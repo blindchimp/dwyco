@@ -27,6 +27,7 @@ DEFINES -= UNICODE
 QMAKE_CXXFLAGS_WARN_ON -= -W3
 QMAKE_CXXFLAGS += /wd4100 /wd4068 /wd4189 /wd4291
 DEFINES += _Windows
+DEFINES += CDCCORE_STATIC
 }
 linux-g++|linux-g++-64|macx-g++|macx-clang: QMAKE_CXX=ccache g++
 

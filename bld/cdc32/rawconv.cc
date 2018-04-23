@@ -7,6 +7,8 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 // $Header: g:/dwight/repo/cdc32/rcs/rawconv.cc 1.15 1999/01/10 16:09:44 dwight Checkpoint $
+
+#include <string.h>
 #include "memory.h"
 #include "rawconv.h"
 

@@ -13,13 +13,14 @@
 #ifndef MMCHAN_H
 #define MMCHAN_H
 #include <stdio.h>
-#include <stdint.h>
 #ifndef _Windows
+#include <stdint.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #endif
 #ifdef _MSC_VER
 #include <sys/types.h>
+#include "msint.h"
 #endif
 
 #include "dwvecp.h"

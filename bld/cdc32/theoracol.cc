@@ -22,7 +22,7 @@
 #include "sysattr.h"
 #include <limits.h>
 #include <stdlib.h>
-#if 0 // _MSC_VER
+#if _MSC_VER
 #include "msint.h"
 #else
 #include <stdint.h>

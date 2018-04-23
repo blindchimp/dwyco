@@ -13,6 +13,7 @@
 #endif
 #ifdef _MSC_VER
 #include <direct.h>
+#include <sys\stat.h>
 #endif
 #include <dos.h>
 #include <io.h>
