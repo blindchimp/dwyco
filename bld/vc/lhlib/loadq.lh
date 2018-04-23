@@ -1,0 +1,100 @@
+;
+; function to load functions from a list of files.
+; This is a construct, so the executed expressions are using
+; the context the load-file function is called from.
+; this does its work silently, so avoid problems with xinetd
+
+
+scompile(gv __lh_load_file_stop exc a1 a2 `printml(load stopped: <a1> <a2>) exit(1)')
+excdhandle(*:LH.LOAD_FILE_TOP_LEVEL <__lh_load_file_stop>)
+scompile(cvg load-file `
+;print(<__lh_varargs>)
+	if(not(gbound(__lh_lf_depth))
+		 gbind(__lh_lf_depth 0)
+		 gbind(__lh_lf_depth ++(<__lh_lf_depth>))
+	)
+	if(gt(<__lh_lf_depth> 8) excraise(T:LH.LOAD_FILE_TOP_LEVEL loop |Recursive load-file loop?|))
+	lbind({__lh_varargs<__lh_lf_depth>} <__lh_varargs>)
+	scompile(vl {__lh_handler-fun<__lh_lf_depth>} exc file name `
+		print( {|load-file operation failed while trying to load |
+			<name> | : | <exc>  |\n|})
+		return(backout)
+	')
+	lbind({__lh_do-removes<__lh_lf_depth>} `
+		lremove({__lh_filename<__lh_lf_depth>})
+		lremove({__lh_file<__lh_lf_depth>})
+		lremove({__lh_tmp<__lh_lf_depth>})
+		lremove({__lh_varargs<__lh_lf_depth>})
+		lremove({__lh_file-contents<__lh_lf_depth>})
+		lremove({__lh_handler-fun<__lh_lf_depth>})
+		lremove({__lh_do-removes<__lh_lf_depth>})
+		gbind(__lh_loading_file nil)
+		gbind(__lh_lf_depth --(<__lh_lf_depth>))
+		')
+	exchandle(|[AE]:*| <__lh_handler-fun<__lh_lf_depth>> <__lh_do-removes<__lh_lf_depth>> void(
+	foreach({__lh_filename<__lh_lf_depth>} <__lh_varargs<__lh_lf_depth>> void(
+		lbind({__lh_file<__lh_lf_depth>} openfile(<__lh_filename<__lh_lf_depth>> r))
+		lbind({__lh_file-contents<__lh_lf_depth>} contents-of(<__lh_file<__lh_lf_depth>>))
+		closefile(<__lh_file<__lh_lf_depth>>)
+		gbind(__lh_loading_file <__lh_filename<__lh_lf_depth>>)
+		lcompile({__lh_tmp<__lh_lf_depth>} <__lh_file-contents<__lh_lf_depth>>)
+		;print({<__lh_file-contents<__lh_lf_depth>> |\n|})
+		;print({loaded | | <__lh_filename<__lh_lf_depth>> |\n|})
+		eval(<__lh_tmp<__lh_lf_depth>>)
+	))
+	)) ; handle
+	eval(<__lh_do-removes<__lh_lf_depth>>)
+')
+
+gbind(__lh_lf_already_loaded set())
+
+scompile(cvg load-file-once `
+	if(not(gbound(__lh_lf_depth))
+		 gbind(__lh_lf_depth 0)
+		 gbind(__lh_lf_depth ++(<__lh_lf_depth>))
+	)
+	if(gt(<__lh_lf_depth> 8) excraise(E:LH.LOAD_FILE |Recursive load-file loop?|))
+	lbind({__lh_varargs<__lh_lf_depth>} <__lh_varargs>)
+	scompile(vl {__lh_handler-fun<__lh_lf_depth>} exc name `
+		print( {|load-file operation failed while trying to load |
+			<name> | : | <exc>  |\n|})
+		return(backout)
+	')
+	lbind({__lh_do-removes<__lh_lf_depth>} `
+		lremove({__lh_filename<__lh_lf_depth>})
+		lremove({__lh_file<__lh_lf_depth>})
+		lremove({__lh_tmp<__lh_lf_depth>})
+		lremove({__lh_varargs<__lh_lf_depth>})
+		lremove({__lh_file-contents<__lh_lf_depth>})
+		lremove({__lh_handler-fun<__lh_lf_depth>})
+		lremove({__lh_do-removes<__lh_lf_depth>})
+		gbind(__lh_loading_file nil)
+		gbind(__lh_lf_depth --(<__lh_lf_depth>))
+		')
+	exchandle(|[AE]:*| <__lh_handler-fun<__lh_lf_depth>> eval(<__lh_do-removes<__lh_lf_depth>>) void(
+	foreach({__lh_filename<__lh_lf_depth>} <__lh_varargs<__lh_lf_depth>> void(
+		if(not(contains(<__lh_lf_already_loaded> <__lh_filename<__lh_lf_depth>>)) prog(
+		put(<__lh_lf_already_loaded> <__lh_filename<__lh_lf_depth>>)
+		lbind({__lh_file<__lh_lf_depth>} openfile(<__lh_filename<__lh_lf_depth>> r))
+		lbind({__lh_file-contents<__lh_lf_depth>} contents-of(<__lh_file<__lh_lf_depth>>))
+		closefile(<__lh_file<__lh_lf_depth>>)
+		gbind(__lh_loading_file <__lh_filename<__lh_lf_depth>>)
+		lcompile({__lh_tmp<__lh_lf_depth>} <__lh_file-contents<__lh_lf_depth>>)
+		;print({<__lh_file-contents<__lh_lf_depth>> |\n|})
+		;print({loaded | | <__lh_filename<__lh_lf_depth>> |\n|})
+		eval(<__lh_tmp<__lh_lf_depth>>)
+		)
+		; else
+		prog(
+		;print({skipping | | <__lh_filename<__lh_lf_depth>> |\n|})
+
+		))
+	))
+	)) ; handle
+	eval(<__lh_do-removes<__lh_lf_depth>>)
+')
+
+gbind(HOME getenv(HOME))
+load-file({<HOME>/lhlib/common.lh})
+;print(|done.\n|)
+if(<__lh_start_debugger> load-file({<HOME>/lhlib/lhdbg.lh}))

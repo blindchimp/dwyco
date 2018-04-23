@@ -1,0 +1,168 @@
+1/24/94
+-------
+
+Need to possibly put a special case in bind code for 
+checking to see if a function is being bound. if so,
+can xform from a lambda to a named function.
+---
+need to add better variable printing in debug backtrace
+(now the variables are output at the end of the trace, not
+as useful...)
+---
+need to add "bound" functions for testing whether a variable
+exists...  done.
+---
+need to fix the function quoting stuff so it works right.
+should make compile a construct, and not evaluate
+the last argument (function expr.) this would eliminate the
+need for quoting it.
+---
+need to decide whether functions being passed over a comm link
+should be done "internally" in C++ or it should be done
+via a combination of stringrepping and re-compilation in
+LH. note: primitive functions cannot be sent over wire:
+must assume there is some basic level of support on
+both sides.
+---
+debugger needs an interactive mode. maybe something windowy
+would be nice...
+---
+need to make LH language counterparts to the networking objects
+in vc hierarchy. done.
+---
+need to add recursive scanning to the composite part of
+the vc hierarchy to deal with those troublesome self-refs
+---
+having the "file" objects raise LH exceptions is a lose.
+it makes the vc objects dependent on the LH language.
+would be better to have them use their own little exception
+handler ala the socket stuff, and then have the LH
+functions raise LH exception when there was a problem
+with the lower level objects.
+---
+files: need to be redone at the vc level, perhaps
+integrating better with xfer stuff...
+also need a better set of things for the LH level.
+too primitive and expensive at the moment.
+---
+need to port to other C++ implementations...
+(works with gcc2.6.0, yay!)
+---
+need to redo template classes so that excess ctor calls
+are eliminated. mainly need a way to reference the bowels
+of a structure without requiring copies.
+2/14/94- some experimentation done with alternate means of
+doing hash tables... very promising, have a lazy-map
+that is several times faster than current stuff.
+---
+redo the lexer to get rid of flex (the only hard part is
+floating pointer numbers.)
+3/10/94 pretty much working and integrated.
+much more flexible than old flex stuff, and just
+about as big/fast.
+---
+try to coalesce the various representations, both
+implementation-wise and abstraction wise (xfer,print,lex,string...)
+---
+add a new composite/atomic type: byte streams? might be useful, but
+only for performance reasons. means it would be necessary
+to provide access functions to take apart and reassemble.
+---
+add new decomposable type: homo-decomposables? type where
+all elements were the same atomic type (float, double, int, short, char).
+would be a big performance win for vectors wrt dsp-type problem solving.
+lose would be code-size, templates would explode in size.
+(note: got hetero-vectors working, nice performance improvement.)
+---
+add new decomposable type: matrix? perhaps 2-d at first
+then maybe n-d. provide both homo and normal types.
+---
+consider making a uniform abstraction for devices based on
+their capabilities: serial, serial packet, seekable, easy seekable, random.
+---
+what to do about functions that expect non-self-ref structures like printing
+and stringrepping? probably should emit an error and terminate.
+also, probably should look at providing deep vs. shallow stuff, especially
+for "eq".
+---
+add user defined varadic functions
+(1/94: almost done, reorg'ed function calling stuff, and function
+attrs are now more accessible.) 2/94: internals done, need a means
+for users to specify varadicity.
+2/94: done, new function called scompile that gives
+user control over the various function attributes.
+user defined varadic functions work.
+---
+add property lists, or some sort of aggregate support.
+3/94: attempted a prototype for this, but failed because it
+would have meant rearranging the syntax too much, or going to
+yacc. put in a small lh-hack to implement aggs as maps.
+9/94: got LH objects working. LH is no "object-oriented". yay!
+---
+add fast function call mechanism, have a good idea where most of the
+time is being spent (context creation/destruction& arg binding).
+have tried implementing fast closed hasher for smaller case, which
+is about twice as fast as current setup. not sure if it's worth
+the extra complexity yet.
+have to investigate allocation strategy a bit more before deciding.
+can probably squeeze more performance with special stack-like
+data structure for function context mappings.
+also, function call cache would speed things up considerably, only
+need to figure out when and where the cache may need to be flushed (maybe
+only when a function binding is changed?)
+2/94
+function cache done. about
+30% improvement in function call performance (w/o args).
+note: potential performance problems for functions that
+bind a lot of functions. probably ought to provide
+function to turn off function cacheing.
+3/94: improved function caching, probably no need to allow
+disabling it.
+---
+port to win32 -> putting at least a decent gui on things.
+(ported to win32, but the bcc compiler is so buggy it doesn't work.)
+---
+glom in some of the neural net stuff.
+---
+glom in the "pbm" package
+---
+fill out the operators available with bitwise ops and so on.
+---
+add iterator objects to vc hierarchy, this might be an
+intesting test of the classification of things
+(are they atomic? composite? decomposable?)
+---
+need model of external world that makes sense for all sorts
+of objects. mainly need to think of something that works
+ok for filesystems, and potentially filesystems that
+have some sort of versioning.
+---
+need to have some idea of streaming or maybe storing objects
+somewhere persistently.
+---
+put in a "path" like searching deal that would dynamically
+load lh functions if they are not found in the current
+set of contexts. might be something like searching a set of
+directories for names matching the called function, or might
+be a "library" of stored functions that has an associated
+map. in any case, could be primitive and easy to use at first
+so i don't have to keep writing the same functions all the time.
+---
+maybe have an explicit include directive so large sets of functions
+could be loaded all at once.
+3/94: wrote a small lh construct that can load/eval other files
+with lh programs in them. works ok.
+
+---
+think up a uniform way of doing internal error handling
+that allows most of the implementation to reside in vc_default.
+having vc_default present a template and use virtual functions
+in the derived classes to provide a more informative set of
+error messages.
+---
+come up with am i/o handler class that can be used to encapsulate
+some of the system dependencies for networking (and maybe other
+sorts of i/o, eventually.)
+
+
+

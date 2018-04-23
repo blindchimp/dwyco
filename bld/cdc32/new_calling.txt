@@ -1,0 +1,74 @@
+dwight melcher
+Wed Aug  7 08:42:53 MDT 2013
+
+notes on revamping channel setup and media setup for calling.
+
+* the old school method of forcing the user thru a set of
+"accept/reject" dialogs and then combining media streaming with
+the results of that action is cumbersome. 
+* it would be easier to let the dll just provide network setup
+of clear channels, and then operations of starting/stopping various
+forms of media on those channels at arbitrary times.
+this would allow for more varied forms of "call screening" that
+don't use the old-style (which is derived from old telecom standards.)
+
+new operations:
+
+replace the existing "connect" call which requires you to
+specify all the media you are going to use with:
+
+caller:
+
+channel_create(uid, pw, call_type, callbacks...)
+ this initiates the channel creation, the callbacks are called
+ to indicate status as the call progresses. the final callback
+ in the call setup state indicates when the channel is available
+ as a full duplex channel.
+ note: the callbacks in these cases can subsume all the
+ "video_init_callback" stuff as the status could include
+ things like "video_streaming_start/end" type things.
+ note: for symmetry, could also emit a "channel_appeared"
+ callback on the caller, tho not sure this is a win, have to think
+ about it.
+
+callee:
+
+channel_appeared(chan_id, rem_uid, rem_pw, rem_call_type)
+ this allows for basic screening. if the call isn't rejected
+ at this point, a full duplex channel is available to the
+ remote uid.
+
+
+streaming:
+
+channel_send_video(chan, vid_dev)
+channel_stop_send_video(chan, vid_dev)
+channel_send_audio(chan, aud_dev)
+channel_stop_send_audio(chan, aud_dev)
+channel_send_data(chan, data-src)
+channel_stop_send_data(chan, data-src)
+
+ each of these calls sets up and initiates the given media stream.
+ the local end will receive a callback msg when the streaming starts
+ or a failure if the stream could not be started. this failure could
+ be the result of the remote end actively rejecting the stream or
+ the remote end may have passively indicated the stream is not accepted.
+ on stop, likewise a callback is received when the stream is stopped.
+
+
+channel_recv_video(chan, rem_vid_dev)
+channel_stop_recv_video(chan, rem_vid_dev)
+channel_recv_audio(chan, rem_aud_dev)
+channel_stop_recv_audio(chan, rem_aud_dev)
+
+ when a channel is initiated, the caller gets an indication of which
+ video devices are available on the remote end. these calls can be used
+ to initiate streaming remote video. callback msgs are sent when
+ a stream is started, and with any errors.
+
+terminating:
+
+channel_destroy(chan)
+
+ gracefully destroys the channel by sending termination requests to
+ the remote end. all streams are stopped and devices released as needed.

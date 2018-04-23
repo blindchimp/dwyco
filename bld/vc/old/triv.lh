@@ -1,0 +1,334 @@
+load-file(strhacks.lh)
+; simple trivia bot
+; count the number of questions. get a shuffled list of indexes from the count
+; load the questions into memory.
+; march thru the list picking up the next question.
+;
+; schema for database is:
+; CREATE TABLE questions (category , question , answer , regex , used int);
+; CREATE TABLE scores(id, time, qid, pts);
+; (plus whatever indexs)
+
+; goofy, returns vector 1-n shuffled with 1-n, really need to
+; convert to 0 based.
+compile(shuffle-n n `
+	srand(time())
+	lbind(a vector2(add(<n> 1)))
+	for(i 1 <n> prog(
+		putidx(<a> <i> <i>)
+	))
+	while(ge(<n> 2) prog(
+		lbind(r add(mod(rand() <n>) 1))
+		lbind(tmp a[<r>])
+		putidx(<a> <r> a[<n>])
+		putidx(<a> <n> <tmp>)
+		lbind(n sub(<n> 1))
+	))
+
+	return(<a>)
+	;printl(<a>)
+')
+
+compile(trivial-trivia-init `
+	lbind(succ wrap_sqlite3_open(questions.db db))
+	gbind(DB <db>)
+	if(ne(<succ> 0) excraise(A:CANT_OPEN_TRIVIA))
+	lbind(a sql_query(<DB> |select count(*) from questions;|))
+	printl(<a>)
+	gbind(QN a[0][0])
+	; load all the questions
+	gbind(Q sql_query(<DB> |select *, ROWID from questions;|))
+	gbind(QS shuffle-n(<QN>))
+	delfirst(<QS>)
+	gbind(Q-curr 0)
+	printml(TRIVIA UP)
+')
+
+compile(trivia-ask-next `
+	if(ge(<Q-curr> <QN>) prog(
+		lbind(Q-curr 0)
+		gbind(QS shuffle-n(<QN>))
+		delfirst(<QS>)
+	))
+	gbind(Q-curr add(<Q-curr> 1))
+	lbind(a Q[QS[<Q-curr>]])
+	return(vector(a[0] a[1]))
+')
+
+; check for answer to current question in str
+compile(trivia-check-for-answer str `
+	lbind(q Q[QS[<Q-curr>]])
+	lbind(a1 tolower(q[2]))
+	; this doesn't work because the regex syntax isn't quite rght
+	; in the database
+	;re-set-syntax(egrep)
+	;lbind(ar regex(q[3]))
+	;re-set-syntax(emacs)
+	lbind(ar pcre-compile(q[3]))
+	lbind(str tolower(<str>))
+	if(cor(strstr(<str> <a1>)
+		;match(<ar> <str>) ; see comment above
+		pcre-exec(<ar> <str>)
+		) prog(
+		return(t)
+	))
+	return(nil)
+')
+
+compile(trivia-check-for-answer2 q str `
+	lbind(a1 tolower(q[2]))
+	lbind(ar pcre-compile(q[3]))
+	lbind(str tolower(<str>))
+	if(cor(strstr(<str> <a1>)
+		pcre-exec(<ar> <str>)
+		) prog(
+		return(t)
+	))
+	return(nil)
+')
+
+compile(trivia-give-answer `
+	lbind(q Q[QS[<Q-curr>]])
+	lbind(a1 q[2])
+	return(<a1>)
+')
+
+; add points to user uid
+compile(trivia-add-points uid `
+	; see if they answered it before
+	lbind(q Q[QS[<Q-curr>]])
+	lbind(rowid q[5])
+	lbind(ans q[2])
+	printl(<rowid>)
+	lbind(prev_ans sql_query(<DB> |select count(*) from scores where id = $1 and qid = $2;| err <uid> <rowid>))
+	cond(
+	ge(prev_ans[0][0] 2) lbind(pts -5)
+	eq(prev_ans[0][0] 1) lbind(pts 5)
+	lbind(pts 10)
+	)
+	lbind(a sql_query(<DB> |insert into scores values($1, $2, $3, $4);| err <uid> time() <rowid> <pts>))
+	lbind(newscore sql_query(<DB> |select sum(pts) from scores where id = $1;| err <uid>))
+
+	return(vector(prev_ans[0][0] <pts> newscore[0][0] <ans>))
+
+')
+
+;trivial-trivia-init()
+
+if(nil prog(
+lbind(a trivia-ask-next())
+printl(<a>)
+lbind(b trivia-give-answer())
+printl(<b>)
+lbind(c trivia-check-for-answer(|fucker|))
+printl(<c>)
+lbind(c trivia-check-for-answer(|5000 to 6000|))
+printl(<c>)
+lbind(c trivia-check-for-answer(|5 to 6 thousand|))
+printl(<c>)
+;trivia-add-points(foouid)
+exit(0)
+))
+
+gbind(Qstate emit)
+gbind(Qstate-time time())
+compile(trivia-crank name uid str `
+	switch(<Qstate>
+	emit prog(
+		lbind(a trivia-ask-next())
+		output-trivia-question(a[0] a[1])
+		gbind(Qstate wait-for-answer)
+		gbind(Qstate-time time())
+	)
+
+	wait-for-answer prog(
+		if(gt(sub(time() <Qstate-time>) 8) prog(
+			lbind(a trivia-give-answer())
+			output-trivia-answer(<a>)
+			gbind(Qstate pause)
+			gbind(Qstate-time time())
+		)
+		;else
+		prog(
+			if(cand(<str> trivia-check-for-answer(<str>)) prog(
+				lbind(res trivia-add-points(<uid>))
+				output-trivia-results(<name> res[0] res[1] res[2] res[3])
+				gbind(Qstate pause)
+				gbind(Qstate-time time())
+			))
+		))
+	)
+
+	pause prog(
+		if(gt(sub(time() <Qstate-time>) 2) prog(
+			gbind(Qstate emit)
+		))
+	)
+	prog()
+	)
+')
+
+; this is another trivia game: strato-challenge
+;
+; the bot picks N questions, and emits them all at once
+; the players must answer some subset of the questions
+; correctly to get awarded any points. the first one to
+; answer the subset gets the points, noone else does.
+; to add some strategy, the player that announces the
+; correct answer for a particular question first gets
+; 5 provisional points. further users that answer the
+; question are considered to have "poached" the answer
+; and it is only worth 1 provisional point.
+; in addition, the answers can be announced at any time,
+; and in multiple answers on one line.
+;
+compile(trivia-sc-start `
+	gbind(Qsc-first <Q-curr>)
+	;gbind(Q-curr add(<Q-curr> <Qsc-count>))
+	gbind(Qsc-score map())
+')
+
+; tabulate up the provisional scores, and see if anyone
+; has won
+compile(trivia-sc-prov-score uid str `
+	lbind(score get(<Qsc-score> <uid>))
+	if(not(<score>) lbind(score vector2(<Qsc-score> 0)))
+	lbind(j 0)
+	lbind(answered 0)
+	for(i <Qsc-first> add(<Qsc-first> sub(<Qsc-count> 1)) prog(
+		if(not(score[<j>]) prog(
+			; see if the string matches
+			if(trivia-check-for-answer2(Q[QS[<i>]] <str>) prog(
+				lbind(answered add(<answered> 1))
+				lbind(poached nil)
+				foreach(u <Qsc-score> prog(
+					lbind(av u[1])
+					if(cand(ne(<av> <score>) ne(av[<j>] 0)) prog(
+						putidx(<score> <j> 1)
+						lbind(poached t)
+						break(1)
+					))
+				))
+				if(not(<poached>) prog(
+					putidx(<score> <j> 5)
+				))
+			))
+		))
+		lbind(j add(<j> 1))
+	))
+	put(<Qsc-score> <uid> <score>)
+	if(ge(<answered> sub(<Qsc-count> 1)) prog(
+		; uid wins that round, tally up the score
+		lbind(total sum(<score>))
+		return(<total>)
+	)
+	;else
+	prog(
+		return(nil)
+	))
+')
+
+compile(trivia-sc-crank name uid str `
+	switch(<Qstate>
+	emit-sc prog(
+		trivia-sc-start()
+		lbind(qs vector())
+		for(i 1 <Qsc-count>
+			append(<qs> trivia-ask-next())
+		)
+		output-trivia-sc-question(<qs>)
+		gbind(Qstate wait-for-answers-sc)
+		gbind(Qstate-time time())
+	)
+
+	wait-for-answers-sc prog(
+		if(gt(sub(time() <Qstate-time>) 90) prog(
+			lbind(a trivia-give-answer())
+			output-trivia-sc-answers(<a>)
+			gbind(Qstate pause)
+			gbind(Qstate-time time())
+		)
+		;else
+		prog(
+			if(cand(<str> trivia-check-for-answer(<str>)) prog(
+				lbind(res trivia-add-points(<uid>))
+				output-trivia-results(<name> res[0] res[1] res[2] res[3])
+				gbind(Qstate pause)
+				gbind(Qstate-time time())
+			))
+		))
+	)
+
+	pause prog(
+		if(gt(sub(time() <Qstate-time>) 10) prog(
+			gbind(Qstate emit)
+		))
+	)
+	prog()
+	)
+')
+
+if(nil prog(
+compile(output-trivia-question cat ques `
+	printml(QUESTION <cat> : <ques>)
+
+')
+
+compile(output-trivia-answer ans `
+	printml(ANSWER <ans>)
+
+')
+
+compile(output-trivia-results num-prev pts new-score `
+	printml(GOT IT: prev <num-prev> <pts> <new-score>)
+')
+
+
+compile(main `
+	while(t prog(
+		trivia-crank(dwightm foouid hoser)
+		sleep(1)
+	))
+')
+
+load-file(../cdk.lh)
+gbind(stderr openfile(/dev/stderr wb))
+gbind(S wrap_initCDKScreen(<wrap_stdscr>))
+gbind(db-win wrap_newCDKSwindow(<S> 0 0 40 80 nil 100 1 0))
+gbind(ulist-win wrap_newCDKSwindow(<S> <RIGHT> <TOP> 20 30 Users 100 <BOX> 0))
+wrap_drawCDKSwindow(<db-win> 0)
+wrap_drawCDKSwindow(<ulist-win> 0)
+wrap_initCDKColor()
+
+lbind(lf openfile(triv.out wb))
+
+compile(str-to-lines s `
+	lbind(sx strlen(<s>))
+	lbind(i strstr(<s> |\n|))
+	lbind(res vector())
+	while(<i> prog(
+		lbind(f substr(<s> 0 <i>))
+		append(<res> <f>)
+		lbind(s substr(<s> add(<i> 1) end))
+		lbind(i strstr(<s> |\n|))
+	))
+	append(<res> <s>)
+	return(<res>)
+')
+gbind(pbuf ||)
+compile(print x `
+	fprint(<lf> <x>)
+	lbind(r str-to-lines({<x>}))
+	if(eq(numelems(<r>) 1) prog(
+		gbind(pbuf {<pbuf> r[0]})
+		return(nil)
+	))
+	prepend(<r> <pbuf>)
+	gbind(pbuf ||)
+	foreach(l <r> prog(
+		wrap_addCDKSwindow(<db-win> <l> <BOTTOM>) ; bottom of window
+	))
+	wrap_refreshCDKScreen(<S>)
+')
+main()
+))

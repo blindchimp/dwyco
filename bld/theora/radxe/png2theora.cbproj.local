@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2009/05/11 18:17:20.600.cbproj,C:\mk\depot\cdcdll2\bld\theora\examples\png2theora.cbproj=C:\Documents and Settings\Administrator\My Documents\RAD Studio\Projects\Project1.cbproj</Transaction>
+    <Transaction>2009/05/11 18:18:50.756.cbproj,C:\mk\depot\cdcdll2\bld\theora\bds\png2theora.cbproj=C:\mk\depot\cdcdll2\bld\theora\examples\png2theora.cbproj</Transaction>
+  </Transactions>
+</BorlandProject>

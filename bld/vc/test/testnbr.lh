@@ -1,0 +1,19 @@
+lbind(sa socket(tcp any:7777 t t))
+lbind(s socket-accept(<sa> peer))
+socket-set-option(<s> nonblocking)
+
+lbind(foo openfile(out w))
+compile(handler exc sock `return(backout)')
+lbind(n 0)
+while(lt(<n> 1000) prog(
+	printl(<n>)
+	while(exchandle(E:*would* <handler> ` t' `
+	lbind(b socket-recv(<s> a))
+	;printl(<b>)
+	fprint(<foo> <a>)
+	nil
+	')
+	prog()
+	)
+	lbind(n add(<n> 1))
+))

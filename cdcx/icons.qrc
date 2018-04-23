@@ -1,0 +1,127 @@
+<RCC>
+    <qresource prefix="/new/blue48">
+        <file>icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/Gmail-48x48.png</file>
+        <file>icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/mail-48x48.png</file>
+        <file>icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/plus-48x48.png</file>
+        <file>icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/right arrow-48x48.png</file>
+        <file>icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/trash full-48x48.png</file>
+        <file>icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/undo-48x48.png</file>
+    </qresource>
+    <qresource prefix="/new/green24">
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/24x24/Eye-24x24.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/24x24/arrow left-24x24.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/24x24/arrow right-24x24.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/24x24/blank-24x24.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/24x24/chat 1-24x24.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/24x24/no-24x24.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/24x24/Locked-24x24.png</file>
+    </qresource>
+    <qresource prefix="/new/green32">
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Eye-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Keyboard-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Mail2-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Media2-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Upload-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/arrow down-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/arrow up-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/cancel-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/heart-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/info-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/no-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/star-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/users-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/chat 1-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Chat2-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Music4-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/exclamation-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/question-32x32.png</file>
+        <file alias="gooduser.png">icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/user-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Media1-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Clock1-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Clock2-32x32.png</file>
+        <file>icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Locked-32x32.png</file>
+    </qresource>
+    <qresource prefix="/new/prefix1">
+        <file alias="black.png">misc_icons/black.png</file>
+        <file alias="cache.png">misc_icons/cache.png</file>
+        <file alias="cancel.png">misc_icons/cancel.png</file>
+        <file alias="cdplayer-record.png">misc_icons/cdplayer-record.png</file>
+        <file alias="connect_creating.png">misc_icons/connect_creating.png</file>
+        <file alias="connect_established.png">misc_icons/connect_established.png</file>
+        <file alias="connect_no.png">misc_icons/connect_no.png</file>
+        <file alias="downlaod-16x16.png">misc_icons/downlaod-16x16.png</file>
+        <file alias="edit_add.png">misc_icons/edit_add.png</file>
+        <file alias="ggtiny-nevervis.png">misc_icons/ggtiny-nevervis.png</file>
+        <file alias="ggtiny.png">misc_icons/ggtiny.png</file>
+        <file alias="greenguy.png">misc_icons/greenguy.png</file>
+        <file alias="hangup-24x24.png">misc_icons/hangup-24x24.png</file>
+        <file alias="hangup-32x32.png">misc_icons/hangup-32x32.png</file>
+        <file alias="hangup.png">misc_icons/hangup.png</file>
+        <file alias="kill.png">misc_icons/kill.png</file>
+        <file alias="media 1-16x16.png">misc_icons/media 1-16x16.png</file>
+        <file alias="media 2-16x16.png">misc_icons/media 2-16x16.png</file>
+        <file alias="media-1-16x16.png">misc_icons/media-1-16x16.png</file>
+        <file alias="music 2-16x16.png">misc_icons/music 2-16x16.png</file>
+        <file alias="noatunplay.png">misc_icons/noatunplay.png</file>
+        <file alias="panel-screenshot.png">misc_icons/panel-screenshot.png</file>
+        <file alias="player_stop.png">misc_icons/player_stop.png</file>
+        <file alias="reload.png">misc_icons/reload.png</file>
+        <file alias="stop.png">misc_icons/stop.png</file>
+        <file alias="tux.png">misc_icons/tux.png</file>
+        <file alias="tv.png">misc_icons/tv.png</file>
+        <file alias="volume-zero.png">misc_icons/volume-zero.png</file>
+        <file alias="wizdec.png">misc_icons/wizdec.png</file>
+        <file alias="refresh.png">misc_icons/refresh.png</file>
+        <file alias="grayguy.png">misc_icons/grayguy.png</file>
+        <file alias="bad_grayguy.png">misc_icons/bad_grayguy.png</file>
+        <file alias="baduser.png">misc_icons/baduser.png</file>
+        <file alias="redguy.png">misc_icons/redguy.png</file>
+        <file>icons/PrimaryCons_Blue_KenSaunders/PNGs/16x16/mail-16x16.png</file>
+    </qresource>
+    <qresource prefix="/new/prefix2">
+        <file>icons/MediaCons1/PNGs/Play-small.png</file>
+        <file>icons/MediaCons1/PNGs/Record-small.png</file>
+        <file>icons/MediaCons1/PNGs/Stop-small.png</file>
+    </qresource>
+    <qresource prefix="/new/red32">
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Computer-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/chat-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Gears3-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/key-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Eye-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Keyboard-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media2-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Phone-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Stop-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Upload-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/arrow down-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/arrow right-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/arrow up-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/cancel-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/heart-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/info-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/no-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/star-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/users-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/mail 2-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Globe-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/refresh-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/music 2-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/exclamation-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/question-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media1-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/zoom in-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/zoom out-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Clock1-32x32.png</file>
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Clock2-32x32.png</file>
+    </qresource>
+    <qresource prefix="/new/red24">
+        <file>icons/PrimaryCons_Red_KenSaunders/PNGs/24x24/restart-24x24.png</file>
+    </qresource>
+    <qresource prefix="/new/blue24">
+        <file>icons/PrimaryCons_Blue_KenSaunders/PNGs/24x24/restart.png</file>
+    </qresource>
+    <qresource prefix="/new/blue32">
+        <file>icons/PrimaryCons_Blue_KenSaunders/PNGs/32x32/restart.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,5 @@
+Sun Aug 23 15:29:38 MDT 2015
+this is a hacked up version 3.00 of jhead, so it compiles into a
+static c++ lib in its own namespace. there is one entry point:
+jhead::do_jhead(const char *filename)
+and it is hardwired to strip out as much info as possible in-place

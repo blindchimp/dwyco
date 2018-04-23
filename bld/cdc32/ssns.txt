@@ -1,0 +1,170 @@
+SSNS - Simple Signals And Slots
+===============================
+Copyright (C) 2008 Brian Allen Vanderburg II
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+
+Brian Allen Vanderburg II - brianvanderburg@users.sourceforge.net
+
+
+What is SSNS
+============
+It is a simple signals and slots implementation.  It is designed to be
+portable and easy to install into your project.  It supports creating
+typesafe signals that can be connected to either global function or
+member function slots that can take any number of arguments.
+
+
+Using SSNS
+==========
+To use SSNS, just include the header and source file into your project
+and compile with the rest of your code.  The only thing that needs
+configuring is whether or not to support mutiple thread programs,
+and this is pretty much automatic.
+
+Options
+=======
+These options help control how SSNS is handled.
+
+SSNS_NO_THREADS - Build SSNS with no multi-threaded support.  It is
+still possible to use SSNS in a program that has multiple threads,
+just make sure that the connections of signals and slots are all handled
+in the same thread.  That is, no signal should do anything in one thread
+where a slot (ssns::trackable) may do something in another thread.  To
+be sure, it is best not to use threads at all if using this option.
+
+SSNS_WIN32_THREADS - Build SSNS for WIN32 threading support.  It will
+use a critical section for the locking mutex so that using SSNS across
+many threads shouldn't cause problems.
+
+SSNS_POSIX_THREADS - Instead of using a WIN32 critical section, it will
+use a posix thread.  The posix mutex MUST support recursive entry from
+the same thread.  This isn't much of a problem as most systems support
+this now.
+
+SSNS_DLL - This option will cause the symbols to be exported or imported
+as needed.  The file must be manually compiled into a DLL.  For example
+with g++ this will usually do the trick.
+
+    g++ -DSSNS_DLL -ossns.dll -fPIC --shared ssns.cpp
+
+Using SSNS in a modular program
+===============================
+If building a program that uses shared modules, SSNS can still be used
+under certain conditions.  First, the source file (ssns.cpp) should be
+compiled into a shared library (.dll, .so, etc).  Then any parts of the
+program should use the same header file and link to the dll or shared
+object.  This is important so that two different code modules or
+libraries using SSNS will still use the same locking mutex.  If two
+differnet code modules use pass signals/slots from one to another but
+both compile in there own source file, then each will have its own
+locking mutex, so it would be possible for one module to do something
+in one thread while another would do something in another thread and
+with seperate locking mutexes possibly corrupt the signals/slots lists.
+
+The above is only needed if sharing information between the modules.
+For example if module A contains a signal and module B contains a slot
+and connects the signal to the slot, then SSNS should be compiled as
+its own module and both A and B should use it.  This is not needed for
+standalone applications or even modular applications as long as the SSNS
+signals and slots connections are not inter-module connections.  That is,
+both module A and B could use SSNS and link statically, each with their
+own locking mutex, and this would not cause a problem as long as they
+down share with each other.
+
+Note:  In the above, 'module' is refering to a dynamic loaded module
+or code library, typically DLLs on Windows and shared objects on Unix
+like systems.  Later, an option SSNS_DLL will probably be provided to
+automatically export the symbols when compiling and automatically
+import then when using.
+
+Usage
+=====
+All the application really needs to do is create a signal object and then
+connect it to functions or member fuctions.  When the object a signal is
+connected to is destroyed it will automatically disconnect from the signal
+and when the signal is destroyed it will automatically disconnect from any
+connected objects.
+
+The template parameters to the signal are the argument types that the slot
+will take.  The slot returns void.  The number specifies how many arguments,
+for signal0, there are no template parameters:
+
+    signal0 sig;
+    signal2<int, int> sig2;
+
+A signal can be connected to a function or member taking the same arguments
+and returning void:
+
+    void slot()
+    {
+        ...
+    }
+
+    sig.connect_ptrfun(&slot);
+
+To connect to a member, also pass the address of the connected object.  The
+object must derive from ssns::trackable
+
+    class Object : public ssns::trackable
+    {
+    public:
+        ...
+        
+        void Action2(int x, int y)
+        {
+            ...
+        }
+    };
+
+    ...
+    Object o;
+
+    sig2.connect_memfun(&o, &Object::Action2);
+
+Finally, to call the signal, just treat it like a function or call
+the emit member:
+
+    sig();
+    sig2(10, 20);
+
+    sig.emit();
+    sig2.emit(10, 20);
+
+A signal returns a connection that can be used to later disconnect it:
+
+    ssns::connection c1 = sig2.connect_memfun(&o, &Object::Action2);
+
+    // use sig2
+
+    c1.disconnect();
+
+If the signal is destroyed before the connectoin object is destroyed, it
+is still safe to call disconnect because the signal will set the connection
+pointer to NULL so it will do nothing and not cause a crash.
+
+For more details, review the source and header files.
+
+Extending for more arguments
+============================
+To extend SSNS to support more arguments if needed, simply edit the
+M4 file and adjust the value for SSNS_ARGCOUT, then regenerate the
+header:
+
+    m4 ssns.h.m4 > ssns.h
+
+

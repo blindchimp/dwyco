@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2007/05/28 09:20:05.383.bdsproj,C:\Documents and Settings\dwight\My Documents\Borland Studio Projects\Project1.bdsproj=C:\mk\depot\cdcdll2\bld\vorbis\bds4\libvorbis.bdsproj</Transaction>
+    <Transaction>2007/05/28 09:34:40.430.c,C:\mk\depot\cdcdll2\bld\vorbis\lib\psytune.c=</Transaction>
+    <Transaction>2007/05/28 09:35:08.461.c,C:\mk\depot\cdcdll2\bld\vorbis\lib\barkmel.c=</Transaction>
+    <Transaction>2007/05/28 09:35:57.367.c,C:\mk\depot\cdcdll2\bld\vorbis\lib\barkmel.c=</Transaction>
+    <Transaction>2007/05/28 09:36:23.851.c,C:\mk\depot\cdcdll2\bld\vorbis\lib\sharedbook.c=</Transaction>
+    <Transaction>2007/05/28 09:36:35.055.c,C:\mk\depot\cdcdll2\bld\vorbis\lib\tone.c=</Transaction>
+    <Transaction>2007/05/29 07:35:17.062.c,C:\mk\depot\cdcdll2\bld\vorbis\lib\vorbisfile.c=</Transaction>
+  </Transactions>
+</BorlandProject>

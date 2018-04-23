@@ -1,0 +1,76 @@
+;#define MSE_CLOSE 0
+;#define STOPPED_REFINING_NO_MOTION 1
+;#define STOPPED_REFINING_MOTION 2
+;#define REFINING_MOTION 3
+;#define REFINING_NO_MOTION 4
+;#define REFERENCE 5
+lowest
+-
+-
+-
+-
+-
+lowest
+-
+-
+-
+-
+-
+clowest
+end
+typical
+-
+-
+-
+-
+-
+typical
+-
+-
+-
+-
+-
+ctypical
+end
+better
+-
+-
+-
+-
+-
+better
+-
+-
+-
+-
+-
+cbetter
+end
+better-yet
+-
+-
+-
+-
+-
+better-yet
+-
+-
+-
+-
+-
+cbetter-yet
+end
+best
+-
+-
+-
+-
+-
+best
+-
+-
+-
+-
+-
+cbest
+end

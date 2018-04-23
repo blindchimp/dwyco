@@ -1,0 +1,8 @@
+to make things layout and expand
+to fix the form, click on the form
+and then right-click and select "layout
+in grid".
+
+this creates a voodoo member in the ui file
+that is called gridLayout, which isn't accessible
+anywhere in the designer ui.

@@ -1,0 +1,598 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>394</width>
+    <height>325</height>
+   </rect>
+  </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::DefaultContextMenu</enum>
+  </property>
+  <property name="windowTitle">
+   <string>Dwyco (2.17)</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="icons.qrc">
+    <normaloff>:/new/prefix1/greenguy.png</normaloff>:/new/prefix1/greenguy.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">#MainWindow {background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #eef, stop: 1 #ccf);}
+QTextEdit {
+padding: 1px;
+border-style: solid;
+border: 2px solid gray;
+border-radius: 2px;
+}
+QLineEdit {
+padding: 1px;
+border-style: solid;
+border: 2px solid gray;
+border-radius: 2px;
+}
+QListView {
+padding: 1px;
+border-style: solid;
+border: 2px solid gray;
+border-radius: 2px;
+}
+QTreeView {
+padding: 1px;
+border-style: solid;
+border: 2px solid gray;
+border-radius: 2px;
+}</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>120</height>
+    </size>
+   </property>
+   <layout class="QGridLayout">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <item row="1" column="0">
+     <widget class="QPushButton" name="login_button">
+      <property name="text">
+       <string>Login</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QTreeView" name="usertree_view">
+      <property name="toolTip">
+       <string>Dbl-click name to start chatbox. Right click name for more actions.</string>
+      </property>
+      <property name="statusTip">
+       <string>Dbl-click names to send/recv zaps or recv calls!</string>
+      </property>
+      <property name="whatsThis">
+       <string>This is the main pal list. Red means user is online.</string>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::ExtendedSelection</enum>
+      </property>
+      <property name="indentation">
+       <number>2</number>
+      </property>
+      <property name="sortingEnabled">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>394</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuSetup">
+    <property name="title">
+     <string>Setup</string>
+    </property>
+    <addaction name="actionVideo"/>
+    <addaction name="actionUser_profile"/>
+    <addaction name="actionChange_password"/>
+    <addaction name="actionFetch_Lost_Password"/>
+    <addaction name="actionAdvanced"/>
+    <addaction name="actionShow_Ignore_List"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+    <addaction name="actionHow_to_buy_a_subscription"/>
+    <addaction name="actionCheck_for_Updates"/>
+    <addaction name="actionDiagnostics"/>
+    <addaction name="actionBandwidth_test"/>
+   </widget>
+   <widget class="QMenu" name="menuWindows">
+    <property name="title">
+     <string>Windows</string>
+    </property>
+    <addaction name="actionShow_Directory"/>
+    <addaction name="actionShow_Profile_Grid"/>
+    <addaction name="actionShow_Public_Chat"/>
+    <addaction name="actionShow_Lobby_List"/>
+    <addaction name="actionShow_Msg_Browser"/>
+    <addaction name="actionShow_Video_Preview"/>
+    <addaction name="actionHide_All"/>
+    <addaction name="actionHide_All_Chatboxes"/>
+    <addaction name="actionShow_Archived_Users"/>
+    <addaction name="actionShow_Public_Chat_Users"/>
+    <addaction name="actionShow_pics_in_user_list"/>
+    <addaction name="actionShow_Offline_Users"/>
+    <addaction name="actionAllow_multiple_profiles_and_browsers"/>
+    <addaction name="actionMake_me_invisible"/>
+   </widget>
+   <widget class="QMenu" name="menuLobby">
+    <property name="title">
+     <string>Lobby</string>
+    </property>
+    <addaction name="actionCreate_new_lobby"/>
+    <addaction name="actionRemove_lobby"/>
+   </widget>
+   <widget class="QMenu" name="menuExit">
+    <property name="title">
+     <string>Exit</string>
+    </property>
+    <addaction name="actionHide"/>
+    <addaction name="actionExit_2"/>
+   </widget>
+   <addaction name="menuSetup"/>
+   <addaction name="menuWindows"/>
+   <addaction name="menuLobby"/>
+   <addaction name="menuHelp"/>
+   <addaction name="menuExit"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionShow_Directory"/>
+   <addaction name="actionShow_Profile_Grid"/>
+   <addaction name="actionShow_Public_Chat"/>
+   <addaction name="actionShow_Lobby_List"/>
+   <addaction name="actionShow_Video_Preview"/>
+   <addaction name="actionShow_Msg_Browser"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="action_User_info">
+   <property name="text">
+    <string>User &amp;info...</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About...</string>
+   </property>
+  </action>
+  <action name="actionDelete_user">
+   <property name="text">
+    <string>Delete user</string>
+   </property>
+  </action>
+  <action name="actionPromote_to_Pal">
+   <property name="text">
+    <string>Promote to Pal</string>
+   </property>
+  </action>
+  <action name="actionDemote_to_Non_pal">
+   <property name="text">
+    <string>Demote to Non-pal</string>
+   </property>
+  </action>
+  <action name="actionBlock_user">
+   <property name="text">
+    <string>Block user</string>
+   </property>
+  </action>
+  <action name="actionUnblock_user">
+   <property name="text">
+    <string>Unblock user</string>
+   </property>
+  </action>
+  <action name="actionVideo">
+   <property name="text">
+    <string>&amp;Web cam...</string>
+   </property>
+  </action>
+  <action name="actionCheck_for_Updates">
+   <property name="text">
+    <string>Check for Updates...</string>
+   </property>
+  </action>
+  <action name="actionCompose_Message">
+   <property name="text">
+    <string>Audio/Video Message...</string>
+   </property>
+  </action>
+  <action name="actionUser_profile">
+   <property name="text">
+    <string>Your &amp;profile...</string>
+   </property>
+  </action>
+  <action name="actionView_Profile">
+   <property name="text">
+    <string>View Profile</string>
+   </property>
+  </action>
+  <action name="actionDiagnostics">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Diagnostics...</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionRemove_user">
+   <property name="text">
+    <string>Remove user...</string>
+   </property>
+  </action>
+  <action name="actionSend_file">
+   <property name="text">
+    <string>Send file...</string>
+   </property>
+  </action>
+  <action name="actionFetch_Lost_Password">
+   <property name="text">
+    <string>&amp;Fetch Lost Password...</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionAdvanced">
+   <property name="text">
+    <string>&amp;Advanced...</string>
+   </property>
+  </action>
+  <action name="actionUpdate_info">
+   <property name="text">
+    <string>Update info...</string>
+   </property>
+  </action>
+  <action name="actionBrowse_saved_msgs">
+   <property name="text">
+    <string>Browse saved msgs...</string>
+   </property>
+  </action>
+  <action name="actionHow_to_buy_a_subscription">
+   <property name="text">
+    <string>How to buy a subscription...</string>
+   </property>
+  </action>
+  <action name="actionShow_Directory">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/users-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/users-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Recent Visitors</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionShow_Profile_Grid">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Eye-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Eye-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Profile Grid</string>
+   </property>
+   <property name="toolTip">
+    <string>Show profiles</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionShow_Public_Chat">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Keyboard-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Keyboard-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Public Chat</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionShow_Video_Preview">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Computer-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Computer-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Video Preview</string>
+   </property>
+  </action>
+  <action name="actionChange_password">
+   <property name="text">
+    <string>Change password...</string>
+   </property>
+  </action>
+  <action name="actionBandwidth_test">
+   <property name="text">
+    <string>Bandwidth test...</string>
+   </property>
+  </action>
+  <action name="actionAlert_when_online">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Alert when online</string>
+   </property>
+  </action>
+  <action name="actionSend_message">
+   <property name="text">
+    <string>Show Chatbox...</string>
+   </property>
+   <property name="toolTip">
+    <string>Show Chatbox for User</string>
+   </property>
+  </action>
+  <action name="actionShow_Ignore_List">
+   <property name="text">
+    <string>Show Ignore List...</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </action>
+  <action name="actionImport_CDC32_account">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Import CDC32 or other account...</string>
+   </property>
+   <property name="toolTip">
+    <string>Import CDC32 or other old account</string>
+   </property>
+  </action>
+  <action name="actionHide_All">
+   <property name="text">
+    <string>Hide All</string>
+   </property>
+  </action>
+  <action name="actionHide_All_Msg_Browsers">
+   <property name="text">
+    <string>Hide All Msg Browsers</string>
+   </property>
+  </action>
+  <action name="actionHide_All_Chatboxes">
+   <property name="text">
+    <string>Hide All Chatboxes</string>
+   </property>
+  </action>
+  <action name="actionShow_Offline_Users">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Offline Users</string>
+   </property>
+  </action>
+  <action name="actionHangup">
+   <property name="text">
+    <string>Hangup</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop all calls to this user</string>
+   </property>
+  </action>
+  <action name="actionAccept_call">
+   <property name="text">
+    <string>Accept call</string>
+   </property>
+  </action>
+  <action name="actionReject_call">
+   <property name="text">
+    <string>Reject call</string>
+   </property>
+  </action>
+  <action name="actionStealthy_login">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stealthy login</string>
+   </property>
+   <property name="toolTip">
+    <string>Enable to avoid detection while just checking messages</string>
+   </property>
+  </action>
+  <action name="actionAllow_multiple_profiles_and_browsers">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Allow multiple profiles</string>
+   </property>
+   <property name="toolTip">
+    <string>Allow multiple profiles</string>
+   </property>
+  </action>
+  <action name="actionShow_Lobby_List">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Globe-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Globe-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Lobby List</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the lobby list</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionReload_recent_visitors">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/refresh-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/refresh-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reload recent visitors</string>
+   </property>
+  </action>
+  <action name="actionCreate_new_lobby">
+   <property name="text">
+    <string>Create new lobby</string>
+   </property>
+  </action>
+  <action name="actionRemove_lobby">
+   <property name="text">
+    <string>Remove lobby</string>
+   </property>
+  </action>
+  <action name="actionMake_me_invisible">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Make me invisible</string>
+   </property>
+  </action>
+  <action name="actionShow_Msg_Browser">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media1-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media1-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Show Msg Browser</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the saved-message browser</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionHide">
+   <property name="text">
+    <string>Hi&amp;de</string>
+   </property>
+   <property name="toolTip">
+    <string>Hide app</string>
+   </property>
+  </action>
+  <action name="actionExit_2">
+   <property name="text">
+    <string>E&amp;xit</string>
+   </property>
+   <property name="toolTip">
+    <string>Exit app</string>
+   </property>
+  </action>
+  <action name="actionShow_Public_Chat_Users">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Show Public Chat Users</string>
+   </property>
+   <property name="toolTip">
+    <string>Show people current in public chat in your user list</string>
+   </property>
+  </action>
+  <action name="actionShow_pics_in_user_list">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show pics in user list</string>
+   </property>
+  </action>
+  <action name="actionShow_Archived_Users">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Archived Users</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="icons.qrc"/>
+ </resources>
+ <connections/>
+</ui>

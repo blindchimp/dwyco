@@ -1,0 +1,15 @@
+version: 1.0.{build}
+skip_non_tags: true
+clone_folder: c:\users\dwight\cdcxbld
+init:
+- cmd: >-
+    curl http://www.dwyco.com/downloads/qt-4.8.7.zip -o c:\users\dwight\qt-4.8.7.zip
+
+    7z x -oc:\users\dwight c:\users\dwight\qt-4.8.7.zip
+build_script:
+- cmd: >-
+    cd %APPVEYOR_BUILD_FOLDER%
+
+    call "vcbuild.bat"
+test: off
+deploy: off

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>vidbox</class>
+ <widget class="QDockWidget" name="vidbox">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>178</width>
+    <height>186</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Your Video</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="aswitch" name="vid_toggle">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>17</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>PushButton</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="vidlab" name="vid">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>160</width>
+        <height>120</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>160</width>
+        <height>120</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <action name="actionPause">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media2-32x32.png</normaloff>
+     <normalon>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Media2-32x32.png</normalon>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media2-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pause</string>
+   </property>
+   <property name="toolTip">
+    <string>Pause chat snapshots</string>
+   </property>
+  </action>
+  <action name="actionVideo_options">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Gears3-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Gears3-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Video options</string>
+   </property>
+   <property name="toolTip">
+    <string>Pick video cameras/fix colors/etc.</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>vidlab</class>
+   <extends>QLabel</extends>
+   <header>vidlab.h</header>
+  </customwidget>
+  <customwidget>
+   <class>aswitch</class>
+   <extends>QPushButton</extends>
+   <header>aswitch.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="icons.qrc"/>
+ </resources>
+ <connections/>
+</ui>

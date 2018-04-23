@@ -1,0 +1,163 @@
+dwight melcher
+Tue Mar 19 11:03:53 MST 2013
+some simple notes on translating lh
+
+/* grammar for lingua hacka exprs
+
+ var -> atom |
+	< var_list > |
+	var ( var_list ) |
+	var [ var ] |
+	{ var_list } |
+	` var_list '
+
+	note used: var ^ var
+
+var_list -> var_list var |
+		var |
+		empty
+
+
+note: grammar is ambiguous for funcall
+and member selection. there is no
+precedence, and ops are evaluated in
+a strict left to right sequence (left
+associative.)
+
+----------
+hacked grammar used for r-d parsing:
+
+var_list -> var tail | empty
+tail -> var_list | empty
+
+var -> { var_list } v' |
+	< var_list > v' |
+	` var_list ' v' |
+	atom v'
+
+v' -> ( var_list ) v' |
+		[ var ] v' |
+		empty
+
+note: start symbol is "var_list", which is
+reasonable since it would be pointless to define
+var's that weren't evaluated. unfortunately, this
+leads to a problem where the first set of <> are
+implicit, and when converting back and forth to
+stringrep results in more levels of <> showing up.
+the extra <> level is removed by having a flag
+that indicates the root of the cvar tree, and we
+don't print the implicit <>. changing the start symbol
+to "var", allows vars that
+are essentially the same as their atomic counterparts...
+not a big deal, but not pretty either. it also complicates
+the implementation of cvar's, since then the root would have
+to have another vc that was used specifically for holding the
+root of the vc-tree.
+
+* basic ideas that would need translating:
+	* function context
+	* varlist
+	* func arg list
+	* string cat
+	* deferred eval
+	* exception handling
+	* function/loop termination
+
+
+
+* translate "atom"
+
+return vc("str");
+return vc(1);
+etc.
+
+
+* translate var_list
+
+translate var0
+...
+val = translate varn
+
+
+* translate {}
+
+varlist = translate var_list
+(concatenate subst-reps)
+val = resulting string atom
+
+* translate <>
+
+varlist = translate var_list
+(concatenate subst-reps)
+val = resulting string atom
+val = lookup val in current context
+
+* translate `'
+val = address of some object that represents the translated
+version of var_list
+
+* translate var (var_list)
+
+varlist = translate var_list
+fun = translate var
+setup ctx
+setup args with var_list
+evaluate expr bound to fun
+
+
+---
+each item needs an "address" and a way of evaluating it.
+normally C calling would be how to evaluate an item.
+
+atom:
+
+vc item897() {return vc("foo");}
+vc item8809() {return vc(1);}
+
+var_list:
+
+vc
+varlist_xyz()
+{
+	vc vlist(VC_VECTOR);
+	vlist[0] = varlist_abc();
+	vlist[1] = var_999();
+	vlist[2] = item_787();
+	...
+	return vlist;
+}
+
+{}:
+
+vc
+varlist_nolookup_999()
+{
+	vc res;
+	vc tmp = varlist_999();
+	// concat substreps in tmp
+	return res;
+}
+
+<>:
+
+vc
+varlist_lookup_878()
+{
+	vc res;
+	vc tmp = varlist_878();
+	// concat substreps in tmp
+	// find result in current ctx
+	return res;
+}
+
+`':
+
+vc
+varlist_quot_987()
+{
+	vc res;
+	// note: just return address of the thing, so it can be
+	// run later
+	return varlist_987;
+}

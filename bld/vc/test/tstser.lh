@@ -1,0 +1,28 @@
+if(t prog(
+lbind(out openfile(tmp.out wb))
+lbind(a 0x7fffffffffffffff)
+putfile(<out> <a>)
+lbind(a -0x7fffffffffffffff)
+putfile(<out> <a>)
+putfile(<out> sub(<a> 1))
+putfile(<out> vector())
+putfile(<out> list(1 2 3))
+putfile(<out> map(vector(1 2) vector( 3 4)))
+
+
+closefile(<out>)
+))
+lbind(out openfile(tmp.out rb))
+printl(getfile(<out> a))
+printl(<a>)
+printl(getfile(<out> a))
+printl(<a>)
+printl(getfile(<out> a))
+printl(<a>)
+printl(getfile(<out> a))
+printl(<a>)
+printl(getfile(<out> a))
+printl(<a>)
+printl(getfile(<out> a))
+printl(<a>)
+

@@ -1,0 +1,11 @@
+trusty:
+libqt4-dev
+libsdl1.2-dev
+libesd0-dev
+libsqlite3-dev
+libv4l-dev
+make
+g++
+ccache
+git
+

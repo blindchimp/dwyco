@@ -1,0 +1,753 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{7C2EC187-D377-4C23-B9EA-89AE18BC2C10}</ProjectGuid>
+			<ProjectVersion>12.3</ProjectVersion>
+			<Base>True</Base>
+			<Config Condition="'$(Config)'==''">mingw-rel</Config>
+			<Platform>Win32</Platform>
+			<AppType>Library</AppType>
+			<FrameworkType>None</FrameworkType>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='powerb-dbg' or '$(Cfg_4)'!=''">
+			<Cfg_4>true</Cfg_4>
+			<CfgParent>Cfg_1</CfgParent>
+			<Cfg_1>true</Cfg_1>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='mingw-dbg' or '$(Cfg_5)'!=''">
+			<Cfg_5>true</Cfg_5>
+			<CfgParent>Cfg_1</CfgParent>
+			<Cfg_1>true</Cfg_1>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='powerb-rel' or '$(Cfg_3)'!=''">
+			<Cfg_3>true</Cfg_3>
+			<CfgParent>Cfg_2</CfgParent>
+			<Cfg_2>true</Cfg_2>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='mingw-rel' or '$(Cfg_6)'!=''">
+			<Cfg_6>true</Cfg_6>
+			<CfgParent>Cfg_2</CfgParent>
+			<Cfg_2>true</Cfg_2>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<PackageImports>vclimg.bpi;vcl.bpi;vclx.bpi;dbrtl.bpi;Rave90VCL.bpi;bdertl.bpi;rtl.bpi;bcbie.bpi;xmlrtl.bpi;vclactnband.bpi;bcbsmp.bpi;VclSmp.bpi;svnui.bpi;svn.bpi;TeeUI.bpi;TeeDB.bpi;Tee.bpi;vcldb.bpi;vcldbx.bpi;vcltouch.bpi;dsnap.bpi;dsnapcon.bpi;vclib.bpi;ibxpress.bpi;adortl.bpi;IndyCore.bpi;IndySystem.bpi;IndyProtocols.bpi;inet.bpi;intrawebdb_110_150.bpi;Intraweb_110_150.bpi;vclie.bpi;websnap.bpi;webdsnap.bpi;inetdb.bpi;inetdbbde.bpi;inetdbxpress.bpi;soaprtl.bpi;vclribbon.bpi;dbexpress.bpi;DbxCommonDriver.bpi;DataSnapIndy10ServerTransport.bpi;DataSnapProviderClient.bpi;DataSnapClient.bpi;dbxcds.bpi;DbxClientDriver.bpi;DataSnapServer.bpi;AzureCloud.bpi;DBXInterBaseDriver.bpi;DBXMySQLDriver.bpi;DBXFirebirdDriver.bpi;DBXSybaseASEDriver.bpi;DBXSybaseASADriver.bpi;DBXOracleDriver.bpi;DBXMSSQLDriver.bpi;DBXInformixDriver.bpi;DBXDb2Driver.bpi;CodeSiteExpressVcl.bpi</PackageImports>
+			<ProjectType>CppDynamicLibrary</ProjectType>
+			<BCC_Defines>VCCFG_FILE;CDCX;NO_IOSTREAMS;VIDGRAB_HACKS;DW_APP_NAME=&quot;CDCX&quot;;XXXDISKID;UWB_SAMPLING;UWB_SAMPLE_RATE=44100;THEORA_CODEC;DIRSEPSTR=&quot;\\&quot;;USE_VFW;$(BCC_Defines)</BCC_Defines>
+			<NoVCL>true</NoVCL>
+			<IncludePath>..\;C:\mk\depot\dwycore\bld\cdc32\radxe\;C:\mk\depot\dwycore\bld\cdc32\;$(IncludePath)</IncludePath>
+			<BCC_CPPCompileAlways>true</BCC_CPPCompileAlways>
+			<_TCHARMapping>char</_TCHARMapping>
+			<ILINK_GenerateImportLibrary>true</ILINK_GenerateImportLibrary>
+			<LinkPackageStatics>rtl.lib;vcl.lib</LinkPackageStatics>
+			<OutputExt>dll</OutputExt>
+			<AllPackageLibs>rtl.lib;vcl.lib</AllPackageLibs>
+			<Multithreaded>true</Multithreaded>
+			<ILINK_LibraryPath>..\..\..\ins\OPT\LIB\;..\..\diskid\radxe\Debug\Win32\;..\..\theora\radxe\Release\;..\..\mtcap\mingw-dbg\Win32\;..\..\mtcap\Debug\Win32\;..\..\vgcap\radxe\mingw-dbg\Win32\;..\..\speex\libspeex\radxe\Debug\Win32\;..\..\vorbis112\radxe\Debug_Build\;..\..\ogg\radxe\Debug_Build\;..\..\theora\radxe\Debug\;..\..\vgcap\radxe\Debug\Win32\;..\..\..\ins\DBG\LIB\;..\;C:\mk\depot\dwycore\bld\cdc32\radxe\;C:\mk\depot\dwycore\bld\cdc32\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+			<DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE</DCC_UnitAlias>
+			<IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
+			<FinalOutputDir>.\$(Config)\$(Platform)</FinalOutputDir>
+			<BCC_wpar>false</BCC_wpar>
+			<BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
+			<BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
+			<ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\release\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<BCC_PCHWithExternalTypeFiles>false</BCC_PCHWithExternalTypeFiles>
+			<BCC_PCHUsage>None</BCC_PCHUsage>
+			<BCC_Defines>NO_STRICT;$(BCC_Defines)</BCC_Defines>
+			<BCC_SmartPCHCache>false</BCC_SmartPCHCache>
+			<BCC_IncludePath>C:\mk\depot\dwycore\ins\DBG\INC;C:\mk\depot\dwycore\bld\speex\include;C:\mk\depot\dwycore\bld\ogg\include;C:\mk\depot\dwycore\bld\theora\include;C:\mk\depot\dwycore\bld\vorbis112\include;C:\mk\depot\dwycore\bld\vgcap;$(BCC_IncludePath)</BCC_IncludePath>
+			<BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
+			<BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+			<DCC_Optimize>false</DCC_Optimize>
+			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+			<Defines>_DEBUG;$(Defines)</Defines>
+			<BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
+			<BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
+			<DCC_Define>DEBUG</DCC_Define>
+			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+			<TASM_DisplaySourceLines>true</TASM_DisplaySourceLines>
+			<BCC_StackFrames>true</BCC_StackFrames>
+			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
+			<TASM_Debugging>Full</TASM_Debugging>
+			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+			<ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+			<ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\debug\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_4)'!=''">
+			<BCC_Undefines>USE_VFW;VIDGRAB_HACKS;$(BCC_Undefines)</BCC_Undefines>
+			<BCC_Defines>DWYCO_POWERBROWSE;FNMOD;DWYCO_TRACE;$(BCC_Defines)</BCC_Defines>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_5)'!=''">
+			<ILINK_DelayLoadDll>mtcapxe.dll;$(ILINK_DelayLoadDll)</ILINK_DelayLoadDll>
+			<ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
+			<BCC_Defines>MINGW_CLIENT;DWYCO_RELEASE;$(BCC_Defines)</BCC_Defines>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<ILINK_LibraryPath>C:\mk\depot\dwycore\ins\OPT\LIB;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+			<BCC_IncludePath>C:\mk\depot\dwycore\ins\OPT\INC;C:\mk\depot\dwycore\bld\ogg\include;C:\mk\depot\dwycore\bld\theora\include;C:\mk\depot\dwycore\bld\vorbis112\include;C:\mk\depot\dwycore\bld\speex\include;C:\mk\depot\dwycore\bld\vgcap;$(BCC_IncludePath)</BCC_IncludePath>
+			<Defines>NDEBUG;$(Defines)</Defines>
+			<TASM_Debugging>None</TASM_Debugging>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_3)'!=''">
+			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+			<BCC_Undefines>USE_VFW;VIDGRAB_HACKS;$(BCC_Undefines)</BCC_Undefines>
+			<BCC_Defines>DWYCO_POWERBROWSE;FNMOD;NO_VIDEO_CAPTURE;$(BCC_Defines)</BCC_Defines>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_6)'!=''">
+			<ILINK_DelayLoadDll>mtcapxe.dll;$(ILINK_DelayLoadDll)</ILINK_DelayLoadDll>
+			<BCC_Defines>MINGW_CLIENT;DWYCO_RELEASE;AUTOBUG;DWYCO_UDP_PALXXX;DWYCO_FIELD_TRACK;DWYCO_USE_SQLITE;DWYCO_USE_STATIC_SQLITE;WIN32;$(BCC_Defines)</BCC_Defines>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_6)'!='' And '$(FileToCompile)'=='..\sqlite3.c'">
+			<BCC_CPPCompileAlways>false</BCC_CPPCompileAlways>
+		</PropertyGroup>
+		<ItemGroup>
+			<CppCompile Include="..\aconn.cc">
+				<BuildOrder>37</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\acqfile.cc">
+				<BuildOrder>38</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\aq.cc">
+				<BuildOrder>40</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\aqaud.cc">
+				<BuildOrder>41</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\aqext.cc">
+				<BuildOrder>42</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\aqextaud.cc">
+				<BuildOrder>43</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\aqvfw.cc">
+				<BuildOrder>46</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\asshole.cpp">
+				<BuildOrder>2</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audchk.cc">
+				<BuildOrder>47</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audconv.cc">
+				<BuildOrder>48</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audexto.cc">
+				<BuildOrder>49</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audi.cc">
+				<BuildOrder>50</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audmix.cc">
+				<BuildOrder>156</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audmixs.cc">
+				<BuildOrder>156</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audo.cc">
+				<BuildOrder>53</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audout.cc">
+				<BuildOrder>55</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audth.cc">
+				<BuildOrder>157</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\audwin.cc">
+				<BuildOrder>148</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\autoup.cpp">
+				<BuildOrder>3</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\backsql.cpp">
+				<BuildOrder>168</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\bcastq.cc">
+				<BuildOrder>142</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\calldll.cpp">
+				<BuildOrder>4</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\calllive.cpp">
+				<BuildOrder>5</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\callq.cpp">
+				<BuildOrder>1</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\cdcpal.cc">
+				<BuildOrder>140</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\cdcpal2.cc">
+				<BuildOrder>166</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\chatgrid.cpp">
+				<BuildOrder>7</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\chatops.cc">
+				<BuildOrder>153</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\chatq.cpp">
+				<BuildOrder>8</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\chimp.cc">
+				<BuildOrder>144</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\chroma.cc">
+				<BuildOrder>98</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\cllaccpt.cpp">
+				<BuildOrder>9</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\codec.cc">
+				<BuildOrder>99</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\colcod.cc">
+				<BuildOrder>100</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\coldec.cc">
+				<BuildOrder>101</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dchroma.cc">
+				<BuildOrder>102</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dct.cc">
+				<BuildOrder>143</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dhsetup.cpp">
+				<BuildOrder>159</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\directsend.cpp">
+				<BuildOrder>164</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dirth.cc">
+				<BuildOrder>103</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dlli.cpp">
+				<BuildOrder>13</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dmdsrv.cc">
+				<BuildOrder>104</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\doinit.cc">
+				<BuildOrder>105</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dwlog.cc">
+				<BuildOrder>107</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dwrate.cc">
+				<BuildOrder>108</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dwrtlog.cc">
+				<BuildOrder>109</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\dwtimer.cc">
+				<BuildOrder>110</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\enc.cc">
+				<BuildOrder>168</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\ezset.cpp">
+				<BuildOrder>14</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\favmsg.cpp">
+				<BuildOrder>169</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\fetch_to_inbox.cpp">
+				<BuildOrder>167</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\filetube.cc">
+				<BuildOrder>111</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\fl.cc">
+				<BuildOrder>96</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\fnmod.cc">
+				<BuildOrder>97</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\globs.cc">
+				<BuildOrder>68</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\gsmconv.cc">
+				<BuildOrder>69</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\imgmisc.cc">
+				<BuildOrder>70</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jccolor.cc">
+				<BuildOrder>71</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jchuff.cc">
+				<BuildOrder>72</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jcolcod.cc">
+				<BuildOrder>74</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jcoldec.cc">
+				<BuildOrder>76</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jcparam.cc">
+				<BuildOrder>77</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jdcolor.cc">
+				<BuildOrder>78</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jdhuff.cc">
+				<BuildOrder>79</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jdmaster.cc">
+				<BuildOrder>80</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jfdctfst.cc">
+				<BuildOrder>162</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jqtab.cc">
+				<BuildOrder>81</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jtcode.cc">
+				<BuildOrder>158</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jtdecode.cc">
+				<BuildOrder>158</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\jutils.cc">
+				<BuildOrder>163</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\keydyn.cc">
+				<BuildOrder>83</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\lpcconv.cc">
+				<BuildOrder>84</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mcc.cpp">
+				<BuildOrder>17</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmaud.cc">
+				<BuildOrder>85</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmband.cc">
+				<BuildOrder>86</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmbld.cc">
+				<BuildOrder>87</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmcall.cpp">
+				<BuildOrder>18</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmchan.cc">
+				<BuildOrder>89</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmchan2.cc">
+				<BuildOrder>88</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmchan3.cpp">
+				<BuildOrder>160</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmconn.cc">
+				<BuildOrder>90</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmctrl.cc">
+				<BuildOrder>91</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmserv.cc">
+				<BuildOrder>92</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mmsync.cc">
+				<BuildOrder>93</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\mo.cc">
+				<BuildOrder>161</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\msend.cpp">
+				<BuildOrder>165</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\msgddll.cpp">
+				<BuildOrder>152</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\netcod.cc">
+				<BuildOrder>95</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\netdiag.cpp">
+				<BuildOrder>19</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\netvid.cc">
+				<BuildOrder>67</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\packbits.cc">
+				<BuildOrder>112</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\pgdll.cpp">
+				<DependentOn>..\pgdll.h</DependentOn>
+				<BuildOrder>20</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\pkcache.cpp">
+				<BuildOrder>161</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\prfcache.cpp">
+				<BuildOrder>21</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\qauth.cc">
+				<BuildOrder>118</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\qdirth.cc">
+				<BuildOrder>119</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\qmsg.cc">
+				<BuildOrder>120</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\qmsgsql.cpp">
+				<BuildOrder>166</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\qpol.cc">
+				<BuildOrder>121</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\qsend.cpp">
+				<BuildOrder>162</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\qtab.cc">
+				<BuildOrder>122</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="cdcdll8.cpp">
+				<BuildOrder>0</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\ratetwkr.cpp">
+				<BuildOrder>23</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\rawconv.cc">
+				<BuildOrder>123</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\rawfiles.cpp">
+				<BuildOrder>24</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\rlc.cc">
+				<BuildOrder>160</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\se.cpp">
+				<BuildOrder>25</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\senc.cc">
+				<BuildOrder>164</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\ser.cpp">
+				<BuildOrder>165</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\servass.cpp">
+				<BuildOrder>26</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\sleep.cc">
+				<BuildOrder>126</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\sproto.cpp">
+				<BuildOrder>161</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\spxconv.cc">
+				<BuildOrder>128</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\sqlbq.cpp">
+				<BuildOrder>170</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\sqlite3.c">
+				<HasBuildEvent>true</HasBuildEvent>
+				<BuildOrder>167</BuildOrder>
+				<OptionOverrides>true</OptionOverrides>
+			</CppCompile>
+			<CppCompile Include="..\sqrs.cc">
+				<BuildOrder>164</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\ssns.cpp">
+				<BuildOrder>163</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\statfun.cc">
+				<BuildOrder>129</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\stkd.cc">
+				<BuildOrder>130</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\stunpool.cpp">
+				<BuildOrder>28</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\syncvar.cc">
+				<BuildOrder>131</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\sysattr.cpp">
+				<DependentOn>..\sysattr.h</DependentOn>
+				<BuildOrder>29</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\ta.cc">
+				<BuildOrder>156</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\tcode.cc">
+				<BuildOrder>147</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\tdecode.cc">
+				<BuildOrder>159</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\theoracol.cc">
+				<BuildOrder>129</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\tl.cc">
+				<BuildOrder>130</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\tlim.cpp">
+				<BuildOrder>31</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\tpgmcod.cc">
+				<BuildOrder>150</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\tpgmdec.cc">
+				<BuildOrder>149</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\trc.cpp">
+				<BuildOrder>32</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\uicfg.cc">
+				<BuildOrder>131</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\uniq.cpp">
+				<BuildOrder>6</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\usercnfg.cpp">
+				<BuildOrder>145</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\vcpan.cc">
+				<BuildOrder>132</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\vfwdll.cc">
+				<BuildOrder>133</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\vfwinvst.cpp">
+				<BuildOrder>33</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\vfwmgr.cc">
+				<BuildOrder>134</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\vidaq.cc">
+				<BuildOrder>135</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\vidcvt.cc">
+				<BuildOrder>136</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\vidinput.cpp">
+				<BuildOrder>34</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\vorbconv.cc">
+				<BuildOrder>137</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\whack.cc">
+				<BuildOrder>127</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\xinfo.cpp">
+				<BuildOrder>146</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\zapadv.cpp">
+				<BuildOrder>35</BuildOrder>
+			</CppCompile>
+			<LibFiles Include="..\..\diskid\radxe\Debug\Win32\diskid.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>168</BuildOrder>
+			</LibFiles>
+			<None Include="..\..\mtcap\Debug\Win32\mtcapxe.lib">
+				<Exclude>True</Exclude>
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>165</BuildOrder>
+			</None>
+			<LibFiles Include="..\..\mtcap\mingw-dbg\Win32\mtcapxe.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>166</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\ogg\radxe\Debug_Build\libogg.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>139</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\speex\libspeex\radxe\Debug\Win32\libspeex.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>165</BuildOrder>
+			</LibFiles>
+			<None Include="..\..\theora\radxe\Debug\theora.lib">
+				<Exclude>True</Exclude>
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>138</BuildOrder>
+			</None>
+			<LibFiles Include="..\..\theora\radxe\Release\theora.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>167</BuildOrder>
+			</LibFiles>
+			<None Include="..\..\vgcap\radxe\Debug\Win32\vgcapxe.lib">
+				<Exclude>True</Exclude>
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>95</BuildOrder>
+			</None>
+			<None Include="..\..\vgcap\radxe\mingw-dbg\Win32\vgcapxe.lib">
+				<Exclude>True</Exclude>
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>164</BuildOrder>
+			</None>
+			<LibFiles Include="..\..\vorbis112\radxe\Debug_Build\libvorbis.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>151</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\crypto5.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>56</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\DWCLS.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>57</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\GSM.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>58</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\JENKINS.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>59</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\KAZLIB.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>60</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\LPC.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>61</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\PBM.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>62</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\PGM.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>63</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\PPM.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>64</BuildOrder>
+			</LibFiles>
+			<None Include="..\..\..\ins\OPT\LIB\SPAZ.LIB">
+				<Exclude>True</Exclude>
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>65</BuildOrder>
+			</None>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\VC.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>66</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\ins\OPT\LIB\ZLIB.LIB">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>55</BuildOrder>
+			</LibFiles>
+			<BuildConfiguration Include="powerb-dbg">
+				<Key>Cfg_4</Key>
+				<CfgParent>Cfg_1</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="mingw-dbg">
+				<Key>Cfg_5</Key>
+				<CfgParent>Cfg_1</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="mingw-rel">
+				<Key>Cfg_6</Key>
+				<CfgParent>Cfg_2</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="powerb-rel">
+				<Key>Cfg_3</Key>
+				<CfgParent>Cfg_2</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Cpp.Targets')" Project="$(BDS)\Bin\CodeGear.Cpp.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
+		<ProjectExtensions>
+			<Borland.Personality>CPlusPlusBuilder.Personality.12</Borland.Personality>
+			<Borland.ProjectType>CppDynamicLibrary</Borland.ProjectType>
+			<BorlandProject>
+				<CPlusPlusBuilder.Personality>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1033</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+					<ProjectProperties>
+						<ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
+						<ProjectProperties Name="ManagePaths">True</ProjectProperties>
+						<ProjectProperties Name="VerifyPackages">True</ProjectProperties>
+					</ProjectProperties>
+					<Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\SignalLabGenericBasicPkgCB15.bpl">Mitov - SignalLab Generic Basic Package C++ Builder</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\AudioLabGenericBasicPkgCB15.bpl">Mitov - AudioLab Generic Basic Package C++ Builder</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\VideoLabGenericBasicPkgCB15.bpl">Mitov - VideoLab Generic Basic Package C++ Builder</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\VideoLabBasicPkgD15.bpl">Mitov - VideoLab Basic Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\SignalLabBasicDsnD15.bpl">Mitov - SignalLab Basic Design Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\SignalLabAdditionalDsnD15.bpl">Mitov - SignalLab Additional Design Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\TimingLabBasicPkgD15.bpl">Mitov - TimingLab Basic Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\MediaLabBasicPkgD15.bpl">Mitov - MediaLab Basic Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\VideoLabBasicDsnD15.bpl">Mitov - VideoLab Basic Design Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\VideoLabAdditionalPkgD15.bpl">Mitov - VideoLab Additional Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\VideoLabAdditionalDsnD15.bpl">Mitov - VideoLab Additional Design Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\VideoLabPkgD15.bpl">Mitov - VideoLab Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\VideoLabDsnD15.bpl">Mitov - VideoLab Design Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\SignalLabScopePkgD15.bpl">Mitov - SignalLab Scope Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\SignalLabScopeDsnD15.bpl">Mitov - SignalLab Scope Design Package</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\SLBufferVisualizersDsnD15.bpl">Mitov - SignalLab Buffer Debug Visualizer</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\ALBufferVisualizersDsnD15.bpl">Mitov - AudioLab Buffer Debug Visualizer</Excluded_Packages>
+						<Excluded_Packages Name="C:\Windows\system32\VLBufferVisualizersDsnD15.bpl">Mitov - AudioLab Buffer Debug Visualizer</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\bcboffice2k150.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\bcbofficexp150.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k150.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dclofficexp150.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+					</Excluded_Packages>
+				</CPlusPlusBuilder.Personality>
+				<Platforms>
+					<Platform value="Win32">True</Platform>
+				</Platforms>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
+	</Project>

@@ -1,0 +1,7 @@
+Sun Mar 25 08:39:15 MST 2012
+The "fix" for the crt-init error a lot of people were having
+was to delay load the video capture dll (mtcapxe.dll). 
+i haven't figured out why, but this fixes it as i get no more
+tech support emails regarding this problem after doing it this way.
+possibly it has something to do with the static/dynamic linking of
+the crt into multiple dll's in the app as a whole.

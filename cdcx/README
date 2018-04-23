@@ -1,0 +1,32 @@
+Thu Jan 25 10:01:46 MST 2018
+Dwight Melcher
+dwight@dwyco.com
+
+This is the source code for CDC-X client UI.
+It uses Qt4.8.
+For version 2.15/2.16 (released late 2017)
+it can be run on Windows XP+, Mac, and Linux.
+
+As distributed by Dwyco, building requires:
+Windows: MSVC 2008, Borland rad studio XE, Qt 4.8.7, DMake
+Mac: Xcode9, Qt 4.8.7, QtCreator 4.5
+Linux: Ubuntu 14.04+, QtCreator 4.5
+
+The windows build is *challenging* because the tools are antiques. I've
+ported it up to Windows 10/Qt4 with more recent tools, but have not
+distributed the build because I'm too much of a wuss to deal with the tech
+support issues that might arise from a drastic change in build tactics.
+
+I've also ported it up to Qt5, but there were some weird regressions with
+the Mac toolbar and Linux desktop integration, so I never went any further
+with it.
+
+The windows build also depends on a 3rd party video capture library that
+is closed-source (mitov.com). The mtcapxe.dll file is redistributable
+(since Dwyco has paid for the license from mitov.com), but you will not
+be able to rebuild mtcapxe.dll from source without buying a license from
+mitov.com. If you are bold, you could write your own driver (see dlli.h
+for how to do it) and not use mtcapxe.dll at all.
+
+Note: App icons are from:
+http://simplefly.nl/icons

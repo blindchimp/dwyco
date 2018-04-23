@@ -1,0 +1,48 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{40EB0D6C-DDDF-466D-9D91-C5C795679433}</ProjectGuid>
+		</PropertyGroup>
+		<ItemGroup>
+			<Projects Include="cryptest_bds.cbproj">
+				<Dependencies>cryptlib_bds.cbproj</Dependencies>
+			</Projects>
+			<Projects Include="cryptlib_bds.cbproj">
+				<Dependencies/>
+			</Projects>
+		</ItemGroup>
+		<ProjectExtensions>
+			<Borland.Personality>Default.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<Default.Personality/>
+			</BorlandProject>
+		</ProjectExtensions>
+		<Target DependsOnTargets="cryptlib_bds" Name="cryptest_bds">
+			<MSBuild Projects="cryptest_bds.cbproj"/>
+		</Target>
+		<Target DependsOnTargets="cryptlib_bds:Clean" Name="cryptest_bds:Clean">
+			<MSBuild Targets="Clean" Projects="cryptest_bds.cbproj"/>
+		</Target>
+		<Target DependsOnTargets="cryptlib_bds:Make" Name="cryptest_bds:Make">
+			<MSBuild Targets="Make" Projects="cryptest_bds.cbproj"/>
+		</Target>
+		<Target Name="cryptlib_bds">
+			<MSBuild Projects="cryptlib_bds.cbproj"/>
+		</Target>
+		<Target Name="cryptlib_bds:Clean">
+			<MSBuild Targets="Clean" Projects="cryptlib_bds.cbproj"/>
+		</Target>
+		<Target Name="cryptlib_bds:Make">
+			<MSBuild Targets="Make" Projects="cryptlib_bds.cbproj"/>
+		</Target>
+		<Target Name="Build">
+			<CallTarget Targets="cryptest_bds;cryptlib_bds"/>
+		</Target>
+		<Target Name="Clean">
+			<CallTarget Targets="cryptest_bds:Clean;cryptlib_bds:Clean"/>
+		</Target>
+		<Target Name="Make">
+			<CallTarget Targets="cryptest_bds:Make;cryptlib_bds:Make"/>
+		</Target>
+		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+	</Project>

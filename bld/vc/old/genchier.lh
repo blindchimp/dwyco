@@ -1,0 +1,21 @@
+
+lbind(a openfile(__argv[0] r))
+lbind(l readline(<a>))
+lbind(t1 vector())
+while(<l> prog(
+	append(<t1> <l>)
+	lbind(l readline(<a>))
+))
+
+lbind(n sub(numelems(<t1>) 1))
+for(j 0 <n> prog(
+printml(t1[<j>] {*foo_ t1[<j>] \;})
+))
+for(i 0 <n> prog(
+	for(j 0 <n> prog(
+		printml({
+		if\( dynamic_cast\< t1[<i>] * \> \( foo_ t1[<j>]  \) \)
+			printf\(" t1[<i>] \  t1[<j>] \\n"\)\;
+		})
+	))
+))

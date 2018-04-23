@@ -1,0 +1,120 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{9F9D35ED-9901-4F5F-B925-DF24EBCB0100}</ProjectGuid>
+		</PropertyGroup>
+		<ItemGroup>
+			<Projects Include="cdcdll8.cbproj">
+				<Dependencies>..\..\theora\radxe\theora.cbproj;..\..\ogg\radxe\libogg.cbproj;..\..\vorbis112\radxe\libvorbis.cbproj;..\..\speex\libspeex\radxe\libspeex.cbproj</Dependencies>
+			</Projects>
+			<Projects Include="..\..\theora\radxe\theora.cbproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\..\ogg\radxe\libogg.cbproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\..\vorbis112\radxe\libvorbis.cbproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\..\speex\libspeex\radxe\libspeex.cbproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\..\testdll\testdllradxe.cbproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\..\vgcap\radxe\vgcapxe.cbproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="..\..\mtcap\mtcapxe.cbproj">
+				<Dependencies/>
+			</Projects>
+		</ItemGroup>
+		<ProjectExtensions>
+			<Borland.Personality>Default.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<Default.Personality/>
+			</BorlandProject>
+		</ProjectExtensions>
+		<Target Name="cdcdll8" DependsOnTargets="theora;libogg;libvorbis;libspeex">
+			<MSBuild Projects="cdcdll8.cbproj"/>
+		</Target>
+		<Target Name="cdcdll8:Clean" DependsOnTargets="theora:Clean;libogg:Clean;libvorbis:Clean;libspeex:Clean">
+			<MSBuild Projects="cdcdll8.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="cdcdll8:Make" DependsOnTargets="theora:Make;libogg:Make;libvorbis:Make;libspeex:Make">
+			<MSBuild Projects="cdcdll8.cbproj" Targets="Make"/>
+		</Target>
+		<Target Name="theora">
+			<MSBuild Projects="..\..\theora\radxe\theora.cbproj"/>
+		</Target>
+		<Target Name="theora:Clean">
+			<MSBuild Projects="..\..\theora\radxe\theora.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="theora:Make">
+			<MSBuild Projects="..\..\theora\radxe\theora.cbproj" Targets="Make"/>
+		</Target>
+		<Target Name="libogg">
+			<MSBuild Projects="..\..\ogg\radxe\libogg.cbproj"/>
+		</Target>
+		<Target Name="libogg:Clean">
+			<MSBuild Projects="..\..\ogg\radxe\libogg.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="libogg:Make">
+			<MSBuild Projects="..\..\ogg\radxe\libogg.cbproj" Targets="Make"/>
+		</Target>
+		<Target Name="libvorbis">
+			<MSBuild Projects="..\..\vorbis112\radxe\libvorbis.cbproj"/>
+		</Target>
+		<Target Name="libvorbis:Clean">
+			<MSBuild Projects="..\..\vorbis112\radxe\libvorbis.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="libvorbis:Make">
+			<MSBuild Projects="..\..\vorbis112\radxe\libvorbis.cbproj" Targets="Make"/>
+		</Target>
+		<Target Name="libspeex">
+			<MSBuild Projects="..\..\speex\libspeex\radxe\libspeex.cbproj"/>
+		</Target>
+		<Target Name="libspeex:Clean">
+			<MSBuild Projects="..\..\speex\libspeex\radxe\libspeex.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="libspeex:Make">
+			<MSBuild Projects="..\..\speex\libspeex\radxe\libspeex.cbproj" Targets="Make"/>
+		</Target>
+		<Target Name="testdllradxe">
+			<MSBuild Projects="..\..\testdll\testdllradxe.cbproj"/>
+		</Target>
+		<Target Name="testdllradxe:Clean">
+			<MSBuild Projects="..\..\testdll\testdllradxe.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="testdllradxe:Make">
+			<MSBuild Projects="..\..\testdll\testdllradxe.cbproj" Targets="Make"/>
+		</Target>
+		<Target Name="vgcapxe">
+			<MSBuild Projects="..\..\vgcap\radxe\vgcapxe.cbproj"/>
+		</Target>
+		<Target Name="vgcapxe:Clean">
+			<MSBuild Projects="..\..\vgcap\radxe\vgcapxe.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="vgcapxe:Make">
+			<MSBuild Projects="..\..\vgcap\radxe\vgcapxe.cbproj" Targets="Make"/>
+		</Target>
+		<Target Name="mtcapxe">
+			<MSBuild Projects="..\..\mtcap\mtcapxe.cbproj"/>
+		</Target>
+		<Target Name="mtcapxe:Clean">
+			<MSBuild Projects="..\..\mtcap\mtcapxe.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="mtcapxe:Make">
+			<MSBuild Projects="..\..\mtcap\mtcapxe.cbproj" Targets="Make"/>
+		</Target>
+		<Target Name="Build">
+			<CallTarget Targets="cdcdll8;theora;libogg;libvorbis;libspeex;testdllradxe;vgcapxe;mtcapxe"/>
+		</Target>
+		<Target Name="Clean">
+			<CallTarget Targets="cdcdll8:Clean;theora:Clean;libogg:Clean;libvorbis:Clean;libspeex:Clean;testdllradxe:Clean;vgcapxe:Clean;mtcapxe:Clean"/>
+		</Target>
+		<Target Name="Make">
+			<CallTarget Targets="cdcdll8:Make;theora:Make;libogg:Make;libvorbis:Make;libspeex:Make;testdllradxe:Make;vgcapxe:Make;mtcapxe:Make"/>
+		</Target>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
+	</Project>

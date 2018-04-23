@@ -1,0 +1,59 @@
+compile(gen-wad files key `
+	BF-init-key-cbc(<key> nil)
+	lbind(wad vector())
+	foreach(f <files> prog(
+		append(<wad> BF-xfer-enc(contents-of(openfile(<f> rb))))
+	))
+	return(<wad>)
+')
+
+;
+; construct to load functions from a vector of encrypted
+; strings generated from gen-wad above.
+; This is a construct, so the executed expressions are using
+; the context the load-file function is called from.
+;
+
+
+scompile(cg load-wad __lh_wad __lh_key `
+	if(not(gbound(__lh_lf_depth))
+		 gbind(__lh_lf_depth 0)
+		 gbind(__lh_lf_depth ++(<__lh_lf_depth>))
+	)
+	if(gt(<__lh_lf_depth> 8) excraise(E:LH.LOAD_FILE |Recursive load-file loop?|))
+	lbind({__lh_wad<__lh_lf_depth>} <__lh_wad>)
+	lremove(__lh_wad)
+	lbind({__lh_key<__lh_lf_depth>} <__lh_key>)
+	lremove(__lh_key)
+	scompile(vl {__lh_handler-fun<__lh_lf_depth>} exc name `
+		print( {|load-wad operation failed while trying to load |
+			<name> | : | <exc>  |\n|})
+		return(backout)
+	')
+	lbind({__lh_do-removes<__lh_lf_depth>} `
+		lremove({__lh_w<__lh_lf_depth>})
+		lremove({__lh_tmp<__lh_lf_depth>})
+		lremove({__lh_wad<__lh_lf_depth>})
+		lremove({__lh_key<__lh_lf_depth>})
+		lremove({__lh_pt<__lh_lf_depth>})
+		lremove({__lh_handler-fun<__lh_lf_depth>})
+		lremove({__lh_do-removes<__lh_lf_depth>})
+		gbind(__lh_loading_file nil)
+		gbind(__lh_lf_depth --(<__lh_lf_depth>))
+		')
+	exchandle(|[AE]:*| <__lh_handler-fun<__lh_lf_depth>> eval(<__lh_do-removes<__lh_lf_depth>>) void(
+	foreach({__lh_w<__lh_lf_depth>} <__lh_wad<__lh_lf_depth>> prog(
+		gbind(__lh_loading_file {wad<__lh_lf_depth>})
+		BF-init-key-cbc(<__lh_key<__lh_lf_depth>> nil)
+		if(not(BF-xfer-dec(<__lh_w<__lh_lf_depth>> {__lh_pt<__lh_lf_depth>})) prog(
+			excraise(A:LH.LOAD_FILE |bad wad load|)
+		))
+		lcompile({__lh_tmp<__lh_lf_depth>} <__lh_pt<__lh_lf_depth>>)
+		;print({<__lh_file-contents<__lh_lf_depth>> |\n|})
+		print({loaded | | {wad<__lh_lf_depth>} |\n|})
+		eval(<__lh_tmp<__lh_lf_depth>>)
+	))
+	)) ; handle
+	eval(<__lh_do-removes<__lh_lf_depth>>)
+')
+

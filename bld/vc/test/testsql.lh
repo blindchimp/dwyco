@@ -1,0 +1,53 @@
+compile(simple `
+lbind(a wrap_sqlite3_open(mumble.db db))
+printl(<a>)
+printl(<db>)
+
+lbind(a wrap_sqlite3_exec(<db> |create table foo(bar integer, mumble float, teeb string);
+insert into foo values(5, 3.0, 'hoohoo');| nil 0 err))
+printl(<a>)
+printl(<err>)
+
+compile(cb val res columns `
+	printl(<val>)
+	printl(<res>)
+	printl(<columns>)
+')
+
+lbind(a wrap_sqlite3_exec(<db> |select * from foo;| cb 0 err))
+
+lbind(a sql_query(<db> |select * from foo;| err))
+if(<a>
+printl(<a>)
+printl(<err>)
+)
+
+lbind(a wrap_sqlite3_close(<db>))
+printl(<a>)
+')
+
+compile(simple2 `
+lbind(a wrap_sqlite3_open(questions.db db))
+printl(<a>)
+printl(<db>)
+
+lbind(a sql_query(<db> |select * from questions;| err))
+if(<a>
+printl(numelems(<a>))
+printl(<err>)
+)
+
+lbind(field __argv[0])
+lbind(field2 __argv[1])
+lbind(field3 __argv[2])
+lbind(a sql_query(<db> |select question from questions where category like ?;| err <field3>))
+if(<a>
+	printl(<a>)
+	printl(<err>)
+)
+
+lbind(a wrap_sqlite3_close(<db>))
+printl(<a>)
+')
+simple2()
+sleep(100)

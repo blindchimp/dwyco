@@ -1,0 +1,44 @@
+; useful functions
+gcompile(nl `print(|\n|)')
+gcompile(printl x `print(<x>) nl()')
+gcompile(dprintl x `if(not(<__lh__debugprint>) return(nil)) print(<x>) nl()')
+scompile(gv printm `
+	foreach(x <__lh_varargs> prog(print(<x>) print(| |)))
+')
+scompile(gv printml `do-funcall(<printm> <__lh_varargs>) nl()')
+scompile(gv dprintml `if(not(<__lh_debugprint>) return(nil)) do-funcall(<printm> <__lh_varargs>) nl()')
+scompile(gc cat __lh_a __lh_b `bind(<__lh_a> {<<__lh_a>> | | <__lh_b>})')
+gbind(Pows
+	vector(
+		1
+		2
+		4
+		8
+		16
+		32
+		64
+		128
+		256
+		512
+		1024
+		2048
+		4096
+		8192
+		16384
+		32768
+		65536))
+
+compile(pow2 n `if(lt(<n> numelems(<Pows>)) Pows[<n>] prog(printl(pow2) exit(0)))')
+compile(log2 n `
+	lbind(a 0)
+	while(ne(<n> 1) prog(lbind(a ++(<a>)) lbind(n div(<n> 2))))
+	return(<a>)
+')
+compile(odd x `return(eq(mod(<x> 2) 1))')
+scompile(gc incr _x `bind(<_x> ++(<<_x>>))')
+scompile(gc decr _x `bind(<_x> --(<<_x>>))')
+scompile(gc = _x _y `lbind(<_x> <_y>)')
+scompile(gc += _x _y `bind(<_x> add(<<_x>> <_y>))')
+scompile(gc -= _x _y `bind(<_x> sub(<<_x>> <_y>))')
+scompile(gc *= _x _y `bind(<_x> mul(<<_x>> <_y>))')
+scompile(gc /= _x _y `bind(<_x> div(<<_x>> <_y>))')

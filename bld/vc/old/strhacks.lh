@@ -1,0 +1,71 @@
+
+
+; remove all occurances of s from str
+compile(strip-string str s `
+	lbind(at strstr(<str> <s>))
+	while(<at> prog(
+		lbind(str {substr(<str> 0 <at>) substr(<str> add(<at> strlen(<s>)) end)})
+		lbind(at strstr(<str> <s>))
+	))
+	return(<str>)
+')
+
+gbind(Strip-white-re regex(|^[ 	]*\\(.*[^	 ]\\)[ 	]*$|))
+; like "trim" in a lot of languages
+compile(strip-white s `
+	if(ne(type(<s>) string) return(||))
+	if(split(<Strip-white-re> <s> final)
+		return(<final>)
+	)
+	return(||)
+')
+
+;printl(stringrep(strip-white(|dw yco|)))
+;printl(stringrep(strip-white(| dw yco |)))
+;printl(stringrep(strip-white(| d w yco |)))
+
+; strip out all except a given class
+compile(strip-special s `
+	lbind(s tolower(<s>))
+	lbind(accept |abcdefghijklmnopqrstuvwxyz0123456789|)
+	lbind(tot ||)
+	while(gt(strlen(<s>) 0) prog(
+		lbind(oklen strspn(<s> <accept>))
+		lbind(okpiece substr(<s> 0 <oklen>))
+		lbind(tot {<tot> <okpiece>})
+		lbind(s substr(<s> <oklen> end))
+		if(eq(strlen(<s>) 0) break(1))
+		lbind(noklen strcspn(<s> <accept>))
+		lbind(s substr(<s> <noklen> end))
+	))
+	return(<tot>)
+')
+
+compile(srep s s1 s2 `
+	lbind(a strstr(<s> <s1>))
+	lbind(res ||)
+	while(<a> prog(
+		lbind(res {<res> substr(<s> 0 <a>)})
+		lbind(res {<res> <s2>})
+		lbind(s substr(<s> add(<a> strlen(<s1>)) end))
+		lbind(a strstr(<s> <s1>))
+	))
+	if(<s> lbind(res {<res> <s>}))
+	return(<res>)
+')
+
+;printl(strip-special(abcdef))
+;printl(strip-special($$abcdef))
+;printl(strip-special($$abcdef%%))
+;printl(strip-special($$ab#cdef%%))
+;printl(strip-special($$%%))
+;printl(strip-special($$a%%))
+;printl(strip-special(a%%))
+;printl(strip-special(||))
+;printl(strip-special(|1$2%3|))
+;printl(srep(|abbb| b c))
+;printl(srep(|ababab| |ab| c))
+;printl(srep(|ka| k ||))
+;printl(srep(|ka| a ||))
+;printl(srep(|kkk| kk ttt))
+;printl(srep(|nkkk| kk ttt))

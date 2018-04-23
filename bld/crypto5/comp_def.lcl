@@ -1,0 +1,72 @@
+#for GCC3, iostreams are a pain in the ass, get rid of them
+COMP_DFLAGS += -DNO_IOSTREAMS -DNDEBUG
+
+.IF $(ENV) == GCC
+# note: add -O3 because on a mac with older gcc, damn thing
+# doesn't compile the mp arith stuff right and it infinite loops without it (sigh.)
+COMP_CPPOPTS += -fexceptions -O3
+COMP_CCOPTS += -fexceptions -O3
+.END
+
+
+.IF $(ENV) == M32
+# disable build for vc
+#COMP_LIB_MEMBERS=
+COMP_CPPOPTS += /EHsc /wd4100 /wd4189
+.END
+
+# use this if you want to compile the validation stuff
+.IF 0 == 1
+#CFG_CCOPTS=-O2 -5 -OS -w-par -w-inl -Ve -r -a8 -k -y -v -vi- -b- -Vx -tWC
+#CFG_DFLAGS=
+COMP_LIB_MEMBERS=   \
+	3way \
+	asn \
+	base64 \
+	bfinit \
+	blowfish \
+	blumgold \
+	blumshub \
+	crc \
+	cryptlib \
+	default \
+	des \
+	dessp \
+	dh \
+	diamond \
+	diamondt \
+	dsa \
+	ecbasic \
+	elgamal \
+	files \
+	filters \
+	gf2n \
+	gzip \
+	haval \
+	hex \
+	idea \
+	integer \
+	luc \
+	md5 \
+	md5mac \
+	misc \
+	modes \
+	nbtheory \
+	pkcspad \
+	queue \
+	rabin \
+	randpool \
+	rng \
+	rsarefcl \
+	safer \
+	sapphire \
+	secshare \
+	secsplit \
+	sha \
+	tea \
+	wake \
+	zbits \
+	zdeflate \
+	zinflate \
+	ztrees
+.END

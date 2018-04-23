@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2007/05/10 11:00:58.421.bdsproj,C:\Documents and Settings\dwight\My Documents\Borland Studio Projects\Project1.bdsproj=C:\mk\depot\cdcdll2\bld\speex\libspeex\libspeex.bdsproj</Transaction>
+    <Transaction>2007/05/23 15:53:37.671.c,C:\mk\depot\cdcdll2\bld\speex\libspeex\testdenoise.c=</Transaction>
+    <Transaction>2007/05/23 15:53:41.078.c,C:\mk\depot\cdcdll2\bld\speex\libspeex\testecho.c=</Transaction>
+    <Transaction>2007/05/23 15:53:43.312.c,C:\mk\depot\cdcdll2\bld\speex\libspeex\testenc.c=</Transaction>
+    <Transaction>2007/05/23 15:53:45.500.c,C:\mk\depot\cdcdll2\bld\speex\libspeex\testenc_uwb.c=</Transaction>
+    <Transaction>2007/05/23 15:53:48.140.c,C:\mk\depot\cdcdll2\bld\speex\libspeex\testenc_wb.c=</Transaction>
+  </Transactions>
+</BorlandProject>

@@ -1,0 +1,7 @@
+lbind(a regex(|foo.*\\([0-9][0-9]*\\)baz|))
+printl(match(<a> mumble))
+printl(match(<a> |foo and baz|))
+printl(match(<a> |foo 9 baz|))
+printl(match(<a> |foo 9baz|))
+printl(split(<a> |foo9baz| subs))
+printl(<subs>)

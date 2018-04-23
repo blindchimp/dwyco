@@ -1,0 +1,8 @@
+There are two idiotic changes you have to make directly to the
+include files of any windows-based SDK (from borland or ms).
+
+in objbase.h, find DBG and change it to WINDBG. this is just a conflict
+in the naming of the define.
+in winsock.h, find the non-WSA errors and change the "#if 0" to "#if 1".
+this is just a portability thing because i can't be bothered to
+change all my error code stuff to the WSA stuff (won't work on unix stuff.)

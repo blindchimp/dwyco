@@ -1,0 +1,178 @@
+Thu Dec 20 16:33:04 MST 2007
+
+* add help links to website help
+* composer: allow "select multiple" to be a checkbox so you can uncheck it and hide the selection window to go back to single-recipient mode.
+* msg browser: add delete confirmation
+* msg browser: limited forward functionality
+* msg browser: nice down the road: add some searching/filtering based on text
+* msg browser: forwarding html stuff, make it look halfway decent.
+* spammers delight: mainwin: multi-select in mainwin should result in multi-send composer (note: change to single-select for now)
+* audio: need to get the echo canceller working
+* audio: poor mans echo canceller, turn off the mic if the output is playing something.
+* admin: add ability to make global changes to server cluster from admin box
+* make sure Dwyco (#5a098f) is always in the pal/others list so people can report problems.
+* the network diagnostics don't work on the mac or linux
+* put the "recommend" stuff back in
+* put an application event filter in that will charge up the entropy pool better than what we have now.
+* need to limit the amount of public chat that is used in the scroller
+* might want to add an "increase font size on local display" to override font sizes set my remote user. related: cdcx now ignores fonts on the sending machine and sends just plain text.
+* if someone changes the ports to listen on, need a restart
+* composer: need to strip off all but the original on the forward window, since we aren't providing multi-segment forwards in this version.
+* really need like a "minimize all" thing when you want to just hide the entire thing.
+* FEATURE: broadcast zaps in the chat room
+* BUG: AGC and denoise are disabled because the speex library stopped supporting them properly. see if we can reinstate them with an update.
+* LINUX BUG: when you switch workspaces, qt thinks you are "hiding" the various windows, which causes them to disconnect from the servers, which isn't quite what you want.
+* jack up the length of time the authentication tokens are valid to about a week. that might resolve some of the issues with the pal list.
+* BUG (mac): apparently you can select a directory when you are trying to send a file.
+* BUG: on systems where esd/pulseaudio can't be contacted, there is some conflict that is allow esd_record_fallback to return a 0, which is then closed, which just happens to have been the descriptor used to accept incoming connections. so it appears that the client can't receive connections directly. this problem goes away when you start pulseaudio/esd, but it really needs to be worked around so it isn't stepping on other parts of the system.
+* BUG in dll: if two clients have the same IP address, but one is behind a NAT box (like in a VM), and their network settings are the same (the defaults, say, like 6780), a call from the client on the main machine to the client on the VM may result in a call to yourself that goes thru fine, when it should be rejected (because the attempted recipient uid shouldn't match your uid.) weird case, but needs to be fixed.  workaround is to set the ports on the client to something odd, which will force the client on the host machine to go via server-assist, or connect via the new ports.
+* BUG: if you have a bunch of attachments in a chat, and then go to the browser and delete them, they still show up in the chat and attempts to view or save them result in silent failure.
+* BUG: you can't have 2 coders in the system. so, if you are streaming theora to someone, and want to record a zap, but the defaults say you can use the old "dct" codec, it won't work (because we can't create another coder to produce the dct stream.) this is a problem because it might be nice to continue to provide the dct format for qm's for compat reasons. have to think about this one.  one solution would be to allow multiple encoders, but really have to think about this one, since the dll was never really designed for that.
+* BUG: cdcx *may* be calling dwyco* function after a dwyco_exit (do an exit and see if the dtors are calling any dwyco* functions.)
+* composer: the "select recipients" box needs to be wider so that more of the names are visible.
+* BUG: ampersands need to be searched for and displayed properly
+* allow authenticated uid to forward even no-forward msgs, as long as they are the creators uid.
+* remove all access to someone's uid from the interface. if you could lightly encrypt it so people couldn't get it, then it would be ok not to have any password related stuff in the servers.
+* set up the servers to allow remote adjustment of video and other minor parameters.
+* bug: trivia: when removing odd characters, don't just remove them, but make them "*"-ed. for example, beavis and butt-head -> beavis and butt-*head
+* prompt people to add a profile
+* if you send a message via the composer, it isn't put int he chatbox properly. try to keep them in sync a little better.
+* should have some kinda indicator that a direct zap is being received. right now you get the alert then it is just silent
+* FEATURE: add a small note thing so you can annotate a user locally
+* see about a video podium in the servers
+* have an option to receive offline zaps via email (the text anyways, and maybe a preview of the image).
+* must have better email authentication for the above option
+* try putting the profile info in various places without having to pop it up. for example, in the chat box as a default when it is first started up. and in calls when they are first started up.
+* BUG: if you select the setup video button on the preview before cdcx logs in, it crashes.
+* BUG: it appears that the networking stuff on windows is not kicking the event loop fast enough, resulting in a max transfer rate of about 800kbps despite having more b/w available.
+* FEATURE: allow using server to store account info.
+* FEATURE: add podium controls to admin panel
+* server bug: if you update your profile, it isn't updating in the chat server text (ie, internal state in the chat server isn't being updated.)
+* FEATURE: people with "not regular" profiles by default to not have privs to send pics to chat room (or we filter them out by default.)
+* on first run, the UID on the advanced tab doesn't get set
+* BUG: when navigating the user list with the keyboard, it isn't selecting and showing zaps when you change user names
+* BUG: if you ignore someone from the user list and have their profile up, the ignore state for the button on the profile isn't changed (it isn't a toggle) and the box doesn't go away.
+* add eyes-only msgs
+* BUG: if you are invisible, you don't get your admin privs when you log in.
+* FEATURE: put in "one chattab at a time" with box for "allow multiple chat tabs"
+* FEATURE: load in the last few messages into the chat tab on first run
+* show who's online when you are doing a forward list too
+* see if you can add message forward to context dropdown in simple_call
+* FEATURE: add a push installer for testing with numbskulls
+* BUG: toggling video on and off while composer is up causes record button to light up even tho there is already video recorded.
+* FEATURE: pause incoming stream when window is invisible
+(not done) * BUG: if someone is in the chatroom, they should be revealed in the user list. this has some problems, because the user list has the idea of "remove", and it looks like someone keeps re-appearing if you remove them from the list. in other words, there is a clash between the "you sent them a message" and "presence" idea here. have to think about it more.
+* EVENTUALLY: merge "profiles", "messages", "chat" into one thing.
+* CHECK: what happens to the bandwidth when you start a call in one lobby then move to another lobby
+* BUG: keep people from cancelling the wizard
+* FEATURE: filter lobby names
+* BUG: after a camera change while in a call, indicator goes to "cam on" instead of "cam sending"
+* FEATURE: simplify settings in config to things like "public place", so that it sets all the audio features and filtering features accordingly instead of having a lot of single options.
+* BUG: trying to preview files that are mp3's instead of images leaves crumbs in the install folder.
+* BUG: escape '&' in titles and tabs and stuff, otherwise you get _.
+* make popups chat messages work again
+* make the autoupdate check happen based on a signal from the server rather than relying on login or change of lobby.
+* BUG: running powerbrowse and cdc-x at the same time crashes one of them.
+* BUG: if the cam is muffed up, trying to send with the capture failing gives you "send locally rejected" error. it should fail more gracefully.
+* BUG: for touchpads, trying to hold down the send button can be a problem, especially if the button is "released" when the mouse moves off the button
+* BUG: if you are dj-ing, turn off audio alerts.
+* BUG: need a "do you want to close" type thing if there is a message currently sending
+* FEATURE: zoom buttons for the attachment view in the chatbox
+* FEATURE: in forwarded messages, allow recipient of forward to manipulate creator uid, like see its profile, add to list, etc.
+* BUG: composer: while transferring large file directly, if the other side closes, an error is signaled, and the composer says "click to retry", then automatically switches to send via server. confusing. in addition, it gets in the wrong state and the transfer continues in the background even tho the composer is "discarded". (this is 2.8, need to check in 2.9)
+* BUG: figure out why, after the latest updates, you can initially send from A to B directly with an attachment, but B still sends via server for a reply. for some reason B is erroring out when it tries to reuse the connection back to A.
+* BUG: the ignore info can get "stuck" some places in the system which will cause all kind of wierd problems with sending messages and stuff. restarting servers can help, but really need to redo the ignore stuff.
+* CHECK: make sure hiq stuff is working
+* NOTE: verified: as of 8/2014, with AVG anti-virus, causes webkit to crash and blocks ads, even if the "surfing protection" is turned off.
+* FEATURE: better handling of win7 notifications... and tray icon. should put short messages in notification bubble
+* FEATURE: allow pausing real-time video independent of sending chat pics
+* BUG: android isn't previewing forwarded messages right, probably another FNMOD problem
+* BUG: when someone goes offline, and you have a simple_call up for them, sometimes clicking on the name again will connect up to *yourself*... huh
+* ANDROID: have client make a guess about file types being transferred and use the QStandardPaths thing to figure out a default.
+* BUG: converting a jpg to a PPM can cause typical jpgs to turn into giant PPM, which can cause lag.
+* FEATURE: add start timers to all video record items
+* BUG: check times on android for messages, it looks like there is some problem with times being assigned wrong.
+* NOTE: put cleanup in aboutToQuit handler
+* BUG: windows on file save doesn't fill in file name  in dialog, seems to be a problem on windows
+* BUG: server is still sending internal messages for attributes for users that are ignored. need to decide to deal with it in the server or do it locally.
+* BUG: turning off a cam session will leave the "pic send" state weird so it won't send even if the camera is on.
+* BUG: audio multiplexing with a channel and the podium may be messed up.
+* BUG: use qimagereader to be a little more circumspect about loading and previewing images, in case someone sends hand-crafted bogus messages
+* FEATURE: since we are going to use images/file xfer for mobile versions, figure out a way of disallowing image saving maybe using the no-forward flag and encrypting the attachment or some such
+* FEATURE: some parts of profile are fixed and can be used offline, and others are better left ephemeral (like keys, or last time seen.) figure out an API for dealing with that.
+* BUG: if someone is invisible and you message them, it can still end up connecting to them, basically letting them know you are there.
+* BUG: profile invalidate isn't being propagated properly
+* TODO: add mild checksum/encryption to dh.dif file
+* TODO: fix background sending
+* TODO: add server-delivery to recipient notification to sender
+* FEATURE: make the chat have one big picture instead of the small ones, people sometimes complain about the size of the pics being too small.
+* FEATURE: add pal-list restore function (via email address.)
+* FEATURE: put some indicator in the profile regarding the users use of trivia, like number of questions answered, etc.
+* TODO: add canceling message sends
+* TODO: check that self-sends work sensibly
+* TODO: need a size estimate in the msg summaries from the server, and a way of rejecting transfers of large files on mobile devices
+* TODO: add api for loading only part of the msg list model
+* TODO: delivery ack msgs
+* TODO: fix defer send/pals-only thing
+* TODO: add filtering for direct send failures back into the mix
+* TODO: don't let xml dir load until everything else is set up
+* BUG: figure out what is happening with double-msg delivery... as if the message is sent by one channel, and it is stuck there, but not delivered. then it is delivered to the server and picked up again there. have to check the message id to see if there is something we can do on the client side to filter it out. looks like the server may be getting it, but the success indicator isn't coming back, so it gets re-qd on the client. need to just fix the mid on the client and use that to filter retries. looks like it is a vanilla bug where the wrong channel is selected for a send, which fails, then it is re-qd.
+* FEATURE: send a tiny thumbnail with the text part of a message that has a large attachment
+* BUG: if paused at the wrong time, the background q-sender can get stuck.
+* figure out how to merge qt event handling and network sockets stuff/qml event handling
+* new api for old messages that includes coalescing by time
+* thumbnail image cache from profiles
+* FEATURE: private profiles
+* FIX: go through everything in the plaintext part of the protocol and remove the stuff that isn't used (like the usernames and descriptions).
+* BUG: timer button is re-enabled when the cam changes resolutions
+* BUG: if we manage to re-establish a connection to a user, remove the "always send via server" filter for that user.
+* FEATURE: reduce or eliminate pics in chat when in real-time
+* BUG: make sure the servers strip out EXIF info on profiles
+* BUG: if network connectivity is lost while connected, seems to cause things to go crazy
+* need to play the video full screen
+* need a way to clear an already downloaded gated install
+* add "i'm using headset", which will allow the other side to send full duplex.
+* make the lobby list always visible again, some users are confused by it disappearing.
+* try using simple qml in one of the profile panes
+* make the app go full screen on startup like the old cdc32
+* make launcher launch the background message sender too, figure out way to get it to launch in the background on all platforms
+* should compare old timing to new timing to make sure i didn't break anything.
+* BUG: 2.12 isn't detecting the quit oin exit right
+* BUG: linux audio input isn't working
+* BUG: can a direct media channel be set up via reversal if one side doesn't have video?
+* BUG: if the other side has no audio, it still shows "allow audio" on the local end (on initial setup, further setups appear to have no audio)
+* revisit whether we should allow audio to be streamed to someone without audio input (right now, both ends require it.)
+* BUG: on win10, new installs are getting new machine id, not sure if this is right or not. the bug isn't win10, the bug is that the attempt to get the registry machineguid is failing, which results in fallback to the crumb file. it probably has something to do with the unicode/ansi versions of the registry key stuff. right now, the core stuff is compiled as ansi, which is a bit of a problem. it probably should be converted to unicode at some point just to remain current. not sure how this will play with the borland compiled stuff.
+* go full screen and keep the user list smaller in width
+* should we do "accept and send" to turn on video by default on recv? probably.
+* figure out some way of passing profiles around in a message so people can share what they find
+* have to figure out why when it first starts up, all the ids are numbers maybe come up with a better default name
+* implement a survey bot of some kind
+* revisit whether we should allow audio to be streamed to someone with audio input (right now, both ends require it.)
+* BUG: if you have INCOMING direct, and the remote end dies, it appears it doesn't reset properly
+* BUG: on proxy link to someone with no audio, the allow audio still shows
+* BUG: cdc-x doesn't sort saved model by logical time, so some messages don't end up in right order
+* FEATURE: put old profile info into database to allow the fetches to go thru
+* OTHER: add better logging for pk problems
+* BUG: after awhile, the saved msg model gets messed up and the messages are sorted wrong. might be because of receiving messages and channel setup is resetting something.
+* UPDATE: on next update, might need to delete sinfo because of regression in 2.12
+* add missed call notifications into the chat box with option to return call
+Thu Aug 25 10:46:45 MDT 2016
+* implement a simple "no forward" for attachments, which turns off the save button and encrypts the attachment lightly. this is only sensible for thing cdc-x can actually display, like images.
+* BUG: even if "save sent" is off, sending messages to self should work.
+* BUG: if you start cdc-x, and a background xferdl.exe starts up to download an update, then you quit cdc-x, and restart it before xferdl has time to finish, the second xferdl will crash. need to serialize them.
+* be more aggressive about pruning out things on the pal list. right now, something being on the pal list removes it as a candidate for trashing. this is a problem largely because we automatically put people on the "pal list" when you send them a message, but we don't have a way of automatically removing them from the pal list. we should more aggressively look for situations where no messages were received from the person, and trash that user and remove it from the pal list.
+* possibly need some way of recording "automatic pal list" vs. "user explicitly added to pal list" 
+* add button to "reset index" to the account page
+* if we can't get to the servers, pop up a dialog reminding them maybe they need to get the latest version from the website.
+* figure out way to "share" a user with another user so they can see the profile
+* (removed mutex for background process) BUG: background sender on windows holds the mutex for cdcx, which will cause problems with older versions. need to iron out how that mutex works for multiple instances. it is better to use mutexes on windows anyway since they are multiprocess.
+* figure out how the background thing impacts autoupdate and manual installs, since it uses the dll
+* add server config for rooms enable/disable audio by default
+* (done) bug: when you restore from backup, if the account that is being restored has a profile that exists in the profile cache, it may not be fetched from the server before being used, which means things like the email address will be nuked. need to kill all the profile caches on a restore, since the caches are not necessarily the same for all users.
+* (done) bug: if you restore from backup using on the backups in the documents folder, when you exit the next time, your backup will be destroyed if it is named the same as the id you just restored. this is only a problem if the restore fails for some reason. possibly it would be better to rename or copy the backup somehow.
+* (fixed, mostly, show archived needed only to show users that have no messages) bug: untrashing doesn't reindex, so the untrashed users won't show up until you "show archived"
+* put in some telemetery to figure out if people are using the saved msgs tab at all
+* make "query" command into something that returns a model
+* have group messaging attached to an identifier, and model is accumulated as messages are received to that id.
+* bug: if you  have save-sent disabled and send yourself a message with an attachment, it disappears... need to override this case and just file the message as a sent message

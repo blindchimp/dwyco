@@ -1,0 +1,355 @@
+<?xml version="1.0"?>
+<GCC_XML>
+  <Namespace id="_1" name="::" members="_3 _4 _5 _6 _7 _8 _9 _10 _11 _12 _13 _14 _15 _16 _17 _18 _19 _20 _21 _22 _23 _24 _25 _26 _27 _28 _29 _30 _31 _32 _33 _34 _35 _36 _37 _38 _39 _40 _41 _42 _44 _43 _46 _45 _48 _47 _50 _49 _52 _51 _54 _53 _56 _57 _58 _59 _60 _61 _62 _63 _64 _65 _66 _67 _68 " mangled="_Z2::"/>
+  <Namespace id="_2" name="std" context="_1" members="" mangled="_Z3std"/>
+  <Function id="_3" name="SP_error" returns="_69" context="_1" location="f0:125" file="f0" line="125" extern="1">
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_4" name="SP_equal_group_ids" returns="_55" context="_1" location="f0:123" file="f0" line="123" extern="1">
+    <Argument type="_49"/>
+    <Argument type="_49"/>
+  </Function>
+  <Function id="_5" name="SP_poll" returns="_55" context="_1" location="f0:121" file="f0" line="121" extern="1">
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_6" name="SP_scat_get_vs_set_members" returns="_55" context="_1" location="f0:119" file="f0" line="119" extern="1">
+    <Argument type="_70"/>
+    <Argument type="_71"/>
+    <Argument type="_72"/>
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_7" name="SP_scat_get_vs_sets_info" returns="_55" context="_1" location="f0:115" file="f0" line="115" extern="1">
+    <Argument type="_70"/>
+    <Argument type="_73"/>
+    <Argument type="_55"/>
+    <Argument type="_74"/>
+  </Function>
+  <Function id="_8" name="SP_scat_get_memb_info" returns="_55" context="_1" location="f0:111" file="f0" line="111" extern="1">
+    <Argument type="_70"/>
+    <Argument type="_55"/>
+    <Argument type="_75"/>
+  </Function>
+  <Function id="_9" name="SP_get_vs_set_members" returns="_55" context="_1" location="f0:107" file="f0" line="107" extern="1">
+    <Argument type="_76"/>
+    <Argument type="_71"/>
+    <Argument type="_72"/>
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_10" name="SP_get_vs_sets_info" returns="_55" context="_1" location="f0:103" file="f0" line="103" extern="1">
+    <Argument type="_76"/>
+    <Argument type="_73"/>
+    <Argument type="_55"/>
+    <Argument type="_74"/>
+  </Function>
+  <Function id="_11" name="SP_get_memb_info" returns="_55" context="_1" location="f0:99" file="f0" line="99" extern="1">
+    <Argument type="_76"/>
+    <Argument type="_55"/>
+    <Argument type="_75"/>
+  </Function>
+  <Function id="_12" name="SP_scat_receive" returns="_55" context="_1" location="f0:94" file="f0" line="94" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_77"/>
+    <Argument type="_78"/>
+    <Argument type="_55"/>
+    <Argument type="_79"/>
+    <Argument type="_72"/>
+    <Argument type="_80"/>
+    <Argument type="_79"/>
+    <Argument type="_81"/>
+  </Function>
+  <Function id="_13" name="SP_receive" returns="_55" context="_1" location="f0:88" file="f0" line="88" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_77"/>
+    <Argument type="_78"/>
+    <Argument type="_55"/>
+    <Argument type="_79"/>
+    <Argument type="_72"/>
+    <Argument type="_80"/>
+    <Argument type="_79"/>
+    <Argument type="_55"/>
+    <Argument type="_78"/>
+  </Function>
+  <Function id="_14" name="SP_multigroup_scat_multicast" returns="_55" context="_1" location="f0:82" file="f0" line="82" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_82"/>
+    <Argument type="_83"/>
+    <Argument type="_70"/>
+  </Function>
+  <Function id="_15" name="SP_multigroup_multicast" returns="_55" context="_1" location="f0:76" file="f0" line="76" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_82"/>
+    <Argument type="_83"/>
+    <Argument type="_55"/>
+    <Argument type="_76"/>
+  </Function>
+  <Function id="_16" name="SP_scat_multicast" returns="_55" context="_1" location="f0:70" file="f0" line="70" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_76"/>
+    <Argument type="_83"/>
+    <Argument type="_70"/>
+  </Function>
+  <Function id="_17" name="SP_multicast" returns="_55" context="_1" location="f0:66" file="f0" line="66" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_76"/>
+    <Argument type="_83"/>
+    <Argument type="_55"/>
+    <Argument type="_76"/>
+  </Function>
+  <Function id="_18" name="SP_leave" returns="_55" context="_1" location="f0:62" file="f0" line="62" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_76"/>
+  </Function>
+  <Function id="_19" name="SP_join" returns="_55" context="_1" location="f0:60" file="f0" line="60" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_76"/>
+  </Function>
+  <Function id="_20" name="SP_kill" returns="_69" context="_1" location="f0:58" file="f0" line="58" extern="1">
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_21" name="SP_disconnect" returns="_55" context="_1" location="f0:56" file="f0" line="56" extern="1">
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_22" name="SP_connect_timeout" returns="_55" context="_1" location="f0:54" file="f0" line="54" extern="1">
+    <Argument type="_76"/>
+    <Argument type="_76"/>
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_84"/>
+    <Argument type="_78"/>
+    <Argument type="_43"/>
+  </Function>
+  <Function id="_23" name="SP_connect" returns="_55" context="_1" location="f0:50" file="f0" line="50" extern="1">
+    <Argument type="_76"/>
+    <Argument type="_76"/>
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_84"/>
+    <Argument type="_78"/>
+  </Function>
+  <Function id="_24" name="SP_set_auth_methods" returns="_55" context="_1" location="f0:46" file="f0" line="46" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_85"/>
+    <Argument type="_86"/>
+    <Argument type="_87"/>
+  </Function>
+  <Function id="_25" name="SP_set_auth_method" returns="_55" context="_1" location="f0:44" file="f0" line="44" extern="1">
+    <Argument type="_76"/>
+    <Argument type="_88"/>
+    <Argument type="_89"/>
+  </Function>
+  <Function id="_26" name="SP_version" returns="_55" context="_1" location="f0:42" file="f0" line="42" extern="1">
+    <Argument type="_79"/>
+    <Argument type="_79"/>
+    <Argument type="_79"/>
+  </Function>
+  <Function id="_27" name="E_exit_events" returns="_69" context="_1" location="f1:103" file="f1" line="103" extern="1"/>
+  <Function id="_28" name="E_handle_events" returns="_69" context="_1" location="f1:102" file="f1" line="102" extern="1"/>
+  <Function id="_29" name="E_num_active" returns="_55" context="_1" location="f1:100" file="f1" line="100" extern="1">
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_30" name="E_deactivate_fd" returns="_55" context="_1" location="f1:99" file="f1" line="99" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_31" name="E_activate_fd" returns="_55" context="_1" location="f1:98" file="f1" line="98" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_32" name="E_set_active_threshold" returns="_55" context="_1" location="f1:97" file="f1" line="97" extern="1">
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_33" name="E_detach_fd" returns="_55" context="_1" location="f1:96" file="f1" line="96" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_34" name="E_attach_fd" returns="_55" context="_1" location="f1:95" file="f1" line="95" extern="1">
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_90"/>
+    <Argument type="_55"/>
+    <Argument type="_89"/>
+    <Argument type="_55"/>
+  </Function>
+  <Function id="_35" name="E_delay" returns="_69" context="_1" location="f1:91" file="f1" line="91" extern="1">
+    <Argument type="_43"/>
+  </Function>
+  <Function id="_36" name="E_dequeue" returns="_55" context="_1" location="f1:90" file="f1" line="90" extern="1">
+    <Argument type="_91"/>
+    <Argument type="_55"/>
+    <Argument type="_89"/>
+  </Function>
+  <Function id="_37" name="E_queue" returns="_55" context="_1" location="f1:86" file="f1" line="86" extern="1">
+    <Argument type="_91"/>
+    <Argument type="_55"/>
+    <Argument type="_89"/>
+    <Argument type="_43"/>
+  </Function>
+  <Function id="_38" name="E_compare_time" returns="_55" context="_1" location="f1:84" file="f1" line="84" extern="1">
+    <Argument type="_43"/>
+    <Argument type="_43"/>
+  </Function>
+  <Function id="_39" name="E_add_time" returns="_44" context="_1" location="f1:80" file="f1" line="80" extern="1">
+    <Argument type="_43"/>
+    <Argument type="_43"/>
+  </Function>
+  <Function id="_40" name="E_sub_time" returns="_44" context="_1" location="f1:79" file="f1" line="79" extern="1">
+    <Argument type="_43"/>
+    <Argument type="_43"/>
+  </Function>
+  <Function id="_41" name="E_get_time" returns="_44" context="_1" location="f1:78" file="f1" line="78" extern="1"/>
+  <Function id="_42" name="E_init" returns="_55" context="_1" location="f1:77" file="f1" line="77" extern="1"/>
+  <Struct id="_43" name="dummy_time" context="_1" mangled="10dummy_time" location="f1:66" file="f1" line="66" members="_92 _93 _94 _95 " bases=""/>
+  <Typedef id="_44" name="sp_time" type="_43" context="_1" location="f1:69" file="f1" line="69"/>
+  <Struct id="_45" name="dummy_membership_info" context="_1" mangled="21dummy_membership_info" location="f2:156" file="f2" line="156" members="_96 _97 _98 _99 _100 _101 " bases=""/>
+  <Typedef id="_46" name="membership_info" type="_45" context="_1" location="f2:161" file="f2" line="161"/>
+  <Struct id="_47" name="dummy_vs_set_info" context="_1" mangled="17dummy_vs_set_info" location="f2:151" file="f2" line="151" members="_102 _103 _104 _105 " bases=""/>
+  <Typedef id="_48" name="vs_set_info" type="_47" context="_1" location="f2:154" file="f2" line="154"/>
+  <Struct id="_49" name="dummy_group_id" context="_1" mangled="14dummy_group_id" location="f2:147" file="f2" line="147" members="_106 _107 _108 " bases=""/>
+  <Typedef id="_50" name="group_id" type="_49" context="_1" location="f2:149" file="f2" line="149"/>
+  <Struct id="_51" name="dummy_scatter" context="_1" mangled="13dummy_scatter" location="f2:142" file="f2" line="142" members="_109 _110 _111 _112 " bases=""/>
+  <Typedef id="_52" name="scatter" type="_51" context="_1" location="f2:145" file="f2" line="145"/>
+  <Struct id="_53" name="dummy_scat_element" context="_1" mangled="18dummy_scat_element" location="f2:137" file="f2" line="137" members="_113 _114 _115 _116 " bases=""/>
+  <Typedef id="_54" name="scat_element" type="_53" context="_1" location="f2:140" file="f2" line="140"/>
+  <FundamentalType id="_55" name="int"/>
+  <Typedef id="_56" name="service" type="_55" context="_1" location="f2:135" file="f2" line="135"/>
+  <Typedef id="_57" name="mailbox" type="_55" context="_1" location="f2:134" file="f2" line="134"/>
+  <Function id="_58" name="__builtin_expect" returns="_117" context="_1" location="f3:15" file="f3" line="15" extern="1">
+    <Argument type="_117"/>
+    <Argument type="_117"/>
+  </Function>
+  <Function id="_59" name="__builtin_prefetch" returns="_69" context="_1" location="f3:16" file="f3" line="16" extern="1">
+    <Argument type="_118"/>
+    <Ellipsis/>
+  </Function>
+  <Function id="_60" name="__builtin_return" returns="_69" context="_1" location="f3:12" file="f3" line="12" extern="1" attributes="nothrow noreturn">
+    <Argument type="_89"/>
+  </Function>
+  <Function id="_61" name="__builtin_return_address" returns="_89" context="_1" location="f3:13" file="f3" line="13" extern="1">
+    <Argument type="_119"/>
+  </Function>
+  <Function id="_62" name="__builtin_frame_address" returns="_89" context="_1" location="f3:14" file="f3" line="14" extern="1">
+    <Argument type="_119"/>
+  </Function>
+  <Function id="_63" name="__builtin_nansl" returns="_120" context="_1" mangled="nansl" location="f3:22" file="f3" line="22" extern="1" attributes="nothrow const">
+    <Argument type="_76"/>
+  </Function>
+  <Function id="_64" name="__builtin_nansf" returns="_121" context="_1" mangled="nansf" location="f3:21" file="f3" line="21" extern="1" attributes="nothrow const">
+    <Argument type="_76"/>
+  </Function>
+  <Function id="_65" name="__builtin_nans" returns="_122" context="_1" mangled="nans" location="f3:20" file="f3" line="20" extern="1" attributes="nothrow const">
+    <Argument type="_76"/>
+  </Function>
+  <Function id="_66" name="__builtin_infl" returns="_120" context="_1" location="f3:19" file="f3" line="19" extern="1" attributes="nothrow const"/>
+  <Function id="_67" name="__builtin_inff" returns="_121" context="_1" location="f3:18" file="f3" line="18" extern="1" attributes="nothrow const"/>
+  <Function id="_68" name="__builtin_inf" returns="_122" context="_1" location="f3:17" file="f3" line="17" extern="1" attributes="nothrow const"/>
+  <FundamentalType id="_69" name="void"/>
+  <PointerType id="_70" type="_52c"/>
+  <PointerType id="_71" type="_48c"/>
+  <PointerType id="_72" type="_125"/>
+  <PointerType id="_73" type="_48"/>
+  <PointerType id="_74" type="_119"/>
+  <PointerType id="_75" type="_46"/>
+  <PointerType id="_76" type="_126c"/>
+  <PointerType id="_77" type="_56"/>
+  <PointerType id="_78" type="_126"/>
+  <PointerType id="_79" type="_55"/>
+  <PointerType id="_80" type="_83"/>
+  <PointerType id="_81" type="_52"/>
+  <PointerType id="_82" type="_125c"/>
+  <FundamentalType id="_83" name="short int"/>
+  <PointerType id="_84" type="_57"/>
+  <PointerType id="_85" type="_76"/>
+  <PointerType id="_86" type="_88"/>
+  <PointerType id="_87" type="_89"/>
+  <PointerType id="_88" type="_129"/>
+  <PointerType id="_89" type="_69"/>
+  <PointerType id="_90" type="_130"/>
+  <PointerType id="_91" type="_131"/>
+  <Field id="_92" name="sec" type="_117" context="_43" mangled="_ZN10dummy_time3secE" location="f1:67" file="f1" line="67"/>
+  <Field id="_93" name="usec" type="_117" context="_43" mangled="_ZN10dummy_time4usecE" location="f1:68" file="f1" line="68"/>
+  <Constructor id="_94" name="dummy_time" artificial="1" throw="" context="_43" mangled="_ZN10dummy_timeC1ERKS_ *INTERNAL* " location="f1:66" file="f1" line="66">
+    <Argument name="_ctor_arg" type="_132"/>
+  </Constructor>
+  <Constructor id="_95" name="dummy_time" artificial="1" throw="" context="_43" mangled="_ZN10dummy_timeC1Ev *INTERNAL* " location="f1:66" file="f1" line="66"/>
+  <Field id="_96" name="gid" type="_50" context="_45" mangled="_ZN21dummy_membership_info3gidE" location="f2:157" file="f2" line="157"/>
+  <Field id="_97" name="changed_member" type="_125" context="_45" mangled="_ZN21dummy_membership_info14changed_memberE" location="f2:158" file="f2" line="158"/>
+  <Field id="_98" name="num_vs_sets" type="_119" context="_45" mangled="_ZN21dummy_membership_info11num_vs_setsE" location="f2:159" file="f2" line="159"/>
+  <Field id="_99" name="my_vs_set" type="_48" context="_45" mangled="_ZN21dummy_membership_info9my_vs_setE" location="f2:160" file="f2" line="160"/>
+  <Constructor id="_100" name="dummy_membership_info" artificial="1" throw="" context="_45" mangled="_ZN21dummy_membership_infoC1ERKS_ *INTERNAL* " location="f2:156" file="f2" line="156">
+    <Argument name="_ctor_arg" type="_133"/>
+  </Constructor>
+  <Constructor id="_101" name="dummy_membership_info" artificial="1" throw="" context="_45" mangled="_ZN21dummy_membership_infoC1Ev *INTERNAL* " location="f2:156" file="f2" line="156"/>
+  <Field id="_102" name="num_members" type="_119" context="_47" mangled="_ZN17dummy_vs_set_info11num_membersE" location="f2:152" file="f2" line="152"/>
+  <Field id="_103" name="members_offset" type="_119" context="_47" mangled="_ZN17dummy_vs_set_info14members_offsetE" location="f2:153" file="f2" line="153"/>
+  <Constructor id="_104" name="dummy_vs_set_info" artificial="1" throw="" context="_47" mangled="_ZN17dummy_vs_set_infoC1ERKS_ *INTERNAL* " location="f2:151" file="f2" line="151">
+    <Argument name="_ctor_arg" type="_134"/>
+  </Constructor>
+  <Constructor id="_105" name="dummy_vs_set_info" artificial="1" throw="" context="_47" mangled="_ZN17dummy_vs_set_infoC1Ev *INTERNAL* " location="f2:151" file="f2" line="151"/>
+  <Field id="_106" name="id" type="_135" context="_49" mangled="_ZN14dummy_group_id2idE" location="f2:148" file="f2" line="148"/>
+  <Constructor id="_107" name="dummy_group_id" artificial="1" throw="" context="_49" mangled="_ZN14dummy_group_idC1ERKS_ *INTERNAL* " location="f2:147" file="f2" line="147">
+    <Argument name="_ctor_arg" type="_136"/>
+  </Constructor>
+  <Constructor id="_108" name="dummy_group_id" artificial="1" throw="" context="_49" mangled="_ZN14dummy_group_idC1Ev *INTERNAL* " location="f2:147" file="f2" line="147"/>
+  <Field id="_109" name="num_elements" type="_55" context="_51" mangled="_ZN13dummy_scatter12num_elementsE" location="f2:143" file="f2" line="143"/>
+  <Field id="_110" name="elements" type="_137" context="_51" mangled="_ZN13dummy_scatter8elementsE" location="f2:144" file="f2" line="144"/>
+  <Constructor id="_111" name="dummy_scatter" artificial="1" throw="" context="_51" mangled="_ZN13dummy_scatterC1ERKS_ *INTERNAL* " location="f2:142" file="f2" line="142">
+    <Argument name="_ctor_arg" type="_138"/>
+  </Constructor>
+  <Constructor id="_112" name="dummy_scatter" artificial="1" throw="" context="_51" mangled="_ZN13dummy_scatterC1Ev *INTERNAL* " location="f2:142" file="f2" line="142"/>
+  <Field id="_113" name="buf" type="_78" context="_53" mangled="_ZN18dummy_scat_element3bufE" location="f2:138" file="f2" line="138"/>
+  <Field id="_114" name="len" type="_55" context="_53" mangled="_ZN18dummy_scat_element3lenE" location="f2:139" file="f2" line="139"/>
+  <Constructor id="_115" name="dummy_scat_element" artificial="1" throw="" context="_53" mangled="_ZN18dummy_scat_elementC1ERKS_ *INTERNAL* " location="f2:137" file="f2" line="137">
+    <Argument name="_ctor_arg" type="_139"/>
+  </Constructor>
+  <Constructor id="_116" name="dummy_scat_element" artificial="1" throw="" context="_53" mangled="_ZN18dummy_scat_elementC1Ev *INTERNAL* " location="f2:137" file="f2" line="137"/>
+  <FundamentalType id="_117" name="long int"/>
+  <PointerType id="_118" type="_69c"/>
+  <FundamentalType id="_119" name="unsigned int"/>
+  <FundamentalType id="_120" name="long double"/>
+  <FundamentalType id="_121" name="float"/>
+  <FundamentalType id="_122" name="double"/>
+  <ReferenceType id="_132" type="_43c"/>
+  <ArrayType id="_125" min="0" max="31" type="_126"/>
+  <ReferenceType id="_133" type="_45c"/>
+  <ReferenceType id="_134" type="_47c"/>
+  <ArrayType id="_135" min="0" max="2" type="_55"/>
+  <ReferenceType id="_136" type="_49c"/>
+  <ArrayType id="_137" min="0" max="99" type="_54"/>
+  <ReferenceType id="_138" type="_51c"/>
+  <ReferenceType id="_139" type="_53c"/>
+  <FundamentalType id="_126" name="char"/>
+  <CvQualifiedType id="_126c" type="_126" const="1"/>
+  <FunctionType id="_129" returns="_55">
+    <Argument type="_55"/>
+    <Argument type="_89"/>
+  </FunctionType>
+  <FunctionType id="_131" returns="_69">
+    <Argument type="_55"/>
+    <Argument type="_89"/>
+  </FunctionType>
+  <CvQualifiedType id="_69c" type="_69" const="1"/>
+  <CvQualifiedType id="_53c" type="_53" const="1"/>
+  <CvQualifiedType id="_51c" type="_51" const="1"/>
+  <CvQualifiedType id="_49c" type="_49" const="1"/>
+  <CvQualifiedType id="_47c" type="_47" const="1"/>
+  <CvQualifiedType id="_45c" type="_45" const="1"/>
+  <CvQualifiedType id="_43c" type="_43" const="1"/>
+  <FunctionType id="_130" returns="_69">
+    <Argument type="_55"/>
+    <Argument type="_55"/>
+    <Argument type="_89"/>
+  </FunctionType>
+  <CvQualifiedType id="_52c" type="_52" const="1"/>
+  <CvQualifiedType id="_125c" type="_125" const="1"/>
+  <CvQualifiedType id="_48c" type="_48" const="1"/>
+  <File id="f0" name="/home/dwight/spread-src-4.0.0/include/sp_func.h"/>
+  <File id="f1" name="/home/dwight/spread-src-4.0.0/include/sp_events.h"/>
+  <File id="f2" name="/home/dwight/spread-src-4.0.0/include/sp.h"/>
+  <File id="f3" name="/usr/local/share/gccxml-0.6/GCC/3.3/gccxml_builtins.h"/>
+</GCC_XML>

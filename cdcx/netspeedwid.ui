@@ -1,0 +1,69 @@
+<ui version="4.0" >
+ <class>netspeedwid</class>
+ <widget class="QWidget" name="netspeedwid" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <layout class="QHBoxLayout" >
+     <item>
+      <layout class="QVBoxLayout" >
+       <item>
+        <widget class="QLabel" name="label_14" >
+         <property name="text" >
+          <string>Upload</string>
+         </property>
+         <property name="buddy" >
+          <cstring>upload_speed</cstring>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_15" >
+         <property name="text" >
+          <string>Download</string>
+         </property>
+         <property name="buddy" >
+          <cstring>download_speed</cstring>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" >
+       <item>
+        <widget class="QLineEdit" name="upload_speed" />
+       </item>
+       <item>
+        <widget class="QLineEdit" name="download_speed" >
+         <property name="text" >
+          <string/>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="0" >
+    <widget class="QPushButton" name="run_bw_test_button" >
+     <property name="text" >
+      <string>Run Speed Estimation Test</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

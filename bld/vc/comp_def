@@ -1,0 +1,643 @@
+#
+# template for comp_def
+#
+# $Header: g:/dwight/repo/vc/rcs/comp_def 1.71 1999/03/13 02:52:44 dwight Exp $
+#
+
+COMP_NAME=vc
+
+.IF $(COMP) != $(NULL)
+.IF $(COMP) != $(COMP_NAME)
+# totally bogus, but need to stop the make here or weird stuff happens
+.ERROR:
+	echo COMP name conflict, makefiles are hosed.
+	
+COMP := __bogus
+.INCLUDE: __bogus
+
+.END
+.ELSE
+COMP=$(COMP_NAME)
+.END
+
+#
+# list of component level C and C++ options
+#
+# normal vc interp
+#
+VCVERFS2=0
+.IF $(VC_BUILD) == interpreter
+
+VCPARSEDATE=0
+VCVERFS=0
+VCCRYPTO=1
+LHCRYPTO=1
+VCNETWORK=1
+VCDBG=0
+VCLIBUV=0
+.IF $(OS_SUBSTYLE) == macosx
+VCREGEX=0
+.ELSE
+VCREGEX=1
+.END
+# note: if you are writing non-blocking programs,
+# buffering sockets works ok.
+# if you are writing blocking programs, hoping that
+# they won't block for very long, turn this off
+# and it avoids readahead that might block. it
+# doesn't guarantee anything, but it may work better
+# for structured i/o. note that this is dumb and
+# needs to be replaced by something easier than
+# non-blocking i/o (like maybe some multi-threaded stuff... someday.)
+VCBUFFER_SOCKETS=1
+# WARNING: as of sep 11 2005, this option is BROKEN for non-blocking programs.
+# you must use socket buffering, or you'll get wierd random failures.
+#VCBUFFER_SOCKETS=0
+VCCOMPRESS=1
+.ELIF $(VC_BUILD) == interpreter-wrap
+# use this one if you want to use the interpreter that wrap dlli
+# main difference is "verfs" is excluded (no reason, just can't be bothered to
+# get it set up right now. besides, you can use the wrapped sqlite stuff, it is better anyway
+VCPARSEDATE=0
+VCVERFS=1
+VCCRYPTO=1
+LHCRYPTO=1
+VCNETWORK=1
+VCDBG=0
+.IF $(OS_SUBSTYLE) == macosx
+VCREGEX=0
+.ELSE
+VCREGEX=1
+VCLIBUV=0
+.END
+# note: if you are writing non-blocking programs,
+# buffering sockets works ok.
+# if you are writing blocking programs, hoping that
+# they won't block for very long, turn this off
+# and it avoids readahead that might block. it
+# doesn't guarantee anything, but it may work better
+# for structured i/o. note that this is dumb and
+# needs to be replaced by something easier than
+# non-blocking i/o (like maybe some multi-threaded stuff... someday.)
+VCBUFFER_SOCKETS=1
+# WARNING: as of sep 11 2005, this option is BROKEN for non-blocking programs.
+# you must use socket buffering, or you'll get wierd random failures.
+#VCBUFFER_SOCKETS=0
+VCCOMPRESS=1
+VCPCRE=0
+.ELIF $(VC_BUILD) == win-interpreter
+
+VCPARSEDATE=0
+VCVERFS=0
+VCCRYPTO=1
+LHCRYPTO=1
+VCNETWORK=1
+VCDBG=0
+VCREGEX=0
+VCBUFFER_SOCKETS=0
+VCCOMPRESS=1
+.ELIF $(VC_BUILD) == cdclib
+
+# vc lib for cdc clients
+VCPARSEDATE=0
+#VCVERFS=1
+VCCRYPTO=1
+LHCRYPTO=0
+VCNETWORK=1
+VCDBG=0
+VCREGEX=0
+VCBUFFER_SOCKETS=1
+VCCOMPRESS=1
+
+.ELIF $(VC_BUILD) == xferlib
+
+# for xfer
+VCPARSEDATE=0
+VCVERFS=0
+VCCRYPTO=1
+LHCRYPTO=0
+VCNETWORK=1
+VCDBG=0
+VCREGEX=0
+VCLIBUV=0
+
+.ELIF $(VC_BUILD) == xferdllib
+
+# for xfer
+VCPARSEDATE=0
+VCVERFS=0
+VCCRYPTO=0
+VCNETWORK=1
+VCDBG=0
+VCREGEX=0
+VCLIBUV=0
+
+.ELIF $(VC_BUILD) == shitmasterlib
+
+VCPARSEDATE=0
+VCVERFS=0
+VCCRYPTO=1
+LHCRYPTO=0
+VCNETWORK=1
+VCDBG=0
+VCREGEX=0
+VCBUFFER_SOCKETS=0
+VCCOMPRESS=1
+
+.ELSE
+.ERROR:
+	echo VC_BUILD must be set to xferlib, interpreter, cdclib, shitmasterlib, win-interpreter, interpreter-wrap
+.INCLUDE: __bogus
+.END
+
+.IF $(FLAVOR) == opt
+VCDBG=0
+.END
+.IF $(FLAVOR) == leak
+VCDBG=0
+.END
+.IF $(FLAVOR) == prof
+VCDBG=0
+.END
+
+.IF $(VCDBG) == 1
+COMP_DFLAGS=-DVCDBG_INTERACTIVE -DVCDBG -DPERFHACKS -DLHOBJ -DFUNCACHE #-DVCHOMOV
+.ELSE
+COMP_DFLAGS=-DPERFHACKS -DLHOBJ -DFUNCACHE #-DVCHOMOV
+.END
+
+.IF $(ENV) == B32
+# there seems to be some incompatibility with console mode
+# apps and c++ streams. trying to open the device "con"
+# causes an error; using stdio file fixes the problem.
+#
+#COMP_CCOPTS += -WC
+#COMP_CCOPTS += -W
+.END
+.IF $(ENV) == M32
+COMP_CPPOPTS += /wd4068 /wd4005
+.END
+.IF $(ENV) == GCC
+.IF $(MACH) == DOS
+VCNETWORK=
+COMP_CPPOPTS = -fexternal-templates
+.ELSE
+# commented out for testing
+COMP_CPPOPTS = #-fno-implicit-templates -DANSI_INSTANTIATE
+.END
+COMP_DFLAGS += -DVCXFER  
+.END
+.IF $(MACH) == UNIX
+COMP_DFLAGS += -DLONGNAMES -DUNIX
+.IF $(OS_STYLE) == LINUX
+COMP_DFLAGS += -DLINUX
+.END
+.END
+
+.IF $(VCNETWORK) != $(NULL)
+COMP_CCOPTS+=
+COMP_CPPOPT+=
+.IF $(MACH) == UNIX
+COMP_DFLAGS += -DUSE_BERKSOCK -DVCXFER -DVCSOCK -DLHSOCK
+.ELSE
+COMP_DFLAGS += -DUSE_WINSOCK -DVCXFER -DVCSOCK -DLHSOCK
+.END
+.END
+
+.IF $(VCVERFS) == 1
+
+COMP_DFLAGS+= -DEXC_EXPLICIT -DUSE_PROTO -DUSE_VERFS
+
+.IF $(ENV) == B32
+COMP_CCOPTS+=-WC
+.END
+
+
+.END
+
+.IF $(VCVERFS2) == 1
+
+COMP_DFLAGS+= -DEXC_EXPLICIT -DUSE_PROTO -DUSE_VERFS
+
+.IF $(ENV) == B32
+COMP_CCOPTS+=-WC
+.END
+
+
+.END
+
+.IF $(VCCRYPTO) == 1
+COMP_DFLAGS += -DVCCRYPTO
+.END
+
+.IF $(LHCRYPTO) == 1
+COMP_DFLAGS += -DLHCRYPTO -DVCCRYPTO
+.END
+
+.IF $(VCREGEX) == 1
+COMP_DFLAGS += -DVCREGEX
+.END
+
+.IF $(VCPARSEDATE) == 1
+COMP_DFLAGS += -DPARSEDATE
+.END
+
+.IF $(VCBUFFER_SOCKETS) == 1
+COMP_DFLAGS += -DBUFFER_SOCKETS
+.END
+
+.IF $(VCCOMPRESS) == 1
+COMP_DFLAGS += -DVCCOMPRESS -DUSE_ZLIB
+#COMP_IFLAGS += -I/home3/dwight/depot/clh/zlib
+.END
+
+.IF $(VCPCRE) == 1
+COMP_DFLAGS += -DVCPCRE
+.END
+
+.IF $(VCLIBUV) == 1
+COMP_DFLAGS += -DVCUVSOCK
+.END
+
+
+# The default library built by the component has a basename
+# that is generated from the component name. Depending on the
+# compiler system used to do the build, the name of the library
+# will be something like $(COMP).lib or $(COMP).a
+# The same thing is true for the default executable for the component,
+# execept it will be named something like $(COMP).exe or $(COMP)
+# You could change the default output, but this is not a good idea...
+# If you have other executables or libraries to generate, it is
+# better to add targets to comp_trg to build them (pending support
+# for generating multiple libs/exes in the make system).
+
+#
+# list of things that are put into the library for the component.
+# names should be without extensions, like this:
+# COMP_LIB_MEMBERS=file1 file2 file3
+#
+COMP_LIB_MEMBERS=  \
+	vclhnet \
+	dwgrows \
+	dwioh \
+	pmatch \
+	vc \
+	vc2 \
+	vc3 \
+	vcatomic \
+	vccfun \
+	vccomp \
+	vcctx \
+	vccvar \
+	vcdbg \
+	vcdbl \
+	vcdecom \
+	vcdeflt \
+	vcenco \
+	vcexcctx \
+	vcfunc \
+	vcfuncal \
+	vcfunctx \
+	vcfundef \
+	vcint \
+	vclex \
+	vclh \
+	vcmap \
+	vcnil \
+	vcregex \
+	vcser \
+	vcsock \
+	vcsrc \
+	vcstr \
+	vcwserr \
+	vcwsioh \
+	vcwsock \
+	vcxstrm \
+vcmemfun \
+vcmemsel \
+vcobj \
+vcfac \
+vclhfac \
+vcmath \
+vclhsys \
+vchomov \
+vcfile \
+vcsfile  \
+enc \
+vcverfs \
+vccrypt2 \
+zcomp \
+vcio \
+vcuvsock \
+lhuvsock \
+vctrans \
+vctfun \
+vcudh
+
+#lhboot \
+#tboot
+
+.IF $(VCPCRE) == 1
+COMP_LIB_MEMBERS += vcpcre
+.END
+
+	
+TMP_LIB_MEMBERS=$(COMP_LIB_MEMBERS)
+	
+# list of objects that should be linked into the component executable
+# but not put into the library. without extensions:
+COMP_EXE_MEMBERS=vcrun $(TMP_LIB_MEMBERS) #gnumal
+#COMP_EXE_MEMBERS=tboot $(TMP_LIB_MEMBERS)
+
+#
+# list of executables to be generated by the
+# component. Not fully supported. You need extra
+# targets in comp_trg to get this to work...
+#
+#EXES_COMP=$(VER_MEMBERS:s/.c//)
+#EXES_COMP=testenc xfer
+#EXES_COMP=xfer
+
+# list of libraries to link with the component executable. these
+# are libraries that are local to the component:
+# LIBS_COMP=lib1 lib2
+LIBS_COMP=vc
+
+# list of libraries to link with the component executable from the
+# configuration install directory.
+# COMP_LIBS_IMPORT=lib1 lib2
+#
+.IF $(FLAVOR) == leak
+COMP_LIBS_IMPORT += cppleak
+.END
+
+.IF $(VCREGEX) == 1
+.IF $(USE_SYSTEM_REGEX) == 1
+COMP_LIBS_IMPORT += gnustr 
+.ELSE
+COMP_LIBS_IMPORT += gnustr gnure
+.END
+.END
+
+.IF $(VCPARSEDATE) == 1
+COMP_LIBS_IMPORT += parsedat
+.END
+
+.IF $(VCVERFS) == 1
+COMP_LIBS_IMPORT += verfs exc
+.END
+
+.IF $(VCVERFS2) == 1
+COMP_LIBS_IMPORT += verfs exc
+.END
+
+.IF $(VCCRYPTO) == 1
+COMP_LIBS_IMPORT += crypto5
+.END
+
+.IF $(VCCOMPRESS) == 1
+COMP_LIBS_IMPORT+= zlib
+.END
+
+COMP_LIBS_IMPORT += kazlib jenkins dwcls
+
+.IF $(VCLIBUV) == 1
+COMP_LIBS_IMPORT += uv
+.END
+
+# list of libraries to link with component executable from the
+# surrounding environment. all parts of the items to be linked (extensions,
+# paths, etc.) must be explicit, and the make system does not
+# change the values.
+# LIBS_FOREIGN=c:\djgpp\lib\libgr.a
+# since the make system gives you no help with the names, you may
+# have to twiddle with the "IF" conditions to make it work right
+# for all the platforms the component can compile on.
+#
+LIBS_FOREIGN=
+
+#
+# list of libraries (or -l flags) to be used on the link line.
+# these must be complete paths or -l flags, and they are not
+# used in any dependency checking.
+#
+.IF $(ENV) == GCC 
+.IF $(OS_STYLE) == LINUX
+LIBS_SYSTEM=  -lstdc++ -lm
+.IF $(VCPCRE) == 1
+LIBS_SYSTEM += -lpcre
+.END
+.IF $(VCVERFS2) == 1
+LIBS_SYSTEM += -lpthread
+.END
+.END
+.END
+.IF $(ENV) == M32
+LIBS_SYSTEM += ws2_32.lib
+.END
+
+LIBS_SYSTEM += -lrt
+
+# list of files to be put into the source repository for the component.
+# complete file names must be specified (without leading path info).
+# do not put binary files into the list, since not all version control systems
+# can handle binaries.
+VER_MEMBERS= \
+	vclhnet.cpp \
+	vclhnet.h \
+	dwgrows.cpp \
+	dwgrows.h \
+	dwioh.cpp \
+	dwioh.h \
+	elvis.rc \
+	lexyy.c \
+	notes \
+	ournew.cpp \
+	pmatch.cpp \
+	rtpplex.l \
+	test_var.cpp \
+	tlex.cpp \
+	tlex.ide \
+	tmpvc.ide \
+	todo \
+	to_prof \
+	vc.cpp \
+	vc.def \
+	vc.h \
+	vc2.cpp \
+	vc3.cpp \
+	vcatomic.cpp \
+	vcatomic.h \
+	vccfun.cpp \
+	vccfun.h \
+	vccomp.cpp \
+	vccomp.h \
+	vcctx.cpp \
+	vcctx.h \
+	vccvar.cpp \
+	vccvar.h \
+	vcdbg.cpp \
+	vcdbg.h \
+	vcdbl.cpp \
+	vcdbl.h \
+	vcdecom.cpp \
+	vcdecom.h \
+	vcdeflt.cpp \
+	vcdeflt.h \
+	vcenco.cpp \
+	vcenco.h \
+	vcexcctx.cpp \
+	vcexcctx.h \
+	vcfext.h \
+	vcfile.h \
+	vcfile.cpp \
+	vcfunc.cpp \
+	vcfunc.h \
+	vcfuncal.cpp \
+	vcfuncal.h \
+	vcfunctx.cpp \
+	vcfunctx.h \
+	vcfundef.cpp \
+	vcfundef.h \
+	vcint.cpp \
+	vcint.h \
+	vclex.cpp \
+	vclex.h \
+	vclh.cpp \
+	vcmap.cpp \
+	vcmap.h \
+	vcnil.cpp \
+	vcnil.h \
+	vcregex.cpp \
+	vcregex.h \
+	vcrun.cpp \
+	vcsc.h \
+	vcser.cpp \
+	vcsfile.cpp \
+	vcsfile.h \
+	vcsock.cpp \
+	vcsock.h \
+	vcsrc.cpp \
+	vcsrc.h \
+	vcstd.cpp \
+	vcstr.cpp \
+	vcstr.h \
+	vcwfile.cpp \
+	vcwfile.h \
+	vcwserr.cpp \
+	vcwsioh.cpp \
+	vcwsioh.h \
+	vcwsock.cpp \
+	vcwsock.h \
+	vcxstrm.cpp \
+	vcxstrm.h \
+	\
+vcmemfun.cpp \
+vcmemsel.cpp \
+vcobj.cpp \
+vcfac.cpp \
+vclhfac.cpp \
+vcmemfun.h \
+vcmemsel.h \
+vcobj.h \
+vcfac.h \
+vclhfac.h \
+vcmath.cpp \
+vcmath.h \
+vclhsys.cpp \
+vclhsys.h \
+vchomov.cpp \
+vchomov.h \
+homocom.h \
+lhhomov.h \
+lhhomov.cpp \
+vcberk.h \
+lhdbg.lh \
+vcrec.h \
+vcrec.cpp \
+ifdefs.txt \
+lhboot.cpp \
+lhboot.h \
+enc.h \
+enc.cpp \
+tboot.cpp \
+munge.cpp \
+testenc.cpp \
+gnumal.c \
+_thread.h \
+bonehead.h \
+vcverfs.cpp \
+vcfilt.h \
+vccfilt.h \
+vccfilt.cpp \
+zcomp.h \
+zcomp.cpp
+
+
+
+# list of local include files to install into the configuration include dir
+#
+# INCLUDES_EXPORT=a.h b.h
+INCLUDES_EXPORT= \
+	vc.h \
+	vcfext.h \
+	vclex.h \
+	homocom.h \
+	vcwsock.h \
+	vcsock.h \
+	vcxstrm.h \
+	vccomp.h \
+	vcwsioh.h \
+	vcdeflt.h \
+	dwioh.h \
+	lhboot.h \
+	vcmap.h \
+	vcdbg.h \
+	vcctx.h \
+	enc.h \
+	vcberk.h \
+	vccrypt2.h \
+	dwgrows.h \
+	vcfunctx.h \
+	vclhsys.h \
+	vcdecom.h \
+	vcnil.h \
+	vcatomic.h \
+	vcio.h \
+	vcuvsock.h \
+	vcudh.h
+	
+
+# list of local libraries to install into the configuration lib dir
+# no extensions or path info...
+# if you don't set this, the default is to install the default library
+# for the component.
+# if you set it to NONE, nothing is exported.
+#
+# LIBS_COMP_EXPORT=foolib barlib
+#LIBS_COMP_EXPORT=NONE
+
+# list of executables to export from the component to the config install dir.
+# if you don't set this, default is to install the default executable.
+# if you set it to NONE, nothing is exported.
+# no extensions or paths...
+#
+# EXES_COMP_EXPORT=foo bar
+#
+#EXES_COMP_EXPORT=NONE
+.IF $(VC_BUILD) == cdclib
+EXES_COMP_EXPORT=NONE
+.END
+
+#
+# list of scripts to be exported to config install dir.
+# just list the names of the scripts, and they are 
+# copied over... note: this is done at the same time
+# the executable for the component is installed.
+#
+# SCRIPTS_EXPORT=groovy
+
+# list of documentation files to export from component to config install dir.
+#
+# DOCS_EXPORT=foo.doc bar.mif
+

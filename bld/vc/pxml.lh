@@ -1,0 +1,1284 @@
+;set-dynamic-binding(nil)
+; this LH program can be used to parse the output of gcc-xml
+; in order to produce C/C++ wrappers that can be modified and 
+; compiled into LH in order to wrap a library.
+; currently useful for wrapping C interfaces, and has stuff in it for
+; wrapping classes, but this hasn't been extensively tested.
+;
+; step 1:
+; use gcc-xml on the header for the library you want to wrap, say foo.h. this
+; should produce a foo.xml file containing definitions for all the
+; types and functions.
+;
+; step 2:
+; use this script and an existing LH interpreter to generate wrapper
+; functions. invoke like this:
+; vc pxml.lh foo.xml [restrict-to-filename ...]
+;
+; pxml.lh will scan foo.xml and try to produce wrappers for everything
+; in the xml file (which may include all kinda system stuff like
+; stdio and whatnot, which you probaby don't want to wrap.) by providing
+; the restrict-to-filenames (say, foo.h), it will ignore all the stuff
+; that wasn't in foo.h.
+;
+; the results will be 3 files:
+; W_cvt_foo.xml.cpp - conversion functions
+; W_foo.xml.cpp - wrapper functions
+; W_foo.xml.lh - LH code for gbind-ing enums to values and wrapping classes
+; 
+; all of these files will certainly need to be editted. by convention
+; i replace the W_ with hacked_ . the idea here is that if the API
+; changes a little bit, you could diff the old W_ file with a newly
+; generated one, and then apply those changes to your "hacked_" version
+; and save some time.
+;
+; in general, wrapping a C function is like this:
+; C: int func(int arg);
+; LH: compile(wrap_func arg `....')
+;
+; the C wrapper code looks like this:
+; vc wrap_func(VCArglist *a)
+; {
+; vc retval = cvt_int_to_vc(func(
+;	 cvt_vc_to_int((*a)[0])
+;	);
+; return retval;
+; }
+; with some extra stuff at the beginning and end that can be
+; used for defining contexts on start of finish of the wrapper.
+;
+; generally, the conversion functions are generated for you, one
+; vc->type, and one type->vc for each type found in any function
+; argument or function return type. those conversion functions 
+; sometimes need to be hand tweaked for situations where
+; some args are "out" vs. "in", etc.
+; 
+; the wrapper functions usually don't need a lot of tweaking unless
+; there is some very complicated API for a function.
+; some things to watch out for: callbacks can be tricky. 
+; out parameters can be tricky too. it is best to use one of the
+; existing "hacked" files support routines for doing the more
+; complicated wrapping, but this is not easy to explain.
+;
+; the wrappers are installed into LH by inserting a call to
+; wrapper_init_foo_xml into vclh.cpp (usually ifdefed to some
+; unique WRAP_FOO or something.) during initialization, all the
+; wrapper functions will be registered as built-in's in LH
+;
+; LH programs using the wrapped library can include W_foo.xml.lh
+; to get the values of enums and whatnot to make using the
+; library easier.
+; 
+; Tue Apr  4 19:23:37 MDT 2006
+; first blood! wrapped a small "hello world" class
+; and it appeared to run ok.
+;
+; todo:
+; generate proper args for ctors in lh file
+; generate the proper class-as-base stuff in the lh file
+; figure out how to deal with overloading
+;
+; how to deal with overloading:
+; if a function or member has duplicates, we can
+; create another uber-wrapper that tries to figure out
+; which function to call based on the LH types of the
+; arguments. in some cases, it will be impossible to
+; figure out (since LH has a much smaller set of types)
+; 
+; * emit type-specific names for the LH functions
+; * the uber-wrapper has the common name, and
+; looks like this:
+; scompile(gv overloaded-fun ` ... ')
+; where ... implements the selection process
+; which is something like this
+; if all overloaded functions have different # of args, then
+; use *only* the number of args passed in as the selector.
+; if there are some overloaded functions that have the same
+; number of arguments N, then use the following selection
+; for calls that contain N arguments:
+; vc type		c type
+; VC_INT		int/short/long/char
+; VC_FLOAT		float/double
+; VC_VECTOR		reference (&)
+; VC_BSTRING	either char * *or* (char *, len) pairs, or a function pointer
+; VC_INT_DTOR	pointer
+;
+; note: at this point, i'm avoiding putting the type
+; of the pointer into the LH object, but eventually
+; if you have overloading like this foo(Foo *, Bar *)
+; foo(Bar *, Foo*), this simple scheme won't be able to
+; select the right function. we'll have to make pointers
+; into something like vector(int, type-name) or something
+; like that.
+; start with list of all overloaded funs
+; match the first arg, if that arg selects more than one
+; function, then on to the next arg until you have
+; only one function. if you have 0 or more than 1, then error.
+;
+; function pointers (for callbacks)
+;
+; in LH, you pass in a string, which is the name of the
+; function to call. the wrapper stores the string
+; in a map that says "this string is a function".
+; the wrapper defines a "bounce" function that is put
+; in place of the string, and sent to the wrapped
+; library. the bounce function will have to be the right
+; type for the callback.
+; when the library calls the callback, it ends up in the
+; bounce function. the bounce function looks at its callback
+; arg, and decides which LH function to eval.
+; this requires that the wrapper fits its own user-data
+; into the library's callback arguments, so it knows how to
+; dispatch things.
+
+compile(subst s x y `
+	lbind(sx strlen(<x>))
+	lbind(i strstr(<s> <x>))
+	lbind(res ||)
+	while(<i> prog(
+		lbind(f substr(<s> 0 <i>))
+		lbind(res {<res> <f> <y>})
+		lbind(s substr(<s> add(<i> <sx>) end))
+		lbind(i strstr(<s> <x>))
+	))
+	if(eq(strlen(<res>) 0) return(<s>))
+	return({<res> <s>})
+')
+
+compile(excdobackout e `return(backout)')
+
+if(nil prog(
+lbind(f openfile(foo r))
+lbind(a readatoms(<f>))
+while(<a> prog(
+	printl(<a>)
+	lbind(a readatoms(<f>))
+))
+))
+
+; 
+;	makefun("__lh_dumptrack", vc(vclh_dumptrack, "__lh_dumptrack", VC_FUNC_BUILTIN_LEAF));
+; these functions will be reflected in lh, and callable as builtins
+gbind(Regular-funs set())
+gbind(Member-funs set())
+gbind(Ctor-funs set())
+; these functions have to be provided by the wrappers... they
+; convert library values into "vc"'s.
+gbind(Convert-return-vals tree())
+; set of functions that convert 'vc' to types wanted by wrapped lib.
+gbind(Convert-args tree())
+gbind(Typedefs tree())
+gbind(File-map tree())
+
+compile(read-gcc-xml fn `
+
+lbind(f openfile(<fn> r))
+
+lbind(start-re regex(| *< *\\([^/][^ >/]*\\)|))
+lbind(attr-re regex(| *\\([^ =]*\\)= *"\\([^"]*\\)"|))
+lbind(end-re regex(| */>|))
+lbind(attr-list-re regex(| *\\([^ ][^ ]*\\) *|))
+
+lcompile(end-x x `
+	lbind(a regex({| *< */| <x> |>|}))
+;printml(endx <a>)
+	return(<a>)
+')
+
+lcompile(attr-list x `
+	lbind(v vector())
+	lbind(a split(<attr-list-re> <x> attr-val))
+	while(<a> prog(
+;printml(<a> <x>)
+		append(<v> <attr-val>)
+		lbind(x substr(<x> strlen(<a>) end))
+		lbind(a split(<attr-list-re> <x> attr-val))
+	))
+	return(<v>)
+')
+
+lbind(a readline(<f>))
+lbind(looking-for-end ||)
+lbind(stk list())
+; final structure looks like this:
+;
+; vector(what vector(
+; subwhat vector(...
+;
+gbind(id-map tree())
+lbind(unit-stk list())
+lbind(curunit nil)
+
+while(<a> prog(
+
+	lbind(v vector())
+	while(gt(strlen(<a>) 0) prog(
+;printml(looking for "<looking-for-end>")
+		cond(
+		split(<start-re> <a> <v>) prog(
+			append(<stk> <looking-for-end>)
+			append(<unit-stk> <curunit>)
+			;printml(START <v>)
+			lbind(a substr(<a> strlen(match(<start-re> <a>)) end))
+			lbind(looking-for-end v[0])
+			lbind(curmap map())
+			lbind(curunit vector())
+			append(<curunit> v[0])
+			append(<curunit> <curmap>)
+		)
+		split(<attr-re> <a> <v>) prog(
+			;printml(ATTR <v>)
+			if(ne(v[0] name) prog(
+				; chop it up, names can have spaces in them, and are
+				; never multi-valued, so we skip them
+				putidx(<v> 1 attr-list(v[1]))
+			)
+			; else
+			prog(
+				putidx(<v> 1 vector(v[1]))
+			))
+			;printml(ATTR <v>)
+			putkv(<curmap> v[0] v[1])
+			if(eq(v[0] id) prog(
+				putkv(<id-map> v[1][0] <curunit>)
+			))
+			lbind(a substr(<a> strlen(match(<attr-re> <a>)) end))
+		)
+		split(<end-re> <a> <v>) prog(
+			;printml(END <v>)
+			lbind(a substr(<a> strlen(match(<end-re> <a>)) end))
+			lbind(looking-for-end dellast(<stk>))
+			lbind(unitdone <curunit>)
+;printml(END <curunit>)
+			lbind(curunit dellast(<unit-stk>))
+			if(<curunit> append(<curunit> <unitdone>))
+		)
+		split(end-x(<looking-for-end>) <a> <v>) prog(
+			;printml(END <looking-for-end> <v>)
+			lbind(a substr(<a> strlen(match(end-x(<looking-for-end>) <a>)) end))
+			lbind(looking-for-end dellast(<stk>))
+			lbind(unitdone <curunit>)
+;printml(ENDX <curunit>)
+			lbind(curunit dellast(<unit-stk>))
+			if(<curunit> append(<curunit> <unitdone>))
+		)
+		prog(
+		;printml(no match)
+		;printml(" substr(<a> 0 end) ")
+		lbind(a substr(<a> 1 end))
+		)
+		)
+		lbind(v vector())
+	))
+	lbind(a readline(<f>))
+))
+;printl(<id-map>)
+;printl(<curunit>)
+closefile(<f>)
+return(<curunit>)
+')
+
+; remove all "id" references and replace them
+; with direct references
+
+compile(remove-ids c `
+	foreach(m <c> prog(
+		switch(type(<m>) 
+		map prog(
+			foreach(kv <m> prog(
+				if(cor(
+					eq(kv[0] type)
+					eq(kv[0] members)
+					eq(kv[0] returns)
+					eq(kv[0] bases)
+					eq(kv[0] context)
+					)
+				prog(
+					lbind(n sub(numelems(kv[1]) 1))
+					for(i 0 <n> prog(
+						lbind(a get(<id-map> kv[1][<i>]))
+						if(not(<a>) prog(
+							printml(cant find kv[1][<i>])
+						))
+						putidx(kv[1] <i> <a>)
+					))
+				))
+			))
+		)
+		vector prog(
+			remove-ids(<m>)
+		)
+		prog()
+		)
+	))
+')
+
+; make a map from our goofy mangled names to typedef
+; names, so we can use the typedefs later in code
+; generation. makes dealing with function callbacks
+; a bit easier.
+; note, in cases where one type maps to
+; multiple typedefs, the last one wins
+compile(make-typedef-map c `
+	foreach(m <c> prog(
+		switch(type(<m>) 
+		map prog(
+		)
+		vector prog(
+			if(eq(m[0] Typedef) prog(
+			lbind(a m[1]) ; attrs
+			;printml(fun get(<a> name)[0])
+			lbind(file-id get(<a> file)[0])
+			if(contains(<File-restricted-ids> <file-id>) prog(
+				try(
+					prog(
+						lbind(tstr emit-type(get(m[1] type)[0]))
+						putkv(<Typedefs> <tstr> get(m[1] name)[0])
+					)
+					;catch
+					`printml(ignoring typedef get(m[1] name)[0])'
+				)
+			))
+			make-typedef-map(<m>)
+			))
+		)
+		prog()
+		)
+	))
+')
+
+compile(map-to-typedef tp `
+	if(not(strstr(<tp> F)) return(<tp>))
+	lbind(td get(<Typedefs> <tp>))
+	if(<td>
+		return(<td>)
+		return(<tp>)
+	)
+')
+
+gbind(Fun-names tree())
+
+compile(arg-count f `
+	lbind(ac 0)
+	foreach(arg <f> prog(
+		if(cand(eq(type(<arg>) vector) eq(arg[0] Argument)) prog(
+			lbind(ac add(<ac> 1))
+		))
+	))
+	return(<ac>)
+')
+
+compile(find-overloaded-functions c `
+	foreach(m <c> prog(
+		switch(type(<m>) 
+		map prog(
+		)
+		vector prog(
+			if(eq(m[0] Function) prog(
+				lbind(nm get(m[1] name)[0])
+				lbind(nac arg-count(<m>))
+				if(contains(<Fun-names> <nm>) prog(
+					lbind(funs get(<Fun-names> <nm>))
+					append(<funs> vector(<nac> <m>))
+				)
+				;else
+				prog(
+					putkv(<Fun-names> <nm> vector(vector(<nac> <m>)))
+				))
+			))
+			find-overloaded-functions(<m>)
+		)
+		prog()
+		)
+	))
+')
+
+compile(find-files c `
+	foreach(m <c> prog(
+		switch(type(<m>) 
+		map prog(
+		)
+		vector prog(
+			if(eq(m[0] File) prog(
+				lbind(nm get(m[1] name)[0])
+				lbind(id get(m[1] id)[0])
+				putkv(<File-map> <id> <nm>)
+printml(file <nm> <id>)
+			))
+			find-files(<m>)
+		)
+		prog()
+		)
+	))
+')
+
+compile(emit-enums-as-lh c `
+	foreach(m <c> prog(
+		switch(type(<m>) 
+		map prog(
+		)
+		vector prog(
+			if(eq(m[0] Enumeration) prog(
+				lbind(nm get(m[1] name)[0])
+				lbind(id get(m[1] id)[0])
+				foreach(arg <m> prog(
+					if(cand(eq(type(<arg>) vector) eq(arg[0] EnumValue)) prog(
+						; sometimes, the name isn't output by gcc-xml if the
+						; decl doesn't have one
+						lbind(enm get(arg[1] name)[0])
+						lbind(eval get(arg[1] init)[0])
+						printl({|gbind(| <enm> | | <eval> |)|})
+					))
+				))	
+			))
+			emit-enums-as-lh(<m>)
+		)
+		prog()
+		)
+	))
+')
+
+compile(wrap-functions c `
+	foreach(m <c> prog(
+		switch(type(<m>) 
+		map prog(
+			if(nil prog(
+			foreach(kv <m> prog(
+				if(cor(
+					eq(kv[0] type)
+					eq(kv[0] members)
+					eq(kv[0] returns)
+					eq(kv[0] bases)
+					eq(kv[0] context)
+					)
+				prog(
+					lbind(n sub(numelems(kv[1]) 1))
+					for(i 0 <n> prog(
+						lbind(a get(<id-map> kv[1][<i>]))
+						if(not(<a>) prog(
+							printml(cant find kv[1][<i>])
+						))
+						putidx(kv[1] <i> <a>)
+					))
+				))
+			))
+			))
+		)
+		vector prog(
+			if(eq(m[0] Function) prog(
+				try(
+					emit-function(<m>)
+					;catch
+					`printml(ignoring function get(m[1] name)[0])'
+				)
+			))
+			wrap-functions(<m>)
+		)
+		prog()
+		)
+	))
+')
+
+compile(wrap-methods c `
+	foreach(m <c> prog(
+		switch(type(<m>) 
+		map prog(
+			if(nil prog(
+			foreach(kv <m> prog(
+				if(cor(
+					eq(kv[0] type)
+					eq(kv[0] members)
+					eq(kv[0] returns)
+					eq(kv[0] bases)
+					eq(kv[0] context)
+					)
+				prog(
+					lbind(n sub(numelems(kv[1]) 1))
+					for(i 0 <n> prog(
+						lbind(a get(<id-map> kv[1][<i>]))
+						if(not(<a>) prog(
+							printml(cant find kv[1][<i>])
+						))
+						putidx(kv[1] <i> <a>)
+					))
+				))
+			))
+			))
+		)
+		vector prog(
+			; only wrap public methods (without "access"
+			; attr
+			if(cand(
+				eq(m[0] Method)
+				not(get(m[1] access))
+				) prog(
+				try(
+					emit-method(<m>)
+					`printml(ignoring get(m[1] name)[0])'
+				)
+			))
+			if(cand(
+				eq(m[0] Constructor)
+				not(get(m[1] access))
+				) prog(
+				try(
+					emit-ctor(<m>)
+					`printml(ignoring get(m[1] name)[0])'
+				)
+			))
+			wrap-methods(<m>)
+		)
+		prog()
+		)
+	))
+')
+
+compile(wrap-classes c `
+	foreach(m <c> prog(
+		switch(type(<m>) 
+		map prog(
+			if(nil prog(
+			foreach(kv <m> prog(
+				if(cor(
+					eq(kv[0] type)
+					eq(kv[0] members)
+					eq(kv[0] returns)
+					eq(kv[0] bases)
+					eq(kv[0] context)
+					)
+				prog(
+					lbind(n sub(numelems(kv[1]) 1))
+					for(i 0 <n> prog(
+						lbind(a get(<id-map> kv[1][<i>]))
+						if(not(<a>) prog(
+							printml(cant find kv[1][<i>])
+						))
+						putidx(kv[1] <i> <a>)
+					))
+				))
+			))
+			))
+		)
+		vector prog(
+			if(eq(m[0] Class) prog(
+				emit-class(<m> nil)
+			))
+			wrap-classes(<m>)
+		)
+		prog()
+		)
+	))
+')
+
+; emit the LH part of the wrapper
+compile(emit-class m as-base `
+	lbind(a m[1]) ; attrs
+	;printml(CLASS get(<a> name)[0])
+	lbind(cls get(<a> name)[0])
+	if(strstr(<cls> |&|) return(nil))
+	lbind(members get(<a> members))
+	; some classes are incomplete, and have no members
+	; ignore them now.
+	if(not(<members>) return(nil))
+	lbind(bases get(<a> bases))
+	lbind(basename nil)
+	if(ge(numelems(<bases>) 1) prog(
+		if(gt(numelems(<bases>) 1) printml(WARNING: multiple bases for <cls> not wrapped))
+		lbind(basename get(bases[0][1] name)[0])
+		printml(BASENAME <basename>)
+	))
+	;lbind(return-type emit-type(get(<a> returns)[0]))
+	emit-wrapper-cls-name(<cls> <as-base> <basename>)
+	;printml(returns get(<a> returns))
+	lbind(i 0)
+;printml(MEMBERS <members>)
+	foreach(mem <members> prog(
+		if(cand(eq(type(<mem>) vector) eq(mem[0] Method)) prog(
+			lbind(method-name get(mem[1] name))
+;printl(<method-name>)
+			emit-lh-method(<cls> <mem>)
+			;lbind(tp emit-type(get(arg[1] type)[0]))
+			;printml(get(arg[1] type))
+			lbind(i add(<i> 1))
+		))
+	))	
+	printl(|)|)
+	if(<bases> prog(
+	; need to emit special versions of the base
+	; class objects in order to simulate roughly
+	; the type of virtual inheritance in c++
+		foreach(b <bases> prog(
+			start-unit()
+			emit-class(<b> t)
+			end-unit()
+		))
+	))
+')
+
+compile(emit-wrapper-cls-name cls as-base with-base `
+	if(not(<as-base>) prog(
+printl({
+|gmake-factory(wrapped-| <cls> |
+	vector(XXXargsXXX)
+	| if(<with-base> {\`wrapped-as-base- <with-base> |(XXXargsXXX)'|} |nil |) | ; base
+	nil ; delegates
+	nil ; forwards
+
+	ow `wrap_ctor_| <cls> |(XXXargsXXX)'
+|
+})
+)
+; else
+prog(
+printl({
+|gmake-factory(wrapped-as-base-| <cls> |
+	vector(XXXargsXXX)
+	| if(<with-base> {\'wrapped-as-base- <with-base> |(XXXargsXXX)'|} |nil |) | ; base
+	nil ; delegates
+	nil ; forwards
+
+	;ow `wrap_ctor_| <cls> |(XXXargsXXX)'
+|
+})
+))
+
+')
+
+compile(emit-lh-method cls m `
+	lbind(a m[1]) ; attrs
+	lbind(fun get(<a> name)[0])
+	print({|
+	|<fun>| lambda(|
+	})
+
+	lbind(i 0)
+	lbind(arglist vector())
+	foreach(arg <m> prog(
+		if(cand(eq(type(<arg>) vector) eq(arg[0] Argument)) prog(
+			; sometimes, the name isn't output by gcc-xml if the
+			; decl doesn't have one
+			lbind(nm get(arg[1] name))
+			if(<nm>
+				lbind(argname nm[0])
+				lbind(argname {__lh_arg <i>})
+			)
+			append(<arglist> <argname>)
+			lbind(i add(<i> 1))
+		))
+	))	
+	foreach(arg <arglist> prog(
+		print(<arg>)
+		print(| |)
+	))
+	print({ |`return(wrap_memcall_| <cls> |_| <fun> |(<ow> |})
+	foreach(arg <arglist> prog(
+		print({\< <arg> \> })
+		print(| |)
+	))
+	printl( |))')| )
+	
+')
+
+
+compile(emit-function m `
+	lbind(a m[1]) ; attrs
+	;printml(fun get(<a> name)[0])
+	lbind(file-id get(<a> file)[0])
+	if(not(contains(<File-restricted-ids> <file-id>)) prog(
+		excraise(|A:function outside restriction list|)
+	))
+	lbind(fun get(<a> name)[0])
+	lbind(return-type emit-type(get(<a> returns)[0]))
+	lbind(tv vector())
+	;emit-type2(get(<a> returns)[0] <tv>)
+;printl(<tv>)
+	lbind(return-type map-to-typedef(<return-type>))
+	lbind(c-return-type emit-c-type(get(<a> returns)[0] ||))
+	emit-wrapper-fun-name(<fun> <return-type> <c-return-type>)
+	;printml(returns get(<a> returns))
+	lbind(i 0)
+	foreach(arg <m> prog(
+		if(cand(eq(type(<arg>) vector) eq(arg[0] Argument)) prog(
+			lbind(tp emit-type(get(arg[1] type)[0]))
+	lbind(tv vector())
+;	emit-type2(get(arg[1] type)[0] <tv>)
+;printl(<tv>)
+			lbind(tp map-to-typedef(<tp>))
+			lbind(c-tp emit-c-type(get(arg[1] type)[0] ||))
+			putkv(<Convert-args> <tp> <c-tp>)
+			print({cvt_vc_ <tp> |((*a)[| <i> |])|})
+			;printml(get(arg[1] type))
+			;printml(get(<id-map>  get(arg[1] type)[0]))
+			lbind(i add(<i> 1))
+			if(lt(<i> sub(numelems(<m>) 2)) print(|,\n|))
+		))
+	))	
+	if(eq(<return-type> _void) prog(
+		print(|);\n|)
+		print(|WRAP_END\n|)
+		print(|return(vcnil);\n|)
+	)
+	;else
+	prog(
+		print(|)|)
+		print(|);\n|)
+		print(|WRAP_END\n|)
+		print(|return ret;\n|)
+	))
+	emit-end-wrapper()
+')
+
+compile(emit-method m `
+	lbind(a m[1]) ; attrs
+	;printml(fun get(<a> name)[0])
+	lbind(file-id get(<a> file)[0])
+	if(not(contains(<File-restricted-ids> <file-id>)) prog(
+		excraise(|A:function outside restriction list|)
+	))
+	lbind(fun get(<a> name)[0])
+	;lbind(cls get(get(<a> context)[0][1] name)[0])
+	lbind(cls get(get(<a> context)[0][1] name))
+;printml(CLASS <cls>)
+	lbind(cls cls[0])
+	lbind(return-type emit-type(get(<a> returns)[0]))
+	lbind(c-return-type emit-c-type(get(<a> returns)[0] ||))
+;printml(C-TYPE emit-c-type(get(<a> returns)[0] ||))
+	emit-wrapper-method-name(<fun> <return-type> <c-return-type> <cls>)
+	;printml(returns get(<a> returns))
+	lbind(i 1)
+	foreach(arg <m> prog(
+		if(cand(eq(type(<arg>) vector) eq(arg[0] Argument)) prog(
+			lbind(tp emit-type(get(arg[1] type)[0]))
+	lbind(tv vector())
+	;emit-type2(get(arg[1] type)[0] <tv>)
+;printl(<tv>)
+			lbind(c-tp emit-c-type(get(arg[1] type)[0] ||))
+			putkv(<Convert-args> <tp> <c-tp>)
+			print({cvt_vc_ <tp> |((*a)[| <i> |])|})
+			;printml(get(arg[1] type))
+			;printml(get(<id-map>  get(arg[1] type)[0]))
+			lbind(i add(<i> 1))
+			if(lt(<i> sub(numelems(<m>) 1)) print(|,\n|))
+		))
+	))	
+	if(eq(<return-type> _void) prog(
+		print(|);\n|)
+		print(|return(vcnil);\n|)
+	)
+	;else
+	prog(
+		print(|)|)
+		print(|);\n|)
+	))
+	emit-end-wrapper()
+')
+
+compile(emit-ctor m `
+	lbind(a m[1]) ; attrs
+	;printml(fun get(<a> name)[0])
+	lbind(file-id get(<a> file)[0])
+	if(not(contains(<File-restricted-ids> <file-id>)) prog(
+		excraise(|A:function outside restriction list|)
+	))
+	lbind(fun get(<a> name)[0])
+	;lbind(cls get(get(<a> context)[0][1] name)[0])
+	lbind(cls get(get(<a> context)[0][1] name))
+;printml(CTOR-CLASS <cls>)
+	lbind(cls cls[0])
+	emit-wrapper-ctor-name(<fun> <cls>)
+	;printml(returns get(<a> returns))
+	lbind(i 0)
+	foreach(arg <m> prog(
+		if(cand(eq(type(<arg>) vector) eq(arg[0] Argument)) prog(
+			lbind(tp emit-type(get(arg[1] type)[0]))
+			lbind(c-tp emit-c-type(get(arg[1] type)[0] ||))
+			putkv(<Convert-args> <tp> <c-tp>)
+			print({cvt_vc_ <tp> |((*a)[| <i> |])|})
+			;printml(get(arg[1] type))
+			;printml(get(<id-map>  get(arg[1] type)[0]))
+			lbind(i add(<i> 1))
+			if(lt(<i> sub(numelems(<m>) 2)) print(|,\n|))
+		))
+	))	
+	;print(|)|)
+	print(|);\n|)
+	emit-end-wrapper-ctor(<fun>)
+')
+
+
+; turn names like "unsigned int" into "unsigned_int"
+; and foo&lt;unsigned int&gt; to foo<unsigned int>
+;
+gbind(template-re regex(|.*&lt;.*|))
+compile(c-ify s `
+	if(strstr(<s> |&lt;|) prog(
+excraise(A:TEMPLATE_TYPE)
+		return(subst(subst(<s> |&lt;| |<|) |&gt;| |>|))
+	)
+	;else
+	prog(
+		return(subst(<s> | | _))
+	))
+')
+
+; emit an identifier (kinda like a mangled id)
+; from a type.
+compile(emit-type m `
+	switch(m[0]
+	FundamentalType prog(
+		return({_ c-ify(get(m[1] name)[0])})
+	)
+
+	PointerType prog(
+		lbind(a {p emit-type(get(m[1] type)[0])})
+		return(<a>)
+	)
+	ReferenceType prog(
+		lbind(a {r emit-type(get(m[1] type)[0])})
+		return(<a>)
+	)
+	CvQualifiedType prog(
+		lbind(a {q emit-type(get(m[1] type)[0])})
+		return(<a>)
+	)
+	FunctionType prog(
+		; sometimes it is useful to know what the
+		; typedef was for the function, since in a lot
+		; of cases, the typedef is for a callback or something.
+		;return({f <typedef-name>})
+		lbind(returns emit-type(get(m[1] returns)[0]))
+		lbind(i 0)
+		lbind(arglist vector())
+		foreach(arg <m> prog(
+			if(cand(eq(type(<arg>) vector) eq(arg[0] Argument)) prog(
+				lbind(tp get(arg[1] type)[0])
+				append(<arglist> emit-type(<tp>))
+				lbind(i add(<i> 1))
+			))
+		))	
+		lbind(decl {F_ <returns> _})
+		for(i2 1 <i> prog(
+			lbind(decl {<decl> arglist[sub(<i2> 1)]})
+			if(ne(<i2> <i>) lbind(decl {<decl> _x_}))
+		))
+		return(<decl>)
+	)
+	Class prog(
+		return({_ c-ify(get(m[1] name)[0]) _})
+	)
+	Struct prog(
+		return({_ c-ify(get(m[1] name)[0]) _})
+	)
+	Union prog(
+		return({_ c-ify(get(m[1] name)[0]) _})
+	)
+	Typedef prog(
+		;return({ _typedef_ emit-type(get(m[1] type)[0])})
+		; note: record the typedef name, as this gives us a
+		; chance to get some extra info the cvt_ functions
+		; for functions
+		lbind(typedef-name get(m[1] name)[0])
+;printml(TYPEDEF <typedef-name>)
+		return({ emit-type(get(m[1] type)[0])})
+	)
+	Enumeration prog(
+		; treat enums as ints for now
+		return({_ c-ify(int)})
+	)
+	ArrayType prog(
+		return({_a_ get(m[1] max)[0] _ emit-type(get(m[1] type)[0])})
+	)
+	prog(
+	printml(type needs m[0])
+	excraise(A:NO_TYPE m[0])
+	)
+	)
+')
+
+; emit an identifier (kinda like a mangled id)
+; from a type.
+compile(emit-type2 m ret `
+	switch(m[0]
+	FundamentalType prog(
+		append(<ret> c-ify(get(m[1] name)[0]))
+	)
+	PointerType prog(
+		append(<ret> p)
+		emit-type2(get(m[1] type)[0] <ret>)
+	)
+	ReferenceType prog(
+		append(<ret> r)
+		emit-type2(get(m[1] type)[0] <ret>)
+	)
+	CvQualifiedType prog(
+		append(<ret> q)
+		emit-type2(get(m[1] type)[0] <ret>)
+	)
+	FunctionType prog(
+		; sometimes it is useful to know what the
+		; typedef was for the function, since in a lot
+		; of cases, the typedef is for a callback or something.
+		;return({f <typedef-name>})
+		append(<ret> F)
+		emit-type2(get(m[1] returns)[0] <ret>)
+		lbind(i 0)
+		lbind(arglist vector())
+		foreach(arg <m> prog(
+			if(cand(eq(type(<arg>) vector) eq(arg[0] Argument)) prog(
+				lbind(tp get(arg[1] type)[0])
+				lbind(at vector())
+				emit-type2(<tp> <at>)
+				append(<ret> <at>)
+				lbind(i add(<i> 1))
+			))
+		))	
+	)
+	Class prog(
+		append(<ret> C)
+		append(<ret> c-ify(get(m[1] name)[0]))
+	)
+	Struct prog(
+		append(<ret> C)
+		append(<ret> c-ify(get(m[1] name)[0]))
+	)
+	Union prog(
+		append(<ret> C)
+		append(<ret> c-ify(get(m[1] name)[0]))
+	)
+	Typedef prog(
+		;return({ _typedef_ emit-type(get(m[1] type)[0])})
+		; note: record the typedef name, as this gives us a
+		; chance to get some extra info the cvt_ functions
+		; for functions
+		;lbind(typedef-name get(m[1] name)[0])
+;printml(TYPEDEF <typedef-name>)
+		emit-type2(get(m[1] type)[0] <ret>)
+	)
+	Enumeration prog(
+		; treat enums as ints for now
+		append(<ret> c-ify(int))
+	)
+	prog(
+	printml(type2 needs m[0])
+	)
+	)
+')
+
+; emit a c-type from a type tree
+compile(emit-c-type m ptr-ref `
+	switch(m[0]
+	FundamentalType prog(
+		return({get(m[1] name)[0] <ptr-ref>})
+	)
+
+	PointerType prog(
+		; have to think about this ------------------v
+		; might not work right, works ok for 2 levels tho
+		lbind(a emit-c-type(get(m[1] type)[0] {|*| <ptr-ref>}))
+		return(<a>)
+	)
+	ReferenceType prog(
+		lbind(a emit-c-type(get(m[1] type)[0] {|&| <ptr-ref>}))
+		return(<a>)
+	)
+	CvQualifiedType prog(
+		; FIXME
+		lbind(a {const | | emit-c-type(get(m[1] type)[0] <ptr-ref>)})
+		return(<a>)
+	)
+	FunctionType prog(
+		gbind(returns emit-c-type(get(m[1] returns)[0] ||))
+		lbind(i 0)
+		lbind(arglist vector())
+		foreach(arg <m> prog(
+			if(cand(eq(type(<arg>) vector) eq(arg[0] Argument)) prog(
+				lbind(tp get(arg[1] type)[0])
+				append(<arglist> emit-c-type(<tp> ||))
+				lbind(i add(<i> 1))
+			))
+		))	
+		lbind(decl {<returns> | (| <ptr-ref> |__mumble__)(|})
+		for(i2 1 <i> prog(
+			lbind(decl {<decl> arglist[sub(<i2> 1)]})
+			if(ne(<i2> <i>) lbind(decl {<decl> ,}))
+		))
+		lbind(decl {<decl> |)|})
+		return(<decl>)
+	)
+	Class prog(
+		return({get(m[1] name)[0] <ptr-ref>})
+	)
+	Struct prog(
+		return({get(m[1] name)[0] <ptr-ref>})
+	)
+	Union prog(
+		return({get(m[1] name)[0] <ptr-ref>})
+	)
+	Typedef prog(
+		;return({ _typedef_ emit-type(get(m[1] type)[0])})
+		return(emit-c-type(get(m[1] type)[0] <ptr-ref>))
+	)
+	Enumeration prog(
+		; treat enums as ints for now
+		return({int <ptr-ref>})
+	)
+	; i *think* this is only used for writing the return
+	; value for a conversion function, and in C, arrays
+	; as return values are a no-no. so we just change it to
+	; a pointer for now
+	ArrayType prog(
+		return(emit-c-type(get(m[1] type)[0] {* <ptr-ref>}))
+	)
+	prog(
+	printml(c-type needs m[0])
+	)
+	)
+')
+
+
+compile(emit-wrapper-fun-name fn rt c-rt `
+	if(contains(<Regular-funs> <fn>) prog(
+		printml(OVERLOAD <fn>)
+	))
+	append(<Regular-funs> <fn>)
+	if(ne(<rt> _void) prog(
+		putkv(<Convert-return-vals> <rt> <c-rt>)
+	print({
+|static vc
+| wrap_ <fn> |(VCArglist *a)
+{
+START_WRAP
+	vc ret = | cvt_ <rt> \( <fn> \(
+})
+	)
+	;else
+	prog(
+		; special case for void
+	print({
+|static vc
+| wrap_ <fn> |(VCArglist *a)
+{
+START_WRAP
+	|  <fn> \(
+})
+	))
+
+')
+
+compile(emit-wrapper-method-name fn rt c-rt cls `
+append(<Member-funs> {<cls> _ <fn>})
+	lbind(cls c-ify(<cls>))
+	if(ne(<rt> _void) prog(
+		putkv(<Convert-return-vals> <rt> <c-rt>)
+	print({
+|static vc
+| wrap_memcall_ <cls> _ <fn> |(VCArglist *a)
+{
+	| <cls> |*o = (| <cls> | *)(void *)(*a)[0];
+	return | cvt_ <rt> \( o-\> <fn> \(
+})
+	) 
+	;else
+	prog(
+	print({
+|static vc
+| wrap_memcall_ <cls> _ <fn> |(VCArglist *a)
+{
+	| <cls> |*o = (| <cls> | *)(void *)(*a)[0];
+	| o-\> <fn> \(
+})
+	))
+
+')
+
+;
+; ctors are generally like this:
+; vc
+; wrap_ctor_class_name(VCArglist *a)
+; {
+; 	class_name *o = new class_name(cvt...)
+;	return vc(VC_INT_DTOR, (long)o, wrap_dtor_fun_class_name);
+; }
+;
+; void
+; wrap_dtor_fun_class_name(long p)
+; {
+; class_name *o = (class_name *)p;
+; delete o;
+; }
+
+
+compile(emit-wrapper-ctor-name fun cls `
+	;if(ne(<fun> <cls>) excraise(A:HUH?))
+	append(<Ctor-funs> <fun>)
+lbind(cls c-ify(<cls>))
+print({
+|
+static void
+wrap_dtor_fun_| <cls> |(long p)
+{
+| <cls> |*o = (| <cls> |*)p;
+delete o;
+}
+
+static vc
+wrap_ctor_| <fun> |(VCArglist *a)
+{
+	| <cls> | *o = new | <cls> \(
+})
+')
+
+compile(emit-end-wrapper-ctor fun `
+	print({
+|return vc(VC_INT_DTOR, (const char *) wrap_dtor_fun_| <fun> |, (long)o);|
+})
+	print(|\n}\n|)
+')
+
+compile(emit-end-wrapper `
+	print(|\n}\n|)
+')
+
+compile(output-lh `
+	lbind(lh-file openfile({W_ __argv[0] .lh} w))
+	lcompile(print a `fprint(<lh-file> <a>)')
+	emit-enums-as-lh(<Units>)
+	wrap-classes(<Units>)
+')
+;printl(<Funs-to-be-wrapped>)
+printl(<Convert-args>)
+printl(<Convert-return-vals>)
+
+; note: this won't work for really bloated
+; pointer to pointer to function returning pointer to a function
+; type things, but is ok for other stuff.
+compile(emit-cvt-ret-types `
+	foreach(rt <Convert-return-vals> prog(
+		print({|
+static vc
+cvt_|rt[0]|(|if(strstr(rt[1] __mumble__) subst(rt[1] __mumble__ foo) {rt[1] | | foo})|)
+{
+}
+|
+})
+	))
+')
+
+compile(emit-cvt-arg-types `
+	foreach(at <Convert-args> prog(
+	if(at[1] prog(
+	print({
+|static
+|
+;subst(at[1] __mumble__ ||)| ; this was used for outputing the c-type, which chokes gcc if it is a function type
+if(strstr(at[1] __mumble__) at[0] at[1]) |
+cvt_vc_| at[0] |(vc a)
+{
+}
+|
+})
+	))
+	))
+')
+
+;	makefun("__lh_dumptrack", vc(vclh_dumptrack, "__lh_dumptrack", VC_FUNC_BUILTIN_LEAF));
+; NOTE: need to put class name into the names since this is a flat table.
+; otherwise, may need the namespace names to keep conflicts from causing a problem.
+compile(emit-vclh-make-funs funs pfx `
+; sort it to try and minimize differences when you need to re-wrap a new
+; version of lib
+	lbind(a tree())
+	foreach(fn <funs> prog(
+		putkv(<a> <fn> nil)
+	))
+	foreach(fn <a> prog(
+		lbind(fn fn[0])
+print({
+|
+makefun("wrap_| <pfx> <fn> |", vc(wrap_| <pfx> <fn> |, "wrap_| <pfx> <fn>|", VC_FUNC_BUILTIN_LEAF));
+|
+})
+	))
+')
+
+compile(output-cpp `
+	lbind(cpp-file openfile({W_ __argv[0] .cpp} w))
+	lcompile(print a `fprint(<cpp-file> <a>)')
+	print({|
+#include "vc.h"
+#include "W_cvt_| __argv[0] |.cpp"
+	|})
+	wrap-functions(<Units>)
+	wrap-methods(<Units>)
+	; note: must do the wrapping first, which accumulates
+	; the types we need to supply
+	lbind(scpp-file <cpp-file>)
+	lbind(cpp-file openfile({W_cvt_ __argv[0] .cpp} w))
+	emit-cvt-ret-types()
+	emit-cvt-arg-types()
+	lbind(cpp-file <scpp-file>)
+	print({|
+static void
+makefun(const char *name, const vc& fun)
+{
+    vc(name).bind(fun);
+}
+void
+wrapper_init_| subst(__argv[0] . _)| ()
+{
+|})
+	emit-vclh-make-funs(<Regular-funs> ||)
+	emit-vclh-make-funs(<Member-funs> memcall_)
+	emit-vclh-make-funs(<Ctor-funs> ctor_)
+	print(|}
+|)
+')
+
+gbind(Already-output set())
+
+scompile(c start-unit `
+	lbind(Accum ||)
+	lcompile(print x `
+		bind(Accum {<Accum> <x>})
+	')
+')
+
+scompile(c end-unit `
+	lbind(_h SHA(<Accum>))
+	lremove(print)
+;gfind(print)(|ACCUM\n|)
+;gfind(print)(<Accum>)
+	if(not(contains(<Already-output> <_h>)) prog(
+		append(<Already-output> <_h>)
+		print(<Accum>)
+	))
+')
+
+gbind(Units read-gcc-xml(__argv[0]))
+remove-ids(<Units>)
+make-typedef-map(<Units>)
+find-overloaded-functions(<Units>)
+find-files(<Units>)
+gbind(File-restricted-ids tree())
+if(__argv[1] prog(
+	foreach(fn <File-map> prog(
+		if(strstr(fn[1] __argv[1]) append(<File-restricted-ids> fn[0]))
+	))
+)
+;else
+prog(
+	gbind(File-restricted-ids <File-map>)
+))
+printl(<File-restricted-ids>)
+foreach(fn <Fun-names> prog(
+print({fn[0] | |})
+	foreach(nargs fn[1] prog(
+		print(nargs[0])
+		print(| |)
+	))
+	print(|\n|)
+))
+printl(<Typedefs>)
+
+output-lh()
+output-cpp()

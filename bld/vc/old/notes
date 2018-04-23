@@ -1,0 +1,841 @@
+xfer rep:
+representation that is suitable for xfer between hosts on
+a network. may need an internal "byte stream" type to make
+this play properly.
+
+writing xfer rep:
+
+check to see if the item being written has already been
+written out. if so, there is a cycle, and we must
+write a reference to the item into the stream instead.
+
+register and install a new item in the decode table. if there
+is a cycle in the structure, this allows later references to
+simply be sent as a single chit.
+
+type byte followed by data for each of the components of
+the type. this is usually a length, then the data in some format.
+during writing, each member fun checks the size of
+the buffer and calls a "overflow" function that is set by the
+caller of the xfer-rep. the overflow function can be used to
+flush the buffer, or expand it, or whatever.
+
+reading xfer rep:
+read the type byte.
+create a vc of that type (this gets you an empty whatever.)
+now call the read_xfer member using that vc as the object.
+
+in the individual read_xfer memfuncs:
+atomics: read len, and bytes and install normally.
+composites:
+call the reader for the various components in the right
+order: v.read_xfer(buf, len, used);
+the read_xfer function calls "underflow" whenever the
+buffer becomes empty. this can be used to stream in more
+data or whatever. 
+
+notes:
+the table of chits that are needed to decode a structure
+need not be sent over the wire. since the ordering is well
+defined, the decoding side can construct the table in the
+same way, and when a chit is found in the stream, it can
+simply index its own table to know what to install in
+the reconstituted stream.
+
+1/21/94 - xfer stuff appears to be working fine.
+
+-------------------
+
+notes on networking functions for LH
+2/3/94
+-------------------
+
+should consider providing two or three levels:
+low level: direct to vc_socket objects. this would require
+adding a byte-stream type to enable talking to non-lh
+cognizant applications.
+
+medium level: socket-like interface that can be used to
+talk to both lh and non-lh apps, but has more precise
+control over the various network parameters.
+
+high level: encapsulate as much as possible to avoid
+exposing users of this level to many network details (like
+connection vs datagram, addressing peculiarities,
+timeouts, etc.etc.) maybe this to be written in LH itself, since
+C++ level stuff like this wouldn't be too useful?
+
+----
+2/3/94
+performance notes (all notes on 486-66 under windows unless noted otherwise):
+added vector arithmetics, 486-66 = ~7000 ops/sec
+null function calls ~800/sec
+2/14/94:
+performance notes: added function call cache, null
+function calls ~1100/sec (~30% improvement)
+vector arith up to about ~8300 ops/sec (~15% better)
+2/18/94:
+more performance hacks:
+no hacks (only funcall cache):
+variable lookups:
+local hit 1000/s
+miss thru 1 ctx 900/s
+miss global 1000/s
+hit global 1000/s
+0 arg user calls: 555
+1 arg : 416
+2 arg : 370
+
+w/ adaptive maps+eval hack
+local hit: 2500
+miss thru 1 ctx: 1666
+miss global 1428
+hit global 1250
+0 arg 666
+1 arg 588
+2 arg 500
+
+----
+func call cache doesn't work if there are local functions
+bound in a context. have to add some logic to get this
+case (cached values may end up pointing to functions that
+have gone out of scope and should no longer be called.)
+fixed, also fixed cache flushing to be efficient.
+-------
+
+aggregate type:
+
+to define:
+
+agg(name field1 field2 ...)
+
+this creates some meta-info that can be used to
+generate instances of the aggregate. (note: for other
+builtin aggs, the meta-info is built-in to lh.) the
+agg function creates a new function that can be used to
+create instances of the aggregate type (like a constructor.)
+
+
+to create instance:
+simply mention name as if it were a function (a la constructors)
+
+lbind(foo name())
+
+to access members of the agg, use either the map functions, or
+use the abbreviated notation:
+
+<foo>^field = get(<foo> field1)
+
+fields are set by using the putkv function or
+the abbreviated:
+
+lbind(<foo>^field bar)
+
+in general, the expr
+
+e^f
+
+refers to the field f in object e. note that both
+e and f can be exprs.
+
+as with function calls, the form:
+
+foo^bar is treated as if it were <foo>^bar, allowing
+a bit of shorthand (there is no meaning for foo^bar, just
+like with function calls.)
+
+lh def for agg:
+
+vcompile(__make_agg_ctor name `
+	lcompile(make_one_field fname `
+		{|vector(| <fname> | nil)|}
+	')
+	lcompile(<name> {
+		lbind(field_setup |return(map(|)
+		foreach(arg <__varargs> {
+			lbind(field_setup {<field_setup> make_one_field(<arg>)})
+		})
+		lbind(field_setup {<field_setup> |))|})
+		<field_setup>
+	})
+	return(<name>)
+')
+
+construct to make sure name is imported
+back to calling context:
+vcompile(agg  `
+	bind(<name> do-funcall(<make_agg_ctor> <__varargs>))
+')
+note: decided the above is a lose, since the syntax makes
+things look funny. also hard to change the grammar to work right.
+---
+
+note re: varargs
+------
+calling a user -defined varadic construct will kill hte value
+of __lh_varargs in the current context. should there be a
+better way of passing args to a construct?
+
+-----
+reorganized virtual functions to remove do_* functions. Also
+added a "default" class that can be used to hang error
+functionality for the various subclasses. Also moved the
+reference count into "default" class, reducing the size of
+an "atom reference" to 6 bytes (large model, 16 bit) or
+8 bytes (flat 32-bit).
+
+
+----
+notes: i/o handler class(es).
+
+abstract classes that can be used to implement system-independent
+i/o polling/messaging behavior.
+a poller/dispatcher class gathers (or receives registration of)
+a bunch of abstract i/o handler objects. calling a special function
+then starts the poll/dispatch behavior.
+
+specific implementations of the poller class would, for example, be
+able to extract the system dependent parts of the i/o objects
+it was dealing with, and could then arrange to make the "select"/poll
+system call and then translate the results back into something useful.
+(it might be better not to "extract" the information, because that
+implies that particular implementations expect certain types of objects
+to be used internally, might be ok too, if the object type is wired
+into the derived class interface.)
+
+
+-----
+
+Notes on objects for LH
+4/94
+
+new syntax:
+
+e1[e2]
+
+e1 should eval to an object. e2 should eval to a string.
+the string is used to search back through e1's object context
+in order to find what is bound the string. if e2 is not found in
+e1's hierarchy, it is an error (note difference from object contexts,
+in which failed search ends up creating a local binding).
+
+object contexts are created by calling an object factory
+to generate an object instance.   this means that an
+object factory is a function. this function is created in
+special way. this allows the system to coordinate the various
+factory functions in a standard way that provides for building
+an "isa" hierarchy. 
+
+factories are also handled in a special way with respect to their lifetime.
+factories exist even when they are not explicitly the target of a
+binding. essentially, factories are referenced in a special place
+than keeps them "alive" until they are explicitly destroyed. note that
+this is different than a normal object, which goes away sometime
+after the last reference to the object is removed.
+
+factories cannot be changed after they are created. there are no operations
+that allow such to happen. new, independent factories can be created
+based on existing factories. essentially, this makes a copy of an
+existing factory, which can be manipulated as a table and then
+handed to the factory creation function to make a new factory(?).
+
+an object factory is created by calling a factory creating
+function. the factory creating function can take an object creation call
+to use as the base for creating the new factory. the base
+factory is used to create a "subobject" at the time
+the original object factory is invoked. this acts in the same
+manner as other attribute initializations. the factory call
+is used to generate an object that is manipulated as if it
+were a base object of the new object. for example:
+
+lbind(factory make-factory(`base()' ...))
+
+generates a new factory that force-evals base() in order to
+generate the base object for new objects when "factory" is invoked.
+this results in each "factory" object having one "base" object. all
+of the normal inheritance rules and so on apply.
+
+lbind(factory make-factory(base() ...))
+
+generates a new factory, but in this case the base object that is
+used is the one generated at factory creation time. 
+in this case, it is the *instance* of base that is used by
+all "factory" objects. so, factory objects are inheriting from
+a single instance, and not a class, as in the case above. this means
+that if a change is made to the base instance, it is immediately
+inherited by all instances of "factory".
+
+during the lifetime of a program, a factory cannot be changed (this might be
+an interesting restriction to lift.) also, a factory cannot be
+destroyed unless there are no objects from that
+factory that still exist. attempting this results in
+an exception. note: since derived factories "contain" subobjects
+from parent factories, the existence of an object created
+from a factory guarantees the existence of all the factories
+from the generating factory up to the root of the factory tree.
+
+when a factory is created, names and initial default bindings
+for the contents of the objects to be generated by the
+factory are specified. a base factory that can generate
+one subobject can also be specified. all of the attributes
+of the subobject are inherited by the new factory, and
+attributes specified in the new factory override the
+identically named attributes in the base factory (single
+inheritance.) the base factory is invoked each time
+the new factory is invoked in order to create a new object.
+the object that is created is bound to the [type of?] factory
+that created it.
+
+when a factory is invoked to create a new object, special
+functions associated with the object are executed. One
+function, called _lh_preinit, is called before any members or subobjects
+are initialized (thus, all members appear to be
+nil.) The immediately enclosed subobject is then initialized.
+The members are then bound to the default values specified
+in the factory creation call. After this binding, another function
+called _lh_postinit, is called. arguments to preinit and postinit
+can be specified in the factory call.
+
+similarly, when the last reference to an object is removed, and
+the object is about to be destroyed, two more functions are called.
+preexit is called before the object is destroyed. all of the
+members of the object are unbound. then the immediate subobject
+is destroyed. after this destruction, postexit is called.
+args to these functions can be specified on the factory
+call that created the object. there is no guarantee that an
+object will be destroyed at any particular time.
+
+forwarding
+----------
+forwarding means that operations that are performed on object
+o1 are automatically performed on object o2. o2 must be contained
+in o1 (note: not a base). the only operations that can be forwarded
+are function calls. access to data members are not forwarded (maybe
+this is too restrictive?). note that forwarding does not mean
+"chaining". in other words, if function f1 on object o1 is called,
+and f1 is found in o1 directly, then the function bound to f1 is called.
+if f1 is not found in o1, then the function is searched for in
+objects from which o1 is derived. if not found there, then
+objects marked as "forwarded-to" are searched in order.
+the list of objects to forward to is given in the factory definition.
+the list is searched in order, so if objects have identical
+binding names, the one found first is used.
+
+
+samples:
+
+lbind(queue-factory make-factory(nil ; no base
+	queue `vector()'  ; initialize with empty vector
+	peek-head lambda(`if(eq(numelems(<queue>) 0) return(nil)
+		return(getidx(<queue> 0)))')
+	fetch-head lambda(`if(eq(numelems(<queue>) 0) return(nil)
+		return(delfirst(<queue>))')
+	bozo-obj `bozo()'	; create a bozo object inside
+	)
+)
+
+lbind(queue queue-factory()) ; create a new queue
+queue[peek-head]() ; peek at the head of the queue
+
+to create a parameterized factory:
+
+compile(queue-factory-maker type `return(
+	make-factory(<queue-factory> ; use queue factory as base
+		queue <type>()    ; add new queue member and init type.
+	)
+	)'
+)
+
+lbind(list-queue queue-factory-maker(list))  ; create the type
+lbind(lq list-queue()) ; create a list q object
+
+---
+notes on specification of factory attributes:
+
+when an attribute is specified it must have an expr specified
+with it:
+
+	attr expr
+
+The attr is evaluated, and the result must be a string.
+The expr is also evaled, but there is no restriction on the
+value the expr can be. The value of the expr is stored, and
+is used as the default value that is bound to the attr when
+a new instance of the object is created. If an expr is quoted,
+it will be "force evaled" when the object is created.
+Examples:
+
+	foo nil	; bind nil to foo when object is created.
+	foo bar ; bind the string bar to foo when object is created.
+	foo <bar> ; eval bar and store its value, use that value when obj is created.
+	foo lambda(x `return(<x>)') ; store lambda and use it when obj is created.
+		note: every object uses the same lambda definition.
+	foo vector() ; bind an empty vector to foo at creation time. note:
+		every object uses the *same vector*. this means foo is a "class-wide"
+		vector.
+	foo `vector()' ; store a quoted expr that is force-evaled when an object
+		is created. this results in a new vector for each object instance.
+	foo `<bar>' ; store expr, eval at obj creation time (where is bar
+		found? object contexts? current contexts? voodoo context?)
+		since the context in which the factory is defined and the creation
+		context are different, the expression is evaluated in the object
+		creation context for the object. when a factory is called to
+		create an object, arguments can be given, and these are bound
+		into the creation context that is searched first when the
+		object is being created. So bar is looked for in: creation
+		context, object context, function context, in that order.
+		
+	
+
+---
+calling a function bound in an object:
+e1[e2](args)
+this interposes a context that is searched
+after the local function context. so, while executing
+inside one of these functions e1(args) refers to whatever e1
+is locally defined, and if none
+is defined, e1 might be found in the object context. if not there,
+then the normal search is resumed.  this gives the flavor of implicit
+"this" or "self" for object defined items. while in this context,
+there is a "this" string that is bound automatically to allow
+explicit reference to the object data. also, there are two
+special bindings that allow for referencing the immediate subobject
+"subobj" and superclass factory ("super").
+
+an object context is: a set of bindings that are used when an object
+is being referenced. object contexts can be nested (this is not the
+same as inherited.) (where can object factories be bound? in other
+object contexts? only in function contexts? maybe in a voodoo meta
+context?) (can an object context be an exception context? this
+might lead to some sort of "class-wide" exception handling
+scheme that could be useful.)
+
+implementation:
+<o> is the object that is bound to "o". the binding is found
+by using the current search method (which changes according
+to overall context.)
+
+<o>[t] means find o using the current search method, then find t's
+binding in o's object context. since o[t] has no other meaning, and
+is more convenient to write, by definition it has the same meaning as <o>[t].
+the value that is bound to t is used as if it were
+in the context that contains the expression o[t].
+
+o[t](a) means eval(o[t])(a) (that is, [] and () bind
+left to right.) this is the way an object method is invoked.
+o's object context is pushed on the
+context stack, then o[t] is funcalled (which implies the
+the creation of a local function context for the duration of the funcall.)
+
+
+o[lbind](t bar) means invoke o's lbind method. lbind might be defined in
+some global object to mean the usual thing, or it may be overriden in
+a user-defined object context.
+
+lbind(o[t] bar) means evaluate o[t], and use that and bar
+as the arguments for calling lbind in whatever context the
+expression is found (if in a non-object context, means replacing
+the binding in the appropriate function context.)
+
+lbind(t bar) if executed in an object context means find lbind's
+binding in the context (which means that lbind could have been
+overridden) and then call that function with args t and bar.
+the global lbind replaces t's binding with bar, with t
+potentially being in an object context.
+
+if foo is bound to a factory, calling foo results inn the creation of
+a new object and its associated context. 
+---------------------------
+implementation:
+
+vc_factory_def is derived from vc_fundef (?) so that it can be called
+just like a normal function.
+
+vc_factory_def object has:
+	* a map that contains each of the binding specified in the make-factory
+	call. the range of each binding is the value speced in the make-factory
+	call.
+	* a special object that contains the expr to be used when creating
+	the object's base object.
+	* a list of string atoms that are used for forwarding requests.
+	* a counter that is the number of objects that are in
+	existence for the factory.
+	
+
+when the factory def object is invoked via a function call, it
+does the following:
+	* creates a map that will contain all the bindings for the
+	object. this is the object context.
+	* copies the contents of the factory defaults into the object
+	context, evaluating quoted expressions in the process.
+	note that args to the factory have been set up in a function
+	context, so evaluation is done as usual for a function call.
+	* if there is some problem with creating the object, the factory
+	returns nil instead of an object. an exception can be raised in the
+	factory creation, in which case the exception is processed
+	normally.
+	* "returns" processed in the object creation level cause the 
+	factory to terminate and return nil, regardless of the return
+	value given to the return function. [lift restriction and allow
+	arbitrary return from from factory? what about returns simply
+	determining the value of the expression being evaluated? sort of
+	a mini function context?] 
+	* this stuff is all packaged up into a vc_object and returned.
+
+when an object is operated on with an object selector (ie foo[bar]):
+	* foo must be a vc_object, or if it is not, the 
+	query is about foo's meta data. (1[type] = int?, for example)
+	this works for vc_factory_def objects as well.
+	* when foo evals to an object, 
+	bar is evaled. it must be a string.
+	the value of bar is then searched for using the search functions
+	on the vc_object. if not found, an error signaled. otherwise,
+	the value of the expression is returned, along with a pointer
+	to the object in which it was found (if the request was forwarded).
+	if the value returned is a function, a new vc object is
+	created: a memberfun object. the value returned by the search
+	is put into the member object along with a pointer to the
+	object from which the member was selected. this is the value
+	that is returned by the "eval" function for a member selection.
+	if the value returned is not a function, the value is simply
+	returned by the eval (it is a simple value.)
+	* when foo evals to a non-object (a builtin), basically the
+	same things happens, except special builtin objects are substituted
+	that allow various queries about the meta-info on the objects.
+
+when a memberfun is funcalled:
+	* when a member fun is called, the normal function call processing
+	is performed first (args are evaled or whatever.) then the
+	object context is pushed on the context stack. then a
+	function context is pushed on the stack (if the function is
+	not a construct.) the member function expression is then
+	evaled as a normal function's expr would be.
+	when the member function returns, both the contexts are
+	popped off the stack.
+	
+----
+
+
+make manual clear about wierd construct calls like:
+return(return(foo))
+	-return is a construct whose args are evaled and after the
+	evaluation is complete, the effect is immediately processed.
+	so, in this case, the return value is "foo" from the inner return.
+	
+break(return(foo))
+return(break(foo))
+return(excraise(foo))
+excraise(return(foo))
+and so on.
+
+----
+note: need slambda function that acts like scompile function (so you can
+specify all the various construct/arg eval stuff...)
+---
+there is a problem with backing out: you must decide whether
+to use EXC, ANY, or DBG. ANY backs out with breaks/returns,
+which is significant if you have a construct like:
+foreach(... eval(<str>))
+where str turns out to be a break or return.
+have to look at all the places that use EXC and decide if
+it is better to use ANY.
+
+DBG is useful for completely internal operations that cannot
+be influenced by user input (like multiplying numbers or whatever.)
+
+EXC only backs out when there is an exception raised by the
+user. this is a problem if we want to use the same mechanism
+to do debug back-outs and exception back outs.
+
+(all EXC backouts changed to ANY backouts)
+
+---
+fixed quoting so that it inhibits normal stringrepping operations,
+and for a list of expressions between quotes, the value of the
+quoted expression is the value of the last expression in the list.
+this seems to work ok, and makes quoting a lot more useful.
+have to check to make sure that is works properly with other
+stuff yet...
+---
+member functions ought to be all "virtual", but object contexts are
+pushed on the stack in the wrong order to make this work right.
+so, if an object o has a base b, and o overrides a function f
+in b, and b calls f, the current system calls b::f, rather than o::f.
+this is not right. the place to start searching for a name has to be
+fixed at the lowest level, rather than being evaluated locally
+as the base objects are searched.
+fixed: changed search algorithms to build objects based on top level
+of entry into the search process.
+---
+need to implement a way of specifying the current/base object explicitly.
+maybe reserve bindings for them.... (done, "this" and "base").
+---
+need object level binding manipulators: obind, oremove, obound
+should also note in object that contains fields that were
+not in the original factory (a mutant object.)
+(done.)
+---
+hmmm, maybe provide a way for an object to override the
+stringrepping mechanism for objects. this would allow user to
+spec a stringrep for an object.
+---
+objects over the net:
+
+there is a slight problem with sending objects over the net
+that have references to "factory-wide" expressions. the question
+is whether to try to replicate the factory-data on the remote
+system, or to just punt on it. one method would be to
+set up a protocol that, if an object has factory-wide
+data, the factory is sent over to the remote side if needed.
+when the object is sent over, the reconstructor would bind
+the proper members to the factory's data. this would happen once
+the first time the object of that type is sent over the wire.
+this might lead to some problems for servers that have multiple clients:
+whose factory data do we honor? the first ones? maybe there are
+multiple communities of remote objects, so factory's have
+names like "foo-factory-<ip-addr>" or something.
+this would allow for different clients to have different "communities"
+of objects on a single server. what if you want a system-wide
+factory? that's difficult, cuz then you have to have some
+idea of keeping the data synchronized.
+
+perhaps an idea like this would work:
+when you send a factory over the wire, it is transformed into
+a factory that initializes its members from arguments:
+
+make-factory(foo-factory ... base ... mem1 `foo()' ... mem2 bag())
+is transformed into
+lbind(a foo-factory[mem2])
+make-factory(foo-factory vector(a1 a2 ...) mem1 `<a1>' mem2 <a>...)
+
+the new factory is sent over the net and installed in the remote system
+as a means of creating objects that arrive from a particular client.
+
+then, when objects are sent over the net, they are transformed into a
+call to make an object that is executed on the remote system:
+
+foo-factory with members mem1 = a gets xformed to 
+foo-factory(<a> ...)
+
+this avoids having to send member names over the net for every object,
+but you have to keep the indexes in sync so the object is
+created properly on the other side. 
+
+---
+could possibly cache object look-ups like function look ups.
+might even be able to cache some of the selector look-ups
+as well, though this might be more difficult and less
+useful.
+for objects, can use roughly the same approach as for functions:
+	for expr of form a[b], with cache info stored in the syntax tree:
+	
+		a == string, can cache lookup, and flush cache in same cases
+		as function cache flush. can also probably cache base
+		and this from the outset.
+		
+		if b == string, might be able to cache the lookup of the
+		member too. note: can't cache member lookup if object
+		isn't cached. also, might be able to cache partial info:
+		what object the lookup resolved to, as well as the
+		value of the eventual lookup.
+		
+		assuming factory updates are not allowed (which means
+		forwarding and delegation info and inheritance info
+		is fixed): 
+			without an accompanying object context:
+				the only time the member resolution can change
+				is if the factory for the object changes. so,
+				we have to cache the factory the lookup uses as well
+				as the object (this can be gotten from the cache
+				info for "a", which we know we have.)
+
+			with an object context:
+				for cases where only isa search is considered:
+					if the "toplevel" object factory changes, then the
+					syntax element may refer to another member, and the
+					cached value cannot be used.
+					
+				for forwarded searches:
+				for delegated searches:
+		
+---
+note: funcall cache fails when function passed as argument and used
+as a string in a call? nope: checked, cache is flushed properly.
+---
+need a way of specifying more info about factory functions (like
+varadic, etc.) so that multiple styles of creating an object
+can be used.
+---
+need to flesh out the xstrm class to include partial i/o (like for
+files and so on) and have some idea of a "how hard to try" at the
+I/O device level.
+---
+string hash value caching will cause all strings to be scanned
+twice at creation time, which is a waste for long strings.
+maybe it is less of a waste to put a flag in the object and
+only hash when the first call to hashvalue() occurs?
+
+---
+for global factory data, you must have an object in order
+to get at it now. it might be interesting to try and set 
+something up with the factory such that you could access
+the factory-wide items via a special factory function call.
+Maybe something like Factory-name[item] could be used
+for this purpose. this would mean you might be able to 
+call factory functions without an object context?
+yep. interesting. it would be easier to just inhibit
+this, since it doesn't sound too interesting.
+i guess this means you might want to have "factory contexts"
+which would be like object contexts, but only used
+when calling member functions outside of object
+contexts. this also means that these functions could
+change the initial values given to members in an object,
+essentially allowing the function to change the meta-data
+for the system. this needs more thought...
+---
+need to add deletion operations for a lot of the aggregates.
+
+---
+debugger:
+can be used instead of "vc": vcdbg <file>
+
+sorts of things available:
+breakpoints:
+	when a function/memfun is called
+	when a value is referenced
+	when a value is bound/replaced
+	when line is about to be executed
+	when an expr is true
+	when a value is constructed (via catenation)
+
+printing:
+	print a binding
+	print all bindings in context
+	print value of expr
+
+stack trace:
+	print current expr stack
+
+tracing:
+	trace when a function is called/what it returns
+
+commands can take expressions, which are evaluated in the
+current context. vc object are augmented with
+member functions like "break on access", "break on call",
+"break on modify", "break on bind", etc.
+these member functions are called (depending on the command)
+with the results of the evaluated expr. then, when
+the indicated operation is about to be performed,
+the object calls back to the debugger, and interactive
+mode is entered. more exprs, etc can be entered, execution
+continues, or whatever.
+
+for line number debugging, the line number has to be mapped to
+the closest expr, then the "break_on_eval" member function
+called on the vccvar/funcal/memselect node.
+---
+need proper index checking for vectors (trying to index
+with negative number causes "abort" now, when it doesn't have
+to.)
+---
+evaling a function should not "call" it. need to find any problems
+with this and fix it.
+done. (almost)
+---
+this lcompile(a b) really meaning lcompile(a <b>) is going
+to come back and bite, i just know it. need to fix this
+so that <b> is not implied when just "b" is written except
+is really obvious cases. this could be a minor performance
+win as well, since it would keep extra evals from happening
+at the top level of some expressions.
+----
+for debugging, have to make USER_BOMB* macros less
+destructive so we can get back to a debugging shell if needed.
+done.
+---
+for debugging, move tag stuff into top level (or vcdefault)
+and put the appropriate stuff into each subclass that
+can be debugged.
+done.
+---
+function aliasing: now there is a special case that
+checks for functions being defined as other functions, and
+just bypasses the extra fundef object. unfortunately, this
+makes stringrep return the former function, which may
+be unexpected. have to think about function aliasing and whether
+it might be better to just let it work as it did before.
+
+---
+notes on persistent lh items.
+
+have new lh objects that represent persistent repositories:
+
+* sequential files, so you can store things in a normal file system
+
+* indexed files
+	* random, objects are referenced by system generated "oid",
+		so you can store hierarchies and get at them piecemeal, also can
+		be gotten sequentially, but not sorted.
+		
+	* keyed, objects are referenced by user supplied key, which
+		must be an lh object that can be stringrepped.
+		objects can be accessed sequentially and sorted.
+	
+all repositories have some kind of transaction mechanism
+in order to give a reasonable bit of robustness.
+the transaction mechanism is optional, so update in place
+can be performed without extra overhead.
+some repositories could store versions as well, though that is
+not as important.
+some repositories might also support some type of concurrency control
+but this is not likely to be implemented.
+
+---
+evil C bug of the day:
+switch(a)
+{
+FOO:
+	mumble;
+	break;
+BAR:
+	mumble2;
+	break;
+default:
+	mumble3;
+}
+no error from compiler, and default case
+is always executed.
+
+---
+some sort of "incremental build from stream" functionality for
+the net stuff would be useful. this would allow you
+to start an operation to receive an item, and not
+be notified until a complete item had been received and
+created. the way it works now, it is difficult to
+manage situations where the data is dribbling in
+(ie. WOULDBLOCKs must be resolved in a reasonable
+amount of time, or the operation is considered a
+failure.) this makes it difficult to have multiple
+streams comming in simultaneously. 
+if there were some way to keep the
+state of object reconstruction and restart the
+reconstruction by polling for more data, this
+would be ideal. another way would be to register
+to get a message when a certain amount of data
+was available at the low levels. this style
+would constrain the amount of state information
+that would have to be kept in order to restart
+things. 
+----
+null's in strings: there is a hack that allows
+nulls in strings mainly for the purpose of
+reading binary data from the net and transferring
+is opaquely to somewhere else. this hack has
+not been propagated to all parts of the system, so
+the bulk of the system still doesn't expect to
+have 0's in strings, and computes the length
+of the string based on this. as long as you don't
+use binary data obtained from socket-recv-str
+to build functions or bind variables, everything
+should still work.
+

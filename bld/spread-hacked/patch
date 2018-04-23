@@ -1,0 +1,192 @@
+Only in spread-src-4.0.0: config.log
+Only in spread-src-4.0.0: config.status
+Only in spread-src-4.0.0/daemon: acm.o
+Only in spread-src-4.0.0/daemon: acp-permit.o
+Only in spread-src-4.0.0/daemon: alarm.o
+Only in spread-src-4.0.0/daemon: auth-ip.o
+Only in spread-src-4.0.0/daemon: auth-null.o
+Only in spread-src-4.0.0/daemon: config.h
+Only in spread-src-4.0.0/daemon: configuration.o
+Only in spread-src-4.0.0/daemon: data_link.o
+Only in spread-src-4.0.0/daemon: events.o
+Only in spread-src-4.0.0/daemon: flow_control.o
+Only in spread-src-4.0.0/daemon: groups.o
+Only in spread-src-4.0.0/daemon: lex.yy.o
+Only in spread-src-4.0.0/daemon: log.o
+Only in spread-src-4.0.0/daemon: Makefile
+Only in spread-src-4.0.0/daemon: membership.o
+Only in spread-src-4.0.0/daemon: memory.o
+Only in spread-src-4.0.0/daemon: message.o
+Only in spread-src-4.0.0/daemon: monitor.o
+Only in spread-src-4.0.0/daemon: network.o
+Only in spread-src-4.0.0/daemon: protocol.o
+Only in spread-src-4.0.0/daemon: session.o
+Only in spread-src-4.0.0/daemon: spmonitor
+Only in spread-src-4.0.0/daemon: spread
+Only in spread-src-4.0.0/daemon: spread.o
+Only in spread-src-4.0.0/daemon: status.o
+Only in spread-src-4.0.0/daemon: y.tab.o
+Only in spread-src-4.0.0/docs: libspread.3.out
+Only in spread-src-4.0.0/docs: Makefile
+Only in spread-src-4.0.0/docs: SP_connect.3.out
+Only in spread-src-4.0.0/docs: SP_disconnect.3.out
+Only in spread-src-4.0.0/docs: SP_equal_group_ids.3.out
+Only in spread-src-4.0.0/docs: SP_error.3.out
+Only in spread-src-4.0.0/docs: spflooder.1.out
+Only in spread-src-4.0.0/docs: SP_get_memb_info.3.out
+Only in spread-src-4.0.0/docs: SP_get_vs_set_members.3.out
+Only in spread-src-4.0.0/docs: SP_get_vs_sets_info.3.out
+Only in spread-src-4.0.0/docs: SP_join.3.out
+Only in spread-src-4.0.0/docs: SP_leave.3.out
+Only in spread-src-4.0.0/docs: spmonitor.1.out
+Only in spread-src-4.0.0/docs: SP_multicast.3.out
+Only in spread-src-4.0.0/docs: SP_multigroup_multicast.3.out
+Only in spread-src-4.0.0/docs: SP_multigroup_scat_multicast.3.out
+Only in spread-src-4.0.0/docs: SP_poll.3.out
+Only in spread-src-4.0.0/docs: spread.1.out
+Only in spread-src-4.0.0/docs: SP_receive.3.out
+Only in spread-src-4.0.0/docs: SP_scat_get_memb_info.3.out
+Only in spread-src-4.0.0/docs: SP_scat_get_vs_set_members.3.out
+Only in spread-src-4.0.0/docs: SP_scat_get_vs_sets_info.3.out
+Only in spread-src-4.0.0/docs: SP_scat_multicast.3.out
+Only in spread-src-4.0.0/docs: SP_scat_receive.3.out
+Only in spread-src-4.0.0/docs: sptuser.1.out
+Only in spread-src-4.0.0/docs: spuser.1.out
+Only in spread-src-4.0.0/docs: SP_version.3.out
+Only in spread-src-4.0.0/examples: flooder.o
+Only in spread-src-4.0.0/examples: fl_user.to
+Only in spread-src-4.0.0/examples: flush_user
+Only in spread-src-4.0.0/examples: Makefile
+Only in spread-src-4.0.0/examples: spflooder
+Only in spread-src-4.0.0/examples: sptuser
+Only in spread-src-4.0.0/examples: spuser
+diff -cr ../spread/spread-src-4.0.0/examples/user.c spread-src-4.0.0/examples/user.c
+*** ../spread/spread-src-4.0.0/examples/user.c	2009-04-19 11:19:49.000000000 -0600
+--- spread-src-4.0.0/examples/user.c	2009-04-19 11:19:49.000000000 -0600
+***************
+*** 40,45 ****
+--- 40,46 ----
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <string.h>
++ #include <ctype.h>
+  
+  #define int32u unsigned int
+  
+***************
+*** 431,436 ****
+--- 432,442 ----
+  		else if( Is_causal_mess(     service_type ) ) printf("received CAUSAL ");
+  		else if( Is_agreed_mess(     service_type ) ) printf("received AGREED ");
+  		else if( Is_safe_mess(       service_type ) ) printf("received SAFE ");
++ 		for(i = 0; i < ret; ++i)
++ 		{
++ 			if(!isprint(mess[i]))
++ 				mess[i] = '?';
++ 		}
+  		printf("message from %s, of type %d, (endian %d) to %d groups \n(%d bytes): %s\n",
+  			sender, mess_type, endian_mismatch, num_groups, ret, mess );
+  	}else if( Is_membership_mess( service_type ) )
+Only in spread-src-4.0.0/examples: user.o
+Only in spread-src-4.0.0/examples: user.to
+Only in spread-src-4.0.0/libspread: alarm.lo
+Only in spread-src-4.0.0/libspread: alarm.tlo
+Only in spread-src-4.0.0/libspread: alarm.to
+Only in spread-src-4.0.0/libspread: events.lo
+Only in spread-src-4.0.0/libspread: events.tlo
+Only in spread-src-4.0.0/libspread: events.to
+Only in spread-src-4.0.0/libspread: fl.tlo
+Only in spread-src-4.0.0/libspread: fl.to
+Only in spread-src-4.0.0/libspread: libspread.a
+Only in spread-src-4.0.0/libspread: libspread-core.a
+Only in spread-src-4.0.0/libspread: libspread-core.so
+Only in spread-src-4.0.0/libspread: libspread.so
+Only in spread-src-4.0.0/libspread: libtspread-core.a
+Only in spread-src-4.0.0/libspread: libtspread-core.so
+Only in spread-src-4.0.0/libspread: Makefile
+Only in spread-src-4.0.0/libspread: memory.lo
+Only in spread-src-4.0.0/libspread: memory.tlo
+Only in spread-src-4.0.0/libspread: memory.to
+Only in spread-src-4.0.0/libspread: scatp.tlo
+Only in spread-src-4.0.0/libspread: scatp.to
+diff -cr ../spread/spread-src-4.0.0/libspread/sp.c spread-src-4.0.0/libspread/sp.c
+*** ../spread/spread-src-4.0.0/libspread/sp.c	2009-04-19 11:19:49.000000000 -0600
+--- spread-src-4.0.0/libspread/sp.c	2009-05-28 15:35:47.000000000 -0600
+***************
+*** 53,58 ****
+--- 53,59 ----
+  #include <signal.h>
+  #include <sys/ioctl.h>
+  #include <unistd.h>
++ #include <poll.h>
+  
+  #else	/* ARCH_PC_WIN95 */
+  
+***************
+*** 1778,1785 ****
+--- 1779,1800 ----
+  
+  	if( ses < 0 ) return( ILLEGAL_SESSION );
+  
++ 	{
++ 	struct pollfd pfd;
++ 	pfd.fd = mbox;
++ 	pfd.events = POLLIN;
++ 	pfd.revents = 0;
++ 	ret = poll(&pfd, 1, 0);
++ 	if(ret == -1)
++ 		return(ILLEGAL_SESSION);
++ 	if(pfd.revents & (POLLHUP|POLLERR))
++ 		return ILLEGAL_SESSION;
++ 
+  	ret = ioctl( mbox, FIONREAD, &num_bytes);
+  	if( ret < 0 ) return( ILLEGAL_SESSION );
++ 	if((pfd.revents & POLLIN) && num_bytes == 0)
++ 		return ILLEGAL_SESSION;
++ 	}
+  	return( num_bytes );
+  
+  }
+Only in spread-src-4.0.0/libspread: sp.lo
+Only in spread-src-4.0.0/libspread: sp.o
+Only in spread-src-4.0.0/libspread: sp.tlo
+Only in spread-src-4.0.0/libspread: sp.to
+Only in spread-src-4.0.0/libspread: stdarr.to
+Only in spread-src-4.0.0/libspread: stdcarr.to
+Only in spread-src-4.0.0/libspread: stddll.to
+Only in spread-src-4.0.0/libspread: stderror.to
+Only in spread-src-4.0.0/libspread: stdfd.to
+Only in spread-src-4.0.0/libspread: stdhash.to
+Only in spread-src-4.0.0/libspread: stdit.to
+Only in spread-src-4.0.0/libspread: stdskl.to
+Only in spread-src-4.0.0/libspread: stdthread.to
+Only in spread-src-4.0.0/libspread: stdtime.to
+Only in spread-src-4.0.0/libspread: stdutil.to
+Only in spread-src-4.0.0: Makefile
+Only in spread-src-4.0.0/stdutil: config.log
+Only in spread-src-4.0.0/stdutil: config.status
+Only in spread-src-4.0.0/stdutil: lib
+Only in spread-src-4.0.0/stdutil/src: Makefile
+Only in spread-src-4.0.0/stdutil/src: stdarr.lto
+Only in spread-src-4.0.0/stdutil/src: stdarr.to
+Only in spread-src-4.0.0/stdutil/src: stdcarr.lto
+Only in spread-src-4.0.0/stdutil/src: stdcarr.to
+Only in spread-src-4.0.0/stdutil/src: stddll.lto
+Only in spread-src-4.0.0/stdutil/src: stddll.to
+Only in spread-src-4.0.0/stdutil/src: stderror.lto
+Only in spread-src-4.0.0/stdutil/src: stderror.to
+Only in spread-src-4.0.0/stdutil/src: stdfd.lto
+Only in spread-src-4.0.0/stdutil/src: stdfd.to
+Only in spread-src-4.0.0/stdutil/src: stdhash.lto
+Only in spread-src-4.0.0/stdutil/src: stdhash.to
+Only in spread-src-4.0.0/stdutil/src: stdit.lto
+Only in spread-src-4.0.0/stdutil/src: stdit.to
+Only in spread-src-4.0.0/stdutil/src: stdskl.lto
+Only in spread-src-4.0.0/stdutil/src: stdskl.to
+Only in spread-src-4.0.0/stdutil/src: stdthread.lto
+Only in spread-src-4.0.0/stdutil/src: stdthread.to
+Only in spread-src-4.0.0/stdutil/src: stdtime.lto
+Only in spread-src-4.0.0/stdutil/src: stdtime.to
+Only in spread-src-4.0.0/stdutil/src/stdutil/private: stdarch_autoconf.h
+Only in spread-src-4.0.0/stdutil/src: stdutil.lto
+Only in spread-src-4.0.0/stdutil/src: stdutil.to

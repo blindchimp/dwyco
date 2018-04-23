@@ -1,0 +1,47 @@
+;
+;
+; debugging functions for lingua-hacka
+;
+
+; tracing a function prints out calls and return
+; values for that function.
+; 
+compile(trace fun `
+	lbind(fun-meta get-meta(<<fun>>)) 	; get info about function arg list
+	lbind(avec gensym()) 
+	lbind(var gensym()) 
+	; this builds a wrapper function, __trace_funname that is
+	; called in place of the real function. the wrapper prints out
+	; the function args as well as the return value.
+	gcompile({__trace_<fun>} <fun-meta> {|prog(
+		print({\|called \| | <fun> |\|(\|}) 
+		lbind(|<avec>| vector()) 
+		foreach(|<var>| |<fun-meta> | prog(
+			print({<<|<var>|>> \| \|}) 
+			append(<|<avec>|> <<|<var>|>>)
+		)) 
+		print(\|)\n\|)
+		lbind(ret do-funcall({__real_|<fun>|} <|<avec>|>)) 
+		print({\|returns \| <ret> \|\n\|}) 
+		return(<ret>) 
+	)|}) 
+	; swap in the wrapper function
+	gbind({__real_<fun>} <<fun>>) 
+	bind(<fun> <__trace_<fun>>) 
+') 
+
+compile(untrace fun `
+	bind(<fun> <__real_<fun>>) 
+	gremove({__trace_<fun>})
+	gremove({__real_<fun>})
+') 
+
+
+;compile(fooey a b c `
+;	return(list(<a> <b> <c>)) 
+;') 
+;
+;trace(fooey) 
+;print(fooey(1 2 3)) 
+;untrace(fooey) 
+;print(fooey(4 5 6)) 

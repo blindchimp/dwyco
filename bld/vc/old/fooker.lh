@@ -1,0 +1,732 @@
+; this is a semi-working demo program that shows
+; wrapping the dwyco video dll and using cdk to do some
+; simple display things. was used for speed-trivia at one
+; point, but was really buggy.
+gbind(stderr openfile(/dev/stderr wb))
+load-file(../dlli.lh)
+load-file(../cdk.lh)
+gbind(S wrap_initCDKScreen(<wrap_stdscr>))
+gbind(db-win wrap_newCDKSwindow(<S> 0 0 40 80 nil 100 1 0))
+gbind(ulist-win wrap_newCDKSwindow(<S> <RIGHT> <TOP> 20 30 Users 100 <BOX> 0))
+wrap_drawCDKSwindow(<db-win> 0)
+wrap_drawCDKSwindow(<ulist-win> 0)
+wrap_initCDKColor()
+load-file(triv.lh)
+
+compile(str-to-lines s `
+	lbind(sx strlen(<s>))
+	lbind(i strstr(<s> |\n|))
+	lbind(res vector())
+	while(<i> prog(
+		lbind(f substr(<s> 0 <i>))
+		append(<res> <f>)
+		lbind(s substr(<s> add(<i> 1) end))
+		lbind(i strstr(<s> |\n|))
+	))
+	append(<res> <s>)
+	return(<res>)
+')
+
+lbind(lf openfile(fooker.out wb))
+
+gbind(pbuf ||)
+compile(print x `
+	fprint(<lf> <x>)
+	lbind(r str-to-lines({<x>}))
+	if(eq(numelems(<r>) 1) prog(
+		gbind(pbuf {<pbuf> r[0]})
+		return(nil)
+	))
+	prepend(<r> <pbuf>)
+	gbind(pbuf ||)
+	foreach(l <r> prog(
+		wrap_addCDKSwindow(<db-win> <l> <BOTTOM>) ; bottom of window
+	))
+	wrap_refreshCDKScreen(<S>)
+')
+
+
+printl(getenv(kk27g))
+fs-file-remove(ignore)
+wrap_dwyco_set_cmd_path(vc 2)
+wrap_dwyco_init()
+wrap_dwyco_setup_autoupdate(vc nil nil nil)
+;wrap_dwyco_set_regcode(|68af3285e6|)
+wrap_dwyco_set_regcode(|0000000000|)
+wrap_dwyco_set_net_data(2005 2006 6782 nil 0 0 0 nil 0 <DWYCO_MEDIA_SELECT_TCP_ONLY>)
+wrap_dwyco_set_raw_files(|| |oldp3%03d-s.ppm| nil t t)
+wrap_dwyco_set_video_input(|| nil t nil nil 0)
+wrap_dwyco_set_rate_tweaks(0 10. 65535 10000 1000 1000)
+wrap_dwyco_set_moron_dork_mode(0)
+
+compile(login-callback str what `
+	printml(SERVER LOGIN <str> <what>)
+	if(eq(<what> 0)
+		exit(0)
+	)
+	gbind(Logged-in t)
+')
+wrap_dwyco_set_login_result_callback(<login-callback>)
+
+compile(unregister id msg pd arg `
+	printl(<msg>)
+	exit(0)
+')
+
+wrap_dwyco_set_unregister_callback(<unregister>)
+
+compile(autoupdate-download-status id msg percent-done arg `
+	printml(download status <id> <msg> <percent-done> <arg>)
+')
+
+compile(autoupdate-download-end status `
+	printml(autoupdate-download-end <status>)
+	exit(0)
+')
+
+compile(autoupdate-status status desc `
+	printml(autoupdate-check <status> <desc>)
+	;wrap_dwyco_start_autoupdate_download(<autoupdate-download-status> 27 <autoupdate-download-end>)
+')
+
+wrap_dwyco_set_autoupdate_status_callback(<autoupdate-status>)
+
+gbind(Already-sent set())
+gbind(UIDs-to-send set())
+
+compile(dir-downloaded dl `
+printml(dir downloaded <dl>)
+	lbind(dl Dwyco-list(Dwyco-dir-list <dl>))
+	; extract UID's 
+	lbind(i 0)
+	lbind(n dl[count]())
+	while(lt(<i> <n>) prog(
+		lbind(uid dl[INFO_UID](<i>))
+		if(cand(eq(type(<uid>) string) eq(strlen(<uid>) 10) ne(<uid> wrap_dwyco_get_my_uid())) prog(
+			if(not(contains(<Already-sent> <uid>)) prog(
+				append(<UIDs-to-send> <uid>)
+				printml(appended to-hex(<uid>))
+			))
+		))
+		lbind(i add(<i> 1))
+	))
+	dl[done]()
+;wrap_dwyco_list_print(<dl>)
+')
+
+wrap_dwyco_set_user_data(|Automated| |Speed trivia| |cdchelp@dwyco.com| || || nil)
+
+compile(vid-disp-init-callback chan-id ui-id `
+	printml(VIDDISPINIT <chan-id> <ui-id>)
+')
+compile(vid-disp-callback ui-id img cols rows depth `
+	printml(VID DISP <ui-id> <img> <cols> <rows> <depth>)
+')
+
+compile(priv-chat-init-callback chan-id ui-id caption `
+	printml(PRIV CHAT INIT <chan-id> <ui-id> <caption>)
+	gbind(Priv-id <ui-id>)
+	return(<ui-id>)
+')
+
+compile(pub-chat-init-callback ui-id `
+	printml(pub CHAT INIT <ui-id>)
+	gbind(Pub-chat-ui-id <ui-id>)
+	return(<ui-id>)
+')
+
+compile(pub-chat-display-callback who line uid `
+	;printml(PUB: <who> to-hex(<uid>) <line>)
+	if(ne(<uid> wrap_dwyco_get_my_uid())
+		trivia-crank(<who> to-hex(<uid>) <line>)
+	)
+')
+
+compile(chat-server-status-callback id msg pd arg `
+	printml(CHAT SERVER <id> <msg> <pd> <arg>)
+	if(eq(<msg> offline) exit(0))
+')
+
+wrap_dwyco_set_directory_downloaded_callback(<dir-downloaded>)
+wrap_dwyco_set_video_display_init_callback(<vid-disp-init-callback>)
+wrap_dwyco_set_video_display_callback(<vid-disp-callback>)
+wrap_dwyco_set_private_chat_init_callback(<priv-chat-init-callback>)
+wrap_dwyco_set_public_chat_init_callback(<pub-chat-init-callback>)
+wrap_dwyco_set_public_chat_display_callback(<pub-chat-display-callback>)
+wrap_dwyco_set_chat_server_status_callback(<chat-server-status-callback>)
+wrap_dwyco_load_users()
+wrap_dwyco_get_user_list(ul num)
+;wrap_dwyco_list_print(<ul>)
+
+trivial-trivia-init()
+
+compile(main `
+lbind(ui_id 0)
+;wrap_dwyco_enable_video_capture_preview(1 <ui_id> ui_id)
+printml(CAPTURE <ui_id>)
+;switch-to-server(|Chat w/ Trivia|)
+while(t prog(
+	wrap_dwyco_service_channels(foo)
+	if(<Logged-in> prog(
+	if(not(<cleaned-out>) prog(
+		delete-all-unsaved()
+		lbind(cleaned-out t)
+	))
+	;printl(<foo>)
+	if(not(<sub-logged-in>) prog(
+		switch-to-server(|Adult Hangout w/ Trivia 2|)
+		;switch-to-server(|Speed Trivia|)
+		;switch-to-server(|Adult Hangout w/ Trivia|)
+		;switch-to-server(|Alpha testers 1|)
+		;switch-to-server(|Adult Playroom|)
+		lbind(sub-logged-in t)
+	))
+	if(eq(wrap_dwyco_get_refresh_users() 1) prog(
+		printml(REFRESH USERS)
+		;wrap_dwyco_get_user_list(ul num)
+		;wrap_dwyco_list_print(<ul>)
+		;wrap_dwyco_list_release(<ul>)
+		display-user-list()
+		wrap_dwyco_set_refresh_users(0)
+	))
+	if(eq(wrap_dwyco_get_rescan_messages() 1) prog(
+		printml(REFRESH MESSAGES)
+		wrap_dwyco_get_unsaved_messages(ml nil 0)
+		;wrap_dwyco_list_print(<ml>)
+		nice-print-ml(<ml>)
+		wrap_dwyco_list_release(<ml>)
+		reply-all()
+		wrap_dwyco_set_rescan_messages(0)
+	))
+	lbind(now time())
+if(nil prog(
+	if(cand(<Priv-id> not(<typed>)) prog(
+		type-string(<Priv-id> |fooker here|)
+		lbind(typed t)
+	))
+	if(cand(<Pub-chat-ui-id> ne(<last-pub-chat> div(<now> 60))) prog(
+		lbind(fooker-sez |<plain>i ahm di fooker! death to amerika!</plain><extended>|)
+		wrap_dwyco_line_from_keyboard(<Pub-chat-ui-id> <fooker-sez> strlen(<fooker-sez>))
+		lbind(last-pub-chat div(<now> 60))
+printml(chat)
+		
+	))
+))
+if(nil prog(
+	if(not(<last-refresh>) lbind(last-refresh <now>))
+	if(gt(sub(<now> <last-refresh>) 15) prog(
+		wrap_dwyco_refresh_directory()
+		lbind(last-refresh <now>)
+	))
+	foreach(uid <UIDs-to-send> prog(
+		send-msg(<uid> |Please quit and restart ICUII in order to get the new version 8 servers.\r\n\r\nThanks,\r\nICUII\r\n|)
+		printml(sent to to-hex(<uid>))
+		append(<Already-sent> <uid>)
+	))
+	gbind(UIDs-to-send set())
+	))
+
+	))
+	trivia-crank(nil nil nil)
+	if(eq(<foo> 0) socket-poll-all(r 0 1000))
+	if(fs-file-exists(stop) exit(0))
+))
+')
+
+compile(get-attr lst row attr-name `
+	lbind(s wrap_dwyco_list_get(<lst> <row> <<attr-name>>
+		out len-out type-out))
+	if(eq(<s> 0) return(nil))
+	cond(
+	eq(<type-out> <DWYCO_TYPE_NIL>) return(nil)
+	eq(<type-out> <DWYCO_TYPE_STRING>) return(<out>)
+	eq(<type-out> <DWYCO_TYPE_INT>) return(atol(<out>))
+	eq(<type-out> <DWYCO_TYPE_VECTOR>) excraise(|A:get-attr|)
+	excraise(|A:get-attr2|)
+	)
+')
+
+compile(nice-print-ml ml `
+	lbind(n wrap_dwyco_list_numelems(<ml> rows nil))
+	for(i 0 sub(<rows> 1) prog(
+		printml(to-hex(get-attr(<ml> <i> DWYCO_QMS_FROM)) ID: 
+			get-attr(<ml> <i> DWYCO_QMS_ID))
+	))
+')
+
+compile(delete-all-unsaved `
+	wrap_dwyco_get_unsaved_messages(ml nil 0)
+
+	lbind(n wrap_dwyco_list_numelems(<ml> rows nil))
+printml(DEL rows <rows>)
+	for(i 0 sub(<rows> 1) prog(
+printml(DELM get-attr(<ml> <i> DWYCO_QMS_ID))
+		wrap_dwyco_delete_unsaved_message(get-attr(<ml> <i> DWYCO_QMS_ID))
+	))
+	wrap_dwyco_list_release(<ml>)
+')
+
+gbind(Replied-to set())
+gbind(Fetching set())
+compile(reply-all `
+	wrap_dwyco_get_unsaved_messages(ml nil 0)
+
+	lbind(n wrap_dwyco_list_numelems(<ml> rows nil))
+	lbind(i 0)
+	while(lt(<i> <rows>) prog(
+		lbind(mid get-attr(<ml> <i> DWYCO_QMS_ID))
+		if(not(contains(<Replied-to> <mid>)) prog(
+			lbind(txt fetch-msg(<mid>))
+			if(<txt> prog(
+				printml(GOT TXT <txt>)
+				printml(GOT-PLAIN get-plain(<txt>))
+				;call(get-attr(<ml> <i> DWYCO_QMS_FROM))
+				append(<Replied-to> <mid>)
+				lbind(resp parse-cmd(get-attr(<ml> <i> DWYCO_QMS_FROM) get-plain(<txt>)))
+				send-msg(get-attr(<ml> <i> DWYCO_QMS_FROM) {|fooker here: got |
+					get-plain(<txt>) |\r\n| resp: | | <resp>})
+			))
+		))
+		lbind(i add(<i> 1))
+	))
+	wrap_dwyco_list_release(<ml>)
+	;delete-all-unsaved()
+')
+
+compile(msg-send-callback id what recip server-msg user-arg `
+	printml(msg send <id> <what> to-hex(<recip>) <server-msg> <user-arg>)
+')
+
+compile(msg-status-callback id msg percent-done user-arg `
+	printml(msg-status <id> <msg> <percent-done> <user-arg>)
+')
+
+compile(send-msg uid txt `
+	lbind(zid wrap_dwyco_make_zap_composition(nil))
+	wrap_dwyco_zap_send2(<zid> vector(<uid>) 1 <txt> 0 <msg-send-callback> 0 <msg-status-callback> 0)
+')
+
+compile(msg-download id what mid user-arg `
+	printml(msg-download <id> <what> <mid> <user-arg>)
+	switch(<what>
+	<DWYCO_MSG_DOWNLOAD_FAILED> del(<Fetching> <mid>)
+	<DWYCO_MSG_DOWNLOAD_SAVE_FAILED> del(<Fetching> <mid>)
+	<DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED> del(<Fetching> <mid>)
+	<DWYCO_MSG_DOWNLOAD_OK> del(<Fetching> <mid>)
+	<DWYCO_MSG_DOWNLOAD_RATHOLED> del(<Fetching> <mid>)
+	prog()
+	)
+')
+
+compile(fetch-msg mid `
+printml(MID <mid>)
+	if(contains(<Fetching> <mid>) prog(
+		printml(already fetching <mid>)
+		return(nil)
+	))
+	printml(UNSAVED wrap_dwyco_get_unsaved_message(ml <mid>))
+	if(get-attr(<ml> 0 DWYCO_QMS_IS_DIRECT) prog(
+		; don't bother with the attachment at this point
+		wrap_dwyco_unsaved_message_to_body(sml <mid>)
+		lbind(txt wrap_dwyco_get_body_text(<sml>))
+		wrap_dwyco_list_release(<sml>)
+		lbind(real-text get-attr(<txt> 0 DWYCO_NO_COLUMN))
+		wrap_dwyco_list_release(<txt>)
+	)
+	;else
+	prog(
+		wrap_dwyco_fetch_server_message(<mid> <msg-download> 0 <msg-status-callback> 0)
+		lbind(real-text nil)
+		append(<Fetching> <mid>)
+	))
+	wrap_dwyco_list_release(<ml>)
+	return(<real-text>)
+')
+
+compile(get-plain txt `
+	if(not(split(regex(|.*<plain>\\([^<]*\\)</plain>.*|) <txt> plain-txt)) prog(
+		return(<txt>)
+	))
+	if(not(<plain-txt>) return(<txt>))
+	return(<plain-txt>)
+')
+
+compile(call-status-callback id msg percent-done user-arg `
+	printml(call-status <id> <msg> <percent-done> <user-arg>)
+')
+compile(call-disp-callback call-id chan-id what user-arg uid `
+	printml(call-disp-callback <call-id> <chan-id> <what> <user-arg> to-hex(<uid>))
+	if(eq(<what> <DWYCO_CALLDISP_ESTABLISHED>) prog(
+	))
+	if(eq(<what> <DWYCO_CALLDISP_TERMINATED>) prog(
+		gbind(Priv-id nil)
+	))
+')
+
+compile(call uid svid saud rvid raud prv-chat pub-chat `
+	wrap_dwyco_uid_to_ip(<uid> strlen(<uid>) direct ip)
+	printml(CALL to-hex(<uid>) <ip> <direct>)
+	lbind(uids vector(<uid>))
+	lbind(ips vector(<ip>))
+	wrap_dwyco_connect_all2(<ips> <uids> 1
+		<call-disp-callback> 0
+		<call-status-callback> 0
+		<svid> <rvid>
+		<saud> <raud>
+		<prv-chat> <pub-chat> |foofoo| 
+		private 7)
+')
+
+gmake-factory(Dwyco-list-type
+	vector(field-names strip-name)
+	nil ; base
+	nil ; delegate
+	nil ; forwards
+
+	valid-field-names `<field-names>'
+	__lh_postinit `
+		foreach(field <valid-field-names> prog(
+			obind(<field> lambda(idx {|return(get(| <field> | <idx>))|}))
+			obind(subst(<field> <strip-name> ||) lambda(idx {|return(get(| <field> | <idx>))|}))
+		))
+	'
+)
+
+gbind(Dwyco-server-list-fields vector(
+DWYCO_SL_SERVER_HOSTNAME
+DWYCO_SL_SERVER_IP
+DWYCO_SL_SERVER_PORT
+DWYCO_SL_SERVER_RATING
+DWYCO_SL_SERVER_NAME
+DWYCO_SL_SERVER_CATEGORY
+))
+gbind(Dwyco-server-list-fields-strip-name DWYCO_SL_SERVER_)
+
+gbind(Dwyco-user-list-fields vector(
+;DWYCO_UL_DIRNAME
+;DWYCO_UL_INFO
+DWYCO_UL_QIR_FROM
+DWYCO_UL_QIR_HANDLE
+DWYCO_UL_QIR_EMAIL
+DWYCO_UL_QIR_ICQ
+DWYCO_UL_QIR_FIRST
+DWYCO_UL_QIR_LAST
+DWYCO_UL_QIR_DESCRIPTION
+DWYCO_UL_QIR_LOCATION
+))
+
+gbind(Dwyco-dir-list-fields vector(
+DWYCO_DIR_IP
+DWYCO_DIR_INFO_HOSTNAME
+DWYCO_DIR_INFO_USERNAME
+DWYCO_DIR_INFO_DESC
+DWYCO_DIR_INFO_CALLACCEPT
+DWYCO_DIR_INFO_CA_MAX_AUDIO
+DWYCO_DIR_INFO_CA_MAX_VIDEO
+DWYCO_DIR_INFO_CA_CHAT
+DWYCO_DIR_INFO_CA_MAX_AUDIO_RECV
+DWYCO_DIR_INFO_CA_MAX_VIDEO_RECV
+DWYCO_DIR_INFO_UID
+DWYCO_DIR_INFO_REG
+DWYCO_DIR_INFO_ONLINE
+DWYCO_DIR_INFO_SHITLISTED
+DWYCO_DIR_INFO_RATING
+DWYCO_DIR_INFO_DIRECT
+DWYCO_DIR_INFO_LOCATION
+DWYCO_DIR_INFO_CLIENT_TYPE
+DWYCO_DIR_INFO_PROFILE
+DWYCO_DIR_INFO_FW_PORTS
+DWYCO_DIR_INFO_FW_PORTS_PRIMARY
+DWYCO_DIR_INFO_FW_PORTS_SECONDARY
+DWYCO_DIR_INFO_FW_PORTS_PAL
+DWYCO_DIR_INFO_IS_GOD
+DWYCO_DIR_INHIBIT
+DWYCO_DIR_EXTRA
+))
+gbind(Dwyco-dir-list-fields-strip-name DWYCO_DIR_)
+
+gbind(Dwyco-user-list-fields-strip-name DWYCO_UL_QIR_)
+
+
+gmake-factory(Dwyco-list
+	vector(type-name dlist)
+	nil ; base
+	vector(dwyco-list-type) ; delegate
+	nil ; forwards
+
+
+	done lambda(`wrap_dwyco_list_release(<lst>)')
+	dwyco-list-type `Dwyco-list-type(<<type-name>-fields> <<type-name>-fields-strip-name>)'
+	lst `<dlist>'
+	get	lambda(field i `return(get-attr(<lst> <i> <field>))')
+	count lambda(`
+			lbind(n wrap_dwyco_list_numelems(<lst> rows nil))
+			return(<rows>)
+	')
+)
+
+	
+compile(switch-to-server name `
+	wrap_dwyco_get_server_list(sl num)
+	lbind(dl Dwyco-list(Dwyco-server-list <sl>))
+	lbind(i 0)
+	while(lt(<i> <num>) prog(
+		printml(sl name dl[NAME](<i>))
+		if(eq(dl[NAME](<i>) <name>) prog(
+			wrap_dwyco_switch_to_server(<i>)
+			wrap_dwyco_switch_to_chat_server(<i>)
+			printml(switch to dl[NAME](<i>))
+			dl[done]()
+			return(t)
+		))
+		lbind(i add(<i> 1))
+	))
+	printml(|can't switch to | <name>)
+	exit(0)
+	dl[done]()
+	return(nil)
+')
+
+compile(display-user-list `
+	wrap_dwyco_get_user_list(ul num)
+	lbind(ul Dwyco-list(Dwyco-user-list <ul>))
+	lbind(i 0)
+	wrap_cleanCDKSwindow(<ulist-win>)
+	while(lt(<i> <num>) prog(
+		;printml(to-hex(ul[FROM](<i>)) ul[HANDLE](<i>) ul[LOCATION](<i>))
+		lbind(str {uid-to-color(ul[FROM](<i>))
+			ul[HANDLE](<i>)})
+		wrap_addCDKSwindow(<ulist-win> <str> <BOTTOM>) ; bottom of window
+		lbind(i add(<i> 1))
+	))
+	wrap_refreshCDKScreen(<S>)
+	ul[done]()
+')
+
+gbind(CDK-green |</24>|)
+compile(uid-to-color uid `
+	if(ne(wrap_dwyco_is_pal(<uid> strlen(<uid>)) 0) prog(
+		return(<CDK-green>)
+	))
+	return(||)
+')
+
+;
+; little msg sender/recv class w/ cdk
+gmake-factory(Chatbox 
+	vector(auid)
+	nil ; base
+	nil ; delegate
+	nil ; forwards
+
+	subwin nil
+	sendbox nil
+	recvbox nil
+
+	uid `<auid>'
+
+	init	lambda(r c w h `
+		obind(subwin wrap_newwin(<h> <w> <r> <c>))
+		obind(scrn initCDKscreen(<subwin>))
+		obind(sendbox wrap_newCDKEntry(<scrn> <BOTTOM> <LEFT> || || <A_REVERSE> 32 5 0 0 2048 1 0))
+		obind(recvbox wrap_newCDKSwindow(<scrn> <TOP> <RIGHT> -2 0 || 1000 1 0))
+		putkv(<Uid-to-chatbox> <uid> <this>)
+		
+	')
+	destroy lambda(`
+		wrap_eraseCDKScreen(<scrn>)
+		wrap_destroyCDKScreen(<scrn>)
+		wrap_delwin(<subwin>)
+	')
+
+	draw lambda(`
+		wrap_drawCDKEntry(<sendbox>)
+		wrap_drawCDKSwindow(<recvbox>)
+	')
+
+	inject lambda(ch `
+		lbind(ret wrap_injectCDKEntry(<sendbox> <ch>))
+		if(<ret> prog(
+			send-msg(<uid> <ret>)
+			wrap_setCDKEntryValue(<sendbox> ||)
+			show-msg(<ret>)
+			return(t)
+		))
+		return(nil)
+	')
+
+	show-msg lambda(msg `
+		wrap_addCDKSwindow(<recvbox> <msg> <BOTTOM>)
+	')
+)
+
+
+;
+; commands are:
+; call [vid] [aud] [uid-to-call]
+; palme
+; forw [to-uid] [noforw-flag]
+;
+compile(parse-cmd from-uid txt `
+	if(not(split(regex(|\\([^ ]*\\) *\\([^ ]*\\) *\\([^ ]*\\) *\\([^ ]*\\)|) <txt>
+		cmd arg1 arg2 arg3)) prog(
+		lbind(cmd help)
+	))
+	;return({cmd: <cmd> | a1:| <arg1> | a2: | <arg2> | a3: | <arg3> })
+	switch(<cmd>
+	help prog(
+		return(|
+		 commands are:
+		 call [vid] [uid-to-call]
+		 palme
+		 unpalme
+		 ignoreme (warning, you can't send cmds if you do this)
+		 alwaysvisme
+		 nevervisme
+		 normalvisme
+		 setinvis 0/1
+		 forw [to-uid] [noforw-flag]
+		|)
+	)
+	call prog(
+		call(<from-uid> 1 0 0 0 0 0)
+		return(|calling you|)
+	)
+	palme prog(
+		wrap_dwyco_pal_add(<from-uid> strlen(<from-uid>))
+		return(|pal-ed you|)
+	)
+	unpalme prog(
+		wrap_dwyco_pal_delete(<from-uid> strlen(<from-uid>))
+		return(|unpal-ed you|)
+	)
+	ignoreme prog(
+		wrap_dwyco_ignore(<from-uid> strlen(<from-uid>))
+		return(|ignore-ed you|)
+	)
+	restart prog(
+		wrap_dwyco_exit()
+		exit(0)
+	)
+	alwaysvisme prog(
+		wrap_dwyco_always_visible(<from-uid> strlen(<from-uid>) 1)
+		return(|i'm always visible to you|)
+	)
+	normalvisme prog(
+		wrap_dwyco_always_visible(<from-uid> strlen(<from-uid>) 0)
+		wrap_dwyco_never_visible(<from-uid> strlen(<from-uid>) 0)
+		return(|i'm normal visible to you|)
+	)
+	nevervisme prog(
+		wrap_dwyco_never_visible(<from-uid> strlen(<from-uid>) 1)
+		return(|i'm never visible to you|)
+	)
+	setinvis prog(
+		wrap_dwyco_set_invisible_state(atol(<arg1>))
+		return({|set invis to | wrap_dwyco_get_invisible_state()})
+	)
+	forw prog(
+	return(unimp)
+	)
+	prog(return(|huh?|))
+	)
+')
+
+compile(type-string chan str `
+	lbind(n strlen(<str>))
+	lbind(i 0)
+	lbind(chars vector3(<str>))
+printl(<chars>)
+	while(lt(<i> <n>) prog(
+		wrap_dwyco_command_from_keyboard(<chan> 107 chars[<i>] 0 nil 0)
+		lbind(i add(<i> 1))
+	))
+')
+
+
+compile(subst s x y `
+	lbind(sx strlen(<x>))
+	lbind(i strstr(<s> <x>))
+	lbind(res ||)
+	while(<i> prog(
+		lbind(f substr(<s> 0 <i>))
+		lbind(res {<res> <f> <y>})
+		lbind(s substr(<s> add(<i> <sx>) end))
+		lbind(i strstr(<s> <x>))
+	))
+	if(eq(strlen(<res>) 0) return(<s>))
+	return({<res> <s>})
+')
+
+compile(output-trivia-question cat ques `
+		lbind(q {<cat>: | | <ques>})
+		lbind(q html-ize(<q>))
+		wrap_dwyco_line_from_keyboard(<Pub-chat-ui-id> <q> strlen(<q>))
+')
+
+compile(output-trivia-answer ans `
+		lbind(q {|I guess y'all are clueless. The answer is |<ans> ||})
+		lbind(q html-ize(<q>))
+		wrap_dwyco_line_from_keyboard(<Pub-chat-ui-id> <q> strlen(<q>))
+')
+
+gbind(trivia-icon contents-of(openfile(icon.dat rb)))
+
+compile(trivia-format msg `
+	lbind(ret subst(|
+<plain>%s</plain>
+<extended><table cellspacing="0" cellpadding="5" width="100%%" border="0"><tr><td width="80" valign="top"><a href="PROFILEIMG://"><img src="entryimage.jpg"></a></td><td valign="top">marker_user_name
+<font size=2 color="#000000" face="Arial">
+<div><font size=2 color="#892489" face="Tahoma">%s</font></div>
+</font>
+</td></tr></table></extended>| %s <msg>))
+	lbind(ret {<ret> <trivia-icon>})
+	return(<ret>)
+')
+
+compile(trivia-font `
+	return(|<font color="#ff0000" face="Arial">|)
+')
+
+compile(html-ize s `
+	return(trivia-format(<s>))
+	return({|<plain>| <s> |</plain><extended>| trivia-font() <s> |</font></extended>|})
+')
+
+compile(output-trivia-results name num-prev pts new-score ans `
+	cond(
+	lt(<pts> 0) prog(
+		lbind(q {<name> | has answered the question | <num-prev>| times! You receive | <pts>| points!
+		Don\'t answer the same question more than twice to avoid penalties.
+		Your new score is |<new-score>})
+	)
+	prog(
+		lbind(q {<ans> | is right | <name> |! That's worth | <pts> | points!
+		Your new score is |<new-score>})
+	))
+	lbind(q html-ize(<q>))
+	wrap_dwyco_line_from_keyboard(<Pub-chat-ui-id> <q> strlen(<q>))
+')
+
+main()
+
+do-funcall(<wrap_dwyco_get_call_accept> vector(
+a0
+a1
+a2
+a3
+a4
+a5
+a6
+a7
+a8
+a9
+a10
+a11
+))
+for(i 0 11 prog(
+	printl(<a<i>>)
+))
+;wrap_dwyco_list_print(<sl>)
+printl(<num>)
+;exit(0)

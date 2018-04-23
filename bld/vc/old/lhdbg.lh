@@ -1,0 +1,266 @@
+
+;
+; debugger shell for LH
+; $Header: g:/dwight/repo/vc/rcs/lhdbg.lh 1.18 1997/11/06 21:37:56 dwight Stable $
+
+; no longer works, but kept for reference
+;
+
+gcompile(__lh_debug msg why filename line`
+; trap for debugging debugger
+lcompile(__lh_debug msg why filename line `
+printl(|DEBUGGER ERROR|)
+backtrace()
+dump()
+exit(1)
+')
+lcompile(getyn `
+	while(t prog(
+		print(|[yn]|) 
+		lbind(ans readatoms(<Terminal>))
+		if(<ans>
+			switch(ans[0]
+			y	return(t)
+			n	return(nil)
+			nil
+			)
+		)
+		printml(y or n please.)
+	))
+')
+
+scompile(lv excbo exc `return(backout)')
+
+scompile(cl attempt_eval `
+	gbind(__lh_loading_file __lh_user_input)
+	scompile(cl tmpexpr <user_string>)
+	gremove(__lh_loading_file)
+	; note: might want to consider just eval, since that might
+	; allow more state info to be retained in current context
+	lbind(trap_tmp <__lh_debug>)
+	lbind(__lh_debug gfind(__lh_debug)) ; remove trap
+	<tmpexpr>()
+	lbind(__lh_debug <trap_tmp>)
+	lremove(trap_tmp)
+	reset()
+')
+
+lcompile(reset `
+printl(reset)
+	bind(cont_mode nil)
+	bind(user_string nil)
+	bind(last_chance nil)
+')
+	
+lcompile(compile_error `
+	if(<last_chance> reset() 
+		if(not(<cont_mode>) bind(cont_mode t))
+	)
+')
+
+lcompile(eval_string s `
+	scompile(cld tmp {return\(<s>\)})
+	return(<tmp>())
+')
+
+scompile(vl user_error exc `
+	; if we want to go to the top level, re-raise the exception
+	if(eq(<exc> A:LHDBG.TOP_LEVEL) excraise(<exc>))
+	if(eq(<exc> E:LHDBG.UP_ONE) prog(
+		if(eq(<__lh_dbg_level> 0) return(resume))
+		if(eq(__lh_varargs[0] 0) excraise(<exc> 1) return(backout))
+	))
+	printml(Exception <exc>)
+	return(backout)
+')
+
+lcompile(back_to_top_level exc `
+	return(backout)
+')
+
+lcompile(cat a b `bind(<a> {<<a>> <b>})')
+
+lbind(cont_mode nil)
+lbind(user_string nil)
+lbind(last_chance nil)
+	
+lcompile(toplevel `
+	reset()
+')
+
+if(eq(<why> toplev)
+	prog(
+	toplevel()
+	lbind(__lh_dbg_level 0)
+	__lh_dbg_init_files()
+	)
+	lbind(__lh_dbg_level ++(<__lh_dbg_level>))
+)
+
+printl(<msg>)
+if(and(<filename> <line>)
+	printml(<line> : __lh_dbg_src_line(<filename> <line>)))
+lbind(last_file <filename>)
+lbind(last_line <line>)
+
+;trace(user_error)
+
+while(t
+exchandle(if(eq(<why> toplev) A:LHDBG.TOP_LEVEL __) ;kluge, __ matches nothing
+	<excbo> `toplevel() printml(Top level.) '
+exchandle(* <user_error> `reset()' prog(
+while(t
+exchandle(E:LH.COMPILE_ERROR <excbo> `compile_error()' prog(
+	while(t prog(
+		if(<cont_mode> print(|>|) print({<__lh_dbg_level>| $ |}))
+		lbind(inp readline2(<Terminal>))
+		if(<cont_mode>
+			lbind(first_word regex(|\\(.*\\)|))
+			lbind(first_word regex(|[ 	]*\\([a-z_][a-z_]*\\)[ 	]*\\(.*\\)|))
+		)
+printml(got: \| <inp> \|)
+		if(not(split(<first_word> <inp> command rest)) printl(huh?)
+		prog( printml( inp: <inp> command: <command> rest: <rest>)
+			switch(<command>
+		
+		help	printml(|
+go - start executing user program
+quit - quit current debug level and pop up one level
+_exit - terminate immediately
+top - pop up to top level
+cont - continue executing from point of last breakpoint
+list - list a few lines of source around the current breakpoint
+bc fun-name - break on call to fun-name 
+ba obj - break on access to any non-function member of obj
+bm memfun - break on call to objects member function
+ee - enable eval break
+ed - disable eval break
+
+Otherwise, what you type in is taken as an LH expression and
+it is executed and the value is printed. For multi-line expressions
+the last line must be a dot (.) on a line by itself.
+|)
+		;nil		return(quit)
+		quit	excraise(E:LHDBG.UP_ONE 0)
+		_exit	exit(0)
+		
+		; blast back to the top level debugger shell
+		top		excraise(A:LHDBG.TOP_LEVEL)
+		
+		; return back and try to continue
+		cont	prog(
+					if(eq(<why> bomb) prog(
+						printm(Clear error and continue?)
+						if(getyn() prog(__lh_clear_errors() return(cont)))
+					)
+						prog(gensym() return(cont))
+					)
+				)
+		list	prog(
+			if(and(<last_file> <last_line>)
+				__lh_dbg_listnear(<last_file> <last_line>))
+		)
+		;
+		bc	prog(
+			__lh_break_on_call(<<rest>>)
+		)
+		ba	prog(
+			__lh_break_on_access(eval_string(<rest>))
+		)
+		;
+		bm prog(
+			__lh_break_on_call(eval_string(<rest>))
+		)
+		ed prog(
+			gbind(__lh_single_step nil)
+		)
+		;
+		ee prog(
+			gbind(__lh_single_step t)
+		)
+		;
+		go prog(
+				lcompile(__lh_dbg_go `eval(<__lh_dbg_user_expr>)
+					lcompile(__lh_before_main `')
+					__lh_break_on_call(<__lh_before_main>)
+					__lh_before_main()
+					if(<__lh_single_step>
+						__lh_eval_break_on(t))
+					main()
+					__lh_eval_break_off(t)
+				')
+				lbind(trap_tmp <__lh_debug>)
+				lbind(__lh_debug gfind(__lh_debug)) ; remove trap
+				excbackout(`
+					lbind(__lh_debug <trap_tmp>)
+					lremove(trap_tmp)
+				')
+				__lh_dbg_go()
+				lbind(__lh_debug <trap_tmp>)
+				lremove(trap_tmp)
+		)
+		;
+		|.|		prog(	
+			lbind(last_chance t)
+			if(<cont_mode> attempt_eval())
+		)
+		; see if we can compile and execute it if we're not
+		; in continuation mode
+		prog(
+			if(<cont_mode>
+				cat(user_string <inp>)
+				prog(lbind(user_string <inp>) attempt_eval())
+			)
+		)))
+	)))
+)))
+))))
+')
+
+gcompile(__lh_dbg_init_files `
+	gbind(__lh_dbg_filenames map())
+')
+
+gcompile(prbo exc file `printml(Can\'t open file <file>) return(backout)')
+gcompile(__lh_dbg_getfile fn `
+	if(contains(<__lh_dbg_filenames> <fn>) return(get(<__lh_dbg_filenames> <fn>)))
+	exchandle(A:OPEN_FAILED <prbo> `return(vector())' prog(
+	lbind(f openfile(<fn> r))
+	))
+	lbind(l readline2(<f>))
+	lbind(v vector())
+	while(<l> prog(
+		append(<v> <l>)
+		lbind(l readline2(<f>))
+	))
+	closefile(<f>)
+	putkv(<__lh_dbg_filenames> <fn> <v>)
+	return(<v>)
+')
+
+gcompile(__lh_dbg_src_line fn ln `
+	if(eq(<fn> __lh_user_input) return(nil))
+	if(eq(<ln> 0) lbind(ln 1))
+	return(__lh_dbg_getfile(<fn>)[--(<ln>)])
+')
+
+gcompile(__lh_dbg_listnear fn ln `
+	lbind(ln sub(<ln> 5))
+	if(lt(<ln> 0) lbind(ln 0))
+	lbind(le add(<ln> 10))
+	lbind(vec __lh_dbg_getfile(<fn>))
+	while(and(lt(<ln> <le>) vec[<le>]) prog(
+		printml(++(<ln>): vec[<ln>])
+		lbind(ln ++(<ln>))
+	))
+')
+	
+	
+		
+;bind(Terminal openfile(CONIN$ rw))
+printl(|opening terminal\n|)
+;gbind(Terminal openfile(con r))
+gbind(Terminal openfile(/dev/tty rw))
+load-file({getenv(HOME)/lhlib/trace.lh})
+;__lh_debug(|LH debug, type "help" for help.| toplev nil nil)
+;exit(0)

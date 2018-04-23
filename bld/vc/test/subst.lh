@@ -1,0 +1,21 @@
+
+compile(subst s x y `
+	lbind(sx strlen(<x>))
+	lbind(i strstr(<s> <x>))
+	lbind(res ||)
+	while(<i> prog(
+		lbind(f substr(<s> 0 <i>))
+		lbind(res {<res> <f> <y>})
+		lbind(s substr(<s> add(<i> <sx>) end))
+		lbind(i strstr(<s> <x>))
+	))
+	if(eq(strlen(<res>) 0) return(<s>))
+	return({<res> <s>})
+')
+
+printl(subst(foo foo foo))
+printl(subst(foo foo barbar))
+printl(subst(foofoo foo barbar))
+printl(subst(creep foo barbar))
+printl(subst(rrfoofooxfoow foo f))
+printl(subst(|unsigned int| | | _))

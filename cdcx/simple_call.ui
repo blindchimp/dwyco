@@ -1,0 +1,755 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>simple_call</class>
+ <widget class="QDockWidget" name="simple_call">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1011</width>
+    <height>647</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>DockWidget</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="debug_label">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="vidlab" name="label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>2</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>320</width>
+          <height>240</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="player" name="msgplayer" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>2</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>320</width>
+          <height>240</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="2" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="pal_button">
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Make Pal</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="icons.qrc">
+          <normaloff>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/heart-32x32.png</normaloff>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/heart-32x32.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="compose_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Send video message</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="icons.qrc">
+          <normaloff>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Mail2-32x32.png</normaloff>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Mail2-32x32.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="send_file_button">
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Send File</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="icons.qrc">
+          <normaloff>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Upload-32x32.png</normaloff>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Upload-32x32.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="show_profile_button">
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>View profile</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="icons.qrc">
+          <normaloff>:/new/green32/gooduser.png</normaloff>:/new/green32/gooduser.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="connect_button">
+        <property name="maximumSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Live connect status</string>
+        </property>
+        <property name="icon">
+         <iconset resource="icons.qrc">
+          <normaloff>:/new/blue32/icons/PrimaryCons_Blue_KenSaunders/PNGs/32x32/restart.png</normaloff>
+          <normalon>:/new/green24/icons/PrimaryCons_Green_KenSaunders/PNGs/24x24/Locked-24x24.png</normalon>
+          <disabledon>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Locked-32x32.png</disabledon>:/new/blue32/icons/PrimaryCons_Blue_KenSaunders/PNGs/32x32/restart.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="accept">
+        <property name="styleSheet">
+         <string notr="true"> background-color: green; border: none; 
+color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>Accept Live</string>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="accept_and_send">
+        <property name="styleSheet">
+         <string notr="true"> background-color: green; border: none; 
+color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>Accept and Send Live</string>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="send_video">
+        <property name="styleSheet">
+         <string notr="true"> background-color: green; border: none; 
+color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>Send Live Video</string>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="cancel_req">
+        <property name="styleSheet">
+         <string notr="true"> background-color: red; border: none; 
+color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>Asking... click to cancel</string>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="send_audio_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>74</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>74</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"> background-color: green; border: none; 
+color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>Send audio</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="mute_button">
+        <property name="styleSheet">
+         <string notr="true"> background-color: green; border: none; 
+color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>Unblock audio</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="hangup">
+        <property name="styleSheet">
+         <string notr="true"> background-color: red; border: none; 
+color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>Stop Live</string>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="reject">
+        <property name="styleSheet">
+         <string notr="true"> background-color: red; border: none; 
+color: rgb(255, 255, 255);</string>
+        </property>
+        <property name="text">
+         <string>Reject Live</string>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="3" column="0">
+     <widget class="chattext" name="textBrowser">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>1</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>120</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">border-radius: 8px;</string>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+      <property name="textInteractionFlags">
+       <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+      </property>
+      <property name="openLinks">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QTextEdit" name="textEdit">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Type message here</string>
+        </property>
+        <property name="verticalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="countdown_label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>24</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>5</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="snap_timer">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="send_snapchat">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item>
+         <widget class="QPushButton" name="send_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>Click to send image and text</string>
+          </property>
+          <property name="text">
+           <string>send</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="vidlab" name="send_preview">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>160</width>
+            <height>120</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>160</width>
+            <height>120</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Click to refresh image</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <action name="actionPause">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media2-32x32.png</normaloff>
+     <normalon>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Media2-32x32.png</normalon>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media2-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pause</string>
+   </property>
+   <property name="toolTip">
+    <string>Pause your video</string>
+   </property>
+  </action>
+  <action name="actionVideo_options">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Gears3-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Gears3-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Video options</string>
+   </property>
+   <property name="toolTip">
+    <string>Pick video cameras/fix colors/etc.</string>
+   </property>
+  </action>
+  <action name="actionView_profile_ctx">
+   <property name="text">
+    <string>View profile</string>
+   </property>
+  </action>
+  <action name="actionCompose_msg_ctx">
+   <property name="text">
+    <string>Audio/Video msg...</string>
+   </property>
+  </action>
+  <action name="actionIgnore_user_ctx">
+   <property name="text">
+    <string>Ignore user</string>
+   </property>
+  </action>
+  <action name="actionView_attachment">
+   <property name="text">
+    <string>View attachment...</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the Audio/video message</string>
+   </property>
+  </action>
+  <action name="actionSend_file_ctx">
+   <property name="text">
+    <string>Send file...</string>
+   </property>
+  </action>
+  <action name="actionCam_off">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Cam off</string>
+   </property>
+   <property name="toolTip">
+    <string>Turn off camera</string>
+   </property>
+  </action>
+  <action name="actionCam_on">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Cam on</string>
+   </property>
+   <property name="toolTip">
+    <string>Start streaming video</string>
+   </property>
+  </action>
+  <action name="actionRefresh">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/refresh-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/refresh-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Refresh</string>
+   </property>
+   <property name="toolTip">
+    <string>Update the current image to send in chat</string>
+   </property>
+  </action>
+  <action name="actionZoom_in">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/zoom in-32x32.png</normaloff>
+     <normalon>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/zoom out-32x32.png</normalon>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/zoom in-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom in</string>
+   </property>
+   <property name="toolTip">
+    <string>Make picture bigger</string>
+   </property>
+  </action>
+  <action name="actionZoom_out">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/zoom out-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/zoom out-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom out</string>
+   </property>
+   <property name="toolTip">
+    <string>Make picture smaller</string>
+   </property>
+  </action>
+  <action name="actionSend_snapchat">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media1-32x32.png</normaloff>
+     <normalon>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Media1-32x32.png</normalon>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Media1-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Send_snapchat</string>
+   </property>
+   <property name="toolTip">
+    <string>Send picture with chat</string>
+   </property>
+  </action>
+  <action name="actionStart_snapshot_timer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Clock2-32x32.png</normaloff>
+     <normalon>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Clock2-32x32.png</normalon>:/new/green32/icons/PrimaryCons_Green_KenSaunders/PNGs/32x32/Clock2-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start snapshot timer</string>
+   </property>
+   <property name="toolTip">
+    <string>Start 5 second timer</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>chattext</class>
+   <extends>QTextBrowser</extends>
+   <header>chattext.h</header>
+  </customwidget>
+  <customwidget>
+   <class>vidlab</class>
+   <extends>QLabel</extends>
+   <header>vidlab.h</header>
+  </customwidget>
+  <customwidget>
+   <class>player</class>
+   <extends>QWidget</extends>
+   <header>player.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>textEdit</tabstop>
+  <tabstop>send_button</tabstop>
+  <tabstop>textBrowser</tabstop>
+  <tabstop>send_video</tabstop>
+  <tabstop>reject</tabstop>
+  <tabstop>accept</tabstop>
+  <tabstop>accept_and_send</tabstop>
+ </tabstops>
+ <resources>
+  <include location="icons.qrc"/>
+ </resources>
+ <connections/>
+</ui>

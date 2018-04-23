@@ -1,0 +1,11 @@
+Mon Jul 10 14:01:09 MDT 2017
+
+around the time i updated the website to use wix.com, with a
+gallery that flipped images endlessly, i saw cdc-x growing in size
+like something was leaking. well, turns out that i had the "don't
+load directories", which defaults to the www.dwyco.com. the
+qtwebkit lib leaks like a sieve while it is showing those images.
+most people leave the defaults, so they won't see the problem.
+
+also, it appears QtWebkit get random seg faults on Linux with
+the lib provided by the distro. Caveat emptor

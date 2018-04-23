@@ -1,0 +1,6 @@
+note: you'll need to add these packages by hand
+
+sudo apt-get install esound libesd0-dev libsdl1.2-dev 
+
+also, the vorbis install-includes is broken. you'll
+need to copy include/vorbis/*.h to ins/dbg/inc/vorbis by hand

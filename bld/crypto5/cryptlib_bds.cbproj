@@ -1,0 +1,601 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{70949AD8-A923-4012-BCC6-5B1BB6BA413D}</ProjectGuid>
+			<ProjectType>CppStaticLibrary</ProjectType>
+			<Config Condition="'$(Config)'==''">Debug</Config>
+			<ProjectVersion>12.0</ProjectVersion>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
+			<BRCC_Defines>_RTLDLL;NO_STRICT;USE_PRECOMPILED_HEADERS;$(BRCC_Defines)</BRCC_Defines>
+			<PackageImports>vclx.bpi;vcl.bpi;rtl.bpi</PackageImports>
+			<TASM_Defines>_RTLDLL;NO_STRICT;USE_PRECOMPILED_HEADERS;$(TASM_Defines)</TASM_Defines>
+			<DCC_UnitSearchPath>.;$(BDS)\lib;$(BDS)\lib\obj;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_ResourcePath>.;$(DCC_ResourcePath)</DCC_ResourcePath>
+			<BCC_PCHCache>true</BCC_PCHCache>
+			<BRCC_IncludePath>.;$(BDS)\include;$(BDS)\include\dinkumware;$(BDS)\include\vcl;$(BRCC_IncludePath)</BRCC_IncludePath>
+			<BCC_StopPCHAfter>pch.h</BCC_StopPCHAfter>
+			<BCC_IncludePath>.;$(BDS)\include;$(BDS)\include\dinkumware;$(BDS)\include\vcl;$(BCC_IncludePath)</BCC_IncludePath>
+			<TASM_IncludePath>.;$(BDS)\include;$(BDS)\include\dinkumware;$(BDS)\include\vcl;$(TASM_IncludePath)</TASM_IncludePath>
+			<DCC_IncludePath>.;$(BDS)\lib;$(BDS)\lib\obj;$(DCC_IncludePath)</DCC_IncludePath>
+			<OutputExt>lib</OutputExt>
+			<Multithreaded>true</Multithreaded>
+			<BCC_GenerateWindowsApp>true</BCC_GenerateWindowsApp>
+			<AllPackageLibs>rtl.lib;vcl.lib</AllPackageLibs>
+			<BCC_GenerateMultithreaded>true</BCC_GenerateMultithreaded>
+			<ILINK_LibraryPath>$(BDS)\lib;$(BDS)\lib\obj;$(BDS)\lib\psdk;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+			<BCC_Defines>_RTLDLL;NO_STRICT;USE_PRECOMPILED_HEADERS;$(BCC_Defines)</BCC_Defines>
+			<DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
+			<TLIB_PageSize>512</TLIB_PageSize>
+			<DCC_ObjPath>.;$(DCC_ObjPath)</DCC_ObjPath>
+			<BCC_UserSuppliedOptions> -6</BCC_UserSuppliedOptions>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<BCC_AllCodeguardOptions>true</BCC_AllCodeguardOptions>
+			<BCC_ZeroLengthEmptyMemberFuncs>true</BCC_ZeroLengthEmptyMemberFuncs>
+			<BCC_ZeroLengthEmptyBaseClass>true</BCC_ZeroLengthEmptyBaseClass>
+			<BCC_PCHUsage>None</BCC_PCHUsage>
+			<BCC_InstructionSet>5</BCC_InstructionSet>
+			<BCC_StackFrames>true</BCC_StackFrames>
+			<BCC_MonitorGlobalAndStackData>true</BCC_MonitorGlobalAndStackData>
+			<BCC_MonitorThis>true</BCC_MonitorThis>
+			<BCC_MonitorInlinePtrAccess>true</BCC_MonitorInlinePtrAccess>
+			<BCC_Defines>_DEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>
+			<BCC_UserSuppliedOptions> -6 -k</BCC_UserSuppliedOptions>
+			<ILINK_LibraryPath>$(BDS)\lib\debug;$(ILINK_LibraryPath);$(ILINK_LibraryPath)</ILINK_LibraryPath>
+			<DCC_Define>DEBUG;$(DCC_Define);$(DCC_Define)</DCC_Define>
+			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+			<IntermediateOutputDir>Debug_Build</IntermediateOutputDir>
+			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
+			<TASM_DisplaySourceLines>true</TASM_DisplaySourceLines>
+			<ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
+			<BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+			<TASM_Debugging>Full</TASM_Debugging>
+			<DCC_AdditionalSwitches> -V</DCC_AdditionalSwitches>
+			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+			<BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<IntermediateOutputDir>Release_Build</IntermediateOutputDir>
+			<BCC_Defines>NDEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>
+			<BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
+			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+			<BCC_UserSuppliedOptions> -6 -Oc -Ob -OS -O -Oi -r -Ov</BCC_UserSuppliedOptions>
+			<DCC_AdditionalSwitches> -$O+</DCC_AdditionalSwitches>
+			<TASM_Debugging>None</TASM_Debugging>
+			<ILINK_LibraryPath>$(BDS)\lib\release;$(ILINK_LibraryPath);$(ILINK_LibraryPath)</ILINK_LibraryPath>
+			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+		</PropertyGroup>
+		<ItemGroup>
+			<CppCompile Include="rijndael.cpp">
+				<BuildOrder>82</BuildOrder>
+				<BuildOrder>2</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="ripemd.cpp">
+				<BuildOrder>83</BuildOrder>
+				<BuildOrder>7</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="rng.cpp">
+				<BuildOrder>84</BuildOrder>
+				<BuildOrder>12</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="rdtables.cpp">
+				<BuildOrder>81</BuildOrder>
+				<BuildOrder>1</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="rc2.cpp">
+				<BuildOrder>78</BuildOrder>
+				<BuildOrder>6</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="rc5.cpp">
+				<BuildOrder>79</BuildOrder>
+				<BuildOrder>3</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="rc6.cpp">
+				<BuildOrder>80</BuildOrder>
+				<BuildOrder>0</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="rsa.cpp">
+				<BuildOrder>85</BuildOrder>
+				<BuildOrder>13</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="serpent.cpp">
+				<BuildOrder>90</BuildOrder>
+				<BuildOrder>10</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="sha.cpp">
+				<BuildOrder>91</BuildOrder>
+				<BuildOrder>30</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="shacal2.cpp">
+				<BuildOrder>92</BuildOrder>
+				<BuildOrder>50</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="seed.cpp">
+				<BuildOrder>9</BuildOrder>
+				<BuildOrder>89</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="rw.cpp">
+				<BuildOrder>86</BuildOrder>
+				<BuildOrder>14</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="safer.cpp">
+				<BuildOrder>87</BuildOrder>
+				<BuildOrder>11</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="seal.cpp">
+				<BuildOrder>88</BuildOrder>
+				<BuildOrder>8</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="nbtheory.cpp">
+				<BuildOrder>67</BuildOrder>
+				<BuildOrder>17</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="network.cpp">
+				<BuildOrder>68</BuildOrder>
+				<BuildOrder>22</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="oaep.cpp">
+				<BuildOrder>69</BuildOrder>
+				<BuildOrder>27</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="mqv.cpp">
+				<BuildOrder>66</BuildOrder>
+				<BuildOrder>16</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="misc.cpp">
+				<BuildOrder>63</BuildOrder>
+				<BuildOrder>21</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="modes.cpp">
+				<BuildOrder>64</BuildOrder>
+				<BuildOrder>18</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="mqueue.cpp">
+				<BuildOrder>65</BuildOrder>
+				<BuildOrder>15</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="osrng.cpp">
+				<BuildOrder>70</BuildOrder>
+				<BuildOrder>28</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="pubkey.cpp">
+				<BuildOrder>75</BuildOrder>
+				<BuildOrder>25</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="queue.cpp">
+				<BuildOrder>76</BuildOrder>
+				<BuildOrder>4</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="rabin.cpp">
+				<BuildOrder>77</BuildOrder>
+				<BuildOrder>5</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="pssr.cpp">
+				<BuildOrder>74</BuildOrder>
+				<BuildOrder>24</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="panama.cpp">
+				<BuildOrder>71</BuildOrder>
+				<BuildOrder>29</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="pkcspad.cpp">
+				<BuildOrder>72</BuildOrder>
+				<BuildOrder>26</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="polynomi.cpp">
+				<BuildOrder>73</BuildOrder>
+				<BuildOrder>23</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="xtr.cpp">
+				<BuildOrder>32</BuildOrder>
+				<BuildOrder>112</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="xtrcrypt.cpp">
+				<BuildOrder>33</BuildOrder>
+				<BuildOrder>113</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="winpipes.cpp">
+				<BuildOrder>31</BuildOrder>
+				<BuildOrder>111</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="wait.cpp">
+				<BuildOrder>36</BuildOrder>
+				<BuildOrder>108</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="wake.cpp">
+				<BuildOrder>37</BuildOrder>
+				<BuildOrder>109</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="whrlpool.cpp">
+				<BuildOrder>34</BuildOrder>
+				<BuildOrder>110</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="vmac.cpp">
+				<BuildOrder>40</BuildOrder>
+				<BuildOrder>120</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="dll.cpp">
+				<BuildOrder>119</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="sosemanuk.cpp">
+				<BuildOrder>39</BuildOrder>
+				<BuildOrder>119</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="randpool.cpp">
+				<BuildOrder>44</BuildOrder>
+				<BuildOrder>116</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="cpu.cpp">
+				<BuildOrder>45</BuildOrder>
+				<BuildOrder>117</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="salsa.cpp">
+				<BuildOrder>42</BuildOrder>
+				<BuildOrder>118</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="socketft.cpp">
+				<BuildOrder>97</BuildOrder>
+				<BuildOrder>47</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="square.cpp">
+				<BuildOrder>98</BuildOrder>
+				<BuildOrder>48</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="squaretb.cpp">
+				<BuildOrder>99</BuildOrder>
+				<BuildOrder>53</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="skipjack.cpp">
+				<BuildOrder>96</BuildOrder>
+				<BuildOrder>46</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="shark.cpp">
+				<BuildOrder>93</BuildOrder>
+				<BuildOrder>51</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="sharkbox.cpp">
+				<BuildOrder>94</BuildOrder>
+				<BuildOrder>52</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="simple.cpp">
+				<BuildOrder>95</BuildOrder>
+				<BuildOrder>49</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="strciphr.cpp">
+				<BuildOrder>58</BuildOrder>
+				<BuildOrder>100</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="trdlocal.cpp">
+				<BuildOrder>55</BuildOrder>
+				<BuildOrder>105</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="ttmac.cpp">
+				<BuildOrder>56</BuildOrder>
+				<BuildOrder>106</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="twofish.cpp">
+				<BuildOrder>35</BuildOrder>
+				<BuildOrder>107</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="tigertab.cpp">
+				<BuildOrder>54</BuildOrder>
+				<BuildOrder>104</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="tea.cpp">
+				<BuildOrder>59</BuildOrder>
+				<BuildOrder>101</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="tftables.cpp">
+				<BuildOrder>60</BuildOrder>
+				<BuildOrder>102</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="tiger.cpp">
+				<BuildOrder>57</BuildOrder>
+				<BuildOrder>103</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="ccm.cpp">
+				<BuildOrder>61</BuildOrder>
+				<BuildOrder>19</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="channels.cpp">
+				<BuildOrder>62</BuildOrder>
+				<BuildOrder>20</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="cmac.cpp">
+				<BuildOrder>63</BuildOrder>
+				<BuildOrder>21</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="cbcmac.cpp">
+				<BuildOrder>64</BuildOrder>
+				<BuildOrder>18</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="camellia.cpp">
+				<BuildOrder>65</BuildOrder>
+				<BuildOrder>15</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="cast.cpp">
+				<BuildOrder>66</BuildOrder>
+				<BuildOrder>16</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="casts.cpp">
+				<BuildOrder>67</BuildOrder>
+				<BuildOrder>17</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="crc.cpp">
+				<BuildOrder>68</BuildOrder>
+				<BuildOrder>22</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="dh2.cpp">
+				<BuildOrder>69</BuildOrder>
+				<BuildOrder>27</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="dh.cpp">
+				<BuildOrder>70</BuildOrder>
+				<BuildOrder>28</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="dsa.cpp">
+				<BuildOrder>91</BuildOrder>
+				<BuildOrder>30</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="dessp.cpp">
+				<BuildOrder>72</BuildOrder>
+				<BuildOrder>26</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="cryptlib.cpp">
+				<BuildOrder>73</BuildOrder>
+				<BuildOrder>23</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="default.cpp">
+				<BuildOrder>74</BuildOrder>
+				<BuildOrder>24</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="des.cpp">
+				<BuildOrder>75</BuildOrder>
+				<BuildOrder>25</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="algebra.cpp">
+				<BuildOrder>76</BuildOrder>
+				<BuildOrder>4</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="algparam.cpp">
+				<BuildOrder>77</BuildOrder>
+				<BuildOrder>5</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="adler32.cpp">
+				<BuildOrder>79</BuildOrder>
+				<BuildOrder>3</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="cryptlib_bds.cpp">
+				<BuildOrder>-1</BuildOrder>
+				<BuildOrder>0</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="adhoc.cpp">
+				<BuildOrder>82</BuildOrder>
+				<BuildOrder>2</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="asn.cpp">
+				<BuildOrder>83</BuildOrder>
+				<BuildOrder>7</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="bfinit.cpp">
+				<BuildOrder>84</BuildOrder>
+				<BuildOrder>12</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="blowfish.cpp">
+				<BuildOrder>85</BuildOrder>
+				<BuildOrder>13</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="blumshub.cpp">
+				<BuildOrder>86</BuildOrder>
+				<BuildOrder>14</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="basecode.cpp">
+				<BuildOrder>87</BuildOrder>
+				<BuildOrder>11</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="authenc.cpp">
+				<BuildOrder>88</BuildOrder>
+				<BuildOrder>8</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="base32.cpp">
+				<BuildOrder>9</BuildOrder>
+				<BuildOrder>89</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="base64.cpp">
+				<BuildOrder>90</BuildOrder>
+				<BuildOrder>10</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="hrtimer.cpp">
+				<BuildOrder>94</BuildOrder>
+				<BuildOrder>52</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="ida.cpp">
+				<BuildOrder>99</BuildOrder>
+				<BuildOrder>53</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="idea.cpp">
+				<BuildOrder>54</BuildOrder>
+				<BuildOrder>104</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="hmac.cpp">
+				<BuildOrder>93</BuildOrder>
+				<BuildOrder>51</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="gost.cpp">
+				<BuildOrder>98</BuildOrder>
+				<BuildOrder>48</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="hex.cpp">
+				<BuildOrder>92</BuildOrder>
+				<BuildOrder>50</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="integer.cpp">
+				<BuildOrder>55</BuildOrder>
+				<BuildOrder>105</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="md2.cpp">
+				<BuildOrder>60</BuildOrder>
+				<BuildOrder>102</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="md4.cpp">
+				<BuildOrder>61</BuildOrder>
+				<BuildOrder>19</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="md5.cpp">
+				<BuildOrder>62</BuildOrder>
+				<BuildOrder>20</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="marss.cpp">
+				<BuildOrder>59</BuildOrder>
+				<BuildOrder>101</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="iterhash.cpp">
+				<BuildOrder>56</BuildOrder>
+				<BuildOrder>106</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="mars.cpp">
+				<BuildOrder>58</BuildOrder>
+				<BuildOrder>100</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="emsa2.cpp">
+				<BuildOrder>36</BuildOrder>
+				<BuildOrder>108</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="eprecomp.cpp">
+				<BuildOrder>37</BuildOrder>
+				<BuildOrder>109</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="esign.cpp">
+				<BuildOrder>38</BuildOrder>
+				<BuildOrder>114</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="eax.cpp">
+				<BuildOrder>31</BuildOrder>
+				<BuildOrder>111</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="ecp.cpp">
+				<BuildOrder>34</BuildOrder>
+				<BuildOrder>110</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="files.cpp">
+				<BuildOrder>39</BuildOrder>
+				<BuildOrder>119</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="gf2n.cpp">
+				<BuildOrder>45</BuildOrder>
+				<BuildOrder>117</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="gf256.cpp">
+				<BuildOrder>96</BuildOrder>
+				<BuildOrder>46</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="gfpcrypt.cpp">
+				<BuildOrder>97</BuildOrder>
+				<BuildOrder>47</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="gf2_32.cpp">
+				<BuildOrder>44</BuildOrder>
+				<BuildOrder>116</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="filters.cpp">
+				<BuildOrder>40</BuildOrder>
+				<BuildOrder>120</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="fips140.cpp">
+				<BuildOrder>41</BuildOrder>
+				<BuildOrder>121</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="gcm.cpp">
+				<BuildOrder>43</BuildOrder>
+				<BuildOrder>115</BuildOrder>
+			</CppCompile>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Project="$(BDS)\Bin\CodeGear.Cpp.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Cpp.Targets')"/>
+		<ProjectExtensions>
+			<Borland.Personality>CPlusPlusBuilder.Personality.12</Borland.Personality>
+			<Borland.ProjectType>CppStaticLibrary</Borland.ProjectType>
+			<BorlandProject>
+				<CPlusPlusBuilder.Personality>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1033</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+					<Debugging>
+						<Debugging Name="DebugSourceDirs"/>
+					</Debugging>
+					<Parameters>
+						<Parameters Name="RunParams"/>
+						<Parameters Name="Launcher"/>
+						<Parameters Name="UseLauncher">False</Parameters>
+						<Parameters Name="DebugCWD"/>
+						<Parameters Name="HostApplication"/>
+						<Parameters Name="RemoteHost"/>
+						<Parameters Name="RemotePath"/>
+						<Parameters Name="RemoteParams"/>
+						<Parameters Name="RemoteLauncher"/>
+						<Parameters Name="UseRemoteLauncher">False</Parameters>
+						<Parameters Name="RemoteCWD"/>
+						<Parameters Name="RemoteDebug">False</Parameters>
+						<Parameters Name="Debug Symbols Search Path"/>
+						<Parameters Name="LoadAllSymbols">True</Parameters>
+						<Parameters Name="LoadUnspecifiedSymbols">False</Parameters>
+					</Parameters>
+					<ProjectProperties>
+						<ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
+						<ProjectProperties Name="ManagePaths">True</ProjectProperties>
+						<ProjectProperties Name="VerifyPackages">True</ProjectProperties>
+					</ProjectProperties>
+				</CPlusPlusBuilder.Personality>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
+	</Project>

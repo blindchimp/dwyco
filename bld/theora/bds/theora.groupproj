@@ -1,0 +1,64 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{6f3401c0-a34a-49a7-964c-2cedb64b8de4}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Projects Include="dump_video.cbproj" />
+    <Projects Include="encoder_example.cbproj" />
+    <Projects Include="png2theora.cbproj" />
+    <Projects Include="theora.cbproj" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Default.Personality</Borland.Personality>
+    <Borland.ProjectType />
+    <BorlandProject>
+  <BorlandProject xmlns=""> <Default.Personality> </Default.Personality> </BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Target Name="theora">
+    <MSBuild Projects="theora.cbproj" Targets="" />
+  </Target>
+  <Target Name="theora:Clean">
+    <MSBuild Projects="theora.cbproj" Targets="Clean" />
+  </Target>
+  <Target Name="theora:Make">
+    <MSBuild Projects="theora.cbproj" Targets="Make" />
+  </Target>
+  <Target Name="encoder_example">
+    <MSBuild Projects="encoder_example.cbproj" Targets="" />
+  </Target>
+  <Target Name="encoder_example:Clean">
+    <MSBuild Projects="encoder_example.cbproj" Targets="Clean" />
+  </Target>
+  <Target Name="encoder_example:Make">
+    <MSBuild Projects="encoder_example.cbproj" Targets="Make" />
+  </Target>
+  <Target Name="png2theora">
+    <MSBuild Projects="png2theora.cbproj" Targets="" />
+  </Target>
+  <Target Name="png2theora:Clean">
+    <MSBuild Projects="png2theora.cbproj" Targets="Clean" />
+  </Target>
+  <Target Name="png2theora:Make">
+    <MSBuild Projects="png2theora.cbproj" Targets="Make" />
+  </Target>
+  <Target Name="dump_video">
+    <MSBuild Projects="dump_video.cbproj" Targets="" />
+  </Target>
+  <Target Name="dump_video:Clean">
+    <MSBuild Projects="dump_video.cbproj" Targets="Clean" />
+  </Target>
+  <Target Name="dump_video:Make">
+    <MSBuild Projects="dump_video.cbproj" Targets="Make" />
+  </Target>
+  <Target Name="Build">
+    <CallTarget Targets="theora;encoder_example;png2theora;dump_video" />
+  </Target>
+  <Target Name="Clean">
+    <CallTarget Targets="theora:Clean;encoder_example:Clean;png2theora:Clean;dump_video:Clean" />
+  </Target>
+  <Target Name="Make">
+    <CallTarget Targets="theora:Make;encoder_example:Make;png2theora:Make;dump_video:Make" />
+  </Target>
+  <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
+</Project>

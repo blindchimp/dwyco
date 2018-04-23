@@ -1,0 +1,20 @@
+lbind(s socket(tcp any:any nil nil))
+socket-connect(<s> 127.0.0.1:7777)
+socket-set-option(<s> nonblocking)
+
+lbind(a vector2(10000))
+srand(1)
+for(i 0 9999 putidx(<a> <i> rand()))
+compile(handler exc sock `return(backout)')
+lbind(n 0)
+while(lt(<n> 1000) prog(
+	printl(<n>)
+	while(exchandle(E:*would* <handler> `printl(retry) t' `
+	lbind(b socket-send(<s> <a>))
+	printl(<b>)
+	nil
+	')
+	prog()
+	)
+	lbind(n add(<n> 1))
+))

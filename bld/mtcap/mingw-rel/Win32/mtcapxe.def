@@ -1,0 +1,20 @@
+LIBRARY     MTCAPXE.DLL
+
+EXPORTS
+    vg_set_appdata                @64  ; _vg_set_appdata
+    vgdel                         @66  ; _vgdel
+    vgfree_data                   @73  ; _vgfree_data
+    vgfree_video_devices          @58  ; _vgfree_video_devices
+    vgget_data                    @72  ; _vgget_data
+    vgget_video_devices           @57  ; _vgget_video_devices
+    vghas_data                    @68  ; _vghas_data
+    vginit                        @67  ; _vginit
+    vgneed                        @69  ; _vgneed
+    vgnew                         @65  ; _vgnew
+    vgpass                        @70  ; _vgpass
+    vgpreview_off                 @63  ; _vgpreview_off
+    vgpreview_on                  @62  ; _vgpreview_on
+    vgset_video_device            @59  ; _vgset_video_device
+    vgshow_source_dialog          @61  ; _vgshow_source_dialog
+    vgstop                        @71  ; _vgstop
+    vgstop_video_device           @60  ; _vgstop_video_device

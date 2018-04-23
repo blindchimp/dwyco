@@ -1,0 +1,210 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{75e0a783-11e2-400b-bece-dec9b30f45a4}</ProjectGuid>
+    <ProjectType>CppStaticLibrary</ProjectType>
+    <Config Condition="'$(Config)'==''">Release Build</Config>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+    <Base>true</Base>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Config)'=='Debug Build' or '$(Cfg_1)'!=''">
+    <Base>true</Base>
+    <Cfg_1>true</Cfg_1>
+    <CfgParent>Base</CfgParent>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Config)'=='Release Build' or '$(Cfg_2)'!=''">
+    <Base>true</Base>
+    <Cfg_2>true</Cfg_2>
+    <CfgParent>Base</CfgParent>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Base)'!=''">
+    <OutputExt>lib</OutputExt>
+    <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
+    <DCC_ObjPath>C:\mk\depot\cdcdll2\bld\speex\libspeex</DCC_ObjPath>
+    <BCC_GenerateWindowsApp>true</BCC_GenerateWindowsApp>
+    <PackageImports>vcl.bpi;rtl.bpi;vclx.bpi;dbrtl.bpi;vcldb.bpi;adortl.bpi;dbxcds.bpi;dbexpress.bpi;vclib.bpi;ibxpress.bpi;xmlrtl.bpi;vclie.bpi;inet.bpi;inetdbbde.bpi;inetdbxpress.bpi;bcbofficexp.bpi;vclactnband.bpi;bcbsmp.bpi;soaprtl.bpi;dsnap.bpi;bcbie.bpi;bdertl.bpi;vcldbx.bpi;indy.bpi;IntrawebDB_90_100.bpi;Intraweb_90_100.bpi;Rave65VCL.bpi;teeui.bpi;teedb.bpi;tee.bpi;TVidGrab.bpi</PackageImports>
+    <DCC_UnitSearchPath>C:\mk\depot\cdcdll2\bld\speex\libspeex;C:\Documents and Settings\dwight\My Documents\Borland Studio Projects;$(BDS)\lib;$(BDS)\lib\obj</DCC_UnitSearchPath>
+    <BCC_GenerateMultithreaded>true</BCC_GenerateMultithreaded>
+    <BCC_PCHCache>true</BCC_PCHCache>
+    <BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
+    <BCC_IncludePath>$(BDS)\include;$(BDS)\include\dinkumware;$(BDS)\include\vcl;..\include\speex;..\include;..\win32\rad2007</BCC_IncludePath>
+    <DCC_IncludePath>C:\mk\depot\cdcdll2\bld\speex\libspeex;C:\Documents and Settings\dwight\My Documents\Borland Studio Projects;$(BDS)\lib;$(BDS)\lib\obj</DCC_IncludePath>
+    <AllPackageLibs>rtl.lib;vcl.lib</AllPackageLibs>
+    <BRCC_IncludePath>$(BDS)\include;$(BDS)\include\dinkumware;$(BDS)\include\vcl;..\include\speex;..\include</BRCC_IncludePath>
+    <TASM_IncludePath>$(BDS)\include;$(BDS)\include\dinkumware;$(BDS)\include\vcl;..\include\speex;..\include</TASM_IncludePath>
+    <ILINK_LibraryPath>$(BDS)\lib;$(BDS)\lib\obj;$(BDS)\lib\psdk</ILINK_LibraryPath>
+    <BCC_Defines>_RTLDLL;NO_STRICT;HAVE_CONFIG_H</BCC_Defines>
+    <BRCC_Defines>_RTLDLL;NO_STRICT;HAVE_CONFIG_H;FIXED_POINT;DISABLE_WARNINGS</BRCC_Defines>
+    <TASM_Defines>_RTLDLL;NO_STRICT;HAVE_CONFIG_H;FIXED_POINT;DISABLE_WARNINGS</TASM_Defines>
+    <Multithreaded>true</Multithreaded>
+    <DCC_ResourcePath>C:\mk\depot\cdcdll2\bld\speex\libspeex</DCC_ResourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Cfg_1)'!=''">
+    <DCC_Optimize>false</DCC_Optimize>
+    <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+    <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
+    <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
+    <ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
+    <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+    <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+    <FinalOutputDir>.</FinalOutputDir>
+    <IntermediateOutputDir>Debug_Build</IntermediateOutputDir>
+    <TASM_DisplaySourceLines>true</TASM_DisplaySourceLines>
+    <BCC_StackFrames>true</BCC_StackFrames>
+    <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+    <ILINK_LibraryPath>$(BDS)\lib\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+    <BCC_Defines>_DEBUG;$(BCC_Defines)</BCC_Defines>
+    <TASM_Debugging>Full</TASM_Debugging>
+    <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Cfg_2)'!=''">
+    <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
+    <BCC_InstructionSet>5</BCC_InstructionSet>
+    <DCC_DebugInformation>false</DCC_DebugInformation>
+    <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+    <FinalOutputDir>.</FinalOutputDir>
+    <IntermediateOutputDir>Release_Build</IntermediateOutputDir>
+    <ILINK_LibraryPath>$(BDS)\lib\release;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+    <BCC_Defines>NDEBUG;$(BCC_Defines)</BCC_Defines>
+    <TASM_Debugging>None</TASM_Debugging>
+    <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+  </PropertyGroup>
+  <ProjectExtensions>
+    <Borland.Personality>CPlusPlusBuilder.Personality</Borland.Personality>
+    <Borland.ProjectType>CppStaticLibrary</Borland.ProjectType>
+    <BorlandProject>
+<BorlandProject><CPlusPlusBuilder.Personality><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1033</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Debugging><Debugging Name="DebugSourceDirs"></Debugging></Debugging><Parameters><Parameters Name="RunParams"></Parameters><Parameters Name="Launcher"></Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="DebugCWD"></Parameters><Parameters Name="HostApplication"></Parameters><Parameters Name="RemoteHost"></Parameters><Parameters Name="RemotePath"></Parameters><Parameters Name="RemoteParams"></Parameters><Parameters Name="RemoteLauncher"></Parameters><Parameters Name="UseRemoteLauncher">False</Parameters><Parameters Name="RemoteCWD"></Parameters><Parameters Name="RemoteDebug">False</Parameters><Parameters Name="Debug Symbols Search Path"></Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><Linker><Linker Name="LibPrefix"></Linker><Linker Name="LibSuffix"></Linker><Linker Name="LibVersion"></Linker></Linker><ProjectProperties><ProjectProperties Name="AutoShowDeps">False</ProjectProperties><ProjectProperties Name="ManagePaths">True</ProjectProperties><ProjectProperties Name="VerifyPackages">True</ProjectProperties></ProjectProperties><HistoryLists_hlILINK_LibraryPath><HistoryLists_hlILINK_LibraryPath Name="Count">1</HistoryLists_hlILINK_LibraryPath><HistoryLists_hlILINK_LibraryPath Name="Item0">$(BDS)\lib;$(BDS)\lib\obj;$(BDS)\lib\psdk</HistoryLists_hlILINK_LibraryPath></HistoryLists_hlILINK_LibraryPath><HistoryLists_hlBCC_IncludePath><HistoryLists_hlBCC_IncludePath Name="Count">2</HistoryLists_hlBCC_IncludePath><HistoryLists_hlBCC_IncludePath Name="Item0">$(BDS)\include;$(BDS)\include\dinkumware;$(BDS)\include\vcl;..\include\speex;..\include;..\win32\rad2007</HistoryLists_hlBCC_IncludePath>  <HistoryLists_hlBCC_IncludePath Name="Item1">$(BDS)\include;$(BDS)\include\dinkumware;$(BDS)\include\vcl;..\include\speex;..\include</HistoryLists_hlBCC_IncludePath>
+    </HistoryLists_hlBCC_IncludePath><HistoryLists_hlBCC_Defines><HistoryLists_hlBCC_Defines Name="Count">6</HistoryLists_hlBCC_Defines><HistoryLists_hlBCC_Defines Name="Item0">_RTLDLL;NO_STRICT;HAVE_CONFIG_H</HistoryLists_hlBCC_Defines><HistoryLists_hlBCC_Defines Name="Item1">_RTLDLL;NO_STRICT;HAVE_CONFIG_H;DISABLE_WARNINGS;EXPORT=;FLOATING_POINT;USE_SMALLFT</HistoryLists_hlBCC_Defines><HistoryLists_hlBCC_Defines Name="Item2">_RTLDLL;NO_STRICT;HAVE_CONFIG_H;DISABLE_WARNINGS;EXPORT=;FLOATING_POINT;SMALLFT</HistoryLists_hlBCC_Defines><HistoryLists_hlBCC_Defines Name="Item3">_RTLDLL;NO_STRICT;HAVE_CONFIG_H;DISABLE_WARNINGS;EXPORT=;FLOATING_POINT</HistoryLists_hlBCC_Defines><HistoryLists_hlBCC_Defines Name="Item4">_RTLDLL;NO_STRICT;HAVE_CONFIG_H;DISABLE_WARNINGS;EXPORT=</HistoryLists_hlBCC_Defines>  <HistoryLists_hlBCC_Defines Name="Item5">_RTLDLL;NO_STRICT;HAVE_CONFIG_H;FIXED_POINT;DISABLE_WARNINGS;EXPORT=</HistoryLists_hlBCC_Defines>
+    </HistoryLists_hlBCC_Defines></CPlusPlusBuilder.Personality></BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Import Project="$(MSBuildBinPath)\Borland.Cpp.Targets" />
+  <ItemGroup>
+    <CppCompile Include="bits.c">
+      <BuildOrder>2</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="cb_search.c">
+      <BuildOrder>3</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="exc_10_16_table.c">
+      <BuildOrder>7</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="exc_10_32_table.c">
+      <BuildOrder>8</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="exc_20_32_table.c">
+      <BuildOrder>9</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="exc_5_256_table.c">
+      <BuildOrder>5</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="exc_5_64_table.c">
+      <BuildOrder>4</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="exc_8_128_table.c">
+      <BuildOrder>6</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="fftwrap.c">
+      <BuildOrder>10</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="filterbank.c">
+      <BuildOrder>38</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="filters.c">
+      <BuildOrder>11</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="gain_table.c">
+      <BuildOrder>12</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="gain_table_lbr.c">
+      <BuildOrder>13</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="hexc_10_32_table.c">
+      <BuildOrder>14</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="hexc_table.c">
+      <BuildOrder>15</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="high_lsp_tables.c">
+      <BuildOrder>16</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="jitter.c">
+      <BuildOrder>17</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="kiss_fft.c">
+      <BuildOrder>18</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="kiss_fftr.c">
+      <BuildOrder>19</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="libspeex.cpp">
+      <BuildOrder>0</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="lpc.c">
+      <BuildOrder>20</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="lsp.c">
+      <BuildOrder>21</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="lsp_tables_nb.c">
+      <BuildOrder>22</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="ltp.c">
+      <BuildOrder>23</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="mdf.c">
+      <BuildOrder>24</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="modes.c">
+      <BuildOrder>25</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="modes_wb.c">
+      <BuildOrder>39</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="nb_celp.c">
+      <BuildOrder>26</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="preprocess.c">
+      <BuildOrder>27</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="quant_lsp.c">
+      <BuildOrder>28</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="resample.c">
+      <BuildOrder>37</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="sb_celp.c">
+      <BuildOrder>29</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="smallft.c">
+      <BuildOrder>30</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="speex.c">
+      <BuildOrder>31</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="speex_callbacks.c">
+      <BuildOrder>32</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="speex_header.c">
+      <BuildOrder>33</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="stereo.c">
+      <BuildOrder>34</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="vbr.c">
+      <BuildOrder>35</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="vq.c">
+      <BuildOrder>36</BuildOrder>
+    </CppCompile>
+    <CppCompile Include="window.c">
+      <BuildOrder>1</BuildOrder>
+    </CppCompile>
+    <BuildConfiguration Include="Debug Build">
+      <Key>Cfg_1</Key>
+    </BuildConfiguration>
+    <BuildConfiguration Include="Release Build">
+      <Key>Cfg_2</Key>
+    </BuildConfiguration>
+  </ItemGroup>
+</Project>

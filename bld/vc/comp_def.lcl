@@ -1,0 +1,124 @@
+#COMP_DFLAGS += -DVCUVSOCK #-DLHUVSOCK -DVCDBG
+#COMP_CCOPTS += -fexceptions
+#COMP_CPPOPTS += --coverage
+#COMP_LFLAGS += --coverage
+#COMP_CPPOPTS += -pg
+COMP_DFLAGS += -DOLD_EXCHANDLE
+.IF $(VC_BUILD) == interpreter
+#### vc interpreter settings
+LCL_LFLAGS+= #-static
+
+LCL_DFLAGS+= -DVCLH
+
+.IF $(OS_SUBSTYLE) == macosx
+LCL_DFLAGS += -DMACOSX -DFREEBSD
+.END
+
+FLAVOR_CCOPTS_prof_DEFAULT +=# -ftest-coverage -fprofile-arcs
+LCL_DFLAGS+=-DCACHE_LOOKUPS #-DLHPROF
+LCL_CCOPTS += -fno-operator-names
+COMP_EXE_MEMBERS=vcrun $(TMP_LIB_MEMBERS)
+######
+.ELIF $(VC_BUILD) == win-interpreter
+#### vc interpreter settings
+LCL_CCOPTS=-w-inl -w-hid
+LCL_DFLAGS+= -DINLINE_SOME 
+
+LCL_DFLAGS+=-DCACHE_LOOKUPS #-DLHPROF
+COMP_EXE_MEMBERS=vcrun $(TMP_LIB_MEMBERS) 
+######
+
+.ELIF $(VC_BUILD) == cdclib
+
+#### vc lib for clients settings
+
+LCL_DFLAGS=-DVCCFG_FILE 
+.IF $(OS_SUBSTYLE) == macosx
+LCL_DFLAGS += -DMACOSX -DFREEBSD
+.END
+COMP_DFLAGS=
+.IF $(MACH) == UNIX
+COMP_DFLAGS += -DLONGNAMES -DUNIX 
+.ELSE
+.IF $(ENV) == B32
+LCL_CCOPTS=-w-inl -w-hid
+.END
+# inlining in bc45 fails for some reason (in odd cases, possibly
+# a template expansion problem.) comment out the INLINE_SOME
+# for bc45
+#LCL_DFLAGS+=  -DINLINE_SOME
+.END
+COMP_LIB_MEMBERS=  \
+	vclhnet \
+	dwgrows \
+	dwioh \
+	pmatch \
+	vc \
+	vc2 \
+	vc3 \
+	vcatomic \
+	vccfun \
+	vccomp \
+	vcctx \
+	vccvar \
+	vcdbg \
+	vcdbl \
+	vcdecom \
+	vcdeflt \
+	vcenco \
+	vcexcctx \
+	vcfunc \
+	vcfuncal \
+	vcfunctx \
+	vcfundef \
+	vcint \
+	vclex \
+	vclh \
+	vcmap \
+	vcnil \
+	vcregex \
+	vcser \
+	vcsock \
+	vcsrc \
+	vcstr \
+	vcwserr \
+	vcwsioh \
+	vcwsock \
+	vcxstrm \
+vcmemfun \
+vcmemsel \
+vcobj \
+vcfac \
+vclhfac \
+vcmath \
+vclhsys \
+vchomov \
+vcfile \
+vcsfile  \
+enc \
+vccrypt2 \
+zcomp \
+vcio \
+vcuvsock \
+vctrans \
+vctfun \
+vcudh
+
+# NOTE: only want all this stuff if you are compile LH with cdclib inside of it.
+# the reason is that since it is all statically linked, all the same
+# flags have to be used for *everything*.
+.ELIF $(VC_BUILD) == interpreter-wrap
+LCL_LFLAGS += #-static
+LCL_DFLAGS += -DLH_WRAP_SPREAD -DLH_WRAP_SQLITE3 #-DLH_WRAP_DLLI -DLH_WRAP_CDK -DLH_WRAP_CURSES -DLHCDC32
+LCL_DFLAGS +=  -DINLINE_SOME
+#LCL_DFLAGS +=  -DUSE_RCT
+LCL_DFLAGS += #-DVCCFG_FILE
+LCL_DFLAGS += -DLONGNAMES -DUNIX 
+LIBS_SYSTEM += -lsqlite3 -lpthread -ldl #-lcdk -lcurses -lpthread -ldl
+LCL_CCOPTS += -fno-operator-names 
+COMP_EXE_MEMBERS=vcrun $(TMP_LIB_MEMBERS) hacked_spread.xml hacked_sqlite3 #hacked_dlli.xml hacked_cdk.xml hacked_curses.xml 
+#COMP_LIBS_IMPORT += cdc32 crypto20 dwcls gsm kazlib lpc ppm pgm pbm zlib gnustr jenkins v4lcap libspeex libvorbisenc libvorbis libogg
+COMP_LIBS_IMPORT +=  libspread libuv
+.ELIF $(VC_BUILD) == shitmasterlib
+LCL_DFLAGS=-DVCCFG_FILE 
+.END

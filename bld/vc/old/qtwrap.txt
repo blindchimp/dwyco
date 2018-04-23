@@ -1,0 +1,107 @@
+Tue Jun 12 22:40:22 MDT 2007
+-------
+Dwight Melcher
+Dwyco, Inc.
+
+ideas on using the qmetaobject stuff to create "wrappers" for
+qt stuff.
+
+--------------
+
+say we present a qt object like an LH object.
+the factories for lh objects that mapped to qt objects
+would generate lh-like objects from a qt object.
+it could do this by using the name of the qt class
+as the factory.
+
+lbind(a QObject())
+
+it appears that there is no way to create an qobject type
+thing dynamically (unless you can register the type,
+like QButton, using the QMetaType thing and create
+it with constuct)
+
+the user then can wrap call methods on the object
+
+a[clicked]()
+
+alternately, if they want to have their own handlers
+in LH called when a signal is received, they would
+have to create a new factory, and forward/delegate to the
+Qt object:
+
+gmake-factor(MyButton
+	vector()
+	nil ; base
+	vector(qt-button) ; delegate
+	nil
+
+	qt-button `QButton()'
+
+	clicked lambda(`...')
+)
+
+hmmm, this doesn't look like it would work. we would have
+to create a class that would have all the members for
+slots, and translate all those members to "member" calls
+for the object.
+
+maybe this would be better:
+
+create "lookalike" factories in LH for QButton, but
+they have LH structure that includes a default
+delegate to an object whose factory is called QUserButton.
+the user would then define a factory:
+
+gmake-factory(QUserButton
+	vector()
+	nil; base
+	nil; delegate
+	nil; forward
+
+	clicked lambda(`...')
+)
+
+(note: see qsignalspy as a possible source of signal info we can use
+to create lookalike functionality)
+
+note: qsignalmapper is another source of info for mapping signals to
+LH objects.
+
+ok, when we make a factory like that above, we notice that it is
+of the given name "quserbutton" and switch to a new factory
+create function that creates a qt object: QButton.
+NOTE: this special object would have to be derived from both
+QObject and the vc stuff so it would receive mapped signals.
+we assign the encapsulated qt object to a special member (say __lh_qt_obj)
+and continue creating the member functions as usual.
+now, in order to get signals that are sent to __lh_qt_obj
+to the right place, we connect __lh_qt_obj signals to a signalmapper.
+we can use qmetaobjects to iterate thru all signals in the __lh_qt_obj
+and create a mapping like this
+	during creation of this new hybrid object:
+	foreach(sig <signals>
+		connect(__lh_qt_obj, SIGNAL(<sig>), signalmapper, SLOT(map()))
+		signalmapper->setMapping(__lh_qt_obj, LH_SIGNAL_NAME)
+		connect(__lh_qt_obj, SIGNAL(mapped(const QString &)), this,
+			SLOT(dispatch(const QString&)))
+
+with any luck, this would capture any signals sent to __lh_qt_obj
+and map them our object, sending them to he "dispatch" member with
+the string containing the LH_SIGNAL_NAME, which could be derived from
+the qt signal name in some intuitive way.
+
+since i assume this extra connection is *in addition to* whatever
+signal delivery will happen for the __lh_qt_obj, it should be
+that we need to just martial the args for the signal and find the
+LH member fun and call it.
+
+NOTE: this above will only work for parameter-less signals (qt limitation).
+
+if we use "signalspy", we could do it this way. instead of a mapping,
+we just create a bunch of spy objects, one for each signal, and keep
+a map like this in the object: (signal, spyobj).
+each time the __lh_qt_obj emits a signal (shit, we don't know the
+target of the signal.)
+
+maybe we can get the target of the signal using qobject::connectnotify

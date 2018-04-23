@@ -1,0 +1,16 @@
+functionality:
+
+LHOBJ
+VCDBG
+
+environment:
+
+USE_BERKSOCK
+USE_WINSOCK
+UNIX
+
+performance, misc:
+
+FUNCACHE
+PERFHACKS
+BTYPES

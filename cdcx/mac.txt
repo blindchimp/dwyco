@@ -1,0 +1,14 @@
+CODESIGNING NOTES:
+Tue Aug 19 10:33:42 MDT 2014
+You can use the same cert you use on windows to do codesigning on mac.
+You have to use applications/utilities/keychainaccess to import the key.
+if the key says "signed by an unknown authority", look inside the
+certificate for the "Cert Authority Info Access" URI and download and
+import that certificate. you *may* also have to import the apple
+world wide developer certificate from their website.
+
+Fri Jun 23 14:43:18 MDT 2017
+WARNING: when compiling on xcode 8, and qt4.8.7, you may need to tweak the make spec files for ./common/g++-macx.conf to increase the min-deploy-target so you can successfully link with stdc++ instead of the older libstdc++. this is important since i compiled the audio/video drivers with the newer compilers and runtime as well. this allows you to use the xcode leak debugging tools and whatnot. if you compile everything with qmake, it seems to get this right as far as i can tell. it is just xcode that may cough.
+
+Sun Jun 25 16:23:12 MDT 2017
+cdc-x v 2.15 was compiled on macos 10.11 and xcode 8.2. no libuv, the static libs were compiled using the qmake files (with qt-creator). min-deploy-target was tweaked as mentioned above. the a/v driver lib was compiled using xcode 7 on a 10.10 VM because of APIs that are missing in the new SDKs.

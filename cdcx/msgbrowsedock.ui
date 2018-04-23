@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MsgBrowseDock</class>
+ <widget class="QDockWidget" name="MsgBrowseDock">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>536</width>
+    <height>284</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Saved Msgs</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QListView" name="msglist">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::ExtendedSelection</enum>
+          </property>
+          <property name="layoutMode">
+           <enum>QListView::Batched</enum>
+          </property>
+          <property name="viewMode">
+           <enum>QListView::ListMode</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="show_sent">
+          <property name="text">
+           <string>Show msgs you sent</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="layoutWidget">
+       <layout class="QVBoxLayout" name="_2">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="player" name="label" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>160</width>
+            <height>120</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTextBrowser" name="textBrowser">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <action name="actionDelete">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/blue48/icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/trash full-48x48.png</normaloff>:/new/blue48/icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/trash full-48x48.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Delete</string>
+   </property>
+  </action>
+  <action name="actionForward">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/blue48/icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/right arrow-48x48.png</normaloff>:/new/blue48/icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/right arrow-48x48.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Forward...</string>
+   </property>
+  </action>
+  <action name="actionReply">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/blue48/icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/undo-48x48.png</normaloff>:/new/blue48/icons/PrimaryCons_Blue_KenSaunders/PNGs/48x48/undo-48x48.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Reply...</string>
+   </property>
+  </action>
+  <action name="actionDelete_All">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/exclamation-32x32.png</normaloff>:/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/exclamation-32x32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete &amp;All..</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>player</class>
+   <extends>QWidget</extends>
+   <header>player.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="icons.qrc"/>
+ </resources>
+ <connections/>
+</ui>

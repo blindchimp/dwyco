@@ -1,0 +1,136 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.06.00"/>
+    <PROJECT value="mtcap.dll"/>
+    <OBJFILES value="mtcap.obj mtcapform.obj"/>
+    <RESFILES value="mtcap.res"/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES) mtcapform.dfm"/>
+    <LIBFILES value="..\..\ins\OPT\LIB\DWCLS.LIB"/>
+    <LIBRARIES value="VideoLabPkgCB6.lib AudioLabBasicPkgCB6.lib SignalLabBasicPkgCB6.lib 
+      OpenWirePkgCB6.lib VideoLabBasicPkgCB6.lib rtl.lib vcl.lib"/>
+    <SPARELIBS value="vcl.lib rtl.lib VideoLabBasicPkgCB6.lib OpenWirePkgCB6.lib 
+      SignalLabBasicPkgCB6.lib AudioLabBasicPkgCB6.lib VideoLabPkgCB6.lib"/>
+    <PACKAGES value="rtl.bpi"/>
+    <PATHCPP value=".;"/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
+    <RELEASELIBPATH value="$(BCB)\lib\release"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value="DWCLSFAR"/>
+    <SYSDEFINES value="NO_STRICT;_RTLDLL"/>
+    <MAINSOURCE value="mtcap.bpf"/>
+    <INCLUDEPATH value="&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;C:\mk\depot\cdcdll\bld\mtcap;$(BCB)\include;$(BCB)\include\vcl;&quot;C:\Program Files\Borland\CBuilder6\LabPacks&quot;;&quot;C:\Program Files\Borland\CBuilder6\OpenWire&quot;;..\..\ins\opt\inc;..\cdc32"/>
+    <LIBPATH value="$(BCB)\Imports;$(BCB)\Projects\Lib;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;C:\mk\depot\cdcdll\bld\mtcap;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\LabPacks"/>
+    <WARNINGS value="-w-par"/>
+    <OTHERFILES value=""/>
+  </MACROS>
+  <OPTIONS>
+    <CFLAG1 value="-WD -O2 -Vx -Ve -X- -a8 -5 -b- -k- -y -v -vi -tWD -tWM -c"/>
+    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
+    <RFLAGS value=""/>
+    <AFLAGS value="/mx /w2 /zn"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpd -x -Gn -Gi"/>
+    <OTHERFILES value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value="c0d32.obj Memmgr.Lib sysinit.obj $(OBJFILES)"/>
+    <ALLRES value="$(RESFILES)"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mti.lib"/>
+    <OTHERFILES value=""/>
+  </LINKER>
+  <FILELIST>
+      <FILE FILENAME="mtcap.res" FORMNAME="" UNITNAME="mtcap.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="mtcap.bpf" FORMNAME="" UNITNAME="mtcap" CONTAINERID="BPF" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="mtcap.cpp" FORMNAME="" UNITNAME="mtcap" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="mtcapform.cpp" FORMNAME="CapForm" UNITNAME="mtcapform" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\ins\OPT\LIB\DWCLS.LIB" FORMNAME="" UNITNAME="DWCLS.LIB" CONTAINERID="LibTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+  </FILELIST>
+  <BUILDTOOLS>
+  </BUILDTOOLS>
+
+  <IDEOPTIONS>
+[Version Info]
+IncludeVerInfo=0
+AutoIncBuild=0
+MajorVer=1
+MinorVer=0
+Release=0
+Build=0
+Debug=0
+PreRelease=0
+Special=0
+Private=0
+DLL=0
+Locale=1033
+CodePage=1252
+
+[Version Info Keys]
+CompanyName=
+FileDescription=
+FileVersion=1.0.0.0
+InternalName=
+LegalCopyright=
+LegalTrademarks=
+OriginalFilename=
+ProductName=
+ProductVersion=1.0.0.0
+Comments=
+
+[HistoryLists\hlIncludePath]
+Count=4
+Item0=C:\Program Files\Borland\CBuilder6\Projects;C:\mk\depot\cdcdll\bld\mtcap;$(BCB)\include;$(BCB)\include\vcl;C:\Program Files\Borland\CBuilder6\LabPacks;C:\Program Files\Borland\CBuilder6\OpenWire;..\..\ins\opt\inc;..\cdc32
+Item1=C:\Program Files\Borland\CBuilder6\Projects;C:\mk\depot\cdcdll\bld\mtcap;$(BCB)\include;$(BCB)\include\vcl;C:\Program Files\Borland\CBuilder6\LabPacks;C:\Program Files\Borland\CBuilder6\OpenWire;..\..\ins\opt\inc
+Item2=C:\Program Files\Borland\CBuilder6\Projects;C:\mk\depot\cdcdll\bld\mtcap;$(BCB)\include;$(BCB)\include\vcl;C:\Program Files\Borland\CBuilder6\LabPacks;C:\Program Files\Borland\CBuilder6\OpenWire
+Item3=C:\Program Files\Borland\CBuilder6\Projects;C:\mk\depot\cdcdll\bld\mtcap;$(BCB)\include;$(BCB)\include\vcl
+
+[HistoryLists\hlLibraryPath]
+Count=2
+Item0=$(BCB)\Imports;$(BCB)\Projects\Lib;C:\Program Files\Borland\CBuilder6\Projects;C:\mk\depot\cdcdll\bld\mtcap;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\LabPacks
+Item1=$(BCB)\Imports;$(BCB)\Projects\Lib;C:\Program Files\Borland\CBuilder6\Projects;C:\mk\depot\cdcdll\bld\mtcap;$(BCB)\lib\obj;$(BCB)\lib
+
+[HistoryLists\hlDebugSourcePath]
+Count=1
+Item0=$(BCB)\source\vcl
+
+[HistoryLists\hlConditionals]
+Count=3
+Item0=DWCLSFAR
+Item1=_DEBUG;DWCLSFAR
+Item2=_DEBUG
+
+[Debugging]
+DebugSourceDirs=$(BCB)\source\vcl
+
+[Parameters]
+RunParams=
+Launcher=
+UseLauncher=0
+DebugCWD=
+HostApplication=
+RemoteHost=
+RemotePath=
+RemoteLauncher=
+RemoteCWD=
+RemoteDebug=0
+
+[Compiler]
+ShowInfoMsgs=0
+LinkDebugVcl=0
+LinkCGLIB=0
+
+[Language]
+ActiveLang=
+ProjectLang=
+RootDir=
+
+[Linker]
+LibPrefix=
+LibSuffix=
+LibVersion=
+  </IDEOPTIONS>
+</PROJECT>

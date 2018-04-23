@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BrowseBox</class>
+ <widget class="QDockWidget" name="BrowseBox">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>710</width>
+    <height>365</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>710</width>
+    <height>82</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Profiles</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents">
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QCheckBox" name="filter">
+        <property name="text">
+         <string>Show all profiles (warning: selecting this shows explicit, unreviewed material.)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QWebView" name="webView" native="true">
+        <property name="url" stdset="0">
+         <url>
+          <string>http://www.dwyco.citymax.com/new_home.html</string>
+         </url>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <action name="actionView_profile_ctx">
+   <property name="text">
+    <string>View profile...</string>
+   </property>
+  </action>
+  <action name="actionShow_Chatbox_ctx">
+   <property name="text">
+    <string>Show Chatbox...</string>
+   </property>
+  </action>
+  <action name="actionCompose_msg_ctx">
+   <property name="text">
+    <string>Audio/Video msg...</string>
+   </property>
+  </action>
+  <action name="actionIgnore_user_ctx">
+   <property name="text">
+    <string>Block user</string>
+   </property>
+   <property name="toolTip">
+    <string>Block user</string>
+   </property>
+  </action>
+  <action name="actionSend_file_ctx">
+   <property name="text">
+    <string>Send file...</string>
+   </property>
+  </action>
+  <action name="actionFilter_change">
+   <property name="text">
+    <string>filter_change</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QWebView</class>
+   <extends>QWidget</extends>
+   <header>QtWebKit/QWebView</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,261 @@
+LIBRARY     MTCAPXE.DLL
+
+EXPORTS
+    @$xp$26Vlgenericgen@TVLGenericGen @94  ; __tpdsc__ Vlgenericgen::TVLGenericGen
+    @$xp$32Vlgenericfilter@TVLGenericFilter @86  ; __tpdsc__ Vlgenericfilter::TVLGenericFilter
+    @$xp$ynpqqrp14System@TObject15TVLCVideoBufferr15TVLCVideoBufferro$v @88  ; __tpdsc__ void __fastcall __closure(*)(System::TObject *, TVLCVideoBuffer, TVLCVideoBuffer&, bool&)
+    @$xp$ynpqqrp14System@TObjectr15TVLCVideoBufferrot3$v @95  ; __tpdsc__ void __fastcall __closure(*)(System::TObject *, TVLCVideoBuffer&, bool&, bool&)
+    @$xp$ynpqqrp14System@TObjectrit2f$v @87  ; __tpdsc__ void __fastcall __closure(*)(System::TObject *, int&, int&, float)
+    @@Mlcmediabuffer@Finalize      @251 ; __linkproc__ Mlcmediabuffer::Finalize
+    @@Mlcmediabuffer@Initialize    @250 ; __linkproc__ Mlcmediabuffer::Initialize
+    @@Mtcapform@Finalize           @76  ; __linkproc__ Mtcapform::Finalize
+    @@Mtcapform@Initialize         @75  ; __linkproc__ Mtcapform::Initialize
+    @@Slcgenericbuffer@Finalize    @254 ; __linkproc__ Slcgenericbuffer::Finalize
+    @@Slcgenericbuffer@Initialize  @253 ; __linkproc__ Slcgenericbuffer::Initialize
+    @@Vlgenericfilter@Finalize     @90  ; __linkproc__ Vlgenericfilter::Finalize
+    @@Vlgenericfilter@Initialize   @89  ; __linkproc__ Vlgenericfilter::Initialize
+    @@Vlgenericgen@Finalize        @97  ; __linkproc__ Vlgenericgen::Finalize
+    @@Vlgenericgen@Initialize      @96  ; __linkproc__ Vlgenericgen::Initialize
+    @@Vlvideobuffer@Finalize       @243 ; __linkproc__ Vlvideobuffer::Finalize
+    @@Vlvideobuffer@Initialize     @242 ; __linkproc__ Vlvideobuffer::Initialize
+    @System@TObject@%GetInterface$34Vlsimpleimagebuffer@IVLImageBuffer%$qqrr62System@%DelphiInterface$t34Vlsimpleimagebuffer@IVLImageBuffer%$o @74  ; bool __fastcall System::TObject::GetInterface<Vlsimpleimagebuffer::IVLImageBuffer>(System::DelphiInterface<Vlsimpleimagebuffer::IVLImageBuffer>&)
+    @TMLCMediaBuffer@$bctr$qv      @11  ; TMLCMediaBuffer::TMLCMediaBuffer()
+    @TMLCMediaBuffer@GetInstance$qv @9   ; TMLCMediaBuffer::GetInstance()
+    @TMLCMediaBuffer@GetIntPasBuffer$xqv @10  ; TMLCMediaBuffer::GetIntPasBuffer() const
+    @TMLCMediaBuffer@GetTimeStamp$qv @12  ; TMLCMediaBuffer::GetTimeStamp()
+    @TMLCTimeStamp@$bctr$qp15TMLCMediaBuffer @8   ; TMLCTimeStamp::TMLCTimeStamp(TMLCMediaBuffer *)
+    @TMLCTimeStamp@GetAvailable$qv @244 ; TMLCTimeStamp::GetAvailable()
+    @TMLCTimeStamp@GetBeginTime$qv @246 ; TMLCTimeStamp::GetBeginTime()
+    @TMLCTimeStamp@GetEndTime$qv   @248 ; TMLCTimeStamp::GetEndTime()
+    @TMLCTimeStamp@SetAvailable$qo @245 ; TMLCTimeStamp::SetAvailable(bool)
+    @TMLCTimeStamp@SetBeginTime$qj @247 ; TMLCTimeStamp::SetBeginTime(__int64)
+    @TMLCTimeStamp@SetEndTime$qj   @249 ; TMLCTimeStamp::SetEndTime(__int64)
+    @TSLCDataBuffer@$bctr$qv       @1   ; TSLCDataBuffer::TSLCDataBuffer()
+    @TSLCDataBuffer@$bdtr$qv       @2   ; TSLCDataBuffer::~TSLCDataBuffer()
+    @TSLCDataBuffer@GetIntPasBuffer$xqv @4   ; TSLCDataBuffer::GetIntPasBuffer() const
+    @TSLCDataBuffer@GetPasBuffer$xqv @3   ; TSLCDataBuffer::GetPasBuffer() const
+    @TSLCGenericBuffer@$bctr$qv    @5   ; TSLCGenericBuffer::TSLCGenericBuffer()
+    @TSLCGenericBuffer@GetSize$xqv @7   ; TSLCGenericBuffer::GetSize() const
+    @TSLCGenericBuffer@PopulateCahces$xqv @252 ; TSLCGenericBuffer::PopulateCahces() const
+    @TSLCGenericBuffer@Unique$xqo  @6   ; TSLCGenericBuffer::Unique(bool) const
+    @TVLCDateTime@$bctr$qp34Vlsimpleimagebuffer@TVLImageBuffer @14  ; TVLCDateTime::TVLCDateTime(Vlsimpleimagebuffer::TVLImageBuffer *)
+    @TVLCDateTime@GetAvailable$qv  @226 ; TVLCDateTime::GetAvailable()
+    @TVLCDateTime@GetDay$qv        @236 ; TVLCDateTime::GetDay()
+    @TVLCDateTime@GetHour$qv       @234 ; TVLCDateTime::GetHour()
+    @TVLCDateTime@GetMillisec$qv   @228 ; TVLCDateTime::GetMillisec()
+    @TVLCDateTime@GetMin$qv        @232 ; TVLCDateTime::GetMin()
+    @TVLCDateTime@GetMonth$qv      @238 ; TVLCDateTime::GetMonth()
+    @TVLCDateTime@GetSec$qv        @230 ; TVLCDateTime::GetSec()
+    @TVLCDateTime@GetYear$qv       @240 ; TVLCDateTime::GetYear()
+    @TVLCDateTime@SetAvailable$qo  @227 ; TVLCDateTime::SetAvailable(bool)
+    @TVLCDateTime@SetDay$qi        @237 ; TVLCDateTime::SetDay(int)
+    @TVLCDateTime@SetHour$qi       @235 ; TVLCDateTime::SetHour(int)
+    @TVLCDateTime@SetMillisec$qi   @229 ; TVLCDateTime::SetMillisec(int)
+    @TVLCDateTime@SetMin$qi        @233 ; TVLCDateTime::SetMin(int)
+    @TVLCDateTime@SetMonth$qi      @239 ; TVLCDateTime::SetMonth(int)
+    @TVLCDateTime@SetSec$qi        @231 ; TVLCDateTime::SetSec(int)
+    @TVLCDateTime@SetYear$qi       @241 ; TVLCDateTime::SetYear(int)
+    @TVLCTimeCode@$bctr$qp34Vlsimpleimagebuffer@TVLImageBuffer @13  ; TVLCTimeCode::TVLCTimeCode(Vlsimpleimagebuffer::TVLImageBuffer *)
+    @TVLCTimeCode@GetAvailable$qv  @216 ; TVLCTimeCode::GetAvailable()
+    @TVLCTimeCode@GetFrame$qv      @218 ; TVLCTimeCode::GetFrame()
+    @TVLCTimeCode@GetHour$qv       @224 ; TVLCTimeCode::GetHour()
+    @TVLCTimeCode@GetMin$qv        @222 ; TVLCTimeCode::GetMin()
+    @TVLCTimeCode@GetSec$qv        @220 ; TVLCTimeCode::GetSec()
+    @TVLCTimeCode@SetAvailable$qo  @217 ; TVLCTimeCode::SetAvailable(bool)
+    @TVLCTimeCode@SetFrame$qi      @219 ; TVLCTimeCode::SetFrame(int)
+    @TVLCTimeCode@SetHour$qi       @225 ; TVLCTimeCode::SetHour(int)
+    @TVLCTimeCode@SetMin$qi        @223 ; TVLCTimeCode::SetMin(int)
+    @TVLCTimeCode@SetSec$qi        @221 ; TVLCTimeCode::SetSec(int)
+    @TVLCVideoBuffer@$basg$q15Graphics@TColor @112 ; TVLCVideoBuffer::operator =(Graphics::TColor)
+    @TVLCVideoBuffer@$basg$qrx15TVLCVideoBuffer @107 ; TVLCVideoBuffer::operator =(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@$bctr$q62System@%DelphiInterface$t34Vlsimpleimagebuffer@IVLImageBuffer% @104 ; TVLCVideoBuffer::TVLCVideoBuffer(System::DelphiInterface<Vlsimpleimagebuffer::IVLImageBuffer>)
+    @TVLCVideoBuffer@$bctr$qii30Vlinternalstore@TVLVideoFormat @99  ; TVLCVideoBuffer::TVLCVideoBuffer(int, int, Vlinternalstore::TVLVideoFormat)
+    @TVLCVideoBuffer@$bctr$qp16Graphics@TBitmap @100 ; TVLCVideoBuffer::TVLCVideoBuffer(Graphics::TBitmap *)
+    @TVLCVideoBuffer@$bctr$qp34Vlsimpleimagebuffer@TVLImageBuffer @103 ; TVLCVideoBuffer::TVLCVideoBuffer(Vlsimpleimagebuffer::TVLImageBuffer *)
+    @TVLCVideoBuffer@$bctr$qrx15TVLCVideoBuffer @101 ; TVLCVideoBuffer::TVLCVideoBuffer(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@$bctr$qv      @102 ; TVLCVideoBuffer::TVLCVideoBuffer()
+    @TVLCVideoBuffer@$bdtr$qv      @106 ; TVLCVideoBuffer::~TVLCVideoBuffer()
+    @TVLCVideoBuffer@$brdiv$q15Graphics@TColor @149 ; TVLCVideoBuffer::operator /=(Graphics::TColor)
+    @TVLCVideoBuffer@$brdiv$qrx15TVLCVideoBuffer @147 ; TVLCVideoBuffer::operator /=(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@$brdiv$qui    @148 ; TVLCVideoBuffer::operator /=(unsigned int)
+    @TVLCVideoBuffer@$brmin$q15Graphics@TColor @127 ; TVLCVideoBuffer::operator -=(Graphics::TColor)
+    @TVLCVideoBuffer@$brmin$qrx15TVLCVideoBuffer @126 ; TVLCVideoBuffer::operator -=(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@$brmin$qui    @128 ; TVLCVideoBuffer::operator -=(unsigned int)
+    @TVLCVideoBuffer@$brmul$q15Graphics@TColor @136 ; TVLCVideoBuffer::operator *=(Graphics::TColor)
+    @TVLCVideoBuffer@$brmul$qrx15TVLCVideoBuffer @134 ; TVLCVideoBuffer::operator *=(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@$brmul$qui    @135 ; TVLCVideoBuffer::operator *=(unsigned int)
+    @TVLCVideoBuffer@$brplu$q15Graphics@TColor @119 ; TVLCVideoBuffer::operator +=(Graphics::TColor)
+    @TVLCVideoBuffer@$brplu$qrx15TVLCVideoBuffer @118 ; TVLCVideoBuffer::operator +=(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@$brplu$qui    @120 ; TVLCVideoBuffer::operator +=(unsigned int)
+    @TVLCVideoBuffer@$bsubs$qi     @23  ; TVLCVideoBuffer::operator [](int)
+    @TVLCVideoBuffer@$o62System@%DelphiInterface$t34Vlsimpleimagebuffer@IVLImageBuffer%$qv @22  ; TVLCVideoBuffer::operator System::DelphiInterface<Vlsimpleimagebuffer::IVLImageBuffer>()
+    @TVLCVideoBuffer@AbsDiff$qrx15TVLCVideoBuffer @150 ; TVLCVideoBuffer::AbsDiff(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@AbsDiff$qrx15TVLCVideoBuffert1 @151 ; TVLCVideoBuffer::AbsDiff(const TVLCVideoBuffer&, const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Add$q15Graphics@TColor @114 ; TVLCVideoBuffer::Add(Graphics::TColor)
+    @TVLCVideoBuffer@Add$q15Graphics@TColoruc @115 ; TVLCVideoBuffer::Add(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@Add$qrx15TVLCVideoBuffer @116 ; TVLCVideoBuffer::Add(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Add$qrx15TVLCVideoBuffert1 @117 ; TVLCVideoBuffer::Add(const TVLCVideoBuffer&, const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Add$qui       @113 ; TVLCVideoBuffer::Add(unsigned int)
+    @TVLCVideoBuffer@And$q15Graphics@TColor @167 ; TVLCVideoBuffer::And(Graphics::TColor)
+    @TVLCVideoBuffer@And$q15Graphics@TColoruc @168 ; TVLCVideoBuffer::And(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@And$qrx15TVLCVideoBuffer @169 ; TVLCVideoBuffer::And(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@And$qrx15TVLCVideoBuffer15Graphics@TColor @171 ; TVLCVideoBuffer::And(const TVLCVideoBuffer&, Graphics::TColor)
+    @TVLCVideoBuffer@And$qrx15TVLCVideoBuffert1 @172 ; TVLCVideoBuffer::And(const TVLCVideoBuffer&, const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@And$qrx15TVLCVideoBufferui @170 ; TVLCVideoBuffer::And(const TVLCVideoBuffer&, unsigned int)
+    @TVLCVideoBuffer@And$qui       @166 ; TVLCVideoBuffer::And(unsigned int)
+    @TVLCVideoBuffer@CheckFormatPopulateCahces$qv @31  ; TVLCVideoBuffer::CheckFormatPopulateCahces()
+    @TVLCVideoBuffer@Copy$qrx15TVLCVideoBuffer @111 ; TVLCVideoBuffer::Copy(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Divide$q15Graphics@TColor @142 ; TVLCVideoBuffer::Divide(Graphics::TColor)
+    @TVLCVideoBuffer@Divide$q15Graphics@TColoruc @143 ; TVLCVideoBuffer::Divide(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@Divide$qrx15TVLCVideoBuffer @145 ; TVLCVideoBuffer::Divide(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Divide$qrx15TVLCVideoBuffert1 @146 ; TVLCVideoBuffer::Divide(const TVLCVideoBuffer&, const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Divide$qui    @144 ; TVLCVideoBuffer::Divide(unsigned int)
+    @TVLCVideoBuffer@FromBitmap$qp16Graphics@TBitmap @212 ; TVLCVideoBuffer::FromBitmap(Graphics::TBitmap *)
+    @TVLCVideoBuffer@FromBitmap$qp18Vlbitmap@TVLBitmap @214 ; TVLCVideoBuffer::FromBitmap(Vlbitmap::TVLBitmap *)
+    @TVLCVideoBuffer@GetAlpha$qii  @201 ; TVLCVideoBuffer::GetAlpha(int, int)
+    @TVLCVideoBuffer@GetAlphaChannel$qv @210 ; TVLCVideoBuffer::GetAlphaChannel()
+    @TVLCVideoBuffer@GetBlue$qii   @199 ; TVLCVideoBuffer::GetBlue(int, int)
+    @TVLCVideoBuffer@GetBlueChannel$qv @209 ; TVLCVideoBuffer::GetBlueChannel()
+    @TVLCVideoBuffer@GetByteSize$qv @35  ; TVLCVideoBuffer::GetByteSize()
+    @TVLCVideoBuffer@GetBytesPerPixel$xqv @36  ; TVLCVideoBuffer::GetBytesPerPixel() const
+    @TVLCVideoBuffer@GetCharSize$qv @34  ; TVLCVideoBuffer::GetCharSize()
+    @TVLCVideoBuffer@GetDateTime$qv @30  ; TVLCVideoBuffer::GetDateTime()
+    @TVLCVideoBuffer@GetFormat$qv  @28  ; TVLCVideoBuffer::GetFormat()
+    @TVLCVideoBuffer@GetGreen$qii  @197 ; TVLCVideoBuffer::GetGreen(int, int)
+    @TVLCVideoBuffer@GetGreenChannel$qv @208 ; TVLCVideoBuffer::GetGreenChannel()
+    @TVLCVideoBuffer@GetHeight$qv  @38  ; TVLCVideoBuffer::GetHeight()
+    @TVLCVideoBuffer@GetInstance$qv @21  ; TVLCVideoBuffer::GetInstance()
+    @TVLCVideoBuffer@GetIsKeyFrame$qv @40  ; TVLCVideoBuffer::GetIsKeyFrame()
+    @TVLCVideoBuffer@GetPasBuffer$xqv @33  ; TVLCVideoBuffer::GetPasBuffer() const
+    @TVLCVideoBuffer@GetPixel$q12Types@TPoint @189 ; TVLCVideoBuffer::GetPixel(Types::TPoint)
+    @TVLCVideoBuffer@GetPixel$qii  @190 ; TVLCVideoBuffer::GetPixel(int, int)
+    @TVLCVideoBuffer@GetPixelChannel$qiii @193 ; TVLCVideoBuffer::GetPixelChannel(int, int, int)
+    @TVLCVideoBuffer@GetRed$qii    @195 ; TVLCVideoBuffer::GetRed(int, int)
+    @TVLCVideoBuffer@GetRedChannel$qv @207 ; TVLCVideoBuffer::GetRedChannel()
+    @TVLCVideoBuffer@GetSize$xqv   @32  ; TVLCVideoBuffer::GetSize() const
+    @TVLCVideoBuffer@GetStep$xqv   @37  ; TVLCVideoBuffer::GetStep() const
+    @TVLCVideoBuffer@GetWidth$qv   @39  ; TVLCVideoBuffer::GetWidth()
+    @TVLCVideoBuffer@IntAddReff$qv @105 ; TVLCVideoBuffer::IntAddReff()
+    @TVLCVideoBuffer@LShift$q15Graphics@TColor @155 ; TVLCVideoBuffer::LShift(Graphics::TColor)
+    @TVLCVideoBuffer@LShift$q15Graphics@TColoruc @156 ; TVLCVideoBuffer::LShift(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@LShift$qrx15TVLCVideoBuffer15Graphics@TColor @158 ; TVLCVideoBuffer::LShift(const TVLCVideoBuffer&, Graphics::TColor)
+    @TVLCVideoBuffer@LShift$qrx15TVLCVideoBufferui @157 ; TVLCVideoBuffer::LShift(const TVLCVideoBuffer&, unsigned int)
+    @TVLCVideoBuffer@LShift$qui    @154 ; TVLCVideoBuffer::LShift(unsigned int)
+    @TVLCVideoBuffer@Modify$qv     @26  ; TVLCVideoBuffer::Modify()
+    @TVLCVideoBuffer@Multiply$q15Graphics@TColor @129 ; TVLCVideoBuffer::Multiply(Graphics::TColor)
+    @TVLCVideoBuffer@Multiply$q15Graphics@TColoruc @130 ; TVLCVideoBuffer::Multiply(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@Multiply$qrx15TVLCVideoBuffer @132 ; TVLCVideoBuffer::Multiply(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Multiply$qrx15TVLCVideoBuffert1 @133 ; TVLCVideoBuffer::Multiply(const TVLCVideoBuffer&, const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Multiply$qui  @131 ; TVLCVideoBuffer::Multiply(unsigned int)
+    @TVLCVideoBuffer@MultiplyScale$q15Graphics@TColor @138 ; TVLCVideoBuffer::MultiplyScale(Graphics::TColor)
+    @TVLCVideoBuffer@MultiplyScale$q15Graphics@TColoruc @139 ; TVLCVideoBuffer::MultiplyScale(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@MultiplyScale$qrx15TVLCVideoBuffer @140 ; TVLCVideoBuffer::MultiplyScale(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@MultiplyScale$qrx15TVLCVideoBuffert1 @141 ; TVLCVideoBuffer::MultiplyScale(const TVLCVideoBuffer&, const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@MultiplyScale$qui @137 ; TVLCVideoBuffer::MultiplyScale(unsigned int)
+    @TVLCVideoBuffer@Not$qrx15TVLCVideoBuffer @165 ; TVLCVideoBuffer::Not(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Not$qv        @164 ; TVLCVideoBuffer::Not()
+    @TVLCVideoBuffer@Or$q15Graphics@TColor @174 ; TVLCVideoBuffer::Or(Graphics::TColor)
+    @TVLCVideoBuffer@Or$q15Graphics@TColoruc @175 ; TVLCVideoBuffer::Or(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@Or$qrx15TVLCVideoBuffer @176 ; TVLCVideoBuffer::Or(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Or$qrx15TVLCVideoBuffer15Graphics@TColor @178 ; TVLCVideoBuffer::Or(const TVLCVideoBuffer&, Graphics::TColor)
+    @TVLCVideoBuffer@Or$qrx15TVLCVideoBuffert1 @179 ; TVLCVideoBuffer::Or(const TVLCVideoBuffer&, const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Or$qrx15TVLCVideoBufferui @177 ; TVLCVideoBuffer::Or(const TVLCVideoBuffer&, unsigned int)
+    @TVLCVideoBuffer@Or$qui        @173 ; TVLCVideoBuffer::Or(unsigned int)
+    @TVLCVideoBuffer@PopulateCahces$xqv @215 ; TVLCVideoBuffer::PopulateCahces() const
+    @TVLCVideoBuffer@RShift$q15Graphics@TColor @160 ; TVLCVideoBuffer::RShift(Graphics::TColor)
+    @TVLCVideoBuffer@RShift$q15Graphics@TColoruc @161 ; TVLCVideoBuffer::RShift(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@RShift$qrx15TVLCVideoBuffer15Graphics@TColor @163 ; TVLCVideoBuffer::RShift(const TVLCVideoBuffer&, Graphics::TColor)
+    @TVLCVideoBuffer@RShift$qrx15TVLCVideoBufferui @162 ; TVLCVideoBuffer::RShift(const TVLCVideoBuffer&, unsigned int)
+    @TVLCVideoBuffer@RShift$qui    @159 ; TVLCVideoBuffer::RShift(unsigned int)
+    @TVLCVideoBuffer@Read$xqv      @24  ; TVLCVideoBuffer::Read() const
+    @TVLCVideoBuffer@RemoveOwnerShip$qv @27  ; TVLCVideoBuffer::RemoveOwnerShip()
+    @TVLCVideoBuffer@Set$q15Graphics@TColor @108 ; TVLCVideoBuffer::Set(Graphics::TColor)
+    @TVLCVideoBuffer@Set$q15Graphics@TColoruc @110 ; TVLCVideoBuffer::Set(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@Set$qui       @109 ; TVLCVideoBuffer::Set(unsigned int)
+    @TVLCVideoBuffer@SetAlpha$qiiuc @202 ; TVLCVideoBuffer::SetAlpha(int, int, unsigned char)
+    @TVLCVideoBuffer@SetAlphaChannel$quc @206 ; TVLCVideoBuffer::SetAlphaChannel(unsigned char)
+    @TVLCVideoBuffer@SetBlue$qiiuc @200 ; TVLCVideoBuffer::SetBlue(int, int, unsigned char)
+    @TVLCVideoBuffer@SetBlueChannel$quc @205 ; TVLCVideoBuffer::SetBlueChannel(unsigned char)
+    @TVLCVideoBuffer@SetFormat$q30Vlinternalstore@TVLVideoFormat @29  ; TVLCVideoBuffer::SetFormat(Vlinternalstore::TVLVideoFormat)
+    @TVLCVideoBuffer@SetGreen$qiiuc @198 ; TVLCVideoBuffer::SetGreen(int, int, unsigned char)
+    @TVLCVideoBuffer@SetGreenChannel$quc @204 ; TVLCVideoBuffer::SetGreenChannel(unsigned char)
+    @TVLCVideoBuffer@SetImageSize$qii @42  ; TVLCVideoBuffer::SetImageSize(int, int)
+    @TVLCVideoBuffer@SetIsKeyFrame$qo @41  ; TVLCVideoBuffer::SetIsKeyFrame(bool)
+    @TVLCVideoBuffer@SetPixel$q12Types@TPoint15Graphics@TColor @187 ; TVLCVideoBuffer::SetPixel(Types::TPoint, Graphics::TColor)
+    @TVLCVideoBuffer@SetPixel$q12Types@TPoint15Graphics@TColoruc @188 ; TVLCVideoBuffer::SetPixel(Types::TPoint, Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@SetPixel$qii15Graphics@TColor @191 ; TVLCVideoBuffer::SetPixel(int, int, Graphics::TColor)
+    @TVLCVideoBuffer@SetPixel$qii15Graphics@TColoruc @192 ; TVLCVideoBuffer::SetPixel(int, int, Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@SetPixelChannel$qiiiuc @194 ; TVLCVideoBuffer::SetPixelChannel(int, int, int, unsigned char)
+    @TVLCVideoBuffer@SetRed$qiiuc  @196 ; TVLCVideoBuffer::SetRed(int, int, unsigned char)
+    @TVLCVideoBuffer@SetRedChannel$quc @203 ; TVLCVideoBuffer::SetRedChannel(unsigned char)
+    @TVLCVideoBuffer@Sqr$qrx15TVLCVideoBuffer @153 ; TVLCVideoBuffer::Sqr(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Sqr$qv        @152 ; TVLCVideoBuffer::Sqr()
+    @TVLCVideoBuffer@Subtract$q15Graphics@TColor @122 ; TVLCVideoBuffer::Subtract(Graphics::TColor)
+    @TVLCVideoBuffer@Subtract$q15Graphics@TColoruc @123 ; TVLCVideoBuffer::Subtract(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@Subtract$qrx15TVLCVideoBuffer @124 ; TVLCVideoBuffer::Subtract(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Subtract$qrx15TVLCVideoBuffert1 @125 ; TVLCVideoBuffer::Subtract(const TVLCVideoBuffer&, const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Subtract$qui  @121 ; TVLCVideoBuffer::Subtract(unsigned int)
+    @TVLCVideoBuffer@ToBitmap$qp16Graphics@TBitmap @211 ; TVLCVideoBuffer::ToBitmap(Graphics::TBitmap *)
+    @TVLCVideoBuffer@ToBitmap$qp18Vlbitmap@TVLBitmap @213 ; TVLCVideoBuffer::ToBitmap(Vlbitmap::TVLBitmap *)
+    @TVLCVideoBuffer@VLGetInterface$qrx15TVLCVideoBuffer @98  ; TVLCVideoBuffer::VLGetInterface(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Write$qv      @25  ; TVLCVideoBuffer::Write()
+    @TVLCVideoBuffer@Xor$q15Graphics@TColor @181 ; TVLCVideoBuffer::Xor(Graphics::TColor)
+    @TVLCVideoBuffer@Xor$q15Graphics@TColoruc @182 ; TVLCVideoBuffer::Xor(Graphics::TColor, unsigned char)
+    @TVLCVideoBuffer@Xor$qrx15TVLCVideoBuffer @183 ; TVLCVideoBuffer::Xor(const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Xor$qrx15TVLCVideoBuffer15Graphics@TColor @185 ; TVLCVideoBuffer::Xor(const TVLCVideoBuffer&, Graphics::TColor)
+    @TVLCVideoBuffer@Xor$qrx15TVLCVideoBuffert1 @186 ; TVLCVideoBuffer::Xor(const TVLCVideoBuffer&, const TVLCVideoBuffer&)
+    @TVLCVideoBuffer@Xor$qrx15TVLCVideoBufferui @184 ; TVLCVideoBuffer::Xor(const TVLCVideoBuffer&, unsigned int)
+    @TVLCVideoBuffer@Xor$qui       @180 ; TVLCVideoBuffer::Xor(unsigned int)
+    @TVLCVideoColorColumn@$bctr$qr15TVLCVideoBufferii @18  ; TVLCVideoColorColumn::TVLCVideoColorColumn(TVLCVideoBuffer&, int, int)
+    @TVLCVideoColorColumn@$bsubs$qi @44  ; TVLCVideoColorColumn::operator [](int)
+    @TVLCVideoColorPixel@$basg$qrx19TVLCVideoColorPixel @55  ; TVLCVideoColorPixel::operator =(const TVLCVideoColorPixel&)
+    @TVLCVideoColorPixel@$basg$qrxuc @54  ; TVLCVideoColorPixel::operator =(const unsigned char&)
+    @TVLCVideoColorPixel@$bctr$qr20TVLCVideoColorColumni @16  ; TVLCVideoColorPixel::TVLCVideoColorPixel(TVLCVideoColorColumn&, int)
+    @TVLCVideoColorPixel@$ouc$xqv  @53  ; TVLCVideoColorPixel::operator unsigned char() const
+    @TVLCVideoColumn@$bctr$qr15TVLCVideoBufferi @17  ; TVLCVideoColumn::TVLCVideoColumn(TVLCVideoBuffer&, int)
+    @TVLCVideoColumn@$bsubs$qi     @43  ; TVLCVideoColumn::operator [](int)
+    @TVLCVideoPixel@$basg$qrx14TVLCVideoPixel @50  ; TVLCVideoPixel::operator =(const TVLCVideoPixel&)
+    @TVLCVideoPixel@$basg$qrx15Graphics@TColor @46  ; TVLCVideoPixel::operator =(const Graphics::TColor&)
+    @TVLCVideoPixel@$bctr$qr15TVLCVideoColumni @15  ; TVLCVideoPixel::TVLCVideoPixel(TVLCVideoColumn&, int)
+    @TVLCVideoPixel@$o15Graphics@TColor$xqv @45  ; TVLCVideoPixel::operator Graphics::TColor() const
+    @TVLCVideoPixel@GetAlpha$qv    @49  ; TVLCVideoPixel::GetAlpha()
+    @TVLCVideoPixel@Set$qrx15Graphics@TColoruc @47  ; TVLCVideoPixel::Set(const Graphics::TColor&, unsigned char)
+    @TVLCVideoPixel@SetAlpha$quc   @48  ; TVLCVideoPixel::SetAlpha(unsigned char)
+    @TVLVideoPixelColors@$bctr$qr15TVLCVideoBufferi @20  ; TVLVideoPixelColors::TVLVideoPixelColors(TVLCVideoBuffer&, int)
+    @TVLVideoPixelColors@$bsubs$qi @52  ; TVLVideoPixelColors::operator [](int)
+    @TVLVideoPixels@$bctr$qr15TVLCVideoBuffer @19  ; TVLVideoPixels::TVLVideoPixels(TVLCVideoBuffer&)
+    @TVLVideoPixels@$bsubs$qi      @51  ; TVLVideoPixels::operator [](int)
+    @Vlgenericfilter@Register$qqrv @77  ; __fastcall Vlgenericfilter::Register()
+    @Vlgenericfilter@TVLGenericFilter@ @256 ; Vlgenericfilter::TVLGenericFilter::
+    @Vlgenericfilter@TVLGenericFilter@$bctr$qqrp18Classes@TComponent @78  ; __fastcall Vlgenericfilter::TVLGenericFilter::TVLGenericFilter(Classes::TComponent *)
+    @Vlgenericfilter@TVLGenericFilter@DefineProperties$qqrp14Classes@TFiler @85  ; __fastcall Vlgenericfilter::TVLGenericFilter::DefineProperties(Classes::TFiler *)
+    @Vlgenericfilter@TVLGenericFilter@DoProcessData$qqr62System@%DelphiInterface$t34Vlsimpleimagebuffer@IVLImageBuffer%r62System@%DelphiInterface$t34Vlsimpleimagebuffer@IVLImageBuffer%ro @82  ; __fastcall Vlgenericfilter::TVLGenericFilter::DoProcessData(System::DelphiInterface<Vlsimpleimagebuffer::IVLImageBuffer>, System::DelphiInterface<Vlsimpleimagebuffer::IVLImageBuffer>&, bool&)
+    @Vlgenericfilter@TVLGenericFilter@GetHasEvent$qqrv @81  ; __fastcall Vlgenericfilter::TVLGenericFilter::GetHasEvent()
+    @Vlgenericfilter@TVLGenericFilter@IntStart$qqrrit1i @80  ; __fastcall Vlgenericfilter::TVLGenericFilter::IntStart(int&, int&, int)
+    @Vlgenericfilter@TVLGenericFilter@ReadCompProperty$qqrp15Classes@TReader @84  ; __fastcall Vlgenericfilter::TVLGenericFilter::ReadCompProperty(Classes::TReader *)
+    @Vlgenericfilter@TVLGenericFilter@SendData$qqr15TVLCVideoBuffer @83  ; __fastcall Vlgenericfilter::TVLGenericFilter::SendData(TVLCVideoBuffer)
+    @Vlgenericfilter@TVLGenericFilter@SetOnFilterData$qqrynpqqrp14System@TObject15TVLCVideoBufferr15TVLCVideoBufferro$v @79  ; __fastcall Vlgenericfilter::TVLGenericFilter::SetOnFilterData(void __fastcall __closure(*)(System::TObject *, TVLCVideoBuffer, TVLCVideoBuffer&, bool&))
+    @Vlgenericfilter@TVLGenericFilter@WriteCompProperty$qqrp15Classes@TWriter @56  ; __fastcall Vlgenericfilter::TVLGenericFilter::WriteCompProperty(Classes::TWriter *)
+    @Vlgenericgen@Register$qqrv    @91  ; __fastcall Vlgenericgen::Register()
+    @Vlgenericgen@TVLGenericGen@   @257 ; Vlgenericgen::TVLGenericGen::
+    @Vlgenericgen@TVLGenericGen@$bctr$qqrp18Classes@TComponent @92  ; __fastcall Vlgenericgen::TVLGenericGen::TVLGenericGen(Classes::TComponent *)
+    @Vlgenericgen@TVLGenericGen@GenerateFrame$qqrr62System@%DelphiInterface$t34Vlsimpleimagebuffer@IVLImageBuffer%rot2 @93  ; __fastcall Vlgenericgen::TVLGenericGen::GenerateFrame(System::DelphiInterface<Vlsimpleimagebuffer::IVLImageBuffer>&, bool&, bool&)
+    _CapForm                       @258 ; _CapForm
+    ___CPPdebugHook                @255 ; ___CPPdebugHook
+    _vg_set_appdata                @64  ; _vg_set_appdata
+    _vgdel                         @66  ; _vgdel
+    _vgfree_data                   @73  ; _vgfree_data
+    _vgfree_video_devices          @58  ; _vgfree_video_devices
+    _vgget_data                    @72  ; _vgget_data
+    _vgget_video_devices           @57  ; _vgget_video_devices
+    _vghas_data                    @68  ; _vghas_data
+    _vginit                        @67  ; _vginit
+    _vgneed                        @69  ; _vgneed
+    _vgnew                         @65  ; _vgnew
+    _vgpass                        @70  ; _vgpass
+    _vgpreview_off                 @63  ; _vgpreview_off
+    _vgpreview_on                  @62  ; _vgpreview_on
+    _vgset_video_device            @59  ; _vgset_video_device
+    _vgshow_source_dialog          @61  ; _vgshow_source_dialog
+    _vgstop                        @71  ; _vgstop
+    _vgstop_video_device           @60  ; _vgstop_video_device

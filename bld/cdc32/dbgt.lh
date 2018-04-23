@@ -1,0 +1,562 @@
+;
+; create tracing wrappers for dlli api
+;
+; invoke with
+; cat dlli.h dlli.cpp >/tmp/k
+; vc dbgt.lh /tmp/k
+;
+;
+; writes the files "dwyco_rename.h" which is included
+; in dlli.cpp, and trc_wrappers.cpp, which is compiled and linked
+; into the final setup to do the tracing.
+; define DWYCO_TRACE when compiling to get the tracing API
+; trc.cpp must be compiled and linked too (the "runtime" for doing the
+; output.)
+; add "trc.cpp" to rtlog.dbg to get tracing output
+
+; NOTES on formatting function definitions so they can be 
+; automatically wrapped to create debugging wrappers:
+; general format is:
+; DWYCOEXPORT
+; ret-type
+; funname(argtype argname, <etc.>)
+;
+; the argument list MUST be all on one line.
+;
+; if you have composite arguments that represent counted buffers,
+; name the arguments like this (put "len" somewhere in the name of the count
+; parameter):
+; funname(const char *foo, int len_foo)
+;
+; the wrapper generated will format this a little differently so it is
+; easier to read.
+;
+; if you have "out" parameters that are filled in by the callee, name
+; the arguments with a "_out" suffix, like this:
+; funname(int bar, int *bar_out)
+;
+; the wrappers will display the "out" param both before and after the call.
+;
+; if you have counted byte buffers that are "out" params:
+; funname(int bar, const char *foo_out int *len_foo_out)
+;
+; the wrapper program will only wrap generic "C" style functions, not
+; whacky c++ stuff.
+;
+; the "runtime" for the wrapper makes some assumptions specific to this
+; API in order to print things in easier to read format: byte buffers
+; with arguments whose names are "uid" or "user_id", it will print them
+; as 10-byte UID's, even if it can't find the length easily.
+;
+; static callbacks are wrapped by looking specifically for the "set.*callback" function
+; names in the api header and emitting hooks so that the callback invokations are
+; printed out as they happen.
+;
+; callbacks associated with specific contexts are not traced at the moment (ie, callbacks
+; associated with zap_send, for example.)
+
+gbind(RENAMES-FILE dwyco_rename.h)
+gbind(WRAPPERS-FILE trc_wrappers.cpp)
+gbind(exp-re regex(|^DWYCOEXPORT|))
+gbind(argnames-re regex(|\\([a-z0-9_][a-z0-9_]*\\)$|))
+gbind(argall regex(|^\\([^,]*\\)[,)]|))
+gbind(funname-re regex(|^\\([^(]*\\)|))
+
+gbind(cb-re regex(|typedef.*DWYCOCALLCONV|))
+gbind(cb-typename regex(|.*DWYCOCALLCONV.*\\(Dwyco[^)]*\\)).*|))
+; note: only works for single-word return types delimited by
+; spaces. ok for now, since cb's only return int and void
+gbind(cb-ret-type regex(|typedef[ ]*\\([^ ]*\\)|))
+
+
+gbind(Fun-names vector())
+gbind(Funarg-types vector())
+gbind(Funarg-names vector())
+gbind(Fun-ret-types vector())
+gbind(Fun-line vector())
+gbind(Cb-names vector())
+gbind(Cb-line vector())
+gbind(Cb-ret-types vector())
+gbind(Cbarg-types vector())
+gbind(Cbarg-names vector())
+gbind(Cb-set-fun-names vector())
+gbind(Ignore-names vector(
+dwyco_set_codec_data
+dwyco_get_codec_data
+dwyco_set_user_data
+dwyco_get_user_data
+dwyco_set_vidcap_data
+dwyco_get_vidcap_data
+dwyco_set_config_display
+dwyco_get_config_display
+dwyco_set_conn_remote_data
+dwyco_get_conn_remote_data
+dwyco_set_codec_tweaks
+dwyco_get_codec_tweaks
+dwyco_set_raw_files
+dwyco_get_raw_files
+dwyco_set_rate_tweaks
+dwyco_get_rate_tweaks
+dwyco_set_video_input
+dwyco_get_video_input
+dwyco_set_call_accept
+dwyco_get_call_accept
+dwyco_set_zap_data
+dwyco_get_zap_data
+dwyco_set_net_data
+dwyco_get_net_data
+dwyco_eim_pal_del
+dwyco_eim_pal_add
+dwyco_pal_type
+dwyco_eim_set_acct_info
+dwyco_eim_stop
+dwyco_eim_start
+dwyco_handle_msg
+dwyco_set_main_msg_window
+dwyco_get_dnd
+dwyco_set_dnd
+dwyco_clear_pal_auths
+dwyco_pal_auth_granted
+dwyco_get_pal_auth_warning
+dwyco_revoke_pal_auth
+dwyco_handle_pal_auth
+dwyco_handle_pal_auth2
+dwyco_zap_send_sms
+dwyco_is_capturing_video
+dwyco_is_never_visible
+dwyco_is_always_visible
+dwyco_never_visible
+dwyco_always_visible
+dwyco_get_my_pal_auth_state
+dwyco_get_pal_auth_state
+dwyco_set_pal_auth_state
+dwyco_room_delete
+dwyco_room_create
+dwyco_room_enter
+dwyco_disconnect_server
+dwyco_switch_to_server2
+dwyco_switch_to_server
+dwyco_directory_downloading
+dwyco_directory_online
+dwyco_directory_starting
+dwyco_connect_all
+dwyco_chat_update_call_accept
+dwyco_set_pal_auth_callback
+;dwyco_set_system_event_callback
+dwyco_channel_attrs
+dwyco_set_unregister_callback
+dwyco_is_registered
+dwyco_get_expired
+dwyco_final_setup
+dwyco_exit ; can't log this cuz it deallocates logging objects
+dwyco_trace_init
+dwyco_connect_all4 ; interface too complicated: needs dedicated printer
+dwyco_connect_all2 ; interface too complicated: needs dedicated printer
+dwyco_zap_send ; old
+dwyco_zap_send2 ; old
+dwyco_set_video_display_init_callback
+dwyco_destroy_by_ui_id
+dwyco_get_fn_prefixes ; funny interface confuses printarg template
+dwyco_app_debug1
+dwyco_app_debug2
+dwyco_background_processing ; logging may not be set up properly, this might be called from java or who knows what
+DwycoVidGetDataCallback
+DwycoCACallback
+DwycoAudGetDataCallback
+dwyco_set_system_event_callback
+))
+
+gbind(Strip-white-re regex(|^[ 	]*\\(.*[^	 ]\\)[ 	]*$|))
+; like "trim" in a lot of languages
+compile(strip-white s `
+	if(ne(type(<s>) string) return(||))
+	if(split(<Strip-white-re> <s> final)
+		return(<final>)
+	)
+	return(||)
+')
+
+compile(main `
+	lbind(f openfile(__argv[0] rb))
+	lbind(ln readline(<f>))
+	while(<ln> prog(
+		if(match(<exp-re> <ln>) prog(
+			lbind(rettype readline(<f>))
+			lbind(fundef readline(<f>))
+			if(fun(<rettype> <fundef>) prog(
+				append(<Fun-line> <fundef>)
+				append(<Fun-ret-types> <rettype>)
+			))
+		))
+		if(match(<cb-re> <ln>) prog(
+			split(<cb-ret-type> <ln> rettype)
+			if(cb(<rettype> <ln>) prog(
+				append(<Cb-line> <ln>)
+				append(<Cb-ret-types> <rettype>)
+			))
+		))
+		lbind(ln readline(<f>))
+	))
+
+if(t prog(
+	printl(<Cb-line>)
+	printl(<Cb-names>)
+	printl(<Cb-ret-types>)
+	printl(<Cbarg-names>)
+	printl(<Cbarg-types>)
+))
+	dump-fun-redefs()
+	lcompile(print x `fprint(<outfile> <x>)')
+	lbind(outfile openfile(<WRAPPERS-FILE> wb))
+	dump-static-hooks()
+	dump-decls()
+	dump-cb-wrappers()
+	dump-wrappers()
+')
+
+compile(fun rtype fdef `
+	lbind(args vector())
+	lbind(argtypes vector())
+	lbind(argnames vector())
+	split(<funname-re> <fdef> fname)
+	if(contains(<Ignore-names> <fname>) return(nil))
+	append(<Fun-names> <fname>)
+	lbind(fdef substr(<fdef> add(strlen(<fname>) 1) end))
+	while(split(<argall> <fdef> arg) prog(
+		append(<args> <arg>)
+		lbind(aname search(<argnames-re> <arg>))
+		if(not(<aname>) break(1))
+		append(<argnames> <aname>)
+		lbind(argtype substr(<arg> 0 sub(strlen(<arg>) strlen(<aname>))))
+		append(<argtypes> <argtype>)
+		lbind(fdef substr(<fdef> add(strlen(<arg>) 1) end))
+	))
+	append(<Funarg-types> <argtypes>)
+	append(<Funarg-names> <argnames>)
+	return(t)
+')
+
+compile(cb rtype fdef `
+	lbind(args vector())
+	lbind(argtypes vector())
+	lbind(argnames vector())
+	;split(<funname-re> <fdef> fname)
+	split(<cb-typename> <fdef> fname)
+	if(contains(<Ignore-names> <fname>) return(nil))
+	append(<Cb-names> <fname>)
+	lbind(fdef substr(<fdef> add(strlen(<fname>) 1) end))
+	split(regex(|^.*(\\(.*\\);|) <fdef> fdef)
+	while(split(<argall> <fdef> arg) prog(
+		append(<args> <arg>)
+		lbind(aname search(<argnames-re> <arg>))
+		if(not(<aname>) break(1))
+		append(<argnames> <aname>)
+		lbind(argtype substr(<arg> 0 sub(strlen(<arg>) strlen(<aname>))))
+		append(<argtypes> <argtype>)
+		lbind(fdef substr(<fdef> add(strlen(<arg>) 1) end))
+	))
+	append(<Cbarg-types> <argtypes>)
+	append(<Cbarg-names> <argnames>)
+	return(t)
+')
+
+compile(dump-static-hooks `
+	for(i 0 --(numelems(<Fun-names>)) prog(
+		lbind(fn Fun-names[<i>])
+		if(cand(match(regex(|dwyco_set.*callback|) <fn>) 
+			eq(numelems(Funarg-types[<i>]) 1))
+			prog(
+			
+			print({
+			|static | Funarg-types[<i>][0] | user_| <fn> |;\n|
+			})
+			lbind(i add(<i> 1))
+		))
+	))
+')
+
+compile(dump-fun-redefs `
+	lcompile(print x `fprint(<outfile> <x>)')
+	lbind(outfile openfile(<RENAMES-FILE> wb))
+	foreach(fn <Fun-names> prog(
+		printml(#define <fn> {_real_ <fn>})
+	))
+')
+
+compile(dump-decls `
+	print(|extern "C" {\n|)
+	for(i 0 --(numelems(<Fun-names>)) prog(
+		print({
+		DWYCOEXPORT | |
+		Fun-ret-types[<i>] | |
+		_real_ Fun-line[<i>] |;\n|
+		})
+	))
+	print(|}\n|)
+')
+
+compile(dump-wrappers `
+	for(i 0 --(numelems(<Fun-names>)) prog(
+		lbind(rt Fun-ret-types[<i>])
+		print({
+		DWYCOEXPORT |\n|
+		<rt> |\n|
+		Fun-line[<i>] |\n|
+		|{\n|
+		})
+		print({
+		|printfunname("| Fun-names[<i>] |");\n|
+		})
+		lbind(at Funarg-types[<i>])
+		lbind(an Funarg-names[<i>])
+		lbind(j 0)
+		while(lt(<j> numelems(<at>)) prog(
+			; heuristic: if we see a "char *" followed by
+			; something that is an "int" and name contains "len",
+			; we guess that it is a counted byte buffer and display
+			; that a little differently.
+			if(not(strstr(an[<j>] _elide)) prog(
+			if(cand(lt(<j> --(numelems(<at>)))
+				strstr(at[<j>] |char *|)
+				strstr(at[++(<j>)] |int|)
+				strstr(an[++(<j>)] |len|)
+				not(strstr(an[<j>] |out|))) prog(
+				print({
+				|printarg("| 
+					at[<j>] |", "| an[<j>] |",| an[<j>] |, |
+					|"| at[++(<j>)] |", "| an[++(<j>)] |", | an[++(<j>)] |);\n|
+				})
+				; absorb extra argument
+				lbind(j ++(<j>))
+				)
+				;else
+				prog(
+				print({
+				|printarg("| at[<j>] |", "| an[<j>] |",| 
+					if(strstr(at[<j>] Callback) |(void *)| ||) an[<j>]|);\n|
+				})
+			))
+			))
+			lbind(j ++(<j>))
+		))
+		; if it is a callback setting function, emit a hook
+if(t prog(
+		if(cand(match(regex(|dwyco_set.*callback|) Fun-names[<i>]) 
+			eq(numelems(Funarg-types[<i>]) 1))
+			prog(
+			print({
+			|user_| Fun-names[<i>] = Funarg-names[<i>][0] |;\n|
+			Funarg-names[<i>][0] = wrapped_cb_ Fun-names[<i>] |;\n|
+			})
+		))
+))
+
+		; CAll the real function to do the work
+		if(eq(<rt> |void|) prog(
+			print({
+			_real_ Fun-names[<i>] |(|
+			})
+			if(ne(numelems(<an>) 0) prog(
+				for(j 0 --(--(numelems(<an>))) prog(
+					print({an[<j>],})
+				))
+				print(an[<j>])
+			))
+			print(|);\n|)
+		)
+		;else need to return a value
+		prog(
+			print({
+			<rt> | _ret = |
+			})
+			print({
+			_real_ Fun-names[<i>] |(|
+			})
+			if(ne(numelems(<an>) 0) prog(
+				for(j 0 --(--(numelems(<an>))) prog(
+					print({an[<j>],})
+				))
+				print(an[<j>])
+			))
+			print(|);\n|)
+		))
+		; DUMP values of any "out" params
+		lbind(j 0)
+		while(lt(<j> numelems(<at>)) prog(
+			; heuristic: if we see a "char *" followed by
+			; something that is an "int" and name contains "len",
+			; we guess that it is a counted byte buffer and display
+			; that a little differently.
+			if(not(strstr(an[<j>] _elide)) prog(
+			if(strstr(an[<j>] |_out|) prog(
+			if(cand(lt(<j> --(numelems(<at>)))
+				strstr(at[<j>] |char *|)
+				strstr(at[++(<j>)] |int|)
+				strstr(an[++(<j>)] |len|)
+				) prog(
+				print({
+				|printargout("| 
+					at[<j>] |", "| an[<j>] |",| an[<j>] |, |
+					|"| at[++(<j>)] |", "| an[++(<j>)] |", | an[++(<j>)] |);\n|
+				})
+				; absorb extra argument
+				lbind(j ++(<j>))
+				)
+				;else
+				prog(
+				print({
+				|printargout("| at[<j>] |", "| an[<j>] |",| 
+					if(strstr(at[<j>] Callback) |(void *)| ||) an[<j>]|);\n|
+				})
+			))
+			))
+			))
+			lbind(j ++(<j>))
+		))
+
+		if(eq(<rt> |void|)
+			print(|printret();\n|)
+			print(|printretval(_ret);\nreturn(_ret);\n|)
+		)
+		print(|}\n\n|)
+	))
+')
+
+compile(args line `
+	split(regex(|^.*\\((.*\\);|) <line> arg-list)
+	return(<arg-list>)
+')
+
+compile(cb-args-from-cb-set-idx nm-idx `
+	; find the callback args from the name of the function
+	; use to set the static callback (ie, set_foo_callback(cb-type cb)
+	; searches for the cb-type associated with foo_callback
+	lbind(argtp Funarg-types[<nm-idx>][0])
+	for(i 0 --(numelems(<Cb-names>)) prog(
+		if(eq(strip-white(Cb-names[<i>])  strip-white(<argtp>)) prog(
+			break(1)
+		))
+	))
+	return(<i>)
+')
+
+compile(dump-cb-wrappers `
+	for(ii 0 --(numelems(<Fun-names>)) prog(
+if(cand(match(regex(|dwyco_set.*callback|) Fun-names[<ii>])
+	eq(numelems(Funarg-types[<ii>]) 1))
+		prog(
+		lbind(i cb-args-from-cb-set-idx(<ii>))
+		lbind(rt Cb-ret-types[<i>])
+		print({
+		<rt> |\n|
+		DWYCOCALLCONV |\n|
+		wrapped_cb_ Fun-names[<ii>] args(Cb-line[<i>]) |\n|
+		|{\n|
+		})
+		print({
+		;|--Reentered;\n|
+		|printcbfunname("| Fun-names[<ii>] |" "| Cb-names[<i>] |");\n|
+		})
+		lbind(at Cbarg-types[<i>])
+		lbind(an Cbarg-names[<i>])
+		lbind(j 0)
+		while(lt(<j> numelems(<at>)) prog(
+			; heuristic: if we see a "char *" followed by
+			; something that is an "int" and name contains "len",
+			; we guess that it is a counted byte buffer and display
+			; that a little differently.
+			if(not(strstr(an[<j>] _elide)) prog(
+			if(cand(lt(<j> --(numelems(<at>)))
+				strstr(at[<j>] |char *|)
+				strstr(at[++(<j>)] |int|)
+				strstr(an[++(<j>)] |len|)
+				not(strstr(an[<j>] |out|))) prog(
+				print({
+				|printarg("| 
+					at[<j>] |", "| an[<j>] |",| an[<j>] |, |
+					|"| at[++(<j>)] |", "| an[++(<j>)] |", | an[++(<j>)] |);\n|
+				})
+				; absorb extra argument
+				lbind(j ++(<j>))
+				)
+				;else
+				prog(
+				print({
+				|printarg("| at[<j>] |", "| an[<j>] |",| 
+					if(strstr(at[<j>] Callback) |(void *)| ||) an[<j>]|);\n|
+				})
+			))
+			))
+			lbind(j ++(<j>))
+		))
+		; CAll the real function to do the work
+		if(eq(<rt> |void|) prog(
+			print({
+			|(*user_| Fun-names[<ii>] |)(|
+			})
+			if(ne(numelems(<an>) 0) prog(
+				for(j 0 --(--(numelems(<an>))) prog(
+					print({an[<j>],})
+				))
+				print(an[<j>])
+			))
+			print(|);\n|)
+		)
+		;else need to return a value
+		prog(
+			print({
+			<rt> | _ret = |
+			})
+			print({
+			|(*user_| Fun-names[<ii>] |)(|
+			})
+			if(ne(numelems(<an>) 0) prog(
+				for(j 0 --(--(numelems(<an>))) prog(
+					print({an[<j>],})
+				))
+				print(an[<j>])
+			))
+			print(|);\n|)
+		))
+		; DUMP values of any "out" params
+		lbind(j 0)
+		while(lt(<j> numelems(<at>)) prog(
+			; heuristic: if we see a "char *" followed by
+			; something that is an "int" and name contains "len",
+			; we guess that it is a counted byte buffer and display
+			; that a little differently.
+			if(strstr(an[<j>] |_out|) prog(
+			if(cand(lt(<j> --(numelems(<at>)))
+				strstr(at[<j>] |char *|)
+				strstr(at[++(<j>)] |int|)
+				strstr(an[++(<j>)] |len|)
+				) prog(
+				print({
+				|printargout("| 
+					at[<j>] |", "| an[<j>] |",| an[<j>] |, |
+					|"| at[++(<j>)] |", "| an[++(<j>)] |", | an[++(<j>)] |);\n|
+				})
+				; absorb extra argument
+				lbind(j ++(<j>))
+				)
+				;else
+				prog(
+				print({
+				|printargout("| at[<j>] |", "| an[<j>] |",| 
+					if(strstr(at[<j>] Callback) |(void *)| ||) an[<j>]|);\n|
+				})
+			))
+			))
+			lbind(j ++(<j>))
+		))
+
+		if(eq(<rt> |void|)
+			print(|/*++Reentered;\n*/printcbret();\n|)
+			print(|/*++Reentered;\n*/printcbretval(_ret);\nreturn(_ret);\n|)
+		)
+		print(|}\n\n|)
+	))
+))
+')
+
+main()

@@ -1,0 +1,42 @@
+#
+# Template for comp_trg file
+#
+# $Header: g:/dwight/repo/vc/rcs/comp_trg 1.60 1999/03/13 02:52:45 dwight Exp $
+
+#
+# put any special target you have for
+# executables and libraries that are
+# not built by the make system proper.
+#
+
+.IF $(ENV) == GCC
+.IF $(MACH) != DOS
+vctpl.o: ../vctpl.cpp
+	 $(CPP) -x c++ $(CPPFLAGS:s/-fno-implicit-templates//) -c $<
+
+xfer.o: ../xfer.cc
+	g++ -frepo -I/home3/dwight/depot/clh/ins/dbg/inc -c -DVCFAR= -DDWCLSFAR= -I.. -DVCCFG_FILE ../xfer.cc
+.END
+.END
+
+#.IF $(MACH) == DOS
+#MAKEDEPCMD=makedep__tab__-i.;$(CFG_INSTALL_INCLUDES_DIR)__tab__-n__tab__-a__tab__
+#LITMP=$(MAKEDEPCMD){$(LIB_MEMBERS)}__tab__depend__nl__
+#DOMKDEP=\
+#	call $(mktmp,$(TMPFILE).bat,$(TMPFILE) $(subst,__tab__,\t $(subst,__nl__,\n $(subst,\,\\ $(LITMP)))))
+#depend:
+#	[
+#	del depend
+#	$(DOMKDEP)
+#	]
+#.END
+#
+#
+#
+#.IF $(SINGLE) == $(NULL)
+#
+#$(EXES) : 
+#	$(MAKE) COMP=$(COMP) SINGLE=yes EXE=$@ COMP_EXE_MEMBERS=$(@:b) exe
+#
+#
+#.END
