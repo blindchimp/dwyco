@@ -5,7 +5,7 @@
 # Also, if you get linker warnings related to version mismatches, you can
 # hand it the Makefile generated for the top level cdcx build and
 # change all occurances of "10.5" to "10.9"
-VCCFG_COMP=../..
+VCCFG_COMP=$$PWD
 DWYCOBG=1
 DEFINES += VCCFG_FILE
 linux-g++*:DEFINES += LINUX 

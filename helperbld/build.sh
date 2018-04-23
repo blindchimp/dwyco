@@ -6,6 +6,6 @@ mkdir -p $SHADOW_NAME
 (
 opwd=$PWD
 cd $SHADOW_NAME
-qmake $opwd/helpers.pro
+qmake DWYCO_CONFDIR=helperbld $opwd/helpers.pro
 make -j 8
 )

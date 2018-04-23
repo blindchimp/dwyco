@@ -19,7 +19,7 @@ HEADERS  += qdwyrun.h
 
 FORMS    += qdwyrun.ui
 
-include(../conf.pro)
+include(../$$DWYCO_CONFDIR/conf.pri)
 
 linux-* {
 QMAKE_CXXFLAGS += -fpermissive

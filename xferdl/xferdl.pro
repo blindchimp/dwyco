@@ -3,7 +3,7 @@ TEMPLATE = app
 win32: CONFIG += windows
 CONFIG -= app_bundle
 CONFIG -= qt
-include(../conf.pro)
+include(../$$DWYCO_CONFDIR/conf.pri)
 
 SOURCES += \
     xferdl.cpp

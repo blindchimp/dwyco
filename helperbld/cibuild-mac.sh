@@ -6,7 +6,7 @@ mkdir $SHADOW_NAME
 (
 opwd=$PWD
 cd $SHADOW_NAME
-qmake CONFIG+=release -spec macx-g++ $opwd/helpers.pro
+qmake CONFIG+=release -spec macx-g++ DWYCO_CONFDIR=helperbld $opwd/helpers.pro
 # this is goofy because qt4 has some old flags that
 # we need to override, but i don't want to tweak the
 # qt4 install's mkspecs

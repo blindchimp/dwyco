@@ -2,7 +2,7 @@ TEMPLATE = app
 CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
-include(../conf.pro)
+include(../$$DWYCO_CONFDIR/conf.pri)
 
 #QMAKE_LFLAGS_RELEASE += -static
 
