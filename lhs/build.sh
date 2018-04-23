@@ -18,6 +18,6 @@ make -j 8 && make install
 (
 opwd=$PWD
 cd $D/git/build-lh
-qmake $opwd/lh.pro
+qmake DWYCO_CONFDIR=lhs $opwd/lh.pro
 make -j 8
 )

@@ -47,8 +47,6 @@ class Allocator;
 #include <dir.h>
 #endif
 
-class DwAllocator;
-DwAllocator *Default_alloc;
 
 extern "C" void malloc_shutdown(void);
 extern "C" void malloc_debug(long);
