@@ -1,6 +1,8 @@
 QT += core
 QT -= gui
 
+include(../$$DWYCO_CONFDIR/conf.pri)
+
 SOURCES += \
     greetbot.cpp \
     dwyco_new_msg.cpp
