@@ -15,6 +15,6 @@ cp include/uv.h $SHADOW_NAME/include
 (
 opwd=$PWD
 cd $SHADOW_NAME
-qmake DWYCO_CONFDIR=phoobld $opwd/phoobld.pro
+qmake -spec macx-clang DWYCO_CONFDIR=phoobld $opwd/phoobld.pro
 make -j 8
 )
