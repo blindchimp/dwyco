@@ -1324,12 +1324,12 @@ mainwinform::update_ignore(DwOString uid)
     dwyco_pal_relogin();
 }
 
-QList<QByteArray> *
+QList<QByteArray>
 mainwinform::get_selection(int only_one)
 {
     QItemSelectionModel *sm = ui.usertree_view->selectionModel();
     QModelIndexList idxs = sm->selectedIndexes();
-    QList<QByteArray> *ret = new QList<QByteArray>;
+    QList<QByteArray> ret;
     if(idxs.count() == 0 || (idxs.count() > 1 && only_one))
         return ret;
 
@@ -1340,11 +1340,11 @@ mainwinform::get_selection(int only_one)
             QByteArray uid = sort_proxy_model.data(idxs[i], Qt::UserRole).toByteArray();
             if(uid.length() == 0)
                 continue;
-            ret->append(uid);
+            ret.append(uid);
         }
     }
-    if(ret->count() == 1)
-        emit uid_selected(DwOString((*ret)[0].constData(), 0, (*ret)[0].length()), 4);
+    if(ret.count() == 1)
+        emit uid_selected(DwOString(ret[0].constData(), 0, ret[0].length()), 4);
     return ret;
 
 }
@@ -1353,14 +1353,12 @@ void
 mainwinform::contextMenuEvent(QContextMenuEvent *ev)
 {
     QItemSelectionModel *sm = ui.usertree_view->selectionModel();
-    QModelIndex idx = sm->currentIndex();
 
-    QList<QByteArray> *uids = get_selection(0);
-    int multi = uids->count() > 1;
-    int single = uids->count() == 1;
-    if(uids->count() == 0)
+    QList<QByteArray> uids = get_selection(0);
+    int multi = uids.count() > 1;
+    int single = uids.count() == 1;
+    if(uids.count() == 0)
     {
-        delete uids;
         return;
     }
     ui.actionAccept_call->setVisible(0);
@@ -1368,7 +1366,7 @@ mainwinform::contextMenuEvent(QContextMenuEvent *ev)
     ui.actionHangup->setVisible(0);
     if(single)
     {
-        QByteArray uid = (*uids)[0];
+        QByteArray uid = uids[0];
         ui.actionAlert_when_online->setChecked(dwyco_get_alert(uid.constData(), uid.length()));
         int pal = dwyco_is_pal(uid.constData(), uid.length());
 
@@ -1411,7 +1409,6 @@ mainwinform::contextMenuEvent(QContextMenuEvent *ev)
         ui.actionBrowse_saved_msgs->setVisible(0);
 
     }
-    delete uids;
     popup_menu->popup(ev->globalPos());
 }
 
@@ -1483,13 +1480,12 @@ mainwinform::on_actionCompose_Message_triggered(bool)
 {
     dwyco_field_debug("ul-compose", 1);
     composer *c = 0;
-    QList<QByteArray> *uids = get_selection(1);
-    if(uids->count() == 0)
+    QList<QByteArray> uids = get_selection(1);
+    if(uids.count() == 0)
     {
-        delete uids;
         return;
     }
-    QByteArray uid = (*uids)[0];
+    QByteArray uid = uids[0];
 
     c = new composer(COMP_STYLE_REGULAR, 0, this);
     c->set_uid(DwOString(uid.constData(), 0, uid.length()));
@@ -1501,13 +1497,12 @@ mainwinform::on_actionCompose_Message_triggered(bool)
 void
 mainwinform::on_actionSend_message_triggered(bool)
 {
-    QList<QByteArray> *uids = get_selection(1);
-    if(uids->count() == 0)
+    QList<QByteArray> uids = get_selection(1);
+    if(uids.count() == 0)
     {
-        delete uids;
         return;
     }
-    QByteArray uid = (*uids)[0];
+    QByteArray uid = uids[0];
     DwOString duid(uid.constData(), 0, uid.count());
     simple_call *sc = simple_call::get_simple_call(duid);
     sc->setVisible(1);
@@ -1537,10 +1532,9 @@ mainwinform::on_actionAdvanced_triggered(bool)
 void
 mainwinform::on_actionUpdate_info_triggered(bool)
 {
-    QList<QByteArray> &uids = *get_selection(0);
+    QList<QByteArray> uids = get_selection(0);
     for(int i = 0; i < uids.count(); ++i)
         dwyco_fetch_info(uids[i].constData(), uids[i].length());
-    delete &uids;
     cdcx_set_refresh_users(1);
 }
 
@@ -1548,15 +1542,14 @@ void
 mainwinform::on_actionPromote_to_Pal_triggered(bool)
 {
     dwyco_field_debug("ul-pal", 1);
-    QList<QByteArray> *uids = get_selection(0);
-    for(int i = 0; i < uids->count(); ++i)
+    QList<QByteArray> uids = get_selection(0);
+    for(int i = 0; i < uids.count(); ++i)
     {
-        QByteArray uid = (*uids)[i];
+        QByteArray uid = uids[i];
         dwyco_pal_add(uid.constData(), uid.length());
         emit pal_event(DwOString(uid.constData(), 0, uid.length()));
     }
     cdcx_set_refresh_users(1);
-    delete uids;
     //load_users();
     //decorate_users();
 }
@@ -1564,15 +1557,14 @@ mainwinform::on_actionPromote_to_Pal_triggered(bool)
 void
 mainwinform::on_actionDemote_to_Non_pal_triggered(bool)
 {
-    QList<QByteArray> *uids = get_selection(0);
-    for(int i = 0; i < uids->count(); ++i)
+    QList<QByteArray> uids = get_selection(0);
+    for(int i = 0; i < uids.count(); ++i)
     {
-        QByteArray uid = (*uids)[i];
+        QByteArray uid = uids[i];
         dwyco_pal_delete(uid.constData(), uid.length());
         emit pal_event(DwOString(uid.constData(), 0, uid.length()));
     }
     cdcx_set_refresh_users(1);
-    delete uids;
     //load_users();
     //decorate_users();
 }
@@ -1583,27 +1575,25 @@ mainwinform::on_actionBlock_user_triggered(bool)
     dwyco_field_debug("ul-block", 1);
     if(!confirm_ignore())
         return;
-    QList<QByteArray> *uids = get_selection(0);
-    for(int i = 0; i < uids->count(); ++i)
+    QList<QByteArray> uids = get_selection(0);
+    for(int i = 0; i < uids.count(); ++i)
     {
-        QByteArray uid = (*uids)[i];
+        QByteArray uid = uids[i];
         dwyco_ignore(uid.constData(), uid.length());
         emit ignore_event(DwOString(uid.constData(), 0, uid.length()));
     }
-    delete uids;
 }
 
 void
 mainwinform::on_actionUnblock_user_triggered(bool)
 {
-    QList<QByteArray> *uids = get_selection(0);
-    for(int i = 0; i < uids->count(); ++i)
+    QList<QByteArray> uids = get_selection(0);
+    for(int i = 0; i < uids.count(); ++i)
     {
-        QByteArray uid = (*uids)[i];
+        QByteArray uid = uids[i];
         dwyco_unignore(uid.constData(), uid.length());
         emit ignore_event(DwOString(uid.constData(), 0, uid.length()));
     }
-    delete uids;
 }
 
 void
@@ -1611,13 +1601,12 @@ mainwinform::on_actionView_Profile_triggered(bool)
 {
     dwyco_field_debug("ul-show-profile", 1);
     viewer_profile *c;
-    QList<QByteArray> *uids = get_selection(1);
-    if(uids->count() == 0)
+    QList<QByteArray> uids = get_selection(1);
+    if(uids.count() == 0)
     {
-        delete uids;
         return;
     }
-    QByteArray uid = (*uids)[0];
+    QByteArray uid = uids[0];
     DwOString duid(uid.constData(), 0, uid.length());
     if(!Allow_multiple_windows)
         viewer_profile::delete_all();
@@ -1635,18 +1624,17 @@ mainwinform::on_actionView_Profile_triggered(bool)
         c->raise();
         c->showNormal();
     }
-    delete uids;
 }
 
 void
 mainwinform::on_actionBrowse_saved_msgs_triggered(bool)
 {
     dwyco_field_debug("ul-browse-old", 1);
-    QList<QByteArray> *uids = get_selection(0);
-    if(uids->count() != 1)
+    QList<QByteArray> uids = get_selection(0);
+    if(uids.count() != 1)
         return;
     on_actionShow_Msg_Browser_triggered(1);
-    QByteArray uid = (*uids)[0];
+    QByteArray uid = uids[0];
     DwOString duid = DwOString(uid.constData(), 0, uid.length());
 
     emit uid_selected(duid, 6);
@@ -1732,34 +1720,31 @@ send_file_common(const QByteArray& uid)
 void
 mainwinform::on_actionSend_file_triggered(bool)
 {
-    QList<QByteArray> *uids = get_selection(1);
-    if(uids->count() == 0)
+    QList<QByteArray> uids = get_selection(1);
+    if(uids.count() == 0)
     {
-        delete uids;
         return;
     }
-    QByteArray uid = (*uids)[0];
+    QByteArray uid = uids[0];
     send_file_common(uid);
-    delete uids;
 }
 
 void
 mainwinform::on_actionRemove_user_triggered(bool)
 {
-    QList<QByteArray> *uids = get_selection(0);
-    int n = uids->count();
+    QList<QByteArray> uids = get_selection(0);
+    int n = uids.count();
     QMessageBox::StandardButton s = QMessageBox::question(this, "Remove user",
                                     QString("Are you sure you want to remove %1 selected users? (NO UNDO)").arg(n),
                                     QMessageBox::Yes|QMessageBox::No, QMessageBox::No);
     if(s == QMessageBox::No)
     {
-        delete uids;
         return;
     }
     int reload = 0;
     for(int i = 0; i < n; ++i)
     {
-        QByteArray uid = (*uids)[i];
+        QByteArray uid = uids[i];
         DwOString duid(uid.constData(), 0, uid.length());
         // delete all unviewed msgs from the index
         del_unviewed_uid(duid);
@@ -1797,7 +1782,6 @@ mainwinform::on_actionRemove_user_triggered(bool)
         reload = 1;
 
     }
-    delete uids;
     // certain things are really bad in the current core:
     // if a user is added to the system, the user list is automatically
     // updated behind the scenes, you just have to refetch it.
@@ -1815,13 +1799,12 @@ mainwinform::on_actionRemove_user_triggered(bool)
 void
 mainwinform::on_actionAlert_when_online_triggered(bool state)
 {
-    QList<QByteArray> &uids = *get_selection(0);
+    QList<QByteArray> uids = get_selection(0);
     int n = uids.count();
     for(int i = 0; i < n; ++i)
     {
         dwyco_set_alert(uids[i].constData(), uids[i].length(), state);
     }
-    delete &uids;
 }
 
 void
@@ -4070,33 +4053,29 @@ void mainwinform::on_actionHide_All_Chatboxes_triggered()
 
 void mainwinform::on_actionHangup_triggered()
 {
-    QList<QByteArray> *uids = get_selection(0);
-    int n = uids->count();
+    QList<QByteArray> uids = get_selection(0);
+    int n = uids.count();
     for(int i = 0; i < n; ++i)
     {
-        QByteArray uid = (*uids)[i];
+        QByteArray uid = uids[i];
         call_destroy_by_uid(DwOString(uid.constData(), 0, uid.length()));
     }
-    delete uids;
-
 }
 
 void mainwinform::on_actionAccept_call_triggered()
 {
-    QList<QByteArray> *uids = get_selection(1);
-    if(uids->count() == 0)
+    QList<QByteArray> uids = get_selection(1);
+    if(uids.count() == 0)
     {
-        delete uids;
         return;
     }
 }
 
 void mainwinform::on_actionReject_call_triggered()
 {
-    QList<QByteArray> *uids = get_selection(1);
-    if(uids->count() == 0)
+    QList<QByteArray> uids = get_selection(1);
+    if(uids.count() == 0)
     {
-        delete uids;
         return;
     }
 }

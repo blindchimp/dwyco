@@ -16,7 +16,7 @@ mkdir %SHADOW_NAME%
 rem mkdir $SHADOW_NAME/lib
 rem mkdir $SHADOW_NAME/include
 
-set APPVEYOR_BUILD_FOLDER=c:\users\dwight\cdcxbld
+set APPVEYOR_BUILD_FOLDER=c:\users\dwight\dwyco
 cd %SHADOW_NAME%
 qmake CONFIG+=release -spec win32-msvc2015 %APPVEYOR_BUILD_FOLDER%\dwycore.pro
 nmake release

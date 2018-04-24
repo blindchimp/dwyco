@@ -7,10 +7,13 @@ TEMPLATE = lib
 CONFIG += staticlib
 
 INCLUDEPATH += include ../ogg/include
-win32-*: INCLUDEPATH += win32/rad2007
+
+win32: INCLUDEPATH += win32/rad2007
 win32-msvc2008: DEFINES += HAVE_CONFIG_H
 DEFINES += EXPORT= USE_KISS_FFT
-win32-*: DEFINES += _USE_MATH_DEFINES
+android: DEFINES += FIXED_POINT
+!android: DEFINES += FLOATING_POINT
+win32: DEFINES += _USE_MATH_DEFINES
 
 
 SOURCES += \

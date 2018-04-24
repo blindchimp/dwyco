@@ -179,9 +179,9 @@ DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
 
 D = $${OUT_PWD}/../bld
 equals(ANDROID_TARGET_ARCH, x86) {
-L = $$PWD/../libs/x86
+L = $$PWD/../$$DWYCO_CONFDIR/libs/x86
 } else {
-L = $$PWD/../libs/armeabi-v7a
+L = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a
 }
 LIBS += $$D/qt-qml-models/libQtQmlModels.a
 
@@ -321,7 +321,7 @@ contains(ANDROID_TARGET_ARCH,x86) {
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
     ANDROID_EXTRA_LIBS = \
-        $$PWD/../libs/armeabi-v7a/libdwyco_jni.so \
+        $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so \
         $$PWD/arm/libcrypto.so \
         $$PWD/arm/libssl.so
 }
