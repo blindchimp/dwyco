@@ -126,7 +126,7 @@ public:
     void next_tab();
     void prev_tab();
 
-    QList<QByteArray> *get_selection(int only_one);
+    QList<QByteArray> get_selection(int only_one);
 
 
     void emit_public_chat_display(DwOString who, DwOString txt, DwOString uid);
