@@ -310,7 +310,7 @@ qdwyrun::run_app()
 {
     static int been_here;
     if(been_here)
-	    return;
+        return;
     been_here = 1;
     QStringList args;
     int n = qApp->arguments().count();
@@ -328,18 +328,18 @@ qdwyrun::run_app()
 void
 qdwyrun::too_quick(int code, QProcess::ExitStatus e)
 {
-	if(idle_timer.isActive())
-	{
-		idle_timer.stop();
-		proc_error(QProcess::Crashed);
-	}
+    if(idle_timer.isActive())
+    {
+        idle_timer.stop();
+        proc_error(QProcess::Crashed);
+    }
 
 }
 
 void
 qdwyrun::done()
 {
-	exit(0);
+    exit(0);
 }
 
 void
@@ -373,12 +373,12 @@ qdwyrun::update_finished(int exitcode, QProcess::ExitStatus estatus)
     else
         ui->label_2->setText("Update failed");
 
-	QFile::remove("run-update");
-	QFile::remove(update_app);
-	QString chkfn = update_app + ".chk";
-	QString sigfn = update_app + ".sig";
-	QFile::remove(chkfn);
-	QFile::remove(sigfn);
+    QFile::remove("run-update");
+    QFile::remove(update_app);
+    QString chkfn = update_app + ".chk";
+    QString sigfn = update_app + ".sig";
+    QFile::remove(chkfn);
+    QFile::remove(sigfn);
 
     delete proc;
     proc = 0;
@@ -397,10 +397,10 @@ qdwyrun::update_error(QProcess::ProcessError)
 void
 qdwyrun::run_update(QString fn)
 {
-	static int been_here;
-	if(been_here)
-		return;
-	been_here = 1;
+    static int been_here;
+    if(been_here)
+        return;
+    been_here = 1;
     QStringList args;
     args.append("/silent");
 
@@ -447,15 +447,15 @@ check_and_do_simple_update()
         if(check_staged_update("simple-update"))
         {
             int ret = simple_update("simple-update");
-	    // whether it worked or not, remove the update
+            // whether it worked or not, remove the update
             QFile::remove("simple-update");
             QFile::remove("simple-update.chk");
             QFile::remove("simple-update.sig");
             QFile::remove("run-update");
-	    if(ret)
-		    Did_simple_update = 1;
-	    else
-		    throw -1;
+            if(ret)
+                Did_simple_update = 1;
+            else
+                throw -1;
         }
         else
             throw -1;
