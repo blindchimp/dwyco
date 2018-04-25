@@ -9,7 +9,7 @@ mkdir %SHADOW_NAME%
 rem mkdir $SHADOW_NAME/lib
 rem mkdir $SHADOW_NAME/include
 
-set APPVEYOR_BUILD_FOLDER=%D%\helperbld
+set APPVEYOR_BUILD_FOLDER=%D%\dwyco
 cd %SHADOW_NAME%
-qmake CONFIG+=release %APPVEYOR_BUILD_FOLDER%\helpers.pro
+qmake CONFIG+=release DWYCO_CONFDIR=helperbld %APPVEYOR_BUILD_FOLDER%\helpers.pro
 nmake release

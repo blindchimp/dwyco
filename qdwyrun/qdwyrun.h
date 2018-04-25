@@ -30,6 +30,8 @@ public slots:
     void update_finished(int, QProcess::ExitStatus);
     void proc_error(QProcess::ProcessError);
     void update_error(QProcess::ProcessError);
+    void done();
+	void too_quick(int code, QProcess::ExitStatus e);
 
     void app_started();
     
