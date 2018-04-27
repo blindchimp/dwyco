@@ -337,7 +337,8 @@ backup_user(vc v)
             }
             catch(...)
             {
-                close(fd);
+				if(fd != -1)
+					close(fd);
                 delete [] buf;
                 sql_insert_record(uid, mid, ret[i], attfn, "");
             }
