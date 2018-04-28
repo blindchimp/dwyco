@@ -311,7 +311,6 @@ backup_user(vc v)
             int fd = -1;
             try
             {
-
                 DwString actual_fn = newfn(dir);
                 actual_fn += DIRSEPSTR;
                 actual_fn += (const char *)attfn;
@@ -337,8 +336,8 @@ backup_user(vc v)
             }
             catch(...)
             {
-				if(fd != -1)
-					close(fd);
+                if(fd != -1)
+                    close(fd);
                 delete [] buf;
                 sql_insert_record(uid, mid, ret[i], attfn, "");
             }
@@ -395,7 +394,8 @@ backup_msg(vc uid, vc mid)
         }
         catch(...)
         {
-            close(fd);
+            if(fd != -1)
+                close(fd);
             delete [] buf;
             sql_insert_record(uid, mid, ret, attfn, "", "dbu");
         }
