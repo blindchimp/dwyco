@@ -1,4 +1,5 @@
 *~
+*.autosave
 phoobld/jni/toolchain/
 phoobld/obj/
 phoobld/libs/
