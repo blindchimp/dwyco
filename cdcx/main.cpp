@@ -681,6 +681,17 @@ int main(int argc, char *argv[])
         First217 = 0;
     }
 
+    int first_bug217 = !setting_get("first_bug217", sdum);
+    if(first_bug217)
+    {
+        // need to remove any full backup so it gets recreated.
+        // this is because of a bug we fixed in 2.17 that might
+        // have created a partial full backup if an attachment was
+        // missing.
+        dwyco_remove_backup();
+        setting_put("first_bug217", 0);
+    }
+
 
     ClientGod = !!getenv("kk27g");
     mainwinform mainwin;
