@@ -454,6 +454,9 @@ Recipients:</string>
    <property name="checkable">
     <bool>true</bool>
    </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Hi-Quality Video</string>
    </property>
@@ -462,6 +465,9 @@ Recipients:</string>
    </property>
    <property name="whatsThis">
     <string>This advanced feature allows you to record messages at a higher quality. Selecting this punch-in tells CDC-X to record at a much higher frame-rate and/or spatial video quality. The resulting message files are much bigger than normal quality.</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionRecord_Video">

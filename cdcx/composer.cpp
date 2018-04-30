@@ -343,10 +343,26 @@ composer::on_actionHi_Quality_Video_triggered(bool newstate)
 {
 }
 
+static void
+DWYCOCALLCONV
+dwyco_record_status_callback(int /*id*/, const char *msg, int percent_done, void *arg)
+{
+    DVP vp = DVP::cookie_to_ptr((DVP_COOKIE)arg);
+    if(!vp.is_valid())
+        return;
+    composer_profile *c = (composer_profile *)(void *)vp;
+    c->ui.statusbar->showMessage(msg);
+    if(c->has_attachment)
+    {
+        c->ui.progressBar->show();
+        c->ui.progressBar->setValue(percent_done);
+    }
+}
+
 
 /*static*/ void
 DWYCOCALLCONV
-dwyco_record_done(int /*id*/, void *arg)
+composer::dwyco_record_done(int /*id*/, void *arg)
 {
     DVP vp = DVP::cookie_to_ptr((DVP_COOKIE)arg);
     if(!vp.is_valid())
@@ -370,6 +386,7 @@ dwyco_record_done(int /*id*/, void *arg)
     c->recording = 0;
 
     c->ui.actionSend_Message->setEnabled(1);
+    c->ui.statusbar->showMessage("");
 }
 
 void
@@ -379,7 +396,7 @@ composer::on_actionRecord_triggered(bool)
             !ui.actionRecord_Audio->isChecked() &&
             !ui.actionRecord_Picture->isChecked())
         return;
-    int hiq = ui.actionHi_Quality_Video->isChecked();
+    //int hiq = ui.actionHi_Quality_Video->isChecked();
     if(ui.actionRecord_Picture->isChecked())
     {
         if(!dwyco_zap_record(compid,
@@ -396,9 +413,9 @@ composer::on_actionRecord_triggered(bool)
         if(!dwyco_zap_record2(compid,
                               ui.actionRecord_Video->isChecked(),
                               ui.actionRecord_Audio->isChecked(),
-                              -1, hiq ? (500 * 1024 * 1024) : (50 * 1024 * 1024) ,
-                              hiq,
-                              0, 0,
+                              -1, (97 * 1024 * 1024),
+                              1,
+                              dwyco_record_status_callback, (void *)vp.cookie,
                               dwyco_record_done, (void *)vp.cookie, &ui_id))
         {
             return;
@@ -1118,7 +1135,7 @@ dwyco_set_profile_callback(int succ, const char *reason,
 //static
 void
 DWYCOCALLCONV
-dwyco_profile_composer_fetch_done(int succ, const char *reason,
+composer_profile::dwyco_profile_composer_fetch_done(int succ, const char *reason,
                                   const char *s1, int len_s1,
                                   const char *s2, int len_s2,
                                   const char *s3, int len_s3,
@@ -1399,26 +1416,9 @@ composer_profile::closeEvent(QCloseEvent *ev)
     composer::closeEvent(ev);
 }
 
-static void
-DWYCOCALLCONV
-dwyco_profile_record_status_callback(int /*id*/, const char *msg, int percent_done, void *arg)
-{
-    DVP vp = DVP::cookie_to_ptr((DVP_COOKIE)arg);
-    if(!vp.is_valid())
-        return;
-    composer_profile *c = (composer_profile *)(void *)vp;
-    c->ui.statusbar->showMessage(msg);
-    if(c->has_attachment)
-    {
-        c->ui.progressBar->show();
-        c->ui.progressBar->setValue(percent_done);
-    }
-}
-
-//static
 void
 DWYCOCALLCONV
-dwyco_record_profile_done(int /*id*/, void *arg)
+composer_profile::dwyco_record_profile_done(int /*id*/, void *arg)
 {
     DVP vp = DVP::cookie_to_ptr((DVP_COOKIE)arg);
     if(!vp.is_valid())
@@ -1439,7 +1439,7 @@ composer_profile::on_actionRecord_triggered(bool)
                           ui.actionRecord_Video->isChecked(),
                           ui.actionRecord_Audio->isChecked(),
                           -1, 60000, 0,
-                          dwyco_profile_record_status_callback, (void *)vp.cookie,
+                          dwyco_record_status_callback, (void *)vp.cookie,
                           dwyco_record_profile_done, (void *)vp.cookie, &ui_id))
     {
         return;
