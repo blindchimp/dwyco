@@ -42,6 +42,8 @@ private slots:
 
     void on_restore_button_clicked();
 
+    void on_pals_only_clicked(bool checked);
+
 signals:
     void content_filter_event(int);
     void pals_only(int);

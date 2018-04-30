@@ -2290,7 +2290,7 @@ void simple_call::on_send_button_clicked()
 
 void simple_call::on_actionPause_toggled(bool arg1)
 {
-
+    dwyco_field_debug("sc-pause-vid", 1);
     dwyco_delete_zap_composition(zap_id);
     new_zap();
 
@@ -2319,6 +2319,7 @@ void simple_call::on_textBrowser_anchorClicked(const QUrl &url)
     QList<QByteArray> elems = b.split(',');
     if(elems.count() != 3)
         return;
+    dwyco_field_debug("sc-text-browser", 1);
 
     context_uid = from_hex(elems[0].constData());
     context_mid = elems[1].constData();
@@ -2534,6 +2535,7 @@ void simple_call::on_cancel_req_clicked()
 
 void simple_call::on_actionZoom_in_toggled(bool arg1)
 {
+    dwyco_field_debug("sc-vid-zoom", 1);
     if(arg1)
     {
         ui->label->setMinimumSize(640, 480);
@@ -2593,6 +2595,7 @@ void simple_call::on_compose_button_clicked()
 
 void simple_call::on_send_file_button_clicked()
 {
+    dwyco_field_debug("sc-file-send", 1);
     send_file_common(uid);
 }
 
@@ -2628,6 +2631,7 @@ simple_call::process_content_filter_change(int)
 
 void simple_call::on_pal_button_clicked()
 {
+    dwyco_field_debug("sc-pal", 1);
     dwyco_pal_add(uid.c_str(), uid.length());
     //Mainwinform->load_users();
     //Mainwinform->decorate_users();
@@ -2689,7 +2693,7 @@ void simple_call::on_actionStart_snapshot_timer_toggled(bool checked)
         ui->countdown_label->setText(QString::number(snapshot_countdown));
         snapshot_timer.stop();
     }
-    dwyco_field_debug("snapshot-timer", 1);
+    dwyco_field_debug("sc-snapshot-timer", 1);
 
 }
 
@@ -2721,6 +2725,7 @@ simple_call::stop_snapshot_timer(bool)
 void simple_call::on_connect_button_clicked()
 {
     emit try_connect();
+    dwyco_field_debug("sc-connect", 1);
 
 }
 
