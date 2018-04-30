@@ -49,12 +49,11 @@ public slots:
 class composer : public QMainWindow
 {
     Q_OBJECT
-    friend void
-    DWYCOCALLCONV
-    dwyco_record_profile_done(int /*id*/, void *arg);
-    friend void
-    DWYCOCALLCONV
-    dwyco_record_done(int /*id*/, void *arg);
+
+protected:
+    static void DWYCOCALLCONV dwyco_record_profile_done(int /*id*/, void *arg);
+    static void DWYCOCALLCONV dwyco_record_done(int /*id*/, void *arg);
+
 public:
     composer(int style = 0, int special_type = 0, QWidget *parent = 0, Qt::WindowFlags f = 0);
     virtual ~composer();
@@ -138,9 +137,8 @@ signals:
 class composer_profile : public composer
 {
     Q_OBJECT
-    friend
-    void
-    DWYCOCALLCONV
+
+    static void DWYCOCALLCONV
     dwyco_profile_composer_fetch_done(int succ, const char *reason,
                                       const char *s1, int len_s1,
                                       const char *s2, int len_s2,
@@ -149,6 +147,8 @@ class composer_profile : public composer
                                       const char *uid, int len_uid,
                                       int reviewed, int regular,
                                       void *arg);
+    static void DWYCOCALLCONV dwyco_record_profile_done(int /*id*/, void *arg);
+
 public:
     composer_profile(QWidget *parent = 0, Qt::WindowFlags f = 0) ;
     static composer_profile *get_composer_profile(const DwOString& uid);
