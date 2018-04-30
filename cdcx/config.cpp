@@ -480,3 +480,9 @@ void configform::on_restore_button_clicked()
                              QMessageBox::Ok);
     exit(0);
 }
+
+void configform::on_pals_only_clicked(bool checked)
+{
+    if(checked)
+        dwyco_field_debug("cfg-pals-only", 1);
+}
