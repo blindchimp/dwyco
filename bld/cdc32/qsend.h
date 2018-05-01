@@ -21,9 +21,11 @@ class MMChannel;
 namespace dwyco {
 class DwQSend
 {
-    friend void qd_send_done(vc m, void *, vc, ValidPtr vp);
-    friend void eo_qd_xfer(MMChannel *mc, vc, void *, ValidPtr vp);
-    friend void qd_set_status(MMChannel *mc, vc msg, void *, ValidPtr vp);
+    static void qd_send_done(vc m, void *, vc, ValidPtr vp);
+    static void eo_qd_xfer(MMChannel *mc, vc, void *, ValidPtr vp);
+    static void qd_set_status(MMChannel *mc, vc msg, void *, ValidPtr vp);
+    static void xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp);
+
 public:
     DwQSend(const DwString& qfn);
     ~DwQSend();
@@ -58,7 +60,12 @@ private:
     vc key;
     vc ectx;
     vc att_basename;
+    // note: when msg is encrypted, both the plain
+    // and encrypted attachments exist until the message
+    // is completely sent.
     DwString att_actual_fn;
+    DwString alternate_att_actual_fn;
+
     int has_att;
     vc delivered_mid;
     int dont_save_sent;
