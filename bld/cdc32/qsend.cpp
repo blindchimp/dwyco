@@ -159,7 +159,7 @@ DwQSend::remove_aux()
 
 
 void
-qd_send_done(vc m, void *, vc, ValidPtr vp)
+DwQSend::qd_send_done(vc m, void *, vc, ValidPtr vp)
 {
 
     if(!vp.is_valid())
@@ -171,7 +171,7 @@ qd_send_done(vc m, void *, vc, ValidPtr vp)
         delete_later(qs);
         return;
     }
-    vc afn = qs->att_basename;
+    //vc afn = qs->att_basename;
     if(m[1].is_nil())
     {
         // move message back to outbox
@@ -195,9 +195,13 @@ qd_send_done(vc m, void *, vc, ValidPtr vp)
         }
 
         DeleteFile(newfn(tmpfn).c_str());
+
+        // note: need to clean up both enc and non-enc attachments here
         if(qs->att_actual_fn.length() > 0)
             DeleteFile(qs->att_actual_fn.c_str());
-        // note: need to clean up both enc and non-enc attachments here
+        if(qs->alternate_att_actual_fn.length() > 0)
+            DeleteFile(qs->alternate_att_actual_fn.c_str());
+
         DwString efn = qs->qfn;
         efn += ".enc";
         DeleteFile(newfn(efn).c_str());
@@ -228,7 +232,7 @@ DwQSend::do_store()
 
 
 void
-eo_qd_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
+DwQSend::eo_qd_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
 {
     mc->timer1.stop();
     if(!vp.is_valid())
@@ -258,23 +262,43 @@ eo_qd_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
     qs->do_store();
 }
 
+
+// note: once you call cancel, the state of the object
+// is going to be unknown, and the object is going to be
+// deleted soon. don't do anything to the object after
+// calling cancel.
+//
 void
 DwQSend::cancel()
 {
+    if(!inprogress)
+    {
+        delete_later(this);
+        return;
+    }
+
     cancel_op = 1;
     if(xfer_chan_id != -1)
     {
         MMChannel::synchronous_destroy(xfer_chan_id, MMChannel::HARD);
     }
 
+    // note: there is a race here between the future
+    // firing and the delete happening.
+    // "cancel" is an operation that is a bit of an
+    // abort, where i want minimal actions (including
+    // cleanup). so there will be crumbs leftover after
+    // this, which will be eventually cleaned up by
+    // the "clean cruft" stuff.
     dirth_simulate_error_response(send_done_future);
     canceled();
+
     delete_later(this);
 }
 
 
 void
-qd_set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
+DwQSend::qd_set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
 {
     mc->timer1.stop();
     mc->timer1.load(XFER_WATCHDOG_TIMEOUT);
@@ -312,10 +336,10 @@ xfer_chan_call_succeeded(MMChannel *mc, int , vc, void *, ValidPtr)
     // timer1 callback still set to xfer_chan_setup_timeout
 }
 
-static void
-xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp)
+void
+DwQSend::xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp)
 {
-    eo_qd_xfer(mc, arg1, arg2, vp);
+    DwQSend::eo_qd_xfer(mc, arg1, arg2, vp);
     mc->schedule_destroy(MMChannel::HARD);
     TRACK_ADD(QS_xfer_setup_timeout, 1);
 }
@@ -405,19 +429,24 @@ DwQSend::send_with_attachment()
 
 // returns -1 if the message to send is corrupt and can never
 // be sent. in this case, the message given to the ctor is
-// deleted.
+// deleted and the caller should delete the object ASAP.
+//
 // returns 0 if the message is already in the process of
 // being sent, or if the q operation is not performed.
 // if 0 is returned, the send state machine is not started.
 // in this case, the send can be retried (if the current
 // operations on the message eventually fails, or if the
 // send could not be started for a transient reason.)
+//
 // returns 1 if the message is queued successfully, and the
 // send state machine is started to try and send it to the server.
 //
 int
 DwQSend::send_message()
 {
+    if(cancel_op)
+        return 0;
+
     {
         DwVecP<DwQSend> c = Qbm.query_by_member(qfn, &DwQSend::qfn);
         if(c.num_elems() > 1)
@@ -449,6 +478,10 @@ DwQSend::send_message()
             DeleteFile(newfn(afn).c_str());
             return -1;
         }
+        // att_actual_fn may get overwritten if the message is
+        // encrypted. likewise with basename, but this is only
+        // used to cleanup on success to remove the sent attachment
+        alternate_att_actual_fn = att_actual_fn;
         has_att = 1;
     }
 #if defined(ANDROID) || defined(DWYCO_IOS)
