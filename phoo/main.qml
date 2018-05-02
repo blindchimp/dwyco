@@ -543,6 +543,14 @@ ApplicationWindow {
 
     }
 
+    SimpleMsgBrowse {
+        id: simp_msg_browse
+        model: themsglist
+        to_uid: top_dispatch.last_uid_selected
+        visible: false
+
+    }
+
 
     ProfileView {
         id: theprofileview

@@ -239,6 +239,12 @@ Page {
                                 stack.push(theprofileview)
                             }
                         }
+                        MenuItem {
+                            text: "Browse Msgs"
+                            onTriggered: {
+                                stack.push(simp_msg_browse)
+                            }
+                        }
 
                         MenuItem {
                             text: "Clear msgs"
