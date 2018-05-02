@@ -81,8 +81,8 @@ INCLUDEPATH += $${DINC}/v4lcap
 QMAKE_CXX=ccache g++
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameters
 
-SHADOW=/home/dwight/git/build-phoo
-D = $${SHADOW}/bld
+SHADOW=$${OUT_PWD}
+D = $${SHADOW}/../bld
 
 LIBS += \
 $${D}/cdc32/libcdc32.a \
@@ -103,7 +103,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
-$${SHADOW}/lib/libuv.a \
+$${SHADOW}/../lib/libuv.a \
 -lsqlite3 \
 -lSDL \
 -lv4l2 \
