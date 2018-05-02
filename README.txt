@@ -1,4 +1,9 @@
+
 Dwyco Video Chat Client Components
+
+CDC-X (stable)
+
+Linux/Mac: [![Build Status](https://travis-ci.org/blindchimp/dwyco.svg?branch=cdcx-stable-travis)](https://travis-ci.org/blindchimp/dwyco)
 
 
 Reorganized, again.
