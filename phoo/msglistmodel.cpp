@@ -235,6 +235,7 @@ msglist_model::msglist_model(QObject *p) :
     filter_show_recv = 1;
     filter_show_sent = 1;
     filter_last_n = -1;
+    filter_only_favs = 0;
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
     mlm = this;
@@ -321,6 +322,7 @@ msglist_model::delete_all_selected()
         }
 
     }
+    Selected.clear();
     reload_model();
 }
 
@@ -375,11 +377,12 @@ msglist_model::reload_model()
 }
 
 void
-msglist_model::set_filter(int sent, int recv, int last_n)
+msglist_model::set_filter(int sent, int recv, int last_n, int only_favs)
 {
     filter_show_recv = recv;
     filter_show_sent = sent;
     filter_last_n = last_n;
+    filter_only_favs = only_favs;
     invalidateFilter();
 }
 
@@ -389,11 +392,19 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     QAbstractItemModel *alm = sourceModel();
 
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
-    if(filter_show_sent == 1 && is_sent.toInt() == 1)
-        return 1;
-    if(filter_show_recv == 1 && is_sent.toInt() == 0)
-        return 1;
-    return 0;
+    if(filter_show_sent == 0 && is_sent.toInt() == 1)
+        return 0;
+    if(filter_show_recv == 0 && is_sent.toInt() == 0)
+        return 0;
+    if(filter_only_favs)
+    {
+        QVariant is_fav = alm->data(alm->index(source_row, 0), IS_FAVORITE);
+        if(is_fav.toInt() == 1)
+            return 1;
+        else
+            return 0;
+    }
+    return 1;
 }
 
 msglist_raw::msglist_raw(QObject *p)
@@ -463,9 +474,8 @@ msglist_raw::reload_model()
     count_inbox_msgs = 0;
     count_msg_idx = 0;
     count_qd_msgs = 0;
-
+    // ugh, need to fix this to validate the uid some way
     if(buid.length() != 10)
-
     {
         endResetModel();
         return;

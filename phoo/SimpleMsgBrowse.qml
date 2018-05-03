@@ -1,4 +1,12 @@
 
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
 import QtQuick 2.6
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.1
@@ -10,10 +18,20 @@ Page {
     property bool multiselect_mode: false
     property url cur_source
     property int ind_online: 0
+    property int filter_show_sent: 1
+    property int filter_show_only_fav: 0
 
     function star_fun(b) {
         console.log("chatbox star")
         model.fav_all_selected(b ? 1 : 0)
+    }
+
+    onFilter_show_only_favChanged: {
+        themsglist.set_filter(filter_show_sent, 1, -1, filter_show_only_fav)
+    }
+
+    onFilter_show_sentChanged: {
+        themsglist.set_filter(filter_show_sent, 1, -1, filter_show_only_fav)
     }
 
     onTo_uidChanged: {
@@ -29,6 +47,8 @@ Page {
     }
     onVisibleChanged: {
         multiselect_mode = false
+        filter_show_only_fav = 0
+        filter_show_sent = 1
     }
 
     Component {
@@ -183,6 +203,25 @@ Page {
                         id: optionsMenu
                         x: parent.width - width
                         transformOrigin: Menu.TopRight
+                        MenuItem {
+                            text: "Show sent"
+                            checked: filter_show_sent
+                            checkable: true
+                            onCheckedChanged: {
+                                filter_show_sent = checked
+                            }
+
+                        }
+
+                        MenuItem {
+                            text: "Show Only Favorites"
+                            checked: filter_show_only_fav
+                            checkable: true
+                            onCheckedChanged: {
+                                filter_show_only_fav = checked
+                            }
+
+                        }
 
                         MenuItem {
                             text: "View profile"
@@ -294,7 +333,7 @@ Page {
             ColumnLayout {
                 id: clayout
                 z: 1
-                Layout.margins: 1
+                Layout.margins: 3
                 width: parent.width
                 height: parent.height
                 //anchors.centerIn: ditem
@@ -334,22 +373,32 @@ Page {
                         height: 32
                     }
                 }
+                Item {
+                    Layout.fillHeight: true
+                }
 
                 Text {
                     function gentext(msg, tm) {
                         var dt = new Date(tm * 1000)
-                        return "<html>" + msg + "<sub>" + Qt.formatTime(dt) + "</sub></html>"
+                        if(Date.now() - dt.getTime() > 86400 * 1000) {
+                            return "<html>" + msg + " " + Qt.formatDate(dt) + "</html>"
+                        } else {
+                            return "<html>" + msg + " " + Qt.formatTime(dt) + "</html>"
+                        }
 
                     }
 
                     id: msg
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     //Layout.maximumWidth: (listView1.width * 3) / 4
+                    Layout.fillWidth: true
+                    Layout.maximumHeight: 10
                     //horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
                     verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.Wrap
+                    wrapMode: Text.NoWrap
                     textFormat: Text.RichText
                     color: primary_text
+                    clip: true
 
                 }
 
@@ -360,13 +409,11 @@ Page {
                 onPressAndHold: {
                     console.log("click msg")
                     console.log(index)
-
-
                     grid.currentIndex = index
                     multiselect_mode = true
                     grid.model.toggle_selected(model.mid)
                     if(Qt.platform.os == "android") {
-                    notificationClient.vibrate(50)
+                        notificationClient.vibrate(50)
                     }
                 }
                 onClicked: {
@@ -421,9 +468,10 @@ Page {
         //width: 200; height: 400
         id: grid
         anchors.fill: parent
-        cellWidth: 160 ; cellHeight: 120
+        cellWidth: 160 ; cellHeight: 130
         delegate: msgdelegate
         clip: true
+        ScrollBar.vertical: ScrollBar { }
     }
 
 }

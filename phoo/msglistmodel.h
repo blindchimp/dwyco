@@ -32,7 +32,7 @@ public:
 
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
 
-    Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n);
+    Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n, int only_favs);
 
     Q_INVOKABLE void toggle_selected(QByteArray mid);
     Q_INVOKABLE void set_all_unselected();
@@ -49,6 +49,7 @@ private:
     int filter_show_sent;
     int filter_show_recv;
     int filter_last_n;
+    int filter_only_favs;
 
 signals:
     void uidChanged();

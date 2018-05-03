@@ -594,10 +594,14 @@ Page {
                 Text {
                     function gentext(msg, tm) {
                         var dt = new Date(tm * 1000)
-//                        return "<table><tr><td>" + msg + "</td>" +
-//                                "</tr><tr><td align=\"right\"><small>" + Qt.formatTime(dt) +
-//                                "</td></tr></table>"
-                        return "<html>" + msg + "<sub>" + Qt.formatTime(dt) + "</sub></html>"
+                        //                        return "<table><tr><td>" + msg + "</td>" +
+                        //                                "</tr><tr><td align=\"right\"><small>" + Qt.formatTime(dt) +
+                        //                                "</td></tr></table>"
+                        if(Date.now() - dt.getTime() > 86400 * 1000) {
+                            return "<html>" + msg + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
+                        } else {
+                            return "<html>" + msg + "<sub>" + Qt.formatTime(dt) + "</sub></html>"
+                        }
 
                     }
 
