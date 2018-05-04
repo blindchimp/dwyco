@@ -44,7 +44,7 @@ AppDrawerForm {
     lock_and_exit_button.onClicked: {
         expire_immediate = true
         core.power_clean()
-        if(Qt.platform.os == "android") {
+        if(Qt.platform.os === "android") {
             notificationClient.start_background()
         }
         Qt.quit()
@@ -56,7 +56,7 @@ AppDrawerForm {
     quiet_switch.onClicked: {
         dwy_quiet = quiet_switch.checked
 
-        if(Qt.platform.os == "android") {
+        if(Qt.platform.os === "android") {
             notificationClient.set_quiet(dwy_quiet ? 1 : 0)
         }
         core.set_local_setting("quiet", dwy_quiet ? "true" : "false")

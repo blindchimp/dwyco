@@ -146,7 +146,6 @@ Page {
             // sort proxy doesn't play well since you have to forward stuff
             // out to the source model which is tedious.
             // instead, i just implement the send in c++ in the model
-            // which seems retarded. oh well.
             //user_model.send_forward_selected(uid_folder, mid_to_forward)
             //
             stack.pop()

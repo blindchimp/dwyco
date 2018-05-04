@@ -2154,8 +2154,7 @@ MMChannel::match_config(vc cfg, int caller)
     //pvers = (pvers < ourvers) ? pvers : ourvers;
     if(pvers != ourvers)
         return vcnil;
-    // only check codec versions for obvious
-    // incompatibility
+
 
     vc rq;
     vc codec;
