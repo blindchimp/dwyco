@@ -1142,16 +1142,14 @@ fetch_attachment(vc id, DestroyCallback dc, vc dcb_arg1, void *dcb_arg2, ValidPt
     if(sip.is_nil() || port.is_nil())
         return 0;
     MMChannel *mc = 0;
-    if(!sip.is_nil())
-    {
-        mc = new MMChannel;
-        mc->tube = new DummyTube;
-        mc->tube->connect((const char *)sip, 0, 0);
-    }
+
+    mc = new MMChannel;
+    mc->tube = new DummyTube;
+    mc->tube->connect((const char *)sip, 0, 0);
 
     int i = -1;
     int state;
-    if(sip.is_nil() || (state = mc->tube->gen_channel((int)port, i)) == SSERR)
+    if((state = mc->tube->gen_channel((int)port, i)) == SSERR)
     {
         return 0;
     }

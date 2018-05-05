@@ -168,7 +168,6 @@ senc.cc \
 aq.cc \
 vcpan.cc \
 ta.cc \
-stkd.cc \
 audi.cc \
 audo.cc \
 aconn.cc \

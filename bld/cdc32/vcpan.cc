@@ -31,8 +31,12 @@
 #include "fnmod.h"
 
 
-void stackdump(void *v, int len);
-char stack[1024];
+// note: all "soft crashes" stopped being reported when
+// i switched to msvc static build in apr 2018. i suspect
+// it is because the stackdump stuff, which sorta worked
+// in borland, was crashing in msvc. possibly this was turning soft
+// crashes into hard crashes. since we don't use the stack dump
+// really any more, just get rid of it.
 extern DwycoEmergencyCallback dwyco_emergency_callback;
 
 
@@ -43,8 +47,6 @@ oopanic(const char *s)
     if(f)
     {
         fputs(s, f);
-        stackdump((void *)stack, sizeof(stack));
-        fwrite(stack, 1, sizeof(stack), f);
         fclose(f);
     }
 #ifndef DWYCO_NO_AUTOBUG
@@ -75,16 +77,6 @@ oopanic(const char *s)
     exit(1);
 }
 
-#if 0
-void
-oopanic(const char *s)
-{
-    char a[10000];
-    strcpy(a, s);
-    oopanic(a);
-}
-#endif
-
 extern "C" {
     void coopanic(char *s);
 };
@@ -98,10 +90,11 @@ void coopanic(char *s)
 #else
     int fd = open("lhcore", O_CREAT|O_BINARY|O_TRUNC|O_WRONLY, S_IRUSR|S_IWUSR);
 #endif
-    write(fd, s, strlen(s));
-    stackdump((void *)stack, sizeof(stack));
-    write(fd, stack, sizeof(stack));
-    close(fd);
+    if(fd != -1)
+    {
+	    write(fd, s, strlen(s));
+	    close(fd);
+    }
 #ifndef DWYCO_NO_AUTOBUG
     {
         int fd;
