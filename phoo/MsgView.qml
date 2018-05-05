@@ -8,6 +8,7 @@
 */
 import QtQuick 2.6
 import QtQuick.Controls 2.1
+import dwyco 1.0
 
 Page {
     property string uid

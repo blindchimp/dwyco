@@ -3,16 +3,28 @@ Dwight Melcher
 dwight@dwyco.com
 
 This is the source code for CDC-X client UI.
-It uses Qt4.8.
-For version 2.15/2.16 (released late 2017)
-it can be run on Windows XP+, Mac, and Linux.
+It can be run on Windows XP+, Mac, and Linux.
 
 As distributed by Dwyco, building requires:
-Windows: MSVC 2008, Borland rad studio XE, Qt 4.8.7, DMake
-Mac: Xcode9, Qt 4.8.7, QtCreator 4.5
-Linux: Ubuntu 14.04+, QtCreator 4.5
 
-The windows build is *challenging* because the tools are antiques. I've
+Windows: MSVC 2008, Qt 4.8.7
+
+Mac: Xcode9, Qt 4.8.7 (but NOT from Homebrew. It appears to build ok,
+but produces binaries that popup weird boxes asking to download fonts.
+Building Qt from scratch seems to solve the problem.)
+
+Linux: Ubuntu 14.04+
+
+5/2/2018
+UPDATE: Windows version 2.17 is released using simpler static build
+for everything except the video capture driver (see below.) It
+appears to be working ok in the field. The build still requires
+VS2008, running on a magical laptop with Qt4 installed, but it is much
+simpler than before.
+
+
+The windows build prior to 2.17 
+is *challenging* because the tools are antiques. I've
 ported it up to Windows 10/Qt4 with more recent tools, but have not
 distributed the build because I'm too much of a wuss to deal with the tech
 support issues that might arise from a drastic change in build tactics.

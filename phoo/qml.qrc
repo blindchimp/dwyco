@@ -43,5 +43,6 @@
         <file>VidView.qml</file>
         <file>AppDrawer.qml</file>
         <file>AppDrawerForm.ui.qml</file>
+        <file>SimpleMsgBrowse.qml</file>
     </qresource>
 </RCC>

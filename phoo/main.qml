@@ -14,7 +14,6 @@ import QtQuick.Controls.Material 2.2
 import QtQuick.Layouts 1.3
 import QtQuick.Dialogs 1.2
 import QtMultimedia 5.4
-//import QtPositioning 5.2
 import dwyco 1.0
 
 ApplicationWindow {
@@ -200,105 +199,7 @@ ApplicationWindow {
     Drawer {
         id: drawer
         interactive: {stack.depth === 1}
-//        Pane {
-//            padding: 0
-//            width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
-//            height: applicationWindow1.height
 
-//            ListView {
-//                id: listView
-//                currentIndex: -1
-//                anchors.fill: parent
-
-//                delegate: ItemDelegate {
-//                    width: parent.width
-//                    text: model.title
-//                    highlighted: ListView.isCurrentItem
-//                    checkable: model.chk
-//                    checked: model.chked
-//                    enabled: model.enbl
-//                    onClicked: {
-//                        // note: this is necessary because even when the
-//                        // drawer is completely closed, the buttons
-//                        // respond to clicks that are not absorbed by
-//                        // tools bars and other controls. this seems like
-//                        // a bug, because it can lead to some really weird
-//                        // behavior if toolbar buttons have small margins around
-//                        // them, or there are small margins around list items
-//                        //
-//                        if(drawer.position < 1)
-//                            return
-//                        //if (listView.currentIndex != index) {
-//                            listView.currentIndex = index
-//                            //titleLabel.text = model.title
-//                            if(index == 0) {
-//                                profile_update_dialog.preview_existing = true
-//                                stack.push(profile_update_dialog)
-//                            }
-//                            else if(index == 1) {
-//                                stack.push(pwchange_dialog)
-//                            }
-//                            else if(index == 2) {
-//                                stack.push(iglist_dialog)
-//                            }
-//                            else if(index == 3) {
-//                                expire_immediate = true
-//                                core.power_clean()
-//                                if(Qt.platform.os == "android") {
-//                                notificationClient.start_background()
-//                                }
-//                                Qt.quit()
-//                            } else if(index == 4) {
-//                                // note: clicked gets called before the checked property
-//                                // is toggled.
-//                                dwy_quiet = !checked
-//                                if(Qt.platform.os == "android") {
-//                                notificationClient.set_quiet(dwy_quiet ? 1 : 0)
-//                                }
-//                                core.set_local_setting("quiet", dwy_quiet ? "true" : "false")
-//                            }
-//                            else if(index == 5) {
-//                                dwy_invis = !checked
-//                                core.set_local_setting("invis", dwy_invis ? "true" : "false")
-//                                core.set_invisible_state(dwy_invis ? 1 : 0)
-//                            }
-//                            else if(index == 6)
-//                            {
-//                                stack.push(settings_dialog)
-//                            }
-//                            else if(index == 7)
-//                            {
-//                                stack.push(about_dialog)
-//                                //stack.push(adminfolder)
-//                            }
-//                            else if(index == 8)
-//                            {
-//                                stack.push(vid_cam_preview)
-//                            }
-
-//                        drawer.close()
-//                    }
-//                    // note: reason we can't do this is because the changed signal
-//                    // could happen early in initialization, before we have
-//                    // initialized the core... which leads to a crash on the set_invisible.
-////                    onCheckedChanged: {
-////                        if(index == 4) {
-////                            dwy_quiet = checked
-////                            core.set_local_setting("quiet", dwy_quiet ? "true" : "false")
-////                        }
-////                        else if(index == 5) {
-////                            dwy_invis = checked
-////                            core.set_local_setting("invis", dwy_invis ? "true" : "false")
-////                            core.set_invisible_state(dwy_invis ? 1 : 0)
-////                        }
-////                    }
-//                }
-
-//                model: drawer_model
-
-//                ScrollIndicator.vertical: ScrollIndicator { }
-//            }
-//        }
         AppDrawer {
 
             padding: 0
@@ -310,20 +211,6 @@ ApplicationWindow {
 
         }
     }
-
-    ListModel {
-        id: drawer_model
-        ListElement { title: "Update Profile"; chk: false; chked: false ; enbl: true }
-        ListElement { title: "PIN Lock Setup"; chk: false; chked: false ; enbl: true}
-        ListElement { title: "Block List"; chk: false; chked: false ; enbl: true}
-        ListElement { title: "Lock and Exit"; chk: false; chked: false; enbl: true}
-        ListElement { title: "Quiet"; chk: true; chked: false; enbl: true }
-        ListElement { title: "Invisible"; chk: true; chked: false; enbl: true }
-        ListElement { title: "Settings"; chk: false; chked: false; enbl: true }
-        ListElement { title: "About"; chk: false; chked: false; enbl: true }
-        ListElement { title: "Preview"; chk: false; chked: false; enbl: true }
-    }
-
 
 
     footer: RowLayout {
@@ -503,7 +390,7 @@ ApplicationWindow {
                 }
             }
 
-            if(visible == true && xmloader.source == "") {
+            if(visible === true && xmloader.source === "") {
                 xmloader.source = "qrc:/SimpDir.qml"
             }
         }
@@ -540,6 +427,14 @@ ApplicationWindow {
         onVisibleChanged: {
             core.reset_unviewed_msgs(to_uid)
         }
+
+    }
+
+    SimpleMsgBrowse {
+        id: simp_msg_browse
+        model: themsglist
+        to_uid: top_dispatch.last_uid_selected
+        visible: false
 
     }
 
@@ -603,14 +498,14 @@ ApplicationWindow {
         }
 
         onAllow_accessChanged: {
-            if(allow_access == 1) {
+            if(allow_access === 1) {
                 Qt.inputMethod.hide()
-                if(state == "start") {
+                if(state === "start") {
                     core.init()
                 }
             }
         }
-        visible: allow_access == 0
+        visible: allow_access === 0
 
         states: [
             State {
@@ -726,19 +621,6 @@ ApplicationWindow {
         
     }
 
-//    PositionSource {
-//        id: src
-//        updateInterval: 1000
-//        active: true
-//        preferredPositioningMethods: PositionSource.AllPositioningMethods
-
-//        onPositionChanged: {
-//            var coord = src.position.coordinate;
-//            console.log("Coordinate:", coord.longitude, coord.latitude);
-//        }
-//    }
-
-
     DwycoCore {
         id: core
         property int is_database_online: -1
@@ -802,7 +684,7 @@ ApplicationWindow {
                 show_unreviewed = true
             }
 
-            if(pwdialog.allow_access == 1) {
+            if(pwdialog.allow_access === 1) {
                 init()
             }
         }
@@ -816,6 +698,10 @@ ApplicationWindow {
             var expire = pin_expire()
             core.set_local_setting("pin_expire", expire.toString())
             exit()
+        }
+
+        onRem_keyboard_active: {
+
         }
 
         onServer_login: {
@@ -832,22 +718,6 @@ ApplicationWindow {
             if(simpdir_rect.visible && simpdir_rect.xml_url === "")
                 simpdir_rect.xml_url = core.get_simple_xml_url()
         }
-
-//        onChat_event: {
-//            console.log("got chat event");
-//            console.log(cmd, sid)
-//            console.log(huid)
-//            console.log(sname)
-//            console.log(vdata)
-//            console.log(qid)
-//            console.log(extra_arg)
-//            if(cmd == 17)
-//            {
-//                //public_chat.text = public_chat.text + "<br>" + vdata[0];
-//                public_chat.model.insert(0, { "name" : sname,  "text_msg" : String(vdata[0])})
-//                public_chat.listview.positionViewAtBeginning()
-//            }
-//        }
 
         onNew_msg: {
             console.log(from_uid)

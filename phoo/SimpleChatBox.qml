@@ -239,6 +239,12 @@ Page {
                                 stack.push(theprofileview)
                             }
                         }
+                        MenuItem {
+                            text: "Browse Msgs"
+                            onTriggered: {
+                                stack.push(simp_msg_browse)
+                            }
+                        }
 
                         MenuItem {
                             text: "Clear msgs"
@@ -322,17 +328,6 @@ Page {
         }
     }
     
-//    Connections {
-//        target: top_dispatch
-//        onCamera_snapshot: {
-//            console.log("CAMERA SNAP", filename)
-//            core.send_simple_cam_pic(to_uid, "", filename)
-//            themsglist.reload_model()
-//            listview.positionViewAtBeginning()
-            
-//        }
-//    }
-    
     function snapshot(filename) {
         console.log("CAMERA SNAP2", filename)
         core.send_simple_cam_pic(to_uid, "", filename)
@@ -340,22 +335,6 @@ Page {
         listview.positionViewAtBeginning()
         
     }
-
-//    Connections {
-//        target: top_dispatch
-////        onImage_picked: {
-////            chat_picpreview.source = url_fn
-////            chat_picpreview.ok_vis = true
-////            //file_to_send = fn
-////            stack.push(chat_picpreview)
-////        }
-//        onUid_resolved: {
-//            if(chatbox.to_uid == uid) {
-//            cur_source = core.uid_to_profile_preview(uid)
-//            top_toolbar_text.text = core.uid_to_name(uid);
-//            }
-//        }
-//    }
 
     Connections {
         target: core
@@ -588,10 +567,14 @@ Page {
                 Text {
                     function gentext(msg, tm) {
                         var dt = new Date(tm * 1000)
-//                        return "<table><tr><td>" + msg + "</td>" +
-//                                "</tr><tr><td align=\"right\"><small>" + Qt.formatTime(dt) +
-//                                "</td></tr></table>"
-                        return "<html>" + msg + "<sub>" + Qt.formatTime(dt) + "</sub></html>"
+                        //                        return "<table><tr><td>" + msg + "</td>" +
+                        //                                "</tr><tr><td align=\"right\"><small>" + Qt.formatTime(dt) +
+                        //                                "</td></tr></table>"
+                        if(Date.now() - dt.getTime() > 86400 * 1000) {
+                            return "<html>" + msg + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
+                        } else {
+                            return "<html>" + msg + "<sub>" + Qt.formatTime(dt) + "</sub></html>"
+                        }
 
                     }
 
@@ -761,7 +744,7 @@ Page {
         }
         // this is here because on iOS, when you pop this
         // item, the focus stays in here somehow and the keyboard
-        // will pop up on the previous screen, which is retarded.
+        // will pop up on the previous screen, wtf.
         focus: visible
         //font.family: "Noto Color Emoji"
         Label {

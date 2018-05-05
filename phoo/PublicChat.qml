@@ -257,7 +257,7 @@ Page {
         }
         // this is here because on iOS, when you pop this
         // item, the focus stays in here somehow and the keyboard
-        // will pop up on the previous screen, which is retarded.
+        // will pop up on the previous screen, wtf.
         focus: visible
     }
     
