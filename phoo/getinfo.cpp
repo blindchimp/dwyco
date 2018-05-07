@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -46,7 +46,7 @@ dwyco_info_to_display2(const QByteArray& uid, const char *field)
 QString
 dwyco_info_to_display(const QByteArray& uid)
 {
-   return dwyco_info_to_display2(uid, DWYCO_INFO_HANDLE);
+    return dwyco_info_to_display2(uid, DWYCO_INFO_HANDLE);
 }
 
 static int

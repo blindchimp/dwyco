@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -16,15 +16,15 @@
 
 class FauxButton : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
     FauxButton(QObject *parent = 0) : QObject(parent) {
-		m_checked = 0;
-		m_enabled = 1;
-		m_visible = 1;
-		m_checkable = 0;
+        m_checked = 0;
+        m_enabled = 1;
+        m_visible = 1;
+        m_checkable = 0;
         m_BackgroundColor = QColor("green");
-	}
+    }
 
     Q_PROPERTY(bool checked READ checked WRITE setChecked NOTIFY checkedChanged)
     Q_PROPERTY(bool visible READ visible WRITE setVisible NOTIFY visibleChanged)
@@ -34,12 +34,24 @@ public:
     Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
 
 public:
-    bool checked() const {return m_checked;}
-    bool checkable() const {return m_checkable;}
-    bool visible() const {return m_visible;}
-    bool enabled() const {return m_enabled;}
-    QString text() const {return m_text;}
-    QColor backgroundColor() const {return m_BackgroundColor;}
+    bool checked() const {
+        return m_checked;
+    }
+    bool checkable() const {
+        return m_checkable;
+    }
+    bool visible() const {
+        return m_visible;
+    }
+    bool enabled() const {
+        return m_enabled;
+    }
+    QString text() const {
+        return m_text;
+    }
+    QColor backgroundColor() const {
+        return m_BackgroundColor;
+    }
 
 public slots:
     void trigger() {
@@ -232,10 +244,10 @@ public:
             cl[i]->setProperty("visible", false);
             button_model->append(cl[i]);
         }
-    } 
+    }
 
 
 };
 
 
-#endif 
+#endif

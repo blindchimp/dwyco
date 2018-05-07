@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -125,7 +125,7 @@ send_user_command(int chan_id, DwOString cmd)
 simple_call::simple_call(const DwOString& auid, QObject *parent) :
     QObject(parent),
     vp(this),
-	keyboard_active_timer(this),
+    keyboard_active_timer(this),
     uid(auid)
 {
     ui = &smo;
@@ -137,9 +137,9 @@ simple_call::simple_call(const DwOString& auid, QObject *parent) :
 #endif
     //connect(return_filter, SIGNAL(return_hit()), this, SLOT(on_send_button_clicked()));
     //connect(return_filter, SIGNAL(esc_hit()), this, SLOT(clear_chatwin()));
-	keyboard_active_timer.setSingleShot(1);
-	connect(&keyboard_active_timer, SIGNAL(timeout()), this, SLOT(keyboard_inactive()));
-	kb_active = 0;
+    keyboard_active_timer.setSingleShot(1);
+    connect(&keyboard_active_timer, SIGNAL(timeout()), this, SLOT(keyboard_inactive()));
+    kb_active = 0;
     rem_kb_active = 0;
 
     //ui->textEdit->installEventFilter(return_filter);
@@ -179,7 +179,7 @@ simple_call::simple_call(const DwOString& auid, QObject *parent) :
 
     connect(this, SIGNAL(audio_recording(int,int)), Mainwinform, SIGNAL(audio_recording(int,int)));
     connect(Mainwinform, SIGNAL(audio_recording(int,int)), this, SLOT(audio_recording_event(int,int)));
-    
+
     connect(this, SIGNAL(rem_keyboard_active(int)), this, SLOT(rem_keyboard_active_with_uid(int)));
     connect(this, SIGNAL(rem_keyboard_active_uid(const QString&,int)), Mainwinform, SIGNAL(rem_keyboard_active(const QString&, int)));
 
@@ -1007,21 +1007,21 @@ simple_call::rem_keyboard_active_with_uid(int i)
     emit rem_keyboard_active_uid(QString(uid.toHex()), i);
 }
 
-void 
+void
 simple_call::keyboard_input()
 {
-	keyboard_active_timer.start(2000);
-	if(kb_active)
-		return;
-	send_user_command(chan_id, "ka");
-	kb_active = 1;
+    keyboard_active_timer.start(2000);
+    if(kb_active)
+        return;
+    send_user_command(chan_id, "ka");
+    kb_active = 1;
 }
 
 void
 simple_call::keyboard_inactive()
 {
-	send_user_command(chan_id, "ki");
-	kb_active = 0;
+    send_user_command(chan_id, "ki");
+    kb_active = 0;
 }
 
 void
@@ -1184,7 +1184,7 @@ simple_call::dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg
         dwyco_call_type cto(chan_id, call_type, len_call_type, cuid, len_uid, DWYCO_CT_ORIG);
         call_add(cto);
     }
-        break;
+    break;
     case DWYCO_CALLDISP_ESTABLISHED:
     {
         c->chan_id = chan_id;
@@ -1195,7 +1195,7 @@ simple_call::dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg
         c->mute_state_machine->start();
         c->update_connected(1);
     }
-        break;
+    break;
     case DWYCO_CALLDISP_FAILED:
     case DWYCO_CALLDISP_CANCELED:
     case DWYCO_CALLDISP_REJECTED:
@@ -1260,7 +1260,7 @@ simple_call::dwyco_private_chat_display(int chan_id, const char *com, int arg1, 
         return 0;
 #if 0
     scl[0]->display_new_msg(scl[0]->uid,
-    QString("priv chat com chan %1 com %2 a1 %3 a2 %4 str %5 len %6").arg(chan_id).arg(com).arg(arg1).arg(arg2).arg(str).arg(len).toAscii().constData(), "");
+                            QString("priv chat com chan %1 com %2 a1 %3 a2 %4 str %5 len %6").arg(chan_id).arg(com).arg(arg1).arg(arg2).arg(str).arg(len).toAscii().constData(), "");
 #endif
     scl[0]->recv_control_msg(chan_id, DwOString(com, 0, strlen(com)), arg1, arg2, DwOString(str, 0, len));
     return 1;
@@ -1318,13 +1318,13 @@ simple_call::dwyco_call_accepted(int chan_id, const char *name, const char *loca
 int
 DWYCOCALLCONV
 simple_call::dwyco_call_screening_callback(int chan_id,
-                              int remote_wants_to_recv_your_video, int remote_wants_to_send_you_video,
-                              int remote_wants_to_recv_your_audio, int remote_wants_to_send_you_audio,
-                              int remote_wants_to_exchange_pubchat, int remote_wants_to_exchange_privchat,
-                              const char *call_type, int len_call_type,
-                              const char *uid, int len_uid,
-                              int *accept_call_style,
-                              char **error_msg)
+        int remote_wants_to_recv_your_video, int remote_wants_to_send_you_video,
+        int remote_wants_to_recv_your_audio, int remote_wants_to_send_you_audio,
+        int remote_wants_to_exchange_pubchat, int remote_wants_to_exchange_privchat,
+        const char *call_type, int len_call_type,
+        const char *uid, int len_uid,
+        int *accept_call_style,
+        char **error_msg)
 {
     DwOString suid(uid, 0, len_uid);
     DwOString ct(call_type, 0, len_call_type);
@@ -1390,7 +1390,7 @@ simple_call::camera_event(int on)
     {
         // camera is turning off, just terminate our outgoing stream.
         // send a control message to other side saying camera is off now.
-		dwyco_channel_stop_send_video(chan_id);
+        dwyco_channel_stop_send_video(chan_id);
         show_preview = 0;
         render_image();
         send_user_command(chan_id, "cam off");
@@ -1453,7 +1453,7 @@ simple_call::render_image()
         return;
 
     QImage ri_scaled = remote_image.scaled(ui->label->size(),
-                                            Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                                           Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
     if(show_preview && !preview_image.isNull())
     {

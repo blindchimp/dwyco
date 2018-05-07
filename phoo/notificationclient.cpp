@@ -61,18 +61,18 @@ void NotificationClient::updateAndroidNotification()
         return;
     QAndroidJniObject javaNotification = QAndroidJniObject::fromString(m_notification);
     QAndroidJniObject::callStaticMethod<void>("com/dwyco/phoo/NotificationClient",
-                                       "notify",
-                                       "(Ljava/lang/String;)V",
-                                       javaNotification.object<jstring>());
+            "notify",
+            "(Ljava/lang/String;)V",
+            javaNotification.object<jstring>());
 }
 void
 NotificationClient::set_allow_notification(int a)
 {
     jint jms = a;
     QAndroidJniObject::callStaticMethod<void>("com/dwyco/phoo/NotificationClient",
-                                       "set_allow_notification",
-                                       "(I)V",
-                                       jms);
+            "set_allow_notification",
+            "(I)V",
+            jms);
 
 }
 
@@ -80,8 +80,8 @@ void NotificationClient::cancel()
 {
     m_notification = "";
     QAndroidJniObject::callStaticMethod<void>(
-                "com/dwyco/phoo/NotificationClient",
-                "cancel");
+        "com/dwyco/phoo/NotificationClient",
+        "cancel");
 }
 
 void
@@ -89,9 +89,9 @@ NotificationClient::set_msg_count_url(QString s)
 {
     QAndroidJniObject jurl = QAndroidJniObject::fromString(s);
     QAndroidJniObject::callStaticMethod<void>("com/dwyco/phoo/NotificationClient",
-                                       "set_msg_count_url",
-                                       "(Ljava/lang/String;)V",
-                                       jurl.object<jstring>());
+            "set_msg_count_url",
+            "(Ljava/lang/String;)V",
+            jurl.object<jstring>());
 
 }
 
@@ -103,13 +103,13 @@ NotificationClient::set_service_params(int port, QString sys_pfx, QString user_p
     QAndroidJniObject jtmp = QAndroidJniObject::fromString(tmp_pfx);
     jint jport = port;
     QAndroidJniObject::callStaticMethod<void>("com/dwyco/phoo/NotificationClient",
-                                       "set_service_params",
-                                       "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-                                       jport,
-                                              jsys.object<jstring>(),
-                                              juser.object<jstring>(),
-                                              jtmp.object<jstring>()
-                                              );
+            "set_service_params",
+            "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+            jport,
+            jsys.object<jstring>(),
+            juser.object<jstring>(),
+            jtmp.object<jstring>()
+                                             );
 
 }
 
@@ -117,9 +117,9 @@ void
 NotificationClient::start_background()
 {
     QAndroidJniObject::callStaticMethod<void>(
-                "com/dwyco/phoo/NotificationClient",
-                "start_background"
-                );
+        "com/dwyco/phoo/NotificationClient",
+        "start_background"
+    );
 
 }
 
@@ -127,9 +127,9 @@ void
 NotificationClient::load_contacts()
 {
     QAndroidJniObject::callStaticMethod<void>(
-                "com/dwyco/phoo/NotificationClient",
-                "load_contacts"
-                );
+        "com/dwyco/phoo/NotificationClient",
+        "load_contacts"
+    );
 
 }
 
@@ -137,9 +137,9 @@ void
 NotificationClient::open_image()
 {
     QAndroidJniObject::callStaticMethod<void>(
-                "com/dwyco/phoo/NotificationClient",
-                "openAnImage"
-                );
+        "com/dwyco/phoo/NotificationClient",
+        "openAnImage"
+    );
 
 }
 
@@ -148,9 +148,9 @@ NotificationClient::vibrate(long ms)
 {
     jlong jms = ms;
     QAndroidJniObject::callStaticMethod<void>("com/dwyco/phoo/NotificationClient",
-                                       "vibrate",
-                                       "(J)V",
-                                       jms);
+            "vibrate",
+            "(J)V",
+            jms);
 
 }
 
@@ -159,9 +159,9 @@ NotificationClient::set_quiet(int i)
 {
     jint ji = i;
     QAndroidJniObject::callStaticMethod<void>("com/dwyco/phoo/NotificationClient",
-                                       "set_quiet",
-                                       "(I)V",
-                                       ji);
+            "set_quiet",
+            "(I)V",
+            ji);
 
 }
 

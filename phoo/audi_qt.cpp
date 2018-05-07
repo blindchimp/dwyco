@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -124,7 +124,7 @@ void InputTest::toggleMode()
         m_audioInput->start(m_audioInfo);
     }
 
-   // m_suspendResumeButton->setText(tr(SUSPEND_LABEL));
+    // m_suspendResumeButton->setText(tr(SUSPEND_LABEL));
 }
 
 void InputTest::toggleSuspend()
@@ -282,7 +282,7 @@ void DWYCOCALLCONV audi_qt_pass(void *)
 }
 void DWYCOCALLCONV audi_qt_stop(void *)
 {
-oopanic("audi_stop");
+    oopanic("audi_stop");
 }
 void DWYCOCALLCONV audi_qt_on(void *)
 {

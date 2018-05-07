@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -78,7 +78,7 @@ dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
 void
 init_convlist_model()
 {
-    
+
 }
 
 void
@@ -90,7 +90,7 @@ ConvListModel::set_all_selected(bool b)
         Conversation *c = at(i);
         c->set_selected(b);
     }
-        
+
 }
 
 bool
@@ -132,7 +132,7 @@ ConvListModel::delete_all_selected()
     hack_unread_count();
     dwyco_load_users2(1, 0);
     load_users_to_model();
-        
+
 }
 
 void
@@ -174,7 +174,7 @@ ConvListModel::block_all_selected()
     }
 }
 
-void 
+void
 ConvListModel::decorate(QString huid, QString txt, QString mid)
 {
     QByteArray uid = QByteArray::fromHex(huid.toLatin1());
@@ -231,7 +231,7 @@ ConvListModel::load_users_to_model()
     {
         QByteArray uid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
         Conversation *c = add_uid_to_model(uid);
-        c->update_counter = cnt;        
+        c->update_counter = cnt;
     }
     // find removed items
     // there is probably a faster way of doing this, but
@@ -243,7 +243,7 @@ ConvListModel::load_users_to_model()
         Conversation *c = at(i);
         if(c->update_counter < cnt)
             dead.append(c);
-    
+
     }
     for(int i = 0; i < dead.count(); ++i)
     {
@@ -310,7 +310,7 @@ ConvSortFilterModel::set_all_selected(bool b)
     ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->set_all_selected(b);       
+    m->set_all_selected(b);
 }
 
 void
@@ -319,8 +319,8 @@ ConvSortFilterModel::delete_all_selected()
     ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->delete_all_selected();    
-    
+    m->delete_all_selected();
+
 }
 
 void
@@ -374,7 +374,7 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
 //        return false;
 //    else if(ruc < luc)
 //        return true;
-    
+
     bool lau = m->data(left, m->roleForName("any_unread")).toBool();
     bool rau = m->data(right, m->roleForName("any_unread")).toBool();
     if(lau && !rau)
@@ -388,7 +388,7 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
         return true;
     else if(!lsp && rsp)
         return false;
-    
+
     bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
     bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
     if(lreg && !rreg)

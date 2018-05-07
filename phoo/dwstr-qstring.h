@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -16,60 +16,60 @@ void cdcxpanic(const char *);
 
 struct DwOString : public QByteArray
 {
-	enum {npos = -1};
+    enum {npos = -1};
 
-	DwOString() : QByteArray("") {}
-	DwOString(const char *a) : QByteArray(a) {}
+    DwOString() : QByteArray("") {}
+    DwOString(const char *a) : QByteArray(a) {}
     DwOString(const char *a, int s, int len) : QByteArray(a + s, len) {}
     DwOString(const QByteArray& b) : QByteArray(b) {}
 
-	const char *c_str() const {
-		return this->constData();
-	}
-	int eq(const char *a) const {
-		return (*this) == a;
-	}
-	int find(const char *a) const {
-		return this->indexOf(a);
-	}
-	int find(const DwOString& a) const {
-		return this->indexOf(a);
-	}
-	// note: not exact interface, replace does all occurences
-	// but old interface only did first occurance by default
-	int srep(const char *find, const char *repl) {
-		this->replace(find, repl);
-		return 1;
-	}
+    const char *c_str() const {
+        return this->constData();
+    }
+    int eq(const char *a) const {
+        return (*this) == a;
+    }
+    int find(const char *a) const {
+        return this->indexOf(a);
+    }
+    int find(const DwOString& a) const {
+        return this->indexOf(a);
+    }
+    // note: not exact interface, replace does all occurences
+    // but old interface only did first occurance by default
+    int srep(const char *find, const char *repl) {
+        this->replace(find, repl);
+        return 1;
+    }
     int srep_all(const char *find, const char *repl) {
         this->replace(find, repl);
         return 1;
     }
-	int srep(const DwOString& find, const DwOString& repl) {
-		this->replace(find, repl);
-		return 1;
-	}
-	long hashValue() const {
-		return qHash(*this);
-	}
-	int compare(const DwOString& s2) const
-	{
-			int len = length() < s2.length() ? length() : s2.length();
-			int c = memcmp(this->constData(), s2.constData(), len);
-			if(c != 0)
-					return c;
-			if(length() < s2.length())
-					return -1;
-			else if(length() > s2.length())
-					return 1;
-			return 0;
-	}
-	void remove(int pos) {
-		this->truncate(pos);
-	}
-	void remove(int pos, int len) {
-		QByteArray::remove(pos, len);
-	}
+    int srep(const DwOString& find, const DwOString& repl) {
+        this->replace(find, repl);
+        return 1;
+    }
+    long hashValue() const {
+        return qHash(*this);
+    }
+    int compare(const DwOString& s2) const
+    {
+        int len = length() < s2.length() ? length() : s2.length();
+        int c = memcmp(this->constData(), s2.constData(), len);
+        if(c != 0)
+            return c;
+        if(length() < s2.length())
+            return -1;
+        else if(length() > s2.length())
+            return 1;
+        return 0;
+    }
+    void remove(int pos) {
+        this->truncate(pos);
+    }
+    void remove(int pos, int len) {
+        QByteArray::remove(pos, len);
+    }
 
     int find_first_of(const char *set) const {
         if(strlen(set) != 1)

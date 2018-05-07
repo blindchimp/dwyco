@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -15,12 +15,14 @@
 
 struct pvcache_entry
 {
-	QByteArray uid;
+    QByteArray uid;
     QString info;
     QByteArray fn;
     int remove_filename;
     QImage img;
-    pvcache_entry() { remove_filename = 0; }
+    pvcache_entry() {
+        remove_filename = 0;
+    }
 };
 
 static QMap<QByteArray, pvcache_entry> Preview_cache;
@@ -55,8 +57,8 @@ profpv::profpv()
     QByteArray pfn = add_pfx(Sys_pfx, "no_img.png");
     No_img_fn = pfn;
     No_img = new QImage(pfn);
-    
-    
+
+
     //connect(Mainwinform, SIGNAL(content_filter_event(int)), this, SLOT(clear_cache(int)));
     //connect(Mainwinform, SIGNAL(invalidate_profile(QByteArray)), this, SLOT(remove_entry(QByteArray)));
     //connect(Mainwinform, SIGNAL(pal_event(QByteArray)), this, SLOT(remove_entry(QByteArray)));
@@ -114,7 +116,7 @@ profpv::get_preview_by_uid(const QByteArray& uid)
     pvcache_entry pve(Preview_cache.value(uid));
     char *ufn = 0;
     int len_ufn;
-    
+
     if(pve.uid.length() == 0)
     {
         int viewid = dwyco_get_profile_to_viewer_sync(uid.constData(), uid.length(), &ufn, &len_ufn);
@@ -174,12 +176,12 @@ profpv::get_preview_by_uid(const QByteArray& uid)
             pve.uid = uid;
             pve.img = *No_img;
             pve.fn = No_img_fn;
-            Preview_cache.insert(uid, pve);            
+            Preview_cache.insert(uid, pve);
         }
         dwyco_delete_zap_view(viewid);
         return pve.img;
     }
-    
+
     if(!pve.img.isNull())
         return pve.img;
 

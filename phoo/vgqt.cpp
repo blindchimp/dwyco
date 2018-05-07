@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -314,9 +314,9 @@ DWYCOEXPORT
 vgqt_set_video_device(int idx)
 {
     if(!vgqt_init(0, 0))
-	{
+    {
 
-	}
+    }
 }
 
 void
@@ -349,12 +349,12 @@ DWYCOEXPORT
 vgqt_stop_video_device()
 {
     if(Probe_handler)
-	{
+    {
         vgqt_stop(0);
         vgqt_pass(0);
         delete Probe_handler;
         Probe_handler = 0;
-	}
+    }
 }
 
 
@@ -377,11 +377,11 @@ DWYCOEXPORT
 vgqt_del(void *aqext)
 {
     if(Probe_handler)
-	{
+    {
         vgqt_stop(0);
         vgqt_pass(0);
 
-	}
+    }
     delete Probe_handler;
     Probe_handler = 0;
     stop_thread = 1;
@@ -397,7 +397,7 @@ vgqt_init(void *aqext, int frame_rate)
     if(!Probe_handler)
         Probe_handler = new probe_handler;
 #ifdef TEST_THREAD
-return 1;
+    return 1;
 #endif
     QList<QObject *> ro = TheEngine->rootObjects();
     for(int i = 0; i < ro.count(); ++i)
@@ -448,19 +448,19 @@ vgqt_pass(void *aqext)
 {
     QMutexLocker ml(&mutex);
     while(next_buf != next_ibuf)
-	{
+    {
         vbufs[next_buf] = QVideoFrame();
-		//GRTLOG("chuck %d", (int)y_bufs[next_buf], 0);
+        //GRTLOG("chuck %d", (int)y_bufs[next_buf], 0);
         next_buf = (next_buf + 1) % NB_BUFFER;
-	}
+    }
 }
 
 void
 DWYCOEXPORT
 vgqt_stop(void *aqext)
 {
-	// XXX need to make sure thread is dead and then
-	// see about the capture device too
+    // XXX need to make sure thread is dead and then
+    // see about the capture device too
     if(!Probe_handler)
         return;
     Probe_handler->probe.setSource((QMediaObject *)0);
@@ -469,7 +469,7 @@ vgqt_stop(void *aqext)
 void *
 DWYCOEXPORT
 vgqt_get_data(
-void *aqext,
+    void *aqext,
     int *c_out, int *r_out,
     int *bytes_out, int *fmt_out, unsigned long *captime_out)
 {
@@ -502,8 +502,8 @@ conv_data()
 
     struct finished f;
 
-	if(next_buf != next_ibuf)
-	{
+    if(next_buf != next_ibuf)
+    {
         int nb = next_buf;
         int cols, rows;
         QVideoFrame vf = vbufs[nb];
@@ -538,17 +538,17 @@ conv_data()
         case QVideoFrame::Format_YUYV:
             fmt = AQ_YUY2;
             break;
-	// note: NV12 seems to be the closest thing to
-	// NV21 provided by the qt ios driver. this isn't
-	// in the documentation, but was gleaned from reading
-	// the source for 5.6.2. it *appears* to work, as long
-	// as you set the format explicitly in the camera setup.
-	// though it needs more testing because sometimes it doesn't
-	// appear to get setup properly, and we still end up with
-	// ARGB32 in here.
+        // note: NV12 seems to be the closest thing to
+        // NV21 provided by the qt ios driver. this isn't
+        // in the documentation, but was gleaned from reading
+        // the source for 5.6.2. it *appears* to work, as long
+        // as you set the format explicitly in the camera setup.
+        // though it needs more testing because sometimes it doesn't
+        // appear to get setup properly, and we still end up with
+        // ARGB32 in here.
         case QVideoFrame::Format_NV12:
-                swap = 1;
-                // FALL THRU
+            swap = 1;
+        // FALL THRU
         case QVideoFrame::Format_NV21:
             fmt = AQ_NV21;
             // for now, if the stride isn't the same as
@@ -633,10 +633,10 @@ conv_data()
         vf.unmap();
         vf = QVideoFrame();
         return f;
-	}
+    }
 
     oopanic("aqvfw get no data");
-	// not reached
+    // not reached
     return finished();
 }
 

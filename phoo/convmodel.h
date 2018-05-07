@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -31,7 +31,7 @@ class Conversation : public QObject
     QML_READONLY_VAR_PROPERTY(bool, session_msg)
     QML_READONLY_VAR_PROPERTY(bool, pal)
     QML_WRITABLE_VAR_PROPERTY(bool, selected)
-    
+
 
 public:
     Conversation(QObject *parent = 0) : QObject(parent) {
@@ -58,11 +58,11 @@ class ConvListModel : public QQmlObjectListModel<Conversation>
 public:
     explicit ConvListModel(QObject *parent = 0);
     ~ConvListModel();
-    
+
     void load_users_to_model();
     void remove_uid_from_model(const QByteArray& uid);
     Conversation * add_uid_to_model(const QByteArray& uid);
-    
+
     void set_all_selected(bool);
     void delete_all_selected();
     void pal_all_selected(bool);
@@ -98,7 +98,7 @@ public:
         }
         return 0;
     }
-    
+
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void set_all_selected(bool);
     Q_INVOKABLE void delete_all_selected();
@@ -110,10 +110,10 @@ private:
     int m_count;
 signals:
     void countChanged();
-    
-    
+
+
 };
 
 extern ConvListModel *TheConvListModel;
 
-#endif 
+#endif

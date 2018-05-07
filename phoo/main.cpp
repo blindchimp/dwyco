@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
-    
+
     QGuiApplication app(argc, argv);
 
     QQuickStyle::setStyle("Material");
@@ -94,12 +94,12 @@ int main(int argc, char *argv[])
     dpi = screen->logicalDotsPerInch() * app.devicePixelRatio();
 #elif defined(Q_OS_ANDROID)
     QAndroidJniObject qtActivity =
-            QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt5/android/QtNative",
-                                                      "activity", "()Landroid/app/Activity;");
+        QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt5/android/QtNative",
+                "activity", "()Landroid/app/Activity;");
     QAndroidJniObject resources = qtActivity.callObjectMethod("getResources",
-                                                              "()Landroid/content/res/Resources;");
+                                  "()Landroid/content/res/Resources;");
     QAndroidJniObject displayMetrics = resources.callObjectMethod("getDisplayMetrics",
-                                                                  "()Landroid/util/DisplayMetrics;");
+                                       "()Landroid/util/DisplayMetrics;");
     int density = displayMetrics.getField<int>("densityDpi");
     dpi = density;
 #else

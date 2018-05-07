@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -15,49 +15,57 @@
 class VidAquire
 {
 public:
-	static void *dummy;
-	static int dummy2;
-	static unsigned long dummy3;
+    static void *dummy;
+    static int dummy2;
+    static unsigned long dummy3;
 
 public:
 
-	VidAquire() {inited = 0;}
-	virtual ~VidAquire() {}
+    VidAquire() {
+        inited = 0;
+    }
+    virtual ~VidAquire() {}
 
-   int init_ok() {return inited;}
+    int init_ok() {
+        return inited;
+    }
 
-	// can't unload frame now, buffer it, or toss it
-   // if necessary (like not enough memory.)
-	virtual void pass() = 0;
+    // can't unload frame now, buffer it, or toss it
+    // if necessary (like not enough memory.)
+    virtual void pass() = 0;
 
-	// can accept more data (fires up aquisition if
-	// it has been halted.)
-	virtual void need() = 0;
+    // can accept more data (fires up aquisition if
+    // it has been halted.)
+    virtual void need() = 0;
 
-	// stop aquisition (has_data returns 0,
-	// pending data is not affected.)
-	virtual void stop() {}
+    // stop aquisition (has_data returns 0,
+    // pending data is not affected.)
+    virtual void stop() {}
 
-	// get rid of pending data
-   virtual void flush() {}
+    // get rid of pending data
+    virtual void flush() {}
 
-	// return 1 if device has some data waiting
-	virtual int has_data() = 0;
+    // return 1 if device has some data waiting
+    virtual int has_data() = 0;
 
-	// return next aquired thing
-	virtual void *get_data(int& out1, int& out2, 
-		void*& = dummy, void*& = dummy, void*& = dummy, int& = dummy2, unsigned long& = dummy3, int no_convert = 0) = 0;
+    // return next aquired thing
+    virtual void *get_data(int& out1, int& out2,
+                           void*& = dummy, void*& = dummy, void*& = dummy, int& = dummy2, unsigned long& = dummy3, int no_convert = 0) = 0;
 
-	void set_fail_reason(const char *a) {
-		strncpy(fail_reason, a, sizeof(fail_reason) - 1);
-		fail_reason[sizeof(fail_reason) - 1] = 0;
-	}
-	char *get_fail_reason() {return strdup(fail_reason);}
-	virtual int generates_events() {return 0;}
-	
+    void set_fail_reason(const char *a) {
+        strncpy(fail_reason, a, sizeof(fail_reason) - 1);
+        fail_reason[sizeof(fail_reason) - 1] = 0;
+    }
+    char *get_fail_reason() {
+        return strdup(fail_reason);
+    }
+    virtual int generates_events() {
+        return 0;
+    }
+
 protected:
-	int inited;
-	char fail_reason[255];
+    int inited;
+    char fail_reason[255];
 };
 
 #define AQ_YUV9 1

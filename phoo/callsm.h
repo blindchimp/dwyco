@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -23,21 +23,21 @@ class simple_call : public QObject
     QML_READONLY_VAR_PROPERTY(int, connected)
 
 private:
-friend class DwycoCore;
-static void DWYCOCALLCONV dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg, const char *uid, int len_uid, const char *call_type, int len_call_type);
-static void DWYCOCALLCONV dwyco_call_accepted(int chan_id, const char *name, const char *location, const char *uid, int len_uid, const char *call_type, int len_call_type);
-static void DWYCOCALLCONV call_died(int chan_id, void *arg);
-static int DWYCOCALLCONV dwyco_private_chat_init(int chan_id, const char *);
-static int DWYCOCALLCONV dwyco_private_chat_display(int chan_id, const char *com, int arg1, int arg2, const char *str, int len);
-static int DWYCOCALLCONV
-dwyco_call_screening_callback(int chan_id,
-                              int remote_wants_to_recv_your_video, int remote_wants_to_send_you_video,
-                              int remote_wants_to_recv_your_audio, int remote_wants_to_send_you_audio,
-                              int remote_wants_to_exchange_pubchat, int remote_wants_to_exchange_privchat,
-                              const char *call_type, int len_call_type,
-                              const char *uid, int len_uid,
-                              int *accept_call_style,
-                              char **error_msg);
+    friend class DwycoCore;
+    static void DWYCOCALLCONV dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg, const char *uid, int len_uid, const char *call_type, int len_call_type);
+    static void DWYCOCALLCONV dwyco_call_accepted(int chan_id, const char *name, const char *location, const char *uid, int len_uid, const char *call_type, int len_call_type);
+    static void DWYCOCALLCONV call_died(int chan_id, void *arg);
+    static int DWYCOCALLCONV dwyco_private_chat_init(int chan_id, const char *);
+    static int DWYCOCALLCONV dwyco_private_chat_display(int chan_id, const char *com, int arg1, int arg2, const char *str, int len);
+    static int DWYCOCALLCONV
+    dwyco_call_screening_callback(int chan_id,
+                                  int remote_wants_to_recv_your_video, int remote_wants_to_send_you_video,
+                                  int remote_wants_to_recv_your_audio, int remote_wants_to_send_you_audio,
+                                  int remote_wants_to_exchange_pubchat, int remote_wants_to_exchange_privchat,
+                                  const char *call_type, int len_call_type,
+                                  const char *uid, int len_uid,
+                                  int *accept_call_style,
+                                  char **error_msg);
 public:
     explicit simple_call(const DwOString& uid, QObject *parent = 0);
     ~simple_call();
@@ -158,8 +158,8 @@ private slots:
     void on_actionPause_toggled(bool arg1);
 
     void recv_control_msg(int ui_id, DwOString com, int arg1, int arg2, DwOString str);
-	void keyboard_input();
-	void keyboard_inactive();
+    void keyboard_input();
+    void keyboard_inactive();
 
     // slots for control connection
     void start_retry_timer();
@@ -231,7 +231,7 @@ private slots:
     void reemit_mute();
 
     void audio_recording_event(int, int);
-    
+
     void rem_keyboard_active_with_uid(int);
     void connected_changed_uid(int);
 

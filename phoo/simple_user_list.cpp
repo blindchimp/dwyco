@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -71,7 +71,7 @@ send_forward(QString recipient, QString uid_folder, QString mid_to_forward)
     if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
                         txt.constData(), txt.length(), 0,
                         0, 0)
-            )
+      )
 
     {
         dwyco_delete_zap_composition(compid);
@@ -92,7 +92,7 @@ SimpleUserModel::set_all_selected(bool b)
         SimpleUser *c = at(i);
         c->set_selected(b);
     }
-        
+
 }
 
 void
@@ -118,7 +118,7 @@ SimpleUserModel::delete_all_selected()
 
     dwyco_load_users2(1, 0);
     load_users_to_model();
-        
+
 }
 
 void
@@ -147,7 +147,7 @@ SimpleUserModel::toggle_selected(QString uid)
     c->set_selected(!c->get_selected());
 }
 
-void 
+void
 SimpleUserModel::decorate(QString huid, QString txt, QString mid)
 {
     QByteArray uid = QByteArray::fromHex(huid.toLatin1());
@@ -324,7 +324,7 @@ SimpleUserSortFilterModel::set_all_selected(bool b)
     SimpleUserModel *m = dynamic_cast<SimpleUserModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->set_all_selected(b);       
+    m->set_all_selected(b);
 }
 
 void
@@ -333,8 +333,8 @@ SimpleUserSortFilterModel::delete_all_selected()
     SimpleUserModel *m = dynamic_cast<SimpleUserModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->delete_all_selected();    
-    
+    m->delete_all_selected();
+
 }
 
 void

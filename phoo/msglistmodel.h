@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -14,14 +14,14 @@
 
 class msglist_model : public QSortFilterProxyModel
 {
-	Q_OBJECT
+    Q_OBJECT
     Q_PROPERTY(QString uid READ uid WRITE setUid NOTIFY uidChanged)
 
 
 public:
     msglist_model(QObject * = 0);
 
-	virtual ~msglist_model();
+    virtual ~msglist_model();
 
     void setUid(const QString &uid);
     QString uid() const;
