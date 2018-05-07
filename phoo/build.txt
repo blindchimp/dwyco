@@ -1,3 +1,5 @@
+Notes related to Qt for Android building
+
 Sun Feb 28 12:50:57 MST 2016
 dwight melcher
 

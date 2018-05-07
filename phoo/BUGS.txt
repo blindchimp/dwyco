@@ -21,3 +21,4 @@
 * msg model is not updated after "snap and send" if disconnected and msg is only q-ed but not sent
 * viewing a msg that is q-ed doesn't work (or should be disallowed?) how much manipulation should be allowed for q-ed msgs.
 * the "aux" file will have a stale ip address if the servers2 file is updated while msgs are q-ed. need to give up after a certain number of tries and retry with new ip
+* there is a problem where the advanced power management stuff may be stopping the background processing, but the backgrounder still has the sockets "locking" the app. when the UI starts, it doesn't appear to restart the background thing (which would allow it to release the socket), and the UI ends up stuck. haven't verified this, just a suspicion. seems to happen when you are in power-saver mode.
