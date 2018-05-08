@@ -2201,9 +2201,7 @@ DwycoCore::service_channels()
                     process_contact_query_response(mid);
                     dwyco_delete_unsaved_message(mid.constData());
                     dwyco_delete_user(clbot.constData(), clbot.length());
-
                 }
-
             }
         }
         dwyco_get_unsaved_messages(&uml, 0, 0);
@@ -2220,24 +2218,6 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
-
-
-#if 0
-        while(dwyco_new_msg(uid, txt, mid))
-        {
-            if(uid.toHex() == QByteArray("f6006af180260669eafc"))
-            {
-                process_contact_query_response(uid, mid);
-                delete_user(uid.toHex());
-            }
-            else
-            {
-                update_unread_count(has_unviewed_msgs());
-                emit new_msg(QString(uid.toHex()), QString::fromUtf8(txt), QString(mid));
-                emit decorate_user(uid.toHex());
-            }
-        }
-#endif
     }
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically

@@ -370,32 +370,26 @@ ApplicationWindow {
 //        folder: "file:///home/dwight/Downloads/tmp2"
 //    }
 
-
-    Item {
-
+    Loader {
         id: simpdir_rect
+
         property url xml_url : ""
-        //anchors.fill:parent
         visible: false
-        Loader {
-            id: xmloader
-            anchors.fill: parent
-        }
+        active: visible
+        source: "qrc:/SimpDir.qml"
         onVisibleChanged: {
             if(visible) {
                 var tmp
                 tmp = core.get_simple_xml_url()
+                console.log("xml ", tmp)
                 if(xml_url !== tmp) {
                     xml_url = tmp
                 }
             }
-
-            if(visible === true && xmloader.source === "") {
-                xmloader.source = "qrc:/SimpDir.qml"
-            }
         }
 
     }
+
 
     FName {
         id: fname

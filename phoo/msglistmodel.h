@@ -66,7 +66,7 @@ public:
 
     int rowCount ( const QModelIndex & parent = QModelIndex() ) const;
     QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
-    virtual QHash<int, QByteArray>	roleNames() const;
+    virtual QHash<int, QByteArray> roleNames() const;
 
     void setUid(const QString& uid);
     void reload_model();
