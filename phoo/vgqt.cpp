@@ -720,14 +720,19 @@ probe_handler::handleFrame(const QVideoFrame& frm)
         // in some cases, but not worth it at this point.
         return;
     }
+#ifdef __WIN32__
+    y_bufs[next_ibuf] = timeGetTime();
+#else
     struct timeval tm;
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     tm.tv_sec = ts.tv_sec;
     tm.tv_usec = ts.tv_nsec / 1000;
+    y_bufs[next_ibuf] = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
+#endif
 
     vbufs[next_ibuf] = frm;
-    y_bufs[next_ibuf] = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
+
     next_ibuf = (next_ibuf + 1) % NB_BUFFER;
 }
 
