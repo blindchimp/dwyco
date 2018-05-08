@@ -415,6 +415,11 @@ vgqt_init(void *aqext, int frame_rate)
         vfs = camera_->viewfinderSettings();
         vfs.setPixelFormat(QVideoFrame::Format_NV12);
         camera_->setViewfinderSettings(vfs);
+#elif !defined(ANDROID)
+        QCameraViewfinderSettings vfs;
+        vfs = camera_->viewfinderSettings();
+        vfs.setPixelFormat(QVideoFrame::Format_YV12);
+        camera_->setViewfinderSettings(vfs);
 #endif
         QCameraInfo caminfo(*camera_);
         Orientation = caminfo.orientation();
@@ -531,6 +536,10 @@ conv_data()
             break;
         case QVideoFrame::Format_YUV420P:
             fmt = AQ_YUV12;
+            swap = 1;
+            break;
+        case QVideoFrame::Format_YV12:
+            fmt = AQ_YUV12;
             break;
         case QVideoFrame::Format_UYVY:
             fmt = AQ_UYVY;
@@ -564,6 +573,38 @@ conv_data()
         // note for android, nv21 is standard, and we convert to
         // yuv12
         f.fmt = (AQ_COLOR|AQ_YUV12);
+#ifndef ANDROID
+        if(fmt & AQ_YUV12)
+        {
+            unsigned char *c = (unsigned char *)vf.bits();
+            gray **g = pgm_allocarray(cols, rows);
+            memcpy(&g[0][0], c, cols * rows);
+            c += cols * rows;
+            f.planes[0] = g;
+
+            g = pgm_allocarray(cols / 2, rows / 2);
+            memcpy(&g[0][0], c, (cols * rows) / 4);
+            f.planes[1] = g;
+            c += (cols * rows) / 4;
+
+            g = pgm_allocarray(cols / 2, rows / 2);
+            memcpy(&g[0][0], c, (cols * rows) / 4);
+            f.planes[2] = g;
+
+            if(swap)
+            {
+                gray **tmp = f.planes[1];
+                f.planes[1] = f.planes[2];
+                f.planes[2] = tmp;
+            }
+
+            vf.unmap();
+            vf = QVideoFrame();
+            return f;
+
+
+        }
+#endif
 
         unsigned char *c = (unsigned char *)vf.bits();
 #define SSCOLS 320

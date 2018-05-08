@@ -876,9 +876,11 @@ setup_locations()
 
 }
 
-// remember: the stuff that comes in from the cdclibs
-// has been contaminated by microsoft. they are
-// upside down, and bgr... epically retarded.
+// remember: on ms platforms using the old non-qt
+// drivers, frames tend to be bgr and upside down.
+// the newer drivers are a little more sensible in
+// this area, and return rgb and whatever orientation
+// is set by the driver.
 static
 QImage
 dwyco_img_to_qimg(void *vimg, int cols, int rows, int depth)
@@ -887,6 +889,14 @@ dwyco_img_to_qimg(void *vimg, int cols, int rows, int depth)
 
     QImage qi(cols, rows, QImage::Format_RGB888);
 
+#ifdef DWYCO_FORCE_DESKTOP_VGQT
+    for(int r = 0; r < rows; ++r)
+    {
+        unsigned char *sli = img[r];
+        uchar *sl = qi.scanLine(r);
+        memcpy(sl, sli, 3 * cols);
+    }
+#else
     for(int r = 0; r < rows; ++r)
     {
 
@@ -900,6 +910,7 @@ dwyco_img_to_qimg(void *vimg, int cols, int rows, int depth)
             sl[c + 2] = sli[c];
         }
     }
+#endif
     return qi;
 }
 

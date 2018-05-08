@@ -34,54 +34,54 @@ Page {
 
     }
 
-//    Camera {
-//        id: preview_cam
-//        objectName: "qrCameraQML"
-//        viewfinder {
-//            resolution: Qt.size(320, 240)
-//            //maximumFrameRate: 10
-//        }
-//        position: Camera.BackFace
-//        captureMode: Camera.captureVideo
-//        onCameraStateChanged: {
-//            //if(state === Camera.ActiveState) {
-//                var res = preview_cam.supportedViewfinderResolutions();
-//                console.log("RESOLUTIONS ")
-//            for(var i = 0; i < res.length; i++) {
-//                console.log(res[i].width)
-//                console.log(res[i].height)
-//            }
-//            //}
-//        }
-//        onCameraStatusChanged: {
-//            //if(state === Camera.ActiveState) {
-//                var res = preview_cam.supportedViewfinderResolutions();
-//                console.log("RESOLUTIONS ")
-//            for(var i = 0; i < res.length; i++) {
-//                console.log(res[i].width)
-//                console.log(res[i].height)
-//            }
+    Camera {
+        id: preview_cam
+        objectName: "qrCameraQML"
+        viewfinder {
+            resolution: Qt.size(640, 480)
+            //maximumFrameRate: 10
+        }
+        position: Camera.FrontFace
+        captureMode: Camera.captureVideo
+        onCameraStateChanged: {
+            //if(state === Camera.ActiveState) {
+                var res = preview_cam.supportedViewfinderResolutions();
+                console.log("RESOLUTIONS ")
+            for(var i = 0; i < res.length; i++) {
+                console.log(res[i].width)
+                console.log(res[i].height)
+            }
+            //}
+        }
+        onCameraStatusChanged: {
+            //if(state === Camera.ActiveState) {
+                var res = preview_cam.supportedViewfinderResolutions();
+                console.log("RESOLUTIONS ")
+            for(var i = 0; i < res.length; i++) {
+                console.log(res[i].width)
+                console.log(res[i].height)
+            }
 
-//            //}
-//        }
-//    }
-//    VideoOutput {
-//        id: pview
-//        width: cm(1)
-//        height: cm(1)
-//        source: preview_cam
-//        anchors.top: parent.top
-//        anchors.horizontalCenter: parent.horizontalCenter
-//        autoOrientation: true
-//        visible: false
+            //}
+        }
+    }
+    VideoOutput {
+        id: pview
+        width: cm(1)
+        height: cm(1)
+        source: preview_cam
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        autoOrientation: true
+        visible: true
 
-//    }
+    }
 
 
     ListView {
         //Layout.fillWidth: true
-        //anchors.top: pview.bottom
-        anchors.top: parent.top
+        anchors.top: pview.bottom
+        //anchors.top: parent.top
         anchors.left: parent.left
         anchors.right:parent.right
         height: cm(3)
