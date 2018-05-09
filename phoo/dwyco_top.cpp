@@ -58,6 +58,7 @@
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
 #include "vgqt.h"
 #endif
+void init_mac_drivers();
 
 
 namespace jhead {
@@ -1240,6 +1241,13 @@ DwycoCore::init()
     dwyco_set_emergency_callback(dwyco_emergency);
     dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
+
+#if defined(MAC_CLIENT)
+    // we do this early, then if we need to override one of the
+    // subsystems (like to use qt instead of the old drivers)
+    // that can be done further down.
+    init_mac_drivers();
+#endif
 #if defined(LINUX) && !defined(MAC_CLIENT) && !defined(NO_DWYCO_AUDIO)
 
 
@@ -1352,10 +1360,6 @@ DwycoCore::init()
 
     );
 
-#endif
-#if defined(MAC_CLIENT)
-    void init_mac_drivers();
-    init_mac_drivers();
 #endif
 
     //settings_load();
