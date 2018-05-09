@@ -297,34 +297,22 @@ ApplicationWindow {
         }
     }
 
-
-
-    Item {
+    Loader {
         id: cam
-        property alias camitem: cam_loader.item
+
         property string next_state
         property string ok_text: "Send"
         anchors.fill: parent
         visible: false
-        Loader {
-            id: cam_loader
-            anchors.fill: parent
-            onLoaded: {
-                cam_loader.item.state_on_close = cam.next_state
-                cam_loader.item.ok_pv_text = cam.ok_text
-            }
+        active: visible
+        source: "qrc:/DeclarativeCamera.qml"
+
+        onLoaded: {
+            item.state_on_close = cam.next_state
+            item.ok_pv_text = cam.ok_text
         }
 
-        onVisibleChanged: {
-            if(visible == true && cam_loader.source == "") {
-                cam_loader.source = "qrc:/DeclarativeCamera.qml"
-            }
-            if(visible == false) {
-                cam_loader.source = ""
-            }
-        }
-
-   }
+    }
 
     DSettings {
         id: settings_dialog

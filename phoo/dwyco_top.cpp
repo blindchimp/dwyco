@@ -1020,11 +1020,11 @@ block_enable_video_capture_preview(int on)
     int ret = dwyco_enable_video_capture_preview(on);
     Block_DLL = 0;
     return 1;
-    // this is super-retarded hack-around. when we turn off
+    // this is super-hacky hack-around. when we turn off
     // preview, we sometimes need to assume the device will have
     // been shutdown before we start tweaking with other video
     // capture related stuff. unfortunately, the dll doesn't provide
-    // a clean interface to "shut the fucking device up NOW". so we'll
+    // a clean interface to "shut the device up NOW". so we'll
     // just spin a little bit and hope for the best.
     int dum;
     for(int i = 0; i < 100; ++i)
