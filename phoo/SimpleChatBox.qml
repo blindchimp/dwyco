@@ -194,9 +194,9 @@ Page {
                     checkable: false
                     visible: !cam.visible
                     onClicked: {
-                        //stack.push(cam, {"next_state" : "PhotoCapture"})
-                       dwyco_vid_rec.uid = to_uid
-                        stack.push(dwyco_vid_rec)
+                        stack.push(cam, {"next_state" : "PhotoCapture"})
+                       //dwyco_vid_rec.uid = to_uid
+                        //stack.push(dwyco_vid_rec)
                     }
                 }
                 ToolButton {

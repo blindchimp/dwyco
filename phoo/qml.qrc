@@ -44,4 +44,5 @@
         <file>AppDrawerForm.ui.qml</file>
         <file>SimpleMsgBrowse.qml</file>
     </qresource>
+    <qresource prefix="/+linux"/>
 </RCC>
