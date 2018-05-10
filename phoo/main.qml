@@ -571,9 +571,16 @@ ApplicationWindow {
         uid: top_dispatch.last_uid_selected
     }
 
-    VidCamPreview {
+//    VidCamPreview {
+//        id: vid_cam_preview
+//        visible: false
+//    }
+
+    Loader {
         id: vid_cam_preview
+        active: visible
         visible: false
+        source: "qrc:/VidCamPreview.qml"
     }
 
     DwycoVidRec {
