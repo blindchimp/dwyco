@@ -1,2 +1,41 @@
-This repo uses git subrepo to create a collection of components that
-build Dwyco Phoo, a cross platform messenger client.
+
+Phoo is an experimental Qt5 encrypted messenger.
+
+Current requirements:
+* Qt 5.9.x or 5.10.1
+* For Linux: Ubuntu Trusty or later
+
+Mac/Windows/Android/iOS
+TBD
+
+To build on Linux Trusty:
+
+* Get Qt5 set up (make sure the default qmake gets the right version.)
+* Clone repo into the right place (the build scripts are a bit dumb about this
+right now, so do it this way):
+
+cd $(HOME)
+mkdir git
+cd git
+git clone https://github.com/blindchimp/dwyco
+
+cd dwyco
+sh phoobld/deps.sh (installs a few dev packages that are needed.)
+
+* Build phoo:
+
+cd $(HOME)/git/dwyco
+phoobld/build.sh
+
+(note: there are some qmake peculiarities that seem to require the
+invocation to be done exactly as shown above.)
+
+The result should be in $(HOME)/git/build-phoo/phoo/phoo
+
+If you run "phoo", it will create its data directory in
+$(HOME)/Documents/dwyco/phoo. There should be no need for 
+any other installation, as it "installs" everything it needs
+there if it doesn't already exist. There is also no way to make
+it use another directory at the moment.
+
+
