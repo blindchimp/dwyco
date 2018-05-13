@@ -22,7 +22,15 @@ git clone https://github.com/blindchimp/dwyco
 cd dwyco
 sh phoobld/deps.sh (installs a few dev packages that are needed.)
 
-* Build phoo:
+-----------
+
+* IN-TREE BUILD phoo and create AppDir in $(HOME)/git/dwyco/phoo/appdir:
+cd $(HOME)/git/dwyco
+sh phoobld.sh
+
+-----------
+
+* SHADOW BUILD phoo:
 
 cd $(HOME)/git/dwyco
 phoobld/build.sh
@@ -31,6 +39,7 @@ phoobld/build.sh
 invocation to be done exactly as shown above.)
 
 The result should be in $(HOME)/git/build-phoo/phoo/phoo
+-----------
 
 If you run "phoo", it will create its data directory in
 $(HOME)/Documents/dwyco/phoo. There should be no need for 
