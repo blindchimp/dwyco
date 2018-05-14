@@ -1,5 +1,5 @@
 TEMPLATE = app
-FORCE_DESKTOP_VGQT=1
+FORCE_DESKTOP_VGQT=0
 
 #macx-g++:dateincr.commands = ./dumptime-mac
 #macx-clang:dateincr.commands = ./dumptime-mac
@@ -151,7 +151,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${PWD}/../bld/macdrv/libmacdrv.a \
-$${SHADOW}/lib/libuv.a \
+$${D}/libuv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
 

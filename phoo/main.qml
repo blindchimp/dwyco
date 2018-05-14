@@ -128,17 +128,6 @@ ApplicationWindow {
     height: 768
     title: qsTr("Dwyco ")
 
-//    FileDialog {
-//        id: filedialog
-//        title: "Choose a file"
-//        onAccepted: {
-//            console.log(fileUrl)
-//        }
-//        onRejected: {
-
-//        }
-//    }
-
     property int close_bounce: 0
     onClosing: {
         // special cases, don't let them navigate around the
