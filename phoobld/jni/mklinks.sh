@@ -1,20 +1,20 @@
 
-rm jhead
-rm cdc32
-rm crypto5
-rm dwcls
-rm gsm
-rm jenkins
-rm kazlib
-rm libogg
-rm libspeex
-rm libtheora
-rm libvorbis
-rm vc
-rm zlib
-rm ppm
-rm pbm
-rm pgm
+rm -f  jhead
+rm -f  cdc32
+rm -f  crypto5
+rm -f  dwcls
+rm -f  gsm
+rm -f  jenkins
+rm -f  kazlib
+rm -f  libogg
+rm -f  libspeex
+rm -f  libtheora
+rm -f  libvorbis
+rm -f  vc
+rm -f  zlib
+rm -f  ppm
+rm -f  pbm
+rm -f  pgm
 
 ln -s  ../../bld/jhead
 ln -s  ../../bld/cdc32

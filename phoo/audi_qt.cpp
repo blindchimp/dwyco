@@ -51,6 +51,8 @@ InputTest::InputTest() :
 InputTest::~InputTest()
 {
     delete m_audioInfo;
+	if(!m_audioInput)
+		return;
     m_audioInput->reset();
     m_audioInput->deleteLater();
     m_audioInput = 0;

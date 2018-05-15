@@ -1,5 +1,5 @@
 TEMPLATE = app
-FORCE_DESKTOP_VGQT=1
+FORCE_DESKTOP_VGQT=0
 
 #macx-g++:dateincr.commands = ./dumptime-mac
 #macx-clang:dateincr.commands = ./dumptime-mac
@@ -11,6 +11,16 @@ FORCE_DESKTOP_VGQT=1
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
+
+CONFIG(appdir) {
+target.path=/usr/bin
+appdir_desktop.path=/usr/share/applications
+appdir_desktop.files=phoo.desktop
+appdir_icon.path=/usr/share/icons/hicolor/256x256/apps
+appdir_icon.files=phoo.png
+INSTALLS += appdir_icon appdir_desktop
+}
+
 
 QT += core qml quick multimedia network xml widgets #positioning
 QT += quickcontrols2
@@ -103,7 +113,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
-$${SHADOW}/../lib/libuv.a \
+$${D}/libuv/libuv.a \
 -lsqlite3 \
 -lSDL \
 -lv4l2 \
@@ -141,7 +151,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${PWD}/../bld/macdrv/libmacdrv.a \
-$${SHADOW}/lib/libuv.a \
+$${D}/libuv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
 

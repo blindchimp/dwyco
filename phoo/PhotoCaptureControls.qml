@@ -42,6 +42,7 @@ import QtQuick 2.6
 import QtMultimedia 5.6
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.1
+import dwyco 1.0
 
 Item {
     property Camera camera
@@ -80,7 +81,8 @@ Item {
             visible: camera.imageCapture.ready
             onClicked: {
                 file_captured = ""
-                camera.imageCapture.capture()
+                //camera.imageCapture.capture()
+                camera.imageCapture.captureToLocation(core.tmp_dir)
             }
             Layout.fillWidth: true
         }
