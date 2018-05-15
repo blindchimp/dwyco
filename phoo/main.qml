@@ -124,8 +124,16 @@ ApplicationWindow {
 
     id: applicationWindow1
     visible: true
-    width: 1280
-    height: 768
+    // android will override this and go full screen, which is
+    // what we want. for desktop versions, not sure what might be
+    // best.
+    width: 800
+    height: 600
+    // this might be helpful for windows users, as they
+    // seem to get confused with multiple windows running around
+    // at the same time.
+    //width: Screen.width
+    //height: Screen.height
     title: qsTr("Dwyco ")
 
     property int close_bounce: 0
