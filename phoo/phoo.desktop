@@ -2,6 +2,6 @@
 Name=Dwyco Phoo
 Comment=Dwyco Phoo Chat and Video Calling
 Exec=phoo
-Icon=phoo.png
+Icon=phoo
 Type=Application
-Category=Network;
+Categories=Network;
