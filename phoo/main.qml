@@ -302,11 +302,16 @@ ApplicationWindow {
         anchors.fill: parent
         visible: false
         active: visible
-        source: "qrc:/DeclarativeCamera.qml"
 
         onLoaded: {
             item.state_on_close = cam.next_state
             item.ok_pv_text = cam.ok_text
+        }
+
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/DeclarativeCamera.qml"
+            }
         }
 
     }
@@ -340,13 +345,12 @@ ApplicationWindow {
     Loader {
         id: cqres
         anchors.fill: parent
-        source: "qrc:/CQRes.qml"
         visible: false
-        active: false
 
         onVisibleChanged: {
-            if(visible)
-                cqres.active = true
+            if(visible) {
+                source = "qrc:/CQRes.qml"
+            }
         }
     }
 
@@ -360,8 +364,6 @@ ApplicationWindow {
 
         property url xml_url : ""
         visible: false
-        active: visible
-        source: "qrc:/SimpDir.qml"
         onVisibleChanged: {
             if(visible) {
                 var tmp
@@ -370,6 +372,7 @@ ApplicationWindow {
                 if(xml_url !== tmp) {
                     xml_url = tmp
                 }
+                source = "qrc:/SimpDir.qml"
             }
         }
 
@@ -391,6 +394,7 @@ ApplicationWindow {
         //anchors.fill: parent
         visible: false
     }
+
     ForwardToList {
         id: forward_dialog
         visible: false
@@ -547,13 +551,19 @@ ApplicationWindow {
 
 
     ProfileUpdateDialog {
-        id: profile_update_dialog      
+        id: profile_update_dialog
         visible: false
     }
 
-    IgnoreListDialog {
+    Loader {
         id: iglist_dialog
         visible: false
+
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/IgnoreListDialog.qml"
+            }
+        }
     }
 
     PublicChat {
@@ -577,7 +587,11 @@ ApplicationWindow {
         id: vid_cam_preview
         active: visible
         visible: false
-        source: "qrc:/VidCamPreview.qml"
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/VidCamPreview.qml"
+            }
+        }
     }
 
     DwycoVidRec {
