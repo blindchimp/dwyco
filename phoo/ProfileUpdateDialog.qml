@@ -36,6 +36,14 @@ Page {
 
     }
 
+    background: Rectangle {
+        color: primary_dark
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: primary_light }
+            GradientStop { position: 1.0; color: primary_dark}
+        }
+    }
+
     Warning {
         id: warn
         visible: {inh_profile_warning === 0}
@@ -156,7 +164,7 @@ Page {
                     prof_pic_preview.source = fileUrl
                     prof_pic_preview.ok_vis = true
                     prof_pic_preview.ok_text = "Ok"
-                    stack.push(prof_pic_preview)
+                    stack.push(prof_pic_preview, {"ok_text":"Use"})
 
                 }
                 onRejected: {picture_picker.visible = false}
@@ -191,7 +199,7 @@ Page {
         target: top_dispatch
 
         onProfile_updated: {
-            if(success == 1) {
+            if(success === 1) {
                 profile_sent = 0
                 img_filename = ""
                 img_preview.source = ""
@@ -200,21 +208,15 @@ Page {
                 profile_sent = 0
                 animateOpacity.start()
             }
-    
         }
-//        onImage_picked: {
-//            img_filename = fn
-//            img_preview.source = "file:///" + fn
-//        }
     }
 
     function snapshot(filename) {
         console.log("CAMERA profile SNAP2", filename)
         img_filename = filename
         img_preview.source = "file:///" + String(filename)
+
     }
-    
-    
 
     // this just makes sure mouse events don't go down to other
     // components
@@ -256,9 +258,11 @@ Page {
         }
         TextArea {
             id: desc
-            width: parent.width
+            //width: parent.width
             placeholderText: qsTr("Brief description...")
-            Layout.fillHeight: true
+            //Layout.fillHeight: true
+            selectByKeyboard: true
+            selectByMouse: true
             Layout.fillWidth: true
         }
         Image {
@@ -266,8 +270,8 @@ Page {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            sourceSize.height: 256
-            sourceSize.width: 256
+            //sourceSize.height: 256
+            //sourceSize.width: 256
 
             fillMode: Image.PreserveAspectFit
             // we'll perform the strip of exif and re-orientation in the
@@ -298,11 +302,12 @@ Page {
 
         RowLayout {
             Layout.fillWidth: true
-            visible: {profile_sent == 0}
+            //visible: {profile_sent === 0}
             Button {
                 id: done_button
                 Layout.fillWidth: true
                 text: qsTr("Update")
+                enabled: {profile_sent === 0}
                 onClicked: {
                     Qt.inputMethod.commit()
                     if(core.set_simple_profile(handle.text_input, email.text_input, desc.text, img_filename) === 1) {
@@ -323,6 +328,7 @@ Page {
                 id: cancel_button
                 Layout.fillWidth: true
                 text: qsTr("Cancel")
+                enabled: {profile_sent === 0}
                 onClicked: {
                     img_filename = ""
                     img_preview_source = ""
@@ -335,7 +341,7 @@ Page {
     BusyIndicator {
         id: busy1
         
-        running: {profile_sent == 1}
+        running: {profile_sent === 1}
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }

@@ -117,7 +117,7 @@ Page {
     }
     
     onVisibleChanged: {
-        if(visible && core.is_database_online == 1) {
+        if(visible && core.is_database_online === 1) {
             core.switch_to_chat_server(connect_server)
         } else {
             //core.disconnect_chat_server()

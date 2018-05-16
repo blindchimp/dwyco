@@ -11,6 +11,26 @@ import QtQuick 2.6
 import QtMultimedia 5.6
 import QtQuick.Controls 2.1
 
+// the API to this object is ugly... essentially, the requirement is
+// that the user of the object must reside in a stackview, and
+// push the cam onto the same stackview. the user should also tell the
+// camera object what state to start in: "PhotoCapture" for multiple capture
+// or "StopAndPop" to capture one image and pop immediately.
+//
+// the results of the image capture are turned via a signal that is
+// sent to a javascript "snapshot(filename)" function that is defined in
+// the users object, which must be the previous object on the stackview
+// stack.
+//
+// the main reason for this is that we use this camera is multiple slightly
+// different contexts. we really don't want to send a signal to everyone that
+// might be listening for a camera-result, just the one "caller".
+// honestly, there must be a simpler way to do something like this, but
+// i couldn't find a way to, for example, expose a property in another
+// object that this object could "fill in" without the need for a signal.
+// the loader complicates things too. maybe someday it'll dawn on me what
+// to do in cases like this.
+//
 Rectangle {
     id : cameraUI
     property string file_captured
@@ -103,13 +123,6 @@ Rectangle {
             }
         }
 
-    }
-    
-    onSnapshot: {
-       
-            //top_dispatch.camera_snapshot(filename);
-        
-            
     }
 
     PhotoPreview {
