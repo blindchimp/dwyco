@@ -250,11 +250,13 @@ Page {
         TextFieldX {
             id: handle
             placeholder_text:  qsTr("Nick name...")
+            Layout.fillWidth: true
         }
 
         TextFieldX {
             id: email
             placeholder_text: qsTr("Email (optional, not displayed to others)")
+            Layout.fillWidth: true
         }
         TextArea {
             id: desc

@@ -9,6 +9,7 @@
 import QtQuick 2.6
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.1
+import dwyco 1.0
 
 Rectangle {
     anchors.fill: parent
@@ -17,34 +18,20 @@ Rectangle {
     MouseArea {
         anchors.fill: parent
     }
+    gradient: Gradient {
+        GradientStop { position: 0.0; color: primary_light }
+        GradientStop { position: 1.0; color: primary_dark}
+    }
     ColumnLayout {
 
         anchors.fill:parent
         anchors.margins: mm(3)
-//        RowLayout {
-//            TextField {
-//                id: textInput1
-//                placeholderText:  qsTr("Enter nickname (you can change it later)")
-//                text: fname.fname()
-//                Layout.fillWidth: true
-//                Layout.alignment: Qt.AlignVCenter
-//            }
-//            Button {
-//                text: "x"
-//                onClicked: {
-//                    textInput1.text = ""
-//                }
-//                Layout.maximumHeight: textInput1.height
-//                Layout.maximumWidth: textInput1.height
-//                Layout.alignment: Qt.AlignVCenter
-//            }
 
-//            Layout.fillWidth: true
-//        }
         TextFieldX {
             id: textInput1
             text_input: fname.fname()
             placeholder_text: "Enter nickname (you can change it later)"
+            Layout.fillWidth: true
         }
 
         Label {
@@ -58,6 +45,7 @@ Rectangle {
         TextFieldX {
             id: textInput2
             placeholder_text: qsTr("Email (optional)")
+            Layout.fillWidth: true
 
         }
         Label {
@@ -75,6 +63,7 @@ Rectangle {
             id: label3
             text: qsTr("By clicking OK, you agree to our Terms of Service and Privacy Policy. A quick summary: Your communications are encrypted so Dwyco cannot read them. Dwyco doesn't track you, data-mine your phone, or send you spam.")
             font.italic: true
+            color: amber_light
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
@@ -84,9 +73,15 @@ Rectangle {
             Layout.fillWidth: true
             onClicked: {
                 Qt.inputMethod.commit()
-                core.bootstrap(textInput1.text_input, textInput2.text_input)
+                var name;
+                if(textInput1.text_input.length === 0) {
+                    name = "ShinyHappyRock"
+                } else {
+                    name = textInput1.text_input
+                }
+
+                core.bootstrap(name, textInput2.text_input)
                 core.set_local_setting("first-run", "done")
-                //parent.visible = false
                 profile_bootstrapped = 1
                 stack.pop()
             }

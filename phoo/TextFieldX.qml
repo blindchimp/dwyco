@@ -15,8 +15,6 @@ RowLayout {
     property alias placeholder_text: textInput1.placeholderText
     TextField {
         id: textInput1
-        placeholderText:  qsTr("Enter nickname (you can change it later)")
-
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignVCenter
     }
@@ -24,11 +22,12 @@ RowLayout {
         text: "x"
         onClicked: {
             textInput1.text = ""
+            textInput1.focus = true
         }
         Layout.maximumHeight: textInput1.height
         Layout.maximumWidth: textInput1.height
         Layout.alignment: Qt.AlignVCenter
     }
 
-    Layout.fillWidth: true
+    //Layout.fillWidth: true
 }

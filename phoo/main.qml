@@ -321,9 +321,15 @@ ApplicationWindow {
         visible: false
     }
 
-    About {
+    Loader {
         id: about_dialog
         visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/About.qml"
+            }
+        }
     }
 
     ConvList {
@@ -429,12 +435,15 @@ ApplicationWindow {
         visible: false
     }
 
-
-    ProfileDialog {
+    Loader {
         id: profile_dialog
         visible: false
-        //anchors.fill: parent
-
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/ProfileDialog.qml"
+            }
+        }
     }
 
 

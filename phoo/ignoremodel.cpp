@@ -56,26 +56,6 @@ dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
 }
 
 
-#if 0
-void
-IgnoreListModel::decorate(QString huid, QString txt, QString mid)
-{
-    QByteArray uid = QByteArray::fromHex(huid.toLatin1());
-    IgnoredUser *c = getByUid(huid);
-    if(!c)
-        return;
-    int cnt = uid_unviewed_msgs_count(uid);
-    c->set_unseen_count(cnt);
-    c->update_any_unread(any_unread_msg(uid));
-}
-
-void
-IgnoreListModel::decorate(QString huid)
-{
-    decorate(huid, "", "");
-}
-#endif
-
 IgnoredUser *
 IgnoreListModel::add_uid_to_model(const QByteArray& uid)
 {
