@@ -15,5 +15,4 @@ SOURCES = \
 	libpbm1.c \
 	libpbm2.c \
 	libpbm3.c \
-	libpbm4.c \
-	libpbm5.c
+    libpbm4.c

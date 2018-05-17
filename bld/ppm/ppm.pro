@@ -13,7 +13,4 @@ macx-g++|linux-g++|linux-g++-64 {
 
 SOURCES = \
 	libppm1.c \
-	libppm2.c \
-	libppm3.c \
-	libppm4.c \
-	libppm5.c 
+    libppm2.c
