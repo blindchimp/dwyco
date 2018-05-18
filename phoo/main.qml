@@ -316,9 +316,15 @@ ApplicationWindow {
 
     }
 
-    DSettings {
+    Loader {
         id: settings_dialog
         visible: false
+
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/DSettings.qml"
+            }
+        }
     }
 
     Loader {
@@ -553,9 +559,17 @@ ApplicationWindow {
         }
 
     }
-    PINChangeDialog {
+
+    Loader {
         id: pwchange_dialog
         visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/PINChangeDialog.qml"
+            }
+        }
+
     }
 
 
