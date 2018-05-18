@@ -514,6 +514,22 @@ Page {
                     source: mi("ic_star_black_24dp.png")
                 }
             }
+            Rectangle {
+                id: is_forwarded
+                width: 16
+                height: 16
+                anchors.top: ditem.top
+                anchors.left: isfav.right
+                visible: IS_FORWARDED === 1
+                z: 2
+                color: primary_light
+                radius: width / 2
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    source: mi("ic_open_in_new_black_24dp.png")
+                }
+            }
             z: 1
 
         ColumnLayout {
@@ -573,7 +589,7 @@ Page {
                         if(Date.now() - dt.getTime() > 86400 * 1000) {
                             return "<html>" + msg + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
                         } else {
-                            return "<html>" + msg + "<sub>" + Qt.formatTime(dt) + "</sub></html>"
+                            return "<html>" + msg + "<sub>" + LOCAL_TIME_CREATED + "</sub></html>"
                         }
 
                     }
@@ -582,7 +598,7 @@ Page {
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     Layout.maximumWidth: (listView1.width * 3) / 4
                     horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
-                    verticalAlignment: Text.AlignVCenter                   
+                    verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
                     color: primary_text

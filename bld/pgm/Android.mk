@@ -7,8 +7,7 @@ LOCAL_CPPFLAGS := $(MY_CONF_LOCAL_CPPFLAGS) -DANDROID
 
 
 LOCAL_SRC_FILES=   \
-	libpgm1.c \
-	libpgm2.c
+	libpgm1.c 
 
 
 #LOCAL_STATIC_LIBRARIES := pbm crypto5 zlib kazlib jenkins dwcls

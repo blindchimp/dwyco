@@ -40,6 +40,7 @@ enum {
     IS_NO_FORWARD,
     DATE_CREATED,
     DATE_RECEIVED,
+    LOCAL_TIME_CREATED, // this take into account time zone and all that
     IS_QD,
     IS_ACTIVE,
     IS_FAVORITE,
@@ -77,6 +78,40 @@ dwyco_get_attr_bool(DWYCO_LIST l, int row, const char *col)
     if(str_out == "t")
         return 1;
     return 0;
+}
+
+static
+QString
+gen_time(DWYCO_SAVED_MSG_LIST l, int row)
+{
+    int hour;
+    int minute;
+    int second;
+
+    const char *val;
+    int len;
+    int type;
+    if(!dwyco_list_get(l, row, DWYCO_QM_BODY_DATE_HOUR, &val, &len, &type))
+        return "";
+    if(type != DWYCO_TYPE_INT)
+        return "";
+    hour = atoi(val);
+
+    if(!dwyco_list_get(l, row, DWYCO_QM_BODY_DATE_MINUTE, &val, &len, &type))
+        return "";
+    if(type != DWYCO_TYPE_INT)
+        return "";
+    minute = atoi(val);
+
+    if(!dwyco_list_get(l, row, DWYCO_QM_BODY_DATE_SECOND, &val, &len, &type))
+        return "";
+    if(type != DWYCO_TYPE_INT)
+        return "";
+    second = atoi(val);
+
+    QTime qt(hour, minute, second);
+    QString t = qt.toString("hh:mm ap");
+    return t;
 }
 
 static
@@ -537,6 +572,7 @@ msglist_raw::roleNames() const
     rn(IS_NO_FORWARD);
     rn(DATE_CREATED);
     rn(DATE_RECEIVED);
+    rn(LOCAL_TIME_CREATED);
     rn(IS_FAVORITE);
     rn(SELECTED);
     rn(DIRECT);
@@ -572,7 +608,7 @@ msglist_raw::qd_data ( int r, int role ) const
     case DIRECT:
         return 0;
     case IS_QD:
-        return QVariant(1);
+        return 1;
     case IS_ACTIVE:
         return false;
     case MSG_TEXT:
@@ -583,11 +619,10 @@ msglist_raw::qd_data ( int r, int role ) const
         if(!dwyco_get_attr(qba, 0, DWYCO_QM_BODY_NEW_TEXT2, txt))
             return "";
 
-        return QVariant(QString(txt));
+        return QString(txt);
     }
     case SENT:
-
-        return QVariant(1);
+        return 1;
     case PREVIEW_FILENAME:
     {
         int is_file;
@@ -605,6 +640,18 @@ msglist_raw::qd_data ( int r, int role ) const
     case HAS_VIDEO:
     case IS_FAVORITE:
         return 0;
+
+    case IS_FORWARDED:
+    {
+        DWYCO_LIST ba = dwyco_get_body_array(qsm);
+        simple_scoped qba(ba);
+        int n;
+        if(!dwyco_list_numelems(qba, &n, 0))
+            return 0;
+        if(n > 1)
+            return 1;
+        return 0;
+    }
 
     case ATTACHMENT_PERCENT:
         return -1.0;
@@ -768,6 +815,7 @@ msglist_raw::inbox_data (int r, int role ) const
     case HAS_SHORT_VIDEO:
     case HAS_VIDEO:
     case IS_FAVORITE:
+    case IS_FORWARDED:
         return 0;
 
     case ATTACHMENT_PERCENT:
@@ -942,6 +990,31 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         return 0;
 
     }
+    else if (role == IS_FORWARDED)
+    {
+        if(!dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_IS_FORWARDED))
+            return 0;
+        return 1;
+    }
+    else if(role == LOCAL_TIME_CREATED)
+    {
+        // hmm, consider putting the local time in the index, as the way it is now
+        // we would have to read in the message to get it, which may be
+        // too expensive. we know the local time is only really displayed for
+        // "extra info", so it isn't used all that much
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return "unknown";
+        QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+        DWYCO_SAVED_MSG_LIST sm;
+        if(!dwyco_get_saved_message(&sm, buid.constData(), buid.length(), mid.constData()))
+            return "unknown";
+        simple_scoped qsm(sm);
+
+        DWYCO_LIST ba = dwyco_get_body_array(qsm);
+        simple_scoped qba(ba);
+        return gen_time(ba, 0);
+    }
     else if(role == IS_FAVORITE)
     {
         QByteArray mid;
@@ -984,6 +1057,24 @@ msglist_raw::get_msg_text(int row) const
 
     DWYCO_LIST ba = dwyco_get_body_array(qsm);
     simple_scoped qba(ba);
+
+    int n;
+    if(dwyco_list_numelems(qba, &n, 0))
+    {
+        if(n > 1)
+        {
+            // forwarded message, for now just return the
+            // yucky dll formatted message
+            QByteArray ftxt;
+            DWYCO_LIST bt = dwyco_get_body_text(qba);
+            if(!bt)
+                return "";
+            simple_scoped qbt(bt);
+            if(!dwyco_get_attr(qbt, 0, DWYCO_NO_COLUMN, ftxt))
+                return "";
+            return get_extended(ftxt);
+        }
+    }
 
     QByteArray txt;
     if(!dwyco_get_attr(qba, 0, DWYCO_QM_BODY_NEW_TEXT2, txt))

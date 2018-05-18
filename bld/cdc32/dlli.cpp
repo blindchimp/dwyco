@@ -7028,7 +7028,7 @@ dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id
 }
 
 // note: this function is pretty defunct, it assumes you are using
-// simple 8bit ascii and won't generall work with utf8/unicode type
+// simple 8bit ascii and won't generally work with utf8/unicode type
 // situations. use get_body_array instead
 DWYCOEXPORT
 DWYCO_LIST
@@ -7046,7 +7046,7 @@ dwyco_get_body_text(DWYCO_SAVED_MSG_LIST m)
     else
     {
         // new display for new-style forwarded messages
-        s += "(forwarded message below)\r\n";
+        s += "(forwarded follows)\r\n";
         s += (const char *)body[QM_BODY_NEW_TEXT];
         s += "\r\n---\r\n";
         // this test keeps us from crashing on really old

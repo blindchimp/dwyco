@@ -3895,22 +3895,38 @@ append_forwarded_text(DwString& s, vc body)
         s += "<<can't display old old message>>\r\n";
         return;
     }
+    int cant_resolve;
     if(body[QM_BODY_FORWARDED_BODY].is_nil())
     {
-        s += "Message created by ";
-        s += (const char *)uid_to_handle(body[QM_BODY_FROM], 0);
-        s += " (";
-        s += (const char *)uid_to_short_text(body[QM_BODY_FROM]);
-        s += ")";
+
+        s += "Created by ";
+        vc handle;
+        handle = uid_to_handle(body[QM_BODY_FROM], &cant_resolve);
+        if(cant_resolve)
+            handle = " ";
+        s += (const char *)handle;
+        if(cant_resolve)
+        {
+            s += " (";
+            s += (const char *)uid_to_short_text(body[QM_BODY_FROM]);
+            s += ")";
+        }
         s += "\r\n";
         s += (const char *)body[QM_BODY_NEW_TEXT];
         return;
     }
-    s += "Message from ";
-    s += (const char *)uid_to_handle(body[QM_BODY_FROM], 0);
-    s += " (";
-    s += (const char *)uid_to_short_text(body[QM_BODY_FROM]);
-    s += ")";
+    s += "from ";
+    vc handle;
+    handle = uid_to_handle(body[QM_BODY_FROM], &cant_resolve);
+    if(cant_resolve)
+        handle = " ";
+    s += (const char *)handle;
+    if(cant_resolve)
+    {
+        s += " (";
+        s += (const char *)uid_to_short_text(body[QM_BODY_FROM]);
+        s += ")";
+    }
     s += "\r\n";
     s += (const char *)body[QM_BODY_NEW_TEXT];
     s += "\r\n---\r\n";
