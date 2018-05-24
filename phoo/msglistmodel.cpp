@@ -115,6 +115,40 @@ gen_time(DWYCO_SAVED_MSG_LIST l, int row)
 }
 
 static
+QString
+gen_time_unsaved(DWYCO_UNSAVED_MSG_LIST l, int row)
+{
+    int hour;
+    int minute;
+    int second;
+
+    const char *val;
+    int len;
+    int type;
+    if(!dwyco_list_get(l, row, DWYCO_QMS_DS_HOUR, &val, &len, &type))
+        return "";
+    if(type != DWYCO_TYPE_INT)
+        return "";
+    hour = atoi(val);
+
+    if(!dwyco_list_get(l, row, DWYCO_QMS_DS_MINUTE, &val, &len, &type))
+        return "";
+    if(type != DWYCO_TYPE_INT)
+        return "";
+    minute = atoi(val);
+
+    if(!dwyco_list_get(l, row, DWYCO_QMS_DS_SECOND, &val, &len, &type))
+        return "";
+    if(type != DWYCO_TYPE_INT)
+        return "";
+    second = atoi(val);
+
+    QTime qt(hour, minute, second);
+    QString t = qt.toString("hh:mm ap");
+    return t;
+}
+
+static
 void
 DWYCOCALLCONV
 msg_status_callback(int id, const char *text, int percent_done, void *)
@@ -635,6 +669,44 @@ msglist_raw::qd_data ( int r, int role ) const
         return QString(pfn);
 
     }
+    case DATE_CREATED:
+    {
+        DWYCO_LIST ba = dwyco_get_body_array(qsm);
+        simple_scoped qba(ba);
+        QByteArray txt;
+        const char *out;
+        int len_out;
+        int type_out;
+        if(!dwyco_list_get(qba, 0, DWYCO_QM_BODY_DATE_SECONDS_SINCE_JAN1_1970,
+                           &out, &len_out, &type_out))
+            return 0;
+        if(type_out != DWYCO_TYPE_INT)
+            return 0;
+        QVariant v;
+        v.setValue(QString(out).toLong());
+        return v;
+
+    }
+
+    case LOCAL_TIME_CREATED:
+    {
+        DWYCO_LIST ba = dwyco_get_body_array(qsm);
+        simple_scoped qba(ba);
+        QByteArray txt;
+        const char *out;
+        int len_out;
+        int type_out;
+        if(!dwyco_list_get(qba, 0, DWYCO_QM_BODY_DATE_SECONDS_SINCE_JAN1_1970,
+                           &out, &len_out, &type_out))
+            return 0;
+        if(type_out != DWYCO_TYPE_INT)
+            return 0;
+        QDateTime dt;
+        dt = QDateTime::fromSecsSinceEpoch(QString(out).toLong());
+        return dt.toString("hh:mm ap");
+
+
+    }
     case HAS_AUDIO:
     case HAS_SHORT_VIDEO:
     case HAS_VIDEO:
@@ -782,6 +854,11 @@ msglist_raw::inbox_data (int r, int role ) const
         QVariant v;
         v.setValue(QString(out).toLong());
         return v;
+    }
+
+    case LOCAL_TIME_CREATED:
+    {
+        return gen_time_unsaved(inbox_msgs, r);
     }
 
     case MSG_TEXT:
