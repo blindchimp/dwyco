@@ -152,7 +152,7 @@ Page {
                         anchors.bottom: parent.bottom
                         anchors.left: top_toolbar_img.right
                         anchors.leftMargin: 2
-                        text: "online"
+                        text: ind_typing === 1 ? "typing..." : "online"
                         color: "white"
                         background: Rectangle {
                             color: "indigo"
@@ -185,20 +185,6 @@ Page {
                     visible: {stack.depth > 2 || core.unread_count > 0}
                 }
 
-                ToolButton {
-                    id: cam_button
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_add_a_photo_black_24dp.png")
-                    }
-                    checkable: false
-                    visible: !cam.visible
-                    onClicked: {
-                       stack.push(cam, {"next_state" : "PhotoCapture"})
-                       //dwyco_vid_rec.uid = to_uid
-                       //stack.push(dwyco_vid_rec)
-                    }
-                }
                 ToolButton {
                     id: pic_button
                     contentItem: Image {
@@ -763,22 +749,37 @@ Page {
         // will pop up on the previous screen, wtf.
         focus: visible
         //font.family: "Noto Color Emoji"
-        Label {
-            id: typing
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.margins: 3
-            text: "(typing...)"
-            color: "black"
-            opacity: .5
-            visible: {ind_typing === 1 && ind_online === 1}
-            background: Rectangle {
-                color: "red"
-                opacity: .5
-                radius: 6
-            }
-            z: 5
+//        Label {
+//            id: typing
+//            anchors.bottom: parent.top
+//            anchors.left: parent.left
+//            anchors.margins: 3
+//            text: "(typing...)"
+//            color: "black"
+//            opacity: .5
+//            visible: {ind_typing === 1 && ind_online === 1}
+//            background: Rectangle {
+//                color: "red"
+//                opacity: .5
+//                radius: 6
+//            }
+//            z: 5
 
+//        }
+        ToolButton {
+            id: cam_button
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+            anchors.rightMargin: mm(3)
+            contentItem: Image {
+                anchors.centerIn: parent
+                source: mi("ic_add_a_photo_black_24dp.png")
+            }
+            checkable: false
+            visible: !cam.visible && textField1.length === 0
+            onClicked: {
+               stack.push(cam, {"next_state" : "PhotoCapture"})
+            }
         }
     }
 

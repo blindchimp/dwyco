@@ -9,7 +9,7 @@
 
 import QtQuick 2.6
 import QtMultimedia 5.6
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.2
 
 // the API to this object is ugly... essentially, the requirement is
 // that the user of the object must reside in a stackview, and
@@ -163,6 +163,31 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
         }
+
+    }
+    Label {
+        id: no_cams
+        anchors.fill: parent
+
+        anchors.margins: mm(3)
+        wrapMode: Text.WordWrap
+        background: Rectangle {
+            color: "white"
+        }
+
+        text: qsTr("(No camera devices available)")
+        z: 6
+        visible: {QtMultimedia.availableCameras.length === 0}
+        Button {
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            anchors.margins: mm(3)
+            text: "Back"
+            onClicked: {
+                stack.pop()
+            }
+        }
+
 
     }
 

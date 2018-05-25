@@ -163,66 +163,6 @@ msg_status_callback(int id, const char *text, int percent_done, void *)
     //mlm->dataChanged(mi, mi, QVector<int>(1, FETCH_STATE));
 }
 
-#if 0
-static
-void
-DWYCOCALLCONV
-msg_callback(int id, int what, const char *mid, void *)
-{
-//printf("id %d what %d mid %s\n", id, what, mid);
-    int i = Fetching.indexOf(mid);
-    switch(what)
-    {
-    case DWYCO_MSG_DOWNLOAD_FETCHING_ATTACHMENT:
-        // here is a case where it makes sense to provide the text of the message
-        // immediately while the attachment is being downloaded in the background.
-        break;
-
-    case DWYCO_MSG_DOWNLOAD_RATHOLED:
-    case DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED:
-        // if this msg is ratholed, it can never be fetched, so just delete it.
-        Dont_refetch.insert(mid);
-        if(i >= 0)
-            Fetching.removeAt(i);
-        Delete_msgs.append(mid);
-        //del_unviewed_mid(mid);
-        Fid_to_mid.remove(id);
-        Mid_to_percent.remove(mid);
-        break;
-
-    case DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED:
-    case DWYCO_MSG_DOWNLOAD_SAVE_FAILED:
-    case DWYCO_MSG_DOWNLOAD_FAILED:
-        // this is potentially just a transient failure, so maybe try refetching
-        // a certain number of times. really need something from the server that says
-        // whether there is any hope of getting the message or not.
-        // i think i will handle this case on the server and just delete messages that
-        // have not been fetched in a month or something. this will cause a bit of thrashing for
-        // users that have a lot of messages that can't be fetched, but gives the best chance to get
-        // a message in transient failure situations.
-        //Dont_refetch.insert(mid);
-        //del_unviewed_mid(mid);
-
-        if(i >= 0)
-            Fetching.removeAt(i);
-        Fid_to_mid.remove(id);
-        Mid_to_percent.remove(mid);
-        break;
-    case DWYCO_MSG_DOWNLOAD_OK:
-    default:
-        if(i >= 0)
-            Fetching.removeAt(i);
-        Fid_to_mid.remove(id);
-        Mid_to_percent.remove(mid);
-    }
-    int midi = mlm->mid_to_index(mid);
-    QModelIndex mi = mlm->index(midi, 0);
-    mlm->dataChanged(mi, mi, QVector<int>(1, IS_ACTIVE));
-    mlm->dataChanged(mi, mi, QVector<int>(1, FETCH_STATE));
-    mlm->dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
-}
-#endif
-
 void
 msglist_model::msg_recv_status(int cmd, const QString &smid)
 {
