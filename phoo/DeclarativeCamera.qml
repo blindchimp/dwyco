@@ -17,7 +17,7 @@ import QtQuick.Controls 2.1
 // camera object what state to start in: "PhotoCapture" for multiple capture
 // or "StopAndPop" to capture one image and pop immediately.
 //
-// the results of the image capture are turned via a signal that is
+// the results of the image capture are returned via a signal that is
 // sent to a javascript "snapshot(filename)" function that is defined in
 // the users object, which must be the previous object on the stackview
 // stack.
@@ -45,6 +45,7 @@ Rectangle {
     
     Component.onCompleted: {
         cameraUI.snapshot.connect(stack.get(stack.depth - 2).snapshot)
+        console.log("WTF CAMERA")
     }
 
     states: [

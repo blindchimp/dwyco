@@ -288,10 +288,6 @@ ApplicationWindow {
 
             }
         }
-
-        onVideo_display: {
-            //themsgview.view_source = img_path
-        }
     }
 
     Loader {
@@ -689,7 +685,6 @@ ApplicationWindow {
                 notificationClient.set_quiet(1)
                 }
             }
-            //drawer_model.setProperty(4, "chked", dwy_quiet)
 
 
             a = get_local_setting("invis")
@@ -698,7 +693,6 @@ ApplicationWindow {
             } else {
                 dwy_invis = true
             }
-            //drawer_model.setProperty(5, "chked", dwy_invis)
 
             a = get_local_setting("show_unreviewed")
             if(a === "" || a === "0") {
@@ -721,10 +715,6 @@ ApplicationWindow {
             var expire = pin_expire()
             core.set_local_setting("pin_expire", expire.toString())
             exit()
-        }
-
-        onRem_keyboard_active: {
-
         }
 
         onServer_login: {
@@ -786,34 +776,17 @@ ApplicationWindow {
             hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
-        onSys_uid_resolved: {
-        }
-        onSys_invalidate_profile: {
-        }
-
         onProfile_update: {
             top_dispatch.profile_updated(success)
         }
 
-        onVideo_display: {
-            //top_dispatch.video_display(ui_id, frame_number, img_path)
-        }
-
-        onIgnore_event: {
-
-        }
         onQt_app_state_change: {
             console.log("app state change ", app_state)
             if(app_state === 0) {
                 // resuming
                 themsglist.reload_model()
-                //stack.pop()
-
                 pwdialog.state = "resume"
-
             } else {
-
-                //stack.push(blank_page)
                 pwdialog.state = "pause"
             }
 
@@ -821,12 +794,12 @@ ApplicationWindow {
 
         onImage_picked: {
             console.log("image " + fn)
-            if(android_img_pick_hack == 1)
+            if(android_img_pick_hack === 1)
             {
                 profile_update_dialog.android_img_filename = fn
                 profile_update_dialog.android_hack = true
             }
-            else if(android_img_pick_hack == 2)
+            else if(android_img_pick_hack === 2)
             {
                 chatbox.android_img_filename = fn
                 chatbox.android_hack = true
