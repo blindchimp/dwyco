@@ -278,33 +278,33 @@ Page {
         }
 
         }
-    CallButtons {
-        id: call_buttons
-        width: parent.width
-        height: parent.height
-        onButton_click: {
-            model.get(index).click()
-            console.log("button click ", model.get(index).objectName)
-            var objn = model.get(index).objectName
-            if(objn === "send_video" || objn === "accept_and_send" ||
-                    objn === "accept") {
-                stack.push(vid_call_view)
-            }
-        }
-        onButton_pressed: {
-            model.get(index).pressed()
-        }
-        onButton_released: {
-            model.get(index).released()
-        }
-        onButton_triggered: {
-            model.get(index).triggered(state)
-        }
-        onButton_toggled: {
-            model.get(index).toggled(state)
-        }
-        z: 5
-    }
+//    CallButtons {
+//        id: call_buttons
+//        width: parent.width
+//        height: parent.height
+//        onButton_click: {
+//            model.get(index).click()
+//            console.log("button click ", model.get(index).objectName)
+//            var objn = model.get(index).objectName
+//            if(objn === "send_video" || objn === "accept_and_send" ||
+//                    objn === "accept") {
+//                stack.push(vid_call_view)
+//            }
+//        }
+//        onButton_pressed: {
+//            model.get(index).pressed()
+//        }
+//        onButton_released: {
+//            model.get(index).released()
+//        }
+//        onButton_triggered: {
+//            model.get(index).triggered(state)
+//        }
+//        onButton_toggled: {
+//            model.get(index).toggled(state)
+//        }
+//        z: 5
+//    }
 
     background: Rectangle {
         color: primary_dark
@@ -381,7 +381,7 @@ Page {
         top_toolbar_text.text = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
-        call_buttons.model = core.get_button_model(to_uid)
+        //call_buttons.model = core.get_button_model(to_uid)
     }
 
     Loader {

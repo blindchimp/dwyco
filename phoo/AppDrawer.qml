@@ -15,10 +15,10 @@ AppDrawerForm {
     signal close()
     anchors.fill: parent
 
-    vid_preview_button.onClicked: {
-        stack.push(vid_cam_preview)
-        close()
-    }
+//    vid_preview_button.onClicked: {
+//        stack.push(vid_cam_preview)
+//        close()
+//    }
     about_button.onClicked: {
         stack.push(about_dialog)
         close()

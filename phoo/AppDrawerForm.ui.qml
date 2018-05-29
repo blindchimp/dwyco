@@ -78,6 +78,7 @@ Pane {
         ItemDelegate {
             id: vid_preview_button
             text: qsTr("Preview")
+            visible: false
             //visible: false
             Layout.fillWidth: true
         }
