@@ -14,6 +14,9 @@
 #include <QObject>
 #include <QQueue>
 #include <QMutexLocker>
+#ifdef ANDROID
+#include <QtAndroid>
+#endif
 
 void oopanic(const char *);
 
@@ -80,7 +83,7 @@ int InputTest::initializeAudio()
     //connect(m_audioInfo, SIGNAL(update()), SLOT(refreshDisplay()));
 
     createAudioInput();
-    if(m_audioInput->error() == QAudio::OpenError)
+    if(m_audioInput->error() != QAudio::NoError)
         return 0;
     return 1;
 }
@@ -249,9 +252,23 @@ audi_qt_delete(void *)
     Audi = 0;
 }
 
+static
+void
+nada(const QtAndroid::PermissionResultMap&)
+{
+    return;
+}
+
 int DWYCOCALLCONV
 audi_qt_init(void *)
 {
+#ifdef ANDROID
+    if(QtAndroid::checkPermission("android.permission.RECORD_AUDIO") == QtAndroid::PermissionResult::Denied)
+    {
+        QtAndroid::requestPermissions(QStringList("android.permission.RECORD_AUDIO"), nada);
+        return 0;
+    }
+#endif
     if(Audi)
         return 1;
     Audi = new InputTest;
