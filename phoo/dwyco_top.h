@@ -30,6 +30,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(QString, buildtime)
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
     QML_READONLY_VAR_PROPERTY(QString, tmp_dir)
+    QML_READONLY_VAR_PROPERTY(int, external_storage_permission)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {

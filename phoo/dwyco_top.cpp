@@ -15,6 +15,9 @@
 #include <QUrlQuery>
 #include <QSslSocket>
 #include <QApplication>
+#ifdef ANDROID
+#include <QtAndroid>
+#endif
 #include "dlli.h"
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
@@ -749,6 +752,18 @@ static
 void
 setup_locations()
 {
+#ifdef ANDROID
+    if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+    {
+        // we aren't going anywhere without being able to setup our state
+        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
+        if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        {
+            exit(0);
+        }
+    }
+#endif
+    //
     QString userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     userdir += "/dwyco/phoo/";
     //QString userdir("/home/dwight/Downloads/n7phoo/");
