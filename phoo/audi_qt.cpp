@@ -252,12 +252,14 @@ audi_qt_delete(void *)
     Audi = 0;
 }
 
+#ifdef ANDROID
 static
 void
 nada(const QtAndroid::PermissionResultMap&)
 {
     return;
 }
+#endif
 
 int DWYCOCALLCONV
 audi_qt_init(void *)
