@@ -3,4 +3,4 @@
 TEMPLATE = subdirs
 CONFIG += ordered
 SUBDIRS=bld/ogg bld/vorbis112 bld/theora bld/speex bld/kazlib bld/zlib bld/dwcls bld/crypto5 bld/jenkins bld/vc bld/pbm bld/pgm bld/ppm bld/gsm bld/cdc32
-SUBDIRS += dwycobg xferdl qdwyrun
+SUBDIRS += ftpreview dwycobg xferdl qdwyrun

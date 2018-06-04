@@ -251,12 +251,16 @@ init_codec(const char *logname)
     }
 }
 
+// this is internal api used mostly for enabling just enough
+// so you can get a preview from a dwyco dyc file and exit
+// the program.
 void
 simple_init_codec(const char *logname)
 {
     static int init = 0;
     if(!init)
     {
+        init_pval();
         dwyco_srand(time(0));
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
         //No_direct_msgs = vc(VC_SET);
