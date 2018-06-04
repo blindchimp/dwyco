@@ -19,6 +19,7 @@ static DwycoCallAppearanceDeathCallback  user_dwyco_set_call_appearance_death_ca
 static DwycoZapAppearanceCallback  user_dwyco_set_zap_appearance_callback;
 static DwycoAutoUpdateStatusCallback  user_dwyco_set_autoupdate_status_callback;
 extern "C" {
+DWYCOEXPORT void _real_dwyco_field_debug(const char *var, int num);
 DWYCOEXPORT void _real_dwyco_debug_dump();
 DWYCOEXPORT void _real_dwyco_random_string2(char **str_out, int len);
 DWYCOEXPORT void _real_dwyco_eze2(const char *str, int len_str, char **str_out, int *len_out);
@@ -578,6 +579,17 @@ printarg(" const char *", "desc",desc);
 (*user_dwyco_set_autoupdate_status_callback)(status,desc);
 /*++Reentered;
 */printcbret();
+}
+
+DWYCOEXPORT
+void
+dwyco_field_debug(const char *var, int num)
+{
+printfunname("dwyco_field_debug");
+printarg("const char *", "var",var);
+printarg(" int ", "num",num);
+_real_dwyco_field_debug(var,num);
+printret();
 }
 
 DWYCOEXPORT
