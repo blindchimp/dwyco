@@ -121,7 +121,7 @@ Page {
                         anchors.centerIn: parent
                     }
                     onClicked: drawer.open()
-                    visible: stack.depth == 1
+                    visible: stack.depth === 1
                     Layout.fillHeight: true
                 }
                 Item {
