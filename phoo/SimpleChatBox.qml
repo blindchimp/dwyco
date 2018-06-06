@@ -776,7 +776,7 @@ Page {
                 source: mi("ic_add_a_photo_black_24dp.png")
             }
             checkable: false
-            visible: !cam.visible && textField1.length === 0
+            visible: !cam.visible && !(textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0)
             onClicked: {
                stack.push(cam, {"next_state" : "PhotoCapture"})
             }
