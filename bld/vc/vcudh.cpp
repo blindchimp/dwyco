@@ -255,6 +255,57 @@ dh_store_and_forward_material(vc other_pub, vc& session_key_out)
     return ret;
 }
 
+// this is like the above, except it expects an array pubkey vectors
+// and returns an array of encrypted keys and public key material to go with it.
+// this is used for multi-recipient encryption.
+// note: there is still only one session key returned. this means that any of the
+// public material can be used to decrypt the single key returned.
+vc
+dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
+{
+
+    // 128 bit symmetric key
+    SecByteBlock skey(16);
+    Rng->GenerateBlock(skey, skey.SizeInBytes());
+    vc session_key(VC_BSTRING, (const char *)(const byte *)skey, skey.SizeInBytes());
+
+    vc ret_material(VC_VECTOR);
+
+    for(int j = 0; j < other_pub_vec.num_elems(); ++j)
+    {
+        vc other_pub = other_pub_vec[j];
+        // generate a key from their static public material
+        SecByteBlock privk(EphDH->PrivateKeyLength());
+        SecByteBlock pubk(EphDH->PublicKeyLength());
+
+        EphDH->GenerateKeyPair(*Rng, privk, pubk);
+        SecByteBlock akey(EphDH->AgreedValueLength());
+        if(!EphDH->Agree(akey, privk, (const byte *)(const char *)other_pub[DH_STATIC_PUBLIC]))
+            return vcnil;
+        vc key(VC_BSTRING, (const char *)akey.data(), akey.SizeInBytes());
+        vc our_public(VC_BSTRING, (const char *)pubk.data(), pubk.SizeInBytes());
+
+        // normalize to 160 bits
+        key = sha(key);
+
+        const byte *k = (const byte *)(const char *)key;
+        for(size_t i = 0; i < skey.SizeInBytes(); ++i)
+            skey[i] ^= k[i];
+        vc session_key_enc(VC_BSTRING, (const char *)(const byte *)skey, skey.SizeInBytes());
+
+        vc ret(VC_VECTOR);
+        // encrypted output is
+        // 0: session key encrypted with public key
+        // 1: public DH value to decrypt
+        ret[0] = session_key_enc;
+        ret[1] = our_public;
+        ret_material.append(ret);
+    }
+    session_key_out = session_key;
+
+    return ret_material;
+}
+
 vc
 vclh_sf_material(vc other_pub, vc key_out)
 {

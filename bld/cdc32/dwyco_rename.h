@@ -1,3 +1,4 @@
+#define dwyco_field_debug _real_dwyco_field_debug 
 #define dwyco_debug_dump _real_dwyco_debug_dump 
 #define dwyco_random_string2 _real_dwyco_random_string2 
 #define dwyco_eze2 _real_dwyco_eze2 

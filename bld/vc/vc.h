@@ -259,7 +259,6 @@ public:
 	vc(long i);
 	vc(const char *s);
 	vc(VcLexer&);
-	vc(struct vcnode *);
 	vc(enum vc_type, const char * = "nil", long extra_parm = 0);
     vc(VCFUNCP0, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCP1, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
