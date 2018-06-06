@@ -208,7 +208,7 @@ public:
     Q_INVOKABLE void set_invisible_state(int);
 
     // contact list related functions
-    Q_INVOKABLE void load_contacts();
+    Q_INVOKABLE int load_contacts();
     Q_INVOKABLE QUrl get_cq_results_url();
     Q_INVOKABLE void delete_cq_results();
 

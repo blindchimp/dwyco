@@ -17,7 +17,7 @@ import dwyco 1.0
 
 Page {
     id: rectangle1
-    anchors.fill: parent
+    //anchors.fill: parent
     property alias model: listView1.model
     property alias listview: listView1
     property string to_uid

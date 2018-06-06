@@ -352,14 +352,14 @@ ApplicationWindow {
 
     Loader {
         id: cqres
-        anchors.fill: parent
+        //anchors.fill: parent
         visible: false
-
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/CQRes.qml"
-            }
+        active: visible
+        Component {
+            id: wtf
+            CQRes {}
         }
+        sourceComponent: wtf
     }
 
 //    AdminBrowse {

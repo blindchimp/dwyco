@@ -1484,11 +1484,20 @@ DwycoCore::init()
     }
 }
 
-void
+int
 DwycoCore::load_contacts()
 {
 #ifdef ANDROID
+    if(QtAndroid::checkPermission("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
+    {
+        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_CONTACTS"));
+        if(m.value("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
+        {
+            return 0;
+        }
+    }
     notificationClient->load_contacts();
+    return 1;
 #else
     // just some test data, as desktops don't have contact lists yet
     dwyco_clear_contact_list();
@@ -1499,6 +1508,7 @@ DwycoCore::load_contacts()
 //    dwyco_add_contact("bar", "456-456", "fcktola1@gmail.com");
 //    dwyco_add_contact("bar", "456-456", "dwight@dwyco.com");
     dwyco_add_contact("bar", "456-456", "jewelscumberland@gmail.com");
+    return 1;
 #endif
 }
 
@@ -2157,7 +2167,7 @@ DwycoCore::delete_user(QString uid)
 static QByteArray
 get_cq_results_filename()
 {
-    return add_pfx(Tmp_pfx, "cq.xml");
+    return add_pfx(User_pfx, "cq.xml");
 
 }
 
