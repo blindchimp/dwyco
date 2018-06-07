@@ -151,7 +151,7 @@ Page {
 
     Label {
         id: privacy_details
-        text: qsTr("When you click REFRESH, only the Email addresses in your contact list are securely sent to Dwyco. The servers check our database for those Email addresses, and return the results securely to the app. The servers then discard the information used to perform the check. We DO NOT send any emails to the contacts in your contact list.")
+        text: qsTr("When you click SEND, only the Email addresses in your contact list are securely sent to Dwyco. The servers check our database for those Email addresses, and return the results securely to the app. The servers then discard the information used to perform the check. We DO NOT send any emails to the contacts in your contact list.")
         visible: false
         anchors.fill: parent
         wrapMode: Text.Wrap

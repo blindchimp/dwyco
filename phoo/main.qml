@@ -354,12 +354,16 @@ ApplicationWindow {
         id: cqres
         //anchors.fill: parent
         visible: false
-        active: visible
         Component {
             id: wtf
             CQRes {}
         }
-        sourceComponent: wtf
+        onVisibleChanged: {
+            if(visible)
+                sourceComponent = wtf
+        }
+
+        //sourceComponent: wtf
     }
 
 //    AdminBrowse {
