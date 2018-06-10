@@ -17,6 +17,7 @@ import android.os.Bundle;
 import java.util.Iterator;
 import java.util.Set;
 import android.content.SharedPreferences;
+import android.os.Build;
 
 public class Push_Notification extends BroadcastReceiver {
 
@@ -24,7 +25,12 @@ public class Push_Notification extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-// TODO Auto-generated method stub
+
+// see note in notificationclient::start_background, this is TBD for O+
+     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+         return;
+       }
+
         this.context = context;
         catchLog("int " + intent);
         dumpIntent(intent);
@@ -49,6 +55,7 @@ public class Push_Notification extends BroadcastReceiver {
 
             startService();
         }
+
     }
 
     public void startService() {
