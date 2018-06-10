@@ -54,7 +54,7 @@ import android.util.Log;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.provider.DocumentsContract;
-import     android.content.ContentUris;
+import android.content.ContentUris;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.os.Vibrator;
@@ -202,6 +202,15 @@ public class NotificationClient extends QtActivity
         String user_pfx = sp.getString("user_pfx", ".");
         String tmp_pfx = sp.getString("tmp_pfx", ".");
         prefs_lock.release();
+        // this is just a hack to avoid a crash in android O
+        // this disables the background processing that happens when the
+        // main app goes to sleep, which means delivery of large messages
+        // will not work quite right (only happens when the app is
+        // active). this will have to be fixed eventually.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return;
+            }
+
         Intent i = new Intent(m_instance, Dwyco_Message.class);
         i.putExtra("lockport", port);
         i.putExtra("sys_pfx", sys_pfx);
@@ -209,6 +218,7 @@ public class NotificationClient extends QtActivity
         i.putExtra("tmp_pfx", tmp_pfx);
 
         m_instance.startService(i);
+
     }
 
     public static void load_contacts() {
