@@ -87,7 +87,7 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 INCLUDEPATH += $${DINC}/v4lcap
 
 #QMAKE_CXXFLAGS += -g -fsanitize=address #-O2
-#QMAKE_LFLAGS += -g -fsanitize=address
+QMAKE_LFLAGS += -g -fsanitize=address
 QMAKE_CXX=ccache g++
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameters
 
@@ -328,7 +328,7 @@ DISTFILES += \
     androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java
 
 contains(ANDROID_TARGET_ARCH,x86) {
-    ANDROID_EXTRA_LIBS = $$PWD/../libs/x86/libdwyco_jni.so
+    ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
 }
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
