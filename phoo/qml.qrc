@@ -43,6 +43,8 @@
         <file>AppDrawer.qml</file>
         <file>AppDrawerForm.ui.qml</file>
         <file>SimpleMsgBrowse.qml</file>
+        <file>VidCall.qml</file>
+        <file>VidCallForm.ui.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
 </RCC>

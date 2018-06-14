@@ -288,7 +288,9 @@ Page {
             var objn = model.get(index).objectName
             if(objn === "send_video" || objn === "accept_and_send" ||
                     objn === "accept") {
-                stack.push(vid_call_view)
+                //stack.push(vid_call_view)
+                vidpanel.visible = true
+                core.enable_video_capture_preview(1)
             }
         }
         onButton_pressed: {
@@ -427,8 +429,7 @@ Page {
         visible: false
     }
 
-    ListView {
-        id: listView1
+    RowLayout {
         anchors.bottom: textField1.top
         anchors.bottomMargin: 10
         anchors.right: parent.right
@@ -437,11 +438,32 @@ Page {
         anchors.leftMargin: 0
         anchors.top: parent.top
         anchors.topMargin: 0
-        delegate: msglist_delegate
-        clip: true
-        spacing: 5
-        ScrollBar.vertical: ScrollBar { }
-        verticalLayoutDirection: ListView.BottomToTop
+        Layout.margins: mm(1)
+        VidCall {
+            id: vidpanel
+            visible: false
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+        }
+
+        ListView {
+            id: listView1
+//            anchors.bottom: textField1.top
+//            anchors.bottomMargin: 10
+//            anchors.right: parent.right
+//            anchors.rightMargin: 0
+//            anchors.left: parent.left
+//            anchors.leftMargin: 0
+//            anchors.top: parent.top
+//            anchors.topMargin: 0
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            delegate: msglist_delegate
+            clip: true
+            spacing: 5
+            ScrollBar.vertical: ScrollBar { }
+            verticalLayoutDirection: ListView.BottomToTop
+        }
     }
 
 
