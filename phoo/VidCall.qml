@@ -2,8 +2,6 @@ import QtQuick 2.9
 import dwyco 1.0
 
 VidCallForm {
-    anchors.fill: parent
-
     Connections {
         target: core
 

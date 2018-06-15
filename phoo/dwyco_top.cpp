@@ -1625,7 +1625,7 @@ DwycoCore::create_call_context(QString uid)
 void
 DwycoCore::delete_call_context(QString uid)
 {
-    DwOString buid = QByteArray::fromHex(uid.toLatin1());
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
     QList<simple_call *> c = simple_call::Simple_calls.query_by_member(buid, &simple_call::uid);
     simple_call *sc = 0;
     if(c.count() == 0)
@@ -1638,7 +1638,7 @@ DwycoCore::delete_call_context(QString uid)
 void
 DwycoCore::uid_keyboard_input(QString uid)
 {
-    DwOString buid = QByteArray::fromHex(uid.toLatin1());
+    QByteArray buid = QByteArray::fromHex(uid.toLatin1());
     QList<simple_call *> c = simple_call::Simple_calls.query_by_member(buid, &simple_call::uid);
     if(c.count() == 0)
         return;

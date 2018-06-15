@@ -55,7 +55,7 @@ call_del(int chan_id)
 }
 
 void
-call_del_by_uid(const DwOString& uid)
+call_del_by_uid(const QByteArray& uid)
 {
     int n = Calls.count();
     for(int i = 0; i < n; ++i)
@@ -98,7 +98,7 @@ call_find(int chan_id, dwyco_call_type& call_out)
 }
 
 int
-call_destroy_by_uid(const DwOString& uid)
+call_destroy_by_uid(const QByteArray& uid)
 {
     int n = Calls.count();
     int nk = 0;
@@ -117,7 +117,7 @@ call_destroy_by_uid(const DwOString& uid)
 }
 
 int
-call_exists_by_uid(const DwOString& uid)
+call_exists_by_uid(const QByteArray& uid)
 {
     int n = Calls.count();
     for(int i = 0; i < n; ++i)
@@ -158,7 +158,7 @@ call_destroy_by_type(const char *type, int dir)
     int nk = 0;
     for(int i = 0; i < n; ++i)
     {
-        if(Calls[i].call_type.eq(type))
+        if(Calls[i].call_type == type)
         {
             if(dir == DWYCO_CT_ANY ||
                     dir == Calls[i].dir)
@@ -184,7 +184,7 @@ call_destroy_by_mask(const char *type, int dir,
     int nk = 0;
     for(int i = 0; i < n; ++i)
     {
-        if(type == 0 || Calls[i].call_type.eq(type))
+        if(type == 0 || Calls[i].call_type == type)
         {
             if(dir == DWYCO_CT_ANY ||
                     dir == Calls[i].dir)
@@ -298,7 +298,7 @@ call_exists_by_type(const char *type, int dir)
     int n = Calls.count();
     for(int i = 0; i < n; ++i)
     {
-        if(Calls[i].call_type.eq(type))
+        if(Calls[i].call_type == type)
         {
             if(dir == DWYCO_CT_ANY)
                 return 1;
@@ -310,12 +310,12 @@ call_exists_by_type(const char *type, int dir)
 }
 
 int
-call_exists_by_type_to_uid(const char *type, const DwOString& uid, int dir)
+call_exists_by_type_to_uid(const char *type, const QByteArray& uid, int dir)
 {
     int n = Calls.count();
     for(int i = 0; i < n; ++i)
     {
-        if(Calls[i].call_type.eq(type) && Calls[i].uid == uid)
+        if(Calls[i].call_type == type && Calls[i].uid == uid)
         {
             if(dir == DWYCO_CT_ANY)
                 return 1;

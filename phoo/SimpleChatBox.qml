@@ -354,6 +354,13 @@ Page {
                 top_toolbar_text.text = core.uid_to_name(uid)
             }
         }
+        onConnect_terminated: {
+            if(chatbox.to_uid == uid) {
+                console.log("CONNECT TERMINATED")
+            }
+
+
+        }
 
 //        onIgnore_event: {
 //            if(uid === to_uid) {
@@ -443,7 +450,7 @@ Page {
             id: vidpanel
             visible: false
             Layout.fillHeight: true
-            Layout.fillWidth: true
+            Layout.minimumWidth: parent.width / 2
         }
 
         ListView {

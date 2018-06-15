@@ -2,28 +2,21 @@ import QtQuick 2.4
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.3
 
-Item {
+Image {
     property alias vid_incoming: vid_incoming
     property alias vid_preview: vid_preview
-    anchors.fill: parent
-    ColumnLayout {
-        id: columnLayout
-        anchors.fill: parent
+    clip: true
 
-        Image {
-            id: vid_incoming
-            fillMode: Image.PreserveAspectFit
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-            //source: "qrc:/qtquickplugin/images/template_image.png"
-        }
+    id: vid_incoming
+    fillMode: Image.PreserveAspectFit
 
-        Image {
-            id: vid_preview
-            fillMode: Image.PreserveAspectFit
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-            //source: "qrc:/qtquickplugin/images/template_image.png"
-        }
+    Image {
+        id: vid_preview
+        fillMode: Image.PreserveAspectFit
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        width: parent.width / 4
+        height: parent.height / 4
+        clip: true
     }
 }

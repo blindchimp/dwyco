@@ -263,9 +263,14 @@ signals:
     void decorate_user(const QString& uid);
     void sys_chat_server_status(int id, int status);
     void qt_app_state_change(int app_state);
+
+    // this are sent when a call context is up
     void rem_keyboard_active(const QString& uid, int active);
-    void image_picked(const QString& fn);
     void established_active(const QString& uid, int active);
+    void connect_terminated(const QByteArray& uid);
+    void connectedChanged(int, const QByteArray& uid);
+
+    void image_picked(const QString& fn);
     void cq_results_received(int succ);
     void msg_recv_state(int cmd, const QString& mid);
     void msg_recv_progress(const QString& mid, int percent);
