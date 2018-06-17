@@ -72,6 +72,9 @@ struct QckDone
     // this is so when the channel dies, we can clean up
     // callback associated with it (fire them with generic errors)
     int channel; // channel from which response should appear
+    // time we got q-ed up, kluge to adjust timeouts
+    // if the response time starts to creep up
+    time_t time_qed;
 
 
     QckDone() {
@@ -80,6 +83,7 @@ struct QckDone
         permanent = 0;
         channel = -1;
         timeout = -1;
+        time_qed = -1;
     }
     QckDone(QDFUNCP cb, void *user_arg,
             vc user_arg2 = vcnil, ValidPtr v = ValidPtr(), vc t = vcnil, int s = 0, int p = 0, int chan = -1, int tmout = -1)
@@ -93,6 +97,7 @@ struct QckDone
             this->timeout = tmout + time(0);
         else
             this->timeout = -1;
+        time_qed = -1;
     }
 
     // note: we don't check arg1 and arg2 because they are user supplied

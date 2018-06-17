@@ -39,6 +39,10 @@ int Serial;
 int No_database = 0;
 vc Auto_update_hash;
 vc DH_public;
+// this is used to figure out if there is a bulk operation
+// in progress and we want to eliminate timeouts
+// temporarily.
+static int Enable_timeout;
 
 static vc
 reqtype(const char *name, const QckDone& d)
@@ -60,7 +64,9 @@ dirth_send(QckMsg& m, QckDone& d)
     static vc dhsf("dhsf");
 
     vc what = m[QTYPE][0];
-    d.set_timeout(30);
+    if(Enable_timeout)
+        d.set_timeout(30);
+    d.time_qed = time(0);
     if(what == cs1 || what == cs2)
     {
         d.channel = Chat_id;
@@ -253,6 +259,16 @@ dirth_poll_response()
                 if(!q.permanent)
                     Waitq.del(i);
                 q.done(v);
+                if(q.time_qed != -1)
+                {
+                    if(time(0) - q.time_qed > 15)
+                    {
+                        Enable_timeout = 0;
+                    }
+                    else
+                        Enable_timeout = 1;
+                }
+
                 ret = 1;
                 break;
             }
