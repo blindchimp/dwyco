@@ -503,7 +503,7 @@ exit_codec()
 
 #ifndef DWYCO_POWERBROWSE
     clean_cruft();
-    clean_profile_cache(60, 1000);
+    clean_profile_cache(120, 6000);
     clean_pk_cache(365, 1500);
 #endif
 #ifdef DW_RTLOG
