@@ -266,9 +266,8 @@ signals:
 
     // this are sent when a call context is up
     void rem_keyboard_active(const QString& uid, int active);
-    void established_active(const QString& uid, int active);
     void connect_terminated(const QByteArray& uid);
-    void connectedChanged(int, const QByteArray& uid);
+    void connectedChanged(int connected, const QByteArray& uid);
 
     void image_picked(const QString& fn);
     void cq_results_received(int succ);

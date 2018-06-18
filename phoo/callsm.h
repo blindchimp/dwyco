@@ -153,9 +153,7 @@ signals:
 
     // signals for "typing..." indication
     void rem_keyboard_active(int);
-    void rem_keyboard_active_uid(const QString&, int);
-
-    void sig_on_connected_change_uid(const QString&, int);
+    void rem_keyboard_active(const QString&, int);
 
 private slots:
     void on_actionPause_toggled(bool arg1);
@@ -166,6 +164,10 @@ private slots:
 
     void on_simple_call_connectedChanged(int connected) {
         emit connectedChanged(connected, uid.toHex());
+    }
+
+    void on_simple_call_rem_keyboard_active(int active) {
+        emit rem_keyboard_active(QString(uid.toHex()), active);
     }
 
     void recv_control_msg(int ui_id, QByteArray com, int arg1, int arg2, QByteArray str);
@@ -242,9 +244,6 @@ private slots:
     void reemit_mute();
 
     void audio_recording_event(int, int);
-
-    void rem_keyboard_active_with_uid(int);
-    void connected_changed_uid(int);
 
     //void on_pal_button_clicked();
     //void update_pal(QByteArray uid);

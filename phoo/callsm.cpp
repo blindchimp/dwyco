@@ -180,9 +180,7 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     connect(this, SIGNAL(audio_recording(int,int)), Mainwinform, SIGNAL(audio_recording(int,int)));
     connect(Mainwinform, SIGNAL(audio_recording(int,int)), this, SLOT(audio_recording_event(int,int)));
 
-    connect(this, SIGNAL(rem_keyboard_active(int)), this, SLOT(rem_keyboard_active_with_uid(int)));
-    connect(this, SIGNAL(rem_keyboard_active_uid(const QString&,int)), Mainwinform, SIGNAL(rem_keyboard_active(const QString&, int)));
-
+    connect(this, SIGNAL(rem_keyboard_active(const QString&,int)), Mainwinform, SIGNAL(rem_keyboard_active(const QString&, int)));
     connect(this, SIGNAL(connect_terminated(QByteArray)), Mainwinform, SIGNAL(connect_terminated(QByteArray)));
     connect(this, SIGNAL(connectedChanged(int,QByteArray)), Mainwinform, SIGNAL(connectedChanged(int,QByteArray)));
 
@@ -562,15 +560,6 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     cts = 0;
     mute = 0;
     m_connected = 0;
-    connect(this, SIGNAL(connectedChanged(int)), this, SLOT(connected_changed_uid(int)));
-    connect(this, SIGNAL(sig_on_connected_change_uid(QString,int)), Mainwinform, SIGNAL(established_active(QString, int)));
-
-}
-
-void
-simple_call::connected_changed_uid(int a)
-{
-    emit sig_on_connected_change_uid(QString(uid.toHex()), a);
 }
 
 void
@@ -1002,12 +991,6 @@ simple_call::get_simple_call(QByteArray uid)
     else
         cdcxpanic("simple_call error");
     return sc;
-}
-
-void
-simple_call::rem_keyboard_active_with_uid(int i)
-{
-    emit rem_keyboard_active_uid(QString(uid.toHex()), i);
 }
 
 void

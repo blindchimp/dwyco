@@ -331,11 +331,6 @@ Page {
                 ind_typing = active
             }
         }
-        onEstablished_active : {
-            if(uid === to_uid) {
-                ind_online = active
-            }
-        }
         onNew_msg : {
             // if we're visible, reset the unviewed msgs thing since presumably
             // we can see it. might want to set it if the view is scrolled up
@@ -358,9 +353,21 @@ Page {
             if(chatbox.to_uid == uid) {
                 console.log("CONNECT TERMINATED")
             }
-
-
         }
+
+        onConnectedChanged: {
+                if(chatbox.to_uid == uid) {
+                    console.log("ConnectedChanged ", connected)
+                    if(connected === 0 && vidpanel.visible) {
+                        vidpanel.visible = false
+                        core.enable_video_capture_preview(0)
+                    }
+                    ind_online = connected === 1 ? true : false
+                }
+            }
+
+
+
 
 //        onIgnore_event: {
 //            if(uid === to_uid) {
