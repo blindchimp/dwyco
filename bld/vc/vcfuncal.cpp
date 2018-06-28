@@ -323,7 +323,7 @@ vc_funcall::eval() const
 
 	int n = arglist.num_elems();
 
-	VCArglist al(n, 0, 1);
+    VCArglist al(n, 0, 1, 8, 0, 1);
 
 #ifdef VCDBG
 	dbg(fun) = f;

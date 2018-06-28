@@ -248,11 +248,16 @@ public:
 	inline vc(const vc& v);
 	inline notvirtual ~vc() ;
 	inline notvirtual vc& operator=(const vc& v);
+        inline vc(vc&& v);
+        inline vc& operator=(vc&& v);
 #else
 	vc() ;
 	vc(const vc& v);
 	notvirtual ~vc() ;
 	notvirtual vc& operator=(const vc& v);
+        vc(vc&& v);
+        vc& operator=(vc&& v);
+
 #endif
 	vc(double d);
 	vc(int i);
@@ -568,6 +573,27 @@ RCQDEC(rep)
 		rep = v.rep;
 	}
 	return *this;
+}
+
+inline
+vc::vc(vc&& v)
+{
+    rep = v.rep;
+    v.rep = 0;
+}
+
+inline
+vc&
+vc::operator=(vc&& v)
+{
+    if(this != &v)
+    {
+    vc_default *tmp = rep;
+    rep = v.rep;
+    v.rep = tmp;
+
+    }
+    return *this;
 }
 
 #endif
