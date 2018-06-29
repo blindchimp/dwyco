@@ -14,12 +14,10 @@ class Allocator;
 #include "vcio.h"
 #include "vctrt.h"
 
-#ifdef UNIX
+#ifdef LINUX
+#include <unistd.h>
 #include "signal.h"
 #endif
-
-class DwAllocator;
-DwAllocator *Default_alloc;
 
 static void
 out_of_mem()
@@ -31,7 +29,7 @@ out_of_mem()
 int
 main(int argc, char *argv[])
 {
-#ifdef UNIX
+#ifdef LINUX
     signal(SIGPIPE, SIG_IGN);
 #endif
 #ifdef LINUX

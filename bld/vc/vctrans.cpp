@@ -271,6 +271,7 @@ vc
 vc_funcall::translate(VcIO o) const
 {
     VCArglist enames;
+    enames.set_size(arglist.num_elems());
     for(int i = 0; i < arglist.num_elems(); ++i)
     {
         enames.append(arglist[i].translate(o));
@@ -306,6 +307,7 @@ vc_funcall::translate(VcIO o) const
             our_impl << "static vc " << ourname << "() { \n";
             our_impl << "vc ret;";
             our_impl << "VCArglist a;\n";
+            our_impl << "a.set_size(" << arglist.num_elems() << ");";
             for(int i = 0; i < arglist.num_elems(); ++i)
             {
                 our_impl << "a.append(" << enames[i] << "());\n";
@@ -321,6 +323,7 @@ vc_funcall::translate(VcIO o) const
         our_impl << "static vc " << ourname << "() { \n";
         our_impl << "vc ret;";
         our_impl << "VCArglist a;\n";
+        our_impl << "a.set_size(" << arglist.num_elems() << ");";
         for(int i = 0; i < arglist.num_elems(); ++i)
         {
             our_impl << "a.append(" << enames[i] << "());\n";
@@ -360,6 +363,7 @@ vc_cfunc::emitlink(VCArglist *a, vc ourname, VcIO o) const
         if(varadic)
         {
             o << "VCArglist a;\n";
+            o << "a.set_size(" << a->num_elems() << ");\n";
             for(int i = 0; i < a->num_elems(); ++i)
             {
                 o << "a.append(" << (*a)[i] << "());\n";
@@ -705,7 +709,8 @@ trans_compile(VCArglist *a, VcIO o)
 
     DwString fnm("vc ret;vc fnm = %1();");
     fnm.arg((const char *)(*a)[0]);
-    DwString arglist_tmpl("VCArglist na;");
+    DwString arglist_tmpl("VCArglist na;na.set_size(%1);");
+    arglist_tmpl.arg(num_to_str(a->num_elems() - 2));
     for(int i = 1; i < a->num_elems() - 1; ++i)
     {
         arglist_tmpl += DwString("na.append(%1());").arg((const char *)(*a)[i]);
