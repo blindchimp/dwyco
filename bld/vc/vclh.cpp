@@ -125,8 +125,8 @@ user_panic(const char *str)
 	if(!did_backtrace)
 	{
 		VCArglist al;
-		al[0] = vctrue;
-        al[1] = str;
+        al.append(vctrue);
+        al.append(str);
 		did_backtrace = 1;
 		dobacktrace(&al);
 	}
@@ -282,15 +282,6 @@ vc::bomb_op_func() const
 {
 	USER_BOMB2("atomic-op on function.");
 }
-
-static
-void
-space_out(int n)
-{
-	for(int i = 0; i < n; ++i)
-		VcOutput << ' ';
-}
-
 
 vc
 doputfile(vc file, vc item)
@@ -664,7 +655,7 @@ domap(VCArglist *a)
     vc m(VC_MAP, "", tsize);
 	for(int i = 0; i < nargs; ++i)
 	{
-		vc& imap = (*a)[i];
+        vc imap = (*a)[i];
 		if(imap.type() != VC_VECTOR || imap.num_elems() != 2)
 			USER_BOMB("initial mappings must be 2-element vectors", vcnil);
 		m.add_kv(imap[0], imap[1]);
@@ -683,7 +674,7 @@ create_tree(VCArglist *a)
     vc m(VC_TREE);
 	for(int i = 0; i < nargs; ++i)
 	{
-		vc& imap = (*a)[i];
+        vc imap = (*a)[i];
 		if(imap.type() != VC_VECTOR || imap.num_elems() != 2)
 			USER_BOMB("initial mappings must be 2-element vectors", vcnil);
 		m.add_kv(imap[0], imap[1]);
@@ -858,7 +849,6 @@ doresearch2(VCArglist *al)
 		USER_BOMB("first arg to search must be regex", vcnil);
 	if(str.type() != VC_STRING)
 		USER_BOMB("second arg to search must be string", vcnil);
-	const char *strval = str;
 	int len = str.len();
 	if(nargs == 3)
 	{
@@ -1335,7 +1325,7 @@ do_exploded_funcall(vc fun, vc argvec)
 
 	int nargs = argvec.num_elems();
 	for(int i = 0; i < nargs; ++i)
-		a[i] = argvec[i];
+        a.append(argvec[i]);
 	return fun(&a);
 }
 
@@ -2479,12 +2469,12 @@ vc_file_error(vc *vf)
 	if(v->emode == EXCEPTIONS)
 	{
 		VCArglist a;
-		a[0] = v->errvc;
+        a.append(v->errvc);
 		vc v2;
 		v2.attach(v);
-		a[1] = v2;
-		a[2] = v->errvc1;
-		a[3] = v->errvc2;
+        a.append(v2);
+        a.append(v->errvc1);
+        a.append(v->errvc2);
 		Vcmap->excraise(v->errvc, &a);
 		CHECK_ANY_BO(VC_FILE_BACKOUT);
 		return VC_FILE_RESUME;

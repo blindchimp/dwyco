@@ -273,7 +273,7 @@ vc_funcall::translate(VcIO o) const
     VCArglist enames;
     for(int i = 0; i < arglist.num_elems(); ++i)
     {
-        enames[i] = arglist[i].translate(o);
+        enames.append(arglist[i].translate(o));
     }
     vc fname = func.translate(o);
     vc ourname = gensym();

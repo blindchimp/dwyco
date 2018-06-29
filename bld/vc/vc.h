@@ -165,7 +165,10 @@ class vc_fundef;
 #else
 template<class T> class DwVec;
 #endif
-typedef DwVec<vc> VCArglist;
+
+//typedef DwVec<vc> VCArglist;
+#include "dwsvec.h"
+typedef DwSVec<vc> VCArglist;
 
 typedef vc (*VCFUNCP0)();
 typedef vc (*VCFUNCP1)(vc);

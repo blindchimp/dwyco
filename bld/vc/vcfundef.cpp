@@ -20,7 +20,7 @@ vc_fundef::vc_fundef(const char *name, VCArglist *a, int sty, int decrypt)
 	: vc_func(vc(name), sty)
 {
 	int nargs = a->num_elems();
-	bindargs = new VCArglist;
+    bindargs = new DwVec<vc>;
 	// if a vector is passed as the first argument,
 	// we assume its is a list of arguments
 	// to be broken-out

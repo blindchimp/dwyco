@@ -164,8 +164,8 @@ lh_uv_socksend(VCArglist *a)
 	{
 		USER_BOMB("socket send must have at least two args", vcnil);
 	}
-	vc& sock = (*a)[0];
-	vc& item = (*a)[1];
+    vc sock = (*a)[0];
+    vc item = (*a)[1];
 	vc v;
 	if(a->num_elems() == 3)
 		v = sock.socket_put_obj(item, (*a)[2], 0);
@@ -185,7 +185,7 @@ lh_uv_sockrecv(VCArglist *a)
 	{
 		USER_BOMB("socket recv must have at least one arg", vcnil);
 	}
-	vc& sock = (*a)[0];
+    vc sock = (*a)[0];
 
 	int avail;
 	vc recvd_item = sock.socket_get_obj(avail, addr_info);
