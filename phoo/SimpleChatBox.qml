@@ -308,14 +308,49 @@ Page {
 //        }
 //        z: 5
 //    }
-    CallButtonLink {
-        id: accept_button
-        width: parent.width
-        height: implicitHeight
-        but_name: "accept"
-        //visible: true
-        text: "VIDEO VIDEO"
+    Row{
         z: 5
+        CallButtonLink {
+            id: accept_button
+            //width: parent.width
+            //height: implicitHeight
+            but_name: "accept"
+            //visible: true
+            text: "Accept call"
+            z: 5
+
+        }
+        CallButtonLink {
+            but_name: "accept_and_send"
+            text: "Accept and send"
+            z: 5
+        }
+
+        CallButtonLink {
+            but_name: "send_video"
+            text: "Send video"
+            z: 5
+        }
+
+        CallButtonLink {
+            but_name: "hangup"
+            text: "Hangup"
+        }
+
+        CallButtonLink {
+            but_name: "reject"
+            text: "Reject"
+        }
+
+        CallButtonLink {
+            but_name: "cancel_req"
+            text: "Cancel"
+        }
+
+        CallButtonLink {
+            but_name: "actionPause"
+            text: "Pause"
+        }
 
     }
 

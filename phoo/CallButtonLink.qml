@@ -9,29 +9,10 @@ Button {
     property int model_index;
     property string but_name;
 
-//    Connections {
-//        target: chatbox_page
-//        onTo_uidChanged: {
-//            console.log("to uid changed ", to_uid)
-
-//            //but.target = call_buttons_model.get(but_name)
-//        }
-//    }
-
-    Binding {
-        target: our_but
-        property: "visible"
-        value: call_buttons_model.get(but_name).visible
-    }
-
-
-
-//    Connections {
-//        id: but
-//        onVisibleChanged: {
-//            our_but.visible = call_buttons_model.get(but_name).visible
-//        }
-//    }
+    visible: call_buttons_model.get(but_name).visible
+    enabled: call_buttons_model.get(but_name).enabled
+    checkable: call_buttons_model.get(but_name).checkable
+    checked: call_buttons_model.get(but_name).checked
 
     onClicked: {
         console.log("LINK CLICK ", but_name)
@@ -48,6 +29,6 @@ Button {
 //        model.get(index).triggered(state)
 //    }
     onToggled: {
-        call_buttons_model.get(but_name).toggled(state)
+        call_buttons_model.get(but_name).toggle()
     }
 }
