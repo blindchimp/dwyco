@@ -16,7 +16,7 @@ import dwyco 1.0
 
 
 Page {
-    id: rectangle1
+    id: chatbox_page
     //anchors.fill: parent
     property alias model: listView1.model
     property alias listview: listView1
@@ -31,6 +31,7 @@ Page {
     property int inh_block_warning: 0
     property bool multiselect_mode: false
     property url cur_source
+    property var call_buttons_model
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -278,34 +279,44 @@ Page {
         }
 
         }
-    CallButtons {
-        id: call_buttons
+//    CallButtons {
+//        id: call_buttons
+//        width: parent.width
+//        height: parent.height
+//        onButton_click: {
+//            model.get(index).click()
+//            console.log("button click ", model.get(index).objectName)
+//            var objn = model.get(index).objectName
+//            if(objn === "send_video" || objn === "accept_and_send" ||
+//                    objn === "accept") {
+//                //stack.push(vid_call_view)
+//                vidpanel.visible = true
+//                core.enable_video_capture_preview(1)
+//            }
+//        }
+//        onButton_pressed: {
+//            model.get(index).pressed()
+//        }
+//        onButton_released: {
+//            model.get(index).released()
+//        }
+//        onButton_triggered: {
+//            model.get(index).triggered(state)
+//        }
+//        onButton_toggled: {
+//            model.get(index).toggled(state)
+//        }
+//        z: 5
+//    }
+    CallButtonLink {
+        id: accept_button
         width: parent.width
-        height: parent.height
-        onButton_click: {
-            model.get(index).click()
-            console.log("button click ", model.get(index).objectName)
-            var objn = model.get(index).objectName
-            if(objn === "send_video" || objn === "accept_and_send" ||
-                    objn === "accept") {
-                //stack.push(vid_call_view)
-                vidpanel.visible = true
-                core.enable_video_capture_preview(1)
-            }
-        }
-        onButton_pressed: {
-            model.get(index).pressed()
-        }
-        onButton_released: {
-            model.get(index).released()
-        }
-        onButton_triggered: {
-            model.get(index).triggered(state)
-        }
-        onButton_toggled: {
-            model.get(index).toggled(state)
-        }
+        height: implicitHeight
+        but_name: "accept"
+        //visible: true
+        text: "VIDEO VIDEO"
         z: 5
+
     }
 
     background: Rectangle {
@@ -397,7 +408,8 @@ Page {
         top_toolbar_text.text = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
-        call_buttons.model = core.get_button_model(to_uid)
+        //call_buttons.model = core.get_button_model(to_uid)
+        call_buttons_model = core.get_button_model(to_uid)
     }
 
     Loader {

@@ -45,6 +45,7 @@
         <file>SimpleMsgBrowse.qml</file>
         <file>VidCall.qml</file>
         <file>VidCallForm.ui.qml</file>
+        <file>CallButtonLink.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
 </RCC>
