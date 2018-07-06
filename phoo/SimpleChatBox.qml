@@ -318,18 +318,30 @@ Page {
             //visible: true
             text: "Accept call"
             z: 5
+            onClicked: {
+                vidpanel.visible = true
+                core.enable_video_capture_preview(1)
+            }
 
         }
         CallButtonLink {
             but_name: "accept_and_send"
             text: "Accept and send"
             z: 5
+            onClicked: {
+                vidpanel.visible = true
+                core.enable_video_capture_preview(1)
+            }
         }
 
         CallButtonLink {
             but_name: "send_video"
             text: "Send video"
             z: 5
+            onClicked: {
+                vidpanel.visible = true
+                core.enable_video_capture_preview(1)
+            }
         }
 
         CallButtonLink {
