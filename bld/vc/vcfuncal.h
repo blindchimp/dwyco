@@ -30,7 +30,7 @@ friend class VcFuncallDbgNode;
 friend class functx;
 
 private:
-	VCArglist arglist;			// list of argument expressions
+        DwVec<vc> arglist;			// list of argument expressions
 	vc func;					// function expression
 	vc_cvar_src_coord start;	// source code start
 	vc_cvar_src_coord end;      // source code end

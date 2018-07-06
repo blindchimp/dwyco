@@ -47,7 +47,13 @@ vc_cfunc::do_arg_setup(VCArglist *a) const
 			((n_call_args < n_formal_args) ?
 				"fewer args than expected, unspec'ed args treated as nil." :
 				"more args and expected, extra args ignored.") << "\n";
-	}
+
+    }
+    while(n_call_args < n_formal_args)
+    {
+        a->append(vcnil);
+        ++n_call_args;
+    }
 }
 
 #ifdef LHPROF
