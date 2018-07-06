@@ -12,6 +12,16 @@ FORCE_DESKTOP_VGQT=0
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
 
+CONFIG(appdir) {
+target.path=/usr/bin
+appdir_desktop.path=/usr/share/applications
+appdir_desktop.files=phoo.desktop
+appdir_icon.path=/usr/share/icons/hicolor/256x256/apps
+appdir_icon.files=phoo.png
+INSTALLS += appdir_icon appdir_desktop
+}
+
+
 QT += core qml quick multimedia network xml widgets #positioning
 QT += quickcontrols2
 android: QT += androidextras
@@ -77,7 +87,7 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 INCLUDEPATH += $${DINC}/v4lcap
 
 #QMAKE_CXXFLAGS += -g -fsanitize=address #-O2
-#QMAKE_LFLAGS += -g -fsanitize=address
+QMAKE_LFLAGS += -g -fsanitize=address
 QMAKE_CXX=ccache g++
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameters
 
@@ -103,7 +113,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
-$${SHADOW}/../lib/libuv.a \
+$${D}/libuv/libuv.a \
 -lsqlite3 \
 -lSDL \
 -lv4l2 \
@@ -141,7 +151,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${PWD}/../bld/macdrv/libmacdrv.a \
-$${SHADOW}/lib/libuv.a \
+$${D}/libuv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
 
@@ -226,29 +236,31 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 #INCLUDEPATH += dllwin
 #LIBS +=  $${PWD}/cdcdll8.lib winmm.lib user32.lib kernel32.lib
 
-LIBS += \\Users\\dwight\\qt-qml-models\\build\\desktop\\release\\QtQmlModels.lib
 # use this for linking with static cdc lib
 DEFINES += CDCCORE_STATIC
 # use this if you are building with qmake files
-D = \\Users\\dwight\depot\\build-dwycore-phoo\\bld
+D = $$OUT_PWD\\..\\bld
+S=debug
+
 LIBS += \
-$${D}\\cdc32\\release\\cdc32.lib \
-$${D}\\vc\\release\\vc.lib \
-$${D}\\crypto5\\release\\crypto5.lib \
-$${D}\\dwcls\\release\\dwcls.lib \
-$${D}\\gsm\\release\\gsm.lib \
-$${D}\\kazlib\\release\\kazlib.lib \
-$${D}\\lpc\\release\\lpc.lib \
-$${D}\\ppm\\release\\ppm.lib \
-$${D}\\pgm\\release\\pgm.lib \
-$${D}\\pbm\\release\\pbm.lib \
-$${D}\\zlib\\release\\zlib.lib \
-$${D}\\jenkins\\release\\jenkins.lib \
-$${D}\\vorbis112\release\vorbis.lib \
-$${D}\\theora\release\theora.lib \
-$${D}\\speex\release\speex.lib \
-$${D}\\ogg\release\ogg.lib \
-$${D}\\jhead\release\jhead.lib \
+$${D}\\cdc32\\$${S}\\cdc32.lib \
+$${D}\\vc\\$${S}\\vc.lib \
+$${D}\\crypto5\\$${S}\\crypto5.lib \
+$${D}\\dwcls\\$${S}\\dwcls.lib \
+$${D}\\gsm\\$${S}\\gsm.lib \
+$${D}\\kazlib\\$${S}\\kazlib.lib \
+$${D}\\ppm\\$${S}\\ppm.lib \
+$${D}\\pgm\\$${S}\\pgm.lib \
+$${D}\\pbm\\$${S}\\pbm.lib \
+$${D}\\zlib\\$${S}\\zlib.lib \
+$${D}\\jenkins\\$${S}\\jenkins.lib \
+$${D}\\vorbis112\\$${S}\\vorbis.lib \
+$${D}\\theora\\$${S}\\theora.lib \
+$${D}\\speex\\$${S}\\speex.lib \
+$${D}\\ogg\\$${S}\\ogg.lib \
+$${D}\\jhead\\$${S}\\jhead.lib \
+$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
+$${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib binmode.obj
 
 #\\mk\\depot\\dwycore\\bld\\vorbis112\\win32\\vs2003\\libvorbis\\Debug\\libvorbis.lib \
@@ -316,7 +328,7 @@ DISTFILES += \
     androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java
 
 contains(ANDROID_TARGET_ARCH,x86) {
-    ANDROID_EXTRA_LIBS = $$PWD/../libs/x86/libdwyco_jni.so
+    ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
 }
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {

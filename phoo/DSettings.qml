@@ -51,7 +51,7 @@ Page {
 
     Warning {
         id: warn
-        visible: false //{inh_content_warning === 0 && show_warning}
+        visible: false
         z: 3
         warning: "Dwyco reviews all profiles. Normally this app will not display unreviewed or explicit profiles. By checking this box, you agree that YOU MAY RECEIVE UNREVIEWED, EXPLICIT, or OBJECTIONABLE profile content. You can use the BLOCK feature of this app to filter out unwanted profiles."
         inhibit_key: "inh_content_warning"

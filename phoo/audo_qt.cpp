@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -38,10 +38,10 @@ void mixer_buf_done_callback();
 
 struct audpack
 {
-	char *buf;
-	int len;
-	int pos;
-	int user_data;
+    char *buf;
+    int len;
+    int pos;
+    int user_data;
 };
 static QList<audpack> *devq_p;
 static QList<audpack> *doneq;
@@ -177,37 +177,37 @@ qt_filler(void *userdata, char *buf, int len)
 {
     QList<audpack>& devq = *devq_p;
 
-GRTLOGA("filler devq %d doneq %d len %d", devq.count(), doneq->count(), len, 0, 0);
+    GRTLOGA("filler devq %d doneq %d len %d", devq.count(), doneq->count(), len, 0, 0);
 
-	int toload = len;
+    int toload = len;
     while(toload > 0 && devq.count() > 0)
-	{
-		if(toload < devq[0].len - devq[0].pos)
-		{
-			memcpy(buf, devq[0].buf + devq[0].pos, toload);
-			devq[0].pos += toload;
-			toload = 0;
-			buf += toload;
-			break;
-		}
-		else if(toload >= devq[0].len - devq[0].pos)
-		{
-			memcpy(buf, devq[0].buf + devq[0].pos, devq[0].len - devq[0].pos);
-			buf += devq[0].len - devq[0].pos;
-			toload -= devq[0].len - devq[0].pos;
+    {
+        if(toload < devq[0].len - devq[0].pos)
+        {
+            memcpy(buf, devq[0].buf + devq[0].pos, toload);
+            devq[0].pos += toload;
+            toload = 0;
+            buf += toload;
+            break;
+        }
+        else if(toload >= devq[0].len - devq[0].pos)
+        {
+            memcpy(buf, devq[0].buf + devq[0].pos, devq[0].len - devq[0].pos);
+            buf += devq[0].len - devq[0].pos;
+            toload -= devq[0].len - devq[0].pos;
             doneq->append(devq[0]);
             devq.removeFirst();
-			// poke the mixer to update itself, note this is different
-			// than windows, where a buffer is "done" after it is played
-			// out (i think, at least that is what is implied in the ms docs.)
-			// in this case, we signal it is "done" when it goes out to the
-			// driver, but we don't know when it is actually going to be played
-			// in real time (because it may just be q'd up in a buffer).
-			//if(TheAudioMixer)
-				//TheAudioMixer->done_callback();
-			mixer_buf_done_callback();
-		}
-	}
+            // poke the mixer to update itself, note this is different
+            // than windows, where a buffer is "done" after it is played
+            // out (i think, at least that is what is implied in the ms docs.)
+            // in this case, we signal it is "done" when it goes out to the
+            // driver, but we don't know when it is actually going to be played
+            // in real time (because it may just be q'd up in a buffer).
+            //if(TheAudioMixer)
+            //TheAudioMixer->done_callback();
+            mixer_buf_done_callback();
+        }
+    }
 
     return len - toload;
 }
@@ -241,11 +241,11 @@ Audo_qio::readData(char *data, qint64 maxlen)
 void
 audout_qt_new(void *)
 {
-	QMutexLocker ml(&audio_mutex);
-GRTLOG("qt new", 0, 0);
+    QMutexLocker ml(&audio_mutex);
+    GRTLOG("qt new", 0, 0);
     if(Init)
         return;
-	devq_p = new QList<audpack>;
+    devq_p = new QList<audpack>;
     doneq = new QList<audpack>;
     // since this new is assumed to only be called from the
     // main thread, and not the mixer, this ensures m is
@@ -258,15 +258,15 @@ GRTLOG("qt new", 0, 0);
 void
 audout_qt_delete(void *)
 {
-	QMutexLocker ml(&audio_mutex);
+    QMutexLocker ml(&audio_mutex);
 
-GRTLOG("qt del", 0, 0);
+    GRTLOG("qt del", 0, 0);
     delete m;
-	delete devq_p;
-	delete doneq;
+    delete devq_p;
+    delete doneq;
 
-	devq_p = 0;
-	doneq = 0;
+    devq_p = 0;
+    doneq = 0;
     m = 0;
     Init = 0;
 }
@@ -275,12 +275,12 @@ int
 audout_qt_init(void *)
 {
     QMutexLocker ml(&audio_mutex);
-	if(Init)
-		return 1;
-GRTLOG("init", 0, 0);
+    if(Init)
+        return 1;
+    GRTLOG("init", 0, 0);
     m->emit init();
-	Init = 1;
-	return 1;
+    Init = 1;
+    return 1;
 }
 
 
@@ -288,67 +288,67 @@ int
 audout_qt_device_output(void *, void *buf, int len, int user_data)
 {
     QMutexLocker ml(&audio_mutex);
-	if(!Init)
-		return 0;
+    if(!Init)
+        return 0;
 
-	int ret = 1;
-GRTLOG("qt dev out %d", len, 0);
-	// q up the data so that it can be pushed out in the callback
-	// function.
-	struct audpack a;
-	a.buf = (char *)buf;
-	a.len = len;
-	a.user_data = user_data;
-	a.pos = 0;
+    int ret = 1;
+    GRTLOG("qt dev out %d", len, 0);
+    // q up the data so that it can be pushed out in the callback
+    // function.
+    struct audpack a;
+    a.buf = (char *)buf;
+    a.len = len;
+    a.user_data = user_data;
+    a.pos = 0;
     devq_p->append(a);
     GRTLOG("qt dev out state %d", m->audio_output->state(), 0);
     if(m->audio_output->state() != QAudio::ActiveState)
     {
         m->emit init();
     }
-	return ret;
+    return ret;
 }
 
 int
 audout_qt_device_done(void *, void **buf_out, int *len, int *user_data)
 {
-	QMutexLocker ml(&audio_mutex);
+    QMutexLocker ml(&audio_mutex);
     if(!Init)
         return 0;
 
     if(doneq->count() > 0)
-	{
-GRTLOG("done %d", doneq->count(), 0);
+    {
+        GRTLOG("done %d", doneq->count(), 0);
         struct audpack a = doneq->at(0);
-		*buf_out = a.buf;
-		*len = a.len;
-		*user_data = a.user_data;
+        *buf_out = a.buf;
+        *len = a.len;
+        *user_data = a.user_data;
         doneq->removeFirst();
-		return 1;
-	}
-	return 0;
+        return 1;
+    }
+    return 0;
 
 }
 
 int
 audout_qt_device_stop(void *)
 {
-	QMutexLocker ml(&audio_mutex);
+    QMutexLocker ml(&audio_mutex);
     if(!Init)
         return 1;
     GRTLOG("stop", 0, 0);
 
     m->emit suspend();
-	return 1;
+    return 1;
 }
 
 int
 audout_qt_device_reset(void *)
 {
-	QMutexLocker ml(&audio_mutex);
+    QMutexLocker ml(&audio_mutex);
     if(!Init)
         return 1;
-GRTLOG("reset", 0, 0);
+    GRTLOG("reset", 0, 0);
     m->emit reset();
     int n = devq_p->count();
     for(int i = 0; i < n; ++i)
@@ -358,13 +358,13 @@ GRTLOG("reset", 0, 0);
     delete devq_p;
     devq_p = new QList<audpack>;
 
-	return 1;
+    return 1;
 }
 
 int
 audout_qt_device_status(void *)
 {
-	QMutexLocker ml(&audio_mutex);
+    QMutexLocker ml(&audio_mutex);
     // XXX fix me, may need some error indication
     return Init && m->audio_output && m->audio_output->error() == QAudio::NoError;
     return Init;
@@ -373,41 +373,41 @@ audout_qt_device_status(void *)
 int
 audout_qt_device_close(void *ah)
 {
-	QMutexLocker ml(&audio_mutex);
+    QMutexLocker ml(&audio_mutex);
     if(!Init)
         return 1;
-GRTLOG("close", 0, 0);
+    GRTLOG("close", 0, 0);
     audout_qt_device_reset(ah);
     Init = 0;
 
-	return 1;
+    return 1;
 }
 
 int
 audout_qt_device_buffer_time(void *, int sz)
 {
-	return 80;
+    return 80;
 }
 
 int
 audout_qt_device_play_silence(void *ah)
 {
-	QMutexLocker ml(&audio_mutex);
+    QMutexLocker ml(&audio_mutex);
     if(!Init)
         return 1;
     char *sil = new char[AUDBUF_LEN];
-	memset(sil, 0, AUDBUF_LEN);
-	audout_qt_device_output(ah, sil, AUDBUF_LEN, 1);
-	return 1;
+    memset(sil, 0, AUDBUF_LEN);
+    audout_qt_device_output(ah, sil, AUDBUF_LEN, 1);
+    return 1;
 }
 
 int
 audout_qt_device_bufs_playing(void *ah)
 {
-	QMutexLocker ml(&audio_mutex);
+    QMutexLocker ml(&audio_mutex);
     if(!Init)
         return 0;
     int tmp = devq_p->count();
-GRTLOG("playing %d", tmp, 0);
-	return tmp;
+    GRTLOG("playing %d", tmp, 0);
+    return tmp;
 }

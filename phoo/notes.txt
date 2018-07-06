@@ -83,3 +83,4 @@ dwyco, inc.
 * get delivery and view reports working
 * ANDROID: catch the "app updated" message and make sure service gets restarted properly
 * eye-candy: when zooming and panning, send msgs to other side and show the field-of-interest
+* shortcut: if there is an incoming message on the conv button, and it is from only a single user, switch straight to that user rather than top level

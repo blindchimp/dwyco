@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -14,6 +14,9 @@
 #include <QObject>
 #include <QQueue>
 #include <QMutexLocker>
+#ifdef ANDROID
+#include <QtAndroid>
+#endif
 
 void oopanic(const char *);
 
@@ -51,6 +54,8 @@ InputTest::InputTest() :
 InputTest::~InputTest()
 {
     delete m_audioInfo;
+	if(!m_audioInput)
+		return;
     m_audioInput->reset();
     m_audioInput->deleteLater();
     m_audioInput = 0;
@@ -78,7 +83,7 @@ int InputTest::initializeAudio()
     //connect(m_audioInfo, SIGNAL(update()), SLOT(refreshDisplay()));
 
     createAudioInput();
-    if(m_audioInput->error() == QAudio::OpenError)
+    if(m_audioInput->error() != QAudio::NoError)
         return 0;
     return 1;
 }
@@ -124,7 +129,7 @@ void InputTest::toggleMode()
         m_audioInput->start(m_audioInfo);
     }
 
-   // m_suspendResumeButton->setText(tr(SUSPEND_LABEL));
+    // m_suspendResumeButton->setText(tr(SUSPEND_LABEL));
 }
 
 void InputTest::toggleSuspend()
@@ -247,9 +252,25 @@ audi_qt_delete(void *)
     Audi = 0;
 }
 
+#ifdef ANDROID
+static
+void
+nada(const QtAndroid::PermissionResultMap&)
+{
+    return;
+}
+#endif
+
 int DWYCOCALLCONV
 audi_qt_init(void *)
 {
+#ifdef ANDROID
+    if(QtAndroid::checkPermission("android.permission.RECORD_AUDIO") == QtAndroid::PermissionResult::Denied)
+    {
+        QtAndroid::requestPermissions(QStringList("android.permission.RECORD_AUDIO"), nada);
+        return 0;
+    }
+#endif
     if(Audi)
         return 1;
     Audi = new InputTest;
@@ -282,7 +303,7 @@ void DWYCOCALLCONV audi_qt_pass(void *)
 }
 void DWYCOCALLCONV audi_qt_stop(void *)
 {
-oopanic("audi_stop");
+    oopanic("audi_stop");
 }
 void DWYCOCALLCONV audi_qt_on(void *)
 {

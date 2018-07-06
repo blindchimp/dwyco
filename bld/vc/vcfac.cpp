@@ -54,9 +54,9 @@ vc_factory_def::vc_factory_def(const vc& fac_name, vc& args,
 		n = 0;
 	else
 		n = args.num_elems();
-	bindargs = new VCArglist(n);
+    bindargs = new DwVec<vc>;
 	for(i = 0; i < n; ++i)
-		(*bindargs)[i] = args[i];
+        (*bindargs).append(args[i]);
 		
 	// copy in names that are automatically forwarded
 

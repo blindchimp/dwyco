@@ -35,7 +35,6 @@
         <file>FName.qml</file>
         <file>MsgReport.qml</file>
         <file>Warning.qml</file>
-        <file>PulseLoader.qml</file>
         <file>TextFieldX.qml</file>
         <file>VidCamPreview.qml</file>
         <file>CallButtons.qml</file>
@@ -44,5 +43,8 @@
         <file>AppDrawer.qml</file>
         <file>AppDrawerForm.ui.qml</file>
         <file>SimpleMsgBrowse.qml</file>
+        <file>VidCall.qml</file>
+        <file>VidCallForm.ui.qml</file>
     </qresource>
+    <qresource prefix="/+linux"/>
 </RCC>

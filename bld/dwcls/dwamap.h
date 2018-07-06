@@ -62,12 +62,8 @@ thdr
 DwAssocImp<R,D>
 tcls::get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *a) const
 {
-#ifdef CFRONT
-	DwAMapIter<R,D> *ip = (DwAMapIter<R,D> *)a;
-#else
 	typedef DwAMapIter<R,D> *iter_p;
 	iter_p ip = (iter_p)a;
-#endif
     return ip->dmi->get();
 }
 

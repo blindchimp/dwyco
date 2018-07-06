@@ -121,7 +121,7 @@ Page {
                         anchors.centerIn: parent
                     }
                     onClicked: drawer.open()
-                    visible: stack.depth == 1
+                    visible: stack.depth === 1
                     Layout.fillHeight: true
                 }
                 Item {
@@ -292,12 +292,7 @@ Page {
                }
 
                Text {
-                   //id: display_name
-                   //color: {(IS_IN_LOBBY == 1 || IS_ONLINE == 1) ? "red" : "black"}
-                   //font.italic: {IS_ACTIVE ? true : false}
                    text: display
-                   //anchors.verticalCenter: parent.verticalCenter
-
                    elide: Text.ElideRight
                    clip: true
                    Layout.alignment: Qt.AlignLeft
@@ -322,8 +317,6 @@ Page {
                }
                onPressAndHold:  {
                    listView2.currentIndex = index
-                   //core.set_pal(uid, core.get_pal(uid) == 0 ? 1 : 0)
-                   //uid_selected(uid, "hold")
                    multiselect_mode = true
                    listView2.model.toggle_selected(uid)
                    if(Qt.platform.os == "android") {
@@ -381,8 +374,6 @@ Page {
        text: qsTr("(This is your list of people you have exchanged messages with... and it is empty! Click icons above to find more people.)")
        z: 5
        visible: {ConvListModel.count === 0}
-
-
    }
 
 }

@@ -18,6 +18,7 @@ Page {
 
     property int query_in_progress
     property int query_succeeded
+    property bool no_contacts: false
 
     signal uid_selected(string uid, string action)
     
@@ -33,17 +34,15 @@ Page {
          onStatusChanged: {
              console.log("XML")
              console.log(status)
-             console.log(xmlModel.errorString())
+             console.log(xmlModel.source)
          }
      }
-    onVisibleChanged: {
-        if(visible) {
-            xmlModel.source = core.get_cq_results_url()
-            xmlModel.reload()
-            query_in_progress = parseInt(core.get_local_setting("cq-in-progress"))
-            query_succeeded = parseInt(core.get_local_setting("cq-succeeded"))
-        }
-    }
+    // onVisibleChanged: this doesn't seem to work except
+    // when visible turns off. for some reason, the loader
+    // that is encapsulating this. since the loader is
+    // creating and destroying things, i used the "onCompleted"
+    // handler below.
+
     Connections {
         target: core
         onCq_results_received : {
@@ -96,7 +95,11 @@ Page {
             onClicked: {
                 core.delete_cq_results()
                 xmlModel.reload()
-                core.load_contacts()
+                if(core.load_contacts() === 0) {
+                    // permission denied
+                    return;
+                }
+
                 user_model.load_users_to_model()
                 if(user_model.count > 0) {
                     user_model.send_query()
@@ -104,14 +107,16 @@ Page {
                     query_succeeded = 0
                     core.set_local_setting("cq-in-progress", "1")
                     core.set_local_setting("cq-succeeded", "0")
+                    no_contacts = false
                 } else {
                     query_in_progress = 0
                     query_succeeded = 0
                     core.set_local_setting("cq-in-progress", "0")
                     core.set_local_setting("cq-succeeded", "0")
+                    no_contacts = true
                 }
             }
-            enabled: query_in_progress == 0
+            enabled: query_in_progress === 0
 
         }
         Button {
@@ -124,13 +129,9 @@ Page {
         }
         Label {
             id: working
-            text: "Query sent... check back later for results"
+            text: "Query sent... check here later for results"
+            font.bold: true
             visible: query_in_progress > 0
-//            BusyIndicator {
-//                id: busy1
-//                running: query_in_progress > 0
-//                anchors.fill: parent
-//            }
         }
         Label {
             id: sorry
@@ -139,8 +140,8 @@ Page {
         }
         Label {
             id: sorry2
-            text: "Contact list empty"
-            visible: user_model.count === 0
+            text: "No contacts to find"
+            visible: no_contacts
         }
 
         Item {
@@ -150,7 +151,7 @@ Page {
 
     Label {
         id: privacy_details
-        text: qsTr("When you click REFRESH, only the Email addresses in your contact list are securely sent to Dwyco. The servers check our database for those Email addresses, and return the results securely to the app. The servers then discard the information used to perform the check. We DO NOT send any emails to the contacts in your contact list.")
+        text: qsTr("When you click SEND, only the Email addresses in your contact list are securely sent to Dwyco. The servers check our database for those Email addresses, and return the results securely to the app. The servers then discard the information used to perform the check. We DO NOT send any emails to the contacts in your contact list.")
         visible: false
         anchors.fill: parent
         wrapMode: Text.Wrap
@@ -199,7 +200,10 @@ Page {
                     onTriggered: {
                         core.delete_cq_results()
                         xmlModel.reload()
-                        core.load_contacts()
+                        if(core.load_contacts() === 0) {
+                            return
+                        }
+
                         user_model.load_users_to_model()
                         if(user_model.count > 0) {
                             user_model.send_query()
@@ -207,11 +211,13 @@ Page {
                             query_succeeded = 0
                             core.set_local_setting("cq-in-progress", "1")
                             core.set_local_setting("cq-succeeded", "0")
+                            no_contacts = false
                         } else {
                             query_in_progress = 0
                             query_succeeded = 0
                             core.set_local_setting("cq-in-progress", "0")
                             core.set_local_setting("cq-succeeded", "0")
+                            no_contacts = true
 
                         }
                     }
@@ -341,6 +347,10 @@ Page {
 
     Component.onCompleted: {
         cqres_top.uid_selected.connect(top_dispatch.uid_selected)
+        xmlModel.source = core.get_cq_results_url()
+        xmlModel.reload()
+        query_in_progress = parseInt(core.get_local_setting("cq-in-progress"))
+        query_succeeded = parseInt(core.get_local_setting("cq-succeeded"))
     }
 
     ListView {

@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -37,65 +37,72 @@ typedef QHash<DVP_COOKIE, void *> DVP_MAP;
 class DVP
 {
 public:
-	DVP() {ptr = (void *)0xaaaaaaa5; cookie = 0x55555555;}
-	DVP(void *p) {ptr = p; cookie = ++CookieGen; add_ptr(cookie, ptr); }
+    DVP() {
+        ptr = (void *)0xaaaaaaa5;
+        cookie = 0x55555555;
+    }
+    DVP(void *p) {
+        ptr = p;
+        cookie = ++CookieGen;
+        add_ptr(cookie, ptr);
+    }
 
 
-	int operator==(const DVP& v) const {
-		if(ptr == v.ptr && cookie == v.cookie)
-			return 1;
-		return 0;
-	}
-	int operator!=(const DVP& v) const {
-		return ! ((*this) == v);
-	}
-	int operator<(const DVP& ) {
-		cdcxpanic("pval bad op");
-		return 0;
-	}
-	int operator<=(const DVP& ) {
-		cdcxpanic("pval bad op");
-		return 0;
-	}
-	int operator>(const DVP& ) {
-		cdcxpanic("pval bad op");
-		return 0;
-	}
-	int operator>=(const DVP& ) {
-		cdcxpanic("pval bad op");
-		return 0;
-	}
-	
-	operator void *() {
-		if(!is_valid())
-			cdcxpanic("bad ptr");
-		return ptr;
-	}
+    int operator==(const DVP& v) const {
+        if(ptr == v.ptr && cookie == v.cookie)
+            return 1;
+        return 0;
+    }
+    int operator!=(const DVP& v) const {
+        return ! ((*this) == v);
+    }
+    int operator<(const DVP& ) {
+        cdcxpanic("pval bad op");
+        return 0;
+    }
+    int operator<=(const DVP& ) {
+        cdcxpanic("pval bad op");
+        return 0;
+    }
+    int operator>(const DVP& ) {
+        cdcxpanic("pval bad op");
+        return 0;
+    }
+    int operator>=(const DVP& ) {
+        cdcxpanic("pval bad op");
+        return 0;
+    }
+
+    operator void *() {
+        if(!is_valid())
+            cdcxpanic("bad ptr");
+        return ptr;
+    }
 
 
-	int is_valid() {
-		return valid_ptr(cookie);
-	}
-	void invalidate() {
-		del_ptr(cookie);
-	}
+    int is_valid() {
+        return valid_ptr(cookie);
+    }
+    void invalidate() {
+        del_ptr(cookie);
+    }
 
     //unsigned long hashValue() const {return ::hash(cookie);}
 
 
 public:
 
-	DVP_COOKIE cookie;
+    DVP_COOKIE cookie;
 private:
-	static DVP_COOKIE CookieGen;
-	static void add_ptr(DVP_COOKIE p, void *);
-	static int valid_ptr(DVP_COOKIE p);
-	static void del_ptr(DVP_COOKIE p);
-	static DVP_MAP *Ptr_listp;
-	void *ptr;
+    static DVP_COOKIE CookieGen;
+    static void add_ptr(DVP_COOKIE p, void *);
+    static int valid_ptr(DVP_COOKIE p);
+    static void del_ptr(DVP_COOKIE p);
+    static DVP_MAP *Ptr_listp;
+    void *ptr;
 public:
-	static DVP cookie_to_ptr(DVP_COOKIE cookie);
-	static void init_dvp();
+    static DVP cookie_to_ptr(DVP_COOKIE cookie);
+    static void init_dvp();
 };
 
 

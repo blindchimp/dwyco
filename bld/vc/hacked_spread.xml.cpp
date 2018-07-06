@@ -532,7 +532,8 @@ wrap_SP_multicast(VCArglist *a)
 		return vcnil;
 	}
 	vc_composite::new_dfs();
-	if((len = (*a)[4].xfer_out(strm)) < 0)
+    vc tvc = (*a)[4];
+    if((len = tvc.xfer_out(strm)) < 0)
 	{
 		return vcnil;
 	}

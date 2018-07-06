@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -24,12 +24,13 @@
 #endif
 class DwycoCore : public QObject
 {
-	Q_OBJECT
-	Q_PROPERTY(QString client_name READ client_name WRITE setClient_name NOTIFY client_nameChanged)
+    Q_OBJECT
+    Q_PROPERTY(QString client_name READ client_name WRITE setClient_name NOTIFY client_nameChanged)
     QML_READONLY_VAR_PROPERTY(int, unread_count)
     QML_READONLY_VAR_PROPERTY(QString, buildtime)
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
     QML_READONLY_VAR_PROPERTY(QString, tmp_dir)
+    QML_READONLY_VAR_PROPERTY(int, external_storage_permission)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -98,13 +99,13 @@ public:
     Q_ENUM(Profile_info)
     Q_ENUM(Chat_event)
 
-	Q_INVOKABLE void init();
+    Q_INVOKABLE void init();
     Q_INVOKABLE int service_channels();
     Q_INVOKABLE void exit() {
         //dwyco_empty_trash();
         //dwyco_power_clean_safe();
-		dwyco_exit();
-	}
+        dwyco_exit();
+    }
 
     Q_INVOKABLE void power_clean() {
         dwyco_power_clean_safe();
@@ -164,10 +165,16 @@ public:
 
     Q_INVOKABLE int make_zap_view(QString uid, QString mid);
     Q_INVOKABLE int make_zap_view_file(QString fn);
-    Q_INVOKABLE int delete_zap_view(int view_id) {return dwyco_delete_zap_view(view_id);}
-    Q_INVOKABLE int play_zap_preview(int view_id) {return 0;}
+    Q_INVOKABLE int delete_zap_view(int view_id) {
+        return dwyco_delete_zap_view(view_id);
+    }
+    Q_INVOKABLE int play_zap_preview(int view_id) {
+        return 0;
+    }
     Q_INVOKABLE int play_zap_view(int view_id);
-    Q_INVOKABLE int stop_zap_view(int view_id) {return dwyco_zap_stop_view(view_id);}
+    Q_INVOKABLE int stop_zap_view(int view_id) {
+        return dwyco_zap_stop_view(view_id);
+    }
 
     // dwyco video record
     Q_INVOKABLE int make_zap_composition();
@@ -185,23 +192,23 @@ public:
     Q_INVOKABLE int delete_user(QString uid);
     Q_INVOKABLE int get_fav_message(QString mid);
     Q_INVOKABLE void set_fav_message(QString uid, QString mid, int val);
-    
+
     Q_INVOKABLE void uid_keyboard_input(QString uid);
     Q_INVOKABLE int get_rem_keyboard_state(QString uid);
     Q_INVOKABLE void create_call_context(QString uid);
     Q_INVOKABLE void delete_call_context(QString uid);
     Q_INVOKABLE void try_connect(QString uid);
     Q_INVOKABLE int get_established_state(QString uid);
-    
+
     Q_INVOKABLE void delete_file(QString fn);
-    
+
     // chat server related
     Q_INVOKABLE void switch_to_chat_server(int);
     Q_INVOKABLE void disconnect_chat_server();
     Q_INVOKABLE void set_invisible_state(int);
 
     // contact list related functions
-    Q_INVOKABLE void load_contacts();
+    Q_INVOKABLE int load_contacts();
     Q_INVOKABLE QUrl get_cq_results_url();
     Q_INVOKABLE void delete_cq_results();
 
@@ -216,28 +223,28 @@ public:
     // dwyco video camera api
     Q_INVOKABLE void select_vid_dev(int i);
     Q_INVOKABLE void enable_video_capture_preview(int i);
-    
+
 public:
-	void setClient_name(const QString& a) {
-		if(a != m_client_name)
-		{
-			m_client_name = a;
+    void setClient_name(const QString& a) {
+        if(a != m_client_name)
+        {
+            m_client_name = a;
             QByteArray b = a.toLatin1();
             dwyco_set_client_version(b.constBegin(), b.length());
-			emit client_nameChanged();
-		}
-	}
+            emit client_nameChanged();
+        }
+    }
 
-	QString client_name() const {
-		return m_client_name;
-	}
+    QString client_name() const {
+        return m_client_name;
+    }
 
 
 public slots:
     void app_state_change(Qt::ApplicationState);
 
 signals:
-	void client_nameChanged();
+    void client_nameChanged();
     void server_login(const QString& msg, int what);
     void chat_event(int cmd, int sid, const QString& huid, const QString &sname, QVariant vdata, int qid, int extra_arg);
     void new_msg(const QString& from_uid, const QString& txt, const QString& mid);
@@ -256,9 +263,13 @@ signals:
     void decorate_user(const QString& uid);
     void sys_chat_server_status(int id, int status);
     void qt_app_state_change(int app_state);
+
+    // this are sent when a call context is up
     void rem_keyboard_active(const QString& uid, int active);
+    void connect_terminated(const QByteArray& uid);
+    void connectedChanged(int connected, const QByteArray& uid);
+
     void image_picked(const QString& fn);
-    void established_active(const QString& uid, int active);
     void cq_results_received(int succ);
     void msg_recv_state(int cmd, const QString& mid);
     void msg_recv_progress(const QString& mid, int percent);
@@ -268,7 +279,7 @@ signals:
     void zap_stopped(int zid);
 
 private:
-	QString m_client_name;
+    QString m_client_name;
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
 
 };

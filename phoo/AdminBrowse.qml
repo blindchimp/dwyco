@@ -35,7 +35,7 @@ Rectangle {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
                         source: fileURL
-                        ;fillMode: Image.PreserveAspectFit
+                        fillMode: Image.PreserveAspectFit
                     }
                     Text {
                         Layout.fillWidth: true

@@ -15,11 +15,11 @@ vc_trans_fundef::vc_trans_fundef(vc nm, VCArglist *a, vc fdef, int sty)
     : vc_fundef(nm, sty)
 {
     int nargs = a->num_elems();
-    bindargs = new VCArglist;
+    bindargs = new DwVec<vc>;
     // if a vector is passed as the first argument,
     // we assume its is a list of arguments
     // to be broken-out
-    if((*a)[0].type() == VC_VECTOR)
+    if(nargs >= 1 && (*a)[0].type() == VC_VECTOR)
     {
         if(nargs != 2)
         {

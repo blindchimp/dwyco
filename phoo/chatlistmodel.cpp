@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -26,7 +26,7 @@ ChatListModel::~ChatListModel()
     TheChatListModel = 0;
 }
 
-void 
+void
 ChatListModel::decorate(QString huid, QString txt, QString mid)
 {
     QByteArray uid = QByteArray::fromHex(huid.toLatin1());
@@ -102,7 +102,7 @@ ChatListModel::remove_uid_from_model(const QByteArray& uid)
         return;
     // XXX note: maybe just parent to model and let it delete
     remove(c);
-    //delete c;  
+    //delete c;
 }
 
 ChatSortFilterModel::ChatSortFilterModel(QObject *p)
@@ -140,9 +140,9 @@ ChatSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
 
 #if 1
 #if 0
-printf("lt %s (%d, %d) %s (%d, %d)\n",
-    m->data(left).toString().toAscii().constData(), left.row(), left.column(),
-    m->data(right).toString().toAscii().constData(), right.row(), right.column());
+    printf("lt %s (%d, %d) %s (%d, %d)\n",
+           m->data(left).toString().toAscii().constData(), left.row(), left.column(),
+           m->data(right).toString().toAscii().constData(), right.row(), right.column());
 #endif
 
 

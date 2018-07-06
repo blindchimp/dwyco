@@ -59,57 +59,6 @@ ToolBar {
             id: extras_loader
             sourceComponent: extras
         }
-
-
-
-
-        //                ToolButton {
-        //                    label: Image {
-        //                        anchors.centerIn: parent
-        //                        source: mi("ic_action_overflow.png")
-        //                    }
-        //                    onClicked: optionsMenu.open()
-        //                    visible: chatbox.visible
-
-        //                    Menu {
-
-        //                        id: optionsMenu
-        //                        x: parent.width - width
-        //                        transformOrigin: Menu.TopRight
-
-        //                        MenuItem {
-        //                            text: "View profile"
-        //                            onTriggered: {
-        //                                stack.push(theprofileview)
-        //                            }
-        //                        }
-
-        //                        MenuItem {
-        //                            text: "Clear msgs"
-        //                            onTriggered: {
-        //                                core.clear_messages(chatbox.to_uid)
-        //                                themsglist.reload_model()
-        //                            }
-        //                        }
-
-        //                        MenuItem {
-        //                            text: "Delete user"
-        //                            onTriggered: {
-        //                                core.delete_user(chatbox.to_uid)
-        //                                themsglist.reload_model()
-        //                                stack.pop()
-        //                            }
-        //                        }
-        //                        MenuItem {
-        //                            text: "More..."
-        //                            onTriggered: {
-        //                                moremenu.open()
-
-        //                            }
-        //                        }
-
-        //                    }
-        //                }
     }
 
 

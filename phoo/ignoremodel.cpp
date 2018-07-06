@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -56,26 +56,6 @@ dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
 }
 
 
-#if 0
-void 
-IgnoreListModel::decorate(QString huid, QString txt, QString mid)
-{
-    QByteArray uid = QByteArray::fromHex(huid.toLatin1());
-    IgnoredUser *c = getByUid(huid);
-    if(!c)
-        return;
-    int cnt = uid_unviewed_msgs_count(uid);
-    c->set_unseen_count(cnt);
-    c->update_any_unread(any_unread_msg(uid));
-}
-
-void
-IgnoreListModel::decorate(QString huid)
-{
-    decorate(huid, "", "");
-}
-#endif
-
 IgnoredUser *
 IgnoreListModel::add_uid_to_model(const QByteArray& uid)
 {
@@ -107,7 +87,7 @@ IgnoreListModel::load_users_to_model()
     DWYCO_LIST l;
     int n;
 
-	clear();
+    clear();
 
     l = dwyco_ignore_list_get();
     dwyco_list_numelems(l, &n, 0);
@@ -166,14 +146,14 @@ IgnoreSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& righ
         return false;
     else if(ruc < luc)
         return true;
-    
+
     bool lau = m->data(left, m->roleForName("any_unread")).toBool();
     bool rau = m->data(right, m->roleForName("any_unread")).toBool();
     if(lau && !rau)
         return true;
     else if(!lau && rau)
         return false;
-    
+
     bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
     bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
     if(lreg && !rreg)

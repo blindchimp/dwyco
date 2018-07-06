@@ -124,20 +124,17 @@ ApplicationWindow {
 
     id: applicationWindow1
     visible: true
-    width: 1280
-    height: 768
+    // android will override this and go full screen, which is
+    // what we want. for desktop versions, not sure what might be
+    // best.
+    width: 800
+    height: 600
+    // this might be helpful for windows users, as they
+    // seem to get confused with multiple windows running around
+    // at the same time.
+    //width: Screen.width
+    //height: Screen.height
     title: qsTr("Dwyco ")
-
-//    FileDialog {
-//        id: filedialog
-//        title: "Choose a file"
-//        onAccepted: {
-//            console.log(fileUrl)
-//        }
-//        onRejected: {
-
-//        }
-//    }
 
     property int close_bounce: 0
     onClosing: {
@@ -291,49 +288,50 @@ ApplicationWindow {
 
             }
         }
-
-        onVideo_display: {
-            //themsgview.view_source = img_path
-        }
     }
 
-
-
-    Item {
+    Loader {
         id: cam
-        property alias camitem: cam_loader.item
+
         property string next_state
         property string ok_text: "Send"
         anchors.fill: parent
         visible: false
-        Loader {
-            id: cam_loader
-            anchors.fill: parent
-            onLoaded: {
-                cam_loader.item.state_on_close = cam.next_state
-                cam_loader.item.ok_pv_text = cam.ok_text
-            }
+        active: visible
+
+        onLoaded: {
+            item.state_on_close = cam.next_state
+            item.ok_pv_text = cam.ok_text
         }
 
         onVisibleChanged: {
-            if(visible == true && cam_loader.source == "") {
-                cam_loader.source = "qrc:/DeclarativeCamera.qml"
-            }
-            if(visible == false) {
-                cam_loader.source = ""
+            if(visible) {
+                source = "qrc:/DeclarativeCamera.qml"
             }
         }
 
-   }
-
-    DSettings {
-        id: settings_dialog
-        visible: false
     }
 
-    About {
+    Loader {
+        id: settings_dialog
+        visible: false
+
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/DSettings.qml"
+            }
+        }
+    }
+
+    Loader {
         id: about_dialog
         visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/About.qml"
+            }
+        }
     }
 
     ConvList {
@@ -354,15 +352,18 @@ ApplicationWindow {
 
     Loader {
         id: cqres
-        anchors.fill: parent
-        source: "qrc:/CQRes.qml"
+        //anchors.fill: parent
         visible: false
-        active: false
-
+        Component {
+            id: wtf
+            CQRes {}
+        }
         onVisibleChanged: {
             if(visible)
-                cqres.active = true
+                sourceComponent = wtf
         }
+
+        //sourceComponent: wtf
     }
 
 //    AdminBrowse {
@@ -370,32 +371,25 @@ ApplicationWindow {
 //        folder: "file:///home/dwight/Downloads/tmp2"
 //    }
 
-
-    Item {
-
+    Loader {
         id: simpdir_rect
+
         property url xml_url : ""
-        //anchors.fill:parent
         visible: false
-        Loader {
-            id: xmloader
-            anchors.fill: parent
-        }
         onVisibleChanged: {
             if(visible) {
                 var tmp
                 tmp = core.get_simple_xml_url()
+                console.log("xml ", tmp)
                 if(xml_url !== tmp) {
                     xml_url = tmp
                 }
-            }
-
-            if(visible === true && xmloader.source === "") {
-                xmloader.source = "qrc:/SimpDir.qml"
+                source = "qrc:/SimpDir.qml"
             }
         }
 
     }
+
 
     FName {
         id: fname
@@ -412,6 +406,7 @@ ApplicationWindow {
         //anchors.fill: parent
         visible: false
     }
+
     ForwardToList {
         id: forward_dialog
         visible: false
@@ -446,12 +441,15 @@ ApplicationWindow {
         visible: false
     }
 
-
-    ProfileDialog {
+    Loader {
         id: profile_dialog
         visible: false
-        //anchors.fill: parent
-
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/ProfileDialog.qml"
+            }
+        }
     }
 
 
@@ -561,20 +559,34 @@ ApplicationWindow {
         }
 
     }
-    PINChangeDialog {
+
+    Loader {
         id: pwchange_dialog
         visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/PINChangeDialog.qml"
+            }
+        }
+
     }
 
 
     ProfileUpdateDialog {
-        id: profile_update_dialog      
+        id: profile_update_dialog
         visible: false
     }
 
-    IgnoreListDialog {
+    Loader {
         id: iglist_dialog
         visible: false
+
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/IgnoreListDialog.qml"
+            }
+        }
     }
 
     PublicChat {
@@ -589,9 +601,20 @@ ApplicationWindow {
         uid: top_dispatch.last_uid_selected
     }
 
-    VidCamPreview {
+//    VidCamPreview {
+//        id: vid_cam_preview
+//        visible: false
+//    }
+
+    Loader {
         id: vid_cam_preview
+        active: visible
         visible: false
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/VidCamPreview.qml"
+            }
+        }
     }
 
     DwycoVidRec {
@@ -666,7 +689,6 @@ ApplicationWindow {
                 notificationClient.set_quiet(1)
                 }
             }
-            //drawer_model.setProperty(4, "chked", dwy_quiet)
 
 
             a = get_local_setting("invis")
@@ -675,7 +697,6 @@ ApplicationWindow {
             } else {
                 dwy_invis = true
             }
-            //drawer_model.setProperty(5, "chked", dwy_invis)
 
             a = get_local_setting("show_unreviewed")
             if(a === "" || a === "0") {
@@ -698,10 +719,6 @@ ApplicationWindow {
             var expire = pin_expire()
             core.set_local_setting("pin_expire", expire.toString())
             exit()
-        }
-
-        onRem_keyboard_active: {
-
         }
 
         onServer_login: {
@@ -763,34 +780,17 @@ ApplicationWindow {
             hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
-        onSys_uid_resolved: {
-        }
-        onSys_invalidate_profile: {
-        }
-
         onProfile_update: {
             top_dispatch.profile_updated(success)
         }
 
-        onVideo_display: {
-            //top_dispatch.video_display(ui_id, frame_number, img_path)
-        }
-
-        onIgnore_event: {
-
-        }
         onQt_app_state_change: {
             console.log("app state change ", app_state)
             if(app_state === 0) {
                 // resuming
                 themsglist.reload_model()
-                //stack.pop()
-
                 pwdialog.state = "resume"
-
             } else {
-
-                //stack.push(blank_page)
                 pwdialog.state = "pause"
             }
 
@@ -798,12 +798,12 @@ ApplicationWindow {
 
         onImage_picked: {
             console.log("image " + fn)
-            if(android_img_pick_hack == 1)
+            if(android_img_pick_hack === 1)
             {
                 profile_update_dialog.android_img_filename = fn
                 profile_update_dialog.android_hack = true
             }
-            else if(android_img_pick_hack == 2)
+            else if(android_img_pick_hack === 2)
             {
                 chatbox.android_img_filename = fn
                 chatbox.android_hack = true

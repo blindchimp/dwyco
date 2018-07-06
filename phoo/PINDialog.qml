@@ -92,8 +92,6 @@ Rectangle {
         GridLayout {
             rows: 3
             columns: 3
-            //Layout.fillWidth: true
-            //Layout.fillHeight: true
             property int sz
             sz: Math.min(parent.height - l1.height - l2.height - l3.height, parent.width)
             Layout.minimumHeight: sz
@@ -106,8 +104,6 @@ Rectangle {
                 model: 8
 
                 Button {
-                    //width: 32
-                    //height: 32
                     contentItem: Text {
                         anchors.centerIn: parent
                         text: index + 1

@@ -1,6 +1,7 @@
 *~
 *.autosave
 phoobld/jni/toolchain/
+phoobld/jni/toolchain.x86/
 phoobld/obj/
 phoobld/libs/
 build-*/

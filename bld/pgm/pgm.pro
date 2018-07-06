@@ -12,5 +12,4 @@ macx-g++|linux-g++|linux-g++-64 {
 }
 
 SOURCES = \
-	libpgm1.c \
-	libpgm2.c 
+	libpgm1.c

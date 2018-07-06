@@ -95,8 +95,8 @@ vc_cvar::raise_compile_error()
 {
 	vc exc("E:LH.COMPILE_ERROR");
 	VCArglist a;
-	a[0] = exc;
-	a[1] = vc(lexer->input_description());
+    a.append(exc);
+    a.append(vc(lexer->input_description()));
 	Vcmap->excraise(exc, &a);
 }
 

@@ -7,7 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick 2.6
-//import QtMultimedia 5.4
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.1
 
@@ -57,13 +56,5 @@ Item {
         }
 
     }
-//    BusyIndicator {
-//        id: busy1
 
-//        visible: {!listView1.visible}
-//        anchors.horizontalCenter: parent.horizontalCenter
-//        anchors.verticalCenter: parent.verticalCenter
-//        z: 20
-
-//    }
 }

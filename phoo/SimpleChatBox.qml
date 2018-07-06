@@ -17,7 +17,7 @@ import dwyco 1.0
 
 Page {
     id: rectangle1
-    anchors.fill: parent
+    //anchors.fill: parent
     property alias model: listView1.model
     property alias listview: listView1
     property string to_uid
@@ -152,7 +152,7 @@ Page {
                         anchors.bottom: parent.bottom
                         anchors.left: top_toolbar_img.right
                         anchors.leftMargin: 2
-                        text: "online"
+                        text: ind_typing === 1 ? "typing..." : "online"
                         color: "white"
                         background: Rectangle {
                             color: "indigo"
@@ -185,20 +185,6 @@ Page {
                     visible: {stack.depth > 2 || core.unread_count > 0}
                 }
 
-                ToolButton {
-                    id: cam_button
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_add_a_photo_black_24dp.png")
-                    }
-                    checkable: false
-                    visible: !cam.visible
-                    onClicked: {
-                        //stack.push(cam, {"next_state" : "PhotoCapture"})
-                       dwyco_vid_rec.uid = to_uid
-                        stack.push(dwyco_vid_rec)
-                    }
-                }
                 ToolButton {
                     id: pic_button
                     contentItem: Image {
@@ -302,7 +288,9 @@ Page {
             var objn = model.get(index).objectName
             if(objn === "send_video" || objn === "accept_and_send" ||
                     objn === "accept") {
-                stack.push(vid_call_view)
+                //stack.push(vid_call_view)
+                vidpanel.visible = true
+                core.enable_video_capture_preview(1)
             }
         }
         onButton_pressed: {
@@ -343,11 +331,6 @@ Page {
                 ind_typing = active
             }
         }
-        onEstablished_active : {
-            if(uid === to_uid) {
-                ind_online = active
-            }
-        }
         onNew_msg : {
             // if we're visible, reset the unviewed msgs thing since presumably
             // we can see it. might want to set it if the view is scrolled up
@@ -366,6 +349,25 @@ Page {
                 top_toolbar_text.text = core.uid_to_name(uid)
             }
         }
+        onConnect_terminated: {
+            if(chatbox.to_uid == uid) {
+                console.log("CONNECT TERMINATED")
+            }
+        }
+
+        onConnectedChanged: {
+                if(chatbox.to_uid == uid) {
+                    console.log("ConnectedChanged ", connected)
+                    if(connected === 0 && vidpanel.visible) {
+                        vidpanel.visible = false
+                        core.enable_video_capture_preview(0)
+                    }
+                    ind_online = connected === 1 ? true : false
+                }
+            }
+
+
+
 
 //        onIgnore_event: {
 //            if(uid === to_uid) {
@@ -441,8 +443,7 @@ Page {
         visible: false
     }
 
-    ListView {
-        id: listView1
+    RowLayout {
         anchors.bottom: textField1.top
         anchors.bottomMargin: 10
         anchors.right: parent.right
@@ -451,11 +452,32 @@ Page {
         anchors.leftMargin: 0
         anchors.top: parent.top
         anchors.topMargin: 0
-        delegate: msglist_delegate
-        clip: true
-        spacing: 5
-        ScrollBar.vertical: ScrollBar { }
-        verticalLayoutDirection: ListView.BottomToTop
+        Layout.margins: mm(1)
+        VidCall {
+            id: vidpanel
+            visible: false
+            Layout.fillHeight: true
+            Layout.minimumWidth: parent.width / 2
+        }
+
+        ListView {
+            id: listView1
+//            anchors.bottom: textField1.top
+//            anchors.bottomMargin: 10
+//            anchors.right: parent.right
+//            anchors.rightMargin: 0
+//            anchors.left: parent.left
+//            anchors.leftMargin: 0
+//            anchors.top: parent.top
+//            anchors.topMargin: 0
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            delegate: msglist_delegate
+            clip: true
+            spacing: 5
+            ScrollBar.vertical: ScrollBar { }
+            verticalLayoutDirection: ListView.BottomToTop
+        }
     }
 
 
@@ -512,6 +534,22 @@ Page {
                     anchors.fill: parent
                     anchors.margins: 2
                     source: mi("ic_star_black_24dp.png")
+                }
+            }
+            Rectangle {
+                id: is_forwarded
+                width: 16
+                height: 16
+                anchors.top: ditem.top
+                anchors.left: isfav.right
+                visible: IS_FORWARDED === 1
+                z: 2
+                color: primary_light
+                radius: width / 2
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    source: mi("ic_open_in_new_black_24dp.png")
                 }
             }
             z: 1
@@ -573,7 +611,7 @@ Page {
                         if(Date.now() - dt.getTime() > 86400 * 1000) {
                             return "<html>" + msg + "<sub>" + Qt.formatDate(dt) + "</sub></html>"
                         } else {
-                            return "<html>" + msg + "<sub>" + Qt.formatTime(dt) + "</sub></html>"
+                            return "<html>" + msg + "<sub>" + LOCAL_TIME_CREATED + "</sub></html>"
                         }
 
                     }
@@ -582,7 +620,7 @@ Page {
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     Layout.maximumWidth: (listView1.width * 3) / 4
                     horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
-                    verticalAlignment: Text.AlignVCenter                   
+                    verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
                     color: primary_text
@@ -747,22 +785,37 @@ Page {
         // will pop up on the previous screen, wtf.
         focus: visible
         //font.family: "Noto Color Emoji"
-        Label {
-            id: typing
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.margins: 3
-            text: "(typing...)"
-            color: "black"
-            opacity: .5
-            visible: {ind_typing === 1 && ind_online === 1}
-            background: Rectangle {
-                color: "red"
-                opacity: .5
-                radius: 6
-            }
-            z: 5
+//        Label {
+//            id: typing
+//            anchors.bottom: parent.top
+//            anchors.left: parent.left
+//            anchors.margins: 3
+//            text: "(typing...)"
+//            color: "black"
+//            opacity: .5
+//            visible: {ind_typing === 1 && ind_online === 1}
+//            background: Rectangle {
+//                color: "red"
+//                opacity: .5
+//                radius: 6
+//            }
+//            z: 5
 
+//        }
+        ToolButton {
+            id: cam_button
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+            anchors.rightMargin: mm(3)
+            contentItem: Image {
+                anchors.centerIn: parent
+                source: mi("ic_add_a_photo_black_24dp.png")
+            }
+            checkable: false
+            visible: !cam.visible && !(textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0)
+            onClicked: {
+               stack.push(cam, {"next_state" : "PhotoCapture"})
+            }
         }
     }
 

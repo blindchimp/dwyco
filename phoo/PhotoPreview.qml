@@ -39,7 +39,6 @@
 ****************************************************************************/
 
 import QtQuick 2.6
-//import QtMultimedia 5.4
 import QtQuick.Layouts 1.3
 
 Item {

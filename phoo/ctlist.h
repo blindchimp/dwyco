@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -23,7 +23,7 @@ class SimpleContact : public QObject
     QML_READONLY_VAR_PROPERTY(QString, phone)
     QML_READONLY_VAR_PROPERTY(QString, email)
     QML_WRITABLE_VAR_PROPERTY(bool, selected)
-    
+
 
 public:
     SimpleContact(QObject *parent = 0) : QObject(parent) {
@@ -39,10 +39,10 @@ class SimpleContactModel : public QQmlObjectListModel<SimpleContact>
 public:
     explicit SimpleContactModel(QObject *parent = 0);
     ~SimpleContactModel();
-    
+
     Q_INVOKABLE void load_users_to_model();
     SimpleContact * add_contact_to_model(const QByteArray& name, const QByteArray& phone, const QByteArray& email);
-    
+
     void set_all_selected(bool);
 
     Q_INVOKABLE void toggle_selected(int r);
@@ -53,4 +53,4 @@ public slots:
     void mod_selected_count(bool newval);
 };
 
-#endif 
+#endif

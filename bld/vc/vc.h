@@ -165,7 +165,10 @@ class vc_fundef;
 #else
 template<class T> class DwVec;
 #endif
-typedef DwVec<vc> VCArglist;
+
+//typedef DwVec<vc> VCArglist;
+#include "dwsvec.h"
+typedef DwSVec<vc> VCArglist;
 
 typedef vc (*VCFUNCP0)();
 typedef vc (*VCFUNCP1)(vc);
@@ -248,18 +251,22 @@ public:
 	inline vc(const vc& v);
 	inline notvirtual ~vc() ;
 	inline notvirtual vc& operator=(const vc& v);
+        inline vc(vc&& v);
+        inline vc& operator=(vc&& v);
 #else
 	vc() ;
 	vc(const vc& v);
 	notvirtual ~vc() ;
 	notvirtual vc& operator=(const vc& v);
+        vc(vc&& v);
+        vc& operator=(vc&& v);
+
 #endif
 	vc(double d);
 	vc(int i);
 	vc(long i);
 	vc(const char *s);
 	vc(VcLexer&);
-	vc(struct vcnode *);
 	vc(enum vc_type, const char * = "nil", long extra_parm = 0);
     vc(VCFUNCP0, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCP1, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
@@ -569,6 +576,27 @@ RCQDEC(rep)
 		rep = v.rep;
 	}
 	return *this;
+}
+
+inline
+vc::vc(vc&& v)
+{
+    rep = v.rep;
+    v.rep = 0;
+}
+
+inline
+vc&
+vc::operator=(vc&& v)
+{
+    if(this != &v)
+    {
+    vc_default *tmp = rep;
+    rep = v.rep;
+    v.rep = tmp;
+
+    }
+    return *this;
 }
 
 #endif

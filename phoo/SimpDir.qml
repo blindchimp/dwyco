@@ -116,8 +116,6 @@ Page {
                         Layout.fillHeight: true
                         text: description
                         clip: true
-                        //width: parent.width - (nm.width + preview.width)
-
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
 
                     }
@@ -153,7 +151,7 @@ Page {
          model: xmlModel
 
          delegate: simpdir_delegate
-         clip:true
+         clip: true
          ScrollBar.vertical: ScrollBar { }
          
     }

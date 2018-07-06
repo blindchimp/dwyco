@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -13,38 +13,38 @@
 #include <QStateMachine>
 #include "QQmlVarPropertyHelpers.h"
 #include "dvp.h"
-#include "dwstr.h"
 #include "dwquerybymember.h"
 #include "dlli.h"
 #include "callsm_objs.h"
+
 class simple_call : public QObject
 {
     Q_OBJECT
     QML_READONLY_VAR_PROPERTY(int, connected)
 
 private:
-friend class DwycoCore;
-static void DWYCOCALLCONV dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg, const char *uid, int len_uid, const char *call_type, int len_call_type);
-static void DWYCOCALLCONV dwyco_call_accepted(int chan_id, const char *name, const char *location, const char *uid, int len_uid, const char *call_type, int len_call_type);
-static void DWYCOCALLCONV call_died(int chan_id, void *arg);
-static int DWYCOCALLCONV dwyco_private_chat_init(int chan_id, const char *);
-static int DWYCOCALLCONV dwyco_private_chat_display(int chan_id, const char *com, int arg1, int arg2, const char *str, int len);
-static int DWYCOCALLCONV
-dwyco_call_screening_callback(int chan_id,
-                              int remote_wants_to_recv_your_video, int remote_wants_to_send_you_video,
-                              int remote_wants_to_recv_your_audio, int remote_wants_to_send_you_audio,
-                              int remote_wants_to_exchange_pubchat, int remote_wants_to_exchange_privchat,
-                              const char *call_type, int len_call_type,
-                              const char *uid, int len_uid,
-                              int *accept_call_style,
-                              char **error_msg);
+    friend class DwycoCore;
+    static void DWYCOCALLCONV dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg, const char *uid, int len_uid, const char *call_type, int len_call_type);
+    static void DWYCOCALLCONV dwyco_call_accepted(int chan_id, const char *name, const char *location, const char *uid, int len_uid, const char *call_type, int len_call_type);
+    static void DWYCOCALLCONV call_died(int chan_id, void *arg);
+    static int DWYCOCALLCONV dwyco_private_chat_init(int chan_id, const char *);
+    static int DWYCOCALLCONV dwyco_private_chat_display(int chan_id, const char *com, int arg1, int arg2, const char *str, int len);
+    static int DWYCOCALLCONV
+    dwyco_call_screening_callback(int chan_id,
+                                  int remote_wants_to_recv_your_video, int remote_wants_to_send_you_video,
+                                  int remote_wants_to_recv_your_audio, int remote_wants_to_send_you_audio,
+                                  int remote_wants_to_exchange_pubchat, int remote_wants_to_exchange_privchat,
+                                  const char *call_type, int len_call_type,
+                                  const char *uid, int len_uid,
+                                  int *accept_call_style,
+                                  char **error_msg);
 public:
-    explicit simple_call(const DwOString& uid, QObject *parent = 0);
+    explicit simple_call(const QByteArray& uid, QObject *parent = 0);
     ~simple_call();
     DVP vp;
 
     static DwQueryByMember<simple_call> Simple_calls;
-    static simple_call *get_simple_call(DwOString uid);
+    static simple_call *get_simple_call(QByteArray uid);
     //static void hide_all();
     static void init(QObject *mainwin);
     static void suspend();
@@ -54,7 +54,7 @@ public:
 
     int chan_id;
     int call_id;
-    DwOString uid;
+    QByteArray uid;
     int record_preview_id;
     QTimer accept_timer;
     QTimer ask_timer;
@@ -99,16 +99,19 @@ public slots:
     void start_media_calls();
 
 signals:
-    void pal_event(DwOString);
-    void ignore_event(DwOString);
-    void uid_selected(DwOString, int);
-    void send_msg_event(DwOString);
+    void pal_event(QByteArray);
+    void ignore_event(QByteArray);
+    void uid_selected(QByteArray, int);
+    void send_msg_event(QByteArray);
+
+    void connectedChanged(int connected, QByteArray uid);
 
     // signals for control connection
     void try_connect();
     void connect_established();
     void connect_failed();
     void connect_terminated();
+    void connect_terminated(QByteArray);
     void connect_already_exists();
 
     // signals for call setup/screening
@@ -150,16 +153,26 @@ signals:
 
     // signals for "typing..." indication
     void rem_keyboard_active(int);
-    void rem_keyboard_active_uid(const QString&, int);
-
-    void sig_on_connected_change_uid(const QString&, int);
+    void rem_keyboard_active(const QString&, int);
 
 private slots:
     void on_actionPause_toggled(bool arg1);
 
-    void recv_control_msg(int ui_id, DwOString com, int arg1, int arg2, DwOString str);
-	void keyboard_input();
-	void keyboard_inactive();
+    void on_simple_call_connect_terminated() {
+        emit connect_terminated(uid.toHex());
+    }
+
+    void on_simple_call_connectedChanged(int connected) {
+        emit connectedChanged(connected, uid.toHex());
+    }
+
+    void on_simple_call_rem_keyboard_active(int active) {
+        emit rem_keyboard_active(QString(uid.toHex()), active);
+    }
+
+    void recv_control_msg(int ui_id, QByteArray com, int arg1, int arg2, QByteArray str);
+    void keyboard_input();
+    void keyboard_inactive();
 
     // slots for control connection
     void start_retry_timer();
@@ -199,12 +212,12 @@ private slots:
     void cam_control_on(bool);
     void cam_control_off(bool);
 
-    void process_ignore_event(DwOString);
+    void process_ignore_event(QByteArray);
 
     void render_image();
     void on_cancel_req_clicked();
 
-    //void uid_resolved(DwOString);
+    //void uid_resolved(QByteArray);
 
     void start_ask_timer();
     void stop_ask_timer();
@@ -231,12 +244,9 @@ private slots:
     void reemit_mute();
 
     void audio_recording_event(int, int);
-    
-    void rem_keyboard_active_with_uid(int);
-    void connected_changed_uid(int);
 
     //void on_pal_button_clicked();
-    //void update_pal(DwOString uid);
+    //void update_pal(QByteArray uid);
 
 public:
     callsm_objs *ui;

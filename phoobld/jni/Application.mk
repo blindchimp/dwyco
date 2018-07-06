@@ -5,7 +5,7 @@ else
 APP_PROJECT_PATH := $(HOME)/git/dwyco/phoobld
 APP_ABI := x86
 endif
-APP_CPPFLAGS += -frtti -fexceptions -DANDROID -g
+APP_CPPFLAGS += -frtti -fexceptions -DANDROID -g -std=c++11
 APP_CFLAGS += -DANDROID -g
 APP_STL := gnustl_shared
 #APP_MODULES := jhead cdc32 gsm lpc ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls

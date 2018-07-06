@@ -327,6 +327,22 @@ Page {
                     source: mi("ic_star_black_24dp.png")
                 }
             }
+            Rectangle {
+                id: is_forwarded
+                width: 16
+                height: 16
+                anchors.top: ditem.top
+                anchors.left: isfav.right
+                visible: IS_FORWARDED === 1
+                z: 2
+                color: primary_light
+                radius: width / 2
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    source: mi("ic_open_in_new_black_24dp.png")
+                }
+            }
             z: 1
 
             clip: true
@@ -396,7 +412,7 @@ Page {
                     //horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.NoWrap
-                    textFormat: Text.RichText
+                    textFormat: Text.StyledText
                     color: primary_text
                     clip: true
 

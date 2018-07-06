@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -45,7 +45,7 @@ class ChatListModel : public QQmlObjectListModel<ChatUser>
 public:
     explicit ChatListModel(QObject *parent = 0);
     ~ChatListModel();
-    
+
     void remove_uid_from_model(const QByteArray& uid);
     ChatUser *add_uid_to_model(const QByteArray& uid);
 

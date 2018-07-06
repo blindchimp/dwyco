@@ -9,7 +9,7 @@
 import QtQuick 2.6
 import dwyco 1.0
 import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.2
 
 Page {
     id: forward_list
@@ -183,6 +183,8 @@ Page {
                 // out to the source model which is tedious.
                 // instead, i just implement the send in c++ in the model
                 user_model.send_forward_selected(uid_folder, mid_to_forward)
+                themsglist.reload_model()
+                chatbox.listview.positionViewAtBeginning()
                 //
                 stack.pop()
             }

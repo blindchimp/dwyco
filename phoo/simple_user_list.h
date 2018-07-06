@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -27,7 +27,7 @@ class SimpleUser : public QObject
     QML_READONLY_VAR_PROPERTY(bool, session_msg)
     QML_READONLY_VAR_PROPERTY(int, resolved_counter)
     QML_WRITABLE_VAR_PROPERTY(bool, selected)
-    
+
 
 public:
     SimpleUser(QObject *parent = 0) : QObject(parent) {
@@ -51,12 +51,12 @@ class SimpleUserModel : public QQmlObjectListModel<SimpleUser>
 public:
     explicit SimpleUserModel(QObject *parent = 0);
     ~SimpleUserModel();
-    
+
     Q_INVOKABLE void load_users_to_model();
     Q_INVOKABLE void load_admin_users_to_model();
     void remove_uid_from_model(const QByteArray& uid);
     SimpleUser * add_uid_to_model(const QByteArray& uid);
-    
+
     void set_all_selected(bool);
     void delete_all_selected();
     Q_INVOKABLE void toggle_selected(QString uid);
@@ -99,7 +99,7 @@ public:
 
 signals:
     void selected_countChanged(int);
-    
+
 };
 
-#endif 
+#endif

@@ -24,7 +24,7 @@ SOURCES += \
 
 INCLUDEPATH += ../$$DWYCO_CONFDIR  ../bld/dwcls ../bld/vc $${OUT_PWD}/../include
 
-#linux-g++*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3 
+linux-g++*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3 
 #macx-*: DEFINES += LH_WRAP_SPREAD 
 
 D=$${OUT_PWD}/..
@@ -35,10 +35,11 @@ $${D}/bld/crypto5/libcrypto5.a \
 $${D}/bld/jenkins/libjenkins.a \
 $${D}/bld/kazlib/libkazlib.a \
 $${D}/bld/zlib/libzlib.a \
+$${D}/bld/libuv/libuv.a
 
 
 
-macx-** {
+macx-* {
 LIBS += \
 $${D}/lib/libspread.a \
 $${D}/lib/libuv.a
@@ -48,8 +49,7 @@ LIBS += -framework Foundation -framework CoreServices -lpthread -ldl
 
 linux-g++* {
 LIBS += \
-$${D}/lib/libspread.a \
-$${D}/lib/libuv.a
+$${D}/lib/libspread.a
 
 LIBS += -lsqlite3 -lpthread -ldl
 }

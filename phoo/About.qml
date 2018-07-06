@@ -23,7 +23,7 @@ Page {
         RowLayout {
             spacing: mm(3)
             Label {
-                text: "phoo version:"
+                text: "phoo (open source):"
             }
 
             Label {
@@ -33,7 +33,15 @@ Page {
 
         }
         Label {
-            text: "(C) 1995-present, Dwyco, Inc. All rights reserved."
+            text: "(C) 1995-present, Dwyco, Inc."
+            Layout.fillWidth: true
+        }
+        Label {
+            text: "Source code is subject to terms of MPL 2.0."
+            Layout.fillWidth: true
+        }
+        Label {
+            text: "https://mozilla.org/MPL/2.0/"
             Layout.fillWidth: true
         }
         Label {

@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -26,7 +26,7 @@ class IgnoredUser : public QObject
 public:
     IgnoredUser(QObject *parent = 0) : QObject(parent) {
         m_resolved_counter = 0;
-		m_invalid = 0;
+        m_invalid = 0;
     }
 };
 
@@ -36,7 +36,7 @@ class IgnoreListModel : public QQmlObjectListModel<IgnoredUser>
 public:
     explicit IgnoreListModel(QObject *parent = 0);
     ~IgnoreListModel();
-    
+
     void load_users_to_model();
     void remove_uid_from_model(const QByteArray& uid);
     IgnoredUser * add_uid_to_model(const QByteArray& uid);
@@ -74,4 +74,4 @@ signals:
 
 extern IgnoreListModel *TheIgnoreListModel;
 
-#endif 
+#endif
