@@ -235,7 +235,7 @@ void
 sql_insert_misc(vc name, vc data, const char *dbn = "main")
 {
     VCArglist a;
-    a[0] = DwString("replace into %1.misc_blobs values($1,$2);").arg(dbn).c_str();
+    a.append(DwString("replace into %1.misc_blobs values($1,$2);").arg(dbn).c_str());
 
     a.append(name);
 
