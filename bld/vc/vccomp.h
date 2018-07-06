@@ -31,7 +31,7 @@
 class vc_composite : public vc_default
 {
 private:
-	long visit;
+        mutable long visit;
 	static long Visit_SN;
 
 #if 0

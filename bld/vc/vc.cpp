@@ -83,6 +83,24 @@ RCQINC(v.rep)
 	rep = v.rep;
 }
 
+vc::vc(vc&& v)
+{
+    rep = v.rep;
+    v.rep = 0;
+}
+
+vc&
+vc::operator=(vc&& v)
+{
+    if(this != &v)
+    {
+    vc_default *tmp = rep;
+    rep = v.rep;
+    v.rep = tmp;
+    }
+    return *this;
+}
+
 vc::~vc()
 {
 	if(rep == 0) // base destruct
