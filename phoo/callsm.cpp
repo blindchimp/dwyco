@@ -180,10 +180,10 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     connect(this, SIGNAL(audio_recording(int,int)), Mainwinform, SIGNAL(audio_recording(int,int)));
     connect(Mainwinform, SIGNAL(audio_recording(int,int)), this, SLOT(audio_recording_event(int,int)));
 
-    connect(this, SIGNAL(rem_keyboard_active(const QString&,int)), Mainwinform, SIGNAL(rem_keyboard_active(const QString&, int)));
-    connect(this, SIGNAL(connect_terminated(QByteArray)), Mainwinform, SIGNAL(connect_terminated(QByteArray)));
+    //connect(this, SIGNAL(rem_keyboard_active(const QString&,int)), Mainwinform, SIGNAL(rem_keyboard_active(const QString&, int)));
+    //connect(this, SIGNAL(connect_terminated(QByteArray)), Mainwinform, SIGNAL(connect_terminated(QByteArray)));
     connect(this, SIGNAL(connectedChanged(int,QByteArray)), Mainwinform, SIGNAL(connectedChanged(int,QByteArray)));
-
+    connect_signals();
     dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
 
     chan_id = -1;
@@ -570,6 +570,36 @@ simple_call::init(QObject *mainwin)
     dwyco_set_call_acceptance_callback(dwyco_call_accepted);
     dwyco_set_call_screening_callback(dwyco_call_screening_callback);
     Mainwinform = mainwin;
+}
+
+// this is for QML mostly...
+// we want to connect a signal of the form "foo()" to
+// a signal of the form "foo(QByteArray uid)" on the mainwin
+// form, which is connected up to QML so the signal will show up
+// in a handler of the form "onFoo: {... uid ...}"
+// to do this, we directly connect the signals here to the
+// the exact signals on the Mainwinform.
+// we rely on the "on_simple_call_foo" stuff to insert the
+// uid into an emit call on the signal containing the uid.
+// there is probably some fancier way of doing this, but
+// exposing these call objects directly to QML seemed like it would
+// end up being too complicated in the QML itself.
+void
+simple_call::connect_signals()
+{
+    const QMetaObject *mo = metaObject();
+    int m = mo->methodOffset();
+    int mc = mo->methodCount();
+    for(; m < mc; ++m)
+    {
+        QMetaMethod mm = mo->method(m);
+        if(mm.methodType() != QMetaMethod::Signal)
+            continue;
+        // only connect signals with "uid" parameters
+        if(!mm.parameterNames().contains("uid"))
+            continue;
+        connect(this, SIGNAL(mm.methodSignature()), Mainwinform, SIGNAL(mm.methodSignature()));
+    }
 }
 
 void

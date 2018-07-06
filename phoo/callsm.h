@@ -38,6 +38,8 @@ private:
                                   const char *uid, int len_uid,
                                   int *accept_call_style,
                                   char **error_msg);
+    void connect_signals();
+
 public:
     explicit simple_call(const QByteArray& uid, QObject *parent = 0);
     ~simple_call();
@@ -111,7 +113,7 @@ signals:
     void connect_established();
     void connect_failed();
     void connect_terminated();
-    void connect_terminated(QByteArray);
+    void connect_terminated(QByteArray uid);
     void connect_already_exists();
 
     // signals for call setup/screening
@@ -153,7 +155,7 @@ signals:
 
     // signals for "typing..." indication
     void rem_keyboard_active(int);
-    void rem_keyboard_active(const QString&, int);
+    void rem_keyboard_active(const QString& uid, int);
 
 private slots:
     void on_actionPause_toggled(bool arg1);
