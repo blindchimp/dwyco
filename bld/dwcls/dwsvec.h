@@ -5,7 +5,10 @@
 // * vector is resized with memcpy
 // * vector is dense and append-only
 // * copy ctor is called on append
-// * dtors of elements are NOT called on destruction of the vector.
+// * dtors of elements are called on destruction of the vector.
+// * vector is NOT automatically resized if you append past the end
+// * vector has DWSVEC_INITIAL elements before you need to resize it
+//   with set_size.
 //
 #include <string.h>
 
