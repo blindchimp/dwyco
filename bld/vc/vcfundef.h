@@ -30,7 +30,7 @@ friend class vc_memberfun;
 friend vc dofunbuild(const char *, VCArglist *, int, int);
 
 protected:
-	VCArglist *bindargs;
+        DwVec<vc> *bindargs;
 	
 	vc_fundef(int = VC_FUNC_NORMAL); // used for special function definitions (factories)
     vc_fundef(vc name, int sty);

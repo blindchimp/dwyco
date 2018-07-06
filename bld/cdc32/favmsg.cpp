@@ -52,7 +52,7 @@ void
 sql_simple(const char *sql)
 {
     VCArglist a;
-    a[0] = sql;
+    a.append(sql);
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
         throw -1;
@@ -133,7 +133,7 @@ void
 sql_rollback_transaction()
 {
     VCArglist a;
-    a[0] = "rollback to fav;";
+    a.append("rollback to fav;");
     sqlite3_bulk_query(Db, &a);
 }
 
@@ -142,7 +142,7 @@ void
 sql_insert_record(vc from_uid, vc mid)
 {
     VCArglist a;
-    a[0] = "replace into fav_msgs values($1,$2);";
+    a.append("replace into fav_msgs values($1,$2);");
 
 
     a.append(to_hex(from_uid));
@@ -160,8 +160,8 @@ sql_fav_remove_uid(vc uid)
     {
         sql_start_transaction();
         VCArglist a;
-        a[0] = "delete from fav_msgs where from_uid = $1;";
-        a[1] = to_hex(uid);
+        a.append("delete from fav_msgs where from_uid = $1;");
+        a.append(to_hex(uid));
         vc res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
             throw -1;
@@ -181,8 +181,8 @@ sql_fav_remove_mid(vc mid)
     {
         sql_start_transaction();
         VCArglist a;
-        a[0] = "delete from fav_msgs where mid = $1;";
-        a[1] = mid;
+        a.append("delete from fav_msgs where mid = $1;");
+        a.append(mid);
         vc res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
             throw -1;
@@ -211,7 +211,7 @@ vc
 sql_fav_get_fav_set(vc from_uid)
 {
     VCArglist a;
-    a[0] = "select mid from fav_msgs where from_uid = $1;";
+    a.append("select mid from fav_msgs where from_uid = $1;");
     a.append(to_hex(from_uid));
 
     vc res = sqlite3_bulk_query(Db, &a);
@@ -232,7 +232,7 @@ int
 sql_fav_has_fav(vc from_uid)
 {
     VCArglist a;
-    a[0] = "select from_uid from fav_msgs where from_uid = $1 limit 1;";
+    a.append("select from_uid from fav_msgs where from_uid = $1 limit 1;");
     a.append(to_hex(from_uid));
 
     vc res = sqlite3_bulk_query(Db, &a);
@@ -248,7 +248,7 @@ int
 sql_fav_is_fav(vc mid)
 {
     VCArglist a;
-    a[0] = "select count(*) from fav_msgs where mid = $1;";
+    a.append("select count(*) from fav_msgs where mid = $1;");
     a.append(mid);
 
     vc res = sqlite3_bulk_query(Db, &a);

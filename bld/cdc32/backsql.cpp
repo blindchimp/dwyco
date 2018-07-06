@@ -95,7 +95,7 @@ void
 sql_simple(const char *sql)
 {
     VCArglist a;
-    a[0] = sql;
+    a.append(sql);
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
         throw -1;
@@ -201,7 +201,7 @@ void
 sql_rollback_transaction()
 {
     VCArglist a;
-    a[0] = "rollback transaction;";
+    a.append("rollback transaction;");
     sqlite3_bulk_query(Db, &a);
 }
 
@@ -210,7 +210,7 @@ void
 sql_insert_record(vc from_uid, vc mid, vc msg, vc attfn, vc att, const char *dbn = "main")
 {
     VCArglist a;
-    a[0] = DwString("replace into %1.msgs values($1,$2,$3,$4,$5);").arg(dbn).c_str();
+    a.append(DwString("replace into %1.msgs values($1,$2,$3,$4,$5);").arg(dbn).c_str());
 
     a.append(to_hex(from_uid));
     a.append(mid);
@@ -234,7 +234,7 @@ void
 sql_insert_misc(vc name, vc data, const char *dbn = "main")
 {
     VCArglist a;
-    a[0] = DwString("replace into %1.misc_blobs values($1,$2);").arg(dbn).c_str();
+    a.append(DwString("replace into %1.misc_blobs values($1,$2);").arg(dbn).c_str());
 
     a.append(name);
 
@@ -409,7 +409,7 @@ vc
 get_new_msgs()
 {
     VCArglist a;
-    a[0] = "select assoc_uid, mid from mi.msg_idx where mid not in (select mid from msgs union select mid from dbu.msgs);";
+    a.append("select assoc_uid, mid from mi.msg_idx where mid not in (select mid from msgs union select mid from dbu.msgs);");
 
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
@@ -457,8 +457,8 @@ vc
 get_file_contents(const char *name, const char *dbn)
 {
     VCArglist a;
-    a[0] = DwString("select data from %1.misc_blobs where name = $1;").arg(dbn).c_str();
-    a[1] = name;
+    a.append(DwString("select data from %1.misc_blobs where name = $1;").arg(dbn).c_str());
+    a.append(name);
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
         return vcnil;
@@ -595,7 +595,7 @@ int
 get_state(const char *dbn = "main")
 {
     VCArglist a;
-    a[0] = DwString("select state from %1.bu;").arg(dbn).c_str();
+    a.append(DwString("select state from %1.bu;").arg(dbn).c_str());
 
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
@@ -608,7 +608,7 @@ int
 get_date(const char *field_name, const char *dbn = "main")
 {
     VCArglist a;
-    a[0] = DwString("select %2 from %1.bu;").arg(dbn, field_name).c_str();
+    a.append(DwString("select %2 from %1.bu;").arg(dbn, field_name).c_str());
 
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
@@ -835,8 +835,8 @@ int
 restore_msg(vc uid, vc mid)
 {
     VCArglist a;
-    a[0] = "select msg, attfn, att from msgs where mid = $1;";
-    a[1] = mid;
+    a.append("select msg, attfn, att from msgs where mid = $1;");
+    a.append(mid);
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
         return 0;
@@ -890,11 +890,14 @@ restore_msgs(const char *cfn, int msgs_only)
 
     try
     {
+        vc res;
+	{
         VCArglist a;
-        a[0] = "select distinct(from_uid) from msgs;";
-        vc res = sqlite3_bulk_query(Db, &a);
+        a.append("select distinct(from_uid) from msgs;");
+        res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
             return 0;
+	}
         // we are likely to be loading something at this point,
         // so kill the index so it is rebuilt
         DeleteFile(newfn("mi.sql").c_str());
@@ -907,11 +910,13 @@ restore_msgs(const char *cfn, int msgs_only)
             vc uid = uid_list[i][0];
             make_msg_folder(uid, 0);
         }
-        a.set_size(0);
-        a[0] = "select from_uid, mid from msgs;";
+	{
+	VCArglist a;
+        a.append("select from_uid, mid from msgs;");
         res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
             return 0;
+	}
         for(int i = 0; i < res.num_elems(); ++i)
         {
             vc uid = res[i][0];
