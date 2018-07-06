@@ -83,6 +83,7 @@ RCQINC(v.rep)
 	rep = v.rep;
 }
 
+#if !defined(_MSC_VER) || _MSC_VER != 1500
 vc::vc(vc&& v)
 {
     rep = v.rep;
@@ -100,6 +101,7 @@ vc::operator=(vc&& v)
     }
     return *this;
 }
+#endif
 
 vc::~vc()
 {

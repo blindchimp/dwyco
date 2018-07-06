@@ -251,15 +251,19 @@ public:
 	inline vc(const vc& v);
 	inline notvirtual ~vc() ;
 	inline notvirtual vc& operator=(const vc& v);
+#if !defined(_MSC_VER) || _MSC_VER != 1500
         inline vc(vc&& v);
         inline vc& operator=(vc&& v);
+#endif
 #else
 	vc() ;
 	vc(const vc& v);
 	notvirtual ~vc() ;
 	notvirtual vc& operator=(const vc& v);
+#if !defined(_MSC_VER) || _MSC_VER != 1500
         vc(vc&& v);
         vc& operator=(vc&& v);
+#endif
 
 #endif
 	vc(double d);
@@ -578,6 +582,7 @@ RCQDEC(rep)
 	return *this;
 }
 
+#if !defined(_MSC_VER) || _MSC_VER != 1500
 inline
 vc::vc(vc&& v)
 {
@@ -598,6 +603,7 @@ vc::operator=(vc&& v)
     }
     return *this;
 }
+#endif
 
 #endif
 #endif
