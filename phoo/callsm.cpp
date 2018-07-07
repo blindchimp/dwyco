@@ -91,6 +91,7 @@
 #include <QFinalState>
 #include <QStateMachine>
 #include <QSignalTransition>
+#include <QDebug>
 
 #include "callsm.h"
 //#include "ssmap.h"
@@ -182,7 +183,7 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
 
     //connect(this, SIGNAL(rem_keyboard_active(const QString&,int)), Mainwinform, SIGNAL(rem_keyboard_active(const QString&, int)));
     //connect(this, SIGNAL(connect_terminated(QByteArray)), Mainwinform, SIGNAL(connect_terminated(QByteArray)));
-    connect(this, SIGNAL(connectedChanged(int,QByteArray)), Mainwinform, SIGNAL(connectedChanged(int,QByteArray)));
+    //connect(this, SIGNAL(connectedChanged(int,QByteArray)), Mainwinform, SIGNAL(connectedChanged(int,QByteArray)));
     connect_signals();
     dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
 
@@ -574,13 +575,12 @@ simple_call::init(QObject *mainwin)
 
 // this is for QML mostly...
 // we want to connect a signal of the form "foo()" to
-// a signal of the form "foo(QByteArray uid)" on the mainwin
+// a signal of the form "sc_foo(QByteArray uid)" on the mainwin
 // form, which is connected up to QML so the signal will show up
-// in a handler of the form "onFoo: {... uid ...}"
-// to do this, we directly connect the signals here to the
-// the exact signals on the Mainwinform.
-// we rely on the "on_simple_call_foo" stuff to insert the
-// uid into an emit call on the signal containing the uid.
+// in a handler of the form "onSc_foo: {... uid ...}"
+// to do this, we connect all signals to "dispatch" slots that
+// add the uid to the signal invocation, and invoke the
+// call directly on the mainwin.
 // there is probably some fancier way of doing this, but
 // exposing these call objects directly to QML seemed like it would
 // end up being too complicated in the QML itself.
@@ -588,6 +588,8 @@ void
 simple_call::connect_signals()
 {
     const QMetaObject *mo = metaObject();
+    QMetaMethod mm_dispatch = mo->method(mo->indexOfSlot("signal_dispatcher()"));
+    QMetaMethod mm_dispatch_int = mo->method(mo->indexOfSlot("signal_dispatcher_int(int)"));
     int m = mo->methodOffset();
     int mc = mo->methodCount();
     for(; m < mc; ++m)
@@ -595,11 +597,66 @@ simple_call::connect_signals()
         QMetaMethod mm = mo->method(m);
         if(mm.methodType() != QMetaMethod::Signal)
             continue;
-        // only connect signals with "uid" parameters
-        if(!mm.parameterNames().contains("uid"))
-            continue;
-        connect(this, SIGNAL(mm.methodSignature()), Mainwinform, SIGNAL(mm.methodSignature()));
+        if(mm.parameterCount() != mm_dispatch.parameterCount() || QMetaObject::checkConnectArgs(mm, mm_dispatch) == false)
+        {
+             qDebug() << "dispatch arg mismatch " << mm.methodSignature() << "\n";
+
+        }
+        else
+        {
+            if((bool)QObject::connect(this, mm, this, mm_dispatch) == false)
+            {
+                qDebug() << "can't dispatch " << mm.methodSignature() << "\n";
+            }
+
+        }
+        if(mm.parameterCount() != mm_dispatch_int.parameterCount() || QMetaObject::checkConnectArgs(mm, mm_dispatch_int) == false)
+        {
+             qDebug() << "dispatch arg mismatch_int " << mm.methodSignature() << "\n";
+
+        }
+        else
+        {
+            if((bool)QObject::connect(this, mm, this, mm_dispatch_int) == false)
+            {
+                qDebug() << "can't dispatch " << mm.methodSignature() << "\n";
+            }
+
+        }
     }
+}
+
+void
+simple_call::signal_dispatcher()
+{
+    int sig_idx = senderSignalIndex();
+    if(sig_idx == -1)
+        return;
+    QMetaMethod mm = metaObject()->method(sig_idx);
+    // here we see if there is an matching signal with a uid
+    // argument in the mainwinform, and invoke that
+    QByteArray b(mm.name());
+    b.prepend("sc_");
+    QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
+                              Q_ARG(QString, uid.toHex()));
+
+}
+
+void
+simple_call::signal_dispatcher_int(int i)
+{
+    int sig_idx = senderSignalIndex();
+    if(sig_idx == -1)
+        return;
+    QMetaMethod mm = metaObject()->method(sig_idx);
+    // here we see if there is an matching signal with a uid
+    // argument in the mainwinform, and invoke that
+    QByteArray b(mm.name());
+    b.prepend("sc_");
+    QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
+                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(int, i));
+
 }
 
 void

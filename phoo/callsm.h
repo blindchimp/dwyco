@@ -172,6 +172,9 @@ private slots:
         emit rem_keyboard_active(QString(uid.toHex()), active);
     }
 
+    void signal_dispatcher();
+    void signal_dispatcher_int(int i);
+
     void recv_control_msg(int ui_id, QByteArray com, int arg1, int arg2, QByteArray str);
     void keyboard_input();
     void keyboard_inactive();
