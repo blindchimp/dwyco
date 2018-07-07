@@ -319,8 +319,8 @@ Page {
             text: "Accept call"
             z: 5
             onClicked: {
-                vidpanel.visible = true
-                core.enable_video_capture_preview(1)
+                //vidpanel.visible = true
+                //core.enable_video_capture_preview(1)
             }
 
         }
@@ -329,8 +329,8 @@ Page {
             text: "Accept and send"
             z: 5
             onClicked: {
-                vidpanel.visible = true
-                core.enable_video_capture_preview(1)
+                //vidpanel.visible = true
+                //core.enable_video_capture_preview(1)
             }
         }
 
@@ -339,14 +339,23 @@ Page {
             text: "Send video"
             z: 5
             onClicked: {
-                vidpanel.visible = true
-                core.enable_video_capture_preview(1)
+                //vidpanel.visible = true
+                //core.enable_video_capture_preview(1)
             }
         }
 
         CallButtonLink {
             but_name: "hangup"
             text: "Hangup"
+            onVisibleChanged: {
+                if(visible) {
+                    vidpanel.visible = true
+                    core.enable_video_capture_preview(1)
+                } else {
+                    vidpanel.visible = false
+                    core.enable_video_capture_preview(0)
+                }
+            }
         }
 
         CallButtonLink {
@@ -362,6 +371,7 @@ Page {
         CallButtonLink {
             but_name: "actionPause"
             text: "Pause"
+            z: 5
         }
 
     }
@@ -384,7 +394,7 @@ Page {
 
     Connections {
         target: core
-        onRem_keyboard_active : {
+        onSc_rem_keyboard_active : {
             if(uid === to_uid) {
                 ind_typing = active
             }
@@ -407,13 +417,13 @@ Page {
                 top_toolbar_text.text = core.uid_to_name(uid)
             }
         }
-        onConnect_terminated: {
+        onSc_connect_terminated: {
             if(chatbox.to_uid == uid) {
                 console.log("CONNECT TERMINATED")
             }
         }
 
-        onConnectedChanged: {
+        onSc_connectedChanged: {
                 if(chatbox.to_uid == uid) {
                     console.log("ConnectedChanged ", connected)
                     if(connected === 0 && vidpanel.visible) {

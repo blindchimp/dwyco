@@ -106,8 +106,6 @@ signals:
     void uid_selected(QByteArray, int);
     void send_msg_event(QByteArray);
 
-    void connectedChanged(int connected, QByteArray uid);
-
     // signals for control connection
     void try_connect();
     void connect_established();
@@ -159,18 +157,6 @@ signals:
 
 private slots:
     void on_actionPause_toggled(bool arg1);
-
-    void on_simple_call_connect_terminated() {
-        emit connect_terminated(uid.toHex());
-    }
-
-    void on_simple_call_connectedChanged(int connected) {
-        emit connectedChanged(connected, uid.toHex());
-    }
-
-    void on_simple_call_rem_keyboard_active(int active) {
-        emit rem_keyboard_active(QString(uid.toHex()), active);
-    }
 
     void signal_dispatcher();
     void signal_dispatcher_int(int i);

@@ -181,10 +181,8 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     connect(this, SIGNAL(audio_recording(int,int)), Mainwinform, SIGNAL(audio_recording(int,int)));
     connect(Mainwinform, SIGNAL(audio_recording(int,int)), this, SLOT(audio_recording_event(int,int)));
 
-    //connect(this, SIGNAL(rem_keyboard_active(const QString&,int)), Mainwinform, SIGNAL(rem_keyboard_active(const QString&, int)));
-    //connect(this, SIGNAL(connect_terminated(QByteArray)), Mainwinform, SIGNAL(connect_terminated(QByteArray)));
-    //connect(this, SIGNAL(connectedChanged(int,QByteArray)), Mainwinform, SIGNAL(connectedChanged(int,QByteArray)));
     connect_signals();
+
     dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
 
     chan_id = -1;
@@ -597,25 +595,19 @@ simple_call::connect_signals()
         QMetaMethod mm = mo->method(m);
         if(mm.methodType() != QMetaMethod::Signal)
             continue;
-        if(mm.parameterCount() != mm_dispatch.parameterCount() || QMetaObject::checkConnectArgs(mm, mm_dispatch) == false)
-        {
-             qDebug() << "dispatch arg mismatch " << mm.methodSignature() << "\n";
-
-        }
-        else
+        // the reason i have to check the parameter count here is
+        // that it seems like if you have a signal with 0 or *more*
+        // arguments, that signal is considered "compatible" with
+        // a slot with no arguments.
+        if(mm.parameterCount() == mm_dispatch.parameterCount() && QMetaObject::checkConnectArgs(mm, mm_dispatch) == true)
         {
             if((bool)QObject::connect(this, mm, this, mm_dispatch) == false)
             {
                 qDebug() << "can't dispatch " << mm.methodSignature() << "\n";
             }
-
         }
-        if(mm.parameterCount() != mm_dispatch_int.parameterCount() || QMetaObject::checkConnectArgs(mm, mm_dispatch_int) == false)
-        {
-             qDebug() << "dispatch arg mismatch_int " << mm.methodSignature() << "\n";
 
-        }
-        else
+        if(mm.parameterCount() == mm_dispatch_int.parameterCount() && QMetaObject::checkConnectArgs(mm, mm_dispatch_int) == true)
         {
             if((bool)QObject::connect(this, mm, this, mm_dispatch_int) == false)
             {

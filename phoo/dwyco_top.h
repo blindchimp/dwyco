@@ -265,9 +265,9 @@ signals:
     void qt_app_state_change(int app_state);
 
     // this are sent when a call context is up
-    void rem_keyboard_active(const QString& uid, int active);
-    void connect_terminated(const QByteArray& uid);
-    void connectedChanged(int connected, const QByteArray& uid);
+    void sc_rem_keyboard_active(QString uid, int active);
+    void sc_connect_terminated(QString uid);
+    void sc_connectedChanged(QString uid, int connected);
 
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
