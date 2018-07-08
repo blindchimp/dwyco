@@ -11,6 +11,8 @@
 //   with set_size.
 //
 #include <string.h>
+#include <utility>
+
 
 #define DWSVEC_INITIAL 8
 #define DWSVEC_DBG
@@ -32,6 +34,7 @@ public:
     inline ~DwSVec();
 
     inline void append(const T&);
+    inline void append(T&&);
     //inline void append(void *);
     inline const T& ref(int i) const;
     inline T get(int i) const;
@@ -79,6 +82,19 @@ DwSVec<T>::~DwSVec()
 template<class T>
 inline
 void
+DwSVec<T>::append(T&& c)
+{
+#ifdef DWSVEC_DBG
+    if(count >= real_count)
+        oopanic("bad svec append");
+#endif
+    new (&((T*)big)[count]) T(std::move(c));
+    ++count;
+}
+
+template<class T>
+inline
+void
 DwSVec<T>::append(const T& c)
 {
 #ifdef DWSVEC_DBG
@@ -88,6 +104,7 @@ DwSVec<T>::append(const T& c)
     new (&((T*)big)[count]) T(c);
     ++count;
 }
+
 
 #if 0
 template<class T>

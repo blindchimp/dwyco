@@ -14,13 +14,14 @@
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfunc.cpp 1.45 1996/11/17 05:58:41 dwight Stable $";
 
 #ifdef LHPROF
-DwSet<vc_func *> vc_func::Func_list;
 
+template<>
 unsigned long
-hash(vc_func * const & a)
+hash<vc_func *>(vc_func * const & a)
 {
 	return (unsigned long)a;
 }
+DwSet<vc_func *> vc_func::Func_list(0, 101);
 #endif
 
 void
