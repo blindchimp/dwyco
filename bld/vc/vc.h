@@ -544,13 +544,13 @@ RCQINC(v.rep)
 inline
 vc::~vc()
 {
-	if(rep == 0) // base destruct
+        if(rep == 0 || rep == vc_nil::vcnilrep) // base destruct
 		return;
 	// ignore nil destructs, see comment in vcnil.cpp
 #ifdef USE_RCT
 RCQDEC(rep)
 #else
-	if(rep != vc_nil::vcnilrep && --rep->ref_count == 0)
+        if(--rep->ref_count == 0)
 	{
 		delete rep;
 	}

@@ -36,12 +36,12 @@ public:
     inline void append(const T&);
     inline void append(T&&);
     //inline void append(void *);
-    inline const T& ref(int i) const;
+    inline T& ref(int i);
     inline T get(int i) const;
     void set_size(int newsize);
 
-    const T operator[](int i) const {
-        return get(i);
+    T& operator[](int i) {
+        return ref(i);
     }
     int num_elems() const {
         return count;
@@ -123,8 +123,7 @@ DwSVec<T>::append(void *c)
 
 template<class T>
 inline
-const T&
-DwSVec<T>::ref(int i) const
+T &DwSVec<T>::ref(int i)
 {
 #ifdef DWSVEC_DBG
     if(i >= count || i < 0)
