@@ -41,10 +41,6 @@ vc_atomic::vc_atomic()
 {
 }
 
-vc_atomic::vc_atomic(NBaseConstructor a) : vc_default(a)
-{
-}
-
 int
 vc_atomic::visited()
 {

@@ -53,8 +53,6 @@ extern VcIOHack VcError;
 extern VcIOHack VcOutput;
 extern VcIOHack VcInput;
 
-struct BaseConstructor {BaseConstructor(int=0) { } };
-struct NBaseConstructor {NBaseConstructor(int=0) { } };
 struct VcNoinit {VcNoinit() {}};
 
 // DO NOT JACK WITH THIS ENUM
@@ -499,9 +497,6 @@ decl_rel(str)
 	// device and filtering
 	notvirtual vc set_device(vc);
 	
-protected:
-	vc(BaseConstructor) { rep = 0; }
-	vc(NBaseConstructor) { rep = 0; }
 
 #undef notvirtual
 };
@@ -512,6 +507,7 @@ protected:
 #ifdef USE_RCT
 #include "rct.h"
 #endif
+
 inline
 vc::vc()
 {
@@ -528,11 +524,11 @@ vc::vc(const vc& v)
 	// copy constructors for classes derived from vc.
 	// if you can avoid this, then you can remove the following
 	// if(..)
-	if(v.rep == 0)
-	{
-		rep = 0;
-		return;
-	}
+//	if(v.rep == 0)
+//	{
+//		rep = 0;
+//		return;
+//	}
 #ifdef USE_RCT
 RCQINC(v.rep)
 #else
@@ -582,7 +578,7 @@ inline
 vc::vc(vc&& v)
 {
     rep = v.rep;
-    v.rep = 0;
+    v.rep = vc_nil::vcnilrep;
 }
 
 inline

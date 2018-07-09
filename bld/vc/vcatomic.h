@@ -24,7 +24,6 @@ public:
 	void bomb_str_rel() const;
 	
 	vc_atomic();
-	vc_atomic(NBaseConstructor a);
 
 	virtual int visited();
 	virtual void set_visited();
