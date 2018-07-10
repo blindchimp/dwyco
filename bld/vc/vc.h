@@ -510,8 +510,6 @@ inline
 vc::vc()
 {
 	rep = vc_nil::vcnilrep;
-	// ref count is ignored for nil
-	//++rep->ref_count;
 }
 
 
@@ -538,7 +536,7 @@ RCQINC(v.rep)
 inline
 vc::~vc()
 {
-        if(rep == 0 || rep == vc_nil::vcnilrep) // base destruct
+        if(rep == vc_nil::vcnilrep) // base destruct
 		return;
 	// ignore nil destructs, see comment in vcnil.cpp
 #ifdef USE_RCT
