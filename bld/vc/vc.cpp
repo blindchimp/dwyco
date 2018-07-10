@@ -59,8 +59,6 @@ vc::vc(VcLexer &l)
 vc::vc()
 {
 	rep = vc_nil::vcnilrep;
-	// ref count is ignored for nil
-	//++rep->ref_count;
 }
 
 
@@ -70,11 +68,11 @@ vc::vc(const vc& v)
 	// copy constructors for classes derived from vc.
 	// if you can avoid this, then you can remove the following
 	// if(..)
-	if(v.rep == 0)
-	{
-		rep = 0;
-		return;
-	}
+//	if(v.rep == 0)
+//	{
+//		rep = 0;
+//		return;
+//	}
 #ifdef USE_RCT
 RCQINC(v.rep)
 #else
@@ -83,36 +81,18 @@ RCQINC(v.rep)
 	rep = v.rep;
 }
 
-vc::vc(vc&& v)
-{
-    rep = v.rep;
-    v.rep = 0;
-}
-
-vc&
-vc::operator=(vc&& v)
-{
-    if(this != &v)
-    {
-    vc_default *tmp = rep;
-    rep = v.rep;
-    v.rep = tmp;
-    }
-    return *this;
-}
-
 vc::~vc()
 {
-	if(rep == 0) // base destruct
-		return;
-	// ignore nil destructs, see comment in vcnil.cpp
+    if(rep == vc_nil::vcnilrep) // base destruct
+    return;
+// ignore nil destructs, see comment in vcnil.cpp
 #ifdef USE_RCT
 RCQDEC(rep)
 #else
-	if(rep != vc_nil::vcnilrep && --rep->ref_count == 0)
-	{
-		delete rep;
-	}
+    if(--rep->ref_count == 0)
+{
+    delete rep;
+}
 #endif
 }
 
@@ -134,6 +114,27 @@ RCQDEC(rep)
 		rep = v.rep;
 	}
 	return *this;
+}
+
+
+vc::vc(vc&& v)
+{
+    rep = v.rep;
+    v.rep = vc_nil::vcnilrep;
+}
+
+
+vc&
+vc::operator=(vc&& v)
+{
+    if(this != &v)
+    {
+    vc_default *tmp = rep;
+    rep = v.rep;
+    v.rep = tmp;
+
+    }
+    return *this;
 }
 #endif
 
