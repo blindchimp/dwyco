@@ -217,8 +217,6 @@ public:
 	// more awful hacks, though useful when not using
 	// full hierarchy...
 	vc_default *nonono() {return rep;}
-	void bomb_call_atom() const;
-	void bomb_op_func() const;
 	notvirtual int is_atomic() const ;
 	notvirtual int is_varadic() const ;
 	notvirtual int must_eval_args() const;
