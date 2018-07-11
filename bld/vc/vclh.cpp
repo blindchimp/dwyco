@@ -271,18 +271,6 @@ extern int Gc_count;
 	return vcnil;
 }
 
-void
-vc::bomb_call_atom() const
-{
-	USER_BOMB2("attempt to funcall non-function.");
-}
-
-void
-vc::bomb_op_func() const
-{
-	USER_BOMB2("atomic-op on function.");
-}
-
 vc
 doputfile(vc file, vc item)
 {

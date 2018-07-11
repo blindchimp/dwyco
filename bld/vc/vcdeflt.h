@@ -27,7 +27,7 @@ friend class vc;
 public:
 	long ref_count;
 	vc_default();
-	vc_default(NBaseConstructor);
+
 	vc_default(const vc_default&);
 #ifdef OBJTRACK
 	virtual ~vc_default();

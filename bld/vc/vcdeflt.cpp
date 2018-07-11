@@ -59,7 +59,7 @@ clear_objmap()
 
 #endif
 
-vc_default::vc_default() : vc(BaseConstructor())
+vc_default::vc_default()
 {
 	ref_count = 1;
 #ifdef VCDBG
@@ -74,18 +74,10 @@ vc_default::vc_default() : vc(BaseConstructor())
 #endif
 }
 
-vc_default::vc_default(NBaseConstructor a) : vc(a)
-{
-	ref_count = 2; // avoid nilrep destruct
-#ifdef VCDBG
-	break_tag = BREAK_NONE;
-#endif
-}
-
 // we don't want to allow objects to be
 // copied verbatim because that would leave
 // the reference count messed up.
-vc_default::vc_default(const vc_default&) : vc(BaseConstructor())
+vc_default::vc_default(const vc_default&)
 {
 	ref_count = 1;
 #ifdef VCDBG

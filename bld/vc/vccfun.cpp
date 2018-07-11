@@ -213,8 +213,6 @@ vc_cfunc::eval() const
 vc_default *
 vc_cfunc::do_copy() const {
 	oopanic("can't copy cfun");
-	//vc_cfunc *v = new vc_cfunc(funcp0, name);
-	//return v;
 	return 0;
 }
 

@@ -53,8 +53,6 @@ extern VcIOHack VcError;
 extern VcIOHack VcOutput;
 extern VcIOHack VcInput;
 
-struct BaseConstructor {BaseConstructor(int=0) { } };
-struct NBaseConstructor {NBaseConstructor(int=0) { } };
 struct VcNoinit {VcNoinit() {}};
 
 // DO NOT JACK WITH THIS ENUM
@@ -219,8 +217,6 @@ public:
 	// more awful hacks, though useful when not using
 	// full hierarchy...
 	vc_default *nonono() {return rep;}
-	void bomb_call_atom() const;
-	void bomb_op_func() const;
 	notvirtual int is_atomic() const ;
 	notvirtual int is_varadic() const ;
 	notvirtual int must_eval_args() const;
@@ -499,9 +495,6 @@ decl_rel(str)
 	// device and filtering
 	notvirtual vc set_device(vc);
 	
-protected:
-	vc(BaseConstructor) { rep = 0; }
-	vc(NBaseConstructor) { rep = 0; }
 
 #undef notvirtual
 };
@@ -512,12 +505,11 @@ protected:
 #ifdef USE_RCT
 #include "rct.h"
 #endif
+
 inline
 vc::vc()
 {
 	rep = vc_nil::vcnilrep;
-	// ref count is ignored for nil
-	//++rep->ref_count;
 }
 
 
@@ -528,11 +520,11 @@ vc::vc(const vc& v)
 	// copy constructors for classes derived from vc.
 	// if you can avoid this, then you can remove the following
 	// if(..)
-	if(v.rep == 0)
-	{
-		rep = 0;
-		return;
-	}
+//	if(v.rep == 0)
+//	{
+//		rep = 0;
+//		return;
+//	}
 #ifdef USE_RCT
 RCQINC(v.rep)
 #else
@@ -544,13 +536,13 @@ RCQINC(v.rep)
 inline
 vc::~vc()
 {
-	if(rep == 0) // base destruct
+        if(rep == vc_nil::vcnilrep) // base destruct
 		return;
 	// ignore nil destructs, see comment in vcnil.cpp
 #ifdef USE_RCT
 RCQDEC(rep)
 #else
-	if(rep != vc_nil::vcnilrep && --rep->ref_count == 0)
+        if(--rep->ref_count == 0)
 	{
 		delete rep;
 	}
@@ -582,7 +574,7 @@ inline
 vc::vc(vc&& v)
 {
     rep = v.rep;
-    v.rep = 0;
+    v.rep = vc_nil::vcnilrep;
 }
 
 inline
