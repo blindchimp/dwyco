@@ -303,6 +303,8 @@ vc
 vc_default::force_eval() const {USER_BOMB("unimp forceeval", vcnil);}
 vc
 vc_default::eval() const {USER_BOMB("unimp eval", vcnil);}
+void
+vc_default::eval(vc& res) const {USER_BOMB2("unimp eval");}
 //hashValueType vc_default::hashValue() const {USER_BOMB("unimp hashval", 0);}
 hashValueType vc_default::hashValue() const {return (hashValueType)this;}
 

@@ -85,6 +85,7 @@ public:
 
 	virtual vc force_eval() const ;
 	virtual vc eval() const ;
+        virtual void eval(vc& res) const;
 
 	virtual void stringrep(VcIO o) const ;
 	

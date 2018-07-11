@@ -11,6 +11,7 @@
 #include "vccomp.h"
 #include "vcmap.h"
 #include "vcio.h"
+#include <utility>
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vc3.cpp 1.47 1997/11/27 03:05:54 dwight Stable $";
 
@@ -343,6 +344,17 @@ vc::eval() const
 	if(is_quoted())
 		return *this;
 	return rep->eval();
+}
+
+void
+vc::eval(vc &res) const
+{
+    if(is_quoted())
+    {
+        res.rep = rep;
+        return;
+    }
+    rep->eval(res);
 }
 
 void

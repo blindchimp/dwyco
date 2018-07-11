@@ -243,9 +243,17 @@ vc_funcall::flush_cache()
 	*cached_fun = vcnil;
 }
 
-
 vc
 vc_funcall::eval() const
+{
+    vc ret;
+    eval(ret);
+    CHECK_ANY_BO(vcnil);
+    return ret;
+}
+
+void
+vc_funcall::eval(vc& res) const
 {
 
 #ifdef VCDBG
@@ -299,7 +307,7 @@ vc_funcall::eval() const
 	{
 		// no caching for computed functions
 		f = func.eval();
-		CHECK_ANY_BO(vcnil);
+        CHECK_ANY_BO2(res);
 	}
 	// check this early, so we can stop execution
 	// now, instead of waiting for the actual function
@@ -342,18 +350,20 @@ vc_funcall::eval() const
 	}
 	else
 	{
+        al.set_count(n);
 		for(int i = 0; i < n; ++i)
 		{
 #ifdef VCDBG
 			dbg(argnum) = i;
 #endif
-            al.append(arglist[i].eval());
+            //al.append(arglist[i].eval());
+            arglist[i].eval(al.ref(i));
 			if(Vcmap->dbg_backout_in_progress())
 			{
 				dbg_print(f, i);
-				return vcnil;
+                return;
 			}
-			CHECK_ANY_BO(vcnil);
+            CHECK_ANY_BO2(res);
 		}
 	}
 
@@ -361,7 +371,7 @@ vc_funcall::eval() const
 	dbg(info) = "Calling function";
 #endif
 
-	vc ret = f(&al);
+    res = f(&al);
 
 #ifdef VCDBG
 	dbg(info) = "After function return";
@@ -371,9 +381,7 @@ vc_funcall::eval() const
 	if(Vcmap->dbg_backout_in_progress())
 	{
 		dbg_print(f, &al);
-		return vcnil;
 	}
-	return ret;
 }
 
 void

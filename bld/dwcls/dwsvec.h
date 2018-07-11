@@ -29,9 +29,10 @@ public:
     char *big;
     int count;
     int real_count;
+    unsigned int dtor_mask;
 
     inline DwSVec();
-    inline ~DwSVec();
+    ~DwSVec();
 
     inline void append(const T&);
     inline void append(T&&);
@@ -39,6 +40,7 @@ public:
     inline T& ref(int i);
     inline T get(int i) const;
     void set_size(int newsize);
+    void set_count(int newcount);
 
     T& operator[](int i) {
         return ref(i);
@@ -64,16 +66,27 @@ DwSVec<T>::DwSVec()
     count = 0;
     real_count = DWSVEC_INITIAL;
     big = vec;
+    dtor_mask = 0;
 }
 
 template<class T>
-inline
 DwSVec<T>::~DwSVec()
 {
+//    if(dtor_mask)
+//    {
+//    for(int i = 0; i < count; ++i)
+//    {
+//        if(dtor_mask & (1 << i))
+//            (&((T*)big)[i])->~T();
+//    }
+//    }
+
     for(int i = 0; i < count; ++i)
     {
-        (&((T*)big)[i])->~T();
+
+            (&((T*)big)[i])->~T();
     }
+
     if(big != vec)
         delete [] big;
 }
@@ -89,6 +102,7 @@ DwSVec<T>::append(T&& c)
         oopanic("bad svec append");
 #endif
     new (&((T*)big)[count]) T(std::move(c));
+
     ++count;
 }
 
@@ -102,6 +116,7 @@ DwSVec<T>::append(const T& c)
         oopanic("bad svec append");
 #endif
     new (&((T*)big)[count]) T(c);
+    dtor_mask |= (1 << count);
     ++count;
 }
 
@@ -167,6 +182,17 @@ DwSVec<T>::set_size(int newsize)
 
 template<class T>
 void
+DwSVec<T>::set_count(int newcount)
+{
+    if(newcount > real_count)
+        set_size(newcount);
+    count = newcount;
+    for(int i = 0; i < count; ++i)
+        new (&((T*)big)[i]) T();
+}
+
+template<class T>
+void
 DwSVec<T>::del(int s, int n)
 {
 #ifdef DWSVEC_DBG
@@ -175,6 +201,7 @@ DwSVec<T>::del(int s, int n)
 #endif
     memmove(big, big + (sizeof(T) * n), (count - n) * sizeof(T));
     count -= n;
+    dtor_mask >>= n;
 }
 
 #endif

@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <utility>
 
 #define dwmax(x, y) (((x) < (y)) ? (y) : (x))
 #define dwmin(x, y) (((x) > (y)) ? (y) : (x))
@@ -467,6 +468,7 @@ decl_rel(str)
 
 	notvirtual vc force_eval() const ;
 	notvirtual vc eval() const ;
+        notvirtual void eval(vc& res) const;
 
 	notvirtual void stringrep(VcIO o) const ;
 

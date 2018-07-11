@@ -151,6 +151,7 @@ private:
 	void local_bremove() const ;
 	void global_bremove() const ;
 	vc eval() const;
+        void eval(vc& res) const;
 	virtual vc_default *do_copy() const ;
 
 public:

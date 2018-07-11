@@ -33,6 +33,7 @@
 #define CHECK_DBG_BO_LOOP if(Vcmap->dbg_backout_in_progress()) break
 
 #define CHECK_ANY_BO(ret) if(Vcmap->unwind_in_progress()) return ret
+#define CHECK_ANY_BO2(ret) if(Vcmap->unwind_in_progress()) {ret = vcnil; return;}
 #define CHECK_ANY_BO_CLEANUP(cleanup, ret) if(Vcmap->unwind_in_progress()) { cleanup return ret;}
 #define CHECK_ANY_BO_LOOP if(Vcmap->unwind_in_progress()) break
 

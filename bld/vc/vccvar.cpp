@@ -228,6 +228,12 @@ vc_cvar::performance_hack(vc& atom) const
 
 #endif
 
+void
+vc_cvar::eval(vc& res) const
+{
+    res = eval();
+}
+
 vc
 vc_cvar::eval() const
 {
