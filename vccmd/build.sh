@@ -15,12 +15,16 @@ cp libuv.a $SHADOW_NAME/bld/libuv
 cp include/uv.h $SHADOW_NAME/include
 )
 
-(
-cd bld/spread-hacked
-cd `cat curver`
-./configure --prefix=$SHADOW_NAME
-make -j 8 install
-)
+if [ ! -e $SHADOW_NAME/include/sp.h ]
+then
+( 
+cd bld/spread-hacked 
+cd `cat curver` 
+./configure --prefix=$SHADOW_NAME 
+make -j 8
+make install 
+) 
+fi
 
 (
 opwd=$PWD
