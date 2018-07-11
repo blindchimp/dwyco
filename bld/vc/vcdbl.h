@@ -22,9 +22,6 @@ friend class vc_int;
 private:
 	double d;
 	static char buf[2048];
-
-	vc eval() const {oopanic("eval double?"); return vcnil;}
-
 public:
 	vc_double() ;
 	vc_double(double d2) ;
