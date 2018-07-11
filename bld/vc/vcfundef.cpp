@@ -100,31 +100,11 @@ vc_fundef::stringrep(VcIO o) const
 	o << ")";
 }
 
-#if 0
-//
-// used when making a copy of a fundef
-//
-vc_fundef::vc_fundef(vc fd, VCArglist *a, int)
-{
-	fundef = fd;
-	bindargs = a;
-}
-#endif
-
 
 vc_fundef::~vc_fundef()
 {
 	delete bindargs;
 }
-
-#if 0
-vc *
-vc_fundef::do_copy() const
-{
-	vc_fundef *v = new vc_fundef(fundef, new VCArglist(*bindargs), 0);
-	return v;
-}
-#endif
 
 //
 // eval a fundef.

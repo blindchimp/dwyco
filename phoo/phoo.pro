@@ -87,7 +87,7 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 INCLUDEPATH += $${DINC}/v4lcap
 
 #QMAKE_CXXFLAGS += -g -fsanitize=address #-O2
-QMAKE_LFLAGS += -g -fsanitize=address
+#QMAKE_LFLAGS += -g -fsanitize=address
 QMAKE_CXX=ccache g++
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameters
 

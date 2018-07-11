@@ -50,13 +50,9 @@ vc_nil::operator new(size_t )
 {
 	oopanic("new nil?");
 	return 0;
-#if 0
-	extern vc_nil TheNil;
-	return (void *)&TheNil;
-#endif
 }
 
-vc_nil::vc_nil() : vc_atomic(NBaseConstructor()) { }
+vc_nil::vc_nil() {}
 vc_nil::~vc_nil() { }
 
 vc_nil::operator double() const {return 0.0; }

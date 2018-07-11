@@ -11,6 +11,8 @@
 //   with set_size.
 //
 #include <string.h>
+#include <utility>
+
 
 #define DWSVEC_INITIAL 8
 #define DWSVEC_DBG
@@ -32,13 +34,14 @@ public:
     inline ~DwSVec();
 
     inline void append(const T&);
+    inline void append(T&&);
     //inline void append(void *);
-    inline const T& ref(int i) const;
+    inline T& ref(int i);
     inline T get(int i) const;
     void set_size(int newsize);
 
-    const T operator[](int i) const {
-        return get(i);
+    T& operator[](int i) {
+        return ref(i);
     }
     int num_elems() const {
         return count;
@@ -79,6 +82,19 @@ DwSVec<T>::~DwSVec()
 template<class T>
 inline
 void
+DwSVec<T>::append(T&& c)
+{
+#ifdef DWSVEC_DBG
+    if(count >= real_count)
+        oopanic("bad svec append");
+#endif
+    new (&((T*)big)[count]) T(std::move(c));
+    ++count;
+}
+
+template<class T>
+inline
+void
 DwSVec<T>::append(const T& c)
 {
 #ifdef DWSVEC_DBG
@@ -88,6 +104,7 @@ DwSVec<T>::append(const T& c)
     new (&((T*)big)[count]) T(c);
     ++count;
 }
+
 
 #if 0
 template<class T>
@@ -106,8 +123,7 @@ DwSVec<T>::append(void *c)
 
 template<class T>
 inline
-const T&
-DwSVec<T>::ref(int i) const
+T &DwSVec<T>::ref(int i)
 {
 #ifdef DWSVEC_DBG
     if(i >= count || i < 0)
