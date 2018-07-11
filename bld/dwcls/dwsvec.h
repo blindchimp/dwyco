@@ -34,7 +34,7 @@ public:
     inline ~DwSVec();
 
     inline void append(const T&);
-    inline void append(T&&);
+    //inline void append(T&&);
     //inline void append(void *);
     inline T& ref(int i);
     inline T get(int i) const;
@@ -79,6 +79,7 @@ DwSVec<T>::~DwSVec()
 }
 
 
+#if 0
 template<class T>
 inline
 void
@@ -91,6 +92,7 @@ DwSVec<T>::append(T&& c)
     new (&((T*)big)[count]) T(std::move(c));
     ++count;
 }
+#endif
 
 template<class T>
 inline
