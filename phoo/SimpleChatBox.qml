@@ -537,10 +537,6 @@ Page {
                     ind_online = connected === 1 ? true : false
                 }
             }
-
-
-
-
 //        onIgnore_event: {
 //            if(uid === to_uid) {
 //               to_uid = ""
@@ -982,7 +978,7 @@ Page {
 //            z: 5
 
 //        }
-        ToolButton {
+        TipButton {
             id: cam_button
             anchors.verticalCenter: parent.verticalCenter
             anchors.right: parent.right
@@ -996,6 +992,7 @@ Page {
             onClicked: {
                stack.push(cam, {"next_state" : "PhotoCapture"})
             }
+            ToolTip.text: "Take pic from camera"
         }
     }
 
