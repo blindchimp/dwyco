@@ -20,17 +20,14 @@ ToolBar {
 
     implicitWidth: parent.width
 
-
     RowLayout {
-
-
         Item {
             Layout.minimumHeight: cm(1)
         }
         anchors.fill: parent
         spacing: mm(2)
 
-        ToolButton {
+        TipButton {
             id: back_button
             contentItem: Image {
                 source: mi("ic_arrow_back_black_24dp.png")
@@ -41,18 +38,14 @@ ToolBar {
                 stack.pop()
             }
             Layout.fillHeight: true
-
+            ToolTip.text: "Go back"
         }
 
-
         Item {
-
             Layout.fillWidth: true
         }
 
         ConvToolButton {
-
-
         }
 
         Loader {

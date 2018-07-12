@@ -295,14 +295,45 @@ Page {
 
                 }
 
+                CallButtonLink {
+                    id: mute_button
+                    but_name: "mute_button"
+                    contentItem: Image {
+                        id: mic_icon
+                        anchors.centerIn: parent
+                        source: mi("ic_mic_black_24dp.png")
+                    }
+                    onCheckedChanged: {
+                        mic_icon.source = checked ? mi("ic_mic_black_24dp.png") : mi("ic_mic_off_black_24dp.png")
+                    }
 
-                ToolButton {
+//                    background: Rectangle {
+//                        id: bgblink3
+//                        ParallelAnimation {
+//                            loops: Animation.Infinite
+//                            running: call_reject_button.visible
+//                            ColorAnimation {
+//                                target: bgblink3
+//                                property: "color"
+//                                from: "red"
+//                                to: "white"
+//                                duration: 1000
+//                            }
+//                        }
+//                    }
+                    ToolTip.text: "Toggle mic"
+
+                }
+
+
+                TipButton {
                     contentItem: Image {
                         anchors.centerIn: parent
                         source: mi("ic_action_overflow.png")
                     }
                     onClicked: optionsMenu.open()
                     visible: chatbox.visible
+                    ToolTip.text: "More actions"
 
                     Menu {
 
@@ -537,10 +568,6 @@ Page {
                     ind_online = connected === 1 ? true : false
                 }
             }
-
-
-
-
 //        onIgnore_event: {
 //            if(uid === to_uid) {
 //               to_uid = ""
@@ -982,7 +1009,7 @@ Page {
 //            z: 5
 
 //        }
-        ToolButton {
+        TipButton {
             id: cam_button
             anchors.verticalCenter: parent.verticalCenter
             anchors.right: parent.right
@@ -996,6 +1023,7 @@ Page {
             onClicked: {
                stack.push(cam, {"next_state" : "PhotoCapture"})
             }
+            ToolTip.text: "Take pic from camera"
         }
     }
 
