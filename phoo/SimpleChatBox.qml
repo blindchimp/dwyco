@@ -100,7 +100,7 @@ Page {
                     Layout.minimumHeight: cm(1)
                 }
 
-                ToolButton {
+                TipButton {
                     id: back_button
                     contentItem: Image {
                         anchors.centerIn: parent
@@ -112,6 +112,8 @@ Page {
                         stack.pop()
                     }
                     Layout.fillHeight: true
+                    ToolTip.text: "Go back"
+
                     //Layout.maximumWidth: mm(3)
                     //Layout.rightMargin: 0
                 }
@@ -193,11 +195,7 @@ Page {
                         anchors.centerIn: parent
                         source: mi("ic_videocam_black_24dp.png")
                     }
-                    //checkable: false
-                    //visible: !cam.visible
-                    onClicked: {
-
-                    }
+                    ToolTip.text: "Request live video"
                 }
                 CallButtonLink {
                     but_name: "cancel_req"
@@ -205,6 +203,7 @@ Page {
                         anchors.centerIn: parent
                         source: mi("ic_cancel_black_24dp.png")
                     }
+                    ToolTip.text: "Hangup"
 
                 }
                 CallButtonLink {
@@ -222,6 +221,7 @@ Page {
                             core.enable_video_capture_preview(0)
                         }
                     }
+                    ToolTip.text: "Hangup"
 
                 }
                 CallButtonLink {
@@ -245,6 +245,7 @@ Page {
                             }
                         }
                     }
+                    ToolTip.text: "Accept live video"
                 }
                 CallButtonLink {
                     id: call_send_accept_button
@@ -267,6 +268,7 @@ Page {
                             }
                         }
                     }
+                    ToolTip.text: "Start two-way video"
                 }
                 CallButtonLink {
                     id: call_reject_button
@@ -289,6 +291,7 @@ Page {
                             }
                         }
                     }
+                    ToolTip.text: "Decline live video"
 
                 }
 
@@ -469,11 +472,11 @@ Page {
 //            text: "Cancel"
 //        }
 
-        CallButtonLink {
-            but_name: "actionPause"
-            text: "Pause"
-            z: 5
-        }
+//        CallButtonLink {
+//            but_name: "actionPause"
+//            text: "Pause"
+//            z: 5
+//        }
 
     }
 
@@ -566,7 +569,6 @@ Page {
         top_toolbar_text.text = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
-        //call_buttons.model = core.get_button_model(to_uid)
         call_buttons_model = core.get_button_model(to_uid)
     }
 

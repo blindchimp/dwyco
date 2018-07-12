@@ -9,11 +9,11 @@
 import QtQuick 2.6
 import QtGraphicalEffects 1.0
 import QtQml 2.2
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.2
 import dwyco 1.0
 
 
-ToolButton {
+TipButton {
     background: Image {
         id: bgimage
         anchors.centerIn: parent
@@ -36,9 +36,7 @@ ToolButton {
             verticalAlignment: Text.AlignVCenter
         }
     }
-
-
-
+    ToolTip.text: "Pop back to top"
     checkable: false
     onClicked: {
         // go back to top level

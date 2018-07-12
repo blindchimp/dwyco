@@ -4,7 +4,7 @@ import QtQuick.Controls 2.2
 import dwyco 1.0
 
 
-ToolButton {
+TipButton {
     id: our_but
     property int model_index;
     property string but_name;
