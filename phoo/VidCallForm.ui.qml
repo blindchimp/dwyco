@@ -7,7 +7,6 @@ Image {
 
     id: vid_incoming
     fillMode: Image.PreserveAspectFit
-
     Image {
         id: vid_preview
         fillMode: Image.PreserveAspectFit
@@ -16,5 +15,17 @@ Image {
         width: parent.width / 4
         height: parent.height / 4
         clip: true
+        CallButtonLink {
+            anchors.fill: parent
+            but_name: "actionPause"
+            opacity: checked ? .7 : 0
+            contentItem: Image {
+                anchors.centerIn: parent
+                source: mi("ic_pause_circle_outline_white_24dp.png")
+            }
+            onClicked: {
+                console.log("okok")
+            }
+        }
     }
 }

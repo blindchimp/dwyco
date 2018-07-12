@@ -186,26 +186,113 @@ Page {
                     visible: {stack.depth > 2 || core.unread_count > 0}
                 }
 
-                ToolButton {
-                    id: pic_button
+                CallButtonLink {
+                    id: vidcall_button
+                    but_name: "send_video"
                     contentItem: Image {
                         anchors.centerIn: parent
-                        source: mi("ic_attachment_black_24dp.png")
+                        source: mi("ic_videocam_black_24dp.png")
                     }
-                    checkable: false
-                    visible: !cam.visible
+                    //checkable: false
+                    //visible: !cam.visible
                     onClicked: {
-                        if(Qt.platform.os == "android") {
-                            // ugh, what a hack
-                            android_img_pick_hack = 0
-                            android_img_pick_hack = 2
-                            notificationClient.open_image()
+
+                    }
+                }
+                CallButtonLink {
+                    but_name: "cancel_req"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+
+                }
+                CallButtonLink {
+                    but_name: "hangup"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+                    onVisibleChanged: {
+                        if(visible) {
+                            vidpanel.visible = true
+                            core.enable_video_capture_preview(1)
                         } else {
-                            picture_picker.visible = true
+                            vidpanel.visible = false
+                            core.enable_video_capture_preview(0)
                         }
                     }
 
                 }
+                CallButtonLink {
+                    id: call_accept_button
+                    but_name: "accept"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_videocam_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_accept_button.visible
+                            ColorAnimation {
+                                target: bgblink
+                                property: "color"
+                                from: "white"
+                                to: "green"
+                                duration: 1000
+                            }
+                        }
+                    }
+                }
+                CallButtonLink {
+                    id: call_send_accept_button
+                    but_name: "accept_and_send"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_videocam_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink2
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_send_accept_button.visible
+                            ColorAnimation {
+                                target: bgblink2
+                                property: "color"
+                                from: "white"
+                                to: "green"
+                                duration: 1000
+                            }
+                        }
+                    }
+                }
+                CallButtonLink {
+                    id: call_reject_button
+                    but_name: "reject"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink3
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_reject_button.visible
+                            ColorAnimation {
+                                target: bgblink3
+                                property: "color"
+                                from: "red"
+                                to: "white"
+                                duration: 1000
+                            }
+                        }
+                    }
+
+                }
+
+
                 ToolButton {
                     contentItem: Image {
                         anchors.centerIn: parent
@@ -224,6 +311,20 @@ Page {
                             text: "View profile"
                             onTriggered: {
                                 stack.push(theprofileview)
+                            }
+                        }
+                        MenuItem {
+                            text: "Send picture"
+                            onTriggered: {
+                                if(Qt.platform.os == "android") {
+                                    // ugh, what a hack
+                                    android_img_pick_hack = 0
+                                    android_img_pick_hack = 2
+                                    notificationClient.open_image()
+                                } else {
+                                    picture_picker.visible = true
+                                }
+
                             }
                         }
                         MenuItem {
@@ -310,63 +411,63 @@ Page {
 //    }
     Row{
         z: 5
-        CallButtonLink {
-            id: accept_button
-            //width: parent.width
-            //height: implicitHeight
-            but_name: "accept"
-            //visible: true
-            text: "Accept call"
-            z: 5
-            onClicked: {
-                //vidpanel.visible = true
-                //core.enable_video_capture_preview(1)
-            }
+//        CallButtonLink {
+//            id: accept_button
+//            //width: parent.width
+//            //height: implicitHeight
+//            but_name: "accept"
+//            //visible: true
+//            text: "Accept call"
+//            z: 5
+//            onClicked: {
+//                //vidpanel.visible = true
+//                //core.enable_video_capture_preview(1)
+//            }
 
-        }
-        CallButtonLink {
-            but_name: "accept_and_send"
-            text: "Accept and send"
-            z: 5
-            onClicked: {
-                //vidpanel.visible = true
-                //core.enable_video_capture_preview(1)
-            }
-        }
+//        }
+//        CallButtonLink {
+//            but_name: "accept_and_send"
+//            text: "Accept and send"
+//            z: 5
+//            onClicked: {
+//                //vidpanel.visible = true
+//                //core.enable_video_capture_preview(1)
+//            }
+//        }
 
-        CallButtonLink {
-            but_name: "send_video"
-            text: "Send video"
-            z: 5
-            onClicked: {
-                //vidpanel.visible = true
-                //core.enable_video_capture_preview(1)
-            }
-        }
+//        CallButtonLink {
+//            but_name: "send_video"
+//            text: "Send video"
+//            z: 5
+//            onClicked: {
+//                //vidpanel.visible = true
+//                //core.enable_video_capture_preview(1)
+//            }
+//        }
 
-        CallButtonLink {
-            but_name: "hangup"
-            text: "Hangup"
-            onVisibleChanged: {
-                if(visible) {
-                    vidpanel.visible = true
-                    core.enable_video_capture_preview(1)
-                } else {
-                    vidpanel.visible = false
-                    core.enable_video_capture_preview(0)
-                }
-            }
-        }
+//        CallButtonLink {
+//            but_name: "hangup"
+//            text: "Hangup"
+//            onVisibleChanged: {
+//                if(visible) {
+//                    vidpanel.visible = true
+//                    core.enable_video_capture_preview(1)
+//                } else {
+//                    vidpanel.visible = false
+//                    core.enable_video_capture_preview(0)
+//                }
+//            }
+//        }
 
-        CallButtonLink {
-            but_name: "reject"
-            text: "Reject"
-        }
+//        CallButtonLink {
+//            but_name: "reject"
+//            text: "Reject"
+//        }
 
-        CallButtonLink {
-            but_name: "cancel_req"
-            text: "Cancel"
-        }
+//        CallButtonLink {
+//            but_name: "cancel_req"
+//            text: "Cancel"
+//        }
 
         CallButtonLink {
             but_name: "actionPause"
