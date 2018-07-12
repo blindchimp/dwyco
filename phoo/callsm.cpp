@@ -145,6 +145,11 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
 
     //ui->textEdit->installEventFilter(return_filter);
 
+    if(HasCamera)
+    {
+        ui->actionPause->setVisible(1);
+    }
+
     connect(ui->actionCam_off, SIGNAL(triggered(bool)), this, SLOT(cam_control_off(bool)));
     connect(ui->actionCam_on, SIGNAL(triggered(bool)), this, SLOT(cam_control_on(bool)));
 
@@ -588,6 +593,7 @@ simple_call::connect_signals()
     const QMetaObject *mo = metaObject();
     QMetaMethod mm_dispatch = mo->method(mo->indexOfSlot("signal_dispatcher()"));
     QMetaMethod mm_dispatch_int = mo->method(mo->indexOfSlot("signal_dispatcher_int(int)"));
+    QMetaMethod mm_dispatch_bool = mo->method(mo->indexOfSlot("signal_dispatcher_bool(bool)"));
     int m = mo->methodOffset();
     int mc = mo->methodCount();
     for(; m < mc; ++m)
@@ -610,6 +616,14 @@ simple_call::connect_signals()
         if(mm.parameterCount() == mm_dispatch_int.parameterCount() && QMetaObject::checkConnectArgs(mm, mm_dispatch_int) == true)
         {
             if((bool)QObject::connect(this, mm, this, mm_dispatch_int) == false)
+            {
+                qDebug() << "can't dispatch " << mm.methodSignature() << "\n";
+            }
+
+        }
+        if(mm.parameterCount() == mm_dispatch_bool.parameterCount() && QMetaObject::checkConnectArgs(mm, mm_dispatch_bool) == true)
+        {
+            if((bool)QObject::connect(this, mm, this, mm_dispatch_bool) == false)
             {
                 qDebug() << "can't dispatch " << mm.methodSignature() << "\n";
             }
@@ -648,6 +662,23 @@ simple_call::signal_dispatcher_int(int i)
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
                               Q_ARG(QString, uid.toHex()),
                               Q_ARG(int, i));
+
+}
+
+void
+simple_call::signal_dispatcher_bool(bool i)
+{
+    int sig_idx = senderSignalIndex();
+    if(sig_idx == -1)
+        return;
+    QMetaMethod mm = metaObject()->method(sig_idx);
+    // here we see if there is an matching signal with a uid
+    // argument in the mainwinform, and invoke that
+    QByteArray b(mm.name());
+    b.prepend("sc_");
+    QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
+                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(bool, i));
 
 }
 

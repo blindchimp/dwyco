@@ -160,6 +160,7 @@ private slots:
 
     void signal_dispatcher();
     void signal_dispatcher_int(int i);
+    void signal_dispatcher_bool(bool i);
 
     void recv_control_msg(int ui_id, QByteArray com, int arg1, int arg2, QByteArray str);
     void keyboard_input();

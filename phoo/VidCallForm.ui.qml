@@ -20,7 +20,8 @@ Image {
             id: vid_pause_button
             anchors.fill: parent
             but_name: "actionPause"
-            opacity: checked ? .7 : 0
+            opacity: checked ? .7 : (hovered ? .3 : 0)
+            hoverEnabled: true
         }
     }
 }

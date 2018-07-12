@@ -632,14 +632,6 @@ Page {
 
         ListView {
             id: listView1
-//            anchors.bottom: textField1.top
-//            anchors.bottomMargin: 10
-//            anchors.right: parent.right
-//            anchors.rightMargin: 0
-//            anchors.left: parent.left
-//            anchors.leftMargin: 0
-//            anchors.top: parent.top
-//            anchors.topMargin: 0
             Layout.fillHeight: true
             Layout.fillWidth: true
             delegate: msglist_delegate
