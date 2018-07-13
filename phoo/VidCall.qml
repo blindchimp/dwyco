@@ -14,4 +14,14 @@ VidCallForm {
         }
 
     }
+    vid_pause_button.onClicked: {
+        console.log("okok")
+    }
+    vid_pause_button.contentItem:  Image {
+            anchors.centerIn: vid_pause_button
+            width: Math.min(vid_preview.paintedHeight, vid_preview.paintedWidth)
+            height: Math.min(vid_preview.paintedHeight, vid_preview.paintedWidth)
+            source: mi("ic_pause_circle_outline_white_24dp.png")
+        }
+
 }
