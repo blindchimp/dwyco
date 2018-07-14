@@ -420,6 +420,10 @@ vgqt_init(void *aqext, int frame_rate)
         // NOTE: qt5.10.1 doesn't support videoprobe on windows
         // other platforms, not sure. rgb and 420p seem to be returned tho.
         // on linux, i think yv12 is returned, but not sure.
+        // on qt5.11.1 the probe appears to work, but the format
+        // isn't being set properly, so the video is garbled.
+        // can't be bothered to debug it at this point, will just
+        // stick with older mtcapxe stuff.
         QList<QVideoFrame::PixelFormat> pf = camera_->supportedViewfinderPixelFormats();
         qDebug() << "FORMATS\n";
         for(int i = 0; i < pf.count(); ++i)
