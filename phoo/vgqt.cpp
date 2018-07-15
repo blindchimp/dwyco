@@ -19,6 +19,7 @@
 #include <QtConcurrent>
 #include <QFuture>
 #include <QThread>
+#include <QDebug>
 
 #include "vgqt.h"
 #include "vidaq.h"
@@ -416,9 +417,19 @@ vgqt_init(void *aqext, int frame_rate)
         vfs.setPixelFormat(QVideoFrame::Format_NV12);
         camera_->setViewfinderSettings(vfs);
 #elif !defined(ANDROID)
+        // NOTE: qt5.10.1 doesn't support videoprobe on windows
+        // other platforms, not sure. rgb and 420p seem to be returned tho.
+        // on linux, i think yv12 is returned, but not sure.
+        QList<QVideoFrame::PixelFormat> pf = camera_->supportedViewfinderPixelFormats();
+        qDebug() << "FORMATS\n";
+        for(int i = 0; i < pf.count(); ++i)
+        {
+            qDebug() << pf[i] << "\n";
+        }
+        qDebug() << "DONE\n";
         QCameraViewfinderSettings vfs;
         vfs = camera_->viewfinderSettings();
-        vfs.setPixelFormat(QVideoFrame::Format_YV12);
+        vfs.setPixelFormat(QVideoFrame::Format_YUV420P);
         camera_->setViewfinderSettings(vfs);
 #endif
         QCameraInfo caminfo(*camera_);
@@ -428,6 +439,8 @@ vgqt_init(void *aqext, int frame_rate)
 
         if(Probe_handler->probe.setSource(camera_))
             return 1;
+        else
+            qDebug() << "CANT PROBE CAM\n";
     }
     return 0;
 }
