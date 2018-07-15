@@ -1312,6 +1312,7 @@ do_exploded_funcall(vc fun, vc argvec)
 	VCArglist a;
 
 	int nargs = argvec.num_elems();
+	a.set_size(nargs);
 	for(int i = 0; i < nargs; ++i)
         a.append(argvec[i]);
 	return fun(&a);
