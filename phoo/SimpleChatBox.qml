@@ -362,6 +362,14 @@ Page {
                             }
                         }
                         MenuItem {
+                            text: "Send video message"
+                            onTriggered: {
+                                dwyco_vid_rec.uid = to_uid
+                                stack.push(dwyco_vid_rec)
+                            }
+                        }
+
+                        MenuItem {
                             text: "Browse Msgs"
                             onTriggered: {
                                 stack.push(simp_msg_browse)
@@ -1098,15 +1106,7 @@ Page {
             source: mi("ic_mic_black_24dp.png")
         }
         ToolTip.text: "Press while talking to send audio msg"
-//        onClicked: {
-//            Qt.inputMethod.commit()
-//            Qt.inputMethod.reset()
-//            core.simple_send(to_uid, textField1.text)
-//            core.try_connect(to_uid)
-//            themsglist.reload_model()
-//            textField1.text = ""
-//            listView1.positionViewAtBeginning()
-//        }
+
         onPressed: {
             core.try_connect(to_uid)
             zid = core.make_zap_composition()
@@ -1114,9 +1114,7 @@ Page {
         }
         onReleased: {
             core.stop_zap_record(zid)
-            //core.send_zap(zid, to_uid, 1)
-            //zid = -1
-            //themsglist.reload_model()
+
         }
         Connections {
             target: core
