@@ -1072,6 +1072,65 @@ Page {
         }
         focusPolicy: Qt.NoFocus
     }
+
+    TipButton {
+        property int zid: -1
+        property int chan: -1
+
+        id: toolButton2
+        height: toolButton1.height
+        width: toolButton1.width
+
+        anchors.fill: toolButton1
+        //anchors.verticalCenter: textField1.verticalCenter
+
+        enabled: !toolButton1.enabled && core.has_audio_input
+        visible: !toolButton1.enabled && core.has_audio_input
+        z: 5
+        background: Rectangle {
+            id: bg2
+            color: toolButton2.zid === -1 ? accent : "lime"
+            radius: 20
+        }
+        contentItem: Image {
+            id: quick_audio
+            anchors.centerIn: bg2
+            source: mi("ic_mic_black_24dp.png")
+        }
+        ToolTip.text: "Press while talking to send audio msg"
+//        onClicked: {
+//            Qt.inputMethod.commit()
+//            Qt.inputMethod.reset()
+//            core.simple_send(to_uid, textField1.text)
+//            core.try_connect(to_uid)
+//            themsglist.reload_model()
+//            textField1.text = ""
+//            listView1.positionViewAtBeginning()
+//        }
+        onPressed: {
+            core.try_connect(to_uid)
+            zid = core.make_zap_composition()
+            chan = core.start_zap_record(zid, 0, 1)
+        }
+        onReleased: {
+            core.stop_zap_record(zid)
+            //core.send_zap(zid, to_uid, 1)
+            //zid = -1
+            //themsglist.reload_model()
+        }
+        Connections {
+            target: core
+            onZap_stopped: {
+                if(zid === toolButton2.zid) {
+                    core.send_zap(zid, to_uid, 1)
+                    toolButton2.zid = -1
+                    themsglist.reload_model()
+                }
+            }
+        }
+
+        focusPolicy: Qt.NoFocus
+    }
     BusyIndicator {
         id: busy1
 

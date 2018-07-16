@@ -212,7 +212,7 @@ Page {
                 signal: core.zap_stopped
             }
             onEntered: {
-                video_chan = core.start_zap_record(rzid)
+                video_chan = core.start_zap_record(rzid, 1, 1)
                 something_recorded = false
             }
             onExited: {

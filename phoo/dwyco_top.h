@@ -31,6 +31,9 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
     QML_READONLY_VAR_PROPERTY(QString, tmp_dir)
     QML_READONLY_VAR_PROPERTY(int, external_storage_permission)
+    QML_READONLY_VAR_PROPERTY(int, has_audio_input)
+    QML_READONLY_VAR_PROPERTY(int, has_audio_output)
+    QML_READONLY_VAR_PROPERTY(int, audio_full_duplex)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -178,7 +181,7 @@ public:
 
     // dwyco video record
     Q_INVOKABLE int make_zap_composition();
-    Q_INVOKABLE int start_zap_record(int zid);
+    Q_INVOKABLE int start_zap_record(int zid, int vid, int aud);
     Q_INVOKABLE int start_zap_record_pic(int zid);
     Q_INVOKABLE int stop_zap_record(int zid);
     Q_INVOKABLE int play_zap(int zid);

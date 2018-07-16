@@ -1168,10 +1168,10 @@ DwycoCore::make_zap_composition()
 }
 
 int
-DwycoCore::start_zap_record(int zid)
+DwycoCore::start_zap_record(int zid, int vid, int aud)
 {
     int ui_id = -1;
-    if(!dwyco_zap_record2(zid, 1, 1, -1, 1000000, 1, 0, 0, emit_finished, 0, &ui_id))
+    if(!dwyco_zap_record2(zid, vid, aud, -1, 10000000, 1, 0, 0, emit_finished, 0, &ui_id))
         return -1;
     return ui_id;
 }
@@ -1461,6 +1461,9 @@ DwycoCore::init()
     int audio_full_duplex = 0;
 
     dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, &audio_full_duplex);
+    update_audio_full_duplex(audio_full_duplex);
+    update_has_audio_input(HasAudioInput);
+    update_has_audio_output(HasAudioOutput);
     if(audio_full_duplex)
         dwyco_set_full_duplex(1);
 
