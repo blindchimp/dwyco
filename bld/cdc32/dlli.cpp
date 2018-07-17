@@ -410,7 +410,7 @@ extern vc Server_list;
 extern int Send_auth;
 extern vc Current_authenticator;
 extern vc Current_session_key;
-extern DwVecP<TMsgCompose> CompositionDeleteQ;
+extern DwVec<ValidPtr> CompositionDeleteQ;
 extern int Crashed_last_time;
 extern DwListA<vc> Response_q;
 static void setup_callbacks();
@@ -1966,7 +1966,9 @@ dwyco_service_channels(int *spin_out)
     int n = CompositionDeleteQ.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        delete CompositionDeleteQ[i];
+        ValidPtr v = CompositionDeleteQ[i];
+        if(v.is_valid())
+            delete (TMsgCompose *)(void *)v;
     }
     CompositionDeleteQ.set_size(0);
     TryDeletes();
@@ -5902,8 +5904,8 @@ dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int 
     // the file sender objects own the files now, don't let the composer delete them
     m->composer = 0;
 
-    if(CompositionDeleteQ.index(m) == -1)
-        CompositionDeleteQ.append(m);
+    if(CompositionDeleteQ.index(m->vp) == -1)
+        CompositionDeleteQ.append(m->vp);
 
     return 1;
 }

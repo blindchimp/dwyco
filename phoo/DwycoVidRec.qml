@@ -52,6 +52,8 @@ Page {
         }
 
         onVideo_capture_preview: {
+            if(!visible)
+                return
             if(start.active) {
                 viewer.source = img_path
             }
@@ -365,7 +367,7 @@ Page {
 
             Button {
                 id: snap_and_send
-                text: "Snap & Send"
+                text: "Snap && Send"
                 enabled: start.active || pic_staged.active
                 visible: start.active || pic_staged.active
 

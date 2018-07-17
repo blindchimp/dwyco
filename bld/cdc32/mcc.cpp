@@ -65,7 +65,7 @@ msgbox(const char *s, const char *s2, int)
 }
 
 DwVec<ValidPtr> Composers;
-DwVecP<TMsgCompose> CompositionDeleteQ;
+DwVec<ValidPtr> CompositionDeleteQ;
 DwVec<DwString> FileDeleteQ;
 
 static int Zaps_recording;
@@ -283,8 +283,8 @@ TMsgCompose::Close()
     FormCloseQuery(canclose);
     if(!canclose)
         return;
-    if(CompositionDeleteQ.index(this) == -1)
-        CompositionDeleteQ.append(this);
+    if(CompositionDeleteQ.index(vp) == -1)
+        CompositionDeleteQ.append(vp);
 }
 
 //---------------------------------------------------------------------------

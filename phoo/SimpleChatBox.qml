@@ -364,6 +364,7 @@ Page {
                         MenuItem {
                             text: "Send video message"
                             onTriggered: {
+                                core.try_connect(to_uid)
                                 dwyco_vid_rec.uid = to_uid
                                 stack.push(dwyco_vid_rec)
                             }
@@ -922,7 +923,7 @@ Page {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
                                     var vid = core.make_zap_view(to_uid, model.mid)
                                     themsgview.view_id = vid
-                                    core.play_zap_view(vid)
+
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {
                                         themsgview.view_source = mi("ic_audiotrack_black_24dp.png")
                                     } else {
