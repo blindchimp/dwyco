@@ -117,7 +117,7 @@ close_cb(uv_handle_t *h)
     DwVP vp = DwVP::cookie_to_ptr((long)h->data);
 	if(vp.is_valid())
 	{
-		vc_uvsocket *vcu = (vc_uvsocket *)(void *)vp;
+        //vc_uvsocket *vcu = (vc_uvsocket *)(void *)vp;
 		// hmmm... what to do about the put and get q's?
 	}
     else

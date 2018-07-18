@@ -10,6 +10,7 @@
 #include "vcnil.h"
 #include "vcmap.h"
 #include "vcio.h"
+#include <new>
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcnil.cpp 1.46 1996/11/17 05:58:59 dwight Stable $";
 
 //
@@ -49,7 +50,8 @@ void *
 vc_nil::operator new(size_t )
 {
 	oopanic("new nil?");
-	return 0;
+    throw std::bad_alloc();
+    //return 0;
 }
 
 vc_nil::vc_nil() {}

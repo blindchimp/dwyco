@@ -406,16 +406,12 @@ CDCTheoraCoderColor::code_preprocess(gray **img_l, gray **img_cb, gray **img_cr,
     if(cur_coder_ctx == 0 || cur_cols != cols || cur_rows != rows)
     {
         int szidx;
-        int approx = 0;
         if(!find_next_bigger_size(cols, rows, szidx))
         {
             // don't crash, stupid windows cams may become
             // unusable cuz they store the last size in the drivers
             set_busy(0);
             return 0;
-
-            oopanic("can't do that size");
-            approx = 1;
         }
         if(szidx != cur_size || get_quality() != cur_qual)
         {
