@@ -70,7 +70,7 @@ public:
 	virtual int func_eq(const vc& v) const ;
 	
 
-	vc operator()(void *p) const ;
+	//vc operator()(void *p) const ;
 	vc operator()(VCArglist *a) const ;
 
 	vc operator()() const ;

@@ -101,8 +101,8 @@ vc::funmeta() const {return rep->funmeta();}
 // functor action
 vc
 vc::operator()(void) const {return (*rep)(); }
-vc
-vc::operator()(void *p) const { return (*rep)(p);}
+//vc
+//vc::operator()(void *p) const { return (*rep)(p);}
 vc
 vc::operator()(VCArglist *al) const { return (*rep)(al);}
 

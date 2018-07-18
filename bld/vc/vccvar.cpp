@@ -672,7 +672,7 @@ int vc_cvar::double_eq(const vc& v) const {return eval().double_eq(v);}
 int vc_cvar::double_ne(const vc& v) const {return eval().double_ne(v);}
 
 
-vc vc_cvar::operator()(void *p) const {return eval()(p);}
+//vc vc_cvar::operator()(void *p) const {return eval()(p);}
 vc vc_cvar::operator()(VCArglist *a) const {return eval()(a);}
 
 vc vc_cvar::operator()() const {return eval()();}

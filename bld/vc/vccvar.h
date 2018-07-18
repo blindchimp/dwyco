@@ -197,7 +197,7 @@ public:
 	int double_eq(const vc& v) const ;
 	int double_ne(const vc& v) const ;
 
-	vc operator()(void *p) const ;
+	//vc operator()(void *p) const ;
 	vc operator()(VCArglist *a) const ;
 
 	vc operator()() const ;

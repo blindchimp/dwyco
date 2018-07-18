@@ -85,7 +85,7 @@ public:
 	// it crashes the system, pronto.
 	// 
 	virtual vc operator()(void) const ;
-	virtual vc operator()(void *p) const ;
+	//virtual vc operator()(void *p) const ;
 	virtual vc operator()(VCArglist *al) const ;
 
 	virtual vc operator()(vc v0) const ;

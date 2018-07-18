@@ -322,7 +322,7 @@ public:
 
 	// functors 
 	notvirtual vc operator()(void) const ;
-	notvirtual vc operator()(void *p) const ;
+	//notvirtual vc operator()(void *p) const ;
 	notvirtual vc operator()(VCArglist *al) const ;
 
 	notvirtual vc operator()(vc v0) const ;

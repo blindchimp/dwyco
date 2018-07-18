@@ -51,7 +51,7 @@ public:
 	virtual int func_eq(const vc& v) const;
 
 	virtual vc operator()(void) const;
-	virtual vc operator()(void *p) const;
+	//virtual vc operator()(void *p) const;
 	virtual vc operator()(VCArglist *al) const;
 
 	virtual vc operator()(vc v0) const;
