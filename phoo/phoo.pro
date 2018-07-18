@@ -328,7 +328,7 @@ DISTFILES += \
     androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java
 
 contains(ANDROID_TARGET_ARCH,x86) {
-    ANDROID_EXTRA_LIBS = $$PWD/../libs/x86/libdwyco_jni.so
+    ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
 }
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {

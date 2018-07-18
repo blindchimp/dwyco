@@ -37,6 +37,8 @@ after_success:
   - bash upload.sh Dwyco*.AppImage*
   
 branches:
+  only:
+    - master
   except:
     - # Do not build tags that we create when we upload to GitHub Releases
     - /^(?i:continuous)/

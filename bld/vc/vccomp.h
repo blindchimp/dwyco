@@ -31,7 +31,7 @@
 class vc_composite : public vc_default
 {
 private:
-	long visit;
+        mutable long visit;
 	static long Visit_SN;
 
 #if 0
@@ -70,7 +70,7 @@ public:
 	virtual int func_eq(const vc& v) const ;
 	
 
-	vc operator()(void *p) const ;
+	//vc operator()(void *p) const ;
 	vc operator()(VCArglist *a) const ;
 
 	vc operator()() const ;

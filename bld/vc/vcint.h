@@ -27,9 +27,6 @@ protected:
 	// with older interpreters.
 	long i;
 	static char buf[100];
-
-	vc eval() const {oopanic("eval int?"); return vcnil;}
-
 public:
 	vc_int() ;
 	vc_int(long i2) ;

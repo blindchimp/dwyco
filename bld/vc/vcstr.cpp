@@ -91,7 +91,9 @@ vc_string::bremove() const
 vc
 vc_string::eval() const
 {
-	return Vcmap->get(vc(VC_STRING, str, cached_len));
+    oopanic("string eval?");
+    //return Vcmap->get(vc(VC_STRING, str, cached_len));
+    return vcnil;
 }
 
 void
@@ -211,8 +213,8 @@ vc_string::operator !=(const vc &v) const {return v.str_ne(*this); }
 // 
 vc
 vc_string::operator()(void) const {return eval()();}
-vc
-vc_string::operator()(void *p) const {return eval()(p);}
+//vc
+//vc_string::operator()(void *p) const {return eval()(p);}
 vc
 vc_string::operator()(VCArglist *al) const {return eval()(al);}
 

@@ -42,7 +42,6 @@ friend void process_dec(void **);
 private:
 	static vc_nil *const vcnilrep;
 	void *operator new(size_t bytes) ;
-	vc eval() const {oopanic("eval nil?"); return vcnil;}
 
 public:
 	vc_nil() ;

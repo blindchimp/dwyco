@@ -309,7 +309,7 @@ Page {
                 anchors.left: ditem.left
                 visible: {multiselect_mode && SELECTED}
                 opacity: 1.0
-                z: 2
+                z: 4
             }
             Rectangle {
                 id: isfav
@@ -318,7 +318,7 @@ Page {
                 anchors.top: ditem.top
                 anchors.left: ditem.left
                 visible: IS_FAVORITE === 1
-                z: 2
+                z: 3
                 color: primary_light
                 radius: width / 2
                 Image {
@@ -334,13 +334,29 @@ Page {
                 anchors.top: ditem.top
                 anchors.left: isfav.right
                 visible: IS_FORWARDED === 1
-                z: 2
+                z: 3
                 color: primary_light
                 radius: width / 2
                 Image {
                     anchors.fill: parent
                     anchors.margins: 2
                     source: mi("ic_open_in_new_black_24dp.png")
+                }
+            }
+            Rectangle {
+                id: multimedia
+                width: 16
+                height: 16
+                anchors.top: ditem.top
+                anchors.left: is_forwarded.right
+                visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
+                z: 3
+                color: primary_light
+                radius: width / 2
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    source: mi("ic_videocam_black_24dp.png")
                 }
             }
             z: 1
@@ -379,15 +395,15 @@ Page {
                     }
 
 
-                    Image {
-                        id: deco
-                        visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
-                        source: decoration
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        width: 32
-                        height: 32
-                    }
+//                    Image {
+//                        id: deco
+//                        visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
+//                        source: decoration
+//                        anchors.left: parent.left
+//                        anchors.top: parent.top
+//                        width: 32
+//                        height: 32
+//                    }
                 }
                 Item {
                     Layout.fillHeight: true

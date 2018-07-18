@@ -11,6 +11,10 @@ QMAKE_CXXFLAGS += -fpermissive
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder
 }
 
+equals(LH_INTERPRETER, 1) {
+DEFINES += LHOBJ PERFHACKS FUNCACHE LH_WRAP_SPREAD LH_WRAP_SQLITE3
+}
+
 SOURCES = \
 vclhnet.cpp \
 dwgrows.cpp \

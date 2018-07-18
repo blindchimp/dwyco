@@ -95,8 +95,8 @@ vc_cvar::raise_compile_error()
 {
 	vc exc("E:LH.COMPILE_ERROR");
 	VCArglist a;
-	a[0] = exc;
-	a[1] = vc(lexer->input_description());
+    a.append(exc);
+    a.append(vc(lexer->input_description()));
 	Vcmap->excraise(exc, &a);
 }
 
@@ -672,7 +672,7 @@ int vc_cvar::double_eq(const vc& v) const {return eval().double_eq(v);}
 int vc_cvar::double_ne(const vc& v) const {return eval().double_ne(v);}
 
 
-vc vc_cvar::operator()(void *p) const {return eval()(p);}
+//vc vc_cvar::operator()(void *p) const {return eval()(p);}
 vc vc_cvar::operator()(VCArglist *a) const {return eval()(a);}
 
 vc vc_cvar::operator()() const {return eval()();}

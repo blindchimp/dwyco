@@ -16,7 +16,7 @@ import dwyco 1.0
 
 
 Page {
-    id: rectangle1
+    id: chatbox_page
     //anchors.fill: parent
     property alias model: listView1.model
     property alias listview: listView1
@@ -31,6 +31,7 @@ Page {
     property int inh_block_warning: 0
     property bool multiselect_mode: false
     property url cur_source
+    property var call_buttons_model
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -99,7 +100,7 @@ Page {
                     Layout.minimumHeight: cm(1)
                 }
 
-                ToolButton {
+                TipButton {
                     id: back_button
                     contentItem: Image {
                         anchors.centerIn: parent
@@ -111,6 +112,8 @@ Page {
                         stack.pop()
                     }
                     Layout.fillHeight: true
+                    ToolTip.text: "Go back"
+
                     //Layout.maximumWidth: mm(3)
                     //Layout.rightMargin: 0
                 }
@@ -185,33 +188,152 @@ Page {
                     visible: {stack.depth > 2 || core.unread_count > 0}
                 }
 
-                ToolButton {
-                    id: pic_button
+                CallButtonLink {
+                    id: vidcall_button
+                    but_name: "send_video"
                     contentItem: Image {
                         anchors.centerIn: parent
-                        source: mi("ic_attachment_black_24dp.png")
+                        source: mi("ic_videocam_black_24dp.png")
                     }
-                    checkable: false
-                    visible: !cam.visible
-                    onClicked: {
-                        if(Qt.platform.os == "android") {
-                            // ugh, what a hack
-                            android_img_pick_hack = 0
-                            android_img_pick_hack = 2
-                            notificationClient.open_image()
-                        } else {
-                            picture_picker.visible = true
-                        }
+                    ToolTip.text: "Request live video"
+                }
+                CallButtonLink {
+                    but_name: "cancel_req"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
                     }
+                    ToolTip.text: "Hangup"
 
                 }
-                ToolButton {
+                CallButtonLink {
+                    but_name: "hangup"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+                    onVisibleChanged: {
+                        if(visible) {
+                            vidpanel.visible = true
+                            core.enable_video_capture_preview(1)
+                        } else {
+                            vidpanel.visible = false
+                            core.enable_video_capture_preview(0)
+                        }
+                    }
+                    ToolTip.text: "Hangup"
+
+                }
+                CallButtonLink {
+                    id: call_accept_button
+                    but_name: "accept"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_videocam_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_accept_button.visible
+                            ColorAnimation {
+                                target: bgblink
+                                property: "color"
+                                from: "white"
+                                to: "green"
+                                duration: 1000
+                            }
+                        }
+                    }
+                    ToolTip.text: "Accept live video"
+                }
+                CallButtonLink {
+                    id: call_send_accept_button
+                    but_name: "accept_and_send"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_videocam_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink2
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_send_accept_button.visible
+                            ColorAnimation {
+                                target: bgblink2
+                                property: "color"
+                                from: "white"
+                                to: "green"
+                                duration: 1000
+                            }
+                        }
+                    }
+                    ToolTip.text: "Start two-way video"
+                }
+                CallButtonLink {
+                    id: call_reject_button
+                    but_name: "reject"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink3
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_reject_button.visible
+                            ColorAnimation {
+                                target: bgblink3
+                                property: "color"
+                                from: "red"
+                                to: "white"
+                                duration: 1000
+                            }
+                        }
+                    }
+                    ToolTip.text: "Decline live video"
+
+                }
+
+                CallButtonLink {
+                    id: mute_button
+                    but_name: "mute_button"
+                    contentItem: Image {
+                        id: mic_icon
+                        anchors.centerIn: parent
+                        source: mi("ic_mic_black_24dp.png")
+                    }
+                    onCheckedChanged: {
+                        mic_icon.source = checked ? mi("ic_mic_black_24dp.png") : mi("ic_mic_off_black_24dp.png")
+                    }
+
+//                    background: Rectangle {
+//                        id: bgblink3
+//                        ParallelAnimation {
+//                            loops: Animation.Infinite
+//                            running: call_reject_button.visible
+//                            ColorAnimation {
+//                                target: bgblink3
+//                                property: "color"
+//                                from: "red"
+//                                to: "white"
+//                                duration: 1000
+//                            }
+//                        }
+//                    }
+                    ToolTip.text: "Toggle mic"
+
+                }
+
+
+                TipButton {
                     contentItem: Image {
                         anchors.centerIn: parent
                         source: mi("ic_action_overflow.png")
                     }
                     onClicked: optionsMenu.open()
                     visible: chatbox.visible
+                    ToolTip.text: "More actions"
 
                     Menu {
 
@@ -225,6 +347,29 @@ Page {
                                 stack.push(theprofileview)
                             }
                         }
+                        MenuItem {
+                            text: "Send picture"
+                            onTriggered: {
+                                if(Qt.platform.os == "android") {
+                                    // ugh, what a hack
+                                    android_img_pick_hack = 0
+                                    android_img_pick_hack = 2
+                                    notificationClient.open_image()
+                                } else {
+                                    picture_picker.visible = true
+                                }
+
+                            }
+                        }
+                        MenuItem {
+                            text: "Send video message"
+                            onTriggered: {
+                                core.try_connect(to_uid)
+                                dwyco_vid_rec.uid = to_uid
+                                stack.push(dwyco_vid_rec)
+                            }
+                        }
+
                         MenuItem {
                             text: "Browse Msgs"
                             onTriggered: {
@@ -288,7 +433,9 @@ Page {
 //            var objn = model.get(index).objectName
 //            if(objn === "send_video" || objn === "accept_and_send" ||
 //                    objn === "accept") {
-//                stack.push(vid_call_view)
+//                //stack.push(vid_call_view)
+//                vidpanel.visible = true
+//                core.enable_video_capture_preview(1)
 //            }
 //        }
 //        onButton_pressed: {
@@ -304,6 +451,73 @@ Page {
 //            model.get(index).toggled(state)
 //        }
 //        z: 5
+//    }
+//    Row{
+//        z: 5
+//        CallButtonLink {
+//            id: accept_button
+//            //width: parent.width
+//            //height: implicitHeight
+//            but_name: "accept"
+//            //visible: true
+//            text: "Accept call"
+//            z: 5
+//            onClicked: {
+//                //vidpanel.visible = true
+//                //core.enable_video_capture_preview(1)
+//            }
+
+//        }
+//        CallButtonLink {
+//            but_name: "accept_and_send"
+//            text: "Accept and send"
+//            z: 5
+//            onClicked: {
+//                //vidpanel.visible = true
+//                //core.enable_video_capture_preview(1)
+//            }
+//        }
+
+//        CallButtonLink {
+//            but_name: "send_video"
+//            text: "Send video"
+//            z: 5
+//            onClicked: {
+//                //vidpanel.visible = true
+//                //core.enable_video_capture_preview(1)
+//            }
+//        }
+
+//        CallButtonLink {
+//            but_name: "hangup"
+//            text: "Hangup"
+//            onVisibleChanged: {
+//                if(visible) {
+//                    vidpanel.visible = true
+//                    core.enable_video_capture_preview(1)
+//                } else {
+//                    vidpanel.visible = false
+//                    core.enable_video_capture_preview(0)
+//                }
+//            }
+//        }
+
+//        CallButtonLink {
+//            but_name: "reject"
+//            text: "Reject"
+//        }
+
+//        CallButtonLink {
+//            but_name: "cancel_req"
+//            text: "Cancel"
+//        }
+
+//        CallButtonLink {
+//            but_name: "actionPause"
+//            text: "Pause"
+//            z: 5
+//        }
+
 //    }
 
     background: Rectangle {
@@ -324,14 +538,9 @@ Page {
 
     Connections {
         target: core
-        onRem_keyboard_active : {
+        onSc_rem_keyboard_active : {
             if(uid === to_uid) {
                 ind_typing = active
-            }
-        }
-        onEstablished_active : {
-            if(uid === to_uid) {
-                ind_online = active
             }
         }
         onNew_msg : {
@@ -352,7 +561,22 @@ Page {
                 top_toolbar_text.text = core.uid_to_name(uid)
             }
         }
+        onSc_connect_terminated: {
+            if(chatbox.to_uid == uid) {
+                console.log("CONNECT TERMINATED")
+            }
+        }
 
+        onSc_connectedChanged: {
+                if(chatbox.to_uid == uid) {
+                    console.log("ConnectedChanged ", connected)
+                    if(connected === 0 && vidpanel.visible) {
+                        vidpanel.visible = false
+                        core.enable_video_capture_preview(0)
+                    }
+                    ind_online = connected === 1 ? true : false
+                }
+            }
 //        onIgnore_event: {
 //            if(uid === to_uid) {
 //               to_uid = ""
@@ -381,7 +605,7 @@ Page {
         top_toolbar_text.text = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
-        //call_buttons.model = core.get_button_model(to_uid)
+        call_buttons_model = core.get_button_model(to_uid)
     }
 
     Loader {
@@ -427,8 +651,7 @@ Page {
         visible: false
     }
 
-    ListView {
-        id: listView1
+    RowLayout {
         anchors.bottom: textField1.top
         anchors.bottomMargin: 10
         anchors.right: parent.right
@@ -437,11 +660,24 @@ Page {
         anchors.leftMargin: 0
         anchors.top: parent.top
         anchors.topMargin: 0
-        delegate: msglist_delegate
-        clip: true
-        spacing: 5
-        ScrollBar.vertical: ScrollBar { }
-        verticalLayoutDirection: ListView.BottomToTop
+        Layout.margins: mm(1)
+        VidCall {
+            id: vidpanel
+            visible: false
+            Layout.fillHeight: true
+            Layout.minimumWidth: parent.width / 2
+        }
+
+        ListView {
+            id: listView1
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            delegate: msglist_delegate
+            clip: true
+            spacing: 5
+            ScrollBar.vertical: ScrollBar { }
+            verticalLayoutDirection: ListView.BottomToTop
+        }
     }
 
 
@@ -482,7 +718,7 @@ Page {
                 anchors.left: ditem.left
                 visible: {multiselect_mode && SELECTED}
                 opacity: 1.0
-                z: 2
+                z: 4
             }
             Rectangle {
                 id: isfav
@@ -491,7 +727,7 @@ Page {
                 anchors.top: ditem.top
                 anchors.left: ditem.left
                 visible: IS_FAVORITE === 1
-                z: 2
+                z: 3
                 color: primary_light
                 radius: width / 2
                 Image {
@@ -507,13 +743,29 @@ Page {
                 anchors.top: ditem.top
                 anchors.left: isfav.right
                 visible: IS_FORWARDED === 1
-                z: 2
+                z: 3
                 color: primary_light
                 radius: width / 2
                 Image {
                     anchors.fill: parent
                     anchors.margins: 2
                     source: mi("ic_open_in_new_black_24dp.png")
+                }
+            }
+            Rectangle {
+                id: multimedia
+                width: 16
+                height: 16
+                anchors.top: ditem.top
+                anchors.left: is_forwarded.right
+                visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
+                z: 3
+                color: primary_light
+                radius: width / 2
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    source: mi("ic_videocam_black_24dp.png")
                 }
             }
             z: 1
@@ -552,15 +804,15 @@ Page {
                     }
 
 
-                    Image {
-                        id: deco
-                        visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
-                        source: decoration
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        width: 32
-                        height: 32
-                    }
+//                    Image {
+//                        id: deco
+//                        visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
+//                        source: decoration
+//                        anchors.left: parent.left
+//                        anchors.top: parent.top
+//                        width: 32
+//                        height: 32
+//                    }
                 }
 
 
@@ -671,7 +923,7 @@ Page {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
                                     var vid = core.make_zap_view(to_uid, model.mid)
                                     themsgview.view_id = vid
-                                    core.play_zap_view(vid)
+
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {
                                         themsgview.view_source = mi("ic_audiotrack_black_24dp.png")
                                     } else {
@@ -766,7 +1018,7 @@ Page {
 //            z: 5
 
 //        }
-        ToolButton {
+        TipButton {
             id: cam_button
             anchors.verticalCenter: parent.verticalCenter
             anchors.right: parent.right
@@ -780,6 +1032,7 @@ Page {
             onClicked: {
                stack.push(cam, {"next_state" : "PhotoCapture"})
             }
+            ToolTip.text: "Take pic from camera"
         }
     }
 
@@ -826,6 +1079,55 @@ Page {
             but_height = textField1.height
             but_width = but_height
         }
+        focusPolicy: Qt.NoFocus
+    }
+
+    TipButton {
+        property int zid: -1
+        property int chan: -1
+
+        id: toolButton2
+        height: toolButton1.height
+        width: toolButton1.width
+
+        anchors.fill: toolButton1
+        //anchors.verticalCenter: textField1.verticalCenter
+
+        enabled: !toolButton1.enabled && core.has_audio_input
+        visible: !toolButton1.enabled && core.has_audio_input
+        z: 5
+        background: Rectangle {
+            id: bg2
+            color: toolButton2.zid === -1 ? accent : "lime"
+            radius: 20
+        }
+        contentItem: Image {
+            id: quick_audio
+            anchors.centerIn: bg2
+            source: mi("ic_mic_black_24dp.png")
+        }
+        ToolTip.text: "Press while talking to send audio msg"
+
+        onPressed: {
+            core.try_connect(to_uid)
+            zid = core.make_zap_composition()
+            chan = core.start_zap_record(zid, 0, 1)
+        }
+        onReleased: {
+            core.stop_zap_record(zid)
+
+        }
+        Connections {
+            target: core
+            onZap_stopped: {
+                if(zid === toolButton2.zid) {
+                    core.send_zap(zid, to_uid, 1)
+                    toolButton2.zid = -1
+                    themsglist.reload_model()
+                }
+            }
+        }
+
         focusPolicy: Qt.NoFocus
     }
     BusyIndicator {

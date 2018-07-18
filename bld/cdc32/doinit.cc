@@ -503,7 +503,11 @@ exit_codec()
 
 #ifndef DWYCO_POWERBROWSE
     clean_cruft();
+#ifdef ANDROID
     clean_profile_cache(60, 1000);
+#else
+    clean_profile_cache(120, 6000);
+#endif
     clean_pk_cache(365, 1500);
 #endif
 #ifdef DW_RTLOG

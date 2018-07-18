@@ -55,8 +55,6 @@ public:
 
 public slots:
     void trigger() {
-        if(!m_enabled)
-            return;
         if(m_checkable)
         {
             setChecked(!m_checked);
@@ -66,6 +64,13 @@ public slots:
         else
             emit triggered();
 
+    }
+
+    void toggle() {
+        if(m_checkable)
+        {
+            setChecked(!m_checked);
+        }
     }
 
     void setChecked(bool a) {

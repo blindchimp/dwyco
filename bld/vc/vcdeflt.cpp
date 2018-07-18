@@ -59,7 +59,7 @@ clear_objmap()
 
 #endif
 
-vc_default::vc_default() : vc(BaseConstructor())
+vc_default::vc_default()
 {
 	ref_count = 1;
 #ifdef VCDBG
@@ -74,18 +74,10 @@ vc_default::vc_default() : vc(BaseConstructor())
 #endif
 }
 
-vc_default::vc_default(NBaseConstructor a) : vc(a)
-{
-	ref_count = 2; // avoid nilrep destruct
-#ifdef VCDBG
-	break_tag = BREAK_NONE;
-#endif
-}
-
 // we don't want to allow objects to be
 // copied verbatim because that would leave
 // the reference count messed up.
-vc_default::vc_default(const vc_default&) : vc(BaseConstructor())
+vc_default::vc_default(const vc_default&)
 {
 	ref_count = 1;
 #ifdef VCDBG
@@ -440,7 +432,7 @@ decl_rel(str)
 
 // functors 
 vc vc_default::operator()(void) const {USER_BOMB("undefined functor", vcnil);}
-vc vc_default::operator()(void *p) const {USER_BOMB("undefined functor", vcnil);}
+//vc vc_default::operator()(void *p) const {USER_BOMB("undefined functor", vcnil);}
 vc vc_default::operator()(VCArglist *al) const {USER_BOMB("undefined functor", vcnil);}
 
 vc vc_default::operator()(vc v0) const {USER_BOMB("undefined functor", vcnil);}

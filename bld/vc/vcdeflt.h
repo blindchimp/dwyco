@@ -27,7 +27,7 @@ friend class vc;
 public:
 	long ref_count;
 	vc_default();
-	vc_default(NBaseConstructor);
+
 	vc_default(const vc_default&);
 #ifdef OBJTRACK
 	virtual ~vc_default();
@@ -158,7 +158,7 @@ decl_rel(str)
 #undef decl_rel
 	// functors 
 	virtual vc operator()(void) const ;
-	virtual vc operator()(void *p) const ;
+	//virtual vc operator()(void *p) const ;
 	virtual vc operator()(VCArglist *al) const ;
 
 	virtual vc operator()(vc v0) const ;

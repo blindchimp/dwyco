@@ -20,7 +20,7 @@ vc_fundef::vc_fundef(const char *name, VCArglist *a, int sty, int decrypt)
 	: vc_func(vc(name), sty)
 {
 	int nargs = a->num_elems();
-	bindargs = new VCArglist;
+    bindargs = new DwVec<vc>;
 	// if a vector is passed as the first argument,
 	// we assume its is a list of arguments
 	// to be broken-out
@@ -100,31 +100,11 @@ vc_fundef::stringrep(VcIO o) const
 	o << ")";
 }
 
-#if 0
-//
-// used when making a copy of a fundef
-//
-vc_fundef::vc_fundef(vc fd, VCArglist *a, int)
-{
-	fundef = fd;
-	bindargs = a;
-}
-#endif
-
 
 vc_fundef::~vc_fundef()
 {
 	delete bindargs;
 }
-
-#if 0
-vc *
-vc_fundef::do_copy() const
-{
-	vc_fundef *v = new vc_fundef(fundef, new VCArglist(*bindargs), 0);
-	return v;
-}
-#endif
 
 //
 // eval a fundef.
@@ -163,16 +143,16 @@ vc_fundef::do_arg_setup(VCArglist *a) const
 	{
 		VcError << "warning: varadic " << (is_construct ? "construct" : "function")
 			<<  " \""; 
-		vc& a = (vc &)name;
+        vc a = name;
 		a.print(VcError);
 		VcError << "\" called with fewer arguments than definition, "
-			"unspec'ed args lbinded to nil\n";;
+            "unspec'ed args lbinded to nil\n";
 	}
 	if(!varadic && n_call_args != n_formal_args)
 	{
 		VcError << "warning: non-varadic " <<
 			(is_construct ? "construct" : "function") <<  " \"";
-		vc& a = (vc&) name;
+        vc a = name;
 		a.print(VcError);
 		VcError << "\" called with " <<
 			((n_call_args < n_formal_args) ?
@@ -183,7 +163,6 @@ vc_fundef::do_arg_setup(VCArglist *a) const
 	for(int i = 0; i < n_formal_args; ++i)
 	{
 		Vcmap->local_add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i]);
-		//(*bindargs)[i].local_bind(((i >= n_call_args) ? vcnil : (*a)[i]));
 	}
 	if(varadic)
 	{
@@ -194,8 +173,7 @@ vc_fundef::do_arg_setup(VCArglist *a) const
 		int j;
 		for(i = n_formal_args, j = 0; i < n_call_args; ++i, ++j)
 			trailing[j] = (*a)[i];
-		Vcmap->local_add("__lh_varargs", trailing);
-		//vc("__lh_varargs").local_bind(trailing);
+        Vcmap->local_add("__lh_varargs", trailing);
 	}
 }
 

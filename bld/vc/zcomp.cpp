@@ -11,6 +11,7 @@
 #include "zlib.h"
 #include "dwgrows.h"
 #include "vcmap.h"
+#include "vcxstrm.h"
 
 
 /* Compresses the contents of input_buffer into output_buffer.  All

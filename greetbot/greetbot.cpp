@@ -222,7 +222,9 @@ dwyco_chat_ctx_callback(int cmd, int id,
                           "As always from Dwyco, this little installer is safe, and just updates "
                           "one file to point to the new servers. "
                           "If you prefer to download the installer, you can find it here:\r\n"
-                          "http://www.dwyco.com/downloads/ArcheologyServers.exe"
+                          "http://www.dwyco.com/downloads/ArcheologyServers.exe\r\n"
+			  "ps. if you need a copy of Icu2, you can still get it here:\r\n"
+			  "http://www.softpedia.com/get/Internet/WebCam/ICUII-Video-Chat.shtml"
 
                           );
 
@@ -319,7 +321,10 @@ main(int argc, char *argv[])
             else
             {
                 if(txt.contains("yes"))
-                    send_file_to(uid, "Just save the EXE to your desktop or downloads folder and run it.", "ArcheologyServers.exe");
+                    send_file_to(uid, "Just save the EXE to your Desktop or Downloads folder and run it.\r\n"
+			"ps. if you need a copy of Icu2, you can still get it here:\r\n"
+                          "http://www.softpedia.com/get/Internet/WebCam/ICUII-Video-Chat.shtml"
+			, "ArcheologyServers.exe");
             }
 
             HANDLE_MSG(mid);

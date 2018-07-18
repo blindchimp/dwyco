@@ -273,6 +273,7 @@ update_server_list(vc m, void *, vc, ValidPtr)
         start_database_thread();
 }
 
+static
 vc
 get_server_by_uid(vc uid)
 {

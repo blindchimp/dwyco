@@ -13,10 +13,10 @@
 #include <QStateMachine>
 #include "QQmlVarPropertyHelpers.h"
 #include "dvp.h"
-#include "dwstr.h"
 #include "dwquerybymember.h"
 #include "dlli.h"
 #include "callsm_objs.h"
+
 class simple_call : public QObject
 {
     Q_OBJECT
@@ -38,13 +38,15 @@ private:
                                   const char *uid, int len_uid,
                                   int *accept_call_style,
                                   char **error_msg);
+    void connect_signals();
+
 public:
-    explicit simple_call(const DwOString& uid, QObject *parent = 0);
+    explicit simple_call(const QByteArray& uid, QObject *parent = 0);
     ~simple_call();
     DVP vp;
 
     static DwQueryByMember<simple_call> Simple_calls;
-    static simple_call *get_simple_call(DwOString uid);
+    static simple_call *get_simple_call(QByteArray uid);
     //static void hide_all();
     static void init(QObject *mainwin);
     static void suspend();
@@ -54,7 +56,7 @@ public:
 
     int chan_id;
     int call_id;
-    DwOString uid;
+    QByteArray uid;
     int record_preview_id;
     QTimer accept_timer;
     QTimer ask_timer;
@@ -99,16 +101,17 @@ public slots:
     void start_media_calls();
 
 signals:
-    void pal_event(DwOString);
-    void ignore_event(DwOString);
-    void uid_selected(DwOString, int);
-    void send_msg_event(DwOString);
+    void pal_event(QByteArray);
+    void ignore_event(QByteArray);
+    void uid_selected(QByteArray, int);
+    void send_msg_event(QByteArray);
 
     // signals for control connection
     void try_connect();
     void connect_established();
     void connect_failed();
     void connect_terminated();
+    void connect_terminated(QByteArray uid);
     void connect_already_exists();
 
     // signals for call setup/screening
@@ -150,14 +153,16 @@ signals:
 
     // signals for "typing..." indication
     void rem_keyboard_active(int);
-    void rem_keyboard_active_uid(const QString&, int);
-
-    void sig_on_connected_change_uid(const QString&, int);
+    void rem_keyboard_active(const QString& uid, int);
 
 private slots:
     void on_actionPause_toggled(bool arg1);
 
-    void recv_control_msg(int ui_id, DwOString com, int arg1, int arg2, DwOString str);
+    void signal_dispatcher();
+    void signal_dispatcher_int(int i);
+    void signal_dispatcher_bool(bool i);
+
+    void recv_control_msg(int ui_id, QByteArray com, int arg1, int arg2, QByteArray str);
     void keyboard_input();
     void keyboard_inactive();
 
@@ -199,12 +204,12 @@ private slots:
     void cam_control_on(bool);
     void cam_control_off(bool);
 
-    void process_ignore_event(DwOString);
+    void process_ignore_event(QByteArray);
 
     void render_image();
     void on_cancel_req_clicked();
 
-    //void uid_resolved(DwOString);
+    //void uid_resolved(QByteArray);
 
     void start_ask_timer();
     void stop_ask_timer();
@@ -232,11 +237,8 @@ private slots:
 
     void audio_recording_event(int, int);
 
-    void rem_keyboard_active_with_uid(int);
-    void connected_changed_uid(int);
-
     //void on_pal_button_clicked();
-    //void update_pal(DwOString uid);
+    //void update_pal(QByteArray uid);
 
 public:
     callsm_objs *ui;

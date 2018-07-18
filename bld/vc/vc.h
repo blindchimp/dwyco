@@ -53,8 +53,6 @@ extern VcIOHack VcError;
 extern VcIOHack VcOutput;
 extern VcIOHack VcInput;
 
-struct BaseConstructor {BaseConstructor(int=0) { } };
-struct NBaseConstructor {NBaseConstructor(int=0) { } };
 struct VcNoinit {VcNoinit() {}};
 
 // DO NOT JACK WITH THIS ENUM
@@ -165,7 +163,10 @@ class vc_fundef;
 #else
 template<class T> class DwVec;
 #endif
-typedef DwVec<vc> VCArglist;
+
+//typedef DwVec<vc> VCArglist;
+#include "dwsvec.h"
+typedef DwSVec<vc> VCArglist;
 
 typedef vc (*VCFUNCP0)();
 typedef vc (*VCFUNCP1)(vc);
@@ -216,8 +217,6 @@ public:
 	// more awful hacks, though useful when not using
 	// full hierarchy...
 	vc_default *nonono() {return rep;}
-	void bomb_call_atom() const;
-	void bomb_op_func() const;
 	notvirtual int is_atomic() const ;
 	notvirtual int is_varadic() const ;
 	notvirtual int must_eval_args() const;
@@ -248,11 +247,16 @@ public:
 	inline vc(const vc& v);
 	inline notvirtual ~vc() ;
 	inline notvirtual vc& operator=(const vc& v);
+        inline vc(vc&& v);
+        inline vc& operator=(vc&& v);
 #else
 	vc() ;
 	vc(const vc& v);
 	notvirtual ~vc() ;
 	notvirtual vc& operator=(const vc& v);
+        vc(vc&& v);
+        vc& operator=(vc&& v);
+
 #endif
 	vc(double d);
 	vc(int i);
@@ -318,7 +322,7 @@ public:
 
 	// functors 
 	notvirtual vc operator()(void) const ;
-	notvirtual vc operator()(void *p) const ;
+	//notvirtual vc operator()(void *p) const ;
 	notvirtual vc operator()(VCArglist *al) const ;
 
 	notvirtual vc operator()(vc v0) const ;
@@ -491,9 +495,6 @@ decl_rel(str)
 	// device and filtering
 	notvirtual vc set_device(vc);
 	
-protected:
-	vc(BaseConstructor) { rep = 0; }
-	vc(NBaseConstructor) { rep = 0; }
 
 #undef notvirtual
 };
@@ -504,12 +505,11 @@ protected:
 #ifdef USE_RCT
 #include "rct.h"
 #endif
+
 inline
 vc::vc()
 {
 	rep = vc_nil::vcnilrep;
-	// ref count is ignored for nil
-	//++rep->ref_count;
 }
 
 
@@ -520,11 +520,11 @@ vc::vc(const vc& v)
 	// copy constructors for classes derived from vc.
 	// if you can avoid this, then you can remove the following
 	// if(..)
-	if(v.rep == 0)
-	{
-		rep = 0;
-		return;
-	}
+//	if(v.rep == 0)
+//	{
+//		rep = 0;
+//		return;
+//	}
 #ifdef USE_RCT
 RCQINC(v.rep)
 #else
@@ -536,13 +536,13 @@ RCQINC(v.rep)
 inline
 vc::~vc()
 {
-	if(rep == 0) // base destruct
+        if(rep == vc_nil::vcnilrep) // base destruct
 		return;
 	// ignore nil destructs, see comment in vcnil.cpp
 #ifdef USE_RCT
 RCQDEC(rep)
 #else
-	if(rep != vc_nil::vcnilrep && --rep->ref_count == 0)
+        if(--rep->ref_count == 0)
 	{
 		delete rep;
 	}
@@ -568,6 +568,27 @@ RCQDEC(rep)
 		rep = v.rep;
 	}
 	return *this;
+}
+
+inline
+vc::vc(vc&& v)
+{
+    rep = v.rep;
+    v.rep = vc_nil::vcnilrep;
+}
+
+inline
+vc&
+vc::operator=(vc&& v)
+{
+    if(this != &v)
+    {
+    vc_default *tmp = rep;
+    rep = v.rep;
+    v.rep = tmp;
+
+    }
+    return *this;
 }
 
 #endif

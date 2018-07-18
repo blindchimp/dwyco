@@ -390,9 +390,9 @@ sqlite3_callback_bounce(void *user_arg, int argc, char **argv, char **columnName
 		}
 	}
 	VCArglist nargs;
-	nargs[0] = args[1];
-	nargs[1] = res;
-	nargs[2] = Column_name_cache;
+        nargs.append(args[1]);
+        nargs.append(res);
+        nargs.append(Column_name_cache);
 	vc ret = fn(&nargs);
 	if(ret.is_nil())
 		return 0;

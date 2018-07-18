@@ -23,6 +23,18 @@ vc_atomic::bomb_str_rel() const
 	USER_BOMB2("can't compare string to non-string with relational");
 }
 
+void
+vc_atomic::bomb_call_atom() const
+{
+	USER_BOMB2("attempt to funcall non-function.");
+}
+
+void
+vc_atomic::bomb_op_func() const
+{
+	USER_BOMB2("atomic-op on function.");
+}
+
 
 #define bombvec(op, msg) \
 vc \
@@ -38,10 +50,6 @@ bombvec(mod, "modulo");
 #undef bombvec
 
 vc_atomic::vc_atomic()
-{
-}
-
-vc_atomic::vc_atomic(NBaseConstructor a) : vc_default(a)
 {
 }
 
@@ -89,8 +97,8 @@ vc_atomic::func_eq(const vc&) const {return FALSE;}
 
 vc
 vc_atomic::operator()(void) const {bomb_call_atom();return vcnil;}
-vc
-vc_atomic::operator()(void *) const {bomb_call_atom();return vcnil;}
+//vc
+//vc_atomic::operator()(void *) const {bomb_call_atom();return vcnil;}
 vc
 vc_atomic::operator()(VCArglist *) const {bomb_call_atom();return vcnil;}
 

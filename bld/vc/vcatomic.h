@@ -22,9 +22,10 @@ class vc_atomic : public vc_default
 public:
 	void bomb_setop() const;
 	void bomb_str_rel() const;
+	void bomb_call_atom() const;
+	void bomb_op_func() const;
 	
 	vc_atomic();
-	vc_atomic(NBaseConstructor a);
 
 	virtual int visited();
 	virtual void set_visited();
@@ -50,7 +51,7 @@ public:
 	virtual int func_eq(const vc& v) const;
 
 	virtual vc operator()(void) const;
-	virtual vc operator()(void *p) const;
+	//virtual vc operator()(void *p) const;
 	virtual vc operator()(VCArglist *al) const;
 
 	virtual vc operator()(vc v0) const;

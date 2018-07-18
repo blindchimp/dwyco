@@ -11,9 +11,11 @@ import QtQuick.Controls 2.2
 import dwyco 1.0
 
 Page {
+    id: msgviewer
     property string uid
     property string mid
-    property int view_id
+    property int view_id: -1
+    property int ui_id: -1
     property alias view_source : viewer.source
     property alias msg_text: msg_text.text
     property bool dragging
@@ -26,6 +28,12 @@ Page {
             core.stop_zap_view(view_id)
             core.delete_zap_view(view_id)
         }
+        else
+        {
+            if(view_id !== -1) {
+                ui_id = core.play_zap_view(view_id)
+            }
+        }
     }
 
     fav: { (mid.length > 0) ?
@@ -35,7 +43,9 @@ Page {
     Connections {
         target: core
         onVideo_display: {
-            view_source = img_path
+            if(ui_id === msgviewer.ui_id) {
+                view_source = img_path
+            }
         }
     }
 
@@ -156,17 +166,18 @@ Page {
 
             }
             onClicked: {
-                stack.pop()
                 core.stop_zap_view(view_id)
                 core.delete_zap_view(view_id)
+                stack.pop()
             }
         }
     }
     BusyIndicator {
         id: busy1
-        running: {viewer.source == "" && view_id != -1}
+        running: view_source == ""
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
+        z: 20
     }
 
 

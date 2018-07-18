@@ -1,4 +1,6 @@
+#ifdef VCCFG_FILE
 #include "vccfg.h"
+#endif
 #ifndef DWYCO_NO_VCREGEX
 #include <regex.h>
 #include <string.h>
