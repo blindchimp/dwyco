@@ -188,125 +188,95 @@ Page {
                     visible: {stack.depth > 2 || core.unread_count > 0}
                 }
 
-                CallButtonLink {
-                    id: vidcall_button
-                    but_name: "send_video"
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_videocam_black_24dp.png")
-                    }
-                    ToolTip.text: "Request live video"
-                }
-                CallButtonLink {
-                    but_name: "cancel_req"
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_cancel_black_24dp.png")
-                    }
-                    ToolTip.text: "Hangup"
+//                CallButtonLink {
+//                    id: vidcall_button
+//                    but_name: "send_video"
+//                    contentItem: Image {
+//                        anchors.centerIn: parent
+//                        source: mi("ic_videocam_black_24dp.png")
+//                    }
+//                    ToolTip.text: "Request live video"
+//                }
+//                CallButtonLink {
+//                    but_name: "cancel_req"
+//                    contentItem: Image {
+//                        anchors.centerIn: parent
+//                        source: mi("ic_cancel_black_24dp.png")
+//                    }
+//                    ToolTip.text: "Hangup"
 
-                }
-                CallButtonLink {
-                    but_name: "hangup"
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_cancel_black_24dp.png")
-                    }
-                    onVisibleChanged: {
-                        if(visible) {
-                            vidpanel.visible = true
-                            core.enable_video_capture_preview(1)
-                        } else {
-                            vidpanel.visible = false
-                            core.enable_video_capture_preview(0)
-                        }
-                    }
-                    ToolTip.text: "Hangup"
+//                }
+//                CallButtonLink {
+//                    but_name: "hangup"
+//                    contentItem: Image {
+//                        anchors.centerIn: parent
+//                        source: mi("ic_cancel_black_24dp.png")
+//                    }
+//                    onVisibleChanged: {
+//                        if(visible) {
+//                            vidpanel.visible = true
+//                            core.enable_video_capture_preview(1)
+//                        } else {
+//                            vidpanel.visible = false
+//                            core.enable_video_capture_preview(0)
+//                        }
+//                    }
+//                    ToolTip.text: "Hangup"
 
-                }
-                CallButtonLink {
-                    id: call_accept_button
-                    but_name: "accept"
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_videocam_black_24dp.png")
-                    }
-                    background: Rectangle {
-                        id: bgblink
-                        ParallelAnimation {
-                            loops: Animation.Infinite
-                            running: call_accept_button.visible
-                            ColorAnimation {
-                                target: bgblink
-                                property: "color"
-                                from: "white"
-                                to: "green"
-                                duration: 1000
-                            }
-                        }
-                    }
-                    ToolTip.text: "Accept live video"
-                }
-                CallButtonLink {
-                    id: call_send_accept_button
-                    but_name: "accept_and_send"
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_videocam_black_24dp.png")
-                    }
-                    background: Rectangle {
-                        id: bgblink2
-                        ParallelAnimation {
-                            loops: Animation.Infinite
-                            running: call_send_accept_button.visible
-                            ColorAnimation {
-                                target: bgblink2
-                                property: "color"
-                                from: "white"
-                                to: "green"
-                                duration: 1000
-                            }
-                        }
-                    }
-                    ToolTip.text: "Start two-way video"
-                }
-                CallButtonLink {
-                    id: call_reject_button
-                    but_name: "reject"
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_cancel_black_24dp.png")
-                    }
-                    background: Rectangle {
-                        id: bgblink3
-                        ParallelAnimation {
-                            loops: Animation.Infinite
-                            running: call_reject_button.visible
-                            ColorAnimation {
-                                target: bgblink3
-                                property: "color"
-                                from: "red"
-                                to: "white"
-                                duration: 1000
-                            }
-                        }
-                    }
-                    ToolTip.text: "Decline live video"
-
-                }
-
-                CallButtonLink {
-                    id: mute_button
-                    but_name: "mute_button"
-                    contentItem: Image {
-                        id: mic_icon
-                        anchors.centerIn: parent
-                        source: mi("ic_mic_black_24dp.png")
-                    }
-                    onCheckedChanged: {
-                        mic_icon.source = checked ? mi("ic_mic_black_24dp.png") : mi("ic_mic_off_black_24dp.png")
-                    }
-
+//                }
+//                CallButtonLink {
+//                    id: call_accept_button
+//                    but_name: "accept"
+//                    contentItem: Image {
+//                        anchors.centerIn: parent
+//                        source: mi("ic_videocam_black_24dp.png")
+//                    }
+//                    background: Rectangle {
+//                        id: bgblink
+//                        ParallelAnimation {
+//                            loops: Animation.Infinite
+//                            running: call_accept_button.visible
+//                            ColorAnimation {
+//                                target: bgblink
+//                                property: "color"
+//                                from: "white"
+//                                to: "green"
+//                                duration: 1000
+//                            }
+//                        }
+//                    }
+//                    ToolTip.text: "Accept live video"
+//                }
+//                CallButtonLink {
+//                    id: call_send_accept_button
+//                    but_name: "accept_and_send"
+//                    contentItem: Image {
+//                        anchors.centerIn: parent
+//                        source: mi("ic_videocam_black_24dp.png")
+//                    }
+//                    background: Rectangle {
+//                        id: bgblink2
+//                        ParallelAnimation {
+//                            loops: Animation.Infinite
+//                            running: call_send_accept_button.visible
+//                            ColorAnimation {
+//                                target: bgblink2
+//                                property: "color"
+//                                from: "white"
+//                                to: "green"
+//                                duration: 1000
+//                            }
+//                        }
+//                    }
+//                    ToolTip.text: "Start two-way video"
+//                }
+//                CallButtonLink {
+//                    id: call_reject_button
+//                    but_name: "reject"
+//                    contentItem: Image {
+//                        anchors.centerIn: parent
+//                        source: mi("ic_cancel_black_24dp.png")
+//                    }
 //                    background: Rectangle {
 //                        id: bgblink3
 //                        ParallelAnimation {
@@ -321,9 +291,39 @@ Page {
 //                            }
 //                        }
 //                    }
-                    ToolTip.text: "Toggle mic"
+//                    ToolTip.text: "Decline live video"
 
-                }
+//                }
+
+//                CallButtonLink {
+//                    id: mute_button
+//                    but_name: "mute_button"
+//                    contentItem: Image {
+//                        id: mic_icon
+//                        anchors.centerIn: parent
+//                        source: mi("ic_mic_black_24dp.png")
+//                    }
+//                    onCheckedChanged: {
+//                        mic_icon.source = checked ? mi("ic_mic_black_24dp.png") : mi("ic_mic_off_black_24dp.png")
+//                    }
+
+////                    background: Rectangle {
+////                        id: bgblink3
+////                        ParallelAnimation {
+////                            loops: Animation.Infinite
+////                            running: call_reject_button.visible
+////                            ColorAnimation {
+////                                target: bgblink3
+////                                property: "color"
+////                                from: "red"
+////                                to: "white"
+////                                duration: 1000
+////                            }
+////                        }
+////                    }
+//                    ToolTip.text: "Toggle mic"
+
+//                }
 
 
                 TipButton {
@@ -361,14 +361,14 @@ Page {
 
                             }
                         }
-                        MenuItem {
-                            text: "Send video message"
-                            onTriggered: {
-                                core.try_connect(to_uid)
-                                dwyco_vid_rec.uid = to_uid
-                                stack.push(dwyco_vid_rec)
-                            }
-                        }
+//                        MenuItem {
+//                            text: "Send video message"
+//                            onTriggered: {
+//                                core.try_connect(to_uid)
+//                                dwyco_vid_rec.uid = to_uid
+//                                stack.push(dwyco_vid_rec)
+//                            }
+//                        }
 
                         MenuItem {
                             text: "Browse Msgs"
@@ -605,7 +605,7 @@ Page {
         top_toolbar_text.text = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
-        call_buttons_model = core.get_button_model(to_uid)
+        //call_buttons_model = core.get_button_model(to_uid)
     }
 
     Loader {
