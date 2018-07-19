@@ -8,26 +8,28 @@
 long
 gcd(long x, long y)        // euclid's algorithm
 {
-  long a = labs(x);
-  long b = labs(y);
+    long a = labs(x);
+    long b = labs(y);
 
-  long tmp;
-  
-  if (b > a)
-  {
-    tmp = a; a = b; b = tmp;
-  }
-  for(;;)
-  {
-    if (b == 0)
-      return a;
-    else if (b == 1)
-      return b;
-    else
+    long tmp;
+
+    if (b > a)
     {
-      tmp = b;
-      b = a % b;
-      a = tmp;
+        tmp = a;
+        a = b;
+        b = tmp;
     }
-  }
+    for(;;)
+    {
+        if (b == 0)
+            return a;
+        else if (b == 1)
+            return b;
+        else
+        {
+            tmp = b;
+            b = a % b;
+            a = tmp;
+        }
+    }
 }

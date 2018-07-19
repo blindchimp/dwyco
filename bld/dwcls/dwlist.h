@@ -28,15 +28,21 @@ template<class T>
 class DwList : public DwListA<T *>
 {
 protected:
-	
+
 
 public:
-	DwList(Allocator *a = Default_alloc) : DwListA<T *>(0, a) {}
+    DwList(Allocator *a = Default_alloc) : DwListA<T *>(0, a) {}
 
 //	DwList& operator=(const DwList&);
-	virtual int eqfun(T* const &e1, T* const &e2) const {return *e1 == *e2;}
-	virtual int search_fun(T* const &key, T* const &elem) {return *key == *elem;}
-	virtual int sort_fun(T* const &from_list, T* const &new_elem) {return 1;}
+    virtual int eqfun(T* const &e1, T* const &e2) const {
+        return *e1 == *e2;
+    }
+    virtual int search_fun(T* const &key, T* const &elem) {
+        return *key == *elem;
+    }
+    virtual int sort_fun(T* const &from_list, T* const &new_elem) {
+        return 1;
+    }
 
 };
 
@@ -52,16 +58,20 @@ class DwListHC : public DwListA<T *>
 protected:
 
 public:
-	DwListHC(Allocator *a = Default_alloc) : DwListA<T *>(0, a) {}
-	virtual int search_fun(T * const &key, T * const &elem) {return key == elem;}
-	virtual int sort_fun(T * const &from_list, T * const &new_elem) {return 1;}
+    DwListHC(Allocator *a = Default_alloc) : DwListA<T *>(0, a) {}
+    virtual int search_fun(T * const &key, T * const &elem) {
+        return key == elem;
+    }
+    virtual int sort_fun(T * const &from_list, T * const &new_elem) {
+        return 1;
+    }
 };
 
 template<class T>
 class DwListIter : public DwListAIter<T *>
 {
 public:
-	DwListIter(const DwList<T> *t) : DwListAIter<T *>(t) {}
+    DwListIter(const DwList<T> *t) : DwListAIter<T *>(t) {}
 };
 
 #define dwlist_foreach(e,list) for((list).rewind();(((e)=(list).get())!=LIST_ERROR);(list).forward())
