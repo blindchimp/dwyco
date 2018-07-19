@@ -8,6 +8,8 @@
 long gcd(long, long);
 
 #ifndef _builtin_h
-inline long lcm(long a, long b) {return a / gcd(a, b) * b; }
+inline long lcm(long a, long b) {
+    return a / gcd(a, b) * b;
+}
 #endif
 #endif

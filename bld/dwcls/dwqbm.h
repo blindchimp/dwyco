@@ -44,9 +44,9 @@ template<class T>
 void
 DwQueryByMember<T>::del(T *a)
 {
-	long i;
-	if((i = objs.index(a)) == -1)
-		return;
+    long i;
+    if((i = objs.index(a)) == -1)
+        return;
     objs.del(i);
 }
 

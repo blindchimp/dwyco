@@ -9,7 +9,7 @@ DwTreeKaz<void *, long> *DwVP::Ptr_listp;
 void
 DwVP::init_dvp()
 {
-	Ptr_listp = new DwTreeKaz<void *, long>(0);
+    Ptr_listp = new DwTreeKaz<void *, long>(0);
 }
 #define Ptr_list (*Ptr_listp)
 
@@ -18,9 +18,9 @@ long DwVP::CookieGen = 2000;
 void
 DwVP::add_ptr(long p, void *v)
 {
-	if(Ptr_list.exists(p))
-		oopanic("bogus ptr add");
-	Ptr_list.add(p, v);
+    if(Ptr_list.exists(p))
+        oopanic("bogus ptr add");
+    Ptr_list.add(p, v);
 //GRTLOG("vpsize %d", Ptr_list.num_elems(), 0);
 }
 
@@ -28,19 +28,19 @@ DwVP::add_ptr(long p, void *v)
 int
 DwVP::valid_ptr(long p)
 {
-	return Ptr_list.exists(p);
+    return Ptr_list.exists(p);
 }
 
 void
 DwVP::del_ptr(long p)
 {
-	Ptr_list.del(p);
+    Ptr_list.del(p);
 }
 
 DwVP
 DwVP::cookie_to_ptr(long cookie)
 {
-	DwVP p;
+    DwVP p;
     p.cookie = cookie;
     void *v;
     if(!Ptr_list.find(cookie, v))

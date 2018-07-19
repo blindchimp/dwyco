@@ -11,12 +11,22 @@ template<class T>
 class DwStackA : private DwListA<T>
 {
 public:
-	DwStackA(T def) : DwListA<T>(def) { }
-	void push(const T& t) {append(t);}
-	T pop() {T t(this->get_last()); this->remove_last(); return t;}
-	void clear() {for(int i = num_elems(); i > 0; --i) { this->remove_last(); }}
+    DwStackA(T def) : DwListA<T>(def) { }
+    void push(const T& t) {
+        append(t);
+    }
+    T pop() {
+        T t(this->get_last());
+        this->remove_last();
+        return t;
+    }
+    void clear() {
+        for(int i = num_elems(); i > 0; --i) {
+            this->remove_last();
+        }
+    }
 
-	DwListA<T>::num_elems;
+    DwListA<T>::num_elems;
 };
 
 #endif

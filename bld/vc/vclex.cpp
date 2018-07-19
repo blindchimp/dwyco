@@ -625,7 +625,6 @@ VcLexer::get_toplev()
 		S1, S2, S3, S4, S5, S6, S7,
 		GOT_FLOAT, GOT_SYMATOM} state;
 	int t;
-	int term;
 
 	state = EAT_WHITE;
 	if(!get_safe_char(c))
