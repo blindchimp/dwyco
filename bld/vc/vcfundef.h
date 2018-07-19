@@ -13,6 +13,7 @@
 #include "vc.h"
 #include "vcfunc.h"
 #include "dwvec.h"
+#include "vcfunctx.h"
 
 //
 // class encapsulating a function definition and call
@@ -31,11 +32,18 @@ friend vc dofunbuild(const char *, VCArglist *, int, int);
 
 protected:
         DwVec<vc> *bindargs;
+        mutable functx lctx;
+        mutable int recurse;
+        mutable int primed;
+        mutable DwVecP<vc> wps;
+
 	
 	vc_fundef(int = VC_FUNC_NORMAL); // used for special function definitions (factories)
     vc_fundef(vc name, int sty);
 	~vc_fundef();
-	
+    void do_function_initialize(VCArglist *) const;
+    void do_function_finalize(VCArglist *)  const;
+
 	virtual void do_arg_setup(VCArglist *) const;
 	virtual vc do_function_call(VCArglist *, int suppress_break = 0) ;
 

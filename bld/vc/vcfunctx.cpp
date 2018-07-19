@@ -72,8 +72,28 @@ functx::~functx()
 	vc_cvar::flush_lookup_cache();
 #endif
 	delete map;
-	if(exc != 0)
-		delete exc;
+    delete exc;
+}
+
+void
+functx::reset()
+{
+    if(flush_on_close)
+        vc_funcall::flush_all_cache();
+#ifdef CACHE_LOOKUPS
+    vc_cvar::flush_lookup_cache();
+#endif
+    delete exc;
+    exc = 0;
+    doing_ret = 0;
+    loop_ctrl = 0;
+    break_level = 0;
+    flush_on_close = 0;
+#ifdef LHOBJ
+    obj_ctx = 0;
+    obj_ctx_enabled = 0;
+    base_init_in_progress = 0;
+#endif
 }
 
 #ifdef LHOBJ
@@ -170,10 +190,10 @@ functx::is_base_init()
 
 
 void
-functx::add(const vc& key, const vc& value) {
+functx::add(const vc& key, const vc& value, vc** wp) {
 	if(((const char *)key)[0] == '\0')
 		USER_BOMB2("can't bind to zero length string");
-	if(map->replace(key, value) == 0)
+    if(map->replace(key, value, wp) == 0)
 	{
 #ifdef CACHE_LOOKUPS
 		vc_cvar::flush_lookup_cache();

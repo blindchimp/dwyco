@@ -53,7 +53,9 @@ private:
 public:
 	functx(int tsize = 1);
 	~functx();
-	void add(const vc& key, const vc& value) ;
+        void reset();
+
+        void add(const vc& key, const vc& value, vc **wp = 0) ;
 	vc get(const vc& key) ;
 	int find(const vc& key, vc& out) ;
 	int find2(const vc& key, vc& out, vc*& wp) ;

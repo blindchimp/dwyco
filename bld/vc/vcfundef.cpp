@@ -17,10 +17,12 @@
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfundef.cpp 1.47 1997/10/05 17:27:06 dwight Stable $";
 
 vc_fundef::vc_fundef(const char *name, VCArglist *a, int sty, int decrypt)
-	: vc_func(vc(name), sty)
+    : lctx(32), vc_func(vc(name), sty)
 {
 	int nargs = a->num_elems();
     bindargs = new DwVec<vc>;
+    recurse = 0;
+    primed = 0;
 	// if a vector is passed as the first argument,
 	// we assume its is a list of arguments
 	// to be broken-out
@@ -124,6 +126,27 @@ vc_fundef::eval() const
 	return fundef.force_eval();
 }
 
+void
+vc_fundef::do_function_initialize(VCArglist *) const
+{
+    if(recurse)
+        oopanic("oops");
+
+    if(!is_construct)
+        Vcmap->open_ctx(&lctx);
+    recurse = 1;
+}
+
+void
+vc_fundef::do_function_finalize(VCArglist *)  const
+{
+    if(!is_construct)
+    {
+        Vcmap->close_ctx();
+        lctx.reset();
+    }
+    recurse = 0;
+}
 //
 // set up arguments for a user-defined function call.
 // note that arguments are assumed to be evaled, if
@@ -160,10 +183,24 @@ vc_fundef::do_arg_setup(VCArglist *a) const
 				"more args than expected, extra args ignored.") << "\n";
 	}
 
-	for(int i = 0; i < n_formal_args; ++i)
-	{
-		Vcmap->local_add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i]);
-	}
+
+    if(!primed)
+    {
+        for(int i = 0; i < n_formal_args; ++i)
+        {
+            lctx.add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i], &wps[i]);
+            //Vcmap->local_add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i]);
+        }
+        primed = 1;
+    }
+    else
+    {
+        for(int i = 0; i < n_formal_args; ++i)
+        {
+            *(wps[i]) = (i >= n_call_args) ? vcnil : (*a)[i];
+        }
+    }
+
 	if(varadic)
 	{
 		// bundle up the trailing args into a special variable

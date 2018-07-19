@@ -22,6 +22,7 @@ class vcctx
 {
 private:
 	DwVecP<functx> maps;
+        DwVec<int> delete_ctx;
 	int ctx;
 	
 	// exception handling

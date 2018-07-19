@@ -23,12 +23,18 @@ vcctx::vcctx() {
 	backout_ctx = 0;
 	dbg_backout = 0;
 	maps[0] = new functx(313);
+    delete_ctx[0] = 1;
 }
 
 vcctx::~vcctx()
 {
+    // hmmm, this might be better going the other
+    // direction, but this is end-of-world anyway
 	for(int i = 0; i <= ctx; ++i)
-		delete maps[i];
+    {
+        if(delete_ctx[i])
+            delete maps[i];
+    }
 }
 
 void
@@ -52,11 +58,14 @@ vcctx::open_ctx(functx *f)
 	if(!f)
 	{
 		maps[ctx] = new functx; // tiny table
+        delete_ctx[ctx] = 1;
 	}
 	else
 	{
 		// use the existing function context
 		// as a template
+        maps[ctx] = f;
+        delete_ctx[ctx] = 0;
 	}
 }
 
@@ -72,7 +81,8 @@ vcctx::close_ctx()
 		// context being closed.
 		call_backouts_back_to(backout_handler);
     }
-	delete maps[ctx];
+    if(delete_ctx[ctx])
+        delete maps[ctx];
 	--ctx;
 #ifdef LHOBJ
 	// re-enable the previous object context in case it was
