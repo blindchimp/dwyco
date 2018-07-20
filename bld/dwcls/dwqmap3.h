@@ -70,10 +70,7 @@ private:
 
 protected:
     unsigned long used;
-    // for finalization, we need where *any* slot
-    // might need to be destroyed, across multiple
-    // "fast_clears"
-    unsigned long prev_used;
+
     int size;			// total size of table
 
 public:
@@ -93,7 +90,6 @@ public:
     int replace(const D&, const R&, R** wp = 0);
     R get(const D&);
     int del(const D&);
-    void fast_clear();
     //virtual DwAssocImp<R,D> get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *) const;
     virtual DwMapsIter<R,D> *make_iter() const;
 
@@ -277,21 +273,10 @@ tcls::del(const D& key)
 
 thdr
 void
-tcls::fast_clear()
-{
-    count = 0;
-    deleted = 0;
-    prev_used |= used;
-    used = 0;
-}
-
-thdr
-void
 tcls::initdel(long isize)
 {
     deleted = 0;
     used = 0;
-    prev_used = 0;
 }
 
 thdr
@@ -496,12 +481,11 @@ thdr
 void
 tcls::destr_fun()
 {
-    //unsigned long u = used;
-    //unsigned long u2 = prev_used;
+
 // WARNING: problems here with long/int on 64 bit stuff
 // previous version of this function would be more
 // general, but this is faster.
-    unsigned long u3 = (this->used | this->prev_used);
+    unsigned long u3 = this->used;
     for(int i = 0; u3; ++i)
     {
         static char table[64] =
@@ -545,7 +529,7 @@ thdr
 void
 tcls::add_assoc(const D& key, const R& val, long idx)
 {
-    int u = ((this->used|this->prev_used) & (1UL << idx));
+    int u = ((this->used) & (1UL << idx));
     D *d = addr_dom(idx);
     R *r = addr_rng(idx);
 
@@ -574,7 +558,7 @@ inline
 void
 tcls::set_rng(const R& r, long idx)
 {
-    if((this->used|this->prev_used) & (1UL << idx))
+    if((this->used) & (1UL << idx))
         *addr_rng(idx) = r;
     else
         new(addr_rng(idx)) R(r);

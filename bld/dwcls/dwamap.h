@@ -48,7 +48,6 @@ public:
     virtual int replace(const D&, const R&, R** wp = 0) ;
     virtual R get(const D&) ;
     virtual int del(const D&) ;
-    virtual void fast_clear();
 
     virtual DwAssocImp<R,D> get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *) const;
     DwMapsIter<R,D> *make_iter() const;
@@ -122,13 +121,6 @@ int
 tcls::find(const D& key, R& out, R** wp)
 {
     return map->find(key, out, wp);
-}
-
-thdr
-void
-tcls::fast_clear()
-{
-    map->fast_clear();
 }
 
 thdr

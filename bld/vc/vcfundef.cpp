@@ -197,7 +197,8 @@ vc_fundef::do_arg_setup(VCArglist *a) const
     {
         for(int i = 0; i < n_formal_args; ++i)
         {
-            *(wps[i]) = (i >= n_call_args) ? vcnil : (*a)[i];
+            if(wps[i])
+                *(wps[i]) = (i >= n_call_args) ? vcnil : (*a)[i];
         }
     }
 

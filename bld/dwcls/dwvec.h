@@ -4,7 +4,6 @@
 // WARNING!
 // if you don't have ctors for classes when this is undefined,
 // then you doin't get intialization of vector elements.
-// unfortunately, gcc can't handle this at the moment...
 //**********************
 // NOTE: define DWVEC_DOINIT for cdc32, otherwise it
 // won't work. you get a small performance boost
@@ -50,15 +49,6 @@
 #undef index
 void oopanic(const char *);
 
-// non-polymorphic vector (vector of objects.)
-//
-// if you want to put polymorphic objects in this container, you
-// must specify pointers to the objects. it is then your
-// responsibility to implement the desired copy semantics (the
-// package will only assign the pointers...)  also, auto-enlarged
-// arrays of pointers result in uninitialized pointer values.
-//
-//
 // note: tried to do this using templates with fixed arguments, but
 // all three of the compilers I have access to screw it up...
 // template<class T, int is_fixed, int auto_expand>
@@ -135,11 +125,8 @@ public:
     int contains(const T&) const;
     void apply(typename DwVec<T>::Funcp f);
 
-#if defined(__BCPLUSPLUS__) && __BCPLUSPLUS__ >= 0x540
     virtual T get_by_iter(DwIter<DwVec<T>, T> *a) const ;
-#else
-    virtual T get_by_iter(DwIter<DwVec, T> *a) const ;
-#endif
+
 #ifdef DWVEC_DOINIT
     void init_value(T& v) {
         if(initfun) (*initfun)(v);
@@ -511,9 +498,6 @@ public:
         cur = 0;
         max = t->num_elems();
     }
-    //note: gcc 3.4.2 has become fussy wrt the "to_iterate" member in the
-    // base class. overspecifying fixes it, and probably won't hurt other
-    // compilers.
     void init() {
         cur = 0;
         max = DwIter<DwVec<T>, T>::to_iterate->num_elems() - 1;
