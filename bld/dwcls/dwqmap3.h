@@ -526,6 +526,8 @@ thdr
 void
 tcls::snapshot()
 {
+    if(this->deleted != 0)
+        oopanic("snapshot with deletes");
     used_snap = this->used;
     deleted_snap = this->deleted;
 }
@@ -534,8 +536,9 @@ thdr
 int
 tcls::restore()
 {
-    if(this->deleted != deleted_snap)
+    if(this->deleted != 0)
         return 0;
+
     // note: we don't keep a copy of the map and try to
     // restore it to its original value. this is simply
     // a way to remove keys that were added after the

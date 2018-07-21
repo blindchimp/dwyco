@@ -32,10 +32,19 @@ friend vc dofunbuild(const char *, VCArglist *, int, int);
 
 protected:
         DwVec<vc> *bindargs;
-        mutable functx lctx;
+        mutable functx *lctx;
         mutable int recurse;
-        mutable int primed;
-        mutable DwVecP<vc> wps;
+
+        struct argstate {
+            mutable functx fctx;
+            mutable int primed;
+            mutable DwVecP<vc> wps;
+            argstate() {
+                primed = 0;
+            }
+        };
+
+        DwVecP<argstate> primed_maps;
 
 	
 	vc_fundef(int = VC_FUNC_NORMAL); // used for special function definitions (factories)

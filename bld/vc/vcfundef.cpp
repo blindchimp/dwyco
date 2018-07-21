@@ -18,12 +18,14 @@
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfundef.cpp 1.47 1997/10/05 17:27:06 dwight Stable $";
 
 vc_fundef::vc_fundef(const char *name, VCArglist *a, int sty, int decrypt)
-    : lctx(32), vc_func(vc(name), sty)
+    :  vc_func(vc(name), sty)
 {
 	int nargs = a->num_elems();
     bindargs = new DwVec<vc>;
+    primed_maps.append(new argstate);
+    lctx = &primed_maps[0]->fctx;
     recurse = 0;
-    primed = 0;
+
 	// if a vector is passed as the first argument,
 	// we assume its is a list of arguments
 	// to be broken-out
@@ -130,12 +132,15 @@ vc_fundef::eval() const
 void
 vc_fundef::do_function_initialize(VCArglist *) const
 {
-    if(recurse)
-        oopanic("oops");
-
     if(!is_construct)
-        Vcmap->open_ctx(&lctx);
-    recurse = 1;
+    {
+        if(primed_maps[recurse] == 0)
+        {
+            primed_maps[recurse] = new argstate;
+        }
+        lctx = &primed_maps[recurse]->fctx;
+        Vcmap->open_ctx(lctx);
+    }
 }
 
 void
@@ -144,17 +149,20 @@ vc_fundef::do_function_finalize(VCArglist *)  const
     if(!is_construct)
     {
         Vcmap->close_ctx();
-        lctx.reset();
-        DwQMapLazyC<vc,vc,32> *m = dynamic_cast<DwQMapLazyC<vc,vc,32> *>(lctx.map);
+        lctx->reset();
+        DwQMapLazyC<vc,vc,32> *m = dynamic_cast<DwQMapLazyC<vc,vc,32> *>(lctx->map);
         if(m)
         {
             if(m->restore() == 0)
             {
-                oopanic("fix me");
+                delete primed_maps[recurse - 1];
+                primed_maps[recurse - 1] = new argstate;
+
             }
         }
+        --recurse;
+        lctx = &primed_maps[recurse]->fctx;
     }
-    recurse = 0;
 }
 //
 // set up arguments for a user-defined function call.
@@ -192,16 +200,16 @@ vc_fundef::do_arg_setup(VCArglist *a) const
 				"more args than expected, extra args ignored.") << "\n";
 	}
 
-
-    if(!primed)
+    argstate *as = primed_maps[recurse];
+    if(!as->primed)
     {
         for(int i = 0; i < n_formal_args; ++i)
         {
-            lctx.add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i], &wps[i]);
+            lctx->add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i], &(as->wps[i]));
             //Vcmap->local_add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i]);
         }
-        primed = 1;
-        DwQMapLazyC<vc,vc,32> *m = dynamic_cast<DwQMapLazyC<vc,vc,32> *>(lctx.map);
+        as->primed = 1;
+        DwQMapLazyC<vc,vc,32> *m = dynamic_cast<DwQMapLazyC<vc,vc,32> *>(lctx->map);
         if(m)
             m->snapshot();
     }
@@ -209,8 +217,8 @@ vc_fundef::do_arg_setup(VCArglist *a) const
     {
         for(int i = 0; i < n_formal_args; ++i)
         {
-            if(wps[i])
-                *(wps[i]) = (i >= n_call_args) ? vcnil : (*a)[i];
+            if(as->wps[i])
+                *(as->wps[i]) = (i >= n_call_args) ? vcnil : (*a)[i];
         }
     }
 
@@ -263,6 +271,8 @@ vc_fundef::do_function_call(VCArglist *, int suppress_break)
 	struct timeval t0;
 	gettimeofday(&t0, 0);
 #endif
+    if(!is_construct)
+        ++recurse;
 	vc ret = fundef.force_eval();
 	if(Vcmap->ret_in_progress())
 		ret = Vcmap->retval();
