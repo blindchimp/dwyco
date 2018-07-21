@@ -2,11 +2,12 @@
 /*
  * $Header: g:/dwight/repo/dwcls/rcs/tqmap.cpp 1.9 1997/06/01 04:40:23 dwight Stable095 $
  */
-#include <iostream.h>
+#include <iostream>
 #include "dwqmap3.h"
 #include "dwamap.h"
+#include <memory.h>
+using namespace std;
 
-Allocator *Default_alloc;
 void oopanic(const char *) {::abort();}
 
 struct Int
@@ -17,6 +18,8 @@ struct Int
 	operator int() const {return i;}
 	void *operator new(size_t t, Int *v) {return v;}
 	friend ostream& operator<<(ostream& os, const Int& ii);
+  // generate a lot of collisions
+    unsigned long hashValue() const {return i & 0x3;}
 };
 
 ostream&
@@ -26,6 +29,7 @@ operator<<(ostream& os, const Int& ii)
 	return os;
 }
 
+#if 0
 
 unsigned long
 hash(const int& i)
@@ -33,21 +37,25 @@ hash(const int& i)
 	return i;
 }
 
+template<>
 unsigned long
 hash(const Int& ii)
 {
 	return ii.i;
 }
 
+template<>
 unsigned long
 hash(const DwAssocImp<Int, Int>& a)
 {
 	return hash(a.peek_key());
 }
+#endif
 
-main()
+int
+main(int, char **)
 {
-	DwAMap<Int, Int> a(0, 0);
+    DwQMapLazyC<Int, Int, 32> a(0, 0);
 
 
 	a.add(1, 100);
@@ -55,74 +63,108 @@ main()
 		::abort();
 	if(a.contains(2) == 1)
 		::abort();
-
-	int i;
-	for(i = 0; i < 200; ++i)
+    int i;
+    Int r;
+    a.add(5, 200);
+    a.del(1);
+    if(a.contains(1) == 1)
+        ::abort();
+    a.add(1, 300);
+    if(a.get(5) != 200)
+        ::abort();
+    if(a.get(1) != 300)
+        ::abort();
+    for(int j = 0; j < 2; ++j)
+    {
+    for(i = 0; i < 15; ++i)
 	{
-		a.add(i, i*100);
+        a.replace(i, i*100);
 	}
-	if(a.num_elems() != 200)
+    if(a.num_elems() != 15)
 		::abort();
-	for(i = 0; i < 200; ++i)
+    for(i = 0; i < 15; ++i)
 	{
-		if(a.get(i) != i * 100)
+
+        if(!a.find(i, r) || r != i * 100)
 			::abort();
 	}
-	for(i = 0; i < 200; ++i)
+    for(i = 0; i < 7; ++i)
 	{
 		if(a.del(i) == 0)
 			::abort();
 	}
-	if(a.num_elems() != 0)
+    if(a.num_elems() != 8)
 		::abort();
-	// generate some random numbers and see if
-	// everything plays that way.
 
-	srand(1);
-	for(i = 0; i < 200; ++i)
+
+    for(i = 7; i < 15; ++i)
+    {
+        Int r;
+        if(!a.find(i, r) || r != i * 100)
+            ::abort();
+    }
+    }
+    for(int tst = 0; tst < 10; ++tst)
+    {
+        DwQMapLazyC<Int,Int,32> &a = *new DwQMapLazyC<Int, Int, 32>(0, 0);
+    cout << "TEST " << tst << "\n";
+    DwQMapIter<Int,Int> it(&a);
+    int m[64];
+    memset(m, 0xff, sizeof(m));
+    for(it.rewind(); !it.eol(); it.forward())
+    {
+        DwAssocImp<Int, Int> as = it.get();
+        cout << "key = " << as.peek_key() << " val = " << as.peek_value() << "\n";
+        m[as.peek_key()] = as.peek_value();
+    }
+
+    for(int p = 0; p < 200; ++p)
+    {
+    srand(p * tst);
+    int n = rand() % 28;
+    for(i = 0; i < n; ++i)
 	{
-		a.add(rand(), i);
+        int k = rand() % 30;
+        a.replace(k, i);
+        m[k] = i;
+
 	}
-	srand(1);
-	for(i = 0; i < 200; ++i)
+    srand(p * tst);
+    for(i = 0; i < n / 2; ++i)
 	{
-		// may bomb if rand generates a dup
-		if(a.get(rand()) != i)
-			::abort();
+        int k = rand() % 30;
+        a.del(k);
+        m[k] = -1;
 	}
-	DwAMapIter<Int,Int> it(&a);
-	for(; !it.eol(); it.forward())
+    }
+
+
+    for(it.rewind(); !it.eol(); it.forward())
 	{
 		DwAssocImp<Int, Int> as = it.get();
 		cout << "key = " << as.peek_key() << " val = " << as.peek_value() << "\n";
-	}
-	srand(1);
-	for(i = 0; i < 200; ++i)
-	{
-		// might bomb is rand returned dup in first 30...
-		if(a.del(rand()) == 0)
-			::abort();
-	}
-	cout << "should have nothing\n";
-	for(it.rewind(); !it.eol(); it.forward())
-	{
-		::abort();
-		DwAssocImp<Int, Int> as = it.get();
-		cout << "key = " << as.peek_key() << " val = " << as.peek_value() << "\n";
-	}
-	
-	if(a.num_elems() != 0)
-		::abort();
+        if(m[as.peek_key()] != as.peek_value())
+            ::abort();
+    }
+    for(int mi = 0; mi < 64; ++mi)
+    {
+        if(m[mi] == -1)
+        {
+            if(a.contains(mi))
+                ::abort();
+        }
+        else
+        {
+            if(!a.find(mi, r) || r != m[mi])
+                ::abort();
+        }
 
-	a.add(12, 10);
-	a.replace(12, 15);
-	if(a.get(12) != 15)
-		::abort();
-	if(a.del(12) == 0)
-		::abort();
-	Int k;
-	if(a.find(12, k))
-		::abort();
+    }
+    delete &a;
+    }
+
+    exit(0);
+
 	
 	
 

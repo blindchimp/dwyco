@@ -70,7 +70,6 @@ private:
 
 protected:
     unsigned long used;
-
     int size;			// total size of table
 
 public:
@@ -266,14 +265,13 @@ tcls::del(const D& key)
     if(!found)
         return 0;
     setdel(idx);
-    setempty(idx);
     --count;
     return 1;
 }
 
 thdr
 void
-tcls::initdel(long isize)
+tcls::initdel(long )
 {
     deleted = 0;
     used = 0;
@@ -317,7 +315,7 @@ tcls::setempty(long idx)
     if(idx < 0 || idx >= size)
         oopanic("bad empty idx");
 #endif
-    //used &= ~(1UL << idx);
+    used &= ~(1UL << idx);
 }
 
 
