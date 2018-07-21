@@ -13,6 +13,7 @@
 #include "vcmap.h"
 #include "dwvec.h"
 #include "vcio.h"
+#include "dwqmap3.h"
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfundef.cpp 1.47 1997/10/05 17:27:06 dwight Stable $";
 
@@ -144,6 +145,14 @@ vc_fundef::do_function_finalize(VCArglist *)  const
     {
         Vcmap->close_ctx();
         lctx.reset();
+        DwQMapLazyC<vc,vc,32> *m = dynamic_cast<DwQMapLazyC<vc,vc,32> *>(lctx.map);
+        if(m)
+        {
+            if(m->restore() == 0)
+            {
+                oopanic("fix me");
+            }
+        }
     }
     recurse = 0;
 }
@@ -192,6 +201,9 @@ vc_fundef::do_arg_setup(VCArglist *a) const
             //Vcmap->local_add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i]);
         }
         primed = 1;
+        DwQMapLazyC<vc,vc,32> *m = dynamic_cast<DwQMapLazyC<vc,vc,32> *>(lctx.map);
+        if(m)
+            m->snapshot();
     }
     else
     {

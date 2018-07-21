@@ -12,6 +12,7 @@
 #include "vcctx.h"
 #include "vcmap.h"
 #include "vcio.h"
+#include "dwmapr.h"
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcctx.cpp 1.46 1997/10/05 17:27:06 dwight Stable $";
 
@@ -22,7 +23,7 @@ vcctx::vcctx() {
 	backout_handler = 0;
 	backout_ctx = 0;
 	dbg_backout = 0;
-	maps[0] = new functx(313);
+    maps[0] = new functx(new DwMapR<vc,vc>(313));
     delete_ctx[0] = 1;
 }
 

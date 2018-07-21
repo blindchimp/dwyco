@@ -12,30 +12,31 @@
 
 #include "vc.h"
 
-#ifndef BTYPES
-#ifdef PERFHACKS
-template<class R, class D> class DwAMap;
-template<class R, class D> class DwAMapIter;
-typedef DwAMap<vc,vc> VMAP;
-typedef DwAMapIter<vc,vc> VMAPIter;
-#else
-template<class R, class D> class DwMapR;
-template<class R, class D> class DwMapRIter;
-typedef DwMapR<vc,vc> VMAP;
-typedef DwMapRIter<vc,vc> VMAPIter;
-#endif
-#else
-template<class R, class D> class DwMap;
-template<class R, class D> class DwMapIter;
-typedef DwMap<vc,vc> VMAP;
-typedef DwMapIter<vc,vc> VMAPIter;
-#endif
+//#ifdef PERFHACKS
+//template<class R, class D> class DwAMap;
+//template<class R, class D> class DwAMapIter;
+//typedef DwAMap<vc,vc> VMAP;
+//typedef DwAMapIter<vc,vc> VMAPIter;
+//#else
+//template<class R, class D> class DwMapR;
+//template<class R, class D> class DwMapRIter;
+//typedef DwMapR<vc,vc> VMAP;
+//typedef DwMapRIter<vc,vc> VMAPIter;
+//#endif
+
+template<class R, class D> class DwMaps;
+template<class R, class D> class DwMapsIter;
+typedef DwMaps<vc,vc> VMAP;
+typedef DwMapsIter<vc,vc> VMAPIter;
+
 class excctx;
 class excfun;
 class vc_object;
 
 class functx
 {
+    friend class vc_fundef;
+
 private:
 	VMAP *map;
 	vc retval;
@@ -51,7 +52,8 @@ private:
 #endif
 
 public:
-	functx(int tsize = 1);
+        functx(int tsize = 1);
+        functx(VMAP *);
 	~functx();
         void reset();
 

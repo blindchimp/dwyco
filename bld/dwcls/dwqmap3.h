@@ -44,7 +44,7 @@ private:
 
     int count;				// number of elements in table
     int thresh;				// number of elements where ops degrade
-    unsigned long deleted;
+
 
     void init1(int);
     void setdel(long);
@@ -71,6 +71,7 @@ private:
 protected:
     unsigned long used;
     int size;			// total size of table
+    unsigned long deleted;
 
 public:
     typedef DwIter<DwMaps<R,D> , DwAssocImp<R,D> > Foo;
@@ -95,6 +96,7 @@ public:
     int over_threshold() const {
         return count >= thresh;
     }
+
 };
 
 #define thdr template<class R, class D>
@@ -442,7 +444,7 @@ private:
     virtual D *addr_dom(long idx) const = 0;
 
 protected:
-    void destr_fun();
+    void destr_fun(unsigned long);
     void copy(const DwQMapLazy&);
 
 public:
@@ -451,6 +453,19 @@ public:
     // note: default ctor, op= work ok
     ~DwQMapLazy();
 
+    // this is an api that is used by LH
+    // it allows you to take a snapshot of the
+    // state of the map.
+    // THIS ONLY WORKS IF NO DELETES ARE USED.
+    // if there is a delete detected, restore returns 0
+    // and the client will have to reset the map manually
+    // (typically just delete it and start over.) this works
+    // ok in LH because removing items is extremely rare.
+    void snapshot();
+    int restore();
+private:
+    unsigned long used_snap;
+    unsigned long deleted_snap;
 };
 
 thdr
@@ -477,13 +492,13 @@ tcls::~DwQMapLazy()
 
 thdr
 void
-tcls::destr_fun()
+tcls::destr_fun(unsigned long u3)
 {
 
 // WARNING: problems here with long/int on 64 bit stuff
 // previous version of this function would be more
 // general, but this is faster.
-    unsigned long u3 = this->used;
+    //unsigned long u3 = this->used;
     for(int i = 0; u3; ++i)
     {
         static char table[64] =
@@ -505,6 +520,30 @@ tcls::destr_fun()
         addr_rng(i)-> ~ R ();
         addr_dom(i)-> ~ D ();
     }
+}
+
+thdr
+void
+tcls::snapshot()
+{
+    used_snap = this->used;
+    deleted_snap = this->deleted;
+}
+
+thdr
+int
+tcls::restore()
+{
+    if(this->deleted != deleted_snap)
+        return 0;
+    // note: we don't keep a copy of the map and try to
+    // restore it to its original value. this is simply
+    // a way to remove keys that were added after the
+    // snapshot call.
+    unsigned long new_items = used_snap ^ this->used;
+    destr_fun(new_items);
+    this->used = used_snap;
+    return 1;
 }
 
 thdr
@@ -602,13 +641,13 @@ public:
         if(elems < s.size) oopanic("bad lazy op=");
         if(this != &s)
         {
-            this->destr_fun();
+            this->destr_fun(this->used);
             copy(s);
         }
         return *this;
     }
     ~DwQMapLazyC() {
-        this->destr_fun();
+        this->destr_fun(this->used);
     }
 };
 
@@ -644,13 +683,13 @@ public:
     const DwQMapLazyV& operator=(const DwQMapLazyV& s) {
         if(this != &s)
         {
-            this->destr_fun();
+            this->destr_fun(this->used);
             copy(s);
         }
         return *this;
     }
     ~DwQMapLazyV() {
-        this->destr_fun();
+        this->destr_fun(this->used);
         delete [] rng;
         delete [] dom;
     }

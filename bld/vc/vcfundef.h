@@ -12,7 +12,7 @@
 
 #include "vc.h"
 #include "vcfunc.h"
-#include "dwvec.h"
+#include "dwvecp.h"
 #include "vcfunctx.h"
 
 //

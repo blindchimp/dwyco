@@ -17,45 +17,43 @@
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfunctx.cpp 1.46 1997/10/05 17:27:06 dwight Stable $";
 
-#ifndef BTYPES
-#ifdef PERFHACKS
-#include "dwamap.h"
-#else
-#include "dwmapr.h"
-#endif
-#else
-#include "dwmap.h"
-#endif
+//#ifndef BTYPES
+//#ifdef PERFHACKS
+//#include "dwamap.h"
+//#else
+//#include "dwmapr.h"
+//#endif
+//#else
+//#include "dwmap.h"
+//#endif
+#include "dwmaps.h"
 
 functx::functx(int tsize) {
-	doing_ret = 0;
-	loop_ctrl = 0;
-	break_level = 0;
-	flush_on_close = 0;
-#ifdef PERFHACKS
-	map = new VMAP(tsize);
-	// the map we get here is a fast closed
-	// hash with 32 slots. since we are probably
-	// caching pointers into this thing, we can't
-	// really having it move around. flushing the
-	// cache when a physical internal constraint
-	// is dealt with which moves the map around
-	// would be really confusing (since we would have
-	// to recompute or rebind somehow all the bindings and
-	// cached bindings in the current function, which
-	// might end up binding them to something else unless
-	// we were careful.) so, we just say you are limited to
-	// 32 items (unless it is the top level) for now.
-	// this really needs to be fixed.
-	map->no_expand = 1;
-#else
-	map = new VMAP(vcnil, vcnil, tsize);
-#endif
-	exc = 0;
+    doing_ret = 0;
+    loop_ctrl = 0;
+    break_level = 0;
+    flush_on_close = 0;
+    map = new DwQMapLazyC<vc,vc,32>;
+    exc = 0;
 #ifdef LHOBJ
-	obj_ctx = 0;
-	obj_ctx_enabled = 0;
-	base_init_in_progress = 0;
+    obj_ctx = 0;
+    obj_ctx_enabled = 0;
+    base_init_in_progress = 0;
+#endif
+}
+
+functx::functx(VMAP *m)
+{
+    doing_ret = 0;
+    loop_ctrl = 0;
+    break_level = 0;
+    flush_on_close = 0;
+    map = m;
+    exc = 0;
+#ifdef LHOBJ
+    obj_ctx = 0;
+    obj_ctx_enabled = 0;
+    base_init_in_progress = 0;
 #endif
 }
 
@@ -315,7 +313,9 @@ functx::drop(excfun *handler) {
 void
 functx::dump(VcIO os) const
 {
-	VMAPIter vmi(map);
+    //VMAPIter vmi(map);
+    VMAPIter *vmip = map->make_iter();
+    VMAPIter& vmi = *vmip;
 	for(; !vmi.eol(); vmi.forward())
 	{
        	DwAssocImp<vc,vc> dai = vmi.get();
@@ -324,7 +324,7 @@ functx::dump(VcIO os) const
 		dai.get_value().print_top(os);
 		os << "\n";
 	}
-
+    delete vmip;
 }
 
 void
