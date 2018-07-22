@@ -109,6 +109,10 @@ vc_fundef::stringrep(VcIO o) const
 vc_fundef::~vc_fundef()
 {
 	delete bindargs;
+    for(int i = primed_maps.num_elems() - 1; i >= 0; --i)
+    {
+        delete primed_maps[i];
+    }
 }
 
 //

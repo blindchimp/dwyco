@@ -104,25 +104,28 @@ vc_cfunc::do_function_call(VCArglist *a, int)
 			ret =  (*funcp0)();
 			break;
 		case 1:
-			ret =  (*funcp1)((*a)[0]);
+            ret =  (*funcp1)(std::move((*a)[0]));
 			break;
 		case 2:
-			ret =  (*funcp2)((*a)[0], (*a)[1]);
+            ret =  (*funcp2)(std::move((*a)[0]), std::move((*a)[1]));
 			break;
 		case 3:
-			ret =  (*funcp3)((*a)[0], (*a)[1], (*a)[2]);
+            ret =  (*funcp3)(std::move((*a)[0]), std::move((*a)[1]), std::move((*a)[2]));
 			break;
 		case 4:
-			ret =  (*funcp4)((*a)[0], (*a)[1], (*a)[2], (*a)[3]);
+            ret =  (*funcp4)(std::move((*a)[0]), std::move((*a)[1]), std::move((*a)[2]), std::move((*a)[3]));
 			break;
 		case 5:
-			ret =  (*funcp5)((*a)[0], (*a)[1], (*a)[2], (*a)[3], (*a)[4]);
+            ret =  (*funcp5)(std::move((*a)[0]), std::move((*a)[1]), std::move((*a)[2]), std::move((*a)[3]), std::move((*a)[4]));
 			break;
 		default:
 			oopanic("arg overflow");
 			/*NOTREACHED*/
 		}
 	}
+    // we know everything was transferred out of the arg vector to the
+    // callee's, no need to call a bunch of dtors
+    //a->no_dtor = 1;
 #ifdef LHPROF
 	struct rusage r1;
 	getrusage(RUSAGE_SELF, &r1);

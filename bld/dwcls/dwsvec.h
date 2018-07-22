@@ -29,6 +29,7 @@ public:
     char *big;
     int count;
     int real_count;
+    int no_dtor;
 
     inline DwSVec();
     inline ~DwSVec();
@@ -64,15 +65,19 @@ DwSVec<T>::DwSVec()
     count = 0;
     real_count = DWSVEC_INITIAL;
     big = vec;
+    no_dtor = 0;
 }
 
 template<class T>
 inline
 DwSVec<T>::~DwSVec()
 {
-    for(int i = 0; i < count; ++i)
+    if(!no_dtor)
     {
-        (&((T*)big)[i])->~T();
+        for(int i = 0; i < count; ++i)
+        {
+            (&((T*)big)[i])->~T();
+        }
     }
     if(big != vec)
         delete [] big;
