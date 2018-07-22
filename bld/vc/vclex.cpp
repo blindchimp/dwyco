@@ -30,7 +30,6 @@ VcLexer::VcLexer(VcIO o)
 	start_token = 0;
 	end_token = 0;
 	lexical_error = 0;
-	inp_desc = strdup("");
 }
 
 VcLexer::Token
@@ -121,7 +120,7 @@ VcLexer::token_linenum_start_scan()
 }
 
 // note: half-assed, leaks here... need to clean this up
-char *
+DwString
 VcLexer::input_description()
 {
 	return inp_desc;
@@ -130,7 +129,7 @@ VcLexer::input_description()
 void
 VcLexer::set_input_description(const char *s)
 {
-	inp_desc = strdup(s);
+    inp_desc = s;
 }
 
 

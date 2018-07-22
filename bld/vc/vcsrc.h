@@ -10,13 +10,13 @@
 #define VCSRC_H
 // $Header: g:/dwight/repo/vc/rcs/vcsrc.h 1.45 1996/11/17 05:59:14 dwight Stable $
 class VcLexer;
-
+#include "dwstr.h"
 struct vc_cvar_src_coord
 {
 	long abs_charnum;
 	long linenum;
 	long charnum;
-	char *filename;
+        DwString filename;
 
 	vc_cvar_src_coord();
 	void init(VcLexer *);
