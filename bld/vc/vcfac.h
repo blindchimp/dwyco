@@ -45,7 +45,13 @@ public:
 	static const vc Predestroyname;
 
 private:
-	virtual vc do_function_call(VCArglist *, int = 0) ;
+        virtual vc do_function_call(VCArglist *, int = 0) ;
+        // note: we override here because the simpler
+        // function setup is ok for now, we don't create that
+        // many objects that it needs all the improvements
+        void do_function_initialize(VCArglist *) const;
+        void do_function_finalize(VCArglist *)  const;
+        virtual void do_arg_setup(VCArglist *) const;
 
 	VC_FACTORY_MAP *member_map;
 	vc base_expr;

@@ -125,7 +125,7 @@ vc_cfunc::do_function_call(VCArglist *a, int)
 	}
     // we know everything was transferred out of the arg vector to the
     // callee's, no need to call a bunch of dtors
-    if(a->num_elems() == nargs)
+    if(!varadic && a->num_elems() == nargs)
         a->no_dtor = 1;
 #ifdef LHPROF
 	struct rusage r1;

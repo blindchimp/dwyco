@@ -133,6 +133,74 @@ vc_factory_def::~vc_factory_def()
 	delete member_map;
 }
 
+void
+vc_factory_def::do_function_initialize(VCArglist *) const
+{
+    if(!is_construct)
+    {
+        Vcmap->open_ctx();
+    }
+}
+
+void
+vc_factory_def::do_function_finalize(VCArglist *)  const
+{
+    if(!is_construct)
+    {
+        Vcmap->close_ctx();
+    }
+}
+
+void
+vc_factory_def::do_arg_setup(VCArglist *a) const
+{
+    int n_formal_args = bindargs->num_elems();
+    int n_call_args = a->num_elems();
+    if(varadic && n_call_args < n_formal_args)
+    {
+        VcError << "warning: varadic " << (is_construct ? "construct" : "function")
+            <<  " \"";
+        vc a = name;
+        a.print(VcError);
+        VcError << "\" called with fewer arguments than definition, "
+            "unspec'ed args lbinded to nil\n";
+    }
+    if(!varadic && n_call_args != n_formal_args)
+    {
+        VcError << "warning: non-varadic " <<
+            (is_construct ? "construct" : "function") <<  " \"";
+        vc a = name;
+        a.print(VcError);
+        VcError << "\" called with " <<
+            ((n_call_args < n_formal_args) ?
+                "fewer args than expected, unspec'ed args lbinded to nil." :
+                "more args than expected, extra args ignored.") << "\n";
+    }
+
+
+    for(int i = 0; i < n_formal_args; ++i)
+    {
+        //lctx->add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i], &(as->wps[i]));
+        Vcmap->local_add((*bindargs)[i], (i >= n_call_args) ? vcnil : (*a)[i]);
+    }
+
+
+
+    if(varadic)
+    {
+        // bundle up the trailing args into a special variable
+        // and lbind this into the function context.
+        vc trailing(VC_VECTOR);
+        int i;
+        int j;
+        for(i = n_formal_args, j = 0; i < n_call_args; ++i, ++j)
+            trailing[j] = (*a)[i];
+        Vcmap->local_add("__lh_varargs", trailing);
+    }
+}
+
+
+
 vc
 vc_factory_def::do_function_call(VCArglist *, int) 
 {
