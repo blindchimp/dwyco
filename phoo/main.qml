@@ -633,6 +633,12 @@ ApplicationWindow {
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
+    SoundEffect {
+        id: sound_alert
+        source: "qrc:/androidinst/assets/space-incoming.wav"
+        volume: {dwy_quiet ? 0.0 : 1.0}
+        muted: dwy_quiet
+    }
 
     
     StackView {
