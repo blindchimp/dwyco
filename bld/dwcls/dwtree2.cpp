@@ -5,6 +5,6 @@
 dnode_t *
 dwtreekaz_alloc_node(void *)
 {
-	return new dnode_t;
+    return new dnode_t;
 }
 

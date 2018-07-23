@@ -13,6 +13,7 @@
 #include "dwgrows.h"
 #include "enc.h"
 #include "vc.h"
+#include "dwstr.h"
 
 class VcLexer
 {
@@ -28,7 +29,7 @@ public:
 	virtual Token next_token(const char*&, long& len, Atom& );
 	virtual long token_linenum();
 	virtual long token_linenum_start_scan();
-	virtual char *input_description();
+        virtual DwString input_description();
 	virtual void set_input_description(const char *); 
 
 	virtual VcIO get_err_strm() { return err_strm;}
@@ -76,7 +77,7 @@ private:
 	virtual void set_beginning_of_scan();
 	
 protected:
-	char *inp_desc;
+        DwString inp_desc;
 	void forward_track_source(const char *, long);
 	void backward_track_source(const char *, long);
 

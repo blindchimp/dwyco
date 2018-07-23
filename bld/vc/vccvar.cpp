@@ -96,7 +96,7 @@ vc_cvar::raise_compile_error()
 	vc exc("E:LH.COMPILE_ERROR");
 	VCArglist a;
     a.append(exc);
-    a.append(vc(lexer->input_description()));
+    a.append(vc(lexer->input_description().c_str()));
 	Vcmap->excraise(exc, &a);
 }
 
@@ -369,7 +369,7 @@ void
 vc_cvar::syntax_err(const char *msg, vc_cvar_src_coord start, vc_cvar_src_coord end)
 {
 	VcIO os = lexer->get_err_strm();
-	os << start.filename << ": syntax error in expression that began near line " <<
+    os << start.filename.c_str() << ": syntax error in expression that began near line " <<
 		start.linenum << "\n";
 	os << msg << " at line " << end.linenum << "\n";
 	error = 1;
@@ -573,7 +573,7 @@ vc_cvar::dbg_print(int expr_num, const char *var_name) const
 {
 	dbg_print_date();
 	VcError << "Eval expr that began near line " <<
-		begin_scoord.filename << ":" << begin_scoord.linenum << "\n";
+        begin_scoord.filename.c_str() << ":" << begin_scoord.linenum << "\n";
 	dbg_print_date();
 	VcError << "Expr num = " << expr_num << ", Accumulated result = \"" << var_name << "\"\n";
 }

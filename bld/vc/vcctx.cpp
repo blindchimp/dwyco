@@ -377,38 +377,6 @@ vcctx::local_find(const vc& k) {
 }
 
 
-
-#if 0
-void
-vcctx::set_retval(const vc& v) {
-	maps[ctx]->set_retval(v);
-}
-
-int
-vcctx::ret_in_progress() {
-	return maps[ctx]->ret_in_progress();
-}
-
-vc
-vcctx::retval() { return maps[ctx]->get_retval(); }
-
-void
-vcctx::open_loop() {maps[ctx]->open_loop();}
-void
-vcctx::close_loop() {maps[ctx]->close_loop();}
-int
-vcctx::break_in_progress() {return maps[ctx]->break_in_progress();}
-void
-vcctx::set_break_level(int n) {maps[ctx]->set_break_level(n);}
-
-int
-vcctx::unwind_in_progress() {
-	return ret_in_progress() ||
-		break_in_progress() ||
-		exc_backout || dbg_backout;
-}
-#endif
-
 // exception handling support
 int
 vcctx::backed_out_to(excfun *handler) {

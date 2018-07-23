@@ -2,10 +2,10 @@
 #define DWHASH_H
 
 template<class T>
-unsigned long 
+unsigned long
 hash(const T& val)
 {
-	return val.hashValue();
+    return val.hashValue();
 }
 
 unsigned long hash(int a);
