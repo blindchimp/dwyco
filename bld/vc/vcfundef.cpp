@@ -166,6 +166,8 @@ vc_fundef::do_function_finalize(VCArglist *)  const
         }
         --recurse;
         lctx = &primed_maps[recurse]->fctx;
+        if(recurse != 0)
+            primed_maps[primed_maps.num_elems() - 1] = 0;
     }
 }
 //

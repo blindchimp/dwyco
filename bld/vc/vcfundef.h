@@ -44,7 +44,7 @@ protected:
             }
         };
 
-        DwVecP<argstate> primed_maps;
+        mutable DwVecP<argstate> primed_maps;
 
 	
 	vc_fundef(int = VC_FUNC_NORMAL); // used for special function definitions (factories)
