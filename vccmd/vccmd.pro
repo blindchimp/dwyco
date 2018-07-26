@@ -41,8 +41,7 @@ $${D}/bld/libuv/libuv.a
 
 macx-* {
 LIBS += \
-$${D}/lib/libspread.a \
-$${D}/lib/libuv.a
+$${D}/lib/libspread.a
 
 LIBS += -framework Foundation -framework CoreServices -lpthread -ldl
 }

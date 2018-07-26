@@ -18,6 +18,7 @@ then
 cd bld/spread-hacked 
 cd `cat curver` 
 ./configure --prefix=$SHADOW_NAME 
-make -j 8 install 
+make -j 8
+make install 
 ) 
 fi
