@@ -112,7 +112,7 @@ public class NotificationClient extends QtActivity
 
         Notification.Builder m_builder = new Notification.Builder(m_instance);
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
-        m_builder.setColor(m_instance.getResources().getColor(R.color.green));
+        //m_builder.setColor(m_instance.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);
         m_builder.setContentText("New messages");
