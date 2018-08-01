@@ -267,8 +267,11 @@ audi_qt_init(void *)
 #ifdef ANDROID
     if(QtAndroid::checkPermission("android.permission.RECORD_AUDIO") == QtAndroid::PermissionResult::Denied)
     {
-        QtAndroid::requestPermissions(QStringList("android.permission.RECORD_AUDIO"), nada);
-        return 0;
+        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.RECORD_AUDIO"));
+        if(m.value("android.permission.RECORD_AUDIO") == QtAndroid::PermissionResult::Denied)
+        {
+            return 0;
+        }
     }
 #endif
     if(Audi)
