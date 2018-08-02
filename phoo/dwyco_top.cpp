@@ -1055,6 +1055,8 @@ write_vid_setting(int i)
     QVariant v = CamListModel->get(i);
     setting_put("video device", v.toString());
     settings_save();
+    TheDwycoCore->update_vid_dev_idx(i);
+    TheDwycoCore->update_vid_dev_name(v.toString());
 }
 
 void
@@ -1112,7 +1114,6 @@ load_cam_model()
     QString vid_dev;
     setting_get("video device", vid_dev);
 
-
     DWYCO_LIST drv = dwyco_get_vfw_drivers();
     if(drv)
     {
@@ -1128,10 +1129,12 @@ load_cam_model()
     }
 #endif
 
+    TheDwycoCore->update_vid_dev_name(vid_dev);
+
     // note: may not be able to get camera
     // selected until after qml is up and
     // running all the way
-#if 0
+#if 1
     // select last cam
     int found_it = 0;
     for(int i = 0; i < CamListModel->count(); ++i)
@@ -1139,16 +1142,17 @@ load_cam_model()
         QVariant v = CamListModel->get(i);
         if(v.toString() == vid_dev)
         {
+            TheDwycoCore->update_vid_dev_idx(i);
             TheDwycoCore->select_vid_dev(i);
             return;
         }
     }
 
-    if(HasCamHardware)
-    {
-        // just select the first one
-        TheDwycoCore->select_vid_dev(2);
-    }
+//    if(HasCamHardware)
+//    {
+//        // just select the first one
+//        TheDwycoCore->select_vid_dev(2);
+//    }
 #endif
 
 }
