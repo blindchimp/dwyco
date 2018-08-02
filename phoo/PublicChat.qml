@@ -258,7 +258,12 @@ Page {
         // this is here because on iOS, when you pop this
         // item, the focus stays in here somehow and the keyboard
         // will pop up on the previous screen, wtf.
-        focus: visible
+        //focus: visible
+        // qt 5.11 seems focus is handled a little differently
+        onVisibleChanged: {
+            if(!visible)
+                focus = false
+        }
     }
     
     Button {
