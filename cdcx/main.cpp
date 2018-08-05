@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 
     // this has to happen way early because the logging stuff
     // needs to know where to send stuff
-#if defined(DWYCO_QT5)
+#if 0 //defined(DWYCO_QT5)
 #define FPATH userdir
     QString userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     userdir += "/dwyco/cdc-x/";
@@ -715,7 +715,12 @@ int main(int argc, char *argv[])
     if(!d)
     {
         dwyco_create_backup();
+#ifdef DWYCO_QT5
+        QStringList sl = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+        QString loc = sl[0];
+#else
         QString loc = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif
         QByteArray b = loc.toLatin1();
         dwyco_copy_out_backup(b.constData(), 0);
     }
