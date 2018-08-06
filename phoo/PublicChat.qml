@@ -17,7 +17,7 @@ Page {
     anchors.fill: parent
     property alias model: listView1.model
     //property alias listview : listView1
-    property bool chat_server_connected: false
+    //property bool chat_server_connected: false
     property int connect_server: 0
     
     background: Rectangle {
@@ -117,39 +117,12 @@ Page {
     }
     
     onVisibleChanged: {
-        if(visible && core.is_database_online === 1) {
-            core.switch_to_chat_server(connect_server)
-        } else {
-            //core.disconnect_chat_server()
-        }
+
     }
     
     
     Connections {
         target: core
-        onSys_chat_server_status: {
-            console.log("CHAT SERVER ", id, status)
-            if(status == 0)
-                chat_server_connected = false
-            else
-                chat_server_connected = true
-            
-        }
-        onQt_app_state_change: {
-            if(pchat.visible && app_state == 0) {
-                core.switch_to_chat_server(connect_server)
-            }
-            if(app_state !== 0)
-                chat_server_connected = false
-        }
-        
-        onServer_login: {
-            if(!pchat.visible)
-                return
-            if(what > 0 && !chat_server_connected) {
-                core.switch_to_chat_server(connect_server)
-            }
-        }
 
         onChat_event: {
             console.log("got chat event")
@@ -319,7 +292,7 @@ Page {
     BusyIndicator {
         id: busy1
         
-        running: {!chat_server_connected}
+        running: {!chat_server.chat_server_connected}
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }

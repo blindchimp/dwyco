@@ -363,18 +363,29 @@ kill_coder_pipe()
 void
 MMChannel::exit_mmchan()
 {
+
+restart:;
+
     int n = MMChannels.num_elems();
     for(int i = 0; i < n; ++i)
     {
         MMChannel *m = MMChannels[i];
+
         if(m)
         {
+            ValidPtr vp = m->vp;
             m->schedule_destroy(HARD);
             m->destroy();
-            m->stop_service();
-            delete m;
+            if(vp.is_valid())
+            {
+                m->stop_service();
+                delete m;
+            }
+            goto restart;
         }
     }
+    MMChannels = DwVecP<MMChannel>();
+
 }
 
 
@@ -1143,7 +1154,6 @@ MMChannel::synchronous_destroy(int id, enum destroy_how how)
 int
 MMChannel::destroy()
 {
-    DwString a;
     int i;
 
     // need this to sync the state of some record tubes
@@ -3963,8 +3973,10 @@ MMChannel::service_channels(int *spin_out)
             continue;
         }
         dont_restart_listening |= mc->negotiating;
-        if(!mc->negotiating && (mc->do_destroy != KEEP || mc->pstate == RECV_FAILED))
+        if(!mc->negotiating && mc->do_destroy != KEEP)
         {
+            if(!mc->vp.is_valid())
+                oopanic("invalid mc");
             if(mc->destroy())
             {
                 mc->stop_service();

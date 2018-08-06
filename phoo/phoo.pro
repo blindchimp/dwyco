@@ -86,8 +86,8 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 INCLUDEPATH += $${DINC}/v4lcap
 
-#QMAKE_CXXFLAGS += -g -fsanitize=address #-O2
-#QMAKE_LFLAGS += -g -fsanitize=address
+QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
+QMAKE_LFLAGS += -g #-fsanitize=address
 QMAKE_CXX=ccache g++
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameters
 
@@ -119,7 +119,26 @@ $${D}/libuv/libuv.a \
 -lv4l2 \
 -lesd
 
-#$${D}/lpc/liblpc.a \
+PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora/libtheora.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${D}/jhead/libjhead.a \
+$${D}/v4lcap/libv4lcap.a \
+$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/libuv/libuv.a
 
 }
 
