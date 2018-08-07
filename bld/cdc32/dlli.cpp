@@ -992,7 +992,7 @@ dwyco_suspend()
     while(se_process() || dirth_poll_response())
         ;
     save_qmsg_state();
-    exit_qmsg();
+    suspend_qmsg();
     exit_prf_cache();
     exit_pk_cache();
     save_entropy();
@@ -1022,7 +1022,6 @@ dwyco_resume()
     if(!Dwyco_suspended)
         return;
     handle_crash_setup();
-    Dwyco_suspended = 0;
     Inhibit_database_thread = 0;
     Inhibit_pal = 0;
     Inhibit_auto_connect = 0;
@@ -1034,13 +1033,14 @@ dwyco_resume()
     else
         turn_listen_off();
     init_pal();
-    init_qmsg();
+    resume_qmsg();
     init_prf_cache();
     init_pk_cache();
     // inbox may have changed if messages were delivered
     // directly while we were asleep
     load_inbox();
     start_database_thread();
+    Dwyco_suspended = 0;
 }
 
 DWYCOEXPORT

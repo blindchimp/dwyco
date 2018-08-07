@@ -76,6 +76,8 @@ void ack_all_direct();
 void ack_all_direct_from(vc id);
 void init_qmsg();
 void exit_qmsg();
+void suspend_qmsg();
+void resume_qmsg();
 int valid_qd_message(vc v);
 int valid_info(vc v);
 void clear_local_ignore();

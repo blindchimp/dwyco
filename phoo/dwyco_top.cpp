@@ -1527,6 +1527,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     // when testing "background" stuff on desktop
     if(as == Qt::ApplicationSuspended  || as == Qt::ApplicationInactive)
     {
+        Suspended = 1;
         simple_call::suspend();
         dwyco_suspend();
         if(BGLockSock)
@@ -1539,7 +1540,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         notificationClient->start_background();
         notificationClient->set_allow_notification(1);
 #endif
-        Suspended = 1;
+
         emit qt_app_state_change(1);
     }
     else if(as == Qt::ApplicationActive && Suspended)
@@ -2225,6 +2226,8 @@ int
 DwycoCore::service_channels()
 {
     int spin = 0;
+    if(Suspended)
+        return 0;
     dwyco_service_channels(&spin);
     if(dwyco_get_rescan_messages())
     {
