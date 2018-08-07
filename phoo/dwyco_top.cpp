@@ -1104,6 +1104,9 @@ static
 void
 load_cam_model()
 {
+    QString vid_dev;
+    setting_get("video device", vid_dev);
+
     CamListModel->append("(Select this to disable video)");
     CamListModel->append("(Files)");
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
@@ -1111,8 +1114,6 @@ load_cam_model()
     HasCamHardware = 1;
 #else
 
-    QString vid_dev;
-    setting_get("video device", vid_dev);
 
     DWYCO_LIST drv = dwyco_get_vfw_drivers();
     if(drv)

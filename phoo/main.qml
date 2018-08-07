@@ -644,11 +644,13 @@ ApplicationWindow {
 
     Loader {
         id: vid_cam_preview
-        active: visible
+        active: false
         visible: false
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/VidCamPreview.qml"
+                active = true
+
             }
         }
     }
