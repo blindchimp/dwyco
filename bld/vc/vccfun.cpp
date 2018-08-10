@@ -26,7 +26,7 @@ ctor_vcfuncp(VCFUNCP2)
 ctor_vcfuncp(VCFUNCP3)
 ctor_vcfuncp(VCFUNCP4)
 ctor_vcfuncp(VCFUNCP5)
-ctor_vcfuncp(VCFUNCPVP)
+//ctor_vcfuncp(VCFUNCPVP)
 ctor_vcfuncp(VCFUNCPv)
 #undef ctor_vcfuncp
 
@@ -49,10 +49,16 @@ vc_cfunc::do_arg_setup(VCArglist *a) const
 				"more args and expected, extra args ignored.") << "\n";
 
     }
-    while(n_call_args < n_formal_args)
+    // note: for varadic funcs, we leave it up to the implementation of the
+    // functions to emit warnings/errors for arg count.
+    // alternative would be to specify min args instead
+    if(!varadic)
     {
-        a->append(vcnil);
-        ++n_call_args;
+        while(n_call_args < n_formal_args)
+        {
+            a->append(vcnil);
+            ++n_call_args;
+        }
     }
 }
 
@@ -179,8 +185,8 @@ ctor(VCFUNCP,4,4)
 ctor(VCFUNCP,5,5)
 #undef ctor
 
-vc_cfunc::vc_cfunc(VCFUNCPVP p, const char *name, const char *impl_fun, int style, VCTRANSFUNCP tfp)
-     : vc_func(vc(name), style) {funcp_vp = p; nargs = 1; transfunc = tfp;}
+//vc_cfunc::vc_cfunc(VCFUNCPVP p, const char *name, const char *impl_fun, int style, VCTRANSFUNCP tfp)
+//     : vc_func(vc(name), style) {funcp_vp = p; nargs = 1; transfunc = tfp;}
 // varadic function
 vc_cfunc::vc_cfunc(VCFUNCPv p, const char *name, const char *impl_fun, int style, VCTRANSFUNCP tfp)
     : vc_func(vc(name), style | VC_FUNC_VARADIC) {funcpv = p; nargs = -1; transfunc = tfp; impl_name = impl_fun; }
@@ -226,8 +232,8 @@ vc
 vc_cfunc::operator()(vc v0, vc v1, vc v2) const {return (*funcp3)(v0, v1, v2);}
 vc
 vc_cfunc::operator()(vc v0, vc v1, vc v2, vc v3) const {return (*funcp4)(v0, v1, v2, v3);}
-vc
-vc_cfunc::operator()(void *p) const {return (*funcp_vp)(p);}
+//vc
+//vc_cfunc::operator()(void *p) const {return (*funcp_vp)(p);}
 
 int
 vc_cfunc::func_eq(const vc& v) const { return funcp0 == ((const vc_cfunc&)v).funcp0; }

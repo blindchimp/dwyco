@@ -12,11 +12,8 @@ make sure it gets signed with a real key instead of a debug key.
 
 linux
 -----
-HAHAHAHAHA, right.
-tried a couple of "linuxdeployqt" things cooked up by other devs, but
-they either failed or created deployments that dropped core with an
-opengl error. not worth the trouble. appimages might eventually work, but
-not at this point.
+thanks to appimages and @probonopd on github, appimages are automatically
+created in the github releases area.
 
 windows
 -------
@@ -32,9 +29,16 @@ ship an older one, it might work without error. there was also some talk
 about using msvc110 runtimes, but that would require using older
 compiler suite. i guess xp is pretty much toast.
 
-copy <build-phoo.exe> c:\users\dwight\phoo\vcdist
+note: c:\users\dwight\dwyco is the git repo cloned from github
+like so:
+cd c:\users\dwight
+git clone https://github.com/blindchimp/dwyco
+
+perform build using qtcreator or the build scripts in phoobld.
+
+copy <build-phoo.exe> c:\users\dwight\dwyco\phoo\vcdist
 set VCINSTALLDIR=c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC
-windeployqt --qmldir c:\Users\dwight\phoo vcdist\phoo.exe
+windeployqt --qmldir c:\Users\dwight\dwyco\phoo vcdist\phoo.exe
 
 note: need to get the manifest stuff working so we don't have to run the redist installer... otherwise windeployqt seems to be getting fairly close to a deployable thing, at least on windows7, i think windows xp is going to be undoable.
 
@@ -43,7 +47,7 @@ Updated September 11, 2015: App-local deployment of the Universal CRT is support
 
 MAC
 ---
-use macdeployqt, seems to work ok for qt5.6, also works for qt5.9.
+use macdeployqt, works for qt5.9.
 NOTE: MUST USE -qmldir=$HOME/phoo (ie, the directory with the qml source files
 which isn't obvious from the docs. it wants to scan *your* files to find
 out what it needs to import, even tho those files are put into a qrc file

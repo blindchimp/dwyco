@@ -7,14 +7,12 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include <ctype.h>
-//#include <stdint.h>
 #include "vc.h"
 #include "vcstr.h"
 #include "vcmap.h"
 #include "vcxstrm.h"
 #include "vcenco.h"
 #include <new>
-//#include <iomanip>
 #include "jhash.h"
 #include "vcio.h"
 
@@ -213,8 +211,8 @@ vc_string::operator !=(const vc &v) const {return v.str_ne(*this); }
 // 
 vc
 vc_string::operator()(void) const {return eval()();}
-vc
-vc_string::operator()(void *p) const {return eval()(p);}
+//vc
+//vc_string::operator()(void *p) const {return eval()(p);}
 vc
 vc_string::operator()(VCArglist *al) const {return eval()(al);}
 

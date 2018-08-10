@@ -42,6 +42,7 @@ DwDecoderColor::~DwDecoderColor()
 #endif
 }
 
+#if 0
 void
 outpgm(const char *p, int cnt, gray **img, int cols, int rows)
 {
@@ -52,6 +53,7 @@ outpgm(const char *p, int cnt, gray **img, int cols, int rows)
     pgm_writepgm(f, img, cols, rows, 255, 0);
     fclose(f);
 }
+#endif
 
 void
 DwDecoderColor::decode_from_stream(DWBYTE*& buf, int& len, void *&vimg, int &cols, int& rows)
@@ -192,7 +194,7 @@ DwDecoderColor::decode_postprocess(DWBYTE *buf, int len)
     cr->decode_from_stream(buf, len, vimg, cols, rows);
     gray **gcr = (gray **)vimg;
     static int cnt;
-    outpgm("r1", cnt, gcr, cols, rows);
+    //outpgm("r1", cnt, gcr, cols, rows);
     gray **gcr2 = 0;
     if(cr->get_sampling() == SAMP422)
     {
@@ -204,10 +206,10 @@ DwDecoderColor::decode_postprocess(DWBYTE *buf, int len)
     }
     else
         oopanic("bad chroma sampling");
-    outpgm("r2", cnt, gcr2, cols, rows);
+    //outpgm("r2", cnt, gcr2, cols, rows);
     rows = ocrows;
     cols = occols;
-    outpgm("b1", cnt, gcb, cols, rows);
+    //outpgm("b1", cnt, gcb, cols, rows);
     gray **gcb2 = 0;
     if(cb->get_sampling() == SAMP422)
     {
@@ -219,7 +221,7 @@ DwDecoderColor::decode_postprocess(DWBYTE *buf, int len)
     }
     else
         oopanic("bad chroma sampling2");
-    outpgm("b2", cnt, gcb2, cols, rows);
+    //outpgm("b2", cnt, gcb2, cols, rows);
     ++cnt;
     // note: upsampled chroma may be different in
     // size than original luma, but the extra

@@ -67,18 +67,18 @@ clock_time_t
 clock_time()
 {
 #ifdef _Windows
-	return timeGetTime();
+    return timeGetTime();
 #elif defined(LINUX)
 #ifdef MACOSX
-	struct timeval tv;
-	gettimeofday(&tv, 0);
-	dwtime_t d = ((dwtime_t)tv.tv_sec * 1000 + tv.tv_usec / 1000);
-	return d;
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    dwtime_t d = ((dwtime_t)tv.tv_sec * 1000 + tv.tv_usec / 1000);
+    return d;
 #else
-	struct timespec ts;
+    struct timespec ts;
     clock_gettime(CLOCK_BOOTTIME, &ts);
-	dwtime_t d = ((dwtime_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
-	return d;
+    dwtime_t d = ((dwtime_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+    return d;
 #endif
 #else
 #error fix timer routines for this os
@@ -220,9 +220,9 @@ timer::stop()
 void
 timer_set(struct timer *t, clock_time_t interval)
 {
-  //t->interval = interval;
-  //t->start = clock_time();
-  update_exp_time(t, clock_time(), interval);
+    //t->interval = interval;
+    //t->start = clock_time();
+    update_exp_time(t, clock_time(), interval);
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -276,7 +276,7 @@ timer_reset(struct timer *t)
 void
 timer_restart(struct timer *t)
 {
-  //t->start = clock_time();
+    //t->start = clock_time();
     update_exp_time(t, clock_time(), t->interval);
 }
 /*---------------------------------------------------------------------------*/
@@ -294,10 +294,10 @@ timer_restart(struct timer *t)
 int
 timer_expired(struct timer *t)
 {
-  /* Note: Can not return diff >= t->interval so we add 1 to diff and return
-     t->interval < diff - required to avoid an internal error in mspgcc. */
-  clock_time_t diff = (clock_time() - t->start) + 1;
-  return t->interval < diff;
+    /* Note: Can not return diff >= t->interval so we add 1 to diff and return
+       t->interval < diff - required to avoid an internal error in mspgcc. */
+    clock_time_t diff = (clock_time() - t->start) + 1;
+    return t->interval < diff;
 
 }
 /*---------------------------------------------------------------------------*/
@@ -314,7 +314,7 @@ timer_expired(struct timer *t)
 clock_time_t
 timer_remaining(struct timer *t)
 {
-  return t->start + t->interval - clock_time();
+    return t->start + t->interval - clock_time();
 }
 /*---------------------------------------------------------------------------*/
 }

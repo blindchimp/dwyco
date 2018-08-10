@@ -299,5 +299,23 @@
         <file>icons/material/mdpi/ic_open_in_new_white_24dp.png</file>
         <file>icons/material/xhdpi/ic_open_in_new_black_24dp.png</file>
         <file>icons/material/xhdpi/ic_open_in_new_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_mic_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_mic_off_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_not_interested_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_not_interested_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_pause_circle_outline_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_pause_circle_outline_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_mic_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_mic_off_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_not_interested_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_not_interested_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_pause_circle_outline_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_pause_circle_outline_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_mic_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_mic_off_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_not_interested_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_not_interested_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_pause_circle_outline_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_pause_circle_outline_white_24dp.png</file>
     </qresource>
 </RCC>

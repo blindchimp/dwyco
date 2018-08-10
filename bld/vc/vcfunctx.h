@@ -55,22 +55,11 @@ public:
 	~functx();
 	void add(const vc& key, const vc& value) ;
 	vc get(const vc& key) ;
-	int find(const vc& key, vc& out) ;
-	int find2(const vc& key, vc& out, vc*& wp) ;
+    int find(const vc& key, vc& out) const ;
+    int find2(const vc& key, vc& out, vc*& wp) const ;
 	void del(const vc& v) const ;
 	int contains(const vc& v) const ;
 
-#if 0
-    // supports "return" construct
-	void set_retval(const vc& v) ;
-	int ret_in_progress() const ;
-	vc get_retval() ;
-
-	// support for looping constructs
-	void open_loop() ;
-	void close_loop() ;
-	int break_in_progress() ;
-#endif
 	void set_break_level(int n) ;
 
 	void set_retval(const vc& v) {retval = v; doing_ret = 1;}
@@ -89,13 +78,6 @@ public:
 			return 1;
 		return 0;
 	}
-#if 0
-	void set_break_level(int n) {
-		break_level -= n;
-		if(break_level < 0)
-			USER_BOMB2("too many break levels requested");
-	}
-#endif
 
 	// support for exception handling
 
@@ -104,9 +86,6 @@ public:
 	void add_default_handler(const vc& pat, const vc& fun) ;
 	void addbackout(const vc& fun) ;
 	
-#if 0
-	void cancelhandler() ;
-#endif
 
     // search for handler in this context
 	excctx *exchandlerfind(const vc& estr, excfun*& handler_out) ;

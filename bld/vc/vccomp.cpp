@@ -156,8 +156,8 @@ int
 vc_composite::func_eq(const vc&) const {return FALSE;}
 
 
-vc
-vc_composite::operator()(void *) const {return bomb_funcall();}
+//vc
+//vc_composite::operator()(void *) const {return bomb_funcall();}
 vc
 vc_composite::operator()(VCArglist *) const {return bomb_funcall();}
 

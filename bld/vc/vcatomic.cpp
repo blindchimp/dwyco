@@ -97,8 +97,8 @@ vc_atomic::func_eq(const vc&) const {return FALSE;}
 
 vc
 vc_atomic::operator()(void) const {bomb_call_atom();return vcnil;}
-vc
-vc_atomic::operator()(void *) const {bomb_call_atom();return vcnil;}
+//vc
+//vc_atomic::operator()(void *) const {bomb_call_atom();return vcnil;}
 vc
 vc_atomic::operator()(VCArglist *) const {bomb_call_atom();return vcnil;}
 

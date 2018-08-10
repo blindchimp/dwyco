@@ -31,6 +31,11 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
     QML_READONLY_VAR_PROPERTY(QString, tmp_dir)
     QML_READONLY_VAR_PROPERTY(int, external_storage_permission)
+    QML_READONLY_VAR_PROPERTY(int, has_audio_input)
+    QML_READONLY_VAR_PROPERTY(int, has_audio_output)
+    QML_READONLY_VAR_PROPERTY(int, audio_full_duplex)
+    QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
+    QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -39,6 +44,12 @@ public:
         m_buildtime = BUILDTIME;
         m_user_dir = ".";
         m_tmp_dir = ".";
+        m_external_storage_permission = 0;
+        m_has_audio_input = 0;
+        m_has_audio_output = 0;
+        m_audio_full_duplex = 0;
+        m_vid_dev_idx = 0;
+        m_vid_dev_name = "";
     }
     static QByteArray My_uid;
 
@@ -178,7 +189,7 @@ public:
 
     // dwyco video record
     Q_INVOKABLE int make_zap_composition();
-    Q_INVOKABLE int start_zap_record(int zid);
+    Q_INVOKABLE int start_zap_record(int zid, int vid, int aud);
     Q_INVOKABLE int start_zap_record_pic(int zid);
     Q_INVOKABLE int stop_zap_record(int zid);
     Q_INVOKABLE int play_zap(int zid);
@@ -265,16 +276,16 @@ signals:
     void qt_app_state_change(int app_state);
 
     // this are sent when a call context is up
-    void rem_keyboard_active(const QString& uid, int active);
-    void connect_terminated(const QByteArray& uid);
-    void connectedChanged(int connected, const QByteArray& uid);
+    void sc_rem_keyboard_active(QString uid, int active);
+    void sc_connect_terminated(QString uid);
+    void sc_connectedChanged(QString uid, int connected);
 
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
     void msg_recv_state(int cmd, const QString& mid);
     void msg_recv_progress(const QString& mid, int percent);
     // dwyco video camera signals
-    void camera_change(int);
+    void camera_change(int cam_on);
     // zap composition record/play stopped
     void zap_stopped(int zid);
 

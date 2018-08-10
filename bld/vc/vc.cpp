@@ -22,9 +22,6 @@
 #include "vcuvsock.h"
 #endif
 
-#include "vcmap.h"
-
-
 vc::vc(double d)
 {
 	rep = new vc_double(d);

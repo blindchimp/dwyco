@@ -3,23 +3,23 @@
 unsigned long
 hash(int a)
 {
-	return a;
+    return a;
 }
 
 unsigned long
 hash(long a)
 {
-	return a;
+    return a;
 }
 
 unsigned long
 hash(double d)
 {
-	return (unsigned long)d;
+    return (unsigned long)d;
 }
 
 unsigned long
 hash(void *d)
 {
-	return (unsigned long)d;
+    return (unsigned long)d;
 }

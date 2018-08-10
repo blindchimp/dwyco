@@ -1055,6 +1055,8 @@ write_vid_setting(int i)
     QVariant v = CamListModel->get(i);
     setting_put("video device", v.toString());
     settings_save();
+    TheDwycoCore->update_vid_dev_idx(i);
+    TheDwycoCore->update_vid_dev_name(v.toString());
 }
 
 void
@@ -1112,7 +1114,6 @@ load_cam_model()
     QString vid_dev;
     setting_get("video device", vid_dev);
 
-
     DWYCO_LIST drv = dwyco_get_vfw_drivers();
     if(drv)
     {
@@ -1128,10 +1129,12 @@ load_cam_model()
     }
 #endif
 
+    TheDwycoCore->update_vid_dev_name(vid_dev);
+
     // note: may not be able to get camera
     // selected until after qml is up and
     // running all the way
-#if 0
+#if 1
     // select last cam
     int found_it = 0;
     for(int i = 0; i < CamListModel->count(); ++i)
@@ -1139,16 +1142,17 @@ load_cam_model()
         QVariant v = CamListModel->get(i);
         if(v.toString() == vid_dev)
         {
+            TheDwycoCore->update_vid_dev_idx(i);
             TheDwycoCore->select_vid_dev(i);
             return;
         }
     }
 
-    if(HasCamHardware)
-    {
-        // just select the first one
-        TheDwycoCore->select_vid_dev(2);
-    }
+//    if(HasCamHardware)
+//    {
+//        // just select the first one
+//        TheDwycoCore->select_vid_dev(2);
+//    }
 #endif
 
 }
@@ -1168,10 +1172,10 @@ DwycoCore::make_zap_composition()
 }
 
 int
-DwycoCore::start_zap_record(int zid)
+DwycoCore::start_zap_record(int zid, int vid, int aud)
 {
     int ui_id = -1;
-    if(!dwyco_zap_record2(zid, 1, 1, -1, 1000000, 1, 0, 0, emit_finished, 0, &ui_id))
+    if(!dwyco_zap_record2(zid, vid, aud, -1, 10000000, 1, 0, 0, emit_finished, 0, &ui_id))
         return -1;
     return ui_id;
 }
@@ -1461,6 +1465,9 @@ DwycoCore::init()
     int audio_full_duplex = 0;
 
     dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, &audio_full_duplex);
+    update_audio_full_duplex(audio_full_duplex);
+    update_has_audio_input(HasAudioInput);
+    update_has_audio_output(HasAudioOutput);
     if(audio_full_duplex)
         dwyco_set_full_duplex(1);
 
@@ -1518,8 +1525,9 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
 {
     // note: comment out the "inactive" normally, but put it back in
     // when testing "background" stuff on desktop
-    if(as == Qt::ApplicationSuspended  /*|| as == Qt::ApplicationInactive*/)
+    if(as == Qt::ApplicationSuspended  || as == Qt::ApplicationInactive)
     {
+        Suspended = 1;
         simple_call::suspend();
         dwyco_suspend();
         if(BGLockSock)
@@ -1532,7 +1540,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         notificationClient->start_background();
         notificationClient->set_allow_notification(1);
 #endif
-        Suspended = 1;
+
         emit qt_app_state_change(1);
     }
     else if(as == Qt::ApplicationActive && Suspended)
@@ -2218,6 +2226,8 @@ int
 DwycoCore::service_channels()
 {
     int spin = 0;
+    if(Suspended)
+        return 0;
     dwyco_service_channels(&spin);
     if(dwyco_get_rescan_messages())
     {

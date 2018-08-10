@@ -395,7 +395,7 @@ lh_socksend(VCArglist *a)
     vc sock = (*a)[0];
     vc item = (*a)[1];
 	vc v;
-	if(a->num_elems() == 3)
+    if(a->num_elems() >= 3)
 		v = sock.socket_send(item, vcnil, (*a)[2]);
 	else
 		v = sock.socket_send(item, vcnil);
@@ -449,7 +449,7 @@ lh_socksendstring(VCArglist *a)
 	long len = item.len();
 	const char *data = (const char *)item;
 	vc v;
-	if(a->num_elems() == 3)
+    if(a->num_elems() >= 3)
 		v = sock.socket_send_raw((void *)data, len, 0, (*a)[2]);
 	else
 		v = sock.socket_send_raw((void *)data, len, 0);
@@ -465,7 +465,7 @@ lh_sockrecvstring(VCArglist *a)
 
 	if(a->num_elems() < 2)
 	{
-		USER_BOMB("socket recv must have at least two args\n", vcnil);
+        USER_BOMB("socket recv must have at least two args", vcnil);
 	}
     vc sock = (*a)[0];
 	long len = (*a)[1];
@@ -506,7 +506,9 @@ lh_sockset_option(VCArglist *al)
 {
 	vc sock = (*al)[0];
 	vc option = (*al)[1];
-	unsigned long arg = (unsigned long)(long)(*al)[2];
+    unsigned long arg = 0;
+    if(al->num_elems() > 2)
+        arg = (unsigned long)(long)(*al)[2];
 	int bomb = 0;
 	vcsocketmode so = VC_BLOCKING;
 	if(option.type() != VC_STRING)
@@ -531,7 +533,7 @@ lh_sockset_option(VCArglist *al)
 			so = VC_BLOCKING;
 		else if(option == cloexec)
 			so = VC_CLOSE_ON_EXEC;
-		else if(option == cloexec)
+        else if(option == nocloexec)
 			so = VC_NO_CLOSE_ON_EXEC;
 		else if(option == get_recv)
 			so = VC_GET_RECV_BUF_SIZE;
@@ -640,7 +642,7 @@ lh_socksend_buf(VCArglist *a)
     vc sock = (*a)[0];
     vc item = (*a)[1];
 	vc v;
-	if(a->num_elems() == 3)
+    if(a->num_elems() >= 3)
 		v = sock.socket_send_buf(item, vcnil, (*a)[2]);
 	else
 		v = sock.socket_send_buf(item, vcnil);
