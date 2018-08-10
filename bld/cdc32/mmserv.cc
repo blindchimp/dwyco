@@ -346,6 +346,7 @@ MMChannel::chat_response(vc v)
     }
     else if(v[0] == data)
     {
+#ifdef DWYCO_AUDIO_PODIUM
         if(v[2] != My_UID)
         {
             // shouldn't happen that the server sends us our own stuff,
@@ -370,6 +371,7 @@ MMChannel::chat_response(vc v)
                                         subchan(AUDIO_SUBCHANNEL, payload), timecode);
             }
         }
+#endif
 
         if(TheChatGrid)
         {
