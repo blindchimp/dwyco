@@ -248,7 +248,8 @@ audi_qt_delete(void *)
     }
     Bufs.clear();
     Buf_times.clear();
-    delete Audi;
+    //delete Audi;
+    Audi->deleteLater();
     Audi = 0;
 }
 
@@ -267,8 +268,11 @@ audi_qt_init(void *)
 #ifdef ANDROID
     if(QtAndroid::checkPermission("android.permission.RECORD_AUDIO") == QtAndroid::PermissionResult::Denied)
     {
-        QtAndroid::requestPermissions(QStringList("android.permission.RECORD_AUDIO"), nada);
-        return 0;
+        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.RECORD_AUDIO"));
+        if(m.value("android.permission.RECORD_AUDIO") == QtAndroid::PermissionResult::Denied)
+        {
+            return 0;
+        }
     }
 #endif
     if(Audi)
@@ -335,13 +339,20 @@ void DWYCOCALLCONV audi_qt_reset(void *)
 {
     if(!Audi)
         return;
-    Audi->m_audioInput->stop();
+    if(Audi->m_audioInput)
+        Audi->m_audioInput->stop();
+//    for(int i = 0; i < Bufs.count(); ++i)
+//    {
+//        delete [] Bufs[i];
+//    }
+//    Bufs.clear();
+//    Buf_times.clear();
     audi_qt_delete(0);
 
 }
 int DWYCOCALLCONV audi_qt_status(void *)
 {
-    if(Audi && Audi->m_audioInput->state() == QAudio::ActiveState)
+    if(Audi && Audi->m_audioInput && Audi->m_audioInput->state() == QAudio::ActiveState)
         return 1;
     return 0;
 

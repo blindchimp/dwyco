@@ -115,6 +115,10 @@ chat_online(MMChannel *mc, vc challenge, void *, ValidPtr)
     if(Chat_status_callback)
         (*Chat_status_callback)(mc, "online", 0, ValidPtr());
 
+    // ca 2018, noone seems to want to use the audio-podium stuff anymore
+    // (it was a popular feature at one point.) so instead of trying to get it
+    // work properly, we'll get rid of it for now
+#ifdef DWYCO_AUDIO_PODIUM
     // get the audio output setup
     // note: at first, i thought i might create a new type of tube
     // that would allow the core to stream data as usual to a tube
@@ -147,6 +151,8 @@ chat_online(MMChannel *mc, vc challenge, void *, ValidPtr)
         mc->display_chat("SYS", "Audio recording device not available.", My_UID);
     }
     // note: had to put these down here since recv_matches resets the state to ESTABLISHED
+#endif
+
     mc->pstate = MMChannel::CHAT_OPS;
     mc->chat_state = MMChannel::CHAT_NORMAL;
     mc->drop_timer.stop();

@@ -27,7 +27,7 @@ Page {
        id: chatlist_delegate
        Rectangle {
            property int showit
-           showit: (REVIEWED == 1 && REGULAR == 1) || show_unreviewed
+           showit: (REVIEWED && REGULAR) || show_unreviewed
            height: showit ? vh(pct) : 0
            width: parent.width
            //opacity: {multiselect_mode && selected ? 0.5 : 1.0}
@@ -48,7 +48,7 @@ Page {
                    //width: dp(80)
                    //height: dp(60)
                    source : {
-                       (!invalid && (show_unreviewed || (REVIEWED == 1 && REGULAR == 1)) && resolved_counter > -1) ?
+                       (!invalid && (show_unreviewed || (REVIEWED && REGULAR)) && resolved_counter > -1) ?
                                    core.uid_to_profile_preview(uid) :
                                    "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                    }

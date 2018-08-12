@@ -39,8 +39,8 @@ public:
         return !(*this == t);
     }
 
-    T*& operator[](long idx) const {
-        return (T*&)DwVec<void *>::operator[](idx);
+    const T*& operator[](long idx) const {
+        return (const T*&)DwVec<void *>::operator[](idx);
     }
     T*& operator[](long idx) {
         return (T*&)DwVec<void *>::operator[](idx);

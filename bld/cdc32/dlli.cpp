@@ -981,6 +981,9 @@ dwyco_suspend()
 {
     if(Dwyco_suspended)
         return;
+    // note: this inhibits all processing in "service_channels"
+    // at this point
+    Dwyco_suspended = 1;
     // note: this pal stuff won't be necessary once we switch to regular
     // server-based interest list.
     exit_pal();
@@ -989,7 +992,7 @@ dwyco_suspend()
     while(se_process() || dirth_poll_response())
         ;
     save_qmsg_state();
-    exit_qmsg();
+    suspend_qmsg();
     exit_prf_cache();
     exit_pk_cache();
     save_entropy();
@@ -1007,7 +1010,7 @@ dwyco_suspend()
     // mobile platforms like to kill suspended processes, but that isn't
     // really a "crash"
     handle_crash_done();
-    Dwyco_suspended = 1;
+
 }
 
 // after a suspend, this is called to re-enable the auto-connection stuff
@@ -1019,7 +1022,6 @@ dwyco_resume()
     if(!Dwyco_suspended)
         return;
     handle_crash_setup();
-    Dwyco_suspended = 0;
     Inhibit_database_thread = 0;
     Inhibit_pal = 0;
     Inhibit_auto_connect = 0;
@@ -1031,13 +1033,14 @@ dwyco_resume()
     else
         turn_listen_off();
     init_pal();
-    init_qmsg();
+    resume_qmsg();
     init_prf_cache();
     init_pk_cache();
     // inbox may have changed if messages were delivered
     // directly while we were asleep
     load_inbox();
     start_database_thread();
+    Dwyco_suspended = 0;
 }
 
 DWYCOEXPORT
@@ -1949,6 +1952,14 @@ dwyco_service_channels(int *spin_out)
         GRTLOG("service channels ignored (suspended)", 0, 0);
         return 0;
     }
+    // there are weird cases where deleting some multimedia
+    // qt objects can result in timer events being fired that causes
+    // re-entry here, which is really bad. please, no exceptions, no
+    // multi-threaded calls to this functions, etc.etc.
+    static int entered = 0;
+    if(entered)
+        return 0;
+    entered = 1;
 #ifdef DWYCO_CDC_LIBUV
     vc_uvsocket::run_loop_once();
 #endif
@@ -2008,6 +2019,7 @@ dwyco_service_channels(int *spin_out)
     se_process();
     crank_activity_timer();
     GRTLOG("next timer %ld", DwTimer::next_expire_time() - DwTimer::time_now(), 0);
+    entered = 0;
     return DwTimer::next_expire_time() - DwTimer::time_now();
 }
 

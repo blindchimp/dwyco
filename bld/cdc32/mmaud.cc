@@ -295,6 +295,7 @@ MMChannel::process_outgoing_audio()
         }
         else
         {
+#ifdef DWYCO_AUDIO_PODIUM
             // if it is a chat server with audio pending, and we are not granted
             // the podium, just drop the audio on the ground. this probably
             // isn't going to sound right if there is a lot of audio buffered up, but
@@ -308,6 +309,7 @@ MMChannel::process_outgoing_audio()
                 }
                 return 1;
             }
+#endif
         }
 
     do
@@ -371,6 +373,7 @@ MMChannel::process_outgoing_audio()
 
         if(pstate == CHAT_OPS)
         {
+#ifdef DWYCO_AUDIO_PODIUM
             // format the packet exactly like it would be formatted for other
             // cases, and then just send it to the chat server
             DWBYTE *outbuf = new DWBYTE[len +
@@ -384,6 +387,7 @@ MMChannel::process_outgoing_audio()
             bps_audio_send.add_units(8 * len);
             delete [] buf;
             buf = 0;
+#endif
         }
         else if(force_unreliable_audio || audio_state != MEDIA_SESSION_UP)
         {

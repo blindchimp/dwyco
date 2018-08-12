@@ -164,7 +164,7 @@ public class Dwyco_Message extends StickyIntentService {
 
         Notification.Builder m_builder = new Notification.Builder(context);
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
-        m_builder.setColor(context.getResources().getColor(R.color.green));
+        //m_builder.setColor(context.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);
         m_builder.setContentText("New messages received");

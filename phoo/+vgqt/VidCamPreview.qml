@@ -11,9 +11,7 @@ import QtQuick.Controls 2.2
 import QtQuick.Controls.Material 2.2
 import dwyco 1.0
 import QtQuick.Layouts 1.3
-
-// this assumes you are using the internal dwyco-provided
-// video capture drivers.
+import QtMultimedia 5.6
 
 Page {
     property bool dragging
@@ -28,12 +26,17 @@ Page {
     onVisibleChanged: {
         if(visible)
         {
-            if(core.vid_dev_idx !== 0) {
+            if(core.vid_dev_idx === 2) {
+                preview_cam.start()
+                core.enable_video_capture_preview(1)
+            } else if(core.vid_dev_idx === 1) {
+                // files
+                preview_cam.stop()
                 core.enable_video_capture_preview(1)
             } else {
+                preview_cam.stop()
                 core.enable_video_capture_preview(0)
                 viewer.source = mi("ic_videocam_off_black_24dp.png")
-
             }
         }
         else
@@ -47,15 +50,85 @@ Page {
         target: core
         onCamera_change: {
             if(visible) {
-                if(cam_on) {
+                if(cam_on === 1 && core.vid_dev_idx === 2) {
+                    preview_cam.start()
+                    core.enable_video_capture_preview(1)
+                } else if(cam_on === 1 && core.vid_dev_idx === 1) {
+                    preview_cam.stop()
                     core.enable_video_capture_preview(1)
                 } else {
+                    preview_cam.stop()
                     core.enable_video_capture_preview(0)
                     viewer.source = mi("ic_videocam_off_black_24dp.png")
                 }
             }
         }
     }
+
+    Camera {
+        id: preview_cam
+        objectName: "qrCameraQML"
+        viewfinder {
+            //resolution: Qt.size(640, 480)
+            //maximumFrameRate: 10
+        }
+        position: Camera.FrontFace
+        captureMode: Camera.captureVideo
+        onCameraStateChanged: {
+            //if(state === Camera.ActiveState) {
+                var res = preview_cam.supportedViewfinderResolutions();
+                console.log("RESOLUTIONS ")
+            for(var i = 0; i < res.length; i++) {
+                console.log(res[i].width)
+                console.log(res[i].height)
+            }
+            //}
+        }
+        onCameraStatusChanged: {
+            //if(state === Camera.ActiveState) {
+                var res = preview_cam.supportedViewfinderResolutions();
+                console.log("RESOLUTIONS ")
+            for(var i = 0; i < res.length; i++) {
+                console.log(res[i].width)
+                console.log(res[i].height)
+            }
+
+            //}
+        }
+    }
+//    VideoOutput {
+//        id: pview
+//        width: cm(1)
+//        height: cm(1)
+//        source: preview_cam
+//        anchors.top: parent.top
+//        anchors.horizontalCenter: parent.horizontalCenter
+//        autoOrientation: true
+//        visible: true
+
+//    }
+
+
+//    ListView {
+
+//        //Layout.fillWidth: true
+//        anchors.top: pview.bottom
+//        //anchors.top: parent.top
+//        anchors.left: parent.left
+//        anchors.right:parent.right
+//        height: cm(3)
+//        clip: true
+//        spacing: 5
+//        model: QtMultimedia.availableCameras
+//        delegate: Text {
+//            text: modelData.displayName
+
+//            MouseArea {
+//                anchors.fill: parent
+//                onClicked: preview_cam.deviceId = modelData.deviceId
+//            }
+//        }
+//    }
 
     Component {
         id: camlist_delegate
@@ -93,6 +166,14 @@ Page {
             delegate: camlist_delegate
             clip: true
             spacing: 5
+        }
+        VideoOutput {
+            id: pview
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            source: preview_cam
+            autoOrientation: true
+            visible: true
         }
 
         Rectangle {
@@ -151,7 +232,7 @@ Page {
 
     BusyIndicator {
         id: busy1
-        running: {viewer.source === "" }
+        running: {viewer.source == "" }
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }

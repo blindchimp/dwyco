@@ -284,7 +284,7 @@ public:
         WAIT_FOR_MATCH,
         ESTABLISHED,
         FAILED,
-        RECV_FAILED,
+        //RECV_FAILED,
         WAIT_FOR_CLOSE,
         // state used while waiting for STUN setup
         WAIT_FOR_STUN,

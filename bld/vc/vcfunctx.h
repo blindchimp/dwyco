@@ -59,8 +59,8 @@ public:
 
         void add(const vc& key, const vc& value, vc **wp = 0) ;
 	vc get(const vc& key) ;
-	int find(const vc& key, vc& out) ;
-	int find2(const vc& key, vc& out, vc*& wp) ;
+    int find(const vc& key, vc& out) const ;
+    int find2(const vc& key, vc& out, vc*& wp) const ;
 	void del(const vc& v) const ;
 	int contains(const vc& v) const ;
 

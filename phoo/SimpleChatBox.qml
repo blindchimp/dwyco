@@ -423,102 +423,6 @@ Page {
         }
 
         }
-//    CallButtons {
-//        id: call_buttons
-//        width: parent.width
-//        height: parent.height
-//        onButton_click: {
-//            model.get(index).click()
-//            console.log("button click ", model.get(index).objectName)
-//            var objn = model.get(index).objectName
-//            if(objn === "send_video" || objn === "accept_and_send" ||
-//                    objn === "accept") {
-//                //stack.push(vid_call_view)
-//                vidpanel.visible = true
-//                core.enable_video_capture_preview(1)
-//            }
-//        }
-//        onButton_pressed: {
-//            model.get(index).pressed()
-//        }
-//        onButton_released: {
-//            model.get(index).released()
-//        }
-//        onButton_triggered: {
-//            model.get(index).triggered(state)
-//        }
-//        onButton_toggled: {
-//            model.get(index).toggled(state)
-//        }
-//        z: 5
-//    }
-//    Row{
-//        z: 5
-//        CallButtonLink {
-//            id: accept_button
-//            //width: parent.width
-//            //height: implicitHeight
-//            but_name: "accept"
-//            //visible: true
-//            text: "Accept call"
-//            z: 5
-//            onClicked: {
-//                //vidpanel.visible = true
-//                //core.enable_video_capture_preview(1)
-//            }
-
-//        }
-//        CallButtonLink {
-//            but_name: "accept_and_send"
-//            text: "Accept and send"
-//            z: 5
-//            onClicked: {
-//                //vidpanel.visible = true
-//                //core.enable_video_capture_preview(1)
-//            }
-//        }
-
-//        CallButtonLink {
-//            but_name: "send_video"
-//            text: "Send video"
-//            z: 5
-//            onClicked: {
-//                //vidpanel.visible = true
-//                //core.enable_video_capture_preview(1)
-//            }
-//        }
-
-//        CallButtonLink {
-//            but_name: "hangup"
-//            text: "Hangup"
-//            onVisibleChanged: {
-//                if(visible) {
-//                    vidpanel.visible = true
-//                    core.enable_video_capture_preview(1)
-//                } else {
-//                    vidpanel.visible = false
-//                    core.enable_video_capture_preview(0)
-//                }
-//            }
-//        }
-
-//        CallButtonLink {
-//            but_name: "reject"
-//            text: "Reject"
-//        }
-
-//        CallButtonLink {
-//            but_name: "cancel_req"
-//            text: "Cancel"
-//        }
-
-//        CallButtonLink {
-//            but_name: "actionPause"
-//            text: "Pause"
-//            z: 5
-//        }
-
-//    }
 
     background: Rectangle {
         color: primary_dark
@@ -999,25 +903,17 @@ Page {
         // this is here because on iOS, when you pop this
         // item, the focus stays in here somehow and the keyboard
         // will pop up on the previous screen, wtf.
-        focus: visible
-        //font.family: "Noto Color Emoji"
-//        Label {
-//            id: typing
-//            anchors.bottom: parent.top
-//            anchors.left: parent.left
-//            anchors.margins: 3
-//            text: "(typing...)"
-//            color: "black"
-//            opacity: .5
-//            visible: {ind_typing === 1 && ind_online === 1}
-//            background: Rectangle {
-//                color: "red"
-//                opacity: .5
-//                radius: 6
-//            }
-//            z: 5
+        // qt 5.11 seems focus is handled a little differently
+        //focus: visible
+        onVisibleChanged: {
+            if(Qt.platform.os == "android") {
+            if(!visible)
+                focus = false
+            } else {
+                focus = visible
+            }
+        }
 
-//        }
         TipButton {
             id: cam_button
             anchors.verticalCenter: parent.verticalCenter
@@ -1086,7 +982,7 @@ Page {
         property int zid: -1
         property int chan: -1
 
-        id: toolButton2
+        id: audio_zap_button
         height: toolButton1.height
         width: toolButton1.width
 
@@ -1098,7 +994,7 @@ Page {
         z: 5
         background: Rectangle {
             id: bg2
-            color: toolButton2.zid === -1 ? accent : "lime"
+            color: audio_zap_button.zid === -1 ? accent : "lime"
             radius: 20
         }
         contentItem: Image {
@@ -1120,9 +1016,9 @@ Page {
         Connections {
             target: core
             onZap_stopped: {
-                if(zid === toolButton2.zid) {
+                if(zid === audio_zap_button.zid) {
                     core.send_zap(zid, to_uid, 1)
-                    toolButton2.zid = -1
+                    audio_zap_button.zid = -1
                     themsglist.reload_model()
                 }
             }
@@ -1130,6 +1026,36 @@ Page {
 
         focusPolicy: Qt.NoFocus
     }
+    ProgressBar {
+        id: progbar
+        anchors.fill: textField1
+        visible: audio_zap_button.pressed
+        background: Rectangle {
+                  color: "black"
+                  radius: 10
+              }
+        from: 0
+        to: 30
+        onVisibleChanged: {
+            if(visible) {
+                value = 0
+                sound_alert.play()
+            }
+        }
+        z: 5
+
+
+        Timer {
+            running: progbar.visible
+            repeat: true
+            interval: 100
+            triggeredOnStart: true
+            onTriggered: {
+                progbar.value = progbar.value + (interval / 1000.0)
+            }
+        }
+    }
+
     BusyIndicator {
         id: busy1
 

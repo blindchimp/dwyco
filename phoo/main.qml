@@ -340,9 +340,45 @@ ApplicationWindow {
     }
 
     ChatList {
-        
         id: chatlist
         visible: false
+    }
+
+    Item {
+        id: chat_server
+        property bool chat_server_connected: false
+        property int connect_server: 0
+
+        Connections {
+            target: core
+            onSys_chat_server_status: {
+                console.log("CHAT SERVER ", id, status)
+                if(status === 0)
+                    chat_server.chat_server_connected = false
+                else
+                    chat_server.chat_server_connected = true
+
+            }
+            onQt_app_state_change: {
+                if(app_state === 0) {
+                    console.log("CHAT SERVER RESUME ")
+                    chat_server.chat_server_connected = false
+                    core.switch_to_chat_server(chat_server.connect_server)
+                }
+                if(app_state !== 0) {
+                    console.log("CHAT SERVER PAUSE");
+                    chat_server.chat_server_connected = false
+                    core.disconnect_chat_server()
+                }
+            }
+
+            onServer_login: {
+                console.log("CHAT SERVER RESTART ", what, chat_server.chat_server_connected)
+                if(what > 0 && !chat_server.chat_server_connected) {
+                    core.switch_to_chat_server(chat_server.connect_server)
+                }
+            }
+        }
     }
 
     ContactList {
@@ -608,11 +644,13 @@ ApplicationWindow {
 
     Loader {
         id: vid_cam_preview
-        active: visible
+        active: false
         visible: false
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/VidCamPreview.qml"
+                active = true
+
             }
         }
     }
@@ -630,6 +668,12 @@ ApplicationWindow {
     SoundEffect {
         id: sound_recv
         source: "qrc:/androidinst/assets/space-zap.wav"
+        volume: {dwy_quiet ? 0.0 : 1.0}
+        muted: dwy_quiet
+    }
+    SoundEffect {
+        id: sound_alert
+        source: "qrc:/androidinst/assets/space-incoming.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
