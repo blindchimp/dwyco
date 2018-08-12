@@ -20,12 +20,14 @@
 #include "vcudh.h"
 #include "dhsetup.h"
 #include "qmsg.h"
+#include "se.h"
 
 int Chat_id = -1;
 static int Chat_starting;
 static int Chat_ready;
 int Chat_online;
-static StatusCallback Chat_status_callback;
+vc Chat_name;
+//static StatusCallback Chat_status_callback;
 extern vc Current_authenticator;
 vc generate_mac_msg(vc m);
 extern vc LocalIP;
@@ -35,16 +37,14 @@ extern vc KKG; //god pw
 void
 chat_offline(MMChannel *mc, vc, void *, ValidPtr)
 {
-    if(Chat_status_callback)
-        (*Chat_status_callback)(mc, "offline", 0, ValidPtr());
+    se_emit(DWYCO_SE_CHAT_SERVER_DISCONNECT, Chat_name);
     Chat_id = -1;
     Chat_starting = 0;
     Chat_ready = 0;
     Chat_online = 0;
-    Chat_status_callback = 0;
 }
 
-vc
+static vc
 build_chat_entry(vc challenge, vc password)
 {
     vc v(VC_VECTOR);
@@ -74,17 +74,18 @@ build_chat_entry(vc challenge, vc password)
 void
 chat_call_failed_last(MMChannel *mc, vc, void *, ValidPtr)
 {
-    if(Chat_status_callback)
-        (*Chat_status_callback)(mc, "failed", 0, ValidPtr());
+    se_emit(DWYCO_SE_CHAT_SERVER_DISCONNECT, Chat_name);
     Chat_id = -1;
     Chat_starting = 0;
-    Chat_status_callback = 0;
+
     GRTLOG("chat call failed last", 0, 0);
 }
 
 void
 chat_online_first(MMChannel *mc, vc which, void *, ValidPtr)
 {
+    se_emit(DWYCO_SE_CHAT_SERVER_CONNECTION_SUCCESSFUL, Chat_name);
+
     mc->destroy_callback = chat_offline;
     // generate a proper authentication message
     vc m = generate_mac_msg("chat-login");
@@ -102,6 +103,8 @@ chat_online_first(MMChannel *mc, vc which, void *, ValidPtr)
 void
 chat_online(MMChannel *mc, vc challenge, void *, ValidPtr)
 {
+    se_emit(DWYCO_SE_CHAT_SERVER_LOGIN, Chat_name);
+
     mc->build_outgoing_chat(1);
     mc->chat_display = mc->gen_public_chat_display();
 
@@ -112,8 +115,7 @@ chat_online(MMChannel *mc, vc challenge, void *, ValidPtr)
     v[2] = generate_mac_msg(build_chat_entry(challenge, mc->password));
     mc->send_ctrl(v);
     Chat_online = 1;
-    if(Chat_status_callback)
-        (*Chat_status_callback)(mc, "online", 0, ValidPtr());
+
 
     // ca 2018, noone seems to want to use the audio-podium stuff anymore
     // (it was a popular feature at one point.) so instead of trying to get it
@@ -160,16 +162,7 @@ chat_online(MMChannel *mc, vc challenge, void *, ValidPtr)
 }
 
 int
-start_chat_thread2(vc ip, vc port, const char *pw, StatusCallback scb)
-{
-    if(!start_chat_thread(ip, port, pw))
-        return 0;
-    Chat_status_callback = scb;
-    return 1;
-}
-
-int
-start_chat_thread(vc ip, vc port, const char *pw)
+start_chat_thread(vc ip, vc port, const char *pw, vc chat_name)
 {
     if(Chat_id != -1)
         return 0;
@@ -177,6 +170,7 @@ start_chat_thread(vc ip, vc port, const char *pw)
     // we might need to connect to get a new server list
     //if(Current_authenticator.is_nil())
     //return 0;
+
     MMChannel *mc = MMChannel::start_server_channel(
                         MMChannel::BYADDR,
                         inet_addr(ip),
@@ -195,6 +189,8 @@ start_chat_thread(vc ip, vc port, const char *pw)
     Chat_id = mc->myid;
     Chat_online = 0;
     Chat_starting = 1;
+    Chat_name = chat_name;
+    se_emit(DWYCO_SE_CHAT_SERVER_CONNECTING, Chat_name);
     GRTLOG("chat start", 0, 0);
     GRTLOGVC(ip);
     GRTLOGVC(port);
@@ -217,5 +213,4 @@ stop_chat_thread()
     Chat_ready = 0;
     Chat_online = 0;
     exit_msgaq();
-    Chat_status_callback = 0;
 }

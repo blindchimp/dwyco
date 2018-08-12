@@ -413,7 +413,7 @@ int DWYCOEXPORT dwyco_chat_get_admin_info();
 
 void DWYCOEXPORT dwyco_set_chat_ctx_callback(DwycoChatCtxCallback cb);
 void DWYCOEXPORT dwyco_set_chat_ctx_callback2(DwycoChatCtxCallback2 cb);
-void DWYCOEXPORT dwyco_set_chat_server_status_callback(DwycoStatusCallback cb);
+//void DWYCOEXPORT dwyco_set_chat_server_status_callback(DwycoStatusCallback cb);
 
 void DWYCOEXPORT dwyco_chat_create_user_lobby(const char *dispname,
         const char *category,

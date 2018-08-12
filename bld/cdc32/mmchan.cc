@@ -374,6 +374,8 @@ restart:;
         if(m)
         {
             ValidPtr vp = m->vp;
+            if(!vp.is_valid())
+                continue;
             m->schedule_destroy(HARD);
             m->destroy();
             if(vp.is_valid())

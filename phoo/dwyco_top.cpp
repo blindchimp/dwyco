@@ -729,10 +729,10 @@ DwycoCore::send_chat(QString text)
     dwyco_chat_send_data(chat.constBegin(), chat.length(), DWYCO_CHAT_DATA_PIC_TYPE_NONE, 0, 0);
 }
 
-void
+int
 DwycoCore::switch_to_chat_server(int i)
 {
-    dwyco_switch_to_chat_server(i);
+    return dwyco_switch_to_chat_server(i);
 }
 
 void
@@ -1010,22 +1010,22 @@ dwyco_emergency(int what, int must_exit, const char *msg)
 
 }
 
-static
-void
-DWYCOCALLCONV
-dwyco_chat_server_status(int id, const char *msg, int, void *)
-{
-    if(!TheDwycoCore)
-        return;
-    if(strcmp(msg, "online") == 0)
-    {
-        TheDwycoCore-> emit sys_chat_server_status(id, 1);
-    }
-    else if(strcmp(msg, "offline") == 0)
-    {
-        TheDwycoCore->emit sys_chat_server_status(id, 0);
-    }
-}
+//static
+//void
+//DWYCOCALLCONV
+//dwyco_chat_server_status(int id, const char *msg, int, void *)
+//{
+//    if(!TheDwycoCore)
+//        return;
+//    if(strcmp(msg, "online") == 0)
+//    {
+//        TheDwycoCore-> emit sys_chat_server_status(id, 1);
+//    }
+//    else if(strcmp(msg, "offline") == 0)
+//    {
+//        TheDwycoCore->emit sys_chat_server_status(id, 0);
+//    }
+//}
 
 int Block_DLL;
 
@@ -1259,7 +1259,7 @@ DwycoCore::init()
     dwyco_set_video_display_callback(dwyco_video_make_image);
     dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
-    dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
+    //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
 
 #if defined(MAC_CLIENT)

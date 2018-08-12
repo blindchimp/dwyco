@@ -653,7 +653,7 @@ DwycoEmergencyCallback dwyco_emergency_callback;
 DwycoChatCtxCallback dwyco_pg_callback;
 DwycoChatCtxCallback2 dwyco_pg_callback2;
 DwycoSystemEventCallback dwyco_system_event_callback;
-static DwycoStatusCallback dwyco_chat_server_status_callback;
+//static DwycoStatusCallback dwyco_chat_server_status_callback;
 static DwycoUserControlCallback dwyco_user_control_callback;
 static DwycoCallScreeningCallback dwyco_call_screening_callback;
 static DwycoCommandCallback dwyco_alert_callback;
@@ -1082,12 +1082,12 @@ dwyco_set_debug_message_callback(DwycoStatusCallback cb)
     dbg_msg_callback = cb;
 }
 
-DWYCOEXPORT
-void
-dwyco_set_chat_server_status_callback(DwycoStatusCallback cb)
-{
-    dwyco_chat_server_status_callback = cb;
-}
+//DWYCOEXPORT
+//void
+//dwyco_set_chat_server_status_callback(DwycoStatusCallback cb)
+//{
+//    dwyco_chat_server_status_callback = cb;
+//}
 
 #if 0
 // called each time the core needs someplace to put
@@ -3665,35 +3665,12 @@ dwyco_get_lobby_name_by_id2(const char *id, DWYCO_LIST *list_out)
 }
 
 
-static
-void
-bounce_chat_status(MMChannel *mc, vc what, void *, ValidPtr)
-{
-
-    if (what == vc("offline"))
-    {
-        GRTLOG("chat channel %d offline", mc->myid, 0);
-        hide_chat_grid();
-    }
-    if(dwyco_chat_server_status_callback)
-        (*dwyco_chat_server_status_callback)(mc->myid, (const char *)what, 0, 0);
-    else
-    {
-        GRTLOG("WARNING: no chat_server_status_callback defined", 0, 0);
-    }
-    if(what == vc("online"))
-    {
-        GRTLOG("chat channel %d online", mc->myid, 0);
-        show_chat_grid();
-    }
-}
-
 DWYCOEXPORT
 int
 dwyco_switch_to_chat_server(int i)
 {
     update_activity();
-    if(!dirth_switch_to_chat_server(i, "", bounce_chat_status))
+    if(!dirth_switch_to_chat_server(i, ""))
     {
         GRTLOG("switch to chat server %d failed", i, 0);
         return 0;
@@ -3792,7 +3769,7 @@ dwyco_switch_to_chat_server2(const char *cid, const char *pw)
     vc ip = ulobby[SL_ULOBBY_IP];
     vc port = (int)ulobby[SL_ULOBBY_PORT];
 
-    if(!start_chat_thread2(ip, port, pw, bounce_chat_status))
+    if(!start_chat_thread(ip, port, pw, cid))
     {
         GRTLOG("switch_to_chat_server2: cant start chat thread", 0, 0);
         return 0;

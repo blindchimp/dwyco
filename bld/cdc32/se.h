@@ -63,7 +63,13 @@ enum dwyco_sys_event {
 
 // special, but common case, where msg is just prepended to
 // top of msg index, no need to completely reset models in this case
-    SE_USER_MSG_IDX_UPDATED_PREPEND
+    SE_USER_MSG_IDX_UPDATED_PREPEND,
+
+    DWYCO_SE_CHAT_SERVER_CONNECTING,
+    DWYCO_SE_CHAT_SERVER_CONNECTION_SUCCESSFUL,
+    DWYCO_SE_CHAT_SERVER_DISCONNECT,
+    DWYCO_SE_CHAT_SERVER_LOGIN,
+    DWYCO_SE_CHAT_SERVER_LOGIN_FAILED
 };
 
 #endif
