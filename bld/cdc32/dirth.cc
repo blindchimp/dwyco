@@ -79,7 +79,6 @@ vc KKG; // god mode pw
 static int Inhibit_dir;
 
 extern vc DH_public;
-extern int No_database;
 extern vc My_connection;
 
 void exit_conf_mode();

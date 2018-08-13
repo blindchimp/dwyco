@@ -448,7 +448,6 @@ void set_invisible(int);
 static int DND;
 static int ReadOnlyMode;
 extern int QSend_inprogress;
-extern int No_database;
 extern int All_mute;
 extern vc My_rating;
 extern vc Transmit_stats;
@@ -1436,7 +1435,7 @@ dwyco_init()
     unlink(newfn("stats").c_str());
 
     setup_callbacks();
-    No_database = 0;
+
     All_mute = 1;
 
 #ifdef LINUX
@@ -1453,8 +1452,7 @@ dwyco_init()
     // hmmm, maybe get rid of "finish-startup"
     Inhibit_database_thread = 1;
 
-    if(!No_database)
-        start_database_thread();
+    start_database_thread();
     MMChannel::Moron_dork_mode = 1;
     init_pal();
     Cur_ignore = get_local_ignore();
@@ -1570,7 +1568,6 @@ dwyco_bg_init()
     handle_crash_setup();
     load_info(Transmit_stats, "stats");
     setup_callbacks();
-    No_database = 0;
     init_bg_msg_send("bg.log");
     init_pal();
     set_listen_state(0);
