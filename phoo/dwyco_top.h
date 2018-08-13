@@ -127,6 +127,7 @@ public:
     }
 
     Q_INVOKABLE int database_online();
+    Q_INVOKABLE int chat_online();
 
     Q_INVOKABLE QUrl get_simple_directory_url();
     Q_INVOKABLE QUrl get_simple_xml_url();

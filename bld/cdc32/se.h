@@ -22,13 +22,8 @@
 #include "vc.h"
 #include "dwstr.h"
 
-// at this point, the id can be a uid or a mid
-void se_emit(int cmd, vc id);
-void se_emit_msg(int cmd, DwString qid, vc uid);
-void se_emit_msg(int cmd, vc qid, vc uid);
-void se_emit_msg_status(DwString qid, vc ruid, DwString msg, int percent);
-int se_process();
 enum dwyco_sys_event {
+    SE_NOTHING = 0,
     SE_STATUS_CHANGE = 1,
     SE_USER_ADD,
     SE_USER_REMOVE,
@@ -65,11 +60,18 @@ enum dwyco_sys_event {
 // top of msg index, no need to completely reset models in this case
     SE_USER_MSG_IDX_UPDATED_PREPEND,
 
-    DWYCO_SE_CHAT_SERVER_CONNECTING,
-    DWYCO_SE_CHAT_SERVER_CONNECTION_SUCCESSFUL,
-    DWYCO_SE_CHAT_SERVER_DISCONNECT,
-    DWYCO_SE_CHAT_SERVER_LOGIN,
-    DWYCO_SE_CHAT_SERVER_LOGIN_FAILED
+    SE_CHAT_SERVER_CONNECTING,
+    SE_CHAT_SERVER_CONNECTION_SUCCESSFUL,
+    SE_CHAT_SERVER_DISCONNECT,
+    SE_CHAT_SERVER_LOGIN,
+    SE_CHAT_SERVER_LOGIN_FAILED
 };
+
+// at this point, the id can be a uid or a mid
+void se_emit(enum dwyco_sys_event cmd, vc id);
+void se_emit_msg(enum dwyco_sys_event cmd, DwString qid, vc uid);
+void se_emit_msg(enum dwyco_sys_event cmd, vc qid, vc uid);
+void se_emit_msg_status(DwString qid, vc ruid, DwString msg, int percent);
+int se_process();
 
 #endif

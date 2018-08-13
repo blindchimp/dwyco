@@ -1860,6 +1860,12 @@ DwycoCore::database_online()
     return dwyco_database_online();
 }
 
+int
+DwycoCore::chat_online()
+{
+    return dwyco_chat_online();
+}
+
 QString
 DwycoCore::random_string(int len)
 {

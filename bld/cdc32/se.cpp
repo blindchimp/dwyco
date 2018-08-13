@@ -58,7 +58,7 @@ static int Se_cmd_to_api[] =
 };
 
 void
-se_emit(int cmd, vc id)
+se_emit(dwyco_sys_event cmd, vc id)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -82,7 +82,7 @@ se_emit(int cmd, vc id)
 }
 
 void
-se_emit_msg(int cmd, DwString qid, vc uid)
+se_emit_msg(dwyco_sys_event cmd, DwString qid, vc uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -94,7 +94,7 @@ se_emit_msg(int cmd, DwString qid, vc uid)
 }
 
 void
-se_emit_msg(int cmd, vc qid, vc uid)
+se_emit_msg(dwyco_sys_event cmd, vc qid, vc uid)
 {
     se_emit_msg(cmd, DwString((const char *)qid, 0, qid.len()), uid);
 }
@@ -150,6 +150,29 @@ se_process()
                                            0, 0, 0,
                                            0, 0
                                           );
+            break;
+
+        case     SE_CHAT_SERVER_CONNECTING:
+        case     SE_CHAT_SERVER_CONNECTION_SUCCESSFUL:
+        case     SE_CHAT_SERVER_DISCONNECT:
+        case     SE_CHAT_SERVER_LOGIN:
+        case     SE_CHAT_SERVER_LOGIN_FAILED:
+        {
+            vc v;
+            if(Se_q[i][1].type() == VC_INT)
+            {
+                v = Se_q[i][1].peek_str();
+            }
+            else
+                v = Se_q[i][1];
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           v, v.len(),
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+        }
             break;
 
         case SE_MSG_SEND_START:

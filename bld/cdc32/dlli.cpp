@@ -454,6 +454,7 @@ extern vc Transmit_stats;
 extern vc StackDump;
 extern vc My_connection;
 extern vc KKG;
+extern int Chat_online;
 
 DwString simple_diagnostics();
 int dllify(vc v, const char*& str_out, int& len_out);
@@ -1841,6 +1842,13 @@ dwyco_database_online()
 
 DWYCOEXPORT
 int
+dwyco_chat_online()
+{
+    return Chat_online;
+}
+
+DWYCOEXPORT
+int
 dwyco_database_auth_remote()
 {
     return Auth_remote;
@@ -1926,9 +1934,9 @@ handle_deferred_msg_send()
 // you can use this to sleep until the next timer
 // (or some other event, like a network event) would
 // wake you up. you can also safely ignore this and
-// just call an fixed intervals to simplify things.
+// just call at fixed intervals to simplify things.
 //
-// if spin_out is non-zero, it means the core want to
+// if spin_out is non-zero, it means the core wants to
 // be called continuously.
 // sometimes the core needs
 // spinning to make things work properly (like

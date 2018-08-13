@@ -143,6 +143,10 @@ Page {
    onVisibleChanged: {
        if(visible) {
            Qt.inputMethod.hide()
+           if(!core.is_chat_online) {
+               core.switch_to_chat_server(chat_server.connect_server)
+               chat_server.auto_connect = true
+           }
        }
    }
 

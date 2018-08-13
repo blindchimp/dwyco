@@ -117,6 +117,12 @@ Page {
     }
     
     onVisibleChanged: {
+        if(visible) {
+            if(!core.is_chat_online) {
+                core.switch_to_chat_server(chat_server.connect_server)
+                chat_server.auto_connect = true
+            }
+        }
 
     }
     
@@ -292,7 +298,7 @@ Page {
     BusyIndicator {
         id: busy1
         
-        running: {!chat_server.chat_server_connected}
+        running: {!core.is_chat_online}
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }

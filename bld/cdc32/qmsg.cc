@@ -3339,7 +3339,7 @@ recover_inprogress()
 
 static
 void
-reset_qsend(int cmd, DwString qid, vc recip_uid)
+reset_qsend(enum dwyco_sys_event cmd, DwString qid, vc recip_uid)
 {
     if(cmd == SE_MSG_SEND_START)
         return;

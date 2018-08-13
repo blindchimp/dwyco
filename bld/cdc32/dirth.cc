@@ -45,8 +45,6 @@
 #include "prfcache.h"
 #include "se.h"
 #include "backsql.h"
-
-//#undef NO_RTLOG
 #include "dwrtlog.h"
 #ifdef LINUX
 #include <sys/utsname.h>
