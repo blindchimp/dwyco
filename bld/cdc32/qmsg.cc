@@ -504,6 +504,178 @@ exit_qmsg()
     Mid_to_logical_clock = vcnil;
 }
 
+// note: this gets rid of a lot of ephemeral info that
+// is better if it is refreshed on the next reconnect.
+// access to the various sql databases is still ok
+// even when suspended.
+// this suspend/resume assumes that things might have changed
+// a little while we were suspended, ie, maybe the inbox and other
+// message storage items were changed by a background process, or
+// the ignore list or other persistent info could have been updated.
+// generally, we assume we are *not* connected to the network during
+// the suspended state, so all the server derived info would have to be
+// refreshed on next connect.
+//
+// note: the reason we don't clear this out now is because we can get some
+// spurious (but mostly harmless) calls into the API even after a
+// "suspend", and we don't want to crash those calls.
+void
+suspend_qmsg()
+{
+#if 0
+    Cur_ignore = vcnil;
+    Session_ignore = vcnil;
+    Session_auto_replies = vcnil;
+    Mutual_ignore = vcnil;
+    Online = vcnil;
+    Client_types = vcnil;
+    No_direct_msgs = vcnil;
+    No_direct_att = vcnil;
+
+    Cur_msgs = vcnil;
+    Direct_msgs = vcnil;
+    Direct_msgs_raw = vcnil;
+    Online_noise = vcnil;
+    //Never_visible = vcnil;
+    //Always_visible = vcnil;
+    //I_grant = vcnil;
+    //They_grant = vcnil;
+    //UID_infos = vcnil;
+    MsgFolders = vcnil;
+    Session_infos = vcnil;
+    Chat_ips = vcnil;
+    Chat_ports = vcnil;
+    Mid_to_logical_clock = vcnil;
+#endif
+}
+
+void
+resume_qmsg()
+{
+    Cur_msgs = vc(VC_VECTOR);
+    Cur_ignore = get_local_ignore();
+    Session_ignore = vc(VC_SET);
+    Session_auto_replies = vc(VC_SET);
+    Mutual_ignore = vc(VC_SET);
+    Online = vc(VC_TREE);
+    Client_types = vc(VC_TREE);
+    No_direct_msgs = vc(VC_SET);
+    No_direct_att = vc(VC_SET);
+    MsgFolders = vc(VC_TREE);
+    In_progress = vc(VC_TREE);
+    Direct_msgs_raw = vc(VC_VECTOR);
+    Direct_msgs = vc(VC_VECTOR);
+    // not perfect, but better than scanning for a max value
+    // somewhere.
+    Logical_clock = time(0);
+
+    if(!load_info(Online_noise, "noise"))
+    {
+        Online_noise = vc(VC_SET);
+        save_info(Online_noise, "noise");
+    }
+#if 0
+    if(!load_info(Never_visible, "never"))
+    {
+        Never_visible = vc(VC_SET);
+        save_info(Never_visible, "never");
+    }
+    if(!load_info(Always_visible, "always"))
+    {
+        Always_visible = vc(VC_SET);
+        save_info(Always_visible, "always");
+    }
+    if(!load_info(They_grant, "theygrnt"))
+    {
+        They_grant = vc(VC_TREE);
+        save_info(They_grant, "theygrnt");
+    }
+    vc me;
+    if(They_grant.find("me", me))
+    {
+        if(me != My_UID)
+        {
+            if(They_grant.num_elems() == 1)
+            {
+                // just update it.
+                They_grant.add_kv("me", My_UID);
+                save_info(They_grant, "theygrnt");
+            }
+            else
+                Pal_auth_warn = 1;
+        }
+    }
+    else
+    {
+        They_grant.add_kv("me", My_UID);
+        save_info(They_grant, "theygrnt");
+    }
+
+    if(!load_info(I_grant, "igrant"))
+    {
+        I_grant = vc(VC_TREE);
+        save_info(I_grant, "igrant");
+    }
+
+    if(I_grant.find("me", me))
+    {
+        if(me != My_UID)
+        {
+            if(I_grant.num_elems() == 1)
+            {
+                // just update it.
+                I_grant.add_kv("me", My_UID);
+                save_info(I_grant, "igrant");
+            }
+            else
+                Pal_auth_warn = 1;
+        }
+    }
+    else
+    {
+        I_grant.add_kv("me", My_UID);
+        save_info(I_grant, "igrant");
+    }
+#endif
+
+    if(!load_info(Pals, "pals"))
+    {
+        Pals = vc(VC_TREE);
+        save_info(Pals, "pals");
+    }
+    // one off conversion
+    if(Pals.type() == VC_VECTOR)
+    {
+        int n = Pals.num_elems();
+        vc np(VC_TREE);
+        for(int i = 0; i < n; ++i)
+        {
+            np.add_kv(Pals[i], vcnil);
+        }
+        Pals = np;
+        save_info(Pals, "pals");
+    }
+    Client_ports = vc(VC_TREE);
+    LANmap = vc(VC_TREE);
+    if(!load_info(Session_infos, "sinfo") || Session_infos.type() != VC_MAP)
+    {
+        Session_infos = vc(VC_MAP);
+        save_info(Session_infos, "sinfo");
+    }
+    Chat_ips = vc(VC_TREE);
+    Chat_ports = vc(VC_TREE);
+
+    //init_qmsg_sql();
+    long tmplc = sql_get_max_logical_clock();
+    if(tmplc > Logical_clock)
+        Logical_clock = tmplc + 1;
+    //init_fav_sql();
+
+    //new_pipeline();
+
+    //Mid_to_logical_clock = vc(VC_TREE);
+}
+
 
 
 static int
@@ -3167,7 +3339,7 @@ recover_inprogress()
 
 static
 void
-reset_qsend(int cmd, DwString qid, vc recip_uid)
+reset_qsend(enum dwyco_sys_event cmd, DwString qid, vc recip_uid)
 {
     if(cmd == SE_MSG_SEND_START)
         return;

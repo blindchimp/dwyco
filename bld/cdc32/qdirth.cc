@@ -36,7 +36,6 @@ DwVec<QckDone> Waitq;
 DwListA<vc> Response_q;
 int Serial;
 
-int No_database = 0;
 vc Auto_update_hash;
 vc DH_public;
 // this is used to figure out if there is a bulk operation
@@ -326,13 +325,6 @@ dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_auth,
 {
     QckMsg m;
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vctrue;
-        dirth_q_local_action(resp, d);
-        return;
-    }
     d.type = ReqType("new4", ++Serial);
     m[QTYPE] = reqtype("new4", d);
     m[QFROM] = id;
@@ -355,13 +347,6 @@ dirth_send_get_pk(vc id, vc uid, QckDone d)
 {
     QckMsg m;
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vcnil;
-        dirth_q_local_action(resp, d);
-        return;
-    }
     d.type = ReqType("get-pk", ++Serial);
     m[QTYPE] = reqtype("get-pk", d);
     m[QFROM] = id;
@@ -375,13 +360,6 @@ dirth_send_set_token(vc id, vc token, QckDone d)
 {
     QckMsg m;
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vcnil;
-        dirth_q_local_action(resp, d);
-        return;
-    }
     d.type = ReqType("set-token", ++Serial);
     m[QTYPE] = reqtype("set-token", d);
     m[QFROM] = id;
@@ -396,13 +374,6 @@ dirth_send_get(vc id, vc which, QckDone d)
 {
     QckMsg m;
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vcnil;
-        dirth_q_local_action(resp, d);
-        return;
-    }
     d.type = ReqType("get", ++Serial);
     m[QTYPE] = reqtype("get", d);
     m[QFROM] = id;
@@ -416,13 +387,6 @@ dirth_send_store(vc id, vc recipients, vc msg, QckDone d)
 {
     QckMsg m;
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vcnil;
-        dirth_q_local_action(resp, d);
-        return;
-    }
     d.type = ReqType("store", ++Serial);
     m[QTYPE] = reqtype("store", d);
     m[QFROM] = id;
@@ -478,13 +442,6 @@ dirth_send_query(vc id, QckDone d)
 {
     QckMsg m;
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vc(VC_VECTOR);
-        dirth_q_local_action(resp, d);
-        return;
-    }
     d.type = ReqType("query", ++Serial);
     m[QTYPE] = reqtype("query", d);
     m[QFROM] = id;
@@ -497,13 +454,6 @@ dirth_send_ack_get(vc id, vc mid, QckDone d)
 {
     QckMsg m;
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vctrue;
-        dirth_q_local_action(resp, d);
-        return;
-    }
     d.type = ReqType("ack-get", ++Serial);
     m[QTYPE] = reqtype("ack-get", d);
     m[QFROM] = id;
@@ -523,14 +473,7 @@ dirth_send_ignore(vc id, vc uid, QckDone d)
 // note: in cdcx, we send the ignore in, mainly to
 // update the asshole factor, nothing else is
 // updated
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vctrue;
-        dirth_q_local_action(resp, d);
-        add_local_ignore(uid);
-        return;
-    }
+
     d.type = ReqType("ignore", ++Serial);
     m[QTYPE] = reqtype("ignore", d);
     m[QFROM] = id;
@@ -547,15 +490,6 @@ dirth_send_unignore(vc id, vc uid, QckDone d)
 // ignore lists are used. we don't send commands
 // to the server to store the ignore info.
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vctrue;
-        dirth_q_local_action(resp, d);
-        del_local_ignore(uid);
-        return;
-    }
-
     d.type = ReqType("unignore", ++Serial);
     m[QTYPE] = reqtype("unignore", d);
     m[QFROM] = id;
@@ -570,13 +504,6 @@ void
 dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d)
 {
     QckMsg m;
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vctrue;
-        dirth_q_local_action(resp, d);
-        return;
-    }
 
     d.type = ReqType("ignore-count", ++Serial);
     m[QTYPE] = reqtype("ignore-count", d);
@@ -622,18 +549,19 @@ dirth_send_get_ignore(vc id, QckDone d)
 // NOTE: in this version, we assume only local
 // ignore lists are used. we don't send commands
 // to the server to store the ignore info.
-    if(1 || No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = get_local_ignore();
-        dirth_q_local_action(resp, d);
-        return;
-    }
+
+    vc resp(VC_VECTOR);
+    resp[0] = get_local_ignore();
+    dirth_q_local_action(resp, d);
+    return;
+
+#if 0
     d.type = ReqType("get-ignore", ++Serial);
     m[QTYPE] = reqtype("get-ignore", d);
     m[QFROM] = id;
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+#endif
 }
 
 
@@ -642,13 +570,6 @@ dirth_send_ack_all(vc id, QckDone d)
 {
     QckMsg m;
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vctrue;
-        dirth_q_local_action(resp, d);
-        return;
-    }
     d.type = ReqType("ack-all", ++Serial);
     m[QTYPE] = reqtype("ack-all", d);
     m[QFROM] = id;
@@ -661,14 +582,6 @@ dirth_send_clear_ignore(vc id, QckDone d)
 {
     QckMsg m;
 
-    if(No_database)
-    {
-        vc resp(VC_VECTOR);
-        resp[0] = vcnil;
-        dirth_q_local_action(resp, d);
-        clear_local_ignore();
-        return;
-    }
     d.type = ReqType("clear-ignore", ++Serial);
     m[QTYPE] = reqtype("clear-ignore", d);
     m[QFROM] = id;

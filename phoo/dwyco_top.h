@@ -34,6 +34,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, has_audio_input)
     QML_READONLY_VAR_PROPERTY(int, has_audio_output)
     QML_READONLY_VAR_PROPERTY(int, audio_full_duplex)
+    QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
+    QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -42,6 +44,12 @@ public:
         m_buildtime = BUILDTIME;
         m_user_dir = ".";
         m_tmp_dir = ".";
+        m_external_storage_permission = 0;
+        m_has_audio_input = 0;
+        m_has_audio_output = 0;
+        m_audio_full_duplex = 0;
+        m_vid_dev_idx = 0;
+        m_vid_dev_name = "";
     }
     static QByteArray My_uid;
 
@@ -119,6 +127,7 @@ public:
     }
 
     Q_INVOKABLE int database_online();
+    Q_INVOKABLE int chat_online();
 
     Q_INVOKABLE QUrl get_simple_directory_url();
     Q_INVOKABLE QUrl get_simple_xml_url();
@@ -206,7 +215,7 @@ public:
     Q_INVOKABLE void delete_file(QString fn);
 
     // chat server related
-    Q_INVOKABLE void switch_to_chat_server(int);
+    Q_INVOKABLE int switch_to_chat_server(int);
     Q_INVOKABLE void disconnect_chat_server();
     Q_INVOKABLE void set_invisible_state(int);
 
@@ -277,7 +286,7 @@ signals:
     void msg_recv_state(int cmd, const QString& mid);
     void msg_recv_progress(const QString& mid, int percent);
     // dwyco video camera signals
-    void camera_change(int);
+    void camera_change(int cam_on);
     // zap composition record/play stopped
     void zap_stopped(int zid);
 

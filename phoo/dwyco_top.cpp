@@ -729,10 +729,10 @@ DwycoCore::send_chat(QString text)
     dwyco_chat_send_data(chat.constBegin(), chat.length(), DWYCO_CHAT_DATA_PIC_TYPE_NONE, 0, 0);
 }
 
-void
+int
 DwycoCore::switch_to_chat_server(int i)
 {
-    dwyco_switch_to_chat_server(i);
+    return dwyco_switch_to_chat_server(i);
 }
 
 void
@@ -1010,22 +1010,22 @@ dwyco_emergency(int what, int must_exit, const char *msg)
 
 }
 
-static
-void
-DWYCOCALLCONV
-dwyco_chat_server_status(int id, const char *msg, int, void *)
-{
-    if(!TheDwycoCore)
-        return;
-    if(strcmp(msg, "online") == 0)
-    {
-        TheDwycoCore-> emit sys_chat_server_status(id, 1);
-    }
-    else if(strcmp(msg, "offline") == 0)
-    {
-        TheDwycoCore->emit sys_chat_server_status(id, 0);
-    }
-}
+//static
+//void
+//DWYCOCALLCONV
+//dwyco_chat_server_status(int id, const char *msg, int, void *)
+//{
+//    if(!TheDwycoCore)
+//        return;
+//    if(strcmp(msg, "online") == 0)
+//    {
+//        TheDwycoCore-> emit sys_chat_server_status(id, 1);
+//    }
+//    else if(strcmp(msg, "offline") == 0)
+//    {
+//        TheDwycoCore->emit sys_chat_server_status(id, 0);
+//    }
+//}
 
 int Block_DLL;
 
@@ -1055,6 +1055,8 @@ write_vid_setting(int i)
     QVariant v = CamListModel->get(i);
     setting_put("video device", v.toString());
     settings_save();
+    TheDwycoCore->update_vid_dev_idx(i);
+    TheDwycoCore->update_vid_dev_name(v.toString());
 }
 
 void
@@ -1102,15 +1104,15 @@ static
 void
 load_cam_model()
 {
+    QString vid_dev;
+    setting_get("video device", vid_dev);
+
     CamListModel->append("(Select this to disable video)");
     CamListModel->append("(Files)");
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     CamListModel->append("Camera");
     HasCamHardware = 1;
 #else
-
-    QString vid_dev;
-    setting_get("video device", vid_dev);
 
 
     DWYCO_LIST drv = dwyco_get_vfw_drivers();
@@ -1128,10 +1130,12 @@ load_cam_model()
     }
 #endif
 
+    TheDwycoCore->update_vid_dev_name(vid_dev);
+
     // note: may not be able to get camera
     // selected until after qml is up and
     // running all the way
-#if 0
+#if 1
     // select last cam
     int found_it = 0;
     for(int i = 0; i < CamListModel->count(); ++i)
@@ -1139,16 +1143,17 @@ load_cam_model()
         QVariant v = CamListModel->get(i);
         if(v.toString() == vid_dev)
         {
+            TheDwycoCore->update_vid_dev_idx(i);
             TheDwycoCore->select_vid_dev(i);
             return;
         }
     }
 
-    if(HasCamHardware)
-    {
-        // just select the first one
-        TheDwycoCore->select_vid_dev(2);
-    }
+//    if(HasCamHardware)
+//    {
+//        // just select the first one
+//        TheDwycoCore->select_vid_dev(2);
+//    }
 #endif
 
 }
@@ -1254,7 +1259,7 @@ DwycoCore::init()
     dwyco_set_video_display_callback(dwyco_video_make_image);
     dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
-    dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
+    //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
 
 #if defined(MAC_CLIENT)
@@ -1521,8 +1526,9 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
 {
     // note: comment out the "inactive" normally, but put it back in
     // when testing "background" stuff on desktop
-    if(as == Qt::ApplicationSuspended  /*|| as == Qt::ApplicationInactive*/)
+    if(as == Qt::ApplicationSuspended  || as == Qt::ApplicationInactive)
     {
+        Suspended = 1;
         simple_call::suspend();
         dwyco_suspend();
         if(BGLockSock)
@@ -1535,7 +1541,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         notificationClient->start_background();
         notificationClient->set_allow_notification(1);
 #endif
-        Suspended = 1;
+
         emit qt_app_state_change(1);
     }
     else if(as == Qt::ApplicationActive && Suspended)
@@ -1852,6 +1858,12 @@ int
 DwycoCore::database_online()
 {
     return dwyco_database_online();
+}
+
+int
+DwycoCore::chat_online()
+{
+    return dwyco_chat_online();
 }
 
 QString
@@ -2221,6 +2233,8 @@ int
 DwycoCore::service_channels()
 {
     int spin = 0;
+    if(Suspended)
+        return 0;
     dwyco_service_channels(&spin);
     if(dwyco_get_rescan_messages())
     {

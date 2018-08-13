@@ -45,8 +45,6 @@
 #include "prfcache.h"
 #include "se.h"
 #include "backsql.h"
-
-//#undef NO_RTLOG
 #include "dwrtlog.h"
 #ifdef LINUX
 #include <sys/utsname.h>
@@ -79,7 +77,6 @@ vc KKG; // god mode pw
 static int Inhibit_dir;
 
 extern vc DH_public;
-extern int No_database;
 extern vc My_connection;
 
 void exit_conf_mode();
@@ -795,7 +792,7 @@ end_database_thread()
 }
 
 int
-dirth_switch_to_chat_server(int n, const char *pw, StatusCallback scb)
+dirth_switch_to_chat_server(int n, const char *pw)
 {
     if(n < 0 || n >= Server_list.num_elems())
         return 0;
@@ -807,7 +804,7 @@ dirth_switch_to_chat_server(int n, const char *pw, StatusCallback scb)
     vc ip = d[SL_SERVER_IP];
     vc port = (int)d[SL_SERVER_PORT] + 1000;
 
-    if(!start_chat_thread2(ip, port, pw, scb))
+    if(!start_chat_thread(ip, port, pw, vc(n)))
         return 0;
     return 1;
 }

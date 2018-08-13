@@ -18,7 +18,7 @@ Page {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: mm(3)
-        spacing: mm(3)
+        //spacing: mm(3)
         //width: parent.width
         RowLayout {
             spacing: mm(3)

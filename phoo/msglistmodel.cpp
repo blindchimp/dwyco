@@ -252,7 +252,9 @@ msglist_model::msglist_model(QObject *p) :
 
 msglist_model::~msglist_model()
 {
-
+    // not needed, as msglist is a singleton, but
+    // useful to uncomment this for leak checking
+    //delete sourceModel();
 }
 
 void

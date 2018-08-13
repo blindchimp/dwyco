@@ -14,6 +14,7 @@
 #include <QHostInfo>
 #include <QQuickStyle>
 #include <QDebug>
+#include <QQmlFileSelector>
 #ifdef ANDROID
 #include "notificationclient.h"
 #include <QAndroidJniObject>
@@ -75,6 +76,10 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     TheEngine = &engine;
+    QQmlFileSelector *sel = QQmlFileSelector::get(TheEngine);
+#if defined(FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+    sel->setExtraSelectors(QStringList("vgqt"));
+#endif
 
 
 #ifdef ANDROID

@@ -906,8 +906,12 @@ Page {
         // qt 5.11 seems focus is handled a little differently
         //focus: visible
         onVisibleChanged: {
+            if(Qt.platform.os == "android") {
             if(!visible)
                 focus = false
+            } else {
+                focus = visible
+            }
         }
 
         TipButton {

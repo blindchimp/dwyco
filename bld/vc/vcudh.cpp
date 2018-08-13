@@ -289,9 +289,10 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
         key = sha(key);
 
         const byte *k = (const byte *)(const char *)key;
+        SecByteBlock skt(skey);
         for(size_t i = 0; i < skey.SizeInBytes(); ++i)
-            skey[i] ^= k[i];
-        vc session_key_enc(VC_BSTRING, (const char *)(const byte *)skey, skey.SizeInBytes());
+            skt[i] ^= k[i];
+        vc session_key_enc(VC_BSTRING, (const char *)(const byte *)skt, skt.SizeInBytes());
 
         vc ret(VC_VECTOR);
         // encrypted output is

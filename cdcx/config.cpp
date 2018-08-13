@@ -395,7 +395,12 @@ get_a_backup_filename(QWidget *parent, QString filter)
     static QString last_directory;
     if(last_directory.length() == 0)
     {
+#ifdef DWYCO_QT5
+        QStringList sl = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+        last_directory = sl[0];
+#else
         last_directory = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif
     }
 #if (!defined(LINUX) && !defined(MAC_CLIENT))
 // windows wants to change the cwd on us, so tell it to
