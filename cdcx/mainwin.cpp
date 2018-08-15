@@ -103,6 +103,7 @@ extern int Current_server;
 extern DwOString Current_server_id;
 extern int Last_server;
 extern DwOString Last_server_id;
+extern DwOString Last_selected_id;
 extern int Askup;
 static int Ask_lobby_pw;
 static DwOString Ask_lobby_pw_id;
@@ -572,6 +573,7 @@ set_current_server(int i)
     }
     Current_server = i;
     Current_server_id = "";
+    Last_selected_id = "";
     setting_put("server", i);
     setting_put("server_id", DwOString(""));
     settings_save();
@@ -656,6 +658,7 @@ set_current_server(const DwOString& id)
     }
     Current_server = -1;
     Current_server_id = id;
+    Last_selected_id = id;
     // by avoiding setting the server to -1, we can make sure
     // we log into a system server
     //setting_put("server", -1);
@@ -2297,6 +2300,33 @@ mainwinform::idle()
         setting_put("first214", 0);
 
     }
+
+    static int chat_on = -1;
+    if(dwyco_chat_online())
+    {
+        if(chat_on != 1)
+        {
+
+            if(Initial_chat_mute == 1)
+            {
+                dwyco_chat_mute(0, 1);
+            }
+
+            emit chat_server_status(1);
+            chat_on = 1;
+        }
+    }
+    else
+    {
+        if(chat_on != 0)
+        {
+            Current_server_id = "";
+            Current_server = -1;
+            emit chat_server_status(0);
+            chat_on = 0;
+        }
+
+    }
     // note: the reason for all this static variable stuff in
     // here is because apparently it takes about 8% of a
     // 3ghz CPU to update a pixmap every 10ms (!!)
@@ -3899,6 +3929,7 @@ dwyco_chat_ctx_callback2(int cmd, int id,
 
 }
 
+#if 0
 void
 DWYCOCALLCONV
 dwyco_chat_server_status_callback(int id, const char *msg, int /*percent_done*/, void * /*user_arg*/)
@@ -3930,6 +3961,7 @@ dwyco_chat_server_status_callback(int id, const char *msg, int /*percent_done*/,
         Mainwinform-> emit chat_server_status(id, 0);
     }
 }
+#endif
 
 void
 DWYCOCALLCONV

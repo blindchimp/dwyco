@@ -98,7 +98,6 @@ public:
     void set_hide_video(int hv);
     int find_undisplayed();
     void display_snapchat(QByteArray uid, QString name, QVariant data);
-    int server_chan_id;
     void refresh_all_profiles();
     QPixmap get_preview_by_uid(DwOString uid);
 
@@ -111,7 +110,7 @@ public slots:
     void admin_update(int);
     void update_call_vector_display(DwOString uid, QVector<int>);
     void mouse_stopped_event(QPoint);
-    void chat_server_event(int, int);
+    void chat_server_event(int);
     void set_title(DwOString);
     void uid_resolved(DwOString);
     void update_profile(DwOString);

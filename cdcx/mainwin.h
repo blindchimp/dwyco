@@ -222,7 +222,7 @@ private slots:
     // note: don't use const DwOString& here, since if the
     // signals end up being q'd, you may end up with
     // dangling pointers
-    friend void DWYCOCALLCONV dwyco_chat_server_status_callback(int id, const char *msg, int percent_done, void *user_arg);
+
     friend void DWYCOCALLCONV dwyco_sys_event_callback(int cmd, int id,
             const char *uid, int len_uid,
             const char *name, int len_name,
@@ -264,7 +264,7 @@ signals:
     void chat_event(int, int, QByteArray, QString, QVariant, int, int);
     void pal_event(DwOString);
     void mouse_stopped(QPoint);
-    void chat_server_status(int, int);
+    void chat_server_status(int);
     void uid_info_event(DwOString);
     void uid_selected(DwOString, int);
     void invalidate_profile(DwOString);
