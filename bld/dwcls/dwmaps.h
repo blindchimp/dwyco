@@ -43,13 +43,6 @@ DwMaps<R,D>::DwMaps()
     ruffled = 0;
 }
 
-#if 0
-template<class R, class D>
-DwMaps<R,D>::~DwMaps()
-{
-}
-#endif
-
 template<class R, class D>
 int
 DwMaps<R,D>::under_threshold() const

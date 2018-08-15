@@ -1,7 +1,10 @@
 #ifndef DWITER_H
 #define DWITER_H
-#include <stdlib.h>
 
+
+void oopanic(const char *);
+// T is the container type, I is the element type
+// stored in the container
 template<class T, class I>
 class DwIter
 {
@@ -33,7 +36,7 @@ I
 DwIter<T,I>::get()
 {
     if(eol())
-        ::abort();
+        oopanic("get at eol on dwiter");
     return to_iterate->get_by_iter(this);
 }
 
