@@ -40,12 +40,12 @@ void oopanic(const char *);
 // the caller to figure that out.
 //
 
-template<class R, class D> class DwQMapIter;
+template<class R, class D,int nelems> class DwQMapIter;
 
-template<class R, class D, int elems>
+template<class R, class D, int nelems>
 class DwQMap4 : public DwMaps<R,D>
 {
-    friend class DwQMapIter<R,D>;
+    friend class DwQMapIter<R,D,nelems>;
 
 private:
     R dr;	// default range
@@ -71,8 +71,8 @@ private:
     long search(const D& key, int& found, long& first_del = dum);
 
 private:
-    char rng[elems * sizeof(R)];
-    char dom[elems * sizeof(D)];
+    char rng[nelems * sizeof(R)];
+    char dom[nelems * sizeof(D)];
 
     R *addr_rng(long i) const {
         return (R*)(rng + i * sizeof(R));
@@ -144,7 +144,7 @@ private:
         }
     }
 
-    void copy(const DwQMap4<R,D,int>& s) {
+    void copy(const DwQMap4<R,D,nelems>& s) {
         unsigned long u = s.used;
         for(int i = 0; u && i < s.size; ++i)
         {
@@ -166,12 +166,12 @@ protected:
     int size;			// total size of table
 
 public:
-    typedef DwIter<DwMaps<R,D> , DwAssocImp<R,D> > Foo;
+    typedef DwIter<DwQMap4<R,D,nelems> , DwAssocImp<R,D> > Foo;
     DwAssocImp<R,D> get_by_iter(Foo *) const;
-    DwQMap(const R& defr, const D& defd);
-    DwQMap();
+    DwQMap4(const R& defr, const D& defd);
+    DwQMap4();
     // note: default ctor, op= work ok.
-    ~DwQMap();
+    ~DwQMap4();
 
     int num_elems() const;
     int contains(const D&);
@@ -181,7 +181,7 @@ public:
     R get(const D&);
     int del(const D&);
     void fast_clear();
-    DwMapsIter<R,D> *make_iter() const;
+    DwQMap4Iter<R,D,nelems> *make_iter() const;
 
     int over_threshold() const {
         return count >= thresh;
@@ -189,7 +189,7 @@ public:
 };
 
 #define thdr template<class R, class D, int nelems>
-#define tcls DwQMap<R,D,int>
+#define tcls DwQMap4<R,D,nelems>
 
 thdr
 long tcls::dum = 0;
@@ -213,7 +213,7 @@ const int tcls::rehash8[7] = {
 thdr
 tcls::DwQMap4()
 {
-    init1(elems);
+    init1(nelems);
 }
 
 thdr
@@ -238,7 +238,7 @@ thdr
 tcls::DwQMap4(const R& r, const D& d)
     : dd(d), dr(r)
 {
-    init1(elems);
+    init1(nelems);
 }
 
 thdr
@@ -437,16 +437,19 @@ tcls::search(const D& key, int& found, long& first_del)
 }
 
 
-template<class R, class D>
+#undef tcls
+#define tcls DwQMapIter<R,D,nelems>
+
+template<class R, class D, int nelems>
 class DwQMapIter : public DwMapsIter<R,D>
 {
-    friend class DwQMap4<R,D,int>;
+    friend class DwQMap4<R,D,nelems>;
 private:
     int cur_buck;
     void advance();
 
 public:
-    DwQMapIter(const DwQMap<R,D> *t) : DwMapsIter<R,D>(t) {
+    DwQMapIter(const DwQMap4<R,D,nelems> *t) : DwMapsIter<R,D>(t) {
         init();
     }
 
@@ -469,17 +472,17 @@ public:
         forward();
     }
     int eol() {
-        return cur_buck >= ((DwQMap4<R,D,int> *)this->to_iterate)->size;
+        return cur_buck >= ((DwQMap4<R,D,nelems> *)this->to_iterate)->size;
     }
 };
 
 thdr
 void
-DwQMapIter<R,D>::advance()
+tcls::advance()
 {
     if(eol())
         return;
-    DwQMap4<R,D,int> *toit = (DwQMap4<R,D,int> *)this->to_iterate;
+    DwQMap4<R,D,nelems> *toit = (DwQMap4<R,D,nelems> *)this->to_iterate;
     int i;
     for(i = cur_buck + 1; i < toit->size; ++i)
     {
@@ -491,9 +494,9 @@ DwQMapIter<R,D>::advance()
 
 thdr
 DwAssocImp<R,D>
-tcls::get_by_iter(DwIter<DwMaps4<R,D,int>, DwAssocImp<R,D> > *a) const
+tcls::get_by_iter(DwIter<DwQMap4<R,D,nelems>, DwAssocImp<R,D> > *a) const
 {
-    typedef DwQMapIter<R,D> dmi_t;
+    typedef DwQMapIter<R,D,nelems> dmi_t;
     dmi_t *t = (dmi_t *)a;
     if(t->eol())
         return DwAssocImp<R,D>(dr, dd);
@@ -505,7 +508,7 @@ thdr
 DwMapsIter<R,D> *
 tcls::make_iter() const
 {
-    return new DwQMapIter<R,D>(this);
+    return new DwQMapIter<R,D,nelems>(this);
 }
 
 
