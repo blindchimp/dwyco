@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #ifndef DWTREE2_H
 #define DWTREE2_H
 #include "dwiter.h"

@@ -228,7 +228,11 @@ ApplicationWindow {
             }
             Label {
                 id: db_status
-                text: core.is_database_online == 0 ? "offline" : "online"
+                text: core.is_database_online === 0 ? "db off" : "db on"
+            }
+            Label {
+                id: chat_status
+                text: core.is_chat_online === 0 ? "chat off" : "chat on"
             }
         }
 
@@ -346,39 +350,34 @@ ApplicationWindow {
 
     Item {
         id: chat_server
-        property bool chat_server_connected: false
+
         property int connect_server: 0
+        property bool auto_connect: false
 
         Connections {
             target: core
-            onSys_chat_server_status: {
-                console.log("CHAT SERVER ", id, status)
-                if(status === 0)
-                    chat_server.chat_server_connected = false
-                else
-                    chat_server.chat_server_connected = true
-
-            }
             onQt_app_state_change: {
                 if(app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
-                    chat_server.chat_server_connected = false
-                    core.switch_to_chat_server(chat_server.connect_server)
+
                 }
                 if(app_state !== 0) {
                     console.log("CHAT SERVER PAUSE");
-                    chat_server.chat_server_connected = false
-                    core.disconnect_chat_server()
+
+                    //core.disconnect_chat_server()
                 }
             }
 
             onServer_login: {
-                console.log("CHAT SERVER RESTART ", what, chat_server.chat_server_connected)
-                if(what > 0 && !chat_server.chat_server_connected) {
-                    core.switch_to_chat_server(chat_server.connect_server)
+                console.log("CHAT SERVER RESTART ", what, chat_server.auto_connect)
+                if(what > 0) {
+                    if(chat_server.auto_connect) {
+                        core.switch_to_chat_server(chat_server.connect_server)
+                    }
                 }
             }
         }
+
     }
 
     ContactList {
@@ -691,6 +690,7 @@ ApplicationWindow {
     DwycoCore {
         id: core
         property int is_database_online: -1
+        property int is_chat_online: -1
 
         objectName: "dwyco_singleton"
         client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
@@ -885,6 +885,10 @@ ApplicationWindow {
             if(core.database_online() !== core.is_database_online) {
                 core.is_database_online = core.database_online()
             }
+            if(core.chat_online() !== core.is_chat_online) {
+                core.is_chat_online = core.chat_online();
+            }
+
             if(core.service_channels() === 1)
                 service_timer.interval = 1
             else

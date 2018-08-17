@@ -413,7 +413,7 @@ int DWYCOEXPORT dwyco_chat_get_admin_info();
 
 void DWYCOEXPORT dwyco_set_chat_ctx_callback(DwycoChatCtxCallback cb);
 void DWYCOEXPORT dwyco_set_chat_ctx_callback2(DwycoChatCtxCallback2 cb);
-void DWYCOEXPORT dwyco_set_chat_server_status_callback(DwycoStatusCallback cb);
+//void DWYCOEXPORT dwyco_set_chat_server_status_callback(DwycoStatusCallback cb);
 
 void DWYCOEXPORT dwyco_chat_create_user_lobby(const char *dispname,
         const char *category,
@@ -492,6 +492,12 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_MSG_DOWNLOAD_OK 24
 #define DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED 26
 #define DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED 27
+
+#define DWYCO_SE_CHAT_SERVER_CONNECTING 28
+#define DWYCO_SE_CHAT_SERVER_CONNECTION_SUCCESSFUL 29
+#define DWYCO_SE_CHAT_SERVER_DISCONNECT 30
+#define DWYCO_SE_CHAT_SERVER_LOGIN 31
+#define DWYCO_SE_CHAT_SERVER_LOGIN_FAILED 32
 
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -1113,11 +1119,13 @@ void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
 void DWYCOEXPORT dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 void DWYCOEXPORT dwyco_database_login();
 int DWYCOEXPORT dwyco_database_online();
+int DWYCOEXPORT dwyco_chat_online();
 int DWYCOEXPORT dwyco_database_auth_remote();
 void DWYCOEXPORT dwyco_inhibit_database(int i);
 void DWYCOEXPORT dwyco_inhibit_pal(int i);
 void DWYCOEXPORT dwyco_inhibit_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_lanmap(int i);
+//void DWYCOEXPORT dwyco_inhibit_chat(int i);
 
 int DWYCOEXPORT dwyco_get_audio_hw(int *has_audio_input, int *has_audio_output, int *audio_hw_full_duplex);
 int DWYCOEXPORT dwyco_set_all_mute(int);

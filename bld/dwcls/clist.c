@@ -1,4 +1,14 @@
 
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
+
 /*###TLIBID### "%n %v %f Last checkin: %w Locked by: %l"*/
 static char TLIBID[]="LISTS.C 4 9-Jan-92,15:06:24 Last checkin: DWIGHT Locked by: ***_NOBODY_***";
 

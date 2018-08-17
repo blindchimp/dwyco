@@ -1,4 +1,14 @@
 
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
+
 /*
  * $Header: g:/dwight/repo/dwcls/rcs/dwamap.h 1.14 1997/06/01 04:39:52 dwight Stable095 $
  */

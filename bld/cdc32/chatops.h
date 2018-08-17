@@ -9,10 +9,9 @@
 #ifndef CHATOPS_H
 #define CHATOPS_H
 
-#include "mmchan.h"
+#include "vc.h"
 
-int start_chat_thread(vc ip, vc port, const char *pw);
-int start_chat_thread2(vc ip, vc port, const char *pw, StatusCallback scb);
+int start_chat_thread(vc ip, vc port, const char *pw, vc chat_name);
 void stop_chat_thread();
 
 #endif

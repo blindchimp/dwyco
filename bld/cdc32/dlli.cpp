@@ -448,13 +448,13 @@ void set_invisible(int);
 static int DND;
 static int ReadOnlyMode;
 extern int QSend_inprogress;
-extern int No_database;
 extern int All_mute;
 extern vc My_rating;
 extern vc Transmit_stats;
 extern vc StackDump;
 extern vc My_connection;
 extern vc KKG;
+extern int Chat_online;
 
 DwString simple_diagnostics();
 int dllify(vc v, const char*& str_out, int& len_out);
@@ -653,7 +653,7 @@ DwycoEmergencyCallback dwyco_emergency_callback;
 DwycoChatCtxCallback dwyco_pg_callback;
 DwycoChatCtxCallback2 dwyco_pg_callback2;
 DwycoSystemEventCallback dwyco_system_event_callback;
-static DwycoStatusCallback dwyco_chat_server_status_callback;
+//static DwycoStatusCallback dwyco_chat_server_status_callback;
 static DwycoUserControlCallback dwyco_user_control_callback;
 static DwycoCallScreeningCallback dwyco_call_screening_callback;
 static DwycoCommandCallback dwyco_alert_callback;
@@ -1082,12 +1082,12 @@ dwyco_set_debug_message_callback(DwycoStatusCallback cb)
     dbg_msg_callback = cb;
 }
 
-DWYCOEXPORT
-void
-dwyco_set_chat_server_status_callback(DwycoStatusCallback cb)
-{
-    dwyco_chat_server_status_callback = cb;
-}
+//DWYCOEXPORT
+//void
+//dwyco_set_chat_server_status_callback(DwycoStatusCallback cb)
+//{
+//    dwyco_chat_server_status_callback = cb;
+//}
 
 #if 0
 // called each time the core needs someplace to put
@@ -1436,7 +1436,7 @@ dwyco_init()
     unlink(newfn("stats").c_str());
 
     setup_callbacks();
-    No_database = 0;
+
     All_mute = 1;
 
 #ifdef LINUX
@@ -1453,8 +1453,7 @@ dwyco_init()
     // hmmm, maybe get rid of "finish-startup"
     Inhibit_database_thread = 1;
 
-    if(!No_database)
-        start_database_thread();
+    start_database_thread();
     MMChannel::Moron_dork_mode = 1;
     init_pal();
     Cur_ignore = get_local_ignore();
@@ -1570,7 +1569,6 @@ dwyco_bg_init()
     handle_crash_setup();
     load_info(Transmit_stats, "stats");
     setup_callbacks();
-    No_database = 0;
     init_bg_msg_send("bg.log");
     init_pal();
     set_listen_state(0);
@@ -1844,6 +1842,13 @@ dwyco_database_online()
 
 DWYCOEXPORT
 int
+dwyco_chat_online()
+{
+    return Chat_online;
+}
+
+DWYCOEXPORT
+int
 dwyco_database_auth_remote()
 {
     return Auth_remote;
@@ -1929,9 +1934,9 @@ handle_deferred_msg_send()
 // you can use this to sleep until the next timer
 // (or some other event, like a network event) would
 // wake you up. you can also safely ignore this and
-// just call an fixed intervals to simplify things.
+// just call at fixed intervals to simplify things.
 //
-// if spin_out is non-zero, it means the core want to
+// if spin_out is non-zero, it means the core wants to
 // be called continuously.
 // sometimes the core needs
 // spinning to make things work properly (like
@@ -3665,35 +3670,12 @@ dwyco_get_lobby_name_by_id2(const char *id, DWYCO_LIST *list_out)
 }
 
 
-static
-void
-bounce_chat_status(MMChannel *mc, vc what, void *, ValidPtr)
-{
-
-    if (what == vc("offline"))
-    {
-        GRTLOG("chat channel %d offline", mc->myid, 0);
-        hide_chat_grid();
-    }
-    if(dwyco_chat_server_status_callback)
-        (*dwyco_chat_server_status_callback)(mc->myid, (const char *)what, 0, 0);
-    else
-    {
-        GRTLOG("WARNING: no chat_server_status_callback defined", 0, 0);
-    }
-    if(what == vc("online"))
-    {
-        GRTLOG("chat channel %d online", mc->myid, 0);
-        show_chat_grid();
-    }
-}
-
 DWYCOEXPORT
 int
 dwyco_switch_to_chat_server(int i)
 {
     update_activity();
-    if(!dirth_switch_to_chat_server(i, "", bounce_chat_status))
+    if(!dirth_switch_to_chat_server(i, ""))
     {
         GRTLOG("switch to chat server %d failed", i, 0);
         return 0;
@@ -3792,7 +3774,7 @@ dwyco_switch_to_chat_server2(const char *cid, const char *pw)
     vc ip = ulobby[SL_ULOBBY_IP];
     vc port = (int)ulobby[SL_ULOBBY_PORT];
 
-    if(!start_chat_thread2(ip, port, pw, bounce_chat_status))
+    if(!start_chat_thread(ip, port, pw, cid))
     {
         GRTLOG("switch_to_chat_server2: cant start chat thread", 0, 0);
         return 0;

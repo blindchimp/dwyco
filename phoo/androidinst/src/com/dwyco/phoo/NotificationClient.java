@@ -60,7 +60,7 @@ import android.provider.MediaStore;
 import android.os.Vibrator;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
-import com.google.firebase.crash.FirebaseCrash;
+import com.crashlytics.android.Crashlytics;
 
 // note: use notificationcompat stuff for older androids
 
@@ -176,6 +176,7 @@ public class NotificationClient extends QtActivity
         pe.putInt("quiet", i);
         pe.commit();
         prefs_lock.release();
+       // Crashlytics.getInstance().crash();
     }
 
     public static void set_service_params(int port, String sys_pfx, String user_pfx, String tmp_pfx) {

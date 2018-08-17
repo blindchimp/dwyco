@@ -31,8 +31,8 @@ vc get_server_name_by_uid(vc, vc&);
 vc get_random_xfer_server_ip(vc& port);
 vc get_random_server_ip(vc server_list, vc& port);
 int dirth_switch_to_server(int, MessageDisplay * = 0);
-int dirth_switch_to_server2(const char *id, MessageDisplay *md = 0);
-int dirth_switch_to_chat_server(int, const char *pw, StatusCallback = 0);
+//int dirth_switch_to_server2(const char *id, MessageDisplay *md = 0);
+int dirth_switch_to_chat_server(int, const char *pw);
 vc make_local_ports();
 vc make_fw_setup();
 

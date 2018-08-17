@@ -15,6 +15,7 @@ extern DWYCO_LIST Dwyco_server_list;
 int set_current_server(int i);
 int set_current_server(const DwOString&);
 extern DwOString Current_server_id;
+extern DwOString Last_selected_id;
 
 lobbybox3::lobbybox3(QWidget *parent) :
     QDockWidget(parent),
@@ -87,7 +88,7 @@ lobbybox3::add_lobby(user_lobby ul)
     qtwi->setText(ul.dispname.c_str());
     qtwi->setData(Qt::UserRole, qvl);
     ui->tw->addItem(qtwi);
-    if(ul.id == Current_server_id)
+    if(ul.id == Last_selected_id)
     {
         qtwi->setSelected(1);
     }

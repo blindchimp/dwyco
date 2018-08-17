@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 /*
  * $Header: g:/dwight/repo/dwcls/rcs/dwbag.h 1.14 1998/06/10 17:04:37 dwight Exp $
  */

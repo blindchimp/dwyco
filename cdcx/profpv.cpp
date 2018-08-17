@@ -26,9 +26,9 @@ struct pvcache_entry
 };
 
 static QMap<DwOString, pvcache_entry> Preview_cache;
-static int Chat_online;
 static QSet<DwOString> In_progress;
 profpv *ThePreviewCache;
+int profpv::Chat_online;
 
 profpv::profpv()
 {
@@ -38,7 +38,7 @@ profpv::profpv()
     connect(Mainwinform, SIGNAL(content_filter_event(int)), this, SLOT(clear_cache(int)));
     connect(Mainwinform, SIGNAL(invalidate_profile(DwOString)), this, SLOT(remove_entry(DwOString)));
     connect(Mainwinform, SIGNAL(pal_event(DwOString)), this, SLOT(remove_entry(DwOString)));
-    connect(Mainwinform, SIGNAL(chat_server_status(int,int)), this, SLOT(chat_server(int,int)));
+    connect(Mainwinform, SIGNAL(chat_server_status(int)), this, SLOT(chat_server(int)));
 }
 
 static void
@@ -140,7 +140,7 @@ profpv::remove_entry(DwOString uid)
 }
 
 void
-profpv::chat_server(int, int online)
+profpv::chat_server(int online)
 {
     Chat_online = online;
 }
