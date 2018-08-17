@@ -72,7 +72,7 @@ int DWYCOCALLCONV dwyco_init_public_chat(int ui_id);
 int DWYCOCALLCONV dwyco_display_public_chat(const char *who, int len_who, const char *txt, int len_txt, const char *uid, int len_uid);
 void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
 void DWYCOCALLCONV dwyco_chat_ctx_callback2(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, DWYCO_LIST lst, int qid, int extra_arg);
-void DWYCOCALLCONV dwyco_chat_server_status_callback(int id, const char *msg, int percent_done, void *user_arg);
+//void DWYCOCALLCONV dwyco_chat_server_status_callback(int id, const char *msg, int percent_done, void *user_arg);
 void DWYCOCALLCONV dwyco_emergency_callback(int problem, int must_exit, const char *dll_msg);
 void DWYCOCALLCONV dwyco_db_login_result(const char *str, int what);
 //void DWYCOCALLCONV dwyco_pal_auth_callback(const char *uid, int len_uid, int what);
@@ -110,6 +110,7 @@ int Current_server = -1;
 DwOString Current_server_id;
 int Last_server = -1;
 DwOString Last_server_id;
+DwOString Last_selected_id;
 extern int AvoidCamera;
 int AvoidSSL;
 int Askup;
@@ -526,7 +527,7 @@ int main(int argc, char *argv[])
 
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
     dwyco_set_chat_ctx_callback2(dwyco_chat_ctx_callback2);
-    dwyco_set_chat_server_status_callback(dwyco_chat_server_status_callback);
+    //dwyco_set_chat_server_status_callback(dwyco_chat_server_status_callback);
 
     //dwyco_set_pal_auth_callback(dwyco_pal_auth_callback);
     dwyco_set_call_screening_callback(dwyco_call_screening_callback);

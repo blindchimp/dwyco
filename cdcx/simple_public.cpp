@@ -241,7 +241,7 @@ simple_public::simple_public(QWidget *parent) :
     connect(Mainwinform, SIGNAL(call_vector_event(DwOString,QVector<int>)), this, SLOT(update_call_vector_display(DwOString,QVector<int>)));
     connect(this, SIGNAL(uid_selected(DwOString,int)), Mainwinform, SIGNAL(uid_selected(DwOString,int)));
     connect(Mainwinform, SIGNAL(mouse_stopped(QPoint)), this, SLOT(mouse_stopped_event(QPoint)));
-    connect(Mainwinform, SIGNAL(chat_server_status(int, int)), this, SLOT(chat_server_event(int, int)));
+    connect(Mainwinform, SIGNAL(chat_server_status(int)), this, SLOT(chat_server_event(int)));
     connect(Mainwinform, SIGNAL(new_server_name(DwOString)), this, SLOT(set_title(DwOString)));
     connect(Mainwinform, SIGNAL(uid_info_event(DwOString)), this, SLOT(uid_resolved(DwOString)));
     connect(Mainwinform, SIGNAL(invalidate_profile(DwOString)), this, SLOT(update_profile(DwOString)));
@@ -287,7 +287,6 @@ simple_public::simple_public(QWidget *parent) :
         settings_save();
     }
     ui_id = -1;
-    server_chan_id = -1;
     Simple_publics.append(vp);
 }
 
@@ -310,7 +309,7 @@ simple_public::set_hide_video(int hv)
 }
 
 void
-simple_public::chat_server_event(int chan_id, int online)
+simple_public::chat_server_event(int online)
 {
     // the chan_id is used to direct audio exclusively
     // via the "exclusive_audio" calls
@@ -320,10 +319,7 @@ simple_public::chat_server_event(int chan_id, int online)
         append_msg_to_textedit("<br><font color=#ff0000>Disconnected, click on a lobby name in the lobby list to reconnect</font><br>", ui->text_display, "");
 
         cursor_to_bottom(ui->text_display);
-        server_chan_id = -1;
     }
-    else
-        server_chan_id = chan_id;
 }
 
 void

@@ -30,7 +30,7 @@ DEFINES += _Windows
 }
 linux-g++|linux-g++-64|macx-g++|macx-clang: QMAKE_CXX=ccache g++
 
-QMAKE_CFLAGS += -std=c++11 #-fsanitize=address
+QMAKE_CFLAGS += #-fsanitize=address
 QMAKE_CXXFLAGS += -std=c++11 #-fsanitize=address
 QMAKE_LFLAGS += -std=c++11 #-fsanitize=address
 
