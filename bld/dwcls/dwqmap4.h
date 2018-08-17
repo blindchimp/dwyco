@@ -331,6 +331,9 @@ tcls::get(const D& key)
 // probably call the dtor for both the key
 // and value, or create a new api that deletes
 // just the value associated with the key or something
+// also, an optimization: if the count drops to zero, you
+// can reset the deleted and used items to 0 to speed
+// the hash probe up
 thdr
 int
 tcls::del(const D& key)

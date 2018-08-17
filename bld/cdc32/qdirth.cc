@@ -37,7 +37,6 @@ DwListA<vc> Response_q;
 int Serial;
 
 vc Auto_update_hash;
-vc DH_public;
 // this is used to figure out if there is a bulk operation
 // in progress and we want to eliminate timeouts
 // temporarily.

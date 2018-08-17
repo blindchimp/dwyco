@@ -76,7 +76,6 @@ vc KKG; // god mode pw
 
 static int Inhibit_dir;
 
-extern vc DH_public;
 extern vc My_connection;
 
 void exit_conf_mode();
@@ -583,7 +582,7 @@ build_directory_entry()
     v.append(dwyco_get_version_string());
     v.append(UserConfigData.get_email());
     v.append(My_UID);
-    v.append(DH_public);
+    v.append(vcnil); // was DH_public
     v.append(vcnil); // was "rating"
     v.append(system_info());
     v.append(ZapAdvData.get_always_server() ? vcnil : vctrue); // can do direct msgs
