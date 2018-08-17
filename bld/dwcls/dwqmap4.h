@@ -40,12 +40,12 @@ void oopanic(const char *);
 // the caller to figure that out.
 //
 
-template<class R, class D,int nelems> class DwQMapIter;
+template<class R, class D,int nelems> class DwQMap4Iter;
 
 template<class R, class D, int nelems>
-class DwQMap4 : public DwMaps<R,D>
+class DwQMap4// : public DwMaps<R,D>
 {
-    friend class DwQMapIter<R,D,nelems>;
+    friend class DwQMap4Iter<R,D,nelems>;
 
 private:
     R dr;	// default range
@@ -83,7 +83,7 @@ private:
     }
 
     void add_assoc(const D& key, const R& val, long idx) {
-        int u = ((this->used|this->prev_used) & (1UL << idx));
+        int u = ((this->used) & (1UL << idx));
         D *d = addr_dom(idx);
         R *r = addr_rng(idx);
 
@@ -104,7 +104,7 @@ private:
     }
 
     inline void set_rng(const R& r, long idx) {
-        if((this->used|this->prev_used) & (1UL << idx))
+        if((this->used) & (1UL << idx))
             *addr_rng(idx) = r;
         else
             new(addr_rng(idx)) R(r);
@@ -115,12 +115,10 @@ private:
     }
 
     void destr_fun() {
-        //unsigned long u = used;
-        //unsigned long u2 = prev_used;
 // WARNING: problems here with long/int on 64 bit stuff
 // previous version of this function would be more
 // general, but this is faster.
-        unsigned long u3 = (this->used | this->prev_used);
+        unsigned long u3 = (this->used);
         for(int i = 0; u3; ++i)
         {
             static char table[64] =
@@ -159,10 +157,6 @@ private:
 
 protected:
     unsigned long used;
-    // for finalization, we need where *any* slot
-    // might need to be destroyed, across multiple
-    // "fast_clears"
-    unsigned long prev_used;
     int size;			// total size of table
 
 public:
@@ -180,7 +174,6 @@ public:
     int replace(const D&, const R&, R** wp = 0);
     R get(const D&);
     int del(const D&);
-    void fast_clear();
     DwQMap4Iter<R,D,nelems> *make_iter() const;
 
     int over_threshold() const {
@@ -236,7 +229,7 @@ tcls::init1(int maxsz)
 
 thdr
 tcls::DwQMap4(const R& r, const D& d)
-    : dd(d), dr(r)
+    : dr(r), dd(d)
 {
     init1(nelems);
 }
@@ -334,6 +327,10 @@ tcls::get(const D& key)
     return get_rng(idx);
 }
 
+// this probably needs to be fixed: del should
+// probably call the dtor for both the key
+// and value, or create a new api that deletes
+// just the value associated with the key or something
 thdr
 int
 tcls::del(const D& key)
@@ -350,21 +347,10 @@ tcls::del(const D& key)
 
 thdr
 void
-tcls::fast_clear()
-{
-    count = 0;
-    deleted = 0;
-    prev_used |= used;
-    used = 0;
-}
-
-thdr
-void
-tcls::initdel(long isize)
+tcls::initdel(long /*isize*/)
 {
     deleted = 0;
     used = 0;
-    prev_used = 0;
 }
 
 thdr
@@ -393,7 +379,7 @@ tcls::setfull(long idx)
 
 thdr
 inline void
-tcls::setempty(long idx)
+tcls::setempty(long /*idx*/)
 {
 #ifdef CAREFUL
     if(idx < 0 || idx >= size)
@@ -436,12 +422,31 @@ tcls::search(const D& key, int& found, long& first_del)
     return -1;
 }
 
+thdr
+DwAssocImp<R,D>
+tcls::get_by_iter(DwIter<DwQMap4<R,D,nelems>, DwAssocImp<R,D> > *a) const
+{
+    typedef DwQMap4Iter<R,D,nelems> dmi_t;
+    dmi_t *t = (dmi_t *)a;
+    if(t->eol())
+        return DwAssocImp<R,D>(dr, dd);
+    DwAssocImp<R,D> ret(get_rng(t->cur_buck), get_dom(t->cur_buck));
+    return ret;
+}
+
+thdr
+DwQMap4Iter<R,D,nelems> *
+tcls::make_iter() const
+{
+    return new DwQMap4Iter<R,D,nelems>(this);
+}
+
 
 #undef tcls
-#define tcls DwQMapIter<R,D,nelems>
+#define tcls DwQMap4Iter<R,D,nelems>
 
 template<class R, class D, int nelems>
-class DwQMapIter : public DwMapsIter<R,D>
+class DwQMap4Iter : public DwIter<DwQMap4<R,D,nelems>, DwAssocImp<R,D> >
 {
     friend class DwQMap4<R,D,nelems>;
 private:
@@ -449,7 +454,7 @@ private:
     void advance();
 
 public:
-    DwQMapIter(const DwQMap4<R,D,nelems> *t) : DwMapsIter<R,D>(t) {
+    DwQMap4Iter(const DwQMap4<R,D,nelems> *t) : DwIter<DwQMap4<R,D,nelems>, DwAssocImp<R,D> >(t) {
         init();
     }
 
@@ -492,72 +497,7 @@ tcls::advance()
     cur_buck = i;
 }
 
-thdr
-DwAssocImp<R,D>
-tcls::get_by_iter(DwIter<DwQMap4<R,D,nelems>, DwAssocImp<R,D> > *a) const
-{
-    typedef DwQMapIter<R,D,nelems> dmi_t;
-    dmi_t *t = (dmi_t *)a;
-    if(t->eol())
-        return DwAssocImp<R,D>(dr, dd);
-    DwAssocImp<R,D> ret(get_rng(t->cur_buck), get_dom(t->cur_buck));
-    return ret;
-}
-
-thdr
-DwMapsIter<R,D> *
-tcls::make_iter() const
-{
-    return new DwQMapIter<R,D,nelems>(this);
-}
-
-
-#undef tcls
-#undef thdr
-#if 0
-// -------- lazy variants
-
-// lazy with storage statically alloced in object
-template<class R, class D, int elems>
-class DwQMapLazyC : public DwQMapLazy<R,D>
-{
-private:
-    char rng[elems * sizeof(R)];
-    char dom[elems * sizeof(D)];
-
-    R *addr_rng(long i) const {
-        return (R*)(rng + i * sizeof(R));
-    }
-    D *addr_dom(long i) const {
-        return (D*)(dom + i * sizeof(D));
-    }
-
-
-public:
-    DwQMapLazyC(const R& r, const D& d) : DwQMapLazy<R,D>(r, d, elems) {}
-    DwQMapLazyC() : DwQMapLazy<R,D>(elems) {}
-    DwQMapLazyC(const DwQMapLazyC& s) {
-        if(elems < s.size) oopanic("bad lazy ctor");
-        copy(s);
-    }
-    const DwQMapLazyC& operator=(const DwQMapLazyC& s) {
-        if(elems < s.size) oopanic("bad lazy op=");
-        if(this != &s)
-        {
-            this->destr_fun();
-            copy(s);
-        }
-        return *this;
-    }
-    ~DwQMapLazyC() {
-        this->destr_fun();
-    }
-};
-#endif
-
-
 #undef thdr
 #undef tcls
-
 
 #endif
