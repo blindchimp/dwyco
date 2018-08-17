@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #ifndef DWPIPE_H
 #define DWPIPE_H
 #ifndef __WIN32__

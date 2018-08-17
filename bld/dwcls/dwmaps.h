@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #ifndef DWMAPS_H
 #define DWMAPS_H
 
@@ -42,13 +52,6 @@ DwMaps<R,D>::DwMaps()
 {
     ruffled = 0;
 }
-
-#if 0
-template<class R, class D>
-DwMaps<R,D>::~DwMaps()
-{
-}
-#endif
 
 template<class R, class D>
 int

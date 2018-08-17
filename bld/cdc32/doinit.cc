@@ -165,13 +165,7 @@ init_codec(const char *logname)
             Myhostname = hostname;
 
         init_entropy();
-        extern vc DH_public;
-
-        vclh_dh_init_std();
-        DH_public = vclh_dh_setup();
-
         dh_init();
-
         RTUserDefaults.load();
 #ifdef _Windows
         if(vc_winsock::wsa_data.iMaxUdpDg != 0)
@@ -410,11 +404,6 @@ init_bg_msg_send(const char *logname)
             Myhostname = hostname;
 
         init_entropy();
-        extern vc DH_public;
-
-        vclh_dh_init_std();
-        DH_public = vclh_dh_setup();
-
         dh_init();
 
         RTUserDefaults.load();

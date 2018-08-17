@@ -56,7 +56,7 @@ InputTest::~InputTest()
     delete m_audioInfo;
 	if(!m_audioInput)
 		return;
-    //m_audioInput->reset();
+    m_audioInput->reset();
     m_audioInput->deleteLater();
     m_audioInput = 0;
 }
@@ -341,13 +341,13 @@ void DWYCOCALLCONV audi_qt_reset(void *)
         return;
     if(Audi->m_audioInput)
         Audi->m_audioInput->stop();
-    for(int i = 0; i < Bufs.count(); ++i)
-    {
-        delete [] Bufs[i];
-    }
-    Bufs.clear();
-    Buf_times.clear();
-    //audi_qt_delete(0);
+//    for(int i = 0; i < Bufs.count(); ++i)
+//    {
+//        delete [] Bufs[i];
+//    }
+//    Bufs.clear();
+//    Buf_times.clear();
+    audi_qt_delete(0);
 
 }
 int DWYCOCALLCONV audi_qt_status(void *)

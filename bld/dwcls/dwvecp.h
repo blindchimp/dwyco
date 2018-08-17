@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #ifndef DWVECP_H
 #define DWVECP_H
 #include "useful.h"

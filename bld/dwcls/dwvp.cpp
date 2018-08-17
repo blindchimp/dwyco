@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 // $Header: g:/dwight/repo/cdc32/rcs/pval.cc 1.10 1999/01/10 16:09:48 dwight Checkpoint $
 #include "dwtree2.h"
 #include "dwvp.h"

@@ -127,6 +127,7 @@ public:
     }
 
     Q_INVOKABLE int database_online();
+    Q_INVOKABLE int chat_online();
 
     Q_INVOKABLE QUrl get_simple_directory_url();
     Q_INVOKABLE QUrl get_simple_xml_url();
@@ -214,7 +215,7 @@ public:
     Q_INVOKABLE void delete_file(QString fn);
 
     // chat server related
-    Q_INVOKABLE void switch_to_chat_server(int);
+    Q_INVOKABLE int switch_to_chat_server(int);
     Q_INVOKABLE void disconnect_chat_server();
     Q_INVOKABLE void set_invisible_state(int);
 
