@@ -196,17 +196,17 @@ vc_cvar::performance_hack(vc& atom) const
 {
 	if(vc_list.num_elems() != 1)
 	{
-		((vc_cvar *)this)->nopf = 1;
+        nopf = 1;
 		return 0;
 	}
 	vc tmp = vc_list.get_first();
 	if(tmp.type() != VC_STRING)
 	{
-		((vc_cvar *)this)->nopf = 1;
+        nopf = 1;
 		return 0;
 	}
-	((vc_cvar *)this)->cached_atom = tmp;
-	((vc_cvar *)this)->use_cached_atom = 1;
+    cached_atom = tmp;
+    use_cached_atom = 1;
 	if(dont_map)
 	{
 		atom = tmp;

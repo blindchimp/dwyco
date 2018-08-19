@@ -258,7 +258,7 @@ vc_funcall::eval() const
 	int vetted = 0;
 	if(is_string || func.type() == VC_STRING)
 	{
-		((vc_funcall *)this)->is_string = 1;
+        is_string = 1;
 		// convenience: if func is a string, then do the mapping
 		// instead of causing the user to write <f>(...) all the time.
 		// note: foo() doesn't have any other meaning anyway, so this
