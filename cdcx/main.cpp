@@ -111,6 +111,7 @@ DwOString Current_server_id;
 int Last_server = -1;
 DwOString Last_server_id;
 DwOString Last_selected_id;
+int Last_selected_idx = -1;
 extern int AvoidCamera;
 int AvoidSSL;
 int Askup;
