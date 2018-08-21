@@ -202,6 +202,7 @@ public class NotificationClient extends QtActivity
         String sys_pfx = sp.getString("sys_pfx", ".");
         String user_pfx = sp.getString("user_pfx", ".");
         String tmp_pfx = sp.getString("tmp_pfx", ".");
+        String token = sp.getString("token", "notoken");
         prefs_lock.release();
         // this is just a hack to avoid a crash in android O
         // this disables the background processing that happens when the
@@ -217,6 +218,7 @@ public class NotificationClient extends QtActivity
         i.putExtra("sys_pfx", sys_pfx);
         i.putExtra("user_pfx", user_pfx);
         i.putExtra("tmp_pfx", tmp_pfx);
+        i.putExtra("token", token);
 
         m_instance.startService(i);
 
