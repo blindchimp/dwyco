@@ -89,7 +89,7 @@ INCLUDEPATH += $${DINC}/v4lcap
 QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
 QMAKE_LFLAGS += -g #-fsanitize=address
 QMAKE_CXX=ccache g++
-QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameters
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 
 SHADOW=$${OUT_PWD}
 D = $${SHADOW}/../bld
