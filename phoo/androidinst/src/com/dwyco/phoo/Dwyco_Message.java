@@ -93,7 +93,7 @@ public class Dwyco_Message extends StickyIntentService {
         catchLog(String.valueOf(port));
         catchLog(token);
         poller_thread();
-        dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx);
+        dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx, token);
         catchLog("background died");
         System.exit(0);
 

@@ -1,7 +1,6 @@
 static DwycoChatCtxCallback  user_dwyco_set_chat_ctx_callback;
 static DwycoChatCtxCallback2  user_dwyco_set_chat_ctx_callback2;
 static DwycoStatusCallback  user_dwyco_set_debug_message_callback;
-static DwycoStatusCallback  user_dwyco_set_chat_server_status_callback;
 static DwycoVideoDisplayCallback  user_dwyco_set_video_display_callback;
 static DwycoCallAppearanceCallback  user_dwyco_set_call_acceptance_callback;
 static DwycoEmergencyCallback  user_dwyco_set_emergency_callback;
@@ -30,7 +29,6 @@ DWYCOEXPORT void _real_dwyco_resume();
 DWYCOEXPORT void _real_dwyco_set_chat_ctx_callback(DwycoChatCtxCallback cb);
 DWYCOEXPORT void _real_dwyco_set_chat_ctx_callback2(DwycoChatCtxCallback2 cb);
 DWYCOEXPORT void _real_dwyco_set_debug_message_callback(DwycoStatusCallback cb);
-DWYCOEXPORT void _real_dwyco_set_chat_server_status_callback(DwycoStatusCallback cb);
 DWYCOEXPORT void _real_dwyco_set_video_display_callback(DwycoVideoDisplayCallback cb);
 DWYCOEXPORT void _real_dwyco_set_call_acceptance_callback(DwycoCallAppearanceCallback cb);
 DWYCOEXPORT void _real_dwyco_set_emergency_callback(DwycoEmergencyCallback cb);
@@ -58,6 +56,7 @@ DWYCOEXPORT int _real_dwyco_get_authenticator(const char **a_out, int *len_a_out
 DWYCOEXPORT void _real_dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 DWYCOEXPORT void _real_dwyco_database_login();
 DWYCOEXPORT int _real_dwyco_database_online();
+DWYCOEXPORT int _real_dwyco_chat_online();
 DWYCOEXPORT int _real_dwyco_database_auth_remote();
 DWYCOEXPORT void _real_dwyco_inhibit_database(int i);
 DWYCOEXPORT void _real_dwyco_inhibit_pal(int i);
@@ -336,20 +335,6 @@ printarg(" const char *", "msg",msg);
 printarg(" int ", "percent_done",percent_done);
 printarg(" void *", "user_arg",user_arg);
 (*user_dwyco_set_debug_message_callback)(id,msg,percent_done,user_arg);
-/*++Reentered;
-*/printcbret();
-}
-
-void
-DWYCOCALLCONV
-wrapped_cb_dwyco_set_chat_server_status_callback(int id, const char *msg, int percent_done, void *user_arg)
-{
-printcbfunname("dwyco_set_chat_server_status_callback" "DwycoStatusCallback");
-printarg("int ", "id",id);
-printarg(" const char *", "msg",msg);
-printarg(" int ", "percent_done",percent_done);
-printarg(" void *", "user_arg",user_arg);
-(*user_dwyco_set_chat_server_status_callback)(id,msg,percent_done,user_arg);
 /*++Reentered;
 */printcbret();
 }
@@ -707,18 +692,6 @@ printret();
 
 DWYCOEXPORT
 void
-dwyco_set_chat_server_status_callback(DwycoStatusCallback cb)
-{
-printfunname("dwyco_set_chat_server_status_callback");
-printarg("DwycoStatusCallback ", "cb",(void *)cb);
-user_dwyco_set_chat_server_status_callback=cb;
-cb=wrapped_cb_dwyco_set_chat_server_status_callback;
-_real_dwyco_set_chat_server_status_callback(cb);
-printret();
-}
-
-DWYCOEXPORT
-void
 dwyco_set_video_display_callback(DwycoVideoDisplayCallback cb)
 {
 printfunname("dwyco_set_video_display_callback");
@@ -1013,6 +986,16 @@ dwyco_database_online()
 {
 printfunname("dwyco_database_online");
 int _ret = _real_dwyco_database_online();
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_chat_online()
+{
+printfunname("dwyco_chat_online");
+int _ret = _real_dwyco_chat_online();
 printretval(_ret);
 return(_ret);
 }

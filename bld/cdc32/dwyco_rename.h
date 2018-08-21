@@ -9,7 +9,6 @@
 #define dwyco_set_chat_ctx_callback _real_dwyco_set_chat_ctx_callback 
 #define dwyco_set_chat_ctx_callback2 _real_dwyco_set_chat_ctx_callback2 
 #define dwyco_set_debug_message_callback _real_dwyco_set_debug_message_callback 
-#define dwyco_set_chat_server_status_callback _real_dwyco_set_chat_server_status_callback 
 #define dwyco_set_video_display_callback _real_dwyco_set_video_display_callback 
 #define dwyco_set_call_acceptance_callback _real_dwyco_set_call_acceptance_callback 
 #define dwyco_set_emergency_callback _real_dwyco_set_emergency_callback 
@@ -37,6 +36,7 @@
 #define dwyco_set_login_result_callback _real_dwyco_set_login_result_callback 
 #define dwyco_database_login _real_dwyco_database_login 
 #define dwyco_database_online _real_dwyco_database_online 
+#define dwyco_chat_online _real_dwyco_chat_online 
 #define dwyco_database_auth_remote _real_dwyco_database_auth_remote 
 #define dwyco_inhibit_database _real_dwyco_inhibit_database 
 #define dwyco_inhibit_pal _real_dwyco_inhibit_pal 
