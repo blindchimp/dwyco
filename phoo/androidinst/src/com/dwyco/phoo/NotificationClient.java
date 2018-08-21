@@ -36,6 +36,7 @@ package com.dwyco.phoo;
 import org.qtproject.qt5.android.bindings.QtActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.NotificationChannel;
 import android.content.Context;
 import android.content.Intent;
 import android.app.PendingIntent;
@@ -90,6 +91,17 @@ public class NotificationClient extends QtActivity
         //AlarmManager alarm = (AlarmManager) m_instance.getSystemService(Context.ALARM_SERVICE);
         //alarm.setRepeating(AlarmManager.RTC_WAKEUP, cur_cal.getTimeInMillis(), 1000 * 60, pintent);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+                int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                NotificationChannel channel = new NotificationChannel("dwyco", "Dwyco Channel", importance);
+                channel.setDescription("Dwyco message channel");
+                // Register the channel with the system; you can't change the importance
+                // or other notification behaviors after this
+                NotificationManager notificationManager = getSystemService(NotificationManager.class);
+                notificationManager.createNotificationChannel(channel);
+            }
+
     }
 
     @Override
@@ -109,8 +121,12 @@ public class NotificationClient extends QtActivity
         if(allow_notification == 0)
             return;
         NotificationManager m_notificationManager = (NotificationManager)m_instance.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        Notification.Builder m_builder = new Notification.Builder(m_instance);
+        Notification.Builder m_builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        m_builder = new Notification.Builder(m_instance, "dwyco");
+        } else {
+        m_builder = new Notification.Builder(m_instance);
+        }
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         //m_builder.setColor(m_instance.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco");
@@ -189,7 +205,14 @@ public class NotificationClient extends QtActivity
         pe.putString("tmp_pfx", tmp_pfx);
         pe.commit();
         prefs_lock.release();
-        //FirebaseCrash.report(new Exception("My first Android non-fatal error"));
+    }
+
+public static String get_token() {
+    prefs_lock.lock();
+    SharedPreferences sp = m_instance.getSharedPreferences("phoo", MODE_PRIVATE);
+    String token = sp.getString("token", "notoken");
+    prefs_lock.release();
+    return token;
 
     }
 

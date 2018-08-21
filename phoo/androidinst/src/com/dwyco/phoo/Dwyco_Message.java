@@ -24,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.File;
 import java.util.Arrays;
+import android.os.Build;
+import android.os.Build.VERSION;
 
 
 public class Dwyco_Message extends StickyIntentService {
@@ -167,7 +169,12 @@ public class Dwyco_Message extends StickyIntentService {
     private void set_notification() {
         NotificationManager m_notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        Notification.Builder m_builder = new Notification.Builder(context);
+        Notification.Builder m_builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        m_builder = new Notification.Builder(context, "dwyco");
+        } else {
+        m_builder = new Notification.Builder(context);
+        }
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         //m_builder.setColor(context.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco");

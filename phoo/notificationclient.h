@@ -46,6 +46,7 @@ public:
     void setNotification(const QString &notification);
     QString notification() const;
     void set_allow_notification(int);
+    QString get_token();
 
 
 signals:

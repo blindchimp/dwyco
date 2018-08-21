@@ -165,4 +165,15 @@ NotificationClient::set_quiet(int i)
 
 }
 
+QString
+NotificationClient::get_token()
+{
+    QAndroidJniObject token = QAndroidJniObject::callStaticObjectMethod<jstring>(
+                "com/dwyco/phoo/NotificationClient",
+                "get_token"
+                );
+
+    return token.toString();
+}
+
 #endif
