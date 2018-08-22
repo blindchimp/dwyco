@@ -198,10 +198,25 @@ Page {
                     ToolTip.text: "Request live video"
                 }
                 CallButtonLink {
+                    id: cancel_req_button
                     but_name: "cancel_req"
                     contentItem: Image {
                         anchors.centerIn: parent
                         source: mi("ic_cancel_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink4
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: cancel_req_button.visible
+                            ColorAnimation {
+                                target: bgblink4
+                                property: "color"
+                                from: "red"
+                                to: "white"
+                                duration: 1000
+                            }
+                        }
                     }
                     ToolTip.text: "Hangup"
 
@@ -466,13 +481,13 @@ Page {
             }
         }
         onSc_connect_terminated: {
-            if(chatbox.to_uid == uid) {
+            if(chatbox.to_uid === uid) {
                 console.log("CONNECT TERMINATED")
             }
         }
 
         onSc_connectedChanged: {
-                if(chatbox.to_uid == uid) {
+                if(chatbox.to_uid === uid) {
                     console.log("ConnectedChanged ", connected)
                     if(connected === 0 && vidpanel.visible) {
                         vidpanel.visible = false
