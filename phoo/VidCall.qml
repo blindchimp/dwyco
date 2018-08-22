@@ -2,15 +2,32 @@ import QtQuick 2.9
 import dwyco 1.0
 
 VidCallForm {
+    property bool paused: false
+
     Connections {
         target: core
 
         onVideo_display: {
-            vid_incoming.source = img_path
+            if(!paused) {
+                vid_incoming.source = img_path
+            }
         }
 
         onVideo_capture_preview: {
             vid_preview.source = img_path
+        }
+
+        onSc_rem_pause: {
+            console.log("pause");
+            paused = true
+            vid_incoming.source = mi("ic_pause_circle_outline_white_24dp.png")
+
+        }
+
+        onSc_rem_unpause: {
+            console.log("unpause");
+            paused = false
+
         }
 
     }
