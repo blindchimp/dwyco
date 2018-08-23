@@ -5428,6 +5428,11 @@ dwyco_make_special_zap_composition( int special_type, const char *user_id, const
         //m->force_server = 1;
         break;
     case DWYCO_SPECIAL_TYPE_USER:
+        m->special_type = DWYCO_SPECIAL_TYPE_USER;
+        if(user_block)
+        {
+            m->special_payload = vc(VC_BSTRING, user_block, len_user_block);
+        }
     default:
         delete m;
         return -1;
@@ -6671,6 +6676,8 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
     static vc palok("palok");
     static vc palrej("palrej");
     static vc dlv("dlv");
+    static vc user("user");
+
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc& v = *(vc *)ml;
     vc summary = v[0];
@@ -6690,6 +6697,8 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
                 *what_out = DWYCO_SUMMARY_PAL_REJECT;
             else if(what == dlv)
                 *what_out = DWYCO_SUMMARY_DELIVERED;
+            else if(what == user)
+                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
             else
                 *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
         }
@@ -6762,6 +6771,42 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
 }
 #endif
 
+
+DWYCOEXPORT
+int
+dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out)
+{
+    // this keeps the debugging stuff from crashing
+    *str_out = "";
+    *len_out = 0;
+
+    vc& v = *(vc *)ml;
+    vc summary = v[0];
+    if(summary[QM_IS_DIRECT].is_nil())
+        return 0; // unfetched server message doesn't have enough info on it
+    vc body;
+    body = direct_to_body2(summary);
+    if(body.is_nil())
+        return 0;
+
+    vc sv = body[QM_BODY_SPECIAL_TYPE];
+    if(sv[0] != vc("user"))
+        return 0;
+    vc msg_type_vec = sv[1];
+
+   vc payload = msg_type_vec[0];
+   if(payload.type() != VC_STRING)
+       return 0;
+
+    char *b = new char[payload.len()];
+    memcpy(b, (const char *)payload, payload.len());
+    *str_out = b;
+    *len_out = payload.len();
+
+    return 1;
+}
+
+
 // note: for the next two functions, uid MUST be equal to 0, as they
 // are broken otherwise. essentially, it turns out that i strip out the
 // special stuff when the msgs are saved (for vague security reasons.)
@@ -6777,6 +6822,7 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
     static vc palok("palok");
     static vc palrej("palrej");
     static vc dlv("dlv");
+    static vc user("user");
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc id(VC_BSTRING, msg_id, strlen(msg_id));
     if(uid == 0)
@@ -6800,6 +6846,8 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
                     *what_out = DWYCO_SUMMARY_PAL_REJECT;
                 else if(what == dlv)
                     *what_out = DWYCO_SUMMARY_DELIVERED;
+                else if(what == user)
+                    *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
                 else
                     *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
             }

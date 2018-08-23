@@ -77,6 +77,7 @@ public:
     // where you don't want to save as a sent message
     int dont_save_sent;
     int special_type;
+    vc special_payload;
 
     TMsgCompose();
     TMsgCompose(const TMsgCompose&);
