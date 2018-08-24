@@ -65,13 +65,20 @@ init_schema()
     sql_simple("create table if not exists fav_msgs ("
                "from_uid text,"
                "mid text unique on conflict ignore);"
-
               );
-    //sql_simple("create table if not exists indexed_flag (uid text primary key);");
+    sql_simple("create table if not exists msg_tags(from_uid text, mid text, tag text, unique(from_uid, mid, tag) on conflict ignore)");
+
+
     sql_simple("create index if not exists from_uid_idx on fav_msgs(from_uid);");
     sql_simple("create index if not exists mid_idx on fav_msgs(mid);");
-    //sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock desc);");
-    //sql_simple("create index if not exists date_idx on msg_idx(date desc);");
+
+    sql_simple("create index if not exists mt_from_uid_idx on msg_tags(from_uid)");
+    sql_simple("create index if not exists mt_mid_idx on msg_tags(mid)");
+    sql_simple("create index if not exists mt_tag_idx on msg_tags(tag)");
+
+    sql_simple("insert into msg_tags (from_uid, mid, tag) select from_uid, mid, '_fav' from fav_msgs");
+    sql_simple("delete from fav_msgs");
+
 
 }
 
@@ -139,18 +146,46 @@ sql_rollback_transaction()
 
 static
 void
-sql_insert_record(vc from_uid, vc mid)
+sql_insert_record(vc from_uid, vc mid, vc tag)
 {
     VCArglist a;
-    a.append("replace into fav_msgs values($1,$2);");
+    a.append("replace into msg_tags values($1,$2,$3);");
 
 
     a.append(to_hex(from_uid));
     a.append(mid);
+    a.append(tag);
 
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
         throw -1;
+}
+
+void
+sql_add_tag(vc from_uid, vc mid, vc tag)
+{
+    sql_insert_record(from_uid, mid, tag);
+}
+
+void
+sql_remove_tag(vc tag)
+{
+    try
+    {
+        sql_start_transaction();
+        VCArglist a;
+        a.append("delete from msg_tags where tag = $1;");
+        a.append(tag);
+        vc res = sqlite3_bulk_query(Db, &a);
+        if(res.is_nil())
+            throw -1;
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+
 }
 
 void
@@ -160,7 +195,7 @@ sql_fav_remove_uid(vc uid)
     {
         sql_start_transaction();
         VCArglist a;
-        a.append("delete from fav_msgs where from_uid = $1;");
+        a.append("delete from msg_tags where from_uid = $1;");
         a.append(to_hex(uid));
         vc res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
@@ -181,8 +216,29 @@ sql_fav_remove_mid(vc mid)
     {
         sql_start_transaction();
         VCArglist a;
-        a.append("delete from fav_msgs where mid = $1;");
+        a.append("delete from msg_tags where mid = $1;");
         a.append(mid);
+        vc res = sqlite3_bulk_query(Db, &a);
+        if(res.is_nil())
+            throw -1;
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+}
+
+void
+sql_remove_mid_tag(vc mid, vc tag)
+{
+    try
+    {
+        sql_start_transaction();
+        VCArglist a;
+        a.append("delete from msg_tags where mid = $1 and tag = $2;");
+        a.append(mid);
+        a.append(tag);
         vc res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
             throw -1;
@@ -199,11 +255,11 @@ sql_fav_set_fav(vc from_uid, vc mid, int fav)
 {
     if(!fav)
     {
-        sql_fav_remove_mid(mid);
+        sql_remove_mid_tag(mid, "_fav");
     }
     else
     {
-        sql_insert_record(from_uid, mid);
+        sql_insert_record(from_uid, mid, "_fav");
     }
 }
 
@@ -211,7 +267,7 @@ vc
 sql_fav_get_fav_set(vc from_uid)
 {
     VCArglist a;
-    a.append("select mid from fav_msgs where from_uid = $1;");
+    a.append("select mid from msg_tags where from_uid = $1 and tag = '_fav';");
     a.append(to_hex(from_uid));
 
     vc res = sqlite3_bulk_query(Db, &a);
@@ -232,7 +288,7 @@ int
 sql_fav_has_fav(vc from_uid)
 {
     VCArglist a;
-    a.append("select from_uid from fav_msgs where from_uid = $1 limit 1;");
+    a.append("select from_uid from msg_tags where from_uid = $1 and tag = '_fav' limit 1;");
     a.append(to_hex(from_uid));
 
     vc res = sqlite3_bulk_query(Db, &a);
@@ -248,7 +304,7 @@ int
 sql_fav_is_fav(vc mid)
 {
     VCArglist a;
-    a.append("select count(*) from fav_msgs where mid = $1;");
+    a.append("select count(*) from msg_tags where mid = $1 and tag = '_fav' limit 1;");
     a.append(mid);
 
     vc res = sqlite3_bulk_query(Db, &a);
