@@ -315,4 +315,27 @@ sql_fav_is_fav(vc mid)
     return c != 0;
 
 }
+
+vc
+sql_get_tagged_mids(vc tag)
+{
+    DwString mfn = newfn("mi.sql");
+    sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
+    vc res;
+    try {
+        VCArglist a;
+        a.append("select from_uid, mid from msg_tags,mi.msg_idx using(mid) where tag = $1 order by logical_clock asc;");
+        a.append(tag);
+
+        res = sqlite3_bulk_query(Db, &a);
+        if(res.is_nil())
+            throw -1;
+    } catch (...) {
+        res = vc(VC_VECTOR);
+    }
+    sql_simple("detach mi;");
+
+    return res;
+
+}
 }

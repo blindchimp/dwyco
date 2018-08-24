@@ -7604,6 +7604,41 @@ dwyco_pal_get_list()
 
 DWYCOEXPORT
 void
+dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    vc bmid(mid);
+    sql_add_tag(buid, bmid, tag);
+}
+
+DWYCOEXPORT
+void
+dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    vc bmid(mid);
+    sql_remove_mid_tag(buid, bmid);
+}
+
+DWYCOEXPORT
+void
+dwyco_unset_all_msg_tag(const char *tag)
+{
+    sql_remove_tag(tag);
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag)
+{
+    vc res = sql_get_tagged_mids(tag);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
+}
+
+
+DWYCOEXPORT
+void
 dwyco_set_fav_msg(const char *uid, int len_uid, const char *mid, int fav)
 {
     vc buid(VC_BSTRING, uid, len_uid);
