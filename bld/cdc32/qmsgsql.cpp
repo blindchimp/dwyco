@@ -479,7 +479,7 @@ sql_load_index(vc uid, int max_count)
 {
     VCArglist a;
     a.append("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
-           "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock "
+           "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
            " from msg_idx where assoc_uid = $1 order by logical_clock desc limit $2;");
     a.append(to_hex(uid));
     a.append(max_count);

@@ -338,4 +338,30 @@ sql_get_tagged_mids(vc tag)
     return res;
 
 }
+
+vc
+sql_get_tagged_idx(vc tag)
+{
+    DwString mfn = newfn("mi.sql");
+    sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
+    vc res;
+    try {
+        VCArglist a;
+        a.append("select "
+                 "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+                 "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
+                 " from msg_tags,mi.msg_idx using(mid) where tag = $1 order by logical_clock desc;");
+        a.append(tag);
+
+        res = sqlite3_bulk_query(Db, &a);
+        if(res.is_nil())
+            throw -1;
+    } catch (...) {
+        res = vc(VC_VECTOR);
+    }
+    sql_simple("detach mi;");
+
+    return res;
+
+}
 }
