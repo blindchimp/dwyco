@@ -2258,6 +2258,21 @@ group_add(QString name, QByteArray huid)
 }
 
 static
+QByteArray
+group_msg(QString name)
+{
+    QList<QByteArray> members = Groups.values(name);
+
+    QByteArray payload;
+    QDataStream out(&payload, QIODevice::WriteOnly);
+    QList<QVariant> cmd;
+    cmd.append("group-msg");
+    cmd.append(name);
+    out << cmd;
+    return payload;
+}
+
+static
 void
 group_delete(QString name)
 {
@@ -2311,6 +2326,29 @@ send_group_leave(QString name)
     }
 }
 
+static
+void
+send_group_msg(QString name, QByteArray msg)
+{
+    QByteArray cmd = group_msg(name);
+    QList<QByteArray> send_list = Groups.values(name);
+    for(int i = 0; i < send_list.count(); ++i)
+    {
+        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
+        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
+        // note: if my uid is in the group list, i'll get a copy of the message
+        // saved as a sent message to myself. this is ok, but it needs to be tagged
+        // properly so it can be re-incorporated into the model. i think if the msg
+        // is text only, this should work as it will be delivered to the inbox
+        // as usual.
+        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                            msg.constData(), msg.length(), 0, 0, 0, 0))
+        {
+            dwyco_delete_zap_composition(compid);
+        }
+    }
+}
+
 
 static
 void
@@ -2344,10 +2382,30 @@ process_special_msg(QByteArray mid)
     else if(what == QByteArray("group-leave"))
     {
         QMutableMapIterator<QString, QByteArray> i(Groups);
-          while (i.findNext(DwycoCore::My_uid.toHex())) {
+          while (i.findNext(DwycoCore::My_uid.toHex()))
+          {
               if (i.key() == name)
                   i.remove();
           }
+    }
+    else if(what == QByteArray("group-msg"))
+    {
+        // this is where we could re-write the "from" field on the
+        // message to be SHA(group_name). then when we saved the
+        // message, it would get refiled into a normal folder and it
+        // could be manipulated as if it was from a single user.
+        // the actual user it came from could be stored... hmmm
+        // the profile would have to be auto-created...
+        // sounds like a lot of work
+        //
+        // alternately, we save the message as usual, and tag it
+        // with the group name.
+
+        dwyco_save_message(mid.constData());
+        dwyco_set_msg_tag(0, 0, mid.constData(), name.toLatin1().constData());
+
+        // emit a signal for a new group message
+
     }
 
 }
@@ -2398,6 +2456,12 @@ DwycoCore::service_channels()
     if(Suspended)
         return 0;
     dwyco_service_channels(&spin);
+    static int been_here;
+    if(!been_here)
+    {
+        been_here = 1;
+        send_group_add("mumble", My_uid.toHex());
+    }
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
@@ -2762,7 +2826,7 @@ dwyco_register_qml(QQmlContext *root)
     CamListModel = new QQmlVariantListModel;
     root->setContextProperty("camListModel", CamListModel);
 
-
+    // current users in the chat server, updated dynamically
     ChatListModel * clm = new ChatListModel;
     Chat_sort_proxy = new ChatSortFilterModel;
     Chat_sort_proxy->setSourceModel(clm);
