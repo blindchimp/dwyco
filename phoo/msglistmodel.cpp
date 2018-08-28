@@ -356,6 +356,42 @@ msglist_model::fav_all_selected(int f)
 }
 
 void
+msglist_model::tag_all_selected(const char *tag)
+{
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    foreach (const QString &value, Selected)
+    {
+        QByteArray b = value.toLatin1();
+        DWYCO_LIST l;
+        if(dwyco_qd_message_to_body(&l, b.constData(), b.length()))
+        {
+            dwyco_list_release(l);
+            continue;
+        }
+        dwyco_set_msg_tag(buid.constData(), buid.length(), b.constData(), tag);
+    }
+    reload_model();
+}
+
+void
+msglist_model::untag_all_selected(const char *tag)
+{
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    foreach (const QString &value, Selected)
+    {
+        QByteArray b = value.toLatin1();
+        DWYCO_LIST l;
+        if(dwyco_qd_message_to_body(&l, b.constData(), b.length()))
+        {
+            dwyco_list_release(l);
+            continue;
+        }
+        dwyco_unset_msg_tag(buid.constData(), buid.length(), b.constData(), tag);
+    }
+    reload_model();
+}
+
+void
 msglist_model::setUid(const QString &uid)
 {
     if(m_uid != uid)

@@ -5433,6 +5433,7 @@ dwyco_make_special_zap_composition( int special_type, const char *user_id, const
         {
             m->special_payload = vc(VC_BSTRING, user_block, len_user_block);
         }
+        break;
     default:
         delete m;
         return -1;
@@ -7607,17 +7608,14 @@ void
 dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag)
 {
     vc buid(VC_BSTRING, uid, len_uid);
-    vc bmid(mid);
-    sql_add_tag(buid, bmid, tag);
+    sql_add_tag(buid, mid, tag);
 }
 
 DWYCOEXPORT
 void
-dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid)
+dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag)
 {
-    vc buid(VC_BSTRING, uid, len_uid);
-    vc bmid(mid);
-    sql_remove_mid_tag(buid, bmid);
+    sql_remove_mid_tag(mid, tag);
 }
 
 DWYCOEXPORT

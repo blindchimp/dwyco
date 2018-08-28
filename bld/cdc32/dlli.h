@@ -755,7 +755,7 @@ int DWYCOEXPORT dwyco_get_fav_msg(const char *uid, int len_uid, const char *mid)
 int DWYCOEXPORT dwyco_clear_user_unfav(const char *uid, int len_uid);
 
 void DWYCOEXPORT dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
-void DWYCOEXPORT dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid);
+void DWYCOEXPORT dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
 void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
 int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 

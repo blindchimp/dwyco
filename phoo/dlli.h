@@ -755,7 +755,7 @@ int DWYCOEXPORT dwyco_get_fav_msg(const char *uid, int len_uid, const char *mid)
 int DWYCOEXPORT dwyco_clear_user_unfav(const char *uid, int len_uid);
 
 void DWYCOEXPORT dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
-void DWYCOEXPORT dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid);
+void DWYCOEXPORT dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
 void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
 int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 
@@ -1032,6 +1032,7 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 #define DWYCO_MSG_IDX_ATT_IS_SHORT_VIDEO "010"
 #define DWYCO_MSG_IDX_IS_DELIVERED "011"
 #define DWYCO_MSG_IDX_IS_VIEWED "012"
+#define DWYCO_MSG_IDX_ASSOC_UID "013"
 
 // DWYCO_QD_MSG_LIST, list of messages that are not sent yet.
 #define DWYCO_QD_MSG_RECIPIENT "000"
