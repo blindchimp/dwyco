@@ -1034,9 +1034,10 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 #define DWYCO_MSG_IDX_ATT_HAS_VIDEO "008"
 #define DWYCO_MSG_IDX_ATT_HAS_AUDIO "009"
 #define DWYCO_MSG_IDX_ATT_IS_SHORT_VIDEO "010"
-#define DWYCO_MSG_IDX_ASSOC_UID "011"
-#define DWYCO_MSG_IDX_IS_DELIVERED "012"
-#define DWYCO_MSG_IDX_IS_VIEWED "013"
+#define DWYCO_MSG_IDX_LOGICAL_CLOCK "011"
+#define DWYCO_MSG_IDX_ASSOC_UID "012"
+#define DWYCO_MSG_IDX_IS_DELIVERED "013"
+#define DWYCO_MSG_IDX_IS_VIEWED "014"
 
 
 // DWYCO_QD_MSG_LIST, list of messages that are not sent yet.
