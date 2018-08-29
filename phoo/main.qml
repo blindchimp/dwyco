@@ -468,6 +468,12 @@ ApplicationWindow {
 
     }
 
+    SimpleTagMsgBrowse {
+        id: simp_tag_browse
+        model: themsglist
+        visible: false
+    }
+
 
     ProfileView {
         id: theprofileview
@@ -683,6 +689,10 @@ ApplicationWindow {
         //initialItem: userlist
         anchors.fill: parent
         visible: {pwdialog.allow_access === 1}
+        onDepthChanged: {
+            if(depth === 1)
+                simp_tag_browse.to_tag = ""
+        }
 
         
     }
