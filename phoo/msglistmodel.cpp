@@ -47,7 +47,8 @@ enum {
     SELECTED,
     DIRECT,
     FETCH_STATE,
-    ATTACHMENT_PERCENT
+    ATTACHMENT_PERCENT,
+    ASSOC_UID, // who the message is from (or to, if sent msg)
 };
 
 static int
@@ -414,6 +415,28 @@ msglist_model::uid() const
 }
 
 void
+msglist_model::setTag(const QString& tag)
+{
+    if(m_tag != tag)
+    {
+        Selected.clear();
+        msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
+        if(mr)
+        {
+            mr->setTag(tag);
+            m_tag = tag;
+            emit tagChanged();
+        }
+    }
+}
+
+QString
+msglist_model::tag() const
+{
+    return m_tag;
+}
+
+void
 msglist_model::reload_model()
 {
     msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
@@ -522,13 +545,24 @@ msglist_raw::reload_model()
     count_msg_idx = 0;
     count_qd_msgs = 0;
     // ugh, need to fix this to validate the uid some way
-    if(buid.length() != 10)
+    if(buid.length() != 10 && m_tag.length() == 0)
     {
         endResetModel();
         return;
     }
 
-    dwyco_get_message_index(&msg_idx, buid.constData(), buid.length());
+    // note: setting the tag overrides the uid
+    if(m_tag.length() > 0)
+    {
+        dwyco_get_tagged_idx(&msg_idx, m_tag.toLatin1().constData());
+        dwyco_list_numelems(msg_idx, &count_msg_idx, 0);
+        endResetModel();
+        return;
+    }
+    else if(buid.length() == 10)
+    {
+        dwyco_get_message_index(&msg_idx, buid.constData(), buid.length());
+    }
     dwyco_get_qd_messages(&qd_msgs, buid.constData(), buid.length());
     dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());
     if(msg_idx)
@@ -547,6 +581,16 @@ msglist_raw::setUid(const QString &uid)
     if(m_uid != uid)
     {
         m_uid = uid;
+        reload_model();
+    }
+}
+
+void
+msglist_raw::setTag(const QString& tag)
+{
+    if(m_tag != tag)
+    {
+        m_tag = tag;
         reload_model();
     }
 }
@@ -590,6 +634,7 @@ msglist_raw::roleNames() const
     rn(DIRECT);
     rn(FETCH_STATE);
     rn(ATTACHMENT_PERCENT);
+    rn(ASSOC_UID);
 #undef rn
     return roles;
 }
@@ -902,16 +947,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     int r = index.row();
 
     int r2 = count_inbox_msgs;
-//    if(inbox_msgs)
-//    {
-//        dwyco_list_numelems(inbox_msgs, &r2, 0);
-//    }
-
     int r1 = count_qd_msgs;
-//    if(qd_msgs)
-//    {
-//        dwyco_list_numelems(qd_msgs, &r1, 0);
-//    }
 
     if(r < r2)
     {
@@ -1060,7 +1096,12 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray mid;
         if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
             return "unknown";
-        QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+        QByteArray buid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, buid))
+        {
+            return "unknown";
+        }
+        buid = QByteArray::fromHex(buid);
         DWYCO_SAVED_MSG_LIST sm;
         if(!dwyco_get_saved_message(&sm, buid.constData(), buid.length(), mid.constData()))
             return "unknown";
@@ -1105,7 +1146,10 @@ msglist_raw::get_msg_text(int row) const
         return "";
     DWYCO_SAVED_MSG_LIST sm;
 
-    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    QByteArray buid;
+    if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_ASSOC_UID, buid))
+        return "";
+    buid = QByteArray::fromHex(buid);
     if(!dwyco_get_saved_message(&sm, buid.constData(), buid.length(), mid.constData()))
         return "";
     simple_scoped qsm(sm);
@@ -1142,13 +1186,16 @@ QString
 msglist_raw::preview_filename(int row) const
 {
     QByteArray pfn;
-    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    QByteArray buid;
     QByteArray mid;
     int is_file;
     QString local_time;
 
     if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_MID, mid))
         return "";
+    if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_ASSOC_UID, buid))
+        return "";
+    buid = QByteArray::fromHex(buid);
     QByteArray full_size;
 
     if(!preview_saved_msg(buid, mid, pfn, is_file, full_size, local_time))

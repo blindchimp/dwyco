@@ -16,6 +16,7 @@ class msglist_model : public QSortFilterProxyModel
 {
     Q_OBJECT
     Q_PROPERTY(QString uid READ uid WRITE setUid NOTIFY uidChanged)
+    Q_PROPERTY(QString tag READ tag WRITE setTag NOTIFY tagChanged)
 
 
 public:
@@ -26,7 +27,8 @@ public:
     void setUid(const QString &uid);
     QString uid() const;
 
-    QString m_uid;
+    void setTag(const QString& tag);
+    QString tag() const;
 
     Q_INVOKABLE void reload_model();
 
@@ -48,6 +50,9 @@ public slots:
     void msg_recv_status(int cmd, const QString& mid);
 
 private:
+    QString m_uid;
+    QString m_tag;
+
     int filter_show_sent;
     int filter_show_recv;
     int filter_last_n;
@@ -55,6 +60,7 @@ private:
 
 signals:
     void uidChanged();
+    void tagChanged();
 
 };
 
@@ -71,6 +77,7 @@ public:
     virtual QHash<int, QByteArray> roleNames() const;
 
     void setUid(const QString& uid);
+    void setTag(const QString& tag);
     void reload_model();
     void reload_inbox_model();
 
@@ -83,6 +90,7 @@ private:
     int count_inbox_msgs;
 
     QString m_uid;
+    QString m_tag;
 
     QVariant qd_data (int r, int role = Qt::DisplayRole ) const;
     QVariant inbox_data (int r, int role = Qt::DisplayRole ) const;
