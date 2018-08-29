@@ -273,6 +273,19 @@ msglist_model::toggle_selected(QByteArray bmid)
 }
 
 void
+msglist_model::set_all_selected()
+{
+    int n = rowCount();
+    for(int i = 0; i < n; ++i)
+    {
+        QModelIndex mi = index(i, 0);
+        QByteArray mid = data(mi, MID).toByteArray();
+        Selected.insert(mid);
+        emit dataChanged(mi, mi, QVector<int>(1, SELECTED));
+    }
+}
+
+void
 msglist_model::set_all_unselected()
 {
     QSet<QByteArray> oselected = Selected;
@@ -357,7 +370,7 @@ msglist_model::fav_all_selected(int f)
 }
 
 void
-msglist_model::tag_all_selected(const char *tag)
+msglist_model::tag_all_selected(QByteArray tag)
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     foreach (const QString &value, Selected)
@@ -369,13 +382,13 @@ msglist_model::tag_all_selected(const char *tag)
             dwyco_list_release(l);
             continue;
         }
-        dwyco_set_msg_tag(buid.constData(), buid.length(), b.constData(), tag);
+        dwyco_set_msg_tag(buid.constData(), buid.length(), b.constData(), tag.constData());
     }
     reload_model();
 }
 
 void
-msglist_model::untag_all_selected(const char *tag)
+msglist_model::untag_all_selected(QByteArray tag)
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     foreach (const QString &value, Selected)
@@ -387,7 +400,7 @@ msglist_model::untag_all_selected(const char *tag)
             dwyco_list_release(l);
             continue;
         }
-        dwyco_unset_msg_tag(buid.constData(), buid.length(), b.constData(), tag);
+        dwyco_unset_msg_tag(buid.constData(), buid.length(), b.constData(), tag.constData());
     }
     reload_model();
 }

@@ -34,13 +34,6 @@ Page {
         themsglist.set_filter(filter_show_sent, 1, -1, filter_show_only_fav)
     }
 
-//    onTo_uidChanged: {
-//        if(to_uid === "")
-//            return
-//        cur_source = core.uid_to_profile_preview(to_uid)
-//        top_toolbar_text.text = core.uid_to_name(to_uid)
-//        ind_online = core.get_established_state(to_uid)
-//    }
     onTo_tagChanged: {
         themsglist.tag = to_tag
     }

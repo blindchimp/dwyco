@@ -72,6 +72,12 @@ Page {
                         multiselect_mode = false
                     }
                 }
+                MenuItem {
+                    text: "Select All"
+                    onTriggered: {
+                        model.set_all_selected()
+                    }
+                }
             }
         }
     }

@@ -82,6 +82,21 @@ init_schema()
 
 }
 
+static
+void
+sql_sync_off()
+{
+    sql_simple("pragma synchronous=off;");
+}
+
+static
+void
+sql_sync_on()
+{
+    sql_simple("pragma synchronous=full;");
+
+}
+
 void
 init_fav_sql()
 {
@@ -93,6 +108,7 @@ init_fav_sql()
         return;
     }
     init_schema();
+    sql_sync_off();
 }
 
 void
@@ -118,21 +134,6 @@ void
 sql_commit_transaction()
 {
     sql_simple("release fav;");
-}
-
-static
-void
-sql_sync_off()
-{
-    sql_simple("pragma synchronous=off;");
-}
-
-static
-void
-sql_sync_on()
-{
-    sql_simple("pragma synchronous=full;");
-
 }
 
 static
