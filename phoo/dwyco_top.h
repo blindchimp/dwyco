@@ -281,6 +281,36 @@ signals:
     void sc_connect_terminated(QString uid);
     void sc_connectedChanged(QString uid, int connected);
 
+    void sc_cam_is_off(QString uid);
+    void sc_cam_is_on(QString uid);
+    void sc_mute_on(QString uid);
+    void sc_mute_off(QString uid);
+    void sc_cts_on(QString uid);
+    void sc_cts_off(QString uid);
+    void sc_audio_none(QString uid);
+
+    // remote video manipulation signals
+
+    void sc_rem_pause(QString uid);
+    void sc_rem_unpause(QString uid);
+    void sc_rem_cam_off(QString uid);
+    void sc_rem_cam_on(QString uid);
+    void sc_rem_cam_none(QString uid);
+
+    // remote audio state signals
+
+    void sc_rem_cts_on(QString uid);
+    void sc_rem_cts_off(QString uid);
+    void sc_rem_audio_on(QString uid);
+    void sc_rem_audio_off(QString uid);
+    void sc_rem_audio_none(QString uid);
+    void sc_rem_mute_on(QString uid);
+    void sc_rem_mute_off(QString uid);
+    void sc_rem_mute_unknown(QString uid);
+
+
+
+
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
     void msg_recv_state(int cmd, const QString& mid);

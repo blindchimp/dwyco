@@ -16,22 +16,18 @@ import dwyco 1.0
 
 
 Page {
-    id: chatbox_page
-    //anchors.fill: parent
+    id: groupchat_page
     property alias model: listView1.model
     property alias listview: listView1
-    property string to_uid
+    property string group;
     property string file_to_send
     property url url_to_send
     //property alias pick_pic: picture_picker.visible
     property bool android_hack: false
     property string android_img_filename
-    property int ind_typing: 0
-    property int ind_online: 0
     property int inh_block_warning: 0
     property bool multiselect_mode: false
     property url cur_source
-    property var call_buttons_model
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -66,28 +62,7 @@ Page {
                         multiselect_mode = false
                     }
                 }
-                MenuItem {
-                    text: "Hide"
-                    onTriggered: {
-                        model.tag_all_selected("_hid")
-                        multiselect_mode = false
-                    }
-                }
-                MenuItem {
-                    text: "UnHide"
-                    onTriggered: {
-                        model.untag_all_selected("_hid")
-                        multiselect_mode = false
-                    }
-                }
-                MenuItem {
-                    text: "Select All"
-                    onTriggered: {
-                        model.set_all_selected()
-                    }
-                }
             }
-
         }
     }
 
@@ -151,12 +126,7 @@ Page {
 
                     CircularImage {
                         id: top_toolbar_img
-                        source: {
-                            if(to_uid === "")
-                                return
-                            return (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid))) ?
-                                    cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
-                        }
+                        source: "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         fillMode: Image.PreserveAspectCrop
                         width: parent.height
                         height: parent.height
@@ -164,12 +134,11 @@ Page {
                     }
                     Text {
                         id:top_toolbar_text
-                        //width: dp(160)
+			text: "Group"
                         clip: true
                         anchors.leftMargin: 2
                         fontSizeMode: Text.Fit
                         anchors.top: parent.top
-                        //anchors.bottom: parent.bottom
                         anchors.left: top_toolbar_img.right
                     }
                     Label {
@@ -241,78 +210,108 @@ Page {
                     }
                     ToolTip.text: "Hangup"
 
-//                }
-//                CallButtonLink {
-//                    but_name: "hangup"
-//                    contentItem: Image {
-//                        anchors.centerIn: parent
-//                        source: mi("ic_cancel_black_24dp.png")
-//                    }
-//                    onVisibleChanged: {
-//                        if(visible) {
-//                            vidpanel.visible = true
-//                            core.enable_video_capture_preview(1)
-//                        } else {
-//                            vidpanel.visible = false
-//                            core.enable_video_capture_preview(0)
-//                        }
-//                    }
-//                    ToolTip.text: "Hangup"
+                }
+                CallButtonLink {
+                    but_name: "hangup"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+                    onVisibleChanged: {
+                        if(visible) {
+                            vidpanel.visible = true
+                            core.enable_video_capture_preview(1)
+                        } else {
+                            vidpanel.visible = false
+                            core.enable_video_capture_preview(0)
+                        }
+                    }
+                    ToolTip.text: "Hangup"
 
-//                }
-//                CallButtonLink {
-//                    id: call_accept_button
-//                    but_name: "accept"
-//                    contentItem: Image {
-//                        anchors.centerIn: parent
-//                        source: mi("ic_videocam_black_24dp.png")
-//                    }
-//                    background: Rectangle {
-//                        id: bgblink
-//                        ParallelAnimation {
-//                            loops: Animation.Infinite
-//                            running: call_accept_button.visible
-//                            ColorAnimation {
-//                                target: bgblink
-//                                property: "color"
-//                                from: "white"
-//                                to: "green"
-//                                duration: 1000
-//                            }
-//                        }
-//                    }
-//                    ToolTip.text: "Accept live video"
-//                }
-//                CallButtonLink {
-//                    id: call_send_accept_button
-//                    but_name: "accept_and_send"
-//                    contentItem: Image {
-//                        anchors.centerIn: parent
-//                        source: mi("ic_videocam_black_24dp.png")
-//                    }
-//                    background: Rectangle {
-//                        id: bgblink2
-//                        ParallelAnimation {
-//                            loops: Animation.Infinite
-//                            running: call_send_accept_button.visible
-//                            ColorAnimation {
-//                                target: bgblink2
-//                                property: "color"
-//                                from: "white"
-//                                to: "green"
-//                                duration: 1000
-//                            }
-//                        }
-//                    }
-//                    ToolTip.text: "Start two-way video"
-//                }
-//                CallButtonLink {
-//                    id: call_reject_button
-//                    but_name: "reject"
-//                    contentItem: Image {
-//                        anchors.centerIn: parent
-//                        source: mi("ic_cancel_black_24dp.png")
-//                    }
+                }
+                CallButtonLink {
+                    id: call_accept_button
+                    but_name: "accept"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_videocam_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_accept_button.visible
+                            ColorAnimation {
+                                target: bgblink
+                                property: "color"
+                                from: "white"
+                                to: "green"
+                                duration: 1000
+                            }
+                        }
+                    }
+                    ToolTip.text: "Accept live video"
+                }
+                CallButtonLink {
+                    id: call_send_accept_button
+                    but_name: "accept_and_send"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_videocam_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink2
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_send_accept_button.visible
+                            ColorAnimation {
+                                target: bgblink2
+                                property: "color"
+                                from: "white"
+                                to: "green"
+                                duration: 1000
+                            }
+                        }
+                    }
+                    ToolTip.text: "Start two-way video"
+                }
+                CallButtonLink {
+                    id: call_reject_button
+                    but_name: "reject"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink3
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_reject_button.visible
+                            ColorAnimation {
+                                target: bgblink3
+                                property: "color"
+                                from: "red"
+                                to: "white"
+                                duration: 1000
+                            }
+                        }
+                    }
+                    ToolTip.text: "Decline live video"
+
+                }
+
+                CallButtonLink {
+                    id: mute_button
+                    but_name: "mute_button"
+                    contentItem: Image {
+                        id: mic_icon
+                        anchors.centerIn: parent
+                        source: mi("ic_mic_black_24dp.png")
+                    }
+                    onCheckedChanged: {
+                        mic_icon.source = checked ? mi("ic_mic_black_24dp.png") : mi("ic_mic_off_black_24dp.png")
+                    }
+
 //                    background: Rectangle {
 //                        id: bgblink3
 //                        ParallelAnimation {
@@ -327,39 +326,9 @@ Page {
 //                            }
 //                        }
 //                    }
-//                    ToolTip.text: "Decline live video"
+                    ToolTip.text: "Toggle mic"
 
-//                }
-
-//                CallButtonLink {
-//                    id: mute_button
-//                    but_name: "mute_button"
-//                    contentItem: Image {
-//                        id: mic_icon
-//                        anchors.centerIn: parent
-//                        source: mi("ic_mic_black_24dp.png")
-//                    }
-//                    onCheckedChanged: {
-//                        mic_icon.source = checked ? mi("ic_mic_black_24dp.png") : mi("ic_mic_off_black_24dp.png")
-//                    }
-
-////                    background: Rectangle {
-////                        id: bgblink3
-////                        ParallelAnimation {
-////                            loops: Animation.Infinite
-////                            running: call_reject_button.visible
-////                            ColorAnimation {
-////                                target: bgblink3
-////                                property: "color"
-////                                from: "red"
-////                                to: "white"
-////                                duration: 1000
-////                            }
-////                        }
-////                    }
-//                    ToolTip.text: "Toggle mic"
-
-//                }
+                }
 
 
                 TipButton {
@@ -397,14 +366,14 @@ Page {
 
                             }
                         }
-//                        MenuItem {
-//                            text: "Send video message"
-//                            onTriggered: {
-//                                core.try_connect(to_uid)
-//                                dwyco_vid_rec.uid = to_uid
-//                                stack.push(dwyco_vid_rec)
-//                            }
-//                        }
+                        MenuItem {
+                            text: "Send video message"
+                            onTriggered: {
+                                core.try_connect(to_uid)
+                                dwyco_vid_rec.uid = to_uid
+                                stack.push(dwyco_vid_rec)
+                            }
+                        }
 
                         MenuItem {
                             text: "Browse Msgs"
@@ -464,7 +433,7 @@ Page {
         color: primary_dark
         gradient: Gradient {
             GradientStop { position: 0.0; color: primary_light }
-            GradientStop { position: 1.0; color: primary_dark}
+            GradientStop { position: 1.0; color: amber_dark}
         }
     }
     
@@ -478,11 +447,6 @@ Page {
 
     Connections {
         target: core
-        onSc_rem_keyboard_active : {
-            if(uid === to_uid) {
-                ind_typing = active
-            }
-        }
         onNew_msg : {
             // if we're visible, reset the unviewed msgs thing since presumably
             // we can see it. might want to set it if the view is scrolled up
@@ -493,35 +457,7 @@ Page {
             }
         }
         onSys_uid_resolved: {
-            if(chatbox.to_uid === uid) {
-                // try to defeat caching since the actual name of the name
-                // of the "preview url" hasn't changed, but the contents have
-                cur_source = ""
-                cur_source = core.uid_to_profile_preview(uid)
-                top_toolbar_text.text = core.uid_to_name(uid)
-            }
         }
-        onSc_connect_terminated: {
-            if(chatbox.to_uid === uid) {
-                console.log("CONNECT TERMINATED")
-            }
-        }
-
-        onSc_connectedChanged: {
-                if(chatbox.to_uid === uid) {
-                    console.log("ConnectedChanged ", connected)
-                    if(connected === 0 && vidpanel.visible) {
-                        vidpanel.visible = false
-                        core.enable_video_capture_preview(0)
-                    }
-                    ind_online = connected === 1 ? true : false
-                }
-            }
-//        onIgnore_event: {
-//            if(uid === to_uid) {
-//               to_uid = ""
-//            }
-//        }
 
     }
 
@@ -545,7 +481,7 @@ Page {
         top_toolbar_text.text = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
-        //call_buttons_model = core.get_button_model(to_uid)
+        call_buttons_model = core.get_button_model(to_uid)
     }
 
     Loader {
@@ -584,11 +520,6 @@ Page {
             url_to_send = ""
             stack.pop()
         }
-    }
-
-    VidView {
-        id: vid_call_view
-        visible: false
     }
 
     RowLayout {
@@ -803,15 +734,6 @@ Page {
             visible: IS_ACTIVE
             active: IS_ACTIVE
         }
-//        Loader {
-//            id: pulse
-//            anchors.centerIn: ditem
-//            anchors.fill: ditem
-//            anchors.margins: mm(1)
-//            visible: {IS_ACTIVE && ATTACHMENT_PERCENT === 0.0}
-//            source: "qrc:/PulseLoader.qml"
-//            active: IS_ACTIVE
-//        }
 
 
         MouseArea {

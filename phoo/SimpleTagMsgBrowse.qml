@@ -14,7 +14,7 @@ import QtQuick.Dialogs 1.2
 
 Page {
     property alias model: grid.model
-    property string to_uid;
+    property string to_tag;
     property bool multiselect_mode: false
     property url cur_source
     property int ind_online: 0
@@ -34,12 +34,8 @@ Page {
         themsglist.set_filter(filter_show_sent, 1, -1, filter_show_only_fav)
     }
 
-    onTo_uidChanged: {
-        if(to_uid === "")
-            return
-        cur_source = core.uid_to_profile_preview(to_uid)
-        top_toolbar_text.text = core.uid_to_name(to_uid)
-        ind_online = core.get_established_state(to_uid)
+    onTo_tagChanged: {
+        themsglist.tag = to_tag
     }
 
     onMultiselect_modeChanged: {
@@ -149,19 +145,8 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
-                    CircularImage {
-                        id: top_toolbar_img
-                        source: {
-                            if(to_uid === "")
-                                return
-                            return (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid))) ?
-                                    cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
-                        }
-                        fillMode: Image.PreserveAspectCrop
-                        width: parent.height
-                        height: parent.height
 
-                    }
+
                     Text {
                         id:top_toolbar_text
                         //width: dp(160)
@@ -170,33 +155,11 @@ Page {
                         fontSizeMode: Text.Fit
                         anchors.top: parent.top
                         //anchors.bottom: parent.bottom
-                        anchors.left: top_toolbar_img.right
+                        anchors.left: prof.left
+                        text: "Tag:"
                     }
-                    Label {
-                        anchors.bottom: parent.bottom
-                        anchors.left: top_toolbar_img.right
-                        anchors.leftMargin: 2
-                        text: "online"
-                        color: "white"
-                        background: Rectangle {
-                            color: "indigo"
-                            radius: 3
-                        }
-                        visible: ind_online === 1
-                    }
-                    MouseArea {
-                        //anchors.fill: parent
-                        anchors.left: parent.left
-                        anchors.right: top_toolbar_img.right
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-//                        color: "black"
-//                        z:10
-//                        visible: true
-                        onClicked: {
-                            stack.pop()
-                        }
-                    }
+
+
 
                 }
 
@@ -251,45 +214,45 @@ Page {
                         }
 
 
-                        MenuItem {
-                            text: "Clear msgs"
-                            onTriggered: {
-                                core.clear_messages_unfav(simp_msg_browse.to_uid)
+//                        MenuItem {
+//                            text: "Clear msgs"
+//                            onTriggered: {
+//                                core.clear_messages_unfav(simp_msg_browse.to_uid)
 
-                                themsglist.reload_model()
-                            }
-                        }
+//                                themsglist.reload_model()
+//                            }
+//                        }
 
-                        MenuItem {
-                            text: "Delete user"
-                            onTriggered: {
-                                confirm_delete.visible = true
-                            }
-                            MessageDialog {
-                                id: confirm_delete
-                                title: "Bulk delete?"
-                                icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    core.delete_user(simp_msg_browse.to_uid)
-                                    themsglist.reload_model()
-                                    close()
-                                    stack.pop()
-                                }
-                                onNo: {
-                                    close()
-                                }
-                            }
-                        }
-                        MenuItem {
-                            text: "More..."
-                            onTriggered: {
-                                moremenu.open()
+//                        MenuItem {
+//                            text: "Delete user"
+//                            onTriggered: {
+//                                confirm_delete.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_delete
+//                                title: "Bulk delete?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL messages from user?"
+//                                informativeText: "This removes FAVORITE messages too."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.delete_user(simp_msg_browse.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                    stack.pop()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
+//                        MenuItem {
+//                            text: "More..."
+//                            onTriggered: {
+//                                moremenu.open()
 
-                            }
-                        }
+//                            }
+//                        }
 
                     }
                 }
@@ -414,16 +377,6 @@ Page {
                         }
                     }
 
-
-//                    Image {
-//                        id: deco
-//                        visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
-//                        source: decoration
-//                        anchors.left: parent.left
-//                        anchors.top: parent.top
-//                        width: 32
-//                        height: 32
-//                    }
                 }
                 Item {
                     Layout.fillHeight: true
@@ -441,7 +394,7 @@ Page {
                     }
 
                     id: msg
-                    text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
+                    text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(core.uid_to_name(ASSOC_UID), DATE_CREATED)
                     //Layout.maximumWidth: (listView1.width * 3) / 4
                     Layout.fillWidth: true
                     Layout.maximumHeight: 10
@@ -485,14 +438,14 @@ Page {
                             themsgview.msg_text = model.MSG_TEXT
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
-                            themsgview.uid = to_uid
+                            themsgview.uid = model.ASSOC_UID
                             if(model.IS_FILE === 1) {
                                 themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file:///" + String(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(to_uid, model.mid)
+                                    var vid = core.make_zap_view(model.ASSOC_UID, model.mid)
                                     themsgview.view_id = vid
                                     //core.play_zap_view(vid)
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {

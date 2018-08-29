@@ -1645,7 +1645,7 @@ save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc 
     return vcnil;
 }
 
-static vc
+vc
 direct_to_body2(vc m)
 {
     vc v(VC_VECTOR);
@@ -2867,6 +2867,15 @@ q_message2(vc recip, const char *attachment, vc& msg_out,
         vc v(VC_VECTOR);
         v.append("backup");
         vc sv(VC_VECTOR);
+        v.append(sv);
+        m[QQM_BODY_SPECIAL_TYPE] = v;
+    }
+    else if(special_type == vc("user"))
+    {
+        vc v(VC_VECTOR);
+        v.append("user");
+        vc sv(VC_VECTOR);
+        sv.append(st_arg1);
         v.append(sv);
         m[QQM_BODY_SPECIAL_TYPE] = v;
     }

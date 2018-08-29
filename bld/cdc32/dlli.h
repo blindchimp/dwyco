@@ -754,6 +754,13 @@ int DWYCOEXPORT dwyco_get_fav_msg(const char *uid, int len_uid, const char *mid)
 // this clears all the messages for a user except for ones that are "favorites"
 int DWYCOEXPORT dwyco_clear_user_unfav(const char *uid, int len_uid);
 
+void DWYCOEXPORT dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
+void DWYCOEXPORT dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
+void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
+int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
+int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
+int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
+
 void DWYCOEXPORT dwyco_set_alert(const char *uid, int len_uid, int val);
 int DWYCOEXPORT dwyco_get_alert(const char *uid, int len_uid);
 
@@ -1013,6 +1020,9 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 // clock, with the date being used as a backup if the logical clock on the
 // message isn't available. the logical clock provides better ordering when the
 // dates on the two computers sending messages are not the same.
+// note: ca 2018, ASSOC_UID is set to who a message is from (or to, for sent msgs)
+// this is for indexes that refer to messages for multiple UID, like
+// indexes derived from a tag, or group message.
 
 #define DWYCO_MSG_IDX_DATE "000"
 #define DWYCO_MSG_IDX_MID "001"
@@ -1025,8 +1035,11 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 #define DWYCO_MSG_IDX_ATT_HAS_VIDEO "008"
 #define DWYCO_MSG_IDX_ATT_HAS_AUDIO "009"
 #define DWYCO_MSG_IDX_ATT_IS_SHORT_VIDEO "010"
-#define DWYCO_MSG_IDX_IS_DELIVERED "011"
-#define DWYCO_MSG_IDX_IS_VIEWED "012"
+#define DWYCO_MSG_IDX_LOGICAL_CLOCK "011"
+#define DWYCO_MSG_IDX_ASSOC_UID "012"
+#define DWYCO_MSG_IDX_IS_DELIVERED "013"
+#define DWYCO_MSG_IDX_IS_VIEWED "014"
+
 
 // DWYCO_QD_MSG_LIST, list of messages that are not sent yet.
 #define DWYCO_QD_MSG_RECIPIENT "000"
@@ -1070,6 +1083,7 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
 int DWYCOEXPORT dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
 int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out);
+int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out);
 
 // "what" returns from the dwyco_is_special_message function
 #define DWYCO_SUMMARY_PAL_AUTH_REQ 0

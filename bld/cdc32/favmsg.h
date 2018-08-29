@@ -19,6 +19,14 @@ void sql_fav_set_fav(vc from_uid, vc mid, int fav);
 vc sql_fav_get_fav_set(vc from_uid);
 int sql_fav_is_fav(vc mid);
 int sql_fav_has_fav(vc from_uid);
+
+void sql_add_tag(vc from_uid, vc mid, vc tag);
+void sql_remove_tag(vc tag);
+void sql_remove_mid_tag(vc mid, vc tag);
+vc sql_get_tagged_mids(vc tag);
+vc sql_get_tagged_idx(vc tag);
+int sql_mid_has_tag(vc mid, vc tag);
+
 }
 
 #endif

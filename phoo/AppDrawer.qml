@@ -13,6 +13,17 @@ AppDrawerForm {
     //property bool dwy_invis
     //property bool dwy_quiet
     signal close()
+    browse_hidden_button.onClicked: {
+        simp_tag_browse.to_tag = "_hid"
+        stack.push(simp_tag_browse)
+        close()
+}
+    browse_hidden_button.visible: show_hidden
+    browse_tags_button.onClicked: {
+        simp_tag_browse.to_tag = "_fav"
+        stack.push(simp_tag_browse)
+        close()
+    }
     anchors.fill: parent
 
 //    vid_preview_button.onClicked: {

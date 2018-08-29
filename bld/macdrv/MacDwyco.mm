@@ -552,7 +552,7 @@ void DWYCOCALLCONV mac_audio_delete(void *)
 {
     //NSLog(@"%s", __FUNCTION__);
     MacDwycoAudioSource * audioSource = (MacDwycoAudioSource *) [[MacDwyco singleton] getAudioSource];
-    if (nil == audioSource)
+    if (nil != audioSource)
     {
         [[MacDwyco singleton] setAudioSource:nil];
         if ([audioSource isQueueRunning])
@@ -593,7 +593,10 @@ void DWYCOCALLCONV mac_audio_stop(void *)
 void DWYCOCALLCONV mac_audio_on(void *)
 {
     //NSLog(@"%s", __FUNCTION__);
-    [[[MacDwyco singleton] getAudioSource] on];
+    MacDwycoAudioSource * source = [[MacDwyco singleton] getAudioSource];
+    if(nil != source)
+        [source on];
+    //[[[MacDwyco singleton] getAudioSource] on];
 }
 
 void DWYCOCALLCONV mac_audio_off(void *)
