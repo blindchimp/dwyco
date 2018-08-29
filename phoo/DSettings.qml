@@ -46,6 +46,17 @@ Page {
         else
             inh_content_warning = 1
 
+        a = core.get_local_setting("show_hidden");
+        if(a === "" || a === "1") {
+            themsglist.set_show_hidden(1)
+            show_hidden_msgs.checked = true
+            show_hidden = true
+        } else {
+            themsglist.set_show_hidden(0)
+            show_hidden_msgs.checked = false
+            show_hidden = false
+        }
+
 
     }
 
@@ -112,6 +123,15 @@ Page {
                         warn.visible = true
                     }
                 }
+            }
+        }
+        CheckBox {
+            id: show_hidden_msgs
+            text: "Show hidden messages"
+            onCheckedChanged: {
+                core.set_local_setting("show_hidden", checked ? "1" : "0")
+                themsglist.set_show_hidden(checked ? 1 : 0)
+                show_hidden = checked
             }
         }
 

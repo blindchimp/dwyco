@@ -104,6 +104,7 @@ ApplicationWindow {
     property bool dwy_quiet: false
     property bool show_unreviewed: false
     property bool expire_immediate: false
+    property bool show_hidden: true
     function pin_expire() {
         var expire
         var duration
@@ -316,15 +317,20 @@ ApplicationWindow {
 
     }
 
-    Loader {
+//    Loader {
+//        id: settings_dialog
+//        visible: false
+
+//        onVisibleChanged: {
+//            if(visible) {
+//                source = "qrc:/DSettings.qml"
+//            }
+//        }
+//    }
+    DSettings {
         id: settings_dialog
         visible: false
 
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/DSettings.qml"
-            }
-        }
     }
 
     Loader {

@@ -246,6 +246,7 @@ msglist_model::msglist_model(QObject *p) :
     filter_show_sent = 1;
     filter_last_n = -1;
     filter_only_favs = 0;
+    filter_show_hidden = 1;
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
     mlm = this;
@@ -440,6 +441,7 @@ msglist_model::setTag(const QString& tag)
             m_tag = tag;
             emit tagChanged();
         }
+        //invalidateFilter();
     }
 }
 
@@ -469,6 +471,13 @@ msglist_model::set_filter(int sent, int recv, int last_n, int only_favs)
     invalidateFilter();
 }
 
+void
+msglist_model::set_show_hidden(int show_hidden)
+{
+    filter_show_hidden = show_hidden;
+    invalidateFilter();
+}
+
 bool
 msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
@@ -482,11 +491,17 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     if(filter_only_favs)
     {
         QVariant is_fav = alm->data(alm->index(source_row, 0), IS_FAVORITE);
-        if(is_fav.toInt() == 1)
-            return 1;
-        else
+        if(is_fav.toInt() == 0)
             return 0;
     }
+    if(filter_show_hidden == 0)
+    {
+        QVariant mid = alm->data(alm->index(source_row, 0), MID);
+        int hidden = dwyco_mid_has_tag(mid.toByteArray().constData(), "_hid");
+        if(hidden)
+            return 0;
+    }
+
     return 1;
 }
 

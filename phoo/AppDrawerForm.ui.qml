@@ -22,6 +22,7 @@ Pane {
     property alias invisible_switch: invisible_switch
     property alias quiet_switch: quiet_switch
     property alias browse_tags_button: browse_tags_button
+    property alias browse_hidden_button: browse_hidden_button
 
     ColumnLayout {
         id: columnLayout
@@ -35,7 +36,13 @@ Pane {
 
         ItemDelegate {
             id: browse_tags_button
-            text: qsTr("Browse Tags")
+            text: qsTr("Browse Favs")
+            Layout.fillWidth: true
+        }
+
+        ItemDelegate {
+            id: browse_hidden_button
+            text: qsTr("Browse Hidden")
             Layout.fillWidth: true
         }
 

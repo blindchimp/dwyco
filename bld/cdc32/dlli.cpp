@@ -7643,6 +7643,13 @@ dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
     return 1;
 }
 
+DWYCOEXPORT
+int
+dwyco_mid_has_tag(const char *mid, const char *tag)
+{
+    return sql_mid_has_tag(mid, tag);
+}
+
 
 DWYCOEXPORT
 void

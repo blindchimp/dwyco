@@ -73,6 +73,20 @@ Page {
                     }
                 }
                 MenuItem {
+                    text: "Hide"
+                    onTriggered: {
+                        model.tag_all_selected("_hid")
+                        multiselect_mode = false
+                    }
+                }
+                MenuItem {
+                    text: "UnHide"
+                    onTriggered: {
+                        model.untag_all_selected("_hid")
+                        multiselect_mode = false
+                    }
+                }
+                MenuItem {
                     text: "Select All"
                     onTriggered: {
                         model.set_all_selected()
