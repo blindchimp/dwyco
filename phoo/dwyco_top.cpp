@@ -2473,11 +2473,11 @@ DwycoCore::service_channels()
         return 0;
     dwyco_service_channels(&spin);
     static int been_here;
-    if(!been_here)
-    {
-        been_here = 1;
-        send_group_add("mumble", My_uid.toHex());
-    }
+//    if(!been_here)
+//    {
+//        been_here = 1;
+//        send_group_add("mumble", My_uid.toHex());
+//    }
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);

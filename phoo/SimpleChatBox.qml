@@ -209,38 +209,37 @@ Page {
                     visible: {stack.depth > 2 || core.unread_count > 0}
                 }
 
-                CallButtonLink {
-                    id: vidcall_button
-                    but_name: "send_video"
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_videocam_black_24dp.png")
-                    }
-                    ToolTip.text: "Request live video"
-                }
-                CallButtonLink {
-                    id: cancel_req_button
-                    but_name: "cancel_req"
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_cancel_black_24dp.png")
-                    }
-                    background: Rectangle {
-                        id: bgblink4
-                        ParallelAnimation {
-                            loops: Animation.Infinite
-                            running: cancel_req_button.visible
-                            ColorAnimation {
-                                target: bgblink4
-                                property: "color"
-                                from: "red"
-                                to: "white"
-                                duration: 1000
-                            }
-                        }
-                    }
-                    ToolTip.text: "Hangup"
-
+//                CallButtonLink {
+//                    id: vidcall_button
+//                    but_name: "send_video"
+//                    contentItem: Image {
+//                        anchors.centerIn: parent
+//                        source: mi("ic_videocam_black_24dp.png")
+//                    }
+//                    ToolTip.text: "Request live video"
+//                }
+//                CallButtonLink {
+//                    id: cancel_req_button
+//                    but_name: "cancel_req"
+//                    contentItem: Image {
+//                        anchors.centerIn: parent
+//                        source: mi("ic_cancel_black_24dp.png")
+//                    }
+//                    background: Rectangle {
+//                        id: bgblink4
+//                        ParallelAnimation {
+//                            loops: Animation.Infinite
+//                            running: cancel_req_button.visible
+//                            ColorAnimation {
+//                                target: bgblink4
+//                                property: "color"
+//                                from: "red"
+//                                to: "white"
+//                                duration: 1000
+//                            }
+//                        }
+//                    }
+//                    ToolTip.text: "Hangup"
 //                }
 //                CallButtonLink {
 //                    but_name: "hangup"
