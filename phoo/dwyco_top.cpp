@@ -767,8 +767,18 @@ setup_locations()
     }
 #endif
     //
-    QString userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    userdir += "/dwyco/phoo/";
+    QStringList args = QGuiApplication::arguments();
+    QString userdir;
+    if(args.count() == 1)
+    {
+        userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        userdir += "/dwyco/phoo/";
+    }
+    else
+    {
+        userdir = args[1];
+        userdir += "/";
+    }
     //QString userdir("/home/dwight/Downloads/n7phoo/");
     {
         QDir d(userdir);
@@ -2456,12 +2466,12 @@ DwycoCore::service_channels()
     if(Suspended)
         return 0;
     dwyco_service_channels(&spin);
-    static int been_here;
-    if(!been_here)
-    {
-        been_here = 1;
-        send_group_add("mumble", My_uid.toHex());
-    }
+//    static int been_here;
+//    if(!been_here)
+//    {
+//        been_here = 1;
+//        send_group_add("mumble", My_uid.toHex());
+//    }
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
