@@ -379,6 +379,17 @@ Page {
                     source: mi("ic_videocam_black_24dp.png")
                 }
             }
+            Rectangle {
+                id: hidden
+                width: 16
+                height: 16
+                anchors.right:ditem.right
+                anchors.top:ditem.top
+                visible: IS_HIDDEN === 1
+                z: 3
+                color: "orange"
+            }
+
             z: 1
 
             clip: true

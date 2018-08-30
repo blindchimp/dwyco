@@ -44,6 +44,7 @@ enum {
     IS_QD,
     IS_ACTIVE,
     IS_FAVORITE,
+    IS_HIDDEN,
     SELECTED,
     DIRECT,
     FETCH_STATE,
@@ -660,6 +661,7 @@ msglist_raw::roleNames() const
     rn(DATE_RECEIVED);
     rn(LOCAL_TIME_CREATED);
     rn(IS_FAVORITE);
+    rn(IS_HIDDEN);
     rn(SELECTED);
     rn(DIRECT);
     rn(FETCH_STATE);
@@ -764,6 +766,7 @@ msglist_raw::qd_data ( int r, int role ) const
     case HAS_SHORT_VIDEO:
     case HAS_VIDEO:
     case IS_FAVORITE:
+    case IS_HIDDEN:
         return 0;
 
     case IS_FORWARDED:
@@ -945,6 +948,7 @@ msglist_raw::inbox_data (int r, int role ) const
     case HAS_SHORT_VIDEO:
     case HAS_VIDEO:
     case IS_FAVORITE:
+    case IS_HIDDEN:
     case IS_FORWARDED:
         return 0;
 
@@ -1148,6 +1152,17 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
             return QVariant();
 
         if(dwyco_get_fav_msg(0, 0, mid.constData()))
+            return 1;
+        return 0;
+
+    }
+    else if(role == IS_HIDDEN)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QVariant();
+
+        if(dwyco_mid_has_tag(mid.constData(), "_hid"))
             return 1;
         return 0;
 
