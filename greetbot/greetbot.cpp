@@ -171,16 +171,6 @@ send_pic(QByteArray buid)
 
 void
 DWYCOCALLCONV
-dwyco_chat_server_status_callback(int id, const char *msg, int /*percent_done*/, void * /*user_arg*/)
-{
-    if(strcmp(msg, "offline") == 0)
-    {
-        exit(1);
-    }
-}
-
-void
-DWYCOCALLCONV
 dwyco_chat_ctx_callback(int cmd, int id,
     const char *uid, int len_uid,
     const char *name, int len_name,
@@ -208,7 +198,10 @@ dwyco_chat_ctx_callback(int cmd, int id,
             return;
         if(!Nostalgia)
         {
-            send_reply_to(buid, "I'm a bot... This is just a test message to get you going. Have fun.");
+            send_reply_to(buid, "I'm a bot... This is just a test message to get you going. Have fun. "
+                          "If you have an Android phone and want to test the next-gen mobile version, please "
+                          "visit https://play.google.com/apps/testing/com.dwyco.phoo "
+                          "it's free and you'll get a peek at the coming new version of Dwyco.");
         }
         else
         {
@@ -262,7 +255,6 @@ main(int argc, char *argv[])
         Nostalgia = 1;
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
-    dwyco_set_chat_server_status_callback(dwyco_chat_server_status_callback);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
 
     dwyco_init();
@@ -288,6 +280,7 @@ main(int argc, char *argv[])
     dwyco_get_my_uid(&my_uid, &len_uid);
     My_uid = QByteArray(my_uid, len_uid);
     Sent.insert(My_uid);
+    int was_online = 0;
 
     while(1)
     {
@@ -302,7 +295,14 @@ main(int argc, char *argv[])
             dwyco_exit();
             exit(0);
         }
-
+        if(dwyco_chat_online() == 0)
+        {
+            if(was_online)
+                exit(0);
+            else
+                continue;
+        }
+        was_online = 1;
 
         QByteArray uid;
         QByteArray txt;
