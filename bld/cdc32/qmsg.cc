@@ -4233,7 +4233,7 @@ clean_cruft()
         return;
 // end safety check that won't work if the filename mapper
 // is working
-    int i;
+
     vc nodel(VC_SET);
     find_files_to_keep("inbox", "*.urd", nodel);
     find_files_to_keep("inprogress", "*.q", nodel);
@@ -4267,7 +4267,7 @@ clean_cruft()
     // tmp pfx, we'll delete all the files in that path
     if(tmp.length() >= 5 && user.length() + 4 == tmp.length() &&
             user == DwString(tmp.c_str(), user.length()) &&
-            tmp.rfind("/tmp/") == tmp.length() - 5)
+            tmp.rfind(DIRSEPSTR "tmp" DIRSEPSTR) == tmp.length() - 5)
     {
         DwString tp = tmp;
         tp += "*.*";
