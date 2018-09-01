@@ -283,6 +283,7 @@ main(int argc, char *argv[])
     My_uid = QByteArray(my_uid, len_uid);
 
     int was_online = 0;
+    unlink("stopped");
 
     while(1)
     {
@@ -295,6 +296,7 @@ main(int argc, char *argv[])
             dwyco_power_clean_safe();
             dwyco_empty_trash();
             dwyco_exit();
+            creat("stopped", 0666);
             exit(0);
         }
         if(dwyco_chat_online() == 0)
