@@ -288,7 +288,7 @@ main(int argc, char *argv[])
     {
         int spin;
         dwyco_service_channels(&spin);
-        usleep(10 * 1000);
+        usleep(100 * 1000);
         ++i;
         if(time(0) - start >= r || access("stop", F_OK) == 0)
         {
