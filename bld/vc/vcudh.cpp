@@ -31,6 +31,8 @@
 #include "hex.h"
 #include "vcudh.h"
 #include "randpool.h"
+#include "aes.h"
+#include "modes.h"
 
 // this was just for debugging
 #ifdef CDCDLL
@@ -259,7 +261,7 @@ dh_store_and_forward_material(vc other_pub, vc& session_key_out)
 // note: there is still only one session key returned. this means that any of the
 // public material can be used to decrypt the single key returned.
 vc
-dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
+dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out, vc& key_validation)
 {
 
     // 128 bit symmetric key
@@ -267,7 +269,7 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
     Rng->GenerateBlock(skey, skey.SizeInBytes());
     vc session_key(VC_BSTRING, (const char *)(const byte *)skey, skey.SizeInBytes());
 
-    vc ret_material(VC_VECTOR);
+    vc ret(VC_VECTOR);
 
     for(int j = 0; j < other_pub_vec.num_elems(); ++j)
     {
@@ -291,8 +293,6 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
         for(size_t i = 0; i < skey.SizeInBytes(); ++i)
             skt[i] ^= k[i];
         vc session_key_enc(VC_BSTRING, (const char *)(const byte *)skt, skt.SizeInBytes());
-
-        vc ret(VC_VECTOR);
         // encrypted output is
         // 0: session key encrypted with public key
         // 1: public DH value to decrypt
@@ -305,8 +305,15 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
         //ret_material.append(ret);
     }
     session_key_out = session_key;
+    ECB_Mode<AES>::Encryption kc;
+    kc.SetKey(skey, skey.SizeInBytes());
+    byte buf[8];
+    memset(buf, 0, sizeof(buf));
+    byte checkstr[8];
+    kc.ProcessData(checkstr, buf, sizeof(checkstr));
+    ret.append(vc(VC_BSTRING, (const char *)checkstr, sizeof(checkstr)));
 
-    return ret_material;
+    return ret;
 }
 
 vc
