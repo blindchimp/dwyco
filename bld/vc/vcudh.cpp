@@ -296,9 +296,13 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
         // encrypted output is
         // 0: session key encrypted with public key
         // 1: public DH value to decrypt
-        ret[0] = session_key_enc;
-        ret[1] = our_public;
-        ret_material.append(ret);
+        // note: instead of returning vector(vector(k1 p1) vector(k2 p2))
+        // just string them into a vector(k1 p1 k2 p2) which will make it
+        // possible that this material could be used by unchanged old software
+        // (which will ignore everything past the first pair)
+        ret[2 * j] = session_key_enc;
+        ret[2 * j + 1] = our_public;
+        //ret_material.append(ret);
     }
     session_key_out = session_key;
 
