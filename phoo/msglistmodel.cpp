@@ -17,6 +17,9 @@
 #include "pfx.h"
 #include "dwycolistscoped.h"
 #include "dwyco_new_msg.h"
+
+// this needs to be fixed, either allow multiple
+// models, or promote this to bona-fide singleton
 msglist_model *mlm;
 
 static QSet<QByteArray> Selected;
@@ -470,6 +473,7 @@ msglist_model::set_filter(int sent, int recv, int last_n, int only_favs)
     filter_last_n = last_n;
     filter_only_favs = only_favs;
     invalidateFilter();
+    Selected.clear();
 }
 
 void
@@ -477,6 +481,7 @@ msglist_model::set_show_hidden(int show_hidden)
 {
     filter_show_hidden = show_hidden;
     invalidateFilter();
+    Selected.clear();
 }
 
 bool
