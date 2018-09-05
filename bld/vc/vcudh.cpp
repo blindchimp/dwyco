@@ -305,13 +305,23 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out, vc& key_va
         //ret_material.append(ret);
     }
     session_key_out = session_key;
+
+    // this is a key check string. i think technically, since we use
+    // AES/GCM for encryption using this stuff, the mac would fail if we
+    // used the wrong key. we *do* have to decrypt the entire message to
+    // find that out (even with an attachment, we encrypt the message that
+    // references the attachment first, so it wouldn't cause that much of
+    // a performance hit on decryption, unless the message is pretty big.)
+    // so, i'll add this so you can select the right key if there are multiple
+    // keys in a messages, just in case.
     ECB_Mode<AES>::Encryption kc;
     kc.SetKey(skey, skey.SizeInBytes());
     byte buf[8];
     memset(buf, 0, sizeof(buf));
     byte checkstr[8];
     kc.ProcessData(checkstr, buf, sizeof(checkstr));
-    ret.append(vc(VC_BSTRING, (const char *)checkstr, sizeof(checkstr)));
+    // use just first 3 bytes
+    ret.append(vc(VC_BSTRING, (const char *)checkstr, 3));
 
     return ret;
 }
