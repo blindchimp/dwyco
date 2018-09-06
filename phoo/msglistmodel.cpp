@@ -589,7 +589,7 @@ msglist_raw::reload_model()
     if(m_tag.length() > 0)
     {
         dwyco_get_tagged_idx(&msg_idx, m_tag.toLatin1().constData());
-        dwyco_list_print(msg_idx);
+        //dwyco_list_print(msg_idx);
         dwyco_list_numelems(msg_idx, &count_msg_idx, 0);
         endResetModel();
         return;
@@ -597,7 +597,7 @@ msglist_raw::reload_model()
     else if(buid.length() == 10)
     {
         dwyco_get_message_index(&msg_idx, buid.constData(), buid.length());
-        dwyco_list_print(msg_idx);
+        //dwyco_list_print(msg_idx);
     }
     dwyco_get_qd_messages(&qd_msgs, buid.constData(), buid.length());
     dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());
