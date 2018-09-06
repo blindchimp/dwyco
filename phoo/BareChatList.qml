@@ -11,7 +11,7 @@ Item {
         Rectangle {
             property int showit
             showit: (REVIEWED && REGULAR) || show_unreviewed
-            height: showit ? vh(pct) : 0
+            height: showit ? picht() : 0
             width: parent.width
             //opacity: {multiselect_mode && selected ? 0.5 : 1.0}
             color: primary_dark

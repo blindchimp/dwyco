@@ -1,4 +1,4 @@
-
+/* DESKTOP */
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -149,10 +149,13 @@ Page {
             }
         }
     }
-    
 
-    ListView {
-        id: listView1
+    function picht() {
+        return vh(10) - mm(.5)
+    }
+    
+    RowLayout {
+        Layout.margins: mm(1)
         anchors.bottom: textField1.top
         anchors.bottomMargin: 10
         anchors.right: parent.right
@@ -161,14 +164,24 @@ Page {
         anchors.leftMargin: 0
         anchors.top: parent.top
         anchors.topMargin: 0
-        delegate: msglist_delegate
-        model: chatmodel
-        spacing: dp(3)
-        ScrollBar.vertical: ScrollBar { }
-        verticalLayoutDirection: ListView.BottomToTop
+        ListView {
+            id: listView1
 
-        clip: true
+            delegate: msglist_delegate
+            model: chatmodel
+            spacing: dp(3)
+            ScrollBar.vertical: ScrollBar { }
+            verticalLayoutDirection: ListView.BottomToTop
+            clip: true
+            Layout.fillHeight: true
+            Layout.fillWidth: true
 
+        }
+        BareChatList {
+            Layout.fillHeight: true
+            Layout.minimumWidth: parent.width / 3
+
+        }
     }
 
     Component {

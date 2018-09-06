@@ -53,6 +53,7 @@
         <file>GridToggle.qml</file>
         <file>+desktop/GridToggle.qml</file>
         <file>BareChatList.qml</file>
+        <file>+desktop/PublicChat.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>
