@@ -34,6 +34,7 @@ INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 #QMAKE_MAC_SDK = macosx10.9
 #DEFINES += DWYCO_RELEASE
 ICON=greenguy.icns
+RC_FILE=phoo.rc
 
 SOURCES += main.cpp \
     dwyco_top.cpp \
