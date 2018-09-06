@@ -50,6 +50,8 @@
         <file>+vgqt/VidCamPreview.qml</file>
         <file>SimpleGroupChat.qml</file>
         <file>SimpleTagMsgBrowse.qml</file>
+        <file>GridToggle.qml</file>
+        <file>+desktop/GridToggle.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>
