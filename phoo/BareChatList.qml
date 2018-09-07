@@ -71,13 +71,17 @@ Item {
             }
             MouseArea {
                 anchors.fill: drow
+                acceptedButtons: Qt.LeftButton|Qt.RightButton
                 onClicked: {
                     console.log("click")
                     console.log(index)
                     listView2.currentIndex = index
+                    if(mouse.button === Qt.LeftButton) {
 
-                    uid_selected(uid, "clicked")
-
+                        uid_selected(uid, "clicked")
+                    } else if(mouse.button === Qt.RightButton) {
+                        uid_selected(uid, "hold")
+                    }
                 }
                 onPressAndHold:  {
                     listView2.currentIndex = index

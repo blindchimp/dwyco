@@ -179,7 +179,7 @@ Page {
         }
         BareChatList {
             Layout.fillHeight: true
-            Layout.minimumWidth: parent.width / 3
+            Layout.minimumWidth: parent.width / 4
 
         }
     }
