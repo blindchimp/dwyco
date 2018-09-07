@@ -382,4 +382,21 @@ sql_mid_has_tag(vc mid, vc tag)
     return c != 0;
 
 }
+
+int
+sql_uid_has_tag(vc uid, vc tag)
+{
+    VCArglist a;
+    a.append("select count(*) from msg_tags where from_uid = $1 and tag = $2 limit 1;");
+    a.append(to_hex(uid));
+    a.append(tag);
+
+    vc res = sqlite3_bulk_query(Db, &a);
+    if(res.is_nil())
+        throw -1;
+
+    long c = (long)res[0][0];
+    return c != 0;
+
+}
 }

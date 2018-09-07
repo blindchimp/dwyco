@@ -298,6 +298,17 @@ Page {
                            source: mi("ic_visibility_off_white_24dp.png")
                        }
                    }
+                   Rectangle {
+                       id: hidden
+                       width: 16
+                       height: 16
+                       anchors.right:parent.right
+                       anchors.top:parent.top
+                       visible: show_hidden && has_hidden
+                       z: 2
+                       radius: width
+                       color: "orange"
+                   }
                }
 
                Text {
@@ -455,6 +466,17 @@ Page {
                        anchors.margins: 2
                        source: mi("ic_visibility_off_white_24dp.png")
                    }
+               }
+               Rectangle {
+                   id: ghidden
+                   width: 16
+                   height: 16
+                   anchors.right:parent.right
+                   anchors.top:parent.top
+                   visible: show_hidden && has_hidden
+                   z: 2
+                   radius: width
+                   color: "orange"
                }
            }
 

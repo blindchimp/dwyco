@@ -77,7 +77,6 @@ Item {
                     console.log(index)
                     listView2.currentIndex = index
                     if(mouse.button === Qt.LeftButton) {
-
                         uid_selected(uid, "clicked")
                     } else if(mouse.button === Qt.RightButton) {
                         uid_selected(uid, "hold")
@@ -87,8 +86,6 @@ Item {
                     listView2.currentIndex = index
                     uid_selected(uid, "hold")
                 }
-
-
             }
 
         }

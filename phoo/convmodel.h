@@ -30,6 +30,7 @@ class Conversation : public QObject
     QML_READONLY_VAR_PROPERTY(bool, any_unread)
     QML_READONLY_VAR_PROPERTY(bool, session_msg)
     QML_READONLY_VAR_PROPERTY(bool, pal)
+    QML_READONLY_VAR_PROPERTY(bool, has_hidden)
     QML_WRITABLE_VAR_PROPERTY(bool, selected)
 
 
