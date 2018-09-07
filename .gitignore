@@ -370,3 +370,5 @@ jni/vc
 jni/zlib
 
 bld/spread-hacked/spread-src-4\.4\.0/libspread/__\.SYMDEF SORTED
+
+\.DS_Store

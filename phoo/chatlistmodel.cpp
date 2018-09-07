@@ -56,7 +56,7 @@ ChatListModel::uid_resolved(const QString &huid)
 
     QByteArray buid = QByteArray::fromHex(huid.toLatin1());
     c->update_display(dwyco_info_to_display(buid));
-    c->update_invalid(0);
+    c->update_invalid(false);
     int regular = 0;
     int reviewed = 0;
     get_review_status(buid, reviewed, regular);
@@ -109,6 +109,20 @@ ChatListModel::remove_uid_from_model(const QByteArray& uid)
     //delete c;
 }
 
+void
+ChatListModel::ignore_state_change(QString huid)
+{
+    // note: if the user ignores someone, the server simply
+    // starts filtering out all messages from that uid immediately,
+    // so we don't get "finalization" messages as if they had logged
+    // out. but we want to get rid of them immediately.
+    QByteArray buid = QByteArray::fromHex(huid.toLatin1());
+    if(dwyco_is_ignored(buid.constData(), buid.length()))
+    {
+        remove_uid_from_model(buid);
+    }
+}
+
 ChatSortFilterModel::ChatSortFilterModel(QObject *p)
     : QSortFilterProxyModel(p)
 {
@@ -117,6 +131,21 @@ ChatSortFilterModel::ChatSortFilterModel(QObject *p)
     // note: this is totally non-obvious from the docs that you
     // have to call sort once to effectively "tell it to use this column from now on".
     sort(0);
+}
+
+bool
+ChatSortFilterModel::filterAcceptRows(int source_row, const QModelIndex&) const
+{
+    ChatListModel *m = dynamic_cast<ChatListModel *>(sourceModel());
+    if(!m)
+        return false;
+    QString huid = m->data(m->index(source_row, 0), m->roleForName("uid")).toString();
+    QByteArray buid = QByteArray::fromHex(huid.toLatin1());
+    if(dwyco_is_ignored(buid.constData(), buid.length()))
+    {
+        return false;
+    }
+    return true;
 }
 
 bool

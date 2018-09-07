@@ -10,10 +10,12 @@
 import QtQuick 2.6
 import dwyco 1.0
 import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.2
 
 ToolBar {
     property Component extras
+    property alias grid_checked: show_grid.grid_checked
+    property bool hide_grid: true
     background: Rectangle {
         color: accent
     }
@@ -41,6 +43,11 @@ ToolBar {
             ToolTip.text: "Go back"
         }
 
+        GridToggle {
+            id: show_grid
+            visible: !hide_grid
+            Layout.fillHeight: true
+        }
         Item {
             Layout.fillWidth: true
         }

@@ -17,6 +17,9 @@
 #include "pfx.h"
 #include "dwycolistscoped.h"
 #include "dwyco_new_msg.h"
+
+// this needs to be fixed, either allow multiple
+// models, or promote this to bona-fide singleton
 msglist_model *mlm;
 
 static QSet<QByteArray> Selected;
@@ -470,6 +473,7 @@ msglist_model::set_filter(int sent, int recv, int last_n, int only_favs)
     filter_last_n = last_n;
     filter_only_favs = only_favs;
     invalidateFilter();
+    Selected.clear();
 }
 
 void
@@ -477,6 +481,7 @@ msglist_model::set_show_hidden(int show_hidden)
 {
     filter_show_hidden = show_hidden;
     invalidateFilter();
+    Selected.clear();
 }
 
 bool
@@ -584,7 +589,7 @@ msglist_raw::reload_model()
     if(m_tag.length() > 0)
     {
         dwyco_get_tagged_idx(&msg_idx, m_tag.toLatin1().constData());
-        dwyco_list_print(msg_idx);
+        //dwyco_list_print(msg_idx);
         dwyco_list_numelems(msg_idx, &count_msg_idx, 0);
         endResetModel();
         return;
@@ -592,7 +597,7 @@ msglist_raw::reload_model()
     else if(buid.length() == 10)
     {
         dwyco_get_message_index(&msg_idx, buid.constData(), buid.length());
-        dwyco_list_print(msg_idx);
+        //dwyco_list_print(msg_idx);
     }
     dwyco_get_qd_messages(&qd_msgs, buid.constData(), buid.length());
     dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());

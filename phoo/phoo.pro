@@ -34,6 +34,7 @@ INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 #QMAKE_MAC_SDK = macosx10.9
 #DEFINES += DWYCO_RELEASE
 ICON=greenguy.icns
+RC_FILE=phoo.rc
 
 SOURCES += main.cpp \
     dwyco_top.cpp \
@@ -245,7 +246,7 @@ QMAKE_LFLAGS += -g
 
 }
 
-win32-msvc2008|win32-msvc2010|win32-msvc2012|win32-msvc2015 {
+win32-msvc* {
 
 DEFINES += USE_VFW  MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
 equals(FORCE_DESKTOP_VGQT, 1) {
@@ -259,7 +260,14 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 DEFINES += CDCCORE_STATIC
 # use this if you are building with qmake files
 D = $$OUT_PWD\\..\\bld
+
+CONFIG(debug) {
 S=debug
+}
+
+CONFIG(release) {
+S=release
+}
 
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
@@ -279,8 +287,11 @@ $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
 $${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
-$${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib \
-winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib binmode.obj
+winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib binmode.obj \
+delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
+
+QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
+QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
 
 #\\mk\\depot\\dwycore\\bld\\vorbis112\\win32\\vs2003\\libvorbis\\Debug\\libvorbis.lib \
 #\\mk\\depot\\dwycore\\bld\\theora\\win32\\vs2008\\win32\\Debug\\libtheora_static.lib \

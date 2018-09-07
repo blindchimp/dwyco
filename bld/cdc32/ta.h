@@ -30,7 +30,7 @@ if(Track_stats) \
 } while(0)
 
 #define TRACK_ADD_str(var, num) do {\
-    GRTLOG(var " %d", num, 0); \
+    GRTLOG(#var " %d", num, 0); \
 if(Track_stats) \
 { \
         vc __n; \

@@ -212,6 +212,7 @@ DWYCOEXPORT int _real_dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, co
 DWYCOEXPORT int _real_dwyco_get_unsaved_messages(DWYCO_UNSAVED_MSG_LIST *list_out, const char *uid, int len_uid);
 DWYCOEXPORT int _real_dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out);
+DWYCOEXPORT int _real_dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out);
 DWYCOEXPORT int _real_dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
 DWYCOEXPORT int _real_dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out, const char **dlv_mid_out, int *what_out);
 DWYCOEXPORT int _real_dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
@@ -227,6 +228,12 @@ DWYCOEXPORT void _real_dwyco_pal_add(const char *user_id, int len_uid);
 DWYCOEXPORT void _real_dwyco_pal_delete(const char *user_id, int len_uid);
 DWYCOEXPORT int _real_dwyco_is_pal(const char *user_id, int len_uid);
 DWYCOEXPORT DWYCO_LIST _real_dwyco_pal_get_list();
+DWYCOEXPORT void _real_dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
+DWYCOEXPORT void _real_dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
+DWYCOEXPORT void _real_dwyco_unset_all_msg_tag(const char *tag);
+DWYCOEXPORT int _real_dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
+DWYCOEXPORT int _real_dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
+DWYCOEXPORT int _real_dwyco_mid_has_tag(const char *mid, const char *tag);
 DWYCOEXPORT void _real_dwyco_set_fav_msg(const char *uid, int len_uid, const char *mid, int fav);
 DWYCOEXPORT int _real_dwyco_get_fav_msg(const char *uid, int len_uid, const char *mid);
 DWYCOEXPORT int _real_dwyco_is_ignored(const char *user_id, int len_uid);
@@ -2901,6 +2908,20 @@ return(_ret);
 
 DWYCOEXPORT
 int
+dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out)
+{
+printfunname("dwyco_get_user_payload");
+printarg("DWYCO_UNSAVED_MSG_LIST ", "ml",ml);
+printarg(" const char **", "str_out",str_out);
+printarg(" int *", "len_out",len_out);
+int _ret = _real_dwyco_get_user_payload(ml,str_out,len_out);
+printargout(" const char **", "str_out",str_out, " int *", "len_out", len_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
 dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out)
 {
 printfunname("dwyco_is_special_message");
@@ -3075,6 +3096,78 @@ dwyco_pal_get_list()
 {
 printfunname("dwyco_pal_get_list");
 DWYCO_LIST _ret = _real_dwyco_pal_get_list();
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+void
+dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag)
+{
+printfunname("dwyco_set_msg_tag");
+printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
+printarg(" const char *", "mid",mid);
+printarg(" const char *", "tag",tag);
+_real_dwyco_set_msg_tag(uid,len_uid,mid,tag);
+printret();
+}
+
+DWYCOEXPORT
+void
+dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag)
+{
+printfunname("dwyco_unset_msg_tag");
+printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
+printarg(" const char *", "mid",mid);
+printarg(" const char *", "tag",tag);
+_real_dwyco_unset_msg_tag(uid,len_uid,mid,tag);
+printret();
+}
+
+DWYCOEXPORT
+void
+dwyco_unset_all_msg_tag(const char *tag)
+{
+printfunname("dwyco_unset_all_msg_tag");
+printarg("const char *", "tag",tag);
+_real_dwyco_unset_all_msg_tag(tag);
+printret();
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag)
+{
+printfunname("dwyco_get_tagged_mids");
+printarg("DWYCO_LIST *", "list_out",list_out);
+printarg(" const char *", "tag",tag);
+int _ret = _real_dwyco_get_tagged_mids(list_out,tag);
+printargout("DWYCO_LIST *", "list_out",list_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
+{
+printfunname("dwyco_get_tagged_idx");
+printarg("DWYCO_MSG_IDX *", "list_out",list_out);
+printarg(" const char *", "tag",tag);
+int _ret = _real_dwyco_get_tagged_idx(list_out,tag);
+printargout("DWYCO_MSG_IDX *", "list_out",list_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_mid_has_tag(const char *mid, const char *tag)
+{
+printfunname("dwyco_mid_has_tag");
+printarg("const char *", "mid",mid);
+printarg(" const char *", "tag",tag);
+int _ret = _real_dwyco_mid_has_tag(mid,tag);
 printretval(_ret);
 return(_ret);
 }

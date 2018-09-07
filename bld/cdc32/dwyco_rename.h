@@ -192,6 +192,7 @@
 #define dwyco_get_unsaved_messages _real_dwyco_get_unsaved_messages 
 #define dwyco_get_unsaved_message _real_dwyco_get_unsaved_message 
 #define dwyco_is_special_message2 _real_dwyco_is_special_message2 
+#define dwyco_get_user_payload _real_dwyco_get_user_payload 
 #define dwyco_is_special_message _real_dwyco_is_special_message 
 #define dwyco_is_delivery_report _real_dwyco_is_delivery_report 
 #define dwyco_unsaved_message_to_body _real_dwyco_unsaved_message_to_body 
@@ -207,6 +208,12 @@
 #define dwyco_pal_delete _real_dwyco_pal_delete 
 #define dwyco_is_pal _real_dwyco_is_pal 
 #define dwyco_pal_get_list _real_dwyco_pal_get_list 
+#define dwyco_set_msg_tag _real_dwyco_set_msg_tag 
+#define dwyco_unset_msg_tag _real_dwyco_unset_msg_tag 
+#define dwyco_unset_all_msg_tag _real_dwyco_unset_all_msg_tag 
+#define dwyco_get_tagged_mids _real_dwyco_get_tagged_mids 
+#define dwyco_get_tagged_idx _real_dwyco_get_tagged_idx 
+#define dwyco_mid_has_tag _real_dwyco_mid_has_tag 
 #define dwyco_set_fav_msg _real_dwyco_set_fav_msg 
 #define dwyco_get_fav_msg _real_dwyco_get_fav_msg 
 #define dwyco_is_ignored _real_dwyco_is_ignored 

@@ -801,7 +801,7 @@ ApplicationWindow {
             console.log(txt)
             console.log(mid)
             console.log("msglist", themsglist.uid)
-            if(from_uid == themsglist.uid) {
+            if(from_uid === themsglist.uid) {
                 themsglist.reload_model()
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
@@ -816,7 +816,7 @@ ApplicationWindow {
         onSys_msg_idx_updated: {
             console.log("update idx", uid)
             console.log("upd" + uid + " " + themsglist.uid)
-            if(uid == themsglist.uid) {
+            if(uid === themsglist.uid) {
                 themsglist.reload_model()
                 console.log("RELOAD")
             }

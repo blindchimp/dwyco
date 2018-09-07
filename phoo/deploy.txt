@@ -38,7 +38,12 @@ perform build using qtcreator or the build scripts in phoobld.
 
 copy <build-phoo.exe> c:\users\dwight\dwyco\phoo\vcdist
 set VCINSTALLDIR=c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC
+(or use vcvarsall.bat, i think this sets it)
 windeployqt --qmldir c:\Users\dwight\dwyco\phoo vcdist\phoo.exe
+
+note: you will need to remove all the Qt related stuff from the
+vcdist folder, as windeployqt doesn't seem to update things
+properly, esp if you update to new version of Qt.
 
 note: need to get the manifest stuff working so we don't have to run the redist installer... otherwise windeployqt seems to be getting fairly close to a deployable thing, at least on windows7, i think windows xp is going to be undoable.
 

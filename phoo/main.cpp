@@ -81,6 +81,10 @@ int main(int argc, char *argv[])
     sel->setExtraSelectors(QStringList("vgqt"));
 #endif
 
+#if (defined(Q_OS_WINDOWS) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
+    sel->setExtraSelectors(QStringList("desktop"));
+#endif
+
 
 #ifdef ANDROID
     notificationClient = new NotificationClient(&engine);

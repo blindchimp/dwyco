@@ -31,6 +31,8 @@
 #include "hex.h"
 #include "vcudh.h"
 #include "randpool.h"
+#include "aes.h"
+#include "modes.h"
 
 // this was just for debugging
 #ifdef CDCDLL
@@ -259,7 +261,7 @@ dh_store_and_forward_material(vc other_pub, vc& session_key_out)
 // note: there is still only one session key returned. this means that any of the
 // public material can be used to decrypt the single key returned.
 vc
-dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
+dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out, vc& key_validation)
 {
 
     // 128 bit symmetric key
@@ -267,7 +269,7 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
     Rng->GenerateBlock(skey, skey.SizeInBytes());
     vc session_key(VC_BSTRING, (const char *)(const byte *)skey, skey.SizeInBytes());
 
-    vc ret_material(VC_VECTOR);
+    vc ret(VC_VECTOR);
 
     for(int j = 0; j < other_pub_vec.num_elems(); ++j)
     {
@@ -291,18 +293,37 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
         for(size_t i = 0; i < skey.SizeInBytes(); ++i)
             skt[i] ^= k[i];
         vc session_key_enc(VC_BSTRING, (const char *)(const byte *)skt, skt.SizeInBytes());
-
-        vc ret(VC_VECTOR);
         // encrypted output is
         // 0: session key encrypted with public key
         // 1: public DH value to decrypt
-        ret[0] = session_key_enc;
-        ret[1] = our_public;
-        ret_material.append(ret);
+        // note: instead of returning vector(vector(k1 p1) vector(k2 p2))
+        // just string them into a vector(k1 p1 k2 p2) which will make it
+        // possible that this material could be used by unchanged old software
+        // (which will ignore everything past the first pair)
+        ret[2 * j] = session_key_enc;
+        ret[2 * j + 1] = our_public;
+        //ret_material.append(ret);
     }
     session_key_out = session_key;
 
-    return ret_material;
+    // this is a key check string. i think technically, since we use
+    // AES/GCM for encryption using this stuff, the mac would fail if we
+    // used the wrong key. we *do* have to decrypt the entire message to
+    // find that out (even with an attachment, we encrypt the message that
+    // references the attachment first, so it wouldn't cause that much of
+    // a performance hit on decryption, unless the message is pretty big.)
+    // so, i'll add this so you can select the right key if there are multiple
+    // keys in a messages, just in case.
+    ECB_Mode<AES>::Encryption kc;
+    kc.SetKey(skey, skey.SizeInBytes());
+    byte buf[8];
+    memset(buf, 0, sizeof(buf));
+    byte checkstr[8];
+    kc.ProcessData(checkstr, buf, sizeof(checkstr));
+    // use just first 3 bytes
+    ret.append(vc(VC_BSTRING, (const char *)checkstr, 3));
+
+    return ret;
 }
 
 vc

@@ -267,7 +267,7 @@ signals:
     void sys_uid_resolved(const QString& uid);
     void profile_update(int success);
     void pal_event(const QString& uid);
-    void ignore_event(const QString& uid);
+    void ignore_event(QString uid);
     void video_display(int ui_id, int frame_number, QString img_path);
     void video_capture_preview(QString img_path);
 // this is used internally, should not fiddle with it via QML

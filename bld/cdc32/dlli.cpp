@@ -7650,6 +7650,15 @@ dwyco_mid_has_tag(const char *mid, const char *tag)
     return sql_mid_has_tag(mid, tag);
 }
 
+DWYCOEXPORT
+int
+dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    return sql_uid_has_tag(buid, tag);
+}
+
+
 
 DWYCOEXPORT
 void
