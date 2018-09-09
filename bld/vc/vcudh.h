@@ -17,8 +17,9 @@ vc udh_agree_auth(vc our_material, vc other_publics);
 vc udh_just_publics(vc);
 vc udh_new_static(vc entropy);
 vc dh_store_and_forward_material(vc other_pub, vc& session_key_out);
-vc dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out, vc &key_validation);
+vc dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out);
 vc dh_store_and_forward_get_key(vc sfpack, vc our_material);
+vc dh_store_and_forward_get_key2(vc sfpack, vc our_material);
 vc vclh_sf_material(vc other_pub, vc key_out);
 
 #define DH_STATIC_PUBLIC 0

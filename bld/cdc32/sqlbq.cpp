@@ -31,10 +31,10 @@ namespace dwyco {
 #define USER_BOMB(a, b) {return (b);}
 
 vc
-sqlite3_bulk_query(sqlite3 *dbs, VCArglist *a)
+sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
 {
-    VCArglist &aa = *a;
-    vc sql = aa[0];
+    const VCArglist &aa = *a;
+    vc sql = aa.get(0);
     //vc err = aa[2];
     // everything after err is considered to be a binding to be
     // set into the sql
@@ -56,10 +56,11 @@ sqlite3_bulk_query(sqlite3 *dbs, VCArglist *a)
     {
         for(int i = 1; i < a->num_elems(); ++i)
         {
-            switch((*a)[i].type())
+            vc val = aa.get(i);
+            switch(aa.get(i).type())
             {
             case VC_INT:
-                if(sqlite3_bind_int(st, i, (*a)[i]) != SQLITE_OK)
+                if(sqlite3_bind_int(st, i, val) != SQLITE_OK)
                 {
                     sqlite3_finalize(st);
                     USER_BOMB("sql bind error", vcnil)
@@ -67,14 +68,14 @@ sqlite3_bulk_query(sqlite3 *dbs, VCArglist *a)
                 break;
             case VC_STRING:
             case VC_BSTRING:
-                if(sqlite3_bind_text(st, i, (*a)[i], (*a)[i].len(), SQLITE_TRANSIENT) != SQLITE_OK)
+                if(sqlite3_bind_text(st, i, val, val.len(), SQLITE_TRANSIENT) != SQLITE_OK)
                 {
                     sqlite3_finalize(st);
                     USER_BOMB("sql bind error", vcnil)
                 }
                 break;
             case VC_DOUBLE:
-                if(sqlite3_bind_double(st, i, (*a)[i]) != SQLITE_OK)
+                if(sqlite3_bind_double(st, i, val) != SQLITE_OK)
                 {
                     sqlite3_finalize(st);
                     USER_BOMB("sql bind error", vcnil)
@@ -94,12 +95,12 @@ sqlite3_bulk_query(sqlite3 *dbs, VCArglist *a)
                 // but it could easily be extended to allow this
                 // routine to serialize and deserialize stuff for the
                 // caller.
-                if((*a)[i].num_elems() != 2 ||
-                        (*a)[i][0] != vc("blob"))
+                if(val.num_elems() != 2 ||
+                        val[0] != vc("blob"))
                 {
                     USER_BOMB("sql bind error, explicit type vector must be (type value) pair (and only \"blob\" type is supported now.", vcnil)
                 }
-                if(sqlite3_bind_blob(st, i, (const void *)(const char *)((*a)[i][1]), (*a)[i][1].len(), SQLITE_TRANSIENT) != SQLITE_OK)
+                if(sqlite3_bind_blob(st, i, (const void *)(const char *)(val[1]), val[1].len(), SQLITE_TRANSIENT) != SQLITE_OK)
                 {
                     sqlite3_finalize(st);
                     USER_BOMB("sql bind error", vcnil)
