@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
     sel->setExtraSelectors(QStringList("vgqt"));
 #endif
 
-#if (defined(Q_OS_WINDOWS) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
+#if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
     sel->setExtraSelectors(QStringList("desktop"));
 #endif
 
