@@ -57,7 +57,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         for(int i = 1; i < a->num_elems(); ++i)
         {
             vc val = aa.get(i);
-            switch(aa.get(i).type())
+            switch(val.type())
             {
             case VC_INT:
                 if(sqlite3_bind_int(st, i, val) != SQLITE_OK)

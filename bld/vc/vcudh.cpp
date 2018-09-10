@@ -399,6 +399,7 @@ dh_store_and_forward_get_key2(vc sfpack, vc our_material)
     ECB_Mode<AES>::Encryption kc;
     for(int i = 0; i < n; ++i)
     {
+        //for forcing alternate key if(i == 0) continue;
         if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[i][DH_STATIC_PRIVATE],
                          (const byte *)(const char *)sfpack[2 * i + 1]))
             return vcnil;
