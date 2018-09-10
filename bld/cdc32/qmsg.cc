@@ -97,6 +97,7 @@ using namespace CryptoPP;
 #include "vcudh.h"
 #include "pkcache.h"
 #include "dhsetup.h"
+#include "dhgsetup.h"
 #include "qsend.h"
 #include "ssns.h"
 #include "dwyco_rand.h"
@@ -144,6 +145,7 @@ static long Logical_clock;
 // this is used in order to assign clock values to
 // messages when we first see them from the server.
 static vc Mid_to_logical_clock;
+extern DH_alternate *Current_alternate;
 
 static void purge_inbox(vc id);
 
@@ -2900,7 +2902,11 @@ decrypt_msg_qqm(vc emsg)
 
     vc body = emsg[QQM_MSG_VEC];
 
-    vc key = dh_store_and_forward_get_key(body[QQM_BODY_DHSF], dh_my_static());
+    vc prvkeys(VC_VECTOR);
+    prvkeys[0] = dh_my_static();
+    prvkeys[1] = Current_alternate->my_static();
+
+    vc key = dh_store_and_forward_get_key2(body[QQM_BODY_DHSF], prvkeys);
     if(key.type() != VC_STRING)
         return vcnil;
     vc ectx = vclh_encdec_open();
@@ -2933,7 +2939,11 @@ decrypt_msg_body(vc body)
     GRTLOG("dec msg body", 0, 0);
     GRTLOGVC(body);
 
-    vc key = dh_store_and_forward_get_key(body[QQM_BODY_DHSF], dh_my_static());
+    vc prvkeys(VC_VECTOR);
+    prvkeys[0] = dh_my_static();
+    prvkeys[1] = Current_alternate->my_static();
+
+    vc key = dh_store_and_forward_get_key2(body[QQM_BODY_DHSF], prvkeys);
     if(key.type() != VC_STRING)
         return vcnil;
     vc ectx = vclh_encdec_open();
@@ -2972,7 +2982,11 @@ decrypt_msg_body2(vc body, DwString& src, DwString& dst, DwString& key_out)
     GRTLOG("dec msg body", 0, 0);
     GRTLOGVC(body);
 
-    vc key = dh_store_and_forward_get_key(body[QQM_BODY_DHSF], dh_my_static());
+    vc prvkeys(VC_VECTOR);
+    prvkeys[0] = dh_my_static();
+    prvkeys[1] = Current_alternate->my_static();
+
+    vc key = dh_store_and_forward_get_key2(body[QQM_BODY_DHSF], prvkeys);
     if(key.type() != VC_STRING)
         return vcnil;
     vc ectx = vclh_encdec_open();

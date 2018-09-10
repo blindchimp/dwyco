@@ -33,6 +33,10 @@ struct DHG_sql : public SimpleSql
                    "privkey blob,"
                    "time integer"
                    ")");
+        sql_simple("create index if not exists keys_uid on keys(uid)");
+        sql_simple("create index if not exists keys_alt_name on keys(alt_name)");
+
+
     }
 
 
@@ -58,7 +62,10 @@ DH_alternate::init(vc uid, vc alternate_name)
     this->uid = uid;
     this->alternate_name = alternate_name;
     if(!DHG_db)
+    {
         DHG_db = new DHG_sql;
+        DHG_db->init();
+    }
 }
 
 int
@@ -117,44 +124,62 @@ DH_alternate::load_account(vc uid, vc alternate_name)
         GRTLOG("created new DH account", 0, 0);
         return 2;
     }
+    DH_static = vc(VC_VECTOR);
     DH_static[DH_STATIC_PRIVATE] = res[0][1];
     DH_static[DH_STATIC_PUBLIC] = res[0][0];
     GRTLOG("loaded existing DH account", 0, 0);
     return 1;
 }
 
-vc
-DH_alternate::my_combined_publics()
-{
-    if(DH_static.is_nil())
-        return vcnil;
-    return udh_just_publics(DH_static);
-}
+//vc
+//DH_alternate::my_combined_publics()
+//{
+//    if(DH_static.is_nil())
+//        return vcnil;
+//    return udh_just_publics(DH_static);
+//}
 
-vc
-DH_alternate::static_material(vc combined_material)
-{
-    // warning: the indexing between combined and
-    // separate key-pairs is messed up, don't rely on
-    // defines or correspondence between the indexes.
-    // ugh.
-    vc ret(VC_VECTOR);
-    ret[DH_STATIC_PRIVATE] = combined_material[2];
-    ret[DH_STATIC_PUBLIC] = combined_material[3];
-    return ret;
-}
+//vc
+//DH_alternate::static_material(vc combined_material)
+//{
+//    // warning: the indexing between combined and
+//    // separate key-pairs is messed up, don't rely on
+//    // defines or correspondence between the indexes.
+//    // ugh.
+//    vc ret(VC_VECTOR);
+//    ret[DH_STATIC_PRIVATE] = combined_material[2];
+//    ret[DH_STATIC_PUBLIC] = combined_material[3];
+//    return ret;
+//}
 
-vc
-DH_alternate::gen_combined_keys()
-{
-    vc entropy = get_entropy();
-    return udh_gen_keys(DH_static, entropy);
-}
+//vc
+//DH_alternate::gen_combined_keys()
+//{
+//    vc entropy = get_entropy();
+//    return udh_gen_keys(DH_static, entropy);
+//}
 
 vc
 DH_alternate::my_static()
 {
-    return DH_static;
+    if(DH_static.is_nil())
+        return vcnil;
+    vc ret(VC_VECTOR);
+    ret[DH_STATIC_PUBLIC] = DH_static[DH_STATIC_PUBLIC];
+    ret[DH_STATIC_PRIVATE] = DH_static[DH_STATIC_PRIVATE];
+    return ret;
 }
+
+vc
+DH_alternate::my_static_public()
+{
+    if(DH_static.is_nil())
+        return vcnil;
+    vc ret(VC_VECTOR);
+    ret[DH_STATIC_PUBLIC] = DH_static[DH_STATIC_PUBLIC];
+
+    return ret;
+}
+
 
 

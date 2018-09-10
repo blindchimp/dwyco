@@ -22,10 +22,12 @@
 #include "vcudh.h"
 #include "sepstr.h"
 #include "ta.h"
+#include "dhgsetup.h"
 #ifdef WIN32
 #include <io.h>
 #endif
 extern vc My_UID;
+extern DH_alternate *Current_alternate;
 
 
 // these are a bit longer because we are at the end of
@@ -574,7 +576,7 @@ DwQSend::send_message()
         // if the key hasn't been fetched before, the message
         // will be sent unencrypted until the key is fetched.
         // it probably makes sense to try and fetch keys that are
-        // likely to be used, but that complicates things, for now,
+        // likely to be used, but that complicates things. for now,
         // keep it simple.
         if(!pk_session_cached(recip_uid))
         {
@@ -583,7 +585,10 @@ DwQSend::send_message()
         }
         if(!Avoid_pk && get_pk(recip_uid, pk))
         {
-            dhsf = dh_store_and_forward_material(pk, key);
+            vc pkeys(VC_VECTOR);
+            pkeys[0] = pk;
+            pkeys[1] = Current_alternate->my_static_public();
+            dhsf = dh_store_and_forward_material2(pkeys, key);
             if(dhsf.is_nil())
             {
                 // this is one of those queasy cases where there is something
@@ -596,7 +601,6 @@ DwQSend::send_message()
                 emsg = vcnil;
                 pk_invalidate(recip_uid);
                 TRACK_ADD(QS_pk_problem, 1);
-
             }
             else
             {

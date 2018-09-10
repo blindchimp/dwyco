@@ -383,6 +383,7 @@ using namespace Weak;
 #include "sepstr.h"
 #include "xinfo.h"
 #include "dhsetup.h"
+#include "dhgsetup.h"
 #include "qsend.h"
 #include "directsend.h"
 #include "msend.h"
@@ -459,6 +460,7 @@ extern int Chat_online;
 DwString simple_diagnostics();
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
+DH_alternate *Current_alternate;
 
 #undef CPPLEAK
 #ifdef CPPLEAK
@@ -1221,6 +1223,12 @@ dwyco_finish_startup()
         save_auth_info(My_UID, My_server_key, "auth");
     }
     dh_load_account("dh.dif");
+
+    DH_alternate *dha = new DH_alternate;
+    dha->init(My_UID, "foo@bar.com");
+    dha->load_account(My_UID, "foo@bar.com");
+    Current_alternate = dha;
+
 
     init_home_server();
     Inhibit_database_thread = 0;

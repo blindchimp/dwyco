@@ -24,10 +24,14 @@ public:
 
     void init(vc uid, vc alternate_name);
     int load_account(vc uid, vc alternate_name);
-    vc gen_combined_keys();
-    vc my_combined_publics();
-    vc static_material(vc combined_material);
+    // note: these "combined" things are used for manipulation
+    // of static/ephemeral UDH keys, which aren't used in this
+    // situation.
+//    vc gen_combined_keys();
+//    vc my_combined_publics();
+//    vc static_material(vc combined_material);
     vc my_static();
+    vc my_static_public();
 };
 
 }

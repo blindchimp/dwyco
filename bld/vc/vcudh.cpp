@@ -260,6 +260,9 @@ dh_store_and_forward_material(vc other_pub, vc& session_key_out)
 // this is used for multi-recipient encryption.
 // note: there is still only one session key returned. this means that any of the
 // public material can be used to decrypt the single key returned.
+// note2: you *can* send the results of this function to the single-key
+// store_and_forward_get_key, which means old software should still be
+// able to decrypt messages
 vc
 dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
 {
@@ -316,9 +319,9 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
     // keys in a messages, just in case.
     ECB_Mode<AES>::Encryption kc;
     kc.SetKey(skey, skey.SizeInBytes());
-    byte buf[8];
+    byte buf[16];
     memset(buf, 0, sizeof(buf));
-    byte checkstr[8];
+    byte checkstr[sizeof(buf)];
     kc.ProcessData(checkstr, buf, sizeof(checkstr));
     // use just first 3 bytes
     ret.append(vc(VC_BSTRING, (const char *)checkstr, 3));
@@ -342,6 +345,8 @@ vclh_sf_material(vc other_pub, vc key_out)
 
 // sfpack is the package of info created by dh_store_and_forward_material, presumably
 // created by the sender. here is where we do the agreement and recover the session key.
+
+static
 vc
 dh_store_and_forward_get_key(vc sfpack, vc our_material)
 {
@@ -376,17 +381,20 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
     return ret;
 }
 
-// sfpack is the package of info created by dh_store_and_forward_material, presumably
+// sfpack is the package of info created by dh_store_and_forward_material2, presumably
 // created by the sender. here is where we do the agreement and recover the session key.
 vc
 dh_store_and_forward_get_key2(vc sfpack, vc our_material)
 {
 
     if((sfpack.num_elems() & 1) != 1 || sfpack.num_elems() < 3)
-        return vcnil;
+    {
+        // maybe it is an old pack, try the old decryption
+        return dh_store_and_forward_get_key(sfpack, our_material);
+    }
 
     int n = sfpack.num_elems() / 2;
-    vc checkstr = sfpack[2 * n + 1];
+    vc checkstr = sfpack[2 * n];
     SecByteBlock akey(EphDH->AgreedValueLength());
     ECB_Mode<AES>::Encryption kc;
     for(int i = 0; i < n; ++i)
@@ -417,12 +425,12 @@ dh_store_and_forward_get_key2(vc sfpack, vc our_material)
         // test the key, return if it looks ok
 
         kc.SetKey(sk, sk.SizeInBytes());
-        byte buf[8];
+        byte buf[16];
         memset(buf, 0, sizeof(buf));
-        byte ck_str[8];
+        byte ck_str[sizeof(buf)];
         kc.ProcessData(ck_str, buf, sizeof(ck_str));
         // use just first 3 bytes
-        if(checkstr == vc(VC_BSTRING, (const char *)checkstr, 3))
+        if(checkstr == vc(VC_BSTRING, (const char *)ck_str, 3))
         {
             vc ret(VC_BSTRING, (const char *)sk.BytePtr(), sk.SizeInBytes());
             return ret;
