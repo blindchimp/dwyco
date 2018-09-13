@@ -34,6 +34,8 @@ public:
     vc my_static_public();
 };
 
+extern DH_alternate *Current_alternate;
+
 }
 
 #endif

@@ -460,7 +460,7 @@ extern int Chat_online;
 DwString simple_diagnostics();
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
-DH_alternate *Current_alternate;
+DH_alternate *dwyco::Current_alternate;
 
 #undef CPPLEAK
 #ifdef CPPLEAK

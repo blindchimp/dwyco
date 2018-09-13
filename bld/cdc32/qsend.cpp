@@ -27,8 +27,6 @@
 #include <io.h>
 #endif
 extern vc My_UID;
-extern DH_alternate *Current_alternate;
-
 
 // these are a bit longer because we are at the end of
 // the road... either we send or the message gets stuck

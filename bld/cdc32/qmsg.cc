@@ -145,7 +145,6 @@ static long Logical_clock;
 // this is used in order to assign clock values to
 // messages when we first see them from the server.
 static vc Mid_to_logical_clock;
-extern DH_alternate *Current_alternate;
 
 static void purge_inbox(vc id);
 

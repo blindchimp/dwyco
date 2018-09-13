@@ -48,7 +48,6 @@ using namespace CryptoPP;
 static DH *EphDH;
 static DH2 *UDH;
 
-//static AutoSeededRandomPool *Rng;
 static RandomPool *Rng;
 
 // XXX this really needs to be beefed up on windows... if we have access
@@ -58,7 +57,7 @@ init_rng(vc entropy)
 {
     // seed, don't bother with it, just use
     // whatever rubbish is on the stack.
-    // this bothers valgrind, so init it.
+    // but, this bothers valgrind, so init it.
 #define N 8
     byte a[N];
     byte k[N];
@@ -255,7 +254,7 @@ dh_store_and_forward_material(vc other_pub, vc& session_key_out)
     return ret;
 }
 
-// this is like the above, except it expects an array pubkey vectors
+// this is like the above, except it expects an array of pubkey vectors
 // and returns an array of encrypted keys and public key material to go with it.
 // this is used for multi-recipient encryption.
 // note: there is still only one session key returned. this means that any of the
@@ -383,6 +382,9 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
 
 // sfpack is the package of info created by dh_store_and_forward_material2, presumably
 // created by the sender. here is where we do the agreement and recover the session key.
+// the first key that checks out with the key check string is returned.
+// since the key check string is only 24 bits long, there is a tiny chance the wrong
+// key will be returned.
 vc
 dh_store_and_forward_get_key2(vc sfpack, vc our_material)
 {
