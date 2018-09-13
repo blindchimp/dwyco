@@ -261,7 +261,7 @@ dh_store_and_forward_material(vc other_pub, vc& session_key_out)
 // note: there is still only one session key returned. this means that any of the
 // public material can be used to decrypt the single key returned.
 vc
-dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out, vc& key_validation)
+dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
 {
 
     // 128 bit symmetric key
@@ -345,6 +345,9 @@ vclh_sf_material(vc other_pub, vc key_out)
 vc
 dh_store_and_forward_get_key(vc sfpack, vc our_material)
 {
+    if(sfpack.num_elems() < 2)
+        return vcnil;
+
     SecByteBlock akey(EphDH->AgreedValueLength());
     if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[DH_STATIC_PRIVATE],
                      (const byte *)(const char *)sfpack[1]))
@@ -371,6 +374,63 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
 
     vc ret(VC_BSTRING, (const char *)sk.BytePtr(), sk.SizeInBytes());
     return ret;
+}
+
+// sfpack is the package of info created by dh_store_and_forward_material, presumably
+// created by the sender. here is where we do the agreement and recover the session key.
+vc
+dh_store_and_forward_get_key2(vc sfpack, vc our_material)
+{
+
+    if((sfpack.num_elems() & 1) != 1 || sfpack.num_elems() < 3)
+        return vcnil;
+
+    int n = sfpack.num_elems() / 2;
+    vc checkstr = sfpack[2 * n + 1];
+    SecByteBlock akey(EphDH->AgreedValueLength());
+    ECB_Mode<AES>::Encryption kc;
+    for(int i = 0; i < n; ++i)
+    {
+        if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[i][DH_STATIC_PRIVATE],
+                         (const byte *)(const char *)sfpack[2 * i + 1]))
+            return vcnil;
+
+        vc kdk(VC_BSTRING, (const char *)akey.data(), akey.SizeInBytes());
+
+        kdk = sha(kdk);
+
+        vc sk_enc = sfpack[2 * i];
+        if(!(sk_enc.type() == VC_STRING && sk_enc.len() <= kdk.len()))
+        {
+            return vcnil;
+        }
+
+        const byte *k = (const byte *)(const char *)sk_enc;
+        SecByteBlock sk(sk_enc.len());
+        const byte *k2 = (const byte *)(const char *)kdk;
+
+        for(int i = 0; i < sk_enc.len(); ++i)
+        {
+            sk[i] = k[i] ^ k2[i];
+        }
+
+        // test the key, return if it looks ok
+
+        kc.SetKey(sk, sk.SizeInBytes());
+        byte buf[8];
+        memset(buf, 0, sizeof(buf));
+        byte ck_str[8];
+        kc.ProcessData(ck_str, buf, sizeof(ck_str));
+        // use just first 3 bytes
+        if(checkstr == vc(VC_BSTRING, (const char *)checkstr, 3))
+        {
+            vc ret(VC_BSTRING, (const char *)sk.BytePtr(), sk.SizeInBytes());
+            return ret;
+        }
+
+    }
+
+    return vcnil;
 }
 
 

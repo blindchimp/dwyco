@@ -2153,7 +2153,7 @@ DwycoCore::delete_message(QString uid, QString mid)
     QByteArray buid = uid.toLatin1();
     QByteArray bmid = mid.toLatin1();
     buid = QByteArray::fromHex(buid);
-    if(dwyco_get_fav_msg(0, 0, bmid.constData()))
+    if(dwyco_get_fav_msg(bmid.constData()))
         return 0;
     return dwyco_delete_saved_message(buid.constData(), buid.length(), bmid.constData());
 
@@ -2163,16 +2163,14 @@ int
 DwycoCore::get_fav_message(QString mid)
 {
     QByteArray bmid = mid.toLatin1();
-    return dwyco_get_fav_msg(0, 0, bmid.constData());
+    return dwyco_get_fav_msg(bmid.constData());
 }
 
 void
-DwycoCore::set_fav_message(QString uid, QString mid, int val)
+DwycoCore::set_fav_message(QString mid, int val)
 {
-    QByteArray buid = uid.toLatin1();
     QByteArray bmid = mid.toLatin1();
-    buid = QByteArray::fromHex(buid);
-    dwyco_set_fav_msg(buid.constData(), buid.length(), bmid.constData(), !!val);
+    dwyco_set_fav_msg(bmid.constData(), !!val);
 }
 
 int
@@ -2429,7 +2427,7 @@ process_special_msg(QByteArray mid)
         // with the group name.
 
         dwyco_save_message(mid.constData());
-        dwyco_set_msg_tag(0, 0, mid.constData(), name.toLatin1().constData());
+        dwyco_set_msg_tag(mid.constData(), name.toLatin1().constData());
 
         // emit a signal for a new group message
 

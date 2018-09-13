@@ -374,30 +374,30 @@ sql_remove_uid(vc uid)
     {
         vc res;
         sql_start_transaction();
-	{
-        VCArglist a;
-        a.append("delete from indexed_flag where uid = $1;");
-        a.append(to_hex(uid));
-        res = sqlite3_bulk_query(Db, &a);
-        if(res.is_nil())
-            throw -1;
-	}
-	{
-	VCArglist a;
-        a.append("delete from msg_idx where assoc_uid = $1;");
-        a.append(to_hex(uid));
-        res = sqlite3_bulk_query(Db, &a);
-        if(res.is_nil())
-            throw -1;
-	}
-	{
-	VCArglist a;
-        a.append("delete from most_recent_msg where uid = $1;");
-        a.append(to_hex(uid));
-        res = sqlite3_bulk_query(Db, &a);
-        if(res.is_nil())
-            throw -1;
-	}
+        {
+            VCArglist a;
+            a.append("delete from indexed_flag where uid = $1;");
+            a.append(to_hex(uid));
+            res = sqlite3_bulk_query(Db, &a);
+            if(res.is_nil())
+                throw -1;
+        }
+        {
+            VCArglist a;
+            a.append("delete from msg_idx where assoc_uid = $1;");
+            a.append(to_hex(uid));
+            res = sqlite3_bulk_query(Db, &a);
+            if(res.is_nil())
+                throw -1;
+        }
+        {
+            VCArglist a;
+            a.append("delete from most_recent_msg where uid = $1;");
+            a.append(to_hex(uid));
+            res = sqlite3_bulk_query(Db, &a);
+            if(res.is_nil())
+                throw -1;
+        }
         sql_commit_transaction();
     }
     catch(...)
@@ -728,23 +728,23 @@ vc
 get_unfav_msgids(vc uid)
 {
     vc ret(VC_VECTOR);
+    DwString mfn = newfn("fav.sql");
+    sql_simple(DwString("attach '%1' as mt;").arg(mfn).c_str());
     try
     {
         sql_start_transaction();
         VCArglist a;
-        a.append("select mid from msg_idx where assoc_uid = $1;");
+        a.append("select mid as foo from msg_idx where assoc_uid = $1 "
+                 "and not exists (select * from msg_tags2 where mid = foo and tag = '_fav')");
         a.append(to_hex(uid));
         vc res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
             throw -1;
-
-        vc favset = sql_fav_get_fav_set(uid);
         int n = res.num_elems();
         for(int i = 0; i < n; ++i)
         {
             vc mid = res[i][0];
-            if(!favset.contains(mid))
-                ret.append(mid);
+            ret.append(mid);
         }
         sql_commit_transaction();
     }
@@ -752,6 +752,7 @@ get_unfav_msgids(vc uid)
     {
         sql_rollback_transaction();
     }
+    sql_simple("detach mt;");
     return ret;
 }
 

@@ -31,7 +31,7 @@ DEFINES += \
         DWYCO_USE_SQLITE
     
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-#DEFINES += DW_RTLOG
+DEFINES += DW_RTLOG
 #DEFINES += DWYCO_TRACE
 #LCL_DFLAGS += -DLEAK_CLEANUP
 DEFINES += DWYCO_FIELD_DEBUG
@@ -227,7 +227,9 @@ fetch_to_inbox.cpp \
 backsql.cpp \
 sqlbq.cpp \
 favmsg.cpp \
-aqext_android.cpp
+aqext_android.cpp \
+    dhgsetup.cpp \
+    simplesql.cpp
 
 HEADERS += \
     vccfg.h

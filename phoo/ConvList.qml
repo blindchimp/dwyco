@@ -322,6 +322,7 @@ Page {
            }
            MouseArea {
                anchors.fill: drow
+               acceptedButtons: Qt.LeftButton|Qt.RightButton
                onClicked: {
                    console.log("click")
                    console.log(index)
@@ -331,7 +332,11 @@ Page {
                        if(!listView2.model.at_least_one_selected())
                            multiselect_mode = false
                    }   else {                     
-                       uid_selected(uid, "clicked")
+                       if(mouse.button === Qt.LeftButton) {
+                           uid_selected(uid, "clicked")
+                       } else if(mouse.button === Qt.RightButton) {
+                           uid_selected(uid, "hold")
+                       }
                    }
 
                }
@@ -491,6 +496,7 @@ Page {
 
            MouseArea {
                anchors.fill: parent
+               acceptedButtons: Qt.LeftButton|Qt.RightButton
                onClicked: {
                    console.log("click")
                    console.log(index)
@@ -500,7 +506,11 @@ Page {
                        if(!gridView1.model.at_least_one_selected())
                            multiselect_mode = false
                    }   else {
-                       uid_selected(uid, "clicked")
+                       if(mouse.button === Qt.LeftButton) {
+                           uid_selected(uid, "clicked")
+                       } else if(mouse.button === Qt.RightButton) {
+                           uid_selected(uid, "hold")
+                       }
                    }
 
                }
