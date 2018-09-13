@@ -347,7 +347,7 @@ msglist_model::delete_all_selected()
         }
         else
         {
-            if(!dwyco_get_fav_msg(0, 0, mid.constData()))
+            if(!dwyco_get_fav_msg(mid.constData()))
                 dwyco_delete_saved_message(buid.constData(), buid.length(), mid.constData());
         }
 
@@ -369,7 +369,7 @@ msglist_model::fav_all_selected(int f)
             dwyco_list_release(l);
             continue;
         }
-        dwyco_set_fav_msg(buid.constData(), buid.length(), b.constData(), f);
+        dwyco_set_fav_msg(b.constData(), f);
     }
     reload_model();
 }
@@ -387,7 +387,7 @@ msglist_model::tag_all_selected(QByteArray tag)
             dwyco_list_release(l);
             continue;
         }
-        dwyco_set_msg_tag(buid.constData(), buid.length(), b.constData(), tag.constData());
+        dwyco_set_msg_tag(b.constData(), tag.constData());
     }
     reload_model();
 }
@@ -405,7 +405,7 @@ msglist_model::untag_all_selected(QByteArray tag)
             dwyco_list_release(l);
             continue;
         }
-        dwyco_unset_msg_tag(buid.constData(), buid.length(), b.constData(), tag.constData());
+        dwyco_unset_msg_tag(b.constData(), tag.constData());
     }
     reload_model();
 }
@@ -1156,7 +1156,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
             return QVariant();
 
-        if(dwyco_get_fav_msg(0, 0, mid.constData()))
+        if(dwyco_get_fav_msg(mid.constData()))
             return 1;
         return 0;
 

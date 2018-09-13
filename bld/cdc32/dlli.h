@@ -749,13 +749,13 @@ DWYCO_LIST DWYCOEXPORT dwyco_pal_get_list();
 void DWYCOEXPORT dwyco_pal_relogin();
 int DWYCOEXPORT dwyco_get_pal_logged_in();
 
-void DWYCOEXPORT dwyco_set_fav_msg(const char *uid, int len_uid, const char *mid, int fav);
-int DWYCOEXPORT dwyco_get_fav_msg(const char *uid, int len_uid, const char *mid);
+void DWYCOEXPORT dwyco_set_fav_msg(const char *mid, int fav);
+int DWYCOEXPORT dwyco_get_fav_msg(const char *mid);
 // this clears all the messages for a user except for ones that are "favorites"
 int DWYCOEXPORT dwyco_clear_user_unfav(const char *uid, int len_uid);
 
-void DWYCOEXPORT dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
-void DWYCOEXPORT dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
+void DWYCOEXPORT dwyco_set_msg_tag(const char *mid, const char *tag);
+void DWYCOEXPORT dwyco_unset_msg_tag(const char *mid, const char *tag);
 void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
 int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
