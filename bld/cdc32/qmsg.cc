@@ -2327,8 +2327,9 @@ remove_user(vc id, const char *pfx)
     vc uid = dir_to_uid((const char *)id);
     //always_vis_del(uid);
     // remove indexs so the msgs don't magically reappear
-    remove_msg_idx_uid(uid);
     sql_fav_remove_uid(uid);
+    remove_msg_idx_uid(uid);
+
     MsgFolders.del(uid);
     se_emit(SE_USER_REMOVE, uid);
     return 1;
@@ -2339,8 +2340,8 @@ clear_user(vc id, const char *pfx)
 {
     remove_user_files(id, pfx, 1);
     vc uid = dir_to_uid((const char *)id);
-    clear_msg_idx_uid(uid);
     sql_fav_remove_uid(uid);
+    clear_msg_idx_uid(uid);
     Rescan_msgs = 1;
     return 1;
 }

@@ -7614,15 +7614,14 @@ dwyco_pal_get_list()
 
 DWYCOEXPORT
 void
-dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag)
+dwyco_set_msg_tag(const char *mid, const char *tag)
 {
-    vc buid(VC_BSTRING, uid, len_uid);
-    sql_add_tag(buid, mid, tag);
+    sql_add_tag(mid, tag);
 }
 
 DWYCOEXPORT
 void
-dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag)
+dwyco_unset_msg_tag(const char *mid, const char *tag)
 {
     sql_remove_mid_tag(mid, tag);
 }
@@ -7668,29 +7667,18 @@ dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag)
 }
 
 
-
 DWYCOEXPORT
 void
-dwyco_set_fav_msg(const char *uid, int len_uid, const char *mid, int fav)
+dwyco_set_fav_msg(const char *mid, int fav)
 {
-    vc buid(VC_BSTRING, uid, len_uid);
-    vc bmid(mid);
-    sql_fav_set_fav(buid, bmid, fav);
+    sql_fav_set_fav(mid, fav);
 }
 
 DWYCOEXPORT
 int
-dwyco_get_fav_msg(const char *uid, int len_uid, const char *mid)
+dwyco_get_fav_msg(const char *mid)
 {
-    if(mid == 0)
-    {
-        if(uid == 0)
-            return 0;
-        vc buid(VC_BSTRING, uid, len_uid);
-        return sql_fav_has_fav(buid);
-    }
-    vc bmid(mid);
-    return sql_fav_is_fav(bmid);
+    return sql_fav_is_fav(mid);
 }
 
 // ignore list stuff

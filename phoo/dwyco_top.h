@@ -203,7 +203,7 @@ public:
     Q_INVOKABLE int clear_messages_unfav(QString uid);
     Q_INVOKABLE int delete_user(QString uid);
     Q_INVOKABLE int get_fav_message(QString mid);
-    Q_INVOKABLE void set_fav_message(QString uid, QString mid, int val);
+    Q_INVOKABLE void set_fav_message(QString mid, int val);
 
     Q_INVOKABLE void uid_keyboard_input(QString uid);
     Q_INVOKABLE int get_rem_keyboard_state(QString uid);
