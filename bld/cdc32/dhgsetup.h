@@ -24,6 +24,7 @@ public:
 
     void init(vc uid, vc alternate_name);
     int load_account(vc uid, vc alternate_name);
+    vc alt_name() {return alternate_name;}
     // note: these "combined" things are used for manipulation
     // of static/ephemeral UDH keys, which aren't used in this
     // situation.

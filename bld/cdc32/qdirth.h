@@ -195,6 +195,7 @@ QckMsg dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d);
 #define QIGNORE_LIST 16
 #define QSTATIC_PUBLIC 17
 #define QSTATIC_PUBLIC_ALTERNATE 18
+#define QSTATIC_ALT_NAME 19
 
 // store message has these fields
 #define QRECIPIENTS 2
