@@ -154,7 +154,7 @@ DwBagR<T>::set_size(int sz)
     table_size = sz;
 }
 
-// note: these functions need remodulatization...
+// note: these functions need remodularization...
 
 template<class T>
 DwBagR<T>::DwBagR(const DwBagR<T>& m)

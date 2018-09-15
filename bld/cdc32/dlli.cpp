@@ -1022,6 +1022,7 @@ dwyco_resume()
     if(!Dwyco_suspended)
         return;
     handle_crash_setup();
+    init_entropy();
     Inhibit_database_thread = 0;
     Inhibit_pal = 0;
     Inhibit_auto_connect = 0;
