@@ -129,11 +129,10 @@ private:
 int dirth_poll_response();
 void dirth_poll_timeouts();
 
-//void dirth_send_new3(vc id, vc handle, vc email, vc icq, vc first, vc last, vc info,
-//	vc pw, vc rating, vc force_rating, vc pal_auth, QckDone);
 void dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_auth, QckDone d);
 
 void dirth_send_ack_get(vc id, vc mid, QckDone d);
+void dirth_send_ack_get2(vc id, vc mid, QckDone d);
 void dirth_send_query(vc id, QckDone d);
 void dirth_send_store(vc id, vc recipients, vc msg, QckDone d);
 void dirth_send_get(vc id, vc which, QckDone d);
@@ -156,8 +155,6 @@ void dirth_send_set_interest_list(vc id, vc list, QckDone d);
 void dirth_send_recommend2(vc id, vc from, vc to, QckDone d);
 void dirth_send_set_state(vc id, vc state, QckDone d);
 void dirth_send_check_for_update(vc id, QckDone d);
-//void dirth_send_set_profile(vc id, vc info, QckDone d);
-//void dirth_send_get_profile(vc id, vc uid, vc cache_check, QckDone d);
 void dirth_send_get_info(vc id, vc uid, vc cache_check, QckDone d);
 void dirth_send_set_info(vc id, vc info, QckDone d);
 void dirth_send_get_pal_auth_state(vc id, vc who, QckDone d);

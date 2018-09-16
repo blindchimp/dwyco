@@ -9,6 +9,7 @@
 #ifndef PKCACHE_H
 #define PKCACHE_H
 
+#include "vc.h"
 void init_pk_cache();
 void exit_pk_cache();
 int get_pk(vc uid, vc& sfpk_out);

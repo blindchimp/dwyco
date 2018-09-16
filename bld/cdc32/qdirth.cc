@@ -468,6 +468,19 @@ dirth_send_ack_get(vc id, vc mid, QckDone d)
 }
 
 void
+dirth_send_ack_get2(vc uid, vc mid, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("ack-get2", ++Serial);
+    m[QTYPE] = reqtype("ack-get2", d);
+    m[QFROM] = uid;
+    m[2] = mid;
+    Waitq.append(d);
+    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+}
+
+void
 dirth_send_ignore(vc id, vc uid, QckDone d)
 {
     QckMsg m;
