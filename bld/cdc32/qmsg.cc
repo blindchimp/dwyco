@@ -1382,7 +1382,23 @@ fetch_pk_done(vc m, void *, vc uid, ValidPtr)
     vc static_public(VC_VECTOR);
     static_public[DH_STATIC_PUBLIC] = m[1][0];
     vc sig = m[1][1];
-    put_pk(uid, static_public, sig);
+    // next is a vector containing the alt key
+    vc alt = m[1][2];
+    if(!alt.is_nil())
+    {
+        vc alt_pk = alt[0];
+        vc alt_static_public(VC_VECTOR);
+        alt_static_public[DH_STATIC_PUBLIC] = alt_pk;
+        vc server_sig = alt[1];
+        vc gname = alt[2];
+        put_pk2(uid, static_public, sig, alt_static_public, server_sig, gname);
+
+    }
+    else
+    {
+        put_pk(uid, static_public, sig);
+    }
+
     pk_set_session_cache(uid);
     TRACK_ADD(QM_fetch_pk_ok, 1);
 

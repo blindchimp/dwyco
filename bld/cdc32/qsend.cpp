@@ -581,11 +581,19 @@ DwQSend::send_message()
             fetch_info(recip_uid);
             pk_set_session_cache(recip_uid);
         }
-        if(!Avoid_pk && get_pk(recip_uid, pk))
+
+        vc alt_pk;
+
+        if(!Avoid_pk && get_pk2(recip_uid, pk, alt_pk))
         {
             vc pkeys(VC_VECTOR);
             pkeys[0] = pk;
-            pkeys[1] = Current_alternate->my_static_public();
+            // note: this was just for testing
+            //pkeys[1] = Current_alternate->my_static_public();
+            if(!alt_pk.is_nil())
+            {
+                pkeys[1] = alt_pk;
+            }
             dhsf = dh_store_and_forward_material2(pkeys, key);
             if(dhsf.is_nil())
             {

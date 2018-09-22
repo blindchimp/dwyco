@@ -253,6 +253,30 @@ get_pk(vc uid, vc& sfpk_out)
     return 1;
 }
 
+int
+get_pk2(vc uid, vc& sfpk_out, vc& alt_sfpk_out)
+{
+    vc prf_out;
+    if(!load_pk(uid, prf_out))
+        return 0;
+
+    vc ret(VC_VECTOR);
+    ret[DH_STATIC_PUBLIC] = prf_out[PKC_STATIC_PUBLIC];
+
+    sfpk_out = ret;
+
+    vc ret2(VC_VECTOR);
+    if(prf_out[PKC_ALT_STATIC_PUBLIC].is_nil())
+    {
+        alt_sfpk_out = vcnil;
+        return 1;
+    }
+    ret2[DH_STATIC_PUBLIC] = prf_out[PKC_ALT_STATIC_PUBLIC];
+    alt_sfpk_out = ret2;
+
+    return 1;
+}
+
 static int
 save_pk(vc uid, vc prf)
 {
@@ -286,6 +310,18 @@ put_pk(vc uid, vc sfpk, vc sig)
     vc pk(VC_VECTOR);
     pk[PKC_STATIC_PUBLIC] = sfpk[DH_STATIC_PUBLIC];
     pk[PKC_DWYCO_SIGNATURE] = sig;
+    return save_pk(uid, pk);
+}
+
+int
+put_pk2(vc uid, vc sfpk, vc sig, vc alt_pk, vc server_sig, vc gname)
+{
+    vc pk(VC_VECTOR);
+    pk[PKC_STATIC_PUBLIC] = sfpk[DH_STATIC_PUBLIC];
+    pk[PKC_DWYCO_SIGNATURE] = sig;
+    pk[PKC_ALT_STATIC_PUBLIC] = alt_pk;
+    pk[PKC_ALT_SERVER_SIG] = server_sig;
+    pk[PKC_ALT_GNAME] = gname;
     return save_pk(uid, pk);
 }
 
