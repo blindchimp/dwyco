@@ -319,7 +319,7 @@ put_pk2(vc uid, vc sfpk, vc sig, vc alt_pk, vc server_sig, vc gname)
     vc pk(VC_VECTOR);
     pk[PKC_STATIC_PUBLIC] = sfpk[DH_STATIC_PUBLIC];
     pk[PKC_DWYCO_SIGNATURE] = sig;
-    pk[PKC_ALT_STATIC_PUBLIC] = alt_pk;
+    pk[PKC_ALT_STATIC_PUBLIC] = alt_pk[DH_STATIC_PUBLIC];
     pk[PKC_ALT_SERVER_SIG] = server_sig;
     pk[PKC_ALT_GNAME] = gname;
     return save_pk(uid, pk);
