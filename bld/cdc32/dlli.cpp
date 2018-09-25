@@ -1225,9 +1225,14 @@ dwyco_finish_startup()
     }
     dh_load_account("dh.dif");
 
+    const char *grpname;
+    grpname = getenv("DWYCO_GROUP");
+    if(!grpname)
+        grpname = "foo@bar.com";
+
     DH_alternate *dha = new DH_alternate;
-    dha->init(My_UID, "foo@bar.com");
-    dha->load_account(My_UID, "foo@bar.com");
+    dha->init(My_UID, grpname);
+    dha->load_account(My_UID, grpname);
     Current_alternate = dha;
 
 
