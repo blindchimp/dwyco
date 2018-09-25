@@ -1826,7 +1826,7 @@ query_done(vc m, void *, vc, ValidPtr)
     if(m[1].is_nil())
         return;
 
-    vc v2 = m[1];
+    const vc v2 = m[1];
 
     int oldnum = 0;
     if(!Cur_msgs.is_nil())
@@ -1847,7 +1847,8 @@ query_done(vc m, void *, vc, ValidPtr)
     // message q-d up offline for that person and they are in pals-only
     // mode when you log in.
     static int first_load = 0;
-    for(i = 0; i < v2.num_elems(); ++i)
+    int nv2 = v2.num_elems();
+    for(i = 0; i < nv2; ++i)
     {
         vc v = v2[i];
         // 0: who from
@@ -1880,8 +1881,8 @@ query_done(vc m, void *, vc, ValidPtr)
                 dirth_send_ack_get(My_UID, v[QM_ID], QckDone(ack_get_done2, 0, args));
             }
             delete_msg2(v[QM_ID]);
-            v2.remove(i, 1);
-            --i;
+            //v2.remove(i, 1);
+            //--i;
             continue;
         }
 
