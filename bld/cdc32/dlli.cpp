@@ -7259,7 +7259,7 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
             if(q->msg_download_callback)
                 (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
             se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, vcnil);
-            dirth_send_ack_get(My_UID, q->msg_id, QckDone(0, 0));
+            dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
             TRACK_ADD(MR_msg_decrypt_failed, 1);
             return;
         }
@@ -7308,7 +7308,7 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
     // note: just send ack_get, with no return, assume it always works.
     // if it doesn't work, it is no big deal, we just get a message
     // twice.
-    dirth_send_ack_get(My_UID, q->msg_id, QckDone(0, 0));
+    dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
 }
 
 static void
@@ -7569,7 +7569,7 @@ dwyco_delete_unsaved_message(const char *msg_id)
     vc args(VC_VECTOR);
     args.append(vcnil);
     args.append(id);
-    dirth_send_ack_get(My_UID, id, QckDone(ack_get_done2, 0, args));
+    dirth_send_ack_get2(My_UID, id, QckDone(ack_get_done2, 0, args));
     //delete_msg2(id);
     return 1;
 }

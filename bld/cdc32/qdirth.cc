@@ -443,25 +443,37 @@ dirth_send_store(vc id, vc recipients, vc msg, QckDone d)
 }
 
 void
-dirth_send_query(vc id, QckDone d)
+dirth_send_query(vc uid, QckDone d)
 {
     QckMsg m;
 
     d.type = ReqType("query", ++Serial);
     m[QTYPE] = reqtype("query", d);
-    m[QFROM] = id;
+    m[QFROM] = uid;
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
 }
 
 void
-dirth_send_ack_get(vc id, vc mid, QckDone d)
+dirth_send_query2(vc uid, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("query2", ++Serial);
+    m[QTYPE] = reqtype("query2", d);
+    m[QFROM] = uid;
+    Waitq.append(d);
+    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+}
+
+void
+dirth_send_ack_get(vc uid, vc mid, QckDone d)
 {
     QckMsg m;
 
     d.type = ReqType("ack-get", ++Serial);
     m[QTYPE] = reqtype("ack-get", d);
-    m[QFROM] = id;
+    m[QFROM] = uid;
     m[2] = mid;
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);

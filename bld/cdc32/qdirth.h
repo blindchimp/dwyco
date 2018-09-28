@@ -133,7 +133,8 @@ void dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_
 
 void dirth_send_ack_get(vc id, vc mid, QckDone d);
 void dirth_send_ack_get2(vc id, vc mid, QckDone d);
-void dirth_send_query(vc id, QckDone d);
+void dirth_send_query(vc uid, QckDone d);
+void dirth_send_query2(vc uid, QckDone d);
 void dirth_send_store(vc id, vc recipients, vc msg, QckDone d);
 void dirth_send_get(vc id, vc which, QckDone d);
 void dirth_send_ignore(vc id, vc uid, QckDone d);

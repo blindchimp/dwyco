@@ -1878,7 +1878,7 @@ query_done(vc m, void *, vc, ValidPtr)
                 vc args(VC_VECTOR);
                 args.append(from);
                 args.append(v[2]);
-                dirth_send_ack_get(My_UID, v[QM_ID], QckDone(ack_get_done2, 0, args));
+                dirth_send_ack_get2(My_UID, v[QM_ID], QckDone(ack_get_done2, 0, args));
             }
             delete_msg2(v[QM_ID]);
             //v2.remove(i, 1);
@@ -1948,7 +1948,7 @@ query_done(vc m, void *, vc, ValidPtr)
 void
 query_messages()
 {
-    dirth_send_query(My_UID, QckDone(query_done, 0));
+    dirth_send_query2(My_UID, QckDone(query_done, 0));
 }
 
 static int Hack_first_load = 0;
@@ -2265,7 +2265,7 @@ ack_all(vc uid)
         vc args(VC_VECTOR);
         args.append(vcnil);
         args.append(ackset[i]);
-        dirth_send_ack_get(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
+        dirth_send_ack_get2(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
         delete_msg2(ackset[i]);
     }
 }
