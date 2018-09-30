@@ -17,13 +17,13 @@ Page {
     id: convlist_top
     //anchors.fill: parent
     property bool multiselect_mode : false
-    property alias model: listView2.model
+    property var model
 
    signal uid_selected(string uid, string action)
 
     function star_fun(b) {
         console.log("convlist star")
-        model.pal_all_selected(b)
+        ConvListModel.pal_all_selected(b)
     }
 
     Component {
@@ -51,14 +51,14 @@ Page {
                 MenuItem {
                     text: "Select All"
                     onTriggered: {
-                        model.set_all_selected(true)
+                        ConvListModel.set_all_selected(true)
                     }
                 }
 
                 MenuItem {
                     text: "Block"
                     onTriggered: {
-                        model.block_all_selected()
+                        ConvListModel.block_all_selected()
                         multiselect_mode = false
 
                     }
@@ -77,8 +77,8 @@ Page {
                         informativeText: "This removes FAVORITE messages too."
                         standardButtons: StandardButton.Yes | StandardButton.No
                         onYes: {
-                            model.block_all_selected()
-                            model.delete_all_selected()
+                            ConvListModel.block_all_selected()
+                            ConvListModel.delete_all_selected()
                             close()
                         }
                         onNo: {
@@ -122,6 +122,15 @@ Page {
                     }
                     onClicked: drawer.open()
                     visible: stack.depth === 1
+                    Layout.fillHeight: true
+                }
+                Item {
+
+                    Layout.fillWidth: true
+                }
+
+                GridToggle {
+                    id: show_grid
                     Layout.fillHeight: true
                 }
                 Item {
@@ -289,6 +298,17 @@ Page {
                            source: mi("ic_visibility_off_white_24dp.png")
                        }
                    }
+                   Rectangle {
+                       id: hidden
+                       width: 16
+                       height: 16
+                       anchors.right:parent.right
+                       anchors.top:parent.top
+                       visible: show_hidden && has_hidden
+                       z: 2
+                       radius: width
+                       color: "orange"
+                   }
                }
 
                Text {
@@ -302,6 +322,7 @@ Page {
            }
            MouseArea {
                anchors.fill: drow
+               acceptedButtons: Qt.LeftButton|Qt.RightButton
                onClicked: {
                    console.log("click")
                    console.log(index)
@@ -311,7 +332,11 @@ Page {
                        if(!listView2.model.at_least_one_selected())
                            multiselect_mode = false
                    }   else {                     
-                       uid_selected(uid, "clicked")
+                       if(mouse.button === Qt.LeftButton) {
+                           uid_selected(uid, "clicked")
+                       } else if(mouse.button === Qt.RightButton) {
+                           uid_selected(uid, "hold")
+                       }
                    }
 
                }
@@ -336,6 +361,7 @@ Page {
    }
 
    Component.onCompleted: {
+       model = ConvListModel
        convlist_top.uid_selected.connect(top_dispatch.uid_selected)
    }
 
@@ -349,7 +375,9 @@ Page {
    
    ListView {
        id: listView2
-        anchors.fill:parent
+       anchors.fill:parent
+
+       visible: !show_grid.grid_checked
 
        model: ConvListModel
        delegate: convlist_delegate
@@ -361,6 +389,170 @@ Page {
            }
 
        }
+
+   }
+
+   Component {
+       id: convgrid_delegate
+
+       Rectangle {
+           id: bgrec
+           height: gridView1.cellHeight
+           width: gridView1.cellWidth
+           opacity: {multiselect_mode && selected ? 0.5 : 1.0}
+           color: primary_dark
+           border.width: 1
+           gradient: Gradient {
+               GradientStop { position: 0.0; color: primary_light }
+               GradientStop { position: 1.0; color: primary_dark}
+           }
+
+           CircularImage {
+               id: ppic
+               anchors.centerIn: parent
+               source : {
+                   (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                               core.uid_to_profile_preview(uid) :
+                               "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
+               }
+               //anchors.verticalCenter: parent.verticalCenter
+               fillMode: Image.PreserveAspectCrop
+               height:parent.height
+               width: parent.height
+               Image {
+                   id: ggtiny
+                   width: .3 * ppic.height
+                   height: .3 * ppic.height
+                   source: "qrc:/new/prefix1/icons/ggtiny.png"
+                   anchors.top: parent.top
+                   anchors.left: has_msgs.right
+                   visible: selected
+                   z: 3
+                   opacity: 1.0
+               }
+               Image {
+                   id: has_msgs
+                   width: .3 * ppic.height
+                   height: .3 * ppic.height
+                   source: "qrc:/new/red32/icons/red-32x32/arrow right-32x32.png"
+                   z:3
+                   anchors.top:parent.top
+                   anchors.left:parent.left
+                   visible: {unseen_count > 0 ? true : false }
+               }
+               Rectangle {
+                   id: ispal
+                   width: .3 * ppic.height
+                   height: .3 * ppic.height
+                   anchors.top: parent.top
+                   anchors.left: parent.left
+                   visible: pal
+                   z: 2
+                   color: primary_light
+                   radius: width / 2
+                   Image {
+                       anchors.fill: parent
+                       anchors.margins: 2
+                       source: mi("ic_star_black_24dp.png")
+                   }
+               }
+               Rectangle {
+                   id: blocked
+                   width: .3 * ppic.height
+                   height: .3 * ppic.height
+                   anchors.top: parent.top
+                   anchors.left: parent.left
+                   visible: is_blocked
+                   z: 2
+                   color: primary_dark
+                   radius: width / 2
+                   Image {
+                       anchors.fill: parent
+                       anchors.margins: 2
+                       source: mi("ic_visibility_off_white_24dp.png")
+                   }
+               }
+               Rectangle {
+                   id: ghidden
+                   width: 16
+                   height: 16
+                   anchors.right:parent.right
+                   anchors.top:parent.top
+                   visible: show_hidden && has_hidden
+                   z: 2
+                   radius: width
+                   color: "orange"
+               }
+           }
+
+           Text {
+               text: display
+               elide: Text.ElideRight
+               clip: true
+               anchors.bottom: parent.bottom
+               width: parent.width
+               color: amber_light
+           }
+
+           MouseArea {
+               anchors.fill: parent
+               acceptedButtons: Qt.LeftButton|Qt.RightButton
+               onClicked: {
+                   console.log("click")
+                   console.log(index)
+                   gridView1.currentIndex = index
+                   if(multiselect_mode) {
+                       gridView1.model.toggle_selected(uid)
+                       if(!gridView1.model.at_least_one_selected())
+                           multiselect_mode = false
+                   }   else {
+                       if(mouse.button === Qt.LeftButton) {
+                           uid_selected(uid, "clicked")
+                       } else if(mouse.button === Qt.RightButton) {
+                           uid_selected(uid, "hold")
+                       }
+                   }
+
+               }
+               onPressAndHold:  {
+                   gridView1.currentIndex = index
+                   multiselect_mode = true
+                   gridView1.model.toggle_selected(uid)
+                   if(Qt.platform.os == "android") {
+                       notificationClient.vibrate(50)
+                   }
+               }
+           }
+       }
+   }
+
+   GridView {
+       id: gridView1
+       anchors.fill:parent
+       cellWidth: 160 ; cellHeight: 160
+
+       visible: show_grid.grid_checked
+
+       model: ConvListModel
+       delegate: convgrid_delegate
+       clip: true
+       //spacing: 5
+       ScrollBar.vertical: ScrollBar {
+           background: Rectangle {
+               color: "green"
+           }
+
+       }
+       // i can't get any of this to work on linux for some reason
+//       move: Transition {
+//                 NumberAnimation { properties: "x,y"; duration: 5000 }
+//             }
+//       moveDisplaced: Transition {
+//                 NumberAnimation { properties: "x,y"; duration: 5000 }
+//             }
+//       populate: Transition {
+//                 NumberAnimation { properties: "x,y"; duration: 1000 }
+//             }
 
    }
 

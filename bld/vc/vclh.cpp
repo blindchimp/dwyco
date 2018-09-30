@@ -2935,14 +2935,6 @@ vclh_clear_objmap()
 }
 #endif
 
-static
-void
-makefun(const char *name, const vc& fun)
-{
-	vc(name).bind(fun);
-}
-
-
 #if defined(_Windows) || defined(_MSC_VER)
 #include <process.h>
 #endif
@@ -3007,6 +2999,15 @@ vc::init()
 	Vcmap = new vcctx;
 	init_rest();
 }
+
+#ifndef NO_VCEVAL
+static
+void
+makefun(const char *name, const vc& fun)
+{
+    vc(name).bind(fun);
+}
+#endif
 
 #define VC(fun, nicename, attr) vc(fun, nicename, #fun, attr)
 #define VC2(fun, nicename, attr, trans) vc(fun, nicename, #fun, attr, trans)

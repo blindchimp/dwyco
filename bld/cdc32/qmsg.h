@@ -135,6 +135,7 @@ int can_forward(vc body, vc att_dir);
 DwString simple_diagnostics();
 vc gen_hash(DwString filename);
 vc direct_to_body(vc msgid);
+vc direct_to_body2(vc dm);
 int pal_add(vc u);
 int pal_del(vc u, int norelogin = 0);
 int pal_user(vc u);
@@ -178,10 +179,7 @@ void clean_cruft();
 
 // this is the summary info sent from the
 // server
-// 0: who from
-// 1: len
-// 2: id on server
-// 3: date vector
+
 #define QM_FROM 0
 #define QM_LEN 1
 #define QM_ID 2

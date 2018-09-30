@@ -99,7 +99,9 @@ theader
 tcls::DwTreeKaz(R const & rdeflt)
 {
     dict_comp_t cc = dwtreekaz_compare<D>;
-    dict = dict_create(1 << 31, cc);
+    //dict = dict_create(1 << 31, cc);
+    dict = new dict_t;
+    dict_init(dict, 1 << 31, cc);
     dnode_free_t ft = dwtreekaz_delete_node<R,D>;
     dict_set_allocator(dict, dwtreekaz_alloc_node, ft, this);
     def = rdeflt;
@@ -109,7 +111,9 @@ theader
 tcls::~DwTreeKaz()
 {
     dict_free_nodes(dict);
-    dict_destroy(dict);
+    //dict_destroy(dict);
+    delete dict;
+    dict = 0;
 }
 
 theader
@@ -136,9 +140,9 @@ tcls::operator=(const DwTreeKaz<R,D>& t)
     if(this == &t)
         return *this;
     dict_free_nodes(dict);
-    dict_destroy(dict);
-    dict_comp_t cc = dwtreekaz_compare<D>;
-    dict = dict_create(0, cc);
+    delete dict;
+    //dict_comp_t cc = dwtreekaz_compare<D>;
+    dict = new dict_t;
     dict_init_like(dict, t.dict);
     dnode_process_t dp = copy_kaz_node<R,D>;
     dict_process(t.dict, dict, dp);
@@ -149,8 +153,8 @@ theader
 tcls::DwTreeKaz(const DwTreeKaz<R,D>& t)
     : def(t.def)
 {
-    dict_comp_t cc = dwtreekaz_compare<D>;
-    dict = dict_create(0, cc);
+    //dict_comp_t cc = dwtreekaz_compare<D>;
+    dict = new dict_t;
     dict_init_like(dict, t.dict);
     dnode_process_t dp = copy_kaz_node<R,D>;
     dict_process(t.dict, dict, dp);

@@ -10,7 +10,11 @@
 #include "dlli.h"
 struct simple_scoped
 {
+private:
+    simple_scoped();
+    simple_scoped(const simple_scoped&);
     DWYCO_LIST value;
+public:
     simple_scoped(DWYCO_LIST v) {
         value = v;
     }

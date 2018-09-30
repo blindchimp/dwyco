@@ -1,7 +1,12 @@
 VCCFG_COMP=$$PWD
 DWYCOBG=0
 DEFINES += VCCFG_FILE
-linux-g++*:DEFINES += LINUX 
+linux-g++* {
+DEFINES += LINUX
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+}
+
 macx-ios-clang: DEFINES += LINUX MACOSX DWYCO_IOS
 macx-ios-clang: QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 macx-g++*|macx-clang* {

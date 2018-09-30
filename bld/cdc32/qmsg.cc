@@ -1645,7 +1645,7 @@ save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc 
     return vcnil;
 }
 
-static vc
+vc
 direct_to_body2(vc m)
 {
     vc v(VC_VECTOR);
@@ -2326,8 +2326,9 @@ remove_user(vc id, const char *pfx)
     vc uid = dir_to_uid((const char *)id);
     //always_vis_del(uid);
     // remove indexs so the msgs don't magically reappear
-    remove_msg_idx_uid(uid);
     sql_fav_remove_uid(uid);
+    remove_msg_idx_uid(uid);
+
     MsgFolders.del(uid);
     se_emit(SE_USER_REMOVE, uid);
     return 1;
@@ -2338,8 +2339,8 @@ clear_user(vc id, const char *pfx)
 {
     remove_user_files(id, pfx, 1);
     vc uid = dir_to_uid((const char *)id);
-    clear_msg_idx_uid(uid);
     sql_fav_remove_uid(uid);
+    clear_msg_idx_uid(uid);
     Rescan_msgs = 1;
     return 1;
 }
@@ -2867,6 +2868,15 @@ q_message2(vc recip, const char *attachment, vc& msg_out,
         vc v(VC_VECTOR);
         v.append("backup");
         vc sv(VC_VECTOR);
+        v.append(sv);
+        m[QQM_BODY_SPECIAL_TYPE] = v;
+    }
+    else if(special_type == vc("user"))
+    {
+        vc v(VC_VECTOR);
+        v.append("user");
+        vc sv(VC_VECTOR);
+        sv.append(st_arg1);
         v.append(sv);
         m[QQM_BODY_SPECIAL_TYPE] = v;
     }
@@ -4224,7 +4234,7 @@ clean_cruft()
         return;
 // end safety check that won't work if the filename mapper
 // is working
-    int i;
+
     vc nodel(VC_SET);
     find_files_to_keep("inbox", "*.urd", nodel);
     find_files_to_keep("inprogress", "*.q", nodel);
@@ -4258,7 +4268,7 @@ clean_cruft()
     // tmp pfx, we'll delete all the files in that path
     if(tmp.length() >= 5 && user.length() + 4 == tmp.length() &&
             user == DwString(tmp.c_str(), user.length()) &&
-            tmp.rfind("/tmp/") == tmp.length() - 5)
+            tmp.rfind(DIRSEPSTR "tmp" DIRSEPSTR) == tmp.length() - 5)
     {
         DwString tp = tmp;
         tp += "*.*";

@@ -181,6 +181,7 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
     return 1;
 }
 
+
 static void
 DWYCOCALLCONV
 msg_callback(int id, int what, const char *mid, void *)
@@ -283,6 +284,8 @@ reload_msgs()
     }
     return 1;
 }
+
+#if 0
 
 int
 dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, QByteArray& mid)
@@ -457,6 +460,7 @@ save_it:
 
     return 0;
 }
+#endif
 
 int
 dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
