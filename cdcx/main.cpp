@@ -694,6 +694,14 @@ int main(int argc, char *argv[])
         setting_put("first_bug217", 0);
     }
 
+    int first_bug218 = !setting_get("first_bug218", sdum);
+    if(first_bug218)
+    {
+        // schema change in backups so redo them
+        dwyco_remove_backup();
+        setting_put("first_bug218", 0);
+    }
+
 
     ClientGod = !!getenv("kk27g");
     mainwinform mainwin;
