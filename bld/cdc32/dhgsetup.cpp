@@ -87,7 +87,7 @@ DH_alternate::new_account()
         v2[0] = "blob";
         v2[1] = DH_static[DH_STATIC_PRIVATE];
         a.append(v2);
-        a.append(time(0));
+        a.append((long)time(0));
         DHG_db->query(&a);
         DHG_db->commit_transaction();
 

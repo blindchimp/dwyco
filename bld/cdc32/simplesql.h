@@ -24,9 +24,9 @@ public:
             exit();
     }
 
-    void sql_simple(const char *sql);
+    vc sql_simple(const char *sql);
 
-    virtual void init_schema() = 0;
+    virtual void init_schema() {}
     void init();
     void exit();
     void start_transaction();
