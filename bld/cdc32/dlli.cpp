@@ -448,6 +448,7 @@ void set_invisible(int);
 static int DND;
 static int ReadOnlyMode;
 extern int QSend_inprogress;
+extern int QSend_special_inprogress;
 extern int All_mute;
 extern vc My_rating;
 extern vc Transmit_stats;
@@ -1027,6 +1028,7 @@ dwyco_resume()
     Inhibit_pal = 0;
     Inhibit_auto_connect = 0;
     QSend_inprogress = 0;
+    QSend_special_inprogress = 0;
     turn_listen_on();
     set_listen_state(Suspend_no_listen_state);
     if(Suspend_listen_mode)
