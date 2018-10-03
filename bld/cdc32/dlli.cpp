@@ -1907,7 +1907,7 @@ handle_deferred_msg_send()
     }
     if(!send_qd_msg_timer.is_running())
     {
-        if(any_q_files())
+        if(!msg_outq_empty())
         {
             send_qd_msg_timer.start();
         }

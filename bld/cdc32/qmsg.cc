@@ -3492,32 +3492,6 @@ msg_outq_empty()
 #endif
 }
 
-int
-any_q_files()
-{
-    DwString pat("outbox");
-    pat += DIRSEPSTR;
-    pat += "*.q";
-
-    FindVec *fv = find_to_vec(newfn(pat).c_str());
-    int nn = fv->num_elems();
-    delete_findvec(fv);
-    if(nn > 0)
-    {
-        return 1;
-    }
-    pat = "inprogress";
-    pat += DIRSEPSTR;
-    pat += "*.q";
-
-    fv = find_to_vec(newfn(pat).c_str());
-    nn = fv->num_elems();
-    delete_findvec(fv);
-    if(nn > 0)
-        return 1;
-    return 0;
-}
-
 // returns 1 if "something is happening" or 0 if the q appears to be empty
 int
 qd_send_one()
