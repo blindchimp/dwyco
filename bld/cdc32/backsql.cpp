@@ -106,8 +106,8 @@ void
 init_schema()
 {
     sql_simple("create table if not exists msgs ("
-               "from_uid text,"
-               "mid text unique on conflict ignore,"
+               "from_uid text collate nocase,"
+               "mid text collate nocase unique on conflict ignore,"
                "msg blob,"
                "attfn text,"
                "att blob);"
