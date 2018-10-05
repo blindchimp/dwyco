@@ -7541,7 +7541,7 @@ dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback dcb,
     bv->scb_arg1 = scb_arg1;
     bv->msg_download_callback = dcb;
     bv->mdc_arg1 = mdc_arg1;
-    dirth_send_get(My_UID, bv->msg_id, QckDone(get_done, bv, bv->msg_id, bv->vp));
+    dirth_send_get2(My_UID, bv->msg_id, QckDone(get_done, bv, bv->msg_id, bv->vp));
     se_emit_msg(SE_MSG_DOWNLOAD_START, m, vcnil);
     return (int)bv->vp;
 }

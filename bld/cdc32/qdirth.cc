@@ -388,6 +388,19 @@ dirth_send_get(vc id, vc which, QckDone d)
 }
 
 void
+dirth_send_get2(vc id, vc which, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("get2", ++Serial);
+    m[QTYPE] = reqtype("get2", d);
+    m[QFROM] = id;
+    m[2] = which;
+    Waitq.append(d);
+    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+}
+
+void
 dirth_send_store(vc id, vc recipients, vc msg, QckDone d)
 {
     QckMsg m;
