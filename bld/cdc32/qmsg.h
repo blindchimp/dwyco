@@ -50,7 +50,6 @@ int q_message(vc recip, const char *attachment, DwString& fn_out,
 DwString date_from_vector(vc v);
 void fetch_info(vc id);
 int qd_send_one();
-int any_q_files();
 int msg_outq_empty();
 void qd_purge_outbox();
 void move_back_to_outbox(const DwString&);

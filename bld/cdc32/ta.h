@@ -17,13 +17,13 @@ if(Track_stats) \
         vc __n; \
         if(Stats.find(#var, __n)) \
 	{ \
-                int __i = (int)__n; \
+                int __i = static_cast<int>(__n); \
                 __i += (num); \
                 Stats.add_kv(#var, __i); \
 	} \
 	else \
 	{ \
-		Stats.add_kv(#var, (int)(num)); \
+        Stats.add_kv(#var, static_cast<int>(num)); \
 	} \
 	save_info(Stats, "stats"); \
 } \
@@ -36,13 +36,13 @@ if(Track_stats) \
         vc __n; \
         if(Stats.find(var, __n)) \
 	{ \
-                int __i = (int)__n; \
+                int __i = static_cast<int>(__n); \
                 __i += (num); \
                 Stats.add_kv(var, __i); \
 	} \
 	else \
 	{ \
-		Stats.add_kv(var, (int)(num)); \
+        Stats.add_kv(var, static_cast<int>(num)); \
 	} \
 	save_info(Stats, "stats"); \
 } \
@@ -55,13 +55,13 @@ if(Track_stats) \
         vc __n; \
         if(Stats.find(#var, __n)) \
 	{ \
-                int __i = (int)__n; \
+                int __i = int(__n); \
                 __i += (num); \
                 Stats.add_kv(#var, __i); \
 	} \
 	else \
 	{ \
-		Stats.add_kv(#var, (int)(num)); \
+        Stats.add_kv(#var, int(num)); \
 	} \
 } \
 } while(0)
@@ -73,13 +73,13 @@ if(Track_stats) \
         vc __n; \
         if(Stats.find(#var "_max", __n)) \
         { \
-                int __i = (int)__n; \
+                int __i = int(__n); \
                 if((num) > __i) \
-                    Stats.add_kv(#var "_max", (int)(num)); \
+                    Stats.add_kv(#var "_max", int(num)); \
         } \
         else \
         { \
-                Stats.add_kv(#var "_max", (int)(num)); \
+                Stats.add_kv(#var "_max", int(num)); \
         } \
         save_info(Stats, "stats"); \
 } \
@@ -93,13 +93,13 @@ if(Track_stats) \
     vc __var = (avar); \
         if(Stats.find(__var, __n)) \
 	{ \
-                int __i = (int)__n; \
+                int __i = int(__n); \
                 __i += (num); \
                 Stats.add_kv(__var, __i); \
 	} \
 	else \
 	{ \
-                Stats.add_kv(__var, (int)(num)); \
+                Stats.add_kv(__var, int(num)); \
 	} \
     save_info(Stats, "stats"); \
 } \
@@ -113,13 +113,13 @@ if(Track_stats) \
     vc __var = (avar); \
         if(Stats.find(__var, __n)) \
 	{ \
-                int __i = (int)__n; \
+                int __i = int(__n); \
                 __i += (num); \
                 Stats.add_kv(__var, __i); \
 	} \
 	else \
 	{ \
-                Stats.add_kv(__var, (int)(num)); \
+                Stats.add_kv(__var, int(num)); \
 	} \
 } \
 } while(0)

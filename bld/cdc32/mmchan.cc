@@ -2485,7 +2485,7 @@ MMChannel::recv_crypto(vc their_crypto)
     }
     vc pvers;
     if(!their_crypto.find("protocol version", pvers) ||
-            (int)pvers != MMCHAN_PROTOCOL_VERS)
+            int(pvers) != MMCHAN_PROTOCOL_VERS)
     {
         pstate = FAILED;
         return;

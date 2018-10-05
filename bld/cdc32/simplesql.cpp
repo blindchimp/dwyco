@@ -13,7 +13,7 @@
 using namespace dwyco;
 
 
-void
+vc
 SimpleSql::sql_simple(const char *sql)
 {
     VCArglist a;
@@ -21,6 +21,7 @@ SimpleSql::sql_simple(const char *sql)
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
         throw -1;
+    return res;
 }
 
 
