@@ -78,7 +78,9 @@ transient_online_list()
         return p;
     for(int i = 0; i < rm.num_elems(); ++i)
     {
-        p.append(from_hex(rm[i]));
+        vc u = from_hex(rm[i]);
+        if(!pal_user(u))
+            p.append(u);
     }
     return p;
 }
