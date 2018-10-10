@@ -8,6 +8,7 @@
 #include "ser.h"
 #include "mcc.h"
 #include "msend.h"
+#include "dhgsetup.h"
 
 extern DwVec<ValidPtr> CompositionDeleteQ;
 
@@ -157,8 +158,11 @@ post_req(int compid, vc vuid)
 
 static
 void
-terminate()
+terminate(vc initiator, vc responder)
 {
+
+    SKID->sql_simple("delete from pstate where initiating_uid = $1 and responding_uid = $2",
+                     initiator, responder);
 
 }
 
@@ -171,6 +175,7 @@ terminate()
 // and forcing encryption would eliminate this i think since the
 // recipient wouldn't be able to decrypt without the group private key.
 //
+// CALLED IN INITIATOR
 int
 start_gj(vc target_uid, vc password)
 {
@@ -212,6 +217,7 @@ start_gj(vc target_uid, vc password)
     return 1;
 }
 
+// CALLED IN INITIATOR
 int
 recv_gj2(vc from, vc msg, vc password)
 {
@@ -253,7 +259,7 @@ recv_gj2(vc from, vc msg, vc password)
         mr[3] = hfrom;
 
         vc mrs = xfer_enc(mr, password);
-        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN3, 0, (const char *)mr, mr.len());
+        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN3, 0, (const char *)mrs, mrs.len());
         if(comp_id == -1)
             throw -1;
 
@@ -280,21 +286,39 @@ recv_gj2(vc from, vc msg, vc password)
         catch(...)
         {
             SKID->rollback_transaction();
-            terminate();
+            terminate(to_hex(My_UID), to_hex(from));
             return 0;
         }
     }
     catch (...)
     {
-        terminate();
+        terminate(to_hex(My_UID), to_hex(from));
         //SKID->rollback_transaction();
     }
 
     return 0;
 }
 
+// CALLED IN INITIATOR
+int
+install_group_key(vc from, vc msg, vc password)
+{
+    vc m = xfer_dec(msg, password);
+    vc hfrom = to_hex(from);
+
+    if(m.is_nil())
+        return 0;
+
+    vc alt_name = m[0];
+    vc grp_key = m[1];
+    int ret = DH_alternate::insert_new_key(alt_name, grp_key);
+    terminate(to_hex(My_UID), to_hex(from));
+    return ret;
+}
+
 // receive first request from join candidate
 
+// CALLED IN RESPONDER
 int
 recv_gj1(vc from, vc msg, vc password)
 {
@@ -323,7 +347,7 @@ recv_gj1(vc from, vc msg, vc password)
         mr[3] = hfrom;
 
         vc mrs = xfer_enc(mr, password);
-        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN2, 0, (const char *)mr, mr.len());
+        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN2, 0, (const char *)mrs, mrs.len());
         if(comp_id == -1)
             throw -1;
 
@@ -354,6 +378,8 @@ recv_gj1(vc from, vc msg, vc password)
 
 // final part of SKID, if everything matches up, send them
 // the private group key we have
+
+// CALLED IN RESPONDER
 int
 recv_gj3(vc from, vc msg, vc password)
 {
@@ -395,15 +421,21 @@ recv_gj3(vc from, vc msg, vc password)
         {
             throw -1;
         }
+        // note: for now, we are only in one group, and it should be the
+        // same as the requester wanted. this ought to be fixed later
+        // if we allow multiple groups for some reason
+        if(Current_alternate->alt_name() != alt_name)
+        {
+            oopanic("protocol error");
+            throw -1;
+        }
 
         vc mr(VC_VECTOR);
         mr[0] = alt_name;
-        mr[1] = nonce;
-        mr[2] = nonce2;
-        mr[3] = hfrom;
+        mr[1] = Current_alternate->my_static();
 
         vc mrs = xfer_enc(mr, password);
-        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN4, 0, (const char *)mr, mr.len());
+        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN4, 0, (const char *)mrs, mrs.len());
         if(comp_id == -1)
             throw -1;
 
@@ -412,33 +444,13 @@ recv_gj3(vc from, vc msg, vc password)
             dwyco_delete_zap_composition(comp_id);
             throw -1;
         }
-        try
-        {
-            SKID->start_transaction();
-            VCArglist a;
-            a.append("insert into pstate (responding_uid = $1,  nonce_2 = $2, time = strftime('%s', 'now'), pstate = 3) "
-                     "where initiating_uid = $3 and nonce_1 = $4 and alt_name = $5 and pstate = 1");
-            a.append(hfrom);
-            a.append(nonce2);
-            a.append(to_hex(My_UID));
-            a.append(nonce);
-            a.append(alt_name);
-            SKID->query(&a);
-            SKID->commit_transaction();
-            return 1;
-        }
-        catch(...)
-        {
-            SKID->rollback_transaction();
-            terminate();
-            return 0;
-        }
     }
     catch (...)
     {
-        terminate();
-        //SKID->rollback_transaction();
+
     }
+
+    terminate(to_hex(from), to_hex(My_UID));
 
     return 0;
 }

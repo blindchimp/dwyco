@@ -872,16 +872,30 @@ void  TMsgCompose::send_buttonClick()
         sp = pok;
     else if(pal_auth_rej_mode)
         sp = pnok;
-    else if(special_type == DWYCO_SPECIAL_TYPE_BACKUP)
-        sp = "backup";
-    else if(special_type == DWYCO_SPECIAL_TYPE_JOIN)
+    else
     {
-        sp = "join";
-        sp_payload = special_payload;
-    }
-    else if(special_type == DWYCO_SPECIAL_TYPE_USER)
-    {
-        sp = "user";
+        switch(special_type)
+        {
+        case DWYCO_SPECIAL_TYPE_BACKUP:
+            sp = "backup";
+            break;
+        case DWYCO_SPECIAL_TYPE_JOIN1:
+            sp = "join1";
+            break;
+        case DWYCO_SPECIAL_TYPE_JOIN2:
+            sp = "join2";
+            break;
+        case DWYCO_SPECIAL_TYPE_JOIN3:
+            sp = "join3";
+            break;
+        case DWYCO_SPECIAL_TYPE_JOIN4:
+            sp = "join4";
+            break;
+        default:
+        case DWYCO_SPECIAL_TYPE_USER:
+            sp = "user";
+            break;
+        }
         sp_payload = special_payload;
     }
     // note: this is a little odd, two copies of the text will be

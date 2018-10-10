@@ -2898,10 +2898,10 @@ q_message2(vc recip, const char *attachment, vc& msg_out,
         v.append(sv);
         m[QQM_BODY_SPECIAL_TYPE] = v;
     }
-    else if(special_type == vc("join"))
+    else if(special_type.len() > 4 && vc(VC_BSTRING, special_type, 4) == vc("join"))
     {
         vc v(VC_VECTOR);
-        v.append("join");
+        v.append(special_type);
         vc sv(VC_VECTOR);
         sv.append(st_arg1);
         v.append(sv);

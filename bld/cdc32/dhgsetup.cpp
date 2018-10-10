@@ -69,23 +69,21 @@ DH_alternate::init(vc uid, vc alternate_name)
 }
 
 int
-DH_alternate::new_account()
+DH_alternate::insert_record(vc uid, vc alt_name, vc dh_static)
 {
-    vc entropy = get_entropy();
-    DH_static = udh_new_static(entropy);
     try {
         DHG_db->start_transaction();
         VCArglist a;
         a.append("insert into keys values($1, $2, $3, $4, $5)");
         a.append(to_hex(uid));
-        a.append(alternate_name);
+        a.append(alt_name);
         vc v(VC_VECTOR);
         v[0] = "blob";
-        v[1] = DH_static[DH_STATIC_PUBLIC];
+        v[1] = dh_static[DH_STATIC_PUBLIC];
         a.append(v);
         vc v2(VC_VECTOR);
         v2[0] = "blob";
-        v2[1] = DH_static[DH_STATIC_PRIVATE];
+        v2[1] = dh_static[DH_STATIC_PRIVATE];
         a.append(v2);
         a.append((long)time(0));
         DHG_db->query(&a);
@@ -95,6 +93,17 @@ DH_alternate::new_account()
         DHG_db->rollback_transaction();
         return 0;
     }
+    return 1;
+
+}
+
+int
+DH_alternate::new_account()
+{
+    vc entropy = get_entropy();
+    DH_static = udh_new_static(entropy);
+    if(!insert_record(uid, alternate_name, DH_static))
+        return 0;
     return 1;
 }
 
@@ -131,33 +140,13 @@ DH_alternate::load_account(vc uid, vc alternate_name)
     return 1;
 }
 
-//vc
-//DH_alternate::my_combined_publics()
-//{
-//    if(DH_static.is_nil())
-//        return vcnil;
-//    return udh_just_publics(DH_static);
-//}
-
-//vc
-//DH_alternate::static_material(vc combined_material)
-//{
-//    // warning: the indexing between combined and
-//    // separate key-pairs is messed up, don't rely on
-//    // defines or correspondence between the indexes.
-//    // ugh.
-//    vc ret(VC_VECTOR);
-//    ret[DH_STATIC_PRIVATE] = combined_material[2];
-//    ret[DH_STATIC_PUBLIC] = combined_material[3];
-//    return ret;
-//}
-
-//vc
-//DH_alternate::gen_combined_keys()
-//{
-//    vc entropy = get_entropy();
-//    return udh_gen_keys(DH_static, entropy);
-//}
+int
+DH_alternate::insert_new_key(vc alt_name, vc grp_key)
+{
+    if(!insert_record(My_UID, alt_name, grp_key))
+        return 0;
+    return 1;
+}
 
 vc
 DH_alternate::my_static()

@@ -20,20 +20,19 @@ class DH_alternate {
     vc password;
 
     int new_account();
+    static int insert_record(vc uid, vc alt_name, vc dh_static);
 
 public:
 
     void init(vc uid, vc alternate_name);
     int load_account(vc uid, vc alternate_name);
     vc alt_name() {return alternate_name;}
-    // note: these "combined" things are used for manipulation
-    // of static/ephemeral UDH keys, which aren't used in this
-    // situation.
-//    vc gen_combined_keys();
-//    vc my_combined_publics();
-//    vc static_material(vc combined_material);
     vc my_static();
     vc my_static_public();
+
+    // inserts a new key into the database, which we
+    // presumably got from another group member
+    static int insert_new_key(vc alt_name, vc grp_key);
 };
 
 extern DH_alternate *Current_alternate;
