@@ -254,7 +254,7 @@ get_pk(vc uid, vc& sfpk_out)
 }
 
 int
-get_pk2(vc uid, vc& sfpk_out, vc& alt_sfpk_out)
+get_pk2(vc uid, vc& sfpk_out, vc& alt_sfpk_out, vc& alt_name)
 {
     vc prf_out;
     if(!load_pk(uid, prf_out))
@@ -273,6 +273,7 @@ get_pk2(vc uid, vc& sfpk_out, vc& alt_sfpk_out)
     }
     ret2[DH_STATIC_PUBLIC] = prf_out[PKC_ALT_STATIC_PUBLIC];
     alt_sfpk_out = ret2;
+    alt_name = prf_out[PKC_ALT_GNAME];
 
     return 1;
 }

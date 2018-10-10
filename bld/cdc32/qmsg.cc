@@ -2898,6 +2898,15 @@ q_message2(vc recip, const char *attachment, vc& msg_out,
         v.append(sv);
         m[QQM_BODY_SPECIAL_TYPE] = v;
     }
+    else if(special_type == vc("join"))
+    {
+        vc v(VC_VECTOR);
+        v.append("join");
+        vc sv(VC_VECTOR);
+        sv.append(st_arg1);
+        v.append(sv);
+        m[QQM_BODY_SPECIAL_TYPE] = v;
+    }
     m[QQM_BODY_NO_FORWARD] = no_forward;
     // inhibit server-based delivery reporting for now
     m[QQM_BODY_NO_DELIVERY_REPORT] = vctrue;

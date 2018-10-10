@@ -874,6 +874,11 @@ void  TMsgCompose::send_buttonClick()
         sp = pnok;
     else if(special_type == DWYCO_SPECIAL_TYPE_BACKUP)
         sp = "backup";
+    else if(special_type == DWYCO_SPECIAL_TYPE_JOIN)
+    {
+        sp = "join";
+        sp_payload = special_payload;
+    }
     else if(special_type == DWYCO_SPECIAL_TYPE_USER)
     {
         sp = "user";

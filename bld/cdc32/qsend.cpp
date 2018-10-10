@@ -54,6 +54,7 @@ DwQSend::DwQSend(const DwString &qfn) :
     xfer_chan_id = -1;
     att_size = 0;
     has_att = 0;
+    force_encryption = 0;
     Qbm.add(this);
 }
 
@@ -583,8 +584,9 @@ DwQSend::send_message()
         }
 
         vc alt_pk;
+        vc alt_name;
 
-        if(!Avoid_pk && get_pk2(recip_uid, pk, alt_pk))
+        if(!Avoid_pk && get_pk2(recip_uid, pk, alt_pk, alt_name))
         {
             vc pkeys(VC_VECTOR);
             pkeys[0] = pk;
@@ -643,7 +645,7 @@ DwQSend::send_message()
         }
 
     }
-    if(Force_pk && emsg.is_nil())
+    if((Force_pk || force_encryption) && emsg.is_nil())
     {
         // just defer the send, with any luck we have sent the
         // request for the key and the server will have responded

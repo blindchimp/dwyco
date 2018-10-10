@@ -9,6 +9,7 @@
 #ifndef MSEND_H
 #define MSEND_H
 #include "dwstr.h"
+#include "vc.h"
 
 namespace dwyco {
 int send_best_way(const DwString& qfn, vc ruid);

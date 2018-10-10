@@ -17,6 +17,7 @@ class DH_alternate {
     vc DH_static;
     vc uid;
     vc alternate_name;
+    vc password;
 
     int new_account();
 

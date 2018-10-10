@@ -229,7 +229,8 @@ sqlbq.cpp \
 favmsg.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
-    simplesql.cpp
+    simplesql.cpp \
+    grpmsg.cpp
 
 HEADERS += \
     vccfg.h

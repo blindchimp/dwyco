@@ -35,6 +35,7 @@ public:
     static dwyco::DwQueryByMember<DwQSend> Qbm;
     int inprogress;
     ValidPtr vp;
+    int force_encryption;
 
     int send_message();
     void cancel();

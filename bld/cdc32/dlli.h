@@ -1063,6 +1063,10 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 #define DWYCO_SPECIAL_TYPE_BACKUP 5
 #define DWYCO_SPECIAL_TYPE_DELIVERED 6
 #define DWYCO_SPECIAL_TYPE_VIEWED 7
+#define DWYCO_SPECIAL_TYPE_JOIN1 8
+#define DWYCO_SPECIAL_TYPE_JOIN2 9
+#define DWYCO_SPECIAL_TYPE_JOIN3 10
+#define DWYCO_SPECIAL_TYPE_JOIN4 11
 
 // the following id's show up in
 // the message summary field DWYCO_QMS_BODY_SPECIAL_TYPE,
