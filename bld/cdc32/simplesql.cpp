@@ -14,10 +14,22 @@ using namespace dwyco;
 
 
 vc
-SimpleSql::sql_simple(const char *sql)
+SimpleSql::sql_simple(const char *sql, vc a0, vc a1, vc a2)
 {
     VCArglist a;
     a.append(sql);
+    if(!a0.is_nil())
+    {
+        a.append(a0);
+        if(!a1.is_nil())
+        {
+            a.append(a1);
+            if(!a2.is_nil())
+            {
+                a.append(a2);
+            }
+        }
+    }
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
         throw -1;

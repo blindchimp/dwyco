@@ -19,12 +19,12 @@ public:
         dbname = nm;
         Db = 0;
     }
-    ~SimpleSql() {
+    virtual ~SimpleSql() {
         if(Db)
             exit();
     }
 
-    vc sql_simple(const char *sql);
+    vc sql_simple(const char *sql, vc = vcnil, vc = vcnil, vc = vcnil);
 
     virtual void init_schema() {}
     void init();
