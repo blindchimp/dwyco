@@ -5826,6 +5826,13 @@ dwyco_zap_send4(int compid, const char *uid, int len_uid, const char *text, int 
 
 }
 
+DWYCOEXPORT
+int
+dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, const char **pers_id_out, int *len_pers_id_out)
+{
+    return dwyco_zap_send6(compid, uid, len_uid, text, len_text, no_forward, ZapAdvData.get_save_sent(), 0, pers_id_out, len_pers_id_out);
+}
+
 
 // note: this does *not* invalidate the composer as previous
 // zap_send functions did. it simply starts up the send process on
@@ -5841,7 +5848,7 @@ dwyco_zap_send4(int compid, const char *uid, int len_uid, const char *text, int 
 // replaced by some kind of ephemeral messaging.
 DWYCOEXPORT
 int
-dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, const char **pers_id_out, int *len_pers_id_out)
+dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, int defer, const char **pers_id_out, int *len_pers_id_out)
 {
     update_activity();
     ValidPtr p = cookie_to_ptr(compid);
@@ -5892,10 +5899,21 @@ dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int 
     else
         m->dont_save_sent = !save_sent;
     m->send_buttonClick();
-    if(!send_best_way(m->qfn, vuid))
+    if(!defer)
     {
-        GRTLOG("zap_send4: send startup failed", 0, 0);
-        return 0;
+        if(!send_best_way(m->qfn, vuid))
+        {
+            GRTLOG("zap_send4: send startup failed", 0, 0);
+            return 0;
+        }
+    }
+    else
+    {
+        if(!send_via_server_deferred(m->qfn))
+        {
+            GRTLOG("zap_send4: send defer failed", 0, 0);
+            return 0;
+        }
     }
     if(len_pers_id_out)
     {
