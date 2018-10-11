@@ -28,7 +28,7 @@ class DwQSend
     static void xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp);
 
 public:
-    DwQSend(const DwString& qfn);
+    DwQSend(const DwString& qfn, int defer_send);
     ~DwQSend();
 
     DwString qfn;
@@ -54,6 +54,7 @@ public:
 private:
 
     int cancel_op;
+    int defer_send;
 
     vc msg;
     vc emsg;

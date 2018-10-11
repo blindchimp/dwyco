@@ -36,7 +36,7 @@ send_via_server_int(const DwString& qfn)
 {
     // assumes already in the outbox
 
-    DwQSend *qs = new DwQSend(qfn);
+    DwQSend *qs = new DwQSend(qfn, 0);
     qs->se_sig.connect_ptrfun(qs_signal_bounce);
     qs->status_sig.connect_ptrfun(se_emit_msg_status);
     int err;
@@ -84,6 +84,34 @@ send_via_server(const DwString& qfn)
     move_to_outbox(qfn);
 
     return send_via_server_int(qfn);
+}
+
+int
+send_via_server_deferred(const DwString& qfn)
+{
+    move_to_outbox(qfn);
+
+    DwQSend *qs = new DwQSend(qfn, 1);
+    qs->se_sig.connect_ptrfun(qs_signal_bounce);
+    qs->status_sig.connect_ptrfun(se_emit_msg_status);
+    int err;
+    err = qs->send_message();
+    if(err == -1)
+    {
+        // at this point, the message can never be sent
+        // because something is corrupted
+        se_emit_msg(SE_MSG_SEND_FAIL, qfn, vcnil);
+        delete qs;
+        return 0;
+    }
+    else if(err == 0)
+    {
+        // some transient error, but it is q'd
+        move_back_to_outbox(qfn);
+        se_emit_msg(SE_MSG_SEND_FAIL, qfn, vcnil);
+        delete qs;
+    }
+    return 1;
 }
 
 static
