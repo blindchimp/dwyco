@@ -44,7 +44,7 @@ dwyco::DwQueryByMember<DwQSend> DwQSend::Qbm;
 
 // send a q'd message
 
-DwQSend::DwQSend(const DwString &qfn) :
+DwQSend::DwQSend(const DwString &qfn, int defer_send) :
     vp(this)
 {
     inprogress = 0;
@@ -55,6 +55,7 @@ DwQSend::DwQSend(const DwString &qfn) :
     att_size = 0;
     has_att = 0;
     force_encryption = 0;
+    this->defer_send = defer_send;
     Qbm.add(this);
 }
 
@@ -652,6 +653,9 @@ DwQSend::send_message()
         // by the time we get back here.
         return 0;
     }
+
+    if(defer_send)
+        return 0;
     if(att_basename.is_nil())
     {
         start();

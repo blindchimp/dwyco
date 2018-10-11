@@ -1342,6 +1342,7 @@ int DWYCOEXPORT dwyco_zap_play(int compid,
 // these messages are delivered for interrupted background sends too.
 int DWYCOEXPORT dwyco_zap_send4(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, const char **pers_id_out, int *len_pers_id_out);
 int DWYCOEXPORT dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, const char **pers_id_out, int *len_pers_id_out);
+int DWYCOEXPORT dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, int defer, const char **pers_id_out, int *len_pers_id_out);
 
 int DWYCOEXPORT dwyco_zap_cancel(int compid);
 int DWYCOEXPORT dwyco_zap_still_active(int compid);
