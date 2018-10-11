@@ -14,6 +14,8 @@ extern DwVec<ValidPtr> CompositionDeleteQ;
 
 using namespace dwyco;
 
+namespace dwyco {
+
 struct skid_sql : public SimpleSql
 {
     skid_sql() : SimpleSql("skid.sql") {}
@@ -30,7 +32,7 @@ struct skid_sql : public SimpleSql
         sql_simple("create index if not exists keys_uid on keys(uid)");
         sql_simple("create index if not exists keys_alt_name on keys(alt_name)");
         sql_simple("create table if not exists pstate ("
-                   "initiator_uid text collate nocase,"
+                   "initiating_uid text collate nocase,"
                    "responding_uid text collate nocase, "
                    "alt_name text collate nocase, "
                    "state integer,"
@@ -453,6 +455,8 @@ recv_gj3(vc from, vc msg, vc password)
     terminate(to_hex(from), to_hex(My_UID));
 
     return 0;
+}
+
 }
 
 

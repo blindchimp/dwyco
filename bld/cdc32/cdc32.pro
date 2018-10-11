@@ -233,5 +233,6 @@ aqext_android.cpp \
     grpmsg.cpp
 
 HEADERS += \
-    vccfg.h
+    vccfg.h \
+    grpmsg.h
 

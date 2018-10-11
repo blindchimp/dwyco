@@ -397,6 +397,7 @@ using namespace Weak;
 #include "qmsgsql.h"
 #include "vcwsock.h"
 #include "backsql.h"
+#include "grpmsg.h"
 
 using namespace dwyco;
 
@@ -1528,6 +1529,7 @@ dwyco_init()
     // use the dll's idea of activity check by default.
     // the user can override by calling this itself.
     dwyco_enable_activity_checking(1, Inactivity_time, internal_activity);
+    init_gj();
     Inited = 1;
     return 1;
 }
@@ -5444,7 +5446,11 @@ dwyco_make_special_zap_composition( int special_type, const char *user_id, const
         //m->force_server = 1;
         break;
     case DWYCO_SPECIAL_TYPE_USER:
-        m->special_type = DWYCO_SPECIAL_TYPE_USER;
+    case DWYCO_SPECIAL_TYPE_JOIN1:
+    case DWYCO_SPECIAL_TYPE_JOIN2:
+    case DWYCO_SPECIAL_TYPE_JOIN3:
+    case DWYCO_SPECIAL_TYPE_JOIN4:
+        m->special_type = special_type;
         if(user_block)
         {
             m->special_payload = vc(VC_BSTRING, user_block, len_user_block);
@@ -6839,6 +6845,14 @@ dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len
     *len_out = payload.len();
 
     return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_start_gj(const char *uid, int len_uid, const char *password)
+{
+    vc vuid(VC_BSTRING, uid, len_uid);
+    start_gj(vuid, password);
 }
 
 

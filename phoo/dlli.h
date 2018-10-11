@@ -812,6 +812,8 @@ int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
 
+int DWYCOEXPORT dwyco_start_gj(const char *uid, int len_uid, const char *password);
+
 int DWYCOEXPORT dwyco_is_ignored(const char *user_id, int len_uid);
 void DWYCOEXPORT dwyco_ignore(const char *user_id, int len_uid);
 void DWYCOEXPORT dwyco_unignore(const char *user_id, int len_uid);
@@ -1063,6 +1065,10 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 #define DWYCO_SPECIAL_TYPE_BACKUP 5
 #define DWYCO_SPECIAL_TYPE_DELIVERED 6
 #define DWYCO_SPECIAL_TYPE_VIEWED 7
+#define DWYCO_SPECIAL_TYPE_JOIN1 8
+#define DWYCO_SPECIAL_TYPE_JOIN2 9
+#define DWYCO_SPECIAL_TYPE_JOIN3 10
+#define DWYCO_SPECIAL_TYPE_JOIN4 11
 
 // the following id's show up in
 // the message summary field DWYCO_QMS_BODY_SPECIAL_TYPE,
@@ -1338,6 +1344,7 @@ int DWYCOEXPORT dwyco_zap_play(int compid,
 // these messages are delivered for interrupted background sends too.
 int DWYCOEXPORT dwyco_zap_send4(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, const char **pers_id_out, int *len_pers_id_out);
 int DWYCOEXPORT dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, const char **pers_id_out, int *len_pers_id_out);
+int DWYCOEXPORT dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, int defer, const char **pers_id_out, int *len_pers_id_out);
 
 int DWYCOEXPORT dwyco_zap_cancel(int compid);
 int DWYCOEXPORT dwyco_zap_still_active(int compid);

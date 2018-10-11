@@ -236,6 +236,9 @@ public:
     Q_INVOKABLE void select_vid_dev(int i);
     Q_INVOKABLE void enable_video_capture_preview(int i);
 
+    // test stuff
+    Q_INVOKABLE void start_gj(QString uid, QString password);
+
 public:
     void setClient_name(const QString& a) {
         if(a != m_client_name)

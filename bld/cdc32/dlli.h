@@ -812,6 +812,8 @@ int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
 
+int DWYCOEXPORT dwyco_start_gj(const char *uid, int len_uid, const char *password);
+
 int DWYCOEXPORT dwyco_is_ignored(const char *user_id, int len_uid);
 void DWYCOEXPORT dwyco_ignore(const char *user_id, int len_uid);
 void DWYCOEXPORT dwyco_unignore(const char *user_id, int len_uid);

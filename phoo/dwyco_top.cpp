@@ -2815,6 +2815,16 @@ DwycoCore::play_zap_view(int view_id)
 
 
 void
+DwycoCore::start_gj(QString uid, QString password)
+{
+    QByteArray ruid = QByteArray::fromHex(uid.toLatin1());
+    QByteArray pw = password.toLatin1();
+    dwyco_start_gj(ruid.constData(), ruid.length(), pw.constData());
+
+}
+
+
+void
 dwyco_register_qml(QQmlContext *root)
 {
     setup_locations();
