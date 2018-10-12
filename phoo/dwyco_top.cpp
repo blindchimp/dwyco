@@ -2439,7 +2439,8 @@ scan_special_msgs()
         {
             if(quml.is_nil(i, DWYCO_QMS_SPECIAL_TYPE))
                 continue;
-            if(quml.get<QByteArray>(i, DWYCO_QMS_SPECIAL_TYPE) == QByteArray("user"))
+            QByteArray st = quml.get<QByteArray>(i, DWYCO_QMS_SPECIAL_TYPE);
+            if(st == QByteArray("user"))
             {
                 QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
                 if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
@@ -2449,6 +2450,19 @@ scan_special_msgs()
                 else
                 {
                     process_special_msg(mid);
+                    dwyco_delete_unsaved_message(mid.constData());
+                }
+            }
+            if(st.startsWith("join"))
+            {
+                QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
+                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
+                {
+                    auto_fetch(mid);
+                }
+                else
+                {
+                    dwyco_handle_join(mid.constData());
                     dwyco_delete_unsaved_message(mid.constData());
                 }
             }

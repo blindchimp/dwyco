@@ -828,6 +828,20 @@ auto_fetch(QByteArray mid)
             }
 
         }
+        else if(dwyco_is_special_message(0, 0, mid.constData(), &special_type))
+        {
+            switch(special_type)
+            {
+            case DWYCO_SUMMARY_JOIN1:
+            case DWYCO_SUMMARY_JOIN2:
+            case DWYCO_SUMMARY_JOIN3:
+            case DWYCO_SUMMARY_JOIN4:
+                break;
+            default:
+                dwyco_delete_unsaved_message(mid.constData());
+                return 0;
+            }
+        }
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
 

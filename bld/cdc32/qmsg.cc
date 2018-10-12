@@ -2085,7 +2085,7 @@ store_direct(MMChannel *m, vc msg, void *)
     v[QM_DATE_SENT] = msg[QQM_MSG_VEC][QQM_BODY_DATE];
     //v[QM_SENDER_RATING] = msg[QQM_MSG_VEC][QQM_BODY_RATING];
     v[QM_IS_DIRECT] = vctrue;
-    v[QM_SPECIAL_TYPE] = msg[QQM_MSG_VEC][QQM_BODY_SPECIAL_TYPE];
+    v[QM_SPECIAL_TYPE] = msg[QQM_MSG_VEC][QQM_BODY_SPECIAL_TYPE][0];
     v[QM_LOGICAL_CLOCK] = msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK];
     // if this is a direct msg with attachment, the att is already here, so
     // we can put in the estimated size if needed

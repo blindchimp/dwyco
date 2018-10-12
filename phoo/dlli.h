@@ -813,6 +813,7 @@ int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
 
 int DWYCOEXPORT dwyco_start_gj(const char *uid, int len_uid, const char *password);
+int DWYCOEXPORT dwyco_handle_join(const char *mid);
 
 int DWYCOEXPORT dwyco_is_ignored(const char *user_id, int len_uid);
 void DWYCOEXPORT dwyco_ignore(const char *user_id, int len_uid);
@@ -1109,6 +1110,10 @@ int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **s
 // sending both.
 #define DWYCO_SUMMARY_DELIVERED 8
 #define DWYCO_SUMMARY_VIEWED 9
+#define DWYCO_SUMMARY_JOIN1 10
+#define DWYCO_SUMMARY_JOIN2 11
+#define DWYCO_SUMMARY_JOIN3 12
+#define DWYCO_SUMMARY_JOIN4 13
 
 int DWYCOEXPORT dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out, const char **msg_id_out, int *what_out);
 
@@ -1311,6 +1316,10 @@ dwyco_copy_out_file_zap(
     const char *msg_id,
     const char *dst_filename
 );
+
+int
+DWYCOEXPORT
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out);
 
 int DWYCOEXPORT
 dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filename);

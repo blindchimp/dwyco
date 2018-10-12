@@ -6806,16 +6806,30 @@ dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id)
     return 1;
 }
 
+struct special_map
+{
+    const char *name;
+    int code;
+};
+
+static special_map Sm[] = {
+    {"palreq", DWYCO_SUMMARY_PAL_AUTH_REQ},
+    {"palok", DWYCO_SUMMARY_PAL_OK},
+    {"palrej", DWYCO_SUMMARY_PAL_REJECT},
+    {"dlv", DWYCO_SUMMARY_DELIVERED},
+    {"user", DWYCO_SUMMARY_SPECIAL_USER_DEFINED},
+    {"join1", DWYCO_SUMMARY_JOIN1},
+    {"join2", DWYCO_SUMMARY_JOIN2},
+    {"join3", DWYCO_SUMMARY_JOIN3},
+    {"join4", DWYCO_SUMMARY_JOIN4},
+
+    {0, 0}
+};
 
 DWYCOEXPORT
 int
 dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
 {
-    static vc palreq("palreq");
-    static vc palok("palok");
-    static vc palrej("palrej");
-    static vc dlv("dlv");
-    static vc user("user");
 
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc& v = *(vc *)ml;
@@ -6826,25 +6840,25 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
         if(summary[QM_SPECIAL_TYPE].is_nil())
             return 0;
         vc what = summary[QM_SPECIAL_TYPE];
+        const char *whats = (const char *)what;
         if(what_out)
         {
-            if(what == palreq)
-                *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
-            else if(what == palok)
-                *what_out = DWYCO_SUMMARY_PAL_OK;
-            else if(what == palrej)
-                *what_out = DWYCO_SUMMARY_PAL_REJECT;
-            else if(what == dlv)
-                *what_out = DWYCO_SUMMARY_DELIVERED;
-            else if(what == user)
-                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-            else
-                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
+            struct special_map *sm = &Sm[0];
+            while(sm->name)
+            {
+                if(strcmp(sm->name, whats) == 0)
+                {
+                    *what_out = sm->code;
+                    return 1;
+                }
+                ++sm;
+            }
+            *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
         }
         return 1;
     }
-    return 0;
-#if 0
+
+
     // message has been fetched, and is unsaved
     vc body = direct_to_body2(summary);
     if(body.is_nil())
@@ -6853,20 +6867,25 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
     if(sv.is_nil())
         return 0;
     vc what = sv[0];
+    const char *whats = (const char *)what;
     // args are in a vector at sv[1]
     if(what_out)
     {
-        if(what == palreq)
-            *what_out = DWYCO_PAL_AUTH_REQ;
-        else if(what == palok)
-            *what_out = DWYCO_PAL_OK;
-        else if(what == palrej)
-            *what_out = DWYCO_PAL_REJECT;
-        else
-            *what_out = DWYCO_SPECIAL_USER_DEFINED;
+        struct special_map *sm = &Sm[0];
+        while(sm->name)
+        {
+            if(strcmp(sm->name, whats) == 0)
+            {
+                *what_out = sm->code;
+                return 1;
+            }
+            ++sm;
+        }
+        *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
+
     }
     return 1;
-#endif
+
 }
 
 #if 0
@@ -6929,13 +6948,13 @@ dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len
         return 0;
 
     vc sv = body[QM_BODY_SPECIAL_TYPE];
-    if(sv[0] != vc("user"))
-        return 0;
+//    if(sv[0] != vc("user"))
+//        return 0;
     vc msg_type_vec = sv[1];
 
-   vc payload = msg_type_vec[0];
-   if(payload.type() != VC_STRING)
-       return 0;
+    vc payload = msg_type_vec[0];
+    if(payload.type() != VC_STRING)
+        return 0;
 
     char *b = new char[payload.len()];
     memcpy(b, (const char *)payload, payload.len());
@@ -6953,6 +6972,50 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
     start_gj(vuid, password);
 }
 
+#include "dwycolistscoped.h"
+
+DWYCOEXPORT
+int
+dwyco_handle_join(const char *mid)
+{
+    vc password = "foo";
+    DWYCO_UNSAVED_MSG_LIST l;
+    if(!dwyco_get_unsaved_message(&l, mid))
+        return 0;
+    simple_scoped ql(l);
+    int jstate;
+    if(!dwyco_is_special_message(0, 0, mid, &jstate))
+        return 0;
+    const char *b;
+    int len;
+    if(!dwyco_get_user_payload(ql, &b, &len))
+    {
+        return 0;
+    }
+    vc msg(VC_BSTRING, b, len);
+    dwyco_free_array((char *)b);
+    int ret = 0;
+    switch(jstate)
+    {
+    case DWYCO_SPECIAL_TYPE_JOIN1:
+        ret = recv_gj1(ql.get<vc>(DWYCO_QM_BODY_FROM), msg, password);
+        break;
+    case DWYCO_SPECIAL_TYPE_JOIN2:
+        ret = recv_gj2(ql.get<vc>(DWYCO_QM_BODY_FROM), msg, password);
+        break;
+    case DWYCO_SPECIAL_TYPE_JOIN3:
+        ret = recv_gj3(ql.get<vc>(DWYCO_QM_BODY_FROM), msg, password);
+        break;
+    case DWYCO_SPECIAL_TYPE_JOIN4:
+        ret = install_group_key(ql.get<vc>(DWYCO_QM_BODY_FROM), msg, password);
+        break;
+    default:
+        return 0;
+    }
+    return ret;
+
+}
+
 
 // note: for the next two functions, uid MUST be equal to 0, as they
 // are broken otherwise. essentially, it turns out that i strip out the
@@ -6965,16 +7028,11 @@ DWYCOEXPORT
 int
 dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out)
 {
-    static vc palreq("palreq");
-    static vc palok("palok");
-    static vc palrej("palrej");
-    static vc dlv("dlv");
-    static vc user("user");
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
-    vc id(VC_BSTRING, msg_id, strlen(msg_id));
+    vc mid(VC_BSTRING, msg_id, strlen(msg_id));
     if(uid == 0)
     {
-        vc summary = find_cur_msg(id);
+        vc summary = find_cur_msg(mid);
         if(summary.is_nil())
             return 0;
         if(summary[QM_IS_DIRECT].is_nil())
@@ -6983,47 +7041,53 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
             if(summary[QM_SPECIAL_TYPE].is_nil())
                 return 0;
             vc what = summary[QM_SPECIAL_TYPE];
+            const char *whats = (const char *)what;
             if(what_out)
             {
-                if(what == palreq)
-                    *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
-                else if(what == palok)
-                    *what_out = DWYCO_SUMMARY_PAL_OK;
-                else if(what == palrej)
-                    *what_out = DWYCO_SUMMARY_PAL_REJECT;
-                else if(what == dlv)
-                    *what_out = DWYCO_SUMMARY_DELIVERED;
-                else if(what == user)
-                    *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-                else
-                    *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
+                struct special_map *sm = &Sm[0];
+                while(sm->name)
+                {
+                    if(strcmp(sm->name, whats) == 0)
+                    {
+                        *what_out = sm->code;
+                        return 1;
+                    }
+                    ++sm;
+                }
+                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
             }
             return 1;
         }
-        return 0;
     }
-    return 0;
-#if 0
+
+
     // message has been fetched, and is unsaved
-    vc body = direct_to_body(id);
+    vc body = direct_to_body(mid);
     vc sv = body[QM_BODY_SPECIAL_TYPE];
     if(sv.is_nil())
         return 0;
     vc what = sv[0];
+    const char *whats = (const char *)what;
     // args are in a vector at sv[1]
     if(what_out)
     {
-        if(what == palreq)
-            *what_out = DWYCO_PAL_AUTH_REQ;
-        else if(what == palok)
-            *what_out = DWYCO_PAL_OK;
-        else if(what == palrej)
-            *what_out = DWYCO_PAL_REJECT;
-        else
-            *what_out = DWYCO_SPECIAL_USER_DEFINED;
+        struct special_map *sm = &Sm[0];
+        while(sm->name)
+        {
+            if(strcmp(sm->name, whats) == 0)
+            {
+                *what_out = sm->code;
+                return 1;
+            }
+            ++sm;
+        }
+        *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
+
     }
+    return 1;
 
 }
+#if 0
 else
 {
     // saved msg
@@ -7048,10 +7112,8 @@ else
             *what_out = DWYCO_SPECIAL_USER_DEFINED;
     }
 }
-
-return 1;
 #endif
-}
+
 
 
 #if 0
