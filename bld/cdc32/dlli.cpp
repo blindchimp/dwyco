@@ -5664,6 +5664,104 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     return 1;
 }
 
+// if uid == 0, then the message is an unsaved message
+// otherwise, the msg_id is assumed to be filed in the
+// uid.usr folder.
+// YOU MUST CALL dwyco_free_array on returned buffer
+DWYCOEXPORT
+int
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out)
+{
+    vc body;
+    vc attachment;
+    vc from;
+    // keep debugging from crashing
+    *buf_out = "";
+    *buf_len_out = 0;
+
+    if(uid == 0)
+    {
+        vc id(VC_BSTRING, msg_id, strlen(msg_id));
+        vc summary = find_cur_msg(id);
+        if(summary.is_nil())
+            return 0;
+
+        if(summary[QM_IS_DIRECT].is_nil())
+        {
+            return 0;
+        }
+        body = direct_to_body(id);
+        if(body.is_nil())
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        vc u(VC_BSTRING, uid, len_uid);
+        body = load_body_by_id(u, msg_id);
+        if(body.is_nil())
+            return 0;
+    }
+
+    from = body[QM_BODY_FROM];
+    attachment = body[QM_BODY_ATTACHMENT];
+    vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
+    if(user_filename.is_nil() || attachment.is_nil())
+        return 0;
+    DwString a((const char *)attachment, 0, attachment.len());
+    if(a.rfind(".fle") != a.length() - 4)
+        return 0;
+
+    DwString s2;
+    if(body[QM_BODY_SENT].is_nil())
+        s2 = (const char *)to_hex(from);
+    else if(uid == 0)
+        oopanic("bad call to copyout");
+    else
+        s2 = (const char *)to_hex(vc(VC_BSTRING, uid, len_uid));
+
+    s2 += ".usr" DIRSEPSTR;
+    DwString att_dir = s2;
+#if 0
+    // debatable whether we should allow exporting corrupted msgs
+    if(uid == 0)
+    {
+        if(verify_chain(body, 1, vcnil, vc(".")) != VERF_AUTH_OK)
+            return 0;
+    }
+    else
+    {
+        if(verify_chain(body, 1, vcnil, att_dir.c_str()) != VERF_AUTH_OK)
+            return 0;
+    }
+#endif
+
+
+    s2 += (const char *)attachment;
+
+    DwString src = newfn((uid == 0 ? (const char *)attachment : s2.c_str()));
+
+    struct stat s;
+    if(stat(src.c_str(), &s) == -1)
+        return 0;
+    int fd = open(src.c_str(), O_RDONLY);
+    if(fd == -1)
+        return 0;
+    if(s.st_size >= INT32_MAX)
+        return 0;
+    int sz = s.st_size;
+    char *buf = new char[sz];
+    if(read(fd, buf, sz) != sz)
+    {
+        delete [] buf;
+        return 0;
+    }
+    *buf_out = buf;
+    *buf_len_out = sz;
+    return 1;
+}
+
 // use this to CANCEL a composition without sending it.
 // do NOT use this after a call to "send". use "cancel" instead
 // to stop a send in progress, and don't do anything
