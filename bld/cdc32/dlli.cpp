@@ -6943,7 +6943,7 @@ dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len
     if(summary[QM_IS_DIRECT].is_nil())
         return 0; // unfetched server message doesn't have enough info on it
     vc body;
-    body = direct_to_body2(summary);
+    body = direct_to_body(summary[QM_ID]);
     if(body.is_nil())
         return 0;
 
@@ -6997,17 +6997,17 @@ dwyco_handle_join(const char *mid)
     int ret = 0;
     switch(jstate)
     {
-    case DWYCO_SPECIAL_TYPE_JOIN1:
-        ret = recv_gj1(ql.get<vc>(DWYCO_QM_BODY_FROM), msg, password);
+    case DWYCO_SUMMARY_JOIN1:
+        ret = recv_gj1(ql.get<vc>(DWYCO_QMS_FROM), msg, password);
         break;
-    case DWYCO_SPECIAL_TYPE_JOIN2:
-        ret = recv_gj2(ql.get<vc>(DWYCO_QM_BODY_FROM), msg, password);
+    case DWYCO_SUMMARY_JOIN2:
+        ret = recv_gj2(ql.get<vc>(DWYCO_QMS_FROM), msg, password);
         break;
-    case DWYCO_SPECIAL_TYPE_JOIN3:
-        ret = recv_gj3(ql.get<vc>(DWYCO_QM_BODY_FROM), msg, password);
+    case DWYCO_SUMMARY_JOIN3:
+        ret = recv_gj3(ql.get<vc>(DWYCO_QMS_FROM), msg, password);
         break;
-    case DWYCO_SPECIAL_TYPE_JOIN4:
-        ret = install_group_key(ql.get<vc>(DWYCO_QM_BODY_FROM), msg, password);
+    case DWYCO_SUMMARY_JOIN4:
+        ret = install_group_key(ql.get<vc>(DWYCO_QMS_FROM), msg, password);
         break;
     default:
         return 0;

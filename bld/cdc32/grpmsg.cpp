@@ -113,7 +113,7 @@ xfer_dec(vc vs, vc password)
     vc enc_ctx = vclh_encdec_open();
     vclh_encdec_init_key_ctx(enc_ctx, k, 0);
     vc ret;
-    vc p = vclh_encdec_xfer_dec_ctx(enc_ctx, v, ret);
+    vc p = encdec_xfer_dec_ctx(enc_ctx, v, ret);
     if(p.is_nil())
         return vcnil;
     return ret;
@@ -247,7 +247,7 @@ recv_gj2(vc from, vc msg, vc password)
 
         vc res = SKID->sql_simple("select * from pstate where "
                                   "initiating_uid = $1 and nonce_1 = $2 and "
-                                  "alt_name = $3 and pstate = 1",
+                                  "alt_name = $3 and state = 1",
                                   our_uid, nonce, alt_name);
         if(res.num_elems() == 0)
         {
@@ -274,8 +274,8 @@ recv_gj2(vc from, vc msg, vc password)
         {
             SKID->start_transaction();
             VCArglist a;
-            a.append("insert into pstate (responding_uid = $1,  nonce_2 = $2, time = strftime('%s', 'now'), pstate = 3) "
-                     "where initiating_uid = $3 and nonce_1 = $4 and alt_name = $5 and pstate = 1");
+            a.append("update pstate set responding_uid = $1,  nonce_2 = $2, time = strftime('%s', 'now'), state = 3 "
+                     "where initiating_uid = $3 and nonce_1 = $4 and alt_name = $5 and state = 1");
             a.append(hfrom);
             a.append(nonce2);
             a.append(to_hex(My_UID));
@@ -359,7 +359,7 @@ recv_gj1(vc from, vc msg, vc password)
             throw -1;
         }
         VCArglist a;
-        a.append("insert into pstate (initiating_uid, responding_uid, nonce_1, nonce_2, alt_name, time, pstate) "
+        a.append("insert into pstate (initiating_uid, responding_uid, nonce_1, nonce_2, alt_name, time, state) "
                          "values($1, $2, $3, $4, $5, strftime('%s', 'now'), 2)");
         a.append(hfrom);
         a.append(to_hex(My_UID));
@@ -410,7 +410,7 @@ recv_gj3(vc from, vc msg, vc password)
         VCArglist a;
         a.append("select * from pstate where "
                  "initiating_uid = $1 and responding_uid = $2 and nonce_1 = $3 and "
-                 "nonce_2 = $4 and alt_name = $5 and pstate = 2");
+                 "nonce_2 = $4 and alt_name = $5 and state = 2");
         a.append(hfrom);
         a.append(our_uid);
         a.append(nonce);
