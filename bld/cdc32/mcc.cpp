@@ -874,29 +874,31 @@ void  TMsgCompose::send_buttonClick()
         sp = pnok;
     else
     {
-        switch(special_type)
+        if(special_type != 0)
         {
-        case DWYCO_SPECIAL_TYPE_BACKUP:
-            sp = "backup";
-            break;
-        case DWYCO_SPECIAL_TYPE_JOIN1:
-            sp = "join1";
-            break;
-        case DWYCO_SPECIAL_TYPE_JOIN2:
-            sp = "join2";
-            break;
-        case DWYCO_SPECIAL_TYPE_JOIN3:
-            sp = "join3";
-            break;
-        case DWYCO_SPECIAL_TYPE_JOIN4:
-            sp = "join4";
-            break;
-        default:
-        case DWYCO_SPECIAL_TYPE_USER:
-            sp = "user";
-            break;
+            switch(special_type)
+            {
+            case DWYCO_SPECIAL_TYPE_BACKUP:
+                sp = "backup";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN1:
+                sp = "join1";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN2:
+                sp = "join2";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN3:
+                sp = "join3";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN4:
+                sp = "join4";
+                break;
+            case DWYCO_SPECIAL_TYPE_USER:
+                sp = "user";
+                break;
+            }
+            sp_payload = special_payload;
         }
-        sp_payload = special_payload;
     }
     // note: this is a little odd, two copies of the text will be
     // in the message, one for old clients, and one for
