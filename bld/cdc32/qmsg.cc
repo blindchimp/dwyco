@@ -1645,7 +1645,7 @@ save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc 
     return vcnil;
 }
 
-static vc
+vc
 direct_to_body2(vc m)
 {
     vc v(VC_VECTOR);
@@ -2326,8 +2326,9 @@ remove_user(vc id, const char *pfx)
     vc uid = dir_to_uid((const char *)id);
     //always_vis_del(uid);
     // remove indexs so the msgs don't magically reappear
-    remove_msg_idx_uid(uid);
     sql_fav_remove_uid(uid);
+    remove_msg_idx_uid(uid);
+
     MsgFolders.del(uid);
     se_emit(SE_USER_REMOVE, uid);
     return 1;
@@ -2338,8 +2339,8 @@ clear_user(vc id, const char *pfx)
 {
     remove_user_files(id, pfx, 1);
     vc uid = dir_to_uid((const char *)id);
-    clear_msg_idx_uid(uid);
     sql_fav_remove_uid(uid);
+    clear_msg_idx_uid(uid);
     Rescan_msgs = 1;
     return 1;
 }
@@ -2870,6 +2871,15 @@ q_message2(vc recip, const char *attachment, vc& msg_out,
         v.append(sv);
         m[QQM_BODY_SPECIAL_TYPE] = v;
     }
+    else if(special_type == vc("user"))
+    {
+        vc v(VC_VECTOR);
+        v.append("user");
+        vc sv(VC_VECTOR);
+        sv.append(st_arg1);
+        v.append(sv);
+        m[QQM_BODY_SPECIAL_TYPE] = v;
+    }
     m[QQM_BODY_NO_FORWARD] = no_forward;
     // inhibit server-based delivery reporting for now
     m[QQM_BODY_NO_DELIVERY_REPORT] = vctrue;
@@ -3266,6 +3276,7 @@ do_local_store(vc filename, vc speced_mid)
 // send a q'd message
 
 int QSend_inprogress;
+int QSend_special_inprogress;
 
 void
 move_back_to_outbox(const DwString &fn)
@@ -3344,6 +3355,15 @@ reset_qsend(enum dwyco_sys_event cmd, DwString qid, vc recip_uid)
     if(cmd == SE_MSG_SEND_START)
         return;
     QSend_inprogress = 0;
+}
+
+static
+void
+reset_qsend_special(enum dwyco_sys_event cmd, DwString qid, vc recip_uid)
+{
+    if(cmd == SE_MSG_SEND_START)
+        return;
+    QSend_special_inprogress = 0;
 }
 
 static
@@ -3482,44 +3502,22 @@ msg_outq_empty()
 #endif
 }
 
-int
-any_q_files()
-{
-    DwString pat("outbox");
-    pat += DIRSEPSTR;
-    pat += "*.q";
-
-    FindVec *fv = find_to_vec(newfn(pat).c_str());
-    int nn = fv->num_elems();
-    delete_findvec(fv);
-    if(nn > 0)
-    {
-        return 1;
-    }
-    pat = "inprogress";
-    pat += DIRSEPSTR;
-    pat += "*.q";
-
-    fv = find_to_vec(newfn(pat).c_str());
-    nn = fv->num_elems();
-    delete_findvec(fv);
-    if(nn > 0)
-        return 1;
-    return 0;
-}
-
 // returns 1 if "something is happening" or 0 if the q appears to be empty
+// this will allow one special and one non-special to be going at the
+// same time
+
 int
 qd_send_one()
 {
     // note: we can send attachments without a connection
     // to the server, so don't prevent it here.
-    if(QSend_inprogress)// || !Auth_remote || !Database_online)
+    if(QSend_inprogress && QSend_special_inprogress)
     {
         return 1;
     }
     vc qd(VC_VECTOR);
     load_q_files("outbox", vcnil, 0, qd);
+    int is_special = 0;
     if(qd.num_elems() == 0)
     {
         // selected non-special messages previously and
@@ -3527,7 +3525,12 @@ qd_send_one()
         load_q_files("outbox", vcnil, 1, qd);
         if(qd.num_elems() == 0)
             return 0;
+        is_special = 1;
     }
+    if(!is_special && QSend_inprogress)
+        return 1;
+    if(is_special && QSend_special_inprogress)
+        return 1;
     //sort_on_time(qd, 2);
     GRTLOG("QUEUE", 0, 0);
     GRTLOGVC(qd);
@@ -3554,13 +3557,16 @@ qd_send_one()
         tosend = na[r];
     }
     DwString a = dwbasename(tosend[1]);
-    DwQSend *qs = new DwQSend(a);
+    DwQSend *qs = new DwQSend(a, 0);
     qs->se_sig.connect_ptrfun(se_emit_msg);
     qs->status_sig.connect_ptrfun(se_emit_msg_status);
-    qs->se_sig.connect_ptrfun(reset_qsend);
+    qs->se_sig.connect_ptrfun(is_special ? reset_qsend_special : reset_qsend);
     if(qs->send_message() == 1)
     {
-        QSend_inprogress = 1;
+        if(!is_special)
+            QSend_inprogress = 1;
+        else
+            QSend_special_inprogress = 1;
     }
     else
         delete qs;
@@ -4224,7 +4230,7 @@ clean_cruft()
         return;
 // end safety check that won't work if the filename mapper
 // is working
-    int i;
+
     vc nodel(VC_SET);
     find_files_to_keep("inbox", "*.urd", nodel);
     find_files_to_keep("inprogress", "*.q", nodel);
@@ -4258,7 +4264,7 @@ clean_cruft()
     // tmp pfx, we'll delete all the files in that path
     if(tmp.length() >= 5 && user.length() + 4 == tmp.length() &&
             user == DwString(tmp.c_str(), user.length()) &&
-            tmp.rfind("/tmp/") == tmp.length() - 5)
+            tmp.rfind(DIRSEPSTR "tmp" DIRSEPSTR) == tmp.length() - 5)
     {
         DwString tp = tmp;
         tp += "*.*";

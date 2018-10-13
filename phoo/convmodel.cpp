@@ -30,6 +30,7 @@ Conversation::load_external_state(const QByteArray& uid)
     update_any_unread(any_unread_msg(uid));
     update_session_msg(session_msg(uid));
     update_pal(dwyco_is_pal(uid.constData(), uid.length()));
+    update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
 }
 
 ConvListModel::ConvListModel(QObject *parent) :
@@ -185,6 +186,7 @@ ConvListModel::decorate(QString huid, QString txt, QString mid)
     c->update_unseen_count(cnt);
     c->update_any_unread(any_unread_msg(uid));
     c->update_is_blocked(dwyco_is_ignored(uid.constData(), uid.length()));
+    c->update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
 }
 
 void

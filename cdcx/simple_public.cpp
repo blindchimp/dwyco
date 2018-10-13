@@ -257,6 +257,9 @@ simple_public::simple_public(QWidget *parent) :
 
     ui->dj->setDefaultAction(ui->actionDj);
     ui->mute->setDefaultAction(ui->actionMute);
+    ui->dj->setVisible(0);
+    ui->mute->setVisible(0);
+
     ui->send_snapchat->setDefaultAction(ui->actionSend_snapchat);
 
     if(!HasAudioInput)

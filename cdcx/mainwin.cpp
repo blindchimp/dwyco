@@ -104,6 +104,7 @@ extern DwOString Current_server_id;
 extern int Last_server;
 extern DwOString Last_server_id;
 extern DwOString Last_selected_id;
+extern int Last_selected_idx;
 extern int Askup;
 static int Ask_lobby_pw;
 static DwOString Ask_lobby_pw_id;
@@ -574,6 +575,7 @@ set_current_server(int i)
     Current_server = i;
     Current_server_id = "";
     Last_selected_id = "";
+    Last_selected_idx = i;
     setting_put("server", i);
     setting_put("server_id", DwOString(""));
     settings_save();
@@ -659,6 +661,7 @@ set_current_server(const DwOString& id)
     Current_server = -1;
     Current_server_id = id;
     Last_selected_id = id;
+    Last_selected_idx = -1;
     // by avoiding setting the server to -1, we can make sure
     // we log into a system server
     //setting_put("server", -1);
@@ -4323,8 +4326,8 @@ void mainwinform::on_actionRemove_lobby_triggered()
 
 void mainwinform::on_actionMake_me_invisible_triggered(bool checked)
 {
-    int tmp1 = Current_server;
-    DwOString tmp2 = Current_server_id;
+    int tmp1 = Last_selected_idx;
+    DwOString tmp2 = Last_selected_id;
     dwyco_set_invisible_state(checked);
     // chat server will disconnect synchronously at this point, so we need to reissue a login
 

@@ -111,6 +111,7 @@ DwOString Current_server_id;
 int Last_server = -1;
 DwOString Last_server_id;
 DwOString Last_selected_id;
+int Last_selected_idx = -1;
 extern int AvoidCamera;
 int AvoidSSL;
 int Askup;
@@ -691,6 +692,14 @@ int main(int argc, char *argv[])
         // missing.
         dwyco_remove_backup();
         setting_put("first_bug217", 0);
+    }
+
+    int first_bug218 = !setting_get("first_bug218", sdum);
+    if(first_bug218)
+    {
+        // schema change in backups so redo them
+        dwyco_remove_backup();
+        setting_put("first_bug218", 0);
     }
 
 

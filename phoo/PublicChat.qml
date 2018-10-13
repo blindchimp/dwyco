@@ -16,8 +16,6 @@ Page {
     id: pchat
     anchors.fill: parent
     property alias model: listView1.model
-    //property alias listview : listView1
-    //property bool chat_server_connected: false
     property int connect_server: 0
     
     background: Rectangle {

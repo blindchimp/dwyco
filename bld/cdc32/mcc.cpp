@@ -864,6 +864,8 @@ void  TMsgCompose::send_buttonClick()
     static vc pok("palok");
     static vc pnok("palrej");
     vc sp;
+    vc sp_payload;
+    sp_payload = vctrue;
     if(pal_auth_mode)
         sp = pr;
     else if(pal_auth_ok_mode)
@@ -872,6 +874,11 @@ void  TMsgCompose::send_buttonClick()
         sp = pnok;
     else if(special_type == DWYCO_SPECIAL_TYPE_BACKUP)
         sp = "backup";
+    else if(special_type == DWYCO_SPECIAL_TYPE_USER)
+    {
+        sp = "user";
+        sp_payload = special_payload;
+    }
     // note: this is a little odd, two copies of the text will be
     // in the message, one for old clients, and one for
     // new authenticated clients, tho icuii doesn't really
@@ -880,7 +887,7 @@ void  TMsgCompose::send_buttonClick()
     vc ufn = user_filename;
 
     if(!q_message(rid_list, file_basename.c_str(), qfn,
-                  body_to_forward, msg_text.c_str(), filehash, sp, vctrue, no_forward, ufn, !dont_save_sent))
+                  body_to_forward, msg_text.c_str(), filehash, sp, sp_payload, no_forward, ufn, !dont_save_sent))
     {
         msgbox("Can't Q message, free up some diskspace and try again.", 0, MB_OK);
         enable_most();

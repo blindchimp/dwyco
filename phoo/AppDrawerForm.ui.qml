@@ -1,7 +1,6 @@
-
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -22,6 +21,8 @@ Pane {
     property alias lock_and_exit_button: lock_and_exit_button
     property alias invisible_switch: invisible_switch
     property alias quiet_switch: quiet_switch
+    property alias browse_tags_button: browse_tags_button
+    property alias browse_hidden_button: browse_hidden_button
 
     ColumnLayout {
         id: columnLayout
@@ -30,6 +31,18 @@ Pane {
         ItemDelegate {
             id: lock_and_exit_button
             text: qsTr("Lock and exit")
+            Layout.fillWidth: true
+        }
+
+        ItemDelegate {
+            id: browse_tags_button
+            text: qsTr("Browse Favs")
+            Layout.fillWidth: true
+        }
+
+        ItemDelegate {
+            id: browse_hidden_button
+            text: qsTr("Browse Hidden")
             Layout.fillWidth: true
         }
 

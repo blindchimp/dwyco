@@ -448,6 +448,7 @@ void set_invisible(int);
 static int DND;
 static int ReadOnlyMode;
 extern int QSend_inprogress;
+extern int QSend_special_inprogress;
 extern int All_mute;
 extern vc My_rating;
 extern vc Transmit_stats;
@@ -1022,10 +1023,12 @@ dwyco_resume()
     if(!Dwyco_suspended)
         return;
     handle_crash_setup();
+    init_entropy();
     Inhibit_database_thread = 0;
     Inhibit_pal = 0;
     Inhibit_auto_connect = 0;
     QSend_inprogress = 0;
+    QSend_special_inprogress = 0;
     turn_listen_on();
     set_listen_state(Suspend_no_listen_state);
     if(Suspend_listen_mode)
@@ -1906,7 +1909,7 @@ handle_deferred_msg_send()
     }
     if(!send_qd_msg_timer.is_running())
     {
-        if(any_q_files())
+        if(!msg_outq_empty())
         {
             send_qd_msg_timer.start();
         }
@@ -5428,6 +5431,12 @@ dwyco_make_special_zap_composition( int special_type, const char *user_id, const
         //m->force_server = 1;
         break;
     case DWYCO_SPECIAL_TYPE_USER:
+        m->special_type = DWYCO_SPECIAL_TYPE_USER;
+        if(user_block)
+        {
+            m->special_payload = vc(VC_BSTRING, user_block, len_user_block);
+        }
+        break;
     default:
         delete m;
         return -1;
@@ -5636,6 +5645,104 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     return 1;
 }
 
+// if uid == 0, then the message is an unsaved message
+// otherwise, the msg_id is assumed to be filed in the
+// uid.usr folder.
+// YOU MUST CALL dwyco_free_array on returned buffer
+DWYCOEXPORT
+int
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out)
+{
+    vc body;
+    vc attachment;
+    vc from;
+    // keep debugging from crashing
+    *buf_out = "";
+    *buf_len_out = 0;
+
+    if(uid == 0)
+    {
+        vc id(VC_BSTRING, msg_id, strlen(msg_id));
+        vc summary = find_cur_msg(id);
+        if(summary.is_nil())
+            return 0;
+
+        if(summary[QM_IS_DIRECT].is_nil())
+        {
+            return 0;
+        }
+        body = direct_to_body(id);
+        if(body.is_nil())
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        vc u(VC_BSTRING, uid, len_uid);
+        body = load_body_by_id(u, msg_id);
+        if(body.is_nil())
+            return 0;
+    }
+
+    from = body[QM_BODY_FROM];
+    attachment = body[QM_BODY_ATTACHMENT];
+    vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
+    if(user_filename.is_nil() || attachment.is_nil())
+        return 0;
+    DwString a((const char *)attachment, 0, attachment.len());
+    if(a.rfind(".fle") != a.length() - 4)
+        return 0;
+
+    DwString s2;
+    if(body[QM_BODY_SENT].is_nil())
+        s2 = (const char *)to_hex(from);
+    else if(uid == 0)
+        oopanic("bad call to copyout");
+    else
+        s2 = (const char *)to_hex(vc(VC_BSTRING, uid, len_uid));
+
+    s2 += ".usr" DIRSEPSTR;
+    DwString att_dir = s2;
+#if 0
+    // debatable whether we should allow exporting corrupted msgs
+    if(uid == 0)
+    {
+        if(verify_chain(body, 1, vcnil, vc(".")) != VERF_AUTH_OK)
+            return 0;
+    }
+    else
+    {
+        if(verify_chain(body, 1, vcnil, att_dir.c_str()) != VERF_AUTH_OK)
+            return 0;
+    }
+#endif
+
+
+    s2 += (const char *)attachment;
+
+    DwString src = newfn((uid == 0 ? (const char *)attachment : s2.c_str()));
+
+    struct stat s;
+    if(stat(src.c_str(), &s) == -1)
+        return 0;
+    int fd = open(src.c_str(), O_RDONLY);
+    if(fd == -1)
+        return 0;
+    if(s.st_size >= INT32_MAX)
+        return 0;
+    int sz = s.st_size;
+    char *buf = new char[sz];
+    if(read(fd, buf, sz) != sz)
+    {
+        delete [] buf;
+        return 0;
+    }
+    *buf_out = buf;
+    *buf_len_out = sz;
+    return 1;
+}
+
 // use this to CANCEL a composition without sending it.
 // do NOT use this after a call to "send". use "cancel" instead
 // to stop a send in progress, and don't do anything
@@ -5817,6 +5924,13 @@ dwyco_zap_send4(int compid, const char *uid, int len_uid, const char *text, int 
 
 }
 
+DWYCOEXPORT
+int
+dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, const char **pers_id_out, int *len_pers_id_out)
+{
+    return dwyco_zap_send6(compid, uid, len_uid, text, len_text, no_forward, ZapAdvData.get_save_sent(), 0, pers_id_out, len_pers_id_out);
+}
+
 
 // note: this does *not* invalidate the composer as previous
 // zap_send functions did. it simply starts up the send process on
@@ -5832,7 +5946,7 @@ dwyco_zap_send4(int compid, const char *uid, int len_uid, const char *text, int 
 // replaced by some kind of ephemeral messaging.
 DWYCOEXPORT
 int
-dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, const char **pers_id_out, int *len_pers_id_out)
+dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, int defer, const char **pers_id_out, int *len_pers_id_out)
 {
     update_activity();
     ValidPtr p = cookie_to_ptr(compid);
@@ -5883,10 +5997,21 @@ dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int 
     else
         m->dont_save_sent = !save_sent;
     m->send_buttonClick();
-    if(!send_best_way(m->qfn, vuid))
+    if(!defer)
     {
-        GRTLOG("zap_send4: send startup failed", 0, 0);
-        return 0;
+        if(!send_best_way(m->qfn, vuid))
+        {
+            GRTLOG("zap_send4: send startup failed", 0, 0);
+            return 0;
+        }
+    }
+    else
+    {
+        if(!send_via_server_deferred(m->qfn))
+        {
+            GRTLOG("zap_send4: send defer failed", 0, 0);
+            return 0;
+        }
     }
     if(len_pers_id_out)
     {
@@ -6671,6 +6796,8 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
     static vc palok("palok");
     static vc palrej("palrej");
     static vc dlv("dlv");
+    static vc user("user");
+
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc& v = *(vc *)ml;
     vc summary = v[0];
@@ -6690,6 +6817,8 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
                 *what_out = DWYCO_SUMMARY_PAL_REJECT;
             else if(what == dlv)
                 *what_out = DWYCO_SUMMARY_DELIVERED;
+            else if(what == user)
+                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
             else
                 *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
         }
@@ -6762,6 +6891,42 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
 }
 #endif
 
+
+DWYCOEXPORT
+int
+dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out)
+{
+    // this keeps the debugging stuff from crashing
+    *str_out = "";
+    *len_out = 0;
+
+    vc& v = *(vc *)ml;
+    vc summary = v[0];
+    if(summary[QM_IS_DIRECT].is_nil())
+        return 0; // unfetched server message doesn't have enough info on it
+    vc body;
+    body = direct_to_body2(summary);
+    if(body.is_nil())
+        return 0;
+
+    vc sv = body[QM_BODY_SPECIAL_TYPE];
+    if(sv[0] != vc("user"))
+        return 0;
+    vc msg_type_vec = sv[1];
+
+   vc payload = msg_type_vec[0];
+   if(payload.type() != VC_STRING)
+       return 0;
+
+    char *b = new char[payload.len()];
+    memcpy(b, (const char *)payload, payload.len());
+    *str_out = b;
+    *len_out = payload.len();
+
+    return 1;
+}
+
+
 // note: for the next two functions, uid MUST be equal to 0, as they
 // are broken otherwise. essentially, it turns out that i strip out the
 // special stuff when the msgs are saved (for vague security reasons.)
@@ -6777,6 +6942,7 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
     static vc palok("palok");
     static vc palrej("palrej");
     static vc dlv("dlv");
+    static vc user("user");
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc id(VC_BSTRING, msg_id, strlen(msg_id));
     if(uid == 0)
@@ -6800,6 +6966,8 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
                     *what_out = DWYCO_SUMMARY_PAL_REJECT;
                 else if(what == dlv)
                     *what_out = DWYCO_SUMMARY_DELIVERED;
+                else if(what == user)
+                    *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
                 else
                     *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
             }
@@ -7556,26 +7724,71 @@ dwyco_pal_get_list()
 
 DWYCOEXPORT
 void
-dwyco_set_fav_msg(const char *uid, int len_uid, const char *mid, int fav)
+dwyco_set_msg_tag(const char *mid, const char *tag)
 {
-    vc buid(VC_BSTRING, uid, len_uid);
-    vc bmid(mid);
-    sql_fav_set_fav(buid, bmid, fav);
+    sql_add_tag(mid, tag);
+}
+
+DWYCOEXPORT
+void
+dwyco_unset_msg_tag(const char *mid, const char *tag)
+{
+    sql_remove_mid_tag(mid, tag);
+}
+
+DWYCOEXPORT
+void
+dwyco_unset_all_msg_tag(const char *tag)
+{
+    sql_remove_tag(tag);
 }
 
 DWYCOEXPORT
 int
-dwyco_get_fav_msg(const char *uid, int len_uid, const char *mid)
+dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag)
 {
-    if(mid == 0)
-    {
-        if(uid == 0)
-            return 0;
-        vc buid(VC_BSTRING, uid, len_uid);
-        return sql_fav_has_fav(buid);
-    }
-    vc bmid(mid);
-    return sql_fav_is_fav(bmid);
+    vc res = sql_get_tagged_mids(tag);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
+{
+    vc res = sql_get_tagged_idx(tag);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_mid_has_tag(const char *mid, const char *tag)
+{
+    return sql_mid_has_tag(mid, tag);
+}
+
+DWYCOEXPORT
+int
+dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    return sql_uid_has_tag(buid, tag);
+}
+
+
+DWYCOEXPORT
+void
+dwyco_set_fav_msg(const char *mid, int fav)
+{
+    sql_fav_set_fav(mid, fav);
+}
+
+DWYCOEXPORT
+int
+dwyco_get_fav_msg(const char *mid)
+{
+    return sql_fav_is_fav(mid);
 }
 
 // ignore list stuff

@@ -16,6 +16,7 @@ class msglist_model : public QSortFilterProxyModel
 {
     Q_OBJECT
     Q_PROPERTY(QString uid READ uid WRITE setUid NOTIFY uidChanged)
+    Q_PROPERTY(QString tag READ tag WRITE setTag NOTIFY tagChanged)
 
 
 public:
@@ -26,18 +27,23 @@ public:
     void setUid(const QString &uid);
     QString uid() const;
 
-    QString m_uid;
+    void setTag(const QString& tag);
+    QString tag() const;
 
     Q_INVOKABLE void reload_model();
 
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
 
     Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n, int only_favs);
+    Q_INVOKABLE void set_show_hidden(int);
 
     Q_INVOKABLE void toggle_selected(QByteArray mid);
+    Q_INVOKABLE void set_all_selected();
     Q_INVOKABLE void set_all_unselected();
     Q_INVOKABLE void delete_all_selected();
     Q_INVOKABLE void fav_all_selected(int);
+    Q_INVOKABLE void tag_all_selected(QByteArray tag);
+    Q_INVOKABLE void untag_all_selected(QByteArray tag);
     Q_INVOKABLE bool at_least_one_selected();
 
     int mid_to_index(QByteArray mid);
@@ -46,13 +52,18 @@ public slots:
     void msg_recv_status(int cmd, const QString& mid);
 
 private:
+    QString m_uid;
+    QString m_tag;
+
     int filter_show_sent;
     int filter_show_recv;
     int filter_last_n;
     int filter_only_favs;
+    int filter_show_hidden;
 
 signals:
     void uidChanged();
+    void tagChanged();
 
 };
 
@@ -69,6 +80,7 @@ public:
     virtual QHash<int, QByteArray> roleNames() const;
 
     void setUid(const QString& uid);
+    void setTag(const QString& tag);
     void reload_model();
     void reload_inbox_model();
 
@@ -81,6 +93,7 @@ private:
     int count_inbox_msgs;
 
     QString m_uid;
+    QString m_tag;
 
     QVariant qd_data (int r, int role = Qt::DisplayRole ) const;
     QVariant inbox_data (int r, int role = Qt::DisplayRole ) const;

@@ -85,7 +85,7 @@ Page {
                 MenuItem {
                     text: fav ? "Unfavorite" : "Favorite"
                     onTriggered: {
-                        core.set_fav_message(uid, mid, !fav)
+                        core.set_fav_message(mid, !fav)
                         // oops, breaks binding
                         //fav = !fav
                         var save_mid = mid

@@ -6,9 +6,12 @@ mkdir $SHADOW_NAME
 mkdir $SHADOW_NAME/lib
 mkdir $SHADOW_NAME/include
 
-(cd bld/libuv
+(
+cd bld/libuv
 make -j 8
-cp libuv.a $SHADOW_NAME/lib
+mkdir -p $SHADOW_NAME/bld/libuv
+cp libuv.a $SHADOW_NAME/bld/libuv
+#cp libuv.a $SHADOW_NAME/lib
 cp include/uv.h $SHADOW_NAME/include
 )
 

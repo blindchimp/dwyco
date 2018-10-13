@@ -66,7 +66,28 @@ Page {
                         multiselect_mode = false
                     }
                 }
+                MenuItem {
+                    text: "Hide"
+                    onTriggered: {
+                        model.tag_all_selected("_hid")
+                        multiselect_mode = false
+                    }
+                }
+                MenuItem {
+                    text: "UnHide"
+                    onTriggered: {
+                        model.untag_all_selected("_hid")
+                        multiselect_mode = false
+                    }
+                }
+                MenuItem {
+                    text: "Select All"
+                    onTriggered: {
+                        model.set_all_selected()
+                    }
+                }
             }
+
         }
     }
 
@@ -198,10 +219,25 @@ Page {
                     ToolTip.text: "Request live video"
                 }
                 CallButtonLink {
+                    id: cancel_req_button
                     but_name: "cancel_req"
                     contentItem: Image {
                         anchors.centerIn: parent
                         source: mi("ic_cancel_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink4
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: cancel_req_button.visible
+                            ColorAnimation {
+                                target: bgblink4
+                                property: "color"
+                                from: "red"
+                                to: "white"
+                                duration: 1000
+                            }
+                        }
                     }
                     ToolTip.text: "Hangup"
 
@@ -466,13 +502,13 @@ Page {
             }
         }
         onSc_connect_terminated: {
-            if(chatbox.to_uid == uid) {
+            if(chatbox.to_uid === uid) {
                 console.log("CONNECT TERMINATED")
             }
         }
 
         onSc_connectedChanged: {
-                if(chatbox.to_uid == uid) {
+                if(chatbox.to_uid === uid) {
                     console.log("ConnectedChanged ", connected)
                     if(connected === 0 && vidpanel.visible) {
                         vidpanel.visible = false
@@ -671,6 +707,16 @@ Page {
                     anchors.margins: 2
                     source: mi("ic_videocam_black_24dp.png")
                 }
+            }
+            Rectangle {
+                id: hidden
+                width: 16
+                height: 16
+                anchors.right:ditem.right
+                anchors.top:ditem.top
+                visible: IS_HIDDEN === 1
+                z: 3
+                color: "orange"
             }
             z: 1
 

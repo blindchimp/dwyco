@@ -328,11 +328,16 @@ Page {
             }
             MouseArea {
                 anchors.fill: parent
+                acceptedButtons: Qt.LeftButton|Qt.RightButton
                 onClicked: {
                     console.log("cqres click ")
                     console.log(index)
                     listView1.currentIndex = index
-                    uid_selected(uid, "clicked")
+                    if(mouse.button === Qt.LeftButton) {
+                        uid_selected(uid, "clicked")
+                    } else if(mouse.button === Qt.RightButton) {
+                        uid_selected(uid, "hold")
+                    }
                 }
                 onPressAndHold: {
                     console.log("cqres hold ")

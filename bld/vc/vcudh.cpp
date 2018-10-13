@@ -31,6 +31,8 @@
 #include "hex.h"
 #include "vcudh.h"
 #include "randpool.h"
+#include "aes.h"
+#include "modes.h"
 
 // this was just for debugging
 #ifdef CDCDLL
@@ -267,7 +269,7 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
     Rng->GenerateBlock(skey, skey.SizeInBytes());
     vc session_key(VC_BSTRING, (const char *)(const byte *)skey, skey.SizeInBytes());
 
-    vc ret_material(VC_VECTOR);
+    vc ret(VC_VECTOR);
 
     for(int j = 0; j < other_pub_vec.num_elems(); ++j)
     {
@@ -291,18 +293,37 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
         for(size_t i = 0; i < skey.SizeInBytes(); ++i)
             skt[i] ^= k[i];
         vc session_key_enc(VC_BSTRING, (const char *)(const byte *)skt, skt.SizeInBytes());
-
-        vc ret(VC_VECTOR);
         // encrypted output is
         // 0: session key encrypted with public key
         // 1: public DH value to decrypt
-        ret[0] = session_key_enc;
-        ret[1] = our_public;
-        ret_material.append(ret);
+        // note: instead of returning vector(vector(k1 p1) vector(k2 p2))
+        // just string them into a vector(k1 p1 k2 p2) which will make it
+        // possible that this material could be used by unchanged old software
+        // (which will ignore everything past the first pair)
+        ret[2 * j] = session_key_enc;
+        ret[2 * j + 1] = our_public;
+        //ret_material.append(ret);
     }
     session_key_out = session_key;
 
-    return ret_material;
+    // this is a key check string. i think technically, since we use
+    // AES/GCM for encryption using this stuff, the mac would fail if we
+    // used the wrong key. we *do* have to decrypt the entire message to
+    // find that out (even with an attachment, we encrypt the message that
+    // references the attachment first, so it wouldn't cause that much of
+    // a performance hit on decryption, unless the message is pretty big.)
+    // so, i'll add this so you can select the right key if there are multiple
+    // keys in a messages, just in case.
+    ECB_Mode<AES>::Encryption kc;
+    kc.SetKey(skey, skey.SizeInBytes());
+    byte buf[8];
+    memset(buf, 0, sizeof(buf));
+    byte checkstr[8];
+    kc.ProcessData(checkstr, buf, sizeof(checkstr));
+    // use just first 3 bytes
+    ret.append(vc(VC_BSTRING, (const char *)checkstr, 3));
+
+    return ret;
 }
 
 vc
@@ -324,6 +345,9 @@ vclh_sf_material(vc other_pub, vc key_out)
 vc
 dh_store_and_forward_get_key(vc sfpack, vc our_material)
 {
+    if(sfpack.num_elems() < 2)
+        return vcnil;
+
     SecByteBlock akey(EphDH->AgreedValueLength());
     if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[DH_STATIC_PRIVATE],
                      (const byte *)(const char *)sfpack[1]))
@@ -350,6 +374,63 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
 
     vc ret(VC_BSTRING, (const char *)sk.BytePtr(), sk.SizeInBytes());
     return ret;
+}
+
+// sfpack is the package of info created by dh_store_and_forward_material, presumably
+// created by the sender. here is where we do the agreement and recover the session key.
+vc
+dh_store_and_forward_get_key2(vc sfpack, vc our_material)
+{
+
+    if((sfpack.num_elems() & 1) != 1 || sfpack.num_elems() < 3)
+        return vcnil;
+
+    int n = sfpack.num_elems() / 2;
+    vc checkstr = sfpack[2 * n + 1];
+    SecByteBlock akey(EphDH->AgreedValueLength());
+    ECB_Mode<AES>::Encryption kc;
+    for(int i = 0; i < n; ++i)
+    {
+        if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[i][DH_STATIC_PRIVATE],
+                         (const byte *)(const char *)sfpack[2 * i + 1]))
+            return vcnil;
+
+        vc kdk(VC_BSTRING, (const char *)akey.data(), akey.SizeInBytes());
+
+        kdk = sha(kdk);
+
+        vc sk_enc = sfpack[2 * i];
+        if(!(sk_enc.type() == VC_STRING && sk_enc.len() <= kdk.len()))
+        {
+            return vcnil;
+        }
+
+        const byte *k = (const byte *)(const char *)sk_enc;
+        SecByteBlock sk(sk_enc.len());
+        const byte *k2 = (const byte *)(const char *)kdk;
+
+        for(int i = 0; i < sk_enc.len(); ++i)
+        {
+            sk[i] = k[i] ^ k2[i];
+        }
+
+        // test the key, return if it looks ok
+
+        kc.SetKey(sk, sk.SizeInBytes());
+        byte buf[8];
+        memset(buf, 0, sizeof(buf));
+        byte ck_str[8];
+        kc.ProcessData(ck_str, buf, sizeof(ck_str));
+        // use just first 3 bytes
+        if(checkstr == vc(VC_BSTRING, (const char *)checkstr, 3))
+        {
+            vc ret(VC_BSTRING, (const char *)sk.BytePtr(), sk.SizeInBytes());
+            return ret;
+        }
+
+    }
+
+    return vcnil;
 }
 
 

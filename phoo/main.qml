@@ -104,6 +104,7 @@ ApplicationWindow {
     property bool dwy_quiet: false
     property bool show_unreviewed: false
     property bool expire_immediate: false
+    property bool show_hidden: true
     function pin_expire() {
         var expire
         var duration
@@ -316,15 +317,20 @@ ApplicationWindow {
 
     }
 
-    Loader {
+//    Loader {
+//        id: settings_dialog
+//        visible: false
+
+//        onVisibleChanged: {
+//            if(visible) {
+//                source = "qrc:/DSettings.qml"
+//            }
+//        }
+//    }
+    DSettings {
         id: settings_dialog
         visible: false
 
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/DSettings.qml"
-            }
-        }
     }
 
     Loader {
@@ -466,6 +472,12 @@ ApplicationWindow {
         to_uid: top_dispatch.last_uid_selected
         visible: false
 
+    }
+
+    SimpleTagMsgBrowse {
+        id: simp_tag_browse
+        model: themsglist
+        visible: false
     }
 
 
@@ -683,6 +695,10 @@ ApplicationWindow {
         //initialItem: userlist
         anchors.fill: parent
         visible: {pwdialog.allow_access === 1}
+        onDepthChanged: {
+            if(depth === 1)
+                simp_tag_browse.to_tag = ""
+        }
 
         
     }
@@ -785,7 +801,7 @@ ApplicationWindow {
             console.log(txt)
             console.log(mid)
             console.log("msglist", themsglist.uid)
-            if(from_uid == themsglist.uid) {
+            if(from_uid === themsglist.uid) {
                 themsglist.reload_model()
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
@@ -800,7 +816,7 @@ ApplicationWindow {
         onSys_msg_idx_updated: {
             console.log("update idx", uid)
             console.log("upd" + uid + " " + themsglist.uid)
-            if(uid == themsglist.uid) {
+            if(uid === themsglist.uid) {
                 themsglist.reload_model()
                 console.log("RELOAD")
             }

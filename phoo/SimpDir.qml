@@ -23,7 +23,7 @@ Page {
          source: simpdir_rect.xml_url
          query: "/directory/entry"
 
-         XmlRole { name: "uid"; query: "uid/string()" }
+         XmlRole { name: "uid"; query: "uid/string()"; isKey: true }
          XmlRole { name: "name"; query: "name/string()" }
          XmlRole { name: "description"; query: "description/string()" }
          XmlRole { name: "has_preview"; query: "has_preview/number()" }
@@ -35,7 +35,9 @@ Page {
      }
 
     header: SimpleToolbar {
+        id: toolbar
         extras: extras_button
+        hide_grid: false
     }
 
     Component {
@@ -68,7 +70,7 @@ Page {
         id: simpdir_delegate
         Rectangle {
             width: parent.width
-            height: has_preview == 1 ? vh(pct) : vh(pct) / 2
+            height: has_preview === 1 ? vh(pct) : vh(pct) / 2
             border.width: 1
 
             color: primary_dark
@@ -84,7 +86,7 @@ Page {
                 anchors.fill: parent
                 CircularImage {
                     id: preview
-                    source: {has_preview == 1 ? core.uid_to_http_profile_preview(uid) : ""}
+                    source: {has_preview === 1 ? core.uid_to_http_profile_preview(uid) : ""}
                     fillMode: Image.PreserveAspectCrop
                     Layout.minimumWidth: picht()
                     Layout.maximumWidth: picht()
@@ -124,11 +126,16 @@ Page {
             }
             MouseArea {
                 anchors.fill: parent
+                acceptedButtons: Qt.LeftButton|Qt.RightButton
                 onClicked: {
                     console.log("simpdir click ")
                     console.log(index)
                     listView1.currentIndex = index
-                    uid_selected(uid, "clicked")
+                    if(mouse.button === Qt.LeftButton) {
+                        uid_selected(uid, "clicked")
+                    } else if(mouse.button === Qt.RightButton) {
+                        uid_selected(uid, "hold")
+                    }
                 }
                 onPressAndHold: {
                     console.log("simpdir hold ")
@@ -149,12 +156,123 @@ Page {
         id: listView1
          anchors.fill: parent
          model: xmlModel
+         visible: !toolbar.grid_checked
 
          delegate: simpdir_delegate
          clip: true
          ScrollBar.vertical: ScrollBar { }
          
     }
+
+    Component {
+        id: simpdir_grid_delegate
+        Rectangle {
+            width: gridView1.cellWidth
+            height: gridView1.cellHeight
+            border.width: 1
+            color: primary_dark
+
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: primary_light }
+                GradientStop { position: 1.0; color: primary_dark}
+            }
+
+            CircularImage {
+                id: preview
+                source: {has_preview === 1 ? core.uid_to_http_profile_preview(uid) : ""}
+                fillMode: Image.PreserveAspectCrop
+                height:parent.height
+                width: parent.height
+                visible: has_preview === 1
+            }
+            Text {
+                text: name
+                elide: Text.ElideRight
+                clip: true
+                anchors.bottom: parent.bottom
+                width: parent.width
+                color: amber_light
+                visible: has_preview === 1
+            }
+            ColumnLayout {
+                visible: has_preview !== 1
+                Layout.fillWidth: true
+                anchors.fill: parent
+                Layout.margins: 3
+
+                spacing: mm(2)
+                Text {
+                    Layout.alignment: Qt.AlignLeft
+                    Layout.fillWidth: true
+                    id: nm
+                    text: name
+                    clip: true
+                    font.bold: true
+                    elide: Text.ElideRight
+
+                }
+                Text {
+                    Layout.alignment: Qt.AlignLeft
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    text: description
+                    clip: true
+                    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton|Qt.RightButton
+                onClicked: {
+                    console.log("simpdir click ")
+                    console.log(index)
+                    gridView1.currentIndex = index
+                    if(mouse.button === Qt.LeftButton) {
+                        uid_selected(uid, "clicked")
+                    } else if(mouse.button === Qt.RightButton) {
+                        uid_selected(uid, "hold")
+                    }
+                }
+                onPressAndHold: {
+                    console.log("simpdir hold ")
+                    console.log(index)
+                    gridView1.currentIndex = index
+                    uid_selected(uid, "hold")
+                }
+
+            }
+
+        }
+    }
+
+    GridView {
+        id: gridView1
+        anchors.fill:parent
+        cellWidth: 160 ; cellHeight: 160
+
+        visible: toolbar.grid_checked
+
+        model: xmlModel
+        delegate: simpdir_grid_delegate
+        clip: true
+        //spacing: 5
+        ScrollBar.vertical: ScrollBar {
+            background: Rectangle {
+                color: "green"
+            }
+        }
+    }
+
+    Connections {
+        target: core
+        onIgnore_event: {
+            if(simpdir_top.visible)
+                xmlModel.reload()
+        }
+    }
+
     BusyIndicator {
         id: busy1
 

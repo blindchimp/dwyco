@@ -21,7 +21,6 @@
 #include <strings.h>
 #include "dwyco_rand.h"
 
-//void oopanic(char *);
 void oopanic(const char *);
 
 // WARNING: don't use these time things to initialize
