@@ -285,182 +285,6 @@ reload_msgs()
     return 1;
 }
 
-#if 0
-
-int
-dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, QByteArray& mid)
-{
-    return 0;
-
-    int k = Delete_msgs.count();
-    for(int i = 0; i < k; ++i)
-    {
-        dwyco_delete_unsaved_message(Delete_msgs[i].constData());
-
-    }
-    Delete_msgs.clear();
-
-    DWYCO_UNSAVED_MSG_LIST qml;
-    if(!dwyco_get_unsaved_messages(&qml, 0, 0))
-        return 0;
-    simple_scoped ml(qml);
-    int n;
-    const char *val;
-    int len;
-    int type;
-    dwyco_list_numelems(ml, &n, 0);
-    if(n == 0)
-    {
-        return 0;
-    }
-    for(int i = 0; i < n; ++i)
-    {
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_FROM, uid_out))
-            continue;
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_ID, mid))
-            continue;
-        if(Dont_refetch.contains(mid) ||
-                fetching.contains(mid) || fetching.count() > 2)
-            continue;
-        if(!dwyco_list_get(ml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
-            continue;
-        if(type == DWYCO_TYPE_NIL)
-        {
-            int special_type;
-            const char *uid;
-            int len_uid;
-            const char *dlv_mid;
-            if(dwyco_is_delivery_report(mid.constData(), &uid, &len_uid, &dlv_mid, &special_type))
-            {
-                // process pal authorization stuff here
-                if(special_type == DWYCO_SUMMARY_DELIVERED)
-                {
-                    // NOTE: uid, dlv_mid must be copied out before next
-                    // dll call
-                    // hmmm, need new api to get uid/mid_out of delivered msg
-                    dwyco_delete_unsaved_message(mid.constData());
-                    continue;
-                }
-
-            }
-            // issue a server fetch, client will have to
-            // come back in to get it when the fetch is done
-            fetching.append(mid);
-            dwyco_fetch_server_message(mid.constData(), msg_callback, 0, 0, 0);
-            continue;
-        }
-        int special_type;
-#if 0
-        if(dwyco_is_special_message(0, 0, mid.constData(), &special_type))
-        {
-            // process pal authorization stuff here
-            switch(special_type)
-            {
-            case DWYCO_PAL_AUTH_REQ:
-                // note that most of the "special message" stuff only
-                // works on unsaved messages. which is a pain.
-                display_msg(uid_out, "Pal authorization request", 0, QByteArray(""));
-                // yuck, this chat_uids stuff needs to be encapsulated
-                {
-                    int i = chat_uids.index(uid_out);
-                    if(i == -1)
-                        break;
-                    chatform2 *c = chat_wins[i];
-                    dwyco_get_unsaved_message(&c->pal_auth_req_msg, mid.constData());
-                    // note: we can't delete it if it has an attachment...
-                    // we can *save* it ok, but the unsaved msg's attachment
-                    // will become unreadable, but since we don't need the
-                    // attachment for pal auth purposes, we'll ignore this "bug"
-                }
-                goto save_it;
-                break;
-            case DWYCO_PAL_OK:
-                dwyco_handle_pal_auth(0, 0, mid.constData(), 1);
-                display_msg(uid_out, "Pal authorization accepted", 0, QByteArray(""));
-                dwyco_delete_unsaved_message(mid.constData());
-                break;
-            case DWYCO_PAL_REJECT:
-                dwyco_handle_pal_auth(0, 0, mid.constData(), 1);
-                dwyco_pal_delete(uid_out.constData(), uid_out.length());
-                display_msg(uid_out, "Pal authorization rejected", 0, QByteArray(""));
-                dwyco_delete_unsaved_message(mid.constData());
-                break;
-            default:
-                dwyco_delete_unsaved_message(mid.constData());
-                break;// do nothing, ignore it.
-            }
-            continue;
-        }
-#endif
-save_it:
-        ;
-        DWYCO_SAVED_MSG_LIST qsm;
-#ifndef NO_SAVED_MSGS
-        int delete_unsaved = 0;
-        if(!dwyco_save_message(mid.constData()))
-        {
-            // keep from constantly refetching it
-            // this happens sometimes when attachments get lost
-            // for direct messages, things are read-only, etc.
-            Dont_refetch.insert(mid);
-            // see if we can continue with the unsaved msg, just not
-            // saving it.
-            if(!dwyco_unsaved_message_to_body(&qsm, mid.constData()))
-            {
-                dwyco_delete_unsaved_message(mid.constData());
-                continue;
-            }
-            else
-                delete_unsaved = 1;
-        }
-        else
-        {
-            if(!dwyco_get_saved_message(&qsm, uid_out.constData(), uid_out.length(), mid.constData()))
-            {
-                // something is really hosed, saved it, and now
-                // can't read it.
-                Dont_refetch.insert(mid);
-                continue;
-            }
-        }
-
-
-#else
-        if(!dwyco_unsaved_message_to_body(&qsm, mid.constData()))
-            continue;
-#endif
-        simple_scoped sm(qsm);
-        DWYCO_LIST qbt = dwyco_get_body_text(sm);
-        simple_scoped bt(qbt);
-        if(!dwyco_get_attr(bt, 0, DWYCO_NO_COLUMN, txt))
-            continue;
-#ifdef NO_SAVED_MSGS
-        int dont_delete = 0;
-#endif
-
-
-        // need to just q it for delete, since we want to play
-        // the video that came with it potentially
-
-        if(delete_unsaved)
-            dwyco_delete_unsaved_message(mid.constData());
-#ifdef NO_SAVED_MSGS
-        if(!dont_delete)
-            dwyco_delete_unsaved_message(mid.constData());
-#endif
-        // ok, at least it is likely the person will see it now
-        // if there are any errors above, people may not be able to see a message
-        // but the user would appear towards the top of the user list, which is weird.
-        // this happens sometimes when attachments are not fetchable for whatever reason.
-        Got_msg_from.insert(uid_out);
-        Got_msg_from_this_session.insert(uid_out);
-        add_unviewed(uid_out, mid);
-        return 1;
-    }
-
-    return 0;
-}
-#endif
 
 int
 dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
@@ -496,7 +320,6 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
 //            continue;
         if(!dwyco_list_get(ml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
             continue;
-
 #if 0
         if(type == DWYCO_TYPE_NIL)
         {
@@ -523,49 +346,14 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
             dwyco_fetch_server_message(mid.constData(), msg_callback, 0, 0, 0);
             continue;
         }
+#endif
         int special_type;
 
         if(dwyco_is_special_message(0, 0, mid.constData(), &special_type))
         {
-            // process pal authorization stuff here
-            switch(special_type)
-            {
-            case DWYCO_PAL_AUTH_REQ:
-                // note that most of the "special message" stuff only
-                // works on unsaved messages. which is a pain.
-                display_msg(uid_out, "Pal authorization request", 0, QByteArray(""));
-                // yuck, this chat_uids stuff needs to be encapsulated
-                {
-                    int i = chat_uids.index(uid_out);
-                    if(i == -1)
-                        break;
-                    chatform2 *c = chat_wins[i];
-                    dwyco_get_unsaved_message(&c->pal_auth_req_msg, mid.constData());
-                    // note: we can't delete it if it has an attachment...
-                    // we can *save* it ok, but the unsaved msg's attachment
-                    // will become unreadable, but since we don't need the
-                    // attachment for pal auth purposes, we'll ignore this "bug"
-                }
-                goto save_it;
-                break;
-            case DWYCO_PAL_OK:
-                dwyco_handle_pal_auth(0, 0, mid.constData(), 1);
-                display_msg(uid_out, "Pal authorization accepted", 0, QByteArray(""));
-                dwyco_delete_unsaved_message(mid.constData());
-                break;
-            case DWYCO_PAL_REJECT:
-                dwyco_handle_pal_auth(0, 0, mid.constData(), 1);
-                dwyco_pal_delete(uid_out.constData(), uid_out.length());
-                display_msg(uid_out, "Pal authorization rejected", 0, QByteArray(""));
-                dwyco_delete_unsaved_message(mid.constData());
-                break;
-            default:
-                dwyco_delete_unsaved_message(mid.constData());
-                break;// do nothing, ignore it.
-            }
             continue;
         }
-#endif
+
         if(type != DWYCO_TYPE_NIL)
         {
             if(!dwyco_save_message(mid.constData()))

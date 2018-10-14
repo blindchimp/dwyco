@@ -794,6 +794,7 @@ ApplicationWindow {
             }
             if(simpdir_rect.visible && simpdir_rect.xml_url === "")
                 simpdir_rect.xml_url = core.get_simple_xml_url()
+            applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid());
         }
 
         onNew_msg: {
