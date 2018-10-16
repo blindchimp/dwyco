@@ -35,19 +35,32 @@
 #include "sepstr.h"
 #include "sqlbq.h"
 #include "favmsg.h"
+#include "qdirth.h"
 
 
 static sqlite3 *Db;
 
-static
-void
-sql_simple(const char *sql)
+static vc
+sql_simple(const char *sql, vc a0 = vcnil, vc a1 = vcnil, vc a2 = vcnil)
 {
     VCArglist a;
     a.append(sql);
+    if(!a0.is_nil())
+    {
+        a.append(a0);
+        if(!a1.is_nil())
+        {
+            a.append(a1);
+            if(!a2.is_nil())
+            {
+                a.append(a2);
+            }
+        }
+    }
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
         throw -1;
+    return res;
 }
 
 static
@@ -408,14 +421,15 @@ sql_remove_uid(vc uid)
 }
 
 static
-void
+vc
 sql_clear_uid(vc uid)
 {
+
     try
     {
         sql_start_transaction();
+        vc mids = sql_simple("select mid from msg_idx where assoc_uid = $1", to_hex(uid));
         VCArglist a;
-
         a.append("delete from msg_idx where assoc_uid = $1;");
         a.append(to_hex(uid));
         vc res = sqlite3_bulk_query(Db, &a);
@@ -423,11 +437,15 @@ sql_clear_uid(vc uid)
             throw -1;
 
         sql_commit_transaction();
+        return mids;
+
     }
     catch(...)
     {
         sql_rollback_transaction();
+        return vc(VC_VECTOR);
     }
+
 
 }
 
@@ -765,7 +783,11 @@ void
 clear_msg_idx_uid(vc uid)
 {
     msg_idx_updated(uid, 0);
-    sql_clear_uid(uid);
+    vc mids = sql_clear_uid(uid);
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        dirth_send_delete(uid, mids[i][0], QckDone(0, 0));
+    }
 }
 
 void

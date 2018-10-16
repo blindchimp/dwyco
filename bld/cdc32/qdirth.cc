@@ -506,6 +506,19 @@ dirth_send_ack_get2(vc uid, vc mid, QckDone d)
 }
 
 void
+dirth_send_delete(vc uid, vc mid, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("delete", ++Serial);
+    m[QTYPE] = reqtype("delete", d);
+    m[QFROM] = uid;
+    m[2] = mid;
+    Waitq.append(d);
+    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+}
+
+void
 dirth_send_ignore(vc id, vc uid, QckDone d)
 {
     QckMsg m;

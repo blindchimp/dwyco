@@ -2267,7 +2267,8 @@ ack_all(vc uid)
         vc args(VC_VECTOR);
         args.append(vcnil);
         args.append(ackset[i]);
-        dirth_send_ack_get2(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
+        //dirth_send_ack_get2(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
+        dirth_send_delete(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
         delete_msg2(ackset[i]);
     }
 }
