@@ -5729,7 +5729,8 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     int fd = open(src.c_str(), O_RDONLY);
     if(fd == -1)
         return 0;
-    if(s.st_size >= INT32_MAX)
+    // i give up trying to find the right header, sheesh
+    if(s.st_size >= (1 << 30))
         return 0;
     int sz = s.st_size;
     char *buf = new char[sz];

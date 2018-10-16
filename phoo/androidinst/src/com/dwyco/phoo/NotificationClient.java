@@ -61,6 +61,7 @@ import android.os.Vibrator;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import com.crashlytics.android.Crashlytics;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 // note: use notificationcompat stuff for older androids
 
@@ -70,6 +71,7 @@ public class NotificationClient extends QtActivity
     public static String msg_count_url;
     private static SocketLock prefs_lock;
     public static int allow_notification = 1;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     public NotificationClient()
     {
@@ -90,6 +92,7 @@ public class NotificationClient extends QtActivity
         //AlarmManager alarm = (AlarmManager) m_instance.getSystemService(Context.ALARM_SERVICE);
         //alarm.setRepeating(AlarmManager.RTC_WAKEUP, cur_cal.getTimeInMillis(), 1000 * 60, pintent);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
     }
 
     @Override
