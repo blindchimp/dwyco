@@ -71,7 +71,7 @@ public class NotificationClient extends QtActivity
     public static String msg_count_url;
     private static SocketLock prefs_lock;
     public static int allow_notification = 1;
-    private FirebaseAnalytics mFirebaseAnalytics;
+    private static FirebaseAnalytics mFirebaseAnalytics;
 
     public NotificationClient()
     {
@@ -223,6 +223,16 @@ public class NotificationClient extends QtActivity
 
         m_instance.startService(i);
 
+    }
+
+public static void log_event() {
+    Bundle bundle = new Bundle();
+    bundle.putString(FirebaseAnalytics.Param.METHOD, "regular");
+    mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.LOGIN, bundle);
+
+    }
+public static void set_user_property(String name, String value) {
+    mFirebaseAnalytics.setUserProperty(name, value);
     }
 
     public static void load_contacts() {

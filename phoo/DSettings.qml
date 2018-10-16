@@ -116,6 +116,12 @@ Page {
             onCheckedChanged: {
                 show_unreviewed = checked
                 core.set_local_setting("show_unreviewed", checked ? "1" : "0")
+                if(Qt.platform.os === "android") {
+                    if(show_unreviewed)
+                        notificationClient.set_user_property("content", "unrev")
+                    else
+                        notificationClient.set_user_property("content", "rev")
+                }
             }
             onClicked: {
                 if(checked) {

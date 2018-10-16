@@ -284,6 +284,9 @@ Page {
             core.send_chat(textField1.text)
             textField1.text = ""
             listView1.positionViewAtBeginning()
+            if(Qt.platform.os === "android") {
+                notificationClient.set_user_property("triv_player", "t")
+            }
         }
 
         Component.onCompleted: {
