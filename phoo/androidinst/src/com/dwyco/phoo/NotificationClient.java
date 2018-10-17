@@ -62,6 +62,7 @@ import android.os.Vibrator;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import com.crashlytics.android.Crashlytics;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 // note: use notificationcompat stuff for older androids
 
@@ -71,6 +72,7 @@ public class NotificationClient extends QtActivity
     public static String msg_count_url;
     private static SocketLock prefs_lock;
     public static int allow_notification = 1;
+    private static FirebaseAnalytics mFirebaseAnalytics;
 
     public NotificationClient()
     {
@@ -102,6 +104,7 @@ public class NotificationClient extends QtActivity
                 notificationManager.createNotificationChannel(channel);
             }
 
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
     }
 
     @Override
@@ -245,6 +248,16 @@ public static String get_token() {
 
         m_instance.startService(i);
 
+    }
+
+public static void log_event() {
+    Bundle bundle = new Bundle();
+    bundle.putString(FirebaseAnalytics.Param.METHOD, "regular");
+    mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.LOGIN, bundle);
+
+    }
+public static void set_user_property(String name, String value) {
+    mFirebaseAnalytics.setUserProperty(name, value);
     }
 
     public static void load_contacts() {

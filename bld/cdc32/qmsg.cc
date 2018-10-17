@@ -3557,7 +3557,7 @@ qd_send_one()
         tosend = na[r];
     }
     DwString a = dwbasename(tosend[1]);
-    DwQSend *qs = new DwQSend(a);
+    DwQSend *qs = new DwQSend(a, 0);
     qs->se_sig.connect_ptrfun(se_emit_msg);
     qs->status_sig.connect_ptrfun(se_emit_msg_status);
     qs->se_sig.connect_ptrfun(is_special ? reset_qsend_special : reset_qsend);

@@ -62,6 +62,8 @@ public slots:
     void load_contacts();
     void open_image();
     void vibrate(long ms);
+    void log_event();
+    void set_user_property(QString name, QString value);
 
 private:
     QString m_notification;
