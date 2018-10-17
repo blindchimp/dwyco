@@ -25,7 +25,7 @@ class DH_alternate {
 public:
 
     void init(vc uid, vc alternate_name);
-    int load_account(vc uid, vc alternate_name);
+    int load_account(vc alternate_name);
     vc alt_name() {return alternate_name;}
     vc my_static();
     vc my_static_public();

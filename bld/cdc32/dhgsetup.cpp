@@ -110,15 +110,12 @@ DH_alternate::new_account()
 // return 2 means account was created, and the public static info will
 // have to be refreshed in the profile, etc.
 int
-DH_alternate::load_account(vc uid, vc alternate_name)
+DH_alternate::load_account(vc alternate_name)
 {
     vc res;
     try {
-        VCArglist a;
-        a.append("select pubkey, privkey from keys where alt_name = $1 order by time desc limit 1");
-        //a.append(to_hex(uid));
-        a.append(alternate_name);
-        res = DHG_db->query(&a);
+        res = DHG_db->sql_simple("select pubkey, privkey from keys where alt_name = $1 order by time desc limit 1",
+                                 alternate_name);
     } catch (...) {
         GRTLOG("cant create DH account", 0, 0);
         return 0;

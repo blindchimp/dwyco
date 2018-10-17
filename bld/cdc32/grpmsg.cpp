@@ -121,7 +121,7 @@ xfer_dec(vc vs, vc password)
 
 static
 int
-post_req(int compid, vc vuid)
+post_req(int compid, vc vuid, DwString& pers_id)
 {
     ValidPtr p = cookie_to_ptr(compid);
 
@@ -149,6 +149,7 @@ post_req(int compid, vc vuid)
         GRTLOG("post_req: send startup failed", 0, 0);
         return 0;
     }
+    pers_id = m->qfn;
     // the file sender objects own the files now, don't let the composer delete them
     m->composer = 0;
 
@@ -177,10 +178,12 @@ terminate(vc initiator, vc responder)
 // and forcing encryption would eliminate this i think since the
 // recipient wouldn't be able to decrypt without the group private key.
 //
-// CALLED IN INITIATOR
+// CALLED IN INITIATOR, first state
 int
 start_gj(vc target_uid, vc password)
 {
+    DwString pers_id;
+
     vc nonce = to_hex(get_entropy());
 
     // note: in order to get the group pk we need to have access to
@@ -204,34 +207,46 @@ start_gj(vc target_uid, vc password)
     int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN1, 0, (const char *)mk, mk.len());
     if(comp_id == -1)
         return 0;
-    if(!post_req(comp_id, target_uid))
+
+    if(!post_req(comp_id, target_uid, pers_id))
     {
         dwyco_delete_zap_composition(comp_id);
         return 0;
     }
+    try
+    {
 
-    SKID->sql_simple("insert into pstate (alt_name, nonce_1, initiating_uid, state, time) "
-                     "values($1, $2, $3, 1, strftime('%s', 'now'))",
-                     alt_name,
-                     nonce,
-                     to_hex(My_UID)
-                     );
-    return 1;
+        SKID->sql_simple("insert into pstate (alt_name, nonce_1, initiating_uid, state, time) "
+                         "values($1, $2, $3, 1, strftime('%s', 'now'))",
+                         alt_name,
+                         nonce,
+                         to_hex(My_UID)
+                         );
+        return 1;
+    }
+    catch(...)
+    {
+        dwyco_delete_zap_composition(comp_id);
+        dwyco_kill_message(pers_id.c_str(), pers_id.length());
+    }
+    return 0;
 }
 
 // CALLED IN INITIATOR
 int
 recv_gj2(vc from, vc msg, vc password)
 {
+    DwString pers_id;
+    vc hfrom = to_hex(from);
+    int rollback = 0;
     try
     {
 
         vc m = xfer_dec(msg, password);
-        vc hfrom = to_hex(from);
 
         if(m.is_nil())
         {
-            throw -1;
+            return 0;
         }
 
         vc alt_name = m[0];
@@ -242,9 +257,11 @@ recv_gj2(vc from, vc msg, vc password)
         // first checks
         if(to_hex(My_UID) != our_uid)
         {
-            throw -1;
+            return 0;
         }
 
+        SKID->start_transaction();
+        rollback = 1;
         vc res = SKID->sql_simple("select * from pstate where "
                                   "initiating_uid = $1 and nonce_1 = $2 and "
                                   "alt_name = $3 and state = 1",
@@ -265,43 +282,37 @@ recv_gj2(vc from, vc msg, vc password)
         if(comp_id == -1)
             throw -1;
 
-        if(!post_req(comp_id, from))
+        if(!post_req(comp_id, from, pers_id))
         {
             dwyco_delete_zap_composition(comp_id);
             throw -1;
         }
-        try
-        {
-            SKID->start_transaction();
-            VCArglist a;
-            a.append("update pstate set responding_uid = $1,  nonce_2 = $2, time = strftime('%s', 'now'), state = 3 "
-                     "where initiating_uid = $3 and nonce_1 = $4 and alt_name = $5 and state = 1");
-            a.append(hfrom);
-            a.append(nonce2);
-            a.append(to_hex(My_UID));
-            a.append(nonce);
-            a.append(alt_name);
-            SKID->query(&a);
-            SKID->commit_transaction();
-            return 1;
-        }
-        catch(...)
-        {
-            SKID->rollback_transaction();
-            terminate(to_hex(My_UID), to_hex(from));
-            return 0;
-        }
+
+        VCArglist a;
+        a.append("update pstate set responding_uid = $1,  nonce_2 = $2, time = strftime('%s', 'now'), state = 3 "
+                 "where initiating_uid = $3 and nonce_1 = $4 and alt_name = $5 and state = 1");
+        a.append(hfrom);
+        a.append(nonce2);
+        a.append(to_hex(My_UID));
+        a.append(nonce);
+        a.append(alt_name);
+        SKID->query(&a);
+        SKID->commit_transaction();
+        return 1;
     }
     catch (...)
     {
-        terminate(to_hex(My_UID), to_hex(from));
-        //SKID->rollback_transaction();
+        if(rollback)
+            SKID->rollback_transaction();
+        terminate(to_hex(My_UID), hfrom);
+        dwyco_kill_message(pers_id.c_str(), pers_id.length());
+
     }
 
     return 0;
 }
 
-// CALLED IN INITIATOR
+// CALLED IN INITIATOR, final state
 int
 install_group_key(vc from, vc msg, vc password)
 {
@@ -324,11 +335,11 @@ install_group_key(vc from, vc msg, vc password)
 int
 recv_gj1(vc from, vc msg, vc password)
 {
+    DwString pers_id;
+    vc hfrom = to_hex(from);
     try
     {
-
         vc m = xfer_dec(msg, password);
-        vc hfrom = to_hex(from);
 
         if(m.is_nil())
             return 0;
@@ -353,7 +364,7 @@ recv_gj1(vc from, vc msg, vc password)
         if(comp_id == -1)
             throw -1;
 
-        if(!post_req(comp_id, from))
+        if(!post_req(comp_id, from, pers_id))
         {
             dwyco_delete_zap_composition(comp_id);
             throw -1;
@@ -373,6 +384,7 @@ recv_gj1(vc from, vc msg, vc password)
     catch (...)
     {
         SKID->rollback_transaction();
+        dwyco_kill_message(pers_id.c_str(), pers_id.length());
     }
 
     return 0;
@@ -385,11 +397,13 @@ recv_gj1(vc from, vc msg, vc password)
 int
 recv_gj3(vc from, vc msg, vc password)
 {
+    DwString pers_id;
+    vc hfrom = to_hex(from);
+    int ret = 0;
+
     try
     {
-
         vc m = xfer_dec(msg, password);
-        vc hfrom = to_hex(from);
 
         if(m.is_nil())
         {
@@ -441,20 +455,21 @@ recv_gj3(vc from, vc msg, vc password)
         if(comp_id == -1)
             throw -1;
 
-        if(!post_req(comp_id, from))
+        if(!post_req(comp_id, from, pers_id))
         {
             dwyco_delete_zap_composition(comp_id);
             throw -1;
         }
+        ret = 1;
     }
     catch (...)
     {
 
     }
 
-    terminate(to_hex(from), to_hex(My_UID));
+    terminate(hfrom, to_hex(My_UID));
 
-    return 0;
+    return ret;
 }
 
 }
