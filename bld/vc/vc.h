@@ -262,6 +262,7 @@ public:
 	vc(int i);
 	vc(long i);
 	vc(const char *s);
+        vc(const char *s, int len);
 	vc(VcLexer&);
 	vc(enum vc_type, const char * = "nil", long extra_parm = 0);
     vc(VCFUNCP0, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
