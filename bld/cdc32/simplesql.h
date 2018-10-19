@@ -2,9 +2,9 @@
 #define SIMPLESQL_H
 
 struct sqlite3;
-#include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
+#include "dwstr.h"
 
 
 namespace dwyco {
