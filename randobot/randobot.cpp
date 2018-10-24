@@ -26,7 +26,7 @@
 #include <QDataStream>
 #include <QDebug>
 #include <QDir>
-#define HANDLE_MSG(m) //dwyco_delete_unsaved_message(m)
+#define HANDLE_MSG(m) dwyco_save_message(m)
 
 using namespace dwyco;
 
@@ -43,13 +43,15 @@ struct rando_sql : public SimpleSql
 
     void init_schema() {
         sql_simple("create table if not exists randos(from_uid text collate nocase, "
-                   "filename text, time integer, hash text collate nocase)");
-        sql_simple("create index if not exists uid_idx(from_uid)");
+                   "filename text, time integer, hash text collate nocase, loc_lat, loc_long)");
+        sql_simple("create index if not exists uid_idx on randos(from_uid)");
         sql_simple("create table if not exists sent_to(to_uid text collate nocase, "
-                   "filename text, time integer, hash text collate nocase");
+                   "filename text, time integer, hash text collate nocase, loc_lat, loc_long)");
     }
 
 };
+
+rando_sql *D;
 
 static
 void
@@ -68,6 +70,18 @@ QByteArray My_uid;
 QMap<QByteArray, QString> Who_got_what;
 
 QStringList Ann_names;
+
+QByteArray
+random_fn()
+{
+    char *s;
+    dwyco_random_string2(&s, 10);
+    QByteArray ret(s, 10);
+    ret = ret.toHex();
+    dwyco_free_array(s);
+    return ret;
+
+}
 
 void
 forward_msg(const QByteArray& mid, const QByteArray& uid)
@@ -200,7 +214,7 @@ main(int argc, char *argv[])
 {
     if(access("stop", F_OK) == 0)
         exit(0);
-    if(argc < 4)
+    if(argc < 3)
         exit(1);
     signal(SIGPIPE, SIG_IGN);
 	alarm(3600);
@@ -213,8 +227,7 @@ main(int argc, char *argv[])
 
     const char *name = argv[1];
     const char *desc = argv[2];
-    char *cmd = strdup(argv[0]);
-    cmd = basename(cmd);
+
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
@@ -245,6 +258,10 @@ main(int argc, char *argv[])
     int was_online = 0;
     unlink("stopped");
 
+    D = new rando_sql;
+    if(!D->init())
+        exit(1);
+
     while(1)
     {
         int spin;
@@ -274,8 +291,9 @@ main(int argc, char *argv[])
         int dummy;
         QByteArray mid;
         int has_att;
+        int is_file = 0;
 
-        if(dwyco_new_msg(uid, txt, dummy, mid, has_att))
+        if(dwyco_new_msg(uid, txt, dummy, mid, has_att, is_file))
         {
             txt = txt.toLower();
 
@@ -283,6 +301,61 @@ main(int argc, char *argv[])
             {
                 send_reply_to(uid, "Send me a zap with a pic... I'll send you a random pic in return.");
             }
+
+            DWYCO_UNSAVED_MSG_LIST uml;
+
+
+            if(!dwyco_get_unsaved_messages(&uml, uid.constData(), uid.length()))
+            {
+                dwyco_delete_unsaved_message(mid.constData());
+                continue;
+            }
+            simple_scoped quml(uml);
+            int n = quml.rows();
+            if(n == 0 || n > 5)
+            {
+                send_reply_to(uid, "Thanks, I've already got a message from you and I'm working on sending it to a random Dwyconian, I'll let you know when you can send me another.");
+                HANDLE_MSG(mid.constData());
+                continue;
+            }
+            if(!has_att)
+            {
+                send_reply_to(uid, "Your message needs more than just text... send a pic or video!");
+                HANDLE_MSG(mid.constData());
+                continue;
+            }
+            int compid = dwyco_make_forward_zap_composition(0, 0, mid.constData(), 1);
+            int tmp = dwyco_flim(compid);
+            dwyco_delete_zap_composition(compid);
+            if(tmp)
+            {
+                send_reply_to(uid, "You sent me a message that is flagged as \"no forward\". The message was deleted, try again.");
+                HANDLE_MSG(mid.constData());
+
+                continue;
+            }
+
+//            DWYCO_UNSAVED_MSG_LIST um;
+//            if(!dwyco_get_unsaved_message(&um, mid.constData()))
+//            {
+//                continue;
+//            }
+//            simple_scoped qum(um);
+
+            send_reply_to(uid, "Thanks, got your message, I'll send you a random message soon!");
+
+            // save the incoming rando, copy the attachment out
+            QByteArray b = random_fn();
+            if(is_file)
+                b += ".fle";
+            else
+                b += ".dyc";
+            dwyco_copy_out_file_zap(0, 0, mid.constData(), b.constData());
+            QByteArray huid = uid.toHex();
+            D->sql_simple("insert into randos (from_uid, filename, time) values($1, $2, strftime('%s', 'now'))",
+                          vc(VC_BSTRING, huid.constData(), huid.length()),
+                          vc(b.constData()));
+
             HANDLE_MSG(mid);
 
         }
