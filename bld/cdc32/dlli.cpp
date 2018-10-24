@@ -5152,6 +5152,23 @@ dwyco_make_zap_composition( char *dum)
     return m->vp;
 }
 
+DWYCOEXPORT
+int
+dwyco_make_zap_composition_raw(const char *filename)
+{
+    TMsgCompose *m = new TMsgCompose;
+
+    m->FormShow();
+    m->composer = 1;
+    m->play_button_enabled = 1;
+    m->stop_button_enabled = 0;
+    m->actual_filename = filename;
+    m->file_basename = dwbasename(filename);
+    m->filehash = gen_hash(m->actual_filename);
+    m->inhibit_hashing = 1;
+    return m->vp;
+}
+
 // this is used when doing multi-sends, you need to
 // duplicate the composition's attachments and stuff for
 // each send operation. what you can do and when is very
@@ -5516,11 +5533,11 @@ dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filena
     vc body = v[0];
     vc from = body[QM_BODY_FROM];
     vc attachment = body[QM_BODY_ATTACHMENT];
-    vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
-    if(user_filename.is_nil() || attachment.is_nil())
+    //vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
+    if(attachment.is_nil())
         return 0;
     DwString a((const char *)attachment, 0, attachment.len());
-    if(a.rfind(".fle") != a.length() - 4)
+    if(!(a.rfind(".fle") == a.length() - 4 || a.rfind(".dyc") == a.length() - 4))
         return 0;
 
 
@@ -5594,11 +5611,11 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
 
     from = body[QM_BODY_FROM];
     attachment = body[QM_BODY_ATTACHMENT];
-    vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
-    if(user_filename.is_nil() || attachment.is_nil())
+    //vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
+    if(attachment.is_nil())
         return 0;
     DwString a((const char *)attachment, 0, attachment.len());
-    if(a.rfind(".fle") != a.length() - 4)
+    if(!(a.rfind(".fle") == a.length() - 4 || a.rfind(".dyc") == a.length() - 4))
         return 0;
 
     DwString s2;

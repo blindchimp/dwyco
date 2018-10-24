@@ -8,6 +8,7 @@
 */
 #ifndef DWYCOLISTSCOPED_H
 #include "dlli.h"
+
 struct simple_scoped
 {
 private:
@@ -28,7 +29,11 @@ public:
         int n;
         if(dwyco_list_numelems(value, &n, 0))
             return n;
+#ifdef DWYCO_THROW
+        throw -1;
+#else
         return 0;
+#endif
     }
 
     template<class T> T get(int row, const char *col) {
@@ -36,7 +41,11 @@ public:
         int len;
         int type;
         if(!dwyco_list_get(value, row, col, &val, &len, &type))
+#ifdef DWYCO_THROW
+            throw -1;
+#else
             return T();
+#endif
         if(type != DWYCO_TYPE_STRING)
             return T();
         return T(val, len);
@@ -54,7 +63,11 @@ public:
         int len;
         int type;
         if(!dwyco_list_get(value, row, col, &val, &len, &type))
+#ifdef DWYCO_THROW
+            throw -1;
+#else
             return 0;
+#endif
         if(type == DWYCO_TYPE_NIL)
             return 1;
         else
