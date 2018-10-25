@@ -220,7 +220,12 @@ uid_due_randos()
     D->sql_simple("create temp table c1 as select count(*), from_uid from randos group by from_uid");
     D->sql_simple("create temp table c2 as select count(*), to_uid from sent_to group by to_uid");
     vc res = D->sql_simple("select from_uid from c1,c2 where c1.from_uid = c2.to_uid and c1.'count(*)' > c2.'count(*)'");
-    D->rollback_transaction();
+    vc res2 = D->sql_simple("select from_uid from c1 where from_uid not in (select to_uid from c2);");
+    D->sql_simple("drop table c1");
+    D->sql_simple("drop table c2");
+    D->commit_transaction();
+    for(int i = 0; i < res2.num_elems(); ++i)
+        res.append(res2[i]);
     return res;
 }
 
@@ -241,7 +246,7 @@ do_rando(vc huid)
             // no brand new content, so double-up on some old randos.
             // candidate is the newest rando that has been resent
             // the least number of times.
-            res = D->sql_simple("select sent_to.filename, send_to.hash from sent_to,randos "
+            res = D->sql_simple("select sent_to.filename, sent_to.hash from sent_to,randos "
                                 "where sent_to.hash = randos.hash and from_uid != $1 "
                                 "and to_uid != $1 "
                                 "group by sent_to.hash having max(randos.time) "
@@ -320,7 +325,7 @@ main(int argc, char *argv[])
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
-    dwyco_set_initial_invis(1);
+    dwyco_set_initial_invis(0);
     dwyco_init();
 
     dwyco_set_setting("call_acceptance/no_listen", "1");
