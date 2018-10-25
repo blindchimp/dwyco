@@ -235,7 +235,7 @@ main(int argc, char *argv[])
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
-
+    dwyco_set_initial_invis(1);
     dwyco_init();
 
     dwyco_set_setting("call_acceptance/no_listen", "1");
@@ -371,24 +371,33 @@ main(int argc, char *argv[])
 
             try
             {
-            D->start_transaction();
-            res = D->sql_simple("select filename, mid, hash from randos where from_uid != $1 and "
-                                   "not exists(select 1 from sent_to where randos.hash = hash) order by time desc limit 1;",
-                                vc(huid.constData()));
-            if(res.num_elems() > 0)
-            {
-                int compid = dwyco_make_zap_composition_raw(res[0][0]);
-                if(compid == -1)
-                    throw -1;
-                if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), "Here is a rando", 15, 0, 1, 0, 0))
+                D->start_transaction();
+                res = D->sql_simple("select filename, mid, hash from randos where from_uid != $1 and "
+                                    "not exists(select 1 from sent_to where randos.hash = hash) order by time desc limit 1;",
+                                    vc(huid.constData()));
+                if(res.num_elems() > 0)
                 {
-                    dwyco_delete_zap_composition(compid);
-                    throw -1;
+                    int compid = dwyco_make_zap_composition_raw(res[0][0]);
+                    if(compid == 0)
+                    {
+                        D->sql_simple("delete from randos where filename = $1",
+                                      res[0][0]);
+                        D->commit_transaction();
+                        // don't handle the message, we might be able to
+                        // answer it next time, as the most likely cause
+                        // for the problem is the file went missing we
+                        // are trying to send
+                        continue;
+                    }
+                    if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), "Here is a rando", 15, 0, 1, 0, 0))
+                    {
+                        dwyco_delete_zap_composition(compid);
+                        throw -1;
+                    }
+                    D->sql_simple("insert into sent_to (to_uid, filename, mid, hash) select $1, filename, mid, hash from randos where hash = $2",
+                                  vc(huid.constData()), vc(hash.constData()));
                 }
-                D->sql_simple("insert into sent_to (to_uid, filename, mid, hash) select $1, filename, mid, hash from randos where hash = $2",
-                              vc(huid.constData()), vc(hash.constData()));
                 D->commit_transaction();
-            }
             }
             catch(...)
             {

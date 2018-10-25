@@ -5156,6 +5156,14 @@ DWYCOEXPORT
 int
 dwyco_make_zap_composition_raw(const char *filename)
 {
+    DwString a(filename);
+
+    if(access(a.c_str(), 04) == -1)
+    {
+        GRTLOG("make_zap_raw: cant access %s", a.c_str(), 0);
+        return 0;
+    }
+
     TMsgCompose *m = new TMsgCompose;
 
     m->FormShow();
@@ -5500,23 +5508,21 @@ DWYCOEXPORT
 int
 dwyco_make_file_zap_composition( const char *filename, int len_filename)
 {
-    TMsgCompose *m = new TMsgCompose;
-
     DwString a(filename, 0, len_filename);
 
     if(access(a.c_str(), 04) == -1)
     {
         GRTLOG("make_file_zap: cant access %s", a.c_str(), 0);
-        delete m;
         return 0;
     }
     DwString out_fn;
     if(!import_file(a, out_fn))
     {
-        delete m;
         GRTLOG("make_file_zap: cant import %s", a.c_str(), 0);
         return 0;
     }
+
+    TMsgCompose *m = new TMsgCompose;
     m->file_basename = out_fn.c_str();
     m->actual_filename = newfn(out_fn);
     m->filehash = gen_hash(out_fn.c_str());
