@@ -56,6 +56,7 @@ struct rando_sql : public SimpleSql
 };
 
 rando_sql *D;
+const char *Botfiles;
 
 static
 void
@@ -212,13 +213,96 @@ dwyco_chat_ctx_callback(int cmd, int id,
     }
 }
 
+vc
+uid_due_randos()
+{
+    D->start_transaction();
+    D->sql_simple("create temp table c1 as select count(*), from_uid from randos group by from_uid");
+    D->sql_simple("create temp table c2 as select count(*), to_uid from sent_to group by to_uid");
+    vc res = D->sql_simple("select from_uid from c1,c2 where c1.from_uid = c2.to_uid and c1.'count(*)' > c2.'count(*)'");
+    D->rollback_transaction();
+    return res;
+}
+
+int
+do_rando(vc huid)
+{
+    vc res;
+    try
+    {
+        D->start_transaction();
+        res = D->sql_simple("select filename, hash from randos where from_uid != $1 and "
+                            "not exists(select 1 from sent_to where randos.hash = hash) order by time desc limit 1",
+                            huid);
+        vc fn;
+        vc hash;
+        if(res.num_elems() == 0)
+        {
+            // no brand new content, so double-up on some old randos.
+            // candidate is the newest rando that has been resent
+            // the least number of times.
+            res = D->sql_simple("select sent_to.filename, send_to.hash from sent_to,randos "
+                                "where sent_to.hash = randos.hash and from_uid != $1 "
+                                "and to_uid != $1 "
+                                "group by sent_to.hash having max(randos.time) "
+                                "order by count(*) asc, randos.time desc limit 10",
+                                huid);
+            // pick a random one from the first 10
+            if(res.num_elems() > 0)
+            {
+                int i = rand() % res.num_elems();
+                fn = res[i][0];
+                hash = res[i][1];
+            }
+        }
+        else
+        {
+            fn = res[0][0];
+            hash = res[0][1];
+        }
+        if(!fn.is_nil())
+        {
+            QByteArray bf(Botfiles);
+            bf += "/";
+            bf += (const char *)fn;
+            int compid = dwyco_make_zap_composition_raw(bf.constData());
+            if(compid == 0)
+            {
+                D->sql_simple("delete from randos where filename = $1",
+                              fn);
+                D->commit_transaction();
+                // don't handle the message, we might be able to
+                // answer it next time, as the most likely cause
+                // for the problem is the file went missing we
+                // are trying to send
+                return 0;
+            }
+            QByteArray uid = QByteArray::fromHex((const char *)huid);
+            if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), "Here is a rando", 15, 0, 1, 0, 0))
+            {
+                dwyco_delete_zap_composition(compid);
+                throw -1;
+            }
+            D->sql_simple("insert into sent_to (to_uid, filename, mid, hash) select $1, filename, mid, hash from randos where hash = $2",
+                          huid, hash);
+        }
+        D->commit_transaction();
+    }
+    catch(...)
+    {
+        D->rollback_transaction();
+        return 0;
+    }
+    return 1;
+}
+
 
 int
 main(int argc, char *argv[])
 {
     if(access("stop", F_OK) == 0)
         exit(0);
-    if(argc < 3)
+    if(argc < 4)
         exit(1);
     signal(SIGPIPE, SIG_IGN);
 	alarm(3600);
@@ -231,6 +315,7 @@ main(int argc, char *argv[])
 
     const char *name = argv[1];
     const char *desc = argv[2];
+    Botfiles = argv[3];
 
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
@@ -309,17 +394,17 @@ main(int argc, char *argv[])
             DWYCO_UNSAVED_MSG_LIST uml;
 
 
-            if(!dwyco_get_unsaved_messages(&uml, uid.constData(), uid.length()))
+            if(!dwyco_get_unsaved_messages(&uml, 0, 0))
             {
                 dwyco_delete_unsaved_message(mid.constData());
                 continue;
             }
             simple_scoped quml(uml);
             int n = quml.rows();
-            if(n == 0 || n > 5)
+            if(n == 0)
             {
-                send_reply_to(uid, "Thanks, I've already got a message from you and I'm working on sending it to a random Dwyconian, I'll let you know when you can send me another.");
-                HANDLE_MSG(mid.constData());
+//                send_reply_to(uid, "Thanks, I've already got a message from you and I'm working on sending it to a random Dwyconian, I'll let you know when you can send me another.");
+//                HANDLE_MSG(mid.constData());
                 continue;
             }
             if(!has_att)
@@ -346,8 +431,11 @@ main(int argc, char *argv[])
                 b += ".fle";
             else
                 b += ".dyc";
-            dwyco_copy_out_file_zap(0, 0, mid.constData(), b.constData());
-            QFile fn(b);
+            QByteArray actual_b(Botfiles);
+            actual_b += "/";
+            actual_b += b;
+            dwyco_copy_out_file_zap(0, 0, mid.constData(), actual_b.constData());
+            QFile fn(actual_b);
             fn.open(QFile::ReadOnly);
             QCryptographicHash h(QCryptographicHash::Sha1);
             h.addData(&fn);
@@ -363,50 +451,20 @@ main(int argc, char *argv[])
             }
 
             D->sql_simple("insert into randos (from_uid, filename, time, hash) values($1, $2, strftime('%s', 'now'), $3)",
-                          vc(VC_BSTRING, huid.constData(), huid.length()),
+                          huid.constData(),
                           vc(b.constData()),
                           vc(hash.constData()));
 
             send_reply_to(uid, "Thanks, got your message, I'll send you a random message soon!");
 
-            try
-            {
-                D->start_transaction();
-                res = D->sql_simple("select filename, mid, hash from randos where from_uid != $1 and "
-                                    "not exists(select 1 from sent_to where randos.hash = hash) order by time desc limit 1;",
-                                    vc(huid.constData()));
-                if(res.num_elems() > 0)
-                {
-                    int compid = dwyco_make_zap_composition_raw(res[0][0]);
-                    if(compid == 0)
-                    {
-                        D->sql_simple("delete from randos where filename = $1",
-                                      res[0][0]);
-                        D->commit_transaction();
-                        // don't handle the message, we might be able to
-                        // answer it next time, as the most likely cause
-                        // for the problem is the file went missing we
-                        // are trying to send
-                        continue;
-                    }
-                    if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), "Here is a rando", 15, 0, 1, 0, 0))
-                    {
-                        dwyco_delete_zap_composition(compid);
-                        throw -1;
-                    }
-                    D->sql_simple("insert into sent_to (to_uid, filename, mid, hash) select $1, filename, mid, hash from randos where hash = $2",
-                                  vc(huid.constData()), vc(hash.constData()));
-                }
-                D->commit_transaction();
-            }
-            catch(...)
-            {
-                D->rollback_transaction();
-            }
+           HANDLE_MSG(mid);
 
+        }
 
-            HANDLE_MSG(mid);
-
+        vc due = uid_due_randos();
+        for(int i = 0; i < due.num_elems(); ++i)
+        {
+            do_rando(due[i][0]);
         }
 
     }
