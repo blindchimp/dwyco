@@ -5140,6 +5140,23 @@ dwyco_get_net_data(
 // Message composition
 //
 
+static int
+import_file(DwString& name, DwString& out_fn, const char *suf = ".fle")
+{
+    vc fn = to_hex(gen_id());
+    DwString s((const char *)fn);
+    s += suf;
+    vc p(VC_VECTOR);
+    if(!CopyFile(name.c_str(), newfn(s).c_str(), 0))
+    {
+        GRTLOG("import file failed: %s to %s", name.c_str(), newfn(s).c_str());
+
+        return 0;
+    }
+    out_fn = s;
+    return 1;
+}
+
 DWYCOEXPORT
 int
 dwyco_make_zap_composition( char *dum)
@@ -5156,14 +5173,47 @@ DWYCOEXPORT
 int
 dwyco_make_zap_composition_raw(const char *filename)
 {
+    // XXX REMEMBER may need to import the file so keep the
+    // file name/attachment uniqueness stuff intact
+    DwString a(filename);
+
+    if(access(a.c_str(), 04) == -1)
+    {
+        GRTLOG("make_zap_raw: cant access %s", a.c_str(), 0);
+        return 0;
+    }
+
+    // hack, assume we are using dyc/fle things
+    const char *suf;
+    int si = a.rfind(".dyc");
+    if(si == -1)
+    {
+        si = a.rfind(".fle");
+        if(si == -1 || si != a.length() - 4)
+            return 0;
+        suf = ".fle";
+    }
+    else if(si != a.length() - 4)
+        return 0;
+    else
+        suf = ".dyc";
+
+
+    DwString out_fn;
+    if(!import_file(a, out_fn, suf))
+    {
+        GRTLOG("make_zap_raw: cant import %s", a.c_str(), 0);
+        return 0;
+    }
+
     TMsgCompose *m = new TMsgCompose;
 
     m->FormShow();
     m->composer = 1;
     m->play_button_enabled = 1;
     m->stop_button_enabled = 0;
-    m->actual_filename = filename;
-    m->file_basename = dwbasename(filename);
+    m->actual_filename = newfn(out_fn);
+    m->file_basename = out_fn.c_str();
     m->filehash = gen_hash(m->actual_filename);
     m->inhibit_hashing = 1;
     if(m->file_basename.rfind(".fle") == m->file_basename.length() - 4)
@@ -5479,44 +5529,26 @@ dwyco_set_special_zap(int compid, int special_type)
     return 1;
 }
 
-static int
-import_file(DwString& name, DwString& out_fn)
-{
-    vc fn = to_hex(gen_id());
-    DwString s((const char *)fn);
-    s += ".fle";
-    vc p(VC_VECTOR);
-    if(!CopyFile(name.c_str(), newfn(s).c_str(), 0))
-    {
-        GRTLOG("import file failed: %s to %s", name.c_str(), newfn(s).c_str());
-
-        return 0;
-    }
-    out_fn = s;
-    return 1;
-}
 
 DWYCOEXPORT
 int
 dwyco_make_file_zap_composition( const char *filename, int len_filename)
 {
-    TMsgCompose *m = new TMsgCompose;
-
     DwString a(filename, 0, len_filename);
 
     if(access(a.c_str(), 04) == -1)
     {
         GRTLOG("make_file_zap: cant access %s", a.c_str(), 0);
-        delete m;
         return 0;
     }
     DwString out_fn;
     if(!import_file(a, out_fn))
     {
-        delete m;
         GRTLOG("make_file_zap: cant import %s", a.c_str(), 0);
         return 0;
     }
+
+    TMsgCompose *m = new TMsgCompose;
     m->file_basename = out_fn.c_str();
     m->actual_filename = newfn(out_fn);
     m->filehash = gen_hash(out_fn.c_str());
