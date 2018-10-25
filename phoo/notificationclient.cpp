@@ -124,6 +124,31 @@ NotificationClient::start_background()
 }
 
 void
+NotificationClient::log_event()
+{
+    QAndroidJniObject::callStaticMethod<void>(
+        "com/dwyco/phoo/NotificationClient",
+        "log_event"
+    );
+
+}
+
+void
+NotificationClient::set_user_property(QString name, QString value)
+{
+    QAndroidJniObject jname = QAndroidJniObject::fromString(name);
+    QAndroidJniObject jval = QAndroidJniObject::fromString(value);
+
+    QAndroidJniObject::callStaticMethod<void>("com/dwyco/phoo/NotificationClient",
+                                              "set_user_property",
+                                              "(Ljava/lang/String;Ljava/lang/String;)V",
+
+                                              jname.object<jstring>(),
+                                              jval.object<jstring>()
+                                              );
+}
+
+void
 NotificationClient::load_contacts()
 {
     QAndroidJniObject::callStaticMethod<void>(

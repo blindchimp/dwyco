@@ -2805,8 +2805,6 @@ date_vector()
 // vector(
 //	 vector(recipients...)
 //   vector(fromid text_message attachid vector(yy dd hh mm ss) rating)
-//	 vector(name description location) <used in non-database mode>
-//	 autoplay
 // )
 static int
 q_message2(vc recip, const char *attachment, vc& msg_out,

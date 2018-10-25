@@ -791,6 +791,7 @@ ApplicationWindow {
             }
             if(Qt.platform.os == "android") {
                 notificationClient.set_msg_count_url(core.get_msg_count_url())
+                notificationClient.log_event()
             }
             if(simpdir_rect.visible && simpdir_rect.xml_url === "")
                 simpdir_rect.xml_url = core.get_simple_xml_url()

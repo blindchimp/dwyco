@@ -10,6 +10,7 @@ import QtQuick 2.6
 import QtQuick.Controls 2.1
 import QtQuick.Layouts 1.3
 import QtQml.Models 2.2
+import QtQml 2.2
 import dwyco 1.0
 
 Page {
@@ -284,6 +285,9 @@ Page {
             core.send_chat(textField1.text)
             textField1.text = ""
             listView1.positionViewAtBeginning()
+            if(Qt.platform.os == "android") {
+                notificationClient.set_user_property("triv_player", "t")
+            }
         }
 
         Component.onCompleted: {

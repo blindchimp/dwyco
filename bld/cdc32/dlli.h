@@ -1291,6 +1291,7 @@ int DWYCOEXPORT dwyco_get_invisible_state();
 
 // message composition functions
 int DWYCOEXPORT dwyco_make_zap_composition(char *must_be_zero);
+int DWYCOEXPORT dwyco_make_zap_composition_raw(const char *filename);
 // WARNING: dup-ing should only be used in very specific cases.
 int DWYCOEXPORT dwyco_dup_zap_composition(int compid);
 int DWYCOEXPORT dwyco_make_forward_zap_composition(

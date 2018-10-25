@@ -38,7 +38,7 @@ SimpleSql::sql_simple(const char *sql, vc a0, vc a1, vc a2)
 
 
 
-void
+int
 SimpleSql::init()
 {
     if(Db)
@@ -46,9 +46,10 @@ SimpleSql::init()
     if(sqlite3_open(newfn(dbname).c_str(), &Db) != SQLITE_OK)
     {
         Db = 0;
-        return;
+        return 0;
     }
     init_schema();
+    return 1;
 }
 
 void
