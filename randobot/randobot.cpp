@@ -18,6 +18,7 @@
 #include "dwyco_new_msg.h"
 #include "dwycolistscoped.h"
 #include "simplesql.h"
+#include <QCryptographicHash>
 #include <QList>
 #include <QByteArray>
 #include <QMap>
@@ -43,10 +44,13 @@ struct rando_sql : public SimpleSql
 
     void init_schema() {
         sql_simple("create table if not exists randos(from_uid text collate nocase, "
+                   "mid text collate nocase,"
                    "filename text, time integer, hash text collate nocase, loc_lat, loc_long)");
         sql_simple("create index if not exists uid_idx on randos(from_uid)");
         sql_simple("create table if not exists sent_to(to_uid text collate nocase, "
+                   "mid text collate nocase,"
                    "filename text, time integer, hash text collate nocase, loc_lat, loc_long)");
+        sql_simple("create index if not exists uid_idx2 on sent_to(to_uid)");
     }
 
 };
@@ -266,7 +270,7 @@ main(int argc, char *argv[])
     {
         int spin;
         dwyco_service_channels(&spin);
-        usleep(100 * 1000);
+        usleep(10 * 1000);
         ++i;
         if(time(0) - start >= r || access("stop", F_OK) == 0)
         {
@@ -335,14 +339,6 @@ main(int argc, char *argv[])
                 continue;
             }
 
-//            DWYCO_UNSAVED_MSG_LIST um;
-//            if(!dwyco_get_unsaved_message(&um, mid.constData()))
-//            {
-//                continue;
-//            }
-//            simple_scoped qum(um);
-
-            send_reply_to(uid, "Thanks, got your message, I'll send you a random message soon!");
 
             // save the incoming rando, copy the attachment out
             QByteArray b = random_fn();
@@ -351,10 +347,54 @@ main(int argc, char *argv[])
             else
                 b += ".dyc";
             dwyco_copy_out_file_zap(0, 0, mid.constData(), b.constData());
+            QFile fn(b);
+            fn.open(QFile::ReadOnly);
+            QCryptographicHash h(QCryptographicHash::Sha1);
+            h.addData(&fn);
+            QByteArray hash = h.result().toHex();
             QByteArray huid = uid.toHex();
-            D->sql_simple("insert into randos (from_uid, filename, time) values($1, $2, strftime('%s', 'now'))",
+
+            vc res = D->sql_simple("select 1 from randos where hash = $1", vc(hash.constData()));
+            if(res.num_elems() != 0)
+            {
+                send_reply_to(uid, "Sorry, already seen that one, please send some new content for me to use.");
+                HANDLE_MSG(mid);
+                continue;
+            }
+
+            D->sql_simple("insert into randos (from_uid, filename, time, hash) values($1, $2, strftime('%s', 'now'), $3)",
                           vc(VC_BSTRING, huid.constData(), huid.length()),
-                          vc(b.constData()));
+                          vc(b.constData()),
+                          vc(hash.constData()));
+
+            send_reply_to(uid, "Thanks, got your message, I'll send you a random message soon!");
+
+            try
+            {
+            D->start_transaction();
+            res = D->sql_simple("select filename, mid, hash from randos where from_uid != $1 and "
+                                   "not exists(select 1 from sent_to where randos.hash = hash) order by time desc limit 1;",
+                                vc(huid.constData()));
+            if(res.num_elems() > 0)
+            {
+                int compid = dwyco_make_zap_composition_raw(res[0][0]);
+                if(compid == -1)
+                    throw -1;
+                if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), "Here is a rando", 15, 0, 1, 0, 0))
+                {
+                    dwyco_delete_zap_composition(compid);
+                    throw -1;
+                }
+                D->sql_simple("insert into sent_to (to_uid, filename, mid, hash) select $1, filename, mid, hash from randos where hash = $2",
+                              vc(huid.constData()), vc(hash.constData()));
+                D->commit_transaction();
+            }
+            }
+            catch(...)
+            {
+                D->rollback_transaction();
+            }
+
 
             HANDLE_MSG(mid);
 

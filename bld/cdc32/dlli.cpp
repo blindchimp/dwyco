@@ -5166,6 +5166,8 @@ dwyco_make_zap_composition_raw(const char *filename)
     m->file_basename = dwbasename(filename);
     m->filehash = gen_hash(m->actual_filename);
     m->inhibit_hashing = 1;
+    if(m->file_basename.rfind(".fle") == m->file_basename.length() - 4)
+        m->user_filename = to_hex(gen_id());
     return m->vp;
 }
 
