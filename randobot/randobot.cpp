@@ -45,12 +45,13 @@ struct rando_sql : public SimpleSql
     void init_schema() {
         sql_simple("create table if not exists randos(from_uid text collate nocase, "
                    "mid text collate nocase,"
-                   "filename text, time integer, hash text collate nocase, loc_lat, loc_long)");
+                   "filename text, time integer, hash text collate nocase unique, loc_lat, loc_long)");
         sql_simple("create index if not exists uid_idx on randos(from_uid)");
         sql_simple("create table if not exists sent_to(to_uid text collate nocase, "
                    "mid text collate nocase,"
                    "filename text, time integer, hash text collate nocase, loc_lat, loc_long)");
         sql_simple("create index if not exists uid_idx2 on sent_to(to_uid)");
+        sql_simple("create table if not exists seeder(uid text collate nocase unique on conflict ignore)");
     }
 
 };
@@ -216,11 +217,13 @@ dwyco_chat_ctx_callback(int cmd, int id,
 vc
 uid_due_randos()
 {
+    // TODO: put some prioritization in here so that users that haven't received anything
+    // lately are put on the top of the q
     D->start_transaction();
-    D->sql_simple("create temp table c1 as select count(*), from_uid from randos group by from_uid");
-    D->sql_simple("create temp table c2 as select count(*), to_uid from sent_to group by to_uid");
-    vc res = D->sql_simple("select from_uid from c1,c2 where c1.from_uid = c2.to_uid and c1.'count(*)' > c2.'count(*)'");
-    vc res2 = D->sql_simple("select from_uid from c1 where from_uid not in (select to_uid from c2);");
+    D->sql_simple("create temp table c1 as select count(*) as cr, from_uid from randos where from_uid not in (select uid from seeder) group by from_uid");
+    D->sql_simple("create temp table c2 as select count(*) as cs, to_uid from sent_to group by to_uid");
+    vc res = D->sql_simple("select from_uid,c1.cr - c2.cs from c1,c2 where c1.from_uid = c2.to_uid and c1.cr > c2.cs");
+    vc res2 = D->sql_simple("select from_uid,c1.cr from c1 where from_uid not in (select to_uid from c2);");
     D->sql_simple("drop table c1");
     D->sql_simple("drop table c2");
     D->commit_transaction();
@@ -248,8 +251,7 @@ do_rando(vc huid)
             // the least number of times.
             res = D->sql_simple("select sent_to.filename, sent_to.hash from sent_to,randos "
                                 "where sent_to.hash = randos.hash and from_uid != $1 "
-                                "and to_uid != $1 "
-                                "group by sent_to.hash having max(randos.time) "
+                                "group by sent_to.hash having (count(nullif(sent_to.to_uid,$1)) = count(*)) "
                                 "order by count(*) asc, randos.time desc limit 10",
                                 huid);
             // pick a random one from the first 10
@@ -390,31 +392,38 @@ main(int argc, char *argv[])
         if(dwyco_new_msg(uid, txt, dummy, mid, has_att, is_file))
         {
             txt = txt.toLower();
+            QByteArray huid = uid.toHex();
 
             if(!has_att && txt.contains("yes"))
             {
-                send_reply_to(uid, "Send me a zap with a pic... I'll send you a random pic in return.");
-            }
-
-            DWYCO_UNSAVED_MSG_LIST uml;
-
-
-            if(!dwyco_get_unsaved_messages(&uml, 0, 0))
-            {
-                dwyco_delete_unsaved_message(mid.constData());
+                send_reply_to(uid, "Send me a zap with a pic... I'll send you a random pic in return. "
+                                   "NOTE! I will forward the pic you send me anonymously to another "
+                                   "random Dwyconian.");
+                HANDLE_MSG(mid);
                 continue;
             }
-            simple_scoped quml(uml);
-            int n = quml.rows();
-            if(n == 0)
+
+            if(!has_att && txt.contains("noseeder"))
             {
-//                send_reply_to(uid, "Thanks, I've already got a message from you and I'm working on sending it to a random Dwyconian, I'll let you know when you can send me another.");
-//                HANDLE_MSG(mid.constData());
+                send_reply_to(uid, "Ok, stop seeding.");
+                D->sql_simple("delete from seeder where uid = $1", huid.constData());
+                HANDLE_MSG(mid);
                 continue;
             }
+            if(!has_att && txt.contains("seeder"))
+            {
+                send_reply_to(uid, "Ok, I won't send you any messages.");
+                D->sql_simple("insert into seeder(uid) values($1)", huid.constData());
+                HANDLE_MSG(mid);
+                continue;
+            }
+
+
             if(!has_att)
             {
-                send_reply_to(uid, "Your message needs more than just text... send a pic or video!");
+                send_reply_to(uid, "Your message needs more than just text... send a pic or video!"
+                                   "NOTE! I will forward the pic you send me anonymously to another "
+                                   "random Dwyconian.");
                 HANDLE_MSG(mid.constData());
                 continue;
             }
@@ -428,7 +437,6 @@ main(int argc, char *argv[])
 
                 continue;
             }
-
 
             // save the incoming rando, copy the attachment out
             QByteArray b = random_fn();
@@ -445,7 +453,6 @@ main(int argc, char *argv[])
             QCryptographicHash h(QCryptographicHash::Sha1);
             h.addData(&fn);
             QByteArray hash = h.result().toHex();
-            QByteArray huid = uid.toHex();
 
             vc res = D->sql_simple("select 1 from randos where hash = $1", vc(hash.constData()));
             if(res.num_elems() != 0)
@@ -454,13 +461,24 @@ main(int argc, char *argv[])
                 HANDLE_MSG(mid);
                 continue;
             }
-
+            D->start_transaction();
             D->sql_simple("insert into randos (from_uid, filename, time, hash) values($1, $2, strftime('%s', 'now'), $3)",
                           huid.constData(),
                           vc(b.constData()),
                           vc(hash.constData()));
+            res = D->sql_simple("select 1 from seeder where uid = $1", huid.constData());
 
-            send_reply_to(uid, "Thanks, got your message, I'll send you a random message soon!");
+            if(res.num_elems() > 0)
+            {
+                send_reply_to(uid, "Seeded msg");
+                // when you seed, we just pretend the message was sent right back to you,
+                // so it doesn't look like you need more randos sent to you.
+                D->sql_simple("insert into sent_to (to_uid, filename, mid, hash) select $1, filename, mid, hash from randos where hash = $2",
+                              huid.constData(), hash.constData());
+            }
+            else
+                send_reply_to(uid, "Thanks, got your message, I'll send you a random message soon!");
+            D->commit_transaction();
 
            HANDLE_MSG(mid);
 
