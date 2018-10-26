@@ -308,6 +308,13 @@ do_rando(vc huid)
 int
 main(int argc, char *argv[])
 {
+    char *owd = getenv("OWD");
+    if(owd)
+    {
+        printf("OWD %s\n", owd);
+        if(chdir(owd) == -1)
+            exit(1);
+    }
     if(access("stop", F_OK) == 0)
         exit(0);
     if(argc < 4)
