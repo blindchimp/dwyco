@@ -221,6 +221,7 @@ uid_due_randos()
     // lately are put on the top of the q
     D->start_transaction();
     D->sql_simple("create temp table c1 as select count(*) as cr, from_uid from randos where from_uid not in (select uid from seeder) group by from_uid");
+    D->sql_simple("delete from c1 where from_uid in (select to_uid from sent_to where strftime('%s', 'now') - time < 3600 group by to_uid having(count(*) > 2));");
     D->sql_simple("create temp table c2 as select count(*) as cs, to_uid from sent_to group by to_uid");
     vc res = D->sql_simple("select from_uid,c1.cr - c2.cs from c1,c2 where c1.from_uid = c2.to_uid and c1.cr > c2.cs");
     vc res2 = D->sql_simple("select from_uid,c1.cr from c1 where from_uid not in (select to_uid from c2);");
@@ -290,7 +291,7 @@ do_rando(vc huid)
                 dwyco_delete_zap_composition(compid);
                 throw -1;
             }
-            D->sql_simple("insert into sent_to (to_uid, filename, mid, hash) select $1, filename, mid, hash from randos where hash = $2",
+            D->sql_simple("insert into sent_to (to_uid, filename, mid, hash, time) select $1, filename, mid, hash, strftime('%s', 'now') from randos where hash = $2",
                           huid, hash);
         }
         D->commit_transaction();
@@ -362,7 +363,7 @@ main(int argc, char *argv[])
     {
         int spin;
         dwyco_service_channels(&spin);
-        usleep(10 * 1000);
+        usleep(100 * 1000);
         ++i;
         if(time(0) - start >= r || access("stop", F_OK) == 0)
         {
