@@ -8,8 +8,6 @@
 //--------------------------------------------------------------------------
 #include "jhead.h"
 
-#include <math.h>
-
 static unsigned char * DirWithThumbnailPtrs;
 static double FocalplaneXRes;
 static double FocalplaneUnits;
