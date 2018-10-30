@@ -273,7 +273,35 @@ do_rando(vc huid)
             QByteArray bf(Botfiles);
             bf += "/";
             bf += (const char *)fn;
-            int compid = dwyco_make_zap_composition_raw(bf.constData());
+            // see if there is an extension we can add to get a file type
+            DwString cmd("grep `file -b --mime-type %1` mime2extension.csv | sed 's/.*,//' >mumble");
+            cmd.arg(bf.constData());
+            const char *poss_ext = 0;
+            char a[500];
+            memset(a, 0, sizeof(a));
+            if(system(cmd.c_str()) == 0)
+            {
+                FILE *f = fopen("mumble", "rb");
+                if(f)
+                {
+                    if(fgets(a, sizeof(a), f) != 0)
+                    {
+                        int len = strlen(a);
+                        if(a[len - 1] == '\n')
+                            a[len - 1] = 0;
+                        if(a[0] != '.')
+                        {
+                            DwString foo(a);
+                            foo.insert(0, ".");
+                            strcpy(a, foo.c_str());
+                        }
+                        poss_ext = a;
+                    }
+                    fclose(f);
+                }
+            }
+
+            int compid = dwyco_make_zap_composition_raw(bf.constData(), poss_ext);
             if(compid == 0)
             {
                 D->sql_simple("delete from randos where filename = $1",
@@ -286,7 +314,7 @@ do_rando(vc huid)
                 return 0;
             }
             QByteArray uid = QByteArray::fromHex((const char *)huid);
-            if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), "Here is a rando", 15, 0, 1, 0, 0))
+            if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), "Here is a rando", strlen("Here is a rando"), 0, 1, 0, 0))
             {
                 dwyco_delete_zap_composition(compid);
                 throw -1;
@@ -339,7 +367,7 @@ main(int argc, char *argv[])
     dwyco_init();
 
     dwyco_set_setting("call_acceptance/no_listen", "1");
-    dwyco_inhibit_sac(1);
+    //dwyco_inhibit_sac(1);
 
     if(dwyco_get_create_new_account())
     {
@@ -368,9 +396,12 @@ main(int argc, char *argv[])
 
     while(1)
     {
-        int spin;
+        int spin = 0;
         dwyco_service_channels(&spin);
-        usleep(100 * 1000);
+        if(spin)
+            usleep(10 * 1000);
+        else
+            usleep(100 * 1000);
         ++i;
         if(time(0) - start >= r || access("stop", F_OK) == 0)
         {

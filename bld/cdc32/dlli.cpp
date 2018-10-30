@@ -5171,7 +5171,7 @@ dwyco_make_zap_composition( char *dum)
 
 DWYCOEXPORT
 int
-dwyco_make_zap_composition_raw(const char *filename)
+dwyco_make_zap_composition_raw(const char *filename, const char *possible_extension)
 {
     // XXX REMEMBER may need to import the file so keep the
     // file name/attachment uniqueness stuff intact
@@ -5217,7 +5217,14 @@ dwyco_make_zap_composition_raw(const char *filename)
     m->filehash = gen_hash(m->actual_filename);
     m->inhibit_hashing = 1;
     if(m->file_basename.rfind(".fle") == m->file_basename.length() - 4)
-        m->user_filename = to_hex(gen_id());
+    {
+        DwString base = (const char *)to_hex(gen_id());
+        if(possible_extension)
+        {
+            base += possible_extension;
+        }
+        m->user_filename = base.c_str();
+    }
     return m->vp;
 }
 
