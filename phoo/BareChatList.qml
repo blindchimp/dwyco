@@ -1,3 +1,16 @@
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+;
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
+// this is just a list of users currently in the chat room.
+// on mobile, this is presented as one page. on desktop, it can be
+// attached to a chatbox or something as a side-bar, since you have more
+// room.
+
 import QtQuick 2.0
 import dwyco 1.0
 import QtQuick.Layouts 1.3
