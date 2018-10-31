@@ -617,6 +617,12 @@ Page {
             spacing: 5
             ScrollBar.vertical: ScrollBar { }
             verticalLayoutDirection: ListView.BottomToTop
+            onAtYEndChanged: {
+                console.log("at y end ", atYEnd)
+            }
+            onAtYBeginningChanged: {
+                console.log("at y beg ", atYBeginning)
+            }
         }
     }
 
@@ -1022,6 +1028,35 @@ Page {
             but_width = but_height
         }
         focusPolicy: Qt.NoFocus
+    }
+
+    Button {
+        id: go_to_bottom
+        width: toolButton1.width
+        height: toolButton1.height
+        anchors.bottom: toolButton1.top
+        anchors.right: toolButton1.right
+
+        background: Rectangle {
+            id: gtb_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtb_img
+            anchors.centerIn: gtb_bg
+            source: mi("ic_system_update_alt_black_24dp.png")
+            opacity: .5
+        }
+
+        visible: !listView1.atYEnd
+
+        onClicked: {
+            listView1.positionViewAtBeginning()
+        }
+
     }
 
     TipButton {

@@ -803,12 +803,15 @@ ApplicationWindow {
             console.log(mid)
             console.log("msglist", themsglist.uid)
             if(from_uid === themsglist.uid) {
-                themsglist.reload_model()
+                //themsglist.reload_model()
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
                 // do this, or display a "go to bottom" icon
-                chatbox.listview.positionViewAtBeginning()
+                if(chatbox.listview.atYEnd) {
+                    chatbox.listview.positionViewAtBeginning()
+                }
                 console.log("RELOAD")
+                //themsglist.reload_model()
             }
             //notificationClient.notification = "New messages"
             sound_recv.play()
@@ -830,7 +833,9 @@ ApplicationWindow {
                 //sound_sent.play()
                 if(themsglist.uid == recipient) {
                     themsglist.reload_model()
-                    chatbox.listview.positionViewAtBeginning()
+                    if(chatbox.listview.atYEnd) {
+                        chatbox.listview.positionViewAtBeginning()
+                    }
                 }
 
             }
