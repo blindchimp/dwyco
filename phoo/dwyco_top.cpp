@@ -2158,6 +2158,32 @@ DwycoCore::set_fav_message(QString mid, int val)
 }
 
 int
+DwycoCore::has_tag_message(QString mid, QString tag)
+{
+    QByteArray bmid = mid.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    return dwyco_mid_has_tag(bmid.constData(), btag.constData());
+
+}
+void
+DwycoCore::set_tag_message(QString mid, QString tag)
+{
+    QByteArray bmid = mid.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    dwyco_set_msg_tag(bmid.constData(), btag.constData());
+}
+
+void
+DwycoCore::unset_tag_message(QString mid, QString tag)
+{
+    QByteArray bmid = mid.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    dwyco_unset_msg_tag(bmid.constData(), btag.constData());
+}
+
+
+
+int
 DwycoCore::clear_messages(QString uid)
 {
     QByteArray buid = uid.toLatin1();

@@ -20,6 +20,7 @@ Page {
     property alias msg_text: msg_text.text
     property bool dragging
     property bool fav
+    property bool hid
 
     anchors.fill:parent
     onVisibleChanged: {
@@ -39,6 +40,8 @@ Page {
     fav: { (mid.length > 0) ?
              (core.get_fav_message(mid) === 1) : false
     }
+
+    hid: {mid.length > 0 ? core.has_tag_message(mid, "_hid") === 1 : false}
 
     Connections {
         target: core
@@ -88,6 +91,19 @@ Page {
                         core.set_fav_message(mid, !fav)
                         // oops, breaks binding
                         //fav = !fav
+                        var save_mid = mid
+                        mid = ""
+                        mid = save_mid
+                        themsglist.reload_model()
+                    }
+                }
+                MenuItem {
+                    text: hid ? "Unhide" : "Hide"
+                    onTriggered: {
+                        if(hid)
+                            core.unset_tag_message(mid, "_hid")
+                        else
+                            core.set_tag_message(mid, "_hid")
                         var save_mid = mid
                         mid = ""
                         mid = save_mid
