@@ -9,6 +9,7 @@
 #include "mcc.h"
 #include "msend.h"
 #include "dhgsetup.h"
+#include "dwrtlog.h"
 
 extern DwVec<ValidPtr> CompositionDeleteQ;
 
