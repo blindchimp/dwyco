@@ -14,12 +14,14 @@ private:
     simple_scoped();
     simple_scoped(const simple_scoped&);
     DWYCO_LIST value;
+    int no_release;
 public:
-    simple_scoped(DWYCO_LIST v) {
+    simple_scoped(DWYCO_LIST v, int no_release = 0) {
         value = v;
+        this->no_release = no_release;
     }
     ~simple_scoped() {
-        if(value) dwyco_list_release(value);
+        if(value && !no_release) dwyco_list_release(value);
     }
     operator DWYCO_LIST() {
         return value;

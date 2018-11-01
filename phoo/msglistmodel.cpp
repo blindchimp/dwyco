@@ -536,6 +536,40 @@ void
 msglist_raw::reload_inbox_model()
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+
+    // optimization, to avoid resetting the model in common cases
+    DWYCO_UNSAVED_MSG_LIST new_im;
+    if(dwyco_get_unsaved_messages(&new_im, buid.constData(), buid.length()))
+    {
+        simple_scoped qnew_im(new_im);
+
+        // see if the common case of a new record being right at the end
+        // or if a message fetch has finished and toggled the direct attribute
+        simple_scoped q_inbox_msgs(inbox_msgs, 1);
+        if(qnew_im.rows() == count_inbox_msgs)
+        {
+            for(int i = 0; i < count_inbox_msgs; ++i)
+            {
+                QByteArray mid = qnew_im.get<QByteArray>(i, DWYCO_QMS_ID);
+                if(mid != q_inbox_msgs.get<QByteArray>(i, DWYCO_QMS_ID))
+                {
+                    goto do_reset;
+                }
+                if(qnew_im.is_nil(i, DWYCO_QMS_IS_DIRECT) != q_inbox_msgs.is_nil(i, DWYCO_QMS_IS_DIRECT))
+                {
+                    int k = count_inbox_msgs - i - 1;
+
+                    QModelIndex mi = index(k, 0);
+                    emit dataChanged(mi, mi);
+
+                }
+            }
+        }
+        return;
+    }
+
+do_reset:
+
     beginResetModel();
     if(inbox_msgs)
         dwyco_list_release(inbox_msgs);
