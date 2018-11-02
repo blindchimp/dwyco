@@ -32,6 +32,7 @@ Page {
     property bool multiselect_mode: false
     property url cur_source
     property var call_buttons_model
+    property bool lock_to_bottom: false
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -615,10 +616,19 @@ Page {
             delegate: msglist_delegate
             clip: true
             spacing: 5
-            ScrollBar.vertical: ScrollBar { }
+            ScrollBar.vertical: ScrollBar {
+                onPressedChanged: {
+                    lock_to_bottom = false
+                }
+            }
             verticalLayoutDirection: ListView.BottomToTop
+            onFlickStarted: {
+                lock_to_bottom = false
+            }
+
             onAtYEndChanged: {
                 console.log("at y end ", atYEnd)
+
             }
             onAtYBeginningChanged: {
                 console.log("at y beg ", atYBeginning)
@@ -645,6 +655,12 @@ Page {
             anchors.right: {(SENT == 1) ? parent.right : undefined}
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
+            onHeightChanged: {
+                console.log("del ", model.index, "ch to ", ditem.height)
+                if(lock_to_bottom) {
+                    listView1.positionViewAtBeginning()
+                }
+            }
 
             Image {
                 id: deco2
@@ -1055,6 +1071,7 @@ Page {
 
         onClicked: {
             listView1.positionViewAtBeginning()
+            lock_to_bottom = true
         }
 
     }

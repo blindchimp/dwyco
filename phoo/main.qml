@@ -440,9 +440,6 @@ ApplicationWindow {
     DwycoMsgList {
         id: themsglist
         uid: top_dispatch.last_uid_selected
-        onRowsInserted: {
-            chatbox.listview.positionViewAtBeginning()
-        }
     }
 
     MsgView {
@@ -806,14 +803,7 @@ ApplicationWindow {
             console.log(mid)
             console.log("msglist", themsglist.uid)
             if(from_uid === themsglist.uid) {
-                if(chatbox.listview.atYEnd) {
-                    themsglist.reload_model()
-                    chatbox.listview.positionViewAtBeginning()
-                } else {
-                    var a = chatbox.listview.contentY
-                    themsglist.reload_model()
-                    chatbox.listview.contentY = a
-                }
+                themsglist.reload_model();
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
                 // do this, or display a "go to bottom" icon
@@ -831,14 +821,7 @@ ApplicationWindow {
             console.log("update idx", uid)
             console.log("upd" + uid + " " + themsglist.uid)
             if(uid === themsglist.uid) {
-                if(chatbox.listview.atYEnd) {
-                    themsglist.reload_model()
-                    chatbox.listview.positionViewAtBeginning()
-                } else {
-                    var a = chatbox.listview.contentY
-                    themsglist.reload_model()
-                    chatbox.listview.contentY = a
-                }
+                themsglist.reload_model()
 
                 console.log("RELOAD msg_idx")
             }
@@ -851,9 +834,7 @@ ApplicationWindow {
                 //sound_sent.play()
                 if(themsglist.uid == recipient) {
                     themsglist.reload_model()
-                    if(chatbox.listview.atYEnd) {
-                        chatbox.listview.positionViewAtBeginning()
-                    }
+
                 }
 
             }
