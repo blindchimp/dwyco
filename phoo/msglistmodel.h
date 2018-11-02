@@ -97,6 +97,8 @@ private:
 
     QVariant qd_data (int r, int role = Qt::DisplayRole ) const;
     QVariant inbox_data (int r, int role = Qt::DisplayRole ) const;
+    int check_inbox_model();
+    int check_qd_msgs();
 
     QString get_msg_text(int row) const;
     QString preview_filename(int row) const;

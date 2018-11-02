@@ -6735,7 +6735,7 @@ DWYCOEXPORT
 int
 dwyco_get_message_index2(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, int *available_count_out, int load_count)
 {
-    vc& ret = *new vc;
+    vc& ret = *new vc(VC_VECTOR);
     vc u(VC_BSTRING, uid, len_uid);
     vc tmp = load_msg_index(u, load_count);
     if(tmp.is_nil())
@@ -6759,7 +6759,7 @@ DWYCOEXPORT
 int
 dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, long logical_clock)
 {
-    vc& ret = *new vc;
+    vc& ret = *new vc(VC_VECTOR);
     vc u(VC_BSTRING, uid, len_uid);
     vc tmp = msg_idx_get_new_msgs(u, logical_clock);
     if(tmp.is_nil())

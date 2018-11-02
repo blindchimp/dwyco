@@ -8,6 +8,8 @@
 */
 #ifndef DWYCOLISTSCOPED_H
 #include "dlli.h"
+#include <stdlib.h>
+
 struct simple_scoped
 {
 private:
@@ -25,6 +27,11 @@ public:
     }
     operator DWYCO_LIST() {
         return value;
+    }
+
+    void release() {
+        if(value)
+            dwyco_list_release(value);
     }
     int rows() {
         int n;
@@ -62,6 +69,20 @@ public:
         else
             return 0;
     }
+    int get_long(int row, const char *col) {
+        const char *val;
+        int len;
+        int type;
+        if(!dwyco_list_get(value, row, col, &val, &len, &type))
+            return 0;
+        if(type == DWYCO_TYPE_INT)
+        {
+            return atol(val);
+        }
+        else
+            return 0;
+    }
+
 };
 
 #endif

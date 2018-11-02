@@ -532,8 +532,9 @@ msglist_raw::~msglist_raw()
         dwyco_list_release(inbox_msgs);
 }
 
-void
-msglist_raw::reload_inbox_model()
+
+int
+msglist_raw::check_inbox_model()
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
 
@@ -541,7 +542,7 @@ msglist_raw::reload_inbox_model()
     DWYCO_UNSAVED_MSG_LIST new_im;
     if(dwyco_get_unsaved_messages(&new_im, buid.constData(), buid.length()))
     {
-        simple_scoped qnew_im(new_im);
+        simple_scoped qnew_im(new_im, 1);
 
         // see if the common case of a new record being right at the end
         // or if a message fetch has finished and toggled the direct attribute
@@ -553,7 +554,8 @@ msglist_raw::reload_inbox_model()
                 QByteArray mid = qnew_im.get<QByteArray>(i, DWYCO_QMS_ID);
                 if(mid != q_inbox_msgs.get<QByteArray>(i, DWYCO_QMS_ID))
                 {
-                    goto do_reset;
+                    qnew_im.release();
+                    return 0;
                 }
                 if(qnew_im.is_nil(i, DWYCO_QMS_IS_DIRECT) != q_inbox_msgs.is_nil(i, DWYCO_QMS_IS_DIRECT))
                 {
@@ -565,10 +567,45 @@ msglist_raw::reload_inbox_model()
                 }
             }
         }
-        return;
-    }
+        else if(qnew_im.rows() == 1 && count_inbox_msgs == 0)
+        {
+            beginInsertRows(QModelIndex(), 0, 0);
+            if(inbox_msgs)
+                dwyco_list_release(inbox_msgs);
 
-do_reset:
+            inbox_msgs = qnew_im;
+            count_inbox_msgs = qnew_im.rows();
+            endInsertRows();
+            return 1;
+        }
+        else if(qnew_im.rows() == 0 && count_inbox_msgs == 1)
+        {
+            beginRemoveRows(QModelIndex(), 0, 0);
+            if(inbox_msgs)
+                dwyco_list_release(inbox_msgs);
+
+            inbox_msgs = qnew_im;
+            count_inbox_msgs = qnew_im.rows();
+            endRemoveRows();
+            return 1;
+        }
+        if(inbox_msgs)
+            dwyco_list_release(inbox_msgs);
+
+        inbox_msgs = qnew_im;
+        count_inbox_msgs = qnew_im.rows();
+        return 1;
+    }
+    return 0;
+}
+
+void
+msglist_raw::reload_inbox_model()
+{
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+
+    if(check_inbox_model())
+        return;
 
     beginResetModel();
     if(inbox_msgs)
@@ -578,13 +615,10 @@ do_reset:
     count_inbox_msgs = 0;
 
     if(buid.length() != 10)
-
     {
         endResetModel();
         return;
     }
-
-
 
     dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());
 
@@ -595,10 +629,55 @@ do_reset:
 
 }
 
+int
+msglist_raw::check_qd_msgs()
+{
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    DWYCO_QD_MSG_LIST qml;
+    dwyco_get_qd_messages(&qml, buid.constData(), buid.length());
+
+    simple_scoped qqml(qml);
+    if(qqml.rows() != count_qd_msgs)
+        return 0;
+    simple_scoped oqml(qd_msgs, 1);
+    for(int i = 0; i < count_qd_msgs; ++i)
+    {
+        if(qqml.get<QByteArray>(i, DWYCO_QD_MSG_PERS_ID) != oqml.get<QByteArray>(i, DWYCO_QD_MSG_PERS_ID))
+            return 0;
+    }
+    return 1;
+}
+
 void
 msglist_raw::reload_model()
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    if(msg_idx && m_tag.length() == 0 && check_inbox_model() && check_qd_msgs())
+    {
+        // inbox might have been update, qd msgs are the same
+        // check if there are some new messages in the index for this
+        // uid.
+        simple_scoped qm(msg_idx, 1);
+
+        long curlc = qm.get_long(0, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+        DWYCO_MSG_IDX nmi;
+        dwyco_get_new_message_index(&nmi, buid.constData(), buid.length(), curlc);
+        simple_scoped qnmi(nmi);
+        DWYCO_MSG_IDX cmi;
+        dwyco_get_message_index(&cmi, buid.constData(), buid.length());
+        simple_scoped qcmi(cmi , 1);
+        if(qcmi.rows() == qm.rows() + qnmi.rows())
+        {
+            beginInsertRows(QModelIndex(), 0, qnmi.rows() - 1);
+            qm.release();
+            msg_idx = qcmi;
+            count_msg_idx = qcmi.rows();
+            endInsertRows();
+            return;
+        }
+
+
+    }
     beginResetModel();
     if(msg_idx)
         dwyco_list_release(msg_idx);
