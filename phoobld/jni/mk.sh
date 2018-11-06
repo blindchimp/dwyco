@@ -16,5 +16,5 @@ export NDK_PROJECT_PATH=~/git/dwyco/phoobld
 fi
 (cd ..;mkdir obj)
 # force rebuild all
-#$NDK/ndk-build -B NDK_DEBUG=1
-$NDK/ndk-build   #NDK_DEBUG=1
+$NDK/ndk-build -B NDK_DEBUG=1
+#$NDK/ndk-build   NDK_DEBUG=1

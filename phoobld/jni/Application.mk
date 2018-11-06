@@ -7,10 +7,10 @@ APP_ABI := x86
 endif
 APP_CPPFLAGS += -frtti -fexceptions -DANDROID -g -std=c++11
 APP_CFLAGS += -DANDROID -g
-APP_STL := gnustl_shared
+APP_STL := c++_shared
 #APP_MODULES := jhead cdc32 gsm lpc ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls
 #APP_PLATFORM := android-20
 #NDK_TOOLCHAIN_VERSION := 4.8
 APP_PLATFORM := android-19
 NDK_TOOLCHAIN_VERSION := 4.9
-APP_OPTIM := release
+APP_OPTIM := debug

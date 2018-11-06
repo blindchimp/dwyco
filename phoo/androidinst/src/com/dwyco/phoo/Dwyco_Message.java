@@ -44,7 +44,7 @@ public class Dwyco_Message extends StickyIntentService {
         super.onCreate();
         catchLog("dwyco_msg Service got created");
         context = this;
-        System.loadLibrary("gnustl_shared");
+        System.loadLibrary("libc++_shared");
         System.loadLibrary("dwyco_jni");
     }
 
