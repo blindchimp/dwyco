@@ -658,22 +658,24 @@ msglist_raw::reload_model()
         // check if there are some new messages in the index for this
         // uid.
         simple_scoped qm(msg_idx, 1);
-
-        long curlc = qm.get_long(0, DWYCO_MSG_IDX_LOGICAL_CLOCK);
-        DWYCO_MSG_IDX nmi;
-        dwyco_get_new_message_index(&nmi, buid.constData(), buid.length(), curlc);
-        simple_scoped qnmi(nmi);
-        DWYCO_MSG_IDX cmi;
-        dwyco_get_message_index(&cmi, buid.constData(), buid.length());
-        simple_scoped qcmi(cmi , 1);
-        if(qcmi.rows() == qm.rows() + qnmi.rows())
+        if(qm.rows() > 0)
         {
-            beginInsertRows(QModelIndex(), 0, qnmi.rows() - 1);
-            qm.release();
-            msg_idx = qcmi;
-            count_msg_idx = qcmi.rows();
-            endInsertRows();
-            return;
+            long curlc = qm.get_long(0, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+            DWYCO_MSG_IDX nmi;
+            dwyco_get_new_message_index(&nmi, buid.constData(), buid.length(), curlc);
+            simple_scoped qnmi(nmi);
+            DWYCO_MSG_IDX cmi;
+            dwyco_get_message_index(&cmi, buid.constData(), buid.length());
+            simple_scoped qcmi(cmi , 1);
+            if(qcmi.rows() == qm.rows() + qnmi.rows())
+            {
+                beginInsertRows(QModelIndex(), 0, qnmi.rows() - 1);
+                qm.release();
+                msg_idx = qcmi;
+                count_msg_idx = qcmi.rows();
+                endInsertRows();
+                return;
+            }
         }
 
 

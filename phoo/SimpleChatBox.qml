@@ -628,6 +628,12 @@ Page {
 
             onAtYEndChanged: {
                 console.log("at y end ", atYEnd)
+                if(lock_to_bottom && !atYEnd)
+                {
+                    listView1.positionViewAtBeginning()
+                }
+                if(atYEnd)
+                    lock_to_bottom = true
 
             }
             onAtYBeginningChanged: {
@@ -657,9 +663,9 @@ Page {
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             onHeightChanged: {
                 console.log("del ", model.index, "ch to ", ditem.height)
-                if(lock_to_bottom) {
-                    listView1.positionViewAtBeginning()
-                }
+//                if(lock_to_bottom) {
+//                    listView1.positionViewAtBeginning()
+//                }
             }
 
             Image {
