@@ -160,7 +160,7 @@ dwybg_wrap.c \
 aqext_android.cpp \
 backsql.cpp
 
-LOCAL_STATIC_LIBRARIES := libspeex-prebuilt libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm lpc ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls
+LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls
 LOCAL_C_INCLUDES := \
 $(LOCAL_PATH)/../dwcls \
 $(LOCAL_PATH)/../zlib \

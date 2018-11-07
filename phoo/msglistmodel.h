@@ -61,6 +61,8 @@ private:
     int filter_only_favs;
     int filter_show_hidden;
 
+    void force_reload_model();
+
 signals:
     void uidChanged();
     void tagChanged();
@@ -81,7 +83,7 @@ public:
 
     void setUid(const QString& uid);
     void setTag(const QString& tag);
-    void reload_model();
+    void reload_model(int force = 0);
     void reload_inbox_model();
 
 private:
@@ -97,6 +99,8 @@ private:
 
     QVariant qd_data (int r, int role = Qt::DisplayRole ) const;
     QVariant inbox_data (int r, int role = Qt::DisplayRole ) const;
+    int check_inbox_model();
+    int check_qd_msgs();
 
     QString get_msg_text(int row) const;
     QString preview_filename(int row) const;

@@ -32,6 +32,7 @@ Page {
     property bool multiselect_mode: false
     property url cur_source
     property var call_buttons_model
+    property bool lock_to_bottom: false
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -621,8 +622,31 @@ Page {
             delegate: msglist_delegate
             clip: true
             spacing: 5
-            ScrollBar.vertical: ScrollBar { }
+            ScrollBar.vertical: ScrollBar {
+                onPressedChanged: {
+                    lock_to_bottom = false
+                }
+            }
             verticalLayoutDirection: ListView.BottomToTop
+            onMovementStarted: {
+                if(atYEnd)
+                    lock_to_bottom = false
+                console.log("move start aty ", atYEnd, "lb ", lock_to_bottom)
+            }
+
+            onAtYEndChanged: {
+                console.log("at y end ", atYEnd)
+                if(lock_to_bottom && !atYEnd)
+                {
+                    listView1.positionViewAtBeginning()
+                }
+                else if(atYEnd && !lock_to_bottom)
+                    lock_to_bottom = true
+
+            }
+            onAtYBeginningChanged: {
+                console.log("at y beg ", atYBeginning)
+            }
         }
     }
 
@@ -645,6 +669,12 @@ Page {
             anchors.right: {(SENT == 1) ? parent.right : undefined}
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
+            onHeightChanged: {
+                console.log("del ", model.index, "ch to ", ditem.height)
+//                if(lock_to_bottom) {
+//                    listView1.positionViewAtBeginning()
+//                }
+            }
 
             Image {
                 id: deco2
@@ -1028,6 +1058,36 @@ Page {
             but_width = but_height
         }
         focusPolicy: Qt.NoFocus
+    }
+
+    Button {
+        id: go_to_bottom
+        width: toolButton1.width
+        height: toolButton1.height
+        anchors.bottom: toolButton1.top
+        anchors.right: toolButton1.right
+
+        background: Rectangle {
+            id: gtb_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtb_img
+            anchors.centerIn: gtb_bg
+            source: mi("ic_system_update_alt_black_24dp.png")
+            opacity: .5
+        }
+
+        visible: !listView1.atYEnd
+
+        onClicked: {
+            listView1.positionViewAtBeginning()
+            lock_to_bottom = true
+        }
+
     }
 
     TipButton {

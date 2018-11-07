@@ -2543,7 +2543,6 @@ DwycoCore::service_channels()
         dwyco_process_unsaved_list(uml, uids_out);
         dwyco_list_release(uml);
 
-        mlm->reload_model();
         update_unread_count(has_unviewed_msgs());
         foreach(const QByteArray& buid, uids_out)
         {
@@ -2551,6 +2550,10 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
+//        if(uids_out.contains(QByteArray::fromHex(mlm->uid().toLatin1())))
+//        {
+//            mlm->reload_model();
+//        }
     }
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically
