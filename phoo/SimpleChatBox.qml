@@ -622,8 +622,10 @@ Page {
                 }
             }
             verticalLayoutDirection: ListView.BottomToTop
-            onFlickStarted: {
-                lock_to_bottom = false
+            onMovementStarted: {
+                if(atYEnd)
+                    lock_to_bottom = false
+                console.log("move start aty ", atYEnd, "lb ", lock_to_bottom)
             }
 
             onAtYEndChanged: {
@@ -632,7 +634,7 @@ Page {
                 {
                     listView1.positionViewAtBeginning()
                 }
-                if(atYEnd)
+                else if(atYEnd && !lock_to_bottom)
                     lock_to_bottom = true
 
             }
