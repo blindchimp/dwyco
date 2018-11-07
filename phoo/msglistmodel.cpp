@@ -363,7 +363,7 @@ msglist_model::delete_all_selected()
 
     }
     Selected.clear();
-    reload_model();
+    force_reload_model();
 }
 
 void
@@ -381,7 +381,7 @@ msglist_model::fav_all_selected(int f)
         }
         dwyco_set_fav_msg(b.constData(), f);
     }
-    reload_model();
+    force_reload_model();
 }
 
 void
@@ -399,7 +399,7 @@ msglist_model::tag_all_selected(QByteArray tag)
         }
         dwyco_set_msg_tag(b.constData(), tag.constData());
     }
-    reload_model();
+    force_reload_model();
 }
 
 void
@@ -417,7 +417,7 @@ msglist_model::untag_all_selected(QByteArray tag)
         }
         dwyco_unset_msg_tag(b.constData(), tag.constData());
     }
-    reload_model();
+    force_reload_model();
 }
 
 void
@@ -472,6 +472,16 @@ msglist_model::reload_model()
     if(mr)
     {
         mr->reload_model();
+    }
+}
+
+void
+msglist_model::force_reload_model()
+{
+    msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
+    if(mr)
+    {
+        mr->reload_model(1);
     }
 }
 
@@ -665,10 +675,10 @@ msglist_raw::check_qd_msgs()
 }
 
 void
-msglist_raw::reload_model()
+msglist_raw::reload_model(int force)
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
-    if(msg_idx && m_tag.length() == 0 && check_inbox_model() && check_qd_msgs())
+    if(!force && msg_idx && m_tag.length() == 0 && check_inbox_model() && check_qd_msgs())
     {
         // inbox might have been update, qd msgs are the same
         // check if there are some new messages in the index for this
@@ -750,7 +760,7 @@ msglist_raw::setUid(const QString &uid)
     if(m_uid != uid)
     {
         m_uid = uid;
-        reload_model();
+        reload_model(1);
     }
 }
 
@@ -760,7 +770,7 @@ msglist_raw::setTag(const QString& tag)
     if(m_tag != tag)
     {
         m_tag = tag;
-        reload_model();
+        reload_model(1);
     }
 }
 
