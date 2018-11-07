@@ -10,21 +10,17 @@
 #include "dlli.h"
 #include <stdlib.h>
 
-struct simple_scoped
+struct dwyco_list
 {
 private:
-    simple_scoped();
-    simple_scoped(const simple_scoped&);
+    dwyco_list();
+    dwyco_list(const dwyco_list&);
     DWYCO_LIST value;
-    int no_release;
 public:
-    simple_scoped(DWYCO_LIST v, int no_release = 0) {
+    dwyco_list(DWYCO_LIST v) {
         value = v;
-        this->no_release = no_release;
     }
-    ~simple_scoped() {
-        if(value && !no_release) dwyco_list_release(value);
-    }
+
     operator DWYCO_LIST() {
         return value;
     }
@@ -83,6 +79,19 @@ public:
             return 0;
     }
 
+};
+
+struct simple_scoped : public dwyco_list
+{
+private:
+    simple_scoped();
+    simple_scoped(const simple_scoped&);
+public:
+    simple_scoped(DWYCO_LIST v): dwyco_list(v) {
+    }
+    ~simple_scoped() {
+        release();
+    }
 };
 
 #endif
