@@ -145,6 +145,13 @@ DH_alternate::insert_new_key(vc alt_name, vc grp_key)
     return 1;
 }
 
+int
+DH_alternate::remove_key(vc alt_name)
+{
+    DHG_db->sql_simple("delete from keys where alt_name = $1", alt_name);
+    return 1;
+}
+
 vc
 DH_alternate::my_static()
 {

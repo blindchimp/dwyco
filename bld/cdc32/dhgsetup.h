@@ -33,6 +33,10 @@ public:
     // inserts a new key into the database, which we
     // presumably got from another group member
     static int insert_new_key(vc alt_name, vc grp_key);
+
+    // call this to remove a key from the database, as when
+    // leaving a group.
+    static int remove_key(vc alt_name);
 };
 
 extern DH_alternate *Current_alternate;

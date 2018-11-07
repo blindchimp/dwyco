@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-// send commands to the chat server related to audio q-ing
+// send commands to the chat server
 #include "vc.h"
 #include "mmchan.h"
 #include "chatq.h"
