@@ -30,22 +30,22 @@ AppDrawerForm {
 //        stack.push(vid_cam_preview)
 //        close()
 //    }
-    about_button.onClicked: {
-        stack.push(about_dialog)
-        close()
-    }
+//    about_button.onClicked: {
+//        stack.push(about_dialog)
+//        close()
+//    }
     settings_button.onClicked: {
         stack.push(settings_dialog)
         close()
     }
-    pin_lock_button.onClicked: {
-        stack.push(pwchange_dialog)
-        close()
-    }
-    block_list_button.onClicked: {
-        stack.push(iglist_dialog)
-        close()
-    }
+//    pin_lock_button.onClicked: {
+//        stack.push(pwchange_dialog)
+//        close()
+//    }
+//    block_list_button.onClicked: {
+//        stack.push(iglist_dialog)
+//        close()
+//    }
 
     profile_button.onClicked: {
         profile_update_dialog.preview_existing = true

@@ -1,3 +1,4 @@
+
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ;
@@ -13,10 +14,10 @@ Pane {
     //width: 400
     //height: 400
     property alias vid_preview_button: vid_preview_button
-    property alias about_button: about_button
+    //property alias about_button: about_button
     property alias settings_button: settings_button
-    property alias pin_lock_button: pin_lock_button
-    property alias block_list_button: block_list_button
+    //property alias pin_lock_button: pin_lock_button
+    //property alias block_list_button: block_list_button
     property alias profile_button: profile_button
     property alias lock_and_exit_button: lock_and_exit_button
     property alias invisible_switch: invisible_switch
@@ -64,30 +65,28 @@ Pane {
             Layout.fillWidth: true
         }
 
-        ItemDelegate {
-            id: block_list_button
-            text: qsTr("Block List")
-            Layout.fillWidth: true
-        }
+        //        ItemDelegate {
+        //            id: block_list_button
+        //            text: qsTr("Block List")
+        //            Layout.fillWidth: true
+        //        }
 
-        ItemDelegate {
-            id: pin_lock_button
-            text: qsTr("PIN Lock Setup")
-            Layout.fillWidth: true
-        }
-
+        //        ItemDelegate {
+        //            id: pin_lock_button
+        //            text: qsTr("PIN Lock Setup")
+        //            Layout.fillWidth: true
+        //        }
         ItemDelegate {
             id: settings_button
             text: qsTr("Settings")
             Layout.fillWidth: true
         }
 
-        ItemDelegate {
-            id: about_button
-            text: qsTr("About")
-            Layout.fillWidth: true
-        }
-
+        //        ItemDelegate {
+        //            id: about_button
+        //            text: qsTr("About")
+        //            Layout.fillWidth: true
+        //        }
         ItemDelegate {
             id: vid_preview_button
             text: qsTr("Preview")
