@@ -204,6 +204,10 @@ public:
     Q_INVOKABLE int delete_user(QString uid);
     Q_INVOKABLE int get_fav_message(QString mid);
     Q_INVOKABLE void set_fav_message(QString mid, int val);
+    Q_INVOKABLE int has_tag_message(QString mid, QString tag);
+    Q_INVOKABLE void set_tag_message(QString mid, QString tag);
+    Q_INVOKABLE void unset_tag_message(QString mid, QString tag);
+
 
     Q_INVOKABLE void uid_keyboard_input(QString uid);
     Q_INVOKABLE int get_rem_keyboard_state(QString uid);
@@ -319,6 +323,8 @@ signals:
     void camera_change(int cam_on);
     // zap composition record/play stopped
     void zap_stopped(int zid);
+
+    void mid_tag_changed(QString mid);
 
 private:
     QString m_client_name;

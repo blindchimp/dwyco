@@ -79,7 +79,7 @@ INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst
 
-linux-g++* {
+linux-* {
 DEFINES += LINUX
 DEFINES += DWYCO_APP_DEBUG
 equals(FORCE_DESKTOP_VGQT, 1) {
@@ -89,7 +89,8 @@ INCLUDEPATH += $${DINC}/v4lcap
 
 QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
 QMAKE_LFLAGS += -g #-fsanitize=address
-QMAKE_CXX=ccache g++
+linux-g++*:QMAKE_CXX=ccache g++
+linux-clang*:QMAKE_CXX=ccache clang
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 
 SHADOW=$${OUT_PWD}
@@ -116,9 +117,7 @@ $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${D}/libuv/libuv.a \
 -lsqlite3 \
--lSDL \
--lv4l2 \
--lesd
+-lv4l2
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -204,7 +203,7 @@ $${D}/qt-qml-models/libQtQmlModels.a
 
 }
 
-android-g++ {
+android-* {
 DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
 
 D = $${OUT_PWD}/../bld

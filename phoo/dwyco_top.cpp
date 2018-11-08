@@ -1451,6 +1451,7 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheIgnoreListModel, SLOT(uid_resolved(QString)));
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString)), mlm, SLOT(msg_recv_status(int,QString)));
+    connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);
@@ -2171,7 +2172,36 @@ DwycoCore::set_fav_message(QString mid, int val)
 {
     QByteArray bmid = mid.toLatin1();
     dwyco_set_fav_msg(bmid.constData(), !!val);
+    emit mid_tag_changed(mid);
 }
+
+int
+DwycoCore::has_tag_message(QString mid, QString tag)
+{
+    QByteArray bmid = mid.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    return dwyco_mid_has_tag(bmid.constData(), btag.constData());
+
+}
+void
+DwycoCore::set_tag_message(QString mid, QString tag)
+{
+    QByteArray bmid = mid.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    dwyco_set_msg_tag(bmid.constData(), btag.constData());
+    emit mid_tag_changed(mid);
+}
+
+void
+DwycoCore::unset_tag_message(QString mid, QString tag)
+{
+    QByteArray bmid = mid.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    dwyco_unset_msg_tag(bmid.constData(), btag.constData());
+    emit mid_tag_changed(mid);
+}
+
+
 
 int
 DwycoCore::clear_messages(QString uid)
@@ -2519,7 +2549,6 @@ DwycoCore::service_channels()
         dwyco_process_unsaved_list(uml, uids_out);
         dwyco_list_release(uml);
 
-        mlm->reload_model();
         update_unread_count(has_unviewed_msgs());
         foreach(const QByteArray& buid, uids_out)
         {
@@ -2527,6 +2556,10 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
+//        if(uids_out.contains(QByteArray::fromHex(mlm->uid().toLatin1())))
+//        {
+//            mlm->reload_model();
+//        }
     }
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically

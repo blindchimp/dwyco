@@ -5140,6 +5140,23 @@ dwyco_get_net_data(
 // Message composition
 //
 
+static int
+import_file(DwString& name, DwString& out_fn, const char *suf = ".fle")
+{
+    vc fn = to_hex(gen_id());
+    DwString s((const char *)fn);
+    s += suf;
+    vc p(VC_VECTOR);
+    if(!CopyFile(name.c_str(), newfn(s).c_str(), 0))
+    {
+        GRTLOG("import file failed: %s to %s", name.c_str(), newfn(s).c_str());
+
+        return 0;
+    }
+    out_fn = s;
+    return 1;
+}
+
 DWYCOEXPORT
 int
 dwyco_make_zap_composition( char *dum)
@@ -5149,6 +5166,65 @@ dwyco_make_zap_composition( char *dum)
     m->composer = 1;
     m->FormShow();
     GRTLOG("make_zap_composition: ret %d", (int)m->vp, 0);
+    return m->vp;
+}
+
+DWYCOEXPORT
+int
+dwyco_make_zap_composition_raw(const char *filename, const char *possible_extension)
+{
+    // XXX REMEMBER may need to import the file so keep the
+    // file name/attachment uniqueness stuff intact
+    DwString a(filename);
+
+    if(access(a.c_str(), 04) == -1)
+    {
+        GRTLOG("make_zap_raw: cant access %s", a.c_str(), 0);
+        return 0;
+    }
+
+    // hack, assume we are using dyc/fle things
+    const char *suf;
+    int si = a.rfind(".dyc");
+    if(si == -1)
+    {
+        si = a.rfind(".fle");
+        if(si == -1 || si != a.length() - 4)
+            return 0;
+        suf = ".fle";
+    }
+    else if(si != a.length() - 4)
+        return 0;
+    else
+        suf = ".dyc";
+
+
+    DwString out_fn;
+    if(!import_file(a, out_fn, suf))
+    {
+        GRTLOG("make_zap_raw: cant import %s", a.c_str(), 0);
+        return 0;
+    }
+
+    TMsgCompose *m = new TMsgCompose;
+
+    m->FormShow();
+    m->composer = 1;
+    m->play_button_enabled = 1;
+    m->stop_button_enabled = 0;
+    m->actual_filename = newfn(out_fn);
+    m->file_basename = out_fn.c_str();
+    m->filehash = gen_hash(m->actual_filename);
+    m->inhibit_hashing = 1;
+    if(m->file_basename.rfind(".fle") == m->file_basename.length() - 4)
+    {
+        DwString base = (const char *)to_hex(gen_id());
+        if(possible_extension)
+        {
+            base += possible_extension;
+        }
+        m->user_filename = base.c_str();
+    }
     return m->vp;
 }
 
@@ -5460,44 +5536,26 @@ dwyco_set_special_zap(int compid, int special_type)
     return 1;
 }
 
-static int
-import_file(DwString& name, DwString& out_fn)
-{
-    vc fn = to_hex(gen_id());
-    DwString s((const char *)fn);
-    s += ".fle";
-    vc p(VC_VECTOR);
-    if(!CopyFile(name.c_str(), newfn(s).c_str(), 0))
-    {
-        GRTLOG("import file failed: %s to %s", name.c_str(), newfn(s).c_str());
-
-        return 0;
-    }
-    out_fn = s;
-    return 1;
-}
 
 DWYCOEXPORT
 int
 dwyco_make_file_zap_composition( const char *filename, int len_filename)
 {
-    TMsgCompose *m = new TMsgCompose;
-
     DwString a(filename, 0, len_filename);
 
     if(access(a.c_str(), 04) == -1)
     {
         GRTLOG("make_file_zap: cant access %s", a.c_str(), 0);
-        delete m;
         return 0;
     }
     DwString out_fn;
     if(!import_file(a, out_fn))
     {
-        delete m;
         GRTLOG("make_file_zap: cant import %s", a.c_str(), 0);
         return 0;
     }
+
+    TMsgCompose *m = new TMsgCompose;
     m->file_basename = out_fn.c_str();
     m->actual_filename = newfn(out_fn);
     m->filehash = gen_hash(out_fn.c_str());
@@ -5516,11 +5574,11 @@ dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filena
     vc body = v[0];
     vc from = body[QM_BODY_FROM];
     vc attachment = body[QM_BODY_ATTACHMENT];
-    vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
-    if(user_filename.is_nil() || attachment.is_nil())
+    //vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
+    if(attachment.is_nil())
         return 0;
     DwString a((const char *)attachment, 0, attachment.len());
-    if(a.rfind(".fle") != a.length() - 4)
+    if(!(a.rfind(".fle") == a.length() - 4 || a.rfind(".dyc") == a.length() - 4))
         return 0;
 
 
@@ -5594,11 +5652,11 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
 
     from = body[QM_BODY_FROM];
     attachment = body[QM_BODY_ATTACHMENT];
-    vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
-    if(user_filename.is_nil() || attachment.is_nil())
+    //vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
+    if(attachment.is_nil())
         return 0;
     DwString a((const char *)attachment, 0, attachment.len());
-    if(a.rfind(".fle") != a.length() - 4)
+    if(!(a.rfind(".fle") == a.length() - 4 || a.rfind(".dyc") == a.length() - 4))
         return 0;
 
     DwString s2;
@@ -6677,7 +6735,7 @@ DWYCOEXPORT
 int
 dwyco_get_message_index2(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, int *available_count_out, int load_count)
 {
-    vc& ret = *new vc;
+    vc& ret = *new vc(VC_VECTOR);
     vc u(VC_BSTRING, uid, len_uid);
     vc tmp = load_msg_index(u, load_count);
     if(tmp.is_nil())
@@ -6695,6 +6753,29 @@ dwyco_get_message_index2(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, 
 
     *list_out = (DWYCO_MSG_IDX)&ret;
     return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, long logical_clock)
+{
+    vc& ret = *new vc(VC_VECTOR);
+    vc u(VC_BSTRING, uid, len_uid);
+    vc tmp = msg_idx_get_new_msgs(u, logical_clock);
+    if(tmp.is_nil())
+    {
+        delete &ret;
+        return 0;
+    }
+    int n = tmp.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        ret.append(tmp[i]);
+    }
+
+    *list_out = (DWYCO_MSG_IDX)&ret;
+    return 1;
+
 }
 
 DWYCOEXPORT

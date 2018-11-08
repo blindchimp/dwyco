@@ -20,6 +20,7 @@ Page {
     property alias msg_text: msg_text.text
     property bool dragging
     property bool fav
+    property bool hid
 
     anchors.fill:parent
     onVisibleChanged: {
@@ -39,6 +40,8 @@ Page {
     fav: { (mid.length > 0) ?
              (core.get_fav_message(mid) === 1) : false
     }
+
+    hid: {mid.length > 0 ? core.has_tag_message(mid, "_hid") === 1 : false}
 
     Connections {
         target: core
@@ -88,10 +91,26 @@ Page {
                         core.set_fav_message(mid, !fav)
                         // oops, breaks binding
                         //fav = !fav
+                        // this just causes the binding to be
+                        // recomputed, probably a better way of doing this
+                        // eventually, like onMid_tag_changed signal
                         var save_mid = mid
                         mid = ""
                         mid = save_mid
-                        themsglist.reload_model()
+                        //themsglist.reload_model()
+                    }
+                }
+                MenuItem {
+                    text: hid ? "Unhide" : "Hide"
+                    onTriggered: {
+                        if(hid)
+                            core.unset_tag_message(mid, "_hid")
+                        else
+                            core.set_tag_message(mid, "_hid")
+                        var save_mid = mid
+                        mid = ""
+                        mid = save_mid
+                        //themsglist.reload_model()
                     }
                 }
 
@@ -110,6 +129,7 @@ Page {
 
     MsgReport {
         id: msg_report
+        visible: false
     }
 
     header: SimpleToolbar {
@@ -133,6 +153,33 @@ Page {
                 scale = 1.0
             }
 
+        }
+
+        Rectangle {
+            id: isfav
+            width: 32
+            height: 32
+            anchors.top: parent.top
+            anchors.left: parent.left
+            visible: fav
+            z: 3
+            color: primary_light
+            radius: width / 2
+            Image {
+                anchors.fill: parent
+                anchors.margins: 2
+                source: mi("ic_star_black_24dp.png")
+            }
+        }
+        Rectangle {
+            id: hidden
+            width: 32
+            height: 32
+            anchors.right:parent.right
+            anchors.top:parent.top
+            visible: hid
+            z: 3
+            color: "orange"
         }
 
         Text {
@@ -174,7 +221,7 @@ Page {
     }
     BusyIndicator {
         id: busy1
-        running: view_source == ""
+        running: view_source == "" && view_id !== -1
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         z: 20

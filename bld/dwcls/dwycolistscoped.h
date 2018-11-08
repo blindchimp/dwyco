@@ -8,32 +8,32 @@
 */
 #ifndef DWYCOLISTSCOPED_H
 #include "dlli.h"
-#include <stdlib.h>
 
-struct dwyco_list
+struct simple_scoped
 {
 private:
-    dwyco_list();
-    dwyco_list(const dwyco_list&);
+    simple_scoped();
+    simple_scoped(const simple_scoped&);
     DWYCO_LIST value;
 public:
-    dwyco_list(DWYCO_LIST v) {
+    simple_scoped(DWYCO_LIST v) {
         value = v;
     }
-
+    ~simple_scoped() {
+        if(value) dwyco_list_release(value);
+    }
     operator DWYCO_LIST() {
         return value;
-    }
-
-    void release() {
-        if(value)
-            dwyco_list_release(value);
     }
     int rows() {
         int n;
         if(dwyco_list_numelems(value, &n, 0))
             return n;
+#ifdef DWYCO_THROW
+        throw -1;
+#else
         return 0;
+#endif
     }
 
     template<class T> T get(int row, const char *col) {
@@ -41,7 +41,11 @@ public:
         int len;
         int type;
         if(!dwyco_list_get(value, row, col, &val, &len, &type))
+#ifdef DWYCO_THROW
+            throw -1;
+#else
             return T();
+#endif
         if(type != DWYCO_TYPE_STRING)
             return T();
         return T(val, len);
@@ -59,38 +63,15 @@ public:
         int len;
         int type;
         if(!dwyco_list_get(value, row, col, &val, &len, &type))
+#ifdef DWYCO_THROW
+            throw -1;
+#else
             return 0;
+#endif
         if(type == DWYCO_TYPE_NIL)
             return 1;
         else
             return 0;
-    }
-    int get_long(int row, const char *col) {
-        const char *val;
-        int len;
-        int type;
-        if(!dwyco_list_get(value, row, col, &val, &len, &type))
-            return 0;
-        if(type == DWYCO_TYPE_INT)
-        {
-            return atol(val);
-        }
-        else
-            return 0;
-    }
-
-};
-
-struct simple_scoped : public dwyco_list
-{
-private:
-    simple_scoped();
-    simple_scoped(const simple_scoped&);
-public:
-    simple_scoped(DWYCO_LIST v): dwyco_list(v) {
-    }
-    ~simple_scoped() {
-        release();
     }
 };
 

@@ -21,7 +21,7 @@ $${VCCFG_COMP} \
 ../vorbis112/include \
 ../libuv/include
 
-linux-g++*: INCLUDEPATH += ../v4lcap
+linux-*: INCLUDEPATH += ../v4lcap
 
 FORCE_DESKTOP_VGQT=0
 
@@ -36,7 +36,7 @@ DEFINES += DW_RTLOG
 #LCL_DFLAGS += -DLEAK_CLEANUP
 DEFINES += DWYCO_FIELD_DEBUG
 
-macx-g++|linux-g++|linux-g++-64|macx-ios-clang|macx-clang|android-* {
+macx-*|linux-*|macx-ios-clang|macx-clang|android-* {
 QMAKE_CXXFLAGS += -fpermissive
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 INCLUDEPATH += winemu

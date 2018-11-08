@@ -14,7 +14,11 @@ INCLUDEPATH += ../dwcls ../cdc32 ../cdc32/winemu ../speex/include
 DEFINES += UWB_SAMPLING UWB_SAMPLE_RATE=44100
 
 SOURCES = \
-aextsdl.cc \
-esdaqaud.cc \
-esdaudin.cpp \
 v4l2cap.cpp
+
+equals(DWYCO_USE_LINUX_AUDIO, 1) {
+SOURCES += aextsdl.cc \
+esdaqaud.cc \
+esdaudin.cpp
+}
+

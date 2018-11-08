@@ -22,5 +22,6 @@ void clear_msg_idx_uid(vc uid);
 vc get_unfav_msgids(vc uid);
 void clear_indexed_flag(vc uid);
 vc sql_get_recent_users2(int max_age, int max_count);
+vc msg_idx_get_new_msgs(vc uid, vc logical_clock);
 
 #endif
