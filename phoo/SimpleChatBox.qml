@@ -628,7 +628,7 @@ Page {
             }
 
             onAtYEndChanged: {
-                console.log("at y end ", atYEnd)
+                console.log("at y end ", atYEnd, "lb ", lock_to_bottom)
                 if(lock_to_bottom && !atYEnd)
                 {
                     listView1.positionViewAtBeginning()
@@ -637,9 +637,9 @@ Page {
                     lock_to_bottom = true
 
             }
-            onAtYBeginningChanged: {
-                console.log("at y beg ", atYBeginning)
-            }
+//            onAtYBeginningChanged: {
+//                console.log("at y beg ", atYBeginning)
+//            }
         }
     }
 
