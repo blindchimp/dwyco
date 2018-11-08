@@ -50,6 +50,7 @@ public:
 
 public slots:
     void msg_recv_status(int cmd, const QString& mid);
+    void mid_tag_changed(QString mid);
 
 private:
     QString m_uid;
