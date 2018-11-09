@@ -196,17 +196,34 @@ ApplicationWindow {
     
     Drawer {
         id: drawer
-        interactive: {stack.depth === 1}
+        interactive: {stack.depth === 1 && profile_bootstrapped && server_account_created}
+        width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
+        height: applicationWindow1.height
 
         AppDrawer {
-
+            id: drawer_contents
             padding: 0
-            width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
-            height: applicationWindow1.height
+            //width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
+            //height: applicationWindow1.height
             onClose: {
                 drawer.close()
             }
 
+            Connections {
+                target: core
+                onProfile_update: {
+                    drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
+                    drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
+                }
+            }
+
+            onVisibleChanged: {
+                if(visible) {
+                    drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
+                    drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
+                }
+
+            }
         }
     }
 

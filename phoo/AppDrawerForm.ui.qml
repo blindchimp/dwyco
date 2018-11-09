@@ -24,44 +24,92 @@ Pane {
     property alias quiet_switch: quiet_switch
     property alias browse_tags_button: browse_tags_button
     property alias browse_hidden_button: browse_hidden_button
+    property real ctrl_pad: 4
+    property alias circularImage: circularImage
+    property alias text1: text1
+    padding: 6
 
     ColumnLayout {
         id: columnLayout
+        spacing: 3
         anchors.fill: parent
+
+        RowLayout {
+            id: rowLayout
+            //width: 100
+            //height: 100
+            Layout.fillWidth: true
+
+            CircularImage {
+                id: circularImage
+                Layout.maximumHeight: 32
+                Layout.maximumWidth: 32
+                Layout.minimumHeight: 32
+                Layout.minimumWidth: 32
+                Layout.margins: ctrl_pad
+            }
+
+            Text {
+                id: text1
+                text: qsTr("Text")
+                clip: true
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                Layout.fillWidth: true
+                Layout.margins: ctrl_pad
+                font.pixelSize: 12
+            }
+        }
 
         ItemDelegate {
             id: lock_and_exit_button
             text: qsTr("Lock and exit")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
+
             Layout.fillWidth: true
         }
 
         ItemDelegate {
             id: browse_tags_button
             text: qsTr("Browse Favs")
+            padding: ctrl_pad
             Layout.fillWidth: true
         }
 
         ItemDelegate {
             id: browse_hidden_button
             text: qsTr("Browse Hidden")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
             Layout.fillWidth: true
         }
 
         ItemDelegate {
             id: profile_button
             text: qsTr("Update profile...")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
             Layout.fillWidth: true
         }
 
         Switch {
             id: quiet_switch
             text: qsTr("Quiet")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
             Layout.fillWidth: true
         }
 
         Switch {
             id: invisible_switch
             text: qsTr("Invisible")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
             Layout.fillWidth: true
         }
 
@@ -79,6 +127,9 @@ Pane {
         ItemDelegate {
             id: settings_button
             text: qsTr("Settings")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
             Layout.fillWidth: true
         }
 
@@ -90,6 +141,9 @@ Pane {
         ItemDelegate {
             id: vid_preview_button
             text: qsTr("Preview")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
             //visible: false
             Layout.fillWidth: true
         }
