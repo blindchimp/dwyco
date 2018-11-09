@@ -10,9 +10,9 @@ import QtQuick 2.9
 import QtQuick.Controls 2.2
 
 AppDrawerForm {
-    //property bool dwy_invis
-    //property bool dwy_quiet
+
     signal close()
+
     browse_hidden_button.onClicked: {
         simp_tag_browse.to_tag = "_hid"
         stack.push(simp_tag_browse)
