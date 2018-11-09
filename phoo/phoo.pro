@@ -32,7 +32,7 @@ macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 
 #QMAKE_MAC_SDK = macosx10.9
-#DEFINES += DWYCO_RELEASE
+DEFINES += DWYCO_RELEASE
 ICON=greenguy.icns
 RC_FILE=phoo.rc
 

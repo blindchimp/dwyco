@@ -30,7 +30,7 @@ static
 void
 myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
-#if 1
+#if 0
     if(msg.contains("Timers cannot be stopped from another thread"))
         ::abort();
     if(msg.contains("Timers can only be used with threads started with QThread"))
@@ -41,7 +41,7 @@ myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString
 
 int main(int argc, char *argv[])
 {
-#if 0 && defined(DWYCO_RELEASE)
+#if 1 && defined(DWYCO_RELEASE)
     qInstallMessageHandler(myMessageOutput);
 #endif
 
