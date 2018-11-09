@@ -141,7 +141,7 @@ ApplicationWindow {
     onClosing: {
         // special cases, don't let them navigate around the
         // initial app setup
-        if(!profile_bootstrapped) {
+        if(profile_bootstrapped === 0) {
             close.accepted = false
             return
         }
@@ -196,7 +196,7 @@ ApplicationWindow {
     
     Drawer {
         id: drawer
-        interactive: {stack.depth === 1 && profile_bootstrapped && server_account_created}
+        interactive: {stack.depth === 1 && pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created}
         width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
         height: applicationWindow1.height
 
@@ -746,7 +746,7 @@ ApplicationWindow {
             } else {
                 server_account_created = true
             }
-            if(profile_bootstrapped && !server_account_created) {
+            if(profile_bootstrapped === 1 && !server_account_created) {
                 stack.push(blank_page)
             }
 
