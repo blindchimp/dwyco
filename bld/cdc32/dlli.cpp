@@ -403,7 +403,6 @@ using namespace dwyco;
 #undef index
 
 extern vc Pals;
-extern vc Cur_ignore;
 extern vc Session_ignore;
 extern vc Mutual_ignore;
 extern vc Server_list;
