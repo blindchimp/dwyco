@@ -1054,7 +1054,7 @@ Page {
         focusPolicy: Qt.NoFocus
     }
 
-    Button {
+    TipButton {
         id: go_to_bottom
         width: toolButton1.width
         height: toolButton1.height
@@ -1081,6 +1081,7 @@ Page {
             listView1.positionViewAtBeginning()
             lock_to_bottom = true
         }
+        ToolTip.text: "Skip to bottom"
 
     }
 
