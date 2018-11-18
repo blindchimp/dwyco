@@ -176,12 +176,6 @@ Rectangle {
                 text: qsTr("Cancel")
 
             }
-            Rectangle {
-                color: "red"
-                height: parent.height
-                Layout.fillWidth: true
-            }
-
             Item {Layout.fillWidth: true}
             Button {
                 id: set_pin_button
