@@ -10,9 +10,9 @@ import QtQuick 2.9
 import QtQuick.Controls 2.2
 
 AppDrawerForm {
-    //property bool dwy_invis
-    //property bool dwy_quiet
+
     signal close()
+
     browse_hidden_button.onClicked: {
         simp_tag_browse.to_tag = "_hid"
         stack.push(simp_tag_browse)
@@ -30,22 +30,22 @@ AppDrawerForm {
         stack.push(vid_cam_preview)
         close()
     }
-    about_button.onClicked: {
-        stack.push(about_dialog)
-        close()
-    }
+//    about_button.onClicked: {
+//        stack.push(about_dialog)
+//        close()
+//    }
     settings_button.onClicked: {
         stack.push(settings_dialog)
         close()
     }
-    pin_lock_button.onClicked: {
-        stack.push(pwchange_dialog)
-        close()
-    }
-    block_list_button.onClicked: {
-        stack.push(iglist_dialog)
-        close()
-    }
+//    pin_lock_button.onClicked: {
+//        stack.push(pwchange_dialog)
+//        close()
+//    }
+//    block_list_button.onClicked: {
+//        stack.push(iglist_dialog)
+//        close()
+//    }
 
     profile_button.onClicked: {
         profile_update_dialog.preview_existing = true

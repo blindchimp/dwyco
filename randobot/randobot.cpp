@@ -220,10 +220,19 @@ uid_due_randos()
     // TODO: put some prioritization in here so that users that haven't received anything
     // lately are put on the top of the q
     D->start_transaction();
+    // c1 is count of received randos from each non-seeder uid
     D->sql_simple("create temp table c1 as select count(*) as cr, from_uid from randos where from_uid not in (select uid from seeder) group by from_uid");
+
+    // delete from c1 if a uid has been sent 3 or more randos in the last hour
     D->sql_simple("delete from c1 where from_uid in (select to_uid from sent_to where strftime('%s', 'now') - time < 3600 group by to_uid having(count(*) > 2));");
+
+    // c2 is the count of messages sent to uid
     D->sql_simple("create temp table c2 as select count(*) as cs, to_uid from sent_to group by to_uid");
+
+    // list of all uids that have sent in more than they have received
     vc res = D->sql_simple("select from_uid,c1.cr - c2.cs from c1,c2 where c1.from_uid = c2.to_uid and c1.cr > c2.cs");
+
+    // list of all uids that have sent something in, but never received anything
     vc res2 = D->sql_simple("select from_uid,c1.cr from c1 where from_uid not in (select to_uid from c2);");
     D->sql_simple("drop table c1");
     D->sql_simple("drop table c2");

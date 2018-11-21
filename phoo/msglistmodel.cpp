@@ -338,6 +338,17 @@ msglist_model::mid_to_index(QByteArray bmid)
 }
 
 void
+msglist_model::mid_tag_changed(QString mid)
+{
+    int midi = mlm->mid_to_index(mid.toLatin1());
+    QModelIndex mi = mlm->index(midi, 0);
+    QVector<int> roles;
+    roles.append(IS_HIDDEN);
+    roles.append(IS_FAVORITE);
+    mlm->dataChanged(mi, mi, roles);
+}
+
+void
 msglist_model::delete_all_selected()
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());

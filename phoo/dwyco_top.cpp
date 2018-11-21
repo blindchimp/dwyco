@@ -1435,6 +1435,7 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheIgnoreListModel, SLOT(uid_resolved(QString)));
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString)), mlm, SLOT(msg_recv_status(int,QString)));
+    connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);
@@ -2155,6 +2156,7 @@ DwycoCore::set_fav_message(QString mid, int val)
 {
     QByteArray bmid = mid.toLatin1();
     dwyco_set_fav_msg(bmid.constData(), !!val);
+    emit mid_tag_changed(mid);
 }
 
 int
@@ -2171,6 +2173,7 @@ DwycoCore::set_tag_message(QString mid, QString tag)
     QByteArray bmid = mid.toLatin1();
     QByteArray btag = tag.toLatin1();
     dwyco_set_msg_tag(bmid.constData(), btag.constData());
+    emit mid_tag_changed(mid);
 }
 
 void
@@ -2179,6 +2182,7 @@ DwycoCore::unset_tag_message(QString mid, QString tag)
     QByteArray bmid = mid.toLatin1();
     QByteArray btag = tag.toLatin1();
     dwyco_unset_msg_tag(bmid.constData(), btag.constData());
+    emit mid_tag_changed(mid);
 }
 
 

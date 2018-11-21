@@ -1197,7 +1197,7 @@ init_msg_folder(vc uid, DwString* fn_out)
         do_fetch = 1;
         add_msg_folder(uid);
     }
-    if(do_fetch || !have_user(uid))
+    if(do_fetch || !Session_infos.contains(uid))
     {
         fetch_info(uid);
     }
@@ -2207,13 +2207,6 @@ load_users(int only_recent, int *total_out)
     }
 }
 
-int
-have_user(vc id)
-{
-    if(Session_infos.contains(id))
-        return 1;
-    return 0;
-}
 
 vc
 uid_to_short_text(vc id)

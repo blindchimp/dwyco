@@ -501,7 +501,7 @@ Page {
         }
         onSys_uid_resolved: {
             if(chatbox.to_uid === uid) {
-                // try to defeat caching since the actual name of the name
+                // try to defeat caching since the actual name
                 // of the "preview url" hasn't changed, but the contents have
                 cur_source = ""
                 cur_source = core.uid_to_profile_preview(uid)
@@ -1060,7 +1060,7 @@ Page {
         focusPolicy: Qt.NoFocus
     }
 
-    Button {
+    TipButton {
         id: go_to_bottom
         width: toolButton1.width
         height: toolButton1.height
@@ -1087,6 +1087,7 @@ Page {
             listView1.positionViewAtBeginning()
             lock_to_bottom = true
         }
+        ToolTip.text: "Skip to bottom"
 
     }
 
