@@ -45,11 +45,11 @@ import QtQuick.Controls 2.1
 import dwyco 1.0
 
 Item {
-    property Camera camera
+    //property Camera camera
     property bool previewAvailable : false
     property int  cur_cam: 0
 
-    id : captureControls
+    //id : captureControls
     anchors {
         bottom: parent.bottom
         margins: 8
@@ -82,8 +82,19 @@ Item {
             onClicked: {
                 file_captured = ""
                 //camera.imageCapture.capture()
-                camera.imageCapture.captureToLocation(core.tmp_dir)
+                //camera.imageCapture.captureToLocation(core.tmp_dir)
+                console.log("cam st ", camera.lockStatus == Camera.Unlocked)
+                console.log("cam af ", camera.focus.isFocusModeSupported(CameraFocus.FocusAuto))
+                if(camera.focus.isFocusModeSupported(CameraFocus.FocusAuto) && camera.lockStatus == Camera.Unlocked)
+                    camera.searchAndLock()
+                else
+                    camera.imageCapture.captureToLocation(core.tmp_dir)
             }
+            onVisibleChanged: {
+                if(visible)
+                    camera.unlock()
+            }
+
             Layout.fillWidth: true
         }
         
@@ -93,7 +104,15 @@ Item {
             visible: QtMultimedia.availableCameras.length > 1
             onClicked: {
                 cur_cam = (cur_cam == 0 ? 1 : 0)
-                captureControls.camera.deviceId = QtMultimedia.availableCameras[cur_cam].deviceId
+                // note sure if this a bug or not...
+                // seems like sometimes when the camera
+                // is locked, and you change the device_id, it
+                // doesn't unlock it... like the searchAndLock fails
+                // if the target camera doesn't support autofocus or
+                // whatever. these unlocks work around the problem.
+                camera.unlock()
+                camera.deviceId = QtMultimedia.availableCameras[cur_cam].deviceId
+                camera.unlock()
             }
             Layout.fillWidth: true
         }

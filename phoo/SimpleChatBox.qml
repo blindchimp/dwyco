@@ -625,11 +625,11 @@ Page {
             onMovementStarted: {
                 if(atYEnd)
                     lock_to_bottom = false
-                console.log("move start aty ", atYEnd, "lb ", lock_to_bottom)
+                //console.log("move start aty ", atYEnd, "lb ", lock_to_bottom)
             }
 
             onAtYEndChanged: {
-                console.log("at y end ", atYEnd)
+                //console.log("at y end ", atYEnd)
                 if(lock_to_bottom && !atYEnd)
                 {
                     listView1.positionViewAtBeginning()
@@ -639,7 +639,7 @@ Page {
 
             }
             onAtYBeginningChanged: {
-                console.log("at y beg ", atYBeginning)
+                //console.log("at y beg ", atYBeginning)
             }
         }
     }
@@ -664,7 +664,7 @@ Page {
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             onHeightChanged: {
-                console.log("del ", model.index, "ch to ", ditem.height)
+                //console.log("del ", model.index, "ch to ", ditem.height)
 //                if(lock_to_bottom) {
 //                    listView1.positionViewAtBeginning()
 //                }
