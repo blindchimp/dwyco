@@ -9184,7 +9184,7 @@ dwyco_background_db_login_result(const char *str, int what)
 
 DWYCOEXPORT
 int
-dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx)
+dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
 {
 #ifndef WIN32
     signal(SIGPIPE, SIG_IGN);
@@ -9203,6 +9203,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     dwyco_set_client_version("dwycobg", 7);
     dwyco_set_initial_invis(1);
     dwyco_bg_init();
+    if(token)
+        dwyco_write_token(token);
 
     //dwyco_set_setting("call_acceptance/no_listen", "1");
     set_listen_state(0);
@@ -9211,7 +9213,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     // calling stuff sorted out (needs a protocol change to alert
     // regarding incoming calls, etc.) we just let everything go
     // via the server.
-    dwyco_inhibit_sac(1);
+    //dwyco_inhibit_sac(1);
     dwyco_inhibit_pal(1);
 
     if(dwyco_get_create_new_account())
