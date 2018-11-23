@@ -37,7 +37,13 @@ import com.google.firebase.messaging.RemoteMessage;
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "MyFirebaseMsgService";
+    private static SocketLock prefs_lock;
 
+@Override
+public void onCreate() {
+    super.onCreate();
+    prefs_lock = new SocketLock("com.dwyco.phoo.prefs");
+    }
 
     /**
      * Called when message is received.
@@ -146,5 +152,34 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         m_notificationManager.notify(1, not);
 
     }
+
+/**
+ * Called if InstanceID token is updated. This may occur if the security of
+ * the previous token had been compromised. Note that this is called when the InstanceID token
+ * is initially generated so this is where you would retrieve the token.
+ */
+@Override
+public void onNewToken(String token) {
+    Log.d(TAG, "Refreshed token: " + token);
+
+    // If you want to send messages to this application instance or
+    // manage this apps subscriptions on the server side, send the
+    // Instance ID token to your app server.
+    sendRegistrationToServer(token);
+}
+
+private void sendRegistrationToServer(String token) {
+    prefs_lock.lock();
+    SharedPreferences sp;
+    sp = getSharedPreferences("phoo", MODE_PRIVATE);
+    SharedPreferences.Editor pe = sp.edit();
+    pe.putString("token", token);
+    pe.commit();
+    prefs_lock.release();
+
+    Log.d(TAG, "wrote token: " + token);
+    //dwybg.dwyco_write_token(token);
+}
+
 
 }

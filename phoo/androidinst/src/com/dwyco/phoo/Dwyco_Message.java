@@ -58,6 +58,7 @@ public class Dwyco_Message extends StickyIntentService {
         String sys_pfx;
         String user_pfx;
         String tmp_pfx;
+        String token;
 
         if(intent == null) {
             // restart, fetch the values from preferences
@@ -67,11 +68,13 @@ public class Dwyco_Message extends StickyIntentService {
             sys_pfx = sp.getString("sys_pfx", ".");
             user_pfx = sp.getString("user_pfx", ".");
             tmp_pfx = sp.getString("tmp_pfx", ".");
+            token = sp.getString("token", "notoken");
         } else {
             port = intent.getIntExtra("lockport", 4500);
             sys_pfx = intent.getStringExtra("sys_pfx");
             user_pfx = intent.getStringExtra("user_pfx");
             tmp_pfx = intent.getStringExtra("tmp_pfx");
+            token = intent.getStringExtra("token");
 
             // write it back out for later if we need to restart
             sp = context.getSharedPreferences("dwyco_msg", MODE_PRIVATE);
@@ -80,6 +83,7 @@ public class Dwyco_Message extends StickyIntentService {
             pe.putString("sys_pfx", sys_pfx);
             pe.putString("user_pfx", user_pfx);
             pe.putString("tmp_pfx", tmp_pfx);
+            pe.putString("token", token);
             pe.commit();
         }
     prefs_lock.release();
@@ -87,6 +91,7 @@ public class Dwyco_Message extends StickyIntentService {
         catchLog(user_pfx);
         catchLog(tmp_pfx);
         catchLog(String.valueOf(port));
+        catchLog(token);
         poller_thread();
         dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx);
         catchLog("background died");

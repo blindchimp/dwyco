@@ -54,11 +54,6 @@
 </receiver>
 <service android:name="com.dwyco.phoo.Dwyco_Message" android:enabled="true" android:process=":dwycobg">
 </service>
-<service android:name=".MyFirebaseInstanceIDService">
-    <intent-filter>
-        <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
-    </intent-filter>
-</service>
 <service android:name=".MyFirebaseMessagingService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
