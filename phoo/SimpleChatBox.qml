@@ -624,11 +624,11 @@ Page {
             onMovementStarted: {
                 if(atYEnd)
                     lock_to_bottom = false
-                console.log("move start aty ", atYEnd, "lb ", lock_to_bottom)
+                //console.log("move start aty ", atYEnd, "lb ", lock_to_bottom)
             }
 
             onAtYEndChanged: {
-                console.log("at y end ", atYEnd, "lb ", lock_to_bottom)
+                //console.log("at y end ", atYEnd)
                 if(lock_to_bottom && !atYEnd)
                 {
                     listView1.positionViewAtBeginning()
@@ -637,9 +637,9 @@ Page {
                     lock_to_bottom = true
 
             }
-//            onAtYBeginningChanged: {
-//                console.log("at y beg ", atYBeginning)
-//            }
+            onAtYBeginningChanged: {
+                //console.log("at y beg ", atYBeginning)
+            }
         }
     }
 
@@ -663,7 +663,7 @@ Page {
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             onHeightChanged: {
-                console.log("del ", model.index, "ch to ", ditem.height)
+                //console.log("del ", model.index, "ch to ", ditem.height)
 //                if(lock_to_bottom) {
 //                    listView1.positionViewAtBeginning()
 //                }
@@ -1053,7 +1053,7 @@ Page {
         focusPolicy: Qt.NoFocus
     }
 
-    Button {
+    TipButton {
         id: go_to_bottom
         width: toolButton1.width
         height: toolButton1.height
@@ -1080,6 +1080,7 @@ Page {
             listView1.positionViewAtBeginning()
             lock_to_bottom = true
         }
+        ToolTip.text: "Skip to bottom"
 
     }
 
