@@ -85,10 +85,14 @@ Item {
                 //camera.imageCapture.captureToLocation(core.tmp_dir)
                 console.log("cam st ", camera.lockStatus == Camera.Unlocked)
                 console.log("cam af ", camera.focus.isFocusModeSupported(CameraFocus.FocusAuto))
-                if(camera.focus.isFocusModeSupported(CameraFocus.FocusAuto) && camera.lockStatus == Camera.Unlocked)
-                    camera.searchAndLock()
-                else
+                if(Qt.platform.os == "ios") {
                     camera.imageCapture.captureToLocation(core.tmp_dir)
+                } else {
+                    if(camera.focus.isFocusModeSupported(CameraFocus.FocusAuto) && camera.lockStatus == Camera.Unlocked)
+                        camera.searchAndLock()
+                    else
+                        camera.imageCapture.captureToLocation(core.tmp_dir)
+                }
             }
             onVisibleChanged: {
                 if(visible)

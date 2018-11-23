@@ -89,8 +89,8 @@ Page {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: mm(3)
-        spacing: mm(3)
+        anchors.margins: mm(2)
+        spacing: mm(1)
 
         CheckBox {
             id: cb_pin_expire
