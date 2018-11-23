@@ -33,6 +33,8 @@ import android.content.SharedPreferences;
 //import com.firebase.jobdispatcher.Job;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import android.os.Build;
+import android.os.Build.VERSION;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
@@ -127,7 +129,13 @@ public void onCreate() {
         Context m_instance = getApplicationContext();
         NotificationManager m_notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
-        Notification.Builder m_builder = new Notification.Builder(m_instance);
+        Notification.Builder m_builder;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        m_builder = new Notification.Builder(m_instance, "dwyco");
+        } else {
+        m_builder = new Notification.Builder(m_instance);
+        }
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);

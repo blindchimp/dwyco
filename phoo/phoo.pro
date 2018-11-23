@@ -351,7 +351,6 @@ DISTFILES += \
     androidinst/src/com/dwyco/phoo/dwybgJNI.java \
     androidinst/src/com/dwyco/phoo/Dwyco_Message.java \
     androidinst/src/com/dwyco/phoo/StickyIntentService.java \
-    androidinst/src/com/dwyco/phoo/MyFirebaseInstanceIDService.java \
     androidinst/google-services.json \
     androidinst/src/com/dwyco/phoo/SocketLock.java \
     androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java
