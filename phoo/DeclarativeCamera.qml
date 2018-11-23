@@ -134,6 +134,7 @@ Rectangle {
         imageProcessing.whiteBalanceMode: CameraImageProcessing.WhiteBalanceAuto
 
         onLockStatusChanged: {
+            console.log("lock status ", lockStatus)
             if(lockStatus == Camera.Locked) {
                 camera.imageCapture.captureToLocation(core.tmp_dir)
 
