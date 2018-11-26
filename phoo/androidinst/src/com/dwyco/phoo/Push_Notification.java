@@ -44,11 +44,13 @@ public class Push_Notification extends BroadcastReceiver {
             String sys_pfx = sp.getString("sys_pfx", ".");
             String user_pfx = sp.getString("user_pfx", ".");
             String tmp_pfx = sp.getString("tmp_pfx", ".");
+            String token = sp.getString("token", "notoken");
             Intent i = new Intent(context, Dwyco_Message.class);
             i.putExtra("lockport", port);
             i.putExtra("sys_pfx", sys_pfx);
             i.putExtra("user_pfx", user_pfx);
             i.putExtra("tmp_pfx", tmp_pfx);
+            i.putExtra("token", token);
             context.startService(i);
 
         } else {

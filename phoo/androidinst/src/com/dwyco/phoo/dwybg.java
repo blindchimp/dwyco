@@ -9,8 +9,8 @@
 package com.dwyco.phoo;
 
 public class dwybg {
-  public static int dwyco_background_processing(int port, int exit_if_outq_empty, String sys_pfx, String user_pfx, String tmp_pfx) {
-    return dwybgJNI.dwyco_background_processing(port, exit_if_outq_empty, sys_pfx, user_pfx, tmp_pfx);
+  public static int dwyco_background_processing(int port, int exit_if_outq_empty, String sys_pfx, String user_pfx, String tmp_pfx, String token) {
+    return dwybgJNI.dwyco_background_processing(port, exit_if_outq_empty, sys_pfx, user_pfx, tmp_pfx, token);
   }
 
   public static void dwyco_set_aux_string(String str) {

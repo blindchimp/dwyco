@@ -10,7 +10,7 @@ import QtQuick 2.9
 //import QtQuick.Window 2.2
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.2
-import QtQuick.Controls.Material 2.1
+//import QtQuick.Controls.Material 2.1
 
 Rectangle {
     property int password_ok
@@ -59,7 +59,12 @@ Rectangle {
 
     ColumnLayout {
         id: topcol
-        anchors.fill: parent
+        //anchors.fill: parent
+        anchors.left: parent.left
+        anchors.top:parent.top
+        anchors.right: parent.right
+        anchors.bottom: l3.top
+        anchors.margins: 3
         //anchors.margins: 10
         Label {
             id: l1
@@ -71,7 +76,7 @@ Rectangle {
             id: l2
             Layout.fillWidth: true
 
-            TextField {
+            TextInput {
                 //Layout.columnSpan: 2
                 Layout.fillWidth: true
                 text: pw
@@ -79,21 +84,25 @@ Rectangle {
                 readOnly: true
                 //inputMask: "DDDD"
                 echoMode: {show.checked ? TextInput.Normal : TextInput.Password}
-            }
+
             CheckBox {
                 id: show
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
                 text: "Show"
                 checked: true
                 onClicked: {
                     xhit = xhit + 1
                 }
             }
+            }
+
         }
         GridLayout {
             rows: 3
             columns: 3
             property int sz
-            sz: Math.min(parent.height - l1.height - l2.height - l3.height, parent.width)
+            sz: Math.min(parent.height - l1.height - l2.height /*- l3.height*/, parent.width)
             Layout.minimumHeight: sz
             Layout.minimumWidth: sz
             Layout.maximumHeight: sz
@@ -103,7 +112,7 @@ Rectangle {
             Repeater {
                 model: 8
 
-                Button {
+                RoundButton {
                     contentItem: Text {
                         anchors.centerIn: parent
                         text: index + 1
@@ -111,12 +120,12 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
 
                     }
-                    background: Rectangle {
-                        radius: parent.width / 2
-                        border.color: "blue"
-                        border.width: 3
+//                    background: Rectangle {
+//                        //radius: parent.width / 2
+//                        border.color: "blue"
+//                        border.width: 3
 
-                    }
+//                    }
 
                     Layout.fillWidth: true; Layout.fillHeight: true
 
@@ -127,7 +136,7 @@ Rectangle {
                     }
                 }
             }
-            Button {
+            RoundButton {
                 //text: "x"
                 enabled: { pw.length > 0 }
                 contentItem: Text {
@@ -138,12 +147,12 @@ Rectangle {
                     font.bold: true
 
                 }
-                background: Rectangle {
-                    radius: width / 2
-                    border.color: "red"
-                    border.width: 4
+//                background: Rectangle {
+//                    radius: width / 2
+//                    border.color: "red"
+//                    border.width: 4
 
-                }
+//                }
                 onClicked: {
                     pw = pw.substring(0, pw.length - 1)
                     xhit = 0
@@ -151,12 +160,21 @@ Rectangle {
                 Layout.fillWidth: true; Layout.fillHeight: true
             }
         }
+    }
+
         RowLayout {
             id: l3
             Layout.fillWidth: true
+            height: exit_button.height
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.margins: 3
+
             Button {
                 id: exit_button
                 text: qsTr("Cancel")
+
             }
             Item {Layout.fillWidth: true}
             Button {
@@ -165,5 +183,5 @@ Rectangle {
                 text: qsTr("Set PIN")
             }
         }
-    }
+
 }

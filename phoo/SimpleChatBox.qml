@@ -495,7 +495,7 @@ Page {
         }
         onSys_uid_resolved: {
             if(chatbox.to_uid === uid) {
-                // try to defeat caching since the actual name of the name
+                // try to defeat caching since the actual name
                 // of the "preview url" hasn't changed, but the contents have
                 cur_source = ""
                 cur_source = core.uid_to_profile_preview(uid)
@@ -622,16 +622,24 @@ Page {
                 }
             }
             verticalLayoutDirection: ListView.BottomToTop
-            onFlickStarted: {
-                lock_to_bottom = false
+            onMovementStarted: {
+                if(atYEnd)
+                    lock_to_bottom = false
+                //console.log("move start aty ", atYEnd, "lb ", lock_to_bottom)
             }
 
             onAtYEndChanged: {
-                console.log("at y end ", atYEnd)
+                //console.log("at y end ", atYEnd)
+                if(lock_to_bottom && !atYEnd)
+                {
+                    listView1.positionViewAtBeginning()
+                }
+                else if(atYEnd && !lock_to_bottom)
+                    lock_to_bottom = true
 
             }
             onAtYBeginningChanged: {
-                console.log("at y beg ", atYBeginning)
+                //console.log("at y beg ", atYBeginning)
             }
         }
     }
@@ -656,10 +664,10 @@ Page {
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             onHeightChanged: {
-                console.log("del ", model.index, "ch to ", ditem.height)
-                if(lock_to_bottom) {
-                    listView1.positionViewAtBeginning()
-                }
+                //console.log("del ", model.index, "ch to ", ditem.height)
+//                if(lock_to_bottom) {
+//                    listView1.positionViewAtBeginning()
+//                }
             }
 
             Image {
@@ -1046,7 +1054,7 @@ Page {
         focusPolicy: Qt.NoFocus
     }
 
-    Button {
+    TipButton {
         id: go_to_bottom
         width: toolButton1.width
         height: toolButton1.height
@@ -1073,6 +1081,7 @@ Page {
             listView1.positionViewAtBeginning()
             lock_to_bottom = true
         }
+        ToolTip.text: "Skip to bottom"
 
     }
 

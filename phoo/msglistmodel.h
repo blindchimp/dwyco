@@ -50,6 +50,7 @@ public:
 
 public slots:
     void msg_recv_status(int cmd, const QString& mid);
+    void mid_tag_changed(QString mid);
 
 private:
     QString m_uid;
@@ -60,6 +61,8 @@ private:
     int filter_last_n;
     int filter_only_favs;
     int filter_show_hidden;
+
+    void force_reload_model();
 
 signals:
     void uidChanged();
@@ -81,7 +84,7 @@ public:
 
     void setUid(const QString& uid);
     void setTag(const QString& tag);
-    void reload_model();
+    void reload_model(int force = 0);
     void reload_inbox_model();
 
 private:

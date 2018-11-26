@@ -1,18 +1,7 @@
 <?xml version="1.0"?>
-<manifest package="com.dwyco.phoo" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="2.0" android:versionCode="75" android:installLocation="auto">
-    <application
-    android:hardwareAccelerated="true"
-    android:name="org.qtproject.qt5.android.bindings.QtApplication"
-    android:label="-- %%INSERT_APP_NAME%% --"
-    android:icon="@drawable/icon"
-    >
-        <activity
-    android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation"
-    android:name="com.dwyco.phoo.NotificationClient"
-    android:label="-- %%INSERT_APP_NAME%% --"
-    android:screenOrientation="unspecified"
-    android:launchMode="singleTop"
-    android:windowSoftInputMode="adjustResize">
+<manifest package="com.dwyco.phoo" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="2.0" android:versionCode="84" android:installLocation="auto">
+    <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="-- %%INSERT_APP_NAME%% --" android:icon="@drawable/icon">
+        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="com.dwyco.phoo.NotificationClient" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="unspecified" android:launchMode="singleTop" android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -64,11 +53,6 @@
 </intent-filter>
 </receiver>
 <service android:name="com.dwyco.phoo.Dwyco_Message" android:enabled="true" android:process=":dwycobg">
-</service>
-<service android:name=".MyFirebaseInstanceIDService">
-    <intent-filter>
-        <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
-    </intent-filter>
 </service>
 <service android:name=".MyFirebaseMessagingService">
             <intent-filter>
