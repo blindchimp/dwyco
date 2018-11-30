@@ -240,6 +240,8 @@ public:
     Q_INVOKABLE void select_vid_dev(int i);
     Q_INVOKABLE void enable_video_capture_preview(int i);
 
+    Q_INVOKABLE void set_badge_number(int i);
+
 public:
     void setClient_name(const QString& a) {
         if(a != m_client_name)

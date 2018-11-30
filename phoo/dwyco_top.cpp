@@ -64,8 +64,13 @@
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
 #include "vgqt.h"
 #endif
-void init_mac_drivers();
 
+
+#ifdef MACOSX
+#include <QtMacExtras>
+#endif
+
+void init_mac_drivers();
 
 namespace jhead {
 int do_jhead(const char *);
@@ -1520,6 +1525,18 @@ DwycoCore::init()
     {
         dwyco_set_setting("call_acceptance/max_audio_recv", "0");
     }
+}
+
+void
+DwycoCore::set_badge_number(int i)
+{
+#ifdef MACOSX
+    if(i == 0)
+        QtMac::setBadgeLabelText("");
+    else
+        QtMac::setBadgeLabelText(QString::number(i));
+
+#endif
 }
 
 int
