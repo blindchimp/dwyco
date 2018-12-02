@@ -243,6 +243,8 @@ public:
     // test stuff
     Q_INVOKABLE void start_gj(QString uid, QString password);
 
+    Q_INVOKABLE void set_badge_number(int i);
+
 public:
     void setClient_name(const QString& a) {
         if(a != m_client_name)

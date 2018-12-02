@@ -9272,7 +9272,7 @@ dwyco_background_db_login_result(const char *str, int what)
 
 DWYCOEXPORT
 int
-dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx)
+dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
 {
 #ifndef WIN32
     signal(SIGPIPE, SIG_IGN);
@@ -9291,6 +9291,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     dwyco_set_client_version("dwycobg", 7);
     dwyco_set_initial_invis(1);
     dwyco_bg_init();
+    if(token)
+        dwyco_write_token(token);
 
     //dwyco_set_setting("call_acceptance/no_listen", "1");
     set_listen_state(0);

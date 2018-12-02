@@ -8,7 +8,7 @@
 */
 
 import QtQuick 2.6
-import QtMultimedia 5.6
+import QtMultimedia 5.8
 import QtQuick.Controls 2.2
 
 // the API to this object is ugly... essentially, the requirement is
@@ -110,11 +110,14 @@ Rectangle {
                 photoPreview.source = preview
                 cameraUI.state = "PhotoPreview"
                 console.log("orientation ", camera.orientation)
+                console.log("focus auto ",focus.isFocusModeSupported(CameraFocus.FocusAuto))
+                camera.unlock()
                 //photoPreview.ok_vis = false
             }
 
             onCaptureFailed: {
                 console.log("cap failed ", message)
+                camera.unlock()
             }
 
             onImageSaved: {
@@ -123,6 +126,22 @@ Rectangle {
                 
             }
         }
+
+        focus {
+            focusMode: CameraFocus.FocusAuto
+        }
+
+        imageProcessing.whiteBalanceMode: CameraImageProcessing.WhiteBalanceAuto
+
+        onLockStatusChanged: {
+            console.log("lock status ", lockStatus)
+            if(lockStatus == Camera.Locked) {
+                camera.imageCapture.captureToLocation(core.tmp_dir)
+
+            }
+
+        }
+
 
     }
 
@@ -152,7 +171,7 @@ Rectangle {
         PhotoCaptureControls {
             id: stillControls
             //anchors.fill: parent
-            camera: camera
+            //camera: camera
             visible: cameraUI.state == "PhotoCapture"
             z: 5
         }

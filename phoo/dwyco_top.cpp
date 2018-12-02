@@ -64,8 +64,13 @@
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
 #include "vgqt.h"
 #endif
-void init_mac_drivers();
 
+
+#ifdef MACOSX
+#include <QtMacExtras>
+#endif
+
+void init_mac_drivers();
 
 namespace jhead {
 int do_jhead(const char *);
@@ -1403,6 +1408,22 @@ DwycoCore::init()
     else
         inv = 1;
     dwyco_set_initial_invis(inv);
+#ifdef ANDROID
+    // this is a kluge for android
+    // the FCM token may or not be available at this point, but
+    // eventually it will be (we hope). so write it out so it gets
+    // sent to the server on login. if it doesn't get out properly, it
+    // isn't the end of the world, the user may not get notifications
+    // right away while the app is in the background, the phone is snoozing, etc.etc.
+    // they will get the notification eventually when they restart the app tho
+    // this should eventually be made a little more robust, but for now it is ok.
+    QString token = notificationClient->get_token();
+    // note: kinda assume the token is 8-bit ascii, but who knows
+    QByteArray b = token.toLatin1();
+    dwyco_write_token(b.constData());
+
+#endif
+
     if(!dwyco_init())
         ::abort();
     dwyco_set_setting("zap/always_server", "0");
@@ -1504,6 +1525,18 @@ DwycoCore::init()
     {
         dwyco_set_setting("call_acceptance/max_audio_recv", "0");
     }
+}
+
+void
+DwycoCore::set_badge_number(int i)
+{
+#ifdef MACOSX
+    if(i == 0)
+        QtMac::setBadgeLabelText("");
+    else
+        QtMac::setBadgeLabelText(QString::number(i));
+
+#endif
 }
 
 int

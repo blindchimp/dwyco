@@ -1443,7 +1443,7 @@ void DWYCOEXPORT dwyco_sub_get(const char **reg_out, int *len_out);
 // at which time, the process that called this function should exit.
 // the exit will release the "lock" and allow the main app to continue
 // normally.
-int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx);
+int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 // some more helper functions called from java for android related stuff
 // strings in this case are utf-8, null terminated i hope
 void DWYCOEXPORT dwyco_set_aux_string(const char *str);

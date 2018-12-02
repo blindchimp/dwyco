@@ -24,7 +24,10 @@ INSTALLS += appdir_icon appdir_desktop
 
 QT += core qml quick multimedia network xml widgets #positioning
 QT += quickcontrols2
+
 android: QT += androidextras
+macx-clang: QT += macextras
+
 linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
@@ -372,7 +375,6 @@ DISTFILES += \
     androidinst/src/com/dwyco/phoo/dwybgJNI.java \
     androidinst/src/com/dwyco/phoo/Dwyco_Message.java \
     androidinst/src/com/dwyco/phoo/StickyIntentService.java \
-    androidinst/src/com/dwyco/phoo/MyFirebaseInstanceIDService.java \
     androidinst/google-services.json \
     androidinst/src/com/dwyco/phoo/SocketLock.java \
     androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java
