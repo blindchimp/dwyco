@@ -105,6 +105,17 @@ public class NotificationClient extends QtActivity
             }
 
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+                int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                NotificationChannel channel = new NotificationChannel("dwyco", "Dwyco Channel", importance);
+                channel.setDescription("Dwyco message channel");
+                // Register the channel with the system; you can't change the importance
+                // or other notification behaviors after this
+                NotificationManager notificationManager = getSystemService(NotificationManager.class);
+                notificationManager.createNotificationChannel(channel);
+            }
+
     }
 
     @Override

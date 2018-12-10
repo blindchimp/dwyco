@@ -329,6 +329,7 @@ ApplicationWindow {
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/DeclarativeCamera.qml"
+                //vid_cam_preview.active = false
             }
         }
 
@@ -893,6 +894,10 @@ ApplicationWindow {
             }
         }
 
+        onUnread_countChanged: {
+            set_badge_number(unread_count)
+        }
+
     }
 
     Rectangle {
@@ -919,6 +924,8 @@ ApplicationWindow {
         id: service_timer
         interval: 30; running:true; repeat:true
         onTriggered: {
+            if(!pwdialog.allow_access)
+                return
             //time.text = Date().toString()
             if(core.database_online() !== core.is_database_online) {
                 core.is_database_online = core.database_online()
