@@ -48,7 +48,7 @@ Page {
         id: warn
         visible: {inh_profile_warning === 0}
         z: 3
-        warning: "Dwyco reviews all profiles. It is best if your profile contains no overtly adult language. If your profile has a picture, please be sure it shows a face, and the person is clothed and wearing a shirt. Other profiles are accepted, but are not visible to users that do not wish to view other types of profiles. Thanks."
+        warning: "Dwyco reviews all profiles. It is best if your profile contains no overtly adult language. If your profile has a picture, please be sure it shows a face, and the person is clothed and wearing a shirt. Other profiles are accepted, but are not visible to users that do not wish to view those types of profiles. Thanks."
         inhibit_key: "inh_profile_warning"
     }
 

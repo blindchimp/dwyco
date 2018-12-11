@@ -924,7 +924,7 @@ ApplicationWindow {
         id: service_timer
         interval: 30; running:true; repeat:true
         onTriggered: {
-            if(!pwdialog.allow_access)
+            if(pwdialog.allow_access === 0)
                 return
             //time.text = Date().toString()
             if(core.database_online() !== core.is_database_online) {
