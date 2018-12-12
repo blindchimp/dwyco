@@ -9230,7 +9230,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     dwyco_signal_msg_cond();
     while(1)
     {
-        int spin;
+        int spin = 0;
         int snooze = dwyco_service_channels(&spin);
         int e;
         if(exit_if_outq_empty && msg_outq_empty())
