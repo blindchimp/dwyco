@@ -66,6 +66,9 @@
 #include "dwyco_rand.h"
 #include "dirth.h"
 #include "cdcpal.h"
+#include "se.h"
+#include "qdirth.h"
+#include "ta.h"
 
 vc Myhostname;
 DwLog *Log;
@@ -361,7 +364,6 @@ init_bg_msg_send(const char *logname)
         Current_user_lobbies = vc(VC_TREE);
         InitializeCriticalSection(&Audio_lock);
         InitializeCriticalSection(&Audio_mixer_shutdown_lock);
-        void init_stats();
         init_stats();
         if(!Log)
             Log = new DwLog(logname);
@@ -451,9 +453,25 @@ init_bg_msg_send(const char *logname)
 void
 exit_bg_msg_send()
 {
+    if(!Bg_msg_send_init)
+        return;
+
     save_qmsg_state();
     save_entropy();
     Log->make_entry("background exit");
+
+    // note: mmchan depends on being able to use some of the
+    // other stuff below, so we clean it up first. there
+    // may be other dependencies lurking in here as well...
+    MMChannel::exit_mmchan();
+    // empty out all the system messages
+    while(se_process() || dirth_poll_response())
+        ;
+
+    exit_qmsg();
+    exit_pal();
+    exit_prf_cache();
+    exit_pk_cache();
 
     vc::non_lh_exit();
     vc::shutdown_logs();
@@ -461,19 +479,7 @@ exit_bg_msg_send()
 #ifdef DW_RTLOG
     RTLog->flush_to_file();
 #endif
-//#ifdef LEAK_CLEANUP
-    // note: mmchan depends on being able to use some of the
-    // other stuff below, so we clean it up first. there
-    // may be other dependencies lurking in here as well...
-    MMChannel::exit_mmchan();
-    //void exit_shwdrctr();
-    //exit_shwdrctr();
 
-    exit_qmsg();
-    exit_pal();
-    exit_prf_cache();
-    exit_pk_cache();
-//#endif
     Bg_msg_send_init = 0;
 
 }

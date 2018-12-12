@@ -134,6 +134,7 @@ if(Track_stats) \
 
 extern vc Stats;
 extern int Track_stats;
+void init_stats();
 #include "xinfo.h"
 
 
