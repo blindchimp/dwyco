@@ -64,6 +64,8 @@
 #include "xinfo.h"
 #include "dhsetup.h"
 #include "dwyco_rand.h"
+#include "dirth.h"
+#include "cdcpal.h"
 
 vc Myhostname;
 DwLog *Log;
@@ -459,24 +461,19 @@ exit_bg_msg_send()
 #ifdef DW_RTLOG
     RTLog->flush_to_file();
 #endif
-#ifdef LEAK_CLEANUP
+//#ifdef LEAK_CLEANUP
     // note: mmchan depends on being able to use some of the
     // other stuff below, so we clean it up first. there
     // may be other dependencies lurking in here as well...
     MMChannel::exit_mmchan();
     //void exit_shwdrctr();
     //exit_shwdrctr();
-    void exit_qmsg();
+
     exit_qmsg();
-    void exit_pal();
     exit_pal();
     exit_prf_cache();
     exit_pk_cache();
-    void exit_dirth();
-    exit_dirth();
-
-    stun_pool_exit();
-#endif
+//#endif
     Bg_msg_send_init = 0;
 
 }

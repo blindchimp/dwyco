@@ -9315,7 +9315,7 @@ out:
     // sometimes.
     dwyco_suspend();
     dwyco_bg_exit();
-    exit(0);
+    //exit(0);
 }
 
 DWYCOEXPORT
