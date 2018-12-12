@@ -53,6 +53,7 @@
 #include "vcxstrm.h"
 #include "ta.h"
 
+using namespace dwyco;
 
 int Inhibit_database_thread;
 
@@ -370,7 +371,7 @@ invalidate_profile(vc m, void *, vc, ValidPtr)
     se_emit(SE_USER_PROFILE_INVALIDATE, m[1]);
 
 }
-extern DwVec<QckDone> Waitq;
+
 void update_server_list(vc, void *, vc, ValidPtr);
 void ignoring_you_update(vc, void *, vc, ValidPtr);
 void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
@@ -379,6 +380,8 @@ void async_pal(vc, void *, vc, ValidPtr);
 void
 init_dirth()
 {
+    Waitq = DwVec<QckDone>();
+    Response_q = DwListA<vc>();
     Waitq.append(QckDone(got_sync, 0, vcnil, ValidPtr(0), "sync", 0, 1));
     Waitq.append(QckDone(got_serv_r, 0, vcnil, ValidPtr(0), "serv_r", 0, 1));
     Waitq.append(QckDone(got_inhibit, 0, vcnil, ValidPtr(0), "inhibit", 0, 1));

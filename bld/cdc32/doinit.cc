@@ -347,11 +347,11 @@ simple_init_codec(const char *logname)
 // when all you want to do is call service_channels to
 // send and receive messages that have already been queued. no multimedia capture
 // or display stuff is initialized.
+static int Bg_msg_send_init;
 void
 init_bg_msg_send(const char *logname)
 {
-    static int init = 0;
-    if(!init)
+    if(!Bg_msg_send_init)
     {
         dwyco_srand(time(0));
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
@@ -361,8 +361,8 @@ init_bg_msg_send(const char *logname)
         InitializeCriticalSection(&Audio_mixer_shutdown_lock);
         void init_stats();
         init_stats();
-
-        Log = new DwLog(logname);
+        if(!Log)
+            Log = new DwLog(logname);
 #ifdef DW_RTLOG
         if(!RTLog)
         {
@@ -438,7 +438,7 @@ init_bg_msg_send(const char *logname)
         Disable_upnp = 1;
 
         init_sysattr();
-        init = 1;
+        Bg_msg_send_init = 1;
         Log->make_entry("background init done");
     }
 }
@@ -477,6 +477,7 @@ exit_bg_msg_send()
 
     stun_pool_exit();
 #endif
+    Bg_msg_send_init = 0;
 
 }
 

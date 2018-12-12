@@ -12,8 +12,9 @@
 #include <time.h>
 #include "vc.h"
 #include "pval.h"
+#include "dwlista.h"
 
-
+namespace dwyco {
 struct QckMsg
 {
     vc v;
@@ -170,6 +171,12 @@ void dirth_send_debug(vc id, vc crashed, vc stack, vc field_track, QckDone d);
 void dirth_send_set_token(vc id, vc token, QckDone d);
 // used internally
 QckMsg dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d);
+vc generate_mac_msg(vc);
+
+extern DwVec<QckDone> Waitq;
+extern DwListA<vc> Response_q;
+extern int Serial;
+}
 
 // all msgs to server start with these two things
 #define QTYPE 0
