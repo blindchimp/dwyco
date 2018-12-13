@@ -9313,7 +9313,7 @@ out:
     // explicitly stop transfers, even though we are not
     // going to resume, just doing an exit may be too abrupt
     // sometimes.
-    dwyco_suspend();
+    //dwyco_suspend();
     dwyco_bg_exit();
     //exit(0);
 }
