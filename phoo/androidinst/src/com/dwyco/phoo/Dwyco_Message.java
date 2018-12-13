@@ -100,6 +100,12 @@ public class Dwyco_Message extends StickyIntentService {
         System.exit(0);
 
     }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        catchLog("DESTROY");
+        System.exit(0);
+    }
 
     private void poller_thread() {
         Thread t = new Thread(new Runnable() {
