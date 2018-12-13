@@ -1,0 +1,171 @@
+package com.dwyco.phoo;
+//import com.dwyco.phoo.R;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.content.Intent;
+import android.app.PendingIntent;
+import android.util.Log;
+import java.util.Calendar;
+import android.net.ConnectivityManager;
+import android.app.AlarmManager;
+import android.net.NetworkInfo;
+import android.content.BroadcastReceiver;
+import android.app.Service;
+import android.os.Binder;
+import android.os.IBinder;
+import android.app.IntentService;
+import android.content.SharedPreferences;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.File;
+import java.util.Arrays;
+import android.os.Build;
+import android.os.Build.VERSION;
+
+
+public class DwycoSender extends Service {
+
+    private static Context context;
+    private static String[] local_files = {};
+    private static SocketLock prefs_lock;
+
+    public DwycoSender() {
+        //super("DwycoSender");
+        prefs_lock = new SocketLock("com.dwyco.phoo.prefs");
+
+    }
+
+    @Override
+    public void onCreate() {
+        // TODO Auto-generated method stub
+        super.onCreate();
+        catchLog("DwycoSender Service got created");
+        context = this;
+        System.loadLibrary("gnustl_shared");
+        System.loadLibrary("dwyco_jni");
+    }
+
+    /**
+     * Unless you provide binding for your service, you don't need to implement this
+     * method, because the default implementation returns null.
+     * @see android.app.Service#onBind
+     */
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        catchLog("dwycoSend handle intent");
+        prefs_lock.lock();
+        SharedPreferences sp;
+        int port;
+        String sys_pfx;
+        String user_pfx;
+        String tmp_pfx;
+        String token;
+
+        if(intent == null) {
+            // restart, fetch the values from preferences
+
+            sp = context.getSharedPreferences("dwyco_msg", MODE_PRIVATE);
+            port = sp.getInt("lockport", 4500);
+            sys_pfx = sp.getString("sys_pfx", ".");
+            user_pfx = sp.getString("user_pfx", ".");
+            tmp_pfx = sp.getString("tmp_pfx", ".");
+            token = sp.getString("token", "notoken");
+        } else {
+            port = intent.getIntExtra("lockport", 4500);
+            sys_pfx = intent.getStringExtra("sys_pfx");
+            user_pfx = intent.getStringExtra("user_pfx");
+            tmp_pfx = intent.getStringExtra("tmp_pfx");
+            token = intent.getStringExtra("token");
+
+            // write it back out for later if we need to restart
+            sp = context.getSharedPreferences("dwyco_msg", MODE_PRIVATE);
+            SharedPreferences.Editor pe = sp.edit();
+            pe.putInt("lockport", port);
+            pe.putString("sys_pfx", sys_pfx);
+            pe.putString("user_pfx", user_pfx);
+            pe.putString("tmp_pfx", tmp_pfx);
+            pe.putString("token", token);
+            pe.commit();
+        }
+    prefs_lock.release();
+        catchLog(sys_pfx);
+        catchLog(user_pfx);
+        catchLog(tmp_pfx);
+        catchLog(String.valueOf(port));
+        catchLog(token);
+        //poller_thread();
+        set_notification();
+        dwybg.dwyco_background_processing(port, 1, sys_pfx, user_pfx, tmp_pfx, token);
+        stopForeground(STOP_FOREGROUND_REMOVE);
+        catchLog("send end");
+        return START_NOT_STICKY;
+        //System.exit(0);
+
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        catchLog("DESTROY");
+        System.exit(0);
+    }
+
+    
+
+    private void set_notification() {
+        NotificationManager m_notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        Notification.Builder m_builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        m_builder = new Notification.Builder(context, "dwyco");
+        } else {
+        m_builder = new Notification.Builder(context);
+        }
+        m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
+        //m_builder.setColor(context.getResources().getColor(R.color.green));
+        m_builder.setContentTitle("Dwyco");
+        m_builder.setAutoCancel(true);
+        m_builder.setContentText("Message sending");
+        m_builder.setOnlyAlertOnce(true);
+        SharedPreferences sp;
+        prefs_lock.lock();
+        sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
+        int quiet = sp.getInt("quiet", 0);
+        prefs_lock.release();
+        int def = Notification.DEFAULT_ALL;
+        if(quiet == 1)
+            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+        m_builder.setDefaults(def);
+
+        Intent notintent = new Intent(context, NotificationClient.class);
+        notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent p = PendingIntent.getActivity(context, 1, notintent, 0);
+        m_builder.setContentIntent(p);
+
+        Notification not = m_builder.getNotification();
+        //m_notificationManager.notify(1, not);
+        startForeground(1, not);
+    }
+
+    private void clear_notification() {
+        NotificationManager m_notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+        m_notificationManager.cancelAll();
+    }
+
+    private void catchLog(String log) {
+        Log.d("DwycoSender", log);
+
+
+    }
+
+}
