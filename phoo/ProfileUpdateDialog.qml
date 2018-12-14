@@ -11,6 +11,7 @@ import QtQuick.Controls 2.1
 import dwyco 1.0
 import QtQuick.Layouts 1.3
 import QtQuick.Dialogs 1.2
+import Qt.labs.platform 1.1 as NL
 
 Page {
     id: rectangle1
