@@ -51,10 +51,11 @@ class KeyboardAcquire;
 class AudioOutput;
 class AudioAcquire;
 class MessageDisplay;
-struct QckMsg;
+
 namespace dwyco {
 class DirectSend;
 class DwQSend;
+struct QckMsg;
 }
 
 typedef DwVecP<MMChannel> ChanList;
@@ -808,7 +809,7 @@ public:
     int start_server_ops();
     static MMChannel * get_server_channel();
     static MMChannel * get_secondary_server_channel();
-    static void send_to_db(QckMsg& m, int chan_id);
+    static void send_to_db(dwyco::QckMsg& m, int chan_id);
     void server_response(vc v);
     void chat_response(vc);
     int disconnect_server();

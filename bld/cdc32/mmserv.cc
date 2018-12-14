@@ -22,7 +22,6 @@
 #include "dwscoped.h"
 using namespace dwyco;
 
-extern DwListA<vc> Response_q;
 extern vc Online;
 extern vc Chat_ips;
 extern vc Chat_ports;

@@ -24,6 +24,8 @@
 #include "qmsgsql.h"
 #include "qauth.h"
 
+using namespace dwyco;
+
 extern vc My_UID;
 extern vc Online;
 extern vc Client_types;

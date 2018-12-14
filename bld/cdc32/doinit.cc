@@ -64,6 +64,11 @@
 #include "xinfo.h"
 #include "dhsetup.h"
 #include "dwyco_rand.h"
+#include "dirth.h"
+#include "cdcpal.h"
+#include "se.h"
+#include "qdirth.h"
+#include "ta.h"
 
 vc Myhostname;
 DwLog *Log;
@@ -347,11 +352,11 @@ simple_init_codec(const char *logname)
 // when all you want to do is call service_channels to
 // send and receive messages that have already been queued. no multimedia capture
 // or display stuff is initialized.
+static int Bg_msg_send_init;
 void
 init_bg_msg_send(const char *logname)
 {
-    static int init = 0;
-    if(!init)
+    if(!Bg_msg_send_init)
     {
         dwyco_srand(time(0));
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
@@ -359,10 +364,9 @@ init_bg_msg_send(const char *logname)
         Current_user_lobbies = vc(VC_TREE);
         InitializeCriticalSection(&Audio_lock);
         InitializeCriticalSection(&Audio_mixer_shutdown_lock);
-        void init_stats();
         init_stats();
-
-        Log = new DwLog(logname);
+        if(!Log)
+            Log = new DwLog(logname);
 #ifdef DW_RTLOG
         if(!RTLog)
         {
@@ -438,7 +442,7 @@ init_bg_msg_send(const char *logname)
         Disable_upnp = 1;
 
         init_sysattr();
-        init = 1;
+        Bg_msg_send_init = 1;
         Log->make_entry("background init done");
     }
 }
@@ -449,9 +453,25 @@ init_bg_msg_send(const char *logname)
 void
 exit_bg_msg_send()
 {
+    if(!Bg_msg_send_init)
+        return;
+
     save_qmsg_state();
     save_entropy();
     Log->make_entry("background exit");
+
+    // note: mmchan depends on being able to use some of the
+    // other stuff below, so we clean it up first. there
+    // may be other dependencies lurking in here as well...
+    MMChannel::exit_mmchan();
+    // empty out all the system messages
+    while(se_process() || dirth_poll_response())
+        ;
+
+    exit_qmsg();
+    exit_pal();
+    exit_prf_cache();
+    exit_pk_cache();
 
     vc::non_lh_exit();
     vc::shutdown_logs();
@@ -459,24 +479,8 @@ exit_bg_msg_send()
 #ifdef DW_RTLOG
     RTLog->flush_to_file();
 #endif
-#ifdef LEAK_CLEANUP
-    // note: mmchan depends on being able to use some of the
-    // other stuff below, so we clean it up first. there
-    // may be other dependencies lurking in here as well...
-    MMChannel::exit_mmchan();
-    //void exit_shwdrctr();
-    //exit_shwdrctr();
-    void exit_qmsg();
-    exit_qmsg();
-    void exit_pal();
-    exit_pal();
-    exit_prf_cache();
-    exit_pk_cache();
-    void exit_dirth();
-    exit_dirth();
 
-    stun_pool_exit();
-#endif
+    Bg_msg_send_init = 0;
 
 }
 

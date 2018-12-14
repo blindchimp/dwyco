@@ -411,7 +411,6 @@ extern vc Current_authenticator;
 extern vc Current_session_key;
 extern DwVec<ValidPtr> CompositionDeleteQ;
 extern int Crashed_last_time;
-extern DwListA<vc> Response_q;
 static void setup_callbacks();
 static int UI_ids = 1000000;
 static int Inited;
@@ -9231,7 +9230,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     dwyco_signal_msg_cond();
     while(1)
     {
-        int spin;
+        int spin = 0;
         int snooze = dwyco_service_channels(&spin);
         int e;
         if(exit_if_outq_empty && msg_outq_empty())
@@ -9314,9 +9313,10 @@ out:
     // explicitly stop transfers, even though we are not
     // going to resume, just doing an exit may be too abrupt
     // sometimes.
-    dwyco_suspend();
+    //dwyco_suspend();
     dwyco_bg_exit();
-    exit(0);
+    //exit(0);
+    return 0;
 }
 
 DWYCOEXPORT

@@ -235,18 +235,29 @@ public static String get_token() {
         // main app goes to sleep, which means delivery of large messages
         // will not work quite right (only happens when the app is
         // active). this will have to be fixed eventually.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            return;
-            }
+        
 
-        Intent i = new Intent(m_instance, Dwyco_Message.class);
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            Intent i = new Intent(m_instance, DwycoSender.class);
+        i.putExtra("lockport", port);
+        i.putExtra("sys_pfx", sys_pfx);
+        i.putExtra("user_pfx", user_pfx);
+        i.putExtra("tmp_pfx", tmp_pfx);
+        i.putExtra("token", token);
+            m_instance.startForegroundService(i);
+            }
+            else {
+                Intent i = new Intent(m_instance, Dwyco_Message.class);
         i.putExtra("lockport", port);
         i.putExtra("sys_pfx", sys_pfx);
         i.putExtra("user_pfx", user_pfx);
         i.putExtra("tmp_pfx", tmp_pfx);
         i.putExtra("token", token);
 
-        m_instance.startService(i);
+            m_instance.startService(i);
+            }
 
     }
 
