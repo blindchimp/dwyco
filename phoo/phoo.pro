@@ -356,7 +356,8 @@ DISTFILES += \
     androidinst/src/com/dwyco/phoo/StickyIntentService.java \
     androidinst/google-services.json \
     androidinst/src/com/dwyco/phoo/SocketLock.java \
-    androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java
+    androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java \
+    androidinst/src/com/dwyco/phoo/DwycoSender.java
 
 contains(ANDROID_TARGET_ARCH,x86) {
     ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
