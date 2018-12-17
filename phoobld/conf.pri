@@ -2,7 +2,7 @@ VCCFG_COMP=$$PWD
 DWYCOBG=0
 DWYCO_USE_LINUX_AUDIO=0
 DEFINES += VCCFG_FILE
-linux-* {
+linux-*|wasm-emscripten {
 DEFINES += LINUX
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
@@ -29,6 +29,10 @@ DEFINES += ANDROID LINUX
 QMAKE_CXXFLAGS += -frtti -fexceptions
 QMAKE_CFLAGS += -frtti -fexceptions
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+}
+
+wasm-emscripten {
+DEFINES += EMSCRIPTEN
 }
 
 #QMAKE_CFLAGS += -fsanitize=address
