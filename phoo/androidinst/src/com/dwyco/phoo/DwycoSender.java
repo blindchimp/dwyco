@@ -62,7 +62,9 @@ public class DwycoSender extends Service {
 
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(final Intent intent, int flags, int startId) {
+        Thread t = new Thread(new Runnable() {
+            public void run() {
         catchLog("dwycoSend handle intent");
         prefs_lock.lock();
         SharedPreferences sp;
@@ -105,10 +107,16 @@ public class DwycoSender extends Service {
         catchLog(String.valueOf(port));
         catchLog(token);
         //poller_thread();
+        
         set_notification();
         dwybg.dwyco_background_processing(port, 1, sys_pfx, user_pfx, tmp_pfx, token);
         stopForeground(STOP_FOREGROUND_REMOVE);
         catchLog("send end");
+        System.exit(0);
+            }
+        }
+        );
+        t.start();
         return START_NOT_STICKY;
         //System.exit(0);
 
