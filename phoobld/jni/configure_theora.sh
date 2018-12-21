@@ -4,13 +4,13 @@ pushd `dirname $0`
 
 if [ "$NDK_ABI" = "arm" ]
 then
-	abi="arm-linux-androideabi"
-	host="arm-linux"
-	export CFLAGS="-fPIC -DANDROID -D__thumb__ -mthumb -Wfatal-errors -Wno-deprecated"
+	#abi="arm-linux-androideabi"
+	host="arm-linux-androideabi"
+	export CFLAGS="-fPIC -DANDROID"
 else
-	abi="i686-linux-android"
-	host="x86-linux"
-	export CFLAGS="-fPIC -DANDROID -Wfatal-errors -Wno-deprecated"
+	#abi="i686-linux-android"
+	host="i686-linux-android"
+	export CFLAGS="-fPIC -DANDROID"
 fi
 
 thisdir=`pwd`
@@ -28,10 +28,10 @@ echo "**********"
 
 pushd libtheora
 
-export CC="$abi-gcc"
-export LD="$abi-ld"
-export RANLIB="$abi-ranlib"
-export AR="$abi-ar"
+#export CC="$abi-gcc"
+#export LD="$abi-ld"
+#export RANLIB="$abi-ranlib"
+#export AR="$abi-ar"
 export OGG_CFLAGS=-I$oggdir/include
 
 ./configure \
@@ -41,6 +41,7 @@ export OGG_CFLAGS=-I$oggdir/include
 --enable-static \
 --with-ogg=$oggdir \
 --with-vorbis=$vorbisdir  \
---disable-examples
+--disable-examples \
+--disable-asflag-probe
 
 popd;popd
