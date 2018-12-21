@@ -42,6 +42,11 @@ vc::vc(const char *s)
 		rep = new vc_string(s);
 }
 
+vc::vc(const char *s, int len)
+{
+        rep = new vc_string(s, len);
+}
+
 #ifndef NO_VCEVAL
 class VcLexer;
 vc::vc(VcLexer &l)

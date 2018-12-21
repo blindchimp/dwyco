@@ -46,6 +46,7 @@ public:
     void setNotification(const QString &notification);
     QString notification() const;
     void set_allow_notification(int);
+    QString get_token();
 
 
 signals:
@@ -61,6 +62,8 @@ public slots:
     void load_contacts();
     void open_image();
     void vibrate(long ms);
+    void log_event();
+    void set_user_property(QString name, QString value);
 
 private:
     QString m_notification;

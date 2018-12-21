@@ -649,6 +649,38 @@ load_msg_index(vc uid, int load_count)
     return di;
 }
 
+// return all index records for messages
+// associated with uid and after logical clock
+// used for incrementally updating models
+vc
+msg_idx_get_new_msgs(vc uid, vc logical_clock)
+{
+    VCArglist a;
+
+    try
+    {
+        sql_start_transaction();
+        VCArglist a;
+        a.append("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+               "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
+               " from msg_idx where assoc_uid = $1 and logical_clock > $2 order by logical_clock desc");
+        a.append(to_hex(uid));
+        a.append(logical_clock);
+
+        vc res = sqlite3_bulk_query(Db, &a);
+        if(res.is_nil())
+            throw -1;
+        sql_commit_transaction();
+        return res;
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return vcnil;
+    }
+
+}
+
 int
 msg_index_count(vc uid)
 {

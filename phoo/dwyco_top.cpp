@@ -64,8 +64,13 @@
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
 #include "vgqt.h"
 #endif
-void init_mac_drivers();
 
+
+#ifdef MACOSX
+#include <QtMacExtras>
+#endif
+
+void init_mac_drivers();
 
 namespace jhead {
 int do_jhead(const char *);
@@ -1403,6 +1408,22 @@ DwycoCore::init()
     else
         inv = 1;
     dwyco_set_initial_invis(inv);
+#ifdef ANDROID
+    // this is a kluge for android
+    // the FCM token may or not be available at this point, but
+    // eventually it will be (we hope). so write it out so it gets
+    // sent to the server on login. if it doesn't get out properly, it
+    // isn't the end of the world, the user may not get notifications
+    // right away while the app is in the background, the phone is snoozing, etc.etc.
+    // they will get the notification eventually when they restart the app tho
+    // this should eventually be made a little more robust, but for now it is ok.
+    QString token = notificationClient->get_token();
+    // note: kinda assume the token is 8-bit ascii, but who knows
+    QByteArray b = token.toLatin1();
+    dwyco_write_token(b.constData());
+
+#endif
+
     if(!dwyco_init())
         ::abort();
     dwyco_set_setting("zap/always_server", "0");
@@ -1435,6 +1456,7 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheIgnoreListModel, SLOT(uid_resolved(QString)));
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString)), mlm, SLOT(msg_recv_status(int,QString)));
+    connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);
@@ -1503,6 +1525,18 @@ DwycoCore::init()
     {
         dwyco_set_setting("call_acceptance/max_audio_recv", "0");
     }
+}
+
+void
+DwycoCore::set_badge_number(int i)
+{
+#ifdef MACOSX
+    if(i == 0)
+        QtMac::setBadgeLabelText("");
+    else
+        QtMac::setBadgeLabelText(QString::number(i));
+
+#endif
 }
 
 int
@@ -2155,7 +2189,36 @@ DwycoCore::set_fav_message(QString mid, int val)
 {
     QByteArray bmid = mid.toLatin1();
     dwyco_set_fav_msg(bmid.constData(), !!val);
+    emit mid_tag_changed(mid);
 }
+
+int
+DwycoCore::has_tag_message(QString mid, QString tag)
+{
+    QByteArray bmid = mid.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    return dwyco_mid_has_tag(bmid.constData(), btag.constData());
+
+}
+void
+DwycoCore::set_tag_message(QString mid, QString tag)
+{
+    QByteArray bmid = mid.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    dwyco_set_msg_tag(bmid.constData(), btag.constData());
+    emit mid_tag_changed(mid);
+}
+
+void
+DwycoCore::unset_tag_message(QString mid, QString tag)
+{
+    QByteArray bmid = mid.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    dwyco_unset_msg_tag(bmid.constData(), btag.constData());
+    emit mid_tag_changed(mid);
+}
+
+
 
 int
 DwycoCore::clear_messages(QString uid)
@@ -2503,7 +2566,6 @@ DwycoCore::service_channels()
         dwyco_process_unsaved_list(uml, uids_out);
         dwyco_list_release(uml);
 
-        mlm->reload_model();
         update_unread_count(has_unviewed_msgs());
         foreach(const QByteArray& buid, uids_out)
         {
@@ -2511,6 +2573,10 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
+//        if(uids_out.contains(QByteArray::fromHex(mlm->uid().toLatin1())))
+//        {
+//            mlm->reload_model();
+//        }
     }
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically

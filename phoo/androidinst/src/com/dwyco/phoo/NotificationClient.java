@@ -36,6 +36,7 @@ package com.dwyco.phoo;
 import org.qtproject.qt5.android.bindings.QtActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.NotificationChannel;
 import android.content.Context;
 import android.content.Intent;
 import android.app.PendingIntent;
@@ -61,6 +62,7 @@ import android.os.Vibrator;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import com.crashlytics.android.Crashlytics;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 // note: use notificationcompat stuff for older androids
 
@@ -70,6 +72,7 @@ public class NotificationClient extends QtActivity
     public static String msg_count_url;
     private static SocketLock prefs_lock;
     public static int allow_notification = 1;
+    private static FirebaseAnalytics mFirebaseAnalytics;
 
     public NotificationClient()
     {
@@ -90,6 +93,18 @@ public class NotificationClient extends QtActivity
         //AlarmManager alarm = (AlarmManager) m_instance.getSystemService(Context.ALARM_SERVICE);
         //alarm.setRepeating(AlarmManager.RTC_WAKEUP, cur_cal.getTimeInMillis(), 1000 * 60, pintent);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+                int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                NotificationChannel channel = new NotificationChannel("dwyco", "Dwyco Channel", importance);
+                channel.setDescription("Dwyco message channel");
+                // Register the channel with the system; you can't change the importance
+                // or other notification behaviors after this
+                NotificationManager notificationManager = getSystemService(NotificationManager.class);
+                notificationManager.createNotificationChannel(channel);
+            }
+
     }
 
     @Override
@@ -109,8 +124,12 @@ public class NotificationClient extends QtActivity
         if(allow_notification == 0)
             return;
         NotificationManager m_notificationManager = (NotificationManager)m_instance.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        Notification.Builder m_builder = new Notification.Builder(m_instance);
+        Notification.Builder m_builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        m_builder = new Notification.Builder(m_instance, "dwyco");
+        } else {
+        m_builder = new Notification.Builder(m_instance);
+        }
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         //m_builder.setColor(m_instance.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco");
@@ -189,7 +208,14 @@ public class NotificationClient extends QtActivity
         pe.putString("tmp_pfx", tmp_pfx);
         pe.commit();
         prefs_lock.release();
-        //FirebaseCrash.report(new Exception("My first Android non-fatal error"));
+    }
+
+public static String get_token() {
+    prefs_lock.lock();
+    SharedPreferences sp = m_instance.getSharedPreferences("phoo", MODE_PRIVATE);
+    String token = sp.getString("token", "notoken");
+    prefs_lock.release();
+    return token;
 
     }
 
@@ -202,24 +228,47 @@ public class NotificationClient extends QtActivity
         String sys_pfx = sp.getString("sys_pfx", ".");
         String user_pfx = sp.getString("user_pfx", ".");
         String tmp_pfx = sp.getString("tmp_pfx", ".");
+        String token = sp.getString("token", "notoken");
         prefs_lock.release();
         // this is just a hack to avoid a crash in android O
         // this disables the background processing that happens when the
         // main app goes to sleep, which means delivery of large messages
         // will not work quite right (only happens when the app is
         // active). this will have to be fixed eventually.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            return;
-            }
+        
 
-        Intent i = new Intent(m_instance, Dwyco_Message.class);
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            Intent i = new Intent(m_instance, DwycoSender.class);
         i.putExtra("lockport", port);
         i.putExtra("sys_pfx", sys_pfx);
         i.putExtra("user_pfx", user_pfx);
         i.putExtra("tmp_pfx", tmp_pfx);
+        i.putExtra("token", token);
+            m_instance.startForegroundService(i);
+            }
+            else {
+                Intent i = new Intent(m_instance, Dwyco_Message.class);
+        i.putExtra("lockport", port);
+        i.putExtra("sys_pfx", sys_pfx);
+        i.putExtra("user_pfx", user_pfx);
+        i.putExtra("tmp_pfx", tmp_pfx);
+        i.putExtra("token", token);
 
-        m_instance.startService(i);
+            m_instance.startService(i);
+            }
 
+    }
+
+public static void log_event() {
+    Bundle bundle = new Bundle();
+    bundle.putString(FirebaseAnalytics.Param.METHOD, "regular");
+    mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.LOGIN, bundle);
+
+    }
+public static void set_user_property(String name, String value) {
+    mFirebaseAnalytics.setUserProperty(name, value);
     }
 
     public static void load_contacts() {

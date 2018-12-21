@@ -21,7 +21,7 @@ $${VCCFG_COMP} \
 ../vorbis112/include \
 ../libuv/include
 
-linux-g++*: INCLUDEPATH += ../v4lcap
+linux-*: INCLUDEPATH += ../v4lcap
 
 FORCE_DESKTOP_VGQT=0
 
@@ -36,7 +36,7 @@ DEFINES += DW_RTLOG
 #LCL_DFLAGS += -DLEAK_CLEANUP
 DEFINES += DWYCO_FIELD_DEBUG
 
-macx-g++|linux-g++|linux-g++-64|macx-ios-clang|macx-clang|android-* {
+macx-*|linux-*|macx-ios-clang|macx-clang|android-*|wasm-emscripten {
 QMAKE_CXXFLAGS += -fpermissive
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 INCLUDEPATH += winemu
@@ -93,6 +93,16 @@ DEFINES += DWYCO_CDC_LIBUV
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
+}
+
+wasm-emscripten {
+DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
+DEFINES += DWYCO_USE_STATIC_SQLITE
+QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
+equals(FORCE_DESKTOP_VGQT, 1) {
+DEFINES += DWYCO_FORCE_DESKTOP_VGQT
+}
+SOURCES += sqlite3.c
 }
 
 SOURCES += \

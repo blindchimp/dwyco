@@ -19,7 +19,6 @@
         <file>AdminBrowse.qml</file>
         <file>UserActionMenu.qml</file>
         <file>ConvList.qml</file>
-        <file>MsgActionMenu.qml</file>
         <file>ForwardToList.qml</file>
         <file>PINDialog.qml</file>
         <file>PINChangeDialog.qml</file>

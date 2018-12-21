@@ -24,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.File;
 import java.util.Arrays;
+import android.os.Build;
+import android.os.Build.VERSION;
 
 
 public class Dwyco_Message extends StickyIntentService {
@@ -58,6 +60,7 @@ public class Dwyco_Message extends StickyIntentService {
         String sys_pfx;
         String user_pfx;
         String tmp_pfx;
+        String token;
 
         if(intent == null) {
             // restart, fetch the values from preferences
@@ -67,11 +70,13 @@ public class Dwyco_Message extends StickyIntentService {
             sys_pfx = sp.getString("sys_pfx", ".");
             user_pfx = sp.getString("user_pfx", ".");
             tmp_pfx = sp.getString("tmp_pfx", ".");
+            token = sp.getString("token", "notoken");
         } else {
             port = intent.getIntExtra("lockport", 4500);
             sys_pfx = intent.getStringExtra("sys_pfx");
             user_pfx = intent.getStringExtra("user_pfx");
             tmp_pfx = intent.getStringExtra("tmp_pfx");
+            token = intent.getStringExtra("token");
 
             // write it back out for later if we need to restart
             sp = context.getSharedPreferences("dwyco_msg", MODE_PRIVATE);
@@ -80,6 +85,7 @@ public class Dwyco_Message extends StickyIntentService {
             pe.putString("sys_pfx", sys_pfx);
             pe.putString("user_pfx", user_pfx);
             pe.putString("tmp_pfx", tmp_pfx);
+            pe.putString("token", token);
             pe.commit();
         }
     prefs_lock.release();
@@ -87,11 +93,18 @@ public class Dwyco_Message extends StickyIntentService {
         catchLog(user_pfx);
         catchLog(tmp_pfx);
         catchLog(String.valueOf(port));
+        catchLog(token);
         poller_thread();
-        dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx);
+        dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx, token);
         catchLog("background died");
         System.exit(0);
 
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        catchLog("DESTROY");
+        System.exit(0);
     }
 
     private void poller_thread() {
@@ -162,7 +175,12 @@ public class Dwyco_Message extends StickyIntentService {
     private void set_notification() {
         NotificationManager m_notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        Notification.Builder m_builder = new Notification.Builder(context);
+        Notification.Builder m_builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        m_builder = new Notification.Builder(context, "dwyco");
+        } else {
+        m_builder = new Notification.Builder(context);
+        }
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         //m_builder.setColor(context.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco");

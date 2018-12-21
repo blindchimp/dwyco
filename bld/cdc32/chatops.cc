@@ -22,6 +22,9 @@
 #include "qmsg.h"
 #include "se.h"
 #include "chatgrid.h"
+#include "qdirth.h"
+
+using namespace dwyco;
 
 int Chat_id = -1;
 static int Chat_starting;
@@ -30,7 +33,7 @@ int Chat_online;
 vc Chat_name;
 //static StatusCallback Chat_status_callback;
 extern vc Current_authenticator;
-vc generate_mac_msg(vc m);
+
 extern vc LocalIP;
 int is_invisible();
 extern vc KKG; //god pw

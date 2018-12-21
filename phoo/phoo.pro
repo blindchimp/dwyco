@@ -24,7 +24,10 @@ INSTALLS += appdir_icon appdir_desktop
 
 QT += core qml quick multimedia network xml widgets #positioning
 QT += quickcontrols2
+
 android: QT += androidextras
+macx-clang: QT += macextras
+
 linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
@@ -79,7 +82,7 @@ INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst
 
-linux-g++* {
+linux-* {
 DEFINES += LINUX
 DEFINES += DWYCO_APP_DEBUG
 equals(FORCE_DESKTOP_VGQT, 1) {
@@ -89,7 +92,8 @@ INCLUDEPATH += $${DINC}/v4lcap
 
 QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
 QMAKE_LFLAGS += -g #-fsanitize=address
-QMAKE_CXX=ccache g++
+linux-g++*:QMAKE_CXX=ccache g++
+linux-clang*:QMAKE_CXX=ccache clang
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 
 SHADOW=$${OUT_PWD}
@@ -116,9 +120,7 @@ $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${D}/libuv/libuv.a \
 -lsqlite3 \
--lSDL \
--lv4l2 \
--lesd
+-lv4l2
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -140,6 +142,44 @@ $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${D}/libuv/libuv.a
+
+}
+
+wasm-emscripten {
+DEFINES += LINUX
+DEFINES += DWYCO_APP_DEBUG
+equals(FORCE_DESKTOP_VGQT, 1) {
+DEFINES += DWYCO_FORCE_DESKTOP_VGQT
+}
+#INCLUDEPATH += $${DINC}/v4lcap
+
+#QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
+#QMAKE_LFLAGS += -g #-fsanitize=address
+
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+QMAKE_LFLAGS += -s ERROR_ON_UNDEFINED_SYMBOLS=0
+
+SHADOW=$${OUT_PWD}
+D = $${SHADOW}/../bld
+
+LIBS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora/libtheora.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${D}/jhead/libjhead.a \
+$${D}/qt-qml-models/libQtQmlModels.a
 
 }
 
@@ -204,7 +244,7 @@ $${D}/qt-qml-models/libQtQmlModels.a
 
 }
 
-android-g++ {
+android-* {
 DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
 
 D = $${OUT_PWD}/../bld
@@ -352,10 +392,10 @@ DISTFILES += \
     androidinst/src/com/dwyco/phoo/dwybgJNI.java \
     androidinst/src/com/dwyco/phoo/Dwyco_Message.java \
     androidinst/src/com/dwyco/phoo/StickyIntentService.java \
-    androidinst/src/com/dwyco/phoo/MyFirebaseInstanceIDService.java \
     androidinst/google-services.json \
     androidinst/src/com/dwyco/phoo/SocketLock.java \
-    androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java
+    androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java \
+    androidinst/src/com/dwyco/phoo/DwycoSender.java
 
 contains(ANDROID_TARGET_ARCH,x86) {
     ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so

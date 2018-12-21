@@ -141,7 +141,7 @@ ApplicationWindow {
     onClosing: {
         // special cases, don't let them navigate around the
         // initial app setup
-        if(!profile_bootstrapped) {
+        if(profile_bootstrapped === 0) {
             close.accepted = false
             return
         }
@@ -196,17 +196,34 @@ ApplicationWindow {
     
     Drawer {
         id: drawer
-        interactive: {stack.depth === 1}
+        interactive: {stack.depth === 1 && pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created}
+        width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
+        height: applicationWindow1.height
 
         AppDrawer {
-
+            id: drawer_contents
             padding: 0
-            width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
-            height: applicationWindow1.height
+            //width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
+            //height: applicationWindow1.height
             onClose: {
                 drawer.close()
             }
 
+            Connections {
+                target: core
+                onProfile_update: {
+                    drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
+                    drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
+                }
+            }
+
+            onVisibleChanged: {
+                if(visible) {
+                    drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
+                    drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
+                }
+
+            }
         }
     }
 
@@ -312,6 +329,7 @@ ApplicationWindow {
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/DeclarativeCamera.qml"
+                //vid_cam_preview.active = false
             }
         }
 
@@ -729,7 +747,7 @@ ApplicationWindow {
             } else {
                 server_account_created = true
             }
-            if(profile_bootstrapped && !server_account_created) {
+            if(profile_bootstrapped === 1 && !server_account_created) {
                 stack.push(blank_page)
             }
 
@@ -791,6 +809,7 @@ ApplicationWindow {
             }
             if(Qt.platform.os == "android") {
                 notificationClient.set_msg_count_url(core.get_msg_count_url())
+                notificationClient.log_event()
             }
             if(simpdir_rect.visible && simpdir_rect.xml_url === "")
                 simpdir_rect.xml_url = core.get_simple_xml_url()
@@ -802,12 +821,15 @@ ApplicationWindow {
             console.log(mid)
             console.log("msglist", themsglist.uid)
             if(from_uid === themsglist.uid) {
-                themsglist.reload_model()
+                themsglist.reload_model();
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
                 // do this, or display a "go to bottom" icon
-                chatbox.listview.positionViewAtBeginning()
-                console.log("RELOAD")
+//                if(chatbox.listview.atYEnd) {
+//                    chatbox.listview.positionViewAtBeginning()
+//                }
+                console.log("RELOAD nm")
+                //themsglist.reload_model()
             }
             //notificationClient.notification = "New messages"
             sound_recv.play()
@@ -818,7 +840,8 @@ ApplicationWindow {
             console.log("upd" + uid + " " + themsglist.uid)
             if(uid === themsglist.uid) {
                 themsglist.reload_model()
-                console.log("RELOAD")
+
+                console.log("RELOAD msg_idx")
             }
         }
 
@@ -829,7 +852,7 @@ ApplicationWindow {
                 //sound_sent.play()
                 if(themsglist.uid == recipient) {
                     themsglist.reload_model()
-                    chatbox.listview.positionViewAtBeginning()
+
                 }
 
             }
@@ -871,6 +894,10 @@ ApplicationWindow {
             }
         }
 
+        onUnread_countChanged: {
+            set_badge_number(unread_count)
+        }
+
     }
 
     Rectangle {
@@ -897,6 +924,8 @@ ApplicationWindow {
         id: service_timer
         interval: 30; running:true; repeat:true
         onTriggered: {
+            if(!pwdialog.allow_access)
+                return
             //time.text = Date().toString()
             if(core.database_online() !== core.is_database_online) {
                 core.is_database_online = core.database_online()

@@ -2,9 +2,9 @@
 #define SIMPLESQL_H
 
 struct sqlite3;
-#include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
+#include "dwstr.h"
 
 
 namespace dwyco {
@@ -19,15 +19,15 @@ public:
         dbname = nm;
         Db = 0;
     }
-    ~SimpleSql() {
+    virtual ~SimpleSql() {
         if(Db)
             exit();
     }
 
-    vc sql_simple(const char *sql);
+    vc sql_simple(const char *sql, vc = vcnil, vc = vcnil, vc = vcnil);
 
     virtual void init_schema() {}
-    void init();
+    int init();
     void exit();
     void start_transaction();
     void commit_transaction();

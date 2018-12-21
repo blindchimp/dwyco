@@ -1,5 +1,4 @@
-#include <math.h>
-#include <cstdlib>
+#include "sysjhead.h"
 namespace jhead {
 #include "exif.c"
 }
