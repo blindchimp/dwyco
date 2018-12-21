@@ -511,3 +511,7 @@ bld/speexdsp-1\.2rc3/speexdsp\.pc
 bld/speexdsp-1\.2rc3/SpeexDSP\.spec
 
 bld/speexdsp-1\.2rc3/stamp-h1
+
+bld/speexdsp-1\.2rc3/autom4te\.cache/
+
+bld/libogg-1\.3\.3/autom4te\.cache/
