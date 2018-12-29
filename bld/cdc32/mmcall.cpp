@@ -175,7 +175,7 @@ MMCall::start_call(int media_sel)
     this->media_select = media_sel;
     mc->call_type = call_type;
 
-    in_addr_t addr;
+    unsigned long addr;
     if((addr = inet_addr((const char *)host)) == INADDR_NONE)
     {
         // start connect process at resolve stage
