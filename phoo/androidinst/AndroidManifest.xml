@@ -54,6 +54,8 @@
 </receiver>
 <service android:name="com.dwyco.phoo.Dwyco_Message" android:enabled="true" android:process=":dwycobg">
 </service>
+<service android:name="com.dwyco.phoo.DwycoProbe" android:enabled="true" android:process=":dwycoprobe" android:permission="android.permission.BIND_JOB_SERVICE">
+</service>
 <service android:name="com.dwyco.phoo.DwycoSender" android:enabled="true" android:process=":dwycosend">
 </service>
 <service android:name=".MyFirebaseMessagingService">

@@ -1,20 +1,13 @@
 package com.dwyco.phoo;
-//import com.dwyco.phoo.R;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.app.PendingIntent;
 import android.util.Log;
-import java.util.Calendar;
-import android.net.ConnectivityManager;
-import android.app.AlarmManager;
-import android.net.NetworkInfo;
-import android.content.BroadcastReceiver;
 import android.app.Service;
 import android.os.Binder;
 import android.os.IBinder;
-import android.app.IntentService;
 import android.content.SharedPreferences;
 
 import java.io.ByteArrayOutputStream;
@@ -26,16 +19,18 @@ import java.io.File;
 import java.util.Arrays;
 import android.os.Build;
 import android.os.Build.VERSION;
+import android.app.job.JobParameters;
+import android.app.job.JobService;
 
 
-public class DwycoSender extends Service {
+public class DwycoProbe extends JobService {
 
     private static Context context;
     private static String[] local_files = {};
     private static SocketLock prefs_lock;
 
-    public DwycoSender() {
-        //super("DwycoSender");
+    public DwycoProbe() {
+        //super("DwycoProbe");
         prefs_lock = new SocketLock("com.dwyco.phoo.prefs");
 
     }
@@ -44,28 +39,22 @@ public class DwycoSender extends Service {
     public void onCreate() {
         // TODO Auto-generated method stub
         super.onCreate();
-        catchLog("DwycoSender Service got created");
+        catchLog("DwycoProbe Service got created");
         context = this;
         System.loadLibrary("gnustl_shared");
         System.loadLibrary("dwyco_jni");
     }
 
-    /**
-     * Unless you provide binding for your service, you don't need to implement this
-     * method, because the default implementation returns null.
-     * @see android.app.Service#onBind
-     */
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
 
     @Override
-    public int onStartCommand(final Intent intent, int flags, int startId) {
+    public boolean onStartJob(final JobParameters params) {
+        //JobWorkItem jwi = params.dequeueWork();
+        //if(jwi == null)
+        //    return false;
+
         Thread t = new Thread(new Runnable() {
             public void run() {
-        catchLog("dwycoSend handle intent");
+        catchLog("DwycoProbe starting");
         prefs_lock.lock();
         SharedPreferences sp;
         int port;
@@ -74,32 +63,13 @@ public class DwycoSender extends Service {
         String tmp_pfx;
         String token;
 
-        if(intent == null) {
-            // restart, fetch the values from preferences
-
             sp = context.getSharedPreferences("dwyco_msg", MODE_PRIVATE);
             port = sp.getInt("lockport", 4500);
             sys_pfx = sp.getString("sys_pfx", ".");
             user_pfx = sp.getString("user_pfx", ".");
             tmp_pfx = sp.getString("tmp_pfx", ".");
             token = sp.getString("token", "notoken");
-        } else {
-            port = intent.getIntExtra("lockport", 4500);
-            sys_pfx = intent.getStringExtra("sys_pfx");
-            user_pfx = intent.getStringExtra("user_pfx");
-            tmp_pfx = intent.getStringExtra("tmp_pfx");
-            token = intent.getStringExtra("token");
-
-            // write it back out for later if we need to restart
-            sp = context.getSharedPreferences("dwyco_msg", MODE_PRIVATE);
-            SharedPreferences.Editor pe = sp.edit();
-            pe.putInt("lockport", port);
-            pe.putString("sys_pfx", sys_pfx);
-            pe.putString("user_pfx", user_pfx);
-            pe.putString("tmp_pfx", tmp_pfx);
-            pe.putString("token", token);
-            pe.commit();
-        }
+        
     prefs_lock.release();
         catchLog(sys_pfx);
         catchLog(user_pfx);
@@ -108,24 +78,24 @@ public class DwycoSender extends Service {
         catchLog(token);
         //poller_thread();
         
-        set_notification();
+        //set_notification();
         dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx, token);
-        stopForeground(STOP_FOREGROUND_REMOVE);
-        catchLog("send end");
+        catchLog("job end");
+        jobFinished(params, true);
         System.exit(0);
             }
         }
         );
         t.start();
-        return START_STICKY;
+        return true;
         //System.exit(0);
 
     }
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        catchLog("DESTROY");
+    public boolean onStopJob(JobParameters params) {
+        catchLog("STOP JOB");
         System.exit(0);
+        return true;
     }
 
     
@@ -135,15 +105,15 @@ public class DwycoSender extends Service {
 
         Notification.Builder m_builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        m_builder = new Notification.Builder(context, "dwycobg");
+        m_builder = new Notification.Builder(context, "dwyco");
         } else {
         m_builder = new Notification.Builder(context);
         }
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         //m_builder.setColor(context.getResources().getColor(R.color.green));
-        //m_builder.setContentTitle("Dwyco");
+        m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("Background send/recv");
+        m_builder.setContentText("Message probing");
         m_builder.setOnlyAlertOnce(true);
         SharedPreferences sp;
         prefs_lock.lock();
@@ -171,7 +141,7 @@ public class DwycoSender extends Service {
     }
 
     private void catchLog(String log) {
-        Log.d("DwycoSender", log);
+        Log.d("DwycoProbe", log);
 
 
     }

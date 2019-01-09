@@ -9088,6 +9088,76 @@ dwyco_wait_msg_cond(int ms)
 // this is just a goofy way to keep this background
 // processing from interfering with the UI (which does
 // its own processing for everything.)
+
+// return -1 if there is some error
+// return 0 if the port appears locked
+// return 1 is the port looks unlocked
+DWYCOEXPORT
+int
+dwyco_test_funny_mutex(int port)
+{
+#ifdef WIN32
+    if(vc_winsock::startup() == 0)
+        return -1;
+#endif
+    int s = socket(AF_INET, SOCK_STREAM,  0);
+    if(s == -1)
+        return -1;
+#ifdef WIN32
+    {
+        u_long on = 1;
+        if(ioctlsocket(s, FIONBIO, &on) != 0)
+            return -1;
+    }
+#else
+    if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+        return -1;
+#endif
+    struct sockaddr_in sap;
+    memset(&sap, 0, sizeof(sap));
+    sap.sin_family = AF_INET;
+    sap.sin_addr.s_addr = inet_addr("127.0.0.1");
+    sap.sin_port = htons(port);
+    int i;
+    for(i = 0; i < 2; ++i)
+    {
+        if(bind(s, (struct sockaddr *)&sap, sizeof(sap)) == -1)
+        {
+#ifdef WIN32
+            int e = WSAGetLastError();
+            if(e == WSAEADDRINUSE)
+            {
+                SleepEx(10, 0);
+                continue;
+            }
+            closesocket(s);
+#else
+            if(errno == EADDRINUSE)
+            {
+                usleep(10000);
+                continue;
+            }
+            close(s);
+#endif
+
+            return -1;
+        }
+        else
+            break;
+    }
+#ifdef WIN32
+        closesocket(s);
+#else
+        close(s);
+#endif
+    if(i == 2)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
 static
 int
 get_funny_mutex(int port)
@@ -9115,7 +9185,7 @@ get_funny_mutex(int port)
     sap.sin_addr.s_addr = inet_addr("127.0.0.1");
     sap.sin_port = htons(port);
     int i;
-    for(i = 0; i < 400; ++i)
+    for(i = 0; i < 40; ++i)
     {
         if(bind(s, (struct sockaddr *)&sap, sizeof(sap)) == -1)
         {
@@ -9141,7 +9211,7 @@ get_funny_mutex(int port)
         else
             break;
     }
-    if(i == 400)
+    if(i == 40)
     {
 #ifdef WIN32
         closesocket(s);
@@ -9199,6 +9269,15 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 
     //dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
+
+    // quick check, and nothing else
+    if(exit_if_outq_empty == 2)
+    {
+        int tmp = msg_outq_empty();
+        close(s);
+        return tmp;
+    }
+
     dwyco_set_client_version("dwycobg", 7);
     dwyco_set_initial_invis(1);
     dwyco_bg_init();

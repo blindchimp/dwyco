@@ -1441,6 +1441,7 @@ void DWYCOEXPORT dwyco_clear_contact_list();
 int DWYCOEXPORT dwyco_add_contact(const char *name, const char *phone, const char *email);
 void DWYCOEXPORT dwyco_signal_msg_cond();
 void DWYCOEXPORT dwyco_wait_msg_cond(int ms);
+int DWYCOEXPORT dwyco_test_funny_mutex(int port);
 
 // api for creating a simple backup of messages and account info
 // "create_backup" creates an initial backup, then subsequent calls
