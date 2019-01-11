@@ -79,9 +79,20 @@ public class DwycoProbe extends JobService {
         //poller_thread();
         
         //set_notification();
-        dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx, token);
+        dwybg.dwyco_background_processing(port, 1, sys_pfx, user_pfx, tmp_pfx, token);
         catchLog("job end");
+        // release wakelock, we don't really need it after sending
+        // whatever is in the q
         jobFinished(params, true);
+        // ok, this is a little sneaky... it appears that the jobscheduler does not
+        // immediately destroy the process, keeping it around for a few minutes
+        // after there are no wakelocks (killing the process because it is "empty").
+        // this is ok for us, because a few minutes after a send is probably the most
+        // likely time we will get a reply, and this will expedite it in most cases
+        // (since FCM takes 15 or 20 minutes sometimes to deliver a "high" priority
+        // message). 
+        dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx, token);
+        catchLog("job end2");
         System.exit(0);
             }
         }
