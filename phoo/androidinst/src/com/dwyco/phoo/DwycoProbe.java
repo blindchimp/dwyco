@@ -178,10 +178,19 @@ public class DwycoProbe extends JobService {
 
     private void set_notification() {
         NotificationManager m_notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
-
+        
+        SharedPreferences sp;
+        prefs_lock.lock();
+        sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
+        int quiet = sp.getInt("quiet", 0);
+        prefs_lock.release();
         Notification.Builder m_builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        m_builder = new Notification.Builder(context, "dwyco");
+            if(quiet == 0) 
+                m_builder = new Notification.Builder(context, "dwyco");
+            else
+                m_builder = new Notification.Builder(context, "dwyco-quiet");
+
         } else {
         m_builder = new Notification.Builder(context);
         }
@@ -189,13 +198,9 @@ public class DwycoProbe extends JobService {
         //m_builder.setColor(context.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("Msg recv");
+        m_builder.setContentText("Message received");
         m_builder.setOnlyAlertOnce(true);
-        SharedPreferences sp;
-        prefs_lock.lock();
-        sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
-        int quiet = sp.getInt("quiet", 0);
-        prefs_lock.release();
+        
         int def = Notification.DEFAULT_ALL;
         if(quiet == 1)
             def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
