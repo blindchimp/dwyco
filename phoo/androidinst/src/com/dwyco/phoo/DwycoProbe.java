@@ -76,7 +76,7 @@ public class DwycoProbe extends JobService {
         catchLog(tmp_pfx);
         catchLog(String.valueOf(port));
         catchLog(token);
-        //poller_thread();
+        poller_thread();
         
         //set_notification();
         dwybg.dwyco_background_processing(port, 1, sys_pfx, user_pfx, tmp_pfx, token);
@@ -109,6 +109,71 @@ public class DwycoProbe extends JobService {
         return true;
     }
 
+    private void poller_thread() {
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                catchLog("poll thread");
+                String responseMessage = "";
+                SharedPreferences sp;
+                dwybg.dwyco_wait_msg_cond(0);
+
+                prefs_lock.lock();
+
+                sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
+                String inboxdir = sp.getString("user_pfx", ".");
+                prefs_lock.release();
+                inboxdir += "/inbox";
+
+                while(true) {
+
+                    try
+                    {
+                        File f = new File(inboxdir);
+                        String[] foo = f.list();
+                        if(foo.length == 0)
+                        {
+                            local_files = foo;
+                            catchLog("no files");
+                        }
+                        else
+                        {
+                            Arrays.sort(foo);
+                            int i;
+                            for(i = 0; i < foo.length; ++i)
+                            {
+                                if(Arrays.binarySearch(local_files, foo[i]) < 0)
+                                {
+                                    set_notification();
+                                    break;
+                                }
+                            }
+                            local_files = foo;
+                            if(i == foo.length)
+                                catchLog("no new file count " + Integer.toString(foo.length));
+                            else
+                                catchLog("file count " + Integer.toString(foo.length));
+
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        catchLog("file check failed " + e);
+                    }
+
+                dwybg.dwyco_wait_msg_cond(0);
+                    //try {
+                    //    Thread.sleep(20 * 1000);
+                    //
+                    //} catch(InterruptedException ex) {
+                   //     Thread.currentThread().interrupt();
+                    //}
+                }
+
+            }
+        });
+        t.start();
+    }
+
     
 
     private void set_notification() {
@@ -124,7 +189,7 @@ public class DwycoProbe extends JobService {
         //m_builder.setColor(context.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("Message probing");
+        m_builder.setContentText("Msg recv");
         m_builder.setOnlyAlertOnce(true);
         SharedPreferences sp;
         prefs_lock.lock();
@@ -142,8 +207,7 @@ public class DwycoProbe extends JobService {
         m_builder.setContentIntent(p);
 
         Notification not = m_builder.getNotification();
-        //m_notificationManager.notify(1, not);
-        startForeground(1, not);
+        m_notificationManager.notify(1, not);
     }
 
     private void clear_notification() {
