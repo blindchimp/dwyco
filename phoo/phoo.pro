@@ -119,6 +119,7 @@ $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${D}/libuv/libuv.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -lsqlite3 \
 -lv4l2
 
