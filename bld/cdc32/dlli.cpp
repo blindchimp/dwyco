@@ -396,6 +396,7 @@ using namespace Weak;
 #include "qmsgsql.h"
 #include "vcwsock.h"
 #include "backsql.h"
+#include "upnp.h"
 
 using namespace dwyco;
 
@@ -1432,6 +1433,7 @@ dwyco_init()
     signal(SIGPIPE, SIG_IGN);
 #endif
 
+
     handle_crash_setup();
     load_info(Transmit_stats, "stats");
     unlink(newfn("stats").c_str());
@@ -1449,6 +1451,8 @@ dwyco_init()
     ExternalAudioOutput = 1;
 #endif
     init_codec();
+
+    do_upnp();
 
     set_listen_state(!CallAcceptanceData.get_no_listen());
     // hmmm, maybe get rid of "finish-startup"
