@@ -6,29 +6,25 @@
 
 using namespace dwyco;
 
-Upnp::Upnp()
-{
-
-}
-
 namespace dwyco {
-void
-do_upnp()
+int
+do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 {
-    struct UPNPDev * devlist = 0;
+    struct UPNPDev *devlist;
     int error = 0;
 
-    devlist = upnpDiscover(2000, 0, 0,
+    devlist = upnpDiscover(5000, 0, 0,
                            UPNP_LOCAL_PORT_ANY, 0, 2, &error);
     if(devlist == 0)
-        return;
+        return 0;
     int i;
-    struct UPNPDev * device;
+
     struct UPNPUrls urls;
     struct IGDdatas data;
     char lanaddr[64] = "unset";
 
     i = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
+    freeUPNPDevlist(devlist);
 
     switch(i) {
     case 1:
@@ -45,22 +41,41 @@ do_upnp()
     }
     GRTLOG("Local LAN ip address : %s", lanaddr, 0);
 
-//    if(SetRedirectAndTest(&urls, &data,
-//                               lanaddr, "6780",
-//                               "46780", "tcp",
-//                               "0",
-//                               "cdc-upnp", 0) < 0)
-//        return;
     int r;
 
+    char p1[64];
+    char p2[64];
+
+    sprintf(p1, "%d", natport1);
+    sprintf(p2, "%d", local_port1);
+
     r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
-                            "46780", "6780", lanaddr, "cdc-upnp",
-                            "TCP", 0, "0");
+                            p1, p2, lanaddr, "cdc-upnp1",
+                            "TCP", 0, "3600");
     if(r!=UPNPCOMMAND_SUCCESS)
     {
         GRTLOG("AddPortMapping failed with code %d (%s)",
                r, strupnperror(r));
+        FreeUPNPUrls(&urls);
+        return 0;
     }
+
+    sprintf(p1, "%d", natport2);
+    sprintf(p2, "%d", local_port2);
+
+    r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
+                            p1, p2, lanaddr, "cdc-upnp2",
+                            "TCP", 0, "3600");
+    if(r!=UPNPCOMMAND_SUCCESS)
+    {
+        GRTLOG("AddPortMapping failed with code %d (%s)",
+               r, strupnperror(r));
+        FreeUPNPUrls(&urls);
+        return 0;
+    }
+
+    FreeUPNPUrls(&urls);
+    return 1;
 
 }
 }
