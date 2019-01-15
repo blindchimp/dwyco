@@ -80,7 +80,7 @@ class Listener : public SimpleSocket
 {
 public:
     int init(const char *, const char *local_addr = 0, int retry = 0, HWND = 0);
-    int init2(const char *local_addr = 0, int outside_port = 0);
+    int init2(const char *local_addr = 0);
     int accept_ready();
     SimpleSocket *accept();
 };
