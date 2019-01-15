@@ -1452,7 +1452,7 @@ dwyco_init()
 #endif
     init_codec();
 
-    do_upnp();
+    //do_upnp();
 
     set_listen_state(!CallAcceptanceData.get_no_listen());
     // hmmm, maybe get rid of "finish-startup"
