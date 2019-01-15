@@ -419,6 +419,7 @@ HWND Main_window;
 extern int Reauthorize;
 extern int Create_new_account;
 extern int Database_id;
+extern int Disable_upnp;
 
 int uid_online(vc);
 int uid_online_display(vc);
@@ -1452,9 +1453,19 @@ dwyco_init()
 #endif
     init_codec();
 
-    //do_upnp();
-
     set_listen_state(!CallAcceptanceData.get_no_listen());
+
+    {
+        int rport = (dwyco_rand() % (65500 - 10000)) + 10000;
+        dwyco_set_net_data(rport, rport + 1, rport + 2,
+                           rport, rport + 1, rport + 2,
+                           1, 0, CSMS_TCP_ONLY);
+        bg_upnp(rport, rport + 1, rport, rport + 1);
+    }
+
+
+
+
     // hmmm, maybe get rid of "finish-startup"
     Inhibit_database_thread = 1;
 
@@ -5087,7 +5098,7 @@ dwyco_set_net_data(
         }
     }
     pal_reset();
-    extern int Disable_upnp;
+
     Disable_upnp = disable_upnp;
     extern int Media_select;
 //note: we depend on the values being sent in here being the same

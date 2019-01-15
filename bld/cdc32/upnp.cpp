@@ -3,10 +3,39 @@
 #include "upnpcommands.h"
 #include "upnperrors.h"
 #include "dwrtlog.h"
+#include <pthread.h>
 
 using namespace dwyco;
 
 namespace dwyco {
+
+static int Natport1, Natport2, Local_port1, Local_port2;
+
+static
+void *
+threaded_upnp(void *)
+{
+    do_upnp(Natport1, Natport2, Local_port1, Local_port2);
+    return 0;
+}
+
+int
+bg_upnp(int natport1, int natport2, int local_port1, int local_port2)
+{
+    pthread_t pt;
+    Natport1 = natport1;
+    Natport2 = natport2;
+    Local_port1 = local_port1;
+    Local_port2 = local_port2;
+
+    int i = pthread_create(&pt, 0, threaded_upnp, 0);
+    if(i != 0)
+        return 0;
+
+    return 1;
+
+}
+
 int
 do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 {

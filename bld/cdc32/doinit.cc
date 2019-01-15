@@ -79,6 +79,7 @@ int Disable_upnp;
 
 extern vc Current_user_lobbies;
 extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
+void init_dct();
 
 void
 init_codec(const char *logname)
@@ -90,7 +91,7 @@ init_codec(const char *logname)
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
         //No_direct_msgs = vc(VC_SET);
         Current_user_lobbies = vc(VC_TREE);
-        void init_stats();
+
         init_stats();
         Log = new DwLog(newfn(logname).c_str());
 #ifdef DW_RTLOG
@@ -144,7 +145,6 @@ init_codec(const char *logname)
         //init_snds();
         rgb_ycc_start();
         build_ycc_rgb_table();
-        void init_dct();
         init_dct();
         init_huff_encode();
         init_huff_decode();
