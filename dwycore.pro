@@ -17,6 +17,6 @@ bld/ppm \
 bld/gsm \
 bld/cdc32
 
-linux-*:SUBDIRS += bld/v4lcap
+linux-*:SUBDIRS += bld/v4lcap bld/miniupnp/miniupnp-master/miniupnpc
 
 SUBDIRS += cdcx
