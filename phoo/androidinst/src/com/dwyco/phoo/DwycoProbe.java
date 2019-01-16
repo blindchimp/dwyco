@@ -193,6 +193,10 @@ public class DwycoProbe extends JobService {
 
         } else {
         m_builder = new Notification.Builder(context);
+        int def = Notification.DEFAULT_ALL;
+        if(quiet == 1)
+            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+        m_builder.setDefaults(def);
         }
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         //m_builder.setColor(context.getResources().getColor(R.color.green));
@@ -201,11 +205,6 @@ public class DwycoProbe extends JobService {
         m_builder.setContentText("Message received");
         m_builder.setOnlyAlertOnce(true);
         
-        int def = Notification.DEFAULT_ALL;
-        if(quiet == 1)
-            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
-        m_builder.setDefaults(def);
-
         Intent notintent = new Intent(context, NotificationClient.class);
         notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent p = PendingIntent.getActivity(context, 1, notintent, 0);

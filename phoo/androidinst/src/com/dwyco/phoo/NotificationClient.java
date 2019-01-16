@@ -255,27 +255,27 @@ public static String get_token() {
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
-        //     Intent i = new Intent(m_instance, DwycoSender.class);
-        // i.putExtra("lockport", port);
-        // i.putExtra("sys_pfx", sys_pfx);
-        // i.putExtra("user_pfx", user_pfx);
-        // i.putExtra("tmp_pfx", tmp_pfx);
-        // i.putExtra("token", token);
-        //     m_instance.startForegroundService(i);
+            Intent i = new Intent(m_instance, DwycoSender.class);
+        i.putExtra("lockport", port);
+        i.putExtra("sys_pfx", sys_pfx);
+        i.putExtra("user_pfx", user_pfx);
+        i.putExtra("tmp_pfx", tmp_pfx);
+        i.putExtra("token", token);
+            m_instance.startForegroundService(i);
 
-            JobScheduler js = (JobScheduler)m_instance.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-            ComponentName jobService =  new ComponentName("com.dwyco.phoo", DwycoProbe.class.getName());
-            JobInfo.Builder jib = new JobInfo.Builder(1, jobService);
-            JobInfo ji = jib.
-               setPeriodic(60 * 15  * 1000).
-               setPersisted(true).
-               setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).
-               build();
-            int i = js.schedule(ji);
-            if(i == JobScheduler.RESULT_FAILURE)
-                catchLog("JOB SCHED FAIL");
-                else
-                catchLog("JOB OK");
+            // JobScheduler js = (JobScheduler)m_instance.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+            // ComponentName jobService =  new ComponentName("com.dwyco.phoo", DwycoProbe.class.getName());
+            // JobInfo.Builder jib = new JobInfo.Builder(1, jobService);
+            // JobInfo ji = jib.
+            //    setPeriodic(60 * 15  * 1000).
+            //    setPersisted(true).
+            //    setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).
+            //    build();
+            // int i = js.schedule(ji);
+            // if(i == JobScheduler.RESULT_FAILURE)
+            //     catchLog("JOB SCHED FAIL");
+            //     else
+            //     catchLog("JOB OK");
             return;
 
 
