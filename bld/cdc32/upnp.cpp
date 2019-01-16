@@ -1,7 +1,9 @@
 #include "upnp.h"
+#ifndef ANDROID
 #include "miniupnpc.h"
 #include "upnpcommands.h"
 #include "upnperrors.h"
+#endif
 #include "dwrtlog.h"
 #include <pthread.h>
 
@@ -22,6 +24,7 @@ threaded_upnp(void *)
 int
 bg_upnp(int natport1, int natport2, int local_port1, int local_port2)
 {
+#ifndef ANDROID
     pthread_t pt;
     Natport1 = natport1;
     Natport2 = natport2;
@@ -32,6 +35,7 @@ bg_upnp(int natport1, int natport2, int local_port1, int local_port2)
     if(i != 0)
         return 0;
 
+#endif
     return 1;
 
 }
@@ -39,6 +43,7 @@ bg_upnp(int natport1, int natport2, int local_port1, int local_port2)
 int
 do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 {
+#ifndef ANDROID
     struct UPNPDev *devlist;
     int error = 0;
 
@@ -104,6 +109,7 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
     }
 
     FreeUPNPUrls(&urls);
+#endif
     return 1;
 
 }
