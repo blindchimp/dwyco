@@ -85,7 +85,7 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 
     r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
                             p1, p2, lanaddr, "cdc-upnp1",
-                            "TCP", 0, "3600");
+                            "TCP", 0, "86400");
     if(r!=UPNPCOMMAND_SUCCESS)
     {
         GRTLOG("AddPortMapping failed with code %d (%s)",
@@ -99,7 +99,7 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 
     r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
                             p1, p2, lanaddr, "cdc-upnp2",
-                            "TCP", 0, "3600");
+                            "TCP", 0, "86400");
     if(r!=UPNPCOMMAND_SUCCESS)
     {
         GRTLOG("AddPortMapping failed with code %d (%s)",
