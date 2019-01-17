@@ -21,7 +21,7 @@ $${VCCFG_COMP} \
 ../vorbis112/include \
 ../libuv/include
 
-linux-*: INCLUDEPATH += ../v4lcap
+linux-*: INCLUDEPATH += ../v4lcap ../miniupnp/miniupnp-master/miniupnpc
 
 FORCE_DESKTOP_VGQT=0
 
@@ -239,8 +239,10 @@ sqlbq.cpp \
 favmsg.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
-    simplesql.cpp
+    simplesql.cpp \
+    upnp.cpp
 
 HEADERS += \
-    vccfg.h
+    vccfg.h \
+    upnp.h
 

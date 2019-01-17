@@ -151,7 +151,7 @@ set_listen_state(int on)
             Listen_sock = new Listener;
             Listen_sock->non_blocking(1);
             DwString lp(DwNetConfigData.get_primary_suffix("any"));
-            if(!Listen_sock->init2(lp.c_str(), DwNetConfigData.get_nat_primary_port()))
+            if(!Listen_sock->init2(lp.c_str()))
             {
                 (*MMChannel::popup_message_box_callback)(0, "can't listen (winsock error)", vcnil, vcnil);
                 delete Listen_sock;
@@ -160,7 +160,7 @@ set_listen_state(int on)
             Static_secondary_sock = new Listener;
             Static_secondary_sock->non_blocking(1);
             DwString lp2(DwNetConfigData.get_secondary_suffix("any"));
-            if(!Static_secondary_sock->init2(lp2.c_str(), DwNetConfigData.get_nat_secondary_port()))
+            if(!Static_secondary_sock->init2(lp2.c_str()))
             {
                 (*MMChannel::popup_message_box_callback)(0, "can't listen (winsock error)", vcnil, vcnil);
                 delete Static_secondary_sock;

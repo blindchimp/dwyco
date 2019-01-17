@@ -874,6 +874,7 @@ ApplicationWindow {
                 themsglist.reload_model()
                 pwdialog.state = "resume"
             } else {
+                drawer.close()
                 pwdialog.state = "pause"
             }
 

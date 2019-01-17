@@ -138,6 +138,7 @@ $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${OUT_PWD}/../lib/libuv.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -lesd \
 -lSDL \
 -lv4l2 \

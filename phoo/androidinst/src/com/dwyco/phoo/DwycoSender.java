@@ -106,10 +106,10 @@ public class DwycoSender extends Service {
         catchLog(tmp_pfx);
         catchLog(String.valueOf(port));
         catchLog(token);
-        //poller_thread();
+        poller_thread();
         
         set_notification();
-        dwybg.dwyco_background_processing(port, 1, sys_pfx, user_pfx, tmp_pfx, token);
+        dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx, token);
         stopForeground(STOP_FOREGROUND_REMOVE);
         catchLog("send end");
         System.exit(0);
@@ -117,7 +117,7 @@ public class DwycoSender extends Service {
         }
         );
         t.start();
-        return START_NOT_STICKY;
+        return START_STICKY;
         //System.exit(0);
 
     }
@@ -128,42 +128,148 @@ public class DwycoSender extends Service {
         System.exit(0);
     }
 
-    
+    private void poller_thread() {
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                catchLog("poll thread");
+                String responseMessage = "";
+                SharedPreferences sp;
+                dwybg.dwyco_wait_msg_cond(0);
 
-    private void set_notification() {
+                prefs_lock.lock();
+
+                sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
+                String inboxdir = sp.getString("user_pfx", ".");
+                prefs_lock.release();
+                inboxdir += "/inbox";
+
+                while(true) {
+
+                    try
+                    {
+                        File f = new File(inboxdir);
+                        String[] foo = f.list();
+                        if(foo.length == 0)
+                        {
+                            local_files = foo;
+                            catchLog("no files");
+                        }
+                        else
+                        {
+                            Arrays.sort(foo);
+                            int i;
+                            for(i = 0; i < foo.length; ++i)
+                            {
+                                if(Arrays.binarySearch(local_files, foo[i]) < 0)
+                                {
+                                    set_msg_notification();
+                                    break;
+                                }
+                            }
+                            local_files = foo;
+                            if(i == foo.length)
+                                catchLog("no new file count " + Integer.toString(foo.length));
+                            else
+                                catchLog("file count " + Integer.toString(foo.length));
+
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        catchLog("file check failed " + e);
+                    }
+
+                dwybg.dwyco_wait_msg_cond(0);
+                    //try {
+                    //    Thread.sleep(20 * 1000);
+                    //
+                    //} catch(InterruptedException ex) {
+                   //     Thread.currentThread().interrupt();
+                    //}
+                }
+
+            }
+        });
+        t.start();
+    }
+
+    private void set_msg_notification() {
         NotificationManager m_notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        Notification.Builder m_builder;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        m_builder = new Notification.Builder(context, "dwyco");
-        } else {
-        m_builder = new Notification.Builder(context);
-        }
-        m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
-        //m_builder.setColor(context.getResources().getColor(R.color.green));
-        m_builder.setContentTitle("Dwyco");
-        m_builder.setAutoCancel(true);
-        m_builder.setContentText("Message sending");
-        m_builder.setOnlyAlertOnce(true);
+        
         SharedPreferences sp;
         prefs_lock.lock();
         sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
+        Notification.Builder m_builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if(quiet == 0) 
+                m_builder = new Notification.Builder(context, "dwyco");
+            else
+                m_builder = new Notification.Builder(context, "dwyco-quiet");
+
+        } else {
+        m_builder = new Notification.Builder(context);
         int def = Notification.DEFAULT_ALL;
         if(quiet == 1)
             def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
         m_builder.setDefaults(def);
-
+        }
+        m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
+        //m_builder.setColor(context.getResources().getColor(R.color.green));
+        m_builder.setContentTitle("Dwyco");
+        m_builder.setAutoCancel(true);
+        m_builder.setContentText("Message received");
+        m_builder.setOnlyAlertOnce(true);
+        
         Intent notintent = new Intent(context, NotificationClient.class);
         notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent p = PendingIntent.getActivity(context, 1, notintent, 0);
         m_builder.setContentIntent(p);
 
         Notification not = m_builder.getNotification();
-        //m_notificationManager.notify(1, not);
+        m_notificationManager.notify(1, not);
+    }
+
+    
+
+    private void set_notification() {
+        NotificationManager m_notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+        
+        SharedPreferences sp;
+        prefs_lock.lock();
+        sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
+        int quiet = sp.getInt("quiet", 0);
+        prefs_lock.release();
+        Notification.Builder m_builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            
+                m_builder = new Notification.Builder(context, "dwycobg");
+            
+
+        } else {
+        m_builder = new Notification.Builder(context);
+        int def = Notification.DEFAULT_ALL;
+        if(quiet == 1)
+            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+        m_builder.setDefaults(def);
+        }
+        m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
+        //m_builder.setColor(context.getResources().getColor(R.color.green));
+        m_builder.setContentTitle("Dwyco");
+        m_builder.setAutoCancel(true);
+        m_builder.setContentText("Waiting");
+        m_builder.setOnlyAlertOnce(true);
+        
+        Intent notintent = new Intent(context, NotificationClient.class);
+        notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent p = PendingIntent.getActivity(context, 1, notintent, 0);
+        m_builder.setContentIntent(p);
+
+        Notification not = m_builder.getNotification();
         startForeground(1, not);
     }
+    
 
     private void clear_notification() {
         NotificationManager m_notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
