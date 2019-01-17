@@ -419,7 +419,6 @@ HWND Main_window;
 extern int Reauthorize;
 extern int Create_new_account;
 extern int Database_id;
-extern int Disable_upnp;
 
 int uid_online(vc);
 int uid_online_display(vc);
@@ -5099,7 +5098,6 @@ dwyco_set_net_data(
     }
     pal_reset();
 
-    Disable_upnp = disable_upnp;
     extern int Media_select;
 //note: we depend on the values being sent in here being the same
 // as the ones in aconn.h
