@@ -444,7 +444,7 @@ vc Current_chat_server_id;
 extern int Pal_logged_in;
 int is_invisible();
 void set_invisible(int);
-static int DND;
+
 static int ReadOnlyMode;
 extern int QSend_inprogress;
 extern int QSend_special_inprogress;
@@ -972,7 +972,7 @@ handle_crash_done()
 // should still work fine. this is a prelude to going to sleep, primarily
 // useful on mobile devices...
 static int Dwyco_suspended;
-static int Suspend_no_listen_state;
+static int Suspend_listen_state;
 static int Suspend_listen_mode;
 
 DWYCOEXPORT
@@ -998,12 +998,8 @@ dwyco_suspend()
     save_entropy();
     int current_listen = is_listening();
     Suspend_listen_mode = current_listen;
-    Suspend_no_listen_state = (int)get_settings_value("call_acceptance/no_listen");
-
-    turn_listen_on();
+    Suspend_listen_state = (int)get_settings_value("net/listen");
     set_listen_state(0);
-    if(current_listen == 0)
-        turn_listen_off();
     Inhibit_database_thread = 1;
     Inhibit_auto_connect = 1;
     Inhibit_pal = 1;
@@ -1028,12 +1024,8 @@ dwyco_resume()
     Inhibit_auto_connect = 0;
     QSend_inprogress = 0;
     QSend_special_inprogress = 0;
-    turn_listen_on();
-    set_listen_state(Suspend_no_listen_state);
-    if(Suspend_listen_mode)
-        turn_listen_on();
-    else
-        turn_listen_off();
+    turn_accept_on();
+    set_listen_state(Suspend_listen_state);
     init_pal();
     resume_qmsg();
     init_prf_cache();
@@ -1452,13 +1444,13 @@ dwyco_init()
 #endif
     init_codec();
 
-    set_listen_state(!CallAcceptanceData.get_no_listen());
-
+    set_listen_state(DwNetConfigData.get_listen());
+    if(DwNetConfigData.get_listen())
     {
         int rport = (dwyco_rand() % (65500 - 10000)) + 10000;
         dwyco_set_net_data(rport, rport + 1, rport + 2,
                            rport, rport + 1, rport + 2,
-                           1, 0, CSMS_TCP_ONLY);
+                           1, 0, CSMS_TCP_ONLY, 1);
         bg_upnp(rport, rport + 1, rport, rport + 1);
     }
 
@@ -4634,55 +4626,6 @@ dwyco_get_codec_data(int *agc, int *denoise, double *audio_delay)
     return 1;
 }
 
-#if 0
-DWYCOEXPORT
-int
-dwyco_set_user_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(const char *, description)
-    DWUIDECLARG(const char *, username)
-    DWUIDECLARG(const char *, email)
-    DWUIDECLARG(const char *, last_name)
-    DWUIDECLARG(const char *, first_name)
-    DWUIDECLARG_END
-)
-{
-    DWUISET_BEGIN(UserConfigXfer, UserConfigData)
-    DWUISET_MEMBER(const char *, description)
-    DWUISET_MEMBER(const char *, username)
-    DWUISET_MEMBER(const char *, email)
-    DWUISET_MEMBER(const char *, last_name)
-    DWUISET_MEMBER(const char *, first_name)
-    a.set_sync(1);
-    update_server_info();
-    DWUISET_END
-
-
-}
-
-DWYCOEXPORT
-int
-dwyco_get_user_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(const char *, description)
-    DWUIDECLARG_OUT(const char *, username)
-    DWUIDECLARG_OUT(const char *, email)
-    DWUIDECLARG_OUT(const char *, last_name)
-    DWUIDECLARG_OUT(const char *, first_name)
-    DWUIDECLARG_END
-)
-{
-    DWUIGET_BEGIN(UserConfigXfer, UserConfigData)
-    DWUIGET_MEMBER(const char *, description)
-    DWUIGET_MEMBER(const char *, username)
-    DWUIGET_MEMBER(const char *, email)
-    DWUIGET_MEMBER(const char *, last_name)
-    DWUIGET_MEMBER(const char *, first_name)
-    DWUIGET_END
-}
-
-#endif
-
 DWYCOEXPORT
 int
 dwyco_set_vidcap_data(
@@ -4943,8 +4886,6 @@ dwyco_set_call_accept(
     DWUIDECLARG(const char * , pw)
     DWUIDECLARG(bool, auto_accept)
     DWUIDECLARG(bool, require_pw)
-    DWUIDECLARG(bool, accept_any_rating)
-    DWUIDECLARG(bool, no_listen)
     DWUIDECLARG_END
 )
 {
@@ -4958,9 +4899,6 @@ dwyco_set_call_accept(
     DWUISET_MEMBER(const char * , pw)
     DWUISET_MEMBER(bool, auto_accept)
     DWUISET_MEMBER(bool, require_pw)
-    DWUISET_MEMBER(bool, accept_any_rating)
-    DWUISET_MEMBER(bool, no_listen)
-
     chatq_send_update_call_accept();
     DWUISET_END
 }
@@ -4978,8 +4916,6 @@ dwyco_get_call_accept(
     DWUIDECLARG_OUT(const char * , pw)
     DWUIDECLARG_OUT(bool, auto_accept)
     DWUIDECLARG_OUT(bool, require_pw)
-    DWUIDECLARG_OUT(bool, accept_any_rating)
-    DWUIDECLARG_OUT(bool, no_listen)
     DWUIDECLARG_END
 )
 {
@@ -4993,8 +4929,6 @@ dwyco_get_call_accept(
     DWUIGET_MEMBER(const char * , pw)
     DWUIGET_MEMBER(bool, auto_accept)
     DWUIGET_MEMBER(bool, require_pw)
-    DWUIGET_MEMBER(bool, accept_any_rating)
-    DWUIGET_MEMBER(bool, no_listen)
     DWUIGET_END
 }
 
@@ -5067,6 +5001,7 @@ dwyco_set_net_data(
     DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
     DWUIDECLARG(int, disable_upnp)		// icuii: 0
     DWUIDECLARG(int, call_setup_media_select)
+    DWUIDECLARG(int, listen)
     DWUIDECLARG_END
 )
 {
@@ -5080,22 +5015,12 @@ dwyco_set_net_data(
     DWUISET_MEMBER(bool, advertise_nat_ports)		// icuii: 0
     DWUISET_MEMBER(int, disable_upnp)		// icuii: 0
     DWUISET_MEMBER(int, call_setup_media_select)		// icuii: tcp
+    DWUISET_MEMBER(int, listen)
     if(is_listening())
     {
         set_listen_state(0);
-        set_listen_state(1);
     }
-    else
-    {
-        if(!DND) // they haven't turned off the listeners altogether
-            // they are just not serviced temporarily
-        {
-            turn_listen_on();
-            set_listen_state(0);
-            set_listen_state(1);
-            turn_listen_off();
-        }
-    }
+    set_listen_state(listen);
     pal_reset();
 
     extern int Media_select;
@@ -5131,6 +5056,7 @@ dwyco_get_net_data(
     DWUIDECLARG_OUT(bool, advertise_nat_ports)
     DWUIDECLARG_OUT(int, disable_upnp)
     DWUIDECLARG_OUT(int, call_setup_media_select)
+    DWUIDECLARG_OUT(int, listen)
     DWUIDECLARG_END
 )
 {
@@ -5144,6 +5070,7 @@ dwyco_get_net_data(
     DWUIGET_MEMBER(bool, advertise_nat_ports)
     DWUIGET_MEMBER(int, disable_upnp)
     DWUIGET_MEMBER(int, call_setup_media_select)
+    DWUIGET_MEMBER(int, listen)
     DWUIGET_END
 }
 
@@ -9297,14 +9224,13 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     if(token)
         dwyco_write_token(token);
 
-    //dwyco_set_setting("call_acceptance/no_listen", "1");
     set_listen_state(0);
     // for now, don't let any channels get setup via the
     // server ... not strictly necessary, but until we get the
     // calling stuff sorted out (needs a protocol change to alert
     // regarding incoming calls, etc.) we just let everything go
     // via the server.
-    dwyco_inhibit_sac(0);
+    dwyco_inhibit_sac(1);
     dwyco_inhibit_pal(1);
 
     if(dwyco_get_create_new_account())

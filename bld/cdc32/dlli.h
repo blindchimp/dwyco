@@ -2109,35 +2109,6 @@ dwyco_get_vidcap_data(
     DWUIDECLARG_END
 );
 
-// this is miscellaneous UI config
-// that isn't used in ICUII.
-int DWYCOEXPORT
-dwyco_set_config_display(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(bool, fit_video)
-    DWUIDECLARG(bool, integral_zoom)
-    DWUIDECLARG(bool, jumbo_buttons)
-    DWUIDECLARG(bool, no_buttons)
-    DWUIDECLARG(bool, small_buttons)
-    DWUIDECLARG(bool, mini_toolbar)
-    DWUIDECLARG(bool, blinky)
-    DWUIDECLARG_END
-);
-
-
-int DWYCOEXPORT
-dwyco_get_config_display(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(bool, fit_video)
-    DWUIDECLARG_OUT(bool, integral_zoom)
-    DWUIDECLARG_OUT(bool, jumbo_buttons)
-    DWUIDECLARG_OUT(bool, no_buttons)
-    DWUIDECLARG_OUT(bool, small_buttons)
-    DWUIDECLARG_OUT(bool, mini_toolbar)
-    DWUIDECLARG_OUT(bool, blinky)
-    DWUIDECLARG_END
-);
-
 // this is only used for testing without
 // a camera. it is NOT used in ICUII.
 int DWYCOEXPORT
@@ -2205,8 +2176,6 @@ dwyco_set_call_accept(
     DWUIDECLARG(const char * , pw)			// icuii: connection password required to connect
     DWUIDECLARG(bool, auto_accept)		// icuii: 1 if "accept calls automatically" is checked
     DWUIDECLARG(bool, require_pw)       // icuii: 1 if "require password" is checked
-    DWUIDECLARG(bool, accept_any_rating)// icuii: 1 if "accept calls from other ratings" is checked
-    DWUIDECLARG(bool, no_listen)		// icuii: always 0
     DWUIDECLARG_END
 );
 
@@ -2222,8 +2191,6 @@ dwyco_get_call_accept(
     DWUIDECLARG_OUT(const char * , pw)
     DWUIDECLARG_OUT(bool, auto_accept)
     DWUIDECLARG_OUT(bool, require_pw)
-    DWUIDECLARG_OUT(bool, accept_any_rating)
-    DWUIDECLARG_OUT(bool, no_listen)
     DWUIDECLARG_END
 );
 
@@ -2304,6 +2271,7 @@ dwyco_set_net_data(
     DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
     DWUIDECLARG(int, disable_upnp)				// icuii: 0 , disabled for compat right now
     DWUIDECLARG(int, media_select)				// defaults to "handshake", see *MEDIA_SEL* defines
+    DWUIDECLARG(int, listen)
     DWUIDECLARG_END
 );
 
@@ -2319,6 +2287,7 @@ dwyco_get_net_data(
     DWUIDECLARG_OUT(bool, advertise_nat_ports)
     DWUIDECLARG_OUT(int, disable_upnp)
     DWUIDECLARG_OUT(int, media_select)
+    DWUIDECLARG_OUT(int, listen)
     DWUIDECLARG_END
 );
 
