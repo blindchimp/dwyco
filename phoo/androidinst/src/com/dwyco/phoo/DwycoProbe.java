@@ -63,7 +63,7 @@ public class DwycoProbe extends JobService {
         String tmp_pfx;
         String token;
 
-            sp = context.getSharedPreferences("dwyco_msg", MODE_PRIVATE);
+            sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
             port = sp.getInt("lockport", 4500);
             sys_pfx = sp.getString("sys_pfx", ".");
             user_pfx = sp.getString("user_pfx", ".");
