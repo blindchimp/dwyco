@@ -41,6 +41,7 @@
 #include "sproto.h"
 #include "ssns.h"
 #include "audconv.h"
+#include "aconn.h"
 
 class MMTube;
 class VidAcquire;
@@ -602,7 +603,7 @@ private:
     friend class TMsgCompose;
     friend void send_qd_and_attachment(DwString qfn, vc m);
     friend int DWYCOCALLCONV dwyco_enable_video_capture_preview(int on);
-    friend void poll_listener();
+    friend void dwyco::poll_listener();
 private:
 
     friend void async_lookup_handler(HANDLE, DWORD);

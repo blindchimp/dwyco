@@ -36,8 +36,6 @@ public:
     DWUIDECLVAL(const char *, pw)
     DWUIDECLVAL(bool, auto_accept)
     DWUIDECLVAL(bool, require_pw)
-    DWUIDECLVAL(bool, accept_any_rating)
-    DWUIDECLVAL(bool, no_listen)
     DWUIDECL_END
 };
 

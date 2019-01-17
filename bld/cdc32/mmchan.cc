@@ -129,9 +129,7 @@ CallScreeningCallback MMChannel::call_screening_callback;
 int MMChannel::Moron_dork_mode;
 int MMChannel::Session_id = 1;
 
-
 void pump_messages();
-void turn_listen_on();
 
 // Conference mode, mostly defunct
 int Conf;
@@ -2982,7 +2980,7 @@ cleanup:
     pstate = WAIT_FOR_CLOSE;
     negotiating = 0;
     // we're through monkeying with devices, so allow new connects.
-    turn_listen_on();
+    turn_accept_on();
     // note: leave nego_timer going in this case because
     // we may not get a disconnect is odd cases.
 }
@@ -3216,14 +3214,14 @@ done:
         if(connection_list_changed_callback)
             (*connection_list_changed_callback)(0, clc_arg1, clc_arg2, clc_arg3);
         negotiating = 0;
-        turn_listen_on();
+        turn_accept_on();
         nego_timer.reset();
     }
     return;
 cleanup:
     pstate = WAIT_FOR_CLOSE;
     negotiating = 0;
-    turn_listen_on();
+    turn_accept_on();
     // note: leave nego_timer going in this case because
     // we may not get a disconnect is odd cases.
 }
@@ -3235,7 +3233,7 @@ MMChannel::reject_call()
     pstate = WAIT_FOR_CLOSE;
     negotiating = 0;
     // we're through monkeying with devices, so allow new connects.
-    turn_listen_on();
+    turn_accept_on();
     // note: leave nego_timer going in this case because
     // we may not get a disconnect is odd cases.
 }
@@ -4756,7 +4754,7 @@ dropit:
     }
     if(!dont_restart_listening)
     {
-        turn_listen_on();
+        turn_accept_on();
     }
 #if 0
     if(not_idle == 0)

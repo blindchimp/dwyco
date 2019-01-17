@@ -73,9 +73,7 @@
 vc Myhostname;
 DwLog *Log;
 CRITICAL_SECTION Audio_lock;
-int GodMode = 0;
 vc TheMan;
-int Disable_upnp;
 
 extern vc Current_user_lobbies;
 extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
@@ -199,7 +197,6 @@ init_codec(const char *logname)
 
         ZapAdvData.load();
         DwNetConfigData.load();
-        Disable_upnp = DwNetConfigData.get_disable_upnp();
         extern int Media_select;
         switch(DwNetConfigData.get_call_setup_media_select())
         {
@@ -340,7 +337,6 @@ simple_init_codec(const char *logname)
         CallAcceptanceData.load();
         ZapAdvData.load();
         DwNetConfigData.load();
-        Disable_upnp = 1;
 
         init_sysattr();
         init = 1;
@@ -439,7 +435,6 @@ init_bg_msg_send(const char *logname)
         CallAcceptanceData.load();
         ZapAdvData.load();
         DwNetConfigData.load();
-        Disable_upnp = 1;
 
         init_sysattr();
         Bg_msg_send_init = 1;

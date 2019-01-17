@@ -260,7 +260,7 @@ main(int argc, char *argv[])
 
     dwyco_init();
 
-    dwyco_set_setting("call_acceptance/no_listen", "1");
+    dwyco_set_setting("net/listen", "0");
     dwyco_inhibit_sac(1);
 
     if(dwyco_get_create_new_account())
