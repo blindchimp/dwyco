@@ -19,9 +19,10 @@ $${VCCFG_COMP} \
 ../theora/include \
 ../ogg/include \
 ../vorbis112/include \
-../libuv/include
+../libuv/include \
+../miniupnp/miniupnp-master/miniupnpc
 
-linux-*: INCLUDEPATH += ../v4lcap ../miniupnp/miniupnp-master/miniupnpc
+linux-*: INCLUDEPATH += ../v4lcap
 
 FORCE_DESKTOP_VGQT=0
 
@@ -35,6 +36,7 @@ DEFINES += DW_RTLOG
 #DEFINES += DWYCO_TRACE
 #LCL_DFLAGS += -DLEAK_CLEANUP
 DEFINES += DWYCO_FIELD_DEBUG
+DEFINES += MINIUPNP_STATICLIB
 
 macx-*|linux-*|macx-ios-clang|macx-clang|android-*|wasm-emscripten {
 QMAKE_CXXFLAGS += -fpermissive

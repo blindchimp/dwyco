@@ -5,7 +5,12 @@
 #include "upnperrors.h"
 #endif
 #include "dwrtlog.h"
+#ifdef _WIN32
+#include <windows.h>
+#include <process.h>
+#else
 #include <pthread.h>
+#endif
 
 using namespace dwyco;
 
@@ -14,26 +19,41 @@ namespace dwyco {
 static int Natport1, Natport2, Local_port1, Local_port2;
 
 static
+#ifdef _WIN32
+void
+#else
 void *
+#endif
 threaded_upnp(void *)
 {
     do_upnp(Natport1, Natport2, Local_port1, Local_port2);
+#ifdef _WIN32
+    _endthread();
+#else
     return 0;
+#endif
 }
 
 int
 bg_upnp(int natport1, int natport2, int local_port1, int local_port2)
 {
 #ifndef ANDROID
-    pthread_t pt;
     Natport1 = natport1;
     Natport2 = natport2;
     Local_port1 = local_port1;
     Local_port2 = local_port2;
 
+#ifdef _WIN32
+    HANDLE h = (HANDLE)_beginthread(threaded_upnp, 4096, 0);
+    if(h == 0 || h == (void *)-1)
+	    return 0;
+#endif
+#ifdef LINUX
+    pthread_t pt;
     int i = pthread_create(&pt, 0, threaded_upnp, 0);
     if(i != 0)
         return 0;
+#endif
 
 #endif
     return 1;
