@@ -1,5 +1,6 @@
 %module dwybg
 %inline %{
+int dwyco_test_funny_mutex(int port);
 int dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 void dwyco_set_aux_string(const char *str);
 void dwyco_clear_contact_list();

@@ -47,8 +47,6 @@
 #include "dwscoped.h"
 using namespace dwyco;
 
-extern DwVec<QckDone> Waitq;
-extern DwListA<vc> Response_q;
 extern vc My_UID;
 
 static void

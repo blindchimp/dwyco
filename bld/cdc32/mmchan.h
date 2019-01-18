@@ -40,6 +40,7 @@
 #include "sproto.h"
 #include "ssns.h"
 #include "audconv.h"
+#include "aconn.h"
 
 class MMTube;
 class VidAcquire;
@@ -51,10 +52,11 @@ class KeyboardAcquire;
 class AudioOutput;
 class AudioAcquire;
 class MessageDisplay;
-struct QckMsg;
+
 namespace dwyco {
 class DirectSend;
 class DwQSend;
+struct QckMsg;
 }
 
 typedef DwVecP<MMChannel> ChanList;
@@ -600,7 +602,7 @@ private:
     friend class TMsgCompose;
     friend void send_qd_and_attachment(DwString qfn, vc m);
     friend int DWYCOCALLCONV dwyco_enable_video_capture_preview(int on);
-    friend void poll_listener();
+    friend void dwyco::poll_listener();
 private:
 
     friend void async_lookup_handler(HANDLE, DWORD);
@@ -808,7 +810,7 @@ public:
     int start_server_ops();
     static MMChannel * get_server_channel();
     static MMChannel * get_secondary_server_channel();
-    static void send_to_db(QckMsg& m, int chan_id);
+    static void send_to_db(dwyco::QckMsg& m, int chan_id);
     void server_response(vc v);
     void chat_response(vc);
     int disconnect_server();

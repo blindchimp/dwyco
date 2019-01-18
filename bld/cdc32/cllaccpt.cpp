@@ -33,8 +33,6 @@ CallAcceptanceXfer CallAcceptanceData;
 #define CA_AUTO_ACCEPT "auto_accept"
 #define CA_REQUIRE_PW "require_pw"
 #define CA_PW "pw"
-#define CA_NO_LISTEN "no_listen"
-#define CA_ACCEPT_ANY_RATING "accept_any_rating"
 
 #define DEFAULT_MAX_AUDIO_RECV "4"
 #define DEFAULT_MAX_VIDEO_RECV "4"
@@ -45,9 +43,6 @@ CallAcceptanceXfer CallAcceptanceData;
 #define DEFAULT_AUTO_ACCEPT BF_UNCHECKED
 #define DEFAULT_REQUIRE_PW BF_UNCHECKED
 #define DEFAULT_PW ""
-#define DEFAULT_ACCEPT_ANY_RATING BF_UNCHECKED
-#define DEFAULT_NO_LISTEN BF_UNCHECKED
-
 
 CallAcceptanceXfer::CallAcceptanceXfer()
 DWUIINIT_CTOR_BEGIN,
@@ -59,9 +54,7 @@ DWUIINIT_CTOR_VAL(max_video_recv),
 DWUIINIT_CTOR_VAL(max_pchat),
 DWUIINIT_CTOR_VAL(pw),
 DWUIINIT_CTOR_VAL(auto_accept),
-DWUIINIT_CTOR_VAL(require_pw),
-DWUIINIT_CTOR_VAL(accept_any_rating),
-DWUIINIT_CTOR_VAL(no_listen)
+DWUIINIT_CTOR_VAL(require_pw)
 DWUIINIT_CTOR_END
 {
     set_max_audio_recv(DEFAULT_MAX_AUDIO_RECV);
@@ -73,9 +66,6 @@ DWUIINIT_CTOR_END
     set_auto_accept(DEFAULT_AUTO_ACCEPT);
     set_require_pw(DEFAULT_REQUIRE_PW);
     set_pw(DEFAULT_PW);
-    set_accept_any_rating(DEFAULT_ACCEPT_ANY_RATING);
-    set_no_listen(DEFAULT_NO_LISTEN);
-
 }
 
 void

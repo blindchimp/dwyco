@@ -15,7 +15,8 @@ bld/pbm \
 bld/pgm \
 bld/ppm \
 bld/gsm \
-bld/cdc32
+bld/cdc32 \
+bld/miniupnp/miniupnp-master/miniupnpc
 
 linux-*:SUBDIRS += bld/v4lcap
 

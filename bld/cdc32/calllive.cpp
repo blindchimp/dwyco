@@ -425,7 +425,7 @@ stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr vp, M
         mc->call_type = mmc->call_type;
     }
 
-    u_long addr;
+    in_addr_t addr;
     if((addr = inet_addr((const char *)host)) == INADDR_NONE)
     {
         // start connect process at resolve stage

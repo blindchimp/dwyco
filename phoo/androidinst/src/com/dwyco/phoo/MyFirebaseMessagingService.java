@@ -40,10 +40,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "MyFirebaseMsgService";
     private static SocketLock prefs_lock;
+    private static Context context;
 
 @Override
 public void onCreate() {
     super.onCreate();
+    context = this;
     prefs_lock = new SocketLock("com.dwyco.phoo.prefs");
     }
 
@@ -125,35 +127,39 @@ public void onCreate() {
         int allow_not = NotificationClient.allow_notification;
         if(allow_not == 0)
             return;
-        SocketLock prefs_lock = new SocketLock("com.dwyco.phoo.prefs");
-        Context m_instance = getApplicationContext();
+        //SocketLock prefs_lock = new SocketLock("com.dwyco.phoo.prefs");
+
         NotificationManager m_notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
         Notification.Builder m_builder;
-
+        SharedPreferences sp;
+        prefs_lock.lock();
+        sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
+        int quiet = sp.getInt("quiet", 0);
+        prefs_lock.release();
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        m_builder = new Notification.Builder(m_instance, "dwyco");
+            if(quiet == 0) 
+                m_builder = new Notification.Builder(context, "dwyco");
+            else
+                m_builder = new Notification.Builder(context, "dwyco-quiet");
+
         } else {
-        m_builder = new Notification.Builder(m_instance);
+        m_builder = new Notification.Builder(context);
+        int def = Notification.DEFAULT_ALL;
+        if(quiet == 1)
+            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+        m_builder.setDefaults(def);
         }
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);
         m_builder.setContentText("New messages");
         m_builder.setOnlyAlertOnce(true);
-        SharedPreferences sp;
-        prefs_lock.lock();
-        sp = getSharedPreferences("phoo", MODE_PRIVATE);
-        int quiet = sp.getInt("quiet", 0);
-        prefs_lock.release();
-        int def = Notification.DEFAULT_ALL;
-        if(quiet == 1)
-            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
-        m_builder.setDefaults(def);
 
-        Intent notintent = new Intent(m_instance, NotificationClient.class);
+        Intent notintent = new Intent(context, NotificationClient.class);
         notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent p = PendingIntent.getActivity(m_instance, 1, notintent, 0);
+        PendingIntent p = PendingIntent.getActivity(context, 1, notintent, 0);
         m_builder.setContentIntent(p);
 
         Notification not = m_builder.getNotification();

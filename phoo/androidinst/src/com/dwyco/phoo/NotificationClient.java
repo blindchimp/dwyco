@@ -63,6 +63,10 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import com.crashlytics.android.Crashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
+import android.app.job.JobScheduler;
+import android.app.job.JobInfo;
+import android.app.job.JobInfo.Builder;
+import android.content.ComponentName;
 
 // note: use notificationcompat stuff for older androids
 
@@ -114,6 +118,17 @@ public class NotificationClient extends QtActivity
                 // or other notification behaviors after this
                 NotificationManager notificationManager = getSystemService(NotificationManager.class);
                 notificationManager.createNotificationChannel(channel);
+
+                channel = new NotificationChannel("dwyco-quiet", "Quiet notification", NotificationManager.IMPORTANCE_LOW);
+                channel.setDescription("Quiet message channel");
+                channel.setShowBadge(false);
+                notificationManager.createNotificationChannel(channel);
+
+                channel = new NotificationChannel("dwycobg", "Waiting", NotificationManager.IMPORTANCE_LOW);
+                channel.setDescription("Background send/receives");
+                channel.setShowBadge(false);
+                notificationManager.createNotificationChannel(channel);
+
             }
 
     }
@@ -246,18 +261,46 @@ public static String get_token() {
         // main app goes to sleep, which means delivery of large messages
         // will not work quite right (only happens when the app is
         // active). this will have to be fixed eventually.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            return;
-            }
+        
 
-        Intent i = new Intent(m_instance, Dwyco_Message.class);
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            Intent i = new Intent(m_instance, DwycoSender.class);
+        i.putExtra("lockport", port);
+        i.putExtra("sys_pfx", sys_pfx);
+        i.putExtra("user_pfx", user_pfx);
+        i.putExtra("tmp_pfx", tmp_pfx);
+        i.putExtra("token", token);
+            m_instance.startForegroundService(i);
+
+            // JobScheduler js = (JobScheduler)m_instance.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+            // ComponentName jobService =  new ComponentName("com.dwyco.phoo", DwycoProbe.class.getName());
+            // JobInfo.Builder jib = new JobInfo.Builder(1, jobService);
+            // JobInfo ji = jib.
+            //    setPeriodic(60 * 15  * 1000).
+            //    setPersisted(true).
+            //    setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).
+            //    build();
+            // int i = js.schedule(ji);
+            // if(i == JobScheduler.RESULT_FAILURE)
+            //     catchLog("JOB SCHED FAIL");
+            //     else
+            //     catchLog("JOB OK");
+            return;
+
+
+            }
+            else {
+                Intent i = new Intent(m_instance, Dwyco_Message.class);
         i.putExtra("lockport", port);
         i.putExtra("sys_pfx", sys_pfx);
         i.putExtra("user_pfx", user_pfx);
         i.putExtra("tmp_pfx", tmp_pfx);
         i.putExtra("token", token);
 
-        m_instance.startService(i);
+            m_instance.startService(i);
+            }
 
     }
 

@@ -93,8 +93,8 @@ unsigned long hash(vc_winsock *a)
 #include <sys/un.h>
 #include <sys/param.h>
 #else
-#include <linux/un.h>
-#include <linux/limits.h>
+#include <sys/un.h>
+#include <limits.h>
 #endif
 #endif
 

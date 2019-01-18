@@ -585,7 +585,7 @@ int main(int argc, char *argv[])
 #endif
     dwyco_set_setting("call_acceptance/max_chat", "100");
     dwyco_set_setting("call_acceptance/max_pchat", "100");
-    dwyco_set_setting("call_acceptance/no_listen", "0");
+    dwyco_set_setting("net/listen", "1");
     dwyco_set_setting("zap/always_accept", "1");
     dwyco_set_setting("zap/always_server", "0");
     // TCP only calling

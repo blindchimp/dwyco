@@ -4,13 +4,11 @@ pushd `dirname $0`
 
 if [ "$NDK_ABI" = "arm" ]
 then
-	abi="arm-linux-androideabi"
-	host="arm-linux"
-	export CFLAGS="-fPIC -DANDROID -D__thumb__ -mthumb -Wfatal-errors -Wno-deprecated"
+	host="arm-linux-androideabi"
+	export CFLAGS="-fPIC -DANDROID"
 else
-	abi="i686-linux-android"
-	host="x86-linux"
-	export CFLAGS="-fPIC -DANDROID -Wfatal-errors -Wno-deprecated"
+	host="i686-linux-android"
+	export CFLAGS="-fPIC -DANDROID"
 fi
 
 thisdir=`pwd`
@@ -28,10 +26,10 @@ echo "**********"
 
 pushd libspeex
 
-export CC="$abi-gcc"
-export LD="$abi-ld"
-export RANLIB="$abi-ranlib"
-export AR="$abi-ar"
+#export CC="$abi-gcc"
+#export LD="$abi-ld"
+#export RANLIB="$abi-ranlib"
+#export AR="$abi-ar"
 
 ./configure \
 --prefix=`pwd`/output \

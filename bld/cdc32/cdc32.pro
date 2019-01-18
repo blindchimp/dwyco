@@ -19,7 +19,8 @@ $${VCCFG_COMP} \
 ../theora/include \
 ../ogg/include \
 ../vorbis112/include \
-../libuv/include
+../libuv/include \
+../miniupnp/miniupnp-master/miniupnpc
 
 linux-*: INCLUDEPATH += ../v4lcap
 
@@ -35,8 +36,9 @@ DEFINES += DW_RTLOG
 #DEFINES += DWYCO_TRACE
 #LCL_DFLAGS += -DLEAK_CLEANUP
 DEFINES += DWYCO_FIELD_DEBUG
+DEFINES += MINIUPNP_STATICLIB
 
-macx-*|linux-*|macx-ios-clang|macx-clang|android-* {
+macx-*|linux-*|macx-ios-clang|macx-clang|android-*|wasm-emscripten {
 QMAKE_CXXFLAGS += -fpermissive
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 INCLUDEPATH += winemu
@@ -93,6 +95,16 @@ DEFINES += DWYCO_CDC_LIBUV
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
+}
+
+wasm-emscripten {
+DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
+DEFINES += DWYCO_USE_STATIC_SQLITE
+QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
+equals(FORCE_DESKTOP_VGQT, 1) {
+DEFINES += DWYCO_FORCE_DESKTOP_VGQT
+}
+SOURCES += sqlite3.c
 }
 
 SOURCES += \
@@ -229,8 +241,10 @@ sqlbq.cpp \
 favmsg.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
-    simplesql.cpp
+    simplesql.cpp \
+    upnp.cpp
 
 HEADERS += \
-    vccfg.h
+    vccfg.h \
+    upnp.h
 

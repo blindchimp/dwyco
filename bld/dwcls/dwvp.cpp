@@ -19,6 +19,11 @@ DwTreeKaz<void *, long> *DwVP::Ptr_listp;
 void
 DwVP::init_dvp()
 {
+    if(Ptr_listp)
+    {
+        delete Ptr_listp;
+        Ptr_listp = 0;
+    }
     Ptr_listp = new DwTreeKaz<void *, long>(0);
 }
 #define Ptr_list (*Ptr_listp)

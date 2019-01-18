@@ -9,6 +9,7 @@
 package com.dwyco.phoo;
 
 public class dwybgJNI {
+  public final static native int dwyco_test_funny_mutex(int jarg1);
   public final static native int dwyco_background_processing(int jarg1, int jarg2, String jarg3, String jarg4, String jarg5, String jarg6);
   public final static native void dwyco_set_aux_string(String jarg1);
   public final static native void dwyco_clear_contact_list();

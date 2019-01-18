@@ -35,7 +35,7 @@ function current_dir {
   echo "$(cd "$(dirname $0)"; pwd)"
 }
 
-export PATH=$PATH:$NDK:$(current_dir)/toolchain/bin
+export PATH=$NDK:$(current_dir)/toolchain/bin:$PATH
 
 echo $PATH
 
