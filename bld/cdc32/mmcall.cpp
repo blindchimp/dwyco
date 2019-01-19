@@ -33,6 +33,9 @@
 #include "qauth.h"
 #include "pval.h"
 #include "qmsg.h"
+#ifdef _Windows
+typedef unsigned long in_addr_t;
+#endif
 
 using namespace dwyco;
 
