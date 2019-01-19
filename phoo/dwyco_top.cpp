@@ -1433,7 +1433,7 @@ DwycoCore::init()
         ::abort();
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
-    dwyco_set_setting("net/listen", "0");
+    dwyco_set_setting("net/listen", "1");
 
     new profpv;
     // the order of these is important, you have to clear the cache
