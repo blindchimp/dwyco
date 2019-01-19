@@ -760,6 +760,7 @@ static
 void
 setup_locations()
 {
+    QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
 #ifdef ANDROID
     if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
@@ -767,6 +768,10 @@ setup_locations()
         QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
         if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
         {
+            // this needs to be thought out a little more... if you deny this, you can't
+            // access your photos on the device easily. maybe need to just request "read"
+            // in this case.
+            filepath = QStandardPaths::AppDataLocation;
             exit(0);
         }
     }
@@ -776,7 +781,7 @@ setup_locations()
     QString userdir;
     if(args.count() == 1)
     {
-        userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        userdir = QStandardPaths::writableLocation(filepath);
         userdir += "/dwyco/phoo/";
     }
     else
