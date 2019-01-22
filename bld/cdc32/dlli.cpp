@@ -5172,7 +5172,7 @@ dwyco_make_zap_composition_raw(const char *filename, const char *possible_extens
 // strict:
 // this is only used before send time on a fresh composition.
 // you must not call record/play, etc. on the new composition, just "send".
-// part of the reason for all this is that the authentication
+// part of the reason for all this is that the checksum
 // gets computed at send time.
 // you can't dup a forward or file composition, mainly because you
 // don't really need to (forwarding you are already "dup-ing" a known
@@ -5319,7 +5319,7 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     {
         if(any_no_forward(body) && verify_chain(body, 1, vcnil, vc(".")) != VERF_AUTH_OK)
         {
-            GRTLOG("make_forward_zap: failed authentication or no forward flag speced (%s, unsaved msg)", msg_id, 0);
+            GRTLOG("make_forward_zap: failed checksum or no forward flag speced (%s, unsaved msg)", msg_id, 0);
             return 0;
         }
     }
@@ -5327,7 +5327,7 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     {
         if(any_no_forward(body) && verify_chain(body, 1, vcnil, att_dir.c_str()) != VERF_AUTH_OK)
         {
-            GRTLOG("make_forward_zap: failed authentication or no forward flag speced (%s, saved msg)", msg_id, 0);
+            GRTLOG("make_forward_zap: failed checksum or no forward flag speced (%s, saved msg)", msg_id, 0);
             return 0;
         }
     }
@@ -5368,7 +5368,7 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
         m->actual_filename = newfn(na);
         // note: recomputing the hash here. this will work
         // because even if they switch the file at this point, that
-        // will still cause the authentication to fail because
+        // will still cause the checksum to fail because
         // it won't match the bogus file.
         m->filehash = gen_hash(na);
         m->user_filename = body[QM_BODY_FILE_ATTACHMENT];
