@@ -158,7 +158,8 @@ favmsg.cpp \
 sqlite3.c \
 dwybg_wrap.c \
 aqext_android.cpp \
-backsql.cpp
+backsql.cpp \
+upnp.cpp
 
 LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls
 LOCAL_C_INCLUDES := \

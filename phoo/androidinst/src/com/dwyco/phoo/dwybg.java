@@ -9,6 +9,10 @@
 package com.dwyco.phoo;
 
 public class dwybg {
+  public static int dwyco_test_funny_mutex(int port) {
+    return dwybgJNI.dwyco_test_funny_mutex(port);
+  }
+
   public static int dwyco_background_processing(int port, int exit_if_outq_empty, String sys_pfx, String user_pfx, String tmp_pfx, String token) {
     return dwybgJNI.dwyco_background_processing(port, exit_if_outq_empty, sys_pfx, user_pfx, tmp_pfx, token);
   }

@@ -50,9 +50,28 @@ public class Dwyco_Message extends StickyIntentService {
         System.loadLibrary("dwyco_jni");
     }
 
+    private boolean prefs_ok() {
+        boolean ret;
+        prefs_lock.lock();
+        SharedPreferences sp;
+        sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
+        if(!sp.contains("lockport") || !sp.contains("sys_pfx") ||
+            !sp.contains("user_pfx") || !sp.contains("tmp_pfx"))
+            ret = false;
+        ret = true;
+        prefs_lock.release();
+        return ret;
+    }
+
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        if(!prefs_ok()) {
+            // something is really wrong, maybe user cleared data
+            // and we got started before it could be regenerated or something
+            catchLog("dwyco_message prefs hosed");
+            System.exit(0);
+        }
         catchLog("dwyco_message handle intent");
         prefs_lock.lock();
         SharedPreferences sp;
@@ -65,7 +84,7 @@ public class Dwyco_Message extends StickyIntentService {
         if(intent == null) {
             // restart, fetch the values from preferences
 
-            sp = context.getSharedPreferences("dwyco_msg", MODE_PRIVATE);
+            sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
             port = sp.getInt("lockport", 4500);
             sys_pfx = sp.getString("sys_pfx", ".");
             user_pfx = sp.getString("user_pfx", ".");
@@ -79,7 +98,7 @@ public class Dwyco_Message extends StickyIntentService {
             token = intent.getStringExtra("token");
 
             // write it back out for later if we need to restart
-            sp = context.getSharedPreferences("dwyco_msg", MODE_PRIVATE);
+            sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
             SharedPreferences.Editor pe = sp.edit();
             pe.putInt("lockport", port);
             pe.putString("sys_pfx", sys_pfx);

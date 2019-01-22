@@ -700,6 +700,7 @@ int DWYCOEXPORT dwyco_load_users2(int recent, int *total_out);
 int DWYCOEXPORT dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out);
 int DWYCOEXPORT dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_get_message_index2(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, int *available_count_out, int load_count);
+int DWYCOEXPORT dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, long logical_clock);
 int DWYCOEXPORT dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int uid_len, int load_sent);
 int DWYCOEXPORT dwyco_get_unsaved_messages(DWYCO_UNSAVED_MSG_LIST *list_out, const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id);
@@ -1277,6 +1278,7 @@ int DWYCOEXPORT dwyco_get_invisible_state();
 
 // message composition functions
 int DWYCOEXPORT dwyco_make_zap_composition(char *must_be_zero);
+int DWYCOEXPORT dwyco_make_zap_composition_raw(const char *filename, const char *possible_extension);
 // WARNING: dup-ing should only be used in very specific cases.
 int DWYCOEXPORT dwyco_dup_zap_composition(int compid);
 int DWYCOEXPORT dwyco_make_forward_zap_composition(
@@ -1305,6 +1307,10 @@ dwyco_copy_out_file_zap(
     const char *msg_id,
     const char *dst_filename
 );
+
+int
+DWYCOEXPORT
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out);
 
 int DWYCOEXPORT
 dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filename);
@@ -1426,7 +1432,7 @@ void DWYCOEXPORT dwyco_sub_get(const char **reg_out, int *len_out);
 // at which time, the process that called this function should exit.
 // the exit will release the "lock" and allow the main app to continue
 // normally.
-int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx);
+int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 // some more helper functions called from java for android related stuff
 // strings in this case are utf-8, null terminated i hope
 void DWYCOEXPORT dwyco_set_aux_string(const char *str);
@@ -1435,6 +1441,7 @@ void DWYCOEXPORT dwyco_clear_contact_list();
 int DWYCOEXPORT dwyco_add_contact(const char *name, const char *phone, const char *email);
 void DWYCOEXPORT dwyco_signal_msg_cond();
 void DWYCOEXPORT dwyco_wait_msg_cond(int ms);
+int DWYCOEXPORT dwyco_test_funny_mutex(int port);
 
 // api for creating a simple backup of messages and account info
 // "create_backup" creates an initial backup, then subsequent calls
@@ -2102,35 +2109,6 @@ dwyco_get_vidcap_data(
     DWUIDECLARG_END
 );
 
-// this is miscellaneous UI config
-// that isn't used in ICUII.
-int DWYCOEXPORT
-dwyco_set_config_display(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(bool, fit_video)
-    DWUIDECLARG(bool, integral_zoom)
-    DWUIDECLARG(bool, jumbo_buttons)
-    DWUIDECLARG(bool, no_buttons)
-    DWUIDECLARG(bool, small_buttons)
-    DWUIDECLARG(bool, mini_toolbar)
-    DWUIDECLARG(bool, blinky)
-    DWUIDECLARG_END
-);
-
-
-int DWYCOEXPORT
-dwyco_get_config_display(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(bool, fit_video)
-    DWUIDECLARG_OUT(bool, integral_zoom)
-    DWUIDECLARG_OUT(bool, jumbo_buttons)
-    DWUIDECLARG_OUT(bool, no_buttons)
-    DWUIDECLARG_OUT(bool, small_buttons)
-    DWUIDECLARG_OUT(bool, mini_toolbar)
-    DWUIDECLARG_OUT(bool, blinky)
-    DWUIDECLARG_END
-);
-
 // this is only used for testing without
 // a camera. it is NOT used in ICUII.
 int DWYCOEXPORT
@@ -2198,8 +2176,6 @@ dwyco_set_call_accept(
     DWUIDECLARG(const char * , pw)			// icuii: connection password required to connect
     DWUIDECLARG(bool, auto_accept)		// icuii: 1 if "accept calls automatically" is checked
     DWUIDECLARG(bool, require_pw)       // icuii: 1 if "require password" is checked
-    DWUIDECLARG(bool, accept_any_rating)// icuii: 1 if "accept calls from other ratings" is checked
-    DWUIDECLARG(bool, no_listen)		// icuii: always 0
     DWUIDECLARG_END
 );
 
@@ -2215,8 +2191,6 @@ dwyco_get_call_accept(
     DWUIDECLARG_OUT(const char * , pw)
     DWUIDECLARG_OUT(bool, auto_accept)
     DWUIDECLARG_OUT(bool, require_pw)
-    DWUIDECLARG_OUT(bool, accept_any_rating)
-    DWUIDECLARG_OUT(bool, no_listen)
     DWUIDECLARG_END
 );
 
@@ -2297,6 +2271,7 @@ dwyco_set_net_data(
     DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
     DWUIDECLARG(int, disable_upnp)				// icuii: 0 , disabled for compat right now
     DWUIDECLARG(int, media_select)				// defaults to "handshake", see *MEDIA_SEL* defines
+    DWUIDECLARG(int, listen)
     DWUIDECLARG_END
 );
 
@@ -2312,6 +2287,7 @@ dwyco_get_net_data(
     DWUIDECLARG_OUT(bool, advertise_nat_ports)
     DWUIDECLARG_OUT(int, disable_upnp)
     DWUIDECLARG_OUT(int, media_select)
+    DWUIDECLARG_OUT(int, listen)
     DWUIDECLARG_END
 );
 

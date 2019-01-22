@@ -834,11 +834,11 @@ gen_authentication(vc qmsg, vc att_hash)
     sha.Update((const byte *)&tm, sizeof(tm));
 
     // newer style of message with the no_forward flag added in.
-    // old messages will have this as nil, and we want the authentication
+    // old messages will have this as nil, and we want the checksum
     // for those messages to remain the same (and remain forward-able
     // as well. however, we don't want to allow people to change the
     // forward flag and we want to allow the core to enforce this
-    // via the authentication.
+    // via the checksum.
     if(mvec[QQM_BODY_NO_FORWARD].is_nil())
     {
         // old style, don't do anything

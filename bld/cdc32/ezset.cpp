@@ -31,7 +31,7 @@
 #include "aqext.h"
 
 #include "ezset.h"
-
+using namespace dwyco;
 
 static
 SyncMap *
@@ -41,10 +41,6 @@ name_to_syncmap(DwString name)
         return DwNetConfigData.syncmap;
     if(name.eq("call_acceptance"))
         return CallAcceptanceData.syncmap;
-#if 0
-    if(name.eq("display"))
-        return ConfigDisplayData.syncmap;
-#endif
     if(name.eq("raw_files"))
         return RawFilesData.syncmap;
     if(name.eq("user"))
@@ -66,10 +62,6 @@ name_to_section(DwString name)
         return "firewall.dif";
     if(name.eq("call_acceptance"))
         return "call accept.dif";
-#if 0
-    if(name.eq("display"))
-        return "display.dif";
-#endif
     if(name.eq("raw_files"))
         return "raw files.dif";
     if(name.eq("user"))
@@ -149,13 +141,14 @@ set_settings_value(const char *name, const char *value)
                 ea->set_swap_rb(atol(value));
         }
     }
+    if(b.eq("net") && a.eq("listen"))
+    {
+        set_listen_state(0);
+        set_listen_state(atol(value));
+    }
     if(b.eq("call_acceptance") && a.eq("no_listen"))
     {
-        int current_listen = is_listening();
-        turn_listen_on();
-        set_listen_state(!atol(value));
-        if(current_listen == 0)
-            turn_listen_off();
+        oopanic("deprecated no_listen");
     }
     return 1;
 }

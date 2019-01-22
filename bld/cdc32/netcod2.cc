@@ -428,7 +428,7 @@ Listener::init(const char *, const char *local_addr, int, HWND)
 }
 
 int
-Listener::init2(const char *local_addr, int outside_port)
+Listener::init2(const char *local_addr)
 {
     initsock();
     //sock.set_err_callback(net_socket_error);

@@ -204,6 +204,7 @@ static void SWIGUNUSED SWIG_JavaThrowException(JNIEnv *jenv, SWIG_JavaExceptionC
 #define SWIG_contract_assert(nullreturn, expr, msg) if (!(expr)) {SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, msg); return nullreturn; } else
 
 
+int dwyco_test_funny_mutex(int port);
 int dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 void dwyco_set_aux_string(const char *str);
 void dwyco_clear_contact_list();
@@ -216,6 +217,20 @@ void dwyco_write_token(const char *token);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+SWIGEXPORT jint JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1test_1funny_1mutex(JNIEnv *jenv, jclass jcls, jint jarg1) {
+  jint jresult = 0 ;
+  int arg1 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = (int)jarg1; 
+  result = (int)dwyco_test_funny_mutex(arg1);
+  jresult = (jint)result; 
+  return jresult;
+}
+
 
 SWIGEXPORT jint JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1background_1processing(JNIEnv *jenv, jclass jcls, jint jarg1, jint jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6) {
   jint jresult = 0 ;
