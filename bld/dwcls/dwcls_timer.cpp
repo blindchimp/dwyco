@@ -55,6 +55,7 @@
 #endif
 #include "dwtree2.h"
 #include "dwvecp.h"
+#include "dwstr.h"
 #ifdef DWCLS_TIMER_DBG
 #include <stdio.h>
 #include <string.h>
@@ -142,7 +143,7 @@ update_exp_time(struct timer *t, clock_time_t tm, clock_time_t interval)
 // polling it, it is removed here and no indication is
 // given that you should hurry up and poll it.
 clock_time_t
-timer_next_expire()
+timer::timer_next_expire(DwString &dbg)
 {
     if(!Timers)
     {
@@ -156,14 +157,18 @@ timer_next_expire()
         if(!v)
             return 0;
 #ifdef DWCLS_TIMER_DBG
-        fprintf(stderr, "dtmr min\n");
+        char dbg_buf[100];
         for(int i = 0; i < v->num_elems(); ++i)
-            (*v)[i]->print();
+        {
+            (*v)[i]->sprint(dbg_buf);
+            dbg += dbg_buf;
+            dbg += "\n";
+        }
 #endif
         if(mt < now)
         {
 #ifdef DWCLS_TIMER_DBG
-            fprintf(stderr, "delmin\n");
+            dbg += "delmin";
 #endif
             Timers->delmin();
             delete v;
@@ -176,9 +181,13 @@ timer_next_expire()
 
 #ifdef DWCLS_TIMER_DBG
 void
-timer::print()
+timer::sprint(char *buf)
 {
-    fprintf(stderr, "dtmr %s %ld %ld\n", lid, start, interval);
+#ifdef ANDROID
+    sprintf(buf, "dtmr %s %lld %lld\n", lid, start, interval);
+#else
+    sprintf(buf, "dtmr %s %ld %ld\n", lid, start, interval);
+#endif
 }
 
 #endif
@@ -190,7 +199,7 @@ timer::timer(const char *id)
     if(id)
         strcpy(lid, id);
     else
-        lid[0] = 0;
+        strcpy(lid, "timer");
 #endif
 }
 

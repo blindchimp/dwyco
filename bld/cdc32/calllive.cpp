@@ -103,6 +103,9 @@
 #include "mmcall.h"
 #include "dwrtlog.h"
 #include "sysattr.h"
+#ifdef _Windows
+typedef unsigned long in_addr_t;
+#endif
 
 extern int Disable_SAC;
 int Media_select = MEDIA_VIA_HANDSHAKE;

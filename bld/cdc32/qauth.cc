@@ -203,7 +203,7 @@ get_entropy()
 }
 
 void
-add_entropy(char *astr, int alen)
+add_entropy(const char *astr, int alen)
 {
     if(Entropy.is_nil())
         init_entropy();
@@ -217,7 +217,7 @@ add_entropy(char *astr, int alen)
 }
 
 void
-add_entropy_timer(char *astr, int alen)
+add_entropy_timer(const char *astr, int alen)
 {
     static DwTimer timer("esample");
     static DwTimer save_timer("esave");

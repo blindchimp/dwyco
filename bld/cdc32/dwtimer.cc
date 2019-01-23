@@ -42,9 +42,6 @@ DwTimer::DwTimer(const char *timer_id) :
     {
         sprintf(lid, "%s %d ", timer_id, Id++);
     }
-#ifdef DWCLS_TIMER_DBG
-    strcpy(timer.lid, lid);
-#endif
 #endif
 
     oneshot = 1;
@@ -60,9 +57,9 @@ DwTimer::~DwTimer()
 }
 
 dwtime_t
-DwTimer::next_expire_time()
+DwTimer::next_expire_time(DwString& dbgstr)
 {
-    return timer_next_expire();
+    return timer::timer_next_expire(dbgstr);
 }
 
 // make is_expired return 0, and if it is autoreload, reset

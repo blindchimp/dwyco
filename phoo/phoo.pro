@@ -306,9 +306,9 @@ CONFIG(debug) {
 S=debug
 }
 
-CONFIG(release) {
-S=release
-}
+#CONFIG(release) {
+#S=release
+#}
 
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
@@ -328,11 +328,33 @@ $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
 $${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
-winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib binmode.obj \
-delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
+$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
+winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj \
+$${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
 
-QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
-QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
+#delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
+#QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
+#QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
+
+PRE_TARGETDEPS += \
+$${D}\\cdc32\\$${S}\\cdc32.lib \
+$${D}\\vc\\$${S}\\vc.lib \
+$${D}\\crypto5\\$${S}\\crypto5.lib \
+$${D}\\dwcls\\$${S}\\dwcls.lib \
+$${D}\\gsm\\$${S}\\gsm.lib \
+$${D}\\kazlib\\$${S}\\kazlib.lib \
+$${D}\\ppm\\$${S}\\ppm.lib \
+$${D}\\pgm\\$${S}\\pgm.lib \
+$${D}\\pbm\\$${S}\\pbm.lib \
+$${D}\\zlib\\$${S}\\zlib.lib \
+$${D}\\jenkins\\$${S}\\jenkins.lib \
+$${D}\\vorbis112\\$${S}\\vorbis.lib \
+$${D}\\theora\\$${S}\\theora.lib \
+$${D}\\speex\\$${S}\\speex.lib \
+$${D}\\ogg\\$${S}\\ogg.lib \
+$${D}\\jhead\\$${S}\\jhead.lib \
+$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
+$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\vorbis112\\win32\\vs2003\\libvorbis\\Debug\\libvorbis.lib \
 #\\mk\\depot\\dwycore\\bld\\theora\\win32\\vs2008\\win32\\Debug\\libtheora_static.lib \

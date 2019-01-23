@@ -102,7 +102,7 @@ init_codec(const char *logname)
         }
 #endif
         Log->make_entry("system starting up");
-#ifndef LHCDC32
+
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -115,7 +115,7 @@ init_codec(const char *logname)
         setbuf(stdout, 0);
         setbuf(stderr, 0);
 #endif
-#endif
+
         if(access(newfn("inprogress").c_str(), 0) == -1)
             if(mkdir(newfn("inprogress").c_str()) == -1)
                 Log->make_entry("can't create inprogress dir");
@@ -274,7 +274,7 @@ simple_init_codec(const char *logname)
         }
 #endif
         Log->make_entry("system starting up");
-#ifndef LHCDC32
+
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -285,7 +285,7 @@ simple_init_codec(const char *logname)
             Log->make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
-#endif
+
         //Cur_msgs = vc(VC_VECTOR);
         InitializeCriticalSection(&Audio_lock);
         InitializeCriticalSection(&Audio_mixer_shutdown_lock);
@@ -373,7 +373,7 @@ init_bg_msg_send(const char *logname)
         }
 #endif
         Log->make_entry("background system starting up");
-#ifndef LHCDC32
+
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -384,7 +384,6 @@ init_bg_msg_send(const char *logname)
             Log->make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
-#endif
 
         // this is important, don't leave it till later
         init_prf_cache();

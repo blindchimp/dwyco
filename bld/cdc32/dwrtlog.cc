@@ -28,7 +28,9 @@ init_rtlog()
 {
     RTLogOn = vc(VC_VECTOR);
 #ifdef ANDROID
-    RTLogOn.add("*");
+    RTLogOn.add("dlli.cpp");
+    RTLogOn.add("netcod.cc");
+    RTLogOn.add("netvid.cc");
 #else
     // note: we do not use "newfn" here to map the file
     // location, because that itself may cause some logging.
@@ -59,7 +61,7 @@ DwString
 logbasename(const char *name)
 {
     DwString f(name);
-    size_t b = f.rfind(DIRSEPSTR);
+    int b = f.rfind(DIRSEPSTR);
     if(b != DwString::npos)
         f.remove(0, b + 1);
     f.to_lower();

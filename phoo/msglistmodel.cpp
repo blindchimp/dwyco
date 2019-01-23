@@ -666,6 +666,8 @@ msglist_raw::reload_inbox_model()
 
 }
 
+// return 0 if the q-d msg list has changed
+// return 1 if it is the same
 int
 msglist_raw::check_qd_msgs()
 {
@@ -704,14 +706,17 @@ msglist_raw::reload_model(int force)
             DWYCO_MSG_IDX cmi;
             dwyco_get_message_index(&cmi, buid.constData(), buid.length());
             dwyco_list qcmi(cmi);
+            int new_rows = qnmi.rows();
             if(qcmi.rows() == qm.rows() + qnmi.rows())
             {
-                beginInsertRows(QModelIndex(), count_inbox_msgs + count_qd_msgs,
+                if(new_rows > 0)
+                    beginInsertRows(QModelIndex(), count_inbox_msgs + count_qd_msgs,
                                 count_inbox_msgs + count_qd_msgs + qnmi.rows() - 1);
                 qm.release();
                 msg_idx = qcmi;
                 count_msg_idx = qcmi.rows();
-                endInsertRows();
+                if(new_rows > 0)
+                    endInsertRows();
                 return;
             }
             qcmi.release();
