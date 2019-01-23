@@ -2042,7 +2042,7 @@ dwyco_service_channels(int *spin_out)
 
 DWYCOEXPORT
 void
-dwyco_add_entropy_timer(char *crap, int len_crap)
+dwyco_add_entropy_timer(const char *crap, int len_crap)
 {
     add_entropy_timer(crap, len_crap);
 }
