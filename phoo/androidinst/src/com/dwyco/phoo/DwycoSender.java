@@ -46,7 +46,7 @@ public class DwycoSender extends Service {
         super.onCreate();
         catchLog("DwycoSender Service got created");
         context = this;
-        System.loadLibrary("gnustl_shared");
+        System.loadLibrary("c++_shared");
         System.loadLibrary("dwyco_jni");
     }
 
