@@ -29,6 +29,8 @@ init_rtlog()
     RTLogOn = vc(VC_VECTOR);
 #ifdef ANDROID
     RTLogOn.add("dlli.cpp");
+    RTLogOn.add("netcod.cc");
+    RTLogOn.add("netvid.cc");
 #else
     // note: we do not use "newfn" here to map the file
     // location, because that itself may cause some logging.

@@ -2028,9 +2028,14 @@ dwyco_service_channels(int *spin_out)
     handle_deferred_msg_send();
     se_process();
     crank_activity_timer();
-    GRTLOG("next timer %ld", DwTimer::next_expire_time() - DwTimer::time_now(), 0);
+    {
+    DwString str;
+    dwtime_t nex = DwTimer::next_expire_time(str) - DwTimer::time_now();
+    GRTLOG("next timer %ld", nex, 0);
+    GRTLOG("(%s)", str.c_str(), 0);
     entered = 0;
-    return DwTimer::next_expire_time() - DwTimer::time_now();
+    return nex;
+    }
 }
 
 
@@ -9180,7 +9185,7 @@ dwyco_background_db_login_result(const char *str, int what)
         // exit the process since there isn't anything more
         // we can do really, unless there are direct connects...
         // if there are no direct connections, for sure quit
-        GRTLOG("bg db login fail", 0, 0);
+        GRTLOG("bg db login fail %s", str, 0);
     }
     else
     {
@@ -9218,6 +9223,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 
     dwyco_set_client_version("dwycobg", 7);
     dwyco_set_initial_invis(1);
+    dwyco_set_login_result_callback(dwyco_background_db_login_result);
     dwyco_bg_init();
     if(token)
         dwyco_write_token(token);
