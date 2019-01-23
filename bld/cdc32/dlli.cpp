@@ -1455,8 +1455,6 @@ dwyco_init()
     }
 
 
-
-
     // hmmm, maybe get rid of "finish-startup"
     Inhibit_database_thread = 1;
 
@@ -9250,7 +9248,6 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     {
         int spin = 0;
         int snooze = dwyco_service_channels(&spin);
-        int e;
         if(exit_if_outq_empty && msg_outq_empty())
             break;
 #ifdef WIN32
@@ -9260,7 +9257,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         }
         else
         {
-            e = WSAGetLastError();
+            int e = WSAGetLastError();
             if(e != WSAEWOULDBLOCK)
                 return 1;
         }
@@ -9318,7 +9315,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             for(int i = 0; i < res.num_elems(); ++i)
             {
                 if(asock.socket_local_addr() == res[i]->socket_local_addr())
+                {
+                    GRTLOG("req to exit", 0, 0);
                     goto out;
+                }
             }
         }
     }

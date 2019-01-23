@@ -225,9 +225,7 @@ private:
 	static void init_rest(void);
 public:
 	static void init(void);
-	static void thread_init(void);
 	static void exit(void);
-	static void thread_exit(void);
 	static void non_lh_init(void);
 	static void non_lh_exit(void);
 	static void setup_logs(void);
