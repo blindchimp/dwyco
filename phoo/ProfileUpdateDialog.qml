@@ -155,7 +155,7 @@ Page {
 
         visible: false
         active: visible
-        sourceComponent: FileDialog {
+        sourceComponent: NL.FileDialog {
                 title: "Pick a picture"
                 folder: shortcuts.pictures
                 onAccepted: {
