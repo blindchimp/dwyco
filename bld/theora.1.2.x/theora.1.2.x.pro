@@ -52,4 +52,18 @@ SOURCES += \
         lib/x86/sse2idct.c
 }
 
+win32-* {
+DEFINES += OC_X86_ASM
+SOURCES += \
+        lib/x86_vc/x86cpu.c \
+        lib/x86_vc/mmxencfrag.c \
+        lib/x86_vc/mmxfdct.c \
+        lib/x86_vc/x86enc.c \
+        lib/x86_vc/mmxfrag.c \
+        lib/x86_vc/mmxidct.c \
+        lib/x86_vc/mmxstate.c \
+        lib/x86_vc/x86state.c
+
+}
+
 HEADERS +=

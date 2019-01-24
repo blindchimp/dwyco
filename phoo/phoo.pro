@@ -324,7 +324,7 @@ $${D}\\pbm\\$${S}\\pbm.lib \
 $${D}\\zlib\\$${S}\\zlib.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
 $${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora\\$${S}\\theora.lib \
+$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
@@ -350,7 +350,7 @@ $${D}\\pbm\\$${S}\\pbm.lib \
 $${D}\\zlib\\$${S}\\zlib.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
 $${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora\\$${S}\\theora.lib \
+$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
