@@ -110,7 +110,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
@@ -134,7 +134,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
@@ -241,6 +241,7 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qt-qml-models/libQtQmlModels.a
 
 }
@@ -323,7 +324,7 @@ $${D}\\pbm\\$${S}\\pbm.lib \
 $${D}\\zlib\\$${S}\\zlib.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
 $${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora\\$${S}\\theora.lib \
+$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
@@ -349,7 +350,7 @@ $${D}\\pbm\\$${S}\\pbm.lib \
 $${D}\\zlib\\$${S}\\zlib.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
 $${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora\\$${S}\\theora.lib \
+$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \

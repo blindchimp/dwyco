@@ -40,7 +40,6 @@ using namespace dwyco;
 int
 MMChannel::adjust_outgoing_bandwidth()
 {
-#define RETURN(x) {return (x);}
     scoped_ptr<ChanList> cl(MMChannel::get_serviced_channels_net());
     ChanListIter cli(cl.get());
     int cnt = 0;
@@ -49,7 +48,7 @@ MMChannel::adjust_outgoing_bandwidth()
     long naudio = 0;
 
     if(cl->num_elems() == 0)
-        RETURN(0);
+        return 0;
     // this is the calculation for our OUTGOING
     // throttles
     for(cli.rewind(); !cli.eol(); cli.forward())
@@ -139,9 +138,9 @@ MMChannel::adjust_outgoing_bandwidth()
                             mc->adjust_outgoing_throttle((int)mc->rem_incoming_throttle);
                     }
                 }
-                RETURN(1);
+                return 1;
             }
-            RETURN(0);
+            return 0;
         }
         // more needed than available must knock down
         // everybody to fit in.
@@ -164,7 +163,7 @@ MMChannel::adjust_outgoing_bandwidth()
                     mc->adjust_outgoing_throttle((int)mc->rem_incoming_throttle);
             }
         }
-        RETURN(1);
+        return 1;
     }
 
     // non-synchronized case
@@ -183,7 +182,7 @@ MMChannel::adjust_outgoing_bandwidth()
             if(mc->grab_coded_id != -1)
                 mc->adjust_outgoing_throttle((int)mc->rem_incoming_throttle);
         }
-        RETURN(1);
+        return 1;
     }
     // too much requested, have to allocate and adjust
     // each channel to get us under the bandwidth requirements.
@@ -216,19 +215,18 @@ MMChannel::adjust_outgoing_bandwidth()
         if(mc->grab_coded_id != -1)
             mc->adjust_outgoing_throttle((int)mc->rem_incoming_throttle * k);
     }
-    RETURN(1);
+    return 1;
 }
 
 int
 MMChannel::adjust_incoming_bandwidth()
 {
-#define RETURN(x) {return (x);}
     scoped_ptr<ChanList> cl(MMChannel::get_serviced_channels_net());
     ChanListIter cli(cl.get());
     int cnt = 0;
 
     if(cl->num_elems() == 0)
-        RETURN(0);
+        return 0;
 
     // this is the calculation for REMOTE SYSTEMS
     // throttles. We have N clients, and X bandwidth
@@ -280,7 +278,7 @@ MMChannel::adjust_incoming_bandwidth()
         }
         ++cnt;
     }
-    RETURN(1);
+    return 1;
 }
 
 int

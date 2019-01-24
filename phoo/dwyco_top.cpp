@@ -444,6 +444,7 @@ dwyco_sys_event_callback(int cmd, int id,
     {
         namestr = QByteArray(name, len_name);
     }
+    dwyco_add_entropy_timer(suid.constData(), suid.length());
 
     //printf("SYS EVENT %d\n", cmd);
 
@@ -1490,7 +1491,7 @@ DwycoCore::init()
 
     dwyco_set_raw_files(
         "/home/dwight/vidfile.lst",
-        "/2/dwight/stuff/320x240/ml%04d.ppm",
+        "/1204/dwight/stuff/320x240/ml%04d.ppm",
         0, // use list of files
         1,
         0 // preload
@@ -2552,6 +2553,7 @@ DwycoCore::service_channels()
             if(n > 0)
             {
                 QByteArray mid = quml.get<QByteArray>(0, DWYCO_QMS_ID);
+                dwyco_add_entropy_timer(mid.constData(), mid.length());
                 if(quml.is_nil(0, DWYCO_QMS_IS_DIRECT))
                 {
                     auto_fetch(mid);

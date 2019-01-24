@@ -8,7 +8,10 @@
 VCCFG_COMP=$$PWD
 DWYCOBG=0
 DEFINES += VCCFG_FILE
-linux-g++*:DEFINES += LINUX 
+linux-g++* {
+DEFINES += LINUX
+DWYCO_USE_LINUX_AUDIO=1
+}
 macx-ios-clang {
 DEFINES += LINUX MACOSX DWYCO_IOS
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function

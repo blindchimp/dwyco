@@ -680,7 +680,7 @@ void DWYCOEXPORT dwyco_set_channel_destroy_callback(int chan_id,
 void DWYCOEXPORT dwyco_get_my_uid(const char **uid_out, int *len_out);
 #define DWYCO_VIDEO_PREVIEW_CHAN 1
 int DWYCOEXPORT dwyco_enable_video_capture_preview(int on);
-void DWYCOEXPORT dwyco_add_entropy_timer(char *crap, int crap_len);
+void DWYCOEXPORT dwyco_add_entropy_timer(const char *crap, int crap_len);
 
 int DWYCOEXPORT dwyco_get_refresh_users();
 void DWYCOEXPORT dwyco_set_refresh_users(int);

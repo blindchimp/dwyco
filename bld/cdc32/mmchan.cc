@@ -3282,7 +3282,7 @@ MMChannel::compute_sync()
     // this includes tubes for recording zaps
     // and stuff, so they can run at full speed
     // even tho you are on a modem.
-    // also, if there is anyoine in step mode,
+    // also, if there is anyone in step mode,
     // make sure we don't sync so the step
     // can be completed at the next frame
     // captured.

@@ -3,7 +3,7 @@ CONFIG += ordered
 SUBDIRS= \
 bld/ogg \
 bld/vorbis112 \
-bld/theora \
+bld/theora.1.2.x \
 bld/speex \
 bld/kazlib \
 bld/zlib \
