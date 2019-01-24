@@ -11,6 +11,7 @@
 #else
 #include <pthread.h>
 #endif
+#include <stdio.h>
 
 using namespace dwyco;
 
