@@ -51,6 +51,8 @@ private:
 
 	vcxstream vcxr;
 	vcxstream vcxs;
+        static int thread_startup();
+        static int thread_shutoff();
 
 friend vc lh_horrible_hack(vc);
 
@@ -117,9 +119,7 @@ public:
         static void set_async_error(SOCKET s, int err);
 
 	static int startup();
-	static int thread_startup();
 	static int shutoff();
-	static int thread_shutoff();
 	static SocketSet *get_read_set();
 	static SocketSet *get_write_set();
 	static void clear_read_set();
