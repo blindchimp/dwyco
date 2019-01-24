@@ -1491,7 +1491,7 @@ DwycoCore::init()
 
     dwyco_set_raw_files(
         "/home/dwight/vidfile.lst",
-        "/2/dwight/stuff/320x240/ml%04d.ppm",
+        "/1204/dwight/stuff/320x240/ml%04d.ppm",
         0, // use list of files
         1,
         0 // preload
