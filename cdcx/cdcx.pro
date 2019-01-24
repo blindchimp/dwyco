@@ -131,7 +131,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
