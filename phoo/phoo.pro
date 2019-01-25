@@ -22,7 +22,7 @@ INSTALLS += appdir_icon appdir_desktop
 }
 
 
-QT += core qml quick multimedia network xml widgets #positioning
+QT += core qml quick multimedia network xml #widgets #positioning
 QT += quickcontrols2
 
 android: QT += androidextras
