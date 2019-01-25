@@ -117,7 +117,7 @@ serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv)
 // if we were the callee after the connection is completed.
 static
 void
-track_connect(MMChannel *, vc what, void *, ValidPtr)
+track_connect(MMChannel *mc, vc what, void *, ValidPtr)
 {
     if(what.is_nil())
     {
@@ -127,6 +127,18 @@ track_connect(MMChannel *, vc what, void *, ValidPtr)
     {
         TRACK_ADD(CLR_connect_succeeded, 1);
     }
+    // this is a bit of a hack... we know the proxy will die
+    // if the control connection gets set up and fails right away.
+    // that will signal the other side of a failure, and they can
+    // get on to trying another way of sending a message, etc.
+    // in the past, we just ignored the connection attempt, and it
+    // would result in the other side waiting around for things to
+    // time out, which was 30+ seconds. ideally we would send something
+    // to the server to tell it not to even attempt a server assisted
+    // set up, but that requires some extra protocol and server changes.
+    if(Disable_SAC)
+        mc->schedule_destroy(MMChannel::HARD);
+
 }
 
 void
@@ -167,8 +179,9 @@ start_serv_recv_thread(vc ip, vc port, ValidPtr mcv)
 void
 got_serv_r(vc m, void *, vc, ValidPtr)
 {
-    if(Disable_SAC)
-        return;
+    // see comment is track_connect
+//    if(Disable_SAC)
+//        return;
     if(m[1].is_nil())
         return;
     vc ip = m[1][2];
@@ -228,9 +241,9 @@ start_server_assisted_call(vc uid, int media_select, ValidPtr vp, MessageDisplay
 void
 aux_channel_setup(MMChannel *mc, vc v)
 {
-
-    if(Disable_SAC)
-        return;
+// see comment in track_connect
+//    if(Disable_SAC)
+//        return;
     // this is where we start an aux setup by calling out to the
     // same proxy that set up the control channel
     // this is called on the callee's client in response to another
