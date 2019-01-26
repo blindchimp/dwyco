@@ -233,6 +233,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${PWD}/../bld/macdrv/libmacdrv.a \
 $${OUT_PWD}/../lib/libuv.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -Wl,-framework,Cocoa -Wl,-framework,QuickTime -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore -lc++
 
 QMAKE_CXX=ccache g++
