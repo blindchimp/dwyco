@@ -719,7 +719,7 @@ less_than(const DwOString& u1, const DwOString& u2)
 {
     int o1;
     int o2;
-
+#if 0
     o1 = is_streaming_uid(u1);
     o2 = is_streaming_uid(u2);
 
@@ -727,6 +727,7 @@ less_than(const DwOString& u1, const DwOString& u2)
         return -1;
     else if(!o1 && o2)
         return 1;
+#endif
 
     o1 = any_unread_msg(u1);
     o2 = any_unread_msg(u2);
@@ -736,6 +737,7 @@ less_than(const DwOString& u1, const DwOString& u2)
     else if(!o1 && o2)
         return 1;
 
+#if 0
     // ignored users are greater than anyone else, so they always
     // end up at the bottom, which is why the test looks backwards
     o1 = dwyco_is_ignored(u1.c_str(), u1.length());
@@ -746,6 +748,7 @@ less_than(const DwOString& u1, const DwOString& u2)
     else if(!o1 && o2)
         return -1;
     // end backwards looking
+#endif
 
     o1 = recent_uid_operation(u1);
     o2 = recent_uid_operation(u2);
