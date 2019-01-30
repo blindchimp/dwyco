@@ -69,7 +69,6 @@ public:
 	virtual vc operator%(const vc &v) const ;
 
 	enum vc_type type() const ;
-	virtual int is_nil() const ;
 
 	virtual int operator <(const vc &v) const ;
 	virtual int operator <=(const vc &v) const ;
