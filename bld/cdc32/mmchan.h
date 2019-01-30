@@ -353,7 +353,11 @@ private:
 
     // estimate for fps on channel
 public:
+#ifdef DWYCO_RATE_DISPLAY
     int rate_updated(int);
+#else
+    int rate_updated(int) {return 0;}
+#endif
     void enable_packet_drop_reporting(int);
 
 private:

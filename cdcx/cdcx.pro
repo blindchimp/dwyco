@@ -226,13 +226,14 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${PWD}/../bld/macdrv/libmacdrv.a \
 $${OUT_PWD}/../lib/libuv.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -Wl,-framework,Cocoa -Wl,-framework,QuickTime -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore -lc++
 
 QMAKE_CXX=ccache g++
