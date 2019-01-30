@@ -247,7 +247,7 @@ public:
 	inline notvirtual vc& operator=(const vc& v);
         inline vc(vc&& v);
         inline vc& operator=(vc&& v);
-        notvirtual int is_nil() const ;
+        inline notvirtual int is_nil() const ;
 #else
 	vc() ;
 	vc(const vc& v);
