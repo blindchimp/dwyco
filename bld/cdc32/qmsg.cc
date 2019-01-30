@@ -1399,9 +1399,9 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
     // can display at least something
     vc uid = other[0];
     In_progress.del(uid);
-    vc name = other[1][0];
-    vc desc = other[1][1];
-    vc location = other[1][2];
+//    vc name = other[1][0];
+//    vc desc = other[1][1];
+//    vc location = other[1][2];
 
     static vc invalid("invalid");
 
@@ -1441,15 +1441,16 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         // fetch it
         if(m[2] == invalid)
             prf_set_cached(uid);
+        vc ai = make_best_local_info(uid, 0);
         v = vc(VC_VECTOR);
         v[QIR_FROM] = uid;
-        v[QIR_HANDLE] = name;
+        v[QIR_HANDLE] = ai[0];
         v[QIR_EMAIL] = "";
         v[QIR_USER_SPECED_ID] = "";
         v[QIR_FIRST] = "";
         v[QIR_LAST] = "";
-        v[QIR_DESCRIPTION] = desc;
-        v[QIR_LOCATION] = location;
+        v[QIR_DESCRIPTION] = ai[2];
+        v[QIR_LOCATION] = ai[1];
     }
     else
     {
@@ -1490,14 +1491,15 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         {
             // had to use alternate info, don't set as cached
             v = vc(VC_VECTOR);
+            vc ai = make_best_local_info(uid, 0);
             v[QIR_FROM] = uid;
-            v[QIR_HANDLE] = name;
+            v[QIR_HANDLE] = ai[0];
             v[QIR_EMAIL] = "";
             v[QIR_USER_SPECED_ID] = "";
             v[QIR_FIRST] = "";
             v[QIR_LAST] = "";
-            v[QIR_DESCRIPTION] = desc;
-            v[QIR_LOCATION] = location;
+            v[QIR_DESCRIPTION] = ai[2];
+            v[QIR_LOCATION] = ai[1];
         }
 
     }
@@ -1581,7 +1583,7 @@ fetch_info(vc uid)
     vc v(VC_VECTOR);
     v.append(uid);
     // load alt-info up with the best info we have locally, just in case
-    v.append(make_best_local_info(uid, 0));
+    //v.append(make_best_local_info(uid, 0));
     if(!In_progress.contains(uid))
     {
         if(prf_already_cached(uid))
