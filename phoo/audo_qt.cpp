@@ -10,7 +10,7 @@
 #include <QAudioOutput>
 #include <QMutex>
 #include <QMutexLocker>
-#include <QApplication>
+#include <QGuiApplication>
 #include <QObject>
 #include <QIODevice>
 #include <QTimer>
@@ -251,7 +251,7 @@ audout_qt_new(void *)
     // main thread, and not the mixer, this ensures m is
     // associated with the main thread and not the mixer
     m = new mumble;
-    m->moveToThread(QApplication::instance()->thread());
+    m->moveToThread(QGuiApplication::instance()->thread());
 
 }
 

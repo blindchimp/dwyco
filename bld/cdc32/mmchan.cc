@@ -3282,7 +3282,7 @@ MMChannel::compute_sync()
     // this includes tubes for recording zaps
     // and stuff, so they can run at full speed
     // even tho you are on a modem.
-    // also, if there is anyoine in step mode,
+    // also, if there is anyone in step mode,
     // make sure we don't sync so the step
     // can be completed at the next frame
     // captured.
@@ -3538,7 +3538,7 @@ MMChannel::all_msg_broadcast_done()
     }
     return 1;
 }
-
+#ifdef DWYCO_RATE_DISPLAY
 int
 MMChannel::rate_updated(int who)
 {
@@ -3548,7 +3548,7 @@ MMChannel::rate_updated(int who)
     }
     return 0;
 }
-
+#endif
 DwString
 MMChannel::info_format(int who)
 {
@@ -4102,7 +4102,8 @@ stun_done:
             // destroy for the channel has been scheduled
             continue;
         }
-
+#ifdef DWYCO_RATE_DISPLAY
+        {
         int recv_on = 0;
         int send_on = 0;
         int do_update = 0;
@@ -4139,6 +4140,8 @@ stun_done:
             set_indicator_by_id(mc->gv_id, IND_SEND, send_on);
             set_indicator_by_id(mc->gv_id, IND_RECV, recv_on);
         }
+        }
+#endif
 
         MMTube *const t = mc->tube;
         VidAcquire *const va = mc->sampler;

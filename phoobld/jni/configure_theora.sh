@@ -6,7 +6,7 @@ if [ "$NDK_ABI" = "arm" ]
 then
 	#abi="arm-linux-androideabi"
 	host="arm-linux-androideabi"
-	export CFLAGS="-fPIC -DANDROID"
+	export CFLAGS="-fPIC -DANDROID -march=armv7-a"
 else
 	#abi="i686-linux-android"
 	host="i686-linux-android"

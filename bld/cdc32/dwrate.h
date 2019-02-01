@@ -21,6 +21,7 @@
 class DwRateMonitor
 {
 public:
+#ifdef DWYCO_RATE_DISPLAY
     DwRateMonitor(long update_interval, long rate_div = 1000L);
     ~DwRateMonitor() {}
 
@@ -41,6 +42,19 @@ private:
     long rate_mult;
     DwVec<long> unittime;
     DwVec<long> unitbuf;
+#else
+    DwRateMonitor(long update_interval, long rate_div = 1000L){}
+    ~DwRateMonitor() {}
+
+    void add_units(long){}
+    void add_units_sliding(long){}
+    long get_rate_sliding(){return 0;}
+    long get_rate(){return 0;}
+    int is_expired(){return 0;}
+    void reset(){}
+    void start(){}
+    void stop(){}
+#endif
 
 };
 #endif
