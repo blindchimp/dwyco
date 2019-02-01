@@ -31,6 +31,7 @@ pushd libspeex
 #export RANLIB="$abi-ranlib"
 #export AR="$abi-ar"
 
+autoreconf -if
 ./configure \
 --prefix=`pwd`/output \
 --host=$host \

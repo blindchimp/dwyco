@@ -27,6 +27,7 @@ prefixdir=$thisdir$prefixpath
 #export AR="$abi-ar"
 export OGG_CFLAGS=-I$oggdir/include
 
+autoreconf -if
 ./configure \
 --prefix=$prefixdir \
 --host=$host \
