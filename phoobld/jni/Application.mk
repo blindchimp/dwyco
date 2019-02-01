@@ -13,4 +13,4 @@ APP_STL := c++_shared
 #NDK_TOOLCHAIN_VERSION := 4.8
 APP_PLATFORM := android-19
 #NDK_TOOLCHAIN_VERSION := 4.9
-APP_OPTIM := release
+APP_OPTIM := debug
