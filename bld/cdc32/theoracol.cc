@@ -196,7 +196,7 @@ op_out(ogg_packet *op, DwString& out)
 // need a limit on this to avoid potential overflows
 static int
 op_in(DWBYTE *&inbuf, ogg_packet *op)
-#ifndef _Windows
+#if !defined(_Windows) && defined(__clang__)
 __attribute__ ((optnone))
 #endif
 {
