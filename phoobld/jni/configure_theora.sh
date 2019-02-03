@@ -34,6 +34,7 @@ pushd libtheora
 #export AR="$abi-ar"
 export OGG_CFLAGS=-I$oggdir/include
 
+autoreconf -if
 ./configure \
 --prefix=`pwd`/output \
 --host=$host \
@@ -42,6 +43,6 @@ export OGG_CFLAGS=-I$oggdir/include
 --with-ogg=$oggdir \
 --with-vorbis=$vorbisdir  \
 --disable-examples \
---disable-asflag-probe
+--disable-asm
 
 popd;popd

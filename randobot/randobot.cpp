@@ -73,7 +73,6 @@ dwyco_db_login_result(const char *str, int what)
 
 quint32 Sent_age;
 QByteArray My_uid;
-QMap<QByteArray, QString> Who_got_what;
 
 QStringList Ann_names;
 
