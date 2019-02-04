@@ -436,6 +436,7 @@ DWYCO_LIST dwyco_list_from_vc(vc vec);
 TAutoUpdate *TheAutoUpdate;
 extern vc Pal_auth_state;
 extern int Disable_SAC;
+static int Disable_UPNP = 1;
 extern int Media_select;
 extern int Inhibit_database_thread;
 int Inhibit_auto_connect;
@@ -1447,11 +1448,14 @@ dwyco_init()
     set_listen_state(DwNetConfigData.get_listen());
     if(DwNetConfigData.get_listen())
     {
+        if(!Disable_UPNP)
+        {
         int rport = (dwyco_rand() % (65500 - 10000)) + 10000;
         dwyco_set_net_data(rport, rport + 1, rport + 2,
                            rport, rport + 1, rport + 2,
                            1, 0, CSMS_TCP_ONLY, 1);
         bg_upnp(rport, rport + 1, rport, rport + 1);
+        }
     }
 
 
@@ -8057,13 +8061,10 @@ DWYCOEXPORT
 DWYCO_LIST
 dwyco_uid_to_info(const char *user_id, int len_uid, int* cant_resolve_now_out)
 {
-    int tmp = 0;
     if(cant_resolve_now_out)
         *cant_resolve_now_out = 0;
     vc uid(VC_BSTRING, user_id, len_uid);
     vc v(VC_VECTOR);
-    vc h;
-    vc l;
     vc ai = make_best_local_info(uid, cant_resolve_now_out);
     v.append(ai[0]);
     v.append(ai[2]);

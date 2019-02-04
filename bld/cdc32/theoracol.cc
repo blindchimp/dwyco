@@ -196,6 +196,9 @@ op_out(ogg_packet *op, DwString& out)
 // need a limit on this to avoid potential overflows
 static int
 op_in(DWBYTE *&inbuf, ogg_packet *op)
+#if !defined(_Windows) && defined(__clang__)
+__attribute__ ((optnone))
+#endif
 {
     int total_len = *((int *)inbuf);
     inbuf += 4;
@@ -305,6 +308,22 @@ gen_encoder_info(th_info& cur_info, th_enc_ctx*& cur_coder_ctx, int q, int w, in
 }
 
 static
+DWBYTE *
+gen_encoder_setup(int qual_idx, int size_idx, int& len_out)
+{
+    th_info cur_info;
+    th_enc_ctx *ec;
+
+    DwString tmp = gen_encoder_info(cur_info, ec, qual_idx, Sizes[size_idx][0], Sizes[size_idx][1]);
+    DWBYTE *ret = new DWBYTE[tmp.length()];
+    memcpy(ret, tmp.c_str(), tmp.length());
+    len_out = tmp.length();
+    th_encode_free(ec);
+    return ret;
+}
+
+#if 0
+static
 void
 setup_encoder_headers()
 {
@@ -323,6 +342,7 @@ setup_encoder_headers()
         }
     }
 }
+#endif
 
 // unlike our other codecs, the theora stuff doesn't process
 // luma and chroma planes separately. so we just do all the work
@@ -331,10 +351,10 @@ setup_encoder_headers()
 CDCTheoraCoderColor::CDCTheoraCoderColor()
 {
 
-    if(EncoderSetupInfo[0][0] == 0)
-    {
-        setup_encoder_headers();
-    }
+//    if(EncoderSetupInfo[0][0] == 0)
+//    {
+//        setup_encoder_headers();
+//    }
     cur_coder_ctx = 0;
     cur_size = -1;
     cur_qual = -1;
@@ -1011,10 +1031,10 @@ CDCTheoraDecoderColor::CDCTheoraDecoderColor()
 
     // note: we may be playing back something, so we need the encoder
     // info even if we don't have an encoder object laying around.
-    if(EncoderSetupInfo[0][0] == 0)
-    {
-        setup_encoder_headers();
-    }
+//    if(EncoderSetupInfo[0][0] == 0)
+//    {
+//        setup_encoder_headers();
+//    }
     cur_fqual = -1;
     cur_fsize = -1;
     cur_fcols = -1;
@@ -1039,6 +1059,13 @@ CDCTheoraDecoderColor::setup_decoder_state(int fsize, int fqual)
     // dimensions and quality in it.
     ogg_packet op;
     th_comment tc;
+    if(EncoderSetupInfo[fqual][fsize] == 0)
+    {
+        int len;
+
+        EncoderSetupInfo[fqual][fsize] = gen_encoder_setup(fqual, fsize, len);
+        EncoderSetupLen[fqual][fsize] = len;
+    }
     DWBYTE *obuf = EncoderSetupInfo[fqual][fsize];
     int len = EncoderSetupLen[fqual][fsize];
     DWBYTE *buf = obuf;
@@ -1105,7 +1132,6 @@ CDCTheoraDecoderColor::decode_from_stream(DWBYTE*& buf, int& len, void *&vimg, i
     buf += 6;
     len -= 6;
     // the docs are unclear whether this is necessary or not
-    DWBYTE *obuf = buf;
     DWBYTE *ebuf = buf + len;
     op_in(buf, &op);
     if(buf > ebuf)

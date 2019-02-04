@@ -21,7 +21,7 @@ prefixdir=$thisdir$prefixpath
 #export LD="$abi-ld"
 #export RANLIB="$abi-ranlib"
 #export AR="$abi-ar"
-
+autoreconf -if
 ./configure \
 --prefix=$prefixdir \
 --host=$host \

@@ -56,8 +56,10 @@ void
 vc::global_bremove() const { rep->global_bremove();}
 enum vc_type
 vc::type() const { return rep->type(); }
+#ifdef VC_DBG_ENVELOPE
 int
 vc::is_nil() const { return rep->is_nil(); }
+#endif
 int
 vc::is_decomposable() const { return rep->is_decomposable();}
 vc

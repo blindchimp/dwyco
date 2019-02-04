@@ -247,6 +247,7 @@ public:
 	inline notvirtual vc& operator=(const vc& v);
         inline vc(vc&& v);
         inline vc& operator=(vc&& v);
+        inline notvirtual int is_nil() const ;
 #else
 	vc() ;
 	vc(const vc& v);
@@ -254,6 +255,7 @@ public:
 	notvirtual vc& operator=(const vc& v);
         vc(vc&& v);
         vc& operator=(vc&& v);
+        notvirtual int is_nil() const ;
 
 #endif
 	vc(double d);
@@ -292,7 +294,6 @@ public:
 	notvirtual void local_bremove() const ;
 	notvirtual void global_bremove() const ;
 	notvirtual enum vc_type type() const ;
-	notvirtual int is_nil() const ;
     notvirtual int is_decomposable() const ;
 	notvirtual vc copy() const ;
 	notvirtual vc get_special() const ;
@@ -509,6 +510,13 @@ inline
 vc::vc()
 {
 	rep = vc_nil::vcnilrep;
+}
+
+inline
+int
+vc::is_nil() const
+{
+    return rep == vc_nil::vcnilrep;
 }
 
 

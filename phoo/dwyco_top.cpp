@@ -14,7 +14,7 @@
 #include <QUrl>
 #include <QUrlQuery>
 #include <QSslSocket>
-#include <QApplication>
+#include <QGuiApplication>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -1446,7 +1446,7 @@ DwycoCore::init()
     //connect(this, SIGNAL(pal_event(QString)), sort_proxy_model, SLOT(decorate_user(QString)));
     //connect(this, SIGNAL(ignore_event(QString)), sort_proxy_model, SLOT(decorate_user(QString)));
 
-    connect(QApplication::instance(), SIGNAL(applicationStateChanged(Qt::ApplicationState)), this, SLOT(app_state_change(Qt::ApplicationState)));
+    connect(QGuiApplication::instance(), SIGNAL(applicationStateChanged(Qt::ApplicationState)), this, SLOT(app_state_change(Qt::ApplicationState)));
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheChatListModel, SLOT(uid_resolved(QString)));
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheChatListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(new_msg(QString,QString,QString)), TheChatListModel, SLOT(decorate(QString,QString,QString)));
@@ -1491,7 +1491,7 @@ DwycoCore::init()
 
     dwyco_set_raw_files(
         "/home/dwight/vidfile.lst",
-        "/2/dwight/stuff/320x240/ml%04d.ppm",
+        "/1204/dwight/stuff/320x240/ml%04d.ppm",
         0, // use list of files
         1,
         0 // preload

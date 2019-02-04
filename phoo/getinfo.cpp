@@ -23,14 +23,6 @@ dwyco_info_to_display2(const QByteArray& uid, const char *field)
     {
         dwyco_fetch_info(uid.constData(), uid.length());
     }
-#if 0
-    else if(!Session_uids.contains(uid))
-    {
-        //Session_uids.insert(uid);
-        dwyco_fetch_info(uid.constData(), uid.length());
-
-    }
-#endif
 
     const char *val;
     int len, type;
