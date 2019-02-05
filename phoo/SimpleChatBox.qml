@@ -1028,13 +1028,14 @@ Page {
             id: bg
             color: accent
             radius: 20
+            // this is weird, setting size is supposed to be unnecessary...
+            // qt5.10 didn't have a problem with the previous code that was here.
+            anchors.fill: toolButton1
         }
-        contentItem: Text {
-            color: toolButton1.enabled ? primary_text : secondary_text
-            text: toolButton1.text
+        contentItem: Image {
             anchors.centerIn: bg
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
+            source: mi("ic_send_black_24dp.png")
+            opacity: toolButton1.enabled ? 1.0 : 0.3
         }
         
 
