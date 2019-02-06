@@ -125,7 +125,7 @@ static void
 reload_conv_list()
 {
     Conv_sort_proxy->setDynamicSortFilter(false);
-    dwyco_load_users2(0, 0);
+    dwyco_load_users2(1, 0);
     TheConvListModel->load_users_to_model();
     Conv_sort_proxy->setDynamicSortFilter(true);
 }
@@ -1414,6 +1414,7 @@ DwycoCore::init()
     else
         inv = 1;
     dwyco_set_initial_invis(inv);
+    dwyco_inhibit_pal(1);
 #ifdef ANDROID
     // this is a kluge for android
     // the FCM token may or not be available at this point, but
