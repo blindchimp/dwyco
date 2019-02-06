@@ -41,7 +41,7 @@ public class DwycoProbe extends JobService {
         super.onCreate();
         catchLog("DwycoProbe Service got created");
         context = this;
-        System.loadLibrary("gnustl_shared");
+        System.loadLibrary("c++_shared");
         System.loadLibrary("dwyco_jni");
     }
 

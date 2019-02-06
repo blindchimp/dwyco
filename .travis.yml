@@ -38,7 +38,7 @@ after_success:
   
 branches:
   only:
-    - master
+    - qt10-backport
   except:
     - # Do not build tags that we create when we upload to GitHub Releases
     - /^(?i:continuous)/
