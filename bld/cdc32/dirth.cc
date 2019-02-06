@@ -72,6 +72,7 @@ vc Pal_server_list;
 vc STUN_server_list;
 vc BW_server_list;
 extern vc STUN_server;
+extern vc Client_version;
 
 vc KKG; // god mode pw
 
@@ -99,7 +100,6 @@ exit_dirth()
 vc
 dwyco_get_version_string()
 {
-    extern vc Client_version;
     DwString a(IVERSION);
     a += "!";
     a += (const char *)Client_version;

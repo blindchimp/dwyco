@@ -13,6 +13,7 @@
 #include "ignoremodel.h"
 
 void hack_unread_count();
+void reload_conv_list();
 
 ConvListModel *TheConvListModel;
 
@@ -131,8 +132,7 @@ ConvListModel::delete_all_selected()
     }
 
     hack_unread_count();
-    dwyco_load_users2(1, 0);
-    load_users_to_model();
+    reload_conv_list();
 
 }
 
