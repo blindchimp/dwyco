@@ -5,6 +5,11 @@ phoobld/jni/toolchain.x86/
 phoobld/jni/NDK_ABI_X86
 phoobld/obj/
 phoobld/libs/
+randobld/jni/toolchain/
+randobld/jni/toolchain.x86/
+randobld/jni/NDK_ABI_X86
+randobld/obj/
+randobld/libs/
 build-*/
 phoobld.pro.user
 *.pro.user

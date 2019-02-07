@@ -1,0 +1,53 @@
+Fri Feb 19 07:23:55 MST 2016
+dwight melcher
+dwyco, inc.
+
+* partition app into 2 "modes": community and personal. in community mode, work as we do now, allowing messages to come in, become listed in public directories, ability to message anyone, and play competitive games. in personal mode, messages from people not in your "personal" list (which is more or less your "pal" list) are deferred (or optionally discarded.)
+* on first run, stay in a sensible state if the user backs out and comes back later
+* email verification
+* invisible in the main menu, possible a composite of "go invis, lock, and exit"
+* empty the trash at periodic intervals.
+* add play for video profiles
+* do something files that are sent, show the name or something if they are not pictures
+* switch to flock for semaphore
+* need to improve protocol so that a client will not try to send media to the background processor. either say "i can't show video", or have some kind of alert if there is an incoming call. initial compat with cdc-x should be to just disallow media calls from the background processor
+* add "priority" messages that will make more noise, etc.
+* need "allow others to find my email" or whatever
+* look into displaying the last pic sent instead of the profile preview in the conversation list.
+* figure out when to probe the server for a profile update, maybe when you explicitly look at the msg list for a user. right now, the local profile isn't being updated until the user is deleted or something.
+* see if there is a way to avoid dropping all connections for a few minutes (esp media connections and whatnot)... msg send connections are probably ok to drop on it goes into the background, but not the other connections.
+* Deferred send option... Allow there to be an amount of time between hitting send and actual send in that time user can cancel the send or hit a button to send immediately
+* Set archived users limit for mobile
+* Try streaming video to file and playing it at the same time then transforming it into a message that can be played a few times
+* Turn down poll rate before release
+* Figure out 8khz audio playback for mobile
+* Only show emails that are verified
+* when there are lots of messages, option to "zoom out" to days or weeks and scroll those, then zoom in. maybe use a pinch gesture on mobile for that.
+* need a way of sending/exporting regular attachments
+* need "go to bottom" button in chat
+* reinstate calls in desktop stuff
+* flip viewer for profiles in mobile
+* make profile viewer nicer looking
+* when net is off, turn off all bg processing
+* try detecting larger layout (like tablet) and using different layout
+* add "report" to user list too
+* add ability to search for email/identifier to contact list thing
+* if someone is "invis", and they send something to chat room, allow them to be selected somehow in case they get abusive.
+* it is not obvious that "trivia" is what you want for current users. make it more explicit.
+* while the service is running in the background, it is getting presence updates. might be a buddy notification feature running around in there somewhere
+* note: interest list should also be used to filter out profile-invalidate messages, or get rid of all of those messages unless they are in your pal list or something
+* allow people to create "private" profiles that are not reviewed, and that can be sent and revoked as necessary (make hook into blocking)
+* think about avoiding direct connect attempt, as it is an info leak 
+* think about putting "always visible to pals" back in to allow direct connects in the background easier
+* Maybe it is time to move all settings to sql files
+* Have a database full of ack get calls locally that can be sent to server for filtering like the ignore list
+* make updating profile a message send, could do more complicated profiles that way, and avoid a lot of problems with size restrictions.
+* switch to fifos for sync instead of tcp
+* need better coordination between dwycobg and pin screen... i think it will deliver and notify even if the pin is up
+* add video profile playback properly
+* swap trivia and "players" since you really want to talk to someone other than play trivia in most cases
+* if you have no lock set, change the "lock and exit" to "cleanup and exit"
+* get delivery and view reports working
+* ANDROID: catch the "app updated" message and make sure service gets restarted properly
+* eye-candy: when zooming and panning, send msgs to other side and show the field-of-interest
+* shortcut: if there is an incoming message on the conv button, and it is from only a single user, switch straight to that user rather than top level
