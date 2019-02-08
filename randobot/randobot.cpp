@@ -435,8 +435,9 @@ main(int argc, char *argv[])
         QByteArray mid;
         int has_att;
         int is_file = 0;
+        QByteArray creator_uid;
 
-        if(dwyco_new_msg(uid, txt, dummy, mid, has_att, is_file))
+        if(dwyco_new_msg(uid, txt, dummy, mid, has_att, is_file, creator_uid))
         {
             txt = txt.toLower();
             QByteArray huid = uid.toHex();
