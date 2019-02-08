@@ -543,16 +543,6 @@ Page {
            }
 
        }
-       // i can't get any of this to work on linux for some reason
-//       move: Transition {
-//                 NumberAnimation { properties: "x,y"; duration: 5000 }
-//             }
-//       moveDisplaced: Transition {
-//                 NumberAnimation { properties: "x,y"; duration: 5000 }
-//             }
-//       populate: Transition {
-//                 NumberAnimation { properties: "x,y"; duration: 1000 }
-//             }
 
    }
 

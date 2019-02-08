@@ -242,10 +242,10 @@ ApplicationWindow {
                 id: db_status
                 text: core.is_database_online === 0 ? "db off" : "db on"
             }
-            Label {
-                id: chat_status
-                text: core.is_chat_online === 0 ? "chat off" : "chat on"
-            }
+//            Label {
+//                id: chat_status
+//                text: core.is_chat_online === 0 ? "chat off" : "chat on"
+//            }
         }
 
     Item {
@@ -267,7 +267,9 @@ ApplicationWindow {
 
             if(action === "clicked") {
 
-                stack.push(chatbox)
+                stack.push(simple_msg_list)
+
+
             }
             else if(action == "hold")
             {
@@ -325,6 +327,11 @@ ApplicationWindow {
         visible: false
     }
 
+    SimpleMsgList {
+        id: simple_msg_list
+        visible: false
+    }
+
     Loader {
         id: simpdir_rect
 
@@ -355,19 +362,19 @@ ApplicationWindow {
         visible: false
     }
 
-    SimpleMsgBrowse {
-        id: simp_msg_browse
-        model: themsglist
-        to_uid: top_dispatch.last_uid_selected
-        visible: false
+//    SimpleMsgBrowse {
+//        id: simp_msg_browse
+//        model: themsglist
+//        to_uid: top_dispatch.last_uid_selected
+//        visible: false
 
-    }
+//    }
 
-    SimpleTagMsgBrowse {
-        id: simp_tag_browse
-        model: themsglist
-        visible: false
-    }
+//    SimpleTagMsgBrowse {
+//        id: simp_tag_browse
+//        model: themsglist
+//        visible: false
+//    }
 
 
     UserActionMenu {
@@ -399,8 +406,8 @@ ApplicationWindow {
         anchors.fill: parent
         visible: true
         onDepthChanged: {
-            if(depth === 1)
-                simp_tag_browse.to_tag = ""
+//            if(depth === 1)
+//                simp_tag_browse.to_tag = ""
         }
 
         
