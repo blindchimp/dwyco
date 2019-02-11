@@ -537,7 +537,7 @@ main(int argc, char *argv[])
                           vc(hash.constData()));
 
             // reviewers are treated as seeders, but not the other way around
-            res = D->sql_simple("select 1 from seeder,reviewer where seeder.uid = $1 or reviewer.uid = $1", huid.constData());
+            res = D->sql_simple("select 1 from seeder,reviewers where seeder.uid = $1 or reviewers.uid = $1", huid.constData());
 
             if(res.num_elems() > 0)
             {

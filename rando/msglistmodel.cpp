@@ -1106,6 +1106,11 @@ msglist_raw::inbox_data (int r, int role ) const
         return QVariant(0);
     case PREVIEW_FILENAME:
     {
+        if(!direct)
+        {
+            auto_fetch(mid);
+
+        }
         return QVariant("");
     }
     case HAS_AUDIO:
