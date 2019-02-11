@@ -27,13 +27,6 @@ Page {
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
-        Label {
-            text: "Please use the BLOCK feature to stop future contact from this user if you feel you are being harassed."
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-            font.italic: true
-        }
-
         Item {
             Layout.fillHeight: true
         }

@@ -7,9 +7,18 @@ import QtQuick.Controls 2.12
 Page {
 
     property alias model: listview.model
-    property bool only_sent: true
+    property bool show_sent: true
+    property bool show_recv: true
+    property string uid
 
     anchors.fill: parent
+
+    onVisibleChanged: {
+        if(visible) {
+            themsglist.reload_model()
+            core.reset_unviewed_msgs(top_dispatch.last_uid_selected)
+        }
+    }
 
     Component {
         id: msg_delegate
@@ -19,10 +28,20 @@ Page {
             height: width
 
             id: img
-            visible: only_sent && SENT == 1
+            visible: (show_sent && SENT == 1) || (show_recv && SENT == 0)
             asynchronous: true
             source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
             fillMode: Image.PreserveAspectCrop
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    themsgview.mid = model.mid
+                    themsgview.uid = model.ASSOC_UID
+                    themsgview.view_source = source
+                    stack.push(themsgview)
+
+                }
+            }
         }
     }
 

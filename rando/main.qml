@@ -482,7 +482,7 @@ ApplicationWindow {
             //if(pwdialog.allow_access === 1) {
                 init()
             if(!profile_bootstrapped) {
-            core.bootstrap(fname.fname(), "")
+            core.bootstrap("R:"+fname.fname(), "")
             core.set_local_setting("first-run", "done")
             profile_bootstrapped = 1
             }
