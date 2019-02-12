@@ -27,6 +27,7 @@ Pane {
     property real ctrl_pad: 4
     property alias circularImage: circularImage
     property alias text1: text1
+    property alias tech_uid: tech_uid
     padding: 6
 
     ColumnLayout {
@@ -42,6 +43,7 @@ Pane {
 
             CircularImage {
                 id: circularImage
+                visible: false
                 Layout.maximumHeight: 32
                 Layout.maximumWidth: 32
                 Layout.minimumHeight: 32
@@ -60,9 +62,18 @@ Pane {
             }
         }
 
+        Text {
+            id: tech_uid
+            text: qsTr("Text")
+            clip: true
+            Layout.fillWidth: true
+            font.pixelSize: 12
+        }
+
         ItemDelegate {
             id: lock_and_exit_button
             text: qsTr("Lock and exit")
+            visible: false
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
             padding: ctrl_pad
@@ -80,6 +91,7 @@ Pane {
         ItemDelegate {
             id: browse_hidden_button
             text: qsTr("Browse Hidden")
+            visible: false
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
             padding: ctrl_pad
@@ -89,6 +101,7 @@ Pane {
         ItemDelegate {
             id: profile_button
             text: qsTr("Update profile...")
+            visible: false
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
             padding: ctrl_pad
@@ -98,6 +111,7 @@ Pane {
         Switch {
             id: quiet_switch
             text: qsTr("Quiet")
+            visible: false
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
             padding: ctrl_pad
@@ -107,6 +121,7 @@ Pane {
         Switch {
             id: invisible_switch
             text: qsTr("Invisible")
+            visible: false
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
             padding: ctrl_pad
@@ -141,6 +156,7 @@ Pane {
         ItemDelegate {
             id: vid_preview_button
             text: qsTr("Preview")
+            visible: false
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
             padding: ctrl_pad

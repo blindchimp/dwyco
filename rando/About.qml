@@ -23,7 +23,7 @@ Page {
         RowLayout {
             spacing: mm(3)
             Label {
-                text: "phoo (open source):"
+                text: "Dwyco Rando (open source):"
             }
 
             Label {

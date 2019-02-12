@@ -213,8 +213,9 @@ ApplicationWindow {
 
             onVisibleChanged: {
                 if(visible) {
-                    drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
+                    //drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
                     drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
+                    drawer_contents.tech_uid.text = "(#" + core.get_my_uid().substr(0, 8) + ")"
                 }
 
             }
