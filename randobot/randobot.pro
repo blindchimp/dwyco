@@ -1,5 +1,5 @@
-QT += core
-QT -= gui
+QT = core
+#QT -= gui
 
 include(../$$DWYCO_CONFDIR/conf.pri)
 
@@ -7,10 +7,9 @@ SOURCES += \
     randobot.cpp \
     dwyco_new_msg.cpp
 DEFINES += DWYCO_THROW
-
-linux-g++* {
-
 INCLUDEPATH += $${PWD}/../bld/dwcls $${PWD}/../bld/vc $${PWD}/../bld/cdc32 $${VCCFG_COMP}
+
+linux-*|macx-* {
 
 D = $${OUT_PWD}/../bld
 
