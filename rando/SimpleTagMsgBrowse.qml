@@ -68,20 +68,20 @@ Page {
                         multiselect_mode = false
                     }
                 }
-                MenuItem {
-                    text: "Hide"
-                    onTriggered: {
-                        model.tag_all_selected("_hid")
-                        multiselect_mode = false
-                    }
-                }
-                MenuItem {
-                    text: "UnHide"
-                    onTriggered: {
-                        model.untag_all_selected("_hid")
-                        multiselect_mode = false
-                    }
-                }
+//                MenuItem {
+//                    text: "Hide"
+//                    onTriggered: {
+//                        model.tag_all_selected("_hid")
+//                        multiselect_mode = false
+//                    }
+//                }
+//                MenuItem {
+//                    text: "UnHide"
+//                    onTriggered: {
+//                        model.untag_all_selected("_hid")
+//                        multiselect_mode = false
+//                    }
+//                }
                 MenuItem {
                     text: "Select All"
                     onTriggered: {
@@ -173,89 +173,89 @@ Page {
                 }
 
 
-                ToolButton {
-                    contentItem: Image {
-                        anchors.centerIn: parent
-                        source: mi("ic_action_overflow.png")
-                    }
-                    onClicked: optionsMenu.open()
-                    visible: simp_msg_browse.visible
+//                ToolButton {
+//                    contentItem: Image {
+//                        anchors.centerIn: parent
+//                        source: mi("ic_action_overflow.png")
+//                    }
+//                    onClicked: optionsMenu.open()
+//                    visible: simp_msg_browse.visible
 
-                    Menu {
+//                    Menu {
 
-                        id: optionsMenu
-                        x: parent.width - width
-                        transformOrigin: Menu.TopRight
-                        MenuItem {
-                            text: "Show sent"
-                            checked: filter_show_sent
-                            checkable: true
-                            onCheckedChanged: {
-                                filter_show_sent = checked
-                            }
-
-                        }
-
-                        MenuItem {
-                            text: "Show Only Favorites"
-                            checked: filter_show_only_fav
-                            checkable: true
-                            onCheckedChanged: {
-                                filter_show_only_fav = checked
-                            }
-
-                        }
-
-                        MenuItem {
-                            text: "View profile"
-                            onTriggered: {
-                                stack.push(theprofileview)
-                            }
-                        }
-
-
+//                        id: optionsMenu
+//                        x: parent.width - width
+//                        transformOrigin: Menu.TopRight
 //                        MenuItem {
-//                            text: "Clear msgs"
-//                            onTriggered: {
-//                                core.clear_messages_unfav(simp_msg_browse.to_uid)
-
-//                                themsglist.reload_model()
+//                            text: "Show sent"
+//                            checked: filter_show_sent
+//                            checkable: true
+//                            onCheckedChanged: {
+//                                filter_show_sent = checked
 //                            }
+
 //                        }
 
 //                        MenuItem {
-//                            text: "Delete user"
-//                            onTriggered: {
-//                                confirm_delete.visible = true
+//                            text: "Show Only Favorites"
+//                            checked: filter_show_only_fav
+//                            checkable: true
+//                            onCheckedChanged: {
+//                                filter_show_only_fav = checked
 //                            }
-//                            MessageDialog {
-//                                id: confirm_delete
-//                                title: "Bulk delete?"
-//                                icon: StandardIcon.Question
-//                                text: "Delete ALL messages from user?"
-//                                informativeText: "This removes FAVORITE messages too."
-//                                standardButtons: StandardButton.Yes | StandardButton.No
-//                                onYes: {
-//                                    core.delete_user(simp_msg_browse.to_uid)
-//                                    themsglist.reload_model()
-//                                    close()
-//                                    stack.pop()
-//                                }
-//                                onNo: {
-//                                    close()
-//                                }
-//                            }
+
 //                        }
+
 //                        MenuItem {
-//                            text: "More..."
+//                            text: "View profile"
 //                            onTriggered: {
-//                                moremenu.open()
-
+//                                stack.push(theprofileview)
 //                            }
 //                        }
 
-                    }
-                }
+
+////                        MenuItem {
+////                            text: "Clear msgs"
+////                            onTriggered: {
+////                                core.clear_messages_unfav(simp_msg_browse.to_uid)
+
+////                                themsglist.reload_model()
+////                            }
+////                        }
+
+////                        MenuItem {
+////                            text: "Delete user"
+////                            onTriggered: {
+////                                confirm_delete.visible = true
+////                            }
+////                            MessageDialog {
+////                                id: confirm_delete
+////                                title: "Bulk delete?"
+////                                icon: StandardIcon.Question
+////                                text: "Delete ALL messages from user?"
+////                                informativeText: "This removes FAVORITE messages too."
+////                                standardButtons: StandardButton.Yes | StandardButton.No
+////                                onYes: {
+////                                    core.delete_user(simp_msg_browse.to_uid)
+////                                    themsglist.reload_model()
+////                                    close()
+////                                    stack.pop()
+////                                }
+////                                onNo: {
+////                                    close()
+////                                }
+////                            }
+////                        }
+////                        MenuItem {
+////                            text: "More..."
+////                            onTriggered: {
+////                                moremenu.open()
+
+////                            }
+////                        }
+
+//                    }
+//                }
             }
         }
 
@@ -420,7 +420,7 @@ Page {
             }
             MouseArea {
                 anchors.fill: parent
-                enabled: !(optionsMenu.visible || moremenu.visible)
+                //enabled: !(optionsMenu.visible || moremenu.visible)
                 onPressAndHold: {
                     console.log("click msg")
                     console.log(index)

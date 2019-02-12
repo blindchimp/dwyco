@@ -380,6 +380,11 @@ ApplicationWindow {
 //        visible: false
 //    }
 
+    ProfileDialog {
+        id: profile_dialog
+        visible: false
+    }
+
 
     UserActionMenu {
         id: user_action_popup
@@ -417,8 +422,8 @@ ApplicationWindow {
             if(a === "") {
                 //profile_dialog.visible = true
                 stack.push(simple_msg_list)
-                //stack.push(blank_page)
-                //stack.push(profile_dialog)
+                stack.push(blank_page)
+                stack.push(profile_dialog)
             } else {
                 stack.push(simple_msg_list)
                 profile_bootstrapped = 1
@@ -468,11 +473,11 @@ ApplicationWindow {
 
             //if(pwdialog.allow_access === 1) {
                 init()
-            if(!profile_bootstrapped) {
-            core.bootstrap("R:"+fname.fname(), "")
-            core.set_local_setting("first-run", "done")
-            profile_bootstrapped = 1
-            }
+//            if(!profile_bootstrapped) {
+//            core.bootstrap("R:"+fname.fname(), "")
+//            core.set_local_setting("first-run", "done")
+//            profile_bootstrapped = 1
+//            }
             //}
         }
 
@@ -520,7 +525,7 @@ ApplicationWindow {
                 //themsglist.reload_model()
             }
             //notificationClient.notification = "New messages"
-            sound_recv.play()
+            //sound_recv.play()
         }
 
         onSys_msg_idx_updated: {
@@ -611,7 +616,7 @@ ApplicationWindow {
 
     Timer {
         id: service_timer
-        interval: 30; running:true; repeat:true
+        interval: 100; running:true; repeat:true
         onTriggered: {
             //if(!pwdialog.allow_access)
             //    return
@@ -624,9 +629,9 @@ ApplicationWindow {
             }
 
             if(core.service_channels() === 1)
-                service_timer.interval = 1
-            else
                 service_timer.interval = 30
+            else
+                service_timer.interval = 100
         }
 
     }

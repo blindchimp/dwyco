@@ -8,7 +8,7 @@
 */
 import QtQuick 2.6
 import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.12
 import dwyco 1.0
 
 Rectangle {
@@ -27,41 +27,42 @@ Rectangle {
         anchors.fill:parent
         anchors.margins: mm(3)
 
-        TextFieldX {
+        Label {
             id: textInput1
-            text_input: fname.fname()
-            placeholder_text: "Enter nickname (you can change it later)"
+            text: fname.fname()
+
             Layout.fillWidth: true
+
         }
 
         Label {
             id: label1
-            text: qsTr("Enter a short nick name that is displayed to other users. You can change it later.")
+            text: qsTr("(visible only to tech support, you can ignore this)")
             font.italic: true
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
 
-        TextFieldX {
-            id: textInput2
-            placeholder_text: qsTr("Email (optional)")
-            Layout.fillWidth: true
+//        TextFieldX {
+//            id: textInput2
+//            placeholder_text: qsTr("Email (optional)")
+//            Layout.fillWidth: true
 
-        }
-        Label {
-            id: label2
-            text: qsTr("Your Email is NOT visible to other users, and we do not sell it or send you spam. If you enter an email address, you can use the email-based features of this app.")
-            font.italic: true
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-        }
+//        }
+//        Label {
+//            id: label2
+//            text: qsTr("Your Email is NOT visible to other users, and we do not sell it or send you spam. If you enter an email address, you can use the email-based features of this app.")
+//            font.italic: true
+//            wrapMode: Text.WordWrap
+//            Layout.fillWidth: true
+//        }
         Item {
             Layout.fillHeight: true
             Layout.fillWidth: true
         }
         Label {
             id: label3
-            text: qsTr("By clicking OK, you agree to our Terms of Service and Privacy Policy. A quick summary: Your communications are encrypted so Dwyco cannot read them. Dwyco doesn't track you, data-mine your phone, or send you spam.")
+            text: qsTr("By clicking OK, you agree to our Terms of Service and Privacy Policy. A quick summary: Dwyco doesn't track you, data-mine your phone, or send you spam. Dwyco reviews pictures sent to the Rando server and inappropriate content is not allowed.")
             font.italic: true
             color: amber_light
             wrapMode: Text.WordWrap
@@ -74,13 +75,14 @@ Rectangle {
             onClicked: {
                 Qt.inputMethod.commit()
                 var name;
-                if(textInput1.text_input.length === 0) {
-                    name = "ShinyHappyRock"
+                name = "R:"
+                if(textInput1.text.length === 0) {
+                    name += "ShinyHappyRock"
                 } else {
-                    name = textInput1.text_input
+                    name += textInput1.text
                 }
 
-                core.bootstrap(name, textInput2.text_input)
+                core.bootstrap(name, "no@email.com")
                 core.set_local_setting("first-run", "done")
                 profile_bootstrapped = 1
                 stack.pop()
