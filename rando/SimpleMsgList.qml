@@ -9,6 +9,7 @@ Page {
     property alias model: listview.model
     property bool show_sent: true
     property bool show_recv: true
+    property bool multiselect_mode: false
     property string uid
 
     anchors.fill: parent
@@ -17,6 +18,130 @@ Page {
         if(visible) {
             themsglist.reload_model()
             core.reset_unviewed_msgs(top_dispatch.last_uid_selected)
+        }
+    }
+
+    header: Column {
+        width: parent.width
+        MultiSelectToolbar {
+            id: multi_toolbar
+            visible: multiselect_mode
+            //extras: extras_button
+        }
+        ToolBar {
+            id: regular_toolbar
+            background: Rectangle {
+                color: accent
+            }
+            visible: !multiselect_mode
+
+            implicitWidth: parent.width
+
+            RowLayout {
+                Item {
+                    Layout.minimumHeight: cm(1)
+                }
+                anchors.fill: parent
+                //spacing: mm(5)
+
+                ToolButton {
+                    contentItem: Image {
+                        source: mi("ic_menu_black_24dp.png")
+                        anchors.centerIn: parent
+                    }
+                    onClicked: drawer.open()
+                    visible: stack.depth === 1
+                    Layout.fillHeight: true
+                }
+                Item {
+
+                    Layout.fillWidth: true
+                }
+
+                GridToggle {
+                    id: show_grid
+                    Layout.fillHeight: true
+                }
+                Item {
+
+                    Layout.fillWidth: true
+                }
+
+
+                ToolButton {
+                    id: sent
+                    text: "Sent"
+                    background: Rectangle {
+                        color: primary_dark
+                        radius: 3
+                    }
+                    contentItem: Text {
+                        x: parent.leftPadding
+                        y: parent.topPadding
+                        width: parent.availableWidth
+                        height: parent.availableHeight
+
+                        text: parent.text
+                        font: parent.font
+                        color: "white"
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    checkable: true
+                    onCheckedChanged: {
+                        if(checked) {
+
+                            top_dispatch.uid_selected(the_man, "clicked")
+                            recv.checked = false
+                        }
+                        show_sent = checked
+                    }
+                }
+                Item {
+
+                    Layout.fillWidth: true
+                }
+                ToolButton {
+                    id: recv
+                    text: "Received"
+                    background: Rectangle {
+                        color: primary_dark
+                        radius: 3
+                    }
+                    contentItem: Text {
+                        x: parent.leftPadding
+                        y: parent.topPadding
+                        width: parent.availableWidth
+                        height: parent.availableHeight
+
+                        text: parent.text
+                        font: parent.font
+                        color: "white"
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    checkable: true
+                    onCheckedChanged: {
+                        if(checked) {
+                            sent.checked = false
+                            var i
+                            for(i = 0; i < convlist.model.count; i++) {
+                                var u = convlist.model.get(i).uid
+                                if(u !== the_man) {
+                                    top_dispatch.uid_selected(u, "clicked")
+                                    break;
+                                }
+                            }
+                        }
+
+                        show_recv = checked
+                    }
+                }
+            }
         }
     }
 
@@ -63,6 +188,7 @@ Page {
         anchors.margins: mm(3)
         anchors.horizontalCenter: parent.horizontalCenter
         icon.name: "camera-photo"
+        icon.color: "red"
         onClicked: {
             cam.next_state = "StopAndPop"
             cam.ok_text = "Upload"

@@ -137,7 +137,7 @@ ApplicationWindow {
     // at the same time.
     //width: Screen.width
     //height: Screen.height
-    title: qsTr("Dwyco Rando4U")
+    title: qsTr("Dwyco Rando")
 
     property int close_bounce: 0
     onClosing: {
@@ -267,9 +267,12 @@ ApplicationWindow {
 
             if(action === "clicked") {
 
-                stack.push(simple_msg_list)
-
-
+                //stack.push(simple_msg_list)
+                if(uid === the_man) {
+                    simple_msg_list.show_sent = true
+                }
+                else
+                    simple_msg_list.show_recv = true
             }
             else if(action == "hold")
             {
@@ -332,24 +335,24 @@ ApplicationWindow {
         visible: false
     }
 
-    Loader {
-        id: simpdir_rect
+//    Loader {
+//        id: simpdir_rect
 
-        property url xml_url : ""
-        visible: false
-        onVisibleChanged: {
-            if(visible) {
-                var tmp
-                tmp = core.get_simple_xml_url()
-                console.log("xml ", tmp)
-                if(xml_url !== tmp) {
-                    xml_url = tmp
-                }
-                source = "qrc:/SimpDir.qml"
-            }
-        }
+//        property url xml_url : ""
+//        visible: false
+//        onVisibleChanged: {
+//            if(visible) {
+//                var tmp
+//                tmp = core.get_simple_xml_url()
+//                console.log("xml ", tmp)
+//                if(xml_url !== tmp) {
+//                    xml_url = tmp
+//                }
+//                source = "qrc:/SimpDir.qml"
+//            }
+//        }
 
-    }
+//    }
 
     DwycoMsgList {
         id: themsglist
@@ -382,24 +385,7 @@ ApplicationWindow {
         uid: top_dispatch.last_uid_selected
     }
 
-    SoundEffect {
-        id: sound_sent
-        source: "qrc:/androidinst/assets/space-zap.wav"
-    }
-    SoundEffect {
-        id: sound_recv
-        source: "qrc:/androidinst/assets/space-zap.wav"
-        volume: {dwy_quiet ? 0.0 : 1.0}
-        muted: dwy_quiet
-    }
-    SoundEffect {
-        id: sound_alert
-        source: "qrc:/androidinst/assets/space-incoming.wav"
-        volume: {dwy_quiet ? 0.0 : 1.0}
-        muted: dwy_quiet
-    }
 
-    
     StackView {
         id: stack
         //initialItem: userlist
@@ -429,11 +415,11 @@ ApplicationWindow {
             a = get_local_setting("first-run")
             if(a === "") {
                 //profile_dialog.visible = true
-                stack.push(convlist)
+                stack.push(simple_msg_list)
                 //stack.push(blank_page)
                 //stack.push(profile_dialog)
             } else {
-                stack.push(convlist)
+                stack.push(simple_msg_list)
                 profile_bootstrapped = 1
                 //pwdialog.state = "start"
             }
@@ -512,8 +498,8 @@ ApplicationWindow {
                 notificationClient.set_msg_count_url(core.get_msg_count_url())
                 notificationClient.log_event()
             }
-            if(simpdir_rect.visible && simpdir_rect.xml_url === "")
-                simpdir_rect.xml_url = core.get_simple_xml_url()
+//            if(simpdir_rect.visible && simpdir_rect.xml_url === "")
+//                simpdir_rect.xml_url = core.get_simple_xml_url()
         }
 
         onNew_msg: {

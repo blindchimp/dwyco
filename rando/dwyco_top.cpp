@@ -2949,9 +2949,9 @@ dwyco_register_qml(QQmlContext *root)
 
     ConvListModel *convlist = new ConvListModel;
     Conv_sort_proxy = new ConvSortFilterModel;
-    Conv_sort_proxy->setSourceModel(convlist);
-    QObject::connect(convlist, SIGNAL(countChanged()), Conv_sort_proxy, SIGNAL(countChanged()));
-    root->setContextProperty("ConvListModel", Conv_sort_proxy);
+    //Conv_sort_proxy->setSourceModel(convlist);
+    //QObject::connect(convlist, SIGNAL(countChanged()), Conv_sort_proxy, SIGNAL(countChanged()));
+    root->setContextProperty("ConvListModel", convlist);
 
     //IgnoreListModel *ignorelist = new IgnoreListModel;
     //Ignore_sort_proxy = new IgnoreSortFilterModel;
