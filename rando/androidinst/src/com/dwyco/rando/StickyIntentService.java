@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dwyco.phoo;
+package com.dwyco.rando;
 
 //import android.support.annotation.WorkerThread;
 import android.content.Intent;

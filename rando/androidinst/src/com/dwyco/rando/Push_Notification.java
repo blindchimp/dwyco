@@ -1,7 +1,7 @@
 
 
-package com.dwyco.phoo;
-//import com.dwyco.phoo.R;
+package com.dwyco.rando;
+//import com.dwyco.rando.R;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
@@ -39,7 +39,7 @@ public class Push_Notification extends BroadcastReceiver {
 
             SharedPreferences sp;
 
-            sp = context.getSharedPreferences("phoo", Context.MODE_PRIVATE);
+            sp = context.getSharedPreferences("rando", Context.MODE_PRIVATE);
             int port = sp.getInt("lockport", 4500);
             String sys_pfx = sp.getString("sys_pfx", ".");
             String user_pfx = sp.getString("user_pfx", ".");

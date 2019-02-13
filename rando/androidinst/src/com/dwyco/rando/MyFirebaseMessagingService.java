@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dwyco.phoo;
+package com.dwyco.rando;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -46,7 +46,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 public void onCreate() {
     super.onCreate();
     context = this;
-    prefs_lock = new SocketLock("com.dwyco.phoo.prefs");
+    prefs_lock = new SocketLock("com.dwyco.rando.prefs");
     }
 
     /**
@@ -127,14 +127,14 @@ public void onCreate() {
         int allow_not = NotificationClient.allow_notification;
         if(allow_not == 0)
             return;
-        //SocketLock prefs_lock = new SocketLock("com.dwyco.phoo.prefs");
+        //SocketLock prefs_lock = new SocketLock("com.dwyco.rando.prefs");
 
         NotificationManager m_notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
         Notification.Builder m_builder;
         SharedPreferences sp;
         prefs_lock.lock();
-        sp = context.getSharedPreferences("phoo", MODE_PRIVATE);
+        sp = context.getSharedPreferences("rando", MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
         
@@ -185,7 +185,7 @@ public void onNewToken(String token) {
 private void sendRegistrationToServer(String token) {
     prefs_lock.lock();
     SharedPreferences sp;
-    sp = getSharedPreferences("phoo", MODE_PRIVATE);
+    sp = getSharedPreferences("rando", MODE_PRIVATE);
     SharedPreferences.Editor pe = sp.edit();
     pe.putString("token", token);
     pe.commit();

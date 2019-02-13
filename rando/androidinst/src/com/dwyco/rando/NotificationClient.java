@@ -31,8 +31,8 @@
 **
 ****************************************************************************/
 
-package com.dwyco.phoo;
-//import com.dwyco.phoo.R;
+package com.dwyco.rando;
+//import com.dwyco.rando.R;
 import org.qtproject.qt5.android.bindings.QtActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -81,7 +81,7 @@ public class NotificationClient extends QtActivity
     public NotificationClient()
     {
         m_instance = this;
-        prefs_lock = new SocketLock("com.dwyco.phoo.prefs");
+        prefs_lock = new SocketLock("com.dwyco.rando.prefs");
     }
 
     @Override
@@ -153,7 +153,7 @@ public class NotificationClient extends QtActivity
         m_builder.setOnlyAlertOnce(true);
         SharedPreferences sp;
         prefs_lock.lock();
-        sp = m_instance.getSharedPreferences("phoo", MODE_PRIVATE);
+        sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
         int def = Notification.DEFAULT_ALL;
@@ -195,7 +195,7 @@ public class NotificationClient extends QtActivity
     public static void set_msg_count_url(String s) {
         prefs_lock.lock();
         msg_count_url = s;
-        SharedPreferences sp = m_instance.getSharedPreferences("phoo", MODE_PRIVATE);
+        SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
         SharedPreferences.Editor pe = sp.edit();
         pe.putString("url", s);
         pe.commit();
@@ -205,7 +205,7 @@ public class NotificationClient extends QtActivity
 
     public static void set_quiet(int i) {
         prefs_lock.lock();
-        SharedPreferences sp = m_instance.getSharedPreferences("phoo", MODE_PRIVATE);
+        SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
         SharedPreferences.Editor pe = sp.edit();
         pe.putInt("quiet", i);
         pe.commit();
@@ -215,7 +215,7 @@ public class NotificationClient extends QtActivity
 
     public static void set_service_params(int port, String sys_pfx, String user_pfx, String tmp_pfx) {
         prefs_lock.lock();
-        SharedPreferences sp = m_instance.getSharedPreferences("phoo", MODE_PRIVATE);
+        SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
         SharedPreferences.Editor pe = sp.edit();
         pe.putInt("lockport", port);
         pe.putString("sys_pfx", sys_pfx);
@@ -227,7 +227,7 @@ public class NotificationClient extends QtActivity
 
 public static String get_token() {
     prefs_lock.lock();
-    SharedPreferences sp = m_instance.getSharedPreferences("phoo", MODE_PRIVATE);
+    SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
     String token = sp.getString("token", "notoken");
     prefs_lock.release();
     return token;
@@ -238,7 +238,7 @@ public static String get_token() {
         prefs_lock.lock();
         SharedPreferences sp;
 
-        sp = m_instance.getSharedPreferences("phoo", MODE_PRIVATE);
+        sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
         int port = sp.getInt("lockport", 4500);
         String sys_pfx = sp.getString("sys_pfx", ".");
         String user_pfx = sp.getString("user_pfx", ".");
@@ -264,7 +264,7 @@ public static String get_token() {
             m_instance.startForegroundService(i);
 
             // JobScheduler js = (JobScheduler)m_instance.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-            // ComponentName jobService =  new ComponentName("com.dwyco.phoo", DwycoProbe.class.getName());
+            // ComponentName jobService =  new ComponentName("com.dwyco.rando", DwycoProbe.class.getName());
             // JobInfo.Builder jib = new JobInfo.Builder(1, jobService);
             // JobInfo ji = jib.
             //    setPeriodic(60 * 15  * 1000).

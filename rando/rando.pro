@@ -374,17 +374,17 @@ DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.properties \
     androidinst/gradlew \
     androidinst/gradlew.bat \
-    androidinst/src/com/dwyco/phoo/NotificationClient.java \
-    androidinst/src/com/dwyco/phoo/Push_Notification.java \
-    androidinst/src/com/dwyco/phoo/dwybg.java \
-    androidinst/src/com/dwyco/phoo/dwybgJNI.java \
-    androidinst/src/com/dwyco/phoo/Dwyco_Message.java \
-    androidinst/src/com/dwyco/phoo/StickyIntentService.java \
+    androidinst/src/com/dwyco/rando/NotificationClient.java \
+    androidinst/src/com/dwyco/rando/Push_Notification.java \
+    androidinst/src/com/dwyco/rando/dwybg.java \
+    androidinst/src/com/dwyco/rando/dwybgJNI.java \
+    androidinst/src/com/dwyco/rando/Dwyco_Message.java \
+    androidinst/src/com/dwyco/rando/StickyIntentService.java \
     androidinst/google-services.json \
-    androidinst/src/com/dwyco/phoo/SocketLock.java \
-    androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java \
-    androidinst/src/com/dwyco/phoo/DwycoSender.java \
-    androidinst/src/com/dwyco/phoo/DwycoProbe.java
+    androidinst/src/com/dwyco/rando/SocketLock.java \
+    androidinst/src/com/dwyco/rando/MyFirebaseMessagingService.java \
+    androidinst/src/com/dwyco/rando/DwycoSender.java \
+    androidinst/src/com/dwyco/rando/DwycoProbe.java
 
 contains(ANDROID_TARGET_ARCH,x86) {
     ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so

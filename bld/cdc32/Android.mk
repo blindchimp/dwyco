@@ -180,7 +180,7 @@ $(LOCAL_PATH)/../ogg/include \
 $(LOCAL_PATH)/../vorbis/include \
 $(LOCAL_PATH)/winemu \
 $(LOCAL_PATH)/glob \
-$(LOCAL_PATH)/../../phoobld
+$(LOCAL_PATH)/../../randobld
 
 LOCAL_CPPFLAGS += -fpermissive -frtti
 
