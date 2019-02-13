@@ -39,7 +39,7 @@ compile 'com.google.firebase:firebase-core:16.0.6'
 
 android {
 defaultConfig {
-        applicationId "com.dwyco.phoo"
+        applicationId "com.dwyco.rando"
 
     }
     /*******************************************************
