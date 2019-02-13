@@ -7,7 +7,7 @@ import QtQuick.Controls 2.12
 Page {
 
     property alias model: listview.model
-    property bool show_sent: true
+    property bool show_sent: false
     property bool show_recv: true
     property bool multiselect_mode: false
     property string uid
@@ -167,6 +167,50 @@ Page {
 
                 }
             }
+            Rectangle {
+                id: isfav
+                width: 32
+                height: 32
+                anchors.top: img.top
+                anchors.left: img.left
+                visible: IS_FAVORITE === 1
+                z: 3
+                color: primary_light
+                radius: width / 2
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    source: mi("ic_star_black_24dp.png")
+                }
+            }
+            Image {
+                id: deco2
+                visible: IS_QD
+                source: decoration
+                anchors.left: img.left
+                anchors.top: img.top
+                width: 32
+                height: 32
+            }
+            Loader {
+                anchors.centerIn: img
+                anchors.fill: img
+                anchors.margins: mm(1)
+                sourceComponent: ProgressBar {
+                    id: pbar
+                    anchors.fill: parent
+                    visible: IS_ACTIVE
+                    value: ATTACHMENT_PERCENT
+                    indeterminate: {ATTACHMENT_PERCENT < 0.0}
+                    to: 100.0
+                    z: 4
+                    background: Rectangle {
+                        color: "green"
+                    }
+                }
+                visible: IS_ACTIVE
+                active: IS_ACTIVE
+            }
         }
     }
 
@@ -181,6 +225,31 @@ Page {
     function snapshot(filename) {
         core.send_simple_cam_pic(the_man, "for review", filename)
 
+    }
+
+    ColumnLayout {
+        visible: {model.uid === the_man && listview.count === 0}
+
+        anchors.fill: parent
+        anchors.margins: mm(5)
+        Item {
+            Layout.fillHeight: true
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: "Click the Camera button below to take a picture and anonymously send it to a stranger."
+            wrapMode: Text.WordWrap
+        }
+        Label {
+            Layout.fillWidth: true
+            text: "You'll receive a picture in return."
+            wrapMode: Text.WordWrap
+
+        }
+        Item {
+            Layout.fillHeight: true
+        }
     }
 
     TipButton {

@@ -267,8 +267,6 @@ ApplicationWindow {
             last_uid_selected = uid
 
             if(action === "clicked") {
-
-                //stack.push(simple_msg_list)
                 if(uid === the_man) {
                     simple_msg_list.show_sent = true
                 }
@@ -420,14 +418,13 @@ ApplicationWindow {
             var a
             a = get_local_setting("first-run")
             if(a === "") {
-                //profile_dialog.visible = true
-                stack.push(simple_msg_list)
-                stack.push(blank_page)
+                //stack.push(simple_msg_list)
+                //stack.push(blank_page)
                 stack.push(profile_dialog)
             } else {
+                init()
                 stack.push(simple_msg_list)
                 profile_bootstrapped = 1
-                //pwdialog.state = "start"
             }
             a = get_local_setting("acct-created")
             if(a === "") {
@@ -470,15 +467,7 @@ ApplicationWindow {
             } else {
                 show_unreviewed = true
             }
-
-            //if(pwdialog.allow_access === 1) {
-                init()
-//            if(!profile_bootstrapped) {
-//            core.bootstrap("R:"+fname.fname(), "")
-//            core.set_local_setting("first-run", "done")
-//            profile_bootstrapped = 1
-//            }
-            //}
+            top_dispatch.uid_selected(the_man, "clicked")
         }
 
 

@@ -68,12 +68,14 @@ Rectangle {
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
+
         Button {
             id: done_button
             text: qsTr("OK")
             Layout.fillWidth: true
             onClicked: {
                 Qt.inputMethod.commit()
+                enabled = false
                 var name;
                 name = "R:"
                 if(textInput1.text.length === 0) {
@@ -81,13 +83,29 @@ Rectangle {
                 } else {
                     name += textInput1.text
                 }
-
+                core.init()
                 core.bootstrap(name, "no@email.com")
                 core.set_local_setting("first-run", "done")
                 profile_bootstrapped = 1
-                stack.pop()
+                busy.running = true
             }
         }
+    }
+    Connections {
+        target: core
+        onServer_login: {
+            if(what === 1) {
+                stack.replace(simple_msg_list)
+            }
+        }
+    }
+
+    BusyIndicator {
+        id: busy
+        running: !done_button.enabled
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        z: 5
     }
 
 }
