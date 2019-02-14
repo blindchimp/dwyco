@@ -5,6 +5,11 @@ phoobld/jni/toolchain.x86/
 phoobld/jni/NDK_ABI_X86
 phoobld/obj/
 phoobld/libs/
+randobld/jni/toolchain/
+randobld/jni/toolchain.x86/
+randobld/jni/NDK_ABI_X86
+randobld/obj/
+randobld/libs/
 build-*/
 phoobld.pro.user
 *.pro.user
@@ -352,22 +357,22 @@ bld/vorbis/vorbisfile-uninstalled.pc
 bld/vorbis/vorbisfile.pc
 bld/vorbis/vq/.deps/
 bld/vorbis/vq/Makefile
-jni/cdc32
-jni/crypto5
-jni/dwcls
-jni/gsm
-jni/jenkins
-jni/jhead
-jni/kazlib
-jni/libogg
-jni/libspeex
-jni/libtheora
-jni/libvorbis
-jni/pbm
-jni/pgm
-jni/ppm
-jni/vc
-jni/zlib
+randobld/jni/cdc32
+randobld/jni/crypto5
+randobld/jni/dwcls
+randobld/jni/gsm
+randobld/jni/jenkins
+randobld/jni/jhead
+randobld/jni/kazlib
+randobld/jni/libogg
+randobld/jni/libspeex
+randobld/jni/libtheora
+randobld/jni/libvorbis
+randobld/jni/pbm
+randobld/jni/pgm
+randobld/jni/ppm
+randobld/jni/vc
+randobld/jni/zlib
 
 bld/spread-hacked/spread-src-4\.4\.0/libspread/__\.SYMDEF SORTED
 

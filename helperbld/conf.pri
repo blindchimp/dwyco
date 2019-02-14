@@ -7,7 +7,7 @@
 # change all occurances of "10.5" to "10.9"
 VCCFG_COMP=$$PWD
 DWYCOBG=1
-DEFINES += VCCFG_FILE
+DEFINES += VCCFG_FILE DWYCO_NO_UPNP
 linux-g++*:DEFINES += LINUX 
 macx-ios-clang: DEFINES += LINUX MACOSX DWYCO_IOS
 macx-ios-clang: QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function

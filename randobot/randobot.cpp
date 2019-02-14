@@ -52,6 +52,8 @@ struct rando_sql : public SimpleSql
                    "filename text, time integer, hash text collate nocase, loc_lat, loc_long)");
         sql_simple("create index if not exists uid_idx2 on sent_to(to_uid)");
         sql_simple("create table if not exists seeder(uid text collate nocase unique on conflict ignore)");
+        sql_simple("create table if not exists reviewers(uid text collate nocase unique on conflict ignore)");
+        sql_simple("insert into reviewers (uid) values ('5a098f3df49015331d74')");
     }
 
 };
@@ -367,6 +369,9 @@ main(int argc, char *argv[])
     const char *name = argv[1];
     const char *desc = argv[2];
     Botfiles = argv[3];
+    int Reviewer_only = 0;
+    if(argc >= 5)
+        Reviewer_only = 1;
 
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
@@ -435,12 +440,22 @@ main(int argc, char *argv[])
         QByteArray mid;
         int has_att;
         int is_file = 0;
+        QByteArray creator_uid;
 
-        if(dwyco_new_msg(uid, txt, dummy, mid, has_att, is_file))
+        if(dwyco_new_msg(uid, txt, dummy, mid, has_att, is_file, creator_uid))
         {
             txt = txt.toLower();
             QByteArray huid = uid.toHex();
 
+            if(Reviewer_only)
+            {
+                 vc res = D->sql_simple("select 1 from reviewers where uid = $1", huid.constData());
+                 if(res.num_elems() == 0)
+                 {
+                     dwyco_delete_unsaved_message(mid.constData());
+                     continue;
+                 }
+            }
             if(!has_att && txt.contains("yes"))
             {
                 send_reply_to(uid, "Send me a zap with a pic... I'll send you a random pic in return. "
@@ -508,12 +523,21 @@ main(int argc, char *argv[])
                 HANDLE_MSG(mid);
                 continue;
             }
+
+            QByteArray chuid = creator_uid.toHex();
+            QByteArray effective_uid = huid;
+            if(Reviewer_only)
+            {
+                effective_uid = chuid;
+            }
             D->start_transaction();
             D->sql_simple("insert into randos (from_uid, filename, time, hash) values($1, $2, strftime('%s', 'now'), $3)",
-                          huid.constData(),
+                          effective_uid.constData(),
                           vc(b.constData()),
                           vc(hash.constData()));
-            res = D->sql_simple("select 1 from seeder where uid = $1", huid.constData());
+
+            // reviewers are treated as seeders, but not the other way around
+            res = D->sql_simple("select 1 from seeder,reviewers where seeder.uid = $1 or reviewers.uid = $1", huid.constData());
 
             if(res.num_elems() > 0)
             {
