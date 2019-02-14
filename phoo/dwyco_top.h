@@ -53,7 +53,7 @@ public:
         m_audio_full_duplex = 0;
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
-        m_use_archived = false;
+        m_use_archived = true;
     }
     static QByteArray My_uid;
 
