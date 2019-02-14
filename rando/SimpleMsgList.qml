@@ -16,6 +16,10 @@ Page {
 
     onVisibleChanged: {
         if(visible) {
+            if(top_dispatch.last_uid_selected === "") {
+                top_dispatch.uid_selected(the_man, "clicked")
+            }
+
             themsglist.reload_model()
             core.reset_unviewed_msgs(top_dispatch.last_uid_selected)
         }

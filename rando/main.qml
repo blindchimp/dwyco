@@ -258,7 +258,7 @@ ApplicationWindow {
         signal uid_resolved(string uid)
         //signal image_picked(string fn)
 
-        property string last_uid_selected
+        property string last_uid_selected: ""
         visible: false
         enabled: false
 
@@ -467,7 +467,6 @@ ApplicationWindow {
             } else {
                 show_unreviewed = true
             }
-            top_dispatch.uid_selected(the_man, "clicked")
         }
 
 
@@ -599,6 +598,9 @@ ApplicationWindow {
     onServer_account_createdChanged: {
         if(server_account_created && blank_page.visible) {
             stack.pop()
+        }
+        if(server_account_created && profile_dialog.visible) {
+            stack.replace(simple_msg_list)
         }
     }
 

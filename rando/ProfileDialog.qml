@@ -91,18 +91,10 @@ Rectangle {
             }
         }
     }
-    Connections {
-        target: core
-        onServer_login: {
-            if(what === 1) {
-                stack.replace(simple_msg_list)
-            }
-        }
-    }
 
     BusyIndicator {
         id: busy
-        running: !done_button.enabled
+        running: false
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         z: 5
