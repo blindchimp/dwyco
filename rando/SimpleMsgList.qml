@@ -1,3 +1,10 @@
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+;
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 
 import QtQuick 2.6
 import QtQuick.Layouts 1.3
@@ -161,6 +168,8 @@ Page {
             asynchronous: true
             source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
             fillMode: Image.PreserveAspectCrop
+            sourceSize.width: 256
+            sourceSize.height: 256
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
