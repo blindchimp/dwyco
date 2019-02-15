@@ -15,9 +15,9 @@ include $(MY_CONF_LOCAL_PATH)/pgm/Android.mk
 include $(MY_CONF_LOCAL_PATH)/ppm/Android.mk
 include $(MY_CONF_LOCAL_PATH)/cdc32/Android.mk
 include $(MY_CONF_LOCAL_PATH)/libogg/Android.mk
-include $(MY_CONF_LOCAL_PATH)/libtheora/Android.mk
-include $(MY_CONF_LOCAL_PATH)/libtheora/Android2.mk
-include $(MY_CONF_LOCAL_PATH)/libtheora/Android3.mk
+#include $(MY_CONF_LOCAL_PATH)/libtheora/Android.mk
+#include $(MY_CONF_LOCAL_PATH)/libtheora/Android2.mk
+#include $(MY_CONF_LOCAL_PATH)/libtheora/Android3.mk
 include $(MY_CONF_LOCAL_PATH)/libvorbis/Android.mk
 include $(MY_CONF_LOCAL_PATH)/libvorbis/Android2.mk
 include $(MY_CONF_LOCAL_PATH)/libvorbis/Android3.mk

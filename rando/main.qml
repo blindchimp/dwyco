@@ -107,20 +107,6 @@ ApplicationWindow {
     property bool show_hidden: true
     property bool show_archived_users: false
 
-//    function pin_expire() {
-//        var expire
-//        var duration
-//        duration = core.get_local_setting("pin_duration")
-//        if(duration === "") {
-//            core.set_local_setting("pin_duration", "0")
-//            duration = "0"
-//        }
-//        if(expire_immediate)
-//            duration = "0"
-//        expire = datesec() + parseInt(duration, 10)
-//        return expire
-//    }
-
     function datesec() {
         return Math.round(Date.now() / 1000)
     }
