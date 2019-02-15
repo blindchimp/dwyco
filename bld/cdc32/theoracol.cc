@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_THEORA_CODEC
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -1295,3 +1295,5 @@ CDCTheoraDecoderColor::display_decoded(void *p, int cols, int rows)
     pixel **img = (pixel **)p;
     ppm_to_colorview(img, cols, rows, gv_id);
 }
+#endif
+
