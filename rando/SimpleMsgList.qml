@@ -140,8 +140,8 @@ Page {
                         if(checked) {
                             sent.checked = false
                             var i
-                            for(i = 0; i < convlist.model.count; i++) {
-                                var u = convlist.model.get(i).uid
+                            for(i = 0; i < ConvListModel.count; i++) {
+                                var u = ConvListModel.get(i).uid
                                 if(u !== the_man) {
                                     top_dispatch.uid_selected(u, "clicked")
                                     break;

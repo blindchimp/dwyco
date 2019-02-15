@@ -324,10 +324,10 @@ ApplicationWindow {
         }
     }
 
-    ConvList {
-        id: convlist
-        visible: false
-    }
+//    ConvList {
+//        id: convlist
+//        visible: false
+//    }
 
     SimpleMsgList {
         id: simple_msg_list
