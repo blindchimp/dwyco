@@ -51,10 +51,6 @@ ToolBar {
         Item {
             Layout.fillWidth: true
         }
-
-        ConvToolButton {
-        }
-
         Loader {
             id: extras_loader
             sourceComponent: extras

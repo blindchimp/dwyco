@@ -12,7 +12,7 @@ import QtQuick.Controls 2.12
 
 
 Page {
-
+    id: msglist
     property alias model: listview.model
     property bool show_sent: false
     property bool show_recv: true
@@ -20,6 +20,12 @@ Page {
     property string uid
 
     anchors.fill: parent
+    background: Rectangle {
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
+            GradientStop { position: 1.0; color: msglist.model.uid === the_man ? amber_dark : primary_dark}
+        }
+    }
 
     onVisibleChanged: {
         if(visible) {
@@ -168,8 +174,8 @@ Page {
             asynchronous: true
             source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
             fillMode: Image.PreserveAspectCrop
-            sourceSize.width: 256
-            sourceSize.height: 256
+            sourceSize.width: 512
+            sourceSize.height: 512
             MouseArea {
                 anchors.fill: parent
                 onClicked: {

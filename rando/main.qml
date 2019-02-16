@@ -210,29 +210,17 @@ ApplicationWindow {
 
 
     footer: RowLayout {
-            Label {
-                id: ind_invis
-                text: "Invis"
-                visible: dwy_invis
-                color: "red"
-
-            }
             Item {
                 Layout.fillWidth: true
             }
 
             Label {
                 id: hwtext
-
             }
             Label {
                 id: db_status
                 text: core.is_database_online === 0 ? "db off" : "db on"
             }
-//            Label {
-//                id: chat_status
-//                text: core.is_chat_online === 0 ? "chat off" : "chat on"
-//            }
         }
 
     Item {
@@ -258,14 +246,6 @@ ApplicationWindow {
                 }
                 else
                     simple_msg_list.show_recv = true
-            }
-            else if(action == "hold")
-            {
-                //stack.push(theprofileview)
-               //stack.push(user_action_popup)
-                user_action_popup.popup()
-                //user_action_popup.visible = true
-
             }
         }
     }
@@ -310,34 +290,10 @@ ApplicationWindow {
         }
     }
 
-//    ConvList {
-//        id: convlist
-//        visible: false
-//    }
-
     SimpleMsgList {
         id: simple_msg_list
         visible: false
     }
-
-//    Loader {
-//        id: simpdir_rect
-
-//        property url xml_url : ""
-//        visible: false
-//        onVisibleChanged: {
-//            if(visible) {
-//                var tmp
-//                tmp = core.get_simple_xml_url()
-//                console.log("xml ", tmp)
-//                if(xml_url !== tmp) {
-//                    xml_url = tmp
-//                }
-//                source = "qrc:/SimpDir.qml"
-//            }
-//        }
-
-//    }
 
     DwycoMsgList {
         id: themsglist
@@ -367,12 +323,6 @@ ApplicationWindow {
     ProfileDialog {
         id: profile_dialog
         visible: false
-    }
-
-
-    UserActionMenu {
-        id: user_action_popup
-        uid: top_dispatch.last_uid_selected
     }
 
 
@@ -461,8 +411,6 @@ ApplicationWindow {
             if(Qt.platform.os == "android") {
                 notificationClient.cancel()
             }
-//            var expire = pin_expire()
-//            core.set_local_setting("pin_expire", expire.toString())
             exit()
         }
 
@@ -478,8 +426,6 @@ ApplicationWindow {
                 notificationClient.set_msg_count_url(core.get_msg_count_url())
                 notificationClient.log_event()
             }
-//            if(simpdir_rect.visible && simpdir_rect.xml_url === "")
-//                simpdir_rect.xml_url = core.get_simple_xml_url()
         }
 
         onNew_msg: {
@@ -595,25 +541,15 @@ ApplicationWindow {
         id: service_timer
         interval: 100; running:true; repeat:true
         onTriggered: {
-            //if(!pwdialog.allow_access)
-            //    return
-            //time.text = Date().toString()
             if(core.database_online() !== core.is_database_online) {
                 core.is_database_online = core.database_online()
             }
-            if(core.chat_online() !== core.is_chat_online) {
-                core.is_chat_online = core.chat_online();
-            }
-
             if(core.service_channels() === 1)
                 service_timer.interval = 30
             else
                 service_timer.interval = 100
         }
-
     }
-
-
 }
 
 

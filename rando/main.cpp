@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 #endif
 
 #if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
-    sel->setExtraSelectors(QStringList("desktop"));
+    //sel->setExtraSelectors(QStringList("desktop"));
 #endif
 
 
