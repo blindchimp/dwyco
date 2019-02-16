@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_VORBIS
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -240,3 +240,5 @@ VorbisConverter::convert(DWBYTE *buf, int len, int , DWBYTE*& out_buf, int& out_
 
     return 1;
 }
+
+#endif
