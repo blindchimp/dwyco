@@ -84,12 +84,16 @@ Page {
                     Layout.fillWidth: true
                 }
 
+                ButtonGroup {
+                    id: radio
+                }
 
                 ToolButton {
                     id: sent
+                    ButtonGroup.group: radio
                     text: "Sent"
                     background: Rectangle {
-                        color: primary_dark
+                        color: amber_dark
                         radius: 3
                     }
                     contentItem: Text {
@@ -122,7 +126,8 @@ Page {
                 }
                 ToolButton {
                     id: recv
-                    text: "Received"
+                    ButtonGroup.group: radio
+                    text: {"Received" + (core.unread_count > 0 ? " (" + String(core.unread_count) + ")" : "")}
                     background: Rectangle {
                         color: primary_dark
                         radius: 3
@@ -146,17 +151,22 @@ Page {
                         if(checked) {
                             sent.checked = false
                             var i
+                            var u
                             for(i = 0; i < ConvListModel.count; i++) {
-                                var u = ConvListModel.get(i).uid
+                                u = ConvListModel.get(i).uid
                                 if(u !== the_man) {
                                     top_dispatch.uid_selected(u, "clicked")
                                     break;
                                 }
                             }
+                            core.reset_unviewed_msgs(u)
                         }
-
                         show_recv = checked
                     }
+                }
+                Item {
+
+                    Layout.fillWidth: true
                 }
             }
         }
