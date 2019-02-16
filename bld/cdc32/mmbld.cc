@@ -63,7 +63,11 @@ MMChannel::audio_decoder_from_config()
         delete audio_decoders[i];
         audio_decoders[i] = 0;
     }
+#ifndef DWYCO_NO_GSM
     audio_decoders[PAYLOAD_MSGSM610] = new GSMConverter(1);
+#else
+    audio_decoders[PAYLOAD_MSGSM610] = 0;
+#endif
     audio_decoders[PAYLOAD_RAW8KHZ] = new RawConverter(1);
     // default, narrow band
 #ifdef DWYCO_USE_SPEEX
@@ -158,7 +162,11 @@ MMChannel::audio_coder_from_config()
         delete audio_coders[i];
         audio_coders[i] = 0;
     }
+#ifndef DWYCO_NO_GSM
     audio_coders[PAYLOAD_MSGSM610] = new GSMConverter(0);
+#else
+    audio_coders[PAYLOAD_MSGSM610] = 0;
+#endif
     audio_coders[PAYLOAD_RAW8KHZ] = new RawConverter(0);
     // default, narrow band
 #ifdef DWYCO_USE_SPEEX
