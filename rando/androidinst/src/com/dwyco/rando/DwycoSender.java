@@ -128,7 +128,7 @@ public class DwycoSender extends Service {
         poller_thread();
         
         set_notification();
-        dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx, token);
+        dwybg.dwyco_background_processing(port, 1, sys_pfx, user_pfx, tmp_pfx, token);
         stopForeground(STOP_FOREGROUND_REMOVE);
         catchLog("send end");
         System.exit(0);
@@ -136,7 +136,7 @@ public class DwycoSender extends Service {
         }
         );
         t.start();
-        return START_STICKY;
+        return START_NOT_STICKY;
         //System.exit(0);
 
     }

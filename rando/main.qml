@@ -539,15 +539,15 @@ ApplicationWindow {
 
     Timer {
         id: service_timer
-        interval: 100; running:true; repeat:true
+        interval: 30; running:true; repeat:true
         onTriggered: {
             if(core.database_online() !== core.is_database_online) {
                 core.is_database_online = core.database_online()
             }
             if(core.service_channels() === 1)
-                service_timer.interval = 30
+                service_timer.interval = 1
             else
-                service_timer.interval = 100
+                service_timer.interval = 30
         }
     }
 }

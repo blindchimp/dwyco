@@ -223,11 +223,12 @@ Page {
             }
             Loader {
                 anchors.centerIn: img
-                anchors.fill: img
+                //anchors.fill: img
+                width: img.width
                 anchors.margins: mm(1)
                 sourceComponent: ProgressBar {
                     id: pbar
-                    anchors.fill: parent
+                    width: parent.width
                     visible: IS_ACTIVE
                     value: ATTACHMENT_PERCENT
                     indeterminate: {ATTACHMENT_PERCENT < 0.0}

@@ -15,6 +15,7 @@ struct dwyco_list
 private:
     dwyco_list();
     dwyco_list(const dwyco_list&);
+    dwyco_list& operator=(const dwyco_list&);
     DWYCO_LIST value;
 public:
     dwyco_list(DWYCO_LIST v) {
@@ -87,6 +88,7 @@ struct simple_scoped : public dwyco_list
 private:
     simple_scoped();
     simple_scoped(const simple_scoped&);
+    simple_scoped& operator=(const simple_scoped&);
 public:
     simple_scoped(DWYCO_LIST v): dwyco_list(v) {
     }
