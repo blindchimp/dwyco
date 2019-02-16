@@ -77,12 +77,17 @@ MMChannel::audio_decoder_from_config()
     audio_decoders[PAYLOAD_SPEEX] = 0;
     audio_decoders[PAYLOAD_UWB_SPEEX] = 0;
 #endif
+#ifndef DWYCO_NO_VORBIS
 #ifdef UWB_SAMPLING
     audio_decoders[PAYLOAD_VORBIS] = new VorbisConverter(1, 32000, UWB_SAMPLE_RATE);
 #else
     audio_decoders[PAYLOAD_VORBIS] = 0;
 #endif
     audio_decoders[PAYLOAD_VORBIS8KHZ] = new VorbisConverter(1, 32000, 8000);
+#else
+    audio_decoders[PAYLOAD_VORBIS] = 0;
+    audio_decoders[PAYLOAD_VORBIS8KHZ] = 0;
+#endif
     return 1;
 }
 
@@ -176,12 +181,17 @@ MMChannel::audio_coder_from_config()
     audio_coders[PAYLOAD_SPEEX] = 0;
     audio_coders[PAYLOAD_UWB_SPEEX] = 0;
 #endif
+#ifndef DWYCO_NO_VORBIS
 #ifdef UWB_SAMPLING
     audio_coders[PAYLOAD_VORBIS] = new VorbisConverter(0, 32000, UWB_SAMPLE_RATE);
 #else
     audio_coders[PAYLOAD_VORBIS] = 0;
 #endif
     audio_coders[PAYLOAD_VORBIS8KHZ] = new VorbisConverter(0, 32000, 8000);
+#else
+    audio_coders[PAYLOAD_VORBIS] = 0;
+    audio_coders[PAYLOAD_VORBIS8KHZ] = 0;
+#endif
     return 1;
 }
 
