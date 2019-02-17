@@ -1,5 +1,6 @@
 QT = core
 #QT -= gui
+CONFIG -= app_bundle
 
 include(../$$DWYCO_CONFDIR/conf.pri)
 
