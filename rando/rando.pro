@@ -115,7 +115,6 @@ $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
 $${D}/jenkins/libjenkins.a \
-$${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${D}/libuv/libuv.a
