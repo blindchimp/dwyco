@@ -46,7 +46,6 @@ SOURCES += main.cpp \
     ssmap.cpp \
     dwycoimageprovider.cpp \
     notificationclient.cpp \
-    dwquerybymember.cpp \
     dvp.cpp \
     convmodel.cpp \
     getinfo.cpp \
@@ -351,8 +350,6 @@ HEADERS += \
     msglistmodel.h \
     dwycoimageprovider.h \
     notificationclient.h \
-    dwstr-qstring.h \
-    dwstr.h \
     dwquerybymember.h \
     dvp.h \
     convmodel.h \
