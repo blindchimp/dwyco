@@ -215,7 +215,7 @@ Page {
             Image {
                 id: deco2
                 visible: IS_QD
-                source: decoration
+                source: mi("ic_cloud_upload_black_24dp")
                 anchors.left: img.left
                 anchors.top: img.top
                 width: 32

@@ -87,21 +87,12 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${D}/libuv/libuv.a \
-$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -lsqlite3
 
-#$${D}/ogg/libogg.a \
-#$${D}/vorbis112/libvorbis.a \
-#$${D}/v4lcap/libv4lcap.a \
-#-lv4l2
-#$${D}/speex/libspeex.a \
-#$${D}/gsm/libgsm.a \
-#$${D}/theora.1.2.x/libtheora.1.2.x.a \
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -112,7 +103,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels.a \

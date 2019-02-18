@@ -83,12 +83,12 @@ Item {
                 file_captured = ""
                 //camera.imageCapture.capture()
                 //camera.imageCapture.captureToLocation(core.tmp_dir)
-                console.log("cam st ", camera.lockStatus == Camera.Unlocked)
+                console.log("cam st ", camera.lockStatus === Camera.Unlocked)
                 console.log("cam af ", camera.focus.isFocusModeSupported(CameraFocus.FocusAuto))
                 if(Qt.platform.os == "ios") {
                     camera.imageCapture.captureToLocation(core.tmp_dir)
                 } else {
-                    if(camera.focus.isFocusModeSupported(CameraFocus.FocusAuto) && camera.lockStatus == Camera.Unlocked)
+                    if(camera.focus.isFocusModeSupported(CameraFocus.FocusAuto) && camera.lockStatus === Camera.Unlocked)
                         camera.searchAndLock()
                     else
                         camera.imageCapture.captureToLocation(core.tmp_dir)
@@ -107,7 +107,7 @@ Item {
             text: "Swap"
             visible: QtMultimedia.availableCameras.length > 1
             onClicked: {
-                cur_cam = (cur_cam == 0 ? 1 : 0)
+                cur_cam = (cur_cam === 0 ? 1 : 0)
                 // note sure if this a bug or not...
                 // seems like sometimes when the camera
                 // is locked, and you change the device_id, it
