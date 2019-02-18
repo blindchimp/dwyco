@@ -202,9 +202,9 @@ public class Dwyco_Message extends StickyIntentService {
         }
         m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         //m_builder.setColor(context.getResources().getColor(R.color.green));
-        m_builder.setContentTitle("Dwyco");
+        m_builder.setContentTitle("Dwyco Rando");
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("New messages received");
+        m_builder.setContentText("New rando received");
         m_builder.setOnlyAlertOnce(true);
         SharedPreferences sp;
         prefs_lock.lock();
