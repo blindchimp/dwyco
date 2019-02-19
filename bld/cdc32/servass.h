@@ -15,7 +15,6 @@ class MMChannel;
 class MessageDisplay;
 
 void start_serv_recv_thread(vc ip, vc port, ValidPtr);
-void stop_serv_recv_thread();
 void got_serv_r(vc m, void *, vc, ValidPtr);
 void start_server_assisted_call(vc to_uid, int use_stun, ValidPtr, MessageDisplay * = 0);
 void aux_channel_setup(MMChannel *mc, vc v);
