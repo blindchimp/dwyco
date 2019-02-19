@@ -374,7 +374,5 @@ contains(ANDROID_TARGET_ARCH,x86) {
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
     ANDROID_EXTRA_LIBS = \
-        $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so \
-        $$PWD/arm/libcrypto.so \
-        $$PWD/arm/libssl.so
+        $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so
 }
