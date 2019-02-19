@@ -1454,7 +1454,9 @@ dwyco_init()
         dwyco_set_net_data(rport, rport + 1, rport + 2,
                            rport, rport + 1, rport + 2,
                            1, 0, CSMS_TCP_ONLY, 1);
+#ifndef DWYCO_NO_UPNP
         bg_upnp(rport, rport + 1, rport, rport + 1);
+#endif
         }
     }
 

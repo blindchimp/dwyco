@@ -1,3 +1,4 @@
+#ifndef DWYCO_NO_UPNP
 #include "upnp.h"
 #ifndef ANDROID
 #include "miniupnpc.h"
@@ -135,4 +136,5 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 
 }
 }
+#endif
 
