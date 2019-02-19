@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_GSM
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -34,4 +34,5 @@ private:
 #endif
 };
 
+#endif
 #endif

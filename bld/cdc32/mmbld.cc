@@ -63,7 +63,11 @@ MMChannel::audio_decoder_from_config()
         delete audio_decoders[i];
         audio_decoders[i] = 0;
     }
+#ifndef DWYCO_NO_GSM
     audio_decoders[PAYLOAD_MSGSM610] = new GSMConverter(1);
+#else
+    audio_decoders[PAYLOAD_MSGSM610] = 0;
+#endif
     audio_decoders[PAYLOAD_RAW8KHZ] = new RawConverter(1);
     // default, narrow band
 #ifdef DWYCO_USE_SPEEX
@@ -73,12 +77,17 @@ MMChannel::audio_decoder_from_config()
     audio_decoders[PAYLOAD_SPEEX] = 0;
     audio_decoders[PAYLOAD_UWB_SPEEX] = 0;
 #endif
+#ifndef DWYCO_NO_VORBIS
 #ifdef UWB_SAMPLING
     audio_decoders[PAYLOAD_VORBIS] = new VorbisConverter(1, 32000, UWB_SAMPLE_RATE);
 #else
     audio_decoders[PAYLOAD_VORBIS] = 0;
 #endif
     audio_decoders[PAYLOAD_VORBIS8KHZ] = new VorbisConverter(1, 32000, 8000);
+#else
+    audio_decoders[PAYLOAD_VORBIS] = 0;
+    audio_decoders[PAYLOAD_VORBIS8KHZ] = 0;
+#endif
     return 1;
 }
 
@@ -158,7 +167,11 @@ MMChannel::audio_coder_from_config()
         delete audio_coders[i];
         audio_coders[i] = 0;
     }
+#ifndef DWYCO_NO_GSM
     audio_coders[PAYLOAD_MSGSM610] = new GSMConverter(0);
+#else
+    audio_coders[PAYLOAD_MSGSM610] = 0;
+#endif
     audio_coders[PAYLOAD_RAW8KHZ] = new RawConverter(0);
     // default, narrow band
 #ifdef DWYCO_USE_SPEEX
@@ -168,12 +181,17 @@ MMChannel::audio_coder_from_config()
     audio_coders[PAYLOAD_SPEEX] = 0;
     audio_coders[PAYLOAD_UWB_SPEEX] = 0;
 #endif
+#ifndef DWYCO_NO_VORBIS
 #ifdef UWB_SAMPLING
     audio_coders[PAYLOAD_VORBIS] = new VorbisConverter(0, 32000, UWB_SAMPLE_RATE);
 #else
     audio_coders[PAYLOAD_VORBIS] = 0;
 #endif
     audio_coders[PAYLOAD_VORBIS8KHZ] = new VorbisConverter(0, 32000, 8000);
+#else
+    audio_coders[PAYLOAD_VORBIS] = 0;
+    audio_coders[PAYLOAD_VORBIS8KHZ] = 0;
+#endif
     return 1;
 }
 

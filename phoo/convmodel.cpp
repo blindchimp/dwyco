@@ -13,6 +13,7 @@
 #include "ignoremodel.h"
 
 void hack_unread_count();
+void reload_conv_list();
 
 ConvListModel *TheConvListModel;
 
@@ -131,8 +132,7 @@ ConvListModel::delete_all_selected()
     }
 
     hack_unread_count();
-    dwyco_load_users2(1, 0);
-    load_users_to_model();
+    reload_conv_list();
 
 }
 
@@ -266,7 +266,7 @@ ConvListModel::uid_resolved(const QString &huid)
 
     QByteArray buid = QByteArray::fromHex(huid.toLatin1());
     c->update_display(dwyco_info_to_display(buid));
-    c->update_invalid(0);
+    c->update_invalid(false);
     int regular = 0;
     int reviewed = 0;
     get_review_status(buid, reviewed, regular);
@@ -281,7 +281,7 @@ ConvListModel::uid_invalidate_profile(const QString &huid)
     Conversation *c = getByUid(huid);
     if(!c)
         return;
-    c->update_invalid(1);
+    c->update_invalid(true);
 
 }
 
@@ -406,16 +406,16 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
 //    else if(!lreg && rreg)
 //        return true;
 
-    int ret1 = QSortFilterProxyModel::lessThan(left, right);
-    int ret2 = QSortFilterProxyModel::lessThan(right, left);
-    if(ret1 == 0 && ret2 == 0)
+    bool ret1 = QSortFilterProxyModel::lessThan(left, right);
+    bool ret2 = QSortFilterProxyModel::lessThan(right, left);
+    if(ret1 == false && ret2 == false)
     {
         // stabilize the sort with uid tie breaker
         QString uidl = m->data(left, m->roleForName("uid")).toString();
         QString uidr = m->data(right, m->roleForName("uid")).toString();
         if(uidl < uidr)
-            return 1;
-        return 0;
+            return true;
+        return false;
     }
     return ret1;
 }

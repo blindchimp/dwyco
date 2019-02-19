@@ -1454,7 +1454,9 @@ dwyco_init()
         dwyco_set_net_data(rport, rport + 1, rport + 2,
                            rport, rport + 1, rport + 2,
                            1, 0, CSMS_TCP_ONLY, 1);
+#ifndef DWYCO_NO_UPNP
         bg_upnp(rport, rport + 1, rport, rport + 1);
+#endif
         }
     }
 
@@ -6426,11 +6428,14 @@ dwyco_zap_create_preview_buf(int viewid, const char **buf_out_elide, int *len_ou
         // for now, only do it for theora
         if(!decoder)
         {
+#ifndef DWYCO_NO_THEORA_CODEC
             if(MMChannel::codec_number_to_name(codec) == vc("theora"))
             {
                 decoder = new CDCTheoraDecoderColor;
             }
-            else if(MMChannel::codec_number_to_name(codec) == vc("dct"))
+            else
+#endif
+                if(MMChannel::codec_number_to_name(codec) == vc("dct"))
             {
                 decoder = new TPGMMSWDecoderColor;
             }
@@ -9129,7 +9134,8 @@ get_funny_mutex(int port)
     sap.sin_addr.s_addr = inet_addr("127.0.0.1");
     sap.sin_port = htons(port);
     int i;
-    for(i = 0; i < 40; ++i)
+    const int tries = 100;
+    for(i = 0; i < tries; ++i)
     {
         if(bind(s, (struct sockaddr *)&sap, sizeof(sap)) == -1)
         {
@@ -9155,7 +9161,7 @@ get_funny_mutex(int port)
         else
             break;
     }
-    if(i == 40)
+    if(i == tries)
     {
 #ifdef WIN32
         closesocket(s);

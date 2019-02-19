@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_VORBIS
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -49,4 +49,5 @@ private:
 
 };
 
+#endif
 #endif

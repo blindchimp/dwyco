@@ -11,12 +11,11 @@
 #include "vc.h"
 #include "pval.h"
 
-class TEditId;
 class MessageDisplay;
 class MMChannel;
 
 void stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr, MessageDisplay *md = 0);
-void direct_conference_connect(vc hostlist, vc portlist, vc proxlist, vc uid_list, TEditId *mid = 0);
+//void direct_conference_connect(vc hostlist, vc portlist, vc proxlist, vc uid_list, TEditId *mid = 0);
 
 
 void timer1_expired(MMChannel *mc, vc, void *, ValidPtr vp);

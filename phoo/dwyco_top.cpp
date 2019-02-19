@@ -121,11 +121,13 @@ hack_unread_count()
         TheDwycoCore->update_unread_count(has_unviewed_msgs());
 }
 
-static void
+void
 reload_conv_list()
 {
     Conv_sort_proxy->setDynamicSortFilter(false);
-    dwyco_load_users2(0, 0);
+    int total = 0;
+    dwyco_load_users2(TheDwycoCore->get_use_archived() ? 0 : 1, &total);
+    TheDwycoCore->update_total_users(total);
     TheConvListModel->load_users_to_model();
     Conv_sort_proxy->setDynamicSortFilter(true);
 }
@@ -1263,6 +1265,13 @@ DwycoCore::send_zap(int zid, QString recipient, int save_sent)
     return 1;
 }
 
+void
+DwycoCore::update_dwyco_client_name(QString name)
+{
+    QByteArray nm = name.toLatin1();
+    dwyco_set_client_version(nm.constData(), nm.length());
+}
+
 
 void
 DwycoCore::init()
@@ -1414,6 +1423,7 @@ DwycoCore::init()
     else
         inv = 1;
     dwyco_set_initial_invis(inv);
+    dwyco_inhibit_pal(1);
 #ifdef ANDROID
     // this is a kluge for android
     // the FCM token may or not be available at this point, but
@@ -1463,6 +1473,8 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString)), mlm, SLOT(msg_recv_status(int,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
+    connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
+    connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);

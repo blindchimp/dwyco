@@ -208,8 +208,6 @@ sql_get_max_logical_clock()
 vc
 sql_get_recent_users(int *total_out)
 {
-
-
     try
     {
         sql_start_transaction();
@@ -226,7 +224,11 @@ sql_get_recent_users(int *total_out)
             *total_out = (int)res[0][0];
         }
         VCArglist a;
+#ifdef ANDROID
+        a.append("select distinct assoc_uid from foo order by \"max(date)\" desc limit 20;");
+#else
         a.append("select distinct assoc_uid from foo order by \"max(date)\" desc limit 100;");
+#endif
         res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
             throw -1;

@@ -105,6 +105,8 @@ ApplicationWindow {
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
+    property bool show_archived_users: true
+
     function pin_expire() {
         var expire
         var duration
