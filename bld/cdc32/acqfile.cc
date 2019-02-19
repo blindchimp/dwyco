@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_VIDEO_FROM_PPM
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -27,3 +27,4 @@ readfile(pixel *, FILE *f, int *cols, int *rows, gray *maxval)
 {
     return ppm_readppm(f, cols, rows, maxval);
 }
+#endif
