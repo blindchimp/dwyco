@@ -83,8 +83,6 @@ $${D}/vc/libvc.a \
 $${D}/crypto5/libcrypto5.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
-$${D}/ppm/libppm.a \
-$${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
@@ -92,6 +90,8 @@ $${D}/qt-qml-models/libQtQmlModels.a \
 $${D}/libuv/libuv.a \
 -lsqlite3
 
+#$${D}/pbm/libpbm.a \
+#$${D}/ppm/libppm.a \
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -99,8 +99,6 @@ $${D}/vc/libvc.a \
 $${D}/crypto5/libcrypto5.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
-$${D}/ppm/libppm.a \
-$${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
