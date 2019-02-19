@@ -6494,6 +6494,9 @@ DWYCOEXPORT
 int
 dwyco_zap_create_preview(int viewid, const char *filename, int len_filename)
 {
+#ifdef DWYCO_NO_VIDEO_MSGS
+    return 0;
+#else
     const char *vimg;
     int rows;
     int cols;
@@ -6513,6 +6516,7 @@ dwyco_zap_create_preview(int viewid, const char *filename, int len_filename)
     fclose(f);
     ppm_freearray(vimg, rows);
     return 1;
+#endif
 }
 
 DWYCOEXPORT
