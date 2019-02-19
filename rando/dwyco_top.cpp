@@ -2912,7 +2912,7 @@ dwyco_register_qml(QQmlContext *root)
     //qmlRegisterType<FauxButton>("dwyco", 1, 0, "FauxButton");
     //qmlRegisterType<iglist_model>("dwyco", 1, 0, "DwycoIgnoreList");
     //qmlRegisterType<codel>("dwyco", 1, 0, "ChatListModel");
-    Dwyco_video_provider = new DwycoImageProvider;
+    //Dwyco_video_provider = new DwycoImageProvider;
     //root->engine()->addImageProvider("dwyco_video_frame", Dwyco_video_provider);
     //root->engine()->addImageProvider("profile_preview", new DwycoProfilePreviewProvider);
     //Dwyco_video_preview_provider = new DwycoVideoPreviewProvider;

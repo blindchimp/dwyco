@@ -44,7 +44,6 @@ SOURCES += main.cpp \
     msglistmodel.cpp \
     msgpv.cpp \
     ssmap.cpp \
-    dwycoimageprovider.cpp \
     notificationclient.cpp \
     dvp.cpp \
     convmodel.cpp \
@@ -338,7 +337,6 @@ include(deployment.pri)
 HEADERS += \
 	dwyco_top.h \
     msglistmodel.h \
-    dwycoimageprovider.h \
     notificationclient.h \
     dwquerybymember.h \
     dvp.h \

@@ -1289,7 +1289,7 @@ DwycoCore::init()
     dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
     dwyco_set_system_event_callback(dwyco_sys_event_callback);
-    dwyco_set_video_display_callback(dwyco_video_make_image);
+    //dwyco_set_video_display_callback(dwyco_video_make_image);
     dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
@@ -2911,11 +2911,11 @@ dwyco_register_qml(QQmlContext *root)
     //qmlRegisterType<FauxButton>("dwyco", 1, 0, "FauxButton");
     //qmlRegisterType<iglist_model>("dwyco", 1, 0, "DwycoIgnoreList");
     //qmlRegisterType<codel>("dwyco", 1, 0, "ChatListModel");
-    Dwyco_video_provider = new DwycoImageProvider;
-    root->engine()->addImageProvider("dwyco_video_frame", Dwyco_video_provider);
-    root->engine()->addImageProvider("profile_preview", new DwycoProfilePreviewProvider);
-    Dwyco_video_preview_provider = new DwycoVideoPreviewProvider;
-    root->engine()->addImageProvider("dwyco_video_preview", Dwyco_video_preview_provider);
+    //Dwyco_video_provider = new DwycoImageProvider;
+    //root->engine()->addImageProvider("dwyco_video_frame", Dwyco_video_provider);
+   // root->engine()->addImageProvider("profile_preview", new DwycoProfilePreviewProvider);
+    //Dwyco_video_preview_provider = new DwycoVideoPreviewProvider;
+    //root->engine()->addImageProvider("dwyco_video_preview", Dwyco_video_preview_provider);
 
     CamListModel = new QQmlVariantListModel;
     root->setContextProperty("camListModel", CamListModel);
