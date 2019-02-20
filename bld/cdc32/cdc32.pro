@@ -68,11 +68,12 @@ SOURCES += sqlite3.c
 
 win32-* {
 DEFINES += CDCCORE_STATIC
-DEFINES += USE_VFW
+#DEFINES += USE_VFW
 DEFINES += DWYCO_USE_STATIC_SQLITE
-DEFINES += VIDGRAB_HACKS
-DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100 
-SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+#DEFINES += VIDGRAB_HACKS
+#DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
+#SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+SOURCES += uniq.cpp audwin.cc aqaud.cc
 SOURCES += sqlite3.c
 INCLUDEPATH += ../mtcap
 equals(FORCE_DESKTOP_VGQT, 1) {
