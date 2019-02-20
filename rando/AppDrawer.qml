@@ -7,7 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick 2.9
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.12
 
 AppDrawerForm {
 
@@ -31,14 +31,16 @@ AppDrawerForm {
 //        stack.push(vid_cam_preview)
 //        close()
 //    }
-//    about_button.onClicked: {
-//        stack.push(about_dialog)
-//        close()
-//    }
-    settings_button.onClicked: {
-        stack.push(settings_dialog)
+
+    about_button.onClicked: {
+        stack.push(about_dialog)
         close()
     }
+
+//    settings_button.onClicked: {
+//        stack.push(settings_dialog)
+//        close()
+//    }
 //    pin_lock_button.onClicked: {
 //        stack.push(pwchange_dialog)
 //        close()

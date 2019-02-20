@@ -8,7 +8,7 @@
 */
 import QtQuick 2.6
 import dwyco 1.0
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.3
 
 Page {
@@ -23,7 +23,7 @@ Page {
         spacing: mm(3)
 
         Label {
-            text: "Click SEND to forward the message to Dwyco. We will review the message and contact you if more details are needed. The user DWYCO will appear in your contact list to help with future messages regarding this issue."
+            text: "Click SEND to forward the message to Dwyco for special review."
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }

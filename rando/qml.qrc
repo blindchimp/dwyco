@@ -22,6 +22,7 @@
         <file>+desktop/GridToggle.qml</file>
         <file>FName.qml</file>
         <file>SimpleMsgList.qml</file>
+        <file>MsgReport.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

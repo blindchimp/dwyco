@@ -71,8 +71,19 @@ Page {
                         //themsglist.reload_model()
                     }
                 }
+                MenuItem {
+                    text: "Report msg"
+                    onTriggered: {
+                        stack.push(msg_report)
+
+                    }
+                }
             }
         }
+    }
+
+    MsgReport {
+        id: msg_report
     }
 
     header: SimpleToolbar {

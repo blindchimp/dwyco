@@ -20,6 +20,10 @@ Page {
     property string uid
 
     anchors.fill: parent
+    Component.onCompleted: {
+        sent.checked = true
+    }
+
     background: Rectangle {
         gradient: Gradient {
             GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
@@ -97,14 +101,14 @@ Page {
                         radius: 3
                     }
                     contentItem: Text {
-                        x: parent.leftPadding
-                        y: parent.topPadding
-                        width: parent.availableWidth
-                        height: parent.availableHeight
+                        x: sent.leftPadding
+                        y: sent.topPadding
+                        width: sent.availableWidth
+                        height: sent.availableHeight
 
-                        text: parent.text
-                        font: parent.font
-                        color: "white"
+                        text: sent.text
+                        font: sent.font
+                        color: sent.checked ? "white" : "gray"
                         elide: Text.ElideRight
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -133,14 +137,14 @@ Page {
                         radius: 3
                     }
                     contentItem: Text {
-                        x: parent.leftPadding
-                        y: parent.topPadding
-                        width: parent.availableWidth
-                        height: parent.availableHeight
+                        x: recv.leftPadding
+                        y: recv.topPadding
+                        width: recv.availableWidth
+                        height: recv.availableHeight
 
-                        text: parent.text
-                        font: parent.font
-                        color: "white"
+                        text: recv.text
+                        font: recv.font
+                        color: recv.checked ? "white" : "gray"
                         elide: Text.ElideRight
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -288,6 +292,8 @@ Page {
         anchors.horizontalCenter: parent.horizontalCenter
         icon.source: mi("ic_add_a_photo_black_24dp.png")
         icon.color: "blue"
+        width: cm(2)
+        height: cm(2)
         onClicked: {
             cam.next_state = "StopAndPop"
             cam.ok_text = "Upload"

@@ -14,7 +14,7 @@ Pane {
     //width: 400
     //height: 400
     property alias vid_preview_button: vid_preview_button
-    //property alias about_button: about_button
+    property alias about_button: about_button
     property alias settings_button: settings_button
     //property alias pin_lock_button: pin_lock_button
     //property alias block_list_button: block_list_button
@@ -146,13 +146,15 @@ Pane {
             topPadding: ctrl_pad
             padding: ctrl_pad
             Layout.fillWidth: true
+            visible: false
         }
 
-        //        ItemDelegate {
-        //            id: about_button
-        //            text: qsTr("About")
-        //            Layout.fillWidth: true
-        //        }
+        ItemDelegate {
+            id: about_button
+            text: qsTr("About")
+            Layout.fillWidth: true
+        }
+
         ItemDelegate {
             id: vid_preview_button
             text: qsTr("Preview")
@@ -163,7 +165,6 @@ Pane {
             //visible: false
             Layout.fillWidth: true
         }
-
         Item {
             id: item1
 
