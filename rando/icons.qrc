@@ -1,9 +1,6 @@
 <RCC>
-    <qresource prefix="/new/prefix1">
-
-    </qresource>
-    <qresource prefix="/new/red32">
-    </qresource>
+    <qresource prefix="/new/prefix1"/>
+    <qresource prefix="/new/red32"/>
     <qresource prefix="/material">
         <file>icons/material/hdpi/ic_arrow_back_black_24dp.png</file>
         <file>icons/material/hdpi/ic_cloud_upload_black_24dp.png</file>
@@ -32,5 +29,11 @@
         <file>icons/material/hdpi/ic_open_in_new_black_24dp.png</file>
         <file>icons/material/mdpi/ic_open_in_new_black_24dp.png</file>
         <file>icons/material/xhdpi/ic_open_in_new_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_add_a_photo_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_add_a_photo_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_add_a_photo_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_add_a_photo_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_add_a_photo_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_add_a_photo_white_24dp.png</file>
     </qresource>
 </RCC>

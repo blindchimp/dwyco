@@ -57,13 +57,6 @@ Page {
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
-        Label {
-            text: "This software contains graphics from www.mouserunner.com"
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-        }
-
-
 
         Button {
             text: "Privacy policy"

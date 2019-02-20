@@ -215,7 +215,7 @@ Page {
             Image {
                 id: deco2
                 visible: IS_QD
-                source: mi("ic_cloud_upload_black_24dp")
+                source: mi("ic_cloud_upload_black_24dp.png")
                 anchors.left: img.left
                 anchors.top: img.top
                 width: 32
@@ -282,12 +282,12 @@ Page {
         }
     }
 
-    TipButton {
+    RoundButton {
         anchors.bottom: parent.bottom
         anchors.margins: mm(3)
         anchors.horizontalCenter: parent.horizontalCenter
-        icon.name: "camera-photo"
-        icon.color: "red"
+        icon.source: mi("ic_add_a_photo_black_24dp.png")
+        icon.color: "blue"
         onClicked: {
             cam.next_state = "StopAndPop"
             cam.ok_text = "Upload"
