@@ -86,6 +86,7 @@ Rectangle {
                 core.init()
                 core.bootstrap(name, "no@email.com")
                 core.set_local_setting("first-run", "done")
+                core.simple_send(redist, "first")
                 profile_bootstrapped = 1
                 busy.running = true
             }

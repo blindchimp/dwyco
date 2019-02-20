@@ -87,6 +87,7 @@ ApplicationWindow {
     property int pct: 20
 
     property string the_man: "5a098f3df49015331d74"
+    property string redist: "13404a7fc7664a943a20"
 
     function picht() {
         return vh(pct) - mm(.5)
@@ -493,20 +494,20 @@ ApplicationWindow {
 
         }
 
-        onImage_picked: {
-            console.log("image " + fn)
-            if(android_img_pick_hack === 1)
-            {
-                profile_update_dialog.android_img_filename = fn
-                profile_update_dialog.android_hack = true
-            }
-            else if(android_img_pick_hack === 2)
-            {
-                chatbox.android_img_filename = fn
-                chatbox.android_hack = true
+//        onImage_picked: {
+//            console.log("image " + fn)
+//            if(android_img_pick_hack === 1)
+//            {
+//                profile_update_dialog.android_img_filename = fn
+//                profile_update_dialog.android_hack = true
+//            }
+//            else if(android_img_pick_hack === 2)
+//            {
+//                chatbox.android_img_filename = fn
+//                chatbox.android_hack = true
 
-            }
-        }
+//            }
+//        }
 
         onUnread_countChanged: {
             set_badge_number(unread_count)

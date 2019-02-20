@@ -20,9 +20,7 @@ Page {
     property string uid
 
     anchors.fill: parent
-    Component.onCompleted: {
-        sent.checked = true
-    }
+
 
     background: Rectangle {
         gradient: Gradient {
@@ -39,6 +37,8 @@ Page {
 
             themsglist.reload_model()
             core.reset_unviewed_msgs(top_dispatch.last_uid_selected)
+            if(!sent.checked && !recv.checked)
+                sent.checked = true
         }
     }
 
