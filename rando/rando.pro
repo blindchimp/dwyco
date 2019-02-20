@@ -157,21 +157,11 @@ $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
 $${D}/crypto5/libcrypto5.a \
 $${D}/dwcls/libdwcls.a \
-$${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
-$${D}/ppm/libppm.a \
-$${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
-$${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/vorbis112/libvorbis.a \
-$${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
-$${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
-$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${PWD}/../bld/macdrv/libmacdrv.a \
 $${D}/libuv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
@@ -186,19 +176,10 @@ $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
 $${D}/crypto5/libcrypto5.a \
 $${D}/dwcls/libdwcls.a \
-$${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
-$${D}/ppm/libppm.a \
-$${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
-$${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/vorbis112/libvorbis.a \
-$${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
-$${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
-$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qt-qml-models/libQtQmlModels.a
 
 }
