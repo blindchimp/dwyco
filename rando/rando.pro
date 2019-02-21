@@ -49,7 +49,8 @@ SOURCES += main.cpp \
     convmodel.cpp \
     getinfo.cpp \
     qlimitedbuffer.cpp \
-    resizeimage.cpp
+    resizeimage.cpp \
+    androidperms.cpp
 
 # note: you can *compile* the qt stuff on any platform, but
 # as of 2017, the videoprobing stuff only works on android
@@ -299,6 +300,7 @@ HEADERS += \
     dwycolistscoped.h \
     qlimitedbuffer.h \
     resizeimage.h \
+    androidperms.h
 
 DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.jar \

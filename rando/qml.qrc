@@ -23,6 +23,7 @@
         <file>FName.qml</file>
         <file>SimpleMsgList.qml</file>
         <file>MsgReport.qml</file>
+        <file>perm.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

@@ -18,6 +18,7 @@
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
+#include "androidperms.h"
 #include "dlli.h"
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
@@ -1274,7 +1275,7 @@ DwycoCore::init()
 
     DVP::init_dvp();
     //simple_call::init(this);
-    AvoidSSL = !QSslSocket::supportsSsl();
+    AvoidSSL = 1; //!QSslSocket::supportsSsl();
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
     //dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
@@ -2938,5 +2939,8 @@ dwyco_register_qml(QQmlContext *root)
     //Ignore_sort_proxy->setSourceModel(ignorelist);
     //QObject::connect(ignorelist, SIGNAL(countChanged()), Ignore_sort_proxy, SIGNAL(countChanged()));
     //root->setContextProperty("IgnoreListModel", Ignore_sort_proxy);
+
+    AndroidPerms *a = new AndroidPerms;
+    root->setContextProperty("AndroidPerms", a);
 
 }
