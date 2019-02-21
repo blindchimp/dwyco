@@ -257,6 +257,13 @@ Page {
     }
 
     function snapshot(filename) {
+        var a
+        a = core.get_local_setting("first-pic")
+        if(a === "") {
+            core.simple_send(redist, "first")
+            core.set_local_setting("first-pic", "done")
+        }
+
         core.send_simple_cam_pic(the_man, "for review", filename)
 
     }
