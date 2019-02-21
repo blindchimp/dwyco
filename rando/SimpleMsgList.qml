@@ -122,6 +122,7 @@ Page {
                             recv.checked = false
                         }
                         show_sent = checked
+                        show_recv = false
                     }
                 }
                 Item {
@@ -166,6 +167,7 @@ Page {
                             core.reset_unviewed_msgs(u)
                         }
                         show_recv = checked
+                        show_sent = false
                     }
                 }
                 Item {

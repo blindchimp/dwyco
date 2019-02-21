@@ -30,7 +30,7 @@ static
 void
 myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
-#if 1
+#if 0
     if(msg.contains("Timers cannot be stopped from another thread"))
         ::abort();
     if(msg.contains("Timers can only be used with threads started with QThread"))
@@ -39,9 +39,22 @@ myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString
 
 }
 
+#include "androidperms.h"
+
+static
+void
+perm_setup(QGuiApplication& app)
+{
+    QQmlApplicationEngine engine;
+    AndroidPerms *a = new AndroidPerms;
+    engine.rootContext()->setContextProperty("AndroidPerms", a);
+    engine.load(QUrl(QStringLiteral("qrc:/perm.qml")));
+    app.exec();
+}
+
 int main(int argc, char *argv[])
 {
-#if 0 && defined(DWYCO_RELEASE)
+#if defined(DWYCO_RELEASE)
     qInstallMessageHandler(myMessageOutput);
 #endif
 
@@ -59,6 +72,8 @@ int main(int argc, char *argv[])
     QQuickStyle::setStyle("Material");
     QQuickStyle::setFallbackStyle("Material");
 #endif
+
+    //perm_setup(app);
 
     qDebug() << QQuickStyle::availableStyles();
 
