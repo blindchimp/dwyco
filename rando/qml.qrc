@@ -24,6 +24,7 @@
         <file>SimpleMsgList.qml</file>
         <file>MsgReport.qml</file>
         <file>perm.qml</file>
+        <file>Warning.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

@@ -56,6 +56,9 @@ AndroidPerms::toggle()
 bool
 AndroidPerms::request_sync(QString perm)
 {
+#ifndef ANDROID
+    return true;
+#else
     QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList(perm));
     if(m.value(perm) == QtAndroid::PermissionResult::Denied)
     {
@@ -67,4 +70,5 @@ AndroidPerms::request_sync(QString perm)
     }
     load();
     return true;
+#endif
 }

@@ -17,6 +17,7 @@ Page {
     property bool show_sent: false
     property bool show_recv: true
     property bool multiselect_mode: false
+    property int storage_warning: 1
     property string uid
 
     anchors.fill: parent
@@ -39,6 +40,14 @@ Page {
             core.reset_unviewed_msgs(top_dispatch.last_uid_selected)
             if(!sent.checked && !recv.checked)
                 sent.checked = true
+            if(core.get_local_setting("storage_warning") === "")
+                storage_warning = 1
+            else
+                storage_warning = 0
+            AndroidPerms.load()
+            if(storage_warning === 1 && !AndroidPerms.external_storage_permission) {
+                warn.visible = true
+            }
         }
     }
 
@@ -309,5 +318,31 @@ Page {
             stack.push(cam)
         }
     }
+
+    Warning {
+        id: warn
+        visible: false
+        z: 3
+        warning: "You denied access to storage, which is OK. BUT if you uninstall the app, the pictures stored by this app are removed too. IF YOU WOULD LIKE TO KEEP THE PICTURES YOU GET, EVEN IF YOU UNINSTALL, click the button below to quit the app. Then restart the app, and when it asks for permission to access storage, answer YES."
+        inhibit_key: "storage_warning"
+        oops_text: "Quit and reasses my life-choices"
+
+        onVisibleChanged: {
+            if(visible) {
+                oops = false
+            } else {
+                if(core.get_local_setting("storage_warning") === "")
+                    storage_warning = 1
+                else
+                    storage_warning = 0
+            }
+        }
+
+        onOopsChanged: {
+            if(oops)
+                Qt.quit()
+        }
+    }
+
 
 }

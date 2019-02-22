@@ -780,7 +780,7 @@ setup_locations()
             // access your photos on the device easily. maybe need to just request "read"
             // in this case.
             filepath = QStandardPaths::AppDataLocation;
-            exit(0);
+            //exit(0);
         }
     }
 #endif
@@ -803,11 +803,11 @@ setup_locations()
         d.mkpath(userdir);
         // this is just a stopgap, really need to do something to obfuscate the files
         // a little bit to avoid apps indexing temp images on all platforms
-        QString fp = d.filePath(".nomedia");
-        QFile f(fp);
-        f.open(QIODevice::WriteOnly);
-        f.putChar(0);
-        f.close();
+//        QString fp = d.filePath(".nomedia");
+//        QFile f(fp);
+//        f.open(QIODevice::WriteOnly);
+//        f.putChar(0);
+//        f.close();
     }
 #ifdef ANDROID
     QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
