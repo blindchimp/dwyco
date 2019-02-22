@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<manifest package="com.dwyco.rando" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.0" android:versionCode="89" android:installLocation="auto">
+<manifest package="com.dwyco.rando" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.0" android:versionCode="90" android:installLocation="auto">
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="-- %%INSERT_APP_NAME%% --" android:icon="@drawable/icon">
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="com.dwyco.rando.NotificationClient" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="unspecified" android:launchMode="singleTop" android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -74,7 +74,9 @@
 
     <!-- The following comment will be replaced upon deployment with default features based on the dependencies of the application.
          Remove the comment if you do not require these default features. -->
-    <!-- %%INSERT_FEATURES -->
+
+<uses-feature android:glEsVersion="0x00020000" android:required="true"/>
+<uses-feature android:name="android.hardware.camera" android:required="true"/>
 
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
