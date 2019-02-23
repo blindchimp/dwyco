@@ -295,7 +295,7 @@ Page {
         }
         Label {
             Layout.fillWidth: true
-            text: "You'll receive a picture in return."
+            text: "Each picture you send, you'll receive a picture in return!"
             wrapMode: Text.WordWrap
 
         }
