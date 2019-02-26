@@ -1841,6 +1841,7 @@ query_done(vc m, void *, vc, ValidPtr)
         // 3: date vector
 
         vc from = v[QM_FROM];
+        sql_add_tag(v[QM_ID], "_seen");
 
         int auto_reply = 0;
         if(uid_ignored(from) || (auto_reply = (ZapAdvData.get_ignore() && wrong_rating(v))))
@@ -3693,9 +3694,16 @@ purge_inbox(vc id)
 int
 save_to_inbox(vc m)
 {
-    DwString f((const char *)m[2]);
+    DwString f((const char *)m[QQM_LOCAL_ID]);
     f += ".urd";
     f.insert(0, "inbox" DIRSEPSTR "");
+    // note: the "local id" is set from the server if this msg came from the
+    // server. it is set to something locally generated for peer-to-peer messages.
+    // this isn't a problem, the main reason we are creating this tag is to filter out
+    // stale notifications from google (ie, our app sees and notifies the user of
+    // a message, then 20 minutes later google notifies about the same message.)
+    // we only get sent google notifications for server messages...
+    sql_add_tag(m[QQM_LOCAL_ID], "_seen");
     if(!save_info(m, f.c_str()))
         return 0;
     return 1;

@@ -192,7 +192,7 @@ void
 sql_insert_record(vc mid, vc tag)
 {
     VCArglist a;
-    a.append("replace into msg_tags2 (mid, tag) values($1,$2);");
+    a.append("replace into msg_tags2 (mid, tag, time) values($1,$2,strftime('%s','now'));");
     a.append(mid);
     a.append(tag);
 
