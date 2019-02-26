@@ -64,6 +64,7 @@ public slots:
     void vibrate(long ms);
     void log_event();
     void set_user_property(QString name, QString value);
+    void set_lastrun();
 
 private:
     QString m_notification;
