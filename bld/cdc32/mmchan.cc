@@ -4682,10 +4682,12 @@ resume:
                             // check for this particular theora case and work around it.
                             // what we really need here is some indication from the codec
                             // that it actually displayed a frame.
+#ifndef DWYCO_NO_THEORA_CODEC
                             CDCTheoraDecoderColor *d = dynamic_cast<CDCTheoraDecoderColor *>(decoder);
                             if(d && !d->seeking_keyframe)
                                 --mc->step_frames;
                             else if(!d)
+#endif
                                 --mc->step_frames;
                             if(mc->step_frames <= 0 && mc->step_done_callback)
                                 (*mc->step_done_callback)(mc, mc->sdc_arg1, mc->sdc_arg2, mc->sdc_arg3);

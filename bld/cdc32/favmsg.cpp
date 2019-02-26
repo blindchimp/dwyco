@@ -48,28 +48,32 @@ namespace dwyco {
 static sqlite3 *Db;
 
 static
-void
+vc
 sql_simple(const char *sql)
 {
     VCArglist a;
     a.append(sql);
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res;
+
+    res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
         throw -1;
+
+    return res;
 }
 
 static
 void
 sql_start_transaction()
 {
-    sql_simple("savepoint fav;");
+    sql_simple("begin transaction");
 }
 
 static
 void
 sql_commit_transaction()
 {
-    sql_simple("release fav;");
+    sql_simple("commit transaction");
 }
 
 static
@@ -77,7 +81,7 @@ void
 sql_rollback_transaction()
 {
     VCArglist a;
-    a.append("rollback to fav;");
+    a.append("rollback transaction");
     sqlite3_bulk_query(Db, &a);
 }
 
@@ -114,20 +118,49 @@ init_schema()
     } catch(...) {
         sql_rollback_transaction();
     }
+
+    try {
+        sql_start_transaction();
+        vc res = sql_simple("pragma user_version");
+        long v = res[0][0];
+        if(v == 0)
+        {
+            sql_simple("alter table msg_tags2 add time integer default 0");
+            sql_simple("update msg_tags2 set time = 0");
+            sql_simple("pragma user_version = 1");
+        }
+        sql_commit_transaction();
+    } catch (...) {
+        sql_rollback_transaction();
+    }
+
+    try {
+        sql_start_transaction();
+        vc res = sql_simple("pragma user_version");
+        long v = res[0][0];
+        if(v == 1)
+        {
+            sql_simple("update msg_tags2 set time = 0");
+            sql_simple("pragma user_version = 2");
+        }
+        sql_commit_transaction();
+    } catch (...) {
+        sql_rollback_transaction();
+    }
 }
 
 static
 void
 sql_sync_off()
 {
-    sql_simple("pragma synchronous=off;");
+    sql_simple("pragma synchronous=off");
 }
 
 static
 void
 sql_sync_on()
 {
-    sql_simple("pragma synchronous=full;");
+    sql_simple("pragma synchronous=full");
 
 }
 
@@ -141,8 +174,8 @@ init_fav_sql()
         Db = 0;
         return;
     }
-    init_schema();
     sql_sync_off();
+    init_schema();
 }
 
 void
@@ -159,7 +192,7 @@ void
 sql_insert_record(vc mid, vc tag)
 {
     VCArglist a;
-    a.append("replace into msg_tags2 (mid, tag) values($1,$2);");
+    a.append("replace into msg_tags2 (mid, tag, time) values($1,$2,strftime('%s','now'));");
     a.append(mid);
     a.append(tag);
 
@@ -171,7 +204,13 @@ sql_insert_record(vc mid, vc tag)
 void
 sql_add_tag(vc mid, vc tag)
 {
-    sql_insert_record(mid, tag);
+    try
+    {
+        sql_insert_record(mid, tag);
+    }
+    catch (...)
+    {
+    }
 }
 
 void
@@ -283,15 +322,14 @@ int
 sql_fav_is_fav(vc mid)
 {
     VCArglist a;
-    a.append("select count(*) from msg_tags2 where mid = $1 and tag = '_fav' limit 1;");
+    a.append("select 1 from msg_tags2 where mid = $1 and tag = '_fav' limit 1;");
     a.append(mid);
 
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
-        throw -1;
+        return 0;
 
-    long c = (long)res[0][0];
-    return c != 0;
+    return res.num_elems() > 0;
 
 }
 
@@ -348,16 +386,15 @@ int
 sql_mid_has_tag(vc mid, vc tag)
 {
     VCArglist a;
-    a.append("select count(*) from msg_tags2 where mid = $1 and tag = $2 limit 1;");
+    a.append("select 1 from msg_tags2 where mid = $1 and tag = $2 limit 1;");
     a.append(mid);
     a.append(tag);
 
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
-        throw -1;
+        return 0;
 
-    long c = (long)res[0][0];
-    return c != 0;
+    return res.num_elems() > 0;
 
 }
 
@@ -366,24 +403,24 @@ sql_uid_has_tag(vc uid, vc tag)
 {
     DwString mfn = newfn("mi.sql");
     sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
-    long c = 0;
+    int c = 0;
     try {
         VCArglist a;
-        a.append("select count(*) from msg_tags2,mi.msg_idx using(mid) where assoc_uid = $1 and tag = $2 limit 1;");
+        a.append("select 1 from msg_tags2,mi.msg_idx using(mid) where assoc_uid = $1 and tag = $2 limit 1;");
         a.append(to_hex(uid));
         a.append(tag);
 
         vc res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
             throw -1;
-        c = (long)res[0][0];
+        c = (res.num_elems() > 0);
     }
     catch(...) {
 
     }
     sql_simple("detach mi;");
 
-    return c != 0;
+    return c;
 
 }
 }

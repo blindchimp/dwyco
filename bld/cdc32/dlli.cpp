@@ -436,7 +436,7 @@ DWYCO_LIST dwyco_list_from_vc(vc vec);
 TAutoUpdate *TheAutoUpdate;
 extern vc Pal_auth_state;
 extern int Disable_SAC;
-static int Disable_UPNP = 1;
+static int Disable_UPNP = 0;
 extern int Media_select;
 extern int Inhibit_database_thread;
 int Inhibit_auto_connect;
@@ -1454,7 +1454,9 @@ dwyco_init()
         dwyco_set_net_data(rport, rport + 1, rport + 2,
                            rport, rport + 1, rport + 2,
                            1, 0, CSMS_TCP_ONLY, 1);
+#ifndef DWYCO_NO_UPNP
         bg_upnp(rport, rport + 1, rport, rport + 1);
+#endif
         }
     }
 
@@ -6426,11 +6428,14 @@ dwyco_zap_create_preview_buf(int viewid, const char **buf_out_elide, int *len_ou
         // for now, only do it for theora
         if(!decoder)
         {
+#ifndef DWYCO_NO_THEORA_CODEC
             if(MMChannel::codec_number_to_name(codec) == vc("theora"))
             {
                 decoder = new CDCTheoraDecoderColor;
             }
-            else if(MMChannel::codec_number_to_name(codec) == vc("dct"))
+            else
+#endif
+                if(MMChannel::codec_number_to_name(codec) == vc("dct"))
             {
                 decoder = new TPGMMSWDecoderColor;
             }
@@ -6489,6 +6494,9 @@ DWYCOEXPORT
 int
 dwyco_zap_create_preview(int viewid, const char *filename, int len_filename)
 {
+#ifdef DWYCO_NO_VIDEO_MSGS
+    return 0;
+#else
     const char *vimg;
     int rows;
     int cols;
@@ -6508,6 +6516,7 @@ dwyco_zap_create_preview(int viewid, const char *filename, int len_filename)
     fclose(f);
     ppm_freearray(vimg, rows);
     return 1;
+#endif
 }
 
 DWYCOEXPORT

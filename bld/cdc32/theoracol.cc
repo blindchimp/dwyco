@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_THEORA_CODEC
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -289,6 +289,7 @@ gen_encoder_info(th_info& cur_info, th_enc_ctx*& cur_coder_ctx, int q, int w, in
         int max_sp;
         if(th_encode_ctl(cur_coder_ctx, TH_ENCCTL_GET_SPLEVEL_MAX, &max_sp, sizeof(max_sp)) == 0)
         {
+	    --max_sp;
             th_encode_ctl(cur_coder_ctx, TH_ENCCTL_SET_SPLEVEL, &max_sp, sizeof(max_sp));
         }
     }
@@ -1295,3 +1296,5 @@ CDCTheoraDecoderColor::display_decoded(void *p, int cols, int rows)
     pixel **img = (pixel **)p;
     ppm_to_colorview(img, cols, rows, gv_id);
 }
+#endif
+

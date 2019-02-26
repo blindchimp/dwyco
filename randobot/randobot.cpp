@@ -54,6 +54,7 @@ struct rando_sql : public SimpleSql
         sql_simple("create table if not exists seeder(uid text collate nocase unique on conflict ignore)");
         sql_simple("create table if not exists reviewers(uid text collate nocase unique on conflict ignore)");
         sql_simple("insert into reviewers (uid) values ('5a098f3df49015331d74')");
+        sql_simple("create table if not exists grace(uid text collate nocase unique on conflict ignore, time integer, sent integer default 0)");
     }
 
 };
@@ -230,16 +231,23 @@ uid_due_randos()
     // c2 is the count of messages sent to uid
     D->sql_simple("create temp table c2 as select count(*) as cs, to_uid from sent_to group by to_uid");
 
+    D->sql_simple("create temp table res(uid text collate nocase unique on conflict ignore, count integer)");
     // list of all uids that have sent in more than they have received
-    vc res = D->sql_simple("select from_uid,c1.cr - c2.cs from c1,c2 where c1.from_uid = c2.to_uid and c1.cr > c2.cs");
+    D->sql_simple("insert into res select from_uid,c1.cr - c2.cs from c1,c2 where c1.from_uid = c2.to_uid and c1.cr > c2.cs");
 
     // list of all uids that have sent something in, but never received anything
-    vc res2 = D->sql_simple("select from_uid,c1.cr from c1 where from_uid not in (select to_uid from c2);");
+    D->sql_simple("insert into res select from_uid,c1.cr from c1 where from_uid not in (select to_uid from c2);");
     D->sql_simple("drop table c1");
     D->sql_simple("drop table c2");
+
+    // users getting a grace-period
+    // we aren't too worried if something happens later that causes the message
+    // to fail... so just terminate the grace-period here.
+    D->sql_simple("insert into res select uid, 0 from grace where sent = 0");
+    D->sql_simple("update grace set sent = 1 where sent = 0");
+    vc res = D->sql_simple("select * from res");
+    D->sql_simple("drop table res");
     D->commit_transaction();
-    for(int i = 0; i < res2.num_elems(); ++i)
-        res.append(res2[i]);
     return res;
 }
 
@@ -452,6 +460,21 @@ main(int argc, char *argv[])
                  vc res = D->sql_simple("select 1 from reviewers where uid = $1", huid.constData());
                  if(res.num_elems() == 0)
                  {
+                     if(!has_att && txt.contains("first"))
+                     {
+                         // this is a hack to allow a user to get a "grace period" when initially
+                         // running the app. since we manually review stuff coming in, there can be
+                         // a delay if there are no reviewers awake to approve someone's initial message.
+                         // so it looks like the app is doing nothing at first.
+                         //
+                         // this makes it so we don't need to review their
+                         // initial picture, they can just get one if this is the first pic they have sent.
+                         // there are all sorts of problems with this, but for now livable, and easy enough to
+                         // turn off if there is a problem
+                         D->sql_simple("insert into grace(uid, time) values($1, strftime('%s', 'now'))", huid.constData());
+                         HANDLE_MSG(mid);
+                         continue;
+                     }
                      dwyco_delete_unsaved_message(mid.constData());
                      continue;
                  }

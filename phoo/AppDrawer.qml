@@ -57,6 +57,7 @@ AppDrawerForm {
         core.power_clean()
         if(Qt.platform.os === "android") {
             notificationClient.start_background()
+            notificationClient.set_lastrun()
         }
         Qt.quit()
     }
