@@ -265,6 +265,26 @@ Page {
         clip: true
         delegate: msg_delegate
         model: themsglist
+
+        SwipeView {
+            id: swiper
+            interactive: parent.visible
+            anchors.fill: parent
+            currentIndex: sent.checked ? 0 : (recv.checked ? 1 : 0)
+            Item {
+
+            }
+            Item {
+
+            }
+            onCurrentIndexChanged: {
+                console.log("swipe ", currentIndex)
+                if(currentIndex === 0)
+                    sent.checked = true
+                if(currentIndex === 1)
+                    recv.checked = true
+            }
+        }
     }
 
     function snapshot(filename) {
