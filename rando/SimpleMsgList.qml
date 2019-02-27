@@ -211,6 +211,20 @@ Page {
 
                 }
             }
+            Behavior on visible {
+                SequentialAnimation {
+
+                NumberAnimation {
+                    target: img
+                    property: "opacity"
+                    duration: 250
+                    easing.type: Easing.InOutQuad
+                    from: 0.0
+                    to: 1.0
+                }
+                }
+            }
+
             Rectangle {
                 id: isfav
                 width: 32
@@ -265,6 +279,7 @@ Page {
         clip: true
         delegate: msg_delegate
         model: themsglist
+
 
         SwipeView {
             id: swiper
