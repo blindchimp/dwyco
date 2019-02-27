@@ -12,7 +12,7 @@ import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.3
 
 Page {
-    anchors.fill: parent
+    //anchors.fill: parent
     header: SimpleToolbar {
 
     }

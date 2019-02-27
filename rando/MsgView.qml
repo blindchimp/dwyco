@@ -22,7 +22,7 @@ Page {
     property bool fav
     property bool hid
 
-    anchors.fill:parent
+    //anchors.fill:parent
 
 
     fav: { (mid.length > 0) ?

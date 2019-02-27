@@ -256,7 +256,7 @@ ApplicationWindow {
 
         property string next_state
         property string ok_text: "Send"
-        anchors.fill: parent
+        //anchors.fill: parent
         visible: false
         active: visible
 

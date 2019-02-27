@@ -20,7 +20,7 @@ Page {
     property int storage_warning: 1
     property string uid
 
-    anchors.fill: parent
+    //anchors.fill: parent
 
 
     background: Rectangle {
@@ -103,6 +103,8 @@ Page {
 
                 ToolButton {
                     id: sent
+                    property bool hoopty
+                    hoopty: checked
                     ButtonGroup.group: radio
                     text: "Sent"
                     background: Rectangle {
@@ -132,7 +134,29 @@ Page {
                         }
                         show_sent = checked
                         show_recv = false
+
                     }
+//                    Behavior on hoopty {
+
+//                        SequentialAnimation {
+//                        NumberAnimation {
+//                            target: listview
+//                            property: "x"
+//                            duration: 200
+//                            easing.type: Easing.InOutQuad
+////                            from: 1.0
+////                            to: 0.5
+//                        }
+//                        NumberAnimation {
+//                            target: listview
+//                            property: "scale"
+//                            duration: 200
+//                            easing.type: Easing.InOutQuad
+//                            from: 0.5
+//                            to: 1.0
+//                        }
+//                        }
+//                    }
                 }
                 Item {
 
@@ -177,6 +201,7 @@ Page {
                         }
                         show_recv = checked
                         show_sent = false
+
                     }
                 }
                 Item {
@@ -279,27 +304,38 @@ Page {
         clip: true
         delegate: msg_delegate
         model: themsglist
+/*
+// sadly, this doesn't work very well
+// i was trying to allow a "swipe to switch sent/recv"
+// this almost works, but the swipeview eats the mouse
+events for the delegates in the listview, rendering all the
+per-delegate mouse handling useless.
+no combination of putting the swipeview outside the listview or
+anything else seemed to solve the problem, it either disables the
+scrolling in the listview or doesn't recognizing the swipe.
+*/
 
+//        SwipeView {
+//            id: swiper
+//            interactive: parent.visible
+//            anchors.fill: parent
+//            currentIndex: sent.checked ? 0 : (recv.checked ? 1 : 0)
+//            Item {
 
-        SwipeView {
-            id: swiper
-            interactive: parent.visible
-            anchors.fill: parent
-            currentIndex: sent.checked ? 0 : (recv.checked ? 1 : 0)
-            Item {
+//            }
+//            Item {
 
-            }
-            Item {
+//            }
+//            onCurrentIndexChanged: {
+//                console.log("swipe ", currentIndex)
+//                if(currentIndex === 0)
+//                    sent.checked = true
+//                if(currentIndex === 1)
+//                    recv.checked = true
+//            }
 
-            }
-            onCurrentIndexChanged: {
-                console.log("swipe ", currentIndex)
-                if(currentIndex === 0)
-                    sent.checked = true
-                if(currentIndex === 1)
-                    recv.checked = true
-            }
-        }
+//        }
+
     }
 
     function snapshot(filename) {
