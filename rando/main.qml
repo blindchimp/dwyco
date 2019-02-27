@@ -240,14 +240,6 @@ ApplicationWindow {
         onUid_selected: {
             console.log("UID SELECTED", uid)
             last_uid_selected = uid
-
-            if(action === "clicked") {
-                if(uid === the_man) {
-                    simple_msg_list.show_sent = true
-                }
-                else
-                    simple_msg_list.show_recv = true
-            }
         }
     }
 

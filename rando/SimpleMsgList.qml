@@ -217,10 +217,10 @@ Page {
 
         CircularImage {
             width: listview.width
-            height: width
+            height: ((show_sent && SENT === 0) || (show_recv && SENT === 1)) ? 0 : width
 
             id: img
-            visible: (show_sent && SENT == 1) || (show_recv && SENT == 0)
+            visible: (show_sent && SENT === 1) || (show_recv && SENT === 0)
             asynchronous: true
             source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
             fillMode: Image.PreserveAspectCrop
