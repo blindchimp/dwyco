@@ -55,12 +55,16 @@ struct rando_sql : public SimpleSql
         sql_simple("create table if not exists reviewers(uid text collate nocase unique on conflict ignore)");
         sql_simple("insert into reviewers (uid) values ('5a098f3df49015331d74')");
         sql_simple("create table if not exists grace(uid text collate nocase unique on conflict ignore, time integer, sent integer default 0)");
+        sql_simple("create table if not exists recv_loc(from_uid text collate nocase, mid text collate nocase, time integer, geo text)");
+        sql_simple("create table if not exists sent_geo(to_uid text collate nocase, mid text collate nocase, time integer, geo text)");
     }
 
 };
 
-rando_sql *D;
-const char *Botfiles;
+static rando_sql *D;
+static const char *Botfiles;
+
+static SimpleSql *Iplog;
 
 static
 void
@@ -76,7 +80,6 @@ dwyco_db_login_result(const char *str, int what)
 
 quint32 Sent_age;
 QByteArray My_uid;
-
 QStringList Ann_names;
 
 QByteArray
@@ -258,17 +261,18 @@ do_rando(vc huid)
     try
     {
         D->start_transaction();
-        res = D->sql_simple("select filename, hash from randos where from_uid != $1 and "
+        res = D->sql_simple("select filename, hash, mid from randos where from_uid != $1 and "
                             "not exists(select 1 from sent_to where randos.hash = hash) order by time desc limit 1",
                             huid);
         vc fn;
         vc hash;
+        vc mid;
         if(res.num_elems() == 0)
         {
             // no brand new content, so double-up on some old randos.
             // candidate is the newest rando that has been resent
             // the least number of times.
-            res = D->sql_simple("select sent_to.filename, sent_to.hash from sent_to,randos "
+            res = D->sql_simple("select sent_to.filename, sent_to.hash, randos.mid from sent_to,randos "
                                 "where sent_to.hash = randos.hash and from_uid != $1 "
                                 "group by sent_to.hash having (count(nullif(sent_to.to_uid,$1)) = count(*)) "
                                 "order by count(*) asc, randos.time desc limit 10",
@@ -279,12 +283,14 @@ do_rando(vc huid)
                 int i = rand() % res.num_elems();
                 fn = res[i][0];
                 hash = res[i][1];
+                mid = res[i][2];
             }
         }
         else
         {
             fn = res[0][0];
             hash = res[0][1];
+            mid = res[0][2];
         }
         if(!fn.is_nil())
         {
@@ -332,7 +338,53 @@ do_rando(vc huid)
                 return 0;
             }
             QByteArray uid = QByteArray::fromHex((const char *)huid);
-            if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), "Here is a rando", strlen("Here is a rando"), 0, 1, 0, 0))
+            QByteArray str_to_send("Here is a rando");
+            if(Iplog)
+            {
+                vc res;
+                try {
+                    // try to get a location estimate for the recipient and send that back to the
+                    // to the creator of the msg. note: this gets an estimated location based on recipients
+                    // latest login, not on their location when they generated their content.
+
+                    res = Iplog->sql_simple("select geo, max(time) from iplog where id = $1", huid);
+                    if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                    {
+                        int ccid = dwyco_make_zap_composition(0);
+                        if(ccid != 0)
+                        {
+                            QByteArray tagstr("tagsent:");
+                            tagstr += (const char *)mid;
+                            tagstr += ":";
+                            tagstr += (const char *)res[0][0];
+                            if(!dwyco_zap_send6(ccid, uid.constData(), uid.length(), tagstr.constData(), tagstr.length(), 1, 0, 0, 0, 0))
+                            {
+                                dwyco_delete_zap_composition(ccid);
+                            }
+                        }
+                    }
+                } catch (...) {
+                }
+            }
+            // see if we can get some location estimate for the message we received
+            {
+                vc res = D->sql_simple("select geo from recv_loc where mid = $1 limit 1", mid);
+                if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                {
+                    // note: mid not included because the mid is being generated in the new message
+                    // being sent to recipient
+                    str_to_send = "tagrecv:";
+                    str_to_send += (const char *)res[0][0];
+
+                    D->sql_simple("insert into sent_geo(to_uid, mid, time, geo) values($1, $2, strftime('%s', 'now'), $3)",
+                              huid,
+                              mid,
+                              res[0][0]);
+                }
+
+            }
+
+            if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), str_to_send.constData(), str_to_send.length(), 0, 1, 0, 0))
             {
                 dwyco_delete_zap_composition(compid);
                 throw -1;
@@ -379,7 +431,15 @@ main(int argc, char *argv[])
     Botfiles = argv[3];
     int Reviewer_only = 0;
     if(argc >= 5)
+    {
         Reviewer_only = 1;
+        Iplog = new SimpleSql("/Users/dwight/iplog.sqlite3");
+        if(!Iplog->init())
+        {
+            delete Iplog;
+            Iplog = 0;
+        }
+    }
 
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
@@ -554,10 +614,29 @@ main(int argc, char *argv[])
                 effective_uid = chuid;
             }
             D->start_transaction();
-            D->sql_simple("insert into randos (from_uid, filename, time, hash) values($1, $2, strftime('%s', 'now'), $3)",
+            D->sql_simple("insert into randos (from_uid, filename, time, hash, mid) values($1, $2, strftime('%s', 'now'), $3, $4)",
                           effective_uid.constData(),
                           vc(b.constData()),
-                          vc(hash.constData()));
+                          vc(hash.constData()),
+                          mid.constData());
+            if(Iplog)
+            {
+                // see if we can find an estimated location for the effective uid and record that
+                vc res;
+                try {
+                    res = Iplog->sql_simple("select geo, max(time) from iplog where id = $1", effective_uid.constData());
+                    if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                    {
+                        D->sql_simple("insert into recv_loc(from_uid, mid, time, geo) values($1, $2, strftime('%s', 'now'), $3)",
+                                effective_uid.constData(),
+                                mid.constData(),
+                                res[0][0]);
+                    }
+                } catch (...) {
+                    res = vcnil;
+
+                }
+            }
 
             // reviewers are treated as seeders, but not the other way around
             res = D->sql_simple("select 1 from seeder,reviewers where seeder.uid = $1 or reviewers.uid = $1", huid.constData());
