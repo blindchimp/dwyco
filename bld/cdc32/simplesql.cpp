@@ -14,7 +14,7 @@ using namespace dwyco;
 
 
 vc
-SimpleSql::sql_simple(const char *sql, vc a0, vc a1, vc a2)
+SimpleSql::sql_simple(const char *sql, vc a0, vc a1, vc a2, vc a3)
 {
     VCArglist a;
     a.append(sql);
@@ -27,6 +27,10 @@ SimpleSql::sql_simple(const char *sql, vc a0, vc a1, vc a2)
             if(!a2.is_nil())
             {
                 a.append(a2);
+                if(!a3.is_nil())
+                {
+                    a.append(a3);
+                }
             }
         }
     }
@@ -64,14 +68,14 @@ SimpleSql::exit()
 void
 SimpleSql::start_transaction()
 {
-    sql_simple("savepoint mi;");
+    sql_simple("begin immediate transaction");
 }
 
 
 void
 SimpleSql::commit_transaction()
 {
-    sql_simple("release mi;");
+    sql_simple("commit transaction");
 }
 
 
@@ -92,7 +96,7 @@ void
 SimpleSql::rollback_transaction()
 {
     VCArglist a;
-    a.append("rollback to savepoint mi;");
+    a.append("rollback transaction;");
     sqlite3_bulk_query(Db, &a);
 }
 
