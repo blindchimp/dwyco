@@ -27,6 +27,7 @@
 #include <QDataStream>
 #include <QDebug>
 #include <QDir>
+#include <QVariant>
 #define HANDLE_MSG(m) dwyco_save_message(m)
 
 using namespace dwyco;
@@ -144,6 +145,45 @@ send_file_to(const QByteArray& uid, const char *msg, QByteArray fn)
                     msg, strlen(msg), 0, 0, 0, 0);
 
 }
+
+static
+QByteArray
+group_msg(QByteArray tag)
+{
+    //QList<QByteArray> members = Groups.values(name);
+
+    QByteArray payload;
+    QDataStream out(&payload, QIODevice::WriteOnly);
+    QList<QVariant> cmd;
+    cmd.append("group-msg");
+    cmd.append(tag);
+    out << cmd;
+    return payload;
+}
+
+static
+void
+send_group_msg(QByteArray uid, QByteArray msg)
+{
+    QByteArray cmd = group_msg(name);
+    //QList<QByteArray> send_list = Groups.values(name);
+    //for(int i = 0; i < send_list.count(); ++i)
+    //{
+        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
+        //QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
+        // note: if my uid is in the group list, i'll get a copy of the message
+        // saved as a sent message to myself. this is ok, but it needs to be tagged
+        // properly so it can be re-incorporated into the model. i think if the msg
+        // is text only, this should work as it will be delivered to the inbox
+        // as usual.
+        if(!dwyco_zap_send5(compid, uid.constData(), uid.length(),
+                            msg.constData(), msg.length(), 0, 0, 0, 0))
+        {
+            dwyco_delete_zap_composition(compid);
+        }
+    //}
+}
+
 
 template<class T>
 void
