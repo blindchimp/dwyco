@@ -255,7 +255,7 @@ Page {
                 width: 32
                 height: 32
                 anchors.top: img.top
-                anchors.left: img.left
+                anchors.right: img.right
                 visible: IS_FAVORITE === 1
                 z: 3
                 color: primary_light
@@ -275,6 +275,24 @@ Page {
                 width: 32
                 height: 32
             }
+            Label {
+                id: location
+                visible: false
+                text: {
+                    try
+                    {
+                        var o = JSON.parse(MSG_TEXT)
+                        visible = true
+                        return o.loc
+                    }
+                    catch(e)
+                    {
+                        console.log(e)
+                    }
+                }
+
+            }
+
             Loader {
                 anchors.centerIn: img
                 //anchors.fill: img
