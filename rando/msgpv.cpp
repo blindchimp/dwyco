@@ -74,6 +74,8 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
     QByteArray cached_name = add_pfx(Tmp_pfx, aname);
     cached_name.replace(".dyc", "");
     cached_name.replace(".fle", "");
+    if(Mid_to_hash.contains(mid))
+    {
     if(QFile::exists(cached_name + ".jpg"))
     {
         preview_fn = cached_name + ".jpg";
@@ -93,6 +95,7 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
     {
         preview_fn = cached_name + ".png";
         return 1;
+    }
     }
     QByteArray fn;
     QByteArray user_filename = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_FILE_ATTACHMENT);
@@ -128,7 +131,7 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
                 if(ch.addData(&f))
                 {
                     QByteArray res = ch.result();
-                    Mid_to_hash.insert(res, mid);
+                    Mid_to_hash.insert(mid, res);
                 }
             }
 

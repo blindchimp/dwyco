@@ -217,12 +217,12 @@ Page {
 
         CircularImage {
             width: listview.width
-            height: ((show_sent && SENT === 0) || (show_recv && SENT === 1)) ? 0 : width
+            height: (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
 
             id: img
-            visible: (show_sent && SENT === 1) || (show_recv && SENT === 0)
+            visible: (((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1)
             asynchronous: true
-            source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
+            source: {PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
             fillMode: Image.PreserveAspectCrop
             sourceSize.width: 512
             sourceSize.height: 512
@@ -289,7 +289,10 @@ Page {
                         catch(e)
                         {
                             console.log(e)
+                            console.log(mid)
                         }
+                        visible = false
+                        return ""
                     } else {
                         visible = true
                         return SENT_TO_LOCATION

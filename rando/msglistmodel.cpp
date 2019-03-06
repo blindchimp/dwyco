@@ -1364,10 +1364,10 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     {
         QByteArray mid;
         if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QVariant();
-        QByteArray h = Mid_to_hash.value(mid);
+            return QByteArray("");
+        QByteArray h = Mid_to_hash.value(mid, "");
         if(h.length() == 0)
-            return "Unknown";
+            return QByteArray("Unknown");
         QByteArray l = Hash_to_loc.value(h, "Unknown");
         return l;
     }

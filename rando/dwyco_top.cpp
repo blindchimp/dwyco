@@ -101,6 +101,7 @@ extern int HasAudioInput;
 extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
+extern QMap<QByteArray,QByteArray> Hash_to_loc;
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -1476,6 +1477,45 @@ DwycoCore::init()
     update_unread_count(has_unviewed_msgs());
     reload_conv_list();
     reload_ignore_list();
+
+    {
+        DWYCO_USER_LIST ul;
+        int nul = 0;
+        dwyco_get_user_list2(&ul, &nul);
+        simple_scoped qul(ul);
+        QByteArray the_man = QByteArray::fromHex("5a098f3df49015331d74");
+        for(int i = 0; i < nul; ++i)
+        {
+            QByteArray u = qul.get<QByteArray>(i, DWYCO_NO_COLUMN);
+            if(u == the_man)
+                continue;
+            DWYCO_SAVED_MSG_LIST sml;
+            if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
+            {
+                simple_scoped qsml(sml);
+                for(int i = 0; i < qsml.rows(); ++i)
+                {
+                    if(qsml.is_nil(i, DWYCO_QM_BODY_ATTACHMENT))
+                    {
+                        QByteArray txt = qsml.get<QByteArray>(i, DWYCO_QM_BODY_NEW_TEXT2);
+                        QJsonDocument qjd = QJsonDocument::fromJson(txt);
+                        if(!qjd.isNull())
+                        {
+                            QJsonObject qjo = qjd.object();
+                            if(!qjo.isEmpty())
+                            {
+                                QJsonValue h = qjo.value("hash");
+                                QJsonValue loc = qjo.value("loc");
+                                Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
 
     const char *uid;
     int len_uid;
