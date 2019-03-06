@@ -2552,6 +2552,7 @@ load_bodies(vc id, int load_sent)
 
     DwString ss = s;
     s = newfn(s);
+    DwString dpref = s;
     s += "" DIRSEPSTR "*.bod";
     int t = 0;
 
@@ -2560,11 +2561,11 @@ load_bodies(vc id, int load_sent)
     for(i = 0; i < n; ++i)
     {
         WIN32_FIND_DATA &d = *fv[i];
-        DwString s2((const char *)id);
+        DwString s2(dpref);
         s2 += "" DIRSEPSTR "";
         s2 += d.cFileName;
         vc info;
-        if(load_info(info, s2.c_str()))
+        if(load_info(info, s2.c_str(), 1))
         {
             //ret.append(info);
             sorter.add(GroovyItem(info), t++);
@@ -2582,11 +2583,11 @@ load_bodies(vc id, int load_sent)
         for(i = 0; i < n; ++i)
         {
             WIN32_FIND_DATA &d = *fv2[i];
-            DwString s2((const char *)id);
+            DwString s2(dpref);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
             vc info;
-            if(load_info(info, s2.c_str()))
+            if(load_info(info, s2.c_str(), 1))
             {
                 //ret.append(info);
                 info[QM_BODY_SENT] = vctrue;
