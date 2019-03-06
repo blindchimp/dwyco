@@ -40,6 +40,9 @@ static QMap<QByteArray, int> Mid_to_percent;
 // after that, the fetch can be initiated explicitly
 static QSet<QByteArray> Manual_fetch;
 
+extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QByteArray> Mid_to_hash;
+
 enum {
     MID = Qt::UserRole,
     SENT,
@@ -63,6 +66,7 @@ enum {
     FETCH_STATE,
     ATTACHMENT_PERCENT,
     ASSOC_UID, // who the message is from (or to, if sent msg)
+    SENT_TO_LOCATION,
 };
 
 static int
@@ -831,6 +835,7 @@ msglist_raw::roleNames() const
     rn(FETCH_STATE);
     rn(ATTACHMENT_PERCENT);
     rn(ASSOC_UID);
+    rn(SENT_TO_LOCATION);
 #undef rn
     return roles;
 }
@@ -1354,6 +1359,17 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
             return "unknown";
         }
         return huid;
+    }
+    else if(role == SENT_TO_LOCATION)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QVariant();
+        QByteArray h = Mid_to_hash.value(mid);
+        if(h.length() == 0)
+            return "Unknown";
+        QByteArray l = Hash_to_loc.value(h, "Unknown");
+        return l;
     }
 
     return QVariant();

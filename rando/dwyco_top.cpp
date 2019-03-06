@@ -2323,6 +2323,7 @@ DwycoCore::retry_auto_fetch(QString mid)
 }
 
 static QMap<QString, QByteArray> Groups;
+QMap<QByteArray, QByteArray> Hash_to_loc;
 
 static
 void
@@ -2560,27 +2561,27 @@ DwycoCore::service_channels()
         QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
         DWYCO_UNSAVED_MSG_LIST uml;
-        if(dwyco_get_unsaved_messages(&uml, clbot.constData(), clbot.length()))
-        {
-            simple_scoped quml(uml);
-            int n = quml.rows();
-            if(n > 0)
-            {
-                QByteArray mid = quml.get<QByteArray>(0, DWYCO_QMS_ID);
-                dwyco_add_entropy_timer(mid.constData(), mid.length());
-                if(quml.is_nil(0, DWYCO_QMS_IS_DIRECT))
-                {
-                    auto_fetch(mid);
-                }
-                else
-                {
-                    process_contact_query_response(mid);
-                    dwyco_delete_unsaved_message(mid.constData());
-                    dwyco_delete_user(clbot.constData(), clbot.length());
-                }
-            }
-        }
-        scan_special_msgs();
+//        if(dwyco_get_unsaved_messages(&uml, clbot.constData(), clbot.length()))
+//        {
+//            simple_scoped quml(uml);
+//            int n = quml.rows();
+//            if(n > 0)
+//            {
+//                QByteArray mid = quml.get<QByteArray>(0, DWYCO_QMS_ID);
+//                dwyco_add_entropy_timer(mid.constData(), mid.length());
+//                if(quml.is_nil(0, DWYCO_QMS_IS_DIRECT))
+//                {
+//                    auto_fetch(mid);
+//                }
+//                else
+//                {
+//                    process_contact_query_response(mid);
+//                    dwyco_delete_unsaved_message(mid.constData());
+//                    dwyco_delete_user(clbot.constData(), clbot.length());
+//                }
+//            }
+//        }
+        //scan_special_msgs();
         dwyco_get_unsaved_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;
@@ -2840,8 +2841,8 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
         QFile::remove(dest);
         return 0;
     }
-    if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0,
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        txt.constData(), txt.length(), 0, 1,
                         0, 0)
       )
 

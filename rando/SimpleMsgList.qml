@@ -279,15 +279,20 @@ Page {
                 id: location
                 visible: false
                 text: {
-                    try
-                    {
-                        var o = JSON.parse(MSG_TEXT)
+                    if(SENT === 0) {
+                        try
+                        {
+                            var o = JSON.parse(MSG_TEXT)
+                            visible = true
+                            return o.loc
+                        }
+                        catch(e)
+                        {
+                            console.log(e)
+                        }
+                    } else {
                         visible = true
-                        return o.loc
-                    }
-                    catch(e)
-                    {
-                        console.log(e)
+                        return SENT_TO_LOCATION
                     }
                 }
 

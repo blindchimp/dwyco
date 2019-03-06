@@ -14,6 +14,9 @@
 #include <QSet>
 #include <QFile>
 #include <QDataStream>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMap>
 #include "dwyco_new_msg.h"
 #include "dlli.h"
 #include "pfx.h"
@@ -32,6 +35,7 @@ static QSet<QByteArray> Dont_refetch;
 static QList<QByteArray> Delete_msgs;
 typedef QHash<QByteArray, QByteArray> UID_MID_MAP;
 static UID_MID_MAP Unviewed_msgs;
+extern QMap<QByteArray,QByteArray> Hash_to_loc;
 
 int
 save_unviewed()
@@ -496,6 +500,10 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
 //            continue;
         if(!dwyco_list_get(ml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
             continue;
+        int special_type;
+
+        if(dwyco_is_special_message(0, 0, mid.constData(), &special_type))
+            continue;
 
 #if 0
         if(type == DWYCO_TYPE_NIL)
@@ -574,6 +582,31 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                 // this happens sometimes when attachments get lost
                 // for direct messages, things are read-only, etc.
                 Dont_refetch.insert(mid);
+            }
+            else
+            {
+
+
+                DWYCO_SAVED_MSG_LIST sml;
+                if(dwyco_get_saved_message(&sml, uid_out.constData(), uid_out.length(), mid.constData()))
+                {
+                    simple_scoped qsml(sml);
+                    QByteArray txt = qsml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2);
+                    QJsonDocument qjd = QJsonDocument::fromJson(txt);
+                    if(!qjd.isNull())
+                    {
+                        QJsonObject qjo = qjd.object();
+                        if(!qjo.isEmpty())
+                        {
+                            QJsonValue h = qjo.value("hash");
+                            QJsonValue loc = qjo.value("loc");
+                            Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+
+                        }
+                    }
+
+
+                }
             }
         }
 

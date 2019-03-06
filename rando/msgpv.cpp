@@ -11,12 +11,16 @@
 #include <QPixmap>
 #include <QFile>
 #include <QImage>
+#include <QCryptographicHash>
+#include <QFileDevice>
+#include <QMap>
 #include "pfx.h"
 #include "msgpv.h"
 #include "dwycolistscoped.h"
 
 void cdcxpanic(const char *);
 
+QMap<QByteArray, QByteArray> Mid_to_hash;
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -65,7 +69,6 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
     QByteArray aname = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_ATTACHMENT);
     if(aname.length() == 0)
     {
-        //dwyco_list_release(sm);
         return 0;
     }
     QByteArray cached_name = add_pfx(Tmp_pfx, aname);
@@ -118,6 +121,17 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
             full_size_filename = rfn;
             if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.constData(), rfn.constData()))
                 throw 0;
+            QFile f(rfn);
+            if(f.open(QIODevice::ReadOnly))
+            {
+                QCryptographicHash ch(QCryptographicHash::Sha1);
+                if(ch.addData(&f))
+                {
+                    QByteArray res = ch.result();
+                    Mid_to_hash.insert(res, mid);
+                }
+            }
+
             preview_fn = rfn;
         }
         catch(...)
