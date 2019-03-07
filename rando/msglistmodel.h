@@ -47,6 +47,7 @@ public:
     Q_INVOKABLE bool at_least_one_selected();
 
     int mid_to_index(QByteArray mid);
+    void invalidate_sent_to();
 
 public slots:
     void msg_recv_status(int cmd, const QString& mid);

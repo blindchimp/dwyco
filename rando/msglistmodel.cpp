@@ -43,7 +43,7 @@ static QMap<QByteArray, int> Mid_to_percent;
 static QSet<QByteArray> Manual_fetch;
 
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
-QMap<QByteArray,QByteArray> Mid_to_hash;
+static QMap<QByteArray,QByteArray> Mid_to_hash;
 
 enum {
     MID = Qt::UserRole,
@@ -368,6 +368,17 @@ msglist_model::set_all_unselected()
             QModelIndex mi = index(i, 0);
             emit dataChanged(mi, mi, QVector<int>(1, SELECTED));
         }
+    }
+}
+
+void
+msglist_model::invalidate_sent_to()
+{
+    int n = rowCount();
+    for(int i = 0; i < n; ++i)
+    {
+        QModelIndex mi = index(i, 0);
+        emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LOCATION));
     }
 }
 
