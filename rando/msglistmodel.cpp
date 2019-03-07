@@ -12,6 +12,8 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
+#include <QCryptographicHash>
+#include <QFileDevice>
 #include "msglistmodel.h"
 #include "msgpv.h"
 #include "pfx.h"
@@ -41,7 +43,7 @@ static QMap<QByteArray, int> Mid_to_percent;
 static QSet<QByteArray> Manual_fetch;
 
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
-extern QMap<QByteArray,QByteArray> Mid_to_hash;
+QMap<QByteArray,QByteArray> Mid_to_hash;
 
 enum {
     MID = Qt::UserRole,
@@ -165,6 +167,55 @@ gen_time_unsaved(DWYCO_UNSAVED_MSG_LIST l, int row)
     QTime qt(hour, minute, second);
     QString t = qt.toString("hh:mm ap");
     return t;
+}
+
+static
+int
+att_file_hash(const QByteArray& huid, const QByteArray& mid, QByteArray& hash_out)
+{
+    DWYCO_SAVED_MSG_LIST qsm;
+    QByteArray uid = QByteArray::fromHex(huid);
+    if(!dwyco_get_saved_message(&qsm, uid.constData(), uid.length(), mid.constData()))
+    {
+        return 0;
+    }
+    simple_scoped sm(qsm);
+    QByteArray aname = sm.get<QByteArray>(DWYCO_QM_BODY_ATTACHMENT);
+    if(aname.length() == 0)
+    {
+        return 0;
+    }
+
+    if(Mid_to_hash.contains(mid))
+    {
+        hash_out = Mid_to_hash.value(mid);
+        return 1;
+    }
+    QByteArray fn;
+    QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    int is_file = user_filename.length() > 0;
+    if(!is_file)
+        return 0;
+
+
+    QByteArray rfn = random_fn();
+    rfn = add_pfx(Tmp_pfx, rfn);
+    if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.constData(), rfn.constData()))
+        return 0;
+    QFile f(rfn);
+    if(f.open(QIODevice::ReadOnly))
+    {
+        QCryptographicHash ch(QCryptographicHash::Sha1);
+        if(ch.addData(&f))
+        {
+            QByteArray res = ch.result();
+            Mid_to_hash.insert(mid, res);
+            hash_out = res;
+            return 1;
+        }
+    }
+    return 0;
+
 }
 
 static
@@ -1365,9 +1416,14 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray mid;
         if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
             return QByteArray("");
-        QByteArray h = Mid_to_hash.value(mid, "");
-        if(h.length() == 0)
-            return QByteArray("Unknown");
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+        {
+            return QByteArray("");
+        }
+        QByteArray h;
+        if(!att_file_hash(huid, mid, h))
+            return QByteArray("");
         QByteArray l = Hash_to_loc.value(h, "Unknown");
         return l;
     }

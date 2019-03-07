@@ -11,7 +11,6 @@
 #include <QPixmap>
 #include <QFile>
 #include <QImage>
-#include <QCryptographicHash>
 #include <QFileDevice>
 #include <QMap>
 #include "pfx.h"
@@ -19,8 +18,6 @@
 #include "dwycolistscoped.h"
 
 void cdcxpanic(const char *);
-
-QMap<QByteArray, QByteArray> Mid_to_hash;
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -74,8 +71,7 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
     QByteArray cached_name = add_pfx(Tmp_pfx, aname);
     cached_name.replace(".dyc", "");
     cached_name.replace(".fle", "");
-    if(Mid_to_hash.contains(mid))
-    {
+
     if(QFile::exists(cached_name + ".jpg"))
     {
         preview_fn = cached_name + ".jpg";
@@ -96,7 +92,7 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
         preview_fn = cached_name + ".png";
         return 1;
     }
-    }
+
     QByteArray fn;
     QByteArray user_filename = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_FILE_ATTACHMENT);
     int is_file = user_filename.length() > 0;
@@ -124,17 +120,6 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
             full_size_filename = rfn;
             if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.constData(), rfn.constData()))
                 throw 0;
-            QFile f(rfn);
-            if(f.open(QIODevice::ReadOnly))
-            {
-                QCryptographicHash ch(QCryptographicHash::Sha1);
-                if(ch.addData(&f))
-                {
-                    QByteArray res = ch.result();
-                    Mid_to_hash.insert(mid, res);
-                }
-            }
-
             preview_fn = rfn;
         }
         catch(...)

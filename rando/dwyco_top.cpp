@@ -1527,24 +1527,24 @@ DwycoCore::init()
     dwyco_set_video_input(
         "",
         0,
-        1, // raw files
+        0, // raw files
         0, // vfw
-        0,
+        1,
         0
     );
 
-    dwyco_set_raw_files(
-        "/home/dwight/vidfile.lst",
-        "/1204/dwight/stuff/320x240/ml%04d.ppm",
-        0, // use list of files
-        1,
-        0 // preload
-    );
-    dwyco_set_setting("video_format/swap_rb", "0");
-    dwyco_set_rate_tweaks(20.0, 65535, 1000, 1000);
-    dwyco_set_moron_dork_mode(0);
+//    dwyco_set_raw_files(
+//        "/home/dwight/vidfile.lst",
+//        "/1204/dwight/stuff/320x240/ml%04d.ppm",
+//        0, // use list of files
+//        1,
+//        0 // preload
+//    );
+//    dwyco_set_setting("video_format/swap_rb", "0");
+//    dwyco_set_rate_tweaks(20.0, 65535, 1000, 1000);
+//    dwyco_set_moron_dork_mode(0);
 
-    dwyco_set_external_video(1);
+//    dwyco_set_external_video(1);
 
     //load_cam_model();
     //dwyco_enable_video_capture_preview(1);
@@ -2362,9 +2362,10 @@ DwycoCore::retry_auto_fetch(QString mid)
     return ::retry_auto_fetch(bmid);
 }
 
-static QMap<QString, QByteArray> Groups;
-QMap<QByteArray, QByteArray> Hash_to_loc;
 
+QMap<QByteArray, QByteArray> Hash_to_loc;
+#if 0
+static QMap<QString, QByteArray> Groups;
 static
 void
 group_create(QString name)
@@ -2580,6 +2581,7 @@ scan_special_msgs()
     }
 
 }
+#endif
 
 
 int
