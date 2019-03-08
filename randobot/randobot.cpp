@@ -146,44 +146,6 @@ send_file_to(const QByteArray& uid, const char *msg, QByteArray fn)
 
 }
 
-static
-QByteArray
-group_msg(QByteArray tag)
-{
-    //QList<QByteArray> members = Groups.values(name);
-
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-msg");
-    cmd.append(tag);
-    out << cmd;
-    return payload;
-}
-
-static
-void
-send_group_msg(QByteArray uid, QByteArray msg)
-{
-    QByteArray cmd = group_msg(name);
-    //QList<QByteArray> send_list = Groups.values(name);
-    //for(int i = 0; i < send_list.count(); ++i)
-    //{
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        //QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        // note: if my uid is in the group list, i'll get a copy of the message
-        // saved as a sent message to myself. this is ok, but it needs to be tagged
-        // properly so it can be re-incorporated into the model. i think if the msg
-        // is text only, this should work as it will be delivered to the inbox
-        // as usual.
-        if(!dwyco_zap_send5(compid, uid.constData(), uid.length(),
-                            msg.constData(), msg.length(), 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    //}
-}
-
 
 template<class T>
 void
@@ -302,18 +264,19 @@ do_rando(vc huid)
     try
     {
         D->start_transaction();
-        res = D->sql_simple("select filename, hash, mid from randos where from_uid != $1 and "
+        res = D->sql_simple("select filename, hash, mid, from_uid from randos where from_uid != $1 and "
                             "not exists(select 1 from sent_to where randos.hash = hash) order by time desc limit 1",
                             huid);
         vc fn;
         vc hash;
         vc mid;
+        vc hcreator_uid;
         if(res.num_elems() == 0)
         {
             // no brand new content, so double-up on some old randos.
             // candidate is the newest rando that has been resent
             // the least number of times.
-            res = D->sql_simple("select sent_to.filename, sent_to.hash, randos.mid from sent_to,randos "
+            res = D->sql_simple("select sent_to.filename, sent_to.hash, randos.mid, randos.from_uid from sent_to,randos "
                                 "where sent_to.hash = randos.hash and from_uid != $1 "
                                 "group by sent_to.hash having (count(nullif(sent_to.to_uid,$1)) = count(*)) "
                                 "order by count(*) asc, randos.time desc limit 10",
@@ -325,6 +288,7 @@ do_rando(vc huid)
                 fn = res[i][0];
                 hash = res[i][1];
                 mid = res[i][2];
+                hcreator_uid = res[i][3];
             }
         }
         else
@@ -332,6 +296,7 @@ do_rando(vc huid)
             fn = res[0][0];
             hash = res[0][1];
             mid = res[0][2];
+            hcreator_uid = res[0][3];
         }
         if(!fn.is_nil())
         {
@@ -400,11 +365,8 @@ do_rando(vc huid)
                         int ccid = dwyco_make_zap_composition(0);
                         if(ccid != 0)
                         {
-                            QByteArray tagstr("tagsent:");
-                            tagstr += (const char *)mid;
-                            tagstr += ":";
-                            tagstr += (const char *)res[0][0];
-                            if(!dwyco_zap_send6(ccid, uid.constData(), uid.length(), tagstr.constData(), tagstr.length(), 1, 0, 0, 0, 0))
+                            QByteArray creator_uid = QByteArray::fromHex((const char *)hcreator_uid);
+                            if(!dwyco_zap_send6(ccid, creator_uid.constData(), creator_uid.length(), tagstr.constData(), tagstr.length(), 1, 1, 0, 0, 0))
                             {
                                 dwyco_delete_zap_composition(ccid);
                             }
@@ -420,8 +382,9 @@ do_rando(vc huid)
                 {
                     // note: mid not included because the mid is being generated in the new message
                     // being sent to recipient
-                    str_to_send = "tagrecv:";
+                    str_to_send = "{\"loc\":\"";
                     str_to_send += (const char *)res[0][0];
+                    str_to_send += "\"}";
 
                     D->sql_simple("insert into sent_geo(to_uid, mid, time, geo) values($1, $2, strftime('%s', 'now'), $3)",
                               huid,
@@ -480,7 +443,7 @@ main(int argc, char *argv[])
     if(argc >= 5)
     {
         Reviewer_only = 1;
-        Iplog = new SimpleSql("/Users/dwight/iplog.sqlite3");
+        Iplog = new SimpleSql("/home/dwight/iplog.sqlite3");
         if(!Iplog->init())
         {
             delete Iplog;
