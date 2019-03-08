@@ -74,7 +74,7 @@ dwyco_db_login_result(const char *str, int what)
 {
 
     if(what != 0)
-        dwyco_switch_to_chat_server(0);
+    {}//dwyco_switch_to_chat_server(0);
     else
         exit(1);
 }
@@ -177,7 +177,7 @@ load_it(T& out, const char *filename)
     return 0;
 }
 
-
+static
 int
 send_pic(QByteArray buid)
 {
@@ -231,7 +231,8 @@ uid_due_randos()
     D->sql_simple("create temp table c1 as select count(*) as cr, from_uid from randos where from_uid not in (select uid from seeder) group by from_uid");
 
     // delete from c1 if a uid has been sent 3 or more randos in the last hour
-    // testing D->sql_simple("delete from c1 where from_uid in (select to_uid from sent_to where strftime('%s', 'now') - time < 3600 group by to_uid having(count(*) > 2));");
+    // NOTE: comment out following line for testing, otherwise you'll get throttled
+    D->sql_simple("delete from c1 where from_uid in (select to_uid from sent_to where strftime('%s', 'now') - time < 3600 group by to_uid having(count(*) > 2));");
 
     // c2 is the count of messages sent to uid
     D->sql_simple("create temp table c2 as select count(*) as cs, to_uid from sent_to group by to_uid");
@@ -361,7 +362,6 @@ do_rando(vc huid)
                         tagstr += (const char *)res[0][0];
                         tagstr += "\"}";
 
-                        //QByteArray cmd = group_msg((const char *)hash, (const char *)res[0][0]);
                         int ccid = dwyco_make_zap_composition(0);
                         if(ccid != 0)
                         {
@@ -502,15 +502,15 @@ main(int argc, char *argv[])
             creat("stopped", 0666);
             exit(0);
         }
-        if(dwyco_chat_online() == 0)
-        {
-            if(was_online)
-                exit(0);
-            else
-                continue;
-        }
+//        if(dwyco_chat_online() == 0)
+//        {
+//            if(was_online)
+//                exit(0);
+//            else
+//                continue;
+//        }
 
-        was_online = 1;
+//        was_online = 1;
 
         QByteArray uid;
         QByteArray txt;
