@@ -220,7 +220,7 @@ Page {
             height: (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
 
             id: img
-            visible: (((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1)
+            visible: IS_QD || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
             asynchronous: true
             source: {PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
             fillMode: Image.PreserveAspectCrop
@@ -266,18 +266,12 @@ Page {
                     source: mi("ic_star_black_24dp.png")
                 }
             }
-            Image {
-                id: deco2
-                visible: IS_QD
-                source: mi("ic_cloud_upload_black_24dp.png")
-                anchors.left: img.left
-                anchors.top: img.top
-                width: 32
-                height: 32
-            }
+
             Label {
                 id: location
                 visible: false
+                anchors.top: img.top
+                anchors.left: img.left
                 text: {
                     if(SENT === 0) {
                         try
@@ -300,7 +294,16 @@ Page {
                 }
 
             }
-
+            Image {
+                id: deco2
+                visible: IS_QD
+                source: mi("ic_cloud_upload_black_24dp.png")
+                anchors.left: img.left
+                anchors.top: img.top
+                width: 32
+                height: 32
+                z: 4
+            }
             Loader {
                 anchors.centerIn: img
                 //anchors.fill: img
