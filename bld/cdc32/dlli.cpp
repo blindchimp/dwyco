@@ -5934,7 +5934,7 @@ DWYCOEXPORT
 int
 dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, const char **pers_id_out, int *len_pers_id_out)
 {
-    return dwyco_zap_send6(compid, uid, len_uid, text, len_text, no_forward, ZapAdvData.get_save_sent(), 0, pers_id_out, len_pers_id_out);
+    return dwyco_zap_send6(compid, uid, len_uid, text, len_text, no_forward, save_sent, 0, pers_id_out, len_pers_id_out);
 }
 
 
