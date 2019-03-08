@@ -444,7 +444,7 @@ main(int argc, char *argv[])
     if(argc >= 5)
     {
         Reviewer_only = 1;
-        Iplog = new SimpleSql("/home/dwight/iplog.sqlite3");
+        Iplog = new SimpleSql("/home/dwight/local/db/iplog.sqlite3");
         if(!Iplog->init())
         {
             delete Iplog;
