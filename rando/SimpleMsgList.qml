@@ -220,7 +220,7 @@ Page {
             height: (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
 
             id: img
-            visible: IS_QD || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
+            visible: IS_ACTIVE || IS_QD || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
             asynchronous: true
             source: {PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
             fillMode: Image.PreserveAspectCrop
@@ -288,11 +288,15 @@ Page {
                         visible = false
                         return ""
                     } else {
-                        visible = true
-                        return SENT_TO_LOCATION
+                        if(SENT_TO_LOCATION == "Unknown") {
+                            visible = false
+                            return ""
+                        } else {
+                            visible = true
+                            return SENT_TO_LOCATION
+                        }
                     }
                 }
-
             }
             Image {
                 id: deco2
@@ -303,16 +307,33 @@ Page {
                 width: 32
                 height: 32
                 z: 4
+                ProgressBar {
+                    id: pb
+                    to: 100
+                    width: parent.width
+                    anchors.top: parent.bottom
+                    anchors.left: parent.left
+                    Connections {
+                        target: core
+                        onMsg_progress : {
+                            console.log("PB ", pers_id, msg, percent_done, model.mid)
+                            if(pers_id == model.mid) {
+                                pb.value = percent_done
+                            }
+                        }
+                    }
+                }
             }
             Loader {
+                id: pbar_loader
                 anchors.centerIn: img
                 //anchors.fill: img
                 width: img.width
                 anchors.margins: mm(1)
                 sourceComponent: ProgressBar {
                     id: pbar
-                    width: parent.width
-                    visible: IS_ACTIVE
+                    width: pbar_loader.width
+                    visible: model.IS_ACTIVE
                     value: ATTACHMENT_PERCENT
                     indeterminate: {ATTACHMENT_PERCENT < 0.0}
                     to: 100.0
