@@ -274,17 +274,38 @@ Page {
                 }
             }
 
-            Label {
-                id: location
-                visible: false
+            Image {
+                id: has_geo_info
+                source: mi("ic_language_white_24dp.png")
                 anchors.top: img.top
                 anchors.left: img.left
+                anchors.margins: mm(.5)
+                visible: location.text.length > 0
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        if(location.state == "moveIn")
+                            location.state = "moveOut"
+                        else
+                            location.state = "moveIn"
+                    }
+                }
+
+
+            Label {
+                id: location
+                visible: x > -width
+                //anchors.top: parent.top
+                //anchors.left: parent.left
+                //property alias tstate: state
+                x: -width
+                state: "moveIn"
                 text: {
                     if(SENT === 0) {
                         try
                         {
                             var o = JSON.parse(MSG_TEXT)
-                            visible = true
+
                             return o.loc
                         }
                         catch(e)
@@ -292,18 +313,41 @@ Page {
                             console.log(e)
                             console.log(mid)
                         }
-                        visible = false
+
                         return ""
                     } else {
                         if(SENT_TO_LOCATION == "Unknown") {
-                            visible = false
+
                             return ""
                         } else {
-                            visible = true
+
                             return SENT_TO_LOCATION
                         }
                     }
                 }
+
+                states: [
+                    State {
+                        name: "moveOut";
+                        PropertyChanges { target: location; x: has_geo_info.width ; y: 0 }
+                    },
+                    State {
+                        name: "moveIn";
+                        PropertyChanges { target: location; x: -width; y: 0 }
+                    }
+                ]
+
+                transitions: [
+                    Transition {
+                        to: "moveOut"
+                        NumberAnimation { properties: "x,y"; easing.type: Easing.InOutQuad; duration: 400; loops: 1 }
+                    },
+                    Transition {
+                        to: "moveIn"
+                        NumberAnimation { properties: "x,y"; easing.type: Easing.InOutQuad; duration: 400; loops: 1 }
+                    }
+                ]
+            }
             }
             Image {
                 id: deco2
