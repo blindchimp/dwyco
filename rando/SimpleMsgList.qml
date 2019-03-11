@@ -325,6 +325,9 @@ Page {
                         }
                     }
                 }
+                color: amber_light
+                style: Text.Outline
+                styleColor: "black"
 
                 states: [
                     State {
