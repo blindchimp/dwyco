@@ -106,10 +106,15 @@ Page {
                     property bool hoopty
                     hoopty: checked
                     ButtonGroup.group: radio
+                    Layout.fillHeight: true
+                    Layout.margins: mm(.25)
+                    Layout.minimumWidth: recv.width
+
                     text: "Sent"
                     background: Rectangle {
+                        id: sent_bg_rect
                         color: amber_dark
-                        radius: 3
+                        radius: 6
                     }
                     contentItem: Text {
                         x: sent.leftPadding
@@ -118,8 +123,8 @@ Page {
                         height: sent.availableHeight
 
                         text: sent.text
-                        font: sent.font
-                        color: sent.checked ? "white" : "gray"
+                        //font: sent.font
+                        color: "white" //sent.checked ? "white" : "gray"
                         elide: Text.ElideRight
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -136,27 +141,17 @@ Page {
                         show_recv = false
 
                     }
-//                    Behavior on hoopty {
+                    Rectangle {
+                        visible: sent.checked
+                        width: parent.width * .75
+                        anchors.margins: mm(1)
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom
 
-//                        SequentialAnimation {
-//                        NumberAnimation {
-//                            target: listview
-//                            property: "x"
-//                            duration: 200
-//                            easing.type: Easing.InOutQuad
-////                            from: 1.0
-////                            to: 0.5
-//                        }
-//                        NumberAnimation {
-//                            target: listview
-//                            property: "scale"
-//                            duration: 200
-//                            easing.type: Easing.InOutQuad
-//                            from: 0.5
-//                            to: 1.0
-//                        }
-//                        }
-//                    }
+                        height: mm(.5)
+                        color: "white"
+                    }
+
                 }
                 Item {
 
@@ -166,9 +161,12 @@ Page {
                     id: recv
                     ButtonGroup.group: radio
                     text: {"Received" + (core.unread_count > 0 ? " (" + String(core.unread_count) + ")" : "")}
+                    Layout.fillHeight: true
+                    Layout.margins: mm(.25)
+
                     background: Rectangle {
                         color: primary_dark
-                        radius: 3
+                        radius: 6
                     }
                     contentItem: Text {
                         x: recv.leftPadding
@@ -177,8 +175,8 @@ Page {
                         height: recv.availableHeight
 
                         text: recv.text
-                        font: recv.font
-                        color: recv.checked ? "white" : "gray"
+                        //font: recv.font
+                        color: "white" //recv.checked ? "white" : "gray"
                         elide: Text.ElideRight
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -202,6 +200,15 @@ Page {
                         show_recv = checked
                         show_sent = false
 
+                    }
+                    Rectangle {
+                        visible: recv.checked
+                        width: parent.width * .75
+                        anchors.margins: mm(1)
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom
+                        height: mm(.5)
+                        color: "white"
                     }
                 }
                 Item {
