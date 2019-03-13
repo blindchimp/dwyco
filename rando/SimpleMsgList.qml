@@ -380,7 +380,7 @@ Page {
                 //anchors.fill: img
                 //width: img.width
                 anchors.margins: mm(1)
-                sourceComponent: SlideTag {
+                sourceComponent: ProgressRound {
                     id: pbar
                     //width: pbar_loader.width
                     visible: model.IS_ACTIVE
