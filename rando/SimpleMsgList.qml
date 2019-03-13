@@ -20,9 +20,6 @@ Page {
     property int storage_warning: 1
     property string uid
 
-    //anchors.fill: parent
-
-
     background: Rectangle {
         gradient: Gradient {
             GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
@@ -160,13 +157,29 @@ Page {
                 ToolButton {
                     id: recv
                     ButtonGroup.group: radio
-                    text: {"Received" + (core.unread_count > 0 ? " (" + String(core.unread_count) + ")" : "")}
+                    text: "Received"
+
                     Layout.fillHeight: true
                     Layout.margins: mm(.25)
 
                     background: Rectangle {
+                        id: bgblink
                         color: primary_dark
                         radius: 6
+                        ParallelAnimation {
+                            loops: 30
+                            running: core.unread_count > 0
+                            ColorAnimation {
+                                target: bgblink
+                                property: "color"
+                                from: primary_dark
+                                to: "black"
+                                duration: 1000
+                            }
+                            onStopped: {
+                                bgblink.color = primary_dark
+                            }
+                        }
                     }
                     contentItem: Text {
                         x: recv.leftPadding
@@ -183,6 +196,17 @@ Page {
                     }
 
                     checkable: true
+                    onClicked: {
+                        var i
+                        var u
+                        for(i = 0; i < ConvListModel.count; i++) {
+                            u = ConvListModel.get(i).uid
+                            core.reset_unviewed_msgs(u)
+                        }
+
+
+                    }
+
                     onCheckedChanged: {
                         if(checked) {
                             sent.checked = false
@@ -195,7 +219,6 @@ Page {
                                     break;
                                 }
                             }
-                            core.reset_unviewed_msgs(u)
                         }
                         show_recv = checked
                         show_sent = false

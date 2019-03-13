@@ -29,7 +29,7 @@ typedef QHash<QByteArray, QByteArray> UID_MID_MAP;
 static UID_MID_MAP Unviewed_msgs;
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
 
-int
+static int
 save_unviewed()
 {
     QFile qf(add_pfx(User_pfx, "unviewed.qts"));
@@ -69,7 +69,7 @@ load_unviewed()
     // this just serves to preen out any messages that might be missing
     // so the user doesn't end up with notifications about messages
     // that don't exist anymore.
-    reload_msgs();
+
     UID_MID_MAP::const_iterator i = Unviewed_msgs.constBegin();
     while(i != Unviewed_msgs.constEnd())
     {
@@ -177,61 +177,6 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
     return 1;
 }
 
-
-// this is used on initial start up to re-establish the
-// state of the ui with msgs that you haven't viewed yet.
-int
-reload_msgs()
-{
-    QList<QByteArray> kill_list_uid;
-    QList<QByteArray> kill_list_mid;
-
-    QList<QByteArray> k = Unviewed_msgs.keys();
-    QList<QByteArray> v = Unviewed_msgs.values();
-    int n = k.count();
-
-
-    for(int i = 0; i < n; ++i)
-    {
-
-        {
-            DWYCO_SAVED_MSG_LIST qsm;
-            if(dwyco_get_saved_message(&qsm, k[i].constData(), k[i].length(), v[i].constData()))
-            {
-                simple_scoped sm(qsm);
-                // don't really need this extra check unless we are reloading
-                // some visible text
-#if 0
-                DWYCO_LIST qbt = dwyco_get_body_text(sm);
-                simple_scoped bt(qbt);
-                QByteArray txt;
-                if(dwyco_get_attr(bt, 0, DWYCO_NO_COLUMN, txt))
-                {
-                    //display_msg(k[i], txt, v[i]);
-                }
-                else
-                {
-                    kill_list_uid.append(k[i]);
-                    kill_list_mid.append(v[i]);
-
-                }
-#endif
-            }
-            else
-            {
-                kill_list_uid.append(k[i]);
-                kill_list_mid.append(v[i]);
-            }
-        }
-    }
-    n = kill_list_uid.count();
-    for(int i = 0; i < n; ++i)
-    {
-        del_unviewed_mid(kill_list_uid[i], kill_list_mid[i]);
-    }
-    return 1;
-}
-
 int
 dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
 {
@@ -254,9 +199,7 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
             continue;
         if(!dwyco_get_attr(ml, i, DWYCO_QMS_ID, mid))
             continue;
-//        if(Dont_refetch.contains(mid) ||
-//            fetching.contains(mid) || fetching.count() > 2)
-//            continue;
+
         if(!dwyco_list_get(ml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
             continue;
         int special_type;
@@ -264,75 +207,7 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
         if(dwyco_is_special_message(0, 0, mid.constData(), &special_type))
             continue;
 
-#if 0
-        if(type == DWYCO_TYPE_NIL)
-        {
-            int special_type;
-            const char *uid;
-            int len_uid;
-            const char *dlv_mid;
-            if(dwyco_is_delivery_report(mid.constData(), &uid, &len_uid, &dlv_mid, &special_type))
-            {
-                // process pal authorization stuff here
-                if(special_type == DWYCO_SUMMARY_DELIVERED)
-                {
-                    // NOTE: uid, dlv_mid must be copied out before next
-                    // dll call
-                    // hmmm, need new api to get uid/mid_out of delivered msg
-                    dwyco_delete_unsaved_message(mid.constData());
-                    continue;
-                }
-
-            }
-            // issue a server fetch, client will have to
-            // come back in to get it when the fetch is done
-            fetching.append(mid);
-            dwyco_fetch_server_message(mid.constData(), msg_callback, 0, 0, 0);
-            continue;
-        }
-        int special_type;
-
-        if(dwyco_is_special_message(0, 0, mid.constData(), &special_type))
-        {
-            // process pal authorization stuff here
-            switch(special_type)
-            {
-            case DWYCO_PAL_AUTH_REQ:
-                // note that most of the "special message" stuff only
-                // works on unsaved messages. which is a pain.
-                display_msg(uid_out, "Pal authorization request", 0, QByteArray(""));
-                // yuck, this chat_uids stuff needs to be encapsulated
-                {
-                    int i = chat_uids.index(uid_out);
-                    if(i == -1)
-                        break;
-                    chatform2 *c = chat_wins[i];
-                    dwyco_get_unsaved_message(&c->pal_auth_req_msg, mid.constData());
-                    // note: we can't delete it if it has an attachment...
-                    // we can *save* it ok, but the unsaved msg's attachment
-                    // will become unreadable, but since we don't need the
-                    // attachment for pal auth purposes, we'll ignore this "bug"
-                }
-                goto save_it;
-                break;
-            case DWYCO_PAL_OK:
-                dwyco_handle_pal_auth(0, 0, mid.constData(), 1);
-                display_msg(uid_out, "Pal authorization accepted", 0, QByteArray(""));
-                dwyco_delete_unsaved_message(mid.constData());
-                break;
-            case DWYCO_PAL_REJECT:
-                dwyco_handle_pal_auth(0, 0, mid.constData(), 1);
-                dwyco_pal_delete(uid_out.constData(), uid_out.length());
-                display_msg(uid_out, "Pal authorization rejected", 0, QByteArray(""));
-                dwyco_delete_unsaved_message(mid.constData());
-                break;
-            default:
-                dwyco_delete_unsaved_message(mid.constData());
-                break;// do nothing, ignore it.
-            }
-            continue;
-        }
-#endif
+        int do_add_unviewed = 1;
         if(type != DWYCO_TYPE_NIL)
         {
             if(dwyco_save_message(mid.constData()))
@@ -352,6 +227,8 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                             QJsonValue loc = qjo.value("loc");
                             Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
                             mlm->invalidate_sent_to();
+                            // these little json control messages don't get seen by the user directly
+                            do_add_unviewed = 0;
                         }
                     }
                 }
@@ -362,9 +239,12 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
         // if there are any errors above, people may not be able to see a message
         // but the user would appear towards the top of the user list, which is weird.
         // this happens sometimes when attachments are not fetchable for whatever reason.
-        Got_msg_from.insert(uid_out);
-        Got_msg_from_this_session.insert(uid_out);
-        add_unviewed(uid_out, mid);
+        if(do_add_unviewed)
+        {
+            Got_msg_from.insert(uid_out);
+            Got_msg_from_this_session.insert(uid_out);
+            add_unviewed(uid_out, mid);
+        }
         uids.insert(uid_out);
     }
 
