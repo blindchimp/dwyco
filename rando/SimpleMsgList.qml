@@ -276,7 +276,7 @@ Page {
 
             Image {
                 id: has_geo_info
-                source: mi("ic_language_white_24dp.png")
+                source: msglist.model.uid === the_man ? mi("ic_language_black_24dp.png") : mi("ic_language_white_24dp.png")
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
@@ -305,7 +305,6 @@ Page {
                         try
                         {
                             var o = JSON.parse(MSG_TEXT)
-
                             return o.loc
                         }
                         catch(e)
@@ -313,14 +312,11 @@ Page {
                             console.log(e)
                             console.log(mid)
                         }
-
                         return ""
                     } else {
                         if(SENT_TO_LOCATION == "Unknown") {
-
                             return ""
                         } else {
-
                             return SENT_TO_LOCATION
                         }
                     }

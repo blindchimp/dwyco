@@ -2583,6 +2583,42 @@ scan_special_msgs()
 }
 #endif
 
+// this is a bit of a hack, we know that the location and other
+// non-picture messages are small, so we fetch them automatically.
+// the larger picture messages are not fetched until the user
+// views the model they are in...
+static
+void
+fetch_small_msgs()
+{
+    DWYCO_LIST uml;
+
+    if(dwyco_get_unsaved_messages(&uml, 0, 0))
+    {
+        simple_scoped quml(uml);
+        int n = quml.rows();
+
+        if(n == 0)
+        {
+            return;
+        }
+
+        for(int i = 0; i < n; ++i)
+        {
+            if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
+            {
+                long len = quml.get_long(i, DWYCO_QMS_LEN);
+                if(len < 5000)
+                {
+                    QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
+                    auto_fetch(mid);
+                }
+            }
+        }
+    }
+
+}
+
 
 int
 DwycoCore::service_channels()
@@ -2591,39 +2627,13 @@ DwycoCore::service_channels()
     if(Suspended)
         return 0;
     dwyco_service_channels(&spin);
-//    static int been_here;
-//    if(!been_here)
-//    {
-//        been_here = 1;
-//        send_group_add("mumble", My_uid.toHex());
-//    }
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
-        QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
-
         DWYCO_UNSAVED_MSG_LIST uml;
-//        if(dwyco_get_unsaved_messages(&uml, clbot.constData(), clbot.length()))
-//        {
-//            simple_scoped quml(uml);
-//            int n = quml.rows();
-//            if(n > 0)
-//            {
-//                QByteArray mid = quml.get<QByteArray>(0, DWYCO_QMS_ID);
-//                dwyco_add_entropy_timer(mid.constData(), mid.length());
-//                if(quml.is_nil(0, DWYCO_QMS_IS_DIRECT))
-//                {
-//                    auto_fetch(mid);
-//                }
-//                else
-//                {
-//                    process_contact_query_response(mid);
-//                    dwyco_delete_unsaved_message(mid.constData());
-//                    dwyco_delete_user(clbot.constData(), clbot.length());
-//                }
-//            }
-//        }
+
         //scan_special_msgs();
+        fetch_small_msgs();
         dwyco_get_unsaved_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;
