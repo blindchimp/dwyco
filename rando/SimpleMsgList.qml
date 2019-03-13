@@ -378,19 +378,19 @@ Page {
                 id: pbar_loader
                 anchors.centerIn: img
                 //anchors.fill: img
-                width: img.width
+                //width: img.width
                 anchors.margins: mm(1)
-                sourceComponent: ProgressBar {
+                sourceComponent: SlideTag {
                     id: pbar
-                    width: pbar_loader.width
+                    //width: pbar_loader.width
                     visible: model.IS_ACTIVE
                     value: ATTACHMENT_PERCENT
                     indeterminate: {ATTACHMENT_PERCENT < 0.0}
                     to: 100.0
                     z: 4
-                    background: Rectangle {
-                        color: "green"
-                    }
+//                    background: Rectangle {
+//                        color: "green"
+//                    }
                 }
                 visible: IS_ACTIVE
                 active: IS_ACTIVE
