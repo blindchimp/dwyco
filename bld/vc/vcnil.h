@@ -16,8 +16,7 @@
 //
 // The nil atom. This is a separate type to avoid the need
 // for special values in other classes to represent nil.
-// Also, there is an efficiency win here, since all nils
-// can use the same storage. The storage is allocated at
+// The storage is allocated at
 // program start time and never freed. The constant
 // vcnil is used to reference the nil atom.
 //
