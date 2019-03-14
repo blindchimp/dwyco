@@ -62,7 +62,7 @@ Page {
             text: "Privacy policy"
             onClicked: {
 
-                Qt.openUrlExternally("http://www.dwyco.citymax.com/privacy/policy.htm")
+                Qt.openUrlExternally("https://www.dwyco.net/privacy-policy")
             }
             Layout.fillWidth: true
         }
@@ -70,7 +70,7 @@ Page {
             text: "Terms of service"
             onClicked: {
 
-                Qt.openUrlExternally("http://www.dwyco.citymax.com/page/page/955930.htm")
+                Qt.openUrlExternally("https://www.dwyco.net/terms-of-service")
             }
             Layout.fillWidth: true
         }
