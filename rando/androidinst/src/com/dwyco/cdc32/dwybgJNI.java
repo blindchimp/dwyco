@@ -6,7 +6,7 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package com.dwyco.rando;
+package com.dwyco.cdc32;
 
 public class dwybgJNI {
   public final static native int dwyco_test_funny_mutex(int jarg1);

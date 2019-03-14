@@ -312,8 +312,8 @@ DISTFILES += \
     androidinst/gradlew.bat \
     androidinst/src/com/dwyco/rando/NotificationClient.java \
     androidinst/src/com/dwyco/rando/Push_Notification.java \
-    androidinst/src/com/dwyco/rando/dwybg.java \
-    androidinst/src/com/dwyco/rando/dwybgJNI.java \
+    androidinst/src/com/dwyco/cdc32/dwybg.java \
+    androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
     androidinst/src/com/dwyco/rando/Dwyco_Message.java \
     androidinst/src/com/dwyco/rando/StickyIntentService.java \
     androidinst/google-services.json \
