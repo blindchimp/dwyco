@@ -149,6 +149,7 @@ ApplicationWindow {
             {
                 if(Qt.platform.os == "android") {
                     notificationClient.start_background()
+                    notificationClient.set_lastrun()
                 }
                 //if(pwdialog.allow_access === 0)
                 //    expire_immediate = true
@@ -403,6 +404,7 @@ ApplicationWindow {
             console.log("die")
             if(Qt.platform.os == "android") {
                 notificationClient.cancel()
+                notificationClient.set_lastrun()
             }
             exit()
         }
@@ -418,6 +420,7 @@ ApplicationWindow {
             if(Qt.platform.os == "android") {
                 notificationClient.set_msg_count_url(core.get_msg_count_url())
                 notificationClient.log_event()
+                notificationClient.set_lastrun()
             }
         }
 
@@ -483,6 +486,10 @@ ApplicationWindow {
                 drawer.close()
                 //pwdialog.state = "pause"
             }
+            if(Qt.platform.os == "android") {
+                notificationClient.set_lastrun()
+            }
+                
 
         }
 

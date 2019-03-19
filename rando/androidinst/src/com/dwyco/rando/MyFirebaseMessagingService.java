@@ -35,6 +35,8 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import android.os.Build;
 import android.os.Build.VERSION;
+import java.lang.Integer;
+import java.util.Map;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
@@ -74,7 +76,24 @@ public void onCreate() {
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
+            Map<String, String> m = remoteMessage.getData();
+            String v = m.get("generated");
+            if(v != null)
+            {
+                long g = Long.parseLong(v);
 
+                SharedPreferences sp;
+                prefs_lock.lock();
+                sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+                long last_run = sp.getLong("lastrun", 0);
+                prefs_lock.release();
+                if(last_run > g)
+                {
+                    Log.d(TAG, "skip notification ");
+                    return;
+                }
+
+            }
             if (/* Check if data needs to be processed by long running job */ true) {
                 // For long-running tasks (10 seconds or more) use Firebase Job Dispatcher.
                 //scheduleJob();

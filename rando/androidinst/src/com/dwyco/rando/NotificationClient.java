@@ -204,6 +204,16 @@ public class NotificationClient extends QtActivity
 
     }
 
+    public static void set_lastrun() {
+        prefs_lock.lock();
+        long secs = System.currentTimeMillis() / 1000; 
+        SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
+        SharedPreferences.Editor pe = sp.edit();
+        pe.putLong("lastrun", secs);
+        pe.commit();
+        prefs_lock.release();
+
+    }
     public static void set_quiet(int i) {
         prefs_lock.lock();
         SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);

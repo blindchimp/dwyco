@@ -84,6 +84,12 @@ void NotificationClient::cancel()
         "cancel");
 }
 
+void NotificationClient::set_lastrun()
+{
+    QAndroidJniObject::callStaticMethod<void>(
+        "com/dwyco/rando/NotificationClient",
+        "set_lastrun");
+}
 void
 NotificationClient::set_msg_count_url(QString s)
 {
