@@ -1,7 +1,6 @@
 
 
-package com.dwyco.rando;
-//import com.dwyco.rando.R;
+package com.dwyco.android;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;

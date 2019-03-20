@@ -310,17 +310,18 @@ DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.properties \
     androidinst/gradlew \
     androidinst/gradlew.bat \
-    androidinst/src/com/dwyco/rando/NotificationClient.java \
-    androidinst/src/com/dwyco/rando/Push_Notification.java \
     androidinst/src/com/dwyco/cdc32/dwybg.java \
     androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst/src/com/dwyco/rando/Dwyco_Message.java \
-    androidinst/src/com/dwyco/rando/StickyIntentService.java \
     androidinst/google-services.json \
-    androidinst/src/com/dwyco/rando/SocketLock.java \
-    androidinst/src/com/dwyco/rando/MyFirebaseMessagingService.java \
-    androidinst/src/com/dwyco/rando/DwycoSender.java \
-    androidinst/src/com/dwyco/rando/DwycoProbe.java
+    androidinst/src/com/dwyco/rando/app.java \
+    androidinst/src/com/dwyco/android/Dwyco_Message.java \
+    androidinst/src/com/dwyco/android/DwycoProbe.java \
+    androidinst/src/com/dwyco/android/DwycoSender.java \
+    androidinst/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst/src/com/dwyco/android/NotificationClient.java \
+    androidinst/src/com/dwyco/android/Push_Notification.java \
+    androidinst/src/com/dwyco/android/SocketLock.java \
+    androidinst/src/com/dwyco/android/StickyIntentService.java
 
 contains(ANDROID_TARGET_ARCH,x86) {
     ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so

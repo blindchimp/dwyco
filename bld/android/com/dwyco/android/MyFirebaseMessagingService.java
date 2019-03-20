@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dwyco.rando;
+package com.dwyco.android;
 
 import android.app.Notification;
 import android.app.NotificationManager;

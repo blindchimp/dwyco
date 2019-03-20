@@ -1,5 +1,4 @@
-package com.dwyco.rando;
-//import com.dwyco.rando.R;
+package com.dwyco.android;
 import com.dwyco.cdc32.dwybg;
 import android.app.Notification;
 import android.app.NotificationManager;
