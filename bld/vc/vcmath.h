@@ -9,7 +9,7 @@
 #ifndef VCMATH_H
 #define VCMATH_H
 // $Header: g:/dwight/repo/vc/rcs/vcmath.h 1.38 1998/06/17 17:21:57 dwight Exp $
-
+#ifndef NO_VCEVAL
 vc vcsqrt(vc v);
 vc vcsin(vc v);
 vc vccos(vc v);
@@ -35,5 +35,6 @@ vc vclhsum(vc);
 vc vclhsum2(vc);
 vc vcrand();
 vc vcsrand(vc);
+#endif
 
 #endif
