@@ -321,7 +321,8 @@ DISTFILES += \
     androidinst/src/com/dwyco/android/NotificationClient.java \
     androidinst/src/com/dwyco/android/Push_Notification.java \
     androidinst/src/com/dwyco/android/SocketLock.java \
-    androidinst/src/com/dwyco/android/StickyIntentService.java
+    androidinst/src/com/dwyco/android/StickyIntentService.java \
+    androidinst/src/com/dwyco/rando/DwycoApp.java
 
 contains(ANDROID_TARGET_ARCH,x86) {
     ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
