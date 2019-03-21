@@ -170,7 +170,7 @@ public void onCreate() {
             def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
         m_builder.setDefaults(def);
         }
-        m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
+        m_builder.setSmallIcon(DwycoApp.notification_icon());
         m_builder.setContentTitle("Dwyco Rando");
         m_builder.setAutoCancel(true);
         m_builder.setContentText("New rando");

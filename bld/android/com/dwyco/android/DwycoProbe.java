@@ -199,7 +199,8 @@ public class DwycoProbe extends JobService {
             def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
         m_builder.setDefaults(def);
         }
-        m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
+        //m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
+        m_builder.setSmallIcon(DwycoApp.notification_icon());
         //m_builder.setColor(context.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);
