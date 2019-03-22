@@ -62,8 +62,18 @@ Rectangle {
         }
         Label {
             id: label3
-            text: qsTr("By clicking OK, you agree to our Terms of Service and Privacy Policy. A quick summary: Dwyco doesn't track you, data-mine your phone, or send you spam. Dwyco reviews pictures sent to the Rando server and inappropriate content is not allowed.")
+            text: qsTr("By clicking OK, you agree to our Terms of Service and Privacy Policy. A quick summary: Dwyco doesn't track you, data-mine your phone, or send you spam.")
             font.italic: true
+            color: amber_light
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+
+        Label {
+            id: label4
+            text: qsTr("Dwyco REVIEWS pictures sent using this app. Please send only APPROPRIATE PICTURES. Thanks.")
+            font.italic: true
+            font.bold: true
             color: amber_light
             wrapMode: Text.WordWrap
             Layout.fillWidth: true

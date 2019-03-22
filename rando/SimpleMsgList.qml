@@ -484,7 +484,7 @@ scrolling in the listview or doesn't recognizing the swipe.
 
         Label {
             Layout.fillWidth: true
-            text: "Click the Camera button below to take a picture and anonymously send it to a stranger."
+            text: "Click the Camera button below to take a picture and anonymously send it to a random person."
             wrapMode: Text.WordWrap
         }
         Label {
@@ -517,7 +517,7 @@ scrolling in the listview or doesn't recognizing the swipe.
         id: warn
         visible: false
         z: 3
-        warning: "You denied access to storage, which is OK. BUT if you uninstall the app, the pictures stored by this app are removed too. IF YOU WOULD LIKE TO KEEP THE PICTURES YOU GET, EVEN IF YOU UNINSTALL, click the button below to quit the app. Then restart the app, and when it asks for permission to access storage, answer YES."
+        warning: "You denied access to storage, which is OK. BUT if you uninstall the app, the pictures stored by this app are also removed. IF YOU WOULD LIKE TO KEEP THE PICTURES YOU GET, EVEN IF YOU UNINSTALL, click the button below to quit the app. Then restart the app, and when it asks for permission to access storage, answer YES."
         inhibit_key: "storage_warning"
         oops_text: "Quit and reasses my life-choices"
 
