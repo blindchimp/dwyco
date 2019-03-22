@@ -289,6 +289,7 @@ gen_encoder_info(th_info& cur_info, th_enc_ctx*& cur_coder_ctx, int q, int w, in
         int max_sp;
         if(th_encode_ctl(cur_coder_ctx, TH_ENCCTL_GET_SPLEVEL_MAX, &max_sp, sizeof(max_sp)) == 0)
         {
+	    --max_sp;
             th_encode_ctl(cur_coder_ctx, TH_ENCCTL_SET_SPLEVEL, &max_sp, sizeof(max_sp));
         }
     }
