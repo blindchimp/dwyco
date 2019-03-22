@@ -222,8 +222,10 @@ ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 #$${D}/libogg.a \
 #$${D}/libjhead.a \
 #$${D}/libjenkins.a #-lgcc
+include(functions.pri)
 
-QMAKE_LFLAGS += -g
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava", "src/com/dwyco/android", $$files($$PWD/../bld/android/com/dwyco/android/*.java))
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava2", "src/com/dwyco/cdc32", $$files($$PWD/../bld/android/com/dwyco/cdc32/*.java))
 
 }
 
