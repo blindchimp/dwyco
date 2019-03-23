@@ -38,7 +38,7 @@ public class Push_Notification extends BroadcastReceiver {
 
             SharedPreferences sp;
 
-            sp = context.getSharedPreferences("rando", Context.MODE_PRIVATE);
+            sp = context.getSharedPreferences(DwycoApp.shared_prefs, Context.MODE_PRIVATE);
             int port = sp.getInt("lockport", 4500);
             String sys_pfx = sp.getString("sys_pfx", ".");
             String user_pfx = sp.getString("user_pfx", ".");

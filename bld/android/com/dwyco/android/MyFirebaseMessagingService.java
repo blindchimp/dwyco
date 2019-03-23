@@ -48,7 +48,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 public void onCreate() {
     super.onCreate();
     context = this;
-    prefs_lock = new SocketLock("com.dwyco.rando.prefs");
+    prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
     }
 
     /**
@@ -84,7 +84,7 @@ public void onCreate() {
 
                 SharedPreferences sp;
                 prefs_lock.lock();
-                sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+                sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
                 long last_run = sp.getLong("lastrun", 0);
                 prefs_lock.release();
                 if(last_run > g)
@@ -146,14 +146,14 @@ public void onCreate() {
         int allow_not = NotificationClient.allow_notification;
         if(allow_not == 0)
             return;
-        //SocketLock prefs_lock = new SocketLock("com.dwyco.rando.prefs");
+        //SocketLock prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
 
         NotificationManager m_notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
         Notification.Builder m_builder;
         SharedPreferences sp;
         prefs_lock.lock();
-        sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+        sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
         
@@ -204,7 +204,7 @@ public void onNewToken(String token) {
 private void sendRegistrationToServer(String token) {
     prefs_lock.lock();
     SharedPreferences sp;
-    sp = getSharedPreferences("rando", MODE_PRIVATE);
+    sp = getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
     SharedPreferences.Editor pe = sp.edit();
     pe.putString("token", token);
     pe.commit();

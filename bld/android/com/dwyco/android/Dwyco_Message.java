@@ -36,7 +36,7 @@ public class Dwyco_Message extends StickyIntentService {
 
     public Dwyco_Message() {
         super("Dwyco_Message");
-        prefs_lock = new SocketLock("com.dwyco.rando.prefs");
+        prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
 
     }
 
@@ -54,7 +54,7 @@ public class Dwyco_Message extends StickyIntentService {
         boolean ret;
         prefs_lock.lock();
         SharedPreferences sp;
-        sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+        sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         if(!sp.contains("lockport") || !sp.contains("sys_pfx") ||
             !sp.contains("user_pfx") || !sp.contains("tmp_pfx"))
             ret = false;
@@ -84,7 +84,7 @@ public class Dwyco_Message extends StickyIntentService {
         if(intent == null) {
             // restart, fetch the values from preferences
 
-            sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+            sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
             port = sp.getInt("lockport", 4500);
             sys_pfx = sp.getString("sys_pfx", ".");
             user_pfx = sp.getString("user_pfx", ".");
@@ -98,7 +98,7 @@ public class Dwyco_Message extends StickyIntentService {
             token = intent.getStringExtra("token");
 
             // write it back out for later if we need to restart
-            sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+            sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
             SharedPreferences.Editor pe = sp.edit();
             pe.putInt("lockport", port);
             pe.putString("sys_pfx", sys_pfx);
@@ -136,7 +136,7 @@ public class Dwyco_Message extends StickyIntentService {
 
                 prefs_lock.lock();
 
-                sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+                sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
                 String inboxdir = sp.getString("user_pfx", ".");
                 prefs_lock.release();
                 inboxdir += "/inbox";
@@ -204,11 +204,11 @@ public class Dwyco_Message extends StickyIntentService {
         //m_builder.setColor(context.getResources().getColor(R.color.green));
         m_builder.setContentTitle("Dwyco Rando");
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("New rando received");
+        m_builder.setContentText(DwycoApp.new_received);
         m_builder.setOnlyAlertOnce(true);
         SharedPreferences sp;
         prefs_lock.lock();
-        sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+        sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
         int def = Notification.DEFAULT_ALL;

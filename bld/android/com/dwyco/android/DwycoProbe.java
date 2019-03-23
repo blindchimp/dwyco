@@ -32,7 +32,7 @@ public class DwycoProbe extends JobService {
 
     public DwycoProbe() {
         //super("DwycoProbe");
-        prefs_lock = new SocketLock("com.dwyco.rando.prefs");
+        prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
 
     }
 
@@ -64,7 +64,7 @@ public class DwycoProbe extends JobService {
         String tmp_pfx;
         String token;
 
-            sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+            sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
             port = sp.getInt("lockport", 4500);
             sys_pfx = sp.getString("sys_pfx", ".");
             user_pfx = sp.getString("user_pfx", ".");
@@ -120,7 +120,7 @@ public class DwycoProbe extends JobService {
 
                 prefs_lock.lock();
 
-                sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+                sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
                 String inboxdir = sp.getString("user_pfx", ".");
                 prefs_lock.release();
                 inboxdir += "/inbox";
@@ -182,7 +182,7 @@ public class DwycoProbe extends JobService {
         
         SharedPreferences sp;
         prefs_lock.lock();
-        sp = context.getSharedPreferences("rando", MODE_PRIVATE);
+        sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
         Notification.Builder m_builder;

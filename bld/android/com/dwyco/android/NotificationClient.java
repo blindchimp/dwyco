@@ -52,7 +52,7 @@ public class NotificationClient extends QtActivity
     public NotificationClient()
     {
         m_instance = this;
-        prefs_lock = new SocketLock("com.dwyco.rando.prefs");
+        prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
     }
 
     @Override
@@ -124,7 +124,7 @@ public class NotificationClient extends QtActivity
         m_builder.setOnlyAlertOnce(true);
         SharedPreferences sp;
         prefs_lock.lock();
-        sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
+        sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
         int def = Notification.DEFAULT_ALL;
@@ -166,7 +166,7 @@ public class NotificationClient extends QtActivity
     public static void set_msg_count_url(String s) {
         prefs_lock.lock();
         msg_count_url = s;
-        SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
+        SharedPreferences sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         SharedPreferences.Editor pe = sp.edit();
         pe.putString("url", s);
         pe.commit();
@@ -177,7 +177,7 @@ public class NotificationClient extends QtActivity
     public static void set_lastrun() {
         prefs_lock.lock();
         long secs = System.currentTimeMillis() / 1000; 
-        SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
+        SharedPreferences sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         SharedPreferences.Editor pe = sp.edit();
         pe.putLong("lastrun", secs);
         pe.commit();
@@ -186,7 +186,7 @@ public class NotificationClient extends QtActivity
     }
     public static void set_quiet(int i) {
         prefs_lock.lock();
-        SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
+        SharedPreferences sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         SharedPreferences.Editor pe = sp.edit();
         pe.putInt("quiet", i);
         pe.commit();
@@ -196,7 +196,7 @@ public class NotificationClient extends QtActivity
 
     public static void set_service_params(int port, String sys_pfx, String user_pfx, String tmp_pfx) {
         prefs_lock.lock();
-        SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
+        SharedPreferences sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         SharedPreferences.Editor pe = sp.edit();
         pe.putInt("lockport", port);
         pe.putString("sys_pfx", sys_pfx);
@@ -208,7 +208,7 @@ public class NotificationClient extends QtActivity
 
 public static String get_token() {
     prefs_lock.lock();
-    SharedPreferences sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
+    SharedPreferences sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
     String token = sp.getString("token", "notoken");
     prefs_lock.release();
     return token;
@@ -219,7 +219,7 @@ public static String get_token() {
         prefs_lock.lock();
         SharedPreferences sp;
 
-        sp = m_instance.getSharedPreferences("rando", MODE_PRIVATE);
+        sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         int port = sp.getInt("lockport", 4500);
         String sys_pfx = sp.getString("sys_pfx", ".");
         String user_pfx = sp.getString("user_pfx", ".");
