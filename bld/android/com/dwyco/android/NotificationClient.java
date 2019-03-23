@@ -118,9 +118,9 @@ public class NotificationClient extends QtActivity
         }
         m_builder.setSmallIcon(DwycoApp.notification_icon());
         //m_builder.setColor(m_instance.getResources().getColor(R.color.green));
-        m_builder.setContentTitle("Dwyco Rando");
+        m_builder.setContentTitle(DwycoApp.content_title);
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("New rando");
+        m_builder.setContentText(DwycoApp.new_available);
         m_builder.setOnlyAlertOnce(true);
         SharedPreferences sp;
         prefs_lock.lock();

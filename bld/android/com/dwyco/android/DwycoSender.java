@@ -236,9 +236,9 @@ public class DwycoSender extends Service {
         }
         m_builder.setSmallIcon(DwycoApp.notification_icon());
         //m_builder.setColor(context.getResources().getColor(R.color.green));
-        m_builder.setContentTitle("Dwyco Rando");
+        m_builder.setContentTitle(DwycoApp.content_title);
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("Rando received");
+        m_builder.setContentText(DwycoApp.new_received);
         m_builder.setOnlyAlertOnce(true);
         
         Intent notintent = new Intent(context, NotificationClient.class);
@@ -275,7 +275,7 @@ public class DwycoSender extends Service {
         }
         m_builder.setSmallIcon(DwycoApp.notification_icon());
         //m_builder.setColor(context.getResources().getColor(R.color.green));
-        m_builder.setContentTitle("Dwyco Rando");
+        m_builder.setContentTitle(DwycoApp.content_title);
         m_builder.setAutoCancel(true);
         m_builder.setContentText("Uploading");
         m_builder.setOnlyAlertOnce(true);
