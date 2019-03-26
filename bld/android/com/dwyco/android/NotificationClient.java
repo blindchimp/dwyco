@@ -67,7 +67,8 @@ public class NotificationClient extends QtActivity
         //PendingIntent pintent = PendingIntent.getService(m_instance, 0, i2, 0);
         //AlarmManager alarm = (AlarmManager) m_instance.getSystemService(Context.ALARM_SERVICE);
         //alarm.setRepeating(AlarmManager.RTC_WAKEUP, cur_cal.getTimeInMillis(), 1000 * 60, pintent);
-        //getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        if(!DwycoApp.allow_screenshots)
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
@@ -96,7 +97,8 @@ public class NotificationClient extends QtActivity
     @Override
     protected void onResume() {
         super.onResume();
-        //getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+	if(!DwycoApp.allow_screenshots)
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
     }
 
     public static void set_allow_notification(int a)
