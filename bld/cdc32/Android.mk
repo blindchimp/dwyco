@@ -20,7 +20,8 @@ LOCAL_CPPFLAGS += #-DDW_RTLOG -DDWYCO_NO_CLEANUP_ON_EXIT -DDWYCO_APP_DEBUG
 #LOCAL_CPPFLAGS += -DDWYCO_TRACE 
 #LOCAL_CPPFLAGS += -DLEAK_CLEANUP
 #LOCAL_CPPFLAGS += -DDWYCO_FIELD_DEBUG
-LOCAL_CPPFLAGS += -DDWYCO_THREADED_ENCODE
+#LOCAL_CPPFLAGS += -DDWYCO_THREADED_ENCODE
+LOCAL_CPPFLAGS += -DDWYCO_NO_THEORA_CODEC -DDWYCO_NO_GSM -DDWYCO_NO_VORBIS -DDWYCO_NO_UPNP -DDWYCO_NO_VIDEO_MSGS -DDWYCO_NO_VIDEO_FROM_PPM
 
 LOCAL_SRC_FILES=  \
 mmchan.cc \
@@ -161,7 +162,7 @@ aqext_android.cpp \
 backsql.cpp \
 upnp.cpp
 
-LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls
+LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls
 LOCAL_C_INCLUDES := \
 $(LOCAL_PATH)/../dwcls \
 $(LOCAL_PATH)/../zlib \
@@ -173,14 +174,9 @@ $(LOCAL_PATH)/../lpc \
 $(LOCAL_PATH)/../pbm \
 $(LOCAL_PATH)/../pgm \
 $(LOCAL_PATH)/../ppm \
-$(LOCAL_PATH)/../gsm \
-$(LOCAL_PATH)/../speex/include \
-$(LOCAL_PATH)/../theora/include \
-$(LOCAL_PATH)/../ogg/include \
-$(LOCAL_PATH)/../vorbis/include \
 $(LOCAL_PATH)/winemu \
 $(LOCAL_PATH)/glob \
-$(LOCAL_PATH)/../../phoobld
+$(LOCAL_PATH)/../../randobld
 
 LOCAL_CPPFLAGS += -fpermissive -frtti
 
