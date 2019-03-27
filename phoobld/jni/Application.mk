@@ -5,6 +5,7 @@ else
 APP_PROJECT_PATH := $(HOME)/git/dwyco/phoobld
 APP_ABI := x86
 endif
+include $(APP_PROJECT_PATH)/dwyco_android.mk
 APP_CPPFLAGS += -frtti -fexceptions -DANDROID -g -std=c++11
 APP_CFLAGS += -DANDROID -g
 APP_STL := c++_shared
