@@ -1,0 +1,51 @@
+<RCC>
+    <qresource prefix="/new/prefix1"/>
+    <qresource prefix="/new/red32"/>
+    <qresource prefix="/material">
+        <file>icons/material/hdpi/ic_arrow_back_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_cloud_upload_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_delete_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_menu_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_star_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_videocam_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_arrow_back_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_cloud_upload_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_delete_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_menu_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_star_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_videocam_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_arrow_back_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_cloud_upload_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_delete_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_menu_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_star_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_videocam_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_action_overflow.png</file>
+        <file>icons/material/mdpi/ic_action_overflow.png</file>
+        <file>icons/material/xhdpi/ic_action_overflow.png</file>
+        <file>icons/material/hdpi/ic_more_vert_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_more_vert_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_more_vert_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_open_in_new_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_open_in_new_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_open_in_new_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_add_a_photo_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_add_a_photo_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_add_a_photo_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_add_a_photo_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_add_a_photo_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_add_a_photo_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_done_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_done_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_done_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_done_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_done_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_done_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_language_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_language_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_language_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_language_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_language_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_language_white_24dp.png</file>
+    </qresource>
+</RCC>

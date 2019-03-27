@@ -47,7 +47,7 @@
        <widget class="QWebView" name="webView" native="true">
         <property name="url" stdset="0">
          <url>
-          <string>http://www.dwyco.citymax.com/new_home.html</string>
+          <string>http://www.dwyco.com</string>
          </url>
         </property>
        </widget>

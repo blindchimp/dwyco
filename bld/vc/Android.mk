@@ -60,7 +60,7 @@ vcudh.cpp
 
 
 #LOCAL_STATIC_LIBRARIES := crypto5 zlib kazlib jenkins dwcls
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/../dwcls $(LOCAL_PATH)/../zlib $(LOCAL_PATH)/../kazlib $(LOCAL_PATH)/../jenkins $(LOCAL_PATH)/../crypto5 $(LOCAL_PATH)/../../phoobld
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/../dwcls $(LOCAL_PATH)/../zlib $(LOCAL_PATH)/../kazlib $(LOCAL_PATH)/../jenkins $(LOCAL_PATH)/../crypto5 $(APP_PROJECT_PATH)
 LOCAL_CPPFLAGS += -fpermissive -frtti
 
 

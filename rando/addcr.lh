@@ -1,0 +1,45 @@
+;
+; add copyright notices to files
+;
+
+lbind(a substr(__argv[0] sub(strlen(__argv[0]) 2) 2))
+if(eq(<a> lh) prog(
+lbind(cr |
+; ===
+; 
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+;
+|)
+)
+;else
+prog(
+lbind(cr |
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+|)
+))
+
+lbind(f openfile(__argv[0] r))
+for(i 0 10 prog(
+	lbind(l readline(<f>))
+	if(not(<l>) break(1))
+	if(cand(gt(strlen(<l>) 2) eq(substr(<l> 0 2) |#!|)) prog(
+		lbind(firstline <l>)
+	))
+	if(cor(eq(<l> |; ===|) eq(<l> |/* ===|))exit(1))
+	if(match(regex(|.*[Cc]opyright.*|) <l>) exit(1))
+))
+
+lbind(nf {<firstline> <cr> contents-of(openfile(__argv[0] r)) })
+system({|mkdir -p bak; cp | __argv[0] | bak|})
+fputs(openfile(__argv[0] w) <nf>)
+exit(0)

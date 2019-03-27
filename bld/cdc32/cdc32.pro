@@ -31,12 +31,22 @@ DEFINES += \
 	DWVEC_DOINIT \
         DWYCO_USE_SQLITE
     
+equals(DWYCO_APP, "rando") {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-DEFINES += DW_RTLOG
+#DEFINES += DWYCO_TRACE
+#LCL_DFLAGS += -DLEAK_CLEANUP
+#DEFINES += DWYCO_FIELD_DEBUG
+#DEFINES += MINIUPNP_STATICLIB
+message("cdc32 setup for rando")
+} else {
+#DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
 #DEFINES += DWYCO_TRACE
 #LCL_DFLAGS += -DLEAK_CLEANUP
 DEFINES += DWYCO_FIELD_DEBUG
 DEFINES += MINIUPNP_STATICLIB
+message("generic setup for cdc32")
+}
 
 macx-*|linux-*|macx-ios-clang|macx-clang|android-*|wasm-emscripten {
 QMAKE_CXXFLAGS += -fpermissive
@@ -68,11 +78,19 @@ SOURCES += sqlite3.c
 
 win32-* {
 DEFINES += CDCCORE_STATIC
-DEFINES += USE_VFW
 DEFINES += DWYCO_USE_STATIC_SQLITE
+equals(DWYCO_APP, "rando") {
+#DEFINES += USE_VFW
+#DEFINES += VIDGRAB_HACKS
+#DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
+#SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+SOURCES += uniq.cpp audwin.cc aqaud.cc
+} else {
+DEFINES += USE_VFW
 DEFINES += VIDGRAB_HACKS
-DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100 
+DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
 SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+}
 SOURCES += sqlite3.c
 INCLUDEPATH += ../mtcap
 equals(FORCE_DESKTOP_VGQT, 1) {
