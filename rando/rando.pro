@@ -312,9 +312,9 @@ DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.properties \
     androidinst/gradlew \
     androidinst/gradlew.bat \
+    androidinst/google-services.json \
     androidinst/src/com/dwyco/cdc32/dwybg.java \
     androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst/google-services.json \
     androidinst/src/com/dwyco/rando/app.java \
     androidinst/src/com/dwyco/android/Dwyco_Message.java \
     androidinst/src/com/dwyco/android/DwycoProbe.java \
