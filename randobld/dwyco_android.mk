@@ -1,1 +1,1 @@
-DWYCO_APP := rando
+DWYCO_APP := "rando"

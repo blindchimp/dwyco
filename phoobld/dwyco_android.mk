@@ -1,1 +1,1 @@
-DWYCO_APP := phoo
+DWYCO_APP := "phoo"
