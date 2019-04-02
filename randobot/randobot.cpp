@@ -64,7 +64,6 @@ struct rando_sql : public SimpleSql
 
 static rando_sql *D;
 static const char *Botfiles;
-
 static SimpleSql *Iplog;
 
 static
@@ -264,7 +263,7 @@ do_rando(vc huid)
     try
     {
         D->start_transaction();
-        res = D->sql_simple("select filename, hash, mid, from_uid from randos where from_uid != $1 and "
+        res = D->sql_simple("select filename, hash, mid, from_uid from randos where from_uid != ?1 and "
                             "not exists(select 1 from sent_to where randos.hash = hash) order by time desc limit 1",
                             huid);
         vc fn;
@@ -277,8 +276,8 @@ do_rando(vc huid)
             // candidate is the newest rando that has been resent
             // the least number of times.
             res = D->sql_simple("select sent_to.filename, sent_to.hash, randos.mid, randos.from_uid from sent_to,randos "
-                                "where sent_to.hash = randos.hash and from_uid != $1 "
-                                "group by sent_to.hash having (count(nullif(sent_to.to_uid,$1)) = count(*)) "
+                                "where sent_to.hash = randos.hash and from_uid != ?1 "
+                                "group by sent_to.hash having (count(nullif(sent_to.to_uid,?1)) = count(*)) "
                                 "order by count(*) asc, randos.time desc limit 10",
                                 huid);
             // pick a random one from the first 10
@@ -334,7 +333,7 @@ do_rando(vc huid)
             int compid = dwyco_make_zap_composition_raw(bf.constData(), poss_ext);
             if(compid == 0)
             {
-                D->sql_simple("delete from randos where filename = $1",
+                D->sql_simple("delete from randos where filename = ?1",
                               fn);
                 D->commit_transaction();
                 // don't handle the message, we might be able to
@@ -353,7 +352,7 @@ do_rando(vc huid)
                     // to the creator of the msg. note: this gets an estimated location based on recipients
                     // latest login, not on their location when they generated their content.
 
-                    res = Iplog->sql_simple("select geo, max(time) from iplog where id = $1", huid);
+                    res = Iplog->sql_simple("select geo, max(time) from iplog where id = ?1", huid);
                     if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
                     {
                         QByteArray tagstr("{\"hash\" : \"");
@@ -377,7 +376,7 @@ do_rando(vc huid)
             }
             // see if we can get some location estimate for the message we received
             {
-                vc res = D->sql_simple("select geo from recv_loc where hash = $1 limit 1", hash);
+                vc res = D->sql_simple("select geo from recv_loc where hash = ?1 limit 1", hash);
                 if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
                 {
                     // note: mid not included because the mid is being generated in the new message
@@ -386,7 +385,7 @@ do_rando(vc huid)
                     str_to_send += (const char *)res[0][0];
                     str_to_send += "\"}";
 
-                    D->sql_simple("insert into sent_geo(to_uid, mid, hash, time, geo) values($1, $2, $3, strftime('%s', 'now'), $4)",
+                    D->sql_simple("insert into sent_geo(to_uid, mid, hash, time, geo) values(?1, ?2, ?3, strftime('%s', 'now'), ?4)",
                                   huid,
                                   mid,
                                   hash,
@@ -400,7 +399,7 @@ do_rando(vc huid)
                 dwyco_delete_zap_composition(compid);
                 throw -1;
             }
-            D->sql_simple("insert into sent_to (to_uid, filename, mid, hash, time) select $1, filename, mid, hash, strftime('%s', 'now') from randos where hash = $2",
+            D->sql_simple("insert into sent_to (to_uid, filename, mid, hash, time) select ?1, filename, mid, hash, strftime('%s', 'now') from randos where hash = ?2",
                           huid, hash);
         }
         D->commit_transaction();
@@ -411,6 +410,64 @@ do_rando(vc huid)
         return 0;
     }
     return 1;
+}
+
+QByteArray
+fnhash(const char *fn)
+{
+    QByteArray afn(Botfiles);
+    afn += "/";
+    afn += fn;
+
+
+    int fd = open(afn.constData(), O_RDONLY);
+    if(fd == -1)
+        return "";
+    char buf[4096];
+    int n = read(fd, buf, sizeof(buf));
+    if(n == -1)
+    {
+        close(fd);
+        return "";
+    }
+    close(fd);
+
+    QCryptographicHash h(QCryptographicHash::Sha1);
+    h.addData(buf, n);
+    return h.result().toHex();
+}
+
+void
+update_hashes()
+{
+    try {
+        D->start_transaction();
+
+        vc res = D->sql_simple("select filename, hash from randos");
+        for(int i = 0; i < res.num_elems(); ++i)
+        {
+            vc fn = res[i][0];
+            vc hash = res[i][1];
+
+            QByteArray h = fnhash(fn);
+            if(h.length() == 0)
+                continue;
+            if(h != (const char *)hash)
+            {
+                D->sql_simple("update randos set hash = ?2 where hash = ?1", hash, h.constData());
+                D->sql_simple("update sent_to set hash = ?2 where hash = ?1", hash, h.constData());
+                D->sql_simple("update recv_loc set hash = ?2 where hash = ?1", hash, h.constData());
+                D->sql_simple("update sent_geo set hash = ?2 where hash = ?1", hash, h.constData());
+            }
+        }
+
+        D->commit_transaction();
+    }
+    catch(...)
+    {
+        D->rollback_transaction();
+    }
+
 }
 
 
@@ -485,6 +542,10 @@ main(int argc, char *argv[])
     D = new rando_sql;
     if(!D->init())
         exit(1);
+    if(Reviewer_only)
+    {
+        update_hashes();
+    }
 
     while(1)
     {
@@ -528,7 +589,7 @@ main(int argc, char *argv[])
 
             if(Reviewer_only)
             {
-                 vc res = D->sql_simple("select 1 from reviewers where uid = $1", huid.constData());
+                 vc res = D->sql_simple("select 1 from reviewers where uid = ?1", huid.constData());
                  if(res.num_elems() == 0)
                  {
                      if(!has_att && txt.contains("first"))
@@ -542,7 +603,7 @@ main(int argc, char *argv[])
                          // initial picture, they can just get one if this is the first pic they have sent.
                          // there are all sorts of problems with this, but for now livable, and easy enough to
                          // turn off if there is a problem
-                         D->sql_simple("insert into grace(uid, time) values($1, strftime('%s', 'now'))", huid.constData());
+                         D->sql_simple("insert into grace(uid, time) values(?1, strftime('%s', 'now'))", huid.constData());
                          HANDLE_MSG(mid);
                          continue;
                      }
@@ -562,14 +623,14 @@ main(int argc, char *argv[])
             if(!has_att && txt.contains("noseeder"))
             {
                 send_reply_to(uid, "Ok, stop seeding.");
-                D->sql_simple("delete from seeder where uid = $1", huid.constData());
+                D->sql_simple("delete from seeder where uid = ?1", huid.constData());
                 HANDLE_MSG(mid);
                 continue;
             }
             if(!has_att && txt.contains("seeder"))
             {
                 send_reply_to(uid, "Ok, I won't send you any messages.");
-                D->sql_simple("insert into seeder(uid) values($1)", huid.constData());
+                D->sql_simple("insert into seeder(uid) values(?1)", huid.constData());
                 HANDLE_MSG(mid);
                 continue;
             }
@@ -604,13 +665,23 @@ main(int argc, char *argv[])
             actual_b += "/";
             actual_b += b;
             dwyco_copy_out_file_zap(0, 0, mid.constData(), actual_b.constData());
-            QFile fn(actual_b);
-            fn.open(QFile::ReadOnly);
-            QCryptographicHash h(QCryptographicHash::Sha1);
-            h.addData(&fn);
-            QByteArray hash = h.result().toHex();
 
-            vc res = D->sql_simple("select 1 from randos where hash = $1", vc(hash.constData()));
+            // mobile devices have a hard time hashing a lot of multi-MB
+            // image data, so just hash the first 4k or so (which is ok since
+            // we are limiting people to stuff captured from camera)
+            QByteArray hash;
+            {
+                const char *buf;
+                int len_buf = 0;
+
+                dwyco_copy_out_file_zap_buf(0, 0, mid.constData(), &buf, &len_buf, 4096);
+                QCryptographicHash h(QCryptographicHash::Sha1);
+                h.addData(buf, len_buf);
+                hash = h.result().toHex();
+                dwyco_free_array((char *)buf);
+            }
+
+            vc res = D->sql_simple("select 1 from randos where hash = ?1", vc(hash.constData()));
             if(res.num_elems() != 0)
             {
                 send_reply_to(uid, "Sorry, already seen that one, please send some new content for me to use.");
@@ -625,7 +696,7 @@ main(int argc, char *argv[])
                 effective_uid = chuid;
             }
             D->start_transaction();
-            D->sql_simple("insert into randos (from_uid, filename, time, hash, mid) values($1, $2, strftime('%s', 'now'), $3, $4)",
+            D->sql_simple("insert into randos (from_uid, filename, time, hash, mid) values(?1, ?2, strftime('%s', 'now'), ?3, ?4)",
                           effective_uid.constData(),
                           vc(b.constData()),
                           vc(hash.constData()),
@@ -635,10 +706,10 @@ main(int argc, char *argv[])
                 // see if we can find an estimated location for the effective uid and record that
                 vc res;
                 try {
-                    res = Iplog->sql_simple("select geo, max(time) from iplog where id = $1", effective_uid.constData());
+                    res = Iplog->sql_simple("select geo, max(time) from iplog where id = ?1", effective_uid.constData());
                     if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
                     {
-                        D->sql_simple("insert into recv_loc(from_uid, mid, hash, time, geo) values($1, $2, $3, strftime('%s', 'now'), $4)",
+                        D->sql_simple("insert into recv_loc(from_uid, mid, hash, time, geo) values(?1, ?2, ?3, strftime('%s', 'now'), ?4)",
                                       effective_uid.constData(),
                                       mid.constData(),
                                       vc(hash.constData()),
@@ -651,14 +722,14 @@ main(int argc, char *argv[])
             }
 
             // reviewers are treated as seeders, but not the other way around
-            res = D->sql_simple("select 1 from seeder,reviewers where seeder.uid = $1 or reviewers.uid = $1", huid.constData());
+            res = D->sql_simple("select 1 from seeder,reviewers where seeder.uid = ?1 or reviewers.uid = ?1", huid.constData());
 
             if(res.num_elems() > 0)
             {
                 send_reply_to(uid, "Seeded msg");
                 // when you seed, we just pretend the message was sent right back to you,
                 // so it doesn't look like you need more randos sent to you.
-                D->sql_simple("insert into sent_to (to_uid, filename, mid, hash) select $1, filename, mid, hash from randos where hash = $2",
+                D->sql_simple("insert into sent_to (to_uid, filename, mid, hash) select ?1, filename, mid, hash from randos where hash = ?2",
                               huid.constData(), hash.constData());
             }
             else
