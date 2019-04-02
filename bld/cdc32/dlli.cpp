@@ -5656,7 +5656,7 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
 // YOU MUST CALL dwyco_free_array on returned buffer
 DWYCOEXPORT
 int
-dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out)
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out)
 {
     vc body;
     vc attachment;
@@ -5734,10 +5734,12 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     int fd = open(src.c_str(), O_RDONLY);
     if(fd == -1)
         return 0;
-    // i give up trying to find the right header, sheesh
+    // i give up trying to find the right header for MAX_INT32 blahblah, sheesh
     if(s.st_size >= (1 << 30))
         return 0;
     int sz = s.st_size;
+    if(sz > max_out)
+        sz = max_out;
     char *buf = new char[sz];
     if(read(fd, buf, sz) != sz)
     {
