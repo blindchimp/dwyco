@@ -192,7 +192,7 @@ void
 sql_insert_record(vc mid, vc tag)
 {
     VCArglist a;
-    a.append("replace into msg_tags2 (mid, tag, time) values($1,$2,strftime('%s','now'));");
+    a.append("replace into msg_tags2 (mid, tag, time) values(?1,?2,strftime('%s','now'));");
     a.append(mid);
     a.append(tag);
 
@@ -220,7 +220,7 @@ sql_remove_tag(vc tag)
     {
         sql_start_transaction();
         VCArglist a;
-        a.append("delete from msg_tags2 where tag = $1;");
+        a.append("delete from msg_tags2 where tag = ?1;");
         a.append(tag);
         vc res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
@@ -243,7 +243,7 @@ sql_fav_remove_uid(vc uid)
     {
         sql_start_transaction();
         VCArglist a;
-        a.append("delete from msg_tags2 where mid in (select mid from msg_idx where assoc_uid = $1)");
+        a.append("delete from msg_tags2 where mid in (select mid from msg_idx where assoc_uid = ?1)");
         a.append(to_hex(uid));
         vc res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
@@ -265,7 +265,7 @@ sql_fav_remove_mid(vc mid)
     {
         sql_start_transaction();
         VCArglist a;
-        a.append("delete from msg_tags2 where mid = $1;");
+        a.append("delete from msg_tags2 where mid = ?1;");
         a.append(mid);
         vc res = sqlite3_bulk_query(Db, &a);
         if(res.is_nil())
@@ -285,7 +285,7 @@ sql_remove_mid_tag(vc mid, vc tag)
     {
         sql_start_transaction();
         VCArglist a;
-        a.append("delete from msg_tags2 where mid = $1 and tag = $2;");
+        a.append("delete from msg_tags2 where mid = ?1 and tag = ?2;");
         a.append(mid);
         a.append(tag);
         vc res = sqlite3_bulk_query(Db, &a);
@@ -322,7 +322,7 @@ int
 sql_fav_is_fav(vc mid)
 {
     VCArglist a;
-    a.append("select 1 from msg_tags2 where mid = $1 and tag = '_fav' limit 1;");
+    a.append("select 1 from msg_tags2 where mid = ?1 and tag = '_fav' limit 1;");
     a.append(mid);
 
     vc res = sqlite3_bulk_query(Db, &a);
@@ -341,7 +341,7 @@ sql_get_tagged_mids(vc tag)
     vc res;
     try {
         VCArglist a;
-        a.append("select assoc_uid, mid from msg_tags2,mi.msg_idx using(mid) where tag = $1 order by logical_clock asc;");
+        a.append("select assoc_uid, mid from msg_tags2,mi.msg_idx using(mid) where tag = ?1 order by logical_clock asc;");
         a.append(tag);
 
         res = sqlite3_bulk_query(Db, &a);
@@ -367,7 +367,7 @@ sql_get_tagged_idx(vc tag)
         a.append("select "
                  "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
                  "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-                 " from msg_tags2,mi.msg_idx using(mid) where tag = $1 order by logical_clock desc;");
+                 " from msg_tags2,mi.msg_idx using(mid) where tag = ?1 order by logical_clock desc;");
         a.append(tag);
 
         res = sqlite3_bulk_query(Db, &a);
@@ -386,7 +386,7 @@ int
 sql_mid_has_tag(vc mid, vc tag)
 {
     VCArglist a;
-    a.append("select 1 from msg_tags2 where mid = $1 and tag = $2 limit 1;");
+    a.append("select 1 from msg_tags2 where mid = ?1 and tag = ?2 limit 1;");
     a.append(mid);
     a.append(tag);
 
@@ -406,7 +406,7 @@ sql_uid_has_tag(vc uid, vc tag)
     int c = 0;
     try {
         VCArglist a;
-        a.append("select 1 from msg_tags2,mi.msg_idx using(mid) where assoc_uid = $1 and tag = $2 limit 1;");
+        a.append("select 1 from msg_tags2,mi.msg_idx using(mid) where assoc_uid = ?1 and tag = ?2 limit 1;");
         a.append(to_hex(uid));
         a.append(tag);
 
