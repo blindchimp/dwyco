@@ -165,7 +165,7 @@ void
 terminate(vc initiator, vc responder)
 {
 
-    SKID->sql_simple("delete from pstate where initiating_uid = $1 and responding_uid = $2",
+    SKID->sql_simple("delete from pstate where initiating_uid = ?1 and responding_uid = ?2",
                      initiator, responder);
 
 }
@@ -218,7 +218,7 @@ start_gj(vc target_uid, vc password)
     {
 
         SKID->sql_simple("insert into pstate (alt_name, nonce_1, initiating_uid, state, time) "
-                         "values($1, $2, $3, 1, strftime('%s', 'now'))",
+                         "values(?1, ?2, ?3, 1, strftime('%s', 'now'))",
                          alt_name,
                          nonce,
                          to_hex(My_UID)
@@ -264,8 +264,8 @@ recv_gj2(vc from, vc msg, vc password)
         SKID->start_transaction();
         rollback = 1;
         vc res = SKID->sql_simple("select * from pstate where "
-                                  "initiating_uid = $1 and nonce_1 = $2 and "
-                                  "alt_name = $3 and state = 1",
+                                  "initiating_uid = ?1 and nonce_1 = ?2 and "
+                                  "alt_name = ?3 and state = 1",
                                   our_uid, nonce, alt_name);
         if(res.num_elems() == 0)
         {
@@ -290,8 +290,8 @@ recv_gj2(vc from, vc msg, vc password)
         }
 
         VCArglist a;
-        a.append("update pstate set responding_uid = $1,  nonce_2 = $2, time = strftime('%s', 'now'), state = 3 "
-                 "where initiating_uid = $3 and nonce_1 = $4 and alt_name = $5 and state = 1");
+        a.append("update pstate set responding_uid = ?1,  nonce_2 = ?2, time = strftime('%s', 'now'), state = 3 "
+                 "where initiating_uid = ?3 and nonce_1 = ?4 and alt_name = ?5 and state = 1");
         a.append(hfrom);
         a.append(nonce2);
         a.append(to_hex(My_UID));
@@ -350,7 +350,7 @@ recv_gj1(vc from, vc msg, vc password)
 
         SKID->start_transaction();
 
-        SKID->sql_simple("delete from pstate where initiating_uid = $1", hfrom);
+        SKID->sql_simple("delete from pstate where initiating_uid = ?1", hfrom);
 
         vc nonce2 = to_hex(get_entropy());
 
@@ -372,7 +372,7 @@ recv_gj1(vc from, vc msg, vc password)
         }
         VCArglist a;
         a.append("insert into pstate (initiating_uid, responding_uid, nonce_1, nonce_2, alt_name, time, state) "
-                         "values($1, $2, $3, $4, $5, strftime('%s', 'now'), 2)");
+                         "values(?1, ?2, ?3, ?4, ?5, strftime('%s', 'now'), 2)");
         a.append(hfrom);
         a.append(to_hex(My_UID));
         a.append(nonce);
@@ -424,8 +424,8 @@ recv_gj3(vc from, vc msg, vc password)
 
         VCArglist a;
         a.append("select * from pstate where "
-                 "initiating_uid = $1 and responding_uid = $2 and nonce_1 = $3 and "
-                 "nonce_2 = $4 and alt_name = $5 and state = 2");
+                 "initiating_uid = ?1 and responding_uid = ?2 and nonce_1 = ?3 and "
+                 "nonce_2 = ?4 and alt_name = ?5 and state = 2");
         a.append(hfrom);
         a.append(our_uid);
         a.append(nonce);

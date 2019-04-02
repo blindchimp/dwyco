@@ -1,0 +1,105 @@
+Tue Jan  9 16:12:27 MST 2018
+dwight melcher
+
+deployment notes for qml app for various platforms
+--------------------------------------------------
+
+android
+-------
+nothing special here, qtcreator seems to be able to create an apk
+that can be used in the play store without much trouble. main thing is to
+make sure it gets signed with a real key instead of a debug key.
+
+linux
+-----
+thanks to appimages and @probonopd on github, appimages are automatically
+created in the github releases area.
+
+windows
+-------
+building on win10 using msvc 2015 (i think)
+use windeployqt
+
+does not allow winxp by default, though you can change the
+link line in the makefile to include SUBSYSTEM=WINDOWS,5.01 to at least
+get something winxp will try to load. there are still errors about
+a missing "setnlen" but they go away and the program appears to run ok.
+there is some stuff about d3dcompiler.... not working right on xp, if you
+ship an older one, it might work without error. there was also some talk
+about using msvc110 runtimes, but that would require using older
+compiler suite. i guess xp is pretty much toast.
+
+note: c:\users\dwight\dwyco is the git repo cloned from github
+like so:
+cd c:\users\dwight
+git clone https://github.com/blindchimp/dwyco
+
+perform build using qtcreator or the build scripts in phoobld.
+
+copy <build-phoo.exe> c:\users\dwight\dwyco\phoo\vcdist
+set VCINSTALLDIR=c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC
+(or use vcvarsall.bat, i think this sets it)
+windeployqt --qmldir c:\Users\dwight\dwyco\phoo vcdist\phoo.exe
+
+note: you will need to remove all the Qt related stuff from the
+vcdist folder, as windeployqt doesn't seem to update things
+properly, esp if you update to new version of Qt.
+
+note: need to get the manifest stuff working so we don't have to run the redist installer... otherwise windeployqt seems to be getting fairly close to a deployable thing, at least on windows7, i think windows xp is going to be undoable.
+
+Updated September 11, 2015: App-local deployment of the Universal CRT is supported. To obtain the binaries for app-local deployment, install the Windows Software Development Kit (SDK) for Windows 10. The binaries will be installed to C:\Program Files (x86)\Windows Kits\10\Redist\ucrt. You will need to copy all of the DLLs with your app (note that the set of DLLs are necessary is different on different versions of Windows, so you must include all of the DLLs in order for your program to run on all supported versions of Windows). 
+
+
+MAC
+---
+use macdeployqt, works for qt5.9.
+NOTE: MUST USE -qmldir=$HOME/phoo (ie, the directory with the qml source files
+which isn't obvious from the docs. it wants to scan *your* files to find
+out what it needs to import, even tho those files are put into a qrc file
+and not deployed separately.)
+
+
+iOS
+---
+This is for xcode 8.2. once xcode is set up properly with a developer account and some
+certificates, qtcreator seems to work ok deploying to local device. NOTE: you may have to
+create a dummy app and install that using xcode to get the credentials put
+on the device properly. 
+
+If you want to do adhoc development on a remote device, you have to create an IPA file,
+which is an archive (like an APK for android.) You do this using xcode. First
+get everything working in qtcreator. then snag the "qmake invocation" line from
+qtcreator, and replace the "macx-ios-clang" mkspec with "macx-xcode".
+BE SURE TO REMOVE THE .qmake.stash file in ~/phoo BEFORE running qmake.
+
+like this:
+qmake -spec macx-xcode CONFIG+=release CONFIG+=iphoneos CONFIG+=device phoo.pro
+
+The result is ~/phoo/phoo.xcodeproj. Open this project in xcode, and wait for
+it to process the files.
+Click "product|Archive" in xcode
+in the dialog that opens, click "export...". 
+after some processing you get asked how you want to export it.
+select "ad hoc" and then select your dev account to sign the app.
+eventually it will save a folder with "phoo.ipa" in it, which you can use to
+deploy manually. using amazon device farm, just tell it to upload the phoo.ipa
+and it appears to work ok.
+
+WARNING: on ios10, the program will crash if you do not have the proper
+permissions description in the Info.plist file. unfortunately,
+there doesn't appear to be an easy way to do this automatically
+from within qtcreator. in qmake, apparently you can use QMAKE_INFO_PLIST and give it a file, but that means you have to use xcode to get the proper thing set up, then copy the file to someplace else and hope that qmake copies in the right thing.
+i think the thing that needs to be added to Info.plist is
+<key>NSCameraUsageDescription</key>
+<string>${PRODUCT NAME} Camera usage</string>
+
+so, the general way to do it is this:
+* use qtcreator to do a shadow build for ios. if this all works you should have an *.xcodeproj in the shadow build area. this will crash if you try to use the camera or other item that needs a permission because there are no descriptions in the Info.plist file.
+* open xcode and then open the *.xcodeproj file in the shadow build area.
+* in the warnings, tell xcode to update the project with the recommended settings.
+* select the *.app thing from the dropdown near the upper right of the main panel. you should get a bunch of tabs, one which is "info". select "info" 
+* you should see a "custom ios blah blah" . use the incomprehensible +- button to add a row, and select the "privacy - camera..." item. because of a bug in xcode you will not be able to edit the value. wtf.
+* build the item using xcode, and run it using xcode.
+* IF YOU RUN QTCREATOR AGAIN, IT WILL OBLITERATE THE Info.plist you just modified.
+This works on ios 10.2 on an ipad, i verified with xcode 8.3 on 10.12. so the problem really is just the usage strings.
+

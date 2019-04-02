@@ -1,4 +1,4 @@
-
+#ifndef NO_VCEVAL
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -231,3 +231,4 @@ vclhsum2(vc v)
 		sum = sum + (v[i] * v[i]);
 	return sum;
 }
+#endif

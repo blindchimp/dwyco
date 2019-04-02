@@ -285,7 +285,10 @@ ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 #$${D}/libjhead.a \
 #$${D}/libjenkins.a #-lgcc
 
-QMAKE_LFLAGS += -g
+include(functions.pri)
+
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava", "src/com/dwyco/android", $$files($$PWD/../bld/android/com/dwyco/android/*.java))
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava2", "src/com/dwyco/cdc32", $$files($$PWD/../bld/android/com/dwyco/cdc32/*.java))
 
 }
 
@@ -411,17 +414,20 @@ DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.properties \
     androidinst/gradlew \
     androidinst/gradlew.bat \
-    androidinst/src/com/dwyco/phoo/NotificationClient.java \
-    androidinst/src/com/dwyco/phoo/Push_Notification.java \
-    androidinst/src/com/dwyco/phoo/dwybg.java \
-    androidinst/src/com/dwyco/phoo/dwybgJNI.java \
-    androidinst/src/com/dwyco/phoo/Dwyco_Message.java \
-    androidinst/src/com/dwyco/phoo/StickyIntentService.java \
     androidinst/google-services.json \
-    androidinst/src/com/dwyco/phoo/SocketLock.java \
-    androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java \
-    androidinst/src/com/dwyco/phoo/DwycoSender.java \
-    androidinst/src/com/dwyco/phoo/DwycoProbe.java
+    androidinst/src/com/dwyco/cdc32/dwybg.java \
+    androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
+    androidinst/src/com/dwyco/phoo/app.java \
+    androidinst/src/com/dwyco/android/Dwyco_Message.java \
+    androidinst/src/com/dwyco/android/DwycoProbe.java \
+    androidinst/src/com/dwyco/android/DwycoSender.java \
+    androidinst/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst/src/com/dwyco/android/NotificationClient.java \
+    androidinst/src/com/dwyco/android/Push_Notification.java \
+    androidinst/src/com/dwyco/android/SocketLock.java \
+    androidinst/src/com/dwyco/android/StickyIntentService.java \
+    androidinst/src/com/dwyco/phoo/DwycoApp.java
+
 
 contains(ANDROID_TARGET_ARCH,x86) {
     ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so

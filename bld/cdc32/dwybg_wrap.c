@@ -218,7 +218,7 @@ void dwyco_write_token(const char *token);
 extern "C" {
 #endif
 
-SWIGEXPORT jint JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1test_1funny_1mutex(JNIEnv *jenv, jclass jcls, jint jarg1) {
+SWIGEXPORT jint JNICALL Java_com_dwyco_cdc32_dwybgJNI_dwyco_1test_1funny_1mutex(JNIEnv *jenv, jclass jcls, jint jarg1) {
   jint jresult = 0 ;
   int arg1 ;
   int result;
@@ -232,7 +232,7 @@ SWIGEXPORT jint JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1test_1funny_1mutex(J
 }
 
 
-SWIGEXPORT jint JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1background_1processing(JNIEnv *jenv, jclass jcls, jint jarg1, jint jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6) {
+SWIGEXPORT jint JNICALL Java_com_dwyco_cdc32_dwybgJNI_dwyco_1background_1processing(JNIEnv *jenv, jclass jcls, jint jarg1, jint jarg2, jstring jarg3, jstring jarg4, jstring jarg5, jstring jarg6) {
   jint jresult = 0 ;
   int arg1 ;
   int arg2 ;
@@ -276,7 +276,7 @@ SWIGEXPORT jint JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1background_1processi
 }
 
 
-SWIGEXPORT void JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1set_1aux_1string(JNIEnv *jenv, jclass jcls, jstring jarg1) {
+SWIGEXPORT void JNICALL Java_com_dwyco_cdc32_dwybgJNI_dwyco_1set_1aux_1string(JNIEnv *jenv, jclass jcls, jstring jarg1) {
   char *arg1 = (char *) 0 ;
   
   (void)jenv;
@@ -291,14 +291,14 @@ SWIGEXPORT void JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1set_1aux_1string(JNI
 }
 
 
-SWIGEXPORT void JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1clear_1contact_1list(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT void JNICALL Java_com_dwyco_cdc32_dwybgJNI_dwyco_1clear_1contact_1list(JNIEnv *jenv, jclass jcls) {
   (void)jenv;
   (void)jcls;
   dwyco_clear_contact_list();
 }
 
 
-SWIGEXPORT jint JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1add_1contact(JNIEnv *jenv, jclass jcls, jstring jarg1, jstring jarg2, jstring jarg3) {
+SWIGEXPORT jint JNICALL Java_com_dwyco_cdc32_dwybgJNI_dwyco_1add_1contact(JNIEnv *jenv, jclass jcls, jstring jarg1, jstring jarg2, jstring jarg3) {
   jint jresult = 0 ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -331,14 +331,14 @@ SWIGEXPORT jint JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1add_1contact(JNIEnv 
 }
 
 
-SWIGEXPORT void JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1signal_1msg_1cond(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT void JNICALL Java_com_dwyco_cdc32_dwybgJNI_dwyco_1signal_1msg_1cond(JNIEnv *jenv, jclass jcls) {
   (void)jenv;
   (void)jcls;
   dwyco_signal_msg_cond();
 }
 
 
-SWIGEXPORT void JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1wait_1msg_1cond(JNIEnv *jenv, jclass jcls, jint jarg1) {
+SWIGEXPORT void JNICALL Java_com_dwyco_cdc32_dwybgJNI_dwyco_1wait_1msg_1cond(JNIEnv *jenv, jclass jcls, jint jarg1) {
   int arg1 ;
   
   (void)jenv;
@@ -348,7 +348,7 @@ SWIGEXPORT void JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1wait_1msg_1cond(JNIE
 }
 
 
-SWIGEXPORT void JNICALL Java_com_dwyco_phoo_dwybgJNI_dwyco_1write_1token(JNIEnv *jenv, jclass jcls, jstring jarg1) {
+SWIGEXPORT void JNICALL Java_com_dwyco_cdc32_dwybgJNI_dwyco_1write_1token(JNIEnv *jenv, jclass jcls, jstring jarg1) {
   char *arg1 = (char *) 0 ;
   
   (void)jenv;
