@@ -197,24 +197,21 @@ att_file_hash(const QByteArray& huid, const QByteArray& mid, QByteArray& hash_ou
     if(!is_file)
         return 0;
 
-
-    QByteArray rfn = random_fn();
-    rfn = add_pfx(Tmp_pfx, rfn);
-    if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.constData(), rfn.constData()))
+    const char *buf = 0;
+    int len = 0;
+    if(!dwyco_copy_out_file_zap_buf(uid.constData(), uid.length(), mid.constData(), &buf, &len, 4096))
         return 0;
-    QFile f(rfn);
-    if(f.open(QIODevice::ReadOnly))
-    {
-        QCryptographicHash ch(QCryptographicHash::Sha1);
-        if(ch.addData(&f))
-        {
-            QByteArray res = ch.result();
-            Mid_to_hash.insert(mid, res);
-            hash_out = res;
-            return 1;
-        }
-    }
-    return 0;
+    QCryptographicHash ch(QCryptographicHash::Sha1);
+    ch.addData(buf, len);
+
+    QByteArray res = ch.result();
+    Mid_to_hash.insert(mid, res);
+    hash_out = res;
+    dwyco_free_array((char *)buf);
+    return 1;
+
+
+
 
 }
 
