@@ -1695,7 +1695,10 @@ login_auth_results(vc m, void *, vc, ValidPtr)
         {
             Current_authenticator = m[3][2];
             Pal_auth_state = m[3][3];
+#ifdef DWYCO_ASSHAT
             set_asshole_param(m[3][4]);
+#endif
+
             load_ignoring_you(m[3][5]);
             // note: need to have most things set up before loading
             // the inbox, that is why it is here (we have to do
@@ -2568,7 +2571,7 @@ dwyco_chat_update_call_accept()
     chatq_send_update_call_accept();
 }
 
-
+#if 0
 DWYCOEXPORT
 int
 dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
@@ -2599,6 +2602,7 @@ dwyco_get_ah2(const char *uid, int len_uid)
     ah *= 10.0;
     return (int)ah;
 }
+#endif
 
 DWYCOEXPORT
 void

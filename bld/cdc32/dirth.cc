@@ -617,7 +617,11 @@ build_directory_entry()
 #endif
 
     v.append(KKG);
+#ifdef DWYCO_ASSHAT
     v.append(get_asshole_factor());
+#else
+    v.append(0.0);
+#endif
 
     GRTLOG("dir entry", 0, 0);
     GRTLOGVC(v);
