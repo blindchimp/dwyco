@@ -1185,7 +1185,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
             return QVariant();
         if(type_out != DWYCO_TYPE_INT)
             return QVariant();
-        QDateTime q(QDateTime::fromTime_t(atol(out)));
+        QDateTime q(QDateTime::fromSecsSinceEpoch(atol(out)));
         return QVariant(q);
     }
     else if(role == DATE_CREATED)
