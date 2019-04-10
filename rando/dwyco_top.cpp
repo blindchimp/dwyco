@@ -53,7 +53,7 @@
 //#include "audi_qt.h"
 //#endif
 //#include "audo_qt.h"
-#include "dvp.h"
+//#include "dvp.h"
 //#include "callsm.h"
 #include "resizeimage.h"
 #ifdef _Windows
@@ -1274,7 +1274,7 @@ DwycoCore::init()
     update_user_dir(User_pfx);
     update_tmp_dir(Tmp_pfx);
 
-    DVP::init_dvp();
+    //DVP::init_dvp();
     //simple_call::init(this);
     AvoidSSL = 1; //!QSslSocket::supportsSsl();
 

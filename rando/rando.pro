@@ -45,7 +45,6 @@ SOURCES += main.cpp \
     msgpv.cpp \
     ssmap.cpp \
     notificationclient.cpp \
-    dvp.cpp \
     convmodel.cpp \
     getinfo.cpp \
     qlimitedbuffer.cpp \
@@ -298,7 +297,6 @@ HEADERS += \
     msglistmodel.h \
     notificationclient.h \
     dwquerybymember.h \
-    dvp.h \
     convmodel.h \
     getinfo.h \
     dwycolistscoped.h \
