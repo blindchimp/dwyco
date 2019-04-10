@@ -101,7 +101,9 @@ extern int HasAudioInput;
 extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
-extern QMap<QByteArray,QByteArray> Hash_to_loc;
+
+QMap<QByteArray, QByteArray> Hash_to_loc;
+QMap<QByteArray, QByteArray> Hash_to_review;
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -1506,7 +1508,14 @@ DwycoCore::init()
                             {
                                 QJsonValue h = qjo.value("hash");
                                 QJsonValue loc = qjo.value("loc");
-                                Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                                QJsonValue rev = qjo.value("review");
+
+                                if(!loc.isUndefined())
+                                    Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                                if(!rev.isUndefined())
+                                    Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+
+
 
                             }
                         }
@@ -2363,7 +2372,6 @@ DwycoCore::retry_auto_fetch(QString mid)
 }
 
 
-QMap<QByteArray, QByteArray> Hash_to_loc;
 #if 0
 static QMap<QString, QByteArray> Groups;
 static

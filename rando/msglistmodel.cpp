@@ -43,6 +43,8 @@ static QMap<QByteArray, int> Mid_to_percent;
 static QSet<QByteArray> Manual_fetch;
 
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QByteArray> Hash_to_review;
+
 static QMap<QByteArray,QByteArray> Mid_to_hash;
 
 enum {
@@ -69,6 +71,7 @@ enum {
     ATTACHMENT_PERCENT,
     ASSOC_UID, // who the message is from (or to, if sent msg)
     SENT_TO_LOCATION,
+    REVIEW_RESULTS,
 };
 
 static int
@@ -895,6 +898,7 @@ msglist_raw::roleNames() const
     rn(ATTACHMENT_PERCENT);
     rn(ASSOC_UID);
     rn(SENT_TO_LOCATION);
+    rn(REVIEW_RESULTS);
 #undef rn
     return roles;
 }
@@ -1254,7 +1258,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
             return QVariant();
         if(type_out != DWYCO_TYPE_INT)
             return QVariant();
-        QDateTime q(QDateTime::fromTime_t(atol(out)));
+        QDateTime q(QDateTime::fromSecsSinceEpoch(atol(out)));
         return QVariant(q);
     }
     else if(role == DATE_CREATED)
@@ -1433,6 +1437,22 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
         QByteArray l = Hash_to_loc.value(h, "Unknown");
+        return l;
+    }
+    else if(role == REVIEW_RESULTS)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QByteArray("");
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+        {
+            return QByteArray("");
+        }
+        QByteArray h;
+        if(!att_file_hash(huid, mid, h))
+            return QByteArray("");
+        QByteArray l = Hash_to_review.value(h, "Unknown");
         return l;
     }
 
