@@ -297,6 +297,17 @@ Page {
             }
 
             Image {
+                id: failed_review
+                anchors.top: img.top
+                anchors.left: img.left
+                anchors.margins: mm(.5)
+                visible: REVIEW_RESULTS != "Unknown"
+                source: mi("ic_not_interested_black_24dp.png")
+                z: 10
+
+            }
+
+            Image {
                 id: has_geo_info
                 source: msglist.model.uid === the_man ? mi("ic_language_black_24dp.png") : mi("ic_language_white_24dp.png")
                 anchors.top: img.top

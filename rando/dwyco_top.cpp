@@ -1489,8 +1489,8 @@ DwycoCore::init()
         for(int i = 0; i < nul; ++i)
         {
             QByteArray u = qul.get<QByteArray>(i, DWYCO_NO_COLUMN);
-            if(u == the_man)
-                continue;
+            //if(u == the_man)
+            //    continue;
             DWYCO_SAVED_MSG_LIST sml;
             if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
             {
@@ -2895,6 +2895,20 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     f.copy(dest);
     f.remove();
 
+    QByteArray revhelp;
+    {
+    QFile df(dest);
+    if(!df.open(QFile::ReadOnly))
+        return 0;
+    char buf[4096];
+    int len = df.read(buf, sizeof(buf));
+    QCryptographicHash ch(QCryptographicHash::Sha1);
+    ch.addData(buf, len);
+
+    QByteArray res = ch.result();
+    res = res.toHex();
+    revhelp = QString("{\"hash\" : \"%1\", \"review\" : \"nope\"}").arg(QString(res)).toLatin1();
+    }
     int compid = dwyco_make_file_zap_composition(dest.constData(), dest.length());
     if(compid == 0)
     {
@@ -2902,7 +2916,7 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
         return 0;
     }
     if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0, 1,
+                        revhelp.constData(), revhelp.length(), 0, 1,
                         0, 0)
       )
 

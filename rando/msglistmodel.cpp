@@ -371,6 +371,9 @@ msglist_model::set_all_unselected()
     }
 }
 
+// this is a bit sloppy, but since there aren't that
+// many things in the list, it hopefully won't me a problem
+// to just invalidate everything
 void
 msglist_model::invalidate_sent_to()
 {
@@ -379,6 +382,7 @@ msglist_model::invalidate_sent_to()
     {
         QModelIndex mi = index(i, 0);
         emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LOCATION));
+        emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
     }
 }
 
