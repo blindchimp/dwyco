@@ -100,8 +100,7 @@ Page {
 
                 ToolButton {
                     id: sent
-                    property bool hoopty
-                    hoopty: checked
+
                     ButtonGroup.group: radio
                     Layout.fillHeight: true
                     Layout.margins: mm(.25)
