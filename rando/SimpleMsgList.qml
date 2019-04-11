@@ -301,11 +301,55 @@ Page {
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
-                visible: REVIEW_RESULTS != "Unknown"
+                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && msglist.model.uid === the_man
                 source: mi("ic_not_interested_black_24dp.png")
                 z: 10
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        if(fail_review_msg.state == "moveIn")
+                            fail_review_msg.state = "moveOut"
+                        else
+                            fail_review_msg.state = "moveIn"
+                    }
+                }
 
+
+                Label {
+                    id: fail_review_msg
+                    visible: x > -width
+                    x: -width
+                    state: "moveIn"
+                    text: "Sorry, pic did not pass review... try again."
+                    color: amber_light
+                    style: Text.Outline
+                    styleColor: "black"
+
+                    states: [
+                        State {
+                            name: "moveOut";
+                            PropertyChanges { target: fail_review_msg; x: failed_review.width ; y: 0 }
+                        },
+                        State {
+                            name: "moveIn";
+                            PropertyChanges { target: fail_review_msg; x: -width; y: 0 }
+                        }
+                    ]
+
+                    transitions: [
+                        Transition {
+                            to: "moveOut"
+                            NumberAnimation { properties: "x,y"; easing.type: Easing.InOutQuad; duration: 400; loops: 1 }
+                        },
+                        Transition {
+                            to: "moveIn"
+                            NumberAnimation { properties: "x,y"; easing.type: Easing.InOutQuad; duration: 400; loops: 1 }
+                        }
+                    ]
+                }
             }
+
+
 
             Image {
                 id: has_geo_info
@@ -425,8 +469,8 @@ Page {
 //                        color: "green"
 //                    }
                 }
-                visible: IS_ACTIVE
-                active: IS_ACTIVE
+                visible: msglist.model.uid !== the_man && IS_ACTIVE
+                active: msglist.model.uid !== the_man && IS_ACTIVE
             }
         }
     }
