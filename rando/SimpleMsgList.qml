@@ -245,24 +245,42 @@ Page {
         id: msg_delegate
 
         CircularImage {
+            property bool click_to_fetch
+            click_to_fetch: model.uid !== the_man && !IS_ACTIVE && FETCH_STATE === "manual"
+
             width: listview.width
             height: (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
 
             id: img
             visible: IS_ACTIVE || IS_QD || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
             asynchronous: true
-            source: {PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
-            fillMode: Image.PreserveAspectCrop
+            source: {
+                click_to_fetch ? mi("ic_cloud_download_black_24dp.png") :
+                (PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : "")
+            }
+            fillMode: click_to_fetch ? Image.Pad : Image.PreserveAspectCrop
+            Text {
+                visible: click_to_fetch
+                text: "(tap to retry fetch)"
+                horizontalAlignment: Text.AlignHCenter
+                anchors.top: img.top
+                anchors.margins: mm(1)
+            }
+
             sourceSize.width: 512
             sourceSize.height: 512
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    themsgview.mid = model.mid
-                    themsgview.uid = model.ASSOC_UID
-                    themsgview.view_source = source
-                    stack.push(themsgview)
-
+                    if(click_to_fetch) {
+                        //console.log("click to fetch")
+                        core.retry_auto_fetch(model.mid)
+                    } else {
+                        themsgview.mid = model.mid
+                        themsgview.uid = model.ASSOC_UID
+                        themsgview.view_source = source
+                        stack.push(themsgview)
+                    }
                 }
             }
             Behavior on visible {

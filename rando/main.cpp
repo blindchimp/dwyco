@@ -54,7 +54,7 @@ perm_setup(QGuiApplication& app)
 
 int main(int argc, char *argv[])
 {
-#if defined(DWYCO_RELEASE)
+#if 0 && defined(DWYCO_RELEASE)
     qInstallMessageHandler(myMessageOutput);
 #endif
 

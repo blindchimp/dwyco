@@ -53,5 +53,11 @@
         <file>icons/material/hdpi/ic_not_interested_white_24dp.png</file>
         <file>icons/material/xhdpi/ic_not_interested_black_24dp.png</file>
         <file>icons/material/xhdpi/ic_not_interested_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_cloud_download_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_cloud_download_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_cloud_download_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_cloud_download_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_cloud_download_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_cloud_download_white_24dp.png</file>
     </qresource>
 </RCC>
