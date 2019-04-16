@@ -65,6 +65,7 @@ struct rando_sql : public SimpleSql
 static rando_sql *D;
 static const char *Botfiles;
 static SimpleSql *Iplog;
+static int Throttle = 3;
 
 static
 void
@@ -225,13 +226,16 @@ uid_due_randos()
 {
     // TODO: put some prioritization in here so that users that haven't received anything
     // lately are put on the top of the q
+    vc res;
+    try
+    {
     D->start_transaction();
     // c1 is count of received randos from each non-seeder uid
     D->sql_simple("create temp table c1 as select count(*) as cr, from_uid from randos where from_uid not in (select uid from seeder) group by from_uid");
 
     // delete from c1 if a uid has been sent 3 or more randos in the last hour
     // NOTE: comment out following line for testing, otherwise you'll get throttled
-    D->sql_simple("delete from c1 where from_uid in (select to_uid from sent_to where strftime('%s', 'now') - time < 3600 group by to_uid having(count(*) > 2));");
+    D->sql_simple("delete from c1 where from_uid in (select to_uid from sent_to where strftime('%s', 'now') - time < 3600 group by to_uid having(count(*) >= ?1));", Throttle);
 
     // c2 is the count of messages sent to uid
     D->sql_simple("create temp table c2 as select count(*) as cs, to_uid from sent_to group by to_uid");
@@ -250,9 +254,16 @@ uid_due_randos()
     // to fail... so just terminate the grace-period here.
     D->sql_simple("insert into res select uid, 0 from grace where sent = 0");
     D->sql_simple("update grace set sent = 1 where sent = 0");
-    vc res = D->sql_simple("select * from res");
+    res = D->sql_simple("select * from res");
     D->sql_simple("drop table res");
     D->commit_transaction();
+    }
+    catch(...)
+    {
+        D->rollback_transaction();
+        res = vc(VC_VECTOR);
+
+    }
     return res;
 }
 
@@ -501,12 +512,20 @@ main(int argc, char *argv[])
     if(argc >= 5)
     {
         Reviewer_only = 1;
-        Iplog = new SimpleSql("/home/dwight/local/db/iplog.sqlite3");
+        const char *iplog = "/home/dwight/local/db/iplog.sqlite3";
+        if(strcmp(argv[4], "-") != 0)
+            iplog = argv[4];
+        Iplog = new SimpleSql(iplog);
         if(!Iplog->init())
         {
             delete Iplog;
             Iplog = 0;
         }
+    }
+
+    if(argc >= 6)
+    {
+        Throttle = atoi(argv[5]);
     }
 
 
