@@ -1425,7 +1425,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         {
             return "unknown";
         }
-        return huid;
+        return QString(huid);
     }
     else if(role == SENT_TO_LOCATION)
     {
