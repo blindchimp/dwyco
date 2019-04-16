@@ -1515,7 +1515,9 @@ DwycoCore::init()
                                 if(!rev.isUndefined())
                                     Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
 
-
+                                // upgrade hack, favorite the geo-info so it isn't cleared
+                                QByteArray mid = qsml.get<QByteArray>(i, DWYCO_QM_BODY_ID);
+                                dwyco_set_fav_msg(mid.constData(), 1);
 
                             }
                         }

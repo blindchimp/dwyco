@@ -596,7 +596,7 @@ scrolling in the listview or doesn't recognizing the swipe.
         z: 3
         warning: "You denied access to storage, which is OK. BUT if you uninstall the app, the pictures stored by this app are also removed. IF YOU WOULD LIKE TO KEEP THE PICTURES YOU GET, EVEN IF YOU UNINSTALL, click the button below to quit the app. Then restart the app, and when it asks for permission to access storage, answer YES."
         inhibit_key: "storage_warning"
-        oops_text: "Quit and reasses my life-choices"
+        oops_text: "Quit (give storage permission next time)"
 
         onVisibleChanged: {
             if(visible) {

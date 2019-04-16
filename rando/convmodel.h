@@ -65,8 +65,8 @@ public:
     void remove_uid_from_model(const QByteArray& uid);
     Conversation * add_uid_to_model(const QByteArray& uid);
 
-    void set_all_selected(bool);
-    void delete_all_selected();
+    Q_INVOKABLE void set_all_selected(bool);
+    Q_INVOKABLE void delete_all_selected();
     void pal_all_selected(bool);
     void block_all_selected();
     bool at_least_one_selected();

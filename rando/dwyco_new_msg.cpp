@@ -236,6 +236,15 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                             mlm->invalidate_sent_to();
                             // these little json control messages don't get seen by the user directly
                             do_add_unviewed = 0;
+                            // note: this is a hack. we favorite the message so it doesn't
+                            // get removed during "clear-non favorites". this keeps us
+                            // from having to check hashes while we are deleting pictures.
+                            // down side is that some of the geo-info stays around across clears.
+                            // we'll fix this eventually.
+                            if(qsml.is_nil(i, DWYCO_QM_BODY_ATTACHMENT))
+                            {
+                                dwyco_set_fav_msg(mid.constData(), 1);
+                            }
                         }
                     }
                 }
