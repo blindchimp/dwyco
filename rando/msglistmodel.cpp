@@ -43,6 +43,8 @@ static QMap<QByteArray, int> Mid_to_percent;
 static QSet<QByteArray> Manual_fetch;
 
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QByteArray> Hash_to_review;
+
 static QMap<QByteArray,QByteArray> Mid_to_hash;
 
 enum {
@@ -69,6 +71,7 @@ enum {
     ATTACHMENT_PERCENT,
     ASSOC_UID, // who the message is from (or to, if sent msg)
     SENT_TO_LOCATION,
+    REVIEW_RESULTS,
 };
 
 static int
@@ -197,24 +200,21 @@ att_file_hash(const QByteArray& huid, const QByteArray& mid, QByteArray& hash_ou
     if(!is_file)
         return 0;
 
-
-    QByteArray rfn = random_fn();
-    rfn = add_pfx(Tmp_pfx, rfn);
-    if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.constData(), rfn.constData()))
+    const char *buf = 0;
+    int len = 0;
+    if(!dwyco_copy_out_file_zap_buf(uid.constData(), uid.length(), mid.constData(), &buf, &len, 4096))
         return 0;
-    QFile f(rfn);
-    if(f.open(QIODevice::ReadOnly))
-    {
-        QCryptographicHash ch(QCryptographicHash::Sha1);
-        if(ch.addData(&f))
-        {
-            QByteArray res = ch.result();
-            Mid_to_hash.insert(mid, res);
-            hash_out = res;
-            return 1;
-        }
-    }
-    return 0;
+    QCryptographicHash ch(QCryptographicHash::Sha1);
+    ch.addData(buf, len);
+
+    QByteArray res = ch.result();
+    Mid_to_hash.insert(mid, res);
+    hash_out = res;
+    dwyco_free_array((char *)buf);
+    return 1;
+
+
+
 
 }
 
@@ -371,6 +371,9 @@ msglist_model::set_all_unselected()
     }
 }
 
+// this is a bit sloppy, but since there aren't that
+// many things in the list, it hopefully won't me a problem
+// to just invalidate everything
 void
 msglist_model::invalidate_sent_to()
 {
@@ -379,6 +382,7 @@ msglist_model::invalidate_sent_to()
     {
         QModelIndex mi = index(i, 0);
         emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LOCATION));
+        emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
     }
 }
 
@@ -898,6 +902,7 @@ msglist_raw::roleNames() const
     rn(ATTACHMENT_PERCENT);
     rn(ASSOC_UID);
     rn(SENT_TO_LOCATION);
+    rn(REVIEW_RESULTS);
 #undef rn
     return roles;
 }
@@ -1257,7 +1262,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
             return QVariant();
         if(type_out != DWYCO_TYPE_INT)
             return QVariant();
-        QDateTime q(QDateTime::fromTime_t(atol(out)));
+        QDateTime q(QDateTime::fromSecsSinceEpoch(atol(out)));
         return QVariant(q);
     }
     else if(role == DATE_CREATED)
@@ -1420,7 +1425,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         {
             return "unknown";
         }
-        return huid;
+        return QString(huid);
     }
     else if(role == SENT_TO_LOCATION)
     {
@@ -1436,6 +1441,22 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
         QByteArray l = Hash_to_loc.value(h, "Unknown");
+        return l;
+    }
+    else if(role == REVIEW_RESULTS)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QByteArray("");
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+        {
+            return QByteArray("");
+        }
+        QByteArray h;
+        if(!att_file_hash(huid, mid, h))
+            return QByteArray("");
+        QByteArray l = Hash_to_review.value(h, "Unknown");
         return l;
     }
 

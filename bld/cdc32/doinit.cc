@@ -240,7 +240,10 @@ init_codec(const char *logname)
         init_netdiag(); // note: can't do netdiag until stun_server is known.
 #endif
         init_callq();
+#ifdef DWYCO_ASSHAT
         init_assholes();
+#endif
+
         init_sysattr();
         init = 1;
         Log->make_entry("init done");

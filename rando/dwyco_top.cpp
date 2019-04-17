@@ -53,7 +53,7 @@
 //#include "audi_qt.h"
 //#endif
 //#include "audo_qt.h"
-#include "dvp.h"
+//#include "dvp.h"
 //#include "callsm.h"
 #include "resizeimage.h"
 #ifdef _Windows
@@ -101,7 +101,9 @@ extern int HasAudioInput;
 extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
-extern QMap<QByteArray,QByteArray> Hash_to_loc;
+
+QMap<QByteArray, QByteArray> Hash_to_loc;
+QMap<QByteArray, QByteArray> Hash_to_review;
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -1274,7 +1276,7 @@ DwycoCore::init()
     update_user_dir(User_pfx);
     update_tmp_dir(Tmp_pfx);
 
-    DVP::init_dvp();
+    //DVP::init_dvp();
     //simple_call::init(this);
     AvoidSSL = 1; //!QSslSocket::supportsSsl();
 
@@ -1487,8 +1489,8 @@ DwycoCore::init()
         for(int i = 0; i < nul; ++i)
         {
             QByteArray u = qul.get<QByteArray>(i, DWYCO_NO_COLUMN);
-            if(u == the_man)
-                continue;
+            //if(u == the_man)
+            //    continue;
             DWYCO_SAVED_MSG_LIST sml;
             if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
             {
@@ -1506,7 +1508,16 @@ DwycoCore::init()
                             {
                                 QJsonValue h = qjo.value("hash");
                                 QJsonValue loc = qjo.value("loc");
-                                Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                                QJsonValue rev = qjo.value("review");
+
+                                if(!loc.isUndefined())
+                                    Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                                if(!rev.isUndefined())
+                                    Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+
+                                // upgrade hack, favorite the geo-info so it isn't cleared
+                                QByteArray mid = qsml.get<QByteArray>(i, DWYCO_QM_BODY_ID);
+                                dwyco_set_fav_msg(mid.constData(), 1);
 
                             }
                         }
@@ -2363,7 +2374,6 @@ DwycoCore::retry_auto_fetch(QString mid)
 }
 
 
-QMap<QByteArray, QByteArray> Hash_to_loc;
 #if 0
 static QMap<QString, QByteArray> Groups;
 static
@@ -2887,6 +2897,20 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     f.copy(dest);
     f.remove();
 
+    QByteArray revhelp;
+    {
+    QFile df(dest);
+    if(!df.open(QFile::ReadOnly))
+        return 0;
+    char buf[4096];
+    int len = df.read(buf, sizeof(buf));
+    QCryptographicHash ch(QCryptographicHash::Sha1);
+    ch.addData(buf, len);
+
+    QByteArray res = ch.result();
+    res = res.toHex();
+    revhelp = QString("{\"hash\" : \"%1\", \"review\" : \"nope\"}").arg(QString(res)).toLatin1();
+    }
     int compid = dwyco_make_file_zap_composition(dest.constData(), dest.length());
     if(compid == 0)
     {
@@ -2894,7 +2918,7 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
         return 0;
     }
     if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0, 1,
+                        revhelp.constData(), revhelp.length(), 0, 1,
                         0, 0)
       )
 

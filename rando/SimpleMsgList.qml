@@ -100,8 +100,7 @@ Page {
 
                 ToolButton {
                     id: sent
-                    property bool hoopty
-                    hoopty: checked
+
                     ButtonGroup.group: radio
                     Layout.fillHeight: true
                     Layout.margins: mm(.25)
@@ -246,24 +245,47 @@ Page {
         id: msg_delegate
 
         CircularImage {
-            width: listview.width
-            height: (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
-
             id: img
-            visible: IS_ACTIVE || IS_QD || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
+            property bool click_to_fetch
+            click_to_fetch: model.uid !== the_man && !IS_ACTIVE && FETCH_STATE === "manual"
+
+            width: listview.width
+            height: {
+                if(click_to_fetch)
+                    return width
+                return (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
+            }
+            visible: click_to_fetch || IS_ACTIVE || IS_QD || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
             asynchronous: true
-            source: {PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : ""}
-            fillMode: Image.PreserveAspectCrop
+            source: {
+                click_to_fetch ? mi("ic_cloud_download_black_24dp.png") :
+                (PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : "")
+            }
+
+            fillMode: click_to_fetch ? Image.Pad : Image.PreserveAspectCrop
+            Text {
+                visible: click_to_fetch
+                text: "(tap to retry fetch)"
+                horizontalAlignment: Text.AlignHCenter
+                anchors.top: img.top
+                anchors.margins: mm(1)
+                z: 10
+            }
+
             sourceSize.width: 512
             sourceSize.height: 512
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    themsgview.mid = model.mid
-                    themsgview.uid = model.ASSOC_UID
-                    themsgview.view_source = source
-                    stack.push(themsgview)
-
+                    if(click_to_fetch) {
+                        console.log("click to refetch")
+                        core.retry_auto_fetch(model.mid)
+                    } else {
+                        themsgview.mid = model.mid
+                        themsgview.uid = model.ASSOC_UID
+                        themsgview.view_source = source
+                        stack.push(themsgview)
+                    }
                 }
             }
             Behavior on visible {
@@ -296,6 +318,61 @@ Page {
                     source: mi("ic_star_black_24dp.png")
                 }
             }
+
+            Image {
+                id: failed_review
+                anchors.top: img.top
+                anchors.left: img.left
+                anchors.margins: mm(.5)
+                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && msglist.model.uid === the_man
+                source: mi("ic_not_interested_black_24dp.png")
+                z: 10
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        if(fail_review_msg.state == "moveIn")
+                            fail_review_msg.state = "moveOut"
+                        else
+                            fail_review_msg.state = "moveIn"
+                    }
+                }
+
+
+                Label {
+                    id: fail_review_msg
+                    visible: x > -width
+                    x: -width
+                    state: "moveIn"
+                    text: "Sorry, pic did not pass review... try again."
+                    color: amber_light
+                    style: Text.Outline
+                    styleColor: "black"
+
+                    states: [
+                        State {
+                            name: "moveOut";
+                            PropertyChanges { target: fail_review_msg; x: failed_review.width ; y: 0 }
+                        },
+                        State {
+                            name: "moveIn";
+                            PropertyChanges { target: fail_review_msg; x: -width; y: 0 }
+                        }
+                    ]
+
+                    transitions: [
+                        Transition {
+                            to: "moveOut"
+                            NumberAnimation { properties: "x,y"; easing.type: Easing.InOutQuad; duration: 400; loops: 1 }
+                        },
+                        Transition {
+                            to: "moveIn"
+                            NumberAnimation { properties: "x,y"; easing.type: Easing.InOutQuad; duration: 400; loops: 1 }
+                        }
+                    ]
+                }
+            }
+
+
 
             Image {
                 id: has_geo_info
@@ -415,8 +492,8 @@ Page {
 //                        color: "green"
 //                    }
                 }
-                visible: IS_ACTIVE
-                active: IS_ACTIVE
+                visible: msglist.model.uid !== the_man && IS_ACTIVE
+                active: msglist.model.uid !== the_man && IS_ACTIVE
             }
         }
     }
@@ -519,7 +596,7 @@ scrolling in the listview or doesn't recognizing the swipe.
         z: 3
         warning: "You denied access to storage, which is OK. BUT if you uninstall the app, the pictures stored by this app are also removed. IF YOU WOULD LIKE TO KEEP THE PICTURES YOU GET, EVEN IF YOU UNINSTALL, click the button below to quit the app. Then restart the app, and when it asks for permission to access storage, answer YES."
         inhibit_key: "storage_warning"
-        oops_text: "Quit and reasses my life-choices"
+        oops_text: "Quit (give storage permission next time)"
 
         onVisibleChanged: {
             if(visible) {

@@ -45,7 +45,6 @@ SOURCES += main.cpp \
     msgpv.cpp \
     ssmap.cpp \
     notificationclient.cpp \
-    dvp.cpp \
     convmodel.cpp \
     getinfo.cpp \
     qlimitedbuffer.cpp \
@@ -226,6 +225,8 @@ include(functions.pri)
 
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava", "src/com/dwyco/android", $$files($$PWD/../bld/android/com/dwyco/android/*.java))
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava2", "src/com/dwyco/cdc32", $$files($$PWD/../bld/android/com/dwyco/cdc32/*.java))
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycorandodeploy", ".", $$PWD/../../deploy-rando/google-services.json)
+
 
 }
 
@@ -296,7 +297,6 @@ HEADERS += \
     msglistmodel.h \
     notificationclient.h \
     dwquerybymember.h \
-    dvp.h \
     convmodel.h \
     getinfo.h \
     dwycolistscoped.h \

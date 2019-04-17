@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_ASSHAT
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -33,4 +33,5 @@ extern int Asshole_filtering;
 #define ASSHOLE_FILTERING_LIGHT 1
 #define ASSHOLE_FILTERING_MEDIUM 2
 #define ASSHOLE_FILTERING_STRONG 3
+#endif
 #endif

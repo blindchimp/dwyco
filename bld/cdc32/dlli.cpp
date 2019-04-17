@@ -1695,7 +1695,10 @@ login_auth_results(vc m, void *, vc, ValidPtr)
         {
             Current_authenticator = m[3][2];
             Pal_auth_state = m[3][3];
+#ifdef DWYCO_ASSHAT
             set_asshole_param(m[3][4]);
+#endif
+
             load_ignoring_you(m[3][5]);
             // note: need to have most things set up before loading
             // the inbox, that is why it is here (we have to do
@@ -2568,7 +2571,7 @@ dwyco_chat_update_call_accept()
     chatq_send_update_call_accept();
 }
 
-
+#if 0
 DWYCOEXPORT
 int
 dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
@@ -2599,6 +2602,7 @@ dwyco_get_ah2(const char *uid, int len_uid)
     ah *= 10.0;
     return (int)ah;
 }
+#endif
 
 DWYCOEXPORT
 void
@@ -5656,7 +5660,7 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
 // YOU MUST CALL dwyco_free_array on returned buffer
 DWYCOEXPORT
 int
-dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out)
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out)
 {
     vc body;
     vc attachment;
@@ -5734,10 +5738,12 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     int fd = open(src.c_str(), O_RDONLY);
     if(fd == -1)
         return 0;
-    // i give up trying to find the right header, sheesh
+    // i give up trying to find the right header for MAX_INT32 blahblah, sheesh
     if(s.st_size >= (1 << 30))
         return 0;
     int sz = s.st_size;
+    if(sz > max_out)
+        sz = max_out;
     char *buf = new char[sz];
     if(read(fd, buf, sz) != sz)
     {

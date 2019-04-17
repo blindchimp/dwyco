@@ -28,6 +28,7 @@ static QSet<QByteArray> Got_msg_from_this_session;
 typedef QHash<QByteArray, QByteArray> UID_MID_MAP;
 static UID_MID_MAP Unviewed_msgs;
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QByteArray> Hash_to_review;
 
 static int
 save_unviewed()
@@ -225,10 +226,25 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                         {
                             QJsonValue h = qjo.value("hash");
                             QJsonValue loc = qjo.value("loc");
-                            Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                            QJsonValue rev = qjo.value("review");
+
+                            if(!loc.isUndefined())
+                                Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                            if(!rev.isUndefined())
+                                Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+
                             mlm->invalidate_sent_to();
                             // these little json control messages don't get seen by the user directly
                             do_add_unviewed = 0;
+                            // note: this is a hack. we favorite the message so it doesn't
+                            // get removed during "clear-non favorites". this keeps us
+                            // from having to check hashes while we are deleting pictures.
+                            // down side is that some of the geo-info stays around across clears.
+                            // we'll fix this eventually.
+                            if(qsml.is_nil(i, DWYCO_QM_BODY_ATTACHMENT))
+                            {
+                                dwyco_set_fav_msg(mid.constData(), 1);
+                            }
                         }
                     }
                 }
