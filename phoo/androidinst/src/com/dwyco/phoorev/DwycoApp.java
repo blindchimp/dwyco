@@ -5,7 +5,7 @@
 // app folder.
 
 package com.dwyco.android;
-import com.dwyco.phoo.R;
+import com.dwyco.phoorev.R;
 
 public class DwycoApp {
     public static int notification_icon() {
