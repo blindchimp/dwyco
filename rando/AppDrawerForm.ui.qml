@@ -15,6 +15,7 @@ Pane {
     //width: 400
     //height: 400
     property alias about_button: about_button
+    property alias help_button: help_button
 
     property real ctrl_pad: 4
     property alias circularImage: circularImage
@@ -97,7 +98,7 @@ Pane {
         }
         ItemDelegate {
             id: clear_nonfav
-            text: "Delete All...\n(except favorites)"
+            text: qsTr("Delete All...\n(except favorites)")
             font.bold: true
             icon.source: mi("ic_delete_black_24dp.png")
         }
@@ -109,14 +110,19 @@ Pane {
             icon.source: mi("ic_delete_black_24dp.png")
         }
         Item {
-
             Layout.fillHeight: true
         }
-
+        ItemDelegate {
+            id: help_button
+            text: qsTr("Help")
+            Layout.fillWidth: true
+            icon.source: mi("ic_help_outline_black_24dp.png")
+        }
         ItemDelegate {
             id: about_button
             text: qsTr("About")
             Layout.fillWidth: true
+            icon.source: mi("ic_info_outline_black_24dp.png")
         }
     }
 }
