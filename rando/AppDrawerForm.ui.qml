@@ -22,6 +22,7 @@ Pane {
     property alias tech_uid: tech_uid
     property alias clear_nonfav: clear_nonfav
     property alias delete_all: delete_all
+    focusPolicy: Qt.NoFocus
     padding: 6
 
     ColumnLayout {
@@ -29,40 +30,66 @@ Pane {
         spacing: 3
         anchors.fill: parent
 
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            color: primary_dark
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: mm(1)
+                Text {
+                    text: "Dwyco Rando"
+                    font.bold: true
+                    font.pixelSize: 20
+                    color: "white"
+                }
+
         RowLayout {
             id: rowLayout
             //width: 100
             //height: 100
+            //Layout.fillWidth: true
+            //anchors.fill: parent
+            //anchors.margins: 10
+            Layout.fillHeight: true
             Layout.fillWidth: true
 
             CircularImage {
                 id: circularImage
-                visible: false
+
                 Layout.maximumHeight: 32
                 Layout.maximumWidth: 32
                 Layout.minimumHeight: 32
                 Layout.minimumWidth: 32
                 Layout.margins: ctrl_pad
+                source: "qrc:/icons/greenguy.png"
             }
-
-            Text {
-                id: text1
-                text: qsTr("Text")
-                clip: true
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                Layout.fillWidth: true
-                Layout.margins: ctrl_pad
-                font.pixelSize: 12
+            ColumnLayout {
+                Text {
+                    id: text1
+                    text: qsTr("Text")
+                    clip: true
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    Layout.fillWidth: true
+                    Layout.margins: ctrl_pad
+                    font.pixelSize: 12
+                    color: "white"
+                }
+                Text {
+                    id: tech_uid
+                    text: qsTr("Text")
+                    clip: true
+                    Layout.fillWidth: true
+                    font.pixelSize: 12
+                    color: "white"
+                }
             }
         }
+            }
+            }
 
-        Text {
-            id: tech_uid
-            text: qsTr("Text")
-            clip: true
-            Layout.fillWidth: true
-            font.pixelSize: 12
-        }
+
 
         Item {
 
@@ -70,12 +97,16 @@ Pane {
         }
         ItemDelegate {
             id: clear_nonfav
-            text: qsTr("Delete All (except favorites)")
+            text: "Delete All...\n(except favorites)"
+            font.bold: true
+            icon.source: mi("ic_delete_black_24dp.png")
         }
 
         ItemDelegate {
             id: delete_all
-            text: qsTr("Delete All")
+            text: qsTr("Delete All...")
+            font.bold: true
+            icon.source: mi("ic_delete_black_24dp.png")
         }
         Item {
 
@@ -89,3 +120,11 @@ Pane {
         }
     }
 }
+
+
+
+
+/*##^## Designer {
+    D{i:0;autoSize:true;height:480;width:640}
+}
+ ##^##*/
