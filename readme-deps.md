@@ -24,6 +24,10 @@ THEN install homebrew, and lastly install Qt5 (5.12 as of this writing).
 
 android:
 
+brew install automake
+(This is for the android build of some of the old xiph codecs, so
+get the hand-coded assembly performance improvements.)
+
 The current sdkmanager from google doesn't work with jdk12.
 Oracle is no longer providing previous versions of jdk.
 

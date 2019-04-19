@@ -244,6 +244,14 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                             if(qsml.is_nil(i, DWYCO_QM_BODY_ATTACHMENT))
                             {
                                 dwyco_set_fav_msg(mid.constData(), 1);
+                                // note: this is a hack... we set the msg tag to "hidden",  but
+                                // we actually mean "new". we then display the annotation differentlhy
+                                // in the ui so the user knows it is new. then when they have seen it,
+                                // we unset the tag. only reason we do this is because we already have
+                                // the infrastructure for "hidden" setup, which we aren't using for that
+                                // purpose in this app.
+                                dwyco_set_msg_tag(mid.constData(), "_hid");
+
                             }
                         }
                     }

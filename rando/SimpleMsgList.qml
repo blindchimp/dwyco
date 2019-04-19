@@ -108,9 +108,23 @@ Page {
 
                     text: "Sent"
                     background: Rectangle {
-                        id: sent_bg_rect
+                        id: bgblink2
                         color: amber_dark
                         radius: 6
+                        ParallelAnimation {
+                            loops: 30
+                            running: core.unread_count > 0
+                            ColorAnimation {
+                                target: bgblink2
+                                property: "color"
+                                from: amber_dark
+                                to: "black"
+                                duration: 1000
+                            }
+                            onStopped: {
+                                bgblink2.color = amber_dark
+                            }
+                        }
                     }
                     contentItem: Text {
                         x: sent.leftPadding
