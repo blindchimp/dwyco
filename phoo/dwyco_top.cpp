@@ -1489,6 +1489,7 @@ DwycoCore::init()
     int len_uid;
     dwyco_get_my_uid(&uid, &len_uid);
     My_uid = QByteArray(uid, len_uid);
+    update_this_uid(My_uid.toHex());
 
 
     // for easier testing, setup for raw file acq

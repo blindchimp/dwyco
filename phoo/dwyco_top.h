@@ -39,6 +39,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, audio_full_duplex)
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
+    QML_READONLY_VAR_PROPERTY(QString, this_uid)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -54,6 +55,7 @@ public:
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
         m_use_archived = true;
+        m_this_uid = "";
     }
     static QByteArray My_uid;
 

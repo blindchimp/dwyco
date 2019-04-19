@@ -122,6 +122,15 @@ Page {
                     }
                 }
 
+                MenuItem {
+                    text: "Review"
+                    visible: core.this_uid === the_man
+                    onTriggered: {
+                        stack.push(msg_review)
+
+                    }
+                }
+
 
             }
         }
@@ -129,6 +138,11 @@ Page {
 
     MsgReport {
         id: msg_report
+        visible: false
+    }
+
+    MsgReview {
+        id: msg_review
         visible: false
     }
 
