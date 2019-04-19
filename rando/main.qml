@@ -284,6 +284,17 @@ ApplicationWindow {
         }
     }
 
+    Loader {
+        id: help_dialog
+        visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/Help.qml"
+            }
+        }
+    }
+
     SimpleMsgList {
         id: simple_msg_list
         visible: false

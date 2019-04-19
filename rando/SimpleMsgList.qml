@@ -549,12 +549,18 @@ scrolling in the listview or doesn't recognizing the swipe.
         core.send_simple_cam_pic(the_man, "for review", filename)
 
     }
+    Pane {
+        visible: {model.uid === the_man && listview.count === 0}
+        font.bold: true
+        anchors.fill: parent
+        background: parent.background
 
     ColumnLayout {
-        visible: {model.uid === the_man && listview.count === 0}
+        //visible: {model.uid === the_man && listview.count === 0}
 
         anchors.fill: parent
         anchors.margins: mm(5)
+
         Item {
             Layout.fillHeight: true
         }
@@ -573,6 +579,7 @@ scrolling in the listview or doesn't recognizing the swipe.
         Item {
             Layout.fillHeight: true
         }
+    }
     }
 
     RoundButton {
