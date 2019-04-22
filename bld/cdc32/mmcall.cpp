@@ -33,6 +33,9 @@
 #include "qauth.h"
 #include "pval.h"
 #include "qmsg.h"
+#ifdef _Windows
+typedef unsigned long in_addr_t;
+#endif
 
 using namespace dwyco;
 
@@ -175,7 +178,7 @@ MMCall::start_call(int media_sel)
     this->media_select = media_sel;
     mc->call_type = call_type;
 
-    u_long addr;
+    in_addr_t addr;
     if((addr = inet_addr((const char *)host)) == INADDR_NONE)
     {
         // start connect process at resolve stage

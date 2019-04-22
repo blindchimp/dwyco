@@ -74,7 +74,7 @@ DH_alternate::insert_record(vc uid, vc alt_name, vc dh_static)
     try {
         DHG_db->start_transaction();
         VCArglist a;
-        a.append("insert into keys values($1, $2, $3, $4, $5)");
+        a.append("insert into keys values(?1, ?2, ?3, ?4, ?5)");
         a.append(to_hex(uid));
         a.append(alt_name);
         vc v(VC_VECTOR);
@@ -114,8 +114,11 @@ DH_alternate::load_account(vc alternate_name)
 {
     vc res;
     try {
-        res = DHG_db->sql_simple("select pubkey, privkey from keys where alt_name = $1 order by time desc limit 1",
-                                 alternate_name);
+        VCArglist a;
+        a.append("select pubkey, privkey from keys where uid = ?1 and alt_name = ?2 order by time desc limit 1");
+        a.append(to_hex(uid));
+        a.append(alternate_name);
+        res = DHG_db->query(&a);
     } catch (...) {
         GRTLOG("cant create DH account", 0, 0);
         return 0;

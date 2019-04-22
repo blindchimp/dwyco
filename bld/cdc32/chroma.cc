@@ -41,10 +41,8 @@
 #include "sqrs.h"
 #include "statfun.h"
 #include "chroma.h"
-//#define VERB(x) if(Verbose) {x}
-#define VERB(x)
-extern int Verbose;
 
+#define VERB(x)
 
 extern JSAMPLE *Range_limit;
 

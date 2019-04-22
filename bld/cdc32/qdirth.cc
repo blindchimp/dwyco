@@ -29,17 +29,20 @@ void clear_local_ignore();
 void add_local_ignore(vc uid);
 void del_local_ignore(vc uid);
 vc get_local_ignore();
-vc generate_mac_msg(vc);
+
 int send_to_secondary(vc name, vc ip, vc port, QckMsg m, QckDone d);
 vc to_hex(vc);
 vc vclh_serialize(vc);
 vc vclh_sha(vc);
+extern int Database_id;
+extern int Chat_id;
+vc Auto_update_hash;
 
+namespace dwyco {
 DwVec<QckDone> Waitq;
 DwListA<vc> Response_q;
 int Serial;
 
-vc Auto_update_hash;
 // this is used to figure out if there is a bulk operation
 // in progress and we want to eliminate timeouts
 // temporarily.
@@ -54,8 +57,7 @@ reqtype(const char *name, const QckDone& d)
     return v;
 }
 
-extern int Database_id;
-extern int Chat_id;
+
 
 static void
 dirth_send(QckMsg& m, QckDone& d)
@@ -970,6 +972,7 @@ dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d)
 
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+}
 }
 
 void

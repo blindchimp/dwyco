@@ -14,7 +14,7 @@
    <enum>Qt::DefaultContextMenu</enum>
   </property>
   <property name="windowTitle">
-   <string>Dwyco (2.18)</string>
+   <string>Dwyco (2.19)</string>
   </property>
   <property name="windowIcon">
    <iconset resource="icons.qrc">

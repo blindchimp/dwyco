@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_THEORA_CODEC
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -65,4 +65,5 @@ private:
     int cur_fcols;
 
 };
+#endif
 #endif

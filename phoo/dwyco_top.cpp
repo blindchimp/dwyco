@@ -14,7 +14,7 @@
 #include <QUrl>
 #include <QUrlQuery>
 #include <QSslSocket>
-#include <QApplication>
+#include <QGuiApplication>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -121,11 +121,13 @@ hack_unread_count()
         TheDwycoCore->update_unread_count(has_unviewed_msgs());
 }
 
-static void
+void
 reload_conv_list()
 {
     Conv_sort_proxy->setDynamicSortFilter(false);
-    dwyco_load_users2(0, 0);
+    int total = 0;
+    dwyco_load_users2(TheDwycoCore->get_use_archived() ? 0 : 1, &total);
+    TheDwycoCore->update_total_users(total);
     TheConvListModel->load_users_to_model();
     Conv_sort_proxy->setDynamicSortFilter(true);
 }
@@ -444,6 +446,7 @@ dwyco_sys_event_callback(int cmd, int id,
     {
         namestr = QByteArray(name, len_name);
     }
+    dwyco_add_entropy_timer(suid.constData(), suid.length());
 
     //printf("SYS EVENT %d\n", cmd);
 
@@ -760,6 +763,7 @@ static
 void
 setup_locations()
 {
+    QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
 #ifdef ANDROID
     if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
@@ -767,6 +771,10 @@ setup_locations()
         QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
         if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
         {
+            // this needs to be thought out a little more... if you deny this, you can't
+            // access your photos on the device easily. maybe need to just request "read"
+            // in this case.
+            filepath = QStandardPaths::AppDataLocation;
             exit(0);
         }
     }
@@ -776,7 +784,7 @@ setup_locations()
     QString userdir;
     if(args.count() == 1)
     {
-        userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        userdir = QStandardPaths::writableLocation(filepath);
         userdir += "/dwyco/phoo/";
     }
     else
@@ -1257,6 +1265,13 @@ DwycoCore::send_zap(int zid, QString recipient, int save_sent)
     return 1;
 }
 
+void
+DwycoCore::update_dwyco_client_name(QString name)
+{
+    QByteArray nm = name.toLatin1();
+    dwyco_set_client_version(nm.constData(), nm.length());
+}
+
 
 void
 DwycoCore::init()
@@ -1408,6 +1423,7 @@ DwycoCore::init()
     else
         inv = 1;
     dwyco_set_initial_invis(inv);
+    dwyco_inhibit_pal(1);
 #ifdef ANDROID
     // this is a kluge for android
     // the FCM token may or not be available at this point, but
@@ -1428,7 +1444,7 @@ DwycoCore::init()
         ::abort();
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
-    dwyco_set_setting("call_acceptance/no_listen", "0");
+    dwyco_set_setting("net/listen", "1");
 
     new profpv;
     // the order of these is important, you have to clear the cache
@@ -1440,7 +1456,7 @@ DwycoCore::init()
     //connect(this, SIGNAL(pal_event(QString)), sort_proxy_model, SLOT(decorate_user(QString)));
     //connect(this, SIGNAL(ignore_event(QString)), sort_proxy_model, SLOT(decorate_user(QString)));
 
-    connect(QApplication::instance(), SIGNAL(applicationStateChanged(Qt::ApplicationState)), this, SLOT(app_state_change(Qt::ApplicationState)));
+    connect(QGuiApplication::instance(), SIGNAL(applicationStateChanged(Qt::ApplicationState)), this, SLOT(app_state_change(Qt::ApplicationState)));
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheChatListModel, SLOT(uid_resolved(QString)));
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheChatListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(new_msg(QString,QString,QString)), TheChatListModel, SLOT(decorate(QString,QString,QString)));
@@ -1457,6 +1473,8 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString)), mlm, SLOT(msg_recv_status(int,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
+    connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
+    connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);
@@ -1471,6 +1489,7 @@ DwycoCore::init()
     int len_uid;
     dwyco_get_my_uid(&uid, &len_uid);
     My_uid = QByteArray(uid, len_uid);
+    update_this_uid(My_uid.toHex());
 
 
     // for easier testing, setup for raw file acq
@@ -1485,7 +1504,7 @@ DwycoCore::init()
 
     dwyco_set_raw_files(
         "/home/dwight/vidfile.lst",
-        "/2/dwight/stuff/320x240/ml%04d.ppm",
+        "/1204/dwight/stuff/320x240/ml%04d.ppm",
         0, // use list of files
         1,
         0 // preload
@@ -2561,6 +2580,7 @@ DwycoCore::service_channels()
             if(n > 0)
             {
                 QByteArray mid = quml.get<QByteArray>(0, DWYCO_QMS_ID);
+                dwyco_add_entropy_timer(mid.constData(), mid.length());
                 if(quml.is_nil(0, DWYCO_QMS_IS_DIRECT))
                 {
                     auto_fetch(mid);

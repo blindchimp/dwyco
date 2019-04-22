@@ -413,7 +413,7 @@ int DWYCOEXPORT dwyco_chat_get_admin_info();
 
 void DWYCOEXPORT dwyco_set_chat_ctx_callback(DwycoChatCtxCallback cb);
 void DWYCOEXPORT dwyco_set_chat_ctx_callback2(DwycoChatCtxCallback2 cb);
-void DWYCOEXPORT dwyco_set_chat_server_status_callback(DwycoStatusCallback cb);
+//void DWYCOEXPORT dwyco_set_chat_server_status_callback(DwycoStatusCallback cb);
 
 void DWYCOEXPORT dwyco_chat_create_user_lobby(const char *dispname,
         const char *category,
@@ -492,6 +492,12 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_MSG_DOWNLOAD_OK 24
 #define DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED 26
 #define DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED 27
+
+#define DWYCO_SE_CHAT_SERVER_CONNECTING 28
+#define DWYCO_SE_CHAT_SERVER_CONNECTION_SUCCESSFUL 29
+#define DWYCO_SE_CHAT_SERVER_DISCONNECT 30
+#define DWYCO_SE_CHAT_SERVER_LOGIN 31
+#define DWYCO_SE_CHAT_SERVER_LOGIN_FAILED 32
 
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -694,6 +700,7 @@ int DWYCOEXPORT dwyco_load_users2(int recent, int *total_out);
 int DWYCOEXPORT dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out);
 int DWYCOEXPORT dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_get_message_index2(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, int *available_count_out, int load_count);
+int DWYCOEXPORT dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, long logical_clock);
 int DWYCOEXPORT dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int uid_len, int load_sent);
 int DWYCOEXPORT dwyco_get_unsaved_messages(DWYCO_UNSAVED_MSG_LIST *list_out, const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id);
@@ -743,10 +750,18 @@ DWYCO_LIST DWYCOEXPORT dwyco_pal_get_list();
 void DWYCOEXPORT dwyco_pal_relogin();
 int DWYCOEXPORT dwyco_get_pal_logged_in();
 
-void DWYCOEXPORT dwyco_set_fav_msg(const char *uid, int len_uid, const char *mid, int fav);
-int DWYCOEXPORT dwyco_get_fav_msg(const char *uid, int len_uid, const char *mid);
+void DWYCOEXPORT dwyco_set_fav_msg(const char *mid, int fav);
+int DWYCOEXPORT dwyco_get_fav_msg(const char *mid);
 // this clears all the messages for a user except for ones that are "favorites"
 int DWYCOEXPORT dwyco_clear_user_unfav(const char *uid, int len_uid);
+
+void DWYCOEXPORT dwyco_set_msg_tag(const char *mid, const char *tag);
+void DWYCOEXPORT dwyco_unset_msg_tag(const char *mid, const char *tag);
+void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
+int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
+int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
+int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
+int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 
 void DWYCOEXPORT dwyco_set_alert(const char *uid, int len_uid, int val);
 int DWYCOEXPORT dwyco_get_alert(const char *uid, int len_uid);
@@ -1007,6 +1022,9 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 // clock, with the date being used as a backup if the logical clock on the
 // message isn't available. the logical clock provides better ordering when the
 // dates on the two computers sending messages are not the same.
+// note: ca 2018, ASSOC_UID is set to who a message is from (or to, for sent msgs)
+// this is for indexes that refer to messages for multiple UID, like
+// indexes derived from a tag, or group message.
 
 #define DWYCO_MSG_IDX_DATE "000"
 #define DWYCO_MSG_IDX_MID "001"
@@ -1019,8 +1037,11 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 #define DWYCO_MSG_IDX_ATT_HAS_VIDEO "008"
 #define DWYCO_MSG_IDX_ATT_HAS_AUDIO "009"
 #define DWYCO_MSG_IDX_ATT_IS_SHORT_VIDEO "010"
-#define DWYCO_MSG_IDX_IS_DELIVERED "011"
-#define DWYCO_MSG_IDX_IS_VIEWED "012"
+#define DWYCO_MSG_IDX_LOGICAL_CLOCK "011"
+#define DWYCO_MSG_IDX_ASSOC_UID "012"
+#define DWYCO_MSG_IDX_IS_DELIVERED "013"
+#define DWYCO_MSG_IDX_IS_VIEWED "014"
+
 
 // DWYCO_QD_MSG_LIST, list of messages that are not sent yet.
 #define DWYCO_QD_MSG_RECIPIENT "000"
@@ -1041,6 +1062,8 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 #define DWYCO_PAL_AUTH_ACCEPT 3
 #define DWYCO_SPECIAL_TYPE_USER 4
 #define DWYCO_SPECIAL_TYPE_BACKUP 5
+#define DWYCO_SPECIAL_TYPE_DELIVERED 6
+#define DWYCO_SPECIAL_TYPE_VIEWED 7
 
 // the following id's show up in
 // the message summary field DWYCO_QMS_BODY_SPECIAL_TYPE,
@@ -1062,6 +1085,7 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
 int DWYCOEXPORT dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
 int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out);
+int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out);
 
 // "what" returns from the dwyco_is_special_message function
 #define DWYCO_SUMMARY_PAL_AUTH_REQ 0
@@ -1076,6 +1100,8 @@ int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_o
 // exist in the server message list, and are just deleted
 // when they are no longer needed. the summary is generated by
 // the server, and cannot be generated by clients.
+// note: VIEWED implies DELIVERED, so you avoid
+// sending both.
 #define DWYCO_SUMMARY_DELIVERED 8
 #define DWYCO_SUMMARY_VIEWED 9
 
@@ -1109,11 +1135,13 @@ void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
 void DWYCOEXPORT dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 void DWYCOEXPORT dwyco_database_login();
 int DWYCOEXPORT dwyco_database_online();
+int DWYCOEXPORT dwyco_chat_online();
 int DWYCOEXPORT dwyco_database_auth_remote();
 void DWYCOEXPORT dwyco_inhibit_database(int i);
 void DWYCOEXPORT dwyco_inhibit_pal(int i);
 void DWYCOEXPORT dwyco_inhibit_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_lanmap(int i);
+//void DWYCOEXPORT dwyco_inhibit_chat(int i);
 
 int DWYCOEXPORT dwyco_get_audio_hw(int *has_audio_input, int *has_audio_output, int *audio_hw_full_duplex);
 int DWYCOEXPORT dwyco_set_all_mute(int);
@@ -1250,6 +1278,7 @@ int DWYCOEXPORT dwyco_get_invisible_state();
 
 // message composition functions
 int DWYCOEXPORT dwyco_make_zap_composition(char *must_be_zero);
+int DWYCOEXPORT dwyco_make_zap_composition_raw(const char *filename, const char *possible_extension);
 // WARNING: dup-ing should only be used in very specific cases.
 int DWYCOEXPORT dwyco_dup_zap_composition(int compid);
 int DWYCOEXPORT dwyco_make_forward_zap_composition(
@@ -1278,6 +1307,10 @@ dwyco_copy_out_file_zap(
     const char *msg_id,
     const char *dst_filename
 );
+
+int
+DWYCOEXPORT
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out);
 
 int DWYCOEXPORT
 dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filename);
@@ -1311,6 +1344,7 @@ int DWYCOEXPORT dwyco_zap_play(int compid,
 // these messages are delivered for interrupted background sends too.
 int DWYCOEXPORT dwyco_zap_send4(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, const char **pers_id_out, int *len_pers_id_out);
 int DWYCOEXPORT dwyco_zap_send5(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, const char **pers_id_out, int *len_pers_id_out);
+int DWYCOEXPORT dwyco_zap_send6(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, int save_sent, int defer, const char **pers_id_out, int *len_pers_id_out);
 
 int DWYCOEXPORT dwyco_zap_cancel(int compid);
 int DWYCOEXPORT dwyco_zap_still_active(int compid);
@@ -1398,7 +1432,7 @@ void DWYCOEXPORT dwyco_sub_get(const char **reg_out, int *len_out);
 // at which time, the process that called this function should exit.
 // the exit will release the "lock" and allow the main app to continue
 // normally.
-int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx);
+int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 // some more helper functions called from java for android related stuff
 // strings in this case are utf-8, null terminated i hope
 void DWYCOEXPORT dwyco_set_aux_string(const char *str);
@@ -1407,6 +1441,7 @@ void DWYCOEXPORT dwyco_clear_contact_list();
 int DWYCOEXPORT dwyco_add_contact(const char *name, const char *phone, const char *email);
 void DWYCOEXPORT dwyco_signal_msg_cond();
 void DWYCOEXPORT dwyco_wait_msg_cond(int ms);
+int DWYCOEXPORT dwyco_test_funny_mutex(int port);
 
 // api for creating a simple backup of messages and account info
 // "create_backup" creates an initial backup, then subsequent calls
@@ -2074,35 +2109,6 @@ dwyco_get_vidcap_data(
     DWUIDECLARG_END
 );
 
-// this is miscellaneous UI config
-// that isn't used in ICUII.
-int DWYCOEXPORT
-dwyco_set_config_display(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(bool, fit_video)
-    DWUIDECLARG(bool, integral_zoom)
-    DWUIDECLARG(bool, jumbo_buttons)
-    DWUIDECLARG(bool, no_buttons)
-    DWUIDECLARG(bool, small_buttons)
-    DWUIDECLARG(bool, mini_toolbar)
-    DWUIDECLARG(bool, blinky)
-    DWUIDECLARG_END
-);
-
-
-int DWYCOEXPORT
-dwyco_get_config_display(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(bool, fit_video)
-    DWUIDECLARG_OUT(bool, integral_zoom)
-    DWUIDECLARG_OUT(bool, jumbo_buttons)
-    DWUIDECLARG_OUT(bool, no_buttons)
-    DWUIDECLARG_OUT(bool, small_buttons)
-    DWUIDECLARG_OUT(bool, mini_toolbar)
-    DWUIDECLARG_OUT(bool, blinky)
-    DWUIDECLARG_END
-);
-
 // this is only used for testing without
 // a camera. it is NOT used in ICUII.
 int DWYCOEXPORT
@@ -2170,8 +2176,6 @@ dwyco_set_call_accept(
     DWUIDECLARG(const char * , pw)			// icuii: connection password required to connect
     DWUIDECLARG(bool, auto_accept)		// icuii: 1 if "accept calls automatically" is checked
     DWUIDECLARG(bool, require_pw)       // icuii: 1 if "require password" is checked
-    DWUIDECLARG(bool, accept_any_rating)// icuii: 1 if "accept calls from other ratings" is checked
-    DWUIDECLARG(bool, no_listen)		// icuii: always 0
     DWUIDECLARG_END
 );
 
@@ -2187,8 +2191,6 @@ dwyco_get_call_accept(
     DWUIDECLARG_OUT(const char * , pw)
     DWUIDECLARG_OUT(bool, auto_accept)
     DWUIDECLARG_OUT(bool, require_pw)
-    DWUIDECLARG_OUT(bool, accept_any_rating)
-    DWUIDECLARG_OUT(bool, no_listen)
     DWUIDECLARG_END
 );
 
@@ -2269,6 +2271,7 @@ dwyco_set_net_data(
     DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
     DWUIDECLARG(int, disable_upnp)				// icuii: 0 , disabled for compat right now
     DWUIDECLARG(int, media_select)				// defaults to "handshake", see *MEDIA_SEL* defines
+    DWUIDECLARG(int, listen)
     DWUIDECLARG_END
 );
 
@@ -2284,6 +2287,7 @@ dwyco_get_net_data(
     DWUIDECLARG_OUT(bool, advertise_nat_ports)
     DWUIDECLARG_OUT(int, disable_upnp)
     DWUIDECLARG_OUT(int, media_select)
+    DWUIDECLARG_OUT(int, listen)
     DWUIDECLARG_END
 );
 

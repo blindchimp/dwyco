@@ -22,7 +22,7 @@ INSTALLS += appdir_icon appdir_desktop
 }
 
 
-QT += core qml quick multimedia network xml widgets #positioning
+QT += core qml quick multimedia network xml #widgets #positioning
 QT += quickcontrols2
 
 android: QT += androidextras
@@ -110,7 +110,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
@@ -119,10 +119,51 @@ $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
 $${D}/libuv/libuv.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -lsqlite3 \
 -lv4l2
 
 PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${D}/jhead/libjhead.a \
+$${D}/v4lcap/libv4lcap.a \
+$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/libuv/libuv.a
+
+}
+
+wasm-emscripten {
+DEFINES += LINUX
+DEFINES += DWYCO_APP_DEBUG
+equals(FORCE_DESKTOP_VGQT, 1) {
+DEFINES += DWYCO_FORCE_DESKTOP_VGQT
+}
+#INCLUDEPATH += $${DINC}/v4lcap
+
+#QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
+#QMAKE_LFLAGS += -g #-fsanitize=address
+
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+QMAKE_LFLAGS += -s ERROR_ON_UNDEFINED_SYMBOLS=0
+
+SHADOW=$${OUT_PWD}
+D = $${SHADOW}/../bld
+
+LIBS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
 $${D}/crypto5/libcrypto5.a \
@@ -139,9 +180,7 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
-$${D}/v4lcap/libv4lcap.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
-$${D}/libuv/libuv.a
+$${D}/qt-qml-models/libQtQmlModels.a
 
 }
 
@@ -165,13 +204,14 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${PWD}/../bld/macdrv/libmacdrv.a \
 $${D}/libuv/libuv.a \
 -lsqlite3 \
@@ -217,12 +257,13 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qt-qml-models/libQtQmlModels.a
 
 }
@@ -265,7 +306,10 @@ ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 #$${D}/libjhead.a \
 #$${D}/libjenkins.a #-lgcc
 
-QMAKE_LFLAGS += -g
+include(functions.pri)
+
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava", "src/com/dwyco/android", $$files($$PWD/../bld/android/com/dwyco/android/*.java))
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava2", "src/com/dwyco/cdc32", $$files($$PWD/../bld/android/com/dwyco/cdc32/*.java))
 
 }
 
@@ -288,9 +332,9 @@ CONFIG(debug) {
 S=debug
 }
 
-CONFIG(release) {
-S=release
-}
+#CONFIG(release) {
+#S=release
+#}
 
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
@@ -305,16 +349,38 @@ $${D}\\pbm\\$${S}\\pbm.lib \
 $${D}\\zlib\\$${S}\\zlib.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
 $${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora\\$${S}\\theora.lib \
+$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
 $${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
-winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib binmode.obj \
-delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
+$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
+winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj \
+$${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
 
-QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
-QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
+#delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
+#QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
+#QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
+
+PRE_TARGETDEPS += \
+$${D}\\cdc32\\$${S}\\cdc32.lib \
+$${D}\\vc\\$${S}\\vc.lib \
+$${D}\\crypto5\\$${S}\\crypto5.lib \
+$${D}\\dwcls\\$${S}\\dwcls.lib \
+$${D}\\gsm\\$${S}\\gsm.lib \
+$${D}\\kazlib\\$${S}\\kazlib.lib \
+$${D}\\ppm\\$${S}\\ppm.lib \
+$${D}\\pgm\\$${S}\\pgm.lib \
+$${D}\\pbm\\$${S}\\pbm.lib \
+$${D}\\zlib\\$${S}\\zlib.lib \
+$${D}\\jenkins\\$${S}\\jenkins.lib \
+$${D}\\vorbis112\\$${S}\\vorbis.lib \
+$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
+$${D}\\speex\\$${S}\\speex.lib \
+$${D}\\ogg\\$${S}\\ogg.lib \
+$${D}\\jhead\\$${S}\\jhead.lib \
+$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
+$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\vorbis112\\win32\\vs2003\\libvorbis\\Debug\\libvorbis.lib \
 #\\mk\\depot\\dwycore\\bld\\theora\\win32\\vs2008\\win32\\Debug\\libtheora_static.lib \
@@ -369,15 +435,20 @@ DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.properties \
     androidinst/gradlew \
     androidinst/gradlew.bat \
-    androidinst/src/com/dwyco/phoo/NotificationClient.java \
-    androidinst/src/com/dwyco/phoo/Push_Notification.java \
-    androidinst/src/com/dwyco/phoo/dwybg.java \
-    androidinst/src/com/dwyco/phoo/dwybgJNI.java \
-    androidinst/src/com/dwyco/phoo/Dwyco_Message.java \
-    androidinst/src/com/dwyco/phoo/StickyIntentService.java \
     androidinst/google-services.json \
-    androidinst/src/com/dwyco/phoo/SocketLock.java \
-    androidinst/src/com/dwyco/phoo/MyFirebaseMessagingService.java
+    androidinst/src/com/dwyco/cdc32/dwybg.java \
+    androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
+    androidinst/src/com/dwyco/phoo/app.java \
+    androidinst/src/com/dwyco/android/Dwyco_Message.java \
+    androidinst/src/com/dwyco/android/DwycoProbe.java \
+    androidinst/src/com/dwyco/android/DwycoSender.java \
+    androidinst/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst/src/com/dwyco/android/NotificationClient.java \
+    androidinst/src/com/dwyco/android/Push_Notification.java \
+    androidinst/src/com/dwyco/android/SocketLock.java \
+    androidinst/src/com/dwyco/android/StickyIntentService.java \
+    androidinst/src/com/dwyco/phoo/DwycoApp.java
+
 
 contains(ANDROID_TARGET_ARCH,x86) {
     ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so

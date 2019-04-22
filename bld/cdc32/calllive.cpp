@@ -103,6 +103,9 @@
 #include "mmcall.h"
 #include "dwrtlog.h"
 #include "sysattr.h"
+#ifdef _Windows
+typedef unsigned long in_addr_t;
+#endif
 
 extern int Disable_SAC;
 int Media_select = MEDIA_VIA_HANDSHAKE;
@@ -425,7 +428,7 @@ stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr vp, M
         mc->call_type = mmc->call_type;
     }
 
-    u_long addr;
+    in_addr_t addr;
     if((addr = inet_addr((const char *)host)) == INADDR_NONE)
     {
         // start connect process at resolve stage

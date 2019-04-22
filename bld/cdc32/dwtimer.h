@@ -41,7 +41,7 @@ public:
     DwTimer(const char *timer_id = 0);
     virtual ~DwTimer();
 
-    static dwtime_t next_expire_time();
+    static dwtime_t next_expire_time(DwString&);
 
     int is_expired();
     void ack_expire();

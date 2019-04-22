@@ -73,28 +73,39 @@ void
 MMChannel::set_progress_got(int len)
 {
     char a[4096];
-    total_got += len;
     if(expected_size == 0)
         expected_size = 1;
-    bps_file_xfer.add_units(len * 8);
-    if(bps_file_xfer.is_expired())
+
+    if(total_got != expected_size)
     {
-        double rate = (double)bps_file_xfer.get_rate() / 1000;
+    int old_pct = (int)(((double)total_got * 100) / expected_size);
+    int new_pct = (int)(((double)(total_got + len) * 100) / expected_size);
+    total_got += len;
+    if(old_pct / 10 == new_pct / 10)
+        return;
+    }
+
+
+    //bps_file_xfer.add_units(len * 8);
+    //if(bps_file_xfer.is_expired())
+    //{
+    //    double rate = (double)bps_file_xfer.get_rate() / 1000;
         if(total_got < 1024)
         {
-            sprintf(a, "Xfer: %d bytes (%.1f Kbps)", total_got, rate);
+            sprintf(a, "Xfer: %d bytes", total_got);
         }
         else if(total_got < 1024 * 1024)
         {
-            sprintf(a, "Xfer: %dK (%.1f Kbps)", total_got / 1024, rate);
+            sprintf(a, "Xfer: %dK", total_got / 1024);
         }
         else
         {
-            sprintf(a, "Xfer: %4.2fM (%.1f Kbps)", (double)total_got / (1024 * 1024), rate);
+            sprintf(a, "Xfer: %4.2fM", (double)total_got / (1024 * 1024));
         }
+
+    //}
         int p = (int)(((double)total_got * 100) / expected_size);
         set_progress_status(a, p);
-    }
 }
 
 void

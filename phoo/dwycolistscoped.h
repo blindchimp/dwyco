@@ -28,6 +28,7 @@ public:
     void release() {
         if(value)
             dwyco_list_release(value);
+        value = 0;
     }
     int rows() {
         int n;

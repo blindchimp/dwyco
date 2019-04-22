@@ -1,0 +1,19 @@
+* need messages for pk warnings, ie, someones pk changed
+* need a search thing for lists (or a filter, anyways)
+* clearing msgs doesn't clear pending sends... should it?
+* don't allow forwarding of q'd messages. allow deletion of q'd message.
+* add "don't notify except for favorites"
+* add "hidden" users
+* block user should remove user from all dynamic models, delete user should remove the user from all stored models
+* on an ignore event, need to reload most of the models
+* there is a problem with propagating "uid_resolved" to object that we don't know exist yet... there has to be a way of sending signals from the main dwyco object to models that may not exist at init time. doing it when the model object is created doesn't work either because it may be getting created before the dwyco object is initialized.
+* msglist isn't always repositioned to the bottom on a new message. need to check to see if the listview is scrolled near the bottom, and move it to the bottom properly (but leave it alone if the user is scrolling around somewhere else.)
+* in airplane mode, main UI will not "deliver" a message from the inbox since it can't get initialized (no server login.)
+* need to be able to cancel out of the first screen, right now you are stuck and the app won't terminate
+* EMAIL isn't being set properly in first run in the profile update pane.
+* logical clock doesn't appear to be getting recorded right on sends if the app is closed and reopened
+* msg model is not updated after "snap and send" if disconnected and msg is only q-ed but not sent
+* viewing a msg that is q-ed doesn't work (or should be disallowed?) how much manipulation should be allowed for q-ed msgs.
+* the "aux" file will have a stale ip address if the servers2 file is updated while msgs are q-ed. need to give up after a certain number of tries and retry with new ip
+* there is a problem where the advanced power management stuff may be stopping the background processing, but the backgrounder still has the sockets "locking" the app. when the UI starts, it doesn't appear to restart the background thing (which would allow it to release the socket), and the UI ends up stuck. haven't verified this, just a suspicion. seems to happen when you are in power-saver mode.
+* when you forward a message, if even an old one, it should assign a new logical clock value to it so that it gets sorted into the right place in the model

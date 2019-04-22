@@ -113,7 +113,7 @@ save_audio()
 // little race conditions, we just brute force it here.
 //
 
-void
+static void
 DeleteFileQ(const char *fn)
 {
     if(DeleteFile(newfn(fn).c_str()))

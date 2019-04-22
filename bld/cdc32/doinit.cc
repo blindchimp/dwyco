@@ -64,16 +64,20 @@
 #include "xinfo.h"
 #include "dhsetup.h"
 #include "dwyco_rand.h"
+#include "dirth.h"
+#include "cdcpal.h"
+#include "se.h"
+#include "qdirth.h"
+#include "ta.h"
 
 vc Myhostname;
 DwLog *Log;
 CRITICAL_SECTION Audio_lock;
-int GodMode = 0;
 vc TheMan;
-int Disable_upnp;
 
 extern vc Current_user_lobbies;
 extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
+void init_dct();
 
 void
 init_codec(const char *logname)
@@ -85,7 +89,7 @@ init_codec(const char *logname)
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
         //No_direct_msgs = vc(VC_SET);
         Current_user_lobbies = vc(VC_TREE);
-        void init_stats();
+
         init_stats();
         Log = new DwLog(newfn(logname).c_str());
 #ifdef DW_RTLOG
@@ -98,7 +102,7 @@ init_codec(const char *logname)
         }
 #endif
         Log->make_entry("system starting up");
-#ifndef LHCDC32
+
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -111,7 +115,7 @@ init_codec(const char *logname)
         setbuf(stdout, 0);
         setbuf(stderr, 0);
 #endif
-#endif
+
         if(access(newfn("inprogress").c_str(), 0) == -1)
             if(mkdir(newfn("inprogress").c_str()) == -1)
                 Log->make_entry("can't create inprogress dir");
@@ -139,7 +143,6 @@ init_codec(const char *logname)
         //init_snds();
         rgb_ycc_start();
         build_ycc_rgb_table();
-        void init_dct();
         init_dct();
         init_huff_encode();
         init_huff_decode();
@@ -194,7 +197,6 @@ init_codec(const char *logname)
 
         ZapAdvData.load();
         DwNetConfigData.load();
-        Disable_upnp = DwNetConfigData.get_disable_upnp();
         extern int Media_select;
         switch(DwNetConfigData.get_call_setup_media_select())
         {
@@ -238,7 +240,10 @@ init_codec(const char *logname)
         init_netdiag(); // note: can't do netdiag until stun_server is known.
 #endif
         init_callq();
+#ifdef DWYCO_ASSHAT
         init_assholes();
+#endif
+
         init_sysattr();
         init = 1;
         Log->make_entry("init done");
@@ -272,7 +277,7 @@ simple_init_codec(const char *logname)
         }
 #endif
         Log->make_entry("system starting up");
-#ifndef LHCDC32
+
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -283,7 +288,7 @@ simple_init_codec(const char *logname)
             Log->make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
-#endif
+
         //Cur_msgs = vc(VC_VECTOR);
         InitializeCriticalSection(&Audio_lock);
         InitializeCriticalSection(&Audio_mixer_shutdown_lock);
@@ -335,7 +340,6 @@ simple_init_codec(const char *logname)
         CallAcceptanceData.load();
         ZapAdvData.load();
         DwNetConfigData.load();
-        Disable_upnp = 1;
 
         init_sysattr();
         init = 1;
@@ -347,11 +351,11 @@ simple_init_codec(const char *logname)
 // when all you want to do is call service_channels to
 // send and receive messages that have already been queued. no multimedia capture
 // or display stuff is initialized.
+static int Bg_msg_send_init;
 void
 init_bg_msg_send(const char *logname)
 {
-    static int init = 0;
-    if(!init)
+    if(!Bg_msg_send_init)
     {
         dwyco_srand(time(0));
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
@@ -359,10 +363,9 @@ init_bg_msg_send(const char *logname)
         Current_user_lobbies = vc(VC_TREE);
         InitializeCriticalSection(&Audio_lock);
         InitializeCriticalSection(&Audio_mixer_shutdown_lock);
-        void init_stats();
         init_stats();
-
-        Log = new DwLog(logname);
+        if(!Log)
+            Log = new DwLog(logname);
 #ifdef DW_RTLOG
         if(!RTLog)
         {
@@ -373,7 +376,7 @@ init_bg_msg_send(const char *logname)
         }
 #endif
         Log->make_entry("background system starting up");
-#ifndef LHCDC32
+
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -384,7 +387,6 @@ init_bg_msg_send(const char *logname)
             Log->make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
-#endif
 
         // this is important, don't leave it till later
         init_prf_cache();
@@ -435,10 +437,9 @@ init_bg_msg_send(const char *logname)
         CallAcceptanceData.load();
         ZapAdvData.load();
         DwNetConfigData.load();
-        Disable_upnp = 1;
 
         init_sysattr();
-        init = 1;
+        Bg_msg_send_init = 1;
         Log->make_entry("background init done");
     }
 }
@@ -449,9 +450,25 @@ init_bg_msg_send(const char *logname)
 void
 exit_bg_msg_send()
 {
+    if(!Bg_msg_send_init)
+        return;
+
     save_qmsg_state();
     save_entropy();
     Log->make_entry("background exit");
+
+    // note: mmchan depends on being able to use some of the
+    // other stuff below, so we clean it up first. there
+    // may be other dependencies lurking in here as well...
+    MMChannel::exit_mmchan();
+    // empty out all the system messages
+    while(se_process() || dirth_poll_response())
+        ;
+
+    exit_qmsg();
+    exit_pal();
+    exit_prf_cache();
+    exit_pk_cache();
 
     vc::non_lh_exit();
     vc::shutdown_logs();
@@ -459,24 +476,8 @@ exit_bg_msg_send()
 #ifdef DW_RTLOG
     RTLog->flush_to_file();
 #endif
-#ifdef LEAK_CLEANUP
-    // note: mmchan depends on being able to use some of the
-    // other stuff below, so we clean it up first. there
-    // may be other dependencies lurking in here as well...
-    MMChannel::exit_mmchan();
-    //void exit_shwdrctr();
-    //exit_shwdrctr();
-    void exit_qmsg();
-    exit_qmsg();
-    void exit_pal();
-    exit_pal();
-    exit_prf_cache();
-    exit_pk_cache();
-    void exit_dirth();
-    exit_dirth();
 
-    stun_pool_exit();
-#endif
+    Bg_msg_send_init = 0;
 
 }
 

@@ -78,7 +78,8 @@ init_pk_cache()
 void
 exit_pk_cache()
 {
-    vclh_encdec_close(enc_ctx);
+    if(!enc_ctx.is_nil())
+        vclh_encdec_close(enc_ctx);
     enc_ctx = vcnil;
     Prf_session_cache = vcnil;
     Prf_memory_cache = vcnil;

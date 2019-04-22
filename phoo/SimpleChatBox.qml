@@ -6,12 +6,13 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
+import QtQuick 2.12
 import QtQuick.Layouts 1.3
 import QtGraphicalEffects 1.0
 import QtQml 2.2
-import QtQuick.Controls 2.1
-import QtQuick.Dialogs 1.2
+import QtQuick.Controls 2.12
+import QtQuick.Dialogs 1.3
+import Qt.labs.platform 1.1 as NL
 import dwyco 1.0
 
 
@@ -561,7 +562,7 @@ Page {
         visible: false
 
 
-        sourceComponent: FileDialog {
+        sourceComponent: NL.FileDialog {
 
             title: "Pick a picture"
             folder: shortcuts.pictures
@@ -1033,13 +1034,14 @@ Page {
             id: bg
             color: accent
             radius: 20
+            // this is weird, setting size is supposed to be unnecessary...
+            // qt5.10 didn't have a problem with the previous code that was here.
+            anchors.fill: toolButton1
         }
-        contentItem: Text {
-            color: toolButton1.enabled ? primary_text : secondary_text
-            text: toolButton1.text
+        contentItem: Image {
             anchors.centerIn: bg
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
+            source: mi("ic_send_black_24dp.png")
+            opacity: toolButton1.enabled ? 1.0 : 0.3
         }
         
 

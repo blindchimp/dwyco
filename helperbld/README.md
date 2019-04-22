@@ -4,6 +4,16 @@ together can build helper apps that run on the client side with CDC-X.
 Also, some simple bots that can be run just about anywhere, but usually
 end up on the same servers as the backend servers.
 
+bots:
+* randobot - the bot that is used to redistribute random content using the "rando" app. NOTE NOTE: this must be compiled with the Qt5 that is installed on whatever Ubuntu distro you are running it with, current 16.04. The way this is done is this:
+
+cd git/dwyco
+export QT_SELECT=5
+sh helperbld/buildbots.sh
+
+The other bots can be build with qt4 (actually easier since it is easier to deploy qt4.)
+
+
 The helpers are:
 * ftpreview - A server-side video previewer, simply snags first frame of video into an image file. Used to produce static web pages from video profiles.
 

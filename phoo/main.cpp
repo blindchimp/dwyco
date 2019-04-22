@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#include <QApplication>
+#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QScreen>
@@ -46,14 +46,19 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ANDROID
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
 
     QGuiApplication app(argc, argv);
 
+#if defined(_WIN32)
+    QQuickStyle::setStyle("Fusion");
+    QQuickStyle::setFallbackStyle("Fusion");
+#else
     QQuickStyle::setStyle("Material");
     QQuickStyle::setFallbackStyle("Material");
+#endif
 
     qDebug() << QQuickStyle::availableStyles();
 

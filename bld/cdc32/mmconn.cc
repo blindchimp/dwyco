@@ -20,6 +20,8 @@
 #include "qauth.h"
 #include "dwrtlog.h"
 
+using namespace dwyco;
+
 
 #ifdef _Windows
 void

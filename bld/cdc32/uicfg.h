@@ -42,7 +42,7 @@
 #define DWUIDECL_END
 
 #define DWUIINIT_CTOR_BEGIN \
-    : syncmap(new SyncMap(31))
+    : syncmap(new SyncMap(vc()))
 
 #define DWUIINIT_CTOR_VAL(name) \
 	dwvc##name(#name, syncmap)

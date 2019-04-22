@@ -835,11 +835,11 @@ gen_authentication(vc qmsg, vc att_hash)
     sha.Update((const byte *)&tm, sizeof(tm));
 
     // newer style of message with the no_forward flag added in.
-    // old messages will have this as nil, and we want the authentication
+    // old messages will have this as nil, and we want the checksum
     // for those messages to remain the same (and remain forward-able
     // as well. however, we don't want to allow people to change the
     // forward flag and we want to allow the core to enforce this
-    // via the authentication.
+    // via the checksum.
     if(mvec[QQM_BODY_NO_FORWARD].is_nil())
     {
         // old style, don't do anything
@@ -1416,9 +1416,9 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
     // can display at least something
     vc uid = other[0];
     In_progress.del(uid);
-    vc name = other[1][0];
-    vc desc = other[1][1];
-    vc location = other[1][2];
+//    vc name = other[1][0];
+//    vc desc = other[1][1];
+//    vc location = other[1][2];
 
     static vc invalid("invalid");
 
@@ -1458,15 +1458,16 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         // fetch it
         if(m[2] == invalid)
             prf_set_cached(uid);
+        vc ai = make_best_local_info(uid, 0);
         v = vc(VC_VECTOR);
         v[QIR_FROM] = uid;
-        v[QIR_HANDLE] = name;
+        v[QIR_HANDLE] = ai[0];
         v[QIR_EMAIL] = "";
         v[QIR_USER_SPECED_ID] = "";
         v[QIR_FIRST] = "";
         v[QIR_LAST] = "";
-        v[QIR_DESCRIPTION] = desc;
-        v[QIR_LOCATION] = location;
+        v[QIR_DESCRIPTION] = ai[2];
+        v[QIR_LOCATION] = ai[1];
     }
     else
     {
@@ -1507,14 +1508,15 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         {
             // had to use alternate info, don't set as cached
             v = vc(VC_VECTOR);
+            vc ai = make_best_local_info(uid, 0);
             v[QIR_FROM] = uid;
-            v[QIR_HANDLE] = name;
+            v[QIR_HANDLE] = ai[0];
             v[QIR_EMAIL] = "";
             v[QIR_USER_SPECED_ID] = "";
             v[QIR_FIRST] = "";
             v[QIR_LAST] = "";
-            v[QIR_DESCRIPTION] = desc;
-            v[QIR_LOCATION] = location;
+            v[QIR_DESCRIPTION] = ai[2];
+            v[QIR_LOCATION] = ai[1];
         }
 
     }
@@ -1598,7 +1600,7 @@ fetch_info(vc uid)
     vc v(VC_VECTOR);
     v.append(uid);
     // load alt-info up with the best info we have locally, just in case
-    v.append(make_best_local_info(uid, 0));
+    //v.append(make_best_local_info(uid, 0));
     if(!In_progress.contains(uid))
     {
         if(prf_already_cached(uid))
@@ -1857,6 +1859,7 @@ query_done(vc m, void *, vc, ValidPtr)
         // 3: date vector
 
         vc from = v[QM_FROM];
+        sql_add_tag(v[QM_ID], "_seen");
 
         int auto_reply = 0;
         if(uid_ignored(from) || (auto_reply = (ZapAdvData.get_ignore() && wrong_rating(v))))
@@ -2570,6 +2573,7 @@ load_bodies(vc id, int load_sent)
 
     DwString ss = s;
     s = newfn(s);
+    DwString dpref = s;
     s += "" DIRSEPSTR "*.bod";
     int t = 0;
 
@@ -2578,11 +2582,11 @@ load_bodies(vc id, int load_sent)
     for(i = 0; i < n; ++i)
     {
         WIN32_FIND_DATA &d = *fv[i];
-        DwString s2((const char *)id);
+        DwString s2(dpref);
         s2 += "" DIRSEPSTR "";
         s2 += d.cFileName;
         vc info;
-        if(load_info(info, s2.c_str()))
+        if(load_info(info, s2.c_str(), 1))
         {
             //ret.append(info);
             sorter.add(GroovyItem(info), t++);
@@ -2600,11 +2604,11 @@ load_bodies(vc id, int load_sent)
         for(i = 0; i < n; ++i)
         {
             WIN32_FIND_DATA &d = *fv2[i];
-            DwString s2((const char *)id);
+            DwString s2(dpref);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
             vc info;
-            if(load_info(info, s2.c_str()))
+            if(load_info(info, s2.c_str(), 1))
             {
                 //ret.append(info);
                 info[QM_BODY_SENT] = vctrue;
@@ -3733,9 +3737,16 @@ purge_inbox(vc id)
 int
 save_to_inbox(vc m)
 {
-    DwString f((const char *)m[2]);
+    DwString f((const char *)m[QQM_LOCAL_ID]);
     f += ".urd";
     f.insert(0, "inbox" DIRSEPSTR "");
+    // note: the "local id" is set from the server if this msg came from the
+    // server. it is set to something locally generated for peer-to-peer messages.
+    // this isn't a problem, the main reason we are creating this tag is to filter out
+    // stale notifications from google (ie, our app sees and notifies the user of
+    // a message, then 20 minutes later google notifies about the same message.)
+    // we only get sent google notifications for server messages...
+    sql_add_tag(m[QQM_LOCAL_ID], "_seen");
     if(!save_info(m, f.c_str()))
         return 0;
     return 1;

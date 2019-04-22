@@ -53,6 +53,7 @@
 #include "vcxstrm.h"
 #include "ta.h"
 
+using namespace dwyco;
 
 int Inhibit_database_thread;
 
@@ -71,6 +72,7 @@ vc Pal_server_list;
 vc STUN_server_list;
 vc BW_server_list;
 extern vc STUN_server;
+extern vc Client_version;
 
 vc KKG; // god mode pw
 
@@ -98,7 +100,6 @@ exit_dirth()
 vc
 dwyco_get_version_string()
 {
-    extern vc Client_version;
     DwString a(IVERSION);
     a += "!";
     a += (const char *)Client_version;
@@ -370,7 +371,7 @@ invalidate_profile(vc m, void *, vc, ValidPtr)
     se_emit(SE_USER_PROFILE_INVALIDATE, m[1]);
 
 }
-extern DwVec<QckDone> Waitq;
+
 void update_server_list(vc, void *, vc, ValidPtr);
 void ignoring_you_update(vc, void *, vc, ValidPtr);
 void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
@@ -379,6 +380,8 @@ void async_pal(vc, void *, vc, ValidPtr);
 void
 init_dirth()
 {
+    Waitq = DwVec<QckDone>();
+    Response_q = DwListA<vc>();
     Waitq.append(QckDone(got_sync, 0, vcnil, ValidPtr(0), "sync", 0, 1));
     Waitq.append(QckDone(got_serv_r, 0, vcnil, ValidPtr(0), "serv_r", 0, 1));
     Waitq.append(QckDone(got_inhibit, 0, vcnil, ValidPtr(0), "inhibit", 0, 1));
@@ -614,7 +617,11 @@ build_directory_entry()
 #endif
 
     v.append(KKG);
+#ifdef DWYCO_ASSHAT
     v.append(get_asshole_factor());
+#else
+    v.append(0.0);
+#endif
 
     GRTLOG("dir entry", 0, 0);
     GRTLOGVC(v);

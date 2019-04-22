@@ -71,7 +71,7 @@ msg_callback(int id, int what, const char *mid, void *)
 }
 
 int
-dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray& mid, int& has_att, int& is_file)
+dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray& mid, int& has_att, int& is_file, QByteArray& creator_uid)
 {
     zap_viewer = 0;
 
@@ -140,6 +140,17 @@ dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray&
             txt = qbt.get<QByteArray>(DWYCO_NO_COLUMN);
             has_att = !qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT);
             is_file = !qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT);
+
+            DWYCO_LIST ba = dwyco_get_body_array(qsm);
+            simple_scoped qba(ba);
+            if(qba.rows() == 1)
+                creator_uid = uid_out;
+            else
+            {
+                int crow = qba.rows() - 1;
+                creator_uid = qba.get<QByteArray>(crow, DWYCO_QM_BODY_FROM);
+            }
+
 
             Already_returned.insert(mid);
             return 1;

@@ -25,7 +25,10 @@
 class DwycoCore : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString client_name READ client_name WRITE setClient_name NOTIFY client_nameChanged)
+
+    QML_WRITABLE_VAR_PROPERTY(QString, client_name)
+    QML_WRITABLE_VAR_PROPERTY(bool, use_archived)
+    QML_READONLY_VAR_PROPERTY(int, total_users)
     QML_READONLY_VAR_PROPERTY(int, unread_count)
     QML_READONLY_VAR_PROPERTY(QString, buildtime)
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
@@ -36,6 +39,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, audio_full_duplex)
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
+    QML_READONLY_VAR_PROPERTY(QString, this_uid)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -50,6 +54,8 @@ public:
         m_audio_full_duplex = 0;
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
+        m_use_archived = true;
+        m_this_uid = "";
     }
     static QByteArray My_uid;
 
@@ -246,26 +252,12 @@ public:
     Q_INVOKABLE void set_badge_number(int i);
 
 public:
-    void setClient_name(const QString& a) {
-        if(a != m_client_name)
-        {
-            m_client_name = a;
-            QByteArray b = a.toLatin1();
-            dwyco_set_client_version(b.constBegin(), b.length());
-            emit client_nameChanged();
-        }
-    }
-
-    QString client_name() const {
-        return m_client_name;
-    }
-
 
 public slots:
     void app_state_change(Qt::ApplicationState);
+    void update_dwyco_client_name(QString);
 
 signals:
-    void client_nameChanged();
     void server_login(const QString& msg, int what);
     void chat_event(int cmd, int sid, const QString& huid, const QString &sname, QVariant vdata, int qid, int extra_arg);
     void new_msg(const QString& from_uid, const QString& txt, const QString& mid);
@@ -318,8 +310,6 @@ signals:
     void sc_rem_mute_unknown(QString uid);
 
 
-
-
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
     void msg_recv_state(int cmd, const QString& mid);
@@ -332,7 +322,7 @@ signals:
     void mid_tag_changed(QString mid);
 
 private:
-    QString m_client_name;
+
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
 
 };

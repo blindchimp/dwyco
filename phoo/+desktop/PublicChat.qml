@@ -280,6 +280,7 @@ Page {
             id: bg
             color: "indigo"
             radius: 20
+            anchors.fill: toolButton1
         }
         contentItem: Text {
             color: toolButton1.enabled ? "white" : "gray"
