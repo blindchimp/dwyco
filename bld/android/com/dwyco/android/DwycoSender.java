@@ -277,7 +277,11 @@ public class DwycoSender extends Service {
         //m_builder.setColor(context.getResources().getColor(R.color.green));
         m_builder.setContentTitle(DwycoApp.content_title);
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("Uploading");
+	if(DwycoApp.sender_sticky)
+		m_builder.setContentText("Waiting");
+	else
+		m_builder.setContentText("Uploading");
+
         m_builder.setOnlyAlertOnce(true);
         
         Intent notintent = new Intent(context, NotificationClient.class);
