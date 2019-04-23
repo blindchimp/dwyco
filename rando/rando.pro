@@ -29,7 +29,12 @@ android: QT += androidextras
 macx-clang: QT += macextras
 
 DEFINES += DWYCO_APP_DEBUG
-macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
+macx-ios-clang {
+QMAKE_INFO_PLIST=Info.plist.ios
+VERSION=1.0.0
+QMAKE_TARGET_BUNDLE_PREFIX=com.dwyco
+QMAKE_TARGET_BUNDLE=rando
+}
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 
