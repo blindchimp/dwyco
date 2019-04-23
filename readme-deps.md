@@ -25,6 +25,8 @@ THEN install homebrew, and lastly install Qt5 (5.12 as of this writing).
 android:
 
 brew install automake
+brew install pkg-config
+
 (This is for the android build of some of the old xiph codecs, so
 get the hand-coded assembly performance improvements.)
 
