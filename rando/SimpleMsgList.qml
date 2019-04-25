@@ -108,9 +108,23 @@ Page {
 
                     text: "Sent"
                     background: Rectangle {
-                        id: sent_bg_rect
+                        id: bgblink2
                         color: amber_dark
                         radius: 6
+                        ParallelAnimation {
+                            loops: 30
+                            running: core.unread_count > 0
+                            ColorAnimation {
+                                target: bgblink2
+                                property: "color"
+                                from: amber_dark
+                                to: "black"
+                                duration: 1000
+                            }
+                            onStopped: {
+                                bgblink2.color = amber_dark
+                            }
+                        }
                     }
                     contentItem: Text {
                         x: sent.leftPadding
@@ -549,12 +563,18 @@ scrolling in the listview or doesn't recognizing the swipe.
         core.send_simple_cam_pic(the_man, "for review", filename)
 
     }
+    Pane {
+        visible: {model.uid === the_man && listview.count === 0}
+        font.bold: true
+        anchors.fill: parent
+        background: parent.background
 
     ColumnLayout {
-        visible: {model.uid === the_man && listview.count === 0}
+        //visible: {model.uid === the_man && listview.count === 0}
 
         anchors.fill: parent
         anchors.margins: mm(5)
+
         Item {
             Layout.fillHeight: true
         }
@@ -573,6 +593,7 @@ scrolling in the listview or doesn't recognizing the swipe.
         Item {
             Layout.fillHeight: true
         }
+    }
     }
 
     RoundButton {

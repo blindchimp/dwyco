@@ -567,3 +567,11 @@ m4/ltsugar.m4
 m4/ltversion.m4
 m4/lt~obsolete.m4
 
+
+randobld\.pro\.user\.4\.9-pre1
+
+bld/speexdsp/output/
+
+bld/speexdsp/libspeexdsp/testresample
+
+bld/speexdsp/libspeexdsp/testresample2

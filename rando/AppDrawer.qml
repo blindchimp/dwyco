@@ -72,5 +72,10 @@ AppDrawerForm {
         close()
     }
 
+    help_button.onClicked: {
+        stack.push(help_dialog)
+        close()
+    }
+
 
 }

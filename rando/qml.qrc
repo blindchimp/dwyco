@@ -26,6 +26,7 @@
         <file>perm.qml</file>
         <file>Warning.qml</file>
         <file>ProgressRound.qml</file>
+        <file>Help.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>
