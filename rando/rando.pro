@@ -36,6 +36,10 @@ QMAKE_TARGET_BUNDLE_PREFIX=com.dwyco
 QMAKE_TARGET_BUNDLE=rando
 }
 
+macx-clang {
+QMAKE_INFO_PLIST=Info.plist.mac
+}
+
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 
 DEFINES += DWYCO_RELEASE

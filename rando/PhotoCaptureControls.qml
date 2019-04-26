@@ -39,7 +39,7 @@
 ****************************************************************************/
 
 import QtQuick 2.6
-import QtMultimedia 5.6
+import QtMultimedia 5.12
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.1
 import dwyco 1.0
@@ -48,6 +48,18 @@ Item {
     //property Camera camera
     property bool previewAvailable : false
     property int  cur_cam: 0
+
+    Component.onCompleted: {
+        var n = QtMultimedia.availableCameras.length
+        var i
+        for(i = 0; i < n; i++) {
+            if(QtMultimedia.availableCameras[i].position === camera.position) {
+                cur_cam = i
+                console.log("cam sel ", i, camera.position)
+                break
+            }
+        }
+    }
 
     //id : captureControls
     anchors {
