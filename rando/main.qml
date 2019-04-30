@@ -13,7 +13,7 @@ import QtQuick.Controls 2.2
 import QtQuick.Controls.Material 2.2
 import QtQuick.Layouts 1.3
 import QtQuick.Dialogs 1.2
-import QtMultimedia 5.4
+//import QtMultimedia 5.4
 import dwyco 1.0
 
 ApplicationWindow {

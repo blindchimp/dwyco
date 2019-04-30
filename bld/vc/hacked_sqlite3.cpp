@@ -19,6 +19,7 @@ static DwVec<vc> *outbind_long;
 static DwVec<vc> *outbind_str;
 static DwVec<vc> *outbind_double;
 typedef DwVec<vc> vvc;
+#define Mem sqlite3_value
 
 template class DwVecP<void>;
 static
