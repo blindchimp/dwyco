@@ -1,3 +1,16 @@
+Wed May  1 13:26:55 PDT 2019
+things that need to be fixed before first release on android
+
+* remove status bar, or make it less obtrusive (ie, do a small x somewhere if server is offline.)
+* home (conv) button is being displayed even in cases where the back arrow is all you need, decide if that is ok.
+* see if there is some way to display links in chat properly
+* try to enable cut/paste in chat text somehow
+* try to figure out permissions, esp on camera since it seems to never start the first time the app is run
+* toggling items in drawer should not close drawer
+* better look for the setting page, about box
+* make sure that "clear msgs" only clears what is visible, or asks if you want to clear hidden stuff too. give it a confirmation too.
+* add help screen for empty forward list to explain how to get names on it
+
 Fri Feb 19 07:23:55 MST 2016
 dwight melcher
 dwyco, inc.
