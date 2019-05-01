@@ -7,7 +7,6 @@
 * block user should remove user from all dynamic models, delete user should remove the user from all stored models
 * on an ignore event, need to reload most of the models
 * there is a problem with propagating "uid_resolved" to object that we don't know exist yet... there has to be a way of sending signals from the main dwyco object to models that may not exist at init time. doing it when the model object is created doesn't work either because it may be getting created before the dwyco object is initialized.
-* msglist isn't always repositioned to the bottom on a new message. need to check to see if the listview is scrolled near the bottom, and move it to the bottom properly (but leave it alone if the user is scrolling around somewhere else.)
 * in airplane mode, main UI will not "deliver" a message from the inbox since it can't get initialized (no server login.)
 * need to be able to cancel out of the first screen, right now you are stuck and the app won't terminate
 * EMAIL isn't being set properly in first run in the profile update pane.
