@@ -706,6 +706,58 @@ emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name,
     }
 }
 
+QString
+DwycoCore::strip_html(QString txt)
+{
+    QTextDocumentFragment f = QTextDocumentFragment::fromHtml(txt);
+    QString ret = f.toPlainText();
+
+    // we removed html formatting, now scan and re-insert things that
+    // look like links. the reason for all this is to provide some
+    // uniformity for recipients of the message as far as the look on
+    // their device. another option would be to just send it in stripped
+    // form, and everywhere the text is used, reformat it and insert links
+    // as needed, but that would involve finding all those places the
+    // text was used,which is a pain right now
+
+    QRegularExpression re("http.*?://([^\\s)\\\"](?!ttp:))+");
+
+//    bool v = re.isValid();
+
+//    printf("val %d\n", (int)v);
+//    fflush(stdout);
+
+    QRegularExpressionMatchIterator i = re.globalMatch(ret);
+    int n = 0;
+    int last_start = 0;
+    int last_len = 0;
+    bool first = true;
+    QString res;
+    while (i.hasNext()) {
+        QRegularExpressionMatch match = i.next();
+        if(first)
+        {
+            last_len = match.capturedStart();
+            first = false;
+        }
+
+        res += ret.mid(last_start, last_len);
+        res += "<a href=\"";
+        res += match.captured();
+        res += "\">";
+        res += match.captured();
+        res += "</a>";
+        last_start = match.capturedStart();
+        last_len = match.capturedLength();
+        //printf("%d, %s\n", n, match.captured().toLatin1().constData());
+        //++n;
+        // ...
+    }
+    res += ret.mid(last_start + last_len);
+
+    return res;
+}
+
 void
 DWYCOCALLCONV
 DwycoCore::dwyco_chat_ctx_callback(int cmd, int id,

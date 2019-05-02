@@ -968,7 +968,7 @@ Page {
 
         onAccepted: {
             if(textField1.length > 0) {
-                core.simple_send(to_uid, textField1.text)
+                core.simple_send(to_uid, core.strip_html(textField1.text))
                 core.try_connect(to_uid)
 
                 themsglist.reload_model()
