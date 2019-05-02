@@ -820,6 +820,10 @@ Page {
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
                     color: primary_text
+                    onLinkActivated: {
+                        console.log(link + " link activated")
+                        Qt.openUrlExternally(link)
+                    }
                     //font.family: "Noto Color Emoji"
                 }
 
@@ -895,6 +899,7 @@ Page {
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
+                            themsgview.text_bg_color = ditem.color
                             if(model.IS_FILE === 1) {
                                 themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file:///" + String(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
@@ -967,7 +972,7 @@ Page {
 
         onAccepted: {
             if(textField1.length > 0) {
-                core.simple_send(to_uid, textField1.text)
+                core.simple_send(to_uid, core.strip_html(textField1.text))
                 core.try_connect(to_uid)
 
                 themsglist.reload_model()

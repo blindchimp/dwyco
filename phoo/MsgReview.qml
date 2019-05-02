@@ -30,6 +30,7 @@ Page {
             onClicked: {
                 // note: don't save the message
                 core.send_forward(rando_bot, "Ok", uid, mid, 1)
+                core.set_tag_message(mid, "_hid")
                 stack.pop()
             }
             Layout.fillWidth: true
@@ -42,6 +43,7 @@ Page {
             onClicked: {
                 core.simple_send(uid, msg_text.text)
                 stack.pop()
+                core.set_tag_message(mid, "_hid")
             }
             Layout.fillWidth: true
         }
