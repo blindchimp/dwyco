@@ -21,8 +21,18 @@ Page {
     property bool dragging
     property bool fav
     property bool hid
+    property string text_bg_color: primary_dark
 
     anchors.fill:parent
+
+//    background: Rectangle {
+//        color: primary_dark
+//        gradient: Gradient {
+//            GradientStop { position: 0.0; color: "green" }
+//            GradientStop { position: 1.0; color: primary_light}
+//        }
+//    }
+
     onVisibleChanged: {
         if(!visible)
         {
@@ -153,6 +163,11 @@ Page {
 
     Rectangle {
         anchors.fill:parent
+        color: primary_dark
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: primary_dark }
+            GradientStop { position: 1.0; color: primary_light}
+        }
 
         Image {
             id: viewer
@@ -196,8 +211,18 @@ Page {
             color: "orange"
         }
 
-        Text {
+        TextArea {
             id: msg_text
+            background: Rectangle {
+                color: msgviewer.text_bg_color
+                radius: 6
+            }
+            readOnly: true
+            textFormat: Text.AutoText
+            onLinkActivated: {
+                Qt.openUrlExternally(link)
+            }
+
             //height: 16
             //anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
