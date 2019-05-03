@@ -1048,7 +1048,7 @@ Page {
         onClicked: {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
-            core.simple_send(to_uid, textField1.text)
+            core.simple_send(to_uid, core.strip_html(textField1.text))
             core.try_connect(to_uid)
             themsglist.reload_model()
             textField1.text = ""
