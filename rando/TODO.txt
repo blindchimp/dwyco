@@ -10,3 +10,4 @@ Wed May  1 13:09:06 PDT 2019
 * add date display somewhere for a pic (create? received?)
 * maybe add option for coarse location from the device rather than ip
 * try a grid display mode for browsing
+* test on tablets, some of the icons are too small to click
