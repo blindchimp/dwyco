@@ -15,6 +15,7 @@
 #include <QUrlQuery>
 #include <QSslSocket>
 #include <QGuiApplication>
+#include <QTextDocumentFragment>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
