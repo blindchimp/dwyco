@@ -418,9 +418,23 @@ Page {
                         MenuItem {
                             text: "Clear msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(chatbox.to_uid)
-
-                                themsglist.reload_model()
+                                confirm_clear.visible = true
+                            }
+                            MessageDialog {
+                                id: confirm_clear
+                                title: "Remove all msgs?"
+                                icon: StandardIcon.Question
+                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+                                informativeText: "This KEEPS FAVORITE messages."
+                                standardButtons: StandardButton.Yes | StandardButton.No
+                                onYes: {
+                                    core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.reload_model()
+                                    close()
+                                }
+                                onNo: {
+                                    close()
+                                }
                             }
                         }
 
@@ -434,7 +448,7 @@ Page {
                                 title: "Bulk delete?"
                                 icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE messages too."
+                                informativeText: "This removes FAVORITE and HIDDEN messages too."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
                                     core.delete_user(chatbox.to_uid)
