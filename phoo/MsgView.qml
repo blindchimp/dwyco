@@ -257,8 +257,8 @@ Page {
             radius: 6
         }
         readOnly: true
-        //selectByKeyboard: true
-        //selectByMouse: true
+        selectByKeyboard: !is_mobile
+        selectByMouse: !is_mobile
         textFormat: Text.AutoText
         onLinkActivated: {
             Qt.openUrlExternally(link)

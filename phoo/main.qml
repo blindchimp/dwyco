@@ -107,6 +107,10 @@ ApplicationWindow {
     property bool show_hidden: true
     property bool show_archived_users: true
 
+    property bool is_mobile
+
+    is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+
     function pin_expire() {
         var expire
         var duration
