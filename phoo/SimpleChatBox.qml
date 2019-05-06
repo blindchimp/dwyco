@@ -12,7 +12,7 @@ import QtGraphicalEffects 1.0
 import QtQml 2.2
 import QtQuick.Controls 2.12
 import QtQuick.Dialogs 1.3
-import Qt.labs.platform 1.1 as NL
+//import Qt.labs.platform 1.1 as NL
 import dwyco 1.0
 
 
@@ -570,7 +570,7 @@ Page {
         visible: false
 
 
-        sourceComponent: NL.FileDialog {
+        sourceComponent: FileDialog {
 
             title: "Pick a picture"
             folder: shortcuts.pictures
