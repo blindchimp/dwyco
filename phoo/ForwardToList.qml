@@ -32,8 +32,8 @@ Page {
             color: primary_dark
             border.width: 1
             gradient: Gradient {
-                GradientStop { position: 0.0; color: primary_light }
-                GradientStop { position: 1.0; color: primary_dark}
+                GradientStop { position: 0.0; color: "lightgreen" }
+                GradientStop { position: 1.0; color: "lightgrey"}
             }
 
             RowLayout {

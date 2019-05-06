@@ -254,13 +254,13 @@ DEFINES += CDCCORE_STATIC
 # use this if you are building with qmake files
 D = $$OUT_PWD\\..\\bld
 
-CONFIG(debug) {
-S=debug
-}
-
-#CONFIG(release) {
-#S=release
+#CONFIG(debug) {
+#S=debug
 #}
+
+CONFIG(release) {
+S=release
+}
 
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
@@ -278,16 +278,16 @@ winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib 
 #QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
 #QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
 
-PRE_TARGETDEPS += \
-$${D}\\cdc32\\$${S}\\cdc32.lib \
-$${D}\\vc\\$${S}\\vc.lib \
-$${D}\\crypto5\\$${S}\\crypto5.lib \
-$${D}\\dwcls\\$${S}\\dwcls.lib \
-$${D}\\kazlib\\$${S}\\kazlib.lib \
-$${D}\\pbm\\$${S}\\pbm.lib \
-$${D}\\jenkins\\$${S}\\jenkins.lib \
-$${D}\\jhead\\$${S}\\jhead.lib \
-$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib
+#PRE_TARGETDEPS += \
+#$${D}\\cdc32\\$${S}\\cdc32.lib \
+#$${D}\\vc\\$${S}\\vc.lib \
+#$${D}\\crypto5\\$${S}\\crypto5.lib \
+#$${D}\\dwcls\\$${S}\\dwcls.lib \
+#$${D}\\kazlib\\$${S}\\kazlib.lib \
+#$${D}\\pbm\\$${S}\\pbm.lib \
+#$${D}\\jenkins\\$${S}\\jenkins.lib \
+#$${D}\\jhead\\$${S}\\jhead.lib \
+#$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib
 
 }
 
