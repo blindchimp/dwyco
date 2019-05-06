@@ -189,7 +189,7 @@ transpose(const QImage& src)
 
 static
 int
-jhead_rotate(const QString& filename, int rot)
+jhead_rotate(const QString& filename, int rot, bool mirror_y = false)
 {
     if(rot == 0)
         return 1;
@@ -205,16 +205,47 @@ jhead_rotate(const QString& filename, int rot)
     case 6: //90
         s = transpose(s);
         s = s.mirrored(true, false);
+        if(mirror_y)
+            s = s.mirrored(true, false);
         break;
     case 8: //270
+        // i think this is broken, have to check it
         s = s.mirrored(true, false);
         s = transpose(s);
+
+        if(mirror_y)
+            s = s.mirrored(true, false);
         break;
     }
 
     s.save(filename);
 
     return 1;
+}
+
+// note: tbe main reason we need this is because
+// on iOS images come back without rotation meta
+// data, so we kinda guess how to rotate them
+// so this strips out whatever exif stuff is in there,
+// and then rotates it according to what the caller wants
+int
+DwycoCore::rotate_in_place(QString fn, int rot, int mirror_y)
+{
+    {
+        // note: iOS makes a copy and it must inherit the read-only perms
+        // of the original, so we try to update the permissions on the copy
+        // so we can update it in place
+        QFile cpy(fn);
+        cpy.setPermissions(cpy.permissions()|QFileDevice::WriteOwner|QFileDevice::WriteUser|
+                           QFileDevice::ReadOwner|QFileDevice::ReadUser);
+    }
+    int ret = jhead::do_jhead(fn.toLatin1().constData());
+    if(ret & 1)
+        return 0;
+
+    ret = jhead_rotate(fn, rot, mirror_y ? true : false);
+    return ret;
+
 }
 
 static

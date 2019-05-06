@@ -38,8 +38,9 @@
 **
 ****************************************************************************/
 
-import QtQuick 2.6
+import QtQuick 2.12
 import QtQuick.Layouts 1.3
+import QtMultimedia 5.12
 
 Item {
     id: photopv
@@ -53,7 +54,15 @@ Item {
         anchors.fill : parent
         fillMode: Image.PreserveAspectFit
         smooth: true
+        // note: there doesn't appear to be any orientation
+        // meta-data on ios, so this doesn't do anything
         autoTransform: true
+
+        //rotation: { Qt.platform.os === "ios" ? 270 : 0}
+        //mirror: {Qt.platform.os === "ios" && camera.position === Camera.FrontFace}
+        clip: true
+        asynchronous: true
+
     }
 
     RowLayout {

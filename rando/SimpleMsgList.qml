@@ -419,7 +419,9 @@ Page {
                         try
                         {
                             var o = JSON.parse(MSG_TEXT)
-                            return o.loc
+                            if('loc' in o)
+                                return o.loc
+                            return ""
                         }
                         catch(e)
                         {

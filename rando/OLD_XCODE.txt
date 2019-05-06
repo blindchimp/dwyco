@@ -1,9 +1,0 @@
-Sat Mar 26 09:31:37 MST 2016
-
-NOTE: for qt5.6.0
-it appears the version of xcode (5-ish) is too old, and doesn't quite
-jive with the qt binaries that are provided with 5.6.0 (compiled with clang).
-it is probably somsething to do with the stdc library, and it might be
-possible to tweak the mac drivers in macdrv to avoid the linking problems,
-by tweaking the deployment target and SDK,
-but it is not worth the time. just use the later versions of macos and xcode.
