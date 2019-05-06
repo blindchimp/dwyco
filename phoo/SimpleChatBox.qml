@@ -12,7 +12,7 @@ import QtGraphicalEffects 1.0
 import QtQml 2.2
 import QtQuick.Controls 2.12
 import QtQuick.Dialogs 1.3
-import Qt.labs.platform 1.1 as NL
+//import Qt.labs.platform 1.1 as NL
 import dwyco 1.0
 
 
@@ -417,9 +417,23 @@ Page {
                         MenuItem {
                             text: "Clear msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(chatbox.to_uid)
-
-                                themsglist.reload_model()
+                                confirm_clear.visible = true
+                            }
+                            MessageDialog {
+                                id: confirm_clear
+                                title: "Remove all msgs?"
+                                icon: StandardIcon.Question
+                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+                                informativeText: "This KEEPS FAVORITE messages."
+                                standardButtons: StandardButton.Yes | StandardButton.No
+                                onYes: {
+                                    core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.reload_model()
+                                    close()
+                                }
+                                onNo: {
+                                    close()
+                                }
                             }
                         }
 
@@ -433,7 +447,7 @@ Page {
                                 title: "Bulk delete?"
                                 icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE messages too."
+                                informativeText: "This removes FAVORITE and HIDDEN messages too."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
                                     core.delete_user(chatbox.to_uid)
@@ -555,7 +569,7 @@ Page {
         visible: false
 
 
-        sourceComponent: NL.FileDialog {
+        sourceComponent: FileDialog {
 
             title: "Pick a picture"
             folder: shortcuts.pictures

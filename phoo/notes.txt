@@ -8,8 +8,8 @@ things that need to be fixed before first release on android
 * try to figure out permissions, esp on camera since it seems to never start the first time the app is run
 * (done) toggling items in drawer should not close drawer
 * better look for the setting page, about box
-* make sure that "clear msgs" only clears what is visible, or asks if you want to clear hidden stuff too. give it a confirmation too.
-* add help screen for empty forward list to explain how to get names on it
+* (done, just put language in confirmation regarding hidden msgs) make sure that "clear msgs" only clears what is visible, or asks if you want to clear hidden stuff too. give it a confirmation too.
+* (not needed because you have to have at least one msg to forward, and hence one user in the list.) add help screen for empty forward list to explain how to get names on it
 
 Fri Feb 19 07:23:55 MST 2016
 dwight melcher

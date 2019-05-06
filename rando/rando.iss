@@ -1,35 +1,35 @@
 [Setup]
 DisableReadyMemo=True
-AppName=phoo
+AppName=rando
 AppVersion=1.0
 AppCopyright=Dwyco, Inc.
 PrivilegesRequired=lowest
-DefaultDirName={userdocs}\Dwyco\Programs\phoo
+DefaultDirName={userdocs}\Dwyco\Programs\rando
 DisableDirPage=yes
 DisableProgramGroupPage=auto
 AppPublisher=Dwyco, Inc.
 AppPublisherURL=http://www.dwyco.com
 AppSupportURL=http://www.dwyco.com
 AppContact=cdchelp@dwyco.com
-SourceDir=C:\Users\dwight\dwyco\phoo\vcdist
+SourceDir=C:\Users\dwight\dwyco\rando\vcdist
 MinVersion=0,6.1
-OutputDir=C:\Users\dwight\phooinst
-OutputBaseFilename=dwycophoo
+OutputDir=C:\Users\dwight\randoinst
+OutputBaseFilename=dwycorando
 VersionInfoVersion=1.0
 VersionInfoCompany=Dwyco, Inc.
 VersionInfoDescription=Internet video/audio/conferencing
 VersionInfoCopyright=Dwyco, Inc.
-VersionInfoProductName=phoo
+VersionInfoProductName=rando
 VersionInfoProductVersion=1.0
 AlwaysUsePersonalGroup=True
-DefaultGroupName=phoo
+DefaultGroupName=rando
 DisableStartupPrompt=False
 AlwaysShowGroupOnReadyPage=True
 AlwaysShowDirOnReadyPage=True
 DisableReadyPage=True
 
 [Files]
-Source: "C:\Users\dwight\dwyco\phoo\vcdist\*"; DestDir: "{app}"; Flags: ignoreversion createallsubdirs recursesubdirs
+Source: "C:\Users\dwight\dwyco\rando\vcdist\*"; DestDir: "{app}"; Flags: ignoreversion createallsubdirs recursesubdirs
 
 [Icons]
-Name: "{group}\phoo"; Filename: "{app}\phoo.exe"; WorkingDir: "{app}"; Flags: runmaximized
+Name: "{group}\rando"; Filename: "{app}\rando.exe"; WorkingDir: "{app}"; Flags: runmaximized
