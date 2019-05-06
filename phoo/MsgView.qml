@@ -124,6 +124,13 @@ Page {
                         //themsglist.reload_model()
                     }
                 }
+                MenuItem {
+                    text: "Copy Text"
+                    onTriggered: {
+                        msg_text.selectAll()
+                        msg_text.copy()
+                    }
+                }
 
                 MenuItem {
                     text: "Report"
