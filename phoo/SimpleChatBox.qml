@@ -798,16 +798,6 @@ Page {
                         }
                     }
 
-
-//                    Image {
-//                        id: deco
-//                        visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
-//                        source: decoration
-//                        anchors.left: parent.left
-//                        anchors.top: parent.top
-//                        width: 32
-//                        height: 32
-//                    }
                 }
 
 
@@ -830,18 +820,18 @@ Page {
                     id: msg
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     Layout.maximumWidth: (listView1.width * 3) / 4
+                    width: implicitWidth
                     horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
                     color: primary_text
+                    clip: true
                     onLinkActivated: {
                         console.log(link + " link activated")
                         Qt.openUrlExternally(link)
                     }
-                    //font.family: "Noto Color Emoji"
                 }
-
             }
         Loader {
             anchors.centerIn: ditem
@@ -862,16 +852,6 @@ Page {
             visible: IS_ACTIVE
             active: IS_ACTIVE
         }
-//        Loader {
-//            id: pulse
-//            anchors.centerIn: ditem
-//            anchors.fill: ditem
-//            anchors.margins: mm(1)
-//            visible: {IS_ACTIVE && ATTACHMENT_PERCENT === 0.0}
-//            source: "qrc:/PulseLoader.qml"
-//            active: IS_ACTIVE
-//        }
-
 
         MouseArea {
                 anchors.fill: parent
