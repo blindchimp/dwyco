@@ -249,6 +249,7 @@ public:
 #endif
 
     Q_INVOKABLE void set_badge_number(int i);
+    Q_INVOKABLE int rotate_in_place(QString filename, int rot, int mirror_y);
 
 public:
 

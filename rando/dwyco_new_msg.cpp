@@ -241,7 +241,7 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                             // from having to check hashes while we are deleting pictures.
                             // down side is that some of the geo-info stays around across clears.
                             // we'll fix this eventually.
-                            if(qsml.is_nil(i, DWYCO_QM_BODY_ATTACHMENT))
+                            if(qsml.is_nil(DWYCO_QM_BODY_ATTACHMENT))
                             {
                                 dwyco_set_fav_msg(mid.constData(), 1);
                                 // note: this is a hack... we set the msg tag to "hidden",  but

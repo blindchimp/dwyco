@@ -72,13 +72,13 @@ AppDrawerForm {
             notificationClient.set_quiet(dwy_quiet ? 1 : 0)
         }
         core.set_local_setting("quiet", dwy_quiet ? "true" : "false")
-        close()
+        //close()
     }
     invisible_switch.onClicked: {
         dwy_invis = invisible_switch.checked
         core.set_local_setting("invis", dwy_invis ? "true" : "false")
         core.set_invisible_state(dwy_invis ? 1 : 0)
-        close()
+        //close()
     }
 
 }

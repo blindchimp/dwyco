@@ -15,6 +15,7 @@
 #include <QUrlQuery>
 #include <QSslSocket>
 #include <QGuiApplication>
+#include <QTextDocumentFragment>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -206,7 +207,8 @@ jhead_rotate(const QString& filename, int rot)
         break;
     }
 
-    s.save(filename);
+    if(!s.save(filename))
+        return 0;
 
     return 1;
 }
@@ -247,11 +249,7 @@ copy_and_tweak_jpg(const QString& fn, QByteArray& dest_out)
         }
         int rot = jhead::do_jhead(dest_out.constData());
 
-        if((rot & 1) == 0)
-        {
-            jhead_rotate(dest_out, rot >> 1);
-        }
-        else
+        if((rot & 1) != 0 || !jhead_rotate(dest_out, rot >> 1))
         {
             QFile::remove(dest_out);
             return 0;
@@ -707,6 +705,58 @@ emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name,
     default:
         ;
     }
+}
+
+QString
+DwycoCore::strip_html(QString txt)
+{
+    QTextDocumentFragment f = QTextDocumentFragment::fromHtml(txt);
+    QString ret = f.toPlainText();
+
+    // we removed html formatting, now scan and re-insert things that
+    // look like links. the reason for all this is to provide some
+    // uniformity for recipients of the message as far as the look on
+    // their device. another option would be to just send it in stripped
+    // form, and everywhere the text is used, reformat it and insert links
+    // as needed, but that would involve finding all those places the
+    // text was used,which is a pain right now
+
+    QRegularExpression re("http.*?://([^\\s)\\\"](?!ttp:))+");
+
+//    bool v = re.isValid();
+
+//    printf("val %d\n", (int)v);
+//    fflush(stdout);
+
+    QRegularExpressionMatchIterator i = re.globalMatch(ret);
+    int n = 0;
+    int last_start = 0;
+    int last_len = 0;
+    bool first = true;
+    QString res;
+    while (i.hasNext()) {
+        QRegularExpressionMatch match = i.next();
+        if(first)
+        {
+            last_len = match.capturedStart();
+            first = false;
+        }
+
+        res += ret.mid(last_start, last_len);
+        res += "<a href=\"";
+        res += match.captured();
+        res += "\">";
+        res += match.captured();
+        res += "</a>";
+        last_start = match.capturedStart();
+        last_len = match.capturedLength();
+        //printf("%d, %s\n", n, match.captured().toLatin1().constData());
+        //++n;
+        // ...
+    }
+    res += ret.mid(last_start + last_len);
+
+    return res;
 }
 
 void
@@ -1789,7 +1839,7 @@ DwycoCore::uid_to_profile_image_filename(QString uid)
 
 
 // note: this does not remove the source image, in case it was something
-// the user sent in, instead of a temp file from the camera.
+// the user sent in from their image library.
 int
 DwycoCore::set_simple_profile(QString handle, QString email, QString desc, QString img_fn)
 {
@@ -2815,7 +2865,9 @@ DwycoCore::url_to_filename(QUrl u)
 
 // this just creates a uniq name for the file, and removes the original
 // by default, since we don't want a copy of the image laying around
-// in the camera folder. also, strip out the exif information in the file
+// in the camera folder. also, strip out the exif information in the file.
+// since we strip all exif stuff out, we apply the rotation physically
+// to the image so it looks right to the recipient with 0 rotation.
 int
 DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
 {
@@ -2823,7 +2875,7 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     QByteArray txt = msg.toUtf8();
     QByteArray fn = filename.toLatin1();
 
-    // if for some reason we can't strip out the exit stuff, then
+    // if for some reason we can't strip out the exif stuff, then
     // don't send the image. it could be that it isn't a jpg file or something
     // but this is the safest thing to do
     int rot = jhead::do_jhead(fn.constData());
@@ -2832,7 +2884,8 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
         // should we delete file too?
         return 0;
     }
-    jhead_rotate(filename, rot >> 1);
+    if(!jhead_rotate(filename, rot >> 1))
+        return 0;
     QFile f(filename);
     //QFileInfo fi(filename);
     char *rs;

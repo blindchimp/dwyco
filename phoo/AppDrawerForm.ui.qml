@@ -34,29 +34,48 @@ Pane {
         spacing: 3
         anchors.fill: parent
 
-        RowLayout {
-            id: rowLayout
-            //width: 100
-            //height: 100
+        Rectangle {
             Layout.fillWidth: true
+            Layout.fillHeight: true
+            color: primary_dark
 
-            CircularImage {
-                id: circularImage
-                Layout.maximumHeight: 32
-                Layout.maximumWidth: 32
-                Layout.minimumHeight: 32
-                Layout.minimumWidth: 32
-                Layout.margins: ctrl_pad
-            }
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: mm(1)
+                Text {
+                    text: "Dwyco Phoo"
+                    font.bold: true
+                    font.pixelSize: 16
+                    color: "white"
+                }
 
-            Text {
-                id: text1
-                text: qsTr("Text")
-                clip: true
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                Layout.fillWidth: true
-                Layout.margins: ctrl_pad
-                font.pixelSize: 12
+                RowLayout {
+                    id: rowLayout
+                    //width: 100
+                    //height: 100
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    CircularImage {
+                        id: circularImage
+                        Layout.maximumHeight: 32
+                        Layout.maximumWidth: 32
+                        Layout.minimumHeight: 32
+                        Layout.minimumWidth: 32
+                        Layout.margins: ctrl_pad
+                    }
+
+                    Text {
+                        id: text1
+                        text: qsTr("Text")
+                        clip: true
+                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        Layout.fillWidth: true
+                        Layout.margins: ctrl_pad
+                        font.pixelSize: 12
+                        color: "white"
+                    }
+                }
             }
         }
 
@@ -155,3 +174,11 @@ Pane {
         }
     }
 }
+
+
+
+
+/*##^## Designer {
+    D{i:0;autoSize:true;height:480;width:640}
+}
+ ##^##*/

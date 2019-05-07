@@ -107,6 +107,10 @@ ApplicationWindow {
     property bool show_hidden: true
     property bool show_archived_users: true
 
+    property bool is_mobile
+
+    is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+
     function pin_expire() {
         var expire
         var duration
@@ -272,11 +276,25 @@ ApplicationWindow {
         MenuItem {
             text: "Block and Delete user"
             onTriggered: {
-                core.set_ignore(chatbox.to_uid, 1)
-                core.delete_user(chatbox.to_uid)
-                themsglist.reload_model()
-                stack.pop()
+                confirm_block_delete.visible = true
+            }
+            MessageDialog {
+                id: confirm_block_delete
+                title: "Block and delete?"
+                icon: StandardIcon.Question
+                text: "Delete ALL messages from user and BLOCK them?"
+                informativeText: "This removes FAVORITE and HIDDEN messages too."
+                standardButtons: StandardButton.Yes | StandardButton.No
+                onYes: {
+                    core.set_ignore(chatbox.to_uid, 1)
+                    core.delete_user(chatbox.to_uid)
+                    themsglist.reload_model()
+                    stack.pop()
 
+                }
+                onNo: {
+                    stack.pop()
+                }
             }
         }
 
