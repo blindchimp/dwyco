@@ -48,6 +48,14 @@ Pane {
                     font.pixelSize: 16
                     color: "white"
                 }
+                Text {
+                    text: {
+
+                        (core.is_database_online === 0 ? "" : "Online ")
+                                + (dwy_invis ? "(Invisible)" : "")
+                    }
+                    color: "white"
+                }
 
                 RowLayout {
                     id: rowLayout
@@ -175,11 +183,3 @@ Pane {
         }
     }
 }
-
-
-
-
-/*##^## Designer {
-    D{i:0;autoSize:true;height:480;width:640}
-}
- ##^##*/
