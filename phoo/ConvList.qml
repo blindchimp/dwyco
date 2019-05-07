@@ -146,6 +146,8 @@ Page {
                     background: Rectangle {
                         color: primary_dark
                         radius: 3
+                        border.color: core.is_chat_online === 0 ? "black" : "limegreen"
+                        border.width: core.is_chat_online === 0 ? 0 : 2
                     }
                     contentItem: Text {
                         x: parent.leftPadding

@@ -107,6 +107,10 @@ ApplicationWindow {
     property bool show_hidden: true
     property bool show_archived_users: true
 
+    property bool is_mobile
+
+    is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+
     function pin_expire() {
         var expire
         var duration
@@ -231,31 +235,31 @@ ApplicationWindow {
     }
 
 
-    footer: RowLayout {
-            Label {
-                id: ind_invis
-                text: "Invis"
-                visible: dwy_invis
-                color: "red"
+//    footer: RowLayout {
+//            Label {
+//                id: ind_invis
+//                text: "Invis"
+//                visible: dwy_invis
+//                color: "red"
 
-            }
-            Item {
-                Layout.fillWidth: true
-            }
+//            }
+//            Item {
+//                Layout.fillWidth: true
+//            }
 
-            Label {
-                id: hwtext
+//            Label {
+//                id: hwtext
 
-            }
-            Label {
-                id: db_status
-                text: core.is_database_online === 0 ? "db off" : "db on"
-            }
-            Label {
-                id: chat_status
-                text: core.is_chat_online === 0 ? "chat off" : "chat on"
-            }
-        }
+//            }
+//            Label {
+//                id: db_status
+//                text: core.is_database_online === 0 ? "db off" : "db on"
+//            }
+//            Label {
+//                id: chat_status
+//                text: core.is_chat_online === 0 ? "chat off" : "chat on"
+//            }
+//        }
 
     
     Menu {
@@ -866,7 +870,7 @@ ApplicationWindow {
 
         onMsg_send_status: {
             console.log(pers_id, status, recipient)
-            hwtext.text = status
+            //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
                 if(themsglist.uid == recipient) {
@@ -879,7 +883,7 @@ ApplicationWindow {
 
         onMsg_progress: {
             console.log(pers_id, msg, percent_done)
-            hwtext.text = msg + " " + String(percent_done) + "%"
+            //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
         onProfile_update: {
