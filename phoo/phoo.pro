@@ -40,6 +40,7 @@ ICON=greenguy.icns
 RC_FILE=phoo.rc
 
 SOURCES += main.cpp \
+    androidperms.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
     pfx.cpp \
@@ -380,6 +381,7 @@ QML_IMPORT_PATH = $$PWD
 include(deployment.pri)
 
 HEADERS += \
+    androidperms.h \
 	dwyco_top.h \
     msglistmodel.h \
     dwycoimageprovider.h \
