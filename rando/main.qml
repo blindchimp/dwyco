@@ -160,6 +160,10 @@ ApplicationWindow {
         }
     }
 
+    Component.onCompleted: {
+        AndroidPerms.request_sync("android.permission.CAMERA")
+    }
+
 
     Label {
         id: close_bounce_msg
