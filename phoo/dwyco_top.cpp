@@ -2992,7 +2992,9 @@ dwyco_register_qml(QQmlContext *root)
     QObject::connect(ignorelist, SIGNAL(countChanged()), Ignore_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("IgnoreListModel", Ignore_sort_proxy);
 
+#ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;
     root->setContextProperty("AndroidPerms", a);
+#endif
 
 }
