@@ -1,11 +1,11 @@
 Wed May  1 13:26:55 PDT 2019
 things that need to be fixed before first release on android
 
-* remove status bar, or make it less obtrusive (ie, do a small x somewhere if server is offline.)
+* (done) remove status bar, or make it less obtrusive (ie, do a small x somewhere if server is offline.)
 * home (conv) button is being displayed even in cases where the back arrow is all you need, decide if that is ok.
 * (done) see if there is some way to display links in chat properly
 * (done) try to enable cut/paste in chat text somehow. (it appears you can cut and past ok in textedit, but not in plain "text". so, in order to copy text, you have to view it, and then do the copy there. actually somewhat better there anyway because the text can be display in larger font.
-* try to figure out permissions, esp on camera since it seems to never start the first time the app is run
+* (done, workaround) try to figure out permissions, esp on camera since it seems to never start the first time the app is run
 * (done) toggling items in drawer should not close drawer
 * better look for the setting page, about box
 * (done, just put language in confirmation regarding hidden msgs) make sure that "clear msgs" only clears what is visible, or asks if you want to clear hidden stuff too. give it a confirmation too.

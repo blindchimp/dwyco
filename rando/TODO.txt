@@ -3,7 +3,7 @@ Wed May  1 13:09:06 PDT 2019
 * make it more obvious exactly what is new (your pic got sent, you received new pic, etc.)
 * see if we can get some mapping stuff to show geo data instead of text
 * update server to store coords in addition to text geolocations
-* make reviewer take fewer clicks (needs to "ok and hide" pic, for example)
+* (done) make reviewer take fewer clicks (needs to "ok and hide" pic, for example)
 * add minimal interaction (sort of a "like" thing) so people can get a tiny bit of positive feedback
 * change from garish colors to something more muted for ios
 * try multi-select stuff for favs and deletes
