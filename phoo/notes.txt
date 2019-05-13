@@ -10,6 +10,7 @@ things that need to be fixed before first release on android
 * better look for the setting page, about box
 * (done, just put language in confirmation regarding hidden msgs) make sure that "clear msgs" only clears what is visible, or asks if you want to clear hidden stuff too. give it a confirmation too.
 * (not needed because you have to have at least one msg to forward, and hence one user in the list.) add help screen for empty forward list to explain how to get names on it
+* possible bug: profile update is nuking "mobile user" as the location and making it empty
 
 Fri Feb 19 07:23:55 MST 2016
 dwight melcher

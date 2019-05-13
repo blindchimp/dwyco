@@ -254,9 +254,24 @@ Page {
                         MenuItem {
                             text: "Clear msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(simp_msg_browse.to_uid)
-
-                                themsglist.reload_model()
+                                confirm_delete2.visible = true
+                            }
+                            MessageDialog {
+                                id: confirm_delete2
+                                title: "Clear?"
+                                icon: StandardIcon.Question
+                                text: "Delete ALL messages from user?"
+                                informativeText: "This KEEPS FAVORITE messages."
+                                standardButtons: StandardButton.Yes | StandardButton.No
+                                onYes: {
+                                    core.clear_messages_unfav(simp_msg_browse.to_uid)
+                                    themsglist.reload_model()
+                                    close()
+                                    stack.pop()
+                                }
+                                onNo: {
+                                    close()
+                                }
                             }
                         }
 
