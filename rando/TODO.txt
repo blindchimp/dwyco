@@ -12,3 +12,7 @@ Wed May  1 13:09:06 PDT 2019
 * try a grid display mode for browsing
 * test on tablets, some of the icons are too small to click
 * don't allow you to do "abuse report" on your own pics
+* add a "seeder" option for people that just want to generate content without receiving anything in return
+* add indicator that you are expecting a rando
+* add built-in notification that prompts people to take a picture once a week or something
+* add cross-app promo to phoo and other dwyco stuff
