@@ -156,7 +156,7 @@ Page {
                         anchors.top: parent.top
                         //anchors.bottom: parent.bottom
                         anchors.left: prof.left
-                        text: "Tag:"
+                        text: to_tag === "_hid" ? "Hidden" : (to_tag === "_fav" ? "Favorites" : to_tag)
                     }
 
 
@@ -212,47 +212,6 @@ Page {
                                 stack.push(theprofileview)
                             }
                         }
-
-
-//                        MenuItem {
-//                            text: "Clear msgs"
-//                            onTriggered: {
-//                                core.clear_messages_unfav(simp_msg_browse.to_uid)
-
-//                                themsglist.reload_model()
-//                            }
-//                        }
-
-//                        MenuItem {
-//                            text: "Delete user"
-//                            onTriggered: {
-//                                confirm_delete.visible = true
-//                            }
-//                            MessageDialog {
-//                                id: confirm_delete
-//                                title: "Bulk delete?"
-//                                icon: StandardIcon.Question
-//                                text: "Delete ALL messages from user?"
-//                                informativeText: "This removes FAVORITE messages too."
-//                                standardButtons: StandardButton.Yes | StandardButton.No
-//                                onYes: {
-//                                    core.delete_user(simp_msg_browse.to_uid)
-//                                    themsglist.reload_model()
-//                                    close()
-//                                    stack.pop()
-//                                }
-//                                onNo: {
-//                                    close()
-//                                }
-//                            }
-//                        }
-//                        MenuItem {
-//                            text: "More..."
-//                            onTriggered: {
-//                                moremenu.open()
-
-//                            }
-//                        }
 
                     }
                 }

@@ -15,6 +15,9 @@ Page {
     header: SimpleToolbar {
 
     }
+    background: Rectangle {
+        color: amber_light
+    }
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: mm(3)
