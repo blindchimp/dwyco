@@ -2688,29 +2688,7 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
-//        if(uids_out.contains(QByteArray::fromHex(mlm->uid().toLatin1())))
-//        {
-//            mlm->reload_model();
-//        }
     }
-#ifdef ANDROID
-    // NOTE: bug: this doesn't work if the android version is statically
-    // linked. discovered why: JNI won't find functions properly when statically linked.
-    const char *fn;
-    int len_fn;
-    if(dwyco_get_aux_string(&fn, &len_fn))
-    {
-        if(len_fn > 0)
-        {
-            QString fns = QString::fromUtf8(QByteArray(fn, len_fn));
-            emit image_picked(fns);
-            dwyco_set_aux_string("");
-        }
-        dwyco_free_array((char *)fn);
-    }
-#endif
-
-
     return spin;
 }
 
