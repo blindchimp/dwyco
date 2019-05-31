@@ -9,6 +9,7 @@
 import QtQuick 2.6
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.12
+import QtQuick.Controls.Material 2.2
 
 
 Page {
@@ -94,166 +95,91 @@ Page {
                     Layout.fillWidth: true
                 }
 
-                ButtonGroup {
-                    id: radio
-                }
 
-                ToolButton {
-                    id: sent
-
-                    ButtonGroup.group: radio
-                    Layout.fillHeight: true
-                    Layout.margins: mm(.25)
-                    Layout.minimumWidth: recv.width
-
-                    text: "Sent"
-                    background: Rectangle {
-                        id: bgblink2
-                        color: amber_dark
-                        radius: 6
-                        ParallelAnimation {
-                            loops: 30
-                            running: core.unread_count > 0
-                            ColorAnimation {
-                                target: bgblink2
-                                property: "color"
-                                from: amber_dark
-                                to: "black"
-                                duration: 1000
-                            }
-                            onStopped: {
-                                bgblink2.color = amber_dark
-                            }
-                        }
-                    }
-                    contentItem: Text {
-                        x: sent.leftPadding
-                        y: sent.topPadding
-                        width: sent.availableWidth
-                        height: sent.availableHeight
-
-                        text: sent.text
-                        //font: sent.font
-                        color: "white" //sent.checked ? "white" : "gray"
-                        elide: Text.ElideRight
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    checkable: true
-                    onCheckedChanged: {
-                        if(checked) {
-
-                            top_dispatch.uid_selected(the_man, "clicked")
-                            recv.checked = false
-                        }
-                        show_sent = checked
-                        show_recv = false
-
-                    }
-                    Rectangle {
-                        visible: sent.checked
-                        width: parent.width * .75
-                        anchors.margins: mm(1)
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: parent.bottom
-
-                        height: mm(.5)
-                        color: "white"
-                    }
-
-                }
-                Item {
-
-                    Layout.fillWidth: true
-                }
-                ToolButton {
-                    id: recv
-                    ButtonGroup.group: radio
-                    text: "Received"
-
-                    Layout.fillHeight: true
-                    Layout.margins: mm(.25)
-
-                    background: Rectangle {
-                        id: bgblink
-                        color: primary_dark
-                        radius: 6
-                        ParallelAnimation {
-                            loops: 30
-                            running: core.unread_count > 0
-                            ColorAnimation {
-                                target: bgblink
-                                property: "color"
-                                from: primary_dark
-                                to: "black"
-                                duration: 1000
-                            }
-                            onStopped: {
-                                bgblink.color = primary_dark
-                            }
-                        }
-                    }
-                    contentItem: Text {
-                        x: recv.leftPadding
-                        y: recv.topPadding
-                        width: recv.availableWidth
-                        height: recv.availableHeight
-
-                        text: recv.text
-                        //font: recv.font
-                        color: "white" //recv.checked ? "white" : "gray"
-                        elide: Text.ElideRight
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    checkable: true
-                    onClicked: {
-                        var i
-                        var u
-                        for(i = 0; i < ConvListModel.count; i++) {
-                            u = ConvListModel.get(i).uid
-                            core.reset_unviewed_msgs(u)
-                        }
-
-
-                    }
-
-                    onCheckedChanged: {
-                        if(checked) {
-                            sent.checked = false
-                            var i
-                            var u
-                            for(i = 0; i < ConvListModel.count; i++) {
-                                u = ConvListModel.get(i).uid
-                                if(u !== the_man) {
-                                    top_dispatch.uid_selected(u, "clicked")
-                                    break;
-                                }
-                            }
-                        }
-                        show_recv = checked
-                        show_sent = false
-
-                    }
-                    Rectangle {
-                        visible: recv.checked
-                        width: parent.width * .75
-                        anchors.margins: mm(1)
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: parent.bottom
-                        height: mm(.5)
-                        color: "white"
-                    }
-                }
-                Item {
-
-                    Layout.fillWidth: true
-                }
             }
         }
     }
+
+    footer: ToolBar {
+        width: parent.width
+        RowLayout {
+            anchors.fill: parent
+        ButtonGroup {
+            id: radio
+        }
+
+        ToolButton {
+            id: sent
+
+            ButtonGroup.group: radio
+            Layout.fillHeight: true
+            Layout.margins: mm(.25)
+            Layout.fillWidth: true
+            Layout.minimumWidth: parent.width / 2
+            Layout.maximumWidth: parent.width / 2
+
+            text: "Sent"
+            icon.source: mi("ic_cloud_upload_black_24dp.png")
+            display: AbstractButton.TextUnderIcon
+            checkable: true
+            onCheckedChanged: {
+                if(checked) {
+                    top_dispatch.uid_selected(the_man, "clicked")
+                    recv.checked = false
+                }
+                show_sent = checked
+                show_recv = false
+            }
+        }
+//        Item {
+
+//            Layout.fillWidth: true
+//        }
+        ToolButton {
+            id: recv
+            ButtonGroup.group: radio
+
+            text: "Received"
+            icon.source: mi("ic_cloud_download_black_24dp.png")
+            display: AbstractButton.TextUnderIcon
+
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            Layout.margins: mm(.25)
+
+            checkable: true
+            onClicked: {
+                var i
+                var u
+                for(i = 0; i < ConvListModel.count; i++) {
+                    u = ConvListModel.get(i).uid
+                    core.reset_unviewed_msgs(u)
+                }
+            }
+
+            onCheckedChanged: {
+                if(checked) {
+                    sent.checked = false
+                    var i
+                    var u
+                    for(i = 0; i < ConvListModel.count; i++) {
+                        u = ConvListModel.get(i).uid
+                        if(u !== the_man) {
+                            top_dispatch.uid_selected(u, "clicked")
+                            break;
+                        }
+                    }
+                }
+                show_recv = checked
+                show_sent = false
+
+            }
+        }
+
+        }
+
+    }
+
 
     Component {
         id: msg_delegate
@@ -572,8 +498,6 @@ scrolling in the listview or doesn't recognizing the swipe.
         background: parent.background
 
     ColumnLayout {
-        //visible: {model.uid === the_man && listview.count === 0}
-
         anchors.fill: parent
         anchors.margins: mm(5)
 
