@@ -46,7 +46,7 @@ Page {
             Layout.fillHeight: true
         }
         Label {
-            text: "Click on a round picture to see it in full detail. Use pinching to zoom and pan as usual."
+            text: "Tap on a round picture to see it in full detail. Use pinching to zoom and pan as usual."
             Layout.fillWidth: true
             wrapMode: Text.Wrap
         }

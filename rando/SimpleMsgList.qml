@@ -180,6 +180,7 @@ Page {
 
     }
 
+    property real items_margin: mm(2)
 
     Component {
         id: msg_delegate
@@ -188,8 +189,9 @@ Page {
             id: img
             property bool click_to_fetch
             click_to_fetch: model.uid !== the_man && !IS_ACTIVE && FETCH_STATE === "manual"
-
-            width: listview.width
+            x: items_margin
+            //y: mm(10)
+            width: listview.width - 2 * items_margin
             height: {
                 if(click_to_fetch)
                     return width
@@ -443,9 +445,11 @@ Page {
     ListView {
         id: listview
         anchors.fill: parent
+        anchors.topMargin: items_margin
         clip: true
         delegate: msg_delegate
         model: themsglist
+        spacing: items_margin
 /*
 // sadly, this doesn't work very well
 // i was trying to allow a "swipe to switch sent/recv"
@@ -528,8 +532,8 @@ scrolling in the listview or doesn't recognizing the swipe.
         anchors.horizontalCenter: parent.horizontalCenter
         icon.source: mi("ic_add_a_photo_black_24dp.png")
         icon.color: "blue"
-        width: cm(2)
-        height: cm(2)
+        width: cm(1.5)
+        height: cm(1.5)
         onClicked: {
             cam.next_state = "StopAndPop"
             cam.ok_text = "Upload"
