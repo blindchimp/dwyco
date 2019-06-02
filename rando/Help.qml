@@ -80,7 +80,7 @@ Page {
             }
 
             Label {
-                text: "Where in the world the picture was created (very rough estimate)."
+                text: "Tap to see where in the world the picture was created."
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
             }
@@ -93,7 +93,7 @@ Page {
             }
 
             Label {
-                text: "Where in the world your picture was sent (very rough estimate)."
+                text: "Tap to see where in the world your picture was sent."
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
             }
