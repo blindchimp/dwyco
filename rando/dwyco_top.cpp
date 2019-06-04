@@ -2359,7 +2359,38 @@ DwycoCore::unset_tag_message(QString mid, QString tag)
     emit mid_tag_changed(mid);
 }
 
+int
+DwycoCore::hash_has_tag(QString hash, QString tag)
+{
+    QByteArray bhash = hash.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, bhash.constData());
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        QByteArray b = stl.get<QByteArray>(i, DWYCO_NO_COLUMN);
+        if(dwyco_mid_has_tag(b.constData(), btag.constData()))
+            return 1;
+    }
+    return 0;
+}
 
+void
+DwycoCore::hash_clear_tag(QString hash, QString tag)
+{
+    QByteArray bhash = hash.toLatin1();
+    QByteArray btag = tag.toLatin1();
+
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, bhash.constData());
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        QByteArray b = stl.get<QByteArray>(i, "001");
+        dwyco_unset_msg_tag(b.constData(), btag.constData());
+    }
+}
 
 int
 DwycoCore::clear_messages(QString uid)

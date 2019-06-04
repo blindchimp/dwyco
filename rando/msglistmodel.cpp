@@ -73,6 +73,7 @@ enum {
     SENT_TO_LOCATION,
     REVIEW_RESULTS,
     IS_UNSEEN,
+    ASSOC_HASH,
 };
 
 static int
@@ -213,10 +214,6 @@ att_file_hash(const QByteArray& huid, const QByteArray& mid, QByteArray& hash_ou
     hash_out = res;
     dwyco_free_array((char *)buf);
     return 1;
-
-
-
-
 }
 
 static
@@ -906,6 +903,7 @@ msglist_raw::roleNames() const
     rn(SENT_TO_LOCATION);
     rn(REVIEW_RESULTS);
     rn(IS_UNSEEN);
+    rn(ASSOC_HASH);
 #undef rn
     return roles;
 }
@@ -1466,11 +1464,34 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     {
         QByteArray mid;
         if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QVariant();
-
-        if(dwyco_mid_has_tag(mid.constData(), "_unseen"))
-            return 1;
+            return QByteArray("");
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+        {
+            return QByteArray("");
+        }
+        QByteArray h;
+        if(!att_file_hash(huid, mid, h))
+            return QByteArray("");
+        h = h.toHex();
         return 0;
+
+
+    }
+    else if(role == ASSOC_HASH)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QByteArray("");
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+        {
+            return QByteArray("");
+        }
+        QByteArray h;
+        if(!att_file_hash(huid, mid, h))
+            return QByteArray("");
+        return QString(h.toHex());
     }
 
     return QVariant();

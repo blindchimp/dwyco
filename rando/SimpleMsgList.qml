@@ -276,7 +276,7 @@ Page {
                             fail_review_msg.state = "moveOut"
                         else
                             fail_review_msg.state = "moveIn"
-                        core.unset_tag_message(model.mid, "_unseen")
+                        core.hash_clear_tag(ASSOC_HASH, "_unseen")
                     }
                 }
 
@@ -332,7 +332,7 @@ Page {
                         else
                             location.state = "moveIn"
 
-                        core.unset_tag_message(model.mid, "_unseen")
+                        core.hash_clear_tag(ASSOC_HASH, "_unseen")
                     }
                 }
 
