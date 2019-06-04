@@ -1511,17 +1511,16 @@ DwycoCore::init()
     reload_conv_list();
     reload_ignore_list();
 
+    QString tag_change1;
+    if(!setting_get("tag_change1", tag_change1))
     {
         DWYCO_USER_LIST ul;
         int nul = 0;
         dwyco_get_user_list2(&ul, &nul);
         simple_scoped qul(ul);
-        QByteArray the_man = QByteArray::fromHex("5a098f3df49015331d74");
         for(int i = 0; i < nul; ++i)
         {
             QByteArray u = qul.get<QByteArray>(i, DWYCO_NO_COLUMN);
-            //if(u == the_man)
-            //    continue;
             DWYCO_SAVED_MSG_LIST sml;
             if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
             {
@@ -1549,6 +1548,7 @@ DwycoCore::init()
                                 // upgrade hack, favorite the geo-info so it isn't cleared
                                 QByteArray mid = qsml.get<QByteArray>(i, DWYCO_QM_BODY_ID);
                                 dwyco_set_fav_msg(mid.constData(), 1);
+                                dwyco_set_msg_tag(mid.constData(), "_json");
 
                             }
                         }
@@ -1557,7 +1557,48 @@ DwycoCore::init()
             }
 
         }
+        setting_put("tag_change1", "");
     }
+    else
+    {
+        // just query for _json tag and processes those directly
+        DWYCO_LIST tml;
+        if(dwyco_get_tagged_idx(&tml, "_json"))
+        {
+            simple_scoped stml(tml);
+            for(int i = 0; i < stml.rows(); ++i)
+            {
+                DWYCO_SAVED_MSG_LIST sml;
+                QByteArray u = stml.get<QByteArray>(i, DWYCO_MSG_IDX_ASSOC_UID);
+                QByteArray mid = stml.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+                if(dwyco_get_saved_message(&sml, u.constData(), u.length(), mid.constData()))
+                {
+                    simple_scoped ssml(sml);
+                    if(ssml.is_nil(DWYCO_QM_BODY_ATTACHMENT))
+                    {
+                        QByteArray txt = ssml.get<QByteArray>(i, DWYCO_QM_BODY_NEW_TEXT2);
+                        QJsonDocument qjd = QJsonDocument::fromJson(txt);
+                        if(!qjd.isNull())
+                        {
+                            QJsonObject qjo = qjd.object();
+                            if(!qjo.isEmpty())
+                            {
+                                QJsonValue h = qjo.value("hash");
+                                QJsonValue loc = qjo.value("loc");
+                                QJsonValue rev = qjo.value("review");
+
+                                if(!loc.isUndefined())
+                                    Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                                if(!rev.isUndefined())
+                                    Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     const char *uid;
     int len_uid;
@@ -2899,7 +2940,7 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     QByteArray rsb(rs, 4);
     dwyco_free_array(rs);
     rsb = rsb.toHex();
-    QByteArray dest;// = fi.fileName().toLatin1();
+    QByteArray dest;
     dest += rsb;
     dest += ".jpg";
     dest = add_pfx(Tmp_pfx, dest);

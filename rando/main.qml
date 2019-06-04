@@ -472,7 +472,7 @@ ApplicationWindow {
 
         onMsg_send_status: {
             console.log(pers_id, status, recipient)
-            hwtext.text = status
+            //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
                 if(themsglist.uid == recipient) {

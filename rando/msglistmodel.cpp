@@ -72,6 +72,7 @@ enum {
     ASSOC_UID, // who the message is from (or to, if sent msg)
     SENT_TO_LOCATION,
     REVIEW_RESULTS,
+    IS_UNSEEN,
 };
 
 static int
@@ -383,6 +384,7 @@ msglist_model::invalidate_sent_to()
         QModelIndex mi = index(i, 0);
         emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LOCATION));
         emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
+        emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
     }
 }
 
@@ -903,6 +905,7 @@ msglist_raw::roleNames() const
     rn(ASSOC_UID);
     rn(SENT_TO_LOCATION);
     rn(REVIEW_RESULTS);
+    rn(IS_UNSEEN);
 #undef rn
     return roles;
 }
@@ -1458,6 +1461,16 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
             return QByteArray("");
         QByteArray l = Hash_to_review.value(h, "Unknown");
         return l;
+    }
+    else if(role == IS_UNSEEN)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QVariant();
+
+        if(dwyco_mid_has_tag(mid.constData(), "_unseen"))
+            return 1;
+        return 0;
     }
 
     return QVariant();
