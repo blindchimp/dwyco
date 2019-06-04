@@ -1569,14 +1569,14 @@ DwycoCore::init()
             for(int i = 0; i < stml.rows(); ++i)
             {
                 DWYCO_SAVED_MSG_LIST sml;
-                QByteArray u = stml.get<QByteArray>(i, DWYCO_MSG_IDX_ASSOC_UID);
+                QByteArray u = QByteArray::fromHex(stml.get<QByteArray>(i, DWYCO_MSG_IDX_ASSOC_UID));
                 QByteArray mid = stml.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
                 if(dwyco_get_saved_message(&sml, u.constData(), u.length(), mid.constData()))
                 {
                     simple_scoped ssml(sml);
                     if(ssml.is_nil(DWYCO_QM_BODY_ATTACHMENT))
                     {
-                        QByteArray txt = ssml.get<QByteArray>(i, DWYCO_QM_BODY_NEW_TEXT2);
+                        QByteArray txt = ssml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2);
                         QJsonDocument qjd = QJsonDocument::fromJson(txt);
                         if(!qjd.isNull())
                         {
