@@ -1511,17 +1511,16 @@ DwycoCore::init()
     reload_conv_list();
     reload_ignore_list();
 
+    QString tag_change1;
+    if(!setting_get("tag_change1", tag_change1))
     {
         DWYCO_USER_LIST ul;
         int nul = 0;
         dwyco_get_user_list2(&ul, &nul);
         simple_scoped qul(ul);
-        QByteArray the_man = QByteArray::fromHex("5a098f3df49015331d74");
         for(int i = 0; i < nul; ++i)
         {
             QByteArray u = qul.get<QByteArray>(i, DWYCO_NO_COLUMN);
-            //if(u == the_man)
-            //    continue;
             DWYCO_SAVED_MSG_LIST sml;
             if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
             {
@@ -1549,6 +1548,7 @@ DwycoCore::init()
                                 // upgrade hack, favorite the geo-info so it isn't cleared
                                 QByteArray mid = qsml.get<QByteArray>(i, DWYCO_QM_BODY_ID);
                                 dwyco_set_fav_msg(mid.constData(), 1);
+                                dwyco_set_msg_tag(mid.constData(), "_json");
 
                             }
                         }
@@ -1557,7 +1557,48 @@ DwycoCore::init()
             }
 
         }
+        setting_put("tag_change1", "");
     }
+    else
+    {
+        // just query for _json tag and processes those directly
+        DWYCO_LIST tml;
+        if(dwyco_get_tagged_idx(&tml, "_json"))
+        {
+            simple_scoped stml(tml);
+            for(int i = 0; i < stml.rows(); ++i)
+            {
+                DWYCO_SAVED_MSG_LIST sml;
+                QByteArray u = QByteArray::fromHex(stml.get<QByteArray>(i, DWYCO_MSG_IDX_ASSOC_UID));
+                QByteArray mid = stml.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+                if(dwyco_get_saved_message(&sml, u.constData(), u.length(), mid.constData()))
+                {
+                    simple_scoped ssml(sml);
+                    if(ssml.is_nil(DWYCO_QM_BODY_ATTACHMENT))
+                    {
+                        QByteArray txt = ssml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2);
+                        QJsonDocument qjd = QJsonDocument::fromJson(txt);
+                        if(!qjd.isNull())
+                        {
+                            QJsonObject qjo = qjd.object();
+                            if(!qjo.isEmpty())
+                            {
+                                QJsonValue h = qjo.value("hash");
+                                QJsonValue loc = qjo.value("loc");
+                                QJsonValue rev = qjo.value("review");
+
+                                if(!loc.isUndefined())
+                                    Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                                if(!rev.isUndefined())
+                                    Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     const char *uid;
     int len_uid;
@@ -2318,7 +2359,41 @@ DwycoCore::unset_tag_message(QString mid, QString tag)
     emit mid_tag_changed(mid);
 }
 
+int
+DwycoCore::hash_has_tag(QString hash, QString tag)
+{
+    QByteArray bhash = hash.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, bhash.constData());
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        QByteArray b = stl.get<QByteArray>(i, "001");
+        if(dwyco_mid_has_tag(b.constData(), btag.constData()))
+            return 1;
+    }
+    return 0;
+}
 
+void
+DwycoCore::hash_clear_tag(QString hash, QString tag)
+{
+    QByteArray bhash = hash.toLatin1();
+    QByteArray btag = tag.toLatin1();
+
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, bhash.constData());
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        // ugh, need to fill in the API for *tagged_mids
+        QByteArray b = stl.get<QByteArray>(i, "001");
+        dwyco_unset_msg_tag(b.constData(), btag.constData());
+        emit mid_tag_changed(b);
+    }
+    mlm->invalidate_sent_to();
+}
 
 int
 DwycoCore::clear_messages(QString uid)
@@ -2688,29 +2763,7 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
-//        if(uids_out.contains(QByteArray::fromHex(mlm->uid().toLatin1())))
-//        {
-//            mlm->reload_model();
-//        }
     }
-#ifdef ANDROID
-    // NOTE: bug: this doesn't work if the android version is statically
-    // linked. discovered why: JNI won't find functions properly when statically linked.
-    const char *fn;
-    int len_fn;
-    if(dwyco_get_aux_string(&fn, &len_fn))
-    {
-        if(len_fn > 0)
-        {
-            QString fns = QString::fromUtf8(QByteArray(fn, len_fn));
-            emit image_picked(fns);
-            dwyco_set_aux_string("");
-        }
-        dwyco_free_array((char *)fn);
-    }
-#endif
-
-
     return spin;
 }
 
@@ -2921,7 +2974,7 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     QByteArray rsb(rs, 4);
     dwyco_free_array(rs);
     rsb = rsb.toHex();
-    QByteArray dest;// = fi.fileName().toLatin1();
+    QByteArray dest;
     dest += rsb;
     dest += ".jpg";
     dest = add_pfx(Tmp_pfx, dest);

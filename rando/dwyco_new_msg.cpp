@@ -208,7 +208,6 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
         if(dwyco_is_special_message(0, 0, mid.constData(), &special_type))
             continue;
 
-        int do_add_unviewed = 1;
         if(type != DWYCO_TYPE_NIL)
         {
             if(dwyco_save_message(mid.constData()))
@@ -233,9 +232,7 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                             if(!rev.isUndefined())
                                 Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
 
-                            mlm->invalidate_sent_to();
-                            // these little json control messages don't get seen by the user directly
-                            do_add_unviewed = 0;
+
                             // note: this is a hack. we favorite the message so it doesn't
                             // get removed during "clear-non favorites". this keeps us
                             // from having to check hashes while we are deleting pictures.
@@ -244,30 +241,15 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                             if(qsml.is_nil(DWYCO_QM_BODY_ATTACHMENT))
                             {
                                 dwyco_set_fav_msg(mid.constData(), 1);
-                                // note: this is a hack... we set the msg tag to "hidden",  but
-                                // we actually mean "new". we then display the annotation differentlhy
-                                // in the ui so the user knows it is new. then when they have seen it,
-                                // we unset the tag. only reason we do this is because we already have
-                                // the infrastructure for "hidden" setup, which we aren't using for that
-                                // purpose in this app.
-                                dwyco_set_msg_tag(mid.constData(), "_hid");
-
+                                dwyco_set_msg_tag(mid.constData(), "_json");
                             }
+                            dwyco_set_msg_tag(mid.constData(), "_unseen");
+                            dwyco_set_msg_tag(mid.constData(), h.toString().toLatin1());
+                            mlm->invalidate_sent_to();
                         }
                     }
                 }
             }
-        }
-
-        // ok, at least it is likely the person will see it now
-        // if there are any errors above, people may not be able to see a message
-        // but the user would appear towards the top of the user list, which is weird.
-        // this happens sometimes when attachments are not fetchable for whatever reason.
-        if(do_add_unviewed)
-        {
-            Got_msg_from.insert(uid_out);
-            Got_msg_from_this_session.insert(uid_out);
-            add_unviewed(uid_out, mid);
         }
         uids.insert(uid_out);
     }

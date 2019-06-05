@@ -72,6 +72,8 @@ enum {
     ASSOC_UID, // who the message is from (or to, if sent msg)
     SENT_TO_LOCATION,
     REVIEW_RESULTS,
+    IS_UNSEEN,
+    ASSOC_HASH,
 };
 
 static int
@@ -212,10 +214,6 @@ att_file_hash(const QByteArray& huid, const QByteArray& mid, QByteArray& hash_ou
     hash_out = res;
     dwyco_free_array((char *)buf);
     return 1;
-
-
-
-
 }
 
 static
@@ -383,6 +381,7 @@ msglist_model::invalidate_sent_to()
         QModelIndex mi = index(i, 0);
         emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LOCATION));
         emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
+        emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
     }
 }
 
@@ -407,6 +406,9 @@ msglist_model::mid_to_index(QByteArray bmid)
     return -1;
 }
 
+// note: this is a kluge, we just invalidate all tag-based
+// attributes, causes a little more refreshing than needed, but
+// is ok for now. should fix it...
 void
 msglist_model::mid_tag_changed(QString mid)
 {
@@ -415,6 +417,7 @@ msglist_model::mid_tag_changed(QString mid)
     QVector<int> roles;
     roles.append(IS_HIDDEN);
     roles.append(IS_FAVORITE);
+    roles.append(IS_UNSEEN);
     mlm->dataChanged(mi, mi, roles);
 }
 
@@ -903,6 +906,8 @@ msglist_raw::roleNames() const
     rn(ASSOC_UID);
     rn(SENT_TO_LOCATION);
     rn(REVIEW_RESULTS);
+    rn(IS_UNSEEN);
+    rn(ASSOC_HASH);
 #undef rn
     return roles;
 }
@@ -1003,6 +1008,7 @@ msglist_raw::qd_data ( int r, int role ) const
     case HAS_VIDEO:
     case IS_FAVORITE:
     case IS_HIDDEN:
+    case IS_UNSEEN:
         return 0;
 
     case IS_FORWARDED:
@@ -1088,6 +1094,22 @@ retry_auto_fetch(QByteArray mid)
     roles.append(ATTACHMENT_PERCENT);
     mlm->dataChanged(mi, mi, roles);
     return tmp;
+}
+
+static
+int
+hash_has_tag(QByteArray hash, const char *tag)
+{
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, hash.constData());
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        QByteArray b = stl.get<QByteArray>(i, "001");
+        if(dwyco_mid_has_tag(b.constData(), tag))
+            return 1;
+    }
+    return 0;
 }
 
 QVariant
@@ -1191,6 +1213,7 @@ msglist_raw::inbox_data (int r, int role ) const
     case IS_FAVORITE:
     case IS_HIDDEN:
     case IS_FORWARDED:
+    case IS_UNSEEN:
         return 0;
 
     case ATTACHMENT_PERCENT:
@@ -1458,6 +1481,37 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
             return QByteArray("");
         QByteArray l = Hash_to_review.value(h, "Unknown");
         return l;
+    }
+    else if(role == IS_UNSEEN)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return 0;
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+            return 0;
+        QByteArray h;
+        if(!att_file_hash(huid, mid, h))
+            return 0;
+        h = h.toHex();
+        if(hash_has_tag(h, "_unseen"))
+            return 1;
+        return 0;
+    }
+    else if(role == ASSOC_HASH)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QByteArray("");
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+        {
+            return QByteArray("");
+        }
+        QByteArray h;
+        if(!att_file_hash(huid, mid, h))
+            return QByteArray("");
+        return QString(h.toHex());
     }
 
     return QVariant();

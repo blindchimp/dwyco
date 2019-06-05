@@ -206,10 +206,13 @@ sql_add_tag(vc mid, vc tag)
 {
     try
     {
+        sql_start_transaction();
         sql_insert_record(mid, tag);
+        sql_commit_transaction();
     }
     catch (...)
     {
+        sql_rollback_transaction();
     }
 }
 
