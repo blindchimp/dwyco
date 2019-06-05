@@ -2369,7 +2369,7 @@ DwycoCore::hash_has_tag(QString hash, QString tag)
     simple_scoped stl(tl);
     for(int i = 0; i < stl.rows(); ++i)
     {
-        QByteArray b = stl.get<QByteArray>(i, DWYCO_NO_COLUMN);
+        QByteArray b = stl.get<QByteArray>(i, "001");
         if(dwyco_mid_has_tag(b.constData(), btag.constData()))
             return 1;
     }
@@ -2387,9 +2387,12 @@ DwycoCore::hash_clear_tag(QString hash, QString tag)
     simple_scoped stl(tl);
     for(int i = 0; i < stl.rows(); ++i)
     {
+        // ugh, need to fill in the API for *tagged_mids
         QByteArray b = stl.get<QByteArray>(i, "001");
         dwyco_unset_msg_tag(b.constData(), btag.constData());
+        emit mid_tag_changed(b);
     }
+    mlm->invalidate_sent_to();
 }
 
 int

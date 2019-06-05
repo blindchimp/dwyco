@@ -231,17 +231,16 @@ Page {
                 }
             }
             Behavior on visible {
-                SequentialAnimation {
-
-                NumberAnimation {
-                    target: img
-                    property: "opacity"
-                    duration: 250
-                    easing.type: Easing.InOutQuad
-                    from: 0.0
-                    to: 1.0
-                }
-                }
+                //SequentialAnimation {
+                    NumberAnimation {
+                        target: img
+                        property: "opacity"
+                        duration: 250
+                        easing.type: Easing.InOutQuad
+                        from: 0.0
+                        to: 1.0
+                    }
+                //}
             }
 
             Rectangle {
@@ -268,6 +267,7 @@ Page {
                 anchors.margins: mm(.5)
                 visible: !IS_QD && REVIEW_RESULTS != "Unknown" && msglist.model.uid === the_man
                 source: mi("ic_not_interested_black_24dp.png")
+
                 z: 10
                 MouseArea {
                     anchors.fill: parent
@@ -278,6 +278,27 @@ Page {
                             fail_review_msg.state = "moveIn"
                         core.hash_clear_tag(ASSOC_HASH, "_unseen")
                     }
+                }
+
+                SequentialAnimation {
+                    running: IS_UNSEEN === 1
+                    loops: Animation.Infinite
+                NumberAnimation {
+                    target: failed_review
+                    property: "scale"
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                    from: 1.0
+                    to: 0.5
+                }
+                NumberAnimation {
+                    target: failed_review
+                    property: "scale"
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                    from: 0.5
+                    to: 1.0
+                }
                 }
 
 
