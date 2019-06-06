@@ -1586,11 +1586,14 @@ DwycoCore::init()
                                 QJsonValue h = qjo.value("hash");
                                 QJsonValue loc = qjo.value("loc");
                                 QJsonValue rev = qjo.value("review");
-
-                                if(!loc.isUndefined())
-                                    Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
-                                if(!rev.isUndefined())
-                                    Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+                                if(!h.isUndefined())
+                                {
+                                    QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
+                                    if(!loc.isUndefined())
+                                        Hash_to_loc.insert(hh, loc.toString().toLatin1());
+                                    if(!rev.isUndefined())
+                                        Hash_to_review.insert(hh, rev.toString().toLatin1());
+                                }
                             }
                         }
                     }

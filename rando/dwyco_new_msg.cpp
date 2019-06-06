@@ -227,10 +227,15 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                             QJsonValue loc = qjo.value("loc");
                             QJsonValue rev = qjo.value("review");
 
-                            if(!loc.isUndefined())
-                                Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
-                            if(!rev.isUndefined())
-                                Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+                            if(!h.isUndefined())
+                            {
+                                QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
+                                if(!loc.isUndefined())
+                                    Hash_to_loc.insert(hh, loc.toString().toLatin1());
+                                if(!rev.isUndefined())
+                                    Hash_to_review.insert(hh, rev.toString().toLatin1());
+                                dwyco_set_msg_tag(mid.constData(), h.toString().toLatin1());
+                            }
 
 
                             // note: this is a hack. we favorite the message so it doesn't
@@ -244,7 +249,6 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                                 dwyco_set_msg_tag(mid.constData(), "_json");
                             }
                             dwyco_set_msg_tag(mid.constData(), "_unseen");
-                            dwyco_set_msg_tag(mid.constData(), h.toString().toLatin1());
                             mlm->invalidate_sent_to();
                         }
                     }

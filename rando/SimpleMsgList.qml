@@ -283,6 +283,10 @@ Page {
                 SequentialAnimation {
                     running: IS_UNSEEN === 1
                     loops: Animation.Infinite
+                    onStopped: {
+                        failed_review.scale = 1.0
+                    }
+
                 NumberAnimation {
                     target: failed_review
                     property: "scale"
