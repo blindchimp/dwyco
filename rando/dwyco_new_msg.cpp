@@ -30,6 +30,8 @@ static UID_MID_MAP Unviewed_msgs;
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
 
+void update_unseen_from_db();
+
 static int
 save_unviewed()
 {
@@ -249,6 +251,7 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                                 dwyco_set_msg_tag(mid.constData(), "_json");
                             }
                             dwyco_set_msg_tag(mid.constData(), "_unseen");
+                            update_unseen_from_db();
                             mlm->invalidate_sent_to();
                         }
                     }

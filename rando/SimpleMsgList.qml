@@ -23,8 +23,8 @@ Page {
 
     background: Rectangle {
         gradient: Gradient {
-            GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
-            GradientStop { position: 1.0; color: msglist.model.uid === the_man ? amber_dark : primary_dark}
+            GradientStop { position: 1.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
+            GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_dark : primary_dark}
         }
     }
 
@@ -130,6 +130,16 @@ Page {
                 show_sent = checked
                 show_recv = false
             }
+            Rectangle {
+                id: badge1
+                width: 16
+                height: 16
+                anchors.right: parent.right
+                anchors.top: parent.top
+                radius: width / 2
+                color: "red"
+                visible: core.has_unseen_geo
+            }
         }
 //        Item {
 
@@ -173,6 +183,16 @@ Page {
                 show_recv = checked
                 show_sent = false
 
+            }
+            Rectangle {
+                id: badge2
+                width: 16
+                height: 16
+                anchors.right: parent.right
+                anchors.top: parent.top
+                radius: width / 2
+                color: "red"
+                visible: core.has_unseen_rando
             }
         }
 

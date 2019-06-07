@@ -39,6 +39,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, audio_full_duplex)
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
+    QML_READONLY_VAR_PROPERTY(bool, has_unseen_rando)
+    QML_READONLY_VAR_PROPERTY(bool, has_unseen_geo)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {

@@ -126,6 +126,20 @@ hack_unread_count()
 }
 
 void
+update_unseen_from_db()
+{
+    if(!TheDwycoCore)
+        return;
+    DWYCO_LIST tl;
+    if(!dwyco_get_tagged_mids(&tl, "_unseen"))
+        return;
+    simple_scoped stl(tl);
+
+    TheDwycoCore->update_has_unseen_geo(stl.rows() > 0);
+    TheDwycoCore->update_has_unseen_rando(stl.rows() > 0);
+}
+
+void
 reload_conv_list()
 {
     Conv_sort_proxy->setDynamicSortFilter(false);
@@ -1510,6 +1524,7 @@ DwycoCore::init()
     update_unread_count(has_unviewed_msgs());
     reload_conv_list();
     reload_ignore_list();
+    update_unseen_from_db();
 
     QString tag_change1;
     if(!setting_get("tag_change1", tag_change1))
@@ -2395,6 +2410,7 @@ DwycoCore::hash_clear_tag(QString hash, QString tag)
         dwyco_unset_msg_tag(b.constData(), btag.constData());
         emit mid_tag_changed(b);
     }
+    update_unseen_from_db();
     mlm->invalidate_sent_to();
 }
 
