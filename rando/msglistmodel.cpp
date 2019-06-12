@@ -654,16 +654,16 @@ msglist_raw::check_inbox_model()
         if(qnew_im.rows() == count_inbox_msgs)
         {
             {
-            dwyco_list q_inbox_msgs(inbox_msgs);
-            for(int i = 0; i < count_inbox_msgs; ++i)
-            {
-                QByteArray mid = qnew_im.get<QByteArray>(i, DWYCO_QMS_ID);
-                if(mid != q_inbox_msgs.get<QByteArray>(i, DWYCO_QMS_ID))
+                dwyco_list q_inbox_msgs(inbox_msgs);
+                for(int i = 0; i < count_inbox_msgs; ++i)
                 {
-                    qnew_im.release();
-                    return 0;
+                    QByteArray mid = qnew_im.get<QByteArray>(i, DWYCO_QMS_ID);
+                    if(mid != q_inbox_msgs.get<QByteArray>(i, DWYCO_QMS_ID))
+                    {
+                        qnew_im.release();
+                        return 0;
+                    }
                 }
-            }
             }
 
             simple_scoped q_old_inbox(inbox_msgs);

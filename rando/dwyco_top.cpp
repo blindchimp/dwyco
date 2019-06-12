@@ -81,6 +81,7 @@ class DwycoCore;
 DwycoCore *TheDwycoCore;
 static QQmlContext *TheRootCtx;
 QByteArray DwycoCore::My_uid;
+static QByteArray TheMan;
 static int AvoidSSL = 0;
 typedef QHash<QByteArray, QByteArray> UID_ATTR_MAP;
 typedef QHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
@@ -90,7 +91,7 @@ static UID_ATTR_MAP Uid_attrs;
 static ConvSortFilterModel *Conv_sort_proxy;
 //static IgnoreSortFilterModel *Ignore_sort_proxy;
 static QTcpServer *BGLockSock;
-static DwycoImageProvider *Dwyco_video_provider;
+//static DwycoImageProvider *Dwyco_video_provider;
 //static DwycoVideoPreviewProvider *Dwyco_video_preview_provider;
 static QQmlVariantListModel *CamListModel;
 static int BGLockPort;
@@ -135,8 +136,43 @@ update_unseen_from_db()
         return;
     simple_scoped stl(tl);
 
-    TheDwycoCore->update_has_unseen_geo(stl.rows() > 0);
-    TheDwycoCore->update_has_unseen_rando(stl.rows() > 0);
+    bool has_urando = false;
+    bool has_ugeo = false;
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        if(QByteArray::fromHex(stl.get<QByteArray>(i, "000")) != TheMan)
+        {
+            has_urando = true;
+        }
+        else
+        {
+            has_ugeo = true;
+        }
+        if(has_ugeo && has_urando)
+            break;
+    }
+    TheDwycoCore->update_has_unseen_rando(has_urando);
+
+    TheDwycoCore->update_has_unseen_geo(has_ugeo);
+
+}
+
+void
+DwycoCore::clear_unseen_rando()
+{
+    DWYCO_LIST tl;
+    if(!dwyco_get_tagged_mids(&tl, "_unseen"))
+        return;
+    simple_scoped stl(tl);
+
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        if(QByteArray::fromHex(stl.get<QByteArray>(i, "000")) != TheMan)
+        {
+            dwyco_unset_msg_tag(stl.get<QByteArray>(i, "001").constData(), "_unseen");
+        }
+    }
+    TheDwycoCore->update_has_unseen_rando(false);
 }
 
 void
@@ -1318,6 +1354,7 @@ DwycoCore::init()
     if(TheDwycoCore)
         return;
     TheDwycoCore = this;
+    TheMan = QByteArray::fromHex("5a098f3df49015331d74");
     update_user_dir(User_pfx);
     update_tmp_dir(Tmp_pfx);
 
@@ -1622,7 +1659,6 @@ DwycoCore::init()
     int len_uid;
     dwyco_get_my_uid(&uid, &len_uid);
     My_uid = QByteArray(uid, len_uid);
-
 
     // for easier testing, setup for raw file acq
     dwyco_set_video_input(

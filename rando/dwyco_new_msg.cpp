@@ -210,8 +210,15 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
         if(dwyco_is_special_message(0, 0, mid.constData(), &special_type))
             continue;
 
-        if(type != DWYCO_TYPE_NIL)
+        if(type == DWYCO_TYPE_NIL)
         {
+            // message is waiting on server
+            dwyco_set_msg_tag(mid.constData(), "_unseen");
+        }
+        else
+        {
+            // message has been fetched (or received directly) and is completely
+            // available, even attachments, so save it
             if(dwyco_save_message(mid.constData()))
             {
                 DWYCO_SAVED_MSG_LIST sml;
@@ -251,8 +258,6 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                                 dwyco_set_msg_tag(mid.constData(), "_json");
                             }
                             dwyco_set_msg_tag(mid.constData(), "_unseen");
-                            update_unseen_from_db();
-                            mlm->invalidate_sent_to();
                         }
                     }
                 }
@@ -260,6 +265,8 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
         }
         uids.insert(uid_out);
     }
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
 
     return 0;
 }

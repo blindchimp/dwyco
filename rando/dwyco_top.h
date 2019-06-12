@@ -215,6 +215,7 @@ public:
     Q_INVOKABLE void unset_tag_message(QString mid, QString tag);
     Q_INVOKABLE void hash_clear_tag(QString hash, QString tag);
     Q_INVOKABLE int hash_has_tag(QString hash, QString tag);
+    Q_INVOKABLE void clear_unseen_rando();
 
 
 //    Q_INVOKABLE void uid_keyboard_input(QString uid);

@@ -158,14 +158,6 @@ Page {
             Layout.margins: mm(.25)
 
             checkable: true
-            onClicked: {
-                var i
-                var u
-                for(i = 0; i < ConvListModel.count; i++) {
-                    u = ConvListModel.get(i).uid
-                    core.reset_unviewed_msgs(u)
-                }
-            }
 
             onCheckedChanged: {
                 if(checked) {
@@ -179,6 +171,7 @@ Page {
                             break;
                         }
                     }
+                    core.clear_unseen_rando()
                 }
                 show_recv = checked
                 show_sent = false
