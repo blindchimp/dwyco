@@ -15,6 +15,7 @@
 #include <QUrlQuery>
 #include <QSslSocket>
 #include <QGuiApplication>
+#include <QImage>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -26,7 +27,7 @@
 #include "msglistmodel.h"
 #include "pfx.h"
 #include "ssmap.h"
-#include "dwycoimageprovider.h"
+//#include "dwycoimageprovider.h"
 //#include "dwycoprofilepreviewprovider.h"
 //#include "dwycovideopreviewprovider.h"
 //#include "ignoremodel.h"
@@ -140,25 +141,34 @@ update_unseen_from_db()
     bool has_ugeo = false;
     for(int i = 0; i < stl.rows(); ++i)
     {
-        if(QByteArray::fromHex(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID)) != TheMan)
-        {
-            has_urando = true;
-        }
-        else
-        {
+        QByteArray mid = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        if(dwyco_mid_has_tag(mid.constData(), "_json"))
             has_ugeo = true;
-        }
+        else
+            has_urando = true;
         if(has_ugeo && has_urando)
             break;
     }
+    // if there are messages on the server from the reviewer, it is
+    // almost certain bad news
     if(uid_has_unviewed_msgs(TheMan))
         has_ugeo = true;
-    if(has_unviewed_msgs() - uid_unviewed_msgs_count(TheMan) > 0)
+
+    // if there are server messages from the bot (NOT the reviewer)
+    // it could be either a rando or a geo location msg
+    // the msg summary doesn't tell us directly, we have to wait
+    // until the message is downloaded, so just tell the user it
+    // could be either. note, we could kluge and check the length, or
+    // actually put the attachment info in the summary, but that is
+    // too much for now.
+    if(has_unviewed_msgs() > uid_unviewed_msgs_count(TheMan))
+    {
+        has_ugeo = true;
         has_urando = true;
+    }
 
     TheDwycoCore->update_has_unseen_rando(has_urando);
     TheDwycoCore->update_has_unseen_geo(has_ugeo);
-
 }
 
 void

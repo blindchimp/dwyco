@@ -274,6 +274,8 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                                 dwyco_set_msg_tag(mid.constData(), "_json");
                             }
                             dwyco_set_msg_tag(mid.constData(), "_unseen");
+                            // note: we delete it from the "server has unseen" because
+                            // we have fetched it from the server.
                             del_unviewed_mid(mid);
                         }
                     }

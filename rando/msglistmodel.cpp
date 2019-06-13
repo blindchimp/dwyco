@@ -595,24 +595,24 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
 
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
-        return 0;
+        return false;
     if(filter_show_recv == 0 && is_sent.toInt() == 0)
-        return 0;
+        return false;
     if(filter_only_favs)
     {
         QVariant is_fav = alm->data(alm->index(source_row, 0), IS_FAVORITE);
         if(is_fav.toInt() == 0)
-            return 0;
+            return false;
     }
     if(filter_show_hidden == 0)
     {
         QVariant mid = alm->data(alm->index(source_row, 0), MID);
         int hidden = dwyco_mid_has_tag(mid.toByteArray().constData(), "_hid");
         if(hidden)
-            return 0;
+            return false;
     }
 
-    return 1;
+    return true;
 }
 
 msglist_raw::msglist_raw(QObject *p)

@@ -46,6 +46,8 @@ public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
         m_unread_count = 0;
         m_client_name = "";
+        m_total_users = 0;
+        m_unread_count = 0;
         m_buildtime = BUILDTIME;
         m_user_dir = ".";
         m_tmp_dir = ".";
@@ -56,6 +58,8 @@ public:
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
         m_use_archived = false;
+        m_has_unseen_geo = false;
+        m_has_unseen_rando = false;
     }
     static QByteArray My_uid;
 
@@ -254,7 +258,7 @@ public:
 #endif
 
     Q_INVOKABLE void set_badge_number(int i);
-    Q_INVOKABLE int rotate_in_place(QString filename, int rot, int mirror_y);
+    Q_INVOKABLE int rotate_in_place(QString fn, int rot, int mirror_y);
 
 public:
 
