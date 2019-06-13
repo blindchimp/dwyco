@@ -140,7 +140,7 @@ update_unseen_from_db()
     bool has_ugeo = false;
     for(int i = 0; i < stl.rows(); ++i)
     {
-        if(QByteArray::fromHex(stl.get<QByteArray>(i, "000")) != TheMan)
+        if(QByteArray::fromHex(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID)) != TheMan)
         {
             has_urando = true;
         }
@@ -151,8 +151,12 @@ update_unseen_from_db()
         if(has_ugeo && has_urando)
             break;
     }
-    TheDwycoCore->update_has_unseen_rando(has_urando);
+    if(uid_has_unviewed_msgs(TheMan))
+        has_ugeo = true;
+    if(has_unviewed_msgs() - uid_unviewed_msgs_count(TheMan) > 0)
+        has_urando = true;
 
+    TheDwycoCore->update_has_unseen_rando(has_urando);
     TheDwycoCore->update_has_unseen_geo(has_ugeo);
 
 }
@@ -167,11 +171,12 @@ DwycoCore::clear_unseen_rando()
 
     for(int i = 0; i < stl.rows(); ++i)
     {
-        if(QByteArray::fromHex(stl.get<QByteArray>(i, "000")) != TheMan)
+        if(QByteArray::fromHex(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID)) != TheMan)
         {
-            dwyco_unset_msg_tag(stl.get<QByteArray>(i, "001").constData(), "_unseen");
+            dwyco_unset_msg_tag(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID).constData(), "_unseen");
         }
     }
+    clear_unviewed_except_for_uid(TheMan);
     TheDwycoCore->update_has_unseen_rando(false);
 }
 
@@ -2423,7 +2428,7 @@ DwycoCore::hash_has_tag(QString hash, QString tag)
     simple_scoped stl(tl);
     for(int i = 0; i < stl.rows(); ++i)
     {
-        QByteArray b = stl.get<QByteArray>(i, "001");
+        QByteArray b = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
         if(dwyco_mid_has_tag(b.constData(), btag.constData()))
             return 1;
     }
@@ -2442,9 +2447,10 @@ DwycoCore::hash_clear_tag(QString hash, QString tag)
     for(int i = 0; i < stl.rows(); ++i)
     {
         // ugh, need to fill in the API for *tagged_mids
-        QByteArray b = stl.get<QByteArray>(i, "001");
+        QByteArray b = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
         dwyco_unset_msg_tag(b.constData(), btag.constData());
         emit mid_tag_changed(b);
+        del_unviewed_mid(b);
     }
     update_unseen_from_db();
     mlm->invalidate_sent_to();

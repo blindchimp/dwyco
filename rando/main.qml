@@ -485,7 +485,7 @@ ApplicationWindow {
 
         onMsg_progress: {
             console.log(pers_id, msg, percent_done)
-            hwtext.text = msg + " " + String(percent_done) + "%"
+            //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
         onProfile_update: {

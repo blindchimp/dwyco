@@ -166,6 +166,18 @@ clear_unviewed_msgs()
     save_unviewed();
 }
 
+void
+clear_unviewed_except_for_uid(const QByteArray& uid)
+{
+    QList<QByteArray> uids = Unviewed_msgs.uniqueKeys();
+    uids.removeOne(uid);
+    for(int i = 0; i < uids.count(); ++i)
+    {
+        Unviewed_msgs.remove(uids[i]);
+    }
+    save_unviewed();
+}
+
 static int
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
 {
@@ -213,7 +225,11 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
         if(type == DWYCO_TYPE_NIL)
         {
             // message is waiting on server
-            dwyco_set_msg_tag(mid.constData(), "_unseen");
+            // note: can't do this easily with tags, since they are for
+            // fetched messages only at this point. might want to update
+            // the api for tags to make this sort of thing easier.
+            //dwyco_set_msg_tag(mid.constData(), "_unseen");
+            add_unviewed(uid_out, mid);
         }
         else
         {
@@ -258,6 +274,7 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                                 dwyco_set_msg_tag(mid.constData(), "_json");
                             }
                             dwyco_set_msg_tag(mid.constData(), "_unseen");
+                            del_unviewed_mid(mid);
                         }
                     }
                 }

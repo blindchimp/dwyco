@@ -24,4 +24,5 @@ int session_msg(const QByteArray &uid);
 void clear_session_msg();
 int any_unread_msg(const QByteArray& uid);
 void clear_unviewed_msgs();
+void clear_unviewed_except_for_uid(const QByteArray& uid);
 #endif
