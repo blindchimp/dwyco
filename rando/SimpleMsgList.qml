@@ -373,6 +373,30 @@ Page {
                         core.hash_clear_tag(ASSOC_HASH, "_unseen")
                     }
                 }
+                SequentialAnimation {
+                    running: IS_UNSEEN === 1
+                    loops: Animation.Infinite
+                    onStopped: {
+                        has_geo_info.scale = 1.0
+                    }
+
+                NumberAnimation {
+                    target: has_geo_info
+                    property: "scale"
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                    from: 1.0
+                    to: 0.5
+                }
+                NumberAnimation {
+                    target: has_geo_info
+                    property: "scale"
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                    from: 0.5
+                    to: 1.0
+                }
+                }
 
 
             Label {
