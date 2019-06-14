@@ -797,7 +797,13 @@ msglist_raw::reload_model(int force)
 
 
     }
-    beginResetModel();
+    int end_reset = 0;
+    if(msg_idx || qd_msgs || inbox_msgs)
+    {
+        beginResetModel();
+        end_reset = 1;
+    }
+
     if(msg_idx)
         dwyco_list_release(msg_idx);
     if(qd_msgs)
@@ -813,7 +819,8 @@ msglist_raw::reload_model(int force)
     // ugh, need to fix this to validate the uid some way
     if(buid.length() != 10 && m_tag.length() == 0)
     {
-        endResetModel();
+        if(end_reset)
+               endResetModel();
         return;
     }
 
@@ -823,7 +830,13 @@ msglist_raw::reload_model(int force)
         dwyco_get_tagged_idx(&msg_idx, m_tag.toLatin1().constData());
         //dwyco_list_print(msg_idx);
         dwyco_list_numelems(msg_idx, &count_msg_idx, 0);
-        endResetModel();
+        if(end_reset)
+            endResetModel();
+        else
+        {
+            beginInsertRows(QModelIndex(), 0, count_msg_idx - 1);
+            endInsertRows();
+        }
         return;
     }
     else if(buid.length() == 10)
@@ -839,8 +852,13 @@ msglist_raw::reload_model(int force)
         dwyco_list_numelems(qd_msgs, &count_qd_msgs, 0);
     if(inbox_msgs)
         dwyco_list_numelems(inbox_msgs, &count_inbox_msgs, 0);
-
-    endResetModel();
+    if(end_reset)
+        endResetModel();
+    else
+    {
+        beginInsertRows(QModelIndex(), 0, count_msg_idx + count_qd_msgs + count_inbox_msgs - 1);
+        endInsertRows();
+    }
 }
 
 void
