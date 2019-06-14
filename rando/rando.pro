@@ -197,11 +197,7 @@ android-* {
 DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
 
 D = $${OUT_PWD}/../bld
-equals(ANDROID_TARGET_ARCH, x86) {
-L = $$PWD/../$$DWYCO_CONFDIR/libs/x86
-} else {
-L = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a
-}
+L = $$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 LIBS += $$D/qt-qml-models/libQtQmlModels.a
 
 # link against shared lib that is also used by the background, saves a bit of
@@ -342,4 +338,8 @@ contains(ANDROID_TARGET_ARCH,x86) {
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
     ANDROID_EXTRA_LIBS = \
         $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so
+}
+contains(ANDROID_TARGET_ARCH,arm64-v8a) {
+    ANDROID_EXTRA_LIBS = \
+        $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so
 }
