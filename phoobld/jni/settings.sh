@@ -19,15 +19,18 @@ then
 		echo setting NDK_ABI to \"x86\"
 		export NDK_ABI="x86"
 		export TARGET_TAG="i686-linux-android"
+		export NDK_ABI_NAME="x86"
 	elif [ -f NDK_ABI_ARM64 ]
 	then
 		echo setting NDK_ABI to \"arm64\"
 		export NDK_ABI="arm64"
 		export TARGET_TAG="aarch64-linux-android"
+		export NDK_ABI_NAME="arm64-v8a"
 	else
 		echo setting NDK_ABI to \"arm\"
 		export NDK_ABI="arm"
 		export TARGET_TAG="armv7a-linux-androideabi"
+		export NDK_ABI_NAME="armeabi-v7a"
 	fi
 fi
 
