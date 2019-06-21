@@ -1,6 +1,8 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
+include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+
 #macx-g++:dateincr.commands = ./dumptime-mac
 #macx-clang:dateincr.commands = ./dumptime-mac
 #macx-ios-clang:dateincr.commands = ./dumptime-mac
@@ -150,6 +152,7 @@ $${D}/libuv/libuv.a
 wasm-emscripten {
 DEFINES += LINUX
 DEFINES += DWYCO_APP_DEBUG
+DEFINES += NO_DWYCO_AUDIO
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
@@ -175,7 +178,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \

@@ -42,7 +42,7 @@
 #include "androidperms.h"
 #endif
 #include "profpv.h"
-#if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID)
+#if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN)
 #include "v4lcapexp.h"
 //#include "esdaudin.h"
 #include "audi_qt.h"
@@ -1443,7 +1443,7 @@ DwycoCore::init()
 
     );
 
-#elif defined(LINUX)
+#elif defined(LINUX) && !defined(EMSCRIPTEN)
     dwyco_set_external_video_capture_callbacks(
         vgnew,
         vgdel,
