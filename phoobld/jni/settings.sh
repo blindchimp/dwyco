@@ -49,4 +49,3 @@ export PATH=$NDK:$PATH
 
 echo $PATH
 
-export HOST_TAG="linux-x86_64"

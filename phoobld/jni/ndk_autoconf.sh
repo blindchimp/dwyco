@@ -1,6 +1,13 @@
 #!/bin/bash
 . settings.sh
 
+if [ `uname` = "Darwin" ]
+then
+export HOST_TAG="darwin-x86_64"
+else
+export HOST_TAG="linux-x86_64"
+fi
+
 export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
 NDK_API_LEVEL=17
 if [ $NDK_ABI = "arm64" ]
@@ -8,22 +15,22 @@ then
 NDK_API_LEVEL=21
 fi
 
-if [ $NDK_ABI = "arm" ]
-then
-# dumb
 export CC=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang
 export CXX=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang++
-export AR=$TOOLCHAIN/bin/arm-linux-androideabi-ar
-export AS=$TOOLCHAIN/bin/arm-linux-androideabi-as
-export LD=$TOOLCHAIN/bin/arm-linux-androideabi-ld
-export RANLIB=$TOOLCHAIN/bin/arm-linux-androideabi-ranlib
-export STRIP=$TOOLCHAIN/bin/arm-linux-androideabi-strip
-else
-export CC=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang
-export CXX=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang++
-export AR=$TOOLCHAIN/bin/${TARGET_TAG}-ar
-export AS=$TOOLCHAIN/bin/${TARGET_TAG}-as
-export LD=$TOOLCHAIN/bin/${TARGET_TAG}-ld
-export RANLIB=$TOOLCHAIN/bin/${TARGET_TAG}-ranlib
-export STRIP=$TOOLCHAIN/bin/${TARGET_TAG}-strip
-fi
+
+AR=`ndk-which --abi ${NDK_ABI_NAME} ar | tr -d '\012'`
+AS=`ndk-which --abi ${NDK_ABI_NAME} as`
+LD=`ndk-which --abi ${NDK_ABI_NAME} ld`
+RANLIB=`ndk-which --abi ${NDK_ABI_NAME} ranlib`
+STRIP=`ndk-which --abi ${NDK_ABI_NAME} strip`
+
+export AR
+export AS
+export LD
+export RANLIB
+export STRIP
+
+#echo -n $AR | od -t x1
+#echo -n $AS | od -t x1
+#echo -n $RANLIB | od -t x1
+#echo -n $LD | od -t x1
