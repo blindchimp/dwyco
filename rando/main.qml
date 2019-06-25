@@ -94,8 +94,9 @@ ApplicationWindow {
     }
 
     Material.theme: Material.Light
-    Material.accent: accent
+    Material.accent: "white"
     Material.primary: primary
+    //Material.foreground: "white"
 
     property int profile_bootstrapped : 0
     property bool server_account_created: false
@@ -215,19 +216,19 @@ ApplicationWindow {
     }
 
 
-    footer: RowLayout {
-            Item {
-                Layout.fillWidth: true
-            }
+//    footer: RowLayout {
+//            Item {
+//                Layout.fillWidth: true
+//            }
 
-            Label {
-                id: hwtext
-            }
-            Label {
-                id: db_status
-                text: core.is_database_online === 0 ? "db off" : "db on"
-            }
-        }
+//            Label {
+//                id: hwtext
+//            }
+//            Label {
+//                id: db_status
+//                text: core.is_database_online === 0 ? "db off" : "db on"
+//            }
+//        }
 
     Item {
         id: top_dispatch
@@ -471,7 +472,7 @@ ApplicationWindow {
 
         onMsg_send_status: {
             console.log(pers_id, status, recipient)
-            hwtext.text = status
+            //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
                 if(themsglist.uid == recipient) {
@@ -484,7 +485,7 @@ ApplicationWindow {
 
         onMsg_progress: {
             console.log(pers_id, msg, percent_done)
-            hwtext.text = msg + " " + String(percent_done) + "%"
+            //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
         onProfile_update: {

@@ -575,3 +575,5 @@ bld/speexdsp/output/
 bld/speexdsp/libspeexdsp/testresample
 
 bld/speexdsp/libspeexdsp/testresample2
+
+\.stignore

@@ -1,3 +1,18 @@
+Tue Jun  4 09:19:30 MST 2019
+Notes on Ubuntu 18.04
+
+You may need to install qt4 in order to get all the libGL stuff setup.
+Probably easier way of doing it, but this will work:
+sudo apt intall libqt4-dev
+
+also may need:
+
+sudo apt install libgl1-mesa-dev
+
+if you get link errors for -lGL. Note that you may be able to avoid
+some of the installation by providing the right symlink target for
+libGL.so, but I didn't try this.
+
 Thu Apr 18 09:37:39 PDT 2019
 
 You'll need:

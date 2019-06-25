@@ -13,11 +13,15 @@ fi
 
 if [ -z "$NDK_ABI" ]
 then
-	echo NDK_ABI should be either \"arm\" or \"x86\"
+	echo NDK_ABI should be \"arm\", \"x86\", or \"arm64\"
 	if [ -f NDK_ABI_X86 ]
 	then
 		echo setting NDK_ABI to \"x86\"
 		export NDK_ABI="x86"
+	elif [ -f NDK_ABI_ARM64 ]
+	then
+		echo setting NDK_ABI to \"arm64\"
+		export NDK_ABI="arm64"
 	else
 		echo setting NDK_ABI to \"arm\"
 		export NDK_ABI="arm"
@@ -35,7 +39,8 @@ function current_dir {
   echo "$(cd "$(dirname $0)"; pwd)"
 }
 
-export PATH=$NDK:$(current_dir)/toolchain/bin:$PATH
+#export PATH=$NDK:$(current_dir)/toolchain/bin:$PATH
+export PATH=$NDK:$PATH
 
 echo $PATH
 
