@@ -18,7 +18,7 @@ fi
 export CC=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang
 export CXX=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang++
 
-AR=`ndk-which --abi ${NDK_ABI_NAME} ar | tr -d '\012'`
+AR=`ndk-which --abi ${NDK_ABI_NAME} ar`
 AS=`ndk-which --abi ${NDK_ABI_NAME} as`
 LD=`ndk-which --abi ${NDK_ABI_NAME} ld`
 RANLIB=`ndk-which --abi ${NDK_ABI_NAME} ranlib`
