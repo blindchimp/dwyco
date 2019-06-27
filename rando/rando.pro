@@ -230,6 +230,8 @@ include(functions.pri)
 
 #QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava", "src/com/dwyco/android", $$files($$PWD/../bld/android/com/dwyco/android/*.java))
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavasender", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/DwycoSender.java)
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaDwyco_msg", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/Dwyco_Message.java)
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavastickyintent", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/StickyIntentService.java)
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaNotification", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/NotificationClient.java)
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaSocketLock", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/SocketLock.java)
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaMyFirebase", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/MyFirebaseMessagingService.java)

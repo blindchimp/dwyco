@@ -42,6 +42,7 @@
             <meta-data android:name="android.app.background_running" android:value="false"/>
             <!-- Background running -->
         </activity>
+<!--
 <receiver android:name="com.dwyco.android.Push_Notification">
 <intent-filter>
 <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
@@ -51,10 +52,11 @@
 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
 <action android:name="android.intent.action.MAIN"/>
 </intent-filter>
-</receiver>
+</receiver> -->
+
 <service android:name="com.dwyco.android.Dwyco_Message" android:enabled="true" android:process=":dwycobg">
 </service>
-<service android:name="com.dwyco.android.DwycoProbe" android:enabled="true" android:process=":dwycoprobe" android:permission="android.permission.BIND_JOB_SERVICE">
+<service android:name="com.dwyco.android.DwycoProbe" android:enabled="false" android:process=":dwycoprobe" android:permission="android.permission.BIND_JOB_SERVICE">
 </service>
 <service android:name="com.dwyco.android.DwycoSender" android:enabled="true" android:process=":dwycosend">
 </service>
@@ -80,7 +82,7 @@
 
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
 
 <uses-permission android:name="android.permission.VIBRATE"/>
 <uses-permission android:name="android.permission.CAMERA"/>

@@ -896,17 +896,24 @@ setup_locations()
         userdir = args[1];
         userdir += "/";
     }
-    //QString userdir("/home/dwight/Downloads/n7phoo/");
+
     {
         QDir d(userdir);
-        d.mkpath(userdir);
-        // this is just a stopgap, really need to do something to obfuscate the files
-        // a little bit to avoid apps indexing temp images on all platforms
-//        QString fp = d.filePath(".nomedia");
-//        QFile f(fp);
-//        f.open(QIODevice::WriteOnly);
-//        f.putChar(0);
-//        f.close();
+        if(!d.mkpath(userdir))
+        {
+            // note: failed to make the path, or it doesn't exist.
+            // this can happen on android because the permission to access
+            // external storage might be ok, when in fact external storage is not
+            // available. this seems like a qt bug, as why would it return
+            // a "writable location" that wasn't writeable or creatable.
+            // see if we can fallback to the appdatalocation
+            userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+            userdir += "/dwyco/rando/";
+            QDir d2(userdir);
+            if(!d2.mkpath(userdir))
+                ::abort();
+        }
+
     }
 #ifdef ANDROID
     QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
