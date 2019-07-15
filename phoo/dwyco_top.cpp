@@ -1443,7 +1443,7 @@ DwycoCore::init()
 
     );
 
-#elif defined(LINUX) && !defined(EMSCRIPTEN)
+#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT)
     dwyco_set_external_video_capture_callbacks(
         vgnew,
         vgdel,
