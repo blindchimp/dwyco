@@ -15,6 +15,7 @@ struct dwyco_list
 private:
     dwyco_list();
     dwyco_list(const dwyco_list&);
+    dwyco_list(const dwyco_list&&);
     dwyco_list& operator=(const dwyco_list&);
     DWYCO_LIST value;
 public:
@@ -53,21 +54,21 @@ public:
         return get<T>(0, col);
     }
 
-    int is_nil(const char *col) {
+    bool is_nil(const char *col) {
         return is_nil(0, col);
     }
-    int is_nil(int row, const char *col) {
+    bool is_nil(int row, const char *col) {
         const char *val;
         int len;
         int type;
         if(!dwyco_list_get(value, row, col, &val, &len, &type))
             return 0;
         if(type == DWYCO_TYPE_NIL)
-            return 1;
+            return true;
         else
-            return 0;
+            return false;
     }
-    int get_long(int row, const char *col) {
+    long get_long(int row, const char *col) {
         const char *val;
         int len;
         int type;
