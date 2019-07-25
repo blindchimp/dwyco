@@ -53,6 +53,9 @@ public:
     template<class T> T get(const char *col) {
         return get<T>(0, col);
     }
+    template<class T> T get(int row) {
+        return get<T>(row, DWYCO_NO_COLUMN);
+    }
 
     bool is_nil(const char *col) {
         return is_nil(0, col);

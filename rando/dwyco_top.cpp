@@ -107,19 +107,6 @@ extern int HasCamHardware;
 QMap<QByteArray, QByteArray> Hash_to_loc;
 QMap<QByteArray, QByteArray> Hash_to_review;
 
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
-}
-
 void
 hack_unread_count()
 {
@@ -1594,7 +1581,7 @@ DwycoCore::init()
         simple_scoped qul(ul);
         for(int i = 0; i < nul; ++i)
         {
-            QByteArray u = qul.get<QByteArray>(i, DWYCO_NO_COLUMN);
+            QByteArray u = qul.get<QByteArray>(i);
             DWYCO_SAVED_MSG_LIST sml;
             if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
             {
@@ -2081,15 +2068,17 @@ DwycoCore::clear_ignore_list()
     int n;
 
     l = dwyco_ignore_list_get();
-    dwyco_list_numelems(l, &n, 0);
+    simple_scoped sl(l);
+    n = sl.rows();
+
     for(int i = 0; i < n; ++i)
     {
-        QByteArray buid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
+        QByteArray buid = sl.get<QByteArray>(i);
         dwyco_unignore(buid.constData(), buid.length());
         emit ignore_event(buid.toHex());
 
     }
-    dwyco_list_release(l);
+
     // may involve resorting other lists too
     reload_ignore_list();
 
