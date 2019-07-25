@@ -2309,6 +2309,7 @@ DwycoCore::get_simple_directory_url()
 QUrl
 DwycoCore::get_simple_xml_url()
 {
+#if 0
     QUrlQuery qurl;
     const char *auth;
     int len;
@@ -2345,11 +2346,15 @@ DwycoCore::get_simple_xml_url()
 
     url.setQuery(qurl);
     return url;
+#else
+    return QUrl();
+#endif
 }
 
 QString
 DwycoCore::get_msg_count_url()
 {
+#if 0
     QUrlQuery qurl;
     const char *auth;
     int len;
@@ -2369,6 +2374,9 @@ DwycoCore::get_msg_count_url()
     qurl.addQueryItem("auth", QString::fromUtf8(au.toHex()));
     url.setQuery(qurl);
     return url.url();
+#else
+    return "";
+#endif
 }
 
 int
@@ -2502,6 +2510,7 @@ get_cq_results_filename()
 
 }
 
+#if 0
 static void
 process_contact_query_response(const QByteArray& mid)
 {
@@ -2525,7 +2534,7 @@ process_contact_query_response(const QByteArray& mid)
     TheDwycoCore->emit cq_results_received(succ);
 }
 
-#if 0
+
 QUrl
 DwycoCore::get_cq_results_url()
 {

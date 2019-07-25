@@ -194,7 +194,7 @@ $${D}/qt-qml-models/libQtQmlModels.a
 }
 
 android-* {
-DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
+DEFINES += LINUX VCCFG_FILE ANDROID
 
 D = $${OUT_PWD}/../bld
 L = $$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
