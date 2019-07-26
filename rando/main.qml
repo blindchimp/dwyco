@@ -335,6 +335,13 @@ ApplicationWindow {
         visible: false
     }
 
+    MapImage {
+        id: mapimage
+        //lat: 39.739200
+        //lon: -104.984700
+        visible: false
+    }
+
 
     StackView {
         id: stack

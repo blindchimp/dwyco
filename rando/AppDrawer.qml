@@ -68,7 +68,8 @@ AppDrawerForm {
 
 
     about_button.onClicked: {
-        stack.push(about_dialog)
+        //stack.push(about_dialog)
+        stack.push(mapimage)
         close()
     }
 
