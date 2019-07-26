@@ -24,7 +24,7 @@ public:
             exit();
     }
 
-    vc sql_simple(const char *sql, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil);
+    vc sql_simple(const char *sql, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil);
 
     virtual void init_schema() {}
     int init();

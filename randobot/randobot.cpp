@@ -57,6 +57,7 @@ struct rando_sql : public SimpleSql
         sql_simple("insert into reviewers (uid) values ('5a098f3df49015331d74')");
         sql_simple("create table if not exists grace(uid text collate nocase unique on conflict ignore, time integer, sent integer default 0)");
         sql_simple("create table if not exists recv_loc(from_uid text collate nocase, mid text collate nocase, hash text collate nocase unique on conflict ignore, time integer, geo text)");
+        sql_simple("create table if not exists recv_loc2(from_uid text collate nocase, mid text collate nocase, hash text collate nocase unique on conflict ignore, time integer, lat text, lon text)");
         sql_simple("create table if not exists sent_geo(to_uid text collate nocase, mid text collate nocase, hash text collate nocase, time integer, geo text)");
     }
 
@@ -717,8 +718,8 @@ main(int argc, char *argv[])
             D->start_transaction();
             D->sql_simple("insert into randos (from_uid, filename, time, hash, mid) values(?1, ?2, strftime('%s', 'now'), ?3, ?4)",
                           effective_uid.constData(),
-                          vc(b.constData()),
-                          vc(hash.constData()),
+                          b.constData(),
+                          hash.constData(),
                           mid.constData());
             if(Iplog)
             {
@@ -731,8 +732,18 @@ main(int argc, char *argv[])
                         D->sql_simple("insert into recv_loc(from_uid, mid, hash, time, geo) values(?1, ?2, ?3, strftime('%s', 'now'), ?4)",
                                       effective_uid.constData(),
                                       mid.constData(),
-                                      vc(hash.constData()),
+                                      hash.constData(),
                                       res[0][0]);
+                    }
+                    res = Iplog->sql_simple("select lat, lon, max(time) from iplog2 where id = ?1", effective_uid.constData());
+                    if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                    {
+                        D->sql_simple("insert into recv_loc2(from_uid, mid, hash, time, lat, lon) values(?1, ?2, ?3, strftime('%s', 'now'), ?4, ?5)",
+                                      effective_uid.constData(),
+                                      mid.constData(),
+                                      hash.constData(),
+                                      res[0][0],
+                                res[0][1]);
                     }
                 } catch (...) {
                     res = vcnil;
