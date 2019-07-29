@@ -59,6 +59,7 @@ struct rando_sql : public SimpleSql
         sql_simple("create table if not exists recv_loc(from_uid text collate nocase, mid text collate nocase, hash text collate nocase unique on conflict ignore, time integer, geo text)");
         sql_simple("create table if not exists recv_loc2(from_uid text collate nocase, mid text collate nocase, hash text collate nocase unique on conflict ignore, time integer, lat text, lon text)");
         sql_simple("create table if not exists sent_geo(to_uid text collate nocase, mid text collate nocase, hash text collate nocase, time integer, geo text)");
+        sql_simple("create table if not exists sent_geo2(to_uid text collate nocase, mid text collate nocase, hash text collate nocase, time integer, lat text, lon text)");
     }
 
 };
@@ -365,22 +366,35 @@ do_rando(vc huid)
                     // latest login, not on their location when they generated their content.
 
                     res = Iplog->sql_simple("select geo, max(time) from iplog where id = ?1", huid);
+                    QByteArray tagstr("{\"hash\" : \"");
+                    tagstr += (const char *)hash;
+                    tagstr += "\"";
                     if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
                     {
-                        QByteArray tagstr("{\"hash\" : \"");
-                        tagstr += (const char *)hash;
-                        tagstr += "\", \"loc\" : \"";
+                        tagstr += ", \"loc\" : \"";
                         tagstr += (const char *)res[0][0];
-                        tagstr += "\"}";
+                        tagstr += "\"";
+                    }
 
-                        int ccid = dwyco_make_zap_composition(0);
-                        if(ccid != 0)
+                    // send lat and lon as well to facilitate creating a map image
+                    res = Iplog->sql_simple("select lat, lon, max(time) from iplog2 where id = ?1", huid);
+                    if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                    {
+                        tagstr += ", \"lat\" : \"";
+                        tagstr += (const char *)res[0][0];
+                        tagstr += "\"";
+                        tagstr += ", \"lon\" : \"";
+                        tagstr += (const char *)res[0][1];
+                        tagstr += "\"";
+                    }
+                    tagstr += "}";
+                    int ccid = dwyco_make_zap_composition(0);
+                    if(ccid != 0)
+                    {
+                        QByteArray creator_uid = QByteArray::fromHex((const char *)hcreator_uid);
+                        if(!dwyco_zap_send6(ccid, creator_uid.constData(), creator_uid.length(), tagstr.constData(), tagstr.length(), 1, 1, 0, 0, 0))
                         {
-                            QByteArray creator_uid = QByteArray::fromHex((const char *)hcreator_uid);
-                            if(!dwyco_zap_send6(ccid, creator_uid.constData(), creator_uid.length(), tagstr.constData(), tagstr.length(), 1, 1, 0, 0, 0))
-                            {
-                                dwyco_delete_zap_composition(ccid);
-                            }
+                            dwyco_delete_zap_composition(ccid);
                         }
                     }
                 } catch (...) {
