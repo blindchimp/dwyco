@@ -402,14 +402,15 @@ do_rando(vc huid)
             }
             // see if we can get some location estimate for the message we received
             {
+                str_to_send = "{";
                 vc res = D->sql_simple("select geo from recv_loc where hash = ?1 limit 1", hash);
                 if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
                 {
                     // note: mid not included because the mid is being generated in the new message
                     // being sent to recipient
-                    str_to_send = "{\"loc\":\"";
+                    str_to_send = "\"loc\":\"";
                     str_to_send += (const char *)res[0][0];
-                    str_to_send += "\"}";
+                    str_to_send += "\"";
 
                     D->sql_simple("insert into sent_geo(to_uid, mid, hash, time, geo) values(?1, ?2, ?3, strftime('%s', 'now'), ?4)",
                                   huid,
@@ -417,6 +418,27 @@ do_rando(vc huid)
                                   hash,
                                   res[0][0]);
                 }
+                res = D->sql_simple("select lat, lon from recv_loc2 where hash = ?1 limit 1", hash);
+                if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                {
+                    // note: mid not included because the mid is being generated in the new message
+                    // being sent to recipient
+                    str_to_send = ",\"lat\":\"";
+                    str_to_send += (const char *)res[0][0];
+                    str_to_send += "\"";
+
+                    str_to_send = ",\"lon\":\"";
+                    str_to_send += (const char *)res[0][1];
+                    str_to_send += "\"";
+
+                    D->sql_simple("insert into sent_geo2(to_uid, mid, hash, time, lat, lon) values(?1, ?2, ?3, strftime('%s', 'now'), ?4, ?5)",
+                                  huid,
+                                  mid,
+                                  hash,
+                                  res[0][0],
+                            res[0][1]);
+                }
+                str_to_send += "}";
 
             }
 
