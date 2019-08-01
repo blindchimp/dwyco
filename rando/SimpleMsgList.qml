@@ -370,13 +370,16 @@ Page {
                         {
                             mapimage.lat = o.lat
                             mapimage.lon = o.lon
+                            mapimage.placename = location.text
                             stack.push(mapimage)
                         }
-
-//                        if(location.state == "moveIn")
-//                            location.state = "moveOut"
-//                        else
-//                            location.state = "moveIn"
+                        else
+                        {
+                            if(location.state == "moveIn")
+                                location.state = "moveOut"
+                            else
+                                location.state = "moveIn"
+                        }
 
                         core.hash_clear_tag(ASSOC_HASH, "_unseen")
                     }
