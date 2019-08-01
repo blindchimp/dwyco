@@ -106,6 +106,8 @@ extern int HasCamHardware;
 
 QMap<QByteArray, QByteArray> Hash_to_loc;
 QMap<QByteArray, QByteArray> Hash_to_review;
+QMap<QByteArray, QByteArray> Hash_to_lon;
+QMap<QByteArray, QByteArray> Hash_to_lat;
 
 void
 hack_unread_count()
@@ -1647,6 +1649,8 @@ DwycoCore::init()
                                 QJsonValue h = qjo.value("hash");
                                 QJsonValue loc = qjo.value("loc");
                                 QJsonValue rev = qjo.value("review");
+                                QJsonValue lat = qjo.value("lat");
+                                QJsonValue lon = qjo.value("lon");
                                 if(!h.isUndefined())
                                 {
                                     QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
@@ -1654,6 +1658,10 @@ DwycoCore::init()
                                         Hash_to_loc.insert(hh, loc.toString().toLatin1());
                                     if(!rev.isUndefined())
                                         Hash_to_review.insert(hh, rev.toString().toLatin1());
+                                    if(!lat.isUndefined())
+                                        Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                                    if(!lon.isUndefined())
+                                        Hash_to_lon.insert(hh, lon.toString().toLatin1());
                                 }
                             }
                         }

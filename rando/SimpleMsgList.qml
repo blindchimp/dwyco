@@ -365,20 +365,40 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        var o = JSON.parse(MSG_TEXT)
-                        if('lat' in o && 'lon' in o)
-                        {
-                            mapimage.lat = o.lat
-                            mapimage.lon = o.lon
-                            mapimage.placename = location.text
-                            stack.push(mapimage)
-                        }
-                        else
-                        {
-                            if(location.state == "moveIn")
-                                location.state = "moveOut"
+                        if(SENT === 0) {
+                            var o = JSON.parse(MSG_TEXT)
+                            if('lat' in o && 'lon' in o)
+                            {
+                                mapimage.lat = o.lat
+                                mapimage.lon = o.lon
+                                mapimage.placename = location.text
+                                mapimage.zoom = 10
+                                stack.push(mapimage)
+                            }
                             else
-                                location.state = "moveIn"
+                            {
+                                if(location.state == "moveIn")
+                                    location.state = "moveOut"
+                                else
+                                    location.state = "moveIn"
+                            }
+                        } else {
+                            if(location.text.length > 0 && SENT_TO_LAT !== "" &&
+                                    SENT_TO_LON !== "") {
+                                mapimage.lat = SENT_TO_LAT
+                                mapimage.lon = SENT_TO_LON
+                                mapimage.placename = location.text
+                                mapimage.zoom = 10
+                                stack.push(mapimage)
+
+                            }
+                            else
+                            {
+                                if(location.state == "moveIn")
+                                    location.state = "moveOut"
+                                else
+                                    location.state = "moveIn"
+                            }
                         }
 
                         core.hash_clear_tag(ASSOC_HASH, "_unseen")

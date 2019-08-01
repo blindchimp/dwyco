@@ -11,8 +11,9 @@ Page {
     property real lat: 39.739200
     property real lon: -104.984700
     property string placename: ""
+    property alias zoom: mapz.zoomLevel
 
-    anchors.fill: parent
+    //anchors.fill: parent
     Plugin {
         id: mapPlugin
         name: "osm"
@@ -24,10 +25,15 @@ Page {
     }
 
     Map {
+        id: mapz
         anchors.fill: parent
         plugin: mapPlugin
         center: QtPositioning.coordinate(lat, lon)
         zoomLevel: 10
+        onZoomLevelChanged: {
+            console.log("ZOOM ", zoomLevel)
+        }
+
         // see note above regarding failing https stuff
         activeMapType: supportedMapTypes[supportedMapTypes.length - 1]
     }

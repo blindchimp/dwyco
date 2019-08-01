@@ -44,6 +44,8 @@ static QSet<QByteArray> Manual_fetch;
 
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
+extern QMap<QByteArray, QByteArray> Hash_to_lon;
+extern QMap<QByteArray, QByteArray> Hash_to_lat;
 
 static QMap<QByteArray,QByteArray> Mid_to_hash;
 
@@ -74,6 +76,8 @@ enum {
     REVIEW_RESULTS,
     IS_UNSEEN,
     ASSOC_HASH,
+    SENT_TO_LAT,
+    SENT_TO_LON,
 };
 
 static int
@@ -380,6 +384,8 @@ msglist_model::invalidate_sent_to()
     {
         QModelIndex mi = index(i, 0);
         emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LOCATION));
+        emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LAT));
+        emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LON));
         emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
         emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
     }
@@ -926,6 +932,8 @@ msglist_raw::roleNames() const
     rn(REVIEW_RESULTS);
     rn(IS_UNSEEN);
     rn(ASSOC_HASH);
+    rn(SENT_TO_LAT);
+    rn(SENT_TO_LON);
 #undef rn
     return roles;
 }
@@ -1482,6 +1490,38 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
         QByteArray l = Hash_to_loc.value(h, "Unknown");
+        return l;
+    }
+    else if(role == SENT_TO_LAT)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QByteArray("");
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+        {
+            return QByteArray("");
+        }
+        QByteArray h;
+        if(!att_file_hash(huid, mid, h))
+            return QByteArray("");
+        QByteArray l = Hash_to_lat.value(h, "");
+        return l;
+    }
+    else if(role == SENT_TO_LON)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QByteArray("");
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+        {
+            return QByteArray("");
+        }
+        QByteArray h;
+        if(!att_file_hash(huid, mid, h))
+            return QByteArray("");
+        QByteArray l = Hash_to_lon.value(h, "Unknown");
         return l;
     }
     else if(role == REVIEW_RESULTS)
