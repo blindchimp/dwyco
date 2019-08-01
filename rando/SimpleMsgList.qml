@@ -365,10 +365,18 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        if(location.state == "moveIn")
-                            location.state = "moveOut"
-                        else
-                            location.state = "moveIn"
+                        var o = JSON.parse(MSG_TEXT)
+                        if('lat' in o && 'lon' in o)
+                        {
+                            mapimage.lat = o.lat
+                            mapimage.lon = o.lon
+                            stack.push(mapimage)
+                        }
+
+//                        if(location.state == "moveIn")
+//                            location.state = "moveOut"
+//                        else
+//                            location.state = "moveIn"
 
                         core.hash_clear_tag(ASSOC_HASH, "_unseen")
                     }
