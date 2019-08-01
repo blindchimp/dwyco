@@ -408,7 +408,7 @@ do_rando(vc huid)
                 {
                     // note: mid not included because the mid is being generated in the new message
                     // being sent to recipient
-                    str_to_send = "\"loc\":\"";
+                    str_to_send += "\"loc\":\"";
                     str_to_send += (const char *)res[0][0];
                     str_to_send += "\"";
 
@@ -423,11 +423,11 @@ do_rando(vc huid)
                 {
                     // note: mid not included because the mid is being generated in the new message
                     // being sent to recipient
-                    str_to_send = ",\"lat\":\"";
+                    str_to_send += ",\"lat\":\"";
                     str_to_send += (const char *)res[0][0];
                     str_to_send += "\"";
 
-                    str_to_send = ",\"lon\":\"";
+                    str_to_send += ",\"lon\":\"";
                     str_to_send += (const char *)res[0][1];
                     str_to_send += "\"";
 
