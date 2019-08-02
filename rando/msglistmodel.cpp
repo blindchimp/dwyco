@@ -1521,7 +1521,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray h;
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
-        QByteArray l = Hash_to_lon.value(h, "Unknown");
+        QByteArray l = Hash_to_lon.value(h, "");
         return l;
     }
     else if(role == REVIEW_RESULTS)
