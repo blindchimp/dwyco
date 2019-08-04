@@ -12,6 +12,7 @@ Page {
     property real lon: -104.984700
     property string placename: ""
     property alias zoom: mapz.zoomLevel
+    property alias center: mapz.center
 
     //anchors.fill: parent
     Plugin {

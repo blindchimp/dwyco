@@ -10,6 +10,7 @@ import QtQuick 2.6
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.2
+import QtPositioning 5.12
 
 
 Page {
@@ -369,8 +370,9 @@ Page {
                             var o = JSON.parse(MSG_TEXT)
                             if('lat' in o && 'lon' in o)
                             {
-                                mapimage.lat = o.lat
-                                mapimage.lon = o.lon
+                                //mapimage.lat = o.lat
+                                //mapimage.lon = o.lon
+                                mapimage.center = QtPositioning.coordinate(o.lat, o.lon)
                                 mapimage.placename = location.text
                                 mapimage.zoom = 10
                                 stack.push(mapimage)
