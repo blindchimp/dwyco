@@ -127,6 +127,7 @@ Page {
                 if(checked) {
                     top_dispatch.uid_selected(the_man, "clicked")
                     recv.checked = false
+                    sent_badge = false
                 }
                 show_sent = checked
                 show_recv = false
@@ -139,7 +140,7 @@ Page {
                 anchors.top: parent.top
                 radius: width / 2
                 color: "red"
-                visible: core.has_unseen_geo
+                visible: /* core.has_unseen_geo || */ sent_badge
             }
         }
 //        Item {
@@ -172,6 +173,7 @@ Page {
                             break;
                         }
                     }
+                    recv_badge = false
                     core.clear_unseen_rando()
                 }
                 show_recv = checked
@@ -186,7 +188,7 @@ Page {
                 anchors.top: parent.top
                 radius: width / 2
                 color: "red"
-                visible: core.has_unseen_rando
+                visible: /*core.has_unseen_rando ||*/ recv_badge
             }
         }
 

@@ -555,7 +555,7 @@ dwyco_sys_event_callback(int cmd, int id,
     else if(cmd == DWYCO_SE_USER_MSG_IDX_UPDATED ||
             cmd == DWYCO_SE_USER_MSG_IDX_UPDATED_PREPEND)
     {
-        TheDwycoCore->emit sys_msg_idx_updated(huid);
+        TheDwycoCore->emit sys_msg_idx_updated(huid, cmd == DWYCO_SE_USER_MSG_IDX_UPDATED_PREPEND ? 1 : 0);
     }
     else if(cmd == DWYCO_SE_USER_ADD)
     {
@@ -2483,7 +2483,10 @@ DwycoCore::clear_messages(QString uid)
 {
     QByteArray buid = uid.toLatin1();
     buid = QByteArray::fromHex(buid);
-    return dwyco_clear_user(buid.constData(), buid.length());
+    int ret = dwyco_clear_user(buid.constData(), buid.length());
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
+    return ret;
 
 }
 
@@ -2492,8 +2495,10 @@ DwycoCore::clear_messages_unfav(QString uid)
 {
     QByteArray buid = uid.toLatin1();
     buid = QByteArray::fromHex(buid);
-    return dwyco_clear_user_unfav(buid.constData(), buid.length());
-
+    int ret = dwyco_clear_user_unfav(buid.constData(), buid.length());
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
+    return ret;
 }
 
 int
@@ -2507,6 +2512,8 @@ DwycoCore::delete_user(QString uid)
     // note: msglist_model may have cached info that needs to be cleared
 
     reload_conv_list();
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
 
     return ret;
 }
