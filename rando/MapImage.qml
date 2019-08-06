@@ -30,6 +30,7 @@ Page {
         anchors.fill: parent
         plugin: mapPlugin
         center: QtPositioning.coordinate(lat, lon)
+        gesture.acceptedGestures: MapGestureArea.PanGesture|MapGestureArea.PinchGesture|MapGestureArea.FlickGesture
         zoomLevel: 10
         onZoomLevelChanged: {
             console.log("ZOOM ", zoomLevel)
