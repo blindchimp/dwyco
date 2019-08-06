@@ -374,7 +374,7 @@ Page {
                             {
                                 //mapimage.lat = o.lat
                                 //mapimage.lon = o.lon
-                                mapimage.center = QtPositioning.coordinate(o.lat, o.lon)
+                                mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
                                 mapimage.placename = location.text
                                 mapimage.zoom = 10
                                 stack.push(mapimage)
@@ -387,10 +387,11 @@ Page {
                                     location.state = "moveIn"
                             }
                         } else {
-                            if(location.text.length > 0 && SENT_TO_LAT !== "" &&
-                                    SENT_TO_LON !== "") {
-                                mapimage.lat = SENT_TO_LAT
-                                mapimage.lon = SENT_TO_LON
+                            if(location.text.length > 0 && SENT_TO_LAT != "" &&
+                                    SENT_TO_LON != "") {
+                                //mapimage.lat = SENT_TO_LAT
+                                //mapimage.lon = SENT_TO_LON
+                                mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
                                 mapimage.placename = location.text
                                 mapimage.zoom = 10
                                 stack.push(mapimage)
