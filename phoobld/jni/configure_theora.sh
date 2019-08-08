@@ -1,15 +1,12 @@
 #!/bin/bash
 pushd `dirname $0`
 . settings.sh
+. ndk_autoconf.sh
 
 if [ "$NDK_ABI" = "arm" ]
 then
-	#abi="arm-linux-androideabi"
-	host="arm-linux-androideabi"
 	export CFLAGS="-fPIC -DANDROID -march=armv7-a"
 else
-	#abi="i686-linux-android"
-	host="i686-linux-android"
 	export CFLAGS="-fPIC -DANDROID"
 fi
 
@@ -28,16 +25,12 @@ echo "**********"
 
 pushd libtheora
 
-#export CC="$abi-gcc"
-#export LD="$abi-ld"
-#export RANLIB="$abi-ranlib"
-#export AR="$abi-ar"
 export OGG_CFLAGS=-I$oggdir/include
 
 autoreconf -if
 ./configure \
 --prefix=`pwd`/output \
---host=$host \
+--host=$TARGET_TAG \
 --disable-shared \
 --enable-static \
 --with-ogg=$oggdir \

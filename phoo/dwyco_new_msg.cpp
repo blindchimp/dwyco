@@ -239,6 +239,7 @@ reload_msgs()
     QList<QByteArray> kill_list_uid;
     QList<QByteArray> kill_list_mid;
 
+    // note: qt docs say ordering of keys and values is the same
     QList<QByteArray> k = Unviewed_msgs.keys();
     QList<QByteArray> v = Unviewed_msgs.values();
     int n = k.count();

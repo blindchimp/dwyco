@@ -1,6 +1,8 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
+include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+
 #macx-g++:dateincr.commands = ./dumptime-mac
 #macx-clang:dateincr.commands = ./dumptime-mac
 #macx-ios-clang:dateincr.commands = ./dumptime-mac
@@ -40,6 +42,7 @@ ICON=greenguy.icns
 RC_FILE=phoo.rc
 
 SOURCES += main.cpp \
+    androidperms.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
     pfx.cpp \
@@ -149,6 +152,7 @@ $${D}/libuv/libuv.a
 wasm-emscripten {
 DEFINES += LINUX
 DEFINES += DWYCO_APP_DEBUG
+DEFINES += NO_DWYCO_AUDIO
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
@@ -174,7 +178,7 @@ $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
-$${D}/theora/libtheora.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
@@ -272,11 +276,9 @@ android-* {
 DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
 
 D = $${OUT_PWD}/../bld
-equals(ANDROID_TARGET_ARCH, x86) {
-L = $$PWD/../$$DWYCO_CONFDIR/libs/x86
-} else {
-L = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a
-}
+
+L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
+
 LIBS += $$D/qt-qml-models/libQtQmlModels.a
 
 # link against shared lib that is also used by the background, saves a bit of
@@ -285,6 +287,11 @@ LIBS += $$D/qt-qml-models/libQtQmlModels.a
 # limitation of java as far as i can tell.
 LIBS += $${L}/libdwyco_jni.so
 ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_EXTRA_LIBS += \
+        $$PWD/arm/libcrypto.so \
+        $$PWD/arm/libssl.so
+}
 #LIBS += \
 #$${D}/libcdc32.a \
 #$${D}/libvc.a \
@@ -401,6 +408,7 @@ QML_IMPORT_PATH = $$PWD
 include(deployment.pri)
 
 HEADERS += \
+    androidperms.h \
 	dwyco_top.h \
     msglistmodel.h \
     dwycoimageprovider.h \
@@ -449,14 +457,3 @@ DISTFILES += \
     androidinst/src/com/dwyco/android/StickyIntentService.java \
     androidinst/src/com/dwyco/phoo/DwycoApp.java
 
-
-contains(ANDROID_TARGET_ARCH,x86) {
-    ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
-}
-
-contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    ANDROID_EXTRA_LIBS = \
-        $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so \
-        $$PWD/arm/libcrypto.so \
-        $$PWD/arm/libssl.so
-}

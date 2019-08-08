@@ -86,6 +86,9 @@ ApplicationWindow {
     property color  amber_accent: "#FFAB00"
     property int pct: 20
 
+    property bool sent_badge: false
+    property bool recv_badge: false
+
     property string the_man: "5a098f3df49015331d74"
     property string redist: "13404a7fc7664a943a20"
 
@@ -94,8 +97,9 @@ ApplicationWindow {
     }
 
     Material.theme: Material.Light
-    Material.accent: accent
+    Material.accent: "white"
     Material.primary: primary
+    //Material.foreground: "white"
 
     property int profile_bootstrapped : 0
     property bool server_account_created: false
@@ -160,6 +164,10 @@ ApplicationWindow {
         }
     }
 
+    Component.onCompleted: {
+        AndroidPerms.request_sync("android.permission.CAMERA")
+    }
+
 
     Label {
         id: close_bounce_msg
@@ -211,19 +219,19 @@ ApplicationWindow {
     }
 
 
-    footer: RowLayout {
-            Item {
-                Layout.fillWidth: true
-            }
+//    footer: RowLayout {
+//            Item {
+//                Layout.fillWidth: true
+//            }
 
-            Label {
-                id: hwtext
-            }
-            Label {
-                id: db_status
-                text: core.is_database_online === 0 ? "db off" : "db on"
-            }
-        }
+//            Label {
+//                id: hwtext
+//            }
+//            Label {
+//                id: db_status
+//                text: core.is_database_online === 0 ? "db off" : "db on"
+//            }
+//        }
 
     Item {
         id: top_dispatch
@@ -327,6 +335,13 @@ ApplicationWindow {
 
     ProfileDialog {
         id: profile_dialog
+        visible: false
+    }
+
+    MapImage {
+        id: mapimage
+        //lat: 39.739200
+        //lon: -104.984700
         visible: false
     }
 
@@ -442,17 +457,16 @@ ApplicationWindow {
             console.log("msglist", themsglist.uid)
             if(from_uid === themsglist.uid) {
                 themsglist.reload_model();
-                // note: this could be annoying if the person is
-                // browsing back, need to check to see if so and not
-                // do this, or display a "go to bottom" icon
-//                if(chatbox.listview.atYEnd) {
-//                    chatbox.listview.positionViewAtBeginning()
-//                }
                 console.log("RELOAD nm")
-                //themsglist.reload_model()
             }
-            //notificationClient.notification = "New messages"
-            //sound_recv.play()
+            if(from_uid === the_man) {
+                if(from_uid !== themsglist.uid)
+                    sent_badge = true
+            } else {
+                if(from_uid !== themsglist.uid)
+                    recv_badge = true
+            }
+
         }
 
         onSys_msg_idx_updated: {
@@ -463,11 +477,18 @@ ApplicationWindow {
 
                 console.log("RELOAD msg_idx")
             }
+            if(prepend === 1) {
+                if(uid === the_man) {
+
+                } else {
+
+                }
+            }
         }
 
         onMsg_send_status: {
             console.log(pers_id, status, recipient)
-            hwtext.text = status
+            //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
                 if(themsglist.uid == recipient) {
@@ -480,7 +501,7 @@ ApplicationWindow {
 
         onMsg_progress: {
             console.log(pers_id, msg, percent_done)
-            hwtext.text = msg + " " + String(percent_done) + "%"
+            //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
         onProfile_update: {

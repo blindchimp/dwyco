@@ -39,10 +39,10 @@
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
-
+#include "androidperms.h"
 #endif
 #include "profpv.h"
-#if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID)
+#if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN) && !defined(DWYCO_IOS)
 #include "v4lcapexp.h"
 //#include "esdaudin.h"
 #include "audi_qt.h"
@@ -67,7 +67,7 @@
 #endif
 
 
-#ifdef MACOSX
+#if defined(MACOSX) && !defined(DWYCO_IOS)
 #include <QtMacExtras>
 #endif
 
@@ -1443,7 +1443,7 @@ DwycoCore::init()
 
     );
 
-#elif defined(LINUX)
+#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT)
     dwyco_set_external_video_capture_callbacks(
         vgnew,
         vgdel,
@@ -1599,7 +1599,7 @@ DwycoCore::init()
 void
 DwycoCore::set_badge_number(int i)
 {
-#ifdef MACOSX
+#if  defined(MACOSX) && !defined(DWYCO_IOS)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else
@@ -3015,5 +3015,10 @@ dwyco_register_qml(QQmlContext *root)
     Ignore_sort_proxy->setSourceModel(ignorelist);
     QObject::connect(ignorelist, SIGNAL(countChanged()), Ignore_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("IgnoreListModel", Ignore_sort_proxy);
+
+#ifdef ANDROID
+    AndroidPerms *a = new AndroidPerms;
+    root->setContextProperty("AndroidPerms", a);
+#endif
 
 }

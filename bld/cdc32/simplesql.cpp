@@ -14,7 +14,7 @@ using namespace dwyco;
 
 
 vc
-SimpleSql::sql_simple(const char *sql, vc a0, vc a1, vc a2, vc a3)
+SimpleSql::sql_simple(const char *sql, const vc& a0, const vc& a1, const vc& a2, const vc& a3, const vc& a4)
 {
     VCArglist a;
     a.append(sql);
@@ -30,6 +30,10 @@ SimpleSql::sql_simple(const char *sql, vc a0, vc a1, vc a2, vc a3)
                 if(!a3.is_nil())
                 {
                     a.append(a3);
+                    if(!a4.is_nil())
+                    {
+                        a.append(a4);
+                    }
                 }
             }
         }

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<manifest package="com.dwyco.rando" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.0" android:versionCode="102" android:installLocation="auto">
+<manifest package="com.dwyco.rando" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.51" android:versionCode="2000110" android:installLocation="auto">
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="-- %%INSERT_APP_NAME%% --" android:icon="@drawable/icon">
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="com.dwyco.android.NotificationClient" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="unspecified" android:launchMode="singleTop" android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -42,6 +42,7 @@
             <meta-data android:name="android.app.background_running" android:value="false"/>
             <!-- Background running -->
         </activity>
+<!--
 <receiver android:name="com.dwyco.android.Push_Notification">
 <intent-filter>
 <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
@@ -51,10 +52,11 @@
 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
 <action android:name="android.intent.action.MAIN"/>
 </intent-filter>
-</receiver>
+</receiver> -->
+
 <service android:name="com.dwyco.android.Dwyco_Message" android:enabled="true" android:process=":dwycobg">
 </service>
-<service android:name="com.dwyco.android.DwycoProbe" android:enabled="true" android:process=":dwycoprobe" android:permission="android.permission.BIND_JOB_SERVICE">
+<service android:name="com.dwyco.android.DwycoProbe" android:enabled="false" android:process=":dwycoprobe" android:permission="android.permission.BIND_JOB_SERVICE">
 </service>
 <service android:name="com.dwyco.android.DwycoSender" android:enabled="true" android:process=":dwycosend">
 </service>
@@ -65,7 +67,7 @@
 </service>
 
     </application>
-    <uses-sdk android:minSdkVersion="17" android:targetSdkVersion="26"/>
+    <uses-sdk android:minSdkVersion="17" android:targetSdkVersion="28"/>
     <supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
 
     <!-- The following comment will be replaced upon deployment with default permissions based on the dependencies of the application.
@@ -76,12 +78,13 @@
          Remove the comment if you do not require these default features. -->
 
 <uses-feature android:glEsVersion="0x00020000" android:required="true"/>
-<uses-feature android:name="android.hardware.camera" android:required="true"/>
+<uses-feature android:name="android.hardware.camera.any" android:required="true"/>
 
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
 
 <uses-permission android:name="android.permission.VIBRATE"/>
 <uses-permission android:name="android.permission.CAMERA"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 </manifest>

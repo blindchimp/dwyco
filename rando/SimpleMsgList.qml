@@ -9,6 +9,8 @@
 import QtQuick 2.6
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.12
+import QtQuick.Controls.Material 2.2
+import QtPositioning 5.12
 
 
 Page {
@@ -22,8 +24,8 @@ Page {
 
     background: Rectangle {
         gradient: Gradient {
-            GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
-            GradientStop { position: 1.0; color: msglist.model.uid === the_man ? amber_dark : primary_dark}
+            GradientStop { position: 1.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
+            GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_dark : primary_dark}
         }
     }
 
@@ -94,166 +96,107 @@ Page {
                     Layout.fillWidth: true
                 }
 
-                ButtonGroup {
-                    id: radio
-                }
 
-                ToolButton {
-                    id: sent
-
-                    ButtonGroup.group: radio
-                    Layout.fillHeight: true
-                    Layout.margins: mm(.25)
-                    Layout.minimumWidth: recv.width
-
-                    text: "Sent"
-                    background: Rectangle {
-                        id: bgblink2
-                        color: amber_dark
-                        radius: 6
-                        ParallelAnimation {
-                            loops: 30
-                            running: core.unread_count > 0
-                            ColorAnimation {
-                                target: bgblink2
-                                property: "color"
-                                from: amber_dark
-                                to: "black"
-                                duration: 1000
-                            }
-                            onStopped: {
-                                bgblink2.color = amber_dark
-                            }
-                        }
-                    }
-                    contentItem: Text {
-                        x: sent.leftPadding
-                        y: sent.topPadding
-                        width: sent.availableWidth
-                        height: sent.availableHeight
-
-                        text: sent.text
-                        //font: sent.font
-                        color: "white" //sent.checked ? "white" : "gray"
-                        elide: Text.ElideRight
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    checkable: true
-                    onCheckedChanged: {
-                        if(checked) {
-
-                            top_dispatch.uid_selected(the_man, "clicked")
-                            recv.checked = false
-                        }
-                        show_sent = checked
-                        show_recv = false
-
-                    }
-                    Rectangle {
-                        visible: sent.checked
-                        width: parent.width * .75
-                        anchors.margins: mm(1)
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: parent.bottom
-
-                        height: mm(.5)
-                        color: "white"
-                    }
-
-                }
-                Item {
-
-                    Layout.fillWidth: true
-                }
-                ToolButton {
-                    id: recv
-                    ButtonGroup.group: radio
-                    text: "Received"
-
-                    Layout.fillHeight: true
-                    Layout.margins: mm(.25)
-
-                    background: Rectangle {
-                        id: bgblink
-                        color: primary_dark
-                        radius: 6
-                        ParallelAnimation {
-                            loops: 30
-                            running: core.unread_count > 0
-                            ColorAnimation {
-                                target: bgblink
-                                property: "color"
-                                from: primary_dark
-                                to: "black"
-                                duration: 1000
-                            }
-                            onStopped: {
-                                bgblink.color = primary_dark
-                            }
-                        }
-                    }
-                    contentItem: Text {
-                        x: recv.leftPadding
-                        y: recv.topPadding
-                        width: recv.availableWidth
-                        height: recv.availableHeight
-
-                        text: recv.text
-                        //font: recv.font
-                        color: "white" //recv.checked ? "white" : "gray"
-                        elide: Text.ElideRight
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    checkable: true
-                    onClicked: {
-                        var i
-                        var u
-                        for(i = 0; i < ConvListModel.count; i++) {
-                            u = ConvListModel.get(i).uid
-                            core.reset_unviewed_msgs(u)
-                        }
-
-
-                    }
-
-                    onCheckedChanged: {
-                        if(checked) {
-                            sent.checked = false
-                            var i
-                            var u
-                            for(i = 0; i < ConvListModel.count; i++) {
-                                u = ConvListModel.get(i).uid
-                                if(u !== the_man) {
-                                    top_dispatch.uid_selected(u, "clicked")
-                                    break;
-                                }
-                            }
-                        }
-                        show_recv = checked
-                        show_sent = false
-
-                    }
-                    Rectangle {
-                        visible: recv.checked
-                        width: parent.width * .75
-                        anchors.margins: mm(1)
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottom: parent.bottom
-                        height: mm(.5)
-                        color: "white"
-                    }
-                }
-                Item {
-
-                    Layout.fillWidth: true
-                }
             }
         }
     }
+
+    footer: ToolBar {
+        width: parent.width
+        RowLayout {
+            anchors.fill: parent
+        ButtonGroup {
+            id: radio
+        }
+
+        ToolButton {
+            id: sent
+
+            ButtonGroup.group: radio
+            Layout.fillHeight: true
+            Layout.margins: mm(.25)
+            Layout.fillWidth: true
+            Layout.minimumWidth: parent.width / 2
+            Layout.maximumWidth: parent.width / 2
+
+            text: "Sent"
+            icon.source: mi("ic_cloud_upload_black_24dp.png")
+            display: AbstractButton.TextUnderIcon
+            checkable: true
+            onCheckedChanged: {
+                if(checked) {
+                    top_dispatch.uid_selected(the_man, "clicked")
+                    recv.checked = false
+                    sent_badge = false
+                }
+                show_sent = checked
+                show_recv = false
+            }
+            Rectangle {
+                id: badge1
+                width: 16
+                height: 16
+                anchors.right: parent.right
+                anchors.top: parent.top
+                radius: width / 2
+                color: "red"
+                visible: /* core.has_unseen_geo || */ sent_badge
+            }
+        }
+//        Item {
+
+//            Layout.fillWidth: true
+//        }
+        ToolButton {
+            id: recv
+            ButtonGroup.group: radio
+
+            text: "Received"
+            icon.source: mi("ic_cloud_download_black_24dp.png")
+            display: AbstractButton.TextUnderIcon
+
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            Layout.margins: mm(.25)
+
+            checkable: true
+
+            onCheckedChanged: {
+                if(checked) {
+                    sent.checked = false
+                    var i
+                    var u
+                    for(i = 0; i < ConvListModel.count; i++) {
+                        u = ConvListModel.get(i).uid
+                        if(u !== the_man) {
+                            top_dispatch.uid_selected(u, "clicked")
+                            break;
+                        }
+                    }
+                    recv_badge = false
+                    core.clear_unseen_rando()
+                }
+                show_recv = checked
+                show_sent = false
+
+            }
+            Rectangle {
+                id: badge2
+                width: 16
+                height: 16
+                anchors.right: parent.right
+                anchors.top: parent.top
+                radius: width / 2
+                color: "red"
+                visible: /*core.has_unseen_rando ||*/ recv_badge
+            }
+        }
+
+        }
+
+    }
+
+    property real items_margin: mm(2)
 
     Component {
         id: msg_delegate
@@ -262,8 +205,9 @@ Page {
             id: img
             property bool click_to_fetch
             click_to_fetch: model.uid !== the_man && !IS_ACTIVE && FETCH_STATE === "manual"
-
-            width: listview.width
+            x: items_margin
+            //y: mm(10)
+            width: listview.width - 2 * items_margin
             height: {
                 if(click_to_fetch)
                     return width
@@ -303,17 +247,16 @@ Page {
                 }
             }
             Behavior on visible {
-                SequentialAnimation {
-
-                NumberAnimation {
-                    target: img
-                    property: "opacity"
-                    duration: 250
-                    easing.type: Easing.InOutQuad
-                    from: 0.0
-                    to: 1.0
-                }
-                }
+                //SequentialAnimation {
+                    NumberAnimation {
+                        target: img
+                        property: "opacity"
+                        duration: 250
+                        easing.type: Easing.InOutQuad
+                        from: 0.0
+                        to: 1.0
+                    }
+                //}
             }
 
             Rectangle {
@@ -340,6 +283,7 @@ Page {
                 anchors.margins: mm(.5)
                 visible: !IS_QD && REVIEW_RESULTS != "Unknown" && msglist.model.uid === the_man
                 source: mi("ic_not_interested_black_24dp.png")
+
                 z: 10
                 MouseArea {
                     anchors.fill: parent
@@ -348,7 +292,33 @@ Page {
                             fail_review_msg.state = "moveOut"
                         else
                             fail_review_msg.state = "moveIn"
+                        core.hash_clear_tag(ASSOC_HASH, "_unseen")
                     }
+                }
+
+                SequentialAnimation {
+                    running: IS_UNSEEN === 1
+                    loops: Animation.Infinite
+                    onStopped: {
+                        failed_review.scale = 1.0
+                    }
+
+                NumberAnimation {
+                    target: failed_review
+                    property: "scale"
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                    from: 1.0
+                    to: 0.5
+                }
+                NumberAnimation {
+                    target: failed_review
+                    property: "scale"
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                    from: 0.5
+                    to: 1.0
+                }
                 }
 
 
@@ -398,11 +368,70 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        if(location.state == "moveIn")
-                            location.state = "moveOut"
-                        else
-                            location.state = "moveIn"
+                        if(SENT === 0) {
+                            var o = JSON.parse(MSG_TEXT)
+                            if('lat' in o && 'lon' in o)
+                            {
+                                //mapimage.lat = o.lat
+                                //mapimage.lon = o.lon
+                                mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
+                                mapimage.placename = location.text
+                                mapimage.zoom = 10
+                                stack.push(mapimage)
+                            }
+                            else
+                            {
+                                if(location.state == "moveIn")
+                                    location.state = "moveOut"
+                                else
+                                    location.state = "moveIn"
+                            }
+                        } else {
+                            if(location.text.length > 0 && SENT_TO_LAT != "" &&
+                                    SENT_TO_LON != "") {
+                                //mapimage.lat = SENT_TO_LAT
+                                //mapimage.lon = SENT_TO_LON
+                                mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
+                                mapimage.placename = location.text
+                                mapimage.zoom = 10
+                                stack.push(mapimage)
+
+                            }
+                            else
+                            {
+                                if(location.state == "moveIn")
+                                    location.state = "moveOut"
+                                else
+                                    location.state = "moveIn"
+                            }
+                        }
+
+                        core.hash_clear_tag(ASSOC_HASH, "_unseen")
                     }
+                }
+                SequentialAnimation {
+                    running: IS_UNSEEN === 1
+                    loops: Animation.Infinite
+                    onStopped: {
+                        has_geo_info.scale = 1.0
+                    }
+
+                NumberAnimation {
+                    target: has_geo_info
+                    property: "scale"
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                    from: 1.0
+                    to: 0.5
+                }
+                NumberAnimation {
+                    target: has_geo_info
+                    property: "scale"
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                    from: 0.5
+                    to: 1.0
+                }
                 }
 
 
@@ -517,9 +546,11 @@ Page {
     ListView {
         id: listview
         anchors.fill: parent
+        anchors.topMargin: items_margin
         clip: true
         delegate: msg_delegate
         model: themsglist
+        spacing: items_margin
 /*
 // sadly, this doesn't work very well
 // i was trying to allow a "swipe to switch sent/recv"
@@ -572,8 +603,6 @@ scrolling in the listview or doesn't recognizing the swipe.
         background: parent.background
 
     ColumnLayout {
-        //visible: {model.uid === the_man && listview.count === 0}
-
         anchors.fill: parent
         anchors.margins: mm(5)
 
@@ -604,8 +633,8 @@ scrolling in the listview or doesn't recognizing the swipe.
         anchors.horizontalCenter: parent.horizontalCenter
         icon.source: mi("ic_add_a_photo_black_24dp.png")
         icon.color: "blue"
-        width: cm(2)
-        height: cm(2)
+        width: cm(1.5)
+        height: cm(1.5)
         onClicked: {
             cam.next_state = "StopAndPop"
             cam.ok_text = "Upload"
