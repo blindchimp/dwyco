@@ -27,6 +27,7 @@
         <file>Warning.qml</file>
         <file>ProgressRound.qml</file>
         <file>Help.qml</file>
+        <file>MapImage.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

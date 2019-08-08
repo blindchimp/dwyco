@@ -106,19 +106,8 @@ extern int HasCamHardware;
 
 QMap<QByteArray, QByteArray> Hash_to_loc;
 QMap<QByteArray, QByteArray> Hash_to_review;
-
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
-}
+QMap<QByteArray, QByteArray> Hash_to_lon;
+QMap<QByteArray, QByteArray> Hash_to_lat;
 
 void
 hack_unread_count()
@@ -566,7 +555,7 @@ dwyco_sys_event_callback(int cmd, int id,
     else if(cmd == DWYCO_SE_USER_MSG_IDX_UPDATED ||
             cmd == DWYCO_SE_USER_MSG_IDX_UPDATED_PREPEND)
     {
-        TheDwycoCore->emit sys_msg_idx_updated(huid);
+        TheDwycoCore->emit sys_msg_idx_updated(huid, cmd == DWYCO_SE_USER_MSG_IDX_UPDATED_PREPEND ? 1 : 0);
     }
     else if(cmd == DWYCO_SE_USER_ADD)
     {
@@ -1594,7 +1583,7 @@ DwycoCore::init()
         simple_scoped qul(ul);
         for(int i = 0; i < nul; ++i)
         {
-            QByteArray u = qul.get<QByteArray>(i, DWYCO_NO_COLUMN);
+            QByteArray u = qul.get<QByteArray>(i);
             DWYCO_SAVED_MSG_LIST sml;
             if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
             {
@@ -1660,6 +1649,8 @@ DwycoCore::init()
                                 QJsonValue h = qjo.value("hash");
                                 QJsonValue loc = qjo.value("loc");
                                 QJsonValue rev = qjo.value("review");
+                                QJsonValue lat = qjo.value("lat");
+                                QJsonValue lon = qjo.value("lon");
                                 if(!h.isUndefined())
                                 {
                                     QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
@@ -1667,6 +1658,10 @@ DwycoCore::init()
                                         Hash_to_loc.insert(hh, loc.toString().toLatin1());
                                     if(!rev.isUndefined())
                                         Hash_to_review.insert(hh, rev.toString().toLatin1());
+                                    if(!lat.isUndefined())
+                                        Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                                    if(!lon.isUndefined())
+                                        Hash_to_lon.insert(hh, lon.toString().toLatin1());
                                 }
                             }
                         }
@@ -2081,15 +2076,17 @@ DwycoCore::clear_ignore_list()
     int n;
 
     l = dwyco_ignore_list_get();
-    dwyco_list_numelems(l, &n, 0);
+    simple_scoped sl(l);
+    n = sl.rows();
+
     for(int i = 0; i < n; ++i)
     {
-        QByteArray buid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
+        QByteArray buid = sl.get<QByteArray>(i);
         dwyco_unignore(buid.constData(), buid.length());
         emit ignore_event(buid.toHex());
 
     }
-    dwyco_list_release(l);
+
     // may involve resorting other lists too
     reload_ignore_list();
 
@@ -2320,6 +2317,7 @@ DwycoCore::get_simple_directory_url()
 QUrl
 DwycoCore::get_simple_xml_url()
 {
+#if 0
     QUrlQuery qurl;
     const char *auth;
     int len;
@@ -2356,11 +2354,15 @@ DwycoCore::get_simple_xml_url()
 
     url.setQuery(qurl);
     return url;
+#else
+    return QUrl();
+#endif
 }
 
 QString
 DwycoCore::get_msg_count_url()
 {
+#if 0
     QUrlQuery qurl;
     const char *auth;
     int len;
@@ -2380,6 +2382,9 @@ DwycoCore::get_msg_count_url()
     qurl.addQueryItem("auth", QString::fromUtf8(au.toHex()));
     url.setQuery(qurl);
     return url.url();
+#else
+    return "";
+#endif
 }
 
 int
@@ -2478,7 +2483,10 @@ DwycoCore::clear_messages(QString uid)
 {
     QByteArray buid = uid.toLatin1();
     buid = QByteArray::fromHex(buid);
-    return dwyco_clear_user(buid.constData(), buid.length());
+    int ret = dwyco_clear_user(buid.constData(), buid.length());
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
+    return ret;
 
 }
 
@@ -2487,8 +2495,10 @@ DwycoCore::clear_messages_unfav(QString uid)
 {
     QByteArray buid = uid.toLatin1();
     buid = QByteArray::fromHex(buid);
-    return dwyco_clear_user_unfav(buid.constData(), buid.length());
-
+    int ret = dwyco_clear_user_unfav(buid.constData(), buid.length());
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
+    return ret;
 }
 
 int
@@ -2502,6 +2512,8 @@ DwycoCore::delete_user(QString uid)
     // note: msglist_model may have cached info that needs to be cleared
 
     reload_conv_list();
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
 
     return ret;
 }
@@ -2513,6 +2525,7 @@ get_cq_results_filename()
 
 }
 
+#if 0
 static void
 process_contact_query_response(const QByteArray& mid)
 {
@@ -2536,7 +2549,7 @@ process_contact_query_response(const QByteArray& mid)
     TheDwycoCore->emit cq_results_received(succ);
 }
 
-#if 0
+
 QUrl
 DwycoCore::get_cq_results_url()
 {

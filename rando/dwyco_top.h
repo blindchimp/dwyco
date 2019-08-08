@@ -273,7 +273,7 @@ signals:
     void msg_send_status(int status, const QString& recipient, const QString& pers_id);
     void msg_progress(const QString& pers_id, const QString& recipient, const QString& msg, int percent_done);
     void sys_invalidate_profile(const QString& uid);
-    void sys_msg_idx_updated(const QString& uid);
+    void sys_msg_idx_updated(const QString& uid, int prepend);
     void sys_uid_resolved(const QString& uid);
     void profile_update(int success);
     void pal_event(const QString& uid);

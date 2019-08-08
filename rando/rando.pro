@@ -24,6 +24,7 @@ INSTALLS += appdir_icon appdir_desktop
 
 QT += core qml quick multimedia network
 QT += quickcontrols2
+QT += location positioning
 
 android: QT += androidextras
 macx-clang: QT += macextras
@@ -194,7 +195,7 @@ $${D}/qt-qml-models/libQtQmlModels.a
 }
 
 android-* {
-DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
+DEFINES += LINUX VCCFG_FILE ANDROID
 
 D = $${OUT_PWD}/../bld
 L = $$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH

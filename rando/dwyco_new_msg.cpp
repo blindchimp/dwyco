@@ -29,6 +29,8 @@ typedef QHash<QByteArray, QByteArray> UID_MID_MAP;
 static UID_MID_MAP Unviewed_msgs;
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
+extern QMap<QByteArray, QByteArray> Hash_to_lon;
+extern QMap<QByteArray, QByteArray> Hash_to_lat;
 
 void update_unseen_from_db();
 
@@ -251,6 +253,8 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                             QJsonValue h = qjo.value("hash");
                             QJsonValue loc = qjo.value("loc");
                             QJsonValue rev = qjo.value("review");
+                            QJsonValue lat = qjo.value("lat");
+                            QJsonValue lon = qjo.value("lon");
 
                             if(!h.isUndefined())
                             {
@@ -259,6 +263,11 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                                     Hash_to_loc.insert(hh, loc.toString().toLatin1());
                                 if(!rev.isUndefined())
                                     Hash_to_review.insert(hh, rev.toString().toLatin1());
+                                if(!lat.isUndefined())
+                                    Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                                if(!lon.isUndefined())
+                                    Hash_to_lon.insert(hh, lon.toString().toLatin1());
+
                                 dwyco_set_msg_tag(mid.constData(), h.toString().toLatin1());
                             }
 

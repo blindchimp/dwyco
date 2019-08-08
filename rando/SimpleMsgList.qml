@@ -10,6 +10,7 @@ import QtQuick 2.6
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.2
+import QtPositioning 5.12
 
 
 Page {
@@ -126,6 +127,7 @@ Page {
                 if(checked) {
                     top_dispatch.uid_selected(the_man, "clicked")
                     recv.checked = false
+                    sent_badge = false
                 }
                 show_sent = checked
                 show_recv = false
@@ -138,7 +140,7 @@ Page {
                 anchors.top: parent.top
                 radius: width / 2
                 color: "red"
-                visible: core.has_unseen_geo
+                visible: /* core.has_unseen_geo || */ sent_badge
             }
         }
 //        Item {
@@ -171,6 +173,7 @@ Page {
                             break;
                         }
                     }
+                    recv_badge = false
                     core.clear_unseen_rando()
                 }
                 show_recv = checked
@@ -185,7 +188,7 @@ Page {
                 anchors.top: parent.top
                 radius: width / 2
                 color: "red"
-                visible: core.has_unseen_rando
+                visible: /*core.has_unseen_rando ||*/ recv_badge
             }
         }
 
@@ -365,10 +368,43 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        if(location.state == "moveIn")
-                            location.state = "moveOut"
-                        else
-                            location.state = "moveIn"
+                        if(SENT === 0) {
+                            var o = JSON.parse(MSG_TEXT)
+                            if('lat' in o && 'lon' in o)
+                            {
+                                //mapimage.lat = o.lat
+                                //mapimage.lon = o.lon
+                                mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
+                                mapimage.placename = location.text
+                                mapimage.zoom = 10
+                                stack.push(mapimage)
+                            }
+                            else
+                            {
+                                if(location.state == "moveIn")
+                                    location.state = "moveOut"
+                                else
+                                    location.state = "moveIn"
+                            }
+                        } else {
+                            if(location.text.length > 0 && SENT_TO_LAT != "" &&
+                                    SENT_TO_LON != "") {
+                                //mapimage.lat = SENT_TO_LAT
+                                //mapimage.lon = SENT_TO_LON
+                                mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
+                                mapimage.placename = location.text
+                                mapimage.zoom = 10
+                                stack.push(mapimage)
+
+                            }
+                            else
+                            {
+                                if(location.state == "moveIn")
+                                    location.state = "moveOut"
+                                else
+                                    location.state = "moveIn"
+                            }
+                        }
 
                         core.hash_clear_tag(ASSOC_HASH, "_unseen")
                     }
