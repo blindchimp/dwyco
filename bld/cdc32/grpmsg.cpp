@@ -263,13 +263,15 @@ recv_gj2(vc from, vc msg, vc password)
 
         SKID->start_transaction();
         rollback = 1;
-        vc res = SKID->sql_simple("select * from pstate where "
+        {
+        vc res = SKID->sql_simple("select 1 from pstate where "
                                   "initiating_uid = ?1 and nonce_1 = ?2 and "
                                   "alt_name = ?3 and state = 1",
                                   our_uid, nonce, alt_name);
         if(res.num_elems() == 0)
         {
             throw -1;
+        }
         }
 
         vc mr(VC_VECTOR);
@@ -352,6 +354,13 @@ recv_gj1(vc from, vc msg, vc password)
 
         SKID->start_transaction();
 
+        // look more closely at this... i think if a requester spams us
+        // with multiple requests, the implementation may end up in
+        // a weird state where none of the requests is processed because
+        // they are stepping on one another. need to reorganize a bit and
+        // arrange for follow on requests are simply ignored for some
+        // period of time, or allowed to progress until one of them
+        // completes, then terminate the remaining ones.
         SKID->sql_simple("delete from pstate where initiating_uid = ?1", hfrom);
 
         vc nonce2 = to_hex(get_entropy());
@@ -425,7 +434,7 @@ recv_gj3(vc from, vc msg, vc password)
         }
 
         VCArglist a;
-        a.append("select * from pstate where "
+        a.append("select 1 from pstate where "
                  "initiating_uid = ?1 and responding_uid = ?2 and nonce_1 = ?3 and "
                  "nonce_2 = ?4 and alt_name = ?5 and state = 2");
         a.append(hfrom);
@@ -433,12 +442,13 @@ recv_gj3(vc from, vc msg, vc password)
         a.append(nonce);
         a.append(nonce2);
         a.append(alt_name);
-
+        {
         vc res = SKID->query(&a);
 
         if(res.num_elems() == 0)
         {
             throw -1;
+        }
         }
         // note: for now, we are only in one group, and it should be the
         // same as the requester wanted. this ought to be fixed later
