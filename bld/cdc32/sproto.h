@@ -15,8 +15,7 @@
 #include "dwstr.h"
 
 class MMChannel;
-
-struct sproto;
+class sproto;
 
 struct strans
 {
@@ -27,10 +26,15 @@ struct strans
     const char *alt_next_state;
 };
 
-struct sproto
+class sproto
 {
-    sproto(int sc, strans *tr, ValidPtr v);
+    friend class MMChannel;
 
+public:
+    sproto(int sc, strans *tr, ValidPtr v);
+    void start();
+
+private:
     enum handler_ret {
         none,
         next,
@@ -54,10 +58,10 @@ struct sproto
     DwString recv_fn;
     int crank();
     int find(const char *state);
-    void start();
     void end();
 
 };
+
 
 // this one is for protocol that allows restart on sends
 #define DWYCO_SEND_FILE_PORT_OFFSET 6
