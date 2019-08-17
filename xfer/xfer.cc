@@ -41,11 +41,8 @@ off_t Start_offset;
 off_t Total_recv;
 off_t Session_recv;
 int Recv_to_null;
-void dolog(const char *s);
 
 #define MAXFILESIZE (100 * 1024 * 1024)
-#define FORWARDS_DIR "./forwards"
-
 
 static int
 backout(vc *)
@@ -105,7 +102,6 @@ load_info(vc& info, const char *filename)
 
     newfn = filename;
     vc f(VC_FILE);
-    int err = 0;
     f.set_err_callback(backout);
     vc v = newfn.c_str();
     if(!f.open(v, (vcfilemode)(VCFILE_READ|VCFILE_BINARY)))
@@ -113,7 +109,7 @@ load_info(vc& info, const char *filename)
     vcxstream vcx(f);
     if(!vcx.open(vcxstream::READABLE))
         goto err;
-    if((err = info.xfer_in(vcx)) < 0)
+    if(info.xfer_in(vcx) < 0)
         goto err;
     if(!vcx.close())
         goto err;
@@ -567,12 +563,11 @@ do_sendfile(vc sock)
 int
 do_recvfile(vc sock)
 {
-    int len;
+    int len = -1;
     int done = 0;
     off_t total = Start_offset;
     Total_recv = total;
 
-    int len1 = 0;
     vc rvc;
     while(recv_vc(sock, rvc))
     {
@@ -703,12 +698,6 @@ send_main(int sock)
 }
 
 void
-oopanic(char *s)
-{
-    dolog(s);
-    exit(0);
-}
-void
 oopanic(const char *s)
 {
     dolog(s);
@@ -754,11 +743,7 @@ main(int argc, char **argv)
 
 #if 1
     struct rlimit r;
-    // the units for setrlimit are a total fucking mystery.
-    // man page says "pages" for some, and no specification for
-    // others.
     r.rlim_cur = r.rlim_max = 20 * 1024 * 1024;
-    // these might be bytes
     setrlimit(RLIMIT_DATA, &r);
     setrlimit(RLIMIT_STACK, &r);
     setrlimit(RLIMIT_AS, &r);
