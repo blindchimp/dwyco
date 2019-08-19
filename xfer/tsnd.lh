@@ -1,0 +1,17 @@
+lbind(a socket(tcp any:any nil nil))
+socket-connect(<a> {127.0.0.1: __argv[0]})
+socket-send(<a> vector(00000000000000000000.fle 5 a b))
+socket-recv(<a> val)
+printl(<val>)
+socket-send(<a> |fileok|)
+;sleep(120)
+while(t prog(
+socket-recv(<a> val)
+printl(<val>)
+if(not(<val>) prog(
+socket-send(<a> frok)
+break(1)
+))
+))
+printl(<val>)
+

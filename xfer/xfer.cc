@@ -246,16 +246,17 @@ get_write_locked_fd(vc filename)
                             kill(fl.l_pid, SIGKILL);
                             sleep(1);
                             close(fd);
-                            break;
+                            continue;
                         }
-                        return -1;
+                        else
+                            return -1;
                     }
                     else
                     {
                         // well it was unlocked, give it a retry
                         dolog("odd found unlocked");
                         close(fd);
-                        break;
+                        continue;
                     }
                 }
                 else
@@ -287,7 +288,7 @@ get_write_locked_fd(vc filename)
                 // zapped it in the mean time, retry
                 // or wrong perms or something...
                 dolog("zapped");
-                break;
+                continue;
             }
         }
         else
@@ -783,14 +784,16 @@ main(int argc, char **argv)
     //close(2);
     //open("/tmp/st", O_CREAT|O_WRONLY|O_TRUNC, 0666);
 #define TEST
+    int s = 0;
 #ifdef TEST
-    int s = socket(PF_INET, SOCK_STREAM, 0);
+    int port = atoi(argv[3]);
+    s = socket(PF_INET, SOCK_STREAM, 0);
     int yes = 1;
     setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
     struct sockaddr_in sa;
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = htonl(INADDR_ANY);
-    sa.sin_port = htons(9000);
+    sa.sin_port = htons(port);
     bind(s, (struct sockaddr *)&sa, sizeof(sa));
     listen(s, 5);
     //close(0);
@@ -801,7 +804,7 @@ main(int argc, char **argv)
 #endif
     struct sockaddr_in in;
     socklen_t len = sizeof(in);
-    if(getpeername(0, (struct sockaddr *)&in, &len) < 0)
+    if(getpeername(s, (struct sockaddr *)&in, &len) < 0)
         Peer = "unknown";
     else
     {
@@ -810,30 +813,26 @@ main(int argc, char **argv)
     if(strcmp(argv[2], "send") == 0)
     {
         Send = 1;
-        send_main(0);
+        send_main(s);
     }
     if(strcmp(argv[2], "send2") == 0)
     {
         Send = 1;
         Allow_start = 1;
-        send_main(0);
+        send_main(s);
     }
     if(strcmp(argv[2], "send3") == 0)
     {
         Send = 1;
         Allow_start = 1;
         Req_enc = 1;
-#ifdef TEST
         send_main(s);
-#else
-        send_main(0);
-#endif
     }
     else if(strcmp(argv[2], "psend") == 0)
     {
         Send = 1;
         Loose_file = 1;
-        send_main(0);
+        send_main(s);
     }
     else if(strcmp(argv[2], "psend2") == 0)
     {
@@ -841,7 +840,7 @@ main(int argc, char **argv)
         Send = 1;
         Loose_file = 1;
         Allow_start = 1;
-        send_main(0);
+        send_main(s);
     }
     else if(strcmp(argv[2], "psend3") == 0)
     {
@@ -850,39 +849,27 @@ main(int argc, char **argv)
         Loose_file = 1;
         Allow_start = 1;
         Req_enc = 1;
-        send_main(0);
+        send_main(s);
     }
     else if(strcmp(argv[2], "recv") == 0)
     {
-#ifdef TEST
         recv_main(s);
-#else
-        recv_main(0);
-#endif
     }
     else if(strcmp(argv[2], "recv3") == 0)
     {
         Req_enc = 1;
-#ifdef TEST
         recv_main(s);
-#else
-        recv_main(0);
-#endif
     }
     else if(strcmp(argv[2], "recv4") == 0)
     {
         Req_enc = 1;
         Allow_restart = 1;
-#ifdef TEST
         recv_main(s);
-#else
-        recv_main(0);
-#endif
     }
     else if(strcmp(argv[2], "precv") == 0)
     {
         Loose_file = 1;
-        recv_main(0);
+        recv_main(s);
     }
     exit(0);
 }
