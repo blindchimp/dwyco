@@ -197,6 +197,139 @@ checkfn(vc s)
     return 0;
 }
 
+int
+get_write_locked_fd(vc filename)
+{
+    int flags;
+    struct flock fl;
+    int retries;
+
+    for(retries = 0; retries < 5; ++retries)
+    {
+        fl.l_whence = SEEK_SET;
+        fl.l_start = 0;
+        fl.l_len = 0;
+
+        if(Allow_restart)
+            flags = O_CREAT|O_EXCL|O_WRONLY;
+        else
+            flags = O_CREAT|O_EXCL|O_WRONLY|O_TRUNC;
+
+        int fd = open((const char *)filename, flags, 0666);
+        if(fd == -1)
+        {
+            fd = open((const char *)filename, O_WRONLY);
+            if(fd != -1)
+            {
+                fl.l_type = F_WRLCK;
+                fl.l_whence = SEEK_SET;
+                fl.l_start = 0;
+                fl.l_len = 0;
+                if(fcntl(fd, F_SETLK, &fl) == -1)
+                {
+                    // someone else has it, probably in the
+                    // process of timing out, so we try to
+                    // blow him away before we proceed so the
+                    // file doesn't get gronked later when he
+                    // does exit.
+                    fl.l_type = F_WRLCK;
+                    fl.l_whence = SEEK_SET;
+                    fl.l_start = 0;
+                    fl.l_len = 0;
+                    if(fcntl(fd, F_GETLK, &fl) == -1)
+                        return -1;
+                    if(fl.l_type != F_UNLCK)
+                    {
+                        if(fl.l_pid > 0)
+                        {
+                            dolog("kill to unlock");
+                            kill(fl.l_pid, SIGKILL);
+                            sleep(1);
+                            close(fd);
+                            break;
+                        }
+                        return -1;
+                    }
+                    else
+                    {
+                        // well it was unlocked, give it a retry
+                        dolog("odd found unlocked");
+                        close(fd);
+                        break;
+                    }
+                }
+                else
+                {
+                    // we got the lock
+                    if(Allow_restart)
+                    {
+                        off_t off = lseek(fd, 0, SEEK_END);
+                        char a[1024];
+                        sprintf(a, "locked recv restart %ld", off);
+                        dolog(a);
+                    }
+                    else if(ftruncate(fd, 0) == 0)
+                        dolog("locked and truncated");
+                    else
+                    {
+                        close(fd);
+                        dolog("truncate failed");
+                        return -1;
+                    }
+                    return fd;
+                }
+            }
+            else
+            {
+                // something weird, we can't open it for
+                // exclusive write, but it doesn't exist when
+                // we open it a second time, means someone else
+                // zapped it in the mean time, retry
+                // or wrong perms or something...
+                dolog("zapped");
+                break;
+            }
+        }
+        else
+        {
+            // put the lock on it
+            fl.l_type = F_WRLCK;
+            fl.l_whence = SEEK_SET;
+            fl.l_start = 0;
+            fl.l_len = 0;
+            if(fcntl(fd, F_SETLK, &fl) == -1)
+            {
+                dolog("can't get lock");
+                return -1;
+            }
+            dolog("got lock");
+            return fd;
+        }
+    }
+    return -1;
+}
+
+int
+get_read_locked_file(vc filename)
+{
+    struct flock fl;
+
+    int fd = open((const char *)filename, O_RDONLY);
+    if(fd != -1)
+    {
+        fl.l_type = F_RDLCK;
+        fl.l_whence = SEEK_SET;
+        fl.l_start = 0;
+        fl.l_len = 0;
+        if(fcntl(fd, F_SETLK, &fl) == -1)
+        {
+            return -1;
+        }
+        return fd;
+    }
+    return -1;
+}
+
 
 int
 send_vc(vc sock, vc v)
@@ -205,14 +338,13 @@ send_vc(vc sock, vc v)
     if(!vcx.open(vcxstream::WRITEABLE))
         return 0;
     vc_composite::new_dfs();
-    long len;
     if(!ECtx.is_nil())
     {
         v = vclh_encdec_xfer_enc_ctx(ECtx, v);
         if(v.is_nil())
             return 0;
     }
-    if((len = v.xfer_out(vcx)) < 0)
+    if(v.xfer_out(vcx) < 0)
         return 0;
     vcx.close();
     return 1;
@@ -299,6 +431,12 @@ recv_get_request(vc sock)
         return 0;
     }
     Filename = req;
+    // it is better to get the lock as soon as we know the filename
+    // so that we can avoid problems where file sizes and stuff would
+    // change if there is another writer running around
+    File = get_read_locked_file(Filename);
+    if(File == -1)
+        return 0;
 
     Filesize = vclh_file_size(req);
     if(Filesize.is_nil())
@@ -356,149 +494,9 @@ send_restart(vc sock, vc loc)
 }
 
 int
-get_write_locked_fd(vc filename)
-{
-    int flags;
-    struct flock fl;
-    int retries;
-
-    for(retries = 0; retries < 5; ++retries)
-    {
-        fl.l_whence = SEEK_SET;
-        fl.l_start = 0;
-        fl.l_len = 0;
-
-        if(Allow_restart)
-            flags = O_CREAT|O_EXCL|O_WRONLY;
-        else
-            flags = O_CREAT|O_EXCL|O_WRONLY|O_TRUNC;
-
-        int fd = open((const char *)filename, flags, 0666);
-        if(fd == -1)
-        {
-            fd = open((const char *)filename, O_WRONLY);
-            if(fd != -1)
-            {
-                fl.l_type = F_WRLCK;
-                fl.l_whence = SEEK_SET;
-                fl.l_start = 0;
-                fl.l_len = 0;
-                if(fcntl(fd, F_SETLK, &fl) == -1)
-                {
-                    // someone else has it, probably in the
-                    // process of timing out, so we try to
-                    // blow him away before we proceed so the
-                    // file doesn't get gronked later when he
-                    // does exit.
-                    fl.l_type = F_WRLCK;
-                    fl.l_whence = SEEK_SET;
-                    fl.l_start = 0;
-                    fl.l_len = 0;
-                    if(fcntl(fd, F_GETLK, &fl) == -1)
-                        return -1;
-                    if(fl.l_type != F_UNLCK)
-                    {
-                        if(fl.l_pid > 0)
-                        {
-                            dolog("kill to unlock");
-                            kill(fl.l_pid, SIGKILL);
-                            sleep(1);
-                            close(fd);
-                            break;
-                        }
-                        else
-                            return -1;
-                    }
-                    else
-                    {
-                        // well it was unlocked, give it a retry
-                        dolog("odd found unlocked");
-                        close(fd);
-                        break;
-                    }
-                }
-                else
-                {
-                    // we got the lock
-                    if(Allow_restart)
-                    {
-                        off_t off = lseek(fd, 0, SEEK_END);
-                        char a[1024];
-                        sprintf(a, "locked recv restart %ld", off);
-                        dolog(a);
-                    }
-                    else if(ftruncate(fd, 0) == 0)
-                        dolog("locked and truncated");
-                    else
-                    {
-                        close(fd);
-                        dolog("truncate failed");
-                        return -1;
-                    }
-                }
-            }
-            else
-            {
-                // something weird, we can't open it for
-                // exclusive write, but it doesn't exist when
-                // we open it a second time, means someone else
-                // zapped it in the mean time, retry
-                // or wrong perms or something...
-                dolog("zapped");
-                break;
-            }
-        }
-        else
-        {
-            // put the lock on it
-            fl.l_type = F_WRLCK;
-            fl.l_whence = SEEK_SET;
-            fl.l_start = 0;
-            fl.l_len = 0;
-            if(fcntl(fd, F_SETLK, &fl) == -1)
-            {
-                dolog("can't get lock");
-                return -1;
-            }
-            dolog("got lock");
-            return fd;
-        }
-    }
-    return -1;
-}
-
-int
-get_read_locked_file(vc filename)
-{
-    struct flock fl;
-
-    int fd = open((const char *)filename, O_RDONLY);
-    if(fd != -1)
-    {
-        fl.l_type = F_RDLCK;
-        fl.l_whence = SEEK_SET;
-        fl.l_start = 0;
-        fl.l_len = 0;
-        if(fcntl(fd, F_SETLK, &fl) == -1)
-        {
-            return -1;
-        }
-        return fd;
-    }
-    return -1;
-}
-
-
-int
 recv_response(vc sock)
 {
     vc resp;
-    struct flock fl;
-    int retries = 0;
-
-    fl.l_whence = SEEK_SET;
-    fl.l_start = 0;
-    fl.l_len = 0;
 
     if(!recv_vc(sock, resp))
         return 0;
@@ -520,120 +518,9 @@ recv_response(vc sock)
             // 2 is session_id, not sure why i put that in
             Client_UID = resp[3];
             Client_MID = resp[4];
-
-retry:
-            ++retries;
-            if(retries > 5)
-            {
-                dolog("out of retries");
+            int fd;
+            if((fd = get_write_locked_fd(Filename)) == -1)
                 return 0;
-            }
-            // this has all kind of race conditions, but
-            // that's the best we can do with this
-            // hokey locking stuff that is available.
-            int flags;
-            if(Allow_restart)
-                flags = O_CREAT|O_EXCL|O_WRONLY;
-            else
-                flags = O_CREAT|O_EXCL|O_WRONLY|O_TRUNC;
-
-            int fd = open((const char *)resp[1][0], flags, 0666);
-            if(fd == -1)
-            {
-                fd = open((const char *)resp[1][0], O_WRONLY);
-                if(fd != -1)
-                {
-                    fl.l_type = F_WRLCK;
-                    fl.l_whence = SEEK_SET;
-                    fl.l_start = 0;
-                    fl.l_len = 0;
-                    if(fcntl(fd, F_SETLK, &fl) == -1)
-                    {
-                        // someone else has it, probably in the
-                        // process of timing out, so we try to
-                        // blow him away before we proceed so the
-                        // file doesn't get gronked later when he
-                        // does exit.
-                        fl.l_type = F_WRLCK;
-                        fl.l_whence = SEEK_SET;
-                        fl.l_start = 0;
-                        fl.l_len = 0;
-                        if(fcntl(fd, F_GETLK, &fl) == -1)
-                            return 0;
-                        if(fl.l_type != F_UNLCK)
-                        {
-                            if(fl.l_pid > 0)
-                            {
-                                dolog("kill to unlock");
-                                kill(fl.l_pid, SIGKILL);
-                                sleep(1);
-                                close(fd);
-                                goto retry;
-                            }
-                            else
-                                return 0;
-                        }
-                        else
-                        {
-                            // well it was unlocked, give it a retry
-                            dolog("odd found unlocked");
-                            close(fd);
-                            goto retry;
-                        }
-                    }
-                    else
-                    {
-                        // we got the lock
-                        if(Allow_restart)
-                        {
-                            off_t off = lseek(fd, 0, SEEK_END);
-                            if(off == (off_t)-1)
-                                return 0;
-                            if(send_restart(sock, vc((long)off)))
-                            {
-                                Start_offset = off;
-                                char a[1024];
-                                sprintf(a, "recv restart %ld", off);
-                                dolog(a);
-                            }
-                            else
-                                return 0;
-
-                        }
-                        else if(ftruncate(fd, 0) == 0)
-                            dolog("locked and truncated");
-                        else
-                        {
-                            dolog("truncate failed");
-                            return 0;
-                        }
-                    }
-                }
-                else
-                {
-                    // something weird, we can't open it for
-                    // exclusive write, but it doesn't exist when
-                    // we open it a second time, means someone else
-                    // zapped it in the mean time, retry
-                    // or wrong perms or something...
-                    dolog("zapped");
-                    goto retry;
-                }
-            }
-            else
-            {
-                // put the lock on it
-                fl.l_type = F_WRLCK;
-                fl.l_whence = SEEK_SET;
-                fl.l_start = 0;
-                fl.l_len = 0;
-                if(fcntl(fd, F_SETLK, &fl) == -1)
-                {
-                    dolog("can't get lock");
-                    return 0;
-                }
-                dolog("got lock");
-            }
             File = fd;
 
             return 1;
@@ -648,7 +535,7 @@ retry:
         // send a file
         if(resp == vc("fileok"))
         {
-            File = get_read_locked_file(Filename);
+            // the read lock should already have been gotten by now
             if(File == -1)
                 return 0;
             if(lseek(File, Start_offset, SEEK_SET) == -1)
@@ -754,9 +641,7 @@ do_recvfile(vc sock)
     }
     else
     {
-        // send the ok now so they don't have to wait for hash related stuff
         send_frok(sock);
-
         char a[4096];
         sprintf(a, "recv ok %ld", total);
         dolog(a);
@@ -897,7 +782,7 @@ main(int argc, char **argv)
 #endif
     //close(2);
     //open("/tmp/st", O_CREAT|O_WRONLY|O_TRUNC, 0666);
-#undef TEST
+#define TEST
 #ifdef TEST
     int s = socket(PF_INET, SOCK_STREAM, 0);
     int yes = 1;
@@ -905,7 +790,7 @@ main(int argc, char **argv)
     struct sockaddr_in sa;
     sa.sin_family = AF_INET;
     sa.sin_addr.s_addr = htonl(INADDR_ANY);
-    sa.sin_port = htons(6904);
+    sa.sin_port = htons(9000);
     bind(s, (struct sockaddr *)&sa, sizeof(sa));
     listen(s, 5);
     //close(0);

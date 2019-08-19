@@ -1,0 +1,12 @@
+lbind(a socket(tcp any:any nil nil))
+socket-connect(<a> 127.0.0.1:9000)
+socket-send(<a> vector(file vector(00000000000000000000.fle 10 a b)))
+socket-recv(<a> val)
+printl(<val>)
+if(ne(<val> fileok) exit(0))
+sleep(120)
+socket-send(<a> |1234567890|)
+socket-send(<a> nil)
+socket-recv(<a> val)
+printl(<val>)
+
