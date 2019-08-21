@@ -95,34 +95,6 @@ dolog(const char *s)
     //close(fd);
 }
 
-int
-load_info(vc& info, const char *filename)
-{
-    DwString newfn;
-
-    newfn = filename;
-    vc f(VC_FILE);
-    f.set_err_callback(backout);
-    vc v = newfn.c_str();
-    if(!f.open(v, (vcfilemode)(VCFILE_READ|VCFILE_BINARY)))
-        return 0;
-    vcxstream vcx(f);
-    if(!vcx.open(vcxstream::READABLE))
-        goto err;
-    if(info.xfer_in(vcx) < 0)
-        goto err;
-    if(!vcx.close())
-        goto err;
-    if(!f.close())
-        goto err2;
-    return 1;
-err:
-    f.close();
-err2:
-    return 0;
-}
-
-
 vc Server_keys;
 #include "dwyco_dh_dif.cpp"
 
@@ -197,6 +169,9 @@ checkfn(vc s)
     return 0;
 }
 
+// this gets an exclusive lock on the file, and sets
+// Start_off to where the file offset where writing should begin.
+//
 int
 get_write_locked_fd(vc filename)
 {
@@ -262,9 +237,13 @@ get_write_locked_fd(vc filename)
                 else
                 {
                     // we got the lock
+                    Start_offset = 0;
                     if(Allow_restart)
                     {
                         off_t off = lseek(fd, 0, SEEK_END);
+                        if(off == (off_t)-1)
+                            return 0;
+                        Start_offset = off;
                         char a[1024];
                         sprintf(a, "locked recv restart %ld", off);
                         dolog(a);
@@ -523,6 +502,11 @@ recv_response(vc sock)
             if((fd = get_write_locked_fd(Filename)) == -1)
                 return 0;
             File = fd;
+            if(Allow_restart)
+            {
+                if(lseek(File, Start_offset, SEEK_SET) == -1)
+                    return 0;
+            }
 
             return 1;
         }
@@ -686,8 +670,17 @@ recv_main(int sock)
             exit(0);
         }
     }
-    if(!send_ok(vcsock))
-        exit(0);
+
+    if(Start_offset > 0)
+    {
+        if(!send_restart(vcsock, vc((long)Start_offset)))
+            exit(0);
+    }
+    else
+    {
+        if(!send_ok(vcsock))
+            exit(0);
+    }
     do_recvfile(vcsock);
     exit(0);
 }
