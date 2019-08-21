@@ -796,11 +796,8 @@ main(int argc, char **argv)
     sa.sin_port = htons(port);
     bind(s, (struct sockaddr *)&sa, sizeof(sa));
     listen(s, 5);
-    //close(0);
     socklen_t slen;
     s = accept(s, (struct sockaddr *)&sa, &slen);
-    //if(connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-    //	exit(0);
 #endif
     struct sockaddr_in in;
     socklen_t len = sizeof(in);
@@ -866,10 +863,12 @@ main(int argc, char **argv)
         Allow_restart = 1;
         recv_main(s);
     }
+#if 0
     else if(strcmp(argv[2], "precv") == 0)
     {
         Loose_file = 1;
         recv_main(s);
     }
+#endif
     exit(0);
 }

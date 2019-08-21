@@ -1,15 +1,36 @@
+compile(send-enc d `
+	socket-send(<a> GCM-xfer-enc-ctx(<g> <d>))
+')
+
+compile(recv-dec `
+	socket-recv(<a> val)
+	GCM-xfer-dec-ctx(<g> <val> dval)
+	return(<dval>)
+')
+
+UDH-init(nil)
+getfile(openfile(dwyco_dh_pub.dif rb) server-pub)
+;printl(<server-pub>)
+lbind(m UDH-sf-material(<server-pub> k))
+;printl(<m>)
+;printl(<k>)
+lbind(g GCM-open-ctx())
+GCM-init-key-ctx(<g> <k> 0)
+
 lbind(a socket(tcp any:any nil nil))
 socket-connect(<a> {127.0.0.1: __argv[0]})
-socket-send(<a> vector(00000000000000000000.fle 5 a b))
-socket-recv(<a> val)
+socket-send(<a> <m>)
+send-enc(vector(00000000000000000000.fle 5 a b))
+;socket-send(<a> <p>)
+lbind(val recv-dec())
 printl(<val>)
-socket-send(<a> |fileok|)
+send-enc(|fileok|)
 ;sleep(120)
 while(t prog(
-socket-recv(<a> val)
+lbind(val recv-dec())
 printl(<val>)
 if(not(<val>) prog(
-socket-send(<a> frok)
+send-enc(frok)
 break(1)
 ))
 ))
