@@ -8,26 +8,43 @@ compile(recv-dec `
 	return(<dval>)
 ')
 
+srand(time())
 UDH-init(nil)
 getfile(openfile(dwyco_dh_pub.dif rb) server-pub)
-;printl(<server-pub>)
 lbind(m UDH-sf-material(<server-pub> k))
-;printl(<m>)
-;printl(<k>)
 lbind(g GCM-open-ctx())
 GCM-init-key-ctx(<g> <k> 0)
 
 lbind(a socket(tcp any:any nil nil))
-socket-connect(<a> {127.0.0.1: __argv[0]})
+;socket-connect(<a> {127.0.0.1: __argv[0]})
+;if(eq(mod(rand() 2) 0) lbind(port 9001) lbind(port 9002))
+lbind(port __argv[0])
+
+socket-connect(<a> {127.0.0.1: <port>})
 socket-send(<a> <m>)
-send-enc(vector(file vector(00000000000000000000.fle 10) 101 a b))
-;socket-send(<a> <p>)
+lbind(fs fs-file-size(lfile))
+lbind(of openfile(lfile rb))
+
+send-enc(vector(file vector(00000000000000000000.fle <fs>) 101 a b))
+
 lbind(val recv-dec())
-;socket-recv(<a> val)
 printl(<val>)
+if(eq(type(<val>) vector) prog(
+	seekfile(<of> val[1] set)
+	lbind(val recv-dec())
+	printl(<val>)
+))
 if(ne(<val> fileok) exit(0))
-;sleep(120)
-send-enc(|1234567890|)
+
+lbind(buf fread(<of> 2048))
+while(<buf> prog(
+if(eq(mod(rand() 5) 0) exit(0))
+if(eq({<port>} |9001|) sleep(60))
+	send-enc(<buf>)
+	lbind(buf fread(<of> 2048))
+))
+
+;send-enc(|1234567890|)
 send-enc(nil)
 lbind(val recv-dec())
 printl(<val>)

@@ -676,11 +676,10 @@ recv_main(int sock)
         if(!send_restart(vcsock, vc((long)Start_offset)))
             exit(0);
     }
-    else
-    {
-        if(!send_ok(vcsock))
-            exit(0);
-    }
+
+    if(!send_ok(vcsock))
+        exit(0);
+
     do_recvfile(vcsock);
     exit(0);
 }
