@@ -35,8 +35,10 @@ int File;
 int Send;
 int Loose_file; // set to one to allow looser filename checking
 int Plain_file; // 1 means file is not an audio/video attachment
-int Allow_start; // 1 means use slight variation that allows requester to start downloads at a given offset
-int Allow_restart; // 1 means we will tell the sender we have part of the file already
+//int Allow_start; // 1 means use slight variation that allows requester to start downloads at a given offset
+//int Allow_restart; // 1 means we will tell the sender we have part of the file already
+#define Allow_start 1
+#define Allow_restart 1
 off_t Start_offset;
 off_t Total_recv;
 off_t Session_recv;
@@ -802,6 +804,7 @@ main(int argc, char **argv)
     {
         Peer = inet_ntoa(in.sin_addr);
     }
+#if 0
     if(strcmp(argv[2], "send") == 0)
     {
         Send = 1;
@@ -813,25 +816,28 @@ main(int argc, char **argv)
         Allow_start = 1;
         send_main(s);
     }
+#endif
     if(strcmp(argv[2], "send3") == 0)
     {
         Send = 1;
-        Allow_start = 1;
+        //Allow_start = 1;
         Req_enc = 1;
         send_main(s);
     }
+#if 0
     else if(strcmp(argv[2], "psend") == 0)
     {
         Send = 1;
         Loose_file = 1;
         send_main(s);
     }
+#endif
     else if(strcmp(argv[2], "psend2") == 0)
     {
         // allows giving a start point for a download
         Send = 1;
         Loose_file = 1;
-        Allow_start = 1;
+        //Allow_start = 1;
         send_main(s);
     }
     else if(strcmp(argv[2], "psend3") == 0)
@@ -839,10 +845,11 @@ main(int argc, char **argv)
         // allows giving a start point for a download
         Send = 1;
         Loose_file = 1;
-        Allow_start = 1;
+        //Allow_start = 1;
         Req_enc = 1;
         send_main(s);
     }
+#if 0
     else if(strcmp(argv[2], "recv") == 0)
     {
         recv_main(s);
@@ -852,18 +859,13 @@ main(int argc, char **argv)
         Req_enc = 1;
         recv_main(s);
     }
+#endif
     else if(strcmp(argv[2], "recv4") == 0)
     {
         Req_enc = 1;
-        Allow_restart = 1;
+        //Allow_restart = 1;
         recv_main(s);
     }
-#if 0
-    else if(strcmp(argv[2], "precv") == 0)
-    {
-        Loose_file = 1;
-        recv_main(s);
-    }
-#endif
+
     exit(0);
 }

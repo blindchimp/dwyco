@@ -1,4 +1,2 @@
-* allow specifying starting point on send side (our recv side)
-so incremental sends can happen (mobile)
 * fix protocol so on reject there is no retry, to avoid having to receive
 a large file and throw it away
