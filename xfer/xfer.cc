@@ -159,9 +159,9 @@ checkfn(vc s)
     }
     if(i != n)
         return 0;
-    if(a[n] == '.' || a[n+1] == 'd' || a[n+2] == 'y' || a[n+3] == 'c')
+    if(a[n] == '.' && a[n+1] == 'd' && a[n+2] == 'y' && a[n+3] == 'c')
         return 1;
-    if(a[n] == '.' || a[n+1] == 'f' || a[n+2] == 'l' || a[n+3] == 'e')
+    if(a[n] == '.' && a[n+1] == 'f' && a[n+2] == 'l' && a[n+3] == 'e')
     {
         Plain_file = 1;
         return 1;
@@ -609,7 +609,8 @@ do_recvfile(vc sock)
         alarm(60);
     }
     alarm(60);
-    close(File);
+    if(close(File) != 0)
+        done = 0;
     if(!done)
     {
         if(!Allow_restart)
@@ -626,9 +627,11 @@ do_recvfile(vc sock)
     }
     else
     {
-        send_frok(sock);
         char a[4096];
-        sprintf(a, "recv ok %ld", total);
+        if(!send_frok(sock))
+            sprintf(a, "recv final frok failed %ld", total);
+        else
+            sprintf(a, "recv ok %ld", total);
         dolog(a);
     }
     exit(0);
