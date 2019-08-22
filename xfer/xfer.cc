@@ -780,7 +780,7 @@ main(int argc, char **argv)
 #endif
     //close(2);
     //open("/tmp/st", O_CREAT|O_WRONLY|O_TRUNC, 0666);
-#define TEST
+#undef TEST
     int s = 0;
 #ifdef TEST
     int port = atoi(argv[3]);
