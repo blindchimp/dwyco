@@ -25,7 +25,7 @@ General flow:
 
 * The randobot receives the message, and looks up the ip address of the last login of the creator of the message. It maps the IP to a location for future use. It also records the rando in a table.
 
-* The randbot is constantly checking for users that have sent in more randos than they have recieved. If it finds a user that has sent in more randos than they have received, it does the following:
+* The randobot is constantly checking for users that have sent in more randos than they have recieved. If it finds a user that has sent in more randos than they have received, it does the following:
 	* Picks a rando more or less at random that the user has not received before.
 	* Sends that rando directly to the user, the message will contain the location that the rando was generated with.
 	* Sends another auxilliary message to the CREATOR of the rando we just sent. The message contains the hash of the picture, and the locatiom of the user we just sent the rando to.

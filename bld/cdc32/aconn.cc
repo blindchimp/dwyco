@@ -16,6 +16,7 @@
 #include "filetube.h"
 #include "dwrtlog.h"
 #include "ta.h"
+#include "sproto.h"
 
 namespace dwyco {
 DwNetConfig DwNetConfigData;

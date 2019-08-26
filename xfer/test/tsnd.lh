@@ -1,0 +1,46 @@
+; test the xfer daemon in "send" mode, ie, download a file
+; from it.
+compile(send-enc d `
+	socket-send(<a> GCM-xfer-enc-ctx(<g> <d>))
+')
+
+compile(recv-dec `
+	socket-recv(<a> val)
+	GCM-xfer-dec-ctx(<g> <val> dval)
+	return(<dval>)
+')
+
+UDH-init(nil)
+getfile(openfile(dwyco_dh_pub.dif rb) server-pub)
+lbind(m UDH-sf-material(<server-pub> k))
+lbind(g GCM-open-ctx())
+GCM-init-key-ctx(<g> <k> 0)
+
+lbind(cursz fs-file-size(rfile))
+if(not(<cursz>) prog(
+	lbind(cursz 0)
+	lbind(of openfile(rfile wb))
+)
+;else
+prog(
+	lbind(of openfile(rfile ab))
+))
+
+
+lbind(a socket(tcp any:any nil nil))
+socket-connect(<a> {127.0.0.1: __argv[0]})
+socket-send(<a> <m>)
+send-enc(vector(00000000000000000000.fle <cursz> a b))
+lbind(val recv-dec())
+printl(<val>)
+send-enc(|fileok|)
+while(t prog(
+	lbind(val recv-dec())
+	if(not(<val>) prog(
+		send-enc(frok)
+		break(1)
+	))
+	fputs(<of> <val>)
+))
+printl(<val>)
+
