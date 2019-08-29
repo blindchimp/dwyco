@@ -1,4 +1,4 @@
-#undef LOCAL_TEST
+
 #include <netinet/in.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -35,10 +35,6 @@ int File;
 int Send;
 int Loose_file; // set to one to allow looser filename checking
 int Plain_file; // 1 means file is not an audio/video attachment
-//int Allow_start; // 1 means use slight variation that allows requester to start downloads at a given offset
-//int Allow_restart; // 1 means we will tell the sender we have part of the file already
-#define Allow_start 1
-#define Allow_restart 1
 off_t Start_offset;
 off_t Total_recv;
 off_t Session_recv;
@@ -187,10 +183,7 @@ get_write_locked_fd(vc filename)
         fl.l_start = 0;
         fl.l_len = 0;
 
-        if(Allow_restart)
-            flags = O_CREAT|O_EXCL|O_WRONLY;
-        else
-            flags = O_CREAT|O_EXCL|O_WRONLY|O_TRUNC;
+        flags = O_CREAT|O_EXCL|O_WRONLY;
 
         int fd = open((const char *)filename, flags, 0666);
         if(fd == -1)
@@ -240,24 +233,15 @@ get_write_locked_fd(vc filename)
                 {
                     // we got the lock
                     Start_offset = 0;
-                    if(Allow_restart)
-                    {
-                        off_t off = lseek(fd, 0, SEEK_END);
-                        if(off == (off_t)-1)
-                            return 0;
-                        Start_offset = off;
-                        char a[1024];
-                        sprintf(a, "locked recv restart %ld", off);
-                        dolog(a);
-                    }
-                    else if(ftruncate(fd, 0) == 0)
-                        dolog("locked and truncated");
-                    else
-                    {
-                        close(fd);
-                        dolog("truncate failed");
-                        return -1;
-                    }
+
+                    off_t off = lseek(fd, 0, SEEK_END);
+                    if(off == (off_t)-1)
+                        return 0;
+                    Start_offset = off;
+                    char a[1024];
+                    sprintf(a, "locked recv restart %ld", off);
+                    dolog(a);
+
                     return fd;
                 }
             }
@@ -385,28 +369,23 @@ recv_get_request(vc sock)
 
     if(!recv_vc(sock, req))
         return 0;
-    if(Allow_start)
-    {
-        if(req.type() != VC_STRING)
-        {
-            if(req.type() != VC_VECTOR)
-                return 0;
-            if(req[0].type() != VC_STRING)
-                return 0;
-            if(req[1].type() != VC_INT)
-                return 0;
-            Start_offset = (long)req[1];
-            Client_UID = req[2];
-            Client_MID = req[3];
 
-            req = req[0];
-        }
-    }
-    else
+    if(req.type() != VC_STRING)
     {
-        if(req.type() != VC_STRING)
+        if(req.type() != VC_VECTOR)
             return 0;
+        if(req[0].type() != VC_STRING)
+            return 0;
+        if(req[1].type() != VC_INT)
+            return 0;
+        Start_offset = (long)req[1];
+        Client_UID = req[2];
+        Client_MID = req[3];
+
+        req = req[0];
     }
+
+
     if(!checkfn(req))
     {
         dolog("bogus filename");
@@ -504,11 +483,9 @@ recv_response(vc sock)
             if((fd = get_write_locked_fd(Filename)) == -1)
                 return 0;
             File = fd;
-            if(Allow_restart)
-            {
-                if(lseek(File, Start_offset, SEEK_SET) == -1)
-                    return 0;
-            }
+
+            if(lseek(File, Start_offset, SEEK_SET) == -1)
+                return 0;
 
             return 1;
         }
@@ -615,16 +592,11 @@ do_recvfile(vc sock)
         done = 0;
     if(!done)
     {
-        if(!Allow_restart)
-        {
-            unlink((const char *)Filename);
-        }
-        else
-        {
-            char a[4096];
-            sprintf(a, "recv fail %ld, %d, %ld", total, len, (long)Filesize);
-            dolog(a);
-        }
+
+        char a[4096];
+        sprintf(a, "recv fail %ld, %d, %ld", total, len, (long)Filesize);
+        dolog(a);
+
         dolog("recv failed");
     }
     else
@@ -661,19 +633,18 @@ recv_main(int sock)
         // we have to accept the file and send it to the
         // bit bucket
         Recv_to_null = 1;
-        if(Allow_restart)
-        {
-            unlink(Filename);
-            if(!send_reject(vcsock))
-                exit(0);
-            dolog("rejected too big");
-            vc frok;
-            if(!recv_vc(vcsock, frok) || frok != vc("rejectok"))
-                dolog("no rejectok");
-            else
-                dolog("got rejectok");
+
+        unlink(Filename);
+        if(!send_reject(vcsock))
             exit(0);
-        }
+        dolog("rejected too big");
+        vc frok;
+        if(!recv_vc(vcsock, frok) || frok != vc("rejectok"))
+            dolog("no rejectok");
+        else
+            dolog("got rejectok");
+        exit(0);
+
     }
 
     if(Start_offset > 0)
@@ -727,17 +698,9 @@ got_alarm(int)
     dolog("alarm");
     if(!Send)
     {
-        if(Allow_restart)
-        {
-            char a[4096];
-            sprintf(a, "recv fail %ld, %ld, %ld", Total_recv, Session_recv, (long)Filesize);
-            dolog(a);
-        }
-        else
-        {
-            dolog("unlink");
-            unlink((const char *)Filename);
-        }
+        char a[4096];
+        sprintf(a, "recv fail %ld, %ld, %ld", Total_recv, Session_recv, (long)Filesize);
+        dolog(a);
     }
     _exit(0);
 }
@@ -804,19 +767,7 @@ main(int argc, char **argv)
     {
         Peer = inet_ntoa(in.sin_addr);
     }
-#if 0
-    if(strcmp(argv[2], "send") == 0)
-    {
-        Send = 1;
-        send_main(s);
-    }
-    if(strcmp(argv[2], "send2") == 0)
-    {
-        Send = 1;
-        Allow_start = 1;
-        send_main(s);
-    }
-#endif
+
     if(strcmp(argv[2], "send3") == 0)
     {
         Send = 1;
@@ -824,14 +775,7 @@ main(int argc, char **argv)
         Req_enc = 1;
         send_main(s);
     }
-#if 0
-    else if(strcmp(argv[2], "psend") == 0)
-    {
-        Send = 1;
-        Loose_file = 1;
-        send_main(s);
-    }
-#endif
+
     else if(strcmp(argv[2], "psend2") == 0)
     {
         // allows giving a start point for a download
@@ -849,17 +793,7 @@ main(int argc, char **argv)
         Req_enc = 1;
         send_main(s);
     }
-#if 0
-    else if(strcmp(argv[2], "recv") == 0)
-    {
-        recv_main(s);
-    }
-    else if(strcmp(argv[2], "recv3") == 0)
-    {
-        Req_enc = 1;
-        recv_main(s);
-    }
-#endif
+
     else if(strcmp(argv[2], "recv4") == 0)
     {
         Req_enc = 1;
