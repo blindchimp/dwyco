@@ -177,6 +177,7 @@ cllaccpt.cpp \
 ratetwkr.cpp \
 rawfiles.cpp \
 syncvar.cc \
+    tagmsg.cpp \
 uicfg.cc \
 usercnfg.cpp \
 vfwinvst.cpp \
@@ -265,6 +266,7 @@ aqext_android.cpp \
     upnp.cpp
 
 HEADERS += \
+    tagmsg.h \
     vccfg.h \
     grpmsg.h
     upnp.h

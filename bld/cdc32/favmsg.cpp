@@ -6,21 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#ifdef _Windows
-#ifdef __BORLANDC__
-#include <dir.h>
-#endif
-#ifdef _MSC_VER
-#include <direct.h>
-#endif
-#include <dos.h>
-#include <io.h>
-#include <fcntl.h>
-#else
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#endif
+
 
 #ifdef DWYCO_USE_STATIC_SQLITE
 #include "sqlite/sqlite3.h"
@@ -33,10 +19,6 @@
 #include "qauth.h"
 #include "qmsg.h"
 #include "vc.h"
-#include "xinfo.h"
-#include "se.h"
-#include "filetube.h"
-#include "sepstr.h"
 #include "sqlbq.h"
 #include "favmsg.h"
 
