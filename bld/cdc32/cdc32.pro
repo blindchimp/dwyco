@@ -262,12 +262,9 @@ favmsg.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
     simplesql.cpp \
-    grpmsg.cpp
+    grpmsg.cpp \
     upnp.cpp
 
 HEADERS += \
-    tagmsg.h \
-    vccfg.h \
-    grpmsg.h
-    upnp.h
+    vccfg.h
 

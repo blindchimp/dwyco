@@ -399,6 +399,7 @@ using namespace Weak;
 #include "backsql.h"
 #include "grpmsg.h"
 #include "upnp.h"
+#include "tagmsg.h"
 
 using namespace dwyco;
 
@@ -7805,7 +7806,7 @@ dwyco_delete_unsaved_message(const char *msg_id)
     args.append(vcnil);
     args.append(id);
     dirth_send_ack_get2(My_UID, id, QckDone(ack_get_done2, 0, args));
-    //delete_msg2(id);
+    dirth_send_delete(My_UID, id, QckDone(0, 0));
     return 1;
 }
 
@@ -7816,6 +7817,7 @@ dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id)
     vc uid(VC_BSTRING, user_id, len_uid);
     vc mid(msg_id);
     delete_body3(uid, mid, 0);
+    dirth_send_delete(My_UID, mid, QckDone(0, 0));
     return 1;
 }
 

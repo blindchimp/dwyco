@@ -22,6 +22,7 @@
 #include "dhsetup.h"
 #include "dhgsetup.h"
 #include "vcudh.h"
+#include "tagmsg.h"
 
 using namespace dwyco;
 
@@ -505,6 +506,7 @@ dirth_send_ack_get2(vc uid, vc mid, QckDone d)
     m[2] = mid;
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    add_ctrl_tag(mid, "_ack");
 }
 
 void
@@ -518,6 +520,7 @@ dirth_send_delete(vc uid, vc mid, QckDone d)
     m[2] = mid;
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    add_ctrl_tag(mid, "_del");
 }
 
 void

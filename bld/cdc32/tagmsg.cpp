@@ -42,7 +42,7 @@ struct Tag_sql : public SimpleSql
 static Tag_sql *Tag_db;
 
 int
-init_tag_sql()
+init_ctrl_tag_sql()
 {
     if(Tag_db)
         return 0;
@@ -51,9 +51,34 @@ init_tag_sql()
 }
 
 void
-exit_tag_sql()
+exit_ctrl_tag_sql()
 {
     if(!Tag_db)
         return;
     Tag_db->exit();
+}
+
+static
+void
+insert_record(vc mid, vc tag)
+{
+    Tag_db->sql_simple("replace into tags (mid, tag, time, guid) values(?1, ?2, strftime('%s', 'now'), ?3)",
+                       mid, tag, to_hex(gen_id()));
+}
+
+int
+add_ctrl_tag(vc mid, vc tag)
+{
+    try
+    {
+        Tag_db->start_transaction();
+        insert_record(mid, tag);
+        Tag_db->commit_transaction();
+        return 1;
+    }
+    catch (...)
+    {
+        Tag_db->rollback_transaction();
+    }
+    return 0;
 }
