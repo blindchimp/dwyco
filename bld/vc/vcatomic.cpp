@@ -14,7 +14,12 @@ static vc bogus;
 void
 vc_atomic::bomb_setop() const
 {
-	USER_BOMB2("can't do set operation on atomic");
+    // 99 times out of a 100 it is probably nil, but we'll
+    // add the type in here anyways
+    enum vc_type t = type();
+    char a[1024];
+    sprintf(a, "can't do set operation on atomic (%d)", (int)t);
+    USER_BOMB2(a);
 }
 
 void
@@ -27,12 +32,6 @@ void
 vc_atomic::bomb_call_atom() const
 {
 	USER_BOMB2("attempt to funcall non-function.");
-}
-
-void
-vc_atomic::bomb_op_func() const
-{
-	USER_BOMB2("atomic-op on function.");
 }
 
 
