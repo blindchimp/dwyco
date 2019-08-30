@@ -19,7 +19,7 @@
 //
 class vc_atomic : public vc_default
 {
-private:
+protected:
 	void bomb_setop() const;
 	void bomb_str_rel() const;
 	void bomb_call_atom() const;
