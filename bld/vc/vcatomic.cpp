@@ -29,12 +29,6 @@ vc_atomic::bomb_call_atom() const
 	USER_BOMB2("attempt to funcall non-function.");
 }
 
-void
-vc_atomic::bomb_op_func() const
-{
-	USER_BOMB2("atomic-op on function.");
-}
-
 
 #define bombvec(op, msg) \
 vc \

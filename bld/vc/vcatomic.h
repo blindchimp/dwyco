@@ -19,12 +19,12 @@
 //
 class vc_atomic : public vc_default
 {
-public:
+private:
 	void bomb_setop() const;
 	void bomb_str_rel() const;
 	void bomb_call_atom() const;
-	void bomb_op_func() const;
-	
+
+public:
 	vc_atomic();
 
 	virtual int visited();
