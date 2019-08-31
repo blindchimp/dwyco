@@ -169,6 +169,7 @@ void dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d);
 void dirth_send_get_pk(vc id, vc uid, QckDone d);
 void dirth_send_debug(vc id, vc crashed, vc stack, vc field_track, QckDone d);
 void dirth_send_set_token(vc id, vc token, QckDone d);
+void dirth_send_check_set(vc uid, vc tag, QckDone d);
 // used internally
 QckMsg dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d);
 vc generate_mac_msg(vc);

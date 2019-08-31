@@ -527,6 +527,22 @@ dirth_send_delete(vc uid, vc mid, QckDone d)
 }
 
 void
+dirth_send_check_set(vc uid, vc tag, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("setchk", ++Serial);
+    m[QTYPE] = reqtype("setchk", d);
+    m[QFROM] = uid;
+    m[2] = tag;
+    m[3] = 30;
+    m[4] = compute_tag_hash(tag, 30);
+
+    Waitq.append(d);
+    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+}
+
+void
 dirth_send_ignore(vc id, vc uid, QckDone d)
 {
     QckMsg m;

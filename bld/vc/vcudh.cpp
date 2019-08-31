@@ -422,7 +422,7 @@ dh_store_and_forward_get_key2(vc sfpack, vc our_material)
     if((sfpack.num_elems() & 1) != 1 || sfpack.num_elems() < 3)
     {
         // maybe it is an old pack, try the old decryption
-        return dh_store_and_forward_get_key(sfpack, our_material);
+        return dh_store_and_forward_get_key(sfpack, our_material[0]);
     }
 
     int n = sfpack.num_elems() / 2;

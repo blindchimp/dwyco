@@ -20,6 +20,10 @@
 
 using namespace dwyco;
 
+vc vclh_sha(vc s);
+namespace dwyco {
+
+
 struct Tag_sql : public SimpleSql
 {
     Tag_sql() : SimpleSql("tags.sql") {}
@@ -27,13 +31,15 @@ struct Tag_sql : public SimpleSql
     void init_schema() {
         sql_simple("create table if not exists tags ("
                    "uid text collate nocase, "
+                   "tag text, "
                    "mid text collate nocase unique on conflict ignore, "
                    "guid text collate nocase unique on conflict ignore, "
                    "time integer "
                    ")");
         sql_simple("create index if not exists guid_idx on tags(guid)");
         sql_simple("create index if not exists time_idx on tags(time)");
-        sql_simple("create index if not exists mid on tags(mid)");
+        sql_simple("create index if not exists mid_idx on tags(mid)");
+        sql_simple("create index if not exists tag_idx on tags(tag)");
     }
 
 
@@ -81,4 +87,57 @@ add_ctrl_tag(vc mid, vc tag)
         Tag_db->rollback_transaction();
     }
     return 0;
+}
+
+static
+vc
+sha_list(vc lst)
+{
+    DwString str;
+    for(int i = 0; i < lst.num_elems(); ++i)
+    {
+        str += (const char *)lst[i][0];
+    }
+    vc res = vclh_sha(str.c_str());
+    return res;
+}
+
+static
+vc
+flatten(vc lst)
+{
+    vc res(VC_VECTOR);
+    for(int i = 0; i < lst.num_elems(); ++i)
+        res.append(lst[i][0]);
+    return res;
+}
+
+vc
+compute_tag_hash(vc tag, vc age_days)
+{
+    try {
+        vc res = Tag_db->sql_simple("select mid from tags where time > strftime('%s', 'now') - ?1 and tag = ?2 order by mid asc",
+                                    (long)age_days * 24 * 3600, tag);
+        return sha_list(res);
+    }
+    catch(...)
+    {
+        return "";
+    }
+}
+
+vc
+ctrl_tag_list(vc tag, vc age_days)
+{
+    try {
+        vc res = Tag_db->sql_simple("select mid from tags where time > strftime('%s', 'now') - ?1 and tag = ?2 order by mid asc",
+                                    (long)age_days * 24 * 3600, tag);
+        return flatten(res);
+    }
+    catch(...)
+    {
+        return vc(VC_VECTOR);
+    }
+}
+
 }

@@ -1665,6 +1665,33 @@ load_ignoring_you(vc iy)
     iy.foreach(vcnil, add_to_mutual_ignore);
 }
 
+static
+void
+update_del_set(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    if(m[1].type() == VC_VECTOR)
+    {
+        vc v = m[1];
+        vc midset(VC_SET);
+        for(int i = 0; i < v.num_elems(); ++i)
+        {
+            vc rv = v[i];
+            add_ctrl_tag(rv[0], "_del");
+            midset.add(rv[0]);
+        }
+        // this gets deletes we have locally that aren't on the server for some reason.
+        vc ourtags = ctrl_tag_list("_del", 30);
+        for(int i = 0; i < ourtags.num_elems(); ++i)
+        {
+            if(midset.contains(ourtags[i]))
+                continue;
+            dirth_send_delete(My_UID, ourtags[i], QckDone(0, 0));
+        }
+    }
+}
+
 // SERVER related interface functions
 static void
 login_auth_results(vc m, void *, vc, ValidPtr)
@@ -1740,6 +1767,7 @@ login_auth_results(vc m, void *, vc, ValidPtr)
                 (*login_callback)("Server login ok.", 1);
             TRACK_ADD(MDB_login_ok, 1);
         }
+        dirth_send_check_set(My_UID, "_del", QckDone(update_del_set, 0));
     }
     // reset this so we don't keep sending it in over and over
     Crashed_last_time = 0;

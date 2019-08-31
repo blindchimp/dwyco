@@ -101,6 +101,7 @@ using namespace CryptoPP;
 #include "qsend.h"
 #include "ssns.h"
 #include "dwyco_rand.h"
+#include "tagmsg.h"
 using namespace dwyco;
 
 vc MsgFolders;
@@ -463,6 +464,7 @@ init_qmsg()
     if(tmplc > Logical_clock)
         Logical_clock = tmplc + 1;
     init_fav_sql();
+    init_ctrl_tag_sql();
 
     new_pipeline();
 
@@ -480,6 +482,7 @@ exit_qmsg()
 {
     exit_qmsg_sql();
     exit_fav_sql();
+    exit_ctrl_tag_sql();
     Cur_ignore = vcnil;
     Session_ignore = vcnil;
     Session_auto_replies = vcnil;

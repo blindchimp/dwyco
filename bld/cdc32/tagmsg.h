@@ -16,6 +16,8 @@ namespace dwyco {
 int init_ctrl_tag_sql();
 void exit_ctrl_tag_sql();
 int add_ctrl_tag(vc mid, vc tag);
+vc compute_tag_hash(vc tag, vc age_days);
+vc ctrl_tag_list(vc tag, vc age_days);
 
 }
 
