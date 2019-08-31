@@ -373,6 +373,16 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
         return vcnil;
 
     SecByteBlock akey(EphDH->AgreedValueLength());
+    if(our_material.type() != VC_VECTOR)
+        return vcnil;
+    if(our_material[DH_STATIC_PRIVATE].type() != VC_STRING)
+        return vcnil;
+    if(sfpack.type() != VC_VECTOR)
+        return vcnil;
+    if(sfpack[1].type() != VC_STRING)
+        return vcnil;
+    if(sfpack[0].type() != VC_STRING)
+        return vcnil;
     if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[DH_STATIC_PRIVATE],
                      (const byte *)(const char *)sfpack[1]))
         return vcnil;
