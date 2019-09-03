@@ -7309,7 +7309,7 @@ dwyco_authenticate_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_u
 }
 
 
-static int
+int
 save_msg(vc m, vc msg_id)
 {
     if(m[1].is_nil())

@@ -145,11 +145,10 @@ static long Logical_clock;
 // messages when we first see them from the server.
 static vc Mid_to_logical_clock;
 
-static void purge_inbox(vc id);
-
 void pal_relogin();
 void remove_msg_idx(vc uid, vc mid);
 void new_pipeline();
+int save_msg(vc m, vc msg_id);
 
 #include "qmsgsql.h"
 #include "favmsg.h"
@@ -2123,8 +2122,9 @@ store_direct(MMChannel *m, vc msg, void *)
 
     if(m)
     {
-        if(save_to_inbox(msg))
+        if(save_msg(msg, id))
         {
+            sql_add_tag(id, "_inbox");
             m->send_ctrl("ok");
             TRACK_ADD(DR_ok, 1);
         }
@@ -3628,69 +3628,32 @@ load_inbox()
 
     Direct_msgs_raw = vc(VC_VECTOR);
     Direct_msgs = vc(VC_VECTOR);
-    FindVec& fv = *find_to_vec(newfn("inbox" DIRSEPSTR "*.urd").c_str());
-    int nn = fv.num_elems();
-    for(i = 0; i < nn; ++i)
-    {
-        WIN32_FIND_DATA& n = *fv[i];
+//    FindVec& fv = *find_to_vec(newfn("inbox" DIRSEPSTR "*.urd").c_str());
+//    int nn = fv.num_elems();
+//    for(i = 0; i < nn; ++i)
+//    {
+//        WIN32_FIND_DATA& n = *fv[i];
 
-        DwString d("inbox" DIRSEPSTR "");
-        d += n.cFileName;
-        vc m;
-        if(load_info(m, d.c_str()))
-        {
-            if(!valid_qd_message(m))
-            {
-                DeleteFile(newfn(d).c_str());
-                Log->make_entry("deleting bogus inbox item.");
-            }
-            else if(store_direct(0, m, 0) == -1)
-            {
-                DeleteFile(newfn(d).c_str());
-                Log->make_entry("deleting misdelivered message");
-            }
-        }
-    }
-    delete_findvec(&fv);
+//        DwString d("inbox" DIRSEPSTR "");
+//        d += n.cFileName;
+//        vc m;
+//        if(load_info(m, d.c_str()))
+//        {
+//            if(!valid_qd_message(m))
+//            {
+//                DeleteFile(newfn(d).c_str());
+//                Log->make_entry("deleting bogus inbox item.");
+//            }
+//            else if(store_direct(0, m, 0) == -1)
+//            {
+//                DeleteFile(newfn(d).c_str());
+//                Log->make_entry("deleting misdelivered message");
+//            }
+//        }
+//    }
+//    delete_findvec(&fv);
     Hack_first_load = 0;
 }
-
-static void
-purge_inbox(vc id)
-{
-    int i;
-
-    FindVec& fv = *find_to_vec(newfn("inbox" DIRSEPSTR "*.urd").c_str());
-    int nn = fv.num_elems();
-
-    for(i = 0; i < nn; ++i)
-    {
-        WIN32_FIND_DATA& n = *fv[i];
-        DwString d("inbox" DIRSEPSTR "");
-        d += n.cFileName;
-        vc m;
-        if(load_info(m, d.c_str()))
-        {
-            if(valid_qd_message(m))
-            {
-                vc from = m[QQM_MSG_VEC][QQM_BODY_FROM];
-                if((from.type() == VC_STRING && from == id) ||
-                        from.type() != VC_STRING)
-                {
-                    DeleteFile(newfn(d).c_str());
-                    Log->make_entry("purged msg with invalid sender from inbox");
-                }
-            }
-            else
-            {
-                DeleteFile(newfn(d).c_str());
-                Log->make_entry("purged bogus message from inbox");
-            }
-        }
-    }
-    delete_findvec(&fv);
-}
-
 
 int
 save_to_inbox(vc m)
