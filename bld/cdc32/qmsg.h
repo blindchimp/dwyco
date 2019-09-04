@@ -141,13 +141,9 @@ int refile_attachment(vc filename, vc from_user);
 void pal_relogin();
 void save_msg_idxs();
 void save_qmsg_state();
-void update_msg_idx(vc recip, vc body);
-//vc load_msg_index(vc uid, int load_count);
 // note: this returns the total count of messages,
 // which is different than the number of entries in
 // the current index.
-int msg_index_count(vc uid);
-void remove_msg_idx_uid(vc uid);
 vc do_local_store(vc filename, vc speced_mid);
 vc make_best_local_info(vc uid, int *cant_resolve_now);
 int init_msg_folder(vc uid);

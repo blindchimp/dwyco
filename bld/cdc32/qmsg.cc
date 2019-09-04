@@ -145,7 +145,7 @@ static long Logical_clock;
 static vc Mid_to_logical_clock;
 
 void pal_relogin();
-void remove_msg_idx(vc uid, vc mid);
+
 void new_pipeline();
 int save_msg(vc m, vc msg_id);
 
@@ -1808,19 +1808,7 @@ query_done(vc m, void *, vc, ValidPtr)
     Cur_msgs = vc(VC_VECTOR);
 
     int i;
-    // this is a hack: if this is the first load
-    // of messages from the server, we don't want to
-    // generate a huge pile of auto-replies if we are in
-    // pals-only mode. this is roughly the same as ignoring
-    // someone while you are offline and having the server
-    // rathole their messages. one way to fix it would be to have
-    // the server know the pals-only status, and have it generate
-    // a response when a message comes in. but that is too complicated
-    // for now.
-    // note also that you will not receive auto-replies if you had a
-    // message q-d up offline for that person and they are in pals-only
-    // mode when you log in.
-    static int first_load = 0;
+
     for(i = 0; i < v2.num_elems(); ++i)
     {
         vc v = v2[i];
@@ -1832,22 +1820,9 @@ query_done(vc m, void *, vc, ValidPtr)
         vc from = v[QM_FROM];
         sql_add_tag(v[QM_ID], "_seen");
 
-        int auto_reply = 0;
-        if(uid_ignored(from) || (auto_reply = (ZapAdvData.get_ignore() && wrong_rating(v))))
+        if(uid_ignored(from))
         {
             // rathole it
-            if(auto_reply)
-            {
-                if(first_load)
-                    Session_auto_replies.add(from);
-                else
-                {
-                    // no auto-reply to delivery reports
-                    // or other special messages
-                    if(v[QM_SPECIAL_TYPE].is_nil())
-                        gen_auto_reply(v);
-                }
-            }
             {
                 vc args(VC_VECTOR);
                 args.append(from);
@@ -1920,8 +1895,6 @@ query_done(vc m, void *, vc, ValidPtr)
     if(Cur_msgs.num_elems() != oldnum)
         Rescan_msgs = 1;
     Rescan_msgs = 1;
-
-    first_load = 0;
 }
 
 void

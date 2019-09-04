@@ -569,6 +569,7 @@ dwyco_process_unsaved_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids)
 #endif
         if(type != DWYCO_TYPE_NIL)
         {
+            ::abort();
             if(!dwyco_save_message(mid.constData()))
             {
                 // keep from constantly refetching it

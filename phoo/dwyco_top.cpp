@@ -1525,6 +1525,8 @@ DwycoCore::init()
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
+    connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
+
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);
@@ -2332,8 +2334,10 @@ get_cq_results_filename()
 static void
 process_contact_query_response(const QByteArray& mid)
 {
-    DWYCO_LIST sm;
-    if(!dwyco_unsaved_message_to_body(&sm, mid.constData()))
+    QByteArray clh("f6006af180260669eafc");
+    QByteArray clbot(QByteArray::fromHex(clh));
+    DWYCO_SAVED_MSG_LIST sm;
+    if(!dwyco_get_saved_message(&sm, clbot.constData(), clbot.length(), mid.constData()))
     {
         TheDwycoCore->emit cq_results_received(0);
         return;
@@ -2351,6 +2355,32 @@ process_contact_query_response(const QByteArray& mid)
     int succ = dwyco_copy_out_file_zap(0, 0, mid.constData(), qrfn.constData());
     TheDwycoCore->emit cq_results_received(succ);
 }
+
+void
+DwycoCore::internal_cq_check(QString huid)
+{
+    QByteArray clh("f6006af180260669eafc");
+    if(huid.toLatin1() != clh)
+        return;
+    QByteArray clbot(QByteArray::fromHex(clh));
+    if(!dwyco_uid_has_tag(clbot.constData(), clbot.length(), "_inbox"))
+        return;
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, "_inbox");
+    simple_scoped qtl(tl);
+    for(int i = 0; i < qtl.rows(); ++i)
+    {
+        if(qtl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID) == clh)
+        {
+            QByteArray mid = qtl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+            process_contact_query_response(mid);
+            dwyco_delete_unfetched_message(mid.constData());
+
+        }
+    }
+    dwyco_delete_user(clbot.constData(), clbot.length());
+}
+
 
 QUrl
 DwycoCore::get_cq_results_url()
@@ -2555,6 +2585,7 @@ static
 void
 scan_special_msgs()
 {
+    return;
     DWYCO_LIST uml;
 
     if(dwyco_get_unfetched_messages(&uml, 0, 0))
@@ -2616,19 +2647,11 @@ DwycoCore::service_channels()
             if(n > 0)
             {
                 QByteArray mid = quml.get<QByteArray>(0, DWYCO_QMS_ID);
+                auto_fetch(mid);
                 dwyco_add_entropy_timer(mid.constData(), mid.length());
-                if(quml.is_nil(0, DWYCO_QMS_IS_DIRECT))
-                {
-                    auto_fetch(mid);
-                }
-                else
-                {
-                    process_contact_query_response(mid);
-                    dwyco_delete_unfetched_message(mid.constData());
-                    dwyco_delete_user(clbot.constData(), clbot.length());
-                }
             }
         }
+
         scan_special_msgs();
         dwyco_get_unfetched_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
@@ -2643,10 +2666,7 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
-//        if(uids_out.contains(QByteArray::fromHex(mlm->uid().toLatin1())))
-//        {
-//            mlm->reload_model();
-//        }
+
     }
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically

@@ -255,6 +255,7 @@ public:
 public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);
+    void internal_cq_check(QString);
 
 signals:
     void server_login(const QString& msg, int what);

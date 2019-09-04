@@ -26,6 +26,10 @@ void clear_indexed_flag(vc uid);
 vc sql_get_recent_users2(int max_age, int max_count);
 vc msg_idx_get_new_msgs(vc uid, vc logical_clock);
 vc sql_get_uid_from_mid(vc mid);
+void remove_msg_idx_uid(vc uid);
+void remove_msg_idx(vc uid, vc mid);
+void update_msg_idx(vc recip, vc body);
+int msg_index_count(vc uid);
 }
 
 #endif
