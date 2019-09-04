@@ -128,7 +128,7 @@ fetch_to_inbox(DwString& uid_out, DwString& mid_out)
     }
     Delete_msgs.set_size(0);
 
-    DWYCO_UNSAVED_MSG_LIST qml;
+    DWYCO_UNFETCHED_MSG_LIST qml;
     if(!dwyco_get_unsaved_messages(&qml, 0, 0))
         return 0;
     simple_scoped ml(qml);

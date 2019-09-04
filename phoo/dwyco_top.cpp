@@ -2495,7 +2495,7 @@ static
 void
 process_special_msg(QByteArray mid)
 {
-    DWYCO_UNSAVED_MSG_LIST uml;
+    DWYCO_UNFETCHED_MSG_LIST uml;
     if(!dwyco_get_unsaved_message(&uml, mid.constData()))
         return;
     simple_scoped quml(uml);
@@ -2608,7 +2608,7 @@ DwycoCore::service_channels()
         dwyco_set_rescan_messages(0);
         QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
-        DWYCO_UNSAVED_MSG_LIST uml;
+        DWYCO_UNFETCHED_MSG_LIST uml;
         if(dwyco_get_unsaved_messages(&uml, clbot.constData(), clbot.length()))
         {
             simple_scoped quml(uml);

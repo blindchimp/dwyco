@@ -51,7 +51,7 @@ extern "C" {
 
 typedef void *DWYCO_LIST;
 typedef DWYCO_LIST DWYCO_USER_LIST;
-typedef DWYCO_LIST DWYCO_UNSAVED_MSG_LIST;
+typedef DWYCO_LIST DWYCO_UNFETCHED_MSG_LIST;
 typedef DWYCO_LIST DWYCO_SAVED_MSG_LIST;
 typedef DWYCO_LIST DWYCO_SERVER_LIST;
 typedef DWYCO_LIST DWYCO_QUERY_RESULTS_LIST;
@@ -702,8 +702,8 @@ int DWYCOEXPORT dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid
 int DWYCOEXPORT dwyco_get_message_index2(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, int *available_count_out, int load_count);
 int DWYCOEXPORT dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, long logical_clock);
 int DWYCOEXPORT dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int uid_len, int load_sent);
-int DWYCOEXPORT dwyco_get_unsaved_messages(DWYCO_UNSAVED_MSG_LIST *list_out, const char *uid, int len_uid);
-int DWYCOEXPORT dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id);
+int DWYCOEXPORT dwyco_get_unsaved_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
+int DWYCOEXPORT dwyco_get_unsaved_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id);
 int DWYCOEXPORT dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
 int DWYCOEXPORT dwyco_delete_unsaved_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
@@ -1092,8 +1092,8 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 // fetched from the server, what_out will be one of the *SUMMARY* types.
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
 int DWYCOEXPORT dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
-int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out);
-int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out);
+int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
+int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out);
 
 // "what" returns from the dwyco_is_special_message function
 #define DWYCO_SUMMARY_PAL_AUTH_REQ 0
@@ -1321,7 +1321,7 @@ DWYCOEXPORT
 dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out);
 
 int DWYCOEXPORT
-dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filename);
+dwyco_copy_out_unsaved_file_zap(DWYCO_UNFETCHED_MSG_LIST m, const char *dst_filename);
 
 int DWYCOEXPORT dwyco_is_file_zap(int compid);
 

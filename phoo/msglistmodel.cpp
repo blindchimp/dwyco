@@ -131,7 +131,7 @@ gen_time(DWYCO_SAVED_MSG_LIST l, int row)
 
 static
 QString
-gen_time_unsaved(DWYCO_UNSAVED_MSG_LIST l, int row)
+gen_time_unsaved(DWYCO_UNFETCHED_MSG_LIST l, int row)
 {
     int hour;
     int minute;
@@ -570,7 +570,7 @@ msglist_raw::check_inbox_model()
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
 
     // optimization, to avoid resetting the model in common cases
-    DWYCO_UNSAVED_MSG_LIST new_im;
+    DWYCO_UNFETCHED_MSG_LIST new_im;
     if(dwyco_get_unsaved_messages(&new_im, buid.constData(), buid.length()))
     {
         dwyco_list qnew_im(new_im);

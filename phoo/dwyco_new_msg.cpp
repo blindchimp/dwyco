@@ -464,7 +464,7 @@ save_it:
 #endif
 
 int
-dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
+dwyco_process_unsaved_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids)
 {
     int k = Delete_msgs.count();
     for(int i = 0; i < k; ++i)

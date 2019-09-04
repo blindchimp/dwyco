@@ -5519,7 +5519,7 @@ dwyco_make_file_zap_composition( const char *filename, int len_filename)
 
 DWYCOEXPORT
 int
-dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filename)
+dwyco_copy_out_unsaved_file_zap(DWYCO_UNFETCHED_MSG_LIST m, const char *dst_filename)
 {
     vc& v = *(vc *)m;
     vc body = v[0];
@@ -6804,20 +6804,20 @@ dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len
 
 DWYCOEXPORT
 int
-dwyco_get_unsaved_messages(DWYCO_UNSAVED_MSG_LIST *list_out, const char *uid, int len_uid)
+dwyco_get_unsaved_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid)
 {
     vc u;
     if(uid != 0)
         u = vc(VC_BSTRING, uid, len_uid);
     vc &ret = *new vc;
     ret = load_msgs(u);
-    *list_out = (DWYCO_UNSAVED_MSG_LIST)&ret;
+    *list_out = (DWYCO_UNFETCHED_MSG_LIST)&ret;
     return 1;
 }
 
 DWYCOEXPORT
 int
-dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id)
+dwyco_get_unsaved_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id)
 {
     vc id(VC_BSTRING, msg_id, strlen(msg_id));
     vc summary = find_cur_msg(id);
@@ -6828,14 +6828,14 @@ dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id)
     }
     vc &ret = *new vc(VC_VECTOR);
     ret[0] = summary;
-    *list_out = (DWYCO_UNSAVED_MSG_LIST)&ret;
+    *list_out = (DWYCO_UNFETCHED_MSG_LIST)&ret;
     return 1;
 }
 
 
 DWYCOEXPORT
 int
-dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
+dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
 {
     static vc palreq("palreq");
     static vc palok("palok");
@@ -6939,7 +6939,7 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
 
 DWYCOEXPORT
 int
-dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out)
+dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out)
 {
     // this keeps the debugging stuff from crashing
     *str_out = "";

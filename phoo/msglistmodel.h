@@ -90,7 +90,7 @@ public:
 private:
     DWYCO_MSG_IDX msg_idx;
     DWYCO_QD_MSG_LIST qd_msgs;
-    DWYCO_UNSAVED_MSG_LIST inbox_msgs;
+    DWYCO_UNFETCHED_MSG_LIST inbox_msgs;
     int count_msg_idx;
     int count_qd_msgs;
     int count_inbox_msgs;
