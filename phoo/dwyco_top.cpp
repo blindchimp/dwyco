@@ -2496,7 +2496,7 @@ void
 process_special_msg(QByteArray mid)
 {
     DWYCO_UNFETCHED_MSG_LIST uml;
-    if(!dwyco_get_unsaved_message(&uml, mid.constData()))
+    if(!dwyco_get_unfetched_message(&uml, mid.constData()))
         return;
     simple_scoped quml(uml);
 
@@ -2557,7 +2557,7 @@ scan_special_msgs()
 {
     DWYCO_LIST uml;
 
-    if(dwyco_get_unsaved_messages(&uml, 0, 0))
+    if(dwyco_get_unfetched_messages(&uml, 0, 0))
     {
         simple_scoped quml(uml);
         int n = quml.rows();
@@ -2581,7 +2581,7 @@ scan_special_msgs()
                 else
                 {
                     process_special_msg(mid);
-                    dwyco_delete_unsaved_message(mid.constData());
+                    dwyco_delete_unfetched_message(mid.constData());
                 }
             }
         }
@@ -2609,7 +2609,7 @@ DwycoCore::service_channels()
         QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
         DWYCO_UNFETCHED_MSG_LIST uml;
-        if(dwyco_get_unsaved_messages(&uml, clbot.constData(), clbot.length()))
+        if(dwyco_get_unfetched_messages(&uml, clbot.constData(), clbot.length()))
         {
             simple_scoped quml(uml);
             int n = quml.rows();
@@ -2624,13 +2624,13 @@ DwycoCore::service_channels()
                 else
                 {
                     process_contact_query_response(mid);
-                    dwyco_delete_unsaved_message(mid.constData());
+                    dwyco_delete_unfetched_message(mid.constData());
                     dwyco_delete_user(clbot.constData(), clbot.length());
                 }
             }
         }
         scan_special_msgs();
-        dwyco_get_unsaved_messages(&uml, 0, 0);
+        dwyco_get_unfetched_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;
         dwyco_process_unsaved_list(uml, uids_out);

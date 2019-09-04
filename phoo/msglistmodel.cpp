@@ -356,10 +356,10 @@ msglist_model::delete_all_selected()
     {
         QByteArray mid = value.toLatin1();
         DWYCO_LIST l;
-        if(dwyco_get_unsaved_message(&l, mid.constData()))
+        if(dwyco_get_unfetched_message(&l, mid.constData()))
         {
             dwyco_list_release(l);
-            dwyco_delete_unsaved_message(mid.constData());
+            dwyco_delete_unfetched_message(mid.constData());
         }
         else if(dwyco_qd_message_to_body(&l, mid.constData(), mid.length()))
         {
@@ -571,7 +571,7 @@ msglist_raw::check_inbox_model()
 
     // optimization, to avoid resetting the model in common cases
     DWYCO_UNFETCHED_MSG_LIST new_im;
-    if(dwyco_get_unsaved_messages(&new_im, buid.constData(), buid.length()))
+    if(dwyco_get_unfetched_messages(&new_im, buid.constData(), buid.length()))
     {
         dwyco_list qnew_im(new_im);
 
@@ -657,7 +657,7 @@ msglist_raw::reload_inbox_model()
         return;
     }
 
-    dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());
+    dwyco_get_unfetched_messages(&inbox_msgs, buid.constData(), buid.length());
 
     if(inbox_msgs)
         dwyco_list_numelems(inbox_msgs, &count_inbox_msgs, 0);
@@ -772,7 +772,7 @@ msglist_raw::reload_model(int force)
         //dwyco_list_print(msg_idx);
     }
     dwyco_get_qd_messages(&qd_msgs, buid.constData(), buid.length());
-    dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());
+    dwyco_get_unfetched_messages(&inbox_msgs, buid.constData(), buid.length());
     if(msg_idx)
         dwyco_list_numelems(msg_idx, &count_msg_idx, 0);
     if(qd_msgs)
@@ -1000,7 +1000,7 @@ auto_fetch(QByteArray mid)
                 // NOTE: uid, dlv_mid must be copied out before next
                 // dll call
                 // hmmm, need new api to get uid/mid_out of delivered msg
-                dwyco_delete_unsaved_message(mid.constData());
+                dwyco_delete_unfetched_message(mid.constData());
                 return 0;
             }
 
@@ -1052,9 +1052,10 @@ msglist_raw::inbox_data (int r, int role ) const
     if(role == MID)
         return mid;
 
-    int direct = dwyco_get_attr_bool(inbox_msgs, r, DWYCO_QMS_IS_DIRECT);
+    int direct = 0; //dwyco_get_attr_bool(inbox_msgs, r, DWYCO_QMS_IS_DIRECT);
 
     DWYCO_SAVED_MSG_LIST sm = 0;
+#if 0
     if(direct)
     {
         if(!dwyco_unsaved_message_to_body(&sm, mid.constData()))
@@ -1062,6 +1063,7 @@ msglist_raw::inbox_data (int r, int role ) const
             return QVariant();
         }
     }
+#endif
 
     simple_scoped qsm(sm);
 

@@ -10,8 +10,10 @@
 #define QMSGSQL
 #include "vc.h"
 
+namespace dwyco {
 void init_qmsg_sql();
 void exit_qmsg_sql();
+vc load_msg_index(vc uid, int load_count);
 long sql_get_max_logical_clock();
 vc sql_get_recent_users(int *total_count);
 vc sql_get_old_ignored_users();
@@ -23,5 +25,7 @@ vc get_unfav_msgids(vc uid);
 void clear_indexed_flag(vc uid);
 vc sql_get_recent_users2(int max_age, int max_count);
 vc msg_idx_get_new_msgs(vc uid, vc logical_clock);
+vc sql_get_uid_from_mid(vc mid);
+}
 
 #endif

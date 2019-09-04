@@ -123,13 +123,13 @@ fetch_to_inbox(DwString& uid_out, DwString& mid_out)
     int k = Delete_msgs.num_elems();
     for(int i = 0; i < k; ++i)
     {
-        dwyco_delete_unsaved_message(Delete_msgs[i].c_str());
+        dwyco_delete_unfetched_message(Delete_msgs[i].c_str());
 
     }
     Delete_msgs.set_size(0);
 
     DWYCO_UNFETCHED_MSG_LIST qml;
-    if(!dwyco_get_unsaved_messages(&qml, 0, 0))
+    if(!dwyco_get_unfetched_messages(&qml, 0, 0))
         return 0;
     simple_scoped ml(qml);
     int n;
@@ -169,7 +169,7 @@ fetch_to_inbox(DwString& uid_out, DwString& mid_out)
                     // NOTE: uid, dlv_mid must be copied out before next
                     // dll call
                     // hmmm, need new api to get uid/mid_out of delivered msg
-                    dwyco_delete_unsaved_message(mid_out.c_str());
+                    dwyco_delete_unfetched_message(mid_out.c_str());
                     continue;
                 }
 

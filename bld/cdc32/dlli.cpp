@@ -5250,17 +5250,18 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     {
         vc id(VC_BSTRING, msg_id, strlen(msg_id));
         vc summary = find_cur_msg(id);
-        if(summary.is_nil())
+        if(!summary.is_nil())
         {
-            GRTLOG("make_forward_zap: cant find unsaved msgid %s", msg_id, 0);
+            GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
+            //GRTLOG("make_forward_zap: cant find unsaved msgid %s", msg_id, 0);
             return 0;
         }
 
-        if(summary[QM_IS_DIRECT].is_nil())
-        {
-            GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
-            return 0;
-        }
+//        if(summary[QM_IS_DIRECT].is_nil())
+//        {
+//            GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
+//            return 0;
+//        }
         body = direct_to_body(id);
         if(body.is_nil())
         {
@@ -5580,13 +5581,13 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     {
         vc id(VC_BSTRING, msg_id, strlen(msg_id));
         vc summary = find_cur_msg(id);
-        if(summary.is_nil())
+        if(!summary.is_nil())
             return 0;
 
-        if(summary[QM_IS_DIRECT].is_nil())
-        {
-            return 0;
-        }
+//        if(summary[QM_IS_DIRECT].is_nil())
+//        {
+//            return 0;
+//        }
         body = direct_to_body(id);
         if(body.is_nil())
         {
@@ -5673,13 +5674,13 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     {
         vc id(VC_BSTRING, msg_id, strlen(msg_id));
         vc summary = find_cur_msg(id);
-        if(summary.is_nil())
+        if(!summary.is_nil())
             return 0;
 
-        if(summary[QM_IS_DIRECT].is_nil())
-        {
-            return 0;
-        }
+//        if(summary[QM_IS_DIRECT].is_nil())
+//        {
+//            return 0;
+//        }
         body = direct_to_body(id);
         if(body.is_nil())
         {
@@ -6804,7 +6805,7 @@ dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len
 
 DWYCOEXPORT
 int
-dwyco_get_unsaved_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid)
+dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid)
 {
     vc u;
     if(uid != 0)
@@ -6817,7 +6818,7 @@ dwyco_get_unsaved_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, 
 
 DWYCOEXPORT
 int
-dwyco_get_unsaved_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id)
+dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id)
 {
     vc id(VC_BSTRING, msg_id, strlen(msg_id));
     vc summary = find_cur_msg(id);
@@ -7203,7 +7204,7 @@ dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out
     return 0;
 }
 
-
+#if 0
 DWYCOEXPORT
 int
 dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
@@ -7235,6 +7236,7 @@ dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id
     *list_out = (DWYCO_SAVED_MSG_LIST)&ret;
     return 1;
 }
+#endif
 
 // note: this function is pretty defunct, it assumes you are using
 // simple 8bit ascii and won't generally work with utf8/unicode type
@@ -7356,8 +7358,8 @@ save_msg(vc m, vc msg_id)
     if(msg[2].is_nil())
     {
         update_msg_idx(vcnil, body);
-        ack_direct(msg_id);
-        //delete_msg2(m[1][0]);
+        //ack_direct(msg_id);
+        delete_msg2(m[1][0]);
         return 1;
     }
     // if the msg came directly, assume
@@ -7365,8 +7367,8 @@ save_msg(vc m, vc msg_id)
     if(!refile_attachment(msg[2], msg[0]))
         return 0;
     update_msg_idx(vcnil, body);
-    ack_direct(msg_id);
-    //delete_msg2(m[1][0]);
+    //ack_direct(msg_id);
+    delete_msg2(m[1][0]);
     return 1;
 
 }
@@ -7728,10 +7730,10 @@ dwyco_cancel_message_fetch(int fetch_id)
 // state the message is in, on the server or whereever
 DWYCOEXPORT
 int
-dwyco_delete_unsaved_message(const char *msg_id)
+dwyco_delete_unfetched_message(const char *msg_id)
 {
     vc id(msg_id);
-    ack_direct(id);
+    //delete_msg2(id);
     vc args(VC_VECTOR);
     args.append(vcnil);
     args.append(id);

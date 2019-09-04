@@ -67,7 +67,7 @@ void ack_all(vc);
 int save_to_inbox(vc m);
 void load_inbox();
 int store_direct(MMChannel *m, vc msg, void *);
-void ack_direct(vc msgid);
+//void ack_direct(vc msgid);
 vc direct_to_server(vc msgid);
 int wrong_rating(vc);
 void ack_all_direct();
@@ -77,7 +77,7 @@ void exit_qmsg();
 void suspend_qmsg();
 void resume_qmsg();
 int valid_qd_message(vc v);
-int valid_info(vc v);
+//int valid_info(vc v);
 void clear_local_ignore();
 void add_local_ignore(vc uid);
 void del_local_ignore(vc uid);
@@ -142,7 +142,7 @@ void pal_relogin();
 void save_msg_idxs();
 void save_qmsg_state();
 void update_msg_idx(vc recip, vc body);
-vc load_msg_index(vc uid, int load_count);
+//vc load_msg_index(vc uid, int load_count);
 // note: this returns the total count of messages,
 // which is different than the number of entries in
 // the current index.

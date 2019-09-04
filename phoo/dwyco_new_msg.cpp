@@ -469,7 +469,7 @@ dwyco_process_unsaved_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids)
     int k = Delete_msgs.count();
     for(int i = 0; i < k; ++i)
     {
-        dwyco_delete_unsaved_message(Delete_msgs[i].constData());
+        dwyco_delete_unfetched_message(Delete_msgs[i].constData());
     }
     Delete_msgs.clear();
 

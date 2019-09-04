@@ -9,19 +9,17 @@
 
 // $Header: g:/dwight/repo/cdc32/rcs/qmsg.cc 1.9 1999/01/10 16:09:51 dwight Checkpoint $
 
-// manage messages received from server
+// manage messages
 
 // messages are stored on disk like this:
 //
 // each sender has a directory whose name is
-// their id.
+// their <uid>.usr
 // each message that is received is stored in a file
-// with the messages id as the name. if a message is stored
-// as different components, then all those components are stored
+// with the message id as the name: <mid>.bod or <mid>.snt. if a message
+// has attachments, then all those attachments are stored
 // in the directory as well.
-//
-// message as stored on disk: (.bod file)
-// vector(message-id from-id msg-text attachment-filename date-vector)
+
 
 
 #include "dwdate.h"
@@ -100,6 +98,7 @@ using namespace CryptoPP;
 #include "qsend.h"
 #include "ssns.h"
 #include "dwyco_rand.h"
+#include "qmsgsql.h"
 using namespace dwyco;
 
 vc MsgFolders;
@@ -119,7 +118,7 @@ vc Mutual_ignore;
 // list of message summaries from direct messages
 //static vc Direct_msgs;
 // list of direct messages (full message)
-static vc Direct_msgs_raw;
+//static vc Direct_msgs_raw;
 
 vc Online;
 vc Client_types;
@@ -698,6 +697,7 @@ gen_auto_reply(vc msg)
 
 // need this because some info files get
 // trashed mysteriously...
+static
 int
 valid_info(vc v)
 {
@@ -1212,10 +1212,10 @@ FindVec *
 find_to_vec(const char *pat)
 {
     int i = 1;
-    WIN32_FIND_DATA n;
 
     FindVec& ret = *new FindVec;
 #ifdef _Windows
+    WIN32_FIND_DATA n;
     HANDLE h = FindFirstFile(pat, &n);
     int idx;
     for(idx = 0; h != INVALID_HANDLE_VALUE && i != 0; i = FindNextFile(h, &n))
@@ -1669,21 +1669,11 @@ direct_to_body2(vc m)
 vc
 direct_to_body(vc msgid)
 {
-    vc m;
-    int i;
-    for(i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        if(Direct_msgs_raw[i][QQM_LOCAL_ID] == msgid)
-        {
-            m = Direct_msgs_raw[i][QQM_MSG_VEC];
-            break;
-        }
-    }
-    if(m.is_nil())
+    vc huid = sql_get_uid_from_mid(msgid);
+    if(huid.is_nil())
         return vcnil;
-    vc v = direct_to_body2(m);
-    v[QM_BODY_ID] = msgid;
-    return v;
+    vc uid = from_hex(huid);
+    return load_body_by_id(uid, msgid);
 
 }
 
@@ -1984,25 +1974,28 @@ store_direct(MMChannel *m, vc msg, void *)
         return 1;
     }
 
-    if(msg[QQM_MSG_VEC][QQM_BODY_DHSF].type() == VC_VECTOR)
-    {
-        TRACK_ADD(SD_dhfs_unexpected, 1);
-        vc nmsg = decrypt_msg_qqm(msg);
-        if(nmsg.is_nil())
-        {
-            TRACK_ADD(DR_bad_decrypt, 1);
-            if(m)
-            {
-                m->send_ctrl("ok");
-                m->schedule_destroy(MMChannel::HARD);
-            }
-            // NOTE: add notification that decryption failed
-            return -1;
-        }
-        msg[QQM_MSG_VEC] = nmsg;
-    }
+    // note: msgs sent directly are not encrypted because the channel
+    // is encrypted.
 
-    vc v(VC_VECTOR);
+//    if(msg[QQM_MSG_VEC][QQM_BODY_DHSF].type() == VC_VECTOR)
+//    {
+//        TRACK_ADD(SD_dhfs_unexpected, 1);
+//        vc nmsg = decrypt_msg_qqm(msg);
+//        if(nmsg.is_nil())
+//        {
+//            TRACK_ADD(DR_bad_decrypt, 1);
+//            if(m)
+//            {
+//                m->send_ctrl("ok");
+//                m->schedule_destroy(MMChannel::HARD);
+//            }
+//            // NOTE: add notification that decryption failed
+//            return -1;
+//        }
+//        msg[QQM_MSG_VEC] = nmsg;
+//    }
+
+    //vc v(VC_VECTOR);
     // 0: who from
     // 1: len
     // 2: id on server
@@ -2068,31 +2061,23 @@ store_direct(MMChannel *m, vc msg, void *)
         }
     }
 #endif
-    v[QM_FROM] = msg[QQM_MSG_VEC][QQM_BODY_FROM];
-    v[QM_LEN] = msg[QQM_MSG_VEC][QQM_BODY_NEW_TEXT].len();
-    v[QM_ID] = id;
-    v[QM_DATE_SENT] = msg[QQM_MSG_VEC][QQM_BODY_DATE];
-    //v[QM_SENDER_RATING] = msg[QQM_MSG_VEC][QQM_BODY_RATING];
-    v[QM_IS_DIRECT] = vctrue;
-    v[QM_SPECIAL_TYPE] = msg[QQM_MSG_VEC][QQM_BODY_SPECIAL_TYPE];
-    v[QM_LOGICAL_CLOCK] = msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK];
+//    v[QM_FROM] = msg[QQM_MSG_VEC][QQM_BODY_FROM];
+//    v[QM_LEN] = msg[QQM_MSG_VEC][QQM_BODY_NEW_TEXT].len();
+//    v[QM_ID] = id;
+//    v[QM_DATE_SENT] = msg[QQM_MSG_VEC][QQM_BODY_DATE];
+//    //v[QM_SENDER_RATING] = msg[QQM_MSG_VEC][QQM_BODY_RATING];
+//    v[QM_IS_DIRECT] = vctrue;
+//    v[QM_SPECIAL_TYPE] = msg[QQM_MSG_VEC][QQM_BODY_SPECIAL_TYPE];
+//    v[QM_LOGICAL_CLOCK] = msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK];
     // if this is a direct msg with attachment, the att is already here, so
     // we can put in the estimated size if needed
-    vc from = v[0];
-    int auto_reply = 0;
-    if(uid_ignored(from) || (auto_reply = (ZapAdvData.get_ignore() && wrong_rating(v))))
+    vc from = msg[QQM_MSG_VEC][QQM_BODY_FROM];
+
+    if(uid_ignored(from))
     {
-        // see comments in query_done regarding this "first_load" hack
-        if(auto_reply)
-        {
-            if(Hack_first_load)
-                Session_auto_replies.add(from);
-            else
-                gen_auto_reply(v);
-        }
         TRACK_ADD(DR_bad_ignored, 1);
         // rathole it
-        ack_direct(v[QM_ID]);
+        //ack_direct(v[QM_ID]);
         if(m)
         {
             m->send_ctrl("ok");
@@ -2119,7 +2104,7 @@ store_direct(MMChannel *m, vc msg, void *)
         No_direct_msgs.del(from);
     }
 
-    add_msg(Cur_msgs, v);
+    //add_msg(Cur_msgs, v);
 
     Rescan_msgs = 1;
     //Direct_msgs_raw.append(msg);
@@ -2753,18 +2738,6 @@ delete_attachment2(vc user_id, vc attachment_name)
     DeleteFile(s.c_str());
 }
 
-static
-void
-delete_attachment(vc attachment_name)
-{
-    if(!is_attachment(attachment_name))
-        return;
-
-    DwString t((const char *)attachment_name);
-
-
-    DeleteFile(newfn(t).c_str());
-}
 
 static vc
 date_vector()
@@ -3368,6 +3341,7 @@ reset_qsend_special(enum dwyco_sys_event cmd, DwString qid, vc recip_uid)
     QSend_special_inprogress = 0;
 }
 
+#if 0
 static
 DwVec<int>
 perm(int n)
@@ -3392,6 +3366,7 @@ perm(int n)
     }
     return ret;
 }
+#endif
 
 static
 vc
@@ -3631,8 +3606,6 @@ qd_purge_outbox()
 void
 load_inbox()
 {
-    int i;
-
     //Direct_msgs_raw = vc(VC_VECTOR);
     //Direct_msgs = vc(VC_VECTOR);
 //    FindVec& fv = *find_to_vec(newfn("inbox" DIRSEPSTR "*.urd").c_str());
@@ -3665,9 +3638,6 @@ load_inbox()
 int
 save_to_inbox(vc m)
 {
-    DwString f((const char *)m[QQM_LOCAL_ID]);
-    f += ".urd";
-    f.insert(0, "inbox" DIRSEPSTR "");
     // note: the "local id" is set from the server if this msg came from the
     // server. it is set to something locally generated for peer-to-peer messages.
     // this isn't a problem, the main reason we are creating this tag is to filter out
@@ -3675,8 +3645,7 @@ save_to_inbox(vc m)
     // a message, then 20 minutes later google notifies about the same message.)
     // we only get sent google notifications for server messages...
     sql_add_tag(m[QQM_LOCAL_ID], "_seen");
-    if(!save_info(m, f.c_str()))
-        return 0;
+    sql_add_tag(m[QQM_LOCAL_ID], "_inbox");
     return 1;
 }
 
