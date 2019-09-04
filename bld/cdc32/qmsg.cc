@@ -117,7 +117,7 @@ vc Session_ignore;
 vc Mutual_ignore;
 
 // list of message summaries from direct messages
-static vc Direct_msgs;
+//static vc Direct_msgs;
 // list of direct messages (full message)
 static vc Direct_msgs_raw;
 
@@ -354,8 +354,8 @@ init_qmsg()
     No_direct_att = vc(VC_SET);
     MsgFolders = vc(VC_TREE);
     In_progress = vc(VC_TREE);
-    Direct_msgs_raw = vc(VC_VECTOR);
-    Direct_msgs = vc(VC_VECTOR);
+    //Direct_msgs_raw = vc(VC_VECTOR);
+    //Direct_msgs = vc(VC_VECTOR);
     // not perfect, but better than scanning for a max value
     // somewhere.
     Logical_clock = time(0);
@@ -488,8 +488,8 @@ exit_qmsg()
     No_direct_att = vcnil;
 
     Cur_msgs = vcnil;
-    Direct_msgs = vcnil;
-    Direct_msgs_raw = vcnil;
+    //Direct_msgs = vcnil;
+    //Direct_msgs_raw = vcnil;
     Online_noise = vcnil;
     //Never_visible = vcnil;
     //Always_visible = vcnil;
@@ -562,8 +562,8 @@ resume_qmsg()
     No_direct_att = vc(VC_SET);
     MsgFolders = vc(VC_TREE);
     In_progress = vc(VC_TREE);
-    Direct_msgs_raw = vc(VC_VECTOR);
-    Direct_msgs = vc(VC_VECTOR);
+    //Direct_msgs_raw = vc(VC_VECTOR);
+    //Direct_msgs = vc(VC_VECTOR);
     // not perfect, but better than scanning for a max value
     // somewhere.
     Logical_clock = time(0);
@@ -1902,6 +1902,10 @@ query_done(vc m, void *, vc, ValidPtr)
         add_msg(Cur_msgs, v);
 
     }
+    // note: need to decide if it is really needed to present
+    // direct messages as a summary. the results of this query
+    // really represent something else, but may require an api change
+#if 0
     // readd all direct messages
     for(i = 0; i < Direct_msgs.num_elems(); ++i)
     {
@@ -1919,6 +1923,7 @@ query_done(vc m, void *, vc, ValidPtr)
         else
             add_msg(Cur_msgs, Direct_msgs[i]);
     }
+#endif
 
     if(!(oldnum == 0 && Cur_msgs.num_elems() == 0))
         Rescan_msgs = 1;
@@ -2117,8 +2122,8 @@ store_direct(MMChannel *m, vc msg, void *)
     add_msg(Cur_msgs, v);
 
     Rescan_msgs = 1;
-    Direct_msgs_raw.append(msg);
-    add_msg(Direct_msgs, v);
+    //Direct_msgs_raw.append(msg);
+    //add_msg(Direct_msgs, v);
 
     if(m)
     {
@@ -2224,12 +2229,14 @@ uid_to_location(vc id, int *cant_resolve_now)
     return ai[1];
 }
 
+// this is called to clean out all messages that might
+// be on the server from a particular sender
 void
 ack_all(vc uid)
 {
     int i;
     vc ackset(VC_VECTOR);
-    ack_all_direct_from(uid);
+    //ack_all_direct_from(uid);
     // only thing left in Cur_msgs for uid is server messages
     for(i = 0; i < Cur_msgs.num_elems(); ++i)
     {
@@ -2660,7 +2667,7 @@ void
 delete_msg2(vc msg_id)
 {
     del_msg(Cur_msgs, msg_id);
-    del_msg(Direct_msgs, msg_id);
+    //del_msg(Direct_msgs, msg_id);
     Rescan_msgs = 1;
 }
 
@@ -3626,8 +3633,8 @@ load_inbox()
 {
     int i;
 
-    Direct_msgs_raw = vc(VC_VECTOR);
-    Direct_msgs = vc(VC_VECTOR);
+    //Direct_msgs_raw = vc(VC_VECTOR);
+    //Direct_msgs = vc(VC_VECTOR);
 //    FindVec& fv = *find_to_vec(newfn("inbox" DIRSEPSTR "*.urd").c_str());
 //    int nn = fv.num_elems();
 //    for(i = 0; i < nn; ++i)
@@ -3673,6 +3680,7 @@ save_to_inbox(vc m)
     return 1;
 }
 
+#if 0
 vc
 direct_to_server(vc msgid)
 {
@@ -3703,7 +3711,9 @@ direct_to_server(vc msgid)
     sm[1] = m;
     return sm;
 }
+#endif
 
+#if 0
 void
 ack_direct(vc msgid)
 {
@@ -3760,6 +3770,7 @@ ack_all_direct()
         ack_direct(msglist[i]);
     }
 }
+#endif
 
 void
 got_ignore(vc m, void *, vc, ValidPtr)

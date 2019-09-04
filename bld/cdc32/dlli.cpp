@@ -6799,6 +6799,9 @@ dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len
     return 1;
 }
 
+// the idea of "unsaved" vs "saved" should be changed to
+// "fetched" vs "unfetched", since all messages are "saved" now.
+
 DWYCOEXPORT
 int
 dwyco_get_unsaved_messages(DWYCO_UNSAVED_MSG_LIST *list_out, const char *uid, int len_uid)
@@ -7641,6 +7644,9 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
 
 }
 
+// "saving" a message now just means removing from the inbox
+// which involves just removing the tag, unless it hasn't
+// been fetched yet.
 DWYCOEXPORT
 int
 dwyco_save_message(const char *msg_id)
@@ -7650,17 +7656,26 @@ dwyco_save_message(const char *msg_id)
 
     vc id(VC_BSTRING, msg_id, strlen(msg_id));
     vc summary = find_cur_msg(id);
-    if(summary.is_nil())
+    if(!summary.is_nil())
     {
-        GRTLOG("save_message: cant find summary %s", msg_id, 0);
+        GRTLOG("save_message: msg isn't fetched %s", msg_id, 0);
         return 0;
     }
 
+#if 0
     if(summary[QM_IS_DIRECT].is_nil())
     {
         GRTLOG("save_message: cant save an unfetched server message %s", msg_id, 0);
         return 0;
     }
+#endif
+
+    if(sql_mid_has_tag(id, "_inbox"))
+        Rescan_msgs = 1;
+    sql_remove_mid_tag(id, "_inbox");
+    return 1;
+
+#if 0
     vc m = direct_to_server(msg_id);
     vc resp(VC_VECTOR);
     resp[1] = m[1];
@@ -7668,6 +7683,7 @@ dwyco_save_message(const char *msg_id)
     if(tmp)
         Rescan_msgs = 1;
     return tmp;
+#endif
 }
 
 DWYCOEXPORT
@@ -7707,6 +7723,9 @@ dwyco_cancel_message_fetch(int fetch_id)
 }
 
 
+// this api should probably go away.
+// delete msg should probably just work no matter what
+// state the message is in, on the server or whereever
 DWYCOEXPORT
 int
 dwyco_delete_unsaved_message(const char *msg_id)
