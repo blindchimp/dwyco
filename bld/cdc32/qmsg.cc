@@ -136,7 +136,7 @@ vc LANmap;
 int LANmap_inhibit;
 vc Chat_ips;
 vc Chat_ports;
-static vc Session_auto_replies;
+//static vc Session_auto_replies;
 vc Session_infos;
 static vc In_progress;
 static long Logical_clock;
@@ -345,7 +345,7 @@ init_qmsg()
     Cur_msgs = vc(VC_VECTOR);
     Cur_ignore = get_local_ignore();
     Session_ignore = vc(VC_SET);
-    Session_auto_replies = vc(VC_SET);
+    //Session_auto_replies = vc(VC_SET);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
@@ -479,7 +479,7 @@ exit_qmsg()
     exit_fav_sql();
     Cur_ignore = vcnil;
     Session_ignore = vcnil;
-    Session_auto_replies = vcnil;
+    //Session_auto_replies = vcnil;
     Mutual_ignore = vcnil;
     Online = vcnil;
     Client_types = vcnil;
@@ -553,7 +553,7 @@ resume_qmsg()
     Cur_msgs = vc(VC_VECTOR);
     Cur_ignore = get_local_ignore();
     Session_ignore = vc(VC_SET);
-    Session_auto_replies = vc(VC_SET);
+    //Session_auto_replies = vc(VC_SET);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
@@ -675,7 +675,7 @@ resume_qmsg()
 }
 
 
-
+#if 0
 static int
 should_auto_reply(vc msg)
 {
@@ -694,6 +694,7 @@ gen_auto_reply(vc msg)
     Session_auto_replies.add(msg[QM_FROM]);
     return ret;
 }
+#endif
 
 // need this because some info files get
 // trashed mysteriously...

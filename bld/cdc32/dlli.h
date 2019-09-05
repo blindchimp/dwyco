@@ -866,7 +866,7 @@ int DWYCOEXPORT dwyco_get_pals_only();
 // There is no way to get the msgid.
 // obviously, this api needs to be improved a bit to make it possible to
 // provide an easier UI.
-int DWYCOEXPORT dwyco_set_auto_reply_msg(const char *text, int len_text, int compid);
+int DWYCOEXPORT dwyco_set_auto_reply_msgNA(const char *text, int len_text, int compid);
 
 DWYCO_LIST DWYCOEXPORT dwyco_uid_to_info(const char *user_id, int len_uid, int *cant_resolve_now);
 int DWYCOEXPORT dwyco_delete_user(const char *uid, int uid_len);

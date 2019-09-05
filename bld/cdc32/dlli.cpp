@@ -7976,6 +7976,7 @@ dwyco_get_pals_only()
     return ZapAdvData.get_ignore();
 }
 
+#if 0
 //
 // this will use the given composer
 // and text to generate a local message. the msgid of the message
@@ -8023,6 +8024,8 @@ dwyco_set_auto_reply_msg(const char *text, int len_text, int compid)
     GRTLOG("set_auto_reply_msg: %d msg successfully saved.", compid, 0);
     return 1;
 }
+#endif
+
 
 #if 0
 static
@@ -8048,6 +8051,7 @@ auto_reply_msg_send_callback(int id, int what, const char *recip, int recip_len,
 }
 #endif
 
+#if 0
 int
 perform_auto_reply(vc recip_uid)
 {
@@ -8091,6 +8095,7 @@ perform_auto_reply(vc recip_uid)
     }
     return 1;
 }
+#endif
 
 
 DWYCOEXPORT
