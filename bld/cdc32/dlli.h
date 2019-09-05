@@ -504,7 +504,7 @@ void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
 int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
 // use this version if you just want an integer back.
-// returns -1 if the asshole factor isn't valid yet
+// returns -1 if the asshat factor isn't valid yet
 // returns -2 if the users isn't registered and the trial as expired
 // otherwise returns an integer between 0 and 99 (inclusive)
 int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
@@ -2262,6 +2262,9 @@ dwyco_get_rate_tweaks(
 // from a tech support perspective. UPnP, when it was tested, was also
 // too flakey to rely on. ca 2018, Possibly UPnP could be revisited now that
 // routers are implementing it more reliably.
+// ca 2019, UPnP is an option that is handled and set up automatically.
+// if it doesn't get a set of ports set up, it automatically fallsback to
+// using server assisted calls as usual.
 
 #define DWYCO_MEDIA_SELECT_DIRECT_ONLY 0  	// not impl.
 #define DWYCO_MEDIA_SELECT_TCP_ONLY 1 		// force tcp SAC only

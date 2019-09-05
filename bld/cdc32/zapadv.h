@@ -29,8 +29,8 @@ public:
     DWUIDECLVAL(bool, save_sent)
 //DWUIDECLVAL(bool, only_pals)
     DWUIDECLVAL(bool, no_forward_default)
-    DWUIDECLVAL(const char *, auto_reply_mid)
-    DWUIDECLVAL(bool, send_auto_reply)
+//    DWUIDECLVAL(const char *, auto_reply_mid)
+//    DWUIDECLVAL(bool, send_auto_reply)
     DWUIDECL_END
 };
 

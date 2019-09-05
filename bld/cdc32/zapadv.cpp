@@ -20,8 +20,8 @@ ZapAdvXfer ZapAdvData;
 #define USE_OLD_TIMING "old_timing"
 //#define ONLY_PALS "only_pals"
 #define NO_FORWARD "no_forward"
-#define AUTO_REPLY_MID "auto_reply_mid"
-#define SEND_AUTO_REPLY "send_auto_reply"
+//#define AUTO_REPLY_MID "auto_reply_mid"
+//#define SEND_AUTO_REPLY "send_auto_reply"
 
 #define DEFAULT_ALWAYS_SERVER 0
 #define DEFAULT_ALWAYS_ACCEPT 0
@@ -29,8 +29,8 @@ ZapAdvXfer ZapAdvData;
 //#define DEFAULT_ONLY_PALS 0
 #define DEFAULT_NO_FORWARD_DEFAULT 0
 #define DEFAULT_SAVE_SENT 1
-#define DEFAULT_AUTO_REPLY_MID ""
-#define DEFAULT_SEND_AUTO_REPLY 0
+//#define DEFAULT_AUTO_REPLY_MID ""
+//#define DEFAULT_SEND_AUTO_REPLY 0
 
 #define OTHERZAPS "otherzaps"
 #define DEFAULT_OTHERZAPS OZ_RECV_ALL
@@ -48,9 +48,9 @@ DWUIINIT_CTOR_VAL(always_accept),
 DWUIINIT_CTOR_VAL(use_old_timing),
 DWUIINIT_CTOR_VAL(save_sent),
 //DWUIINIT_CTOR_VAL(only_pals),
-DWUIINIT_CTOR_VAL(no_forward_default),
-DWUIINIT_CTOR_VAL(auto_reply_mid),
-DWUIINIT_CTOR_VAL(send_auto_reply)
+DWUIINIT_CTOR_VAL(no_forward_default)
+//DWUIINIT_CTOR_VAL(auto_reply_mid),
+//DWUIINIT_CTOR_VAL(send_auto_reply)
 DWUIINIT_CTOR_END
 {
     set_always_server(DEFAULT_ALWAYS_SERVER);
@@ -62,8 +62,8 @@ DWUIINIT_CTOR_END
     set_no_forward_default(DEFAULT_NO_FORWARD_DEFAULT);
     set_save_sent(DEFAULT_SAVE_SENT);
     //set_only_pals(DEFAULT_ONLY_PALS);
-    set_auto_reply_mid(DEFAULT_AUTO_REPLY_MID);
-    set_send_auto_reply(DEFAULT_SEND_AUTO_REPLY);
+    //set_auto_reply_mid(DEFAULT_AUTO_REPLY_MID);
+    //set_send_auto_reply(DEFAULT_SEND_AUTO_REPLY);
 }
 
 void
