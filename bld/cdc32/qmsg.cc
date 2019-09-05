@@ -2084,20 +2084,25 @@ store_direct(MMChannel *m, vc msg, void *)
     //Direct_msgs_raw.append(msg);
     //add_msg(Direct_msgs, v);
 
-    if(m)
+
+    if(save_msg(msg, id))
     {
-        if(save_msg(msg, id))
+        sql_add_tag(id, "_inbox");
+        if(m)
         {
-            sql_add_tag(id, "_inbox");
             m->send_ctrl("ok");
             TRACK_ADD(DR_ok, 1);
         }
-        else
+    }
+    else
+    {
+        if(m)
         {
             m->send_ctrl("store failed");
             TRACK_ADD(DR_store_failed, 1);
         }
     }
+
     return 1;
 }
 

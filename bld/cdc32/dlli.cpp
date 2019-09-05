@@ -7313,32 +7313,25 @@ dwyco_authenticate_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_u
     return verify_chain(body, 1, vcnil, u);
 }
 
-
+//
+// m should be a regular message: vector(vector(recipients) msg-vec local-id)
+//
 int
 save_msg(vc m, vc msg_id)
 {
-    if(m[1].is_nil())
+    if(m[QQM_MSG_VEC].is_nil())
     {
         return 0;
     }
 
-    // returned item is a vector of 2 items:
-    // 0: msg id
-    // 1: msg
-    //	msg is a vector:
-    // 0: sender id
-    // 1: the text message
-    // 2: id of any attachment
-    // 3: date vector
-
-    vc msg = m[1][1];
+    vc msg = m[QQM_MSG_VEC];
 
     if(msg.is_nil())
     {
         return 0;
     }
 
-    vc body = save_body(m[1][0],
+    vc body = save_body(msg_id,
                         msg[QQM_BODY_FROM],
                         "", //msg[QQM_BODY_TEXT],
                         msg[QQM_BODY_ATTACHMENT],
@@ -7355,16 +7348,16 @@ save_msg(vc m, vc msg_id)
         return 0;
     }
 
-    if(msg[2].is_nil())
+    if(msg[QQM_BODY_ATTACHMENT].is_nil())
     {
         update_msg_idx(vcnil, body);
         //ack_direct(msg_id);
-        delete_msg2(m[1][0]);
+        delete_msg2(msg_id);
         return 1;
     }
     // if the msg came directly, assume
     // the attachment was sent direct as well.
-    if(!refile_attachment(msg[2], msg[0]))
+    if(!refile_attachment(msg[QQM_BODY_ATTACHMENT], msg[QQM_BODY_FROM]))
         return 0;
     update_msg_idx(vcnil, body);
     //ack_direct(msg_id);
