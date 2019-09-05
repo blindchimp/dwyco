@@ -6847,7 +6847,7 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc& v = *(vc *)ml;
     vc summary = v[0];
-    if(summary[QM_IS_DIRECT].is_nil())
+    //if(summary[QM_IS_DIRECT].is_nil())
     {
         // server message waiting to be fetched
         if(summary[QM_SPECIAL_TYPE].is_nil())
@@ -6945,7 +6945,7 @@ dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *l
     // this keeps the debugging stuff from crashing
     *str_out = "";
     *len_out = 0;
-
+#if 0
     vc& v = *(vc *)ml;
     vc summary = v[0];
     if(summary[QM_IS_DIRECT].is_nil())
@@ -6968,7 +6968,7 @@ dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *l
     memcpy(b, (const char *)payload, payload.len());
     *str_out = b;
     *len_out = payload.len();
-
+#endif
     return 1;
 }
 
@@ -6996,7 +6996,7 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
         vc summary = find_cur_msg(id);
         if(summary.is_nil())
             return 0;
-        if(summary[QM_IS_DIRECT].is_nil())
+        //if(summary[QM_IS_DIRECT].is_nil())
         {
             // server message waiting to be fetched
             if(summary[QM_SPECIAL_TYPE].is_nil())
@@ -7175,7 +7175,7 @@ dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out
     {
         return 0;
     }
-    if(summary[QM_IS_DIRECT].is_nil())
+    //if(summary[QM_IS_DIRECT].is_nil())
     {
         // server message waiting to be fetched
         if(summary[QM_SPECIAL_TYPE].is_nil())

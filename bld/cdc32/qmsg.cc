@@ -1868,28 +1868,6 @@ query_done(vc m, void *, vc, ValidPtr)
         add_msg(Cur_msgs, v);
 
     }
-    // note: need to decide if it is really needed to present
-    // direct messages as a summary. the results of this query
-    // really represent something else, but may require an api change
-#if 0
-    // readd all direct messages
-    for(i = 0; i < Direct_msgs.num_elems(); ++i)
-    {
-        vc v = Direct_msgs[i];
-        vc from = v[QM_FROM];
-        int auto_reply = 0;
-        if(uid_ignored(from) || (auto_reply = (ZapAdvData.get_ignore() && wrong_rating(v))))
-        {
-            if(auto_reply)
-                gen_auto_reply(v);
-            // note: ack_direct modifies Direct_msgs
-            ack_direct(v[QM_ID]);
-            --i;
-        }
-        else
-            add_msg(Cur_msgs, Direct_msgs[i]);
-    }
-#endif
 
     if(!(oldnum == 0 && Cur_msgs.num_elems() == 0))
         Rescan_msgs = 1;
@@ -1904,7 +1882,7 @@ query_messages()
     dirth_send_query(My_UID, QckDone(query_done, 0));
 }
 
-static int Hack_first_load = 0;
+//static int Hack_first_load = 0;
 
 // return -1 if the message can never be delivered here
 // callers can use this to determine when to delete
@@ -1948,41 +1926,24 @@ store_direct(MMChannel *m, vc msg, void *)
         return 1;
     }
 
+    vc from = msg[QQM_MSG_VEC][QQM_BODY_FROM];
+
+    if(uid_ignored(from))
+    {
+        TRACK_ADD(DR_bad_ignored, 1);
+        // rathole it
+        if(m)
+        {
+            m->send_ctrl("ok");
+        }
+        return 1;
+    }
+
     // note: msgs sent directly are not encrypted because the channel
     // is encrypted.
 
-//    if(msg[QQM_MSG_VEC][QQM_BODY_DHSF].type() == VC_VECTOR)
-//    {
-//        TRACK_ADD(SD_dhfs_unexpected, 1);
-//        vc nmsg = decrypt_msg_qqm(msg);
-//        if(nmsg.is_nil())
-//        {
-//            TRACK_ADD(DR_bad_decrypt, 1);
-//            if(m)
-//            {
-//                m->send_ctrl("ok");
-//                m->schedule_destroy(MMChannel::HARD);
-//            }
-//            // NOTE: add notification that decryption failed
-//            return -1;
-//        }
-//        msg[QQM_MSG_VEC] = nmsg;
-//    }
+    vc id;
 
-    //vc v(VC_VECTOR);
-    // 0: who from
-    // 1: len
-    // 2: id on server
-    // 3: date vector
-    // added locally:
-    // 4: pending del
-    // 5: t = direct message, nil, must fetch from server
-    // oops, server has to put this way out here because
-    // old software expects to see the above structure...
-    // 6: rating of sender
-    vc id = to_hex(gen_id());
-    // drop the id on the end of the message so it
-    // is easier to load the inbox later.
     if(!m)
     {
         // we're loading the inbox from disk, so
@@ -1992,13 +1953,8 @@ store_direct(MMChannel *m, vc msg, void *)
     else
     {
         // generate a local id for the message
+        id = to_hex(gen_id());
         msg[QQM_LOCAL_ID] = id;
-        if(msg[QQM_LOCAL_INFO_VEC].is_nil())
-        {
-            msg[QQM_LOCAL_INFO_VEC] = vc(VC_VECTOR);
-        }
-        if(msg[QQM_LOCAL_INFO_VEC].type() == VC_VECTOR)
-            msg[QQM_LOCAL_INFO_VEC][QQM_LIV_TIME_RECV] = (long)time(0);
     }
 
     // note: doing the logical clock stuff here isn't quite right...
@@ -2035,29 +1991,10 @@ store_direct(MMChannel *m, vc msg, void *)
         }
     }
 #endif
-//    v[QM_FROM] = msg[QQM_MSG_VEC][QQM_BODY_FROM];
-//    v[QM_LEN] = msg[QQM_MSG_VEC][QQM_BODY_NEW_TEXT].len();
-//    v[QM_ID] = id;
-//    v[QM_DATE_SENT] = msg[QQM_MSG_VEC][QQM_BODY_DATE];
-//    //v[QM_SENDER_RATING] = msg[QQM_MSG_VEC][QQM_BODY_RATING];
-//    v[QM_IS_DIRECT] = vctrue;
-//    v[QM_SPECIAL_TYPE] = msg[QQM_MSG_VEC][QQM_BODY_SPECIAL_TYPE];
-//    v[QM_LOGICAL_CLOCK] = msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK];
+
     // if this is a direct msg with attachment, the att is already here, so
     // we can put in the estimated size if needed
-    vc from = msg[QQM_MSG_VEC][QQM_BODY_FROM];
 
-    if(uid_ignored(from))
-    {
-        TRACK_ADD(DR_bad_ignored, 1);
-        // rathole it
-        //ack_direct(v[QM_ID]);
-        if(m)
-        {
-            m->send_ctrl("ok");
-        }
-        return 1;
-    }
     init_msg_folder(from);
 
     // if someone connects to us, assume we can use
@@ -2078,12 +2015,7 @@ store_direct(MMChannel *m, vc msg, void *)
         No_direct_msgs.del(from);
     }
 
-    //add_msg(Cur_msgs, v);
-
     Rescan_msgs = 1;
-    //Direct_msgs_raw.append(msg);
-    //add_msg(Direct_msgs, v);
-
 
     if(save_msg(msg, id))
     {
@@ -3041,33 +2973,6 @@ decrypt_attachment2(const DwString& filename, const DwString& key, const DwStrin
     return decrypt_attachment(f, k, d);
 }
 
-#if 0
-
-vc
-encrypt_msg_body(vc body, vc sf, vc ectx, vc key)
-{
-    if(sf.is_nil() || ectx.is_nil())
-        return body;
-    // encrypting: just re-encapsulate the msg in a new message
-    vc nmsg;
-
-    vc emsg = vclh_encdec_xfer_enc_ctx(ectx, body);
-
-    q_message2(vc(VC_VECTOR),
-               body[QQM_BODY_ATTACHMENT].is_nil() ? "" : (const char *)body[QQM_BODY_ATTACHMENT],
-               nmsg, vcnil, "update", vcnil, vcnil, vcnil,
-               !body[QQM_BODY_NO_FORWARD].is_nil(), vcnil, 1);
-    nmsg[QQM_MSG_VEC][QQM_BODY_DHSF] = sf;
-    nmsg[QQM_MSG_VEC][QQM_BODY_EMSG] = emsg;
-    nmsg[QQM_MSG_VEC][QQM_BODY_ATTACHMENT_LOCATION] = body[QQM_BODY_ATTACHMENT_LOCATION];
-
-    GRTLOG("EMSG body", 0, 0);
-    GRTLOGVC(body);
-    GRTLOGVC(nmsg[QQM_MSG_VEC]);
-
-    return nmsg[QQM_MSG_VEC];
-}
-#endif
 
 vc
 encrypt_msg_qqm(vc msg, vc sf, vc ectx, vc key)
@@ -3585,33 +3490,7 @@ qd_purge_outbox()
 void
 load_inbox()
 {
-    //Direct_msgs_raw = vc(VC_VECTOR);
-    //Direct_msgs = vc(VC_VECTOR);
-//    FindVec& fv = *find_to_vec(newfn("inbox" DIRSEPSTR "*.urd").c_str());
-//    int nn = fv.num_elems();
-//    for(i = 0; i < nn; ++i)
-//    {
-//        WIN32_FIND_DATA& n = *fv[i];
 
-//        DwString d("inbox" DIRSEPSTR "");
-//        d += n.cFileName;
-//        vc m;
-//        if(load_info(m, d.c_str()))
-//        {
-//            if(!valid_qd_message(m))
-//            {
-//                DeleteFile(newfn(d).c_str());
-//                Log->make_entry("deleting bogus inbox item.");
-//            }
-//            else if(store_direct(0, m, 0) == -1)
-//            {
-//                DeleteFile(newfn(d).c_str());
-//                Log->make_entry("deleting misdelivered message");
-//            }
-//        }
-//    }
-//    delete_findvec(&fv);
-    Hack_first_load = 0;
 }
 
 int
@@ -3628,97 +3507,9 @@ save_to_inbox(vc m)
     return 1;
 }
 
-#if 0
-vc
-direct_to_server(vc msgid)
-{
-    // returned item is a vector of 2 items:
-    // 0: msg id
-    // 1: msg
-    //	msg is a vector:
-    // 0: sender id
-    // 1: the text message
-    // 2: id of any attachment
-    // 3: date vector
 
-    // convert direct raw msg into server-like
-    // message so it can be processed by existing
-    // code
 
-    vc m(VC_VECTOR);
-    m[0] = msgid;
-    for(int i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        if(Direct_msgs_raw[i][QQM_LOCAL_ID] == msgid)
-        {
-            m[1] = Direct_msgs_raw[i][QQM_MSG_VEC];
-            break;
-        }
-    }
-    vc sm(VC_VECTOR);
-    sm[1] = m;
-    return sm;
-}
-#endif
 
-#if 0
-void
-ack_direct(vc msgid)
-{
-    for(int i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        if(Direct_msgs_raw[i][QQM_LOCAL_ID] == msgid)
-        {
-            vc msg = Direct_msgs_raw[i];
-            vc att = msg[QQM_MSG_VEC][QQM_BODY_ATTACHMENT];
-            if(!att.is_nil())
-            {
-                delete_attachment(att);
-            }
-            Direct_msgs_raw.remove(i);
-            break;
-        }
-    }
-    DwString f((const char *)msgid);
-    f += ".urd";
-    f.insert(0, "inbox" DIRSEPSTR "");
-    DeleteFile(newfn(f).c_str());
-    delete_msg2(msgid);
-}
-
-void
-ack_all_direct_from(vc uid)
-{
-    vc msglist(VC_VECTOR);
-    int i;
-    for(i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        if(Direct_msgs_raw[i][QQM_MSG_VEC][QQM_BODY_FROM] == uid)
-            msglist.append(Direct_msgs_raw[i][QQM_LOCAL_ID]);
-    }
-    int n = msglist.num_elems();
-    for(i = 0; i < n; ++i)
-    {
-        ack_direct(msglist[i]);
-    }
-}
-
-void
-ack_all_direct()
-{
-    vc msglist(VC_VECTOR);
-    int i;
-    for(int i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        msglist.append(Direct_msgs_raw[i][QQM_LOCAL_ID]);
-    }
-    int n = msglist.num_elems();
-    for(i = 0; i < n; ++i)
-    {
-        ack_direct(msglist[i]);
-    }
-}
-#endif
 
 void
 got_ignore(vc m, void *, vc, ValidPtr)
