@@ -580,7 +580,6 @@ msglist_raw::check_inbox_model()
 
         if(qnew_im.rows() == count_inbox_msgs)
         {
-            {
             dwyco_list q_inbox_msgs(inbox_msgs);
             for(int i = 0; i < count_inbox_msgs; ++i)
             {
@@ -591,8 +590,8 @@ msglist_raw::check_inbox_model()
                     return 0;
                 }
             }
-            }
 
+#if 0
             simple_scoped q_old_inbox(inbox_msgs);
 
             inbox_msgs = qnew_im;
@@ -608,6 +607,7 @@ msglist_raw::check_inbox_model()
 
                 }
             }
+#endif
             return 1;
         }
         else if(qnew_im.rows() == 1 && count_inbox_msgs == 0)
@@ -1065,7 +1065,7 @@ msglist_raw::inbox_data (int r, int role ) const
     }
 #endif
 
-    simple_scoped qsm(sm);
+    //simple_scoped qsm(sm);
 
     switch(role)
     {
@@ -1103,18 +1103,9 @@ msglist_raw::inbox_data (int r, int role ) const
 
     case MSG_TEXT:
     {
-        if(!direct)
-        {
-            auto_fetch(mid);
-            return "(fetching)";
-        }
-        DWYCO_LIST ba = dwyco_get_body_array(qsm);
-        simple_scoped qba(ba);
-        QByteArray txt;
-        if(!dwyco_get_attr(qba, 0, DWYCO_QM_BODY_NEW_TEXT2, txt))
-            return "";
+        auto_fetch(mid);
+        return "(fetching)";
 
-        return QVariant(QString(txt));
     }
     case FETCH_STATE:
     {

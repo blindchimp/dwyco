@@ -115,10 +115,6 @@ vc Session_ignore;
 // via the api
 vc Mutual_ignore;
 
-// list of message summaries from direct messages
-//static vc Direct_msgs;
-// list of direct messages (full message)
-//static vc Direct_msgs_raw;
 
 vc Online;
 vc Client_types;
@@ -136,7 +132,6 @@ vc LANmap;
 int LANmap_inhibit;
 vc Chat_ips;
 vc Chat_ports;
-//static vc Session_auto_replies;
 vc Session_infos;
 static vc In_progress;
 static long Logical_clock;
@@ -345,7 +340,6 @@ init_qmsg()
     Cur_msgs = vc(VC_VECTOR);
     Cur_ignore = get_local_ignore();
     Session_ignore = vc(VC_SET);
-    //Session_auto_replies = vc(VC_SET);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
@@ -353,8 +347,6 @@ init_qmsg()
     No_direct_att = vc(VC_SET);
     MsgFolders = vc(VC_TREE);
     In_progress = vc(VC_TREE);
-    //Direct_msgs_raw = vc(VC_VECTOR);
-    //Direct_msgs = vc(VC_VECTOR);
     // not perfect, but better than scanning for a max value
     // somewhere.
     Logical_clock = time(0);
@@ -479,7 +471,6 @@ exit_qmsg()
     exit_fav_sql();
     Cur_ignore = vcnil;
     Session_ignore = vcnil;
-    //Session_auto_replies = vcnil;
     Mutual_ignore = vcnil;
     Online = vcnil;
     Client_types = vcnil;
@@ -487,8 +478,6 @@ exit_qmsg()
     No_direct_att = vcnil;
 
     Cur_msgs = vcnil;
-    //Direct_msgs = vcnil;
-    //Direct_msgs_raw = vcnil;
     Online_noise = vcnil;
     //Never_visible = vcnil;
     //Always_visible = vcnil;
@@ -523,7 +512,6 @@ suspend_qmsg()
 #if 0
     Cur_ignore = vcnil;
     Session_ignore = vcnil;
-    Session_auto_replies = vcnil;
     Mutual_ignore = vcnil;
     Online = vcnil;
     Client_types = vcnil;
@@ -531,8 +519,6 @@ suspend_qmsg()
     No_direct_att = vcnil;
 
     Cur_msgs = vcnil;
-    Direct_msgs = vcnil;
-    Direct_msgs_raw = vcnil;
     Online_noise = vcnil;
     //Never_visible = vcnil;
     //Always_visible = vcnil;
@@ -553,7 +539,6 @@ resume_qmsg()
     Cur_msgs = vc(VC_VECTOR);
     Cur_ignore = get_local_ignore();
     Session_ignore = vc(VC_SET);
-    //Session_auto_replies = vc(VC_SET);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
@@ -561,8 +546,7 @@ resume_qmsg()
     No_direct_att = vc(VC_SET);
     MsgFolders = vc(VC_TREE);
     In_progress = vc(VC_TREE);
-    //Direct_msgs_raw = vc(VC_VECTOR);
-    //Direct_msgs = vc(VC_VECTOR);
+    
     // not perfect, but better than scanning for a max value
     // somewhere.
     Logical_clock = time(0);
@@ -1678,40 +1662,12 @@ direct_to_body(vc msgid)
 
 }
 
-// ca 2010 (actually a long time before), "ratings" are defunct, so
-// i'm repurposing the "rating" logic to implement the "pals-only"
-// functionality:
-// users can set "only-from-pals" for messages, and then have a couple
-// of options:
-// ignore msgs from non-pals
-// save msgs from non-pals, and display them the next time they are in non-pals-only-mode
-// recv all messages
-//
-// this function now means "person is in the wrong pal-space"
-//
-// return 1 if the rating isn't right for a
-// message summary item
-int
-wrong_rating(vc item)
-{
-    // if the rating isn't our rating, ignore it
-    // for now.
-    if(ZapAdvData.get_recv_all())
-        return 0;
-    if(!pal_user(item[QM_FROM]))
-        return 1;
-    return 0;
-}
-
 static void
 add_msg(vc vec, vc item)
 {
     int n = vec.num_elems();
     int i;
-    // if the rating isn't our rating, ignore it
-    // for now.
-    if(wrong_rating(item))
-        return;
+
     for(i = 0; i < n; ++i)
     {
         if(vec[i][QM_ID] == item[QM_ID])
@@ -1803,9 +1759,6 @@ query_done(vc m, void *, vc, ValidPtr)
 
     vc v2 = m[1];
 
-    int oldnum = 0;
-    if(!Cur_msgs.is_nil())
-        oldnum = Cur_msgs.num_elems();
     Cur_msgs = vc(VC_VECTOR);
 
     int i;
@@ -1836,10 +1789,7 @@ query_done(vc m, void *, vc, ValidPtr)
             continue;
         }
 
-        if(!wrong_rating(v))
-        {
-            init_msg_folder(from);
-        }
+        init_msg_folder(from);
 
         // this logical clock stuff corresponds to "receiving" the message
         // the first time we see the message summary from the server.
@@ -1869,10 +1819,6 @@ query_done(vc m, void *, vc, ValidPtr)
 
     }
 
-    if(!(oldnum == 0 && Cur_msgs.num_elems() == 0))
-        Rescan_msgs = 1;
-    if(Cur_msgs.num_elems() != oldnum)
-        Rescan_msgs = 1;
     Rescan_msgs = 1;
 }
 
@@ -2011,7 +1957,6 @@ store_direct(MMChannel *m, vc msg, void *)
     // attachment (ie, attachment msgs must go via the server.)
     if(m)
     {
-        extern vc No_direct_msgs;
         No_direct_msgs.del(from);
     }
 
@@ -2563,7 +2508,6 @@ void
 delete_msg2(vc msg_id)
 {
     del_msg(Cur_msgs, msg_id);
-    //del_msg(Direct_msgs, msg_id);
     Rescan_msgs = 1;
 }
 
@@ -3504,6 +3448,7 @@ save_to_inbox(vc m)
     // we only get sent google notifications for server messages...
     sql_add_tag(m[QQM_LOCAL_ID], "_seen");
     sql_add_tag(m[QQM_LOCAL_ID], "_inbox");
+    sql_add_tag(m[QQM_LOCAL_ID], "_local");
     return 1;
 }
 

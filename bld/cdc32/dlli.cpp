@@ -4951,9 +4951,6 @@ dwyco_set_zap_data(
     DWUIDECLARG_BEGIN
     DWUIDECLARG(bool, always_server)
     DWUIDECLARG(bool, always_accept)
-    DWUIDECLARG(bool, ignore)
-    DWUIDECLARG(bool, recv_all)
-    DWUIDECLARG(bool, zsave)
     DWUIDECLARG(bool, use_old_timing)
     DWUIDECLARG(bool, save_sent)
     DWUIDECLARG(bool, no_forward_default)
@@ -4963,10 +4960,6 @@ dwyco_set_zap_data(
     DWUISET_BEGIN(ZapAdvXfer, ZapAdvData)
     DWUISET_MEMBER(bool, always_server)
     DWUISET_MEMBER(bool, always_accept)
-// hijacked for pals-only. doesn't make sense to set it here.
-//DWUISET_MEMBER(bool, ignore)
-//DWUISET_MEMBER(bool, recv_all)
-//DWUISET_MEMBER(bool, zsave)
     DWUISET_MEMBER(bool, save_sent)
     DWUISET_MEMBER(bool, use_old_timing)
     DWUISET_MEMBER(bool, no_forward_default)
@@ -4980,8 +4973,6 @@ dwyco_get_zap_data(
     DWUIDECLARG_OUT(bool, always_server)
     DWUIDECLARG_OUT(bool, always_accept)
     DWUIDECLARG_OUT(bool, ignore)
-    DWUIDECLARG_OUT(bool, recv_all)
-    DWUIDECLARG_OUT(bool, zsave)
     DWUIDECLARG_OUT(bool, use_old_timing)
     DWUIDECLARG_OUT(bool, save_sent)
     DWUIDECLARG_OUT(bool, no_forward_default)
@@ -4992,8 +4983,6 @@ dwyco_get_zap_data(
     DWUIGET_MEMBER(bool, always_server)
     DWUIGET_MEMBER(bool, always_accept)
     DWUIGET_MEMBER(bool, ignore)
-    DWUIGET_MEMBER(bool, recv_all)
-    DWUIGET_MEMBER(bool, zsave)
     DWUIGET_MEMBER(bool, use_old_timing)
     DWUIGET_MEMBER(bool, save_sent)
     DWUIGET_MEMBER(bool, no_forward_default)
@@ -7361,7 +7350,7 @@ save_msg(vc m, vc msg_id)
         return 0;
     update_msg_idx(vcnil, body);
     //ack_direct(msg_id);
-    delete_msg2(m[1][0]);
+    delete_msg2(msg_id);
     return 1;
 
 }
@@ -7947,17 +7936,11 @@ dwyco_set_pals_only(int on)
     {
         chatq_send_pals_only(0, My_UID, vctrue);
         ZapAdvData.set_ignore(1);
-        ZapAdvData.set_recv_all(0);
-        ZapAdvData.set_zsave(0);
-        //ZapAdvData.set_send_auto_reply(send_reply);
     }
     else
     {
         chatq_send_pals_only(0, My_UID, vcnil);
         ZapAdvData.set_ignore(0);
-        ZapAdvData.set_recv_all(1);
-        ZapAdvData.set_zsave(0);
-        //ZapAdvData.set_send_auto_reply(send_reply);
     }
     ZapAdvData.save();
 }

@@ -504,7 +504,7 @@ void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
 int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
 // use this version if you just want an integer back.
-// returns -1 if the asshole factor isn't valid yet
+// returns -1 if the asshat factor isn't valid yet
 // returns -2 if the users isn't registered and the trial as expired
 // otherwise returns an integer between 0 and 99 (inclusive)
 int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
@@ -704,6 +704,7 @@ int DWYCOEXPORT dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char 
 int DWYCOEXPORT dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int uid_len, int load_sent);
 int DWYCOEXPORT dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id);
+// this doesn't make sense anymore
 //int DWYCOEXPORT dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
@@ -2208,9 +2209,6 @@ dwyco_set_zap_data(
     DWUIDECLARG_BEGIN
     DWUIDECLARG(bool, always_server)	// icuii: always 0
     DWUIDECLARG(bool, always_accept)    // icuii: 1 if "auto-accept quick messages" is checked
-    DWUIDECLARG(bool, ignore)           // icuii: always 0
-    DWUIDECLARG(bool, recv_all)         // icuii: always 1
-    DWUIDECLARG(bool, zsave)            // icuii: always 0
     DWUIDECLARG(bool, use_old_timing)   // icuii: 1 if "qm's move too fast or not at all" checked (in obscure tab)
     DWUIDECLARG(bool, save_sent)   		// icuii: 1 by default, 0 to turn off automatic "sent" qm saving
     DWUIDECLARG(bool, no_forward_default)	// icuii: 0 by default
@@ -2222,9 +2220,6 @@ dwyco_get_zap_data(
     DWUIDECLARG_BEGIN
     DWUIDECLARG_OUT(bool, always_server)
     DWUIDECLARG_OUT(bool, always_accept)
-    DWUIDECLARG_OUT(bool, ignore)
-    DWUIDECLARG_OUT(bool, recv_all)
-    DWUIDECLARG_OUT(bool, zsave)
     DWUIDECLARG_OUT(bool, use_old_timing)
     DWUIDECLARG_OUT(bool, save_sent)
     DWUIDECLARG_OUT(bool, no_forward_default)
@@ -2261,6 +2256,9 @@ dwyco_get_rate_tweaks(
 // from a tech support perspective. UPnP, when it was tested, was also
 // too flakey to rely on. ca 2018, Possibly UPnP could be revisited now that
 // routers are implementing it more reliably.
+// ca 2019, UPnP is an option that is handled and set up automatically.
+// if it doesn't get a set of ports set up, it automatically fallsback to
+// using server assisted calls as usual.
 
 #define DWYCO_MEDIA_SELECT_DIRECT_ONLY 0  	// not impl.
 #define DWYCO_MEDIA_SELECT_TCP_ONLY 1 		// force tcp SAC only

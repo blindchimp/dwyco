@@ -2209,9 +2209,6 @@ dwyco_set_zap_data(
     DWUIDECLARG_BEGIN
     DWUIDECLARG(bool, always_server)	// icuii: always 0
     DWUIDECLARG(bool, always_accept)    // icuii: 1 if "auto-accept quick messages" is checked
-    DWUIDECLARG(bool, ignore)           // icuii: always 0
-    DWUIDECLARG(bool, recv_all)         // icuii: always 1
-    DWUIDECLARG(bool, zsave)            // icuii: always 0
     DWUIDECLARG(bool, use_old_timing)   // icuii: 1 if "qm's move too fast or not at all" checked (in obscure tab)
     DWUIDECLARG(bool, save_sent)   		// icuii: 1 by default, 0 to turn off automatic "sent" qm saving
     DWUIDECLARG(bool, no_forward_default)	// icuii: 0 by default
@@ -2223,9 +2220,6 @@ dwyco_get_zap_data(
     DWUIDECLARG_BEGIN
     DWUIDECLARG_OUT(bool, always_server)
     DWUIDECLARG_OUT(bool, always_accept)
-    DWUIDECLARG_OUT(bool, ignore)
-    DWUIDECLARG_OUT(bool, recv_all)
-    DWUIDECLARG_OUT(bool, zsave)
     DWUIDECLARG_OUT(bool, use_old_timing)
     DWUIDECLARG_OUT(bool, save_sent)
     DWUIDECLARG_OUT(bool, no_forward_default)
