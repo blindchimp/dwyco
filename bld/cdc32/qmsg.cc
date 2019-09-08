@@ -1965,6 +1965,7 @@ store_direct(MMChannel *m, vc msg, void *)
     if(save_msg(msg, id))
     {
         sql_add_tag(id, "_inbox");
+        sql_add_tag(id, "_local");
         if(m)
         {
             m->send_ctrl("ok");
@@ -3071,6 +3072,8 @@ do_local_store(vc filename, vc speced_mid)
         else
         {
             update_msg_idx(recip[i], m[1]);
+            sql_add_tag(m[1][QM_BODY_ID], "_local");
+            sql_add_tag(m[1][QM_BODY_ID], "_sent");
         }
     }
     return m[1];
