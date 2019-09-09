@@ -51,7 +51,7 @@ extern "C" {
 
 typedef void *DWYCO_LIST;
 typedef DWYCO_LIST DWYCO_USER_LIST;
-typedef DWYCO_LIST DWYCO_UNSAVED_MSG_LIST;
+typedef DWYCO_LIST DWYCO_UNFETCHED_MSG_LIST;
 typedef DWYCO_LIST DWYCO_SAVED_MSG_LIST;
 typedef DWYCO_LIST DWYCO_SERVER_LIST;
 typedef DWYCO_LIST DWYCO_QUERY_RESULTS_LIST;
@@ -504,7 +504,7 @@ void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
 int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
 // use this version if you just want an integer back.
-// returns -1 if the asshole factor isn't valid yet
+// returns -1 if the asshat factor isn't valid yet
 // returns -2 if the users isn't registered and the trial as expired
 // otherwise returns an integer between 0 and 99 (inclusive)
 int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
@@ -680,7 +680,7 @@ void DWYCOEXPORT dwyco_set_channel_destroy_callback(int chan_id,
 void DWYCOEXPORT dwyco_get_my_uid(const char **uid_out, int *len_out);
 #define DWYCO_VIDEO_PREVIEW_CHAN 1
 int DWYCOEXPORT dwyco_enable_video_capture_preview(int on);
-void DWYCOEXPORT dwyco_add_entropy_timer(char *crap, int crap_len);
+void DWYCOEXPORT dwyco_add_entropy_timer(const char *crap, int crap_len);
 
 int DWYCOEXPORT dwyco_get_refresh_users();
 void DWYCOEXPORT dwyco_set_refresh_users(int);
@@ -702,10 +702,11 @@ int DWYCOEXPORT dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid
 int DWYCOEXPORT dwyco_get_message_index2(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, int *available_count_out, int load_count);
 int DWYCOEXPORT dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid, long logical_clock);
 int DWYCOEXPORT dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int uid_len, int load_sent);
-int DWYCOEXPORT dwyco_get_unsaved_messages(DWYCO_UNSAVED_MSG_LIST *list_out, const char *uid, int len_uid);
-int DWYCOEXPORT dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id);
-int DWYCOEXPORT dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
-int DWYCOEXPORT dwyco_delete_unsaved_message(const char *msg_id);
+int DWYCOEXPORT dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
+int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id);
+// this doesn't make sense anymore
+//int DWYCOEXPORT dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
+int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
 int DWYCOEXPORT dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
@@ -758,7 +759,15 @@ int DWYCOEXPORT dwyco_clear_user_unfav(const char *uid, int len_uid);
 void DWYCOEXPORT dwyco_set_msg_tag(const char *mid, const char *tag);
 void DWYCOEXPORT dwyco_unset_msg_tag(const char *mid, const char *tag);
 void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
+
+// WARNING: the uid is returned in ASCII hex instead of binary like the
+// rest of the interface. this api is a bit sketchy so i'm not sure i want
+// to fix it. also note, setting a (tag, mid) pair will not be returned
+// here, because there wouldn't be an associated uid...
+#define DWYCO_TAGGED_MIDS_MID "001"
+#define DWYCO_TAGGED_MIDS_HEX_UID "000"
 int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
+
 int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
@@ -857,7 +866,7 @@ int DWYCOEXPORT dwyco_get_pals_only();
 // There is no way to get the msgid.
 // obviously, this api needs to be improved a bit to make it possible to
 // provide an easier UI.
-int DWYCOEXPORT dwyco_set_auto_reply_msg(const char *text, int len_text, int compid);
+int DWYCOEXPORT dwyco_set_auto_reply_msgNA(const char *text, int len_text, int compid);
 
 DWYCO_LIST DWYCOEXPORT dwyco_uid_to_info(const char *user_id, int len_uid, int *cant_resolve_now);
 int DWYCOEXPORT dwyco_delete_user(const char *uid, int uid_len);
@@ -1084,8 +1093,8 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 // fetched from the server, what_out will be one of the *SUMMARY* types.
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
 int DWYCOEXPORT dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
-int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out);
-int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out);
+int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
+int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out);
 
 // "what" returns from the dwyco_is_special_message function
 #define DWYCO_SUMMARY_PAL_AUTH_REQ 0
@@ -1310,10 +1319,10 @@ dwyco_copy_out_file_zap(
 
 int
 DWYCOEXPORT
-dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out);
+dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out);
 
 int DWYCOEXPORT
-dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filename);
+dwyco_copy_out_unsaved_file_zap(DWYCO_UNFETCHED_MSG_LIST m, const char *dst_filename);
 
 int DWYCOEXPORT dwyco_is_file_zap(int compid);
 
@@ -2200,9 +2209,6 @@ dwyco_set_zap_data(
     DWUIDECLARG_BEGIN
     DWUIDECLARG(bool, always_server)	// icuii: always 0
     DWUIDECLARG(bool, always_accept)    // icuii: 1 if "auto-accept quick messages" is checked
-    DWUIDECLARG(bool, ignore)           // icuii: always 0
-    DWUIDECLARG(bool, recv_all)         // icuii: always 1
-    DWUIDECLARG(bool, zsave)            // icuii: always 0
     DWUIDECLARG(bool, use_old_timing)   // icuii: 1 if "qm's move too fast or not at all" checked (in obscure tab)
     DWUIDECLARG(bool, save_sent)   		// icuii: 1 by default, 0 to turn off automatic "sent" qm saving
     DWUIDECLARG(bool, no_forward_default)	// icuii: 0 by default
@@ -2214,9 +2220,6 @@ dwyco_get_zap_data(
     DWUIDECLARG_BEGIN
     DWUIDECLARG_OUT(bool, always_server)
     DWUIDECLARG_OUT(bool, always_accept)
-    DWUIDECLARG_OUT(bool, ignore)
-    DWUIDECLARG_OUT(bool, recv_all)
-    DWUIDECLARG_OUT(bool, zsave)
     DWUIDECLARG_OUT(bool, use_old_timing)
     DWUIDECLARG_OUT(bool, save_sent)
     DWUIDECLARG_OUT(bool, no_forward_default)
@@ -2253,6 +2256,9 @@ dwyco_get_rate_tweaks(
 // from a tech support perspective. UPnP, when it was tested, was also
 // too flakey to rely on. ca 2018, Possibly UPnP could be revisited now that
 // routers are implementing it more reliably.
+// ca 2019, UPnP is an option that is handled and set up automatically.
+// if it doesn't get a set of ports set up, it automatically fallsback to
+// using server assisted calls as usual.
 
 #define DWYCO_MEDIA_SELECT_DIRECT_ONLY 0  	// not impl.
 #define DWYCO_MEDIA_SELECT_TCP_ONLY 1 		// force tcp SAC only

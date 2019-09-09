@@ -236,6 +236,7 @@ protected slots:
     virtual void camera_event(int);
 };
 
+#if 0
 class composer_autoreply : public composer
 {
     Q_OBJECT
@@ -252,6 +253,7 @@ protected slots:
     virtual void on_actionSend_Message_triggered(bool);
     //virtual void camera_event(int);
 };
+#endif
 
 void preview_file_zap(DWYCO_SAVED_MSG_LIST sm, vidlab *lab, DwOString user_fn, QByteArray uid, DwOString mid, int no_resize = 0);
 #endif

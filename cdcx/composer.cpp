@@ -1983,6 +1983,7 @@ composer_forward::switch_composition()
 
 }
 
+#if 0
 //----- AUTOREPLY -------
 // disable most of the "recipient" stuff
 composer_autoreply::composer_autoreply(QWidget *par, Qt::WindowFlags f) :
@@ -2005,6 +2006,7 @@ composer_autoreply::composer_autoreply(QWidget *par, Qt::WindowFlags f) :
 void
 composer_autoreply::on_actionSend_Message_triggered(bool)
 {
+#if 0
     QString a;
     QString b;
     b = ui.textEdit->toPlainText();
@@ -2019,7 +2021,9 @@ composer_autoreply::on_actionSend_Message_triggered(bool)
     modified = 0;
     has_attachment = 0;
     close();
+#endif
 }
+#endif
 
 void composer::on_actionShow_Chatbox_triggered()
 {
