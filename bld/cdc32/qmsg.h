@@ -41,7 +41,7 @@ vc save_body(vc msgid, vc from, vc text, vc attachment_id, vc date, vc rating, v
              vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock);
 int uid_ignored(vc uid);
 void delete_msg2(vc msgid);
-void delete_body2(vc user_id, vc msgid);
+//void delete_body2(vc user_id, vc msgid);
 void delete_body3(vc user_id, vc msgid, int inhibit_indexing);
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,

@@ -7429,13 +7429,13 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
         se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED, q->msg_id, vcnil);
         return;
     }
-    if(!save_to_inbox(dm))
-    {
-        if(q->msg_download_callback)
-            (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_SAVE_FAILED, q->msg_id, q->mdc_arg1);
-        se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
-        return;
-    }
+//    if(!save_to_inbox(dm))
+//    {
+//        if(q->msg_download_callback)
+//            (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_SAVE_FAILED, q->msg_id, q->mdc_arg1);
+//        se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
+//        return;
+//    }
     if(q->msg_download_callback)
         (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_OK, q->msg_id, q->mdc_arg1);
     se_emit_msg(SE_MSG_DOWNLOAD_OK, q->msg_id, vcnil);
@@ -7448,15 +7448,8 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
 static void
 eo_xfer(MMChannel *mc, vc m, void *, ValidPtr vp)
 {
-    vc msg = m[1];
-    vc from_user = m[1][0];
+    // we can resume partial fetches now, so don't delete the attachment
 
-    if(mc->xfer_failed)
-    {
-        // we can resume partial fetches now, so don't delete the attachment
-        //DeleteFile(newfn((const char *)mc->remote_filename).c_str());
-        delete_body2(from_user, m[0]);
-    }
     if(!vp.is_valid())
         return;
     BodyView *q = (BodyView *)(void *)vp;
@@ -7475,15 +7468,7 @@ eo_xfer(MMChannel *mc, vc m, void *, ValidPtr vp)
         delete q;
         return;
     }
-    // don't refile the attachment at this point.
-    // in icuii, the message becomes an "unsaved message"
-    // that must be explicitly saved (unlike cdc, where it is
-    // automatically saved.
-    //q->refile_attachment(mc->remote_filename, from_user);
-    //q->view(load_body_by_id(msg[0], m[0]));
 
-    // so we need to save the body to the inbox,
-    // and signal that the msg can be viewed.
 
 #ifdef DWYCO_CRYPTO_PIPELINE
     if(!q->body[QQM_BODY_DHSF].is_nil())
@@ -7549,35 +7534,11 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
         if(q->msg_download_callback)
             (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
-        // probably ought to delete the message from the in box at
-        // this point.
         q->cancel();
         delete q;
         return;
     }
 
-    // note: for icuii, we don't want to save yet.
-    // want to save to inbox but only when the entire message
-    // shows up... so for now we just save this in the context
-#if 0
-    if(!save_body(m[1][0],
-                  msg[QQM_BODY_FROM],
-                  msg[QQM_BODY_TEXT],
-                  msg[QQM_BODY_ATTACHMENT],
-                  msg[QQM_BODY_DATE],
-                  msg[QQM_BODY_RATING],
-                  msg[QQM_BODY_AUTH_VEC],
-                  msg[QQM_BODY_FORWARDED_BODY],
-                  msg[QQM_BODY_NEW_TEXT]))
-    {
-        if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_SAVE_FAILED, 0);
-        Qck_in_progress.del(m[1][0]);
-        q->cancel();
-        delete q;
-        return;
-    }
-#endif
     q->body = msg;
 
     if(msg[QQM_BODY_ATTACHMENT].is_nil())

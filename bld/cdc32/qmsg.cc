@@ -2513,24 +2513,24 @@ delete_msg2(vc msg_id)
 }
 
 
-void
-delete_body2(vc user_id, vc msg_id)
-{
-    if(user_id.len() == 0)
-        return;
-    DwString s((const char *)to_hex(user_id));
-    DwString t((const char *)msg_id);
+//void
+//delete_body2(vc user_id, vc msg_id)
+//{
+//    if(user_id.len() == 0)
+//        return;
+//    DwString s((const char *)to_hex(user_id));
+//    DwString t((const char *)msg_id);
 
-    s += ".usr";
-    s = newfn(s);
-    s += DIRSEPSTR "";
-    s += t;
-    s += ".bod";
+//    s += ".usr";
+//    s = newfn(s);
+//    s += DIRSEPSTR "";
+//    s += t;
+//    s += ".bod";
 
-    DeleteFile(s.c_str());
-    remove_msg_idx(user_id, msg_id);
-    sql_fav_remove_mid(msg_id);
-}
+//    DeleteFile(s.c_str());
+//    remove_msg_idx(user_id, msg_id);
+//    sql_fav_remove_mid(msg_id);
+//}
 
 void
 delete_body3(vc user_id, vc msg_id, int inhibit_indexing)
