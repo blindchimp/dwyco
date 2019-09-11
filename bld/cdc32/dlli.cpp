@@ -1031,9 +1031,6 @@ dwyco_resume()
     resume_qmsg();
     init_prf_cache();
     init_pk_cache();
-    // inbox may have changed if messages were delivered
-    // directly while we were asleep
-    load_inbox();
     start_database_thread();
     Dwyco_suspended = 0;
 }
@@ -1711,7 +1708,6 @@ login_auth_results(vc m, void *, vc, ValidPtr)
             dwyco::Enable_backups = !m[3][9].is_nil();
             if(m[3][10].type() == VC_INT)
                 dwyco::Backup_freq = (int)m[3][10];
-            load_inbox();
             pal_login();
         }
         if(m[2] == created)

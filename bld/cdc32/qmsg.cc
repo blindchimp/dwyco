@@ -3434,11 +3434,6 @@ qd_purge_outbox()
     delete_findvec(&fv);
 }
 
-void
-load_inbox()
-{
-
-}
 
 int
 save_to_inbox(vc m)
