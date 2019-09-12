@@ -1669,6 +1669,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         // note: background process may have updated messages on disk
         // *and* we may not get to the server, so force a reload here just
         // in case.
+        load_inbox_tags_to_unviewed();
         reload_conv_list();
         Suspended = 0;
 #ifdef ANDROID

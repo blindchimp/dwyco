@@ -228,6 +228,11 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
     {
         msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
         mr->reload_inbox_model();
+        if(mlm->uid().length() > 0)
+        {
+            add_unviewed(mlm->uid().toLatin1(), mid);
+            dwyco_unset_msg_tag(mid.constData(), "_inbox");
+        }
     }
     // FALLTHRU
     default:

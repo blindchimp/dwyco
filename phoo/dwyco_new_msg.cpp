@@ -48,8 +48,8 @@ save_unviewed()
     return 1;
 }
 
-static void
-add_unviewed(const QByteArray& uid, const QByteArray& mid)
+void
+add_unviewed(const QByteArray& uid, const QByteArray& mid, int no_save)
 {
     QList<QByteArray> ql = Unviewed_msgs.values(uid);
     if(ql.contains(mid))
@@ -58,8 +58,26 @@ add_unviewed(const QByteArray& uid, const QByteArray& mid)
     // note: ideally we would sort it in by the time the msg was sent, tho this
     // method usually works (messages can appear from different
     // sources like server vs. direct at different times.)
+    if(!no_save)
+        save_unviewed();
+}
 
-    save_unviewed();
+void
+load_inbox_tags_to_unviewed()
+{
+    // use this after resume to make sure new messages
+    // that were received are flagged properly
+    DWYCO_LIST tm;
+    if(!dwyco_get_tagged_mids(&tm, "_inbox"))
+        return;
+    simple_scoped qtm(tm);
+    for(int i = 0; i < qtm.rows(); ++i)
+    {
+        QByteArray uid = QByteArray::fromHex(qtm.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID));
+        QByteArray mid = qtm.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        add_unviewed(uid, mid);
+    }
+    dwyco_unset_all_msg_tag("_inbox");
 }
 
 int
