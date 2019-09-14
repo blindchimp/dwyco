@@ -40,8 +40,6 @@
 #include "sqlbq.h"
 #include "favmsg.h"
 
-vc vclh_serialize(vc);
-
 namespace dwyco {
 
 #define USER_BOMB(a, b) {return (b);}

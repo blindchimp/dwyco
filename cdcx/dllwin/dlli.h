@@ -502,12 +502,14 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
+#ifdef DWYCO_ASSHAT
 int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
 // use this version if you just want an integer back.
 // returns -1 if the asshat factor isn't valid yet
 // returns -2 if the users isn't registered and the trial as expired
 // otherwise returns an integer between 0 and 99 (inclusive)
 int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
+#endif
 
 void DWYCOEXPORT dwyco_trace_init();
 void DWYCOEXPORT dwyco_field_debug(const char *var, int num);
