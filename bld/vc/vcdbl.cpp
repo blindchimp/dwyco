@@ -141,9 +141,6 @@ vc_double::hashValue() const {return (hashValueType)(d * 100.);}
 void
 vc_double::printOn(VcIO outputStream) {outputStream << d;}
 
-int
-vc_double::func_eq(const vc&) const {bomb_op_func(); return 0;}
-
 long
 vc_double::xfer_out(vcxstream& vcx)
 {

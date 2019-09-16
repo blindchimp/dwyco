@@ -74,8 +74,6 @@ public:
 	int double_ge(const vc& v) const ;
 	int double_eq(const vc& v) const ;
 	int double_ne(const vc& v) const ;
-
-	int func_eq(const vc& v) const;
 	
 	enum vc_type type() const ;
 

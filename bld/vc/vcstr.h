@@ -114,8 +114,6 @@ public:
 	virtual int str_gt(const vc& v) const ;
 	virtual int str_ge(const vc& v) const ;
 
-	int func_eq(const vc& v) const;
-
 	hashValueType hashValue() const ;
 	void printOn(VcIO outputStream) ;
 

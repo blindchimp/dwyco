@@ -342,8 +342,6 @@ vc_string::printOn(VcIO outputStream)
 	}
 }
 
-int
-vc_string::func_eq(const vc&) const {bomb_op_func(); return 0;}
 
 long
 vc_string::xfer_out(vcxstream& vcx)
