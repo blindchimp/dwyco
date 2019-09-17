@@ -761,7 +761,7 @@ msglist_raw::reload_model(int force)
             endResetModel();
         else
         {
-            beginInsertRows(QModelIndex(), 0, count_msg_idx - 1);
+            beginInsertRows(QModelIndex(), 0, count_msg_idx == 0 ? 0 : (count_msg_idx - 1));
             endInsertRows();
         }
         return;
@@ -783,7 +783,10 @@ msglist_raw::reload_model(int force)
         endResetModel();
     else
     {
-        beginInsertRows(QModelIndex(), 0, count_msg_idx + count_qd_msgs + count_inbox_msgs - 1);
+        int endidx = count_msg_idx + count_qd_msgs + count_inbox_msgs - 1;
+        if(endidx < 0)
+            endidx = 0;
+        beginInsertRows(QModelIndex(), 0, endidx);
         endInsertRows();
     }
 }
