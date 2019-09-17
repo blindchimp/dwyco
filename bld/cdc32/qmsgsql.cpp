@@ -35,27 +35,39 @@
 #include "sepstr.h"
 #include "sqlbq.h"
 #include "favmsg.h"
+#include "simplesql.h"
 
 namespace dwyco {
 
+class QMsgSql : public SimpleSql
+{
+public:
+    QMsgSql() : SimpleSql("mi.sql") {}
+    void init_schema(const DwString &schema_name);
+};
 
-static sqlite3 *Db;
+static QMsgSql *sDb;
 
 static
 void
 sql_simple(const char *sql)
 {
-    VCArglist a;
-    a.append(sql);
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sDb->sql_simple(sql);
     if(res.is_nil())
         throw -1;
+
+//    VCArglist a;
+//    a.append(sql);
+//    vc res = sql_bulk_query(&a);
+//    if(res.is_nil())
+//        throw -1;
 }
 
-static
 void
-init_schema()
+QMsgSql::init_schema(const DwString& schema_name)
 {
+    if(schema_name.eq("main"))
+    {
     // WARNING: the order and number of the fields in this table
     // is the same as the #defines for the msg index in
     // qmsg.h
@@ -81,29 +93,27 @@ init_schema()
     sql_simple("create index if not exists date_idx on msg_idx(date desc);");
     sql_simple("create index if not exists sent_idx on msg_idx(is_sent);");
     sql_simple("create index if not exists att_idx on msg_idx(has_attachment);");
+    }
 
 }
 
 void
 init_qmsg_sql()
 {
-    if(Db)
+    if(sDb)
         oopanic("already init");
-    if(sqlite3_open(newfn("mi.sql").c_str(), &Db) != SQLITE_OK)
-    {
-        Db = 0;
-        return;
-    }
-    init_schema();
+    sDb = new QMsgSql;
+    if(!sDb->init())
+        throw -1;
+    sDb->attach("fav.sql", "mt");
 }
 
 void
 exit_qmsg_sql()
 {
-    if(!Db)
+    if(!sDb)
         return;
-    sqlite3_close_v2(Db);
-    Db = 0;
+    sDb->exit();
 }
 
 
@@ -112,28 +122,28 @@ static
 void
 sql_start_transaction()
 {
-    sql_simple("savepoint mi;");
+    sDb->start_transaction();
 }
 
 static
 void
 sql_commit_transaction()
 {
-    sql_simple("release mi;");
+    sDb->commit_transaction();
 }
 
 static
 void
 sql_sync_off()
 {
-    sql_simple("pragma synchronous=off;");
+    sDb->sync_off();
 }
 
 static
 void
 sql_sync_on()
 {
-    sql_simple("pragma synchronous=full;");
+    sDb->sync_on();
 
 }
 
@@ -141,9 +151,14 @@ static
 void
 sql_rollback_transaction()
 {
-    VCArglist a;
-    a.append("rollback to savepoint mi;");
-    sqlite3_bulk_query(Db, &a);
+    sDb->rollback_transaction();
+}
+
+static
+vc
+sql_bulk_query(const VCArglist *a)
+{
+    return sDb->query(a);
 }
 
 static
@@ -158,7 +173,7 @@ sql_insert_record(vc entry, vc assoc_uid)
         a.append(entry[i]);
     a.append(to_hex(assoc_uid));
 
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sql_bulk_query(&a);
     if(res.is_nil())
         throw -1;
 }
@@ -170,7 +185,7 @@ sql_record_most_recent(vc uid)
     VCArglist a;
     a.append("insert or ignore into most_recent_msg select assoc_uid, max(date) from msg_idx where assoc_uid = ?1 limit 1;");
     a.append(to_hex(uid));
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sql_bulk_query(&a);
     if(res.is_nil())
         throw -1;
 }
@@ -182,7 +197,7 @@ sql_delete_mid(vc mid)
     VCArglist a;
     a.append("delete from msg_idx where mid = ?1;");
     a.append(mid);
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sql_bulk_query(&a);
     if(res.is_nil())
         throw -1;
 
@@ -193,7 +208,7 @@ sql_get_max_logical_clock()
 {
     VCArglist a;
     a.append("select max(logical_clock) from msg_idx;");
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sql_bulk_query(&a);
     if(res.is_nil())
         throw -1;
     if(res[0][0].type() != VC_INT)
@@ -220,7 +235,7 @@ sql_get_recent_users(int *total_out)
         {
             VCArglist a;
             a.append("select count(distinct assoc_uid) from foo;");
-            res = sqlite3_bulk_query(Db, &a);
+            res = sql_bulk_query(&a);
             if(res.is_nil())
                 throw -1;
             *total_out = (int)res[0][0];
@@ -231,7 +246,7 @@ sql_get_recent_users(int *total_out)
 #else
         a.append("select distinct assoc_uid from foo order by \"max(date)\" desc limit 100;");
 #endif
-        res = sqlite3_bulk_query(Db, &a);
+        res = sql_bulk_query(&a);
         if(res.is_nil())
             throw -1;
 
@@ -263,7 +278,7 @@ sql_get_recent_users2(int max_age, int max_count)
         a.append("select distinct assoc_uid from foo where strftime('%s', 'now') - \"max(date)\" < ?1 order by \"max(date)\" desc limit ?2;");
         a.append(max_age);
         a.append(max_count);
-        res = sqlite3_bulk_query(Db, &a);
+        res = sql_bulk_query(&a);
         if(res.is_nil())
             throw -1;
 
@@ -298,7 +313,7 @@ sql_get_old_ignored_users()
         sql_simple("delete from foo where (select count(*) from msg_idx where foo.assoc_uid = assoc_uid and has_attachment notnull and is_sent isnull limit 3) > 2;");
         sql_simple("delete from foo where (select count(*) from msg_idx where foo.assoc_uid = assoc_uid limit 5) > 4;");
         a.append("select * from foo;");
-        vc res = sqlite3_bulk_query(Db, &a);
+        vc res = sql_bulk_query(&a);
         if(res.is_nil())
             throw -1;
 
@@ -326,7 +341,7 @@ sql_get_empty_users()
         sql_start_transaction();
 
         a.append("select uid from indexed_flag where not exists (select * from msg_idx where uid = assoc_uid);");
-        vc res = sqlite3_bulk_query(Db, &a);
+        vc res = sql_bulk_query(&a);
         if(res.is_nil())
             throw -1;
         sql_commit_transaction();
@@ -353,7 +368,7 @@ sql_get_no_response_users()
         sql_start_transaction();
 
         a.append("select uid from indexed_flag where not exists(select * from msg_idx where uid = assoc_uid and is_sent isnull);");
-        vc res = sqlite3_bulk_query(Db, &a);
+        vc res = sql_bulk_query(&a);
         if(res.is_nil())
             throw -1;
         sql_commit_transaction();
@@ -382,7 +397,7 @@ sql_remove_uid(vc uid)
             VCArglist a;
             a.append("delete from indexed_flag where uid = ?1;");
             a.append(to_hex(uid));
-            res = sqlite3_bulk_query(Db, &a);
+            res = sql_bulk_query(&a);
             if(res.is_nil())
                 throw -1;
         }
@@ -390,7 +405,7 @@ sql_remove_uid(vc uid)
             VCArglist a;
             a.append("delete from msg_idx where assoc_uid = ?1;");
             a.append(to_hex(uid));
-            res = sqlite3_bulk_query(Db, &a);
+            res = sql_bulk_query(&a);
             if(res.is_nil())
                 throw -1;
         }
@@ -398,7 +413,7 @@ sql_remove_uid(vc uid)
             VCArglist a;
             a.append("delete from most_recent_msg where uid = ?1;");
             a.append(to_hex(uid));
-            res = sqlite3_bulk_query(Db, &a);
+            res = sql_bulk_query(&a);
             if(res.is_nil())
                 throw -1;
         }
@@ -422,7 +437,7 @@ sql_clear_uid(vc uid)
 
         a.append("delete from msg_idx where assoc_uid = ?1;");
         a.append(to_hex(uid));
-        vc res = sqlite3_bulk_query(Db, &a);
+        vc res = sql_bulk_query(&a);
         if(res.is_nil())
             throw -1;
 
@@ -442,7 +457,7 @@ sql_insert_indexed_flag(vc uid)
     VCArglist a;
     a.append("insert or replace into indexed_flag values(?1);");
     a.append(to_hex(uid));
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sql_bulk_query(&a);
     if(res.is_nil())
         throw -1;
 
@@ -455,7 +470,7 @@ sql_check_indexed_flag(vc uid)
     VCArglist a;
     a.append("select count(*) from indexed_flag where uid = ?1;");
     a.append(to_hex(uid));
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sql_bulk_query(&a);
     if(res.is_nil())
         throw -1;
     if(res[0][0] == vc(0))
@@ -470,7 +485,7 @@ sql_reset_indexed_flag(vc uid)
     VCArglist a;
     a.append("delete from indexed_flag where uid = ?1;");
     a.append(to_hex(uid));
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sql_bulk_query(&a);
     if(res.is_nil())
         throw -1;
 }
@@ -487,7 +502,7 @@ sql_load_index(vc uid, int max_count)
            " from msg_idx where assoc_uid = ?1 order by logical_clock desc limit ?2;");
     a.append(to_hex(uid));
     a.append(max_count);
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sql_bulk_query(&a);
     if(res.is_nil())
         throw -1;
     return res;
@@ -500,7 +515,7 @@ sql_count_index(vc uid)
     VCArglist a;
     a.append("select count(*) from msg_idx where assoc_uid = ?1;");
     a.append(to_hex(uid));
-    vc res = sqlite3_bulk_query(Db, &a);
+    vc res = sql_bulk_query(&a);
     if(res.is_nil())
         throw -1;
     return (int)res[0][0];
@@ -669,7 +684,7 @@ msg_idx_get_new_msgs(vc uid, vc logical_clock)
         a.append(to_hex(uid));
         a.append(logical_clock);
 
-        vc res = sqlite3_bulk_query(Db, &a);
+        vc res = sql_bulk_query(&a);
         if(res.is_nil())
             throw -1;
         sql_commit_transaction();
@@ -694,7 +709,7 @@ sql_get_uid_from_mid(vc mid)
                " from msg_idx where mid = ?1 limit 1");
         a.append(mid);
 
-        vc res = sqlite3_bulk_query(Db, &a);
+        vc res = sql_bulk_query(&a);
         if(res.is_nil())
             throw -1;
         sql_commit_transaction();
@@ -788,8 +803,8 @@ vc
 get_unfav_msgids(vc uid)
 {
     vc ret(VC_VECTOR);
-    DwString mfn = newfn("fav.sql");
-    sql_simple(DwString("attach '%1' as mt;").arg(mfn).c_str());
+    //DwString mfn = newfn("fav.sql");
+    //sql_simple(DwString("attach '%1' as mt;").arg(mfn).c_str());
     try
     {
         sql_start_transaction();
@@ -797,7 +812,7 @@ get_unfav_msgids(vc uid)
         a.append("select mid as foo from msg_idx where assoc_uid = ?1 "
                  "and not exists (select * from msg_tags2 where mid = foo and tag = '_fav')");
         a.append(to_hex(uid));
-        vc res = sqlite3_bulk_query(Db, &a);
+        vc res = sql_bulk_query(&a);
         if(res.is_nil())
             throw -1;
         int n = res.num_elems();
@@ -812,7 +827,7 @@ get_unfav_msgids(vc uid)
     {
         sql_rollback_transaction();
     }
-    sql_simple("detach mt;");
+    //sql_simple("detach mt;");
     return ret;
 }
 
