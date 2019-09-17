@@ -2657,7 +2657,7 @@ DwycoCore::service_channels()
         dwyco_get_unfetched_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;
-        dwyco_process_unsaved_list(uml, uids_out);
+        dwyco_process_unfetched_list(uml, uids_out);
         dwyco_list_release(uml);
 
         update_unread_count(has_unviewed_msgs());
