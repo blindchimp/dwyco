@@ -34,8 +34,8 @@
 #include "filetube.h"
 #include "sepstr.h"
 #include "sqlbq.h"
-#include "favmsg.h"
 #include "simplesql.h"
+#include "qmsgsql.h"
 
 namespace dwyco {
 
@@ -44,6 +44,7 @@ class QMsgSql : public SimpleSql
 public:
     QMsgSql() : SimpleSql("mi.sql") {}
     void init_schema(const DwString &schema_name);
+    void init_schema_fav();
 };
 
 static QMsgSql *sDb;
@@ -61,6 +62,68 @@ sql_simple(const char *sql)
 //    vc res = sql_bulk_query(&a);
 //    if(res.is_nil())
 //        throw -1;
+}
+
+void
+QMsgSql::init_schema_fav()
+{
+    sql_simple("create table if not exists mt.fav_msgs ("
+               "from_uid text,"
+               "mid text unique on conflict ignore);"
+              );
+    sql_simple("create table if not exists mt.msg_tags(from_uid text, mid text, tag text, unique(from_uid, mid, tag) on conflict ignore)");
+
+
+    sql_simple("create index if not exists mt.from_uid_idx on fav_msgs(from_uid);");
+    sql_simple("create index if not exists mt.mid_idx on fav_msgs(mid);");
+
+    sql_simple("create index if not exists mt.mt_from_uid_idx on msg_tags(from_uid)");
+    sql_simple("create index if not exists mt.mt_mid_idx on msg_tags(mid)");
+    sql_simple("create index if not exists mt.mt_tag_idx on msg_tags(tag)");
+
+    sql_simple("insert into mt.msg_tags (from_uid, mid, tag) select from_uid, mid, '_fav' from mt.fav_msgs");
+    sql_simple("delete from mt.fav_msgs");
+
+    try {
+        start_transaction();
+        sql_simple("create table if not exists mt.msg_tags2(mid text, tag text, unique(mid, tag) on conflict ignore)");
+        sql_simple("insert into mt.msg_tags2 (mid, tag) select mid, tag from mt.msg_tags");
+        sql_simple("delete from mt.msg_tags");
+        sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
+        sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
+        commit_transaction();
+    } catch(...) {
+        rollback_transaction();
+    }
+
+    try {
+        start_transaction();
+        vc res = sql_simple("pragma mt.user_version");
+        long v = res[0][0];
+        if(v == 0)
+        {
+            sql_simple("alter table mt.msg_tags2 add time integer default 0");
+            sql_simple("update mt.msg_tags2 set time = 0");
+            sql_simple("pragma mt.user_version = 1");
+        }
+        commit_transaction();
+    } catch (...) {
+        rollback_transaction();
+    }
+
+    try {
+        start_transaction();
+        vc res = sql_simple("pragma mt.user_version");
+        long v = res[0][0];
+        if(v == 1)
+        {
+            sql_simple("update mt.msg_tags2 set time = 0");
+            sql_simple("pragma mt.user_version = 2");
+        }
+        commit_transaction();
+    } catch (...) {
+        rollback_transaction();
+    }
 }
 
 void
@@ -94,6 +157,10 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists sent_idx on msg_idx(is_sent);");
     sql_simple("create index if not exists att_idx on msg_idx(has_attachment);");
     }
+    else if(schema_name.eq("mt"))
+	{
+		init_schema_fav();
+	}
 
 }
 
@@ -894,6 +961,249 @@ sql_index_all()
 
     }
     sql_sync_on();
+}
+
+// FAVMSG
+
+
+static
+void
+sql_insert_record_mt(vc mid, vc tag)
+{
+    VCArglist a;
+    a.append("replace into msg_tags2 (mid, tag, time) values(?1,?2,strftime('%s','now'));");
+    a.append(mid);
+    a.append(tag);
+
+    vc res = sql_bulk_query(&a);
+    if(res.is_nil())
+        throw -1;
+}
+
+void
+sql_add_tag(vc mid, vc tag)
+{
+    try
+    {
+        sql_start_transaction();
+        sql_insert_record_mt(mid, tag);
+        sql_commit_transaction();
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+    }
+}
+
+void
+sql_remove_tag(vc tag)
+{
+    try
+    {
+        sql_start_transaction();
+        VCArglist a;
+        a.append("delete from msg_tags2 where tag = ?1;");
+        a.append(tag);
+        vc res = sql_bulk_query(&a);
+        if(res.is_nil())
+            throw -1;
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+
+}
+
+void
+sql_fav_remove_uid(vc uid)
+{
+    //DwString mfn = newfn("mi.sql");
+    //sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
+    try
+    {
+        sql_start_transaction();
+        VCArglist a;
+        a.append("delete from msg_tags2 where mid in (select mid from msg_idx where assoc_uid = ?1)");
+        a.append(to_hex(uid));
+        vc res = sql_bulk_query(&a);
+        if(res.is_nil())
+            throw -1;
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+    //sql_simple("detach mi;");
+
+}
+
+void
+sql_fav_remove_mid(vc mid)
+{
+    try
+    {
+        sql_start_transaction();
+        VCArglist a;
+        a.append("delete from msg_tags2 where mid = ?1;");
+        a.append(mid);
+        vc res = sql_bulk_query(&a);
+        if(res.is_nil())
+            throw -1;
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+}
+
+void
+sql_remove_mid_tag(vc mid, vc tag)
+{
+    try
+    {
+        sql_start_transaction();
+        VCArglist a;
+        a.append("delete from msg_tags2 where mid = ?1 and tag = ?2;");
+        a.append(mid);
+        a.append(tag);
+        vc res = sql_bulk_query(&a);
+        if(res.is_nil())
+            throw -1;
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+}
+
+void
+sql_fav_set_fav(vc mid, int fav)
+{
+    if(!fav)
+    {
+        sql_remove_mid_tag(mid, "_fav");
+    }
+    else
+    {
+        sql_insert_record_mt(mid, "_fav");
+    }
+}
+
+int
+sql_fav_has_fav(vc from_uid)
+{
+    return sql_uid_has_tag(from_uid, "_fav");
+}
+
+int
+sql_fav_is_fav(vc mid)
+{
+    VCArglist a;
+    a.append("select 1 from msg_tags2 where mid = ?1 and tag = '_fav' limit 1;");
+    a.append(mid);
+
+    vc res = sql_bulk_query(&a);
+    if(res.is_nil())
+        return 0;
+
+    return res.num_elems() > 0;
+
+}
+
+vc
+sql_get_tagged_mids(vc tag)
+{
+    //DwString mfn = newfn("mi.sql");
+    //sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
+    vc res;
+    try {
+        VCArglist a;
+        a.append("select assoc_uid, mid from msg_tags2,msg_idx using(mid) where tag = ?1 order by logical_clock asc;");
+        a.append(tag);
+
+        res = sql_bulk_query(&a);
+        if(res.is_nil())
+            throw -1;
+    } catch (...) {
+        res = vc(VC_VECTOR);
+    }
+    //sql_simple("detach mi;");
+
+    return res;
+
+}
+
+vc
+sql_get_tagged_idx(vc tag)
+{
+    //DwString mfn = newfn("mi.sql");
+    //sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
+    vc res;
+    try {
+        VCArglist a;
+        a.append("select "
+                 "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+                 "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
+                 " from msg_tags2,msg_idx using(mid) where tag = ?1 order by logical_clock desc;");
+        a.append(tag);
+
+        res = sql_bulk_query(&a);
+        if(res.is_nil())
+            throw -1;
+    } catch (...) {
+        res = vc(VC_VECTOR);
+    }
+    //sql_simple("detach mi;");
+
+    return res;
+
+}
+
+int
+sql_mid_has_tag(vc mid, vc tag)
+{
+    VCArglist a;
+    a.append("select 1 from msg_tags2 where mid = ?1 and tag = ?2 limit 1;");
+    a.append(mid);
+    a.append(tag);
+
+    vc res = sql_bulk_query(&a);
+    if(res.is_nil())
+        return 0;
+
+    return res.num_elems() > 0;
+
+}
+
+int
+sql_uid_has_tag(vc uid, vc tag)
+{
+    //DwString mfn = newfn("mi.sql");
+    //sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
+    int c = 0;
+    try {
+        VCArglist a;
+        a.append("select 1 from msg_tags2,msg_idx using(mid) where assoc_uid = ?1 and tag = ?2 limit 1;");
+        a.append(to_hex(uid));
+        a.append(tag);
+
+        vc res = sql_bulk_query(&a);
+        if(res.is_nil())
+            throw -1;
+        c = (res.num_elems() > 0);
+    }
+    catch(...) {
+
+    }
+    //sql_simple("detach mi;");
+
+    return c;
+
 }
 }
 

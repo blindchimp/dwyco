@@ -392,7 +392,6 @@ using namespace Weak;
 #include "ta.h"
 #include "cdcver.h"
 #include "dwcls_timer.h"
-#include "favmsg.h"
 #include "qmsgsql.h"
 #include "vcwsock.h"
 #include "backsql.h"
