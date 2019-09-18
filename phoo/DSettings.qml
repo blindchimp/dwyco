@@ -19,6 +19,9 @@ Page {
     header: SimpleToolbar {
 
     }
+    background: Rectangle {
+        color: amber_light
+    }
 
     Component.onCompleted: {
         var duration

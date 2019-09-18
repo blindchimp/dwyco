@@ -8,7 +8,7 @@
 */
 
 import QtQuick 2.6
-import QtMultimedia 5.8
+import QtMultimedia 5.12
 import QtQuick.Controls 2.2
 
 // the API to this object is ugly... essentially, the requirement is
@@ -103,13 +103,17 @@ Rectangle {
     Camera {
         id: camera
         captureMode: Camera.CaptureStillImage
+        position: Camera.BackFace
 
         imageCapture {
 
             onImageCaptured: {
+
                 photoPreview.source = preview
+                console.log("preview url ", preview)
                 cameraUI.state = "PhotoPreview"
                 console.log("orientation ", camera.orientation)
+                console.log("orientation c ", camera.metaData.cameraManufacturer)
                 console.log("focus auto ",focus.isFocusModeSupported(CameraFocus.FocusAuto))
                 camera.unlock()
                 //photoPreview.ok_vis = false
@@ -121,6 +125,11 @@ Rectangle {
             }
 
             onImageSaved: {
+                console.log("save fn ", path)
+                if(Qt.platform.os === "ios") {
+                    core.rotate_in_place(path, 6, camera.position === Camera.FrontFace ? 1 : 0)
+                }
+                photoPreview.source = "file:///" + path
                 file_captured = path
                 //photoPreview.ok_vis = true
                 
@@ -167,6 +176,15 @@ Rectangle {
         anchors.fill: parent
         source: camera
         autoOrientation: true
+        Component.onCompleted: {
+            console.log("pic Orientation:", orientation, Qt.platform.os)
+
+            if (Qt.platform.os === "ios") {
+                autoOrientation = false;
+                // camera orientation always returns 270 on iPhone. Is this expected?
+                orientation = Qt.binding(function () { return camera.orientation; } );
+            }
+        }
         
         PhotoCaptureControls {
             id: stillControls

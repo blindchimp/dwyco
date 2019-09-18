@@ -28,6 +28,11 @@ static QSet<QByteArray> Got_msg_from_this_session;
 typedef QHash<QByteArray, QByteArray> UID_MID_MAP;
 static UID_MID_MAP Unviewed_msgs;
 extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QByteArray> Hash_to_review;
+extern QMap<QByteArray, QByteArray> Hash_to_lon;
+extern QMap<QByteArray, QByteArray> Hash_to_lat;
+
+void update_unseen_from_db();
 
 static int
 save_unviewed()
@@ -163,6 +168,18 @@ clear_unviewed_msgs()
     save_unviewed();
 }
 
+void
+clear_unviewed_except_for_uid(const QByteArray& uid)
+{
+    QList<QByteArray> uids = Unviewed_msgs.uniqueKeys();
+    uids.removeOne(uid);
+    for(int i = 0; i < uids.count(); ++i)
+    {
+        Unviewed_msgs.remove(uids[i]);
+    }
+    save_unviewed();
+}
+
 static int
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
 {
@@ -207,9 +224,19 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
         if(dwyco_is_special_message(0, 0, mid.constData(), &special_type))
             continue;
 
-        int do_add_unviewed = 1;
-        if(type != DWYCO_TYPE_NIL)
+        if(type == DWYCO_TYPE_NIL)
         {
+            // message is waiting on server
+            // note: can't do this easily with tags, since they are for
+            // fetched messages only at this point. might want to update
+            // the api for tags to make this sort of thing easier.
+            //dwyco_set_msg_tag(mid.constData(), "_unseen");
+            add_unviewed(uid_out, mid);
+        }
+        else
+        {
+            // message has been fetched (or received directly) and is completely
+            // available, even attachments, so save it
             if(dwyco_save_message(mid.constData()))
             {
                 DWYCO_SAVED_MSG_LIST sml;
@@ -225,28 +252,49 @@ dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)
                         {
                             QJsonValue h = qjo.value("hash");
                             QJsonValue loc = qjo.value("loc");
-                            Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
-                            mlm->invalidate_sent_to();
-                            // these little json control messages don't get seen by the user directly
-                            do_add_unviewed = 0;
+                            QJsonValue rev = qjo.value("review");
+                            QJsonValue lat = qjo.value("lat");
+                            QJsonValue lon = qjo.value("lon");
+
+                            if(!h.isUndefined())
+                            {
+                                QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
+                                if(!loc.isUndefined())
+                                    Hash_to_loc.insert(hh, loc.toString().toLatin1());
+                                if(!rev.isUndefined())
+                                    Hash_to_review.insert(hh, rev.toString().toLatin1());
+                                if(!lat.isUndefined())
+                                    Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                                if(!lon.isUndefined())
+                                    Hash_to_lon.insert(hh, lon.toString().toLatin1());
+
+                                dwyco_set_msg_tag(mid.constData(), h.toString().toLatin1());
+                            }
+
+
+                            // note: this is a hack. we favorite the message so it doesn't
+                            // get removed during "clear-non favorites". this keeps us
+                            // from having to check hashes while we are deleting pictures.
+                            // down side is that some of the geo-info stays around across clears.
+                            // we'll fix this eventually.
+                            if(qsml.is_nil(DWYCO_QM_BODY_ATTACHMENT))
+                            {
+                                dwyco_set_fav_msg(mid.constData(), 1);
+                                dwyco_set_msg_tag(mid.constData(), "_json");
+                            }
+                            dwyco_set_msg_tag(mid.constData(), "_unseen");
+                            // note: we delete it from the "server has unseen" because
+                            // we have fetched it from the server.
+                            del_unviewed_mid(mid);
                         }
                     }
                 }
             }
         }
-
-        // ok, at least it is likely the person will see it now
-        // if there are any errors above, people may not be able to see a message
-        // but the user would appear towards the top of the user list, which is weird.
-        // this happens sometimes when attachments are not fetchable for whatever reason.
-        if(do_add_unviewed)
-        {
-            Got_msg_from.insert(uid_out);
-            Got_msg_from_this_session.insert(uid_out);
-            add_unviewed(uid_out, mid);
-        }
         uids.insert(uid_out);
     }
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
 
     return 0;
 }

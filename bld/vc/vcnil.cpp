@@ -126,9 +126,6 @@ vc_nil::double_eq(const vc&) const {return FALSE;}
 int
 vc_nil::double_ne(const vc&) const {return TRUE;}
 
-int
-vc_nil::func_eq(const vc&) const {return FALSE;}
-
 enum vc_type
 vc_nil::type() const { return VC_NIL; }
 int

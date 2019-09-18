@@ -8,72 +8,74 @@
 */
 import QtQuick 2.9
 import QtQuick.Controls 2.12
+import QtQuick.Dialogs 1.2
 
 AppDrawerForm {
 
     signal close()
 
-//    browse_hidden_button.onClicked: {
-//        simp_tag_browse.to_tag = "_hid"
-//        stack.push(simp_tag_browse)
-//        close()
-//}
-    //browse_hidden_button.visible: show_hidden
-    browse_tags_button.visible: false
-    browse_tags_button.onClicked: {
-        simp_tag_browse.to_tag = "_fav"
-        stack.push(simp_tag_browse)
+    delete_all.onClicked: {
+        confirm_delete.visible = true
+        close()
+
+    }
+    MessageDialog {
+        id: confirm_delete
+        title: "Delete all"
+        icon: StandardIcon.Question
+        text: "Delete ALL pictures?"
+        informativeText: "This removes FAVORITE pictures too."
+        standardButtons: StandardButton.Yes | StandardButton.No
+        onYes: {
+            ConvListModel.set_all_selected(true)
+            ConvListModel.delete_all_selected()
+            close()
+        }
+        onNo: {
+            close()
+        }
+    }
+
+    clear_nonfav.onClicked: {
+        confirm_delete2.visible = true
         close()
     }
+
+    MessageDialog {
+        id: confirm_delete2
+        title: "Delete Non-favorites?"
+        icon: StandardIcon.Question
+        text: "Delete Non-favorite pictures?"
+        informativeText: "This KEEPS FAVORITE pictures"
+        standardButtons: StandardButton.Yes | StandardButton.No
+        onYes: {
+            var i
+            var u
+            for(i = 0; i < ConvListModel.count; i++) {
+                u = ConvListModel.get(i).uid
+                core.clear_messages_unfav(u)
+            }
+
+            close()
+        }
+        onNo: {
+            close()
+        }
+    }
+
+
     anchors.fill: parent
 
-//    vid_preview_button.onClicked: {
-//        stack.push(vid_cam_preview)
-//        close()
-//    }
 
     about_button.onClicked: {
         stack.push(about_dialog)
         close()
     }
 
-//    settings_button.onClicked: {
-//        stack.push(settings_dialog)
-//        close()
-//    }
-//    pin_lock_button.onClicked: {
-//        stack.push(pwchange_dialog)
-//        close()
-//    }
-//    block_list_button.onClicked: {
-//        stack.push(iglist_dialog)
-//        close()
-//    }
+    help_button.onClicked: {
+        stack.push(help_dialog)
+        close()
+    }
 
-//    profile_button.onClicked: {
-//        profile_update_dialog.preview_existing = true
-//        stack.push(profile_update_dialog)
-//        close()
-//    }
-//    lock_and_exit_button.onClicked: {
-//        expire_immediate = true
-//        core.power_clean()
-//        if(Qt.platform.os === "android") {
-//            notificationClient.start_background()
-//        }
-//        Qt.quit()
-//    }
 
-//    quiet_switch.checked: dwy_quiet
-//    invisible_switch.checked: dwy_invis
-
-//    quiet_switch.onClicked: {
-//        dwy_quiet = quiet_switch.checked
-
-//        if(Qt.platform.os === "android") {
-//            notificationClient.set_quiet(dwy_quiet ? 1 : 0)
-//        }
-//        core.set_local_setting("quiet", dwy_quiet ? "true" : "false")
-//        close()
-//    }
 }

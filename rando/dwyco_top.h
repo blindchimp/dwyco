@@ -39,11 +39,15 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, audio_full_duplex)
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
+    QML_READONLY_VAR_PROPERTY(bool, has_unseen_rando)
+    QML_READONLY_VAR_PROPERTY(bool, has_unseen_geo)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
         m_unread_count = 0;
         m_client_name = "";
+        m_total_users = 0;
+        m_unread_count = 0;
         m_buildtime = BUILDTIME;
         m_user_dir = ".";
         m_tmp_dir = ".";
@@ -54,6 +58,8 @@ public:
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
         m_use_archived = false;
+        m_has_unseen_geo = false;
+        m_has_unseen_rando = false;
     }
     static QByteArray My_uid;
 
@@ -211,6 +217,9 @@ public:
     Q_INVOKABLE int has_tag_message(QString mid, QString tag);
     Q_INVOKABLE void set_tag_message(QString mid, QString tag);
     Q_INVOKABLE void unset_tag_message(QString mid, QString tag);
+    Q_INVOKABLE void hash_clear_tag(QString hash, QString tag);
+    Q_INVOKABLE int hash_has_tag(QString hash, QString tag);
+    Q_INVOKABLE void clear_unseen_rando();
 
 
 //    Q_INVOKABLE void uid_keyboard_input(QString uid);
@@ -249,6 +258,7 @@ public:
 #endif
 
     Q_INVOKABLE void set_badge_number(int i);
+    Q_INVOKABLE int rotate_in_place(QString fn, int rot, int mirror_y);
 
 public:
 
@@ -263,7 +273,7 @@ signals:
     void msg_send_status(int status, const QString& recipient, const QString& pers_id);
     void msg_progress(const QString& pers_id, const QString& recipient, const QString& msg, int percent_done);
     void sys_invalidate_profile(const QString& uid);
-    void sys_msg_idx_updated(const QString& uid);
+    void sys_msg_idx_updated(const QString& uid, int prepend);
     void sys_uid_resolved(const QString& uid);
     void profile_update(int success);
     void pal_event(const QString& uid);

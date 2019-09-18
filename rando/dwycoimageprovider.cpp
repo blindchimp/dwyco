@@ -20,11 +20,6 @@ DwycoImageProvider::DwycoImageProvider() :
 
 }
 
-DwycoImageProvider::~DwycoImageProvider()
-{
-
-}
-
 void
 DwycoImageProvider::add_image(const QString &id, QImage qi)
 {

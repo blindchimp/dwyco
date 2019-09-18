@@ -47,5 +47,37 @@
         <file>icons/material/hdpi/ic_language_white_24dp.png</file>
         <file>icons/material/xhdpi/ic_language_black_24dp.png</file>
         <file>icons/material/xhdpi/ic_language_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_not_interested_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_not_interested_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_not_interested_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_not_interested_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_not_interested_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_not_interested_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_cloud_download_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_cloud_download_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_cloud_download_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_cloud_download_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_cloud_download_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_cloud_download_white_24dp.png</file>
+
+
+        <file>icons/material/mdpi/ic_help_outline_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_help_outline_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_help_outline_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_help_outline_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_help_outline_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_help_outline_white_24dp.png</file>
+
+
+        <file>icons/material/mdpi/ic_info_outline_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_info_outline_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_info_outline_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_info_outline_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_info_outline_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_info_outline_white_24dp.png</file>
+
+    </qresource>
+    <qresource prefix="/">
+        <file>icons/greenguy.png</file>
     </qresource>
 </RCC>

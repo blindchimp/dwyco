@@ -15,6 +15,7 @@
 #include <QUrlQuery>
 #include <QSslSocket>
 #include <QGuiApplication>
+#include <QImage>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -26,7 +27,7 @@
 #include "msglistmodel.h"
 #include "pfx.h"
 #include "ssmap.h"
-#include "dwycoimageprovider.h"
+//#include "dwycoimageprovider.h"
 //#include "dwycoprofilepreviewprovider.h"
 //#include "dwycovideopreviewprovider.h"
 //#include "ignoremodel.h"
@@ -53,7 +54,7 @@
 //#include "audi_qt.h"
 //#endif
 //#include "audo_qt.h"
-#include "dvp.h"
+//#include "dvp.h"
 //#include "callsm.h"
 #include "resizeimage.h"
 #ifdef _Windows
@@ -81,6 +82,7 @@ class DwycoCore;
 DwycoCore *TheDwycoCore;
 static QQmlContext *TheRootCtx;
 QByteArray DwycoCore::My_uid;
+static QByteArray TheMan;
 static int AvoidSSL = 0;
 typedef QHash<QByteArray, QByteArray> UID_ATTR_MAP;
 typedef QHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
@@ -90,7 +92,7 @@ static UID_ATTR_MAP Uid_attrs;
 static ConvSortFilterModel *Conv_sort_proxy;
 //static IgnoreSortFilterModel *Ignore_sort_proxy;
 static QTcpServer *BGLockSock;
-static DwycoImageProvider *Dwyco_video_provider;
+//static DwycoImageProvider *Dwyco_video_provider;
 //static DwycoVideoPreviewProvider *Dwyco_video_preview_provider;
 static QQmlVariantListModel *CamListModel;
 static int BGLockPort;
@@ -101,26 +103,80 @@ extern int HasAudioInput;
 extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
-extern QMap<QByteArray,QByteArray> Hash_to_loc;
 
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
-}
+QMap<QByteArray, QByteArray> Hash_to_loc;
+QMap<QByteArray, QByteArray> Hash_to_review;
+QMap<QByteArray, QByteArray> Hash_to_lon;
+QMap<QByteArray, QByteArray> Hash_to_lat;
 
 void
 hack_unread_count()
 {
     if(TheDwycoCore)
         TheDwycoCore->update_unread_count(has_unviewed_msgs());
+}
+
+void
+update_unseen_from_db()
+{
+    if(!TheDwycoCore)
+        return;
+    DWYCO_LIST tl;
+    if(!dwyco_get_tagged_mids(&tl, "_unseen"))
+        return;
+    simple_scoped stl(tl);
+
+    bool has_urando = false;
+    bool has_ugeo = false;
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        QByteArray mid = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        if(dwyco_mid_has_tag(mid.constData(), "_json"))
+            has_ugeo = true;
+        else
+            has_urando = true;
+        if(has_ugeo && has_urando)
+            break;
+    }
+    // if there are messages on the server from the reviewer, it is
+    // almost certain bad news
+    if(uid_has_unviewed_msgs(TheMan))
+        has_ugeo = true;
+
+    // if there are server messages from the bot (NOT the reviewer)
+    // it could be either a rando or a geo location msg
+    // the msg summary doesn't tell us directly, we have to wait
+    // until the message is downloaded, so just tell the user it
+    // could be either. note, we could kluge and check the length, or
+    // actually put the attachment info in the summary, but that is
+    // too much for now.
+    if(has_unviewed_msgs() > uid_unviewed_msgs_count(TheMan))
+    {
+        has_ugeo = true;
+        has_urando = true;
+    }
+
+    TheDwycoCore->update_has_unseen_rando(has_urando);
+    TheDwycoCore->update_has_unseen_geo(has_ugeo);
+}
+
+void
+DwycoCore::clear_unseen_rando()
+{
+    DWYCO_LIST tl;
+    if(!dwyco_get_tagged_mids(&tl, "_unseen"))
+        return;
+    simple_scoped stl(tl);
+
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        if(QByteArray::fromHex(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID)) != TheMan)
+        {
+            dwyco_unset_msg_tag(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID).constData(), "_unseen");
+        }
+    }
+    clear_unviewed_except_for_uid(TheMan);
+    TheDwycoCore->update_has_unseen_rando(false);
 }
 
 void
@@ -187,7 +243,7 @@ transpose(const QImage& src)
 
 static
 int
-jhead_rotate(const QString& filename, int rot)
+jhead_rotate(const QString& filename, int rot, bool mirror_y = false)
 {
     if(rot == 0)
         return 1;
@@ -203,16 +259,47 @@ jhead_rotate(const QString& filename, int rot)
     case 6: //90
         s = transpose(s);
         s = s.mirrored(true, false);
+        if(mirror_y)
+            s = s.mirrored(true, false);
         break;
     case 8: //270
+        // i think this is broken, have to check it
         s = s.mirrored(true, false);
         s = transpose(s);
+
+        if(mirror_y)
+            s = s.mirrored(true, false);
         break;
     }
 
     s.save(filename);
 
     return 1;
+}
+
+// note: tbe main reason we need this is because
+// on iOS images come back without rotation meta
+// data, so we kinda guess how to rotate them
+// so this strips out whatever exif stuff is in there,
+// and then rotates it according to what the caller wants
+int
+DwycoCore::rotate_in_place(QString fn, int rot, int mirror_y)
+{
+    {
+        // note: iOS makes a copy and it must inherit the read-only perms
+        // of the original, so we try to update the permissions on the copy
+        // so we can update it in place
+        QFile cpy(fn);
+        cpy.setPermissions(cpy.permissions()|QFileDevice::WriteOwner|QFileDevice::WriteUser|
+                           QFileDevice::ReadOwner|QFileDevice::ReadUser);
+    }
+    int ret = jhead::do_jhead(fn.toLatin1().constData());
+    if(ret & 1)
+        return 0;
+
+    ret = jhead_rotate(fn, rot, mirror_y ? true : false);
+    return ret;
+
 }
 
 static
@@ -468,7 +555,7 @@ dwyco_sys_event_callback(int cmd, int id,
     else if(cmd == DWYCO_SE_USER_MSG_IDX_UPDATED ||
             cmd == DWYCO_SE_USER_MSG_IDX_UPDATED_PREPEND)
     {
-        TheDwycoCore->emit sys_msg_idx_updated(huid);
+        TheDwycoCore->emit sys_msg_idx_updated(huid, cmd == DWYCO_SE_USER_MSG_IDX_UPDATED_PREPEND ? 1 : 0);
     }
     else if(cmd == DWYCO_SE_USER_ADD)
     {
@@ -798,17 +885,24 @@ setup_locations()
         userdir = args[1];
         userdir += "/";
     }
-    //QString userdir("/home/dwight/Downloads/n7phoo/");
+
     {
         QDir d(userdir);
-        d.mkpath(userdir);
-        // this is just a stopgap, really need to do something to obfuscate the files
-        // a little bit to avoid apps indexing temp images on all platforms
-//        QString fp = d.filePath(".nomedia");
-//        QFile f(fp);
-//        f.open(QIODevice::WriteOnly);
-//        f.putChar(0);
-//        f.close();
+        if(!d.mkpath(userdir))
+        {
+            // note: failed to make the path, or it doesn't exist.
+            // this can happen on android because the permission to access
+            // external storage might be ok, when in fact external storage is not
+            // available. this seems like a qt bug, as why would it return
+            // a "writable location" that wasn't writeable or creatable.
+            // see if we can fallback to the appdatalocation
+            userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+            userdir += "/dwyco/rando/";
+            QDir d2(userdir);
+            if(!d2.mkpath(userdir))
+                ::abort();
+        }
+
     }
 #ifdef ANDROID
     QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
@@ -1271,10 +1365,11 @@ DwycoCore::init()
     if(TheDwycoCore)
         return;
     TheDwycoCore = this;
+    TheMan = QByteArray::fromHex("5a098f3df49015331d74");
     update_user_dir(User_pfx);
     update_tmp_dir(Tmp_pfx);
 
-    DVP::init_dvp();
+    //DVP::init_dvp();
     //simple_call::init(this);
     AvoidSSL = 1; //!QSslSocket::supportsSsl();
 
@@ -1477,18 +1572,18 @@ DwycoCore::init()
     update_unread_count(has_unviewed_msgs());
     reload_conv_list();
     reload_ignore_list();
+    update_unseen_from_db();
 
+    QString tag_change1;
+    if(!setting_get("tag_change1", tag_change1))
     {
         DWYCO_USER_LIST ul;
         int nul = 0;
         dwyco_get_user_list2(&ul, &nul);
         simple_scoped qul(ul);
-        QByteArray the_man = QByteArray::fromHex("5a098f3df49015331d74");
         for(int i = 0; i < nul; ++i)
         {
-            QByteArray u = qul.get<QByteArray>(i, DWYCO_NO_COLUMN);
-            if(u == the_man)
-                continue;
+            QByteArray u = qul.get<QByteArray>(i);
             DWYCO_SAVED_MSG_LIST sml;
             if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
             {
@@ -1506,7 +1601,17 @@ DwycoCore::init()
                             {
                                 QJsonValue h = qjo.value("hash");
                                 QJsonValue loc = qjo.value("loc");
-                                Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                                QJsonValue rev = qjo.value("review");
+
+                                if(!loc.isUndefined())
+                                    Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
+                                if(!rev.isUndefined())
+                                    Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+
+                                // upgrade hack, favorite the geo-info so it isn't cleared
+                                QByteArray mid = qsml.get<QByteArray>(i, DWYCO_QM_BODY_ID);
+                                dwyco_set_fav_msg(mid.constData(), 1);
+                                dwyco_set_msg_tag(mid.constData(), "_json");
 
                             }
                         }
@@ -1515,13 +1620,62 @@ DwycoCore::init()
             }
 
         }
+        setting_put("tag_change1", "");
     }
+    else
+    {
+        // just query for _json tag and processes those directly
+        DWYCO_LIST tml;
+        if(dwyco_get_tagged_idx(&tml, "_json"))
+        {
+            simple_scoped stml(tml);
+            for(int i = 0; i < stml.rows(); ++i)
+            {
+                DWYCO_SAVED_MSG_LIST sml;
+                QByteArray u = QByteArray::fromHex(stml.get<QByteArray>(i, DWYCO_MSG_IDX_ASSOC_UID));
+                QByteArray mid = stml.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+                if(dwyco_get_saved_message(&sml, u.constData(), u.length(), mid.constData()))
+                {
+                    simple_scoped ssml(sml);
+                    if(ssml.is_nil(DWYCO_QM_BODY_ATTACHMENT))
+                    {
+                        QByteArray txt = ssml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2);
+                        QJsonDocument qjd = QJsonDocument::fromJson(txt);
+                        if(!qjd.isNull())
+                        {
+                            QJsonObject qjo = qjd.object();
+                            if(!qjo.isEmpty())
+                            {
+                                QJsonValue h = qjo.value("hash");
+                                QJsonValue loc = qjo.value("loc");
+                                QJsonValue rev = qjo.value("review");
+                                QJsonValue lat = qjo.value("lat");
+                                QJsonValue lon = qjo.value("lon");
+                                if(!h.isUndefined())
+                                {
+                                    QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
+                                    if(!loc.isUndefined())
+                                        Hash_to_loc.insert(hh, loc.toString().toLatin1());
+                                    if(!rev.isUndefined())
+                                        Hash_to_review.insert(hh, rev.toString().toLatin1());
+                                    if(!lat.isUndefined())
+                                        Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                                    if(!lon.isUndefined())
+                                        Hash_to_lon.insert(hh, lon.toString().toLatin1());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     const char *uid;
     int len_uid;
     dwyco_get_my_uid(&uid, &len_uid);
     My_uid = QByteArray(uid, len_uid);
-
 
     // for easier testing, setup for raw file acq
     dwyco_set_video_input(
@@ -1922,15 +2076,17 @@ DwycoCore::clear_ignore_list()
     int n;
 
     l = dwyco_ignore_list_get();
-    dwyco_list_numelems(l, &n, 0);
+    simple_scoped sl(l);
+    n = sl.rows();
+
     for(int i = 0; i < n; ++i)
     {
-        QByteArray buid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
+        QByteArray buid = sl.get<QByteArray>(i);
         dwyco_unignore(buid.constData(), buid.length());
         emit ignore_event(buid.toHex());
 
     }
-    dwyco_list_release(l);
+
     // may involve resorting other lists too
     reload_ignore_list();
 
@@ -2161,6 +2317,7 @@ DwycoCore::get_simple_directory_url()
 QUrl
 DwycoCore::get_simple_xml_url()
 {
+#if 0
     QUrlQuery qurl;
     const char *auth;
     int len;
@@ -2197,11 +2354,15 @@ DwycoCore::get_simple_xml_url()
 
     url.setQuery(qurl);
     return url;
+#else
+    return QUrl();
+#endif
 }
 
 QString
 DwycoCore::get_msg_count_url()
 {
+#if 0
     QUrlQuery qurl;
     const char *auth;
     int len;
@@ -2221,6 +2382,9 @@ DwycoCore::get_msg_count_url()
     qurl.addQueryItem("auth", QString::fromUtf8(au.toHex()));
     url.setQuery(qurl);
     return url.url();
+#else
+    return "";
+#endif
 }
 
 int
@@ -2276,14 +2440,53 @@ DwycoCore::unset_tag_message(QString mid, QString tag)
     emit mid_tag_changed(mid);
 }
 
+int
+DwycoCore::hash_has_tag(QString hash, QString tag)
+{
+    QByteArray bhash = hash.toLatin1();
+    QByteArray btag = tag.toLatin1();
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, bhash.constData());
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        QByteArray b = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        if(dwyco_mid_has_tag(b.constData(), btag.constData()))
+            return 1;
+    }
+    return 0;
+}
 
+void
+DwycoCore::hash_clear_tag(QString hash, QString tag)
+{
+    QByteArray bhash = hash.toLatin1();
+    QByteArray btag = tag.toLatin1();
+
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, bhash.constData());
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        // ugh, need to fill in the API for *tagged_mids
+        QByteArray b = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        dwyco_unset_msg_tag(b.constData(), btag.constData());
+        emit mid_tag_changed(b);
+        del_unviewed_mid(b);
+    }
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
+}
 
 int
 DwycoCore::clear_messages(QString uid)
 {
     QByteArray buid = uid.toLatin1();
     buid = QByteArray::fromHex(buid);
-    return dwyco_clear_user(buid.constData(), buid.length());
+    int ret = dwyco_clear_user(buid.constData(), buid.length());
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
+    return ret;
 
 }
 
@@ -2292,8 +2495,10 @@ DwycoCore::clear_messages_unfav(QString uid)
 {
     QByteArray buid = uid.toLatin1();
     buid = QByteArray::fromHex(buid);
-    return dwyco_clear_user_unfav(buid.constData(), buid.length());
-
+    int ret = dwyco_clear_user_unfav(buid.constData(), buid.length());
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
+    return ret;
 }
 
 int
@@ -2307,6 +2512,8 @@ DwycoCore::delete_user(QString uid)
     // note: msglist_model may have cached info that needs to be cleared
 
     reload_conv_list();
+    update_unseen_from_db();
+    mlm->invalidate_sent_to();
 
     return ret;
 }
@@ -2318,6 +2525,7 @@ get_cq_results_filename()
 
 }
 
+#if 0
 static void
 process_contact_query_response(const QByteArray& mid)
 {
@@ -2341,7 +2549,7 @@ process_contact_query_response(const QByteArray& mid)
     TheDwycoCore->emit cq_results_received(succ);
 }
 
-#if 0
+
 QUrl
 DwycoCore::get_cq_results_url()
 {
@@ -2363,7 +2571,6 @@ DwycoCore::retry_auto_fetch(QString mid)
 }
 
 
-QMap<QByteArray, QByteArray> Hash_to_loc;
 #if 0
 static QMap<QString, QByteArray> Groups;
 static
@@ -2647,29 +2854,7 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
-//        if(uids_out.contains(QByteArray::fromHex(mlm->uid().toLatin1())))
-//        {
-//            mlm->reload_model();
-//        }
     }
-#ifdef ANDROID
-    // NOTE: bug: this doesn't work if the android version is statically
-    // linked. discovered why: JNI won't find functions properly when statically linked.
-    const char *fn;
-    int len_fn;
-    if(dwyco_get_aux_string(&fn, &len_fn))
-    {
-        if(len_fn > 0)
-        {
-            QString fns = QString::fromUtf8(QByteArray(fn, len_fn));
-            emit image_picked(fns);
-            dwyco_set_aux_string("");
-        }
-        dwyco_free_array((char *)fn);
-    }
-#endif
-
-
     return spin;
 }
 
@@ -2880,13 +3065,27 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     QByteArray rsb(rs, 4);
     dwyco_free_array(rs);
     rsb = rsb.toHex();
-    QByteArray dest;// = fi.fileName().toLatin1();
+    QByteArray dest;
     dest += rsb;
     dest += ".jpg";
     dest = add_pfx(Tmp_pfx, dest);
     f.copy(dest);
     f.remove();
 
+    QByteArray revhelp;
+    {
+    QFile df(dest);
+    if(!df.open(QFile::ReadOnly))
+        return 0;
+    char buf[4096];
+    int len = df.read(buf, sizeof(buf));
+    QCryptographicHash ch(QCryptographicHash::Sha1);
+    ch.addData(buf, len);
+
+    QByteArray res = ch.result();
+    res = res.toHex();
+    revhelp = QString("{\"hash\" : \"%1\", \"review\" : \"nope\"}").arg(QString(res)).toLatin1();
+    }
     int compid = dwyco_make_file_zap_composition(dest.constData(), dest.length());
     if(compid == 0)
     {
@@ -2894,7 +3093,7 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
         return 0;
     }
     if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0, 1,
+                        revhelp.constData(), revhelp.length(), 0, 1,
                         0, 0)
       )
 

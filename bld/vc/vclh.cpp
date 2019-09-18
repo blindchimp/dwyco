@@ -1306,6 +1306,7 @@ dotype3(vc v)
 }
 
 
+#ifndef NO_VCEVAL
 vc
 do_exploded_funcall(vc fun, vc argvec)
 {
@@ -2775,7 +2776,7 @@ vclh_tolower(vc s)
     return v;
 }
 
-
+#endif
 vc
 vclh_serialize(vc v)
 {
