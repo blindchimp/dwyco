@@ -42,21 +42,6 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
     return QByteArray(val, len);
 }
 
-static int
-dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_INT)
-        return 0;
-    QByteArray str_out = QByteArray(val, len);
-    int_out = str_out.toInt();
-    return 1;
-}
-
 static
 int
 send_forward(QString recipient, QString uid_folder, QString mid_to_forward)

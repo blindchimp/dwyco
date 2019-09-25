@@ -39,8 +39,8 @@
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
-#include "androidperms.h"
 #endif
+#include "androidperms.h"
 #include "profpv.h"
 #if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN) && !defined(DWYCO_IOS)
 #include "v4lcapexp.h"
@@ -2690,46 +2690,6 @@ DwycoCore::service_channels()
     return spin;
 }
 
-#if 0
-static
-void
-DWYCOCALLCONV
-msg_send_callback(int id, int what, const char *recip, int recip_len, const char *server_msg, void *arg)
-{
-    if(!TheDwycoCore)
-        return;
-    QByteArray b(recip, recip_len);
-    b = b.toHex();
-    QString msg(server_msg);
-
-    TheDwycoCore->emit msg_send_status(id, what, b, msg);
-
-    switch(what)
-    {
-    case DWYCO_MSG_SEND_OK:
-    case DWYCO_MSG_IGNORED: // note: ignore is silent fail
-    case DWYCO_MSG_ATTACHMENT_DECLINED:
-        //play_sound("space-incoming.wav");
-        break;
-    case DWYCO_MSG_SEND_FAILED:
-    case DWYCO_MSG_ATTACHMENT_FAILED:
-        //play_sound("space-call.wav");
-        //dwyco_zap_defer_send(id);
-        break;
-    }
-
-}
-
-static
-void
-msg_progress_callback(int id, const char *msg, int percent_done, void *user_arg)
-{
-    if(!TheDwycoCore)
-        return;
-    QString qmsg(msg);
-    TheDwycoCore->emit msg_progress(id, qmsg, percent_done);
-}
-#endif
 
 int
 DwycoCore::send_forward(QString recipient, QString add_text, QString uid_folder, QString mid_to_forward, int save_sent)
@@ -3013,9 +2973,9 @@ dwyco_register_qml(QQmlContext *root)
     QObject::connect(ignorelist, SIGNAL(countChanged()), Ignore_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("IgnoreListModel", Ignore_sort_proxy);
 
-#ifdef ANDROID
+//#ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;
     root->setContextProperty("AndroidPerms", a);
-#endif
+//#endif
 
 }
