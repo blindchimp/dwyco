@@ -36,6 +36,8 @@
 #include "sqlbq.h"
 #include "favmsg.h"
 
+namespace dwyco {
+
 
 static sqlite3 *Db;
 
@@ -657,8 +659,6 @@ load_msg_index(vc uid, int load_count)
 vc
 msg_idx_get_new_msgs(vc uid, vc logical_clock)
 {
-    VCArglist a;
-
     try
     {
         sql_start_transaction();
@@ -681,6 +681,32 @@ msg_idx_get_new_msgs(vc uid, vc logical_clock)
         return vcnil;
     }
 
+}
+
+vc
+sql_get_uid_from_mid(vc mid)
+{
+    try
+    {
+        sql_start_transaction();
+        VCArglist a;
+        a.append("select assoc_uid "
+               " from msg_idx where mid = ?1 limit 1");
+        a.append(mid);
+
+        vc res = sqlite3_bulk_query(Db, &a);
+        if(res.is_nil())
+            throw -1;
+        sql_commit_transaction();
+        if(res.num_elems() != 1)
+            return vcnil;
+        return res[0][0];
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return vcnil;
+    }
 }
 
 int
@@ -818,10 +844,10 @@ clear_indexed_flag(vc uid)
 
 }
 
-namespace dwyco {
+
 int Index_progress;
 int Index_total;
-}
+
 
 static
 void
@@ -853,5 +879,6 @@ sql_index_all()
 
     }
     sql_sync_on();
+}
 }
 
