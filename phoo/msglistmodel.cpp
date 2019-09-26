@@ -197,7 +197,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         if(i >= 0)
             Fetching.removeAt(i);
         Delete_msgs.append(mid);
-        //del_unviewed_mid(mid);
         Mid_to_percent.remove(mid);
         break;
 
@@ -224,11 +223,12 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
     {
         msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
         mr->reload_inbox_model();
-        if(mlm->uid().length() > 0)
+        if(uid().length() > 0)
         {
-            add_unviewed(QByteArray::fromHex(mlm->uid().toLatin1()), mid);
+            add_unviewed(QByteArray::fromHex(uid().toLatin1()), mid);
             dwyco_unset_msg_tag(mid.constData(), "_inbox");
-            TheDwycoCore->emit decorate_user(mlm->uid());
+            TheDwycoCore->emit decorate_user(uid());
+            dwyco_set_rescan_messages(1);
         }
     }
     // FALLTHRU
@@ -238,16 +238,16 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         Mid_to_percent.remove(mid);
         Manual_fetch.remove(mid);
     }
-    int midi = mlm->mid_to_index(mid);
+    int midi = mid_to_index(mid);
     if(midi < 0)
         return;
-    QModelIndex mi = mlm->index(midi, 0);
+    QModelIndex mi = index(midi, 0);
     QVector<int> roles;
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
     roles.append(DIRECT);
-    mlm->dataChanged(mi, mi, roles);
+    dataChanged(mi, mi, roles);
 }
 
 
@@ -338,12 +338,12 @@ msglist_model::mid_to_index(QByteArray bmid)
 void
 msglist_model::mid_tag_changed(QString mid)
 {
-    int midi = mlm->mid_to_index(mid.toLatin1());
-    QModelIndex mi = mlm->index(midi, 0);
+    int midi = mid_to_index(mid.toLatin1());
+    QModelIndex mi = index(midi, 0);
     QVector<int> roles;
     roles.append(IS_HIDDEN);
     roles.append(IS_FAVORITE);
-    mlm->dataChanged(mi, mi, roles);
+    dataChanged(mi, mi, roles);
 }
 
 void

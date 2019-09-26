@@ -55,7 +55,7 @@ add_unviewed(const QByteArray& uid, const QByteArray& mid, int no_save)
 }
 
 void
-load_inbox_tags_to_unviewed()
+load_inbox_tags_to_unviewed(QSet<QByteArray>& uids_out)
 {
     // use this after resume to make sure new messages
     // that were received are flagged properly
@@ -68,6 +68,7 @@ load_inbox_tags_to_unviewed()
         QByteArray uid = QByteArray::fromHex(qtm.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID));
         QByteArray mid = qtm.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
         add_unviewed(uid, mid);
+        uids_out.insert(uid);
     }
     dwyco_unset_all_msg_tag("_inbox");
 }

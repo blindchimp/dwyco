@@ -26,6 +26,6 @@ int session_msg(const QByteArray &uid);
 void clear_session_msg();
 int any_unread_msg(const QByteArray& uid);
 void clear_unviewed_msgs();
-void load_inbox_tags_to_unviewed();
+void load_inbox_tags_to_unviewed(QSet<QByteArray>&);
 
 #endif

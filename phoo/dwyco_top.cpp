@@ -1673,7 +1673,8 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         // note: background process may have updated messages on disk
         // *and* we may not get to the server, so force a reload here just
         // in case.
-        load_inbox_tags_to_unviewed();
+        QSet<QByteArray> dum;
+        load_inbox_tags_to_unviewed(dum);
         reload_conv_list();
         Suspended = 0;
 #ifdef ANDROID
@@ -2664,7 +2665,8 @@ DwycoCore::service_channels()
         dwyco_process_unfetched_list(uml, uids_out);
         dwyco_list_release(uml);
 
-        update_unread_count(has_unviewed_msgs());
+        load_inbox_tags_to_unviewed(uids_out);
+
         foreach(const QByteArray& buid, uids_out)
         {
             QByteArray huid = buid.toHex();
@@ -2673,6 +2675,7 @@ DwycoCore::service_channels()
         }
 
     }
+    update_unread_count(has_unviewed_msgs());
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically
     // linked. discovered why: JNI won't find functions properly when statically linked.
