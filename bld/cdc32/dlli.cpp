@@ -478,7 +478,7 @@ struct BodyView {
     static DwQueryByMember<BodyView> Bvqbm;
     ValidPtr vp;
     vc body;
-    vc dmsg; // decrypted message
+    //vc dmsg; // decrypted message
     vc msg_id;
     MMChannel *xfer_channel;
     void cancel();
@@ -486,6 +486,10 @@ struct BodyView {
     void *mdc_arg1;
     DwycoStatusCallback status_callback;
     void *scb_arg1;
+
+    // this is a signal that is emitted as a progress indicator during
+    // file transfers. it is intended for display purposes only.
+    ssns::signal4<DwString, vc, DwString, int> progress_signal;
 };
 
 DwQueryByMember<BodyView> BodyView::Bvqbm;
@@ -527,14 +531,17 @@ set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
     if(!vp.is_valid())
         return;
     BodyView *q = (BodyView *)(void *)vp;
-    if(q && q->status_callback)
+    if(!q)
+        return;
+    int e = mc->expected_size;
+    if(e == 0)
+        e = 1;
+    int p = (int)(((double)mc->total_got * 100) / e);
+    if(q->status_callback)
     {
-        int e = mc->expected_size;
-        if(e == 0)
-            e = 1;
-        int p = (int)(((double)mc->total_got * 100) / e);
         (*q->status_callback)((int)q->vp, msg, p, q->scb_arg1);
     }
+    q->progress_signal.emit(DwString(q->msg_id), My_UID, DwString(msg), p);
 }
 
 #undef DWYCO_CRYPTO_PIPELINE
@@ -7644,6 +7651,7 @@ dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback dcb,
     bv->mdc_arg1 = mdc_arg1;
     dirth_send_get(My_UID, bv->msg_id, QckDone(get_done, bv, bv->msg_id, bv->vp));
     se_emit_msg(SE_MSG_DOWNLOAD_START, m, vcnil);
+    bv->progress_signal.connect_ptrfun(se_emit_msg_progress);
     return (int)bv->vp;
 }
 
