@@ -148,7 +148,6 @@ static vc Mid_to_logical_clock;
 static void purge_inbox(vc id);
 
 void pal_relogin();
-void remove_msg_idx(vc uid, vc mid);
 void new_pipeline();
 
 #include "qmsgsql.h"
