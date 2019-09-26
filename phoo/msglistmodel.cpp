@@ -17,6 +17,10 @@
 #include "pfx.h"
 #include "dwycolistscoped.h"
 #include "dwyco_new_msg.h"
+#include "dwyco_top.h"
+
+class DwycoCore;
+extern DwycoCore *TheDwycoCore;
 
 // note: this model integrates 3 lists when a particular uid is
 // selected: the saved message list, the inbox (just msgs from that uid) and
@@ -34,7 +38,6 @@ static QSet<QByteArray> Selected;
 static QList<QByteArray> Fetching;
 static QSet<QByteArray> Dont_refetch;
 static QList<QByteArray> Delete_msgs;
-static QMap<int, QByteArray> Fid_to_mid;
 static QMap<QByteArray, int> Mid_to_percent;
 // messages are automatically fetched, unless it fails.
 // after that, the fetch can be initiated explicitly
@@ -163,19 +166,14 @@ gen_time_unsaved(DWYCO_UNFETCHED_MSG_LIST l, int row)
     return t;
 }
 
-static
 void
-DWYCOCALLCONV
-msg_status_callback(int id, const char *text, int percent_done, void *)
+msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int percent_done)
 {
-    //if(!Fid_to_mid.contains(id))
-    //    return;
-    QByteArray mid = Fid_to_mid.value(id);
-    Mid_to_percent.insert(mid, percent_done);
-    int midi = mlm->mid_to_index(mid);
-    QModelIndex mi = mlm->index(midi, 0);
-    mlm->dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
-    //mlm->dataChanged(mi, mi, QVector<int>(1, FETCH_STATE));
+    QByteArray bmid = mid.toLatin1();
+    Mid_to_percent.insert(bmid, percent_done);
+    int midi = mid_to_index(bmid);
+    QModelIndex mi = index(midi, 0);
+    dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
 }
 
 void
@@ -200,7 +198,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
             Fetching.removeAt(i);
         Delete_msgs.append(mid);
         //del_unviewed_mid(mid);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         break;
 
@@ -218,7 +215,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
 
         if(i >= 0)
             Fetching.removeAt(i);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         Manual_fetch.insert(mid);
         break;
@@ -232,13 +228,13 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         {
             add_unviewed(QByteArray::fromHex(mlm->uid().toLatin1()), mid);
             dwyco_unset_msg_tag(mid.constData(), "_inbox");
+            TheDwycoCore->emit decorate_user(mlm->uid());
         }
     }
     // FALLTHRU
     default:
         if(i >= 0)
             Fetching.removeAt(i);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         Manual_fetch.remove(mid);
     }
@@ -252,9 +248,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
     roles.append(ATTACHMENT_PERCENT);
     roles.append(DIRECT);
     mlm->dataChanged(mi, mi, roles);
-    //mlm->dataChanged(mi, mi, QVector<int>(1, FETCH_STATE));
-    //mlm->dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
-
 }
 
 
@@ -572,6 +565,7 @@ msglist_raw::~msglist_raw()
 int
 msglist_raw::check_inbox_model()
 {
+    return 0;
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
 
     // optimization, to avoid resetting the model in common cases
@@ -1016,11 +1010,10 @@ auto_fetch(QByteArray mid)
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
 
-        int fetch_id = dwyco_fetch_server_message(mid.constData(), 0, 0, msg_status_callback, 0);
+        int fetch_id = dwyco_fetch_server_message(mid.constData(), 0, 0, 0, 0);
         if(fetch_id != 0)
         {
             Fetching.append(mid);
-            Fid_to_mid.insert(fetch_id, mid);
             return 1;
         }
     }
