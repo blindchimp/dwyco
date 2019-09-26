@@ -147,7 +147,7 @@ vc load_msg_index(vc uid, int load_count);
 // which is different than the number of entries in
 // the current index.
 int msg_index_count(vc uid);
-void remove_msg_idx_uid(vc uid);
+//void remove_msg_idx_uid(vc uid);
 vc do_local_store(vc filename, vc speced_mid);
 vc make_best_local_info(vc uid, int *cant_resolve_now);
 int init_msg_folder(vc uid);
