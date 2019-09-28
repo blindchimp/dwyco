@@ -15,7 +15,7 @@
 #include "ratetwkr.h"
 #include "uicfg.h"
 
-RateTweakerXferValid RTDefaults;
+//RateTweakerXferValid RTDefaults;
 RateTweakerXferValid RTUserDefaults;
 
 #define RATETWEAKER_SECTION "rates"
