@@ -577,3 +577,5 @@ bld/speexdsp/libspeexdsp/testresample
 bld/speexdsp/libspeexdsp/testresample2
 
 \.stignore
+
+*.10-pre1

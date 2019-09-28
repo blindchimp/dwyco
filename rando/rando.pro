@@ -22,7 +22,7 @@ INSTALLS += appdir_icon appdir_desktop
 }
 
 
-QT += core qml quick multimedia network
+QT += core qml multimedia network
 QT += quickcontrols2
 QT += location positioning
 
