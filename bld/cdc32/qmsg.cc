@@ -1612,7 +1612,6 @@ save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc 
     v[QM_BODY_TEXT_do_not_use] = "";
     v[QM_BODY_ATTACHMENT] = attachment_id;
     v[QM_BODY_DATE] = date;
-    //v[QM_BODY_RATING] = rating;
     v[QM_BODY_AUTH_VEC] = authvec;
     v[QM_BODY_FORWARDED_BODY] = forwarded_body;
     v[QM_BODY_NEW_TEXT] = new_text;
@@ -1638,7 +1637,6 @@ direct_to_body2(vc m)
     v[QM_BODY_TEXT_do_not_use] = "";
     v[QM_BODY_ATTACHMENT] = m[QQM_BODY_ATTACHMENT];
     v[QM_BODY_DATE] = m[QQM_BODY_DATE];
-    //v[QM_BODY_RATING] = m[QQM_BODY_RATING];
     v[QM_BODY_AUTH_VEC] = m[QQM_BODY_AUTH_VEC];
     v[QM_BODY_FORWARDED_BODY] = m[QQM_BODY_FORWARDED_BODY];
     v[QM_BODY_NEW_TEXT] = m[QQM_BODY_NEW_TEXT];
@@ -1771,7 +1769,6 @@ query_done(vc m, void *, vc, ValidPtr)
         // 3: date vector
 
         vc from = v[QM_FROM];
-        sql_add_tag(v[QM_ID], "_seen");
 
         if(uid_ignored(from))
         {
@@ -1779,15 +1776,13 @@ query_done(vc m, void *, vc, ValidPtr)
             {
                 vc args(VC_VECTOR);
                 args.append(from);
-                args.append(v[2]);
+                args.append(v[QM_ID]);
                 dirth_send_ack_get(My_UID, v[QM_ID], QckDone(ack_get_done2, 0, args));
             }
-            delete_msg2(v[QM_ID]);
             v2.remove(i, 1);
             --i;
             continue;
         }
-
         init_msg_folder(from);
 
         // this logical clock stuff corresponds to "receiving" the message
@@ -1815,7 +1810,6 @@ query_done(vc m, void *, vc, ValidPtr)
             Mid_to_logical_clock.add_kv(mid, lc);
         }
         add_msg(Cur_msgs, v);
-
     }
 
     Rescan_msgs = 1;
@@ -3443,7 +3437,6 @@ save_to_inbox(vc m)
     // stale notifications from google (ie, our app sees and notifies the user of
     // a message, then 20 minutes later google notifies about the same message.)
     // we only get sent google notifications for server messages...
-    sql_add_tag(m[QQM_LOCAL_ID], "_seen");
     sql_add_tag(m[QQM_LOCAL_ID], "_inbox");
     sql_add_tag(m[QQM_LOCAL_ID], "_local");
     return 1;

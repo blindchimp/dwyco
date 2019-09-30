@@ -209,8 +209,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         // have not been fetched in a month or something. this will cause a bit of thrashing for
         // users that have a lot of messages that can't be fetched, but gives the best chance to get
         // a message in transient failure situations.
-        //Dont_refetch.insert(mid);
-        //del_unviewed_mid(mid);
 
         if(i >= 0)
             Fetching.removeAt(i);
