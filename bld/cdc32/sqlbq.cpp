@@ -7,9 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #ifdef _Windows
-#ifdef __BORLANDC__
-#include <dir.h>
-#endif
 #ifdef _MSC_VER
 #include <direct.h>
 #endif

@@ -34,9 +34,6 @@
 #include "dirth.h"
 #include "qdirth.h"
 #ifdef _Windows
-#ifdef __BORLANDC__
-#include <dir.h>
-#endif
 #ifdef _MSC_VER
 #include <direct.h>
 #endif
@@ -140,7 +137,6 @@ static long Logical_clock;
 static vc Mid_to_logical_clock;
 
 void pal_relogin();
-
 void new_pipeline();
 int save_msg(vc m, vc msg_id);
 

@@ -1,23 +1,24 @@
 dwight melcher
-Mon Apr 15 13:47:20 MST 2013
+Sat Sep 28 10:49:56 MDT 2019
 
 basic idea for an android build:
-get version r19c of the NDK from google
-NOTE: r20 is broken
+
+get version r20 of the NDK from google
 
 set up the env vars for it, and run the following scripts:
 export NDK=~/android/android-ndk (the default)
 
-the scripts here expect this:
-
-export NDK_ABI= "arm", "x86", "arm64" (arm is the default)
-
 sh mklinks.sh
 
-# to build external things like vorbis
-./config_make_everything.sh
+run the script
 
-# to build the rest of the lib
+./build-autoconf.sh
+
+this is needed because of the lame autoconf stuff
+in the xiph codecs.
+
+# to build the rest of the libs (this will
+# automatically build x86,armv7,arm64 libs
 ./mk.sh
 
 the resulting libs will be in ../libs and ../obj
