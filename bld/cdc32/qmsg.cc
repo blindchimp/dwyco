@@ -36,9 +36,6 @@
 #include "dirth.h"
 #include "qdirth.h"
 #ifdef _Windows
-#ifdef __BORLANDC__
-#include <dir.h>
-#endif
 #ifdef _MSC_VER
 #include <direct.h>
 #endif

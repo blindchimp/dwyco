@@ -13,11 +13,7 @@
 
 #include "uicfg.h"
 #ifndef LINUX
-#ifdef __BORLANDC__
-#include <dir.h>
-#else
 #include <direct.h>
-#endif
 #include <io.h>
 #endif
 #include "dirth.h"
