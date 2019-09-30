@@ -355,15 +355,11 @@ using namespace Weak;
 #include "tpgmdec.h"
 #include "imgmisc.h"
 #include "ser.h"
-#if defined(__BORLANDC__) || defined(_MSC_VER)
+#if defined(_MSC_VER)
 #include <io.h>
 #endif
 #ifdef _Windows
 #include <io.h>
-#ifdef __BORLANDC__
-#include <dir.h>
-#include <utime.h>
-#endif
 #ifdef _MSC_VER
 #include <direct.h>
 #include <sys/utime.h>

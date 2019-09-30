@@ -15,9 +15,6 @@
 
 #include "dwvec.h"
 #include <string.h>
-#if defined(_Windows) && defined(__BORLANDC__)
-#include <mem.h>
-#endif
 
 class DwString : private DwVec<char>
 {

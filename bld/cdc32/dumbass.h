@@ -9,8 +9,4 @@
 #ifndef DUMBASS_H
 #define DUMBASS_H
 
-#if defined(__BORLANDC__) && !defined(__LP64__)
-typedef unsigned int uint32_t;
-#endif
-
 #endif

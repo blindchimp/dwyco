@@ -6,15 +6,9 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#ifdef _Windows
-#ifdef __BORLANDC__
-#include <dir.h>
-#else
+#if defined(_MSC_VER)
 #include <direct.h>
-#endif
-#if __BORLANDC__ >= 0x560 || defined(_MSC_VER)
 #include <io.h>
-#endif
 #endif
 #include "qauth.h"
 #include "dwstr.h"

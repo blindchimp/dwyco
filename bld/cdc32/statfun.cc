@@ -37,7 +37,7 @@ _matherr(struct _exception *e)
 }
 #endif
 
-#if defined(__BORLANDC__) || defined(MACOSX) || defined(_MSC_VER) || defined(ANDROID)
+#if defined(MACOSX) || defined(_MSC_VER) || defined(ANDROID)
 int
 ffs(int i)
 {

@@ -547,33 +547,6 @@ lbm_motion_estimate8x8(gray **last_frame, int *frame, int fr, int fc, int& vi, i
 static int
 fast_subvec8(int *v1, int *v2)
 {
-#ifdef __BORLANDC__
-#define two_pix(off) \
-	mov eax, dword ptr off[ebp] ; \
-	mov ebx, dword ptr off+4[ebp] ; \
- \
-	sub eax, dword ptr off[esi] ; \
-	sub ebx, dword ptr off+4[esi] ; \
- \
-	add edx, dword ptr [edi + 4*eax] ; \
-	add ecx, dword ptr [edi + 4*ebx] ;
-
-    asm {
-        xor edx, edx ;
-        xor ecx, ecx ;
-
-        mov edi, large dword ptr mo_abs_ptr ;
-        mov esi, dword ptr v2 ;
-        mov ebp, dword ptr v1 ;
-
-        two_pix(0)
-        two_pix(8)
-        two_pix(16)
-        two_pix(24)
-
-        lea eax, dword ptr [edx + ecx] ;
-    }
-#else
     return
         mo_abs_ptr[v1[0] - v2[0]] +
         mo_abs_ptr[v1[1] - v2[1]] +
@@ -583,8 +556,6 @@ fast_subvec8(int *v1, int *v2)
         mo_abs_ptr[v1[5] - v2[5]] +
         mo_abs_ptr[v1[6] - v2[6]] +
         mo_abs_ptr[v1[7] - v2[7]] ;
-#endif
-
 }
 #if 0
 int

@@ -159,12 +159,12 @@ msend.cpp \
 qmsgsql.cpp \
 fetch_to_inbox.cpp \
 sqlbq.cpp \
-favmsg.cpp \
 sqlite3.c \
 dwybg_wrap.c \
 aqext_android.cpp \
 backsql.cpp \
-upnp.cpp
+upnp.cpp \
+simplesql.cpp
 
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls
