@@ -484,6 +484,9 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_SEND_STATUS:
         TheDwycoCore->emit msg_progress(str_data, huid, namestr, extra_arg);
         break;
+    case DWYCO_SE_MSG_DOWNLOAD_PROGRESS:
+        TheDwycoCore->emit msg_recv_progress(str_data, huid, namestr, extra_arg);
+        break;
     case DWYCO_SE_MSG_DOWNLOAD_START:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED:
     case DWYCO_SE_MSG_DOWNLOAD_FETCHING_ATTACHMENT:
@@ -1523,6 +1526,7 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString)), mlm, SLOT(msg_recv_status(int,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
+    connect(this, SIGNAL(msg_recv_progress(QString, QString, QString, int)), mlm, SLOT(msg_recv_progress(QString, QString, QString, int)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     if(dwyco_get_create_new_account())

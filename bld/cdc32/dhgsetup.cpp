@@ -25,7 +25,7 @@ struct DHG_sql : public SimpleSql
 {
     DHG_sql() : SimpleSql("dhg.sql") {}
 
-    void init_schema() {
+    void init_schema(const DwString&) {
         sql_simple("create table if not exists keys ("
                    "uid text collate nocase, "
                    "alt_name text collate nocase, "

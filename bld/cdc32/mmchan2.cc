@@ -78,34 +78,28 @@ MMChannel::set_progress_got(int len)
 
     if(total_got != expected_size)
     {
-    int old_pct = (int)(((double)total_got * 100) / expected_size);
-    int new_pct = (int)(((double)(total_got + len) * 100) / expected_size);
-    total_got += len;
-    if(old_pct / 10 == new_pct / 10)
-        return;
+        int old_pct = (int)(((double)total_got * 100) / expected_size);
+        int new_pct = (int)(((double)(total_got + len) * 100) / expected_size);
+        total_got += len;
+        if(old_pct / 10 == new_pct / 10)
+            return;
     }
 
+    if(total_got < 1024)
+    {
+        sprintf(a, "Xfer: %d bytes", total_got);
+    }
+    else if(total_got < 1024 * 1024)
+    {
+        sprintf(a, "Xfer: %dK", total_got / 1024);
+    }
+    else
+    {
+        sprintf(a, "Xfer: %4.2fM", (double)total_got / (1024 * 1024));
+    }
 
-    //bps_file_xfer.add_units(len * 8);
-    //if(bps_file_xfer.is_expired())
-    //{
-    //    double rate = (double)bps_file_xfer.get_rate() / 1000;
-        if(total_got < 1024)
-        {
-            sprintf(a, "Xfer: %d bytes", total_got);
-        }
-        else if(total_got < 1024 * 1024)
-        {
-            sprintf(a, "Xfer: %dK", total_got / 1024);
-        }
-        else
-        {
-            sprintf(a, "Xfer: %4.2fM", (double)total_got / (1024 * 1024));
-        }
-
-    //}
-        int p = (int)(((double)total_got * 100) / expected_size);
-        set_progress_status(a, p);
+    int p = (int)(((double)total_got * 100) / expected_size);
+    set_progress_status(a, p);
 }
 
 void
@@ -123,6 +117,7 @@ MMChannel::set_progress_status(const DwString& s, int barval)
     {
         (*status_callback)(this, s.c_str(), scb_arg1, scb_arg2);
     }
+    //progress_signal.emit(s, barval);
 }
 
 

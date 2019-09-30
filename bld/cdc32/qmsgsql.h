@@ -10,8 +10,10 @@
 #define QMSGSQL
 #include "vc.h"
 
+namespace dwyco {
 void init_qmsg_sql();
 void exit_qmsg_sql();
+vc load_msg_index(vc uid, int load_count);
 long sql_get_max_logical_clock();
 vc sql_get_recent_users(int *total_count);
 vc sql_get_old_ignored_users();
@@ -23,5 +25,25 @@ vc get_unfav_msgids(vc uid);
 void clear_indexed_flag(vc uid);
 vc sql_get_recent_users2(int max_age, int max_count);
 vc msg_idx_get_new_msgs(vc uid, vc logical_clock);
+vc sql_get_uid_from_mid(vc mid);
+void remove_msg_idx_uid(vc uid);
+void remove_msg_idx(vc uid, vc mid);
+void update_msg_idx(vc recip, vc body);
+int msg_index_count(vc uid);
+
+void sql_fav_remove_uid(vc uid);
+void sql_fav_remove_mid(vc mid);
+void sql_fav_set_fav(vc mid, int fav);
+int sql_fav_is_fav(vc mid);
+int sql_fav_has_fav(vc from_uid);
+
+void sql_add_tag(vc mid, vc tag);
+void sql_remove_tag(vc tag);
+void sql_remove_mid_tag(vc mid, vc tag);
+vc sql_get_tagged_mids(vc tag);
+vc sql_get_tagged_idx(vc tag);
+int sql_mid_has_tag(vc mid, vc tag);
+int sql_uid_has_tag(vc uid, vc tag);
+}
 
 #endif

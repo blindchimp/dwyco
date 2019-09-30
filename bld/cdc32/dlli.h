@@ -501,6 +501,7 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 
 #define DWYCO_SE_GRP_JOIN_OK 33
 #define DWYCO_SE_GRP_JOIN_FAIL 34
+#define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 33
 
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);

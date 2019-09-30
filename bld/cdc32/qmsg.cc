@@ -36,9 +36,6 @@
 #include "dirth.h"
 #include "qdirth.h"
 #ifdef _Windows
-#ifdef __BORLANDC__
-#include <dir.h>
-#endif
 #ifdef _MSC_VER
 #include <direct.h>
 #endif
@@ -150,11 +147,9 @@ static vc Mid_to_logical_clock;
 static void purge_inbox(vc id);
 
 void pal_relogin();
-void remove_msg_idx(vc uid, vc mid);
 void new_pipeline();
 
 #include "qmsgsql.h"
-#include "favmsg.h"
 
 #ifdef WIN32
 int
@@ -463,7 +458,7 @@ init_qmsg()
     long tmplc = sql_get_max_logical_clock();
     if(tmplc > Logical_clock)
         Logical_clock = tmplc + 1;
-    init_fav_sql();
+    //init_fav_sql();
     init_ctrl_tag_sql();
 
     new_pipeline();
@@ -481,7 +476,7 @@ void
 exit_qmsg()
 {
     exit_qmsg_sql();
-    exit_fav_sql();
+    //exit_fav_sql();
     exit_ctrl_tag_sql();
     Cur_ignore = vcnil;
     Session_ignore = vcnil;

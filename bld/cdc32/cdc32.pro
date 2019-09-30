@@ -258,7 +258,6 @@ qmsgsql.cpp \
 fetch_to_inbox.cpp \
 backsql.cpp \
 sqlbq.cpp \
-favmsg.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
     simplesql.cpp \
