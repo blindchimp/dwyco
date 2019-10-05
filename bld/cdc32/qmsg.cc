@@ -446,7 +446,6 @@ init_qmsg()
     long tmplc = sql_get_max_logical_clock();
     if(tmplc > Logical_clock)
         Logical_clock = tmplc + 1;
-    //init_fav_sql();
 
     new_pipeline();
 
@@ -463,7 +462,6 @@ void
 exit_qmsg()
 {
     exit_qmsg_sql();
-    //exit_fav_sql();
     Cur_ignore = vcnil;
     Session_ignore = vcnil;
     Mutual_ignore = vcnil;

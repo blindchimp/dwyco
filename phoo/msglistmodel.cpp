@@ -226,7 +226,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
             add_unviewed(QByteArray::fromHex(uid().toLatin1()), mid);
             dwyco_unset_msg_tag(mid.constData(), "_inbox");
             TheDwycoCore->emit decorate_user(uid());
-            dwyco_set_rescan_messages(1);
         }
     }
     // FALLTHRU

@@ -47,18 +47,13 @@ public:
 static QMsgSql *sDb;
 
 static
-void
-sql_simple(const char *sql)
+vc
+sql_simple(const char *sql, const vc& a0 = vcnil, const vc& a1 = vcnil, const vc& a2 = vcnil, const vc& a3 = vcnil, const vc& a4 = vcnil)
 {
-    vc res = sDb->sql_simple(sql);
+    vc res = sDb->sql_simple(sql, a0, a1, a2, a3, a4);
     if(res.is_nil())
         throw -1;
-
-//    VCArglist a;
-//    a.append(sql);
-//    vc res = sql_bulk_query(&a);
-//    if(res.is_nil())
-//        throw -1;
+    return res;
 }
 
 void
@@ -170,6 +165,12 @@ init_qmsg_sql()
     if(!sDb->init())
         throw -1;
     sDb->attach("fav.sql", "mt");
+    sql_simple("create temp table rescan(flag integer)");
+    sql_simple("insert into rescan (flag) values(0)");
+    sql_simple("create temp trigger rescan1 after delete on msg_tags2 begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan2 after insert on msg_tags2 begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan3 after delete on msg_idx begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan4 after insert on msg_idx begin update rescan set flag = 1; end");
 }
 
 void
@@ -179,8 +180,6 @@ exit_qmsg_sql()
         return;
     sDb->exit();
 }
-
-
 
 static
 void
@@ -1206,6 +1205,19 @@ sql_uid_count_tag(vc uid, vc tag)
     }
     return c;
 
+}
+
+void
+sql_set_rescan(int r)
+{
+    sql_simple("update rescan set flag = ?1", vc(r));
+}
+
+int
+sql_get_rescan()
+{
+    vc res = sql_simple("select flag from rescan");
+    return (int)res[0][0];
 }
 }
 

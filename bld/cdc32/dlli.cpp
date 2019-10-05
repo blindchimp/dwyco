@@ -6531,7 +6531,7 @@ DWYCOEXPORT
 int
 dwyco_get_rescan_messages()
 {
-    return Rescan_msgs;
+    return Rescan_msgs || sql_get_rescan();
 }
 
 DWYCOEXPORT
@@ -6539,6 +6539,7 @@ void
 dwyco_set_rescan_messages(int i)
 {
     Rescan_msgs = i;
+    sql_set_rescan(i);
 }
 
 DWYCOEXPORT

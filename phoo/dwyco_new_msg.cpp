@@ -16,8 +16,7 @@
 #include "dwycolistscoped.h"
 
 static QSet<QByteArray> Got_msg_from_this_session;
-typedef QHash<QByteArray, QByteArray> UID_MID_MAP;
-static UID_MID_MAP Unviewed_msgs;
+static QSet<QByteArray> Already_processed;
 
 static
 int
@@ -34,12 +33,12 @@ void
 add_unviewed(const QByteArray& uid, const QByteArray& mid)
 {
     dwyco_set_msg_tag(mid.constData(), "unviewed");
+    Got_msg_from_this_session.insert(uid);
 }
 
 void
 load_inbox_tags_to_unviewed(QSet<QByteArray>& uids_out)
 {
-    return;
     // use this after resume to make sure new messages
     // that were received are flagged properly
     DWYCO_LIST tm;
@@ -69,7 +68,7 @@ got_msg_this_session(const QByteArray &uid)
     return Got_msg_from_this_session.contains(uid);
 }
 
-int
+bool
 any_unread_msg(const QByteArray& uid)
 {
     return uid_has_unviewed_msgs(uid);
@@ -168,6 +167,8 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
             continue;
         if(!dwyco_get_attr(ml, i, DWYCO_QMS_ID, mid))
             continue;
+        if(Already_processed.contains(mid))
+            continue;
         if(!dwyco_list_get(ml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
             continue;
 
@@ -181,6 +182,7 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
         // but the user would appear towards the top of the user list, which is weird.
         // this happens sometimes when attachments are not fetchable for whatever reason.
         Got_msg_from_this_session.insert(uid_out);
+        Already_processed.insert(mid);
         add_unviewed(uid_out, mid);
         uids.insert(uid_out);
     }
