@@ -1016,8 +1016,6 @@ sql_remove_tag(vc tag)
 void
 sql_fav_remove_uid(vc uid)
 {
-    //DwString mfn = newfn("mi.sql");
-    //sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
     try
     {
         sql_start_transaction();
@@ -1033,8 +1031,6 @@ sql_fav_remove_uid(vc uid)
     {
         sql_rollback_transaction();
     }
-    //sql_simple("detach mi;");
-
 }
 
 void
@@ -1115,8 +1111,6 @@ sql_fav_is_fav(vc mid)
 vc
 sql_get_tagged_mids(vc tag)
 {
-    //DwString mfn = newfn("mi.sql");
-    //sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
     vc res;
     try {
         VCArglist a;
@@ -1129,8 +1123,6 @@ sql_get_tagged_mids(vc tag)
     } catch (...) {
         res = vc(VC_VECTOR);
     }
-    //sql_simple("detach mi;");
-
     return res;
 
 }
@@ -1138,8 +1130,6 @@ sql_get_tagged_mids(vc tag)
 vc
 sql_get_tagged_idx(vc tag)
 {
-    //DwString mfn = newfn("mi.sql");
-    //sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
     vc res;
     try {
         VCArglist a;
@@ -1155,10 +1145,7 @@ sql_get_tagged_idx(vc tag)
     } catch (...) {
         res = vc(VC_VECTOR);
     }
-    //sql_simple("detach mi;");
-
     return res;
-
 }
 
 int
@@ -1180,8 +1167,6 @@ sql_mid_has_tag(vc mid, vc tag)
 int
 sql_uid_has_tag(vc uid, vc tag)
 {
-    //DwString mfn = newfn("mi.sql");
-    //sql_simple(DwString("attach '%1' as mi;").arg(mfn).c_str());
     int c = 0;
     try {
         VCArglist a;
@@ -1197,8 +1182,28 @@ sql_uid_has_tag(vc uid, vc tag)
     catch(...) {
 
     }
-    //sql_simple("detach mi;");
+    return c;
 
+}
+
+int
+sql_uid_count_tag(vc uid, vc tag)
+{
+    int c = 0;
+    try {
+        VCArglist a;
+        a.append("select count(*) from msg_tags2,msg_idx using(mid) where assoc_uid = ?1 and tag = ?2");
+        a.append(to_hex(uid));
+        a.append(tag);
+
+        vc res = sql_bulk_query(&a);
+        if(res.is_nil())
+            throw -1;
+        c = res[0][0];
+    }
+    catch(...) {
+
+    }
     return c;
 
 }

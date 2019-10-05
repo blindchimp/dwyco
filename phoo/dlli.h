@@ -775,6 +775,7 @@ int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
+int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
 
 void DWYCOEXPORT dwyco_set_alert(const char *uid, int len_uid, int val);
 int DWYCOEXPORT dwyco_get_alert(const char *uid, int len_uid);

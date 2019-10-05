@@ -11,18 +11,18 @@
 #include <QByteArray>
 #include "dlli.h"
 
-int dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, QByteArray& mid_out);
+//int dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, QByteArray& mid_out);
 int dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray> &uids);
-void add_unviewed(const QByteArray& uid, const QByteArray& mid, int no_save = 0);
+void add_unviewed(const QByteArray& uid, const QByteArray& mid);
 void del_unviewed_uid(const QByteArray& uid);
 void del_unviewed_mid(const QByteArray& uid, const QByteArray& mid);
 void del_unviewed_mid(const QByteArray& mid);
 int uid_has_unviewed_msgs(const QByteArray &uid);
 int uid_unviewed_msgs_count(const QByteArray &uid);
 int has_unviewed_msgs();
-int load_unviewed();
-int reload_msgs();
-int session_msg(const QByteArray &uid);
+void load_unviewed();
+//int reload_msgs();
+bool got_msg_this_session(const QByteArray &uid);
 void clear_session_msg();
 int any_unread_msg(const QByteArray& uid);
 void clear_unviewed_msgs();

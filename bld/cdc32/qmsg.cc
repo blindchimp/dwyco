@@ -1753,6 +1753,7 @@ query_done(vc m, void *, vc, ValidPtr)
     vc v2 = m[1];
 
     Cur_msgs = vc(VC_VECTOR);
+    sql_remove_tag("_remote");
 
     int i;
 
@@ -1806,6 +1807,7 @@ query_done(vc m, void *, vc, ValidPtr)
             Mid_to_logical_clock.add_kv(mid, lc);
         }
         add_msg(Cur_msgs, v);
+        sql_add_tag(mid, "_remote");
     }
 
     Rescan_msgs = 1;
@@ -1955,6 +1957,7 @@ store_direct(MMChannel *m, vc msg, void *)
     {
         sql_add_tag(id, "_inbox");
         sql_add_tag(id, "_local");
+        sql_remove_mid_tag(id, "_remote");
         if(m)
         {
             m->send_ctrl("ok");

@@ -7781,6 +7781,14 @@ dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag)
     return sql_uid_has_tag(buid, tag);
 }
 
+DWYCOEXPORT
+int
+dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    return sql_uid_count_tag(buid, tag);
+}
+
 
 DWYCOEXPORT
 void

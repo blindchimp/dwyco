@@ -29,7 +29,7 @@ Conversation::load_external_state(const QByteArray& uid)
     update_REVIEWED(reviewed);
     update_unseen_count(uid_unviewed_msgs_count(uid));
     update_any_unread(any_unread_msg(uid));
-    update_session_msg(session_msg(uid));
+    update_session_msg(got_msg_this_session(uid));
     update_pal(dwyco_is_pal(uid.constData(), uid.length()));
     update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
 }
@@ -60,22 +60,6 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
         ::abort();
     return QByteArray(val, len);
 }
-
-static int
-dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_INT)
-        return 0;
-    QByteArray str_out = QByteArray(val, len);
-    int_out = str_out.toInt();
-    return 1;
-}
-
 
 void
 init_convlist_model()
@@ -187,6 +171,7 @@ ConvListModel::decorate(QString huid, QString txt, QString mid)
     c->update_any_unread(any_unread_msg(uid));
     c->update_is_blocked(dwyco_is_ignored(uid.constData(), uid.length()));
     c->update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
+    c->update_session_msg(got_msg_this_session(uid));
 }
 
 void

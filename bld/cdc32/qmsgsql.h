@@ -44,6 +44,7 @@ vc sql_get_tagged_mids(vc tag);
 vc sql_get_tagged_idx(vc tag);
 int sql_mid_has_tag(vc mid, vc tag);
 int sql_uid_has_tag(vc uid, vc tag);
+int sql_uid_count_tag(vc uid, vc tag);
 }
 
 #endif
