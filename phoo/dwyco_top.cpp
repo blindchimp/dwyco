@@ -119,7 +119,7 @@ void
 hack_unread_count()
 {
     if(TheDwycoCore)
-        TheDwycoCore->update_unread_count(has_unviewed_msgs());
+        TheDwycoCore->update_unread_count(total_unviewed_msgs_count());
 }
 
 void
@@ -1537,7 +1537,7 @@ DwycoCore::init()
     dwyco_finish_startup();
 
     load_unviewed();
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     reload_conv_list();
     reload_ignore_list();
 
@@ -1789,7 +1789,7 @@ DwycoCore::bootstrap(QString name, QString email)
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
     load_unviewed();
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     reload_conv_list();
 
     const char *uid;
@@ -1967,7 +1967,7 @@ DwycoCore::reset_unviewed_msgs(QString uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
     del_unviewed_uid(buid);
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     emit decorate_user(uid);
     //sort_proxy_model->decorate_user(uid);
 }
@@ -2322,7 +2322,7 @@ DwycoCore::delete_user(QString uid)
     buid = QByteArray::fromHex(buid);
     int ret = dwyco_delete_user(buid.constData(), buid.length());
     del_unviewed_uid(buid);
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     // note: msglist_model may have cached info that needs to be cleared
 
     reload_conv_list();
@@ -2675,7 +2675,7 @@ DwycoCore::service_channels()
         }
 
     }
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically
     // linked. discovered why: JNI won't find functions properly when statically linked.

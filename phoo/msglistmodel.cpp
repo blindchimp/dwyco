@@ -225,6 +225,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         {
             add_unviewed(QByteArray::fromHex(uid().toLatin1()), mid);
             dwyco_unset_msg_tag(mid.constData(), "_inbox");
+            TheDwycoCore->emit new_msg(uid(), "", smid);
             TheDwycoCore->emit decorate_user(uid());
         }
     }

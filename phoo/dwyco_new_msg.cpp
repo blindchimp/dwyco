@@ -68,12 +68,6 @@ got_msg_this_session(const QByteArray &uid)
     return Got_msg_from_this_session.contains(uid);
 }
 
-bool
-any_unread_msg(const QByteArray& uid)
-{
-    return uid_has_unviewed_msgs(uid);
-}
-
 void
 del_unviewed_uid(const QByteArray& uid)
 {
@@ -96,7 +90,7 @@ del_unviewed_mid(const QByteArray& mid)
     dwyco_unset_msg_tag(mid.constData(), "unviewed");
 }
 
-int
+bool
 uid_has_unviewed_msgs(const QByteArray &uid)
 {
     return uid_has_unfetched(uid) > 0 || dwyco_uid_has_tag(uid.constData(), uid.length(), "unviewed")
@@ -111,7 +105,7 @@ uid_unviewed_msgs_count(const QByteArray &uid)
 }
 
 int
-has_unviewed_msgs()
+total_unviewed_msgs_count()
 {
     DWYCO_LIST tm;
     if(!dwyco_get_tagged_mids(&tm, "unviewed"))
