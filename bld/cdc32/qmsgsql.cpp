@@ -1185,6 +1185,8 @@ sql_uid_has_tag(vc uid, vc tag)
 
 }
 
+// NOTE: if a message hasn't been indexed (ie, it hasn't been downloaded and filed
+// in the file system yet), it will not show up in this count.
 int
 sql_uid_count_tag(vc uid, vc tag)
 {
@@ -1205,6 +1207,28 @@ sql_uid_count_tag(vc uid, vc tag)
     }
     return c;
 
+}
+
+// this counts a tag whether or not the tag is associated with a particular uid,
+// so it is useful for counting messages that have not been downloaded yet
+int
+sql_count_tag(vc tag)
+{
+    int c = 0;
+    try {
+        VCArglist a;
+        a.append("select count(*) from msg_tags2 where tag = ?1");
+        a.append(tag);
+
+        vc res = sql_bulk_query(&a);
+        if(res.is_nil())
+            throw -1;
+        c = res[0][0];
+    }
+    catch(...) {
+
+    }
+    return c;
 }
 
 void

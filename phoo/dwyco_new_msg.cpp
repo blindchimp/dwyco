@@ -107,15 +107,7 @@ uid_unviewed_msgs_count(const QByteArray &uid)
 int
 total_unviewed_msgs_count()
 {
-    DWYCO_LIST tm;
-    if(!dwyco_get_tagged_mids(&tm, "unviewed"))
-        return 0;
-    simple_scoped qtm(tm);
-    DWYCO_LIST tm2;
-    if(!dwyco_get_tagged_mids(&tm2, "_remote"))
-        return 0;
-    simple_scoped qtm2(tm2);
-    return qtm.rows() + qtm2.rows();
+    return dwyco_count_tag("unviewed");
 }
 
 void

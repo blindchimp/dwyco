@@ -7790,6 +7790,13 @@ dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag)
     return sql_uid_count_tag(buid, tag);
 }
 
+DWYCOEXPORT
+int
+dwyco_count_tag(const char *tag)
+{
+    return sql_count_tag(tag);
+}
+
 
 DWYCOEXPORT
 void

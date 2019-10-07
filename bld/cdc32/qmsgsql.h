@@ -47,6 +47,7 @@ int sql_uid_has_tag(vc uid, vc tag);
 int sql_uid_count_tag(vc uid, vc tag);
 void sql_set_rescan(int r);
 int sql_get_rescan();
+int sql_count_tag(vc tag);
 }
 
 #endif
