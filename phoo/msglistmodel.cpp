@@ -781,10 +781,11 @@ msglist_raw::reload_model(int force)
     else
     {
         int endidx = count_msg_idx + count_qd_msgs + count_inbox_msgs - 1;
-        if(endidx < 0)
-            endidx = 0;
+        if(endidx >= 0)
+        {
         beginInsertRows(QModelIndex(), 0, endidx);
         endInsertRows();
+        }
     }
 }
 
