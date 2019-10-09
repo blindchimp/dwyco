@@ -2742,8 +2742,8 @@ DwycoCore::simple_send(QString recipient, QString msg)
         return 0;
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
     QByteArray txt = msg.toUtf8();
-    if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0,
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        txt.constData(), txt.length(), 0, 1,
                         0, 0)
       )
 
@@ -2764,8 +2764,8 @@ DwycoCore::simple_send_file(QString recipient, QString msg, QString filename)
     int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
     if(compid == 0)
         return 0;
-    if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0,
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        txt.constData(), txt.length(), 0, 1,
                         0, 0)
       )
 
@@ -2880,8 +2880,8 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
         QFile::remove(dest);
         return 0;
     }
-    if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0,
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        txt.constData(), txt.length(), 0, 1,
                         0, 0)
       )
 
