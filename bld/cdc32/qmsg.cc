@@ -2103,6 +2103,7 @@ ack_all(vc uid)
         args.append(ackset[i]);
         dirth_send_ack_get(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
         delete_msg2(ackset[i]);
+        sql_remove_mid_tag(ackset[i], "_remote");
     }
 }
 
