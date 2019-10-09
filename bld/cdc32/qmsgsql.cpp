@@ -181,14 +181,14 @@ exit_qmsg_sql()
     sDb->exit();
 }
 
-static
+
 void
 sql_start_transaction()
 {
     sDb->start_transaction();
 }
 
-static
+
 void
 sql_commit_transaction()
 {
@@ -210,7 +210,7 @@ sql_sync_on()
 
 }
 
-static
+
 void
 sql_rollback_transaction()
 {
@@ -258,7 +258,7 @@ void
 sql_delete_mid(vc mid)
 {
     VCArglist a;
-    a.append("delete from msg_idx where mid = ?1;");
+    a.append("delete from msg_idx where mid = ?1");
     a.append(mid);
     vc res = sql_bulk_query(&a);
     if(res.is_nil())
@@ -1039,7 +1039,7 @@ sql_fav_remove_mid(vc mid)
     {
         sql_start_transaction();
         VCArglist a;
-        a.append("delete from msg_tags2 where mid = ?1;");
+        a.append("delete from msg_tags2 where mid = ?1");
         a.append(mid);
         vc res = sql_bulk_query(&a);
         if(res.is_nil())

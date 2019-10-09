@@ -97,7 +97,7 @@ using namespace CryptoPP;
 #define PACKET_DROP_INTERVAL 10000
 
 
-#define FAILRET(x) {fail_reason = (x); Log->make_entry(x); return 0;}
+#define FAILRET(x) do { {fail_reason = (x); Log->make_entry(x); return 0;} } while(0)
 
 MMChannel *
 MMChannel::gen_chan()

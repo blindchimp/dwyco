@@ -1750,6 +1750,8 @@ query_done(vc m, void *, vc, ValidPtr)
 
     vc v2 = m[1];
 
+    try {
+    sql_start_transaction();
     Cur_msgs = vc(VC_VECTOR);
     sql_remove_tag("_remote");
 
@@ -1806,6 +1808,13 @@ query_done(vc m, void *, vc, ValidPtr)
         }
         add_msg(Cur_msgs, v);
         sql_add_tag(mid, "_remote");
+    }
+    sql_commit_transaction();
+    }
+    catch(...)
+    {
+        Cur_msgs = vc(VC_VECTOR);
+        sql_rollback_transaction();
     }
 
     Rescan_msgs = 1;
@@ -1953,9 +1962,19 @@ store_direct(MMChannel *m, vc msg, void *)
 
     if(save_msg(msg, id))
     {
+        try
+        {
+        sql_start_transaction();
         sql_add_tag(id, "_inbox");
         sql_add_tag(id, "_local");
         sql_remove_mid_tag(id, "_remote");
+        sql_commit_transaction();
+        }
+        catch(...)
+        {
+            sql_rollback_transaction();
+        }
+
         if(m)
         {
             m->send_ctrl("ok");
@@ -2174,8 +2193,10 @@ clear_user(vc id, const char *pfx)
 {
     remove_user_files(id, pfx, 1);
     vc uid = dir_to_uid((const char *)id);
+    sql_start_transaction();
     sql_fav_remove_uid(uid);
     clear_msg_idx_uid(uid);
+    sql_commit_transaction();
     Rescan_msgs = 1;
     return 1;
 }

@@ -4026,18 +4026,30 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
 
     if(!sql_fav_has_fav(u))
         return dwyco_clear_user(uid, len_uid);
+
+    try {
+
+    sql_start_transaction();
     vc delmid = get_unfav_msgids(u);
 
     int n = delmid.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        delete_body3(u, delmid[i], 1);
+        delete_body3(u, delmid[i], 0);
     }
     // bulk update the indexes
     remove_msg_idx_uid(u);
     // even if there are some files left in the filesystem
     // that is ok, since they will get reindexed next time the
     // index is loaded.
+    sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        Rescan_msgs = 1;
+        return 0;
+    }
 
     Rescan_msgs = 1;
 

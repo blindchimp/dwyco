@@ -48,6 +48,10 @@ int sql_uid_count_tag(vc uid, vc tag);
 void sql_set_rescan(int r);
 int sql_get_rescan();
 int sql_count_tag(vc tag);
+void sql_start_transaction();
+void sql_commit_transaction();
+void sql_rollback_transaction();
+
 }
 
 #endif
