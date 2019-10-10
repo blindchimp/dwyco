@@ -25,7 +25,7 @@ void init_home_server();
 vc build_directory_entry();
 vc build_directory_entry2();
 long get_disk_serial();
-vc system_info();
+//vc system_info();
 vc get_server_ip_by_uid(vc, vc&);
 vc get_server_name_by_uid(vc, vc&);
 vc get_random_xfer_server_ip(vc& port);

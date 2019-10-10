@@ -141,9 +141,6 @@ vc_double::hashValue() const {return (hashValueType)(d * 100.);}
 void
 vc_double::printOn(VcIO outputStream) {outputStream << d;}
 
-int
-vc_double::func_eq(const vc&) const {bomb_op_func(); return 0;}
-
 long
 vc_double::xfer_out(vcxstream& vcx)
 {
@@ -179,8 +176,6 @@ vc_double::xfer_in(vcxstream& vcx)
 	if((cp = vcx.in_want(len)) == 0)
 		return EXIN_DEV;
 	long flen = decode_long(cp, len);
-    if(flen > vcx.max_element_len)
-        return EXIN_PARSE;
     // we know length has to be > 0
     if(flen == -1 || flen == 0)
 		return EXIN_PARSE;

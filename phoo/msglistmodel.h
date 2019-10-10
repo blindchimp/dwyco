@@ -51,6 +51,7 @@ public:
 public slots:
     void msg_recv_status(int cmd, const QString& mid);
     void mid_tag_changed(QString mid);
+    void msg_recv_progress(QString mid, QString huid, QString msg, int percent);
 
 private:
     QString m_uid;

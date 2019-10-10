@@ -11,12 +11,14 @@ namespace dwyco {
 
 class SimpleSql
 {
-    DwString dbname;
+    DwVec<DwString> dbnames;
+    DwVec<DwString> schema_names;
     sqlite3 *Db;
 
 public:
     SimpleSql(const DwString& nm) {
-        dbname = nm;
+        dbnames[0] = nm;
+        schema_names[0] = "main";
         Db = 0;
     }
     virtual ~SimpleSql() {
@@ -24,9 +26,12 @@ public:
             exit();
     }
 
-    vc sql_simple(const char *sql, vc = vcnil, vc = vcnil, vc = vcnil, vc = vcnil);
+    vc sql_simple(const char *sql, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil);
 
-    virtual void init_schema() {}
+    virtual void init_schema(const DwString& schema_name) {}
+    void attach(const DwString& dbname, const DwString& schema_name);
+    void detach(const DwString& schema_name);
+
     int init();
     void exit();
     void start_transaction();

@@ -39,10 +39,10 @@
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
-
+#include "androidperms.h"
 #endif
 #include "profpv.h"
-#if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID)
+#if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN) && !defined(DWYCO_IOS)
 #include "v4lcapexp.h"
 //#include "esdaudin.h"
 #include "audi_qt.h"
@@ -67,7 +67,7 @@
 #endif
 
 
-#ifdef MACOSX
+#if defined(MACOSX) && !defined(DWYCO_IOS)
 #include <QtMacExtras>
 #endif
 
@@ -483,6 +483,9 @@ dwyco_sys_event_callback(int cmd, int id,
         break;
     case DWYCO_SE_MSG_SEND_STATUS:
         TheDwycoCore->emit msg_progress(str_data, huid, namestr, extra_arg);
+        break;
+    case DWYCO_SE_MSG_DOWNLOAD_PROGRESS:
+        TheDwycoCore->emit msg_recv_progress(str_data, huid, namestr, extra_arg);
         break;
     case DWYCO_SE_MSG_DOWNLOAD_START:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED:
@@ -1443,7 +1446,7 @@ DwycoCore::init()
 
     );
 
-#elif defined(LINUX)
+#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT)
     dwyco_set_external_video_capture_callbacks(
         vgnew,
         vgdel,
@@ -1523,6 +1526,7 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString)), mlm, SLOT(msg_recv_status(int,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
+    connect(this, SIGNAL(msg_recv_progress(QString, QString, QString, int)), mlm, SLOT(msg_recv_progress(QString, QString, QString, int)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     if(dwyco_get_create_new_account())
@@ -1599,7 +1603,7 @@ DwycoCore::init()
 void
 DwycoCore::set_badge_number(int i)
 {
-#ifdef MACOSX
+#if  defined(MACOSX) && !defined(DWYCO_IOS)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else
@@ -2991,5 +2995,10 @@ dwyco_register_qml(QQmlContext *root)
     Ignore_sort_proxy->setSourceModel(ignorelist);
     QObject::connect(ignorelist, SIGNAL(countChanged()), Ignore_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("IgnoreListModel", Ignore_sort_proxy);
+
+#ifdef ANDROID
+    AndroidPerms *a = new AndroidPerms;
+    root->setContextProperty("AndroidPerms", a);
+#endif
 
 }

@@ -260,6 +260,9 @@ dirth_poll_response()
                 QckDone q = Waitq[i];
                 if(!q.permanent)
                     Waitq.del(i);
+                // note: as long as you don't reference the Waitq after this
+                // it is safe for callbacks from "done" to call more commands
+                // that might q more commands
                 q.done(v);
                 if(q.time_qed != -1)
                 {

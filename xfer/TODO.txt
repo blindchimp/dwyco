@@ -1,0 +1,2 @@
+* fix protocol so on reject there is no retry, to avoid having to receive
+a large file and throw it away

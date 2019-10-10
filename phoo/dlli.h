@@ -499,6 +499,8 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_CHAT_SERVER_LOGIN 31
 #define DWYCO_SE_CHAT_SERVER_LOGIN_FAILED 32
 
+#define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 33
+
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
@@ -758,7 +760,15 @@ int DWYCOEXPORT dwyco_clear_user_unfav(const char *uid, int len_uid);
 void DWYCOEXPORT dwyco_set_msg_tag(const char *mid, const char *tag);
 void DWYCOEXPORT dwyco_unset_msg_tag(const char *mid, const char *tag);
 void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
+
+// WARNING: the uid is returned in ASCII hex instead of binary like the
+// rest of the interface. this api is a bit sketchy so i'm not sure i want
+// to fix it. also note, setting a (tag, mid) pair will not be returned
+// here, because there wouldn't be an associated uid...
+#define DWYCO_TAGGED_MIDS_MID "001"
+#define DWYCO_TAGGED_MIDS_HEX_UID "000"
 int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
+
 int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
@@ -1310,7 +1320,7 @@ dwyco_copy_out_file_zap(
 
 int
 DWYCOEXPORT
-dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out);
+dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out);
 
 int DWYCOEXPORT
 dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filename);

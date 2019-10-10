@@ -80,8 +80,6 @@ typedef DwListAIter<vc> VCListIter;
 class vc_cvar : public vc_composite
 {
 friend class VcEvalDbgNode;
-friend long dovcinput(char *, long);
-friend vc doreadatoms(vc);
 
 private:
 	vc_cvar();

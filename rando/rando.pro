@@ -22,8 +22,9 @@ INSTALLS += appdir_icon appdir_desktop
 }
 
 
-QT += core qml quick multimedia network
+QT += core qml multimedia network
 QT += quickcontrols2
+QT += location positioning
 
 android: QT += androidextras
 macx-clang: QT += macextras
@@ -194,14 +195,10 @@ $${D}/qt-qml-models/libQtQmlModels.a
 }
 
 android-* {
-DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
+DEFINES += LINUX VCCFG_FILE ANDROID
 
 D = $${OUT_PWD}/../bld
-equals(ANDROID_TARGET_ARCH, x86) {
-L = $$PWD/../$$DWYCO_CONFDIR/libs/x86
-} else {
-L = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a
-}
+L = $$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 LIBS += $$D/qt-qml-models/libQtQmlModels.a
 
 # link against shared lib that is also used by the background, saves a bit of
@@ -232,7 +229,14 @@ ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 #$${D}/libjenkins.a #-lgcc
 include(functions.pri)
 
-QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava", "src/com/dwyco/android", $$files($$PWD/../bld/android/com/dwyco/android/*.java))
+#QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava", "src/com/dwyco/android", $$files($$PWD/../bld/android/com/dwyco/android/*.java))
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavasender", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/DwycoSender.java)
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaDwyco_msg", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/Dwyco_Message.java)
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavastickyintent", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/StickyIntentService.java)
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaNotification", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/NotificationClient.java)
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaSocketLock", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/SocketLock.java)
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaMyFirebase", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/MyFirebaseMessagingService.java)
+
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava2", "src/com/dwyco/cdc32", $$files($$PWD/../bld/android/com/dwyco/cdc32/*.java))
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycorandodeploy", ".", $$PWD/../../deploy-rando/google-services.json)
 
@@ -325,14 +329,10 @@ DISTFILES += \
     androidinst/src/com/dwyco/cdc32/dwybg.java \
     androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
     androidinst/src/com/dwyco/rando/app.java \
-    androidinst/src/com/dwyco/android/Dwyco_Message.java \
-    androidinst/src/com/dwyco/android/DwycoProbe.java \
     androidinst/src/com/dwyco/android/DwycoSender.java \
     androidinst/src/com/dwyco/android/MyFirebaseMessagingService.java \
     androidinst/src/com/dwyco/android/NotificationClient.java \
-    androidinst/src/com/dwyco/android/Push_Notification.java \
     androidinst/src/com/dwyco/android/SocketLock.java \
-    androidinst/src/com/dwyco/android/StickyIntentService.java \
     androidinst/src/com/dwyco/rando/DwycoApp.java
 
 contains(ANDROID_TARGET_ARCH,x86) {
@@ -342,4 +342,8 @@ contains(ANDROID_TARGET_ARCH,x86) {
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
     ANDROID_EXTRA_LIBS = \
         $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so
+}
+contains(ANDROID_TARGET_ARCH,arm64-v8a) {
+    ANDROID_EXTRA_LIBS = \
+        $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so
 }

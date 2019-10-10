@@ -12,9 +12,8 @@
 
 using namespace dwyco;
 
-
 vc
-SimpleSql::sql_simple(const char *sql, vc a0, vc a1, vc a2, vc a3)
+SimpleSql::sql_simple(const char *sql, const vc& a0, const vc& a1, const vc& a2, const vc& a3, const vc& a4)
 {
     VCArglist a;
     a.append(sql);
@@ -30,6 +29,10 @@ SimpleSql::sql_simple(const char *sql, vc a0, vc a1, vc a2, vc a3)
                 if(!a3.is_nil())
                 {
                     a.append(a3);
+                    if(!a4.is_nil())
+                    {
+                        a.append(a4);
+                    }
                 }
             }
         }
@@ -47,12 +50,12 @@ SimpleSql::init()
 {
     if(Db)
         oopanic("already init");
-    if(sqlite3_open(newfn(dbname).c_str(), &Db) != SQLITE_OK)
+    if(sqlite3_open(newfn(dbnames[0]).c_str(), &Db) != SQLITE_OK)
     {
         Db = 0;
         return 0;
     }
-    init_schema();
+    init_schema(schema_names[0]);
     return 1;
 }
 
@@ -63,6 +66,31 @@ SimpleSql::exit()
         return;
     sqlite3_close_v2(Db);
     Db = 0;
+    dbnames.del(1, dbnames.num_elems() - 1);
+    schema_names.del(1, schema_names.num_elems() - 1);
+}
+
+void
+SimpleSql::attach(const DwString& dbname, const DwString& schema_name)
+{
+    DwString ndbname = newfn(dbname);
+    if(dbnames.contains(ndbname) || schema_names.contains(schema_name))
+        return;
+    sql_simple("attach ?1 as ?2", ndbname.c_str(), schema_name.c_str());
+    dbnames.append(ndbname);
+    schema_names.append(schema_name);
+    init_schema(schema_name);
+}
+
+void
+SimpleSql::detach(const DwString& schema_name)
+{
+    int i;
+    if((i = schema_names.index(schema_name)) == -1)
+        return;
+    sql_simple("detach ?1", schema_name.c_str());
+    dbnames.del(i);
+    schema_names.del(i);
 }
 
 void

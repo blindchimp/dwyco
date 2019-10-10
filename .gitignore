@@ -1,5 +1,6 @@
 *~
 *.autosave
+*.swp
 phoobld/jni/toolchain/
 phoobld/jni/toolchain.x86/
 phoobld/jni/NDK_ABI_X86
@@ -575,3 +576,7 @@ bld/speexdsp/output/
 bld/speexdsp/libspeexdsp/testresample
 
 bld/speexdsp/libspeexdsp/testresample2
+
+\.stignore
+
+*.10-pre1

@@ -454,6 +454,7 @@ get_disk_serial()
     return 0;
 }
 
+static
 vc
 system_info()
 {

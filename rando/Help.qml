@@ -46,7 +46,7 @@ Page {
             Layout.fillHeight: true
         }
         Label {
-            text: "Click on a round picture to see it in full detail. Use pinching to zoom and pan as usual."
+            text: "Tap on a round picture to see it in full detail. Use pinching to zoom and pan as usual."
             Layout.fillWidth: true
             wrapMode: Text.Wrap
         }
@@ -80,7 +80,7 @@ Page {
             }
 
             Label {
-                text: "Where in the world the picture was created (very rough estimate)."
+                text: "Tap to see where in the world the picture was created."
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
             }
@@ -93,7 +93,7 @@ Page {
             }
 
             Label {
-                text: "Where in the world your picture was sent (very rough estimate)."
+                text: "Tap to see where in the world your picture was sent."
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
             }

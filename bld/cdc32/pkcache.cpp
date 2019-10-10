@@ -14,10 +14,6 @@
 #include "dwstr.h"
 #ifdef _Windows
 #include <io.h>
-#ifdef __BORLANDC__
-#include <dir.h>
-#include <utime.h>
-#endif
 #ifdef _MSC_VER
 #include <direct.h>
 #include <sys/utime.h>
