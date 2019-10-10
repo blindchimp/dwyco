@@ -77,15 +77,15 @@ Page {
                 id: optionsMenu
                 x: parent.width - width
                 transformOrigin: Menu.TopRight
-                MenuItem {
-                    text: "Delete msg"
-                    onTriggered: {
-                        core.delete_message(uid, mid)
-                        themsglist.reload_model()
-                        stack.pop()
+//                MenuItem {
+//                    text: "Delete msg"
+//                    onTriggered: {
+//                        core.delete_message(uid, mid)
+//                        themsglist.reload_model()
+//                        stack.pop()
 
-                    }
-                }
+//                    }
+//                }
 
                 MenuItem {
                     text: "Forward msg"

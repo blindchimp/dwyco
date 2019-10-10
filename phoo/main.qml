@@ -73,8 +73,8 @@ ApplicationWindow {
     
     
     property color primary : "#673AB7"
-    property color primary_dark : "#512DA8"
-    property color primary_light : "#D1C4E9"
+    property color primary_dark : "#512D18"
+    property color primary_light : "#D1C439"
     property color accent : "#009688"
     property color primary_text : "#212121"
     property color secondary_text : "#727272"
