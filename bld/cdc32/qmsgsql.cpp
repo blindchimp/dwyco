@@ -951,6 +951,7 @@ sql_fav_is_fav(vc mid)
     return res.num_elems() > 0;
 }
 
+// this one only returns mids that have been downloaded and indexed
 vc
 sql_get_tagged_mids(vc tag)
 {
@@ -958,6 +959,23 @@ sql_get_tagged_mids(vc tag)
     try
     {
         res = sql_simple("select assoc_uid, mid from msg_tags2,msg_idx using(mid) where tag = ?1 order by logical_clock asc",
+                         tag);
+    }
+    catch (...)
+    {
+        res = vc(VC_VECTOR);
+    }
+    return res;
+}
+
+// this returns all mids with given tag regardless of download state
+vc
+sql_get_tagged_mids2(vc tag)
+{
+    vc res;
+    try
+    {
+        res = sql_simple("select distinct(mid) from msg_tags2 where tag = ?1 order by logical_clock asc",
                          tag);
     }
     catch (...)

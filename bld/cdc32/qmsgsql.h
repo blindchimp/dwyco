@@ -41,6 +41,7 @@ void sql_add_tag(vc mid, vc tag);
 void sql_remove_tag(vc tag);
 void sql_remove_mid_tag(vc mid, vc tag);
 vc sql_get_tagged_mids(vc tag);
+vc sql_get_tagged_mids2(vc tag);
 vc sql_get_tagged_idx(vc tag);
 int sql_mid_has_tag(vc mid, vc tag);
 int sql_uid_has_tag(vc uid, vc tag);

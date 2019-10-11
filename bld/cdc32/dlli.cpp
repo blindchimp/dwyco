@@ -3999,7 +3999,6 @@ dwyco_delete_user(const char *uid, int len_uid)
     int ret = remove_user(dir, "");
     ack_all(u);
     pal_del(u, 1);
-    //infos_del(u);
     prf_invalidate(u);
     Session_infos.del(u);
     return ret;

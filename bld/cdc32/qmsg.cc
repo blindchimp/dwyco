@@ -327,6 +327,10 @@ ack_get_done2(vc m, void *, vc del2_args, ValidPtr )
     // make sense to have some kind of "pending" filter
     // depending on how much trouble it causes.
     //delete_msg2(del2_args[0], del2_args[1], vcnil);
+
+    // NOTE: probably need to do another tag update to make sure
+    // everything is gone in case it gets reinstated in the database
+    // somehow
 }
 
 void
@@ -1808,6 +1812,9 @@ query_done(vc m, void *, vc, ValidPtr)
         }
         add_msg(Cur_msgs, v);
         sql_add_tag(mid, "_remote");
+        DwString a("_");
+        a += (const char *)to_hex(from);
+        sql_add_tag(mid, a.c_str());
     }
     sql_commit_transaction();
     }
@@ -1968,6 +1975,9 @@ store_direct(MMChannel *m, vc msg, void *)
         sql_add_tag(id, "_inbox");
         sql_add_tag(id, "_local");
         sql_remove_mid_tag(id, "_remote");
+        DwString a("_");
+        a += (const char *)to_hex(from);
+        sql_remove_mid_tag(id, a.c_str());
         sql_commit_transaction();
         }
         catch(...)
@@ -2096,6 +2106,8 @@ ack_all(vc uid)
             ackset.append(Cur_msgs[i][QM_ID]);
         }
     }
+
+    sql_start_transaction();
     for(i = 0; i < ackset.num_elems(); ++i)
     {
         vc args(VC_VECTOR);
@@ -2105,6 +2117,15 @@ ack_all(vc uid)
         delete_msg2(ackset[i]);
         sql_remove_mid_tag(ackset[i], "_remote");
     }
+    DwString tag("_");
+    tag += (const char *)to_hex(uid);
+    vc mids = sql_get_tagged_mids2(tag.c_str());
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        sql_fav_remove_mid(mids[i][0]);
+    }
+    sql_commit_transaction();
+
 }
 
 int
@@ -2181,8 +2202,17 @@ remove_user(vc id, const char *pfx)
     vc uid = dir_to_uid((const char *)id);
     //always_vis_del(uid);
     // remove indexs so the msgs don't magically reappear
+    sql_start_transaction();
     sql_fav_remove_uid(uid);
     remove_msg_idx_uid(uid);
+    DwString tag("_");
+    tag += (const char *)to_hex(uid);
+    vc mids = sql_get_tagged_mids2(tag.c_str());
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        sql_fav_remove_mid(mids[i][0]);
+    }
+    sql_commit_transaction();
 
     MsgFolders.del(uid);
     se_emit(SE_USER_REMOVE, uid);
@@ -2197,6 +2227,13 @@ clear_user(vc id, const char *pfx)
     sql_start_transaction();
     sql_fav_remove_uid(uid);
     clear_msg_idx_uid(uid);
+    DwString tag("_");
+    tag += (const char *)to_hex(uid);
+    vc mids = sql_get_tagged_mids2(tag.c_str());
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        sql_fav_remove_mid(mids[i][0]);
+    }
     sql_commit_transaction();
     Rescan_msgs = 1;
     return 1;
