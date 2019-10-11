@@ -975,7 +975,7 @@ sql_get_tagged_mids2(vc tag)
     vc res;
     try
     {
-        res = sql_simple("select distinct(mid) from msg_tags2 where tag = ?1 order by logical_clock asc",
+        res = sql_simple("select distinct(mid) from msg_tags2 where tag = ?1",
                          tag);
     }
     catch (...)
