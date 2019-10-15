@@ -1,26 +1,7 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
-#macx-g++:dateincr.commands = ./dumptime-mac
-#macx-clang:dateincr.commands = ./dumptime-mac
-#macx-ios-clang:dateincr.commands = ./dumptime-mac
-#linux-g++-64:dateincr.commands = ./dumptime
-##linux-g++:dateincr.commands = ./dumptime32
-#android:dateincr.commands = ./dumptime
-#windows:dateincr.commands = .\\dumptime
-#!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
-#!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-
-CONFIG(appdir) {
-target.path=/usr/bin
-appdir_desktop.path=/usr/share/applications
-appdir_desktop.files=phoo.desktop
-appdir_icon.path=/usr/share/icons/hicolor/256x256/apps
-appdir_icon.files=phoo.png
-INSTALLS += appdir_icon appdir_desktop
-}
-
 
 QT += core qml multimedia network
 QT += quickcontrols2
@@ -61,22 +42,11 @@ SOURCES += main.cpp \
     resizeimage.cpp \
     androidperms.cpp
 
-# note: you can *compile* the qt stuff on any platform, but
-# as of 2017, the videoprobing stuff only works on android
-# platforms. you must compile the dwyco core lib with NO_VIDEO_CAPTURE
-# to remove the internal implementation of video capture (which is
-# used only on desktop platforms)
-
-DINC=$${PWD}/../bld
-
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst
 
 linux-* {
 DEFINES += LINUX
 DEFINES += DWYCO_APP_DEBUG
-equals(FORCE_DESKTOP_VGQT, 1) {
-DEFINES += DWYCO_FORCE_DESKTOP_VGQT
-}
 
 QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
 QMAKE_LFLAGS += -g #-fsanitize=address
@@ -100,9 +70,6 @@ $${D}/qt-qml-models/libQtQmlModels.a \
 $${D}/libuv/libuv.a \
 -lsqlite3
 
-#$${D}/pbm/libpbm.a \
-#$${D}/ppm/libppm.a \
-
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
@@ -120,13 +87,6 @@ $${D}/libuv/libuv.a
 wasm-emscripten {
 DEFINES += LINUX
 DEFINES += DWYCO_APP_DEBUG
-equals(FORCE_DESKTOP_VGQT, 1) {
-DEFINES += DWYCO_FORCE_DESKTOP_VGQT
-}
-#INCLUDEPATH += $${DINC}/v4lcap
-
-#QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
-#QMAKE_LFLAGS += -g #-fsanitize=address
 
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 QMAKE_LFLAGS += -s ERROR_ON_UNDEFINED_SYMBOLS=0
@@ -157,9 +117,7 @@ $${D}/qt-qml-models/libQtQmlModels.a
 
 macx-clang {
 DEFINES += MACOSX MAC_CLIENT
-equals(FORCE_DESKTOP_VGQT, 1) {
-DEFINES += DWYCO_FORCE_DESKTOP_VGQT
-}
+
 D = $$OUT_PWD/../bld
 SHADOW=$$OUT_PWD/..
 LIBS += \
@@ -246,9 +204,7 @@ QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycorandodeploy", ".", $$PWD/../..
 win32-msvc* {
 
 DEFINES += MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
-equals(FORCE_DESKTOP_VGQT, 1) {
-DEFINES += DWYCO_FORCE_DESKTOP_VGQT
-}
+
 # use this for linking to dynamic cdcdll
 #INCLUDEPATH += dllwin
 #LIBS +=  $${PWD}/cdcdll8.lib winmm.lib user32.lib kernel32.lib
