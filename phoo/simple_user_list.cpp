@@ -29,7 +29,8 @@ SimpleUserModel::~SimpleUserModel()
 {
 }
 
-static QByteArray
+static
+QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
 {
     const char *val;
@@ -40,21 +41,6 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
     if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
         ::abort();
     return QByteArray(val, len);
-}
-
-static int
-dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_INT)
-        return 0;
-    QByteArray str_out = QByteArray(val, len);
-    int_out = str_out.toInt();
-    return 1;
 }
 
 static
@@ -255,7 +241,7 @@ SimpleUserModel::uid_resolved(const QString &huid)
 
     QByteArray buid = QByteArray::fromHex(huid.toLatin1());
     c->update_display(dwyco_info_to_display(buid));
-    c->update_invalid(0);
+    c->update_invalid(false);
     int regular = 0;
     int reviewed = 0;
     get_review_status(buid, reviewed, regular);
@@ -270,7 +256,7 @@ SimpleUserModel::uid_invalidate_profile(const QString &huid)
     SimpleUser *c = getByUid(huid);
     if(!c)
         return;
-    c->update_invalid(1);
+    c->update_invalid(true);
 
 }
 

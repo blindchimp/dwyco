@@ -16,6 +16,7 @@
 #include <QSslSocket>
 #include <QGuiApplication>
 #include <QTextDocumentFragment>
+#include <QNetworkAccessManager>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -101,6 +102,7 @@ extern int HasAudioInput;
 extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
+static QNetworkAccessManager *Net_access;
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -1325,6 +1327,30 @@ DwycoCore::update_dwyco_client_name(QString name)
     dwyco_set_client_version(nm.constData(), nm.length());
 }
 
+void
+DwycoCore::dir_download_finished(QNetworkReply *r)
+{
+    if(r->error() != QNetworkReply::NoError)
+        return;
+
+    QByteArray res = r->readAll();
+    r->deleteLater();
+    DWYCO_LIST dl;
+    if(!dwyco_list_from_string(&dl, res.constData(), res.length()))
+    {
+        return;
+    }
+    simple_scoped qdl(dl);
+
+
+}
+
+void
+DwycoCore::refresh_directory()
+{
+    Net_access->get(QNetworkRequest(get_simple_lh_url()));
+}
+
 
 void
 DwycoCore::init()
@@ -1338,6 +1364,9 @@ DwycoCore::init()
     DVP::init_dvp();
     simple_call::init(this);
     AvoidSSL = !QSslSocket::supportsSsl();
+    Net_access = new QNetworkAccessManager(this);
+    connect(Net_access, &QNetworkAccessManager::finished,
+            this, &DwycoCore::dir_download_finished);
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
@@ -2173,8 +2202,9 @@ DwycoCore::get_simple_directory_url()
     return url;
 }
 
+// convert to LH, since XML stuff is going away in Qt
 QUrl
-DwycoCore::get_simple_xml_url()
+DwycoCore::get_simple_lh_url()
 {
     QUrlQuery qurl;
     const char *auth;
@@ -2188,9 +2218,9 @@ DwycoCore::get_simple_xml_url()
     QUrl url;
 
     if(AvoidSSL)
-        url.setUrl("http://profiles.dwyco.org/cgi-bin/mksimpxmldir.sh");
+        url.setUrl("http://profiles.dwyco.org/cgi-bin/mksimplhdir.sh");
     else
-        url.setUrl("https://profiles.dwyco.org/cgi-bin/mksimpxmldir.sh");
+        url.setUrl("https://profiles.dwyco.org/cgi-bin/mksimplhdir.sh");
     QString filt = "1";
     QString a;
     if(setting_get("show_unreviewed", a))

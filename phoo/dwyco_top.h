@@ -14,6 +14,7 @@
 #include <QObject>
 #include <QVariant>
 #include <QUrl>
+#include <QNetworkReply>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -138,7 +139,7 @@ public:
     Q_INVOKABLE int chat_online();
 
     Q_INVOKABLE QUrl get_simple_directory_url();
-    Q_INVOKABLE QUrl get_simple_xml_url();
+    Q_INVOKABLE QUrl get_simple_lh_url();
     Q_INVOKABLE QString get_msg_count_url();
     Q_INVOKABLE QString url_to_filename(QUrl);
     Q_INVOKABLE int simple_send(QString recipient, QString msg);
@@ -249,12 +250,12 @@ public:
     Q_INVOKABLE void enable_video_capture_preview(int i);
 
     Q_INVOKABLE void set_badge_number(int i);
-
-public:
+    Q_INVOKABLE void refresh_directory();
 
 public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);
+    void dir_download_finished(QNetworkReply *);
 
 signals:
     void server_login(const QString& msg, int what);
