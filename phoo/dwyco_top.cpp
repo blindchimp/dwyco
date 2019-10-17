@@ -37,6 +37,7 @@
 #include "ctlist.h"
 #include "QQmlVarPropertyHelpers.h"
 #include "QQmlVariantListModel.h"
+#include "simpledirmodel.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
@@ -94,6 +95,7 @@ static QTcpServer *BGLockSock;
 static DwycoImageProvider *Dwyco_video_provider;
 static DwycoVideoPreviewProvider *Dwyco_video_preview_provider;
 static QQmlVariantListModel *CamListModel;
+static SimpleDirModel *SimpleDirInst;
 static int BGLockPort;
 int auto_fetch(QByteArray mid);
 int retry_auto_fetch(QByteArray mid);
@@ -1330,6 +1332,7 @@ DwycoCore::update_dwyco_client_name(QString name)
 void
 DwycoCore::dir_download_finished(QNetworkReply *r)
 {
+    update_directory_fetching(false);
     if(r->error() != QNetworkReply::NoError)
         return;
 
@@ -1341,14 +1344,14 @@ DwycoCore::dir_download_finished(QNetworkReply *r)
         return;
     }
     simple_scoped qdl(dl);
-
-
+    SimpleDirInst->load_from_dwycolist(qdl);
 }
 
 void
 DwycoCore::refresh_directory()
 {
     Net_access->get(QNetworkRequest(get_simple_lh_url()));
+    update_directory_fetching(true);
 }
 
 
@@ -3025,6 +3028,9 @@ dwyco_register_qml(QQmlContext *root)
     Ignore_sort_proxy->setSourceModel(ignorelist);
     QObject::connect(ignorelist, SIGNAL(countChanged()), Ignore_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("IgnoreListModel", Ignore_sort_proxy);
+
+    SimpleDirInst = new SimpleDirModel;
+    root->setContextProperty("SimpleDirectoryList", SimpleDirInst);
 
 #ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;

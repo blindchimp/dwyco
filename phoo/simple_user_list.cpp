@@ -13,6 +13,7 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "dwyco_top.h"
+#include "dwycolistscoped.h"
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
@@ -27,20 +28,6 @@ SimpleUserModel::SimpleUserModel(QObject *parent) :
 
 SimpleUserModel::~SimpleUserModel()
 {
-}
-
-static
-QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
 }
 
 static
@@ -211,15 +198,17 @@ SimpleUserModel::load_users_to_model()
     clear();
     QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
     dwyco_get_user_list2(&l, &n);
+    simple_scoped ql(l);
     for(int i = 0; i < n; ++i)
     {
-        QByteArray uid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
+        QByteArray uid = ql.get<QByteArray>(i, DWYCO_NO_COLUMN);
+        if(uid.length() == 0)
+            continue;
         if(!dwyco_is_ignored(uid.constData(), uid.length()))
         {
             add_uid_to_model(uid);
         }
     }
-    dwyco_list_release(l);
 }
 
 void

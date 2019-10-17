@@ -458,20 +458,12 @@ ApplicationWindow {
     Loader {
         id: simpdir_rect
 
-        property url xml_url : ""
         visible: false
         onVisibleChanged: {
             if(visible) {
-                var tmp
-                tmp = core.get_simple_xml_url()
-                console.log("xml ", tmp)
-                if(xml_url !== tmp) {
-                    xml_url = tmp
-                }
                 source = "qrc:/SimpDir.qml"
             }
         }
-
     }
 
 

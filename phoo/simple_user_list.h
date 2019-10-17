@@ -20,7 +20,7 @@ class SimpleUser : public QObject
 
     QML_READONLY_VAR_PROPERTY(QString, uid)
     QML_READONLY_VAR_PROPERTY(QString, display)
-    QML_WRITABLE_VAR_PROPERTY(bool, active)
+    QML_READONLY_VAR_PROPERTY(bool, active)
     QML_READONLY_VAR_PROPERTY(bool, invalid)
     QML_READONLY_VAR_PROPERTY(bool, REVIEWED)
     QML_READONLY_VAR_PROPERTY(bool, REGULAR)
@@ -61,8 +61,6 @@ public:
     void delete_all_selected();
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void send_forward_selected(QString uid_folder, QString mid_to_forward);
-
-signals:
 
 public slots:
     // note: the invalidate is needed because we need to

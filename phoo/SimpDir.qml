@@ -8,7 +8,6 @@
 */
 import QtQuick 2.6
 import QtQuick.Controls 2.1
-import QtQuick.XmlListModel 2.0
 import QtQuick.Layouts 1.3
 
 Page {
@@ -16,23 +15,11 @@ Page {
     anchors.fill: parent
 
     signal uid_selected(string uid, string action)
-    
-    XmlListModel {
-         id: xmlModel
-         //source: {"http://profiles.dwyco.org/cgi-bin/mksimpxmldir.sh"}
-         source: simpdir_rect.xml_url
-         query: "/directory/entry"
 
-         XmlRole { name: "uid"; query: "uid/string()"; isKey: true }
-         XmlRole { name: "name"; query: "name/string()" }
-         XmlRole { name: "description"; query: "description/string()" }
-         XmlRole { name: "has_preview"; query: "has_preview/number()" }
-         onStatusChanged: {
-             console.log("XML")
-             console.log(status)
-             console.log(xmlModel.errorString())
-         }
-     }
+    onVisibleChanged: {
+        if(visible && SimpleDirectoryList.count() === 0)
+            core.refresh_directory()
+    }
 
     header: SimpleToolbar {
         id: toolbar
@@ -58,7 +45,7 @@ Page {
                 MenuItem {
                     text: "Refresh"
                     onTriggered: {
-                        xmlModel.reload()
+                        core.refresh_directory()
                     }
                 }
             }
@@ -70,7 +57,7 @@ Page {
         id: simpdir_delegate
         Rectangle {
             width: parent.width
-            height: has_preview === 1 ? vh(pct) : vh(pct) / 2
+            height: has_preview ? vh(pct) : vh(pct) / 2
             border.width: 1
 
             color: primary_dark
@@ -86,7 +73,7 @@ Page {
                 anchors.fill: parent
                 CircularImage {
                     id: preview
-                    source: {has_preview === 1 ? core.uid_to_http_profile_preview(uid) : ""}
+                    source: {has_preview ? core.uid_to_http_profile_preview(uid) : ""}
                     fillMode: Image.PreserveAspectCrop
                     Layout.minimumWidth: picht()
                     Layout.maximumWidth: picht()
@@ -107,7 +94,7 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         id: nm
-                        text: name
+                        text: handle
                         clip: true
                         font.bold: true
                         elide: Text.ElideRight
@@ -155,7 +142,7 @@ Page {
     ListView {
         id: listView1
          anchors.fill: parent
-         model: xmlModel
+         model: SimpleDirectoryList
          visible: !toolbar.grid_checked
 
          delegate: simpdir_delegate
@@ -179,23 +166,23 @@ Page {
 
             CircularImage {
                 id: preview
-                source: {has_preview === 1 ? core.uid_to_http_profile_preview(uid) : ""}
+                source: {has_preview ? core.uid_to_http_profile_preview(uid) : ""}
                 fillMode: Image.PreserveAspectCrop
                 height:parent.height
                 width: parent.height
-                visible: has_preview === 1
+                visible: has_preview
             }
             Text {
-                text: name
+                text: handle
                 elide: Text.ElideRight
                 clip: true
                 anchors.bottom: parent.bottom
                 width: parent.width
                 color: amber_light
-                visible: has_preview === 1
+                visible: has_preview
             }
             ColumnLayout {
-                visible: has_preview !== 1
+                visible: !has_preview
                 Layout.fillWidth: true
                 anchors.fill: parent
                 Layout.margins: 3
@@ -205,7 +192,7 @@ Page {
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
                     id: nm
-                    text: name
+                    text: handle
                     clip: true
                     font.bold: true
                     elide: Text.ElideRight
@@ -218,7 +205,6 @@ Page {
                     text: description
                     clip: true
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-
                 }
             }
 
@@ -254,7 +240,7 @@ Page {
 
         visible: toolbar.grid_checked
 
-        model: xmlModel
+        model: SimpleDirectoryList
         delegate: simpdir_grid_delegate
         clip: true
         //spacing: 5
@@ -269,14 +255,14 @@ Page {
         target: core
         onIgnore_event: {
             if(simpdir_top.visible)
-                xmlModel.reload()
+                core.refresh_directory()
         }
     }
 
     BusyIndicator {
         id: busy1
 
-        running: {xmlModel.status == XmlListModel.Loading}
+        running: {core.directory_fetching}
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }

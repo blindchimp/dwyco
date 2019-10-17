@@ -48,6 +48,7 @@ SOURCES += main.cpp \
     pfx.cpp \
     msglistmodel.cpp \
     msgpv.cpp \
+    simpledirmodel.cpp \
     ssmap.cpp \
     dwycoimageprovider.cpp \
     notificationclient.cpp \
@@ -412,7 +413,8 @@ HEADERS += \
     simple_user_list.h \
     ctlist.h \
     dwycovideopreviewprovider.h \
-    audi_qt.h
+    audi_qt.h \
+    simpledirmodel.h
 
 DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.jar \

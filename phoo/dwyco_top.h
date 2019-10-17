@@ -41,6 +41,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
     QML_READONLY_VAR_PROPERTY(QString, this_uid)
+    QML_READONLY_VAR_PROPERTY(bool, directory_fetching)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -57,6 +58,7 @@ public:
         m_vid_dev_name = "";
         m_use_archived = true;
         m_this_uid = "";
+        m_directory_fetching = false;
     }
     static QByteArray My_uid;
 
