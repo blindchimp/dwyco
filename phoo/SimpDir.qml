@@ -17,7 +17,7 @@ Page {
     signal uid_selected(string uid, string action)
 
     onVisibleChanged: {
-        if(visible && SimpleDirectoryList.count() === 0)
+        if(visible && SimpleDirectoryList.count === 0)
             core.refresh_directory()
     }
 

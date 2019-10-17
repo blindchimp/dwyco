@@ -125,6 +125,7 @@ Page {
                     else
                         notificationClient.set_user_property("content", "rev")
                 }
+                SimpleDirectoryList.clear()
             }
             onClicked: {
                 if(checked) {

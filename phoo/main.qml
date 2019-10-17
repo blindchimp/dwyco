@@ -464,6 +464,10 @@ ApplicationWindow {
                 source = "qrc:/SimpDir.qml"
             }
         }
+        onLoaded: {
+            if(SimpleDirectoryList.count === 0)
+                core.refresh_directory()
+        }
     }
 
 
@@ -830,8 +834,8 @@ ApplicationWindow {
                 notificationClient.log_event()
                 notificationClient.set_lastrun()
             }
-            if(simpdir_rect.visible && simpdir_rect.xml_url === "")
-                simpdir_rect.xml_url = core.get_simple_xml_url()
+            if(simpdir_rect.visible && SimpleDirectoryList.count === 0)
+                refresh_directory()
         }
 
         onNew_msg: {
