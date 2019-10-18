@@ -19,6 +19,7 @@ class DwycoCore;
 extern DwycoCore *TheDwycoCore;
 
 void hack_unread_count();
+QByteArray get_cq_results_filename();
 
 SimpleUserModel::SimpleUserModel(QObject *parent) :
     QQmlObjectListModel<SimpleUser>(parent, "display", "uid")
@@ -211,6 +212,50 @@ SimpleUserModel::load_users_to_model()
     }
 }
 
+template<class T>
+int
+load_it(T& out, const char *filename)
+{
+    QFile f(filename);
+    if(!f.exists())
+        return 0;
+    f.open(QIODevice::ReadOnly);
+    QDataStream in(&f);
+    in >> out;
+    f.close();
+    if(in.status() == QDataStream::Ok)
+    {
+        return 1;
+    }
+    f.remove();
+    return 0;
+}
+
+void
+SimpleUserModel::load_from_cq_file()
+{
+    int n;
+    clear();
+    QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
+    QList<QPair<QString, QString>> cqlist;
+    if(!load_it(cqlist, get_cq_results_filename()))
+        return;
+    n = cqlist.count();
+    for(int i = 0; i < n; ++i)
+    {
+        QString huid = cqlist[i].first;
+        QByteArray uid = QByteArray::fromHex(huid.toLatin1());
+        QString email = cqlist[i].second;
+        if(uid.length() == 0)
+            continue;
+        if(!dwyco_is_ignored(uid.constData(), uid.length()))
+        {
+            auto su = add_uid_to_model(uid);
+            su->update_email(email);
+        }
+    }
+}
+
 void
 SimpleUserModel::load_admin_users_to_model()
 {
@@ -258,6 +303,8 @@ SimpleUserSortFilterModel::SimpleUserSortFilterModel(QObject *p)
     setSortCaseSensitivity(Qt::CaseInsensitive);
     sort(0);
     connect(m, SIGNAL(selected_countChanged(int)), this, SIGNAL(selected_countChanged(int)));
+    connect(m, SIGNAL(countChanged()), this, SIGNAL(countChanged()));
+    m_count = 0;
 }
 
 int
@@ -276,6 +323,15 @@ SimpleUserSortFilterModel::load_users_to_model()
     if(!m)
         ::abort();
     m->load_users_to_model();
+}
+
+void
+SimpleUserSortFilterModel::load_from_cq_file()
+{
+    SimpleUserModel *m = dynamic_cast<SimpleUserModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    m->load_from_cq_file();
 }
 
 void

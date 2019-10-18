@@ -2359,10 +2359,10 @@ DwycoCore::delete_user(QString uid)
     return ret;
 }
 
-static QByteArray
+QByteArray
 get_cq_results_filename()
 {
-    return add_pfx(User_pfx, "cq.xml");
+    return add_pfx(User_pfx, "cq.qds");
 
 }
 
