@@ -1,3 +1,13 @@
+Sun Oct 20 14:19:31 MDT 2019
+
+deploying with qt4 is easier, just make sure you compile the bot
+with qt4 installed on the same OS version as the target. this is because
+of incompatibilities with libc.
+
+also, the target installation will need the sqlite driver plugin:
+
+apt-get install libqt4-sql-sqlite
+
 Wed Jun  7 08:32:15 MDT 2017
 
 build the bot with qt5.6 requires some goofy stuff in order to
