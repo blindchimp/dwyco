@@ -16,6 +16,7 @@
 #include <QSslSocket>
 #include <QGuiApplication>
 #include <QTextDocumentFragment>
+#include <QNetworkAccessManager>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -36,6 +37,7 @@
 #include "ctlist.h"
 #include "QQmlVarPropertyHelpers.h"
 #include "QQmlVariantListModel.h"
+#include "simpledirmodel.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
@@ -93,6 +95,7 @@ static QTcpServer *BGLockSock;
 static DwycoImageProvider *Dwyco_video_provider;
 static DwycoVideoPreviewProvider *Dwyco_video_preview_provider;
 static QQmlVariantListModel *CamListModel;
+static SimpleDirModel *SimpleDirInst;
 static int BGLockPort;
 int auto_fetch(QByteArray mid);
 int retry_auto_fetch(QByteArray mid);
@@ -101,6 +104,9 @@ extern int HasAudioInput;
 extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
+static QNetworkAccessManager *Net_access;
+
+static QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -1325,6 +1331,31 @@ DwycoCore::update_dwyco_client_name(QString name)
     dwyco_set_client_version(nm.constData(), nm.length());
 }
 
+void
+DwycoCore::dir_download_finished(QNetworkReply *r)
+{
+    update_directory_fetching(false);
+    if(r->error() != QNetworkReply::NoError)
+        return;
+
+    QByteArray res = r->readAll();
+    r->deleteLater();
+    DWYCO_LIST dl;
+    if(!dwyco_list_from_string(&dl, res.constData(), res.length()))
+    {
+        return;
+    }
+    simple_scoped qdl(dl);
+    SimpleDirInst->load_from_dwycolist(qdl);
+}
+
+void
+DwycoCore::refresh_directory()
+{
+    Net_access->get(QNetworkRequest(get_simple_lh_url()));
+    update_directory_fetching(true);
+}
+
 
 void
 DwycoCore::init()
@@ -1338,6 +1369,9 @@ DwycoCore::init()
     DVP::init_dvp();
     simple_call::init(this);
     AvoidSSL = !QSslSocket::supportsSsl();
+    Net_access = new QNetworkAccessManager(this);
+    connect(Net_access, &QNetworkAccessManager::finished,
+            this, &DwycoCore::dir_download_finished);
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
@@ -2177,8 +2211,9 @@ DwycoCore::get_simple_directory_url()
     return url;
 }
 
+// convert to LH, since XML stuff is going away in Qt
 QUrl
-DwycoCore::get_simple_xml_url()
+DwycoCore::get_simple_lh_url()
 {
     QUrlQuery qurl;
     const char *auth;
@@ -2192,9 +2227,9 @@ DwycoCore::get_simple_xml_url()
     QUrl url;
 
     if(AvoidSSL)
-        url.setUrl("http://profiles.dwyco.org/cgi-bin/mksimpxmldir.sh");
+        url.setUrl("http://profiles.dwyco.org/cgi-bin/mksimplhdir.sh");
     else
-        url.setUrl("https://profiles.dwyco.org/cgi-bin/mksimpxmldir.sh");
+        url.setUrl("https://profiles.dwyco.org/cgi-bin/mksimplhdir.sh");
     QString filt = "1";
     QString a;
     if(setting_get("show_unreviewed", a))
@@ -2330,10 +2365,10 @@ DwycoCore::delete_user(QString uid)
     return ret;
 }
 
-static QByteArray
+QByteArray
 get_cq_results_filename()
 {
-    return add_pfx(User_pfx, "cq.xml");
+    return add_pfx(User_pfx, "cq.qds");
 
 }
 
@@ -2643,7 +2678,7 @@ DwycoCore::service_channels()
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
-        QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
+        //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
         DWYCO_UNFETCHED_MSG_LIST uml;
         if(dwyco_get_unfetched_messages(&uml, clbot.constData(), clbot.length()))
@@ -2796,9 +2831,9 @@ send_contact_query(QList<QString> emails)
     int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
     if(compid == 0)
         return;
-    QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
+    //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
-    if(!dwyco_zap_send5(compid, clbot.constData(), clbot.length(),
+    if(!dwyco_zap_send5(compid, Clbot.constData(), Clbot.length(),
                         "", 0,
                         0, 0,
                         0, 0)
@@ -2979,6 +3014,9 @@ dwyco_register_qml(QQmlContext *root)
     Ignore_sort_proxy->setSourceModel(ignorelist);
     QObject::connect(ignorelist, SIGNAL(countChanged()), Ignore_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("IgnoreListModel", Ignore_sort_proxy);
+
+    SimpleDirInst = new SimpleDirModel;
+    root->setContextProperty("SimpleDirectoryList", SimpleDirInst);
 
 //#ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;

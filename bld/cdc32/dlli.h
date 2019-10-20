@@ -921,7 +921,7 @@ void DWYCOEXPORT dwyco_list_append(DWYCO_LIST l, const char *val, int len, int t
 void DWYCOEXPORT dwyco_list_append_int(DWYCO_LIST l, int i);
 // must call dwyco_free_array on returned string after copying out
 void DWYCOEXPORT dwyco_list_to_string(DWYCO_LIST l, const char **str_out, int *len_out);
-DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
+int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, int len_str);
 
 // types returned by get_list
 #define DWYCO_TYPE_NIL 0

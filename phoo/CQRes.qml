@@ -8,7 +8,6 @@
 */
 import QtQuick 2.6
 import QtQuick.Controls 2.1
-import QtQuick.XmlListModel 2.0
 import QtQuick.Layouts 1.3
 import dwyco 1.0
 
@@ -21,22 +20,7 @@ Page {
     property bool no_contacts: false
 
     signal uid_selected(string uid, string action)
-    
-    XmlListModel {
-         id: xmlModel
 
-         query: "/res/contact"
-
-         XmlRole { name: "uid"; query: "uid/string()" }
-         XmlRole { name: "email"; query: "email/string()" }
-         //XmlRole { name: "description"; query: "description/string()" }
-         //XmlRole { name: "has_preview"; query: "has_preview/number()" }
-         onStatusChanged: {
-             console.log("XML")
-             console.log(status)
-             console.log(xmlModel.source)
-         }
-     }
     // onVisibleChanged: this doesn't seem to work except
     // when visible turns off. for some reason, the loader
     // that is encapsulating this. since the loader is
@@ -47,12 +31,11 @@ Page {
         target: core
         onCq_results_received : {
             if(succ) {
-                xmlModel.source = core.get_cq_results_url()
-                xmlModel.reload()
+                cq_res_model.load_from_cq_file()
                 query_succeeded = 1
                 core.set_local_setting("cq-succeeded", "1")
             } else {
-                xmlModel.source = ""
+                cq_res_model.clear()
                 query_succeeded = 0
                 core.set_local_setting("cq-succeeded", "0")
             }
@@ -73,10 +56,13 @@ Page {
     DwycoSimpleContactModel {
         id: user_model
     }
+    DwycoSimpleUserModel {
+        id: cq_res_model
+    }
 
     ColumnLayout {
         id: help_column
-        visible: {xmlModel.count === 0}
+        visible: {cq_res_model.count === 0}
         z: 5
         spacing: mm(10)
         anchors.fill: parent
@@ -94,7 +80,6 @@ Page {
             text: "Send Email Contacts Securely"
             onClicked: {
                 core.delete_cq_results()
-                xmlModel.reload()
                 if(core.load_contacts() === 0) {
                     // permission denied
                     return;
@@ -199,7 +184,7 @@ Page {
                     text: "Refresh"
                     onTriggered: {
                         core.delete_cq_results()
-                        xmlModel.reload()
+                        cq_res_model.load_from_cq_file()
                         if(core.load_contacts() === 0) {
                             return
                         }
@@ -352,17 +337,15 @@ Page {
 
     Component.onCompleted: {
         cqres_top.uid_selected.connect(top_dispatch.uid_selected)
-        xmlModel.source = core.get_cq_results_url()
-        xmlModel.reload()
         query_in_progress = parseInt(core.get_local_setting("cq-in-progress"))
         query_succeeded = parseInt(core.get_local_setting("cq-succeeded"))
+        cq_res_model.load_from_cq_file()
     }
 
     ListView {
         id: listView1
          anchors.fill: parent
-         model: xmlModel
-
+         model: cq_res_model
          delegate: cqres_delegate
          clip:true
          ScrollBar.vertical: ScrollBar { }
