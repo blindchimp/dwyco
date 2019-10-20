@@ -216,19 +216,26 @@ template<class T>
 int
 load_it(T& out, const char *filename)
 {
-    QFile f(filename);
-    if(!f.exists())
-        return 0;
-    f.open(QIODevice::ReadOnly);
-    QDataStream in(&f);
-    in >> out;
-    f.close();
-    if(in.status() == QDataStream::Ok)
+    try
     {
-        return 1;
+        QFile f(filename);
+        if(!f.exists())
+            return 0;
+        f.open(QIODevice::ReadOnly);
+        QDataStream in(&f);
+        in >> out;
+        f.close();
+        if(in.status() == QDataStream::Ok)
+        {
+            return 1;
+        }
+        f.remove();
+        return 0;
     }
-    f.remove();
-    return 0;
+    catch(...)
+    {
+        return 0;
+    }
 }
 
 void
