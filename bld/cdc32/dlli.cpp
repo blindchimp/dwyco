@@ -8328,14 +8328,15 @@ dwyco_list_to_string(DWYCO_LIST l, const char **str_out, int *len_out)
 }
 
 DWYCOEXPORT
-DWYCO_LIST
-dwyco_list_from_string(const char *str, int len_str)
+int
+dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, int len_str)
 {
     vc v(VC_BSTRING, str, len_str);
     vc res;
     if(!deserialize(v, res))
         return 0;
-    return dwyco_list_from_vc(res);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
 }
 
 
