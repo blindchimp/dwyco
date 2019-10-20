@@ -106,6 +106,8 @@ extern int HasCamera;
 extern int HasCamHardware;
 static QNetworkAccessManager *Net_access;
 
+static QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
+
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
 {
@@ -2643,10 +2645,10 @@ DwycoCore::service_channels()
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
-        QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
+        //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
         DWYCO_UNSAVED_MSG_LIST uml;
-        if(dwyco_get_unsaved_messages(&uml, clbot.constData(), clbot.length()))
+        if(dwyco_get_unsaved_messages(&uml, Clbot.constData(), Clbot.length()))
         {
             simple_scoped quml(uml);
             int n = quml.rows();
@@ -2662,7 +2664,7 @@ DwycoCore::service_channels()
                 {
                     process_contact_query_response(mid);
                     dwyco_delete_unsaved_message(mid.constData());
-                    dwyco_delete_user(clbot.constData(), clbot.length());
+                    dwyco_delete_user(Clbot.constData(), Clbot.length());
                 }
             }
         }
@@ -2845,9 +2847,9 @@ send_contact_query(QList<QString> emails)
     int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
     if(compid == 0)
         return;
-    QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
+    //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
-    if(!dwyco_zap_send5(compid, clbot.constData(), clbot.length(),
+    if(!dwyco_zap_send5(compid, Clbot.constData(), Clbot.length(),
                         "", 0,
                         0, 0,
                         0, 0)
