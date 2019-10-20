@@ -2375,10 +2375,8 @@ get_cq_results_filename()
 static void
 process_contact_query_response(const QByteArray& mid)
 {
-    QByteArray clh("f6006af180260669eafc");
-    QByteArray clbot(QByteArray::fromHex(clh));
     DWYCO_SAVED_MSG_LIST sm;
-    if(!dwyco_get_saved_message(&sm, clbot.constData(), clbot.length(), mid.constData()))
+    if(!dwyco_get_saved_message(&sm, Clbot.constData(), Clbot.length(), mid.constData()))
     {
         TheDwycoCore->emit cq_results_received(0);
         return;
@@ -2400,11 +2398,11 @@ process_contact_query_response(const QByteArray& mid)
 void
 DwycoCore::internal_cq_check(QString huid)
 {
-    QByteArray clh("f6006af180260669eafc");
+    QByteArray clh = Clbot.toHex();
     if(huid.toLatin1() != clh)
         return;
-    QByteArray clbot(QByteArray::fromHex(clh));
-    if(!dwyco_uid_has_tag(clbot.constData(), clbot.length(), "_inbox"))
+
+    if(!dwyco_uid_has_tag(Clbot.constData(), Clbot.length(), "_inbox"))
         return;
     DWYCO_LIST tl;
     dwyco_get_tagged_mids(&tl, "_inbox");
@@ -2419,7 +2417,7 @@ DwycoCore::internal_cq_check(QString huid)
 
         }
     }
-    dwyco_delete_user(clbot.constData(), clbot.length());
+    dwyco_delete_user(Clbot.constData(), Clbot.length());
 }
 
 
@@ -2681,7 +2679,7 @@ DwycoCore::service_channels()
         //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
         DWYCO_UNFETCHED_MSG_LIST uml;
-        if(dwyco_get_unfetched_messages(&uml, clbot.constData(), clbot.length()))
+        if(dwyco_get_unfetched_messages(&uml, Clbot.constData(), Clbot.length()))
         {
             simple_scoped quml(uml);
             int n = quml.rows();
