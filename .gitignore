@@ -1,5 +1,6 @@
 *~
 *.autosave
+*.swp
 phoobld/jni/toolchain/
 phoobld/jni/toolchain.x86/
 phoobld/jni/NDK_ABI_X86

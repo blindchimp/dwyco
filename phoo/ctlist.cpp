@@ -11,6 +11,7 @@
 #include "ctlist.h"
 #include "dlli.h"
 #include "getinfo.h"
+#include "dwycolistscoped.h"
 
 SimpleContactModel::SimpleContactModel(QObject *parent) :
     QQmlObjectListModel<SimpleContact>(parent, "display")
@@ -21,35 +22,6 @@ SimpleContactModel::SimpleContactModel(QObject *parent) :
 SimpleContactModel::~SimpleContactModel()
 {
 }
-
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
-}
-
-static int
-dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_INT)
-        return 0;
-    QByteArray str_out = QByteArray(val, len);
-    int_out = str_out.toInt();
-    return 1;
-}
-
 
 void
 SimpleContactModel::set_all_selected(bool b)
@@ -111,17 +83,16 @@ SimpleContactModel::load_users_to_model()
     int n;
     clear();
     dwyco_get_contact_list(&l);
-    dwyco_list_numelems(l, &n, 0);
+    simple_scoped ql(l);
+    l = 0;
+    n = ql.rows();
     for(int i = 0; i < n; ++i)
     {
-        QByteArray name = dwyco_get_attr(l, i, DWYCO_CONTACT_LIST_NAME);
-        QByteArray email = dwyco_get_attr(l, i, DWYCO_CONTACT_LIST_EMAIL);
-        QByteArray phone = dwyco_get_attr(l, i, DWYCO_CONTACT_LIST_PHONE);
-
+        QByteArray name = ql.get<QByteArray>(i, DWYCO_CONTACT_LIST_NAME);
+        QByteArray email = ql.get<QByteArray>(i, DWYCO_CONTACT_LIST_EMAIL);
+        QByteArray phone = ql.get<QByteArray>(i, DWYCO_CONTACT_LIST_PHONE);
         add_contact_to_model(name, phone, email);
-
     }
-    dwyco_list_release(l);
 }
 
 void send_contact_query(QList<QString> emails);
