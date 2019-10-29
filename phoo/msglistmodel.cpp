@@ -563,7 +563,6 @@ msglist_raw::~msglist_raw()
 int
 msglist_raw::check_inbox_model()
 {
-    return 0;
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
 
     // optimization, to avoid resetting the model in common cases
@@ -587,24 +586,6 @@ msglist_raw::check_inbox_model()
                     return 0;
                 }
             }
-
-#if 0
-            simple_scoped q_old_inbox(inbox_msgs);
-
-            inbox_msgs = qnew_im;
-            count_inbox_msgs = qnew_im.rows();
-            for(int i = 0; i < count_inbox_msgs; ++i)
-            {
-                if(qnew_im.is_nil(i, DWYCO_QMS_IS_DIRECT) != q_old_inbox.is_nil(i, DWYCO_QMS_IS_DIRECT))
-                {
-                    int k = count_inbox_msgs - i - 1;
-
-                    QModelIndex mi = index(k, 0);
-                    emit dataChanged(mi, mi);
-
-                }
-            }
-#endif
             return 1;
         }
         else if(qnew_im.rows() == 1 && count_inbox_msgs == 0)
