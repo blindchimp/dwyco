@@ -702,6 +702,13 @@ msglist_raw::reload_model(int force)
 
 
     }
+
+    // note: i discovered that an initial empty model would
+    // react to a "resetmodel" by loading the entire model
+    // and creating delegates for all the elements in the model.
+    // this seems like a qt bug... if you use "insertrows" on the empty
+    // model, it does more what you would imagine: creates delegates just
+    // for what is needed, rather than the entire model.
     int end_reset = 0;
     if(msg_idx || qd_msgs || inbox_msgs)
     {
