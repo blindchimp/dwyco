@@ -14,6 +14,7 @@ extern DwycoChatCtxCallback dwyco_pg_callback;
 extern DwycoChatCtxCallback2 dwyco_pg_callback2;
 
 void internal_list_release(DWYCO_LIST l);
+DWYCO_LIST dwyco_list_from_vc(vc vec);
 
 vc Current_user_lobbies;
 vc Current_gods;
@@ -150,7 +151,6 @@ vc_type_to_dwyco_type(vc v)
 int
 dllify(vc v, const char*& str_out, int& len_out)
 {
-    DWYCO_LIST dwyco_list_from_vc(vc vec);
     if(v.type() == VC_INT)
     {
         str_out = v.peek_str();
