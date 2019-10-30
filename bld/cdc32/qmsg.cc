@@ -135,6 +135,7 @@ static long Logical_clock;
 // this is used in order to assign clock values to
 // messages when we first see them from the server.
 static vc Mid_to_logical_clock;
+extern vc Current_chat_server_id;
 
 void pal_relogin();
 void new_pipeline();
@@ -3552,7 +3553,7 @@ uid_has_god_power(vc uid)
     // mod in a lobby, and you are in that lobby, the ignore will
     // not filter out messages from the god. when you go outside
     // their sphere of control, the ignore works.
-    extern vc Current_chat_server_id;
+
     if(!g[GT_DEMIGOD].is_nil() || !g[GT_SUBGOD].is_nil())
     {
         if(g[GT_SERVER_ID] == Current_chat_server_id)
