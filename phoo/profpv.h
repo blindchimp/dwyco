@@ -10,7 +10,6 @@
 #define PROFPV_H
 #include <QObject>
 #include <QPixmap>
-#include "dwstr.h"
 
 class profpv : public QObject
 {
