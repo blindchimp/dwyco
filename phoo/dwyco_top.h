@@ -14,6 +14,7 @@
 #include <QObject>
 #include <QVariant>
 #include <QUrl>
+#include <QNetworkReply>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -25,7 +26,10 @@
 class DwycoCore : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString client_name READ client_name WRITE setClient_name NOTIFY client_nameChanged)
+
+    QML_WRITABLE_VAR_PROPERTY(QString, client_name)
+    QML_WRITABLE_VAR_PROPERTY(bool, use_archived)
+    QML_READONLY_VAR_PROPERTY(int, total_users)
     QML_READONLY_VAR_PROPERTY(int, unread_count)
     QML_READONLY_VAR_PROPERTY(QString, buildtime)
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
@@ -36,6 +40,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, audio_full_duplex)
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
+    QML_READONLY_VAR_PROPERTY(QString, this_uid)
+    QML_READONLY_VAR_PROPERTY(bool, directory_fetching)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -50,6 +56,9 @@ public:
         m_audio_full_duplex = 0;
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
+        m_use_archived = true;
+        m_this_uid = "";
+        m_directory_fetching = false;
     }
     static QByteArray My_uid;
 
@@ -126,10 +135,13 @@ public:
         return My_uid.toHex();
     }
 
+    Q_INVOKABLE QString strip_html(QString);
+
     Q_INVOKABLE int database_online();
+    Q_INVOKABLE int chat_online();
 
     Q_INVOKABLE QUrl get_simple_directory_url();
-    Q_INVOKABLE QUrl get_simple_xml_url();
+    Q_INVOKABLE QUrl get_simple_lh_url();
     Q_INVOKABLE QString get_msg_count_url();
     Q_INVOKABLE QString url_to_filename(QUrl);
     Q_INVOKABLE int simple_send(QString recipient, QString msg);
@@ -202,7 +214,11 @@ public:
     Q_INVOKABLE int clear_messages_unfav(QString uid);
     Q_INVOKABLE int delete_user(QString uid);
     Q_INVOKABLE int get_fav_message(QString mid);
-    Q_INVOKABLE void set_fav_message(QString uid, QString mid, int val);
+    Q_INVOKABLE void set_fav_message(QString mid, int val);
+    Q_INVOKABLE int has_tag_message(QString mid, QString tag);
+    Q_INVOKABLE void set_tag_message(QString mid, QString tag);
+    Q_INVOKABLE void unset_tag_message(QString mid, QString tag);
+
 
     Q_INVOKABLE void uid_keyboard_input(QString uid);
     Q_INVOKABLE int get_rem_keyboard_state(QString uid);
@@ -214,7 +230,7 @@ public:
     Q_INVOKABLE void delete_file(QString fn);
 
     // chat server related
-    Q_INVOKABLE void switch_to_chat_server(int);
+    Q_INVOKABLE int switch_to_chat_server(int);
     Q_INVOKABLE void disconnect_chat_server();
     Q_INVOKABLE void set_invisible_state(int);
 
@@ -235,27 +251,15 @@ public:
     Q_INVOKABLE void select_vid_dev(int i);
     Q_INVOKABLE void enable_video_capture_preview(int i);
 
-public:
-    void setClient_name(const QString& a) {
-        if(a != m_client_name)
-        {
-            m_client_name = a;
-            QByteArray b = a.toLatin1();
-            dwyco_set_client_version(b.constBegin(), b.length());
-            emit client_nameChanged();
-        }
-    }
-
-    QString client_name() const {
-        return m_client_name;
-    }
-
+    Q_INVOKABLE void set_badge_number(int i);
+    Q_INVOKABLE void refresh_directory();
 
 public slots:
     void app_state_change(Qt::ApplicationState);
+    void update_dwyco_client_name(QString);
+    void dir_download_finished(QNetworkReply *);
 
 signals:
-    void client_nameChanged();
     void server_login(const QString& msg, int what);
     void chat_event(int cmd, int sid, const QString& huid, const QString &sname, QVariant vdata, int qid, int extra_arg);
     void new_msg(const QString& from_uid, const QString& txt, const QString& mid);
@@ -266,7 +270,7 @@ signals:
     void sys_uid_resolved(const QString& uid);
     void profile_update(int success);
     void pal_event(const QString& uid);
-    void ignore_event(const QString& uid);
+    void ignore_event(QString uid);
     void video_display(int ui_id, int frame_number, QString img_path);
     void video_capture_preview(QString img_path);
 // this is used internally, should not fiddle with it via QML
@@ -280,17 +284,47 @@ signals:
     void sc_connect_terminated(QString uid);
     void sc_connectedChanged(QString uid, int connected);
 
+    void sc_cam_is_off(QString uid);
+    void sc_cam_is_on(QString uid);
+    void sc_mute_on(QString uid);
+    void sc_mute_off(QString uid);
+    void sc_cts_on(QString uid);
+    void sc_cts_off(QString uid);
+    void sc_audio_none(QString uid);
+
+    // remote video manipulation signals
+
+    void sc_rem_pause(QString uid);
+    void sc_rem_unpause(QString uid);
+    void sc_rem_cam_off(QString uid);
+    void sc_rem_cam_on(QString uid);
+    void sc_rem_cam_none(QString uid);
+
+    // remote audio state signals
+
+    void sc_rem_cts_on(QString uid);
+    void sc_rem_cts_off(QString uid);
+    void sc_rem_audio_on(QString uid);
+    void sc_rem_audio_off(QString uid);
+    void sc_rem_audio_none(QString uid);
+    void sc_rem_mute_on(QString uid);
+    void sc_rem_mute_off(QString uid);
+    void sc_rem_mute_unknown(QString uid);
+
+
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
     void msg_recv_state(int cmd, const QString& mid);
-    void msg_recv_progress(const QString& mid, int percent);
+    void msg_recv_progress(const QString& mid, const QString& ruid, const QString& msg, int percent);
     // dwyco video camera signals
     void camera_change(int cam_on);
     // zap composition record/play stopped
     void zap_stopped(int zid);
 
+    void mid_tag_changed(QString mid);
+
 private:
-    QString m_client_name;
+
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
 
 };

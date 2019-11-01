@@ -317,5 +317,11 @@
         <file>icons/material/xhdpi/ic_not_interested_white_24dp.png</file>
         <file>icons/material/xhdpi/ic_pause_circle_outline_black_24dp.png</file>
         <file>icons/material/xhdpi/ic_pause_circle_outline_white_24dp.png</file>
+        <file>icons/material/hdpi/ic_system_update_alt_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_system_update_alt_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_system_update_alt_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_system_update_alt_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_system_update_alt_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_system_update_alt_white_24dp.png</file>
     </qresource>
 </RCC>

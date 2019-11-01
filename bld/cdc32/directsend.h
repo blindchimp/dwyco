@@ -16,6 +16,7 @@
 #include "qdirth.h"
 #include "qmsg.h"
 #include "filetube.h"
+#include "se.h"
 
 class MMCall;
 
@@ -46,7 +47,7 @@ public:
     // status is first arg
     // second arg is persistent id, ie, the name of the .q file
     // third arg is recipient uid
-    ssns::signal3<int, DwString, vc> se_sig;
+    ssns::signal3<enum dwyco_sys_event, DwString, vc> se_sig;
 
     // transfer statuses, useful for debugging
     // (pers-id, ruid, msg, percent)

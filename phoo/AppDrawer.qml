@@ -10,31 +10,42 @@ import QtQuick 2.9
 import QtQuick.Controls 2.2
 
 AppDrawerForm {
-    //property bool dwy_invis
-    //property bool dwy_quiet
+
     signal close()
+
+    browse_hidden_button.onClicked: {
+        simp_tag_browse.to_tag = "_hid"
+        stack.push(simp_tag_browse)
+        close()
+}
+    browse_hidden_button.visible: show_hidden
+    browse_tags_button.onClicked: {
+        simp_tag_browse.to_tag = "_fav"
+        stack.push(simp_tag_browse)
+        close()
+    }
     anchors.fill: parent
 
     vid_preview_button.onClicked: {
         stack.push(vid_cam_preview)
         close()
     }
-    about_button.onClicked: {
-        stack.push(about_dialog)
-        close()
-    }
+//    about_button.onClicked: {
+//        stack.push(about_dialog)
+//        close()
+//    }
     settings_button.onClicked: {
         stack.push(settings_dialog)
         close()
     }
-    pin_lock_button.onClicked: {
-        stack.push(pwchange_dialog)
-        close()
-    }
-    block_list_button.onClicked: {
-        stack.push(iglist_dialog)
-        close()
-    }
+//    pin_lock_button.onClicked: {
+//        stack.push(pwchange_dialog)
+//        close()
+//    }
+//    block_list_button.onClicked: {
+//        stack.push(iglist_dialog)
+//        close()
+//    }
 
     profile_button.onClicked: {
         profile_update_dialog.preview_existing = true
@@ -46,6 +57,7 @@ AppDrawerForm {
         core.power_clean()
         if(Qt.platform.os === "android") {
             notificationClient.start_background()
+            notificationClient.set_lastrun()
         }
         Qt.quit()
     }
@@ -60,13 +72,13 @@ AppDrawerForm {
             notificationClient.set_quiet(dwy_quiet ? 1 : 0)
         }
         core.set_local_setting("quiet", dwy_quiet ? "true" : "false")
-        close()
+        //close()
     }
     invisible_switch.onClicked: {
         dwy_invis = invisible_switch.checked
         core.set_local_setting("invis", dwy_invis ? "true" : "false")
         core.set_invisible_state(dwy_invis ? 1 : 0)
-        close()
+        //close()
     }
 
 }

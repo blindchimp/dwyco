@@ -12,8 +12,9 @@
 #include <time.h>
 #include "vc.h"
 #include "pval.h"
+#include "dwlista.h"
 
-
+namespace dwyco {
 struct QckMsg
 {
     vc v;
@@ -46,11 +47,13 @@ struct ReqType
         else
             return name == rt.name && rt.serial == serial;
     }
+#ifdef DW_RTLOG
     operator char *() {
         static char a[1000];
         sprintf(a, "%s %d", (const char *)name, serial);
         return a;
     }
+#endif
     vc response_type() {
         vc v(VC_VECTOR);
         v.append(name);
@@ -168,29 +171,40 @@ void dirth_send_debug(vc id, vc crashed, vc stack, vc field_track, QckDone d);
 void dirth_send_set_token(vc id, vc token, QckDone d);
 // used internally
 QckMsg dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d);
+vc generate_mac_msg(vc);
 
+extern DwVec<QckDone> Waitq;
+extern DwListA<vc> Response_q;
+extern int Serial;
+}
+
+// all msgs to server start with these two things
 #define QTYPE 0
 #define QFROM 1
+
+// the new4 message for logging in uses these, and the server
+// still expects args at these locations. indexes are scattershot
+// mainly for legacy reasons
 #define QHANDLE 2
 #define QEMAIL 3
 #define QUSER_SPECED_ID 4
-#define QFIRST 5
-#define QLAST 6
-#define QMESSAGES 7
-#define QUSER_INFO 8
+//#define QFIRST 5
+//#define QLAST 6
+//#define QMESSAGES 7
+//#define QUSER_INFO 8
 #define QPW  9
-#define QPLAINTEXT 10
-#define QRATING 11
-#define QDHPUBLIC 12
-#define QFORCE_RATING 13
+//#define QPLAINTEXT 10
+//#define QRATING 11
+//#define QDHPUBLIC 12
+//#define QFORCE_RATING 13
 #define QSTUFF 14
-#define QRECIPIENTS 2
-//#define QID 1
-//#define QID_LIST 2
-#define QMSG 4
 #define QPAL_AUTH 15
 #define QIGNORE_LIST 16
 #define QSTATIC_PUBLIC 17
+
+// store message has these fields
+#define QRECIPIENTS 2
+#define QMSG 4
 
 // vector positions for info response
 #define QIR_FROM 0

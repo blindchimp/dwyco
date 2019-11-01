@@ -29,6 +29,11 @@ static void local_audioInputCallback(void *                          inUserData,
     MacDwycoAudioSource * audioSource = (MacDwycoAudioSource *) inUserData;
     if (nil != audioSource)
     {
+#if 0
+        if(![audioSource isQueueRunning])
+            return;
+#endif
+        
         [audioSource handleAudioInput:inAQ
          buffer:inBuffer
          time:inStartTime
@@ -302,6 +307,7 @@ static void local_convertRawMono16bitPcmFileToWav(const char * tempFilePath,
     }
     //[self stopAudioFileCapture];
     [self clearDataPackets];
+    queueRunning = NO;
 }
 
 - (MacAudioPacket) popLatestAudioPacket

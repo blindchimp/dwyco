@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 // $Header: g:/dwight/repo/cdc32/rcs/pval.cc 1.10 1999/01/10 16:09:48 dwight Checkpoint $
 #include "dwtree2.h"
 #include "dwvp.h"
@@ -9,6 +19,11 @@ DwTreeKaz<void *, long> *DwVP::Ptr_listp;
 void
 DwVP::init_dvp()
 {
+    if(Ptr_listp)
+    {
+        delete Ptr_listp;
+        Ptr_listp = 0;
+    }
     Ptr_listp = new DwTreeKaz<void *, long>(0);
 }
 #define Ptr_list (*Ptr_listp)

@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #ifndef DWVECP_H
 #define DWVECP_H
 #include "useful.h"
@@ -39,8 +49,8 @@ public:
         return !(*this == t);
     }
 
-    T*& operator[](long idx) const {
-        return (T*&)DwVec<void *>::operator[](idx);
+    const T*& operator[](long idx) const {
+        return (const T*&)DwVec<void *>::operator[](idx);
     }
     T*& operator[](long idx) {
         return (T*&)DwVec<void *>::operator[](idx);

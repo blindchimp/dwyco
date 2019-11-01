@@ -32,8 +32,8 @@ Page {
             color: primary_dark
             border.width: 1
             gradient: Gradient {
-                GradientStop { position: 0.0; color: primary_light }
-                GradientStop { position: 1.0; color: primary_dark}
+                GradientStop { position: 0.0; color: "lightgreen" }
+                GradientStop { position: 1.0; color: "lightgrey"}
             }
 
             RowLayout {
@@ -46,7 +46,7 @@ Page {
                     //width: dp(80)
                     //height: dp(60)
                     source : {
-                        (!invalid && ((REVIEWED == 1 && REGULAR == 1) || show_unreviewed) && resolved_counter > -1) ?
+                        (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
                                     core.uid_to_profile_preview(uid) :
                                     "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                     }

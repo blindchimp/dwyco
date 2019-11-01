@@ -19,9 +19,10 @@ $${VCCFG_COMP} \
 ../theora/include \
 ../ogg/include \
 ../vorbis112/include \
-../libuv/include
+../libuv/include \
+../miniupnp/miniupnp-master/miniupnpc
 
-linux-g++*: INCLUDEPATH += ../v4lcap
+linux-*: INCLUDEPATH += ../v4lcap
 
 FORCE_DESKTOP_VGQT=0
 
@@ -30,13 +31,24 @@ DEFINES += \
 	DWVEC_DOINIT \
         DWYCO_USE_SQLITE
     
+equals(DWYCO_APP, "rando") {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-#DEFINES += DW_RTLOG
+#DEFINES += DWYCO_TRACE
+#LCL_DFLAGS += -DLEAK_CLEANUP
+#DEFINES += DWYCO_FIELD_DEBUG
+#DEFINES += MINIUPNP_STATICLIB
+message("cdc32 setup for rando")
+} else {
+#DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
 #DEFINES += DWYCO_TRACE
 #LCL_DFLAGS += -DLEAK_CLEANUP
 DEFINES += DWYCO_FIELD_DEBUG
+DEFINES += MINIUPNP_STATICLIB
+message("generic setup for cdc32")
+}
 
-macx-g++|linux-g++|linux-g++-64|macx-ios-clang|macx-clang|android-* {
+macx-*|linux-*|macx-ios-clang|macx-clang|android-*|wasm-emscripten {
 QMAKE_CXXFLAGS += -fpermissive
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 INCLUDEPATH += winemu
@@ -66,11 +78,19 @@ SOURCES += sqlite3.c
 
 win32-* {
 DEFINES += CDCCORE_STATIC
-DEFINES += USE_VFW
 DEFINES += DWYCO_USE_STATIC_SQLITE
+equals(DWYCO_APP, "rando") {
+#DEFINES += USE_VFW
+#DEFINES += VIDGRAB_HACKS
+#DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
+#SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+SOURCES += uniq.cpp audwin.cc aqaud.cc
+} else {
+DEFINES += USE_VFW
 DEFINES += VIDGRAB_HACKS
-DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100 
+DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
 SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+}
 SOURCES += sqlite3.c
 INCLUDEPATH += ../mtcap
 equals(FORCE_DESKTOP_VGQT, 1) {
@@ -93,6 +113,17 @@ DEFINES += DWYCO_CDC_LIBUV
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
+}
+
+wasm-emscripten {
+DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
+DEFINES += DWYCO_USE_STATIC_SQLITE
+DEFINES += DWYCO_NO_UPNP
+QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
+equals(FORCE_DESKTOP_VGQT, 1) {
+DEFINES += DWYCO_FORCE_DESKTOP_VGQT
+}
+SOURCES += sqlite3.c
 }
 
 SOURCES += \
@@ -226,9 +257,12 @@ qmsgsql.cpp \
 fetch_to_inbox.cpp \
 backsql.cpp \
 sqlbq.cpp \
-favmsg.cpp \
-aqext_android.cpp
+aqext_android.cpp \
+    dhgsetup.cpp \
+    simplesql.cpp \
+    upnp.cpp
 
 HEADERS += \
-    vccfg.h
+    vccfg.h \
+    upnp.h
 

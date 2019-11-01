@@ -155,9 +155,6 @@ int vc_int::double_ge(const vc& v) const {return  ((vc_double&)v).d >= i;}
 int vc_int::double_eq(const vc& v) const {return  ((vc_double&)v).d == i;}
 int vc_int::double_ne(const vc& v) const {return  ((vc_double&)v).d != i;}
 
-int vc_int::func_eq(const vc& ) const {bomb_op_func(); return 0;}
-
-
 
 long
 vc_int::xfer_out(vcxstream& vcx)

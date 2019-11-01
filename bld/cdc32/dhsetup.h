@@ -9,6 +9,8 @@
 #ifndef DHSETUP_H
 #define DHSETUP_H
 
+#include "vc.h"
+
 void dh_init();
 int dh_load_account(const char *acct);
 vc dh_gen_combined_keys();

@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #include "dwdate.h"
 
 DwDate::DwDate()
@@ -56,7 +66,7 @@ DwTime::AsString()
 {
     char a[200];
     memset(a, 0, sizeof(a));
-#if defined(__BORLANDC__) || defined(_MSC_VER)
+#if defined(_MSC_VER)
     strftime(a, sizeof(a) - 1, "%c", &stm);
 #else
     strftime(a, sizeof(a) - 1, "%T", &stm);

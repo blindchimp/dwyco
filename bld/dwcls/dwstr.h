@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #ifndef DWSTR_H
 #define DWSTR_H
 // real simple string class
@@ -5,9 +15,6 @@
 
 #include "dwvec.h"
 #include <string.h>
-#if defined(_Windows) && defined(__BORLANDC__)
-#include <mem.h>
-#endif
 
 class DwString : private DwVec<char>
 {

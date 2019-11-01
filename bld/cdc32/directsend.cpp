@@ -27,8 +27,6 @@
 
 #define CHANNEL_SETUP_TIMEOUT (1000 * 4)
 #define XFER_WATCHDOG_TIMEOUT (1000 * 20)
-extern DwVec<QckDone> Waitq;
-extern int Serial;
 
 using namespace dwyco;
 DwQueryByMember<DirectSend> DirectSend::Qbm;

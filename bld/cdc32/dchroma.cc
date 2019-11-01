@@ -22,6 +22,9 @@ void oopanic(const char *);
 #ifdef _Windows
 #include <winsock.h>
 #endif
+#ifdef LINUX
+#include <arpa/inet.h>
+#endif
 
 JPEGTDecoderChroma::JPEGTDecoderChroma(int plane, JPEGTDecoder *l)
 {

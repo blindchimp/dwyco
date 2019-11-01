@@ -14,6 +14,7 @@
 #include "ssns.h"
 #include "qdirth.h"
 #include "dwqbm.h"
+#include "se.h"
 class MMChannel;
 
 // simple class to allow sending a msg (via server for now.)
@@ -27,7 +28,7 @@ class DwQSend
     static void xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp);
 
 public:
-    DwQSend(const DwString& qfn);
+    DwQSend(const DwString& qfn, int defer_send);
     ~DwQSend();
 
     DwString qfn;
@@ -44,7 +45,7 @@ public:
     // status is first arg
     // second arg is persistent id, ie, the name of the .q file
     // third arg is recipient uid
-    ssns::signal3<int, DwString, vc> se_sig;
+    ssns::signal3<enum dwyco_sys_event, DwString, vc> se_sig;
 
     // transfer statuses, useful for debugging
     // (pers-id, ruid, msg, percent)
@@ -53,6 +54,7 @@ public:
 private:
 
     int cancel_op;
+    int defer_send;
 
     vc msg;
     vc emsg;

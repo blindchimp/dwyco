@@ -36,9 +36,6 @@
 #include "dirth.h"
 #include "qdirth.h"
 #ifdef _Windows
-#ifdef __BORLANDC__
-#include <dir.h>
-#endif
 #ifdef _MSC_VER
 #include <direct.h>
 #endif
@@ -148,11 +145,9 @@ static vc Mid_to_logical_clock;
 static void purge_inbox(vc id);
 
 void pal_relogin();
-void remove_msg_idx(vc uid, vc mid);
 void new_pipeline();
 
 #include "qmsgsql.h"
-#include "favmsg.h"
 
 #ifdef WIN32
 int
@@ -461,7 +456,7 @@ init_qmsg()
     long tmplc = sql_get_max_logical_clock();
     if(tmplc > Logical_clock)
         Logical_clock = tmplc + 1;
-    init_fav_sql();
+    //init_fav_sql();
 
     new_pipeline();
 
@@ -478,7 +473,7 @@ void
 exit_qmsg()
 {
     exit_qmsg_sql();
-    exit_fav_sql();
+    //exit_fav_sql();
     Cur_ignore = vcnil;
     Session_ignore = vcnil;
     Session_auto_replies = vcnil;
@@ -502,6 +497,178 @@ exit_qmsg()
     Chat_ips = vcnil;
     Chat_ports = vcnil;
     Mid_to_logical_clock = vcnil;
+}
+
+// note: this gets rid of a lot of ephemeral info that
+// is better if it is refreshed on the next reconnect.
+// access to the various sql databases is still ok
+// even when suspended.
+// this suspend/resume assumes that things might have changed
+// a little while we were suspended, ie, maybe the inbox and other
+// message storage items were changed by a background process, or
+// the ignore list or other persistent info could have been updated.
+// generally, we assume we are *not* connected to the network during
+// the suspended state, so all the server derived info would have to be
+// refreshed on next connect.
+//
+// note: the reason we don't clear this out now is because we can get some
+// spurious (but mostly harmless) calls into the API even after a
+// "suspend", and we don't want to crash those calls.
+void
+suspend_qmsg()
+{
+#if 0
+    Cur_ignore = vcnil;
+    Session_ignore = vcnil;
+    Session_auto_replies = vcnil;
+    Mutual_ignore = vcnil;
+    Online = vcnil;
+    Client_types = vcnil;
+    No_direct_msgs = vcnil;
+    No_direct_att = vcnil;
+
+    Cur_msgs = vcnil;
+    Direct_msgs = vcnil;
+    Direct_msgs_raw = vcnil;
+    Online_noise = vcnil;
+    //Never_visible = vcnil;
+    //Always_visible = vcnil;
+    //I_grant = vcnil;
+    //They_grant = vcnil;
+    //UID_infos = vcnil;
+    MsgFolders = vcnil;
+    Session_infos = vcnil;
+    Chat_ips = vcnil;
+    Chat_ports = vcnil;
+    Mid_to_logical_clock = vcnil;
+#endif
+}
+
+void
+resume_qmsg()
+{
+    Cur_msgs = vc(VC_VECTOR);
+    Cur_ignore = get_local_ignore();
+    Session_ignore = vc(VC_SET);
+    Session_auto_replies = vc(VC_SET);
+    Mutual_ignore = vc(VC_SET);
+    Online = vc(VC_TREE);
+    Client_types = vc(VC_TREE);
+    No_direct_msgs = vc(VC_SET);
+    No_direct_att = vc(VC_SET);
+    MsgFolders = vc(VC_TREE);
+    In_progress = vc(VC_TREE);
+    Direct_msgs_raw = vc(VC_VECTOR);
+    Direct_msgs = vc(VC_VECTOR);
+    // not perfect, but better than scanning for a max value
+    // somewhere.
+    Logical_clock = time(0);
+
+    if(!load_info(Online_noise, "noise"))
+    {
+        Online_noise = vc(VC_SET);
+        save_info(Online_noise, "noise");
+    }
+#if 0
+    if(!load_info(Never_visible, "never"))
+    {
+        Never_visible = vc(VC_SET);
+        save_info(Never_visible, "never");
+    }
+    if(!load_info(Always_visible, "always"))
+    {
+        Always_visible = vc(VC_SET);
+        save_info(Always_visible, "always");
+    }
+    if(!load_info(They_grant, "theygrnt"))
+    {
+        They_grant = vc(VC_TREE);
+        save_info(They_grant, "theygrnt");
+    }
+    vc me;
+    if(They_grant.find("me", me))
+    {
+        if(me != My_UID)
+        {
+            if(They_grant.num_elems() == 1)
+            {
+                // just update it.
+                They_grant.add_kv("me", My_UID);
+                save_info(They_grant, "theygrnt");
+            }
+            else
+                Pal_auth_warn = 1;
+        }
+    }
+    else
+    {
+        They_grant.add_kv("me", My_UID);
+        save_info(They_grant, "theygrnt");
+    }
+
+    if(!load_info(I_grant, "igrant"))
+    {
+        I_grant = vc(VC_TREE);
+        save_info(I_grant, "igrant");
+    }
+
+    if(I_grant.find("me", me))
+    {
+        if(me != My_UID)
+        {
+            if(I_grant.num_elems() == 1)
+            {
+                // just update it.
+                I_grant.add_kv("me", My_UID);
+                save_info(I_grant, "igrant");
+            }
+            else
+                Pal_auth_warn = 1;
+        }
+    }
+    else
+    {
+        I_grant.add_kv("me", My_UID);
+        save_info(I_grant, "igrant");
+    }
+#endif
+
+    if(!load_info(Pals, "pals"))
+    {
+        Pals = vc(VC_TREE);
+        save_info(Pals, "pals");
+    }
+    // one off conversion
+    if(Pals.type() == VC_VECTOR)
+    {
+        int n = Pals.num_elems();
+        vc np(VC_TREE);
+        for(int i = 0; i < n; ++i)
+        {
+            np.add_kv(Pals[i], vcnil);
+        }
+        Pals = np;
+        save_info(Pals, "pals");
+    }
+    Client_ports = vc(VC_TREE);
+    LANmap = vc(VC_TREE);
+    if(!load_info(Session_infos, "sinfo") || Session_infos.type() != VC_MAP)
+    {
+        Session_infos = vc(VC_MAP);
+        save_info(Session_infos, "sinfo");
+    }
+    Chat_ips = vc(VC_TREE);
+    Chat_ports = vc(VC_TREE);
+
+    //init_qmsg_sql();
+    long tmplc = sql_get_max_logical_clock();
+    if(tmplc > Logical_clock)
+        Logical_clock = tmplc + 1;
+    //init_fav_sql();
+
+    //new_pipeline();
+
+    //Mid_to_logical_clock = vc(VC_TREE);
 }
 
 
@@ -662,11 +829,11 @@ gen_authentication(vc qmsg, vc att_hash)
     sha.Update((const byte *)&tm, sizeof(tm));
 
     // newer style of message with the no_forward flag added in.
-    // old messages will have this as nil, and we want the authentication
+    // old messages will have this as nil, and we want the checksum
     // for those messages to remain the same (and remain forward-able
     // as well. however, we don't want to allow people to change the
     // forward flag and we want to allow the core to enforce this
-    // via the authentication.
+    // via the checksum.
     if(mvec[QQM_BODY_NO_FORWARD].is_nil())
     {
         // old style, don't do anything
@@ -1024,7 +1191,7 @@ init_msg_folder(vc uid, DwString* fn_out)
         do_fetch = 1;
         add_msg_folder(uid);
     }
-    if(do_fetch || !have_user(uid))
+    if(do_fetch || !Session_infos.contains(uid))
     {
         fetch_info(uid);
     }
@@ -1227,9 +1394,9 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
     // can display at least something
     vc uid = other[0];
     In_progress.del(uid);
-    vc name = other[1][0];
-    vc desc = other[1][1];
-    vc location = other[1][2];
+//    vc name = other[1][0];
+//    vc desc = other[1][1];
+//    vc location = other[1][2];
 
     static vc invalid("invalid");
 
@@ -1269,15 +1436,16 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         // fetch it
         if(m[2] == invalid)
             prf_set_cached(uid);
+        vc ai = make_best_local_info(uid, 0);
         v = vc(VC_VECTOR);
         v[QIR_FROM] = uid;
-        v[QIR_HANDLE] = name;
+        v[QIR_HANDLE] = ai[0];
         v[QIR_EMAIL] = "";
         v[QIR_USER_SPECED_ID] = "";
         v[QIR_FIRST] = "";
         v[QIR_LAST] = "";
-        v[QIR_DESCRIPTION] = desc;
-        v[QIR_LOCATION] = location;
+        v[QIR_DESCRIPTION] = ai[2];
+        v[QIR_LOCATION] = ai[1];
     }
     else
     {
@@ -1318,14 +1486,15 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         {
             // had to use alternate info, don't set as cached
             v = vc(VC_VECTOR);
+            vc ai = make_best_local_info(uid, 0);
             v[QIR_FROM] = uid;
-            v[QIR_HANDLE] = name;
+            v[QIR_HANDLE] = ai[0];
             v[QIR_EMAIL] = "";
             v[QIR_USER_SPECED_ID] = "";
             v[QIR_FIRST] = "";
             v[QIR_LAST] = "";
-            v[QIR_DESCRIPTION] = desc;
-            v[QIR_LOCATION] = location;
+            v[QIR_DESCRIPTION] = ai[2];
+            v[QIR_LOCATION] = ai[1];
         }
 
     }
@@ -1409,7 +1578,7 @@ fetch_info(vc uid)
     vc v(VC_VECTOR);
     v.append(uid);
     // load alt-info up with the best info we have locally, just in case
-    v.append(make_best_local_info(uid, 0));
+    //v.append(make_best_local_info(uid, 0));
     if(!In_progress.contains(uid))
     {
         if(prf_already_cached(uid))
@@ -1473,7 +1642,7 @@ save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc 
     return vcnil;
 }
 
-static vc
+vc
 direct_to_body2(vc m)
 {
     vc v(VC_VECTOR);
@@ -1667,6 +1836,7 @@ query_done(vc m, void *, vc, ValidPtr)
         // 3: date vector
 
         vc from = v[QM_FROM];
+        sql_add_tag(v[QM_ID], "_seen");
 
         int auto_reply = 0;
         if(uid_ignored(from) || (auto_reply = (ZapAdvData.get_ignore() && wrong_rating(v))))
@@ -2015,13 +2185,6 @@ load_users(int only_recent, int *total_out)
     }
 }
 
-int
-have_user(vc id)
-{
-    if(Session_infos.contains(id))
-        return 1;
-    return 0;
-}
 
 vc
 uid_to_short_text(vc id)
@@ -2154,8 +2317,9 @@ remove_user(vc id, const char *pfx)
     vc uid = dir_to_uid((const char *)id);
     //always_vis_del(uid);
     // remove indexs so the msgs don't magically reappear
-    remove_msg_idx_uid(uid);
     sql_fav_remove_uid(uid);
+    remove_msg_idx_uid(uid);
+
     MsgFolders.del(uid);
     se_emit(SE_USER_REMOVE, uid);
     return 1;
@@ -2166,8 +2330,8 @@ clear_user(vc id, const char *pfx)
 {
     remove_user_files(id, pfx, 1);
     vc uid = dir_to_uid((const char *)id);
-    clear_msg_idx_uid(uid);
     sql_fav_remove_uid(uid);
+    clear_msg_idx_uid(uid);
     Rescan_msgs = 1;
     return 1;
 }
@@ -2383,6 +2547,7 @@ load_bodies(vc id, int load_sent)
 
     DwString ss = s;
     s = newfn(s);
+    DwString dpref = s;
     s += "" DIRSEPSTR "*.bod";
     int t = 0;
 
@@ -2391,11 +2556,11 @@ load_bodies(vc id, int load_sent)
     for(i = 0; i < n; ++i)
     {
         WIN32_FIND_DATA &d = *fv[i];
-        DwString s2((const char *)id);
+        DwString s2(dpref);
         s2 += "" DIRSEPSTR "";
         s2 += d.cFileName;
         vc info;
-        if(load_info(info, s2.c_str()))
+        if(load_info(info, s2.c_str(), 1))
         {
             //ret.append(info);
             sorter.add(GroovyItem(info), t++);
@@ -2413,11 +2578,11 @@ load_bodies(vc id, int load_sent)
         for(i = 0; i < n; ++i)
         {
             WIN32_FIND_DATA &d = *fv2[i];
-            DwString s2((const char *)id);
+            DwString s2(dpref);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
             vc info;
-            if(load_info(info, s2.c_str()))
+            if(load_info(info, s2.c_str(), 1))
             {
                 //ret.append(info);
                 info[QM_BODY_SENT] = vctrue;
@@ -2611,8 +2776,6 @@ date_vector()
 // vector(
 //	 vector(recipients...)
 //   vector(fromid text_message attachid vector(yy dd hh mm ss) rating)
-//	 vector(name description location) <used in non-database mode>
-//	 autoplay
 // )
 static int
 q_message2(vc recip, const char *attachment, vc& msg_out,
@@ -2695,6 +2858,15 @@ q_message2(vc recip, const char *attachment, vc& msg_out,
         vc v(VC_VECTOR);
         v.append("backup");
         vc sv(VC_VECTOR);
+        v.append(sv);
+        m[QQM_BODY_SPECIAL_TYPE] = v;
+    }
+    else if(special_type == vc("user"))
+    {
+        vc v(VC_VECTOR);
+        v.append("user");
+        vc sv(VC_VECTOR);
+        sv.append(st_arg1);
         v.append(sv);
         m[QQM_BODY_SPECIAL_TYPE] = v;
     }
@@ -3094,6 +3266,7 @@ do_local_store(vc filename, vc speced_mid)
 // send a q'd message
 
 int QSend_inprogress;
+int QSend_special_inprogress;
 
 void
 move_back_to_outbox(const DwString &fn)
@@ -3167,11 +3340,20 @@ recover_inprogress()
 
 static
 void
-reset_qsend(int cmd, DwString qid, vc recip_uid)
+reset_qsend(enum dwyco_sys_event cmd, DwString qid, vc recip_uid)
 {
     if(cmd == SE_MSG_SEND_START)
         return;
     QSend_inprogress = 0;
+}
+
+static
+void
+reset_qsend_special(enum dwyco_sys_event cmd, DwString qid, vc recip_uid)
+{
+    if(cmd == SE_MSG_SEND_START)
+        return;
+    QSend_special_inprogress = 0;
 }
 
 static
@@ -3310,44 +3492,22 @@ msg_outq_empty()
 #endif
 }
 
-int
-any_q_files()
-{
-    DwString pat("outbox");
-    pat += DIRSEPSTR;
-    pat += "*.q";
-
-    FindVec *fv = find_to_vec(newfn(pat).c_str());
-    int nn = fv->num_elems();
-    delete_findvec(fv);
-    if(nn > 0)
-    {
-        return 1;
-    }
-    pat = "inprogress";
-    pat += DIRSEPSTR;
-    pat += "*.q";
-
-    fv = find_to_vec(newfn(pat).c_str());
-    nn = fv->num_elems();
-    delete_findvec(fv);
-    if(nn > 0)
-        return 1;
-    return 0;
-}
-
 // returns 1 if "something is happening" or 0 if the q appears to be empty
+// this will allow one special and one non-special to be going at the
+// same time
+
 int
 qd_send_one()
 {
     // note: we can send attachments without a connection
     // to the server, so don't prevent it here.
-    if(QSend_inprogress)// || !Auth_remote || !Database_online)
+    if(QSend_inprogress && QSend_special_inprogress)
     {
         return 1;
     }
     vc qd(VC_VECTOR);
     load_q_files("outbox", vcnil, 0, qd);
+    int is_special = 0;
     if(qd.num_elems() == 0)
     {
         // selected non-special messages previously and
@@ -3355,7 +3515,12 @@ qd_send_one()
         load_q_files("outbox", vcnil, 1, qd);
         if(qd.num_elems() == 0)
             return 0;
+        is_special = 1;
     }
+    if(!is_special && QSend_inprogress)
+        return 1;
+    if(is_special && QSend_special_inprogress)
+        return 1;
     //sort_on_time(qd, 2);
     GRTLOG("QUEUE", 0, 0);
     GRTLOGVC(qd);
@@ -3382,13 +3547,16 @@ qd_send_one()
         tosend = na[r];
     }
     DwString a = dwbasename(tosend[1]);
-    DwQSend *qs = new DwQSend(a);
+    DwQSend *qs = new DwQSend(a, 0);
     qs->se_sig.connect_ptrfun(se_emit_msg);
     qs->status_sig.connect_ptrfun(se_emit_msg_status);
-    qs->se_sig.connect_ptrfun(reset_qsend);
+    qs->se_sig.connect_ptrfun(is_special ? reset_qsend_special : reset_qsend);
     if(qs->send_message() == 1)
     {
-        QSend_inprogress = 1;
+        if(!is_special)
+            QSend_inprogress = 1;
+        else
+            QSend_special_inprogress = 1;
     }
     else
         delete qs;
@@ -3522,9 +3690,16 @@ purge_inbox(vc id)
 int
 save_to_inbox(vc m)
 {
-    DwString f((const char *)m[2]);
+    DwString f((const char *)m[QQM_LOCAL_ID]);
     f += ".urd";
     f.insert(0, "inbox" DIRSEPSTR "");
+    // note: the "local id" is set from the server if this msg came from the
+    // server. it is set to something locally generated for peer-to-peer messages.
+    // this isn't a problem, the main reason we are creating this tag is to filter out
+    // stale notifications from google (ie, our app sees and notifies the user of
+    // a message, then 20 minutes later google notifies about the same message.)
+    // we only get sent google notifications for server messages...
+    sql_add_tag(m[QQM_LOCAL_ID], "_seen");
     if(!save_info(m, f.c_str()))
         return 0;
     return 1;
@@ -4052,7 +4227,7 @@ clean_cruft()
         return;
 // end safety check that won't work if the filename mapper
 // is working
-    int i;
+
     vc nodel(VC_SET);
     find_files_to_keep("inbox", "*.urd", nodel);
     find_files_to_keep("inprogress", "*.q", nodel);
@@ -4086,7 +4261,7 @@ clean_cruft()
     // tmp pfx, we'll delete all the files in that path
     if(tmp.length() >= 5 && user.length() + 4 == tmp.length() &&
             user == DwString(tmp.c_str(), user.length()) &&
-            tmp.rfind("/tmp/") == tmp.length() - 5)
+            tmp.rfind(DIRSEPSTR "tmp" DIRSEPSTR) == tmp.length() - 5)
     {
         DwString tp = tmp;
         tp += "*.*";

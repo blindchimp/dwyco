@@ -15,7 +15,8 @@
 class profpv : public QObject
 {
     Q_OBJECT
-
+private:
+    static int Chat_online;
 public:
     profpv();
 
@@ -25,7 +26,7 @@ public:
 public slots:
     void clear_cache(int);
     void remove_entry(DwOString);
-    void chat_server(int,int);
+    void chat_server(int);
 
 signals:
     void profile_resolved(DwOString);

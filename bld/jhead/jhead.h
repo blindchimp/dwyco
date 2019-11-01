@@ -6,6 +6,7 @@
 // where they get used as possible, so include files only get stuff that 
 // gets used in more than one file.
 //--------------------------------------------------------------------------
+#if 0
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +31,7 @@
     #include <unistd.h>
     #include <errno.h>
     #include <limits.h>
+#endif
 #endif
 
 

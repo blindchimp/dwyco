@@ -7,10 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #ifdef _WIN32
-#ifdef __BORLANDC__
-#include <dir.h>
-#include <sys\stat.h>
-#endif
 #ifdef _MSC_VER
 #include <direct.h>
 #endif
@@ -106,8 +102,8 @@ void
 init_schema()
 {
     sql_simple("create table if not exists msgs ("
-               "from_uid text,"
-               "mid text unique on conflict ignore,"
+               "from_uid text collate nocase,"
+               "mid text collate nocase unique on conflict ignore,"
                "msg blob,"
                "attfn text,"
                "att blob);"
@@ -210,7 +206,7 @@ void
 sql_insert_record(vc from_uid, vc mid, vc msg, vc attfn, vc att, const char *dbn = "main")
 {
     VCArglist a;
-    a.append(DwString("replace into %1.msgs values($1,$2,$3,$4,$5);").arg(dbn).c_str());
+    a.append(DwString("replace into %1.msgs values(?1,?2,?3,?4,?5);").arg(dbn).c_str());
 
     a.append(to_hex(from_uid));
     a.append(mid);
@@ -234,7 +230,7 @@ void
 sql_insert_misc(vc name, vc data, const char *dbn = "main")
 {
     VCArglist a;
-    a.append(DwString("replace into %1.misc_blobs values($1,$2);").arg(dbn).c_str());
+    a.append(DwString("replace into %1.misc_blobs values(?1,?2);").arg(dbn).c_str());
 
     a.append(name);
 
@@ -457,7 +453,7 @@ vc
 get_file_contents(const char *name, const char *dbn)
 {
     VCArglist a;
-    a.append(DwString("select data from %1.misc_blobs where name = $1;").arg(dbn).c_str());
+    a.append(DwString("select data from %1.misc_blobs where name = ?1;").arg(dbn).c_str());
     a.append(name);
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())
@@ -625,7 +621,7 @@ send_in_chunks(const DwString& actual_fn, const char *dbn = "main")
     // won't work too well. if the key management and privacy issues
     // are sorted out, it might be better to create backups in small
     // independent chunks so missing parts don't obliterate an entire backup.
-    return 0;
+    return 1;
 }
 
 #if 0
@@ -835,7 +831,7 @@ int
 restore_msg(vc uid, vc mid)
 {
     VCArglist a;
-    a.append("select msg, attfn, att from msgs where mid = $1;");
+    a.append("select msg, attfn, att from msgs where mid = ?1;");
     a.append(mid);
     vc res = sqlite3_bulk_query(Db, &a);
     if(res.is_nil())

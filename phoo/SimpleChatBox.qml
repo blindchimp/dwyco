@@ -6,12 +6,13 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
+import QtQuick 2.12
 import QtQuick.Layouts 1.3
 import QtGraphicalEffects 1.0
 import QtQml 2.2
-import QtQuick.Controls 2.1
-import QtQuick.Dialogs 1.2
+import QtQuick.Controls 2.12
+import QtQuick.Dialogs 1.3
+//import Qt.labs.platform 1.1 as NL
 import dwyco 1.0
 
 
@@ -32,6 +33,7 @@ Page {
     property bool multiselect_mode: false
     property url cur_source
     property var call_buttons_model
+    property bool lock_to_bottom: false
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -66,7 +68,28 @@ Page {
                         multiselect_mode = false
                     }
                 }
+                MenuItem {
+                    text: "Hide"
+                    onTriggered: {
+                        model.tag_all_selected("_hid")
+                        multiselect_mode = false
+                    }
+                }
+                MenuItem {
+                    text: "UnHide"
+                    onTriggered: {
+                        model.untag_all_selected("_hid")
+                        multiselect_mode = false
+                    }
+                }
+                MenuItem {
+                    text: "Select All"
+                    onTriggered: {
+                        model.set_all_selected()
+                    }
+                }
             }
+
         }
     }
 
@@ -198,10 +221,25 @@ Page {
                     ToolTip.text: "Request live video"
                 }
                 CallButtonLink {
+                    id: cancel_req_button
                     but_name: "cancel_req"
                     contentItem: Image {
                         anchors.centerIn: parent
                         source: mi("ic_cancel_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink4
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: cancel_req_button.visible
+                            ColorAnimation {
+                                target: bgblink4
+                                property: "color"
+                                from: "red"
+                                to: "white"
+                                duration: 1000
+                            }
+                        }
                     }
                     ToolTip.text: "Hangup"
 
@@ -380,9 +418,23 @@ Page {
                         MenuItem {
                             text: "Clear msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(chatbox.to_uid)
-
-                                themsglist.reload_model()
+                                confirm_clear.visible = true
+                            }
+                            MessageDialog {
+                                id: confirm_clear
+                                title: "Remove all msgs?"
+                                icon: StandardIcon.Question
+                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+                                informativeText: "This KEEPS FAVORITE messages."
+                                standardButtons: StandardButton.Yes | StandardButton.No
+                                onYes: {
+                                    core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.reload_model()
+                                    close()
+                                }
+                                onNo: {
+                                    close()
+                                }
                             }
                         }
 
@@ -396,7 +448,7 @@ Page {
                                 title: "Bulk delete?"
                                 icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE messages too."
+                                informativeText: "This removes FAVORITE and HIDDEN messages too."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
                                     core.delete_user(chatbox.to_uid)
@@ -458,7 +510,7 @@ Page {
         }
         onSys_uid_resolved: {
             if(chatbox.to_uid === uid) {
-                // try to defeat caching since the actual name of the name
+                // try to defeat caching since the actual name
                 // of the "preview url" hasn't changed, but the contents have
                 cur_source = ""
                 cur_source = core.uid_to_profile_preview(uid)
@@ -466,13 +518,13 @@ Page {
             }
         }
         onSc_connect_terminated: {
-            if(chatbox.to_uid == uid) {
+            if(chatbox.to_uid === uid) {
                 console.log("CONNECT TERMINATED")
             }
         }
 
         onSc_connectedChanged: {
-                if(chatbox.to_uid == uid) {
+                if(chatbox.to_uid === uid) {
                     console.log("ConnectedChanged ", connected)
                     if(connected === 0 && vidpanel.visible) {
                         vidpanel.visible = false
@@ -579,8 +631,31 @@ Page {
             delegate: msglist_delegate
             clip: true
             spacing: 5
-            ScrollBar.vertical: ScrollBar { }
+            ScrollBar.vertical: ScrollBar {
+                onPressedChanged: {
+                    lock_to_bottom = false
+                }
+            }
             verticalLayoutDirection: ListView.BottomToTop
+            onMovementStarted: {
+                if(atYEnd)
+                    lock_to_bottom = false
+                //console.log("move start aty ", atYEnd, "lb ", lock_to_bottom)
+            }
+
+            onAtYEndChanged: {
+                //console.log("at y end ", atYEnd)
+                if(lock_to_bottom && !atYEnd)
+                {
+                    listView1.positionViewAtBeginning()
+                }
+                else if(atYEnd && !lock_to_bottom)
+                    lock_to_bottom = true
+
+            }
+            onAtYBeginningChanged: {
+                //console.log("at y beg ", atYBeginning)
+            }
         }
     }
 
@@ -603,6 +678,12 @@ Page {
             anchors.right: {(SENT == 1) ? parent.right : undefined}
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
+            onHeightChanged: {
+                //console.log("del ", model.index, "ch to ", ditem.height)
+//                if(lock_to_bottom) {
+//                    listView1.positionViewAtBeginning()
+//                }
+            }
 
             Image {
                 id: deco2
@@ -672,6 +753,16 @@ Page {
                     source: mi("ic_videocam_black_24dp.png")
                 }
             }
+            Rectangle {
+                id: hidden
+                width: 16
+                height: 16
+                anchors.right:ditem.right
+                anchors.top:ditem.top
+                visible: IS_HIDDEN === 1
+                z: 3
+                color: "orange"
+            }
             z: 1
 
         ColumnLayout {
@@ -707,16 +798,6 @@ Page {
                         }
                     }
 
-
-//                    Image {
-//                        id: deco
-//                        visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
-//                        source: decoration
-//                        anchors.left: parent.left
-//                        anchors.top: parent.top
-//                        width: 32
-//                        height: 32
-//                    }
                 }
 
 
@@ -739,14 +820,18 @@ Page {
                     id: msg
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     Layout.maximumWidth: (listView1.width * 3) / 4
+                    width: implicitWidth
                     horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
                     color: primary_text
-                    //font.family: "Noto Color Emoji"
+                    clip: true
+                    onLinkActivated: {
+                        console.log(link + " link activated")
+                        Qt.openUrlExternally(link)
+                    }
                 }
-
             }
         Loader {
             anchors.centerIn: ditem
@@ -767,16 +852,6 @@ Page {
             visible: IS_ACTIVE
             active: IS_ACTIVE
         }
-//        Loader {
-//            id: pulse
-//            anchors.centerIn: ditem
-//            anchors.fill: ditem
-//            anchors.margins: mm(1)
-//            visible: {IS_ACTIVE && ATTACHMENT_PERCENT === 0.0}
-//            source: "qrc:/PulseLoader.qml"
-//            active: IS_ACTIVE
-//        }
-
 
         MouseArea {
                 anchors.fill: parent
@@ -819,6 +894,7 @@ Page {
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
+                            themsgview.text_bg_color = ditem.color
                             if(model.IS_FILE === 1) {
                                 themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file:///" + String(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
@@ -891,7 +967,7 @@ Page {
 
         onAccepted: {
             if(textField1.length > 0) {
-                core.simple_send(to_uid, textField1.text)
+                core.simple_send(to_uid, core.strip_html(textField1.text))
                 core.try_connect(to_uid)
 
                 themsglist.reload_model()
@@ -951,13 +1027,14 @@ Page {
             id: bg
             color: accent
             radius: 20
+            // this is weird, setting size is supposed to be unnecessary...
+            // qt5.10 didn't have a problem with the previous code that was here.
+            anchors.fill: toolButton1
         }
-        contentItem: Text {
-            color: toolButton1.enabled ? primary_text : secondary_text
-            text: toolButton1.text
+        contentItem: Image {
             anchors.centerIn: bg
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
+            source: mi("ic_send_black_24dp.png")
+            opacity: toolButton1.enabled ? 1.0 : 0.3
         }
         
 
@@ -965,7 +1042,7 @@ Page {
         onClicked: {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
-            core.simple_send(to_uid, textField1.text)
+            core.simple_send(to_uid, core.strip_html(textField1.text))
             core.try_connect(to_uid)
             themsglist.reload_model()
             textField1.text = ""
@@ -976,6 +1053,37 @@ Page {
             but_width = but_height
         }
         focusPolicy: Qt.NoFocus
+    }
+
+    TipButton {
+        id: go_to_bottom
+        width: toolButton1.width
+        height: toolButton1.height
+        anchors.bottom: toolButton1.top
+        anchors.right: toolButton1.right
+
+        background: Rectangle {
+            id: gtb_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtb_img
+            anchors.centerIn: gtb_bg
+            source: mi("ic_system_update_alt_black_24dp.png")
+            opacity: .5
+        }
+
+        visible: !listView1.atYEnd
+
+        onClicked: {
+            listView1.positionViewAtBeginning()
+            lock_to_bottom = true
+        }
+        ToolTip.text: "Skip to bottom"
+
     }
 
     TipButton {

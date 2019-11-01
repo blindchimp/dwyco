@@ -6,15 +6,9 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#ifdef _Windows
-#ifdef __BORLANDC__
-#include <dir.h>
-#else
+#if defined(_MSC_VER)
 #include <direct.h>
-#endif
-#if __BORLANDC__ >= 0x560 || defined(_MSC_VER)
 #include <io.h>
-#endif
 #endif
 #include "qauth.h"
 #include "dwstr.h"
@@ -113,7 +107,7 @@ save_audio()
 // little race conditions, we just brute force it here.
 //
 
-void
+static void
 DeleteFileQ(const char *fn)
 {
     if(DeleteFile(newfn(fn).c_str()))
@@ -864,6 +858,8 @@ void  TMsgCompose::send_buttonClick()
     static vc pok("palok");
     static vc pnok("palrej");
     vc sp;
+    vc sp_payload;
+    sp_payload = vctrue;
     if(pal_auth_mode)
         sp = pr;
     else if(pal_auth_ok_mode)
@@ -872,6 +868,11 @@ void  TMsgCompose::send_buttonClick()
         sp = pnok;
     else if(special_type == DWYCO_SPECIAL_TYPE_BACKUP)
         sp = "backup";
+    else if(special_type == DWYCO_SPECIAL_TYPE_USER)
+    {
+        sp = "user";
+        sp_payload = special_payload;
+    }
     // note: this is a little odd, two copies of the text will be
     // in the message, one for old clients, and one for
     // new authenticated clients, tho icuii doesn't really
@@ -880,7 +881,7 @@ void  TMsgCompose::send_buttonClick()
     vc ufn = user_filename;
 
     if(!q_message(rid_list, file_basename.c_str(), qfn,
-                  body_to_forward, msg_text.c_str(), filehash, sp, vctrue, no_forward, ufn, !dont_save_sent))
+                  body_to_forward, msg_text.c_str(), filehash, sp, sp_payload, no_forward, ufn, !dont_save_sent))
     {
         msgbox("Can't Q message, free up some diskspace and try again.", 0, MB_OK);
         enable_most();

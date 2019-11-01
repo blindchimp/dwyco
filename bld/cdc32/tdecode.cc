@@ -19,6 +19,9 @@
 #if __GNUC_MINOR__ >= 7 || defined(__linux__)
 #include <netinet/in.h>
 #endif
+#ifdef LINUX
+#include <arpa/inet.h>
+#endif
 
 #ifdef _Windows
 #include <winsock.h>

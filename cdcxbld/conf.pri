@@ -8,16 +8,20 @@
 VCCFG_COMP=$$PWD
 DWYCOBG=0
 DEFINES += VCCFG_FILE
-linux-g++*:DEFINES += LINUX 
+linux-g++* {
+DEFINES += LINUX
+DWYCO_USE_LINUX_AUDIO=1
+}
 macx-ios-clang {
 DEFINES += LINUX MACOSX DWYCO_IOS
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+}
+macx-* {
+DEFINES += LINUX MACOSX
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 }
 macx-ios-clang|macx-g++|macx-clang {
-#QMAKE_CXXFLAGS += -stdlib=libc++
-#QMAKE_LFLAGS += -stdlib=libstdc++
-#QMAKE_MAC_SDK.macos.version=10.11
-#QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.9
 QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
 }
 macx-g++|macx-clang: DEFINES += LINUX MACOSX
@@ -30,7 +34,7 @@ DEFINES += _Windows
 }
 linux-g++|linux-g++-64|macx-g++|macx-clang: QMAKE_CXX=ccache g++
 
-QMAKE_CFLAGS += -std=c++11 #-fsanitize=address
+QMAKE_CFLAGS += #-fsanitize=address
 QMAKE_CXXFLAGS += -std=c++11 #-fsanitize=address
 QMAKE_LFLAGS += -std=c++11 #-fsanitize=address
 

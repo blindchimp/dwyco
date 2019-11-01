@@ -1,7 +1,6 @@
 static DwycoChatCtxCallback  user_dwyco_set_chat_ctx_callback;
 static DwycoChatCtxCallback2  user_dwyco_set_chat_ctx_callback2;
 static DwycoStatusCallback  user_dwyco_set_debug_message_callback;
-static DwycoStatusCallback  user_dwyco_set_chat_server_status_callback;
 static DwycoVideoDisplayCallback  user_dwyco_set_video_display_callback;
 static DwycoCallAppearanceCallback  user_dwyco_set_call_acceptance_callback;
 static DwycoEmergencyCallback  user_dwyco_set_emergency_callback;
@@ -30,7 +29,6 @@ DWYCOEXPORT void _real_dwyco_resume();
 DWYCOEXPORT void _real_dwyco_set_chat_ctx_callback(DwycoChatCtxCallback cb);
 DWYCOEXPORT void _real_dwyco_set_chat_ctx_callback2(DwycoChatCtxCallback2 cb);
 DWYCOEXPORT void _real_dwyco_set_debug_message_callback(DwycoStatusCallback cb);
-DWYCOEXPORT void _real_dwyco_set_chat_server_status_callback(DwycoStatusCallback cb);
 DWYCOEXPORT void _real_dwyco_set_video_display_callback(DwycoVideoDisplayCallback cb);
 DWYCOEXPORT void _real_dwyco_set_call_acceptance_callback(DwycoCallAppearanceCallback cb);
 DWYCOEXPORT void _real_dwyco_set_emergency_callback(DwycoEmergencyCallback cb);
@@ -58,6 +56,7 @@ DWYCOEXPORT int _real_dwyco_get_authenticator(const char **a_out, int *len_a_out
 DWYCOEXPORT void _real_dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 DWYCOEXPORT void _real_dwyco_database_login();
 DWYCOEXPORT int _real_dwyco_database_online();
+DWYCOEXPORT int _real_dwyco_chat_online();
 DWYCOEXPORT int _real_dwyco_database_auth_remote();
 DWYCOEXPORT void _real_dwyco_inhibit_database(int i);
 DWYCOEXPORT void _real_dwyco_inhibit_pal(int i);
@@ -213,6 +212,7 @@ DWYCOEXPORT int _real_dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, co
 DWYCOEXPORT int _real_dwyco_get_unsaved_messages(DWYCO_UNSAVED_MSG_LIST *list_out, const char *uid, int len_uid);
 DWYCOEXPORT int _real_dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out);
+DWYCOEXPORT int _real_dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out);
 DWYCOEXPORT int _real_dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
 DWYCOEXPORT int _real_dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out, const char **dlv_mid_out, int *what_out);
 DWYCOEXPORT int _real_dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
@@ -228,6 +228,12 @@ DWYCOEXPORT void _real_dwyco_pal_add(const char *user_id, int len_uid);
 DWYCOEXPORT void _real_dwyco_pal_delete(const char *user_id, int len_uid);
 DWYCOEXPORT int _real_dwyco_is_pal(const char *user_id, int len_uid);
 DWYCOEXPORT DWYCO_LIST _real_dwyco_pal_get_list();
+DWYCOEXPORT void _real_dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
+DWYCOEXPORT void _real_dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag);
+DWYCOEXPORT void _real_dwyco_unset_all_msg_tag(const char *tag);
+DWYCOEXPORT int _real_dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
+DWYCOEXPORT int _real_dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
+DWYCOEXPORT int _real_dwyco_mid_has_tag(const char *mid, const char *tag);
 DWYCOEXPORT void _real_dwyco_set_fav_msg(const char *uid, int len_uid, const char *mid, int fav);
 DWYCOEXPORT int _real_dwyco_get_fav_msg(const char *uid, int len_uid, const char *mid);
 DWYCOEXPORT int _real_dwyco_is_ignored(const char *user_id, int len_uid);
@@ -336,20 +342,6 @@ printarg(" const char *", "msg",msg);
 printarg(" int ", "percent_done",percent_done);
 printarg(" void *", "user_arg",user_arg);
 (*user_dwyco_set_debug_message_callback)(id,msg,percent_done,user_arg);
-/*++Reentered;
-*/printcbret();
-}
-
-void
-DWYCOCALLCONV
-wrapped_cb_dwyco_set_chat_server_status_callback(int id, const char *msg, int percent_done, void *user_arg)
-{
-printcbfunname("dwyco_set_chat_server_status_callback" "DwycoStatusCallback");
-printarg("int ", "id",id);
-printarg(" const char *", "msg",msg);
-printarg(" int ", "percent_done",percent_done);
-printarg(" void *", "user_arg",user_arg);
-(*user_dwyco_set_chat_server_status_callback)(id,msg,percent_done,user_arg);
 /*++Reentered;
 */printcbret();
 }
@@ -707,18 +699,6 @@ printret();
 
 DWYCOEXPORT
 void
-dwyco_set_chat_server_status_callback(DwycoStatusCallback cb)
-{
-printfunname("dwyco_set_chat_server_status_callback");
-printarg("DwycoStatusCallback ", "cb",(void *)cb);
-user_dwyco_set_chat_server_status_callback=cb;
-cb=wrapped_cb_dwyco_set_chat_server_status_callback;
-_real_dwyco_set_chat_server_status_callback(cb);
-printret();
-}
-
-DWYCOEXPORT
-void
 dwyco_set_video_display_callback(DwycoVideoDisplayCallback cb)
 {
 printfunname("dwyco_set_video_display_callback");
@@ -1013,6 +993,16 @@ dwyco_database_online()
 {
 printfunname("dwyco_database_online");
 int _ret = _real_dwyco_database_online();
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_chat_online()
+{
+printfunname("dwyco_chat_online");
+int _ret = _real_dwyco_chat_online();
 printretval(_ret);
 return(_ret);
 }
@@ -2918,6 +2908,20 @@ return(_ret);
 
 DWYCOEXPORT
 int
+dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out)
+{
+printfunname("dwyco_get_user_payload");
+printarg("DWYCO_UNSAVED_MSG_LIST ", "ml",ml);
+printarg(" const char **", "str_out",str_out);
+printarg(" int *", "len_out",len_out);
+int _ret = _real_dwyco_get_user_payload(ml,str_out,len_out);
+printargout(" const char **", "str_out",str_out, " int *", "len_out", len_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
 dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out)
 {
 printfunname("dwyco_is_special_message");
@@ -3092,6 +3096,78 @@ dwyco_pal_get_list()
 {
 printfunname("dwyco_pal_get_list");
 DWYCO_LIST _ret = _real_dwyco_pal_get_list();
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+void
+dwyco_set_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag)
+{
+printfunname("dwyco_set_msg_tag");
+printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
+printarg(" const char *", "mid",mid);
+printarg(" const char *", "tag",tag);
+_real_dwyco_set_msg_tag(uid,len_uid,mid,tag);
+printret();
+}
+
+DWYCOEXPORT
+void
+dwyco_unset_msg_tag(const char *uid, int len_uid, const char *mid, const char *tag)
+{
+printfunname("dwyco_unset_msg_tag");
+printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
+printarg(" const char *", "mid",mid);
+printarg(" const char *", "tag",tag);
+_real_dwyco_unset_msg_tag(uid,len_uid,mid,tag);
+printret();
+}
+
+DWYCOEXPORT
+void
+dwyco_unset_all_msg_tag(const char *tag)
+{
+printfunname("dwyco_unset_all_msg_tag");
+printarg("const char *", "tag",tag);
+_real_dwyco_unset_all_msg_tag(tag);
+printret();
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag)
+{
+printfunname("dwyco_get_tagged_mids");
+printarg("DWYCO_LIST *", "list_out",list_out);
+printarg(" const char *", "tag",tag);
+int _ret = _real_dwyco_get_tagged_mids(list_out,tag);
+printargout("DWYCO_LIST *", "list_out",list_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
+{
+printfunname("dwyco_get_tagged_idx");
+printarg("DWYCO_MSG_IDX *", "list_out",list_out);
+printarg(" const char *", "tag",tag);
+int _ret = _real_dwyco_get_tagged_idx(list_out,tag);
+printargout("DWYCO_MSG_IDX *", "list_out",list_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_mid_has_tag(const char *mid, const char *tag)
+{
+printfunname("dwyco_mid_has_tag");
+printarg("const char *", "mid",mid);
+printarg(" const char *", "tag",tag);
+int _ret = _real_dwyco_mid_has_tag(mid,tag);
 printretval(_ret);
 return(_ret);
 }

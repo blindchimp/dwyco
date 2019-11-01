@@ -7,10 +7,10 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #ifndef NO_VCCRYPTO
-#ifndef VCCRYPT_H
-#define VCCRYPT_H
+#ifndef VCCRYPT2_H
+#define VCCRYPT2_H
 // $Header: g:/dwight/repo/vc/rcs/vccrypt.h 1.4 1998/12/26 07:43:27 dwight Exp $
-
+#include "vc.h"
 vc vclh_sha(vc);
 vc vclh_sha256(vc);
 vc vclh_sha3_256(vc s);

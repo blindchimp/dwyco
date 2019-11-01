@@ -1,5 +1,6 @@
 #!/bin/bash
 . settings.sh
+. ndk_autoconf.sh
 
 function die {
   echo "$1 failed" && exit 1
@@ -17,11 +18,5 @@ function die {
 ./configure_theora.sh || die "THEORA configure"
 ./make_theora.sh || die "THEORA make"
 
-if [ "$NDK_ABI" = "arm" ]
-then
-mkdir -p ../obj/local/armeabi-v7a
-cp libtheora/output/lib/*.a libogg/output/lib/*.a libvorbis/output/lib/*.a libspeex/output/lib/*.a ../obj/local/armeabi-v7a/
-else
-mkdir -p ../obj/local/x86
-cp libtheora/output/lib/*.a libogg/output/lib/*.a libvorbis/output/lib/*.a libspeex/output/lib/*.a ../obj/local/x86/
-fi
+mkdir -p ../obj/local/$NDK_ABI_NAME
+cp libtheora/output/lib/*.a libogg/output/lib/*.a libvorbis/output/lib/*.a libspeex/output/lib/*.a ../obj/local/$NDK_ABI_NAME

@@ -170,16 +170,6 @@ send_pic(QByteArray buid)
 
 void
 DWYCOCALLCONV
-dwyco_chat_server_status_callback(int id, const char *msg, int /*percent_done*/, void * /*user_arg*/)
-{
-    if(strcmp(msg, "offline") == 0)
-    {
-        exit(1);
-    }
-}
-
-void
-DWYCOCALLCONV
 dwyco_chat_ctx_callback(int cmd, int id,
     const char *uid, int len_uid,
     const char *name, int len_name,
@@ -230,12 +220,11 @@ main(int argc, char *argv[])
     const char *desc = argv[2];
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
-    dwyco_set_chat_server_status_callback(dwyco_chat_server_status_callback);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
 
     dwyco_init();
 
-    dwyco_set_setting("call_acceptance/no_listen", "1");
+    dwyco_set_setting("net/listen", "0");
 
     if(dwyco_get_create_new_account())
     {
@@ -263,6 +252,8 @@ main(int argc, char *argv[])
         load_it(Sent, "sent.qds");
     }
 
+    int was_online = 0;
+
     while(1)
     {
         int spin;
@@ -279,6 +270,15 @@ main(int argc, char *argv[])
             dwyco_exit();
             exit(0);
         }
+        if(dwyco_chat_online() == 0)
+        {
+            if(was_online)
+                exit(0);
+            else
+                continue;
+        }
+        was_online = 1;
+
         if(time(0) - Sent_age > 6 * 3600)
         {
             Sent.clear();

@@ -129,10 +129,6 @@ CallScreeningCallback MMChannel::call_screening_callback;
 int MMChannel::Moron_dork_mode;
 int MMChannel::Session_id = 1;
 
-
-void pump_messages();
-void turn_listen_on();
-
 // Conference mode, mostly defunct
 int Conf;
 int Soft_preview_on;
@@ -363,18 +359,31 @@ kill_coder_pipe()
 void
 MMChannel::exit_mmchan()
 {
+
+restart:;
+
     int n = MMChannels.num_elems();
     for(int i = 0; i < n; ++i)
     {
         MMChannel *m = MMChannels[i];
+
         if(m)
         {
+            ValidPtr vp = m->vp;
+            if(!vp.is_valid())
+                continue;
             m->schedule_destroy(HARD);
             m->destroy();
-            m->stop_service();
-            delete m;
+            if(vp.is_valid())
+            {
+                m->stop_service();
+                delete m;
+            }
+            goto restart;
         }
     }
+    MMChannels = DwVecP<MMChannel>();
+
 }
 
 
@@ -559,9 +568,6 @@ MMChannel::MMChannel() :
     resolve_result = -1;
     resolve_failed = 0;
     memset(&addr_out, 0, sizeof(addr_out));
-    official_name[0] = 0;
-    addrstr[0] = 0;
-    ouraddr[0] = 0;
 
     msg_output = 0;
     call_setup = 0;
@@ -1143,7 +1149,6 @@ MMChannel::synchronous_destroy(int id, enum destroy_how how)
 int
 MMChannel::destroy()
 {
-    DwString a;
     int i;
 
     // need this to sync the state of some record tubes
@@ -2473,7 +2478,7 @@ MMChannel::recv_crypto(vc their_crypto)
     }
     vc pvers;
     if(!their_crypto.find("protocol version", pvers) ||
-            (int)pvers != MMCHAN_PROTOCOL_VERS)
+            int(pvers) != MMCHAN_PROTOCOL_VERS)
     {
         pstate = FAILED;
         return;
@@ -2970,7 +2975,7 @@ cleanup:
     pstate = WAIT_FOR_CLOSE;
     negotiating = 0;
     // we're through monkeying with devices, so allow new connects.
-    turn_listen_on();
+    turn_accept_on();
     // note: leave nego_timer going in this case because
     // we may not get a disconnect is odd cases.
 }
@@ -3204,14 +3209,14 @@ done:
         if(connection_list_changed_callback)
             (*connection_list_changed_callback)(0, clc_arg1, clc_arg2, clc_arg3);
         negotiating = 0;
-        turn_listen_on();
+        turn_accept_on();
         nego_timer.reset();
     }
     return;
 cleanup:
     pstate = WAIT_FOR_CLOSE;
     negotiating = 0;
-    turn_listen_on();
+    turn_accept_on();
     // note: leave nego_timer going in this case because
     // we may not get a disconnect is odd cases.
 }
@@ -3223,7 +3228,7 @@ MMChannel::reject_call()
     pstate = WAIT_FOR_CLOSE;
     negotiating = 0;
     // we're through monkeying with devices, so allow new connects.
-    turn_listen_on();
+    turn_accept_on();
     // note: leave nego_timer going in this case because
     // we may not get a disconnect is odd cases.
 }
@@ -3272,7 +3277,7 @@ MMChannel::compute_sync()
     // this includes tubes for recording zaps
     // and stuff, so they can run at full speed
     // even tho you are on a modem.
-    // also, if there is anyoine in step mode,
+    // also, if there is anyone in step mode,
     // make sure we don't sync so the step
     // can be completed at the next frame
     // captured.
@@ -3528,7 +3533,7 @@ MMChannel::all_msg_broadcast_done()
     }
     return 1;
 }
-
+#ifdef DWYCO_RATE_DISPLAY
 int
 MMChannel::rate_updated(int who)
 {
@@ -3538,7 +3543,7 @@ MMChannel::rate_updated(int who)
     }
     return 0;
 }
-
+#endif
 DwString
 MMChannel::info_format(int who)
 {
@@ -3963,8 +3968,10 @@ MMChannel::service_channels(int *spin_out)
             continue;
         }
         dont_restart_listening |= mc->negotiating;
-        if(!mc->negotiating && (mc->do_destroy != KEEP || mc->pstate == RECV_FAILED))
+        if(!mc->negotiating && mc->do_destroy != KEEP)
         {
+            if(!mc->vp.is_valid())
+                oopanic("invalid mc");
             if(mc->destroy())
             {
                 mc->stop_service();
@@ -4090,7 +4097,8 @@ stun_done:
             // destroy for the channel has been scheduled
             continue;
         }
-
+#ifdef DWYCO_RATE_DISPLAY
+        {
         int recv_on = 0;
         int send_on = 0;
         int do_update = 0;
@@ -4127,6 +4135,8 @@ stun_done:
             set_indicator_by_id(mc->gv_id, IND_SEND, send_on);
             set_indicator_by_id(mc->gv_id, IND_RECV, recv_on);
         }
+        }
+#endif
 
         MMTube *const t = mc->tube;
         VidAcquire *const va = mc->sampler;
@@ -4667,10 +4677,12 @@ resume:
                             // check for this particular theora case and work around it.
                             // what we really need here is some indication from the codec
                             // that it actually displayed a frame.
+#ifndef DWYCO_NO_THEORA_CODEC
                             CDCTheoraDecoderColor *d = dynamic_cast<CDCTheoraDecoderColor *>(decoder);
                             if(d && !d->seeking_keyframe)
                                 --mc->step_frames;
                             else if(!d)
+#endif
                                 --mc->step_frames;
                             if(mc->step_frames <= 0 && mc->step_done_callback)
                                 (*mc->step_done_callback)(mc, mc->sdc_arg1, mc->sdc_arg2, mc->sdc_arg3);
@@ -4742,7 +4754,7 @@ dropit:
     }
     if(!dont_restart_listening)
     {
-        turn_listen_on();
+        turn_accept_on();
     }
 #if 0
     if(not_idle == 0)

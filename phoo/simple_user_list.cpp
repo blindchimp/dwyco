@@ -13,11 +13,13 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "dwyco_top.h"
+#include "dwycolistscoped.h"
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
 
 void hack_unread_count();
+QByteArray get_cq_results_filename();
 
 SimpleUserModel::SimpleUserModel(QObject *parent) :
     QQmlObjectListModel<SimpleUser>(parent, "display", "uid")
@@ -27,34 +29,6 @@ SimpleUserModel::SimpleUserModel(QObject *parent) :
 
 SimpleUserModel::~SimpleUserModel()
 {
-}
-
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
-}
-
-static int
-dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_INT)
-        return 0;
-    QByteArray str_out = QByteArray(val, len);
-    int_out = str_out.toInt();
-    return 1;
 }
 
 static
@@ -116,7 +90,10 @@ SimpleUserModel::delete_all_selected()
     }
     hack_unread_count();
 
-    dwyco_load_users2(1, 0);
+    //dwyco_load_users2(1, 0);
+    int total = 0;
+    dwyco_load_users2(TheDwycoCore->get_use_archived() ? 0 : 1, &total);
+    TheDwycoCore->update_total_users(total);
     load_users_to_model();
 
 }
@@ -222,15 +199,68 @@ SimpleUserModel::load_users_to_model()
     clear();
     QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
     dwyco_get_user_list2(&l, &n);
+    simple_scoped ql(l);
     for(int i = 0; i < n; ++i)
     {
-        QByteArray uid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
+        QByteArray uid = ql.get<QByteArray>(i, DWYCO_NO_COLUMN);
+        if(uid.length() == 0)
+            continue;
         if(!dwyco_is_ignored(uid.constData(), uid.length()))
         {
             add_uid_to_model(uid);
         }
     }
-    dwyco_list_release(l);
+}
+
+template<class T>
+int
+load_it(T& out, const char *filename)
+{
+    try
+    {
+        QFile f(filename);
+        if(!f.exists())
+            return 0;
+        f.open(QIODevice::ReadOnly);
+        QDataStream in(&f);
+        in >> out;
+        f.close();
+        if(in.status() == QDataStream::Ok)
+        {
+            return 1;
+        }
+        f.remove();
+        return 0;
+    }
+    catch(...)
+    {
+        return 0;
+    }
+}
+
+void
+SimpleUserModel::load_from_cq_file()
+{
+    int n;
+    clear();
+    QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
+    QList<QPair<QString, QString>> cqlist;
+    if(!load_it(cqlist, get_cq_results_filename()))
+        return;
+    n = cqlist.count();
+    for(int i = 0; i < n; ++i)
+    {
+        QString huid = cqlist[i].first;
+        QByteArray uid = QByteArray::fromHex(huid.toLatin1());
+        QString email = cqlist[i].second;
+        if(uid.length() == 0)
+            continue;
+        if(!dwyco_is_ignored(uid.constData(), uid.length()))
+        {
+            auto su = add_uid_to_model(uid);
+            su->update_email(email);
+        }
+    }
 }
 
 void
@@ -252,7 +282,7 @@ SimpleUserModel::uid_resolved(const QString &huid)
 
     QByteArray buid = QByteArray::fromHex(huid.toLatin1());
     c->update_display(dwyco_info_to_display(buid));
-    c->update_invalid(0);
+    c->update_invalid(false);
     int regular = 0;
     int reviewed = 0;
     get_review_status(buid, reviewed, regular);
@@ -267,7 +297,7 @@ SimpleUserModel::uid_invalidate_profile(const QString &huid)
     SimpleUser *c = getByUid(huid);
     if(!c)
         return;
-    c->update_invalid(1);
+    c->update_invalid(true);
 
 }
 
@@ -280,6 +310,8 @@ SimpleUserSortFilterModel::SimpleUserSortFilterModel(QObject *p)
     setSortCaseSensitivity(Qt::CaseInsensitive);
     sort(0);
     connect(m, SIGNAL(selected_countChanged(int)), this, SIGNAL(selected_countChanged(int)));
+    connect(m, SIGNAL(countChanged()), this, SIGNAL(countChanged()));
+    m_count = 0;
 }
 
 int
@@ -298,6 +330,15 @@ SimpleUserSortFilterModel::load_users_to_model()
     if(!m)
         ::abort();
     m->load_users_to_model();
+}
+
+void
+SimpleUserSortFilterModel::load_from_cq_file()
+{
+    SimpleUserModel *m = dynamic_cast<SimpleUserModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    m->load_from_cq_file();
 }
 
 void

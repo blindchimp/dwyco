@@ -1,4 +1,14 @@
 
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
+
 /*
  * $Header: g:/dwight/repo/dwcls/rcs/dwbagr.h 1.12 1997/06/01 04:39:53 dwight Stable095 $
  */
@@ -144,7 +154,7 @@ DwBagR<T>::set_size(int sz)
     table_size = sz;
 }
 
-// note: these functions need remodulatization...
+// note: these functions need remodularization...
 
 template<class T>
 DwBagR<T>::DwBagR(const DwBagR<T>& m)

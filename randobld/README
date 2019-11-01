@@ -1,0 +1,12 @@
+
+Rando is a simple picture-sharing app
+It is built using the Dwyco messaging system back-end.
+
+Current requirements:
+* Qt 5.12
+
+Note: this is really intended as mobile phone app, but it builds
+ok for desktop as well. This makes it easier to debug.
+
+May 2019
+Deployed to google play store

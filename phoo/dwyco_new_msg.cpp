@@ -181,6 +181,7 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
     return 1;
 }
 
+
 static void
 DWYCOCALLCONV
 msg_callback(int id, int what, const char *mid, void *)
@@ -238,6 +239,7 @@ reload_msgs()
     QList<QByteArray> kill_list_uid;
     QList<QByteArray> kill_list_mid;
 
+    // note: qt docs say ordering of keys and values is the same
     QList<QByteArray> k = Unviewed_msgs.keys();
     QList<QByteArray> v = Unviewed_msgs.values();
     int n = k.count();
@@ -283,6 +285,8 @@ reload_msgs()
     }
     return 1;
 }
+
+#if 0
 
 int
 dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, QByteArray& mid)
@@ -457,6 +461,7 @@ save_it:
 
     return 0;
 }
+#endif
 
 int
 dwyco_process_unsaved_list(DWYCO_UNSAVED_MSG_LIST ml, QSet<QByteArray>& uids)

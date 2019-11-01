@@ -17,14 +17,26 @@
 #include "pfx.h"
 #include "dwycolistscoped.h"
 #include "dwyco_new_msg.h"
+
+// note: this model integrates 3 lists when a particular uid is
+// selected: the saved message list, the inbox (just msgs from that uid) and
+// the set of messages that are queued to send that that uid.
+//
+// alternately, if you set a tag, the model is constructed of just messages
+// having that tag (from all uids), with two special values: "_fav" for favorites, and
+// "_hid" for hidden messages.
+//
+// this needs to be fixed, either allow multiple
+// models, or promote this to bona-fide singleton
 msglist_model *mlm;
 
 static QSet<QByteArray> Selected;
 static QList<QByteArray> Fetching;
 static QSet<QByteArray> Dont_refetch;
 static QList<QByteArray> Delete_msgs;
-static QMap<int, QByteArray> Fid_to_mid;
 static QMap<QByteArray, int> Mid_to_percent;
+// messages are automatically fetched, unless it fails.
+// after that, the fetch can be initiated explicitly
 static QSet<QByteArray> Manual_fetch;
 
 enum {
@@ -44,10 +56,12 @@ enum {
     IS_QD,
     IS_ACTIVE,
     IS_FAVORITE,
+    IS_HIDDEN,
     SELECTED,
     DIRECT,
     FETCH_STATE,
-    ATTACHMENT_PERCENT
+    ATTACHMENT_PERCENT,
+    ASSOC_UID, // who the message is from (or to, if sent msg)
 };
 
 static int
@@ -148,19 +162,14 @@ gen_time_unsaved(DWYCO_UNSAVED_MSG_LIST l, int row)
     return t;
 }
 
-static
 void
-DWYCOCALLCONV
-msg_status_callback(int id, const char *text, int percent_done, void *)
+msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int percent_done)
 {
-    //if(!Fid_to_mid.contains(id))
-    //    return;
-    QByteArray mid = Fid_to_mid.value(id);
-    Mid_to_percent.insert(mid, percent_done);
-    int midi = mlm->mid_to_index(mid);
-    QModelIndex mi = mlm->index(midi, 0);
-    mlm->dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
-    //mlm->dataChanged(mi, mi, QVector<int>(1, FETCH_STATE));
+    QByteArray bmid = mid.toLatin1();
+    Mid_to_percent.insert(bmid, percent_done);
+    int midi = mid_to_index(bmid);
+    QModelIndex mi = index(midi, 0);
+    dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
 }
 
 void
@@ -185,7 +194,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
             Fetching.removeAt(i);
         Delete_msgs.append(mid);
         //del_unviewed_mid(mid);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         break;
 
@@ -203,7 +211,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
 
         if(i >= 0)
             Fetching.removeAt(i);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         Manual_fetch.insert(mid);
         break;
@@ -218,7 +225,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
     default:
         if(i >= 0)
             Fetching.removeAt(i);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         Manual_fetch.remove(mid);
     }
@@ -232,9 +238,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
     roles.append(ATTACHMENT_PERCENT);
     roles.append(DIRECT);
     mlm->dataChanged(mi, mi, roles);
-    //mlm->dataChanged(mi, mi, QVector<int>(1, FETCH_STATE));
-    //mlm->dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
-
 }
 
 
@@ -245,6 +248,7 @@ msglist_model::msglist_model(QObject *p) :
     filter_show_sent = 1;
     filter_last_n = -1;
     filter_only_favs = 0;
+    filter_show_hidden = 1;
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
     mlm = this;
@@ -252,7 +256,9 @@ msglist_model::msglist_model(QObject *p) :
 
 msglist_model::~msglist_model()
 {
-
+    // not needed, as msglist is a singleton, but
+    // useful to uncomment this for leak checking
+    //delete sourceModel();
 }
 
 void
@@ -267,6 +273,19 @@ msglist_model::toggle_selected(QByteArray bmid)
     if(i != -1)
         emit dataChanged(mi, mi, QVector<int>(1, SELECTED));
 
+}
+
+void
+msglist_model::set_all_selected()
+{
+    int n = rowCount();
+    for(int i = 0; i < n; ++i)
+    {
+        QModelIndex mi = index(i, 0);
+        QByteArray mid = data(mi, MID).toByteArray();
+        Selected.insert(mid);
+        emit dataChanged(mi, mi, QVector<int>(1, SELECTED));
+    }
 }
 
 void
@@ -307,6 +326,17 @@ msglist_model::mid_to_index(QByteArray bmid)
 }
 
 void
+msglist_model::mid_tag_changed(QString mid)
+{
+    int midi = mlm->mid_to_index(mid.toLatin1());
+    QModelIndex mi = mlm->index(midi, 0);
+    QVector<int> roles;
+    roles.append(IS_HIDDEN);
+    roles.append(IS_FAVORITE);
+    mlm->dataChanged(mi, mi, roles);
+}
+
+void
 msglist_model::delete_all_selected()
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
@@ -326,13 +356,13 @@ msglist_model::delete_all_selected()
         }
         else
         {
-            if(!dwyco_get_fav_msg(0, 0, mid.constData()))
+            if(!dwyco_get_fav_msg(mid.constData()))
                 dwyco_delete_saved_message(buid.constData(), buid.length(), mid.constData());
         }
 
     }
     Selected.clear();
-    reload_model();
+    force_reload_model();
 }
 
 void
@@ -348,9 +378,45 @@ msglist_model::fav_all_selected(int f)
             dwyco_list_release(l);
             continue;
         }
-        dwyco_set_fav_msg(buid.constData(), buid.length(), b.constData(), f);
+        dwyco_set_fav_msg(b.constData(), f);
     }
-    reload_model();
+    force_reload_model();
+}
+
+void
+msglist_model::tag_all_selected(QByteArray tag)
+{
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    foreach (const QString &value, Selected)
+    {
+        QByteArray b = value.toLatin1();
+        DWYCO_LIST l;
+        if(dwyco_qd_message_to_body(&l, b.constData(), b.length()))
+        {
+            dwyco_list_release(l);
+            continue;
+        }
+        dwyco_set_msg_tag(b.constData(), tag.constData());
+    }
+    force_reload_model();
+}
+
+void
+msglist_model::untag_all_selected(QByteArray tag)
+{
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    foreach (const QString &value, Selected)
+    {
+        QByteArray b = value.toLatin1();
+        DWYCO_LIST l;
+        if(dwyco_qd_message_to_body(&l, b.constData(), b.length()))
+        {
+            dwyco_list_release(l);
+            continue;
+        }
+        dwyco_unset_msg_tag(b.constData(), tag.constData());
+    }
+    force_reload_model();
 }
 
 void
@@ -376,12 +442,45 @@ msglist_model::uid() const
 }
 
 void
+msglist_model::setTag(const QString& tag)
+{
+    if(m_tag != tag)
+    {
+        Selected.clear();
+        msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
+        if(mr)
+        {
+            mr->setTag(tag);
+            m_tag = tag;
+            emit tagChanged();
+        }
+        //invalidateFilter();
+    }
+}
+
+QString
+msglist_model::tag() const
+{
+    return m_tag;
+}
+
+void
 msglist_model::reload_model()
 {
     msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
     if(mr)
     {
         mr->reload_model();
+    }
+}
+
+void
+msglist_model::force_reload_model()
+{
+    msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
+    if(mr)
+    {
+        mr->reload_model(1);
     }
 }
 
@@ -393,6 +492,15 @@ msglist_model::set_filter(int sent, int recv, int last_n, int only_favs)
     filter_last_n = last_n;
     filter_only_favs = only_favs;
     invalidateFilter();
+    Selected.clear();
+}
+
+void
+msglist_model::set_show_hidden(int show_hidden)
+{
+    filter_show_hidden = show_hidden;
+    invalidateFilter();
+    Selected.clear();
 }
 
 bool
@@ -402,18 +510,24 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
 
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
-        return 0;
+        return false;
     if(filter_show_recv == 0 && is_sent.toInt() == 0)
-        return 0;
+        return false;
     if(filter_only_favs)
     {
         QVariant is_fav = alm->data(alm->index(source_row, 0), IS_FAVORITE);
-        if(is_fav.toInt() == 1)
-            return 1;
-        else
-            return 0;
+        if(is_fav.toInt() == 0)
+            return false;
     }
-    return 1;
+    if(filter_show_hidden == 0)
+    {
+        QVariant mid = alm->data(alm->index(source_row, 0), MID);
+        int hidden = dwyco_mid_has_tag(mid.toByteArray().constData(), "_hid");
+        if(hidden)
+            return false;
+    }
+
+    return true;
 }
 
 msglist_raw::msglist_raw(QObject *p)
@@ -437,10 +551,87 @@ msglist_raw::~msglist_raw()
         dwyco_list_release(inbox_msgs);
 }
 
+
+int
+msglist_raw::check_inbox_model()
+{
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+
+    // optimization, to avoid resetting the model in common cases
+    DWYCO_UNSAVED_MSG_LIST new_im;
+    if(dwyco_get_unsaved_messages(&new_im, buid.constData(), buid.length()))
+    {
+        dwyco_list qnew_im(new_im);
+
+        // see if the common case of a new record being right at the end
+        // or if a message fetch has finished and toggled the direct attribute
+
+        if(qnew_im.rows() == count_inbox_msgs)
+        {
+            {
+            dwyco_list q_inbox_msgs(inbox_msgs);
+            for(int i = 0; i < count_inbox_msgs; ++i)
+            {
+                QByteArray mid = qnew_im.get<QByteArray>(i, DWYCO_QMS_ID);
+                if(mid != q_inbox_msgs.get<QByteArray>(i, DWYCO_QMS_ID))
+                {
+                    qnew_im.release();
+                    return 0;
+                }
+            }
+            }
+
+            simple_scoped q_old_inbox(inbox_msgs);
+
+            inbox_msgs = qnew_im;
+            count_inbox_msgs = qnew_im.rows();
+            for(int i = 0; i < count_inbox_msgs; ++i)
+            {
+                if(qnew_im.is_nil(i, DWYCO_QMS_IS_DIRECT) != q_old_inbox.is_nil(i, DWYCO_QMS_IS_DIRECT))
+                {
+                    int k = count_inbox_msgs - i - 1;
+
+                    QModelIndex mi = index(k, 0);
+                    emit dataChanged(mi, mi);
+
+                }
+            }
+            return 1;
+        }
+        else if(qnew_im.rows() == 1 && count_inbox_msgs == 0)
+        {
+            beginInsertRows(QModelIndex(), 0, 0);
+            if(inbox_msgs)
+                dwyco_list_release(inbox_msgs);
+
+            inbox_msgs = qnew_im;
+            count_inbox_msgs = qnew_im.rows();
+            endInsertRows();
+            return 1;
+        }
+        else if(qnew_im.rows() == 0 && count_inbox_msgs == 1)
+        {
+            beginRemoveRows(QModelIndex(), 0, 0);
+            if(inbox_msgs)
+                dwyco_list_release(inbox_msgs);
+
+            inbox_msgs = qnew_im;
+            count_inbox_msgs = qnew_im.rows();
+            endRemoveRows();
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void
 msglist_raw::reload_inbox_model()
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+
+    if(check_inbox_model())
+        return;
+
     beginResetModel();
     if(inbox_msgs)
         dwyco_list_release(inbox_msgs);
@@ -449,13 +640,10 @@ msglist_raw::reload_inbox_model()
     count_inbox_msgs = 0;
 
     if(buid.length() != 10)
-
     {
         endResetModel();
         return;
     }
-
-
 
     dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());
 
@@ -466,11 +654,71 @@ msglist_raw::reload_inbox_model()
 
 }
 
-void
-msglist_raw::reload_model()
+// return 0 if the q-d msg list has changed
+// return 1 if it is the same
+int
+msglist_raw::check_qd_msgs()
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
-    beginResetModel();
+    DWYCO_QD_MSG_LIST qml;
+    dwyco_get_qd_messages(&qml, buid.constData(), buid.length());
+
+    simple_scoped qqml(qml);
+    if(qqml.rows() != count_qd_msgs)
+        return 0;
+    dwyco_list oqml(qd_msgs);
+    for(int i = 0; i < count_qd_msgs; ++i)
+    {
+        if(qqml.get<QByteArray>(i, DWYCO_QD_MSG_PERS_ID) != oqml.get<QByteArray>(i, DWYCO_QD_MSG_PERS_ID))
+            return 0;
+    }
+    return 1;
+}
+
+void
+msglist_raw::reload_model(int force)
+{
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    if(!force && msg_idx && m_tag.length() == 0 && check_inbox_model() && check_qd_msgs())
+    {
+        // inbox might have been update, qd msgs are the same
+        // check if there are some new messages in the index for this
+        // uid.
+        dwyco_list qm(msg_idx);
+        if(qm.rows() > 0)
+        {
+            long curlc = qm.get_long(0, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+            DWYCO_MSG_IDX nmi;
+            dwyco_get_new_message_index(&nmi, buid.constData(), buid.length(), curlc);
+            simple_scoped qnmi(nmi);
+            DWYCO_MSG_IDX cmi;
+            dwyco_get_message_index(&cmi, buid.constData(), buid.length());
+            dwyco_list qcmi(cmi);
+            int new_rows = qnmi.rows();
+            if(qcmi.rows() == qm.rows() + qnmi.rows())
+            {
+                if(new_rows > 0)
+                    beginInsertRows(QModelIndex(), count_inbox_msgs + count_qd_msgs,
+                                count_inbox_msgs + count_qd_msgs + qnmi.rows() - 1);
+                qm.release();
+                msg_idx = qcmi;
+                count_msg_idx = qcmi.rows();
+                if(new_rows > 0)
+                    endInsertRows();
+                return;
+            }
+            qcmi.release();
+        }
+
+
+    }
+    int end_reset = 0;
+    if(msg_idx || qd_msgs || inbox_msgs)
+    {
+        beginResetModel();
+        end_reset = 1;
+    }
+
     if(msg_idx)
         dwyco_list_release(msg_idx);
     if(qd_msgs)
@@ -484,13 +732,33 @@ msglist_raw::reload_model()
     count_msg_idx = 0;
     count_qd_msgs = 0;
     // ugh, need to fix this to validate the uid some way
-    if(buid.length() != 10)
+    if(buid.length() != 10 && m_tag.length() == 0)
     {
-        endResetModel();
+        if(end_reset)
+               endResetModel();
         return;
     }
 
-    dwyco_get_message_index(&msg_idx, buid.constData(), buid.length());
+    // note: setting the tag overrides the uid
+    if(m_tag.length() > 0)
+    {
+        dwyco_get_tagged_idx(&msg_idx, m_tag.toLatin1().constData());
+        //dwyco_list_print(msg_idx);
+        dwyco_list_numelems(msg_idx, &count_msg_idx, 0);
+        if(end_reset)
+            endResetModel();
+        else
+        {
+            beginInsertRows(QModelIndex(), 0, count_msg_idx == 0 ? 0 : (count_msg_idx - 1));
+            endInsertRows();
+        }
+        return;
+    }
+    else if(buid.length() == 10)
+    {
+        dwyco_get_message_index(&msg_idx, buid.constData(), buid.length());
+        //dwyco_list_print(msg_idx);
+    }
     dwyco_get_qd_messages(&qd_msgs, buid.constData(), buid.length());
     dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());
     if(msg_idx)
@@ -499,8 +767,17 @@ msglist_raw::reload_model()
         dwyco_list_numelems(qd_msgs, &count_qd_msgs, 0);
     if(inbox_msgs)
         dwyco_list_numelems(inbox_msgs, &count_inbox_msgs, 0);
-
-    endResetModel();
+    if(end_reset)
+        endResetModel();
+    else
+    {
+        int endidx = count_msg_idx + count_qd_msgs + count_inbox_msgs - 1;
+        if(endidx >= 0)
+        {
+        beginInsertRows(QModelIndex(), 0, endidx);
+        endInsertRows();
+        }
+    }
 }
 
 void
@@ -509,7 +786,17 @@ msglist_raw::setUid(const QString &uid)
     if(m_uid != uid)
     {
         m_uid = uid;
-        reload_model();
+        reload_model(1);
+    }
+}
+
+void
+msglist_raw::setTag(const QString& tag)
+{
+    if(m_tag != tag)
+    {
+        m_tag = tag;
+        reload_model(1);
     }
 }
 
@@ -548,10 +835,12 @@ msglist_raw::roleNames() const
     rn(DATE_RECEIVED);
     rn(LOCAL_TIME_CREATED);
     rn(IS_FAVORITE);
+    rn(IS_HIDDEN);
     rn(SELECTED);
     rn(DIRECT);
     rn(FETCH_STATE);
     rn(ATTACHMENT_PERCENT);
+    rn(ASSOC_UID);
 #undef rn
     return roles;
 }
@@ -651,6 +940,7 @@ msglist_raw::qd_data ( int r, int role ) const
     case HAS_SHORT_VIDEO:
     case HAS_VIDEO:
     case IS_FAVORITE:
+    case IS_HIDDEN:
         return 0;
 
     case IS_FORWARDED:
@@ -710,11 +1000,10 @@ auto_fetch(QByteArray mid)
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
 
-        int fetch_id = dwyco_fetch_server_message(mid.constData(), 0, 0, msg_status_callback, 0);
+        int fetch_id = dwyco_fetch_server_message(mid.constData(), 0, 0, 0, 0);
         if(fetch_id != 0)
         {
             Fetching.append(mid);
-            Fid_to_mid.insert(fetch_id, mid);
             return 1;
         }
     }
@@ -832,6 +1121,7 @@ msglist_raw::inbox_data (int r, int role ) const
     case HAS_SHORT_VIDEO:
     case HAS_VIDEO:
     case IS_FAVORITE:
+    case IS_HIDDEN:
     case IS_FORWARDED:
         return 0;
 
@@ -864,16 +1154,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     int r = index.row();
 
     int r2 = count_inbox_msgs;
-//    if(inbox_msgs)
-//    {
-//        dwyco_list_numelems(inbox_msgs, &r2, 0);
-//    }
-
     int r1 = count_qd_msgs;
-//    if(qd_msgs)
-//    {
-//        dwyco_list_numelems(qd_msgs, &r1, 0);
-//    }
 
     if(r < r2)
     {
@@ -913,7 +1194,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
             return QVariant();
         if(type_out != DWYCO_TYPE_INT)
             return QVariant();
-        QDateTime q(QDateTime::fromTime_t(atol(out)));
+        QDateTime q(QDateTime::fromSecsSinceEpoch(atol(out)));
         return QVariant(q);
     }
     else if(role == DATE_CREATED)
@@ -1022,7 +1303,12 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray mid;
         if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
             return "unknown";
-        QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+        QByteArray buid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, buid))
+        {
+            return "unknown";
+        }
+        buid = QByteArray::fromHex(buid);
         DWYCO_SAVED_MSG_LIST sm;
         if(!dwyco_get_saved_message(&sm, buid.constData(), buid.length(), mid.constData()))
             return "unknown";
@@ -1038,7 +1324,18 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
             return QVariant();
 
-        if(dwyco_get_fav_msg(0, 0, mid.constData()))
+        if(dwyco_get_fav_msg(mid.constData()))
+            return 1;
+        return 0;
+
+    }
+    else if(role == IS_HIDDEN)
+    {
+        QByteArray mid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
+            return QVariant();
+
+        if(dwyco_mid_has_tag(mid.constData(), "_hid"))
             return 1;
         return 0;
 
@@ -1053,6 +1350,15 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         return -1.0;
     else if(role == FETCH_STATE)
         return QString("fetched");
+    else if(role == ASSOC_UID)
+    {
+        QByteArray huid;
+        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
+        {
+            return "unknown";
+        }
+        return huid;
+    }
 
     return QVariant();
 
@@ -1067,7 +1373,10 @@ msglist_raw::get_msg_text(int row) const
         return "";
     DWYCO_SAVED_MSG_LIST sm;
 
-    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    QByteArray buid;
+    if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_ASSOC_UID, buid))
+        return "";
+    buid = QByteArray::fromHex(buid);
     if(!dwyco_get_saved_message(&sm, buid.constData(), buid.length(), mid.constData()))
         return "";
     simple_scoped qsm(sm);
@@ -1104,13 +1413,16 @@ QString
 msglist_raw::preview_filename(int row) const
 {
     QByteArray pfn;
-    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    QByteArray buid;
     QByteArray mid;
     int is_file;
     QString local_time;
 
     if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_MID, mid))
         return "";
+    if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_ASSOC_UID, buid))
+        return "";
+    buid = QByteArray::fromHex(buid);
     QByteArray full_size;
 
     if(!preview_saved_msg(buid, mid, pfn, is_file, full_size, local_time))

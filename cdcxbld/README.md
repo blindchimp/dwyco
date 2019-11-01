@@ -8,3 +8,11 @@ Windows
 
 
 Use this to build CDC-X, Dwyco desktop client. It is a Qt4 program.
+
+WARNING: CDC-X must be built with VS2008 for Windows. I attempted to
+port Qt4.8.7 to VS2015, and it worked, except there were a variety of
+small infuriating UI items that didn't work reliably (like right-clicking.)
+
+NOTE: it appears that as of MacOS 10.14 and xcode 10.2, cdc-x is no longer
+buildable with qt4, as the quicktime framework does not exist. The only
+option I know of is to use older Macs to build cdc-x.

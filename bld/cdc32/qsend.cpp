@@ -44,7 +44,7 @@ dwyco::DwQueryByMember<DwQSend> DwQSend::Qbm;
 
 // send a q'd message
 
-DwQSend::DwQSend(const DwString &qfn) :
+DwQSend::DwQSend(const DwString &qfn, int defer_send) :
     vp(this)
 {
     inprogress = 0;
@@ -54,6 +54,7 @@ DwQSend::DwQSend(const DwString &qfn) :
     xfer_chan_id = -1;
     att_size = 0;
     has_att = 0;
+    this->defer_send = defer_send;
     Qbm.add(this);
 }
 
@@ -216,6 +217,13 @@ DwQSend::do_store()
 {
     if(!att_basename.is_nil())
     {
+        // note: we put the ip/port location we sent the attachment
+        // to into the message. if you are using replication of the
+        // attachments on the server, this presumably would be
+        // considered the "best place" for the recipient to find the
+        // attachments, but the recipient could also find it
+        // someplace else too. ca 2019 alternate attachment fetchs
+        // are not implemented, either it finds it here or not at all.
         vc loc(VC_VECTOR);
         loc[0] = ip;
         loc[1] = port + vc(1);
@@ -516,6 +524,18 @@ DwQSend::send_message()
     else
     {
         try_count = (int)try_count + 1;
+        if((int)try_count > 10)
+        {
+            // in this case, try another random place
+            // note: this works better if you are replicating
+            // partial send results on all the servers. if you
+            // don't do this, then the send will restart from
+            // scratch each time, which still works, but is a waste.
+            prev_ip = vcnil;
+            prev_port = vcnil;
+            try_count = 1;
+            TRACK_ADD(QS_aux_retry, 1);
+        }
         save_aux();
         TRACK_ADD(QS_aux_found, 1);
     }
@@ -640,6 +660,9 @@ DwQSend::send_message()
         // by the time we get back here.
         return 0;
     }
+
+    if(defer_send)
+        return 0;
     if(att_basename.is_nil())
     {
         start();

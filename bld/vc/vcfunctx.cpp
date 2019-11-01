@@ -196,7 +196,7 @@ functx::get(const vc& key)
 }
 
 int
-functx::find(const vc& key, vc& out)
+functx::find(const vc& key, vc& out) const
 {
 	if(map->find(key, out))
 		return 1;
@@ -208,7 +208,7 @@ functx::find(const vc& key, vc& out)
 }
 
 int
-functx::find2(const vc& key, vc& out, vc*& wp)
+functx::find2(const vc& key, vc& out, vc*& wp) const
 {
 	if(map->find(key, out, &wp))
 		return 1;

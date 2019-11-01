@@ -1306,6 +1306,7 @@ dotype3(vc v)
 }
 
 
+#ifndef NO_VCEVAL
 vc
 do_exploded_funcall(vc fun, vc argvec)
 {
@@ -2775,7 +2776,7 @@ vclh_tolower(vc s)
     return v;
 }
 
-
+#endif
 vc
 vclh_serialize(vc v)
 {
@@ -2935,14 +2936,6 @@ vclh_clear_objmap()
 }
 #endif
 
-static
-void
-makefun(const char *name, const vc& fun)
-{
-	vc(name).bind(fun);
-}
-
-
 #if defined(_Windows) || defined(_MSC_VER)
 #include <process.h>
 #endif
@@ -2986,16 +2979,6 @@ vc::non_lh_init()
 #endif
 }
 
-// call this in a thread but only
-// call this *after* one call to init has been
-// made sometime before threads are created.
-void
-vc::thread_init()
-{
-	vc_winsock::thread_startup();
-	Vcmap = new vcctx;
-	init_rest();
-}
 
 // call this once globally before any threads
 // are created. this is the usual single-threaded
@@ -3007,6 +2990,15 @@ vc::init()
 	Vcmap = new vcctx;
 	init_rest();
 }
+
+#ifndef NO_VCEVAL
+static
+void
+makefun(const char *name, const vc& fun)
+{
+    vc(name).bind(fun);
+}
+#endif
 
 #define VC(fun, nicename, attr) vc(fun, nicename, #fun, attr)
 #define VC2(fun, nicename, attr, trans) vc(fun, nicename, #fun, attr, trans)
@@ -3452,15 +3444,6 @@ vc::exit()
 	non_lh_exit();
 }
 
-void
-vc::thread_exit()
-{
-	VcOutput.flush();
-	VcError.flush();
-	delete Vcmap;
-	Vcmap = 0;
-	vc_winsock::thread_shutoff();
-}
 
 void
 vc::non_lh_exit()
