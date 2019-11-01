@@ -11,13 +11,26 @@
 #include <QPixmap>
 #include <QFile>
 #include <QImage>
-#include <QFileDevice>
-#include <QMap>
 #include "pfx.h"
 #include "msgpv.h"
 #include "dwycolistscoped.h"
+#include "qfiletweak.h"
 
 void cdcxpanic(const char *);
+
+
+static QByteArray
+dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
+{
+    const char *val;
+    int len;
+    int type;
+    if(!dwyco_list_get(l, row, col, &val, &len, &type))
+        cdcxpanic("bogus list get");
+    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
+        cdcxpanic("bogus type");
+    return QByteArray(val, len);
+}
 
 struct img_info
 {
@@ -50,7 +63,7 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
     }
     simple_scoped sm(qsm);
     //local_time = gen_time(sm, 0);
-    QByteArray aname = sm.get<QByteArray>(DWYCO_QM_BODY_ATTACHMENT);
+    QByteArray aname = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_ATTACHMENT);
     if(aname.length() == 0)
     {
         return 0;
@@ -58,30 +71,32 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
     QByteArray cached_name = add_pfx(Tmp_pfx, aname);
     cached_name.replace(".dyc", "");
     cached_name.replace(".fle", "");
-
     if(QFile::exists(cached_name + ".jpg"))
     {
         preview_fn = cached_name + ".jpg";
+        preview_fn = add_pfx("image://untweak/", preview_fn);
         return 1;
     }
     if(QFile::exists(cached_name + ".jpeg"))
     {
         preview_fn = cached_name + ".jpeg";
+        preview_fn = add_pfx("image://untweak/", preview_fn);
         return 1;
     }
     if(QFile::exists(cached_name + ".ppm"))
     {
         preview_fn = cached_name + ".ppm";
+        preview_fn = add_pfx("image://untweak/", preview_fn);
         return 1;
     }
     if(QFile::exists(cached_name + ".png"))
     {
         preview_fn = cached_name + ".png";
+        preview_fn = add_pfx("image://untweak/", preview_fn);
         return 1;
     }
-
     QByteArray fn;
-    QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    QByteArray user_filename = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_FILE_ATTACHMENT);
     int is_file = user_filename.length() > 0;
     if(is_file)
     {
@@ -105,9 +120,21 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
             // copy file out to random user_filename, scaling to preview size
             rfn = add_pfx(Tmp_pfx, rfn);
             full_size_filename = rfn;
-            if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.constData(), rfn.constData()))
+            const char *buf;
+            int len_buf;
+            if(!dwyco_copy_out_file_zap_buf(uid.constData(), uid.length(), mid.constData(), &buf, &len_buf))
                 throw 0;
+            QFileTweak f(rfn);
+            f.open(QFile::WriteOnly);
+            if(f.write(buf, len_buf) != len_buf)
+            {
+                dwyco_free_array((char *)buf);
+                throw 0;
+            }
+            f.close();
             preview_fn = rfn;
+            dwyco_free_array((char *)buf);
+            preview_fn = add_pfx("image://untweak", preview_fn);
         }
         catch(...)
         {
@@ -141,8 +168,11 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
         // in memory, which the first word contains a pointer to the
         // image data
         QImage pvi(((const uchar **)buf)[0], cols, rows, cols * 3, QImage::Format_RGB888, image_cleanup, new img_info(buf, rows));
-        pvi.save(fn);
-        preview_fn = fn;
+        //pvi.save(fn);
+        QFileTweak qft(fn);
+        qft.open(QFile::WriteOnly);
+        pvi.save(&qft);
+        preview_fn = add_pfx("image://untweak/", fn);
         ret = 1;
     }
     //dwyco_zap_quick_stats_view(viewid, &video, &audio, &short_video);
@@ -152,14 +182,13 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
 }
 
 int
-preview_unsaved_msg(DWYCO_UNFETCHED_MSG_LIST sm, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
+preview_unsaved_msg(DWYCO_UNSAVED_MSG_LIST sm, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
 {
     preview_fn = add_pfx(Sys_pfx, "no_img.png");
     file = 0;
 
     //local_time = gen_time(sm, 0);
-    dwyco_list sm(qsm);
-    QByteArray aname = sm.get<QByteArray>(DWYCO_QM_BODY_ATTACHMENT);
+    QByteArray aname = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_ATTACHMENT);
     if(aname.length() == 0)
     {
         return 0;
@@ -192,7 +221,7 @@ preview_unsaved_msg(DWYCO_UNFETCHED_MSG_LIST sm, QByteArray& preview_fn, int& fi
         return 1;
     }
     QByteArray fn;
-    QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    QByteArray user_filename = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_FILE_ATTACHMENT);
     int is_file = user_filename.length() > 0;
     if(is_file)
     {
@@ -252,8 +281,11 @@ preview_unsaved_msg(DWYCO_UNFETCHED_MSG_LIST sm, QByteArray& preview_fn, int& fi
         // in memory, which the first word contains a pointer to the
         // image data
         QImage pvi(((const uchar **)buf)[0], cols, rows, cols * 3, QImage::Format_RGB888, image_cleanup, new img_info(buf, rows));
-        pvi.save(fn);
-        preview_fn = fn;
+        //pvi.save(fn);
+        QFileTweak qft(fn);
+        qft.open(QFile::WriteOnly);
+        pvi.save(&qft);
+        preview_fn = add_pfx("image://untweak", fn);
         ret = 1;
     }
 

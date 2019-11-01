@@ -26,7 +26,6 @@ save_random_filename(const QBuffer& img, QByteArray& out_fn)
         throw -1;
     out.close();
     out_fn = tmp_fn;
-    return;
 }
 
 // simple heuristic to get a larger image down to less than a max size
