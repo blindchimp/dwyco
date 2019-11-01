@@ -622,9 +622,9 @@ public:
 private:
     char *resolve_buf;
     int resolve_result;
-    char official_name[255];
-    char addrstr[255];
-    char ouraddr[255];
+    //char official_name[255];
+    DwString addrstr;
+    DwString ouraddr;
 public:
     int call_setup;
     vc call_type;

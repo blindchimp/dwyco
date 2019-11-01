@@ -129,8 +129,6 @@ CallScreeningCallback MMChannel::call_screening_callback;
 int MMChannel::Moron_dork_mode;
 int MMChannel::Session_id = 1;
 
-void pump_messages();
-
 // Conference mode, mostly defunct
 int Conf;
 int Soft_preview_on;
@@ -570,9 +568,6 @@ MMChannel::MMChannel() :
     resolve_result = -1;
     resolve_failed = 0;
     memset(&addr_out, 0, sizeof(addr_out));
-    official_name[0] = 0;
-    addrstr[0] = 0;
-    ouraddr[0] = 0;
 
     msg_output = 0;
     call_setup = 0;

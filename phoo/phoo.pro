@@ -24,7 +24,7 @@ INSTALLS += appdir_icon appdir_desktop
 }
 
 
-QT += core qml quick multimedia network xml #widgets #positioning
+QT += core qml quick multimedia network #widgets #positioning
 QT += quickcontrols2
 
 android: QT += androidextras
@@ -48,6 +48,7 @@ SOURCES += main.cpp \
     pfx.cpp \
     msglistmodel.cpp \
     msgpv.cpp \
+    simpledirmodel.cpp \
     ssmap.cpp \
     dwycoimageprovider.cpp \
     notificationclient.cpp \
@@ -393,8 +394,6 @@ HEADERS += \
     dwycoimageprovider.h \
     notificationclient.h \
     profpv.h \
-    dwstr-qstring.h \
-    dwstr.h \
     dwquerybymember.h \
     dvp.h \
     ct.h \
@@ -412,7 +411,8 @@ HEADERS += \
     simple_user_list.h \
     ctlist.h \
     dwycovideopreviewprovider.h \
-    audi_qt.h
+    audi_qt.h \
+    simpledirmodel.h
 
 DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.jar \
