@@ -14,11 +14,18 @@
 // simple vec
 // * vector is resized with memcpy
 // * vector is dense and append-only
-// * copy ctor is called on append
+// * copy/move ctor is called on append
 // * dtors of elements are called on destruction of the vector.
 // * vector is NOT automatically resized if you append past the end
 // * vector has DWSVEC_INITIAL elements before you need to resize it
 //   with set_size.
+// * WARNING: elements are NOT default-constructed, ever. after vector construction
+// or set_size, T's default ctor is NOT used. set_size is used to determine
+// storage requirements, and does not affect the "count" of the vector.
+// * the only way to increase "count" is to append items.
+// * you can decrease count by deleting the first N elements of the vector
+// (dtors are called for the removed items)
+// * on vector destruction, T's dtor is called for elements 0 to count - 1.
 //
 #include <string.h>
 #include <utility>
@@ -183,6 +190,10 @@ DwSVec<T>::del(int s, int n)
     if(s != 0 || n > count)
         oopanic("bad svec del");
 #endif
+    for(int i = 0; i < n; ++i)
+    {
+        (&((T*)big)[i])->~T();
+    }
     memmove(big, big + (sizeof(T) * n), (count - n) * sizeof(T));
     count -= n;
 }

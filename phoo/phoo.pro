@@ -394,8 +394,6 @@ HEADERS += \
     dwycoimageprovider.h \
     notificationclient.h \
     profpv.h \
-    dwstr-qstring.h \
-    dwstr.h \
     dwquerybymember.h \
     dvp.h \
     ct.h \
