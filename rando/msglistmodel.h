@@ -52,6 +52,7 @@ public:
 public slots:
     void msg_recv_status(int cmd, const QString& mid);
     void mid_tag_changed(QString mid);
+    void msg_recv_progress(QString mid, QString huid, QString msg, int percent);
 
 private:
     QString m_uid;
@@ -91,7 +92,7 @@ public:
 private:
     DWYCO_MSG_IDX msg_idx;
     DWYCO_QD_MSG_LIST qd_msgs;
-    DWYCO_UNSAVED_MSG_LIST inbox_msgs;
+    DWYCO_UNFETCHED_MSG_LIST inbox_msgs;
     int count_msg_idx;
     int count_qd_msgs;
     int count_inbox_msgs;
