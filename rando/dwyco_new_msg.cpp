@@ -9,7 +9,10 @@
 
 #include <QSet>
 #include <QFile>
+#include <QMap>
 #include <QDataStream>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include "dwyco_new_msg.h"
 #include "dlli.h"
 #include "pfx.h"
@@ -17,6 +20,10 @@
 
 static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Already_processed;
+extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QByteArray> Hash_to_review;
+extern QMap<QByteArray, QByteArray> Hash_to_lon;
+extern QMap<QByteArray, QByteArray> Hash_to_lat;
 
 static
 int
@@ -36,6 +43,62 @@ add_unviewed(const QByteArray& uid, const QByteArray& mid)
     Got_msg_from_this_session.insert(uid);
 }
 
+static
+void
+load_to_hash(const QByteArray& uid, const QByteArray& mid)
+{
+    DWYCO_SAVED_MSG_LIST sml;
+    if(dwyco_get_saved_message(&sml, uid.constData(), uid.length(), mid.constData()))
+    {
+        simple_scoped qsml(sml);
+        QByteArray txt = qsml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2);
+        QJsonDocument qjd = QJsonDocument::fromJson(txt);
+        if(!qjd.isNull())
+        {
+            QJsonObject qjo = qjd.object();
+            if(!qjo.isEmpty())
+            {
+                QJsonValue h = qjo.value("hash");
+                QJsonValue loc = qjo.value("loc");
+                QJsonValue rev = qjo.value("review");
+                QJsonValue lat = qjo.value("lat");
+                QJsonValue lon = qjo.value("lon");
+
+                if(!h.isUndefined())
+                {
+                    QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
+                    if(!loc.isUndefined())
+                        Hash_to_loc.insert(hh, loc.toString().toLatin1());
+                    if(!rev.isUndefined())
+                        Hash_to_review.insert(hh, rev.toString().toLatin1());
+                    if(!lat.isUndefined())
+                        Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                    if(!lon.isUndefined())
+                        Hash_to_lon.insert(hh, lon.toString().toLatin1());
+
+                    dwyco_set_msg_tag(mid.constData(), h.toString().toLatin1());
+                }
+
+
+                // note: this is a hack. we favorite the message so it doesn't
+                // get removed during "clear-non favorites". this keeps us
+                // from having to check hashes while we are deleting pictures.
+                // down side is that some of the geo-info stays around across clears.
+                // we'll fix this eventually.
+                if(qsml.is_nil(DWYCO_QM_BODY_ATTACHMENT))
+                {
+                    dwyco_set_fav_msg(mid.constData(), 1);
+                    dwyco_set_msg_tag(mid.constData(), "_json");
+                }
+                dwyco_set_msg_tag(mid.constData(), "_unseen");
+                // note: we delete it from the "server has unseen" because
+                // we have fetched it from the server.
+                del_unviewed_mid(mid);
+            }
+        }
+    }
+}
+
 void
 load_inbox_tags_to_unviewed(QSet<QByteArray>& uids_out)
 {
@@ -51,7 +114,9 @@ load_inbox_tags_to_unviewed(QSet<QByteArray>& uids_out)
         QByteArray mid = qtm.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
         add_unviewed(uid, mid);
         uids_out.insert(uid);
+        load_to_hash(uid, mid);
     }
+
     dwyco_unset_all_msg_tag("_inbox");
 }
 
