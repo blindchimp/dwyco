@@ -890,7 +890,7 @@ msglist_raw::qd_data ( int r, int role ) const
         QByteArray full_size;
         QByteArray pfn;
 
-        if(!preview_unsaved_msg(qsm, pfn, is_file, full_size, local_time))
+        if(!preview_msg_body(qsm, pfn, is_file, full_size, local_time))
             return QVariant("");
         return QString(pfn);
 
