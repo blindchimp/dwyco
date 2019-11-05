@@ -150,7 +150,7 @@ update_unseen_from_db()
     // could be either. note, we could kluge and check the length, or
     // actually put the attachment info in the summary, but that is
     // too much for now.
-    if(has_unviewed_msgs() > uid_unviewed_msgs_count(TheMan))
+    if(total_unviewed_msgs_count() > uid_unviewed_msgs_count(TheMan))
     {
         has_ugeo = true;
         has_urando = true;
@@ -1682,7 +1682,7 @@ DwycoCore::init()
     int len_uid;
     dwyco_get_my_uid(&uid, &len_uid);
     My_uid = QByteArray(uid, len_uid);
-    update_this_uid(My_uid.toHex());
+    //update_this_uid(My_uid.toHex());
 
 
     // for easier testing, setup for raw file acq
@@ -2838,7 +2838,7 @@ fetch_small_msgs()
 {
     DWYCO_LIST uml;
 
-    if(dwyco_get_unsaved_messages(&uml, 0, 0))
+    if(dwyco_get_unfetched_messages(&uml, 0, 0))
     {
         simple_scoped quml(uml);
         int n = quml.rows();
@@ -2875,7 +2875,7 @@ DwycoCore::service_channels()
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
-        DWYCO_UNSAVED_MSG_LIST uml;
+        DWYCO_UNFETCHED_MSG_LIST uml;
 
         //scan_special_msgs();
         fetch_small_msgs();

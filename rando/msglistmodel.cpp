@@ -224,7 +224,7 @@ att_file_hash(const QByteArray& huid, const QByteArray& mid, QByteArray& hash_ou
     return 1;
 }
 
-static
+
 void
 msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int percent_done)
 {
@@ -981,7 +981,7 @@ msglist_raw::qd_data ( int r, int role ) const
         QByteArray full_size;
         QByteArray pfn;
 
-        if(!preview_unsaved_msg(qsm, pfn, is_file, full_size, local_time))
+        if(!preview_msg_body(qsm, pfn, is_file, full_size, local_time))
             return QVariant("");
         return QString(pfn);
 

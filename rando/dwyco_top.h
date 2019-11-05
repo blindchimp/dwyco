@@ -140,7 +140,7 @@ public:
     Q_INVOKABLE int chat_online();
 
     Q_INVOKABLE QUrl get_simple_directory_url();
-    Q_INVOKABLE QUrl get_simple_xml_url();
+    Q_INVOKABLE QUrl get_simple_lh_url();
     Q_INVOKABLE QString get_msg_count_url();
     Q_INVOKABLE QString url_to_filename(QUrl);
     Q_INVOKABLE int simple_send(QString recipient, QString msg);
@@ -322,7 +322,7 @@ signals:
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
     void msg_recv_state(int cmd, const QString& mid);
-    void msg_recv_progress(const QString& mid, int percent);
+    void msg_recv_progress(const QString& mid, const QString& ruid, const QString& msg, int percent);
     // dwyco video camera signals
     void camera_change(int cam_on);
     // zap composition record/play stopped
