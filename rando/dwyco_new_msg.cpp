@@ -43,7 +43,6 @@ add_unviewed(const QByteArray& uid, const QByteArray& mid)
     Got_msg_from_this_session.insert(uid);
 }
 
-static
 void
 load_to_hash(const QByteArray& uid, const QByteArray& mid)
 {
@@ -91,9 +90,6 @@ load_to_hash(const QByteArray& uid, const QByteArray& mid)
                     dwyco_set_msg_tag(mid.constData(), "_json");
                 }
                 dwyco_set_msg_tag(mid.constData(), "_unseen");
-                // note: we delete it from the "server has unseen" because
-                // we have fetched it from the server.
-                del_unviewed_mid(mid);
             }
         }
     }

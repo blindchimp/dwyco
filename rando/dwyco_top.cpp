@@ -2893,6 +2893,7 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
+        update_unseen_from_db();
     }
     update_unread_count(total_unviewed_msgs_count());
 #ifdef ANDROID

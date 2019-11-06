@@ -23,6 +23,7 @@
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
+void update_unseen_from_db();
 
 // note: this model integrates 3 lists when a particular uid is
 // selected: the saved message list, the inbox (just msgs from that uid) and
@@ -286,9 +287,12 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         if(uid().length() > 0)
         {
             add_unviewed(QByteArray::fromHex(uid().toLatin1()), mid);
+            load_to_hash(QByteArray::fromHex(uid().toLatin1()), mid);
             dwyco_unset_msg_tag(mid.constData(), "_inbox");
             TheDwycoCore->emit new_msg(uid(), "", smid);
             TheDwycoCore->emit decorate_user(uid());
+            update_unseen_from_db();
+            invalidate_sent_to();
         }
     }
     // FALLTHRU
@@ -1125,7 +1129,7 @@ hash_has_tag(QByteArray hash, const char *tag)
     simple_scoped stl(tl);
     for(int i = 0; i < stl.rows(); ++i)
     {
-        QByteArray b = stl.get<QByteArray>(i, "001");
+        QByteArray b = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
         if(dwyco_mid_has_tag(b.constData(), tag))
             return 1;
     }
