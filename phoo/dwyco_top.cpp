@@ -87,6 +87,7 @@ static int AvoidSSL = 0;
 typedef QHash<QByteArray, QByteArray> UID_ATTR_MAP;
 typedef QHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
 static UID_ATTR_MAP Uid_attrs;
+static int Init_ok;
 
 static ChatSortFilterModel *Chat_sort_proxy;
 static ConvSortFilterModel *Conv_sort_proxy;
@@ -965,13 +966,7 @@ setup_locations()
         setting_put("salt", "");
         setting_put("first-pin", "1");
     }
-    QString first_bugfix1;
-    if(!setting_get("bugfix1", first_bugfix1))
-    {
-        clear_unviewed_msgs();
-        setting_put("bugfix1", "");
 
-    }
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, userdir);
 
 
@@ -1529,6 +1524,7 @@ DwycoCore::init()
 
     if(!dwyco_init())
         ::abort();
+    Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
     dwyco_set_setting("net/listen", "1");
@@ -1633,6 +1629,13 @@ DwycoCore::init()
     else
     {
         dwyco_set_setting("call_acceptance/max_audio_recv", "0");
+    }
+
+    QString first_bugfix1;
+    if(!setting_get("bugfix1", first_bugfix1))
+    {
+        clear_unviewed_msgs();
+        setting_put("bugfix1", "");
     }
 }
 
@@ -2664,7 +2667,7 @@ int
 DwycoCore::service_channels()
 {
     int spin = 0;
-    if(Suspended)
+    if(Suspended || !Init_ok)
         return 0;
     dwyco_service_channels(&spin);
 //    static int been_here;

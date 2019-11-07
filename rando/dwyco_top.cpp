@@ -87,6 +87,7 @@ static int AvoidSSL = 0;
 typedef QHash<QByteArray, QByteArray> UID_ATTR_MAP;
 typedef QHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
 static UID_ATTR_MAP Uid_attrs;
+static int Init_ok;
 
 //static ChatSortFilterModel *Chat_sort_proxy;
 static ConvSortFilterModel *Conv_sort_proxy;
@@ -989,13 +990,7 @@ setup_locations()
         setting_put("salt", "");
         setting_put("first-pin", "1");
     }
-    QString first_bugfix1;
-    if(!setting_get("bugfix1", first_bugfix1))
-    {
-        clear_unviewed_msgs();
-        setting_put("bugfix1", "");
 
-    }
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, userdir);
 
 
@@ -1533,6 +1528,7 @@ DwycoCore::init()
 
     if(!dwyco_init())
         ::abort();
+    Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
     dwyco_set_setting("net/listen", "1");
@@ -1567,7 +1563,7 @@ DwycoCore::init()
     connect(this, SIGNAL(msg_recv_progress(QString, QString, QString, int)), mlm, SLOT(msg_recv_progress(QString, QString, QString, int)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
-    connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
+    //connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
 
     if(dwyco_get_create_new_account())
         return;
@@ -1579,6 +1575,13 @@ DwycoCore::init()
     reload_conv_list();
     reload_ignore_list();
     update_unseen_from_db();
+    QString first_bugfix1;
+    if(!setting_get("bugfix1", first_bugfix1))
+    {
+        clear_unviewed_msgs();
+        setting_put("bugfix1", "");
+
+    }
 
     QString tag_change1;
     if(!setting_get("tag_change1", tag_change1))
@@ -2869,7 +2872,7 @@ int
 DwycoCore::service_channels()
 {
     int spin = 0;
-    if(Suspended)
+    if(Suspended || !Init_ok)
         return 0;
     dwyco_service_channels(&spin);
     if(dwyco_get_rescan_messages())
