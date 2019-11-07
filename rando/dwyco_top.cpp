@@ -2897,6 +2897,7 @@ DwycoCore::service_channels()
             emit decorate_user(huid);
         }
         update_unseen_from_db();
+        mlm->invalidate_sent_to();
     }
     update_unread_count(total_unviewed_msgs_count());
 #ifdef ANDROID
