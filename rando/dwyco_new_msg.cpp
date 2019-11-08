@@ -24,6 +24,7 @@ extern QMap<QByteArray,QByteArray> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
 extern QMap<QByteArray, QByteArray> Hash_to_lon;
 extern QMap<QByteArray, QByteArray> Hash_to_lat;
+void cdcxpanic(const char *);
 
 static
 int
@@ -89,7 +90,6 @@ load_to_hash(const QByteArray& uid, const QByteArray& mid)
                     dwyco_set_fav_msg(mid.constData(), 1);
                     dwyco_set_msg_tag(mid.constData(), "_json");
                 }
-                dwyco_set_msg_tag(mid.constData(), "_unseen");
             }
         }
     }
@@ -238,7 +238,7 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
 
         if(type != DWYCO_TYPE_NIL)
         {
-            ::abort();
+            cdcxpanic("direct msgs api is different now");
         }
 
         // ok, at least it is likely the person will see it now

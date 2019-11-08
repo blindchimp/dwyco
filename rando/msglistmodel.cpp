@@ -1543,7 +1543,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         if(!att_file_hash(huid, mid, h))
             return 0;
         h = h.toHex();
-        if(hash_has_tag(h, "_unseen"))
+        if(hash_has_tag(h, "unviewed"))
             return 1;
         return 0;
     }

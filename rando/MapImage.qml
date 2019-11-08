@@ -31,7 +31,7 @@ Page {
         plugin: mapPlugin
         center: QtPositioning.coordinate(lat, lon)
         gesture.acceptedGestures: MapGestureArea.PanGesture|MapGestureArea.PinchGesture|MapGestureArea.FlickGesture
-        zoomLevel: 10
+        zoomLevel: 7
         onZoomLevelChanged: {
             console.log("ZOOM ", zoomLevel)
         }

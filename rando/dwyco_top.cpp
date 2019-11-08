@@ -123,7 +123,7 @@ update_unseen_from_db()
     if(!TheDwycoCore)
         return;
     DWYCO_LIST tl;
-    if(!dwyco_get_tagged_mids(&tl, "_unseen"))
+    if(!dwyco_get_tagged_mids(&tl, "unviewed"))
         return;
     simple_scoped stl(tl);
 
@@ -164,18 +164,6 @@ update_unseen_from_db()
 void
 DwycoCore::clear_unseen_rando()
 {
-    DWYCO_LIST tl;
-    if(!dwyco_get_tagged_mids(&tl, "_unseen"))
-        return;
-    simple_scoped stl(tl);
-
-    for(int i = 0; i < stl.rows(); ++i)
-    {
-        if(QByteArray::fromHex(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID)) != TheMan)
-        {
-            dwyco_unset_msg_tag(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID).constData(), "_unseen");
-        }
-    }
     clear_unviewed_except_for_uid(TheMan);
     TheDwycoCore->update_has_unseen_rando(false);
 }
