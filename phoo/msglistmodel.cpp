@@ -587,6 +587,7 @@ msglist_raw::check_inbox_model()
                     return 0;
                 }
             }
+            qnew_im.release();
             return 1;
         }
         else if(qnew_im.rows() == 1 && count_inbox_msgs == 0)
