@@ -177,9 +177,11 @@ msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int per
 }
 
 void
-msglist_model::msg_recv_status(int cmd, const QString &smid)
+msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
 {
     QByteArray mid = smid.toLatin1();
+    QByteArray huid = shuid.toLatin1();
+    QByteArray buid = QByteArray::fromHex(huid);
 
     int i = Fetching.indexOf(mid);
     switch(cmd)
@@ -216,18 +218,17 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         Manual_fetch.insert(mid);
         break;
     case DWYCO_SE_MSG_DOWNLOAD_OK:
-        // reload the inbox since a server messages
-        // just got transformed into a direct message
+
     {
         msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
         mr->reload_inbox_model();
-        if(uid().length() > 0)
-        {
-            add_unviewed(QByteArray::fromHex(uid().toLatin1()), mid);
-            dwyco_unset_msg_tag(mid.constData(), "_inbox");
-            TheDwycoCore->emit new_msg(uid(), "", smid);
-            TheDwycoCore->emit decorate_user(uid());
-        }
+        add_unviewed(buid, mid);
+        dwyco_unset_msg_tag(mid.constData(), "_inbox");
+        TheDwycoCore->emit new_msg(shuid, "", smid);
+        TheDwycoCore->emit decorate_user(shuid);
+        if(uid() == shuid)
+            mid_tag_changed(smid);
+
     }
     // FALLTHRU
     default:

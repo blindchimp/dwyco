@@ -321,7 +321,7 @@ signals:
 
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
-    void msg_recv_state(int cmd, const QString& mid);
+    void msg_recv_state(int cmd, const QString& mid, const QString& huid);
     void msg_recv_progress(const QString& mid, const QString& ruid, const QString& msg, int percent);
     // dwyco video camera signals
     void camera_change(int cam_on);

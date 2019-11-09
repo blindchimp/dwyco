@@ -7386,6 +7386,7 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
     dm[QQM_RECIP_VEC] = vc(VC_VECTOR);
     dm[QQM_RECIP_VEC][0] = My_UID;
     vc dmsg = msg;
+    vc from = msg[QQM_BODY_FROM];
     if(!msg[QQM_BODY_DHSF].is_nil())
     {
         dmsg = decrypt_msg_body(msg);
@@ -7402,7 +7403,7 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
             // until the key is reset in the server.
             if(q->msg_download_callback)
                 (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
-            se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, vcnil);
+            se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
             dirth_send_ack_get(My_UID, q->msg_id, QckDone(0, 0));
             TRACK_ADD(MR_msg_decrypt_failed, 1);
             return;
@@ -7436,19 +7437,13 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
     {
         if(q->msg_download_callback)
             (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_RATHOLED, q->msg_id, q->mdc_arg1);
-        se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED, q->msg_id, vcnil);
+        se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED, q->msg_id, from);
         return;
     }
-//    if(!save_to_inbox(dm))
-//    {
-//        if(q->msg_download_callback)
-//            (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_SAVE_FAILED, q->msg_id, q->mdc_arg1);
-//        se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
-//        return;
-//    }
+
     if(q->msg_download_callback)
         (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_OK, q->msg_id, q->mdc_arg1);
-    se_emit_msg(SE_MSG_DOWNLOAD_OK, q->msg_id, vcnil);
+    se_emit_msg(SE_MSG_DOWNLOAD_OK, q->msg_id, from);
     // note: just send ack_get, with no return, assume it always works.
     // if it doesn't work, it is no big deal, we just get a message
     // twice.
@@ -7550,6 +7545,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     }
 
     q->body = msg;
+    vc from = msg[QQM_BODY_FROM];
 
     if(msg[QQM_BODY_ATTACHMENT].is_nil())
     {
@@ -7564,7 +7560,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
 
         if(q->msg_download_callback)
             (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
-        se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, vcnil);
+        se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, from);
         q->cancel();
         delete q;
         return;
@@ -7587,14 +7583,14 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     {
         if(q->msg_download_callback)
             (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
-        se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, vcnil);
+        se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, from);
         q->cancel();
         delete q;
         return;
     }
     if(q->msg_download_callback)
         (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FETCHING_ATTACHMENT, q->msg_id, q->mdc_arg1);
-    se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_START, q->msg_id, vcnil);
+    se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_START, q->msg_id, from);
     q->xfer_channel = mc;
 
 }

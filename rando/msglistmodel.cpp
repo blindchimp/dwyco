@@ -236,10 +236,15 @@ msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int per
     dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
 }
 
+// note: despite this being a member function, it is called for any message
+// that might getting downloaded independent of whatever uid happens to be loaded
+// into the model at a given time.
 void
-msglist_model::msg_recv_status(int cmd, const QString &smid)
+msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shuid)
 {
     QByteArray mid = smid.toLatin1();
+    QByteArray huid = shuid.toLatin1();
+    QByteArray buid = QByteArray::fromHex(huid);
 
     int i = Fetching.indexOf(mid);
     switch(cmd)
@@ -284,16 +289,15 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
     {
         msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
         mr->reload_inbox_model();
-        if(uid().length() > 0)
-        {
-            add_unviewed(QByteArray::fromHex(uid().toLatin1()), mid);
-            load_to_hash(QByteArray::fromHex(uid().toLatin1()), mid);
-            dwyco_unset_msg_tag(mid.constData(), "_inbox");
-            TheDwycoCore->emit new_msg(uid(), "", smid);
-            TheDwycoCore->emit decorate_user(uid());
-            update_unseen_from_db();
+        add_unviewed(buid, mid);
+        load_to_hash(buid, mid);
+        dwyco_unset_msg_tag(mid.constData(), "_inbox");
+        TheDwycoCore->emit new_msg(shuid, "", smid);
+        TheDwycoCore->emit decorate_user(shuid);
+        update_unseen_from_db();
+        if(uid() == shuid)
             invalidate_sent_to();
-        }
+
     }
     // FALLTHRU
     default:

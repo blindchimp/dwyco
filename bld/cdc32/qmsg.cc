@@ -1967,38 +1967,39 @@ store_direct(MMChannel *m, vc msg, void *)
     }
 
     Rescan_msgs = 1;
-
-    if(save_msg(msg, id))
+    // save_msg indexes the message too, so after store_direct
+    // you can map mid to uid and so on.
+    try
     {
-        try
-        {
         sql_start_transaction();
-        sql_add_tag(id, "_inbox");
-        sql_add_tag(id, "_local");
-        sql_remove_mid_tag(id, "_remote");
-        DwString a("_");
-        a += (const char *)to_hex(from);
-        sql_remove_mid_tag(id, a.c_str());
-        sql_commit_transaction();
-        }
-        catch(...)
+        if(save_msg(msg, id))
         {
-            sql_rollback_transaction();
-        }
 
-        if(m)
-        {
-            m->send_ctrl("ok");
-            TRACK_ADD(DR_ok, 1);
+            sql_add_tag(id, "_inbox");
+            sql_add_tag(id, "_local");
+            sql_remove_mid_tag(id, "_remote");
+            DwString a("_");
+            a += (const char *)to_hex(from);
+            sql_remove_mid_tag(id, a.c_str());
+            if(m)
+            {
+                m->send_ctrl("ok");
+                TRACK_ADD(DR_ok, 1);
+            }
         }
+        else
+        {
+            if(m)
+            {
+                m->send_ctrl("store failed");
+                TRACK_ADD(DR_store_failed, 1);
+            }
+        }
+        sql_commit_transaction();
     }
-    else
+    catch(...)
     {
-        if(m)
-        {
-            m->send_ctrl("store failed");
-            TRACK_ADD(DR_store_failed, 1);
-        }
+        sql_rollback_transaction();
     }
 
     return 1;
