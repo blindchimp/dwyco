@@ -358,6 +358,7 @@ cdcxpanic(const char *)
     ::abort();
 }
 
+#if 0
 void
 uid_attrs_clear()
 {
@@ -431,6 +432,7 @@ uid_attrs_get_uids()
 {
     return Uid_attrs.uniqueKeys();
 }
+#endif
 
 
 
