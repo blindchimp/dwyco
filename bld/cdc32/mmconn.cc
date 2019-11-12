@@ -275,7 +275,6 @@ MMChannel::poll_resolve()
         else
         {
             struct hostent *h = (struct hostent *)resolve_buf;
-            strcpy(official_name, h->h_name);
             addr_out.s_addr = *(unsigned long *)h->h_addr;
 
             resolve_timer.reset();
