@@ -485,7 +485,7 @@ MMChannel::MMChannel() :
     frame_interval = 98;
     frame_timer.set_interval(frame_interval);
     frame_timer.set_autoreload(1);
-    frame_timer.start();
+    //frame_timer.start();
 
     frame_send = 0;
 

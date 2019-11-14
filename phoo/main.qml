@@ -958,13 +958,32 @@ ApplicationWindow {
                 core.is_database_online = core.database_online()
             }
             if(core.chat_online() !== core.is_chat_online) {
-                core.is_chat_online = core.chat_online();
+                core.is_chat_online = core.chat_online()
             }
 
-            if(core.service_channels() === 1)
+            // note: trying to schedule out another service channels call
+            // this way doesn't work too well unless we can kick the
+            // timer into action based on a dwyco* call (for example, we might
+            // be in a situation where we are waiting 10 seconds for the next
+            // network event, but the user clicks something that causes a
+            // video to record, which we want to start servicing immediately.
+            // have to think about this. also, the networking stuff really needs to be
+            // integrated into qt event loop using qsocketnotifiers.
+            // as a side note: it might be advantageous to "synchronize" multiple timers
+            // for things like channel sockets, so they can be serviced in a batch with one
+            // call to service channels. if you leave them unsynchronized, you get "next"
+            // expirations that are more or less random based on when the timer was started,
+            // which isn't really necessary.
+            var sc_next = core.service_channels()
+            console.log("next ", sc_next)
+            if(sc_next === 1 || sc_next < 0)
+            {
                 service_timer.interval = 1
+            }
             else
-                service_timer.interval = 30
+            {
+                service_timer.interval = (sc_next === 0 ? 100 : Math.min(100, sc_next))
+            }
         }
 
     }

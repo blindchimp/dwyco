@@ -2669,7 +2669,7 @@ DwycoCore::service_channels()
     int spin = 0;
     if(Suspended || !Init_ok)
         return 0;
-    dwyco_service_channels(&spin);
+    int next_expire = dwyco_service_channels(&spin);
 //    static int been_here;
 //    if(!been_here)
 //    {
@@ -2730,7 +2730,7 @@ DwycoCore::service_channels()
 #endif
 
 
-    return spin;
+    return spin ? 1 : next_expire;
 }
 
 
