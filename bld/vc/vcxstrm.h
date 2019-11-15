@@ -52,7 +52,14 @@ friend vc serialize(vc);
 friend int deserialize(vc, vc&);
 friend vc vclh_encdec_xfer_enc_ctx(vc, vc);
 friend class vc_uvsocket;
-private:
+friend class vc_double;
+friend class vc_decomposable;
+friend class vc_int;
+friend class vc_string;
+friend class vc;
+friend class vc_winsock;
+friend class vc_winsock_datagram;
+
 public:
     enum how_close {
         // for readable streams, any unread data in the buffer is discarded.
@@ -142,22 +149,8 @@ public:
 	int close(enum how_close how = FLUSH);
     int open2(enum status, enum e_iostyle = MULTIPLE);
     int close2(enum how_close how);
-
     char *in_want(long);
-	char *out_want(long);
-    int retry();
-	void put_back(const char *, long);
-	int flush();
-	int flushnb();
-	enum status get_status();
-	int has_input();
-
-	vc_default *chit_get(VCXCHIT);
-	void chit_append(vc_default *);
-	VCXCHIT chit_find(vc_default *);
-	void chit_new_table();
-	void commit();
-    int check_status(enum status);
+    char *out_want(long);
 
     // these are some arbitrary limits you can set and the
     // deserializer will check them and fail if they are
@@ -173,6 +166,22 @@ public:
     long max_elements;
     long max_element_len;
     long max_depth;
+
+private:
+
+    int retry();
+	void put_back(const char *, long);
+	int flush();
+	int flushnb();
+	enum status get_status();
+	int has_input();
+
+	vc_default *chit_get(VCXCHIT);
+	void chit_append(vc_default *);
+	VCXCHIT chit_find(vc_default *);
+	void chit_new_table();
+	void commit();
+    int check_status(enum status);
 
 private:
 	ChitTable *chit_table;
