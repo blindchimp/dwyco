@@ -167,13 +167,15 @@ public:
     long max_element_len;
     long max_depth;
 
+    int flushnb();
+    enum status get_status();
+
 private:
 
     int retry();
 	void put_back(const char *, long);
 	int flush();
-	int flushnb();
-	enum status get_status();
+
 	int has_input();
 
 	vc_default *chit_get(VCXCHIT);
