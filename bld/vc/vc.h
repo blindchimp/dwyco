@@ -139,7 +139,12 @@ const char *vc_wsget_errstr(int);
 #ifdef _Windows
 // can't do this, it causes compile errors, sigh.
 //#include <winsock.h>
+#ifdef _WIN64
+typedef unsigned long long SOCKET;
+#else
 typedef unsigned int SOCKET;
+#endif
+
 #else
 typedef int SOCKET;
 #endif
