@@ -10,8 +10,12 @@
 #define VC_H
 // $Header: g:/dwight/repo/vc/rcs/vc.h 1.54 1998/12/14 05:10:41 dwight Exp $
 
+#ifdef VC_INTERNAL
 #ifdef VCCFG_FILE
 #include "vccfg.h"
+#endif
+#define FALSE 0
+#define TRUE 1
 #endif
 
 #ifdef _MSC_VER
@@ -32,15 +36,10 @@
 
 #define dwmax(x, y) (((x) < (y)) ? (y) : (x))
 #define dwmin(x, y) (((x) > (y)) ? (y) : (x))
-#include "useful.h"
-#include "vcfext.h"
+
 class vcxstream;
 #define EXIN_DEV -1
 #define EXIN_PARSE -2
-class VcLexer;
-
-#define FALSE 0
-#define TRUE 1
 
 void oopanic(const char *);
 void user_panic(const char *);
@@ -140,15 +139,14 @@ const char *vc_wsget_errstr(int);
 #ifdef _Windows
 // can't do this, it causes compile errors, sigh.
 //#include <winsock.h>
-typedef unsigned int SOCKET;
+#ifdef _WIN64
+typedef unsigned long long SOCKET;
 #else
-typedef int SOCKET;
+typedef unsigned int SOCKET;
 #endif
 
-#if 0
-#ifdef USE_BERKSOCK
-#include "vcberk.h"
-#endif
+#else
+typedef int SOCKET;
 #endif
 
 typedef unsigned long hashValueType;
@@ -168,6 +166,9 @@ template<class T> class DwVec;
 #include "dwsvec.h"
 typedef DwSVec<vc> VCArglist;
 
+#ifndef VC_NOEVAL
+#include "vcfext.h"
+class VcLexer;
 typedef vc (*VCFUNCP0)();
 typedef vc (*VCFUNCP1)(vc);
 typedef vc (*VCFUNCP2)(vc, vc);
@@ -178,6 +179,7 @@ typedef vc (*VCFUNCPv)(VCArglist *);
 typedef vc (*VCFUNCPVP)(void *);
 
 typedef vc (*VCTRANSFUNCP)(VCArglist *, VcIO);
+#endif
 
 typedef int (*VC_ERR_CALLBACK)(vc *);
 typedef void (*VC_FOREACH_CALLBACK)(vc);
@@ -267,8 +269,11 @@ public:
 	vc(long i);
 	vc(const char *s);
         vc(const char *s, int len);
-	vc(VcLexer&);
+
 	vc(enum vc_type, const char * = "nil", long extra_parm = 0);
+
+#ifndef NO_VCEVAL
+    vc(VcLexer&);
     vc(VCFUNCP0, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCP1, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCP2, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
@@ -277,6 +282,7 @@ public:
     vc(VCFUNCP5, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCPVP, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCPv,const char *, const char *, int style = VC_FUNC_NORMAL|VC_FUNC_VARADIC, VCTRANSFUNCP = 0);
+#endif
 
 	notvirtual long xfer_in(vcxstream&);
 	notvirtual long xfer_out(vcxstream&);

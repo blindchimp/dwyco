@@ -10,7 +10,6 @@
 #undef LOCAL_TEST
 #include "vc.h"
 #include "dwtimer.h"
-#include "vcdecom.h"
 #include "qmsg.h"
 #include "cdcver.h"
 #include "snds.h"
