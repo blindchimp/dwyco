@@ -975,7 +975,7 @@ ApplicationWindow {
             // expirations that are more or less random based on when the timer was started,
             // which isn't really necessary.
             var sc_next = core.service_channels()
-            console.log("next ", sc_next)
+            //console.log("next ", sc_next)
             if(sc_next === 1 || sc_next < 0)
             {
                 service_timer.interval = 1
