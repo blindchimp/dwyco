@@ -12,7 +12,7 @@
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/dwhist.cc 1.5 1997/11/25 20:41:03 dwight Stable095 $
  */
-#if defined(LINUX) || defined(MINGW) || _MSC_VER >= 1500
+#if defined(LINUX) || _MSC_VER >= 1500
 #include <limits.h>
 #include <float.h>
 #define MINDOUBLE DBL_MIN

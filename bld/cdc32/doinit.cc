@@ -166,15 +166,6 @@ init_codec(const char *logname)
         init_entropy();
         dh_init();
         RTUserDefaults.load();
-#ifdef _Windows
-        if(vc_winsock::wsa_data.iMaxUdpDg != 0)
-        {
-            if(RTDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-            if(RTUserDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTUserDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-        }
-#endif
         TProfile t("admin", INI_FILENAME);
         // note: initvfw makes tweaks to default values
         // based on whether we are doing the wizard or not.
@@ -316,15 +307,6 @@ simple_init_codec(const char *logname)
             Myhostname = hostname;
 
         RTUserDefaults.load();
-#ifdef _Windows
-        if(vc_winsock::wsa_data.iMaxUdpDg != 0)
-        {
-            if(RTDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-            if(RTUserDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTUserDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-        }
-#endif
         TProfile t("admin", INI_FILENAME);
 
         // have to reconfigure a little bit for 0.80
@@ -405,15 +387,6 @@ init_bg_msg_send(const char *logname)
         dh_init();
 
         RTUserDefaults.load();
-#ifdef _Windows
-        if(vc_winsock::wsa_data.iMaxUdpDg != 0)
-        {
-            if(RTDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-            if(RTUserDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTUserDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-        }
-#endif
 
         init_dirth();
         init_qauth();

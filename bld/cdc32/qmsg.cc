@@ -779,7 +779,7 @@ gen_hash(DwString filename)
     }
     SHA sha;
     HashFilter *hf = new HashFilter(sha);
-    FileSource fs(filename.c_str(), TRUE, hf);
+    FileSource fs(filename.c_str(), true, hf);
     int n = hf->MaxRetrievable();
     if(n != 20)
         val = gen_id(); // gen some garbage so it won't match anything
