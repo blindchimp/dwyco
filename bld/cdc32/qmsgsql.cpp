@@ -33,6 +33,7 @@
 #include "sqlbq.h"
 #include "simplesql.h"
 #include "qmsgsql.h"
+#include "qdirth.h"
 
 namespace dwyco {
 
@@ -498,7 +499,11 @@ sql_clear_uid(vc uid)
     try
     {
         sql_start_transaction();
-        vc mids = sql_simple("select mid from msg_idx where assoc_uid = $1", to_hex(uid));
+        VCArglist a2;
+        a2.append("select mid from msg_idx where assoc_uid = ?1");
+        a2.append(to_hex(uid));
+        vc mids = sql_bulk_query(&a2);
+
         VCArglist a;
 
         a.append("delete from msg_idx where assoc_uid = ?1;");
