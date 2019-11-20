@@ -419,8 +419,6 @@ int uid_online_display(vc);
 unsigned long uid_to_ip(vc, int&, int&prim, int&sec, int&pal);
 void exit_conf_mode();
 void enter_conf_mode();
-void set_autoupdate_hash(vc);
-void resort_cur_dir();
 void TryDeletes();
 void async_handler(SOCKET, DWORD);
 void async_lookup_handler(HANDLE, DWORD);
@@ -451,7 +449,6 @@ extern vc My_connection;
 extern vc KKG;
 extern int Chat_online;
 
-DwString simple_diagnostics();
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
 
@@ -7612,28 +7609,10 @@ dwyco_save_message(const char *msg_id)
         return 0;
     }
 
-#if 0
-    if(summary[QM_IS_DIRECT].is_nil())
-    {
-        GRTLOG("save_message: cant save an unfetched server message %s", msg_id, 0);
-        return 0;
-    }
-#endif
-
     if(sql_mid_has_tag(id, "_inbox"))
         Rescan_msgs = 1;
     sql_remove_mid_tag(id, "_inbox");
     return 1;
-
-#if 0
-    vc m = direct_to_server(msg_id);
-    vc resp(VC_VECTOR);
-    resp[1] = m[1];
-    int tmp = save_msg(resp, msg_id);
-    if(tmp)
-        Rescan_msgs = 1;
-    return tmp;
-#endif
 }
 
 DWYCOEXPORT
@@ -7682,12 +7661,12 @@ int
 dwyco_delete_unfetched_message(const char *msg_id)
 {
     vc id(msg_id);
-    //delete_msg2(id);
+
     vc args(VC_VECTOR);
     args.append(vcnil);
     args.append(id);
     dirth_send_ack_get(My_UID, id, QckDone(ack_get_done2, 0, args));
-    //delete_msg2(id);
+
     return 1;
 }
 
@@ -8729,63 +8708,7 @@ dwyco_set_external_audio_output_callbacks( DwycoVVCallback nw, DwycoVVCallback d
     dwyco_audout_bufs_playing = bufs_playing ;
 }
 
-// this must be called before dwyco_init
-// with the complete cmd path, ie, c:\mumble\foo.exe
-// it is used to add an exception to the windows firewall
-// automatically. must be less than 1024 chars
-char CmdPath[1024];
-DWYCOEXPORT
-int
-dwyco_set_cmd_path(const char *cmd, int len_cmd_path)
-{
-    if(len_cmd_path > sizeof(CmdPath) - 1)
-    {
-        GRTLOG("set_cmd_path: cmd path too long (%d max)", sizeof(CmdPath) - 1, 0);
-        return 0;
-    }
-    memcpy(CmdPath, cmd, len_cmd_path);
-    CmdPath[len_cmd_path] = 0;
-    return 1;
-}
-
 // Auto-update functionality for desktop clients
-
-DWYCOEXPORT
-void
-dwyco_setup_autoupdate(const char *f1, const char *f2, const char *f3, const char *f4)
-{
-    const char *fs[4];
-    fs[0] = f1;
-    fs[1] = f2;
-    fs[2] = f3;
-    fs[3] = f4;
-
-    CryptoPP::Weak::MD5 shs;
-    SecByteBlock b(shs.DigestSize());
-    for(int i = 0; i < 4; ++i)
-    {
-        if(fs[i])
-        {
-            FILE *f = fopen(fs[i], "rb");
-            if(!f)
-                break;
-            while(1)
-            {
-                char buf[8192];
-                int len;
-                len = fread(buf, 1, sizeof(buf), f);
-                shs.Update((const byte *)buf, len);
-                if(len != sizeof(buf))
-                    break;
-            }
-            fclose(f);
-        }
-    }
-
-    shs.Final(b);
-    vc v(VC_BSTRING, (const char *)b.data(), shs.DigestSize());
-    set_autoupdate_hash(v);
-}
 
 static void
 check_for_update_done(vc m, void *, vc, ValidPtr p)
@@ -8925,21 +8848,6 @@ dwyco_sub_get(const char **reg_out, int *len_out)
 #endif
 }
 
-
-#if 0
-//DWYCOEXPORT
-//void
-//dwyco_simple_diagnostics(const char **report_out, int *len_out)
-{
-    extern DwString Diag_res;
-    simple_diagnostics();
-    if(report_out)
-        *report_out = Diag_res.c_str();
-    if(len_out)
-        *len_out = Diag_res.length();
-
-}
-#endif
 
 // must call dwyco_free_array on returned pointer
 extern vc STUN_server;
