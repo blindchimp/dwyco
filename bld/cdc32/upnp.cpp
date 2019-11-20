@@ -97,6 +97,9 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
     }
     GRTLOG("Local LAN ip address : %s", lanaddr, 0);
 
+    if(i != 1)
+        return 0;
+
     int r;
 
     char p1[64];

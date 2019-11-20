@@ -15,6 +15,8 @@ struct dwyco_list
 private:
     dwyco_list();
     dwyco_list(const dwyco_list&);
+    dwyco_list(const dwyco_list&&);
+    dwyco_list& operator=(const dwyco_list&);
     DWYCO_LIST value;
 public:
     dwyco_list(DWYCO_LIST v) {
@@ -51,22 +53,25 @@ public:
     template<class T> T get(const char *col) {
         return get<T>(0, col);
     }
+    template<class T> T get(int row) {
+        return get<T>(row, DWYCO_NO_COLUMN);
+    }
 
-    int is_nil(const char *col) {
+    bool is_nil(const char *col) {
         return is_nil(0, col);
     }
-    int is_nil(int row, const char *col) {
+    bool is_nil(int row, const char *col) {
         const char *val;
         int len;
         int type;
         if(!dwyco_list_get(value, row, col, &val, &len, &type))
             return 0;
         if(type == DWYCO_TYPE_NIL)
-            return 1;
+            return true;
         else
-            return 0;
+            return false;
     }
-    int get_long(int row, const char *col) {
+    long get_long(int row, const char *col) {
         const char *val;
         int len;
         int type;
@@ -87,6 +92,7 @@ struct simple_scoped : public dwyco_list
 private:
     simple_scoped();
     simple_scoped(const simple_scoped&);
+    simple_scoped& operator=(const simple_scoped&);
 public:
     simple_scoped(DWYCO_LIST v): dwyco_list(v) {
     }

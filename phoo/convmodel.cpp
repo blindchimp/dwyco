@@ -11,6 +11,7 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "ignoremodel.h"
+#include "dwycolistscoped.h"
 
 void hack_unread_count();
 void reload_conv_list();
@@ -48,18 +49,7 @@ ConvListModel::~ConvListModel()
     TheConvListModel = 0;
 }
 
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
-}
+
 
 void
 init_convlist_model()
@@ -213,9 +203,10 @@ ConvListModel::load_users_to_model()
     ++cnt;
 
     dwyco_get_user_list2(&l, &n);
+    simple_scoped sl(l);
     for(int i = 0; i < n; ++i)
     {
-        QByteArray uid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
+        QByteArray uid = sl.get<QByteArray>(i);
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
@@ -236,7 +227,6 @@ ConvListModel::load_users_to_model()
         Conversation *c = dead[i];
         remove(c);
     }
-    dwyco_list_release(l);
 }
 
 

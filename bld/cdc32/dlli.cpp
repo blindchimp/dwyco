@@ -318,7 +318,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "ratetwkr.h"
 
 #include "vccomp.h"
-#include "vcdecom.h"
 #ifdef DWYCO_CDC_LIBUV
 #include "vcuvsock.h"
 #endif
