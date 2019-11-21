@@ -21,7 +21,7 @@ struct skid_sql : public SimpleSql
 {
     skid_sql() : SimpleSql("skid.sql") {}
 
-    void init_schema() {
+    void init_schema(const DwString&) {
         start_transaction();
         sql_simple("create table if not exists keys ("
                    "uid text collate nocase, "
