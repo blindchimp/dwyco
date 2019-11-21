@@ -175,7 +175,6 @@ cllaccpt.cpp \
 ratetwkr.cpp \
 rawfiles.cpp \
 syncvar.cc \
-    tagmsg.cpp \
 uicfg.cc \
 usercnfg.cpp \
 vfwinvst.cpp \

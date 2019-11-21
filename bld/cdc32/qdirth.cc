@@ -22,7 +22,6 @@
 #include "dhsetup.h"
 #include "dhgsetup.h"
 #include "vcudh.h"
-#include "tagmsg.h"
 
 using namespace dwyco;
 
