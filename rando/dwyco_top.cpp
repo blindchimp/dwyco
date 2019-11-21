@@ -87,6 +87,7 @@ static int AvoidSSL = 0;
 typedef QHash<QByteArray, QByteArray> UID_ATTR_MAP;
 typedef QHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
 static UID_ATTR_MAP Uid_attrs;
+static int Init_ok;
 
 //static ChatSortFilterModel *Chat_sort_proxy;
 static ConvSortFilterModel *Conv_sort_proxy;
@@ -113,7 +114,7 @@ void
 hack_unread_count()
 {
     if(TheDwycoCore)
-        TheDwycoCore->update_unread_count(has_unviewed_msgs());
+        TheDwycoCore->update_unread_count(total_unviewed_msgs_count());
 }
 
 void
@@ -122,7 +123,7 @@ update_unseen_from_db()
     if(!TheDwycoCore)
         return;
     DWYCO_LIST tl;
-    if(!dwyco_get_tagged_mids(&tl, "_unseen"))
+    if(!dwyco_get_tagged_mids(&tl, "unviewed"))
         return;
     simple_scoped stl(tl);
 
@@ -150,7 +151,7 @@ update_unseen_from_db()
     // could be either. note, we could kluge and check the length, or
     // actually put the attachment info in the summary, but that is
     // too much for now.
-    if(has_unviewed_msgs() > uid_unviewed_msgs_count(TheMan))
+    if(total_unviewed_msgs_count() > uid_unviewed_msgs_count(TheMan))
     {
         has_ugeo = true;
         has_urando = true;
@@ -163,18 +164,6 @@ update_unseen_from_db()
 void
 DwycoCore::clear_unseen_rando()
 {
-    DWYCO_LIST tl;
-    if(!dwyco_get_tagged_mids(&tl, "_unseen"))
-        return;
-    simple_scoped stl(tl);
-
-    for(int i = 0; i < stl.rows(); ++i)
-    {
-        if(QByteArray::fromHex(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID)) != TheMan)
-        {
-            dwyco_unset_msg_tag(stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID).constData(), "_unseen");
-        }
-    }
     clear_unviewed_except_for_uid(TheMan);
     TheDwycoCore->update_has_unseen_rando(false);
 }
@@ -579,6 +568,9 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_SEND_STATUS:
         TheDwycoCore->emit msg_progress(str_data, huid, namestr, extra_arg);
         break;
+    case DWYCO_SE_MSG_DOWNLOAD_PROGRESS:
+        TheDwycoCore->emit msg_recv_progress(str_data, huid, namestr, extra_arg);
+        break;
     case DWYCO_SE_MSG_DOWNLOAD_START:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED:
     case DWYCO_SE_MSG_DOWNLOAD_FETCHING_ATTACHMENT:
@@ -586,7 +578,7 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_DOWNLOAD_OK:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED:
-        TheDwycoCore->emit msg_recv_state(cmd, str_data);
+        TheDwycoCore->emit msg_recv_state(cmd, str_data, huid);
         break;
 
     default:
@@ -988,13 +980,7 @@ setup_locations()
         setting_put("salt", "");
         setting_put("first-pin", "1");
     }
-    QString first_bugfix1;
-    if(!setting_get("bugfix1", first_bugfix1))
-    {
-        clear_unviewed_msgs();
-        setting_put("bugfix1", "");
 
-    }
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, userdir);
 
 
@@ -1532,6 +1518,7 @@ DwycoCore::init()
 
     if(!dwyco_init())
         ::abort();
+    Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
     dwyco_set_setting("net/listen", "1");
@@ -1561,20 +1548,30 @@ DwycoCore::init()
 
     //connect(this, SIGNAL(sys_uid_resolved(QString)), TheIgnoreListModel, SLOT(uid_resolved(QString)));
     //connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
-    connect(this, SIGNAL(msg_recv_state(int,QString)), mlm, SLOT(msg_recv_status(int,QString)));
+    connect(this, SIGNAL(msg_recv_state(int,QString,QString)), mlm, SLOT(msg_recv_status(int,QString,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
+    connect(this, SIGNAL(msg_recv_progress(QString, QString, QString, int)), mlm, SLOT(msg_recv_progress(QString, QString, QString, int)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
+    //connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
+
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
 
     load_unviewed();
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     reload_conv_list();
     reload_ignore_list();
     update_unseen_from_db();
+    QString first_bugfix1;
+    if(!setting_get("bugfix1", first_bugfix1))
+    {
+        clear_unviewed_msgs();
+        setting_put("bugfix1", "");
+
+    }
 
     QString tag_change1;
     if(!setting_get("tag_change1", tag_change1))
@@ -1678,6 +1675,8 @@ DwycoCore::init()
     int len_uid;
     dwyco_get_my_uid(&uid, &len_uid);
     My_uid = QByteArray(uid, len_uid);
+    //update_this_uid(My_uid.toHex());
+
 
     // for easier testing, setup for raw file acq
     dwyco_set_video_input(
@@ -1808,6 +1807,8 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         // note: background process may have updated messages on disk
         // *and* we may not get to the server, so force a reload here just
         // in case.
+        QSet<QByteArray> dum;
+        load_inbox_tags_to_unviewed(dum);
         reload_conv_list();
         Suspended = 0;
 #ifdef ANDROID
@@ -1924,7 +1925,7 @@ DwycoCore::bootstrap(QString name, QString email)
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
     load_unviewed();
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     reload_conv_list();
 
     const char *uid;
@@ -2106,7 +2107,7 @@ DwycoCore::reset_unviewed_msgs(QString uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
     del_unviewed_uid(buid);
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     emit decorate_user(uid);
     //sort_proxy_model->decorate_user(uid);
 }
@@ -2316,8 +2317,9 @@ DwycoCore::get_simple_directory_url()
     return url;
 }
 
+// convert to LH, since XML stuff is going away in Qt
 QUrl
-DwycoCore::get_simple_xml_url()
+DwycoCore::get_simple_lh_url()
 {
 #if 0
     QUrlQuery qurl;
@@ -2332,9 +2334,9 @@ DwycoCore::get_simple_xml_url()
     QUrl url;
 
     if(AvoidSSL)
-        url.setUrl("http://profiles.dwyco.org/cgi-bin/mksimpxmldir.sh");
+        url.setUrl("http://profiles.dwyco.org/cgi-bin/mksimplhdir.sh");
     else
-        url.setUrl("https://profiles.dwyco.org/cgi-bin/mksimpxmldir.sh");
+        url.setUrl("https://profiles.dwyco.org/cgi-bin/mksimplhdir.sh");
     QString filt = "1";
     QString a;
     if(setting_get("show_unreviewed", a))
@@ -2510,7 +2512,7 @@ DwycoCore::delete_user(QString uid)
     buid = QByteArray::fromHex(buid);
     int ret = dwyco_delete_user(buid.constData(), buid.length());
     del_unviewed_uid(buid);
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     // note: msglist_model may have cached info that needs to be cleared
 
     reload_conv_list();
@@ -2531,8 +2533,8 @@ get_cq_results_filename()
 static void
 process_contact_query_response(const QByteArray& mid)
 {
-    DWYCO_LIST sm;
-    if(!dwyco_unsaved_message_to_body(&sm, mid.constData()))
+    DWYCO_SAVED_MSG_LIST sm;
+    if(!dwyco_get_saved_message(&sm, Clbot.constData(), Clbot.length(), mid.constData()))
     {
         TheDwycoCore->emit cq_results_received(0);
         return;
@@ -2549,6 +2551,32 @@ process_contact_query_response(const QByteArray& mid)
     QByteArray qrfn = get_cq_results_filename();
     int succ = dwyco_copy_out_file_zap(0, 0, mid.constData(), qrfn.constData());
     TheDwycoCore->emit cq_results_received(succ);
+}
+
+
+void
+DwycoCore::internal_cq_check(QString huid)
+{
+    QByteArray clh = Clbot.toHex();
+    if(huid.toLatin1() != clh)
+        return;
+
+    if(!dwyco_uid_has_tag(Clbot.constData(), Clbot.length(), "_inbox"))
+        return;
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, "_inbox");
+    simple_scoped qtl(tl);
+    for(int i = 0; i < qtl.rows(); ++i)
+    {
+        if(qtl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID) == clh)
+        {
+            QByteArray mid = qtl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+            process_contact_query_response(mid);
+            dwyco_delete_unfetched_message(mid.constData());
+
+        }
+    }
+    dwyco_delete_user(Clbot.constData(), Clbot.length());
 }
 
 
@@ -2697,8 +2725,8 @@ static
 void
 process_special_msg(QByteArray mid)
 {
-    DWYCO_UNSAVED_MSG_LIST uml;
-    if(!dwyco_get_unsaved_message(&uml, mid.constData()))
+    DWYCO_UNFETCHED_MSG_LIST uml;
+    if(!dwyco_get_unfetched_message(&uml, mid.constData()))
         return;
     simple_scoped quml(uml);
 
@@ -2757,9 +2785,10 @@ static
 void
 scan_special_msgs()
 {
+    return;
     DWYCO_LIST uml;
 
-    if(dwyco_get_unsaved_messages(&uml, 0, 0))
+    if(dwyco_get_unfetched_messages(&uml, 0, 0))
     {
         simple_scoped quml(uml);
         int n = quml.rows();
@@ -2783,7 +2812,7 @@ scan_special_msgs()
                 else
                 {
                     process_special_msg(mid);
-                    dwyco_delete_unsaved_message(mid.constData());
+                    dwyco_delete_unfetched_message(mid.constData());
                 }
             }
         }
@@ -2802,7 +2831,7 @@ fetch_small_msgs()
 {
     DWYCO_LIST uml;
 
-    if(dwyco_get_unsaved_messages(&uml, 0, 0))
+    if(dwyco_get_unfetched_messages(&uml, 0, 0))
     {
         simple_scoped quml(uml);
         int n = quml.rows();
@@ -2833,73 +2862,55 @@ int
 DwycoCore::service_channels()
 {
     int spin = 0;
-    if(Suspended)
+    if(Suspended || !Init_ok)
         return 0;
     dwyco_service_channels(&spin);
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
-        DWYCO_UNSAVED_MSG_LIST uml;
+        DWYCO_UNFETCHED_MSG_LIST uml;
 
         //scan_special_msgs();
         fetch_small_msgs();
-        dwyco_get_unsaved_messages(&uml, 0, 0);
+        dwyco_get_unfetched_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;
-        dwyco_process_unsaved_list(uml, uids_out);
+        dwyco_process_unfetched_list(uml, uids_out);
         dwyco_list_release(uml);
 
-        update_unread_count(has_unviewed_msgs());
+        load_inbox_tags_to_unviewed(uids_out);
+
         foreach(const QByteArray& buid, uids_out)
         {
             QByteArray huid = buid.toHex();
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
+        update_unseen_from_db();
+        mlm->invalidate_sent_to();
     }
+    update_unread_count(total_unviewed_msgs_count());
+#ifdef ANDROID
+    // NOTE: bug: this doesn't work if the android version is statically
+    // linked. discovered why: JNI won't find functions properly when statically linked.
+    const char *fn;
+    int len_fn;
+    if(dwyco_get_aux_string(&fn, &len_fn))
+    {
+        if(len_fn > 0)
+        {
+            QString fns = QString::fromUtf8(QByteArray(fn, len_fn));
+            emit image_picked(fns);
+            dwyco_set_aux_string("");
+        }
+        dwyco_free_array((char *)fn);
+    }
+#endif
+
+
     return spin;
 }
 
-#if 0
-static
-void
-DWYCOCALLCONV
-msg_send_callback(int id, int what, const char *recip, int recip_len, const char *server_msg, void *arg)
-{
-    if(!TheDwycoCore)
-        return;
-    QByteArray b(recip, recip_len);
-    b = b.toHex();
-    QString msg(server_msg);
-
-    TheDwycoCore->emit msg_send_status(id, what, b, msg);
-
-    switch(what)
-    {
-    case DWYCO_MSG_SEND_OK:
-    case DWYCO_MSG_IGNORED: // note: ignore is silent fail
-    case DWYCO_MSG_ATTACHMENT_DECLINED:
-        //play_sound("space-incoming.wav");
-        break;
-    case DWYCO_MSG_SEND_FAILED:
-    case DWYCO_MSG_ATTACHMENT_FAILED:
-        //play_sound("space-call.wav");
-        //dwyco_zap_defer_send(id);
-        break;
-    }
-
-}
-
-static
-void
-msg_progress_callback(int id, const char *msg, int percent_done, void *user_arg)
-{
-    if(!TheDwycoCore)
-        return;
-    QString qmsg(msg);
-    TheDwycoCore->emit msg_progress(id, qmsg, percent_done);
-}
-#endif
 
 int
 DwycoCore::send_forward(QString recipient, QString add_text, QString uid_folder, QString mid_to_forward, int save_sent)
@@ -2945,8 +2956,8 @@ DwycoCore::simple_send(QString recipient, QString msg)
         return 0;
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
     QByteArray txt = msg.toUtf8();
-    if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0,
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        txt.constData(), txt.length(), 0, 1,
                         0, 0)
       )
 
@@ -2967,8 +2978,8 @@ DwycoCore::simple_send_file(QString recipient, QString msg, QString filename)
     int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
     if(compid == 0)
         return 0;
-    if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0,
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        txt.constData(), txt.length(), 0, 1,
                         0, 0)
       )
 

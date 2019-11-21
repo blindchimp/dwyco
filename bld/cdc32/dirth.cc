@@ -605,8 +605,7 @@ build_directory_entry()
     // server filled it in.
     v.append(vcnil); // ui-speced-peer
     v.append(make_fw_setup());
-    extern vc Auto_update_hash;
-    v.append(Auto_update_hash); //17
+    v.append(vcnil); // 17 autoupdate hash
 #if 0
     extern vc Never_visible; //18
     if(!Never_visible.is_nil() && Never_visible.num_elems() > 0)

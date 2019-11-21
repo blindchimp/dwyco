@@ -292,7 +292,7 @@ Page {
                             fail_review_msg.state = "moveOut"
                         else
                             fail_review_msg.state = "moveIn"
-                        core.hash_clear_tag(ASSOC_HASH, "_unseen")
+                        core.hash_clear_tag(ASSOC_HASH, "unviewed")
                     }
                 }
 
@@ -376,7 +376,7 @@ Page {
                                 //mapimage.lon = o.lon
                                 mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 10
+                                mapimage.zoom = 7
                                 stack.push(mapimage)
                             }
                             else
@@ -393,7 +393,7 @@ Page {
                                 //mapimage.lon = SENT_TO_LON
                                 mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 10
+                                mapimage.zoom = 7
                                 stack.push(mapimage)
 
                             }
@@ -406,7 +406,7 @@ Page {
                             }
                         }
 
-                        core.hash_clear_tag(ASSOC_HASH, "_unseen")
+                        core.hash_clear_tag(ASSOC_HASH, "unviewed")
                     }
                 }
                 SequentialAnimation {

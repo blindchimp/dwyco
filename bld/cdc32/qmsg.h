@@ -41,12 +41,11 @@ vc save_body(vc msgid, vc from, vc text, vc attachment_id, vc date, vc rating, v
              vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock);
 int uid_ignored(vc uid);
 void delete_msg2(vc msgid);
-void delete_body2(vc user_id, vc msgid);
+//void delete_body2(vc user_id, vc msgid);
 void delete_body3(vc user_id, vc msgid, int inhibit_indexing);
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,
               vc body_to_forward, const char *new_text, vc att_hash, vc special_type, vc st_arg1, int no_forward, vc user_filename, int save_sent);
-//DwString date_from_vector(vc v);
 void fetch_info(vc id);
 int qd_send_one();
 int msg_outq_empty();
@@ -65,11 +64,8 @@ void add_ignore(vc);
 void del_ignore(vc);
 void ack_all(vc);
 int save_to_inbox(vc m);
-void load_inbox();
 int store_direct(MMChannel *m, vc msg, void *);
-void ack_direct(vc msgid);
 vc direct_to_server(vc msgid);
-int wrong_rating(vc);
 void ack_all_direct();
 void ack_all_direct_from(vc id);
 void init_qmsg();
@@ -77,7 +73,6 @@ void exit_qmsg();
 void suspend_qmsg();
 void resume_qmsg();
 int valid_qd_message(vc v);
-int valid_info(vc v);
 void clear_local_ignore();
 void add_local_ignore(vc uid);
 void del_local_ignore(vc uid);
@@ -141,13 +136,9 @@ int refile_attachment(vc filename, vc from_user);
 void pal_relogin();
 void save_msg_idxs();
 void save_qmsg_state();
-//void update_msg_idx(vc recip, vc body);
-//vc load_msg_index(vc uid, int load_count);
 // note: this returns the total count of messages,
 // which is different than the number of entries in
 // the current index.
-//int msg_index_count(vc uid);
-//void remove_msg_idx_uid(vc uid);
 vc do_local_store(vc filename, vc speced_mid);
 vc make_best_local_info(vc uid, int *cant_resolve_now);
 int init_msg_folder(vc uid);
@@ -184,7 +175,7 @@ void clean_cruft();
 #define QM_DATE_SENT 3
 // added locally:
 //#define QM_PENDING_DEL 4
-#define QM_IS_DIRECT 5
+//#define QM_IS_DIRECT 5
 // oops, server has to put this way out here because
 // old software expects to see the above structure...
 // 6: rating of sender
@@ -276,8 +267,8 @@ void clean_cruft();
 // used mostly for single-frame still messages
 //#define QQM_AUTOPLAY 4
 // reserved for storing info added by recipient (like time received)
-#define QQM_LOCAL_INFO_VEC 5
-#define		QQM_LIV_TIME_RECV 0
+//#define QQM_LOCAL_INFO_VEC 5
+//#define		QQM_LIV_TIME_RECV 0
 // t =  save it when the operation is successful
 // nil = don't save it
 // used for messages we want to discard as soon as sent, like auto-replies and stuff.

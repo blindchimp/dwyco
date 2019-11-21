@@ -51,6 +51,9 @@
             </item>
             <item>
              <widget class="QCheckBox" name="CDC_zap__send_auto_reply">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Automatically send zap to
 non-pals if they send you a message.</string>
@@ -59,6 +62,9 @@ non-pals if they send you a message.</string>
             </item>
             <item>
              <widget class="QPushButton" name="create_auto_reply">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Create custom auto-reply zap</string>
               </property>
@@ -66,6 +72,9 @@ non-pals if they send you a message.</string>
             </item>
             <item>
              <widget class="QPushButton" name="revert_auto_reply">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Revert to default auto-reply zap</string>
               </property>
@@ -1066,22 +1075,6 @@ to forward outside ports to this machine.</string>
     <hint type="destinationlabel">
      <x>113</x>
      <y>306</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pals_only</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>CDC_zap__send_auto_reply</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>273</x>
-     <y>270</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>273</x>
-     <y>302</y>
     </hint>
    </hints>
   </connection>
