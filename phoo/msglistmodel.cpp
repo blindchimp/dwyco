@@ -1001,7 +1001,7 @@ auto_fetch(QByteArray mid)
             case DWYCO_SUMMARY_JOIN4:
                 break;
             default:
-                dwyco_delete_unsaved_message(mid.constData());
+                dwyco_delete_unfetched_message(mid.constData());
                 return 0;
             }
         }

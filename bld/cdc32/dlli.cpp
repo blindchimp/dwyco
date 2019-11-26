@@ -1659,32 +1659,6 @@ load_ignoring_you(vc iy)
     iy.foreach(vcnil, add_to_mutual_ignore);
 }
 
-static
-void
-update_del_set(vc m, void *, vc, ValidPtr)
-{
-    if(m[1].is_nil())
-        return;
-    if(m[1].type() == VC_VECTOR)
-    {
-        vc v = m[1];
-        vc midset(VC_SET);
-        for(int i = 0; i < v.num_elems(); ++i)
-        {
-            vc rv = v[i];
-            add_ctrl_tag(rv[0], "_del");
-            midset.add(rv[0]);
-        }
-        // this gets deletes we have locally that aren't on the server for some reason.
-        vc ourtags = ctrl_tag_list("_del", 30);
-        for(int i = 0; i < ourtags.num_elems(); ++i)
-        {
-            if(midset.contains(ourtags[i]))
-                continue;
-            dirth_send_delete(My_UID, ourtags[i], QckDone(0, 0));
-        }
-    }
-}
 
 // SERVER related interface functions
 static void
@@ -1760,7 +1734,6 @@ login_auth_results(vc m, void *, vc, ValidPtr)
                 (*login_callback)("Server login ok.", 1);
             TRACK_ADD(MDB_login_ok, 1);
         }
-        dirth_send_check_set(My_UID, "_del", QckDone(update_del_set, 0));
     }
     // reset this so we don't keep sending it in over and over
     Crashed_last_time = 0;
@@ -7047,8 +7020,8 @@ int
 dwyco_handle_join(const char *mid)
 {
     vc password = "foo";
-    DWYCO_UNSAVED_MSG_LIST l;
-    if(!dwyco_get_unsaved_message(&l, mid))
+    DWYCO_UNFETCHED_MSG_LIST l;
+    if(!dwyco_get_unfetched_message(&l, mid))
         return 0;
     simple_scoped ql(l);
     int jstate;
@@ -7782,7 +7755,7 @@ dwyco_delete_unfetched_message(const char *msg_id)
     args.append(vcnil);
     args.append(id);
     dirth_send_ack_get2(My_UID, id, QckDone(ack_get_done2, 0, args));
-    dirth_send_delete(My_UID, id, QckDone(0, 0));
+    dirth_send_addtag(My_UID, id, "_del", QckDone(0, 0));
     return 1;
 }
 
@@ -7793,7 +7766,7 @@ dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id)
     vc uid(VC_BSTRING, user_id, len_uid);
     vc mid(msg_id);
     delete_body3(uid, mid, 0);
-    dirth_send_delete(My_UID, mid, QckDone(0, 0));
+    dirth_send_addtag(My_UID, mid, "_del", QckDone(0, 0));
     return 1;
 }
 

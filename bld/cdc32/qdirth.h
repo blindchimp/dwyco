@@ -139,7 +139,7 @@ void dirth_send_query2(vc uid, QckDone d);
 void dirth_send_store(vc id, vc recipients, vc msg, QckDone d);
 void dirth_send_get(vc id, vc which, QckDone d);
 void dirth_send_get2(vc id, vc which, QckDone d);
-void dirth_send_delete(vc uid, vc mid, QckDone d);
+void dirth_send_addtag(vc uid, vc mid, vc tag, QckDone d);
 void dirth_send_ignore(vc id, vc uid, QckDone d);
 void dirth_send_unignore(vc id, vc uid, QckDone d);
 void dirth_send_get_ignore(vc id, QckDone d);

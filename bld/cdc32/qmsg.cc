@@ -1797,8 +1797,6 @@ query_done(vc m, void *, vc, ValidPtr)
                 args.append(v[QM_ID]);
                 dirth_send_ack_get2(My_UID, v[QM_ID], QckDone(ack_get_done2, 0, args));
             }
-            v2.remove(i, 1);
-            --i;
             continue;
         }
         init_msg_folder(from);
@@ -2132,7 +2130,7 @@ ack_all(vc uid)
         args.append(vcnil);
         args.append(ackset[i]);
         //dirth_send_ack_get2(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
-        dirth_send_delete(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
+        dirth_send_addtag(My_UID, ackset[i], "_del", QckDone(ack_get_done2, 0, args));
         delete_msg2(ackset[i]);
         sql_remove_mid_tag(ackset[i], "_remote");
     }

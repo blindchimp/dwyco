@@ -2668,7 +2668,7 @@ scan_special_msgs()
                 else
                 {
                     dwyco_handle_join(mid.constData());
-                    dwyco_delete_unsaved_message(mid.constData());
+                    dwyco_delete_unfetched_message(mid.constData());
                 }
             }
         }

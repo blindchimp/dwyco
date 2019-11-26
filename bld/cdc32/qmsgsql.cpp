@@ -802,7 +802,7 @@ clear_msg_idx_uid(vc uid)
     vc mids = sql_clear_uid(uid);
     for(int i = 0; i < mids.num_elems(); ++i)
     {
-        dirth_send_delete(uid, mids[i][0], QckDone(0, 0));
+        dirth_send_addtag(uid, mids[i][0], "_del", QckDone(0, 0));
     }
 }
 

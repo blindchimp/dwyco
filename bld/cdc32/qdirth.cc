@@ -22,6 +22,7 @@
 #include "dhsetup.h"
 #include "dhgsetup.h"
 #include "vcudh.h"
+#include "qmsgsql.h"
 
 using namespace dwyco;
 
@@ -507,23 +508,25 @@ dirth_send_ack_get2(vc uid, vc mid, QckDone d)
     m[2] = mid;
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
-    add_ctrl_tag(mid, "_ack");
+    sql_add_tag(mid, "_ack");
 }
 
 void
-dirth_send_delete(vc uid, vc mid, QckDone d)
+dirth_send_addtag(vc uid, vc mid, vc tag, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("delete", ++Serial);
-    m[QTYPE] = reqtype("delete", d);
+    d.type = ReqType("addtag", ++Serial);
+    m[QTYPE] = reqtype("addtag", d);
     m[QFROM] = uid;
     m[2] = mid;
+    m[3] = tag;
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
-    add_ctrl_tag(mid, "_del");
+    sql_add_tag(mid, "_del");
 }
 
+#if 0
 void
 dirth_send_check_set(vc uid, vc tag, QckDone d)
 {
@@ -539,6 +542,7 @@ dirth_send_check_set(vc uid, vc tag, QckDone d)
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
 }
+#endif
 
 void
 dirth_send_ignore(vc id, vc uid, QckDone d)
