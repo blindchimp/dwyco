@@ -62,7 +62,6 @@ enum {
     IS_FAVORITE,
     IS_HIDDEN,
     SELECTED,
-    DIRECT,
     FETCH_STATE,
     ATTACHMENT_PERCENT,
     ASSOC_UID, // who the message is from (or to, if sent msg)
@@ -245,7 +244,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
-    roles.append(DIRECT);
     dataChanged(mi, mi, roles);
 }
 
@@ -573,7 +571,7 @@ msglist_raw::check_inbox_model()
         dwyco_list qnew_im(new_im);
 
         // see if the common case of a new record being right at the end
-        // or if a message fetch has finished and toggled the direct attribute
+        // or if a message fetch has finished
 
         if(qnew_im.rows() == count_inbox_msgs)
         {
@@ -836,7 +834,6 @@ msglist_raw::roleNames() const
     rn(IS_FAVORITE);
     rn(IS_HIDDEN);
     rn(SELECTED);
-    rn(DIRECT);
     rn(FETCH_STATE);
     rn(ATTACHMENT_PERCENT);
     rn(ASSOC_UID);
@@ -867,8 +864,6 @@ msglist_raw::qd_data ( int r, int role ) const
     {
         return Selected.contains(pers_id);
     }
-    case DIRECT:
-        return 0;
     case IS_QD:
         return 1;
     case IS_ACTIVE:
@@ -1012,7 +1007,7 @@ auto_fetch(QByteArray mid)
         }
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
-
+        // note: we get msg_recv_status signals as the fetch proceeds
         int fetch_id = dwyco_fetch_server_message(mid.constData(), 0, 0, 0, 0);
         if(fetch_id != 0)
         {
@@ -1056,20 +1051,7 @@ msglist_raw::inbox_data (int r, int role ) const
     if(role == MID)
         return mid;
 
-    int direct = 0; //dwyco_get_attr_bool(inbox_msgs, r, DWYCO_QMS_IS_DIRECT);
-
     DWYCO_SAVED_MSG_LIST sm = 0;
-#if 0
-    if(direct)
-    {
-        if(!dwyco_unsaved_message_to_body(&sm, mid.constData()))
-        {
-            return QVariant();
-        }
-    }
-#endif
-
-    //simple_scoped qsm(sm);
 
     switch(role)
     {
@@ -1085,8 +1067,6 @@ msglist_raw::inbox_data (int r, int role ) const
     {
         return Fetching.contains(mid);
     }
-    case DIRECT:
-        return direct;
 
     case DATE_CREATED:
     {
