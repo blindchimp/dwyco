@@ -26,7 +26,7 @@ SOURCES += \
 INCLUDEPATH += ../$$DWYCO_CONFDIR  ../bld/dwcls ../bld/vc $${OUT_PWD}/../include
 
 linux-g++*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3 
-macx-*: DEFINES += LH_WRAP_SPREAD 
+macx-*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3 
 
 D=$${OUT_PWD}/..
 LIBS += \

@@ -1,4 +1,44 @@
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+;
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 
+// this is a service that is normally launched on the servers to process
+// requests to transfer message attachments (for video/audio messages). it is a one-shot process
+// that is normally launched via xinetd. it processes one file transfer
+// request, and exits.
+//
+// it tries to be smart about locking files while the transfer is in progress,
+// and killing zombie transfers that are caused by clients whose internet connection
+// is flakey. note: this happened a *lot* during the modem age, and it is still an
+// issue with mobile phones with sketchy reception.
+//
+// note also that it is an outward facing service, and so is a bit paranoid about
+// resource usage and input corruption. if there is a problem, it just exits.
+// since clients generally retry and resume where they left off, exiting is usually
+// ok, the client will still make progress in most cases.
+//
+// it is expected that it is started with 2 or 3 arguments on the command line:
+// <directory> <protocol> [port]
+// directory is where the file is transfered from or to, the log is written here too
+// protocol is one of psend[23], or send3, or recv4
+//  these correspond to the protocols used by the client, the "psend" protocols are
+//  for downloading autoupdate items, and provide looser constraints on the file names allowed.
+//  send3 and recv4 are for transferring attachments.
+//
+// the optional port argument is only for testing, and specifies the binding port to
+// listen on. normally xinetd will have the socket on fd 0 and the port is ignored in production.
+//
+// this only works on Linux (or macos, mainly for testing.)
+//
+// note: this must be compiled with a private key file, whose public counterpart
+// is used by the client. it is not possible to use this service without
+// encryption (except for old clients downloading autoupdate stuff, but even that
+// will go away soon.)
+//
 #include <netinet/in.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -771,25 +811,19 @@ main(int argc, char **argv)
     if(strcmp(argv[2], "send3") == 0)
     {
         Send = 1;
-        //Allow_start = 1;
         Req_enc = 1;
         send_main(s);
     }
 
     else if(strcmp(argv[2], "psend2") == 0)
     {
-        // allows giving a start point for a download
         Send = 1;
         Loose_file = 1;
-        //Allow_start = 1;
         send_main(s);
     }
     else if(strcmp(argv[2], "psend3") == 0)
     {
-        // allows giving a start point for a download
-        Send = 1;
         Loose_file = 1;
-        //Allow_start = 1;
         Req_enc = 1;
         send_main(s);
     }
@@ -797,7 +831,6 @@ main(int argc, char **argv)
     else if(strcmp(argv[2], "recv4") == 0)
     {
         Req_enc = 1;
-        //Allow_restart = 1;
         recv_main(s);
     }
 
