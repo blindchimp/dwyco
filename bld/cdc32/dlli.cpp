@@ -7574,6 +7574,15 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     // this would normally be base + 1 (as set when the msg was stored)
     // we just add an offset to it to get the xfer new protocol
     vc port = msg[QQM_BODY_ATTACHMENT_LOCATION][1] + vc(DWYCO_SEND_FILE_PORT_OFFSET);
+    // if the ip stored in the message isn't in our current set of
+    // servers, just pick a random one and see if it is there. this
+    // allows us to move attachment servers in some cases.
+    if(!contains_xfer_ip(ip))
+    {
+        ip = get_random_xfer_server_ip(port);
+        port = port + vc(1);
+        port = port + vc(DWYCO_SEND_FILE_PORT_OFFSET);
+    }
     if(!(mc = fetch_attachment(msg[QQM_BODY_ATTACHMENT], eo_xfer, m[1], 0, q->vp,
                                set_status, 0, q->vp, ip, port)))
     {
