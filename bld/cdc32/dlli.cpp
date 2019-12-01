@@ -7491,8 +7491,10 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
             se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
             // note: don't ack it automatically, since we *might* be in a situation where we
             // are waiting for a group key. once the group key is installed we might be
-            // able to decrypt it.
+            // able to decrypt it. tag the msg locally in case our key situation changes
             //dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
+            sql_add_tag(q->msg_id, "_decrypt_failed");
+
             TRACK_ADD(MR_msg_decrypt_failed, 1);
             return;
         }
