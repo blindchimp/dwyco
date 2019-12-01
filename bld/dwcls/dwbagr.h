@@ -62,10 +62,7 @@ protected:
 
 public:
     DwBagR(T def, int tabsize = 31);
-    // this *has* to be unsigned because g++2.5.7 loses
-    // with implicit "int" args in constructors
-    // (it gets things confused with an internal destructor)
-    DwBagR(unsigned int tabsize = 31);
+    DwBagR(int tabsize = 31);
     DwBagR(const DwBagR&);
     virtual ~DwBagR();
     void set_size(int);
@@ -135,7 +132,7 @@ DwBagR<T>::DwBagR(T deflt, int tabsz)
 }
 
 template<class T>
-DwBagR<T>::DwBagR(unsigned int tabsz)
+DwBagR<T>::DwBagR(int tabsz)
     : table(tabsz == 0 ? 31 : tabsz, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND)
 {
     count = 0;
