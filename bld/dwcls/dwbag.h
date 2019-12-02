@@ -13,7 +13,7 @@
  */
 #ifndef DWBAG_H
 #define DWBAG_H
-#include "dwvec.h"
+#include "dwvecp.h"
 #include "dwlista.h"
 #include "dwiter.h"
 #include "dwhash.h"
@@ -25,10 +25,15 @@ class DwBag
 {
     friend class DwBagIter<T>;
 private:
-    DwVec<DwListA<T> > table;
+    DwVecP<DwListA<T> > table;
     int table_size;
     int count;
     T def;
+
+    void init(int idx) {
+        if(table[idx] == 0)
+            table[idx] = new DwListA<T>;
+    }
 
 public:
     DwBag(T def, int tabsize);
@@ -61,17 +66,6 @@ DwBag<T>::DwBag(T deflt, int tabsz)
     def = deflt;
 }
 
-#if 0
-template<class T>
-DwBag<T>::DwBag(int tabsz)
-    : table(tabsz, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND)
-{
-    count = 0;
-    table_size = tabsz;
-    def = T();
-}
-#endif
-
 template<class T>
 DwBag<T>::DwBag(const DwBag<T>& m)
     : table(m.table_size, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND)
@@ -99,14 +93,20 @@ DwBag<T>::operator=(const DwBag<T>& m)
     count = m.count;
     table_size = m.table_size;
     def = m.def;
-    table = m.table;
+    table.set_size(table_size);
+    for(int i = 0; i < table_size; ++i)
+    {
+        *table[i] = *m.table.getp(i);
+    }
+    //table = m.table;
     return *this;
 };
 
 template<class T>
 DwBag<T>::~DwBag()
 {
-
+    for(int i = 0; i < table_size; ++i)
+        delete table[i];
 }
 
 
@@ -115,7 +115,8 @@ void
 DwBag<T>::add(const T& key)
 {
     unsigned long hval = ::hash(key) % table_size;
-    table[hval].prepend(key);
+    init(hval);
+    table[hval]->prepend(key);
     ++count;
 }
 
@@ -124,10 +125,11 @@ int
 DwBag<T>::del(const T& key)
 {
     unsigned long hval = ::hash(key) % table_size;
-
-    if(!table[hval].exists(key))
+    if(table[hval] == 0)
         return 0;
-    table[hval].remove();
+    if(!table[hval]->exists(key))
+        return 0;
+    table[hval]->remove();
     --count;
     return 1;
 }
@@ -138,8 +140,9 @@ int
 DwBag<T>::contains(const T& key)
 {
     unsigned long hval = ::hash(key) % table_size;
-
-    return table[hval].exists(key);
+    if(table[hval] == 0)
+        return 0;
+    return table[hval]->exists(key);
 }
 
 template<class T>
@@ -199,11 +202,11 @@ DwBagIter<T>::advance()
 {
     if(list_iter != 0)
         delete list_iter;
-    while(cur_buck < this->to_iterate->table_size && this->to_iterate->table[cur_buck].num_elems() == 0)
+    while(cur_buck < this->to_iterate->table_size && (this->to_iterate->table[cur_buck] == 0 || this->to_iterate->table[cur_buck]->num_elems() == 0))
         ++cur_buck;
     if(cur_buck < this->to_iterate->table_size)
     {
-        list_iter = new DwListAIter<T>(&this->to_iterate->table[cur_buck]);
+        list_iter = new DwListAIter<T>(this->to_iterate->table[cur_buck]);
     }
     else
         list_iter = 0;

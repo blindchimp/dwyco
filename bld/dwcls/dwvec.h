@@ -144,12 +144,7 @@ public:
     long index(const T&) const;
     int contains(const T&) const;
     void apply(typename DwVec<T>::Funcp f);
-
-#if defined(__BCPLUSPLUS__) && __BCPLUSPLUS__ >= 0x540
-    virtual T get_by_iter(DwIter<DwVec<T>, T> *a) const ;
-#else
     virtual T get_by_iter(DwIter<DwVec, T> *a) const ;
-#endif
 #ifdef DWVEC_DOINIT
     void init_value(T& v) {
         if(initfun) (*initfun)(v);
