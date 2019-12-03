@@ -19,11 +19,7 @@
 
 template<class R, class D>
 class DwAssocImp
-#ifdef USE_INHEAP
-    : public InHeap
-#endif
 {
-
 private:
     R value;
     D key;
