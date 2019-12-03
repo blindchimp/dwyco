@@ -76,11 +76,7 @@ public:
     virtual void add(const T&, T** wp = 0);
     int replace(const T&, T** wp = 0);
     void clear();
-#if (defined(__BCPLUSPLUS__) && __BCPLUSPLUS__ >= 0x540)
-    T get_by_iter(DwIter<DwBagR<T>, T > *a) const ;
-#else
     T get_by_iter(DwIter<DwBagR, T > *a) const ;
-#endif
 };
 
 
