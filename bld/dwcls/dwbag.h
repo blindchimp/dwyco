@@ -61,10 +61,10 @@ public:
 
 template<class T>
 DwBag<T>::DwBag(T deflt, int tabsz)
-    : table(tabsz, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND)
+    : table(tabsz == 0 ? 31 : tabsz, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND)
 {
     count = 0;
-    table_size = tabsz;
+    table_size = table.num_elems();
     def = deflt;
 }
 
@@ -76,6 +76,11 @@ DwBag<T>::DwBag(const DwBag<T>& m)
     table_size = m.table_size;
     def = m.def;
     table = m.table;
+    for(int i = 0; i < table_size; ++i)
+    {
+        if(m.table[i])
+            table[i] = new DwListA<T>(*m.table[i]);
+    }
 };
 
 template<class T>
@@ -92,15 +97,16 @@ template<class T>
 DwBag<T>&
 DwBag<T>::operator=(const DwBag<T>& m)
 {
+    clear();
     count = m.count;
     table_size = m.table_size;
     def = m.def;
-    table.set_size(table_size);
+    table.set_size(m.table_size);
     for(int i = 0; i < table_size; ++i)
     {
-        *table[i] = *m.table.getp(i);
+        if(m.table[i])
+            table[i] = new DwListA<T>(*m.table[i]);
     }
-    //table = m.table;
     return *this;
 };
 
