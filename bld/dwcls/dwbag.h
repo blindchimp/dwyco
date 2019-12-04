@@ -47,9 +47,11 @@ public:
     }
     int contains(const T&);
     int del(const T&);
-    int find(const T&, T& out);
-    virtual void add(const T&);
+    int find(const T&, T& out, T** wp = 0);
+    virtual void add(const T&, T** wp = 0);
+    int replace(const T&, T** wp = 0);
     void set_size(int);
+    void clear();
     T get_by_iter(DwIter<DwBag<T>, T > *a) const {
         DwBagIter<T> *dbi = (DwBagIter<T> *)a;
         return dbi->list_iter->get();
@@ -109,15 +111,37 @@ DwBag<T>::~DwBag()
         delete table[i];
 }
 
+template<class T>
+void
+DwBag<T>::clear()
+{
+    for(int i = 0; i < table_size; ++i)
+    {
+        delete table[i];
+        table[i] = 0;
+    }
+}
+
 
 template<class T>
 void
-DwBag<T>::add(const T& key)
+DwBag<T>::add(const T& key, T **wp)
 {
     unsigned long hval = ::hash(key) % table_size;
     init(hval);
     table[hval]->prepend(key);
     ++count;
+}
+
+template<class T>
+int
+DwBag<T>::replace(const T& key, T** wp)
+{
+    int ret = 0;
+    while(del(key))
+        ret = 1;
+    add(key, wp);
+    return ret;
 }
 
 template<class T>
@@ -147,11 +171,13 @@ DwBag<T>::contains(const T& key)
 
 template<class T>
 int
-DwBag<T>::find(const T& key, T& out)
+DwBag<T>::find(const T& key, T& out, T **wp)
 {
     unsigned long hval = ::hash(key) % table_size;
 
-    if(!table[hval].exists(key, out))
+    if(table[hval] == 0)
+        return 0;
+    if(!table[hval]->exists(key, out))
         return 0;
     return 1;
 }

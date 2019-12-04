@@ -16,7 +16,9 @@
 #define DWASSOC_H
 
 #include "dwhash.h"
-
+// warning: this class is designed to be used with the
+// map adt in this library: only the key is used for
+// equality checking
 template<class R, class D>
 class DwAssocImp
 {
