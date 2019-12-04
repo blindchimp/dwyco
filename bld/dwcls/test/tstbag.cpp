@@ -65,8 +65,47 @@ main(int argc, char *argv[])
 	DwMapR<Barf, Baz> kk;
 	DwMapR<Baz, Baz> ll;
     DwMapR<int, int> mumble;
+    DwMapR<int, DwString> sfoo;
 
     int i;
+
+    for(i = 0; i < 200; ++i)
+    {
+        char a[20];
+        sprintf(a, "%d", i);
+
+        sfoo.add(DwString(a), i);
+    }
+
+    {
+    DwMapRIter<int, DwString> iter4(&sfoo);
+    for(;!iter4.eol();iter4.forward())
+    {
+        DwAssocImp<int, DwString> a = iter4.get();
+        cout << a.peek_key().c_str() << "," << a.peek_value() << "\n";
+    }
+    }
+
+    for(i = 0; i < 200; ++i)
+        if(i % 2)
+        {
+            char a[20];
+            sprintf(a, "%d", i);
+            sfoo.del(DwString(a));
+        }
+    if(sfoo.num_elems() != 100)
+        ::abort();
+    cout << "-------\n";
+    {
+    DwMapRIter<int, DwString> iter4(&sfoo);
+    for(;!iter4.eol();iter4.forward())
+    {
+        DwAssocImp<int, DwString> a = iter4.get();
+        cout << a.peek_key().c_str() << "," << a.peek_value() << "\n";
+    }
+    }
+
+
     for(i = 0; i < 20; ++i)
 		foo.add(i / 2);
 
