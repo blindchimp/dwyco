@@ -349,9 +349,6 @@ tcls::add_operation(DwPipelineOp<I,O> *o)
 #include <stdio.h>
 #include <unistd.h>
 
-class DwAllocator;
-DwAllocator *Default_alloc;
-
 void
 oopanic(const char *m)
 {

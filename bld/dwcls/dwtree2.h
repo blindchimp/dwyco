@@ -18,14 +18,12 @@
 // note: this is an encapsulation of the kazlib "dict" adt
 
 template<class R, class D> class DwTreeKazIter;
-//template<class R, class D> class DwTreeKazIterPre;
 template<class R, class D> class DwTreeKaz;
 
 template<class R, class D>
 class DwTreeKaz
 {
     friend class DwTreeKazIter<R,D>;
-//friend class DwTreeKazIterPre<R,D>;
 private:
 
     R def;
@@ -34,10 +32,11 @@ private:
 public:
 
     DwTreeKaz(R const &def);
-    virtual ~DwTreeKaz();
-
     DwTreeKaz(const DwTreeKaz &t);
     DwTreeKaz& operator=(const DwTreeKaz &t);
+    virtual ~DwTreeKaz();
+
+
     int operator==(DwTreeKaz const &t) const;
 
     R get(D const&);
@@ -379,8 +378,6 @@ protected:
 public:
     DwTreeKazIter(const DwTreeKaz<R,D> *);
     ~DwTreeKazIter() {}
-    //DwTreeKazIter(const DwTreeKaz<R,D> *, _foofoodummy);
-    //~DwTreeIter();
     void init();
     void rewind() {
         init();
@@ -401,16 +398,6 @@ tcls::DwTreeKazIter(const DwTreeKaz<R,D> *t)
 {
     init();
 }
-
-#if 0
-theader
-tcls::DwTreeKazIter(const DwTreeKaz<R,D> *t, _foofoodummy)
-    : DwIter<DwTreeKaz<R,D>, DwAssocImp<R,D> > (t)
-{
-
-}
-#endif
-
 
 theader
 void
@@ -433,71 +420,6 @@ tcls::backward()
     curnode = dict_prev(this->to_iterate->dict, curnode);
 }
 
-#if 0
-#undef tcls
-#define tcls DwTreeIterPre<R,D>
-theader
-class DwTreeIterPre : public DwTreeIter<R,D>
-{
-public:
-    DwTreeIterPre(const DwTree<R,D> *a);
-
-    void init();
-    void forward();
-
-};
-
-static _foofoodummy foofoo;
-
-theader
-tcls::DwTreeIterPre(const DwTree<R,D> *a)
-    : DwTreeIter<R,D>(a, foofoo)
-{
-    init();
-}
-
-theader
-void
-tcls::init()
-{
-    go_right = 0;
-    curnode = this->to_iterate->root;
-}
-
-theader
-void
-tcls::forward()
-{
-    if(curnode == 0)
-        return;
-    while(1)
-    {
-        if(!go_right && curnode->l)
-        {
-            stk.push(curnode);
-            curnode = curnode->l;
-            return;
-        }
-        else if(curnode->r)
-        {
-            curnode = curnode->r;
-            go_right = 0;
-            return;
-        }
-        else
-        {
-            if(stk.num_elems() == 0)
-            {
-                curnode = 0;
-                return;
-            }
-            curnode = stk.pop();
-            go_right = 1;
-        }
-    }
-}
-
-#endif
 
 #undef theader
 #undef tcls
