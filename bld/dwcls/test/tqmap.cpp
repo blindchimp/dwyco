@@ -3,6 +3,7 @@
  * $Header: g:/dwight/repo/dwcls/rcs/tqmap.cpp 1.9 1997/06/01 04:40:23 dwight Stable095 $
  */
 #include <iostream>
+#include <sys/time.h>
 #include "dwqmap3.h"
 #include "dwamap.h"
 using namespace std;
@@ -18,7 +19,7 @@ struct Int
 	void *operator new(size_t t, Int *v) {return v;}
 	friend ostream& operator<<(ostream& os, const Int& ii);
     unsigned long hashValue() const {
-        return i;
+        return i * 314;
     }
 };
 
@@ -36,21 +37,72 @@ hash(const int& i)
 	return i;
 }
 
-//unsigned long
-//hash(const Int& ii)
-//{
-//	return ii.i;
-//}
-
-unsigned long
-hash(const DwAssocImp<Int, Int>& a)
+static int Gen;
+void
+incr(int)
 {
-	return hash(a.peek_key());
+    ++Gen;
 }
+
+void
+start_timer()
+{
+    signal(SIGVTALRM, incr);
+    struct itimerval val;
+    timerclear(&val.it_value);
+    timerclear(&val.it_interval);
+    val.it_value.tv_sec = 5;
+    val.it_interval.tv_sec = 0;
+    setitimer(ITIMER_VIRTUAL, &val, 0);
+}
+
+void
+perf1()
+{
+    DwAMap<Int, Int> a(0, 0);
+    int n = 0;
+    Gen = 0;
+    srand(0);
+    for(int i = 0; i < 4; ++i)
+        a.add(rand(), 0);
+    start_timer();
+    while(Gen == 0)
+    {
+        a.add(n % 20,0);
+        ++n;
+    }
+    printf("%d\n", n);
+}
+
+void
+perf2()
+{
+    //DwAMap<Int, Int> a(0, 0);
+    int n = 0;
+    Gen = 0;
+    srand(0);
+    //for(int i = 0; i < 4; ++i)
+    //    a.add(rand(), 0);
+    start_timer();
+    while(Gen == 0)
+    {
+        DwAMap<Int, Int> a(0, 0);
+        //a.add(1, 0);
+        //a.add(1, 0);
+//        a.add(1, 0);
+//        a.add(1, 0);
+        ++n;
+    }
+    printf("%d\n", n);
+}
+
 
 int
 main()
 {
+    perf2();
+    exit(0);
+
 	DwAMap<Int, Int> a(0, 0);
 
 
