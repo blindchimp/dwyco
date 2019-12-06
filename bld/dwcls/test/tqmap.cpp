@@ -2,11 +2,11 @@
 /*
  * $Header: g:/dwight/repo/dwcls/rcs/tqmap.cpp 1.9 1997/06/01 04:40:23 dwight Stable095 $
  */
-#include <iostream.h>
+#include <iostream>
 #include "dwqmap3.h"
 #include "dwamap.h"
+using namespace std;
 
-Allocator *Default_alloc;
 void oopanic(const char *) {::abort();}
 
 struct Int
@@ -17,6 +17,9 @@ struct Int
 	operator int() const {return i;}
 	void *operator new(size_t t, Int *v) {return v;}
 	friend ostream& operator<<(ostream& os, const Int& ii);
+    unsigned long hashValue() const {
+        return i;
+    }
 };
 
 ostream&
@@ -33,11 +36,11 @@ hash(const int& i)
 	return i;
 }
 
-unsigned long
-hash(const Int& ii)
-{
-	return ii.i;
-}
+//unsigned long
+//hash(const Int& ii)
+//{
+//	return ii.i;
+//}
 
 unsigned long
 hash(const DwAssocImp<Int, Int>& a)
@@ -45,6 +48,7 @@ hash(const DwAssocImp<Int, Int>& a)
 	return hash(a.peek_key());
 }
 
+int
 main()
 {
 	DwAMap<Int, Int> a(0, 0);

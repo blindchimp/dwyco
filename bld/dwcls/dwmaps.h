@@ -34,7 +34,6 @@ public:
     virtual int replace(const D&, const R&, R** wp = 0) = 0;
     virtual R get(const D&) = 0;
     virtual int del(const D&) = 0;
-    virtual void fast_clear() = 0;
 
     typedef DwIter<DwMaps<R,D> , DwAssocImp<R,D> > Foo;
     virtual DwMapsIter<R,D> *make_iter() const = 0;

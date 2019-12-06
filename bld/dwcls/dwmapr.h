@@ -40,7 +40,6 @@ public:
     int replace(const D&, const R&, R** wp = 0);
     R get(const D&);
     int del(const D&);
-    void fast_clear();
 
     DwAssocImp<R,D> get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *a) const;
     DwMapsIter<R,D> *make_iter() const;
@@ -71,13 +70,6 @@ void
 tcls::set_size(int sz)
 {
     set.set_size(sz);
-}
-
-thdr
-void
-tcls::fast_clear()
-{
-    set.clear();
 }
 
 thdr
