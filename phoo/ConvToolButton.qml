@@ -7,7 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick 2.6
-import QtGraphicalEffects 1.0
+//import QtGraphicalEffects 1.0
 import QtQml 2.2
 import QtQuick.Controls 2.2
 import dwyco 1.0
@@ -15,7 +15,11 @@ import dwyco 1.0
 
 TipButton {
     background: Image {
-        id: bgimage
+        // WTF: this id isn't referenced
+        // anywhere, but in qt 5.12, when this is
+        // defined, the image doesn't scale right.
+        // in qt 5.10, and previous, it works fine
+        //id: bgimage
         anchors.centerIn: parent
         source : mi("ic_home_black_24dp.png")
     }

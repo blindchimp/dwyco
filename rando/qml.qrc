@@ -1,0 +1,34 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>ProfileDialog.qml</file>
+        <file>DeclarativeCamera.qml</file>
+        <file>PhotoPreview.qml</file>
+        <file>PhotoCaptureControls.qml</file>
+        <file>CameraButton.qml</file>
+        <file>images/toolbutton.png</file>
+        <file>images/toolbutton.sci</file>
+        <file>MsgView.qml</file>
+        <file>PicPreview.qml</file>
+        <file>SimpleToolbar.qml</file>
+        <file>CircularImage.qml</file>
+        <file>MultiSelectToolbar.qml</file>
+        <file>About.qml</file>
+        <file>DSettings.qml</file>
+        <file>AppDrawer.qml</file>
+        <file>AppDrawerForm.ui.qml</file>
+        <file>TipButton.qml</file>
+        <file>GridToggle.qml</file>
+        <file>+desktop/GridToggle.qml</file>
+        <file>FName.qml</file>
+        <file>SimpleMsgList.qml</file>
+        <file>MsgReport.qml</file>
+        <file>perm.qml</file>
+        <file>Warning.qml</file>
+        <file>ProgressRound.qml</file>
+        <file>Help.qml</file>
+        <file>MapImage.qml</file>
+    </qresource>
+    <qresource prefix="/+linux"/>
+    <qresource prefix="/+vgqt"/>
+</RCC>

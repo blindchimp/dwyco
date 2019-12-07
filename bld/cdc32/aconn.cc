@@ -16,67 +16,49 @@
 #include "filetube.h"
 #include "dwrtlog.h"
 #include "ta.h"
+#include "sproto.h"
 
-
-static Listener *Listen_sock;
-static Listener *Listen_sock_save;
-static Listener *Static_secondary_sock;
-static Listener *Static_secondary_sock_save;
-
+namespace dwyco {
 DwNetConfig DwNetConfigData;
+static Listener *Listen_sock;
+static Listener *Static_secondary_sock;
+static int Inhibit_accept;
+
 
 // these just pause the connection accept
 // process, in order to serialize connection
 // setup. see below to really turn off the socket
 void
-turn_listen_off()
+turn_accept_off()
 {
-
-    if(Listen_sock)
-    {
-        Listen_sock_save = Listen_sock;
-        Listen_sock = 0;
-    }
-    if(Static_secondary_sock)
-    {
-        Static_secondary_sock_save = Static_secondary_sock;
-        Static_secondary_sock = 0;
-    }
+    Inhibit_accept = 1;
 }
 
 void
-turn_listen_on()
+turn_accept_on()
 {
-
-    if(Listen_sock_save)
-    {
-        Listen_sock = Listen_sock_save;
-        Listen_sock_save = 0;
-    }
-    if(Static_secondary_sock_save)
-    {
-        Static_secondary_sock = Static_secondary_sock_save;
-        Static_secondary_sock_save = 0;
-    }
+    Inhibit_accept = 0;
 }
 
 int
 is_listening()
 {
-    return Listen_sock_save || Listen_sock;
+    return Listen_sock != 0;
 }
 
 void
 poll_listener()
 {
+    if(Inhibit_accept)
+        return;
     if(Listen_sock && Listen_sock->accept_ready())
     {
         SimpleSocket *ctrl_sock;
         if((ctrl_sock = Listen_sock->accept()) == 0)
         {
             // try to recover
-            delete Listen_sock;
-            Listen_sock = new Listener;
+            set_listen_state(0);
+            set_listen_state(1);
             return;
         }
         // setup Tube
@@ -100,7 +82,7 @@ poll_listener()
             chan->tube = tube;
             chan->wait_for_crypto();
             chan->start_service();
-            turn_listen_off();
+            turn_accept_off();
             TRACK_ADD(DC_accept_direct, 1);
         }
     }
@@ -111,8 +93,8 @@ poll_listener()
         if((ctrl_sock = Static_secondary_sock->accept()) == 0)
         {
             // try to recover
-            delete Static_secondary_sock;
-            Static_secondary_sock = new Listener;
+            set_listen_state(0);
+            set_listen_state(1);
             return;
         }
         // setup dummy tube to allow deferred
@@ -142,29 +124,30 @@ poll_listener()
 void
 set_listen_state(int on)
 {
-    if(!Listen_sock && !Listen_sock_save)
+    if(!Listen_sock)
     {
-        if(Listen_sock_save || Static_secondary_sock_save)
-            return; // you must have listening "on" before you can do this
         if(on)
         {
             Listen_sock = new Listener;
             Listen_sock->non_blocking(1);
             DwString lp(DwNetConfigData.get_primary_suffix("any"));
-            if(!Listen_sock->init2(lp.c_str(), DwNetConfigData.get_nat_primary_port()))
+            if(!Listen_sock->init2(lp.c_str()))
             {
                 (*MMChannel::popup_message_box_callback)(0, "can't listen (winsock error)", vcnil, vcnil);
                 delete Listen_sock;
                 Listen_sock = 0;
+                return;
             }
             Static_secondary_sock = new Listener;
             Static_secondary_sock->non_blocking(1);
             DwString lp2(DwNetConfigData.get_secondary_suffix("any"));
-            if(!Static_secondary_sock->init2(lp2.c_str(), DwNetConfigData.get_nat_secondary_port()))
+            if(!Static_secondary_sock->init2(lp2.c_str()))
             {
                 (*MMChannel::popup_message_box_callback)(0, "can't listen (winsock error)", vcnil, vcnil);
                 delete Static_secondary_sock;
                 Static_secondary_sock = 0;
+                delete Listen_sock;
+                Listen_sock = 0;
             }
         }
     }
@@ -177,18 +160,13 @@ set_listen_state(int on)
         {
             delete Listen_sock;
             Listen_sock = 0;
-            delete Listen_sock_save;
-            Listen_sock_save = 0;
             delete Static_secondary_sock;
             Static_secondary_sock = 0;
-            delete Static_secondary_sock_save;
-            Static_secondary_sock_save = 0;
         }
     }
 }
 
 #define FW_SECTION "firewall"
-
 
 #define DEFAULT_PORT_SUFFIX ":6780"
 #define DEFAULT_PORT_SUFFIX_SECONDARY ":6781"
@@ -198,6 +176,7 @@ set_listen_state(int on)
 
 #define DEFAULT_ADVERTISE_NAT_PORTS 0
 #define DEFAULT_DISABLE_UPNP 0
+#define DEFAULT_LISTEN 1
 #ifdef CDC32
 #define DEFAULT_CALL_SETUP_MEDIA_SELECT CSMS_VIA_HANDSHAKE
 #else
@@ -216,7 +195,8 @@ DWUIINIT_CTOR_VAL(nat_secondary_port),
 DWUIINIT_CTOR_VAL(nat_pal_port),
 DWUIINIT_CTOR_VAL(advertise_nat_ports),
 DWUIINIT_CTOR_VAL(disable_upnp),
-DWUIINIT_CTOR_VAL(call_setup_media_select)
+DWUIINIT_CTOR_VAL(call_setup_media_select),
+DWUIINIT_CTOR_VAL(listen)
 DWUIINIT_CTOR_END
 {
     set_primary_port(DEFAULT_PRIMARY_PORT);
@@ -231,6 +211,7 @@ DWUIINIT_CTOR_END
     set_advertise_nat_ports(DEFAULT_ADVERTISE_NAT_PORTS);
     set_disable_upnp(DEFAULT_DISABLE_UPNP);
     set_call_setup_media_select(DEFAULT_CALL_SETUP_MEDIA_SELECT);
+    set_listen(DEFAULT_LISTEN);
 }
 
 void
@@ -303,4 +284,6 @@ DwNetConfig::get_nat_pal_suffix(const char *ip)
     DwString ret(ip);
     ret += a;
     return ret;
+}
+
 }

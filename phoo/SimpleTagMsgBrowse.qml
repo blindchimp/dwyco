@@ -156,7 +156,7 @@ Page {
                         anchors.top: parent.top
                         //anchors.bottom: parent.bottom
                         anchors.left: prof.left
-                        text: "Tag:"
+                        text: to_tag === "_hid" ? "Hidden" : (to_tag === "_fav" ? "Favorites" : to_tag)
                     }
 
 
@@ -213,47 +213,6 @@ Page {
                             }
                         }
 
-
-//                        MenuItem {
-//                            text: "Clear msgs"
-//                            onTriggered: {
-//                                core.clear_messages_unfav(simp_msg_browse.to_uid)
-
-//                                themsglist.reload_model()
-//                            }
-//                        }
-
-//                        MenuItem {
-//                            text: "Delete user"
-//                            onTriggered: {
-//                                confirm_delete.visible = true
-//                            }
-//                            MessageDialog {
-//                                id: confirm_delete
-//                                title: "Bulk delete?"
-//                                icon: StandardIcon.Question
-//                                text: "Delete ALL messages from user?"
-//                                informativeText: "This removes FAVORITE messages too."
-//                                standardButtons: StandardButton.Yes | StandardButton.No
-//                                onYes: {
-//                                    core.delete_user(simp_msg_browse.to_uid)
-//                                    themsglist.reload_model()
-//                                    close()
-//                                    stack.pop()
-//                                }
-//                                onNo: {
-//                                    close()
-//                                }
-//                            }
-//                        }
-//                        MenuItem {
-//                            text: "More..."
-//                            onTriggered: {
-//                                moremenu.open()
-
-//                            }
-//                        }
-
                     }
                 }
             }
@@ -274,6 +233,8 @@ Page {
             border.color: divider
             color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
+            z: 1
+            clip: true
             Image {
                 id: deco2
                 visible: IS_QD
@@ -352,71 +313,74 @@ Page {
                 z: 3
                 color: "orange"
             }
-            z: 1
 
-            clip: true
-            ColumnLayout {
-                id: clayout
-                z: 1
-                Layout.margins: 3
-                width: parent.width
-                height: parent.height
-                //anchors.centerIn: ditem
-                Image {
-                    id: preview
+            Image {
+                id: preview
+                anchors.fill: parent
+                visible: {PREVIEW_FILENAME != "" || HAS_AUDIO}
+                fillMode: Image.PreserveAspectFit
+                // note: the extra "/" in file:// is to accomodate
+                // windows which may return "c:/mumble"
+                //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
+                source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) :
+                                                  (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
-                    visible: {PREVIEW_FILENAME != "" || HAS_AUDIO}
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
+                asynchronous: true
+                sourceSize.height: 256
+                sourceSize.width: 256
+                onStatusChanged: {
+                    if (preview.status == Image.Ready) {
+                        //preview.source = "file:///" + String(PREVIEW_FILENAME)
+                        console.log(PREVIEW_FILENAME)
+                    }
+                }
+            }
 
-                    fillMode: Image.PreserveAspectFit
-                    // note: the extra "/" in file:// is to accomodate
-                    // windows which may return "c:/mumble"
-                    //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                    source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) :
-                                                      (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
+            Text {
+                function gentext(msg) {
+                    return "<html>" + msg + "</html>"
+                }
 
-                    asynchronous: true
-                    sourceSize.height: 256
-                    sourceSize.width: 256
-                    onStatusChanged: {
-                        if (preview.status == Image.Ready) {
-                            //preview.source = "file:///" + String(PREVIEW_FILENAME)
-                            console.log(PREVIEW_FILENAME)
-                        }
+                id: msg
+                anchors.bottom: datetext.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                //anchors.top: preview.visible ? undefined : parent.top
+                height: preview.visible ? parent.height : implicitHeight
+                text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT))
+                verticalAlignment: Text.AlignBottom
+                wrapMode: preview.visible ? Text.NoWrap : Text.WordWrap
+                elide: Text.ElideRight
+                textFormat: Text.StyledText
+                color: amber_light
+                style: Text.Outline
+                styleColor: "black"
+
+                clip: true
+            }
+
+            Text {
+                function gendate(tm) {
+                    var dt = new Date(tm * 1000)
+                    if(Date.now() - dt.getTime() > 86400 * 1000) {
+                        return Qt.formatDate(dt)
+                    } else {
+                        return Qt.formatTime(dt)
                     }
 
                 }
-                Item {
-                    Layout.fillHeight: true
-                }
-
-                Text {
-                    function gentext(msg, tm) {
-                        var dt = new Date(tm * 1000)
-                        if(Date.now() - dt.getTime() > 86400 * 1000) {
-                            return "<html>" + msg + " " + Qt.formatDate(dt) + "</html>"
-                        } else {
-                            return "<html>" + msg + " " + Qt.formatTime(dt) + "</html>"
-                        }
-
-                    }
-
-                    id: msg
-                    text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(core.uid_to_name(ASSOC_UID), DATE_CREATED)
-                    //Layout.maximumWidth: (listView1.width * 3) / 4
-                    Layout.fillWidth: true
-                    Layout.maximumHeight: 10
-                    //horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
-                    verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.NoWrap
-                    textFormat: Text.StyledText
-                    color: primary_text
-                    clip: true
-
-                }
-
+                id: datetext
+                anchors.bottom: parent.bottom
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.NoWrap
+                color: primary_text
+                clip: true
+                font.italic: true
+                //font.weight: Font.Light
+                style: Text.Sunken
+                styleColor: "white"
+                scale: .75
+                text: gendate(DATE_CREATED)
             }
             MouseArea {
                 anchors.fill: parent
@@ -483,7 +447,7 @@ Page {
         //width: 200; height: 400
         id: grid
         anchors.fill: parent
-        cellWidth: 160 ; cellHeight: 130
+        cellWidth: 160 ; cellHeight: 140
         delegate: msgdelegate
         clip: true
         ScrollBar.vertical: ScrollBar { }

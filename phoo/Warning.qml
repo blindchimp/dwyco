@@ -6,12 +6,12 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
+import QtQuick 2.12
 import dwyco 1.0
 import QtQuick.Controls 2.1
 import QtQuick.Layouts 1.3
 import QtQml 2.2
-import QtGraphicalEffects 1.0
+//import QtGraphicalEffects 1.0
 
 Rectangle {
     id: popupid
@@ -20,7 +20,7 @@ Rectangle {
     property bool oops: false
     property alias oops_text : oops_button.text
 
-    anchors.margins: mm(2)
+    anchors.margins: mm(1)
     anchors.fill: parent
     color: "white"
     border.width: mm(1)
@@ -35,8 +35,8 @@ Rectangle {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: mm(3)
-        spacing: mm(3)
+        anchors.margins: mm(2)
+        spacing: mm(1)
 
         Label {
             text: warning
@@ -58,7 +58,7 @@ Rectangle {
             visible: {text.length > 0}
 
             Layout.fillWidth: true
-            Layout.bottomMargin: mm(10)
+            Layout.bottomMargin: mm(2)
         }
 
         Button {

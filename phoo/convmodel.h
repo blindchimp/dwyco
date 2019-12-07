@@ -36,17 +36,18 @@ class Conversation : public QObject
 
 public:
     Conversation(QObject *parent = 0) : QObject(parent) {
-        m_active = 0;
-        m_invalid = 0;
-        m_REVIEWED = 0;
-        m_REGULAR = 0;
+        m_active = false;
+        m_invalid = false;
+        m_REVIEWED = false;
+        m_REGULAR = false;
         m_resolved_counter = 0;
         m_unseen_count = 0;
         m_is_blocked = false;
         m_any_unread = false;
         m_session_msg = false;
-        m_selected = 0;
+        m_selected = false;
         m_pal = false;
+        m_has_hidden = false;
         update_counter = -1;
     }
     void load_external_state(const QByteArray& uid);

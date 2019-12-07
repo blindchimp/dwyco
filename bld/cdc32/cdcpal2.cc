@@ -10,7 +10,6 @@
 #undef LOCAL_TEST
 #include "vc.h"
 #include "dwtimer.h"
-#include "vcdecom.h"
 #include "qmsg.h"
 #include "cdcver.h"
 #include "snds.h"
@@ -23,6 +22,8 @@
 #include "se.h"
 #include "qmsgsql.h"
 #include "qauth.h"
+
+using namespace dwyco;
 
 extern vc My_UID;
 extern vc Online;

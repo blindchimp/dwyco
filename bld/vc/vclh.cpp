@@ -1306,6 +1306,7 @@ dotype3(vc v)
 }
 
 
+#ifndef NO_VCEVAL
 vc
 do_exploded_funcall(vc fun, vc argvec)
 {
@@ -2775,7 +2776,7 @@ vclh_tolower(vc s)
     return v;
 }
 
-
+#endif
 vc
 vclh_serialize(vc v)
 {
@@ -2978,16 +2979,6 @@ vc::non_lh_init()
 #endif
 }
 
-// call this in a thread but only
-// call this *after* one call to init has been
-// made sometime before threads are created.
-void
-vc::thread_init()
-{
-	vc_winsock::thread_startup();
-	Vcmap = new vcctx;
-	init_rest();
-}
 
 // call this once globally before any threads
 // are created. this is the usual single-threaded
@@ -3453,15 +3444,6 @@ vc::exit()
 	non_lh_exit();
 }
 
-void
-vc::thread_exit()
-{
-	VcOutput.flush();
-	VcError.flush();
-	delete Vcmap;
-	Vcmap = 0;
-	vc_winsock::thread_shutoff();
-}
 
 void
 vc::non_lh_exit()

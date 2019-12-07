@@ -16,8 +16,7 @@
 //
 // The nil atom. This is a separate type to avoid the need
 // for special values in other classes to represent nil.
-// Also, there is an efficiency win here, since all nils
-// can use the same storage. The storage is allocated at
+// The storage is allocated at
 // program start time and never freed. The constant
 // vcnil is used to reference the nil atom.
 //
@@ -85,8 +84,6 @@ public:
 	int double_ge(const vc& v) const ;
 	int double_eq(const vc& v) const ;
 	int double_ne(const vc& v) const ;
-
-	int func_eq(const vc& v) const ;
 
 	enum vc_type type() const ;
 	virtual int is_nil() const ;

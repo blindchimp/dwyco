@@ -51,7 +51,8 @@ Rectangle {
                         themsgview.view_source = ""
                         var vid = core.make_zap_view_file(filename)
                         themsgview.view_id = vid
-                        core.play_zap_view(vid)
+                        themsgview.mid = ""
+                        //core.play_zap_view(vid)
                         stack.push(themsgview)
                     }
                 }

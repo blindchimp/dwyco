@@ -283,7 +283,7 @@ tcls::del(const D& key)
 
 thdr
 void
-tcls::initdel(long )
+tcls::initdel(long isize)
 {
     deleted = 0;
     used = 0;
@@ -504,11 +504,11 @@ thdr
 void
 tcls::destr_fun(unsigned long u3)
 {
-
+    //unsigned long u = used;
 // WARNING: problems here with long/int on 64 bit stuff
 // previous version of this function would be more
 // general, but this is faster.
-    //unsigned long u3 = this->used;
+    unsigned long u3 = this->used;
     for(int i = 0; u3; ++i)
     {
         static char table[64] =
@@ -579,7 +579,7 @@ thdr
 void
 tcls::add_assoc(const D& key, const R& val, long idx)
 {
-    int u = ((this->used) & (1UL << idx));
+    int u = this->used & (1UL << idx);
     D *d = addr_dom(idx);
     R *r = addr_rng(idx);
 
@@ -608,7 +608,7 @@ inline
 void
 tcls::set_rng(const R& r, long idx)
 {
-    if((this->used) & (1UL << idx))
+    if(this->used & (1UL << idx))
         *addr_rng(idx) = r;
     else
         new(addr_rng(idx)) R(r);
@@ -664,7 +664,8 @@ public:
     }
 };
 
-
+// these were never used
+#if 0
 // lazy with storage alloced outside object
 template<class R, class D>
 class DwQMapLazyV : public DwQMapLazy<R,D>
@@ -786,6 +787,7 @@ tcls::get_dom(long idx) const
 {
     return dom[idx];
 }
+#endif
 
 #undef thdr
 #undef tcls

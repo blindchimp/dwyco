@@ -49,7 +49,9 @@ public:
     int mid_to_index(QByteArray mid);
 
 public slots:
-    void msg_recv_status(int cmd, const QString& mid);
+    void msg_recv_status(int cmd, const QString& mid, const QString& huid);
+    void mid_tag_changed(QString mid);
+    void msg_recv_progress(QString mid, QString huid, QString msg, int percent);
 
 private:
     QString m_uid;
@@ -60,6 +62,8 @@ private:
     int filter_last_n;
     int filter_only_favs;
     int filter_show_hidden;
+
+    void force_reload_model();
 
 signals:
     void uidChanged();
@@ -81,13 +85,13 @@ public:
 
     void setUid(const QString& uid);
     void setTag(const QString& tag);
-    void reload_model();
+    void reload_model(int force = 0);
     void reload_inbox_model();
 
 private:
     DWYCO_MSG_IDX msg_idx;
     DWYCO_QD_MSG_LIST qd_msgs;
-    DWYCO_UNSAVED_MSG_LIST inbox_msgs;
+    DWYCO_UNFETCHED_MSG_LIST inbox_msgs;
     int count_msg_idx;
     int count_qd_msgs;
     int count_inbox_msgs;
@@ -97,6 +101,8 @@ private:
 
     QVariant qd_data (int r, int role = Qt::DisplayRole ) const;
     QVariant inbox_data (int r, int role = Qt::DisplayRole ) const;
+    int check_inbox_model();
+    int check_qd_msgs();
 
     QString get_msg_text(int row) const;
     QString preview_filename(int row) const;

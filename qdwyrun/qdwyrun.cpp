@@ -1,3 +1,14 @@
+// note: this is a qt4 program that doesn't compile at the moment.
+// i'm not going to fix it because it is only used by CDC-X installs, and
+// i'm not sure i'm going to continue using it, as the functionality i put
+// in it hasn't been used that much (different methods of performing updates
+// which didn't work quite as well as i'd hoped, mainly due to virus checkers
+// and whatnot on windows.) in addition, the mac version doesn't work at all, and
+// the linux version has so few users it isn't worth it.)
+//
+// at some point, it might be useful once ported up to qt5 in situations where
+// there is no "app store" available to perform updates for you.
+
 #include <QFileInfo>
 #include <QProcess>
 #include <QDesktopWidget>

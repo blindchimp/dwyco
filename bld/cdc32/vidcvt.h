@@ -12,11 +12,7 @@
  */
 #ifndef VIDCVT_H
 #define VIDCVT_H
-#ifdef __BORLANDC__
-#include <mem.h>
-#else
 #include <string.h>
-#endif
 #include <stddef.h>
 #include "pbmcfg.h"
 

@@ -48,6 +48,7 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_MSG_DOWNLOAD_OK,
     DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED,
     DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED,
+
     DWYCO_SE_USER_MSG_IDX_UPDATED_PREPEND,
 
     DWYCO_SE_CHAT_SERVER_CONNECTING,
@@ -55,6 +56,8 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_CHAT_SERVER_DISCONNECT,
     DWYCO_SE_CHAT_SERVER_LOGIN,
     DWYCO_SE_CHAT_SERVER_LOGIN_FAILED,
+
+    DWYCO_SE_MSG_DOWNLOAD_PROGRESS,
 };
 
 void
@@ -110,6 +113,21 @@ se_emit_msg_status(DwString qid, vc ruid, DwString msg, int percent)
     v[4] = percent;
     Se_q.append(v);
     GRTLOG("se_emit_msg_status ", 0, 0);
+    GRTLOGVC(v);
+
+}
+
+void
+se_emit_msg_progress(DwString mid, vc ruid, DwString msg, int percent)
+{
+    vc v(VC_VECTOR);
+    v[0] = SE_MSG_DOWNLOAD_PROGRESS;
+    v[1] = ruid;
+    v[2] = mid.c_str();
+    v[3] = msg.c_str();
+    v[4] = percent;
+    Se_q.append(v);
+    GRTLOG("se_emit_msg_progress ", 0, 0);
     GRTLOGVC(v);
 
 }
@@ -190,6 +208,7 @@ se_process()
             break;
 
         case SE_MSG_SEND_STATUS:
+        case SE_MSG_DOWNLOAD_PROGRESS:
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
                                            Se_q[i][1], Se_q[i][1].len(),
@@ -208,7 +227,7 @@ se_process()
         case SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED:
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
-                                           0, 0,
+                                           Se_q[i][1], Se_q[i][1].len(),
                                            0, 0,
                                            DWYCO_TYPE_STRING, (const char *)Se_q[i][2], Se_q[i][2].len(),
                                            0, 0

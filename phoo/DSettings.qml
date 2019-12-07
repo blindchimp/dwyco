@@ -19,6 +19,9 @@ Page {
     header: SimpleToolbar {
 
     }
+    background: Rectangle {
+        color: amber_light
+    }
 
     Component.onCompleted: {
         var duration
@@ -89,8 +92,8 @@ Page {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: mm(3)
-        spacing: mm(3)
+        anchors.margins: mm(2)
+        spacing: mm(1)
 
         CheckBox {
             id: cb_pin_expire
@@ -116,6 +119,13 @@ Page {
             onCheckedChanged: {
                 show_unreviewed = checked
                 core.set_local_setting("show_unreviewed", checked ? "1" : "0")
+                if(Qt.platform.os == "android") {
+                    if(show_unreviewed)
+                        notificationClient.set_user_property("content", "unrev")
+                    else
+                        notificationClient.set_user_property("content", "rev")
+                }
+                SimpleDirectoryList.clear()
             }
             onClicked: {
                 if(checked) {
@@ -124,6 +134,7 @@ Page {
                     }
                 }
             }
+            Layout.fillWidth: true
         }
         CheckBox {
             id: show_hidden_msgs
@@ -133,7 +144,47 @@ Page {
                 themsglist.set_show_hidden(checked ? 1 : 0)
                 show_hidden = checked
             }
+            Layout.fillWidth: true
         }
+
+//        CheckBox {
+//            id: show_archived
+//            text: { "Show archived users (" + core.total_users.toString() + ")" }
+//            onCheckedChanged: {
+//                core.use_archived = checked
+//                show_archived_users = checked
+//            }
+//            Layout.fillWidth: true
+//        }
+
+
+        ItemDelegate {
+            id: block_list_button
+            text: qsTr("Block List")
+            onClicked: {
+                    stack.push(iglist_dialog)
+            }
+            Layout.fillWidth: true
+        }
+
+        ItemDelegate {
+            id: pin_lock_button
+            text: qsTr("PIN Lock Setup")
+            onClicked: {
+                stack.push(pwchange_dialog)
+            }
+
+            Layout.fillWidth: true
+        }
+        ItemDelegate {
+            id: about_button
+            text: qsTr("About")
+            onClicked: {
+                    stack.push(about_dialog)
+            }
+            Layout.fillWidth: true
+        }
+
 
         Item {
             Layout.fillHeight: true

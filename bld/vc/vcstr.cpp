@@ -184,11 +184,6 @@ vc_string::operator%(const vc &v) const {bomb(); return v;}
 
 enum vc_type
 vc_string::type() const { return VC_STRING; }
-int
-vc_string::is_nil() const { 
-return 0;
-//return strncmp(str, "nil", 4) == 0; 
-}
 
 int
 vc_string::operator <(const vc &v) const { return v.str_lt(*this); }
@@ -347,8 +342,6 @@ vc_string::printOn(VcIO outputStream)
 	}
 }
 
-int
-vc_string::func_eq(const vc&) const {bomb_op_func(); return 0;}
 
 long
 vc_string::xfer_out(vcxstream& vcx)

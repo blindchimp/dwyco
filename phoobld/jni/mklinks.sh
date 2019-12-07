@@ -23,10 +23,10 @@ ln -s ../../bld/dwcls
 ln -s ../../bld/gsm
 ln -s ../../bld/jenkins
 ln -s ../../bld/kazlib
-ln -s ../../bld/ogg libogg
-ln -s  ../../bld/speex libspeex
-ln -s ../../bld/theora libtheora
-ln -s  ../../bld/vorbis libvorbis
+ln -s ../../bld/libogg-1.3.3 libogg
+ln -s  ../../bld/speexdsp libspeex
+ln -s ../../bld/theora.1.2.x libtheora
+ln -s  ../../bld/libvorbis-1.3.6 libvorbis
 ln -s ../../bld/vc
 ln -s ../../bld/zlib
 ln -s ../../bld/ppm

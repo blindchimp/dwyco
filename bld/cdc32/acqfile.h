@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_VIDEO_FROM_PPM
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -260,4 +260,5 @@ FileAcquire<T>::bump(int &i)
     i = (i + 1) % imgs.num_elems();
 }
 
+#endif
 #endif

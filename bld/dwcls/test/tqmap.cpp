@@ -3,9 +3,12 @@
  * $Header: g:/dwight/repo/dwcls/rcs/tqmap.cpp 1.9 1997/06/01 04:40:23 dwight Stable095 $
  */
 #include <iostream>
+#include <sys/time.h>
+#include <signal.h>
+#include <stdio.h>
 #include "dwqmap3.h"
+#include "dwqmap4.h"
 #include "dwamap.h"
-#include <memory.h>
 using namespace std;
 
 void oopanic(const char *) {::abort();}
@@ -18,8 +21,9 @@ struct Int
 	operator int() const {return i;}
 	void *operator new(size_t t, Int *v) {return v;}
 	friend ostream& operator<<(ostream& os, const Int& ii);
-  // generate a lot of collisions
-    unsigned long hashValue() const {return i & 0x3;}
+    unsigned long hashValue() const {
+        return i * 314;
+    }
 };
 
 ostream&
@@ -37,25 +41,150 @@ hash(const int& i)
 	return i;
 }
 
-template<>
-unsigned long
-hash(const Int& ii)
+static volatile int Gen;
+void
+incr(int)
 {
-	return ii.i;
+    ++Gen;
 }
 
-template<>
-unsigned long
-hash(const DwAssocImp<Int, Int>& a)
+#define RUNTIME 5
+void
+start_timer()
 {
-	return hash(a.peek_key());
+    signal(SIGVTALRM, incr);
+    struct itimerval val;
+    timerclear(&val.it_value);
+    timerclear(&val.it_interval);
+    val.it_value.tv_sec = RUNTIME;
+    val.it_interval.tv_sec = 0;
+    setitimer(ITIMER_VIRTUAL, &val, 0);
 }
 #endif
 
-int
-main(int, char **)
+void
+perf1()
+{
+    DwAMap<Int, Int> a(0, 0);
+    int n = 0;
+    Gen = 0;
+    srand(0);
+    for(int i = 0; i < 4; ++i)
+        a.add(rand(), 0);
+    start_timer();
+    while(Gen == 0)
+    {
+        a.add(n % 4,0);
+        ++n;
+    }
+    printf("%d\n", n / RUNTIME);
+}
+
+void
+perf2()
+{
+    //DwAMap<Int, Int> a(0, 0);
+    int n = 0;
+    Gen = 0;
+    srand(0);
+    //for(int i = 0; i < 4; ++i)
+    //    a.add(rand(), 0);
+    start_timer();
+    while(Gen == 0)
+    {
+        DwAMap<Int, Int> a(0, 0);
+        //a.add(1, 0);
+        //a.add(1, 0);
+//        a.add(1, 0);
+//        a.add(1, 0);
+        ++n;
+    }
+    printf("%d\n", n / RUNTIME);
+}
+
+void
+perf3()
+{
+    DwAMap<Int, Int> a(0, 0);
+    int n = 0;
+    Gen = 0;
+    srand(0);
+    for(int i = 0; i < 20; ++i)
+        a.add(rand(), 0);
+    a.add(0, 0);
+    a.add(1, 0);
+    a.add(2, 0);
+    a.add(3, 0);
+    a.add(4, 0);
+    start_timer();
+    while(Gen == 0)
+    {
+        a.get(n % 4);
+        ++n;
+    }
+    printf("%d\n", n / RUNTIME);
+}
+
+void
+perf4()
 {
     DwQMapLazyC<Int, Int, 32> a(0, 0);
+    int n = 0;
+    Gen = 0;
+    srand(0);
+    for(int i = 0; i < 20; ++i)
+        a.add(rand(), 0);
+    a.add(0, 0);
+    a.add(1, 0);
+    a.add(2, 0);
+    a.add(3, 0);
+    a.add(4, 0);
+    start_timer();
+    while(Gen == 0)
+    {
+        a.get(n % 4);
+        ++n;
+    }
+    printf("%d\n", n / RUNTIME);
+}
+
+void
+perf5()
+{
+    DwQMap4<Int, Int, 32> a(0, 0);
+    int n = 0;
+    Gen = 0;
+    srand(0);
+    for(int i = 0; i < 20; ++i)
+        a.add(rand(), 0);
+    a.add(0, 0);
+    a.add(1, 0);
+    a.add(2, 0);
+    a.add(3, 0);
+    a.add(4, 0);
+    start_timer();
+    while(Gen == 0)
+    {
+        a.get(n % 4);
+        ++n;
+    }
+    printf("%d\n", n / RUNTIME);
+}
+
+
+
+int
+main()
+{
+    perf3();
+    perf4();
+    perf5();
+    exit(0);
+    perf1();
+    perf2();
+    exit(0);
+
+	DwAMap<Int, Int> a(0, 0);
 
 
 	a.add(1, 100);

@@ -5,6 +5,8 @@ CONFIG -= qt
 include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
 INCLUDEPATH +=  $${VCCFG_COMP} ../dwcls ../zlib ../crypto5 ../kazlib ../jenkins ../libuv/include
+DEFINES += VC_INTERNAL
+
 !win32 {
 DEFINES += UNIX
 QMAKE_CXXFLAGS += -fpermissive
@@ -14,6 +16,9 @@ QMAKE_CXXFLAGS += -fpermissive
 equals(LH_INTERPRETER, 1) {
 DEFINES += LHOBJ PERFHACKS FUNCACHE
 linux-g++*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3
+}
+!equals(LH_INTERPRETER, 1) {
+DEFINES += NO_VCEVAL
 }
 
 SOURCES = \

@@ -17,16 +17,11 @@
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfunctx.cpp 1.46 1997/10/05 17:27:06 dwight Stable $";
 
-//#ifndef BTYPES
-//#ifdef PERFHACKS
-//#include "dwamap.h"
-//#else
-//#include "dwmapr.h"
-//#endif
-//#else
-//#include "dwmap.h"
-//#endif
-#include "dwmaps.h"
+#ifdef PERFHACKS
+#include "dwamap.h"
+#else
+#include "dwmapr.h"
+#endif
 
 functx::functx(int tsize) {
     doing_ret = 0;

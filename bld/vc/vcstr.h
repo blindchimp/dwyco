@@ -69,7 +69,6 @@ public:
 	virtual vc operator%(const vc &v) const ;
 
 	enum vc_type type() const ;
-	virtual int is_nil() const ;
 
 	virtual int operator <(const vc &v) const ;
 	virtual int operator <=(const vc &v) const ;
@@ -114,8 +113,6 @@ public:
 	virtual int str_lt(const vc& v) const ;
 	virtual int str_gt(const vc& v) const ;
 	virtual int str_ge(const vc& v) const ;
-
-	int func_eq(const vc& v) const;
 
 	hashValueType hashValue() const ;
 	void printOn(VcIO outputStream) ;

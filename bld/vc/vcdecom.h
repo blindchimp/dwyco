@@ -19,8 +19,6 @@
 class vcxstream;
 
 #include "dwlista.h"
-#include "dwbagr.h"
-#include "dwsetr.h"
 #include "dwbag.h"
 #include "dwset.h"
 #include "dwmapr.h"
@@ -29,6 +27,12 @@ typedef DwBag<vc> VcBagImp;
 typedef DwBagIter<vc> VcBagIter;
 typedef DwSet<vc> VcSetImp;
 typedef DwSetIter<vc> VcSetIter;
+// note: bagr and setr don't work with
+// ref counted things because they make
+// too many explicit copies of the contained
+// items (which mucks up equality checking.)
+// mapr works because there is a level of
+// indirection
 typedef DwMapR<vc,vc> VcMapImp;
 typedef DwMapRIter<vc,vc> VcMapIter;
 typedef DwTreeKaz<vc,vc> VcTreeImp;

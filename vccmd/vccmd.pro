@@ -19,13 +19,14 @@ SOURCES += \
 
 macx-* {
 SOURCES += \
+../bld/vc/hacked_sqlite3.cpp \
 ../bld/vc/hacked_spread.xml.cpp 
 }
 
 INCLUDEPATH += ../$$DWYCO_CONFDIR  ../bld/dwcls ../bld/vc $${OUT_PWD}/../include
 
 linux-g++*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3 
-#macx-*: DEFINES += LH_WRAP_SPREAD 
+macx-*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3 
 
 D=$${OUT_PWD}/..
 LIBS += \
@@ -43,7 +44,7 @@ macx-* {
 LIBS += \
 $${D}/lib/libspread.a
 
-LIBS += -framework Foundation -framework CoreServices -lpthread -ldl
+LIBS += -framework Foundation -framework CoreServices -lsqlite3 -lpthread -ldl
 }
 
 linux-g++* {

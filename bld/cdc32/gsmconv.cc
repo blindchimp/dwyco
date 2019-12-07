@@ -1,4 +1,4 @@
-
+#ifndef DWYCO_NO_GSM
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -115,3 +115,4 @@ GSMConverter::convert(DWBYTE *buf, int len, int , DWBYTE*& out_buf, int& out_len
     }
     return 1;
 }
+#endif

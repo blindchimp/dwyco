@@ -24,7 +24,6 @@ void exit_bg_msg_send();
 extern vc Myhostname;
 extern vc TheMan;
 extern DwLog *Log;
-extern int GodMode;
 #define INI_FILENAME "dwyco.ini"
 
 #endif

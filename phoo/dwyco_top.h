@@ -14,6 +14,7 @@
 #include <QObject>
 #include <QVariant>
 #include <QUrl>
+#include <QNetworkReply>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -25,7 +26,10 @@
 class DwycoCore : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString client_name READ client_name WRITE setClient_name NOTIFY client_nameChanged)
+
+    QML_WRITABLE_VAR_PROPERTY(QString, client_name)
+    QML_WRITABLE_VAR_PROPERTY(bool, use_archived)
+    QML_READONLY_VAR_PROPERTY(int, total_users)
     QML_READONLY_VAR_PROPERTY(int, unread_count)
     QML_READONLY_VAR_PROPERTY(QString, buildtime)
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
@@ -36,6 +40,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, audio_full_duplex)
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
+    QML_READONLY_VAR_PROPERTY(QString, this_uid)
+    QML_READONLY_VAR_PROPERTY(bool, directory_fetching)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -50,6 +56,9 @@ public:
         m_audio_full_duplex = 0;
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
+        m_use_archived = true;
+        m_this_uid = "";
+        m_directory_fetching = false;
     }
     static QByteArray My_uid;
 
@@ -126,11 +135,13 @@ public:
         return My_uid.toHex();
     }
 
+    Q_INVOKABLE QString strip_html(QString);
+
     Q_INVOKABLE int database_online();
     Q_INVOKABLE int chat_online();
 
     Q_INVOKABLE QUrl get_simple_directory_url();
-    Q_INVOKABLE QUrl get_simple_xml_url();
+    Q_INVOKABLE QUrl get_simple_lh_url();
     Q_INVOKABLE QString get_msg_count_url();
     Q_INVOKABLE QString url_to_filename(QUrl);
     Q_INVOKABLE int simple_send(QString recipient, QString msg);
@@ -204,6 +215,10 @@ public:
     Q_INVOKABLE int delete_user(QString uid);
     Q_INVOKABLE int get_fav_message(QString mid);
     Q_INVOKABLE void set_fav_message(QString mid, int val);
+    Q_INVOKABLE int has_tag_message(QString mid, QString tag);
+    Q_INVOKABLE void set_tag_message(QString mid, QString tag);
+    Q_INVOKABLE void unset_tag_message(QString mid, QString tag);
+
 
     Q_INVOKABLE void uid_keyboard_input(QString uid);
     Q_INVOKABLE int get_rem_keyboard_state(QString uid);
@@ -236,27 +251,16 @@ public:
     Q_INVOKABLE void select_vid_dev(int i);
     Q_INVOKABLE void enable_video_capture_preview(int i);
 
-public:
-    void setClient_name(const QString& a) {
-        if(a != m_client_name)
-        {
-            m_client_name = a;
-            QByteArray b = a.toLatin1();
-            dwyco_set_client_version(b.constBegin(), b.length());
-            emit client_nameChanged();
-        }
-    }
-
-    QString client_name() const {
-        return m_client_name;
-    }
-
+    Q_INVOKABLE void set_badge_number(int i);
+    Q_INVOKABLE void refresh_directory();
 
 public slots:
     void app_state_change(Qt::ApplicationState);
+    void update_dwyco_client_name(QString);
+    void internal_cq_check(QString);
+    void dir_download_finished(QNetworkReply *);
 
 signals:
-    void client_nameChanged();
     void server_login(const QString& msg, int what);
     void chat_event(int cmd, int sid, const QString& huid, const QString &sname, QVariant vdata, int qid, int extra_arg);
     void new_msg(const QString& from_uid, const QString& txt, const QString& mid);
@@ -309,19 +313,19 @@ signals:
     void sc_rem_mute_unknown(QString uid);
 
 
-
-
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
-    void msg_recv_state(int cmd, const QString& mid);
-    void msg_recv_progress(const QString& mid, int percent);
+    void msg_recv_state(int cmd, const QString& mid, const QString& huid);
+    void msg_recv_progress(const QString& mid, const QString& ruid, const QString& msg, int percent);
     // dwyco video camera signals
     void camera_change(int cam_on);
     // zap composition record/play stopped
     void zap_stopped(int zid);
 
+    void mid_tag_changed(QString mid);
+
 private:
-    QString m_client_name;
+
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
 
 };

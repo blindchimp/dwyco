@@ -36,7 +36,6 @@ public:
     virtual int del(const D&) = 0;
 
     typedef DwIter<DwMaps<R,D> , DwAssocImp<R,D> > Foo;
-    //virtual DwAssocImp<R,D> get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *) const {return DwAssocImp<R,D>();}
     virtual DwMapsIter<R,D> *make_iter() const = 0;
     virtual DwAssocImp<R,D> get_by_iter(Foo *) const = 0;
 

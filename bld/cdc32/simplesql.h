@@ -2,32 +2,37 @@
 #define SIMPLESQL_H
 
 struct sqlite3;
-#include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
+#include "dwstr.h"
 
 
 namespace dwyco {
 
 class SimpleSql
 {
-    DwString dbname;
+    DwVec<DwString> dbnames;
+    DwVec<DwString> schema_names;
     sqlite3 *Db;
 
 public:
     SimpleSql(const DwString& nm) {
-        dbname = nm;
+        dbnames[0] = nm;
+        schema_names[0] = "main";
         Db = 0;
     }
-    ~SimpleSql() {
+    virtual ~SimpleSql() {
         if(Db)
             exit();
     }
 
-    vc sql_simple(const char *sql);
+    vc sql_simple(const char *sql, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil);
 
-    virtual void init_schema() {}
-    void init();
+    virtual void init_schema(const DwString& schema_name) {}
+    void attach(const DwString& dbname, const DwString& schema_name);
+    void detach(const DwString& schema_name);
+
+    int init();
     void exit();
     void start_transaction();
     void commit_transaction();

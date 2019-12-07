@@ -31,7 +31,7 @@
 // count will be incorrect if there are static inits
 // to vcnil that happen before the initial init of
 // TheNil. this may cause the deletion of nil, which
-// is a BAD THING. so, we kluge: we assume there are never
+// is bad. so, we kluge: we assume there are never
 // more than a few hundered static initializations that
 // happen before nil is initialized, and set the initial
 // value of the reference count of nil to (say) 200 and hope
@@ -126,9 +126,6 @@ vc_nil::double_eq(const vc&) const {return FALSE;}
 int
 vc_nil::double_ne(const vc&) const {return TRUE;}
 
-int
-vc_nil::func_eq(const vc&) const {return FALSE;}
-
 enum vc_type
 vc_nil::type() const { return VC_NIL; }
 int
@@ -158,13 +155,13 @@ vc_nil::stringrep(VcIO os) const
 }
 
 long
-vc_nil::xfer_out(vcxstream& v)
+vc_nil::xfer_out(vcxstream& )
 {
 	return 0;
 }
 
 long
-vc_nil::xfer_in(vcxstream& v)
+vc_nil::xfer_in(vcxstream& )
 {
 	return 0;
 }

@@ -27,9 +27,9 @@
 #include "mo.h"
 #include "sqrs.h"
 #include "statfun.h"
-//#define VERB(x) if(Verbose) {x}
+
 #define VERB(x)
-extern int Verbose;
+//extern int Verbose;
 void oopanic(const char *);
 
 int MV_codes[16] =

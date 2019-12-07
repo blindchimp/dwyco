@@ -80,36 +80,6 @@ DwTProfile::WriteString(const char *name, const char *val)
     save_info(map, section);
 }
 
-#if 0
-// this is *really* nasty
-void
-sync_from_map(SyncMap *sm, SyncMap *om)
-{
-    SyncMapIter i(sm);
-    for(; !i.eol(); i.forward())
-    {
-        SyncMapAssoc sa = i.get();
-        vc key = sa.get_key();
-        vc vp;
-        if(!om->find(key, vp))
-            continue;
-        void *p = (void *)(int)vp;
-        vc vv = sa.get_value();
-        switch(vv.type())
-        {
-        case VC_INT:
-            *(char *)p = (int)vv;
-            break;
-        case VC_STRING:
-            strcpy((char *)p, (const char *)vv);
-            break;
-
-        }
-
-    }
-}
-#endif
-
 void
 save_syncmap(SyncMap *sm, const char *file)
 {

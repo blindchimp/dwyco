@@ -12,22 +12,17 @@
 
 #include "vc.h"
 
-//#ifdef PERFHACKS
-//template<class R, class D> class DwAMap;
-//template<class R, class D> class DwAMapIter;
-//typedef DwAMap<vc,vc> VMAP;
-//typedef DwAMapIter<vc,vc> VMAPIter;
-//#else
-//template<class R, class D> class DwMapR;
-//template<class R, class D> class DwMapRIter;
-//typedef DwMapR<vc,vc> VMAP;
-//typedef DwMapRIter<vc,vc> VMAPIter;
-//#endif
-
-template<class R, class D> class DwMaps;
-template<class R, class D> class DwMapsIter;
-typedef DwMaps<vc,vc> VMAP;
-typedef DwMapsIter<vc,vc> VMAPIter;
+#ifdef PERFHACKS
+template<class R, class D> class DwAMap;
+template<class R, class D> class DwAMapIter;
+typedef DwAMap<vc,vc> VMAP;
+typedef DwAMapIter<vc,vc> VMAPIter;
+#else
+template<class R, class D> class DwMapR;
+template<class R, class D> class DwMapRIter;
+typedef DwMapR<vc,vc> VMAP;
+typedef DwMapRIter<vc,vc> VMAPIter;
+#endif
 
 class excctx;
 class excfun;

@@ -22,21 +22,25 @@
 #include "dhsetup.h"
 #include "vcudh.h"
 
+using namespace dwyco;
+
 void clear_local_ignore();
 void add_local_ignore(vc uid);
 void del_local_ignore(vc uid);
 vc get_local_ignore();
-vc generate_mac_msg(vc);
+
 int send_to_secondary(vc name, vc ip, vc port, QckMsg m, QckDone d);
 vc to_hex(vc);
 vc vclh_serialize(vc);
 vc vclh_sha(vc);
+extern int Database_id;
+extern int Chat_id;
 
+namespace dwyco {
 DwVec<QckDone> Waitq;
 DwListA<vc> Response_q;
 int Serial;
 
-vc Auto_update_hash;
 // this is used to figure out if there is a bulk operation
 // in progress and we want to eliminate timeouts
 // temporarily.
@@ -51,8 +55,7 @@ reqtype(const char *name, const QckDone& d)
     return v;
 }
 
-extern int Database_id;
-extern int Chat_id;
+
 
 static void
 dirth_send(QckMsg& m, QckDone& d)
@@ -256,6 +259,9 @@ dirth_poll_response()
                 QckDone q = Waitq[i];
                 if(!q.permanent)
                     Waitq.del(i);
+                // note: as long as you don't reference the Waitq after this
+                // it is safe for callbacks from "done" to call more commands
+                // that might q more commands
                 q.done(v);
                 if(q.time_qed != -1)
                 {
@@ -771,7 +777,7 @@ dirth_send_check_for_update(vc id, QckDone d)
     // send in a version number
     // hash value of the main executable
     m[2] = dwyco_get_version_string();
-    m[3] = Auto_update_hash;
+    m[3] = "";
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
 }
@@ -914,12 +920,4 @@ dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d)
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
 }
-
-void
-set_autoupdate_hash(vc hash)
-{
-    Auto_update_hash = hash;
-    GRTLOG("autoupdate hash =", 0, 0);
-    GRTLOGVC(to_hex(hash));
 }
-

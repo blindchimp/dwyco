@@ -22,7 +22,6 @@
 #include "dwscoped.h"
 using namespace dwyco;
 
-extern DwListA<vc> Response_q;
 extern vc Online;
 extern vc Chat_ips;
 extern vc Chat_ports;
@@ -210,7 +209,9 @@ MMChannel::chat_response(vc v)
         vc ah = v[4];
         vc ports = v[5];
         vc attrs = v[6];
+#ifdef DWYCO_ASSHAT
         new_asshole(uid, ah);
+#endif
         if(!uid_ignored(uid))
         {
             if(TheChatGrid)
@@ -267,8 +268,9 @@ MMChannel::chat_response(vc v)
             GRTLOGVC(ah);
             GRTLOGVC(ip);
             GRTLOGVC(attrs);
-
+#ifdef DWYCO_ASSHAT
             new_asshole(uid, ah);
+#endif
             if(!uid_ignored(uid))
             {
                 if(TheChatGrid)
@@ -290,7 +292,9 @@ MMChannel::chat_response(vc v)
     }
     else if(v[0] == asshole_update)
     {
+#ifdef DWYCO_ASSHAT
         new_asshole(v[1], v[2]);
+#endif
         if(TheChatGrid)
         {
             TheChatGrid->start_update();

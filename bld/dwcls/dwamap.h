@@ -23,11 +23,9 @@
 #define thdr template<class R, class D>
 #define tcls DwAMap<R,D>
 
-#define USE_GENERAL_MAP 3
-
 template<class R, class D> class DwAMapIter;
 template<class R, class D> class DwMapsIter;
-enum maptype {LAZYC, LAZYV, MAPR};
+
 
 thdr
 class DwAMap : public DwMaps<R,D>
@@ -38,12 +36,11 @@ private:
 
     DwMaps<R,D> *map;
     int can_contract;
-    int level;
-    static maptype exp_table[4];
     void expand();
     void contract();
-    DwMaps<R,D> *make_map(enum maptype, long size);
-    DwMaps<R,D> *make_map(enum maptype, long size, const R&, const D&);
+    DwMaps<R,D> *make_map(long size);
+    R dr;
+    R dd;
 
 public:
     DwAMap(const R&, const D&, unsigned int contr = 0);
@@ -64,10 +61,6 @@ public:
 };
 
 thdr
-maptype tcls::exp_table[4] =
-{LAZYC, LAZYC, LAZYC, LAZYV};
-
-thdr
 DwAssocImp<R,D>
 tcls::get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *a) const
 {
@@ -82,10 +75,10 @@ tcls::get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *a) const
 // and expanding maps at the moment.
 thdr
 tcls::DwAMap(const R& r, const D& d, unsigned int ctr)
+    : dd(d), dr(r)
 {
     can_contract = ctr;
-    level = 2;
-    map = make_map(exp_table[level], 32, r, d);
+    map = make_map(32, r, d);
     no_expand = 0;
 }
 
@@ -95,13 +88,11 @@ tcls::DwAMap(int isize, unsigned int ctr)
     can_contract = ctr;
     if(isize > 32)
     {
-        level = USE_GENERAL_MAP;
-        map = make_map(MAPR, isize);
+        map = make_map(isize);
     }
     else
     {
-        level = 2;
-        map = make_map(exp_table[level], 32);
+        map = make_map(32);
     }
     no_expand = 0;
 }
@@ -181,38 +172,17 @@ tcls::del(const D& key)
 
 thdr
 DwMaps<R,D> *
-tcls::make_map(enum maptype t, long size)
+tcls::make_map(long size)
 {
-    return make_map(t, size, R(), D());
-}
 
-thdr
-DwMaps<R,D> *
-tcls::make_map(enum maptype t, long size, const R& r, const D& d)
-{
-    switch(t)
-    {
-    case LAZYC:
-        if(size <= 8)
-            return new DwQMapLazyC<R,D,8>(r, d);
-        if(size <= 16)
-            return new DwQMapLazyC<R,D,16>(r, d);
-        if(size <= 32)
-            return new DwQMapLazyC<R,D,32>(r, d);
-        oopanic("size too big for lazyC map");
-    /*NOTREACHED*/
+    if(size <= 8)
+        return new DwQMapLazyC<R,D,8>(dr, dd);
+    if(size <= 16)
+        return new DwQMapLazyC<R,D,16>(dr, dd);
+    if(size <= 32)
+        return new DwQMapLazyC<R,D,32>(dr, dd);
+    return new DwMapR<R,D>(dr, dd, size);
 
-    case LAZYV:
-        return new DwQMapLazyV<R,D>(r, d, size);
-
-    case MAPR:
-        return new DwMapR<R,D>(r, d, size);
-
-    default:
-        oopanic("bad type in amap2");
-        /*NOTREACHED*/
-    }
-    return 0;
 }
 
 thdr
@@ -225,30 +195,15 @@ tcls::expand()
         // NOT REACHED
     }
     DwMaps<R,D> *new_map;
-    ++level;
-    if(level >= USE_GENERAL_MAP)
-        new_map = make_map(MAPR, /*next_prime(2 * map->num_elems())*/ 203);
+    int n = num_elems();
+    if(n <= 8)
+        n = 16;
+    else if(n <= 16)
+        n = 32;
     else
-    {
-        // if n is a power of 2, then we just want the next
-        // higher power. otherwise, we want the power of
-        // two one greater than the next level (this is because
-        // this routine is called just before the table gets
-        // full.)
-        unsigned int n = map->num_elems();
-        // if n is already a power of two, don't want to go
-        // two levels up...
-        int b;
-        if((n & (n - 1)) == 0)
-            b = 0;
-        else
-            b = 1;
-        int l;
-        for(l = 0; n ; ++l)
-            n >>= 1;
-        n = (1 << (l + b));
-        new_map = make_map(exp_table[level], n);
-    }
+        n= 203;
+
+    new_map = make_map(n);
 
     DwMapsIter<R,D> *i = map->make_iter();
     for(; !i->eol(); i->forward())

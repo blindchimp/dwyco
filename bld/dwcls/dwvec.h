@@ -134,9 +134,7 @@ public:
     long index(const T&) const;
     int contains(const T&) const;
     void apply(typename DwVec<T>::Funcp f);
-
-    virtual T get_by_iter(DwIter<DwVec<T>, T> *a) const ;
-
+    virtual T get_by_iter(DwIter<DwVec, T> *a) const ;
 #ifdef DWVEC_DOINIT
     void init_value(T& v) {
         if(initfun) (*initfun)(v);

@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_RATE_DISPLAY
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -103,3 +103,4 @@ DwRateMonitor::stop()
 {
     timer.stop();
 }
+#endif

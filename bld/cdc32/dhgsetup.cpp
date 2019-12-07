@@ -25,7 +25,7 @@ struct DHG_sql : public SimpleSql
 {
     DHG_sql() : SimpleSql("dhg.sql") {}
 
-    void init_schema() {
+    void init_schema(const DwString&) {
         sql_simple("create table if not exists keys ("
                    "uid text collate nocase, "
                    "alt_name text collate nocase, "
@@ -69,7 +69,7 @@ DH_alternate::new_account()
     try {
         DHG_db->start_transaction();
         VCArglist a;
-        a.append("insert into keys values($1, $2, $3, $4, $5)");
+        a.append("insert into keys values(?1, ?2, ?3, ?4, ?5)");
         a.append(to_hex(uid));
         a.append(alternate_name);
         vc v(VC_VECTOR);
@@ -99,7 +99,7 @@ DH_alternate::load_account(vc uid, vc alternate_name)
     vc res;
     try {
         VCArglist a;
-        a.append("select pubkey, privkey from keys where uid = $1 and alt_name = $2 order by time desc limit 1");
+        a.append("select pubkey, privkey from keys where uid = ?1 and alt_name = ?2 order by time desc limit 1");
         a.append(to_hex(uid));
         a.append(alternate_name);
         res = DHG_db->query(&a);

@@ -1,0 +1,4 @@
+Tue Oct 29 10:15:07 MDT 2019
+* reinstate optimizations in msglistmodel.cpp
+* possible re-port over to rando before we integrate into master
+* 

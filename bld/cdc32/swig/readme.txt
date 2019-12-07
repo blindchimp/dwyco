@@ -4,12 +4,15 @@ dwight melcher
 this is a tiny swig interface file to allow android to run a small
 message server as an android service, invoked from java.
 
-swig -java -package com.dwyco.phoo -o dwybg_wrap.c dwybg.i
+swig -java -package com.dwyco.cdc32 -o dwybg_wrap.c dwybg.i
 
-note: the package should match whatever the eventual package you
-are going to be including the java file into... in the case of Qt, there
-is a src/com/dwyco/phoo directory with java files used to implement the
-java service.
+note: the resulting java file would need to be put into a
+....<some java source dir>..../com/dwyco/cdc32
+i think.  for qt/qml, it is androidinst/src/com/dwyco/cdc32 .
+
+your other java files will need to import:
+import com.dwyco.cdc32.dwybg;
+ (or com.dwyco.cdc32.*, not sure.)
 
 NOTE NOTE!
 This will not work if you statically link the dwyco libraries into the

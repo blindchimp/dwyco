@@ -72,6 +72,7 @@
 
 #ifndef DWCLS_TIMER_H_
 #define DWCLS_TIMER_H_
+
 #undef DWCLS_TIMER_DBG
 /**
  * A timer.
@@ -95,6 +96,7 @@ typedef unsigned long dwtime_t;
 typedef long sdwtime_t;
 #endif
 typedef sdwtime_t clock_time_t;
+#include "dwstr.h"
 
 namespace dwyco {
 
@@ -102,21 +104,18 @@ struct timer {
     timer(const char *id = 0);
     ~timer();
     void stop();
-
+    static clock_time_t timer_next_expire(DwString&);
     clock_time_t start;
     clock_time_t interval;
-
+private:
 #ifdef DWCLS_TIMER_DBG
     char lid[100];
-    void print();
+    void sprint(char *buf = 0);
 #endif
-private:
-    // copy these things don't work atm
+    // copy things don't work atm
     timer(const timer&);
     timer& operator=(const timer&);
 };
-
-clock_time_t timer_next_expire();
 
 void timer_set(struct timer *t, clock_time_t interval);
 void timer_reset(struct timer *t);

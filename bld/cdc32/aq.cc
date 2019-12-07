@@ -70,6 +70,8 @@ initvfw()
 #endif
 }
 
+#ifndef DWYCO_NO_VIDEO_FROM_PPM
+static
 int
 init_raw_files(int mbox, DwString& fail_reason)
 {
@@ -93,6 +95,7 @@ init_raw_files(int mbox, DwString& fail_reason)
     TheAq = a;
     return 1;
 }
+#endif
 
 #include "aqext.h"
 
@@ -127,11 +130,14 @@ initaq(int mbox, DwString& fail_reason)
     fail_reason = "unknown";
     if(TheAq)
         return 1;
+#ifndef DWYCO_NO_VIDEO_FROM_PPM
     if(VidInputData.get_raw())
     {
         return init_raw_files(mbox, fail_reason);
     }
-    else if(ExternalVideoAcquisition)
+    else
+#endif
+            if(ExternalVideoAcquisition)
     {
         return init_external_video(mbox);
     }
