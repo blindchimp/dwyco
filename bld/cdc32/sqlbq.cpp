@@ -134,7 +134,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             break;
         case SQLITE_ROW:
         {
-            vc resrow(VC_VECTOR);
+            vc resrow(VC_VECTOR, 0, cols);
             for(int i = 0; i < cols; ++i)
             {
                 switch(sqlite3_column_type(st, i))

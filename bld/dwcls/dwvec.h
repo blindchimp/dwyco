@@ -44,9 +44,7 @@
 // note: undefine these for debugging.
 // nice performance boost with them
 // defined.
-// note: bc4.5 seems to have problems inlining
-// this stuff sometimes (weird compile errors)
-//#if defined(DBG) || (defined(__BCPLUSPLUS__) && __BCPLUSPLUS__ < 0x540)
+
 #if 0
 #undef DWVEC_INLINES
 #undef DWVEC_NO_INDEX_CHECK
@@ -83,7 +81,6 @@ template<class T> class DwVecIter;
 #ifndef DWVEC_DEFAULTBLOCKSIZE
 #define DWVEC_DEFAULTBLOCKSIZE 4
 #endif
-#define DWVEC_BLOCKSIZE blocksize
 #define DWVEC_FIXED 1
 #define DWVEC_AUTO_EXPAND 1
 
@@ -161,7 +158,7 @@ DwVec<T>::DwVec(const DwVec<T>& vec)
     is_fixed = vec.is_fixed;
     auto_expand = vec.auto_expand;
     blocksize = vec.blocksize;
-    alloced_count = count + DWVEC_BLOCKSIZE - (count % DWVEC_BLOCKSIZE);
+    alloced_count = count + blocksize - (count % blocksize);
     noinit = vec.noinit;
     values = new T[alloced_count];
     long real_count = alloced_count;
@@ -191,7 +188,7 @@ DwVec<T>::operator=(const DwVec<T>& vec)
         is_fixed = vec.is_fixed;
         auto_expand = vec.auto_expand;
         blocksize = vec.blocksize;
-        alloced_count = count + DWVEC_BLOCKSIZE - (count % DWVEC_BLOCKSIZE);
+        alloced_count = count + blocksize - (count % blocksize);
         noinit = vec.noinit;
         values = new T[alloced_count];
 
@@ -225,7 +222,7 @@ DwVec<T>::DwVec(long icount, int fixed, int aexp, long blksize,
     blocksize = blksize;
     noinit = anoinit;
 
-    alloced_count = real_count = count + DWVEC_BLOCKSIZE - (count % DWVEC_BLOCKSIZE);
+    alloced_count = real_count = count + blocksize - (count % blocksize);
     values = new T[real_count];
 
 #ifdef DWVEC_DOINIT
@@ -329,7 +326,7 @@ DwVec<T>::set_size(long new_count)
         new_alloc_count = lim;
     }
     else if(new_count > old_alloc_count)
-        new_alloc_count = new_count + DWVEC_BLOCKSIZE - (new_count % DWVEC_BLOCKSIZE);
+        new_alloc_count = new_count + blocksize - (new_count % blocksize);
     else
         new_alloc_count = old_alloc_count; // don't let it shrink
     count = new_count;
