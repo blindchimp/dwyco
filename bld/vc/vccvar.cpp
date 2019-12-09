@@ -202,11 +202,11 @@ vc_cvar::performance_hack(vc& atom) const
 	vc tmp = vc_list.get_first();
 	if(tmp.type() != VC_STRING)
 	{
-		((vc_cvar *)this)->nopf = 1;
+        nopf = 1;
 		return 0;
 	}
-	((vc_cvar *)this)->cached_atom = tmp;
-	((vc_cvar *)this)->use_cached_atom = 1;
+    cached_atom = tmp;
+    use_cached_atom = 1;
 	if(dont_map)
 	{
 		atom = tmp;
@@ -352,9 +352,7 @@ vc_cvar::eval() const
 void
 vc_cvar::next_tok()
 {
-
 	tok = lexer->next_token(tokval, toklen, atom_type);
-
 }
 
 void
@@ -502,30 +500,6 @@ vc_cvar::vprime(vc cvar)
 	}
 }
 
-
-#ifdef OLD_PARSE
-void
-vc_cvar::varlist(VCList *vlist)
-{
-	if(tok == ATOM || tok == LBRACKET || tok == LBRACE || tok == LTICK)
-    {
-		vc v = pvar();
-		vlist->append(v);
-		tail(vlist);
-	} // else expand empty
-}
-
-void
-vc_cvar::tail(VCList *vlist)
-{
-	if(tok == ATOM || tok == LBRACKET || tok == LBRACE || tok == LTICK)
-	{
-		varlist(vlist);
-		return;
-	}
-    // expand empty
-}
-#else
 void
 vc_cvar::varlist(VCList *vlist)
 {
@@ -535,8 +509,6 @@ vc_cvar::varlist(VCList *vlist)
 		vlist->append(v);
 	} // else expand empty
 }
-
-#endif
 
 void
 vc_cvar::stringrep(VcIO o) const
