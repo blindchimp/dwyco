@@ -410,7 +410,7 @@ Page {
             Image {
                 id: preview
                 anchors.fill: parent
-                visible: {PREVIEW_FILENAME != "" || HAS_AUDIO}
+                visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"

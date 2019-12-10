@@ -52,6 +52,7 @@ enum {
     HAS_SHORT_VIDEO,
     HAS_AUDIO,
     IS_FILE,
+    HAS_ATTACHMENT,
     IS_FORWARDED,
     IS_NO_FORWARD,
     DATE_CREATED,
@@ -824,6 +825,7 @@ msglist_raw::roleNames() const
     rn(HAS_SHORT_VIDEO);
     rn(HAS_AUDIO);
     rn(IS_FILE);
+    rn(HAS_ATTACHMENT);
     rn(IS_QD);
     rn(IS_ACTIVE);
     rn(IS_FORWARDED);
@@ -1097,6 +1099,9 @@ msglist_raw::inbox_data (int r, int role ) const
     case IS_FORWARDED:
         return 0;
 
+    case HAS_ATTACHMENT:
+        return false;
+
     case ATTACHMENT_PERCENT:
         if(!Mid_to_percent.contains(mid))
             return -1.0;
@@ -1259,6 +1264,14 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         }
         return 0;
 
+    }
+    else if(role == HAS_ATTACHMENT)
+    {
+        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_HAS_ATTACHMENT) == 0)
+        {
+            return QVariant(false);
+        }
+        return QVariant(true);
     }
     else if (role == IS_FORWARDED)
     {
