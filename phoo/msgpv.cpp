@@ -11,25 +11,13 @@
 #include <QPixmap>
 #include <QFile>
 #include <QImage>
+#include <QFileDevice>
+#include <QMap>
 #include "pfx.h"
 #include "msgpv.h"
 #include "dwycolistscoped.h"
 
 void cdcxpanic(const char *);
-
-
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        cdcxpanic("bogus list get");
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        cdcxpanic("bogus type");
-    return QByteArray(val, len);
-}
 
 struct img_info
 {
@@ -62,15 +50,15 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
     }
     simple_scoped sm(qsm);
     //local_time = gen_time(sm, 0);
-    QByteArray aname = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_ATTACHMENT);
+    QByteArray aname = sm.get<QByteArray>(DWYCO_QM_BODY_ATTACHMENT);
     if(aname.length() == 0)
     {
-        //dwyco_list_release(sm);
         return 0;
     }
     QByteArray cached_name = add_pfx(Tmp_pfx, aname);
     cached_name.replace(".dyc", "");
     cached_name.replace(".fle", "");
+
     if(QFile::exists(cached_name + ".jpg"))
     {
         preview_fn = cached_name + ".jpg";
@@ -91,8 +79,9 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
         preview_fn = cached_name + ".png";
         return 1;
     }
+
     QByteArray fn;
-    QByteArray user_filename = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_FILE_ATTACHMENT);
+    QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
     int is_file = user_filename.length() > 0;
     if(is_file)
     {
@@ -163,13 +152,14 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
 }
 
 int
-preview_unsaved_msg(DWYCO_UNSAVED_MSG_LIST sm, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
+preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
 {
     preview_fn = add_pfx(Sys_pfx, "no_img.png");
     file = 0;
 
     //local_time = gen_time(sm, 0);
-    QByteArray aname = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_ATTACHMENT);
+    dwyco_list sm(qsm);
+    QByteArray aname = sm.get<QByteArray>(DWYCO_QM_BODY_ATTACHMENT);
     if(aname.length() == 0)
     {
         return 0;
@@ -202,7 +192,7 @@ preview_unsaved_msg(DWYCO_UNSAVED_MSG_LIST sm, QByteArray& preview_fn, int& file
         return 1;
     }
     QByteArray fn;
-    QByteArray user_filename = dwyco_get_attr(sm, 0, DWYCO_QM_BODY_FILE_ATTACHMENT);
+    QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
     int is_file = user_filename.length() > 0;
     if(is_file)
     {

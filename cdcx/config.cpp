@@ -199,12 +199,12 @@ configform::load()
     if(dwyco_get_pals_only())
     {
         ui.pals_only->setChecked(1);
-        ui.CDC_zap__send_auto_reply->setEnabled(1);
+        //ui.CDC_zap__send_auto_reply->setEnabled(1);
     }
     else
     {
         ui.pals_only->setChecked(0);
-        ui.CDC_zap__send_auto_reply->setEnabled(0);
+        //ui.CDC_zap__send_auto_reply->setEnabled(0);
     }
 
 
@@ -333,15 +333,19 @@ void configform::on_CDC_net__primary_port_cursorPositionChanged(int , int )
 
 void configform::on_create_auto_reply_clicked()
 {
+#if 0
     composer *c = new composer_autoreply(Mainwinform);
     //c->set_uid(uid);
     c->show();
     c->raise();
+#endif
 }
 
 void configform::on_revert_auto_reply_clicked()
 {
+#if 0
     dwyco_set_auto_reply_msg(0, 0, 0);
+#endif
 }
 
 void configform::on_CDC_call_acceptance__max_audio_textChanged(QString val)

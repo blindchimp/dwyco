@@ -6,27 +6,13 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-using namespace std;
+
 #include <new>
 #ifdef _MSC_VER
 #define _Windows
 #include <direct.h>
 #endif
-#include <new>
-#ifndef _Windows
-#ifndef UNIX
-#ifdef __BORLANDC__
-#include <dos.h>
-#include <alloc.h>
-#endif
-#endif
-#endif
-#if defined(__GNUG__) && defined(MSDOS)
-#include <fcntl.h>
-extern int _fmode;
-#endif
 
-class Allocator;
 #include "vc.h"
 #include "vcio.h"
 
@@ -42,11 +28,6 @@ class Allocator;
 #include <signal.h>
 #include <unistd.h>
 #endif
-
-#ifdef __BORLANDC__
-#include <dir.h>
-#endif
-
 
 extern "C" void malloc_shutdown(void);
 extern "C" void malloc_debug(long);
@@ -64,10 +45,7 @@ main(int argc, char *argv[])
 void init_rct();
 init_rct();
 #endif
-#if defined(__GNUG__) && defined(__MSDOS__)
-	// for losing stream package "fix"
-	_fmode = O_BINARY;
-#endif
+
 #ifdef UNIX
 	//extern reg_syntax_t re_syntax_options;
 	//re_syntax_options |= RE_DOT_NEWLINE;
@@ -78,7 +56,7 @@ init_rct();
 	siginterrupt(SIGALRM, 1);
 #endif
 
-	set_new_handler(out_of_mem);
+    std::set_new_handler(out_of_mem);
 	int dec = 0;
 	if(argc >= 2 && argv[1][0] == '-' && argv[1][1] == 0)
 	{
@@ -207,17 +185,6 @@ init_rct();
 	vc::exit();
 	vc::shutdown_logs();
 	return 0;
-}
-
-void
-oopanic(char *s)
-{
-	printf("panic: %s\n", s);
-	fflush(stdout);
-#ifdef VCDBG_INTERACTIVE
-	drop_to_dbg("unrecoverable implementation bug", "bomb");
-#endif
-	exit(1);
 }
 
 void

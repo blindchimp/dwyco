@@ -107,20 +107,11 @@ private:
 	// recursive decent parsing functions
 	void varlist(VCList *);
 	vc pvar(void);
-#ifdef OLD_PARSE
-	void tail(VCList *);
-#endif
 	vc vprime(vc);
 
 	vc make_atom();
 
 	void dbg_print(int expr_num, const char *var_name) const;
-#if 0
-// some compilers choke on this
-	static void syntax_err(const char *msg,
-		vc_cvar_src_coord start = vc_cvar_src_coord(),
-		vc_cvar_src_coord end = vc_cvar_src_coord());
-#endif
 	void syntax_err(const char *msg);
 	void syntax_err(const char *msg, vc_cvar_src_coord, vc_cvar_src_coord);
 	void raise_compile_error();

@@ -17,6 +17,10 @@
 #include "pfx.h"
 #include "dwycolistscoped.h"
 #include "dwyco_new_msg.h"
+#include "dwyco_top.h"
+
+class DwycoCore;
+extern DwycoCore *TheDwycoCore;
 
 // note: this model integrates 3 lists when a particular uid is
 // selected: the saved message list, the inbox (just msgs from that uid) and
@@ -48,6 +52,7 @@ enum {
     HAS_SHORT_VIDEO,
     HAS_AUDIO,
     IS_FILE,
+    HAS_ATTACHMENT,
     IS_FORWARDED,
     IS_NO_FORWARD,
     DATE_CREATED,
@@ -58,7 +63,6 @@ enum {
     IS_FAVORITE,
     IS_HIDDEN,
     SELECTED,
-    DIRECT,
     FETCH_STATE,
     ATTACHMENT_PERCENT,
     ASSOC_UID, // who the message is from (or to, if sent msg)
@@ -130,7 +134,7 @@ gen_time(DWYCO_SAVED_MSG_LIST l, int row)
 
 static
 QString
-gen_time_unsaved(DWYCO_UNSAVED_MSG_LIST l, int row)
+gen_time_unsaved(DWYCO_UNFETCHED_MSG_LIST l, int row)
 {
     int hour;
     int minute;
@@ -173,9 +177,11 @@ msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int per
 }
 
 void
-msglist_model::msg_recv_status(int cmd, const QString &smid)
+msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
 {
     QByteArray mid = smid.toLatin1();
+    QByteArray huid = shuid.toLatin1();
+    QByteArray buid = QByteArray::fromHex(huid);
 
     int i = Fetching.indexOf(mid);
     switch(cmd)
@@ -193,7 +199,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         if(i >= 0)
             Fetching.removeAt(i);
         Delete_msgs.append(mid);
-        //del_unviewed_mid(mid);
         Mid_to_percent.remove(mid);
         break;
 
@@ -206,8 +211,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         // have not been fetched in a month or something. this will cause a bit of thrashing for
         // users that have a lot of messages that can't be fetched, but gives the best chance to get
         // a message in transient failure situations.
-        //Dont_refetch.insert(mid);
-        //del_unviewed_mid(mid);
 
         if(i >= 0)
             Fetching.removeAt(i);
@@ -215,11 +218,17 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         Manual_fetch.insert(mid);
         break;
     case DWYCO_SE_MSG_DOWNLOAD_OK:
-        // reload the inbox since a server messages
-        // just got transformed into a direct message
+
     {
         msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
         mr->reload_inbox_model();
+        add_unviewed(buid, mid);
+        dwyco_unset_msg_tag(mid.constData(), "_inbox");
+        TheDwycoCore->emit new_msg(shuid, "", smid);
+        TheDwycoCore->emit decorate_user(shuid);
+        if(uid() == shuid)
+            mid_tag_changed(smid);
+
     }
     // FALLTHRU
     default:
@@ -228,16 +237,15 @@ msglist_model::msg_recv_status(int cmd, const QString &smid)
         Mid_to_percent.remove(mid);
         Manual_fetch.remove(mid);
     }
-    int midi = mlm->mid_to_index(mid);
+    int midi = mid_to_index(mid);
     if(midi < 0)
         return;
-    QModelIndex mi = mlm->index(midi, 0);
+    QModelIndex mi = index(midi, 0);
     QVector<int> roles;
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
-    roles.append(DIRECT);
-    mlm->dataChanged(mi, mi, roles);
+    dataChanged(mi, mi, roles);
 }
 
 
@@ -328,12 +336,12 @@ msglist_model::mid_to_index(QByteArray bmid)
 void
 msglist_model::mid_tag_changed(QString mid)
 {
-    int midi = mlm->mid_to_index(mid.toLatin1());
-    QModelIndex mi = mlm->index(midi, 0);
+    int midi = mid_to_index(mid.toLatin1());
+    QModelIndex mi = index(midi, 0);
     QVector<int> roles;
     roles.append(IS_HIDDEN);
     roles.append(IS_FAVORITE);
-    mlm->dataChanged(mi, mi, roles);
+    dataChanged(mi, mi, roles);
 }
 
 void
@@ -344,10 +352,10 @@ msglist_model::delete_all_selected()
     {
         QByteArray mid = value.toLatin1();
         DWYCO_LIST l;
-        if(dwyco_get_unsaved_message(&l, mid.constData()))
+        if(dwyco_get_unfetched_message(&l, mid.constData()))
         {
             dwyco_list_release(l);
-            dwyco_delete_unsaved_message(mid.constData());
+            dwyco_delete_unfetched_message(mid.constData());
         }
         else if(dwyco_qd_message_to_body(&l, mid.constData(), mid.length()))
         {
@@ -558,17 +566,16 @@ msglist_raw::check_inbox_model()
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
 
     // optimization, to avoid resetting the model in common cases
-    DWYCO_UNSAVED_MSG_LIST new_im;
-    if(dwyco_get_unsaved_messages(&new_im, buid.constData(), buid.length()))
+    DWYCO_UNFETCHED_MSG_LIST new_im;
+    if(dwyco_get_unfetched_messages(&new_im, buid.constData(), buid.length()))
     {
         dwyco_list qnew_im(new_im);
 
         // see if the common case of a new record being right at the end
-        // or if a message fetch has finished and toggled the direct attribute
+        // or if a message fetch has finished
 
         if(qnew_im.rows() == count_inbox_msgs)
         {
-            {
             dwyco_list q_inbox_msgs(inbox_msgs);
             for(int i = 0; i < count_inbox_msgs; ++i)
             {
@@ -579,23 +586,7 @@ msglist_raw::check_inbox_model()
                     return 0;
                 }
             }
-            }
-
-            simple_scoped q_old_inbox(inbox_msgs);
-
-            inbox_msgs = qnew_im;
-            count_inbox_msgs = qnew_im.rows();
-            for(int i = 0; i < count_inbox_msgs; ++i)
-            {
-                if(qnew_im.is_nil(i, DWYCO_QMS_IS_DIRECT) != q_old_inbox.is_nil(i, DWYCO_QMS_IS_DIRECT))
-                {
-                    int k = count_inbox_msgs - i - 1;
-
-                    QModelIndex mi = index(k, 0);
-                    emit dataChanged(mi, mi);
-
-                }
-            }
+            qnew_im.release();
             return 1;
         }
         else if(qnew_im.rows() == 1 && count_inbox_msgs == 0)
@@ -645,7 +636,7 @@ msglist_raw::reload_inbox_model()
         return;
     }
 
-    dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());
+    dwyco_get_unfetched_messages(&inbox_msgs, buid.constData(), buid.length());
 
     if(inbox_msgs)
         dwyco_list_numelems(inbox_msgs, &count_inbox_msgs, 0);
@@ -712,6 +703,13 @@ msglist_raw::reload_model(int force)
 
 
     }
+
+    // note: i discovered that an initial empty model would
+    // react to a "resetmodel" by loading the entire model
+    // and creating delegates for all the elements in the model.
+    // this seems like a qt bug... if you use "insertrows" on the empty
+    // model, it does more what you would imagine: creates delegates just
+    // for what is needed, rather than the entire model.
     int end_reset = 0;
     if(msg_idx || qd_msgs || inbox_msgs)
     {
@@ -760,7 +758,7 @@ msglist_raw::reload_model(int force)
         //dwyco_list_print(msg_idx);
     }
     dwyco_get_qd_messages(&qd_msgs, buid.constData(), buid.length());
-    dwyco_get_unsaved_messages(&inbox_msgs, buid.constData(), buid.length());
+    dwyco_get_unfetched_messages(&inbox_msgs, buid.constData(), buid.length());
     if(msg_idx)
         dwyco_list_numelems(msg_idx, &count_msg_idx, 0);
     if(qd_msgs)
@@ -827,6 +825,7 @@ msglist_raw::roleNames() const
     rn(HAS_SHORT_VIDEO);
     rn(HAS_AUDIO);
     rn(IS_FILE);
+    rn(HAS_ATTACHMENT);
     rn(IS_QD);
     rn(IS_ACTIVE);
     rn(IS_FORWARDED);
@@ -837,7 +836,6 @@ msglist_raw::roleNames() const
     rn(IS_FAVORITE);
     rn(IS_HIDDEN);
     rn(SELECTED);
-    rn(DIRECT);
     rn(FETCH_STATE);
     rn(ATTACHMENT_PERCENT);
     rn(ASSOC_UID);
@@ -868,8 +866,6 @@ msglist_raw::qd_data ( int r, int role ) const
     {
         return Selected.contains(pers_id);
     }
-    case DIRECT:
-        return 0;
     case IS_QD:
         return 1;
     case IS_ACTIVE:
@@ -893,7 +889,7 @@ msglist_raw::qd_data ( int r, int role ) const
         QByteArray full_size;
         QByteArray pfn;
 
-        if(!preview_unsaved_msg(qsm, pfn, is_file, full_size, local_time))
+        if(!preview_msg_body(qsm, pfn, is_file, full_size, local_time))
             return QVariant("");
         return QString(pfn);
 
@@ -992,14 +988,14 @@ auto_fetch(QByteArray mid)
                 // NOTE: uid, dlv_mid must be copied out before next
                 // dll call
                 // hmmm, need new api to get uid/mid_out of delivered msg
-                dwyco_delete_unsaved_message(mid.constData());
+                dwyco_delete_unfetched_message(mid.constData());
                 return 0;
             }
 
         }
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
-
+        // note: we get msg_recv_status signals as the fetch proceeds
         int fetch_id = dwyco_fetch_server_message(mid.constData(), 0, 0, 0, 0);
         if(fetch_id != 0)
         {
@@ -1043,18 +1039,7 @@ msglist_raw::inbox_data (int r, int role ) const
     if(role == MID)
         return mid;
 
-    int direct = dwyco_get_attr_bool(inbox_msgs, r, DWYCO_QMS_IS_DIRECT);
-
     DWYCO_SAVED_MSG_LIST sm = 0;
-    if(direct)
-    {
-        if(!dwyco_unsaved_message_to_body(&sm, mid.constData()))
-        {
-            return QVariant();
-        }
-    }
-
-    simple_scoped qsm(sm);
 
     switch(role)
     {
@@ -1070,8 +1055,6 @@ msglist_raw::inbox_data (int r, int role ) const
     {
         return Fetching.contains(mid);
     }
-    case DIRECT:
-        return direct;
 
     case DATE_CREATED:
     {
@@ -1092,18 +1075,9 @@ msglist_raw::inbox_data (int r, int role ) const
 
     case MSG_TEXT:
     {
-        if(!direct)
-        {
-            auto_fetch(mid);
-            return "(fetching)";
-        }
-        DWYCO_LIST ba = dwyco_get_body_array(qsm);
-        simple_scoped qba(ba);
-        QByteArray txt;
-        if(!dwyco_get_attr(qba, 0, DWYCO_QM_BODY_NEW_TEXT2, txt))
-            return "";
+        auto_fetch(mid);
+        return "(fetching)";
 
-        return QVariant(QString(txt));
     }
     case FETCH_STATE:
     {
@@ -1124,6 +1098,9 @@ msglist_raw::inbox_data (int r, int role ) const
     case IS_HIDDEN:
     case IS_FORWARDED:
         return 0;
+
+    case HAS_ATTACHMENT:
+        return false;
 
     case ATTACHMENT_PERCENT:
         if(!Mid_to_percent.contains(mid))
@@ -1287,6 +1264,14 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         }
         return 0;
 
+    }
+    else if(role == HAS_ATTACHMENT)
+    {
+        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_HAS_ATTACHMENT) == 0)
+        {
+            return QVariant(false);
+        }
+        return QVariant(true);
     }
     else if (role == IS_FORWARDED)
     {

@@ -19,9 +19,6 @@
 class vcxstream;
 
 #include "dwlista.h"
-#ifndef BTYPES
-#include "dwbagr.h"
-#include "dwsetr.h"
 #include "dwbag.h"
 #include "dwset.h"
 #include "dwmapr.h"
@@ -36,28 +33,12 @@ typedef DwSetIter<vc> VcSetIter;
 // items (which mucks up equality checking.)
 // mapr works because there is a level of
 // indirection
-//typedef DwBagR<vc> VcBagImp;
-//typedef DwBagRIter<vc> VcBagIter;
-//typedef DwSetR<vc> VcSetImp;
-//typedef DwSetRIter<vc> VcSetIter;
 typedef DwMapR<vc,vc> VcMapImp;
 typedef DwMapRIter<vc,vc> VcMapIter;
 typedef DwTreeKaz<vc,vc> VcTreeImp;
 typedef DwTreeKazIter<vc,vc> VcTreeIter;
 typedef DwTreeKazIter<vc,vc> VcTreeIterPre;
 
-#else
-#include "dwset.h"
-#include "dwbag.h"
-#include "dwmap.h"
-typedef DwBag<vc> VcBagImp;
-typedef DwBagIter<vc> VcBagIter;
-typedef DwSet<vc> VcSetImp;
-typedef DwSetIter<vc> VcSetIter;
-// note: dwmap is broken, don't use
-typedef DwMap<vc,vc> VcMapImp;
-typedef DwMapIter<vc,vc> VcMapIter;
-#endif
 
 typedef DwVecIter<vc> VcVecIter;
 
