@@ -152,7 +152,7 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
 }
 
 int
-preview_unsaved_msg(DWYCO_UNSAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
+preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
 {
     preview_fn = add_pfx(Sys_pfx, "no_img.png");
     file = 0;

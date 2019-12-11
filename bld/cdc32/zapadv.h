@@ -23,14 +23,9 @@ public:
     DWUIDECLVAL(bool, always_server)
     DWUIDECLVAL(bool, always_accept)
     DWUIDECLVAL(bool, ignore)
-    DWUIDECLVAL(bool, recv_all)
-    DWUIDECLVAL(bool, zsave)
     DWUIDECLVAL(bool, use_old_timing)
     DWUIDECLVAL(bool, save_sent)
-//DWUIDECLVAL(bool, only_pals)
     DWUIDECLVAL(bool, no_forward_default)
-    DWUIDECLVAL(const char *, auto_reply_mid)
-    DWUIDECLVAL(bool, send_auto_reply)
     DWUIDECL_END
 };
 

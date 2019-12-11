@@ -125,7 +125,7 @@ close_cb(uv_handle_t *h)
         // the dtor for uvsocket invalidates the object, but we
         // still need to delete the handle
     }
-	delete h;
+    delete (uv_tcp_t *)h;
 }
 
 // if we are destroying one of these things,

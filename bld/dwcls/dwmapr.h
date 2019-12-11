@@ -11,7 +11,7 @@
 #ifndef DWMAPR_H
 #define DWMAPR_H
 
-#include "dwsetr.h"
+#include "dwbag.h"
 #include "dwassoc.h"
 #include "dwmaps.h"
 #include "dwiter.h"
@@ -25,7 +25,7 @@ class DwMapR : public DwMaps<R,D>
 
 private:
     R def;
-    DwBagR<DwAssocImp<R,D> > set;
+    DwBag<DwAssocImp<R,D> > set;
 
 public:
     DwMapR(const R& defr, const D& defd, unsigned int tsize = 31);
@@ -40,7 +40,6 @@ public:
     int replace(const D&, const R&, R** wp = 0);
     R get(const D&);
     int del(const D&);
-    void fast_clear();
 
     DwAssocImp<R,D> get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *a) const;
     DwMapsIter<R,D> *make_iter() const;
@@ -71,13 +70,6 @@ void
 tcls::set_size(int sz)
 {
     set.set_size(sz);
-}
-
-thdr
-void
-tcls::fast_clear()
-{
-    set.clear();
 }
 
 thdr
@@ -183,7 +175,7 @@ class DwMapRIter : public DwMapsIter<R,D>
 {
     friend class DwMapR<R,D>;
 private:
-    DwBagRIter<DwAssocImp<R,D> > iter;
+    DwBagIter<DwAssocImp<R,D> > iter;
 
 public:
     DwMapRIter(const DwMapR<R,D> *t) : DwMapsIter<R,D>(t) , iter(&t->set) {}
