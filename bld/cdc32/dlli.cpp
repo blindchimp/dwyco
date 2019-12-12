@@ -8933,6 +8933,8 @@ dwyco_signal_msg_cond()
 
 }
 
+// the java stuff calls into this in another thread
+// when we signal, it means a new message has arrived
 DWYCOEXPORT
 void
 dwyco_wait_msg_cond(int ms)
@@ -9169,6 +9171,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     vc asock = vc(VC_SOCKET_STREAM);
     asock.socket_init(s, vctrue);
     dwyco_signal_msg_cond();
+    int signaled = 0;
+    int started_fetches = 0;
     while(1)
     {
         int spin = 0;
@@ -9194,17 +9198,18 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
             return 1;
 #endif
-
-        DwString uid;
-        DwString mid;
         if(dwyco_get_rescan_messages())
         {
             dwyco_set_rescan_messages(0);
-            while(ns_dwyco_background_processing::fetch_to_inbox(uid, mid))
+            if(ns_dwyco_background_processing::fetch_to_inbox())
+                started_fetches = 1;
+            int tmp;
+            if(started_fetches && (tmp = sql_count_tag("_inbox")) > signaled)
             {
-                //emit new_msg(uid, txt, mid);
+                signaled = tmp;
+                started_fetches = 0;
+                dwyco_signal_msg_cond();
             }
-            dwyco_signal_msg_cond();
         }
         // note: this is a bit sloppy... rather than trying to
         // identify each socket that is waiting for write and
