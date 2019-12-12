@@ -20,10 +20,6 @@ import android.content.SharedPreferences;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.File;
-import java.util.Arrays;
 import android.os.Build;
 import android.os.Build.VERSION;
 
@@ -151,62 +147,11 @@ public class DwycoSender extends Service {
         Thread t = new Thread(new Runnable() {
             public void run() {
                 catchLog("poll thread");
-                String responseMessage = "";
-                SharedPreferences sp;
-                dwybg.dwyco_wait_msg_cond(0);
-
-                prefs_lock.lock();
-
-                sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
-                String inboxdir = sp.getString("user_pfx", ".");
-                prefs_lock.release();
-                inboxdir += "/inbox";
-
-                while(true) {
-
-                    try
-                    {
-                        File f = new File(inboxdir);
-                        String[] foo = f.list();
-                        if(foo.length == 0)
-                        {
-                            local_files = foo;
-                            catchLog("no files");
-                        }
-                        else
-                        {
-                            Arrays.sort(foo);
-                            int i;
-                            for(i = 0; i < foo.length; ++i)
-                            {
-                                if(Arrays.binarySearch(local_files, foo[i]) < 0)
-                                {
-                                    set_msg_notification();
-                                    break;
-                                }
-                            }
-                            local_files = foo;
-                            if(i == foo.length)
-                                catchLog("no new file count " + Integer.toString(foo.length));
-                            else
-                                catchLog("file count " + Integer.toString(foo.length));
-
-                        }
-                    }
-                    catch(Exception e)
-                    {
-                        catchLog("file check failed " + e);
-                    }
-
-                dwybg.dwyco_wait_msg_cond(0);
-                    //try {
-                    //    Thread.sleep(20 * 1000);
-                    //
-                    //} catch(InterruptedException ex) {
-                   //     Thread.currentThread().interrupt();
-                    //}
+                while(true)
+                {
+                    dwybg.dwyco_wait_msg_cond(0);
+                    set_msg_notification();
                 }
-
             }
         });
         t.start();
@@ -249,8 +194,6 @@ public class DwycoSender extends Service {
         Notification not = m_builder.getNotification();
         m_notificationManager.notify(1, not);
     }
-
-    
 
     private void set_notification() {
         NotificationManager m_notificationManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
