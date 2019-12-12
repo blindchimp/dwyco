@@ -9200,14 +9200,15 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #endif
         if(dwyco_get_rescan_messages())
         {
+            GRTLOG("rescan %d %d", started_fetches, signaled);
             dwyco_set_rescan_messages(0);
-            if(ns_dwyco_background_processing::fetch_to_inbox())
-                started_fetches = 1;
+            ns_dwyco_background_processing::fetch_to_inbox();
+            GRTLOG("rescan2 %d %d", started_fetches, signaled);
             int tmp;
-            if(started_fetches && (tmp = sql_count_tag("_inbox")) > signaled)
+            if((tmp = sql_count_tag("_inbox")) > signaled)
             {
+                GRTLOG("signaling newcount %d", tmp, 0);
                 signaled = tmp;
-                started_fetches = 0;
                 dwyco_signal_msg_cond();
             }
         }
