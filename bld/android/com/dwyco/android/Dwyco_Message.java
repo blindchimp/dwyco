@@ -17,13 +17,6 @@ import android.os.IBinder;
 import android.app.IntentService;
 import android.content.SharedPreferences;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.File;
-import java.util.Arrays;
 import android.os.Build;
 import android.os.Build.VERSION;
 
@@ -130,8 +123,8 @@ public class Dwyco_Message extends StickyIntentService {
         Thread t = new Thread(new Runnable() {
             public void run() {
                 catchLog("poll thread");
-                String responseMessage = "";
-                SharedPreferences sp;
+                // first signal is just an indicator that init is done
+                dwybg.dwyco_wait_msg_cond(0);
                 while(true)
                 {
                     dwybg.dwyco_wait_msg_cond(0);

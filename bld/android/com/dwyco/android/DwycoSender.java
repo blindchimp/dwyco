@@ -17,9 +17,6 @@ import android.os.IBinder;
 import android.app.IntentService;
 import android.content.SharedPreferences;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
 import android.os.Build;
 import android.os.Build.VERSION;
 
@@ -147,6 +144,8 @@ public class DwycoSender extends Service {
         Thread t = new Thread(new Runnable() {
             public void run() {
                 catchLog("poll thread");
+                // first signal is just indicator that init is done
+                dwybg.dwyco_wait_msg_cond(0);
                 while(true)
                 {
                     dwybg.dwyco_wait_msg_cond(0);
