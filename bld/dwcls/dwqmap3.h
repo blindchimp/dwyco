@@ -55,7 +55,6 @@ private:
 
     void init1(int);
     void setdel(long);
-    void setempty(long);
     void setfull(long);
     void initdel(long);
     void exitdel();
@@ -256,7 +255,6 @@ tcls::del(const D& key)
     if(!found)
         return 0;
     setdel(idx);
-    setempty(idx);
     --count;
     return 1;
 }
@@ -298,18 +296,6 @@ tcls::setfull(long idx)
     used |= (1UL << idx);
     deleted &= ~(1UL << idx);
 }
-
-thdr
-inline void
-tcls::setempty(long idx)
-{
-#ifdef CAREFUL
-    if(idx < 0 || idx >= size)
-        oopanic("bad empty idx");
-#endif
-    //used &= ~(1UL << idx);
-}
-
 
 thdr
 long
@@ -438,7 +424,6 @@ protected:
     void copy(const DwQMapLazy&);
 
 public:
-    //DwQMapLazy(const R& r, const D& d, unsigned int sz = 8);
     DwQMapLazy(unsigned int sz = 8);
     // note: default ctor, op= work ok
     ~DwQMapLazy();
@@ -577,7 +562,6 @@ private:
 
 
 public:
-    //DwQMapLazyC(const R& r, const D& d) : DwQMapLazy<R,D>(r, d, elems) {}
     DwQMapLazyC() : DwQMapLazy<R,D>(elems) {}
     DwQMapLazyC(const DwQMapLazyC& s) {
         if(elems < s.size) oopanic("bad lazy ctor");
@@ -596,131 +580,6 @@ public:
         this->destr_fun();
     }
 };
-
-// these were never used
-#if 0
-// lazy with storage alloced outside object
-template<class R, class D>
-class DwQMapLazyV : public DwQMapLazy<R,D>
-{
-private:
-    char *rng;
-    char *dom;
-
-    R *addr_rng(long i) const {
-        return (R*)(rng + i * sizeof(R));
-    }
-    D *addr_dom(long i) const {
-        return (D*)(dom + i * sizeof(D));
-    }
-
-public:
-    DwQMapLazyV(const R& r, const D& d, unsigned int sz = 8)
-        : DwQMapLazy<R,D>(r, d, sz) {
-        rng = new char [sz * sizeof(R)];
-        dom = new char [sz * sizeof(D)];
-    }
-    DwQMapLazyV(unsigned int sz = 8) : DwQMapLazy<R,D>(sz) {
-        rng = new char [sz * sizeof(R)];
-        dom = new char [sz * sizeof(D)];
-    }
-    DwQMapLazyV(const DwQMapLazyV& s) {
-        copy(s);
-    }
-    const DwQMapLazyV& operator=(const DwQMapLazyV& s) {
-        if(this != &s)
-        {
-            this->destr_fun();
-            copy(s);
-        }
-        return *this;
-    }
-    ~DwQMapLazyV() {
-        this->destr_fun();
-        delete [] rng;
-        delete [] dom;
-    }
-};
-#undef thdr
-#undef tcls
-
-// eager initialization
-
-#define thdr template<class R, class D>
-#define tcls DwQMapEager<R,D>
-thdr
-class DwQMapEager : public DwQMap<R,D>
-{
-private:
-    DwVec<R> rng;
-    DwVec<D> dom;
-
-    virtual void add_assoc(const D& key, const R& val, long idx);
-    virtual const R& get_rng(long idx) const;
-    virtual void set_rng(const R&, long idx);
-    virtual const D& get_dom(long idx) const;
-
-public:
-    DwQMapEager(const R& r, const D& d, unsigned int sz = 8);
-    DwQMapEager(unsigned int sz = 8);
-    // note: default ctor/ op= work ok.
-    ~DwQMapEager();
-
-};
-
-thdr
-tcls::DwQMapEager(const R& r, const D& d, unsigned int sz)
-    : DwQMap<R,D>(r, d, sz), rng(sz, 1, 0), dom(sz, 1, 0)
-{
-
-}
-
-thdr
-tcls::DwQMapEager(unsigned int sz)
-    : DwQMap<R,D>(sz), rng(sz, 1, 0), dom(sz, 1, 0)
-{
-}
-
-
-thdr
-tcls::~DwQMapEager()
-{
-
-}
-
-thdr
-inline
-void
-tcls::add_assoc(const D& key, const R& val, long idx)
-{
-    rng[idx] = val;
-    dom[idx] = key;
-}
-
-thdr
-inline
-const R&
-tcls::get_rng(long idx) const
-{
-    return rng[idx];
-}
-
-thdr
-inline
-void
-tcls::set_rng(const R& r, long idx)
-{
-    rng[idx] = r;
-}
-
-thdr
-inline
-const D&
-tcls::get_dom(long idx) const
-{
-    return dom[idx];
-}
-#endif
 
 #undef thdr
 #undef tcls
