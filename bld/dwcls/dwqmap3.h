@@ -49,9 +49,6 @@ class DwQMap : public DwMaps<R,D>
     friend class DwQMapIter<R,D>;
 
 private:
-    R dr;	// default range
-    D dd;	// default domain
-
     int count;				// number of elements in table
     int thresh;				// number of elements where ops degrade
     unsigned long deleted;
@@ -85,8 +82,6 @@ protected:
 public:
     typedef DwIter<DwMaps<R,D> , DwAssocImp<R,D> > Foo;
     DwAssocImp<R,D> get_by_iter(Foo *) const;
-    DwQMap(const R& defr, const D& defd);
-    DwQMap(const R& defr, const D& defd, int);
     DwQMap(int);
     DwQMap();
     // note: default ctor, op= work ok.
@@ -99,7 +94,7 @@ public:
     int replace(const D&, const R&, R** wp = 0);
     R get(const D&);
     int del(const D&);
-    //virtual DwAssocImp<R,D> get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *) const;
+
     virtual DwMapsIter<R,D> *make_iter() const;
 
     int over_threshold() const {
@@ -155,20 +150,6 @@ tcls::init1(int maxsz)
 
 thdr
 tcls::DwQMap(int maxsz)
-{
-    init1(maxsz);
-}
-
-thdr
-tcls::DwQMap(const R& r, const D& d)
-    : dd(d), dr(r)
-{
-    init1(8);
-}
-
-thdr
-tcls::DwQMap(const R& r, const D& d, int maxsz)
-    : dd(d), dr(r)
 {
     init1(maxsz);
 }
@@ -262,7 +243,7 @@ tcls::get(const D& key)
     int found;
     long idx = search(key, found);
     if(!found)
-        return dr;
+        return R();
     return get_rng(idx);
 }
 
@@ -424,7 +405,7 @@ tcls::get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *a) const
     typedef DwQMapIter<R,D> dmi_t;
     dmi_t *t = (dmi_t *)a;
     if(t->eol())
-        return DwAssocImp<R,D>(dr, dd);
+        return DwAssocImp<R,D>(R(), D());
     DwAssocImp<R,D> ret(get_rng(t->cur_buck), get_dom(t->cur_buck));
     return ret;
 }
@@ -457,19 +438,12 @@ protected:
     void copy(const DwQMapLazy&);
 
 public:
-    DwQMapLazy(const R& r, const D& d, unsigned int sz = 8);
+    //DwQMapLazy(const R& r, const D& d, unsigned int sz = 8);
     DwQMapLazy(unsigned int sz = 8);
     // note: default ctor, op= work ok
     ~DwQMapLazy();
 
 };
-
-thdr
-tcls::DwQMapLazy(const R& r, const D& d, unsigned int sz)
-    : DwQMap<R,D>(r, d, sz)
-{
-
-}
 
 thdr
 tcls::DwQMapLazy(unsigned int sz)
@@ -603,7 +577,7 @@ private:
 
 
 public:
-    DwQMapLazyC(const R& r, const D& d) : DwQMapLazy<R,D>(r, d, elems) {}
+    //DwQMapLazyC(const R& r, const D& d) : DwQMapLazy<R,D>(r, d, elems) {}
     DwQMapLazyC() : DwQMapLazy<R,D>(elems) {}
     DwQMapLazyC(const DwQMapLazyC& s) {
         if(elems < s.size) oopanic("bad lazy ctor");
