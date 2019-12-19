@@ -57,7 +57,6 @@ private:
     void setdel(long);
     void setfull(long);
     void initdel(long);
-    void exitdel();
 
     static long dum;
     static const int rehash32[31];
@@ -156,7 +155,6 @@ tcls::DwQMap(int maxsz)
 thdr
 tcls::~DwQMap()
 {
-    exitdel();
 }
 
 thdr
@@ -265,12 +263,6 @@ tcls::initdel(long isize)
 {
     deleted = 0;
     used = 0;
-}
-
-thdr
-void
-tcls::exitdel()
-{
 }
 
 thdr
@@ -449,7 +441,11 @@ thdr
 void
 tcls::destr_fun()
 {
-    //unsigned long u = used;
+    // note: we didn't explicitly destroy any entries that
+    // were deleted using "del". we simply flagged them.
+    // so we need to destroy any cell that is currently "used"
+    // at this point.
+
 // WARNING: problems here with long/int on 64 bit stuff
 // previous version of this function would be more
 // general, but this is faster.
@@ -481,6 +477,10 @@ thdr
 void
 tcls::copy(const DwQMapLazy<R,D>& s)
 {
+    // note: the default copy ctors work ok since they are just
+    // copying over the bits for used, deleted, etc.
+    // here we need to specially copy in the proper elements
+    // explicitly.
     unsigned long u = s.used;
     for(int i = 0; u && i < s.size; ++i)
     {
