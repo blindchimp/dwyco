@@ -37,9 +37,6 @@ static DwQueryByMember<SimpleSocket> SSQbm;
 
 vc LocalIP;
 
-static vc Wouldblock("wouldblock");
-static vc Resumable("resumable");
-
 int FrameSocket::dummy;
 int FrameSocket::always_zero;
 
@@ -94,10 +91,6 @@ SimpleSocket::wouldblock()
     if(q_empty && !saw_hard_error)
         return 1;
     return 0;
-
-    if(sock.is_nil())
-        return 0;
-    return sock.socket_error() == Wouldblock;
 }
 
 int
