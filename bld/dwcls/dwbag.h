@@ -126,6 +126,7 @@ DwBag<T>::clear()
         delete table[i];
         table[i] = 0;
     }
+    count = 0;
 }
 
 
