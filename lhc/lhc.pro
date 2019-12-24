@@ -38,14 +38,13 @@ $${D}/bld/crypto5/libcrypto5.a \
 $${D}/bld/jenkins/libjenkins.a \
 $${D}/bld/kazlib/libkazlib.a \
 $${D}/bld/zlib/libzlib.a \
-$${D}/bld/libuv/libuv.a
+$${D}/lib/libuv.a
 
 
 
 macx-* {
 LIBS += \
-$${D}/lib/libspread.a \
-$${D}/lib/libuv.a
+$${D}/lib/libspread.a
 
 LIBS += -framework Foundation -framework CoreServices -lsqlite3 -lpthread -ldl
 }
