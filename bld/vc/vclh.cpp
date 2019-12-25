@@ -3044,11 +3044,7 @@ vc::init_rest()
     makefun("div", VC2(dodiv, "div", VC_FUNC_BUILTIN_LEAF, trans_dodiv));
     makefun("mul", VC2(domul, "mul", VC_FUNC_BUILTIN_LEAF, trans_domul));
     makefun("add", VC2(doadd, "add", VC_FUNC_BUILTIN_LEAF, trans_doadd));
-	makefun("+", VC2(doadd, "+", VC_FUNC_BUILTIN_LEAF, trans_doadd));
     makefun("sub", VC2(dosub, "sub", VC_FUNC_BUILTIN_LEAF, trans_dosub));
-	makefun("-", VC2(dosub, "-", VC_FUNC_BUILTIN_LEAF, trans_dosub));
-	makefun("++", VC(incrfun, "++", VC_FUNC_BUILTIN_LEAF));
-	makefun("--", VC(decrfun, "--", VC_FUNC_BUILTIN_LEAF));
 	makefun("incr", VC(incrfun, "incr", VC_FUNC_BUILTIN_LEAF));
 	makefun("decr", VC(decrfun, "decr", VC_FUNC_BUILTIN_LEAF));
 
@@ -3148,11 +3144,6 @@ vc::init_rest()
 	makefun("excdhandle", VC(doexcdhandle, "excdhandle", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 	makefun("excraise", VC(doexcraise, "excraise", VC_FUNC_BUILTIN_LEAF));
 	makefun("excset-handler-ret", VC(dosethandlerret, "excset-handler-ret", VC_FUNC_BUILTIN_LEAF));
-
-#if 0
-	makefun("excdisable", Doexcdisable);
-	makefun("excenable", Doexcenable);
-#endif
 	makefun("excbackout", VC(doexcbackout, "excbackout", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 
 	// I/O
@@ -3399,24 +3390,6 @@ vc::init_rest()
 #endif
 	makefun("dump-flat-profile", VC(dump_flat_profile, "dump-flat-profile", VC_FUNC_BUILTIN_LEAF));
 
-#ifdef USE_VERFS
-	void vcverfs_lhinit();
-	vcverfs_lhinit();
-#endif
-
-
-#ifdef LH_WRAP_CURSES
-void wrapper_init_curses_xml();
-wrapper_init_curses_xml();
-#endif
-#ifdef LH_WRAP_CDK
-void wrapper_init_cdk_xml();
-wrapper_init_cdk_xml();
-#endif
-#ifdef LH_WRAP_DLLI
-void wrapper_init_dlli_xml();
-wrapper_init_dlli_xml();
-#endif
 #ifdef LH_WRAP_SQLITE3
 void wrapper_init_sqlite3();
 wrapper_init_sqlite3();
