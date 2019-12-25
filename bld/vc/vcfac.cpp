@@ -94,7 +94,7 @@ vc_factory_def::vc_factory_def(const vc& fac_name, vc& args,
 
 	if(n % 2 != 0)
 	{
-		USER_BOMB2("args to fac def must be even")
+        USER_BOMB2("args to fac def must be even");
 		/*NOTREACHED*/
 	}
 	for(i = 0; i < n; i += 2)

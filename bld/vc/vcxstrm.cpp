@@ -10,9 +10,6 @@
 #include <climits>
 #include "dwvec.h"
 #include "dwvecp.h"
-#ifdef __BORLANDC__
-#include "mem.h"
-#endif
 #include "string.h"
 #include "vcxstrm.h"
 

@@ -14,7 +14,7 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <time.h>
-#if !defined(__MSDOS__) && !defined(_Windows) && !defined(_MSC_VER)
+#if !defined(_Windows) && !defined(_MSC_VER)
 #include <unistd.h>
 #endif
 #include "vc.h"
@@ -2584,9 +2584,6 @@ doprog(VCArglist *)
 vc
 vclh_fmt(vc item, vc fmt)
 {
-#if defined(__BORLANDC__) && __BORLANDC__ < 0x500
-USER_BOMB("no fmt for this old version of bcc", vcnil);
-#else
 	char s[4096];
 	size_t len;
 	switch(item.type())
@@ -2650,7 +2647,6 @@ USER_BOMB("no fmt for this old version of bcc", vcnil);
 		USER_BOMB("can't format non-atomics", vcnil);
 	}
 	return vcnil;
-#endif
 }
 
 
