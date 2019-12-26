@@ -31,7 +31,6 @@
 
 #include "vc.h"
 #include "vcwsock.h"
-#include "lhboot.h"
 #include "vccrypt2.h"
 
 #include "aq.h"
