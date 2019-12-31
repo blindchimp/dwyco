@@ -3037,8 +3037,8 @@ vc::init_rest()
     makefun("mul", VC2(domul, "mul", VC_FUNC_BUILTIN_LEAF, trans_domul));
     makefun("add", VC2(doadd, "add", VC_FUNC_BUILTIN_LEAF, trans_doadd));
     makefun("sub", VC2(dosub, "sub", VC_FUNC_BUILTIN_LEAF, trans_dosub));
-	makefun("incr", VC(incrfun, "incr", VC_FUNC_BUILTIN_LEAF));
-	makefun("decr", VC(decrfun, "decr", VC_FUNC_BUILTIN_LEAF));
+	makefun("++", VC(incrfun, "++", VC_FUNC_BUILTIN_LEAF));
+	makefun("--", VC(decrfun, "--", VC_FUNC_BUILTIN_LEAF));
 
     // variable binding
 	makefun("bind", VC(bindfun, "bind", VC_FUNC_BUILTIN_LEAF));
