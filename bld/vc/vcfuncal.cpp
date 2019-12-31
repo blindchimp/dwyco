@@ -51,14 +51,14 @@ VcFuncallDbgNode::VcFuncallDbgNode(const vc_funcall *v)
 int
 VcFuncallDbgNode::has_brief()
 {
-	char *r = strrchr(fc->start.filename, '/');
-	if(!r)
-		r = strrchr(fc->start.filename, '\\');
+    int r = fc->start.filename.rfind("/");
+    if(r == DwString::npos)
+        r = fc->start.filename.rfind("\\");
 	vc file;
-	if(r)
-		file = vc(r + 1);
+    if(r != DwString::npos)
+        file = vc(fc->start.filename.c_str() + r + 1);
 	else
-		file = vc(fc->start.filename);
+        file = vc(fc->start.filename.c_str());
 	
 	static vc debug("lhdbg.lh");
 	static vc userinp("__lh_user_input");
@@ -72,7 +72,7 @@ VcFuncallDbgNode::printOnBrief(VcIOHack &os)
 {
 	VcDebugNode::printOnBrief(os);
 	vc name;
-	os << fc->start.filename << ":" <<
+    os << fc->start.filename.c_str() << ":" <<
 		 fc->start.linenum << ", ";
 	if(info == vc("Finding function"))
 	{
@@ -154,7 +154,7 @@ VcFuncallDbgNode::printOn(VcIO os)
 {
 	VcDebugNode::printOn(os);
 	vc name;
-	os << "---Funcall near line " << fc->start.filename << ":" <<
+    os << "---Funcall near line " << fc->start.filename.c_str() << ":" <<
 		 fc->start.linenum << ", ";
 	if(info == vc("Finding function"))
 	{

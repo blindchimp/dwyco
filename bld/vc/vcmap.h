@@ -24,8 +24,8 @@
 #define USER_BOMB2(str) do {user_panic(str); Vcmap->set_dbg_backout(); return;} while(0)
 #else
 
-#define USER_BOMB(str, ret) {drop_to_dbg(str, "bomb"); return ret;}
-#define USER_BOMB2(str) {drop_to_dbg(str, "bomb"); return;}
+#define USER_BOMB(str, ret) do {drop_to_dbg(str, "bomb"); return ret;} while(0)
+#define USER_BOMB2(str) do {drop_to_dbg(str, "bomb"); return;} while(0)
 
 #endif
 

@@ -13,6 +13,7 @@
 // $Header: g:/dwight/repo/vc/rcs/vcdbg.h 1.47 1997/11/27 03:06:00 dwight Stable $
 #include "dwvecp.h"
 #include "vcio.h"
+#include "dwstr.h"
 
 //
 // This class is used to store and coordinate debugging
@@ -39,7 +40,7 @@ private:
 
 public:
 	virtual ~VcDebugInfo() {}
-	void backtrace(VcIOHack &) const;
+    void backtrace(VcIOHack &);
 	void backtrace_brief(VcIO, int start = 0, int num = -1);
 	virtual VcDebugNode *get(int n = -1);
 	virtual int num_elems() {return callstack.num_elems();}
@@ -50,7 +51,7 @@ class VcDebugNode
 {
 public:
 	vc info;
-	const char *filename;
+    DwString filename;
 	long linenum;
 
 	VcDebugNode();

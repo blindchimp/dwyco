@@ -19,7 +19,7 @@ int Eval_break;
 VcDebugInfo VcDbgInfo;
 
 void
-VcDebugInfo::backtrace(VcIO os) const
+VcDebugInfo::backtrace(VcIO os)
 {
 	os << "---Execution Backtrace---\n";
 	long i = callstack.num_elems() - 1;
@@ -99,6 +99,7 @@ VcDebugNode::printOnBrief(VcIO o)
 }
 
 
+
 //
 // drop into a debug shell
 //
@@ -124,7 +125,7 @@ drop_to_dbg(const char *msg, const char *why)
 	else
 	{
 		la = dbgn->linenum;
-		fa = dbgn->filename;
+        fa = dbgn->filename.c_str();
 	}
 #ifdef VCDBG_INTERACTIVE
 	vc fun = Vcmap->get("__lh_debug");

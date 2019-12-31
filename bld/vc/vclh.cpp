@@ -2932,10 +2932,6 @@ vclh_clear_objmap()
 }
 #endif
 
-#if defined(_Windows) || defined(_MSC_VER)
-#include <process.h>
-#endif
-
 void
 vc::setup_logs()
 {

@@ -25,7 +25,7 @@ public:
     void printOnBrief(VcIO os);
     int has_brief();
 
-    char *state;
+    const char *state;
 };
 
 VcMemSelectDbgNode::VcMemSelectDbgNode(const vc_memselect *m)
@@ -38,7 +38,7 @@ VcMemSelectDbgNode::VcMemSelectDbgNode(const vc_memselect *m)
 void
 VcMemSelectDbgNode::printOn(VcIO os)
 {
-	os << "---object member selection near line " << filename << ":" <<
+    os << "---object member selection near line " << filename.c_str() << ":" <<
         linenum << " (" << state << ")";
     os << "\n";
 }
@@ -47,12 +47,14 @@ VcMemSelectDbgNode::printOn(VcIO os)
 int
 VcMemSelectDbgNode::has_brief()
 {
-	const char *r = strrchr(filename, '/');
+    int r = filename.rfind("/");
+    if(r == DwString::npos)
+        r = filename.rfind("\\");
 	vc file;
-	if(r)
-		file = vc(r + 1);
+    if(r != DwString::npos)
+        file = vc(filename.c_str() + r + 1);
 	else
-		file = vc(filename);
+        file = vc(filename.c_str());
 	
 	static vc debug("lhdbg.lh");
 	static vc userinp("__lh_user_input");
@@ -64,7 +66,7 @@ VcMemSelectDbgNode::has_brief()
 void
 VcMemSelectDbgNode::printOnBrief(VcIO os)
 {
-    os << filename << ":" << linenum << ", ";
+    os << filename.c_str() << ":" << linenum << ", ";
     os << "memsel (" << state << ")";
     os << "\n";
 }
