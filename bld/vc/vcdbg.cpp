@@ -12,8 +12,23 @@
 #include "dwdate.h"
 #include "vcmap.h"
 
-//static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcdbg.cpp 1.49 1998/06/11 06:53:35 dwight Exp $";
+// note: there used to be a bunch of stuff in here for dropping to
+// an interactive debugging shell. it sorta worked, but it was never
+// terribly useful. i'm leaving the backtrace stuff in here mainly because
+// it can be useful to have a snapshot of the state periodically.
+//
+// i think a much more useful debugging facility might be streaming
+// state information to an external source, since a lot of what LH
+// ended up being used for was small distributed services. it might also
+// be possible to provide some kind of "go backwards" or reset to previous state
+// functionality. interesting ideas, but probably never going to get done.
+//
 
+int
+drop_to_dbg(const char *, const char *)
+{
+oopanic("no debugger");
+}
 
 int Eval_break;
 VcDebugInfo VcDbgInfo;
@@ -98,104 +113,6 @@ VcDebugNode::printOnBrief(VcIO o)
 	VcDebugNode::printOn(o);
 }
 
-
-
-//
-// drop into a debug shell
-//
-// "why" is a string indicating the conditions that
-// brought us here. should be one of
-// "bomb" (user error)
-// "breakpoint" (for debug breaks)
-// "toplev" (for initial debugger invocation)
-//
-int
-drop_to_dbg(const char *msg, const char *why)
-{
-	vc la;
-	vc fa;
-	vc w(why);
-	vc m(msg);
-	VcDebugNode *dbgn = VcDbgInfo.get();
-	if(dbgn == 0)
-	{
-		la = vczero;
-		fa = vcnil;
-	}
-	else
-	{
-		la = dbgn->linenum;
-        fa = dbgn->filename.c_str();
-	}
-#ifdef VCDBG_INTERACTIVE
-	vc fun = Vcmap->get("__lh_debug");
-	if(fun.type() != VC_FUNC)
-	{
-		fprintf(stderr, "debugger function failure");
-		fflush(stderr);
-		exit(1);
-	}
-	VCArglist a;
-	a[0] = m;
-	a[1] = w;
-	a[2] = fa;
-	a[3] = la;
-    Eval_break = 0; // don't break in debugger
-	vc v = fun(&a);
-	if(v != vc("cont") && !Vcmap->backout_in_progress())
-#else
-	VcError << msg << "\n";
-#endif
-		Vcmap->set_dbg_backout();
-	CHECK_ANY_BO(1);
-    vc v2 = Vcmap->get("__lh_single_step");
-    if(v2.is_nil())
-      Eval_break = 0;
-    else
-      Eval_break = 1;
-	return 0;
-}
-
-#if 0
-int
-drop_to_dbg(const char *msg, const char *why)
-{
-	static vc wa("__lh_why");
-	static vc ma("__lh_msg");
-	static vc la("__lh_linenum");
-	static vc fa("__lh_filename");
-	vc w(why);
-	vc m(msg);
-	VcDebugNode *dbgn = VcDbgInfo.get();
-	if(dbgn == 0)
-	{
-		la.local_bind(vczero);
-		fa.local_bind(vcnil);
-	}
-	else
-	{
-		la.local_bind(vc(dbgn->linenum));
-		fa.local_bind(vc(dbgn->filename));
-	}
-	wa.local_bind(w);
-	ma.local_bind(m);
-	char *d = "lbind(__lh_dbg_ret __lh_debug(<__lh_msg> <__lh_why> <__lh_filename> <__lh_linenum>))";
-	vc debug_shell(VC_CVAR, d, strlen(d));
-	vc v("__lh_dbg_ret");
-	debug_shell.force_eval();
-	vc v2 = Vcmap->get(v);
-	wa.local_bremove();
-	ma.local_bremove();
-	la.local_bremove();
-	fa.local_bremove();
-	v.local_bremove();
-	if(v2 != vc("cont") && !Vcmap->backout_in_progress())
-		Vcmap->set_dbg_backout();
-	CHECK_ANY_BO(1);
-	return 0;
-}
-#endif
-	
 //
 // LH debugging hooks
 //

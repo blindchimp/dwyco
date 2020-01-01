@@ -308,17 +308,13 @@ vc_funcall::eval() const
 	if(!vetted && f.type() != VC_FUNC && f.type() != VC_MEMFUN)
 	{
 		*cached_fun = vcnil;
-		VcIOHackStr *o = new VcIOHackStr();
+        VcIOHackStr o;
 		if(func.type() == VC_STRING)
-			*o << "can't find function named \"" << (const char *)func << "\"";
+            o << "can't find function named \"" << (const char *)func << "\"";
 		else
-			*o << "attempt to call non-function";
-		*o << '\0';
-		char *s = o->str();
-		delete o;
-		USER_BOMB(s, vcnil);
-		// leak if user backs out
-		delete [] s;
+            o << "attempt to call non-function";
+        o << '\0';
+        USER_BOMB(o.ref_str(), vcnil);
 	}
 
 	int n = arglist.num_elems();
