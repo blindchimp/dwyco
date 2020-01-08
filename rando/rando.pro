@@ -66,21 +66,21 @@ $${D}/kazlib/libkazlib.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/libuv/libuv.a \
 -lsqlite3
 
-PRE_TARGETDEPS += \
-$${D}/cdc32/libcdc32.a \
-$${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
-$${D}/dwcls/libdwcls.a \
-$${D}/kazlib/libkazlib.a \
-$${D}/pbm/libpbm.a \
-$${D}/jenkins/libjenkins.a \
-$${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
-$${D}/libuv/libuv.a
+#PRE_TARGETDEPS += \
+#$${D}/cdc32/libcdc32.a \
+#$${D}/vc/libvc.a \
+#$${D}/crypto5/libcrypto5.a \
+#$${D}/dwcls/libdwcls.a \
+#$${D}/kazlib/libkazlib.a \
+#$${D}/pbm/libpbm.a \
+#$${D}/jenkins/libjenkins.a \
+#$${D}/jhead/libjhead.a \
+#$${D}/qt-qml-models/libQtQmlModels.a \
+#$${D}/libuv/libuv.a
 
 }
 
@@ -129,7 +129,7 @@ $${D}/kazlib/libkazlib.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/libuv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
