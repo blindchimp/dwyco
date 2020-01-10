@@ -2366,7 +2366,7 @@ DwycoCore::get_simple_lh_url()
 QString
 DwycoCore::get_msg_count_url()
 {
-#if 0
+#if 1
     QUrlQuery qurl;
     const char *auth;
     int len;
@@ -2377,8 +2377,8 @@ DwycoCore::get_msg_count_url()
 
     dwyco_free_array((char *)auth);
     QUrl url;
-    if(AvoidSSL)
-        url.setUrl("http://profiles.dwyco.org/cgi-bin/webmsgcnt.sh");
+    if(1 || AvoidSSL)
+        url.setUrl("http://127.0.0.1/cgi-bin/webmsgcnt.sh");
     else
         url.setUrl("https://profiles.dwyco.org/cgi-bin/webmsgcnt.sh");
 

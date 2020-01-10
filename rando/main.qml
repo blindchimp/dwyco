@@ -13,7 +13,6 @@ import QtQuick.Controls 2.2
 import QtQuick.Controls.Material 2.2
 import QtQuick.Layouts 1.3
 import QtQuick.Dialogs 1.2
-//import QtMultimedia 5.4
 import dwyco 1.0
 
 ApplicationWindow {
@@ -319,6 +318,27 @@ ApplicationWindow {
         visible: false
     }
 
+    Loader {
+        id: rando_status
+        property int num_sent: 0;
+        property int num_recv: 0;
+        property int next_freebie: 0;
+
+        function refresh() {
+            active = false
+            active = true
+        }
+
+        visible: false
+        active: false
+
+        onLoaded: {
+            num_sent = item.num_sent
+            num_recv = item.num_recv
+            next_freebie = item.next_freebie
+        }
+    }
+
 //    SimpleMsgBrowse {
 //        id: simp_msg_browse
 //        model: themsglist
@@ -442,6 +462,8 @@ ApplicationWindow {
             if(what === 1) {
                 set_local_setting("acct-created", "true")
                 server_account_created = true
+                rando_status.source = core.get_msg_count_url();
+                rando_status.refresh()
             }
             if(Qt.platform.os == "android") {
                 notificationClient.set_msg_count_url(core.get_msg_count_url())
