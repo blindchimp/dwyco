@@ -60,6 +60,9 @@ struct rando_sql : public SimpleSql
         sql_simple("create table if not exists recv_loc2(from_uid text collate nocase, mid text collate nocase, hash text collate nocase unique on conflict ignore, time integer, lat text, lon text)");
         sql_simple("create table if not exists sent_geo(to_uid text collate nocase, mid text collate nocase, hash text collate nocase, time integer, geo text)");
         sql_simple("create table if not exists sent_geo2(to_uid text collate nocase, mid text collate nocase, hash text collate nocase, time integer, lat text, lon text)");
+
+        sql_simple("create table if not exists logins(uid text collate nocase unique on conflict replace, time integer)");
+        sql_simple("create table if not exists sent_freebie(uid text collate nocase unique on conflict replace, time integer, hash text collate nocase)");
     }
 
 };
