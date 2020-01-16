@@ -32,6 +32,11 @@
 
 using namespace dwyco;
 
+static const char *Botfiles;
+static SimpleSql *Iplog;
+static int Throttle = 3;
+static int Freebie_interval = 30;
+
 // note: instead of using qt database stuff, we'll just the
 // internal database stuff in cdc32 since we are statically linking
 // main reason for this is that it is a bit simpler. it also adds
@@ -66,14 +71,14 @@ struct rando_sql : public SimpleSql
         sql_simple("create table if not exists sent_freebie(to_uid text collate nocase, mid text collate nocase, filename text, time integer, hash text collate nocase)");
         sql_simple("create index if not exists sf_idx_hash on sent_freebie(hash)");
         sql_simple("create index if not exists sf_idx_to_uid on sent_freebie(to_uid)");
+
+        sql_simple("create table if not exists freebie_interval(lock integer not null default 0, secs integer not null, primary key(lock), check(lock = 0))");
+        sql_simple("insert or ignore into freebie_interval(lock, secs) values(0, ?1)", Freebie_interval);
     }
 
 };
 
 static rando_sql *D;
-static const char *Botfiles;
-static SimpleSql *Iplog;
-static int Throttle = 3;
 
 static
 void
@@ -476,7 +481,7 @@ uid_due_freebie()
         D->start_transaction();
         D->sql_simple("create temp table foo as select uid from logins where wants_freebies = 1 and not exists(select 1 from sent_freebie where logins.uid = to_uid)");
         D->sql_simple("create temp table bar as select to_uid, max(time) as time from sent_freebie group by to_uid");
-        D->sql_simple("insert into foo select uid from logins,bar where wants_freebies = 1 and logins.uid = to_uid and logins.time - bar.time > 30");
+        D->sql_simple("insert into foo select uid from logins,bar where wants_freebies = 1 and logins.uid = to_uid and logins.time - bar.time > (select secs from freebie_interval)");
         res = D->sql_simple("select distinct(uid) from foo");
         D->rollback_transaction();
     } catch (...) {
