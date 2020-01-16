@@ -64,8 +64,8 @@ struct rando_sql : public SimpleSql
 
         sql_simple("create table if not exists logins(uid text collate nocase unique on conflict replace, wants_freebies integer, time integer)");
         sql_simple("create table if not exists sent_freebie(to_uid text collate nocase, mid text collate nocase, filename text, time integer, hash text collate nocase)");
-        sql_simple("create index if not exists sf_idx_hash on sent_freebies(hash)");
-        sql_simple("create index if not exists sf_idx_to_uid on sent_freebies(to_uid)");
+        sql_simple("create index if not exists sf_idx_hash on sent_freebie(hash)");
+        sql_simple("create index if not exists sf_idx_to_uid on sent_freebie(to_uid)");
     }
 
 };
