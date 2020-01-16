@@ -2384,6 +2384,7 @@ DwycoCore::get_msg_count_url()
 
     qurl.addQueryItem("uid", QString::fromUtf8(My_uid.toHex()));
     qurl.addQueryItem("auth", QString::fromUtf8(au.toHex()));
+    qurl.addQueryItem("freebies", "1");
     url.setQuery(qurl);
     return url.url();
 #else
