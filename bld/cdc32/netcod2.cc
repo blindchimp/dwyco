@@ -24,7 +24,6 @@
 #include "dwlog.h"
 #include "dwstr.h"
 #include "mmchan.h"
-#include "dumbass.h"
 
 #include "dwrtlog.h"
 #include "qauth.h"
