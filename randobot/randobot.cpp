@@ -35,7 +35,7 @@ using namespace dwyco;
 static const char *Botfiles;
 static SimpleSql *Iplog;
 static int Throttle = 3;
-static int Freebie_interval = 30;
+static int Freebie_interval = 300;
 
 // note: instead of using qt database stuff, we'll just the
 // internal database stuff in cdc32 since we are statically linking
@@ -73,7 +73,7 @@ struct rando_sql : public SimpleSql
         sql_simple("create index if not exists sf_idx_to_uid on sent_freebie(to_uid)");
 
         sql_simple("create table if not exists freebie_interval(lock integer not null default 0, secs integer not null, primary key(lock), check(lock = 0))");
-        sql_simple("insert or ignore into freebie_interval(lock, secs) values(0, ?1)", Freebie_interval);
+        sql_simple("insert or replace into freebie_interval(lock, secs) values(0, ?1)", Freebie_interval);
     }
 
 };
@@ -300,7 +300,7 @@ do_rando(vc huid)
             // candidate is the newest rando that has been resent
             // the least number of times.
             res = D->sql_simple("select sent_to.filename, sent_to.hash, randos.mid, randos.from_uid from sent_to,randos "
-                                "where sent_to.hash = randos.hash and from_uid != ?1 "
+                                "where sent_to.hash = randos.hash and from_uid != ?1 not exists(select 1 from sent_freebie where randos.hash = hash) "
                                 "group by sent_to.hash having (count(nullif(sent_to.to_uid,?1)) = count(*)) "
                                 "order by count(*) asc, randos.time desc limit 10",
                                 huid);
@@ -513,7 +513,7 @@ do_freebie(vc huid)
             // candidate is the newest rando that has been resent
             // the least number of times.
             res = D->sql_simple("select sent_to.filename, sent_to.hash, randos.mid, randos.from_uid from sent_to,randos "
-                                "where sent_to.hash = randos.hash and from_uid != ?1 "
+                                "where sent_to.hash = randos.hash and from_uid != ?1 and not exists(select 1 from sent_freebie where randos.hash = hash) "
                                 "group by sent_to.hash having (count(nullif(sent_to.to_uid,?1)) = count(*)) "
                                 "order by count(*) asc, randos.time desc limit 10",
                                 huid);
