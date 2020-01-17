@@ -58,6 +58,7 @@ vc_factory_def::vc_factory_def(const vc& fac_name, vc& args,
 	for(i = 0; i < n; ++i)
         (*bindargs).append(args[i]);
 		
+#ifdef LHOBJ_FORWARDS
 	// copy in names that are automatically forwarded
 
 	if(forwards_list.is_nil())
@@ -87,6 +88,10 @@ vc_factory_def::vc_factory_def(const vc& fac_name, vc& args,
 		}
 		delegates[i] = delegates_list[i];
 	}
+#else
+    if(forwards_list != vcnil || delegates_list != vcnil)
+        USER_BOMB2("forwards not supported");
+#endif
 
 	// create a map of members with default values
 	n = mem_pairs->num_elems();
@@ -94,7 +99,7 @@ vc_factory_def::vc_factory_def(const vc& fac_name, vc& args,
 
 	if(n % 2 != 0)
 	{
-		USER_BOMB2("args to fac def must be even")
+        USER_BOMB2("args to fac def must be even");
 		/*NOTREACHED*/
 	}
 	for(i = 0; i < n; i += 2)
@@ -283,8 +288,10 @@ vc_factory_def::do_function_call(VCArglist *, int)
 	// this wouldn't be necessary if we used some kinda mark-and-sweep
 	// stuff, but see the comments in vcdeflt on that whole thing.
 	--oret->ref_count;
+#ifdef LHOBJ_FORWARDS
 	oret->forwards = forwards;
 	oret->delegates = delegates;
+#endif
 	oret->base_obj = baseval;
 
 #ifdef LHPROF

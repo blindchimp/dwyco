@@ -9,6 +9,7 @@
 //
 // call objects
 // these objects encapsulate a call that is in progress.
+//
 // the main reason we need these objects is because we
 // now have a complicated set of things we try in order to
 // get a call going between two computers. in the past, we just
@@ -23,7 +24,10 @@
 // objects could be used in that area as well.
 //
 // each call object represents a single call setup. once the call
-// is going (does/doesn't) the object get destroyed, not sure.
+// is terminated, the call object is deleted by the call setup logic.
+//
+// the call object calls callbacks (and emits corresponding signals, if
+// you prefer that api) as the call state progresses.
 
 //
 

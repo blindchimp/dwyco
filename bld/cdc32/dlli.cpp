@@ -448,6 +448,7 @@ extern vc StackDump;
 extern vc My_connection;
 extern vc KKG;
 extern int Chat_online;
+extern CallQ *TheCallQ;
 
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
@@ -2144,7 +2145,6 @@ dwyco_hangup_all_calls()
             mc->schedule_destroy(MMChannel::HARD);
         }
     }
-    extern CallQ *TheCallQ;
     TheCallQ->cancel_all();
 }
 
@@ -3029,7 +3029,6 @@ DWYCOEXPORT
 int
 dwyco_set_max_established_originated_calls(int n)
 {
-    extern CallQ *TheCallQ;
     int tmp = TheCallQ->max_established;
     TheCallQ->set_max_established(n);
     return tmp;
@@ -3044,7 +3043,6 @@ dwyco_channel_create(const char *uid, int len_uid, DwycoCallDispositionCallback 
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     vc host;
@@ -3162,7 +3160,6 @@ dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     vc host;
@@ -3235,7 +3232,6 @@ dwyco_connect_all4(const char **uid_list, int *uid_len_list, int num, DwycoCallD
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     for(int i = 0; i < num; ++i)
@@ -8933,6 +8929,8 @@ dwyco_signal_msg_cond()
 
 }
 
+// the java stuff calls into this in another thread
+// when we signal, it means a new message has arrived
 DWYCOEXPORT
 void
 dwyco_wait_msg_cond(int ms)
@@ -9169,6 +9167,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     vc asock = vc(VC_SOCKET_STREAM);
     asock.socket_init(s, vctrue);
     dwyco_signal_msg_cond();
+    int signaled = 0;
+    int started_fetches = 0;
     while(1)
     {
         int spin = 0;
@@ -9194,17 +9194,19 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
             return 1;
 #endif
-
-        DwString uid;
-        DwString mid;
         if(dwyco_get_rescan_messages())
         {
+            GRTLOG("rescan %d %d", started_fetches, signaled);
             dwyco_set_rescan_messages(0);
-            while(ns_dwyco_background_processing::fetch_to_inbox(uid, mid))
+            ns_dwyco_background_processing::fetch_to_inbox();
+            GRTLOG("rescan2 %d %d", started_fetches, signaled);
+            int tmp;
+            if((tmp = sql_count_tag("_inbox")) > signaled)
             {
-                //emit new_msg(uid, txt, mid);
+                GRTLOG("signaling newcount %d", tmp, 0);
+                signaled = tmp;
+                dwyco_signal_msg_cond();
             }
-            dwyco_signal_msg_cond();
         }
         // note: this is a bit sloppy... rather than trying to
         // identify each socket that is waiting for write and

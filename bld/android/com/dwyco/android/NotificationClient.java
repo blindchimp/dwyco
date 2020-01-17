@@ -234,8 +234,6 @@ public static String get_token() {
         // will not work quite right (only happens when the app is
         // active). this will have to be fixed eventually.
         
-
-        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
             Intent i = new Intent(m_instance, DwycoSender.class);

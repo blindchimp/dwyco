@@ -45,7 +45,7 @@ functx::functx(int tsize) {
 	// this really needs to be fixed.
 	map->no_expand = 1;
 #else
-	map = new VMAP(vcnil, vcnil, tsize);
+    map = new VMAP(tsize);
 #endif
 	exc = 0;
 #ifdef LHOBJ

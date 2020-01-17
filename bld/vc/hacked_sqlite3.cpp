@@ -21,7 +21,7 @@ static DwVec<vc> *outbind_double;
 typedef DwVec<vc> vvc;
 #define Mem sqlite3_value
 
-template class DwVecP<void>;
+//template class DwVecP<void>;
 static
 int
 start_wrapper()
@@ -158,7 +158,7 @@ wrap_sqlite3_bulk_query(VCArglist *a)
 	}
 	if(tail && *tail != 0)
 	{
-		USER_BOMB("must be exactly 1 sql statement in query", vcnil)
+        USER_BOMB("must be exactly 1 sql statement in query", vcnil);
 	}
 	// bind in vars
 	if(a->num_elems() > 3)
@@ -171,7 +171,7 @@ wrap_sqlite3_bulk_query(VCArglist *a)
 				if(sqlite3_bind_int(st, i - 2, (*a)[i]) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 			case VC_STRING:
@@ -179,21 +179,21 @@ wrap_sqlite3_bulk_query(VCArglist *a)
 				if(sqlite3_bind_text(st, i - 2, (*a)[i], (*a)[i].len(), SQLITE_TRANSIENT) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 			case VC_DOUBLE:
 				if(sqlite3_bind_double(st, i - 2, (*a)[i]) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 			case VC_NIL:
 				if(sqlite3_bind_null(st, i - 2) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 			case VC_VECTOR:
@@ -206,17 +206,17 @@ wrap_sqlite3_bulk_query(VCArglist *a)
 				if((*a)[i].num_elems() != 2 ||
 					(*a)[i][0] != vc("blob"))
 				{
-					USER_BOMB("sql bind error, explicit type vector must be (type value) pair (and only \"blob\" type is supported now.", vcnil)
+                    USER_BOMB("sql bind error, explicit type vector must be (type value) pair (and only \"blob\" type is supported now.", vcnil);
 				}
 				if(sqlite3_bind_blob(st, i - 2, (const void *)(const char *)((*a)[i][1]), (*a)[i][1].len(), SQLITE_TRANSIENT) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 
 			default:
-				USER_BOMB("can't bind that in sql", vcnil)
+                USER_BOMB("can't bind that in sql", vcnil);
 			}
 		}
 	}

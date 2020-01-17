@@ -8,6 +8,8 @@
 */
 // this model is a one-off read-only model for the user list
 // that can be instantiated and used to select users, for example.
+#include <QFile>
+#include <QDataStream>
 #include "simple_user_list.h"
 #include "dlli.h"
 #include "dwyco_new_msg.h"

@@ -31,6 +31,7 @@ init_rtlog()
     RTLogOn.add("dlli.cpp");
     RTLogOn.add("netcod.cc");
     RTLogOn.add("netvid.cc");
+    RTLogOn.add("qmsg.cc");
 #else
     // note: we do not use "newfn" here to map the file
     // location, because that itself may cause some logging.

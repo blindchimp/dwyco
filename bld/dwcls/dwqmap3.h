@@ -49,19 +49,14 @@ class DwQMap : public DwMaps<R,D>
     friend class DwQMapIter<R,D>;
 
 private:
-    R dr;	// default range
-    D dd;	// default domain
-
     int count;				// number of elements in table
     int thresh;				// number of elements where ops degrade
     unsigned long deleted;
 
     void init1(int);
     void setdel(long);
-    void setempty(long);
     void setfull(long);
     void initdel(long);
-    void exitdel();
 
     static long dum;
     static const int rehash32[31];
@@ -85,8 +80,6 @@ protected:
 public:
     typedef DwIter<DwMaps<R,D> , DwAssocImp<R,D> > Foo;
     DwAssocImp<R,D> get_by_iter(Foo *) const;
-    DwQMap(const R& defr, const D& defd);
-    DwQMap(const R& defr, const D& defd, int);
     DwQMap(int);
     DwQMap();
     // note: default ctor, op= work ok.
@@ -99,7 +92,7 @@ public:
     int replace(const D&, const R&, R** wp = 0);
     R get(const D&);
     int del(const D&);
-    //virtual DwAssocImp<R,D> get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *) const;
+
     virtual DwMapsIter<R,D> *make_iter() const;
 
     int over_threshold() const {
@@ -160,23 +153,8 @@ tcls::DwQMap(int maxsz)
 }
 
 thdr
-tcls::DwQMap(const R& r, const D& d)
-    : dd(d), dr(r)
-{
-    init1(8);
-}
-
-thdr
-tcls::DwQMap(const R& r, const D& d, int maxsz)
-    : dd(d), dr(r)
-{
-    init1(maxsz);
-}
-
-thdr
 tcls::~DwQMap()
 {
-    exitdel();
 }
 
 thdr
@@ -262,7 +240,7 @@ tcls::get(const D& key)
     int found;
     long idx = search(key, found);
     if(!found)
-        return dr;
+        return R();
     return get_rng(idx);
 }
 
@@ -275,7 +253,6 @@ tcls::del(const D& key)
     if(!found)
         return 0;
     setdel(idx);
-    setempty(idx);
     --count;
     return 1;
 }
@@ -286,12 +263,6 @@ tcls::initdel(long isize)
 {
     deleted = 0;
     used = 0;
-}
-
-thdr
-void
-tcls::exitdel()
-{
 }
 
 thdr
@@ -317,18 +288,6 @@ tcls::setfull(long idx)
     used |= (1UL << idx);
     deleted &= ~(1UL << idx);
 }
-
-thdr
-inline void
-tcls::setempty(long idx)
-{
-#ifdef CAREFUL
-    if(idx < 0 || idx >= size)
-        oopanic("bad empty idx");
-#endif
-    //used &= ~(1UL << idx);
-}
-
 
 thdr
 long
@@ -424,7 +383,7 @@ tcls::get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *a) const
     typedef DwQMapIter<R,D> dmi_t;
     dmi_t *t = (dmi_t *)a;
     if(t->eol())
-        return DwAssocImp<R,D>(dr, dd);
+        return DwAssocImp<R,D>(R(), D());
     DwAssocImp<R,D> ret(get_rng(t->cur_buck), get_dom(t->cur_buck));
     return ret;
 }
@@ -457,19 +416,11 @@ protected:
     void copy(const DwQMapLazy&);
 
 public:
-    DwQMapLazy(const R& r, const D& d, unsigned int sz = 8);
     DwQMapLazy(unsigned int sz = 8);
     // note: default ctor, op= work ok
     ~DwQMapLazy();
 
 };
-
-thdr
-tcls::DwQMapLazy(const R& r, const D& d, unsigned int sz)
-    : DwQMap<R,D>(r, d, sz)
-{
-
-}
 
 thdr
 tcls::DwQMapLazy(unsigned int sz)
@@ -490,7 +441,11 @@ thdr
 void
 tcls::destr_fun()
 {
-    //unsigned long u = used;
+    // note: we didn't explicitly destroy any entries that
+    // were deleted using "del". we simply flagged them.
+    // so we need to destroy any cell that is currently "used"
+    // at this point.
+
 // WARNING: problems here with long/int on 64 bit stuff
 // previous version of this function would be more
 // general, but this is faster.
@@ -522,6 +477,10 @@ thdr
 void
 tcls::copy(const DwQMapLazy<R,D>& s)
 {
+    // note: the default copy ctors work ok since they are just
+    // copying over the bits for used, deleted, etc.
+    // here we need to specially copy in the proper elements
+    // explicitly.
     unsigned long u = s.used;
     for(int i = 0; u && i < s.size; ++i)
     {
@@ -603,7 +562,6 @@ private:
 
 
 public:
-    DwQMapLazyC(const R& r, const D& d) : DwQMapLazy<R,D>(r, d, elems) {}
     DwQMapLazyC() : DwQMapLazy<R,D>(elems) {}
     DwQMapLazyC(const DwQMapLazyC& s) {
         if(elems < s.size) oopanic("bad lazy ctor");
@@ -622,131 +580,6 @@ public:
         this->destr_fun();
     }
 };
-
-// these were never used
-#if 0
-// lazy with storage alloced outside object
-template<class R, class D>
-class DwQMapLazyV : public DwQMapLazy<R,D>
-{
-private:
-    char *rng;
-    char *dom;
-
-    R *addr_rng(long i) const {
-        return (R*)(rng + i * sizeof(R));
-    }
-    D *addr_dom(long i) const {
-        return (D*)(dom + i * sizeof(D));
-    }
-
-public:
-    DwQMapLazyV(const R& r, const D& d, unsigned int sz = 8)
-        : DwQMapLazy<R,D>(r, d, sz) {
-        rng = new char [sz * sizeof(R)];
-        dom = new char [sz * sizeof(D)];
-    }
-    DwQMapLazyV(unsigned int sz = 8) : DwQMapLazy<R,D>(sz) {
-        rng = new char [sz * sizeof(R)];
-        dom = new char [sz * sizeof(D)];
-    }
-    DwQMapLazyV(const DwQMapLazyV& s) {
-        copy(s);
-    }
-    const DwQMapLazyV& operator=(const DwQMapLazyV& s) {
-        if(this != &s)
-        {
-            this->destr_fun();
-            copy(s);
-        }
-        return *this;
-    }
-    ~DwQMapLazyV() {
-        this->destr_fun();
-        delete [] rng;
-        delete [] dom;
-    }
-};
-#undef thdr
-#undef tcls
-
-// eager initialization
-
-#define thdr template<class R, class D>
-#define tcls DwQMapEager<R,D>
-thdr
-class DwQMapEager : public DwQMap<R,D>
-{
-private:
-    DwVec<R> rng;
-    DwVec<D> dom;
-
-    virtual void add_assoc(const D& key, const R& val, long idx);
-    virtual const R& get_rng(long idx) const;
-    virtual void set_rng(const R&, long idx);
-    virtual const D& get_dom(long idx) const;
-
-public:
-    DwQMapEager(const R& r, const D& d, unsigned int sz = 8);
-    DwQMapEager(unsigned int sz = 8);
-    // note: default ctor/ op= work ok.
-    ~DwQMapEager();
-
-};
-
-thdr
-tcls::DwQMapEager(const R& r, const D& d, unsigned int sz)
-    : DwQMap<R,D>(r, d, sz), rng(sz, 1, 0), dom(sz, 1, 0)
-{
-
-}
-
-thdr
-tcls::DwQMapEager(unsigned int sz)
-    : DwQMap<R,D>(sz), rng(sz, 1, 0), dom(sz, 1, 0)
-{
-}
-
-
-thdr
-tcls::~DwQMapEager()
-{
-
-}
-
-thdr
-inline
-void
-tcls::add_assoc(const D& key, const R& val, long idx)
-{
-    rng[idx] = val;
-    dom[idx] = key;
-}
-
-thdr
-inline
-const R&
-tcls::get_rng(long idx) const
-{
-    return rng[idx];
-}
-
-thdr
-inline
-void
-tcls::set_rng(const R& r, long idx)
-{
-    rng[idx] = r;
-}
-
-thdr
-inline
-const D&
-tcls::get_dom(long idx) const
-{
-    return dom[idx];
-}
-#endif
 
 #undef thdr
 #undef tcls

@@ -580,3 +580,5 @@ bld/speexdsp/libspeexdsp/testresample2
 \.stignore
 
 *.10-pre1
+
+bld/android/com/dwyco/android/.vscode/

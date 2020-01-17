@@ -49,7 +49,7 @@ VcEvalDbgNode::printOn(VcIO os)
 {
 	VcDebugNode::printOn(os);
 	os << "Evaluating expression that began near line " <<
-		node->begin_scoord.filename << ":" << node->begin_scoord.linenum << "\n";
+        node->begin_scoord.filename.c_str() << ":" << node->begin_scoord.linenum << "\n";
 	os << "Expr num = " << expr_num << ", Accumulated result = \"" << var_name << "\"\n";
 	os << "\n";
 

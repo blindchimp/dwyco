@@ -107,8 +107,8 @@ perf3()
     int n = 0;
     Gen = 0;
     srand(0);
-    for(int i = 0; i < 20; ++i)
-        a.add(rand(), 0);
+//    for(int i = 0; i < 20; ++i)
+//        a.add(rand(), 0);
     a.add(0, 0);
     a.add(1, 0);
     a.add(2, 0);
@@ -126,12 +126,12 @@ perf3()
 void
 perf4()
 {
-    DwQMapLazyC<Int, Int, 32> a(0, 0);
+    DwQMapLazyC<Int, Int, 32> a;
     int n = 0;
     Gen = 0;
     srand(0);
-    for(int i = 0; i < 20; ++i)
-        a.add(rand(), 0);
+//    for(int i = 0; i < 20; ++i)
+//        a.add(rand(), 0);
     a.add(0, 0);
     a.add(1, 0);
     a.add(2, 0);
@@ -149,12 +149,12 @@ perf4()
 void
 perf5()
 {
-    DwQMap4<Int, Int, 32> a(0, 0);
+    DwQMap4<Int, Int, 32> a;
     int n = 0;
     Gen = 0;
     srand(0);
-    for(int i = 0; i < 20; ++i)
-        a.add(rand(), 0);
+//    for(int i = 0; i < 20; ++i)
+//        a.add(rand(), 0);
     a.add(0, 0);
     a.add(1, 0);
     a.add(2, 0);
