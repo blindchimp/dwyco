@@ -14,7 +14,9 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <time.h>
-#if !defined(_Windows) && !defined(_MSC_VER)
+#ifdef _Windows
+#include <process.h>
+#else
 #include <unistd.h>
 #endif
 #include "vc.h"
