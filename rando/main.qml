@@ -106,6 +106,7 @@ ApplicationWindow {
 
     property bool dwy_invis: false
     property bool dwy_quiet: false
+    property bool dwy_freebies: true
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
@@ -211,6 +212,7 @@ ApplicationWindow {
                     //drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
                     drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
                     drawer_contents.tech_uid.text = "(#" + core.get_my_uid().substr(0, 8) + ")"
+                    rando_status.refresh()
                 }
 
             }
@@ -320,12 +322,14 @@ ApplicationWindow {
 
     Loader {
         id: rando_status
-        property int num_sent: 0;
-        property int num_recv: 0;
-        property int next_freebie: 0;
+        property int num_sent: 0
+        property int num_recv: 0
+        property int next_freebie: 0
 
         function refresh() {
             active = false
+            source = ""
+            source = core.get_msg_count_url(dwy_freebies ? 1 : 0)
             active = true
         }
 
@@ -443,6 +447,13 @@ ApplicationWindow {
             } else {
                 show_unreviewed = true
             }
+
+            a = get_local_setting("send_freebies")
+            if(a === "" || a === "true") {
+                dwy_freebies = true
+            } else {
+                dwy_freebies = false
+            }
         }
 
 
@@ -462,7 +473,7 @@ ApplicationWindow {
             if(what === 1) {
                 set_local_setting("acct-created", "true")
                 server_account_created = true
-                rando_status.source = core.get_msg_count_url();
+                //rando_status.source = core.get_msg_count_url(dwy_freebies ? 1 : 0);
                 rando_status.refresh()
             }
             if(Qt.platform.os == "android") {
