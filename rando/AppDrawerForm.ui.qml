@@ -105,7 +105,10 @@ Pane {
         Text {
             id: next_freebie
             Layout.fillWidth: true
-            text: freebies_switch.checked ? rando_status.next_freebie.toString() : qsTr("No freebies")
+            text: freebies_switch.checked ? (qsTr("Next pic: ")
+                                             + ((rando_status.next_freebie / 3600).toString(
+                                                    ) + qsTr(" Hours"))) : qsTr(
+                                                "No freebies")
         }
 
         Item {
