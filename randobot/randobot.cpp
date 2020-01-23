@@ -488,7 +488,9 @@ uid_due_freebie()
     vc res;
     try {
         D->start_transaction();
+        // someone who never received one is eligible
         D->sql_simple("create temp table foo as select uid from logins where wants_freebies = 1 and not exists(select 1 from sent_freebie where logins.uid = to_uid)");
+        // time of last sent freebie for each uid
         D->sql_simple("create temp table bar as select to_uid, max(time) as time from sent_freebie group by to_uid");
         D->sql_simple("insert into foo select uid from logins,bar where wants_freebies = 1 and logins.uid = to_uid and logins.time - bar.time > (select secs from freebie_interval)");
         res = D->sql_simple("select distinct(uid) from foo");
