@@ -2364,9 +2364,9 @@ DwycoCore::get_simple_lh_url()
 }
 
 QString
-DwycoCore::get_msg_count_url()
+DwycoCore::get_msg_count_url(int wants_freebies)
 {
-#if 0
+#if 1
     QUrlQuery qurl;
     const char *auth;
     int len;
@@ -2378,12 +2378,14 @@ DwycoCore::get_msg_count_url()
     dwyco_free_array((char *)auth);
     QUrl url;
     if(AvoidSSL)
-        url.setUrl("http://profiles.dwyco.org/cgi-bin/webmsgcnt.sh");
+        url.setUrl("http://rando.dwyco.com/cgi-bin/webmsgcnt.sh");
     else
-        url.setUrl("https://profiles.dwyco.org/cgi-bin/webmsgcnt.sh");
+        url.setUrl("https://rando.dwyco.com/cgi-bin/webmsgcnt.sh");
 
     qurl.addQueryItem("uid", QString::fromUtf8(My_uid.toHex()));
     qurl.addQueryItem("auth", QString::fromUtf8(au.toHex()));
+    qurl.addQueryItem("freebies", QString::number(wants_freebies));
+    qurl.addQueryItem("defeat", QString::number(time(0)));
     url.setQuery(qurl);
     return url.url();
 #else
