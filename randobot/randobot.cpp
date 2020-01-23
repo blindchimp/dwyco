@@ -46,7 +46,7 @@ static int Freebie_interval = 300;
 
 struct rando_sql : public SimpleSql
 {
-    rando_sql() : SimpleSql("/tmp/rando.sql") {}
+    rando_sql() : SimpleSql("rando.sql") {}
 
     void init_schema() {
         sql_simple("create table if not exists randos(from_uid text collate nocase, "
@@ -743,7 +743,8 @@ update_hashes()
 
 }
 
-
+// invoke with
+// randobot <name> <desc> <dir-to-save-pics> <ip-log-db> <pics-per-hour-throttle> <free-pic-interval-secs>
 int
 main(int argc, char *argv[])
 {
@@ -788,6 +789,11 @@ main(int argc, char *argv[])
     if(argc >= 6)
     {
         Throttle = atoi(argv[5]);
+    }
+
+    if(argc >= 7)
+    {
+        Freebie_interval = atoi(argv[6]);
     }
 
 
