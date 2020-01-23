@@ -290,7 +290,7 @@ do_rando(vc huid)
         // this selects a pic that has never been sent to anyone, namely, the freshest
         // stuff we have on hand.
         res = D->sql_simple("select filename, hash, mid, from_uid from randos where from_uid != ?1 and "
-                            "not exists(select 1 from sent_to where randos.hash = hash union select 1 from sent_freebies where randos.hash = hash) order by time desc limit 1",
+                            "not exists(select 1 from sent_to where randos.hash = hash union select 1 from sent_freebie where randos.hash = hash) order by time desc limit 1",
                             huid);
         vc fn;
         vc hash;
