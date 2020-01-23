@@ -69,6 +69,22 @@ ApplicationWindow {
         console.warn("Could not calculate 'vh' based on Screen.height.")
         return 0
     }
+
+    function sec_to_hours(s) {
+        return Math.trunc(s / 3600)
+    }
+    function leftover_mins(s) {
+        return Math.trunc((s % 3600) / 60)
+    }
+    function simple_time_left(s) {
+        var h = sec_to_hours(s)
+        if(h == 0) {
+            var m = leftover_mins(s)
+            return m.toString() + qsTr(" Minutes")
+        } else {
+            return h.toString() + qsTr(" Hours")
+        }
+    }
     
     
     property color primary : "#673AB7"
