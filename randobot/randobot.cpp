@@ -307,8 +307,8 @@ do_rando(vc huid)
                           "from sent_to,randos where sent_to.hash = randos.hash and from_uid != ?1 ", huid);
             D->sql_simple("insert into foo select sent_freebie.filename, sent_freebie.hash, randos.mid, randos.from_uid,randos.time "
                           "from sent_freebie,randos where sent_freebie.hash = randos.hash and from_uid != ?1", huid);
-            D->sql_simple("delete from foo where hash in (select hash from sent_to where to_uid = ?1", huid);
-            D->sql_simple("delete from foo where hash in (select hash from sent_freebie where to_uid = ?1", huid);
+            D->sql_simple("delete from foo where hash in (select hash from sent_to where to_uid = ?1)", huid);
+            D->sql_simple("delete from foo where hash in (select hash from sent_freebie where to_uid = ?1)", huid);
 
 
             res = D->sql_simple("select * from foo group by hash order by count(*) asc, time desc limit 10", huid);
@@ -510,8 +510,8 @@ do_freebie(vc huid)
     {
         D->start_transaction();
         D->sql_simple("create temp table bar as select filename, hash, mid, from_uid from randos where from_uid != ?1 order by time desc limit 100", huid);
-        D->sql_simple("delete from bar where hash in (select hash from sent_to where to_uid = ?1", huid);
-        D->sql_simple("delete from bar where hash in (select hash from sent_freebie where to_uid = ?1", huid);
+        D->sql_simple("delete from bar where hash in (select hash from sent_to where to_uid = ?1)", huid);
+        D->sql_simple("delete from bar where hash in (select hash from sent_freebie where to_uid = ?1)", huid);
         res = D->sql_simple("select * from bar");
         D->sql_simple("drop table bar");
         vc fn;
