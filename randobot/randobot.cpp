@@ -287,6 +287,8 @@ do_rando(vc huid)
     try
     {
         D->start_transaction();
+        // this selects a pic that has never been sent to anyone, namely, the freshest
+        // stuff we have on hand.
         res = D->sql_simple("select filename, hash, mid, from_uid from randos where from_uid != ?1 and "
                             "not exists(select 1 from sent_to where randos.hash = hash union select 1 from sent_freebies where randos.hash = hash) order by time desc limit 1",
                             huid);
@@ -299,11 +301,18 @@ do_rando(vc huid)
             // no brand new content, so double-up on some old randos.
             // candidate is the newest rando that has been resent
             // the least number of times.
-            res = D->sql_simple("select sent_to.filename, sent_to.hash, randos.mid, randos.from_uid from sent_to,randos "
-                                "where sent_to.hash = randos.hash and from_uid != ?1 not exists(select 1 from sent_freebie where randos.hash = hash) "
-                                "group by sent_to.hash having (count(nullif(sent_to.to_uid,?1)) = count(*)) "
-                                "order by count(*) asc, randos.time desc limit 10",
-                                huid);
+
+            // previous way of doing this was clever, but hard to understand
+            D->sql_simple("create temp table foo as select sent_to.filename as fn, sent_to.hash as hash, randos.mid as mid, randos.from_uid as from_uid, randos.time as time "
+                          "from sent_to,randos where sent_to.hash = randos.hash and from_uid != ?1 ", huid);
+            D->sql_simple("insert into foo select sent_freebie.filename, sent_freebie.hash, randos.mid, randos.from_uid,randos.time "
+                          "from sent_freebie,randos where sent_freebie.hash = randos.hash and from_uid != ?1", huid);
+            D->sql_simple("delete from foo where hash in (select hash from sent_to where to_uid = ?1", huid);
+            D->sql_simple("delete from foo where hash in (select hash from sent_freebie where to_uid = ?1", huid);
+
+
+            res = D->sql_simple("select * from foo group by hash order by count(*) asc, time desc limit 10", huid);
+            D->sql_simple("drop table foo");
             // pick a random one from the first 10
             if(res.num_elems() > 0)
             {
@@ -500,39 +509,28 @@ do_freebie(vc huid)
     try
     {
         D->start_transaction();
-        res = D->sql_simple("select filename, hash, mid, from_uid from randos where from_uid != ?1 and "
-                            "not exists(select 1 from sent_to where randos.hash = hash union select 1 from sent_freebie where randos.hash = hash) order by time desc limit 1",
-                            huid);
+        D->sql_simple("create temp table bar as select filename, hash, mid, from_uid from randos where from_uid != ?1 order by time desc limit 100", huid);
+        D->sql_simple("delete from bar where hash in (select hash from sent_to where to_uid = ?1", huid);
+        D->sql_simple("delete from bar where hash in (select hash from sent_freebie where to_uid = ?1", huid);
+        res = D->sql_simple("select * from bar");
+        D->sql_simple("drop table bar");
         vc fn;
         vc hash;
         vc mid;
         vc hcreator_uid;
-        if(res.num_elems() == 0)
+
+        if(res.num_elems() > 0)
         {
-            // no brand new content, so double-up on some old randos.
-            // candidate is the newest rando that has been resent
-            // the least number of times.
-            res = D->sql_simple("select sent_to.filename, sent_to.hash, randos.mid, randos.from_uid from sent_to,randos "
-                                "where sent_to.hash = randos.hash and from_uid != ?1 and not exists(select 1 from sent_freebie where randos.hash = hash) "
-                                "group by sent_to.hash having (count(nullif(sent_to.to_uid,?1)) = count(*)) "
-                                "order by count(*) asc, randos.time desc limit 10",
-                                huid);
-            // pick a random one from the first 10ish
-            if(res.num_elems() > 0)
-            {
-                int i = rand() % res.num_elems();
-                fn = res[i][0];
-                hash = res[i][1];
-                mid = res[i][2];
-                hcreator_uid = res[i][3];
-            }
+            int i = rand() % res.num_elems();
+            fn = res[i][0];
+            hash = res[i][1];
+            mid = res[i][2];
+            hcreator_uid = res[i][3];
         }
         else
         {
-            fn = res[0][0];
-            hash = res[0][1];
-            mid = res[0][2];
-            hcreator_uid = res[0][3];
+            // no results, nothing to send them, maybe we could resend an old one?
+            return 0;
         }
         if(!fn.is_nil())
         {
