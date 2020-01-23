@@ -2377,10 +2377,10 @@ DwycoCore::get_msg_count_url(int wants_freebies)
 
     dwyco_free_array((char *)auth);
     QUrl url;
-    if(1 || AvoidSSL)
-        url.setUrl("http://127.0.0.1/cgi-bin/webmsgcnt.sh");
+    if(AvoidSSL)
+        url.setUrl("http://rando.dwyco.com/cgi-bin/webmsgcnt.sh");
     else
-        url.setUrl("https://profiles.dwyco.org/cgi-bin/webmsgcnt.sh");
+        url.setUrl("https://rando.dwyco.com/cgi-bin/webmsgcnt.sh");
 
     qurl.addQueryItem("uid", QString::fromUtf8(My_uid.toHex()));
     qurl.addQueryItem("auth", QString::fromUtf8(au.toHex()));
