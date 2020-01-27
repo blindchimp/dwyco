@@ -304,4 +304,4 @@ DISTFILES += \
 #        $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so
 #}
 
-ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/$${QT_ARCH}/libdwyco_jni.so
+ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/$${QT_ARCH}/libdwyco_jni_$${QT_ARCH}.so
