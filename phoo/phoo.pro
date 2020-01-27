@@ -121,7 +121,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/libuv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -lsqlite3 \
@@ -145,7 +145,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/libuv/libuv.a
 
 }
@@ -215,7 +215,7 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${PWD}/../bld/macdrv/libmacdrv.a \
 $${D}/libuv/libuv.a \
@@ -259,7 +259,7 @@ D = $${OUT_PWD}/../bld
 
 L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 
-LIBS += $$D/qt-qml-models/libQtQmlModels.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will

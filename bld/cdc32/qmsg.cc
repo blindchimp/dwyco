@@ -76,7 +76,6 @@ using namespace CryptoPP;
 #include "dwrtlog.h"
 #include "dwstr.h"
 #include "prfcache.h"
-#include "dumbass.h"
 #include "fnmod.h"
 #ifdef _Windows
 #define strcasecmp strcmpi
