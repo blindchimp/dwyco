@@ -488,11 +488,13 @@ uid_due_freebie()
     vc res;
     try {
         D->start_transaction();
+        vc now(time(0));
         // someone who never received one is eligible
         D->sql_simple("create temp table foo as select uid from logins where wants_freebies = 1 and not exists(select 1 from sent_freebie where logins.uid = to_uid)");
         // time of last sent freebie for each uid
         D->sql_simple("create temp table bar as select to_uid, max(time) as time from sent_freebie group by to_uid");
-        D->sql_simple("insert into foo select uid from logins,bar where wants_freebies = 1 and logins.uid = to_uid and logins.time - bar.time > (select secs from freebie_interval)");
+        D->sql_simple("insert into foo select uid from logins,bar where wants_freebies = 1 and logins.uid = to_uid and ?1 - logins.time <= 2 * (select secs from freebie_interval)"
+                      " and ?1 - bar.time > (select secs from freebie_interval)", now);
         res = D->sql_simple("select distinct(uid) from foo");
         D->rollback_transaction();
     } catch (...) {
@@ -511,7 +513,11 @@ do_freebie(vc huid)
     try
     {
         D->start_transaction();
-        D->sql_simple("create temp table bar as select filename, hash, mid, from_uid from randos where from_uid != ?1 order by time desc limit 100", huid);
+        // note: this could limit the number of freebies sent to a particular user
+        // if no new content is being put into the system. but since we are probably
+        // going to 1 or 2 freebies a day, it should 6-12 months if that happens. we'll
+        // figure it out later...
+        D->sql_simple("create temp table bar as select filename, hash, mid, from_uid from randos where from_uid != ?1 order by time desc limit 300", huid);
         D->sql_simple("delete from bar where hash in (select hash from sent_to where to_uid = ?1)", huid);
         D->sql_simple("delete from bar where hash in (select hash from sent_freebie where to_uid = ?1)", huid);
         res = D->sql_simple("select * from bar");
@@ -531,7 +537,14 @@ do_freebie(vc huid)
         }
         else
         {
-            // no results, nothing to send them, maybe we could resend an old one?
+            // no results, nothing to send them, maybe we could resend a random one?
+            // note: the timing thing in uid_due_freebie is assuming we manage to
+            // send something and update the sent_freebie table. if we don't do that,
+            // due_freebies will show that uid needing a freebie for a long time
+            // before it times out. this will soak some cpu, but is otherwise
+            // harmless. sometime, we may want to consider just putting in a dummy
+            // record so it doesn't keep coming in here until there is some
+            // material to send.
             return 0;
         }
         if(!fn.is_nil())
