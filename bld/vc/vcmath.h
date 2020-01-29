@@ -19,7 +19,6 @@ vc vcexp(vc v);
 vc vclog(vc v);
 vc vclog10(vc v);
 vc vcpow(vc v, vc p);
-vc vcpow10(vc v);
 vc vcacos(vc v);
 vc vcasin(vc v);
 vc vcatan(vc v);

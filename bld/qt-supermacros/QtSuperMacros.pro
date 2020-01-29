@@ -1,5 +1,5 @@
 
-TARGET = QtSuperMacros
+TARGET = "QtSuperMacros_$${QT_ARCH}"
 
 TEMPLATE = lib
 

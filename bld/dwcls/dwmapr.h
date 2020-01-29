@@ -28,7 +28,6 @@ private:
     DwBag<DwAssocImp<R,D> > set;
 
 public:
-    DwMapR(const R& defr, const D& defd, unsigned int tsize = 31);
     DwMapR(unsigned int tsize = 31);
     virtual ~DwMapR();
     void set_size(int);
@@ -47,12 +46,6 @@ public:
 
 #define thdr template<class R, class D>
 #define tcls DwMapR<R,D>
-thdr
-tcls::DwMapR(const R& defr, const D& defd, unsigned int tsize)
-    : set(DwAssocImp<R,D>(defr, defd), tsize)
-{
-    def = defr;
-}
 
 thdr
 tcls::DwMapR(unsigned int tsize)

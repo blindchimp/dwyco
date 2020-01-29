@@ -448,6 +448,7 @@ extern vc StackDump;
 extern vc My_connection;
 extern vc KKG;
 extern int Chat_online;
+extern CallQ *TheCallQ;
 
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
@@ -2144,7 +2145,6 @@ dwyco_hangup_all_calls()
             mc->schedule_destroy(MMChannel::HARD);
         }
     }
-    extern CallQ *TheCallQ;
     TheCallQ->cancel_all();
 }
 
@@ -3029,7 +3029,6 @@ DWYCOEXPORT
 int
 dwyco_set_max_established_originated_calls(int n)
 {
-    extern CallQ *TheCallQ;
     int tmp = TheCallQ->max_established;
     TheCallQ->set_max_established(n);
     return tmp;
@@ -3044,7 +3043,6 @@ dwyco_channel_create(const char *uid, int len_uid, DwycoCallDispositionCallback 
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     vc host;
@@ -3162,7 +3160,6 @@ dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     vc host;
@@ -3235,7 +3232,6 @@ dwyco_connect_all4(const char **uid_list, int *uid_len_list, int num, DwycoCallD
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     for(int i = 0; i < num; ++i)

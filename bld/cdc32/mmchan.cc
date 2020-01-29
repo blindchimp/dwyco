@@ -2591,7 +2591,7 @@ MMChannel::recv_config(vc cfg)
     DwString wants_to_send;
     DwString wants_to_recv;
     vc v;
-    int auto_accept = 0;
+
     int regular_screening = 1;
     // note: this is a hack to get around a
     // bug in the deserializer, seems that sometimes

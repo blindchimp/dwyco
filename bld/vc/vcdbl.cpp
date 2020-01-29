@@ -6,9 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#if !defined(__BORLANDC__)
 #include <stdio.h>
-#endif
 #include "vc.h"
 #include "vcdbl.h"
 #include "vcint.h"
@@ -148,11 +146,7 @@ vc_double::xfer_out(vcxstream& vcx)
 	char buf[40];
 	char fbuf[2048];
 
-#ifdef __BORLANDC__
-	gcvt(d, 100, fbuf);
-#else
 	sprintf(fbuf, "%.*g", (int)(sizeof(fbuf) / 2), d);
-#endif
 
 	int flen = strlen(fbuf);
 	int len = encode_long(buf, flen);

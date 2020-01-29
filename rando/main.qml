@@ -13,7 +13,6 @@ import QtQuick.Controls 2.2
 import QtQuick.Controls.Material 2.2
 import QtQuick.Layouts 1.3
 import QtQuick.Dialogs 1.2
-//import QtMultimedia 5.4
 import dwyco 1.0
 
 ApplicationWindow {
@@ -70,6 +69,22 @@ ApplicationWindow {
         console.warn("Could not calculate 'vh' based on Screen.height.")
         return 0
     }
+
+    function sec_to_hours(s) {
+        return Math.trunc(s / 3600)
+    }
+    function leftover_mins(s) {
+        return Math.trunc((s % 3600) / 60)
+    }
+    function simple_time_left(s) {
+        var h = sec_to_hours(s)
+        if(h == 0) {
+            var m = leftover_mins(s)
+            return m.toString() + qsTr(" Minutes")
+        } else {
+            return h.toString() + qsTr(" Hours")
+        }
+    }
     
     
     property color primary : "#673AB7"
@@ -107,6 +122,7 @@ ApplicationWindow {
 
     property bool dwy_invis: false
     property bool dwy_quiet: false
+    property bool dwy_freebies: true
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
@@ -212,6 +228,7 @@ ApplicationWindow {
                     //drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
                     drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
                     drawer_contents.tech_uid.text = "(#" + core.get_my_uid().substr(0, 8) + ")"
+                    rando_status.refresh()
                 }
 
             }
@@ -319,6 +336,29 @@ ApplicationWindow {
         visible: false
     }
 
+    Loader {
+        id: rando_status
+        property int num_sent: 0
+        property int num_recv: 0
+        property int next_freebie: 0
+
+        function refresh() {
+            active = false
+            source = ""
+            source = core.get_msg_count_url(dwy_freebies ? 1 : 0)
+            active = true
+        }
+
+        visible: false
+        active: false
+
+        onLoaded: {
+            num_sent = item.num_sent
+            num_recv = item.num_recv
+            next_freebie = item.next_freebie
+        }
+    }
+
 //    SimpleMsgBrowse {
 //        id: simp_msg_browse
 //        model: themsglist
@@ -423,6 +463,13 @@ ApplicationWindow {
             } else {
                 show_unreviewed = true
             }
+
+            a = get_local_setting("send_freebies")
+            if(a === "" || a === "true") {
+                dwy_freebies = true
+            } else {
+                dwy_freebies = false
+            }
         }
 
 
@@ -442,6 +489,8 @@ ApplicationWindow {
             if(what === 1) {
                 set_local_setting("acct-created", "true")
                 server_account_created = true
+                //rando_status.source = core.get_msg_count_url(dwy_freebies ? 1 : 0);
+                rando_status.refresh()
             }
             if(Qt.platform.os == "android") {
                 notificationClient.set_msg_count_url(core.get_msg_count_url())

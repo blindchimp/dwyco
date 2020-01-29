@@ -355,8 +355,9 @@ track_stun_connect(MMChannel *, vc what, void *, ValidPtr)
     }
 }
 
-// this gets called in caller when the "server-assist" command
-// returns from the server with a positive response
+// this gets called in CALLER when the "server-assist" command
+// returns from the server with a positive response that includes
+// some rendevous information
 void
 stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr vp, MessageDisplay *mid)
 {

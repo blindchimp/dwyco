@@ -39,11 +39,8 @@ private:
     void expand();
     void contract();
     DwMaps<R,D> *make_map(long size);
-    R dr;
-    R dd;
 
 public:
-    DwAMap(const R&, const D&, unsigned int contr = 0);
     DwAMap(int isize, unsigned int contr = 0);
     ~DwAMap();
     int no_expand;
@@ -69,18 +66,6 @@ tcls::get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *a) const
     return ip->dmi->get();
 }
 
-
-// note: leave the default smaller map at 32
-// since LH has some problems with caching
-// and expanding maps at the moment.
-thdr
-tcls::DwAMap(const R& r, const D& d, unsigned int ctr)
-    : dd(d), dr(r)
-{
-    can_contract = ctr;
-    map = make_map(32, r, d);
-    no_expand = 0;
-}
 
 thdr
 tcls::DwAMap(int isize, unsigned int ctr)
@@ -176,12 +161,12 @@ tcls::make_map(long size)
 {
 
     if(size <= 8)
-        return new DwQMapLazyC<R,D,8>(dr, dd);
+        return new DwQMapLazyC<R,D,8>();
     if(size <= 16)
-        return new DwQMapLazyC<R,D,16>(dr, dd);
+        return new DwQMapLazyC<R,D,16>();
     if(size <= 32)
-        return new DwQMapLazyC<R,D,32>(dr, dd);
-    return new DwMapR<R,D>(dr, dd, size);
+        return new DwQMapLazyC<R,D,32>();
+    return new DwMapR<R,D>(size);
 
 }
 

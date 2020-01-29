@@ -77,5 +77,16 @@ AppDrawerForm {
         close()
     }
 
+    freebies_switch.checked: dwy_freebies
+
+    freebies_switch.onClicked: {
+        dwy_freebies = freebies_switch.checked
+        core.set_local_setting("send_freebies", dwy_freebies ? "true" : "false")
+        rando_status.refresh()
+        //close()
+    }
+
+
 
 }
+

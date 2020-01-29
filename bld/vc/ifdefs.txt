@@ -13,4 +13,3 @@ performance, misc:
 
 FUNCACHE
 PERFHACKS
-BTYPES
