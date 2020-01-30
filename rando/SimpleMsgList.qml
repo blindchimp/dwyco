@@ -102,6 +102,7 @@ Page {
     }
 
     footer: ToolBar {
+        id: footer_toolbar
         width: parent.width
         RowLayout {
             anchors.fill: parent
@@ -640,6 +641,38 @@ scrolling in the listview or doesn't recognizing the swipe.
             cam.ok_text = "Upload"
             stack.push(cam)
         }
+    }
+
+    TipButton {
+        id: go_to_top
+        width: mm(10)
+        height: mm(10)
+        anchors.margins: mm(3)
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+
+        background: Rectangle {
+            id: gtb_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtb_img
+            anchors.centerIn: gtb_bg
+            source: mi("ic_vertical_align_top_black_24dp.png")
+            opacity: .5
+        }
+
+        visible: !listview.atYBeginning
+
+        onClicked: {
+            listview.positionViewAtBeginning()
+            //lock_to_bottom = true
+        }
+        ToolTip.text: "Skip to top"
+
     }
 
     Warning {
