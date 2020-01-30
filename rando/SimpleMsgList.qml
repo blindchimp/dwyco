@@ -373,11 +373,11 @@ Page {
                             var o = JSON.parse(MSG_TEXT)
                             if('lat' in o && 'lon' in o)
                             {
-                                //mapimage.lat = o.lat
-                                //mapimage.lon = o.lon
+                                mapimage.lat = parseFloat(o.lat)
+                                mapimage.lon = parseFloat(o.lon)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 7
+                                mapimage.zoom = default_map_zoom
                                 stack.push(mapimage)
                             }
                             else
@@ -390,11 +390,11 @@ Page {
                         } else {
                             if(location.text.length > 0 && SENT_TO_LAT != "" &&
                                     SENT_TO_LON != "") {
-                                //mapimage.lat = SENT_TO_LAT
-                                //mapimage.lon = SENT_TO_LON
+                                mapimage.lat = parseFloat(SENT_TO_LAT)
+                                mapimage.lon = parseFloat(SENT_TO_LON)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 7
+                                mapimage.zoom = default_map_zoom
                                 stack.push(mapimage)
 
                             }
