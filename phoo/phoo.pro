@@ -248,7 +248,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qt-qml-models/libQtQmlModels.a
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 
 }
 
