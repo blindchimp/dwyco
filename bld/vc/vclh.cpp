@@ -2943,7 +2943,7 @@ vc::setup_logs()
 // mode any more, can do this later
 //#error "do multithreaded logging"
 #endif
-	
+#ifndef _Windows
 	if(getenv("VC_LOG_TO_FILE"))
 	{
 		sprintf(s1, "lhd%d.out", getpid());
@@ -2952,6 +2952,7 @@ vc::setup_logs()
 		freopen(s1, "w", stderr);
 		setbuf(stderr, 0);
 	}
+#endif
 }
 
 void
