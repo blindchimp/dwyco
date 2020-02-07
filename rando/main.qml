@@ -107,6 +107,8 @@ ApplicationWindow {
     property string the_man: "5a098f3df49015331d74"
     property string redist: "13404a7fc7664a943a20"
 
+    property int default_map_zoom: 5
+
     function picht() {
         return vh(pct) - mm(.5)
     }

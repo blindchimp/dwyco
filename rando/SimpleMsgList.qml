@@ -102,6 +102,7 @@ Page {
     }
 
     footer: ToolBar {
+        id: footer_toolbar
         width: parent.width
         RowLayout {
             anchors.fill: parent
@@ -372,11 +373,11 @@ Page {
                             var o = JSON.parse(MSG_TEXT)
                             if('lat' in o && 'lon' in o)
                             {
-                                //mapimage.lat = o.lat
-                                //mapimage.lon = o.lon
+                                mapimage.lat = parseFloat(o.lat)
+                                mapimage.lon = parseFloat(o.lon)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 7
+                                mapimage.zoom = default_map_zoom
                                 stack.push(mapimage)
                             }
                             else
@@ -389,11 +390,11 @@ Page {
                         } else {
                             if(location.text.length > 0 && SENT_TO_LAT != "" &&
                                     SENT_TO_LON != "") {
-                                //mapimage.lat = SENT_TO_LAT
-                                //mapimage.lon = SENT_TO_LON
+                                mapimage.lat = parseFloat(SENT_TO_LAT)
+                                mapimage.lon = parseFloat(SENT_TO_LON)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 7
+                                mapimage.zoom = default_map_zoom
                                 stack.push(mapimage)
 
                             }
@@ -640,6 +641,38 @@ scrolling in the listview or doesn't recognizing the swipe.
             cam.ok_text = "Upload"
             stack.push(cam)
         }
+    }
+
+    TipButton {
+        id: go_to_top
+        width: mm(10)
+        height: mm(10)
+        anchors.margins: mm(3)
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+
+        background: Rectangle {
+            id: gtb_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtb_img
+            anchors.centerIn: gtb_bg
+            source: mi("ic_vertical_align_top_black_24dp.png")
+            opacity: .5
+        }
+
+        visible: !listview.atYBeginning
+
+        onClicked: {
+            listview.positionViewAtBeginning()
+            //lock_to_bottom = true
+        }
+        ToolTip.text: "Skip to top"
+
     }
 
     Warning {
