@@ -66,6 +66,7 @@
 //#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
 //#include "vgqt.h"
 //#endif
+#include "qloc.h"
 
 
 #ifdef MACOSX
@@ -105,10 +106,8 @@ extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
 
-QMap<QByteArray, QByteArray> Hash_to_loc;
-QMap<QByteArray, QByteArray> Hash_to_review;
-QMap<QByteArray, QByteArray> Hash_to_lon;
-QMap<QByteArray, QByteArray> Hash_to_lat;
+QMap<QByteArray, QLoc> Hash_to_loc;
+QMap<QByteArray,QByteArray> Hash_to_review;
 
 void
 hack_unread_count()
@@ -1573,55 +1572,9 @@ DwycoCore::init()
 
     }
 
-    QString tag_change1;
-    if(!setting_get("tag_change1", tag_change1))
-    {
-        DWYCO_USER_LIST ul;
-        int nul = 0;
-        dwyco_get_user_list2(&ul, &nul);
-        simple_scoped qul(ul);
-        for(int i = 0; i < nul; ++i)
-        {
-            QByteArray u = qul.get<QByteArray>(i);
-            DWYCO_SAVED_MSG_LIST sml;
-            if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
-            {
-                simple_scoped qsml(sml);
-                for(int i = 0; i < qsml.rows(); ++i)
-                {
-                    if(qsml.is_nil(i, DWYCO_QM_BODY_ATTACHMENT))
-                    {
-                        QByteArray txt = qsml.get<QByteArray>(i, DWYCO_QM_BODY_NEW_TEXT2);
-                        QJsonDocument qjd = QJsonDocument::fromJson(txt);
-                        if(!qjd.isNull())
-                        {
-                            QJsonObject qjo = qjd.object();
-                            if(!qjo.isEmpty())
-                            {
-                                QJsonValue h = qjo.value("hash");
-                                QJsonValue loc = qjo.value("loc");
-                                QJsonValue rev = qjo.value("review");
 
-                                if(!loc.isUndefined())
-                                    Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
-                                if(!rev.isUndefined())
-                                    Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+    setting_put("tag_change1", "");
 
-                                // upgrade hack, favorite the geo-info so it isn't cleared
-                                QByteArray mid = qsml.get<QByteArray>(i, DWYCO_QM_BODY_ID);
-                                dwyco_set_fav_msg(mid.constData(), 1);
-                                dwyco_set_msg_tag(mid.constData(), "_json");
-
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-        setting_put("tag_change1", "");
-    }
-    else
     {
         // just query for _json tag and processes those directly
         DWYCO_LIST tml;
@@ -1653,14 +1606,22 @@ DwycoCore::init()
                                 if(!h.isUndefined())
                                 {
                                     QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
+                                    QLoc loca;
+                                    loca.hash = hh;
+                                    loca.mid = mid;
                                     if(!loc.isUndefined())
-                                        Hash_to_loc.insert(hh, loc.toString().toLatin1());
+                                        loca.loc = loc.toString().toLatin1();
                                     if(!rev.isUndefined())
                                         Hash_to_review.insert(hh, rev.toString().toLatin1());
                                     if(!lat.isUndefined())
-                                        Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                                        loca.lat = lat.toString().toLatin1();
                                     if(!lon.isUndefined())
-                                        Hash_to_lon.insert(hh, lon.toString().toLatin1());
+                                        loca.lon = lon.toString().toLatin1();
+                                    QList<QLoc> ql = Hash_to_loc.values(hh);
+                                    if(!ql.contains(loca))
+                                    {
+                                        Hash_to_loc.insertMulti(hh, loca);
+                                    }
                                 }
                             }
                         }

@@ -31,6 +31,7 @@ RC_FILE=rando.rc
 SOURCES += main.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
+    geospray.cpp \
     pfx.cpp \
     msglistmodel.cpp \
     msgpv.cpp \
@@ -263,6 +264,7 @@ include(deployment.pri)
 
 HEADERS += \
 	dwyco_top.h \
+    geospray.h \
     msglistmodel.h \
     notificationclient.h \
     dwquerybymember.h \

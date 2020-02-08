@@ -20,6 +20,7 @@
 #include "dwycolistscoped.h"
 #include "dwyco_new_msg.h"
 #include "dwyco_top.h"
+#include "qloc.h"
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
@@ -47,10 +48,8 @@ static QMap<QByteArray, int> Mid_to_percent;
 // after that, the fetch can be initiated explicitly
 static QSet<QByteArray> Manual_fetch;
 
-extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QLoc> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
-extern QMap<QByteArray, QByteArray> Hash_to_lon;
-extern QMap<QByteArray, QByteArray> Hash_to_lat;
 
 static QMap<QByteArray,QByteArray> Mid_to_hash;
 
@@ -1485,7 +1484,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray h;
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
-        QByteArray l = Hash_to_loc.value(h, "Unknown");
+        QByteArray l = Hash_to_loc.value(h).loc;
         return l;
     }
     else if(role == SENT_TO_LAT)
@@ -1501,7 +1500,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray h;
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
-        QByteArray l = Hash_to_lat.value(h, "");
+        QByteArray l = Hash_to_loc.value(h).lat;
         return l;
     }
     else if(role == SENT_TO_LON)
@@ -1517,7 +1516,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray h;
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
-        QByteArray l = Hash_to_lon.value(h, "");
+        QByteArray l = Hash_to_loc.value(h).lon;
         return l;
     }
     else if(role == REVIEW_RESULTS)

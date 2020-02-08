@@ -17,13 +17,12 @@
 #include "dlli.h"
 #include "pfx.h"
 #include "dwycolistscoped.h"
+#include "qloc.h"
 
 static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Already_processed;
-extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QLoc> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
-extern QMap<QByteArray, QByteArray> Hash_to_lon;
-extern QMap<QByteArray, QByteArray> Hash_to_lat;
 void cdcxpanic(const char *);
 
 static
@@ -67,14 +66,22 @@ load_to_hash(const QByteArray& uid, const QByteArray& mid)
                 if(!h.isUndefined())
                 {
                     QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
+                    QLoc loca;
+                    loca.hash = hh;
+                    loca.mid = mid;
                     if(!loc.isUndefined())
-                        Hash_to_loc.insert(hh, loc.toString().toLatin1());
+                        loca.loc = loc.toString().toLatin1();
                     if(!rev.isUndefined())
                         Hash_to_review.insert(hh, rev.toString().toLatin1());
                     if(!lat.isUndefined())
-                        Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                        loca.lat = lat.toString().toLatin1();
                     if(!lon.isUndefined())
-                        Hash_to_lon.insert(hh, lon.toString().toLatin1());
+                        loca.lon = lon.toString().toLatin1();
+                    QList<QLoc> ql = Hash_to_loc.values(hh);
+                    if(!ql.contains(loca))
+                    {
+                        Hash_to_loc.insertMulti(hh, loca);
+                    }
 
                     dwyco_set_msg_tag(mid.constData(), h.toString().toLatin1());
                 }

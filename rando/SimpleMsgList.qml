@@ -513,7 +513,7 @@ Page {
                         target: core
                         onMsg_progress : {
                             console.log("PB ", pers_id, msg, percent_done, model.mid)
-                            if(pers_id == model.mid) {
+                            if(pers_id === model.mid) {
                                 pb.value = percent_done
                             }
                         }
