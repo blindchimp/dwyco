@@ -46,6 +46,7 @@ GeoSent::load_external_state(const QLoc& ql)
     update_lat(ql.lat);
     update_lon(ql.lon);
     /// hmmm, maybe just leave the parsing to qml
+    return 1;
 }
 
 GeoSprayListModel::GeoSprayListModel(QObject *parent) :

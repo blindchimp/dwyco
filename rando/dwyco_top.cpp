@@ -67,6 +67,7 @@
 //#include "vgqt.h"
 //#endif
 #include "qloc.h"
+#include "geospray.h"
 
 
 #ifdef MACOSX
@@ -3161,6 +3162,9 @@ dwyco_register_qml(QQmlContext *root)
     //Conv_sort_proxy->setSourceModel(convlist);
     //QObject::connect(convlist, SIGNAL(countChanged()), Conv_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("ConvListModel", convlist);
+
+    GeoSprayListModel *gs = new GeoSprayListModel;
+    root->setContextProperty("GeoSprayListModel", gs);
 
     //IgnoreListModel *ignorelist = new IgnoreListModel;
     //Ignore_sort_proxy = new IgnoreSortFilterModel;

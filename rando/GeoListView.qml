@@ -1,0 +1,41 @@
+import QtQuick 2.6
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.3
+
+Page {
+    id: geolist
+
+    property string hash: ""
+
+    background: Rectangle {
+        gradient: Gradient {
+            GradientStop { position: 1.0; color: amber_light}
+            GradientStop { position: 0.0; color: amber_dark}
+        }
+    }
+
+    onHashChanged: {
+        GeoSprayListModel.load_hash_to_model(hash)
+    }
+
+    Component {
+        id: geodel
+        RowLayout {
+            width: parent.width
+            Text {
+                Layout.fillWidth: true
+                text: model.display
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+        }
+    }
+
+    ListView {
+        id: geolistview
+        anchors.fill: parent
+        model: GeoSprayListModel
+    }
+}
