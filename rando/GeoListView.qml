@@ -18,11 +18,20 @@ Page {
         GeoSprayListModel.load_hash_to_model(hash)
     }
 
+    header: SimpleToolbar {
+        //extras: extras_button
+
+    }
+
     Component {
         id: geodel
         RowLayout {
             width: parent.width
-            Text {
+            Image {
+                source: mi("ic_language_black_24dp.png")
+            }
+
+            Label {
                 Layout.fillWidth: true
                 text: model.display
             }
@@ -36,6 +45,9 @@ Page {
     ListView {
         id: geolistview
         anchors.fill: parent
+        anchors.margins: mm(2)
         model: GeoSprayListModel
+        delegate: geodel
+        spacing: mm(2)
     }
 }

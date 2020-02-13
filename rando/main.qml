@@ -387,6 +387,11 @@ ApplicationWindow {
         visible: false
     }
 
+    GeoListView {
+        id: geolist
+        visible: false
+    }
+
 
     StackView {
         id: stack

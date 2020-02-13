@@ -45,7 +45,7 @@ public:
     explicit GeoSprayListModel(QObject *parent = 0);
     ~GeoSprayListModel();
 
-    void load_hash_to_model(const QByteArray& hash);
+    Q_INVOKABLE void load_hash_to_model(const QByteArray& hash);
     GeoSent * add_mid_to_model(const QByteArray& mid);
 
     Q_INVOKABLE void set_all_selected(bool);

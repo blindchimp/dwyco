@@ -369,6 +369,9 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
+                        geolist.hash = ASSOC_HASH
+                        stack.push(geolist)
+                        if(false) {
                         if(SENT === 0) {
                             var o = JSON.parse(MSG_TEXT)
                             if('lat' in o && 'lon' in o)
@@ -405,6 +408,7 @@ Page {
                                 else
                                     location.state = "moveIn"
                             }
+                        }
                         }
 
                         core.hash_clear_tag(ASSOC_HASH, "unviewed")

@@ -41,7 +41,8 @@ GeoSent::load_external_state(const QLoc& ql)
 #endif
     // lets assume we have loaded all the messages into the internal
     // hash table for now
-    update_hash(ql.hash);
+    update_mid(ql.mid);
+    update_hash(ql.hash.toHex());
     update_display(ql.loc);
     update_lat(ql.lat);
     update_lon(ql.lon);
@@ -67,7 +68,7 @@ void
 GeoSprayListModel::load_hash_to_model(const QByteArray& hash)
 {
     clear();
-    QList<QLoc> locs = Hash_to_loc.values(hash);
+    QList<QLoc> locs = Hash_to_loc.values(QByteArray::fromHex(hash));
     for(int i = 0; i < locs.count(); ++i)
     {
         GeoSent *gs = new GeoSent;
