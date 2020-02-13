@@ -3,10 +3,10 @@
 #include <QByteArray>
 struct QLoc
 {
-	QByteArray hash;
-	QByteArray loc;
-	QByteArray lat;
-	QByteArray lon;
+    QByteArray hash;
+    QByteArray loc;
+    QByteArray lat;
+    QByteArray lon;
     QByteArray mid;
 
     bool operator==(const struct QLoc& ql) const {

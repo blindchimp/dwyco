@@ -2486,6 +2486,14 @@ DwycoCore::delete_user(QString uid)
     return ret;
 }
 
+int
+DwycoCore::geo_count_from_hash(QString hash)
+{
+    QByteArray buid = hash.toLatin1();
+    buid = QByteArray::fromHex(buid);
+    return Hash_to_loc.count(buid);
+}
+
 static QByteArray
 get_cq_results_filename()
 {

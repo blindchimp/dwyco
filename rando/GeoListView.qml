@@ -1,6 +1,8 @@
 import QtQuick 2.6
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.3
+import QtPositioning 5.12
+
 
 Page {
     id: geolist
@@ -28,7 +30,7 @@ Page {
         RowLayout {
             width: parent.width
             Image {
-                source: mi("ic_language_black_24dp.png")
+                source: model.lat.length === 0 ? mi("ic_not_interested_black_24dp.png") : mi("ic_language_black_24dp.png")
             }
 
             Label {
@@ -38,6 +40,19 @@ Page {
 
             Item {
                 Layout.fillWidth: true
+            }
+            MouseArea {
+                anchors.fill: parent
+                enabled: model.lat.length > 0
+                onClicked: {
+                    mapimage.lat = parseFloat(model.lat)
+                    mapimage.lon = parseFloat(model.lon)
+                    mapimage.center = QtPositioning.coordinate(parseFloat(model.lat), parseFloat(model.lon))
+                    mapimage.placename = model.display
+                    mapimage.zoom = default_map_zoom
+                    stack.push(mapimage)
+                }
+
             }
         }
     }

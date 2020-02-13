@@ -369,9 +369,11 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
+                        if(core.geo_count_from_hash(ASSOC_HASH) > 1) {
                         geolist.hash = ASSOC_HASH
                         stack.push(geolist)
-                        if(false) {
+                        }
+                        else {
                         if(SENT === 0) {
                             var o = JSON.parse(MSG_TEXT)
                             if('lat' in o && 'lon' in o)
