@@ -361,7 +361,12 @@ Page {
 
             Image {
                 id: has_geo_info
-                source: msglist.model.uid === the_man ? mi("ic_language_black_24dp.png") : mi("ic_language_white_24dp.png")
+                source: {
+
+                    msglist.model.uid === the_man ?
+                                ((core.geo_count_from_hash(ASSOC_HASH) > 1) ? mi("ic_open_in_new_black_24dp.png") : mi("ic_language_black_24dp.png"))
+                              : mi("ic_language_white_24dp.png")
+                }
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
