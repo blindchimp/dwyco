@@ -140,7 +140,7 @@ update_unseen_from_db()
             break;
     }
     // if there are messages on the server from the reviewer, it is
-    // almost certain bad news
+    // almost certainly bad news
     if(uid_has_unviewed_msgs(TheMan))
         has_ugeo = true;
 
