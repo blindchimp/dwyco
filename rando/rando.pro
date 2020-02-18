@@ -10,6 +10,8 @@ QT += location positioning
 android: QT += androidextras
 macx-clang: QT += macextras
 
+include(../../SortFilterProxyModel/SortFilterProxyModel.pri)
+
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang {
 QMAKE_INFO_PLIST=Info.plist.ios
