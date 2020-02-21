@@ -9,6 +9,7 @@ QT += location positioning
 
 android: QT += androidextras
 macx-clang: QT += macextras
+CONFIG += c++11
 
 include(../../SortFilterProxyModel/SortFilterProxyModel.pri)
 
