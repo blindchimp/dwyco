@@ -42,7 +42,7 @@ static QSet<QByteArray> Selected;
 static QList<QByteArray> Fetching;
 static QSet<QByteArray> Dont_refetch;
 static QList<QByteArray> Delete_msgs;
-static QMap<int, QByteArray> Fid_to_mid;
+//static QMap<int, QByteArray> Fid_to_mid;
 static QMap<QByteArray, int> Mid_to_percent;
 // messages are automatically fetched, unless it fails.
 // after that, the fetch can be initiated explicitly
