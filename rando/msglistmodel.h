@@ -107,6 +107,7 @@ private:
 
     QString get_msg_text(int row) const;
     QString preview_filename(int row) const;
+    long hash_to_effective_lc(const QByteArray& hash);
 };
 
 extern msglist_model *mlm;

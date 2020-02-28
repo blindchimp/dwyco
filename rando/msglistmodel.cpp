@@ -1140,6 +1140,60 @@ hash_has_tag(QByteArray hash, const char *tag)
     return 0;
 }
 
+static
+QSet<QByteArray>
+hash_to_mids(const QByteArray& hash)
+{
+    QSet<QByteArray> ret;
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, hash.constData());
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        QByteArray b = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        ret.insert(b);
+    }
+    return ret;
+}
+
+
+static
+long
+find_max_logical(const QSet<QByteArray>& mids, DWYCO_MSG_IDX mi)
+{
+    dwyco_list dmi(mi);
+    long maxlc = -1;
+    int found = 0;
+    int mid_count = mids.count();
+    if(mid_count == 0)
+        return -1;
+    for(int i = 0; i < dmi.rows(); ++i)
+    {
+        QByteArray m = dmi.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+        if(!mids.contains(m))
+            continue;
+        long lc = dmi.get_long(i, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+        if(lc > maxlc)
+        {
+            maxlc = lc;
+        }
+        found++;
+        if(mid_count == found)
+            break;
+    }
+    return maxlc;
+}
+
+long
+msglist_raw::hash_to_effective_lc(const QByteArray& hash)
+{
+    if(!msg_idx)
+        return 0;
+    QSet<QByteArray> b = hash_to_mids(hash);
+    long lc = find_max_logical(b, msg_idx);
+    return lc;
+}
+
 QVariant
 msglist_raw::inbox_data (int r, int role ) const
 {
