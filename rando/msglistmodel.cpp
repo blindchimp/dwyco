@@ -1162,11 +1162,11 @@ long
 find_max_logical(const QSet<QByteArray>& mids, DWYCO_MSG_IDX mi)
 {
     dwyco_list dmi(mi);
-    long maxlc = -1;
+    long maxlc = 0;
     int found = 0;
     int mid_count = mids.count();
     if(mid_count == 0)
-        return -1;
+        return 0;
     for(int i = 0; i < dmi.rows(); ++i)
     {
         QByteArray m = dmi.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
