@@ -556,12 +556,12 @@ Page {
         }
     }
 
-    SortFilterProxyModel {
-        id: proxymodel
-        sourceModel: themsglist
+//    SortFilterProxyModel {
+//        id: proxymodel
+//        sourceModel: themsglist
 
-        sorters: RoleSorter { roleName: "IS_UNSEEN"; sortOrder: Qt.DescendingOrder }
-    }
+//        sorters: RoleSorter { roleName: "IS_UNSEEN"; sortOrder: Qt.DescendingOrder }
+//    }
 
     ListView {
         id: listview
@@ -569,7 +569,7 @@ Page {
         anchors.topMargin: items_margin
         clip: true
         delegate: msg_delegate
-        model: proxymodel
+        model: themsglist
         spacing: items_margin
 /*
 // sadly, this doesn't work very well
