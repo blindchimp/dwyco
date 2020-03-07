@@ -1028,6 +1028,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_QM_BODY_SPECIAL_TYPE_AB "010001001"
 
 #define DWYCO_QM_BODY_FILE_ATTACHMENT "012"
+#define DWYCO_QM_BODY_LOGICAL_CLOCK "017"
 
 // DWYCO_MSG_IDX is an index of the saved messages for a particular UID.
 // The index is mostly-sorted in order of descending date.

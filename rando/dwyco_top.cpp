@@ -109,6 +109,8 @@ extern int HasCamHardware;
 
 QMap<QByteArray, QLoc> Hash_to_loc;
 QMap<QByteArray,QByteArray> Hash_to_review;
+QMap<QByteArray, long> Hash_to_max_lc;
+
 
 void
 hack_unread_count()
@@ -1587,6 +1589,7 @@ DwycoCore::init()
                 DWYCO_SAVED_MSG_LIST sml;
                 QByteArray u = QByteArray::fromHex(stml.get<QByteArray>(i, DWYCO_MSG_IDX_ASSOC_UID));
                 QByteArray mid = stml.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+                long lc = stml.get_long(i, DWYCO_MSG_IDX_LOGICAL_CLOCK);
                 if(dwyco_get_saved_message(&sml, u.constData(), u.length(), mid.constData()))
                 {
                     simple_scoped ssml(sml);
@@ -1623,6 +1626,10 @@ DwycoCore::init()
                                     {
                                         Hash_to_loc.insertMulti(hh, loca);
                                     }
+                                    long v = Hash_to_max_lc.value(hh, 0);
+                                    if(lc > v)
+                                        Hash_to_max_lc.insert(hh, lc);
+
                                 }
                             }
                         }

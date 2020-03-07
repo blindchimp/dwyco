@@ -23,6 +23,7 @@ static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Already_processed;
 extern QMap<QByteArray,QLoc> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
+extern QMap<QByteArray, long> Hash_to_max_lc;
 void cdcxpanic(const char *);
 
 static
@@ -57,6 +58,7 @@ load_to_hash(const QByteArray& uid, const QByteArray& mid)
             QJsonObject qjo = qjd.object();
             if(!qjo.isEmpty())
             {
+                long lc = qsml.get_long(DWYCO_QM_BODY_LOGICAL_CLOCK);
                 QJsonValue h = qjo.value("hash");
                 QJsonValue loc = qjo.value("loc");
                 QJsonValue rev = qjo.value("review");
@@ -82,6 +84,9 @@ load_to_hash(const QByteArray& uid, const QByteArray& mid)
                     {
                         Hash_to_loc.insertMulti(hh, loca);
                     }
+                    long v = Hash_to_max_lc.value(hh, 0);
+                    if(lc > v)
+                        Hash_to_max_lc.insert(hh, lc);
 
                     dwyco_set_msg_tag(mid.constData(), h.toString().toLatin1());
                 }

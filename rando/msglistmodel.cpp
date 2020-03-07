@@ -50,6 +50,7 @@ static QSet<QByteArray> Manual_fetch;
 
 extern QMap<QByteArray,QLoc> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
+extern QMap<QByteArray,long> Hash_to_max_lc;
 
 static QMap<QByteArray,QByteArray> Mid_to_hash;
 
@@ -796,7 +797,7 @@ msglist_raw::reload_model(int force)
         dwyco_list qm(msg_idx);
         if(qm.rows() > 0)
         {
-            long curlc = qm.get_long(0, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+            long curlc = qm.get_long(DWYCO_MSG_IDX_LOGICAL_CLOCK);
             DWYCO_MSG_IDX nmi;
             dwyco_get_new_message_index(&nmi, buid.constData(), buid.length(), curlc);
             simple_scoped qnmi(nmi);
@@ -1166,6 +1167,7 @@ hash_has_tag(QByteArray hash, const char *tag)
     return 0;
 }
 
+#if 0
 static
 QSet<QByteArray>
 hash_to_mids(const QByteArray& hash)
@@ -1211,14 +1213,12 @@ find_max_logical(const QSet<QByteArray>& mids, DWYCO_MSG_IDX mi)
     return maxlc;
 }
 
+#endif
+
 long
 msglist_raw::hash_to_effective_lc(const QByteArray& hash)
 {
-    if(!msg_idx)
-        return 0;
-    QSet<QByteArray> b = hash_to_mids(hash);
-    long lc = find_max_logical(b, msg_idx);
-    return lc;
+    return Hash_to_max_lc.value(hash, 0);
 }
 
 QVariant
