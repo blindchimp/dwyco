@@ -399,7 +399,7 @@ msglist_model::invalidate_sent_to()
         emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
         emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
     }
-    sort(0, Qt::AscendingOrder);
+    sort(0, Qt::DescendingOrder);
 }
 
 bool
@@ -575,7 +575,7 @@ msglist_model::reload_model()
     {
         mr->reload_model();
     }
-    sort(0, Qt::AscendingOrder);
+    sort(0, Qt::DescendingOrder);
 }
 
 void
@@ -586,7 +586,7 @@ msglist_model::force_reload_model()
     {
         mr->reload_model(1);
     }
-    sort(0, Qt::AscendingOrder);
+    sort(0, Qt::DescendingOrder);
 }
 
 void
@@ -1218,7 +1218,7 @@ find_max_logical(const QSet<QByteArray>& mids, DWYCO_MSG_IDX mi)
 long
 msglist_raw::hash_to_effective_lc(const QByteArray& hash)
 {
-    return Hash_to_max_lc.value(hash, 0);
+    return Hash_to_max_lc.value(QByteArray::fromHex(hash), 0);
 }
 
 QVariant
