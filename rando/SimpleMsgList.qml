@@ -12,7 +12,6 @@ import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.2
 import QtPositioning 5.12
 
-
 Page {
     id: msglist
     property alias model: listview.model
@@ -24,8 +23,8 @@ Page {
 
     background: Rectangle {
         gradient: Gradient {
-            GradientStop { position: 1.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
-            GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_dark : primary_dark}
+            GradientStop { position: 1.0; color: themsglist.uid === the_man ? amber_light : primary_light }
+            GradientStop { position: 0.0; color: themsglist.uid === the_man ? amber_dark : primary_dark}
         }
     }
 
@@ -282,7 +281,7 @@ Page {
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
-                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && msglist.model.uid === the_man
+                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
                 source: mi("ic_not_interested_black_24dp.png")
 
                 z: 10
@@ -363,7 +362,7 @@ Page {
                 id: has_geo_info
                 source: {
 
-                    msglist.model.uid === the_man ?
+                    themsglist.uid === the_man ?
                                 ((core.geo_count_from_hash(ASSOC_HASH) > 1) ? mi("ic_open_in_new_black_24dp.png") : mi("ic_language_black_24dp.png"))
                               : mi("ic_language_white_24dp.png")
                 }
@@ -549,8 +548,8 @@ Page {
 //                        color: "green"
 //                    }
                 }
-                visible: msglist.model.uid !== the_man && IS_ACTIVE
-                active: msglist.model.uid !== the_man && IS_ACTIVE
+                visible: themsglist.uid !== the_man && IS_ACTIVE
+                active: themsglist.uid !== the_man && IS_ACTIVE
             }
         }
     }

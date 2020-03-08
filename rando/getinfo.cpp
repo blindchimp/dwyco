@@ -48,6 +48,6 @@ get_review_status(const QByteArray& uid, int& reviewed, int& regular)
     int cant_resolve;
     l = dwyco_uid_to_info(uid.constData(), uid.length(), &cant_resolve);
     simple_scoped sl(l);
-    reviewed = sl.get_long(0, DWYCO_INFO_REVIEWED);
-    regular = sl.get_long(0, DWYCO_INFO_REGULAR);
+    reviewed = sl.get_long(DWYCO_INFO_REVIEWED);
+    regular = sl.get_long(DWYCO_INFO_REGULAR);
 }

@@ -9,6 +9,7 @@ QT += location positioning
 
 android: QT += androidextras
 macx-clang: QT += macextras
+CONFIG += c++11
 
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang {
@@ -24,7 +25,7 @@ QMAKE_INFO_PLIST=Info.plist.mac
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 
-DEFINES += DWYCO_RELEASE
+#DEFINES += DWYCO_RELEASE
 ICON=rando.icns
 RC_FILE=rando.rc
 
