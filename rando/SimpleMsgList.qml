@@ -11,8 +11,6 @@ import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.2
 import QtPositioning 5.12
-import SortFilterProxyModel 0.2
-
 
 Page {
     id: msglist
@@ -555,13 +553,6 @@ Page {
             }
         }
     }
-
-//    SortFilterProxyModel {
-//        id: proxymodel
-//        sourceModel: themsglist
-
-//        sorters: RoleSorter { roleName: "IS_UNSEEN"; sortOrder: Qt.DescendingOrder }
-//    }
 
     ListView {
         id: listview
