@@ -27,24 +27,13 @@ Page {
 
     Component {
         id: geodel
-        RowLayout {
+        ItemDelegate {
             width: parent.width
-            Image {
-                source: model.lat.length === 0 ? mi("ic_not_interested_black_24dp.png") : mi("ic_language_black_24dp.png")
-            }
-
-            Label {
-                Layout.fillWidth: true
-                text: model.display
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-            MouseArea {
-                anchors.fill: parent
-                enabled: model.lat.length > 0
-                onClicked: {
+            text: model.display
+            display: AbstractButton.TextBesideIcon
+            icon.source: model.lat.length === 0 ? mi("ic_not_interested_black_24dp.png") : mi("ic_language_black_24dp.png")
+            onClicked: {
+                if(model.lat.length > 0) {
                     mapimage.lat = parseFloat(model.lat)
                     mapimage.lon = parseFloat(model.lon)
                     mapimage.center = QtPositioning.coordinate(parseFloat(model.lat), parseFloat(model.lon))
@@ -52,7 +41,6 @@ Page {
                     mapimage.zoom = default_map_zoom
                     stack.push(mapimage)
                 }
-
             }
         }
     }
