@@ -32,7 +32,8 @@ public:
 
     Q_INVOKABLE void reload_model();
 
-    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
+    bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
 
     Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n, int only_favs);
     Q_INVOKABLE void set_show_hidden(int);
@@ -74,6 +75,8 @@ signals:
 
 class msglist_raw : public QAbstractListModel
 {
+    friend class msglist_model;
+
     Q_OBJECT
 public:
     msglist_raw(QObject * = 0);
@@ -107,6 +110,7 @@ private:
 
     QString get_msg_text(int row) const;
     QString preview_filename(int row) const;
+    long hash_to_effective_lc(const QByteArray& hash);
 };
 
 extern msglist_model *mlm;

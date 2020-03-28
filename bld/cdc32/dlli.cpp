@@ -7752,7 +7752,12 @@ DWYCOEXPORT
 int
 dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
 {
-    vc res = sql_get_tagged_idx(tag);
+    vc res;
+    // super-kluge
+    if(strcmp(tag, "*") == 0)
+        res = sql_get_all_idx();
+    else
+        res = sql_get_tagged_idx(tag);
     *list_out = dwyco_list_from_vc(res);
     return 1;
 }

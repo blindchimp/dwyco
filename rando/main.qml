@@ -387,6 +387,11 @@ ApplicationWindow {
         visible: false
     }
 
+    GeoListView {
+        id: geolist
+        visible: false
+    }
+
 
     StackView {
         id: stack
@@ -495,7 +500,7 @@ ApplicationWindow {
                 rando_status.refresh()
             }
             if(Qt.platform.os == "android") {
-                notificationClient.set_msg_count_url(core.get_msg_count_url())
+                //notificationClient.set_msg_count_url(core.get_msg_count_url())
                 notificationClient.log_event()
                 notificationClient.set_lastrun()
             }
