@@ -42,7 +42,6 @@ static QSet<QByteArray> Selected;
 static QList<QByteArray> Fetching;
 static QSet<QByteArray> Dont_refetch;
 static QList<QByteArray> Delete_msgs;
-//static QMap<int, QByteArray> Fid_to_mid;
 static QMap<QByteArray, int> Mid_to_percent;
 // messages are automatically fetched, unless it fails.
 // after that, the fetch can be initiated explicitly
@@ -262,8 +261,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
         if(i >= 0)
             Fetching.removeAt(i);
         Delete_msgs.append(mid);
-        //del_unviewed_mid(mid);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         break;
 
@@ -279,7 +276,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
 
         if(i >= 0)
             Fetching.removeAt(i);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         Manual_fetch.insert(mid);
         break;
@@ -303,7 +299,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
     default:
         if(i >= 0)
             Fetching.removeAt(i);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         Manual_fetch.remove(mid);
     }
