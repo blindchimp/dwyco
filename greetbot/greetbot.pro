@@ -2,12 +2,12 @@ QT += core
 QT -= gui
 
 include(../$$DWYCO_CONFDIR/conf.pri)
-INCLUDEPATH += ../bld/dwcls
+INCLUDEPATH += ../bld/dwcls ../bld/miscsrc
 CONFIG -= app_bundle
 
 SOURCES += \
     greetbot.cpp \
-    dwyco_new_msg.cpp
+    ../bld/miscsrc/dwyco_new_msg.cpp
 
 linux-g++*|macx-clang {
 
@@ -39,5 +39,3 @@ DEFINES += LINUX VCCFG_FILE
 #QMAKE_LFLAGS += --coverage
 }
 
-HEADERS += \
-    dwyco_new_msg.h

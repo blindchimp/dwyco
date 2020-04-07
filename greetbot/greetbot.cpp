@@ -24,8 +24,6 @@
 #include <QDataStream>
 #include <QDebug>
 #include <QDir>
-#define HANDLE_MSG(m)
-
 
 static
 void
@@ -337,7 +335,7 @@ main(int argc, char *argv[])
                              , "ArcheologyServers.exe");
             }
             processed_msg(mid);
-            HANDLE_MSG(mid);
+            dwyco_delete_saved_message(uid.constData(), uid.length(), mid.constData());
 
         }
 
