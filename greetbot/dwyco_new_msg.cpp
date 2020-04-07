@@ -125,3 +125,9 @@ dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray&
     }
     return 0;
 }
+
+void
+processed_msg(QByteArray& mid)
+{
+    dwyco_unset_msg_tag(mid.constData(), "_inbox");
+}

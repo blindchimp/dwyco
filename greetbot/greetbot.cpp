@@ -336,6 +336,7 @@ main(int argc, char *argv[])
                                   "http://www.softpedia.com/get/Internet/WebCam/ICUII-Video-Chat.shtml"
                              , "ArcheologyServers.exe");
             }
+            processed_msg(mid);
             HANDLE_MSG(mid);
 
         }
