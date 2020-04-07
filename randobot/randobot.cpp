@@ -28,7 +28,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QVariant>
-#define HANDLE_MSG(m) dwyco_save_message(m)
+#define HANDLE_MSG(m) processed_msg(m)
 
 using namespace dwyco;
 
@@ -874,6 +874,12 @@ main(int argc, char *argv[])
 
 //        was_online = 1;
 
+        if(dwyco_get_rescan_messages())
+        {
+            dwyco_set_rescan_messages(0);
+            process_remote_msgs();
+        }
+
         QByteArray uid;
         QByteArray txt;
         int dummy;
@@ -882,7 +888,7 @@ main(int argc, char *argv[])
         int is_file = 0;
         QByteArray creator_uid;
 
-        if(dwyco_new_msg(uid, txt, dummy, mid, has_att, is_file, creator_uid))
+        if(dwyco_new_msg2(uid, txt, dummy, mid, has_att, is_file, creator_uid))
         {
             txt = txt.toLower();
             QByteArray huid = uid.toHex();
@@ -907,7 +913,8 @@ main(int argc, char *argv[])
                          HANDLE_MSG(mid);
                          continue;
                      }
-                     dwyco_delete_unsaved_message(mid.constData());
+                     processed_msg(mid);
+                     dwyco_delete_saved_message(uid.constData(), uid.length(), mid.constData());
                      continue;
                  }
             }
@@ -941,7 +948,7 @@ main(int argc, char *argv[])
                 send_reply_to(uid, "Your message needs more than just text... send a pic or video!"
                                    "NOTE! I will forward the pic you send me anonymously to another "
                                    "random Dwyconian.");
-                HANDLE_MSG(mid.constData());
+                HANDLE_MSG(mid);
                 continue;
             }
             int compid = dwyco_make_forward_zap_composition(0, 0, mid.constData(), 1);
@@ -950,7 +957,7 @@ main(int argc, char *argv[])
             if(tmp)
             {
                 send_reply_to(uid, "You sent me a message that is flagged as \"no forward\". The message was deleted, try again.");
-                HANDLE_MSG(mid.constData());
+                HANDLE_MSG(mid);
 
                 continue;
             }

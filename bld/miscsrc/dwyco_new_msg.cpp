@@ -96,7 +96,7 @@ process_remote_msgs()
 
 
 int
-dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray& mid, int& has_att)
+dwyco_new_msg2(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray& mid, int& has_att, int& is_file, QByteArray& creator_uid)
 {
     DWYCO_LIST inbox_mids;
     if(!dwyco_get_tagged_idx(&inbox_mids, "_inbox"))
@@ -114,6 +114,7 @@ dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray&
         uid_out = qim.get<QByteArray>(i, DWYCO_MSG_IDX_ASSOC_UID);
         uid_out = QByteArray::fromHex(uid_out);
         has_att = !qim.is_nil(i, DWYCO_MSG_IDX_HAS_ATTACHMENT);
+        is_file = !qim.is_nil(i, DWYCO_MSG_IDX_IS_FILE);
         DWYCO_SAVED_MSG_LIST sm;
         if(!dwyco_get_saved_message(&sm, uid_out.constData(), uid_out.length(), mid.constData()))
             continue;
@@ -121,9 +122,28 @@ dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray&
         DWYCO_LIST bt = dwyco_get_body_text(qsm);
         simple_scoped qbt(bt);
         txt = qbt.get<QByteArray>(0);
+
+        DWYCO_LIST ba = dwyco_get_body_array(qsm);
+        simple_scoped qba(ba);
+        if(qba.rows() == 1)
+            creator_uid = uid_out;
+        else
+        {
+            int crow = qba.rows() - 1;
+            creator_uid = qba.get<QByteArray>(crow, DWYCO_QM_BODY_FROM);
+        }
+
         return 1;
     }
     return 0;
+}
+
+int
+dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray& mid, int& has_att)
+{
+    QByteArray dum1;
+    int dum2;
+    return dwyco_new_msg2(uid_out, txt, zap_viewer, mid, has_att, dum2, dum1);
 }
 
 void

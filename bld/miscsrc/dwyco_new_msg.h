@@ -11,4 +11,6 @@
 int process_remote_msgs();
 void processed_msg(QByteArray& mid);
 int dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray& mid_out, int &has_att);
+int dwyco_new_msg2(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray& mid_out, int &has_att, int& is_file, QByteArray& creator_uid);
+
 #endif
