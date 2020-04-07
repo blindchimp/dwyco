@@ -1,7 +1,14 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+;
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
 // this bot receives special messages from clients, performs
-// a contact list lookup, and sends an XML message containing
-// the results back to
-// the client in the form of a reply message.
+// a contact list lookup, and sends a reply message to the sender.
 //
 // we assume the schema contains some views that we can just
 // parameterize with the email address. this gives us a little

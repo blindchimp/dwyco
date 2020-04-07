@@ -8,6 +8,6 @@
 #ifndef dwyco_new_msg_h
 #define dwyco_new_msg_h
 #include <QByteArray>
-
+int process_remote_msgs();
 int dwyco_new_msg(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray& mid_out, int &has_att);
 #endif

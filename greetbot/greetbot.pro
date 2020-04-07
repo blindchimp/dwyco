@@ -2,12 +2,14 @@ QT += core
 QT -= gui
 
 include(../$$DWYCO_CONFDIR/conf.pri)
+INCLUDEPATH += ../bld/dwcls
+CONFIG -= app_bundle
 
 SOURCES += \
     greetbot.cpp \
     dwyco_new_msg.cpp
 
-linux-g++* {
+linux-g++*|macx-clang {
 
 D = $${OUT_PWD}/../bld
 

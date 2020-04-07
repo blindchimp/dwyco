@@ -24,7 +24,7 @@
 #include <QDataStream>
 #include <QDebug>
 #include <QDir>
-#define HANDLE_MSG(m) dwyco_delete_unsaved_message(m)
+#define HANDLE_MSG(m)
 
 
 static
@@ -39,11 +39,11 @@ dwyco_db_login_result(const char *str, int what)
         exit(1);
 }
 
-quint32 Sent_age;
-QByteArray My_uid;
-QMap<QByteArray, QString> Who_got_what;
+static quint32 Sent_age;
+static QByteArray My_uid;
+static QMap<QByteArray, QString> Who_got_what;
 
-QStringList Ann_names;
+static QStringList Ann_names;
 
 struct simple_scoped
 {
@@ -308,6 +308,12 @@ main(int argc, char *argv[])
         }
         load_announcement_names(argv[3]);
         was_online = 1;
+
+        if(dwyco_get_rescan_messages())
+        {
+            dwyco_set_rescan_messages(0);
+            process_remote_msgs();
+        }
 
         QByteArray uid;
         QByteArray txt;

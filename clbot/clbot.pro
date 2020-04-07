@@ -2,6 +2,7 @@ QT += core sql
 QT -= gui
 
 include(../$$DWYCO_CONFDIR/conf.pri)
+INCLUDEPATH += ../bld/dwcls
 
 SOURCES += \
     clbot.cpp \
