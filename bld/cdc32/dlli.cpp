@@ -462,7 +462,7 @@ extern int beginning_of_world;
 #define START_LEAK
 #define END_LEAK
 #endif
-
+#define DWYCO_CRYPTO_PIPELINE
 // this class is just a hanging place for holding the
 // context of a server message fetch.
 struct BodyView {
@@ -471,7 +471,9 @@ struct BodyView {
     static DwQueryByMember<BodyView> Bvqbm;
     ValidPtr vp;
     vc body;
-    //vc dmsg; // decrypted message
+#ifdef DWYCO_CRYPTO_PIPELINE
+    vc dmsg; // decrypted message
+#endif
     vc msg_id;
     MMChannel *xfer_channel;
     void cancel();
@@ -537,7 +539,6 @@ set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
     q->progress_signal.emit(DwString(q->msg_id), My_UID, DwString(msg), p);
 }
 
-#undef DWYCO_CRYPTO_PIPELINE
 #ifdef DWYCO_CRYPTO_PIPELINE
 #include "dwpipe.h"
 struct emsg_input
@@ -607,6 +608,8 @@ pipeline_result(ValidPtr vp, int ok)
         // until the key is reset in the server.
         if(q->msg_download_callback)
             (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
+        vc from = q->dmsg[QQM_BODY_FROM];
+        se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
         dirth_send_ack_get(My_UID, q->msg_id, QckDone(0, 0));
         TRACK_ADD(MR_msg_decrypt_failed, 1);
         return;
