@@ -134,6 +134,9 @@ int Conf;
 int Soft_preview_on;
 int Auto_squelch = 1;
 
+#include "dwhist2.h"
+static DwHistogram Serv_hist(100, .030);
+
 DwVecP<MMChannel> MMChannel::MMChannels;
 DwTreeKaz<MMChannel *, int> *MMChannel::AllChan2;
 int MMChannel::Sync_receivers = 1;
@@ -355,6 +358,16 @@ kill_coder_pipe()
 
 #endif
 
+void
+MMChannel::dump_serv_hist()
+{
+    FILE *f = fopen("/tmp/hist.out", "w");
+    for(int i = 0; i < Serv_hist.bins.num_elems(); ++i)
+    {
+        fprintf(f, "%03d %.6f %ld %ld%%\n", i, (double)i * Serv_hist.unit, Serv_hist.bins[i], (Serv_hist.bins[i] * 100) / Serv_hist.total_samples);
+    }
+    fclose(f);
+}
 
 void
 MMChannel::exit_mmchan()
@@ -3878,6 +3891,7 @@ MMChannel::service_channels(int *spin_out)
         return 1;
     lock = 1;
     static int been_here;
+    clock_t start_time = clock();
     if(!been_here)
     {
         Bw_adj_timer.set_autoreload(1);
@@ -4763,6 +4777,10 @@ dropit:
         set_status((blocked_on_link && !used_cpu) ? STATUS_LINK : STATUS_CPU);
 #endif
     lock = 0;
+    clock_t end_time = clock();
+    double total_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    printf("%ld, %f\n", end_time - start_time, total_time);
+    Serv_hist.add_sample(total_time);
     if(spin_out)
         *spin_out = spin;
     return not_idle;

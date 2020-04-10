@@ -11,7 +11,7 @@ import QtQuick.Controls 2.2
 import QtQuick.Controls.Material 2.2
 import dwyco 1.0
 import QtQuick.Layouts 1.3
-import QtMultimedia 5.6
+import QtMultimedia 5.12
 
 Page {
     property bool dragging
@@ -69,7 +69,7 @@ Page {
         id: preview_cam
         objectName: "qrCameraQML"
         viewfinder {
-            //resolution: Qt.size(640, 480)
+            resolution: Qt.size(640, 480)
             //maximumFrameRate: 10
         }
         position: Camera.FrontFace

@@ -724,6 +724,8 @@ DWYCOEXPORT
 void
 dwyco_debug_dump()
 {
+    MMChannel::dump_serv_hist();
+    return;
 
     if(!dbg_msg_callback)
     {

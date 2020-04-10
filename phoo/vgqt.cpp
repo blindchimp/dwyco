@@ -624,7 +624,7 @@ conv_data()
 #endif
 
         unsigned char *c = (unsigned char *)vf.bits();
-#define SSCOLS 320
+#define SSCOLS 640
 #define SSROWS (calcrows)
         int calcrows = (float)rows / ((float)cols / SSCOLS);
         if(calcrows % 2 != 0) ++calcrows;

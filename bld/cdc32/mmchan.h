@@ -993,6 +993,7 @@ public:
     // usually because size is too big.
     int zreject;
 
+    static void dump_serv_hist();
 };
 
 #define AUDIO_NUM_STATES 8

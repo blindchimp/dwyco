@@ -124,6 +124,7 @@ public:
     Q_INVOKABLE void exit() {
         //dwyco_empty_trash();
         //dwyco_power_clean_safe();
+        dwyco_debug_dump();
         dwyco_exit();
     }
 
