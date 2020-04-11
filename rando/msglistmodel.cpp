@@ -607,6 +607,9 @@ bool
 msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
     QAbstractItemModel *alm = sourceModel();
+    QByteArray hl = alm->data(alm->index(source_row, 0), ASSOC_HASH).toByteArray();
+    if(hl.length() == 0)
+        return false;
 
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
