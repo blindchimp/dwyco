@@ -462,7 +462,13 @@ extern int beginning_of_world;
 #define START_LEAK
 #define END_LEAK
 #endif
+
+#ifndef WIN32
 #define DWYCO_CRYPTO_PIPELINE
+#else
+#undef DWYCO_CRYPTO_PIPELINE
+#endif
+
 // this class is just a hanging place for holding the
 // context of a server message fetch.
 struct BodyView {
