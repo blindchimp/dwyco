@@ -19,7 +19,6 @@
 #else
 #include <unistd.h>
 #endif
-//#include "dwsetr.h"
 #include "dwstr.h"
 #include "dwvec.h"
 #include "dwtree2.h"
@@ -57,20 +56,6 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col, DwString& str_out)
     if(type != DWYCO_TYPE_STRING)
         return 0;
     str_out = DwString(val, len);
-    return 1;
-}
-
-static int
-dwyco_test_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type == DWYCO_TYPE_NIL)
-        return 0;
-
     return 1;
 }
 

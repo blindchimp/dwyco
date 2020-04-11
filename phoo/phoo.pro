@@ -33,11 +33,12 @@ macx-clang: QT += macextras
 linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
+macx-clang: QMAKE_INFO_PLIST=Info.plist.mac
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 
 #QMAKE_MAC_SDK = macosx10.9
-#DEFINES += DWYCO_RELEASE
+DEFINES += DWYCO_RELEASE
 ICON=greenguy.icns
 RC_FILE=phoo.rc
 

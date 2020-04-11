@@ -28,9 +28,14 @@
 #include <QDebug>
 #include <QDir>
 #include <QVariant>
-#define HANDLE_MSG(m) dwyco_save_message(m)
+#define HANDLE_MSG(m) processed_msg(m)
 
 using namespace dwyco;
+
+static const char *Botfiles;
+static SimpleSql *Iplog;
+static int Throttle = 3;
+static int Freebie_interval = 300;
 
 // note: instead of using qt database stuff, we'll just the
 // internal database stuff in cdc32 since we are statically linking
@@ -52,6 +57,7 @@ struct rando_sql : public SimpleSql
                    "mid text collate nocase,"
                    "filename text, time integer, hash text collate nocase, loc_lat, loc_long)");
         sql_simple("create index if not exists uid_idx2 on sent_to(to_uid)");
+        sql_simple("create index if not exists sent_to_hash_idx on sent_to(hash)");
         sql_simple("create table if not exists seeder(uid text collate nocase unique on conflict ignore)");
         sql_simple("create table if not exists reviewers(uid text collate nocase unique on conflict ignore)");
         sql_simple("insert into reviewers (uid) values ('5a098f3df49015331d74')");
@@ -60,14 +66,19 @@ struct rando_sql : public SimpleSql
         sql_simple("create table if not exists recv_loc2(from_uid text collate nocase, mid text collate nocase, hash text collate nocase unique on conflict ignore, time integer, lat text, lon text)");
         sql_simple("create table if not exists sent_geo(to_uid text collate nocase, mid text collate nocase, hash text collate nocase, time integer, geo text)");
         sql_simple("create table if not exists sent_geo2(to_uid text collate nocase, mid text collate nocase, hash text collate nocase, time integer, lat text, lon text)");
+
+        sql_simple("create table if not exists logins(uid text collate nocase unique on conflict replace, wants_freebies integer, time integer)");
+        sql_simple("create table if not exists sent_freebie(to_uid text collate nocase, mid text collate nocase, filename text, time integer, hash text collate nocase)");
+        sql_simple("create index if not exists sf_idx_hash on sent_freebie(hash)");
+        sql_simple("create index if not exists sf_idx_to_uid on sent_freebie(to_uid)");
+
+        sql_simple("create table if not exists freebie_interval(lock integer not null default 0, secs integer not null, primary key(lock), check(lock = 0))");
+        sql_simple("insert or replace into freebie_interval(lock, secs) values(0, ?1)", Freebie_interval);
     }
 
 };
 
 static rando_sql *D;
-static const char *Botfiles;
-static SimpleSql *Iplog;
-static int Throttle = 3;
 
 static
 void
@@ -276,8 +287,10 @@ do_rando(vc huid)
     try
     {
         D->start_transaction();
+        // this selects a pic that has never been sent to anyone, namely, the freshest
+        // stuff we have on hand.
         res = D->sql_simple("select filename, hash, mid, from_uid from randos where from_uid != ?1 and "
-                            "not exists(select 1 from sent_to where randos.hash = hash) order by time desc limit 1",
+                            "not exists(select 1 from sent_to where randos.hash = hash union select 1 from sent_freebie where randos.hash = hash) order by time desc limit 1",
                             huid);
         vc fn;
         vc hash;
@@ -288,11 +301,18 @@ do_rando(vc huid)
             // no brand new content, so double-up on some old randos.
             // candidate is the newest rando that has been resent
             // the least number of times.
-            res = D->sql_simple("select sent_to.filename, sent_to.hash, randos.mid, randos.from_uid from sent_to,randos "
-                                "where sent_to.hash = randos.hash and from_uid != ?1 "
-                                "group by sent_to.hash having (count(nullif(sent_to.to_uid,?1)) = count(*)) "
-                                "order by count(*) asc, randos.time desc limit 10",
-                                huid);
+
+            // previous way of doing this was clever, but hard to understand
+            D->sql_simple("create temp table foo as select sent_to.filename as fn, sent_to.hash as hash, randos.mid as mid, randos.from_uid as from_uid, randos.time as time "
+                          "from sent_to,randos where sent_to.hash = randos.hash and from_uid != ?1 ", huid);
+            D->sql_simple("insert into foo select sent_freebie.filename, sent_freebie.hash, randos.mid, randos.from_uid,randos.time "
+                          "from sent_freebie,randos where sent_freebie.hash = randos.hash and from_uid != ?1", huid);
+            D->sql_simple("delete from foo where hash in (select hash from sent_to where to_uid = ?1)", huid);
+            D->sql_simple("delete from foo where hash in (select hash from sent_freebie where to_uid = ?1)", huid);
+
+
+            res = D->sql_simple("select * from foo group by hash order by count(*) asc, time desc limit 10", huid);
+            D->sql_simple("drop table foo");
             // pick a random one from the first 10
             if(res.num_elems() > 0)
             {
@@ -460,6 +480,224 @@ do_rando(vc huid)
     return 1;
 }
 
+
+// figure out which uid's need a freebie pic
+vc
+uid_due_freebie()
+{
+    vc res;
+    try {
+        D->start_transaction();
+        vc now(time(0));
+        // someone who never received one is eligible
+        D->sql_simple("create temp table foo as select uid from logins where wants_freebies = 1 and not exists(select 1 from sent_freebie where logins.uid = to_uid)");
+        // time of last sent freebie for each uid
+        D->sql_simple("create temp table bar as select to_uid, max(time) as time from sent_freebie group by to_uid");
+        D->sql_simple("insert into foo select uid from logins,bar where wants_freebies = 1 and logins.uid = to_uid and ?1 - logins.time <= 2 * (select secs from freebie_interval)"
+                      " and ?1 - bar.time > (select secs from freebie_interval)", now);
+        res = D->sql_simple("select distinct(uid) from foo");
+        D->rollback_transaction();
+    } catch (...) {
+        D->rollback_transaction();
+        res = vc(VC_VECTOR);
+    }
+    return res;
+}
+// send a freebie pic to huid
+// note: this is a different "channel" from the rando thing, so they
+// don't interact as far as throttling and other counts.
+int
+do_freebie(vc huid)
+{
+    vc res;
+    try
+    {
+        D->start_transaction();
+        // note: this could limit the number of freebies sent to a particular user
+        // if no new content is being put into the system. but since we are probably
+        // going to 1 or 2 freebies a day, it should 6-12 months if that happens. we'll
+        // figure it out later...
+        D->sql_simple("create temp table bar as select filename, hash, mid, from_uid from randos where from_uid != ?1 order by time desc limit 300", huid);
+        D->sql_simple("delete from bar where hash in (select hash from sent_to where to_uid = ?1)", huid);
+        D->sql_simple("delete from bar where hash in (select hash from sent_freebie where to_uid = ?1)", huid);
+        res = D->sql_simple("select * from bar");
+        D->sql_simple("drop table bar");
+        vc fn;
+        vc hash;
+        vc mid;
+        vc hcreator_uid;
+
+        if(res.num_elems() > 0)
+        {
+            int i = rand() % res.num_elems();
+            fn = res[i][0];
+            hash = res[i][1];
+            mid = res[i][2];
+            hcreator_uid = res[i][3];
+        }
+        else
+        {
+            // no results, nothing to send them, maybe we could resend a random one?
+            // note: the timing thing in uid_due_freebie is assuming we manage to
+            // send something and update the sent_freebie table. if we don't do that,
+            // due_freebies will show that uid needing a freebie for a long time
+            // before it times out. this will soak some cpu, but is otherwise
+            // harmless. sometime, we may want to consider just putting in a dummy
+            // record so it doesn't keep coming in here until there is some
+            // material to send.
+            return 0;
+        }
+        if(!fn.is_nil())
+        {
+            QByteArray bf(Botfiles);
+            bf += "/";
+            bf += (const char *)fn;
+            // see if there is an extension we can add to get a file type
+            DwString cmd("grep `file -b --mime-type %1` mime2extension.csv | sed 's/.*,//' >mumble");
+            cmd.arg(bf.constData());
+            const char *poss_ext = 0;
+            char a[500];
+            memset(a, 0, sizeof(a));
+            if(system(cmd.c_str()) == 0)
+            {
+                FILE *f = fopen("mumble", "rb");
+                if(f)
+                {
+                    if(fgets(a, sizeof(a), f) != 0)
+                    {
+                        int len = strlen(a);
+                        if(a[len - 1] == '\n')
+                            a[len - 1] = 0;
+                        if(a[0] != '.')
+                        {
+                            DwString foo(a);
+                            foo.insert(0, ".");
+                            strcpy(a, foo.c_str());
+                        }
+                        poss_ext = a;
+                    }
+                    fclose(f);
+                }
+            }
+
+            int compid = dwyco_make_zap_composition_raw(bf.constData(), poss_ext);
+            if(compid == 0)
+            {
+                D->sql_simple("delete from randos where filename = ?1",
+                              fn);
+                D->commit_transaction();
+                // don't handle the message, we might be able to
+                // answer it next time, as the most likely cause
+                // for the problem is the file went missing we
+                // are trying to send
+                return 0;
+            }
+            QByteArray uid = QByteArray::fromHex((const char *)huid);
+            QByteArray str_to_send("Here is a freebie");
+            if(Iplog)
+            {
+                vc res;
+                try {
+                    // try to get a location estimate for the recipient and send that back to the
+                    // to the creator of the msg. note: this gets an estimated location based on recipients
+                    // latest login, not on their location when they generated their content.
+
+                    res = Iplog->sql_simple("select geo, max(time) from iplog where id = ?1", huid);
+                    QByteArray tagstr("{\"hash\" : \"");
+                    tagstr += (const char *)hash;
+                    tagstr += "\"";
+                    if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                    {
+                        tagstr += ", \"loc\" : \"";
+                        tagstr += (const char *)res[0][0];
+                        tagstr += "\"";
+                    }
+
+                    // send lat and lon as well to facilitate creating a map image
+                    res = Iplog->sql_simple("select lat, lon, max(time) from iplog2 where id = ?1", huid);
+                    if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                    {
+                        tagstr += ", \"lat\" : \"";
+                        tagstr += (const char *)res[0][0];
+                        tagstr += "\"";
+                        tagstr += ", \"lon\" : \"";
+                        tagstr += (const char *)res[0][1];
+                        tagstr += "\"";
+                    }
+                    tagstr += "}";
+                    int ccid = dwyco_make_zap_composition(0);
+                    if(ccid != 0)
+                    {
+                        QByteArray creator_uid = QByteArray::fromHex((const char *)hcreator_uid);
+                        if(!dwyco_zap_send6(ccid, creator_uid.constData(), creator_uid.length(), tagstr.constData(), tagstr.length(), 1, 1, 0, 0, 0))
+                        {
+                            dwyco_delete_zap_composition(ccid);
+                        }
+                    }
+                } catch (...) {
+                }
+            }
+            // see if we can get some location estimate for the message we received
+            {
+                str_to_send = "{";
+                vc res = D->sql_simple("select geo from recv_loc where hash = ?1 limit 1", hash);
+                if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                {
+                    // note: mid not included because the mid is being generated in the new message
+                    // being sent to recipient
+                    str_to_send += "\"loc\":\"";
+                    str_to_send += (const char *)res[0][0];
+                    str_to_send += "\"";
+
+                    D->sql_simple("insert into sent_geo(to_uid, mid, hash, time, geo) values(?1, ?2, ?3, strftime('%s', 'now'), ?4)",
+                                  huid,
+                                  mid,
+                                  hash,
+                                  res[0][0]);
+                }
+                res = D->sql_simple("select lat, lon from recv_loc2 where hash = ?1 limit 1", hash);
+                if(res.num_elems() == 1 && res[0][0].type() == VC_STRING && res[0][0].len() > 0)
+                {
+                    // note: mid not included because the mid is being generated in the new message
+                    // being sent to recipient
+                    str_to_send += ",\"lat\":\"";
+                    str_to_send += (const char *)res[0][0];
+                    str_to_send += "\"";
+
+                    str_to_send += ",\"lon\":\"";
+                    str_to_send += (const char *)res[0][1];
+                    str_to_send += "\"";
+
+                    D->sql_simple("insert into sent_geo2(to_uid, mid, hash, time, lat, lon) values(?1, ?2, ?3, strftime('%s', 'now'), ?4, ?5)",
+                                  huid,
+                                  mid,
+                                  hash,
+                                  res[0][0],
+                            res[0][1]);
+                }
+                str_to_send += "}";
+
+            }
+
+            if(!dwyco_zap_send5(compid, uid.constData(), uid.length(), str_to_send.constData(), str_to_send.length(), 0, 1, 0, 0))
+            {
+                dwyco_delete_zap_composition(compid);
+                throw -1;
+            }
+            D->sql_simple("insert into sent_freebie (to_uid, filename, mid, hash, time) select ?1, filename, mid, hash, strftime('%s', 'now') from randos where hash = ?2",
+                          huid, hash);
+        }
+        D->commit_transaction();
+    }
+    catch(...)
+    {
+        D->rollback_transaction();
+        return 0;
+    }
+    return 1;
+}
+
+
 QByteArray
 fnhash(const char *fn)
 {
@@ -518,7 +756,8 @@ update_hashes()
 
 }
 
-
+// invoke with
+// randobot <name> <desc> <dir-to-save-pics> <ip-log-db> <pics-per-hour-throttle> <free-pic-interval-secs>
 int
 main(int argc, char *argv[])
 {
@@ -563,6 +802,11 @@ main(int argc, char *argv[])
     if(argc >= 6)
     {
         Throttle = atoi(argv[5]);
+    }
+
+    if(argc >= 7)
+    {
+        Freebie_interval = atoi(argv[6]);
     }
 
 
@@ -630,6 +874,12 @@ main(int argc, char *argv[])
 
 //        was_online = 1;
 
+        if(dwyco_get_rescan_messages())
+        {
+            dwyco_set_rescan_messages(0);
+            process_remote_msgs();
+        }
+
         QByteArray uid;
         QByteArray txt;
         int dummy;
@@ -638,7 +888,7 @@ main(int argc, char *argv[])
         int is_file = 0;
         QByteArray creator_uid;
 
-        if(dwyco_new_msg(uid, txt, dummy, mid, has_att, is_file, creator_uid))
+        if(dwyco_new_msg2(uid, txt, dummy, mid, has_att, is_file, creator_uid))
         {
             txt = txt.toLower();
             QByteArray huid = uid.toHex();
@@ -663,7 +913,8 @@ main(int argc, char *argv[])
                          HANDLE_MSG(mid);
                          continue;
                      }
-                     dwyco_delete_unsaved_message(mid.constData());
+                     processed_msg(mid);
+                     dwyco_delete_saved_message(uid.constData(), uid.length(), mid.constData());
                      continue;
                  }
             }
@@ -697,7 +948,7 @@ main(int argc, char *argv[])
                 send_reply_to(uid, "Your message needs more than just text... send a pic or video!"
                                    "NOTE! I will forward the pic you send me anonymously to another "
                                    "random Dwyconian.");
-                HANDLE_MSG(mid.constData());
+                HANDLE_MSG(mid);
                 continue;
             }
             int compid = dwyco_make_forward_zap_composition(0, 0, mid.constData(), 1);
@@ -706,7 +957,7 @@ main(int argc, char *argv[])
             if(tmp)
             {
                 send_reply_to(uid, "You sent me a message that is flagged as \"no forward\". The message was deleted, try again.");
-                HANDLE_MSG(mid.constData());
+                HANDLE_MSG(mid);
 
                 continue;
             }
@@ -811,6 +1062,13 @@ main(int argc, char *argv[])
         {
             do_rando(due[i][0]);
         }
+
+        due = uid_due_freebie();
+        for(int i = 0; i < due.num_elems(); ++i)
+        {
+            do_freebie(due[i][0]);
+        }
+
 
     }
 

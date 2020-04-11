@@ -24,8 +24,7 @@
 #include <QDataStream>
 #include <QDebug>
 #include <QDir>
-//#define HANDLE_MSG(m) dwyco_save_message(m)
-#define HANDLE_MSG(m) dwyco_delete_unsaved_message(m)
+
 
 static
 void
@@ -287,6 +286,12 @@ main(int argc, char *argv[])
             save_it(Sent_age, "sent_age.qds");
         }
 
+        if(dwyco_get_rescan_messages())
+        {
+            dwyco_set_rescan_messages(0);
+            process_remote_msgs();
+        }
+
         QByteArray uid;
         QByteArray txt;
         int dummy;
@@ -326,7 +331,8 @@ main(int argc, char *argv[])
             {
                 send_reply_to(uid, "I can send you pics, read my profile.");
             }
-            HANDLE_MSG(mid);
+            processed_msg(mid);
+            dwyco_delete_saved_message(uid.constData(), uid.length(), mid.constData());
 
         }
 
