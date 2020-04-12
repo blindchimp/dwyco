@@ -107,7 +107,7 @@ init_rct();
 	vc::setup_logs();
 	vc::init();
 
-#if defined(__MSDOS__) || defined(_Windows)
+#if defined(_Windows)
 	char *load_file = "c:\\lhlib\\load.lh";
 #else
 	char *home = getenv("HOME");

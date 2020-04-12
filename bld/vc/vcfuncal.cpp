@@ -51,14 +51,14 @@ VcFuncallDbgNode::VcFuncallDbgNode(const vc_funcall *v)
 int
 VcFuncallDbgNode::has_brief()
 {
-	char *r = strrchr(fc->start.filename, '/');
-	if(!r)
-		r = strrchr(fc->start.filename, '\\');
+    int r = fc->start.filename.rfind("/");
+    if(r == DwString::npos)
+        r = fc->start.filename.rfind("\\");
 	vc file;
-	if(r)
-		file = vc(r + 1);
+    if(r != DwString::npos)
+        file = vc(fc->start.filename.c_str() + r + 1);
 	else
-		file = vc(fc->start.filename);
+        file = vc(fc->start.filename.c_str());
 	
 	static vc debug("lhdbg.lh");
 	static vc userinp("__lh_user_input");
@@ -72,7 +72,7 @@ VcFuncallDbgNode::printOnBrief(VcIOHack &os)
 {
 	VcDebugNode::printOnBrief(os);
 	vc name;
-	os << fc->start.filename << ":" <<
+    os << fc->start.filename.c_str() << ":" <<
 		 fc->start.linenum << ", ";
 	if(info == vc("Finding function"))
 	{
@@ -154,7 +154,7 @@ VcFuncallDbgNode::printOn(VcIO os)
 {
 	VcDebugNode::printOn(os);
 	vc name;
-	os << "---Funcall near line " << fc->start.filename << ":" <<
+    os << "---Funcall near line " << fc->start.filename.c_str() << ":" <<
 		 fc->start.linenum << ", ";
 	if(info == vc("Finding function"))
 	{
@@ -258,7 +258,7 @@ vc_funcall::eval() const
 	int vetted = 0;
 	if(is_string || func.type() == VC_STRING)
 	{
-		((vc_funcall *)this)->is_string = 1;
+        is_string = 1;
 		// convenience: if func is a string, then do the mapping
 		// instead of causing the user to write <f>(...) all the time.
 		// note: foo() doesn't have any other meaning anyway, so this
@@ -308,17 +308,13 @@ vc_funcall::eval() const
 	if(!vetted && f.type() != VC_FUNC && f.type() != VC_MEMFUN)
 	{
 		*cached_fun = vcnil;
-		VcIOHackStr *o = new VcIOHackStr();
+        VcIOHackStr o;
 		if(func.type() == VC_STRING)
-			*o << "can't find function named \"" << (const char *)func << "\"";
+            o << "can't find function named \"" << (const char *)func << "\"";
 		else
-			*o << "attempt to call non-function";
-		*o << '\0';
-		char *s = o->str();
-		delete o;
-		USER_BOMB(s, vcnil);
-		// leak if user backs out
-		delete [] s;
+            o << "attempt to call non-function";
+        o << '\0';
+        USER_BOMB(o.ref_str(), vcnil);
 	}
 
 	int n = arglist.num_elems();

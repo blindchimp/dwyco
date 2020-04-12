@@ -18,7 +18,6 @@
 #include "dirth.h"
 #include "vc.h"
 #include "vcmap.h"
-#include "lhboot.h"
 #include "qdirth.h"
 #include "qauth.h"
 #include "qmsg.h"

@@ -141,7 +141,7 @@ public:
 
     Q_INVOKABLE QUrl get_simple_directory_url();
     Q_INVOKABLE QUrl get_simple_lh_url();
-    Q_INVOKABLE QString get_msg_count_url();
+    Q_INVOKABLE QString get_msg_count_url(int wants_freebies);
     Q_INVOKABLE QString url_to_filename(QUrl);
     Q_INVOKABLE int simple_send(QString recipient, QString msg);
     Q_INVOKABLE int simple_send_file(QString recipient, QString msg, QString filename);
@@ -259,6 +259,10 @@ public:
 
     Q_INVOKABLE void set_badge_number(int i);
     Q_INVOKABLE int rotate_in_place(QString fn, int rot, int mirror_y);
+
+    // hack: get the number of geo records for a hash (rough indication
+    // of where your pic has been sent.)
+    Q_INVOKABLE int geo_count_from_hash(QString hash);
 
 public:
 

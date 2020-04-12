@@ -1026,6 +1026,24 @@ sql_get_tagged_idx(vc tag)
     return res;
 }
 
+vc
+sql_get_all_idx()
+{
+    vc res;
+    try
+    {
+        res = sql_simple("select "
+                 "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+                 "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
+                 " from msg_idx order by logical_clock desc");
+    }
+    catch (...)
+    {
+        res = vc(VC_VECTOR);
+    }
+    return res;
+}
+
 int
 sql_mid_has_tag(vc mid, vc tag)
 {

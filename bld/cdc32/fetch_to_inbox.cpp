@@ -19,7 +19,6 @@
 #else
 #include <unistd.h>
 #endif
-//#include "dwsetr.h"
 #include "dwstr.h"
 #include "dwvec.h"
 #include "dwtree2.h"
@@ -57,20 +56,6 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col, DwString& str_out)
     if(type != DWYCO_TYPE_STRING)
         return 0;
     str_out = DwString(val, len);
-    return 1;
-}
-
-static int
-dwyco_test_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type == DWYCO_TYPE_NIL)
-        return 0;
-
     return 1;
 }
 
@@ -118,13 +103,12 @@ msg_callback(int id, int what, const char *mid, void *)
 }
 
 int
-fetch_to_inbox(DwString& uid_out, DwString& mid_out)
+fetch_to_inbox()
 {
     int k = Delete_msgs.num_elems();
     for(int i = 0; i < k; ++i)
     {
         dwyco_delete_unfetched_message(Delete_msgs[i].c_str());
-
     }
     Delete_msgs.set_size(0);
 
@@ -133,53 +117,32 @@ fetch_to_inbox(DwString& uid_out, DwString& mid_out)
         return 0;
     simple_scoped ml(qml);
     int n;
-    const char *val;
-    int len;
-    int type;
     dwyco_list_numelems(ml, &n, 0);
     if(n == 0)
     {
         return 0;
     }
+    DwString mid_out;
     for(int i = 0; i < n; ++i)
     {
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_FROM, uid_out))
-            continue;
+        //if(!dwyco_get_attr(ml, i, DWYCO_QMS_FROM, uid_out))
+        //    continue;
         if(!dwyco_get_attr(ml, i, DWYCO_QMS_ID, mid_out))
             continue;
         if(Already_returned.contains(mid_out))
             continue;
         if(Dont_refetch.contains(mid_out) ||
-                fetching.contains(mid_out) || fetching.num_elems() >= 5)
+                fetching.contains(mid_out))
             continue;
-        if(!dwyco_list_get(ml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
-            continue;
-        if(type == DWYCO_TYPE_NIL)
-        {
-            int special_type;
-            const char *uid;
-            int len_uid;
-            const char *dlv_mid;
-            if(dwyco_is_delivery_report(mid_out.c_str(), &uid, &len_uid, &dlv_mid, &special_type))
-            {
-                // process pal authorization stuff here
-                if(special_type == DWYCO_SUMMARY_DELIVERED)
-                {
-                    // NOTE: uid, dlv_mid must be copied out before next
-                    // dll call
-                    // hmmm, need new api to get uid/mid_out of delivered msg
-                    dwyco_delete_unfetched_message(mid_out.c_str());
-                    continue;
-                }
 
-            }
-            // issue a server fetch, client will have to
-            // come back in to get it when the fetch is done
-            fetching.append(mid_out);
-            dwyco_fetch_server_message(mid_out.c_str(), msg_callback, 0, 0, 0);
-            continue;
-        }
+        // issue a server fetch, client will have to
+        // come back in to get it when the fetch is done
+        fetching.append(mid_out);
+        dwyco_fetch_server_message(mid_out.c_str(), msg_callback, 0, 0, 0);
+
         Already_returned.add(mid_out, 0);
+        if(fetching.num_elems() >= 3)
+            break;
         return 1;
     }
     return 0;

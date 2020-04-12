@@ -885,7 +885,6 @@ int DWYCOEXPORT dwyco_is_capturing_video();
 void DWYCOEXPORT dwyco_set_moron_dork_mode(int);
 int DWYCOEXPORT dwyco_get_moron_dork_mode();
 
-//void DWYCOEXPORT dwyco_simple_diagnostics(const char **res, int *len_res);
 void DWYCOEXPORT dwyco_network_diagnostics2(char **res, int *len_res);
 // results are in BITS/second, you can leave any of these pointers NULL
 // if you don't need that result.
@@ -1029,6 +1028,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_QM_BODY_SPECIAL_TYPE_AB "010001001"
 
 #define DWYCO_QM_BODY_FILE_ATTACHMENT "012"
+#define DWYCO_QM_BODY_LOGICAL_CLOCK "017"
 
 // DWYCO_MSG_IDX is an index of the saved messages for a particular UID.
 // The index is mostly-sorted in order of descending date.
@@ -1408,17 +1408,6 @@ void DWYCOEXPORT dwyco_handle_msg(const char *msg, int msg_len, unsigned int mes
 
 #endif
 
-// must be called before dwyco_init
-// this is used to set the cmd path that the windows dll can use
-// if it needs to poke holes in the windows firewall. don't think it
-// is used at this point.
-int DWYCOEXPORT dwyco_set_cmd_path(const char *cmd, int len);
-
-// give this function a set of files to be hashed to determine
-// what version of the software is being used. the current windows
-// client uses "icuii.exe" and "cdcdll.dll", for example.
-// the contents of the files are concatenated and hashed.
-void DWYCOEXPORT dwyco_setup_autoupdate(const char *f1, const char *f2, const char *f3, const char *f4);
 // normally, an autoupdate query command is automatically sent when you
 // connect to a chat server. if you need to do it at some later point, like
 // during a dialog, call this function.

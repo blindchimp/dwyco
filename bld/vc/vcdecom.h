@@ -217,8 +217,8 @@ private:
 
 public:
 
-	vc_map() : map(vcnil, vcnil) {}
-    vc_map(int ts) : map(vcnil, vcnil, ts) {}
+    vc_map() : map() {}
+    vc_map(int ts) : map(ts) {}
 	vc_map(const vc_map& v) : map(v.map) {}
 
 	enum vc_type type() const { return VC_MAP; }

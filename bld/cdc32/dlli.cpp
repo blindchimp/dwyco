@@ -450,6 +450,7 @@ extern vc StackDump;
 extern vc My_connection;
 extern vc KKG;
 extern int Chat_online;
+extern CallQ *TheCallQ;
 
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
@@ -465,6 +466,12 @@ extern int beginning_of_world;
 #define END_LEAK
 #endif
 
+#ifndef WIN32
+#define DWYCO_CRYPTO_PIPELINE
+#else
+#undef DWYCO_CRYPTO_PIPELINE
+#endif
+
 // this class is just a hanging place for holding the
 // context of a server message fetch.
 struct BodyView {
@@ -473,7 +480,9 @@ struct BodyView {
     static DwQueryByMember<BodyView> Bvqbm;
     ValidPtr vp;
     vc body;
-    //vc dmsg; // decrypted message
+#ifdef DWYCO_CRYPTO_PIPELINE
+    vc dmsg; // decrypted message
+#endif
     vc msg_id;
     MMChannel *xfer_channel;
     void cancel();
@@ -539,7 +548,6 @@ set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
     q->progress_signal.emit(DwString(q->msg_id), My_UID, DwString(msg), p);
 }
 
-#undef DWYCO_CRYPTO_PIPELINE
 #ifdef DWYCO_CRYPTO_PIPELINE
 #include "dwpipe.h"
 struct emsg_input
@@ -609,6 +617,8 @@ pipeline_result(ValidPtr vp, int ok)
         // until the key is reset in the server.
         if(q->msg_download_callback)
             (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
+        vc from = q->dmsg[QQM_BODY_FROM];
+        se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
         dirth_send_ack_get(My_UID, q->msg_id, QckDone(0, 0));
         TRACK_ADD(MR_msg_decrypt_failed, 1);
         return;
@@ -2159,7 +2169,6 @@ dwyco_hangup_all_calls()
             mc->schedule_destroy(MMChannel::HARD);
         }
     }
-    extern CallQ *TheCallQ;
     TheCallQ->cancel_all();
 }
 
@@ -3044,7 +3053,6 @@ DWYCOEXPORT
 int
 dwyco_set_max_established_originated_calls(int n)
 {
-    extern CallQ *TheCallQ;
     int tmp = TheCallQ->max_established;
     TheCallQ->set_max_established(n);
     return tmp;
@@ -3059,7 +3067,6 @@ dwyco_channel_create(const char *uid, int len_uid, DwycoCallDispositionCallback 
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     vc host;
@@ -3177,7 +3184,6 @@ dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     vc host;
@@ -3250,7 +3256,6 @@ dwyco_connect_all4(const char **uid_list, int *uid_len_list, int num, DwycoCallD
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     for(int i = 0; i < num; ++i)
@@ -7849,9 +7854,23 @@ dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag)
 
 DWYCOEXPORT
 int
+dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag)
+{
+    vc res = sql_get_tagged_mids2(tag);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
+}
+
+DWYCOEXPORT
+int
 dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
 {
-    vc res = sql_get_tagged_idx(tag);
+    vc res;
+    // super-kluge
+    if(strcmp(tag, "*") == 0)
+        res = sql_get_all_idx();
+    else
+        res = sql_get_tagged_idx(tag);
     *list_out = dwyco_list_from_vc(res);
     return 1;
 }
@@ -9028,6 +9047,8 @@ dwyco_signal_msg_cond()
 
 }
 
+// the java stuff calls into this in another thread
+// when we signal, it means a new message has arrived
 DWYCOEXPORT
 void
 dwyco_wait_msg_cond(int ms)
@@ -9264,6 +9285,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     vc asock = vc(VC_SOCKET_STREAM);
     asock.socket_init(s, vctrue);
     dwyco_signal_msg_cond();
+    int signaled = 0;
+    int started_fetches = 0;
     while(1)
     {
         int spin = 0;
@@ -9289,17 +9312,19 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
             return 1;
 #endif
-
-        DwString uid;
-        DwString mid;
         if(dwyco_get_rescan_messages())
         {
+            GRTLOG("rescan %d %d", started_fetches, signaled);
             dwyco_set_rescan_messages(0);
-            while(ns_dwyco_background_processing::fetch_to_inbox(uid, mid))
+            ns_dwyco_background_processing::fetch_to_inbox();
+            GRTLOG("rescan2 %d %d", started_fetches, signaled);
+            int tmp;
+            if((tmp = sql_count_tag("_inbox")) > signaled)
             {
-                //emit new_msg(uid, txt, mid);
+                GRTLOG("signaling newcount %d", tmp, 0);
+                signaled = tmp;
+                dwyco_signal_msg_cond();
             }
-            dwyco_signal_msg_cond();
         }
         // note: this is a bit sloppy... rather than trying to
         // identify each socket that is waiting for write and

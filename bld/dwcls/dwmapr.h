@@ -28,7 +28,6 @@ private:
     DwBag<DwAssocImp<R,D> > set;
 
 public:
-    DwMapR(const R& defr, const D& defd, unsigned int tsize = 31);
     DwMapR(unsigned int tsize = 31);
     virtual ~DwMapR();
     void set_size(int);
@@ -40,7 +39,6 @@ public:
     int replace(const D&, const R&, R** wp = 0);
     R get(const D&);
     int del(const D&);
-    void fast_clear();
 
     DwAssocImp<R,D> get_by_iter(DwIter<DwMaps<R,D>, DwAssocImp<R,D> > *a) const;
     DwMapsIter<R,D> *make_iter() const;
@@ -48,12 +46,6 @@ public:
 
 #define thdr template<class R, class D>
 #define tcls DwMapR<R,D>
-thdr
-tcls::DwMapR(const R& defr, const D& defd, unsigned int tsize)
-    : set(DwAssocImp<R,D>(defr, defd), tsize)
-{
-    def = defr;
-}
 
 thdr
 tcls::DwMapR(unsigned int tsize)
@@ -71,13 +63,6 @@ void
 tcls::set_size(int sz)
 {
     set.set_size(sz);
-}
-
-thdr
-void
-tcls::fast_clear()
-{
-    set.clear();
 }
 
 thdr

@@ -770,15 +770,23 @@ void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
 // rest of the interface. this api is a bit sketchy so i'm not sure i want
 // to fix it. also note, setting a (tag, mid) pair will not be returned
 // here, because there wouldn't be an associated uid...
-#define DWYCO_TAGGED_MIDS_MID "001"
+
 #define DWYCO_TAGGED_MIDS_HEX_UID "000"
+#define DWYCO_TAGGED_MIDS_MID "001"
+
 int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 
+// this returns just mid's, no uids, in a single column
+// it will return msgs that have not been downloaded yet as well.
+int DWYCOEXPORT dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag);
+int DWYCOEXPORT dwyco_count_tag(const char *tag);
+
+// note: the following functions will not return a msg if it hasn't been
+// downloaded.
 int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
-int DWYCOEXPORT dwyco_count_tag(const char *tag);
 
 void DWYCOEXPORT dwyco_set_alert(const char *uid, int len_uid, int val);
 int DWYCOEXPORT dwyco_get_alert(const char *uid, int len_uid);
@@ -1033,6 +1041,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_QM_BODY_SPECIAL_TYPE_AB "010001001"
 
 #define DWYCO_QM_BODY_FILE_ATTACHMENT "012"
+#define DWYCO_QM_BODY_LOGICAL_CLOCK "017"
 
 // DWYCO_MSG_IDX is an index of the saved messages for a particular UID.
 // The index is mostly-sorted in order of descending date.
