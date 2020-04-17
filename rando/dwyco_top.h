@@ -260,6 +260,10 @@ public:
     Q_INVOKABLE void set_badge_number(int i);
     Q_INVOKABLE int rotate_in_place(QString fn, int rot, int mirror_y);
 
+    // hack: get the number of geo records for a hash (rough indication
+    // of where your pic has been sent.)
+    Q_INVOKABLE int geo_count_from_hash(QString hash);
+
 public:
 
 public slots:

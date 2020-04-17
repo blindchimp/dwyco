@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<manifest package="com.dwyco.rando" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.70" android:versionCode="2000112" android:installLocation="auto">
+<manifest package="com.dwyco.rando" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.80" android:versionCode="2000113" android:installLocation="auto">
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="-- %%INSERT_APP_NAME%% --" android:icon="@drawable/icon">
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="com.dwyco.android.NotificationClient" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="unspecified" android:launchMode="singleTop" android:windowSoftInputMode="adjustResize">
             <intent-filter>

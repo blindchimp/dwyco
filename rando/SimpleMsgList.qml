@@ -12,7 +12,6 @@ import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.2
 import QtPositioning 5.12
 
-
 Page {
     id: msglist
     property alias model: listview.model
@@ -24,8 +23,8 @@ Page {
 
     background: Rectangle {
         gradient: Gradient {
-            GradientStop { position: 1.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
-            GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_dark : primary_dark}
+            GradientStop { position: 1.0; color: themsglist.uid === the_man ? amber_light : primary_light }
+            GradientStop { position: 0.0; color: themsglist.uid === the_man ? amber_dark : primary_dark}
         }
     }
 
@@ -282,7 +281,7 @@ Page {
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
-                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && msglist.model.uid === the_man
+                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
                 source: mi("ic_not_interested_black_24dp.png")
 
                 z: 10
@@ -361,7 +360,12 @@ Page {
 
             Image {
                 id: has_geo_info
-                source: msglist.model.uid === the_man ? mi("ic_language_black_24dp.png") : mi("ic_language_white_24dp.png")
+                source: {
+
+                    themsglist.uid === the_man ?
+                                ((core.geo_count_from_hash(ASSOC_HASH) > 1) ? mi("ic_open_in_new_black_24dp.png") : mi("ic_language_black_24dp.png"))
+                              : mi("ic_language_white_24dp.png")
+                }
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
@@ -369,15 +373,20 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
+                        if(core.geo_count_from_hash(ASSOC_HASH) > 1) {
+                        geolist.hash = ASSOC_HASH
+                        stack.push(geolist)
+                        }
+                        else {
                         if(SENT === 0) {
                             var o = JSON.parse(MSG_TEXT)
                             if('lat' in o && 'lon' in o)
                             {
-                                //mapimage.lat = o.lat
-                                //mapimage.lon = o.lon
+                                mapimage.lat = parseFloat(o.lat)
+                                mapimage.lon = parseFloat(o.lon)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 7
+                                mapimage.zoom = default_map_zoom
                                 stack.push(mapimage)
                             }
                             else
@@ -390,11 +399,11 @@ Page {
                         } else {
                             if(location.text.length > 0 && SENT_TO_LAT != "" &&
                                     SENT_TO_LON != "") {
-                                //mapimage.lat = SENT_TO_LAT
-                                //mapimage.lon = SENT_TO_LON
+                                mapimage.lat = parseFloat(SENT_TO_LAT)
+                                mapimage.lon = parseFloat(SENT_TO_LON)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 7
+                                mapimage.zoom = default_map_zoom
                                 stack.push(mapimage)
 
                             }
@@ -405,6 +414,7 @@ Page {
                                 else
                                     location.state = "moveIn"
                             }
+                        }
                         }
 
                         core.hash_clear_tag(ASSOC_HASH, "unviewed")
@@ -513,7 +523,7 @@ Page {
                         target: core
                         onMsg_progress : {
                             console.log("PB ", pers_id, msg, percent_done, model.mid)
-                            if(pers_id == model.mid) {
+                            if(pers_id === model.mid) {
                                 pb.value = percent_done
                             }
                         }
@@ -538,8 +548,8 @@ Page {
 //                        color: "green"
 //                    }
                 }
-                visible: msglist.model.uid !== the_man && IS_ACTIVE
-                active: msglist.model.uid !== the_man && IS_ACTIVE
+                visible: themsglist.uid !== the_man && IS_ACTIVE
+                active: themsglist.uid !== the_man && IS_ACTIVE
             }
         }
     }

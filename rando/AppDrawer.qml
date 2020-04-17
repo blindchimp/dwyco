@@ -24,7 +24,7 @@ AppDrawerForm {
         title: "Delete all"
         icon: StandardIcon.Question
         text: "Delete ALL pictures?"
-        informativeText: "This removes FAVORITE pictures too."
+        informativeText: "This REMOVES FAVORITE pictures too."
         standardButtons: StandardButton.Yes | StandardButton.No
         onYes: {
             ConvListModel.set_all_selected(true)

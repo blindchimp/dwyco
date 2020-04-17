@@ -107,6 +107,8 @@ ApplicationWindow {
     property string the_man: "5a098f3df49015331d74"
     property string redist: "13404a7fc7664a943a20"
 
+    property int default_map_zoom: 5
+
     function picht() {
         return vh(pct) - mm(.5)
     }
@@ -385,6 +387,11 @@ ApplicationWindow {
         visible: false
     }
 
+    GeoListView {
+        id: geolist
+        visible: false
+    }
+
 
     StackView {
         id: stack
@@ -493,7 +500,7 @@ ApplicationWindow {
                 rando_status.refresh()
             }
             if(Qt.platform.os == "android") {
-                notificationClient.set_msg_count_url(core.get_msg_count_url())
+                //notificationClient.set_msg_count_url(core.get_msg_count_url())
                 notificationClient.log_event()
                 notificationClient.set_lastrun()
             }

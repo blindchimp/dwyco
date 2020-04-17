@@ -9,6 +9,7 @@ QT += location positioning
 
 android: QT += androidextras
 macx-clang: QT += macextras
+CONFIG += c++11
 
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang {
@@ -24,13 +25,14 @@ QMAKE_INFO_PLIST=Info.plist.mac
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 
-DEFINES += DWYCO_RELEASE
+#DEFINES += DWYCO_RELEASE
 ICON=rando.icns
 RC_FILE=rando.rc
 
 SOURCES += main.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
+    geospray.cpp \
     pfx.cpp \
     msglistmodel.cpp \
     msgpv.cpp \
@@ -263,6 +265,7 @@ include(deployment.pri)
 
 HEADERS += \
 	dwyco_top.h \
+    geospray.h \
     msglistmodel.h \
     notificationclient.h \
     dwquerybymember.h \

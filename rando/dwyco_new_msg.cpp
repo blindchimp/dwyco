@@ -17,13 +17,13 @@
 #include "dlli.h"
 #include "pfx.h"
 #include "dwycolistscoped.h"
+#include "qloc.h"
 
 static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Already_processed;
-extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QLoc> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
-extern QMap<QByteArray, QByteArray> Hash_to_lon;
-extern QMap<QByteArray, QByteArray> Hash_to_lat;
+extern QMap<QByteArray, long> Hash_to_max_lc;
 void cdcxpanic(const char *);
 
 static
@@ -58,6 +58,7 @@ load_to_hash(const QByteArray& uid, const QByteArray& mid)
             QJsonObject qjo = qjd.object();
             if(!qjo.isEmpty())
             {
+                long lc = qsml.get_long(DWYCO_QM_BODY_LOGICAL_CLOCK);
                 QJsonValue h = qjo.value("hash");
                 QJsonValue loc = qjo.value("loc");
                 QJsonValue rev = qjo.value("review");
@@ -67,14 +68,25 @@ load_to_hash(const QByteArray& uid, const QByteArray& mid)
                 if(!h.isUndefined())
                 {
                     QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
+                    QLoc loca;
+                    loca.hash = hh;
+                    loca.mid = mid;
                     if(!loc.isUndefined())
-                        Hash_to_loc.insert(hh, loc.toString().toLatin1());
+                        loca.loc = loc.toString().toLatin1();
                     if(!rev.isUndefined())
                         Hash_to_review.insert(hh, rev.toString().toLatin1());
                     if(!lat.isUndefined())
-                        Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                        loca.lat = lat.toString().toLatin1();
                     if(!lon.isUndefined())
-                        Hash_to_lon.insert(hh, lon.toString().toLatin1());
+                        loca.lon = lon.toString().toLatin1();
+                    QList<QLoc> ql = Hash_to_loc.values(hh);
+                    if(!ql.contains(loca))
+                    {
+                        Hash_to_loc.insertMulti(hh, loca);
+                    }
+                    long v = Hash_to_max_lc.value(hh, 0);
+                    if(lc > v)
+                        Hash_to_max_lc.insert(hh, lc);
 
                     dwyco_set_msg_tag(mid.constData(), h.toString().toLatin1());
                 }
@@ -194,53 +206,29 @@ clear_unviewed_msgs()
     dwyco_unset_all_msg_tag("unviewed");
 }
 
-static int
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_STRING)
-        return 0;
-    str_out = QByteArray(val, len);
-    return 1;
-}
-
 
 int
 dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids)
 {
     int n;
-    const char *val;
-    int len;
-    int type;
-    dwyco_list_numelems(ml, &n, 0);
+    dwyco_list qml(ml);
+    n = qml.rows();
     if(n == 0)
-    {
         return 0;
-    }
     QByteArray uid_out;
     QByteArray mid;
     for(int i = 0; i < n; ++i)
     {
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_FROM, uid_out))
-            continue;
+        uid_out = qml.get<QByteArray>(i, DWYCO_QMS_FROM);
         if(uid_out == QByteArray::fromHex("f6006af180260669eafc"))
             continue;
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_ID, mid))
-            continue;
+        mid = qml.get<QByteArray>(i, DWYCO_QMS_ID);
         if(Already_processed.contains(mid))
             continue;
-        if(!dwyco_list_get(ml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
-            continue;
-
-        if(type != DWYCO_TYPE_NIL)
+        if(!qml.is_nil(i, DWYCO_QMS_IS_DIRECT))
         {
             cdcxpanic("direct msgs api is different now");
         }
-
         // ok, at least it is likely the person will see it now
         // if there are any errors above, people may not be able to see a message
         // but the user would appear towards the top of the user list, which is weird.

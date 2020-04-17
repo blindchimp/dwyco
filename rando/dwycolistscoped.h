@@ -85,6 +85,10 @@ public:
             return 0;
     }
 
+    long get_long(const char *col) {
+        return get_long(0, col);
+    }
+
 };
 
 struct simple_scoped : public dwyco_list

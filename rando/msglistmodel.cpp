@@ -20,6 +20,7 @@
 #include "dwycolistscoped.h"
 #include "dwyco_new_msg.h"
 #include "dwyco_top.h"
+#include "qloc.h"
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
@@ -41,16 +42,14 @@ static QSet<QByteArray> Selected;
 static QList<QByteArray> Fetching;
 static QSet<QByteArray> Dont_refetch;
 static QList<QByteArray> Delete_msgs;
-static QMap<int, QByteArray> Fid_to_mid;
 static QMap<QByteArray, int> Mid_to_percent;
 // messages are automatically fetched, unless it fails.
 // after that, the fetch can be initiated explicitly
 static QSet<QByteArray> Manual_fetch;
 
-extern QMap<QByteArray,QByteArray> Hash_to_loc;
+extern QMap<QByteArray,QLoc> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
-extern QMap<QByteArray, QByteArray> Hash_to_lon;
-extern QMap<QByteArray, QByteArray> Hash_to_lat;
+extern QMap<QByteArray,long> Hash_to_max_lc;
 
 static QMap<QByteArray,QByteArray> Mid_to_hash;
 
@@ -262,8 +261,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
         if(i >= 0)
             Fetching.removeAt(i);
         Delete_msgs.append(mid);
-        //del_unviewed_mid(mid);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         break;
 
@@ -279,7 +276,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
 
         if(i >= 0)
             Fetching.removeAt(i);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         Manual_fetch.insert(mid);
         break;
@@ -303,7 +299,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
     default:
         if(i >= 0)
             Fetching.removeAt(i);
-        //Fid_to_mid.remove(id);
         Mid_to_percent.remove(mid);
         Manual_fetch.remove(mid);
     }
@@ -384,7 +379,7 @@ msglist_model::set_all_unselected()
 }
 
 // this is a bit sloppy, but since there aren't that
-// many things in the list, it hopefully won't me a problem
+// many things in the list, it hopefully won't be a problem
 // to just invalidate everything
 void
 msglist_model::invalidate_sent_to()
@@ -399,6 +394,7 @@ msglist_model::invalidate_sent_to()
         emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
         emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
     }
+    sort(0, Qt::DescendingOrder);
 }
 
 bool
@@ -533,6 +529,7 @@ msglist_model::setUid(const QString &uid)
             m_uid = uid;
             emit uidChanged();
         }
+        sort(0, Qt::DescendingOrder);
     }
 }
 
@@ -573,6 +570,7 @@ msglist_model::reload_model()
     {
         mr->reload_model();
     }
+    sort(0, Qt::DescendingOrder);
 }
 
 void
@@ -583,6 +581,7 @@ msglist_model::force_reload_model()
     {
         mr->reload_model(1);
     }
+    sort(0, Qt::DescendingOrder);
 }
 
 void
@@ -629,6 +628,28 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     }
 
     return true;
+}
+
+bool
+msglist_model::lessThan(const QModelIndex& source_left, const QModelIndex& source_right) const
+{
+    msglist_raw *m = dynamic_cast<msglist_raw *>(sourceModel());
+
+    QByteArray hl = m->data(source_left, ASSOC_HASH).toByteArray();
+    QByteArray hr = m->data(source_right, ASSOC_HASH).toByteArray();
+
+    if(hl.length() == 0 && hr.length() == 0)
+        return false;
+    if(hl.length() == 0)
+        return true;
+    if(hr.length() == 0)
+        return false;
+
+    long lcl = m->hash_to_effective_lc(hl);
+    long lcr = m->hash_to_effective_lc(hr);
+    if(lcl < lcr)
+        return true;
+    return false;
 }
 
 msglist_raw::msglist_raw(QObject *p)
@@ -771,7 +792,7 @@ msglist_raw::reload_model(int force)
         dwyco_list qm(msg_idx);
         if(qm.rows() > 0)
         {
-            long curlc = qm.get_long(0, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+            long curlc = qm.get_long(DWYCO_MSG_IDX_LOGICAL_CLOCK);
             DWYCO_MSG_IDX nmi;
             dwyco_get_new_message_index(&nmi, buid.constData(), buid.length(), curlc);
             simple_scoped qnmi(nmi);
@@ -1141,6 +1162,13 @@ hash_has_tag(QByteArray hash, const char *tag)
     return 0;
 }
 
+
+long
+msglist_raw::hash_to_effective_lc(const QByteArray& hash)
+{
+    return Hash_to_max_lc.value(QByteArray::fromHex(hash), 0);
+}
+
 QVariant
 msglist_raw::inbox_data (int r, int role ) const
 {
@@ -1485,7 +1513,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray h;
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
-        QByteArray l = Hash_to_loc.value(h, "Unknown");
+        QByteArray l = Hash_to_loc.value(h).loc;
         return l;
     }
     else if(role == SENT_TO_LAT)
@@ -1501,7 +1529,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray h;
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
-        QByteArray l = Hash_to_lat.value(h, "");
+        QByteArray l = Hash_to_loc.value(h).lat;
         return l;
     }
     else if(role == SENT_TO_LON)
@@ -1517,7 +1545,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         QByteArray h;
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
-        QByteArray l = Hash_to_lon.value(h, "");
+        QByteArray l = Hash_to_loc.value(h).lon;
         return l;
     }
     else if(role == REVIEW_RESULTS)

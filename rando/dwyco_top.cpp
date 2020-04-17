@@ -66,6 +66,8 @@
 //#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
 //#include "vgqt.h"
 //#endif
+#include "qloc.h"
+#include "geospray.h"
 
 
 #ifdef MACOSX
@@ -105,10 +107,10 @@ extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
 
-QMap<QByteArray, QByteArray> Hash_to_loc;
-QMap<QByteArray, QByteArray> Hash_to_review;
-QMap<QByteArray, QByteArray> Hash_to_lon;
-QMap<QByteArray, QByteArray> Hash_to_lat;
+QMap<QByteArray, QLoc> Hash_to_loc;
+QMap<QByteArray,QByteArray> Hash_to_review;
+QMap<QByteArray, long> Hash_to_max_lc;
+
 
 void
 hack_unread_count()
@@ -140,7 +142,7 @@ update_unseen_from_db()
             break;
     }
     // if there are messages on the server from the reviewer, it is
-    // almost certain bad news
+    // almost certainly bad news
     if(uid_has_unviewed_msgs(TheMan))
         has_ugeo = true;
 
@@ -1573,55 +1575,9 @@ DwycoCore::init()
 
     }
 
-    QString tag_change1;
-    if(!setting_get("tag_change1", tag_change1))
-    {
-        DWYCO_USER_LIST ul;
-        int nul = 0;
-        dwyco_get_user_list2(&ul, &nul);
-        simple_scoped qul(ul);
-        for(int i = 0; i < nul; ++i)
-        {
-            QByteArray u = qul.get<QByteArray>(i);
-            DWYCO_SAVED_MSG_LIST sml;
-            if(dwyco_get_message_bodies(&sml, u.constData(), u.length(), 1))
-            {
-                simple_scoped qsml(sml);
-                for(int i = 0; i < qsml.rows(); ++i)
-                {
-                    if(qsml.is_nil(i, DWYCO_QM_BODY_ATTACHMENT))
-                    {
-                        QByteArray txt = qsml.get<QByteArray>(i, DWYCO_QM_BODY_NEW_TEXT2);
-                        QJsonDocument qjd = QJsonDocument::fromJson(txt);
-                        if(!qjd.isNull())
-                        {
-                            QJsonObject qjo = qjd.object();
-                            if(!qjo.isEmpty())
-                            {
-                                QJsonValue h = qjo.value("hash");
-                                QJsonValue loc = qjo.value("loc");
-                                QJsonValue rev = qjo.value("review");
 
-                                if(!loc.isUndefined())
-                                    Hash_to_loc.insert(QByteArray::fromHex(h.toString().toLatin1()), loc.toString().toLatin1());
-                                if(!rev.isUndefined())
-                                    Hash_to_review.insert(QByteArray::fromHex(h.toString().toLatin1()), rev.toString().toLatin1());
+    setting_put("tag_change1", "");
 
-                                // upgrade hack, favorite the geo-info so it isn't cleared
-                                QByteArray mid = qsml.get<QByteArray>(i, DWYCO_QM_BODY_ID);
-                                dwyco_set_fav_msg(mid.constData(), 1);
-                                dwyco_set_msg_tag(mid.constData(), "_json");
-
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-        setting_put("tag_change1", "");
-    }
-    else
     {
         // just query for _json tag and processes those directly
         DWYCO_LIST tml;
@@ -1633,6 +1589,7 @@ DwycoCore::init()
                 DWYCO_SAVED_MSG_LIST sml;
                 QByteArray u = QByteArray::fromHex(stml.get<QByteArray>(i, DWYCO_MSG_IDX_ASSOC_UID));
                 QByteArray mid = stml.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+                long lc = stml.get_long(i, DWYCO_MSG_IDX_LOGICAL_CLOCK);
                 if(dwyco_get_saved_message(&sml, u.constData(), u.length(), mid.constData()))
                 {
                     simple_scoped ssml(sml);
@@ -1653,14 +1610,26 @@ DwycoCore::init()
                                 if(!h.isUndefined())
                                 {
                                     QByteArray hh = QByteArray::fromHex(h.toString().toLatin1());
+                                    QLoc loca;
+                                    loca.hash = hh;
+                                    loca.mid = mid;
                                     if(!loc.isUndefined())
-                                        Hash_to_loc.insert(hh, loc.toString().toLatin1());
+                                        loca.loc = loc.toString().toLatin1();
                                     if(!rev.isUndefined())
                                         Hash_to_review.insert(hh, rev.toString().toLatin1());
                                     if(!lat.isUndefined())
-                                        Hash_to_lat.insert(hh, lat.toString().toLatin1());
+                                        loca.lat = lat.toString().toLatin1();
                                     if(!lon.isUndefined())
-                                        Hash_to_lon.insert(hh, lon.toString().toLatin1());
+                                        loca.lon = lon.toString().toLatin1();
+                                    QList<QLoc> ql = Hash_to_loc.values(hh);
+                                    if(!ql.contains(loca))
+                                    {
+                                        Hash_to_loc.insertMulti(hh, loca);
+                                    }
+                                    long v = Hash_to_max_lc.value(hh, 0);
+                                    if(lc > v)
+                                        Hash_to_max_lc.insert(hh, lc);
+
                                 }
                             }
                         }
@@ -2524,6 +2493,14 @@ DwycoCore::delete_user(QString uid)
     return ret;
 }
 
+int
+DwycoCore::geo_count_from_hash(QString hash)
+{
+    QByteArray buid = hash.toLatin1();
+    buid = QByteArray::fromHex(buid);
+    return Hash_to_loc.count(buid);
+}
+
 static QByteArray
 get_cq_results_filename()
 {
@@ -3200,6 +3177,9 @@ dwyco_register_qml(QQmlContext *root)
     //Conv_sort_proxy->setSourceModel(convlist);
     //QObject::connect(convlist, SIGNAL(countChanged()), Conv_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("ConvListModel", convlist);
+
+    GeoSprayListModel *gs = new GeoSprayListModel;
+    root->setContextProperty("GeoSprayListModel", gs);
 
     //IgnoreListModel *ignorelist = new IgnoreListModel;
     //Ignore_sort_proxy = new IgnoreSortFilterModel;
