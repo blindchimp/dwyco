@@ -46,6 +46,7 @@ public:
     Q_INVOKABLE void tag_all_selected(QByteArray tag);
     Q_INVOKABLE void untag_all_selected(QByteArray tag);
     Q_INVOKABLE bool at_least_one_selected();
+    Q_INVOKABLE void set_sort(bool);
 
     int mid_to_index(QByteArray mid);
     void invalidate_sent_to();
@@ -64,6 +65,7 @@ private:
     int filter_last_n;
     int filter_only_favs;
     int filter_show_hidden;
+    bool special_sort;
 
     void force_reload_model();
 
