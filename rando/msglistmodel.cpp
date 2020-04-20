@@ -397,7 +397,8 @@ msglist_model::invalidate_sent_to()
         emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
         emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
     }
-    sort(0, Qt::DescendingOrder);
+    if(special_sort)
+        sort(0, Qt::DescendingOrder);
 }
 
 bool
@@ -532,7 +533,8 @@ msglist_model::setUid(const QString &uid)
             m_uid = uid;
             emit uidChanged();
         }
-        sort(0, Qt::DescendingOrder);
+        if(special_sort)
+            sort(0, Qt::DescendingOrder);
     }
 }
 
@@ -648,6 +650,7 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     return true;
 }
 
+#if 0
 bool
 msglist_model::lessThan(const QModelIndex& source_left, const QModelIndex& source_right) const
 {
@@ -675,6 +678,7 @@ msglist_model::lessThan(const QModelIndex& source_left, const QModelIndex& sourc
         return true;
     return false;
 }
+#endif
 
 msglist_raw::msglist_raw(QObject *p)
     : QAbstractListModel(p)

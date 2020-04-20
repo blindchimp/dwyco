@@ -25,20 +25,6 @@ extern QMap<QByteArray, QLoc> Hash_to_loc;
 int
 GeoSent::load_external_state(const QLoc& ql)
 {
-#if 0
-    DWYCO_SAVED_MSG_LIST ml;
-    if(!dwyco_get_saved_message(&ml, uid.constData(), uid.length(), mid.constData()))
-    {
-        return 0;
-    }
-    simple_scoped sml(ml);
-    QByteArray json = sml.get<QByteArray>(DWYCO_QM_BODY_NEW_TEXT2);
-    QJsonDocument jd = QJsonDocument::fromJson(json);
-    if(jd.isNull())
-        return 0;
-    QJsonArray ja = jd.array();
-
-#endif
     // lets assume we have loaded all the messages into the internal
     // hash table for now
     update_mid(ql.mid);
@@ -73,7 +59,7 @@ GeoSprayListModel::load_hash_to_model(const QByteArray& hash)
     {
         GeoSent *gs = new GeoSent;
         gs->load_external_state(locs[i]);
-        append(gs);
+        prepend(gs);
     }
 }
 

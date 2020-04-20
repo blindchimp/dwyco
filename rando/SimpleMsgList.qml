@@ -125,7 +125,7 @@ Page {
             checkable: true
             onCheckedChanged: {
                 if(checked) {
-                    themsglist.set_sort(true)
+                    //themsglist.set_sort(true)
                     top_dispatch.uid_selected(the_man, "clicked")
                     recv.checked = false
                     sent_badge = false
@@ -170,7 +170,7 @@ Page {
                     for(i = 0; i < ConvListModel.count; i++) {
                         u = ConvListModel.get(i).uid
                         if(u !== the_man) {
-                            themsglist.set_sort(false)
+                            //themsglist.set_sort(false)
                             top_dispatch.uid_selected(u, "clicked")
                             break;
                         }
