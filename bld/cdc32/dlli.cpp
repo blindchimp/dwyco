@@ -464,7 +464,7 @@ extern int beginning_of_world;
 #endif
 
 #ifndef WIN32
-#define DWYCO_CRYPTO_PIPELINE
+#undef DWYCO_CRYPTO_PIPELINE
 #else
 #undef DWYCO_CRYPTO_PIPELINE
 #endif
