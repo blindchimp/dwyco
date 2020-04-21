@@ -19,7 +19,7 @@ Page {
     property bool show_recv: true
     property bool multiselect_mode: false
     property int storage_warning: 1
-    property string uid
+    //property string uid
 
     background: Rectangle {
         gradient: Gradient {
@@ -734,7 +734,7 @@ scrolling in the listview or doesn't recognizing the swipe.
             }
         }
 
-        visible: core.has_unseen_geo
+        visible: core.has_unseen_geo && themsglist.uid === the_man
 
         onClicked: {
             var i
