@@ -687,6 +687,65 @@ scrolling in the listview or doesn't recognizing the swipe.
 
     }
 
+    TipButton {
+        id: go_to_next
+        width: mm(10)
+        height: mm(10)
+        anchors.margins: mm(3)
+        anchors.bottom: parent.bottom
+        //anchors.right: parent.right
+        x: go_to_top.x - mm(11)
+
+        background: Rectangle {
+            id: gtn_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtn_img
+            anchors.centerIn: gtn_bg
+            source: mi("ic_language_black_24dp.png")
+            opacity: .5
+            SequentialAnimation {
+                running: go_to_next.visible
+                loops: Animation.Infinite
+                onStopped: {
+                    gtn_img.scale = 1.0
+                }
+
+            NumberAnimation {
+                target: gtn_img
+                property: "scale"
+                duration: 300
+                easing.type: Easing.InOutQuad
+                from: 1.0
+                to: 0.5
+            }
+            NumberAnimation {
+                target: gtn_img
+                property: "scale"
+                duration: 300
+                easing.type: Easing.InOutQuad
+                from: 0.5
+                to: 1.0
+            }
+            }
+        }
+
+        visible: core.has_unseen_geo
+
+        onClicked: {
+            var i
+            i = themsglist.find_first_unseen()
+            if(i >= 0)
+                listview.positionViewAtIndex(i, ListView.Beginning)
+        }
+        ToolTip.text: "Skip to next unseen"
+
+    }
+
     Warning {
         id: warn
         visible: false

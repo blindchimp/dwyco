@@ -47,6 +47,7 @@ public:
     Q_INVOKABLE void untag_all_selected(QByteArray tag);
     Q_INVOKABLE bool at_least_one_selected();
     Q_INVOKABLE void set_sort(bool);
+    Q_INVOKABLE int find_first_unseen();
 
     int mid_to_index(QByteArray mid);
     void invalidate_sent_to();

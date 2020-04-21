@@ -620,6 +620,21 @@ msglist_model::set_sort(bool s)
     }
 }
 
+int
+msglist_model::find_first_unseen()
+{
+    int n = rowCount();
+    for(int i = 0; i < n; ++i)
+    {
+        QModelIndex mi = index(i, 0);
+        if(data(mi, IS_UNSEEN).toInt() == 1)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 bool
 msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
