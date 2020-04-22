@@ -1,5 +1,5 @@
 
-TARGET = QtQmlModels
+TARGET = "QtQmlModels_$${QT_ARCH}"
 
 TEMPLATE = lib
 

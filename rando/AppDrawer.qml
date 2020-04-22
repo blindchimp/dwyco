@@ -24,7 +24,7 @@ AppDrawerForm {
         title: "Delete all"
         icon: StandardIcon.Question
         text: "Delete ALL pictures?"
-        informativeText: "This removes FAVORITE pictures too."
+        informativeText: "This REMOVES FAVORITE pictures too."
         standardButtons: StandardButton.Yes | StandardButton.No
         onYes: {
             ConvListModel.set_all_selected(true)
@@ -77,5 +77,16 @@ AppDrawerForm {
         close()
     }
 
+    freebies_switch.checked: dwy_freebies
+
+    freebies_switch.onClicked: {
+        dwy_freebies = freebies_switch.checked
+        core.set_local_setting("send_freebies", dwy_freebies ? "true" : "false")
+        rando_status.refresh()
+        //close()
+    }
+
+
 
 }
+

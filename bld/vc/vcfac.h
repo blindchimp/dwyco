@@ -49,8 +49,10 @@ private:
 
 	VC_FACTORY_MAP *member_map;
 	vc base_expr;
+#ifdef LHOBJ_FORWARDS
 	VC_FORWARD_LIST forwards;
 	VC_FORWARD_LIST delegates;
+#endif
 	long instance_count;
 };
 

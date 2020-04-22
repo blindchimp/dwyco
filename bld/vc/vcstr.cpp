@@ -89,8 +89,8 @@ vc_string::bremove() const
 vc
 vc_string::eval() const
 {
-    oopanic("string eval?");
-    //return Vcmap->get(vc(VC_STRING, str, cached_len));
+    //oopanic("string eval?");
+    return Vcmap->get(vc(VC_STRING, str, cached_len));
     return vcnil;
 }
 

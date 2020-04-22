@@ -12,7 +12,6 @@
 
 #include "vc.h"
 
-#ifndef BTYPES
 #ifdef PERFHACKS
 template<class R, class D> class DwAMap;
 template<class R, class D> class DwAMapIter;
@@ -24,12 +23,7 @@ template<class R, class D> class DwMapRIter;
 typedef DwMapR<vc,vc> VMAP;
 typedef DwMapRIter<vc,vc> VMAPIter;
 #endif
-#else
-template<class R, class D> class DwMap;
-template<class R, class D> class DwMapIter;
-typedef DwMap<vc,vc> VMAP;
-typedef DwMapIter<vc,vc> VMAPIter;
-#endif
+
 class excctx;
 class excfun;
 class vc_object;

@@ -71,14 +71,6 @@ vcpow(vc v, vc p)
 	return pow((double)v, (double)p);
 }
 
-#if !defined(__GNUG__) && ((defined(__BORLANDC__) && __BORLANDC__ < 0x540) || defined(MSDOS))
-vc
-vcpow10(vc v)
-{
-	return pow10(v);
-}
-#endif
-
 vc
 vcacos(vc v)
 {

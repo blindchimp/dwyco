@@ -12,7 +12,6 @@ import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.2
 import QtPositioning 5.12
 
-
 Page {
     id: msglist
     property alias model: listview.model
@@ -20,12 +19,12 @@ Page {
     property bool show_recv: true
     property bool multiselect_mode: false
     property int storage_warning: 1
-    property string uid
+    //property string uid
 
     background: Rectangle {
         gradient: Gradient {
-            GradientStop { position: 1.0; color: msglist.model.uid === the_man ? amber_light : primary_light }
-            GradientStop { position: 0.0; color: msglist.model.uid === the_man ? amber_dark : primary_dark}
+            GradientStop { position: 1.0; color: themsglist.uid === the_man ? amber_light : primary_light }
+            GradientStop { position: 0.0; color: themsglist.uid === the_man ? amber_dark : primary_dark}
         }
     }
 
@@ -102,6 +101,7 @@ Page {
     }
 
     footer: ToolBar {
+        id: footer_toolbar
         width: parent.width
         RowLayout {
             anchors.fill: parent
@@ -125,6 +125,7 @@ Page {
             checkable: true
             onCheckedChanged: {
                 if(checked) {
+                    //themsglist.set_sort(true)
                     top_dispatch.uid_selected(the_man, "clicked")
                     recv.checked = false
                     sent_badge = false
@@ -140,7 +141,7 @@ Page {
                 anchors.top: parent.top
                 radius: width / 2
                 color: "red"
-                visible: /* core.has_unseen_geo || */ sent_badge
+                visible: core.has_unseen_geo
             }
         }
 //        Item {
@@ -169,6 +170,7 @@ Page {
                     for(i = 0; i < ConvListModel.count; i++) {
                         u = ConvListModel.get(i).uid
                         if(u !== the_man) {
+                            //themsglist.set_sort(false)
                             top_dispatch.uid_selected(u, "clicked")
                             break;
                         }
@@ -281,7 +283,7 @@ Page {
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
-                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && msglist.model.uid === the_man
+                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
                 source: mi("ic_not_interested_black_24dp.png")
 
                 z: 10
@@ -292,7 +294,7 @@ Page {
                             fail_review_msg.state = "moveOut"
                         else
                             fail_review_msg.state = "moveIn"
-                        core.hash_clear_tag(ASSOC_HASH, "_unseen")
+                        core.hash_clear_tag(ASSOC_HASH, "unviewed")
                     }
                 }
 
@@ -360,7 +362,12 @@ Page {
 
             Image {
                 id: has_geo_info
-                source: msglist.model.uid === the_man ? mi("ic_language_black_24dp.png") : mi("ic_language_white_24dp.png")
+                source: {
+
+                    themsglist.uid === the_man ?
+                                ((core.geo_count_from_hash(ASSOC_HASH) > 1) ? mi("ic_open_in_new_black_24dp.png") : mi("ic_language_black_24dp.png"))
+                              : mi("ic_language_white_24dp.png")
+                }
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
@@ -368,15 +375,20 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
+                        if(core.geo_count_from_hash(ASSOC_HASH) > 1) {
+                        geolist.hash = ASSOC_HASH
+                        stack.push(geolist)
+                        }
+                        else {
                         if(SENT === 0) {
                             var o = JSON.parse(MSG_TEXT)
                             if('lat' in o && 'lon' in o)
                             {
-                                //mapimage.lat = o.lat
-                                //mapimage.lon = o.lon
+                                mapimage.lat = parseFloat(o.lat)
+                                mapimage.lon = parseFloat(o.lon)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 10
+                                mapimage.zoom = default_map_zoom
                                 stack.push(mapimage)
                             }
                             else
@@ -389,11 +401,11 @@ Page {
                         } else {
                             if(location.text.length > 0 && SENT_TO_LAT != "" &&
                                     SENT_TO_LON != "") {
-                                //mapimage.lat = SENT_TO_LAT
-                                //mapimage.lon = SENT_TO_LON
+                                mapimage.lat = parseFloat(SENT_TO_LAT)
+                                mapimage.lon = parseFloat(SENT_TO_LON)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
                                 mapimage.placename = location.text
-                                mapimage.zoom = 10
+                                mapimage.zoom = default_map_zoom
                                 stack.push(mapimage)
 
                             }
@@ -405,8 +417,9 @@ Page {
                                     location.state = "moveIn"
                             }
                         }
+                        }
 
-                        core.hash_clear_tag(ASSOC_HASH, "_unseen")
+                        core.hash_clear_tag(ASSOC_HASH, "unviewed")
                     }
                 }
                 SequentialAnimation {
@@ -512,7 +525,7 @@ Page {
                         target: core
                         onMsg_progress : {
                             console.log("PB ", pers_id, msg, percent_done, model.mid)
-                            if(pers_id == model.mid) {
+                            if(pers_id === model.mid) {
                                 pb.value = percent_done
                             }
                         }
@@ -537,8 +550,8 @@ Page {
 //                        color: "green"
 //                    }
                 }
-                visible: msglist.model.uid !== the_man && IS_ACTIVE
-                active: msglist.model.uid !== the_man && IS_ACTIVE
+                visible: themsglist.uid !== the_man && IS_ACTIVE
+                active: themsglist.uid !== the_man && IS_ACTIVE
             }
         }
     }
@@ -640,6 +653,97 @@ scrolling in the listview or doesn't recognizing the swipe.
             cam.ok_text = "Upload"
             stack.push(cam)
         }
+    }
+
+    TipButton {
+        id: go_to_top
+        width: mm(10)
+        height: mm(10)
+        anchors.margins: mm(3)
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+
+        background: Rectangle {
+            id: gtb_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtb_img
+            anchors.centerIn: gtb_bg
+            source: mi("ic_vertical_align_top_black_24dp.png")
+            opacity: .5
+        }
+
+        visible: !listview.atYBeginning
+
+        onClicked: {
+            listview.positionViewAtBeginning()
+            //lock_to_bottom = true
+        }
+        ToolTip.text: "Skip to top"
+
+    }
+
+    TipButton {
+        id: go_to_next
+        width: mm(10)
+        height: mm(10)
+        anchors.margins: mm(3)
+        anchors.bottom: parent.bottom
+        //anchors.right: parent.right
+        x: go_to_top.x - mm(11)
+
+        background: Rectangle {
+            id: gtn_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtn_img
+            anchors.centerIn: gtn_bg
+            source: mi("ic_language_black_24dp.png")
+            opacity: .5
+            SequentialAnimation {
+                running: go_to_next.visible
+                loops: Animation.Infinite
+                onStopped: {
+                    gtn_img.scale = 1.0
+                }
+
+            NumberAnimation {
+                target: gtn_img
+                property: "scale"
+                duration: 300
+                easing.type: Easing.InOutQuad
+                from: 1.0
+                to: 0.5
+            }
+            NumberAnimation {
+                target: gtn_img
+                property: "scale"
+                duration: 300
+                easing.type: Easing.InOutQuad
+                from: 0.5
+                to: 1.0
+            }
+            }
+        }
+
+        visible: core.has_unseen_geo && themsglist.uid === the_man
+
+        onClicked: {
+            var i
+            i = themsglist.find_first_unseen()
+            if(i >= 0)
+                listview.positionViewAtIndex(i, ListView.Beginning)
+        }
+        ToolTip.text: "Skip to next unseen"
+
     }
 
     Warning {

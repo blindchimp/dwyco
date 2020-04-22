@@ -260,10 +260,10 @@ vc
 vc_default::socket_send_buf(vc item, const vc& send_info, const vc&) 
 {USER_BOMB("socket_send_buf on non-socket", vcnil);}
 
-vc vc_default::socket_get_obj(int& avail, vc& addr_info) {USER_BOMB("get obj not defined for socket", vcnil)}
-vc vc_default::socket_put_obj(vc obj, const vc& to_addr, int syntax) {USER_BOMB("put obj not defined for socket", vcnil)}
-int vc_default::socket_get_write_q_size() {USER_BOMB("get-write-q not defined for socket", vcnil)}
-int vc_default::socket_get_read_q_len() {USER_BOMB("get-read-q-len not defined for socket", -1)}
+vc vc_default::socket_get_obj(int& avail, vc& addr_info) {USER_BOMB("get obj not defined for socket", vcnil);}
+vc vc_default::socket_put_obj(vc obj, const vc& to_addr, int syntax) {USER_BOMB("put obj not defined for socket", vcnil);}
+int vc_default::socket_get_write_q_size() {USER_BOMB("get-write-q not defined for socket", vcnil);}
+int vc_default::socket_get_read_q_len() {USER_BOMB("get-read-q-len not defined for socket", -1);}
 
 VC_ERR_CALLBACK
 vc_default::set_err_callback(VC_ERR_CALLBACK) 

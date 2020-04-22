@@ -3,9 +3,11 @@ QT -= gui
 
 include(../$$DWYCO_CONFDIR/conf.pri)
 
+INCLUDEPATH += ../bld/dwcls ../bld/miscsrc
+
 SOURCES += \
     clbot.cpp \
-    dwyco_new_msg.cpp
+    ../bld/miscsrc/dwyco_new_msg.cpp
 
 linux-g++* {
 
@@ -39,5 +41,3 @@ DEFINES += LINUX VCCFG_FILE
 #QMAKE_LFLAGS += --coverage
 }
 
-HEADERS += \
-    dwyco_new_msg.h

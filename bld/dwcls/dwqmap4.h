@@ -48,18 +48,19 @@ class DwQMap4// : public DwMaps<R,D>
     friend class DwQMap4Iter<R,D,nelems>;
 
 private:
-    R dr;	// default range
-    D dd;	// default domain
+    DwQMap4(const DwQMap4&) {oopanic("nope");}
+    const DwQMap4& operator=(const DwQMap4&) {oopanic("nope2");}
 
     int count;				// number of elements in table
     int thresh;				// number of elements where ops degrade
     unsigned long deleted;
+    unsigned long used;
+    int size;			// total size of table
 
     void init1(int);
     void setdel(long);
-    void setempty(long);
     void setfull(long);
-    void initdel(long);
+    void initdel();
 
     static long dum;
     static const int rehash32[31];
@@ -70,7 +71,6 @@ private:
 
     long search(const D& key, int& found, long& first_del = dum);
 
-private:
     char rng[nelems * sizeof(R)];
     char dom[nelems * sizeof(D)];
 
@@ -155,16 +155,11 @@ private:
         }
     }
 
-protected:
-    unsigned long used;
-    int size;			// total size of table
-
 public:
     typedef DwIter<DwQMap4<R,D,nelems> , DwAssocImp<R,D> > Foo;
     DwAssocImp<R,D> get_by_iter(Foo *) const;
-    DwQMap4(const R& defr, const D& defd);
     DwQMap4();
-    // note: default ctor, op= work ok.
+    // note: for now, we leave copy and op= disabled since they aren't needed
     ~DwQMap4();
 
     int num_elems() const;
@@ -222,16 +217,9 @@ tcls::init1(int maxsz)
     else
         rehash = rehash8;
     count = 0;
-    initdel(maxsz);
+    initdel();
     size = maxsz;
     thresh = (9 * size) / 10;
-}
-
-thdr
-tcls::DwQMap4(const R& r, const D& d)
-    : dr(r), dd(d)
-{
-    init1(nelems);
 }
 
 thdr
@@ -323,7 +311,7 @@ tcls::get(const D& key)
     int found;
     long idx = search(key, found);
     if(!found)
-        return dr;
+        return R();
     return get_rng(idx);
 }
 
@@ -343,14 +331,13 @@ tcls::del(const D& key)
     if(!found)
         return 0;
     setdel(idx);
-    setempty(idx);
     --count;
     return 1;
 }
 
 thdr
 void
-tcls::initdel(long /*isize*/)
+tcls::initdel()
 {
     deleted = 0;
     used = 0;
@@ -379,18 +366,6 @@ tcls::setfull(long idx)
     used |= (1UL << idx);
     deleted &= ~(1UL << idx);
 }
-
-thdr
-inline void
-tcls::setempty(long /*idx*/)
-{
-#ifdef CAREFUL
-    if(idx < 0 || idx >= size)
-        oopanic("bad empty idx");
-#endif
-    //used &= ~(1UL << idx);
-}
-
 
 thdr
 long
@@ -432,7 +407,7 @@ tcls::get_by_iter(DwIter<DwQMap4<R,D,nelems>, DwAssocImp<R,D> > *a) const
     typedef DwQMap4Iter<R,D,nelems> dmi_t;
     dmi_t *t = (dmi_t *)a;
     if(t->eol())
-        return DwAssocImp<R,D>(dr, dd);
+        return DwAssocImp<R,D>();
     DwAssocImp<R,D> ret(get_rng(t->cur_buck), get_dom(t->cur_buck));
     return ret;
 }

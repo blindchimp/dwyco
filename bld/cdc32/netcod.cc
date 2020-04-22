@@ -24,7 +24,6 @@ static char RcsId[] = "$Header: g:/dwight/repo/cdc32/rcs/netcod.cc 1.27 1999/01/
 #include "dwlog.h"
 #include "dwstr.h"
 #include "mmchan.h"
-#include "dumbass.h"
 #include "dwrtlog.h"
 #include "qauth.h"
 #include "ta.h"

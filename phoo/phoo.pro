@@ -33,11 +33,12 @@ macx-clang: QT += macextras
 linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
+macx-clang: QMAKE_INFO_PLIST=Info.plist.mac
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 
 #QMAKE_MAC_SDK = macosx10.9
-#DEFINES += DWYCO_RELEASE
+DEFINES += DWYCO_RELEASE
 ICON=greenguy.icns
 RC_FILE=phoo.rc
 
@@ -121,7 +122,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/libuv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -lsqlite3 \
@@ -145,7 +146,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/libuv/libuv.a
 
 }
@@ -215,7 +216,7 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${PWD}/../bld/macdrv/libmacdrv.a \
 $${D}/libuv/libuv.a \
@@ -248,7 +249,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qt-qml-models/libQtQmlModels.a
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 
 }
 
@@ -259,7 +260,7 @@ D = $${OUT_PWD}/../bld
 
 L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 
-LIBS += $$D/qt-qml-models/libQtQmlModels.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will
@@ -340,7 +341,7 @@ $${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
-$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
+$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
 $${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj \
 $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
@@ -366,7 +367,7 @@ $${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
-$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
+$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
 $${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\vorbis112\\win32\\vs2003\\libvorbis\\Debug\\libvorbis.lib \
