@@ -33,7 +33,7 @@ public:
     Q_INVOKABLE void reload_model();
 
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
-    bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
+    //bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
 
     Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n, int only_favs);
     Q_INVOKABLE void set_show_hidden(int);
@@ -46,6 +46,8 @@ public:
     Q_INVOKABLE void tag_all_selected(QByteArray tag);
     Q_INVOKABLE void untag_all_selected(QByteArray tag);
     Q_INVOKABLE bool at_least_one_selected();
+    Q_INVOKABLE void set_sort(bool);
+    Q_INVOKABLE int find_first_unseen();
 
     int mid_to_index(QByteArray mid);
     void invalidate_sent_to();
@@ -64,6 +66,7 @@ private:
     int filter_last_n;
     int filter_only_favs;
     int filter_show_hidden;
+    bool special_sort;
 
     void force_reload_model();
 

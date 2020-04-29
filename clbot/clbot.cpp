@@ -1,21 +1,20 @@
-// this bot receives special messages from clients, performs
-// a contact list lookup, and sends an XML message containing
-// the results back to
-// the client in the form of a reply message.
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+;
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
+// this bot receives a list of email addresses from clients, performs
+// a contact list lookup, and sends a reply message to the sender
+// containing a list of uid's that corresponds to the input emails.
+// (subject to some constraints, as explained in the queries below.)
 //
-// we assume the schema contains some views that we can just
-// parameterize with the email address. this gives us a little
-// flexibility in filter the return results. ca 2016,
-// we group all the uid's that have a given email,
-// remove all the uids whose profiles are not "reviewed and regular"
-// and are visible in the directory. we then use the newest
-// profile entry as the candidate uid. if the uid is ignored (on either
-// side), it is removed from the result set.
-// we assume the most recent profile is the one of interest, but
-// possibly we could change this to take into account the most recent
-// login as well.
+// the input and output lists are in Qt serialized format.
 //
-//
+
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -27,6 +26,7 @@
 #include "libgen.h"
 #include "dlli.h"
 #include "dwyco_new_msg.h"
+#include "dwycolist2.h"
 #include <QList>
 #include <QByteArray>
 #include <QMap>
@@ -42,7 +42,7 @@
 #include <QtPlugin>
 #include <QCoreApplication>
 //Q_IMPORT_PLUGIN(qsqlite)
-#define HANDLE_MSG(m) dwyco_save_message(m)
+
 
 static
 void
@@ -57,14 +57,6 @@ dwyco_db_login_result(const char *str, int what)
     else
         exit(1);
 }
-
-struct simple_scoped
-{
-    DWYCO_LIST value;
-    simple_scoped(DWYCO_LIST v) {value = v;}
-    ~simple_scoped() {dwyco_list_release(value);}
-    operator DWYCO_LIST() {return value;}
-};
 
 static int
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
@@ -232,6 +224,12 @@ main(int argc, char *argv[])
             exit(0);
         }
 
+        if(dwyco_get_rescan_messages())
+        {
+            dwyco_set_rescan_messages(0);
+            process_remote_msgs();
+        }
+
         QByteArray uid;
         QByteArray txt;
         int dummy;
@@ -243,11 +241,12 @@ main(int argc, char *argv[])
             // if no attachment, then we just ignore it
             if(!has_att)
             {
-                dwyco_delete_unsaved_message(mid.constData());
+                processed_msg(mid);
+                dwyco_delete_saved_message(uid.constData(), uid.length(), mid.constData());
                 continue;
             }
             DWYCO_SAVED_MSG_LIST sm;
-            if(!dwyco_unsaved_message_to_body(&sm, mid.constData()))
+            if(!dwyco_get_saved_message(&sm, uid.constData(), uid.length(), mid.constData()))
                 continue;
             simple_scoped qsm(sm);
             QByteArray attfn;
@@ -295,7 +294,7 @@ main(int argc, char *argv[])
                 // in their latest profile entry. we don't want to return the new account
                 q.exec("delete from baz where not exists(select 1 from bar where baz.email collate nocase = bar.email collate nocase");
 
-                // remember to do ignore filtering
+                // TO DO: ignore filtering
                 q.exec("select uid, email from baz;");
 
                 while(q.next())
@@ -314,8 +313,7 @@ main(int argc, char *argv[])
             tf.close();
             send_file_to(uid, "", tf.fileName().toLatin1());
 
-            HANDLE_MSG(mid);
-
+            processed_msg(mid);
         }
 
     }
