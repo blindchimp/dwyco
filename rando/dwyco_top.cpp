@@ -155,7 +155,10 @@ update_unseen_from_db()
     // too much for now.
     if(total_unviewed_msgs_count() > uid_unviewed_msgs_count(TheMan))
     {
-        has_ugeo = true;
+        // the geo things from the bot are small and will be downloaded
+        // quickly, no need to indicate this here, it will happen above
+        // when the download is complete.
+        //has_ugeo = true;
         has_urando = true;
     }
 
@@ -1563,6 +1566,7 @@ DwycoCore::init()
     dwyco_finish_startup();
 
     dwyco_run_sql("delete from msg_tags2 where mid not in (select mid from msg_idx)", 0, 0, 0);
+    dwyco_unset_all_msg_tag("_seen");
 
     load_unviewed();
     update_unread_count(total_unviewed_msgs_count());
