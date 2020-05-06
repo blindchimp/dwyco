@@ -35,7 +35,6 @@ vc vclh_serialize(vc);
 vc vclh_sha(vc);
 extern int Database_id;
 extern int Chat_id;
-vc Auto_update_hash;
 
 namespace dwyco {
 DwVec<QckDone> Waitq;
@@ -778,7 +777,7 @@ dirth_send_check_for_update(vc id, QckDone d)
     // send in a version number
     // hash value of the main executable
     m[2] = dwyco_get_version_string();
-    m[3] = Auto_update_hash;
+    m[3] = "";
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
 }
@@ -922,12 +921,3 @@ dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d)
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
 }
 }
-
-void
-set_autoupdate_hash(vc hash)
-{
-    Auto_update_hash = hash;
-    GRTLOG("autoupdate hash =", 0, 0);
-    GRTLOGVC(to_hex(hash));
-}
-

@@ -8,9 +8,8 @@
 */
 #ifndef FETCH_TO_INBOX_H
 #define FETCH_TO_INBOX_H
-#include "dwstr.h"
 
 namespace ns_dwyco_background_processing {
-int fetch_to_inbox(DwString& uid_out, DwString& mid_out);
+int fetch_to_inbox();
 }
 #endif

@@ -14,8 +14,6 @@
  */
 
 #include "useful.h"
-class DwAllocator;
-DwAllocator *Default_alloc;
 
 void
 vpnull(void*& v)

@@ -9,6 +9,7 @@ QT += location positioning
 
 android: QT += androidextras
 macx-clang: QT += macextras
+CONFIG += c++11
 
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang {
@@ -31,6 +32,7 @@ RC_FILE=rando.rc
 SOURCES += main.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
+    geospray.cpp \
     pfx.cpp \
     msglistmodel.cpp \
     msgpv.cpp \
@@ -66,21 +68,21 @@ $${D}/kazlib/libkazlib.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/libuv/libuv.a \
 -lsqlite3
 
-PRE_TARGETDEPS += \
-$${D}/cdc32/libcdc32.a \
-$${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
-$${D}/dwcls/libdwcls.a \
-$${D}/kazlib/libkazlib.a \
-$${D}/pbm/libpbm.a \
-$${D}/jenkins/libjenkins.a \
-$${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
-$${D}/libuv/libuv.a
+#PRE_TARGETDEPS += \
+#$${D}/cdc32/libcdc32.a \
+#$${D}/vc/libvc.a \
+#$${D}/crypto5/libcrypto5.a \
+#$${D}/dwcls/libdwcls.a \
+#$${D}/kazlib/libkazlib.a \
+#$${D}/pbm/libpbm.a \
+#$${D}/jenkins/libjenkins.a \
+#$${D}/jhead/libjhead.a \
+#$${D}/qt-qml-models/libQtQmlModels.a \
+#$${D}/libuv/libuv.a
 
 }
 
@@ -129,7 +131,7 @@ $${D}/kazlib/libkazlib.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/libuv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
@@ -148,7 +150,7 @@ $${D}/kazlib/libkazlib.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 
 }
 
@@ -157,7 +159,7 @@ DEFINES += LINUX VCCFG_FILE ANDROID
 
 D = $${OUT_PWD}/../bld
 L = $$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
-LIBS += $$D/qt-qml-models/libQtQmlModels.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will
@@ -263,6 +265,7 @@ include(deployment.pri)
 
 HEADERS += \
 	dwyco_top.h \
+    geospray.h \
     msglistmodel.h \
     notificationclient.h \
     dwquerybymember.h \

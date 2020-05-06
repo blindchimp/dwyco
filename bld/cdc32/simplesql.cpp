@@ -96,14 +96,14 @@ SimpleSql::detach(const DwString& schema_name)
 void
 SimpleSql::start_transaction()
 {
-    sql_simple("begin immediate transaction");
+    sql_simple("savepoint ss");
 }
 
 
 void
 SimpleSql::commit_transaction()
 {
-    sql_simple("commit transaction");
+    sql_simple("release ss");
 }
 
 
@@ -123,9 +123,16 @@ SimpleSql::sync_on()
 void
 SimpleSql::rollback_transaction()
 {
+    {
     VCArglist a;
-    a.append("rollback transaction;");
+    a.append("rollback to ss");
     sqlite3_bulk_query(Db, &a);
+    }
+    {
+    VCArglist a;
+    a.append("release ss");
+    sqlite3_bulk_query(Db, &a);
+    }
 }
 
 vc

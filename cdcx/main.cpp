@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
 
     //Q_INIT_RESOURCE(icons);
 
-    dwyco_set_cmd_path(argv[0], strlen(argv[0]));
+    //dwyco_set_cmd_path(argv[0], strlen(argv[0]));
 // these have to be done before init, since init may probe
 // devices
 

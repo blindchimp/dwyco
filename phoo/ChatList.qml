@@ -8,7 +8,6 @@
 */
 import QtQuick 2.6
 import dwyco 1.0
-import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.1
 
 Page {
@@ -16,11 +15,9 @@ Page {
     anchors.fill: parent
 
     header: SimpleToolbar {
-
         background: Rectangle {
             color: amber_accent
         }
-
     }
 
    BareChatList {
@@ -35,6 +32,14 @@ Page {
                chat_server.auto_connect = true
            }
        }
+   }
+
+   BusyIndicator {
+       id: busy1
+
+       running: {!core.is_chat_online}
+       anchors.horizontalCenter: parent.horizontalCenter
+       anchors.verticalCenter: parent.verticalCenter
    }
 
 }

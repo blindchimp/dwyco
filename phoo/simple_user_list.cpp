@@ -8,6 +8,8 @@
 */
 // this model is a one-off read-only model for the user list
 // that can be instantiated and used to select users, for example.
+#include <QFile>
+#include <QDataStream>
 #include "simple_user_list.h"
 #include "dlli.h"
 #include "dwyco_new_msg.h"
@@ -177,7 +179,7 @@ SimpleUserModel::add_uid_to_model(const QByteArray& uid)
     get_review_status(uid, reviewed, regular);
     c->update_REGULAR(regular);
     c->update_REVIEWED(reviewed);
-    c->update_session_msg(session_msg(uid));
+    c->update_session_msg(got_msg_this_session(uid));
     return c;
 }
 

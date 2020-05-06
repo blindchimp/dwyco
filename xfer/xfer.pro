@@ -10,8 +10,12 @@ D=$${PWD}/../bld
 L=$${OUT_PWD}/../bld
 
 INCLUDEPATH += /home/dwight/syncdev/keys $$D/dwcls $$D/vc
+macx-* {
+CONFIG -= app_bundle
+INCLUDEPATH += /Users/dwight/syncdev/keys
+}
 
-linux-* {
+linux-*|macx-* {
 LIBS += \
 $$L/vc/libvc.a \
 $$L/dwcls/libdwcls.a \

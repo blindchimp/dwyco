@@ -41,9 +41,21 @@ void sql_add_tag(vc mid, vc tag);
 void sql_remove_tag(vc tag);
 void sql_remove_mid_tag(vc mid, vc tag);
 vc sql_get_tagged_mids(vc tag);
+vc sql_get_tagged_mids2(vc tag);
 vc sql_get_tagged_idx(vc tag);
 int sql_mid_has_tag(vc mid, vc tag);
 int sql_uid_has_tag(vc uid, vc tag);
+int sql_uid_count_tag(vc uid, vc tag);
+vc sql_get_all_idx();
+void sql_set_rescan(int r);
+int sql_get_rescan();
+int sql_count_tag(vc tag);
+void sql_start_transaction();
+void sql_commit_transaction();
+void sql_rollback_transaction();
+
+int sql_run_sql(vc s, vc a1, vc a2, vc a3);
+
 }
 
 #endif

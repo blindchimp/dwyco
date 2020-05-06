@@ -31,13 +31,25 @@ Page {
         plugin: mapPlugin
         center: QtPositioning.coordinate(lat, lon)
         gesture.acceptedGestures: MapGestureArea.PanGesture|MapGestureArea.PinchGesture|MapGestureArea.FlickGesture
-        zoomLevel: 10
+        zoomLevel: default_map_zoom
         onZoomLevelChanged: {
             console.log("ZOOM ", zoomLevel)
+        }
+        onCenterChanged: {
+            console.log("center ", center)
+            loc_circle.center = QtPositioning.coordinate(lat, lon)
         }
 
         // see note above regarding failing https stuff
         activeMapType: supportedMapTypes[supportedMapTypes.length - 1]
+
+        MapCircle {
+            id: loc_circle
+            radius: 10000.0
+            color: "red"
+            border.width: 3
+            opacity: .5
+        }
     }
 
     Component {

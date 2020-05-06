@@ -1,0 +1,12 @@
+Tue Oct 29 10:15:07 MDT 2019
+* reinstate optimizations in msglistmodel.cpp
+* possible re-port over to rando before we integrate into master
+* android: need to fix background message checking to use new api
+* fix extra alert noises when messages are delivered
+
+* eventually, for video stuff:
+ * everywhere there is a video option, make sure you can control the camera from there.
+ * try to detect when the camera is supplying no frames, and eliminate those options.
+ * get rid of frame sizes, just pick one. allow frame sizes for advanced menu or something.
+ * reinstate some kind of conferencing thing.
+ * think about some kind of "chat+pic send" thing as we had before

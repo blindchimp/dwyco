@@ -95,17 +95,6 @@ public:
     // how to complete the call
     int media_select;
 
-#if 0
-    // id assigned by the server to call the call.
-    // this is used to associate callbacks from the
-    // server to calls in the client. it is just a
-    // random number.
-    vc server_call_id;
-    // used to do the association when we get a message from the
-    // server regarding the call.
-    static MMCall *server_call_id_to_call(vc sci);
-#endif
-
     ssns::signal4<MMCall *, int, void *, ValidPtr> call_sig;
     // if this is 1, then all the call setup is over and the call is
     // active. this is used if you want to distinguish between a call
