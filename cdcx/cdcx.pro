@@ -18,7 +18,7 @@ windows:dateincr.commands = $$replace(PWD, /, \\)\\dumptime $$replace(PWD, /, \\
 dateincr.depends = FORCE
 #QMAKE_EXTRA_TARGETS += dateincr
 #PRE_TARGETDEPS += dateincr
-QT +=  core network
+QT +=  core network webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
 macx-g++|macx-clang|win32|linux-g++|linux-g++-64:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia #webkitwidgets
 
@@ -45,7 +45,7 @@ DEFINES += CDCX_MAC_USE_DEFAULT_LOCATION
 DEFINES += WHATBOX=BrowseBox
 #DEFINES += LOCAL_TEST
 DEFINES += NO_BUILDTIME
-#DEFINES += CDCX_WEBKIT
+DEFINES += CDCX_WEBKIT
 greaterThan(QT_MAJOR_VERSION, 4): DEFINES += DWYCO_QT5
 greaterThan(QT_MAJOR_VERSION, 4): DEFINES += toAscii=toLatin1
 #DEFINES += NO_DWYCO_AUDIO
