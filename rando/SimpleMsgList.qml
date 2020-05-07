@@ -234,6 +234,9 @@ Page {
 
             sourceSize.width: 512
             sourceSize.height: 512
+//            Component.onCompleted: {
+//                console.log("dele ", index, click_to_fetch, height, SENT, IS_FILE, IS_ACTIVE, IS_QD)
+//            }
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
@@ -563,7 +566,14 @@ Page {
         clip: true
         delegate: msg_delegate
         model: themsglist
-        spacing: items_margin
+        // note: we have 0 height delegates for a variety of
+        // strange reasons (mainly having to do with wanting to
+        // show downloading, partially known items in the same
+        // listview.) if we changed the download to be invisible
+        // or into some dedicated area outside the main view, we
+        // wouldn't have this problem. we could just filter out
+        // all the 0 height delegates in the c++ model.
+        //spacing: items_margin
 /*
 // sadly, this doesn't work very well
 // i was trying to allow a "swipe to switch sent/recv"

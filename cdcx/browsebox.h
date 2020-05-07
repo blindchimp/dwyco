@@ -32,14 +32,16 @@ public:
     DwOString context_uid;
     int default_url;
     QUrl url;
+    QUrl hovered_url;
 
     void set_url(QUrl& url);
     void set_to_default_url();
     virtual void create_new_url() = 0;
 
 public slots:
-    void link_clicked(const QUrl &);
+    void link_clicked();
     void reload_triggered();
+    void hover(const QString &);
 
     void on_actionView_profile_ctx_triggered();
     void on_actionIgnore_user_ctx_triggered();

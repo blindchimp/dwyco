@@ -54,6 +54,8 @@ void sql_start_transaction();
 void sql_commit_transaction();
 void sql_rollback_transaction();
 
+int sql_run_sql(vc s, vc a1, vc a2, vc a3);
+
 }
 
 #endif

@@ -1151,6 +1151,7 @@ auto_fetch(QByteArray mid)
 {
     if(!(Fetching.contains(mid) || Manual_fetch.contains(mid)))
     {
+#if 0
         int special_type;
         const char *uid;
         int len_uid;
@@ -1168,6 +1169,7 @@ auto_fetch(QByteArray mid)
             }
 
         }
+#endif
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
 
