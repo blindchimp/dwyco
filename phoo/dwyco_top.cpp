@@ -51,7 +51,7 @@
 #include "aextsdl.h"
 #include "audo_qt.h"
 #endif
-#ifdef DWYCO_IOS
+#if defined(DWYCO_IOS) || defined(MAC_CLIENT)
 #include "audi_qt.h"
 #endif
 #include "audo_qt.h"
@@ -1383,7 +1383,7 @@ DwycoCore::init()
     // that can be done further down.
     init_mac_drivers();
 #endif
-#if ((defined(LINUX) && !defined(MAC_CLIENT)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
+#if ((defined(LINUX)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
 
 
 #if 0&& defined(LINUX) && !defined(ANDROID) && !defined(MAC_CLIENT)
@@ -1424,7 +1424,7 @@ DwycoCore::init()
     );
 #endif
 #endif
-#if ((defined(LINUX) && !defined(MAC_CLIENT)) || defined(DWYCO_IOS)) && /*!defined(ANDROID) &&*/ !defined(NO_DWYCO_AUDIO)
+#if ((defined(LINUX)) || defined(DWYCO_IOS)) && /*!defined(ANDROID) &&*/ !defined(NO_DWYCO_AUDIO)
 
 //dwyco_set_external_audio_capture_callbacks(
 // esd_new,
