@@ -14,11 +14,14 @@
 #include <QObject>
 #include <QQueue>
 #include <QMutexLocker>
+#include <QIODevice>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
 
 void oopanic(const char *);
+
+struct InputTest;
 
 static QQueue<unsigned char *> Bufs;
 static QQueue<qint64> Buf_times;
@@ -39,7 +42,66 @@ static QMutex Audi_mutex;
 #define UWB_SAMPLE_RATE 44100
 #endif
 #define AUDBUF_LEN ((int)(UWB_SAMPLE_RATE * .080 * 2))
+class AudioInfo : public QIODevice
+{
+    Q_OBJECT
 
+public:
+    AudioInfo(const QAudioFormat &format, QObject *parent);
+    ~AudioInfo();
+
+    void start();
+    void stop();
+
+    qreal level() const {
+        return m_level;
+    }
+
+    qint64 readData(char *data, qint64 maxlen) override;
+    qint64 writeData(const char *data, qint64 len) override;
+
+private:
+    const QAudioFormat m_format;
+    quint32 m_maxAmplitude;
+    qreal m_level; // 0.0 <= m_level <= 1.0
+
+signals:
+    void update();
+};
+
+struct InputTest : public QObject
+{
+    Q_OBJECT
+
+public:
+    InputTest();
+    ~InputTest();
+
+    int initializeAudio();
+    void createAudioInput();
+    QAudioDeviceInfo m_device;
+    AudioInfo *m_audioInfo;
+    QAudioFormat m_format;
+    QAudioInput *m_audioInput;
+    QIODevice *m_input;
+    bool m_pullMode;
+    QByteArray m_buffer;
+
+public slots:
+    void readMore();
+    void toggleMode();
+    void toggleSuspend();
+
+    void do_on();
+    void do_off();
+
+signals:
+    void on();
+    void off();
+
+};
+
+#include "audi_qt.moc"
 
 InputTest::InputTest() :
     m_device(QAudioDeviceInfo::defaultInputDevice())
