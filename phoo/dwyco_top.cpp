@@ -73,8 +73,6 @@
 #include <QtMacExtras>
 #endif
 
-void init_mac_drivers();
-
 namespace jhead {
 int do_jhead(const char *);
 }
@@ -1376,15 +1374,7 @@ DwycoCore::init()
     dwyco_set_emergency_callback(dwyco_emergency);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
-
-#if defined(MAC_CLIENT)
-    // we do this early, then if we need to override one of the
-    // subsystems (like to use qt instead of the old drivers)
-    // that can be done further down.
-    init_mac_drivers();
-#endif
 #if ((defined(LINUX)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
-
 
 #if 0&& defined(LINUX) && !defined(ANDROID) && !defined(MAC_CLIENT)
     dwyco_set_external_audio_output_callbacks(
