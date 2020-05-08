@@ -205,7 +205,7 @@ QMAKE_CXXFLAGS += /wd4100 /wd4068
 
 macx-g++|macx-clang|macx-xcode {
 OBJECTIVE_SOURCES  += mactards.mm
-#QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.9
+INCLUDEPATH += ../bld/qtdrv
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
@@ -225,6 +225,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${OUT_PWD}/../lib/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qtdrv/libqtdrv.a \
 -Wl,-framework,CoreFoundation \
 -Wl,-framework,Cocoa
 

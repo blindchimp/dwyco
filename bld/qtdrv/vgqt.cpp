@@ -40,7 +40,7 @@
 #define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
 #define STBIR_SATURATE_INT
 #include "stb_image_resize.h"
-#undef TEST_THREAD
+#define TEST_THREAD
 #ifdef TEST_THREAD
 #include <pthread.h>
 #endif
@@ -399,7 +399,7 @@ vgqt_init(void *aqext, int frame_rate)
         Probe_handler = new probe_handler;
 #ifdef TEST_THREAD
     return 1;
-#endif
+#else
     QList<QObject *> ro = TheEngine->rootObjects();
     for(int i = 0; i < ro.count(); ++i)
     {
@@ -447,6 +447,7 @@ vgqt_init(void *aqext, int frame_rate)
             qDebug() << "CANT PROBE CAM\n";
     }
     return 0;
+#endif
 }
 
 int
