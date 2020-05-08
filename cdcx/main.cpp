@@ -429,10 +429,7 @@ int main(int argc, char *argv[])
     );
 
 #endif
-#if defined(MAC_CLIENT)
-    void init_mac_drivers();
-    init_mac_drivers();
-#endif
+
     dwyco_set_login_result_callback(dwyco_db_login_result);
 
     // autoupdate hashs are not used anymore because they are not

@@ -22,7 +22,7 @@ DEFINES += LINUX MACOSX
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 }
 macx-ios-clang|macx-g++|macx-clang {
-QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
+#QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
 }
 macx-g++|macx-clang: DEFINES += LINUX MACOSX
 win32-* {

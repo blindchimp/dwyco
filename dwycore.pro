@@ -19,5 +19,6 @@ bld/cdc32 \
 bld/miniupnp/miniupnp-master/miniupnpc
 
 linux-*:SUBDIRS += bld/v4lcap
+macx-*:SUBDIRS += bld/qtdrv
 
 SUBDIRS += cdcx

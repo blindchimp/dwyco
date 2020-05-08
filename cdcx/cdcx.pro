@@ -24,14 +24,6 @@ macx-g++|macx-clang|win32|linux-g++|linux-g++-64:greaterThan(QT_MAJOR_VERSION, 4
 
 RESOURCES=icons.qrc
 #CONFIG-=app_bundle
-#macx-g++:CONFIG+= x86_64
-#macx-clang:CONFIG+= x86_64
-#QMAKE_MACOSX_DEPLOYMENT_TARGET=10.9
-
-macx-g++|macx-clang {
-QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
-QMAKE_LFLAGS += -mmacosx-version-min=10.9
-}
 
 win32-*:CONFIG += embed_manifest_exe
 ICON = greenguy.icns
@@ -213,7 +205,7 @@ QMAKE_CXXFLAGS += /wd4100 /wd4068
 
 macx-g++|macx-clang|macx-xcode {
 OBJECTIVE_SOURCES  += mactards.mm
-QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.9
+#QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.9
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
@@ -231,10 +223,10 @@ $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
-$${PWD}/../bld/macdrv/libmacdrv.a \
 $${OUT_PWD}/../lib/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
--Wl,-framework,Cocoa -Wl,-framework,QuickTime -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore -lc++
+-Wl,-framework,CoreFoundation \
+-Wl,-framework,Cocoa
 
 QMAKE_CXX=ccache g++
 #QMAKE_CXXFLAGS +=  -fsanitize=address
