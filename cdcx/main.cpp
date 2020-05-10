@@ -507,7 +507,8 @@ int main(int argc, char *argv[])
         vgqt_stop,
         vgqt_get_data,
         vgqt_free_data,
-        0, 0, 0, 0, 0, 0, 0, 0
+
+        vgqt_get_video_devices, vgqt_free_video_devices, 0, 0, 0, 0, 0, 0
 
     );
 #endif

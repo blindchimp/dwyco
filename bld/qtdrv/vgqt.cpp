@@ -178,6 +178,31 @@ test_thread(void *)
     }
     return 0;
 }
+
+char **
+DWYCOEXPORT
+vgqt_get_video_devices()
+{
+    char **r = new char *[2];
+    r[0] = new char [sizeof("Synth") + 1];
+    strcpy(r[0], "Synth");
+    r[1] = 0;
+    return r;
+}
+
+void
+DWYCOEXPORT
+vgqt_free_video_devices(char **d)
+{
+    char **tmp = d;
+    while(*d)
+    {
+        delete [] *d;
+        ++d;
+    }
+    delete [] tmp;
+}
+
 #endif
 
 static
@@ -283,6 +308,7 @@ get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu
 //    }
 }
 
+#ifndef TEST_THREAD
 char **
 DWYCOEXPORT
 vgqt_get_video_devices()
@@ -306,6 +332,7 @@ vgqt_free_video_devices(char **d)
     }
     delete [] tmp;
 }
+#endif
 
 // if the video cap device is in use, we
 // turn off the old one, select the new one, and
