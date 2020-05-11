@@ -7,7 +7,6 @@
 # change all occurances of "10.5" to "10.9"
 VCCFG_COMP=$$PWD
 DWYCOBG=0
-FORCE_DESKTOP_VGQT=1
 DEFINES += VCCFG_FILE
 linux-g++* {
 DEFINES += LINUX
@@ -20,12 +19,10 @@ QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-vari
 }
 macx-* {
 DEFINES += LINUX MACOSX
+FORCE_DESKTOP_VGQT=1
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 }
-macx-ios-clang|macx-g++|macx-clang {
-#QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
-}
-macx-g++|macx-clang: DEFINES += LINUX MACOSX
+
 win32-* {
 DEFINES += _WIN32 _CRT_SECURE_NO_WARNINGS __WIN32__ #_MBCS
 DEFINES -= UNICODE
@@ -33,9 +30,11 @@ QMAKE_CXXFLAGS_WARN_ON -= -W3
 QMAKE_CXXFLAGS += /wd4100 /wd4068 /wd4189 /wd4291
 DEFINES += _Windows
 }
-linux-g++|linux-g++-64|macx-g++|macx-clang: QMAKE_CXX=ccache g++
+linux-g++|linux-g++-64|macx-g++|macx-clang {
+QMAKE_CXX=ccache g++
 
 QMAKE_CFLAGS += #-fsanitize=address
 QMAKE_CXXFLAGS += -std=c++11 #-fsanitize=address
 QMAKE_LFLAGS += -std=c++11 #-fsanitize=address
+}
 
