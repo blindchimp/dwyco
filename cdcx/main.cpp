@@ -498,17 +498,20 @@ int main(int argc, char *argv[])
     );
 
     dwyco_set_external_video_capture_callbacks(
-        vgqt_new,
-        vgqt_del,
-        vgqt_init,
-        vgqt_has_data,
-        vgqt_need,
-        vgqt_pass,
-        vgqt_stop,
-        vgqt_get_data,
-        vgqt_free_data,
+                vgqt_new,
+                vgqt_del,
+                vgqt_init,
+                vgqt_has_data,
+                vgqt_need,
+                vgqt_pass,
+                vgqt_stop,
+                vgqt_get_data,
+                vgqt_free_data,
 
-        vgqt_get_video_devices, vgqt_free_video_devices, 0, 0, 0, 0, 0, 0
+                vgqt_get_video_devices,
+                vgqt_free_video_devices,
+                vgqt_set_video_device,
+                vgqt_stop_video_device, 0, 0, 0, 0
 
     );
 #endif

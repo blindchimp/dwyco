@@ -423,7 +423,13 @@ DWYCOEXPORT
 vgqt_init(void *aqext, int frame_rate)
 {
     if(!Probe_handler)
+    {
         Probe_handler = new probe_handler;
+#ifdef TEST_THREAD
+        stop_thread = 0;
+        pthread_create(&thread, 0, test_thread, 0);
+#endif
+    }
 #ifdef TEST_THREAD
     return 1;
 #else

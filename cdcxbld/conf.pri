@@ -7,6 +7,7 @@
 # change all occurances of "10.5" to "10.9"
 VCCFG_COMP=$$PWD
 DWYCOBG=0
+FORCE_DESKTOP_VGQT=1
 DEFINES += VCCFG_FILE
 linux-g++* {
 DEFINES += LINUX

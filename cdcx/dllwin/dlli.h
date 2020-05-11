@@ -499,6 +499,8 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_CHAT_SERVER_LOGIN 31
 #define DWYCO_SE_CHAT_SERVER_LOGIN_FAILED 32
 
+#define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 33
+
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
@@ -766,13 +768,26 @@ void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
 // rest of the interface. this api is a bit sketchy so i'm not sure i want
 // to fix it. also note, setting a (tag, mid) pair will not be returned
 // here, because there wouldn't be an associated uid...
-#define DWYCO_TAGGED_MIDS_MID "001"
+
 #define DWYCO_TAGGED_MIDS_HEX_UID "000"
+#define DWYCO_TAGGED_MIDS_MID "001"
+
 int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 
+// this returns just mid's, no uids, in a single column
+// it will return msgs that have not been downloaded yet as well.
+int DWYCOEXPORT dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag);
+int DWYCOEXPORT dwyco_count_tag(const char *tag);
+
+// note: the following functions will not return a msg if it hasn't been
+// downloaded.
 int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
+int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
+
+// INTERNAL API
+int DWYCOEXPORT dwyco_run_sql(const char *s, const char *a1, const char *a2, const char *a3);
 
 void DWYCOEXPORT dwyco_set_alert(const char *uid, int len_uid, int val);
 int DWYCOEXPORT dwyco_get_alert(const char *uid, int len_uid);
@@ -881,7 +896,6 @@ int DWYCOEXPORT dwyco_is_capturing_video();
 void DWYCOEXPORT dwyco_set_moron_dork_mode(int);
 int DWYCOEXPORT dwyco_get_moron_dork_mode();
 
-//void DWYCOEXPORT dwyco_simple_diagnostics(const char **res, int *len_res);
 void DWYCOEXPORT dwyco_network_diagnostics2(char **res, int *len_res);
 // results are in BITS/second, you can leave any of these pointers NULL
 // if you don't need that result.
@@ -917,7 +931,7 @@ void DWYCOEXPORT dwyco_list_append(DWYCO_LIST l, const char *val, int len, int t
 void DWYCOEXPORT dwyco_list_append_int(DWYCO_LIST l, int i);
 // must call dwyco_free_array on returned string after copying out
 void DWYCOEXPORT dwyco_list_to_string(DWYCO_LIST l, const char **str_out, int *len_out);
-DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
+int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, int len_str);
 
 // types returned by get_list
 #define DWYCO_TYPE_NIL 0
@@ -1025,6 +1039,7 @@ DWYCO_LIST DWYCOEXPORT dwyco_list_from_string(const char *str, int len_str);
 #define DWYCO_QM_BODY_SPECIAL_TYPE_AB "010001001"
 
 #define DWYCO_QM_BODY_FILE_ATTACHMENT "012"
+#define DWYCO_QM_BODY_LOGICAL_CLOCK "017"
 
 // DWYCO_MSG_IDX is an index of the saved messages for a particular UID.
 // The index is mostly-sorted in order of descending date.
@@ -1404,17 +1419,6 @@ void DWYCOEXPORT dwyco_handle_msg(const char *msg, int msg_len, unsigned int mes
 
 #endif
 
-// must be called before dwyco_init
-// this is used to set the cmd path that the windows dll can use
-// if it needs to poke holes in the windows firewall. don't think it
-// is used at this point.
-int DWYCOEXPORT dwyco_set_cmd_path(const char *cmd, int len);
-
-// give this function a set of files to be hashed to determine
-// what version of the software is being used. the current windows
-// client uses "icuii.exe" and "cdcdll.dll", for example.
-// the contents of the files are concatenated and hashed.
-void DWYCOEXPORT dwyco_setup_autoupdate(const char *f1, const char *f2, const char *f3, const char *f4);
 // normally, an autoupdate query command is automatically sent when you
 // connect to a chat server. if you need to do it at some later point, like
 // during a dialog, call this function.
