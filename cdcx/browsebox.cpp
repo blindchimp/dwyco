@@ -20,12 +20,31 @@
 #include "dlli.h"
 #include "simple_call.h"
 
+bool
+DelPage::acceptNavigationRequest(const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame)
+{
+    QUrl q = url;
+
+    if(q.scheme() == "cdcx" && type == QWebEnginePage::NavigationTypeLinkClicked)
+    {
+        DwOString uid = from_hex(q.path().toAscii().constData());
+        emit link_clicked(url);
+        return false;
+    }
+    return true;
+}
+
 BrowseBox::BrowseBox(QWidget *parent) :
     QDockWidget(parent),
     ui(new Ui::BrowseBox)
 {
     ui->setupUi(this);
     default_url = 1;
+
+    DelPage *p = new DelPage;
+    ui->webView->setPage(p);
+
+    connect(p, SIGNAL(link_clicked(const QUrl&)), this, SLOT(link_clicked(const QUrl&)));
 
     QToolBar *tb = new QToolBar(ui->dockWidgetContents);
     QAction *qa = ui->webView->pageAction(QWebEnginePage::Reload);
@@ -41,15 +60,16 @@ BrowseBox::BrowseBox(QWidget *parent) :
     //connect(ui->webView, SIGNAL(linkClicked(QUrl)), this, SLOT(link_clicked(QUrl)));
     connect(this, SIGNAL(uid_selected(DwOString, int)), Mainwinform, SIGNAL(uid_selected(DwOString,int)));
     connect(this, SIGNAL(ignore_event(DwOString)), Mainwinform, SIGNAL(ignore_event(DwOString)));
-    QAction *a = ui->webView->pageAction(QWebEnginePage::OpenLinkInThisWindow);
+    //QAction *a = ui->webView->pageAction(QWebEnginePage::OpenLinkInThisWindow);
     popup_menu = new QMenu(this);
     popup_menu->addAction(ui->actionView_profile_ctx);
     popup_menu->addAction(ui->actionShow_Chatbox_ctx);
     popup_menu->addAction(ui->actionCompose_msg_ctx);
     popup_menu->addAction(ui->actionSend_file_ctx);
     popup_menu->addAction(ui->actionIgnore_user_ctx);
-    connect(ui->webView->page(), SIGNAL(linkHovered(const QString&)), this, SLOT(hover(const QString&)));
-    connect(a, SIGNAL(triggered()), this, SLOT(link_clicked()));
+    //connect(ui->webView->page(), SIGNAL(linkHovered(const QString&)), this, SLOT(hover(const QString&)));
+    //connect(a, SIGNAL(triggered()), this, SLOT(link_clicked()));
+
 }
 
 BrowseBox::~BrowseBox()
@@ -104,13 +124,12 @@ BrowseBox::reload_triggered()
 }
 
 void
-BrowseBox::link_clicked()
+BrowseBox::link_clicked(const QUrl& q)
 {
-    QUrl q = hovered_url;
     if(q.scheme() == "cdcx")
     {
         DwOString uid = from_hex(q.path().toAscii().constData());
-        emit uid_selected(from_hex(uid), 1);
+        emit uid_selected(uid, 1);
         popup_menu->popup(QCursor::pos());
         context_uid = uid;
         dwyco_field_debug("link-click", 1);
