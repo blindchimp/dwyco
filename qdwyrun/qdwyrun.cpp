@@ -421,7 +421,7 @@ qdwyrun::run_update(QString fn)
     QString a(".\\");
 #endif
     a += fn;
-    chmod(fn.toAscii().constData(), 0755);
+    chmod(fn.toLatin1().constData(), 0755);
 
     ui->label_2->setText("Updating CDC-X...");
 
@@ -491,7 +491,7 @@ qdwyrun::idle()
         QString mn("dwyco-autoupdate-");
         mn += update_app;
         HANDLE h;
-        if((h = CreateMutex(NULL, TRUE, mn.toAscii())) == NULL)
+        if((h = CreateMutex(NULL, TRUE, mn.toLatin1())) == NULL)
         {
             run_app();
             return;
@@ -508,7 +508,7 @@ qdwyrun::idle()
             return;
         }
 
-        FILE *f = fopen(update_app.toAscii().constData(), "r");
+        FILE *f = fopen(update_app.toLatin1().constData(), "r");
         if(!f)
         {
             run_app();
@@ -528,7 +528,7 @@ qdwyrun::idle()
         }
 #endif
 
-        if(check_staged_update(update_app.toAscii().constData()))
+        if(check_staged_update(update_app.toLatin1().constData()))
         {
             run_update(update_app);
         }

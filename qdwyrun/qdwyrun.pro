@@ -27,8 +27,8 @@ QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder
 }
 
 macx-* {
-QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
-QMAKE_LFLAGS += -mmacosx-version-min=10.9
+#QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
+#QMAKE_LFLAGS += -mmacosx-version-min=10.9
 }
 
 #win32:QMAKE_CXXFLAGS += /MT
