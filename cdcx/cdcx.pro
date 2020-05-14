@@ -108,7 +108,7 @@ SOURCES += main.cpp tfhex.cpp mainwin.cpp dwyco_new_msg.cpp evret.cpp dvp.cc abo
 
 
 linux-g++* {
-INCLUDEPATH += ./dllwin
+INCLUDEPATH += ./dllwin ../bld/qtdrv
 
 D = $${OUT_PWD}/../bld
 
@@ -129,13 +129,14 @@ $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
+$${D}/qtdrv/libqtdrv.a \
 $${OUT_PWD}/../lib/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
--lesd \
--lSDL \
--lv4l2 \
 -lsqlite3
 
+#-lesd \
+#-lSDL \
+#-lv4l2 \
 
 QMAKE_CXX=ccache g++
 

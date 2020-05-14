@@ -10,7 +10,7 @@
 #include "dlli.h"
 #include "ssmap.h"
 #include "ct.h"
-#if defined(LINUX) && !defined(MAC_CLIENT)
+#if 0 && defined(LINUX) && !defined(MAC_CLIENT)
 #include <SDL/SDL.h>
 #include <unistd.h>
 #include "esd.h"

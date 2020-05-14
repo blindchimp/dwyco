@@ -32,10 +32,12 @@
 #include "dvp.h"
 #include "dwstr.h"
 #include "tfhex.h"
+#if 0
 #if defined(LINUX) && !defined(MAC_CLIENT)
 #include "v4lcapexp.h"
 #include "esdaudin.h"
 #include "aextsdl.h"
+#endif
 #endif
 
 #if defined(LINUX) || defined(MAC_CLIENT)
@@ -43,7 +45,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(MAC_CLIENT)
+#if defined(MAC_CLIENT) || defined(LINUX)
 #include "vgqt.h"
 #include "audi_qt.h"
 #include "audo_qt.h"
@@ -372,7 +374,7 @@ int main(int argc, char *argv[])
     //dwyco_set_cmd_path(argv[0], strlen(argv[0]));
 // these have to be done before init, since init may probe
 // devices
-
+#if 0
 #if defined(LINUX)
 
     dwyco_set_external_video_capture_callbacks(
@@ -435,6 +437,7 @@ int main(int argc, char *argv[])
     );
 
 #endif
+#endif
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
 
@@ -465,7 +468,7 @@ int main(int argc, char *argv[])
     }
     dwyco_set_initial_invis(invis);
 
-#ifdef MAC_CLIENT
+#if defined(MAC_CLIENT) || defined(LINUX)
     dwyco_set_external_audio_capture_callbacks(
         audi_qt_new,
         audi_qt_delete,
