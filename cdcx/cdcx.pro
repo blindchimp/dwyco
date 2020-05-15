@@ -124,7 +124,6 @@ $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/v4lcap/libv4lcap.a \
 $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -134,6 +133,7 @@ $${OUT_PWD}/../lib/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -lsqlite3
 
+#$${D}/v4lcap/libv4lcap.a \
 #-lesd \
 #-lSDL \
 #-lv4l2 \
