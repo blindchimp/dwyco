@@ -20,10 +20,12 @@ dateincr.depends = FORCE
 #PRE_TARGETDEPS += dateincr
 QT +=  core network webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
-macx-g++|macx-clang|win32|linux-g++|linux-g++-64:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia #webkitwidgets
+macx-g++|macx-clang|win32|linux-g++|linux-g++-64:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
 
 RESOURCES=icons.qrc
 #CONFIG-=app_bundle
+
+macx-clang: QMAKE_INFO_PLIST=Info.plist.mac
 
 win32-*:CONFIG += embed_manifest_exe
 ICON = greenguy.icns
@@ -229,6 +231,26 @@ $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qtdrv/libqtdrv.a \
 -Wl,-framework,CoreFoundation \
 -Wl,-framework,Cocoa
+
+PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${OUT_PWD}/../lib/libuv.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qtdrv/libqtdrv.a
 
 QMAKE_CXX=ccache g++
 #QMAKE_CXXFLAGS +=  -fsanitize=address

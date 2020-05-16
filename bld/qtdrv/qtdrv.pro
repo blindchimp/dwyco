@@ -1,5 +1,5 @@
 QT -= gui
-QT += multimedia concurrent qml
+QT += multimedia concurrent qml multimediawidgets
 android: QT += androidextras
 
 TEMPLATE = lib

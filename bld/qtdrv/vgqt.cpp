@@ -13,9 +13,9 @@
 #include <QMutexLocker>
 #include <QCamera>
 #include <QCameraInfo>
+#include <QCameraViewfinder>
 #include <QVideoFrame>
 #include <QVideoProbe>
-#include <QQmlApplicationEngine>
 #include <QtConcurrent>
 #include <QFuture>
 #include <QThread>
@@ -40,12 +40,15 @@
 #define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
 #define STBIR_SATURATE_INT
 #include "stb_image_resize.h"
-#define TEST_THREAD
+#undef TEST_THREAD
 #ifdef TEST_THREAD
 #include <pthread.h>
 #endif
 
+#ifdef USE_QML_CAMERA
+#include <QQmlApplicationEngine>
 extern QQmlApplicationEngine *TheEngine;
+#endif
 
 #define NB_BUFFER 4
 static QVector<unsigned long> y_bufs(NB_BUFFER);
@@ -56,6 +59,7 @@ static int next_buf;
 static int debug = 1;
 static QMutex mutex;
 static int Orientation;
+static QCamera *Cam;
 
 
 struct finished
@@ -418,6 +422,28 @@ vgqt_del(void *aqext)
 #endif
 }
 
+#ifdef USE_QML_CAMERA
+static
+QCamera *
+find_qml_camera()
+{
+    QList<QObject *> ro = TheEngine->rootObjects();
+    for(int i = 0; i < ro.count(); ++i)
+    {
+        QObject *qmlCamera = ro[i]->findChild<QObject*>("qrCameraQML");
+        if(!qmlCamera)
+        {
+            continue;
+        }
+        QCamera *camera_ = qvariant_cast<QCamera*>(qmlCamera->property("mediaObject"));
+        if(!camera_)
+            return 0;
+        return camera_;
+    }
+    return 0;
+}
+#endif
+
 int
 DWYCOEXPORT
 vgqt_init(void *aqext, int frame_rate)
@@ -433,52 +459,69 @@ vgqt_init(void *aqext, int frame_rate)
 #ifdef TEST_THREAD
     return 1;
 #else
-    QList<QObject *> ro = TheEngine->rootObjects();
-    for(int i = 0; i < ro.count(); ++i)
-    {
-        QObject *qmlCamera = ro[i]->findChild<QObject*>("qrCameraQML");
-        if(!qmlCamera)
-        {
-            continue;
-        }
-        QCamera *camera_ = qvariant_cast<QCamera*>(qmlCamera->property("mediaObject"));
-        if(!camera_)
-            return 0;
-#ifdef DWYCO_IOS
-        QCameraViewfinderSettings vfs;
-        vfs = camera_->viewfinderSettings();
-        vfs.setPixelFormat(QVideoFrame::Format_NV12);
-        camera_->setViewfinderSettings(vfs);
-#elif !defined(ANDROID)
-        // NOTE: qt5.10.1 doesn't support videoprobe on windows
-        // other platforms, not sure. rgb and 420p seem to be returned tho.
-        // on linux, i think yv12 is returned, but not sure.
-        // on qt5.11.1 the probe appears to work, but the format
-        // isn't being set properly, so the video is garbled.
-        // can't be bothered to debug it at this point, will just
-        // stick with older mtcapxe stuff.
-        QList<QVideoFrame::PixelFormat> pf = camera_->supportedViewfinderPixelFormats();
-        qDebug() << "FORMATS\n";
-        for(int i = 0; i < pf.count(); ++i)
-        {
-            qDebug() << pf[i] << "\n";
-        }
-        qDebug() << "DONE\n";
-        QCameraViewfinderSettings vfs;
-        vfs = camera_->viewfinderSettings();
-        vfs.setPixelFormat(QVideoFrame::Format_YUV420P);
-        camera_->setViewfinderSettings(vfs);
-#endif
-        QCameraInfo caminfo(*camera_);
-        Orientation = caminfo.orientation();
-        QObject::connect(&Probe_handler->probe, SIGNAL(videoFrameProbed(QVideoFrame)),
-                         Probe_handler, SLOT(handleFrame(QVideoFrame)), Qt::UniqueConnection);
 
-        if(Probe_handler->probe.setSource(camera_))
-            return 1;
-        else
-            qDebug() << "CANT PROBE CAM\n";
+#ifdef USE_QML_CAMERA
+    Cam = find_qml_camera();
+    if(!Cam)
+        return 0;
+#else
+    qDebug() << QCameraInfo::defaultCamera() << "\n";
+    if(!Cam)
+        Cam = new QCamera(QCameraInfo::defaultCamera());
+    Cam->load();
+    Cam->start();
+#endif
+#ifdef DWYCO_IOS
+    QCameraViewfinderSettings vfs;
+    vfs = Cam->viewfinderSettings();
+    vfs.setPixelFormat(QVideoFrame::Format_NV12);
+    Cam->setViewfinderSettings(vfs);
+#elif !defined(ANDROID)
+    // NOTE: qt5.10.1 doesn't support videoprobe on windows
+    // other platforms, not sure. rgb and 420p seem to be returned tho.
+    // on linux, i think yv12 is returned, but not sure.
+    // on qt5.11.1 the probe appears to work, but the format
+    // isn't being set properly, so the video is garbled.
+    // can't be bothered to debug it at this point, will just
+    // stick with older mtcapxe stuff.
+    QCameraViewfinder *vf = new QCameraViewfinder;
+    Cam->setViewfinder(vf);
+//    {
+//    QCameraViewfinderSettings vfs;
+//    vfs = Cam->viewfinderSettings();
+//    vfs.setPixelFormat(QVideoFrame::Format_NV12);
+//    Cam->setViewfinderSettings(vfs);
+//    }
+
+    QList<QVideoFrame::PixelFormat> pf = Cam->supportedViewfinderPixelFormats();
+    qDebug() << "FORMATS\n";
+    for(int i = 0; i < pf.count(); ++i)
+    {
+        qDebug() << pf[i] << "\n";
     }
+    qDebug() << "DONE\n";
+    QList<QSize> sz = Cam->supportedViewfinderResolutions();
+    qDebug() << sz << "\n";
+
+//    QCameraViewfinderSettings vfs;
+//    vfs = Cam->viewfinderSettings();
+//    vfs.setPixelFormat(QVideoFrame::Format_NV12);
+//    Cam->setViewfinderSettings(vfs);
+#endif
+    QCameraInfo caminfo(*Cam);
+    Orientation = caminfo.orientation();
+    QObject::connect(&Probe_handler->probe, SIGNAL(videoFrameProbed(QVideoFrame)),
+                     Probe_handler, SLOT(handleFrame(QVideoFrame)), Qt::UniqueConnection);
+
+    if(Probe_handler->probe.setSource(Cam))
+    {
+        //Cam->start();
+        return 1;
+    }
+    else
+        qDebug() << "CANT PROBE CAM\n";
+
+
     return 0;
 #endif
 }
@@ -577,7 +620,8 @@ conv_data()
 
         int fmt = 0;
         int swap = 0;
-        switch(vf.pixelFormat())
+        QVideoFrame::PixelFormat vfpf = vf.pixelFormat();
+        switch(vfpf)
         {
         case QVideoFrame::Format_RGB24:
             fmt = AQ_RGB24;
