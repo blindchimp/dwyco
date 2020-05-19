@@ -8,14 +8,11 @@
 VCCFG_COMP=$$PWD
 DWYCOBG=0
 DEFINES += VCCFG_FILE
-# note: windows driver still work ok
-win32: FORCE_DESKTOP_VGQT=0
-#
-!win32: FORCE_DESKTOP_VGQT=1
 
 linux-g++* {
 DEFINES += LINUX
-DWYCO_USE_LINUX_AUDIO=1
+DWYCO_USE_LINUX_AUDIO=0
+FORCE_DESKTOP_VGQT=0
 }
 macx-ios-clang {
 DEFINES += LINUX MACOSX DWYCO_IOS
@@ -23,12 +20,13 @@ QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-va
 QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 }
 macx-* {
-DEFINES += LINUX MACOSX
+DEFINES += LINUX MACOSX DWYCO_FORCE_DESKTOP_VGQT
 FORCE_DESKTOP_VGQT=1
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 }
 
 win32-* {
+FORCE_DESKTOP_VGQT=0
 DEFINES += _WIN32 _CRT_SECURE_NO_WARNINGS __WIN32__ #_MBCS
 DEFINES -= UNICODE
 QMAKE_CXXFLAGS_WARN_ON -= -W3

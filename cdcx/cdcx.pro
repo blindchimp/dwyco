@@ -133,13 +133,12 @@ $${D}/jenkins/libjenkins.a \
 $${D}/qtdrv/libqtdrv.a \
 $${OUT_PWD}/../lib/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
--lsqlite3
+-lsqlite3 \
+$${D}/v4lcap/libv4lcap.a \
+-lv4l2
 
-#$${D}/v4lcap/libv4lcap.a \
 #-lesd \
 #-lSDL \
-#-lv4l2 \
-
 QMAKE_CXX=ccache g++
 
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder 

@@ -40,6 +40,10 @@
 #endif
 #endif
 
+#if defined(LINUX) && !defined(DWYCO_FORCE_DESKTOP_VGQT)
+#include "v4lcapexp.h"
+#endif
+
 #if defined(LINUX) || defined(MAC_CLIENT)
 #include <signal.h>
 #include <unistd.h>
@@ -499,7 +503,9 @@ int main(int argc, char *argv[])
         audout_qt_device_play_silence,
         audout_qt_device_bufs_playing
     );
+#endif
 
+#if defined(DWYCO_FORCE_DESKTOP_VGQT)
     dwyco_set_external_video_capture_callbacks(
                 vgqt_new,
                 vgqt_del,
@@ -515,6 +521,26 @@ int main(int argc, char *argv[])
                 vgqt_free_video_devices,
                 vgqt_set_video_device,
                 vgqt_stop_video_device, 0, 0, 0, 0
+
+    );
+
+#elif defined(LINUX) && !defined(DWYCO_FORCE_DESKTOP_VGQT)
+
+    dwyco_set_external_video_capture_callbacks(
+        vgnew,
+        vgdel,
+        vginit,
+        vghas_data,
+        vgneed,
+        vgpass,
+        vgstop,
+        vgget_data,
+        vgfree_data,
+        vgget_video_devices,
+        vgfree_video_devices,
+        vgset_video_device,
+        vgstop_video_device,
+        0, 0, 0, 0
 
     );
 #endif
