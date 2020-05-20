@@ -27,7 +27,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -45,38 +45,7 @@
             <item>
              <widget class="QCheckBox" name="pals_only">
               <property name="text">
-               <string>Only accept Calls and Messages from Pals</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="CDC_zap__send_auto_reply">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Automatically send zap to
-non-pals if they send you a message.</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="create_auto_reply">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Create custom auto-reply zap</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="revert_auto_reply">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Revert to default auto-reply zap</string>
+               <string>Only accept Calls from Pals</string>
               </property>
              </widget>
             </item>
@@ -974,8 +943,6 @@ to forward outside ports to this machine.</string>
   </layout>
  </widget>
  <tabstops>
-  <tabstop>create_auto_reply</tabstop>
-  <tabstop>revert_auto_reply</tabstop>
   <tabstop>chat_dont_display_video</tabstop>
   <tabstop>chat_show_all</tabstop>
   <tabstop>profiles_no_auto_load</tabstop>
@@ -1010,7 +977,6 @@ to forward outside ports to this machine.</string>
   <tabstop>CDC_net__nat_secondary_port</tabstop>
   <tabstop>pals_only</tabstop>
   <tabstop>uid</tabstop>
-  <tabstop>CDC_zap__send_auto_reply</tabstop>
  </tabstops>
  <resources/>
  <connections>
