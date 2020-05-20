@@ -61,6 +61,7 @@ $${D}\\crypto5\\$${S}\\crypto5.lib \
 $${D}\\dwcls\\$${S}\\dwcls.lib \
 $${D}\\kazlib\\$${S}\\kazlib.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
+$${D}\\zlib\\$${S}\\zlib.lib \
 user32.lib kernel32.lib wsock32.lib advapi32.lib Shell32.lib
 }
 

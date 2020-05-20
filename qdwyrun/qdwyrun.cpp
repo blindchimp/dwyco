@@ -218,9 +218,11 @@ simple_update(DwString fn)
     vc arch;
     {
         vc ctx = vclh_decompression_open();
-        vc file = doopenfile(fn.c_str(), "rb");
-        vc str = docontents_of(file);
-
+        QFile f(fn.c_str());
+        if(!f.open(QIODevice::ReadOnly))
+            return 0;
+        QByteArray a = f.readAll();
+        vc str(VC_BSTRING, a.constData(), a.length());
         if(vclh_decompress_xfer(ctx, str, arch).is_nil())
             return 0;
     }
