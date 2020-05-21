@@ -9,6 +9,7 @@
 TEMPLATE = app
 TARGET = CDC-X
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+DEFINES += UNICODE
 
 DEPENDPATH += .
 INCLUDEPATH += .
