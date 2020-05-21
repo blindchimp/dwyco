@@ -8,6 +8,8 @@
 
 TEMPLATE = app
 TARGET = CDC-X
+include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+
 DEPENDPATH += .
 INCLUDEPATH += .
 macx-g++:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp
@@ -18,6 +20,9 @@ windows:dateincr.commands = $$replace(PWD, /, \\)\\dumptime $$replace(PWD, /, \\
 dateincr.depends = FORCE
 #QMAKE_EXTRA_TARGETS += dateincr
 #PRE_TARGETDEPS += dateincr
+
+
+
 QT +=  core network webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
 macx-g++|macx-clang|win32|linux-g++|linux-g++-64:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
