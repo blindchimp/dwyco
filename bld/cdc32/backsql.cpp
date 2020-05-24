@@ -859,7 +859,7 @@ restore_msg(vc uid, vc mid)
         //don't overwrite attachments if it already exists
         if(access(actual_attfn.c_str(), 0) == 0)
             return 1;
-        int fd = creat(actual_attfn.c_str(), 0666);
+        int fd = creat(actual_attfn.c_str(), _S_IREAD|_S_IWRITE);
         if(fd == -1)
             return 0;
         if(write(fd, (const char *)att, att.len()) != att.len())
