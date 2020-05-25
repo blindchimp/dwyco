@@ -14,6 +14,7 @@
 #include <QCamera>
 #include <QCameraInfo>
 #include <QCameraViewfinder>
+#include <QAbstractVideoSurface>
 #include <QVideoFrame>
 #include <QVideoProbe>
 #include <QtConcurrent>
@@ -104,6 +105,29 @@ public slots:
     //void flush_frames();
 
 };
+
+class vidsurf : public QAbstractVideoSurface
+{
+    Q_OBJECT
+public:
+
+    virtual bool present(const QVideoFrame &frame) {return true;}
+
+    virtual bool start(const QVideoSurfaceFormat &format) { return QAbstractVideoSurface::start(format);}
+    virtual void stop() {QAbstractVideoSurface::stop();}
+
+
+    virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(QAbstractVideoBuffer::HandleType type = QAbstractVideoBuffer::NoHandle) const {
+        QList<QVideoFrame::PixelFormat> pf;
+        pf.append(QVideoFrame::Format_NV12);
+        return pf;
+    }
+
+
+
+
+};
+
 #include "vgqt.moc"
 
 static probe_handler *Probe_handler;
@@ -408,11 +432,17 @@ void
 DWYCOEXPORT
 vgqt_del(void *aqext)
 {
+
     if(Probe_handler)
     {
         vgqt_stop(0);
         vgqt_pass(0);
 
+    }
+    if(Cam)
+    {
+        delete Cam;
+        Cam = 0;
     }
     delete Probe_handler;
     Probe_handler = 0;
@@ -444,6 +474,26 @@ find_qml_camera()
 }
 #endif
 
+
+static
+void
+config_viewfinder(QCamera::State state)
+{
+    if(state != QCamera::LoadedState)
+        return;
+    vidsurf *vf = new vidsurf;
+    //vf->show();
+    Cam->setViewfinder(vf);
+    QCameraViewfinderSettings vfs;
+    vfs = Cam->viewfinderSettings();
+    vfs.setPixelFormat(QVideoFrame::Format_NV12);
+    vfs.setResolution(640, 480);
+    Cam->setViewfinderSettings(vfs);
+    qDebug() << "VFS" << Cam->viewfinderSettings().pixelFormat() << "\n";
+    Cam->start();
+
+}
+
 int
 DWYCOEXPORT
 vgqt_init(void *aqext, int frame_rate)
@@ -467,9 +517,13 @@ vgqt_init(void *aqext, int frame_rate)
 #else
     qDebug() << QCameraInfo::defaultCamera() << "\n";
     if(!Cam)
+    {
         Cam = new QCamera(QCameraInfo::defaultCamera());
+        QObject::connect(Cam, &QCamera::stateChanged, config_viewfinder);
+    }
+    Cam->setCaptureMode(QCamera::CaptureViewfinder);
     Cam->load();
-    Cam->start();
+    //Cam->start();
 #endif
 #ifdef DWYCO_IOS
     QCameraViewfinderSettings vfs;
@@ -484,14 +538,6 @@ vgqt_init(void *aqext, int frame_rate)
     // isn't being set properly, so the video is garbled.
     // can't be bothered to debug it at this point, will just
     // stick with older mtcapxe stuff.
-    QCameraViewfinder *vf = new QCameraViewfinder;
-    Cam->setViewfinder(vf);
-//    {
-//    QCameraViewfinderSettings vfs;
-//    vfs = Cam->viewfinderSettings();
-//    vfs.setPixelFormat(QVideoFrame::Format_NV12);
-//    Cam->setViewfinderSettings(vfs);
-//    }
 
     QList<QVideoFrame::PixelFormat> pf = Cam->supportedViewfinderPixelFormats();
     qDebug() << "FORMATS\n";
@@ -502,11 +548,6 @@ vgqt_init(void *aqext, int frame_rate)
     qDebug() << "DONE\n";
     QList<QSize> sz = Cam->supportedViewfinderResolutions();
     qDebug() << sz << "\n";
-
-//    QCameraViewfinderSettings vfs;
-//    vfs = Cam->viewfinderSettings();
-//    vfs.setPixelFormat(QVideoFrame::Format_NV12);
-//    Cam->setViewfinderSettings(vfs);
 #endif
     QCameraInfo caminfo(*Cam);
     Orientation = caminfo.orientation();
