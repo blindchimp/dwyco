@@ -857,9 +857,13 @@ restore_msg(vc uid, vc mid)
         DwString actual_attfn = dir;
         actual_attfn += (const char *)attfn;
         //don't overwrite attachments if it already exists
-        if(access(actual_attfn.c_str(), 0) == 0)
+        if(access(actual_attfn.c_str(), F_OK) == 0)
             return 1;
-        int fd = creat(actual_attfn.c_str(), _S_IREAD|_S_IWRITE);
+#ifdef _Windows
+        int fd = creat(actual_attfn.c_str(), _S_IWRITE);
+#else
+        int fd = creat(actual_attfn.c_str(), 0666);
+#endif
         if(fd == -1)
             return 0;
         if(write(fd, (const char *)att, att.len()) != att.len())
