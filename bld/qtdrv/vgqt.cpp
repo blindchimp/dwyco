@@ -38,7 +38,7 @@
 
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
+//#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
 #define STBIR_SATURATE_INT
 #include "stb_image_resize.h"
 #undef TEST_THREAD
@@ -51,7 +51,7 @@
 extern QQmlApplicationEngine *TheEngine;
 #endif
 
-#define NB_BUFFER 4
+#define NB_BUFFER 2
 static QVector<unsigned long> y_bufs(NB_BUFFER);
 static QVector<unsigned int> lens(NB_BUFFER);
 static QVector<QVideoFrame> vbufs(NB_BUFFER);
@@ -295,14 +295,14 @@ get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu
     int ch_cols = ccols / subsample;
     int ch_rows = crows / subsample;
     int autoconfig = 0;
-    int upside_down = 0;
+    int upside_down = 1;
 
     gray **u_out = pgm_allocarray(ch_cols, ch_rows);
     gray **v_out = pgm_allocarray(ch_cols, ch_rows);
     vu_out = u_out;
     vv_out = v_out;
 
-    //if((autoconfig && !upside_down) || (!autoconfig && upside_down))
+    if(!upside_down)
     {
         gray *ut = &u_out[0][0];
         gray *vt = &v_out[0][0];
@@ -319,23 +319,23 @@ get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu
             }
         }
     }
-//    else
-//    {
-//        gray *us = c;
-//        gray *vs = c + 1;
-//        for(int i = ch_rows - 1; i >= 0; --i)
-//        {
-//            gray *ut = &u_out[i][0];
-//            gray *vt = &v_out[i][0];
-//            for(int j = 0; j < ch_cols; ++j)
-//            {
-//                *ut++ = *us;
-//                us += 2;
-//                *vt++ = *vs;
-//                vs += 2;
-//            }
-//        }
-//    }
+    else
+    {
+        gray *us = c;
+        gray *vs = c + 1;
+        for(int i = ch_rows - 1; i >= 0; --i)
+        {
+            gray *ut = &u_out[i][0];
+            gray *vt = &v_out[i][0];
+            for(int j = 0; j < ch_cols; ++j)
+            {
+                *ut++ = *us;
+                us += 2;
+                *vt++ = *vs;
+                vs += 2;
+            }
+        }
+    }
 }
 
 #ifndef TEST_THREAD
@@ -656,6 +656,22 @@ vgqt_get_data(
     return f;
 }
 
+template<class T>
+void
+flip_in_place(T **img, int cols, int rows)
+{
+    T *tmp = (T *)pm_allocrow(cols, sizeof(T));
+    int lim = rows / 2;
+
+    for(int i = 0; i < lim; ++i)
+    {
+        bcopy(&img[i][0], &tmp[0], cols * sizeof(T));
+        bcopy(&img[rows - i - 1][0], &img[i][0], cols * sizeof(T));
+        bcopy(&tmp[0], &img[rows - i - 1][0], cols * sizeof(T));
+    }
+    pm_freerow((char *)tmp);
+}
+
 static
 struct finished
 conv_data()
@@ -766,7 +782,7 @@ conv_data()
 #endif
 
         unsigned char *c = (unsigned char *)vf.bits();
-#define SSCOLS 320
+#define SSCOLS (320)
 #define SSROWS (calcrows)
         int calcrows = (float)rows / ((float)cols / SSCOLS);
         if(calcrows % 2 != 0) ++calcrows;
@@ -775,6 +791,17 @@ conv_data()
         int ncols = SSCOLS;
         int nrows = SSROWS;
         stbir_resize_uint8(c, cols, rows, 0, &g[0][0], SSCOLS, SSROWS, 0, 1);
+
+        // NOTE: this flipping is for cdc-x compatibility.
+        // the driver produces flipped images because the old ms
+        // drivers did that. naturally, we end up flipping things
+        // again, so this is a total waste. someday, i'll just
+        // force the ms driver to produce the right stuff and
+        // get rid of mose of this other stuff. on android, i'll
+        // have to revisit this, because in that case, there are
+        // other orientation issues.
+
+        flip_in_place(g, ncols, nrows);
 
         //
         if(Orientation != 0)
