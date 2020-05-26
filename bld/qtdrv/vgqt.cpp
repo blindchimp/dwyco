@@ -61,6 +61,8 @@ static int debug = 1;
 static QMutex mutex;
 static int Orientation;
 static QCamera *Cam;
+static QList<QCameraInfo> Cams;
+static int Cur_idx = -1;
 
 
 struct finished
@@ -341,10 +343,16 @@ char **
 DWYCOEXPORT
 vgqt_get_video_devices()
 {
-    char **r = new char *[2];
-    r[0] = new char [strlen("Camera") + 1];
-    strcpy(r[0], "Camera");
-    r[1] = 0;
+    Cams = QCameraInfo::availableCameras();
+    int n = Cams.count();
+    char **r = new char *[n + 1];
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray desc = Cams[i].description().toLatin1();
+        r[i] = new char [desc.count() + 1];
+        strcpy(r[i], desc.constData());
+    }
+    r[n] = 0;
     return r;
 }
 
@@ -369,6 +377,10 @@ void
 DWYCOEXPORT
 vgqt_set_video_device(int idx)
 {
+    vgqt_stop_video_device();
+
+    Cur_idx = idx;
+
     if(!vgqt_init(0, 0))
     {
 
@@ -411,6 +423,13 @@ vgqt_stop_video_device()
         delete Probe_handler;
         Probe_handler = 0;
     }
+#ifndef USE_QML_CAMERA
+    if(Cam)
+    {
+        delete Cam;
+        Cam = 0;
+    }
+#endif
 }
 
 
@@ -439,11 +458,13 @@ vgqt_del(void *aqext)
         vgqt_pass(0);
 
     }
+#ifndef USE_QML_CAMERA
     if(Cam)
     {
         delete Cam;
         Cam = 0;
     }
+#endif
     delete Probe_handler;
     Probe_handler = 0;
     stop_thread = 1;
@@ -518,7 +539,9 @@ vgqt_init(void *aqext, int frame_rate)
     qDebug() << QCameraInfo::defaultCamera() << "\n";
     if(!Cam)
     {
-        Cam = new QCamera(QCameraInfo::defaultCamera());
+        if(Cur_idx < 0 || Cur_idx >= Cams.count())
+            return 0;
+        Cam = new QCamera(Cams[Cur_idx]);
         QObject::connect(Cam, &QCamera::stateChanged, config_viewfinder);
     }
     Cam->setCaptureMode(QCamera::CaptureViewfinder);
