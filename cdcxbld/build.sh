@@ -15,6 +15,6 @@ cp include/uv.h $SHADOW_NAME/include
 (
 opwd=$PWD
 cd $SHADOW_NAME
-qmake CONFIG+=release -spec macx-clang DWYCO_CONFDIR=cdcxbld $opwd/dwycore.pro
+qmake CONFIG+=release DWYCO_CONFDIR=cdcxbld $opwd/dwycore.pro
 make -j 8
 )

@@ -13,10 +13,8 @@ DEFINES += UNICODE
 
 DEPENDPATH += .
 INCLUDEPATH += .
-#macx-g++:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp
 macx-clang:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp $${PWD}/buildtime.h
-linux-g++-64:dateincr.commands = $${PWD}/dumptime $${PWD}/main.cpp
-#linux-g++:dateincr.commands = $${PWD}/dumptime32 $${PWD}/main.cpp
+linux:dateincr.commands = $${PWD}/dumptime $${PWD}/main.cpp $${PWD}/buildtime.h
 windows:dateincr.commands = $$replace(PWD, /, \\)\\dumptime $$replace(PWD, /, \\)\\main.cpp $$replace(OUT_PWD, /, \\)\\buildtime.h
 dateincr.depends = FORCE
 QMAKE_EXTRA_TARGETS += dateincr
