@@ -23,8 +23,8 @@
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>${PRODUCT_NAME} Camera usage</string>
+	<string>@EXECUTABLE@ wants to access the camera</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>${PRODUCT NAME} want to access the microphone</string>
+	<string>@EXECUTABLE@ wants to access the microphone</string>
 </dict>
 </plist>
