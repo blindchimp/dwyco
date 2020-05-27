@@ -13,14 +13,14 @@ DEFINES += UNICODE
 
 DEPENDPATH += .
 INCLUDEPATH += .
-macx-g++:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp
-macx-clang:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp
+#macx-g++:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp
+macx-clang:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp $${PWD}/buildtime.h
 linux-g++-64:dateincr.commands = $${PWD}/dumptime $${PWD}/main.cpp
-linux-g++:dateincr.commands = $${PWD}/dumptime32 $${PWD}/main.cpp
+#linux-g++:dateincr.commands = $${PWD}/dumptime32 $${PWD}/main.cpp
 windows:dateincr.commands = $$replace(PWD, /, \\)\\dumptime $$replace(PWD, /, \\)\\main.cpp $$replace(OUT_PWD, /, \\)\\buildtime.h
 dateincr.depends = FORCE
-#QMAKE_EXTRA_TARGETS += dateincr
-#PRE_TARGETDEPS += dateincr
+QMAKE_EXTRA_TARGETS += dateincr
+PRE_TARGETDEPS += dateincr
 
 
 
@@ -44,7 +44,7 @@ DEFINES += CDCX_RELEASE
 DEFINES += CDCX_MAC_USE_DEFAULT_LOCATION
 DEFINES += WHATBOX=BrowseBox
 #DEFINES += LOCAL_TEST
-DEFINES += NO_BUILDTIME
+#DEFINES += NO_BUILDTIME
 DEFINES += CDCX_WEBKIT
 greaterThan(QT_MAJOR_VERSION, 4): DEFINES += DWYCO_QT5
 greaterThan(QT_MAJOR_VERSION, 4): DEFINES += toAscii=toLatin1
