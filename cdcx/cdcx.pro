@@ -13,14 +13,19 @@ DEFINES += UNICODE
 
 DEPENDPATH += .
 INCLUDEPATH += .
-macx-clang:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp $${PWD}/buildtime.h
-linux:dateincr.commands = $${PWD}/dumptime $${PWD}/main.cpp $${PWD}/buildtime.h
-windows:dateincr.commands = $$replace(PWD, /, \\)\\dumptime $$replace(PWD, /, \\)\\main.cpp $$replace(PWD, /, \\)\\buildtime.h
-dateincr.depends = FORCE
-QMAKE_EXTRA_TARGETS += dateincr
-PRE_TARGETDEPS += dateincr
 
-
+# warning, this dumptime stuff doesn't work too well with qmake.
+# i haven't figured out a way of ordering it for parallel makes.
+# as a result, it can randomly fail to get the right time.
+# short of running a script before the build starts, i'm not sure
+# how to do this in a cross platform way with qmake.
+# one ugly way is to turn off parallel make (-j1).
+#macx-clang:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp $${PWD}/buildtime.h
+#linux:dateincr.commands = $${PWD}/dumptime $${PWD}/main.cpp $${PWD}/buildtime.h
+#windows:dateincr.commands = $$replace(PWD, /, \\)\\dumptime $$replace(PWD, /, \\)\\main.cpp $$replace(PWD, /, \\)\\buildtime.h
+#dateincr.depends = FORCE
+#QMAKE_EXTRA_TARGETS += dateincr
+#PRE_TARGETDEPS += dateincr
 
 QT +=  core network webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
