@@ -139,6 +139,7 @@ void EstablishRunDirectory()
             !FileExists(cdc_x_RunDir + "/v29.ver") ||
             !FileExists(cdc_x_RunDir + "/v211.ver") ||
             !FileExists(cdc_x_RunDir + "/v216.ver") ||
+            !FileExists(cdc_x_RunDir + "/v230.ver") ||
             !FileExists(cdc_x_RunDir + "/v217.ver")
        )
     {
