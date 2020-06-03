@@ -1,4 +1,7 @@
 #!/bin/sh
+
+U=`uname`
+
 D=$HOME
 SHADOW_NAME=$D/git/build-cdcx
 
@@ -11,6 +14,14 @@ make -j 8
 cp libuv.a $SHADOW_NAME/lib
 cp include/uv.h $SHADOW_NAME/include
 )
+
+if [ $U = Darwin ]
+then
+	$D/git/dwyco/cdcx/dumptime-mac $D/git/dwyco/cdcx/main.cpp $D/git/dwyco/cdcx/buildtime.h
+else
+	$D/git/dwyco/cdcx/dumptime $D/git/dwyco/cdcx/main.cpp $D/git/dwyco/cdcx/buildtime.h
+fi
+
 
 (
 opwd=$PWD
