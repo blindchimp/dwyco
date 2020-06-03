@@ -72,6 +72,7 @@ dowiz()
     settings_save();
     Block_DLL = 0;
     TheConfigForm->load();
+    Mainwinform->move(0, Mainwinform->y());
 }
 
 void
