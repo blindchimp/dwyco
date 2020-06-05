@@ -8,9 +8,8 @@
 */
 #ifndef VGQT_H
 #define VGQT_H
+#include "dlli.h"
 
-#define DWYCOCALLCONV
-#define DWYCOEXPORT
 void DWYCOEXPORT vgqt_new(void *aqext);
 void DWYCOEXPORT vgqt_del(void *aqext);
 int DWYCOEXPORT vgqt_init(void *aqext, int frame_rate);

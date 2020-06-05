@@ -27,226 +27,22 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
-     <widget class="QWidget" name="tab">
-      <attribute name="title">
-       <string>Pal Control</string>
-      </attribute>
-      <layout class="QGridLayout">
-       <item row="0" column="0">
-        <widget class="QGroupBox" name="groupBox_2">
-         <property name="title">
-          <string>Only accept from pals</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_6">
-          <item row="0" column="0">
-           <layout class="QVBoxLayout" name="verticalLayout_6">
-            <item>
-             <widget class="QCheckBox" name="pals_only">
-              <property name="text">
-               <string>Only accept Calls and Messages from Pals</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="CDC_zap__send_auto_reply">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Automatically send zap to
-non-pals if they send you a message.</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="create_auto_reply">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Create custom auto-reply zap</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="revert_auto_reply">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Revert to default auto-reply zap</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item row="1" column="0">
-           <spacer name="verticalSpacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
      <widget class="QWidget" name="tab_5">
       <attribute name="title">
        <string>Privacy</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_4">
+      <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <property name="spacing">
-          <number>0</number>
+        <widget class="QCheckBox" name="chat_dont_display_video">
+         <property name="enabled">
+          <bool>true</bool>
          </property>
-         <item>
-          <widget class="QCheckBox" name="chat_dont_display_video">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string>Don't display video profiles in public chat</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="chat_show_all">
-           <property name="text">
-            <string>Show all profiles in public chat
-(warning: selecting this shows unreviewed content.)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="profiles_no_auto_load">
-           <property name="text">
-            <string>Don't load profiles/directory on entry to public chat</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_19">
-           <property name="text">
-            <string>Picture size in chat boxes:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="picsize_combobox">
-           <item>
-            <property name="text">
-             <string>No pics</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Small</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Large</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="CDC_zap__no_forward_default">
-           <property name="text">
-            <string>Make all zaps &quot;no forward&quot;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="CDC_zap__always_accept">
-           <property name="text">
-            <string>Automatically accept direct zaps</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="CDC_zap__use_old_timing">
-           <property name="toolTip">
-            <string>Check this if videos you record go too fast when you play them back.</string>
-           </property>
-           <property name="whatsThis">
-            <string>This is a bug workaround for old video capture drivers that don't provide the right timing information when recording video. Check this box if your videos play back too fast or don't play back at all.</string>
-           </property>
-           <property name="text">
-            <string>The zaps I record go too fast or not at all.</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="CDC_zap__save_sent">
-           <property name="toolTip">
-            <string>Tells CDC-X to save  the zaps you send as well as the zaps you receive.</string>
-           </property>
-           <property name="whatsThis">
-            <string>CDC-X saves the zaps you send in the inbox associated with the recipient. Use the msg browser to view both sent and received msgs to/from a user.</string>
-           </property>
-           <property name="text">
-            <string>Save messages you send</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="_3">
-           <property name="spacing">
-            <number>6</number>
-           </property>
-           <item>
-            <widget class="QCheckBox" name="CDC_call_acceptance__require_pw">
-             <property name="text">
-              <string>Require this password for
-callers to connect:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="CDC_call_acceptance__pw"/>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="CDC_call_acceptance__auto_accept">
-           <property name="text">
-            <string>Accept live video without asking.</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="mute_alerts">
-           <property name="text">
-            <string>Turn off all audible alerts</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+         <property name="text">
+          <string>Don't display video profiles in public chat</string>
+         </property>
+        </widget>
        </item>
        <item row="0" column="1">
         <spacer name="horizontalSpacer_6">
@@ -262,6 +58,126 @@ callers to connect:</string>
         </spacer>
        </item>
        <item row="1" column="0">
+        <widget class="QCheckBox" name="chat_show_all">
+         <property name="text">
+          <string>Show all profiles in public chat
+(warning: selecting this shows unreviewed content.)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QCheckBox" name="profiles_no_auto_load">
+         <property name="text">
+          <string>Don't load profiles/directory on entry to public chat</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_19">
+         <property name="text">
+          <string>Picture size in chat boxes:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QComboBox" name="picsize_combobox">
+         <item>
+          <property name="text">
+           <string>No pics</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Small</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Large</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QCheckBox" name="CDC_zap__no_forward_default">
+         <property name="text">
+          <string>Make all zaps &quot;no forward&quot;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QCheckBox" name="CDC_zap__always_accept">
+         <property name="text">
+          <string>Automatically accept direct zaps</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QCheckBox" name="CDC_zap__use_old_timing">
+         <property name="toolTip">
+          <string>Check this if videos you record go too fast when you play them back.</string>
+         </property>
+         <property name="whatsThis">
+          <string>This is a bug workaround for old video capture drivers that don't provide the right timing information when recording video. Check this box if your videos play back too fast or don't play back at all.</string>
+         </property>
+         <property name="text">
+          <string>The zaps I record go too fast or not at all.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QCheckBox" name="CDC_zap__save_sent">
+         <property name="toolTip">
+          <string>Tells CDC-X to save  the zaps you send as well as the zaps you receive.</string>
+         </property>
+         <property name="whatsThis">
+          <string>CDC-X saves the zaps you send in the inbox associated with the recipient. Use the msg browser to view both sent and received msgs to/from a user.</string>
+         </property>
+         <property name="text">
+          <string>Save messages you send</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <layout class="QHBoxLayout" name="_3">
+         <property name="spacing">
+          <number>6</number>
+         </property>
+         <item>
+          <widget class="QCheckBox" name="CDC_call_acceptance__require_pw">
+           <property name="text">
+            <string>Require this password for
+callers to connect:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="CDC_call_acceptance__pw"/>
+         </item>
+        </layout>
+       </item>
+       <item row="10" column="0">
+        <widget class="QCheckBox" name="CDC_call_acceptance__auto_accept">
+         <property name="text">
+          <string>Accept live video without asking.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QCheckBox" name="mute_alerts">
+         <property name="text">
+          <string>Turn off all audible alerts</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QCheckBox" name="pals_only">
+         <property name="text">
+          <string>Only accept Calls from Pals</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
         <spacer name="verticalSpacer_4">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -974,8 +890,6 @@ to forward outside ports to this machine.</string>
   </layout>
  </widget>
  <tabstops>
-  <tabstop>create_auto_reply</tabstop>
-  <tabstop>revert_auto_reply</tabstop>
   <tabstop>chat_dont_display_video</tabstop>
   <tabstop>chat_show_all</tabstop>
   <tabstop>profiles_no_auto_load</tabstop>
@@ -1008,9 +922,7 @@ to forward outside ports to this machine.</string>
   <tabstop>CDC_net__advertise_nat_ports</tabstop>
   <tabstop>CDC_net__nat_primary_port</tabstop>
   <tabstop>CDC_net__nat_secondary_port</tabstop>
-  <tabstop>pals_only</tabstop>
   <tabstop>uid</tabstop>
-  <tabstop>CDC_zap__send_auto_reply</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -1049,22 +961,6 @@ to forward outside ports to this machine.</string>
   <connection>
    <sender>CDC_net__advertise_nat_ports</sender>
    <signal>clicked(bool)</signal>
-   <receiver>CDC_net__nat_primary_port</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>199</x>
-     <y>211</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>113</x>
-     <y>260</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>CDC_net__advertise_nat_ports</sender>
-   <signal>clicked(bool)</signal>
    <receiver>CDC_net__nat_secondary_port</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
@@ -1075,6 +971,22 @@ to forward outside ports to this machine.</string>
     <hint type="destinationlabel">
      <x>113</x>
      <y>306</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>CDC_net__advertise_nat_ports</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>CDC_net__nat_primary_port</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>199</x>
+     <y>211</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>113</x>
+     <y>260</y>
     </hint>
    </hints>
   </connection>

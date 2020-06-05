@@ -9,16 +9,18 @@
 #ifndef AUDO_QT_H
 #define AUDO_QT_H
 
-void audout_qt_new(void *);
-void audout_qt_delete(void *);
-int audout_qt_init(void *ha);
-int audout_qt_device_output(void *, void *buf, int len, int user_data);
-int audout_qt_device_done(void *, void **buf_out, int *len, int *user_data);
-int audout_qt_device_stop(void *);
-int audout_qt_device_reset(void *);
-int audout_qt_device_status(void *);
-int audout_qt_device_close(void *ah);
-int audout_qt_device_buffer_time(void *, int sz);
-int audout_qt_device_play_silence(void *ah);
-int audout_qt_device_bufs_playing(void *ah);
+#include "dlli.h"
+
+void DWYCOCALLCONV audout_qt_new(void *);
+void DWYCOCALLCONV audout_qt_delete(void *);
+int DWYCOCALLCONV audout_qt_init(void *ha);
+int DWYCOCALLCONV audout_qt_device_output(void *, void *buf, int len, int user_data);
+int DWYCOCALLCONV audout_qt_device_done(void *, void **buf_out, int *len, int *user_data);
+int DWYCOCALLCONV audout_qt_device_stop(void *);
+int DWYCOCALLCONV audout_qt_device_reset(void *);
+int DWYCOCALLCONV audout_qt_device_status(void *);
+int DWYCOCALLCONV audout_qt_device_close(void *ah);
+int DWYCOCALLCONV audout_qt_device_buffer_time(void *, int sz);
+int DWYCOCALLCONV audout_qt_device_play_silence(void *ah);
+int DWYCOCALLCONV audout_qt_device_bufs_playing(void *ah);
 #endif

@@ -8,30 +8,33 @@
 
 TEMPLATE = app
 TARGET = CDC-X
+include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+DEFINES += UNICODE
+
 DEPENDPATH += .
 INCLUDEPATH += .
-macx-g++:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp
-macx-clang:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp
-linux-g++-64:dateincr.commands = $${PWD}/dumptime $${PWD}/main.cpp
-linux-g++:dateincr.commands = $${PWD}/dumptime32 $${PWD}/main.cpp
-windows:dateincr.commands = $$replace(PWD, /, \\)\\dumptime $$replace(PWD, /, \\)\\main.cpp $$replace(OUT_PWD, /, \\)\\buildtime.h
-dateincr.depends = FORCE
-QMAKE_EXTRA_TARGETS += dateincr
-PRE_TARGETDEPS += dateincr
-QT +=  core network
+
+# warning, this dumptime stuff doesn't work too well with qmake.
+# i haven't figured out a way of ordering it for parallel makes.
+# as a result, it can randomly fail to get the right time.
+# short of running a script before the build starts, i'm not sure
+# how to do this in a cross platform way with qmake.
+# one ugly way is to turn off parallel make (-j1).
+#macx-clang:dateincr.commands = $${PWD}/dumptime-mac $${PWD}/main.cpp $${PWD}/buildtime.h
+#linux:dateincr.commands = $${PWD}/dumptime $${PWD}/main.cpp $${PWD}/buildtime.h
+#windows:dateincr.commands = $$replace(PWD, /, \\)\\dumptime $$replace(PWD, /, \\)\\main.cpp $$replace(PWD, /, \\)\\buildtime.h
+#dateincr.depends = FORCE
+#QMAKE_EXTRA_TARGETS += dateincr
+#PRE_TARGETDEPS += dateincr
+
+QT +=  core network webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
-macx-g++|macx-clang|win32|linux-g++|linux-g++-64:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia #webkitwidgets
+macx-g++|macx-clang|win32|linux-g++|linux-g++-64:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
 
 RESOURCES=icons.qrc
 #CONFIG-=app_bundle
-#macx-g++:CONFIG+= x86_64
-#macx-clang:CONFIG+= x86_64
-#QMAKE_MACOSX_DEPLOYMENT_TARGET=10.9
 
-macx-g++|macx-clang {
-QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
-QMAKE_LFLAGS += -mmacosx-version-min=10.9
-}
+macx-clang: QMAKE_INFO_PLIST=Info.plist.mac
 
 win32-*:CONFIG += embed_manifest_exe
 ICON = greenguy.icns
@@ -116,7 +119,7 @@ SOURCES += main.cpp tfhex.cpp mainwin.cpp dwyco_new_msg.cpp evret.cpp dvp.cc abo
 
 
 linux-g++* {
-INCLUDEPATH += ./dllwin
+INCLUDEPATH += ./dllwin ../bld/qtdrv
 
 D = $${OUT_PWD}/../bld
 
@@ -132,19 +135,19 @@ $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
-$${D}/v4lcap/libv4lcap.a \
 $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
+$${D}/qtdrv/libqtdrv.a \
 $${OUT_PWD}/../lib/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
--lesd \
--lSDL \
--lv4l2 \
--lsqlite3
+-lsqlite3 \
+$${D}/v4lcap/libv4lcap.a \
+-lv4l2
 
-
+#-lesd \
+#-lSDL \
 QMAKE_CXX=ccache g++
 
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder 
@@ -187,12 +190,30 @@ $${D}\\pbm\\$${S}\\pbm.lib \
 $${D}\\zlib\\$${S}\\zlib.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
 $${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora\\$${S}\\theora.lib \
+$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
 $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
+
+PRE_TARGETDEPS += \
+$${D}\\cdc32\\$${S}\\cdc32.lib \
+$${D}\\vc\\$${S}\\vc.lib \
+$${D}\\crypto5\\$${S}\\crypto5.lib \
+$${D}\\dwcls\\$${S}\\dwcls.lib \
+$${D}\\gsm\\$${S}\\gsm.lib \
+$${D}\\kazlib\\$${S}\\kazlib.lib \
+$${D}\\ppm\\$${S}\\ppm.lib \
+$${D}\\pgm\\$${S}\\pgm.lib \
+$${D}\\pbm\\$${S}\\pbm.lib \
+$${D}\\zlib\\$${S}\\zlib.lib \
+$${D}\\jenkins\\$${S}\\jenkins.lib \
+$${D}\\vorbis112\\$${S}\\vorbis.lib \
+$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
+$${D}\\speex\\$${S}\\speex.lib \
+$${D}\\ogg\\$${S}\\ogg.lib \
+$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\cdc32\\win32\\vs2008\\Debug\\cdcdll.lib \
 
@@ -213,7 +234,7 @@ QMAKE_CXXFLAGS += /wd4100 /wd4068
 
 macx-g++|macx-clang|macx-xcode {
 OBJECTIVE_SOURCES  += mactards.mm
-QMAKE_OBJECTIVE_CFLAGS += -mmacosx-version-min=10.9
+INCLUDEPATH += ../bld/qtdrv
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
@@ -231,10 +252,31 @@ $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
-$${PWD}/../bld/macdrv/libmacdrv.a \
 $${OUT_PWD}/../lib/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
--Wl,-framework,Cocoa -Wl,-framework,QuickTime -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore -lc++
+$${D}/qtdrv/libqtdrv.a \
+-Wl,-framework,CoreFoundation \
+-Wl,-framework,Cocoa
+
+PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${OUT_PWD}/../lib/libuv.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qtdrv/libqtdrv.a
 
 QMAKE_CXX=ccache g++
 #QMAKE_CXXFLAGS +=  -fsanitize=address
