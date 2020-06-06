@@ -239,6 +239,7 @@ Audo_qio::readData(char *data, qint64 maxlen)
 
 
 void
+DWYCOCALLCONV
 audout_qt_new(void *)
 {
     QMutexLocker ml(&audio_mutex);
@@ -256,6 +257,7 @@ audout_qt_new(void *)
 }
 
 void
+DWYCOCALLCONV
 audout_qt_delete(void *)
 {
     QMutexLocker ml(&audio_mutex);
@@ -272,6 +274,7 @@ audout_qt_delete(void *)
 }
 
 int
+DWYCOCALLCONV
 audout_qt_init(void *)
 {
     QMutexLocker ml(&audio_mutex);
@@ -285,6 +288,7 @@ audout_qt_init(void *)
 
 
 int
+DWYCOCALLCONV
 audout_qt_device_output(void *, void *buf, int len, int user_data)
 {
     QMutexLocker ml(&audio_mutex);
@@ -310,6 +314,7 @@ audout_qt_device_output(void *, void *buf, int len, int user_data)
 }
 
 int
+DWYCOCALLCONV
 audout_qt_device_done(void *, void **buf_out, int *len, int *user_data)
 {
     QMutexLocker ml(&audio_mutex);
@@ -331,6 +336,7 @@ audout_qt_device_done(void *, void **buf_out, int *len, int *user_data)
 }
 
 int
+DWYCOCALLCONV
 audout_qt_device_stop(void *)
 {
     QMutexLocker ml(&audio_mutex);
@@ -343,6 +349,7 @@ audout_qt_device_stop(void *)
 }
 
 int
+DWYCOCALLCONV
 audout_qt_device_reset(void *)
 {
     QMutexLocker ml(&audio_mutex);
@@ -362,6 +369,7 @@ audout_qt_device_reset(void *)
 }
 
 int
+DWYCOCALLCONV
 audout_qt_device_status(void *)
 {
     QMutexLocker ml(&audio_mutex);
@@ -371,6 +379,7 @@ audout_qt_device_status(void *)
 }
 
 int
+DWYCOCALLCONV
 audout_qt_device_close(void *ah)
 {
     QMutexLocker ml(&audio_mutex);
@@ -384,12 +393,14 @@ audout_qt_device_close(void *ah)
 }
 
 int
+DWYCOCALLCONV
 audout_qt_device_buffer_time(void *, int sz)
 {
     return 80;
 }
 
 int
+DWYCOCALLCONV
 audout_qt_device_play_silence(void *ah)
 {
     QMutexLocker ml(&audio_mutex);
@@ -402,6 +413,7 @@ audout_qt_device_play_silence(void *ah)
 }
 
 int
+DWYCOCALLCONV
 audout_qt_device_bufs_playing(void *ah)
 {
     QMutexLocker ml(&audio_mutex);

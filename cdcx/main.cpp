@@ -32,15 +32,27 @@
 #include "dvp.h"
 #include "dwstr.h"
 #include "tfhex.h"
+#if 0
 #if defined(LINUX) && !defined(MAC_CLIENT)
 #include "v4lcapexp.h"
 #include "esdaudin.h"
 #include "aextsdl.h"
 #endif
+#endif
+
+#if defined(LINUX) && !defined(DWYCO_FORCE_DESKTOP_VGQT)
+#include "v4lcapexp.h"
+#endif
 
 #if defined(LINUX) || defined(MAC_CLIENT)
 #include <signal.h>
 #include <unistd.h>
+#endif
+
+#if defined(MAC_CLIENT) || defined(LINUX)
+#include "vgqt.h"
+#include "audi_qt.h"
+#include "audo_qt.h"
 #endif
 
 #include "ssmap.h"
@@ -366,7 +378,7 @@ int main(int argc, char *argv[])
     //dwyco_set_cmd_path(argv[0], strlen(argv[0]));
 // these have to be done before init, since init may probe
 // devices
-
+#if 0
 #if defined(LINUX)
 
     dwyco_set_external_video_capture_callbacks(
@@ -429,10 +441,8 @@ int main(int argc, char *argv[])
     );
 
 #endif
-#if defined(MAC_CLIENT)
-    void init_mac_drivers();
-    init_mac_drivers();
 #endif
+
     dwyco_set_login_result_callback(dwyco_db_login_result);
 
     // autoupdate hashs are not used anymore because they are not
@@ -461,6 +471,80 @@ int main(int argc, char *argv[])
         settings_save();
     }
     dwyco_set_initial_invis(invis);
+
+#if defined(MAC_CLIENT) || defined(LINUX)
+    dwyco_set_external_audio_capture_callbacks(
+        audi_qt_new,
+        audi_qt_delete,
+        audi_qt_init,
+        audi_qt_has_data,
+        audi_qt_need,
+        audi_qt_pass,
+        audi_qt_stop,
+        audi_qt_on,
+        audi_qt_off,
+        audi_qt_reset,
+        audi_qt_status,
+        audi_qt_get_data
+
+    );
+
+    dwyco_set_external_audio_output_callbacks(
+        audout_qt_new,
+        audout_qt_delete,
+        audout_qt_init,
+        audout_qt_device_output,
+        audout_qt_device_done,
+        audout_qt_device_stop,
+        audout_qt_device_reset,
+        audout_qt_device_status,
+        audout_qt_device_close,
+        audout_qt_device_buffer_time,
+        audout_qt_device_play_silence,
+        audout_qt_device_bufs_playing
+    );
+#endif
+
+#if defined(DWYCO_FORCE_DESKTOP_VGQT)
+    dwyco_set_external_video_capture_callbacks(
+                vgqt_new,
+                vgqt_del,
+                vgqt_init,
+                vgqt_has_data,
+                vgqt_need,
+                vgqt_pass,
+                vgqt_stop,
+                vgqt_get_data,
+                vgqt_free_data,
+
+                vgqt_get_video_devices,
+                vgqt_free_video_devices,
+                vgqt_set_video_device,
+                vgqt_stop_video_device, 0, 0, 0, 0
+
+    );
+
+#elif defined(LINUX) && !defined(DWYCO_FORCE_DESKTOP_VGQT)
+
+    dwyco_set_external_video_capture_callbacks(
+        vgnew,
+        vgdel,
+        vginit,
+        vghas_data,
+        vgneed,
+        vgpass,
+        vgstop,
+        vgget_data,
+        vgfree_data,
+        vgget_video_devices,
+        vgfree_video_devices,
+        vgset_video_device,
+        vgstop_video_device,
+        0, 0, 0, 0
+
+    );
+#endif
+
 
     dwyco_init();
     //printf("%s\n", a);

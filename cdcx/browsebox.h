@@ -12,6 +12,7 @@
 #include <QDockWidget>
 #include <QUrl>
 #include <QNetworkAccessManager>
+#include <QWebEnginePage>
 #include "dwstr.h"
 #include <QMenu>
 
@@ -32,14 +33,16 @@ public:
     DwOString context_uid;
     int default_url;
     QUrl url;
+    QUrl hovered_url;
 
     void set_url(QUrl& url);
     void set_to_default_url();
     virtual void create_new_url() = 0;
 
 public slots:
-    void link_clicked(const QUrl &);
+    void link_clicked(const QUrl&);
     void reload_triggered();
+    void hover(const QString &);
 
     void on_actionView_profile_ctx_triggered();
     void on_actionIgnore_user_ctx_triggered();
@@ -58,6 +61,21 @@ signals:
 protected:
     Ui::BrowseBox *ui;
 };
+
+class DelPage : public QWebEnginePage
+{
+    Q_OBJECT
+
+public:
+    DelPage(QObject *o = 0) : QWebEnginePage(o) {}
+
+
+    virtual bool acceptNavigationRequest(const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame);
+signals:
+    void link_clicked(const QUrl&);
+
+};
+
 #endif
 
 #endif // BROWSEBOX_H
