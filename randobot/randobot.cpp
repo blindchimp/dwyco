@@ -311,7 +311,7 @@ do_rando(vc huid)
             D->sql_simple("delete from foo where hash in (select hash from sent_freebie where to_uid = ?1)", huid);
 
 
-            res = D->sql_simple("select * from foo group by hash order by count(*) asc, time desc limit 10", huid);
+            res = D->sql_simple("select * from foo group by hash order by count(*) asc, time desc limit 10");
             D->sql_simple("drop table foo");
             // pick a random one from the first 10
             if(res.num_elems() > 0)
