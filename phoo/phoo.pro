@@ -416,11 +416,11 @@ HEADERS += \
 DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.jar \
     androidinst/AndroidManifest.xml \
-    androidinst/res/values/libs.xml \
-    androidinst/build.gradle \
     androidinst/gradle/wrapper/gradle-wrapper.properties \
     androidinst/gradlew \
     androidinst/gradlew.bat \
+    androidinst/res/values/libs.xml \
+    androidinst/build.gradle \
     androidinst/google-services.json \
     androidinst/src/com/dwyco/cdc32/dwybg.java \
     androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
