@@ -1122,5 +1122,23 @@ sql_get_rescan()
     vc res = sql_simple("select flag from rescan");
     return (int)res[0][0];
 }
+
+// WARNING: this is a useful api for debugging, it should not be in the
+// api generally. it is useful for running arbitrary sql from an app
+// assuming the app knows the schema.
+
+int
+sql_run_sql(vc s, vc a1, vc a2, vc a3)
+{
+    try {
+        sql_start_transaction();
+        sql_simple(s, a1, a2, a3);
+        sql_commit_transaction();
+        return 1;
+    } catch (...) {
+        sql_rollback_transaction();
+        return 0;
+    }
+}
 }
 

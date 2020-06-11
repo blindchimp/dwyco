@@ -779,7 +779,7 @@ Page {
                 Image {
                     id: preview
 
-                    visible: {HAS_ATTACHMENT && PREVIEW_FILENAME != ""}
+                    visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
