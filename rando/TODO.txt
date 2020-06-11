@@ -18,5 +18,5 @@ Wed May  1 13:09:06 PDT 2019
 * add cross-app promo to phoo and other dwyco stuff
 * try putting the favorite right on the msg viewer instead of hiding it in a menu
 * fix bug that causes a new rando notification and then nothing is there when you open the program
-* see how we might be able to give users a "freebie" from time to time without rrequiring them to take a pic
+* (done) see how we might be able to give users a "freebie" from time to time without rrequiring them to take a pic
 

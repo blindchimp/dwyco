@@ -1,37 +1,17 @@
-Thu Jan 25 10:01:46 MST 2018
+Thu Jun 11 10:00:24 MST 2020
 Dwight Melcher
 dwight@dwyco.com
 
 This is the source code for CDC-X client UI.
-It can be run on Windows XP+, Mac, and Linux.
+It can be run on Windows 7+, Mac 10.12+, and Linux 18.04+.
 
 As distributed by Dwyco, building requires:
 
-Windows: MSVC 2008, Qt 4.8.7
+Windows: MSVC 2017, 32bit, Qt 5.12
 
-Mac: Xcode9, Qt 4.8.7 (but NOT from Homebrew. It appears to build ok,
-but produces binaries that popup weird boxes asking to download fonts.
-Building Qt from scratch seems to solve the problem.)
+Mac: Xcode11, Qt 5.12
 
-Linux: Ubuntu 14.04+
-
-5/2/2018
-UPDATE: Windows version 2.17 is released using simpler static build
-for everything except the video capture driver (see below.) It
-appears to be working ok in the field. The build still requires
-VS2008, running on a magical laptop with Qt4 installed, but it is much
-simpler than before.
-
-
-The windows build prior to 2.17 
-is *challenging* because the tools are antiques. I've
-ported it up to Windows 10/Qt4 with more recent tools, but have not
-distributed the build because I'm too much of a wuss to deal with the tech
-support issues that might arise from a drastic change in build tactics.
-
-I've also ported it up to Qt5, but there were some weird regressions with
-the Mac toolbar and Linux desktop integration, so I never went any further
-with it.
+Linux: Ubuntu 18.04+, using the distro installed Qt 5.9
 
 The windows build also depends on a 3rd party video capture library that
 is closed-source (mitov.com). The mtcapxe.dll file is redistributable
@@ -39,6 +19,13 @@ is closed-source (mitov.com). The mtcapxe.dll file is redistributable
 be able to rebuild mtcapxe.dll from source without buying a license from
 mitov.com. If you are bold, you could write your own driver (see dlli.h
 for how to do it) and not use mtcapxe.dll at all.
+The DLL is 32bit, which is why you need to use 32bit MSVC. This is ok since
+there aren't many advantages to moving to 64bit for this app.
+
+Note: to get rid of mtcapxe, you would need to port the vgqt drivers to
+windows properly like I did for MacOS. I gave it a quick try, but ran into
+the usual vidcap problems, so I just gave up and used the old drivers, which
+still work ok on Windows 10.
 
 Note: App icons are from:
 http://simplefly.nl/icons

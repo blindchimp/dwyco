@@ -8,7 +8,7 @@ Linux/Mac: [![Build Status](https://travis-ci.org/blindchimp/dwyco.svg?branch=cd
 
 This repo contains the source and build instructions for:
 
-CDC-X: a video instant messenger using Qt4 (desktop only.)
+CDC-X: a video instant messenger using Qt5 (desktop only.)
 
 Phoo: a video instant messenger using Qt5 (desktop and mobile.)
 
