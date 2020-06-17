@@ -67,6 +67,7 @@ enum {
     DATE_CREATED,
     DATE_RECEIVED,
     LOCAL_TIME_CREATED, // this take into account time zone and all that
+    LOGICAL_CLOCK,
     IS_QD,
     IS_ACTIVE,
     IS_FAVORITE,
@@ -323,7 +324,9 @@ msglist_model::msglist_model(QObject *p) :
     filter_last_n = -1;
     filter_only_favs = 0;
     filter_show_hidden = 1;
+    special_sort = false;
     msglist_raw *m = new msglist_raw(p);
+    setDynamicSortFilter(false);
     setSourceModel(m);
     mlm = this;
 }
@@ -394,7 +397,8 @@ msglist_model::invalidate_sent_to()
         emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
         emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
     }
-    sort(0, Qt::DescendingOrder);
+    if(special_sort)
+        sort(0, Qt::DescendingOrder);
 }
 
 bool
@@ -529,7 +533,8 @@ msglist_model::setUid(const QString &uid)
             m_uid = uid;
             emit uidChanged();
         }
-        sort(0, Qt::DescendingOrder);
+        if(special_sort)
+            sort(0, Qt::DescendingOrder);
     }
 }
 
@@ -570,7 +575,8 @@ msglist_model::reload_model()
     {
         mr->reload_model();
     }
-    sort(0, Qt::DescendingOrder);
+    if(special_sort)
+        sort(0, Qt::DescendingOrder);
 }
 
 void
@@ -581,7 +587,8 @@ msglist_model::force_reload_model()
     {
         mr->reload_model(1);
     }
-    sort(0, Qt::DescendingOrder);
+    if(special_sort)
+        sort(0, Qt::DescendingOrder);
 }
 
 void
@@ -603,10 +610,44 @@ msglist_model::set_show_hidden(int show_hidden)
     Selected.clear();
 }
 
+void
+msglist_model::set_sort(bool s)
+{
+    special_sort = s;
+    if(s)
+    {
+        sort(0, Qt::DescendingOrder);
+    }
+}
+
+int
+msglist_model::find_first_unseen()
+{
+    int n = rowCount();
+    for(int i = 0; i < n; ++i)
+    {
+        QModelIndex mi = index(i, 0);
+        if(data(mi, IS_UNSEEN).toInt() == 1)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 bool
 msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
+    return true;
     QAbstractItemModel *alm = sourceModel();
+
+#if 0
+    // note: this won't work as long as the model contains remote messages,
+    // which don't have a hash associated with them yet.
+    QByteArray hl = alm->data(alm->index(source_row, 0), ASSOC_HASH).toByteArray();
+    if(hl.length() == 0)
+        return false;
+#endif
 
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
@@ -630,6 +671,7 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     return true;
 }
 
+#if 0
 bool
 msglist_model::lessThan(const QModelIndex& source_left, const QModelIndex& source_right) const
 {
@@ -647,10 +689,17 @@ msglist_model::lessThan(const QModelIndex& source_left, const QModelIndex& sourc
 
     long lcl = m->hash_to_effective_lc(hl);
     long lcr = m->hash_to_effective_lc(hr);
+    if(lcl == 0 || lcr == 0)
+    {
+        // hack, no review yet, just use the logical clock for sorting
+        lcl = m->data(source_left, LOGICAL_CLOCK).toLongLong();
+        lcr = m->data(source_right, LOGICAL_CLOCK).toLongLong();
+    }
     if(lcl < lcr)
         return true;
     return false;
 }
+#endif
 
 msglist_raw::msglist_raw(QObject *p)
     : QAbstractListModel(p)
@@ -946,6 +995,7 @@ msglist_raw::roleNames() const
     rn(DATE_CREATED);
     rn(DATE_RECEIVED);
     rn(LOCAL_TIME_CREATED);
+    rn(LOGICAL_CLOCK);
     rn(IS_FAVORITE);
     rn(IS_HIDDEN);
     rn(SELECTED);
@@ -1051,9 +1101,11 @@ msglist_raw::qd_data ( int r, int role ) const
         QDateTime dt;
         dt = QDateTime::fromSecsSinceEpoch(QString(out).toLong());
         return dt.toString("hh:mm ap");
-
-
     }
+
+    case LOGICAL_CLOCK:
+        return (qlonglong)qsm.get_long(DWYCO_QM_BODY_LOGICAL_CLOCK);
+
     case HAS_AUDIO:
     case HAS_SHORT_VIDEO:
     case HAS_VIDEO:
@@ -1099,6 +1151,7 @@ auto_fetch(QByteArray mid)
 {
     if(!(Fetching.contains(mid) || Manual_fetch.contains(mid)))
     {
+#if 0
         int special_type;
         const char *uid;
         int len_uid;
@@ -1116,6 +1169,7 @@ auto_fetch(QByteArray mid)
             }
 
         }
+#endif
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
 
@@ -1266,6 +1320,9 @@ msglist_raw::inbox_data (int r, int role ) const
     case IS_UNSEEN:
         return 0;
 
+    case LOGICAL_CLOCK:
+        return 0;
+
     case ATTACHMENT_PERCENT:
         if(!Mid_to_percent.contains(mid))
             return -1.0;
@@ -1316,6 +1373,9 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     {
         return QVariant(0);
     }
+
+    dwyco_list dmil(msg_idx);
+
     if(role == MID)
     {
         QByteArray mid;
@@ -1594,6 +1654,10 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         if(!att_file_hash(huid, mid, h))
             return QByteArray("");
         return QString(h.toHex());
+    }
+    else if(role == LOGICAL_CLOCK)
+    {
+        return (qlonglong)dmil.get_long(r, DWYCO_MSG_IDX_LOGICAL_CLOCK);
     }
 
     return QVariant();

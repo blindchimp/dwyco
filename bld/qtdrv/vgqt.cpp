@@ -13,9 +13,10 @@
 #include <QMutexLocker>
 #include <QCamera>
 #include <QCameraInfo>
+#include <QCameraViewfinder>
+#include <QAbstractVideoSurface>
 #include <QVideoFrame>
 #include <QVideoProbe>
-#include <QQmlApplicationEngine>
 #include <QtConcurrent>
 #include <QFuture>
 #include <QThread>
@@ -37,7 +38,7 @@
 
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
-#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
+//#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
 #define STBIR_SATURATE_INT
 #include "stb_image_resize.h"
 #undef TEST_THREAD
@@ -45,9 +46,12 @@
 #include <pthread.h>
 #endif
 
+#ifdef USE_QML_CAMERA
+#include <QQmlApplicationEngine>
 extern QQmlApplicationEngine *TheEngine;
+#endif
 
-#define NB_BUFFER 4
+#define NB_BUFFER 2
 static QVector<unsigned long> y_bufs(NB_BUFFER);
 static QVector<unsigned int> lens(NB_BUFFER);
 static QVector<QVideoFrame> vbufs(NB_BUFFER);
@@ -56,6 +60,9 @@ static int next_buf;
 static int debug = 1;
 static QMutex mutex;
 static int Orientation;
+static QCamera *Cam;
+static QList<QCameraInfo> Cams;
+static int Cur_idx = -1;
 
 
 struct finished
@@ -100,6 +107,29 @@ public slots:
     //void flush_frames();
 
 };
+
+class vidsurf : public QAbstractVideoSurface
+{
+    Q_OBJECT
+public:
+
+    virtual bool present(const QVideoFrame &frame) {return true;}
+
+    virtual bool start(const QVideoSurfaceFormat &format) { return QAbstractVideoSurface::start(format);}
+    virtual void stop() {QAbstractVideoSurface::stop();}
+
+
+    virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(QAbstractVideoBuffer::HandleType type = QAbstractVideoBuffer::NoHandle) const {
+        QList<QVideoFrame::PixelFormat> pf;
+        pf.append(QVideoFrame::Format_NV12);
+        return pf;
+    }
+
+
+
+
+};
+
 #include "vgqt.moc"
 
 static probe_handler *Probe_handler;
@@ -178,6 +208,31 @@ test_thread(void *)
     }
     return 0;
 }
+
+char **
+DWYCOEXPORT
+vgqt_get_video_devices()
+{
+    char **r = new char *[2];
+    r[0] = new char [sizeof("Synth") + 1];
+    strcpy(r[0], "Synth");
+    r[1] = 0;
+    return r;
+}
+
+void
+DWYCOEXPORT
+vgqt_free_video_devices(char **d)
+{
+    char **tmp = d;
+    while(*d)
+    {
+        delete [] *d;
+        ++d;
+    }
+    delete [] tmp;
+}
+
 #endif
 
 static
@@ -240,14 +295,14 @@ get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu
     int ch_cols = ccols / subsample;
     int ch_rows = crows / subsample;
     int autoconfig = 0;
-    int upside_down = 0;
+    int upside_down = 1;
 
     gray **u_out = pgm_allocarray(ch_cols, ch_rows);
     gray **v_out = pgm_allocarray(ch_cols, ch_rows);
     vu_out = u_out;
     vv_out = v_out;
 
-    //if((autoconfig && !upside_down) || (!autoconfig && upside_down))
+    if(!upside_down)
     {
         gray *ut = &u_out[0][0];
         gray *vt = &v_out[0][0];
@@ -264,33 +319,40 @@ get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu
             }
         }
     }
-//    else
-//    {
-//        gray *us = c;
-//        gray *vs = c + 1;
-//        for(int i = ch_rows - 1; i >= 0; --i)
-//        {
-//            gray *ut = &u_out[i][0];
-//            gray *vt = &v_out[i][0];
-//            for(int j = 0; j < ch_cols; ++j)
-//            {
-//                *ut++ = *us;
-//                us += 2;
-//                *vt++ = *vs;
-//                vs += 2;
-//            }
-//        }
-//    }
+    else
+    {
+        gray *us = c;
+        gray *vs = c + 1;
+        for(int i = ch_rows - 1; i >= 0; --i)
+        {
+            gray *ut = &u_out[i][0];
+            gray *vt = &v_out[i][0];
+            for(int j = 0; j < ch_cols; ++j)
+            {
+                *ut++ = *us;
+                us += 2;
+                *vt++ = *vs;
+                vs += 2;
+            }
+        }
+    }
 }
 
+#ifndef TEST_THREAD
 char **
 DWYCOEXPORT
 vgqt_get_video_devices()
 {
-    char **r = new char *[2];
-    r[0] = new char [strlen("Camera") + 1];
-    strcpy(r[0], "Camera");
-    r[1] = 0;
+    Cams = QCameraInfo::availableCameras();
+    int n = Cams.count();
+    char **r = new char *[n + 1];
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray desc = Cams[i].description().toLatin1();
+        r[i] = new char [desc.count() + 1];
+        strcpy(r[i], desc.constData());
+    }
+    r[n] = 0;
     return r;
 }
 
@@ -306,6 +368,7 @@ vgqt_free_video_devices(char **d)
     }
     delete [] tmp;
 }
+#endif
 
 // if the video cap device is in use, we
 // turn off the old one, select the new one, and
@@ -314,6 +377,10 @@ void
 DWYCOEXPORT
 vgqt_set_video_device(int idx)
 {
+    vgqt_stop_video_device();
+
+    Cur_idx = idx;
+
     if(!vgqt_init(0, 0))
     {
 
@@ -356,6 +423,13 @@ vgqt_stop_video_device()
         delete Probe_handler;
         Probe_handler = 0;
     }
+#ifndef USE_QML_CAMERA
+    if(Cam)
+    {
+        delete Cam;
+        Cam = 0;
+    }
+#endif
 }
 
 
@@ -377,12 +451,20 @@ void
 DWYCOEXPORT
 vgqt_del(void *aqext)
 {
+
     if(Probe_handler)
     {
         vgqt_stop(0);
         vgqt_pass(0);
 
     }
+#ifndef USE_QML_CAMERA
+    if(Cam)
+    {
+        delete Cam;
+        Cam = 0;
+    }
+#endif
     delete Probe_handler;
     Probe_handler = 0;
     stop_thread = 1;
@@ -391,15 +473,11 @@ vgqt_del(void *aqext)
 #endif
 }
 
-int
-DWYCOEXPORT
-vgqt_init(void *aqext, int frame_rate)
+#ifdef USE_QML_CAMERA
+static
+QCamera *
+find_qml_camera()
 {
-    if(!Probe_handler)
-        Probe_handler = new probe_handler;
-#ifdef TEST_THREAD
-    return 1;
-#endif
     QList<QObject *> ro = TheEngine->rootObjects();
     for(int i = 0; i < ro.count(); ++i)
     {
@@ -411,42 +489,105 @@ vgqt_init(void *aqext, int frame_rate)
         QCamera *camera_ = qvariant_cast<QCamera*>(qmlCamera->property("mediaObject"));
         if(!camera_)
             return 0;
-#ifdef DWYCO_IOS
-        QCameraViewfinderSettings vfs;
-        vfs = camera_->viewfinderSettings();
-        vfs.setPixelFormat(QVideoFrame::Format_NV12);
-        camera_->setViewfinderSettings(vfs);
-#elif !defined(ANDROID)
-        // NOTE: qt5.10.1 doesn't support videoprobe on windows
-        // other platforms, not sure. rgb and 420p seem to be returned tho.
-        // on linux, i think yv12 is returned, but not sure.
-        // on qt5.11.1 the probe appears to work, but the format
-        // isn't being set properly, so the video is garbled.
-        // can't be bothered to debug it at this point, will just
-        // stick with older mtcapxe stuff.
-        QList<QVideoFrame::PixelFormat> pf = camera_->supportedViewfinderPixelFormats();
-        qDebug() << "FORMATS\n";
-        for(int i = 0; i < pf.count(); ++i)
-        {
-            qDebug() << pf[i] << "\n";
-        }
-        qDebug() << "DONE\n";
-        QCameraViewfinderSettings vfs;
-        vfs = camera_->viewfinderSettings();
-        vfs.setPixelFormat(QVideoFrame::Format_YUV420P);
-        camera_->setViewfinderSettings(vfs);
-#endif
-        QCameraInfo caminfo(*camera_);
-        Orientation = caminfo.orientation();
-        QObject::connect(&Probe_handler->probe, SIGNAL(videoFrameProbed(QVideoFrame)),
-                         Probe_handler, SLOT(handleFrame(QVideoFrame)), Qt::UniqueConnection);
-
-        if(Probe_handler->probe.setSource(camera_))
-            return 1;
-        else
-            qDebug() << "CANT PROBE CAM\n";
+        return camera_;
     }
     return 0;
+}
+#endif
+
+
+static
+void
+config_viewfinder(QCamera::State state)
+{
+    if(state != QCamera::LoadedState)
+        return;
+    vidsurf *vf = new vidsurf;
+    //vf->show();
+    Cam->setViewfinder(vf);
+    QCameraViewfinderSettings vfs;
+    vfs = Cam->viewfinderSettings();
+    vfs.setPixelFormat(QVideoFrame::Format_NV12);
+    vfs.setResolution(640, 480);
+    Cam->setViewfinderSettings(vfs);
+    qDebug() << "VFS" << Cam->viewfinderSettings().pixelFormat() << "\n";
+    Cam->start();
+
+}
+
+int
+DWYCOEXPORT
+vgqt_init(void *aqext, int frame_rate)
+{
+    if(!Probe_handler)
+    {
+        Probe_handler = new probe_handler;
+#ifdef TEST_THREAD
+        stop_thread = 0;
+        pthread_create(&thread, 0, test_thread, 0);
+#endif
+    }
+#ifdef TEST_THREAD
+    return 1;
+#else
+
+#ifdef USE_QML_CAMERA
+    Cam = find_qml_camera();
+    if(!Cam)
+        return 0;
+#else
+    qDebug() << QCameraInfo::defaultCamera() << "\n";
+    if(!Cam)
+    {
+        if(Cur_idx < 0 || Cur_idx >= Cams.count())
+            return 0;
+        Cam = new QCamera(Cams[Cur_idx]);
+        QObject::connect(Cam, &QCamera::stateChanged, config_viewfinder);
+    }
+    Cam->setCaptureMode(QCamera::CaptureViewfinder);
+    Cam->load();
+    //Cam->start();
+#endif
+#ifdef DWYCO_IOS
+    QCameraViewfinderSettings vfs;
+    vfs = Cam->viewfinderSettings();
+    vfs.setPixelFormat(QVideoFrame::Format_NV12);
+    Cam->setViewfinderSettings(vfs);
+#elif !defined(ANDROID)
+    // NOTE: qt5.10.1 doesn't support videoprobe on windows
+    // other platforms, not sure. rgb and 420p seem to be returned tho.
+    // on linux, i think yv12 is returned, but not sure.
+    // on qt5.11.1 the probe appears to work, but the format
+    // isn't being set properly, so the video is garbled.
+    // can't be bothered to debug it at this point, will just
+    // stick with older mtcapxe stuff.
+
+    QList<QVideoFrame::PixelFormat> pf = Cam->supportedViewfinderPixelFormats();
+    qDebug() << "FORMATS\n";
+    for(int i = 0; i < pf.count(); ++i)
+    {
+        qDebug() << pf[i] << "\n";
+    }
+    qDebug() << "DONE\n";
+    QList<QSize> sz = Cam->supportedViewfinderResolutions();
+    qDebug() << sz << "\n";
+#endif
+    QCameraInfo caminfo(*Cam);
+    Orientation = caminfo.orientation();
+    QObject::connect(&Probe_handler->probe, SIGNAL(videoFrameProbed(QVideoFrame)),
+                     Probe_handler, SLOT(handleFrame(QVideoFrame)), Qt::UniqueConnection);
+
+    if(Probe_handler->probe.setSource(Cam))
+    {
+        //Cam->start();
+        return 1;
+    }
+    else
+        qDebug() << "CANT PROBE CAM\n";
+
+
+    return 0;
+#endif
 }
 
 int
@@ -515,6 +656,22 @@ vgqt_get_data(
     return f;
 }
 
+template<class T>
+void
+flip_in_place(T **img, int cols, int rows)
+{
+    T *tmp = (T *)pm_allocrow(cols, sizeof(T));
+    int lim = rows / 2;
+
+    for(int i = 0; i < lim; ++i)
+    {
+        bcopy(&img[i][0], &tmp[0], cols * sizeof(T));
+        bcopy(&img[rows - i - 1][0], &img[i][0], cols * sizeof(T));
+        bcopy(&tmp[0], &img[rows - i - 1][0], cols * sizeof(T));
+    }
+    pm_freerow((char *)tmp);
+}
+
 static
 struct finished
 conv_data()
@@ -543,7 +700,8 @@ conv_data()
 
         int fmt = 0;
         int swap = 0;
-        switch(vf.pixelFormat())
+        QVideoFrame::PixelFormat vfpf = vf.pixelFormat();
+        switch(vfpf)
         {
         case QVideoFrame::Format_RGB24:
             fmt = AQ_RGB24;
@@ -624,7 +782,7 @@ conv_data()
 #endif
 
         unsigned char *c = (unsigned char *)vf.bits();
-#define SSCOLS 640
+#define SSCOLS (320)
 #define SSROWS (calcrows)
         int calcrows = (float)rows / ((float)cols / SSCOLS);
         if(calcrows % 2 != 0) ++calcrows;
@@ -633,6 +791,17 @@ conv_data()
         int ncols = SSCOLS;
         int nrows = SSROWS;
         stbir_resize_uint8(c, cols, rows, 0, &g[0][0], SSCOLS, SSROWS, 0, 1);
+
+        // NOTE: this flipping is for cdc-x compatibility.
+        // the driver produces flipped images because the old ms
+        // drivers did that. naturally, we end up flipping things
+        // again, so this is a total waste. someday, i'll just
+        // force the ms driver to produce the right stuff and
+        // get rid of mose of this other stuff. on android, i'll
+        // have to revisit this, because in that case, there are
+        // other orientation issues.
+
+        flip_in_place(g, ncols, nrows);
 
         //
         if(Orientation != 0)

@@ -32,7 +32,7 @@ import android.provider.MediaStore;
 import android.os.Vibrator;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import android.app.job.JobScheduler;
 import android.app.job.JobInfo;

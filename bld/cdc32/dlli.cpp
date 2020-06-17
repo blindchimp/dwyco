@@ -462,7 +462,13 @@ extern int beginning_of_world;
 #define START_LEAK
 #define END_LEAK
 #endif
-#define DWYCO_CRYPTO_PIPELINE
+
+#ifndef WIN32
+#undef DWYCO_CRYPTO_PIPELINE
+#else
+#undef DWYCO_CRYPTO_PIPELINE
+#endif
+
 // this class is just a hanging place for holding the
 // context of a server message fetch.
 struct BodyView {
@@ -7819,6 +7825,18 @@ int
 dwyco_get_fav_msg(const char *mid)
 {
     return sql_fav_is_fav(mid);
+}
+
+// INTERNAL API
+DWYCOEXPORT
+int
+dwyco_run_sql(const char *stmt, const char *a1, const char *a2, const char *a3)
+{
+    vc s(stmt);
+    vc va1 = (a1 ? vc(a1) : vcnil);
+    vc va2 = (a2 ? vc(a2) : vcnil);
+    vc va3 = (a3 ? vc(a3) : vcnil);
+    return sql_run_sql(s, va1, va2, va3);
 }
 
 // ignore list stuff

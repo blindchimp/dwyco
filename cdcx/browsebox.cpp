@@ -8,7 +8,6 @@
 */
 #ifdef CDCX_WEBKIT
 #include <QDesktopServices>
-#include <QWebSettings>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QDebug>
@@ -21,6 +20,20 @@
 #include "dlli.h"
 #include "simple_call.h"
 
+bool
+DelPage::acceptNavigationRequest(const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame)
+{
+    QUrl q = url;
+
+    if(q.scheme() == "cdcx" && type == QWebEnginePage::NavigationTypeLinkClicked)
+    {
+        DwOString uid = from_hex(q.path().toAscii().constData());
+        emit link_clicked(url);
+        return false;
+    }
+    return true;
+}
+
 BrowseBox::BrowseBox(QWidget *parent) :
     QDockWidget(parent),
     ui(new Ui::BrowseBox)
@@ -28,31 +41,46 @@ BrowseBox::BrowseBox(QWidget *parent) :
     ui->setupUi(this);
     default_url = 1;
 
+    DelPage *p = new DelPage;
+    ui->webView->setPage(p);
+
+    connect(p, SIGNAL(link_clicked(const QUrl&)), this, SLOT(link_clicked(const QUrl&)));
+
     QToolBar *tb = new QToolBar(ui->dockWidgetContents);
-    QAction *qa = ui->webView->pageAction(QWebPage::Reload);
+    QAction *qa = ui->webView->pageAction(QWebEnginePage::Reload);
     qa->setIcon(QIcon(":new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/refresh-32x32.png"));
     tb->addAction(qa);
     connect(qa, SIGNAL(triggered()), this, SLOT(reload_triggered()));
     ui->verticalLayout->insertWidget(0, tb);
 
-    ui->webView->page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
-    QNetworkAccessManager *nam = ui->webView->page()->networkAccessManager();
-    connect(nam, SIGNAL(sslErrors(QNetworkReply*,QList<QSslError>)), this, SLOT(sslErrorHandler(QNetworkReply*,QList<QSslError>)));
+    //ui->webView->page()->setLinkDelegationPolicy(QWebEnginePage::DelegateAllLinks);
+    //QNetworkAccessManager *nam = ui->webView->page()->networkAccessManager();
+    //connect(nam, SIGNAL(sslErrors(QNetworkReply*,QList<QSslError>)), this, SLOT(sslErrorHandler(QNetworkReply*,QList<QSslError>)));
     //connect(ui->webView->page(), SIGNAL(linkClicked(const QUrl&)), SIGNAL(linkClicked(const QUrl&)));
-    connect(ui->webView, SIGNAL(linkClicked(QUrl)), this, SLOT(link_clicked(QUrl)));
+    //connect(ui->webView, SIGNAL(linkClicked(QUrl)), this, SLOT(link_clicked(QUrl)));
     connect(this, SIGNAL(uid_selected(DwOString, int)), Mainwinform, SIGNAL(uid_selected(DwOString,int)));
     connect(this, SIGNAL(ignore_event(DwOString)), Mainwinform, SIGNAL(ignore_event(DwOString)));
+    //QAction *a = ui->webView->pageAction(QWebEnginePage::OpenLinkInThisWindow);
     popup_menu = new QMenu(this);
     popup_menu->addAction(ui->actionView_profile_ctx);
     popup_menu->addAction(ui->actionShow_Chatbox_ctx);
     popup_menu->addAction(ui->actionCompose_msg_ctx);
     popup_menu->addAction(ui->actionSend_file_ctx);
     popup_menu->addAction(ui->actionIgnore_user_ctx);
+    //connect(ui->webView->page(), SIGNAL(linkHovered(const QString&)), this, SLOT(hover(const QString&)));
+    //connect(a, SIGNAL(triggered()), this, SLOT(link_clicked()));
+
 }
 
 BrowseBox::~BrowseBox()
 {
     delete ui;
+}
+
+void
+BrowseBox::hover(const QString &u)
+{
+    hovered_url = u;
 }
 
 void
@@ -71,7 +99,7 @@ BrowseBox::sslErrorHandler(QNetworkReply* qnr, const QList<QSslError> & sslErrs)
 void
 BrowseBox::set_url(QUrl &url)
 {
-    QWebSettings::clearMemoryCaches();
+    //QWebSettings::clearMemoryCaches();
     ui->webView->setUrl(url);
     default_url = 0;
 }
@@ -79,7 +107,7 @@ BrowseBox::set_url(QUrl &url)
 void
 BrowseBox::set_to_default_url()
 {
-    QWebSettings::clearMemoryCaches();
+    //QWebSettings::clearMemoryCaches();
     ui->webView->setUrl(QUrl("http://www.dwyco.com"));
     default_url = 1;
 }
@@ -96,12 +124,12 @@ BrowseBox::reload_triggered()
 }
 
 void
-BrowseBox::link_clicked(const QUrl &q)
+BrowseBox::link_clicked(const QUrl& q)
 {
     if(q.scheme() == "cdcx")
     {
         DwOString uid = from_hex(q.path().toAscii().constData());
-        emit uid_selected(from_hex(uid), 1);
+        emit uid_selected(uid, 1);
         popup_menu->popup(QCursor::pos());
         context_uid = uid;
         dwyco_field_debug("link-click", 1);

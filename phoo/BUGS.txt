@@ -1,3 +1,10 @@
+
+note: since update to tag based msg stuff:
+* contact list query is broken
+* count of number of unread messages gets broken sometimes
+* android video capture is broken after cdcx port to qt5
+* android audio capture might be broken too
+
 * need messages for pk warnings, ie, someones pk changed
 * need a search thing for lists (or a filter, anyways)
 * clearing msgs doesn't clear pending sends... should it?
