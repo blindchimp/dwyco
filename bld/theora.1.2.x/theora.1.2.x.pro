@@ -1,10 +1,10 @@
-QT       -= core gui
-
-include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
 TARGET = theora.1.2.x
 TEMPLATE = lib
 CONFIG += staticlib
+CONFIG -= qt
+
+include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
 INCLUDEPATH += include ../ogg/include ../vorbis/include
 
