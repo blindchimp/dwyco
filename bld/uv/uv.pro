@@ -50,6 +50,14 @@ SOURCES += \
             src/unix/proctitle.c
 }
 
+linux {
+SOURCES += \
+            src/unix/linux-core.c \ 
+            src/unix/linux-inotify.c \
+            src/unix/linux-syscalls.c \
+            src/unix/linux-syscalls.h
+}
+
 macx-clang {
 SOURCES += \
             src/unix/darwin.c \

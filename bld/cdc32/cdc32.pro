@@ -19,7 +19,7 @@ $${VCCFG_COMP} \
 ../theora/include \
 ../ogg/include \
 ../vorbis112/include \
-../libuv/include \
+../uv/include \
 ../miniupnp/miniupnp-master/miniupnpc
 
 linux-*: INCLUDEPATH += ../v4lcap

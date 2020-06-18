@@ -121,8 +121,9 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/libuv/libuv.a \
+$${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qtdrv/libqtdrv.a \
 -lsqlite3 \
 -lv4l2
 
@@ -145,7 +146,8 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/libuv/libuv.a
+$${D}/uv/libuv.a \
+$${D}/qtdrv/libqtdrv.a
 
 }
 
