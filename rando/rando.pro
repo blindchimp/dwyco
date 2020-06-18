@@ -69,7 +69,7 @@ $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/libuv/libuv.a \
+$${D}/uv/libuv.a \
 -lsqlite3
 
 #PRE_TARGETDEPS += \

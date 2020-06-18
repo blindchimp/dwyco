@@ -9,12 +9,6 @@ mkdir $SHADOW_NAME
 mkdir $SHADOW_NAME/lib
 mkdir $SHADOW_NAME/include
 
-(cd bld/libuv
-make -j 8
-cp libuv.a $SHADOW_NAME/lib
-cp include/uv.h $SHADOW_NAME/include
-)
-
 if [ $U = Darwin ]
 then
 	$D/git/dwyco/cdcx/dumptime-mac $D/git/dwyco/cdcx/main.cpp $D/git/dwyco/cdcx/buildtime.h
