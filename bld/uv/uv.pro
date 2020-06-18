@@ -62,5 +62,6 @@ macx-clang {
 SOURCES += \
             src/unix/darwin.c \
             src/unix/fsevents.c \
-            src/unix/darwin-proctitle.c
+            src/unix/darwin-proctitle.c \
+            src/unix/kqueue.c
 }
