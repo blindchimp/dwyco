@@ -8952,10 +8952,6 @@ static pthread_cond_t Msg_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t Msg_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-#ifdef WIN32
-#include <WinSock2.h>
-#endif
-
 DWYCOEXPORT
 void
 dwyco_signal_msg_cond()
