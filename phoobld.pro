@@ -12,5 +12,5 @@ SUBDIRS=bld/jhead bld/ogg bld/vorbis112 bld/theora.1.2.x bld/speex bld/kazlib bl
 SUBDIRS += bld/miniupnp/miniupnp-master/miniupnpc
 }
 
-linux-*:SUBDIRS += bld/v4lcap
+linux-*:SUBDIRS += bld/v4lcap bld/qtdrv
 SUBDIRS += phoo

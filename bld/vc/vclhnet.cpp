@@ -16,6 +16,9 @@
 #include "vcwsock.h"
 #ifdef LINUX
 #include <netdb.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 #ifdef _WIN32
 #include <WinSock2.h>
