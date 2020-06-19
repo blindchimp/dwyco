@@ -10,14 +10,15 @@
 #define VCWSOCK_H
 // $Header: /e/linux/home/dwight/repo/vc/rcs/vcwsock.h 1.56 1999/03/17 14:57:04 dwight Exp $
 
-// Winsock implementation of vc sockets
-#ifdef USE_WINSOCK
-#include <winsock.h>
-#endif
+#include "vc.h"
+//// Winsock implementation of vc sockets
+//#ifdef USE_WINSOCK
+//#include <WinSock2.h>
+//#endif
 
-#ifdef USE_BERKSOCK
-#include "vcberk.h"
-#endif
+//#ifdef USE_BERKSOCK
+//#include "vcberk.h"
+//#endif
 
 #include "vcsock.h"
 class vc_winsock;
@@ -108,9 +109,6 @@ protected:
 public:
 	vc_winsock();
 	~vc_winsock();
-#ifdef USE_WINSOCK
-	static WSADATA wsa_data;
-#endif
 	static int have_net;
 
 	static int poll_all(int what_for, Socketvec&, int sec = 0, int usec = 0);

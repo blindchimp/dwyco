@@ -343,9 +343,10 @@ $${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
+$${D}\\uv\\$${S}\\uv.lib \
 $${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
 $${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
-winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj \
+winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
 $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
 
 #delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib

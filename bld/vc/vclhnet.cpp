@@ -17,6 +17,9 @@
 #ifdef LINUX
 #include <netdb.h>
 #endif
+#ifdef _WIN32
+#include <WinSock2.h>
+#endif
 
 static int
 lh_socket_error(vc *vs)

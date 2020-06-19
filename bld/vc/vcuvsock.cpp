@@ -17,12 +17,15 @@
 uv_loop_t *vc_uvsocket::uvs_loop;
 DwTreeKaz<vc_uvsocket *, long> *vc_uvsocket::Ready_q_p;
 
+#ifndef _WIN32
 static char *
 ultoa(unsigned long l, char *out, int radix)
 {
     sprintf(out, "%ld", l);
     return out;
 }
+#endif
+
 
 static
 void
