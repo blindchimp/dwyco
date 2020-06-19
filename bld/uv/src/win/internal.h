@@ -27,7 +27,7 @@
 
 #include "tree.h"
 #include "winapi.h"
-#include "winsock.h"
+#include "winsockhack.h"
 
 
 /*
