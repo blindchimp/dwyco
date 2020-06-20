@@ -26,9 +26,7 @@
 #include "jpeglib.h"
 #include "jdct.h"
 #ifdef _Windows
-#include <winsock.h>
-//#include <winsock2.h>
-//#include <ws2tcpip.h>
+#include <WinSock2.h>
 #endif
 #include "pred.h"
 #if __GNUC_MINOR__ >= 7 || defined(__linux__)

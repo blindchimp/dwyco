@@ -24,7 +24,7 @@
 #endif
 
 #ifdef _Windows
-#include <winsock.h>
+#include <WinSock2.h>
 #endif
 
 TDecoder::TDecoder()

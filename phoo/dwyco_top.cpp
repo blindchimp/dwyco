@@ -1416,22 +1416,6 @@ DwycoCore::init()
 #endif
 #if ((defined(LINUX)) || defined(DWYCO_IOS)) && /*!defined(ANDROID) &&*/ !defined(NO_DWYCO_AUDIO)
 
-//dwyco_set_external_audio_capture_callbacks(
-// esd_new,
-// esd_delete,
-// esd_init,
-// esd_has_data,
-// esd_need,
-// esd_pass,
-// esd_stop,
-// esd_on,
-// esd_off,
-// esd_reset,
-// esd_status,
-// esd_get_data
-//
-//);
-
     dwyco_set_external_audio_capture_callbacks(
         audi_qt_new,
         audi_qt_delete,
