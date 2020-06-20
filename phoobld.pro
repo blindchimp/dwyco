@@ -13,4 +13,5 @@ SUBDIRS += bld/miniupnp/miniupnp-master/miniupnpc
 }
 
 linux-*:SUBDIRS += bld/v4lcap bld/qtdrv
+macx-clang: SUBDIRS += bld/qtdrv
 SUBDIRS += phoo
