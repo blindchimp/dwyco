@@ -2797,6 +2797,7 @@ q_message2(vc recip, const char *attachment, vc& msg_out,
     return 1;
 }
 
+#if 0
 // msg should be in QQM format
 vc
 decrypt_msg_qqm(vc emsg)
@@ -2836,6 +2837,7 @@ decrypt_msg_qqm(vc emsg)
         return vcnil;
     return msg_out;
 }
+#endif
 
 vc
 decrypt_msg_body(vc body)

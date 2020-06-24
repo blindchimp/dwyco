@@ -239,31 +239,31 @@ ApplicationWindow {
     }
 
 
-//    footer: RowLayout {
-//            Label {
-//                id: ind_invis
-//                text: "Invis"
-//                visible: dwy_invis
-//                color: "red"
+    footer: RowLayout {
+            Label {
+                id: ind_invis
+                text: "Invis"
+                visible: dwy_invis
+                color: "red"
 
-//            }
-//            Item {
-//                Layout.fillWidth: true
-//            }
+            }
+            Item {
+                Layout.fillWidth: true
+            }
 
-//            Label {
-//                id: hwtext
+            Label {
+                id: hwtext
 
-//            }
-//            Label {
-//                id: db_status
-//                text: core.is_database_online === 0 ? "db off" : "db on"
-//            }
-//            Label {
-//                id: chat_status
-//                text: core.is_chat_online === 0 ? "chat off" : "chat on"
-//            }
-//        }
+            }
+            Label {
+                id: db_status
+                text: core.is_database_online === 0 ? "db off" : "db on"
+            }
+            Label {
+                id: chat_status
+                text: core.is_chat_online === 0 ? "chat off" : "chat on"
+            }
+        }
 
     
     Menu {
@@ -952,7 +952,7 @@ ApplicationWindow {
         id: service_timer
         interval: 30; running:true; repeat:true
         onTriggered: {
-            if(!pwdialog.allow_access)
+            if(pwdialog.allow_access === 0)
                 return
             //time.text = Date().toString()
             if(core.database_online() !== core.is_database_online) {
