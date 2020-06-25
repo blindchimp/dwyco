@@ -2599,7 +2599,7 @@ process_special_msg(QByteArray mid)
 
 static
 void
-scan_special_msgs()
+fetch_special_msgs()
 {
     return;
     DWYCO_LIST uml;
@@ -2622,28 +2622,30 @@ scan_special_msgs()
             if(st == QByteArray("user"))
             {
                 QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
-                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
-                {
-                    auto_fetch(mid);
-                }
-                else
-                {
-                    process_special_msg(mid);
-                    dwyco_delete_unfetched_message(mid.constData());
-                }
+                auto_fetch(mid);
+//                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
+//                {
+//                    auto_fetch(mid);
+//                }
+//                else
+//                {
+//                    process_special_msg(mid);
+//                    dwyco_delete_unfetched_message(mid.constData());
+//                }
             }
             if(st.startsWith("join"))
             {
                 QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
-                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
-                {
-                    auto_fetch(mid);
-                }
-                else
-                {
-                    dwyco_handle_join(mid.constData());
-                    dwyco_delete_unfetched_message(mid.constData());
-                }
+                auto_fetch(mid);
+//                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
+//                {
+//                    auto_fetch(mid);
+//                }
+//                else
+//                {
+//                    dwyco_handle_join(mid.constData());
+//                    dwyco_delete_unfetched_message(mid.constData());
+//                }
             }
         }
     }
@@ -2682,7 +2684,7 @@ DwycoCore::service_channels()
             }
         }
 
-        scan_special_msgs();
+        fetch_special_msgs();
         dwyco_get_unfetched_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;

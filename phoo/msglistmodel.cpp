@@ -1055,8 +1055,6 @@ msglist_raw::inbox_data (int r, int role ) const
     if(role == MID)
         return mid;
 
-    DWYCO_SAVED_MSG_LIST sm = 0;
-
     switch(role)
     {
     case MID:
