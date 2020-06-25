@@ -1597,7 +1597,7 @@ fetch_info(vc uid)
 
 vc
 save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc authvec,
-          vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock)
+          vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type)
 {
     DwString s;
     init_msg_folder(from, &s);
