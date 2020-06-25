@@ -7063,13 +7063,12 @@ dwyco_handle_join(const char *mid)
 }
 
 
-// note: for the next two functions, uid MUST be equal to 0, as they
-// are broken otherwise. essentially, it turns out that i strip out the
-// special stuff when the msgs are saved (for vague security reasons.)
-// so these will only work on unsaved msgs. this was an attempt to
-// make cdcx work a little better, but in retrospect, i think i'll just
-// provide functions that operate directly on a DWYCO_UNSAVED_MSG
-// instead of a msg id.
+// these is_special functions need to be redone to work properly with
+// the new msg save system. since messages are now immediately saved (there is
+// no "unsaved" state), the special message contents are stored in
+// the usual message format (previously, it was stripped out before
+// it was saved.)
+
 DWYCOEXPORT
 int
 dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out)
@@ -7107,7 +7106,7 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
     }
 
 
-    // message has been fetched, and is unsaved
+    // message has been fetched
     vc body = direct_to_body(mid);
     vc sv = body[QM_BODY_SPECIAL_TYPE];
     if(sv.is_nil())
@@ -7431,7 +7430,8 @@ save_msg(vc m, vc msg_id)
                         msg[QQM_BODY_NEW_TEXT],
                         msg[QQM_BODY_NO_FORWARD],
                         msg[QQM_BODY_FILE_ATTACHMENT],
-                        msg[QQM_BODY_LOGICAL_CLOCK]);
+                        msg[QQM_BODY_LOGICAL_CLOCK],
+                        msg[QQM_BODY_SPECIAL_TYPE]);
     if(body.is_nil())
     {
         return 0;
