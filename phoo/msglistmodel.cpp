@@ -223,10 +223,20 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
     {
         msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
         mr->reload_inbox_model();
-        add_unviewed(buid, mid);
+        // kulge, really need to have different path for special messages
+        // instead of trying to shoehorn them in with regular messages
+        int stype;
+        if(dwyco_is_special_message(0, 0, mid.constData(), &stype))
+        {
+            dwyco_set_msg_tag(mid.constData(), "_special");
+        }
+        else
+        {
+            add_unviewed(buid, mid);
+            TheDwycoCore->emit new_msg(shuid, "", smid);
+            TheDwycoCore->emit decorate_user(shuid);
+        }
         dwyco_unset_msg_tag(mid.constData(), "_inbox");
-        TheDwycoCore->emit new_msg(shuid, "", smid);
-        TheDwycoCore->emit decorate_user(shuid);
         if(uid() == shuid)
             mid_tag_changed(smid);
 

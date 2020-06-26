@@ -7026,7 +7026,7 @@ dwyco_handle_join(const char *mid)
 {
     vc password = "foo";
     DWYCO_UNFETCHED_MSG_LIST l;
-    if(!dwyco_get_unfetched_message(&l, mid))
+    if(!dwyco_get_saved_message(&l, 0, 0, mid))
         return 0;
     simple_scoped ql(l);
     int jstate;
@@ -7071,7 +7071,7 @@ dwyco_handle_join(const char *mid)
 
 DWYCOEXPORT
 int
-dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out)
+dwyco_is_special_message(const char *uid, int , const char *msg_id, int *what_out)
 {
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc mid(VC_BSTRING, msg_id, strlen(msg_id));

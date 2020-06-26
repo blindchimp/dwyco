@@ -2601,7 +2601,6 @@ static
 void
 fetch_special_msgs()
 {
-    return;
     DWYCO_LIST uml;
 
     if(dwyco_get_unfetched_messages(&uml, 0, 0))
@@ -2623,29 +2622,11 @@ fetch_special_msgs()
             {
                 QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
                 auto_fetch(mid);
-//                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
-//                {
-//                    auto_fetch(mid);
-//                }
-//                else
-//                {
-//                    process_special_msg(mid);
-//                    dwyco_delete_unfetched_message(mid.constData());
-//                }
             }
             if(st.startsWith("join"))
             {
                 QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
                 auto_fetch(mid);
-//                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
-//                {
-//                    auto_fetch(mid);
-//                }
-//                else
-//                {
-//                    dwyco_handle_join(mid.constData());
-//                    dwyco_delete_unfetched_message(mid.constData());
-//                }
             }
         }
     }
