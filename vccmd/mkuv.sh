@@ -4,13 +4,9 @@ SHADOW_NAME=$1
 mkdir $SHADOW_NAME
 mkdir $SHADOW_NAME/lib
 mkdir $SHADOW_NAME/include
-mkdir -p $SHADOW_NAME/bld/libuv
-(
-cd bld/libuv
-make -j 8
-cp libuv.a $SHADOW_NAME/bld/libuv
-cp include/uv.h $SHADOW_NAME/include
-)
+
+# note, this was hijacked to do this while doing
+# libuv too. probably need to fix this as well
 
 if [ ! -e $SHADOW_NAME/include/sp.h ]
 then

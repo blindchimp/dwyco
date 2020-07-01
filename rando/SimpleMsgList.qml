@@ -19,7 +19,7 @@ Page {
     property bool show_recv: true
     property bool multiselect_mode: false
     property int storage_warning: 1
-    property string uid
+    //property string uid
 
     background: Rectangle {
         gradient: Gradient {
@@ -125,6 +125,7 @@ Page {
             checkable: true
             onCheckedChanged: {
                 if(checked) {
+                    //themsglist.set_sort(true)
                     top_dispatch.uid_selected(the_man, "clicked")
                     recv.checked = false
                     sent_badge = false
@@ -140,7 +141,7 @@ Page {
                 anchors.top: parent.top
                 radius: width / 2
                 color: "red"
-                visible: /* core.has_unseen_geo || */ sent_badge
+                visible: core.has_unseen_geo
             }
         }
 //        Item {
@@ -169,6 +170,7 @@ Page {
                     for(i = 0; i < ConvListModel.count; i++) {
                         u = ConvListModel.get(i).uid
                         if(u !== the_man) {
+                            //themsglist.set_sort(false)
                             top_dispatch.uid_selected(u, "clicked")
                             break;
                         }
@@ -232,6 +234,9 @@ Page {
 
             sourceSize.width: 512
             sourceSize.height: 512
+//            Component.onCompleted: {
+//                console.log("dele ", index, click_to_fetch, height, SENT, IS_FILE, IS_ACTIVE, IS_QD)
+//            }
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
@@ -561,7 +566,14 @@ Page {
         clip: true
         delegate: msg_delegate
         model: themsglist
-        spacing: items_margin
+        // note: we have 0 height delegates for a variety of
+        // strange reasons (mainly having to do with wanting to
+        // show downloading, partially known items in the same
+        // listview.) if we changed the download to be invisible
+        // or into some dedicated area outside the main view, we
+        // wouldn't have this problem. we could just filter out
+        // all the 0 height delegates in the c++ model.
+        //spacing: items_margin
 /*
 // sadly, this doesn't work very well
 // i was trying to allow a "swipe to switch sent/recv"
@@ -682,6 +694,65 @@ scrolling in the listview or doesn't recognizing the swipe.
             //lock_to_bottom = true
         }
         ToolTip.text: "Skip to top"
+
+    }
+
+    TipButton {
+        id: go_to_next
+        width: mm(10)
+        height: mm(10)
+        anchors.margins: mm(3)
+        anchors.bottom: parent.bottom
+        //anchors.right: parent.right
+        x: go_to_top.x - mm(11)
+
+        background: Rectangle {
+            id: gtn_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtn_img
+            anchors.centerIn: gtn_bg
+            source: mi("ic_language_black_24dp.png")
+            opacity: .5
+            SequentialAnimation {
+                running: go_to_next.visible
+                loops: Animation.Infinite
+                onStopped: {
+                    gtn_img.scale = 1.0
+                }
+
+            NumberAnimation {
+                target: gtn_img
+                property: "scale"
+                duration: 300
+                easing.type: Easing.InOutQuad
+                from: 1.0
+                to: 0.5
+            }
+            NumberAnimation {
+                target: gtn_img
+                property: "scale"
+                duration: 300
+                easing.type: Easing.InOutQuad
+                from: 0.5
+                to: 1.0
+            }
+            }
+        }
+
+        visible: core.has_unseen_geo && themsglist.uid === the_man
+
+        onClicked: {
+            var i
+            i = themsglist.find_first_unseen()
+            if(i >= 0)
+                listview.positionViewAtIndex(i, ListView.Beginning)
+        }
+        ToolTip.text: "Skip to next unseen"
 
     }
 

@@ -373,7 +373,9 @@ using namespace Weak;
 
 #ifdef LINUX
 #include <signal.h>
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #endif
 #include "sepstr.h"
 #include "xinfo.h"
@@ -464,7 +466,7 @@ extern int beginning_of_world;
 #endif
 
 #ifndef WIN32
-#define DWYCO_CRYPTO_PIPELINE
+#undef DWYCO_CRYPTO_PIPELINE
 #else
 #undef DWYCO_CRYPTO_PIPELINE
 #endif
@@ -7342,7 +7344,8 @@ save_msg(vc m, vc msg_id)
                         msg[QQM_BODY_NEW_TEXT],
                         msg[QQM_BODY_NO_FORWARD],
                         msg[QQM_BODY_FILE_ATTACHMENT],
-                        msg[QQM_BODY_LOGICAL_CLOCK]);
+                        msg[QQM_BODY_LOGICAL_CLOCK],
+                        msg[QQM_BODY_SPECIAL_TYPE]);
     if(body.is_nil())
     {
         return 0;
@@ -7823,6 +7826,18 @@ int
 dwyco_get_fav_msg(const char *mid)
 {
     return sql_fav_is_fav(mid);
+}
+
+// INTERNAL API
+DWYCOEXPORT
+int
+dwyco_run_sql(const char *stmt, const char *a1, const char *a2, const char *a3)
+{
+    vc s(stmt);
+    vc va1 = (a1 ? vc(a1) : vcnil);
+    vc va2 = (a2 ? vc(a2) : vcnil);
+    vc va3 = (a3 ? vc(a3) : vcnil);
+    return sql_run_sql(s, va1, va2, va3);
 }
 
 // ignore list stuff
@@ -8848,34 +8863,6 @@ dwyco_abort_autoupdate_download()
 {
     TheAutoUpdate->abort_fetch();
 }
-
-DWYCOEXPORT
-void
-dwyco_set_regcode(const char *s)
-{
-    //reg_write_code(s);
-}
-
-
-DWYCOEXPORT
-void
-dwyco_sub_get(const char **reg_out, int *len_out)
-{
-#if 1
-    static vc v("");
-    //v = reg_get();
-    int n = strspn(v, "0123456789abcdefABCDEF");
-    if(n != v.len())
-    {
-        v = "";
-    }
-    if(reg_out)
-        *reg_out = (const char *)v;
-    if(len_out)
-        *len_out = v.len();
-#endif
-}
-
 
 // must call dwyco_free_array on returned pointer
 extern vc STUN_server;

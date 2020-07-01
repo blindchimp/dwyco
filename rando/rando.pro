@@ -25,7 +25,7 @@ QMAKE_INFO_PLIST=Info.plist.mac
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
 
-#DEFINES += DWYCO_RELEASE
+DEFINES += DWYCO_RELEASE
 ICON=rando.icns
 RC_FILE=rando.rc
 
@@ -69,7 +69,7 @@ $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/libuv/libuv.a \
+$${D}/uv/libuv.a \
 -lsqlite3
 
 #PRE_TARGETDEPS += \
@@ -132,7 +132,7 @@ $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/libuv/libuv.a \
+$${D}/uv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
 

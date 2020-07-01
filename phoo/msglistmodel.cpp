@@ -200,6 +200,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
             Fetching.removeAt(i);
         Delete_msgs.append(mid);
         Mid_to_percent.remove(mid);
+        Manual_fetch.insert(mid);
         break;
 
     case DWYCO_SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED:
@@ -894,6 +895,10 @@ msglist_raw::qd_data ( int r, int role ) const
         return QString(pfn);
 
     }
+    case HAS_ATTACHMENT:
+    {
+        return !qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT);
+    }
     case DATE_CREATED:
     {
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
@@ -943,10 +948,7 @@ msglist_raw::qd_data ( int r, int role ) const
     {
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
-        int n;
-        if(!dwyco_list_numelems(qba, &n, 0))
-            return 0;
-        if(n > 1)
+        if(qba.rows() > 1)
             return 1;
         return 0;
     }

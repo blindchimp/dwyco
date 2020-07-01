@@ -63,6 +63,14 @@ init_external_audio(int mbox)
         TheAudioInput = 0;
         return 0;
     }
+
+    // unfortunately, some drivers can't synchronously do this
+    // so it might end up thinking there is nothing there when
+    // it just takes a sec to get it up and running.
+    // i'm not sure what platform something other than
+    // "init" was needed to determine the probe, so for now,
+    // just avoid doing this.
+#if 0
     // the init may not actually probe for a device, but we really
     // need to know if there is one out there, so just start it up
     // and check the status real quick
@@ -76,6 +84,7 @@ init_external_audio(int mbox)
         return 0;
     }
     a->reset();
+#endif
 
     TheAudioInput = a;
     return 1;

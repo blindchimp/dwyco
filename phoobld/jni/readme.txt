@@ -1,6 +1,10 @@
 dwight melcher
 Sat Sep 28 10:49:56 MDT 2019
 
+on Macos, using homebrew, be sure you have autoconf installed:
+
+brew install autoconf autotools libtool pkg-config
+
 basic idea for an android build:
 
 get version r20 of the NDK from google

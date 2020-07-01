@@ -35,7 +35,7 @@ DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
 macx-clang: QMAKE_INFO_PLIST=Info.plist.mac
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv
 
 #QMAKE_MAC_SDK = macosx10.9
 DEFINES += DWYCO_RELEASE
@@ -58,7 +58,6 @@ SOURCES += main.cpp \
     dvp.cpp \
     ct.cpp \
     callsm.cpp \
-    audo_qt.cpp \
     chatlistmodel.cpp \
     dwycoprofilepreviewprovider.cpp \
     convmodel.cpp \
@@ -68,8 +67,7 @@ SOURCES += main.cpp \
     resizeimage.cpp \
     simple_user_list.cpp \
     ctlist.cpp \
-    dwycovideopreviewprovider.cpp \
-    audi_qt.cpp
+    dwycovideopreviewprovider.cpp 
 
 # note: you can *compile* the qt stuff on any platform, but
 # as of 2017, the videoprobing stuff only works on android
@@ -80,8 +78,8 @@ SOURCES += main.cpp \
 DINC=$${PWD}/../bld
 equals(FORCE_DESKTOP_VGQT,1)|android-*|macx-ios-clang {
 QT += concurrent
-SOURCES += vgqt.cpp
-HEADERS += vgqt.h
+#SOURCES += vgqt.cpp
+#HEADERS += vgqt.h
 INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
 }
 
@@ -123,8 +121,9 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/libuv/libuv.a \
+$${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qtdrv/libqtdrv.a \
 -lsqlite3 \
 -lv4l2
 
@@ -147,7 +146,8 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/libuv/libuv.a
+$${D}/uv/libuv.a \
+$${D}/qtdrv/libqtdrv.a
 
 }
 
@@ -218,8 +218,8 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${PWD}/../bld/macdrv/libmacdrv.a \
-$${D}/libuv/libuv.a \
+$${D}/qtdrv/libqtdrv.a \
+$${D}/uv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
 
@@ -249,7 +249,9 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/qtdrv/libqtdrv.a
+
 
 }
 
@@ -260,7 +262,7 @@ D = $${OUT_PWD}/../bld
 
 L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 
-LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will
@@ -341,9 +343,10 @@ $${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
 $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
+$${D}\\uv\\$${S}\\uv.lib \
 $${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
 $${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
-winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj \
+winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
 $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
 
 #delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
@@ -400,7 +403,6 @@ HEADERS += \
     ct.h \
     callsm_objs.h \
     callsm.h \
-    audo_qt.h \
     chatlistmodel.h \
     dwycoprofilepreviewprovider.h \
     convmodel.h \
@@ -412,17 +414,16 @@ HEADERS += \
     simple_user_list.h \
     ctlist.h \
     dwycovideopreviewprovider.h \
-    audi_qt.h \
     simpledirmodel.h
 
 DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.jar \
     androidinst/AndroidManifest.xml \
-    androidinst/res/values/libs.xml \
-    androidinst/build.gradle \
     androidinst/gradle/wrapper/gradle-wrapper.properties \
     androidinst/gradlew \
     androidinst/gradlew.bat \
+    androidinst/res/values/libs.xml \
+    androidinst/build.gradle \
     androidinst/google-services.json \
     androidinst/src/com/dwyco/cdc32/dwybg.java \
     androidinst/src/com/dwyco/cdc32/dwybgJNI.java \

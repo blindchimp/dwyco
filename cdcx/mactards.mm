@@ -139,6 +139,7 @@ void EstablishRunDirectory()
             !FileExists(cdc_x_RunDir + "/v29.ver") ||
             !FileExists(cdc_x_RunDir + "/v211.ver") ||
             !FileExists(cdc_x_RunDir + "/v216.ver") ||
+            !FileExists(cdc_x_RunDir + "/v230.ver") ||
             !FileExists(cdc_x_RunDir + "/v217.ver")
        )
     {
@@ -150,6 +151,6 @@ void EstablishRunDirectory()
     SetCurrentDirectory(cdc_x_RunDir);
 
     // Tell dll about its new home
-    dwyco_set_cmd_path(cdc_x_RunDir.c_str(), cdc_x_RunDir.length());
+    //dwyco_set_cmd_path(cdc_x_RunDir.c_str(), cdc_x_RunDir.length());
 
 }
