@@ -10,7 +10,7 @@
 #include <string.h>
 
 #ifdef USE_WINSOCK
-#include <winsock.h>
+#include <WinSock2.h>
 #define EWOULDBLOCK             WSAEWOULDBLOCK
 #define EINPROGRESS             WSAEINPROGRESS
 #define EALREADY                WSAEALREADY
@@ -66,9 +66,7 @@ struct scoped_sockaddr
 //static char Rcsid[] = "$Header: /e/linux/home/dwight/repo/vc/rcs/vcwsock.cpp 1.69 1999/03/17 14:57:04 dwight Exp $";
 
 int vc_winsock::have_net;
-#ifdef USE_WINSOCK
-WSADATA vc_winsock::wsa_data;
-#endif
+
 //VcWinsockDispatcher *vc_winsock::dispatcher;
 //Socketvec *vc_winsock::Poll_results;
 SocketSet *vc_winsock::Read_set;
@@ -874,24 +872,24 @@ vc_winsock::startup()
 
 	
 #ifdef USE_WINSOCK
-	int err = WSAStartup(0x0101, &wsa_data);
+    WSADATA wsa_data;
+
+    int err = WSAStartup(MAKEWORD(2, 2), &wsa_data);
 
 	if(err != 0)
 	{
-#ifdef __WIN32__
 		ReleaseMutex(Mutex);
-#endif
 		return 0;
 	}
-	if((wsa_data.wVersion & 0xff) != 1 ||
-		((wsa_data.wVersion >> 8) & 0xff) != 1)
-	{
-		WSACleanup();
-#ifdef __WIN32__
-		ReleaseMutex(Mutex);
-#endif
-		return 0;
+    if ( LOBYTE( wsa_data.wVersion ) != 2 ||
+            HIBYTE( wsa_data.wVersion ) != 2 ) {
+        /* Tell the user that we could not find a usable */
+        /* WinSock DLL.                                  */
+        WSACleanup();
+        ReleaseMutex(Mutex);
+        return 0;
     }
+
 #endif
 	thread_startup();
 	have_net = 1;
@@ -2575,6 +2573,7 @@ vc_winsock_datagram::vc_winsock_datagram()
 {
 	if(have_net && iobuf == 0)
 	{
+#if 0
 #ifdef USE_WINSOCK
 		if(wsa_data.iMaxUdpDg != 0)
 		{	
@@ -2586,11 +2585,12 @@ vc_winsock_datagram::vc_winsock_datagram()
 		}
 		else
 #endif
+#endif
 		{
 
 			// impose arbitrary 65k limit
-			iobuf = new char [65536];
-			iobuflen = 65536;
+            iobuf = new char [32768];
+            iobuflen = 32768;
 		}
 	}
 }

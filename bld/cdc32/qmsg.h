@@ -38,7 +38,7 @@ void query_messages();
 MMChannel *fetch_attachment(vc id, DestroyCallback, vc, void *, ValidPtr,
                             StatusCallback, void *, ValidPtr, vc server_ip = vcnil, vc server_port = vcnil);
 vc save_body(vc msgid, vc from, vc text, vc attachment_id, vc date, vc rating, vc authvec,
-             vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock);
+             vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type);
 int uid_ignored(vc uid);
 void delete_msg2(vc msgid);
 //void delete_body2(vc user_id, vc msgid);

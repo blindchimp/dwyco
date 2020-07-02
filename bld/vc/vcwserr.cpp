@@ -23,7 +23,7 @@
  *				 and added header with comments.
  */
 #ifdef USE_WINSOCK
-#include <winsock.h>
+#include <WinSock2.h>
 #endif
 #ifdef USE_BERKSOCK
 #include <errno.h>

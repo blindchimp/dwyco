@@ -19,7 +19,7 @@ $${VCCFG_COMP} \
 ../theora/include \
 ../ogg/include \
 ../vorbis112/include \
-../libuv/include \
+../uv/include \
 ../miniupnp/miniupnp-master/miniupnpc
 
 linux-*: INCLUDEPATH += ../v4lcap
@@ -94,6 +94,9 @@ INCLUDEPATH += ../mtcap
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT
 }
+#equals(DWYCOBG, 0) {
+#DEFINES += DWYCO_CDC_LIBUV
+#}
 }
 
 android-g++ {

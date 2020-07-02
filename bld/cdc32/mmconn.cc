@@ -8,7 +8,7 @@
 */
 // $Header: g:/dwight/repo/cdc32/rcs/mmconn.cc 1.11 1999/01/10 16:09:47 dwight Checkpoint $
 #ifndef LINUX
-#include <winsock.h>
+#include <WinSock2.h>
 #endif
 #include "vc.h"
 #include "vcwsock.h"

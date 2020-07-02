@@ -23,10 +23,6 @@
 #include "jdhuff.h"
 #include "pred.h"
 
-#ifdef _Windows
-#include <winsock.h>
-#endif
-
 extern JSAMPLE *Range_limit;
 
 JPEGTDecoder::JPEGTDecoder()

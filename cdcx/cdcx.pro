@@ -118,7 +118,7 @@ SOURCES += main.cpp tfhex.cpp mainwin.cpp dwyco_new_msg.cpp evret.cpp dvp.cc abo
     fname.cpp
 
 
-linux-g++* {
+linux-* {
 INCLUDEPATH += ./dllwin ../bld/qtdrv
 
 D = $${OUT_PWD}/../bld
@@ -140,7 +140,7 @@ $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/qtdrv/libqtdrv.a \
-$${OUT_PWD}/../lib/libuv.a \
+$${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 -lsqlite3 \
 $${D}/v4lcap/libv4lcap.a \
@@ -252,7 +252,7 @@ $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
-$${OUT_PWD}/../lib/libuv.a \
+$${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qtdrv/libqtdrv.a \
 -Wl,-framework,CoreFoundation \
@@ -274,7 +274,7 @@ $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
-$${OUT_PWD}/../lib/libuv.a \
+$${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qtdrv/libqtdrv.a
 
