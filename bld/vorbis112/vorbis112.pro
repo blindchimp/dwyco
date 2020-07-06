@@ -1,10 +1,9 @@
-QT       -= core gui
-
-include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
-
 TARGET = vorbis
 TEMPLATE = lib
 CONFIG += staticlib
+CONFIG -= qt
+
+include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
 INCLUDEPATH += include lib ../ogg/include
 

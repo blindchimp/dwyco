@@ -730,10 +730,12 @@ Listener::accept()
 
 FrameSocket::FrameSocket(unsigned int len)
 {
+#if 0
 #ifdef _Windows
     if(vc_winsock::wsa_data.iMaxUdpDg != 0
             && len > vc_winsock::wsa_data.iMaxUdpDg)
         len = vc_winsock::wsa_data.iMaxUdpDg;
+#endif
 #endif
     packet_buf = new DWBYTE[len];
     plen = len;
@@ -749,10 +751,12 @@ FrameSocket::FrameSocket(unsigned int len)
 FrameSocket::FrameSocket(vc sock, unsigned int len) :
     SimpleSocket(sock)
 {
+#if 0
 #ifdef _Windows
     if(vc_winsock::wsa_data.iMaxUdpDg != 0
             && len > vc_winsock::wsa_data.iMaxUdpDg)
         len = vc_winsock::wsa_data.iMaxUdpDg;
+#endif
 #endif
     packet_buf = new DWBYTE[len];
     plen = len;

@@ -12,6 +12,7 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
+#include <stdlib.h>
 #include "msglistmodel.h"
 #include "msgpv.h"
 #include "pfx.h"
@@ -200,6 +201,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
             Fetching.removeAt(i);
         Delete_msgs.append(mid);
         Mid_to_percent.remove(mid);
+        Manual_fetch.insert(mid);
         break;
 
     case DWYCO_SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED:
