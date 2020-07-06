@@ -373,7 +373,9 @@ using namespace Weak;
 
 #ifdef LINUX
 #include <signal.h>
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #endif
 #include "sepstr.h"
 #include "xinfo.h"
@@ -8955,34 +8957,6 @@ dwyco_abort_autoupdate_download()
 {
     TheAutoUpdate->abort_fetch();
 }
-
-DWYCOEXPORT
-void
-dwyco_set_regcode(const char *s)
-{
-    //reg_write_code(s);
-}
-
-
-DWYCOEXPORT
-void
-dwyco_sub_get(const char **reg_out, int *len_out)
-{
-#if 1
-    static vc v("");
-    //v = reg_get();
-    int n = strspn(v, "0123456789abcdefABCDEF");
-    if(n != v.len())
-    {
-        v = "";
-    }
-    if(reg_out)
-        *reg_out = (const char *)v;
-    if(len_out)
-        *len_out = v.len();
-#endif
-}
-
 
 // must call dwyco_free_array on returned pointer
 extern vc STUN_server;

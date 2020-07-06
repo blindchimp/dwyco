@@ -12,6 +12,7 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
+#include <stdlib.h>
 #include "msglistmodel.h"
 #include "msgpv.h"
 #include "pfx.h"

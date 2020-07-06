@@ -13,29 +13,25 @@
 #define CDCCORE_STATIC
 #endif
 #if (defined(_Windows) || defined(_WIN32)) && !defined(CDCCORE_STATIC)
-#ifdef MINGW_CLIENT
-#define DWYCOEXPORT __declspec(dllexport) DWYCOCALLCONV
-#define DWYCOCALLCONV __cdecl
-#else
+
 #define DWYCOCALLCONV __stdcall
 #if defined(_MSC_VER) && defined(DWYCOIMPORT)
 #define DWYCOEXPORT __declspec(dllimport) DWYCOCALLCONV
 #else
 #define DWYCOEXPORT __declspec(dllexport) DWYCOCALLCONV
 #endif
-#endif
+
 #elif defined(CDCCORE_STATIC) && defined(_Windows)
+
 #define DWYCOCALLCONV
 #define DWYCOEXPORT
+
 #else
-// probably linux
-#ifdef MINGW_CLIENT
-#define DWYCOEXPORT __declspec(dllexport) DWYCOCALLCONV
-#define DWYCOCALLCONV __cdecl
-#else
+// probably linux-like
+
 #define DWYCOEXPORT
 #define DWYCOCALLCONV
-#endif
+
 #endif
 
 #ifdef DWYCO_APP_DEBUG
@@ -1444,10 +1440,6 @@ int DWYCOEXPORT dwyco_start_autoupdate_download_bg();
 int DWYCOEXPORT dwyco_run_autoupdate();
 void DWYCOEXPORT dwyco_abort_autoupdate_download();
 
-// defunct
-void DWYCOEXPORT dwyco_set_regcode(const char *s);
-void DWYCOEXPORT dwyco_sub_get(const char **reg_out, int *len_out);
-
 // this is a little builtin mini-applet that does some synchronization
 // with another app (which is assumed to be using this API as well.)
 // it is an artifact of the way android makes us use
@@ -1533,6 +1525,10 @@ int DWYCOEXPORT dwyco_get_aux_string(const char **str_out, int *len_str_out);
 // deprecated for some time. This means that you cannot compile the urania driver
 // using xcode9. I've been using an old VM with xcode7 on it to perform the
 // compilation. The APIs are still supported at runtime as of 2018 for High Sierra.
+//
+// MacOS Catalina deprecated the runtime video api's used by the urania driver.
+// We use Qt 5.12 to create a video capture driver that works on MacOS 10.12+.
+// The urania driver is completely unusable and is unneeded now.
 //
 // -------
 // WRITING a video capture "driver" for the DLL
@@ -2270,14 +2266,13 @@ dwyco_get_rate_tweaks(
 // used for media select arg in the net data
 // WARNING: the values of these defines were copied from aconn.h
 // WARNING: the only value that works is "TCP_ONLY"
-// NOTE: ca 2016, all the internal STUN and UPNP stuff does not work.
+// NOTE: ca 2016, all the internal STUN stuff does not work.
 // STUN/UDP media was abandoned because it is just too problematic
-// from a tech support perspective. UPnP, when it was tested, was also
-// too flakey to rely on. ca 2018, Possibly UPnP could be revisited now that
-// routers are implementing it more reliably.
+// from a tech support perspective.
 // ca 2019, UPnP is an option that is handled and set up automatically.
 // if it doesn't get a set of ports set up, it automatically fallsback to
-// using server assisted calls as usual.
+// using server assisted calls as usual. UPnP sets up incoming port forwarding
+// to allow more peer to peer TCP connections.
 
 #define DWYCO_MEDIA_SELECT_DIRECT_ONLY 0  	// not impl.
 #define DWYCO_MEDIA_SELECT_TCP_ONLY 1 		// force tcp SAC only
