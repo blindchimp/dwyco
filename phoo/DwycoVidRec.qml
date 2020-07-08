@@ -6,12 +6,11 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import QtQuick.Controls 2.1
+import QtQuick 2.12
+import QtQuick.Controls 2.12
 import dwyco 1.0
-import QtQuick.Layouts 1.3
-import QtQml 2.2
-import QtQml.StateMachine 1.0 as DSM
+import QtQuick.Layouts 1.12
+import QtQml.StateMachine 1.12 as DSM
 
 Page {
     property string uid
