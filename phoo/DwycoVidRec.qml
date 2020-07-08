@@ -10,8 +10,7 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import dwyco 1.0
 import QtQuick.Layouts 1.12
-import QtQml 2.2
-import QtQml.StateMachine 1.0 as DSM
+import QtQml.StateMachine 1.12 as DSM
 
 Page {
     property string uid

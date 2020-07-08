@@ -7,8 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick 2.12
-//import QtGraphicalEffects 1.0
-import QtQml 2.2
 import QtQuick.Controls 2.12
 import dwyco 1.0
 

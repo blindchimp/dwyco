@@ -10,7 +10,6 @@ import QtQuick 2.12
 import dwyco 1.0
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
-import QtQml.Models 2.2
 import QtQuick.Dialogs 1.3
 
 ToolBar {
