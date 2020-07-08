@@ -11,7 +11,7 @@ import QtQuick.Layouts 1.12
 //import QtGraphicalEffects 1.0
 import QtQml 2.2
 import QtQuick.Controls 2.12
-import QtQuick.Dialogs 1.2
+import QtQuick.Dialogs 1.3
 import dwyco 1.0
 
 
