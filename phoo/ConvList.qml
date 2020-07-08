@@ -11,7 +11,7 @@ import dwyco 1.0
 import QtQuick.Layouts 1.3
 import QtQml 2.2
 import QtQuick.Dialogs 1.2
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.12
 
 Page {
     id: convlist_top

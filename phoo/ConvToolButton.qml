@@ -9,7 +9,7 @@
 import QtQuick 2.6
 //import QtGraphicalEffects 1.0
 import QtQml 2.2
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.12
 import dwyco 1.0
 
 

@@ -9,7 +9,7 @@
 import QtQuick 2.6
 import Qt.labs.folderlistmodel 2.1
 import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.12
 
 Rectangle {
     property alias folder: folderModel.folder

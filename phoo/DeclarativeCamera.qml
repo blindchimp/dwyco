@@ -9,7 +9,7 @@
 
 import QtQuick 2.6
 import QtMultimedia 5.8
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.12
 
 // the API to this object is ugly... essentially, the requirement is
 // that the user of the object must reside in a stackview, and

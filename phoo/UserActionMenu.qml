@@ -7,7 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick 2.6
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.12
 
 Menu {
     title: "Action"

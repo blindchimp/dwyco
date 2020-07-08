@@ -8,7 +8,7 @@
 */
 import QtQuick 2.6
 import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.12
 import dwyco 1.0
 
 Pane {
