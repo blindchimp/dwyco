@@ -8,7 +8,7 @@
 */
 import QtQuick 2.12
 import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.3
+import QtQuick.Layouts 1.12
 
 RowLayout {
     property alias text_input: textInput1.text

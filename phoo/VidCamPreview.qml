@@ -10,7 +10,7 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.2
 import dwyco 1.0
-import QtQuick.Layouts 1.3
+import QtQuick.Layouts 1.12
 
 // this assumes you are using the internal dwyco-provided
 // video capture drivers.
