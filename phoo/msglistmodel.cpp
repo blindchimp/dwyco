@@ -1326,7 +1326,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
 
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
-        return gen_time(ba, 0);
+        return gen_time(qba, 0);
     }
     else if(role == IS_FAVORITE)
     {

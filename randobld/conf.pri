@@ -16,9 +16,9 @@ QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-va
 }
 
 macx-g++*|macx-clang* {
-QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.9
-QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
 DEFINES += LINUX MACOSX
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 }
 
 win32-* {

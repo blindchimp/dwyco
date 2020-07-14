@@ -7,8 +7,8 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-import QtQuick 2.6
-import QtQuick.Controls 2.1
+import QtQuick 2.12
+import QtQuick.Controls 2.12
 
 
 Rectangle {

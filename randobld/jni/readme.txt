@@ -2,8 +2,7 @@ dwight melcher
 Mon Apr 15 13:47:20 MST 2013
 
 basic idea for an android build:
-get version r19 of the NDK from google
-NOTE: r20 is buggy and will NOT work
+get latest NDK from google, r21 seems to be ok
 
 set up the env vars for it, and run the following scripts:
 export NDK=~/android/android-ndk (the default)
