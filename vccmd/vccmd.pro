@@ -36,7 +36,7 @@ $${D}/bld/crypto5/libcrypto5.a \
 $${D}/bld/jenkins/libjenkins.a \
 $${D}/bld/kazlib/libkazlib.a \
 $${D}/bld/zlib/libzlib.a \
-$${D}/bld/libuv/libuv.a
+$${D}/bld/uv/libuv.a
 
 
 

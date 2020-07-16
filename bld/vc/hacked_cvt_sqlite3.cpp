@@ -230,6 +230,7 @@ static
 int*
 cvt_vc_p_int(vc a)
 {
+    return 0;
 }
 
 static
@@ -263,6 +264,7 @@ static
 char**
 cvt_vc_pp_char(vc a)
 {
+    return 0;
 }
 // out param
 static
@@ -284,26 +286,31 @@ static
 sqlite3_stmt**
 cvt_vc_pp_sqlite3_stmt_(vc a)
 {
+    return 0;
 }
 static
 char***
 cvt_vc_ppp_char(vc a)
 {
+    return 0;
 }
 static
 const char**
 cvt_vc_ppq_char(vc a)
 {
+    return 0;
 }
 static
 const void**
 cvt_vc_ppq_void(vc a)
 {
+    return 0;
 }
 static
 const Mem*
 cvt_vc_pq_Mem_(vc a)
 {
+    return 0;
 }
 static
 const char*
@@ -315,6 +322,7 @@ static
 const void*
 cvt_vc_pq_void(vc a)
 {
+    return 0;
 }
 
 static DwVec<int> Column_type_cache(0, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND);
