@@ -5521,7 +5521,7 @@ dwyco_make_file_zap_composition( const char *filename, int len_filename)
 
 DWYCOEXPORT
 int
-dwyco_copy_out_unsaved_file_zap(DWYCO_UNFETCHED_MSG_LIST m, const char *dst_filename)
+dwyco_copy_out_saved_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename)
 {
     vc& v = *(vc *)m;
     vc body = v[0];
@@ -5578,18 +5578,14 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     vc attachment;
     vc from;
 
+    vc iuid = sql_get_uid_from_mid(msg_id);
+    if(iuid.is_nil())
+        return 0;
+    iuid = from_hex(iuid);
+
     if(uid == 0)
     {
-        vc id(VC_BSTRING, msg_id, strlen(msg_id));
-        vc summary = find_cur_msg(id);
-        if(!summary.is_nil())
-            return 0;
-
-//        if(summary[QM_IS_DIRECT].is_nil())
-//        {
-//            return 0;
-//        }
-        body = direct_to_body(id);
+        body = direct_to_body(msg_id);
         if(body.is_nil())
         {
             return 0;
@@ -5598,6 +5594,11 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     else
     {
         vc u(VC_BSTRING, uid, len_uid);
+        if(u != iuid)
+        {
+            oopanic("bad uid handling");
+            // NOTREACHED
+        }
         body = load_body_by_id(u, msg_id);
         if(body.is_nil())
             return 0;
@@ -6789,7 +6790,29 @@ DWYCOEXPORT
 int
 dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
 {
-    vc u(VC_BSTRING, uid, len_uid);
+    vc iuid = sql_get_uid_from_mid(msg_id);
+    if(iuid.is_nil())
+        return 0;
+    iuid = from_hex(iuid);
+    vc u;
+    if(len_uid != 0)
+    {
+        u = vc(VC_BSTRING, uid, len_uid);
+        if(u != iuid)
+        {
+            oopanic("some problem with uid handling");
+            // NOTREACHED
+        }
+    }
+    else
+        u = iuid;
+
+    if(u.is_nil() || u.len() == 0)
+    {
+        oopanic("really bad problem with uid");
+        // NOTREACHED
+    }
+
     vc body = load_body_by_id(u, msg_id);
     if(body.is_nil())
     {
@@ -6872,6 +6895,7 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
         }
         return 1;
     }
+
     return 0;
 #if 0
     // message has been fetched, and is unsaved
@@ -6894,9 +6918,11 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
         else
             *what_out = DWYCO_SPECIAL_USER_DEFINED;
     }
+#endif
     return 1;
 #endif
 }
+
 
 #if 0
 

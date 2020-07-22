@@ -1335,7 +1335,7 @@ DWYCOEXPORT
 dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out);
 
 int DWYCOEXPORT
-dwyco_copy_out_unsaved_file_zap(DWYCO_UNFETCHED_MSG_LIST m, const char *dst_filename);
+dwyco_copy_out_saved_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
 
 int DWYCOEXPORT dwyco_is_file_zap(int compid);
 
