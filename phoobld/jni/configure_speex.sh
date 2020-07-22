@@ -3,6 +3,14 @@ pushd `dirname $0`
 . settings.sh
 . ndk_autoconf.sh
 
+# asm is currently only for arm32
+if [ $NDK_ABI = "arm64" ]
+then
+	disable_neon="--disable-neon"
+else
+	disable_neon=""
+fi
+
 export CFLAGS="-fPIC -DANDROID"
 
 thisdir=`pwd`
@@ -28,6 +36,9 @@ autoreconf -if
 --enable-static \
 --with-ogg=$oggdir \
 --with-vorbis=$vorbisdir \
---enable-fixed-point
+--enable-fixed-point \
+--disable-examples \
+$disable_neon
+
 
 popd;popd
