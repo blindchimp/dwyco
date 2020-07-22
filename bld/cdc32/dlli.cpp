@@ -5740,7 +5740,10 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
         return 0;
     // i give up trying to find the right header for MAX_INT32 blahblah, sheesh
     if(s.st_size >= (1 << 30))
+    {
+        close(fd);
         return 0;
+    }
     int sz = s.st_size;
     if(sz > max_out)
         sz = max_out;
@@ -5748,10 +5751,12 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     if(read(fd, buf, sz) != sz)
     {
         delete [] buf;
+        close(fd);
         return 0;
     }
     *buf_out = buf;
     *buf_len_out = sz;
+    close(fd);
     return 1;
 }
 
