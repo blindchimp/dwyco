@@ -1335,7 +1335,7 @@ DWYCOEXPORT
 dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out);
 
 int DWYCOEXPORT
-dwyco_copy_out_saved_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
+dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
 
 int DWYCOEXPORT dwyco_is_file_zap(int compid);
 
@@ -1375,7 +1375,7 @@ int DWYCOEXPORT dwyco_zap_still_active(int compid);
 int DWYCOEXPORT dwyco_kill_message(const char *pers_id, int len_pers_id);
 
 // functions for just viewing a zap message attachment
-int DWYCOEXPORT dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int len_uid, int unsaved);
+int DWYCOEXPORT dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int len_uid, int qd);
 int DWYCOEXPORT dwyco_make_zap_view_file(const char *filename);
 int DWYCOEXPORT dwyco_make_zap_view_file_raw(const char *filename);
 int DWYCOEXPORT dwyco_delete_zap_view(int viewid);

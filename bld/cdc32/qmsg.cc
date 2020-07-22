@@ -1647,13 +1647,13 @@ direct_to_body2(vc m)
 }
 
 vc
-direct_to_body(vc msgid)
+direct_to_body(vc msgid, vc& uid_out)
 {
     vc huid = sql_get_uid_from_mid(msgid);
     if(huid.is_nil())
         return vcnil;
-    vc uid = from_hex(huid);
-    return load_body_by_id(uid, msgid);
+    uid_out = from_hex(huid);
+    return load_body_by_id(uid_out, msgid);
 
 }
 
