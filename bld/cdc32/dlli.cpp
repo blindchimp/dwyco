@@ -2577,9 +2577,9 @@ dwyco_chat_update_call_accept()
 }
 
 #if 0
-DWYCOEXPORT
-int
-dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
+//DWYCOEXPORT
+//int
+//dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
 {
     vc u(VC_BSTRING, uid, len_uid);
     DwString a(display_asshole(u));
@@ -2589,9 +2589,9 @@ dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
     return 1;
 }
 
-DWYCOEXPORT
-int
-dwyco_get_ah2(const char *uid, int len_uid)
+//DWYCOEXPORT
+//int
+//dwyco_get_ah2(const char *uid, int len_uid)
 {
     vc u(VC_BSTRING, uid, len_uid);
 
@@ -5621,7 +5621,7 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
 // YOU MUST CALL dwyco_free_array on returned buffer
 DWYCOEXPORT
 int
-dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out)
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max)
 {
     vc body;
     vc attachment;
@@ -5700,8 +5700,8 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
         return 0;
     }
     int sz = s.st_size;
-    if(sz > max_out)
-        sz = max_out;
+    if(sz > max)
+        sz = max;
     char *buf = new char[sz];
     if(read(fd, buf, sz) != sz)
     {
@@ -7910,9 +7910,9 @@ dwyco_get_pals_only()
 // used if it can be found in the users folder.
 // setting text to 0 or compid to 0 will remove the msgid, and cause
 // autoreply to use a default msg.
-DWYCOEXPORT
-int
-dwyco_set_auto_reply_msg(const char *text, int len_text, int compid)
+//DWYCOEXPORT
+//int
+//dwyco_set_auto_reply_msg(const char *text, int len_text, int compid)
 {
     if(text == 0 || compid == 0)
     {

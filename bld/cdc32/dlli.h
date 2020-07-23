@@ -501,12 +501,12 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
 #ifdef DWYCO_ASSHAT
-int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
+//int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
 // use this version if you just want an integer back.
 // returns -1 if the asshat factor isn't valid yet
 // returns -2 if the users isn't registered and the trial as expired
 // otherwise returns an integer between 0 and 99 (inclusive)
-int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
+//int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
 #endif
 
 void DWYCOEXPORT dwyco_trace_init();
@@ -1325,9 +1325,8 @@ dwyco_copy_out_file_zap(
     const char *dst_filename
 );
 
-int
-DWYCOEXPORT
-dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out);
+int DWYCOEXPORT
+dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max);
 
 int DWYCOEXPORT
 dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
