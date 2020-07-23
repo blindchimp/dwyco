@@ -1680,7 +1680,7 @@ add_msg(vc vec, vc item)
     // values in the message summaries (maybe that should change)
     // so in order to present the messages in some kind of reasonable
     // time order, we insert them in order by date sent... as a side
-    // effect, the list of unsaved messages will be presented to
+    // effect, the list of unfetched messages will be presented to
     // the caller and if they just present it in order, it will look ok.
     // otherwise, if we don't do this, the messages will appear in random
     // order on startup (they are just loaded from the inbox in whatever order

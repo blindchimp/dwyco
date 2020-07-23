@@ -5305,10 +5305,6 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
         else
             na += ".fle";
         s2 += (const char *)attachment;
-        // note: if it is an unsaved message, the
-        // attachment is found in the top level
-        // directory, unlike saved messages where
-        // they are filed in the user folder.
         if(!CopyFile(newfn(s2).c_str(), newfn(na).c_str(), 0))
         {
             GRTLOG("make_zap_forward: cant copy %s to %s", newfn(s2).c_str(), newfn(na).c_str());
@@ -5530,11 +5526,6 @@ dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename)
     }
 #endif
 
-
-    // note: if it is an unsaved message, the
-    // attachment is found in the top level
-    // directory, unlike saved messages where
-    // they are filed in the user folder.
     if(!CopyFile(newfn((const char *)attachment).c_str(), dst_filename, 0))
     {
         // hmmm, since we might not have generated the
@@ -5609,13 +5600,8 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     }
 #endif
 
-
     s2 += (const char *)attachment;
 
-    // note: if it is an unsaved message, the
-    // attachment is found in the top level
-    // directory, unlike saved messages where
-    // they are filed in the user folder.
     if(!CopyFile(newfn(s2).c_str(), dst_filename, 0))
     {
         // hmmm, since we might not have generated the
@@ -6796,9 +6782,6 @@ dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len
     return 1;
 }
 
-// the idea of "unsaved" vs "saved" should be changed to
-// "fetched" vs "unfetched", since all messages are "saved" now.
-
 DWYCOEXPORT
 int
 dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid)
@@ -7202,39 +7185,6 @@ dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out
     return 0;
 }
 
-#if 0
-DWYCOEXPORT
-int
-dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
-{
-
-    vc id(VC_BSTRING, msg_id, strlen(msg_id));
-    vc summary = find_cur_msg(id);
-    if(summary.is_nil())
-    {
-        GRTLOG("unsaved_message_to_body: cant find summary for %s", msg_id, 0);
-        return 0;
-    }
-    vc &ret = *new vc(VC_VECTOR);
-
-    if(summary[QM_IS_DIRECT].is_nil())
-    {
-        delete &ret;
-        GRTLOG("unsaved_message_to_body: cant convert an unfetched server summary to a body %s", msg_id, 0);
-        return 0;
-    }
-
-    ret[0] = direct_to_body(id);
-    if(ret[0].is_nil())
-    {
-        delete &ret;
-        GRTLOG("unsaved_message_to_body: cant convert %s to body (msg id can't be found)", msg_id, 0);
-        return 0;
-    }
-    *list_out = (DWYCO_SAVED_MSG_LIST)&ret;
-    return 1;
-}
-#endif
 
 // note: this function is pretty defunct, it assumes you are using
 // simple 8bit ascii and won't generally work with utf8/unicode type

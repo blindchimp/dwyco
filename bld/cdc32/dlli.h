@@ -704,8 +704,6 @@ int DWYCOEXPORT dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char 
 int DWYCOEXPORT dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int uid_len, int load_sent);
 int DWYCOEXPORT dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id);
-// this doesn't make sense anymore
-//int DWYCOEXPORT dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
@@ -828,9 +826,6 @@ void DWYCOEXPORT dwyco_clear_pal_auths();
 //
 // also, call this function when you get a "palrej" message
 //
-// if uid == 0, msg_id must refer to an unsaved msg that has been fetched
-// from the server.
-// if uid != 0, msg_id must refer to a saved msg from uid (NOTE: this is broken)
 int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *msg_id, int add_them);
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
@@ -1102,7 +1097,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 
 // returns 1 if it is special, and what_out will
 // be set to one of the following
-// if uid == 0, msg_id must refer to an unsaved msg. if the msg hasn't been
+// if uid == 0, msg_id must refer to an unfetched msg. if the msg hasn't been
 // fetched from the server, what_out will be one of the *SUMMARY* types.
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
 int DWYCOEXPORT dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
@@ -1304,7 +1299,7 @@ int DWYCOEXPORT dwyco_make_zap_composition_raw(const char *filename, const char 
 // WARNING: dup-ing should only be used in very specific cases.
 int DWYCOEXPORT dwyco_dup_zap_composition(int compid);
 int DWYCOEXPORT dwyco_make_forward_zap_composition(
-    const char *uid, // must be 0 to forward unsaved message, uid for saved messages
+    const char *uid,
     int len_uid,
     const char *msg_id,
     int strip_forward_text
