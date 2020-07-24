@@ -657,7 +657,6 @@ static DwycoCallAppearanceCallback call_accepted_callback;
 static DwycoZapAppearanceCallback zap_appearance_callback;
 static DwycoAutoUpdateStatusCallback autoupdate_status_callback;
 DwycoStatusCallback dbg_msg_callback;
-//static DwycoStatusCallback unregister_callback;
 static DwycoServerLoginCallback login_callback;
 //DwycoPalAuthCallback pal_auth_callback;
 DwycoEmergencyCallback dwyco_emergency_callback;
@@ -1065,16 +1064,6 @@ dwyco_set_system_event_callback(DwycoSystemEventCallback cb)
 {
     dwyco_system_event_callback = cb;
 }
-
-
-#if 0
-DWYCOEXPORT
-void
-dwyco_set_unregister_callback(DwycoStatusCallback cb)
-{
-    unregister_callback = cb;
-}
-#endif
 
 
 DWYCOEXPORT
@@ -2859,7 +2848,7 @@ void
 dwyco_line_from_keyboard(int id, const char *line, int len)
 {
     update_activity();
-    DLLKeyAcquire *a = (DLLKeyAcquire *)TheMsgAq;
+    DLLKeyAcquire *a = dynamic_cast<DLLKeyAcquire *>(TheMsgAq);
     if(a)
         a->add_input(line, len);
 
@@ -6826,29 +6815,28 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc& v = *(vc *)ml;
     vc summary = v[0];
-    //if(summary[QM_IS_DIRECT].is_nil())
+
+    // server message waiting to be fetched
+    if(summary[QM_SPECIAL_TYPE].is_nil())
+        return 0;
+    vc what = summary[QM_SPECIAL_TYPE];
+    if(what_out)
     {
-        // server message waiting to be fetched
-        if(summary[QM_SPECIAL_TYPE].is_nil())
-            return 0;
-        vc what = summary[QM_SPECIAL_TYPE];
-        if(what_out)
-        {
-            if(what == palreq)
-                *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
-            else if(what == palok)
-                *what_out = DWYCO_SUMMARY_PAL_OK;
-            else if(what == palrej)
-                *what_out = DWYCO_SUMMARY_PAL_REJECT;
-            else if(what == dlv)
-                *what_out = DWYCO_SUMMARY_DELIVERED;
-            else if(what == user)
-                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-            else
-                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-        }
-        return 1;
+        if(what == palreq)
+            *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
+        else if(what == palok)
+            *what_out = DWYCO_SUMMARY_PAL_OK;
+        else if(what == palrej)
+            *what_out = DWYCO_SUMMARY_PAL_REJECT;
+        else if(what == dlv)
+            *what_out = DWYCO_SUMMARY_DELIVERED;
+        else if(what == user)
+            *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
+        else
+            *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
     }
+    return 1;
+
 
     return 0;
 #if 0
