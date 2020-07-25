@@ -127,7 +127,7 @@ int decode_no_forward_attachment_qqm(vc m);
 int can_forward(vc body, vc att_dir);
 DwString simple_diagnostics();
 vc gen_hash(DwString filename);
-vc direct_to_body(vc msgid);
+vc direct_to_body(vc msgid, vc &uid_out);
 vc direct_to_body2(vc dm);
 int pal_add(vc u);
 int pal_del(vc u, int norelogin = 0);
@@ -166,8 +166,8 @@ void clean_cruft();
 #define AUTH_PROFILE_FAILED 1
 #define AUTH_PROFILE_NO_INFO 2
 
-// this is the summary info sent from the
-// server
+// this is the summary info sent from the server
+// use these to index a DWYCO_UNFETCHED_MSG_LIST
 
 #define QM_FROM 0
 #define QM_LEN 1
@@ -191,6 +191,7 @@ void clean_cruft();
 #define QM_LOGICAL_CLOCK 11
 
 // message bodies as stored on client
+// use these to index a DWYCO_SAVED_MSG_LIST
 
 #define QM_BODY_ID 0
 #define QM_BODY_FROM 1
