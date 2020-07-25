@@ -6844,48 +6844,17 @@ DWYCOEXPORT
 int
 dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
 {
-
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc& v = *(vc *)ml;
     vc summary = v[0];
-    //if(summary[QM_IS_DIRECT].is_nil())
-    {
-        // server message waiting to be fetched
-        if(summary[QM_SPECIAL_TYPE].is_nil())
-            return 0;
-        vc what = summary[QM_SPECIAL_TYPE];
-        const char *whats = (const char *)what;
-        if(what_out)
-        {
-            struct special_map *sm = &Sm[0];
-            while(sm->name)
-            {
-                if(strcmp(sm->name, whats) == 0)
-                {
-                    *what_out = sm->code;
-                    return 1;
-                }
-                ++sm;
-            }
-            *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-        }
-        return 1;
-    }
 
-
-    // message has been fetched, and is unsaved
-    vc body = direct_to_body2(summary);
-    if(body.is_nil())
+    // server message waiting to be fetched
+    if(summary[QM_SPECIAL_TYPE].is_nil())
         return 0;
-    vc sv = body[QM_BODY_SPECIAL_TYPE];
-    if(sv.is_nil())
-        return 0;
-    vc what = sv[0];
+    vc what = summary[QM_SPECIAL_TYPE];
     const char *whats = (const char *)what;
-    // args are in a vector at sv[1]
     if(what_out)
     {
-        if(what == palreq)
         struct special_map *sm = &Sm[0];
         while(sm->name)
         {
@@ -6897,10 +6866,8 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
             ++sm;
         }
         *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-
     }
     return 1;
-
 }
 
 
@@ -6955,13 +6922,6 @@ dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_o
     *len_out = 0;
     vc& v = *(vc *)ml;
     vc body = v[0];
-    vc summary = v[0];
-    if(summary[QM_IS_DIRECT].is_nil())
-        return 0; // unfetched server message doesn't have enough info on it
-    vc body;
-    body = direct_to_body(summary[QM_ID]);
-    if(body.is_nil())
-        return 0;
 
     vc sv = body[QM_BODY_SPECIAL_TYPE];
 //    if(sv[0] != vc("user"))
@@ -6991,7 +6951,6 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
 
 DWYCOEXPORT
 int
-dwyco_is_special_message(const char *msg_id, int *what_out)
 dwyco_handle_join(const char *mid)
 {
     vc password = "foo";
@@ -7000,7 +6959,7 @@ dwyco_handle_join(const char *mid)
         return 0;
     simple_scoped ql(l);
     int jstate;
-    if(!dwyco_is_special_message(0, 0, mid, &jstate))
+    if(!dwyco_is_special_message(mid, &jstate))
         return 0;
     const char *b;
     int len;
@@ -7032,53 +6991,42 @@ dwyco_handle_join(const char *mid)
 
 }
 
-
-// these is_special functions need to be redone to work properly with
-// the new msg save system. since messages are now immediately saved (there is
-// no "unsaved" state), the special message contents are stored in
-// the usual message format (previously, it was stripped out before
-// it was saved.)
-
 DWYCOEXPORT
 int
-dwyco_is_special_message(const char *uid, int , const char *msg_id, int *what_out)
+dwyco_is_special_message(const char *msg_id, int *what_out)
 {
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc mid(VC_BSTRING, msg_id, strlen(msg_id));
-    if(uid == 0)
+
+    vc summary = find_cur_msg(mid);
+    if(!summary.is_nil())
     {
-        vc summary = find_cur_msg(mid);
-        if(summary.is_nil())
-            return 0;
         vc what = summary[QM_SPECIAL_TYPE];
+        if(what.is_nil())
+            return 0;
         if(what_out)
         {
-            // server message waiting to be fetched
-            if(summary[QM_SPECIAL_TYPE].is_nil())
-                return 0;
-            vc what = summary[QM_SPECIAL_TYPE];
             const char *whats = (const char *)what;
-            if(what_out)
+
+            struct special_map *sm = &Sm[0];
+            while(sm->name)
             {
-                struct special_map *sm = &Sm[0];
-                while(sm->name)
+                if(strcmp(sm->name, whats) == 0)
                 {
-                    if(strcmp(sm->name, whats) == 0)
-                    {
-                        *what_out = sm->code;
-                        return 1;
-                    }
-                    ++sm;
+                    *what_out = sm->code;
+                    return 1;
                 }
-                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
+                ++sm;
             }
-            return 1;
+            *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
         }
+        return 1;
     }
 
 
     // message has been fetched
-    vc body = direct_to_body(mid);
+    vc uid_out;
+    vc body = direct_to_body(mid, uid_out);
     vc sv = body[QM_BODY_SPECIAL_TYPE];
     if(sv.is_nil())
         return 0;
@@ -7098,39 +7046,10 @@ dwyco_is_special_message(const char *uid, int , const char *msg_id, int *what_ou
             ++sm;
         }
         *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-
     }
     return 1;
 
 }
-#if 0
-else
-{
-    // saved msg
-    vc u(VC_BSTRING, uid, len_uid);
-    vc body = load_body_by_id(u, id);
-    if(body.is_nil())
-        return 0;
-    vc sv = body[QM_BODY_SPECIAL_TYPE];
-    if(sv.is_nil())
-        return 0;
-    vc what = sv[0];
-    // args are in a vector at sv[1]
-    if(what_out)
-    {
-        if(what == palreq)
-            *what_out = DWYCO_PAL_AUTH_REQ;
-        else if(what == palok)
-            *what_out = DWYCO_PAL_OK;
-        else if(what == palrej)
-            *what_out = DWYCO_PAL_REJECT;
-        else
-            *what_out = DWYCO_SPECIAL_USER_DEFINED;
-    }
-    return 1;
-}
-#endif
-
 
 
 #if 0
