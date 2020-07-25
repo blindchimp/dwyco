@@ -13,7 +13,17 @@
 
 #ifdef OBJTRACK
 #include "dwmapr.h"
-#include "bonehead.h"
+
+class Int
+{
+public:
+	int i;
+	Int() {i = 0;}
+	operator int() const {return i;}
+	Int(int i) {this->i = i;}
+	int operator==(const Int& i2) const {return i == i2.i;}
+	unsigned long hashValue() const {return i;}
+};
 struct TrackInfo
 {
 	int serial;

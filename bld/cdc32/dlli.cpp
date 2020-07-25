@@ -660,7 +660,6 @@ static DwycoCallAppearanceCallback call_accepted_callback;
 static DwycoZapAppearanceCallback zap_appearance_callback;
 static DwycoAutoUpdateStatusCallback autoupdate_status_callback;
 DwycoStatusCallback dbg_msg_callback;
-//static DwycoStatusCallback unregister_callback;
 static DwycoServerLoginCallback login_callback;
 //DwycoPalAuthCallback pal_auth_callback;
 DwycoEmergencyCallback dwyco_emergency_callback;
@@ -1068,16 +1067,6 @@ dwyco_set_system_event_callback(DwycoSystemEventCallback cb)
 {
     dwyco_system_event_callback = cb;
 }
-
-
-#if 0
-DWYCOEXPORT
-void
-dwyco_set_unregister_callback(DwycoStatusCallback cb)
-{
-    unregister_callback = cb;
-}
-#endif
 
 
 DWYCOEXPORT
@@ -2592,9 +2581,9 @@ dwyco_chat_update_call_accept()
 }
 
 #if 0
-DWYCOEXPORT
-int
-dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
+//DWYCOEXPORT
+//int
+//dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
 {
     vc u(VC_BSTRING, uid, len_uid);
     DwString a(display_asshole(u));
@@ -2604,9 +2593,9 @@ dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
     return 1;
 }
 
-DWYCOEXPORT
-int
-dwyco_get_ah2(const char *uid, int len_uid)
+//DWYCOEXPORT
+//int
+//dwyco_get_ah2(const char *uid, int len_uid)
 {
     vc u(VC_BSTRING, uid, len_uid);
 
@@ -2874,7 +2863,7 @@ void
 dwyco_line_from_keyboard(int id, const char *line, int len)
 {
     update_activity();
-    DLLKeyAcquire *a = (DLLKeyAcquire *)TheMsgAq;
+    DLLKeyAcquire *a = dynamic_cast<DLLKeyAcquire *>(TheMsgAq);
     if(a)
         a->add_input(line, len);
 
@@ -5250,7 +5239,7 @@ dwyco_dup_zap_composition(int compid)
 
 }
 
-// if uid == 0, then the message is an unsaved message
+// if uid == 0, we try to infer the uid from the mid.
 // otherwise, the msg_id is assumed to be filed in the
 // uid.usr folder.
 DWYCOEXPORT
@@ -5262,6 +5251,7 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     vc attachment;
     vc from;
 
+    vc u;
     if(uid == 0)
     {
         vc id(VC_BSTRING, msg_id, strlen(msg_id));
@@ -5269,16 +5259,10 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
         if(!summary.is_nil())
         {
             GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
-            //GRTLOG("make_forward_zap: cant find unsaved msgid %s", msg_id, 0);
             return 0;
         }
 
-//        if(summary[QM_IS_DIRECT].is_nil())
-//        {
-//            GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
-//            return 0;
-//        }
-        body = direct_to_body(id);
+        body = direct_to_body(id, u);
         if(body.is_nil())
         {
             GRTLOG("make_forward_zap: cant find id %s", msg_id, 0);
@@ -5287,7 +5271,7 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     }
     else
     {
-        vc u(VC_BSTRING, uid, len_uid);
+        u = vc(VC_BSTRING, uid, len_uid);
         body = load_body_by_id(u, msg_id);
         if(body.is_nil())
         {
@@ -5310,13 +5294,8 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     DwString s2;
     if(body[QM_BODY_SENT].is_nil())
         s2 = (const char *)to_hex(from);
-    else if(uid == 0)
-    {
-        GRTLOG("make_forward_zap: panic: shouldnt get here (uid == 0)", 0, 0);
-        oopanic("bad call to forward");
-    }
     else
-        s2 = (const char *)to_hex(vc(VC_BSTRING, uid, len_uid));
+        s2 = (const char *)to_hex(u);
 
     DwString na((const char *)to_hex(gen_id()));
 
@@ -5330,13 +5309,9 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
         else
             na += ".fle";
         s2 += (const char *)attachment;
-        // note: if it is an unsaved message, the
-        // attachment is found in the top level
-        // directory, unlike saved messages where
-        // they are filed in the user folder.
-        if(!CopyFile(newfn((uid == 0 ? (const char *)attachment : s2.c_str())).c_str(), newfn(na).c_str(), 0))
+        if(!CopyFile(newfn(s2).c_str(), newfn(na).c_str(), 0))
         {
-            GRTLOG("make_zap_forward: cant copy %s to %s", newfn((uid == 0 ? (const char *)attachment : s2.c_str())).c_str(), newfn(na).c_str());
+            GRTLOG("make_zap_forward: cant copy %s to %s", newfn(s2).c_str(), newfn(na).c_str());
             GRTLOG("make_zap_forward: deleting %s", newfn(na).c_str(), 0);
             DeleteFile(newfn(na).c_str());
             return 0;
@@ -5345,22 +5320,13 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
 
     // determine if we can play the msg associated with
     // the forwarded msgs. if not, disallow the forward.
-    if(uid == 0)
+
+    if(any_no_forward(body) && verify_chain(body, 1, vcnil, att_dir.c_str()) != VERF_AUTH_OK)
     {
-        if(any_no_forward(body) && verify_chain(body, 1, vcnil, vc(".")) != VERF_AUTH_OK)
-        {
-            GRTLOG("make_forward_zap: failed checksum or no forward flag speced (%s, unsaved msg)", msg_id, 0);
-            return 0;
-        }
+        GRTLOG("make_forward_zap: failed checksum or no forward flag speced (%s, saved msg)", msg_id, 0);
+        return 0;
     }
-    else
-    {
-        if(any_no_forward(body) && verify_chain(body, 1, vcnil, att_dir.c_str()) != VERF_AUTH_OK)
-        {
-            GRTLOG("make_forward_zap: failed checksum or no forward flag speced (%s, saved msg)", msg_id, 0);
-            return 0;
-        }
-    }
+
 
     TMsgCompose *m = new TMsgCompose;
     //
@@ -5540,7 +5506,7 @@ dwyco_make_file_zap_composition( const char *filename, int len_filename)
 
 DWYCOEXPORT
 int
-dwyco_copy_out_unsaved_file_zap(DWYCO_UNFETCHED_MSG_LIST m, const char *dst_filename)
+dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename)
 {
     vc& v = *(vc *)m;
     vc body = v[0];
@@ -5568,11 +5534,6 @@ dwyco_copy_out_unsaved_file_zap(DWYCO_UNFETCHED_MSG_LIST m, const char *dst_file
     }
 #endif
 
-
-    // note: if it is an unsaved message, the
-    // attachment is found in the top level
-    // directory, unlike saved messages where
-    // they are filed in the user folder.
     if(!CopyFile(newfn((const char *)attachment).c_str(), dst_filename, 0))
     {
         // hmmm, since we might not have generated the
@@ -5586,7 +5547,7 @@ dwyco_copy_out_unsaved_file_zap(DWYCO_UNFETCHED_MSG_LIST m, const char *dst_file
     return 1;
 }
 
-// if uid == 0, then the message is an unsaved message
+// if uid == 0, try to infer uid from mid.
 // otherwise, the msg_id is assumed to be filed in the
 // uid.usr folder.
 DWYCOEXPORT
@@ -5597,18 +5558,11 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     vc attachment;
     vc from;
 
+    vc iuid;
+
     if(uid == 0)
     {
-        vc id(VC_BSTRING, msg_id, strlen(msg_id));
-        vc summary = find_cur_msg(id);
-        if(!summary.is_nil())
-            return 0;
-
-//        if(summary[QM_IS_DIRECT].is_nil())
-//        {
-//            return 0;
-//        }
-        body = direct_to_body(id);
+        body = direct_to_body(msg_id, iuid);
         if(body.is_nil())
         {
             return 0;
@@ -5620,6 +5574,7 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
         body = load_body_by_id(u, msg_id);
         if(body.is_nil())
             return 0;
+        iuid = u;
     }
 
     from = body[QM_BODY_FROM];
@@ -5634,10 +5589,8 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     DwString s2;
     if(body[QM_BODY_SENT].is_nil())
         s2 = (const char *)to_hex(from);
-    else if(uid == 0)
-        oopanic("bad call to copyout");
     else
-        s2 = (const char *)to_hex(vc(VC_BSTRING, uid, len_uid));
+        s2 = (const char *)to_hex(iuid);
 
     s2 += ".usr" DIRSEPSTR;
     DwString att_dir = s2;
@@ -5655,14 +5608,9 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     }
 #endif
 
-
     s2 += (const char *)attachment;
 
-    // note: if it is an unsaved message, the
-    // attachment is found in the top level
-    // directory, unlike saved messages where
-    // they are filed in the user folder.
-    if(!CopyFile(newfn((uid == 0 ? (const char *)attachment : s2.c_str())).c_str(), dst_filename, 0))
+    if(!CopyFile(newfn(s2).c_str(), dst_filename, 0))
     {
         // hmmm, since we might not have generated the
         // file in the first place, and it might be unwritable but
@@ -5675,13 +5623,13 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     return 1;
 }
 
-// if uid == 0, then the message is an unsaved message
+// if uid == 0, try to infer uid from mid
 // otherwise, the msg_id is assumed to be filed in the
 // uid.usr folder.
 // YOU MUST CALL dwyco_free_array on returned buffer
 DWYCOEXPORT
 int
-dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out)
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max)
 {
     vc body;
     vc attachment;
@@ -5689,6 +5637,7 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     // keep debugging from crashing
     *buf_out = "";
     *buf_len_out = 0;
+    vc u;
 
     if(uid == 0)
     {
@@ -5696,12 +5645,7 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
         vc summary = find_cur_msg(id);
         if(!summary.is_nil())
             return 0;
-
-//        if(summary[QM_IS_DIRECT].is_nil())
-//        {
-//            return 0;
-//        }
-        body = direct_to_body(id);
+        body = direct_to_body(id, u);
         if(body.is_nil())
         {
             return 0;
@@ -5709,7 +5653,7 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     }
     else
     {
-        vc u(VC_BSTRING, uid, len_uid);
+        u = vc (VC_BSTRING, uid, len_uid);
         body = load_body_by_id(u, msg_id);
         if(body.is_nil())
             return 0;
@@ -5727,10 +5671,8 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     DwString s2;
     if(body[QM_BODY_SENT].is_nil())
         s2 = (const char *)to_hex(from);
-    else if(uid == 0)
-        oopanic("bad call to copyout");
     else
-        s2 = (const char *)to_hex(vc(VC_BSTRING, uid, len_uid));
+        s2 = (const char *)to_hex(u);
 
     s2 += ".usr" DIRSEPSTR;
     DwString att_dir = s2;
@@ -5751,7 +5693,7 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
 
     s2 += (const char *)attachment;
 
-    DwString src = newfn((uid == 0 ? (const char *)attachment : s2.c_str()));
+    DwString src = newfn(s2);
 
     struct stat s;
     if(stat(src.c_str(), &s) == -1)
@@ -5761,18 +5703,23 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
         return 0;
     // i give up trying to find the right header for MAX_INT32 blahblah, sheesh
     if(s.st_size >= (1 << 30))
+    {
+        close(fd);
         return 0;
+    }
     int sz = s.st_size;
-    if(sz > max_out)
-        sz = max_out;
+    if(sz > max)
+        sz = max;
     char *buf = new char[sz];
     if(read(fd, buf, sz) != sz)
     {
         delete [] buf;
+        close(fd);
         return 0;
     }
     *buf_out = buf;
     *buf_len_out = sz;
+    close(fd);
     return 1;
 }
 
@@ -6154,7 +6101,7 @@ can_play_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int un
 //
 DWYCOEXPORT
 int
-dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_len, int unsaved)
+dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_len, int qd)
 {
 #if 0
     if(Auto_authenticate)
@@ -6167,7 +6114,7 @@ dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_le
     if(recip_uid != 0)
     {
         ruid = to_hex(vc(VC_BSTRING, recip_uid, uid_len));
-        if(!can_play_body(list, recip_uid, uid_len, unsaved))
+        if(!can_play_body(list, recip_uid, uid_len, 0))
         {
             GRTLOG("make_zap_view: cant play body (either authentication failed or msg is corrupt or tampered-with (recip_uid %s)", (const char *)ruid, 0);
             return 0;
@@ -6194,7 +6141,7 @@ dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_le
     m->play_button_enabled = 1;
     m->stop_button_enabled = 0;
     DwString s;
-    if(!unsaved)
+    if(!qd)
     {
         if(v[0][QM_BODY_SENT].is_nil())
             s = (const char *)uid_to_dir(v[0][QM_BODY_FROM]);
@@ -6808,7 +6755,29 @@ DWYCOEXPORT
 int
 dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
 {
-    vc u(VC_BSTRING, uid, len_uid);
+    vc iuid = sql_get_uid_from_mid(msg_id);
+    if(iuid.is_nil())
+        return 0;
+    iuid = from_hex(iuid);
+    vc u;
+    if(len_uid != 0)
+    {
+        u = vc(VC_BSTRING, uid, len_uid);
+        if(u != iuid)
+        {
+            oopanic("some problem with uid handling");
+            // NOTREACHED
+        }
+    }
+    else
+        u = iuid;
+
+    if(u.is_nil() || u.len() == 0)
+    {
+        oopanic("really bad problem with uid");
+        // NOTREACHED
+    }
+
     vc body = load_body_by_id(u, msg_id);
     if(body.is_nil())
     {
@@ -6820,9 +6789,6 @@ dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len
     *list_out = (DWYCO_SAVED_MSG_LIST)&ret;
     return 1;
 }
-
-// the idea of "unsaved" vs "saved" should be changed to
-// "fetched" vs "unfetched", since all messages are "saved" now.
 
 DWYCOEXPORT
 int
@@ -6845,7 +6811,7 @@ dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_
     vc summary = find_cur_msg(id);
     if(summary.is_nil())
     {
-        GRTLOG("get_unsaved_message: cant find summary msg %s", msg_id, 0);
+        GRTLOG("get_unfetched_message: cant find summary msg %s", msg_id, 0);
         return 0;
     }
     vc &ret = *new vc(VC_VECTOR);
@@ -6919,6 +6885,7 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
     // args are in a vector at sv[1]
     if(what_out)
     {
+        if(what == palreq)
         struct special_map *sm = &Sm[0];
         while(sm->name)
         {
@@ -6935,6 +6902,7 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
     return 1;
 
 }
+
 
 #if 0
 
@@ -6980,13 +6948,13 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
 
 DWYCOEXPORT
 int
-dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out)
+dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_out)
 {
     // this keeps the debugging stuff from crashing
     *str_out = "";
     *len_out = 0;
-#if 0
     vc& v = *(vc *)ml;
+    vc body = v[0];
     vc summary = v[0];
     if(summary[QM_IS_DIRECT].is_nil())
         return 0; // unfetched server message doesn't have enough info on it
@@ -7008,7 +6976,6 @@ dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *l
     memcpy(b, (const char *)payload, payload.len());
     *str_out = b;
     *len_out = payload.len();
-#endif
     return 1;
 }
 
@@ -7024,6 +6991,7 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
 
 DWYCOEXPORT
 int
+dwyco_is_special_message(const char *msg_id, int *what_out)
 dwyco_handle_join(const char *mid)
 {
     vc password = "foo";
@@ -7082,7 +7050,8 @@ dwyco_is_special_message(const char *uid, int , const char *msg_id, int *what_ou
         vc summary = find_cur_msg(mid);
         if(summary.is_nil())
             return 0;
-        //if(summary[QM_IS_DIRECT].is_nil())
+        vc what = summary[QM_SPECIAL_TYPE];
+        if(what_out)
         {
             // server message waiting to be fetched
             if(summary[QM_SPECIAL_TYPE].is_nil())
@@ -7158,6 +7127,7 @@ else
         else
             *what_out = DWYCO_SPECIAL_USER_DEFINED;
     }
+    return 1;
 }
 #endif
 
@@ -7294,39 +7264,6 @@ dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out
     return 0;
 }
 
-#if 0
-DWYCOEXPORT
-int
-dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
-{
-
-    vc id(VC_BSTRING, msg_id, strlen(msg_id));
-    vc summary = find_cur_msg(id);
-    if(summary.is_nil())
-    {
-        GRTLOG("unsaved_message_to_body: cant find summary for %s", msg_id, 0);
-        return 0;
-    }
-    vc &ret = *new vc(VC_VECTOR);
-
-    if(summary[QM_IS_DIRECT].is_nil())
-    {
-        delete &ret;
-        GRTLOG("unsaved_message_to_body: cant convert an unfetched server summary to a body %s", msg_id, 0);
-        return 0;
-    }
-
-    ret[0] = direct_to_body(id);
-    if(ret[0].is_nil())
-    {
-        delete &ret;
-        GRTLOG("unsaved_message_to_body: cant convert %s to body (msg id can't be found)", msg_id, 0);
-        return 0;
-    }
-    *list_out = (DWYCO_SAVED_MSG_LIST)&ret;
-    return 1;
-}
-#endif
 
 // note: this function is pretty defunct, it assumes you are using
 // simple 8bit ascii and won't generally work with utf8/unicode type
@@ -8058,9 +7995,9 @@ dwyco_get_pals_only()
 // used if it can be found in the users folder.
 // setting text to 0 or compid to 0 will remove the msgid, and cause
 // autoreply to use a default msg.
-DWYCOEXPORT
-int
-dwyco_set_auto_reply_msg(const char *text, int len_text, int compid)
+//DWYCOEXPORT
+//int
+//dwyco_set_auto_reply_msg(const char *text, int len_text, int compid)
 {
     if(text == 0 || compid == 0)
     {

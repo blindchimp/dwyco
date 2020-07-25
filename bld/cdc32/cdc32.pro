@@ -40,7 +40,7 @@ DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYC
 message("cdc32 setup for rando")
 } else {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-#DEFINES += DWYCO_TRACE
+DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
 DEFINES += DWYCO_FIELD_DEBUG
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
@@ -262,7 +262,8 @@ aqext_android.cpp \
     dhgsetup.cpp \
     simplesql.cpp \
     grpmsg.cpp \
-    upnp.cpp
+    upnp.cpp \
+    aqkey.cpp
 
 HEADERS += \
     vccfg.h

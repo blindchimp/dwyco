@@ -13,29 +13,25 @@
 #define CDCCORE_STATIC
 #endif
 #if (defined(_Windows) || defined(_WIN32)) && !defined(CDCCORE_STATIC)
-#ifdef MINGW_CLIENT
-#define DWYCOEXPORT __declspec(dllexport) DWYCOCALLCONV
-#define DWYCOCALLCONV __cdecl
-#else
+
 #define DWYCOCALLCONV __stdcall
 #if defined(_MSC_VER) && defined(DWYCOIMPORT)
 #define DWYCOEXPORT __declspec(dllimport) DWYCOCALLCONV
 #else
 #define DWYCOEXPORT __declspec(dllexport) DWYCOCALLCONV
 #endif
-#endif
+
 #elif defined(CDCCORE_STATIC) && defined(_Windows)
+
 #define DWYCOCALLCONV
 #define DWYCOEXPORT
+
 #else
-// probably linux
-#ifdef MINGW_CLIENT
-#define DWYCOEXPORT __declspec(dllexport) DWYCOCALLCONV
-#define DWYCOCALLCONV __cdecl
-#else
+// probably linux-like
+
 #define DWYCOEXPORT
 #define DWYCOCALLCONV
-#endif
+
 #endif
 
 #ifdef DWYCO_APP_DEBUG
@@ -505,12 +501,12 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
 #ifdef DWYCO_ASSHAT
-int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
+//int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
 // use this version if you just want an integer back.
 // returns -1 if the asshat factor isn't valid yet
 // returns -2 if the users isn't registered and the trial as expired
 // otherwise returns an integer between 0 and 99 (inclusive)
-int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
+//int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
 #endif
 
 void DWYCOEXPORT dwyco_trace_init();
@@ -708,8 +704,6 @@ int DWYCOEXPORT dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char 
 int DWYCOEXPORT dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int uid_len, int load_sent);
 int DWYCOEXPORT dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id);
-// this doesn't make sense anymore
-//int DWYCOEXPORT dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
@@ -768,15 +762,26 @@ void DWYCOEXPORT dwyco_unset_all_msg_tag(const char *tag);
 // rest of the interface. this api is a bit sketchy so i'm not sure i want
 // to fix it. also note, setting a (tag, mid) pair will not be returned
 // here, because there wouldn't be an associated uid...
-#define DWYCO_TAGGED_MIDS_MID "001"
+
 #define DWYCO_TAGGED_MIDS_HEX_UID "000"
+#define DWYCO_TAGGED_MIDS_MID "001"
+
 int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 
+// this returns just mid's, no uids, in a single column
+// it will return msgs that have not been downloaded yet as well.
+int DWYCOEXPORT dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag);
+int DWYCOEXPORT dwyco_count_tag(const char *tag);
+
+// note: the following functions will not return a msg if it hasn't been
+// downloaded.
 int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
-int DWYCOEXPORT dwyco_count_tag(const char *tag);
+
+// INTERNAL API
+int DWYCOEXPORT dwyco_run_sql(const char *s, const char *a1, const char *a2, const char *a3);
 
 void DWYCOEXPORT dwyco_set_alert(const char *uid, int len_uid, int val);
 int DWYCOEXPORT dwyco_get_alert(const char *uid, int len_uid);
@@ -821,9 +826,6 @@ void DWYCOEXPORT dwyco_clear_pal_auths();
 //
 // also, call this function when you get a "palrej" message
 //
-// if uid == 0, msg_id must refer to an unsaved msg that has been fetched
-// from the server.
-// if uid != 0, msg_id must refer to a saved msg from uid (NOTE: this is broken)
 int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *msg_id, int add_them);
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
@@ -888,7 +890,6 @@ int DWYCOEXPORT dwyco_is_capturing_video();
 void DWYCOEXPORT dwyco_set_moron_dork_mode(int);
 int DWYCOEXPORT dwyco_get_moron_dork_mode();
 
-//void DWYCOEXPORT dwyco_simple_diagnostics(const char **res, int *len_res);
 void DWYCOEXPORT dwyco_network_diagnostics2(char **res, int *len_res);
 // results are in BITS/second, you can leave any of these pointers NULL
 // if you don't need that result.
@@ -1032,6 +1033,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_QM_BODY_SPECIAL_TYPE_AB "010001001"
 
 #define DWYCO_QM_BODY_FILE_ATTACHMENT "012"
+#define DWYCO_QM_BODY_LOGICAL_CLOCK "017"
 
 // DWYCO_MSG_IDX is an index of the saved messages for a particular UID.
 // The index is mostly-sorted in order of descending date.
@@ -1102,10 +1104,10 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 
 // returns 1 if it is special, and what_out will
 // be set to one of the following
-// if uid == 0, msg_id must refer to an unsaved msg. if the msg hasn't been
+// if uid == 0, msg_id must refer to an unfetched msg. if the msg hasn't been
 // fetched from the server, what_out will be one of the *SUMMARY* types.
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
-int DWYCOEXPORT dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
+int DWYCOEXPORT dwyco_is_special_message(const char *msg_id, int *what_out);
 int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
 int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out);
 
@@ -1308,7 +1310,7 @@ int DWYCOEXPORT dwyco_make_zap_composition_raw(const char *filename, const char 
 // WARNING: dup-ing should only be used in very specific cases.
 int DWYCOEXPORT dwyco_dup_zap_composition(int compid);
 int DWYCOEXPORT dwyco_make_forward_zap_composition(
-    const char *uid, // must be 0 to forward unsaved message, uid for saved messages
+    const char *uid,
     int len_uid,
     const char *msg_id,
     int strip_forward_text
@@ -1334,12 +1336,11 @@ dwyco_copy_out_file_zap(
     const char *dst_filename
 );
 
-int
-DWYCOEXPORT
-dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out);
+int DWYCOEXPORT
+dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max);
 
 int DWYCOEXPORT
-dwyco_copy_out_unsaved_file_zap(DWYCO_UNFETCHED_MSG_LIST m, const char *dst_filename);
+dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
 
 int DWYCOEXPORT dwyco_is_file_zap(int compid);
 
@@ -1379,7 +1380,7 @@ int DWYCOEXPORT dwyco_zap_still_active(int compid);
 int DWYCOEXPORT dwyco_kill_message(const char *pers_id, int len_pers_id);
 
 // functions for just viewing a zap message attachment
-int DWYCOEXPORT dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int len_uid, int unsaved);
+int DWYCOEXPORT dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int len_uid, int qd);
 int DWYCOEXPORT dwyco_make_zap_view_file(const char *filename);
 int DWYCOEXPORT dwyco_make_zap_view_file_raw(const char *filename);
 int DWYCOEXPORT dwyco_delete_zap_view(int viewid);
@@ -1419,17 +1420,6 @@ void DWYCOEXPORT dwyco_handle_msg(const char *msg, int msg_len, unsigned int mes
 
 #endif
 
-// must be called before dwyco_init
-// this is used to set the cmd path that the windows dll can use
-// if it needs to poke holes in the windows firewall. don't think it
-// is used at this point.
-int DWYCOEXPORT dwyco_set_cmd_path(const char *cmd, int len);
-
-// give this function a set of files to be hashed to determine
-// what version of the software is being used. the current windows
-// client uses "icuii.exe" and "cdcdll.dll", for example.
-// the contents of the files are concatenated and hashed.
-void DWYCOEXPORT dwyco_setup_autoupdate(const char *f1, const char *f2, const char *f3, const char *f4);
 // normally, an autoupdate query command is automatically sent when you
 // connect to a chat server. if you need to do it at some later point, like
 // during a dialog, call this function.
@@ -1441,10 +1431,6 @@ int DWYCOEXPORT dwyco_start_autoupdate_download(DwycoStatusCallback cb, void *ar
 int DWYCOEXPORT dwyco_start_autoupdate_download_bg();
 int DWYCOEXPORT dwyco_run_autoupdate();
 void DWYCOEXPORT dwyco_abort_autoupdate_download();
-
-// defunct
-void DWYCOEXPORT dwyco_set_regcode(const char *s);
-void DWYCOEXPORT dwyco_sub_get(const char **reg_out, int *len_out);
 
 // this is a little builtin mini-applet that does some synchronization
 // with another app (which is assumed to be using this API as well.)
@@ -1531,6 +1517,10 @@ int DWYCOEXPORT dwyco_get_aux_string(const char **str_out, int *len_str_out);
 // deprecated for some time. This means that you cannot compile the urania driver
 // using xcode9. I've been using an old VM with xcode7 on it to perform the
 // compilation. The APIs are still supported at runtime as of 2018 for High Sierra.
+//
+// MacOS Catalina deprecated the runtime video api's used by the urania driver.
+// We use Qt 5.12 to create a video capture driver that works on MacOS 10.12+.
+// The urania driver is completely unusable and is unneeded now.
 //
 // -------
 // WRITING a video capture "driver" for the DLL
@@ -2268,14 +2258,13 @@ dwyco_get_rate_tweaks(
 // used for media select arg in the net data
 // WARNING: the values of these defines were copied from aconn.h
 // WARNING: the only value that works is "TCP_ONLY"
-// NOTE: ca 2016, all the internal STUN and UPNP stuff does not work.
+// NOTE: ca 2016, all the internal STUN stuff does not work.
 // STUN/UDP media was abandoned because it is just too problematic
-// from a tech support perspective. UPnP, when it was tested, was also
-// too flakey to rely on. ca 2018, Possibly UPnP could be revisited now that
-// routers are implementing it more reliably.
+// from a tech support perspective.
 // ca 2019, UPnP is an option that is handled and set up automatically.
 // if it doesn't get a set of ports set up, it automatically fallsback to
-// using server assisted calls as usual.
+// using server assisted calls as usual. UPnP sets up incoming port forwarding
+// to allow more peer to peer TCP connections.
 
 #define DWYCO_MEDIA_SELECT_DIRECT_ONLY 0  	// not impl.
 #define DWYCO_MEDIA_SELECT_TCP_ONLY 1 		// force tcp SAC only

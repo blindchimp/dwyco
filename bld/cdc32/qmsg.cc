@@ -1664,13 +1664,13 @@ direct_to_body2(vc m)
 }
 
 vc
-direct_to_body(vc msgid)
+direct_to_body(vc msgid, vc& uid_out)
 {
     vc huid = sql_get_uid_from_mid(msgid);
     if(huid.is_nil())
         return vcnil;
-    vc uid = from_hex(huid);
-    return load_body_by_id(uid, msgid);
+    uid_out = from_hex(huid);
+    return load_body_by_id(uid_out, msgid);
 
 }
 
@@ -1697,7 +1697,7 @@ add_msg(vc vec, vc item)
     // values in the message summaries (maybe that should change)
     // so in order to present the messages in some kind of reasonable
     // time order, we insert them in order by date sent... as a side
-    // effect, the list of unsaved messages will be presented to
+    // effect, the list of unfetched messages will be presented to
     // the caller and if they just present it in order, it will look ok.
     // otherwise, if we don't do this, the messages will appear in random
     // order on startup (they are just loaded from the inbox in whatever order
