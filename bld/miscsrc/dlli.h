@@ -501,12 +501,12 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
 #ifdef DWYCO_ASSHAT
-int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
+//int DWYCOEXPORT dwyco_get_ah(const char *uid, int len_uid, char out[3]);
 // use this version if you just want an integer back.
 // returns -1 if the asshat factor isn't valid yet
 // returns -2 if the users isn't registered and the trial as expired
 // otherwise returns an integer between 0 and 99 (inclusive)
-int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
+//int DWYCOEXPORT dwyco_get_ah2(const char *uid, int len_uid);
 #endif
 
 void DWYCOEXPORT dwyco_trace_init();
@@ -704,8 +704,6 @@ int DWYCOEXPORT dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const char 
 int DWYCOEXPORT dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int uid_len, int load_sent);
 int DWYCOEXPORT dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id);
-// this doesn't make sense anymore
-//int DWYCOEXPORT dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
@@ -828,9 +826,6 @@ void DWYCOEXPORT dwyco_clear_pal_auths();
 //
 // also, call this function when you get a "palrej" message
 //
-// if uid == 0, msg_id must refer to an unsaved msg that has been fetched
-// from the server.
-// if uid != 0, msg_id must refer to a saved msg from uid (NOTE: this is broken)
 int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *msg_id, int add_them);
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
@@ -1102,10 +1097,10 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 
 // returns 1 if it is special, and what_out will
 // be set to one of the following
-// if uid == 0, msg_id must refer to an unsaved msg. if the msg hasn't been
+// if uid == 0, msg_id must refer to an unfetched msg. if the msg hasn't been
 // fetched from the server, what_out will be one of the *SUMMARY* types.
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
-int DWYCOEXPORT dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
+int DWYCOEXPORT dwyco_is_special_message(const char *msg_id, int *what_out);
 int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
 int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out);
 
@@ -1304,7 +1299,7 @@ int DWYCOEXPORT dwyco_make_zap_composition_raw(const char *filename, const char 
 // WARNING: dup-ing should only be used in very specific cases.
 int DWYCOEXPORT dwyco_dup_zap_composition(int compid);
 int DWYCOEXPORT dwyco_make_forward_zap_composition(
-    const char *uid, // must be 0 to forward unsaved message, uid for saved messages
+    const char *uid,
     int len_uid,
     const char *msg_id,
     int strip_forward_text
@@ -1330,9 +1325,8 @@ dwyco_copy_out_file_zap(
     const char *dst_filename
 );
 
-int
-DWYCOEXPORT
-dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out);
+int DWYCOEXPORT
+dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max);
 
 int DWYCOEXPORT
 dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
