@@ -1616,6 +1616,7 @@ save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc 
     v[QM_BODY_NO_FORWARD] = no_forward;
     v[QM_BODY_FILE_ATTACHMENT] = user_filename;
     v[QM_BODY_LOGICAL_CLOCK] = logical_clock;
+    v[QM_BODY_SPECIAL_TYPE] = special_type;
     if(save_info(v, s.c_str(), 1))
     {
         // can't do this here anymore because the index needs to
