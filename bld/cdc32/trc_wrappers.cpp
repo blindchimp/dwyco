@@ -214,8 +214,8 @@ DWYCOEXPORT int _real_dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, co
 DWYCOEXPORT int _real_dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
 DWYCOEXPORT int _real_dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
-DWYCOEXPORT int _real_dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out);
-DWYCOEXPORT int _real_dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
+DWYCOEXPORT int _real_dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_out);
+DWYCOEXPORT int _real_dwyco_is_special_message(const char *msg_id, int *what_out);
 DWYCOEXPORT int _real_dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out, const char **dlv_mid_out, int *what_out);
 DWYCOEXPORT DWYCO_LIST _real_dwyco_get_body_text(DWYCO_SAVED_MSG_LIST m);
 DWYCOEXPORT DWYCO_LIST _real_dwyco_get_body_array(DWYCO_SAVED_MSG_LIST m);
@@ -2947,10 +2947,10 @@ return(_ret);
 
 DWYCOEXPORT
 int
-dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out)
+dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_out)
 {
 printfunname("dwyco_get_user_payload");
-printarg("DWYCO_UNFETCHED_MSG_LIST ", "ml",ml);
+printarg("DWYCO_SAVED_MSG_LIST ", "ml",ml);
 printarg(" const char **", "str_out",str_out);
 printarg(" int *", "len_out",len_out);
 int _ret = _real_dwyco_get_user_payload(ml,str_out,len_out);
@@ -2961,13 +2961,12 @@ return(_ret);
 
 DWYCOEXPORT
 int
-dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out)
+dwyco_is_special_message(const char *msg_id, int *what_out)
 {
 printfunname("dwyco_is_special_message");
-printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
-printarg(" const char *", "msg_id",msg_id);
+printarg("const char *", "msg_id",msg_id);
 printarg(" int *", "what_out",what_out);
-int _ret = _real_dwyco_is_special_message(uid,len_uid,msg_id,what_out);
+int _ret = _real_dwyco_is_special_message(msg_id,what_out);
 printargout(" int *", "what_out",what_out);
 printretval(_ret);
 return(_ret);

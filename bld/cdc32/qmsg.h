@@ -166,8 +166,8 @@ void clean_cruft();
 #define AUTH_PROFILE_FAILED 1
 #define AUTH_PROFILE_NO_INFO 2
 
-// this is the summary info sent from the
-// server
+// this is the summary info sent from the server
+// use these to index a DWYCO_UNFETCHED_MSG_LIST
 
 #define QM_FROM 0
 #define QM_LEN 1
@@ -191,6 +191,7 @@ void clean_cruft();
 #define QM_LOGICAL_CLOCK 11
 
 // message bodies as stored on client
+// use these to index a DWYCO_SAVED_MSG_LIST
 
 #define QM_BODY_ID 0
 #define QM_BODY_FROM 1

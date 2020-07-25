@@ -1100,7 +1100,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 // if uid == 0, msg_id must refer to an unfetched msg. if the msg hasn't been
 // fetched from the server, what_out will be one of the *SUMMARY* types.
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
-int DWYCOEXPORT dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out);
+int DWYCOEXPORT dwyco_is_special_message(const char *msg_id, int *what_out);
 int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
 int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out);
 

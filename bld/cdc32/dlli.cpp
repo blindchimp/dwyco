@@ -6836,32 +6836,6 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
             *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
     }
     return 1;
-
-
-    return 0;
-#if 0
-    // message has been fetched, and is unsaved
-    vc body = direct_to_body2(summary);
-    if(body.is_nil())
-        return 0;
-    vc sv = body[QM_BODY_SPECIAL_TYPE];
-    if(sv.is_nil())
-        return 0;
-    vc what = sv[0];
-    // args are in a vector at sv[1]
-    if(what_out)
-    {
-        if(what == palreq)
-            *what_out = DWYCO_PAL_AUTH_REQ;
-        else if(what == palok)
-            *what_out = DWYCO_PAL_OK;
-        else if(what == palrej)
-            *what_out = DWYCO_PAL_REJECT;
-        else
-            *what_out = DWYCO_SPECIAL_USER_DEFINED;
-    }
-#endif
-    return 1;
 }
 
 
@@ -6909,20 +6883,13 @@ dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
 
 DWYCOEXPORT
 int
-dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out)
+dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_out)
 {
     // this keeps the debugging stuff from crashing
     *str_out = "";
     *len_out = 0;
-#if 0
     vc& v = *(vc *)ml;
-    vc summary = v[0];
-    if(summary[QM_IS_DIRECT].is_nil())
-        return 0; // unfetched server message doesn't have enough info on it
-    vc body;
-    body = direct_to_body2(summary);
-    if(body.is_nil())
-        return 0;
+    vc body = v[0];
 
     vc sv = body[QM_BODY_SPECIAL_TYPE];
     if(sv[0] != vc("user"))
@@ -6937,21 +6904,12 @@ dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *l
     memcpy(b, (const char *)payload, payload.len());
     *str_out = b;
     *len_out = payload.len();
-#endif
     return 1;
 }
 
-
-// note: for the next two functions, uid MUST be equal to 0, as they
-// are broken otherwise. essentially, it turns out that i strip out the
-// special stuff when the msgs are saved (for vague security reasons.)
-// so these will only work on unsaved msgs. this was an attempt to
-// make cdcx work a little better, but in retrospect, i think i'll just
-// provide functions that operate directly on a DWYCO_UNSAVED_MSG
-// instead of a msg id.
 DWYCOEXPORT
 int
-dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out)
+dwyco_is_special_message(const char *msg_id, int *what_out)
 {
     static vc palreq("palreq");
     static vc palok("palok");
@@ -6959,41 +6917,36 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
     static vc dlv("dlv");
     static vc user("user");
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
-    vc id(VC_BSTRING, msg_id, strlen(msg_id));
-    if(uid == 0)
+    vc mid(VC_BSTRING, msg_id, strlen(msg_id));
+
+    vc summary = find_cur_msg(mid);
+    if(!summary.is_nil())
     {
-        vc summary = find_cur_msg(id);
-        if(summary.is_nil())
+        // server message waiting to be fetched
+        if(summary[QM_SPECIAL_TYPE].is_nil())
             return 0;
-        //if(summary[QM_IS_DIRECT].is_nil())
+        vc what = summary[QM_SPECIAL_TYPE];
+        if(what_out)
         {
-            // server message waiting to be fetched
-            if(summary[QM_SPECIAL_TYPE].is_nil())
-                return 0;
-            vc what = summary[QM_SPECIAL_TYPE];
-            if(what_out)
-            {
-                if(what == palreq)
-                    *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
-                else if(what == palok)
-                    *what_out = DWYCO_SUMMARY_PAL_OK;
-                else if(what == palrej)
-                    *what_out = DWYCO_SUMMARY_PAL_REJECT;
-                else if(what == dlv)
-                    *what_out = DWYCO_SUMMARY_DELIVERED;
-                else if(what == user)
-                    *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-                else
-                    *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-            }
-            return 1;
+            if(what == palreq)
+                *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
+            else if(what == palok)
+                *what_out = DWYCO_SUMMARY_PAL_OK;
+            else if(what == palrej)
+                *what_out = DWYCO_SUMMARY_PAL_REJECT;
+            else if(what == dlv)
+                *what_out = DWYCO_SUMMARY_DELIVERED;
+            else if(what == user)
+                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
+            else
+                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
         }
-        return 0;
+        return 1;
     }
-    return 0;
-#if 0
+
     // message has been fetched, and is unsaved
-    vc body = direct_to_body(id);
+    vc uid_out;
+    vc body = direct_to_body(mid, uid_out);
     vc sv = body[QM_BODY_SPECIAL_TYPE];
     if(sv.is_nil())
         return 0;
@@ -7007,39 +6960,14 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
             *what_out = DWYCO_PAL_OK;
         else if(what == palrej)
             *what_out = DWYCO_PAL_REJECT;
+        else if(what == user)
+            *what_out = DWYCO_SPECIAL_USER_DEFINED;
         else
             *what_out = DWYCO_SPECIAL_USER_DEFINED;
     }
-
-}
-else
-{
-    // saved msg
-    vc u(VC_BSTRING, uid, len_uid);
-    vc body = load_body_by_id(u, id);
-    if(body.is_nil())
-        return 0;
-    vc sv = body[QM_BODY_SPECIAL_TYPE];
-    if(sv.is_nil())
-        return 0;
-    vc what = sv[0];
-    // args are in a vector at sv[1]
-    if(what_out)
-    {
-        if(what == palreq)
-            *what_out = DWYCO_PAL_AUTH_REQ;
-        else if(what == palok)
-            *what_out = DWYCO_PAL_OK;
-        else if(what == palrej)
-            *what_out = DWYCO_PAL_REJECT;
-        else
-            *what_out = DWYCO_SPECIAL_USER_DEFINED;
-    }
+    return 1;
 }
 
-return 1;
-#endif
-}
 
 
 #if 0
