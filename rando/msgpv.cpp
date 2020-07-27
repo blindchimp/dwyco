@@ -215,7 +215,7 @@ preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QB
             // copy file out to random user_filename, scaling to preview size
             rfn = add_pfx(Tmp_pfx, rfn);
             full_size_filename = rfn;
-            if(!dwyco_copy_out_unsaved_file_zap(sm, rfn.constData()))
+            if(!dwyco_copy_out_qd_file_zap(sm, rfn.constData()))
                 throw 0;
 
             preview_fn = rfn;

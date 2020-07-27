@@ -20,6 +20,6 @@ fi
 (
 opwd=$PWD
 cd $SHADOW_NAME
-qmake -spec macx-clang DWYCO_CONFDIR=vccmd $opwd/lh.pro
+qmake DWYCO_CONFDIR=vccmd $opwd/lh.pro
 make -j 8
 )

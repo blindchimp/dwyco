@@ -13,6 +13,7 @@
 #ifndef AQKEY_H
 #define AQKEY_H
 #include "vc.h"
+#include "dwstr.h"
 
 // class used to encapsulate aquiring text from the user's
 // keyboard. subclasses handle the system dependent things
@@ -21,10 +22,8 @@
 class KeyboardAcquire
 {
 public:
-    KeyboardAcquire () {
-        inited = 0;
-    }
-    virtual ~KeyboardAcquire() {}
+    KeyboardAcquire ();
+    virtual ~KeyboardAcquire() = default;
 
     int init_ok() {
         return inited;
@@ -37,16 +36,16 @@ public:
         return vcnil;
     }
 
-    void set_fail_reason(const char *a) {
-        strcpy(fail_reason, a);
+    void set_fail_reason(const DwString& a) {
+        fail_reason = a;
     }
-    char *get_fail_reason() {
-        return strdup(fail_reason);
+    DwString get_fail_reason() {
+        return fail_reason;
     }
 
 protected:
     int inited;
-    char fail_reason[255];
+    DwString fail_reason;
 
 };
 
