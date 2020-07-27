@@ -275,7 +275,13 @@ ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 #        $$PWD/arm/libcrypto.so \
 #        $$PWD/arm/libssl.so
 #}
+#message($$QMAKE_HOST.os)
+equals(QMAKE_HOST.os, Darwin) {
+message(MACOS)
+include(/Users/dwight/android/astudio/android_openssl/openssl.pri)
+} else {
 include(/home/dwight/android/astudio/android_openssl/openssl.pri)
+}
 #LIBS += \
 #$${D}/libcdc32.a \
 #$${D}/libvc.a \
