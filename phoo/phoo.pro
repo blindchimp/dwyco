@@ -270,11 +270,12 @@ LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv.a
 # limitation of java as far as i can tell.
 LIBS += $${L}/libdwyco_jni.so
 ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
-contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    ANDROID_EXTRA_LIBS += \
-        $$PWD/arm/libcrypto.so \
-        $$PWD/arm/libssl.so
-}
+#contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+#    ANDROID_EXTRA_LIBS += \
+#        $$PWD/arm/libcrypto.so \
+#        $$PWD/arm/libssl.so
+#}
+include(/home/dwight/android/astudio/android_openssl/openssl.pri)
 #LIBS += \
 #$${D}/libcdc32.a \
 #$${D}/libvc.a \
