@@ -504,7 +504,7 @@ index_from_body(vc recipient, vc body)
     nentry[QM_IDX_IS_FORWARDED] = body[QM_BODY_FORWARDED_BODY].is_nil() ? vcnil : vctrue;
     nentry[QM_IDX_IS_NO_FORWARD] = body[QM_BODY_NO_FORWARD];
     nentry[QM_IDX_IS_FILE] = body[QM_BODY_FILE_ATTACHMENT].is_nil() ? vcnil : vctrue;
-    nentry[QM_IDX_SPECIAL_TYPE] = body[QM_BODY_SPECIAL_TYPE];
+    nentry[QM_IDX_SPECIAL_TYPE] = body[QM_BODY_SPECIAL_TYPE].type() == VC_VECTOR ? body[QM_BODY_SPECIAL_TYPE][0] : vcnil;
     nentry[QM_IDX_HAS_ATTACHMENT] = body[QM_BODY_ATTACHMENT].is_nil() ? vcnil : vctrue;
     vc lc = body[QM_BODY_LOGICAL_CLOCK];
     // older messages won't have logical clock, so just fall back on the
