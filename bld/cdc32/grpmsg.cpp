@@ -205,7 +205,7 @@ start_gj(vc target_uid, vc password)
 
     vc mk = xfer_enc(m, password);
 
-    int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN1, 0, (const char *)mk, mk.len());
+    int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN1, "", (const char *)mk, mk.len());
     if(comp_id == -1)
         return 0;
 
@@ -281,7 +281,7 @@ recv_gj2(vc from, vc msg, vc password)
         mr[3] = hfrom;
 
         vc mrs = xfer_enc(mr, password);
-        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN3, 0, (const char *)mrs, mrs.len());
+        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN3, "", (const char *)mrs, mrs.len());
         if(comp_id == -1)
             throw -1;
 
@@ -372,7 +372,7 @@ recv_gj1(vc from, vc msg, vc password)
         mr[3] = hfrom;
 
         vc mrs = xfer_enc(mr, password);
-        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN2, 0, (const char *)mrs, mrs.len());
+        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN2, "", (const char *)mrs, mrs.len());
         if(comp_id == -1)
             throw -1;
 
@@ -464,7 +464,7 @@ recv_gj3(vc from, vc msg, vc password)
         mr[1] = Current_alternate->my_static();
 
         vc mrs = xfer_enc(mr, password);
-        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN4, 0, (const char *)mrs, mrs.len());
+        int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN4, "", (const char *)mrs, mrs.len());
         if(comp_id == -1)
             throw -1;
 

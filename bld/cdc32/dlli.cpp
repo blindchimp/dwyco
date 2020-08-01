@@ -6955,7 +6955,7 @@ int
 dwyco_handle_join(const char *mid)
 {
     vc password = "foo";
-    DWYCO_UNFETCHED_MSG_LIST l;
+    DWYCO_SAVED_MSG_LIST l;
     if(!dwyco_get_saved_message(&l, 0, 0, mid))
         return 0;
     simple_scoped ql(l);

@@ -892,6 +892,8 @@ void  TMsgCompose::send_buttonClick()
                 break;
             }
             sp_payload = special_payload;
+            // for testing
+            msg_text = (const char *)sp;
         }
     }
     // note: this is a little odd, two copies of the text will be

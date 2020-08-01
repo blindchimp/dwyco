@@ -2453,7 +2453,12 @@ MMChannel::crypto_agree(vc crypto, int caller)
         }
     }
     else
+    {
+        // NOTE: XXX HAVE TO BE CAREFUL HERE, THIS might OBLITERATE or block
+        // acquisition of
+        // ALT KEYS (check and fix)
         put_pk(rem_uid, dh_static_material(their_pubkeys), vcnil);
+    }
 
     vc agreed = udh_agree_auth(channel_keys, their_pubkeys);
     agreed = kdf(agreed, caller, My_UID, rem_uid);

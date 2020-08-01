@@ -224,19 +224,18 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
     {
         msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
         mr->reload_inbox_model();
-        // kulge, really need to have different path for special messages
+        // kluge, really need to have different path for special messages
         // instead of trying to shoehorn them in with regular messages
         int stype;
         if(dwyco_is_special_message(mid.constData(), &stype))
         {
             dwyco_set_msg_tag(mid.constData(), "_special");
         }
-        else
-        {
-            add_unviewed(buid, mid);
-            TheDwycoCore->emit new_msg(shuid, "", smid);
-            TheDwycoCore->emit decorate_user(shuid);
-        }
+
+        add_unviewed(buid, mid);
+        TheDwycoCore->emit new_msg(shuid, "", smid);
+        TheDwycoCore->emit decorate_user(shuid);
+
         dwyco_unset_msg_tag(mid.constData(), "_inbox");
         if(uid() == shuid)
             mid_tag_changed(smid);
@@ -999,20 +998,21 @@ auto_fetch(QByteArray mid)
         const char *uid;
         int len_uid;
         const char *dlv_mid;
-        if(dwyco_is_delivery_report(mid.constData(), &uid, &len_uid, &dlv_mid, &special_type))
-        {
-            // process pal authorization stuff here
-            if(special_type == DWYCO_SUMMARY_DELIVERED)
-            {
-                // NOTE: uid, dlv_mid must be copied out before next
-                // dll call
-                // hmmm, need new api to get uid/mid_out of delivered msg
-                dwyco_delete_unfetched_message(mid.constData());
-                return 0;
-            }
+//        if(dwyco_is_delivery_report(mid.constData(), &uid, &len_uid, &dlv_mid, &special_type))
+//        {
+//            // process pal authorization stuff here
+//            if(special_type == DWYCO_SUMMARY_DELIVERED)
+//            {
+//                // NOTE: uid, dlv_mid must be copied out before next
+//                // dll call
+//                // hmmm, need new api to get uid/mid_out of delivered msg
+//                dwyco_delete_unfetched_message(mid.constData());
+//                return 0;
+//            }
 
-        }
-        else if(dwyco_is_special_message(mid.constData(), &special_type))
+//        }
+//        else
+        if(dwyco_is_special_message(mid.constData(), &special_type))
         {
             switch(special_type)
             {

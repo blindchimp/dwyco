@@ -1534,6 +1534,7 @@ DwycoCore::init()
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
+    connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_join_check(QString)));
 
     if(dwyco_get_create_new_account())
         return;
@@ -2397,6 +2398,20 @@ DwycoCore::internal_cq_check(QString huid)
     dwyco_delete_user(Clbot.constData(), Clbot.length());
 }
 
+void
+DwycoCore::internal_join_check(QString huid)
+{
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, "_special");
+    simple_scoped qtl(tl);
+    for(int i = 0; i < qtl.rows(); ++i)
+    {
+        QByteArray mid = qtl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        dwyco_handle_join(mid.constData());
+        dwyco_unset_msg_tag(mid.constData(), "_special");
+    }
+}
+
 
 QUrl
 DwycoCore::get_cq_results_url()
@@ -2622,6 +2637,7 @@ fetch_special_msgs()
             {
                 QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
                 auto_fetch(mid);
+                continue;
             }
             if(st.startsWith("join"))
             {
@@ -2650,7 +2666,6 @@ DwycoCore::service_channels()
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
-        //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
         DWYCO_UNFETCHED_MSG_LIST uml;
         if(dwyco_get_unfetched_messages(&uml, Clbot.constData(), Clbot.length()))
@@ -2665,9 +2680,14 @@ DwycoCore::service_channels()
             }
         }
 
+        // this initiates fetches of special messages
         fetch_special_msgs();
+
+        // the way this stands now, it just updates the "unviewed"
+        // status, and basically allows us to display a notification before
+        // the actual fetch is initiated.
+
         dwyco_get_unfetched_messages(&uml, 0, 0);
-        // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;
         dwyco_process_unfetched_list(uml, uids_out);
         dwyco_list_release(uml);
