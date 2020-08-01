@@ -5422,6 +5422,7 @@ DWYCOEXPORT
 int
 dwyco_make_special_zap_composition( int special_type, const char *user_id, const char *user_block, int len_user_block)
 {
+    user_id = "";
     TMsgCompose *m = new TMsgCompose;
     GRTLOG("WARNING: special zaps are mostly deprecated, tho if there is a good reason, they can be resurrected", 0, 0);
 
@@ -7027,6 +7028,8 @@ dwyco_is_special_message(const char *msg_id, int *what_out)
     // message has been fetched
     vc uid_out;
     vc body = direct_to_body(mid, uid_out);
+    if(body.is_nil())
+        return 0;
     vc sv = body[QM_BODY_SPECIAL_TYPE];
     if(sv.is_nil())
         return 0;
