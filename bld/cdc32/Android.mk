@@ -164,7 +164,8 @@ dwybg_wrap.c \
 aqext_android.cpp \
 backsql.cpp \
 upnp.cpp \
-simplesql.cpp
+simplesql.cpp \
+aqkey.cpp
 
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls
