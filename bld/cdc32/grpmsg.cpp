@@ -256,7 +256,9 @@ recv_gj2(vc from, vc msg, vc password)
         vc our_uid = m[3];
 
         // first checks
-        if(to_hex(My_UID) != our_uid)
+        // if it wasn't for us directly, or we somehow get it
+        // looped to ourselves, ignore it.
+        if(to_hex(My_UID) != our_uid || from == My_UID)
         {
             return 0;
         }
@@ -342,6 +344,8 @@ recv_gj1(vc from, vc msg, vc password)
 {
     DwString pers_id;
     vc hfrom = to_hex(from);
+    if(from == My_UID)
+        return 0;
     try
     {
         vc m = xfer_dec(msg, password);
@@ -412,6 +416,9 @@ recv_gj3(vc from, vc msg, vc password)
     DwString pers_id;
     vc hfrom = to_hex(from);
     int ret = 0;
+
+    if(from == My_UID)
+        return 0;
 
     try
     {

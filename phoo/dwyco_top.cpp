@@ -1534,7 +1534,7 @@ DwycoCore::init()
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
-    connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_join_check(QString)));
+    //connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_join_check(QString)));
 
     if(dwyco_get_create_new_account())
         return;
@@ -2700,6 +2700,8 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
+
+        internal_join_check("");
 
     }
     update_unread_count(total_unviewed_msgs_count());

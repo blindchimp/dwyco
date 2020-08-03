@@ -6971,19 +6971,20 @@ dwyco_handle_join(const char *mid)
     vc msg(VC_BSTRING, b, len);
     dwyco_free_array((char *)b);
     int ret = 0;
+    vc from = ql.get<vc>(DWYCO_QM_BODY_FROM);
     switch(jstate)
     {
     case DWYCO_SUMMARY_JOIN1:
-        ret = recv_gj1(ql.get<vc>(DWYCO_QMS_FROM), msg, password);
+        ret = recv_gj1(from, msg, password);
         break;
     case DWYCO_SUMMARY_JOIN2:
-        ret = recv_gj2(ql.get<vc>(DWYCO_QMS_FROM), msg, password);
+        ret = recv_gj2(from, msg, password);
         break;
     case DWYCO_SUMMARY_JOIN3:
-        ret = recv_gj3(ql.get<vc>(DWYCO_QMS_FROM), msg, password);
+        ret = recv_gj3(from, msg, password);
         break;
     case DWYCO_SUMMARY_JOIN4:
-        ret = install_group_key(ql.get<vc>(DWYCO_QMS_FROM), msg, password);
+        ret = install_group_key(from, msg, password);
         break;
     default:
         return 0;
