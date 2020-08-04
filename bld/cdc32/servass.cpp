@@ -193,7 +193,7 @@ servass_results(vc m, void *f, vc v, ValidPtr vp)
         stun_servass_failure("User not online.", to_uid, vp);
         if(md)
             md->show("User not online. Call failed.");
-        TRACK_ADD(CL_server_assist_failed, 1);	;
+        TRACK_ADD(CL_server_assist_failed, 1);
         return;
     }
     // return is vector(prox-ip prox-port callee-prox-ip callee-prox-port)
