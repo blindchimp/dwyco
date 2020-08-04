@@ -332,7 +332,7 @@ install_group_key(vc from, vc msg, vc password)
     // NOTE: need to tie this to proper round of protocol, otherwise
     // phony message could cause you to install the wrong key
     int ret = DH_alternate::insert_new_key(alt_name, grp_key);
-    terminate(to_hex(My_UID), to_hex(from));
+    terminate(to_hex(My_UID), hfrom);
     return ret;
 }
 
