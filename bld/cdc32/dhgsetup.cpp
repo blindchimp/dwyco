@@ -31,7 +31,8 @@ struct DHG_sql : public SimpleSql
                    "alt_name text collate nocase, "
                    "pubkey blob,"
                    "privkey blob,"
-                   "time integer"
+                   "time integer,"
+                   "unique(alt_name, pubkey, privkey) on conflict ignore"
                    ")");
         sql_simple("create index if not exists keys_uid on keys(uid)");
         sql_simple("create index if not exists keys_alt_name on keys(alt_name)");
