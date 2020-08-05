@@ -146,10 +146,13 @@ vc encrypt_msg_qqm(vc msg_to_send, vc dhsf, vc ectx, vc key);
 vc encrypt_msg_body(vc body, vc dhsf, vc ectx, vc key);
 vc decrypt_msg_qqm(vc emsg);
 vc decrypt_msg_body(vc body);
+#ifdef DWYCO_CRYPTO_PIPELINE
 vc decrypt_msg_body2(vc body, DwString& src, DwString& dst, DwString& key_out);
+int decrypt_attachment2(const DwString& filename, const DwString& key, const DwString& filename_dst);
+#endif
 int encrypt_attachment(vc filename, vc key, vc filename_dst);
 int decrypt_attachment(vc filename, vc key, vc filename_dst);
-int decrypt_attachment2(const DwString& filename, const DwString& key, const DwString& filename_dst);
+
 unsigned long uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal);
 int uid_online(vc uid);
 void boost_clock(vc mi);
