@@ -2880,6 +2880,7 @@ decrypt_msg_body(vc body)
 
 }
 
+#ifdef DWYCO_CRYPTO_PIPELINE
 // decrypt everything but the attachment
 // this is used to send large attachment decryption to another thread
 // so we don't block on it here
@@ -2923,6 +2924,7 @@ decrypt_msg_body2(vc body, DwString& src, DwString& dst, DwString& key_out)
     return msg_out;
 
 }
+#endif
 
 
 int
@@ -2998,6 +3000,7 @@ decrypt_attachment(vc filename, vc key, vc filename_dst)
     return 1;
 }
 
+#ifdef DWYCO_CRYPTO_PIPELINE
 int
 decrypt_attachment2(const DwString& filename, const DwString& key, const DwString& filename_dst)
 {
@@ -3006,6 +3009,7 @@ decrypt_attachment2(const DwString& filename, const DwString& key, const DwStrin
     vc d(VC_BSTRING, filename_dst.c_str(), filename_dst.length());
     return decrypt_attachment(f, k, d);
 }
+#endif
 
 
 vc
