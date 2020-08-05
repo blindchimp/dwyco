@@ -42,6 +42,8 @@
 #include "dwrtlog.h"
 #include "dwyco_rand.h"
 
+#define DWYCO_NO_PRF_ENC
+
 #define PROFILE_KEY "\x66\x43\xe6\x63\xe8\x4e\x8f\x3d\x08\xf5\xbe\x65\xd0\x42\xf7\x51"
 #define PRF_DIR "pk"
 
@@ -216,12 +218,17 @@ load_pk(vc uid, vc& prf_out)
     }
 
     vc prf;
+#ifdef DWYCO_NO_PRF_ENC
+    prf = c;
+#else
     if(encdec_xfer_dec_ctx(enc_ctx, c, prf).is_nil())
     {
         pk_force_check(uid);
         unlink(fn.c_str());
         return 0;
     }
+#endif
+
     if(!check_profile(prf) || !verify_sig(prf))
     {
         pk_force_check(uid);
@@ -293,7 +300,12 @@ save_pk(vc uid, vc prf)
         return 0;
     vc prfe;
 
+#ifdef DWYCO_NO_PRF_ENC
+    prfe = prf;
+#else
+
     prfe = vclh_encdec_xfer_enc_ctx(enc_ctx, prf);
+#endif
     if(prfe.is_nil())
         return 0;
     // note: prf_cache_name added any prefix already

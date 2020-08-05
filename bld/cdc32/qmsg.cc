@@ -2848,7 +2848,12 @@ decrypt_msg_body(vc body)
 
     vc prvkeys(VC_VECTOR);
     prvkeys[0] = dh_my_static();
-    prvkeys[1] = Current_alternate->my_static();
+    vc ak = Current_alternate->get_all_keys();
+    for(int i = 0; i < ak.num_elems(); ++i)
+    {
+        prvkeys.append(ak[i]);
+    }
+    //prvkeys[1] = Current_alternate->my_static();
 
     vc key = dh_store_and_forward_get_key2(body[QQM_BODY_DHSF], prvkeys);
     if(key.type() != VC_STRING)

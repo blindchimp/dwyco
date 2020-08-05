@@ -415,6 +415,62 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
 // the first key that checks out with the key check string is returned.
 // since the key check string is only 24 bits long, there is a tiny chance the wrong
 // key will be returned.
+// note: for compatibility, we assume index 0 of sf_pack and
+// our_material correspond to one set of keys (the old set of
+// non-group keys).
+// the second item in sfpack is the group encrypted key, and
+// since we might have multiple group keys, each of the items
+// in our_material is checked to see if it can decrypt the key.
+// this is a bit of a kluge i will have to think about, since
+// it is mainly used because remote senders may not have the latest
+// group public key if a recipient is changing groups.
+
+static
+vc
+check_and_get_key(vc pack, vc our_material, vc checkstr)
+{
+    SecByteBlock akey(EphDH->AgreedValueLength());
+    ECB_Mode<AES>::Encryption kc;
+
+    if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[DH_STATIC_PRIVATE],
+                     (const byte *)(const char *)pack[1]))
+        return vcnil;
+
+    vc kdk(VC_BSTRING, (const char *)akey.data(), akey.SizeInBytes());
+
+    kdk = sha(kdk);
+
+    vc sk_enc = pack[0];
+    if(!(sk_enc.type() == VC_STRING && sk_enc.len() <= kdk.len()))
+    {
+        return vcnil;
+    }
+
+    const byte *k = (const byte *)(const char *)sk_enc;
+    SecByteBlock sk(sk_enc.len());
+    const byte *k2 = (const byte *)(const char *)kdk;
+
+    for(int ki = 0; ki < sk_enc.len(); ++ki)
+    {
+        sk[ki] = k[ki] ^ k2[ki];
+    }
+
+    // test the key, return if it looks ok
+
+    kc.SetKey(sk, sk.SizeInBytes());
+    byte buf[16];
+    memset(buf, 0, sizeof(buf));
+    byte ck_str[sizeof(buf)];
+    kc.ProcessData(ck_str, buf, sizeof(ck_str));
+    // use just first 3 bytes
+    if(checkstr == vc(VC_BSTRING, (const char *)ck_str, 3))
+    {
+        vc ret(VC_BSTRING, (const char *)sk.BytePtr(), sk.SizeInBytes());
+        return ret;
+    }
+    return vcnil;
+}
+
 vc
 dh_store_and_forward_get_key2(vc sfpack, vc our_material)
 {
@@ -427,6 +483,22 @@ dh_store_and_forward_get_key2(vc sfpack, vc our_material)
 
     int n = sfpack.num_elems() / 2;
     vc checkstr = sfpack[2 * n];
+    vc rk = check_and_get_key(sfpack, our_material[0], checkstr);
+    if(!rk.is_nil())
+        return rk;
+
+    vc gpack(VC_VECTOR);
+    gpack[0] = sfpack[2];
+    gpack[1] = sfpack[3];
+    for(int i = 1; i < our_material.num_elems(); ++i)
+    {
+        rk = check_and_get_key(gpack, our_material[i], checkstr);
+        if(!rk.is_nil())
+            return rk;
+    }
+
+#if 0
+
     SecByteBlock akey(EphDH->AgreedValueLength());
     ECB_Mode<AES>::Encryption kc;
     for(int i = 0; i < n; ++i)
@@ -434,6 +506,7 @@ dh_store_and_forward_get_key2(vc sfpack, vc our_material)
         if(sfpack[2 * i].is_nil() || sfpack[2 * i + 1].is_nil())
             continue;
         //for forcing alternate key if(i == 0) continue;
+
         if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[i][DH_STATIC_PRIVATE],
                          (const byte *)(const char *)sfpack[2 * i + 1]))
             return vcnil;
@@ -452,9 +525,9 @@ dh_store_and_forward_get_key2(vc sfpack, vc our_material)
         SecByteBlock sk(sk_enc.len());
         const byte *k2 = (const byte *)(const char *)kdk;
 
-        for(int i = 0; i < sk_enc.len(); ++i)
+        for(int ki = 0; ki < sk_enc.len(); ++ki)
         {
-            sk[i] = k[i] ^ k2[i];
+            sk[ki] = k[ki] ^ k2[ki];
         }
 
         // test the key, return if it looks ok
@@ -470,9 +543,7 @@ dh_store_and_forward_get_key2(vc sfpack, vc our_material)
             vc ret(VC_BSTRING, (const char *)sk.BytePtr(), sk.SizeInBytes());
             return ret;
         }
-
-    }
-
+#endif
     return vcnil;
 }
 

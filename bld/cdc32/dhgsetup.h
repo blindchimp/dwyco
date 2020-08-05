@@ -37,6 +37,9 @@ public:
     // call this to remove a key from the database, as when
     // leaving a group.
     static int remove_key(vc alt_name);
+
+    // get all the key-pairs we have
+    static vc get_all_keys();
 };
 
 extern DH_alternate *Current_alternate;

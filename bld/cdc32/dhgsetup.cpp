@@ -115,11 +115,12 @@ DH_alternate::load_account(vc alternate_name)
 {
     vc res;
     try {
-        VCArglist a;
-        a.append("select pubkey, privkey from keys where uid = ?1 and alt_name = ?2 order by time desc limit 1");
-        a.append(to_hex(uid));
-        a.append(alternate_name);
-        res = DHG_db->query(&a);
+//        VCArglist a;
+//        a.append("select pubkey, privkey from keys where uid = ?1 and alt_name = ?2 order by time desc limit 1");
+//        a.append(to_hex(uid));
+//        a.append(alternate_name);
+        res = DHG_db->sql_simple("select pubkey, privkey from keys where uid = ?1 and alt_name = ?2 order by time desc limit 1",
+                                 to_hex(uid), alternate_name);
     } catch (...) {
         GRTLOG("cant create DH account", 0, 0);
         return 0;
@@ -175,6 +176,22 @@ DH_alternate::my_static_public()
     vc ret(VC_VECTOR);
     ret[DH_STATIC_PUBLIC] = DH_static[DH_STATIC_PUBLIC];
 
+    return ret;
+}
+
+vc
+DH_alternate::get_all_keys()
+{
+    vc res = DHG_db->sql_simple("select pubkey, privkey from keys order by time desc");
+    vc ret(VC_VECTOR);
+    int n = res.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        vc v(VC_VECTOR);
+        v[DH_STATIC_PUBLIC] = res[i][0];
+        v[DH_STATIC_PRIVATE] = res[i][1];
+        ret.append(v);
+    }
     return ret;
 }
 
