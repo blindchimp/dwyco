@@ -51,6 +51,7 @@
 #endif
 #include "vcxstrm.h"
 #include "ta.h"
+#include "pkcache.h"
 
 using namespace dwyco;
 
@@ -379,6 +380,7 @@ invalidate_profile(vc m, void *, vc, ValidPtr)
         return;
     GRTLOG("msgb invalidate profile %s", (const char *)to_hex(m[1]), 0);
     prf_invalidate(m[1]);
+    pk_invalidate(m[1]);
     se_emit(SE_USER_PROFILE_INVALIDATE, m[1]);
 
 }
