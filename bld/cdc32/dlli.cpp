@@ -412,7 +412,6 @@ static void setup_callbacks();
 static int UI_ids = 1000000;
 static int Inited;
 HWND Main_window;
-extern int Reauthorize;
 extern int Create_new_account;
 extern int Database_id;
 
