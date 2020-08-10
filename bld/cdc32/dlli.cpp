@@ -414,7 +414,6 @@ static void setup_callbacks();
 static int UI_ids = 1000000;
 static int Inited;
 HWND Main_window;
-extern int Reauthorize;
 extern int Create_new_account;
 extern int Database_id;
 
@@ -2791,7 +2790,7 @@ init_msgaq_private(int mbox, int& chatbox_id, const char *caption, int chan_id, 
 //  c - clear the entire buffer and reposition to the beginning
 //	p string - paste the string into the buffer at the current loc, replacing selected text
 //	b - ring bell on other side
-//	u arg1 arg1 str - user-defined
+//	u arg1 arg2 str - user-defined
 DWYCOEXPORT
 void
 dwyco_command_from_keyboard(int chan_id, int com, int arg1, int arg2, const char *str, int len)
