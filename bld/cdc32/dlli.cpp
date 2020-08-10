@@ -6380,9 +6380,9 @@ dwyco_zap_create_preview_buf(int viewid, const char **buf_out_elide, int *len_ou
 
     DwDecoderColor *decoder = 0;
     void *vimg = 0;
-    int rows;
-    int cols;
-    DWBYTE *orig_vidbuf;
+    int rows = 0;
+    int cols = 0;
+    DWBYTE *orig_vidbuf = 0;
     // ok, this is a bit hokey.
     // we really need to be able to tell it to give us the next
     // usable key frame (which may not be the first one in the
@@ -9627,7 +9627,6 @@ setup_callbacks()
 
 // XXX bogus, most of these probably need to be callbacks of
 // some sort.
-int Mcheck;
 
 void
 set_status_text_by_id(int gv_id, const char *txt)
