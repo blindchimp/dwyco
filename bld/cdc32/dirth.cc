@@ -660,7 +660,7 @@ build_directory_entry2()
 }
 
 
-extern int Reauthorize;
+static int Reauthorize;
 
 static void
 db_offline(MMChannel *, vc, void *, ValidPtr)
