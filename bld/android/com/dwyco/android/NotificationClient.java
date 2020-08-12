@@ -32,7 +32,7 @@ import android.provider.MediaStore;
 import android.os.Vibrator;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
-import com.crashlytics.android.Crashlytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import android.app.job.JobScheduler;
 import android.app.job.JobInfo;
@@ -233,8 +233,6 @@ public static String get_token() {
         // main app goes to sleep, which means delivery of large messages
         // will not work quite right (only happens when the app is
         // active). this will have to be fixed eventually.
-        
-
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 

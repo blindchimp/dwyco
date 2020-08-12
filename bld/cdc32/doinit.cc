@@ -31,7 +31,6 @@
 
 #include "vc.h"
 #include "vcwsock.h"
-#include "lhboot.h"
 #include "vccrypt2.h"
 
 #include "aq.h"
@@ -74,6 +73,7 @@ vc TheMan;
 extern vc Current_user_lobbies;
 extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
 void init_dct();
+void init_stats();
 
 void
 init_codec(const char *logname)
@@ -118,9 +118,6 @@ init_codec(const char *logname)
         if(access(newfn("outbox").c_str(), 0) == -1)
             if(mkdir(newfn("outbox").c_str()) == -1)
                 Log->make_entry("can't create outbox dir");
-        if(access(newfn("inbox").c_str(), 0) == -1)
-            if(mkdir(newfn("inbox").c_str()) == -1)
-                Log->make_entry("can't create inbox dir");
         if(access(newfn("trash").c_str(), 0) == -1)
             if(mkdir(newfn("trash").c_str()) == -1)
                 Log->make_entry("can't create trash dir");
@@ -166,15 +163,6 @@ init_codec(const char *logname)
         init_entropy();
         dh_init();
         RTUserDefaults.load();
-#ifdef _Windows
-        if(vc_winsock::wsa_data.iMaxUdpDg != 0)
-        {
-            if(RTDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-            if(RTUserDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTUserDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-        }
-#endif
         TProfile t("admin", INI_FILENAME);
         // note: initvfw makes tweaks to default values
         // based on whether we are doing the wizard or not.
@@ -214,23 +202,15 @@ init_codec(const char *logname)
 
         //ShowDirectoryData.load();
 
-#ifdef EMODEL
+#ifdef DWYCO_CODEC
         EntropyModel::init_all();
 #endif
-        // note: mdiclient menus get loaded when client is inited
-        // in cdc16App::InitMainWindow
-        // note: need this down here because some of this
-        // initialization depends on the rating the user has
-        // selected.
         init_dirth();
         init_qauth();
         UserConfigData.load();
         // note: qmsg now depends on My_UID
         init_qmsg();
-        //init_home_server(); note: it is a mistake that this got in here
-        // need to delete it in parents of this branch
-        // can't load the inbox until we have a uid
-        // figured out
+
         //stun_pool_init();
 #ifndef MACOSX
         init_netdiag(); // note: can't do netdiag until stun_server is known.
@@ -260,7 +240,6 @@ simple_init_codec(const char *logname)
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
         //No_direct_msgs = vc(VC_SET);
         Current_user_lobbies = vc(VC_TREE);
-        void init_stats();
         init_stats();
 #ifdef DW_RTLOG
         Log = new DwLog(logname);
@@ -291,7 +270,6 @@ simple_init_codec(const char *logname)
 
         rgb_ycc_start();
         build_ycc_rgb_table();
-        void init_dct();
         init_dct();
         init_huff_encode();
         init_huff_decode();
@@ -316,15 +294,6 @@ simple_init_codec(const char *logname)
             Myhostname = hostname;
 
         RTUserDefaults.load();
-#ifdef _Windows
-        if(vc_winsock::wsa_data.iMaxUdpDg != 0)
-        {
-            if(RTDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-            if(RTUserDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTUserDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-        }
-#endif
         TProfile t("admin", INI_FILENAME);
 
         // have to reconfigure a little bit for 0.80
@@ -405,15 +374,6 @@ init_bg_msg_send(const char *logname)
         dh_init();
 
         RTUserDefaults.load();
-#ifdef _Windows
-        if(vc_winsock::wsa_data.iMaxUdpDg != 0)
-        {
-            if(RTDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-            if(RTUserDefaults.get_max_udp_bytes() > vc_winsock::wsa_data.iMaxUdpDg)
-                RTUserDefaults.set_max_udp_bytes(vc_winsock::wsa_data.iMaxUdpDg);
-        }
-#endif
 
         init_dirth();
         init_qauth();

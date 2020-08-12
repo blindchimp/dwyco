@@ -63,7 +63,6 @@ struct strans file_send_server[] = {
 // protocol objects depending on the initial command.
 struct strans recv_command[] = {
     {"get-what-to-do", "r", &MMChannel::get_what_to_do, "stop"},
-//{"send-media-ok", "w", &MMChannel::send_media_ok, "stop"},
     {0}
 };
 
@@ -200,20 +199,7 @@ MMChannel::send_file_info(int subchan, sproto *p, const char *ev)
     v2[0] = f2.c_str();
     if(p->fn_to_send.length() == 0)
         p->fn_to_send = newfn(remote_filename);
-#if 0
-    if(!p->file_key.is_nil())
-    {
-        DwString efn = p->fn_to_send;
-        efn += ".enc";
 
-        if(encrypt_attachment(p->fn_to_send.c_str(), p->file_key, efn.c_str()) == 0)
-            return sproto::fail;
-        // note: we leave both versions of the file, since the
-        // exsiting stuff will be filing the unencrypted stuff after
-        // the send.
-        p->fn_to_send = efn;
-    }
-#endif
     struct stat s;
     if(stat(p->fn_to_send.c_str(), &s) != 0)
     {

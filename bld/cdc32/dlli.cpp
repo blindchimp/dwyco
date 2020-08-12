@@ -318,7 +318,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "ratetwkr.h"
 
 #include "vccomp.h"
-#include "vcdecom.h"
 #ifdef DWYCO_CDC_LIBUV
 #include "vcuvsock.h"
 #endif
@@ -374,7 +373,9 @@ using namespace Weak;
 
 #ifdef LINUX
 #include <signal.h>
+#include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #endif
 #include "sepstr.h"
 #include "xinfo.h"
@@ -411,7 +412,6 @@ static void setup_callbacks();
 static int UI_ids = 1000000;
 static int Inited;
 HWND Main_window;
-extern int Reauthorize;
 extern int Create_new_account;
 extern int Database_id;
 
@@ -420,8 +420,6 @@ int uid_online_display(vc);
 unsigned long uid_to_ip(vc, int&, int&prim, int&sec, int&pal);
 void exit_conf_mode();
 void enter_conf_mode();
-void set_autoupdate_hash(vc);
-void resort_cur_dir();
 void TryDeletes();
 void async_handler(SOCKET, DWORD);
 void async_lookup_handler(HANDLE, DWORD);
@@ -451,8 +449,8 @@ extern vc StackDump;
 extern vc My_connection;
 extern vc KKG;
 extern int Chat_online;
+extern CallQ *TheCallQ;
 
-DwString simple_diagnostics();
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
 
@@ -466,6 +464,12 @@ extern int beginning_of_world;
 #define END_LEAK
 #endif
 
+#ifndef WIN32
+#undef DWYCO_CRYPTO_PIPELINE
+#else
+#undef DWYCO_CRYPTO_PIPELINE
+#endif
+
 // this class is just a hanging place for holding the
 // context of a server message fetch.
 struct BodyView {
@@ -474,7 +478,9 @@ struct BodyView {
     static DwQueryByMember<BodyView> Bvqbm;
     ValidPtr vp;
     vc body;
-    //vc dmsg; // decrypted message
+#ifdef DWYCO_CRYPTO_PIPELINE
+    vc dmsg; // decrypted message
+#endif
     vc msg_id;
     MMChannel *xfer_channel;
     void cancel();
@@ -540,7 +546,6 @@ set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
     q->progress_signal.emit(DwString(q->msg_id), My_UID, DwString(msg), p);
 }
 
-#undef DWYCO_CRYPTO_PIPELINE
 #ifdef DWYCO_CRYPTO_PIPELINE
 #include "dwpipe.h"
 struct emsg_input
@@ -610,6 +615,8 @@ pipeline_result(ValidPtr vp, int ok)
         // until the key is reset in the server.
         if(q->msg_download_callback)
             (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
+        vc from = q->dmsg[QQM_BODY_FROM];
+        se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
         dirth_send_ack_get(My_UID, q->msg_id, QckDone(0, 0));
         TRACK_ADD(MR_msg_decrypt_failed, 1);
         return;
@@ -649,7 +656,6 @@ static DwycoCallAppearanceCallback call_accepted_callback;
 static DwycoZapAppearanceCallback zap_appearance_callback;
 static DwycoAutoUpdateStatusCallback autoupdate_status_callback;
 DwycoStatusCallback dbg_msg_callback;
-//static DwycoStatusCallback unregister_callback;
 static DwycoServerLoginCallback login_callback;
 //DwycoPalAuthCallback pal_auth_callback;
 DwycoEmergencyCallback dwyco_emergency_callback;
@@ -1033,9 +1039,6 @@ dwyco_resume()
     resume_qmsg();
     init_prf_cache();
     init_pk_cache();
-    // inbox may have changed if messages were delivered
-    // directly while we were asleep
-    load_inbox();
     start_database_thread();
     Dwyco_suspended = 0;
 }
@@ -1060,16 +1063,6 @@ dwyco_set_system_event_callback(DwycoSystemEventCallback cb)
 {
     dwyco_system_event_callback = cb;
 }
-
-
-#if 0
-DWYCOEXPORT
-void
-dwyco_set_unregister_callback(DwycoStatusCallback cb)
-{
-    unregister_callback = cb;
-}
-#endif
 
 
 DWYCOEXPORT
@@ -1713,7 +1706,6 @@ login_auth_results(vc m, void *, vc, ValidPtr)
             dwyco::Enable_backups = !m[3][9].is_nil();
             if(m[3][10].type() == VC_INT)
                 dwyco::Backup_freq = (int)m[3][10];
-            load_inbox();
             pal_login();
         }
         if(m[2] == created)
@@ -2152,7 +2144,6 @@ dwyco_hangup_all_calls()
             mc->schedule_destroy(MMChannel::HARD);
         }
     }
-    extern CallQ *TheCallQ;
     TheCallQ->cancel_all();
 }
 
@@ -2574,9 +2565,9 @@ dwyco_chat_update_call_accept()
 }
 
 #if 0
-DWYCOEXPORT
-int
-dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
+//DWYCOEXPORT
+//int
+//dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
 {
     vc u(VC_BSTRING, uid, len_uid);
     DwString a(display_asshole(u));
@@ -2586,9 +2577,9 @@ dwyco_get_ah(const char *uid, int len_uid, char *ah_out)
     return 1;
 }
 
-DWYCOEXPORT
-int
-dwyco_get_ah2(const char *uid, int len_uid)
+//DWYCOEXPORT
+//int
+//dwyco_get_ah2(const char *uid, int len_uid)
 {
     vc u(VC_BSTRING, uid, len_uid);
 
@@ -2856,7 +2847,7 @@ void
 dwyco_line_from_keyboard(int id, const char *line, int len)
 {
     update_activity();
-    DLLKeyAcquire *a = (DLLKeyAcquire *)TheMsgAq;
+    DLLKeyAcquire *a = dynamic_cast<DLLKeyAcquire *>(TheMsgAq);
     if(a)
         a->add_input(line, len);
 
@@ -3037,7 +3028,6 @@ DWYCOEXPORT
 int
 dwyco_set_max_established_originated_calls(int n)
 {
-    extern CallQ *TheCallQ;
     int tmp = TheCallQ->max_established;
     TheCallQ->set_max_established(n);
     return tmp;
@@ -3052,7 +3042,6 @@ dwyco_channel_create(const char *uid, int len_uid, DwycoCallDispositionCallback 
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     vc host;
@@ -3170,7 +3159,6 @@ dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     vc host;
@@ -3243,7 +3231,6 @@ dwyco_connect_all4(const char **uid_list, int *uid_len_list, int num, DwycoCallD
     // designed to limit *incoming* calls. what we really want is
     // some other limit for the number of outgoing calls we can
     // originate, or something, i'm not sure. this will have to do for now.
-    extern CallQ *TheCallQ;
     //TheCallQ->set_max_established(Max_simultaneous_originated_calls);
 
     for(int i = 0; i < num; ++i)
@@ -4003,7 +3990,6 @@ dwyco_delete_user(const char *uid, int len_uid)
     int ret = remove_user(dir, "");
     ack_all(u);
     pal_del(u, 1);
-    //infos_del(u);
     prf_invalidate(u);
     Session_infos.del(u);
     return ret;
@@ -4030,18 +4016,30 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
 
     if(!sql_fav_has_fav(u))
         return dwyco_clear_user(uid, len_uid);
+
+    try {
+
+    sql_start_transaction();
     vc delmid = get_unfav_msgids(u);
 
     int n = delmid.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        delete_body3(u, delmid[i], 1);
+        delete_body3(u, delmid[i], 0);
     }
     // bulk update the indexes
     remove_msg_idx_uid(u);
     // even if there are some files left in the filesystem
     // that is ok, since they will get reindexed next time the
     // index is loaded.
+    sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        Rescan_msgs = 1;
+        return 0;
+    }
 
     Rescan_msgs = 1;
 
@@ -4953,9 +4951,6 @@ dwyco_set_zap_data(
     DWUIDECLARG_BEGIN
     DWUIDECLARG(bool, always_server)
     DWUIDECLARG(bool, always_accept)
-    DWUIDECLARG(bool, ignore)
-    DWUIDECLARG(bool, recv_all)
-    DWUIDECLARG(bool, zsave)
     DWUIDECLARG(bool, use_old_timing)
     DWUIDECLARG(bool, save_sent)
     DWUIDECLARG(bool, no_forward_default)
@@ -4965,10 +4960,6 @@ dwyco_set_zap_data(
     DWUISET_BEGIN(ZapAdvXfer, ZapAdvData)
     DWUISET_MEMBER(bool, always_server)
     DWUISET_MEMBER(bool, always_accept)
-// hijacked for pals-only. doesn't make sense to set it here.
-//DWUISET_MEMBER(bool, ignore)
-//DWUISET_MEMBER(bool, recv_all)
-//DWUISET_MEMBER(bool, zsave)
     DWUISET_MEMBER(bool, save_sent)
     DWUISET_MEMBER(bool, use_old_timing)
     DWUISET_MEMBER(bool, no_forward_default)
@@ -4982,8 +4973,6 @@ dwyco_get_zap_data(
     DWUIDECLARG_OUT(bool, always_server)
     DWUIDECLARG_OUT(bool, always_accept)
     DWUIDECLARG_OUT(bool, ignore)
-    DWUIDECLARG_OUT(bool, recv_all)
-    DWUIDECLARG_OUT(bool, zsave)
     DWUIDECLARG_OUT(bool, use_old_timing)
     DWUIDECLARG_OUT(bool, save_sent)
     DWUIDECLARG_OUT(bool, no_forward_default)
@@ -4994,8 +4983,6 @@ dwyco_get_zap_data(
     DWUIGET_MEMBER(bool, always_server)
     DWUIGET_MEMBER(bool, always_accept)
     DWUIGET_MEMBER(bool, ignore)
-    DWUIGET_MEMBER(bool, recv_all)
-    DWUIGET_MEMBER(bool, zsave)
     DWUIGET_MEMBER(bool, use_old_timing)
     DWUIGET_MEMBER(bool, save_sent)
     DWUIGET_MEMBER(bool, no_forward_default)
@@ -5236,7 +5223,7 @@ dwyco_dup_zap_composition(int compid)
 
 }
 
-// if uid == 0, then the message is an unsaved message
+// if uid == 0, we try to infer the uid from the mid.
 // otherwise, the msg_id is assumed to be filed in the
 // uid.usr folder.
 DWYCOEXPORT
@@ -5248,22 +5235,18 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     vc attachment;
     vc from;
 
+    vc u;
     if(uid == 0)
     {
         vc id(VC_BSTRING, msg_id, strlen(msg_id));
         vc summary = find_cur_msg(id);
-        if(summary.is_nil())
-        {
-            GRTLOG("make_forward_zap: cant find unsaved msgid %s", msg_id, 0);
-            return 0;
-        }
-
-        if(summary[QM_IS_DIRECT].is_nil())
+        if(!summary.is_nil())
         {
             GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
             return 0;
         }
-        body = direct_to_body(id);
+
+        body = direct_to_body(id, u);
         if(body.is_nil())
         {
             GRTLOG("make_forward_zap: cant find id %s", msg_id, 0);
@@ -5272,7 +5255,7 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     }
     else
     {
-        vc u(VC_BSTRING, uid, len_uid);
+        u = vc(VC_BSTRING, uid, len_uid);
         body = load_body_by_id(u, msg_id);
         if(body.is_nil())
         {
@@ -5295,13 +5278,8 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     DwString s2;
     if(body[QM_BODY_SENT].is_nil())
         s2 = (const char *)to_hex(from);
-    else if(uid == 0)
-    {
-        GRTLOG("make_forward_zap: panic: shouldnt get here (uid == 0)", 0, 0);
-        oopanic("bad call to forward");
-    }
     else
-        s2 = (const char *)to_hex(vc(VC_BSTRING, uid, len_uid));
+        s2 = (const char *)to_hex(u);
 
     DwString na((const char *)to_hex(gen_id()));
 
@@ -5315,13 +5293,9 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
         else
             na += ".fle";
         s2 += (const char *)attachment;
-        // note: if it is an unsaved message, the
-        // attachment is found in the top level
-        // directory, unlike saved messages where
-        // they are filed in the user folder.
-        if(!CopyFile(newfn((uid == 0 ? (const char *)attachment : s2.c_str())).c_str(), newfn(na).c_str(), 0))
+        if(!CopyFile(newfn(s2).c_str(), newfn(na).c_str(), 0))
         {
-            GRTLOG("make_zap_forward: cant copy %s to %s", newfn((uid == 0 ? (const char *)attachment : s2.c_str())).c_str(), newfn(na).c_str());
+            GRTLOG("make_zap_forward: cant copy %s to %s", newfn(s2).c_str(), newfn(na).c_str());
             GRTLOG("make_zap_forward: deleting %s", newfn(na).c_str(), 0);
             DeleteFile(newfn(na).c_str());
             return 0;
@@ -5330,22 +5304,13 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
 
     // determine if we can play the msg associated with
     // the forwarded msgs. if not, disallow the forward.
-    if(uid == 0)
+
+    if(any_no_forward(body) && verify_chain(body, 1, vcnil, att_dir.c_str()) != VERF_AUTH_OK)
     {
-        if(any_no_forward(body) && verify_chain(body, 1, vcnil, vc(".")) != VERF_AUTH_OK)
-        {
-            GRTLOG("make_forward_zap: failed checksum or no forward flag speced (%s, unsaved msg)", msg_id, 0);
-            return 0;
-        }
+        GRTLOG("make_forward_zap: failed checksum or no forward flag speced (%s, saved msg)", msg_id, 0);
+        return 0;
     }
-    else
-    {
-        if(any_no_forward(body) && verify_chain(body, 1, vcnil, att_dir.c_str()) != VERF_AUTH_OK)
-        {
-            GRTLOG("make_forward_zap: failed checksum or no forward flag speced (%s, saved msg)", msg_id, 0);
-            return 0;
-        }
-    }
+
 
     TMsgCompose *m = new TMsgCompose;
     //
@@ -5441,6 +5406,7 @@ DWYCOEXPORT
 int
 dwyco_make_special_zap_composition( int special_type, const char *user_id, const char *user_block, int len_user_block)
 {
+    user_id = "";
     TMsgCompose *m = new TMsgCompose;
     GRTLOG("WARNING: special zaps are mostly deprecated, tho if there is a good reason, they can be resurrected", 0, 0);
 
@@ -5521,7 +5487,7 @@ dwyco_make_file_zap_composition( const char *filename, int len_filename)
 
 DWYCOEXPORT
 int
-dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filename)
+dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename)
 {
     vc& v = *(vc *)m;
     vc body = v[0];
@@ -5549,11 +5515,6 @@ dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filena
     }
 #endif
 
-
-    // note: if it is an unsaved message, the
-    // attachment is found in the top level
-    // directory, unlike saved messages where
-    // they are filed in the user folder.
     if(!CopyFile(newfn((const char *)attachment).c_str(), dst_filename, 0))
     {
         // hmmm, since we might not have generated the
@@ -5567,7 +5528,7 @@ dwyco_copy_out_unsaved_file_zap(DWYCO_UNSAVED_MSG_LIST m, const char *dst_filena
     return 1;
 }
 
-// if uid == 0, then the message is an unsaved message
+// if uid == 0, try to infer uid from mid.
 // otherwise, the msg_id is assumed to be filed in the
 // uid.usr folder.
 DWYCOEXPORT
@@ -5578,18 +5539,11 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     vc attachment;
     vc from;
 
+    vc iuid;
+
     if(uid == 0)
     {
-        vc id(VC_BSTRING, msg_id, strlen(msg_id));
-        vc summary = find_cur_msg(id);
-        if(summary.is_nil())
-            return 0;
-
-        if(summary[QM_IS_DIRECT].is_nil())
-        {
-            return 0;
-        }
-        body = direct_to_body(id);
+        body = direct_to_body(msg_id, iuid);
         if(body.is_nil())
         {
             return 0;
@@ -5601,6 +5555,7 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
         body = load_body_by_id(u, msg_id);
         if(body.is_nil())
             return 0;
+        iuid = u;
     }
 
     from = body[QM_BODY_FROM];
@@ -5615,10 +5570,8 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     DwString s2;
     if(body[QM_BODY_SENT].is_nil())
         s2 = (const char *)to_hex(from);
-    else if(uid == 0)
-        oopanic("bad call to copyout");
     else
-        s2 = (const char *)to_hex(vc(VC_BSTRING, uid, len_uid));
+        s2 = (const char *)to_hex(iuid);
 
     s2 += ".usr" DIRSEPSTR;
     DwString att_dir = s2;
@@ -5636,14 +5589,9 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     }
 #endif
 
-
     s2 += (const char *)attachment;
 
-    // note: if it is an unsaved message, the
-    // attachment is found in the top level
-    // directory, unlike saved messages where
-    // they are filed in the user folder.
-    if(!CopyFile(newfn((uid == 0 ? (const char *)attachment : s2.c_str())).c_str(), dst_filename, 0))
+    if(!CopyFile(newfn(s2).c_str(), dst_filename, 0))
     {
         // hmmm, since we might not have generated the
         // file in the first place, and it might be unwritable but
@@ -5656,13 +5604,13 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     return 1;
 }
 
-// if uid == 0, then the message is an unsaved message
+// if uid == 0, try to infer uid from mid
 // otherwise, the msg_id is assumed to be filed in the
 // uid.usr folder.
 // YOU MUST CALL dwyco_free_array on returned buffer
 DWYCOEXPORT
 int
-dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max_out)
+dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max)
 {
     vc body;
     vc attachment;
@@ -5670,19 +5618,15 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     // keep debugging from crashing
     *buf_out = "";
     *buf_len_out = 0;
+    vc u;
 
     if(uid == 0)
     {
         vc id(VC_BSTRING, msg_id, strlen(msg_id));
         vc summary = find_cur_msg(id);
-        if(summary.is_nil())
+        if(!summary.is_nil())
             return 0;
-
-        if(summary[QM_IS_DIRECT].is_nil())
-        {
-            return 0;
-        }
-        body = direct_to_body(id);
+        body = direct_to_body(id, u);
         if(body.is_nil())
         {
             return 0;
@@ -5690,7 +5634,7 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     }
     else
     {
-        vc u(VC_BSTRING, uid, len_uid);
+        u = vc (VC_BSTRING, uid, len_uid);
         body = load_body_by_id(u, msg_id);
         if(body.is_nil())
             return 0;
@@ -5708,10 +5652,8 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     DwString s2;
     if(body[QM_BODY_SENT].is_nil())
         s2 = (const char *)to_hex(from);
-    else if(uid == 0)
-        oopanic("bad call to copyout");
     else
-        s2 = (const char *)to_hex(vc(VC_BSTRING, uid, len_uid));
+        s2 = (const char *)to_hex(u);
 
     s2 += ".usr" DIRSEPSTR;
     DwString att_dir = s2;
@@ -5732,7 +5674,7 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
 
     s2 += (const char *)attachment;
 
-    DwString src = newfn((uid == 0 ? (const char *)attachment : s2.c_str()));
+    DwString src = newfn(s2);
 
     struct stat s;
     if(stat(src.c_str(), &s) == -1)
@@ -5742,18 +5684,23 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
         return 0;
     // i give up trying to find the right header for MAX_INT32 blahblah, sheesh
     if(s.st_size >= (1 << 30))
+    {
+        close(fd);
         return 0;
+    }
     int sz = s.st_size;
-    if(sz > max_out)
-        sz = max_out;
+    if(sz > max)
+        sz = max;
     char *buf = new char[sz];
     if(read(fd, buf, sz) != sz)
     {
         delete [] buf;
+        close(fd);
         return 0;
     }
     *buf_out = buf;
     *buf_len_out = sz;
+    close(fd);
     return 1;
 }
 
@@ -6135,7 +6082,7 @@ can_play_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int un
 //
 DWYCOEXPORT
 int
-dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_len, int unsaved)
+dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_len, int qd)
 {
 #if 0
     if(Auto_authenticate)
@@ -6148,7 +6095,7 @@ dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_le
     if(recip_uid != 0)
     {
         ruid = to_hex(vc(VC_BSTRING, recip_uid, uid_len));
-        if(!can_play_body(list, recip_uid, uid_len, unsaved))
+        if(!can_play_body(list, recip_uid, uid_len, 0))
         {
             GRTLOG("make_zap_view: cant play body (either authentication failed or msg is corrupt or tampered-with (recip_uid %s)", (const char *)ruid, 0);
             return 0;
@@ -6175,7 +6122,7 @@ dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_le
     m->play_button_enabled = 1;
     m->stop_button_enabled = 0;
     DwString s;
-    if(!unsaved)
+    if(!qd)
     {
         if(v[0][QM_BODY_SENT].is_nil())
             s = (const char *)uid_to_dir(v[0][QM_BODY_FROM]);
@@ -6545,7 +6492,7 @@ DWYCOEXPORT
 int
 dwyco_get_rescan_messages()
 {
-    return Rescan_msgs;
+    return Rescan_msgs || sql_get_rescan();
 }
 
 DWYCOEXPORT
@@ -6553,6 +6500,7 @@ void
 dwyco_set_rescan_messages(int i)
 {
     Rescan_msgs = i;
+    sql_set_rescan(i);
 }
 
 DWYCOEXPORT
@@ -6788,7 +6736,29 @@ DWYCOEXPORT
 int
 dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
 {
-    vc u(VC_BSTRING, uid, len_uid);
+    vc iuid = sql_get_uid_from_mid(msg_id);
+    if(iuid.is_nil())
+        return 0;
+    iuid = from_hex(iuid);
+    vc u;
+    if(len_uid != 0)
+    {
+        u = vc(VC_BSTRING, uid, len_uid);
+        if(u != iuid)
+        {
+            oopanic("some problem with uid handling");
+            // NOTREACHED
+        }
+    }
+    else
+        u = iuid;
+
+    if(u.is_nil() || u.len() == 0)
+    {
+        oopanic("really bad problem with uid");
+        // NOTREACHED
+    }
+
     vc body = load_body_by_id(u, msg_id);
     if(body.is_nil())
     {
@@ -6803,38 +6773,38 @@ dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len
 
 DWYCOEXPORT
 int
-dwyco_get_unsaved_messages(DWYCO_UNSAVED_MSG_LIST *list_out, const char *uid, int len_uid)
+dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid)
 {
     vc u;
     if(uid != 0)
         u = vc(VC_BSTRING, uid, len_uid);
     vc &ret = *new vc;
     ret = load_msgs(u);
-    *list_out = (DWYCO_UNSAVED_MSG_LIST)&ret;
+    *list_out = (DWYCO_UNFETCHED_MSG_LIST)&ret;
     return 1;
 }
 
 DWYCOEXPORT
 int
-dwyco_get_unsaved_message(DWYCO_UNSAVED_MSG_LIST *list_out, const char *msg_id)
+dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id)
 {
     vc id(VC_BSTRING, msg_id, strlen(msg_id));
     vc summary = find_cur_msg(id);
     if(summary.is_nil())
     {
-        GRTLOG("get_unsaved_message: cant find summary msg %s", msg_id, 0);
+        GRTLOG("get_unfetched_message: cant find summary msg %s", msg_id, 0);
         return 0;
     }
     vc &ret = *new vc(VC_VECTOR);
     ret[0] = summary;
-    *list_out = (DWYCO_UNSAVED_MSG_LIST)&ret;
+    *list_out = (DWYCO_UNFETCHED_MSG_LIST)&ret;
     return 1;
 }
 
 
 DWYCOEXPORT
 int
-dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
+dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out)
 {
     static vc palreq("palreq");
     static vc palok("palok");
@@ -6845,54 +6815,29 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
     vc& v = *(vc *)ml;
     vc summary = v[0];
-    if(summary[QM_IS_DIRECT].is_nil())
-    {
-        // server message waiting to be fetched
-        if(summary[QM_SPECIAL_TYPE].is_nil())
-            return 0;
-        vc what = summary[QM_SPECIAL_TYPE];
-        if(what_out)
-        {
-            if(what == palreq)
-                *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
-            else if(what == palok)
-                *what_out = DWYCO_SUMMARY_PAL_OK;
-            else if(what == palrej)
-                *what_out = DWYCO_SUMMARY_PAL_REJECT;
-            else if(what == dlv)
-                *what_out = DWYCO_SUMMARY_DELIVERED;
-            else if(what == user)
-                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-            else
-                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-        }
-        return 1;
-    }
-    return 0;
-#if 0
-    // message has been fetched, and is unsaved
-    vc body = direct_to_body2(summary);
-    if(body.is_nil())
+
+    // server message waiting to be fetched
+    if(summary[QM_SPECIAL_TYPE].is_nil())
         return 0;
-    vc sv = body[QM_BODY_SPECIAL_TYPE];
-    if(sv.is_nil())
-        return 0;
-    vc what = sv[0];
-    // args are in a vector at sv[1]
+    vc what = summary[QM_SPECIAL_TYPE];
     if(what_out)
     {
         if(what == palreq)
-            *what_out = DWYCO_PAL_AUTH_REQ;
+            *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
         else if(what == palok)
-            *what_out = DWYCO_PAL_OK;
+            *what_out = DWYCO_SUMMARY_PAL_OK;
         else if(what == palrej)
-            *what_out = DWYCO_PAL_REJECT;
+            *what_out = DWYCO_SUMMARY_PAL_REJECT;
+        else if(what == dlv)
+            *what_out = DWYCO_SUMMARY_DELIVERED;
+        else if(what == user)
+            *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
         else
-            *what_out = DWYCO_SPECIAL_USER_DEFINED;
+            *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
     }
     return 1;
-#endif
 }
+
 
 #if 0
 
@@ -6938,20 +6883,13 @@ dwyco_is_special_message2(DWYCO_UNSAVED_MSG_LIST ml, int *what_out)
 
 DWYCOEXPORT
 int
-dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len_out)
+dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_out)
 {
     // this keeps the debugging stuff from crashing
     *str_out = "";
     *len_out = 0;
-
     vc& v = *(vc *)ml;
-    vc summary = v[0];
-    if(summary[QM_IS_DIRECT].is_nil())
-        return 0; // unfetched server message doesn't have enough info on it
-    vc body;
-    body = direct_to_body2(summary);
-    if(body.is_nil())
-        return 0;
+    vc body = v[0];
 
     vc sv = body[QM_BODY_SPECIAL_TYPE];
     if(sv[0] != vc("user"))
@@ -6966,21 +6904,12 @@ dwyco_get_user_payload(DWYCO_UNSAVED_MSG_LIST ml, const char **str_out, int *len
     memcpy(b, (const char *)payload, payload.len());
     *str_out = b;
     *len_out = payload.len();
-
     return 1;
 }
 
-
-// note: for the next two functions, uid MUST be equal to 0, as they
-// are broken otherwise. essentially, it turns out that i strip out the
-// special stuff when the msgs are saved (for vague security reasons.)
-// so these will only work on unsaved msgs. this was an attempt to
-// make cdcx work a little better, but in retrospect, i think i'll just
-// provide functions that operate directly on a DWYCO_UNSAVED_MSG
-// instead of a msg id.
 DWYCOEXPORT
 int
-dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *what_out)
+dwyco_is_special_message(const char *msg_id, int *what_out)
 {
     static vc palreq("palreq");
     static vc palok("palok");
@@ -6988,64 +6917,36 @@ dwyco_is_special_message(const char *uid, int len_uid, const char *msg_id, int *
     static vc dlv("dlv");
     static vc user("user");
     GRTLOG("WARNING: is_special_message is mostly deprecated", 0, 0);
-    vc id(VC_BSTRING, msg_id, strlen(msg_id));
-    if(uid == 0)
+    vc mid(VC_BSTRING, msg_id, strlen(msg_id));
+
+    vc summary = find_cur_msg(mid);
+    if(!summary.is_nil())
     {
-        vc summary = find_cur_msg(id);
-        if(summary.is_nil())
+        // server message waiting to be fetched
+        if(summary[QM_SPECIAL_TYPE].is_nil())
             return 0;
-        if(summary[QM_IS_DIRECT].is_nil())
+        vc what = summary[QM_SPECIAL_TYPE];
+        if(what_out)
         {
-            // server message waiting to be fetched
-            if(summary[QM_SPECIAL_TYPE].is_nil())
-                return 0;
-            vc what = summary[QM_SPECIAL_TYPE];
-            if(what_out)
-            {
-                if(what == palreq)
-                    *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
-                else if(what == palok)
-                    *what_out = DWYCO_SUMMARY_PAL_OK;
-                else if(what == palrej)
-                    *what_out = DWYCO_SUMMARY_PAL_REJECT;
-                else if(what == dlv)
-                    *what_out = DWYCO_SUMMARY_DELIVERED;
-                else if(what == user)
-                    *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-                else
-                    *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
-            }
-            return 1;
+            if(what == palreq)
+                *what_out = DWYCO_SUMMARY_PAL_AUTH_REQ;
+            else if(what == palok)
+                *what_out = DWYCO_SUMMARY_PAL_OK;
+            else if(what == palrej)
+                *what_out = DWYCO_SUMMARY_PAL_REJECT;
+            else if(what == dlv)
+                *what_out = DWYCO_SUMMARY_DELIVERED;
+            else if(what == user)
+                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
+            else
+                *what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
         }
-        return 0;
-    }
-    return 0;
-#if 0
-    // message has been fetched, and is unsaved
-    vc body = direct_to_body(id);
-    vc sv = body[QM_BODY_SPECIAL_TYPE];
-    if(sv.is_nil())
-        return 0;
-    vc what = sv[0];
-    // args are in a vector at sv[1]
-    if(what_out)
-    {
-        if(what == palreq)
-            *what_out = DWYCO_PAL_AUTH_REQ;
-        else if(what == palok)
-            *what_out = DWYCO_PAL_OK;
-        else if(what == palrej)
-            *what_out = DWYCO_PAL_REJECT;
-        else
-            *what_out = DWYCO_SPECIAL_USER_DEFINED;
+        return 1;
     }
 
-}
-else
-{
-    // saved msg
-    vc u(VC_BSTRING, uid, len_uid);
-    vc body = load_body_by_id(u, id);
+    // message has been fetched, and is unsaved
+    vc uid_out;
+    vc body = direct_to_body(mid, uid_out);
     if(body.is_nil())
         return 0;
     vc sv = body[QM_BODY_SPECIAL_TYPE];
@@ -7061,14 +6962,14 @@ else
             *what_out = DWYCO_PAL_OK;
         else if(what == palrej)
             *what_out = DWYCO_PAL_REJECT;
+        else if(what == user)
+            *what_out = DWYCO_SPECIAL_USER_DEFINED;
         else
             *what_out = DWYCO_SPECIAL_USER_DEFINED;
     }
+    return 1;
 }
 
-return 1;
-#endif
-}
 
 
 #if 0
@@ -7173,7 +7074,7 @@ dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out
     {
         return 0;
     }
-    if(summary[QM_IS_DIRECT].is_nil())
+    //if(summary[QM_IS_DIRECT].is_nil())
     {
         // server message waiting to be fetched
         if(summary[QM_SPECIAL_TYPE].is_nil())
@@ -7202,38 +7103,6 @@ dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out
     return 0;
 }
 
-
-DWYCOEXPORT
-int
-dwyco_unsaved_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
-{
-
-    vc id(VC_BSTRING, msg_id, strlen(msg_id));
-    vc summary = find_cur_msg(id);
-    if(summary.is_nil())
-    {
-        GRTLOG("unsaved_message_to_body: cant find summary for %s", msg_id, 0);
-        return 0;
-    }
-    vc &ret = *new vc(VC_VECTOR);
-
-    if(summary[QM_IS_DIRECT].is_nil())
-    {
-        delete &ret;
-        GRTLOG("unsaved_message_to_body: cant convert an unfetched server summary to a body %s", msg_id, 0);
-        return 0;
-    }
-
-    ret[0] = direct_to_body(id);
-    if(ret[0].is_nil())
-    {
-        delete &ret;
-        GRTLOG("unsaved_message_to_body: cant convert %s to body (msg id can't be found)", msg_id, 0);
-        return 0;
-    }
-    *list_out = (DWYCO_SAVED_MSG_LIST)&ret;
-    return 1;
-}
 
 // note: this function is pretty defunct, it assumes you are using
 // simple 8bit ascii and won't generally work with utf8/unicode type
@@ -7310,32 +7179,25 @@ dwyco_authenticate_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_u
     return verify_chain(body, 1, vcnil, u);
 }
 
-
-static int
+//
+// m should be a regular message: vector(vector(recipients) msg-vec local-id)
+//
+int
 save_msg(vc m, vc msg_id)
 {
-    if(m[1].is_nil())
+    if(m[QQM_MSG_VEC].is_nil())
     {
         return 0;
     }
 
-    // returned item is a vector of 2 items:
-    // 0: msg id
-    // 1: msg
-    //	msg is a vector:
-    // 0: sender id
-    // 1: the text message
-    // 2: id of any attachment
-    // 3: date vector
-
-    vc msg = m[1][1];
+    vc msg = m[QQM_MSG_VEC];
 
     if(msg.is_nil())
     {
         return 0;
     }
 
-    vc body = save_body(m[1][0],
+    vc body = save_body(msg_id,
                         msg[QQM_BODY_FROM],
                         "", //msg[QQM_BODY_TEXT],
                         msg[QQM_BODY_ATTACHMENT],
@@ -7346,26 +7208,27 @@ save_msg(vc m, vc msg_id)
                         msg[QQM_BODY_NEW_TEXT],
                         msg[QQM_BODY_NO_FORWARD],
                         msg[QQM_BODY_FILE_ATTACHMENT],
-                        msg[QQM_BODY_LOGICAL_CLOCK]);
+                        msg[QQM_BODY_LOGICAL_CLOCK],
+                        msg[QQM_BODY_SPECIAL_TYPE]);
     if(body.is_nil())
     {
         return 0;
     }
 
-    if(msg[2].is_nil())
+    if(msg[QQM_BODY_ATTACHMENT].is_nil())
     {
         update_msg_idx(vcnil, body);
-        ack_direct(msg_id);
-        //delete_msg2(m[1][0]);
+        //ack_direct(msg_id);
+        delete_msg2(msg_id);
         return 1;
     }
     // if the msg came directly, assume
     // the attachment was sent direct as well.
-    if(!refile_attachment(msg[2], msg[0]))
+    if(!refile_attachment(msg[QQM_BODY_ATTACHMENT], msg[QQM_BODY_FROM]))
         return 0;
     update_msg_idx(vcnil, body);
-    ack_direct(msg_id);
-    //delete_msg2(m[1][0]);
+    //ack_direct(msg_id);
+    delete_msg2(msg_id);
     return 1;
 
 }
@@ -7391,6 +7254,7 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
     dm[QQM_RECIP_VEC] = vc(VC_VECTOR);
     dm[QQM_RECIP_VEC][0] = My_UID;
     vc dmsg = msg;
+    vc from = msg[QQM_BODY_FROM];
     if(!msg[QQM_BODY_DHSF].is_nil())
     {
         dmsg = decrypt_msg_body(msg);
@@ -7407,7 +7271,7 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
             // until the key is reset in the server.
             if(q->msg_download_callback)
                 (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
-            se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, vcnil);
+            se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
             dirth_send_ack_get(My_UID, q->msg_id, QckDone(0, 0));
             TRACK_ADD(MR_msg_decrypt_failed, 1);
             return;
@@ -7441,19 +7305,13 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
     {
         if(q->msg_download_callback)
             (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_RATHOLED, q->msg_id, q->mdc_arg1);
-        se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED, q->msg_id, vcnil);
+        se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED, q->msg_id, from);
         return;
     }
-    if(!save_to_inbox(dm))
-    {
-        if(q->msg_download_callback)
-            (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_SAVE_FAILED, q->msg_id, q->mdc_arg1);
-        se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
-        return;
-    }
+
     if(q->msg_download_callback)
         (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_OK, q->msg_id, q->mdc_arg1);
-    se_emit_msg(SE_MSG_DOWNLOAD_OK, q->msg_id, vcnil);
+    se_emit_msg(SE_MSG_DOWNLOAD_OK, q->msg_id, from);
     // note: just send ack_get, with no return, assume it always works.
     // if it doesn't work, it is no big deal, we just get a message
     // twice.
@@ -7463,15 +7321,8 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
 static void
 eo_xfer(MMChannel *mc, vc m, void *, ValidPtr vp)
 {
-    vc msg = m[1];
-    vc from_user = m[1][0];
+    // we can resume partial fetches now, so don't delete the attachment
 
-    if(mc->xfer_failed)
-    {
-        // we can resume partial fetches now, so don't delete the attachment
-        //DeleteFile(newfn((const char *)mc->remote_filename).c_str());
-        delete_body2(from_user, m[0]);
-    }
     if(!vp.is_valid())
         return;
     BodyView *q = (BodyView *)(void *)vp;
@@ -7490,15 +7341,7 @@ eo_xfer(MMChannel *mc, vc m, void *, ValidPtr vp)
         delete q;
         return;
     }
-    // don't refile the attachment at this point.
-    // in icuii, the message becomes an "unsaved message"
-    // that must be explicitly saved (unlike cdc, where it is
-    // automatically saved.
-    //q->refile_attachment(mc->remote_filename, from_user);
-    //q->view(load_body_by_id(msg[0], m[0]));
 
-    // so we need to save the body to the inbox,
-    // and signal that the msg can be viewed.
 
 #ifdef DWYCO_CRYPTO_PIPELINE
     if(!q->body[QQM_BODY_DHSF].is_nil())
@@ -7564,36 +7407,13 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
         if(q->msg_download_callback)
             (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
-        // probably ought to delete the message from the in box at
-        // this point.
         q->cancel();
         delete q;
         return;
     }
 
-    // note: for icuii, we don't want to save yet.
-    // want to save to inbox but only when the entire message
-    // shows up... so for now we just save this in the context
-#if 0
-    if(!save_body(m[1][0],
-                  msg[QQM_BODY_FROM],
-                  msg[QQM_BODY_TEXT],
-                  msg[QQM_BODY_ATTACHMENT],
-                  msg[QQM_BODY_DATE],
-                  msg[QQM_BODY_RATING],
-                  msg[QQM_BODY_AUTH_VEC],
-                  msg[QQM_BODY_FORWARDED_BODY],
-                  msg[QQM_BODY_NEW_TEXT]))
-    {
-        if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_SAVE_FAILED, 0);
-        Qck_in_progress.del(m[1][0]);
-        q->cancel();
-        delete q;
-        return;
-    }
-#endif
     q->body = msg;
+    vc from = msg[QQM_BODY_FROM];
 
     if(msg[QQM_BODY_ATTACHMENT].is_nil())
     {
@@ -7608,7 +7428,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
 
         if(q->msg_download_callback)
             (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
-        se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, vcnil);
+        se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, from);
         q->cancel();
         delete q;
         return;
@@ -7626,23 +7446,35 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     // this would normally be base + 1 (as set when the msg was stored)
     // we just add an offset to it to get the xfer new protocol
     vc port = msg[QQM_BODY_ATTACHMENT_LOCATION][1] + vc(DWYCO_SEND_FILE_PORT_OFFSET);
+    // if the ip stored in the message isn't in our current set of
+    // servers, just pick a random one and see if it is there. this
+    // allows us to move attachment servers in some cases.
+    if(!contains_xfer_ip(ip))
+    {
+        ip = get_random_xfer_server_ip(port);
+        port = port + vc(1);
+        port = port + vc(DWYCO_SEND_FILE_PORT_OFFSET);
+    }
     if(!(mc = fetch_attachment(msg[QQM_BODY_ATTACHMENT], eo_xfer, m[1], 0, q->vp,
                                set_status, 0, q->vp, ip, port)))
     {
         if(q->msg_download_callback)
             (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
-        se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, vcnil);
+        se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, from);
         q->cancel();
         delete q;
         return;
     }
     if(q->msg_download_callback)
         (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FETCHING_ATTACHMENT, q->msg_id, q->mdc_arg1);
-    se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_START, q->msg_id, vcnil);
+    se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_START, q->msg_id, from);
     q->xfer_channel = mc;
 
 }
 
+// "saving" a message now just means removing from the inbox
+// which involves just removing the tag, unless it hasn't
+// been fetched yet.
 DWYCOEXPORT
 int
 dwyco_save_message(const char *msg_id)
@@ -7652,24 +7484,16 @@ dwyco_save_message(const char *msg_id)
 
     vc id(VC_BSTRING, msg_id, strlen(msg_id));
     vc summary = find_cur_msg(id);
-    if(summary.is_nil())
+    if(!summary.is_nil())
     {
-        GRTLOG("save_message: cant find summary %s", msg_id, 0);
+        GRTLOG("save_message: msg isn't fetched %s", msg_id, 0);
         return 0;
     }
 
-    if(summary[QM_IS_DIRECT].is_nil())
-    {
-        GRTLOG("save_message: cant save an unfetched server message %s", msg_id, 0);
-        return 0;
-    }
-    vc m = direct_to_server(msg_id);
-    vc resp(VC_VECTOR);
-    resp[1] = m[1];
-    int tmp = save_msg(resp, msg_id);
-    if(tmp)
+    if(sql_mid_has_tag(id, "_inbox"))
         Rescan_msgs = 1;
-    return tmp;
+    sql_remove_mid_tag(id, "_inbox");
+    return 1;
 }
 
 DWYCOEXPORT
@@ -7710,17 +7534,20 @@ dwyco_cancel_message_fetch(int fetch_id)
 }
 
 
+// this api should probably go away.
+// delete msg should probably just work no matter what
+// state the message is in, on the server or whereever
 DWYCOEXPORT
 int
-dwyco_delete_unsaved_message(const char *msg_id)
+dwyco_delete_unfetched_message(const char *msg_id)
 {
     vc id(msg_id);
-    ack_direct(id);
+
     vc args(VC_VECTOR);
     args.append(vcnil);
     args.append(id);
     dirth_send_ack_get(My_UID, id, QckDone(ack_get_done2, 0, args));
-    //delete_msg2(id);
+
     return 1;
 }
 
@@ -7799,9 +7626,23 @@ dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag)
 
 DWYCOEXPORT
 int
+dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag)
+{
+    vc res = sql_get_tagged_mids2(tag);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
+}
+
+DWYCOEXPORT
+int
 dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
 {
-    vc res = sql_get_tagged_idx(tag);
+    vc res;
+    // super-kluge
+    if(strcmp(tag, "*") == 0)
+        res = sql_get_all_idx();
+    else
+        res = sql_get_tagged_idx(tag);
     *list_out = dwyco_list_from_vc(res);
     return 1;
 }
@@ -7821,6 +7662,21 @@ dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag)
     return sql_uid_has_tag(buid, tag);
 }
 
+DWYCOEXPORT
+int
+dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    return sql_uid_count_tag(buid, tag);
+}
+
+DWYCOEXPORT
+int
+dwyco_count_tag(const char *tag)
+{
+    return sql_count_tag(tag);
+}
+
 
 DWYCOEXPORT
 void
@@ -7834,6 +7690,18 @@ int
 dwyco_get_fav_msg(const char *mid)
 {
     return sql_fav_is_fav(mid);
+}
+
+// INTERNAL API
+DWYCOEXPORT
+int
+dwyco_run_sql(const char *stmt, const char *a1, const char *a2, const char *a3)
+{
+    vc s(stmt);
+    vc va1 = (a1 ? vc(a1) : vcnil);
+    vc va2 = (a2 ? vc(a2) : vcnil);
+    vc va3 = (a3 ? vc(a3) : vcnil);
+    return sql_run_sql(s, va1, va2, va3);
 }
 
 // ignore list stuff
@@ -7936,17 +7804,11 @@ dwyco_set_pals_only(int on)
     {
         chatq_send_pals_only(0, My_UID, vctrue);
         ZapAdvData.set_ignore(1);
-        ZapAdvData.set_recv_all(0);
-        ZapAdvData.set_zsave(0);
-        //ZapAdvData.set_send_auto_reply(send_reply);
     }
     else
     {
         chatq_send_pals_only(0, My_UID, vcnil);
         ZapAdvData.set_ignore(0);
-        ZapAdvData.set_recv_all(1);
-        ZapAdvData.set_zsave(0);
-        //ZapAdvData.set_send_auto_reply(send_reply);
     }
     ZapAdvData.save();
 }
@@ -7958,6 +7820,7 @@ dwyco_get_pals_only()
     return ZapAdvData.get_ignore();
 }
 
+#if 0
 //
 // this will use the given composer
 // and text to generate a local message. the msgid of the message
@@ -7965,9 +7828,9 @@ dwyco_get_pals_only()
 // used if it can be found in the users folder.
 // setting text to 0 or compid to 0 will remove the msgid, and cause
 // autoreply to use a default msg.
-DWYCOEXPORT
-int
-dwyco_set_auto_reply_msg(const char *text, int len_text, int compid)
+//DWYCOEXPORT
+//int
+//dwyco_set_auto_reply_msg(const char *text, int len_text, int compid)
 {
     if(text == 0 || compid == 0)
     {
@@ -8005,6 +7868,8 @@ dwyco_set_auto_reply_msg(const char *text, int len_text, int compid)
     GRTLOG("set_auto_reply_msg: %d msg successfully saved.", compid, 0);
     return 1;
 }
+#endif
+
 
 #if 0
 static
@@ -8030,6 +7895,7 @@ auto_reply_msg_send_callback(int id, int what, const char *recip, int recip_len,
 }
 #endif
 
+#if 0
 int
 perform_auto_reply(vc recip_uid)
 {
@@ -8073,6 +7939,7 @@ perform_auto_reply(vc recip_uid)
     }
     return 1;
 }
+#endif
 
 
 DWYCOEXPORT
@@ -8328,14 +8195,15 @@ dwyco_list_to_string(DWYCO_LIST l, const char **str_out, int *len_out)
 }
 
 DWYCOEXPORT
-DWYCO_LIST
-dwyco_list_from_string(const char *str, int len_str)
+int
+dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, int len_str)
 {
     vc v(VC_BSTRING, str, len_str);
     vc res;
     if(!deserialize(v, res))
         return 0;
-    return dwyco_list_from_vc(res);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
 }
 
 
@@ -8747,63 +8615,7 @@ dwyco_set_external_audio_output_callbacks( DwycoVVCallback nw, DwycoVVCallback d
     dwyco_audout_bufs_playing = bufs_playing ;
 }
 
-// this must be called before dwyco_init
-// with the complete cmd path, ie, c:\mumble\foo.exe
-// it is used to add an exception to the windows firewall
-// automatically. must be less than 1024 chars
-char CmdPath[1024];
-DWYCOEXPORT
-int
-dwyco_set_cmd_path(const char *cmd, int len_cmd_path)
-{
-    if(len_cmd_path > sizeof(CmdPath) - 1)
-    {
-        GRTLOG("set_cmd_path: cmd path too long (%d max)", sizeof(CmdPath) - 1, 0);
-        return 0;
-    }
-    memcpy(CmdPath, cmd, len_cmd_path);
-    CmdPath[len_cmd_path] = 0;
-    return 1;
-}
-
 // Auto-update functionality for desktop clients
-
-DWYCOEXPORT
-void
-dwyco_setup_autoupdate(const char *f1, const char *f2, const char *f3, const char *f4)
-{
-    const char *fs[4];
-    fs[0] = f1;
-    fs[1] = f2;
-    fs[2] = f3;
-    fs[3] = f4;
-
-    CryptoPP::Weak::MD5 shs;
-    SecByteBlock b(shs.DigestSize());
-    for(int i = 0; i < 4; ++i)
-    {
-        if(fs[i])
-        {
-            FILE *f = fopen(fs[i], "rb");
-            if(!f)
-                break;
-            while(1)
-            {
-                char buf[8192];
-                int len;
-                len = fread(buf, 1, sizeof(buf), f);
-                shs.Update((const byte *)buf, len);
-                if(len != sizeof(buf))
-                    break;
-            }
-            fclose(f);
-        }
-    }
-
-    shs.Final(b);
-    vc v(VC_BSTRING, (const char *)b.data(), shs.DigestSize());
-    set_autoupdate_hash(v);
-}
 
 static void
 check_for_update_done(vc m, void *, vc, ValidPtr p)
@@ -8916,49 +8728,6 @@ dwyco_abort_autoupdate_download()
     TheAutoUpdate->abort_fetch();
 }
 
-DWYCOEXPORT
-void
-dwyco_set_regcode(const char *s)
-{
-    //reg_write_code(s);
-}
-
-
-DWYCOEXPORT
-void
-dwyco_sub_get(const char **reg_out, int *len_out)
-{
-#if 1
-    static vc v("");
-    //v = reg_get();
-    int n = strspn(v, "0123456789abcdefABCDEF");
-    if(n != v.len())
-    {
-        v = "";
-    }
-    if(reg_out)
-        *reg_out = (const char *)v;
-    if(len_out)
-        *len_out = v.len();
-#endif
-}
-
-
-#if 0
-//DWYCOEXPORT
-//void
-//dwyco_simple_diagnostics(const char **report_out, int *len_out)
-{
-    extern DwString Diag_res;
-    simple_diagnostics();
-    if(report_out)
-        *report_out = Diag_res.c_str();
-    if(len_out)
-        *len_out = Diag_res.length();
-
-}
-#endif
-
 // must call dwyco_free_array on returned pointer
 extern vc STUN_server;
 DWYCOEXPORT
@@ -9034,6 +8803,8 @@ dwyco_signal_msg_cond()
 
 }
 
+// the java stuff calls into this in another thread
+// when we signal, it means a new message has arrived
 DWYCOEXPORT
 void
 dwyco_wait_msg_cond(int ms)
@@ -9270,6 +9041,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     vc asock = vc(VC_SOCKET_STREAM);
     asock.socket_init(s, vctrue);
     dwyco_signal_msg_cond();
+    int signaled = 0;
+    int started_fetches = 0;
     while(1)
     {
         int spin = 0;
@@ -9295,17 +9068,19 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
             return 1;
 #endif
-
-        DwString uid;
-        DwString mid;
         if(dwyco_get_rescan_messages())
         {
+            GRTLOG("rescan %d %d", started_fetches, signaled);
             dwyco_set_rescan_messages(0);
-            while(ns_dwyco_background_processing::fetch_to_inbox(uid, mid))
+            ns_dwyco_background_processing::fetch_to_inbox();
+            GRTLOG("rescan2 %d %d", started_fetches, signaled);
+            int tmp;
+            if((tmp = sql_count_tag("_inbox")) > signaled)
             {
-                //emit new_msg(uid, txt, mid);
+                GRTLOG("signaling newcount %d", tmp, 0);
+                signaled = tmp;
+                dwyco_signal_msg_cond();
             }
-            dwyco_signal_msg_cond();
         }
         // note: this is a bit sloppy... rather than trying to
         // identify each socket that is waiting for write and

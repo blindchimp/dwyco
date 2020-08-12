@@ -32,9 +32,6 @@ vc_int::operator long() const {
 		return i;
 }
 vc_int::operator int () const {
-#if defined(__BORLANDC__) && __BORLANDC__ < 0x500
-	return i;
-#else
 	if(sizeof(int) == sizeof(long))
 		return i;
 	if(i > INT_MAX || i < INT_MIN)
@@ -43,22 +40,25 @@ vc_int::operator int () const {
 	}
 	else
 		return i;
-#endif
 }
 vc_int::operator void *() const {
 	if(sizeof(void *) < sizeof(i))
 	{
-		USER_BOMB("pointer truncation", 0)
+        USER_BOMB("pointer truncation", 0);
 	}
 	return (void *)i;
 }
 vc_int::operator double() const {return (double)i; }
-vc_int::operator const char *() const {USER_BOMB("can't convert int to string (unimp)", "0")}
+vc_int::operator const char *() const {USER_BOMB("can't convert int to string (unimp)", "0");}
 
 const char *
 vc_int::peek_str() const
 {
+#ifdef _WIN64
+    sprintf(buf, "%lld", i);
+#else
 	sprintf(buf, "%ld", i);
+#endif
 	return buf;
 }
 
@@ -133,7 +133,7 @@ vc vc_int::double_add(const vc& v) const {PROLOG; v1->d += i;EPILOG}
 vc vc_int::double_sub(const vc& v) const {PROLOG; v1->d -= i;EPILOG}
 vc vc_int::double_mul(const vc& v) const {PROLOG; v1->d *= i;EPILOG}
 vc vc_int::double_div(const vc& v) const {PROLOG; v1->d /= i;EPILOG}
-vc vc_int::double_mod(const vc& ) const {USER_BOMB("can't modulo floating numbers", vcnil)}
+vc vc_int::double_mod(const vc& ) const {USER_BOMB("can't modulo floating numbers", vcnil);}
 #undef PROLOG
 #undef EPILOG
 

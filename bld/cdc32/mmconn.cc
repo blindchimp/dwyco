@@ -8,7 +8,7 @@
 */
 // $Header: g:/dwight/repo/cdc32/rcs/mmconn.cc 1.11 1999/01/10 16:09:47 dwight Checkpoint $
 #ifndef LINUX
-#include <winsock.h>
+#include <WinSock2.h>
 #endif
 #include "vc.h"
 #include "vcwsock.h"
@@ -275,7 +275,6 @@ MMChannel::poll_resolve()
         else
         {
             struct hostent *h = (struct hostent *)resolve_buf;
-            strcpy(official_name, h->h_name);
             addr_out.s_addr = *(unsigned long *)h->h_addr;
 
             resolve_timer.reset();
@@ -302,7 +301,7 @@ MMChannel::start_connect()
         msg_out("address isn't a valid internet address");
         return 0;
     }
-    strcpy(addrstr, a);
+    addrstr = a;
     if(port == 0)
     {
         //strcat(addrstr, DEFAULT_PORT_SUFFIX);
@@ -312,16 +311,16 @@ MMChannel::start_connect()
         // for default OUTGOING port) to default outgoing port,
         // which is what we want to use if we don't have any
         // other information.
-        DwString a(DwNetConfigData.get_primary_suffix(addrstr));
-        strcpy(addrstr, a.c_str());
+        DwString b(DwNetConfigData.get_primary_suffix(addrstr.c_str()));
+        addrstr = b;
     }
     else
     {
         char b[255];
         sprintf(b, ":%d", port);
-        strcat(addrstr, b);
+        addrstr += b;
     }
-    sprintf(ouraddr, "any:any");
+    ouraddr = "any:any";
     pstate = CONNECTING;
     msg_out("Connecting...");
     tube = new MMTube;
@@ -333,7 +332,7 @@ MMChannel::poll_connect()
 {
     // don't set up unreliable right now, breaks
     // server based calling, need to fix eventually.
-    int err = tube->connect(addrstr, ouraddr, 0 /*,0, force_unreliable_video||force_unreliable_audio*/);
+    int err = tube->connect(addrstr.c_str(), ouraddr.c_str(), 0 /*,0, force_unreliable_video||force_unreliable_audio*/);
     if(err == SSTRYAGAIN)
     {
         return -1;

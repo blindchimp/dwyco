@@ -4,7 +4,9 @@ CONFIG -= qt
 
 include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
-INCLUDEPATH +=  $${VCCFG_COMP} ../dwcls ../zlib ../crypto5 ../kazlib ../jenkins ../libuv/include
+INCLUDEPATH +=  $${VCCFG_COMP} ../dwcls ../zlib ../crypto5 ../kazlib ../jenkins ../uv/include
+DEFINES += VC_INTERNAL
+
 !win32 {
 DEFINES += UNIX
 QMAKE_CXXFLAGS += -fpermissive

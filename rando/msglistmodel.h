@@ -32,7 +32,8 @@ public:
 
     Q_INVOKABLE void reload_model();
 
-    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
+    //bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
 
     Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n, int only_favs);
     Q_INVOKABLE void set_show_hidden(int);
@@ -45,13 +46,16 @@ public:
     Q_INVOKABLE void tag_all_selected(QByteArray tag);
     Q_INVOKABLE void untag_all_selected(QByteArray tag);
     Q_INVOKABLE bool at_least_one_selected();
+    Q_INVOKABLE void set_sort(bool);
+    Q_INVOKABLE int find_first_unseen();
 
     int mid_to_index(QByteArray mid);
     void invalidate_sent_to();
 
 public slots:
-    void msg_recv_status(int cmd, const QString& mid);
+    void msg_recv_status(int cmd, const QString& mid, const QString& huid);
     void mid_tag_changed(QString mid);
+    void msg_recv_progress(QString mid, QString huid, QString msg, int percent);
 
 private:
     QString m_uid;
@@ -62,6 +66,7 @@ private:
     int filter_last_n;
     int filter_only_favs;
     int filter_show_hidden;
+    bool special_sort;
 
     void force_reload_model();
 
@@ -73,6 +78,8 @@ signals:
 
 class msglist_raw : public QAbstractListModel
 {
+    friend class msglist_model;
+
     Q_OBJECT
 public:
     msglist_raw(QObject * = 0);
@@ -91,7 +98,7 @@ public:
 private:
     DWYCO_MSG_IDX msg_idx;
     DWYCO_QD_MSG_LIST qd_msgs;
-    DWYCO_UNSAVED_MSG_LIST inbox_msgs;
+    DWYCO_UNFETCHED_MSG_LIST inbox_msgs;
     int count_msg_idx;
     int count_qd_msgs;
     int count_inbox_msgs;
@@ -106,6 +113,7 @@ private:
 
     QString get_msg_text(int row) const;
     QString preview_filename(int row) const;
+    long hash_to_effective_lc(const QByteArray& hash);
 };
 
 extern msglist_model *mlm;

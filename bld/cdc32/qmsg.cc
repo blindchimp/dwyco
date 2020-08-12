@@ -9,19 +9,17 @@
 
 // $Header: g:/dwight/repo/cdc32/rcs/qmsg.cc 1.9 1999/01/10 16:09:51 dwight Checkpoint $
 
-// manage messages received from server
+// manage messages
 
 // messages are stored on disk like this:
 //
 // each sender has a directory whose name is
-// their id.
+// their <uid>.usr
 // each message that is received is stored in a file
-// with the messages id as the name. if a message is stored
-// as different components, then all those components are stored
+// with the message id as the name: <mid>.bod or <mid>.snt. if a message
+// has attachments, then all those attachments are stored
 // in the directory as well.
-//
-// message as stored on disk: (.bod file)
-// vector(message-id from-id msg-text attachment-filename date-vector)
+
 
 
 #include "dwdate.h"
@@ -78,7 +76,6 @@ using namespace CryptoPP;
 #include "dwrtlog.h"
 #include "dwstr.h"
 #include "prfcache.h"
-#include "dumbass.h"
 #include "fnmod.h"
 #ifdef _Windows
 #define strcasecmp strcmpi
@@ -97,6 +94,7 @@ using namespace CryptoPP;
 #include "qsend.h"
 #include "ssns.h"
 #include "dwyco_rand.h"
+#include "qmsgsql.h"
 using namespace dwyco;
 
 vc MsgFolders;
@@ -113,10 +111,6 @@ vc Session_ignore;
 // via the api
 vc Mutual_ignore;
 
-// list of message summaries from direct messages
-static vc Direct_msgs;
-// list of direct messages (full message)
-static vc Direct_msgs_raw;
 
 vc Online;
 vc Client_types;
@@ -134,18 +128,17 @@ vc LANmap;
 int LANmap_inhibit;
 vc Chat_ips;
 vc Chat_ports;
-static vc Session_auto_replies;
 vc Session_infos;
 static vc In_progress;
 static long Logical_clock;
 // this is used in order to assign clock values to
 // messages when we first see them from the server.
 static vc Mid_to_logical_clock;
-
-static void purge_inbox(vc id);
+extern vc Current_chat_server_id;
 
 void pal_relogin();
 void new_pipeline();
+int save_msg(vc m, vc msg_id);
 
 #include "qmsgsql.h"
 
@@ -334,6 +327,10 @@ ack_get_done2(vc m, void *, vc del2_args, ValidPtr )
     // make sense to have some kind of "pending" filter
     // depending on how much trouble it causes.
     //delete_msg2(del2_args[0], del2_args[1], vcnil);
+
+    // NOTE: probably need to do another tag update to make sure
+    // everything is gone in case it gets reinstated in the database
+    // somehow
 }
 
 void
@@ -342,7 +339,6 @@ init_qmsg()
     Cur_msgs = vc(VC_VECTOR);
     Cur_ignore = get_local_ignore();
     Session_ignore = vc(VC_SET);
-    Session_auto_replies = vc(VC_SET);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
@@ -350,8 +346,6 @@ init_qmsg()
     No_direct_att = vc(VC_SET);
     MsgFolders = vc(VC_TREE);
     In_progress = vc(VC_TREE);
-    Direct_msgs_raw = vc(VC_VECTOR);
-    Direct_msgs = vc(VC_VECTOR);
     // not perfect, but better than scanning for a max value
     // somewhere.
     Logical_clock = time(0);
@@ -456,7 +450,6 @@ init_qmsg()
     long tmplc = sql_get_max_logical_clock();
     if(tmplc > Logical_clock)
         Logical_clock = tmplc + 1;
-    //init_fav_sql();
 
     new_pipeline();
 
@@ -473,10 +466,8 @@ void
 exit_qmsg()
 {
     exit_qmsg_sql();
-    //exit_fav_sql();
     Cur_ignore = vcnil;
     Session_ignore = vcnil;
-    Session_auto_replies = vcnil;
     Mutual_ignore = vcnil;
     Online = vcnil;
     Client_types = vcnil;
@@ -484,8 +475,6 @@ exit_qmsg()
     No_direct_att = vcnil;
 
     Cur_msgs = vcnil;
-    Direct_msgs = vcnil;
-    Direct_msgs_raw = vcnil;
     Online_noise = vcnil;
     //Never_visible = vcnil;
     //Always_visible = vcnil;
@@ -520,7 +509,6 @@ suspend_qmsg()
 #if 0
     Cur_ignore = vcnil;
     Session_ignore = vcnil;
-    Session_auto_replies = vcnil;
     Mutual_ignore = vcnil;
     Online = vcnil;
     Client_types = vcnil;
@@ -528,8 +516,6 @@ suspend_qmsg()
     No_direct_att = vcnil;
 
     Cur_msgs = vcnil;
-    Direct_msgs = vcnil;
-    Direct_msgs_raw = vcnil;
     Online_noise = vcnil;
     //Never_visible = vcnil;
     //Always_visible = vcnil;
@@ -550,7 +536,6 @@ resume_qmsg()
     Cur_msgs = vc(VC_VECTOR);
     Cur_ignore = get_local_ignore();
     Session_ignore = vc(VC_SET);
-    Session_auto_replies = vc(VC_SET);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
@@ -558,8 +543,7 @@ resume_qmsg()
     No_direct_att = vc(VC_SET);
     MsgFolders = vc(VC_TREE);
     In_progress = vc(VC_TREE);
-    Direct_msgs_raw = vc(VC_VECTOR);
-    Direct_msgs = vc(VC_VECTOR);
+    
     // not perfect, but better than scanning for a max value
     // somewhere.
     Logical_clock = time(0);
@@ -672,7 +656,7 @@ resume_qmsg()
 }
 
 
-
+#if 0
 static int
 should_auto_reply(vc msg)
 {
@@ -691,9 +675,11 @@ gen_auto_reply(vc msg)
     Session_auto_replies.add(msg[QM_FROM]);
     return ret;
 }
+#endif
 
 // need this because some info files get
 // trashed mysteriously...
+static
 int
 valid_info(vc v)
 {
@@ -775,7 +761,7 @@ gen_hash(DwString filename)
     }
     SHA sha;
     HashFilter *hf = new HashFilter(sha);
-    FileSource fs(filename.c_str(), TRUE, hf);
+    FileSource fs(filename.c_str(), true, hf);
     int n = hf->MaxRetrievable();
     if(n != 20)
         val = gen_id(); // gen some garbage so it won't match anything
@@ -1208,10 +1194,10 @@ FindVec *
 find_to_vec(const char *pat)
 {
     int i = 1;
-    WIN32_FIND_DATA n;
 
     FindVec& ret = *new FindVec;
 #ifdef _Windows
+    WIN32_FIND_DATA n;
     HANDLE h = FindFirstFile(pat, &n);
     int idx;
     for(idx = 0; h != INVALID_HANDLE_VALUE && i != 0; i = FindNextFile(h, &n))
@@ -1611,7 +1597,7 @@ fetch_info(vc uid)
 
 vc
 save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc authvec,
-          vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock)
+          vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type)
 {
     DwString s;
     init_msg_folder(from, &s);
@@ -1624,13 +1610,13 @@ save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc 
     v[QM_BODY_TEXT_do_not_use] = "";
     v[QM_BODY_ATTACHMENT] = attachment_id;
     v[QM_BODY_DATE] = date;
-    //v[QM_BODY_RATING] = rating;
     v[QM_BODY_AUTH_VEC] = authvec;
     v[QM_BODY_FORWARDED_BODY] = forwarded_body;
     v[QM_BODY_NEW_TEXT] = new_text;
     v[QM_BODY_NO_FORWARD] = no_forward;
     v[QM_BODY_FILE_ATTACHMENT] = user_filename;
     v[QM_BODY_LOGICAL_CLOCK] = logical_clock;
+    v[QM_BODY_SPECIAL_TYPE] = special_type;
     if(save_info(v, s.c_str(), 1))
     {
         // can't do this here anymore because the index needs to
@@ -1650,7 +1636,6 @@ direct_to_body2(vc m)
     v[QM_BODY_TEXT_do_not_use] = "";
     v[QM_BODY_ATTACHMENT] = m[QQM_BODY_ATTACHMENT];
     v[QM_BODY_DATE] = m[QQM_BODY_DATE];
-    //v[QM_BODY_RATING] = m[QQM_BODY_RATING];
     v[QM_BODY_AUTH_VEC] = m[QQM_BODY_AUTH_VEC];
     v[QM_BODY_FORWARDED_BODY] = m[QQM_BODY_FORWARDED_BODY];
     v[QM_BODY_NEW_TEXT] = m[QQM_BODY_NEW_TEXT];
@@ -1663,49 +1648,14 @@ direct_to_body2(vc m)
 }
 
 vc
-direct_to_body(vc msgid)
+direct_to_body(vc msgid, vc& uid_out)
 {
-    vc m;
-    int i;
-    for(i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        if(Direct_msgs_raw[i][QQM_LOCAL_ID] == msgid)
-        {
-            m = Direct_msgs_raw[i][QQM_MSG_VEC];
-            break;
-        }
-    }
-    if(m.is_nil())
+    vc huid = sql_get_uid_from_mid(msgid);
+    if(huid.is_nil())
         return vcnil;
-    vc v = direct_to_body2(m);
-    v[QM_BODY_ID] = msgid;
-    return v;
+    uid_out = from_hex(huid);
+    return load_body_by_id(uid_out, msgid);
 
-}
-
-// ca 2010 (actually a long time before), "ratings" are defunct, so
-// i'm repurposing the "rating" logic to implement the "pals-only"
-// functionality:
-// users can set "only-from-pals" for messages, and then have a couple
-// of options:
-// ignore msgs from non-pals
-// save msgs from non-pals, and display them the next time they are in non-pals-only-mode
-// recv all messages
-//
-// this function now means "person is in the wrong pal-space"
-//
-// return 1 if the rating isn't right for a
-// message summary item
-int
-wrong_rating(vc item)
-{
-    // if the rating isn't our rating, ignore it
-    // for now.
-    if(ZapAdvData.get_recv_all())
-        return 0;
-    if(!pal_user(item[QM_FROM]))
-        return 1;
-    return 0;
 }
 
 static void
@@ -1713,10 +1663,7 @@ add_msg(vc vec, vc item)
 {
     int n = vec.num_elems();
     int i;
-    // if the rating isn't our rating, ignore it
-    // for now.
-    if(wrong_rating(item))
-        return;
+
     for(i = 0; i < n; ++i)
     {
         if(vec[i][QM_ID] == item[QM_ID])
@@ -1734,7 +1681,7 @@ add_msg(vc vec, vc item)
     // values in the message summaries (maybe that should change)
     // so in order to present the messages in some kind of reasonable
     // time order, we insert them in order by date sent... as a side
-    // effect, the list of unsaved messages will be presented to
+    // effect, the list of unfetched messages will be presented to
     // the caller and if they just present it in order, it will look ok.
     // otherwise, if we don't do this, the messages will appear in random
     // order on startup (they are just loaded from the inbox in whatever order
@@ -1808,25 +1755,13 @@ query_done(vc m, void *, vc, ValidPtr)
 
     vc v2 = m[1];
 
-    int oldnum = 0;
-    if(!Cur_msgs.is_nil())
-        oldnum = Cur_msgs.num_elems();
+    try {
+    sql_start_transaction();
     Cur_msgs = vc(VC_VECTOR);
+    sql_remove_tag("_remote");
 
     int i;
-    // this is a hack: if this is the first load
-    // of messages from the server, we don't want to
-    // generate a huge pile of auto-replies if we are in
-    // pals-only mode. this is roughly the same as ignoring
-    // someone while you are offline and having the server
-    // rathole their messages. one way to fix it would be to have
-    // the server know the pals-only status, and have it generate
-    // a response when a message comes in. but that is too complicated
-    // for now.
-    // note also that you will not receive auto-replies if you had a
-    // message q-d up offline for that person and they are in pals-only
-    // mode when you log in.
-    static int first_load = 0;
+
     for(i = 0; i < v2.num_elems(); ++i)
     {
         vc v = v2[i];
@@ -1836,40 +1771,21 @@ query_done(vc m, void *, vc, ValidPtr)
         // 3: date vector
 
         vc from = v[QM_FROM];
-        sql_add_tag(v[QM_ID], "_seen");
 
-        int auto_reply = 0;
-        if(uid_ignored(from) || (auto_reply = (ZapAdvData.get_ignore() && wrong_rating(v))))
+        if(uid_ignored(from))
         {
             // rathole it
-            if(auto_reply)
-            {
-                if(first_load)
-                    Session_auto_replies.add(from);
-                else
-                {
-                    // no auto-reply to delivery reports
-                    // or other special messages
-                    if(v[QM_SPECIAL_TYPE].is_nil())
-                        gen_auto_reply(v);
-                }
-            }
             {
                 vc args(VC_VECTOR);
                 args.append(from);
-                args.append(v[2]);
+                args.append(v[QM_ID]);
                 dirth_send_ack_get(My_UID, v[QM_ID], QckDone(ack_get_done2, 0, args));
             }
-            delete_msg2(v[QM_ID]);
             v2.remove(i, 1);
             --i;
             continue;
         }
-
-        if(!wrong_rating(v))
-        {
-            init_msg_folder(from);
-        }
+        init_msg_folder(from);
 
         // this logical clock stuff corresponds to "receiving" the message
         // the first time we see the message summary from the server.
@@ -1896,33 +1812,20 @@ query_done(vc m, void *, vc, ValidPtr)
             Mid_to_logical_clock.add_kv(mid, lc);
         }
         add_msg(Cur_msgs, v);
-
+        sql_add_tag(mid, "_remote");
+        DwString a("_");
+        a += (const char *)to_hex(from);
+        sql_add_tag(mid, a.c_str());
     }
-    // readd all direct messages
-    for(i = 0; i < Direct_msgs.num_elems(); ++i)
+    sql_commit_transaction();
+    }
+    catch(...)
     {
-        vc v = Direct_msgs[i];
-        vc from = v[QM_FROM];
-        int auto_reply = 0;
-        if(uid_ignored(from) || (auto_reply = (ZapAdvData.get_ignore() && wrong_rating(v))))
-        {
-            if(auto_reply)
-                gen_auto_reply(v);
-            // note: ack_direct modifies Direct_msgs
-            ack_direct(v[QM_ID]);
-            --i;
-        }
-        else
-            add_msg(Cur_msgs, Direct_msgs[i]);
+        Cur_msgs = vc(VC_VECTOR);
+        sql_rollback_transaction();
     }
 
-    if(!(oldnum == 0 && Cur_msgs.num_elems() == 0))
-        Rescan_msgs = 1;
-    if(Cur_msgs.num_elems() != oldnum)
-        Rescan_msgs = 1;
     Rescan_msgs = 1;
-
-    first_load = 0;
 }
 
 void
@@ -1931,7 +1834,7 @@ query_messages()
     dirth_send_query(My_UID, QckDone(query_done, 0));
 }
 
-static int Hack_first_load = 0;
+//static int Hack_first_load = 0;
 
 // return -1 if the message can never be delivered here
 // callers can use this to determine when to delete
@@ -1975,38 +1878,24 @@ store_direct(MMChannel *m, vc msg, void *)
         return 1;
     }
 
-    if(msg[QQM_MSG_VEC][QQM_BODY_DHSF].type() == VC_VECTOR)
+    vc from = msg[QQM_MSG_VEC][QQM_BODY_FROM];
+
+    if(uid_ignored(from))
     {
-        TRACK_ADD(SD_dhfs_unexpected, 1);
-        vc nmsg = decrypt_msg_qqm(msg);
-        if(nmsg.is_nil())
+        TRACK_ADD(DR_bad_ignored, 1);
+        // rathole it
+        if(m)
         {
-            TRACK_ADD(DR_bad_decrypt, 1);
-            if(m)
-            {
-                m->send_ctrl("ok");
-                m->schedule_destroy(MMChannel::HARD);
-            }
-            // NOTE: add notification that decryption failed
-            return -1;
+            m->send_ctrl("ok");
         }
-        msg[QQM_MSG_VEC] = nmsg;
+        return 1;
     }
 
-    vc v(VC_VECTOR);
-    // 0: who from
-    // 1: len
-    // 2: id on server
-    // 3: date vector
-    // added locally:
-    // 4: pending del
-    // 5: t = direct message, nil, must fetch from server
-    // oops, server has to put this way out here because
-    // old software expects to see the above structure...
-    // 6: rating of sender
-    vc id = to_hex(gen_id());
-    // drop the id on the end of the message so it
-    // is easier to load the inbox later.
+    // note: msgs sent directly are not encrypted because the channel
+    // is encrypted.
+
+    vc id;
+
     if(!m)
     {
         // we're loading the inbox from disk, so
@@ -2016,13 +1905,8 @@ store_direct(MMChannel *m, vc msg, void *)
     else
     {
         // generate a local id for the message
+        id = to_hex(gen_id());
         msg[QQM_LOCAL_ID] = id;
-        if(msg[QQM_LOCAL_INFO_VEC].is_nil())
-        {
-            msg[QQM_LOCAL_INFO_VEC] = vc(VC_VECTOR);
-        }
-        if(msg[QQM_LOCAL_INFO_VEC].type() == VC_VECTOR)
-            msg[QQM_LOCAL_INFO_VEC][QQM_LIV_TIME_RECV] = (long)time(0);
     }
 
     // note: doing the logical clock stuff here isn't quite right...
@@ -2059,37 +1943,10 @@ store_direct(MMChannel *m, vc msg, void *)
         }
     }
 #endif
-    v[QM_FROM] = msg[QQM_MSG_VEC][QQM_BODY_FROM];
-    v[QM_LEN] = msg[QQM_MSG_VEC][QQM_BODY_NEW_TEXT].len();
-    v[QM_ID] = id;
-    v[QM_DATE_SENT] = msg[QQM_MSG_VEC][QQM_BODY_DATE];
-    //v[QM_SENDER_RATING] = msg[QQM_MSG_VEC][QQM_BODY_RATING];
-    v[QM_IS_DIRECT] = vctrue;
-    v[QM_SPECIAL_TYPE] = msg[QQM_MSG_VEC][QQM_BODY_SPECIAL_TYPE];
-    v[QM_LOGICAL_CLOCK] = msg[QQM_MSG_VEC][QQM_BODY_LOGICAL_CLOCK];
+
     // if this is a direct msg with attachment, the att is already here, so
     // we can put in the estimated size if needed
-    vc from = v[0];
-    int auto_reply = 0;
-    if(uid_ignored(from) || (auto_reply = (ZapAdvData.get_ignore() && wrong_rating(v))))
-    {
-        // see comments in query_done regarding this "first_load" hack
-        if(auto_reply)
-        {
-            if(Hack_first_load)
-                Session_auto_replies.add(from);
-            else
-                gen_auto_reply(v);
-        }
-        TRACK_ADD(DR_bad_ignored, 1);
-        // rathole it
-        ack_direct(v[QM_ID]);
-        if(m)
-        {
-            m->send_ctrl("ok");
-        }
-        return 1;
-    }
+
     init_msg_folder(from);
 
     // if someone connects to us, assume we can use
@@ -2106,29 +1963,45 @@ store_direct(MMChannel *m, vc msg, void *)
     // attachment (ie, attachment msgs must go via the server.)
     if(m)
     {
-        extern vc No_direct_msgs;
         No_direct_msgs.del(from);
     }
 
-    add_msg(Cur_msgs, v);
-
     Rescan_msgs = 1;
-    Direct_msgs_raw.append(msg);
-    add_msg(Direct_msgs, v);
-
-    if(m)
+    // save_msg indexes the message too, so after store_direct
+    // you can map mid to uid and so on.
+    try
     {
-        if(save_to_inbox(msg))
+        sql_start_transaction();
+        if(save_msg(msg, id))
         {
-            m->send_ctrl("ok");
-            TRACK_ADD(DR_ok, 1);
+
+            sql_add_tag(id, "_inbox");
+            sql_add_tag(id, "_local");
+            sql_remove_mid_tag(id, "_remote");
+            DwString a("_");
+            a += (const char *)to_hex(from);
+            sql_remove_mid_tag(id, a.c_str());
+            if(m)
+            {
+                m->send_ctrl("ok");
+                TRACK_ADD(DR_ok, 1);
+            }
         }
         else
         {
-            m->send_ctrl("store failed");
-            TRACK_ADD(DR_store_failed, 1);
+            if(m)
+            {
+                m->send_ctrl("store failed");
+                TRACK_ADD(DR_store_failed, 1);
+            }
         }
+        sql_commit_transaction();
     }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+
     return 1;
 }
 
@@ -2219,12 +2092,14 @@ uid_to_location(vc id, int *cant_resolve_now)
     return ai[1];
 }
 
+// this is called to clean out all messages that might
+// be on the server from a particular sender
 void
 ack_all(vc uid)
 {
     int i;
     vc ackset(VC_VECTOR);
-    ack_all_direct_from(uid);
+    //ack_all_direct_from(uid);
     // only thing left in Cur_msgs for uid is server messages
     for(i = 0; i < Cur_msgs.num_elems(); ++i)
     {
@@ -2233,6 +2108,8 @@ ack_all(vc uid)
             ackset.append(Cur_msgs[i][QM_ID]);
         }
     }
+
+    sql_start_transaction();
     for(i = 0; i < ackset.num_elems(); ++i)
     {
         vc args(VC_VECTOR);
@@ -2240,7 +2117,17 @@ ack_all(vc uid)
         args.append(ackset[i]);
         dirth_send_ack_get(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
         delete_msg2(ackset[i]);
+        sql_remove_mid_tag(ackset[i], "_remote");
     }
+    DwString tag("_");
+    tag += (const char *)to_hex(uid);
+    vc mids = sql_get_tagged_mids2(tag.c_str());
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        sql_fav_remove_mid(mids[i][0]);
+    }
+    sql_commit_transaction();
+
 }
 
 int
@@ -2317,8 +2204,17 @@ remove_user(vc id, const char *pfx)
     vc uid = dir_to_uid((const char *)id);
     //always_vis_del(uid);
     // remove indexs so the msgs don't magically reappear
+    sql_start_transaction();
     sql_fav_remove_uid(uid);
     remove_msg_idx_uid(uid);
+    DwString tag("_");
+    tag += (const char *)to_hex(uid);
+    vc mids = sql_get_tagged_mids2(tag.c_str());
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        sql_fav_remove_mid(mids[i][0]);
+    }
+    sql_commit_transaction();
 
     MsgFolders.del(uid);
     se_emit(SE_USER_REMOVE, uid);
@@ -2330,8 +2226,17 @@ clear_user(vc id, const char *pfx)
 {
     remove_user_files(id, pfx, 1);
     vc uid = dir_to_uid((const char *)id);
+    sql_start_transaction();
     sql_fav_remove_uid(uid);
     clear_msg_idx_uid(uid);
+    DwString tag("_");
+    tag += (const char *)to_hex(uid);
+    vc mids = sql_get_tagged_mids2(tag.c_str());
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        sql_fav_remove_mid(mids[i][0]);
+    }
+    sql_commit_transaction();
     Rescan_msgs = 1;
     return 1;
 }
@@ -2655,29 +2560,28 @@ void
 delete_msg2(vc msg_id)
 {
     del_msg(Cur_msgs, msg_id);
-    del_msg(Direct_msgs, msg_id);
     Rescan_msgs = 1;
 }
 
 
-void
-delete_body2(vc user_id, vc msg_id)
-{
-    if(user_id.len() == 0)
-        return;
-    DwString s((const char *)to_hex(user_id));
-    DwString t((const char *)msg_id);
+//void
+//delete_body2(vc user_id, vc msg_id)
+//{
+//    if(user_id.len() == 0)
+//        return;
+//    DwString s((const char *)to_hex(user_id));
+//    DwString t((const char *)msg_id);
 
-    s += ".usr";
-    s = newfn(s);
-    s += DIRSEPSTR "";
-    s += t;
-    s += ".bod";
+//    s += ".usr";
+//    s = newfn(s);
+//    s += DIRSEPSTR "";
+//    s += t;
+//    s += ".bod";
 
-    DeleteFile(s.c_str());
-    remove_msg_idx(user_id, msg_id);
-    sql_fav_remove_mid(msg_id);
-}
+//    DeleteFile(s.c_str());
+//    remove_msg_idx(user_id, msg_id);
+//    sql_fav_remove_mid(msg_id);
+//}
 
 void
 delete_body3(vc user_id, vc msg_id, int inhibit_indexing)
@@ -2741,18 +2645,6 @@ delete_attachment2(vc user_id, vc attachment_name)
     DeleteFile(s.c_str());
 }
 
-static
-void
-delete_attachment(vc attachment_name)
-{
-    if(!is_attachment(attachment_name))
-        return;
-
-    DwString t((const char *)attachment_name);
-
-
-    DeleteFile(newfn(t).c_str());
-}
 
 static vc
 date_vector()
@@ -2954,6 +2846,7 @@ decrypt_msg_body(vc body)
 
 }
 
+#ifdef DWYCO_CRYPTO_PIPELINE
 // decrypt everything but the attachment
 // this is used to send large attachment decryption to another thread
 // so we don't block on it here
@@ -2993,6 +2886,7 @@ decrypt_msg_body2(vc body, DwString& src, DwString& dst, DwString& key_out)
     return msg_out;
 
 }
+#endif
 
 
 int
@@ -3068,6 +2962,7 @@ decrypt_attachment(vc filename, vc key, vc filename_dst)
     return 1;
 }
 
+#ifdef DWYCO_CRYPTO_PIPELINE
 int
 decrypt_attachment2(const DwString& filename, const DwString& key, const DwString& filename_dst)
 {
@@ -3076,34 +2971,8 @@ decrypt_attachment2(const DwString& filename, const DwString& key, const DwStrin
     vc d(VC_BSTRING, filename_dst.c_str(), filename_dst.length());
     return decrypt_attachment(f, k, d);
 }
-
-#if 0
-
-vc
-encrypt_msg_body(vc body, vc sf, vc ectx, vc key)
-{
-    if(sf.is_nil() || ectx.is_nil())
-        return body;
-    // encrypting: just re-encapsulate the msg in a new message
-    vc nmsg;
-
-    vc emsg = vclh_encdec_xfer_enc_ctx(ectx, body);
-
-    q_message2(vc(VC_VECTOR),
-               body[QQM_BODY_ATTACHMENT].is_nil() ? "" : (const char *)body[QQM_BODY_ATTACHMENT],
-               nmsg, vcnil, "update", vcnil, vcnil, vcnil,
-               !body[QQM_BODY_NO_FORWARD].is_nil(), vcnil, 1);
-    nmsg[QQM_MSG_VEC][QQM_BODY_DHSF] = sf;
-    nmsg[QQM_MSG_VEC][QQM_BODY_EMSG] = emsg;
-    nmsg[QQM_MSG_VEC][QQM_BODY_ATTACHMENT_LOCATION] = body[QQM_BODY_ATTACHMENT_LOCATION];
-
-    GRTLOG("EMSG body", 0, 0);
-    GRTLOGVC(body);
-    GRTLOGVC(nmsg[QQM_MSG_VEC]);
-
-    return nmsg[QQM_MSG_VEC];
-}
 #endif
+
 
 vc
 encrypt_msg_qqm(vc msg, vc sf, vc ectx, vc key)
@@ -3258,6 +3127,8 @@ do_local_store(vc filename, vc speced_mid)
         else
         {
             update_msg_idx(recip[i], m[1]);
+            sql_add_tag(m[1][QM_BODY_ID], "_local");
+            sql_add_tag(m[1][QM_BODY_ID], "_sent");
         }
     }
     return m[1];
@@ -3356,6 +3227,7 @@ reset_qsend_special(enum dwyco_sys_event cmd, DwString qid, vc recip_uid)
     QSend_special_inprogress = 0;
 }
 
+#if 0
 static
 DwVec<int>
 perm(int n)
@@ -3380,6 +3252,7 @@ perm(int n)
     }
     return ret;
 }
+#endif
 
 static
 vc
@@ -3616,182 +3489,24 @@ qd_purge_outbox()
     delete_findvec(&fv);
 }
 
-void
-load_inbox()
-{
-    int i;
-
-    Direct_msgs_raw = vc(VC_VECTOR);
-    Direct_msgs = vc(VC_VECTOR);
-    FindVec& fv = *find_to_vec(newfn("inbox" DIRSEPSTR "*.urd").c_str());
-    int nn = fv.num_elems();
-    for(i = 0; i < nn; ++i)
-    {
-        WIN32_FIND_DATA& n = *fv[i];
-
-        DwString d("inbox" DIRSEPSTR "");
-        d += n.cFileName;
-        vc m;
-        if(load_info(m, d.c_str()))
-        {
-            if(!valid_qd_message(m))
-            {
-                DeleteFile(newfn(d).c_str());
-                Log->make_entry("deleting bogus inbox item.");
-            }
-            else if(store_direct(0, m, 0) == -1)
-            {
-                DeleteFile(newfn(d).c_str());
-                Log->make_entry("deleting misdelivered message");
-            }
-        }
-    }
-    delete_findvec(&fv);
-    Hack_first_load = 0;
-}
-
-static void
-purge_inbox(vc id)
-{
-    int i;
-
-    FindVec& fv = *find_to_vec(newfn("inbox" DIRSEPSTR "*.urd").c_str());
-    int nn = fv.num_elems();
-
-    for(i = 0; i < nn; ++i)
-    {
-        WIN32_FIND_DATA& n = *fv[i];
-        DwString d("inbox" DIRSEPSTR "");
-        d += n.cFileName;
-        vc m;
-        if(load_info(m, d.c_str()))
-        {
-            if(valid_qd_message(m))
-            {
-                vc from = m[QQM_MSG_VEC][QQM_BODY_FROM];
-                if((from.type() == VC_STRING && from == id) ||
-                        from.type() != VC_STRING)
-                {
-                    DeleteFile(newfn(d).c_str());
-                    Log->make_entry("purged msg with invalid sender from inbox");
-                }
-            }
-            else
-            {
-                DeleteFile(newfn(d).c_str());
-                Log->make_entry("purged bogus message from inbox");
-            }
-        }
-    }
-    delete_findvec(&fv);
-}
-
 
 int
 save_to_inbox(vc m)
 {
-    DwString f((const char *)m[QQM_LOCAL_ID]);
-    f += ".urd";
-    f.insert(0, "inbox" DIRSEPSTR "");
     // note: the "local id" is set from the server if this msg came from the
     // server. it is set to something locally generated for peer-to-peer messages.
     // this isn't a problem, the main reason we are creating this tag is to filter out
     // stale notifications from google (ie, our app sees and notifies the user of
     // a message, then 20 minutes later google notifies about the same message.)
     // we only get sent google notifications for server messages...
-    sql_add_tag(m[QQM_LOCAL_ID], "_seen");
-    if(!save_info(m, f.c_str()))
-        return 0;
+    sql_add_tag(m[QQM_LOCAL_ID], "_inbox");
+    sql_add_tag(m[QQM_LOCAL_ID], "_local");
     return 1;
 }
 
-vc
-direct_to_server(vc msgid)
-{
-    // returned item is a vector of 2 items:
-    // 0: msg id
-    // 1: msg
-    //	msg is a vector:
-    // 0: sender id
-    // 1: the text message
-    // 2: id of any attachment
-    // 3: date vector
 
-    // convert direct raw msg into server-like
-    // message so it can be processed by existing
-    // code
 
-    vc m(VC_VECTOR);
-    m[0] = msgid;
-    for(int i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        if(Direct_msgs_raw[i][QQM_LOCAL_ID] == msgid)
-        {
-            m[1] = Direct_msgs_raw[i][QQM_MSG_VEC];
-            break;
-        }
-    }
-    vc sm(VC_VECTOR);
-    sm[1] = m;
-    return sm;
-}
 
-void
-ack_direct(vc msgid)
-{
-    for(int i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        if(Direct_msgs_raw[i][QQM_LOCAL_ID] == msgid)
-        {
-            vc msg = Direct_msgs_raw[i];
-            vc att = msg[QQM_MSG_VEC][QQM_BODY_ATTACHMENT];
-            if(!att.is_nil())
-            {
-                delete_attachment(att);
-            }
-            Direct_msgs_raw.remove(i);
-            break;
-        }
-    }
-    DwString f((const char *)msgid);
-    f += ".urd";
-    f.insert(0, "inbox" DIRSEPSTR "");
-    DeleteFile(newfn(f).c_str());
-    delete_msg2(msgid);
-}
-
-void
-ack_all_direct_from(vc uid)
-{
-    vc msglist(VC_VECTOR);
-    int i;
-    for(i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        if(Direct_msgs_raw[i][QQM_MSG_VEC][QQM_BODY_FROM] == uid)
-            msglist.append(Direct_msgs_raw[i][QQM_LOCAL_ID]);
-    }
-    int n = msglist.num_elems();
-    for(i = 0; i < n; ++i)
-    {
-        ack_direct(msglist[i]);
-    }
-}
-
-void
-ack_all_direct()
-{
-    vc msglist(VC_VECTOR);
-    int i;
-    for(int i = 0; i < Direct_msgs_raw.num_elems(); ++i)
-    {
-        msglist.append(Direct_msgs_raw[i][QQM_LOCAL_ID]);
-    }
-    int n = msglist.num_elems();
-    for(i = 0; i < n; ++i)
-    {
-        ack_direct(msglist[i]);
-    }
-}
 
 void
 got_ignore(vc m, void *, vc, ValidPtr)
@@ -3843,7 +3558,7 @@ uid_has_god_power(vc uid)
     // mod in a lobby, and you are in that lobby, the ignore will
     // not filter out messages from the god. when you go outside
     // their sphere of control, the ignore works.
-    extern vc Current_chat_server_id;
+
     if(!g[GT_DEMIGOD].is_nil() || !g[GT_SUBGOD].is_nil())
     {
         if(g[GT_SERVER_ID] == Current_chat_server_id)
@@ -4439,189 +4154,6 @@ reset_they_grant()
 }
 #endif
 
-#if 0
-
-DwString Diag_res;
-
-static void
-check_type(vc v)
-{
-    if(v[0].type() != VC_STRING)
-        Diag_res += "BOGUS infos file key (wrong type.)\r\n";
-}
-
-DwString
-simple_diagnostics()
-{
-#ifdef __WIN32__
-    // run thru the set of folders in the install folder
-    // and see if there is any problems with the naming of the
-    // folders, or the consistency of the info associated with the
-    // folders.
-    // notes: check to make sure everything is writable, including "."
-
-    FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
-    DwString &res = Diag_res;
-    res = "";
-
-    int n = fv.num_elems();
-    for(int i = 0; i < n; ++i)
-    {
-        DWORD attr;
-        WIN32_FIND_DATA& n = *fv[i];
-        // check to see that the filename is the right length, case, etc.
-        DwString a = n.cFileName;
-        //attr = GetFileAttributes(a.c_str());
-        if(!(n.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY))
-        {
-            res += "Error: ";
-            res += a;
-            res += " is not a folder.\r\n";
-            continue;
-        }
-#if 0
-        if(n.dwFileAttributes|FILE_ATTRIBUTE_READONLY)
-        {
-            res += "Warning: folder ";
-            res += a;
-            res += " is read-only.\r\n";
-        }
-#endif
-        if(a.length() != 24)
-        {
-            res += "Error: folder ";
-            res += a;
-            res += " is not the right length.\r\n" ;
-            continue;
-        }
-        DwString b = a;
-        b.remove(20);
-        if(b.find_first_not_of("0123456789abcdefABCDEF") != DwString::npos)
-        {
-            res += "Error: folder ";
-            res += a;
-            res += " is not named properly.\r\n";
-            continue;
-        }
-        if(b.find_first_not_of("0123456789abcdef") != DwString::npos)
-        {
-            res += "Warning: folder name ";
-            res += a;
-            res += " contains upper-case letters.\r\n";
-        }
-        // ok, the name is ok at this point, now check to see if the
-        // info file is consistent.
-        DwString info = a;
-        info += DIRSEPSTR "info";
-        vc infoc;
-
-        if(access(info.c_str(), 0) != 0)
-        {
-            res += "Warning: no info file ";
-            res += info;
-            res += "\r\n";
-            goto infos_check;
-        }
-        attr = GetFileAttributes(info.c_str());
-        if(attr&FILE_ATTRIBUTE_DIRECTORY)
-        {
-            res += "Error: info file ";
-            res += info;
-            res += " is a folder???\r\n";
-        }
-        if(attr&FILE_ATTRIBUTE_READONLY)
-        {
-            res += "Error: info file ";
-            res += info;
-            res += " is read-only\r\n";
-        }
-
-        if(!load_info(infoc, info.c_str()))
-        {
-            res += "Error: info file ";
-            res += info;
-            res += " was corrupt (deleted.)\r\n";
-        }
-        if(!valid_info(infoc))
-        {
-            res += "Error: info file ";
-            res += info;
-            res += " not valid.\r\n";
-            goto infos_check;
-        }
-        if(dir_to_uid(a.c_str()) != infoc[QIR_FROM])
-        {
-            res += "Error: info file ";
-            res += info;
-            res += " UID doesn't match folder name.\r\n";
-        }
-infos_check:
-        UID_infos.foreach(vcnil, check_type);
-        // check the folder uid against what is in the infos file
-        vc fuid = dir_to_uid(a.c_str());
-        vc iv;
-        if(!UID_infos.find(fuid, iv))
-        {
-            res += "Error: folder ";
-            res += a;
-            res += " not in infos file.\r\n";
-            continue;
-        }
-        if(!valid_info(iv))
-        {
-            res += "Error: info for ";
-            res += a;
-            res += " in infos file ";
-            res += "not valid.\r\n";
-            continue;
-        }
-        if(fuid != iv[QIR_FROM])
-        {
-            res += "Error: infos file key for ";
-            res += a;
-            res += " doesn't match info UID\r\n";
-        }
-
-    }
-    return res;
-#else
-    return DwString("");
-#endif
-}
-#endif
-
-#if 0
-int
-infos_add(vc uid, vc info)
-{
-    int new_user = 0;
-    // note: this isn't exactly right, since we may have
-    // different info for an existing user... we only
-    // write it out when a new user comes in... this is an
-    // optimization, since the infos file should not be used
-    // all that much with the new profile caching.
-    UID_infos.add_kv(uid, info);
-    if(!UID_infos.contains(uid))
-    {
-        new_user = 1;
-        save_info(UID_infos, "infos");
-    }
-    return new_user;
-}
-
-
-void
-infos_del(vc uid)
-{
-    if(UID_infos.contains(uid))
-    {
-        UID_infos.del(uid);
-        save_info(UID_infos, "infos");
-    }
-}
-#endif
-
-
 int
 pal_add(vc u)
 {
@@ -4689,9 +4221,7 @@ refile_attachment(vc filename, vc from_user)
         if(!move_replace(newfn((const char *)filename), newfn(s2)))
             return 0;
     }
-    // one of the copies succeeded, so
-    // get rid of the original
-    //DeleteFile(newfn((const char *)filename).c_str());
+
     return 1;
 }
 

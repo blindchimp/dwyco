@@ -20,12 +20,13 @@ class SimpleUser : public QObject
 
     QML_READONLY_VAR_PROPERTY(QString, uid)
     QML_READONLY_VAR_PROPERTY(QString, display)
-    QML_WRITABLE_VAR_PROPERTY(bool, active)
+    QML_READONLY_VAR_PROPERTY(bool, active)
     QML_READONLY_VAR_PROPERTY(bool, invalid)
     QML_READONLY_VAR_PROPERTY(bool, REVIEWED)
     QML_READONLY_VAR_PROPERTY(bool, REGULAR)
     QML_READONLY_VAR_PROPERTY(bool, session_msg)
     QML_READONLY_VAR_PROPERTY(int, resolved_counter)
+    QML_READONLY_VAR_PROPERTY(QString, email)
     QML_WRITABLE_VAR_PROPERTY(bool, selected)
 
 
@@ -54,6 +55,7 @@ public:
 
     Q_INVOKABLE void load_users_to_model();
     Q_INVOKABLE void load_admin_users_to_model();
+    Q_INVOKABLE void load_from_cq_file();
     void remove_uid_from_model(const QByteArray& uid);
     SimpleUser * add_uid_to_model(const QByteArray& uid);
 
@@ -61,8 +63,6 @@ public:
     void delete_all_selected();
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void send_forward_selected(QString uid_folder, QString mid_to_forward);
-
-signals:
 
 public slots:
     // note: the invalidate is needed because we need to
@@ -82,14 +82,22 @@ class SimpleUserSortFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT
     Q_PROPERTY(int selected_count READ get_selected_count NOTIFY selected_countChanged)
-
+    Q_PROPERTY (int count READ count NOTIFY countChanged)
 
 public:
     SimpleUserSortFilterModel(QObject *p = 0);
     virtual bool lessThan(const QModelIndex& left, const QModelIndex& right) const;
 
+    int count() const {
+        if(sourceModel()) {
+            return dynamic_cast<SimpleUserModel *>(sourceModel())->count();
+        }
+        return 0;
+    }
+
     Q_INVOKABLE void load_users_to_model();
     Q_INVOKABLE void load_admin_users_to_model();
+    Q_INVOKABLE void load_from_cq_file();
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void set_all_selected(bool);
     Q_INVOKABLE void delete_all_selected();
@@ -99,6 +107,9 @@ public:
 
 signals:
     void selected_countChanged(int);
+    void countChanged();
+private:
+    int m_count;
 
 };
 

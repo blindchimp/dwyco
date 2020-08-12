@@ -75,7 +75,7 @@ public:
 
 	virtual vc_default *do_copy() const {oopanic("copy socket?"); return 0;}
 	enum vc_type type() const {return VC_SOCKET;}
-	int is_quoted() const {return TRUE;}
+    int is_quoted() const {return 1;}
 	void printOn(VcIO os) {os << "socket(errvc="; errvc.printOn(os); os << ")";}
 	void stringrep(VcIO os) const {os << "socket()";}
 	virtual vcsocketmode socket_get_mode() { return smode; }

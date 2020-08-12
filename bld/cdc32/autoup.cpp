@@ -126,7 +126,7 @@ eo_xfer(MMChannel *mc, vc m, void *, ValidPtr vp)
 
         SHA hash;
         BufferedTransformation *bt = new HashFilter(hash);
-        FileSource *file = new FileSource(newfn((const char *)mc->remote_filename).c_str(), TRUE, bt);
+        FileSource *file = new FileSource(newfn((const char *)mc->remote_filename).c_str(), true, bt);
         int n = bt->MaxRetrievable();
         vc val;
         if(n != 20)

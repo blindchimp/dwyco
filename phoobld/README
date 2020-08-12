@@ -1,14 +1,11 @@
 
-Phoo is an experimental Qt5 encrypted messenger.
+Phoo is a Qt5 encrypted messenger.
 
 Current requirements:
-* Qt 5.9.x or 5.10.1
-* For Linux: Ubuntu Trusty or later
+* Qt 5.12
+* For Linux: Ubuntu 16.04+
 
-Mac/Windows/Android/iOS
-TBD
-
-To build on Linux Trusty:
+To build on Linux:
 
 * Get Qt5 set up (make sure the default qmake gets the right version.)
 * Clone repo into the right place (the build scripts are a bit dumb about this
@@ -44,7 +41,7 @@ The result should be in $(HOME)/git/build-phoo/phoo/phoo
 If you run "phoo", it will create its data directory in
 $(HOME)/Documents/dwyco/phoo. There should be no need for 
 any other installation, as it "installs" everything it needs
-there if it doesn't already exist. There is also no way to make
+if it doesn't already exist. There is also no way to make
 it use another directory at the moment.
 
 

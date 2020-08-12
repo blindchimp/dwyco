@@ -7,10 +7,10 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.1
-import QtQuick.Dialogs 1.2
+import QtQuick 2.12
+import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.12
+import QtQuick.Dialogs 1.3
 
 Page {
     property alias model: grid.model
@@ -293,7 +293,7 @@ Page {
                 height: 16
                 anchors.top: ditem.top
                 anchors.left: is_forwarded.right
-                visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
+                visible: {(HAS_VIDEO === 1 && HAS_SHORT_VIDEO === 0) && IS_QD === 0}
                 z: 3
                 color: primary_light
                 radius: width / 2
@@ -317,12 +317,12 @@ Page {
             Image {
                 id: preview
                 anchors.fill: parent
-                visible: {PREVIEW_FILENAME != "" || HAS_AUDIO}
+                visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
                 //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) :
+                source: {PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) :
                                                   (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
                 asynchronous: true

@@ -6,9 +6,9 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.9
+import QtQuick 2.12
 import QtQuick.Controls 2.12
-import QtQuick.Dialogs 1.2
+import QtQuick.Dialogs 1.3
 
 AppDrawerForm {
 
@@ -24,7 +24,7 @@ AppDrawerForm {
         title: "Delete all"
         icon: StandardIcon.Question
         text: "Delete ALL pictures?"
-        informativeText: "This removes FAVORITE pictures too."
+        informativeText: "This REMOVES FAVORITE pictures too."
         standardButtons: StandardButton.Yes | StandardButton.No
         onYes: {
             ConvListModel.set_all_selected(true)
@@ -77,5 +77,16 @@ AppDrawerForm {
         close()
     }
 
+    freebies_switch.checked: dwy_freebies
+
+    freebies_switch.onClicked: {
+        dwy_freebies = freebies_switch.checked
+        core.set_local_setting("send_freebies", dwy_freebies ? "true" : "false")
+        rando_status.refresh()
+        //close()
+    }
+
+
 
 }
+

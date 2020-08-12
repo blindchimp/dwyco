@@ -1,10 +1,10 @@
-QT -= core gui
-include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
-#DESTDIR = $$PWD/../
 
 TARGET = ogg
 TEMPLATE = lib
 CONFIG += staticlib
+CONFIG -= qt
+
+include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
 INCLUDEPATH += include
 

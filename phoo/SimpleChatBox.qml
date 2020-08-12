@@ -7,12 +7,9 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick 2.12
-import QtQuick.Layouts 1.3
-import QtGraphicalEffects 1.0
-import QtQml 2.2
+import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import QtQuick.Dialogs 1.3
-//import Qt.labs.platform 1.1 as NL
 import dwyco 1.0
 
 
@@ -773,7 +770,7 @@ Page {
                 Image {
                     id: preview
 
-                    visible: {PREVIEW_FILENAME != "" || HAS_AUDIO}
+                    visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
@@ -821,7 +818,7 @@ Page {
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     Layout.maximumWidth: (listView1.width * 3) / 4
                     width: implicitWidth
-                    horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
+                    horizontalAlignment: { (SENT === 1) ? Text.AlignRight : Text.AlignLeft}
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText

@@ -6,9 +6,10 @@ include(../$$DWYCO_CONFDIR/conf.pri)
 
 SOURCES += \
     randobot.cpp \
-    dwyco_new_msg.cpp
+    ../bld/miscsrc/dwyco_new_msg.cpp
+
 DEFINES += DWYCO_THROW
-INCLUDEPATH += $${PWD}/../bld/dwcls $${PWD}/../bld/vc $${PWD}/../bld/cdc32 $${VCCFG_COMP}
+INCLUDEPATH += $${PWD}/../bld/dwcls $${PWD}/../bld/vc $${PWD}/../bld/cdc32 ../bld/miscsrc $${VCCFG_COMP}
 
 linux-*|macx-* {
 

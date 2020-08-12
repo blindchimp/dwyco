@@ -6,9 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.9
-import QtQuick.Controls 2.2
-import QtQuick.Layouts 1.3
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
+import QtQuick.Controls.Material 2.12
 
 Pane {
 
@@ -23,7 +24,9 @@ Pane {
     property alias tech_uid: tech_uid
     property alias clear_nonfav: clear_nonfav
     property alias delete_all: delete_all
-    focusPolicy: Qt.NoFocus
+    property alias freebies_switch: freebies_switch
+
+    //focusPolicy: Qt.NoFocus
     padding: 6
 
     ColumnLayout {
@@ -46,54 +49,68 @@ Pane {
                     color: "white"
                 }
 
-        RowLayout {
-            id: rowLayout
-            //width: 100
-            //height: 100
-            //Layout.fillWidth: true
-            //anchors.fill: parent
-            //anchors.margins: 10
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-
-            CircularImage {
-                id: circularImage
-
-                Layout.maximumHeight: 32
-                Layout.maximumWidth: 32
-                Layout.minimumHeight: 32
-                Layout.minimumWidth: 32
-                Layout.margins: ctrl_pad
-                source: "qrc:/icons/greenguy.png"
-            }
-            ColumnLayout {
-                Text {
-                    id: text1
-                    text: qsTr("Text")
-                    clip: true
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                RowLayout {
+                    id: rowLayout
+                    //width: 100
+                    //height: 100
+                    //Layout.fillWidth: true
+                    //anchors.fill: parent
+                    //anchors.margins: 10
+                    Layout.fillHeight: true
                     Layout.fillWidth: true
-                    Layout.margins: ctrl_pad
-                    font.pixelSize: 12
-                    color: "white"
-                }
-                Text {
-                    id: tech_uid
-                    text: qsTr("Text")
-                    clip: true
-                    Layout.fillWidth: true
-                    font.pixelSize: 12
-                    color: "white"
+
+                    CircularImage {
+                        id: circularImage
+
+                        Layout.maximumHeight: 32
+                        Layout.maximumWidth: 32
+                        Layout.minimumHeight: 32
+                        Layout.minimumWidth: 32
+                        Layout.margins: ctrl_pad
+                        source: "qrc:/icons/greenguy.png"
+                    }
+                    ColumnLayout {
+                        Text {
+                            id: text1
+                            text: qsTr("Text")
+                            clip: true
+                            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Layout.margins: ctrl_pad
+                            font.pixelSize: 12
+                            color: "white"
+                        }
+                        Text {
+                            id: tech_uid
+                            text: qsTr("Text")
+                            clip: true
+                            Layout.fillWidth: true
+                            font.pixelSize: 12
+                            color: "white"
+                        }
+                    }
                 }
             }
         }
-            }
-            }
+        Switch {
+            id: freebies_switch
+            text: qsTr("Free pics")
+            //            bottomPadding: ctrl_pad
+            //            topPadding: ctrl_pad
+            //            padding: ctrl_pad
+            Layout.fillWidth: true
+            Material.accent: Material.Teal
+        }
 
-
+        Text {
+            id: next_freebie
+            Layout.fillWidth: true
+            text: freebies_switch.checked ? (qsTr("Next pic: ")
+                                             + simple_time_left(rando_status.next_freebie))
+                                             : qsTr("No freebies")
+        }
 
         Item {
-
             Layout.fillHeight: true
         }
         ItemDelegate {
@@ -126,11 +143,3 @@ Pane {
         }
     }
 }
-
-
-
-
-/*##^## Designer {
-    D{i:0;autoSize:true;height:480;width:640}
-}
- ##^##*/

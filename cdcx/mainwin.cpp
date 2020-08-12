@@ -2326,8 +2326,8 @@ mainwinform::idle()
     {
         if(chat_on != 0)
         {
-            Current_server_id = "";
-            Current_server = -1;
+            //Current_server_id = "";
+            //Current_server = -1;
             emit chat_server_status(0);
             chat_on = 0;
         }

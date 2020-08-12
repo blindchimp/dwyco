@@ -14,6 +14,7 @@
 #include <QObject>
 #include <QVariant>
 #include <QUrl>
+#include <QNetworkReply>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -40,6 +41,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
     QML_READONLY_VAR_PROPERTY(QString, this_uid)
+    QML_READONLY_VAR_PROPERTY(bool, directory_fetching)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -56,6 +58,7 @@ public:
         m_vid_dev_name = "";
         m_use_archived = true;
         m_this_uid = "";
+        m_directory_fetching = false;
     }
     static QByteArray My_uid;
 
@@ -138,7 +141,7 @@ public:
     Q_INVOKABLE int chat_online();
 
     Q_INVOKABLE QUrl get_simple_directory_url();
-    Q_INVOKABLE QUrl get_simple_xml_url();
+    Q_INVOKABLE QUrl get_simple_lh_url();
     Q_INVOKABLE QString get_msg_count_url();
     Q_INVOKABLE QString url_to_filename(QUrl);
     Q_INVOKABLE int simple_send(QString recipient, QString msg);
@@ -249,12 +252,13 @@ public:
     Q_INVOKABLE void enable_video_capture_preview(int i);
 
     Q_INVOKABLE void set_badge_number(int i);
-
-public:
+    Q_INVOKABLE void refresh_directory();
 
 public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);
+    void internal_cq_check(QString);
+    void dir_download_finished(QNetworkReply *);
 
 signals:
     void server_login(const QString& msg, int what);
@@ -311,7 +315,7 @@ signals:
 
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
-    void msg_recv_state(int cmd, const QString& mid);
+    void msg_recv_state(int cmd, const QString& mid, const QString& huid);
     void msg_recv_progress(const QString& mid, const QString& ruid, const QString& msg, int percent);
     // dwyco video camera signals
     void camera_change(int cam_on);

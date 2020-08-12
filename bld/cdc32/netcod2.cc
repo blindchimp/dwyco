@@ -13,7 +13,7 @@
 // note: this stuff is screaming for exceptions, but we don't got it
 // yet in enough compilers to use it... sigh.
 
-#include <windows.h>
+//#include <windows.h>
 #include <string.h>
 #include "vc.h"
 #include "netcod2.h"
@@ -24,7 +24,6 @@
 #include "dwlog.h"
 #include "dwstr.h"
 #include "mmchan.h"
-#include "dumbass.h"
 
 #include "dwrtlog.h"
 #include "qauth.h"
@@ -36,9 +35,6 @@ using namespace dwyco;
 static DwQueryByMember<SimpleSocket> SSQbm;
 
 vc LocalIP;
-
-static vc Wouldblock("wouldblock");
-static vc Resumable("resumable");
 
 int FrameSocket::dummy;
 int FrameSocket::always_zero;
@@ -94,10 +90,6 @@ SimpleSocket::wouldblock()
     if(q_empty && !saw_hard_error)
         return 1;
     return 0;
-
-    if(sock.is_nil())
-        return 0;
-    return sock.socket_error() == Wouldblock;
 }
 
 int
@@ -486,10 +478,12 @@ Listener::accept()
 }
 FrameSocket::FrameSocket(unsigned int len)
 {
+#if 0
 #ifdef _Windows
     if(vc_winsock::wsa_data.iMaxUdpDg != 0
             && len > vc_winsock::wsa_data.iMaxUdpDg)
         len = vc_winsock::wsa_data.iMaxUdpDg;
+#endif
 #endif
     packet_buf = new DWBYTE[len];
     plen = len;
@@ -505,10 +499,12 @@ FrameSocket::FrameSocket(unsigned int len)
 FrameSocket::FrameSocket(vc sock, unsigned int len) :
     SimpleSocket(sock)
 {
+#if 0
 #ifdef _Windows
     if(vc_winsock::wsa_data.iMaxUdpDg != 0
             && len > vc_winsock::wsa_data.iMaxUdpDg)
         len = vc_winsock::wsa_data.iMaxUdpDg;
+#endif
 #endif
     packet_buf = new DWBYTE[len];
     plen = len;

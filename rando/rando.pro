@@ -1,26 +1,7 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
-#macx-g++:dateincr.commands = ./dumptime-mac
-#macx-clang:dateincr.commands = ./dumptime-mac
-#macx-ios-clang:dateincr.commands = ./dumptime-mac
-#linux-g++-64:dateincr.commands = ./dumptime
-##linux-g++:dateincr.commands = ./dumptime32
-#android:dateincr.commands = ./dumptime
-#windows:dateincr.commands = .\\dumptime
-#!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
-#!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-
-CONFIG(appdir) {
-target.path=/usr/bin
-appdir_desktop.path=/usr/share/applications
-appdir_desktop.files=phoo.desktop
-appdir_icon.path=/usr/share/icons/hicolor/256x256/apps
-appdir_icon.files=phoo.png
-INSTALLS += appdir_icon appdir_desktop
-}
-
 
 QT += core qml multimedia network
 QT += quickcontrols2
@@ -28,6 +9,7 @@ QT += location positioning
 
 android: QT += androidextras
 macx-clang: QT += macextras
+CONFIG += c++11
 
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang {
@@ -50,6 +32,7 @@ RC_FILE=rando.rc
 SOURCES += main.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
+    geospray.cpp \
     pfx.cpp \
     msglistmodel.cpp \
     msgpv.cpp \
@@ -61,22 +44,11 @@ SOURCES += main.cpp \
     resizeimage.cpp \
     androidperms.cpp
 
-# note: you can *compile* the qt stuff on any platform, but
-# as of 2017, the videoprobing stuff only works on android
-# platforms. you must compile the dwyco core lib with NO_VIDEO_CAPTURE
-# to remove the internal implementation of video capture (which is
-# used only on desktop platforms)
-
-DINC=$${PWD}/../bld
-
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst
 
 linux-* {
 DEFINES += LINUX
 DEFINES += DWYCO_APP_DEBUG
-equals(FORCE_DESKTOP_VGQT, 1) {
-DEFINES += DWYCO_FORCE_DESKTOP_VGQT
-}
 
 QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
 QMAKE_LFLAGS += -g #-fsanitize=address
@@ -96,37 +68,27 @@ $${D}/kazlib/libkazlib.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
-$${D}/libuv/libuv.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/uv/libuv.a \
 -lsqlite3
 
+#PRE_TARGETDEPS += \
+#$${D}/cdc32/libcdc32.a \
+#$${D}/vc/libvc.a \
+#$${D}/crypto5/libcrypto5.a \
+#$${D}/dwcls/libdwcls.a \
+#$${D}/kazlib/libkazlib.a \
 #$${D}/pbm/libpbm.a \
-#$${D}/ppm/libppm.a \
-
-PRE_TARGETDEPS += \
-$${D}/cdc32/libcdc32.a \
-$${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
-$${D}/dwcls/libdwcls.a \
-$${D}/kazlib/libkazlib.a \
-$${D}/pbm/libpbm.a \
-$${D}/jenkins/libjenkins.a \
-$${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
-$${D}/libuv/libuv.a
+#$${D}/jenkins/libjenkins.a \
+#$${D}/jhead/libjhead.a \
+#$${D}/qt-qml-models/libQtQmlModels.a \
+#$${D}/libuv/libuv.a
 
 }
 
 wasm-emscripten {
 DEFINES += LINUX
 DEFINES += DWYCO_APP_DEBUG
-equals(FORCE_DESKTOP_VGQT, 1) {
-DEFINES += DWYCO_FORCE_DESKTOP_VGQT
-}
-#INCLUDEPATH += $${DINC}/v4lcap
-
-#QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
-#QMAKE_LFLAGS += -g #-fsanitize=address
 
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 QMAKE_LFLAGS += -s ERROR_ON_UNDEFINED_SYMBOLS=0
@@ -157,9 +119,7 @@ $${D}/qt-qml-models/libQtQmlModels.a
 
 macx-clang {
 DEFINES += MACOSX MAC_CLIENT
-equals(FORCE_DESKTOP_VGQT, 1) {
-DEFINES += DWYCO_FORCE_DESKTOP_VGQT
-}
+
 D = $$OUT_PWD/../bld
 SHADOW=$$OUT_PWD/..
 LIBS += \
@@ -171,8 +131,8 @@ $${D}/kazlib/libkazlib.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a \
-$${D}/libuv/libuv.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/uv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
 
@@ -190,7 +150,7 @@ $${D}/kazlib/libkazlib.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
-$${D}/qt-qml-models/libQtQmlModels.a
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 
 }
 
@@ -199,7 +159,7 @@ DEFINES += LINUX VCCFG_FILE ANDROID
 
 D = $${OUT_PWD}/../bld
 L = $$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
-LIBS += $$D/qt-qml-models/libQtQmlModels.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will
@@ -246,9 +206,7 @@ QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycorandodeploy", ".", $$PWD/../..
 win32-msvc* {
 
 DEFINES += MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
-equals(FORCE_DESKTOP_VGQT, 1) {
-DEFINES += DWYCO_FORCE_DESKTOP_VGQT
-}
+
 # use this for linking to dynamic cdcdll
 #INCLUDEPATH += dllwin
 #LIBS +=  $${PWD}/cdcdll8.lib winmm.lib user32.lib kernel32.lib
@@ -258,13 +216,13 @@ DEFINES += CDCCORE_STATIC
 # use this if you are building with qmake files
 D = $$OUT_PWD\\..\\bld
 
-#CONFIG(debug) {
-#S=debug
-#}
-
-CONFIG(release) {
-S=release
+CONFIG(debug) {
+S=debug
 }
+
+#CONFIG(release) {
+#S=release
+#}
 
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
@@ -275,7 +233,7 @@ $${D}\\kazlib\\$${S}\\kazlib.lib \
 $${D}\\pbm\\$${S}\\pbm.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
-$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
+$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
 
 #delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
@@ -307,6 +265,7 @@ include(deployment.pri)
 
 HEADERS += \
 	dwyco_top.h \
+    geospray.h \
     msglistmodel.h \
     notificationclient.h \
     dwquerybymember.h \

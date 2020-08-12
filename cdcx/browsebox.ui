@@ -13,7 +13,7 @@
   <property name="minimumSize">
    <size>
     <width>710</width>
-    <height>82</height>
+    <height>88</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -44,7 +44,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QWebView" name="webView" native="true">
+       <widget class="QWebEngineView" name="webView" native="true">
         <property name="url" stdset="0">
          <url>
           <string>http://www.dwyco.com</string>
@@ -92,9 +92,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QWebView</class>
+   <class>QWebEngineView</class>
    <extends>QWidget</extends>
-   <header>QtWebKit/QWebView</header>
+   <header location="global">QWebEngineView</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

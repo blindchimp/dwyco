@@ -16,6 +16,7 @@
 #include <QSslSocket>
 #include <QGuiApplication>
 #include <QTextDocumentFragment>
+#include <QNetworkAccessManager>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -36,11 +37,12 @@
 #include "ctlist.h"
 #include "QQmlVarPropertyHelpers.h"
 #include "QQmlVariantListModel.h"
+#include "simpledirmodel.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
-#include "androidperms.h"
 #endif
+#include "androidperms.h"
 #include "profpv.h"
 #if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN) && !defined(DWYCO_IOS)
 #include "v4lcapexp.h"
@@ -49,7 +51,7 @@
 #include "aextsdl.h"
 #include "audo_qt.h"
 #endif
-#ifdef DWYCO_IOS
+#if defined(DWYCO_IOS) || defined(MAC_CLIENT)
 #include "audi_qt.h"
 #endif
 #include "audo_qt.h"
@@ -71,8 +73,6 @@
 #include <QtMacExtras>
 #endif
 
-void init_mac_drivers();
-
 namespace jhead {
 int do_jhead(const char *);
 }
@@ -85,6 +85,7 @@ static int AvoidSSL = 0;
 typedef QHash<QByteArray, QByteArray> UID_ATTR_MAP;
 typedef QHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
 static UID_ATTR_MAP Uid_attrs;
+static int Init_ok;
 
 static ChatSortFilterModel *Chat_sort_proxy;
 static ConvSortFilterModel *Conv_sort_proxy;
@@ -93,6 +94,7 @@ static QTcpServer *BGLockSock;
 static DwycoImageProvider *Dwyco_video_provider;
 static DwycoVideoPreviewProvider *Dwyco_video_preview_provider;
 static QQmlVariantListModel *CamListModel;
+static SimpleDirModel *SimpleDirInst;
 static int BGLockPort;
 int auto_fetch(QByteArray mid);
 int retry_auto_fetch(QByteArray mid);
@@ -101,6 +103,9 @@ extern int HasAudioInput;
 extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
+static QNetworkAccessManager *Net_access;
+
+static QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -119,7 +124,7 @@ void
 hack_unread_count()
 {
     if(TheDwycoCore)
-        TheDwycoCore->update_unread_count(has_unviewed_msgs());
+        TheDwycoCore->update_unread_count(total_unviewed_msgs_count());
 }
 
 void
@@ -494,7 +499,7 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_DOWNLOAD_OK:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED:
-        TheDwycoCore->emit msg_recv_state(cmd, str_data);
+        TheDwycoCore->emit msg_recv_state(cmd, str_data, huid);
         break;
 
     default:
@@ -959,13 +964,7 @@ setup_locations()
         setting_put("salt", "");
         setting_put("first-pin", "1");
     }
-    QString first_bugfix1;
-    if(!setting_get("bugfix1", first_bugfix1))
-    {
-        clear_unviewed_msgs();
-        setting_put("bugfix1", "");
 
-    }
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, userdir);
 
 
@@ -1325,6 +1324,31 @@ DwycoCore::update_dwyco_client_name(QString name)
     dwyco_set_client_version(nm.constData(), nm.length());
 }
 
+void
+DwycoCore::dir_download_finished(QNetworkReply *r)
+{
+    update_directory_fetching(false);
+    if(r->error() != QNetworkReply::NoError)
+        return;
+
+    QByteArray res = r->readAll();
+    r->deleteLater();
+    DWYCO_LIST dl;
+    if(!dwyco_list_from_string(&dl, res.constData(), res.length()))
+    {
+        return;
+    }
+    simple_scoped qdl(dl);
+    SimpleDirInst->load_from_dwycolist(qdl);
+}
+
+void
+DwycoCore::refresh_directory()
+{
+    Net_access->get(QNetworkRequest(get_simple_lh_url()));
+    update_directory_fetching(true);
+}
+
 
 void
 DwycoCore::init()
@@ -1338,6 +1362,9 @@ DwycoCore::init()
     DVP::init_dvp();
     simple_call::init(this);
     AvoidSSL = !QSslSocket::supportsSsl();
+    Net_access = new QNetworkAccessManager(this);
+    connect(Net_access, &QNetworkAccessManager::finished,
+            this, &DwycoCore::dir_download_finished);
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
@@ -1347,15 +1374,7 @@ DwycoCore::init()
     dwyco_set_emergency_callback(dwyco_emergency);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
-
-#if defined(MAC_CLIENT)
-    // we do this early, then if we need to override one of the
-    // subsystems (like to use qt instead of the old drivers)
-    // that can be done further down.
-    init_mac_drivers();
-#endif
-#if ((defined(LINUX) && !defined(MAC_CLIENT)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
-
+#if ((defined(LINUX)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
 
 #if 0&& defined(LINUX) && !defined(ANDROID) && !defined(MAC_CLIENT)
     dwyco_set_external_audio_output_callbacks(
@@ -1395,23 +1414,7 @@ DwycoCore::init()
     );
 #endif
 #endif
-#if ((defined(LINUX) && !defined(MAC_CLIENT)) || defined(DWYCO_IOS)) && /*!defined(ANDROID) &&*/ !defined(NO_DWYCO_AUDIO)
-
-//dwyco_set_external_audio_capture_callbacks(
-// esd_new,
-// esd_delete,
-// esd_init,
-// esd_has_data,
-// esd_need,
-// esd_pass,
-// esd_stop,
-// esd_on,
-// esd_off,
-// esd_reset,
-// esd_status,
-// esd_get_data
-//
-//);
+#if ((defined(LINUX)) || defined(DWYCO_IOS)) && /*!defined(ANDROID) &&*/ !defined(NO_DWYCO_AUDIO)
 
     dwyco_set_external_audio_capture_callbacks(
         audi_qt_new,
@@ -1495,6 +1498,7 @@ DwycoCore::init()
 
     if(!dwyco_init())
         ::abort();
+    Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
     dwyco_set_setting("net/listen", "1");
@@ -1524,18 +1528,20 @@ DwycoCore::init()
 
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheIgnoreListModel, SLOT(uid_resolved(QString)));
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
-    connect(this, SIGNAL(msg_recv_state(int,QString)), mlm, SLOT(msg_recv_status(int,QString)));
+    connect(this, SIGNAL(msg_recv_state(int,QString,QString)), mlm, SLOT(msg_recv_status(int,QString,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
     connect(this, SIGNAL(msg_recv_progress(QString, QString, QString, int)), mlm, SLOT(msg_recv_progress(QString, QString, QString, int)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
+    connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
+
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
 
     load_unviewed();
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     reload_conv_list();
     reload_ignore_list();
 
@@ -1597,6 +1603,13 @@ DwycoCore::init()
     else
     {
         dwyco_set_setting("call_acceptance/max_audio_recv", "0");
+    }
+
+    QString first_bugfix1;
+    if(!setting_get("bugfix1", first_bugfix1))
+    {
+        clear_unviewed_msgs();
+        setting_put("bugfix1", "");
     }
 }
 
@@ -1671,6 +1684,8 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         // note: background process may have updated messages on disk
         // *and* we may not get to the server, so force a reload here just
         // in case.
+        QSet<QByteArray> dum;
+        load_inbox_tags_to_unviewed(dum);
         reload_conv_list();
         Suspended = 0;
 #ifdef ANDROID
@@ -1785,7 +1800,7 @@ DwycoCore::bootstrap(QString name, QString email)
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
     load_unviewed();
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     reload_conv_list();
 
     const char *uid;
@@ -1963,7 +1978,7 @@ DwycoCore::reset_unviewed_msgs(QString uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
     del_unviewed_uid(buid);
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     emit decorate_user(uid);
     //sort_proxy_model->decorate_user(uid);
 }
@@ -2173,8 +2188,9 @@ DwycoCore::get_simple_directory_url()
     return url;
 }
 
+// convert to LH, since XML stuff is going away in Qt
 QUrl
-DwycoCore::get_simple_xml_url()
+DwycoCore::get_simple_lh_url()
 {
     QUrlQuery qurl;
     const char *auth;
@@ -2188,9 +2204,9 @@ DwycoCore::get_simple_xml_url()
     QUrl url;
 
     if(AvoidSSL)
-        url.setUrl("http://profiles.dwyco.org/cgi-bin/mksimpxmldir.sh");
+        url.setUrl("http://profiles.dwyco.org/cgi-bin/mksimplhdir.sh");
     else
-        url.setUrl("https://profiles.dwyco.org/cgi-bin/mksimpxmldir.sh");
+        url.setUrl("https://profiles.dwyco.org/cgi-bin/mksimplhdir.sh");
     QString filt = "1";
     QString a;
     if(setting_get("show_unreviewed", a))
@@ -2318,7 +2334,7 @@ DwycoCore::delete_user(QString uid)
     buid = QByteArray::fromHex(buid);
     int ret = dwyco_delete_user(buid.constData(), buid.length());
     del_unviewed_uid(buid);
-    update_unread_count(has_unviewed_msgs());
+    update_unread_count(total_unviewed_msgs_count());
     // note: msglist_model may have cached info that needs to be cleared
 
     reload_conv_list();
@@ -2326,18 +2342,18 @@ DwycoCore::delete_user(QString uid)
     return ret;
 }
 
-static QByteArray
+QByteArray
 get_cq_results_filename()
 {
-    return add_pfx(User_pfx, "cq.xml");
+    return add_pfx(User_pfx, "cq.qds");
 
 }
 
 static void
 process_contact_query_response(const QByteArray& mid)
 {
-    DWYCO_LIST sm;
-    if(!dwyco_unsaved_message_to_body(&sm, mid.constData()))
+    DWYCO_SAVED_MSG_LIST sm;
+    if(!dwyco_get_saved_message(&sm, Clbot.constData(), Clbot.length(), mid.constData()))
     {
         TheDwycoCore->emit cq_results_received(0);
         return;
@@ -2355,6 +2371,32 @@ process_contact_query_response(const QByteArray& mid)
     int succ = dwyco_copy_out_file_zap(0, 0, mid.constData(), qrfn.constData());
     TheDwycoCore->emit cq_results_received(succ);
 }
+
+void
+DwycoCore::internal_cq_check(QString huid)
+{
+    QByteArray clh = Clbot.toHex();
+    if(huid.toLatin1() != clh)
+        return;
+
+    if(!dwyco_uid_has_tag(Clbot.constData(), Clbot.length(), "_inbox"))
+        return;
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, "_inbox");
+    simple_scoped qtl(tl);
+    for(int i = 0; i < qtl.rows(); ++i)
+    {
+        if(qtl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID) == clh)
+        {
+            QByteArray mid = qtl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+            process_contact_query_response(mid);
+            dwyco_delete_unfetched_message(mid.constData());
+
+        }
+    }
+    dwyco_delete_user(Clbot.constData(), Clbot.length());
+}
+
 
 QUrl
 DwycoCore::get_cq_results_url()
@@ -2499,8 +2541,8 @@ static
 void
 process_special_msg(QByteArray mid)
 {
-    DWYCO_UNSAVED_MSG_LIST uml;
-    if(!dwyco_get_unsaved_message(&uml, mid.constData()))
+    DWYCO_UNFETCHED_MSG_LIST uml;
+    if(!dwyco_get_unfetched_message(&uml, mid.constData()))
         return;
     simple_scoped quml(uml);
 
@@ -2559,9 +2601,10 @@ static
 void
 scan_special_msgs()
 {
+    return;
     DWYCO_LIST uml;
 
-    if(dwyco_get_unsaved_messages(&uml, 0, 0))
+    if(dwyco_get_unfetched_messages(&uml, 0, 0))
     {
         simple_scoped quml(uml);
         int n = quml.rows();
@@ -2585,7 +2628,7 @@ scan_special_msgs()
                 else
                 {
                     process_special_msg(mid);
-                    dwyco_delete_unsaved_message(mid.constData());
+                    dwyco_delete_unfetched_message(mid.constData());
                 }
             }
         }
@@ -2598,9 +2641,9 @@ int
 DwycoCore::service_channels()
 {
     int spin = 0;
-    if(Suspended)
+    if(Suspended || !Init_ok)
         return 0;
-    dwyco_service_channels(&spin);
+    int next_expire = dwyco_service_channels(&spin);
 //    static int been_here;
 //    if(!been_here)
 //    {
@@ -2610,48 +2653,39 @@ DwycoCore::service_channels()
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
-        QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
+        //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
-        DWYCO_UNSAVED_MSG_LIST uml;
-        if(dwyco_get_unsaved_messages(&uml, clbot.constData(), clbot.length()))
+        DWYCO_UNFETCHED_MSG_LIST uml;
+        if(dwyco_get_unfetched_messages(&uml, Clbot.constData(), Clbot.length()))
         {
             simple_scoped quml(uml);
             int n = quml.rows();
             if(n > 0)
             {
                 QByteArray mid = quml.get<QByteArray>(0, DWYCO_QMS_ID);
+                auto_fetch(mid);
                 dwyco_add_entropy_timer(mid.constData(), mid.length());
-                if(quml.is_nil(0, DWYCO_QMS_IS_DIRECT))
-                {
-                    auto_fetch(mid);
-                }
-                else
-                {
-                    process_contact_query_response(mid);
-                    dwyco_delete_unsaved_message(mid.constData());
-                    dwyco_delete_user(clbot.constData(), clbot.length());
-                }
             }
         }
+
         scan_special_msgs();
-        dwyco_get_unsaved_messages(&uml, 0, 0);
+        dwyco_get_unfetched_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;
-        dwyco_process_unsaved_list(uml, uids_out);
+        dwyco_process_unfetched_list(uml, uids_out);
         dwyco_list_release(uml);
 
-        update_unread_count(has_unviewed_msgs());
+        load_inbox_tags_to_unviewed(uids_out);
+
         foreach(const QByteArray& buid, uids_out)
         {
             QByteArray huid = buid.toHex();
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
-//        if(uids_out.contains(QByteArray::fromHex(mlm->uid().toLatin1())))
-//        {
-//            mlm->reload_model();
-//        }
+
     }
+    update_unread_count(total_unviewed_msgs_count());
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically
     // linked. discovered why: JNI won't find functions properly when statically linked.
@@ -2670,49 +2704,9 @@ DwycoCore::service_channels()
 #endif
 
 
-    return spin;
+    return spin ? 1 : next_expire;
 }
 
-#if 0
-static
-void
-DWYCOCALLCONV
-msg_send_callback(int id, int what, const char *recip, int recip_len, const char *server_msg, void *arg)
-{
-    if(!TheDwycoCore)
-        return;
-    QByteArray b(recip, recip_len);
-    b = b.toHex();
-    QString msg(server_msg);
-
-    TheDwycoCore->emit msg_send_status(id, what, b, msg);
-
-    switch(what)
-    {
-    case DWYCO_MSG_SEND_OK:
-    case DWYCO_MSG_IGNORED: // note: ignore is silent fail
-    case DWYCO_MSG_ATTACHMENT_DECLINED:
-        //play_sound("space-incoming.wav");
-        break;
-    case DWYCO_MSG_SEND_FAILED:
-    case DWYCO_MSG_ATTACHMENT_FAILED:
-        //play_sound("space-call.wav");
-        //dwyco_zap_defer_send(id);
-        break;
-    }
-
-}
-
-static
-void
-msg_progress_callback(int id, const char *msg, int percent_done, void *user_arg)
-{
-    if(!TheDwycoCore)
-        return;
-    QString qmsg(msg);
-    TheDwycoCore->emit msg_progress(id, qmsg, percent_done);
-}
-#endif
 
 int
 DwycoCore::send_forward(QString recipient, QString add_text, QString uid_folder, QString mid_to_forward, int save_sent)
@@ -2758,8 +2752,8 @@ DwycoCore::simple_send(QString recipient, QString msg)
         return 0;
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
     QByteArray txt = msg.toUtf8();
-    if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0,
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        txt.constData(), txt.length(), 0, 1,
                         0, 0)
       )
 
@@ -2780,8 +2774,8 @@ DwycoCore::simple_send_file(QString recipient, QString msg, QString filename)
     int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
     if(compid == 0)
         return 0;
-    if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0,
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        txt.constData(), txt.length(), 0, 1,
                         0, 0)
       )
 
@@ -2812,9 +2806,9 @@ send_contact_query(QList<QString> emails)
     int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
     if(compid == 0)
         return;
-    QByteArray clbot(QByteArray::fromHex("f6006af180260669eafc"));
+    //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
-    if(!dwyco_zap_send5(compid, clbot.constData(), clbot.length(),
+    if(!dwyco_zap_send5(compid, Clbot.constData(), Clbot.length(),
                         "", 0,
                         0, 0,
                         0, 0)
@@ -2896,8 +2890,8 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
         QFile::remove(dest);
         return 0;
     }
-    if(!dwyco_zap_send4(compid, ruid.constData(), ruid.length(),
-                        txt.constData(), txt.length(), 0,
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        txt.constData(), txt.length(), 0, 1,
                         0, 0)
       )
 
@@ -2996,9 +2990,12 @@ dwyco_register_qml(QQmlContext *root)
     QObject::connect(ignorelist, SIGNAL(countChanged()), Ignore_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("IgnoreListModel", Ignore_sort_proxy);
 
-#ifdef ANDROID
+    SimpleDirInst = new SimpleDirModel;
+    root->setContextProperty("SimpleDirectoryList", SimpleDirInst);
+
+//#ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;
     root->setContextProperty("AndroidPerms", a);
-#endif
+//#endif
 
 }

@@ -13,9 +13,9 @@
 
 int pmatch(const char *pat, const char *str)
 {
-	register int pc; /* pattern character */
-	register int sc; /* string character */
-	register int ok; /* flag used for brackets */
+    int pc; /* pattern character */
+    int sc; /* string character */
+    int ok; /* flag used for brackets */
 
 	for (;;) 
 	{

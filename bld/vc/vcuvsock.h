@@ -128,7 +128,7 @@ public:
     long underflow(vcxstream&, char *buf, long min, long max);
 	virtual vc_default *do_copy() const {oopanic("copy uvsocket?"); return 0;}
 	enum vc_type type() const {return VC_SOCKET;}
-	int is_quoted() const {return TRUE;}
+        int is_quoted() const {return 1;}
     void printOn(VcIO os);
 	void stringrep(VcIO os) const {os << "uvsocket()";}
 };

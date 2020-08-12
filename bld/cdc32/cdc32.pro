@@ -19,12 +19,12 @@ $${VCCFG_COMP} \
 ../theora/include \
 ../ogg/include \
 ../vorbis112/include \
-../libuv/include \
+../uv/include \
 ../miniupnp/miniupnp-master/miniupnpc
 
 linux-*: INCLUDEPATH += ../v4lcap
 
-FORCE_DESKTOP_VGQT=0
+#FORCE_DESKTOP_VGQT=0
 
 DEFINES += \
 	VCCFG_FILE \
@@ -35,14 +35,12 @@ equals(DWYCO_APP, "rando") {
 DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
 #DEFINES += DWYCO_TRACE
-#LCL_DFLAGS += -DLEAK_CLEANUP
 #DEFINES += DWYCO_FIELD_DEBUG
 #DEFINES += MINIUPNP_STATICLIB
 message("cdc32 setup for rando")
 } else {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-#DEFINES += DWYCO_TRACE
-#LCL_DFLAGS += -DLEAK_CLEANUP
+DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
 DEFINES += DWYCO_FIELD_DEBUG
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
@@ -57,7 +55,7 @@ SOURCES += winemu.cc linid.cpp
 
 macx-g++|macx-clang {
 DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100 
-DEFINES += MACOSX FREEBSD NEED_SHORT_EXTERNAL_NAMES
+DEFINES += MACOSX NEED_SHORT_EXTERNAL_NAMES
 QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
 DEFINES += DWYCO_USE_STATIC_SQLITE
 equals(DWYCOBG, 0) {
@@ -70,7 +68,7 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 
 macx-ios-clang {
-DEFINES += MACOSX FREEBSD NEED_SHORT_EXTERNAL_NAMES
+DEFINES += MACOSX NEED_SHORT_EXTERNAL_NAMES
 QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
 DEFINES += DWYCO_USE_STATIC_SQLITE
 SOURCES += sqlite3.c
@@ -96,6 +94,9 @@ INCLUDEPATH += ../mtcap
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT
 }
+#equals(DWYCOBG, 0) {
+#DEFINES += DWYCO_CDC_LIBUV
+#}
 }
 
 android-g++ {
@@ -260,7 +261,8 @@ sqlbq.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
     simplesql.cpp \
-    upnp.cpp
+    upnp.cpp \
+    aqkey.cpp
 
 HEADERS += \
     vccfg.h \

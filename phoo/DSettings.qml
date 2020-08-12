@@ -6,11 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
+import QtQuick 2.12
 import dwyco 1.0
-import QtQuick.Controls 2.1
-import QtQuick.Layouts 1.3
-import QtQml 2.2
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 
 Page {
     property int inh_content_warning: 1
@@ -125,6 +124,7 @@ Page {
                     else
                         notificationClient.set_user_property("content", "rev")
                 }
+                SimpleDirectoryList.clear()
             }
             onClicked: {
                 if(checked) {

@@ -10,16 +10,16 @@
 #include "msgddll.h"
 #include "dlli.h"
 
-MMCallDLL::MMCallDLL(vc uid, vc host, vc port, vc proxinfo, int msg_chan,
-                     int user_control_chan,
+MMCallDLL::MMCallDLL(vc auid, vc ahost, vc aport, vc aproxinfo, int amsg_chan,
+                     int auser_control_chan,
                      DwycoCallDispositionCallback cdc, void *cdc_arg1,
                      DwycoStatusCallback ascb, void *ascb_arg1,
-                     CallStatusCallback scb, void *scb_arg1, ValidPtr scb_arg2):
-    MMCall(uid, host, port, proxinfo, msg_chan, user_control_chan, scb, scb_arg1, scb_arg2)
+                     CallStatusCallback bscb, void *bscb_arg1, ValidPtr bscb_arg2):
+    MMCall(auid, ahost, aport, aproxinfo, amsg_chan, auser_control_chan, bscb, bscb_arg1, bscb_arg2)
 {
     dscb = ascb;
     dscb_arg1 = ascb_arg1;
-    dcb = 0;
+    //dcb = 0;
     this->cdc = cdc;
     this->cdc_arg1 = cdc_arg1;
 }

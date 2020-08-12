@@ -11,6 +11,7 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "ignoremodel.h"
+#include "dwycolistscoped.h"
 
 void hack_unread_count();
 void reload_conv_list();
@@ -28,8 +29,8 @@ Conversation::load_external_state(const QByteArray& uid)
     update_REGULAR(regular);
     update_REVIEWED(reviewed);
     update_unseen_count(uid_unviewed_msgs_count(uid));
-    update_any_unread(any_unread_msg(uid));
-    update_session_msg(session_msg(uid));
+    update_any_unread(uid_has_unviewed_msgs(uid));
+    update_session_msg(got_msg_this_session(uid));
     update_pal(dwyco_is_pal(uid.constData(), uid.length()));
     update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
 }
@@ -48,33 +49,6 @@ ConvListModel::~ConvListModel()
     TheConvListModel = 0;
 }
 
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
-}
-
-static int
-dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_INT)
-        return 0;
-    QByteArray str_out = QByteArray(val, len);
-    int_out = str_out.toInt();
-    return 1;
-}
 
 
 void
@@ -184,9 +158,10 @@ ConvListModel::decorate(QString huid, QString txt, QString mid)
         return;
     int cnt = uid_unviewed_msgs_count(uid);
     c->update_unseen_count(cnt);
-    c->update_any_unread(any_unread_msg(uid));
+    c->update_any_unread(uid_has_unviewed_msgs(uid));
     c->update_is_blocked(dwyco_is_ignored(uid.constData(), uid.length()));
     c->update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
+    c->update_session_msg(got_msg_this_session(uid));
 }
 
 void
@@ -229,9 +204,10 @@ ConvListModel::load_users_to_model()
     ++cnt;
 
     dwyco_get_user_list2(&l, &n);
+    simple_scoped sl(l);
     for(int i = 0; i < n; ++i)
     {
-        QByteArray uid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
+        QByteArray uid = sl.get<QByteArray>(i);
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
@@ -252,7 +228,6 @@ ConvListModel::load_users_to_model()
         Conversation *c = dead[i];
         remove(c);
     }
-    dwyco_list_release(l);
 }
 
 

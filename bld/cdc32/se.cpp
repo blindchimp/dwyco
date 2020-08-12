@@ -227,7 +227,7 @@ se_process()
         case SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED:
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
-                                           0, 0,
+                                           Se_q[i][1], Se_q[i][1].len(),
                                            0, 0,
                                            DWYCO_TYPE_STRING, (const char *)Se_q[i][2], Se_q[i][2].len(),
                                            0, 0

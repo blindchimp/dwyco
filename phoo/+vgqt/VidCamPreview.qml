@@ -6,12 +6,11 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.9
-import QtQuick.Controls 2.2
-import QtQuick.Controls.Material 2.2
+import QtQuick 2.12
+import QtQuick.Controls 2.12
 import dwyco 1.0
 import QtQuick.Layouts 1.3
-import QtMultimedia 5.6
+import QtMultimedia 5.12
 
 Page {
     property bool dragging

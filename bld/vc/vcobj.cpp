@@ -106,18 +106,6 @@ vc_object::vc_object(vc_factory_def *fac, VC_FACTORY_MAP *mems)
 	mutant = 0;
 }
 
-#if 0
-vc_object::vc_object(vc_factory_def *fac, VC_FACTORY_MAP *mems, const vc& base,
-	const VC_FORWARD_LIST& forw, const VC_FORWARD_LIST& dele)
-{
-	factory.attach(fac);
-	members = mems;
-	base_obj = base;
-	forwards = forw;
-	delegates = dele;
-	mutant = 0;
-}
-#endif
 
 vc_object::~vc_object()
 {
@@ -233,6 +221,8 @@ vc_object::member_select(const vc& mem, vc& mem_out, int toplev, vc_object *topo
 		if(base_obj.member_select(mem, mem_out, 0, topobj))
 			return 1;
 	}
+
+#ifdef LH_OBJ_FORWARDS
 	
 #ifdef VCDBG
 	dbg.set_state(VcObjectDbgNode::DELEGATE);
@@ -287,6 +277,7 @@ vc_object::member_select(const vc& mem, vc& mem_out, int toplev, vc_object *topo
 		if(memval.member_select(mem, mem_out, 1, 0))
 			return 1;
 	}
+#endif
 
 	return 0;
 }
