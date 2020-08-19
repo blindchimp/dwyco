@@ -169,13 +169,13 @@ public:
     enum wbok {WB_NOK = 0, WB_OK = 1};
     int send_data(vc v, int chan, int bwchan);
     int send_data(vc v, int chan);
-    int send_data(DWBYTE *buf, int len, int chan, enum wbok = WB_NOK);
+    //int send_data(DWBYTE *buf, int len, int chan, enum wbok = WB_NOK);
     // this version allows you to say what device
     // gets the data, and what channel gets the b/w tally for it.
     // what a hack.
-    int send_data(DWBYTE *buf, int len, int chan, int bwchan, enum wbok = WB_NOK);
+    //int send_data(DWBYTE *buf, int len, int chan, int bwchan, enum wbok = WB_NOK);
     int recv_data(vc& v, int chan);
-    int recv_data(DWBYTE *&buf, int& len, int chan);
+    //int recv_data(DWBYTE *&buf, int& len, int chan);
 
 #if 0
     int accept_new_channel(int& chan);

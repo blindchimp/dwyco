@@ -41,6 +41,7 @@ MMTube::update_myip(DwString a)
     }
 }
 
+#if 0
 static int
 get_port(DwString a)
 {
@@ -52,6 +53,7 @@ get_port(DwString a)
     }
     return 0;
 }
+#endif
 
 MMTube::MMTube() :
     baud(0, !DWVEC_FIXED, DWVEC_AUTO_EXPAND),
@@ -580,6 +582,7 @@ MMTube::send_data(vc v, int chan, int bwchan)
     return 1;
 }
 
+#if 0
 int
 MMTube::send_data(DWBYTE *buf, int len, int chan, enum wbok w)
 {
@@ -601,6 +604,7 @@ MMTube::send_data(DWBYTE *buf, int len, int chan, int bwchan, enum wbok w)
     in_bits[bwchan] += len * 8;
     return 1;
 }
+#endif
 
 int
 MMTube::recv_data(vc& v, int chan)
@@ -629,6 +633,7 @@ MMTube::recv_data(vc& v, int chan)
     return 1;
 }
 
+#if 0
 int
 MMTube::recv_data(DWBYTE *&buf, int& len, int chan)
 {
@@ -643,6 +648,7 @@ MMTube::recv_data(DWBYTE *&buf, int& len, int chan)
     }
     return 1;
 }
+#endif
 
 
 int

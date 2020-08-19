@@ -272,8 +272,6 @@
 //
 //
 
-#undef TEST_NOT_REGISTERED
-
 #ifdef DWYCO_TRACE
 #include "dwyco_rename.h"
 #endif
@@ -397,9 +395,6 @@ using namespace Weak;
 #include "upnp.h"
 
 using namespace dwyco;
-
-
-#undef index
 
 extern vc Pals;
 extern vc Session_ignore;
