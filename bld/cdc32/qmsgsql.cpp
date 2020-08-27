@@ -148,7 +148,7 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists sent_idx on msg_idx(is_sent);");
     sql_simple("create index if not exists att_idx on msg_idx(has_attachment);");
 
-    sql_simple("drop table gi");
+    sql_simple("drop table if exists gi");
     sql_simple("create table gi ("
                "date integer,"
                "mid text primary key,"
@@ -186,7 +186,7 @@ import_remote_mi(int i)
 
     sql_simple("insert into gi select *, 0 from mi2.msg_idx");
     // if there is a local tag in our tag database, note that in the global index
-    sql_simple("update gi set is_local = 1 where exists(select 1 from mt where gi.mid = mt.mid and tag = '_local')");
+    sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
 
     // note: here is where we might want to setup local triggers to make updates
     // to gi whenever there is a piecemeal update to a remote index.
