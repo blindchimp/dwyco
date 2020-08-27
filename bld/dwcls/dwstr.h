@@ -76,6 +76,7 @@ public:
     // specified.
     DwString& arg(const DwString& a1, const DwString& = DwString(), const DwString& = DwString(),
                   const DwString& = DwString());
+    static DwString fromInt(int i);
 };
 
 inline

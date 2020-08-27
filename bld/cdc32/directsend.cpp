@@ -263,8 +263,11 @@ DirectSend::load_small_attachment()
         return 0;
     if(sb.st_size > 20 * 1024)
         return 0;
-    char *buf = new char[sb.st_size];
+
     FILE *f = fopen(actual_filename.c_str(), "rb");
+    if(!f)
+        return 0;
+    char *buf = new char[sb.st_size];
     if(fread(buf, sb.st_size, 1, f) != 1)
     {
         delete [] buf;

@@ -147,12 +147,52 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists date_idx on msg_idx(date desc);");
     sql_simple("create index if not exists sent_idx on msg_idx(is_sent);");
     sql_simple("create index if not exists att_idx on msg_idx(has_attachment);");
+
+    sql_simple("drop table gi");
+    sql_simple("create table gi ("
+               "date integer,"
+               "mid text primary key,"
+               "is_sent,"
+               "is_forwarded,"
+               "is_no_forward,"
+               "is_file,"
+               "special_type,"
+               "has_attachment,"
+               "att_has_video,"
+               "att_has_audio,"
+               "att_is_short_video,"
+               "logical_clock,"
+               "assoc_uid text not null,"
+               "is_local)"
+              );
     }
     else if(schema_name.eq("mt"))
 	{
 		init_schema_fav();
 	}
 
+}
+
+// note: this is for testing, we're just assuming the index
+// has been materialized here so we can investigate things
+void
+import_remote_mi(int i)
+{
+    DwString fn = DwString("mi%1.sql").arg(DwString::fromInt(i));
+    DwString favfn = DwString("fav%1.sql").arg(DwString::fromInt(i));
+
+    sDb->attach(fn, "mi2");
+    sDb->attach(favfn, "fav2");
+
+    sql_simple("insert into gi select *, 0 from mi2.msg_idx");
+    // if there is a local tag in our tag database, note that in the global index
+    sql_simple("update gi set is_local = 1 where exists(select 1 from mt where gi.mid = mt.mid and tag = '_local')");
+
+    // note: here is where we might want to setup local triggers to make updates
+    // to gi whenever there is a piecemeal update to a remote index.
+
+    sql_simple("create temp trigger xgi after insert on msg_idx begin insert into gi select *, 1 where mid = new.mid; end");
+    sql_simple("create temp trigger dgi after delete on msg_idx begin delete from gi where mid = old.mid; end");
 }
 
 void
@@ -163,6 +203,9 @@ init_qmsg_sql()
     sDb = new QMsgSql;
     if(!sDb->init())
         throw -1;
+    // by default, our local index "local" is implied
+    sql_simple("insert into gi select *, 1 from msg_idx");
+
     sDb->attach("fav.sql", "mt");
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
@@ -170,6 +213,8 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan2 after insert on msg_tags2 begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan3 after delete on msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on msg_idx begin update rescan set flag = 1; end");
+
+    import_remote_mi(2);
 }
 
 void
@@ -274,7 +319,7 @@ sql_get_recent_users(int *total_out)
     try
     {
         sql_start_transaction();
-        sql_simple("create temp table foo as select max(date), assoc_uid from msg_idx group by assoc_uid;");
+        sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid;");
         sql_simple("insert into foo select date, uid from most_recent_msg;");
         vc res;
         if(total_out)
@@ -309,7 +354,7 @@ sql_get_recent_users2(int max_age, int max_count)
     try
     {
         sql_start_transaction();
-        sql_simple("create temp table foo as select max(date), assoc_uid from msg_idx group by assoc_uid");
+        sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
         sql_simple("insert into foo select date, uid from most_recent_msg");
         vc res;
         res = sql_simple("select distinct assoc_uid from foo where strftime('%s', 'now') - \"max(date)\" < ?1 order by \"max(date)\" desc limit ?2;",
@@ -486,7 +531,7 @@ sql_load_index(vc uid, int max_count)
 {
     vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-           " from msg_idx where assoc_uid = ?1 order by logical_clock desc limit ?2",
+           " from gi where assoc_uid = ?1 order by logical_clock desc limit ?2",
                         to_hex(uid), max_count);
     return res;
 }
@@ -495,7 +540,7 @@ static
 int
 sql_count_index(vc uid)
 {
-    vc res = sql_simple("select count(*) from msg_idx where assoc_uid = ?1", to_hex(uid));
+    vc res = sql_simple("select count(*) from gi where assoc_uid = ?1", to_hex(uid));
     return (int)res[0][0];
 }
 
@@ -677,7 +722,7 @@ sql_get_uid_from_mid(vc mid)
     try
     {
         sql_start_transaction();
-        vc res = sql_simple("select assoc_uid from msg_idx where mid = ?1 limit 1", mid);
+        vc res = sql_simple("select assoc_uid from gi where mid = ?1 limit 1", mid);
         sql_commit_transaction();
         if(res.num_elems() != 1)
             return vcnil;

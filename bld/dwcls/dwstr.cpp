@@ -248,6 +248,16 @@ DwString::arg(const DwString& a1, const DwString& a2, const DwString& a3,
     return(*this);
 }
 
+#include <stdio.h>
+
+DwString
+DwString::fromInt(int i)
+{
+    char a[100];
+    sprintf(a, "%d", i);
+    return(a);
+}
+
 #undef TESTSTR
 #ifdef TESTSTR
 #include <stdio.h>

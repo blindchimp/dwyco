@@ -1063,6 +1063,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_MSG_IDX_ASSOC_UID "012"
 #define DWYCO_MSG_IDX_IS_DELIVERED "013"
 #define DWYCO_MSG_IDX_IS_VIEWED "014"
+#define DWYCO_MSG_IDX_IS_LOCAL "015"
 
 
 // DWYCO_QD_MSG_LIST, list of messages that are not sent yet.
