@@ -132,7 +132,7 @@ reload_conv_list()
 {
     Conv_sort_proxy->setDynamicSortFilter(false);
     int total = 0;
-    dwyco_load_users2(TheDwycoCore->get_use_archived() ? 0 : 1, &total);
+    dwyco_load_users2(/*TheDwycoCore->get_use_archived() ? 0 : */1, &total);
     TheDwycoCore->update_total_users(total);
     TheConvListModel->load_users_to_model();
     Conv_sort_proxy->setDynamicSortFilter(true);
