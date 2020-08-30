@@ -165,6 +165,8 @@ QMsgSql::init_schema(const DwString& schema_name)
                "assoc_uid text not null,"
                "is_local)"
               );
+    sql_simple("drop table if exists gmt");
+    sql_simple("create table gmt(mid text, tag text, time integer, uid text, unique(mid, tag, uid) on conflict ignore)");
     }
     else if(schema_name.eq("mt"))
 	{
@@ -176,7 +178,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 // note: this is for testing, we're just assuming the index
 // has been materialized here so we can investigate things
 void
-import_remote_mi(int i)
+import_remote_mi(int i, vc remote_uid)
 {
     DwString fn = DwString("mi%1.sql").arg(DwString::fromInt(i));
     DwString favfn = DwString("fav%1.sql").arg(DwString::fromInt(i));
@@ -188,11 +190,15 @@ import_remote_mi(int i)
     // if there is a local tag in our tag database, note that in the global index
     sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
 
+    sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", to_hex(remote_uid));
     // note: here is where we might want to setup local triggers to make updates
     // to gi whenever there is a piecemeal update to a remote index.
 
-    sql_simple("create temp trigger xgi after insert on msg_idx begin insert into gi select *, 1 where mid = new.mid; end");
+    sql_simple("create temp trigger xgi after insert on msg_idx begin insert into gi select *, 1 from msg_idx where mid = new.mid; end");
     sql_simple("create temp trigger dgi after delete on msg_idx begin delete from gi where mid = old.mid; end");
+
+    sql_simple(DwString("create temp trigger xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)to_hex(My_UID)).c_str());
+    sql_simple(DwString("create temp trigger dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)to_hex(My_UID)).c_str());
 }
 
 void
@@ -207,6 +213,8 @@ init_qmsg_sql()
     sql_simple("insert into gi select *, 1 from msg_idx");
 
     sDb->attach("fav.sql", "mt");
+
+    sql_simple("insert into gmt select *, ?1 from mt.msg_tags2", to_hex(My_UID));
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
     sql_simple("create temp trigger rescan1 after delete on msg_tags2 begin update rescan set flag = 1; end");
@@ -214,7 +222,7 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan3 after delete on msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on msg_idx begin update rescan set flag = 1; end");
 
-    import_remote_mi(2);
+    import_remote_mi(2, from_hex("000000"));
 }
 
 void
