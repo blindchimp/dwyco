@@ -22,6 +22,7 @@
 #include "vc.h"
 #include "dwstr.h"
 
+// WARNING: if you change this enum, you have to update the table in se.cpp!
 enum dwyco_sys_event {
     SE_NOTHING = 0,
     SE_STATUS_CHANGE = 1,

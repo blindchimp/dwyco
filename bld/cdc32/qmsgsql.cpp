@@ -194,8 +194,8 @@ import_remote_mi(int i, vc remote_uid)
     // note: here is where we might want to setup local triggers to make updates
     // to gi whenever there is a piecemeal update to a remote index.
 
-    sql_simple("create temp trigger xgi after insert on msg_idx begin insert into gi select *, 1 from msg_idx where mid = new.mid; end");
-    sql_simple("create temp trigger dgi after delete on msg_idx begin delete from gi where mid = old.mid; end");
+    sql_simple("create temp trigger xgi after insert on main.msg_idx begin insert into gi select *, 1 from msg_idx where mid = new.mid; end");
+    sql_simple("create temp trigger dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
 
     sql_simple(DwString("create temp trigger xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)to_hex(My_UID)).c_str());
     sql_simple(DwString("create temp trigger dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)to_hex(My_UID)).c_str());
@@ -217,10 +217,10 @@ init_qmsg_sql()
     sql_simple("insert into gmt select *, ?1 from mt.msg_tags2", to_hex(My_UID));
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
-    sql_simple("create temp trigger rescan1 after delete on msg_tags2 begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan2 after insert on msg_tags2 begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan3 after delete on msg_idx begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan4 after insert on msg_idx begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan1 after delete on mt.msg_tags2 begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan2 after insert on mt.msg_tags2 begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
     import_remote_mi(2, from_hex("000000"));
 }
@@ -313,6 +313,16 @@ sql_get_max_logical_clock()
     if(res[0][0].type() != VC_INT)
         return 0;
     return (long)res[0][0];
+}
+
+int
+sql_is_mid_local(vc mid)
+{
+    vc res = sql_simple("select is_local from gi where mid = ?1", mid);
+    if(res.num_elems() == 0)
+        return 0;
+    int ret = (long)res[0][0];
+    return ret;
 }
 
 // some users have 1000's of users in their list, and this can
@@ -825,8 +835,8 @@ get_unfav_msgids(vc uid)
     try
     {
         sql_start_transaction();
-        vc res = sql_simple("select mid as foo from msg_idx where assoc_uid = ?1 "
-                 "and not exists (select 1 from msg_tags2 where mid = foo and tag = '_fav')",
+        vc res = sql_simple("select mid as foo from gi where assoc_uid = ?1 "
+                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav')",
                             to_hex(uid));
         sql_commit_transaction();
         int n = res.num_elems();
@@ -1022,7 +1032,7 @@ sql_fav_has_fav(vc from_uid)
 int
 sql_fav_is_fav(vc mid)
 {
-    vc res = sql_simple("select 1 from msg_tags2 where mid = ?1 and tag = '_fav' limit 1;", mid);
+    vc res = sql_simple("select 1 from gmt where mid = ?1 and tag = '_fav' limit 1;", mid);
     return res.num_elems() > 0;
 }
 
@@ -1113,7 +1123,7 @@ sql_uid_has_tag(vc uid, vc tag)
     int c = 0;
     try
     {
-        vc res = sql_simple("select 1 from msg_tags2,msg_idx using(mid) where assoc_uid = ?1 and tag = ?2 limit 1",
+        vc res = sql_simple("select 1 from gmt,gi using(mid) where assoc_uid = ?1 and tag = ?2 limit 1",
                             to_hex(uid), tag);
         c = (res.num_elems() > 0);
     }

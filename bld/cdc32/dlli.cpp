@@ -6746,6 +6746,73 @@ dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int le
     return 1;
 }
 
+// this just simulates pulling a msg from remote
+static
+void
+pull_msg(vc uid, vc mid)
+{
+    DwString fn("/home/dwight/syncdev/altkey/m2.sim/");
+    fn += (const char *)to_hex(uid);
+    fn += ".usr/";
+    DwString afn = fn;
+    fn += (const char *)mid;
+    DwString f1 = fn;
+    f1 += ".bod";
+    vc m;
+    DwString udir;
+    init_msg_folder(uid, &udir);
+    if(load_info(m, f1.c_str(), 1))
+    {
+        DwString tn = udir;
+        tn += "/";
+        tn += (const char *)mid;
+        tn += ".bod";
+        if(!save_info(m, tn.c_str(), 1))
+        {
+            oopanic("cant save");
+        }
+        vc aname = m[QM_BODY_ATTACHMENT];
+        if(!aname.is_nil())
+        {
+            DwString fd = udir;
+            fd += "/";
+            fd += (const char *)aname;
+            afn += (const char *)aname;
+            CopyFile(afn.c_str(), fd.c_str(), 0);
+        }
+        update_msg_idx(uid, m);
+        sql_add_tag(m[QM_BODY_ID], "_local");
+    }
+    else
+    {
+        f1 = fn;
+        f1 += ".snt";
+        if(load_info(m, f1.c_str(), 1))
+        {
+            DwString tn = udir;
+            tn += "/";
+            tn += (const char *)mid;
+            tn += ".snt";
+            if(!save_info(m, tn.c_str(), 1))
+            {
+                oopanic("cant save");
+            }
+            vc aname = m[QM_BODY_ATTACHMENT];
+            if(!aname.is_nil())
+            {
+                DwString fd = udir;
+                fd += "/";
+                fd += (const char *)aname;
+                afn += (const char *)aname;
+                CopyFile(afn.c_str(), fd.c_str(), 0);
+            }
+            update_msg_idx(uid, m);
+            sql_add_tag(m[QM_BODY_ID], "_local");
+            sql_add_tag(m[QM_BODY_ID], "_sent");
+        }
+    }
+}
+
 DWYCOEXPORT
 int
 dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
@@ -6771,6 +6838,11 @@ dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len
     {
         oopanic("really bad problem with uid");
         // NOTREACHED
+    }
+    if(!sql_is_mid_local(msg_id))
+    {
+        pull_msg(u, msg_id);
+        return 0;
     }
 
     vc body = load_body_by_id(u, msg_id);

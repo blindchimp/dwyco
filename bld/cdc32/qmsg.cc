@@ -2538,16 +2538,7 @@ boost_clock(vc mi)
 }
 
 
-vc
-load_body_by_id(vc user_id, vc msg_id)
-{
-    if(user_id.len() == 0)
-        return vcnil;
-    DwString s = (const char *)to_hex(user_id);
-    s += ".usr";
-    return load_body(s.c_str(), msg_id);
-}
-
+static
 vc
 load_body(vc user_dir, vc msg_id)
 {
@@ -2571,6 +2562,17 @@ load_body(vc user_dir, vc msg_id)
     }
     return vcnil;
 }
+
+vc
+load_body_by_id(vc user_id, vc msg_id)
+{
+    if(user_id.len() == 0)
+        return vcnil;
+    DwString s = (const char *)to_hex(user_id);
+    s += ".usr";
+    return load_body(s.c_str(), msg_id);
+}
+
 void
 delete_msg2(vc msg_id)
 {
