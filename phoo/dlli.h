@@ -495,7 +495,12 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_CHAT_SERVER_LOGIN 31
 #define DWYCO_SE_CHAT_SERVER_LOGIN_FAILED 32
 
-#define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 33
+#define DWYCO_SE_GRP_JOIN_OK 33
+#define DWYCO_SE_GRP_JOIN_FAIL 34
+#define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 35
+
+// you get this message to indicate a message has content that is now locally accessible
+#define DWYCO_SE_MSG_PULL_OK 36
 
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -1061,6 +1066,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_MSG_IDX_ASSOC_UID "012"
 #define DWYCO_MSG_IDX_IS_DELIVERED "013"
 #define DWYCO_MSG_IDX_IS_VIEWED "014"
+#define DWYCO_MSG_IDX_IS_LOCAL "015"
 
 
 // DWYCO_QD_MSG_LIST, list of messages that are not sent yet.

@@ -60,6 +60,8 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_GRP_JOIN_FAIL,
 
     DWYCO_SE_MSG_DOWNLOAD_PROGRESS,
+
+    DWYCO_SE_MSG_PULL_OK,
 };
 
 void
@@ -132,6 +134,18 @@ se_emit_msg_progress(DwString mid, vc ruid, DwString msg, int percent)
     GRTLOG("se_emit_msg_progress ", 0, 0);
     GRTLOGVC(v);
 
+}
+
+void
+se_emit_msg_pull_ok(vc mid, vc uid)
+{
+    vc v(VC_VECTOR);
+    v[0] = SE_MSG_PULL_OK;
+    v[1] = uid;
+    v[2] = mid;
+    Se_q.append(v);
+    GRTLOG("se_emit_msg_pull ", 0, 0);
+    GRTLOGVC(v);
 }
 
 int
@@ -232,6 +246,16 @@ se_process()
                                            Se_q[i][1], Se_q[i][1].len(),
                                            0, 0,
                                            DWYCO_TYPE_STRING, (const char *)Se_q[i][2], Se_q[i][2].len(),
+                                           0, 0
+                                          );
+            break;
+
+        case SE_MSG_PULL_OK:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           Se_q[i][2], Se_q[i][2].len(),
+                                           0, 0, 0,
                                            0, 0
                                           );
             break;

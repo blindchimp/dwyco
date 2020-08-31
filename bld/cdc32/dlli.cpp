@@ -6811,6 +6811,7 @@ pull_msg(vc uid, vc mid)
             sql_add_tag(m[QM_BODY_ID], "_sent");
         }
     }
+    se_emit_msg_pull_ok(mid, uid);
 }
 
 DWYCOEXPORT

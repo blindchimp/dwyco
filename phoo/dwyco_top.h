@@ -328,6 +328,8 @@ signals:
 
     void mid_tag_changed(QString mid);
 
+    void msg_pull_ok(const QByteArray& mid, const QString& huid);
+
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);

@@ -115,6 +115,21 @@ QMsgSql::init_schema_fav()
     } catch (...) {
         rollback_transaction();
     }
+
+    try {
+        start_transaction();
+        vc res = sql_simple("pragma mt.user_version");
+        long v = res[0][0];
+        if(v == 2)
+        {
+            sql_simple("drop table if exists fav_msgs");
+            sql_simple("drop table if exists msg_tags");
+            sql_simple("pragma mt.user_version = 3");
+        }
+        commit_transaction();
+    } catch (...) {
+        rollback_transaction();
+    }
 }
 
 void
@@ -186,7 +201,7 @@ import_remote_mi(int i, vc remote_uid)
     sDb->attach(fn, "mi2");
     sDb->attach(favfn, "fav2");
 
-    sql_simple("insert into gi select *, 0 from mi2.msg_idx");
+    sql_simple("insert or ignore into gi select *, 0 from mi2.msg_idx");
     // if there is a local tag in our tag database, note that in the global index
     sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
 

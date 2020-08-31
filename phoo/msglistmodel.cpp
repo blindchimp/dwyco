@@ -178,6 +178,17 @@ msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int per
 }
 
 void
+msglist_model::invalidate_mid(const QByteArray& mid, const QString& huid)
+{
+    if(huid != uid())
+        return;
+    int midi = mid_to_index(mid);
+    QModelIndex mi = index(midi, 0);
+    dataChanged(mi, mi, QVector<int>());
+
+}
+
+void
 msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
 {
     QByteArray mid = smid.toLatin1();
@@ -681,6 +692,10 @@ void
 msglist_raw::reload_model(int force)
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+
+    // remove for testing, when a message is pulled, we need to
+    // "invalidate" it more gracefully. for now, just reload the model
+#if 1
     if(!force && msg_idx && m_tag.length() == 0 && check_inbox_model() && check_qd_msgs())
     {
         // inbox might have been update, qd msgs are the same
@@ -713,7 +728,9 @@ msglist_raw::reload_model(int force)
         }
 
 
+
     }
+#endif
 
     // note: i discovered that an initial empty model would
     // react to a "resetmodel" by loading the entire model
