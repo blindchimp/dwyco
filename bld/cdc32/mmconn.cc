@@ -370,7 +370,7 @@ MMChannel::start_negotiation()
     return 1;
 }
 
-#define FAILNEGO(x) {negotiating = 0; FAILRET(x)}
+#define FAILNEGO(x) do {negotiating = 0; FAILRET(x)} while(0)
 #define FAILRET(x) {fail_reason = (x); msg_out(x); return 0;}
 
 int

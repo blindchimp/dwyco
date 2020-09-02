@@ -546,6 +546,9 @@ MMChannel::MMChannel() :
     video_chan = -1;
     video_state = MEDIA_ERR;
 
+    msync_chan = -1;
+    msync_state = MEDIA_ERR;
+
     auto_quality_boost = 0;
     private_chatbox_id = -1;
     private_chat_display = 0;
@@ -1575,6 +1578,24 @@ MMChannel::local_media_setup_new()
                 simple_protos[video_chan] = s;
             }
         }
+
+        // for now, just set up a sync channel for each connection, like media channels
+        // this is ok for testing, but probably needs more thought
+        if(!proxy_info.is_nil())
+            send_ctrl(aux_r);  // this prompts the callee to setup a channel to the proxy
+        msync_chan = -1;
+        if((ret = tube->gen_channel(proxy_info.is_nil() ? remote_listening_port() : (int)proxy_info[1], msync_chan)) == SSERR)
+        {
+            msync_chan = -1;
+        }
+        else
+        {
+            msync_state = ret;
+            sproto *s = new sproto(msync_chan, media_x_setup, vp);
+            s->start();
+            simple_protos[msync_chan] = s;
+        }
+
     }
     negotiating = 0;
     return 1;

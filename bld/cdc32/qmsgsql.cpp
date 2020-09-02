@@ -209,11 +209,6 @@ import_remote_mi(int i, vc remote_uid)
     // note: here is where we might want to setup local triggers to make updates
     // to gi whenever there is a piecemeal update to a remote index.
 
-    sql_simple("create temp trigger xgi after insert on main.msg_idx begin insert into gi select *, 1 from msg_idx where mid = new.mid; end");
-    sql_simple("create temp trigger dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
-
-    sql_simple(DwString("create temp trigger xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)to_hex(My_UID)).c_str());
-    sql_simple(DwString("create temp trigger dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)to_hex(My_UID)).c_str());
 }
 
 void
@@ -237,7 +232,17 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
-    import_remote_mi(2, from_hex("000000"));
+    //import_remote_mi(2, from_hex("000000"));
+
+    // if there is a local tag in our tag database, note that in the global index
+    sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
+
+    sql_simple("create temp trigger xgi after insert on main.msg_idx begin insert into gi select *, 1 from msg_idx where mid = new.mid; end");
+    sql_simple("create temp trigger dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
+
+    sql_simple(DwString("create temp trigger xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)to_hex(My_UID)).c_str());
+    sql_simple(DwString("create temp trigger dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)to_hex(My_UID)).c_str());
+
 }
 
 void

@@ -195,7 +195,6 @@ tdecode.cc \
 tpgmdec.cc \
 sqrs.cc \
 qauth.cc \
-rawconv.cc \
 senc.cc \
 aq.cc \
 vcpan.cc \

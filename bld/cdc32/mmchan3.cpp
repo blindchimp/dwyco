@@ -155,6 +155,8 @@ MMChannel::init_connect_media(int subchan, sproto *p, const char *ev)
             audio_state = i;
         else if(subchan == video_chan)
             video_state = i;
+        else if(subchan == msync_chan)
+            msync_state = i;
 
         return sproto::next;
     }
@@ -175,6 +177,10 @@ MMChannel::send_media_id(int subchan, sproto *p, const char *ev)
     else if(subchan == video_chan)
     {
         v[0] = "video";
+    }
+    else if(subchan == msync_chan)
+    {
+        v[0] = "msync";
     }
     else
         oopanic("bad media protocol");
@@ -395,6 +401,22 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
         return sproto::next;
 
     }
+    else if(rvc == vc("msync ok"))
+    {
+        msync_state = MEDIA_SESSION_UP;
+        // NOTE: make sure timeout is right for syncing
+        p->timeout.load(AUDIO_IDLE_TIMEOUT);
+        p->timeout.set_oneshot(1);
+        p->timeout.start();
+        if(!agreed_key.is_nil())
+        {
+            tube->set_key_iv(agreed_key, 0);
+            tube->start_decrypt_chan(subchan);
+            tube->start_encrypt_chan(subchan);
+        }
+        return sproto::next;
+
+    }
     return sproto::fail;
 
 }
@@ -559,7 +581,8 @@ MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
                 oopanic("unimp");
 
         }
-        else if(rvc[0] == vc("audio") || rvc[0] == vc("video"))
+        else if(rvc[0] == vc("audio") || rvc[0] == vc("video") ||
+                rvc[0] == vc("msync"))
         {
             int sid = (int)rvc[1];
             MMChannel *mc = get_channel_by_session_id(sid);
@@ -585,6 +608,11 @@ MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
             {
                 mc->video_chan = nc;
                 mc->video_state = MEDIA_SESSION_SETUP;
+            }
+            else if(rvc[0] == vc("msync"))
+            {
+                mc->msync_chan = nc;
+                mc->msync_state = MEDIA_SESSION_SETUP;
             }
             tube->set_channel(0, 0, 0, subchan);
             sproto *s = new sproto(nc, media_r_setup, mc->vp);
@@ -830,6 +858,13 @@ MMChannel::send_media_ok(int subchan, sproto *p, const char *ev)
         p->timeout.set_oneshot(1);
         p->timeout.start();
         video_state = MEDIA_SESSION_UP;
+    }
+    else if(media == vc("msync"))
+    {
+        p->timeout.load(AUDIO_IDLE_TIMEOUT);
+        p->timeout.set_oneshot(1);
+        p->timeout.start();
+        msync_state = MEDIA_SESSION_UP;
     }
     tube->set_key_iv(agreed_key, 0);
     tube->start_encrypt_chan(subchan);

@@ -525,6 +525,13 @@ private:
     int internal_0_offset;
     //sd3 preprocess_w_vad;
 
+    // this is a full duplex channel for running a sync protocol
+    // for now, we run this like the audio and video channels, which
+    // are real-time only. might make sense to change this to use something
+    // more msg oriented, but for now, this will be fine.
+    int msync_chan;
+    int msync_state;
+
 public:
     int build_outgoing_audio(int);
     int build_incoming_audio(int);
