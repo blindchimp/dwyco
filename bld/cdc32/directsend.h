@@ -24,6 +24,11 @@ namespace dwyco {
 
 class DirectSend : public ssns::trackable
 {
+
+    // just a note: don't try to make this private unless you want a lot
+    // of grief. there are a lot of non-member functions that need access to this
+    // and i don't feel like calling them out as friends or statics in here.
+    //
 public:
 
     DirectSend(const DwString& fn);
