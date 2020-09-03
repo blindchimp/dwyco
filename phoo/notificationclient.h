@@ -63,6 +63,7 @@ public slots:
     void open_image();
     void vibrate(long ms);
     void log_event();
+    void log_event2(QString name, QString method);
     void set_user_property(QString name, QString value);
     void set_lastrun();
 
