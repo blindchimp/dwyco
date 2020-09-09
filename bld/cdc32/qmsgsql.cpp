@@ -201,13 +201,22 @@ import_remote_mi(int i, vc remote_uid)
     sDb->attach(fn, "mi2");
     sDb->attach(favfn, "fav2");
 
-    sql_simple("insert or ignore into gi select *, 0 from mi2.msg_idx");
-    // if there is a local tag in our tag database, note that in the global index
-    sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
+    try
+    {
+        sql_start_transaction();
+        sql_simple("insert or ignore into gi select *, 0 from mi2.msg_idx");
+        sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", to_hex(remote_uid));
+        // note: here is where we might want to setup local triggers to make updates
+        // to gi whenever there is a piecemeal update to a remote index.
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
 
-    sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", to_hex(remote_uid));
-    // note: here is where we might want to setup local triggers to make updates
-    // to gi whenever there is a piecemeal update to a remote index.
+    sDb->detach("mi2");
+    sDb->detach("fav2");
 
 }
 

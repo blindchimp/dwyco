@@ -115,10 +115,6 @@ DH_alternate::load_account(vc alternate_name)
 {
     vc res;
     try {
-//        VCArglist a;
-//        a.append("select pubkey, privkey from keys where uid = ?1 and alt_name = ?2 order by time desc limit 1");
-//        a.append(to_hex(uid));
-//        a.append(alternate_name);
         res = DHG_db->sql_simple("select pubkey, privkey from keys where uid = ?1 and alt_name = ?2 order by time desc limit 1",
                                  to_hex(uid), alternate_name);
     } catch (...) {

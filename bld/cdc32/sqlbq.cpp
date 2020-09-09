@@ -41,6 +41,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
                                      &st, &tail)) != SQLITE_OK)
     {
+        oopanic(sqlite3_errmsg(dbs));
         throw -1;
         return vcnil;
     }
