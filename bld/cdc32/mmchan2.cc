@@ -58,6 +58,8 @@ MMChannel::drop_subchannel(int i)
         audio_state = MEDIA_ERR;
     if(i == video_chan)
         video_state = MEDIA_ERR;
+    if(i == msync_chan)
+        msync_state = MEDIA_ERR;
     tube->drop_channel(i);
 }
 
