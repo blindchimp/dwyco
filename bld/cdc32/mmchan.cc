@@ -676,6 +676,9 @@ MMChannel::MMChannel() :
 
     file_xfer = 0;
     zreject = 0;
+
+    mms_sync_state = MMSS_NONE;
+    mmr_sync_state = MMSS_NONE;
 }
 
 MMChannel::~MMChannel()

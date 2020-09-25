@@ -132,6 +132,7 @@ mmchan.cc \
 mmbld.cc \
 mmaud.cc \
 mmband.cc \
+    mmchan_sync.cpp \
 mmconn.cc \
 mmctrl.cc \
 mmchan2.cc \

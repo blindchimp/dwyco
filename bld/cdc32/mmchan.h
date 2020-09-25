@@ -1000,6 +1000,37 @@ public:
     // usually because size is too big.
     int zreject;
 
+    // stuff used for syncing msgs to another client
+private:
+    enum syncstate {
+        MMSS_TRYAGAIN = -3,
+        MMSS_ERR = -2,
+        MMSS_NONE = -1,
+        START = 0,
+        SEND_INIT,
+        RECV_INIT,
+        NORMAL_RECV,
+        NORMAL_SEND,
+    };
+
+    enum syncstate mmr_sync_state;
+    enum syncstate mms_sync_state;
+
+    int process_outgoing_sync();
+    int process_incoming_sync();
+
+    vc package_index();
+    vc package_next_cmd();
+
+    void unpack_index(vc);
+    void process_pull(vc);
+    void process_pull_resp(vc);
+    DwListA<vc> sync_sendq;
+
+public:
+    void send_pull(vc mid);
+
+
 };
 
 #define AUDIO_NUM_STATES 8
