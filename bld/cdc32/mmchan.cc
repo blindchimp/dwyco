@@ -4406,7 +4406,10 @@ stun_done:
                     mc->send_reliable_video_proxy();
                 }
             }
-
+            if(t && mc->msync_state == MEDIA_SESSION_UP)
+            {
+                mc->process_outgoing_sync();
+            }
             //
             // check for availability of keyboard data and send out
             // a chat message if there is some available.
@@ -4646,6 +4649,10 @@ resume_ctrl_send:
 next_iter:
         continue;
 resume:
+        if(t && mc->msync_state == MEDIA_SESSION_UP && t->has_data(mc->msync_chan))
+        {
+            mc->process_incoming_sync();
+        }
         // note: don't check for paused here because
         // we want any data that might be q'd up to
         // come through before stopping (ie, pause

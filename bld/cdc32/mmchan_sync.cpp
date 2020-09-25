@@ -106,7 +106,7 @@ MMChannel::unpack_index(vc cmd)
     mifn = newfn(mifn);
     favfn = newfn(favfn);
     string_to_file(cmd[1], mifn);
-    string_to_file(cmd[1], favfn);
+    string_to_file(cmd[2], favfn);
 }
 
 void
@@ -116,6 +116,12 @@ MMChannel::process_pull(vc cmd)
         return;
     vc mid = cmd[1];
     // load the msg and attachment, and send it back as a "pull-resp"
+
+}
+
+void
+MMChannel::process_pull_resp(vc)
+{
 
 }
 
@@ -207,6 +213,7 @@ MMChannel::process_incoming_sync()
                 else if(rvc[0] == vc("pull-resp"))
                     process_pull_resp(rvc);
             }
+            return 1;
         }
         else
             ret = SSERR;
