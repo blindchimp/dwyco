@@ -6746,6 +6746,7 @@ dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int le
     return 1;
 }
 
+#if 0
 // this just simulates pulling a msg from remote
 static
 void
@@ -6812,6 +6813,17 @@ pull_msg(vc uid, vc mid)
         }
     }
     se_emit_msg_pull_ok(mid, uid);
+}
+#endif
+
+static
+void
+pull_msg(vc uid, vc msg_id)
+{
+    // here is where we look for where the msg might be available, and
+    // try to issue a pull to that client. we might have to set up a connection
+    // as well before issuing the pull.
+
 }
 
 DWYCOEXPORT

@@ -12,6 +12,8 @@
 #include "se.h"
 #include "dwscoped.h"
 #include "qauth.h"
+#include "qmsgsql.h"
+#include "xinfo.h"
 
 using namespace dwyco;
 
@@ -73,9 +75,6 @@ MMChannel::package_index()
     cmd[2] = file_to_string(newfn("fav.sql"));
 
     return cmd;
-
-
-    return vcnil;
 }
 
 vc
@@ -83,13 +82,22 @@ MMChannel::package_next_cmd()
 {
     if(sync_sendq.num_elems() == 0)
         return vcnil;
-    vc cmd(VC_VECTOR);
-    cmd[0] = "pull";
-    cmd[1] = sync_sendq.get_first();
+    vc next_cmd = sync_sendq.get_first();
     sync_sendq.remove_first();
-    return cmd;
+    return next_cmd;
+#if 0
+    vc cmd(VC_VECTOR);
+    if(next_cmd[0] == vc("pull"))
+    {
+        cmd = next_cmd;
+    }
+    else if(next_cmd == vc("pull-resp"))
+    {
+        cmd = next_cmd;
+    }
 
-    return vcnil;
+    return cmd;
+#endif
 }
 
 void
@@ -107,6 +115,7 @@ MMChannel::unpack_index(vc cmd)
     favfn = newfn(favfn);
     string_to_file(cmd[1], mifn);
     string_to_file(cmd[2], favfn);
+    import_remote_mi(remote_uid());
 }
 
 void
@@ -117,18 +126,126 @@ MMChannel::process_pull(vc cmd)
     vc mid = cmd[1];
     // load the msg and attachment, and send it back as a "pull-resp"
 
+    vc huid = sql_get_uid_from_mid(mid);
+    if(huid.is_nil())
+    {
+        send_pull_error(mid);
+        return;
+    }
+
+    vc body = load_body_by_id(from_hex(huid), mid);
+    if(body.is_nil())
+    {
+        send_pull_error(mid);
+        return;
+    }
+
+    vc attfn = body[QM_BODY_ATTACHMENT];
+    vc att;
+    if(!attfn.is_nil())
+    {
+        DwString a("%1.usr%2%3");
+        a.arg((const char *)huid, DIRSEPSTR, (const char *)attfn);
+        a = newfn(a);
+        att = file_to_string(a);
+        if(att.is_nil())
+        {
+            send_pull_error(mid);
+            return;
+        }
+    }
+    send_pull_resp(mid, from_hex(huid), body, att);
 }
 
 void
-MMChannel::process_pull_resp(vc)
+MMChannel::process_pull_resp(vc cmd)
 {
+    // here is where we insert the fetched message into our
+    // local model (which automatically gets put into the global
+    // model held here.)
+
+    vc mid = cmd[1];
+    vc uid = cmd[2];
+    vc body = cmd[3];
+    vc att = cmd[4];
+
+
+    vc m = body;
+    DwString udir;
+    init_msg_folder(uid, &udir);
+    if(body[QM_BODY_SENT].is_nil())
+    {
+        DwString tn = udir;
+        tn += "/";
+        tn += (const char *)mid;
+        tn += ".bod";
+        if(!save_info(m, tn.c_str(), 1))
+        {
+            oopanic("cant save");
+        }
+        vc aname = m[QM_BODY_ATTACHMENT];
+        if(!aname.is_nil())
+        {
+            DwString fd = udir;
+            fd += "/";
+            fd += (const char *)aname;
+            string_to_file(att, fd);
+        }
+        update_msg_idx(uid, m);
+        sql_add_tag(m[QM_BODY_ID], "_local");
+    }
+    else
+    {
+            DwString tn = udir;
+            tn += "/";
+            tn += (const char *)mid;
+            tn += ".snt";
+            if(!save_info(m, tn.c_str(), 1))
+            {
+                oopanic("cant save");
+            }
+            vc aname = m[QM_BODY_ATTACHMENT];
+            if(!aname.is_nil())
+            {
+                DwString fd = udir;
+                fd += "/";
+                fd += (const char *)aname;
+                string_to_file(att, fd);
+            }
+            update_msg_idx(uid, m);
+            sql_add_tag(m[QM_BODY_ID], "_local");
+            sql_add_tag(m[QM_BODY_ID], "_sent");
+
+    }
+    se_emit_msg_pull_ok(mid, uid);
 
 }
 
 void
 MMChannel::send_pull(vc mid)
 {
-    sync_sendq.append(mid);
+    vc cmd(VC_VECTOR);
+    cmd[0] = "pull";
+    cmd[1] = mid;
+    sync_sendq.append(cmd);
+}
+
+void
+MMChannel::send_pull_resp(vc mid, vc uid, vc msg, vc att)
+{
+    vc cmd(VC_VECTOR);
+    cmd[0] = "pull-resp";
+    cmd[1] = mid;
+    cmd[2] = uid;
+    cmd[3] = msg;
+    cmd[4] = att;
+    sync_sendq.append(cmd);
+}
+
+void
+MMChannel::send_pull_error(vc mid)
+{
+    send_pull_resp(mid, vcnil, vcnil, vcnil);
 }
 
 int
@@ -193,7 +310,6 @@ MMChannel::process_incoming_sync()
     int ret;
 
     vc rvc;
-    int len;
     if((ret = tube->recv_data(rvc, msync_chan)) >= 0)
     {
         if(rvc.type() == VC_VECTOR)

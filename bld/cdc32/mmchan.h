@@ -1022,10 +1022,13 @@ private:
     vc package_index();
     vc package_next_cmd();
 
-    void unpack_index(vc);
-    void process_pull(vc);
-    void process_pull_resp(vc);
+    void unpack_index(vc cmd);
+    void process_pull(vc cmd);
+    void process_pull_resp(vc cmd);
     DwListA<vc> sync_sendq;
+
+    void send_pull_resp(vc mid, vc uid, vc msg, vc att);
+    void send_pull_error(vc mid);
 
 public:
     void send_pull(vc mid);

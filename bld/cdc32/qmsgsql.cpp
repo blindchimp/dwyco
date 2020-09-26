@@ -193,10 +193,11 @@ QMsgSql::init_schema(const DwString& schema_name)
 // note: this is for testing, we're just assuming the index
 // has been materialized here so we can investigate things
 void
-import_remote_mi(int i, vc remote_uid)
+import_remote_mi(vc remote_uid)
 {
-    DwString fn = DwString("mi%1.sql").arg(DwString::fromInt(i));
-    DwString favfn = DwString("fav%1.sql").arg(DwString::fromInt(i));
+    vc huid = to_hex(remote_uid);
+    DwString fn = DwString("mi%1.sql").arg((const char *)huid);
+    DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
 
     sDb->attach(fn, "mi2");
     sDb->attach(favfn, "fav2");
@@ -205,7 +206,7 @@ import_remote_mi(int i, vc remote_uid)
     {
         sql_start_transaction();
         sql_simple("insert or ignore into gi select *, 0 from mi2.msg_idx");
-        sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", to_hex(remote_uid));
+        sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", huid);
         // note: here is where we might want to setup local triggers to make updates
         // to gi whenever there is a piecemeal update to a remote index.
         sql_commit_transaction();
