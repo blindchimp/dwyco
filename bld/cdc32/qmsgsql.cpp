@@ -178,7 +178,8 @@ QMsgSql::init_schema(const DwString& schema_name)
                "att_is_short_video,"
                "logical_clock,"
                "assoc_uid text not null,"
-               "is_local)"
+               "is_local,"
+               "from_client_uid not null)"
               );
     sql_simple("drop table if exists gmt");
     sql_simple("create table gmt(mid text, tag text, time integer, uid text, unique(mid, tag, uid) on conflict ignore)");
@@ -205,7 +206,9 @@ import_remote_mi(vc remote_uid)
     try
     {
         sql_start_transaction();
-        sql_simple("insert or ignore into gi select *, 0 from mi2.msg_idx");
+        sql_simple("delete from gi where from_client_uid = ?1", huid);
+        sql_simple("delete from gmt where uid = ?1", huid);
+        sql_simple("insert or ignore into gi select *, 0, ?1 from mi2.msg_idx", huid);
         sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", huid);
         // note: here is where we might want to setup local triggers to make updates
         // to gi whenever there is a piecemeal update to a remote index.
@@ -229,12 +232,13 @@ init_qmsg_sql()
     sDb = new QMsgSql;
     if(!sDb->init())
         throw -1;
+    vc hmyuid = to_hex(My_UID);
     // by default, our local index "local" is implied
-    sql_simple("insert into gi select *, 1 from msg_idx");
+    sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
 
     sDb->attach("fav.sql", "mt");
 
-    sql_simple("insert into gmt select *, ?1 from mt.msg_tags2", to_hex(My_UID));
+    sql_simple("insert into gmt select *, ?1 from mt.msg_tags2", hmyuid);
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
     sql_simple("create temp trigger rescan1 after delete on mt.msg_tags2 begin update rescan set flag = 1; end");
@@ -242,17 +246,28 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
-    //import_remote_mi(2, from_hex("000000"));
-
     // if there is a local tag in our tag database, note that in the global index
     sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
 
-    sql_simple("create temp trigger xgi after insert on main.msg_idx begin insert into gi select *, 1 from msg_idx where mid = new.mid; end");
+    sql_simple(DwString("create temp trigger xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
     sql_simple("create temp trigger dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
 
-    sql_simple(DwString("create temp trigger xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)to_hex(My_UID)).c_str());
-    sql_simple(DwString("create temp trigger dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)to_hex(My_UID)).c_str());
+    sql_simple(DwString("create temp trigger xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)hmyuid).c_str());
+    sql_simple(DwString("create temp trigger dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)hmyuid).c_str());
 
+    // this is a hack for debugging, load existing data indexes. we expect we won't
+    // obliterate gi and gmt on each restart in the future
+
+    FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
+    for(int i = 0; i < fv->num_elems(); ++i)
+    {
+        WIN32_FIND_DATA *w = (*fv)[i];
+        DwString a(w->cFileName);
+        a.erase(0, 2);
+        a.erase(20, 4);
+        vc uid = from_hex(a.c_str());
+        import_remote_mi(uid);
+    }
 }
 
 void
@@ -782,6 +797,40 @@ sql_get_uid_from_mid(vc mid)
         return vcnil;
     }
 }
+
+static
+vc
+flatten(vc sql_res)
+{
+    vc ret(VC_VECTOR);
+    for(int i = 0; i < sql_res.num_elems(); ++i)
+    {
+        ret[i] = sql_res[i][0];
+    }
+    return ret;
+}
+
+// this looks in all the loaded global indexes to see what uid's
+// might have the mid in their local cache
+vc
+sql_get_uid_from_mid2(vc mid)
+{
+    try
+    {
+        sql_start_transaction();
+        vc res = sql_simple("select distinct(uid) from gmt where mid = ?1 and tag = '_local'", mid);
+        sql_commit_transaction();
+        if(res.num_elems() == 0)
+            return vcnil;
+        return flatten(res);
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return vcnil;
+    }
+}
+
 
 int
 msg_index_count(vc uid)
