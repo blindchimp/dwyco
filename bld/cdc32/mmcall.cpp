@@ -104,6 +104,12 @@ MMCall::channel_to_call(int chan_id)
     return 0;
 }
 
+DwVecP<MMCall>
+MMCall::calls_by_type(vc tp)
+{
+    return MMCalls_qbm.query_by_member(tp, &MMCall::call_type);
+}
+
 // this is called after a physical connect has occurred on a direct
 // connection attempt. we boost the timeout to something larger
 // so that the user has a chance to respond to accept/reject
