@@ -2611,6 +2611,23 @@ MMChannel::already_connected(vc uid, int is_msg_chan, int is_user_control_chan)
     return 0;
 }
 
+MMChannel *
+MMChannel::channel_by_call_type(vc uid, vc call_type)
+{
+    // check current connections for uid
+    scoped_ptr<ChanList> cl(get_serviced_channels_net());
+    ChanListIter cli(cl.get());
+    for(; !cli.eol(); cli.forward())
+    {
+        MMChannel *mc = cli.getp();
+        if(uid == mc->remote_uid() && call_type == mc->remote_call_type())
+        {
+            return mc;
+        }
+    }
+    return 0;
+}
+
 // this is called in the CALLEE when we receive
 // the CALLER's config
 void

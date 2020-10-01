@@ -446,7 +446,6 @@ extern vc StackDump;
 extern vc My_connection;
 extern vc KKG;
 extern int Chat_online;
-extern CallQ *TheCallQ;
 
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
@@ -6823,6 +6822,58 @@ pull_msg(vc uid, vc msg_id)
     // here is where we look for where the msg might be available, and
     // try to issue a pull to that client. we might have to set up a connection
     // as well before issuing the pull.
+
+    vc uids = sql_get_uid_from_mid2(msg_id);
+    if(uids.is_nil())
+        return;
+
+    for(int i = 0; i < uids.num_elems(); ++i)
+        uids[i] = from_hex(uids[i]);
+
+    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    for(int i = 0; i < mmcl.num_elems(); ++i)
+    {
+        MMCall *mmc = mmcl[i];
+        vc dum;
+        if(uids.find(mmc->uid, dum))
+        {
+            if(mmc->established)
+            {
+                MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
+                if(mc)
+                {
+                    mc->send_pull(msg_id);
+                    return;
+                }
+            }
+            else
+            {
+                // attach the established signal to a slot that does the pull
+            }
+            return;
+        }
+    }
+    // no originating calls, see if we have one we have received
+    // see if we have one that we have orginated
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        MMChannel *mc;
+        if((mc = MMChannel::channel_by_call_type(uids[i], "sync")))
+        {
+            mc->send_pull(msg_id);
+            // note: this probably needs a heuristic to either send
+            // all pulls at once, or decide which one is most likely
+            // to work. for now, we just do the first one.
+            return;
+        }
+    }
+
+    // no existing calls, try to set one up
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        dwyco_connect_uid(uids[i], uids[i].len(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "sync", 4, 1);
+    }
+
 
 }
 

@@ -195,7 +195,7 @@ public:
     DwCoder *coder_from_config();
     DwDecoder *decoder_from_config();
     static MMChannel *already_connected(vc uid, int is_msg_chan = 0, int is_user_control_chan = 0);
-
+    static MMChannel *channel_by_call_type(vc uid, vc call_type);
     static int Sync_receivers;
     static int Auto_sync;
     static int compute_sync();

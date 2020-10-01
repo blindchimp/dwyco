@@ -13,6 +13,9 @@
 #include "mmcall.h"
 #include "dwvecp.h"
 
+namespace dwyco {
+
+
 struct callq
 {
     ValidPtr vp;	// holds the MMCall pointer we are tracking
@@ -55,5 +58,7 @@ public:
 extern CallQ *TheCallQ;
 void init_callq();
 void callq_tick();
+
+}
 
 #endif

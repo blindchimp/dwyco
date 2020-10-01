@@ -23,6 +23,9 @@
 #include "dwrtlog.h"
 #include "qauth.h"
 
+using namespace dwyco;
+extern int Media_select;
+
 #define CQ_WAITING 0
 #define CQ_CONNECTED 1
 #define CQ_CONNECTING 2
@@ -30,7 +33,9 @@
 #define CQ_TERMINATED 4
 #define CALLQ_POLL_TIME (1000)
 
+namespace dwyco {
 CallQ *TheCallQ;
+
 void
 init_callq()
 {
@@ -234,7 +239,6 @@ CallQ::tick()
             continue;
         if(calls[i]->status == CQ_WAITING && !calls[i]->cancel)
         {
-            extern int Media_select;
             if(((MMCall *)(void *)calls[i]->vp)->start_call(Media_select))
             {
                 calls[i]->status = CQ_CONNECTING;
@@ -249,4 +253,5 @@ CallQ::tick()
         }
     }
     return 0;
+}
 }
