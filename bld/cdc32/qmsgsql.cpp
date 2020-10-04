@@ -268,6 +268,8 @@ init_qmsg_sql()
         vc uid = from_hex(a.c_str());
         import_remote_mi(uid);
     }
+
+    delete_findvec(fv);
 }
 
 void
