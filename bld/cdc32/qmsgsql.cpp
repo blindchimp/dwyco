@@ -334,6 +334,10 @@ sql_insert_record(vc entry, vc assoc_uid)
     a.append(to_hex(assoc_uid));
 
     sql_bulk_query(&a);
+
+    sql_add_tag(entry[QM_IDX_MID], "_local");
+    if(!entry[QM_IDX_IS_SENT].is_nil())
+        sql_add_tag(entry[QM_IDX_MID], "_sent");
 }
 
 static
@@ -683,6 +687,7 @@ create_date_index(vc uid)
     try
     {
         sql_start_transaction();
+        sql_simple("delete from mt.msg_tags2 where tag = '_local' or tag = '_sent'");
 
         FindVec& fv = *find_to_vec(s.c_str());
         int n = fv.num_elems();
