@@ -183,11 +183,53 @@ QMsgSql::init_schema(const DwString& schema_name)
               );
     sql_simple("drop table if exists gmt");
     sql_simple("create table gmt(mid text, tag text, time integer, uid text, unique(mid, tag, uid) on conflict ignore)");
+
+    sql_simple("drop table if exists midlog");
+    sql_simple("drop table if exists taglog");
+    sql_simple("create table midlog (mid text not null)");
+    sql_simple("create table taglog (mid text not null, tag text not null)");
     }
     else if(schema_name.eq("mt"))
 	{
 		init_schema_fav();
 	}
+
+}
+
+vc
+package_downstream_sends()
+{
+    try
+    {
+        // NOTE: may want to package this as a single command
+        // containing both index and tag updates, then perform all of them
+        // under a transaction. may not be necessary, but just a thought
+        sql_start_transaction();
+        vc idxs = sql_simple("select * from msg_idx, midlog where midlog.mid = msg_idx.mid");
+        vc tags = sql_simple("select * from mt.msg_tags2 as mt2, taglog where mt2.mid = taglog.mid and mt2.tag = taglog.tag");
+        vc ret(VC_VECTOR);
+        for(int i = 0; i < idxs.num_elems(); ++i)
+        {
+            vc cmd(VC_VECTOR);
+            cmd[0] = "iupdate";
+            cmd[1] = idxs[i];
+            ret.append(cmd);
+        }
+        for(int i = 0; i < tags.num_elems(); ++i)
+        {
+            vc cmd(VC_VECTOR);
+            cmd[0] = "tupdate";
+            cmd[1] = tags[i];
+        }
+        sql_simple("delete from midlog");
+        sql_simple("delete from taglog");
+        sql_commit_transaction();
+        return ret;
+    } catch (...)
+    {
+        sql_rollback_transaction();
+        return vcnil;
+    }
 
 }
 
@@ -245,6 +287,9 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan2 after insert on mt.msg_tags2 begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
+
+    sql_simple("create temp trigger miupdate after insert on main.msg_idx begin insert into midlog (mid) values(new.mid); end");
+    sql_simple("create temp trigger tagupdate after insert on mt.msg_tags2 begin insert into taglog (mid, tag) values(new.mid, new.tag); end");
 
     // if there is a local tag in our tag database, note that in the global index
     sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
@@ -728,6 +773,8 @@ create_date_index(vc uid)
         delete_findvec(&fv2);
         sql_insert_indexed_flag(uid);
         sql_record_most_recent(uid);
+        sql_simple("delete from midlog");
+        sql_simple("delete from taglog");
         sql_commit_transaction();
         return 1;
     }

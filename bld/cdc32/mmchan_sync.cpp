@@ -85,19 +85,6 @@ MMChannel::package_next_cmd()
     vc next_cmd = sync_sendq.get_first();
     sync_sendq.remove_first();
     return next_cmd;
-#if 0
-    vc cmd(VC_VECTOR);
-    if(next_cmd[0] == vc("pull"))
-    {
-        cmd = next_cmd;
-    }
-    else if(next_cmd == vc("pull-resp"))
-    {
-        cmd = next_cmd;
-    }
-
-    return cmd;
-#endif
 }
 
 void
@@ -169,7 +156,6 @@ MMChannel::process_pull_resp(vc cmd)
     vc body = cmd[3];
     vc att = cmd[4];
 
-
     vc m = body;
     DwString udir;
     init_msg_folder(uid, &udir);
@@ -218,6 +204,18 @@ MMChannel::process_pull_resp(vc cmd)
 
     }
     se_emit_msg_pull_ok(mid, uid);
+
+}
+
+void
+MMChannel::process_iupdate(vc cmd)
+{
+
+}
+
+void
+MMChannel::process_tupdate(vc cmd)
+{
 
 }
 
@@ -271,6 +269,13 @@ MMChannel::process_outgoing_sync()
     }
     else if(mms_sync_state == NORMAL_SEND)
     {
+        vc ds = package_downstream_sends();
+        if(!ds.is_nil())
+        {
+            for(int i = 0; i < ds.num_elems(); ++i)
+                sync_sendq.append(ds[i]);
+        }
+
         vcx = package_next_cmd();
         if(vcx.is_nil())
             return 0;
@@ -324,10 +329,19 @@ MMChannel::process_incoming_sync()
             }
             else if(mmr_sync_state == NORMAL_RECV)
             {
-                if(rvc[0] == vc("pull"))
+                vc cmd = rvc[0];
+                if(cmd == vc("pull"))
                     process_pull(rvc);
-                else if(rvc[0] == vc("pull-resp"))
+                else if(cmd == vc("pull-resp"))
                     process_pull_resp(rvc);
+                else if(cmd == vc("iupdate"))
+                {
+                    process_iupdate(rvc);
+                }
+                else if(cmd == vc("tupdate"))
+                {
+                    process_tupdate(rvc);
+                }
             }
             return 1;
         }

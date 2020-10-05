@@ -6854,7 +6854,6 @@ pull_msg(vc uid, vc msg_id)
         }
     }
     // no originating calls, see if we have one we have received
-    // see if we have one that we have orginated
     for(int i = 0; i < uids.num_elems(); ++i)
     {
         MMChannel *mc;
