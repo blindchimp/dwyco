@@ -97,6 +97,9 @@ Item {
                 //camera.imageCapture.captureToLocation(core.tmp_dir)
                 console.log("cam st ", camera.lockStatus === Camera.Unlocked)
                 console.log("cam af ", camera.focus.isFocusModeSupported(CameraFocus.FocusAuto))
+                if(Qt.platform.os == "android") {
+                    notificationClient.log_event2("camcapture", "regular")
+                }
                 if(Qt.platform.os == "ios") {
                     camera.imageCapture.captureToLocation(core.tmp_dir)
                 } else {

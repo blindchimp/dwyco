@@ -141,6 +141,21 @@ NotificationClient::log_event()
 }
 
 void
+NotificationClient::log_event2(QString name, QString method)
+{
+    QAndroidJniObject jname = QAndroidJniObject::fromString(name);
+    QAndroidJniObject jval = QAndroidJniObject::fromString(method);
+    QAndroidJniObject::callStaticMethod<void>(
+        "com/dwyco/android/NotificationClient",
+        "log_event2",
+      "(Ljava/lang/String;Ljava/lang/String;)V",
+      jname.object<jstring>(),
+      jval.object<jstring>()
+    );
+
+}
+
+void
 NotificationClient::set_user_property(QString name, QString value)
 {
     QAndroidJniObject jname = QAndroidJniObject::fromString(name);

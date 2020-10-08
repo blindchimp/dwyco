@@ -98,6 +98,9 @@ Rectangle {
                 core.set_local_setting("first-run", "done")
                 profile_bootstrapped = 1
                 busy.running = true
+                if(Qt.platform.os == "android") {
+                    notificationClient.log_event2("TOSOK", "regular")
+                }
             }
         }
     }
