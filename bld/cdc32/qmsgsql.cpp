@@ -55,6 +55,13 @@ sql_simple(const char *sql, const vc& a0 = vcnil, const vc& a1 = vcnil, const vc
     return res;
 }
 
+static
+vc
+sql_bulk_query(const VCArglist *a)
+{
+    return sDb->query(a);
+}
+
 void
 QMsgSql::init_schema_fav()
 {
@@ -130,6 +137,7 @@ QMsgSql::init_schema_fav()
     } catch (...) {
         rollback_transaction();
     }
+    sql_simple("create table if not exists taglog (mid text not null, tag text not null)");
 }
 
 void
@@ -187,13 +195,31 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("drop table if exists midlog");
     sql_simple("drop table if exists taglog");
     sql_simple("create table midlog (mid text not null)");
-    sql_simple("create table taglog (mid text not null, tag text not null)");
+    sql_simple("drop table if exists taglog");
+    //sql_simple("create table taglog (mid text not null, tag text not null)");
     }
     else if(schema_name.eq("mt"))
 	{
 		init_schema_fav();
 	}
 
+}
+
+static
+DwString
+make_sql_args(int n)
+{
+    DwString ret;
+    int i;
+    for(i = 1; i < n; ++i)
+    {
+        ret += "?";
+        ret += DwString::fromInt(i);
+        ret += ",";
+    }
+    ret += "?";
+    ret += DwString::fromInt(i);
+    return ret;
 }
 
 vc
@@ -205,8 +231,8 @@ package_downstream_sends()
         // containing both index and tag updates, then perform all of them
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
-        vc idxs = sql_simple("select * from msg_idx, midlog where midlog.mid = msg_idx.mid");
-        vc tags = sql_simple("select * from mt.msg_tags2 as mt2, taglog where mt2.mid = taglog.mid and mt2.tag = taglog.tag");
+        vc idxs = sql_simple("select msg_idx.* from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid");
+        vc tags = sql_simple("select mt2.* from mt.msg_tags2 as mt2, mt.taglog where mt2.mid = taglog.mid and mt2.tag = taglog.tag");
         vc ret(VC_VECTOR);
         for(int i = 0; i < idxs.num_elems(); ++i)
         {
@@ -221,8 +247,8 @@ package_downstream_sends()
             cmd[0] = "tupdate";
             cmd[1] = tags[i];
         }
-        sql_simple("delete from midlog");
-        sql_simple("delete from taglog");
+        sql_simple("delete from main.midlog");
+        sql_simple("delete from mt.taglog");
         sql_commit_transaction();
         return ret;
     } catch (...)
@@ -248,12 +274,14 @@ import_remote_mi(vc remote_uid)
     try
     {
         sql_start_transaction();
-        sql_simple("delete from gi where from_client_uid = ?1", huid);
-        sql_simple("delete from gmt where uid = ?1", huid);
-        sql_simple("insert or ignore into gi select *, 0, ?1 from mi2.msg_idx", huid);
-        sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", huid);
+        sql_simple("delete from main.gi where from_client_uid = ?1", huid);
+        sql_simple("delete from main.gmt where uid = ?1", huid);
+        sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
+        sql_simple("insert into main.gmt select *, ?1 from fav2.msg_tags2", huid);
         // note: here is where we might want to setup local triggers to make updates
         // to gi whenever there is a piecemeal update to a remote index.
+        // note: if we setup triggers, we can't detach the database below, but we end up
+        // running into the attached database limit (10 by default, 125 hard max).
         sql_commit_transaction();
     }
     catch(...)
@@ -264,6 +292,46 @@ import_remote_mi(vc remote_uid)
     sDb->detach("mi2");
     sDb->detach("fav2");
 
+}
+
+void
+import_remote_iupdate(vc remote_uid, vc vals)
+{
+    vc huid = to_hex(remote_uid);
+    DwString fn = DwString("mi%1.sql").arg((const char *)huid);
+    DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
+
+    sDb->attach(fn, "mi2");
+    sDb->attach(favfn, "fav2");
+
+    try
+    {
+        sql_start_transaction();
+        //sql_simple("delete from gi where from_client_uid = ?1", huid);
+        //sql_simple("delete from gmt where uid = ?1", huid);
+        DwString sargs = make_sql_args(vals.num_elems());
+        VCArglist a;
+        a.set_size(vals.num_elems() + 1);
+        a.append(DwString("insert or ignore into mi2.msg_idx values(%1)").arg(sargs).c_str());
+        for(int i = 0; i < vals.num_elems(); ++i)
+            a.append(vals[i]);
+        sql_bulk_query(&a);
+
+        sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
+        //sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", huid);
+        // note: here is where we might want to setup local triggers to make updates
+        // to gi whenever there is a piecemeal update to a remote index.
+        // note: if we setup triggers, we can't detach the database below, but we end up
+        // running into the attached database limit (10 by default, 125 hard max).
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+
+    sDb->detach("mi2");
+    sDb->detach("fav2");
 }
 
 void
@@ -288,17 +356,17 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
-    sql_simple("create temp trigger miupdate after insert on main.msg_idx begin insert into midlog (mid) values(new.mid); end");
-    sql_simple("create temp trigger tagupdate after insert on mt.msg_tags2 begin insert into taglog (mid, tag) values(new.mid, new.tag); end");
+    sql_simple("create  trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid) values(new.mid); end");
+    sql_simple("create trigger if not exists mt.tagupdate after insert on mt.msg_tags2 begin insert into taglog (mid, tag) values(new.mid, new.tag); end");
 
     // if there is a local tag in our tag database, note that in the global index
     sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
 
-    sql_simple(DwString("create temp trigger xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
-    sql_simple("create temp trigger dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
+    sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
+    sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
 
-    sql_simple(DwString("create temp trigger xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)hmyuid).c_str());
-    sql_simple(DwString("create temp trigger dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)hmyuid).c_str());
+    sql_simple(DwString("create trigger if not exists xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)hmyuid).c_str());
+    sql_simple(DwString("create trigger if not exists dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)hmyuid).c_str());
 
     // this is a hack for debugging, load existing data indexes. we expect we won't
     // obliterate gi and gmt on each restart in the future
@@ -361,12 +429,6 @@ sql_rollback_transaction()
     sDb->rollback_transaction();
 }
 
-static
-vc
-sql_bulk_query(const VCArglist *a)
-{
-    return sDb->query(a);
-}
 
 static
 void

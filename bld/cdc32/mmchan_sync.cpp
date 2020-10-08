@@ -210,7 +210,7 @@ MMChannel::process_pull_resp(vc cmd)
 void
 MMChannel::process_iupdate(vc cmd)
 {
-
+    import_remote_iupdate(remote_uid(), cmd[1]);
 }
 
 void
