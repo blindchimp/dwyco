@@ -216,7 +216,7 @@ MMChannel::process_iupdate(vc cmd)
 void
 MMChannel::process_tupdate(vc cmd)
 {
-
+    import_remote_tupdate(remote_uid(), cmd[1]);
 }
 
 void

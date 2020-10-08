@@ -45,6 +45,12 @@ public:
     void init_schema_fav();
 };
 
+class RQMsgSql : public QMsgSql
+{
+public:
+    void init_schema(const DwString& schema_name);
+};
+
 static QMsgSql *sDb;
 
 static
@@ -109,7 +115,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
         sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
-        sql_simple("create table mt.taglog (mid text not null, tag text not null)");
+        sql_simple("create table mt.taglog (mid text not null, tag text not null, unique(mid, tag) on conflict ignore)");
         sql_simple("drop table if exists mt.gmt");
         sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, unique(mid, tag, uid) on conflict ignore)");
         commit_transaction();
@@ -121,6 +127,33 @@ QMsgSql::init_schema_fav()
 void
 QMsgSql::init_schema(const DwString& schema_name)
 {
+
+
+    if(schema_name.eq("mi2"))
+    {
+        sql_start_transaction();
+        sql_simple("drop table if exists mi2.gi");
+        sql_simple("drop table if exists mi2.midlog");
+        sql_simple("drop trigger if exists mi2.miupdate");
+        sql_simple("drop trigger if exists mi2.xgi");
+        sql_simple("drop trigger if exists mi2.dgi");
+        sql_commit_transaction();
+        return;
+    }
+    else if(schema_name.eq("fav2"))
+    {
+        sql_start_transaction();
+        sql_simple("drop table if exists fav2.taglog");
+        sql_simple("drop table if exists fav2.gmt");
+        sql_simple("drop trigger if exists fav2.tagupdate");
+        sql_simple("drop trigger if exists fav2.xgmt");
+        sql_simple("drop trigger if exists fav2.dgmt");
+        sql_commit_transaction();
+        return;
+    }
+
+
+
     if(schema_name.eq("main"))
     {
     // WARNING: the order and number of the fields in this table
@@ -172,7 +205,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 
     sql_simple("drop table if exists midlog");
     sql_simple("drop table if exists taglog");
-    sql_simple("create table midlog (mid text not null)");
+    sql_simple("create table midlog (mid text not null, unique(mid) on conflict ignore)");
 
     }
     else if(schema_name.eq("mt"))
@@ -180,6 +213,31 @@ QMsgSql::init_schema(const DwString& schema_name)
 		init_schema_fav();
 	}
 
+}
+
+void
+RQMsgSql::init_schema(const DwString& schema_name)
+{
+    sql_start_transaction();
+
+    if(schema_name.eq("mi2"))
+    {
+        sql_simple("drop table if exists gi");
+        sql_simple("drop table if exists midlog");
+        sql_simple("drop trigger if exists miupdate");
+        sql_simple("drop trigger if exists xgi");
+        sql_simple("drop trigger if exists dgi");
+    }
+    else if(schema_name.eq("fav2"))
+    {
+        sql_simple("drop table if exists taglog");
+        sql_simple("drop table if exists gmt");
+        sql_simple("drop trigger if exists tagupdate");
+        sql_simple("drop trigger if exists xgmt");
+        sql_simple("drop trigger if exists dgmt");
+    }
+
+    sql_commit_transaction();
 }
 
 static
@@ -312,6 +370,46 @@ import_remote_iupdate(vc remote_uid, vc vals)
 }
 
 void
+import_remote_tupdate(vc remote_uid, vc vals)
+{
+    vc huid = to_hex(remote_uid);
+    DwString fn = DwString("mi%1.sql").arg((const char *)huid);
+    DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
+
+    sDb->attach(fn, "mi2");
+    sDb->attach(favfn, "fav2");
+
+    try
+    {
+        sql_start_transaction();
+        //sql_simple("delete from gi where from_client_uid = ?1", huid);
+        //sql_simple("delete from gmt where uid = ?1", huid);
+        DwString sargs = make_sql_args(vals.num_elems());
+        VCArglist a;
+        a.set_size(vals.num_elems() + 1);
+        a.append(DwString("insert or ignore into fav2.msg_tags2 values(%1)").arg(sargs).c_str());
+        for(int i = 0; i < vals.num_elems(); ++i)
+            a.append(vals[i]);
+        sql_bulk_query(&a);
+
+        sql_simple("insert or ignore into mt.gmt select *, ?1 from fav2.msg_tags2 where mid = ?2", huid, vals[0]);
+        //sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", huid);
+        // note: here is where we might want to setup local triggers to make updates
+        // to gi whenever there is a piecemeal update to a remote index.
+        // note: if we setup triggers, we can't detach the database below, but we end up
+        // running into the attached database limit (10 by default, 125 hard max).
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+
+    sDb->detach("mi2");
+    sDb->detach("fav2");
+}
+
+void
 init_qmsg_sql()
 {
     if(sDb)
@@ -345,6 +443,11 @@ init_qmsg_sql()
 
     sql_simple(DwString("create trigger if not exists mt.xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)hmyuid).c_str());
     sql_simple(DwString("create trigger if not exists mt.dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)hmyuid).c_str());
+
+    sql_simple("create temp trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
 
     // this is a hack for debugging, load existing data indexes. we expect we won't
     // obliterate gi and gmt on each restart in the future
