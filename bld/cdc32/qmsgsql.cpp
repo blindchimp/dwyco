@@ -63,81 +63,59 @@ sql_bulk_query(const VCArglist *a)
 }
 
 void
+sql_start_transaction()
+{
+    sDb->start_transaction();
+}
+
+
+void
+sql_commit_transaction()
+{
+    sDb->commit_transaction();
+}
+
+static
+void
+sql_sync_off()
+{
+    sDb->sync_off();
+}
+
+static
+void
+sql_sync_on()
+{
+    sDb->sync_on();
+
+}
+
+
+void
+sql_rollback_transaction()
+{
+    sDb->rollback_transaction();
+}
+
+void
 QMsgSql::init_schema_fav()
 {
-    sql_simple("create table if not exists mt.fav_msgs ("
-               "from_uid text,"
-               "mid text unique on conflict ignore);"
-              );
-    sql_simple("create table if not exists mt.msg_tags(from_uid text, mid text, tag text, unique(from_uid, mid, tag) on conflict ignore)");
-
-
-    sql_simple("create index if not exists mt.from_uid_idx on fav_msgs(from_uid);");
-    sql_simple("create index if not exists mt.mid_idx on fav_msgs(mid);");
-
-    sql_simple("create index if not exists mt.mt_from_uid_idx on msg_tags(from_uid)");
-    sql_simple("create index if not exists mt.mt_mid_idx on msg_tags(mid)");
-    sql_simple("create index if not exists mt.mt_tag_idx on msg_tags(tag)");
-
-    sql_simple("insert into mt.msg_tags (from_uid, mid, tag) select from_uid, mid, '_fav' from mt.fav_msgs");
-    sql_simple("delete from mt.fav_msgs");
+    sql_simple("drop table if exists mt.msg_tags");
+    sql_simple("drop table if exists mt.fav_msgs");
 
     try {
         start_transaction();
-        sql_simple("create table if not exists mt.msg_tags2(mid text, tag text, unique(mid, tag) on conflict ignore)");
-        sql_simple("insert into mt.msg_tags2 (mid, tag) select mid, tag from mt.msg_tags");
-        sql_simple("delete from mt.msg_tags");
+        sql_simple("create table if not exists mt.msg_tags2(mid text, tag text, time integer default 0, unique(mid, tag) on conflict ignore)");
         sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
         sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
+        sql_simple("drop table if exists mt.taglog");
+        sql_simple("create table mt.taglog (mid text not null, tag text not null)");
+        sql_simple("drop table if exists mt.gmt");
+        sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, unique(mid, tag, uid) on conflict ignore)");
         commit_transaction();
     } catch(...) {
         rollback_transaction();
     }
-
-    try {
-        start_transaction();
-        vc res = sql_simple("pragma mt.user_version");
-        long v = res[0][0];
-        if(v == 0)
-        {
-            sql_simple("alter table mt.msg_tags2 add time integer default 0");
-            sql_simple("update mt.msg_tags2 set time = 0");
-            sql_simple("pragma mt.user_version = 1");
-        }
-        commit_transaction();
-    } catch (...) {
-        rollback_transaction();
-    }
-
-    try {
-        start_transaction();
-        vc res = sql_simple("pragma mt.user_version");
-        long v = res[0][0];
-        if(v == 1)
-        {
-            sql_simple("update mt.msg_tags2 set time = 0");
-            sql_simple("pragma mt.user_version = 2");
-        }
-        commit_transaction();
-    } catch (...) {
-        rollback_transaction();
-    }
-
-    try {
-        start_transaction();
-        vc res = sql_simple("pragma mt.user_version");
-        long v = res[0][0];
-        if(v == 2)
-        {
-            sql_simple("drop table if exists fav_msgs");
-            sql_simple("drop table if exists msg_tags");
-            sql_simple("pragma mt.user_version = 3");
-        }
-        commit_transaction();
-    } catch (...) {
-        rollback_transaction();
-    }
-    sql_simple("create table if not exists taglog (mid text not null, tag text not null)");
 }
 
 void
@@ -190,13 +168,12 @@ QMsgSql::init_schema(const DwString& schema_name)
                "from_client_uid not null)"
               );
     sql_simple("drop table if exists gmt");
-    sql_simple("create table gmt(mid text, tag text, time integer, uid text, unique(mid, tag, uid) on conflict ignore)");
+
 
     sql_simple("drop table if exists midlog");
     sql_simple("drop table if exists taglog");
     sql_simple("create table midlog (mid text not null)");
-    sql_simple("drop table if exists taglog");
-    //sql_simple("create table taglog (mid text not null, tag text not null)");
+
     }
     else if(schema_name.eq("mt"))
 	{
@@ -275,9 +252,9 @@ import_remote_mi(vc remote_uid)
     {
         sql_start_transaction();
         sql_simple("delete from main.gi where from_client_uid = ?1", huid);
-        sql_simple("delete from main.gmt where uid = ?1", huid);
+        sql_simple("delete from mt.gmt where uid = ?1", huid);
         sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
-        sql_simple("insert into main.gmt select *, ?1 from fav2.msg_tags2", huid);
+        sql_simple("insert into mt.gmt select *, ?1 from fav2.msg_tags2", huid);
         // note: here is where we might want to setup local triggers to make updates
         // to gi whenever there is a piecemeal update to a remote index.
         // note: if we setup triggers, we can't detach the database below, but we end up
@@ -342,6 +319,7 @@ init_qmsg_sql()
     sDb = new QMsgSql;
     if(!sDb->init())
         throw -1;
+    sql_sync_off();
     vc hmyuid = to_hex(My_UID);
     // by default, our local index "local" is implied
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
@@ -365,8 +343,8 @@ init_qmsg_sql()
     sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
 
-    sql_simple(DwString("create trigger if not exists xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)hmyuid).c_str());
-    sql_simple(DwString("create trigger if not exists dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)hmyuid).c_str());
+    sql_simple(DwString("create trigger if not exists mt.xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)hmyuid).c_str());
+    sql_simple(DwString("create trigger if not exists mt.dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)hmyuid).c_str());
 
     // this is a hack for debugging, load existing data indexes. we expect we won't
     // obliterate gi and gmt on each restart in the future
@@ -392,43 +370,6 @@ exit_qmsg_sql()
         return;
     sDb->exit();
 }
-
-
-void
-sql_start_transaction()
-{
-    sDb->start_transaction();
-}
-
-
-void
-sql_commit_transaction()
-{
-    sDb->commit_transaction();
-}
-
-static
-void
-sql_sync_off()
-{
-    sDb->sync_off();
-}
-
-static
-void
-sql_sync_on()
-{
-    sDb->sync_on();
-
-}
-
-
-void
-sql_rollback_transaction()
-{
-    sDb->rollback_transaction();
-}
-
 
 static
 void
