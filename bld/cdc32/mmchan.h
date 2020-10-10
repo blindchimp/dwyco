@@ -1027,7 +1027,7 @@ private:
     void process_pull_resp(vc cmd);
     void process_iupdate(vc cmd);
     void process_tupdate(vc cmd);
-    DwListA<vc> sync_sendq;
+    DwVec<vc> sync_sendq;
 
     void send_pull_resp(vc mid, vc uid, vc msg, vc att);
     void send_pull_error(vc mid);

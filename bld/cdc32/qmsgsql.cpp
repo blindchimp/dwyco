@@ -283,8 +283,11 @@ package_downstream_sends()
             cmd[1] = tags[i];
             ret.append(cmd);
         }
-        sql_simple("delete from main.midlog");
-        sql_simple("delete from mt.taglog");
+        if(ret.num_elems() > 0)
+        {
+            sql_simple("delete from main.midlog");
+            sql_simple("delete from mt.taglog");
+        }
         sql_commit_transaction();
         return ret;
     } catch (...)

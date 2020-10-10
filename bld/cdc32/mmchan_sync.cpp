@@ -83,8 +83,8 @@ MMChannel::package_next_cmd()
 {
     if(sync_sendq.num_elems() == 0)
         return vcnil;
-    vc next_cmd = sync_sendq.get_first();
-    sync_sendq.remove_first();
+    vc next_cmd = sync_sendq[0];
+    sync_sendq.del(0);
     return next_cmd;
 }
 
@@ -228,6 +228,11 @@ MMChannel::process_tupdate(vc cmd)
 void
 MMChannel::send_pull(vc mid)
 {
+    for(int i = 0; i < sync_sendq.num_elems(); ++i)
+    {
+        if(mid == sync_sendq[i][1])
+            return;
+    }
     vc cmd(VC_VECTOR);
     cmd[0] = "pull";
     cmd[1] = mid;
