@@ -14,6 +14,7 @@
 #include "qauth.h"
 #include "qmsgsql.h"
 #include "xinfo.h"
+#include "dwrtlog.h"
 
 using namespace dwyco;
 
@@ -151,6 +152,9 @@ MMChannel::process_pull_resp(vc cmd)
     // local model (which automatically gets put into the global
     // model held here.)
 
+    GRTLOG("pull resp", 0, 0);
+    GRTLOGVC(cmd);
+
     vc mid = cmd[1];
     vc uid = cmd[2];
     vc body = cmd[3];
@@ -210,12 +214,14 @@ MMChannel::process_pull_resp(vc cmd)
 void
 MMChannel::process_iupdate(vc cmd)
 {
+    GRTLOGVC(cmd);
     import_remote_iupdate(remote_uid(), cmd[1]);
 }
 
 void
 MMChannel::process_tupdate(vc cmd)
 {
+    GRTLOGVC(cmd);
     import_remote_tupdate(remote_uid(), cmd[1]);
 }
 

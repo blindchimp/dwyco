@@ -281,6 +281,7 @@ package_downstream_sends()
             vc cmd(VC_VECTOR);
             cmd[0] = "tupdate";
             cmd[1] = tags[i];
+            ret.append(cmd);
         }
         sql_simple("delete from main.midlog");
         sql_simple("delete from mt.taglog");
@@ -432,7 +433,7 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
-    sql_simple("create  trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid) values(new.mid); end");
+    sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid) values(new.mid); end");
     sql_simple("create trigger if not exists mt.tagupdate after insert on mt.msg_tags2 begin insert into taglog (mid, tag) values(new.mid, new.tag); end");
 
     // if there is a local tag in our tag database, note that in the global index
