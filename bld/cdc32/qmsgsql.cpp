@@ -313,8 +313,14 @@ import_remote_mi(vc remote_uid)
     try
     {
         sql_start_transaction();
+        vc newuids = sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
+        for(int i = 0; i < newuids.num_elems(); ++i)
+        {
+            se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
+        }
         sql_simple("delete from main.gi where from_client_uid = ?1", huid);
         sql_simple("delete from mt.gmt where uid = ?1", huid);
+
         sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
         sql_simple("insert into mt.gmt select *, ?1 from fav2.msg_tags2", huid);
         // note: here is where we might want to setup local triggers to make updates
