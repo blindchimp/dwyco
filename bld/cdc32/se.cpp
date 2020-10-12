@@ -12,6 +12,7 @@
 #include "dwstr.h"
 #include "dwrtlog.h"
 #include "vc.h"
+#include "qauth.h"
 
 extern DwycoSystemEventCallback dwyco_system_event_callback;
 
@@ -62,6 +63,7 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_MSG_DOWNLOAD_PROGRESS,
 
     DWYCO_SE_MSG_PULL_OK,
+    DWYCO_SE_MSG_TAG_CHANGE
 };
 
 void
@@ -144,7 +146,19 @@ se_emit_msg_pull_ok(vc mid, vc uid)
     v[1] = uid;
     v[2] = mid;
     Se_q.append(v);
-    GRTLOG("se_emit_msg_pull ", 0, 0);
+    GRTLOG("se_emit_msg_pull %s %s", (const char *)mid, (const char *)to_hex(uid));
+    GRTLOGVC(v);
+}
+
+void
+se_emit_msg_tag_change(vc mid)
+{
+    vc v(VC_VECTOR);
+    v[0] = SE_MSG_PULL_OK;
+    v[1] = My_UID;
+    v[2] = mid;
+    Se_q.append(v);
+    GRTLOG("se_emit_msg_tag_change %s", (const char *)mid, 0);
     GRTLOGVC(v);
 }
 
@@ -251,6 +265,7 @@ se_process()
             break;
 
         case SE_MSG_PULL_OK:
+        case SE_MSG_TAG_CHANGE:
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
                                            Se_q[i][1], Se_q[i][1].len(),

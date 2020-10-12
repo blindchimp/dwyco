@@ -755,7 +755,7 @@ sql_load_index(vc uid, int max_count)
 {
     vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-           " from gi where assoc_uid = ?1 order by logical_clock desc limit ?2",
+           " from gi where assoc_uid = ?1 and not exists (select 1 from mt.gmt as tags where gi.mid = tags.mid and tag = '_del') order by logical_clock desc limit ?2",
                         to_hex(uid), max_count);
     return res;
 }

@@ -73,7 +73,8 @@ enum dwyco_sys_event {
     SE_MSG_DOWNLOAD_PROGRESS,
 
     // this is what you get when you pull a msg from another client
-    SE_MSG_PULL_OK
+    SE_MSG_PULL_OK,
+    SE_MSG_TAG_CHANGE
 };
 
 // at this point, the id can be a uid or a mid
@@ -83,6 +84,7 @@ void se_emit_msg(enum dwyco_sys_event cmd, vc qid, vc uid);
 void se_emit_msg_status(DwString qid, vc ruid, DwString msg, int percent);
 void se_emit_msg_progress(DwString mid, vc ruid, DwString msg, int percent);
 void se_emit_msg_pull_ok(vc mid, vc uid);
+void se_emit_msg_tag_change(vc mid);
 int se_process();
 
 #endif
