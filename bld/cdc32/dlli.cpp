@@ -6817,6 +6817,22 @@ pull_msg(vc uid, vc mid)
 
 static
 void
+call_disposition(MMCall *, int what, void *, ValidPtr vp)
+{
+    switch(what)
+    {
+    case MMCALL_STARTED:
+        break;
+    case MMCALL_ESTABLISHED:
+        break;
+    default:
+        break;
+
+    }
+}
+
+static
+void
 pull_msg(vc uid, vc msg_id)
 {
     // here is where we look for where the msg might be available, and
@@ -6825,7 +6841,10 @@ pull_msg(vc uid, vc msg_id)
 
     vc uids = sql_get_uid_from_mid2(msg_id);
     if(uids.is_nil())
+    {
+        GRTLOG("cant find uid for mid %s", (const char *)msg_id, 0);
         return;
+    }
 
     for(int i = 0; i < uids.num_elems(); ++i)
         uids[i] = from_hex(uids[i]);
@@ -6834,9 +6853,12 @@ pull_msg(vc uid, vc msg_id)
     for(int i = 0; i < mmcl.num_elems(); ++i)
     {
         MMCall *mmc = mmcl[i];
-        vc dum;
-        if(uids.find(mmc->uid, dum))
+        if(uids.contains(mmc->uid))
         {
+            // if there is an established call, just use that one and return.
+            // this means we always try an established connection first.
+            // if there are some number of connections in progress, we end up
+            // q-ing the pull to all the connections.
             if(mmc->established)
             {
                 MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
@@ -6846,11 +6868,6 @@ pull_msg(vc uid, vc msg_id)
                     return;
                 }
             }
-            else
-            {
-                // attach the established signal to a slot that does the pull
-            }
-            return;
         }
     }
     // no originating calls, see if we have one we have received
@@ -8219,6 +8236,7 @@ dwyco_uid_to_info(const char *user_id, int len_uid, int* cant_resolve_now_out)
 // for the next one, 000001, etc.
 //
 //
+static
 int
 dwyco_get_next_idx(const char *& is)
 {
@@ -8302,8 +8320,9 @@ dwyco_list_get(DWYCO_LIST l, int row, const char *col, const char **val_out, int
     }
     if(vec.type() == VC_INT)
     {
-        *val_out = vec.peek_str();
-        *len_out = strlen(vec.peek_str());
+        const char *s = vec.peek_str();
+        *val_out = s;
+        *len_out = strlen(s);
     }
     else if(vec.type() == VC_VECTOR)
     {

@@ -369,10 +369,10 @@ DirectSend::send_with_attachment()
 
         m->agreed_key = mp->agreed_key;
         sproto *s = new sproto(chan, file_send, m->vp);
-        // note: this is for message attachment encryption
-        // note note: we don't need to incur extra encryption
+
+        // note: we don't need to incur extra encryption
         // cost here because the channel is already encrypted.
-        //s->file_key = key;
+
         m->simple_protos[chan] = s;
         s->start();
 

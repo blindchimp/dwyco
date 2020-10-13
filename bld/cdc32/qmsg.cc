@@ -1262,6 +1262,7 @@ delete_findvec(FindVec *fv)
     delete fv;
 }
 
+static
 int
 compare_date_vector(vc v1, vc v2)
 {
