@@ -41,6 +41,7 @@
 #include "ssns.h"
 #include "audconv.h"
 #include "aconn.h"
+#include "simple_property.h"
 
 class MMTube;
 class VidAcquire;
@@ -1013,8 +1014,10 @@ private:
         NORMAL_SEND,
     };
 
-    enum syncstate mmr_sync_state;
-    enum syncstate mms_sync_state;
+    //enum syncstate mmr_sync_state;
+    dwyco::sigprop<enum syncstate> mmr_sync_state;
+    dwyco::sigprop<enum syncstate> mms_sync_state;
+    //enum syncstate mms_sync_state;
 
     int process_outgoing_sync();
     int process_incoming_sync();
@@ -1034,6 +1037,8 @@ private:
 
 public:
     void send_pull(vc mid);
+
+    ssns::signal2<vc, vc> pull_done;
 
 
 };

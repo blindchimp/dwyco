@@ -6815,6 +6815,20 @@ pull_msg(vc uid, vc mid)
 }
 #endif
 
+// if an mid exists in this set, it is a level-based assertion that
+// we need to find that mid somewhere. the first "pull" that is issued
+// inserts the mid here. the value inserted is a vector containing the
+// uid(s) we have "sent" the pull to.
+// the first successful pull-resp we get for the mid
+// removes the mid from this set. if a pull-resp is received that isn't in this
+// set, it is ignored.
+// if a pull request is issued and it is already in this set, and the value
+// vector associated with it already contains a uid, we ignore the request.
+// if we receive a pull-resp that is an error, we remove the uid from the vector.
+// if the vector is empty, we need to reissue a pull.
+//
+vc Pulls;
+
 static
 void
 call_disposition(MMCall *, int what, void *, ValidPtr vp)

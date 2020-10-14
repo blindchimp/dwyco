@@ -208,6 +208,7 @@ MMChannel::process_pull_resp(vc cmd)
 
     }
     se_emit_msg_pull_ok(mid, uid);
+    pull_done.emit(mid, uid);
 
 }
 

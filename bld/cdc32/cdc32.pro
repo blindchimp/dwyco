@@ -41,7 +41,7 @@ message("cdc32 setup for rando")
 } else {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
 DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
-DEFINES += DWYCO_FIELD_DEBUG
+#DEFINES += DWYCO_FIELD_DEBUG
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
 }
@@ -266,5 +266,6 @@ aqext_android.cpp \
     aqkey.cpp
 
 HEADERS += \
+    simple_property.h \
     vccfg.h
 
