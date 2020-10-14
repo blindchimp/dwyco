@@ -530,9 +530,11 @@ sql_get_max_logical_clock()
 int
 sql_is_mid_local(vc mid)
 {
-    vc res = sql_simple("select is_local from gi where mid = ?1", mid);
+    //vc res = sql_simple("select is_local from gi where mid = ?1", mid);
+    vc res = sql_simple("select 1 from msg_idx where mid = ?1", mid);
     if(res.num_elems() == 0)
         return 0;
+    return 1;
     int ret = (long)res[0][0];
     return ret;
 }

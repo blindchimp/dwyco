@@ -6847,6 +6847,68 @@ call_disposition(MMCall *, int what, void *, ValidPtr vp)
 
 static
 void
+assert_pull(vc mid, vc uid)
+{
+    if(Pulls.is_nil())
+        Pulls = vc(VC_TREE);
+    vc v;
+    if(!Pulls.find(mid, v))
+    {
+        v = vc(VC_SET);
+        v.add(uid);
+        Pulls.add_kv(mid, v);
+    }
+    else
+        v.add(uid);
+}
+
+static
+void
+deassert_pull(vc mid)
+{
+    if(Pulls.is_nil())
+        Pulls = vc(VC_TREE);
+    Pulls.del(mid);
+}
+
+int
+is_asserted(vc mid)
+{
+    if(Pulls.is_nil())
+        Pulls = vc(VC_TREE);
+    if(Pulls.contains(mid))
+        return 1;
+    return 0;
+}
+
+int
+pull_in_progress(vc mid, vc uid)
+{
+    if(Pulls.is_nil())
+        Pulls = vc(VC_TREE);
+    vc v;
+    if(Pulls.find(mid, v))
+    {
+        if(v.contains(uid))
+            return 1;
+    }
+    return 0;
+}
+
+void
+pull_failed(vc mid, vc uid)
+{
+    if(Pulls.is_nil())
+        Pulls = vc(VC_TREE);
+    vc v;
+    if(Pulls.find(mid, v))
+    {
+        v.del(mid);
+    }
+}
+
+static
+void
 pull_msg(vc uid, vc msg_id)
 {
     // here is where we look for where the msg might be available, and
