@@ -22,6 +22,7 @@
 #include "se.h"
 #include "qmsgsql.h"
 #include "qauth.h"
+#include "simple_property.h"
 
 using namespace dwyco;
 
@@ -35,6 +36,8 @@ extern vc I_grant;
 extern vc They_grant;
 extern vc Pals;
 extern vc Client_ports;
+extern sigprop<vc> Group_uids;
+
 int is_invisible();
 
 // not perfect if packets are dropped, the
@@ -68,6 +71,15 @@ vc
 transient_online_list()
 {
     vc p = pal_to_vector(0);
+    vc gv = Group_uids;
+    if(!gv.is_nil())
+    {
+        for(int i = 0; i < gv.num_elems(); ++i)
+        {
+            if(!pal_user(gv[i]))
+                p.append(gv[i]);
+        }
+    }
     int left_over = MAXPALS - p.num_elems();
     if(left_over <= 0)
     {
@@ -87,11 +99,19 @@ transient_online_list()
 }
 
 
+static
+void
+group_changed(vc)
+{
+    pal_relogin();
+}
+
 int
 init_pal()
 {
     Last_sent = vc(VC_VECTOR);
     Init = 1;
+    Group_uids.value_changed.connect_ptrfun(group_changed);
     return 1;
 }
 
@@ -99,6 +119,7 @@ void
 exit_pal()
 {
     Last_sent = vc(VC_VECTOR);
+    Group_uids.value_changed.disconnect_all();
     Init = 0;
 }
 

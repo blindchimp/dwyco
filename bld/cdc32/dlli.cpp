@@ -450,6 +450,7 @@ extern int Chat_online;
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
 DH_alternate *dwyco::Current_alternate;
+sigprop<vc> Group_uids;
 
 #undef CPPLEAK
 #ifdef CPPLEAK
@@ -1744,6 +1745,15 @@ token_res(vc m, void *, vc, ValidPtr)
     DeleteFile(newfn("token.dif").c_str());
 }
 
+static
+void
+set_group_uids(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    Group_uids = m[1];
+}
+
 // NOTE: before this is called, all the static public keys and
 // other account info must be generated, as it gets sent to the
 // server at this point.
@@ -1774,6 +1784,7 @@ send_new()
     }
 
     dirth_send_check_for_update(My_UID, QckDone(background_check_for_update_done, 0));
+    dirth_send_get_group(My_UID, QckDone(set_group_uids, 0));
 
 }
 

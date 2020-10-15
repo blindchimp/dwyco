@@ -378,6 +378,21 @@ dirth_send_set_token(vc id, vc token, QckDone d)
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
 }
 
+// this asks for the current list of uid's that are in
+// the group we are currently logged in with
+void
+dirth_send_get_group(vc id, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("get-group", ++Serial);
+    m[QTYPE] = reqtype("get-group", d);
+    m[QFROM] = id;
+    Waitq.append(d);
+    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+}
+
+
 
 void
 dirth_send_get(vc id, vc which, QckDone d)
