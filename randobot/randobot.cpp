@@ -545,6 +545,7 @@ do_freebie(vc huid)
             // harmless. sometime, we may want to consider just putting in a dummy
             // record so it doesn't keep coming in here until there is some
             // material to send.
+            D->commit_transaction();
             return 0;
         }
         if(!fn.is_nil())
