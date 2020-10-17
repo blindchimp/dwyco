@@ -81,7 +81,7 @@ typedef int (*CallScreeningCallback)(MMChannel *,
                                      char **error_msg
                                     );
 extern "C" int DWYCOCALLCONV dwyco_enable_video_capture_preview(int);
-class MMChannel
+class MMChannel : public ssns::trackable
 {
 
 public:
@@ -1035,10 +1035,13 @@ private:
     void send_pull_resp(vc mid, vc uid, vc msg, vc att);
     void send_pull_error(vc mid);
 
+    void cleanup_pulls(int myid);
+
 public:
     void send_pull(vc mid);
 
-    ssns::signal2<vc, vc> pull_done;
+    ssns::signal3<vc, vc, vc> pull_done;
+    int signal_setup;
 
 
 };

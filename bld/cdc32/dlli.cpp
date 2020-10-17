@@ -6842,7 +6842,7 @@ vc Pulls;
 
 static
 void
-call_disposition(MMCall *, int what, void *, ValidPtr vp)
+sync_call_disposition(MMCall *, int what, void *, ValidPtr vp)
 {
     switch(what)
     {
@@ -6906,6 +6906,22 @@ pull_in_progress(vc mid, vc uid)
     return 0;
 }
 
+static
+void
+rmuid(vc uid, vc assoc)
+{
+    if(assoc[1].is_nil())
+        return;
+    assoc[1].del(uid);
+}
+
+void
+pull_target_destroyed(vc uid)
+{
+    Pulls.foreach(uid, rmuid);
+}
+
+static
 void
 pull_failed(vc mid, vc uid)
 {
@@ -6914,8 +6930,18 @@ pull_failed(vc mid, vc uid)
     vc v;
     if(Pulls.find(mid, v))
     {
-        v.del(mid);
+        v.del(uid);
     }
+}
+
+static
+void
+pull_done_slot(vc mid, vc remote_uid, vc success)
+{
+    if(success.is_nil())
+        pull_failed(mid, remote_uid);
+    else
+        deassert_pull(mid);
 }
 
 static
@@ -6942,6 +6968,8 @@ pull_msg(vc uid, vc msg_id)
         MMCall *mmc = mmcl[i];
         if(uids.contains(mmc->uid))
         {
+            if(pull_in_progress(msg_id, mmc->uid))
+                continue;
             // if there is an established call, just use that one and return.
             // this means we always try an established connection first.
             // if there are some number of connections in progress, we end up
@@ -6951,6 +6979,12 @@ pull_msg(vc uid, vc msg_id)
                 MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
                 if(mc)
                 {
+                    if(!mc->signal_setup)
+                    {
+                        mc->pull_done.connect_ptrfun(pull_done_slot);
+                        mc->signal_setup = 1;
+                    }
+                    assert_pull(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id);
                     return;
                 }
@@ -6963,6 +6997,12 @@ pull_msg(vc uid, vc msg_id)
         MMChannel *mc;
         if((mc = MMChannel::channel_by_call_type(uids[i], "sync")))
         {
+            if(!mc->signal_setup)
+            {
+                mc->pull_done.connect_ptrfun(pull_done_slot);
+                mc->signal_setup = 1;
+            }
+            assert_pull(msg_id, mc->remote_uid());
             mc->send_pull(msg_id);
             // note: this probably needs a heuristic to either send
             // all pulls at once, or decide which one is most likely

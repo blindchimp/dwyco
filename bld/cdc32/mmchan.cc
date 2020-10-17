@@ -679,6 +679,7 @@ MMChannel::MMChannel() :
 
     mms_sync_state = MMSS_NONE;
     mmr_sync_state = MMSS_NONE;
+    signal_setup = 0;
 }
 
 MMChannel::~MMChannel()

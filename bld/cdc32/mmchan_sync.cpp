@@ -151,6 +151,8 @@ MMChannel::process_pull_resp(vc cmd)
     // here is where we insert the fetched message into our
     // local model (which automatically gets put into the global
     // model held here.)
+    // WARNING: the uid here is the uid associated with the message
+    // we fetched, NOT the uid of whoever we sent the message to.
 
     GRTLOG("pull resp", 0, 0);
     GRTLOGVC(cmd);
@@ -159,6 +161,12 @@ MMChannel::process_pull_resp(vc cmd)
     vc uid = cmd[2];
     vc body = cmd[3];
     vc att = cmd[4];
+
+    if(uid.is_nil())
+    {
+        pull_done.emit(mid, remote_uid(), vcnil);
+        return;
+    }
 
     vc m = body;
     DwString udir;
@@ -208,7 +216,7 @@ MMChannel::process_pull_resp(vc cmd)
 
     }
     se_emit_msg_pull_ok(mid, uid);
-    pull_done.emit(mid, uid);
+    pull_done.emit(mid, remote_uid(), vctrue);
 
 }
 
@@ -258,6 +266,13 @@ MMChannel::send_pull_error(vc mid)
     send_pull_resp(mid, vcnil, vcnil, vcnil);
 }
 
+void pull_target_destroyed(vc uid);
+void
+MMChannel::cleanup_pulls(int myid)
+{
+    pull_target_destroyed(remote_uid());
+}
+
 int
 MMChannel::process_outgoing_sync()
 {
@@ -274,6 +289,7 @@ MMChannel::process_outgoing_sync()
     if(mms_sync_state == SEND_INIT)
     {
         vcx = package_index();
+        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls);
     }
     else if(mms_sync_state == MMSS_TRYAGAIN)
     {
@@ -338,6 +354,7 @@ MMChannel::process_incoming_sync()
             {
                 unpack_index(rvc);
                 mmr_sync_state = NORMAL_RECV;
+                destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls);
             }
             else if(mmr_sync_state == NORMAL_RECV)
             {
@@ -365,6 +382,7 @@ MMChannel::process_incoming_sync()
     {
         drop_subchannel(msync_chan);
         msync_chan = -1;
+        mms_sync_state = MMSS_ERR;
     }
     return 0;
 }
