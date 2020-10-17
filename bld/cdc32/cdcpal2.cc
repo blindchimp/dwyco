@@ -109,6 +109,8 @@ group_changed(vc)
 int
 init_pal()
 {
+    if(Init)
+        return 1;
     Last_sent = vc(VC_VECTOR);
     Init = 1;
     Group_uids.value_changed.connect_ptrfun(group_changed);

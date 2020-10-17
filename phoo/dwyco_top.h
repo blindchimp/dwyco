@@ -329,6 +329,7 @@ signals:
     void mid_tag_changed(QString mid);
 
     void msg_pull_ok(const QByteArray& mid, const QString& huid);
+    void msg_tag_change_global(const QByteArray& mid, const QString& huid);
 
 private:
 

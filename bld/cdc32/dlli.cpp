@@ -6842,22 +6842,6 @@ vc Pulls;
 
 static
 void
-sync_call_disposition(MMCall *, int what, void *, ValidPtr vp)
-{
-    switch(what)
-    {
-    case MMCALL_STARTED:
-        break;
-    case MMCALL_ESTABLISHED:
-        break;
-    default:
-        break;
-
-    }
-}
-
-static
-void
 assert_pull(vc mid, vc uid)
 {
     if(Pulls.is_nil())
@@ -6918,6 +6902,8 @@ rmuid(vc uid, vc assoc)
 void
 pull_target_destroyed(vc uid)
 {
+    if(Pulls.is_nil())
+        return;
     Pulls.foreach(uid, rmuid);
 }
 
@@ -6942,6 +6928,22 @@ pull_done_slot(vc mid, vc remote_uid, vc success)
         pull_failed(mid, remote_uid);
     else
         deassert_pull(mid);
+}
+
+static
+void
+sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const char *uid, int len_uid, const char *call_type, int len_call_type)
+{
+    switch(what)
+    {
+    case MMCALL_STARTED:
+        break;
+    case MMCALL_ESTABLISHED:
+        break;
+    default:
+        break;
+
+    }
 }
 
 static
@@ -6997,6 +6999,8 @@ pull_msg(vc uid, vc msg_id)
         MMChannel *mc;
         if((mc = MMChannel::channel_by_call_type(uids[i], "sync")))
         {
+            if(pull_in_progress(msg_id, mc->remote_uid()))
+                continue;
             if(!mc->signal_setup)
             {
                 mc->pull_done.connect_ptrfun(pull_done_slot);
@@ -7014,7 +7018,7 @@ pull_msg(vc uid, vc msg_id)
     // no existing calls, try to set one up
     for(int i = 0; i < uids.num_elems(); ++i)
     {
-        dwyco_connect_uid(uids[i], uids[i].len(), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "sync", 4, 1);
+        dwyco_connect_uid(uids[i], uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "sync", 4, 1);
     }
 
 

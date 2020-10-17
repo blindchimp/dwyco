@@ -154,7 +154,7 @@ void
 se_emit_msg_tag_change(vc mid)
 {
     vc v(VC_VECTOR);
-    v[0] = SE_MSG_PULL_OK;
+    v[0] = SE_MSG_TAG_CHANGE;
     v[1] = My_UID;
     v[2] = mid;
     Se_q.append(v);
