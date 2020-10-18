@@ -235,6 +235,7 @@ public:
 
         static vc set_to_vector(vc set);
         static vc map_to_vector(vc map);
+        static vc tree_to_vector(vc tree);
 
     // these are needed to support the lazy-Qmap stuff
 	void *operator new(size_t, vc *v) {return v;}

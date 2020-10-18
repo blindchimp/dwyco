@@ -723,6 +723,7 @@ dbgdump(int id, const char *msg, int percent_done, void *user_arg)
 
 extern vc Online;
 extern vc Cur_uids;
+extern vc Client_ports;
 
 DWYCOEXPORT
 void
@@ -735,13 +736,23 @@ dwyco_debug_dump()
     }
 
     (*dbg_msg_callback)(0, "Online", 0, 0);
-    vc v = vc::map_to_vector(Online);
+    vc v = vc::tree_to_vector(Online);
     for(int i = 0; i < v.num_elems(); ++i)
     {
         vc h = to_hex(v[i][0]);
         DwString a((const char *)h);
         a += " ";
         a += (const char *)v[i][1];
+        if(Client_ports.find(v[i][0], h))
+        {
+            a += " ";
+            a += h[0].peek_str();
+            a += " ";
+            a += h[1].peek_str();
+            a += " ";
+            a += h[2].peek_str();
+            a += " ";
+        }
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
     }
 
@@ -751,29 +762,26 @@ dwyco_debug_dump()
     {
         DwString a;
         MMChannel *mc = i.getp();
-        char ind[200];
-        ind[0] = '\0';
+        DwString ind;
+
         if(mc->get_string_id().length() == 0)
             continue;
         if(mc->msg_chan)
         {
-            ind[0] = 'm';
-            ind[1] = 0;
+            ind += "m";
         }
         else if(mc->server_channel)
         {
-            ind[0] = 's';
-            ind[1] = 0;
+            ind += "s";
         }
         else if(mc->user_control_chan)
         {
-            ind[0] = 'u';
-            ind[1] = 0;
+            ind += "u";
         }
         else
         {
             if(mc->is_coder())
-                strcat(ind, "<Coder>");
+                ind += "<Coder>";
             // note: this looks backwards, but what
             // we're showing is what the remote end of
             // the link is doing, not what we're doing...
@@ -796,6 +804,9 @@ dwyco_debug_dump()
         a = mc->get_string_id();
         a += " [";
         a += ind;
+        a += mc->msync_chan != -1 ? " msync " : "";
+        a += mc->audio_chan != -1 ? " audio " : "";
+        a += mc->video_chan != -1 ? " video " : "";
         a += "]";
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
     }
@@ -2052,6 +2063,23 @@ dwyco_service_channels(int *spin_out)
     se_process();
     crank_activity_timer();
     {
+        static DwTimer dump_timer("dump");
+        static int been_here;
+        if(!been_here)
+        {
+            dump_timer.set_autoreload(1);
+            dump_timer.set_interval(15000);
+            dump_timer.reset();
+            dump_timer.start();
+            been_here = 1;
+        }
+        if(dump_timer.is_expired())
+        {
+            dump_timer.ack_expire();
+            dwyco_debug_dump();
+        }
+    }
+    {
     DwString str;
     dwtime_t nex = DwTimer::next_expire_time(str) - DwTimer::time_now();
     GRTLOG("next timer %ld", nex, 0);
@@ -2110,7 +2138,7 @@ dwyco_enable_video_capture_preview(int on)
         save_rt = RTUserDefaults;
         RTUserDefaults.set_max_frame_rate(12);
 
-        MMChannel *mc = MMChannel::gen_chan();
+        MMChannel *mc = new MMChannel;
         mc->tube = new DummyTube;
         mc->init_config(1);
         mc->recv_matches(mc->config);

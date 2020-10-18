@@ -1699,3 +1699,21 @@ vc::map_to_vector(vc map)
     return v;
 }
 
+vc
+vc::tree_to_vector(vc map)
+{
+    vc v(VC_VECTOR);
+    vc_tree *vs = (vc_tree *)map.nonono();
+    VcTreeIter i(&vs->tree);
+
+    for(; !i.eol(); i.forward())
+    {
+        vc vec(VC_VECTOR);
+        DwAssocImp<vc, vc> a = i.get();
+        vec[0] = a.peek_key();
+        vec[1] = a.peek_value();
+        v.append(vec);
+    }
+    return v;
+}
+

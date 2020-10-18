@@ -314,7 +314,7 @@ DirectSend::send_with_attachment()
         return;
     }
 
-    MMChannel *m = MMChannel::gen_chan();
+    MMChannel *m = new MMChannel;
     m->tube = new DummyTube;
     DwString remote((const char *)mp->tube->remote_addr_ctrl());
     int c = remote.find(":");

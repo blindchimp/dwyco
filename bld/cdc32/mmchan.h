@@ -83,12 +83,12 @@ typedef int (*CallScreeningCallback)(MMChannel *,
 extern "C" int DWYCOCALLCONV dwyco_enable_video_capture_preview(int);
 class MMChannel : public ssns::trackable
 {
-
+friend void dwyco_debug_dump();
 public:
     // this is only here because of a bug in the
     // borland linker, seems calling "new" locally
     // causes it to take a crap on itself... sigh.
-    static MMChannel *gen_chan();
+    //static MMChannel *gen_chan();
     // initialized at create time so anyone that
     // caches pointers to these channels can
     // decide if one is still valid

@@ -332,6 +332,7 @@ decl(mod, %)
 
 class vc_tree : public vc_decomposable
 {
+    friend class vc;
 private:
 	VcTreeImp tree;
 

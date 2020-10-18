@@ -411,7 +411,7 @@ int  TMsgCompose::record_buttonClick()
     save_rt = RTUserDefaults;
     RTUserDefaults.set_max_frame_rate(hiq ? 20 : 10);
 
-    MMChannel *mc = MMChannel::gen_chan();
+    MMChannel *mc = new MMChannel;
     mc->tube = ft;
     mc->init_config(1);
     mc->set_requested_audio_codec("qms");
@@ -577,7 +577,7 @@ void  TMsgCompose::play_buttonClick( int no_audio)
     send_button_enabled = 0;
     cancel_button_enabled = 0;
 
-    MMChannel *mc = MMChannel::gen_chan();
+    MMChannel *mc = new MMChannel;
 
     int codec = 0;
     {
@@ -647,7 +647,7 @@ void  TMsgCompose::preview_play()
         return;
     play_button_enabled = 0;
 
-    MMChannel *mc = MMChannel::gen_chan();
+    MMChannel *mc = new MMChannel;
     mc->force_unreliable_audio = 1;
     mc->force_unreliable_video = 1;
 
@@ -1021,7 +1021,7 @@ TMsgCompose::do_record_pic()
     save_rt = RTUserDefaults;
     RTUserDefaults.set_max_frame_rate(12);
 
-    mc = MMChannel::gen_chan();
+    mc = new MMChannel;
     mc->tube = ft;
     mc->init_config(1);
     mc->recv_matches(mc->config);
