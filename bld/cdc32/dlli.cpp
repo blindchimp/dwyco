@@ -804,9 +804,14 @@ dwyco_debug_dump()
         a = mc->get_string_id();
         a += " [";
         a += ind;
-        a += mc->msync_chan != -1 ? " msync " : "";
-        a += mc->audio_chan != -1 ? " audio " : "";
-        a += mc->video_chan != -1 ? " video " : "";
+        a += " ";
+        a += mc->msync_chan != -1 ? "msync " : "";
+        a += mc->audio_chan != -1 ? "audio " : "";
+        a += mc->video_chan != -1 ? "video " : "";
+        a += (const char *)mc->call_type;
+        a += " ";
+        a += (const char *)mc->remote_call_type();
+
         a += "]";
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
     }
@@ -6964,9 +6969,9 @@ sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const 
 {
     switch(what)
     {
-    case MMCALL_STARTED:
+    case DWYCO_CALLDISP_STARTED:
         break;
-    case MMCALL_ESTABLISHED:
+    case DWYCO_CALLDISP_ESTABLISHED:
         break;
     default:
         break;

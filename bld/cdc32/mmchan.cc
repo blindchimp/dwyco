@@ -1583,6 +1583,8 @@ MMChannel::local_media_setup_new()
             }
         }
 
+        if(call_type == vc("sync"))
+        {
         // for now, just set up a sync channel for each connection, like media channels
         // this is ok for testing, but probably needs more thought
         if(!proxy_info.is_nil())
@@ -1598,6 +1600,7 @@ MMChannel::local_media_setup_new()
             sproto *s = new sproto(msync_chan, media_x_setup, vp);
             s->start();
             simple_protos[msync_chan] = s;
+        }
         }
 
     }

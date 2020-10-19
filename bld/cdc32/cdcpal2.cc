@@ -71,11 +71,14 @@ vc
 transient_online_list()
 {
     vc p = pal_to_vector(0);
+    p.del(My_UID);
     vc gv = Group_uids;
     if(!gv.is_nil())
     {
         for(int i = 0; i < gv.num_elems(); ++i)
         {
+            if(gv[i] == My_UID)
+                continue;
             if(!pal_user(gv[i]))
                 p.append(gv[i]);
         }
@@ -92,6 +95,8 @@ transient_online_list()
     for(int i = 0; i < rm.num_elems(); ++i)
     {
         vc u = from_hex(rm[i]);
+        if(u == My_UID)
+            continue;
         if(!pal_user(u))
             p.append(u);
     }

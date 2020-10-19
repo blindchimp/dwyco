@@ -85,17 +85,14 @@ class MMChannel : public ssns::trackable
 {
 friend void dwyco_debug_dump();
 public:
-    // this is only here because of a bug in the
-    // borland linker, seems calling "new" locally
-    // causes it to take a crap on itself... sigh.
-    //static MMChannel *gen_chan();
+
     // initialized at create time so anyone that
     // caches pointers to these channels can
     // decide if one is still valid
     ValidPtr vp;
 
     // the tube is a full-duplex channel to
-    // a remote channel. IO operations on
+    // a remote client. IO operations on
     // the tube are point-to-point. any
     // broadcasting must be done via
     // helper channels that are set up to
