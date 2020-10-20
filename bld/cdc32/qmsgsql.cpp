@@ -852,8 +852,6 @@ create_date_index(vc uid)
     try
     {
         sql_start_transaction();
-        sql_simple("delete from mt.msg_tags2 where tag = '_local' or tag = '_sent'");
-
         FindVec& fv = *find_to_vec(s.c_str());
         int n = fv.num_elems();
         for(i = 0; i < n; ++i)
@@ -1164,11 +1162,14 @@ sql_index_all()
     try
     {
         sql_sync_off();
+        sql_start_transaction();
+        sql_simple("delete from mt.msg_tags2 where tag = '_local' or tag = '_sent'");
         MsgFolders.foreach(vcnil, index_user);
+        sql_commit_transaction();
     }
     catch(...)
     {
-
+        sql_rollback_transaction();
     }
     sql_sync_on();
 }
@@ -1180,7 +1181,7 @@ static
 void
 sql_insert_record_mt(vc mid, vc tag)
 {
-    sql_simple("replace into msg_tags2 (mid, tag, time) values(?1,?2,strftime('%s','now'))",
+    sql_simple("replace into mt.msg_tags2 (mid, tag, time) values(?1,?2,strftime('%s','now'))",
                mid, tag);
 }
 

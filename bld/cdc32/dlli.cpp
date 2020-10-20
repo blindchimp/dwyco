@@ -6969,11 +6969,15 @@ static
 vc
 uids_to_call()
 {
-    DwVec<vc> u = pulls::Qbm.project(&pulls::uid);
-    vc ret(VC_SET);
-    for(int i = 0; i < u.num_elems(); ++i)
-        ret.add(u[i]);
-    return vc::set_to_vector(ret);
+    vc ret = Group_uids;
+    ret = ret.copy();
+    ret.del(My_UID);
+    return ret;
+//    DwVec<vc> u = pulls::Qbm.project(&pulls::uid);
+//    vc ret(VC_SET);
+//    for(int i = 0; i < u.num_elems(); ++i)
+//        ret.add(u[i]);
+//    return vc::set_to_vector(ret);
 }
 
 static
@@ -7024,8 +7028,8 @@ sync_call_setup()
     if(!connect_timer.is_expired())
         return;
     connect_timer.ack_expire();
-    if(pulls::Qbm.count() == 0)
-        return;
+//    if(pulls::Qbm.count() == 0)
+//        return;
 
     vc uids = uids_to_call();
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
