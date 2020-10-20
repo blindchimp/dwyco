@@ -194,6 +194,7 @@ public:
     DwDecoder *decoder_from_config();
     static MMChannel *already_connected(vc uid, int is_msg_chan = 0, int is_user_control_chan = 0);
     static MMChannel *channel_by_call_type(vc uid, vc call_type);
+    static ChanList channels_by_call_type(vc call_type);
     static int Sync_receivers;
     static int Auto_sync;
     static int compute_sync();
@@ -626,7 +627,6 @@ public:
 private:
     char *resolve_buf;
     int resolve_result;
-    //char official_name[255];
     DwString addrstr;
     DwString ouraddr;
 public:

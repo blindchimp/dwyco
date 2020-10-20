@@ -2067,6 +2067,8 @@ dwyco_service_channels(int *spin_out)
     handle_deferred_msg_send();
     se_process();
     crank_activity_timer();
+    void sync_call_setup();
+    sync_call_setup();
     {
         static DwTimer dump_timer("dump");
         static int been_here;
@@ -6859,98 +6861,119 @@ pull_msg(vc uid, vc mid)
 }
 #endif
 
-// if an mid exists in this set, it is a level-based assertion that
-// we need to find that mid somewhere. the first "pull" that is issued
-// inserts the mid here. the value inserted is a vector containing the
-// uid(s) we have "sent" the pull to.
-// the first successful pull-resp we get for the mid
-// removes the mid from this set. if a pull-resp is received that isn't in this
-// set, it is ignored.
-// if a pull request is issued and it is already in this set, and the value
-// vector associated with it already contains a uid, we ignore the request.
-// if we receive a pull-resp that is an error, we remove the uid from the vector.
-// if the vector is empty, we need to reissue a pull.
+// this is a set of (mid, uid, inprogress-flag) records
+// the existence of a record means we have some idea that we can
+// obtain the mid from the associated uid. when we issue the pull
+// to that target uid, we set the in-progress flag.
+// if a pull is successful, all the records for that mid are deleted.
 //
-vc Pulls;
+struct pulls
+{
+    pulls(vc mid, vc uid) {
+        this->mid = mid;
+        this->uid = uid;
+        in_progress = 0;
+        Qbm.add(this);
+    }
+    ~pulls() {
+        Qbm.del(this);
+    }
+
+    static DwQueryByMember<pulls> Qbm;
+
+    int uid_in_prog(const vc& uid, const int& inprog) {
+        if(this->uid == uid && in_progress == inprog)
+            return 1;
+        return 0;
+    }
+    vc mid;
+    vc uid;
+    int in_progress;
+};
+
+DwQueryByMember<pulls> pulls::Qbm;
 
 static
 void
 assert_pull(vc mid, vc uid)
 {
-    if(Pulls.is_nil())
-        Pulls = vc(VC_TREE);
-    vc v;
-    if(!Pulls.find(mid, v))
+    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
+    for(int i = 0; i < dm.num_elems(); ++i)
     {
-        v = vc(VC_SET);
-        v.add(uid);
-        Pulls.add_kv(mid, v);
+        if(dm[i]->uid == uid)
+            return;
     }
-    else
-        v.add(uid);
+    new pulls(mid, uid);
 }
 
 static
 void
 deassert_pull(vc mid)
 {
-    if(Pulls.is_nil())
-        Pulls = vc(VC_TREE);
-    Pulls.del(mid);
+    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
+    for(int i = 0; i < dm.num_elems(); ++i)
+        delete dm[i];
 }
 
 int
 is_asserted(vc mid)
 {
-    if(Pulls.is_nil())
-        Pulls = vc(VC_TREE);
-    if(Pulls.contains(mid))
-        return 1;
-    return 0;
+    return pulls::Qbm.exists_by_member(mid, &pulls::mid);
 }
 
 int
 pull_in_progress(vc mid, vc uid)
 {
-    if(Pulls.is_nil())
-        Pulls = vc(VC_TREE);
-    vc v;
-    if(Pulls.find(mid, v))
+    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
+    for(int i = 0; i < dm.num_elems(); ++i)
     {
-        if(v.contains(uid))
+        if(dm[i]->uid == uid && dm[i]->in_progress)
             return 1;
     }
     return 0;
 }
 
-static
-void
-rmuid(vc uid, vc assoc)
-{
-    if(assoc[1].is_nil())
-        return;
-    assoc[1].del(uid);
-}
-
 void
 pull_target_destroyed(vc uid)
 {
-    if(Pulls.is_nil())
-        return;
-    Pulls.foreach(uid, rmuid);
+    DwVecP<pulls> dm = pulls::Qbm.query_by_member(uid, &pulls::uid);
+    for(int i = 0; i < dm.num_elems(); ++i)
+        delete dm[i];
 }
 
 static
 void
 pull_failed(vc mid, vc uid)
 {
-    if(Pulls.is_nil())
-        Pulls = vc(VC_TREE);
-    vc v;
-    if(Pulls.find(mid, v))
+    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
+    for(int i = 0; i < dm.num_elems(); ++i)
     {
-        v.del(uid);
+        if(dm[i]->uid == uid)
+            dm[i]->in_progress = 0;
     }
+}
+
+static
+void
+set_pull_in_progress(vc mid, vc uid)
+{
+    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
+    for(int i = 0; i < dm.num_elems(); ++i)
+    {
+        if(dm[i]->uid == uid)
+            dm[i]->in_progress = 1;
+    }
+}
+
+static
+vc
+uids_to_call()
+{
+    DwVec<vc> u = pulls::Qbm.project(&pulls::uid);
+    vc ret(VC_SET);
+    for(int i = 0; i < u.num_elems(); ++i)
+        ret.add(u[i]);
+    return vc::set_to_vector(ret);
 }
 
 static
@@ -6963,19 +6986,110 @@ pull_done_slot(vc mid, vc remote_uid, vc success)
         deassert_pull(mid);
 }
 
+void start_stalled_pulls();
+
 static
 void
 sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const char *uid, int len_uid, const char *call_type, int len_call_type)
 {
+
     switch(what)
     {
     case DWYCO_CALLDISP_STARTED:
         break;
     case DWYCO_CALLDISP_ESTABLISHED:
+        start_stalled_pulls();
         break;
     default:
         break;
 
+    }
+}
+
+
+void
+sync_call_setup()
+{
+    static DwTimer connect_timer;
+    static int been_here;
+    if(!been_here)
+    {
+        connect_timer.set_autoreload(1);
+        connect_timer.set_interval(10000);
+        connect_timer.set_oneshot(0);
+        connect_timer.reset();
+        connect_timer.start();
+        been_here = 1;
+    }
+    if(!connect_timer.is_expired())
+        return;
+    connect_timer.ack_expire();
+    if(pulls::Qbm.count() == 0)
+        return;
+
+    vc uids = uids_to_call();
+    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    for(int i = 0; i < mmcl.num_elems(); ++i)
+    {
+        MMCall *mmc = mmcl[i];
+        uids.del(mmc->uid);
+    }
+    vc call_uids(VC_VECTOR);
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        if(!MMChannel::channel_by_call_type(uids[i], "sync"))
+            call_uids.append(uids[i]);
+    }
+    for(int i = 0; i < call_uids.num_elems(); ++i)
+    {
+        dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "sync", 4, 1);
+    }
+    start_stalled_pulls();
+}
+
+void
+start_stalled_pulls()
+{
+    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    for(int i = 0; i < mmcl.num_elems(); ++i)
+    {
+        MMCall *mmc = mmcl[i];
+        if(mmc->established)
+        {
+            MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
+            if(mc)
+            {
+                DwVecP<pulls> stalled_pulls = pulls::Qbm.query_by_fun(mmc->uid, 0, &pulls::uid_in_prog, 1);
+                for(int i = 0; i < stalled_pulls.num_elems(); ++i)
+                {
+                    if(!mc->signal_setup)
+                    {
+                        mc->pull_done.connect_ptrfun(pull_done_slot);
+                        mc->signal_setup = 1;
+                    }
+                    stalled_pulls[i]->in_progress = 1;
+                    mc->send_pull(stalled_pulls[i]->mid);
+                }
+            }
+        }
+    }
+
+    ChanList cl = MMChannel::channels_by_call_type("sync");
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        MMChannel *mc = cl[i];
+        DwVecP<pulls> stalled_pulls = pulls::Qbm.query_by_fun(mc->remote_uid(), 0, &pulls::uid_in_prog, 1);
+
+        for(int i = 0; i < stalled_pulls.num_elems(); ++i)
+        {
+            if(!mc->signal_setup)
+            {
+                mc->pull_done.connect_ptrfun(pull_done_slot);
+                mc->signal_setup = 1;
+            }
+            stalled_pulls[i]->in_progress = 1;
+            mc->send_pull(stalled_pulls[i]->mid);
+        }
     }
 }
 
@@ -6995,7 +7109,10 @@ pull_msg(vc uid, vc msg_id)
     }
 
     for(int i = 0; i < uids.num_elems(); ++i)
+    {
         uids[i] = from_hex(uids[i]);
+        assert_pull(msg_id, uids[i]);
+    }
 
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
     for(int i = 0; i < mmcl.num_elems(); ++i)
@@ -7019,7 +7136,7 @@ pull_msg(vc uid, vc msg_id)
                         mc->pull_done.connect_ptrfun(pull_done_slot);
                         mc->signal_setup = 1;
                     }
-                    assert_pull(msg_id, mc->remote_uid());
+                    set_pull_in_progress(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id);
                     return;
                 }
@@ -7039,7 +7156,7 @@ pull_msg(vc uid, vc msg_id)
                 mc->pull_done.connect_ptrfun(pull_done_slot);
                 mc->signal_setup = 1;
             }
-            assert_pull(msg_id, mc->remote_uid());
+            set_pull_in_progress(msg_id, mc->remote_uid());
             mc->send_pull(msg_id);
             // note: this probably needs a heuristic to either send
             // all pulls at once, or decide which one is most likely
@@ -7047,14 +7164,6 @@ pull_msg(vc uid, vc msg_id)
             return;
         }
     }
-
-    // no existing calls, try to set one up
-    for(int i = 0; i < uids.num_elems(); ++i)
-    {
-        dwyco_connect_uid(uids[i], uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "sync", 4, 1);
-    }
-
-
 }
 
 DWYCOEXPORT

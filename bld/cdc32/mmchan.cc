@@ -2632,6 +2632,24 @@ MMChannel::channel_by_call_type(vc uid, vc call_type)
     return 0;
 }
 
+ChanList
+MMChannel::channels_by_call_type(vc call_type)
+{
+    // check current connections for uid
+    scoped_ptr<ChanList> cl(get_serviced_channels_net());
+    ChanListIter cli(cl.get());
+    ChanList ret;
+    for(; !cli.eol(); cli.forward())
+    {
+        MMChannel *mc = cli.getp();
+        if(call_type == mc->remote_call_type())
+        {
+            ret.append(mc);
+        }
+    }
+    return ret;
+}
+
 // this is called in the CALLEE when we receive
 // the CALLER's config
 void
