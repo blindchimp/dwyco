@@ -6972,6 +6972,8 @@ vc
 uids_to_call()
 {
     vc ret = Group_uids;
+    if(ret.is_nil())
+        return vc(VC_VECTOR);
     ret = ret.copy();
     ret.del(My_UID);
     return ret;
@@ -7369,6 +7371,7 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
 {
     vc vuid(VC_BSTRING, uid, len_uid);
     start_gj(vuid, password);
+    return 1;
 }
 
 #include "dwycolistscoped.h"

@@ -1274,7 +1274,7 @@ vclh_encdec_close(vc ctx)
 // basically, you are responsible for getting the iv around in this case.
 //
 // if you use the *xfer* functions below, the IV is done for you, so the
-// iv sent in here is basically ignored.
+// iv sent in here is ignored.
 // 
 vc
 vclh_encdec_init_key_ctx(vc ctx, vc key, vc iv)
