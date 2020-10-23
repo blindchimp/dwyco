@@ -1001,6 +1001,32 @@ sql_get_uid_from_mid2(vc mid)
     }
 }
 
+// this returns a list of all uid, mid pairs where mid is not local
+// this would be used in cases where we want to pull other messages
+// in an "eager" fashion rather than waiting for them to be requested
+// via some model lookup
+
+vc
+sql_get_non_local_messages()
+{
+
+    try
+    {
+        sql_start_transaction();
+        sql_simple("create temp table foo as select mid, uid from gmt where tag = '_local' and not exists (select 1 from msg_idx where gmt.mid = mid)");
+        sql_simple("delete from foo where exists (select 1 from gmt where mid = foo.mid and uid = foo.uid and tag = '_del')");
+        vc res = sql_simple("select * from foo");
+        sql_simple("drop table foo");
+        sql_commit_transaction();
+        return res;
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+        return vcnil;
+    }
+}
+
 
 int
 msg_index_count(vc uid)

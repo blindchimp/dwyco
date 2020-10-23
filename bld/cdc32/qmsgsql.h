@@ -61,6 +61,7 @@ int sql_run_sql(vc s, vc a1, vc a2, vc a3);
 vc package_downstream_sends();
 void import_remote_iupdate(vc remote_uid, vc vals);
 void import_remote_tupdate(vc remote_uid, vc vals);
+vc sql_get_non_local_messages();
 
 
 }

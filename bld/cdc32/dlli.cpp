@@ -6867,6 +6867,8 @@ pull_msg(vc uid, vc mid)
 // to that target uid, we set the in-progress flag.
 // if a pull is successful, all the records for that mid are deleted.
 //
+// note: we may want to put timeouts in here so that once something
+// is in progress, it times out if nothing happens for awhile.
 struct pulls
 {
     pulls(vc mid, vc uid) {
@@ -7028,8 +7030,6 @@ sync_call_setup()
     if(!connect_timer.is_expired())
         return;
     connect_timer.ack_expire();
-//    if(pulls::Qbm.count() == 0)
-//        return;
 
     vc uids = uids_to_call();
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
