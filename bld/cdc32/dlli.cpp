@@ -7046,9 +7046,15 @@ sync_call_setup()
         if(!MMChannel::channel_by_call_type(uids[i], "sync"))
             call_uids.append(uids[i]);
     }
+    // note: we only call uids that are lexicographically larger than
+    // us. this is a klugey way to avoid getting two calls going between
+    // two clients, one incomming and one outgoing. this isn't the best
+    // necessarily because the largest guy in the list will never originate
+    // a call, instead waiting for another client to start things up.
     for(int i = 0; i < call_uids.num_elems(); ++i)
     {
-        dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "sync", 4, 1);
+        if(call_uids[i] > My_UID)
+            dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "sync", 4, 1);
     }
     start_stalled_pulls();
 }

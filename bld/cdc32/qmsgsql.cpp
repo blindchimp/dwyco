@@ -45,12 +45,6 @@ public:
     void init_schema_fav();
 };
 
-class RQMsgSql : public QMsgSql
-{
-public:
-    void init_schema(const DwString& schema_name);
-};
-
 static QMsgSql *sDb;
 
 static
@@ -116,6 +110,8 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
         sql_simple("create table mt.taglog (mid text not null, tag text not null, unique(mid, tag) on conflict ignore)");
+        sql_simple("drop table if exists mt.sent_downstream_tag");
+        sql_simple("create table sent_downstream_tag(mid text, tag text, uid text)");
         sql_simple("drop table if exists mt.gmt");
         sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, unique(mid, tag, uid) on conflict ignore)");
         commit_transaction();
@@ -134,6 +130,7 @@ QMsgSql::init_schema(const DwString& schema_name)
         sql_start_transaction();
         sql_simple("drop table if exists mi2.gi");
         sql_simple("drop table if exists mi2.midlog");
+        sql_simple("drop table if exists mi2.sent_downstream");
         sql_simple("drop trigger if exists mi2.miupdate");
         sql_simple("drop trigger if exists mi2.xgi");
         sql_simple("drop trigger if exists mi2.dgi");
@@ -144,6 +141,7 @@ QMsgSql::init_schema(const DwString& schema_name)
     {
         sql_start_transaction();
         sql_simple("drop table if exists fav2.taglog");
+        sql_simple("drop table if exists fav2.sent_downstream_tag");
         sql_simple("drop table if exists fav2.gmt");
         sql_simple("drop trigger if exists fav2.tagupdate");
         sql_simple("drop trigger if exists fav2.xgmt");
@@ -206,6 +204,8 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("drop table if exists midlog");
     sql_simple("drop table if exists taglog");
     sql_simple("create table midlog (mid text not null, unique(mid) on conflict ignore)");
+    sql_simple("drop table if exists sent_downstream");
+    sql_simple("create table sent_downstream(mid text, uid text)");
 
     }
     else if(schema_name.eq("mt"))
@@ -215,30 +215,6 @@ QMsgSql::init_schema(const DwString& schema_name)
 
 }
 
-void
-RQMsgSql::init_schema(const DwString& schema_name)
-{
-    sql_start_transaction();
-
-    if(schema_name.eq("mi2"))
-    {
-        sql_simple("drop table if exists gi");
-        sql_simple("drop table if exists midlog");
-        sql_simple("drop trigger if exists miupdate");
-        sql_simple("drop trigger if exists xgi");
-        sql_simple("drop trigger if exists dgi");
-    }
-    else if(schema_name.eq("fav2"))
-    {
-        sql_simple("drop table if exists taglog");
-        sql_simple("drop table if exists gmt");
-        sql_simple("drop trigger if exists tagupdate");
-        sql_simple("drop trigger if exists xgmt");
-        sql_simple("drop trigger if exists dgmt");
-    }
-
-    sql_commit_transaction();
-}
 
 static
 DwString
@@ -258,16 +234,18 @@ make_sql_args(int n)
 }
 
 vc
-package_downstream_sends()
+package_downstream_sends(vc remote_uid)
 {
+    vc huid = to_hex(remote_uid);
     try
     {
         // NOTE: may want to package this as a single command
         // containing both index and tag updates, then perform all of them
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
-        vc idxs = sql_simple("select msg_idx.* from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid");
-        vc tags = sql_simple("select mt2.* from mt.msg_tags2 as mt2, mt.taglog where mt2.mid = taglog.mid and mt2.tag = taglog.tag");
+        vc idxs = sql_simple("select msg_idx.* from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and not exists (select 1 from sent_downstream where mid = msg_idx.mid and uid = ?1)", huid);
+        vc tags = sql_simple("select mt2.* from mt.msg_tags2 as mt2, mt.taglog where mt2.mid = taglog.mid and mt2.tag = taglog.tag and not exists (select 1 from sent_downstream_tag  where mid = mt2.mid mt2.tag = tag and uid = ?1)", huid);
+
         vc ret(VC_VECTOR);
         for(int i = 0; i < idxs.num_elems(); ++i)
         {
@@ -275,6 +253,7 @@ package_downstream_sends()
             cmd[0] = "iupdate";
             cmd[1] = idxs[i];
             ret.append(cmd);
+            sql_simple("insert into sent_downstream(mid, uid) values(?1, ?2)", idxs[i][QM_IDX_MID], huid);
         }
         for(int i = 0; i < tags.num_elems(); ++i)
         {
@@ -282,11 +261,7 @@ package_downstream_sends()
             cmd[0] = "tupdate";
             cmd[1] = tags[i];
             ret.append(cmd);
-        }
-        if(ret.num_elems() > 0)
-        {
-            sql_simple("delete from main.midlog");
-            sql_simple("delete from mt.taglog");
+            sql_simple("insert into sent_downstream_tag(mid, tag, uid) values(?1, ?2, ?3)", idxs[i][QM_IDX_MID], huid);
         }
         sql_commit_transaction();
         return ret;
@@ -320,6 +295,8 @@ import_remote_mi(vc remote_uid)
         }
         sql_simple("delete from main.gi where from_client_uid = ?1", huid);
         sql_simple("delete from mt.gmt where uid = ?1", huid);
+        //sql_simple("delete from main.sent_downstream where uid = ?1", huid);
+        //sql_simple("delete from mt.sent_downstream_tag where uid = ?1", huid);
 
         sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
         sql_simple("insert into mt.gmt select *, ?1 from fav2.msg_tags2", huid);

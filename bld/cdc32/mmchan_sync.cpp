@@ -297,7 +297,7 @@ MMChannel::process_outgoing_sync()
     }
     else if(mms_sync_state == NORMAL_SEND)
     {
-        vc ds = package_downstream_sends();
+        vc ds = package_downstream_sends(remote_uid());
         if(!ds.is_nil())
         {
             for(int i = 0; i < ds.num_elems(); ++i)
