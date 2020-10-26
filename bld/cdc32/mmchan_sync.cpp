@@ -154,9 +154,6 @@ MMChannel::process_pull_resp(vc cmd)
     // WARNING: the uid here is the uid associated with the message
     // we fetched, NOT the uid of whoever we sent the message to.
 
-    GRTLOG("pull resp", 0, 0);
-    GRTLOGVC(cmd);
-
     vc mid = cmd[1];
     vc uid = cmd[2];
     vc body = cmd[3];
@@ -223,14 +220,14 @@ MMChannel::process_pull_resp(vc cmd)
 void
 MMChannel::process_iupdate(vc cmd)
 {
-    GRTLOGVC(cmd);
+    //GRTLOGVC(cmd);
     import_remote_iupdate(remote_uid(), cmd[1]);
 }
 
 void
 MMChannel::process_tupdate(vc cmd)
 {
-    GRTLOGVC(cmd);
+    //GRTLOGVC(cmd);
     import_remote_tupdate(remote_uid(), cmd[1]);
 }
 
@@ -326,13 +323,17 @@ MMChannel::process_outgoing_sync()
         return 0;
     }
 
+    GRTLOG("msync output ok %d %s", myid, (const char *)to_hex(remote_uid()));
+    if(mms_sync_state == NORMAL_SEND)
+    {
+    GRTLOGVC(vcx);
+    }
+
     mms_sync_state = NORMAL_SEND;
 
     sproto *s = simple_protos[msync_chan];
     s->timeout.load(VIDEO_IDLE_TIMEOUT);
     s->timeout.start();
-
-    GRTLOG("msync output ok", 0, 0);
 
     return 1;
 }
@@ -358,6 +359,8 @@ MMChannel::process_incoming_sync()
             }
             else if(mmr_sync_state == NORMAL_RECV)
             {
+                GRTLOG("normal sync %d %s", myid, (const char *)to_hex(remote_uid()));
+                GRTLOGVC(rvc);
                 vc cmd = rvc[0];
                 if(cmd == vc("pull"))
                     process_pull(rvc);
