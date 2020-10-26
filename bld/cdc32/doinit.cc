@@ -92,7 +92,7 @@ init_codec(const char *logname)
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
-            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str(), 1000);
+            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str());
             RTLog = tmp;
             init_rtlog();
         }
@@ -246,7 +246,7 @@ simple_init_codec(const char *logname)
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
-            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str(), 1000);
+            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str());
             RTLog = tmp;
             init_rtlog();
         }
@@ -335,7 +335,7 @@ init_bg_msg_send(const char *logname)
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
-            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str(), 1000);
+            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str());
             RTLog = tmp;
             init_rtlog();
         }
