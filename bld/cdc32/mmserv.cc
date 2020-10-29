@@ -102,6 +102,8 @@ void
 MMChannel::server_response(vc v)
 {
     static vc sync("c");
+    GRTLOG("server resp %d", myid, 0);
+    GRTLOGVC(v);
     if(v == sync)
     {
         vc s(VC_VECTOR);

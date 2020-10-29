@@ -109,11 +109,20 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
         sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
-        sql_simple("create table mt.taglog (mid text not null, tag text not null, unique(mid, tag) on conflict ignore)");
+        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, unique(mid, tag, guid) on conflict ignore)");
         sql_simple("drop table if exists mt.sent_downstream_tag");
         sql_simple("create table mt.sent_downstream_tag(mid text, tag text, uid text)");
         sql_simple("drop table if exists mt.gmt");
-        sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, unique(mid, tag, uid) on conflict ignore)");
+        sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid) on conflict ignore)");
+
+        vc v = sql_simple("pragma user_version");
+        if(v[0][0] == vczero)
+        {
+            sql_simple("alter table mt.msg_tags2 add guid text collate nocase");
+            sql_simple("update mt.msg_tags2 set guid = hex(randomblob(10))");
+            sql_simple("pragma user_version = 1");
+        }
+        sql_simple("create table if not exists mt.tomb (guid text collate nocase primary key, time integer)");
         commit_transaction();
     } catch(...) {
         rollback_transaction();
@@ -296,11 +305,9 @@ import_remote_mi(vc remote_uid)
         }
         sql_simple("delete from main.gi where from_client_uid = ?1", huid);
         sql_simple("delete from mt.gmt where uid = ?1", huid);
-        //sql_simple("delete from main.sent_downstream where uid = ?1", huid);
-        //sql_simple("delete from mt.sent_downstream_tag where uid = ?1", huid);
 
         sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
-        sql_simple("insert into mt.gmt select *, ?1 from fav2.msg_tags2", huid);
+        sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
         // note: here is where we might want to setup local triggers to make updates
         // to gi whenever there is a piecemeal update to a remote index.
         // note: if we setup triggers, we can't detach the database below, but we end up
@@ -330,8 +337,6 @@ import_remote_iupdate(vc remote_uid, vc vals)
     try
     {
         sql_start_transaction();
-        //sql_simple("delete from gi where from_client_uid = ?1", huid);
-        //sql_simple("delete from gmt where uid = ?1", huid);
         DwString sargs = make_sql_args(vals.num_elems());
         VCArglist a;
         a.set_size(vals.num_elems() + 1);
@@ -370,8 +375,6 @@ import_remote_tupdate(vc remote_uid, vc vals)
     try
     {
         sql_start_transaction();
-        //sql_simple("delete from gi where from_client_uid = ?1", huid);
-        //sql_simple("delete from gmt where uid = ?1", huid);
         DwString sargs = make_sql_args(vals.num_elems());
         VCArglist a;
         a.set_size(vals.num_elems() + 1);
@@ -430,7 +433,9 @@ init_qmsg_sql()
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
 
     sql_simple(DwString("create trigger if not exists mt.xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)hmyuid).c_str());
-    sql_simple(DwString("create trigger if not exists mt.dgmt after delete on mt.msg_tags2 begin delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; end").arg((const char *)hmyuid).c_str());
+    sql_simple(DwString("create trigger if not exists mt.dgmt after delete on mt.msg_tags2 begin "
+                        "delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; "
+                        " insert into tomb(guid, time) values(old.guid, strftime('%s', 'now')); end").arg((const char *)hmyuid).c_str());
 
     sql_simple("create temp trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
