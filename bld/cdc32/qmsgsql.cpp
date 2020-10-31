@@ -383,7 +383,7 @@ import_remote_tupdate(vc remote_uid, vc vals)
             a.append(vals[i]);
         sql_bulk_query(&a);
 
-        sql_simple("insert or ignore into mt.gmt select *, ?1 from fav2.msg_tags2 where mid = ?2", huid, vals[0]);
+        sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2 where mid = ?2", huid, vals[0]);
         //sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", huid);
         // note: here is where we might want to setup local triggers to make updates
         // to gi whenever there is a piecemeal update to a remote index.
@@ -415,7 +415,7 @@ init_qmsg_sql()
 
     sDb->attach("fav.sql", "mt");
 
-    sql_simple("insert into gmt select *, ?1 from mt.msg_tags2", hmyuid);
+    sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from mt.msg_tags2", hmyuid);
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
     sql_simple("create temp trigger rescan1 after delete on mt.msg_tags2 begin update rescan set flag = 1; end");
@@ -424,15 +424,17 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
     sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid) values(new.mid); end");
-    sql_simple("create trigger if not exists mt.tagupdate after insert on mt.msg_tags2 begin insert into taglog (mid, tag) values(new.mid, new.tag); end");
+    sql_simple("drop trigger if exists mt.tagupdate");
+    sql_simple("create trigger if not exists mt.tagupdate after insert on mt.msg_tags2 begin insert into taglog (mid, tag, guid) values(new.mid, new.tag, new.guid); end");
 
     // if there is a local tag in our tag database, note that in the global index
     sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
 
     sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
-
-    sql_simple(DwString("create trigger if not exists mt.xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid) values(new.mid, new.tag, new.time, '%1'); end").arg((const char *)hmyuid).c_str());
+    sql_simple("drop trigger if exists mt.xgmt");
+    sql_simple("drop trigger if exists mt.dgmt");
+    sql_simple(DwString("create trigger if not exists mt.xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid, guid) values(new.mid, new.tag, new.time, '%1', new.guid); end").arg((const char *)hmyuid).c_str());
     sql_simple(DwString("create trigger if not exists mt.dgmt after delete on mt.msg_tags2 begin "
                         "delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; "
                         " insert into tomb(guid, time) values(old.guid, strftime('%s', 'now')); end").arg((const char *)hmyuid).c_str());
@@ -1190,7 +1192,7 @@ static
 void
 sql_insert_record_mt(vc mid, vc tag)
 {
-    sql_simple("replace into mt.msg_tags2 (mid, tag, time) values(?1,?2,strftime('%s','now'))",
+    sql_simple("replace into mt.msg_tags2 (mid, tag, time, guid) values(?1,?2,strftime('%s','now'), hex(randomblob(10)))",
                mid, tag);
 }
 
