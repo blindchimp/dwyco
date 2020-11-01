@@ -270,6 +270,33 @@ MMChannel::cleanup_pulls(int myid)
     pull_target_destroyed(remote_uid());
 }
 
+void
+MMChannel::mms_sync_state_changed(enum syncstate s)
+{
+    if(s == NORMAL_SEND)
+    {
+        sql_run_sql("insert into current_clients values(?1)", to_hex(remote_uid()));
+    }
+    else
+    {
+        sql_run_sql("delete from current_clients where uid = ?1", to_hex(remote_uid()));
+    }
+}
+
+void
+MMChannel::mmr_sync_state_changed(enum syncstate s)
+{
+    if(s == NORMAL_RECV)
+    {
+        sql_run_sql("insert into current_clients values(?1)", to_hex(remote_uid()));
+    }
+    else
+    {
+        sql_run_sql("delete from current_clients where uid = ?1", to_hex(remote_uid()));
+    }
+
+}
+
 int
 MMChannel::process_outgoing_sync()
 {

@@ -679,6 +679,8 @@ MMChannel::MMChannel() :
 
     mms_sync_state = MMSS_NONE;
     mmr_sync_state = MMSS_NONE;
+    mms_sync_state.value_changed.connect_memfun(this, &MMChannel::mms_sync_state_changed);
+    mmr_sync_state.value_changed.connect_memfun(this, &MMChannel::mmr_sync_state_changed);
     signal_setup = 0;
 }
 

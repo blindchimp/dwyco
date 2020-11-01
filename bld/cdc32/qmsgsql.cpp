@@ -109,7 +109,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
         sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
-        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, unique(mid, tag, guid) on conflict ignore)");
+        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid, unique(mid, tag, guid, to_uid) on conflict ignore)");
         sql_simple("drop table if exists mt.sent_downstream_tag");
         sql_simple("create table mt.sent_downstream_tag(mid text, tag text, uid text)");
         sql_simple("drop table if exists mt.gmt");
@@ -212,7 +212,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 
     sql_simple("drop table if exists midlog");
     sql_simple("drop table if exists taglog");
-    sql_simple("create table midlog (mid text not null, unique(mid) on conflict ignore)");
+    sql_simple("create table midlog (mid text not null, to_uid text not null, unique(mid,to_uid) on conflict ignore)");
     sql_simple("drop table if exists sent_downstream");
     sql_simple("drop table if exists sent_downstream_tag");
     sql_simple("create table sent_downstream(mid text, uid text)");
@@ -253,8 +253,8 @@ package_downstream_sends(vc remote_uid)
         // containing both index and tag updates, then perform all of them
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
-        vc idxs = sql_simple("select msg_idx.* from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and not exists (select 1 from sent_downstream where mid = msg_idx.mid and uid = ?1)", huid);
-        vc tags = sql_simple("select mt2.* from mt.msg_tags2 as mt2, mt.taglog where mt2.mid = taglog.mid and mt2.tag = taglog.tag and not exists (select 1 from mt.sent_downstream_tag  where mid = mt2.mid and mt2.tag = tag and uid = ?1)", huid);
+        vc idxs = sql_simple("select msg_idx.* from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and midlog.to_uid = ?1", huid);
+        vc tags = sql_simple("select mt2.* from mt.msg_tags2 as mt2, mt.taglog where mt2.mid = taglog.mid and mt2.tag = taglog.tag and to_uid = ?1", huid);
 
         vc ret(VC_VECTOR);
         for(int i = 0; i < idxs.num_elems(); ++i)
@@ -263,16 +263,16 @@ package_downstream_sends(vc remote_uid)
             cmd[0] = "iupdate";
             cmd[1] = idxs[i];
             ret.append(cmd);
-            sql_simple("insert into main.sent_downstream(mid, uid) values(?1, ?2)", idxs[i][QM_IDX_MID], huid);
         }
+        sql_simple("delete from midlog where to_uid = ?1", huid);
         for(int i = 0; i < tags.num_elems(); ++i)
         {
             vc cmd(VC_VECTOR);
             cmd[0] = "tupdate";
             cmd[1] = tags[i];
             ret.append(cmd);
-            sql_simple("insert into mt.sent_downstream_tag(mid, tag, uid) values(?1, ?2, ?3)", tags[i][0], tags[i][1], huid);
         }
+        sql_simple("delete from taglog where to_uid = ?1", huid);
         sql_commit_transaction();
         return ret;
     } catch (...)
@@ -308,6 +308,7 @@ import_remote_mi(vc remote_uid)
 
         sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
         sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
+        sql_simple("delete from mt.gmt where guid in (select guid from fav2.tomb)");
         // note: here is where we might want to setup local triggers to make updates
         // to gi whenever there is a piecemeal update to a remote index.
         // note: if we setup triggers, we can't detach the database below, but we end up
@@ -410,12 +411,13 @@ init_qmsg_sql()
         throw -1;
     sql_sync_off();
     vc hmyuid = to_hex(My_UID);
+    sDb->attach("fav.sql", "mt");
+    sql_start_transaction();
     // by default, our local index "local" is implied
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
 
-    sDb->attach("fav.sql", "mt");
+    sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from mt.msg_tags2 where not exists (select 1 from mt.tomb where guid = msg_tags2.guid)", hmyuid);
 
-    sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from mt.msg_tags2", hmyuid);
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
     sql_simple("create temp trigger rescan1 after delete on mt.msg_tags2 begin update rescan set flag = 1; end");
@@ -423,9 +425,11 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
-    sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid) values(new.mid); end");
+    sql_simple("create temp table current_clients(uid text collate nocase unique on conflict ignore)");
+
+    sql_simple("create temp trigger if not exists miupdate after insert on main.msg_idx begin insert into main.midlog (mid,to_uid) select new.mid, uid from current_clients; end");
     sql_simple("drop trigger if exists mt.tagupdate");
-    sql_simple("create trigger if not exists mt.tagupdate after insert on mt.msg_tags2 begin insert into taglog (mid, tag, guid) values(new.mid, new.tag, new.guid); end");
+    sql_simple("create temp trigger if not exists mt.tagupdate after insert on mt.msg_tags2 begin insert into mt.taglog (mid, tag, guid,to_uid) select new.mid, new.tag, new.guid, uid from current_clients; end");
 
     // if there is a local tag in our tag database, note that in the global index
     sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
@@ -443,7 +447,7 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
-
+    sql_commit_transaction();
     // this is a hack for debugging, load existing data indexes. we expect we won't
     // obliterate gi and gmt on each restart in the future
 

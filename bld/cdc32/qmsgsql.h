@@ -57,7 +57,7 @@ int sql_is_mid_local(vc mid);
 void import_remote_mi(vc remote_uid);
 vc sql_get_uid_from_mid2(vc mid);
 
-int sql_run_sql(vc s, vc a1, vc a2, vc a3);
+int sql_run_sql(vc s, vc a1 = vcnil, vc a2 = vcnil, vc a3 = vcnil);
 vc package_downstream_sends(vc remote_uid);
 void import_remote_iupdate(vc remote_uid, vc vals);
 void import_remote_tupdate(vc remote_uid, vc vals);

@@ -1016,6 +1016,9 @@ private:
     dwyco::sigprop<enum syncstate> mms_sync_state;
     //enum syncstate mms_sync_state;
 
+    void mmr_sync_state_changed(enum syncstate);
+    void mms_sync_state_changed(enum syncstate);
+
     int process_outgoing_sync();
     int process_incoming_sync();
 
