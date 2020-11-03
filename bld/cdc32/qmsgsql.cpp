@@ -109,9 +109,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
         sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
-        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid, unique(mid, tag, guid, to_uid) on conflict ignore)");
-        sql_simple("drop table if exists mt.sent_downstream_tag");
-        sql_simple("create table mt.sent_downstream_tag(mid text, tag text, uid text)");
+        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid not null, op text not null, unique(mid, tag, guid, to_uid) on conflict ignore)");
         sql_simple("drop table if exists mt.gmt");
         sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid) on conflict ignore)");
 
@@ -140,6 +138,7 @@ QMsgSql::init_schema(const DwString& schema_name)
         sql_simple("drop table if exists mi2.gi");
         sql_simple("drop table if exists mi2.midlog");
         sql_simple("drop table if exists mi2.sent_downstream");
+        sql_simple("drop table if exists mi2.current_clients");
         sql_simple("drop trigger if exists mi2.miupdate");
         sql_simple("drop trigger if exists mi2.xgi");
         sql_simple("drop trigger if exists mi2.dgi");
@@ -215,8 +214,6 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create table midlog (mid text not null, to_uid text not null, unique(mid,to_uid) on conflict ignore)");
     sql_simple("drop table if exists sent_downstream");
     sql_simple("drop table if exists sent_downstream_tag");
-    sql_simple("create table sent_downstream(mid text, uid text)");
-
     }
     else if(schema_name.eq("mt"))
 	{
@@ -254,7 +251,7 @@ package_downstream_sends(vc remote_uid)
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
         vc idxs = sql_simple("select msg_idx.* from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and midlog.to_uid = ?1", huid);
-        vc tags = sql_simple("select mt2.* from mt.msg_tags2 as mt2, mt.taglog where mt2.mid = taglog.mid and mt2.tag = taglog.tag and to_uid = ?1", huid);
+        vc tags = sql_simple("select mt2.*,tl.op from mt.msg_tags2 as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1", huid);
 
         vc ret(VC_VECTOR);
         for(int i = 0; i < idxs.num_elems(); ++i)
@@ -376,6 +373,10 @@ import_remote_tupdate(vc remote_uid, vc vals)
     try
     {
         sql_start_transaction();
+
+        vc op = vals.remove_last();
+        if(op == vc("a"))
+        {
         DwString sargs = make_sql_args(vals.num_elems());
         VCArglist a;
         a.set_size(vals.num_elems() + 1);
@@ -390,6 +391,17 @@ import_remote_tupdate(vc remote_uid, vc vals)
         // to gi whenever there is a piecemeal update to a remote index.
         // note: if we setup triggers, we can't detach the database below, but we end up
         // running into the attached database limit (10 by default, 125 hard max).
+        }
+        else if (op == vc("d"))
+        {
+            vc guid = vals[2];
+            // this kinda brute force, make sure to update this if you change the
+            // taglog messages
+            sql_simple("insert or ignore into fav2.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
+            sql_simple("delete from fav2.msg_tags2 where mid = ?1 and tag = ?2", vals[0], vals[1]);
+        }
+        else
+            oopanic("bad tupdate");
         sql_commit_transaction();
     }
     catch(...)
@@ -424,12 +436,13 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan2 after insert on mt.msg_tags2 begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
+    sql_simple("drop table if exists current_clients");
+    sql_simple("create table current_clients(uid text collate nocase unique on conflict ignore not null on conflict fail)");
 
-    sql_simple("create temp table current_clients(uid text collate nocase unique on conflict ignore)");
-
-    sql_simple("create temp trigger if not exists miupdate after insert on main.msg_idx begin insert into main.midlog (mid,to_uid) select new.mid, uid from current_clients; end");
+    sql_simple("drop trigger if exists miupdate");
+    sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid) select new.mid, uid from current_clients; end");
     sql_simple("drop trigger if exists mt.tagupdate");
-    sql_simple("create temp trigger if not exists mt.tagupdate after insert on mt.msg_tags2 begin insert into mt.taglog (mid, tag, guid,to_uid) select new.mid, new.tag, new.guid, uid from current_clients; end");
+    sql_simple("create temp trigger if not exists tagupdate after insert on msg_tags2 begin insert into taglog (mid, tag, guid,to_uid,op) select new.mid, new.tag, new.guid, uid, 'a' from current_clients; end");
 
     // if there is a local tag in our tag database, note that in the global index
     sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
@@ -438,16 +451,20 @@ init_qmsg_sql()
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
     sql_simple("drop trigger if exists mt.xgmt");
     sql_simple("drop trigger if exists mt.dgmt");
-    sql_simple(DwString("create trigger if not exists mt.xgmt after insert on mt.msg_tags2 begin insert into gmt (mid, tag, time, uid, guid) values(new.mid, new.tag, new.time, '%1', new.guid); end").arg((const char *)hmyuid).c_str());
-    sql_simple(DwString("create trigger if not exists mt.dgmt after delete on mt.msg_tags2 begin "
+    sql_simple(DwString("create trigger if not exists mt.xgmt after insert on msg_tags2 begin insert into gmt (mid, tag, time, uid, guid) values(new.mid, new.tag, new.time, '%1', new.guid); end").arg((const char *)hmyuid).c_str());
+    sql_simple(DwString("create temp trigger if not exists dgmt after delete on mt.msg_tags2 begin "
                         "delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; "
+                        "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients; "
                         " insert into tomb(guid, time) values(old.guid, strftime('%s', 'now')); end").arg((const char *)hmyuid).c_str());
 
     sql_simple("create temp trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan9 after insert on mt.tomb begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan10 after delete on mt.tomb begin update rescan set flag = 1; end");
     sql_commit_transaction();
+
     // this is a hack for debugging, load existing data indexes. we expect we won't
     // obliterate gi and gmt on each restart in the future
 
