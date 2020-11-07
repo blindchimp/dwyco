@@ -109,7 +109,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
         sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
-        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid not null, op text not null, unique(mid, tag, guid, to_uid) on conflict ignore)");
+        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid) on conflict ignore)");
         sql_simple("drop table if exists mt.gmt");
         sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid) on conflict ignore)");
 
@@ -121,6 +121,17 @@ QMsgSql::init_schema_fav()
             sql_simple("pragma user_version = 1");
         }
         sql_simple("create table if not exists mt.tomb (guid text collate nocase primary key, time integer)");
+        if(v[0][0] == vcone)
+        {
+            start_transaction();
+            sql_simple("create table mt.mumble(guid text not null collate nocase, time integer, unique (guid) on conflict replace)");
+            sql_simple("insert into mt.mumble select * from mt.tomb");
+            sql_simple("drop table mt.tomb");
+            sql_simple("alter table mt.mumble rename to tomb");
+            sql_simple("pragma user_version = 2");
+            commit_transaction();
+        }
+        sql_simple("drop table if exists sent_downstream_tag");
         commit_transaction();
     } catch(...) {
         rollback_transaction();
@@ -453,9 +464,11 @@ init_qmsg_sql()
     sql_simple("drop trigger if exists mt.dgmt");
     sql_simple(DwString("create trigger if not exists mt.xgmt after insert on msg_tags2 begin insert into gmt (mid, tag, time, uid, guid) values(new.mid, new.tag, new.time, '%1', new.guid); end").arg((const char *)hmyuid).c_str());
     sql_simple(DwString("create temp trigger if not exists dgmt after delete on mt.msg_tags2 begin "
-                        "delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; "
                         "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients; "
-                        " insert into tomb(guid, time) values(old.guid, strftime('%s', 'now')); end").arg((const char *)hmyuid).c_str());
+                        " insert into tomb(guid, time) values(old.guid, strftime('%s', 'now')); "
+                        " insert into tomb(guid, time) select guid, strftime('%s', 'now') from gmt where old.mid = mid and old.tag = tag;"
+                        "delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; "
+                        "end").arg((const char *)hmyuid).c_str());
 
     sql_simple("create temp trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
@@ -1217,6 +1230,21 @@ sql_insert_record_mt(vc mid, vc tag)
                mid, tag);
 }
 
+// this is needed in situations where a tag resides in the global
+// model, and we are deleting it locally. if the tag doesn't reside
+// locally, the triggers will not fire to create the right tombstones
+// because no records would be selected. maybe we should just operate on
+// the global model directly in this case, will have to think about it.
+// note: this kind of thing is probably an artifact of assigning guids
+// locally when we first set this up. if you assume a sterile starting place
+// the guids would evolve to be the same on each client more naturally.
+static
+void
+import_global_tomb(vc mid, vc tag)
+{
+    sql_simple("insert into tomb(guid, time) select guid, strftime('%s', 'now') from gmt where mid = ?1 and tag = ?2", mid, tag);
+}
+
 void
 sql_add_tag(vc mid, vc tag)
 {
@@ -1286,6 +1314,7 @@ sql_remove_mid_tag(vc mid, vc tag)
     {
         sql_start_transaction();
         sql_simple("delete from msg_tags2 where mid = ?1 and tag = ?2", mid, tag);
+        import_global_tomb(mid, tag);
         sql_commit_transaction();
     }
     catch(...)
@@ -1316,7 +1345,7 @@ sql_fav_has_fav(vc from_uid)
 int
 sql_fav_is_fav(vc mid)
 {
-    vc res = sql_simple("select 1 from gmt where mid = ?1 and tag = '_fav' limit 1;", mid);
+    vc res = sql_simple("select 1 from gmt where mid = ?1 and tag = '_fav' and not exists(select 1 from mt.tomb where guid = gmt.guid) limit 1;", mid);
     return res.num_elems() > 0;
 }
 
@@ -1395,7 +1424,7 @@ int
 sql_mid_has_tag(vc mid, vc tag)
 {
     VCArglist a;
-    vc res = sql_simple("select 1 from gmt where mid = ?1 and tag = ?2 limit 1",
+    vc res = sql_simple("select 1 from gmt where mid = ?1 and tag = ?2 and not exists(select 1 from mt.tomb where guid = gmt.guid) limit 1",
                         mid, tag);
     return res.num_elems() > 0;
 
