@@ -462,7 +462,7 @@ recv_gj3(vc from, vc msg, vc password)
         // if we allow multiple groups for some reason
         if(Current_alternate->alt_name() != alt_name)
         {
-            oopanic("protocol error");
+            //oopanic("protocol error");
             throw -1;
         }
 
