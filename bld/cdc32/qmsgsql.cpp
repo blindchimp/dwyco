@@ -285,7 +285,7 @@ package_downstream_sends(vc remote_uid)
         {
             vc cmd(VC_VECTOR);
             cmd[0] = "tupdate";
-            cmd[1] = tags[i];
+            cmd[1] = tombs[i];
             ret.append(cmd);
         }
         sql_simple("delete from taglog where to_uid = ?1", huid);
@@ -421,6 +421,7 @@ import_remote_tupdate(vc remote_uid, vc vals)
             // taglog messages
             sql_simple("insert or ignore into fav2.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
             sql_simple("delete from fav2.msg_tags2 where mid = ?1 and tag = ?2", mid, tag);
+            sql_simple("insert or ignore into mt.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
         }
         else
             oopanic("bad tupdate");
