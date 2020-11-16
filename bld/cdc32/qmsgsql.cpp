@@ -118,7 +118,7 @@ QMsgSql::init_schema_fav()
         if(v[0][0] == vczero)
         {
             sql_simple("alter table mt.msg_tags2 add guid text collate nocase");
-            sql_simple("update mt.msg_tags2 set guid = hex(randomblob(10))");
+            sql_simple("update mt.msg_tags2 set guid = lower(hex(randomblob(10)))");
             sql_simple("pragma user_version = 1");
         }
         sql_simple("create table if not exists mt.tomb (guid text collate nocase primary key, time integer)");
@@ -1242,7 +1242,7 @@ static
 void
 sql_insert_record_mt(vc mid, vc tag)
 {
-    sql_simple("replace into mt.msg_tags2 (mid, tag, time, guid) values(?1,?2,strftime('%s','now'), hex(randomblob(10)))",
+    sql_simple("replace into mt.msg_tags2 (mid, tag, time, guid) values(?1,?2,strftime('%s','now'), lower(hex(randomblob(10))))",
                mid, tag);
 }
 
@@ -1452,7 +1452,7 @@ sql_uid_has_tag(vc uid, vc tag)
     int c = 0;
     try
     {
-        vc res = sql_simple("select 1 from gmt,gi using(mid) where assoc_uid = ?1 and tag = ?2 limit 1",
+        vc res = sql_simple("select 1 from gmt,gi using(mid) where assoc_uid = ?1 and tag = ?2 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
                             to_hex(uid), tag);
         c = (res.num_elems() > 0);
     }
