@@ -33,7 +33,10 @@ macx-clang: QT += macextras
 linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
-macx-clang: QMAKE_INFO_PLIST=Info.plist.mac
+macx-clang {
+QMAKE_INFO_PLIST=Info.plist.mac
+CONFIG -= app_bundle
+}
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv
 
@@ -146,6 +149,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
 $${D}/qtdrv/libqtdrv.a
 
@@ -222,6 +226,28 @@ $${D}/qtdrv/libqtdrv.a \
 $${D}/uv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
+
+PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${D}/jhead/libjhead.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/uv/libuv.a \
+$${D}/qtdrv/libqtdrv.a
 
 
 }
