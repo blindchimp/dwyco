@@ -28,7 +28,7 @@ vc msg_idx_get_new_msgs(vc uid, vc logical_clock);
 vc sql_get_uid_from_mid(vc mid);
 void remove_msg_idx_uid(vc uid);
 void remove_msg_idx(vc uid, vc mid);
-void update_msg_idx(vc recip, vc body);
+void update_msg_idx(vc recip, vc body, int inhibit_sysmsg = 0);
 int msg_index_count(vc uid);
 
 void sql_fav_remove_uid(vc uid);

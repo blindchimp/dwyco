@@ -112,8 +112,12 @@ QMsgSql::init_schema_fav()
         sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid) on conflict ignore)");
         sql_simple("drop table if exists mt.gmt");
         sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid) on conflict ignore)");
+        sql_simple("create index if not exists mt.gmti1 on gmt(guid)");
+        sql_simple("create index if not exists mt.gmti2 on gmt(mid)");
+        sql_simple("create index if not exists mt.gmti3 on gmt(tag)");
         sql_simple("drop table if exists mt.gtomb;");
         sql_simple("create table mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
+        sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
         vc v = sql_simple("pragma user_version");
         if(v[0][0] == vczero)
         {
@@ -163,6 +167,7 @@ QMsgSql::init_schema(const DwString& schema_name)
         sql_simple("drop table if exists fav2.taglog");
         sql_simple("drop table if exists fav2.sent_downstream_tag");
         sql_simple("drop table if exists fav2.gmt");
+        sql_simple("drop table if exists fav2.gtomb");
         sql_simple("drop trigger if exists fav2.tagupdate");
         sql_simple("drop trigger if exists fav2.xgmt");
         sql_simple("drop trigger if exists fav2.dgmt");
@@ -218,6 +223,12 @@ QMsgSql::init_schema(const DwString& schema_name)
                "is_local,"
                "from_client_uid not null)"
               );
+
+    sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid);");
+    sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock desc);");
+    sql_simple("create index if not exists gidate_idx on gi(date desc);");
+    sql_simple("create index if not exists gisent_idx on gi(is_sent);");
+    sql_simple("create index if not exists giatt_idx on gi(has_attachment);");
     sql_simple("drop table if exists gmt");
 
 
@@ -1083,7 +1094,7 @@ msg_idx_updated(vc uid, int prepended)
 // directory with all the messages is scanned and the index is
 // initialized.
 void
-update_msg_idx(vc recip, vc body)
+update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
 {
 
     GRTLOG("update idx", 0, 0);
@@ -1120,8 +1131,8 @@ update_msg_idx(vc recip, vc body)
     {
         sql_rollback_transaction();
     }
-
-    msg_idx_updated(uid, 0);
+    if(!inhibit_sysmsg)
+        msg_idx_updated(uid, 0);
 }
 
 void

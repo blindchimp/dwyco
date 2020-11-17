@@ -186,7 +186,13 @@ MMChannel::process_pull_resp(vc cmd)
             fd += (const char *)aname;
             string_to_file(att, fd);
         }
-        update_msg_idx(uid, m);
+        // note: this would do an se_emit to say the msg index had changed,
+        // when in fact, it doesn't really change. we would not have been
+        // able to do the pull if it wasn't already in some part of the index
+        // we do need to make a local record of it. we can either copy it
+        // from the record that induced the pull, or we can just recreate it.
+        // for now, we just recreate, and do not emit the msg_update
+        update_msg_idx(uid, m, 1);
         sql_add_tag(m[QM_BODY_ID], "_local");
     }
     else
@@ -207,7 +213,7 @@ MMChannel::process_pull_resp(vc cmd)
                 fd += (const char *)aname;
                 string_to_file(att, fd);
             }
-            update_msg_idx(uid, m);
+            update_msg_idx(uid, m, 1);
             sql_add_tag(m[QM_BODY_ID], "_local");
             sql_add_tag(m[QM_BODY_ID], "_sent");
 

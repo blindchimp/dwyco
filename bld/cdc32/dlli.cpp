@@ -435,6 +435,7 @@ vc Current_chat_server_id;
 extern int Pal_logged_in;
 int is_invisible();
 void set_invisible(int);
+void sync_call_setup();
 
 static int ReadOnlyMode;
 extern int QSend_inprogress;
@@ -2067,7 +2068,6 @@ dwyco_service_channels(int *spin_out)
     handle_deferred_msg_send();
     se_process();
     crank_activity_timer();
-    void sync_call_setup();
     sync_call_setup();
     {
         static DwTimer dump_timer("dump");
