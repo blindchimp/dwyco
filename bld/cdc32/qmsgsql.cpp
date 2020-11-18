@@ -100,12 +100,9 @@ sql_rollback_transaction()
 void
 QMsgSql::init_schema_fav()
 {
-    sql_simple("drop table if exists mt.msg_tags");
-    sql_simple("drop table if exists mt.fav_msgs");
-
     try {
         start_transaction();
-        sql_simple("create table if not exists mt.msg_tags2(mid text, tag text, time integer default 0, unique(mid, tag) on conflict ignore)");
+        sql_simple("create table if not exists mt.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore, unique(mid, tag) on conflict ignore)");
         sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
         sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
@@ -118,25 +115,7 @@ QMsgSql::init_schema_fav()
         sql_simple("drop table if exists mt.gtomb;");
         sql_simple("create table mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
-        vc v = sql_simple("pragma user_version");
-        if(v[0][0] == vczero)
-        {
-            sql_simple("alter table mt.msg_tags2 add guid text collate nocase");
-            sql_simple("update mt.msg_tags2 set guid = lower(hex(randomblob(10)))");
-            sql_simple("pragma user_version = 1");
-        }
-        sql_simple("create table if not exists mt.tomb (guid text collate nocase primary key, time integer)");
-        if(v[0][0] == vcone)
-        {
-            start_transaction();
-            sql_simple("create table mt.mumble(guid text not null collate nocase, time integer, unique (guid) on conflict replace)");
-            sql_simple("insert into mt.mumble select * from mt.tomb");
-            sql_simple("drop table mt.tomb");
-            sql_simple("alter table mt.mumble rename to tomb");
-            sql_simple("pragma user_version = 2");
-            commit_transaction();
-        }
-        sql_simple("drop table if exists sent_downstream_tag");
+        sql_simple("create table if not exists mt.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
         commit_transaction();
     } catch(...) {
         rollback_transaction();
@@ -146,37 +125,6 @@ QMsgSql::init_schema_fav()
 void
 QMsgSql::init_schema(const DwString& schema_name)
 {
-
-
-    if(schema_name.eq("mi2"))
-    {
-        sql_start_transaction();
-        sql_simple("drop table if exists mi2.gi");
-        sql_simple("drop table if exists mi2.midlog");
-        sql_simple("drop table if exists mi2.sent_downstream");
-        sql_simple("drop table if exists mi2.current_clients");
-        sql_simple("drop trigger if exists mi2.miupdate");
-        sql_simple("drop trigger if exists mi2.xgi");
-        sql_simple("drop trigger if exists mi2.dgi");
-        sql_commit_transaction();
-        return;
-    }
-    else if(schema_name.eq("fav2"))
-    {
-        sql_start_transaction();
-        sql_simple("drop table if exists fav2.taglog");
-        sql_simple("drop table if exists fav2.sent_downstream_tag");
-        sql_simple("drop table if exists fav2.gmt");
-        sql_simple("drop table if exists fav2.gtomb");
-        sql_simple("drop trigger if exists fav2.tagupdate");
-        sql_simple("drop trigger if exists fav2.xgmt");
-        sql_simple("drop trigger if exists fav2.dgmt");
-        sql_commit_transaction();
-        return;
-    }
-
-
-
     if(schema_name.eq("main"))
     {
     // WARNING: the order and number of the fields in this table
@@ -245,6 +193,55 @@ QMsgSql::init_schema(const DwString& schema_name)
 
 }
 
+vc
+sql_dump_mi()
+{
+    DwString fn = gen_random_filename();
+    fn += ".tmp";
+    fn = newfn(fn);
+    sDb->attach(fn, "dump");
+    sql_start_transaction();
+    sql_simple("create table dump.msg_idx ("
+               "date integer,"
+               "mid text primary key,"
+               "is_sent,"
+               "is_forwarded,"
+               "is_no_forward,"
+               "is_file,"
+               "special_type,"
+               "has_attachment,"
+               "att_has_video,"
+               "att_has_audio,"
+               "att_is_short_video,"
+               "logical_clock,"
+               "assoc_uid text not null);"
+              );
+    sql_simple("insert into dump.msg_idx select * from main.msg_idx");
+    sql_commit_transaction();
+    sDb->detach("dump");
+    return fn.c_str();
+}
+
+vc
+sql_dump_mt()
+{
+    DwString fn = gen_random_filename();
+    fn += ".tmp";
+    fn = newfn(fn);
+    sDb->attach(fn, "dump");
+    sql_start_transaction();
+    sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore, unique(mid, tag) on conflict ignore)");
+    sql_simple("create table dump.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
+    // note: we only send "user generated" tags, and derive "_local" and _sent" on the remote side from the msg index
+    // its not clear i really even need to do this. also some tags are completely local, like "unviewed" and "remote" which we
+    // don't really want to send at all.
+    sql_simple("insert into dump.msg_tags2 select * from mt.msg_tags2 where tag = '_fav' or tag = '_hid' or tag = '_del'");
+    sql_simple("insert into dump.tomb select * from mt.tomb");
+    sql_commit_transaction();
+    sDb->detach("dump");
+    return fn.c_str();
+
+}
 
 static
 DwString
@@ -334,13 +331,12 @@ import_remote_mi(vc remote_uid)
         sql_simple("delete from mt.gmt where uid = ?1", huid);
 
         sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
+        // derive some tags from the msg_idx
+        sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_local', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx");
+        sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_sent', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'");
         sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
         sql_simple("delete from mt.gmt where guid in (select guid from fav2.tomb)");
         sql_simple("insert into mt.gtomb select guid, time from fav2.tomb");
-        // note: here is where we might want to setup local triggers to make updates
-        // to gi whenever there is a piecemeal update to a remote index.
-        // note: if we setup triggers, we can't detach the database below, but we end up
-        // running into the attached database limit (10 by default, 125 hard max).
         sql_commit_transaction();
     }
     catch(...)

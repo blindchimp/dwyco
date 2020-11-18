@@ -67,13 +67,13 @@ string_to_file(vc str, DwString fn)
 vc
 MMChannel::package_index()
 {
+    vc fn = sql_dump_mi();
+    vc fn2 = sql_dump_mt();
 
-    // to make things easy for testing, we'll just package up the
-    // files directly. probably not the best idea, but ok for now.
     vc cmd(VC_VECTOR);
     cmd[0] = "idx";
-    cmd[1] = file_to_string(newfn("mi.sql"));
-    cmd[2] = file_to_string(newfn("fav.sql"));
+    cmd[1] = file_to_string((const char *)fn);
+    cmd[2] = file_to_string((const char *)fn2);
 
     return cmd;
 }
