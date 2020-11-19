@@ -108,7 +108,7 @@ QMsgSql::init_schema_fav()
         sql_simple("drop table if exists mt.taglog");
         sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid) on conflict ignore)");
         sql_simple("drop table if exists mt.gmt");
-        sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid) on conflict ignore)");
+        sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid, guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gmti1 on gmt(guid)");
         sql_simple("create index if not exists mt.gmti2 on gmt(mid)");
         sql_simple("create index if not exists mt.gmti3 on gmt(tag)");
@@ -177,14 +177,9 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists gidate_idx on gi(date desc);");
     sql_simple("create index if not exists gisent_idx on gi(is_sent);");
     sql_simple("create index if not exists giatt_idx on gi(has_attachment);");
-    sql_simple("drop table if exists gmt");
-
 
     sql_simple("drop table if exists midlog");
-    sql_simple("drop table if exists taglog");
     sql_simple("create table midlog (mid text not null, to_uid text not null, unique(mid,to_uid) on conflict ignore)");
-    sql_simple("drop table if exists sent_downstream");
-    sql_simple("drop table if exists sent_downstream_tag");
     }
     else if(schema_name.eq("mt"))
 	{
@@ -371,11 +366,6 @@ import_remote_iupdate(vc remote_uid, vc vals)
         sql_bulk_query(&a);
 
         sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
-        //sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", huid);
-        // note: here is where we might want to setup local triggers to make updates
-        // to gi whenever there is a piecemeal update to a remote index.
-        // note: if we setup triggers, we can't detach the database below, but we end up
-        // running into the attached database limit (10 by default, 125 hard max).
         sql_commit_transaction();
     }
     catch(...)
@@ -413,11 +403,6 @@ import_remote_tupdate(vc remote_uid, vc vals)
         sql_bulk_query(&a);
 
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2 where mid = ?2", huid, vals[0]);
-        //sql_simple("insert into gmt select *, ?1 from fav2.msg_tags2", huid);
-        // note: here is where we might want to setup local triggers to make updates
-        // to gi whenever there is a piecemeal update to a remote index.
-        // note: if we setup triggers, we can't detach the database below, but we end up
-        // running into the attached database limit (10 by default, 125 hard max).
         }
         else if (op == vc("d"))
         {
@@ -460,12 +445,14 @@ init_qmsg_sql()
 
     sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from mt.msg_tags2 where not exists (select 1 from mt.tomb where guid = msg_tags2.guid)", hmyuid);
     sql_simple("insert into mt.gtomb select guid, time from mt.tomb");
+
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
     sql_simple("create temp trigger rescan1 after delete on mt.msg_tags2 begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan2 after insert on mt.msg_tags2 begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
+
     sql_simple("drop table if exists current_clients");
     sql_simple("create table current_clients(uid text collate nocase unique on conflict ignore not null on conflict fail)");
 

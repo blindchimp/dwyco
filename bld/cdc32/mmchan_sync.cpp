@@ -93,6 +93,7 @@ MMChannel::unpack_index(vc cmd)
 {
     if(cmd[0] != vc("idx"))
         return;
+    GRTLOG("unpack from %s", (const char *)to_hex(remote_uid()), 0);
     DwString mifn("mi%1.sql");
     DwString favfn("fav%1.sql");
 
@@ -279,6 +280,7 @@ MMChannel::cleanup_pulls(int myid)
 void
 MMChannel::mms_sync_state_changed(enum syncstate s)
 {
+    GRTLOG("mms state to %s %d", (const char *)to_hex(remote_uid()), s);
     if(s == NORMAL_SEND)
     {
         sql_run_sql("insert into current_clients values(?1)", to_hex(remote_uid()));
@@ -292,6 +294,7 @@ MMChannel::mms_sync_state_changed(enum syncstate s)
 void
 MMChannel::mmr_sync_state_changed(enum syncstate s)
 {
+    GRTLOG("mmr state to %s %d", (const char *)to_hex(remote_uid()), s);
     if(s == NORMAL_RECV)
     {
         sql_run_sql("insert into current_clients values(?1)", to_hex(remote_uid()));
