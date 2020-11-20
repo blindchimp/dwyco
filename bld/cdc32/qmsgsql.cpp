@@ -116,6 +116,10 @@ QMsgSql::init_schema_fav()
         sql_simple("create table mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
         sql_simple("create table if not exists mt.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
+        sql_simple("create temp table crdt_tags(tag text not null)");
+        sql_simple("insert into crdt_tags values('_fav')");
+        sql_simple("insert into crdt_tags values('_hid')");
+
         commit_transaction();
     } catch(...) {
         rollback_transaction();
@@ -365,7 +369,10 @@ import_remote_iupdate(vc remote_uid, vc vals)
             a.append(vals[i]);
         sql_bulk_query(&a);
 
-        sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
+        sql_simple("insert or ignore into main.gi select *, 1, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
+        // note: we could try to generate a _local and _sent tag here like we do on startup, but we don't have
+        // a guid. so we have to rely on getting a guid via a tag update. not sure i like this idea.
+
         sql_commit_transaction();
     }
     catch(...)
@@ -470,8 +477,8 @@ init_qmsg_sql()
     sql_simple("drop trigger if exists mt.dgmt");
     sql_simple(DwString("create trigger if not exists mt.xgmt after insert on msg_tags2 begin insert into gmt (mid, tag, time, uid, guid) values(new.mid, new.tag, new.time, '%1', new.guid); end").arg((const char *)hmyuid).c_str());
     sql_simple(DwString("create temp trigger if not exists dgmt after delete on mt.msg_tags2 begin "
-                        "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients; "
-                        "insert into tomb(guid, time) values(old.guid, strftime('%s', 'now')); "
+                        "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
+                        "insert into tomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
                         "delete from gmt where mid = old.mid and tag = old.tag and uid = '%1'; "
                         "end").arg((const char *)hmyuid).c_str());
 
