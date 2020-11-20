@@ -471,9 +471,8 @@ init_qmsg_sql()
     sql_simple(DwString("create trigger if not exists mt.xgmt after insert on msg_tags2 begin insert into gmt (mid, tag, time, uid, guid) values(new.mid, new.tag, new.time, '%1', new.guid); end").arg((const char *)hmyuid).c_str());
     sql_simple(DwString("create temp trigger if not exists dgmt after delete on mt.msg_tags2 begin "
                         "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients; "
-                        " insert into tomb(guid, time) values(old.guid, strftime('%s', 'now')); "
-                        " insert into tomb(guid, time) select guid, strftime('%s', 'now') from gmt where old.mid = mid and old.tag = tag;"
-                        "delete from gmt where mid = old.mid and tag = old.tag and time = old.time and uid = '%1'; "
+                        "insert into tomb(guid, time) values(old.guid, strftime('%s', 'now')); "
+                        "delete from gmt where mid = old.mid and tag = old.tag and uid = '%1'; "
                         "end").arg((const char *)hmyuid).c_str());
 
     sql_simple("create temp trigger ltog_tomb after insert on mt.tomb begin "
