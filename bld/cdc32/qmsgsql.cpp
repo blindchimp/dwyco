@@ -106,7 +106,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
         sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
-        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid) on conflict ignore)");
+        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
         sql_simple("drop table if exists mt.gmt");
         sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid, guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gmti1 on gmt(guid)");
@@ -131,6 +131,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 {
     if(schema_name.eq("main"))
     {
+    sql_simple("pragma recursive_triggers=1");
     // WARNING: the order and number of the fields in this table
     // is the same as the #defines for the msg index in
     // qmsg.h
@@ -469,7 +470,7 @@ init_qmsg_sql()
     sql_simple("create temp trigger if not exists tagupdate after insert on msg_tags2 begin insert into taglog (mid, tag, guid,to_uid,op) select new.mid, new.tag, new.guid, uid, 'a' from current_clients; end");
 
     // if there is a local tag in our tag database, note that in the global index
-    sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
+    //sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
 
     sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
