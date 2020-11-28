@@ -149,6 +149,7 @@ codec.cc \
 colcod.cc \
 coldec.cc \
 dchroma.cc \
+    pulls.cpp \
 qtab.cc \
 dwrate.cc \
 dwrtlog.cc \
@@ -266,6 +267,7 @@ aqext_android.cpp \
     aqkey.cpp
 
 HEADERS += \
+    pulls.h \
     simple_property.h \
     vccfg.h
 

@@ -393,6 +393,7 @@ using namespace Weak;
 #include "backsql.h"
 #include "grpmsg.h"
 #include "upnp.h"
+#include "pulls.h"
 
 using namespace dwyco;
 
@@ -6791,112 +6792,12 @@ dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int le
     return 1;
 }
 
-
-// this is a set of (mid, uid, inprogress-flag) records
-// the existence of a record means we have some idea that we can
-// obtain the mid from the associated uid. when we issue the pull
-// to that target uid, we set the in-progress flag.
-// if a pull is successful, all the records for that mid are deleted.
-//
-// note: we may want to put timeouts in here so that once something
-// is in progress, it times out if nothing happens for awhile.
-struct pulls
-{
-    pulls(vc mid, vc uid) {
-        this->mid = mid;
-        this->uid = uid;
-        in_progress = 0;
-        Qbm.add(this);
-    }
-    ~pulls() {
-        Qbm.del(this);
-    }
-
-    static DwQueryByMember<pulls> Qbm;
-
-    int uid_in_prog(const vc& uid, const int& inprog) {
-        if(this->uid == uid && in_progress == inprog)
-            return 1;
-        return 0;
-    }
-    vc mid;
-    vc uid;
-    int in_progress;
-};
-
-DwQueryByMember<pulls> pulls::Qbm;
-
-static
-void
-assert_pull(vc mid, vc uid)
-{
-    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
-    for(int i = 0; i < dm.num_elems(); ++i)
-    {
-        if(dm[i]->uid == uid)
-            return;
-    }
-    new pulls(mid, uid);
-}
-
-static
-void
-deassert_pull(vc mid)
-{
-    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
-    for(int i = 0; i < dm.num_elems(); ++i)
-        delete dm[i];
-}
-
-int
-is_asserted(vc mid)
-{
-    return pulls::Qbm.exists_by_member(mid, &pulls::mid);
-}
-
-int
-pull_in_progress(vc mid, vc uid)
-{
-    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
-    for(int i = 0; i < dm.num_elems(); ++i)
-    {
-        if(dm[i]->uid == uid && dm[i]->in_progress)
-            return 1;
-    }
-    return 0;
-}
-
 void
 pull_target_destroyed(vc uid)
 {
-    DwVecP<pulls> dm = pulls::Qbm.query_by_member(uid, &pulls::uid);
-    for(int i = 0; i < dm.num_elems(); ++i)
-        delete dm[i];
+    return pulls::deassert_by_uid(uid);
 }
 
-static
-void
-pull_failed(vc mid, vc uid)
-{
-    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
-    for(int i = 0; i < dm.num_elems(); ++i)
-    {
-        if(dm[i]->uid == uid)
-            dm[i]->in_progress = 0;
-    }
-}
-
-static
-void
-set_pull_in_progress(vc mid, vc uid)
-{
-    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
-    for(int i = 0; i < dm.num_elems(); ++i)
-    {
-        if(dm[i]->uid == uid)
-            dm[i]->in_progress = 1;
-    }
-}
 
 static
 vc
@@ -6920,9 +6821,9 @@ void
 pull_done_slot(vc mid, vc remote_uid, vc success)
 {
     if(success.is_nil())
-        pull_failed(mid, remote_uid);
+        pulls::pull_failed(mid, remote_uid);
     else
-        deassert_pull(mid);
+        pulls::deassert_pull(mid);
 }
 
 void start_stalled_pulls();
@@ -7054,7 +6955,7 @@ pull_msg(vc uid, vc msg_id)
     for(int i = 0; i < uids.num_elems(); ++i)
     {
         uids[i] = from_hex(uids[i]);
-        assert_pull(msg_id, uids[i]);
+        pulls::assert_pull(msg_id, uids[i]);
     }
 
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
@@ -7063,7 +6964,7 @@ pull_msg(vc uid, vc msg_id)
         MMCall *mmc = mmcl[i];
         if(uids.contains(mmc->uid))
         {
-            if(pull_in_progress(msg_id, mmc->uid))
+            if(pulls::pull_in_progress(msg_id, mmc->uid))
                 continue;
             // if there is an established call, just use that one and return.
             // this means we always try an established connection first.
@@ -7079,7 +6980,7 @@ pull_msg(vc uid, vc msg_id)
                         mc->pull_done.connect_ptrfun(pull_done_slot);
                         mc->signal_setup = 1;
                     }
-                    set_pull_in_progress(msg_id, mc->remote_uid());
+                    pulls::set_pull_in_progress(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id);
                     return;
                 }
@@ -7092,14 +6993,14 @@ pull_msg(vc uid, vc msg_id)
         MMChannel *mc;
         if((mc = MMChannel::channel_by_call_type(uids[i], "sync")))
         {
-            if(pull_in_progress(msg_id, mc->remote_uid()))
+            if(pulls::pull_in_progress(msg_id, mc->remote_uid()))
                 continue;
             if(!mc->signal_setup)
             {
                 mc->pull_done.connect_ptrfun(pull_done_slot);
                 mc->signal_setup = 1;
             }
-            set_pull_in_progress(msg_id, mc->remote_uid());
+            pulls::set_pull_in_progress(msg_id, mc->remote_uid());
             mc->send_pull(msg_id);
             // note: this probably needs a heuristic to either send
             // all pulls at once, or decide which one is most likely
