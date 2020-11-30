@@ -12,11 +12,24 @@
 #define DWQBM_H
 // this template allows you to enter a list of objects via add/del, and
 // issue simple queries on members of the objects.
-// project can be used to create a list containing copies of
-// the members from the template class.
 // this is useful for situations where you have a bunch of structs
 // that have a field (like an identifier), and you want to search for
 // the structs that have that identifier.
+//
+// "project" can be used to create a list containing copies of
+// the members from the template class.
+//
+// this class never "owns" the objects. it only uses pointers to the
+// objects. however, the U and V types need to be well behaved:
+// they need operator==, assignment.
+//
+// in your object's constructor, call "add(this)", and in the destructor, call
+// "del(this)".
+//
+// note: searches are linear, so this probably won't work too well if you have
+// 100's of objects extant. it wouldn't be hard to introduce indexing
+// and stuff, but for current use case, linear is fine.
+
 #include  "dwvec.h"
 #include  "dwvecp.h"
 #undef index

@@ -38,7 +38,9 @@ struct pulls
     static void deassert_by_uid(vc uid);
     static void pull_failed(vc mid, vc uid);
     static void set_pull_in_progress(vc mid, vc uid);
-
+    static int count() {
+        return Qbm.count();
+    }
 };
 
 }

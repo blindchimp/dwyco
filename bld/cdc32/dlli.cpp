@@ -6795,7 +6795,7 @@ dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int le
 void
 pull_target_destroyed(vc uid)
 {
-    return pulls::deassert_by_uid(uid);
+    pulls::deassert_by_uid(uid);
 }
 
 
@@ -6937,8 +6937,15 @@ start_stalled_pulls()
     }
 }
 
+// returns -1, then there is no place we know where we might find
+// the mid. this could change if we connect to a client in the
+// future that has the message.
+//
+// returns -2, we initiated at least 1 pull
+// returns -3, we didn't initiate any pulls, but it might be available somewhere
+//
 static
-void
+int
 pull_msg(vc uid, vc msg_id)
 {
     // here is where we look for where the msg might be available, and
@@ -6949,7 +6956,7 @@ pull_msg(vc uid, vc msg_id)
     if(uids.is_nil())
     {
         GRTLOG("cant find uid for mid %s", (const char *)msg_id, 0);
-        return;
+        return -1;
     }
 
     for(int i = 0; i < uids.num_elems(); ++i)
@@ -6982,7 +6989,7 @@ pull_msg(vc uid, vc msg_id)
                     }
                     pulls::set_pull_in_progress(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id);
-                    return;
+                    return -2;
                 }
             }
         }
@@ -7005,14 +7012,15 @@ pull_msg(vc uid, vc msg_id)
             // note: this probably needs a heuristic to either send
             // all pulls at once, or decide which one is most likely
             // to work. for now, we just do the first one.
-            return;
+            return -2;
         }
     }
+    return -3;
 }
 
 DWYCOEXPORT
 int
-dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
+dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
 {
     vc iuid = sql_get_uid_from_mid(msg_id);
     if(iuid.is_nil())
@@ -7038,8 +7046,8 @@ dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len
     }
     if(!sql_is_mid_local(msg_id))
     {
-        pull_msg(u, msg_id);
-        return 0;
+        int disposition = pull_msg(u, msg_id);
+        return disposition;
     }
 
     vc body = load_body_by_id(u, msg_id);
@@ -7052,6 +7060,16 @@ dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len
     ret[0] = body;
     *list_out = (DWYCO_SAVED_MSG_LIST)&ret;
     return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
+{
+    int ret = dwyco_get_saved_message2(list_out, uid, len_uid, msg_id);
+    if(ret == 1)
+        return 1;
+    return 0;
 }
 
 DWYCOEXPORT

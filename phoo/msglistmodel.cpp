@@ -1410,8 +1410,18 @@ msglist_raw::get_msg_text(int row) const
     if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_ASSOC_UID, buid))
         return "";
     buid = QByteArray::fromHex(buid);
-    if(!dwyco_get_saved_message(&sm, buid.constData(), buid.length(), mid.constData()))
-        return "";
+    int disp = dwyco_get_saved_message2(&sm, buid.constData(), buid.length(), mid.constData());
+    switch(disp)
+    {
+    case -1:
+        return "(unknown)";
+    case -2:
+        return "(fetching)";
+    case -3:
+        return "(waiting to fetch)";
+    case 0:
+        return "(failed)";
+    }
     simple_scoped qsm(sm);
 
     DWYCO_LIST ba = dwyco_get_body_array(qsm);
