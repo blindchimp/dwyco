@@ -50,6 +50,7 @@ public:
 
     template<typename U> DwVecP<T> query_by_member(const U& val, U T::*memberp);
     template<typename U> int exists_by_member(const U& val, U T::*memberp);
+    template<typename U> int count_by_member(const U& val, U T::*memberp);
     template<typename U> DwVec<U> project(U T::*memberp);
     int exists_by_fun(int (T::*memfun)(), int val);
     template<typename U, typename V> DwVecP<T> query_by_fun(const U& a1, const V& a2, int (T::*memfun)(const U&, const V&), int val);
@@ -86,6 +87,21 @@ DwQueryByMember<T>::query_by_member(const U& val, U T::* memberp)
     {
         if(objs[i]->*memberp == val)
             ret.append(objs[i]);
+    }
+    return ret;
+}
+
+template<class T>
+template<typename U>
+int
+DwQueryByMember<T>::count_by_member(const U& val, U T::* memberp)
+{
+    int n = objs.num_elems();
+    int ret = 0;
+    for(int i = 0; i < n; ++i)
+    {
+        if(objs[i]->*memberp == val)
+            ++ret;
     }
     return ret;
 }

@@ -7,12 +7,9 @@
 
 namespace dwyco {
 
-
 struct pulls
 {
-    pulls(vc mid, vc uid) {
-        this->mid = mid;
-        this->uid = uid;
+    pulls(const vc& mid, const vc& uid) : mid(mid), uid(uid) {
         in_progress = 0;
         Qbm.add(this);
     }
@@ -20,16 +17,12 @@ struct pulls
         Qbm.del(this);
     }
 
-    static DwQueryByMember<pulls> Qbm;
-
-    int uid_in_prog(const vc& uid, const int& inprog) {
-        if(this->uid == uid && in_progress == inprog)
-            return 1;
-        return 0;
-    }
     vc mid;
     vc uid;
     int in_progress;
+
+public:
+    static DwQueryByMember<pulls> Qbm;
 
     static void assert_pull(vc mid, vc uid);
     static void deassert_pull(vc mid);
@@ -41,6 +34,12 @@ struct pulls
     static int count() {
         return Qbm.count();
     }
+    int uid_in_prog(const vc& uid, const int& inprog) {
+        if(this->uid == uid && in_progress == inprog)
+            return 1;
+        return 0;
+    }
+
 };
 
 }

@@ -817,6 +817,14 @@ dwyco_debug_dump()
         a += "]";
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
     }
+    {
+        DwString a("pulls %1, inprog %2");
+        int pcnt = pulls::count();
+        int inpcnt = pulls::Qbm.count_by_member(1, &pulls::in_progress);
+        a.arg(DwString::fromInt(pcnt), DwString::fromInt(inpcnt));
+        (*dbg_msg_callback)(0, a.c_str(), 0, 0);
+    }
+
 }
 
 DWYCOEXPORT
@@ -2076,7 +2084,7 @@ dwyco_service_channels(int *spin_out)
         if(!been_here)
         {
             dump_timer.set_autoreload(1);
-            dump_timer.set_interval(15000);
+            dump_timer.set_interval(5000);
             dump_timer.reset();
             dump_timer.start();
             been_here = 1;
@@ -6826,7 +6834,53 @@ pull_done_slot(vc mid, vc remote_uid, vc success)
         pulls::deassert_pull(mid);
 }
 
-void start_stalled_pulls();
+namespace dwyco {
+void
+start_stalled_pulls()
+{
+    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    for(int i = 0; i < mmcl.num_elems(); ++i)
+    {
+        MMCall *mmc = mmcl[i];
+        if(mmc->established)
+        {
+            MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
+            if(mc)
+            {
+                DwVecP<pulls> stalled_pulls = pulls::Qbm.query_by_fun(mmc->uid, 0, &pulls::uid_in_prog, 1);
+                for(int i = 0; i < stalled_pulls.num_elems(); ++i)
+                {
+                    if(!mc->signal_setup)
+                    {
+                        mc->pull_done.connect_ptrfun(pull_done_slot);
+                        mc->signal_setup = 1;
+                    }
+                    stalled_pulls[i]->in_progress = 1;
+                    mc->send_pull(stalled_pulls[i]->mid);
+                }
+            }
+        }
+    }
+
+    ChanList cl = MMChannel::channels_by_call_type("sync");
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        MMChannel *mc = cl[i];
+        DwVecP<pulls> stalled_pulls = pulls::Qbm.query_by_fun(mc->remote_uid(), 0, &pulls::uid_in_prog, 1);
+
+        for(int i = 0; i < stalled_pulls.num_elems(); ++i)
+        {
+            if(!mc->signal_setup)
+            {
+                mc->pull_done.connect_ptrfun(pull_done_slot);
+                mc->signal_setup = 1;
+            }
+            stalled_pulls[i]->in_progress = 1;
+            mc->send_pull(stalled_pulls[i]->mid);
+        }
+    }
+}
+}
 
 static
 void
@@ -6889,52 +6943,6 @@ sync_call_setup()
             dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "sync", 4, 1);
     }
     start_stalled_pulls();
-}
-
-void
-start_stalled_pulls()
-{
-    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
-    for(int i = 0; i < mmcl.num_elems(); ++i)
-    {
-        MMCall *mmc = mmcl[i];
-        if(mmc->established)
-        {
-            MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
-            if(mc)
-            {
-                DwVecP<pulls> stalled_pulls = pulls::Qbm.query_by_fun(mmc->uid, 0, &pulls::uid_in_prog, 1);
-                for(int i = 0; i < stalled_pulls.num_elems(); ++i)
-                {
-                    if(!mc->signal_setup)
-                    {
-                        mc->pull_done.connect_ptrfun(pull_done_slot);
-                        mc->signal_setup = 1;
-                    }
-                    stalled_pulls[i]->in_progress = 1;
-                    mc->send_pull(stalled_pulls[i]->mid);
-                }
-            }
-        }
-    }
-
-    ChanList cl = MMChannel::channels_by_call_type("sync");
-    for(int i = 0; i < cl.num_elems(); ++i)
-    {
-        MMChannel *mc = cl[i];
-        DwVecP<pulls> stalled_pulls = pulls::Qbm.query_by_fun(mc->remote_uid(), 0, &pulls::uid_in_prog, 1);
-
-        for(int i = 0; i < stalled_pulls.num_elems(); ++i)
-        {
-            if(!mc->signal_setup)
-            {
-                mc->pull_done.connect_ptrfun(pull_done_slot);
-                mc->signal_setup = 1;
-            }
-            stalled_pulls[i]->in_progress = 1;
-            mc->send_pull(stalled_pulls[i]->mid);
-        }
-    }
 }
 
 // returns -1, then there is no place we know where we might find
