@@ -161,7 +161,7 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("drop table if exists gi");
     sql_simple("create table gi ("
                "date integer,"
-               "mid text primary key,"
+               "mid text not null,"
                "is_sent,"
                "is_forwarded,"
                "is_no_forward,"
@@ -174,7 +174,7 @@ QMsgSql::init_schema(const DwString& schema_name)
                "logical_clock,"
                "assoc_uid text not null,"
                "is_local,"
-               "from_client_uid not null)"
+               "from_client_uid not null, unique(mid, from_client_uid) on conflict replace)"
               );
 
     sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid);");
@@ -469,9 +469,6 @@ init_qmsg_sql()
     sql_simple("drop trigger if exists mt.tagupdate");
     sql_simple("create temp trigger if not exists tagupdate after insert on msg_tags2 begin insert into taglog (mid, tag, guid,to_uid,op) select new.mid, new.tag, new.guid, uid, 'a' from current_clients; end");
 
-    // if there is a local tag in our tag database, note that in the global index
-    //sql_simple("update gi set is_local = 1 where exists(select 1 from mt.msg_tags2 where gi.mid = mt.msg_tags2.mid and tag = '_local')");
-
     sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
     sql_simple("drop trigger if exists mt.xgmt");
@@ -566,7 +563,6 @@ sql_get_max_logical_clock()
 int
 sql_is_mid_local(vc mid)
 {
-    //vc res = sql_simple("select is_local from gi where mid = ?1", mid);
     vc res = sql_simple("select 1 from msg_idx where mid = ?1", mid);
     if(res.num_elems() == 0)
         return 0;
@@ -799,7 +795,7 @@ sql_load_index(vc uid, int max_count)
 {
     vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-           " from gi where assoc_uid = ?1 and not exists (select 1 from mt.gmt as tags where gi.mid = tags.mid and tag = '_del') order by logical_clock desc limit ?2",
+           " from gi where assoc_uid = ?1 and not exists (select 1 from mt.gmt as tags where gi.mid = tags.mid and tag = '_del') group by mid order by logical_clock desc limit ?2",
                         to_hex(uid), max_count);
     return res;
 }
@@ -808,7 +804,7 @@ static
 int
 sql_count_index(vc uid)
 {
-    vc res = sql_simple("select count(*) from gi where assoc_uid = ?1", to_hex(uid));
+    vc res = sql_simple("select count(distinct(mid)) from gi where assoc_uid = ?1", to_hex(uid));
     return (int)res[0][0];
 }
 
@@ -1147,7 +1143,7 @@ get_unfav_msgids(vc uid)
     {
         sql_start_transaction();
         vc res = sql_simple("select mid as foo from gi where assoc_uid = ?1 "
-                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav')",
+                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') group by mid",
                             to_hex(uid));
         sql_commit_transaction();
         int n = res.num_elems();
