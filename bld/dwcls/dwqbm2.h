@@ -60,7 +60,7 @@ public:
     void add(T *);
     void del(T *);
     void add_idx(I T::*memberp) {
-        auto b = new BagIdx;
+        auto b = new BagIdx(BagAssoc(), 101);
         idxs[0] = memberp;
         ibag[0] = b;
     }
