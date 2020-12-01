@@ -47,8 +47,11 @@ public:
     }
     int contains(const T&);
     int del(const T&);
+    int del_all(const T&);
     int find(const T&, T& out, T** wp = 0);
+    DwVec<T> find(const T&);
     virtual void add(const T&, T** wp = 0);
+    // warning, this replaces *all* existing keys
     int replace(const T&, T** wp = 0);
     void set_size(int);
     void clear();
@@ -140,6 +143,8 @@ DwBag<T>::add(const T& key, T **wp)
     ++count;
 }
 
+// warning: this version of replaces *all* the existing keys
+//
 template<class T>
 int
 DwBag<T>::replace(const T& key, T** wp)
@@ -148,6 +153,17 @@ DwBag<T>::replace(const T& key, T** wp)
     while(del(key))
         ret = 1;
     add(key, wp);
+    return ret;
+}
+
+
+template<class T>
+int
+DwBag<T>::del_all(const T& key)
+{
+    int ret = 0;
+    while(del(key))
+        ret = 1;
     return ret;
 }
 
@@ -187,6 +203,25 @@ DwBag<T>::find(const T& key, T& out, T **wp)
     if(!table[hval]->exists(key, out))
         return 0;
     return 1;
+}
+
+template<class T>
+DwVec<T>
+DwBag<T>::find(const T& key)
+{
+    unsigned long hval = ::hash(key) % table_size;
+    DwVec<T> ret;
+    if(table[hval] == 0)
+        return ret;
+    DwListA<T> *l = table[hval];
+    l->rewind();
+    while(!l->eol())
+    {
+        const T& d = l->peek_read();
+        if(d == key)
+            ret.append(d);
+    }
+    return ret;
 }
 
 template <class T> class DwSet;
