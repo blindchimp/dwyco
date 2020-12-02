@@ -39,31 +39,52 @@
 namespace dwyco
 {
 
+template<class UserClass, typename IndexKeyType, typename UserClass::MemberPtr>
+struct indexer
+{
+    typedef IndexKeyType UserClass::* mumble;
+
+    typedef DwAssocImp<UserClass *, IndexKeyType> BagAssoc;
+    typedef DwBag<BagAssoc> BagIdx;
+
+    BagIdx *b;
+    IndexKeyType UserClass::* memberp;
+
+    indexer() {
+        b = new BagIdx(BagAssoc(), 101);
+        memberp = UserClass::MemberPtr;
+    }
+
+    void index_obj(UserClass *a) {
+        b->add(BagAssoc(a, a->*memberp));
+    }
+
+    DwVecP<UserClass> find_objs(IndexKeyType k) {
+        DwVec<BagAssoc> lst = b->find(BagAssoc(0, k));
+        int n = lst.num_elems();
+        DwVecP<UserClass> ret;
+        for(int i = 0; i < n; ++i)
+        {
+            ret.append(lst[i].get_value());
+        }
+        return ret;
+    }
+
+
+
+};
+
 template<class T, class I>
 class DwQueryByMember2
 {
 public:
     DwQueryByMember2() : objs(0) {
-        for(int i = 0; i < 3; ++i)
-        {
-            idxs[i] = nullptr;
-            ibag[i] = nullptr;
-        }
     }
 
     DwTreeKaz<int, T*> objs;
-    I T::*idxs[3];
-    typedef DwBag<DwAssocImp<T*, I> > BagIdx;
-    typedef DwAssocImp<T*, I> BagAssoc;
-    BagIdx *ibag[3];
 
     void add(T *);
     void del(T *);
-    void add_idx(I T::*memberp) {
-        auto b = new BagIdx(BagAssoc(), 101);
-        idxs[0] = memberp;
-        ibag[0] = b;
-    }
 
     template<typename U> DwVecP<T> query_by_member(const U& val, U T::*memberp);
 #if 0
@@ -83,12 +104,6 @@ DwQueryByMember2<T, I>::add(T *a)
 {
     objs.add(a, 0);
     // do indexing here
-    for(int i = 0; i < 3; ++i)
-    {
-        if(idxs[i] == nullptr)
-            continue;
-        ibag[i]->add(BagAssoc(a, a->*idxs[i]));
-    }
 }
 
 template<class T, class I>
@@ -103,22 +118,6 @@ template<typename U>
 DwVecP<T>
 DwQueryByMember2<T, I>::query_by_member(const U& val, U T::* memberp)
 {
-    for(int i = 0; i < 3; ++i)
-    {
-        if(idxs[i] == nullptr)
-            continue;
-        if(idxs[i] == memberp)
-        {
-            DwVec<BagAssoc> lst = ibag[i]->find(BagAssoc(0, val));
-            int n = lst.num_elems();
-            DwVecP<T> ret;
-            for(int i = 0; i < n; ++i)
-            {
-                ret.append(lst[i].get_value());
-            }
-            return ret;
-        }
-    }
     DwTreeKazIter<int, T*> i(&objs);
     DwVecP<T> ret;
     for(;!i.eol(); i.forward())
