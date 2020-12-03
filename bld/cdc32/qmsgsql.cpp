@@ -203,7 +203,7 @@ sql_dump_mi()
     sql_start_transaction();
     sql_simple("create table dump.msg_idx ("
                "date integer,"
-               "mid text primary key,"
+               "mid,"
                "is_sent,"
                "is_forwarded,"
                "is_no_forward,"
@@ -216,7 +216,21 @@ sql_dump_mi()
                "logical_clock,"
                "assoc_uid text not null);"
               );
-    sql_simple("insert into dump.msg_idx select * from main.msg_idx");
+    sql_simple("insert into dump.msg_idx select "
+               "date,"
+               "mid,"
+               "is_sent,"
+               "is_forwarded,"
+               "is_no_forward,"
+               "is_file,"
+               "special_type,"
+               "has_attachment,"
+               "att_has_video,"
+               "att_has_audio,"
+               "att_is_short_video,"
+               "logical_clock,"
+               "assoc_uid"
+               " from main.gi");
     sql_commit_transaction();
     sDb->detach("dump");
     return fn.c_str();
