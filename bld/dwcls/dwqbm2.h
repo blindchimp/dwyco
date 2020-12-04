@@ -49,6 +49,7 @@ struct indexer
 
     typedef DwAssocImp<UserClass *, IndexKeyType> BagAssoc;
     typedef DwBag<BagAssoc> BagIdx;
+    typedef dwinternal_pos<BagAssoc> internal_idx_pos;
 
     BagIdx *b;
     IndexKeyType UserClass::* memberp;
@@ -58,11 +59,11 @@ struct indexer
         memberp = MemberPtr;
     }
 
-    void index_obj(UserClass *a) {
-        b->add(BagAssoc(a, a->*memberp));
+    internal_idx_pos index_obj(UserClass *a) {
+        return b->add2(BagAssoc(a, a->*memberp));
     }
-    void deindex_obj(UserClass *a) {
-        //b->add(BagAssoc(a, a->*memberp));
+    void deindex_obj(internal_idx_pos p) {
+        b->del2(p);
     }
 
     DwVecP<UserClass> find_objs(IndexKeyType k) {
@@ -84,14 +85,17 @@ template<class T, class K, K T::* MemberPtr>
 class DwQueryByMember2
 {
 public:
+
+    typedef dwinternal_pos<DwAssocImp<T *, K> > jesus_fuck_me;
+
     DwQueryByMember2() {
         idx = new indexer<T, K, MemberPtr>;
-        objs = new DwTreeKaz<int, T*>(0);
+        objs = new DwTreeKaz<dwinternal_pos<DwAssocImp<T *, K> >, T*>(0);
     }
     // note: since these objects are normally static, we don't bother
     // destructing them.
 
-    DwTreeKaz<int, T*> *objs;
+    DwTreeKaz<dwinternal_pos<DwAssocImp<T *, K> >, T*> *objs;
     indexer<T, K, MemberPtr> *idx;
 
     void add(T *);
@@ -114,11 +118,16 @@ template<class T, class K, K T::* memp>
 void
 DwQueryByMember2<T, K, memp>::add(T *a)
 {
-    objs->add(a, 0);
+
     // do indexing here
     if(memp == idx->memberp)
     {
-        idx->index_obj(a);
+        auto pos = idx->index_obj(a);
+        objs->add(a, pos);
+    }
+    else
+    {
+        objs->add(a, 0);
     }
 }
 
@@ -126,11 +135,17 @@ template<class T, class K, K T::* memp>
 void
 DwQueryByMember2<T, K, memp>::del(T *a)
 {
-    objs->del(a);
     if(memp == idx->memberp)
     {
-        idx->deindex_obj(a);
+        jesus_fuck_me jfm;
+        if(!objs->find(a, jfm))
+            oopanic("bad del");
+
+        idx->deindex_obj(jfm);
     }
+    if(!objs->del(a))
+        oopanic("qbm2 del fail");
+
 }
 
 template<class T, class K, K T::* memp>
@@ -142,7 +157,7 @@ DwQueryByMember2<T, K, memp>::query_by_member(const K& val, K T::* memberp)
         auto ret = idx->find_objs(val);
         return ret;
     }
-    DwTreeKazIter<int, T*> i(objs);
+    DwTreeKazIter<jesus_fuck_me, T*> i(objs);
     DwVecP<T> ret;
     for(;!i.eol(); i.forward())
     {
@@ -158,7 +173,7 @@ template<typename U>
 DwVecP<T>
 DwQueryByMember2<T, K, memp>::query_by_member(const U& val, U T::* memberp)
 {
-    DwTreeKazIter<int, T*> i(objs);
+    DwTreeKazIter<jesus_fuck_me, T*> i(objs);
     DwVecP<T> ret;
     for(;!i.eol(); i.forward())
     {

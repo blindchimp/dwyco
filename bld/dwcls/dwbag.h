@@ -20,6 +20,16 @@
 
 template <class T> class DwBagIter;
 
+// note: this is gross. this provides a way to
+// delete an item without searching for it first.
+// used for performance stuff, it is easy to create
+// dangling refs and other bad stuff using this.
+template<class T> struct dwinternal_pos {
+    dwinternal_pos(listelem<T> *p = 0, int i = -1) : pos(p), idx(i) {}
+    listelem<T> *pos;
+    int idx;
+};
+
 template<class T>
 class DwBag
 {
@@ -36,6 +46,7 @@ private:
     }
 
 public:
+
     DwBag(T def, int tabsize);
     DwBag(const DwBag&);
     virtual ~DwBag();
@@ -51,6 +62,8 @@ public:
     int find(const T&, T& out, T** wp = 0);
     DwVec<T> find(const T&);
     virtual void add(const T&, T** wp = 0);
+    dwinternal_pos<T> add2(const T&);
+    void del2(dwinternal_pos<T>);
     // warning, this replaces *all* existing keys
     int replace(const T&, T** wp = 0);
     void set_size(int);
@@ -141,6 +154,29 @@ DwBag<T>::add(const T& key, T **wp)
     init(hval);
     table[hval]->prepend(key);
     ++count;
+}
+
+template<class T>
+dwinternal_pos<T>
+DwBag<T>::add2(const T& key)
+{
+    unsigned long hval = ::hash(key) % table_size;
+    init(hval);
+    table[hval]->prepend(key);
+    table[hval]->rewind();
+    ++count;
+
+    return dwinternal_pos<T>(table[hval]->getpos(), hval);
+}
+
+template<class T>
+void
+DwBag<T>::del2(dwinternal_pos<T> p)
+{
+    table[p.idx]->setpos(p.pos);
+    table[p.idx]->remove();
+    count--;
+    return;
 }
 
 // warning: this version of replaces *all* the existing keys

@@ -6,6 +6,8 @@ CONFIG -= qt
 linux-*|macx-*: DEFINES += LINUX
 INCLUDEPATH += ../.. ../../../kazlib
 
+LIBS += /home/dwight/Downloads/libkazlib.a /home/dwight/Downloads/libdwcls.a
+
 SOURCES += \
     ../dwqbm2.cpp \
     ../../useful.cpp \
