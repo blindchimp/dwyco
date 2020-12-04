@@ -66,7 +66,7 @@ struct indexer
         b->del2(p);
     }
 
-    DwVecP<UserClass> find_objs(IndexKeyType k) {
+    DwVecP<UserClass> find_objs(const IndexKeyType &k) {
         DwVec<BagAssoc> lst = b->find(BagAssoc(0, k));
         int n = lst.num_elems();
         DwVecP<UserClass> ret;
@@ -75,6 +75,11 @@ struct indexer
             ret.append(lst[i].get_value());
         }
         return ret;
+    }
+    int count_objs(const IndexKeyType &k) {
+        DwVec<BagAssoc> lst = b->find(BagAssoc(0, k));
+        return lst.num_elems();
+
     }
 
 
@@ -103,6 +108,9 @@ public:
 
     template<typename U> DwVecP<T> query_by_member(const U& val, U T::*memberp);
     DwVecP<T> query_by_member(const K& val, K T::*memberp);
+
+    template<typename U> int count_by_member(const U& val, U T::*memberp);
+    int count_by_member(const K& val, K T::*memberp);
 #if 0
     template<typename U> int exists_by_member(const U& val, U T::*memberp);
     template<typename U> int count_by_member(const U& val, U T::*memberp);
@@ -184,23 +192,46 @@ DwQueryByMember2<T, K, memp>::query_by_member(const U& val, U T::* memberp)
     return ret;
 }
 
-#if 0
-
-template<class T>
-template<typename U>
+template<class T, class K, K T::* memp>
 int
-DwQueryByMember2<T>::count_by_member(const U& val, U T::* memberp)
+DwQueryByMember2<T, K, memp>::count_by_member(const K& val, K T::* memberp)
 {
-    int n = objs.num_elems();
-    int ret = 0;
-    for(int i = 0; i < n; ++i)
+    if(memp == memberp)
     {
-        if(objs[i]->*memberp == val)
-            ++ret;
+        auto cnt = idx->count_objs(val);
+        return cnt;
     }
-    return ret;
+    DwTreeKazIter<jesus_fuck_me, T*> i(objs);
+    int cnt = 0;
+    for(;!i.eol(); i.forward())
+    {
+        auto p = i.get().peek_key();
+        if(p->*memberp == val)
+            ++cnt;
+    }
+    return cnt;
 }
 
+template<class T, class K, K T::* memp>
+template<typename U>
+int
+DwQueryByMember2<T, K, memp>::count_by_member(const U& val, U T::* memberp)
+{
+    DwTreeKazIter<jesus_fuck_me, T*> i(objs);
+    int cnt = 0;
+    for(;!i.eol(); i.forward())
+    {
+        auto p = i.get().peek_key();
+        if(p->*memberp == val)
+            ++cnt;
+    }
+    return cnt;
+}
+
+
+
+
+#if 0
 template<class T>
 template<typename U>
 int
