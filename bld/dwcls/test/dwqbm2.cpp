@@ -31,7 +31,7 @@ struct foo
 
 };
 
-DwQueryByMember2<foo, DwString> qbm;
+DwQueryByMember2<foo, DwString, &foo::baz> qbm;
 
 void
 oopanic(const char *s)
@@ -50,7 +50,6 @@ main(int, char **)
     b.bar = 5;
 
 
-    qbm.add_idx(&foo::baz);
     qbm.add(&a);
     qbm.add(&b);
 
@@ -60,9 +59,9 @@ main(int, char **)
 
         printf("%d\n", ret.num_elems());
 
-//        ret = qbm.query_by_member(5, &foo::bar);
+        ret = qbm.query_by_member(5, &foo::bar);
 
-//        printf("%d\n", ret.num_elems());
+        printf("%d\n", ret.num_elems());
 
 //        ret = qbm.query_by_member(3, &foo::bar);
 
