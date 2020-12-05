@@ -45,8 +45,6 @@ namespace dwyco
 template<class UserClass, typename IndexKeyType, IndexKeyType UserClass::* MemberPtr>
 struct indexer
 {
-    typedef IndexKeyType UserClass::* mumble;
-
     typedef DwAssocImp<UserClass *, IndexKeyType> BagAssoc;
     typedef DwBag<BagAssoc> BagIdx;
     typedef dwinternal_pos<BagAssoc> internal_idx_pos;
@@ -86,7 +84,7 @@ struct indexer
 
 };
 
-template<class T, class K, K T::* MemberPtr>
+template<class T, class K = int, K T::* MemberPtr = nullptr>
 class DwQueryByMember2
 {
 public:
@@ -94,7 +92,10 @@ public:
     typedef dwinternal_pos<DwAssocImp<T *, K> > jesus_fuck_me;
 
     DwQueryByMember2() {
-        idx = new indexer<T, K, MemberPtr>;
+        if(MemberPtr != nullptr)
+            idx = new indexer<T, K, MemberPtr>;
+        else
+            idx = 0;
         objs = new DwTreeKaz<dwinternal_pos<DwAssocImp<T *, K> >, T*>(0);
     }
     // note: since these objects are normally static, we don't bother
@@ -128,7 +129,7 @@ DwQueryByMember2<T, K, memp>::add(T *a)
 {
 
     // do indexing here
-    if(memp == idx->memberp)
+    if(idx && memp == idx->memberp)
     {
         auto pos = idx->index_obj(a);
         objs->add(a, pos);
@@ -143,7 +144,7 @@ template<class T, class K, K T::* memp>
 void
 DwQueryByMember2<T, K, memp>::del(T *a)
 {
-    if(memp == idx->memberp)
+    if(idx && memp == idx->memberp)
     {
         jesus_fuck_me jfm;
         if(!objs->find(a, jfm))
@@ -160,7 +161,7 @@ template<class T, class K, K T::* memp>
 DwVecP<T>
 DwQueryByMember2<T, K, memp>::query_by_member(const K& val, K T::* memberp)
 {
-    if(memp == memberp)
+    if(idx && memp == memberp)
     {
         auto ret = idx->find_objs(val);
         return ret;
@@ -196,7 +197,7 @@ template<class T, class K, K T::* memp>
 int
 DwQueryByMember2<T, K, memp>::count_by_member(const K& val, K T::* memberp)
 {
-    if(memp == memberp)
+    if(idx && memp == memberp)
     {
         auto cnt = idx->count_objs(val);
         return cnt;
