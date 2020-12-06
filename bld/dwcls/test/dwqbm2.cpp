@@ -31,10 +31,10 @@ struct foo
 
 };
 
-DwQueryByMember2<foo, DwString, &foo::baz> qbm;
+DwQueryByMember2<foo, decltype(foo::baz), &foo::baz> qbm;
 
 void
-oopanic(const char *s)
+oopanic(const char *)
 {
     ::abort();
 }
@@ -65,6 +65,12 @@ main(int, char **)
         printf("%d\n", cnt);
 
         cnt = qbm.count_by_member(5, &foo::bar);
+        printf("%d\n", cnt);
+
+        cnt = qbm.exists_by_member(DwString("a"), &foo::baz);
+        printf("%d\n", cnt);
+
+        cnt = qbm.exists_by_member(5, &foo::bar);
         printf("%d\n", cnt);
 
 //        ret = qbm.query_by_member(3, &foo::bar);
