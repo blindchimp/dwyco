@@ -38,6 +38,7 @@
 #include "dwbag.h"
 
 #undef index
+#define DWQBM_W_IDX(nm, user_class, idx_member) dwyco::DwQueryByMember2<user_class, decltype(user_classs::idx_member), &user_class::idx_member> nm
 
 namespace dwyco
 {
@@ -77,9 +78,12 @@ struct indexer
         return ret;
     }
     int count_objs(const IndexKeyType &k) {
-        DwVec<BagAssoc> lst = b->find(BagAssoc(0, k));
-        return lst.num_elems();
+        auto cnt = b->count_keys(BagAssoc(0, k));
+        return cnt;
 
+    }
+    int exists_objs(const IndexKeyType &k) {
+        return b->contains(BagAssoc(0, k));
     }
 
 
@@ -111,13 +115,16 @@ public:
 
     template<typename U> int count_by_member(const U& val, U T::*memberp);
     int count_by_member(const K& val, K T::*memberp);
-#if 0
+
     template<typename U> int exists_by_member(const U& val, U T::*memberp);
-    template<typename U> int count_by_member(const U& val, U T::*memberp);
+    int exists_by_member(const K& val, K T::*memberp);
+
+    int count() {return objs->num_elems();}
+
+#if 0
     template<typename U> DwVec<U> project(U T::*memberp);
     int exists_by_fun(int (T::*memfun)(), int val);
     template<typename U, typename V> DwVecP<T> query_by_fun(const U& a1, const V& a2, int (T::*memfun)(const U&, const V&), int val);
-    int count() {return objs.num_elems();}
 #endif
 
 };
@@ -228,23 +235,44 @@ DwQueryByMember2<T, K, memp>::count_by_member(const U& val, U T::* memberp)
     return cnt;
 }
 
-
-
-
-#if 0
-template<class T>
-template<typename U>
+template<class T, class K, K T::* memp>
 int
-DwQueryByMember2<T>::exists_by_member(const U& val, U T::* memberp)
+DwQueryByMember2<T, K, memp>::exists_by_member(const K& val, K T::* memberp)
 {
-    int n = objs.num_elems();
-    for(int i = 0; i < n; ++i)
+    if(memp == memberp)
     {
-        if(objs[i]->*memberp == val)
+        return idx->exists_objs(val);
+    }
+    DwTreeKazIter<jesus_fuck_me, T*> i(objs);
+    for(;!i.eol(); i.forward())
+    {
+        auto p = i.get().peek_key();
+        if(p->*memberp == val)
             return 1;
     }
     return 0;
 }
+
+template<class T, class K, K T::* memp>
+template<typename U>
+int
+DwQueryByMember2<T, K, memp>::exists_by_member(const U& val, U T::* memberp)
+{
+    DwTreeKazIter<jesus_fuck_me, T*> i(objs);
+    for(;!i.eol(); i.forward())
+    {
+        auto p = i.get().peek_key();
+        if(p->*memberp == val)
+            return 1;
+    }
+    return 0;
+}
+
+
+
+
+
+#if 0
 
 template<class T>
 template<typename U>

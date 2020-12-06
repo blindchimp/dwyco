@@ -64,6 +64,7 @@ public:
     virtual void add(const T&, T** wp = 0);
     dwinternal_pos<T> add2(const T&);
     void del2(dwinternal_pos<T>);
+    int count_keys(const T&);
     // warning, this replaces *all* existing keys
     int replace(const T&, T** wp = 0);
     void set_size(int);
@@ -258,6 +259,25 @@ DwBag<T>::find(const T& key)
             ret.append(d);
     }
     return ret;
+}
+
+template<class T>
+int
+DwBag<T>::count_keys(const T& key)
+{
+    unsigned long hval = ::hash(key) % table_size;
+    if(table[hval] == 0)
+        return 0;
+    DwListA<T> *l = table[hval];
+    l->rewind();
+    int cnt = 0;
+    while(!l->eol())
+    {
+        const T& d = l->peek_read();
+        if(d == key)
+            ++cnt;
+    }
+    return cnt;
 }
 
 template <class T> class DwSet;
