@@ -6847,7 +6847,7 @@ start_stalled_pulls()
             MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
             if(mc)
             {
-                DwVecP<pulls> stalled_pulls = pulls::Qbm.query_by_fun(mmc->uid, 0, &pulls::uid_in_prog, 1);
+                DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mmc->uid); //::Qbm.query_by_fun(mmc->uid, 0, &pulls::uid_in_prog, 1);
                 for(int i = 0; i < stalled_pulls.num_elems(); ++i)
                 {
                     if(!mc->signal_setup)
@@ -6855,7 +6855,7 @@ start_stalled_pulls()
                         mc->pull_done.connect_ptrfun(pull_done_slot);
                         mc->signal_setup = 1;
                     }
-                    stalled_pulls[i]->in_progress = 1;
+                    stalled_pulls[i]->set_in_progress(1);
                     mc->send_pull(stalled_pulls[i]->mid);
                 }
             }
@@ -6866,7 +6866,7 @@ start_stalled_pulls()
     for(int i = 0; i < cl.num_elems(); ++i)
     {
         MMChannel *mc = cl[i];
-        DwVecP<pulls> stalled_pulls = pulls::Qbm.query_by_fun(mc->remote_uid(), 0, &pulls::uid_in_prog, 1);
+        DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());//::Qbm.query_by_fun(mc->remote_uid(), 0, &pulls::uid_in_prog, 1);
 
         for(int i = 0; i < stalled_pulls.num_elems(); ++i)
         {
@@ -6875,7 +6875,7 @@ start_stalled_pulls()
                 mc->pull_done.connect_ptrfun(pull_done_slot);
                 mc->signal_setup = 1;
             }
-            stalled_pulls[i]->in_progress = 1;
+            stalled_pulls[i]->set_in_progress(1);
             mc->send_pull(stalled_pulls[i]->mid);
         }
     }

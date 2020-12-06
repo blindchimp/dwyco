@@ -22,7 +22,7 @@ public:
             value_changed.emit(val);
         }
     }
-    T get_val() {return val;}
+    T get_val() const {return val;}
     T operator=(const T& v) {
         set_val(v);
         return val;

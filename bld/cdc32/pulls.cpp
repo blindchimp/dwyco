@@ -9,7 +9,8 @@
 #include "pulls.h"
 namespace dwyco {
 
-DwQueryByMember<pulls> pulls::Qbm;
+DWQBM_W_IDX(pulls::Qbm, pulls, mid);
+DwTreeKaz<int, pulls *> pulls::inp_set(0);
 
 void
 pulls::assert_pull(vc mid, vc uid)
@@ -77,5 +78,19 @@ pulls::set_pull_in_progress(vc mid, vc uid)
         if(dm[i]->uid == uid)
             dm[i]->in_progress = 1;
     }
+}
+
+DwVecP<pulls>
+pulls::get_stalled_pulls(vc uid)
+{
+    DwTreeKazIter<int, pulls *> i(&inp_set);
+    DwVecP<pulls> ret;
+    for(;!i.eol(); i.forward())
+    {
+        auto p = i.get().get_key();
+        if(p->uid == uid)
+            ret.append(p);
+    }
+    return ret;
 }
 }

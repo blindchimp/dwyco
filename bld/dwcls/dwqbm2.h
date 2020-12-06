@@ -38,7 +38,7 @@
 #include "dwbag.h"
 
 #undef index
-#define DWQBM_W_IDX(nm, user_class, idx_member) dwyco::DwQueryByMember2<user_class, decltype(user_classs::idx_member), &user_class::idx_member> nm
+#define DWQBM_W_IDX(nm, user_class, idx_member) dwyco::DwQueryByMember2<user_class, decltype(user_class::idx_member), &user_class::idx_member> nm
 
 namespace dwyco
 {
