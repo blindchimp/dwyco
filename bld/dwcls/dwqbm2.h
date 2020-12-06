@@ -240,7 +240,7 @@ template<class T, class K, K T::* memp>
 int
 DwQueryByMember2<T, K, memp>::exists_by_member(const K& val, K T::* memberp)
 {
-    if(memp == memberp)
+    if(idx && memp == memberp)
     {
         return idx->exists_objs(val);
     }
