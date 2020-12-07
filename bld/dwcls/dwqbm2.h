@@ -10,28 +10,45 @@
 */
 #ifndef DWQBM2_H
 #define DWQBM2_H
+//
+// note: this is intended to be somewhat better performing class
+// than its predecessor, DwQueryByMember.
+// don't bother using DwQueryByMember2 if you only have 10 or 20 objects
+// extant at any given time. this class will be faster for 100 or 1000s
+// of objects, but it has significant overhead and some weird restrictions
+// (see below) that make it harder to use for anything but really simple classes.
+//
 // this template allows you to enter a list of objects via add/del, and
 // issue simple queries on members of the objects.
 // this is useful for situations where you have a bunch of structs
 // that have a field (like an identifier), and you want to search for
 // the structs that have that identifier.
 //
-// "project" can be used to create a list containing copies of
-// the members from the template class.
-//
 // this class never "owns" the objects. it only uses pointers to the
-// objects. however, the U and V types need to be well behaved:
-// they need operator==, assignment.
+// objects. however, the U and V types
+// need operator==. the K type needs operator== and assignment and
+// copy ctors if you are using indexing on a member of the U class.
+// the "indexer" template class is an internal class, but due to
+// vagaries of template expansion of nested subclasses, i couldn't
+// isolate it inside DwQueryByMember2 easily.
 //
 // in your object's constructor, call "add(this)", and in the destructor, call
-// "del(this)".
+// "del(this)". those are the only mods you need to the U class to be searched.
 //
-// NOTE: this indexing assumes you DO NOT CHANGE THE VALUE of the struct member
-// directly after creating the object.
-// this is simplified too: it allows you to specify a member in the template
-// arguments. this member is indexed, and the index is used for searching.
-// you can still use other members, they are not indexed, but are searched using
-// linear search.
+// NOTE: this indexing assumes you DO NOT CHANGE THE VALUE of the indexed
+// struct member (in type U) directly after creating the object. the indexing
+// is performed at "add" time, which means the member needs to be set
+// in the constructor (in most cases.) likewise, del is done assuming the value
+// of the member is intact so it can be unindexed. if you are calling del in a
+// destructor, make sure the del happens before you destroy the indexed member.
+//
+// the member to index is specified as a template argument.
+// the member is indexed, and the index is used for searching.
+// you can still search using other non-indexed members, but the search is linear.
+//
+// note: there is no destructor for this class right now. it is assumed
+// that it will be static most of the time, and short of leak checking this class
+// directly, destruction isn't too useful.
 
 #include "dwvecp.h"
 #include "dwtree2.h"
@@ -39,6 +56,9 @@
 
 #undef index
 #define DWQBM_W_IDX(nm, user_class, idx_member) dwyco::DwQueryByMember2<user_class, decltype(user_class::idx_member), &user_class::idx_member> nm
+// note: if you don't need an index, but have lots of objects to search, this can
+// be a little faster for object creation and deletion (but not for searching.)
+#define DWQBM_NO_IDX(nm, user_class) dwyco::DwQueryByMember2<user_class> nm
 
 namespace dwyco
 {
@@ -46,6 +66,12 @@ namespace dwyco
 template<class UserClass, typename IndexKeyType, IndexKeyType UserClass::* MemberPtr>
 struct indexer
 {
+private:
+    indexer& operator=(const indexer&);
+    indexer(const indexer&);
+    ~indexer();
+public:
+
     typedef DwAssocImp<UserClass *, IndexKeyType> BagAssoc;
     typedef DwBag<BagAssoc> BagIdx;
     typedef dwinternal_pos<BagAssoc> internal_idx_pos;
@@ -91,22 +117,27 @@ struct indexer
 template<class T, class K = int, K T::* MemberPtr = nullptr>
 class DwQueryByMember2
 {
-public:
-
+private:
+    DwQueryByMember2& operator=(const DwQueryByMember2&);
+    DwQueryByMember2(const DwQueryByMember2&);
     typedef dwinternal_pos<DwAssocImp<T *, K> > jesus_fuck_me;
+
+public:
 
     DwQueryByMember2() {
         if(MemberPtr != nullptr)
             idx = new indexer<T, K, MemberPtr>;
         else
             idx = 0;
-        objs = new DwTreeKaz<dwinternal_pos<DwAssocImp<T *, K> >, T*>(0);
+        objs = new DwTreeKaz<jesus_fuck_me, T*>(0);
     }
     // note: since these objects are normally static, we don't bother
     // destructing them.
-
-    DwTreeKaz<dwinternal_pos<DwAssocImp<T *, K> >, T*> *objs;
+private:
+    DwTreeKaz<jesus_fuck_me, T*> *objs;
     indexer<T, K, MemberPtr> *idx;
+
+public:
 
     void add(T *);
     void del(T *);
