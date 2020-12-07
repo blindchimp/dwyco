@@ -44,7 +44,7 @@ pulls::pull_in_progress(vc mid, vc uid)
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
     for(int i = 0; i < dm.num_elems(); ++i)
     {
-        if(dm[i]->uid == uid && dm[i]->in_progress)
+        if(dm[i]->uid == uid && dm[i]->m_in_progress)
             return 1;
     }
     return 0;
@@ -65,7 +65,7 @@ pulls::pull_failed(vc mid, vc uid)
     for(int i = 0; i < dm.num_elems(); ++i)
     {
         if(dm[i]->uid == uid)
-            dm[i]->in_progress = 0;
+            dm[i]->set_in_progress(0);
     }
 }
 
@@ -76,7 +76,7 @@ pulls::set_pull_in_progress(vc mid, vc uid)
     for(int i = 0; i < dm.num_elems(); ++i)
     {
         if(dm[i]->uid == uid)
-            dm[i]->in_progress = 1;
+            dm[i]->set_in_progress(1);
     }
 }
 

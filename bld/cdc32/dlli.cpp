@@ -820,7 +820,7 @@ dwyco_debug_dump()
     {
         DwString a("pulls %1, inprog %2");
         int pcnt = pulls::count();
-        int inpcnt = pulls::Qbm.count_by_member(1, &pulls::in_progress);
+        int inpcnt = pulls::inp_set.num_elems(); //pulls::Qbm.count_by_member(1, &pulls::in_progress);
         a.arg(DwString::fromInt(pcnt), DwString::fromInt(inpcnt));
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
     }
