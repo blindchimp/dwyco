@@ -1,4 +1,13 @@
+#ifdef _WIN32
+#ifdef _MSC_VER
+#include <direct.h>
+#endif
+#include <dos.h>
+#include <io.h>
+#include <fcntl.h>
+#else
 #include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -34,7 +43,7 @@ file_to_string(DwString fn)
     while(1)
     {
         char buf[32768];
-        ssize_t num = read(fd, buf, sizeof(buf));
+        auto num = read(fd, buf, sizeof(buf));
         if(num == -1)
         {
             close(fd);
