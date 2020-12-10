@@ -249,8 +249,13 @@ sql_dump_mt()
     // note: we only send "user generated" tags, and derive "_local" and _sent" on the remote side from the msg index
     // its not clear i really even need to do this. also some tags are completely local, like "unviewed" and "remote" which we
     // don't really want to send at all.
-    sql_simple("insert into dump.msg_tags2 select * from mt.msg_tags2 where tag = '_fav' or tag = '_hid' or tag = '_del'");
-    sql_simple("insert into dump.tomb select * from mt.tomb");
+    sql_simple("insert into dump.msg_tags2 select "
+               "mid, "
+               "tag, "
+               "time, "
+               "guid "
+               "from mt.gmt where tag = '_fav' or tag = '_hid' or tag = '_del'");
+    sql_simple("insert into dump.tomb select * from mt.gtomb");
     sql_commit_transaction();
     sDb->detach("dump");
     return fn.c_str();
