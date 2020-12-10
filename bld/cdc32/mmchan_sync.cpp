@@ -162,7 +162,7 @@ MMChannel::process_pull_resp(vc cmd)
     // local model (which automatically gets put into the global
     // model held here.)
     // WARNING: the uid here is the uid associated with the message
-    // we fetched, NOT the uid of whoever we sent the message to.
+    // we fetched, NOT the uid of the client that sent us the response.
 
     vc mid = cmd[1];
     vc uid = cmd[2];

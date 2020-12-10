@@ -421,15 +421,23 @@ import_remote_tupdate(vc remote_uid, vc vals)
         vc op = vals.remove_last();
         if(op == vc("a"))
         {
-        DwString sargs = make_sql_args(vals.num_elems());
-        VCArglist a;
-        a.set_size(vals.num_elems() + 1);
+            vc mid = vals[0];
+            vc tag = vals[1];
+            DwString sargs = make_sql_args(vals.num_elems());
+            VCArglist a;
+            a.set_size(vals.num_elems() + 1);
         a.append(DwString("insert or ignore into fav2.msg_tags2 values(%1)").arg(sargs).c_str());
         for(int i = 0; i < vals.num_elems(); ++i)
-            a.append(vals[i]);
-        sql_bulk_query(&a);
+                a.append(vals[i]);
+            sql_bulk_query(&a);
 
-        sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2 where mid = ?2", huid, vals[0]);
+            sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2 where mid = ?2", huid, mid);
+            if(tag == vc("_hid") || tag == vc("_fav"))
+            {
+                vc uid = sql_get_uid_from_mid(mid);
+                if(!uid.is_nil())
+                    se_emit_msg_tag_change(mid, from_hex(uid));
+            }
         }
         else if (op == vc("d"))
         {
@@ -441,6 +449,12 @@ import_remote_tupdate(vc remote_uid, vc vals)
             sql_simple("insert or ignore into fav2.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
             sql_simple("delete from fav2.msg_tags2 where mid = ?1 and tag = ?2", mid, tag);
             sql_simple("insert or ignore into mt.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
+            if(tag == vc("_hid") || tag == vc("_fav"))
+            {
+                vc uid = sql_get_uid_from_mid(mid);
+                if(!uid.is_nil())
+                    se_emit_msg_tag_change(mid, from_hex(uid));
+            }
         }
         else
             oopanic("bad tupdate");

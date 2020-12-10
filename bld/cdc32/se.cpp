@@ -151,11 +151,11 @@ se_emit_msg_pull_ok(vc mid, vc uid)
 }
 
 void
-se_emit_msg_tag_change(vc mid)
+se_emit_msg_tag_change(vc mid, vc uid)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_TAG_CHANGE;
-    v[1] = My_UID;
+    v[1] = uid;
     v[2] = mid;
     Se_q.append(v);
     GRTLOG("se_emit_msg_tag_change %s", (const char *)mid, 0);
