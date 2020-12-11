@@ -102,9 +102,9 @@ QMsgSql::init_schema_fav()
 {
     try {
         start_transaction();
-        sql_simple("create table if not exists mt.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore, unique(mid, tag) on conflict ignore)");
-        sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
-        sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
+        //sql_simple("create table if not exists mt.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore, unique(mid, tag) on conflict ignore)");
+        //sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
+        //sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
         sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
         sql_simple("drop table if exists mt.gmt");
@@ -119,7 +119,20 @@ QMsgSql::init_schema_fav()
         sql_simple("create temp table crdt_tags(tag text not null)");
         sql_simple("insert into crdt_tags values('_fav')");
         sql_simple("insert into crdt_tags values('_hid')");
-
+        vc v = sql_simple("pragma user_version");
+        if(v[0][0] == vczero)
+        {
+            sql_start_transaction();
+            sql_simple("create table if not exists mt.msg_tags2_new(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore)");
+            sql_simple("insert into mt.msg_tags2_new select * from mt.msg_tags2");
+            sql_simple("drop table mt.msg_tags2");
+            sql_simple("alter table mt.msg_tags2_new rename to msg_tags2");
+            sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
+            sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
+            sql_simple("create index if not exists mt.mt2_guid_idx on msg_tags2(guid)");
+            sql_simple("pragma user_version = 1");
+            sql_commit_transaction();
+        }
         commit_transaction();
     } catch(...) {
         rollback_transaction();
