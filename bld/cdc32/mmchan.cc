@@ -77,6 +77,7 @@
 #include "sha.h"
 #include "qdirth.h"
 #include "dwscoped.h"
+#include "dhgsetup.h"
 #ifdef _Windows
 //#include <winsock2.h>
 //#include <ws2tcpip.h>
@@ -1587,22 +1588,22 @@ MMChannel::local_media_setup_new()
 
         if(call_type == vc("sync"))
         {
-        // for now, just set up a sync channel for each connection, like media channels
-        // this is ok for testing, but probably needs more thought
-        if(!proxy_info.is_nil())
-            send_ctrl(aux_r);  // this prompts the callee to setup a channel to the proxy
-        msync_chan = -1;
-        if((ret = tube->gen_channel(proxy_info.is_nil() ? remote_listening_port() : (int)proxy_info[1], msync_chan)) == SSERR)
-        {
+            // for now, just set up a sync channel for each connection, like media channels
+            // this is ok for testing, but probably needs more thought
+            if(!proxy_info.is_nil())
+                send_ctrl(aux_r);  // this prompts the callee to setup a channel to the proxy
             msync_chan = -1;
-        }
-        else
-        {
-            msync_state = ret;
-            sproto *s = new sproto(msync_chan, media_x_setup, vp);
-            s->start();
-            simple_protos[msync_chan] = s;
-        }
+            if((ret = tube->gen_channel(proxy_info.is_nil() ? remote_listening_port() : (int)proxy_info[1], msync_chan)) == SSERR)
+            {
+                msync_chan = -1;
+            }
+            else
+            {
+                msync_state = ret;
+                sproto *s = new sproto(msync_chan, media_x_setup, vp);
+                s->start();
+                simple_protos[msync_chan] = s;
+            }
         }
 
     }
@@ -2778,6 +2779,33 @@ MMChannel::recv_config(vc cfg)
                 (int)m == 1)
         {
             user_control_chan = 1;
+            cfg.del("pw");
+            common_cfg.del("pw");
+            remote_cfg.del("pw");
+            finish_connection_new();
+            return;
+        }
+    }
+
+    {
+        // if the remote is requesting a user control channel
+        // ignore all the password and other settings and
+        // just create a clean channel
+        vc m;
+        vc r;
+        if(!remote_cfg.is_nil() && remote_call_type() == vc("sync"))
+        {
+            vc pw;
+            if(!cfg.find("pw", pw))
+            {
+                send_error("sync needs pw");
+                goto cleanup;
+            }
+            if(pw != Current_alternate->hash_key_material())
+            {
+                send_error("sync wrong group");
+                goto cleanup;
+            }
             cfg.del("pw");
             common_cfg.del("pw");
             remote_cfg.del("pw");

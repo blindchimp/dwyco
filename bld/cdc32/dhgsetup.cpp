@@ -18,8 +18,10 @@
 #include "vcudh.h"
 #include "dhgsetup.h"
 #include "simplesql.h"
+#include "sha3.h"
 
 using namespace dwyco;
+using namespace CryptoPP;
 
 struct DHG_sql : public SimpleSql
 {
@@ -172,6 +174,20 @@ DH_alternate::my_static_public()
     vc ret(VC_VECTOR);
     ret[DH_STATIC_PUBLIC] = DH_static[DH_STATIC_PUBLIC];
 
+    return ret;
+}
+
+vc
+DH_alternate::hash_key_material()
+{
+    SHA3_256 md;
+    SecByteBlock b(md.DigestSize());
+    vc s = DH_static[DH_STATIC_PUBLIC];
+    md.Update((const byte *)(const char *)s, s.len());
+    s = DH_static[DH_STATIC_PRIVATE];
+    md.Update((const byte *)(const char *)s, s.len());
+    md.Final(b);
+    vc ret(VC_BSTRING, (const char *)b.data(), (long)md.DigestSize());
     return ret;
 }
 

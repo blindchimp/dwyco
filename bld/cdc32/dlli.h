@@ -1237,7 +1237,7 @@ dwyco_connect_uid(const char *uid, int len_uid,
                   int send_video, int recv_video,
                   int send_audio, int recv_audio,
                   int private_chat, int public_chat,
-                  const char *pw,
+                  const char *pw, int len_pw,
                   const char *call_type, int len_call_type, int q_call);
 
 void DWYCOEXPORT

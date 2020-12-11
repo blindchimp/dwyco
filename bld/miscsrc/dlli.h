@@ -495,7 +495,13 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_CHAT_SERVER_LOGIN 31
 #define DWYCO_SE_CHAT_SERVER_LOGIN_FAILED 32
 
-#define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 33
+#define DWYCO_SE_GRP_JOIN_OK 33
+#define DWYCO_SE_GRP_JOIN_FAIL 34
+#define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 35
+
+// you get this message to indicate a message has content that is now locally accessible
+#define DWYCO_SE_MSG_PULL_OK 36
+#define DWYCO_SE_MSG_TAG_CHANGE 37
 
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -708,6 +714,9 @@ int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
 int DWYCOEXPORT dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
+// the return codes for this api give you a little more info about
+// the message disposition on remote clients
+int DWYCOEXPORT dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback cb, void *mdc_arg1,
         DwycoStatusCallback scb, void *scb_arg1);
 void DWYCOEXPORT dwyco_cancel_message_fetch(int fetch_id);
@@ -829,6 +838,9 @@ void DWYCOEXPORT dwyco_clear_pal_auths();
 int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *msg_id, int add_them);
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
+
+int DWYCOEXPORT dwyco_start_gj(const char *uid, int len_uid, const char *password);
+int DWYCOEXPORT dwyco_handle_join(const char *mid);
 
 int DWYCOEXPORT dwyco_is_ignored(const char *user_id, int len_uid);
 void DWYCOEXPORT dwyco_ignore(const char *user_id, int len_uid);
@@ -1058,6 +1070,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_MSG_IDX_ASSOC_UID "012"
 #define DWYCO_MSG_IDX_IS_DELIVERED "013"
 #define DWYCO_MSG_IDX_IS_VIEWED "014"
+#define DWYCO_MSG_IDX_IS_LOCAL "015"
 
 
 // DWYCO_QD_MSG_LIST, list of messages that are not sent yet.
@@ -1081,6 +1094,10 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_SPECIAL_TYPE_BACKUP 5
 #define DWYCO_SPECIAL_TYPE_DELIVERED 6
 #define DWYCO_SPECIAL_TYPE_VIEWED 7
+#define DWYCO_SPECIAL_TYPE_JOIN1 8
+#define DWYCO_SPECIAL_TYPE_JOIN2 9
+#define DWYCO_SPECIAL_TYPE_JOIN3 10
+#define DWYCO_SPECIAL_TYPE_JOIN4 11
 
 // the following id's show up in
 // the message summary field DWYCO_QMS_BODY_SPECIAL_TYPE,
@@ -1121,6 +1138,10 @@ int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char *
 // sending both.
 #define DWYCO_SUMMARY_DELIVERED 8
 #define DWYCO_SUMMARY_VIEWED 9
+#define DWYCO_SUMMARY_JOIN1 10
+#define DWYCO_SUMMARY_JOIN2 11
+#define DWYCO_SUMMARY_JOIN3 12
+#define DWYCO_SUMMARY_JOIN4 13
 
 int DWYCOEXPORT dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out, const char **msg_id_out, int *what_out);
 
@@ -1216,7 +1237,7 @@ dwyco_connect_uid(const char *uid, int len_uid,
                   int send_video, int recv_video,
                   int send_audio, int recv_audio,
                   int private_chat, int public_chat,
-                  const char *pw,
+                  const char *pw, int len_pw,
                   const char *call_type, int len_call_type, int q_call);
 
 void DWYCOEXPORT

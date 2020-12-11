@@ -3215,7 +3215,7 @@ dwyco_channel_stop_send_audio(int chan_id)
 
 DWYCOEXPORT
 int
-dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc, void *cdc_arg1, DwycoStatusCallback scb, void *scb_arg1, int send_video, int recv_video, int send_audio, int recv_audio, int private_chat, int public_chat, const char *pw, const char *call_type, int len_call_type, int q_call)
+dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc, void *cdc_arg1, DwycoStatusCallback scb, void *scb_arg1, int send_video, int recv_video, int send_audio, int recv_audio, int private_chat, int public_chat, const char *pw, int len_pw, const char *call_type, int len_call_type, int q_call)
 {
 
     update_activity();
@@ -3265,7 +3265,7 @@ dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc
     mmc->priv_chat = private_chat;
     mmc->pub_chat = public_chat;
     if(pw)
-        mmc->password = pw;
+        mmc->password = vc(VC_BSTRING, pw, len_pw);
     if(!q_call)
     {
         if(!mmc->start_call(Media_select))
@@ -6940,7 +6940,13 @@ sync_call_setup()
     for(int i = 0; i < call_uids.num_elems(); ++i)
     {
         if(call_uids[i] > My_UID)
-            dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "sync", 4, 1);
+        {
+            vc pw;
+            if(Current_alternate)
+                pw = Current_alternate->hash_key_material();
+            dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              (const char *)pw, pw.len(), "sync", 4, 1);
+        }
     }
     start_stalled_pulls();
 }

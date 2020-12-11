@@ -29,6 +29,9 @@ public:
     vc alt_name() {return alternate_name;}
     vc my_static();
     vc my_static_public();
+    // this is used as "password" to prove we have the
+    // private key.
+    vc hash_key_material();
 
     // inserts a new key into the database, which we
     // presumably got from another group member
@@ -40,6 +43,8 @@ public:
 
     // get all the key-pairs we have
     static vc get_all_keys();
+
+
 };
 
 extern DH_alternate *Current_alternate;
