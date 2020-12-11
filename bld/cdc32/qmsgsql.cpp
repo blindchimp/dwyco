@@ -439,8 +439,8 @@ import_remote_tupdate(vc remote_uid, vc vals)
             DwString sargs = make_sql_args(vals.num_elems());
             VCArglist a;
             a.set_size(vals.num_elems() + 1);
-        a.append(DwString("insert or ignore into fav2.msg_tags2 values(%1)").arg(sargs).c_str());
-        for(int i = 0; i < vals.num_elems(); ++i)
+            a.append(DwString("insert or ignore into fav2.msg_tags2 values(%1)").arg(sargs).c_str());
+            for(int i = 0; i < vals.num_elems(); ++i)
                 a.append(vals[i]);
             sql_bulk_query(&a);
 
@@ -1097,6 +1097,32 @@ sql_get_non_local_messages()
         sql_simple("drop table foo");
         sql_commit_transaction();
         return res;
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+        return vcnil;
+    }
+}
+
+// this gets a list of mids that we don't have, that look like they might
+// be available at the given uid. when we connect to this uid with a sync
+// channel, we can assert pulls to this uid if we are in "eager" sync mode.
+// XXX WARNING, UNTESTED
+vc
+sql_get_non_local_messages_at_uid(vc uid)
+{
+    vc huid = to_hex(uid);
+    try
+    {
+        sql_start_transaction();
+        sql_simple("create temp table foo as select mid from gmt where tag = '_local' and uid = ?1 "
+                   "and not exists (select 1 from msg_idx where gmt.mid = mid)", huid);
+        sql_simple("delete from foo where exists (select 1 from gmt where mid = foo.mid and tag = '_del')");
+        vc res = sql_simple("select * from foo");
+        sql_simple("drop table foo");
+        sql_commit_transaction();
+        return flatten(res);
     }
     catch (...)
     {
