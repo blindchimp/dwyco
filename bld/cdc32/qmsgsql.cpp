@@ -257,7 +257,7 @@ sql_dump_mt()
     fn = newfn(fn);
     sDb->attach(fn, "dump");
     sql_start_transaction();
-    sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore, unique(mid, tag) on conflict ignore)");
+    sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore)");
     sql_simple("create table dump.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
     // note: we only send "user generated" tags, and derive "_local" and _sent" on the remote side from the msg index
     // its not clear i really even need to do this. also some tags are completely local, like "unviewed" and "remote" which we
