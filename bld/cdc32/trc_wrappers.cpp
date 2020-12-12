@@ -119,7 +119,7 @@ DWYCOEXPORT int _real_dwyco_channel_send_video(int chan_id, int vid_dev);
 DWYCOEXPORT int _real_dwyco_channel_stop_send_video(int chan_id);
 DWYCOEXPORT int _real_dwyco_channel_send_audio(int chan_id, int aud_dev);
 DWYCOEXPORT int _real_dwyco_channel_stop_send_audio(int chan_id);
-DWYCOEXPORT int _real_dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc, void *cdc_arg1, DwycoStatusCallback scb, void *scb_arg1, int send_video, int recv_video, int send_audio, int recv_audio, int private_chat, int public_chat, const char *pw, const char *call_type, int len_call_type, int q_call);
+DWYCOEXPORT int _real_dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc, void *cdc_arg1, DwycoStatusCallback scb, void *scb_arg1, int send_video, int recv_video, int send_audio, int recv_audio, int private_chat, int public_chat, const char *pw, int len_pw, const char *call_type, int len_call_type, int q_call);
 DWYCOEXPORT int _real_dwyco_chan_to_call(int chan_id);
 DWYCOEXPORT int _real_dwyco_channel_streams(int chan_id, int *send_video_out, int *recv_video_out, int *send_audio_out, int *recv_audio_out, int *pubchat_out, int *privchat_out);
 DWYCOEXPORT int _real_dwyco_connect_msg_chan(const char *uid, int len_uid, DwycoCallDispositionCallback cdc, void *cdc_arg1, DwycoStatusCallback scb, void *scb_arg1);
@@ -210,11 +210,14 @@ DWYCOEXPORT int _real_dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const
 DWYCOEXPORT void _real_dwyco_get_qd_messages(DWYCO_QD_MSG_LIST *list_out, const char *uid, int len_uid);
 DWYCOEXPORT int _real_dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *pers_id, int len_pers_id);
 DWYCOEXPORT int _real_dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, int load_sent);
+DWYCOEXPORT int _real_dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
 DWYCOEXPORT int _real_dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
 DWYCOEXPORT int _real_dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_out);
+DWYCOEXPORT int _real_dwyco_start_gj(const char *uid, int len_uid, const char *password);
+DWYCOEXPORT int _real_dwyco_handle_join(const char *mid);
 DWYCOEXPORT int _real_dwyco_is_special_message(const char *msg_id, int *what_out);
 DWYCOEXPORT int _real_dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out, const char **dlv_mid_out, int *what_out);
 DWYCOEXPORT DWYCO_LIST _real_dwyco_get_body_text(DWYCO_SAVED_MSG_LIST m);
@@ -1730,7 +1733,7 @@ return(_ret);
 
 DWYCOEXPORT
 int
-dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc, void *cdc_arg1, DwycoStatusCallback scb, void *scb_arg1, int send_video, int recv_video, int send_audio, int recv_audio, int private_chat, int public_chat, const char *pw, const char *call_type, int len_call_type, int q_call)
+dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc, void *cdc_arg1, DwycoStatusCallback scb, void *scb_arg1, int send_video, int recv_video, int send_audio, int recv_audio, int private_chat, int public_chat, const char *pw, int len_pw, const char *call_type, int len_call_type, int q_call)
 {
 printfunname("dwyco_connect_uid");
 printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
@@ -1744,10 +1747,10 @@ printarg(" int ", "send_audio",send_audio);
 printarg(" int ", "recv_audio",recv_audio);
 printarg(" int ", "private_chat",private_chat);
 printarg(" int ", "public_chat",public_chat);
-printarg(" const char *", "pw",pw);
+printarg(" const char *", "pw",pw, " int ", "len_pw", len_pw);
 printarg(" const char *", "call_type",call_type, " int ", "len_call_type", len_call_type);
 printarg(" int ", "q_call",q_call);
-int _ret = _real_dwyco_connect_uid(uid,len_uid,cdc,cdc_arg1,scb,scb_arg1,send_video,recv_video,send_audio,recv_audio,private_chat,public_chat,pw,call_type,len_call_type,q_call);
+int _ret = _real_dwyco_connect_uid(uid,len_uid,cdc,cdc_arg1,scb,scb_arg1,send_video,recv_video,send_audio,recv_audio,private_chat,public_chat,pw,len_pw,call_type,len_call_type,q_call);
 printretval(_ret);
 return(_ret);
 }
@@ -2894,6 +2897,20 @@ return(_ret);
 
 DWYCOEXPORT
 int
+dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
+{
+printfunname("dwyco_get_saved_message2");
+printarg("DWYCO_SAVED_MSG_LIST *", "list_out",list_out);
+printarg(" const char *", "uid",uid, " int ", "len_uid", len_uid);
+printarg(" const char *", "msg_id",msg_id);
+int _ret = _real_dwyco_get_saved_message2(list_out,uid,len_uid,msg_id);
+printargout("DWYCO_SAVED_MSG_LIST *", "list_out",list_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
 dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
 {
 printfunname("dwyco_get_saved_message");
@@ -2955,6 +2972,29 @@ printarg(" const char **", "str_out",str_out);
 printarg(" int *", "len_out",len_out);
 int _ret = _real_dwyco_get_user_payload(ml,str_out,len_out);
 printargout(" const char **", "str_out",str_out, " int *", "len_out", len_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_start_gj(const char *uid, int len_uid, const char *password)
+{
+printfunname("dwyco_start_gj");
+printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
+printarg(" const char *", "password",password);
+int _ret = _real_dwyco_start_gj(uid,len_uid,password);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_handle_join(const char *mid)
+{
+printfunname("dwyco_handle_join");
+printarg("const char *", "mid",mid);
+int _ret = _real_dwyco_handle_join(mid);
 printretval(_ret);
 return(_ret);
 }

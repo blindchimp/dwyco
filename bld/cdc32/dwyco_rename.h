@@ -190,11 +190,14 @@
 #define dwyco_get_qd_messages _real_dwyco_get_qd_messages 
 #define dwyco_qd_message_to_body _real_dwyco_qd_message_to_body 
 #define dwyco_get_message_bodies _real_dwyco_get_message_bodies 
+#define dwyco_get_saved_message2 _real_dwyco_get_saved_message2 
 #define dwyco_get_saved_message _real_dwyco_get_saved_message 
 #define dwyco_get_unfetched_messages _real_dwyco_get_unfetched_messages 
 #define dwyco_get_unfetched_message _real_dwyco_get_unfetched_message 
 #define dwyco_is_special_message2 _real_dwyco_is_special_message2 
 #define dwyco_get_user_payload _real_dwyco_get_user_payload 
+#define dwyco_start_gj _real_dwyco_start_gj 
+#define dwyco_handle_join _real_dwyco_handle_join 
 #define dwyco_is_special_message _real_dwyco_is_special_message 
 #define dwyco_is_delivery_report _real_dwyco_is_delivery_report 
 #define dwyco_get_body_text _real_dwyco_get_body_text 
