@@ -931,7 +931,7 @@ create_date_index(vc uid)
     {
         sql_start_transaction();
         FindVec& fv = *find_to_vec(s.c_str());
-        int n = fv.num_elems();
+        auto n = fv.num_elems();
         for(i = 0; i < n; ++i)
         {
             WIN32_FIND_DATA &d = *fv[i];
@@ -1367,6 +1367,7 @@ sql_fav_remove_uid(vc uid)
     try
     {
         sql_start_transaction();
+        // find all crdt tags associated with all mids, and perform crdt related things for each mid
         sql_simple("delete from msg_tags2 where mid in (select mid from msg_idx where assoc_uid = ?1)",
                             to_hex(uid));
         sql_commit_transaction();
@@ -1383,6 +1384,7 @@ sql_fav_remove_mid(vc mid)
     try
     {
         sql_start_transaction();
+        // find all crdt tags, and perform crdt related things for each mid
         sql_simple("delete from msg_tags2 where mid = ?1", mid);
         sql_commit_transaction();
     }
@@ -1398,8 +1400,9 @@ sql_remove_mid_tag(vc mid, vc tag)
     try
     {
         sql_start_transaction();
+        // if the tag is a crdt tag, perform ops for that tag
         sql_simple("delete from msg_tags2 where mid = ?1 and tag = ?2", mid, tag);
-        import_global_tomb(mid, tag);
+        //import_global_tomb(mid, tag);
         sql_commit_transaction();
     }
     catch(...)

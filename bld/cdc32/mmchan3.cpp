@@ -427,7 +427,7 @@ int
 MMChannel::send_chunk(int subchan, sproto *p, const char *ev)
 {
     char buf[2048];
-    int len;
+    ssize_t len;
 
     if(read_fd == 0)
         return sproto::fail;
