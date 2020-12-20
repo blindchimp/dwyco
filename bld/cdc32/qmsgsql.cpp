@@ -102,37 +102,20 @@ QMsgSql::init_schema_fav()
 {
     try {
         start_transaction();
-        //sql_simple("create table if not exists mt.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore, unique(mid, tag) on conflict ignore)");
-        //sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
-        //sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
         sql_simple("drop table if exists mt.taglog");
         sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
-        sql_simple("drop table if exists mt.gmt");
-        sql_simple("create table mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid, guid) on conflict ignore)");
+        sql_simple("create table if not exists mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid, guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gmti1 on gmt(guid)");
         sql_simple("create index if not exists mt.gmti2 on gmt(mid)");
         sql_simple("create index if not exists mt.gmti3 on gmt(tag)");
-        sql_simple("drop table if exists mt.gtomb;");
-        sql_simple("create table mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
+        sql_simple("create index if not exists mt.gmti4 on gmt(uid)");
+        sql_simple("create table if not exists mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
-        sql_simple("create table if not exists mt.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
         sql_simple("create temp table crdt_tags(tag text not null)");
         sql_simple("insert into crdt_tags values('_fav')");
         sql_simple("insert into crdt_tags values('_hid')");
-        vc v = sql_simple("pragma user_version");
-        if(v[0][0] == vczero)
-        {
-            sql_start_transaction();
-            sql_simple("create table if not exists mt.msg_tags2_new(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore)");
-            sql_simple("insert into mt.msg_tags2_new select * from mt.msg_tags2");
-            sql_simple("drop table mt.msg_tags2");
-            sql_simple("alter table mt.msg_tags2_new rename to msg_tags2");
-            sql_simple("create index if not exists mt.mt2_mid_idx on msg_tags2(mid)");
-            sql_simple("create index if not exists mt.mt2_tag_idx on msg_tags2(tag)");
-            sql_simple("create index if not exists mt.mt2_guid_idx on msg_tags2(guid)");
-            sql_simple("pragma user_version = 1");
-            sql_commit_transaction();
-        }
+        //vc v = sql_simple("pragma user_version");
+        //if(v[0][0] == vczero)
         commit_transaction();
     } catch(...) {
         rollback_transaction();
@@ -303,7 +286,7 @@ package_downstream_sends(vc remote_uid)
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
         vc idxs = sql_simple("select msg_idx.* from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and midlog.to_uid = ?1", huid);
-        vc tags = sql_simple("select mt2.*,tl.op from mt.msg_tags2 as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a'", huid);
+        vc tags = sql_simple("select mt2.*,tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a'", huid);
         vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl where to_uid = ?1 and op = 'd'", huid);
         vc ret(VC_VECTOR);
         for(int i = 0; i < idxs.num_elems(); ++i)
@@ -367,8 +350,9 @@ import_remote_mi(vc remote_uid)
         sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_local', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx");
         sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_sent', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'");
         sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
-        sql_simple("delete from mt.gmt where guid in (select guid from fav2.tomb)");
+
         sql_simple("insert into mt.gtomb select guid, time from fav2.tomb");
+        sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         sql_commit_transaction();
     }
     catch(...)
@@ -461,7 +445,7 @@ import_remote_tupdate(vc remote_uid, vc vals)
             // taglog messages
             sql_simple("insert or ignore into fav2.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
             sql_simple("delete from fav2.msg_tags2 where mid = ?1 and tag = ?2", mid, tag);
-            sql_simple("insert or ignore into mt.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
+            sql_simple("insert or ignore into mt.gtomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
             if(tag == vc("_hid") || tag == vc("_fav"))
             {
                 vc uid = sql_get_uid_from_mid(mid);
@@ -497,13 +481,13 @@ init_qmsg_sql()
     // by default, our local index "local" is implied
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
 
-    sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from mt.msg_tags2 where not exists (select 1 from mt.tomb where guid = msg_tags2.guid)", hmyuid);
-    sql_simple("insert into mt.gtomb select guid, time from mt.tomb");
+    //sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from mt.msg_tags2 where not exists (select 1 from mt.tomb where guid = msg_tags2.guid)", hmyuid);
+    //sql_simple("insert into mt.gtomb select guid, time from mt.tomb");
 
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
-    sql_simple("create temp trigger rescan1 after delete on mt.msg_tags2 begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan2 after insert on mt.msg_tags2 begin update rescan set flag = 1; end");
+    //sql_simple("create temp trigger rescan1 after delete on mt.msg_tags2 begin update rescan set flag = 1; end");
+    //sql_simple("create temp trigger rescan2 after insert on mt.msg_tags2 begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
@@ -513,29 +497,28 @@ init_qmsg_sql()
     sql_simple("drop trigger if exists miupdate");
     sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid) select new.mid, uid from current_clients; end");
     sql_simple("drop trigger if exists mt.tagupdate");
-    sql_simple("create temp trigger if not exists tagupdate after insert on msg_tags2 begin insert into taglog (mid, tag, guid,to_uid,op) select new.mid, new.tag, new.guid, uid, 'a' from current_clients; end");
+    sql_simple("create temp trigger if not exists tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
+               "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag = '_fav' or new.tag = '_hid'; end");
 
     sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
     sql_simple("drop trigger if exists mt.xgmt");
     sql_simple("drop trigger if exists mt.dgmt");
-    sql_simple(DwString("create trigger if not exists mt.xgmt after insert on msg_tags2 begin insert into gmt (mid, tag, time, uid, guid) values(new.mid, new.tag, new.time, '%1', new.guid); end").arg((const char *)hmyuid).c_str());
-    sql_simple(DwString("create temp trigger if not exists dgmt after delete on mt.msg_tags2 begin "
+    //sql_simple(DwString("create trigger if not exists mt.xgmt after insert on msg_tags2 begin insert into gmt (mid, tag, time, uid, guid) values(new.mid, new.tag, new.time, '%1', new.guid); end").arg((const char *)hmyuid).c_str());
+    sql_simple(DwString("create temp trigger if not exists dgmt after delete on mt.gmt begin "
                         "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
-                        "insert into tomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
-                        "delete from gmt where mid = old.mid and tag = old.tag and uid = '%1'; "
+                        "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
+                        //"delete from gmt where mid = old.mid and tag = old.tag and uid = '%1'; "
                         "end").arg((const char *)hmyuid).c_str());
 
-    sql_simple("create temp trigger ltog_tomb after insert on mt.tomb begin "
-               " insert into gtomb(guid, time) values(new.guid, new.time);"
-               "end"
-               );
+//    sql_simple("create temp trigger ltog_tomb after insert on mt.tomb begin "
+//               " insert into gtomb(guid, time) values(new.guid, new.time);"
+//               "end"
+//               );
     sql_simple("create temp trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan9 after insert on mt.tomb begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan10 after delete on mt.tomb begin update rescan set flag = 1; end");
     sql_commit_transaction();
 
     // this is a hack for debugging, load existing data indexes. we expect we won't
@@ -1293,7 +1276,7 @@ sql_index_all()
     {
         sql_sync_off();
         sql_start_transaction();
-        sql_simple("delete from mt.msg_tags2 where tag = '_local' or tag = '_sent'");
+        sql_simple("delete from mt.gmt where (tag = '_local' or tag = '_sent') and uid = ?1", to_hex(My_UID));
         MsgFolders.foreach(vcnil, index_user);
         sql_commit_transaction();
     }
@@ -1311,8 +1294,8 @@ static
 void
 sql_insert_record_mt(vc mid, vc tag)
 {
-    sql_simple("replace into mt.msg_tags2 (mid, tag, time, guid) values(?1,?2,strftime('%s','now'), lower(hex(randomblob(10))))",
-               mid, tag);
+    sql_simple("replace into mt.gmt (mid, tag, time, guid, uid) values(?1,?2,strftime('%s','now'), lower(hex(randomblob(10))), ?3)",
+               mid, tag, to_hex(My_UID));
 }
 
 // this is needed in situations where a tag resides in the global
@@ -1351,7 +1334,7 @@ sql_remove_tag(vc tag)
     try
     {
         sql_start_transaction();
-        sql_simple("delete from msg_tags2 where tag = ?1", tag);
+        sql_simple("delete from gmt where tag = ?1", tag);
         sql_commit_transaction();
     }
     catch(...)
@@ -1368,7 +1351,7 @@ sql_fav_remove_uid(vc uid)
     {
         sql_start_transaction();
         // find all crdt tags associated with all mids, and perform crdt related things for each mid
-        sql_simple("delete from msg_tags2 where mid in (select mid from msg_idx where assoc_uid = ?1)",
+        sql_simple("delete from gmt where mid in (select dictinct(mid) from gi where assoc_uid = ?1)",
                             to_hex(uid));
         sql_commit_transaction();
     }
@@ -1385,7 +1368,7 @@ sql_fav_remove_mid(vc mid)
     {
         sql_start_transaction();
         // find all crdt tags, and perform crdt related things for each mid
-        sql_simple("delete from msg_tags2 where mid = ?1", mid);
+        sql_simple("delete from gmt where mid = ?1", mid);
         sql_commit_transaction();
     }
     catch(...)
@@ -1401,7 +1384,7 @@ sql_remove_mid_tag(vc mid, vc tag)
     {
         sql_start_transaction();
         // if the tag is a crdt tag, perform ops for that tag
-        sql_simple("delete from msg_tags2 where mid = ?1 and tag = ?2", mid, tag);
+        sql_simple("delete from gmt where mid = ?1 and tag = ?2", mid, tag);
         //import_global_tomb(mid, tag);
         sql_commit_transaction();
     }
@@ -1444,11 +1427,19 @@ sql_get_tagged_mids(vc tag)
     vc res;
     try
     {
-        res = sql_simple("select assoc_uid, mid from msg_tags2,msg_idx using(mid) where tag = ?1 order by logical_clock asc",
+        sql_start_transaction();
+        sql_simple("create temp table foo as select assoc_uid, mid from gmt,gi using(mid) where tag = ?1 "
+                         "group by mid "
+                         "order by logical_clock asc",
                          tag);
+        sql_simple("delete from foo where mid in (select mid from gmt where tag = '_del')");
+        res = sql_simple("select * from foo");
+        sql_simple("drop table foo");
+        sql_commit_transaction();
     }
     catch (...)
     {
+        sql_rollback_transaction();
         res = vc(VC_VECTOR);
     }
     return res;
@@ -1461,7 +1452,7 @@ sql_get_tagged_mids2(vc tag)
     vc res;
     try
     {
-        res = sql_simple("select distinct(mid) from msg_tags2 where tag = ?1",
+        res = sql_simple("select distinct(mid) from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid)",
                          tag);
     }
     catch (...)
@@ -1477,14 +1468,22 @@ sql_get_tagged_idx(vc tag)
     vc res;
     try
     {
-        res = sql_simple("select "
+        sql_start_transaction();
+        sql_simple("create temp table foo as select "
                  "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
                  "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-                 " from msg_tags2,msg_idx using(mid) where tag = ?1 order by logical_clock desc",
+                 " from gmt,gi using(mid) where tag = ?1 "
+                         "group by mid "
+                         "order by logical_clock desc",
                             tag);
+        sql_simple("delete from foo where mid in (select mid from gmt where tag = '_del')");
+        res = sql_simple("select * from foo");
+        sql_simple("drop table foo");
+        sql_commit_transaction();
     }
     catch (...)
     {
+        sql_rollback_transaction();
         res = vc(VC_VECTOR);
     }
     return res;
@@ -1544,8 +1543,8 @@ sql_uid_count_tag(vc uid, vc tag)
     int c = 0;
     try
     {
-        vc res = sql_simple("select count(*) from msg_tags2,msg_idx using(mid) where assoc_uid = ?1 and tag = ?2",
-        to_hex(uid), tag);
+        vc res = sql_simple("select count(distinct mid) from gmt,gi using(mid) where assoc_uid = ?1 and tag = ?2 ",
+                            to_hex(uid), tag);
         c = res[0][0];
     }
     catch(...)
@@ -1564,7 +1563,7 @@ sql_count_tag(vc tag)
     int c = 0;
     try
     {
-        vc res = sql_simple("select count(*) from msg_tags2 where tag = ?1", tag);
+        vc res = sql_simple("select count(distinct mid) from gmt where tag = ?1", tag);
         c = res[0][0];
     }
     catch(...)
