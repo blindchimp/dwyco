@@ -114,6 +114,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create temp table crdt_tags(tag text not null)");
         sql_simple("insert into crdt_tags values('_fav')");
         sql_simple("insert into crdt_tags values('_hid')");
+        sql_simple("insert into crdt_tags values('_del')");
         //vc v = sql_simple("pragma user_version");
         //if(v[0][0] == vczero)
         commit_transaction();
@@ -286,7 +287,7 @@ package_downstream_sends(vc remote_uid)
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
         vc idxs = sql_simple("select msg_idx.* from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and midlog.to_uid = ?1", huid);
-        vc tags = sql_simple("select mt2.*,tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a'", huid);
+        vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a'", huid);
         vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl where to_uid = ?1 and op = 'd'", huid);
         vc ret(VC_VECTOR);
         for(int i = 0; i < idxs.num_elems(); ++i)
@@ -498,7 +499,7 @@ init_qmsg_sql()
     sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid) select new.mid, uid from current_clients; end");
     sql_simple("drop trigger if exists mt.tagupdate");
     sql_simple("create temp trigger if not exists tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
-               "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag = '_fav' or new.tag = '_hid'; end");
+               "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
 
     sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
@@ -766,22 +767,14 @@ sql_clear_uid(vc uid)
     try
     {
         sql_start_transaction();
-        VCArglist a2;
-        a2.append("select mid from msg_idx where assoc_uid = ?1");
-        a2.append(to_hex(uid));
-        vc mids = sql_bulk_query(&a2);
-
-        VCArglist a;
-
-        a.append("delete from msg_idx where assoc_uid = ?1;");
-        a.append(to_hex(uid));
-        vc res = sql_bulk_query(&a);
-        if(res.is_nil())
-            throw -1;
-
+        vc huid = to_hex(uid);
+        vc mids = sql_simple("select distinct(mid) from gi where assoc_uid = ?1", huid);
+        sql_simple("delete from msg_idx where assoc_uid = ?1", huid);
+        // note: there is a trigger to delete msg_idx things
+        // this just gets all the stuff we don't have downloaded here
+        sql_simple("delete from gi where assoc_uid = ?1", huid);
         sql_commit_transaction();
         return mids;
-
     }
     catch(...)
     {
@@ -1298,21 +1291,6 @@ sql_insert_record_mt(vc mid, vc tag)
                mid, tag, to_hex(My_UID));
 }
 
-// this is needed in situations where a tag resides in the global
-// model, and we are deleting it locally. if the tag doesn't reside
-// locally, the triggers will not fire to create the right tombstones
-// because no records would be selected. maybe we should just operate on
-// the global model directly in this case, will have to think about it.
-// note: this kind of thing is probably an artifact of assigning guids
-// locally when we first set this up. if you assume a sterile starting place
-// the guids would evolve to be the same on each client more naturally.
-static
-void
-import_global_tomb(vc mid, vc tag)
-{
-    sql_simple("insert into tomb(guid, time) select guid, strftime('%s', 'now') from gmt where mid = ?1 and tag = ?2", mid, tag);
-}
-
 void
 sql_add_tag(vc mid, vc tag)
 {
@@ -1351,7 +1329,7 @@ sql_fav_remove_uid(vc uid)
     {
         sql_start_transaction();
         // find all crdt tags associated with all mids, and perform crdt related things for each mid
-        sql_simple("delete from gmt where mid in (select dictinct(mid) from gi where assoc_uid = ?1)",
+        sql_simple("delete from gmt where mid in (select distinct(mid) from gi where assoc_uid = ?1)",
                             to_hex(uid));
         sql_commit_transaction();
     }

@@ -2215,14 +2215,14 @@ remove_user_files(vc id, const char *pfx, int keep_folder)
 int
 remove_user(vc id, const char *pfx)
 {
-    remove_user_files(id, pfx, 0);
+
     // note: this removes pal auth stuff too
     vc uid = dir_to_uid((const char *)id);
     //always_vis_del(uid);
     // remove indexs so the msgs don't magically reappear
     sql_start_transaction();
     sql_fav_remove_uid(uid);
-    remove_msg_idx_uid(uid);
+    clear_msg_idx_uid(uid);
     DwString tag("_");
     tag += (const char *)to_hex(uid);
     vc mids = sql_get_tagged_mids2(tag.c_str());
@@ -2231,7 +2231,8 @@ remove_user(vc id, const char *pfx)
         sql_fav_remove_mid(mids[i][0]);
     }
     sql_commit_transaction();
-
+    // when we unindex everything successfully, remove the files
+    remove_user_files(id, pfx, 0);
     MsgFolders.del(uid);
     se_emit(SE_USER_REMOVE, uid);
     return 1;
@@ -2240,7 +2241,6 @@ remove_user(vc id, const char *pfx)
 int
 clear_user(vc id, const char *pfx)
 {
-    remove_user_files(id, pfx, 1);
     vc uid = dir_to_uid((const char *)id);
     sql_start_transaction();
     sql_fav_remove_uid(uid);
@@ -2253,6 +2253,7 @@ clear_user(vc id, const char *pfx)
         sql_fav_remove_mid(mids[i][0]);
     }
     sql_commit_transaction();
+    remove_user_files(id, pfx, 1);
     Rescan_msgs = 1;
     return 1;
 }
