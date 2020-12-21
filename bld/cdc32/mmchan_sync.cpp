@@ -102,11 +102,11 @@ MMChannel::unpack_index(vc cmd)
 {
     if(cmd[0] != vc("idx"))
         return;
-    GRTLOG("unpack from %s", (const char *)to_hex(remote_uid()), 0);
+    vc huid = to_hex(remote_uid());
+    GRTLOG("unpack from %s", (const char *)huid, 0);
     DwString mifn("mi%1.sql");
     DwString favfn("fav%1.sql");
 
-    vc huid = to_hex(remote_uid());
     mifn.arg((const char *)huid);
     favfn.arg((const char *)huid);
     mifn = newfn(mifn);

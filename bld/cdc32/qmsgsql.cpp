@@ -155,8 +155,8 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists sent_idx on msg_idx(is_sent);");
     sql_simple("create index if not exists att_idx on msg_idx(has_attachment);");
 
-    sql_simple("drop table if exists gi");
-    sql_simple("create table gi ("
+    //sql_simple("drop table if exists gi");
+    sql_simple("create table if not exists gi ("
                "date integer,"
                "mid text not null,"
                "is_sent,"
@@ -348,11 +348,13 @@ import_remote_mi(vc remote_uid)
 
         sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
         // derive some tags from the msg_idx
-        sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_local', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx");
-        sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_sent', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'");
-        sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
+        //sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_local', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx");
+        //sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_sent', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'");
+        sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx", huid);
+        sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'", huid);
 
         sql_simple("insert into mt.gtomb select guid, time from fav2.tomb");
+        sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2");
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         sql_commit_transaction();
     }
@@ -522,9 +524,9 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
     sql_commit_transaction();
 
+#if 0
     // this is a hack for debugging, load existing data indexes. we expect we won't
     // obliterate gi and gmt on each restart in the future
-
     FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
     for(int i = 0; i < fv->num_elems(); ++i)
     {
@@ -535,8 +537,8 @@ init_qmsg_sql()
         vc uid = from_hex(a.c_str());
         import_remote_mi(uid);
     }
-
     delete_findvec(fv);
+#endif
 }
 
 void
@@ -1363,7 +1365,6 @@ sql_remove_mid_tag(vc mid, vc tag)
         sql_start_transaction();
         // if the tag is a crdt tag, perform ops for that tag
         sql_simple("delete from gmt where mid = ?1 and tag = ?2", mid, tag);
-        //import_global_tomb(mid, tag);
         sql_commit_transaction();
     }
     catch(...)
