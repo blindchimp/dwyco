@@ -155,6 +155,11 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists sent_idx on msg_idx(is_sent);");
     sql_simple("create index if not exists att_idx on msg_idx(has_attachment);");
 
+    // note: mid's are unique identifiers, so it's meer existence here means it was
+    // deleted.
+    sql_simple("create table if not exists msg_tomb(mid text, time integer, unique(mid) on conflict replace");
+
+
     //sql_simple("drop table if exists gi");
     sql_simple("create table if not exists gi ("
                "date integer,"
@@ -181,7 +186,7 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists giatt_idx on gi(has_attachment);");
 
     sql_simple("drop table if exists midlog");
-    sql_simple("create table midlog (mid text not null, to_uid text not null, unique(mid,to_uid) on conflict ignore)");
+    sql_simple("create table midlog (mid text not null, to_uid text not null, op text not null, unique(mid,to_uid,op) on conflict ignore)");
     }
     else if(schema_name.eq("mt"))
 	{
@@ -286,7 +291,8 @@ package_downstream_sends(vc remote_uid)
         // containing both index and tag updates, then perform all of them
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
-        vc idxs = sql_simple("select msg_idx.* from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and midlog.to_uid = ?1", huid);
+        vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a'", huid);
+        vc mtombs = sql_simple("select mid, op from main.midlog where midlog.to_uid = ?1 and op = 'd'", huid);
         vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a'", huid);
         vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl where to_uid = ?1 and op = 'd'", huid);
         vc ret(VC_VECTOR);
@@ -295,6 +301,13 @@ package_downstream_sends(vc remote_uid)
             vc cmd(VC_VECTOR);
             cmd[0] = "iupdate";
             cmd[1] = idxs[i];
+            ret.append(cmd);
+        }
+        for(int i = 0; i < mtombs.num_elems(); ++i)
+        {
+            vc cmd(VC_VECTOR);
+            cmd[0] = "iupdate";
+            cmd[1] = mtombs[i];
             ret.append(cmd);
         }
         sql_simple("delete from midlog where to_uid = ?1", huid);
@@ -381,18 +394,29 @@ import_remote_iupdate(vc remote_uid, vc vals)
     try
     {
         sql_start_transaction();
-        DwString sargs = make_sql_args(vals.num_elems());
-        VCArglist a;
-        a.set_size(vals.num_elems() + 1);
-        a.append(DwString("insert or ignore into mi2.msg_idx values(%1)").arg(sargs).c_str());
-        for(int i = 0; i < vals.num_elems(); ++i)
-            a.append(vals[i]);
-        sql_bulk_query(&a);
 
-        sql_simple("insert or ignore into main.gi select *, 1, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
-        // note: we could try to generate a _local and _sent tag here like we do on startup, but we don't have
-        // a guid. so we have to rely on getting a guid via a tag update. not sure i like this idea.
+        vc op = vals.remove_last();
+        if(op == vc("a"))
+        {
+            DwString sargs = make_sql_args(vals.num_elems());
+            VCArglist a;
+            a.set_size(vals.num_elems() + 1);
+            a.append(DwString("insert or ignore into mi2.msg_idx values(%1)").arg(sargs).c_str());
+            for(int i = 0; i < vals.num_elems(); ++i)
+                a.append(vals[i]);
+            sql_bulk_query(&a);
 
+            sql_simple("insert or ignore into main.gi select *, 1, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
+            // note: we could try to generate a _local and _sent tag here like we do on startup, but we don't have
+            // a guid. so we have to rely on getting a guid via a tag update. not sure i like this idea.
+        }
+        else if(op == vc("d"))
+        {
+            vc mid = vals[0];
+            sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
+            sql_simple("delete from mi2.msg_idx where mid = ?1", mid);
+            sql_simple("delete from gi where mid = ?1", mid);
+        }
         sql_commit_transaction();
     }
     catch(...)
@@ -484,13 +508,8 @@ init_qmsg_sql()
     // by default, our local index "local" is implied
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
 
-    //sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from mt.msg_tags2 where not exists (select 1 from mt.tomb where guid = msg_tags2.guid)", hmyuid);
-    //sql_simple("insert into mt.gtomb select guid, time from mt.tomb");
-
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
-    //sql_simple("create temp trigger rescan1 after delete on mt.msg_tags2 begin update rescan set flag = 1; end");
-    //sql_simple("create temp trigger rescan2 after insert on mt.msg_tags2 begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
@@ -498,26 +517,25 @@ init_qmsg_sql()
     sql_simple("create table current_clients(uid text collate nocase unique on conflict ignore not null on conflict fail)");
 
     sql_simple("drop trigger if exists miupdate");
-    sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid) select new.mid, uid from current_clients; end");
+    sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid,op) select new.mid, uid, 'a' from current_clients; end");
     sql_simple("drop trigger if exists mt.tagupdate");
     sql_simple("create temp trigger if not exists tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
                "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
 
     sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
-    sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin delete from gi where mid = old.mid; end");
+    sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin "
+               "delete from gi where mid = old.mid; "
+               "insert into msg_tomb (mid, time) values(old.mid, strftime('%s', 'now')); "
+               "insert into midlog (mid,to_uid,op) select old.mid, uid, 'd' from current_clients; "
+               "end");
     sql_simple("drop trigger if exists mt.xgmt");
     sql_simple("drop trigger if exists mt.dgmt");
-    //sql_simple(DwString("create trigger if not exists mt.xgmt after insert on msg_tags2 begin insert into gmt (mid, tag, time, uid, guid) values(new.mid, new.tag, new.time, '%1', new.guid); end").arg((const char *)hmyuid).c_str());
+
     sql_simple(DwString("create temp trigger if not exists dgmt after delete on mt.gmt begin "
                         "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
                         "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
-                        //"delete from gmt where mid = old.mid and tag = old.tag and uid = '%1'; "
                         "end").arg((const char *)hmyuid).c_str());
 
-//    sql_simple("create temp trigger ltog_tomb after insert on mt.tomb begin "
-//               " insert into gtomb(guid, time) values(new.guid, new.time);"
-//               "end"
-//               );
     sql_simple("create temp trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
@@ -819,7 +837,7 @@ sql_load_index(vc uid, int max_count)
 {
     vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-           " from gi where assoc_uid = ?1 and not exists (select 1 from mt.gmt as tags where gi.mid = tags.mid and tag = '_del') group by mid order by logical_clock desc limit ?2",
+           " from gi where assoc_uid = ?1 and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
                         to_hex(uid), max_count);
     return res;
 }
@@ -1070,7 +1088,7 @@ sql_get_non_local_messages()
     {
         sql_start_transaction();
         sql_simple("create temp table foo as select mid, uid from gmt where tag = '_local' and not exists (select 1 from msg_idx where gmt.mid = mid)");
-        sql_simple("delete from foo where exists (select 1 from gmt where mid = foo.mid and uid = foo.uid and tag = '_del')");
+        sql_simple("delete from foo where exists (select 1 from msg_tomb where mid = foo.mid)");
         vc res = sql_simple("select * from foo");
         sql_simple("drop table foo");
         sql_commit_transaction();
@@ -1096,7 +1114,7 @@ sql_get_non_local_messages_at_uid(vc uid)
         sql_start_transaction();
         sql_simple("create temp table foo as select mid from gmt where tag = '_local' and uid = ?1 "
                    "and not exists (select 1 from msg_idx where gmt.mid = mid)", huid);
-        sql_simple("delete from foo where exists (select 1 from gmt where mid = foo.mid and tag = '_del')");
+        sql_simple("delete from foo where exists (select 1 from msg_tomb where mid = foo.mid)");
         vc res = sql_simple("select * from foo");
         sql_simple("drop table foo");
         sql_commit_transaction();
@@ -1411,7 +1429,7 @@ sql_get_tagged_mids(vc tag)
                          "group by mid "
                          "order by logical_clock asc",
                          tag);
-        sql_simple("delete from foo where mid in (select mid from gmt where tag = '_del')");
+        sql_simple("delete from foo where mid in (select mid from msg_tomb)");
         res = sql_simple("select * from foo");
         sql_simple("drop table foo");
         sql_commit_transaction();
@@ -1455,7 +1473,7 @@ sql_get_tagged_idx(vc tag)
                          "group by mid "
                          "order by logical_clock desc",
                             tag);
-        sql_simple("delete from foo where mid in (select mid from gmt where tag = '_del')");
+        sql_simple("delete from foo where mid in (select mid from msg_tomb)");
         res = sql_simple("select * from foo");
         sql_simple("drop table foo");
         sql_commit_transaction();
