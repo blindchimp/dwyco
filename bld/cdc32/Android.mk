@@ -165,7 +165,11 @@ aqext_android.cpp \
 backsql.cpp \
 upnp.cpp \
 simplesql.cpp \
-aqkey.cpp
+aqkey.cpp \
+pulls.cpp \
+dhgsetup.cpp \
+grpmsg.cpp \
+mmchan_sync.cpp
 
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls
