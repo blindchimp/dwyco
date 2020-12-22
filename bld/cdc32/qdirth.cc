@@ -538,7 +538,6 @@ dirth_send_addtag(vc uid, vc mid, vc tag, QckDone d)
     m[3] = tag;
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
-    sql_add_tag(mid, tag);
 }
 
 #if 0

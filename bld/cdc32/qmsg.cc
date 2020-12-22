@@ -2620,27 +2620,31 @@ delete_body3(vc user_id, vc msg_id, int inhibit_indexing)
     vc msg;
     if(load_info(msg, s.c_str(), 1))
     {
+        if(!inhibit_indexing)
+        {
+            sql_start_transaction();
+            remove_msg_idx(user_id, msg_id);
+            sql_fav_remove_mid(msg_id);
+            sql_commit_transaction();
+        }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s.c_str());
-        if(!inhibit_indexing)
-        {
-            remove_msg_idx(user_id, msg_id);
-            sql_fav_remove_mid(msg_id);
-        }
         return;
     }
     s2 += ".snt";
     if(load_info(msg, s2.c_str(), 1))
     {
+        if(!inhibit_indexing)
+        {
+            sql_start_transaction();
+            remove_msg_idx(user_id, msg_id);
+            sql_fav_remove_mid(msg_id);
+            sql_commit_transaction();
+        }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s2.c_str());
-        if(!inhibit_indexing)
-        {
-            remove_msg_idx(user_id, msg_id);
-            sql_fav_remove_mid(msg_id);
-        }
         return;
 
     }

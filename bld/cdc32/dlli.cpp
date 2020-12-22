@@ -6942,6 +6942,11 @@ sync_call_setup()
         if(call_uids[i] > My_UID)
         {
             vc pw;
+            // this is ok for testing, as it will keep us from
+            // screwing up and syncing with non-group members.
+            // but doesn't work otherwise, since a phony could
+            // connect normally and capture the hash, then present it
+            // to other group members to connect.
             if(Current_alternate)
                 pw = Current_alternate->hash_key_material();
             dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0,

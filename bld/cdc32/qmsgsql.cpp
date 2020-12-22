@@ -114,7 +114,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create temp table crdt_tags(tag text not null)");
         sql_simple("insert into crdt_tags values('_fav')");
         sql_simple("insert into crdt_tags values('_hid')");
-        sql_simple("insert into crdt_tags values('_del')");
+        //sql_simple("insert into crdt_tags values('_del')");
         //vc v = sql_simple("pragma user_version");
         //if(v[0][0] == vczero)
         commit_transaction();
@@ -157,7 +157,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 
     // note: mid's are unique identifiers, so it's meer existence here means it was
     // deleted.
-    sql_simple("create table if not exists msg_tomb(mid text, time integer, unique(mid) on conflict replace");
+    sql_simple("create table if not exists msg_tomb(mid text, time integer, unique(mid) on conflict replace)");
 
 
     //sql_simple("drop table if exists gi");
@@ -233,6 +233,9 @@ sql_dump_mi()
                "logical_clock,"
                "assoc_uid"
                " from main.gi");
+
+    sql_simple("create table dump.msg_tomb (mid, time)");
+    sql_simple("insert into dump.msg_tomb select * from main.msg_tomb");
     sql_commit_transaction();
     sDb->detach("dump");
     return fn.c_str();
@@ -256,7 +259,7 @@ sql_dump_mt()
                "tag, "
                "time, "
                "guid "
-               "from mt.gmt where tag = '_fav' or tag = '_hid' or tag = '_del'");
+               "from mt.gmt where tag = '_fav' or tag = '_hid'");
     sql_simple("insert into dump.tomb select * from mt.gtomb");
     sql_commit_transaction();
     sDb->detach("dump");
@@ -360,9 +363,9 @@ import_remote_mi(vc remote_uid)
         sql_simple("delete from mt.gmt where uid = ?1", huid);
 
         sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
+        sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
+        sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
         // derive some tags from the msg_idx
-        //sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_local', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx");
-        //sql_simple("insert into fav2.msg_tags2 (mid, tag, time, guid) select mid, '_sent', strftime('%s', 'now'), lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'");
         sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx", huid);
         sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'", huid);
 
@@ -510,6 +513,8 @@ init_qmsg_sql()
 
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
+    sql_simple("create temp trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan2 after delete on main.msg_tomb begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
@@ -523,6 +528,7 @@ init_qmsg_sql()
                "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
 
     sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
+    sql_simple("drop trigger if exists dgi");
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin "
                "delete from gi where mid = old.mid; "
                "insert into msg_tomb (mid, time) values(old.mid, strftime('%s', 'now')); "
