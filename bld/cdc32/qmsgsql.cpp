@@ -104,7 +104,14 @@ QMsgSql::init_schema_fav()
         start_transaction();
         sql_simple("drop table if exists mt.taglog");
         sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
-        sql_simple("create table if not exists mt.gmt(mid text, tag text, time integer, uid text, guid text not null collate nocase, unique(mid, tag, uid, guid) on conflict ignore)");
+        //sql_simple("drop table if exists mt.gmt");
+        sql_simple("create table if not exists mt.gmt("
+                   "mid text not null, "
+                   "tag text not null, "
+                   "time integer not null, "
+                   "uid text not null, "
+                   "guid text not null collate nocase, "
+                   "unique(mid, tag, uid, guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gmti1 on gmt(guid)");
         sql_simple("create index if not exists mt.gmti2 on gmt(mid)");
         sql_simple("create index if not exists mt.gmti3 on gmt(tag)");
@@ -359,6 +366,8 @@ import_remote_mi(vc remote_uid)
         {
             se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
         }
+        sql_simple("delete from crdt_tags");
+
         sql_simple("delete from main.gi where from_client_uid = ?1", huid);
         sql_simple("delete from mt.gmt where uid = ?1", huid);
 
@@ -366,12 +375,14 @@ import_remote_mi(vc remote_uid)
         sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
         sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
         // derive some tags from the msg_idx
-        sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx", huid);
-        sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'", huid);
+        sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx", huid);
+        sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'", huid);
 
-        sql_simple("insert into mt.gtomb select guid, time from fav2.tomb");
-        sql_simple("insert into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2");
+        sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
+        sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2");
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
+        sql_simple("insert into crdt_tags values('_fav')");
+        sql_simple("insert into crdt_tags values('_hid')");
         sql_commit_transaction();
     }
     catch(...)
@@ -410,8 +421,7 @@ import_remote_iupdate(vc remote_uid, vc vals)
             sql_bulk_query(&a);
 
             sql_simple("insert or ignore into main.gi select *, 1, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
-            // note: we could try to generate a _local and _sent tag here like we do on startup, but we don't have
-            // a guid. so we have to rely on getting a guid via a tag update. not sure i like this idea.
+
         }
         else if(op == vc("d"))
         {
