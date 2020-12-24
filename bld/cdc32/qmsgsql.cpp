@@ -266,7 +266,7 @@ sql_dump_mt()
                "tag, "
                "time, "
                "guid "
-               "from mt.gmt where tag = '_fav' or tag = '_hid'");
+               "from mt.gmt where tag in (select * from crdt_tags)");
     sql_simple("insert into dump.tomb select * from mt.gtomb");
     sql_commit_transaction();
     sDb->detach("dump");
@@ -408,7 +408,9 @@ import_remote_iupdate(vc remote_uid, vc vals)
     try
     {
         sql_start_transaction();
-
+        // this keeps us from bouncing it back to the client we just
+        // received this from
+        sql_simple("delete from current_clients where uid = ?1", huid);
         vc op = vals.remove_last();
         if(op == vc("a"))
         {
@@ -430,6 +432,7 @@ import_remote_iupdate(vc remote_uid, vc vals)
             sql_simple("delete from mi2.msg_idx where mid = ?1", mid);
             sql_simple("delete from gi where mid = ?1", mid);
         }
+        sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
     }
     catch(...)
@@ -454,6 +457,9 @@ import_remote_tupdate(vc remote_uid, vc vals)
     try
     {
         sql_start_transaction();
+        // this keeps us from bouncing it back to the client we just
+        // received this from
+        sql_simple("delete from current_clients where uid = ?1", huid);
 
         vc op = vals.remove_last();
         if(op == vc("a"))
@@ -495,6 +501,7 @@ import_remote_tupdate(vc remote_uid, vc vals)
         }
         else
             oopanic("bad tupdate");
+        sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
     }
     catch(...)
@@ -1442,6 +1449,7 @@ sql_get_tagged_mids(vc tag)
     {
         sql_start_transaction();
         sql_simple("create temp table foo as select assoc_uid, mid from gmt,gi using(mid) where tag = ?1 "
+                   "and not exists(select 1 from mt.gtomb where gmt.guid = guid) "
                          "group by mid "
                          "order by logical_clock asc",
                          tag);
@@ -1485,7 +1493,7 @@ sql_get_tagged_idx(vc tag)
         sql_simple("create temp table foo as select "
                  "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
                  "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-                 " from gmt,gi using(mid) where tag = ?1 "
+                 " from gmt,gi using(mid) where tag = ?1 and not exists(select 1 from mt.gtomb where guid = gmt.guid)"
                          "group by mid "
                          "order by logical_clock desc",
                             tag);
@@ -1556,7 +1564,7 @@ sql_uid_count_tag(vc uid, vc tag)
     int c = 0;
     try
     {
-        vc res = sql_simple("select count(distinct mid) from gmt,gi using(mid) where assoc_uid = ?1 and tag = ?2 ",
+        vc res = sql_simple("select count(distinct mid) from gmt,gi using(mid) where assoc_uid = ?1 and tag = ?2 and not exists (select 1 from gtomb where guid = gmt.guid)",
                             to_hex(uid), tag);
         c = res[0][0];
     }
@@ -1576,7 +1584,7 @@ sql_count_tag(vc tag)
     int c = 0;
     try
     {
-        vc res = sql_simple("select count(distinct mid) from gmt where tag = ?1", tag);
+        vc res = sql_simple("select count(distinct mid) from gmt where tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid)", tag);
         c = res[0][0];
     }
     catch(...)
