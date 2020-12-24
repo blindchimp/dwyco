@@ -379,7 +379,7 @@ import_remote_mi(vc remote_uid)
         sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'", huid);
 
         sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
-        sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2");
+        sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         sql_simple("insert into crdt_tags values('_fav')");
         sql_simple("insert into crdt_tags values('_hid')");
