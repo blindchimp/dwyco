@@ -528,6 +528,13 @@ init_qmsg_sql()
     // by default, our local index "local" is implied
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
 
+    // recreate local and sent tags (kinda of a hassle, may want to revisit this)
+    // note: tag triggers don't exist yet, so don't have to worry about them
+    sql_simple("delete from mt.gmt where uid = ?1", hmyuid);
+    sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx", hmyuid);
+    sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx where is_sent = 't'", hmyuid);
+
+
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
     sql_simple("create temp trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
