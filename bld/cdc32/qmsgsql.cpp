@@ -223,22 +223,13 @@ sql_dump_mi()
                "att_has_audio,"
                "att_is_short_video,"
                "logical_clock,"
-               "assoc_uid text not null);"
+               "assoc_uid text not null,"
+               "is_local, "
+               "from_client_uid "
+               ");"
               );
     sql_simple("insert into dump.msg_idx select "
-               "date,"
-               "mid,"
-               "is_sent,"
-               "is_forwarded,"
-               "is_no_forward,"
-               "is_file,"
-               "special_type,"
-               "has_attachment,"
-               "att_has_video,"
-               "att_has_audio,"
-               "att_is_short_video,"
-               "logical_clock,"
-               "assoc_uid"
+               "*"
                " from main.gi");
 
     sql_simple("create table dump.msg_tomb (mid, time)");
@@ -371,12 +362,15 @@ import_remote_mi(vc remote_uid)
         sql_simple("delete from main.gi where from_client_uid = ?1", huid);
         sql_simple("delete from mt.gmt where uid = ?1", huid);
 
-        sql_simple("insert or ignore into main.gi select *, 0, ?1 from mi2.msg_idx", huid);
+        sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
         sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
         sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
-        // derive some tags from the msg_idx
-        sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx", huid);
-        sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't'", huid);
+
+        // derive some tags from the msg_idx, note we only create them for the
+        // client from which we got the index, even though we got their entire
+        // global list
+        sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where from_client_uid = ?1", huid);
+        sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't' and from_client_uid = ?1", huid);
 
         sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
@@ -414,15 +408,17 @@ import_remote_iupdate(vc remote_uid, vc vals)
         vc op = vals.remove_last();
         if(op == vc("a"))
         {
+            vals.append(0);
+            vals.append(huid);
             DwString sargs = make_sql_args(vals.num_elems());
             VCArglist a;
             a.set_size(vals.num_elems() + 1);
-            a.append(DwString("insert or ignore into mi2.msg_idx values(%1)").arg(sargs).c_str());
+            a.append(DwString("insert or ignore into main.gi values(%1)").arg(sargs).c_str());
             for(int i = 0; i < vals.num_elems(); ++i)
                 a.append(vals[i]);
             sql_bulk_query(&a);
 
-            sql_simple("insert or ignore into main.gi select *, 1, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
+            //sql_simple("insert or ignore into main.gi select *, 1, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
 
         }
         else if(op == vc("d"))
@@ -1093,7 +1089,7 @@ sql_get_uid_from_mid2(vc mid)
     try
     {
         sql_start_transaction();
-        vc res = sql_simple("select distinct(uid) from gmt where mid = ?1 and tag = '_local'", mid);
+        vc res = sql_simple("select distinct(from_client_uid) from gi where mid = ?1", mid);
         sql_commit_transaction();
         if(res.num_elems() == 0)
             return vcnil;
