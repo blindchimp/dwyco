@@ -525,6 +525,7 @@ init_qmsg_sql()
     vc hmyuid = to_hex(My_UID);
     sDb->attach("fav.sql", "mt");
     sql_start_transaction();
+    //sql_simple("insert into mt.gmt (mid, tag, uid, guid, time) values(?2, 'bar', ?1, 'mumble', 0)", hmyuid);
     // by default, our local index "local" is implied
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
 
