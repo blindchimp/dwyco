@@ -296,6 +296,8 @@ package_downstream_sends(vc remote_uid)
         vc mtombs = sql_simple("select mid, op from main.midlog where midlog.to_uid = ?1 and op = 'd'", huid);
         vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a'", huid);
         vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl where to_uid = ?1 and op = 'd'", huid);
+        if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0)
+            GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), 0);
         vc ret(VC_VECTOR);
         for(int i = 0; i < idxs.num_elems(); ++i)
         {
@@ -359,8 +361,8 @@ import_remote_mi(vc remote_uid)
         }
         sql_simple("delete from crdt_tags");
 
-        sql_simple("delete from main.gi where from_client_uid = ?1", huid);
-        sql_simple("delete from mt.gmt where uid = ?1", huid);
+        //sql_simple("delete from main.gi where from_client_uid = ?1", huid);
+        //sql_simple("delete from mt.gmt where uid = ?1", huid);
 
         sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
         sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
@@ -369,6 +371,7 @@ import_remote_mi(vc remote_uid)
         // derive some tags from the msg_idx, note we only create them for the
         // client from which we got the index, even though we got their entire
         // global list
+        sql_simple("delete from mt.gmt where (tag = '_local' or tag = '_sent') and uid = ?1", huid);
         sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where from_client_uid = ?1", huid);
         sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't' and from_client_uid = ?1", huid);
 
@@ -462,15 +465,17 @@ import_remote_tupdate(vc remote_uid, vc vals)
         {
             vc mid = vals[0];
             vc tag = vals[1];
-            DwString sargs = make_sql_args(vals.num_elems());
-            VCArglist a;
-            a.set_size(vals.num_elems() + 1);
-            a.append(DwString("insert or ignore into fav2.msg_tags2 values(%1)").arg(sargs).c_str());
-            for(int i = 0; i < vals.num_elems(); ++i)
-                a.append(vals[i]);
-            sql_bulk_query(&a);
+            vc tm = vals[2];
+            vc guid = vals[3];
+//            DwString sargs = make_sql_args(vals.num_elems());
+//            VCArglist a;
+//            a.set_size(vals.num_elems() + 1);
+//            a.append(DwString("insert or ignore into fav2.msg_tags2 values(%1)").arg(sargs).c_str());
+//            for(int i = 0; i < vals.num_elems(); ++i)
+//                a.append(vals[i]);
+//            sql_bulk_query(&a);
 
-            sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2 where mid = ?2", huid, mid);
+            sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) values(?1, ?2, ?3, ?4, ?5) ", mid, tag, tm, huid, guid);
             if(tag == vc("_hid") || tag == vc("_fav"))
             {
                 vc uid = sql_get_uid_from_mid(mid);
@@ -485,9 +490,10 @@ import_remote_tupdate(vc remote_uid, vc vals)
             vc tag = vals[2];
             // this kinda brute force, make sure to update this if you change the
             // taglog messages
-            sql_simple("insert or ignore into fav2.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
-            sql_simple("delete from fav2.msg_tags2 where mid = ?1 and tag = ?2", mid, tag);
+            //sql_simple("insert or ignore into fav2.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
+            //sql_simple("delete from fav2.msg_tags2 where mid = ?1 and tag = ?2", mid, tag);
             sql_simple("insert or ignore into mt.gtomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
+            sql_simple("delete from gmt where guid = ?1", guid);
             if(tag == vc("_hid") || tag == vc("_fav"))
             {
                 vc uid = sql_get_uid_from_mid(mid);
@@ -527,7 +533,7 @@ init_qmsg_sql()
 
     // recreate local and sent tags (kinda of a hassle, may want to revisit this)
     // note: tag triggers don't exist yet, so don't have to worry about them
-    sql_simple("delete from mt.gmt where uid = ?1", hmyuid);
+    sql_simple("delete from mt.gmt where uid = ?1 and (tag = '_local' or tag = '_sent')", hmyuid);
     sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx", hmyuid);
     sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx where is_sent = 't'", hmyuid);
 
