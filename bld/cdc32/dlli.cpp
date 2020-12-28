@@ -6800,6 +6800,20 @@ dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int le
     return 1;
 }
 
+DWYCOEXPORT
+void
+dwyco_start_bulk_update()
+{
+    dwyco::sql_start_transaction();
+}
+
+DWYCOEXPORT
+void
+dwyco_end_bulk_update()
+{
+    dwyco::sql_commit_transaction();
+}
+
 void
 pull_target_destroyed(vc uid)
 {

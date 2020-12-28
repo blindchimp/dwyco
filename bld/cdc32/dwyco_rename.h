@@ -190,6 +190,8 @@
 #define dwyco_get_qd_messages _real_dwyco_get_qd_messages 
 #define dwyco_qd_message_to_body _real_dwyco_qd_message_to_body 
 #define dwyco_get_message_bodies _real_dwyco_get_message_bodies 
+#define dwyco_start_bulk_update _real_dwyco_start_bulk_update 
+#define dwyco_end_bulk_update _real_dwyco_end_bulk_update 
 #define dwyco_get_saved_message2 _real_dwyco_get_saved_message2 
 #define dwyco_get_saved_message _real_dwyco_get_saved_message 
 #define dwyco_get_unfetched_messages _real_dwyco_get_unfetched_messages 

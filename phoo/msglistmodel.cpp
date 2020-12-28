@@ -399,6 +399,7 @@ void
 msglist_model::fav_all_selected(int f)
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    dwyco_start_bulk_update();
     foreach (const QString &value, Selected)
     {
         QByteArray b = value.toLatin1();
@@ -410,6 +411,7 @@ msglist_model::fav_all_selected(int f)
         }
         dwyco_set_fav_msg(b.constData(), f);
     }
+    dwyco_end_bulk_update();
     force_reload_model();
 }
 
@@ -417,6 +419,7 @@ void
 msglist_model::tag_all_selected(QByteArray tag)
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    dwyco_start_bulk_update();
     foreach (const QString &value, Selected)
     {
         QByteArray b = value.toLatin1();
@@ -428,6 +431,7 @@ msglist_model::tag_all_selected(QByteArray tag)
         }
         dwyco_set_msg_tag(b.constData(), tag.constData());
     }
+    dwyco_end_bulk_update();
     force_reload_model();
 }
 
@@ -435,6 +439,7 @@ void
 msglist_model::untag_all_selected(QByteArray tag)
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    dwyco_start_bulk_update();
     foreach (const QString &value, Selected)
     {
         QByteArray b = value.toLatin1();
@@ -446,6 +451,7 @@ msglist_model::untag_all_selected(QByteArray tag)
         }
         dwyco_unset_msg_tag(b.constData(), tag.constData());
     }
+    dwyco_end_bulk_update();
     force_reload_model();
 }
 

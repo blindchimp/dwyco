@@ -80,6 +80,14 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     sqlite3_stmt *st = 0;
     const char *tail = 0;
     int errcode;
+
+    GRTLOG("sql: %d %s", aa.num_elems(), (const char *)sql);
+    {
+        for(int i = 1; i < aa.num_elems(); ++i)
+        {
+            GRTLOGVC(aa.get(i));
+        }
+    }
     check_args(sql, aa.num_elems() - 1);
     if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
                                      &st, &tail)) != SQLITE_OK)
@@ -214,6 +222,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
 out:
     ;
     sqlite3_finalize(st);
+    GRTLOGVC(res);
     return res;
 }
 }

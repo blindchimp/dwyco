@@ -758,6 +758,11 @@ DWYCO_LIST DWYCOEXPORT dwyco_pal_get_list();
 void DWYCOEXPORT dwyco_pal_relogin();
 int DWYCOEXPORT dwyco_get_pal_logged_in();
 
+// don't use these, but they can speed up situations where
+// you are setting a lot of tags at once
+void DWYCOEXPORT dwyco_start_bulk_update();
+void DWYCOEXPORT dwyco_end_bulk_update();
+
 void DWYCOEXPORT dwyco_set_fav_msg(const char *mid, int fav);
 int DWYCOEXPORT dwyco_get_fav_msg(const char *mid);
 // this clears all the messages for a user except for ones that are "favorites"

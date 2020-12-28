@@ -210,6 +210,8 @@ DWYCOEXPORT int _real_dwyco_get_new_message_index(DWYCO_MSG_IDX *list_out, const
 DWYCOEXPORT void _real_dwyco_get_qd_messages(DWYCO_QD_MSG_LIST *list_out, const char *uid, int len_uid);
 DWYCOEXPORT int _real_dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, const char *pers_id, int len_pers_id);
 DWYCOEXPORT int _real_dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, int load_sent);
+DWYCOEXPORT void _real_dwyco_start_bulk_update();
+DWYCOEXPORT void _real_dwyco_end_bulk_update();
 DWYCOEXPORT int _real_dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
@@ -2893,6 +2895,24 @@ int _ret = _real_dwyco_get_message_bodies(list_out,uid,len_uid,load_sent);
 printargout("DWYCO_SAVED_MSG_LIST *", "list_out",list_out);
 printretval(_ret);
 return(_ret);
+}
+
+DWYCOEXPORT
+void
+dwyco_start_bulk_update()
+{
+printfunname("dwyco_start_bulk_update");
+_real_dwyco_start_bulk_update();
+printret();
+}
+
+DWYCOEXPORT
+void
+dwyco_end_bulk_update()
+{
+printfunname("dwyco_end_bulk_update");
+_real_dwyco_end_bulk_update();
+printret();
 }
 
 DWYCOEXPORT
