@@ -23,6 +23,7 @@
 #include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
+#include "dwstr.h"
 
 namespace dwyco {
 #define USER_BOMB(a, b) {return (b);}
