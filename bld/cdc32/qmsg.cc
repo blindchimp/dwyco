@@ -1991,7 +1991,7 @@ store_direct(MMChannel *m, vc msg, void *)
         {
 
             sql_add_tag(id, "_inbox");
-            sql_add_tag(id, "_local");
+            //sql_add_tag(id, "_local");
             sql_remove_mid_tag(id, "_remote");
             DwString a("_");
             a += (const char *)to_hex(from);
@@ -3178,8 +3178,8 @@ do_local_store(vc filename, vc speced_mid)
         else
         {
             update_msg_idx(recip[i], m[1]);
-            sql_add_tag(m[1][QM_BODY_ID], "_local");
-            sql_add_tag(m[1][QM_BODY_ID], "_sent");
+            //sql_add_tag(m[1][QM_BODY_ID], "_local");
+            //sql_add_tag(m[1][QM_BODY_ID], "_sent");
         }
     }
     return m[1];
@@ -3551,7 +3551,7 @@ save_to_inbox(vc m)
     // a message, then 20 minutes later google notifies about the same message.)
     // we only get sent google notifications for server messages...
     sql_add_tag(m[QQM_LOCAL_ID], "_inbox");
-    sql_add_tag(m[QQM_LOCAL_ID], "_local");
+    //sql_add_tag(m[QQM_LOCAL_ID], "_local");
     return 1;
 }
 

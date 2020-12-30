@@ -178,6 +178,7 @@ MMChannel::process_pull_resp(vc cmd)
     vc m = body;
     DwString udir;
     init_msg_folder(uid, &udir);
+    sql_start_transaction();
     if(body[QM_BODY_SENT].is_nil())
     {
         DwString tn = udir;
@@ -203,7 +204,7 @@ MMChannel::process_pull_resp(vc cmd)
         // from the record that induced the pull, or we can just recreate it.
         // for now, we just recreate, and do not emit the msg_update
         update_msg_idx(uid, m, 1);
-        sql_add_tag(m[QM_BODY_ID], "_local");
+        //sql_add_tag(m[QM_BODY_ID], "_local");
     }
     else
     {
@@ -224,10 +225,11 @@ MMChannel::process_pull_resp(vc cmd)
                 string_to_file(att, fd);
             }
             update_msg_idx(uid, m, 1);
-            sql_add_tag(m[QM_BODY_ID], "_local");
-            sql_add_tag(m[QM_BODY_ID], "_sent");
+            //sql_add_tag(m[QM_BODY_ID], "_local");
+            //sql_add_tag(m[QM_BODY_ID], "_sent");
 
     }
+    sql_commit_transaction();
     se_emit_msg_pull_ok(mid, uid);
     pull_done.emit(mid, remote_uid(), vctrue);
 

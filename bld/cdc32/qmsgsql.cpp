@@ -154,7 +154,7 @@ QMsgSql::init_schema(const DwString& schema_name)
                "logical_clock,"
                "assoc_uid text not null);"
               );
-    sql_simple("create table if not exists most_recent_msg (uid text primary key not null on conflict ignore, date integer not null on conflict ignore);");
+    sql_simple("create table if not exists most_recent_msg (uid text primary key not null on conflict ignore, date integer not null on conflict ignore)");
     sql_simple("create table if not exists indexed_flag (uid text primary key);");
     sql_simple("create index if not exists assoc_uid_idx on msg_idx(assoc_uid);");
     sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock desc);");
@@ -164,7 +164,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 
     // note: mid's are unique identifiers, so it's meer existence here means it was
     // deleted.
-    sql_simple("create table if not exists msg_tomb(mid text, time integer, unique(mid) on conflict replace)");
+    sql_simple("create table if not exists msg_tomb(mid text not null, time integer, unique(mid) on conflict replace)");
 
 
     //sql_simple("drop table if exists gi");
@@ -371,9 +371,9 @@ import_remote_mi(vc remote_uid)
         // derive some tags from the msg_idx, note we only create them for the
         // client from which we got the index, even though we got their entire
         // global list
-        sql_simple("delete from mt.gmt where (tag = '_local' or tag = '_sent') and uid = ?1", huid);
-        sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where from_client_uid = ?1", huid);
-        sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't' and from_client_uid = ?1", huid);
+        //sql_simple("delete from mt.gmt where (tag = '_local' or tag = '_sent') and uid = ?1", huid);
+        //sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where from_client_uid = ?1", huid);
+        //sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't' and from_client_uid = ?1", huid);
 
         sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
@@ -533,9 +533,9 @@ init_qmsg_sql()
 
     // recreate local and sent tags (kinda of a hassle, may want to revisit this)
     // note: tag triggers don't exist yet, so don't have to worry about them
-    sql_simple("delete from mt.gmt where uid = ?1 and (tag = '_local' or tag = '_sent')", hmyuid);
-    sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx", hmyuid);
-    sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx where is_sent = 't'", hmyuid);
+    //sql_simple("delete from mt.gmt where uid = ?1 and (tag = '_local' or tag = '_sent')", hmyuid);
+    //sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx", hmyuid);
+    //sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx where is_sent = 't'", hmyuid);
 
 
     sql_simple("create temp table rescan(flag integer)");
@@ -614,17 +614,25 @@ sql_insert_record(vc entry, vc assoc_uid)
 
     sql_bulk_query(&a);
 
-    sql_add_tag(entry[QM_IDX_MID], "_local");
-    if(!entry[QM_IDX_IS_SENT].is_nil())
-        sql_add_tag(entry[QM_IDX_MID], "_sent");
+    //sql_add_tag(entry[QM_IDX_MID], "_local");
+    //if(!entry[QM_IDX_IS_SENT].is_nil())
+    //    sql_add_tag(entry[QM_IDX_MID], "_sent");
 }
 
 static
 void
 sql_record_most_recent(vc uid)
 {
-    sql_simple("insert or ignore into most_recent_msg select assoc_uid, max(date) from msg_idx where assoc_uid = ?1 limit 1",
-                        to_hex(uid));
+    vc huid = to_hex(uid);
+    vc r = sql_simple("select max(date) from msg_idx where assoc_uid = ?1 limit 1", huid);
+    if(r[0][0].is_nil())
+    {
+        sql_simple("insert or replace into most_recent_msg (uid, date) values(?1, 0)", huid);
+    }
+    else
+    {
+        sql_simple("insert or replace into most_recent_msg (uid, date) values(?1, ?2)", huid, r[0][0]);
+    }
 }
 
 static
@@ -1120,8 +1128,8 @@ sql_get_non_local_messages()
     try
     {
         sql_start_transaction();
-        sql_simple("create temp table foo as select mid, uid from gmt where tag = '_local' and not exists (select 1 from msg_idx where gmt.mid = mid)");
-        sql_simple("delete from foo where exists (select 1 from msg_tomb where mid = foo.mid)");
+        sql_simple("create temp table foo as select mid, from_client_uid from gi where mid not in (select mid from msg_idx)");
+        sql_simple("delete from foo where mid not in (select mid from msg_tomb)");
         vc res = sql_simple("select * from foo");
         sql_simple("drop table foo");
         sql_commit_transaction();
@@ -1145,8 +1153,8 @@ sql_get_non_local_messages_at_uid(vc uid)
     try
     {
         sql_start_transaction();
-        sql_simple("create temp table foo as select mid from gmt where tag = '_local' and uid = ?1 "
-                   "and not exists (select 1 from msg_idx where gmt.mid = mid)", huid);
+        sql_simple("create temp table foo as select mid from gi where from_client_uid = ?1 "
+                   "and not exists (select 1 from msg_idx where gi.mid = mid)", huid);
         sql_simple("delete from foo where exists (select 1 from msg_tomb where mid = foo.mid)");
         vc res = sql_simple("select * from foo");
         sql_simple("drop table foo");
@@ -1322,7 +1330,7 @@ sql_index_all()
     {
         sql_sync_off();
         sql_start_transaction();
-        sql_simple("delete from mt.gmt where (tag = '_local' or tag = '_sent') and uid = ?1", to_hex(My_UID));
+        //sql_simple("delete from mt.gmt where (tag = '_local' or tag = '_sent') and uid = ?1", to_hex(My_UID));
         MsgFolders.foreach(vcnil, index_user);
         sql_commit_transaction();
     }
