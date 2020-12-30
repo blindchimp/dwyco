@@ -6861,7 +6861,7 @@ start_stalled_pulls()
             MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
             if(mc)
             {
-                DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mmc->uid); //::Qbm.query_by_fun(mmc->uid, 0, &pulls::uid_in_prog, 1);
+                DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mmc->uid);
                 for(int i = 0; i < stalled_pulls.num_elems(); ++i)
                 {
                     if(!mc->signal_setup)
@@ -6880,7 +6880,7 @@ start_stalled_pulls()
     for(int i = 0; i < cl.num_elems(); ++i)
     {
         MMChannel *mc = cl[i];
-        DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());//::Qbm.query_by_fun(mc->remote_uid(), 0, &pulls::uid_in_prog, 1);
+        DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());
 
         for(int i = 0; i < stalled_pulls.num_elems(); ++i)
         {

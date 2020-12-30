@@ -701,7 +701,7 @@ msglist_raw::reload_model(int force)
 
     // remove for testing, when a message is pulled, we need to
     // "invalidate" it more gracefully. for now, just reload the model
-#if 1
+#if 0
     if(!force && msg_idx && m_tag.length() == 0 && check_inbox_model() && check_qd_msgs())
     {
         // inbox might have been update, qd msgs are the same

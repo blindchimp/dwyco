@@ -1129,7 +1129,7 @@ sql_get_non_local_messages()
     {
         sql_start_transaction();
         sql_simple("create temp table foo as select mid, from_client_uid from gi where mid not in (select mid from msg_idx)");
-        sql_simple("delete from foo where mid not in (select mid from msg_tomb)");
+        sql_simple("delete from foo where mid in (select mid from msg_tomb)");
         vc res = sql_simple("select * from foo");
         sql_simple("drop table foo");
         sql_commit_transaction();
