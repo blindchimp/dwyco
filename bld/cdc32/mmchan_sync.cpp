@@ -291,28 +291,32 @@ MMChannel::cleanup_pulls(int myid)
 void
 MMChannel::mms_sync_state_changed(enum syncstate s)
 {
-    GRTLOG("mms state to %s %d", (const char *)to_hex(remote_uid()), s);
+    vc huid = to_hex(remote_uid());
+
+    GRTLOG("mms state to %s %d", (const char *)huid, s);
     if(s == NORMAL_SEND)
     {
-        sql_run_sql("insert into current_clients values(?1)", to_hex(remote_uid()));
+        sql_run_sql("insert into current_clients values(?1)", huid);
     }
     else
     {
-        sql_run_sql("delete from current_clients where uid = ?1", to_hex(remote_uid()));
+        sql_run_sql("delete from current_clients where uid = ?1", huid);
     }
 }
 
 void
 MMChannel::mmr_sync_state_changed(enum syncstate s)
 {
-    GRTLOG("mmr state to %s %d", (const char *)to_hex(remote_uid()), s);
+    vc huid = to_hex(remote_uid());
+
+    GRTLOG("mmr state to %s %d", (const char *)huid, s);
     if(s == NORMAL_RECV)
     {
-        sql_run_sql("insert into current_clients values(?1)", to_hex(remote_uid()));
+        sql_run_sql("insert into current_clients values(?1)", huid);
     }
     else
     {
-        sql_run_sql("delete from current_clients where uid = ?1", to_hex(remote_uid()));
+        sql_run_sql("delete from current_clients where uid = ?1", huid);
     }
 
 }

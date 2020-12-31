@@ -1735,7 +1735,7 @@ MMChannel::is_private_chatter()
 vc
 MMChannel::remote_iam()
 {
-    vc v("Bozo T. Clown");
+    vc v;
     if(!remote_cfg.is_atomic())
     {
         v = remote_username();
@@ -1758,7 +1758,7 @@ MMChannel::remote_iam()
 vc
 MMChannel::remote_uid()
 {
-    vc v("Mr. Green Jeans");
+    vc v;
     if(call_setup)
         return attempt_uid;
     if(!remote_cfg.is_atomic())
@@ -1791,7 +1791,7 @@ MMChannel::username()
 vc
 MMChannel::remote_username()
 {
-    vc v("Mr. Moose");
+    vc v;
     if(!remote_cfg.is_atomic())
         remote_cfg.find("username", v);
     else

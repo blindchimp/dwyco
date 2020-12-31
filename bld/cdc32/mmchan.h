@@ -969,7 +969,7 @@ public:
     // encrypted, the channel provides the encryption.
     // this allows us to provide "in flight" encryption without
     // changing a lot of the data management for messages locally.
-    // messages are not encrypted before they are stored on disk.
+    // messages are not encrypted when stored locally.
 
 public:
     int init_connect(int subchan, sproto *p, const char *ev);
