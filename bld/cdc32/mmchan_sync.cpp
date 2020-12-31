@@ -182,7 +182,7 @@ MMChannel::process_pull_resp(vc cmd)
     if(body[QM_BODY_SENT].is_nil())
     {
         DwString tn = udir;
-        tn += "/";
+        tn += DIRSEPSTR;
         tn += (const char *)mid;
         tn += ".bod";
         if(!save_info(m, tn.c_str(), 1))
@@ -193,7 +193,7 @@ MMChannel::process_pull_resp(vc cmd)
         if(!aname.is_nil())
         {
             DwString fd = udir;
-            fd += "/";
+            fd += DIRSEPSTR;
             fd += (const char *)aname;
             string_to_file(att, fd);
         }
@@ -209,7 +209,7 @@ MMChannel::process_pull_resp(vc cmd)
     else
     {
             DwString tn = udir;
-            tn += "/";
+            tn += DIRSEPSTR;
             tn += (const char *)mid;
             tn += ".snt";
             if(!save_info(m, tn.c_str(), 1))
@@ -220,7 +220,7 @@ MMChannel::process_pull_resp(vc cmd)
             if(!aname.is_nil())
             {
                 DwString fd = udir;
-                fd += "/";
+                fd += DIRSEPSTR;
                 fd += (const char *)aname;
                 string_to_file(att, fd);
             }
