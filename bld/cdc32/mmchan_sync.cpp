@@ -32,6 +32,10 @@ using namespace dwyco;
 #endif
 #include "sepstr.h"
 
+namespace dwyco {
+int Eager_sync = 1;
+}
+
 static
 vc
 file_to_string(DwString fn)
@@ -252,9 +256,11 @@ MMChannel::process_tupdate(vc cmd)
 void
 MMChannel::send_pull(vc mid)
 {
+    // this is dicey
     for(int i = 0; i < sync_sendq.num_elems(); ++i)
     {
-        if(mid == sync_sendq[i][1])
+        static vc pull("pull");
+        if(sync_sendq[i][0]== pull && mid == sync_sendq[i][1])
             return;
     }
     vc cmd(VC_VECTOR);
@@ -288,6 +294,8 @@ MMChannel::cleanup_pulls(int myid)
     pull_target_destroyed(remote_uid());
 }
 
+void assert_eager_pulls(MMChannel *, vc uid);
+
 void
 MMChannel::mms_sync_state_changed(enum syncstate s)
 {
@@ -297,6 +305,13 @@ MMChannel::mms_sync_state_changed(enum syncstate s)
     if(s == NORMAL_SEND)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
+        // note: it is better to do this once on the recv side
+        // since we get the signal right after we unpack the
+        // remotes latest info
+//        if(Eager_sync)
+//        {
+//            assert_eager_pulls(this, remote_uid());
+//        }
     }
     else
     {
@@ -313,6 +328,10 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
     if(s == NORMAL_RECV)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
+        if(Eager_sync)
+        {
+            assert_eager_pulls(this, remote_uid());
+        }
     }
     else
     {
@@ -348,6 +367,12 @@ MMChannel::process_outgoing_sync()
         vc ds = package_downstream_sends(remote_uid());
         if(!ds.is_nil())
         {
+            // NOTE: *may* want to consider sending tag updates
+            // before other updates (like pulls) since they are
+            // likely to be small and putting them behind other updates
+            // may cause them to never be updated in a timely manner
+            // likewise with pulls that are initiated from the
+            // model lookup, if we are doing eager updating.
             for(int i = 0; i < ds.num_elems(); ++i)
                 sync_sendq.append(ds[i]);
         }

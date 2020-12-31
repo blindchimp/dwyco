@@ -7051,6 +7051,29 @@ pull_msg(vc uid, vc msg_id)
     return -3;
 }
 
+void
+assert_eager_pulls(MMChannel *mc, vc uid)
+{
+    vc huid = to_hex(uid);
+    vc mids = sql_get_non_local_messages_at_uid(uid);
+    if(!mc->signal_setup)
+    {
+        mc->pull_done.connect_ptrfun(pull_done_slot);
+        mc->signal_setup = 1;
+    }
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        vc mid = mids[i];
+        pulls::assert_pull(mid, uid);
+        if(!pulls::pull_in_progress(mid, uid))
+        {
+            pulls::set_pull_in_progress(mid, uid);
+            mc->send_pull(mid);
+        }
+    }
+
+}
+
 DWYCOEXPORT
 int
 dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
