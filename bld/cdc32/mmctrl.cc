@@ -165,7 +165,7 @@ MMChannel::send_decrypt()
 void
 MMChannel::regular_control_procedures(vc v)
 {
-    if(msg_chan || user_control_chan)
+    if(msg_chan || user_control_chan || is_sync_chan)
     {
         regular_control_procedures2(v);
         return;

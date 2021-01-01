@@ -528,6 +528,7 @@ private:
     // for now, we run this like the audio and video channels, which
     // are real-time only. might make sense to change this to use something
     // more msg oriented, but for now, this will be fine.
+    bool is_sync_chan;
     int msync_chan;
     int msync_state;
 

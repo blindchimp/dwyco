@@ -549,6 +549,7 @@ MMChannel::MMChannel() :
 
     msync_chan = -1;
     msync_state = MEDIA_ERR;
+    is_sync_chan = false;
 
     auto_quality_boost = 0;
     private_chatbox_id = -1;
@@ -2809,6 +2810,7 @@ MMChannel::recv_config(vc cfg)
             cfg.del("pw");
             common_cfg.del("pw");
             remote_cfg.del("pw");
+            is_sync_chan = true;
             finish_connection_new();
             return;
         }
@@ -2914,7 +2916,6 @@ MMChannel::recv_config(vc cfg)
             case MMCHAN_US_REJECT_CALL:
                 send_error(error_msg);
                 goto cleanup;
-                break;
             case MMCHAN_US_ACCEPT_CALL:
                 prescreened = 1;
                 finish_connection_new();
@@ -3271,7 +3272,7 @@ void
 MMChannel::finish_connection_new()
 {
     vc riam;
-    if(msg_chan || user_control_chan)
+    if(msg_chan || user_control_chan || is_sync_chan)
         goto done;
     if(call_accepted_callback)
         (*call_accepted_callback)(this, ca_arg1, ca_arg2, ca_arg3);
