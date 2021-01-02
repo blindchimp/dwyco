@@ -37,6 +37,15 @@ $${D}/bld/kazlib/libkazlib.a \
 $${D}/bld/zlib/libzlib.a \
 $${D}/bld/uv/libuv.a
 
+PRE_TARGETDEPS += \
+$${D}/bld/vc/libvc.a \
+$${D}/bld/dwcls/libdwcls.a \
+$${D}/bld/crypto5/libcrypto5.a \
+$${D}/bld/jenkins/libjenkins.a \
+$${D}/bld/kazlib/libkazlib.a \
+$${D}/bld/zlib/libzlib.a \
+$${D}/bld/uv/libuv.a
+
 
 
 macx-* {
