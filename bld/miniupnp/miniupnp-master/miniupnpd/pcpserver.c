@@ -1,6 +1,7 @@
-/* $Id: pcpserver.c,v 1.47 2018/03/13 10:21:19 nanard Exp $ */
-/* MiniUPnP project
- * Website : http://miniupnp.free.fr/
+/* $Id: pcpserver.c,v 1.51 2019/05/21 08:39:44 nanard Exp $ */
+/* vim: tabstop=4 shiftwidth=4 noexpandtab
+ * MiniUPnP project
+ * Website : http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
  * Author : Peter Tatrai
 
 Copyright (c) 2013 by Cisco Systems, Inc.
@@ -590,6 +591,17 @@ static int CheckExternalAddress(pcp_info_t* pcp_msg_info)
 				pcp_msg_info->result_code = PCP_ERR_NETWORK_FAILURE;
 				return -1;
 			}
+#ifdef ENABLE_IPV6
+		} else if ((af == AF_INET6) && (ext_if_name6 != ext_if_name)) {
+			if(!ext_if_name6 || ext_if_name6[0]=='\0') {
+				pcp_msg_info->result_code = PCP_ERR_NETWORK_FAILURE;
+				return -1;
+			}
+			if(getifaddr_in6(ext_if_name6, af, &external_addr) < 0) {
+				pcp_msg_info->result_code = PCP_ERR_NETWORK_FAILURE;
+				return -1;
+			}
+#endif
 		} else {
 			if(!ext_if_name || ext_if_name[0]=='\0') {
 				pcp_msg_info->result_code = PCP_ERR_NETWORK_FAILURE;
@@ -686,6 +698,7 @@ static int CreatePCPPeer_NAT(pcp_info_t *pcp_msg_info)
 	char peerip_s[INET6_ADDRSTRLEN], extip_s[INET6_ADDRSTRLEN];
 	time_t timestamp = upnp_time() + pcp_msg_info->lifetime;
 	int r;
+	const char * ext_if = ext_if_name;
 
 	FillSA((struct sockaddr*)&intip, pcp_msg_info->mapped_ip,
 	       pcp_msg_info->int_port);
@@ -718,9 +731,14 @@ static int CreatePCPPeer_NAT(pcp_info_t *pcp_msg_info)
 		eport = pcp_msg_info->int_port;
 	}
 
+#ifdef ENABLE_IPV6
+	if (ret_extip.ss_family == AF_INET6) {
+		ext_if = ext_if_name6;
+	}
+#endif
 #ifdef PCP_FLOWP
 	if (pcp_msg_info->flowp_present && pcp_msg_info->dscp_up) {
-		if (add_peer_dscp_rule2(ext_if_name, peerip_s,
+		if (add_peer_dscp_rule2(ext_if, peerip_s,
 					pcp_msg_info->peer_port, pcp_msg_info->dscp_up,
 					pcp_msg_info->mapped_str, pcp_msg_info->int_port,
 					proto, pcp_msg_info->desc, timestamp) < 0 ) {
@@ -735,7 +753,7 @@ static int CreatePCPPeer_NAT(pcp_info_t *pcp_msg_info)
 	}
 
 	if (pcp_msg_info->flowp_present && pcp_msg_info->dscp_down) {
-		if (add_peer_dscp_rule2(ext_if_name,  pcp_msg_info->mapped_str,
+		if (add_peer_dscp_rule2(ext_if,  pcp_msg_info->mapped_str,
 					pcp_msg_info->int_port, pcp_msg_info->dscp_down,
 					peerip_s, pcp_msg_info->peer_port, proto, pcp_msg_info->desc, timestamp)
 		    < 0 ) {
@@ -751,7 +769,7 @@ static int CreatePCPPeer_NAT(pcp_info_t *pcp_msg_info)
 	}
 #endif
 
-	r = add_peer_redirect_rule2(ext_if_name,
+	r = add_peer_redirect_rule2(ext_if,
 				    peerip_s,
 				    pcp_msg_info->peer_port,
 				    extip_s,
@@ -1664,19 +1682,24 @@ void PCPSendUnsolicitedAnnounce(int * sockets, int n_sockets)
 	addr.sin_addr.s_addr = inet_addr("224.0.0.1");
 	addr.sin_port = htons(5350);
 	for(i = 0; i < n_sockets; i++) {
+		if (sockets[i] < 0) {
+			continue;
+		}
 		len = sendto_or_schedule(sockets[i], buff, PCP_MIN_LEN, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 		if( len < 0 ) {
-			syslog(LOG_ERR, "PCPSendUnsolicitedAnnounce() sendto(): %m");
+			syslog(LOG_ERR, "PCPSendUnsolicitedAnnounce(sockets[%d]) sendto(): %m", i);
 		}
 	}
 #ifdef ENABLE_IPV6
-	memset(&addr6, 0, sizeof(struct sockaddr_in6));
-	addr6.sin6_family = AF_INET6;
-	inet_pton(AF_INET6, "FF02::1", &(addr6.sin6_addr));
-	addr6.sin6_port = htons(5350);
-	len = sendto_or_schedule(socket6, buff, PCP_MIN_LEN, 0, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6));
-	if( len < 0 ) {
-		syslog(LOG_ERR, "PCPSendUnsolicitedAnnounce() IPv6 sendto(): %m");
+	if (socket6 >= 0) {
+		memset(&addr6, 0, sizeof(struct sockaddr_in6));
+		addr6.sin6_family = AF_INET6;
+		inet_pton(AF_INET6, "FF02::1", &(addr6.sin6_addr));
+		addr6.sin6_port = htons(5350);
+		len = sendto_or_schedule(socket6, buff, PCP_MIN_LEN, 0, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6));
+		if( len < 0 ) {
+			syslog(LOG_ERR, "PCPSendUnsolicitedAnnounce() IPv6 sendto(): %m");
+		}
 	}
 #endif /* ENABLE_IPV6 */
 }

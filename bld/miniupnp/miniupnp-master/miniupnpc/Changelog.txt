@@ -1,5 +1,52 @@
-$Id: Changelog.txt,v 1.235 2018/05/07 11:05:16 nanard Exp $
+$Id: Changelog.txt,v 1.247 2020/12/20 18:07:34 nanard Exp $
 miniUPnP client Changelog.
+
+VERSION 2.2.1 : released 2020/12/20
+
+2020/11/30:
+  Add miniupnpc.rc for .dll description
+
+VERSION 2.2.0 : released 2020/11/09
+
+2020/09/24:
+  Check properly for reserved IP addresses
+
+2020/09/23:
+  prevent infinite loop in upnpDiscover()
+
+2020/02/16:
+  Add Haiku support
+
+2019/10/22:
+  testminiwget.sh can use either "ip addr" or "ifconfig -a
+
+2019/10/13:
+  fix UPNP_GetValidIGD() when several devices are found
+  which are reachable from != local address
+
+2019/08/24:
+  Allow Remote Host on upnpc command line
+  fix error 708 description in strupnperror()
+
+2019/04/05:
+  Fix memory leak in upnpreplyparse.c with NewPortListing element
+
+2019/03/10:
+  connecthostport.c: Code simplification, error trace fix
+
+2019/01/23:
+  set timeout for select() in connecthostport()
+
+2018/10/31:
+  miniupnpcmodule.c: check return of WSAStartup()
+
+2018/07/14:
+  Fix and improve MSVC project :
+    Add Dll configurations
+    improve genminiupnpcstrings.vbs
+
+2018/06/18:
+  Fixes for windows 64-bits.
 
 VERSION 2.1 : released 2018/05/07
 
