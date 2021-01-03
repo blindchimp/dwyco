@@ -14,8 +14,8 @@
 #include "vcio.h"
 
 
-#define RAISE(fun, retval) {excretval = (retval); NONLH_CHECK_ANY_BO(retval) if((fun)() == VC_SOCKET_BACKOUT) return retval;}
-#define RAISEABORT(fun, retval) {last_wsa_error = WSAGetLastError(); excretval = (retval); NONLH_CHECK_ANY_BO(retval) if((fun)() == VC_SOCKET_RESUME) oopanic("resume after abort?"); return retval;}
+#define RAISE(fun, retval) do {excretval = (retval); NONLH_CHECK_ANY_BO(retval) if((fun)() == VC_SOCKET_BACKOUT) return retval;} while(0)
+#define RAISEABORT(fun, retval) do {last_wsa_error = WSAGetLastError(); excretval = (retval); NONLH_CHECK_ANY_BO(retval) if((fun)() == VC_SOCKET_RESUME) oopanic("resume after abort?"); return retval;} while (0)
 
 #define VC_SOCKET_RESUME 0
 #define VC_SOCKET_BACKOUT 1

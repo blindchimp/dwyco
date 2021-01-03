@@ -124,7 +124,8 @@ enum vcsocketmode {
 	VC_SET_SEND_BUF_SIZE,
 	VC_GET_SEND_BUF_SIZE,
 	VC_SET_TCP_NO_DELAY,
-	VC_BUFFER_SOCK
+        VC_BUFFER_SOCK,
+        VC_SET_BROADCAST
 };
 #define  VC_SOCK_ERROR 4
 #define  VC_SOCK_READ  2

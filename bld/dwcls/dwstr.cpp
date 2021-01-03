@@ -254,9 +254,30 @@ DwString
 DwString::fromInt(int i)
 {
     char a[100];
-    sprintf(a, "%d", i);
+    if(snprintf(a, sizeof(a), "%d", i) >= sizeof(a))
+        oopanic("truncated int");
     return(a);
 }
+
+DwString
+DwString::fromLong(long i)
+{
+    char a[100];
+    if(snprintf(a, sizeof(a), "%ld", i) >= sizeof(a))
+        oopanic("truncated long");
+    return(a);
+}
+
+DwString
+DwString::fromUint(unsigned int i)
+{
+    char a[100];
+    if(snprintf(a, sizeof(a), "%u", i) >= sizeof(a))
+        oopanic("truncated uint");
+    return(a);
+}
+
+
 
 #undef TESTSTR
 #ifdef TESTSTR
