@@ -12,6 +12,7 @@
 
 #ifdef USE_WINSOCK
 #include <WinSock2.h>
+#include <WS2tcpip.h>
 #define EWOULDBLOCK             WSAEWOULDBLOCK
 #define EINPROGRESS             WSAEINPROGRESS
 #define EALREADY                WSAEALREADY
@@ -2087,7 +2088,7 @@ vc_winsock::vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
 
     if(!ip.eq("any"))
 	{
-        int res = inet_aton(ip.c_str(), &in_addr);
+        int res = inet_pton(AF_INET, ip.c_str(), &in_addr);
 		// bogus, doesn't work right for broadcast address
 		// need to use updated version of inet_addr
         if(res == 0)
