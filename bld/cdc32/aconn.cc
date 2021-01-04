@@ -22,6 +22,7 @@
 #include "vccomp.h"
 #include "vcsock.h"
 #include "qauth.h"
+#include "ssns.h"
 
 extern vc LocalIP;
 
@@ -33,6 +34,7 @@ static int Inhibit_accept;
 static vc Local_discover;
 static vc Local_broadcast;
 vc Broadcast_discoveries;
+ssns::signal1<vc> Local_uid_discovered;
 
 
 
@@ -204,9 +206,13 @@ broadcast_tick()
         vc peer;
         if(recvvc(Local_discover, data, peer) > 0)
         {
-            GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
-            GRTLOGVC(data);
-            Broadcast_discoveries.add_kv(data[0], data[1]);
+            if(data[0] != My_UID)
+            {
+                GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
+                GRTLOGVC(data);
+                Broadcast_discoveries.add_kv(data[0], data[1]);
+                Local_uid_discovered.emit(data[0]);
+            }
         }
     }
     if(!Broadcast_timer.is_expired())
