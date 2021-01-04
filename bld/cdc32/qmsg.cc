@@ -95,6 +95,8 @@ using namespace CryptoPP;
 #include "ssns.h"
 #include "dwyco_rand.h"
 #include "qmsgsql.h"
+#include "aconn.h"
+
 using namespace dwyco;
 
 vc MsgFolders;
@@ -215,6 +217,15 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
     pal = 0;
     can_do_direct = 0;
 
+    if(Broadcast_discoveries.find(uid, u))
+    {
+        can_do_direct = 1;
+        prim = u[1];
+        sec = u[2];
+        pal = u[3];
+        GRTLOGA("uid to ip locally ONLINE %s %d %d %d", (const char *)u[0], prim, sec, pal, 0);
+        return inet_addr((const char *)u[0]);
+    }
     if(Online.find(uid, u))
     {
         can_do_direct = 1;

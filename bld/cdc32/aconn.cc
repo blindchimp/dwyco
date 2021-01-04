@@ -24,6 +24,7 @@
 #include "qauth.h"
 
 extern vc LocalIP;
+
 namespace dwyco {
 DwNetConfig DwNetConfigData;
 static Listener *Listen_sock;
@@ -31,6 +32,7 @@ static Listener *Static_secondary_sock;
 static int Inhibit_accept;
 static vc Local_discover;
 static vc Local_broadcast;
+vc Broadcast_discoveries;
 
 
 
@@ -140,6 +142,8 @@ start_broadcaster()
 {
     if(LocalIP.is_nil())
         return 0;
+    if(Broadcast_discoveries.is_nil())
+        Broadcast_discoveries = vc(VC_TREE);
     Local_broadcast = vc(VC_SOCKET_DGRAM);
     Local_broadcast.set_err_callback(net_socket_error);
     Local_discover = vc(VC_SOCKET_DGRAM);
@@ -202,6 +206,7 @@ broadcast_tick()
         {
             GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
             GRTLOGVC(data);
+            Broadcast_discoveries.add_kv(data[0], data[1]);
         }
     }
     if(!Broadcast_timer.is_expired())
@@ -209,12 +214,13 @@ broadcast_tick()
     Broadcast_timer.ack_expire();
     vc announce(VC_VECTOR);
     announce[0] = My_UID;
-    announce[1] = LocalIP;
     vc v(VC_VECTOR);
+    v.append(LocalIP);
     v.append(DwNetConfigData.get_primary_port());
     v.append(DwNetConfigData.get_secondary_port());
     v.append(DwNetConfigData.get_pal_port());
-    announce[2] = v;
+    announce[1] = v;
+
     sendvc(Local_broadcast, announce);
     Broadcast_timer.start();
 }

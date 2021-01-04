@@ -52,6 +52,8 @@ public:
 };
 
 extern DwNetConfig DwNetConfigData;
+
+extern vc Broadcast_discoveries;
 }
 
 #define CSMS_DIRECT_ONLY 0
