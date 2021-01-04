@@ -347,7 +347,6 @@ using namespace Weak;
 #include "se.h"
 #include "fl.h"
 #include "pgdll.h"
-#include "lanmap.h"
 #include "theoracol.h"
 #include "tpgmdec.h"
 #include "imgmisc.h"
@@ -1927,13 +1926,6 @@ void
 dwyco_inhibit_sac(int i)
 {
     Disable_SAC = i;
-}
-
-DWYCOEXPORT
-void
-dwyco_inhibit_lanmap(int i)
-{
-    LANmap_inhibit = i;
 }
 
 DWYCOEXPORT

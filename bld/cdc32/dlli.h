@@ -1183,7 +1183,6 @@ int DWYCOEXPORT dwyco_database_auth_remote();
 void DWYCOEXPORT dwyco_inhibit_database(int i);
 void DWYCOEXPORT dwyco_inhibit_pal(int i);
 void DWYCOEXPORT dwyco_inhibit_sac(int i);
-void DWYCOEXPORT dwyco_inhibit_lanmap(int i);
 //void DWYCOEXPORT dwyco_inhibit_chat(int i);
 
 int DWYCOEXPORT dwyco_get_audio_hw(int *has_audio_input, int *has_audio_output, int *audio_hw_full_duplex);
