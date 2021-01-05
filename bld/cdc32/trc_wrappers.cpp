@@ -61,7 +61,6 @@ DWYCOEXPORT int _real_dwyco_database_auth_remote();
 DWYCOEXPORT void _real_dwyco_inhibit_database(int i);
 DWYCOEXPORT void _real_dwyco_inhibit_pal(int i);
 DWYCOEXPORT void _real_dwyco_inhibit_sac(int i);
-DWYCOEXPORT void _real_dwyco_inhibit_lanmap(int i);
 DWYCOEXPORT void _real_dwyco_fetch_info(const char *uid, int len_uid);
 DWYCOEXPORT int _real_dwyco_service_channels(int *spin_out);
 DWYCOEXPORT void _real_dwyco_add_entropy_timer(const char *crap, int len_crap);
@@ -1051,16 +1050,6 @@ dwyco_inhibit_sac(int i)
 printfunname("dwyco_inhibit_sac");
 printarg("int ", "i",i);
 _real_dwyco_inhibit_sac(i);
-printret();
-}
-
-DWYCOEXPORT
-void
-dwyco_inhibit_lanmap(int i)
-{
-printfunname("dwyco_inhibit_lanmap");
-printarg("int ", "i",i);
-_real_dwyco_inhibit_lanmap(i);
 printret();
 }
 
