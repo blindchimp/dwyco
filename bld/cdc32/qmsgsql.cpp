@@ -554,7 +554,8 @@ init_qmsg_sql()
     sql_simple("create temp trigger if not exists tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
                "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
 
-    sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid; end").arg((const char *)hmyuid).c_str());
+    sql_simple("drop trigger if exists xgi");
+    sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid limit 1; end").arg((const char *)hmyuid).c_str());
     sql_simple("drop trigger if exists dgi");
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin "
                "delete from gi where mid = old.mid; "
