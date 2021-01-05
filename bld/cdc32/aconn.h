@@ -11,6 +11,7 @@
 
 #include "uicfg.h"
 #include "dwstr.h"
+#include "ssns.h"
 
 namespace dwyco {
 
@@ -54,6 +55,7 @@ public:
 extern DwNetConfig DwNetConfigData;
 
 extern vc Broadcast_discoveries;
+extern ssns::signal1<vc> Local_uid_discovered;
 }
 
 #define CSMS_DIRECT_ONLY 0
