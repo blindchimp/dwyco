@@ -128,6 +128,7 @@ SOURCES += sqlite3.c
 }
 
 SOURCES += \
+    ezset2.cpp \
 mmchan.cc \
 mmbld.cc \
 mmaud.cc \
@@ -240,7 +241,6 @@ chatgrid.cpp \
 chatq.cpp \
 sysattr.cpp \
 vorbconv.cc \
-ezset.cpp \
 se.cpp \
 theoracol.cc \
 ser.cpp \
