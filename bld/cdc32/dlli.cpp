@@ -4639,6 +4639,7 @@ dwyco_get_codec_data(int *agc, int *denoise, double *audio_delay)
     return 1;
 }
 
+#if 0
 DWYCOEXPORT
 int
 dwyco_set_vidcap_data(
@@ -4732,6 +4733,7 @@ dwyco_get_vidcap_data(
     DWUIGET_MEMBER(bool, swap_uv)
     DWUIGET_END
 }
+#endif
 
 
 DWYCOEXPORT

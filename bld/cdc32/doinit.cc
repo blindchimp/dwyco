@@ -173,7 +173,7 @@ init_codec(const char *logname)
         else
             Log->make_entry("audio hardware claims full-duplex");
 
-        VFWInvestigateData.load();
+        //VFWInvestigateData.load();
         //CTUserDefaults.load();
         RawFilesData.load();
         VidInputData.load();
@@ -298,7 +298,7 @@ simple_init_codec(const char *logname)
 
         // have to reconfigure a little bit for 0.80
         UserConfigData.load();
-        VFWInvestigateData.load();
+        //VFWInvestigateData.load();
         //CTUserDefaults.load();
         RawFilesData.load();
         VidInputData.load();
@@ -386,7 +386,7 @@ init_bg_msg_send(const char *logname)
         // get used.
         //init_callq();
 
-        VFWInvestigateData.load();
+        //VFWInvestigateData.load();
         //CTUserDefaults.load();
         RawFilesData.load();
         VidInputData.load();

@@ -2060,6 +2060,7 @@ int DWYCOEXPORT
 dwyco_get_codec_data(int *agc, int *denoise, double *audio_delay);
 
 
+#if 0
 // for icuii, "automatic" should be set, which
 // tells the capture driver to figure it out as
 // best it can. warning: there may be bugs in here
@@ -2113,6 +2114,8 @@ dwyco_get_vidcap_data(
     DWUIDECLARG_OUT(bool, swap_uv)
     DWUIDECLARG_END
 );
+
+#endif
 
 // this is only used for testing without
 // a camera. it is NOT used in ICUII.
