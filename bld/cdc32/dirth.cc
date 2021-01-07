@@ -22,7 +22,6 @@
 #include "qauth.h"
 #include "qmsg.h"
 #include "cdcver.h"
-#include "zapadv.h"
 #include "mmchan.h"
 #include "senc.h"
 #include "dwstr.h"
@@ -51,6 +50,7 @@
 #endif
 #include "vcxstrm.h"
 #include "ta.h"
+#include "ezset.h"
 
 using namespace dwyco;
 
@@ -600,7 +600,7 @@ build_directory_entry()
     v.append(vcnil); // was DH_public
     v.append(vcnil); // was "rating"
     v.append(system_info());
-    v.append(ZapAdvData.get_always_server() ? vcnil : vctrue); // can do direct msgs
+    v.append((int)get_settings_value("zap/always_server") == 1 ? vcnil : vctrue); // can do direct msgs
     // note: no more invisible
     v.append(vcnil);
     //v.append(ShowDirectoryData.get_invisible() ? vctrue : vcnil);
@@ -647,7 +647,7 @@ build_directory_entry2()
     v.append(1); // was "registered"
     v.append(dwyco_get_version_string());
     v.append(system_info());
-    v.append(ZapAdvData.get_always_server() ? vcnil : vctrue);
+    v.append((int)get_settings_value("zap/always_server") == 1 ? vcnil : vctrue);
     v.append(make_fw_setup());
 
     v.append(KKG);

@@ -24,7 +24,6 @@
 #include "rawfiles.h"
 #include "vidinput.h"
 #include "cllaccpt.h"
-#include "zapadv.h"
 #include "qtab.h"
 #include "jqtab.h"
 #include "qpol.h"
@@ -181,7 +180,7 @@ init_codec(const char *logname)
         VidInputData.load();
         CallAcceptanceData.load();
 
-        ZapAdvData.load();
+        //ZapAdvData.load();
         DwNetConfigData.load();
         extern int Media_select;
         switch(DwNetConfigData.get_call_setup_media_select())
@@ -305,7 +304,7 @@ simple_init_codec(const char *logname)
         RawFilesData.load();
         VidInputData.load();
         CallAcceptanceData.load();
-        ZapAdvData.load();
+        //ZapAdvData.load();
         DwNetConfigData.load();
 
         init_sysattr();
@@ -393,7 +392,7 @@ init_bg_msg_send(const char *logname)
         RawFilesData.load();
         VidInputData.load();
         CallAcceptanceData.load();
-        ZapAdvData.load();
+        //ZapAdvData.load();
         DwNetConfigData.load();
 
         init_sysattr();

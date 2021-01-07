@@ -13,7 +13,6 @@
 #include "vfwinvst.h"
 #include "cllaccpt.h"
 #include "vidinput.h"
-#include "zapadv.h"
 #include "ratetwkr.h"
 #include "chatdisp.h"
 #include "aqvfw.h"
@@ -77,6 +76,7 @@
 #include "sha.h"
 #include "qdirth.h"
 #include "dwscoped.h"
+#include "ezset.h"
 #ifdef _Windows
 //#include <winsock2.h>
 //#include <ws2tcpip.h>
@@ -2671,7 +2671,7 @@ MMChannel::recv_config(vc cfg)
                 send_error("busy");
                 goto cleanup;
             }
-            if(!call_screening_callback && ZapAdvData.get_ignore() && !pal_user(uid))
+            if(!call_screening_callback && (int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
                 Log->make_entry("call rejected, pals-only mode");
                 send_error("pals-only");
@@ -2841,7 +2841,7 @@ MMChannel::recv_config(vc cfg)
         vc uid;
         if(!remote_cfg.is_nil() && remote_cfg.find("my uid", uid))
         {
-            if(ZapAdvData.get_ignore() && !pal_user(uid))
+            if((int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
                 Log->make_entry("call rejected, pals-only mode");
                 send_error("pals-only");

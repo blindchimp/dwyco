@@ -2060,6 +2060,7 @@ int DWYCOEXPORT
 dwyco_get_codec_data(int *agc, int *denoise, double *audio_delay);
 
 
+#if 0
 // for icuii, "automatic" should be set, which
 // tells the capture driver to figure it out as
 // best it can. warning: there may be bugs in here
@@ -2113,6 +2114,8 @@ dwyco_get_vidcap_data(
     DWUIDECLARG_OUT(bool, swap_uv)
     DWUIDECLARG_END
 );
+
+#endif
 
 // this is only used for testing without
 // a camera. it is NOT used in ICUII.
@@ -2199,28 +2202,28 @@ dwyco_get_call_accept(
     DWUIDECLARG_END
 );
 
-// assorted zap message setup
-int DWYCOEXPORT
-dwyco_set_zap_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(bool, always_server)	// icuii: always 0
-    DWUIDECLARG(bool, always_accept)    // icuii: 1 if "auto-accept quick messages" is checked
-    DWUIDECLARG(bool, use_old_timing)   // icuii: 1 if "qm's move too fast or not at all" checked (in obscure tab)
-    DWUIDECLARG(bool, save_sent)   		// icuii: 1 by default, 0 to turn off automatic "sent" qm saving
-    DWUIDECLARG(bool, no_forward_default)	// icuii: 0 by default
-    DWUIDECLARG_END
-);
+//// assorted zap message setup
+//int DWYCOEXPORT
+//dwyco_set_zap_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(bool, always_server)	// icuii: always 0
+//    DWUIDECLARG(bool, always_accept)    // icuii: 1 if "auto-accept quick messages" is checked
+//    DWUIDECLARG(bool, use_old_timing)   // icuii: 1 if "qm's move too fast or not at all" checked (in obscure tab)
+//    DWUIDECLARG(bool, save_sent)   		// icuii: 1 by default, 0 to turn off automatic "sent" qm saving
+//    DWUIDECLARG(bool, no_forward_default)	// icuii: 0 by default
+//    DWUIDECLARG_END
+//);
 
-int DWYCOEXPORT
-dwyco_get_zap_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(bool, always_server)
-    DWUIDECLARG_OUT(bool, always_accept)
-    DWUIDECLARG_OUT(bool, use_old_timing)
-    DWUIDECLARG_OUT(bool, save_sent)
-    DWUIDECLARG_OUT(bool, no_forward_default)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_get_zap_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(bool, always_server)
+//    DWUIDECLARG_OUT(bool, always_accept)
+//    DWUIDECLARG_OUT(bool, use_old_timing)
+//    DWUIDECLARG_OUT(bool, save_sent)
+//    DWUIDECLARG_OUT(bool, no_forward_default)
+//    DWUIDECLARG_END
+//);
 
 // these are networking rates and capture
 // frame rates.

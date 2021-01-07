@@ -13,7 +13,6 @@
 #include "qauth.h"
 #include "dwstr.h"
 #include "filetube.h"
-#include "zapadv.h"
 #include "ratetwkr.h"
 #include "mmchan.h"
 #include "audout.h"
@@ -31,6 +30,7 @@
 #include "se.h"
 #include "sysattr.h"
 #include "xinfo.h"
+#include "ezset.h"
 #undef index
 
 #include "dlli.h"
@@ -395,7 +395,7 @@ int  TMsgCompose::record_buttonClick()
     SlippyTube *ft =  new SlippyTube(actual_filename.c_str(), mode, FileTube::SINK);
     ft->bytes_left = max_bytes;
     ft->packet_count = max_frames;
-    ft->prefer_old_timing = ZapAdvData.get_use_old_timing();
+    ft->prefer_old_timing = get_settings_value("zap/use_old_timing");  //ZapAdvData.get_use_old_timing();
     // output regardless, so indexer knows new timing
     // info should be used, but the output block
     // is ignored by the old software
@@ -604,7 +604,7 @@ void  TMsgCompose::play_buttonClick( int no_audio)
             // on the uid (for local override) if that's what we want.
             if(composer)
             {
-                st->use_old_timing = ZapAdvData.get_use_old_timing();
+                st->use_old_timing = get_settings_value("zap/use_old_timing");
             }
         }
         int dummy;
@@ -937,7 +937,7 @@ TMsgCompose::do_record_pic()
         if(mc->tube)
             delete mc->tube;
         SlippyTube *ft =  new SlippyTube(actual_filename.c_str(), mode, FileTube::SINK);
-        ft->prefer_old_timing = ZapAdvData.get_use_old_timing();
+        ft->prefer_old_timing = get_settings_value("zap/use_old_timing");
         ft->reset_timer(MMChannel::codec_name_to_number(sysattr_get_vc("us-video-coder-qms")));
         ft->packet_count = 1;
         mc->tube = ft;
@@ -981,7 +981,7 @@ TMsgCompose::do_record_pic()
 
 
     SlippyTube *ft =  new SlippyTube(actual_filename.c_str(), mode, FileTube::SINK);
-    ft->prefer_old_timing = ZapAdvData.get_use_old_timing();
+    ft->prefer_old_timing = get_settings_value("zap/use_old_timing");
     // output regardless, so indexer knows new timing
     // info should be used, but the output block
     // is ignored by the old software

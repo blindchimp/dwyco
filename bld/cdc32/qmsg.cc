@@ -60,7 +60,6 @@
 #include "dwlog.h"
 #include "pval.h"
 #include "doinit.h"
-#include "zapadv.h"
 #include "ta.h"
 #include "usercnfg.h"
 #include "cdcver.h"

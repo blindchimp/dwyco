@@ -311,7 +311,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 
 #include "vfwinvst.h"
 #include "cllaccpt.h"
-#include "zapadv.h"
 #include "rawfiles.h"
 #include "vidinput.h"
 #include "usercnfg.h"
@@ -4947,49 +4946,49 @@ dwyco_get_call_accept(
     DWUIGET_END
 }
 
-DWYCOEXPORT
-int
-dwyco_set_zap_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(bool, always_server)
-    DWUIDECLARG(bool, always_accept)
-    DWUIDECLARG(bool, use_old_timing)
-    DWUIDECLARG(bool, save_sent)
-    DWUIDECLARG(bool, no_forward_default)
-    DWUIDECLARG_END
-)
-{
-    DWUISET_BEGIN(ZapAdvXfer, ZapAdvData)
-    DWUISET_MEMBER(bool, always_server)
-    DWUISET_MEMBER(bool, always_accept)
-    DWUISET_MEMBER(bool, save_sent)
-    DWUISET_MEMBER(bool, use_old_timing)
-    DWUISET_MEMBER(bool, no_forward_default)
-    DWUISET_END
-}
+//DWYCOEXPORT
+//int
+//dwyco_set_zap_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(bool, always_server)
+//    DWUIDECLARG(bool, always_accept)
+//    DWUIDECLARG(bool, use_old_timing)
+//    DWUIDECLARG(bool, save_sent)
+//    DWUIDECLARG(bool, no_forward_default)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUISET_BEGIN(ZapAdvXfer, ZapAdvData)
+//    DWUISET_MEMBER(bool, always_server)
+//    DWUISET_MEMBER(bool, always_accept)
+//    DWUISET_MEMBER(bool, save_sent)
+//    DWUISET_MEMBER(bool, use_old_timing)
+//    DWUISET_MEMBER(bool, no_forward_default)
+//    DWUISET_END
+//}
 
-DWYCOEXPORT
-int
-dwyco_get_zap_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(bool, always_server)
-    DWUIDECLARG_OUT(bool, always_accept)
-    DWUIDECLARG_OUT(bool, ignore)
-    DWUIDECLARG_OUT(bool, use_old_timing)
-    DWUIDECLARG_OUT(bool, save_sent)
-    DWUIDECLARG_OUT(bool, no_forward_default)
-    DWUIDECLARG_END
-)
-{
-    DWUIGET_BEGIN(ZapAdvXfer, ZapAdvData)
-    DWUIGET_MEMBER(bool, always_server)
-    DWUIGET_MEMBER(bool, always_accept)
-    DWUIGET_MEMBER(bool, ignore)
-    DWUIGET_MEMBER(bool, use_old_timing)
-    DWUIGET_MEMBER(bool, save_sent)
-    DWUIGET_MEMBER(bool, no_forward_default)
-    DWUIGET_END
-}
+//DWYCOEXPORT
+//int
+//dwyco_get_zap_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(bool, always_server)
+//    DWUIDECLARG_OUT(bool, always_accept)
+//    DWUIDECLARG_OUT(bool, ignore)
+//    DWUIDECLARG_OUT(bool, use_old_timing)
+//    DWUIDECLARG_OUT(bool, save_sent)
+//    DWUIDECLARG_OUT(bool, no_forward_default)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUIGET_BEGIN(ZapAdvXfer, ZapAdvData)
+//    DWUIGET_MEMBER(bool, always_server)
+//    DWUIGET_MEMBER(bool, always_accept)
+//    DWUIGET_MEMBER(bool, ignore)
+//    DWUIGET_MEMBER(bool, use_old_timing)
+//    DWUIGET_MEMBER(bool, save_sent)
+//    DWUIGET_MEMBER(bool, no_forward_default)
+//    DWUIGET_END
+//}
 
 
 DWYCOEXPORT
@@ -5883,7 +5882,7 @@ int
 dwyco_zap_send4(int compid, const char *uid, int len_uid, const char *text, int len_text, int no_forward, const char **pers_id_out, int *len_pers_id_out)
 {
 
-    return dwyco_zap_send5(compid, uid, len_uid, text, len_text, no_forward, ZapAdvData.get_save_sent(), pers_id_out, len_pers_id_out);
+    return dwyco_zap_send5(compid, uid, len_uid, text, len_text, no_forward, (int)get_settings_value("zap/save_sent") == 1, pers_id_out, len_pers_id_out);
 
 }
 
@@ -7805,21 +7804,23 @@ dwyco_set_pals_only(int on)
     if(on)
     {
         chatq_send_pals_only(0, My_UID, vctrue);
-        ZapAdvData.set_ignore(1);
+        set_settings_value("zap/ignore", 1);
+        //ZapAdvData.set_ignore(1);
     }
     else
     {
         chatq_send_pals_only(0, My_UID, vcnil);
-        ZapAdvData.set_ignore(0);
+        set_settings_value("zap/ignore", 0);
+        //ZapAdvData.set_ignore(0);
     }
-    ZapAdvData.save();
+    //ZapAdvData.save();
 }
 
 DWYCOEXPORT
 int
 dwyco_get_pals_only()
 {
-    return ZapAdvData.get_ignore();
+    return (int)get_settings_value("zap/ignore") == 1;
 }
 
 #if 0
