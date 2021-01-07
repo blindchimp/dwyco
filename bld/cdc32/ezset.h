@@ -10,7 +10,11 @@
 #define EZSET_H
 
 #include "vc.h"
+void init_sql_settings();
 
 vc get_settings_value(const char *name);
 int set_settings_value(const char *name, const char *value);
+int set_settings_value(const char *name, int);
+int set_settings_value(const char *name, vc);
+//template<class T> int set_settings_value(const char *name, T val);
 #endif

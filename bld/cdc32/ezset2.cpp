@@ -2,50 +2,65 @@
 #include "simplesql.h"
 #include "simple_property.h"
 #include "dwtree2.h"
+#include "aconn.h"
 
 using namespace dwyco;
+#undef DWUIDECLVAL
+#define DWUIDECLVAL(tp, nm, ival_str, ival_int) { tp, #nm, ival_str, ival_int}
 
+struct init_settings
+{
+	enum vc_type tp;
+	const char *name;
+    const char *init_val_str;
+    int init_val_int;
+};
 
-aconn.h:    DWUIDECLVAL(int, net/primary_port)
-aconn.h:    DWUIDECLVAL(int, net/secondary_port)
-aconn.h:    DWUIDECLVAL(int, net/pal_port)
-aconn.h:    DWUIDECLVAL(int, net/nat_primary_port)
-aconn.h:    DWUIDECLVAL(int, net/nat_secondary_port)
-aconn.h:    DWUIDECLVAL(int, net/nat_pal_port)
-aconn.h:    DWUIDECLVAL(bool, net/advertise_nat_ports)
-aconn.h:    DWUIDECLVAL(int, net/disable_upnp)
-aconn.h:    DWUIDECLVAL(int, net/call_setup_media_select)
-aconn.h:    DWUIDECLVAL(int, net/listen)
-cllaccpt.h:    DWUIDECLVAL_char_int(const char *, call_acceptance/max_audio)
-cllaccpt.h:    DWUIDECLVAL_char_int(const char *, call_acceptance/max_chat)
-cllaccpt.h:    DWUIDECLVAL_char_int(const char *, call_acceptance/max_video)
-cllaccpt.h:    DWUIDECLVAL_char_int(const char *, call_acceptance/max_audio_recv)
-cllaccpt.h:    DWUIDECLVAL_char_int(const char *, call_acceptance/max_video_recv)
-cllaccpt.h:    DWUIDECLVAL_char_int(const char *, call_acceptance/max_pchat)
-cllaccpt.h:    DWUIDECLVAL(const char *, call_acceptance/pw)
-cllaccpt.h:    DWUIDECLVAL(bool, call_acceptance/auto_accept)
-cllaccpt.h:    DWUIDECLVAL(bool, call_acceptance/require_pw)
-rawfiles.h:    DWUIDECLVAL(const char *, raw_files/raw_files_list)
-rawfiles.h:    DWUIDECLVAL(const char *, raw_files/raw_files_pattern)
-rawfiles.h:    DWUIDECLVAL(bool, raw_files/use_list_of_files)
-rawfiles.h:    DWUIDECLVAL(bool, raw_files/use_pattern)
-rawfiles.h:    DWUIDECLVAL(bool, raw_files/preload)
-usercnfg.h:    DWUIDECLVAL(const char *, user/description)
-usercnfg.h:    DWUIDECLVAL(const char *, user/username)
-usercnfg.h:    DWUIDECLVAL(const char *, user/email)
-usercnfg.h:    DWUIDECLVAL(const char *, user/location)
-vidinput.h:    DWUIDECLVAL(const char *, vid_input/device_name)
-vidinput.h:    DWUIDECLVAL(bool, vid_input/coded)
-vidinput.h:    DWUIDECLVAL(bool, vid_input/raw)
-vidinput.h:    DWUIDECLVAL(bool, vid_input/vfw)
-vidinput.h:    DWUIDECLVAL(bool, vid_input/no_video)
-vidinput.h:    DWUIDECLVAL(int, vid_input/device_index)
-zapadv.h:    DWUIDECLVAL(bool, zap/always_server)
-zapadv.h:    DWUIDECLVAL(bool, zap/always_accept)
-zapadv.h:    DWUIDECLVAL(bool, zap/ignore)
-zapadv.h:    DWUIDECLVAL(bool, zap/use_old_timing)
-zapadv.h:    DWUIDECLVAL(bool, zap/save_sent)
-zapadv.h:    DWUIDECLVAL(bool, zap/no_forward_default)
+static init_settings Initial_settings[] =
+{
+    DWUIDECLVAL(VC_INT, net/primary_port, "", 6780),
+    DWUIDECLVAL(VC_INT, net/secondary_port, "", 6781),
+    DWUIDECLVAL(VC_INT, net/pal_port, "", 6782),
+    DWUIDECLVAL(VC_INT, net/nat_primary_port, "", 6780),
+    DWUIDECLVAL(VC_INT, net/nat_secondary_port, "", 6781),
+    DWUIDECLVAL(VC_INT, net/nat_pal_port, "", 6782),
+    DWUIDECLVAL(VC_INT, net/advertise_nat_ports, "", 0),
+    DWUIDECLVAL(VC_INT, net/disable_upnp, "", 0),
+    DWUIDECLVAL(VC_INT, net/call_setup_media_select, "", CSMS_TCP_ONLY),
+    DWUIDECLVAL(VC_INT, net/listen, "", 1),
+    DWUIDECLVAL(VC_INT, call_acceptance/max_audio, "", 4),
+    DWUIDECLVAL(VC_INT, call_acceptance/max_chat, "", 4),
+    DWUIDECLVAL(VC_INT, call_acceptance/max_video, "", 4),
+    DWUIDECLVAL(VC_INT, call_acceptance/max_audio_recv, "", 4),
+    DWUIDECLVAL(VC_INT, call_acceptance/max_video_recv, "", 4),
+    DWUIDECLVAL(VC_INT, call_acceptance/max_pchat, "", 4),
+    DWUIDECLVAL(VC_BSTRING, call_acceptance/pw, "", 0),
+    DWUIDECLVAL(VC_INT, call_acceptance/auto_accept, "", 1),
+    DWUIDECLVAL(VC_INT, call_acceptance/require_pw, "", 0),
+    DWUIDECLVAL(VC_BSTRING, raw_files/raw_files_list, "", 0),
+    DWUIDECLVAL(VC_BSTRING, raw_files/raw_files_pattern, "", 0),
+    DWUIDECLVAL(VC_INT, raw_files/use_list_of_files, "", 0),
+    DWUIDECLVAL(VC_INT, raw_files/use_pattern, "", 0),
+    DWUIDECLVAL(VC_INT, raw_files/preload, "", 0),
+    DWUIDECLVAL(VC_BSTRING, user/description, "", 0),
+    DWUIDECLVAL(VC_BSTRING, user/username, "", 0),
+    DWUIDECLVAL(VC_BSTRING, user/email, "", 0),
+    DWUIDECLVAL(VC_BSTRING, user/location, "", 0),
+    DWUIDECLVAL(VC_BSTRING, vid_input/device_name, "", 0),
+    DWUIDECLVAL(VC_INT, vid_input/coded, "", 0),
+    DWUIDECLVAL(VC_INT, vid_input/raw, "", 0),
+    DWUIDECLVAL(VC_INT, vid_input/vfw, "", 0),
+    DWUIDECLVAL(VC_INT, vid_input/no_video, "", 1),
+    DWUIDECLVAL(VC_INT, vid_input/device_index, "", 0),
+    DWUIDECLVAL(VC_INT, zap/always_server, "", 0),
+    DWUIDECLVAL(VC_INT, zap/always_accept, "", 1),
+    DWUIDECLVAL(VC_INT, zap/ignore, "", 0),
+    DWUIDECLVAL(VC_INT, zap/use_old_timing, "", 0),
+    DWUIDECLVAL(VC_INT, zap/save_sent, "", 1),
+    DWUIDECLVAL(VC_INT, zap/no_forward_default, "", 0),
+    DWUIDECLVAL(VC_INT, video_format/swap_rb, "", 0),
+    {VC_NIL,0, 0, 0}
+};
 
 struct settings_sql : public SimpleSql
 {
@@ -53,8 +68,8 @@ struct settings_sql : public SimpleSql
 
     void init_schema(const DwString&) {
         sql_simple("create table if not exists settings ("
-		"name text not null primary key, "
-		"value not null, "
+        "name text primary key not null, "
+        "value not null "
 		"on conflict replace"
                    ")");
     }
@@ -72,7 +87,7 @@ struct setting : public ssns::trackable
     sigprop<vc> value;
 
     void update_db(vc val) {
-        sql("update set value = ?1 where name = ?2", val, name);
+        sql("update settings set value = ?1 where name = ?2", val, name);
     }
 };
 
@@ -95,6 +110,27 @@ init_sql_settings()
         s->value = db[i][1];
         s->value.value_changed.connect_memfun(s, &setting::update_db);
         Map->add(s->name, s);
+    }
+    for(int i = 0; Initial_settings[i].name != 0; ++i)
+    {
+        if(Map->contains(Initial_settings[i].name))
+            continue;
+        setting *s = new setting;
+        s->name = Initial_settings[i].name;
+        s->value.value_changed.connect_memfun(s, &setting::update_db);
+        Map->add(s->name, s);
+        switch(Initial_settings[i].tp)
+        {
+        case VC_INT:
+            s->value = Initial_settings[i].init_val_int;
+            break;
+        case VC_BSTRING:
+            s->value = Initial_settings[i].init_val_str;
+            break;
+        default:
+            oopanic("bad init setting table");
+
+        }
     }
 }
 
@@ -121,12 +157,43 @@ bind_sql_setting(vc name, void (*fn)(vc))
 }
 
 int
-set_settings_value(const char *name, const char *value)
+set_settings_value(const char *name, const char  *val)
 {
     setting *s;
     if(!Map->find(name, s))
         oopanic("bad setting");
-    s->value = vc(value);
+    vc tmp = s->value;
+    switch(tmp.type())
+    {
+    case VC_INT:
+        s->value = atol(val);
+        break;
+    case VC_STRING:
+        s->value = val;
+        break;
+    default:
+        oopanic("bad setting type");
+    }
+    return 1;
+}
+
+int
+set_settings_value(const char *name, int val)
+{
+    setting *s;
+    if(!Map->find(name, s))
+        oopanic("bad setting");
+    s->value = val;
+    return 1;
+}
+
+int
+set_settings_value(const char *name, vc val)
+{
+    setting *s;
+    if(!Map->find(name, s))
+        oopanic("bad setting");
+    s->value = val;
     return 1;
 }
 
