@@ -13,7 +13,6 @@
 #include <string.h>
 #include "doinit.h"
 #include "usercnfg.h"
-#include "cllaccpt.h"
 #include "vidinput.h"
 #include "dirth.h"
 #include "vc.h"
@@ -585,13 +584,20 @@ build_directory_entry()
     v.append(Myhostname);
     v.append(UserConfigData.get_username());
     v.append(UserConfigData.get_description());
-    CallAcceptanceXfer& c = CallAcceptanceData;
+    //CallAcceptanceXfer& c = CallAcceptanceData;
     vc v2(VC_VECTOR);
-    v2.append(c.get_max_audio());
-    v2.append(VidInputData.get_no_video() ? 0 : c.get_max_video());
-    v2.append(c.get_max_chat());
-    v2.append(c.get_max_audio_recv());
-    v2.append(c.get_max_video_recv());
+    v2.append(0);
+    v2.append(0);
+    v2.append(0);
+    v2.append(0);
+    v2.append(0);
+
+
+//    v2.append(c.get_max_audio());
+//    v2.append(VidInputData.get_no_video() ? 0 : c.get_max_video());
+//    v2.append(c.get_max_chat());
+//    v2.append(c.get_max_audio_recv());
+//    v2.append(c.get_max_video_recv());
     v.append(v2);
     v.append(1); // "registered"
     v.append(dwyco_get_version_string());

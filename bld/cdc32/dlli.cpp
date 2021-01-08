@@ -310,7 +310,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "qdirth.h"
 
 #include "vfwinvst.h"
-#include "cllaccpt.h"
 #include "rawfiles.h"
 #include "vidinput.h"
 #include "usercnfg.h"
@@ -4887,64 +4886,64 @@ dwyco_get_video_input(
     DWUIGET_END
 }
 
-DWYCOEXPORT
-int
-dwyco_set_call_accept(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(int , max_audio)
-    DWUIDECLARG(int , max_chat)
-    DWUIDECLARG(int , max_video)
-    DWUIDECLARG(int , max_audio_recv)
-    DWUIDECLARG(int , max_video_recv)
-    DWUIDECLARG(int , max_pchat)
-    DWUIDECLARG(const char * , pw)
-    DWUIDECLARG(bool, auto_accept)
-    DWUIDECLARG(bool, require_pw)
-    DWUIDECLARG_END
-)
-{
-    DWUISET_BEGIN(CallAcceptanceXfer, CallAcceptanceData)
-    DWUISET_MEMBER(int , max_audio)
-    DWUISET_MEMBER(int , max_chat)
-    DWUISET_MEMBER(int , max_video)
-    DWUISET_MEMBER(int , max_audio_recv)
-    DWUISET_MEMBER(int , max_video_recv)
-    DWUISET_MEMBER(int , max_pchat)
-    DWUISET_MEMBER(const char * , pw)
-    DWUISET_MEMBER(bool, auto_accept)
-    DWUISET_MEMBER(bool, require_pw)
-    chatq_send_update_call_accept();
-    DWUISET_END
-}
+//DWYCOEXPORT
+//int
+//dwyco_set_call_accept(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(int , max_audio)
+//    DWUIDECLARG(int , max_chat)
+//    DWUIDECLARG(int , max_video)
+//    DWUIDECLARG(int , max_audio_recv)
+//    DWUIDECLARG(int , max_video_recv)
+//    DWUIDECLARG(int , max_pchat)
+//    DWUIDECLARG(const char * , pw)
+//    DWUIDECLARG(bool, auto_accept)
+//    DWUIDECLARG(bool, require_pw)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUISET_BEGIN(CallAcceptanceXfer, CallAcceptanceData)
+//    DWUISET_MEMBER(int , max_audio)
+//    DWUISET_MEMBER(int , max_chat)
+//    DWUISET_MEMBER(int , max_video)
+//    DWUISET_MEMBER(int , max_audio_recv)
+//    DWUISET_MEMBER(int , max_video_recv)
+//    DWUISET_MEMBER(int , max_pchat)
+//    DWUISET_MEMBER(const char * , pw)
+//    DWUISET_MEMBER(bool, auto_accept)
+//    DWUISET_MEMBER(bool, require_pw)
+//    chatq_send_update_call_accept();
+//    DWUISET_END
+//}
 
-DWYCOEXPORT
-int
-dwyco_get_call_accept(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(int , max_audio)
-    DWUIDECLARG_OUT(int , max_chat)
-    DWUIDECLARG_OUT(int , max_video)
-    DWUIDECLARG_OUT(int , max_audio_recv)
-    DWUIDECLARG_OUT(int , max_video_recv)
-    DWUIDECLARG_OUT(int , max_pchat)
-    DWUIDECLARG_OUT(const char * , pw)
-    DWUIDECLARG_OUT(bool, auto_accept)
-    DWUIDECLARG_OUT(bool, require_pw)
-    DWUIDECLARG_END
-)
-{
-    DWUIGET_BEGIN(CallAcceptanceXfer, CallAcceptanceData)
-    DWUIGET_MEMBER(int , max_audio)
-    DWUIGET_MEMBER(int , max_chat)
-    DWUIGET_MEMBER(int , max_video)
-    DWUIGET_MEMBER(int , max_audio_recv)
-    DWUIGET_MEMBER(int , max_video_recv)
-    DWUIGET_MEMBER(int , max_pchat)
-    DWUIGET_MEMBER(const char * , pw)
-    DWUIGET_MEMBER(bool, auto_accept)
-    DWUIGET_MEMBER(bool, require_pw)
-    DWUIGET_END
-}
+//DWYCOEXPORT
+//int
+//dwyco_get_call_accept(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(int , max_audio)
+//    DWUIDECLARG_OUT(int , max_chat)
+//    DWUIDECLARG_OUT(int , max_video)
+//    DWUIDECLARG_OUT(int , max_audio_recv)
+//    DWUIDECLARG_OUT(int , max_video_recv)
+//    DWUIDECLARG_OUT(int , max_pchat)
+//    DWUIDECLARG_OUT(const char * , pw)
+//    DWUIDECLARG_OUT(bool, auto_accept)
+//    DWUIDECLARG_OUT(bool, require_pw)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUIGET_BEGIN(CallAcceptanceXfer, CallAcceptanceData)
+//    DWUIGET_MEMBER(int , max_audio)
+//    DWUIGET_MEMBER(int , max_chat)
+//    DWUIGET_MEMBER(int , max_video)
+//    DWUIGET_MEMBER(int , max_audio_recv)
+//    DWUIGET_MEMBER(int , max_video_recv)
+//    DWUIGET_MEMBER(int , max_pchat)
+//    DWUIGET_MEMBER(const char * , pw)
+//    DWUIGET_MEMBER(bool, auto_accept)
+//    DWUIGET_MEMBER(bool, require_pw)
+//    DWUIGET_END
+//}
 
 //DWYCOEXPORT
 //int

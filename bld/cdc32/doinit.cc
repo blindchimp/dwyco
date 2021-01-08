@@ -23,7 +23,6 @@
 #include "vfwinvst.h"
 #include "rawfiles.h"
 #include "vidinput.h"
-#include "cllaccpt.h"
 #include "qtab.h"
 #include "jqtab.h"
 #include "qpol.h"
@@ -178,7 +177,7 @@ init_codec(const char *logname)
         //CTUserDefaults.load();
         RawFilesData.load();
         VidInputData.load();
-        CallAcceptanceData.load();
+        //CallAcceptanceData.load();
 
         //ZapAdvData.load();
         DwNetConfigData.load();
@@ -303,7 +302,7 @@ simple_init_codec(const char *logname)
         //CTUserDefaults.load();
         RawFilesData.load();
         VidInputData.load();
-        CallAcceptanceData.load();
+        //CallAcceptanceData.load();
         //ZapAdvData.load();
         DwNetConfigData.load();
 
@@ -391,7 +390,7 @@ init_bg_msg_send(const char *logname)
         //CTUserDefaults.load();
         RawFilesData.load();
         VidInputData.load();
-        CallAcceptanceData.load();
+        //CallAcceptanceData.load();
         //ZapAdvData.load();
         DwNetConfigData.load();
 

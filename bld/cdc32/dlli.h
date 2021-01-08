@@ -2172,35 +2172,35 @@ dwyco_get_video_input(
 // set according to whatever mode (single user
 // vs. multiuser) you are in. in CDC32, there
 // is a dialog the users can tweak.
-int DWYCOEXPORT
-dwyco_set_call_accept(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(int , max_audio)		// max # of audio streams you will send
-    DWUIDECLARG(int , max_chat)         // max # if PUBLIC chat streams you will accept
-    DWUIDECLARG(int , max_video)		// max # of video streams you will send
-    DWUIDECLARG(int , max_audio_recv)	// max # of audio streams you will receive
-    DWUIDECLARG(int , max_video_recv)   // max # of video streams you will receive
-    DWUIDECLARG(int , max_pchat)        // max # of private chat streams you will accept
-    DWUIDECLARG(const char * , pw)			// icuii: connection password required to connect
-    DWUIDECLARG(bool, auto_accept)		// icuii: 1 if "accept calls automatically" is checked
-    DWUIDECLARG(bool, require_pw)       // icuii: 1 if "require password" is checked
-    DWUIDECLARG_END
-);
-
-int DWYCOEXPORT
-dwyco_get_call_accept(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(int , max_audio)
-    DWUIDECLARG_OUT(int , max_chat)
-    DWUIDECLARG_OUT(int , max_video)
-    DWUIDECLARG_OUT(int , max_audio_recv)
-    DWUIDECLARG_OUT(int , max_video_recv)
-    DWUIDECLARG_OUT(int , max_pchat)
-    DWUIDECLARG_OUT(const char * , pw)
-    DWUIDECLARG_OUT(bool, auto_accept)
-    DWUIDECLARG_OUT(bool, require_pw)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_set_call_accept(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(int , max_audio)		// max # of audio streams you will send
+//    DWUIDECLARG(int , max_chat)         // max # if PUBLIC chat streams you will accept
+//    DWUIDECLARG(int , max_video)		// max # of video streams you will send
+//    DWUIDECLARG(int , max_audio_recv)	// max # of audio streams you will receive
+//    DWUIDECLARG(int , max_video_recv)   // max # of video streams you will receive
+//    DWUIDECLARG(int , max_pchat)        // max # of private chat streams you will accept
+//    DWUIDECLARG(const char * , pw)			// icuii: connection password required to connect
+//    DWUIDECLARG(bool, auto_accept)		// icuii: 1 if "accept calls automatically" is checked
+//    DWUIDECLARG(bool, require_pw)       // icuii: 1 if "require password" is checked
+//    DWUIDECLARG_END
+//);
+//
+//int DWYCOEXPORT
+//dwyco_get_call_accept(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(int , max_audio)
+//    DWUIDECLARG_OUT(int , max_chat)
+//    DWUIDECLARG_OUT(int , max_video)
+//    DWUIDECLARG_OUT(int , max_audio_recv)
+//    DWUIDECLARG_OUT(int , max_video_recv)
+//    DWUIDECLARG_OUT(int , max_pchat)
+//    DWUIDECLARG_OUT(const char * , pw)
+//    DWUIDECLARG_OUT(bool, auto_accept)
+//    DWUIDECLARG_OUT(bool, require_pw)
+//    DWUIDECLARG_END
+//);
 
 //// assorted zap message setup
 //int DWYCOEXPORT

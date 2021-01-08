@@ -11,7 +11,6 @@
 
 #include "usercnfg.h"
 #include "vfwinvst.h"
-#include "cllaccpt.h"
 #include "vidinput.h"
 #include "ratetwkr.h"
 #include "chatdisp.h"
@@ -2011,26 +2010,21 @@ MMChannel::init_config(int caller)
     }
     else
     {
-        if(!VidInputData.get_no_video() && CallAcceptanceData.get_max_video() > 0)
+        //if(!VidInputData.get_no_video() && CallAcceptanceData.get_max_video() > 0)
             v.append("send");
-        if(CallAcceptanceData.get_max_audio() > 0)
+        //if(CallAcceptanceData.get_max_audio() > 0)
             v.append("send audio");
-        if(CallAcceptanceData.get_max_chat() > 0)
+        //if(CallAcceptanceData.get_max_chat() > 0)
             v.append("chat");
-        if(CallAcceptanceData.get_max_pchat() > 0)
+        //if(CallAcceptanceData.get_max_pchat() > 0)
             v.append("pchat");
-        if(CallAcceptanceData.get_max_video_recv() > 0)
+        //if(CallAcceptanceData.get_max_video_recv() > 0)
             v.append("recv");
-        if(CallAcceptanceData.get_max_audio_recv() > 0)
+        //if(CallAcceptanceData.get_max_audio_recv() > 0)
             v.append("recv audio");
         v.append("uc"); // see above
     }
     config.add_kv("channel duplex", v);
-#if 0
-    channel_keys = dh_gen_combined_keys();
-    config.add_kv("udh pubkeys", udh_just_publics(channel_keys));
-#endif
-
 }
 
 void
@@ -2853,7 +2847,7 @@ MMChannel::recv_config(vc cfg)
     // move password screening down here so that the app defined screening
     // more or less disabled password screening. may need to update app screening
     // to include stuff for doing password screening in the future.
-    if(!Conf && CallAcceptanceData.get_require_pw())
+    if(!Conf && (int)get_settings_value("call_acceptance/require_pw") == 1)
     {
         vc pw;
         if(!cfg.find("pw", pw))
@@ -2862,7 +2856,7 @@ MMChannel::recv_config(vc cfg)
             send_error("password required to connect");
             goto cleanup;
         }
-        if(strcmp((const char *)pw, CallAcceptanceData.get_pw()) != 0)
+        if(pw != get_settings_value("call_acceptance/pw"))
         {
             Log->make_entry("call rejected, incorrect pw.");
             send_error("incorrect password");
@@ -2950,7 +2944,7 @@ MMChannel::recv_config(vc cfg)
     // now pop up a dialog and wait for the user
     // to accept or reject the call.
     play_call_alert();
-    if(!CallAcceptanceData.get_auto_accept())
+    if((int)get_settings_value("call_acceptance/auto_acccept") == 0)
     {
         vc name;
         if(!remote_cfg.is_nil() && !remote_cfg.find("username", name))

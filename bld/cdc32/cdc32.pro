@@ -175,7 +175,6 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
-cllaccpt.cpp \
 ratetwkr.cpp \
 rawfiles.cpp \
 syncvar.cc \
@@ -183,7 +182,6 @@ uicfg.cc \
 usercnfg.cpp \
 vfwinvst.cpp \
 vidinput.cpp \
-zapadv.cpp \
 doinit.cc \
 netcod.cc \
 netcod2.cc \
