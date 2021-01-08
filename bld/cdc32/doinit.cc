@@ -180,9 +180,9 @@ init_codec(const char *logname)
         //CallAcceptanceData.load();
 
         //ZapAdvData.load();
-        DwNetConfigData.load();
+        //DwNetConfigData.load();
         extern int Media_select;
-        switch(DwNetConfigData.get_call_setup_media_select())
+        switch((int)get_settings_value("net/call_setup_media_select"))
         {
         default:
         case CSMS_VIA_HANDSHAKE:
@@ -304,7 +304,7 @@ simple_init_codec(const char *logname)
         VidInputData.load();
         //CallAcceptanceData.load();
         //ZapAdvData.load();
-        DwNetConfigData.load();
+        //DwNetConfigData.load();
 
         init_sysattr();
         init = 1;
@@ -392,7 +392,7 @@ init_bg_msg_send(const char *logname)
         VidInputData.load();
         //CallAcceptanceData.load();
         //ZapAdvData.load();
-        DwNetConfigData.load();
+        //DwNetConfigData.load();
 
         init_sysattr();
         Bg_msg_send_init = 1;

@@ -2263,37 +2263,37 @@ dwyco_get_rate_tweaks(
 #define DWYCO_MEDIA_SELECT_UDP_ONLY 2		// force udp SAC only
 #define DWYCO_MEDIA_SELECT_HANDSHAKE 3		// try to figure out cheapest way
 
-int DWYCOEXPORT
-dwyco_set_net_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(int, primary_port) 				// primary listener, icuii: 2000
-    DWUIDECLARG(int, secondary_port) 			// secondary listenter icuii: 9745
-    DWUIDECLARG(int, pal_port)		 			// pal listener icuii: 6782
-    DWUIDECLARG(int, nat_primary_port)			// icuii: 0
-    DWUIDECLARG(int, nat_secondary_port)		// icuii: 0
-    DWUIDECLARG(int, nat_pal_port)				// icuii: 0
-    DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
-    DWUIDECLARG(int, disable_upnp)				// icuii: 0 , disabled for compat right now
-    DWUIDECLARG(int, media_select)				// defaults to "handshake", see *MEDIA_SEL* defines
-    DWUIDECLARG(int, listen)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_set_net_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(int, primary_port) 				// primary listener, icuii: 2000
+//    DWUIDECLARG(int, secondary_port) 			// secondary listenter icuii: 9745
+//    DWUIDECLARG(int, pal_port)		 			// pal listener icuii: 6782
+//    DWUIDECLARG(int, nat_primary_port)			// icuii: 0
+//    DWUIDECLARG(int, nat_secondary_port)		// icuii: 0
+//    DWUIDECLARG(int, nat_pal_port)				// icuii: 0
+//    DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
+//    DWUIDECLARG(int, disable_upnp)				// icuii: 0 , disabled for compat right now
+//    DWUIDECLARG(int, media_select)				// defaults to "handshake", see *MEDIA_SEL* defines
+//    DWUIDECLARG(int, listen)
+//    DWUIDECLARG_END
+//);
 
-int DWYCOEXPORT
-dwyco_get_net_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(int, primary_port)
-    DWUIDECLARG_OUT(int, secondary_port)
-    DWUIDECLARG_OUT(int, pal_port)
-    DWUIDECLARG_OUT(int, nat_primary_port)
-    DWUIDECLARG_OUT(int, nat_secondary_port)
-    DWUIDECLARG_OUT(int, nat_pal_port)
-    DWUIDECLARG_OUT(bool, advertise_nat_ports)
-    DWUIDECLARG_OUT(int, disable_upnp)
-    DWUIDECLARG_OUT(int, media_select)
-    DWUIDECLARG_OUT(int, listen)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_get_net_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(int, primary_port)
+//    DWUIDECLARG_OUT(int, secondary_port)
+//    DWUIDECLARG_OUT(int, pal_port)
+//    DWUIDECLARG_OUT(int, nat_primary_port)
+//    DWUIDECLARG_OUT(int, nat_secondary_port)
+//    DWUIDECLARG_OUT(int, nat_pal_port)
+//    DWUIDECLARG_OUT(bool, advertise_nat_ports)
+//    DWUIDECLARG_OUT(int, disable_upnp)
+//    DWUIDECLARG_OUT(int, media_select)
+//    DWUIDECLARG_OUT(int, listen)
+//    DWUIDECLARG_END
+//);
 
 
 #ifdef __cplusplus

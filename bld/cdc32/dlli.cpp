@@ -1438,15 +1438,27 @@ dwyco_init()
 #endif
     init_codec();
 
-    set_listen_state(DwNetConfigData.get_listen());
-    if(DwNetConfigData.get_listen())
+    set_listen_state((int)get_settings_value("net/listen"));
+    if((int)get_settings_value("net/listen") == 1)
     {
         if(!Disable_UPNP)
         {
         int rport = (dwyco_rand() % (65500 - 10000)) + 10000;
-        dwyco_set_net_data(rport, rport + 1, rport + 2,
-                           rport, rport + 1, rport + 2,
-                           1, 0, CSMS_TCP_ONLY, 1);
+//        dwyco_set_net_data(rport, rport + 1, rport + 2,
+//                           rport, rport + 1, rport + 2,
+//                           1, 0, CSMS_TCP_ONLY, 1);
+        set_settings_value("net/primary_port", rport);
+        set_settings_value("net/secondary_port", rport + 1);
+        set_settings_value("net/pal_port", rport + 2);
+
+        set_settings_value("net/nat_primary_port", rport);
+        set_settings_value("net/nat_secondary_port", rport + 1);
+        set_settings_value("net/nat_pal_port", rport + 2);
+
+        set_settings_value("net/advertise_nat_ports", 1);
+        set_settings_value("net/disable_upnp", 0);
+        set_settings_value("net/call_setup_media_select", CSMS_TCP_ONLY);
+        set_settings_value("net/listen", 1);
 #ifndef DWYCO_NO_UPNP
         bg_upnp(rport, rport + 1, rport, rport + 1);
 #endif
@@ -4990,91 +5002,91 @@ dwyco_get_video_input(
 //}
 
 
-DWYCOEXPORT
-int
-dwyco_set_net_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(int, primary_port) 				// primary listener, icuii: 2000
-    DWUIDECLARG(int, secondary_port) 			// secondary listenter icuii: 9745
-    DWUIDECLARG(int, pal_port)		 			// pal listener icuii: 6782
-    DWUIDECLARG(int, nat_primary_port)			// icuii: 0
-    DWUIDECLARG(int, nat_secondary_port)		// icuii: 0
-    DWUIDECLARG(int, nat_pal_port)				// icuii: 0
-    DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
-    DWUIDECLARG(int, disable_upnp)		// icuii: 0
-    DWUIDECLARG(int, call_setup_media_select)
-    DWUIDECLARG(int, listen)
-    DWUIDECLARG_END
-)
-{
-    DWUISET_BEGIN(DwNetConfig, DwNetConfigData)
-    DWUISET_MEMBER(int, primary_port)
-    DWUISET_MEMBER(int, secondary_port)
-    DWUISET_MEMBER(int, pal_port)		 			// pal listener icuii: 6782
-    DWUISET_MEMBER(int, nat_primary_port)			// icuii: 0
-    DWUISET_MEMBER(int, nat_secondary_port)		// icuii: 0
-    DWUISET_MEMBER(int, nat_pal_port)				// icuii: 0
-    DWUISET_MEMBER(bool, advertise_nat_ports)		// icuii: 0
-    DWUISET_MEMBER(int, disable_upnp)		// icuii: 0
-    DWUISET_MEMBER(int, call_setup_media_select)		// icuii: tcp
-    DWUISET_MEMBER(int, listen)
-    if(is_listening())
-    {
-        set_listen_state(0);
-    }
-    set_listen_state(listen);
-    pal_reset();
+//DWYCOEXPORT
+//int
+//dwyco_set_net_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(int, primary_port) 				// primary listener, icuii: 2000
+//    DWUIDECLARG(int, secondary_port) 			// secondary listenter icuii: 9745
+//    DWUIDECLARG(int, pal_port)		 			// pal listener icuii: 6782
+//    DWUIDECLARG(int, nat_primary_port)			// icuii: 0
+//    DWUIDECLARG(int, nat_secondary_port)		// icuii: 0
+//    DWUIDECLARG(int, nat_pal_port)				// icuii: 0
+//    DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
+//    DWUIDECLARG(int, disable_upnp)		// icuii: 0
+//    DWUIDECLARG(int, call_setup_media_select)
+//    DWUIDECLARG(int, listen)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUISET_BEGIN(DwNetConfig, DwNetConfigData)
+//    DWUISET_MEMBER(int, primary_port)
+//    DWUISET_MEMBER(int, secondary_port)
+//    DWUISET_MEMBER(int, pal_port)		 			// pal listener icuii: 6782
+//    DWUISET_MEMBER(int, nat_primary_port)			// icuii: 0
+//    DWUISET_MEMBER(int, nat_secondary_port)		// icuii: 0
+//    DWUISET_MEMBER(int, nat_pal_port)				// icuii: 0
+//    DWUISET_MEMBER(bool, advertise_nat_ports)		// icuii: 0
+//    DWUISET_MEMBER(int, disable_upnp)		// icuii: 0
+//    DWUISET_MEMBER(int, call_setup_media_select)		// icuii: tcp
+//    DWUISET_MEMBER(int, listen)
+//    if(is_listening())
+//    {
+//        set_listen_state(0);
+//    }
+//    set_listen_state(listen);
+//    pal_reset();
 
-    extern int Media_select;
-//note: we depend on the values being sent in here being the same
-// as the ones in aconn.h
-    switch(call_setup_media_select)
-    {
-    default:
-    case CSMS_VIA_HANDSHAKE:
-        Media_select = MEDIA_VIA_HANDSHAKE;
-        break;
-    case CSMS_TCP_ONLY:
-        Media_select = MEDIA_TCP_VIA_PROXY;
-        break;
-    case CSMS_UDP_ONLY:
-        Media_select = MEDIA_UDP_VIA_STUN;
-        break;
+//    extern int Media_select;
+////note: we depend on the values being sent in here being the same
+//// as the ones in aconn.h
+//    switch(call_setup_media_select)
+//    {
+//    default:
+//    case CSMS_VIA_HANDSHAKE:
+//        Media_select = MEDIA_VIA_HANDSHAKE;
+//        break;
+//    case CSMS_TCP_ONLY:
+//        Media_select = MEDIA_TCP_VIA_PROXY;
+//        break;
+//    case CSMS_UDP_ONLY:
+//        Media_select = MEDIA_UDP_VIA_STUN;
+//        break;
 
-    }
-    DWUISET_END
-}
+//    }
+//    DWUISET_END
+//}
 
-DWYCOEXPORT
-int
-dwyco_get_net_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(int, primary_port)
-    DWUIDECLARG_OUT(int, secondary_port)
-    DWUIDECLARG_OUT(int, pal_port)
-    DWUIDECLARG_OUT(int, nat_primary_port)
-    DWUIDECLARG_OUT(int, nat_secondary_port)
-    DWUIDECLARG_OUT(int, nat_pal_port)
-    DWUIDECLARG_OUT(bool, advertise_nat_ports)
-    DWUIDECLARG_OUT(int, disable_upnp)
-    DWUIDECLARG_OUT(int, call_setup_media_select)
-    DWUIDECLARG_OUT(int, listen)
-    DWUIDECLARG_END
-)
-{
-    DWUIGET_BEGIN(DwNetConfig, DwNetConfigData)
-    DWUIGET_MEMBER(int, primary_port)
-    DWUIGET_MEMBER(int, secondary_port)
-    DWUIGET_MEMBER(int, pal_port)
-    DWUIGET_MEMBER(int, nat_primary_port)
-    DWUIGET_MEMBER(int, nat_secondary_port)
-    DWUIGET_MEMBER(int, nat_pal_port)
-    DWUIGET_MEMBER(bool, advertise_nat_ports)
-    DWUIGET_MEMBER(int, disable_upnp)
-    DWUIGET_MEMBER(int, call_setup_media_select)
-    DWUIGET_MEMBER(int, listen)
-    DWUIGET_END
-}
+//DWYCOEXPORT
+//int
+//dwyco_get_net_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(int, primary_port)
+//    DWUIDECLARG_OUT(int, secondary_port)
+//    DWUIDECLARG_OUT(int, pal_port)
+//    DWUIDECLARG_OUT(int, nat_primary_port)
+//    DWUIDECLARG_OUT(int, nat_secondary_port)
+//    DWUIDECLARG_OUT(int, nat_pal_port)
+//    DWUIDECLARG_OUT(bool, advertise_nat_ports)
+//    DWUIDECLARG_OUT(int, disable_upnp)
+//    DWUIDECLARG_OUT(int, call_setup_media_select)
+//    DWUIDECLARG_OUT(int, listen)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUIGET_BEGIN(DwNetConfig, DwNetConfigData)
+//    DWUIGET_MEMBER(int, primary_port)
+//    DWUIGET_MEMBER(int, secondary_port)
+//    DWUIGET_MEMBER(int, pal_port)
+//    DWUIGET_MEMBER(int, nat_primary_port)
+//    DWUIGET_MEMBER(int, nat_secondary_port)
+//    DWUIGET_MEMBER(int, nat_pal_port)
+//    DWUIGET_MEMBER(bool, advertise_nat_ports)
+//    DWUIGET_MEMBER(int, disable_upnp)
+//    DWUIGET_MEMBER(int, call_setup_media_select)
+//    DWUIGET_MEMBER(int, listen)
+//    DWUIGET_END
+//}
 
 
 // Message composition

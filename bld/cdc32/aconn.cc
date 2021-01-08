@@ -22,10 +22,15 @@
 #include "vccomp.h"
 #include "vcsock.h"
 #include "qauth.h"
+#include "ezset.h"
+
+// NOTENOTENOTE! fixme, look at the dlli.cpp section where some of these
+// settings are tweaked and set bindings somewhere so we can do the
+// machinations needed when network state changes
 
 extern vc LocalIP;
 namespace dwyco {
-DwNetConfig DwNetConfigData;
+//DwNetConfig DwNetConfigData;
 static Listener *Listen_sock;
 static Listener *Static_secondary_sock;
 static int Inhibit_accept;
@@ -211,9 +216,9 @@ broadcast_tick()
     announce[0] = My_UID;
     announce[1] = LocalIP;
     vc v(VC_VECTOR);
-    v.append(DwNetConfigData.get_primary_port());
-    v.append(DwNetConfigData.get_secondary_port());
-    v.append(DwNetConfigData.get_pal_port());
+    v.append(get_settings_value("net/primary_port"));
+    v.append(get_settings_value("net/secondary_port"));
+    v.append(get_settings_value("net/pal_port"));
     announce[2] = v;
     sendvc(Local_broadcast, announce);
     Broadcast_timer.start();
@@ -307,7 +312,8 @@ set_listen_state(int on)
         {
             Listen_sock = new Listener;
             Listen_sock->non_blocking(1);
-            DwString lp(DwNetConfigData.get_primary_suffix("any"));
+            DwString lp("any:");
+            lp += DwString::fromInt((int)get_settings_value("net/primary_port"));
             if(!Listen_sock->init2(lp.c_str()))
             {
                 (*MMChannel::popup_message_box_callback)(0, "can't listen (winsock error)", vcnil, vcnil);
@@ -317,8 +323,9 @@ set_listen_state(int on)
             }
             Static_secondary_sock = new Listener;
             Static_secondary_sock->non_blocking(1);
-            DwString lp2(DwNetConfigData.get_secondary_suffix("any"));
-            if(!Static_secondary_sock->init2(lp2.c_str()))
+            lp = "any:";
+            lp += DwString::fromInt((int)get_settings_value("net/secondary_port"));
+            if(!Static_secondary_sock->init2(lp.c_str()))
             {
                 (*MMChannel::popup_message_box_callback)(0, "can't listen (winsock error)", vcnil, vcnil);
                 delete Static_secondary_sock;
@@ -343,126 +350,6 @@ set_listen_state(int on)
             stop_broadcaster();
         }
     }
-}
-
-#define FW_SECTION "firewall"
-
-#define DEFAULT_PORT_SUFFIX ":6780"
-#define DEFAULT_PORT_SUFFIX_SECONDARY ":6781"
-#define DEFAULT_PRIMARY_PORT 6780
-#define DEFAULT_SECONDARY_PORT 6781
-#define DEFAULT_PAL_PORT 6783
-
-#define DEFAULT_ADVERTISE_NAT_PORTS 0
-#define DEFAULT_DISABLE_UPNP 0
-#define DEFAULT_LISTEN 1
-#ifdef CDC32
-#define DEFAULT_CALL_SETUP_MEDIA_SELECT CSMS_VIA_HANDSHAKE
-#else
-#define DEFAULT_CALL_SETUP_MEDIA_SELECT CSMS_TCP_ONLY
-#endif
-
-
-
-DwNetConfig::DwNetConfig()
-DWUIINIT_CTOR_BEGIN,
-DWUIINIT_CTOR_VAL(primary_port),
-DWUIINIT_CTOR_VAL(secondary_port),
-DWUIINIT_CTOR_VAL(pal_port),
-DWUIINIT_CTOR_VAL(nat_primary_port),
-DWUIINIT_CTOR_VAL(nat_secondary_port),
-DWUIINIT_CTOR_VAL(nat_pal_port),
-DWUIINIT_CTOR_VAL(advertise_nat_ports),
-DWUIINIT_CTOR_VAL(disable_upnp),
-DWUIINIT_CTOR_VAL(call_setup_media_select),
-DWUIINIT_CTOR_VAL(listen)
-DWUIINIT_CTOR_END
-{
-    set_primary_port(DEFAULT_PRIMARY_PORT);
-    set_secondary_port(DEFAULT_SECONDARY_PORT);
-    set_pal_port(DEFAULT_PAL_PORT);
-
-    // note: these defaults correspond to using the DMZ
-    // on a NAT box
-    set_nat_primary_port(DEFAULT_PRIMARY_PORT);
-    set_nat_secondary_port(DEFAULT_SECONDARY_PORT);
-    set_nat_pal_port(DEFAULT_PAL_PORT);
-    set_advertise_nat_ports(DEFAULT_ADVERTISE_NAT_PORTS);
-    set_disable_upnp(DEFAULT_DISABLE_UPNP);
-    set_call_setup_media_select(DEFAULT_CALL_SETUP_MEDIA_SELECT);
-    set_listen(DEFAULT_LISTEN);
-}
-
-void
-DwNetConfig::save()
-{
-    save_syncmap(syncmap, FW_SECTION ".dif");
-}
-
-void
-DwNetConfig::load()
-{
-    load_syncmap(syncmap, FW_SECTION ".dif");
-}
-
-DwString
-DwNetConfig::get_primary_suffix(const char *ip)
-{
-    char a[100];
-    sprintf(a, ":%d", get_primary_port());
-    DwString ret(ip);
-    ret += a;
-    return ret;
-}
-
-DwString
-DwNetConfig::get_secondary_suffix(const char *ip)
-{
-    char a[100];
-    sprintf(a, ":%d", get_secondary_port());
-    DwString ret(ip);
-    ret += a;
-    return ret;
-}
-
-DwString
-DwNetConfig::get_pal_suffix(const char *ip)
-{
-    char a[100];
-    sprintf(a, ":%d", get_pal_port());
-    DwString ret(ip);
-    ret += a;
-    return ret;
-}
-
-DwString
-DwNetConfig::get_nat_primary_suffix(const char *ip)
-{
-    char a[100];
-    sprintf(a, ":%d", get_nat_primary_port());
-    DwString ret(ip);
-    ret += a;
-    return ret;
-}
-
-DwString
-DwNetConfig::get_nat_secondary_suffix(const char *ip)
-{
-    char a[100];
-    sprintf(a, ":%d", get_nat_secondary_port());
-    DwString ret(ip);
-    ret += a;
-    return ret;
-}
-
-DwString
-DwNetConfig::get_nat_pal_suffix(const char *ip)
-{
-    char a[100];
-    sprintf(a, ":%d", get_nat_pal_port());
-    DwString ret(ip);
-    ret += a;
-    return ret;
 }
 
 }

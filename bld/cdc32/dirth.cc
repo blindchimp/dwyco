@@ -551,30 +551,30 @@ system_info()
 vc
 make_fw_setup()
 {
-    vc v(VC_VECTOR);
-    if(DwNetConfigData.get_advertise_nat_ports())
+    vc fw(VC_VECTOR);
+    if((int)get_settings_value("net/advertise_nat_ports") == 1)
     {
-        v.append(DwNetConfigData.get_nat_primary_port());
-        v.append(DwNetConfigData.get_nat_secondary_port());
-        v.append(DwNetConfigData.get_nat_pal_port());
+        fw[0] = get_settings_value("net/nat_primary_port");
+        fw[1] = get_settings_value("net/nat_secondary_port");
+        fw[2] = get_settings_value("net/nat_pal_port");
     }
     else
     {
-        v.append(DwNetConfigData.get_primary_port());
-        v.append(DwNetConfigData.get_secondary_port());
-        v.append(DwNetConfigData.get_pal_port());
+        fw[0] = get_settings_value("net/primary_port");
+        fw[1] = get_settings_value("net/secondary_port");
+        fw[2] = get_settings_value("net/pal_port");
     }
-    return v;
+    return fw;
 }
 
 vc
 make_local_ports()
 {
-    vc v(VC_VECTOR);
-    v.append(DwNetConfigData.get_primary_port());
-    v.append(DwNetConfigData.get_secondary_port());
-    v.append(DwNetConfigData.get_pal_port());
-    return v;
+    vc fw(VC_VECTOR);
+    fw[0] = get_settings_value("net/primary_port");
+    fw[1] = get_settings_value("net/secondary_port");
+    fw[2] = get_settings_value("net/pal_port");
+    return fw;
 }
 
 vc
