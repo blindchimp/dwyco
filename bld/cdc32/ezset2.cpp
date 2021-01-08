@@ -47,11 +47,11 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_BSTRING, user/email, "", 0),
     DWUIDECLVAL(VC_BSTRING, user/location, "", 0),
     DWUIDECLVAL(VC_BSTRING, vid_input/device_name, "", 0),
-    DWUIDECLVAL(VC_INT, vid_input/coded, "", 0),
-    DWUIDECLVAL(VC_INT, vid_input/raw, "", 0),
-    DWUIDECLVAL(VC_INT, vid_input/vfw, "", 0),
-    DWUIDECLVAL(VC_INT, vid_input/no_video, "", 1),
-    DWUIDECLVAL(VC_INT, vid_input/device_index, "", 0),
+    DWUIDECLVAL(VC_INT, video_input/coded, "", 0),
+    DWUIDECLVAL(VC_INT, video_input/raw, "", 0),
+    DWUIDECLVAL(VC_INT, video_input/vfw, "", 0),
+    DWUIDECLVAL(VC_INT, video_input/no_video, "", 1),
+    DWUIDECLVAL(VC_INT, video_input/device_index, "", 0),
     DWUIDECLVAL(VC_INT, zap/always_server, "", 0),
     DWUIDECLVAL(VC_INT, zap/always_accept, "", 1),
     DWUIDECLVAL(VC_INT, zap/ignore, "", 0),
@@ -111,27 +111,32 @@ init_sql_settings()
         s->value.value_changed.connect_memfun(s, &setting::update_db);
         Map->add(s->name, s);
     }
+    Db->start_transaction();
     for(int i = 0; Initial_settings[i].name != 0; ++i)
     {
         if(Map->contains(Initial_settings[i].name))
             continue;
+        auto is = &Initial_settings[i];
+        sql("insert into settings (name, value) values(?1, ?2)", is->name, is->tp == VC_INT ? vc(is->init_val_int) : vc(is->init_val_str));
         setting *s = new setting;
-        s->name = Initial_settings[i].name;
-        s->value.value_changed.connect_memfun(s, &setting::update_db);
+        s->name = is->name;
+
         Map->add(s->name, s);
-        switch(Initial_settings[i].tp)
+        switch(is->tp)
         {
         case VC_INT:
-            s->value = Initial_settings[i].init_val_int;
+            s->value = is->init_val_int;
             break;
         case VC_BSTRING:
-            s->value = Initial_settings[i].init_val_str;
+            s->value = is->init_val_str;
             break;
         default:
             oopanic("bad init setting table");
 
         }
+        s->value.value_changed.connect_memfun(s, &setting::update_db);
     }
+    Db->commit_transaction();
 }
 
 void
