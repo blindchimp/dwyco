@@ -2117,29 +2117,29 @@ dwyco_get_vidcap_data(
 
 #endif
 
-// this is only used for testing without
-// a camera. it is NOT used in ICUII.
-int DWYCOEXPORT
-dwyco_set_raw_files(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(const char *, raw_files_list)
-    DWUIDECLARG(const char *, raw_files_pattern)
-    DWUIDECLARG(bool, use_list_of_files)
-    DWUIDECLARG(bool, use_pattern)
-    DWUIDECLARG(bool, preload)
-    DWUIDECLARG_END
-);
+//// this is only used for testing without
+//// a camera. it is NOT used in ICUII.
+//int DWYCOEXPORT
+//dwyco_set_raw_files(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(const char *, raw_files_list)
+//    DWUIDECLARG(const char *, raw_files_pattern)
+//    DWUIDECLARG(bool, use_list_of_files)
+//    DWUIDECLARG(bool, use_pattern)
+//    DWUIDECLARG(bool, preload)
+//    DWUIDECLARG_END
+//);
 
-int DWYCOEXPORT
-dwyco_get_raw_files(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(const char *, raw_files_list)
-    DWUIDECLARG_OUT(const char *, raw_files_pattern)
-    DWUIDECLARG_OUT(bool, use_list_of_files)
-    DWUIDECLARG_OUT(bool, use_pattern)
-    DWUIDECLARG_OUT(bool, preload)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_get_raw_files(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(const char *, raw_files_list)
+//    DWUIDECLARG_OUT(const char *, raw_files_pattern)
+//    DWUIDECLARG_OUT(bool, use_list_of_files)
+//    DWUIDECLARG_OUT(bool, use_pattern)
+//    DWUIDECLARG_OUT(bool, preload)
+//    DWUIDECLARG_END
+//);
 
 // this tells the DLL what device should
 // be used as a video source.

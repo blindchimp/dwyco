@@ -1562,13 +1562,13 @@ DwycoCore::init()
         0
     );
 
-    dwyco_set_raw_files(
-        "/home/dwight/vidfile.lst",
-        "/1204/dwight/stuff/320x240/ml%04d.ppm",
-        0, // use list of files
-        1,
-        0 // preload
-    );
+//    dwyco_set_raw_files(
+//        "/home/dwight/vidfile.lst",
+//        "/1204/dwight/stuff/320x240/ml%04d.ppm",
+//        0, // use list of files
+//        1,
+//        0 // preload
+//    );
     dwyco_set_setting("video_format/swap_rb", "0");
     dwyco_set_rate_tweaks(20.0, 65535, 1000, 1000);
     dwyco_set_moron_dork_mode(0);

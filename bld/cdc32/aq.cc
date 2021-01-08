@@ -19,7 +19,6 @@
 #include "aq.h"
 
 #include "aqvfw.h"
-#include "rawfiles.h"
 #include "acqfile.h"
 #include "vfwinvst.h"
 
@@ -27,6 +26,7 @@
 
 #include "mmchan.h"
 #include "chatgrid.h"
+#include "ezset.h"
 
 #include "dwrtlog.h"
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
@@ -78,8 +78,12 @@ init_raw_files(int mbox, DwString& fail_reason)
     FileAcquire<pixel> *a = new FileAcquire<pixel>;
     a->set_fail_reason("unknown");
 
-    if(!a->init(RawFilesData.get_use_pattern() ? RawFilesData.get_raw_files_pattern() : RawFilesData.get_raw_files_list(),
-                RawFilesData.get_use_pattern() ? 1 : 0, RawFilesData.get_preload()))
+    if(!a->init((int)get_settings_value("raw_files/use_pattern") == 1 ?
+                (const char *)get_settings_value("raw_files/raw_files_pattern") :
+                (const char *)get_settings_value("raw_files/raw_files_list"),
+
+                (int)get_settings_value("raw_files/use_pattern"),
+                (int)get_settings_value("raw_files/preload") == 1))
     {
         if(mbox)
         {

@@ -310,7 +310,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "qdirth.h"
 
 #include "vfwinvst.h"
-#include "rawfiles.h"
 #include "vidinput.h"
 #include "usercnfg.h"
 #include "ratetwkr.h"
@@ -4764,49 +4763,49 @@ dwyco_get_codec_tweaks(
     return 0;
 }
 
-// useful for testing without a camera, otherwise
-// not advisable to expose this functionality
-DWYCOEXPORT
-int
-dwyco_set_raw_files(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(const char *, raw_files_list)
-    DWUIDECLARG(const char *, raw_files_pattern)
-    DWUIDECLARG(bool, use_list_of_files)
-    DWUIDECLARG(bool, use_pattern)
-    DWUIDECLARG(bool, preload)
-    DWUIDECLARG_END
-)
-{
-    DWUISET_BEGIN(RawFilesXfer, RawFilesData)
-    DWUISET_MEMBER(const char *, raw_files_list)
-    DWUISET_MEMBER(const char *, raw_files_pattern)
-    DWUISET_MEMBER(bool, use_list_of_files)
-    DWUISET_MEMBER(bool, use_pattern)
-    DWUISET_MEMBER(bool, preload)
-    DWUISET_END
-}
+//// useful for testing without a camera, otherwise
+//// not advisable to expose this functionality
+//DWYCOEXPORT
+//int
+//dwyco_set_raw_files(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(const char *, raw_files_list)
+//    DWUIDECLARG(const char *, raw_files_pattern)
+//    DWUIDECLARG(bool, use_list_of_files)
+//    DWUIDECLARG(bool, use_pattern)
+//    DWUIDECLARG(bool, preload)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUISET_BEGIN(RawFilesXfer, RawFilesData)
+//    DWUISET_MEMBER(const char *, raw_files_list)
+//    DWUISET_MEMBER(const char *, raw_files_pattern)
+//    DWUISET_MEMBER(bool, use_list_of_files)
+//    DWUISET_MEMBER(bool, use_pattern)
+//    DWUISET_MEMBER(bool, preload)
+//    DWUISET_END
+//}
 
-DWYCOEXPORT
-int
-dwyco_get_raw_files(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(const char *, raw_files_list)
-    DWUIDECLARG_OUT(const char *, raw_files_pattern)
-    DWUIDECLARG_OUT(bool, use_list_of_files)
-    DWUIDECLARG_OUT(bool, use_pattern)
-    DWUIDECLARG_OUT(bool, preload)
-    DWUIDECLARG_END
-)
-{
-    DWUIGET_BEGIN(RawFilesXfer, RawFilesData)
-    DWUIGET_MEMBER(const char *, raw_files_list)
-    DWUIGET_MEMBER(const char *, raw_files_pattern)
-    DWUIGET_MEMBER(bool, use_list_of_files)
-    DWUIGET_MEMBER(bool, use_pattern)
-    DWUIGET_MEMBER(bool, preload)
-    DWUIGET_END
-}
+//DWYCOEXPORT
+//int
+//dwyco_get_raw_files(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(const char *, raw_files_list)
+//    DWUIDECLARG_OUT(const char *, raw_files_pattern)
+//    DWUIDECLARG_OUT(bool, use_list_of_files)
+//    DWUIDECLARG_OUT(bool, use_pattern)
+//    DWUIDECLARG_OUT(bool, preload)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUIGET_BEGIN(RawFilesXfer, RawFilesData)
+//    DWUIGET_MEMBER(const char *, raw_files_list)
+//    DWUIGET_MEMBER(const char *, raw_files_pattern)
+//    DWUIGET_MEMBER(bool, use_list_of_files)
+//    DWUIGET_MEMBER(bool, use_pattern)
+//    DWUIGET_MEMBER(bool, preload)
+//    DWUIGET_END
+//}
 
 // end useful for testing
 
