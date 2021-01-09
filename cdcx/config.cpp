@@ -96,7 +96,7 @@ configform::accept()
     // so we always make them accept.
     dwyco_set_setting("zap/always_accept", "1");
     // TCP only
-    dwyco_set_setting("net/media_select", "1");
+    dwyco_set_setting("net/call_setup_media_select", "1");
 
     // update the pals-only settings
     if(ui.pals_only->isChecked())

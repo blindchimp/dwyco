@@ -673,8 +673,8 @@ int main(int argc, char *argv[])
     dwyco_set_setting("zap/always_accept", "1");
     dwyco_set_setting("zap/always_server", "0");
     // TCP only calling
-    dwyco_set_setting("net/media_select", "1");
-    dwyco_set_setting("net/force_non_firewall_friendly", "0");
+    dwyco_set_setting("net/call_setup_media_select", "1");
+    //dwyco_set_setting("net/force_non_firewall_friendly", "0");
 
     // note: for video capture,
     // Linux & Mac ignore the setting and always uses external video
