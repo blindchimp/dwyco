@@ -21,7 +21,7 @@
 #include "ratetwkr.h"
 #include "usercnfg.h"
 #include "vfwinvst.h"
-#include "vidinput.h"
+//#include "vidinput.h"
 #include "qtab.h"
 #include "jqtab.h"
 #include "qpol.h"
@@ -173,7 +173,7 @@ init_codec(const char *logname)
         //VFWInvestigateData.load();
         //CTUserDefaults.load();
         //RawFilesData.load();
-        VidInputData.load();
+        //VidInputData.load();
         //CallAcceptanceData.load();
 
         //ZapAdvData.load();
@@ -298,7 +298,7 @@ simple_init_codec(const char *logname)
         //VFWInvestigateData.load();
         //CTUserDefaults.load();
         //RawFilesData.load();
-        VidInputData.load();
+        //VidInputData.load();
         //CallAcceptanceData.load();
         //ZapAdvData.load();
         //DwNetConfigData.load();
@@ -386,7 +386,7 @@ init_bg_msg_send(const char *logname)
         //VFWInvestigateData.load();
         //CTUserDefaults.load();
         //RawFilesData.load();
-        VidInputData.load();
+        //VidInputData.load();
         //CallAcceptanceData.load();
         //ZapAdvData.load();
         //DwNetConfigData.load();

@@ -180,7 +180,6 @@ syncvar.cc \
 uicfg.cc \
 usercnfg.cpp \
 vfwinvst.cpp \
-vidinput.cpp \
 doinit.cc \
 netcod.cc \
 netcod2.cc \

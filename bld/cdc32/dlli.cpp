@@ -307,7 +307,7 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "qdirth.h"
 
 #include "vfwinvst.h"
-#include "vidinput.h"
+//#include "vidinput.h"
 #include "usercnfg.h"
 #include "ratetwkr.h"
 
@@ -4836,55 +4836,55 @@ dwyco_get_rate_tweaks(
     DWUIGET_END
 }
 
-DWYCOEXPORT
-int
-dwyco_set_video_input(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(const char *, device_name)
-    DWUIDECLARG(bool, coded)
-    DWUIDECLARG(bool, raw)
-    DWUIDECLARG(bool, vfw)
-    DWUIDECLARG(bool, no_video)
-    DWUIDECLARG(int, device_index)
-    DWUIDECLARG_END
-)
-{
-    DWUISET_BEGIN(VidInputXfer, VidInputData)
-    DWUISET_MEMBER(const char *, device_name)
-    DWUISET_MEMBER(bool, coded)
-    DWUISET_MEMBER(bool, raw)
-    DWUISET_MEMBER(bool, vfw)
-    DWUISET_MEMBER(bool, no_video)
-    DWUISET_MEMBER(int, device_index)
+//DWYCOEXPORT
+//int
+//dwyco_set_video_input(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(const char *, device_name)
+//    DWUIDECLARG(bool, coded)
+//    DWUIDECLARG(bool, raw)
+//    DWUIDECLARG(bool, vfw)
+//    DWUIDECLARG(bool, no_video)
+//    DWUIDECLARG(int, device_index)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUISET_BEGIN(VidInputXfer, VidInputData)
+//    DWUISET_MEMBER(const char *, device_name)
+//    DWUISET_MEMBER(bool, coded)
+//    DWUISET_MEMBER(bool, raw)
+//    DWUISET_MEMBER(bool, vfw)
+//    DWUISET_MEMBER(bool, no_video)
+//    DWUISET_MEMBER(int, device_index)
 
-    // because no-video affects the call accept vector
-    // stupid, but that's a compat thing
-    chatq_send_update_call_accept();
-    DWUISET_END
-}
+//    // because no-video affects the call accept vector
+//    // stupid, but that's a compat thing
+//    chatq_send_update_call_accept();
+//    DWUISET_END
+//}
 
-DWYCOEXPORT
-int
-dwyco_get_video_input(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(const char *, device_name)
-    DWUIDECLARG_OUT(bool, coded)
-    DWUIDECLARG_OUT(bool, raw)
-    DWUIDECLARG_OUT(bool, vfw)
-    DWUIDECLARG_OUT(bool, no_video)
-    DWUIDECLARG_OUT(int, device_index)
-    DWUIDECLARG_END
-)
-{
-    DWUIGET_BEGIN(VidInputXfer, VidInputData)
-    DWUIGET_MEMBER(const char *, device_name)
-    DWUIGET_MEMBER(bool, coded)
-    DWUIGET_MEMBER(bool, raw)
-    DWUIGET_MEMBER(bool, vfw)
-    DWUIGET_MEMBER(bool, no_video)
-    DWUIGET_MEMBER(int, device_index)
-    DWUIGET_END
-}
+//DWYCOEXPORT
+//int
+//dwyco_get_video_input(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(const char *, device_name)
+//    DWUIDECLARG_OUT(bool, coded)
+//    DWUIDECLARG_OUT(bool, raw)
+//    DWUIDECLARG_OUT(bool, vfw)
+//    DWUIDECLARG_OUT(bool, no_video)
+//    DWUIDECLARG_OUT(int, device_index)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUIGET_BEGIN(VidInputXfer, VidInputData)
+//    DWUIGET_MEMBER(const char *, device_name)
+//    DWUIGET_MEMBER(bool, coded)
+//    DWUIGET_MEMBER(bool, raw)
+//    DWUIGET_MEMBER(bool, vfw)
+//    DWUIGET_MEMBER(bool, no_video)
+//    DWUIGET_MEMBER(int, device_index)
+//    DWUIGET_END
+//}
 
 //DWYCOEXPORT
 //int

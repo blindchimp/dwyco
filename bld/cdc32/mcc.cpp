@@ -19,7 +19,7 @@
 #include "qmsg.h"
 #include "qdirth.h"
 #include "msgdisp.h"
-#include "vidinput.h"
+//#include "vidinput.h"
 #include "audchk.h"
 #include "ta.h"
 #include "usercnfg.h"
@@ -769,7 +769,7 @@ TMsgCompose::init_av_buttons()
     stop_button_enabled = 0;
     play_button_enabled = 0;
     start_over_button_enabled = 0;
-    if(VidInputData.get_no_video())
+    if((int)get_settings_value("video_input/no_video") == 1)
     {
         record_video = 0;
     }

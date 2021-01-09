@@ -13,7 +13,7 @@
 #include "gvchild.h"
 #include "dwstr.h"
 
-#include "vidinput.h"
+//#include "vidinput.h"
 #include "ratetwkr.h"
 #include "vfwinvst.h"
 #include "aq.h"
@@ -107,7 +107,7 @@ initaq(int mbox, DwString& fail_reason)
     if(TheAq)
         return 1;
 #ifndef DWYCO_NO_VIDEO_FROM_PPM
-    if(VidInputData.get_raw())
+    if(get_settings_value("video_input/source") == vc("raw"))
     {
         return init_raw_files(mbox, fail_reason);
     }

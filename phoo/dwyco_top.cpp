@@ -1150,8 +1150,8 @@ DwycoCore::select_vid_dev(int i)
     HasCamera = 0;
     dwyco_shutdown_vfw();
     dwyco_set_setting("video_input/no_video", "1");
-    dwyco_set_setting("video_input/vfw", "0");
-    dwyco_set_setting("video_input/raw", "0");
+    //dwyco_set_setting("video_input/vfw", "0");
+    //dwyco_set_setting("video_input/raw", "0");
 
     if(i == 0)
     {
@@ -1162,15 +1162,17 @@ DwycoCore::select_vid_dev(int i)
     if(i == 1)
     {
         dwyco_set_setting("video_input/no_video", "0");
-        dwyco_set_setting("video_input/vfw", "0");
-        dwyco_set_setting("video_input/raw", "1");
+        dwyco_set_setting("video_input/source", "raw");
+        //dwyco_set_setting("video_input/vfw", "0");
+        //dwyco_set_setting("video_input/raw", "1");
     }
     else if(i > 1)
     {
         dwyco_start_vfw(i - 2, 0, 0);
         dwyco_set_setting("video_input/no_video", "0");
-        dwyco_set_setting("video_input/vfw", "1");
-        dwyco_set_setting("video_input/raw", "0");
+        dwyco_set_setting("video_input/source", "camera");
+        //dwyco_set_setting("video_input/vfw", "1");
+        //dwyco_set_setting("video_input/raw", "0");
     }
     write_vid_setting(i);
     block_enable_video_capture_preview(1);
@@ -1553,14 +1555,15 @@ DwycoCore::init()
 
 
     // for easier testing, setup for raw file acq
-    dwyco_set_video_input(
-        "",
-        0,
-        1, // raw files
-        0, // vfw
-        0,
-        0
-    );
+//    dwyco_set_video_input(
+//        "",
+//        0,
+//        1, // raw files
+//        0, // vfw
+//        0,
+//        0
+//    );
+    dwyco_set_setting("video_input/source", "raw");
 
 //    dwyco_set_raw_files(
 //        "/home/dwight/vidfile.lst",

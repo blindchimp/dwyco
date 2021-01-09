@@ -11,7 +11,7 @@
 
 #include "usercnfg.h"
 #include "vfwinvst.h"
-#include "vidinput.h"
+//#include "vidinput.h"
 #include "ratetwkr.h"
 #include "chatdisp.h"
 #include "dwstr.h"
@@ -1988,7 +1988,7 @@ MMChannel::init_config(int caller)
         MMCall *mmc = MMCall::channel_to_call(myid);
         if(mmc)
         {
-            if(!VidInputData.get_no_video() && mmc->send_video)
+            if((int)get_settings_value("video_input/no_video") == 0 && mmc->send_video)
                 v.append("send");
             if(mmc->recv_video)
                 v.append("recv");
