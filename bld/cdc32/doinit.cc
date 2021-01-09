@@ -20,8 +20,6 @@
 #include "dirth.h"
 #include "ratetwkr.h"
 #include "usercnfg.h"
-#include "vfwinvst.h"
-//#include "vidinput.h"
 #include "qtab.h"
 #include "jqtab.h"
 #include "qpol.h"
@@ -170,14 +168,6 @@ init_codec(const char *logname)
         else
             Log->make_entry("audio hardware claims full-duplex");
 
-        //VFWInvestigateData.load();
-        //CTUserDefaults.load();
-        //RawFilesData.load();
-        //VidInputData.load();
-        //CallAcceptanceData.load();
-
-        //ZapAdvData.load();
-        //DwNetConfigData.load();
         extern int Media_select;
         switch((int)get_settings_value("net/call_setup_media_select"))
         {
@@ -196,8 +186,6 @@ init_codec(const char *logname)
 
         // for testing
         //Media_select = MEDIA_TCP_VIA_PROXY;
-
-        //ShowDirectoryData.load();
 
 #ifdef DWYCO_CODEC
         EntropyModel::init_all();
@@ -295,14 +283,6 @@ simple_init_codec(const char *logname)
 
         // have to reconfigure a little bit for 0.80
         UserConfigData.load();
-        //VFWInvestigateData.load();
-        //CTUserDefaults.load();
-        //RawFilesData.load();
-        //VidInputData.load();
-        //CallAcceptanceData.load();
-        //ZapAdvData.load();
-        //DwNetConfigData.load();
-
         init_sysattr();
         init = 1;
         Log->make_entry("init done");
@@ -382,14 +362,6 @@ init_bg_msg_send(const char *logname)
         // note: the background send does server-only sends, so this should never
         // get used.
         //init_callq();
-
-        //VFWInvestigateData.load();
-        //CTUserDefaults.load();
-        //RawFilesData.load();
-        //VidInputData.load();
-        //CallAcceptanceData.load();
-        //ZapAdvData.load();
-        //DwNetConfigData.load();
 
         init_sysattr();
         Bg_msg_send_init = 1;

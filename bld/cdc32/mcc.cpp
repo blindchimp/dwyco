@@ -19,7 +19,6 @@
 #include "qmsg.h"
 #include "qdirth.h"
 #include "msgdisp.h"
-//#include "vidinput.h"
 #include "audchk.h"
 #include "ta.h"
 #include "usercnfg.h"

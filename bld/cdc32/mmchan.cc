@@ -10,8 +10,6 @@
 #include <typeinfo>
 
 #include "usercnfg.h"
-#include "vfwinvst.h"
-//#include "vidinput.h"
 #include "ratetwkr.h"
 #include "chatdisp.h"
 #include "dwstr.h"

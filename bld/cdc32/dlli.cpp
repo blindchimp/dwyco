@@ -306,8 +306,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "pbmcfg.h"
 #include "qdirth.h"
 
-#include "vfwinvst.h"
-//#include "vidinput.h"
 #include "usercnfg.h"
 #include "ratetwkr.h"
 

@@ -12,17 +12,11 @@
  */
 #include "gvchild.h"
 #include "dwstr.h"
-
-//#include "vidinput.h"
 #include "ratetwkr.h"
-#include "vfwinvst.h"
 #include "aq.h"
 
 #include "acqfile.h"
-#include "vfwinvst.h"
-
 #include "aqkey.h"
-
 #include "mmchan.h"
 #include "chatgrid.h"
 #include "ezset.h"
