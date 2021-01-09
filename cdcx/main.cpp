@@ -722,7 +722,6 @@ int main(int argc, char *argv[])
             0,
             0
         );
-#endif
         dwyco_set_raw_files(
             "vidfile.lst",
             "",
@@ -730,6 +729,7 @@ int main(int argc, char *argv[])
             0,
             0 // preload
         );
+#endif
 #if 0
         HasCamera = 1;
         HasCamHardware = 1;
