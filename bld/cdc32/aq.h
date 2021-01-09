@@ -14,12 +14,11 @@
 #define AQ_H
 
 #include "vidaq.h"
-struct VFWInvestigateXfer;
+
 class KeyboardAcquire;
 
 int initaq(int mbox, DwString &fail_reason);
 void exitaq();
-void setupaq(VFWInvestigateXfer&);
 
 int init_msgaq(int mbox, DwString &fail_reason);
 void exit_msgaq();

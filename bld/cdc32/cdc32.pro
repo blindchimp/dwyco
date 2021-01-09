@@ -179,7 +179,6 @@ ratetwkr.cpp \
 syncvar.cc \
 uicfg.cc \
 usercnfg.cpp \
-vfwinvst.cpp \
 doinit.cc \
 netcod.cc \
 netcod2.cc \

@@ -49,7 +49,8 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_BSTRING, vid_input/device_name, "", 0),
     //DWUIDECLVAL(VC_INT, video_input/coded, "", 0),
     //DWUIDECLVAL(VC_INT, video_input/raw, "", 0),
-    DWUIDECLVAL(VC_INT, video_input/source, "", 0),
+    // "raw", or "camera" for now
+    DWUIDECLVAL(VC_BSTRING, video_input/source, "", 0),
     DWUIDECLVAL(VC_INT, video_input/no_video, "", 1),
     DWUIDECLVAL(VC_INT, video_input/device_index, "", 0),
     DWUIDECLVAL(VC_INT, zap/always_server, "", 0),
