@@ -317,6 +317,7 @@ MMChannel::start_connect()
     }
     else
     {
+        addrstr += ":";
         addrstr += DwString::fromInt(port);
     }
     ouraddr = "any:any";
