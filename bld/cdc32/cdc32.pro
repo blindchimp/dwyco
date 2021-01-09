@@ -81,13 +81,13 @@ equals(DWYCO_APP, "rando") {
 #DEFINES += USE_VFW
 #DEFINES += VIDGRAB_HACKS
 #DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
-#SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+#SOURCES += uniq.cpp aqaud.cc audwin.cc
 SOURCES += uniq.cpp audwin.cc aqaud.cc
 } else {
-DEFINES += USE_VFW
+#DEFINES += USE_VFW
 DEFINES += VIDGRAB_HACKS
 DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
-SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+SOURCES += uniq.cpp aqaud.cc audwin.cc
 }
 SOURCES += sqlite3.c
 INCLUDEPATH += ../mtcap

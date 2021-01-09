@@ -163,9 +163,7 @@ init_codec(const char *logname)
         dh_init();
         RTUserDefaults.load();
         TProfile t("admin", INI_FILENAME);
-        // note: initvfw makes tweaks to default values
-        // based on whether we are doing the wizard or not.
-        initvfw();
+
         check_audio_device();
         if(!Audio_hw_full_duplex)
             Log->make_entry("audio hardware is half-duplex");

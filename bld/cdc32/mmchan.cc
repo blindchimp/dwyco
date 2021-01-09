@@ -14,7 +14,6 @@
 #include "vidinput.h"
 #include "ratetwkr.h"
 #include "chatdisp.h"
-#include "aqvfw.h"
 #include "dwstr.h"
 #include "mmchan.h"
 #include "netvid.h"
@@ -3704,14 +3703,6 @@ MMChannel::turn_off_color()
 #endif
         }
     }
-#if defined(_Windows) && defined(USE_VFW)
-    if(TheAq)
-    {
-        VFWAquire *va = TYPESAFE_DOWNCAST(TheAq, VFWAquire);
-        if(va)
-            va->force_gray = 1;
-    }
-#endif
 
 }
 

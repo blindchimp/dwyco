@@ -295,9 +295,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "audo.h"
 #include "audout.h"
 #include "aconn.h"
-#if defined(_Windows) && defined(USE_VFW)
-#include "vfwmgr.h"
-#endif
 #include "audth.h"
 #include "dirth.h"
 #include "qauth.h"
@@ -1552,9 +1549,6 @@ dwyco_exit()
     exit_audio_output();
     exit_codec();
 
-#if defined(_Windows) && defined(USE_VFW)
-    delete TheVFWMgr;
-#endif
     // don't delete, since there may be post-dwyco_exit calls come
     // in from global dtors and stuff, just log them
     //delete RTLog;
@@ -4138,11 +4132,6 @@ DWYCOEXPORT
 int
 dwyco_is_capturing_video()
 {
-#if defined(USE_VFW)
-    if(!TheVFWMgr)
-        return 0;
-    return TheVFWMgr->is_hardware_capturing();
-#endif
 // NOTE: FIXME FOR VGCAP
     return 0;
 
@@ -8251,14 +8240,9 @@ dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, int len_str)
 // the internal setup of DX9. this is
 // useful for debugging since video capture can be a problem in some environments.
 
-#ifdef DWYCO_NO_VIDEO_CAPTURE
-#undef USE_VFW
-#else
+#ifndef DWYCO_NO_VIDEO_CAPTURE
 #ifdef __WIN32__
 // NOTE: this interface is WINDOWS SPECIFIC
-#ifdef USE_VFW
-#include "vfwdll.h"
-#endif
 #ifdef VIDGRAB_HACKS
 #include "vgexp.h"
 #endif
@@ -8306,25 +8290,6 @@ dwyco_get_vfw_drivers()
         return dwyco_list_from_vc(v);
     }
 
-#if defined(__WIN32__) && defined(USE_VFW)
-    char szDeviceName[80];
-    char szDeviceVersion[80];
-    vc v(VC_VECTOR);
-
-    for (int wIndex = 0; wIndex < 10; wIndex++) {
-        if (capGetDriverDescription (wIndex, szDeviceName,
-                                     sizeof (szDeviceName), szDeviceVersion,
-                                     sizeof (szDeviceVersion)))
-        {
-            vc v2(VC_VECTOR);
-            v2[0] = wIndex;
-            v2[1] = szDeviceName;
-            v2[2] = szDeviceVersion;
-            v.append(v2);
-        }
-    }
-    return dwyco_list_from_vc(v);
-#endif
     return 0;
 }
 
@@ -8338,11 +8303,7 @@ dwyco_start_vfw(int idx, void *main_hwnd, void *client_hwnd)
             (*dwyco_vidacq_set_vid_device)(idx);
         return 1;
     }
-#if defined(__WIN32__) && defined(USE_VFW)
-    return VFWShitDLL::fire_up_vfw(idx, (HWND)main_hwnd, (HWND)client_hwnd);
-#else
     return 0;
-#endif
 }
 
 DWYCOEXPORT
@@ -8363,9 +8324,6 @@ dwyco_shutdown_vfw()
         }
         return 1;
     }
-#if defined(__WIN32__) && defined(USE_VFW)
-    return VFWShitDLL::shutdown_vfw();
-#endif
     return 0;
 }
 
@@ -8379,11 +8337,6 @@ dwyco_change_driver(int new_idx)
             (*dwyco_vidacq_set_vid_device)(new_idx);
         return 1;
     }
-#if defined(__WIN32__) && defined(USE_VFW)
-    if(!TheVFWMgr)
-        return 0;
-    return TheVFWMgr->change_driver(new_idx);
-#endif
     return 0;
 }
 
@@ -8391,11 +8344,6 @@ DWYCOEXPORT
 int
 dwyco_is_preview_on()
 {
-#if defined(__WIN32__) && defined(USE_VFW)
-    if(!TheVFWMgr)
-        return 0;
-    return TheVFWMgr->is_preview_on();
-#endif
     return 0;
 }
 
@@ -8409,12 +8357,6 @@ dwyco_preview_on(void *display_window)
             (*dwyco_vidacq_hw_preview_on)(display_window);
         return 1;
     }
-#if defined(__WIN32__) && defined(USE_VFW)
-    if(!TheVFWMgr)
-        return 0;
-    ((VFWShitDLL *)TheVFWMgr)->ext_child_hwnd = (HWND)display_window;
-    return TheVFWMgr->start_preview();
-#endif
     return 0;
 }
 
@@ -8428,12 +8370,6 @@ dwyco_preview_off()
             (*dwyco_vidacq_hw_preview_off)();
         return 1;
     }
-#if defined(__WIN32__) && defined(USE_VFW)
-    if(!TheVFWMgr)
-        return 1;
-    TheVFWMgr->preview_off();
-    return 1;
-#endif
     return 0;
 }
 
@@ -8447,11 +8383,6 @@ dwyco_vfw_format()
         // since it is setup automatically.
         return 1;
     }
-#if defined(__WIN32__) && defined(USE_VFW)
-    if(!TheVFWMgr)
-        return 0;
-    return TheVFWMgr->change_format();
-#endif
     return 0;
 }
 
@@ -8465,11 +8396,6 @@ dwyco_vfw_source()
             (*dwyco_vidacq_show_source_dialog)();
         return 1;
     }
-#if defined(__WIN32__) && defined(USE_VFW)
-    if(!TheVFWMgr)
-        return 0;
-    return TheVFWMgr->source_clicked();
-#endif
     return 0;
 }
 
@@ -9613,14 +9539,7 @@ void
 pump_messages()
 {
 }
-void
-vspin()
-{
-}
-void
-vunlock()
-{
-}
+
 void
 dwsleep(int, int *, int)
 {

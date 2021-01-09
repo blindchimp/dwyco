@@ -17,7 +17,6 @@
 struct VFWInvestigateXfer;
 class KeyboardAcquire;
 
-void initvfw();
 int initaq(int mbox, DwString &fail_reason);
 void exitaq();
 void setupaq(VFWInvestigateXfer&);
@@ -28,13 +27,8 @@ KeyboardAcquire *init_msgaq_private(int mbox, int& chatbox_id, const char *capti
 
 
 extern VidAcquire *TheAq;
-extern int Has_VFW;
-enum aq_style {VFW, RAW_FILES};
-extern aq_style Aq_style;
-
 extern KeyboardAcquire *TheMsgAq;
 extern int Chatbox_id;
-
 extern int ExternalVideoAcquisition;
 
 #endif
