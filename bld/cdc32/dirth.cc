@@ -13,7 +13,6 @@
 #include <string.h>
 #include "doinit.h"
 #include "usercnfg.h"
-#include "vidinput.h"
 #include "dirth.h"
 #include "vc.h"
 #include "vcmap.h"

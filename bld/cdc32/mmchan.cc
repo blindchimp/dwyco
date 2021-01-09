@@ -95,12 +95,6 @@ using namespace CryptoPP;
 
 #define FAILRET(x) do { {fail_reason = (x); Log->make_entry(x); return 0;} } while(0)
 
-MMChannel *
-MMChannel::gen_chan()
-{
-    return new MMChannel;
-}
-
 GetWindowCallback MMChannel::get_mdi_client_window_callback;
 GetWindowCallback MMChannel::get_main_window_callback;
 StatusCallback MMChannel::connection_list_changed_callback;

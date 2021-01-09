@@ -2091,7 +2091,7 @@ dwyco_enable_video_capture_preview(int on)
         save_rt = RTUserDefaults;
         RTUserDefaults.set_max_frame_rate(12);
 
-        MMChannel *mc = MMChannel::gen_chan();
+        MMChannel *mc = new MMChannel;
         mc->tube = new DummyTube;
         mc->init_config(1);
         mc->recv_matches(mc->config);
