@@ -30,7 +30,6 @@
 #include "gsmconv.h"
 #include "spxconv.h"
 #include "vorbconv.h"
-#include "ratetwkr.h"
 #include "gvchild.h"
 #include "netvid.h"
 #include "doinit.h"
@@ -42,7 +41,7 @@ extern double Audio_delay;
 }
 using namespace dwyco;
 
-#define FAILRET(x) {fail_reason = (x); Log->make_entry(x); return 0;}
+#define FAILRET(x) do {fail_reason = (x); Log->make_entry(x); return 0;} while(0)
 
 int
 MMChannel::audio_decoder_from_config()

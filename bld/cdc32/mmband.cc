@@ -11,7 +11,6 @@
  * $Header: g:/dwight/repo/cdc32/rcs/mmband.cc 1.5 1999/01/10 16:09:51 dwight Checkpoint $
  */
 #include "mmchan.h"
-#include "ratetwkr.h"
 #include "netvid.h"
 #include "dwrtlog.h"
 #include "dwscoped.h"

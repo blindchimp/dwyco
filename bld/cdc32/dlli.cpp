@@ -307,7 +307,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "qdirth.h"
 
 #include "usercnfg.h"
-#include "ratetwkr.h"
 
 #include "vccomp.h"
 #ifdef DWYCO_CDC_LIBUV
@@ -2087,18 +2086,13 @@ dwyco_enable_video_capture_preview(int on)
             Soft_preview_on = 0;
             return 1;
         }
-        RateTweakerXferValid save_rt;
-        save_rt = RTUserDefaults;
-        RTUserDefaults.set_max_frame_rate(12);
-
         MMChannel *mc = new MMChannel;
         mc->tube = new DummyTube;
         mc->init_config(1);
         mc->recv_matches(mc->config);
         mc->start_service();
-        if(!mc->build_outgoing(1, 1))
+        if(!mc->build_outgoing(1, 1, 12))
         {
-            RTUserDefaults = save_rt;
             delete mc;
             GRTLOG("cant build video preview channel", 0, 0);
             return 0;
@@ -2108,7 +2102,6 @@ dwyco_enable_video_capture_preview(int on)
         {
             mcx->coder->gv_id = MMCHAN_PREVIEW_CHAN_ID;
         }
-        RTUserDefaults = save_rt;
         mc->schedule_destroy(MMChannel::HARD);
         Soft_preview_on = 1;
         return 1;
@@ -3106,7 +3099,7 @@ dwyco_channel_send_video(int chan_id, int vid_dev)
     // video for some reason.
     // note: build_outgoing calls callbacks for video display init which
     // we probably need to modify in some way.
-    return mc->build_outgoing(1, 1);
+    return mc->build_outgoing(1, 1, (int)get_settings_value("rate/max_fps"));
 }
 
 DWYCOEXPORT
@@ -4796,43 +4789,43 @@ dwyco_get_codec_tweaks(
 
 // end useful for testing
 
-DWYCOEXPORT
-int
-dwyco_set_rate_tweaks(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(double, max_frame_rate)
-    DWUIDECLARG(long, max_udp_bytes)
-    DWUIDECLARG(long, link_speed)
-    DWUIDECLARG(long, link_speed_recv)
-    DWUIDECLARG_END
-)
-{
-    DWUISET_BEGIN(RateTweakerXferValid, RTUserDefaults)
-    DWUISET_MEMBER(double, max_frame_rate)
-    DWUISET_MEMBER(long, max_udp_bytes)
-    DWUISET_MEMBER(long, link_speed)
-    DWUISET_MEMBER(long, link_speed_recv)
-    DWUISET_END
-}
+//DWYCOEXPORT
+//int
+//dwyco_set_rate_tweaks(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(double, max_frame_rate)
+//    DWUIDECLARG(long, max_udp_bytes)
+//    DWUIDECLARG(long, link_speed)
+//    DWUIDECLARG(long, link_speed_recv)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUISET_BEGIN(RateTweakerXferValid, RTUserDefaults)
+//    DWUISET_MEMBER(double, max_frame_rate)
+//    DWUISET_MEMBER(long, max_udp_bytes)
+//    DWUISET_MEMBER(long, link_speed)
+//    DWUISET_MEMBER(long, link_speed_recv)
+//    DWUISET_END
+//}
 
-DWYCOEXPORT
-int
-dwyco_get_rate_tweaks(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(double, max_frame_rate)
-    DWUIDECLARG_OUT(long, max_udp_bytes)
-    DWUIDECLARG_OUT(long, link_speed)
-    DWUIDECLARG_OUT(long, link_speed_recv)
-    DWUIDECLARG_END
-)
-{
-    DWUIGET_BEGIN(RateTweakerXferValid, RTUserDefaults)
-    DWUIGET_MEMBER(double, max_frame_rate)
-    DWUIGET_MEMBER(long, max_udp_bytes)
-    DWUIGET_MEMBER(long, link_speed)
-    DWUIGET_MEMBER(long, link_speed_recv)
-    DWUIGET_END
-}
+//DWYCOEXPORT
+//int
+//dwyco_get_rate_tweaks(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(double, max_frame_rate)
+//    DWUIDECLARG_OUT(long, max_udp_bytes)
+//    DWUIDECLARG_OUT(long, link_speed)
+//    DWUIDECLARG_OUT(long, link_speed_recv)
+//    DWUIDECLARG_END
+//)
+//{
+//    DWUIGET_BEGIN(RateTweakerXferValid, RTUserDefaults)
+//    DWUIGET_MEMBER(double, max_frame_rate)
+//    DWUIGET_MEMBER(long, max_udp_bytes)
+//    DWUIGET_MEMBER(long, link_speed)
+//    DWUIGET_MEMBER(long, link_speed_recv)
+//    DWUIGET_END
+//}
 
 //DWYCOEXPORT
 //int

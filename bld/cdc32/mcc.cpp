@@ -13,7 +13,6 @@
 #include "qauth.h"
 #include "dwstr.h"
 #include "filetube.h"
-#include "ratetwkr.h"
 #include "mmchan.h"
 #include "audout.h"
 #include "qmsg.h"
@@ -406,10 +405,6 @@ int  TMsgCompose::record_buttonClick()
     // rest of the system still uses these global
     // variables. should fix it sometime...
 
-    RateTweakerXferValid save_rt;
-    save_rt = RTUserDefaults;
-    RTUserDefaults.set_max_frame_rate(hiq ? 20 : 10);
-
     MMChannel *mc = new MMChannel;
     mc->tube = ft;
     mc->init_config(1);
@@ -437,7 +432,6 @@ int  TMsgCompose::record_buttonClick()
         {
             msgbox("Video recording device not available.", 0, MB_OK);
             stop_buttonClick();
-            RTUserDefaults = save_rt;
             do_append = 1;
             return 0;
         }
@@ -468,7 +462,6 @@ int  TMsgCompose::record_buttonClick()
         {
             msgbox("Audio recording device not available.", 0, MB_OK);
             stop_buttonClick();
-            RTUserDefaults = save_rt;
             do_append = 1;
             return 0;
         }
@@ -488,7 +481,6 @@ int  TMsgCompose::record_buttonClick()
         Auto_squelch = 0;
         ++Zaps_recording;
     }
-    RTUserDefaults = save_rt;
     do_append = 1;
     recording = 1;
     stop_button_enabled = 1;
@@ -988,15 +980,6 @@ TMsgCompose::do_record_pic()
     ft->reset_timer(MMChannel::codec_name_to_number(sysattr_get_vc("us-video-coder-qms")));
     ft->packet_count = 1;
 
-    // this is a hack: we swap in some reasonable defaults
-    // for recording messages, because most of the
-    // rest of the system still uses these global
-    // variables. should fix it sometime...
-
-    RateTweakerXferValid save_rt;
-    save_rt = RTUserDefaults;
-    RTUserDefaults.set_max_frame_rate(12);
-
     mc = new MMChannel;
     mc->tube = ft;
     mc->init_config(1);
@@ -1012,10 +995,9 @@ TMsgCompose::do_record_pic()
     view_id = mc->myid;
 
     mc->gv_id = -1;
-    if(!mc->build_outgoing(1, 1))
+    if(!mc->build_outgoing(1, 1, 12))
     {
         msgbox("Video recording device not available.", 0, MB_OK);
-        RTUserDefaults = save_rt;
         return 0;
     }
     // set it high, so that a frame is emitted almost immediately
@@ -1031,7 +1013,6 @@ TMsgCompose::do_record_pic()
     }
     mc->vid_make_first_0 = 1;
 
-    RTUserDefaults = save_rt;
     recording = 1;
     start_over_button_enabled = 0;
     return 1;

@@ -1573,7 +1573,9 @@ DwycoCore::init()
 //        0 // preload
 //    );
     dwyco_set_setting("video_format/swap_rb", "0");
-    dwyco_set_rate_tweaks(20.0, 65535, 1000, 1000);
+    dwyco_set_setting("rate/max_fps", "20");
+    dwyco_set_setting("rate/kbits_per_sec_out", "1000");
+    dwyco_set_setting("rate/kbits_per_sec_in", "1000");
     dwyco_set_moron_dork_mode(0);
 
     dwyco_set_external_video(1);

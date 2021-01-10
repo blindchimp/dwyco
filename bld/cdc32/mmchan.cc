@@ -10,7 +10,6 @@
 #include <typeinfo>
 
 #include "usercnfg.h"
-#include "ratetwkr.h"
 #include "chatdisp.h"
 #include "dwstr.h"
 #include "mmchan.h"

@@ -12,7 +12,6 @@
  */
 #include "gvchild.h"
 #include "dwstr.h"
-#include "ratetwkr.h"
 #include "aq.h"
 
 #include "acqfile.h"
@@ -82,9 +81,8 @@ init_external_video(int mbox)
     {
         if(mbox)
         {
-            char m[255];
-            sprintf(m, "video capture init failure");
-            (*MMChannel::popup_message_box_callback)(0, m, vcnil, vcnil);
+            if(MMChannel::popup_message_box_callback)
+                (*MMChannel::popup_message_box_callback)(0, "video capture init failure", vcnil, vcnil);
         }
         delete a;
         TheAq = 0;

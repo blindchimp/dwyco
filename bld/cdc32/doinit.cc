@@ -18,7 +18,6 @@
 #include <io.h>
 #endif
 #include "dirth.h"
-#include "ratetwkr.h"
 #include "usercnfg.h"
 #include "qtab.h"
 #include "jqtab.h"
