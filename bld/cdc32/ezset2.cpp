@@ -60,6 +60,10 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_INT, zap/save_sent, "", 1),
     DWUIDECLVAL(VC_INT, zap/no_forward_default, "", 0),
     DWUIDECLVAL(VC_INT, video_format/swap_rb, "", 0),
+
+    DWUIDECLVAL(VC_INT, rate/kbits_per_sec_out, "", 128),
+    DWUIDECLVAL(VC_INT, rate/kbits_per_sec_in, "", 128),
+    DWUIDECLVAL(VC_INT, rate/max_fps, "", 20),
     {VC_NIL,0, 0, 0}
 };
 

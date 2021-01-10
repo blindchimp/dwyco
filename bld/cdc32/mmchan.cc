@@ -2088,9 +2088,9 @@ MMChannel::requested_config()
 
     m.add_kv("audio codec", r);
 
-    m.add_kv("channel bandwidth", RTUserDefaults.get_link_speed());
-    m.add_kv("channel bandwidth recv", RTUserDefaults.get_link_speed_recv());
-    m.add_kv("max udp bytes", RTUserDefaults.get_max_udp_bytes());
+    m.add_kv("channel bandwidth", get_settings_value("rate/kbits_per_sec_out"));
+    m.add_kv("channel bandwidth recv", get_settings_value("rate/kbits_per_sec_in"));
+    //m.add_kv("max udp bytes", RTUserDefaults.get_max_udp_bytes());
     return m;
 }
 

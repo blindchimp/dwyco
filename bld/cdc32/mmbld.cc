@@ -35,6 +35,8 @@
 #include "netvid.h"
 #include "doinit.h"
 #include "dwrtlog.h"
+#include "ezset.h"
+
 namespace dwyco {
 extern double Audio_delay;
 }
@@ -441,7 +443,7 @@ MMChannel::build_incoming_video()
 }
 
 int
-MMChannel::build_outgoing(int locally_invoked, int inhibit_coder_display)
+MMChannel::build_outgoing(int locally_invoked, int inhibit_coder_display, int max_fps)
 {
     MMChannel *mcx;
     // find the codec/sampler object, even if
@@ -482,7 +484,7 @@ MMChannel::build_outgoing(int locally_invoked, int inhibit_coder_display)
         mcx->set_string_id("<<vid source>>");
 
         // set up initial data rates, etc.
-        RateTweakerXferValid& rt = RTUserDefaults;
+        //RateTweakerXferValid& rt = RTUserDefaults;
         // this may be an artifact of the old UDP stuff where
         // the reference frame was too big, and some routers
         // would drop it
@@ -494,8 +496,11 @@ MMChannel::build_outgoing(int locally_invoked, int inhibit_coder_display)
 //				// is getting lost or sometime...
 //				mcx->ref_timer.load(1000);
 //			}
-        long r = (long)rt.get_frame_interval();
-        mcx->frame_timer.set_interval((long)r);
+        //long r = (long)rt.get_frame_interval();
+        int r = get_settings_value("rate/max_fps");
+        double intval = 1. / r;
+        intval *= 1000;
+        mcx->frame_timer.set_interval(intval);
         mcx->frame_timer.reset();
         mcx->frame_timer.start();
         mcx->ready_for_ref = 1;
@@ -508,13 +513,13 @@ MMChannel::build_outgoing(int locally_invoked, int inhibit_coder_display)
     //a reference frame
     mcx->ready_for_ref = 1;
     frame_timer.stop();
-    RateTweakerXferValid& rt = RTUserDefaults;
+    //RateTweakerXferValid& rt = RTUserDefaults;
 
     // this is just to get a reasonable default if for
     // some reason negotiation doesn't come up with one.
     vc bw;
     if(!common_cfg.find("channel bandwidth", bw))
-        bw = rt.get_link_speed();
+        bw = get_settings_value("rate/kbits_per_sec_out");
 
     tube->set_est_baud((long)bw * 1000);
     tube->clear_buf_ctrl();

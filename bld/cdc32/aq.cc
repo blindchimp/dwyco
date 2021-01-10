@@ -78,7 +78,7 @@ init_external_video(int mbox)
     ExtAcquire *a = new ExtAcquire;
 #endif
 
-    if(!a->init(RTUserDefaults.get_max_frame_rate()))
+    if(!a->init((int)get_settings_value("rate/max_fps")))
     {
         if(mbox)
         {

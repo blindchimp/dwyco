@@ -433,7 +433,7 @@ int  TMsgCompose::record_buttonClick()
     {
         view_id = mc->myid;
         mc->gv_id = -1;
-        if(!mc->build_outgoing(1, 1))
+        if(!mc->build_outgoing(1, 1, hiq ? 20 : 10))
         {
             msgbox("Video recording device not available.", 0, MB_OK);
             stop_buttonClick();

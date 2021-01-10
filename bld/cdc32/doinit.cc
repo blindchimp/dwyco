@@ -159,7 +159,7 @@ init_codec(const char *logname)
 
         init_entropy();
         dh_init();
-        RTUserDefaults.load();
+        //RTUserDefaults.load();
         TProfile t("admin", INI_FILENAME);
 
         check_audio_device();
@@ -278,7 +278,7 @@ simple_init_codec(const char *logname)
         else
             Myhostname = hostname;
 
-        RTUserDefaults.load();
+        //RTUserDefaults.load();
         TProfile t("admin", INI_FILENAME);
 
         // have to reconfigure a little bit for 0.80
@@ -350,7 +350,7 @@ init_bg_msg_send(const char *logname)
         init_entropy();
         dh_init();
 
-        RTUserDefaults.load();
+        //RTUserDefaults.load();
 
         init_dirth();
         init_qauth();
