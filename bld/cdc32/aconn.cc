@@ -243,7 +243,7 @@ poll_listener()
         }
         // setup Tube
         MMTube *tube = new MMTube;
-        if(tube->accept(ctrl_sock, 0) < 0) // NOTE: FIXME, maybe need unreliable channels
+        if(tube->accept(ctrl_sock) < 0)
         {
             delete tube;
             tube = 0;
