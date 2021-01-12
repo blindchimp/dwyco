@@ -61,7 +61,6 @@
 #include "pval.h"
 #include "doinit.h"
 #include "ta.h"
-#include "usercnfg.h"
 #include "cdcver.h"
 #include "files.h"
 #include "sha.h"

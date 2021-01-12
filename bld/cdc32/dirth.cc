@@ -12,7 +12,6 @@
  */
 #include <string.h>
 #include "doinit.h"
-#include "usercnfg.h"
 #include "dirth.h"
 #include "vc.h"
 #include "vcmap.h"
@@ -581,8 +580,8 @@ build_directory_entry()
 {
     vc v(VC_VECTOR);
     v.append(Myhostname);
-    v.append(UserConfigData.get_username());
-    v.append(UserConfigData.get_description());
+    v.append(get_settings_value("user/username"));
+    v.append(get_settings_value("user/description"));
     //CallAcceptanceXfer& c = CallAcceptanceData;
     vc v2(VC_VECTOR);
     v2.append(0);
@@ -600,7 +599,7 @@ build_directory_entry()
     v.append(v2);
     v.append(1); // "registered"
     v.append(dwyco_get_version_string());
-    v.append(UserConfigData.get_email());
+    v.append(get_settings_value("user/email"));
     v.append(My_UID);
     v.append(vcnil); // was DH_public
     v.append(vcnil); // was "rating"
@@ -614,7 +613,7 @@ build_directory_entry()
 // XXXXXX note: this needs to be FIXED, it is always mucked up
 // after an integrate.
 // 13
-    v.append(UserConfigData.get_location());
+    v.append(get_settings_value("user/location"));
     v.append(vcnil);
     // note: to support old crappy clients, this element
     // must be nil (this is ui-speced-peer in server, and the

@@ -176,8 +176,6 @@ qdirth.cc \
 qpol.cc \
 dwlog.cc \
 syncvar.cc \
-uicfg.cc \
-usercnfg.cpp \
 doinit.cc \
 netcod.cc \
 netcod2.cc \

@@ -9,7 +9,6 @@
 //$Header: g:/dwight/repo/cdc32/rcs/mmchan.cc 1.37 1999/01/10 16:09:35 dwight Checkpoint $
 #include <typeinfo>
 
-#include "usercnfg.h"
 #include "chatdisp.h"
 #include "dwstr.h"
 #include "mmchan.h"
@@ -1742,7 +1741,7 @@ MMChannel::remote_session_id()
 vc
 MMChannel::username()
 {
-    vc v(UserConfigData.get_username());
+    vc v(get_settings_value("user/username"));
     return v;
 }
 
@@ -1895,8 +1894,8 @@ void
 MMChannel::init_config(int caller)
 {
     config = vc(VC_MAP, "", 31);
-    config.add_kv("username", UserConfigData.get_username());
-    config.add_kv("user description", UserConfigData.get_description());
+    config.add_kv("username", get_settings_value("user/username"));
+    config.add_kv("user description", get_settings_value("user/description"));
     // bumping the protocol version will make direct connections (even via
     // server) fail. this means that calling and direct messaging will fail, and
     // all messages will be sent via server (to older version).
@@ -1922,7 +1921,7 @@ MMChannel::init_config(int caller)
         config.add_kv("reliable video", 1);
     }
 
-    config.add_kv("location", UserConfigData.get_location());
+    config.add_kv("location", get_settings_value("user/location"));
     config.add_kv("call type", call_type);
     vc v(VC_VECTOR);
     v.append("dct");

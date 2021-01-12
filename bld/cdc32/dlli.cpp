@@ -287,7 +287,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "trc.h"
 #include "doinit.h"
 #include "mmchan.h"
-#include "uicfg.h"
 #include "qmsg.h"
 #include "aq.h"
 #include "dwrtlog.h"
@@ -305,8 +304,6 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "chatdisp.h"
 #include "pbmcfg.h"
 #include "qdirth.h"
-
-#include "usercnfg.h"
 
 #include "vccomp.h"
 #ifdef DWYCO_CDC_LIBUV
@@ -1742,8 +1739,9 @@ void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
 static void
 send_new()
 {
-    dirth_send_new4(My_UID, UserConfigData.get_username(),
-                    UserConfigData.get_email(),
+    dirth_send_new4(My_UID,
+                    get_settings_value("user/username"),
+                    get_settings_value("user/email"),
                     vcnil,
                     My_server_key,
                     Pal_auth_state,
@@ -4507,10 +4505,20 @@ internal_boot_file(const char *handle, int len_handle, const char *desc, int len
     vc prf(VC_VECTOR);
     vc pack(VC_TREE);
 
-    pack.add_kv("handle", vc(VC_BSTRING, handle, len_handle));
-    pack.add_kv("desc", vc(VC_BSTRING, desc, len_desc));
-    pack.add_kv("loc", vc(VC_BSTRING, loc, len_loc));
-    pack.add_kv("email", vc(VC_BSTRING, email, len_email));
+    vc vhandle(VC_BSTRING, handle, len_handle);
+    vc vdesc(VC_BSTRING, desc, len_desc);
+    vc vloc(VC_BSTRING, loc, len_loc);
+    vc vemail(VC_BSTRING, email, len_email);
+
+    set_settings_value("user/username", vhandle);
+    set_settings_value("user/description", vdesc);
+    set_settings_value("user/location", vloc);
+    set_settings_value("user/email", vemail);
+
+    pack.add_kv("handle", vhandle);
+    pack.add_kv("desc", vdesc);
+    pack.add_kv("loc", vloc);
+    pack.add_kv("email", vemail);
     vc ser = serialize(pack);
     prf[PRF_PACK] = ser;
     prf[PRF_MEDIA] = vcnil;
@@ -4529,7 +4537,7 @@ dwyco_create_bootstrap_profile(const char *handle, int len_handle, const char *d
 {
     int ret = 0;
     ret = internal_boot_file(handle, len_handle, desc, len_desc, loc, len_loc, email, len_email);
-    UserConfigData.load();
+    //UserConfigData.load();
     return ret;
 }
 
@@ -7954,7 +7962,7 @@ dwyco_uid_to_info(const char *user_id, int len_uid, int* cant_resolve_now_out)
         v.append(prf[PRF_REVIEWED]);
         v.append(prf[PRF_REGULAR]);
         if(uid == My_UID)
-            v.append(UserConfigData.get_email());
+            v.append(get_settings_value("user/email"));
         else
             v.append("");
     }

@@ -11,14 +11,12 @@
  * $Header: g:/dwight/repo/cdc32/rcs/doinit.cc 1.27 1999/01/10 16:09:31 dwight Checkpoint $
  */
 
-#include "uicfg.h"
 #include "ezset.h"
 #ifndef LINUX
 #include <direct.h>
 #include <io.h>
 #endif
 #include "dirth.h"
-#include "usercnfg.h"
 #include "qtab.h"
 #include "jqtab.h"
 #include "qpol.h"
@@ -159,7 +157,7 @@ init_codec(const char *logname)
         init_entropy();
         dh_init();
         //RTUserDefaults.load();
-        TProfile t("admin", INI_FILENAME);
+        //TProfile t("admin", INI_FILENAME);
 
         check_audio_device();
         if(!Audio_hw_full_duplex)
@@ -191,7 +189,7 @@ init_codec(const char *logname)
 #endif
         init_dirth();
         init_qauth();
-        UserConfigData.load();
+        //UserConfigData.load();
         // note: qmsg now depends on My_UID
         init_qmsg();
 
@@ -278,10 +276,10 @@ simple_init_codec(const char *logname)
             Myhostname = hostname;
 
         //RTUserDefaults.load();
-        TProfile t("admin", INI_FILENAME);
+        //TProfile t("admin", INI_FILENAME);
 
         // have to reconfigure a little bit for 0.80
-        UserConfigData.load();
+        //UserConfigData.load();
         init_sysattr();
         init = 1;
         Log->make_entry("init done");
@@ -354,7 +352,7 @@ init_bg_msg_send(const char *logname)
         init_dirth();
         init_qauth();
 
-        UserConfigData.load();
+        //UserConfigData.load();
         // note: qmsg now depends on My_UID
         init_qmsg();
 

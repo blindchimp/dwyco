@@ -9,7 +9,6 @@
 #ifndef ACONN_H
 #define ACONN_H
 
-#include "uicfg.h"
 #include "dwstr.h"
 
 namespace dwyco {

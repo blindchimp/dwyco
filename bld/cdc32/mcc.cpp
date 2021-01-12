@@ -20,7 +20,6 @@
 #include "msgdisp.h"
 #include "audchk.h"
 #include "ta.h"
-#include "usercnfg.h"
 #include "dirth.h"
 #include "codec.h"
 #include "fnmod.h"
