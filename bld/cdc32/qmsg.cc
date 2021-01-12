@@ -83,7 +83,6 @@ using namespace CryptoPP;
 #include "chatq.h"
 #include "pgdll.h"
 #include "sepstr.h"
-#include "lanmap.h"
 #include "ser.h"
 #include "xinfo.h"
 #include "vcudh.h"
@@ -124,7 +123,6 @@ vc No_direct_att;
 //int Pal_auth_warn;
 vc Pals;
 vc Client_ports;
-vc LANmap;
 int LANmap_inhibit;
 vc Chat_ips;
 vc Chat_ports;
@@ -216,26 +214,7 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
     sec = 0;
     pal = 0;
     can_do_direct = 0;
-    // prefer the LAN ip and ports over the remote ones
-    if(!LANmap_inhibit)
-    {
-        if(LANmap.find(uid, u))
-        {
-            can_do_direct = 1;
-            DwString a((const char *)u[LANMAP_LOCAL_IP]);
-            int c = a.find(":");
-            if(c != DwString::npos)
-                a.erase(c);
-            if(u.type() == VC_VECTOR)
-            {
-                prim = (int)u[LANMAP_LOCAL_PORTS][0];
-                sec = (int)u[LANMAP_LOCAL_PORTS][1];
-                pal = (int)u[LANMAP_LOCAL_PORTS][2];
-            }
-            GRTLOGA("uid to ip LANMAP %s %d %d %d", a.c_str(), prim, sec, pal, 0);
-            return inet_addr(a.c_str());
-        }
-    }
+
     if(Online.find(uid, u))
     {
         can_do_direct = 1;
@@ -437,7 +416,6 @@ init_qmsg()
         save_info(Pals, "pals");
     }
     Client_ports = vc(VC_TREE);
-    LANmap = vc(VC_TREE);
     if(!load_info(Session_infos, "sinfo") || Session_infos.type() != VC_MAP)
     {
         Session_infos = vc(VC_MAP);
@@ -635,7 +613,6 @@ resume_qmsg()
         save_info(Pals, "pals");
     }
     Client_ports = vc(VC_TREE);
-    LANmap = vc(VC_TREE);
     if(!load_info(Session_infos, "sinfo") || Session_infos.type() != VC_MAP)
     {
         Session_infos = vc(VC_MAP);
