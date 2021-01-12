@@ -11,19 +11,12 @@
  * $Header: g:/dwight/repo/cdc32/rcs/doinit.cc 1.27 1999/01/10 16:09:31 dwight Checkpoint $
  */
 
-#include "uicfg.h"
+#include "ezset.h"
 #ifndef LINUX
 #include <direct.h>
 #include <io.h>
 #endif
 #include "dirth.h"
-#include "ratetwkr.h"
-#include "usercnfg.h"
-#include "vfwinvst.h"
-#include "rawfiles.h"
-#include "vidinput.h"
-#include "cllaccpt.h"
-#include "zapadv.h"
 #include "qtab.h"
 #include "jqtab.h"
 #include "qpol.h"
@@ -124,6 +117,7 @@ init_codec(const char *logname)
         if(access(newfn("xfer").c_str(), 0) == -1)
             if(mkdir(newfn("xfer").c_str()) == -1)
                 Log->make_entry("can't create xfer dir");
+        init_sql_settings();
         // this is so important, don't leave it till later
         init_prf_cache();
         init_pk_cache();
@@ -162,27 +156,17 @@ init_codec(const char *logname)
 
         init_entropy();
         dh_init();
-        RTUserDefaults.load();
-        TProfile t("admin", INI_FILENAME);
-        // note: initvfw makes tweaks to default values
-        // based on whether we are doing the wizard or not.
-        initvfw();
+        //RTUserDefaults.load();
+        //TProfile t("admin", INI_FILENAME);
+
         check_audio_device();
         if(!Audio_hw_full_duplex)
             Log->make_entry("audio hardware is half-duplex");
         else
             Log->make_entry("audio hardware claims full-duplex");
 
-        VFWInvestigateData.load();
-        //CTUserDefaults.load();
-        RawFilesData.load();
-        VidInputData.load();
-        CallAcceptanceData.load();
-
-        ZapAdvData.load();
-        DwNetConfigData.load();
         extern int Media_select;
-        switch(DwNetConfigData.get_call_setup_media_select())
+        switch((int)get_settings_value("net/call_setup_media_select"))
         {
         default:
         case CSMS_VIA_HANDSHAKE:
@@ -200,14 +184,12 @@ init_codec(const char *logname)
         // for testing
         //Media_select = MEDIA_TCP_VIA_PROXY;
 
-        //ShowDirectoryData.load();
-
 #ifdef DWYCO_CODEC
         EntropyModel::init_all();
 #endif
         init_dirth();
         init_qauth();
-        UserConfigData.load();
+        //UserConfigData.load();
         // note: qmsg now depends on My_UID
         init_qmsg();
 
@@ -293,19 +275,11 @@ simple_init_codec(const char *logname)
         else
             Myhostname = hostname;
 
-        RTUserDefaults.load();
-        TProfile t("admin", INI_FILENAME);
+        //RTUserDefaults.load();
+        //TProfile t("admin", INI_FILENAME);
 
         // have to reconfigure a little bit for 0.80
-        UserConfigData.load();
-        VFWInvestigateData.load();
-        //CTUserDefaults.load();
-        RawFilesData.load();
-        VidInputData.load();
-        CallAcceptanceData.load();
-        ZapAdvData.load();
-        DwNetConfigData.load();
-
+        //UserConfigData.load();
         init_sysattr();
         init = 1;
         Log->make_entry("init done");
@@ -373,26 +347,18 @@ init_bg_msg_send(const char *logname)
         init_entropy();
         dh_init();
 
-        RTUserDefaults.load();
+        //RTUserDefaults.load();
 
         init_dirth();
         init_qauth();
 
-        UserConfigData.load();
+        //UserConfigData.load();
         // note: qmsg now depends on My_UID
         init_qmsg();
 
         // note: the background send does server-only sends, so this should never
         // get used.
         //init_callq();
-
-        VFWInvestigateData.load();
-        //CTUserDefaults.load();
-        RawFilesData.load();
-        VidInputData.load();
-        CallAcceptanceData.load();
-        ZapAdvData.load();
-        DwNetConfigData.load();
 
         init_sysattr();
         Bg_msg_send_init = 1;

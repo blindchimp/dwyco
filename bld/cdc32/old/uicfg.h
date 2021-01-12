@@ -114,8 +114,8 @@ if(strcmp(#type, "char *") == 0) \
 void load_syncmap(SyncMap *, const char *);
 void save_syncmap(SyncMap *, const char *);
 
-#define BF_CHECKED 1
-#define BF_UNCHECKED 0
+//#define BF_CHECKED 1
+//#define BF_UNCHECKED 0
 #define TYPESAFE_DOWNCAST(ptr, class) (dynamic_cast<class *>(ptr))
 
 class DwTProfile

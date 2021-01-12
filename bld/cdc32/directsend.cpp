@@ -13,7 +13,6 @@
 #include "qauth.h"
 #include "calllive.h"
 #include "dwrtlog.h"
-#include "zapadv.h"
 #include "se.h"
 #include "fnmod.h"
 #include "qmsg.h"

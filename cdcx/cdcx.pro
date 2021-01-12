@@ -160,7 +160,7 @@ DEFINES += LINUX VCCFG_FILE
 
 win32 {
 
-DEFINES += USE_VFW  MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
+DEFINES += MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
 
 INCLUDEPATH += dllwin
 # use this for linking to dynamic cdcdll
@@ -176,7 +176,7 @@ DEFINES += CDCX_NO_SSL
 #D = \\Users\\dwight\\build-cdcx\\bld
 
 D = $$replace(OUT_PWD, /, \\)\\..\\bld
-S = release
+S = debug
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
 $${D}\\vc\\$${S}\\vc.lib \
@@ -195,7 +195,7 @@ $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
 $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib \
-winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
+winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
 
 PRE_TARGETDEPS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \

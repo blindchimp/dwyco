@@ -14,7 +14,6 @@
 #include "gvchild.h"
 #include "senc.h"
 #include "qauth.h"
-#include "zapadv.h"
 #include "qmsg.h"
 #include "snds.h"
 #include "dwrtlog.h"

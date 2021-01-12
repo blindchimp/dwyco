@@ -12,9 +12,9 @@
 #include "dlli.h"
 #include "se.h"
 #include "msend.h"
-#include "zapadv.h"
 #include "qmsg.h"
 #include "xinfo.h"
+#include "ezset.h"
 
 namespace dwyco {
 
@@ -136,7 +136,7 @@ send_best_way(const DwString& qfn, vc ruid)
 {
     if(No_direct_msgs.contains(ruid) ||
             (No_direct_att.contains(ruid) && has_attachment(qfn))
-            || ZapAdvData.get_always_server())
+            || (int)get_settings_value("zap/always_server") == 1)
         return send_via_server(qfn);
 
     // basic idea is to try and send directly, which may involve some setup

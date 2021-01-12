@@ -2086,6 +2086,7 @@ int DWYCOEXPORT
 dwyco_get_codec_data(int *agc, int *denoise, double *audio_delay);
 
 
+#if 0
 // for icuii, "automatic" should be set, which
 // tells the capture driver to figure it out as
 // best it can. warning: there may be bugs in here
@@ -2140,135 +2141,137 @@ dwyco_get_vidcap_data(
     DWUIDECLARG_END
 );
 
-// this is only used for testing without
-// a camera. it is NOT used in ICUII.
-int DWYCOEXPORT
-dwyco_set_raw_files(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(const char *, raw_files_list)
-    DWUIDECLARG(const char *, raw_files_pattern)
-    DWUIDECLARG(bool, use_list_of_files)
-    DWUIDECLARG(bool, use_pattern)
-    DWUIDECLARG(bool, preload)
-    DWUIDECLARG_END
-);
+#endif
 
-int DWYCOEXPORT
-dwyco_get_raw_files(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(const char *, raw_files_list)
-    DWUIDECLARG_OUT(const char *, raw_files_pattern)
-    DWUIDECLARG_OUT(bool, use_list_of_files)
-    DWUIDECLARG_OUT(bool, use_pattern)
-    DWUIDECLARG_OUT(bool, preload)
-    DWUIDECLARG_END
-);
+//// this is only used for testing without
+//// a camera. it is NOT used in ICUII.
+//int DWYCOEXPORT
+//dwyco_set_raw_files(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(const char *, raw_files_list)
+//    DWUIDECLARG(const char *, raw_files_pattern)
+//    DWUIDECLARG(bool, use_list_of_files)
+//    DWUIDECLARG(bool, use_pattern)
+//    DWUIDECLARG(bool, preload)
+//    DWUIDECLARG_END
+//);
+
+//int DWYCOEXPORT
+//dwyco_get_raw_files(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(const char *, raw_files_list)
+//    DWUIDECLARG_OUT(const char *, raw_files_pattern)
+//    DWUIDECLARG_OUT(bool, use_list_of_files)
+//    DWUIDECLARG_OUT(bool, use_pattern)
+//    DWUIDECLARG_OUT(bool, preload)
+//    DWUIDECLARG_END
+//);
 
 // this tells the DLL what device should
 // be used as a video source.
-int DWYCOEXPORT
-dwyco_set_video_input(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(const char *, device_name)	// icuii: use this to store the capture driver name if you need to. NOTE: not used by the DLL otherwise.
-    DWUIDECLARG(bool, coded)  			// not used.
-    DWUIDECLARG(bool, raw)				// icuii: set to 0. if 1 uses "raw files" config
-    DWUIDECLARG(bool, vfw)				// icuii: set to 1 if "capture using camera" is checked
-    DWUIDECLARG(bool, no_video)			// icuii: set to 1 if "no video" is checked
-    DWUIDECLARG(int, device_index)		// not used, but you can use it to store the index if needed.
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_set_video_input(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(const char *, device_name)	// icuii: use this to store the capture driver name if you need to. NOTE: not used by the DLL otherwise.
+//    DWUIDECLARG(bool, coded)  			// not used.
+//    DWUIDECLARG(bool, raw)				// icuii: set to 0. if 1 uses "raw files" config
+//    DWUIDECLARG(bool, vfw)				// icuii: set to 1 if "capture using camera" is checked
+//    DWUIDECLARG(bool, no_video)			// icuii: set to 1 if "no video" is checked
+//    DWUIDECLARG(int, device_index)		// not used, but you can use it to store the index if needed.
+//    DWUIDECLARG_END
+//);
 
-int DWYCOEXPORT
-dwyco_get_video_input(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(const char *, device_name)
-    DWUIDECLARG_OUT(bool, coded)
-    DWUIDECLARG_OUT(bool, raw)
-    DWUIDECLARG_OUT(bool, vfw)
-    DWUIDECLARG_OUT(bool, no_video)
-    DWUIDECLARG_OUT(int, device_index)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_get_video_input(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(const char *, device_name)
+//    DWUIDECLARG_OUT(bool, coded)
+//    DWUIDECLARG_OUT(bool, raw)
+//    DWUIDECLARG_OUT(bool, vfw)
+//    DWUIDECLARG_OUT(bool, no_video)
+//    DWUIDECLARG_OUT(int, device_index)
+//    DWUIDECLARG_END
+//);
 
 // this is the call screening stuff
 // in ICUII, most of this is not exposed to users, and it is
 // set according to whatever mode (single user
 // vs. multiuser) you are in. in CDC32, there
 // is a dialog the users can tweak.
-int DWYCOEXPORT
-dwyco_set_call_accept(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(int , max_audio)		// max # of audio streams you will send
-    DWUIDECLARG(int , max_chat)         // max # if PUBLIC chat streams you will accept
-    DWUIDECLARG(int , max_video)		// max # of video streams you will send
-    DWUIDECLARG(int , max_audio_recv)	// max # of audio streams you will receive
-    DWUIDECLARG(int , max_video_recv)   // max # of video streams you will receive
-    DWUIDECLARG(int , max_pchat)        // max # of private chat streams you will accept
-    DWUIDECLARG(const char * , pw)			// icuii: connection password required to connect
-    DWUIDECLARG(bool, auto_accept)		// icuii: 1 if "accept calls automatically" is checked
-    DWUIDECLARG(bool, require_pw)       // icuii: 1 if "require password" is checked
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_set_call_accept(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(int , max_audio)		// max # of audio streams you will send
+//    DWUIDECLARG(int , max_chat)         // max # if PUBLIC chat streams you will accept
+//    DWUIDECLARG(int , max_video)		// max # of video streams you will send
+//    DWUIDECLARG(int , max_audio_recv)	// max # of audio streams you will receive
+//    DWUIDECLARG(int , max_video_recv)   // max # of video streams you will receive
+//    DWUIDECLARG(int , max_pchat)        // max # of private chat streams you will accept
+//    DWUIDECLARG(const char * , pw)			// icuii: connection password required to connect
+//    DWUIDECLARG(bool, auto_accept)		// icuii: 1 if "accept calls automatically" is checked
+//    DWUIDECLARG(bool, require_pw)       // icuii: 1 if "require password" is checked
+//    DWUIDECLARG_END
+//);
+//
+//int DWYCOEXPORT
+//dwyco_get_call_accept(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(int , max_audio)
+//    DWUIDECLARG_OUT(int , max_chat)
+//    DWUIDECLARG_OUT(int , max_video)
+//    DWUIDECLARG_OUT(int , max_audio_recv)
+//    DWUIDECLARG_OUT(int , max_video_recv)
+//    DWUIDECLARG_OUT(int , max_pchat)
+//    DWUIDECLARG_OUT(const char * , pw)
+//    DWUIDECLARG_OUT(bool, auto_accept)
+//    DWUIDECLARG_OUT(bool, require_pw)
+//    DWUIDECLARG_END
+//);
 
-int DWYCOEXPORT
-dwyco_get_call_accept(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(int , max_audio)
-    DWUIDECLARG_OUT(int , max_chat)
-    DWUIDECLARG_OUT(int , max_video)
-    DWUIDECLARG_OUT(int , max_audio_recv)
-    DWUIDECLARG_OUT(int , max_video_recv)
-    DWUIDECLARG_OUT(int , max_pchat)
-    DWUIDECLARG_OUT(const char * , pw)
-    DWUIDECLARG_OUT(bool, auto_accept)
-    DWUIDECLARG_OUT(bool, require_pw)
-    DWUIDECLARG_END
-);
+//// assorted zap message setup
+//int DWYCOEXPORT
+//dwyco_set_zap_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(bool, always_server)	// icuii: always 0
+//    DWUIDECLARG(bool, always_accept)    // icuii: 1 if "auto-accept quick messages" is checked
+//    DWUIDECLARG(bool, use_old_timing)   // icuii: 1 if "qm's move too fast or not at all" checked (in obscure tab)
+//    DWUIDECLARG(bool, save_sent)   		// icuii: 1 by default, 0 to turn off automatic "sent" qm saving
+//    DWUIDECLARG(bool, no_forward_default)	// icuii: 0 by default
+//    DWUIDECLARG_END
+//);
 
-// assorted zap message setup
-int DWYCOEXPORT
-dwyco_set_zap_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(bool, always_server)	// icuii: always 0
-    DWUIDECLARG(bool, always_accept)    // icuii: 1 if "auto-accept quick messages" is checked
-    DWUIDECLARG(bool, use_old_timing)   // icuii: 1 if "qm's move too fast or not at all" checked (in obscure tab)
-    DWUIDECLARG(bool, save_sent)   		// icuii: 1 by default, 0 to turn off automatic "sent" qm saving
-    DWUIDECLARG(bool, no_forward_default)	// icuii: 0 by default
-    DWUIDECLARG_END
-);
-
-int DWYCOEXPORT
-dwyco_get_zap_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(bool, always_server)
-    DWUIDECLARG_OUT(bool, always_accept)
-    DWUIDECLARG_OUT(bool, use_old_timing)
-    DWUIDECLARG_OUT(bool, save_sent)
-    DWUIDECLARG_OUT(bool, no_forward_default)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_get_zap_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(bool, always_server)
+//    DWUIDECLARG_OUT(bool, always_accept)
+//    DWUIDECLARG_OUT(bool, use_old_timing)
+//    DWUIDECLARG_OUT(bool, save_sent)
+//    DWUIDECLARG_OUT(bool, no_forward_default)
+//    DWUIDECLARG_END
+//);
 
 // these are networking rates and capture
 // frame rates.
-int DWYCOEXPORT
-dwyco_set_rate_tweaks(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(double, max_frame_rate)	// icuii: set to 10 (could be a slider tho) fractional frame rates are accepted
-    DWUIDECLARG(long, max_udp_bytes) 	// not used, set to 65535
-    DWUIDECLARG(long, link_speed)       // set to Kbps xmit on link (modem tab)
-    DWUIDECLARG(long, link_speed_recv)  // set to Kbps recv on link (modem tab)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_set_rate_tweaks(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(double, max_frame_rate)	// icuii: set to 10 (could be a slider tho) fractional frame rates are accepted
+//    DWUIDECLARG(long, max_udp_bytes) 	// not used, set to 65535
+//    DWUIDECLARG(long, link_speed)       // set to Kbps xmit on link (modem tab)
+//    DWUIDECLARG(long, link_speed_recv)  // set to Kbps recv on link (modem tab)
+//    DWUIDECLARG_END
+//);
 
-int DWYCOEXPORT
-dwyco_get_rate_tweaks(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(double, max_frame_rate)
-    DWUIDECLARG_OUT(long, max_udp_bytes)
-    DWUIDECLARG_OUT(long, link_speed)
-    DWUIDECLARG_OUT(long, link_speed_recv)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_get_rate_tweaks(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(double, max_frame_rate)
+//    DWUIDECLARG_OUT(long, max_udp_bytes)
+//    DWUIDECLARG_OUT(long, link_speed)
+//    DWUIDECLARG_OUT(long, link_speed_recv)
+//    DWUIDECLARG_END
+//);
 
 // used for media select arg in the net data
 // WARNING: the values of these defines were copied from aconn.h
@@ -2286,37 +2289,37 @@ dwyco_get_rate_tweaks(
 #define DWYCO_MEDIA_SELECT_UDP_ONLY 2		// force udp SAC only
 #define DWYCO_MEDIA_SELECT_HANDSHAKE 3		// try to figure out cheapest way
 
-int DWYCOEXPORT
-dwyco_set_net_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(int, primary_port) 				// primary listener, icuii: 2000
-    DWUIDECLARG(int, secondary_port) 			// secondary listenter icuii: 9745
-    DWUIDECLARG(int, pal_port)		 			// pal listener icuii: 6782
-    DWUIDECLARG(int, nat_primary_port)			// icuii: 0
-    DWUIDECLARG(int, nat_secondary_port)		// icuii: 0
-    DWUIDECLARG(int, nat_pal_port)				// icuii: 0
-    DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
-    DWUIDECLARG(int, disable_upnp)				// icuii: 0 , disabled for compat right now
-    DWUIDECLARG(int, media_select)				// defaults to "handshake", see *MEDIA_SEL* defines
-    DWUIDECLARG(int, listen)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_set_net_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(int, primary_port) 				// primary listener, icuii: 2000
+//    DWUIDECLARG(int, secondary_port) 			// secondary listenter icuii: 9745
+//    DWUIDECLARG(int, pal_port)		 			// pal listener icuii: 6782
+//    DWUIDECLARG(int, nat_primary_port)			// icuii: 0
+//    DWUIDECLARG(int, nat_secondary_port)		// icuii: 0
+//    DWUIDECLARG(int, nat_pal_port)				// icuii: 0
+//    DWUIDECLARG(bool, advertise_nat_ports)		// icuii: 0
+//    DWUIDECLARG(int, disable_upnp)				// icuii: 0 , disabled for compat right now
+//    DWUIDECLARG(int, media_select)				// defaults to "handshake", see *MEDIA_SEL* defines
+//    DWUIDECLARG(int, listen)
+//    DWUIDECLARG_END
+//);
 
-int DWYCOEXPORT
-dwyco_get_net_data(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(int, primary_port)
-    DWUIDECLARG_OUT(int, secondary_port)
-    DWUIDECLARG_OUT(int, pal_port)
-    DWUIDECLARG_OUT(int, nat_primary_port)
-    DWUIDECLARG_OUT(int, nat_secondary_port)
-    DWUIDECLARG_OUT(int, nat_pal_port)
-    DWUIDECLARG_OUT(bool, advertise_nat_ports)
-    DWUIDECLARG_OUT(int, disable_upnp)
-    DWUIDECLARG_OUT(int, media_select)
-    DWUIDECLARG_OUT(int, listen)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_get_net_data(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(int, primary_port)
+//    DWUIDECLARG_OUT(int, secondary_port)
+//    DWUIDECLARG_OUT(int, pal_port)
+//    DWUIDECLARG_OUT(int, nat_primary_port)
+//    DWUIDECLARG_OUT(int, nat_secondary_port)
+//    DWUIDECLARG_OUT(int, nat_pal_port)
+//    DWUIDECLARG_OUT(bool, advertise_nat_ports)
+//    DWUIDECLARG_OUT(int, disable_upnp)
+//    DWUIDECLARG_OUT(int, media_select)
+//    DWUIDECLARG_OUT(int, listen)
+//    DWUIDECLARG_END
+//);
 
 
 #ifdef __cplusplus

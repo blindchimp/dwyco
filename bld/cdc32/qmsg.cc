@@ -60,9 +60,7 @@
 #include "dwlog.h"
 #include "pval.h"
 #include "doinit.h"
-#include "zapadv.h"
 #include "ta.h"
-#include "usercnfg.h"
 #include "cdcver.h"
 #include "files.h"
 #include "sha.h"
@@ -96,6 +94,8 @@ using namespace CryptoPP;
 #include "dwyco_rand.h"
 #include "qmsgsql.h"
 #include "aconn.h"
+
+#include "ezset.h"
 
 using namespace dwyco;
 
@@ -1529,7 +1529,11 @@ make_best_local_info(vc uid, int *cant_resolve_now)
         *cant_resolve_now = 1;
     if(uid == My_UID)
     {
-        return make_alt_info(UserConfigData.get_username(), UserConfigData.get_description(), UserConfigData.get_location());
+        return make_alt_info(
+                    get_settings_value("user/username"),
+                    get_settings_value("user/description"),
+                    get_settings_value("user/location")
+                    );
 
     }
     // try infos

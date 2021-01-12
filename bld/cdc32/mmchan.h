@@ -174,7 +174,7 @@ private:
     DwTimer nego_timer;
 public:
 
-    int build_outgoing(int locally_invoked = 0, int inhibit_coder_display = 0);
+    int build_outgoing(int locally_invoked, int inhibit_coder_display, int max_fps);
     int build_incoming_video();
 #if 0
     int cfg_has_duplex(vc cfg, const char *what);

@@ -18,7 +18,6 @@
 #include "vccomp.h"
 #include "qdirth.h"
 #include "gvchild.h"
-#include "usercnfg.h"
 #include "dwtimer.h"
 #include "netvid.h"
 #include "qauth.h"

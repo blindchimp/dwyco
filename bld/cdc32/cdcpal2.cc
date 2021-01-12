@@ -23,6 +23,8 @@
 #include "qmsgsql.h"
 #include "qauth.h"
 #include "simple_property.h"
+#include "ezset.h"
+#include "dirth.h"
 
 using namespace dwyco;
 
@@ -293,20 +295,7 @@ pal_login()
     v[7] = vc(VC_VECTOR);
     v[8] = vc(VC_VECTOR);
 
-    vc fw(VC_VECTOR);
-    if(DwNetConfigData.get_advertise_nat_ports())
-    {
-        fw[0] = DwNetConfigData.get_nat_primary_port();
-        fw[1] = DwNetConfigData.get_nat_secondary_port();
-        fw[2] = DwNetConfigData.get_nat_pal_port();
-    }
-    else
-    {
-        fw[0] = DwNetConfigData.get_primary_port();
-        fw[1] = DwNetConfigData.get_secondary_port();
-        fw[2] = DwNetConfigData.get_pal_port();
-    }
-    v[4] = fw;
+    v[4] = make_fw_setup();
     dirth_send_set_interest_list(My_UID, v, QckDone());
     return 1;
 }
