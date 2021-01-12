@@ -2143,29 +2143,29 @@ dwyco_get_vidcap_data(
 
 // this tells the DLL what device should
 // be used as a video source.
-int DWYCOEXPORT
-dwyco_set_video_input(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(const char *, device_name)	// icuii: use this to store the capture driver name if you need to. NOTE: not used by the DLL otherwise.
-    DWUIDECLARG(bool, coded)  			// not used.
-    DWUIDECLARG(bool, raw)				// icuii: set to 0. if 1 uses "raw files" config
-    DWUIDECLARG(bool, vfw)				// icuii: set to 1 if "capture using camera" is checked
-    DWUIDECLARG(bool, no_video)			// icuii: set to 1 if "no video" is checked
-    DWUIDECLARG(int, device_index)		// not used, but you can use it to store the index if needed.
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_set_video_input(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(const char *, device_name)	// icuii: use this to store the capture driver name if you need to. NOTE: not used by the DLL otherwise.
+//    DWUIDECLARG(bool, coded)  			// not used.
+//    DWUIDECLARG(bool, raw)				// icuii: set to 0. if 1 uses "raw files" config
+//    DWUIDECLARG(bool, vfw)				// icuii: set to 1 if "capture using camera" is checked
+//    DWUIDECLARG(bool, no_video)			// icuii: set to 1 if "no video" is checked
+//    DWUIDECLARG(int, device_index)		// not used, but you can use it to store the index if needed.
+//    DWUIDECLARG_END
+//);
 
-int DWYCOEXPORT
-dwyco_get_video_input(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(const char *, device_name)
-    DWUIDECLARG_OUT(bool, coded)
-    DWUIDECLARG_OUT(bool, raw)
-    DWUIDECLARG_OUT(bool, vfw)
-    DWUIDECLARG_OUT(bool, no_video)
-    DWUIDECLARG_OUT(int, device_index)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_get_video_input(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(const char *, device_name)
+//    DWUIDECLARG_OUT(bool, coded)
+//    DWUIDECLARG_OUT(bool, raw)
+//    DWUIDECLARG_OUT(bool, vfw)
+//    DWUIDECLARG_OUT(bool, no_video)
+//    DWUIDECLARG_OUT(int, device_index)
+//    DWUIDECLARG_END
+//);
 
 // this is the call screening stuff
 // in ICUII, most of this is not exposed to users, and it is
@@ -2227,25 +2227,25 @@ dwyco_get_video_input(
 
 // these are networking rates and capture
 // frame rates.
-int DWYCOEXPORT
-dwyco_set_rate_tweaks(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG(double, max_frame_rate)	// icuii: set to 10 (could be a slider tho) fractional frame rates are accepted
-    DWUIDECLARG(long, max_udp_bytes) 	// not used, set to 65535
-    DWUIDECLARG(long, link_speed)       // set to Kbps xmit on link (modem tab)
-    DWUIDECLARG(long, link_speed_recv)  // set to Kbps recv on link (modem tab)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_set_rate_tweaks(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG(double, max_frame_rate)	// icuii: set to 10 (could be a slider tho) fractional frame rates are accepted
+//    DWUIDECLARG(long, max_udp_bytes) 	// not used, set to 65535
+//    DWUIDECLARG(long, link_speed)       // set to Kbps xmit on link (modem tab)
+//    DWUIDECLARG(long, link_speed_recv)  // set to Kbps recv on link (modem tab)
+//    DWUIDECLARG_END
+//);
 
-int DWYCOEXPORT
-dwyco_get_rate_tweaks(
-    DWUIDECLARG_BEGIN
-    DWUIDECLARG_OUT(double, max_frame_rate)
-    DWUIDECLARG_OUT(long, max_udp_bytes)
-    DWUIDECLARG_OUT(long, link_speed)
-    DWUIDECLARG_OUT(long, link_speed_recv)
-    DWUIDECLARG_END
-);
+//int DWYCOEXPORT
+//dwyco_get_rate_tweaks(
+//    DWUIDECLARG_BEGIN
+//    DWUIDECLARG_OUT(double, max_frame_rate)
+//    DWUIDECLARG_OUT(long, max_udp_bytes)
+//    DWUIDECLARG_OUT(long, link_speed)
+//    DWUIDECLARG_OUT(long, link_speed_recv)
+//    DWUIDECLARG_END
+//);
 
 // used for media select arg in the net data
 // WARNING: the values of these defines were copied from aconn.h

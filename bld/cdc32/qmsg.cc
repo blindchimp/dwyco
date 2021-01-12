@@ -93,6 +93,8 @@ using namespace CryptoPP;
 #include "ssns.h"
 #include "dwyco_rand.h"
 #include "qmsgsql.h"
+#include "ezset.h"
+
 using namespace dwyco;
 
 vc MsgFolders;
@@ -1522,7 +1524,11 @@ make_best_local_info(vc uid, int *cant_resolve_now)
         *cant_resolve_now = 1;
     if(uid == My_UID)
     {
-        return make_alt_info(UserConfigData.get_username(), UserConfigData.get_description(), UserConfigData.get_location());
+        return make_alt_info(
+                    get_settings_value("user/username"),
+                    get_settings_value("user/description"),
+                    get_settings_value("user/location")
+                    );
 
     }
     // try infos
