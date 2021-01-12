@@ -96,7 +96,7 @@ configform::accept()
     // so we always make them accept.
     dwyco_set_setting("zap/always_accept", "1");
     // TCP only
-    dwyco_set_setting("net/media_select", "1");
+    dwyco_set_setting("net/call_setup_media_select", "1");
 
     // update the pals-only settings
     if(ui.pals_only->isChecked())
@@ -118,9 +118,12 @@ configform::accept()
     dwyco_set_codec_data(agc, denoise, audio_delay);
 
     // b/w settings
-    int up = ui.upload_speed->text().toInt();
-    int down = ui.download_speed->text().toInt();
-    dwyco_set_rate_tweaks(20, 65535, up, down);
+    //int up = ui.upload_speed->text().toInt();
+    //int down = ui.download_speed->text().toInt();
+    //dwyco_set_rate_tweaks(20, 65535, up, down);
+    dwyco_set_setting("rate/max_fps", "20");
+    dwyco_set_setting("rate/kbits_per_sec_out", ui.upload_speed->text().toLatin1());
+    dwyco_set_setting("rate/kbits_per_sec_in", ui.download_speed->text().toLatin1());
 
     setting_put("chat_dont_display_video", ui.chat_dont_display_video->isChecked());
     if(simple_public::Simple_publics.count() > 0)
@@ -226,14 +229,17 @@ configform::load()
     ui.denoise->setChecked(denoise);
     ui.audio_delay->setValue(audio_delay);
 
-    long up;
-    long down;
-    long dum;
-    double ddum;
-    dwyco_get_rate_tweaks(&ddum, &dum, &up, &down);
-    QString st;
-    ui.upload_speed->setText(st.setNum(up));
-    ui.download_speed->setText(st.setNum(down));
+
+    {
+    const char *val;
+    int len;
+    int tp;
+    dwyco_get_setting("rate/kbits_per_sec_out", &val, &len, &tp);
+    ui.upload_speed->setText(val);
+    dwyco_get_setting("rate/kbits_per_sec_in", &val, &len, &tp);
+    ui.download_speed->setText(val);
+    }
+
 
     int val;
 

@@ -311,14 +311,14 @@ MMChannel::start_connect()
         // for default OUTGOING port) to default outgoing port,
         // which is what we want to use if we don't have any
         // other information.
-        DwString b(DwNetConfigData.get_primary_suffix(addrstr.c_str()));
-        addrstr = b;
+        oopanic("what were you thinking");
+        //DwString b(DwNetConfigData.get_primary_suffix(addrstr.c_str()));
+        //addrstr = b;
     }
     else
     {
-        char b[255];
-        sprintf(b, ":%d", port);
-        addrstr += b;
+        addrstr += ":";
+        addrstr += DwString::fromInt(port);
     }
     ouraddr = "any:any";
     pstate = CONNECTING;

@@ -8,7 +8,6 @@
 */
 // $Header: g:/dwight/repo/cdc32/rcs/mmctrl.cc 1.11 1999/01/10 16:09:45 dwight Checkpoint $
 #include "mmchan.h"
-#include "ratetwkr.h"
 #include "chatdisp.h"
 #include "dwrtlog.h"
 #include "qmsg.h"

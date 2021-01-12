@@ -9,7 +9,6 @@
 #ifndef ACONN_H
 #define ACONN_H
 
-#include "uicfg.h"
 #include "dwstr.h"
 
 namespace dwyco {
@@ -20,38 +19,38 @@ void poll_listener();
 void set_listen_state(int on);
 int is_listening();
 
-struct DwNetConfig
-{
+//struct DwNetConfig
+//{
 
-public:
+//public:
 
-    DWUIDECL_BEGIN
-    DWUIDECLVAL(int, primary_port)
-    DWUIDECLVAL(int, secondary_port)
-    DWUIDECLVAL(int, pal_port)
-    DWUIDECLVAL(int, nat_primary_port)
-    DWUIDECLVAL(int, nat_secondary_port)
-    DWUIDECLVAL(int, nat_pal_port)
-    DWUIDECLVAL(bool, advertise_nat_ports)
-    DWUIDECLVAL(int, disable_upnp)
-    DWUIDECLVAL(int, call_setup_media_select)
-    DWUIDECLVAL(int, listen)
-    DWUIDECL_END
+//    DWUIDECL_BEGIN
+//    DWUIDECLVAL(int, primary_port)
+//    DWUIDECLVAL(int, secondary_port)
+//    DWUIDECLVAL(int, pal_port)
+//    DWUIDECLVAL(int, nat_primary_port)
+//    DWUIDECLVAL(int, nat_secondary_port)
+//    DWUIDECLVAL(int, nat_pal_port)
+//    DWUIDECLVAL(bool, advertise_nat_ports)
+//    DWUIDECLVAL(int, disable_upnp)
+//    DWUIDECLVAL(int, call_setup_media_select)
+//    DWUIDECLVAL(int, listen)
+//    DWUIDECL_END
 
-    DwNetConfig();
-    void load();
-    void save();
+//    DwNetConfig();
+//    void load();
+//    void save();
 
-    DwString get_primary_suffix(const char *ip);
-    DwString get_secondary_suffix(const char *ip);
-    DwString get_pal_suffix(const char *ip);
+//    DwString get_primary_suffix(const char *ip);
+//    DwString get_secondary_suffix(const char *ip);
+//    DwString get_pal_suffix(const char *ip);
 
-    DwString get_nat_primary_suffix(const char *ip);
-    DwString get_nat_secondary_suffix(const char *ip);
-    DwString get_nat_pal_suffix(const char *ip);
-};
+//    DwString get_nat_primary_suffix(const char *ip);
+//    DwString get_nat_secondary_suffix(const char *ip);
+//    DwString get_nat_pal_suffix(const char *ip);
+//};
 
-extern DwNetConfig DwNetConfigData;
+//extern DwNetConfig DwNetConfigData;
 }
 
 #define CSMS_DIRECT_ONLY 0

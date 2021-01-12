@@ -45,8 +45,8 @@ name_to_syncmap(DwString name)
         return RawFilesData.syncmap;
     if(name.eq("user"))
         return UserConfigData.syncmap;
-    if(name.eq("video_format"))
-        return VFWInvestigateData.syncmap;
+//    if(name.eq("video_format"))
+//        return VFWInvestigateData.syncmap;
     if(name.eq("video_input"))
         return VidInputData.syncmap;
     if(name.eq("zap"))
