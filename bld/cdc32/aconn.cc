@@ -23,22 +23,65 @@
 #include "vcsock.h"
 #include "qauth.h"
 #include "ezset.h"
+#include "calllive.h"
+#include "cdcpal.h"
 
 // NOTENOTENOTE! fixme, look at the dlli.cpp section where some of these
 // settings are tweaked and set bindings somewhere so we can do the
 // machinations needed when network state changes
 
 extern vc LocalIP;
+extern int Media_select;
+
 namespace dwyco {
-//DwNetConfig DwNetConfigData;
+
 static Listener *Listen_sock;
 static Listener *Static_secondary_sock;
 static int Inhibit_accept;
 static vc Local_discover;
 static vc Local_broadcast;
+void set_listen_state(int on);
 
+// note: this slot is called whenever anything in the net
+// section changes. this can lead to a bit of thrashing
+// esp during startup, but otherwise, the network state doesn't
+// change all that often.
 
+void
+net_section_changed(vc name, vc val)
+{
+    if(is_listening())
+    {
+        set_listen_state(0);
+    }
 
+    int listen = get_settings_value("net/listen");
+    set_listen_state(listen);
+    pal_reset();
+
+    //note: we depend on the values being sent in here being the same
+    // as the ones in aconn.h
+    int call_setup_media_select = get_settings_value("net/call_setup_media_select");
+    switch(call_setup_media_select)
+    {
+    default:
+    case CSMS_VIA_HANDSHAKE:
+        Media_select = MEDIA_VIA_HANDSHAKE;
+        break;
+    case CSMS_TCP_ONLY:
+        Media_select = MEDIA_TCP_VIA_PROXY;
+        break;
+    case CSMS_UDP_ONLY:
+        Media_select = MEDIA_UDP_VIA_STUN;
+        break;
+    }
+}
+
+void
+init_aconn()
+{
+    bind_sql_section("net/", net_section_changed);
+}
 // these just pause the connection accept
 // process, in order to serialize connection
 // setup. see below to really turn off the socket

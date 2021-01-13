@@ -19,14 +19,12 @@
 #include "mmchan.h"
 #include "chatgrid.h"
 #include "ezset.h"
+#include "aqext.h"
 
 #include "dwrtlog.h"
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
 #include "aqext_android.h"
 #endif
-
-class VFWShit;
-extern VFWShit *TheVFWMgr;
 
 KeyboardAcquire *TheMsgAq;
 int Chatbox_id = -1;
@@ -34,6 +32,18 @@ int Chatbox_id = -1;
 VidAcquire *TheAq;
 
 int ExternalVideoAcquisition;
+
+static int Bound_setting;
+void
+rb_tweaked(vc name, vc val)
+{
+    if(TheAq)
+    {
+        ExtAcquire *ea = dynamic_cast<ExtAcquire *>(TheAq);
+        if(ea)
+            ea->set_swap_rb(atol((const char *)val));
+    }
+}
 
 #ifndef DWYCO_NO_VIDEO_FROM_PPM
 static
@@ -66,8 +76,6 @@ init_raw_files(int mbox, DwString& fail_reason)
 }
 #endif
 
-#include "aqext.h"
-
 int
 init_external_video(int mbox)
 {
@@ -98,6 +106,11 @@ initaq(int mbox, DwString& fail_reason)
     fail_reason = "unknown";
     if(TheAq)
         return 1;
+    if(!Bound_setting)
+    {
+        bind_sql_setting("video_format/swap_rb", rb_tweaked);
+        Bound_setting = 1;
+    }
 #ifndef DWYCO_NO_VIDEO_FROM_PPM
     if(get_settings_value("video_input/source") == vc("raw"))
     {
