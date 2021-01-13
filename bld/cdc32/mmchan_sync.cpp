@@ -292,6 +292,9 @@ void
 MMChannel::cleanup_pulls(int myid)
 {
     pull_target_destroyed(remote_uid());
+    sql_run_sql("delete from current_clients where uid = ?1", to_hex(remote_uid()));
+    //mms_sync_state = MMSS_ERR;
+   // mmr_sync_state = MMSS_ERR;
 }
 
 void assert_eager_pulls(MMChannel *, vc uid);
