@@ -92,8 +92,12 @@ struct setting : public ssns::trackable
     vc name;
     sigprop<vc> value;
 
+    ssns::signal2<vc, vc> setting_changed;
+
     void update_db(vc val) {
         sql("update settings set value = ?1 where name = ?2", val, name);
+        setting_changed.emit(name, val);
+
     }
 };
 
@@ -158,13 +162,31 @@ exit_sql_settings()
 }
 
 void
-bind_sql_setting(vc name, void (*fn)(vc))
+bind_sql_setting(vc name, void (*fn)(vc, vc))
 {
     setting *s;
     if(!Map->find(name, s))
         oopanic("bad setting");
-    s->value.value_changed.connect_ptrfun(fn);
+    s->setting_changed.connect_ptrfun(fn);
+}
 
+void
+bind_sql_section(vc pfx, void (*fn)(vc, vc))
+{
+    auto i = DwTreeKazIter<setting *, vc>(Map);
+    for(; !i.eol(); i.forward())
+    {
+        auto a = DwAssocImp<setting *, vc>(i.get());
+        vc nm = a.get_key();
+        if(pfx.len() > nm.len())
+            continue;
+        if(strncmp(pfx, nm, pfx.len()) == 0)
+        {
+            setting *s = a.get_value();
+            s->setting_changed.connect_ptrfun(fn);
+        }
+
+    }
 }
 
 int

@@ -74,10 +74,7 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
-ratetwkr.cpp \
 syncvar.cc \
-uicfg.cc \
-usercnfg.cpp \
 doinit.cc \
 netcod.cc \
 tcode.cc \

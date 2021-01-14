@@ -68,6 +68,21 @@ init_prf_cache()
             Log->make_entry("can't create prf dir");
     Prf_session_cache = vc(VC_SET);
     Prf_memory_cache = vc(VC_TREE);
+    // this pulls the profile into the setting stuff, just to make sure
+    // it gets initialized on first run, and at least tries to be
+    // consistent.
+    vc prf;
+    if(load_profile(My_UID, prf))
+    {
+        vc pack;
+        if(deserialize(prf[PRF_PACK], pack))
+        {
+            set_settings_value("user/username", pack[vc("handle")]);
+            set_settings_value("user/description", pack[vc("desc")]);
+            set_settings_value("user/location", pack[vc("loc")]);
+            set_settings_value("user/email", pack[vc("email")]);
+        }
+    }
 }
 
 void

@@ -118,7 +118,9 @@ init_codec(const char *logname)
             if(mkdir(newfn("xfer").c_str()) == -1)
                 Log->make_entry("can't create xfer dir");
         init_sql_settings();
+        init_aconn();
         // this is so important, don't leave it till later
+        init_qauth();
         init_prf_cache();
         init_pk_cache();
 
@@ -188,9 +190,6 @@ init_codec(const char *logname)
         EntropyModel::init_all();
 #endif
         init_dirth();
-        init_qauth();
-        //UserConfigData.load();
-        // note: qmsg now depends on My_UID
         init_qmsg();
 
         //stun_pool_init();
@@ -234,6 +233,8 @@ simple_init_codec(const char *logname)
         }
 #endif
         Log->make_entry("system starting up");
+        init_sql_settings();
+        init_aconn();
 
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
@@ -275,11 +276,6 @@ simple_init_codec(const char *logname)
         else
             Myhostname = hostname;
 
-        //RTUserDefaults.load();
-        //TProfile t("admin", INI_FILENAME);
-
-        // have to reconfigure a little bit for 0.80
-        //UserConfigData.load();
         init_sysattr();
         init = 1;
         Log->make_entry("init done");
@@ -315,7 +311,8 @@ init_bg_msg_send(const char *logname)
         }
 #endif
         Log->make_entry("background system starting up");
-
+        init_sql_settings();
+        init_aconn();
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -346,13 +343,8 @@ init_bg_msg_send(const char *logname)
 
         init_entropy();
         dh_init();
-
-        //RTUserDefaults.load();
-
         init_dirth();
         init_qauth();
-
-        //UserConfigData.load();
         // note: qmsg now depends on My_UID
         init_qmsg();
 

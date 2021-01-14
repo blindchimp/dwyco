@@ -16,7 +16,7 @@
 
 extern unsigned int dwyco_rand_state;
 #define dwyco_rand() rand_r(&dwyco_rand_state)
-#define dwyco_srand(x) dwyco_rand_state = (x);
+#define dwyco_srand(x) do { dwyco_rand_state = (x); } while(0)
 #endif
 
 #endif
