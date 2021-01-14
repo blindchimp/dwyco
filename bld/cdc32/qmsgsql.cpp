@@ -368,13 +368,6 @@ import_remote_mi(vc remote_uid)
         sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
         sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
 
-        // derive some tags from the msg_idx, note we only create them for the
-        // client from which we got the index, even though we got their entire
-        // global list
-        //sql_simple("delete from mt.gmt where (tag = '_local' or tag = '_sent') and uid = ?1", huid);
-        //sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where from_client_uid = ?1", huid);
-        //sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from mi2.msg_idx where is_sent = 't' and from_client_uid = ?1", huid);
-
         sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
@@ -420,9 +413,6 @@ import_remote_iupdate(vc remote_uid, vc vals)
             for(int i = 0; i < vals.num_elems(); ++i)
                 a.append(vals[i]);
             sql_bulk_query(&a);
-
-            //sql_simple("insert or ignore into main.gi select *, 1, ?1 from mi2.msg_idx where mid = ?2", huid, vals[QM_IDX_MID]);
-
         }
         else if(op == vc("d"))
         {
@@ -467,15 +457,8 @@ import_remote_tupdate(vc remote_uid, vc vals)
             vc tag = vals[1];
             vc tm = vals[2];
             vc guid = vals[3];
-//            DwString sargs = make_sql_args(vals.num_elems());
-//            VCArglist a;
-//            a.set_size(vals.num_elems() + 1);
-//            a.append(DwString("insert or ignore into fav2.msg_tags2 values(%1)").arg(sargs).c_str());
-//            for(int i = 0; i < vals.num_elems(); ++i)
-//                a.append(vals[i]);
-//            sql_bulk_query(&a);
 
-            sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) values(?1, ?2, ?3, ?4, ?5) ", mid, tag, tm, huid, guid);
+            sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select ?1, ?2, ?3, ?4, ?5 where not exists (select 1 from mt.gtomb where ?5 = guid)", mid, tag, tm, huid, guid);
             if(tag == vc("_hid") || tag == vc("_fav"))
             {
                 vc uid = sql_get_uid_from_mid(mid);
@@ -488,10 +471,6 @@ import_remote_tupdate(vc remote_uid, vc vals)
             vc guid = vals[0];
             vc mid = vals[1];
             vc tag = vals[2];
-            // this kinda brute force, make sure to update this if you change the
-            // taglog messages
-            //sql_simple("insert or ignore into fav2.tomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
-            //sql_simple("delete from fav2.msg_tags2 where mid = ?1 and tag = ?2", mid, tag);
             sql_simple("insert or ignore into mt.gtomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
             sql_simple("delete from gmt where guid = ?1", guid);
             if(tag == vc("_hid") || tag == vc("_fav"))
