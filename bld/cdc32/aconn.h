@@ -11,6 +11,7 @@
 
 #include "dwstr.h"
 #include "ssns.h"
+#include "vc.h"
 
 namespace dwyco {
 
@@ -20,6 +21,8 @@ void turn_accept_on();
 void poll_listener();
 void set_listen_state(int on);
 int is_listening();
+extern vc Broadcast_discoveries;
+extern ssns::signal1<vc> Local_uid_discovered;
 
 }
 
