@@ -164,7 +164,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 
     // note: mid's are unique identifiers, so it's meer existence here means it was
     // deleted.
-    sql_simple("create table if not exists msg_tomb(mid text not null, time integer, unique(mid) on conflict replace)");
+    sql_simple("create table if not exists msg_tomb(mid text not null, time integer, unique(mid) on conflict ignore)");
 
 
     //sql_simple("drop table if exists gi");
@@ -183,7 +183,7 @@ QMsgSql::init_schema(const DwString& schema_name)
                "logical_clock,"
                "assoc_uid text not null,"
                "is_local,"
-               "from_client_uid not null, unique(mid, from_client_uid) on conflict replace)"
+               "from_client_uid not null, unique(mid, from_client_uid) on conflict ignore)"
               );
 
     sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid);");
@@ -607,7 +607,7 @@ sql_insert_record(vc entry, vc assoc_uid)
 {
     VCArglist a;
     a.set_size(NUM_QM_IDX_FIELDS + 2);
-    a.append("replace into msg_idx values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13);");
+    a.append("insert or ignore into msg_idx values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)");
 
     for(int i = 0; i < NUM_QM_IDX_FIELDS; ++i)
         a.append(entry[i]);
@@ -1349,7 +1349,7 @@ static
 void
 sql_insert_record_mt(vc mid, vc tag)
 {
-    sql_simple("replace into mt.gmt (mid, tag, time, guid, uid) values(?1,?2,strftime('%s','now'), lower(hex(randomblob(10))), ?3)",
+    sql_simple("insert into mt.gmt (mid, tag, time, guid, uid) values(?1,?2,strftime('%s','now'), lower(hex(randomblob(10))), ?3)",
                mid, tag, to_hex(My_UID));
 }
 
