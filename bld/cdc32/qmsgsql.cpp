@@ -339,6 +339,79 @@ package_downstream_sends(vc remote_uid)
 
 }
 
+// note: this is kind of expensive, but useful during debugging to
+// make sure the file system messages exactly mirror the contents of the
+// index.
+
+static
+void
+sync_user(vc v)
+{
+
+    vc uid = v[0];
+
+    vc id = uid_to_dir(uid);
+
+    DwString s((const char *)id);
+    s = newfn(s);
+    DwString ss = s;
+    s += "" DIRSEPSTR "*";
+
+    FindVec& fv = *find_to_vec(s.c_str());
+    auto n = fv.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        WIN32_FIND_DATA &d = *fv[i];
+        if(strlen(d.cFileName) != 24)
+            continue;
+        DwString mid(d.cFileName);
+        mid.remove(20);
+        vc v = sql_simple("select 1 from msg_idx where mid = ?1", mid.c_str());
+        if(v.num_elems() == 0)
+            delete_body3(uid, mid.c_str(), 1);
+
+    }
+    delete_findvec(&fv);
+
+
+}
+
+
+
+static
+void
+sync_files()
+{
+
+    load_users(0, 0);
+
+    try
+    {
+        sql_start_transaction();
+        sql_simple("delete from msg_idx where mid in (select mid from msg_tomb)");
+        MsgFolders.foreach(vcnil, sync_user);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+}
+
+//static
+//void
+//sync_files()
+//{
+//    vc mids = sql_simple("select assoc_uid, mid from msg_idx,msg_tomb using (mid)");
+//    for(int i = 0; i < mids.num_elems(); ++i)
+//    {
+//        vc uid = mids[i][0];
+//        vc mid = mids[i][1];
+//        delete_body3(from_hex(uid), mid, 1);
+//    }
+
+//}
+
 // note: this is for testing, we're just assuming the index
 // has been materialized here so we can investigate things
 void
@@ -367,6 +440,8 @@ import_remote_mi(vc remote_uid)
         sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
         sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
         sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
+
+        sync_files();
 
         sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
