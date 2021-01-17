@@ -6610,7 +6610,7 @@ assert_eager_pulls(MMChannel *mc, vc uid)
         if(!pulls::pull_in_progress(mid, uid))
         {
             pulls::set_pull_in_progress(mid, uid);
-            mc->send_pull(mid);
+            mc->send_pull(mid, 1);
         }
     }
 

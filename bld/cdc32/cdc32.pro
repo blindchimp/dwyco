@@ -177,6 +177,7 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
+    sync_sendq.cpp \
 syncvar.cc \
 doinit.cc \
 netcod.cc \
@@ -261,5 +262,6 @@ aqext_android.cpp \
 HEADERS += \
     pulls.h \
     simple_property.h \
+    sync_sendq.h \
     vccfg.h
 

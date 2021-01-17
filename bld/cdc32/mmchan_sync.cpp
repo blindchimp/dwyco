@@ -36,6 +36,7 @@ namespace dwyco {
 int Eager_sync = 1;
 }
 
+
 static
 vc
 file_to_string(DwString fn)
@@ -94,10 +95,7 @@ MMChannel::package_index()
 vc
 MMChannel::package_next_cmd()
 {
-    if(sync_sendq.num_elems() == 0)
-        return vcnil;
-    vc next_cmd = sync_sendq[0];
-    sync_sendq.del(0);
+    vc next_cmd = sync_sendq.delmin();
     return next_cmd;
 }
 
@@ -254,19 +252,12 @@ MMChannel::process_tupdate(vc cmd)
 }
 
 void
-MMChannel::send_pull(vc mid)
+MMChannel::send_pull(vc mid, int pri)
 {
-    // this is dicey
-    for(int i = 0; i < sync_sendq.num_elems(); ++i)
-    {
-        static vc pull("pull");
-        if(sync_sendq[i][0]== pull && mid == sync_sendq[i][1])
-            return;
-    }
     vc cmd(VC_VECTOR);
     cmd[0] = "pull";
     cmd[1] = mid;
-    sync_sendq.append(cmd);
+    sync_sendq.append(cmd, pri);
 }
 
 void
@@ -278,7 +269,7 @@ MMChannel::send_pull_resp(vc mid, vc uid, vc msg, vc att)
     cmd[2] = uid;
     cmd[3] = msg;
     cmd[4] = att;
-    sync_sendq.append(cmd);
+    sync_sendq.append(cmd, 0);
 }
 
 void
@@ -377,7 +368,7 @@ MMChannel::process_outgoing_sync()
             // likewise with pulls that are initiated from the
             // model lookup, if we are doing eager updating.
             for(int i = 0; i < ds.num_elems(); ++i)
-                sync_sendq.append(ds[i]);
+                sync_sendq.append(ds[i], 2);
         }
 
         vcx = package_next_cmd();

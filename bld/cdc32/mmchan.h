@@ -42,6 +42,7 @@
 #include "audconv.h"
 #include "aconn.h"
 #include "simple_property.h"
+#include "sync_sendq.h"
 
 class MMTube;
 class VidAcquire;
@@ -1031,7 +1032,7 @@ private:
     void process_pull_resp(vc cmd);
     void process_iupdate(vc cmd);
     void process_tupdate(vc cmd);
-    DwVec<vc> sync_sendq;
+    dwyco::sendq sync_sendq;
 
     void send_pull_resp(vc mid, vc uid, vc msg, vc att);
     void send_pull_error(vc mid);
@@ -1039,7 +1040,7 @@ private:
     void cleanup_pulls(int myid);
 
 public:
-    void send_pull(vc mid);
+    void send_pull(vc mid, int pri = 0);
 
     ssns::signal3<vc, vc, vc> pull_done;
     int signal_setup;
