@@ -13,15 +13,24 @@ DWQBM_W_IDX(pulls::Qbm, pulls, mid);
 DwTreeKaz<int, pulls *> pulls::inp_set(0);
 
 void
-pulls::assert_pull(vc mid, vc uid)
+pulls::assert_pull(vc mid, vc uid, int pri)
 {
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
+    int nonew = 0;
     for(int i = 0; i < dm.num_elems(); ++i)
     {
+        // if the priority of the pull is increased, update that in all
+        // the pulls before returning
+        if(dm[i]->pri < pri)
+            dm[i]->pri = pri;
         if(dm[i]->uid == uid)
-            return;
+        {
+            nonew = 1;
+        }
     }
-    new pulls(mid, uid);
+    if(nonew)
+        return;
+    new pulls(mid, uid, pri);
 }
 
 void

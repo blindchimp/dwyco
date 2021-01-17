@@ -6392,7 +6392,7 @@ pull_done_slot(vc mid, vc remote_uid, vc success)
 
 namespace dwyco {
 void
-start_stalled_pulls()
+start_stalled_pulls(int pri)
 {
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
     for(int i = 0; i < mmcl.num_elems(); ++i)
@@ -6412,7 +6412,7 @@ start_stalled_pulls()
                         mc->signal_setup = 1;
                     }
                     stalled_pulls[i]->set_in_progress(1);
-                    mc->send_pull(stalled_pulls[i]->mid);
+                    mc->send_pull(stalled_pulls[i]->mid, pri);
                 }
             }
         }
@@ -6432,7 +6432,7 @@ start_stalled_pulls()
                 mc->signal_setup = 1;
             }
             stalled_pulls[i]->set_in_progress(1);
-            mc->send_pull(stalled_pulls[i]->mid);
+            mc->send_pull(stalled_pulls[i]->mid, pri);
         }
     }
 }
@@ -6448,7 +6448,7 @@ sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const 
     case DWYCO_CALLDISP_STARTED:
         break;
     case DWYCO_CALLDISP_ESTABLISHED:
-        start_stalled_pulls();
+        start_stalled_pulls(PULLPRI_NORMAL);
         break;
     default:
         break;
@@ -6509,7 +6509,7 @@ sync_call_setup()
                               (const char *)pw, pw.len(), "sync", 4, 1);
         }
     }
-    start_stalled_pulls();
+    start_stalled_pulls(PULLPRI_NORMAL);
 }
 
 // returns -1, then there is no place we know where we might find
@@ -6537,7 +6537,7 @@ pull_msg(vc uid, vc msg_id)
     for(int i = 0; i < uids.num_elems(); ++i)
     {
         uids[i] = from_hex(uids[i]);
-        pulls::assert_pull(msg_id, uids[i]);
+        pulls::assert_pull(msg_id, uids[i], PULLPRI_INTERACTIVE);
     }
 
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
@@ -6563,7 +6563,7 @@ pull_msg(vc uid, vc msg_id)
                         mc->signal_setup = 1;
                     }
                     pulls::set_pull_in_progress(msg_id, mc->remote_uid());
-                    mc->send_pull(msg_id);
+                    mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
                     return -2;
                 }
             }
@@ -6583,7 +6583,7 @@ pull_msg(vc uid, vc msg_id)
                 mc->signal_setup = 1;
             }
             pulls::set_pull_in_progress(msg_id, mc->remote_uid());
-            mc->send_pull(msg_id);
+            mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
             // note: this probably needs a heuristic to either send
             // all pulls at once, or decide which one is most likely
             // to work. for now, we just do the first one.
@@ -6606,11 +6606,11 @@ assert_eager_pulls(MMChannel *mc, vc uid)
     for(int i = 0; i < mids.num_elems(); ++i)
     {
         vc mid = mids[i];
-        pulls::assert_pull(mid, uid);
+        pulls::assert_pull(mid, uid, PULLPRI_BACKGROUND);
         if(!pulls::pull_in_progress(mid, uid))
         {
             pulls::set_pull_in_progress(mid, uid);
-            mc->send_pull(mid, 1);
+            mc->send_pull(mid, PULLPRI_BACKGROUND);
         }
     }
 

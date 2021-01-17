@@ -1034,19 +1034,23 @@ private:
     void process_tupdate(vc cmd);
     dwyco::sendq sync_sendq;
 
-    void send_pull_resp(vc mid, vc uid, vc msg, vc att);
-    void send_pull_error(vc mid);
+    void send_pull_resp(vc mid, vc uid, vc msg, vc att, vc pri);
+    void send_pull_error(vc mid, vc pri);
 
     void cleanup_pulls(int myid);
 
 public:
-    void send_pull(vc mid, int pri = 0);
+    void send_pull(vc mid, int pri);
 
     ssns::signal3<vc, vc, vc> pull_done;
     int signal_setup;
 
 
 };
+
+#define PULLPRI_INTERACTIVE 0
+#define PULLPRI_NORMAL 1
+#define PULLPRI_BACKGROUND 2
 
 #define AUDIO_NUM_STATES 8
 #define AUDIO_TALK 0

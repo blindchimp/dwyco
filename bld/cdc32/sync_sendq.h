@@ -38,24 +38,41 @@ struct qkey {
 
 
 struct sendq {
-    sendq() : q(0), pull_set(0) {}
+    sendq() : q(0), pull_set(qkey()) {}
 
     DwTreeKaz<int, qkey> q;
-    DwTreeKaz<int, vc> pull_set;
+    DwTreeKaz<qkey, vc> pull_set;
     static int Clk;
 
     void append(vc cmd, int pri) {
         static vc pull("pull");
         vc mid;
+        qkey qk;
+        int update = 1;
         if(cmd[0] == pull)
         {
             mid = cmd[1];
-            if(pull_set.contains(mid))
-                return;
-            pull_set.add(mid, 0);
+            if(pull_set.find(mid, qk))
+            {
+                // this allows us to increase the priority of
+                // some items already in the queue
+                if(qk.pri < pri)
+                {
+                    q.del(qk);
+                    cmd = qk.cmd;
+                }
+                else
+                    update = 0;
+            }
+
         }
-        auto qk = qkey(pri, Clk, mid, cmd);
-        q.add(qk, 0);
+        if(update)
+        {
+            qk = qkey(pri, Clk, mid, cmd);
+            q.add(qk, 0);
+            if(!mid.is_nil())
+                pull_set.add(mid, qk);
+        }
         Clk++;
     }
 

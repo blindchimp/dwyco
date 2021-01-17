@@ -33,7 +33,7 @@ using namespace dwyco;
 #include "sepstr.h"
 
 namespace dwyco {
-int Eager_sync = 1;
+int Eager_sync = 0;
 }
 
 
@@ -124,19 +124,20 @@ MMChannel::process_pull(vc cmd)
     if(cmd[0] != vc("pull"))
         return;
     vc mid = cmd[1];
+    vc pri = cmd[5];
     // load the msg and attachment, and send it back as a "pull-resp"
 
     vc huid = sql_get_uid_from_mid(mid);
     if(huid.is_nil())
     {
-        send_pull_error(mid);
+        send_pull_error(mid, pri);
         return;
     }
 
     vc body = load_body_by_id(from_hex(huid), mid);
     if(body.is_nil())
     {
-        send_pull_error(mid);
+        send_pull_error(mid, pri);
         return;
     }
 
@@ -150,11 +151,11 @@ MMChannel::process_pull(vc cmd)
         att = file_to_string(a);
         if(att.is_nil())
         {
-            send_pull_error(mid);
+            send_pull_error(mid, pri);
             return;
         }
     }
-    send_pull_resp(mid, from_hex(huid), body, att);
+    send_pull_resp(mid, from_hex(huid), body, att, pri);
 }
 
 void
@@ -257,11 +258,12 @@ MMChannel::send_pull(vc mid, int pri)
     vc cmd(VC_VECTOR);
     cmd[0] = "pull";
     cmd[1] = mid;
+    cmd[2] = pri;
     sync_sendq.append(cmd, pri);
 }
 
 void
-MMChannel::send_pull_resp(vc mid, vc uid, vc msg, vc att)
+MMChannel::send_pull_resp(vc mid, vc uid, vc msg, vc att, vc pri)
 {
     vc cmd(VC_VECTOR);
     cmd[0] = "pull-resp";
@@ -269,13 +271,13 @@ MMChannel::send_pull_resp(vc mid, vc uid, vc msg, vc att)
     cmd[2] = uid;
     cmd[3] = msg;
     cmd[4] = att;
-    sync_sendq.append(cmd, 0);
+    sync_sendq.append(cmd, pri);
 }
 
 void
-MMChannel::send_pull_error(vc mid)
+MMChannel::send_pull_error(vc mid, vc pri)
 {
-    send_pull_resp(mid, vcnil, vcnil, vcnil);
+    send_pull_resp(mid, vcnil, vcnil, vcnil, pri);
 }
 
 void pull_target_destroyed(vc uid);
@@ -284,8 +286,6 @@ MMChannel::cleanup_pulls(int myid)
 {
     pull_target_destroyed(remote_uid());
     sql_run_sql("delete from current_clients where uid = ?1", to_hex(remote_uid()));
-    //mms_sync_state = MMSS_ERR;
-   // mmr_sync_state = MMSS_ERR;
 }
 
 void assert_eager_pulls(MMChannel *, vc uid);
@@ -368,7 +368,7 @@ MMChannel::process_outgoing_sync()
             // likewise with pulls that are initiated from the
             // model lookup, if we are doing eager updating.
             for(int i = 0; i < ds.num_elems(); ++i)
-                sync_sendq.append(ds[i], 2);
+                sync_sendq.append(ds[i], PULLPRI_NORMAL);
         }
 
         vcx = package_next_cmd();

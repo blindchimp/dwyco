@@ -12,8 +12,8 @@ namespace dwyco {
 
 struct pulls
 {
-    pulls(const vc& mid, const vc& uid) :
-        mid(mid), uid(uid), m_in_progress(0) {
+    pulls(const vc& mid, const vc& uid, int pri) :
+        mid(mid), uid(uid), m_in_progress(0), pri(pri) {
         Qbm.add(this);
     }
     ~pulls() {
@@ -39,6 +39,8 @@ struct pulls
 
     vc mid;
     vc uid;
+    int pri;
+
 private:
 
     friend void ::dwyco_debug_dump();
@@ -48,7 +50,7 @@ private:
 public:
     static DWQBM_W_IDX(Qbm, pulls, mid);
 
-    static void assert_pull(vc mid, vc uid);
+    static void assert_pull(vc mid, vc uid, int pri);
     static void deassert_pull(vc mid);
     static int is_asserted(vc mid);
     static int pull_in_progress(vc mid, vc uid);
