@@ -888,6 +888,7 @@ sql_clear_uid(vc uid)
         sql_simple("delete from msg_idx where assoc_uid = ?1", huid);
         // note: there is a trigger to delete msg_idx things
         // this just gets all the stuff we don't have downloaded here
+        sql_simple("insert into msg_tomb select mid, strftime('%s', 'now') from gi where assoc_uid = ?1", huid);
         sql_simple("delete from gi where assoc_uid = ?1", huid);
         sql_commit_transaction();
         return mids;
