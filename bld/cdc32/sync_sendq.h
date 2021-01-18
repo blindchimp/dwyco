@@ -57,7 +57,7 @@ public:
             {
                 // this allows us to increase the priority of
                 // some items already in the queue
-                if(qk.pri < pri)
+                if(pri < qk.pri)
                 {
                     q.del(qk);
                     cmd = qk.cmd;

@@ -6392,7 +6392,7 @@ pull_done_slot(vc mid, vc remote_uid, vc success)
 
 namespace dwyco {
 void
-start_stalled_pulls(int pri)
+start_stalled_pulls()
 {
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
     for(int i = 0; i < mmcl.num_elems(); ++i)
@@ -6412,7 +6412,7 @@ start_stalled_pulls(int pri)
                         mc->signal_setup = 1;
                     }
                     stalled_pulls[i]->set_in_progress(1);
-                    mc->send_pull(stalled_pulls[i]->mid, pri);
+                    mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
                 }
             }
         }
@@ -6432,7 +6432,7 @@ start_stalled_pulls(int pri)
                 mc->signal_setup = 1;
             }
             stalled_pulls[i]->set_in_progress(1);
-            mc->send_pull(stalled_pulls[i]->mid, pri);
+            mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
         }
     }
 }
@@ -6448,7 +6448,7 @@ sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const 
     case DWYCO_CALLDISP_STARTED:
         break;
     case DWYCO_CALLDISP_ESTABLISHED:
-        start_stalled_pulls(PULLPRI_NORMAL);
+        start_stalled_pulls();
         break;
     default:
         break;
@@ -6509,7 +6509,7 @@ sync_call_setup()
                               (const char *)pw, pw.len(), "sync", 4, 1);
         }
     }
-    start_stalled_pulls(PULLPRI_NORMAL);
+    start_stalled_pulls();
 }
 
 // returns -1, then there is no place we know where we might find

@@ -21,7 +21,7 @@ pulls::assert_pull(vc mid, vc uid, int pri)
     {
         // if the priority of the pull is increased, update that in all
         // the pulls before returning
-        if(dm[i]->pri < pri)
+        if(pri < dm[i]->pri)
             dm[i]->pri = pri;
         if(dm[i]->uid == uid)
         {
