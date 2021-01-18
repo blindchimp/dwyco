@@ -604,8 +604,12 @@ init_qmsg_sql()
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin "
                "delete from gi where mid = old.mid; "
                "insert into msg_tomb (mid, time) values(old.mid, strftime('%s', 'now')); "
-               "insert into midlog (mid,to_uid,op) select old.mid, uid, 'd' from current_clients; "
+               //"insert into midlog (mid,to_uid,op) select old.mid, uid, 'd' from current_clients; "
                "end");
+    sql_simple("create temp trigger mtomb_log after insert on msg_tomb begin "
+               "insert into midlog(mid,to_uid,op) select new.mid, uid, 'd' from current_clients; "
+               "end"
+               );
     sql_simple("drop trigger if exists mt.xgmt");
     sql_simple("drop trigger if exists mt.dgmt");
 
