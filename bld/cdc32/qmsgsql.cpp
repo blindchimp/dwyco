@@ -355,7 +355,7 @@ sync_user(vc v)
     DwString s((const char *)id);
     s = newfn(s);
     DwString ss = s;
-    s += "" DIRSEPSTR "*";
+    s += "" DIRSEPSTR "*.*";
 
     FindVec& fv = *find_to_vec(s.c_str());
     auto n = fv.num_elems();
@@ -398,19 +398,6 @@ sync_files()
     }
 }
 
-//static
-//void
-//sync_files()
-//{
-//    vc mids = sql_simple("select assoc_uid, mid from msg_idx,msg_tomb using (mid)");
-//    for(int i = 0; i < mids.num_elems(); ++i)
-//    {
-//        vc uid = mids[i][0];
-//        vc mid = mids[i][1];
-//        delete_body3(from_hex(uid), mid, 1);
-//    }
-
-//}
 
 // note: this is for testing, we're just assuming the index
 // has been materialized here so we can investigate things
@@ -495,6 +482,7 @@ import_remote_iupdate(vc remote_uid, vc vals)
             sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
             sql_simple("delete from mi2.msg_idx where mid = ?1", mid);
             sql_simple("delete from gi where mid = ?1", mid);
+            // NOTE: if the transaction completes, need to delete the file too
         }
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
