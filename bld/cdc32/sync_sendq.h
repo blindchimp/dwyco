@@ -5,44 +5,45 @@
 
 namespace dwyco {
 
-struct qkey {
-    qkey() {
-        pri = -1;
-        clk = -1;
-    }
-    qkey(int p, int c, vc m, vc cmd) {
-        pri = p;
-        clk = c;
-        mid = m;
-        this->cmd = cmd;
-    }
-    int pri;
-    int clk;
-    vc mid;
-    vc cmd;
-    int operator==(const qkey& q) const {
-        return pri == q.pri && clk == q.clk;
-    }
-    int operator<(const qkey& q) const {
-        if(pri < q.pri)
-            return 1;
-        else if(pri > q.pri)
-            return 0;
-        if(clk < q.clk)
-            return 1;
-        else if(clk > q.clk)
-            return 0;
-        return 0;
-    }
-};
+class sendq {
 
-
-struct sendq {
-    sendq() : q(0), pull_set(qkey()) {}
+    struct qkey {
+        qkey() {
+            pri = -1;
+            clk = -1;
+        }
+        qkey(int p, int c, vc m, vc cmd) {
+            pri = p;
+            clk = c;
+            mid = m;
+            this->cmd = cmd;
+        }
+        int pri;
+        int clk;
+        vc mid;
+        vc cmd;
+        int operator==(const qkey& q) const {
+            return pri == q.pri && clk == q.clk;
+        }
+        int operator<(const qkey& q) const {
+            if(pri < q.pri)
+                return 1;
+            else if(pri > q.pri)
+                return 0;
+            if(clk < q.clk)
+                return 1;
+            else if(clk > q.clk)
+                return 0;
+            return 0;
+        }
+    };
 
     DwTreeKaz<int, qkey> q;
     DwTreeKaz<qkey, vc> pull_set;
     static int Clk;
+
+public:
+    sendq() : q(0), pull_set(qkey()) {}
 
     void append(vc cmd, int pri) {
         static vc pull("pull");
@@ -64,7 +65,6 @@ struct sendq {
                 else
                     update = 0;
             }
-
         }
         if(update)
         {
