@@ -420,6 +420,7 @@ import_remote_mi(vc remote_uid)
             se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
         }
         sql_simple("delete from crdt_tags");
+        sql_simple("delete from current_clients where uid = ?1", huid);
 
         //sql_simple("delete from main.gi where from_client_uid = ?1", huid);
         //sql_simple("delete from mt.gmt where uid = ?1", huid);
@@ -435,6 +436,7 @@ import_remote_mi(vc remote_uid)
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         sql_simple("insert into crdt_tags values('_fav')");
         sql_simple("insert into crdt_tags values('_hid')");
+        sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
     }
     catch(...)
