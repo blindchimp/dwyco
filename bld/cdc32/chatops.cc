@@ -31,7 +31,6 @@ static int Chat_ready;
 int Chat_online;
 vc Chat_name;
 //static StatusCallback Chat_status_callback;
-extern vc Current_authenticator;
 
 extern vc LocalIP;
 int is_invisible();

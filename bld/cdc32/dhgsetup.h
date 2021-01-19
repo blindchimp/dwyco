@@ -10,10 +10,11 @@
 #define DHGSETUP_H
 
 #include "vc.h"
+#include "ssns.h"
 
 namespace dwyco {
 
-class DH_alternate {
+class DH_alternate : public ssns::trackable {
     vc DH_static;
     vc uid;
     vc alternate_name;
@@ -44,9 +45,12 @@ public:
     // get all the key-pairs we have
     static vc get_all_keys();
 
+    void update_group(vc);
+
 
 };
 
+void init_dhg();
 extern DH_alternate *Current_alternate;
 
 }

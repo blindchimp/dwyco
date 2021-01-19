@@ -57,6 +57,7 @@
 #include "se.h"
 #include "qdirth.h"
 #include "ta.h"
+#include "dhgsetup.h"
 
 vc Myhostname;
 DwLog *Log;
@@ -119,6 +120,9 @@ init_codec(const char *logname)
                 Log->make_entry("can't create xfer dir");
         init_sql_settings();
         init_aconn();
+        init_entropy();
+        dh_init();
+        init_dhg();
         // this is so important, don't leave it till later
         init_qauth();
         init_prf_cache();
@@ -155,11 +159,6 @@ init_codec(const char *logname)
             Myhostname = "unknown";
         else
             Myhostname = hostname;
-
-        init_entropy();
-        dh_init();
-        //RTUserDefaults.load();
-        //TProfile t("admin", INI_FILENAME);
 
         check_audio_device();
         if(!Audio_hw_full_duplex)
@@ -234,7 +233,8 @@ simple_init_codec(const char *logname)
 #endif
         Log->make_entry("system starting up");
         init_sql_settings();
-        init_aconn();
+        //init_aconn();
+        //init_dhg();
 
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
@@ -313,6 +313,9 @@ init_bg_msg_send(const char *logname)
         Log->make_entry("background system starting up");
         init_sql_settings();
         init_aconn();
+        init_entropy();
+        dh_init();
+        init_dhg();
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -341,8 +344,6 @@ init_bg_msg_send(const char *logname)
         else
             Myhostname = hostname;
 
-        init_entropy();
-        dh_init();
         init_dirth();
         init_qauth();
         // note: qmsg now depends on My_UID

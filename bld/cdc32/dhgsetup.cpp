@@ -19,9 +19,15 @@
 #include "dhgsetup.h"
 #include "simplesql.h"
 #include "sha3.h"
+#include "simple_property.h"
 
-using namespace dwyco;
+
 using namespace CryptoPP;
+using namespace dwyco;
+
+extern sigprop<vc> Group_uids;
+
+namespace dwyco {
 
 struct DHG_sql : public SimpleSql
 {
@@ -38,14 +44,38 @@ struct DHG_sql : public SimpleSql
                    ")");
         sql_simple("create index if not exists keys_uid on keys(uid)");
         sql_simple("create index if not exists keys_alt_name on keys(alt_name)");
+        sql_simple("create table if not exists group_uids ("
+                   "uid text collate nocase unique on conflict ignore not null on conflict fail"
+                   ")");
 
 
     }
 
 
 };
-
 static DHG_sql *DHG_db;
+
+void
+init_dhg()
+{
+    const char *grpname;
+    grpname = getenv("DWYCO_GROUP");
+    if(!grpname)
+        grpname = "foo@bar.com";
+
+    DH_alternate *dha = new DH_alternate;
+    dha->init(My_UID, grpname);
+    dha->load_account(grpname);
+    vc v = DHG_db->sql_simple("select * from group_uids");
+    vc v2(VC_VECTOR);
+    for(int i = 0; i <v.num_elems(); ++i)
+        v2[i] = v[i][0];
+    Group_uids = v;
+    Current_alternate = dha;
+    Group_uids.value_changed.connect_memfun(dha, &DH_alternate::update_group);
+}
+
+
 
 // wip: this class can be used to encrypt messages with
 // an alternate DH key (for example, if a message needs to be
@@ -68,6 +98,25 @@ DH_alternate::init(vc uid, vc alternate_name)
     {
         DHG_db = new DHG_sql;
         DHG_db->init();
+    }
+}
+
+void
+DH_alternate::update_group(vc uids)
+{
+    try
+    {
+        DHG_db->start_transaction();
+        DHG_db->sql_simple("delete from group_uids");
+        for(int i = 0; i < uids.num_elems(); ++i)
+        {
+            DHG_db->sql_simple("insert into group_uids values(?1)", to_hex(uids[i]));
+        }
+        DHG_db->commit_transaction();
+    }
+    catch(...)
+    {
+        DHG_db->rollback_transaction();
     }
 }
 
@@ -205,6 +254,8 @@ DH_alternate::get_all_keys()
         ret.append(v);
     }
     return ret;
+}
+
 }
 
 
