@@ -122,7 +122,7 @@ init_codec(const char *logname)
         init_aconn();
         init_entropy();
         dh_init();
-        init_dhg();
+
         // this is so important, don't leave it till later
         init_qauth();
         init_prf_cache();
@@ -315,7 +315,7 @@ init_bg_msg_send(const char *logname)
         init_aconn();
         init_entropy();
         dh_init();
-        init_dhg();
+        //init_dhg();
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses

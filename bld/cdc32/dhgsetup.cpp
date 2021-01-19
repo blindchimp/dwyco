@@ -35,10 +35,10 @@ struct DHG_sql : public SimpleSql
 
     void init_schema(const DwString&) {
         sql_simple("create table if not exists keys ("
-                   "uid text collate nocase, "
-                   "alt_name text collate nocase, "
-                   "pubkey blob,"
-                   "privkey blob,"
+                   "uid text collate nocase not null, "
+                   "alt_name text collate nocase  not null, "
+                   "pubkey blob not null,"
+                   "privkey blob not null,"
                    "time integer,"
                    "unique(alt_name, pubkey, privkey) on conflict ignore"
                    ")");

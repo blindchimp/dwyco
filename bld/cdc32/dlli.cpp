@@ -1222,7 +1222,7 @@ dwyco_finish_startup()
         save_auth_info(My_UID, My_server_key, "auth");
     }
     dh_load_account("dh.dif");
-
+    init_dhg();
     init_home_server();
     Inhibit_database_thread = 0;
     start_database_thread();
