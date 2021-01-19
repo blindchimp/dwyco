@@ -189,8 +189,8 @@ static
 int
 start_broadcaster()
 {
-    if(LocalIP.is_nil())
-        return 0;
+//    if(LocalIP.is_nil())
+//        return 0;
     if(Broadcast_discoveries.is_nil())
         Broadcast_discoveries = vc(VC_TREE);
     Local_broadcast = vc(VC_SOCKET_DGRAM);
@@ -207,8 +207,8 @@ start_broadcaster()
         stop_broadcaster();
         return 0;
     }
-    a = (const char *)LocalIP;
-    a += ":any";
+    //a = (const char *)LocalIP;
+    a = "any:any";
     if(Local_broadcast.socket_init(a.c_str(), 0, 0).is_nil())
     {
         stop_broadcaster();
@@ -235,14 +235,27 @@ start_broadcaster()
 }
 
 static
+vc
+strip_port(vc ip)
+{
+    DwString a((const char *)ip);
+    int b = a.find(":");
+    if(b == DwString::npos)
+        return ip;
+    a.remove(b);
+    vc ret(a.c_str());
+    return ret;
+}
+
+static
 void
 broadcast_tick()
 {
-    if((Local_broadcast.is_nil() || Local_discover.is_nil()) && LocalIP.is_nil())
-    {
-        return;
-    }
-    if((Local_broadcast.is_nil() || Local_discover.is_nil()) && !LocalIP.is_nil())
+//    if((Local_broadcast.is_nil() || Local_discover.is_nil()) /*&& LocalIP.is_nil()*/)
+//    {
+//        return;
+//    }
+    if((Local_broadcast.is_nil() || Local_discover.is_nil())/* && !LocalIP.is_nil()*/)
     {
         start_broadcaster();
         return;
@@ -257,7 +270,7 @@ broadcast_tick()
             {
                 GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
                 GRTLOGVC(data);
-                Broadcast_discoveries.add_kv(data[0], data[1]);
+                Broadcast_discoveries.add_kv(data[0], strip_port(peer));
                 Local_uid_discovered.emit(data[0]);
             }
         }
