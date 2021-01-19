@@ -270,7 +270,8 @@ broadcast_tick()
             {
                 GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
                 GRTLOGVC(data);
-                Broadcast_discoveries.add_kv(data[0], strip_port(peer));
+                data[1][0] = strip_port(peer);
+                Broadcast_discoveries.add_kv(data[0], data[1]);
                 Local_uid_discovered.emit(data[0]);
             }
         }
