@@ -161,7 +161,8 @@ aqkey.cpp \
 pulls.cpp \
 dhgsetup.cpp \
 grpmsg.cpp \
-mmchan_sync.cpp
+mmchan_sync.cpp \
+sync_sendq.cpp
 
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls
