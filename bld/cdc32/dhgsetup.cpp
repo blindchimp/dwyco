@@ -69,7 +69,7 @@ init_dhg()
     vc v = DHG_db->sql_simple("select * from group_uids");
     vc v2(VC_VECTOR);
     for(int i = 0; i <v.num_elems(); ++i)
-        v2[i] = v[i][0];
+        v2[i] = from_hex(v[i][0]);
     Group_uids = v2;
     Current_alternate = dha;
     Group_uids.value_changed.connect_memfun(dha, &DH_alternate::update_group);
