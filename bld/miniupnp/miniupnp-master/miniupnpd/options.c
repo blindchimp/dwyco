@@ -1,9 +1,9 @@
-/* $Id: options.c,v 1.36 2018/07/06 12:05:48 nanard Exp $ */
+/* $Id: options.c,v 1.39 2020/04/09 18:40:42 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
- * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
+ * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
  * author: Ryan Wagoner
- * (c) 2006-2018 Thomas Bernard
+ * (c) 2006-2020 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -30,6 +30,9 @@ static const struct {
 	const char * name;
 } optionids[] = {
 	{ UPNPEXT_IFNAME, "ext_ifname" },
+#ifdef ENABLE_IPV6
+	{ UPNPEXT_IFNAME6, "ext_ifname6" },
+#endif
 	{ UPNPEXT_IP,	"ext_ip" },
 	{ UPNPEXT_PERFORM_STUN, "ext_perform_stun" },
 	{ UPNPEXT_STUN_HOST, "ext_stun_host" },
@@ -37,6 +40,7 @@ static const struct {
 	{ UPNPLISTENING_IP, "listening_ip" },
 #ifdef ENABLE_IPV6
 	{ UPNPIPV6_LISTENING_IP, "ipv6_listening_ip" },
+	{ UPNPIPV6_DISABLE, "ipv6_disable" },
 #endif /* ENABLE_IPV6 */
 	{ UPNPPORT, "port" },
 	{ UPNPPORT, "http_port" },	/* "port" and "http_port" are synonims */

@@ -41,7 +41,6 @@
 #define dwyco_inhibit_database _real_dwyco_inhibit_database 
 #define dwyco_inhibit_pal _real_dwyco_inhibit_pal 
 #define dwyco_inhibit_sac _real_dwyco_inhibit_sac 
-#define dwyco_inhibit_lanmap _real_dwyco_inhibit_lanmap 
 #define dwyco_fetch_info _real_dwyco_fetch_info 
 #define dwyco_service_channels _real_dwyco_service_channels 
 #define dwyco_add_entropy_timer _real_dwyco_add_entropy_timer 

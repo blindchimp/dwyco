@@ -1,9 +1,9 @@
-/* $Id: miniupnpc.c,v 1.149 2016/02/09 09:50:46 nanard Exp $ */
+/* $Id: miniupnpc.c,v 1.154 2019/04/23 12:12:13 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * Project : miniupnp
- * Web : http://miniupnp.free.fr/
+ * Web : http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
  * Author : Thomas BERNARD
- * copyright (c) 2005-2018 Thomas Bernard
+ * copyright (c) 2005-2020 Thomas Bernard
  * This software is subjet to the conditions detailed in the
  * provided LICENSE file. */
 #include <stdlib.h>
@@ -15,7 +15,7 @@
 #include <ws2tcpip.h>
 #include <io.h>
 #include <iphlpapi.h>
-#define snprintf _snprintf
+#include "win32_snprintf.h"
 #define strdup _strdup
 #ifndef strncasecmp
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
@@ -61,9 +61,10 @@
 #include "minixml.h"
 #include "upnpcommands.h"
 #include "connecthostport.h"
+#include "addr_is_reserved.h"
 
 /* compare the beginning of a string with a constant string */
-#define COMPARE(str, cstr) (0==memcmp(str, cstr, sizeof(cstr) - 1))
+#define COMPARE(str, cstr) (0==strncmp(str, cstr, sizeof(cstr) - 1))
 
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 64
@@ -72,25 +73,6 @@
 #define SOAPPREFIX "s"
 #define SERVICEPREFIX "u"
 #define SERVICEPREFIX2 'u'
-
-/* check if an ip address is a private (LAN) address
- * see https://tools.ietf.org/html/rfc1918 */
-static int is_rfc1918addr(const char * addr)
-{
-	/* 192.168.0.0     -   192.168.255.255 (192.168/16 prefix) */
-	if(COMPARE(addr, "192.168."))
-		return 1;
-	/* 10.0.0.0        -   10.255.255.255  (10/8 prefix) */
-	if(COMPARE(addr, "10."))
-		return 1;
-	/* 172.16.0.0      -   172.31.255.255  (172.16/12 prefix) */
-	if(COMPARE(addr, "172.")) {
-		int i = atoi(addr + 4);
-		if((16 <= i) && (i <= 31))
-			return 1;
-	}
-	return 0;
-}
 
 /* root description parsing */
 MINIUPNP_LIBSPEC void parserootdesc(const char * buffer, int bufsize, struct IGDdatas * data)
@@ -459,7 +441,7 @@ build_absolute_url(const char * baseurl, const char * descURL,
 	memcpy(s, base, n);
 	if(scope_id != 0) {
 		s[n] = '\0';
-		if(0 == memcmp(s, "http://[fe80:", 13)) {
+		if(n > 13 && 0 == memcmp(s, "http://[fe80:", 13)) {
 			/* this is a linklocal IPv6 address */
 			p = strchr(s, ']');
 			if(p) {
@@ -565,6 +547,7 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 				 char * lanaddr, int lanaddrlen)
 {
 	struct xml_desc {
+		char lanaddr[40];
 		char * xml;
 		int size;
 		int is_igd;
@@ -574,7 +557,6 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 	int i;
 	int state = -1; /* state 1 : IGD connected. State 2 : IGD. State 3 : anything */
 	char extIpAddr[16];
-	char myLanAddr[40];
 	int status_code = -1;
 
 	if(!devlist)
@@ -597,7 +579,7 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 		/* we should choose an internet gateway device.
 		 * with st == urn:schemas-upnp-org:device:InternetGatewayDevice:1 */
 		desc[i].xml = miniwget_getaddr(dev->descURL, &(desc[i].size),
-		                               myLanAddr, sizeof(myLanAddr),
+		                               desc[i].lanaddr, sizeof(desc[i].lanaddr),
 		                               dev->scope_id, &status_code);
 #ifdef DEBUG
 		if(!desc[i].xml)
@@ -614,8 +596,6 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 			           "urn:schemas-upnp-org:service:WANCommonInterfaceConfig:"))
 			{
 				desc[i].is_igd = 1;
-				if(lanaddr)
-					strncpy(lanaddr, myLanAddr, lanaddrlen);
 			}
 		}
 	}
@@ -646,8 +626,7 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 				  /* checks that status is connected AND there is a external IP address assigned */
 				  if(is_connected &&
 				     (UPNP_GetExternalIPAddress(urls->controlURL,  data->first.servicetype, extIpAddr) == 0)) {
-					if(!is_rfc1918addr(extIpAddr) && (extIpAddr[0] != '\0')
-					   && (0 != strcmp(extIpAddr, "0.0.0.0")))
+					if(!addr_is_reserved(extIpAddr))
 					  goto free_and_return;
 				  }
 				  FreeUPNPUrls(urls);
@@ -668,8 +647,7 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 #endif
 				    if(is_connected &&
 				       (UPNP_GetExternalIPAddress(urls->controlURL,  data->first.servicetype, extIpAddr) == 0)) {
-					  if(!is_rfc1918addr(extIpAddr) && (extIpAddr[0] != '\0')
-					     && (0 != strcmp(extIpAddr, "0.0.0.0")))
+					  if(!addr_is_reserved(extIpAddr))
 					    goto free_and_return;
 				    }
 				    FreeUPNPUrls(urls);
@@ -681,6 +659,8 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 	}
 	state = 0;
 free_and_return:
+	if (lanaddr != NULL && state >= 1 && state <= 3 && i < ndev)
+		strncpy(lanaddr, desc[i].lanaddr, lanaddrlen);
 	for(i = 0; i < ndev; i++)
 		free(desc[i].xml);
 	free(desc);
@@ -714,4 +694,3 @@ UPNP_GetIGDFromUrl(const char * rootdescurl,
 		return 0;
 	}
 }
-

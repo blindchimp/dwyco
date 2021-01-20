@@ -280,6 +280,14 @@ public static void log_event() {
     mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.LOGIN, bundle);
 
     }
+
+public static void log_event2(String name, String method) {
+    Bundle bundle = new Bundle();
+    bundle.putString(FirebaseAnalytics.Param.METHOD, method);
+    mFirebaseAnalytics.logEvent(name, bundle);
+
+    }
+
 public static void set_user_property(String name, String value) {
     mFirebaseAnalytics.setUserProperty(name, value);
     }

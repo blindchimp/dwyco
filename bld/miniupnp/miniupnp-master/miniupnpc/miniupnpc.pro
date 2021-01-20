@@ -7,4 +7,4 @@ linux-*:QMAKE_CFLAGS += -fPIC -Wall -W -Wstrict-prototypes -fno-common -DMINIUPN
 win32-*:DEFINES += MINIUPNP_STATICLIB
 
 SOURCES = \
-miniwget.c minixml.c igd_desc_parse.c minisoap.c miniupnpc.c upnpreplyparse.c upnpcommands.c upnperrors.c connecthostport.c portlistingparse.c receivedata.c upnpdev.c minissdpc.c
+miniwget.c minixml.c igd_desc_parse.c minisoap.c miniupnpc.c upnpreplyparse.c upnpcommands.c upnperrors.c connecthostport.c portlistingparse.c receivedata.c upnpdev.c minissdpc.c addr_is_reserved.c

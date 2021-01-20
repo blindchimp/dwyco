@@ -9,6 +9,7 @@
 #ifndef CDCPAL_H
 #define CDCPAL_H
 
+#include "vc.h"
 int init_pal();
 void exit_pal();
 int pal_logout();

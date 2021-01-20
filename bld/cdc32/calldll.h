@@ -20,12 +20,12 @@ public:
               int user_control_chan,
               DwycoCallDispositionCallback cdc, void *cdc_arg1,
               DwycoStatusCallback ascb, void *ascb_arg1,
-              CallStatusCallback scb, void *scb_arg1, ValidPtr scb_arg2);
+              CallStatusCallback bscb, void *bscb_arg1, ValidPtr bscb_arg2);
 
     DwycoStatusCallback dscb;
     void *dscb_arg1;
-    DwycoChannelDestroyCallback dcb;
-    void *dcb_arg1;
+    //DwycoChannelDestroyCallback dcb;
+    //void *dcb_arg1;
     DwycoCallDispositionCallback cdc;
     void *cdc_arg1;
 

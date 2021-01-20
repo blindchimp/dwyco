@@ -13,8 +13,8 @@
 
 #include "vfwinvst.h"
 
-VFWInvestigateXfer VFWInvestigateData;
-VFWInvestigateXfer VIDefaults;
+//VFWInvestigateXfer VFWInvestigateData;
+//VFWInvestigateXfer VIDefaults;
 
 #define MYSTERY_VFW_SECTION "mystery vfw"
 
@@ -36,7 +36,7 @@ VFWInvestigateXfer VIDefaults;
 #define DEFAULT_OR "0"
 #define DEFAULT_XOR "0"
 #define DEFAULT_OFFSET "0"
-#define DEFAULT_ENABLE_COLOR BF_CHECKED
+#define DEFAULT_ENABLE_COLOR 1
 #define DEFAULT_SWAP_UV 0
 #define DEFAULT_SWAP_RB 0
 

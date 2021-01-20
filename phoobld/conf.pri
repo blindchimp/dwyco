@@ -2,7 +2,7 @@ VCCFG_COMP=$$PWD
 DWYCO_APP=phoo
 DWYCOBG=0
 DWYCO_USE_LINUX_AUDIO=0
-DEFINES += VCCFG_FILE register=
+DEFINES += VCCFG_FILE #register=
 
 linux-*|wasm-emscripten {
 DEFINES += LINUX

@@ -29,7 +29,7 @@ public:
     DWUIDECL_END
 };
 
-extern ZapAdvXfer ZapAdvData;
+//extern ZapAdvXfer ZapAdvData;
 
 #endif                                      // __zapadv_h sentry.
 

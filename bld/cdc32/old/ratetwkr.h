@@ -56,7 +56,7 @@ struct RateTweakerXferValid : public RateTweakerXfer
 
 
 //extern RateTweakerXferValid RTDefaults;
-extern RateTweakerXferValid RTUserDefaults;
+//extern RateTweakerXferValid RTUserDefaults;
 
 #endif                                      // __ratetwkr_h sentry.
 

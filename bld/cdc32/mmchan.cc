@@ -9,14 +9,7 @@
 //$Header: g:/dwight/repo/cdc32/rcs/mmchan.cc 1.37 1999/01/10 16:09:35 dwight Checkpoint $
 #include <typeinfo>
 
-#include "usercnfg.h"
-#include "vfwinvst.h"
-#include "cllaccpt.h"
-#include "vidinput.h"
-#include "zapadv.h"
-#include "ratetwkr.h"
 #include "chatdisp.h"
-#include "aqvfw.h"
 #include "dwstr.h"
 #include "mmchan.h"
 #include "netvid.h"
@@ -77,6 +70,7 @@
 #include "sha.h"
 #include "qdirth.h"
 #include "dwscoped.h"
+#include "ezset.h"
 #ifdef _Windows
 //#include <winsock2.h>
 //#include <ws2tcpip.h>
@@ -98,12 +92,6 @@ using namespace CryptoPP;
 
 
 #define FAILRET(x) do { {fail_reason = (x); Log->make_entry(x); return 0;} } while(0)
-
-MMChannel *
-MMChannel::gen_chan()
-{
-    return new MMChannel;
-}
 
 GetWindowCallback MMChannel::get_mdi_client_window_callback;
 GetWindowCallback MMChannel::get_main_window_callback;
@@ -1753,7 +1741,7 @@ MMChannel::remote_session_id()
 vc
 MMChannel::username()
 {
-    vc v(UserConfigData.get_username());
+    vc v(get_settings_value("user/username"));
     return v;
 }
 
@@ -1906,8 +1894,8 @@ void
 MMChannel::init_config(int caller)
 {
     config = vc(VC_MAP, "", 31);
-    config.add_kv("username", UserConfigData.get_username());
-    config.add_kv("user description", UserConfigData.get_description());
+    config.add_kv("username", get_settings_value("user/username"));
+    config.add_kv("user description", get_settings_value("user/description"));
     // bumping the protocol version will make direct connections (even via
     // server) fail. this means that calling and direct messaging will fail, and
     // all messages will be sent via server (to older version).
@@ -1933,7 +1921,7 @@ MMChannel::init_config(int caller)
         config.add_kv("reliable video", 1);
     }
 
-    config.add_kv("location", UserConfigData.get_location());
+    config.add_kv("location", get_settings_value("user/location"));
     config.add_kv("call type", call_type);
     vc v(VC_VECTOR);
     v.append("dct");
@@ -1990,7 +1978,7 @@ MMChannel::init_config(int caller)
         MMCall *mmc = MMCall::channel_to_call(myid);
         if(mmc)
         {
-            if(!VidInputData.get_no_video() && mmc->send_video)
+            if((int)get_settings_value("video_input/no_video") == 0 && mmc->send_video)
                 v.append("send");
             if(mmc->recv_video)
                 v.append("recv");
@@ -2011,26 +1999,21 @@ MMChannel::init_config(int caller)
     }
     else
     {
-        if(!VidInputData.get_no_video() && CallAcceptanceData.get_max_video() > 0)
+        //if(!VidInputData.get_no_video() && CallAcceptanceData.get_max_video() > 0)
             v.append("send");
-        if(CallAcceptanceData.get_max_audio() > 0)
+        //if(CallAcceptanceData.get_max_audio() > 0)
             v.append("send audio");
-        if(CallAcceptanceData.get_max_chat() > 0)
+        //if(CallAcceptanceData.get_max_chat() > 0)
             v.append("chat");
-        if(CallAcceptanceData.get_max_pchat() > 0)
+        //if(CallAcceptanceData.get_max_pchat() > 0)
             v.append("pchat");
-        if(CallAcceptanceData.get_max_video_recv() > 0)
+        //if(CallAcceptanceData.get_max_video_recv() > 0)
             v.append("recv");
-        if(CallAcceptanceData.get_max_audio_recv() > 0)
+        //if(CallAcceptanceData.get_max_audio_recv() > 0)
             v.append("recv audio");
         v.append("uc"); // see above
     }
     config.add_kv("channel duplex", v);
-#if 0
-    channel_keys = dh_gen_combined_keys();
-    config.add_kv("udh pubkeys", udh_just_publics(channel_keys));
-#endif
-
 }
 
 void
@@ -2103,9 +2086,9 @@ MMChannel::requested_config()
 
     m.add_kv("audio codec", r);
 
-    m.add_kv("channel bandwidth", RTUserDefaults.get_link_speed());
-    m.add_kv("channel bandwidth recv", RTUserDefaults.get_link_speed_recv());
-    m.add_kv("max udp bytes", RTUserDefaults.get_max_udp_bytes());
+    m.add_kv("channel bandwidth", get_settings_value("rate/kbits_per_sec_out"));
+    m.add_kv("channel bandwidth recv", get_settings_value("rate/kbits_per_sec_in"));
+    //m.add_kv("max udp bytes", RTUserDefaults.get_max_udp_bytes());
     return m;
 }
 
@@ -2671,7 +2654,7 @@ MMChannel::recv_config(vc cfg)
                 send_error("busy");
                 goto cleanup;
             }
-            if(!call_screening_callback && ZapAdvData.get_ignore() && !pal_user(uid))
+            if(!call_screening_callback && (int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
                 Log->make_entry("call rejected, pals-only mode");
                 send_error("pals-only");
@@ -2841,7 +2824,7 @@ MMChannel::recv_config(vc cfg)
         vc uid;
         if(!remote_cfg.is_nil() && remote_cfg.find("my uid", uid))
         {
-            if(ZapAdvData.get_ignore() && !pal_user(uid))
+            if((int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
                 Log->make_entry("call rejected, pals-only mode");
                 send_error("pals-only");
@@ -2853,7 +2836,7 @@ MMChannel::recv_config(vc cfg)
     // move password screening down here so that the app defined screening
     // more or less disabled password screening. may need to update app screening
     // to include stuff for doing password screening in the future.
-    if(!Conf && CallAcceptanceData.get_require_pw())
+    if(!Conf && (int)get_settings_value("call_acceptance/require_pw") == 1)
     {
         vc pw;
         if(!cfg.find("pw", pw))
@@ -2862,7 +2845,7 @@ MMChannel::recv_config(vc cfg)
             send_error("password required to connect");
             goto cleanup;
         }
-        if(strcmp((const char *)pw, CallAcceptanceData.get_pw()) != 0)
+        if(pw != get_settings_value("call_acceptance/pw"))
         {
             Log->make_entry("call rejected, incorrect pw.");
             send_error("incorrect password");
@@ -2950,7 +2933,7 @@ MMChannel::recv_config(vc cfg)
     // now pop up a dialog and wait for the user
     // to accept or reject the call.
     play_call_alert();
-    if(!CallAcceptanceData.get_auto_accept())
+    if((int)get_settings_value("call_acceptance/auto_acccept") == 0)
     {
         vc name;
         if(!remote_cfg.is_nil() && !remote_cfg.find("username", name))
@@ -3710,14 +3693,6 @@ MMChannel::turn_off_color()
 #endif
         }
     }
-#if defined(_Windows) && defined(USE_VFW)
-    if(TheAq)
-    {
-        VFWAquire *va = TYPESAFE_DOWNCAST(TheAq, VFWAquire);
-        if(va)
-            va->force_gray = 1;
-    }
-#endif
 
 }
 

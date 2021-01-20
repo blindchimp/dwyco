@@ -74,15 +74,7 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
-cllaccpt.cpp \
-ratetwkr.cpp \
-rawfiles.cpp \
 syncvar.cc \
-uicfg.cc \
-usercnfg.cpp \
-vfwinvst.cpp \
-vidinput.cpp \
-zapadv.cpp \
 doinit.cc \
 netcod.cc \
 tcode.cc \
@@ -141,7 +133,7 @@ chatgrid.cpp \
 chatq.cpp \
 sysattr.cpp \
 vorbconv.cc \
-ezset.cpp \
+ezset2.cpp \
 linid.cpp \
 se.cpp \
 theoracol.cc \

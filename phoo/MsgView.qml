@@ -24,7 +24,7 @@ Page {
     property bool hid
     property string text_bg_color: primary_dark
 
-    anchors.fill:parent
+    //anchors.fill:parent
 
 //    background: Rectangle {
 //        color: primary_dark

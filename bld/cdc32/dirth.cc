@@ -12,9 +12,6 @@
  */
 #include <string.h>
 #include "doinit.h"
-#include "usercnfg.h"
-#include "cllaccpt.h"
-#include "vidinput.h"
 #include "dirth.h"
 #include "vc.h"
 #include "vcmap.h"
@@ -22,7 +19,6 @@
 #include "qauth.h"
 #include "qmsg.h"
 #include "cdcver.h"
-#include "zapadv.h"
 #include "mmchan.h"
 #include "senc.h"
 #include "dwstr.h"
@@ -51,6 +47,7 @@
 #endif
 #include "vcxstrm.h"
 #include "ta.h"
+#include "ezset.h"
 
 using namespace dwyco;
 
@@ -552,30 +549,30 @@ system_info()
 vc
 make_fw_setup()
 {
-    vc v(VC_VECTOR);
-    if(DwNetConfigData.get_advertise_nat_ports())
+    vc fw(VC_VECTOR);
+    if((int)get_settings_value("net/advertise_nat_ports") == 1)
     {
-        v.append(DwNetConfigData.get_nat_primary_port());
-        v.append(DwNetConfigData.get_nat_secondary_port());
-        v.append(DwNetConfigData.get_nat_pal_port());
+        fw[0] = get_settings_value("net/nat_primary_port");
+        fw[1] = get_settings_value("net/nat_secondary_port");
+        fw[2] = get_settings_value("net/nat_pal_port");
     }
     else
     {
-        v.append(DwNetConfigData.get_primary_port());
-        v.append(DwNetConfigData.get_secondary_port());
-        v.append(DwNetConfigData.get_pal_port());
+        fw[0] = get_settings_value("net/primary_port");
+        fw[1] = get_settings_value("net/secondary_port");
+        fw[2] = get_settings_value("net/pal_port");
     }
-    return v;
+    return fw;
 }
 
 vc
 make_local_ports()
 {
-    vc v(VC_VECTOR);
-    v.append(DwNetConfigData.get_primary_port());
-    v.append(DwNetConfigData.get_secondary_port());
-    v.append(DwNetConfigData.get_pal_port());
-    return v;
+    vc fw(VC_VECTOR);
+    fw[0] = get_settings_value("net/primary_port");
+    fw[1] = get_settings_value("net/secondary_port");
+    fw[2] = get_settings_value("net/pal_port");
+    return fw;
 }
 
 vc
@@ -583,24 +580,31 @@ build_directory_entry()
 {
     vc v(VC_VECTOR);
     v.append(Myhostname);
-    v.append(UserConfigData.get_username());
-    v.append(UserConfigData.get_description());
-    CallAcceptanceXfer& c = CallAcceptanceData;
+    v.append(get_settings_value("user/username"));
+    v.append(get_settings_value("user/description"));
+    //CallAcceptanceXfer& c = CallAcceptanceData;
     vc v2(VC_VECTOR);
-    v2.append(c.get_max_audio());
-    v2.append(VidInputData.get_no_video() ? 0 : c.get_max_video());
-    v2.append(c.get_max_chat());
-    v2.append(c.get_max_audio_recv());
-    v2.append(c.get_max_video_recv());
+    v2.append(0);
+    v2.append(0);
+    v2.append(0);
+    v2.append(0);
+    v2.append(0);
+
+
+//    v2.append(c.get_max_audio());
+//    v2.append(VidInputData.get_no_video() ? 0 : c.get_max_video());
+//    v2.append(c.get_max_chat());
+//    v2.append(c.get_max_audio_recv());
+//    v2.append(c.get_max_video_recv());
     v.append(v2);
     v.append(1); // "registered"
     v.append(dwyco_get_version_string());
-    v.append(UserConfigData.get_email());
+    v.append(get_settings_value("user/email"));
     v.append(My_UID);
     v.append(vcnil); // was DH_public
     v.append(vcnil); // was "rating"
     v.append(system_info());
-    v.append(ZapAdvData.get_always_server() ? vcnil : vctrue); // can do direct msgs
+    v.append((int)get_settings_value("zap/always_server") == 1 ? vcnil : vctrue); // can do direct msgs
     // note: no more invisible
     v.append(vcnil);
     //v.append(ShowDirectoryData.get_invisible() ? vctrue : vcnil);
@@ -609,7 +613,7 @@ build_directory_entry()
 // XXXXXX note: this needs to be FIXED, it is always mucked up
 // after an integrate.
 // 13
-    v.append(UserConfigData.get_location());
+    v.append(get_settings_value("user/location"));
     v.append(vcnil);
     // note: to support old crappy clients, this element
     // must be nil (this is ui-speced-peer in server, and the
@@ -647,7 +651,7 @@ build_directory_entry2()
     v.append(1); // was "registered"
     v.append(dwyco_get_version_string());
     v.append(system_info());
-    v.append(ZapAdvData.get_always_server() ? vcnil : vctrue);
+    v.append((int)get_settings_value("zap/always_server") == 1 ? vcnil : vctrue);
     v.append(make_fw_setup());
 
     v.append(KKG);
@@ -658,7 +662,7 @@ build_directory_entry2()
 }
 
 
-extern int Reauthorize;
+static int Reauthorize;
 
 static void
 db_offline(MMChannel *, vc, void *, ValidPtr)

@@ -84,10 +84,7 @@ class MMChannel
 {
 
 public:
-    // this is only here because of a bug in the
-    // borland linker, seems calling "new" locally
-    // causes it to take a crap on itself... sigh.
-    static MMChannel *gen_chan();
+
     // initialized at create time so anyone that
     // caches pointers to these channels can
     // decide if one is still valid
@@ -176,7 +173,7 @@ private:
     DwTimer nego_timer;
 public:
 
-    int build_outgoing(int locally_invoked = 0, int inhibit_coder_display = 0);
+    int build_outgoing(int locally_invoked, int inhibit_coder_display, int max_fps);
     int build_incoming_video();
 #if 0
     int cfg_has_duplex(vc cfg, const char *what);
