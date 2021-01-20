@@ -24,19 +24,19 @@ struct skid_sql : public SimpleSql
     void init_schema(const DwString&) {
         start_transaction();
         sql_simple("create table if not exists keys ("
-                   "uid text collate nocase, "
-                   "alt_name text collate nocase, "
-                   "pubkey blob,"
+                   "uid text collate nocase not null, "
+                   "alt_name text collate nocase not null, "
+                   "pubkey blob not null,"
                    "privkey blob,"
                    "time integer"
                    ")");
         sql_simple("create index if not exists keys_uid on keys(uid)");
         sql_simple("create index if not exists keys_alt_name on keys(alt_name)");
         sql_simple("create table if not exists pstate ("
-                   "initiating_uid text collate nocase,"
+                   "initiating_uid text collate nocase not null,"
                    "responding_uid text collate nocase, "
-                   "alt_name text collate nocase, "
-                   "state integer,"
+                   "alt_name text collate nocase not null, "
+                   "state integer not null,"
                    "serial text collate nocase,"
                    "nonce_1 text collate nocase,"
                    "nonce_2 text collate nocase,"
@@ -293,15 +293,14 @@ recv_gj2(vc from, vc msg, vc password)
             throw -1;
         }
 
-        VCArglist a;
-        a.append("update pstate set responding_uid = ?1,  nonce_2 = ?2, time = strftime('%s', 'now'), state = 3 "
-                 "where initiating_uid = ?3 and nonce_1 = ?4 and alt_name = ?5 and state = 1");
-        a.append(hfrom);
-        a.append(nonce2);
-        a.append(to_hex(My_UID));
-        a.append(nonce);
-        a.append(alt_name);
-        SKID->query(&a);
+        SKID->sql_simple("update pstate set responding_uid = ?1,  nonce_2 = ?2, time = strftime('%s', 'now'), state = 3 "
+                         "where initiating_uid = ?3 and nonce_1 = ?4 and alt_name = ?5 and state = 1",
+                         hfrom,
+                         nonce2,
+                         to_hex(My_UID),
+                         nonce,
+                         alt_name);
+
         SKID->commit_transaction();
         return 1;
     }
@@ -385,15 +384,13 @@ recv_gj1(vc from, vc msg, vc password)
             dwyco_delete_zap_composition(comp_id);
             throw -1;
         }
-        VCArglist a;
-        a.append("insert into pstate (initiating_uid, responding_uid, nonce_1, nonce_2, alt_name, time, state) "
-                         "values(?1, ?2, ?3, ?4, ?5, strftime('%s', 'now'), 2)");
-        a.append(hfrom);
-        a.append(to_hex(My_UID));
-        a.append(nonce);
-        a.append(nonce2);
-        a.append(alt_name);
-        SKID->query(&a);
+        SKID->sql_simple("insert into pstate (initiating_uid, responding_uid, nonce_1, nonce_2, alt_name, time, state) "
+                         "values(?1, ?2, ?3, ?4, ?5, strftime('%s', 'now'), 2)",
+                         hfrom,
+                         to_hex(My_UID),
+                         nonce,
+                         nonce2,
+                         alt_name);
         SKID->commit_transaction();
         return 1;
     }
@@ -440,22 +437,20 @@ recv_gj3(vc from, vc msg, vc password)
             throw -1;
         }
 
-        VCArglist a;
-        a.append("select 1 from pstate where "
-                 "initiating_uid = ?1 and responding_uid = ?2 and nonce_1 = ?3 and "
-                 "nonce_2 = ?4 and alt_name = ?5 and state = 2");
-        a.append(hfrom);
-        a.append(our_uid);
-        a.append(nonce);
-        a.append(nonce2);
-        a.append(alt_name);
         {
-        vc res = SKID->query(&a);
+            vc res = SKID->sql_simple("select 1 from pstate where "
+                                      "initiating_uid = ?1 and responding_uid = ?2 and nonce_1 = ?3 and "
+                                      "nonce_2 = ?4 and alt_name = ?5 and state = 2",
+                                      hfrom,
+                                      our_uid,
+                                      nonce,
+                                      nonce2,
+                                      alt_name);
 
-        if(res.num_elems() == 0)
-        {
-            throw -1;
-        }
+            if(res.num_elems() == 0)
+            {
+                throw -1;
+            }
         }
         // note: for now, we are only in one group, and it should be the
         // same as the requester wanted. this ought to be fixed later
