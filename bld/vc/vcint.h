@@ -25,7 +25,15 @@ protected:
 	// note: may want to force this to 32bits
 	// optionally in 64bit environments, for compat
 	// with older interpreters.
+
+// note: windows 64bit compilations "long" is 32 bit.
+// in a few places we assume we can fit a pointer into a long
+// which breaks ms 64bit builds.
+#ifdef _WIN64
+        long long i;
+#else
 	long i;
+#endif
 	static char buf[100];
 public:
 	vc_int() ;

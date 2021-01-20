@@ -39,6 +39,6 @@ public:
     DWUIDECL_END
 };
 
-extern CallAcceptanceXfer CallAcceptanceData;
+//extern CallAcceptanceXfer CallAcceptanceData;
 #endif                                      // __cllaccpt_h sentry.
 

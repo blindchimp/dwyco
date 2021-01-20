@@ -7,9 +7,9 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-import QtQuick 2.6
-import QtMultimedia 5.8
-import QtQuick.Controls 2.2
+import QtQuick 2.12
+import QtMultimedia 5.12
+import QtQuick.Controls 2.12
 
 // the API to this object is ugly... essentially, the requirement is
 // that the user of the object must reside in a stackview, and

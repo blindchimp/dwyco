@@ -1,7 +1,7 @@
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
-; 
+;
 ; This Source Code Form is subject to the terms of the Mozilla Public
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -14,6 +14,15 @@
 
 void oopanic(const char *);
 #include "vcenco.h"
+
+// use explicit offsets and whatnot for encoding items
+// instead of "isdigit" and co. this is to avoid situations
+// where an application decides it wants to use a non-standard
+// locale.
+#define ZERO 0x30
+#define NINE 0x39
+
+#define lisdigit(x) ((x) >= ZERO && (x) <= NINE)
 
 static void strreverse(char* begin, char* end)
 {
@@ -48,20 +57,20 @@ pltoa(long value, char* str, int len, int field_width)
 int
 pltoa(long l, char *buf, int buf_len, int field_wid)
 {
-	char *tail = &buf[buf_len - 1];
-	do
-	{
-		if(tail < buf)
-			oopanic("bad pltoa");
-		int rem = l % 10;
-		*tail-- = rem + ZERO;
-		l /= 10;
+    char *tail = &buf[buf_len - 1];
+    do
+    {
+        if(tail < buf)
+            oopanic("bad pltoa");
+        int rem = l % 10;
+        *tail-- = rem + ZERO;
+        l /= 10;
         --field_wid;
-	}
+    }
     while(l != 0 || field_wid > 0);
-	int len = &buf[buf_len - 1] - tail;
-	memmove(buf, tail + 1, len);
-	buf[len] = 0;
+    int len = &buf[buf_len - 1] - tail;
+    memmove(buf, tail + 1, len);
+    buf[len] = 0;
     return len;
 }
 #endif
@@ -101,25 +110,25 @@ compat_ltoa(long l, char *buf, int buf_len)
 int
 encode_long(char *buf, long l)
 {
-	if(l < 0)
-		oopanic("bogus encode long");
-	char buf3[40];
+    if(l < 0)
+        oopanic("bogus encode long");
+    char buf3[40];
     char buf2[40];
     int bytes = pltoa(l, buf3, sizeof(buf3), -1);
     if(pltoa(bytes, buf2, sizeof(buf2), 2) != 2)
         oopanic("bad encode long");
-	buf[0] = buf2[0];
+    buf[0] = buf2[0];
     buf[1] = buf2[1];
-	memcpy(buf + 2, buf3, bytes);
-	return bytes + 2;
+    memcpy(buf + 2, buf3, bytes);
+    return bytes + 2;
 }
 
 int
 decode_len(char *buf)
 {
-	if(!lisdigit(buf[0]) || !lisdigit(buf[1]))
-		return -1;
-	return (buf[0] - ZERO) * 10 + (buf[1] - ZERO);
+    if(!lisdigit(buf[0]) || !lisdigit(buf[1]))
+        return -1;
+    return (buf[0] - ZERO) * 10 + (buf[1] - ZERO);
 }
 
 // decode a positive integer, return -1 on syntax error
@@ -128,10 +137,10 @@ long
 decode_long(char *buf, int len)
 {
     long l = 0;
-	for(int i = 0; i < len; ++i)
-	{
-		if(!lisdigit(buf[i]))
-			return -1;
+    for(int i = 0; i < len; ++i)
+    {
+        if(!lisdigit(buf[i]))
+            return -1;
         if(l > LONG_MAX / 10L)
             return -1;
         l *= 10L;
@@ -139,7 +148,7 @@ decode_long(char *buf, int len)
         if(l > LONG_MAX - ndig)
             return -1;
         l += ndig;
-	}
+    }
     return l;
 }
 
@@ -196,17 +205,17 @@ decode_long2(char *buf, int len, int& error)
 int
 encode_type(char *buf, VCXFERTYPE t)
 {
-	if(t < 0 || t > 99)
-    	oopanic("bad type to encode");
-	buf[0] = (t / 10) + ZERO;
-	buf[1] = (t % 10) + ZERO;
+    if(t < 0 || t > 99)
+        oopanic("bad type to encode");
+    buf[0] = (t / 10) + ZERO;
+    buf[1] = (t % 10) + ZERO;
     return 2;
 }
 
 VCXFERTYPE
 decode_type(char *buf)
 {
-	if(!lisdigit(buf[0]) || !lisdigit(buf[1]))
-		return -1;
-	return (buf[0] - ZERO) * 10 + (buf[1] - ZERO);
+    if(!lisdigit(buf[0]) || !lisdigit(buf[1]))
+        return -1;
+    return (buf[0] - ZERO) * 10 + (buf[1] - ZERO);
 }

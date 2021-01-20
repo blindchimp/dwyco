@@ -6,8 +6,8 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
+import QtQuick 2.12
+import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import dwyco 1.0
 
@@ -98,6 +98,9 @@ Rectangle {
                 core.set_local_setting("first-run", "done")
                 profile_bootstrapped = 1
                 busy.running = true
+                if(Qt.platform.os == "android") {
+                    notificationClient.log_event2("TOSOK", "regular")
+                }
             }
         }
     }

@@ -1,8 +1,9 @@
-/* $Id: miniupnpcmodule.c,v 1.24 2014/06/10 09:48:11 nanard Exp $*/
-/* Project : miniupnp
+/* $Id: miniupnpcmodule.c,v 1.34 2019/05/20 19:07:16 nanard Exp $*/
+/* vim: tabstop=4 shiftwidth=4 noexpandtab
+ * Project : miniupnp
  * Author : Thomas BERNARD
  * website : https://miniupnp.tuxfamily.org/
- * copyright (c) 2007-2018 Thomas Bernard
+ * copyright (c) 2007-2020 Thomas Bernard
  * This software is subjet to the conditions detailed in the
  * provided LICENCE file. */
 #include <Python.h>
@@ -292,7 +293,7 @@ Py_END_ALLOW_THREADS
 }
 
 /* AddPortMapping(externalPort, protocol, internalHost, internalPort, desc,
- *                remoteHost)
+ *                remoteHost, leaseDuration)
  * protocol is 'UDP' or 'TCP' */
 static PyObject *
 UPnP_addportmapping(UPnPObject *self, PyObject *args)
@@ -305,17 +306,24 @@ UPnP_addportmapping(UPnPObject *self, PyObject *args)
 	const char * host;
 	const char * desc;
 	const char * remoteHost;
-	const char * leaseDuration = "0";
+	unsigned int intLeaseDuration = 0;
+	char strLeaseDuration[12];
 	int r;
-	if (!PyArg_ParseTuple(args, "HssHzz", &ePort, &proto,
-	                                     &host, &iPort, &desc, &remoteHost))
+#if (PY_MAJOR_VERSION >= 3) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION > 3)
+	if (!PyArg_ParseTuple(args, "HssHzz|I", &ePort, &proto,
+	                                     &host, &iPort, &desc, &remoteHost, &intLeaseDuration))
+#else
+	if (!PyArg_ParseTuple(args, "HssHzz|i", &ePort, &proto,
+	                                     &host, &iPort, &desc, &remoteHost, (int *)&intLeaseDuration))
+#endif
         return NULL;
 Py_BEGIN_ALLOW_THREADS
 	sprintf(extPort, "%hu", ePort);
 	sprintf(inPort, "%hu", iPort);
+	sprintf(strLeaseDuration, "%u", intLeaseDuration);
 	r = UPNP_AddPortMapping(self->urls.controlURL, self->data.first.servicetype,
 	                        extPort, inPort, host, desc, proto,
-	                        remoteHost, leaseDuration);
+	                        remoteHost, strLeaseDuration);
 Py_END_ALLOW_THREADS
 	if(r==UPNPCOMMAND_SUCCESS)
 	{
@@ -636,8 +644,9 @@ static PyTypeObject UPnPType = {
 #ifndef _WIN32
     PyType_GenericNew,/*UPnP_new,*/      /* tp_new */
 #else
-    0,
+    0,                         /* tp_new */
 #endif
+    0,                         /* tp_free */
 };
 
 /* module methods */

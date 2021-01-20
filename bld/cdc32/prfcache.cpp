@@ -37,11 +37,11 @@
 #include "sepstr.h"
 #include "se.h"
 #include "ser.h"
-#include "usercnfg.h"
 #include "qdirth.h"
 #include "fnmod.h"
 #include "xinfo.h"
 #include "dwyco_rand.h"
+#include "ezset.h"
 
 #define PROFILE_KEY "\x98\x83\xae\xf3\x60\x23\x33\xf9\x14\xd4"
 #define PRF_DIR "prf2"
@@ -68,6 +68,21 @@ init_prf_cache()
             Log->make_entry("can't create prf dir");
     Prf_session_cache = vc(VC_SET);
     Prf_memory_cache = vc(VC_TREE);
+    // this pulls the profile into the setting stuff, just to make sure
+    // it gets initialized on first run, and at least tries to be
+    // consistent.
+    vc prf;
+    if(load_profile(My_UID, prf))
+    {
+        vc pack;
+        if(deserialize(prf[PRF_PACK], pack))
+        {
+            set_settings_value("user/username", pack[vc("handle")]);
+            set_settings_value("user/description", pack[vc("desc")]);
+            set_settings_value("user/location", pack[vc("loc")]);
+            set_settings_value("user/email", pack[vc("email")]);
+        }
+    }
 }
 
 void
@@ -290,12 +305,15 @@ save_profile(vc uid, vc prf)
         v[QIR_LOCATION] = pack[vc("loc")];
 
         Session_infos.add_kv(uid, v);
-        se_emit(SE_USER_UID_RESOLVED, uid);
 
-    }
-    if(uid == My_UID)
-    {
-        UserConfigData.load();
+        if(uid == My_UID)
+        {
+            set_settings_value("user/username", v[QIR_HANDLE]);
+            set_settings_value("user/description", v[QIR_DESCRIPTION]);
+            set_settings_value("user/location", v[QIR_LOCATION]);
+            set_settings_value("user/email", pack[vc("email")]);
+        }
+        se_emit(SE_USER_UID_RESOLVED, uid);
     }
     return 1;
 }

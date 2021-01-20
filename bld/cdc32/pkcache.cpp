@@ -34,7 +34,6 @@
 #include "sepstr.h"
 #include "se.h"
 #include "ser.h"
-#include "usercnfg.h"
 #include "qdirth.h"
 #include "fnmod.h"
 #include "xinfo.h"

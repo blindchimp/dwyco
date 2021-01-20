@@ -104,7 +104,7 @@ static int jpeg_zigzag_order[64] = {
         for (coefindex = 0; coefindex < 64; coefindex++) {
             unsigned int val;
             if (c>>4) {
-                register unsigned int temp;
+                unsigned int temp;
                 temp=(unsigned int) (Data[a++]);
                 temp *= 256;
                 val=(unsigned int) Data[a++] + temp;

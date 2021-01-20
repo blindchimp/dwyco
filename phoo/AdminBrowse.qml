@@ -6,10 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import Qt.labs.folderlistmodel 2.1
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.1
+import QtQuick 2.12
+import Qt.labs.folderlistmodel 2.12
+import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.12
 
 Rectangle {
     property alias folder: folderModel.folder

@@ -7,7 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include "mmchan.h"
-#include "usercnfg.h"
 #include "qauth.h"
 #include "dwrtlog.h"
 #include "dwstr.h"
@@ -54,7 +53,7 @@ build_chat_entry(vc challenge, vc password)
 {
     vc v(VC_VECTOR);
     v[0] = "login";
-    v[1] = UserConfigData.get_username();
+    v[1] = get_settings_value("user/username");
     v[2] = My_UID;
     v[3] = KKG;
     v[4] = make_fw_setup();

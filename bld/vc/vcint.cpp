@@ -54,7 +54,11 @@ vc_int::operator const char *() const {USER_BOMB("can't convert int to string (u
 const char *
 vc_int::peek_str() const
 {
+#ifdef _WIN64
+    sprintf(buf, "%lld", i);
+#else
 	sprintf(buf, "%ld", i);
+#endif
 	return buf;
 }
 

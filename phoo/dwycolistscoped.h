@@ -98,7 +98,8 @@ private:
     simple_scoped(const simple_scoped&);
     simple_scoped& operator=(const simple_scoped&);
 public:
-    simple_scoped(DWYCO_LIST v): dwyco_list(v) {
+    simple_scoped(DWYCO_LIST& v): dwyco_list(v) {
+        v = 0;
     }
     ~simple_scoped() {
         release();

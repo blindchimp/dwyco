@@ -248,6 +248,37 @@ DwString::arg(const DwString& a1, const DwString& a2, const DwString& a3,
     return(*this);
 }
 
+#include <stdio.h>
+
+DwString
+DwString::fromInt(int i)
+{
+    char a[100];
+    if(snprintf(a, sizeof(a), "%d", i) >= sizeof(a))
+        oopanic("truncated int");
+    return(a);
+}
+
+DwString
+DwString::fromLong(long i)
+{
+    char a[100];
+    if(snprintf(a, sizeof(a), "%ld", i) >= sizeof(a))
+        oopanic("truncated long");
+    return(a);
+}
+
+DwString
+DwString::fromUint(unsigned int i)
+{
+    char a[100];
+    if(snprintf(a, sizeof(a), "%u", i) >= sizeof(a))
+        oopanic("truncated uint");
+    return(a);
+}
+
+
+
 #undef TESTSTR
 #ifdef TESTSTR
 #include <stdio.h>

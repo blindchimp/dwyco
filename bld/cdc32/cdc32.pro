@@ -40,7 +40,7 @@ DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYC
 message("cdc32 setup for rando")
 } else {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-#DEFINES += DWYCO_TRACE
+DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
 DEFINES += DWYCO_FIELD_DEBUG
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
@@ -81,13 +81,13 @@ equals(DWYCO_APP, "rando") {
 #DEFINES += USE_VFW
 #DEFINES += VIDGRAB_HACKS
 #DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
-#SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+#SOURCES += uniq.cpp aqaud.cc audwin.cc
 SOURCES += uniq.cpp audwin.cc aqaud.cc
 } else {
-DEFINES += USE_VFW
+#DEFINES += USE_VFW
 DEFINES += VIDGRAB_HACKS
 DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
-SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+SOURCES += uniq.cpp aqaud.cc audwin.cc
 }
 SOURCES += sqlite3.c
 INCLUDEPATH += ../mtcap
@@ -128,6 +128,7 @@ SOURCES += sqlite3.c
 }
 
 SOURCES += \
+    ezset2.cpp \
 mmchan.cc \
 mmbld.cc \
 mmaud.cc \
@@ -174,15 +175,7 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
-cllaccpt.cpp \
-ratetwkr.cpp \
-rawfiles.cpp \
 syncvar.cc \
-uicfg.cc \
-usercnfg.cpp \
-vfwinvst.cpp \
-vidinput.cpp \
-zapadv.cpp \
 doinit.cc \
 netcod.cc \
 netcod2.cc \
@@ -240,7 +233,6 @@ chatgrid.cpp \
 chatq.cpp \
 sysattr.cpp \
 vorbconv.cc \
-ezset.cpp \
 se.cpp \
 theoracol.cc \
 ser.cpp \
@@ -261,7 +253,8 @@ sqlbq.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
     simplesql.cpp \
-    upnp.cpp
+    upnp.cpp \
+    aqkey.cpp
 
 HEADERS += \
     vccfg.h \

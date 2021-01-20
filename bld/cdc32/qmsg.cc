@@ -60,9 +60,7 @@
 #include "dwlog.h"
 #include "pval.h"
 #include "doinit.h"
-#include "zapadv.h"
 #include "ta.h"
-#include "usercnfg.h"
 #include "cdcver.h"
 #include "files.h"
 #include "sha.h"
@@ -85,7 +83,6 @@ using namespace CryptoPP;
 #include "chatq.h"
 #include "pgdll.h"
 #include "sepstr.h"
-#include "lanmap.h"
 #include "ser.h"
 #include "xinfo.h"
 #include "vcudh.h"
@@ -95,6 +92,8 @@ using namespace CryptoPP;
 #include "ssns.h"
 #include "dwyco_rand.h"
 #include "qmsgsql.h"
+#include "ezset.h"
+
 using namespace dwyco;
 
 vc MsgFolders;
@@ -124,7 +123,6 @@ vc No_direct_att;
 //int Pal_auth_warn;
 vc Pals;
 vc Client_ports;
-vc LANmap;
 int LANmap_inhibit;
 vc Chat_ips;
 vc Chat_ports;
@@ -216,26 +214,7 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
     sec = 0;
     pal = 0;
     can_do_direct = 0;
-    // prefer the LAN ip and ports over the remote ones
-    if(!LANmap_inhibit)
-    {
-        if(LANmap.find(uid, u))
-        {
-            can_do_direct = 1;
-            DwString a((const char *)u[LANMAP_LOCAL_IP]);
-            int c = a.find(":");
-            if(c != DwString::npos)
-                a.erase(c);
-            if(u.type() == VC_VECTOR)
-            {
-                prim = (int)u[LANMAP_LOCAL_PORTS][0];
-                sec = (int)u[LANMAP_LOCAL_PORTS][1];
-                pal = (int)u[LANMAP_LOCAL_PORTS][2];
-            }
-            GRTLOGA("uid to ip LANMAP %s %d %d %d", a.c_str(), prim, sec, pal, 0);
-            return inet_addr(a.c_str());
-        }
-    }
+
     if(Online.find(uid, u))
     {
         can_do_direct = 1;
@@ -437,7 +416,6 @@ init_qmsg()
         save_info(Pals, "pals");
     }
     Client_ports = vc(VC_TREE);
-    LANmap = vc(VC_TREE);
     if(!load_info(Session_infos, "sinfo") || Session_infos.type() != VC_MAP)
     {
         Session_infos = vc(VC_MAP);
@@ -635,7 +613,6 @@ resume_qmsg()
         save_info(Pals, "pals");
     }
     Client_ports = vc(VC_TREE);
-    LANmap = vc(VC_TREE);
     if(!load_info(Session_infos, "sinfo") || Session_infos.type() != VC_MAP)
     {
         Session_infos = vc(VC_MAP);
@@ -1524,7 +1501,11 @@ make_best_local_info(vc uid, int *cant_resolve_now)
         *cant_resolve_now = 1;
     if(uid == My_UID)
     {
-        return make_alt_info(UserConfigData.get_username(), UserConfigData.get_description(), UserConfigData.get_location());
+        return make_alt_info(
+                    get_settings_value("user/username"),
+                    get_settings_value("user/description"),
+                    get_settings_value("user/location")
+                    );
 
     }
     // try infos
@@ -1616,6 +1597,7 @@ save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc 
     v[QM_BODY_NO_FORWARD] = no_forward;
     v[QM_BODY_FILE_ATTACHMENT] = user_filename;
     v[QM_BODY_LOGICAL_CLOCK] = logical_clock;
+    v[QM_BODY_SPECIAL_TYPE] = special_type;
     if(save_info(v, s.c_str(), 1))
     {
         // can't do this here anymore because the index needs to
@@ -1647,13 +1629,13 @@ direct_to_body2(vc m)
 }
 
 vc
-direct_to_body(vc msgid)
+direct_to_body(vc msgid, vc& uid_out)
 {
     vc huid = sql_get_uid_from_mid(msgid);
     if(huid.is_nil())
         return vcnil;
-    vc uid = from_hex(huid);
-    return load_body_by_id(uid, msgid);
+    uid_out = from_hex(huid);
+    return load_body_by_id(uid_out, msgid);
 
 }
 
@@ -1680,7 +1662,7 @@ add_msg(vc vec, vc item)
     // values in the message summaries (maybe that should change)
     // so in order to present the messages in some kind of reasonable
     // time order, we insert them in order by date sent... as a side
-    // effect, the list of unsaved messages will be presented to
+    // effect, the list of unfetched messages will be presented to
     // the caller and if they just present it in order, it will look ok.
     // otherwise, if we don't do this, the messages will appear in random
     // order on startup (they are just loaded from the inbox in whatever order
@@ -2845,6 +2827,7 @@ decrypt_msg_body(vc body)
 
 }
 
+#ifdef DWYCO_CRYPTO_PIPELINE
 // decrypt everything but the attachment
 // this is used to send large attachment decryption to another thread
 // so we don't block on it here
@@ -2884,6 +2867,7 @@ decrypt_msg_body2(vc body, DwString& src, DwString& dst, DwString& key_out)
     return msg_out;
 
 }
+#endif
 
 
 int
@@ -2959,6 +2943,7 @@ decrypt_attachment(vc filename, vc key, vc filename_dst)
     return 1;
 }
 
+#ifdef DWYCO_CRYPTO_PIPELINE
 int
 decrypt_attachment2(const DwString& filename, const DwString& key, const DwString& filename_dst)
 {
@@ -2967,6 +2952,7 @@ decrypt_attachment2(const DwString& filename, const DwString& key, const DwStrin
     vc d(VC_BSTRING, filename_dst.c_str(), filename_dst.length());
     return decrypt_attachment(f, k, d);
 }
+#endif
 
 
 vc

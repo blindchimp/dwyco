@@ -12,10 +12,10 @@
  */
 
 #include "cllaccpt.h"
-#include "doinit.h"
-#include "audchk.h"
-#include "aq.h"
-#include "qauth.h"
+//#include "doinit.h"
+//#include "audchk.h"
+//#include "aq.h"
+//#include "qauth.h"
 #ifdef LINUX
 #include "miscemu.h"
 #endif
@@ -40,8 +40,8 @@ CallAcceptanceXfer CallAcceptanceData;
 #define DEFAULT_MAX_VIDEO "4"
 #define DEFAULT_MAX_CHAT "100"
 #define DEFAULT_MAX_PCHAT "4"
-#define DEFAULT_AUTO_ACCEPT BF_UNCHECKED
-#define DEFAULT_REQUIRE_PW BF_UNCHECKED
+#define DEFAULT_AUTO_ACCEPT 0
+#define DEFAULT_REQUIRE_PW 0
 #define DEFAULT_PW ""
 
 CallAcceptanceXfer::CallAcceptanceXfer()

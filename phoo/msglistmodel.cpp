@@ -12,6 +12,7 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
+#include <stdlib.h>
 #include "msglistmodel.h"
 #include "msgpv.h"
 #include "pfx.h"
@@ -899,6 +900,12 @@ msglist_raw::qd_data ( int r, int role ) const
     {
         return !qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT);
     }
+    case IS_FILE:
+    {
+        if(!qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT) && !qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+            return 1;
+        return 0;
+    }
     case DATE_CREATED:
     {
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
@@ -1303,7 +1310,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
 
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
-        return gen_time(ba, 0);
+        return gen_time(qba, 0);
     }
     else if(role == IS_FAVORITE)
     {

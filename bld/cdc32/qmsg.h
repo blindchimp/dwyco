@@ -127,7 +127,7 @@ int decode_no_forward_attachment_qqm(vc m);
 int can_forward(vc body, vc att_dir);
 DwString simple_diagnostics();
 vc gen_hash(DwString filename);
-vc direct_to_body(vc msgid);
+vc direct_to_body(vc msgid, vc &uid_out);
 vc direct_to_body2(vc dm);
 int pal_add(vc u);
 int pal_del(vc u, int norelogin = 0);
@@ -146,10 +146,13 @@ vc encrypt_msg_qqm(vc msg_to_send, vc dhsf, vc ectx, vc key);
 vc encrypt_msg_body(vc body, vc dhsf, vc ectx, vc key);
 vc decrypt_msg_qqm(vc emsg);
 vc decrypt_msg_body(vc body);
+#ifdef DWYCO_CRYPTO_PIPELINE
 vc decrypt_msg_body2(vc body, DwString& src, DwString& dst, DwString& key_out);
+int decrypt_attachment2(const DwString& filename, const DwString& key, const DwString& filename_dst);
+#endif
 int encrypt_attachment(vc filename, vc key, vc filename_dst);
 int decrypt_attachment(vc filename, vc key, vc filename_dst);
-int decrypt_attachment2(const DwString& filename, const DwString& key, const DwString& filename_dst);
+
 unsigned long uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal);
 int uid_online(vc uid);
 void boost_clock(vc mi);
@@ -166,8 +169,8 @@ void clean_cruft();
 #define AUTH_PROFILE_FAILED 1
 #define AUTH_PROFILE_NO_INFO 2
 
-// this is the summary info sent from the
-// server
+// this is the summary info sent from the server
+// use these to index a DWYCO_UNFETCHED_MSG_LIST
 
 #define QM_FROM 0
 #define QM_LEN 1
@@ -191,6 +194,7 @@ void clean_cruft();
 #define QM_LOGICAL_CLOCK 11
 
 // message bodies as stored on client
+// use these to index a DWYCO_SAVED_MSG_LIST
 
 #define QM_BODY_ID 0
 #define QM_BODY_FROM 1

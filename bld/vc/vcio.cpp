@@ -79,6 +79,15 @@ VcIOHack::operator<<(long c)
 	return *this;
 }
 
+#ifdef _WIN64
+VcIOHack&
+VcIOHack::operator<<(long long c)
+{
+    fprintf(sio, format ? format : "%lld", c);
+    return *this;
+}
+#endif
+
 VcIOHack&
 VcIOHack::operator<<(unsigned long c)
 {

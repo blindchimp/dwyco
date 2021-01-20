@@ -10,17 +10,6 @@
 #define VCENCO_H
 // $Header: g:/dwight/repo/vc/rcs/vcenco.h 1.45 1996/11/17 05:58:34 dwight Stable $
 
-
-// use explicit offsets and whatnot for encoding items
-// instead of "isdigit" and co. this is to avoid situations
-// where an application decides it wants to use a non-standard
-// locale.
-
-#define ZERO 0x30
-#define NINE 0x39
-
-#define lisdigit(x) ((x) >= ZERO && (x) <= NINE)
-
 #define ENCODED_LEN_LEN 2
 #define ENCODED_TYPE_LEN 2
 

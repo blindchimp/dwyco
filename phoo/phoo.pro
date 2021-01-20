@@ -223,6 +223,27 @@ $${D}/uv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
 
+PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${D}/jhead/libjhead.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/uv/libuv.a \
+$${D}/qtdrv/libqtdrv.a
+
 }
 
 macx-ios-clang {
@@ -270,10 +291,17 @@ LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv.a
 # limitation of java as far as i can tell.
 LIBS += $${L}/libdwyco_jni.so
 ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
-contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    ANDROID_EXTRA_LIBS += \
-        $$PWD/arm/libcrypto.so \
-        $$PWD/arm/libssl.so
+#contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+#    ANDROID_EXTRA_LIBS += \
+#        $$PWD/arm/libcrypto.so \
+#        $$PWD/arm/libssl.so
+#}
+#message($$QMAKE_HOST.os)
+equals(QMAKE_HOST.os, Darwin) {
+message(MACOS)
+include(/Users/dwight/android/astudio/android_openssl/openssl.pri)
+} else {
+include(/home/dwight/android/astudio/android_openssl/openssl.pri)
 }
 #LIBS += \
 #$${D}/libcdc32.a \
@@ -346,7 +374,7 @@ $${D}\\jhead\\$${S}\\jhead.lib \
 $${D}\\uv\\$${S}\\uv.lib \
 $${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
 $${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
-winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
+winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
 $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
 
 #delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib

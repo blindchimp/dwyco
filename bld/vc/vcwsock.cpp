@@ -7,10 +7,12 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include "vc.h"
+#include "dwstr.h"
 #include <string.h>
 
 #ifdef USE_WINSOCK
 #include <WinSock2.h>
+#include <WS2tcpip.h>
 #define EWOULDBLOCK             WSAEWOULDBLOCK
 #define EINPROGRESS             WSAEINPROGRESS
 #define EALREADY                WSAEALREADY
@@ -112,12 +114,6 @@ WSASetLastError(int e)
 	return 0;
 }
 
-static char *
-ultoa(unsigned long l, char *out, int radix)
-{
-	sprintf(out, "%ld", l);
-	return out;
-}
 #endif
 
 static SocketSet *All_socks;
@@ -1880,7 +1876,7 @@ vc_winsock::socket_recv_raw(void *ibuf, long& len, long timeout, vc& addr_info)
 #ifdef LINUX
 			case EINTR:
                             continue;
-				RAISEABORT(bad_recv_raw, vc(nread))
+                RAISEABORT(bad_recv_raw, vc(nread));
 				/*NOTREACHED*/
 #endif
 				
@@ -2069,33 +2065,33 @@ vc_winsock::set_async_error(SOCKET s, int err)
 int
 vc_winsock::vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
 {
-	const char *str = v;
-	const char *port;
 	unsigned short in_port = 0;
-	char in_addrstr[64];
 
-	if(strlen(str) > sizeof(in_addrstr) - 2)
-		return 0;
+    DwString inp((const char *)v);
 
-	if((port = strchr(str, ':')) != 0)
+    int colpos = inp.find(":");
+    DwString ip;
+    if(colpos != DwString::npos)
+    {
+        ip = inp;
+        ip.remove(colpos);
+        DwString sport = inp;
+        sport.erase(0, colpos + 1);
+        if(!sport.eq("any"))
+            in_port = htons(atoi(sport.c_str()));
+    }
+    else
+        ip = inp;
+
+    struct in_addr in_addr;
+    in_addr.s_addr = INADDR_ANY;
+
+    if(!ip.eq("any"))
 	{
-		if(strncmp(port + 1, "any", 3) != 0)
-			in_port = htons(atoi(port + 1));
-
-		strncpy(in_addrstr, str, port - str);
-		in_addrstr[port - str] = '\0';
-	}
-	else
-		strcpy(in_addrstr, str);
-
-	unsigned long in_addr = INADDR_ANY;
-
-	if(strncmp(in_addrstr, "any", 3) != 0)
-	{
-		in_addr = inet_addr(in_addrstr);
+        int res = inet_pton(AF_INET, ip.c_str(), &in_addr);
 		// bogus, doesn't work right for broadcast address
 		// need to use updated version of inet_addr
-		if(in_addr == INADDR_NONE)
+        if(res == 0)
 		{
 			return 0;
 		}
@@ -2106,7 +2102,7 @@ vc_winsock::vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
 	memset(sap, 0, sizeof(*sap));
 
 	sap->sin_family = AF_INET;
-	sap->sin_addr.s_addr = in_addr;
+    sap->sin_addr = in_addr;
 	sap->sin_port = in_port;
 	sapr = (struct sockaddr *)sap;
 	len = sizeof(*sap);
@@ -2116,23 +2112,23 @@ vc_winsock::vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
 vc
 vc_winsock::sockaddr_to_vc(struct sockaddr *sapi, int len)
 {
-	char in_addrstr[64];
-	char tmp_str[34];
+    char tmp_str[128];
 
-	struct sockaddr_in *sap = (struct sockaddr_in *)sapi;
+    struct sockaddr_in *sap = (struct sockaddr_in *)sapi;
 
     memset(tmp_str, 0, sizeof(tmp_str));
-	char *str = inet_ntoa(sap->sin_addr);
-	if(str == 0)
-		return vcnil;
-	strcpy(in_addrstr, str);
-	if(sap->sin_port != 0)
-	{
-		strcat(in_addrstr, ":");
-		strcat(in_addrstr, ultoa(ntohs(sap->sin_port), tmp_str, 10));
-	}
+    char *str = inet_ntoa(sap->sin_addr);
+    if(str == 0)
+        return vcnil;
+    DwString in_addrstr(str);
 
-	vc ret(in_addrstr);
+    if(sap->sin_port != 0)
+    {
+        in_addrstr += ':';
+        in_addrstr += DwString::fromUint(ntohs(sap->sin_port));
+    }
+
+    vc ret(in_addrstr.c_str());
     return ret;
 }
 
@@ -2406,6 +2402,16 @@ vc_winsock::socket_set_option(vcsocketmode m,
 		}
 		return vctrue;
 #endif
+
+    case VC_SET_BROADCAST:
+#if !defined(_Windows)
+        val = a1;
+        if(setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &val, sizeof(val)) == -1)
+        {
+            RAISEABORT(generic_problem, vcnil);
+        }
+#endif
+        return vctrue;
 
 	default:
 		RAISEABORT(generic_problem, vcnil);
