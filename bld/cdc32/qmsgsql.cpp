@@ -162,7 +162,7 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists sent_idx on msg_idx(is_sent);");
     sql_simple("create index if not exists att_idx on msg_idx(has_attachment);");
 
-    // note: mid's are unique identifiers, so it's meer existence here means it was
+    // note: mid's are unique identifiers, so its meer existence here means it was
     // deleted.
     sql_simple("create table if not exists msg_tomb(mid text not null, time integer, unique(mid) on conflict ignore)");
 

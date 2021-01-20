@@ -713,10 +713,25 @@ int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, 
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
+
+// returns 1 if the message content was successfully loads, and 0 otherwise.
 int DWYCOEXPORT dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
-// the return codes for this api give you a little more info about
-// the message disposition on remote clients
+
+// returns -1, then there is no place we know where we might find
+// the mid. this could change if we connect to a client in the
+// future that has the message.
+//
+// returns -2, we initiated at least 1 pull
+// returns -3, we didn't initiate any pulls, but it might be available somewhere
+//
+#define DWYCO_GSM_ERROR (0)
+#define DWYCO_GSM_TRANSIENT_FAIL (-1)
+#define DWYCO_GSM_PULL_IN_PROGRESS (-2)
+#define DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE (-3)
+#define DWYCO_GSM_SUCCESS (1)
+
 int DWYCOEXPORT dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
+
 int DWYCOEXPORT dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback cb, void *mdc_arg1,
         DwycoStatusCallback scb, void *scb_arg1);
 void DWYCOEXPORT dwyco_cancel_message_fetch(int fetch_id);
