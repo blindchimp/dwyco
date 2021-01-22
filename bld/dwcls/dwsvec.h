@@ -41,12 +41,13 @@ class DwSVec
 private:
     DwSVec(const DwSVec&);
     DwSVec& operator=(const DwSVec&);
-public:
+
     char vec[DWSVEC_INITIAL * sizeof(T)];
     char *big;
     int count;
     int real_count;
 
+public:
     inline DwSVec();
     inline ~DwSVec();
 
@@ -187,7 +188,7 @@ void
 DwSVec<T>::del(int s, int n)
 {
 #ifdef DWSVEC_DBG
-    if(s != 0 || n > count)
+    if(s != 0 || n > count || n < 0)
         oopanic("bad svec del");
 #endif
     for(int i = 0; i < n; ++i)
