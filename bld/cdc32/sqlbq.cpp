@@ -56,6 +56,7 @@ check_args(const char *sql, int count)
             oopanic("nondense args to sql");
         }
     }
+    int cnt = 0;
     for(int i = 0; i < count; ++i)
     {
         if(!(found & (1 << i)))
@@ -63,10 +64,15 @@ check_args(const char *sql, int count)
             oopanic("unused sql arg");
         }
         found &= ~(1 << i);
+        ++cnt;
     }
     if(found)
     {
         oopanic("unspeced sql arg, ?x treated as null");
+    }
+    if(cnt != count)
+    {
+        oopanic("#args != speced args");
     }
 }
 

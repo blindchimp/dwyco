@@ -351,7 +351,7 @@ init_bg_msg_send(const char *logname)
 
         // note: the background send does server-only sends, so this should never
         // get used.
-        //init_callq();
+        init_callq();
 
         init_sysattr();
         Bg_msg_send_init = 1;
