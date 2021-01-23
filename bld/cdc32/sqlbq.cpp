@@ -38,14 +38,23 @@ static
 void
 check_args(const char *sql, int count)
 {
+    static DwString qargs[32];
+    static int been_here;
+    if(!been_here)
+    {
+        for(int i = 0; i < 32; ++i)
+        {
+            qargs[i] = DwString("?");
+            qargs[i] += DwString::fromInt(i + 1);
+        }
+        been_here = 1;
+    }
     unsigned int found = 0;
     DwString a(sql);
     int dense = 0;
     for(int i = 31; i >= 0; --i)
     {
-        DwString an("?");
-        an += DwString::fromInt(i + 1);
-        int gotit = a.srep(an, "", 1);
+        int gotit = a.srep(qargs[i], "", 1);
         if(gotit)
         {
             dense = 1;
