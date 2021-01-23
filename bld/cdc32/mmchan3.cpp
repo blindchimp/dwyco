@@ -93,8 +93,10 @@ struct strans media_x_setup[] = {
     {"start", "i", &MMChannel::init_connect_media, "send-media-id"},
     {"send-media-id", "w", &MMChannel::send_media_id, "wait-for-ok"},
     {"wait-for-ok", "r", &MMChannel::check_media_response, "ping", "send-chal"},
-    {"send-chal", "w", &MMChannel::send_sync_challenge, "wait-chal"},
-    {"wait-chal", "r", &MMChannel::check_sync_challenge_response, "ping"},
+    {"send-chal", "w", &MMChannel::send_sync_challenge, "wait-resp"},
+    {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "wait-chal"},
+    {"wait-chal", "r", &MMChannel::wait_for_sync_challenge, "send-resp"},
+    {"send-resp", "w", &MMChannel::send_sync_resp, "ping"},
     {"ping", "t", 0, "send-ping"},
     {"send-ping", "w", &MMChannel::send_media_ping, "ping"},
     {0}
@@ -113,7 +115,9 @@ struct strans media_x_setup[] = {
 static struct strans media_r_setup[] = {
     {"start", "w", &MMChannel::send_media_ok, "ping", "wait-chal"},
     {"wait-chal", "r", &MMChannel::wait_for_sync_challenge, "send-resp"},
-    {"send-resp", "w", &MMChannel::send_sync_resp, "ping"},
+    {"send-resp", "w", &MMChannel::send_sync_resp, "send-chal"},
+    {"send-chal", "w", &MMChannel::send_sync_challenge, "wait-resp"},
+    {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "ping"},
     {"ping", "t", 0, "send-ping"},
     {"send-ping", "w", &MMChannel::send_media_ping, "ping"},
     {0}
