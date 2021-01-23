@@ -996,6 +996,12 @@ public:
     int send_media_id(int subchan, sproto *p, const char *ev);
     int init_connect_media(int subchan, sproto *p, const char *ev);
     int send_media_ping(int subchan, sproto *p, const char *ev);
+
+    int send_sync_challenge(int subchan, sproto *p, const char *ev);
+    int check_sync_challenge_response(int subchan, sproto *p, const char *ev);
+    int wait_for_sync_challenge(int subchan, sproto *p, const char *ev);
+    int send_sync_resp(int subchan, sproto *p, const char *ev);
+
     // set to 1 if attachment actively rejected (can never be sent,
     // usually because size is too big.
     int zreject;

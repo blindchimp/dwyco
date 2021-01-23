@@ -19,6 +19,9 @@
 #include "dhgsetup.h"
 #include "simplesql.h"
 #include "sha3.h"
+#include "rng.h"
+#include "aes.h"
+#include "modes.h"
 #include "simple_property.h"
 
 
@@ -53,6 +56,21 @@ struct DHG_sql : public SimpleSql
 
 
 };
+
+static vc
+sha3(vc s)
+{
+    if(s.type() != VC_STRING)
+        return vcnil;
+
+    SHA3_256 md;
+    SecByteBlock b(md.DigestSize());
+    md.Update((const byte *)(const char *)s, s.len());
+    md.Final(b);
+    vc ret(VC_BSTRING, (const char *)b.data(), (long)md.DigestSize());
+    return ret;
+}
+
 static DHG_sql *DHG_db;
 
 void
@@ -254,6 +272,53 @@ DH_alternate::get_all_keys()
         ret.append(v);
     }
     return ret;
+}
+
+vc
+DH_alternate::gen_challenge_msg(vc& nonce_out)
+{
+    vc nonce = get_entropy();
+    vc key;
+    vc pub(VC_VECTOR);
+    pub[0] = my_static_public();
+    vc material = dh_store_and_forward_material2(pub, key);
+
+    ECB_Mode<AES>::Encryption kc;
+    kc.SetKey((const byte *)(const char *)key, key.len());
+    byte buf[16];
+    memset(buf, 0, sizeof(buf));
+    memcpy(buf, (const char *)nonce, dwmin(sizeof(buf), nonce.len()));
+    byte checkstr[sizeof(buf)];
+    kc.ProcessData(checkstr, buf, sizeof(checkstr));
+
+    vc msg(VC_VECTOR);
+    msg[0] = material;
+    msg[1] = vc(VC_BSTRING, (const char *)checkstr, sizeof(checkstr));
+    nonce_out = sha3(vc(VC_BSTRING, (const char *)buf, sizeof(buf)));
+    return msg;
+}
+
+int
+DH_alternate::challenge_recv(vc m, vc& resp)
+{
+    vc priv(VC_VECTOR);
+    priv[0] = my_static();
+    vc key = dh_store_and_forward_get_key2(m[0], priv);
+    if(key.is_nil())
+        return 0;
+
+    vc enonce = m[1];
+
+    ECB_Mode<AES>::Decryption kc;
+    kc.SetKey((const byte *)(const char *)key, key.len());
+    byte buf[16];
+    memset(buf, 0, sizeof(buf));
+    memcpy(buf, (const char *)enonce, dwmin(sizeof(buf), enonce.len()));
+    byte checkstr[sizeof(buf)];
+    kc.ProcessData(checkstr, buf, sizeof(checkstr));
+
+    resp = sha3(vc(VC_BSTRING, (const char *)checkstr, sizeof(checkstr)));
+    return 1;
 }
 
 }
