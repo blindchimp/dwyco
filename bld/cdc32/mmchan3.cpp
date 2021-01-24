@@ -96,7 +96,8 @@ struct strans media_x_setup[] = {
     {"send-chal", "w", &MMChannel::send_sync_challenge, "wait-resp"},
     {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "wait-chal"},
     {"wait-chal", "r", &MMChannel::wait_for_sync_challenge, "send-resp"},
-    {"send-resp", "w", &MMChannel::send_sync_resp, "ping"},
+    {"send-resp", "w", &MMChannel::send_sync_resp, "sync-ready"},
+    {"sync-ready", "i", &MMChannel::sync_ready, "ping"},
     {"ping", "t", 0, "send-ping"},
     {"send-ping", "w", &MMChannel::send_media_ping, "ping"},
     {0}
@@ -117,7 +118,8 @@ static struct strans media_r_setup[] = {
     {"wait-chal", "r", &MMChannel::wait_for_sync_challenge, "send-resp"},
     {"send-resp", "w", &MMChannel::send_sync_resp, "send-chal"},
     {"send-chal", "w", &MMChannel::send_sync_challenge, "wait-resp"},
-    {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "ping"},
+    {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "sync-ready"},
+    {"sync-ready", "i", &MMChannel::sync_ready, "ping"},
     {"ping", "t", 0, "send-ping"},
     {"send-ping", "w", &MMChannel::send_media_ping, "ping"},
     {0}
@@ -475,16 +477,28 @@ MMChannel::check_sync_challenge_response(int subchan, sproto *p, const char *ev)
     }
     if(i == SSTRYAGAIN)
         return sproto::stay;
-    p->watchdog.stop();
+    //p->watchdog.stop();
 
     if(p->user_info == rvc)
     {
-        msync_state = MEDIA_SESSION_UP;
-        mms_sync_state = SEND_INIT;
-        mmr_sync_state = RECV_INIT;
+        p->user_info = vcnil;
+//        msync_state = MEDIA_SESSION_UP;
+//        mms_sync_state = SEND_INIT;
+//        mmr_sync_state = RECV_INIT;
         return sproto::next;
     }
     return sproto::fail;
+}
+
+
+int
+MMChannel::sync_ready(int subchan, sproto *p, const char *ev)
+{
+    p->watchdog.stop();
+    msync_state = MEDIA_SESSION_UP;
+    mms_sync_state = SEND_INIT;
+    mmr_sync_state = RECV_INIT;
+    return sproto::next;
 }
 
 int
@@ -974,12 +988,13 @@ MMChannel::send_sync_resp(int subchan, sproto *p, const char *ev)
         return sproto::fail;
     if(i == SSTRYAGAIN)
         return sproto::stay;
-    p->watchdog.stop();
+    //p->watchdog.stop();
     // note: this is just for testing, can't really assume the channel is
     // up just because we sent a response
-            msync_state = MEDIA_SESSION_UP;
-            mms_sync_state = SEND_INIT;
-            mmr_sync_state = RECV_INIT;
+//            msync_state = MEDIA_SESSION_UP;
+//            mms_sync_state = SEND_INIT;
+//            mmr_sync_state = RECV_INIT;
+    p->user_info = vcnil;
     return sproto::next;
 }
 
