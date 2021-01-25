@@ -87,8 +87,14 @@ static settings_sql *Db;
 
 #define sql Db->sql_simple
 
-struct setting : public ssns::trackable
+class setting : public ssns::trackable
 {
+    setting(const setting&);
+    setting& operator=(const setting&);
+
+public:
+    setting() {}
+
     vc name;
     sigprop<vc> value;
 

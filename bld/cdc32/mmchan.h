@@ -85,6 +85,10 @@ extern "C" int DWYCOCALLCONV dwyco_enable_video_capture_preview(int);
 class MMChannel : public ssns::trackable
 {
 friend void dwyco_debug_dump();
+private:
+    MMChannel(const MMChannel&);
+    MMChannel& operator=(const MMChannel&);
+
 public:
 
     // initialized at create time so anyone that
