@@ -24,8 +24,8 @@ namespace dwyco {
 
 class DirectSend : public ssns::trackable
 {
-    DirectSend(const DirectSend&);
-    DirectSend& operator=(const DirectSend&);
+    DirectSend(const DirectSend&) = delete;
+    DirectSend& operator=(const DirectSend&) = delete;
 
     // just a note: don't try to make this private unless you want a lot
     // of grief. there are a lot of non-member functions that need access to this

@@ -87,12 +87,11 @@ static settings_sql *Db;
 
 #define sql Db->sql_simple
 
-class setting : public ssns::trackable
+struct setting : public ssns::trackable
 {
-    setting(const setting&);
-    setting& operator=(const setting&);
+    setting(const setting&) = delete;
+    setting& operator=(const setting&) = delete;
 
-public:
     setting() {}
 
     vc name;

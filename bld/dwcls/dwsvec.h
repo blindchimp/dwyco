@@ -39,8 +39,8 @@ template<class T>
 class DwSVec
 {
 private:
-    DwSVec(const DwSVec&);
-    DwSVec& operator=(const DwSVec&);
+    DwSVec(const DwSVec&) = delete;
+    DwSVec& operator=(const DwSVec&) = delete;
 
     char vec[DWSVEC_INITIAL * sizeof(T)];
     char *big;
