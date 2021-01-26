@@ -155,12 +155,12 @@ QMsgSql::init_schema(const DwString& schema_name)
                "assoc_uid text not null);"
               );
     sql_simple("create table if not exists most_recent_msg (uid text primary key not null on conflict ignore, date integer not null on conflict ignore)");
-    sql_simple("create table if not exists indexed_flag (uid text primary key);");
-    sql_simple("create index if not exists assoc_uid_idx on msg_idx(assoc_uid);");
-    sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock desc);");
-    sql_simple("create index if not exists date_idx on msg_idx(date desc);");
-    sql_simple("create index if not exists sent_idx on msg_idx(is_sent);");
-    sql_simple("create index if not exists att_idx on msg_idx(has_attachment);");
+    sql_simple("create table if not exists indexed_flag (uid text primary key)");
+    sql_simple("create index if not exists assoc_uid_idx on msg_idx(assoc_uid)");
+    sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock desc)");
+    sql_simple("create index if not exists date_idx on msg_idx(date desc)");
+    sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
+    sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
 
     // note: mid's are unique identifiers, so its meer existence here means it was
     // deleted.
@@ -186,11 +186,12 @@ QMsgSql::init_schema(const DwString& schema_name)
                "from_client_uid not null, unique(mid, from_client_uid) on conflict ignore)"
               );
 
-    sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid);");
-    sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock desc);");
-    sql_simple("create index if not exists gidate_idx on gi(date desc);");
-    sql_simple("create index if not exists gisent_idx on gi(is_sent);");
-    sql_simple("create index if not exists giatt_idx on gi(has_attachment);");
+    sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
+    sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock desc)");
+    sql_simple("create index if not exists gidate_idx on gi(date desc)");
+    sql_simple("create index if not exists gisent_idx on gi(is_sent)");
+    sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
+    sql_simple("create index if not exists gifrom_client_uid_idx on gi(from_client_uid)");
 
     sql_simple("drop table if exists midlog");
     sql_simple("create table midlog (mid text not null, to_uid text not null, op text not null, unique(mid,to_uid,op) on conflict ignore)");
@@ -433,6 +434,7 @@ import_remote_mi(vc remote_uid)
 
         sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
+        sql_simple("delete from mt.gmt where mid in (select mid from msg_tomb)");
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         sql_simple("insert into crdt_tags values('_fav')");
         sql_simple("insert into crdt_tags values('_hid')");
