@@ -150,6 +150,7 @@ codec.cc \
 colcod.cc \
 coldec.cc \
 dchroma.cc \
+    profiledb.cpp \
     pulls.cpp \
 qtab.cc \
 dwrate.cc \
@@ -216,7 +217,6 @@ autoup.cpp \
 dmdsrv.cc \
 fnmod.cc \
 xinfo.cpp \
-prfcache.cpp \
 vidcvt.cc \
 callq.cpp \
 asshole.cpp \
@@ -243,7 +243,6 @@ sproto.cpp \
 dhsetup.cpp \
 trc.cpp \
 cdcpal2.cc \
-pkcache.cpp \
 ssns.cpp \
 qsend.cpp \
 directsend.cpp \
@@ -260,6 +259,7 @@ aqext_android.cpp \
     aqkey.cpp
 
 HEADERS += \
+    profiledb.h \
     pulls.h \
     simple_property.h \
     sync_sendq.h \

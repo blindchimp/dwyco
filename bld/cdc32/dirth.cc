@@ -37,7 +37,7 @@
 #include "xinfo.h"
 #include "vcudh.h"
 #include "dhsetup.h"
-#include "prfcache.h"
+#include "profiledb.h"
 #include "se.h"
 #include "backsql.h"
 #include "dwrtlog.h"
@@ -47,7 +47,6 @@
 #endif
 #include "vcxstrm.h"
 #include "ta.h"
-#include "pkcache.h"
 #include "ezset.h"
 
 using namespace dwyco;

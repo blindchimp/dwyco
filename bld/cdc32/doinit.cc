@@ -39,8 +39,7 @@
 #include "dwrtlog.h"
 #include "qauth.h"
 #include "qmsg.h"
-#include "prfcache.h"
-#include "pkcache.h"
+#include "profiledb.h"
 #include "mmchan.h"
 #include "callq.h"
 #include "asshole.h"
@@ -125,8 +124,7 @@ init_codec(const char *logname)
 
         // this is so important, don't leave it till later
         init_qauth();
-        init_prf_cache();
-        init_pk_cache();
+        init_prfdb();
 
         //Cur_msgs = vc(VC_VECTOR);
         InitializeCriticalSection(&Audio_lock);
@@ -328,8 +326,7 @@ init_bg_msg_send(const char *logname)
         setbuf(stderr, 0);
 
         // this is important, don't leave it till later
-        init_prf_cache();
-        init_pk_cache();
+        init_prfdb();
         recover_inprogress();
 
         //Cur_msgs = vc(VC_VECTOR);
@@ -382,8 +379,7 @@ exit_bg_msg_send()
 
     exit_qmsg();
     exit_pal();
-    exit_prf_cache();
-    exit_pk_cache();
+    exit_prfdb();
 
     vc::non_lh_exit();
     vc::shutdown_logs();
@@ -408,12 +404,14 @@ exit_codec()
 
 #ifndef DWYCO_POWERBROWSE
     clean_cruft();
+#if 0
 #ifdef ANDROID
     clean_profile_cache(60, 1000);
 #else
     clean_profile_cache(120, 6000);
 #endif
     clean_pk_cache(365, 1500);
+#endif
 #endif
 #ifdef DW_RTLOG
     RTLog->flush_to_file();

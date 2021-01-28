@@ -17,7 +17,7 @@
 #include "audout.h"
 #include "se.h"
 #include "ta.h"
-#include "prfcache.h"
+#include "profiledb.h"
 #include "dwscoped.h"
 using namespace dwyco;
 

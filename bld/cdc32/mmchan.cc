@@ -66,7 +66,7 @@
 #include "xinfo.h"
 #include "dhsetup.h"
 #include "vcudh.h"
-#include "pkcache.h"
+#include "profiledb.h"
 #include "sha.h"
 #include "qdirth.h"
 #include "dwscoped.h"
