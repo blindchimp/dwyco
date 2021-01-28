@@ -595,6 +595,7 @@ MMChannel::keepalive_processing()
         // to drop if no activity is going on.
         if(!secondary_server_channel)
             send_ctrl("!");
+        break;
     default:; // do nothing
     }
 }
