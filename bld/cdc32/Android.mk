@@ -114,7 +114,7 @@ autoup.cpp \
 dmdsrv.cc \
 fnmod.cc \
 xinfo.cpp \
-prfcache.cpp \
+profiledb.cpp \
 vidcvt.cc \
 callq.cpp \
 asshole.cpp \
@@ -143,7 +143,6 @@ sproto.cpp \
 mmchan3.cpp \
 trc.cpp \
 glob/glob.c \
-pkcache.cpp \
 ssns.cpp \
 qsend.cpp \
 directsend.cpp \

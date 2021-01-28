@@ -18,7 +18,7 @@
 #include "cdcver.h"
 #include "files.h"
 #include "sha.h"
-#include "prfcache.h"
+#include "profiledb.h"
 #include "dhsetup.h"
 #include "vcudh.h"
 

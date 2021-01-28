@@ -41,7 +41,8 @@
 #include "backsql.h"
 #include "sepstr.h"
 #include "ser.h"
-#include "prfcache.h"
+#include "profiledb.h"
+
 #include "ta.h"
 
 using namespace CryptoPP;
