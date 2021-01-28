@@ -3,7 +3,7 @@
 //#include "vc.h"
 #include "dlli.h"
 #include "qauth.h"
-#include "pkcache.h"
+#include "profiledb.h"
 #include "vccrypt2.h"
 #include "ser.h"
 #include "mcc.h"
