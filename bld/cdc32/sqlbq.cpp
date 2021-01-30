@@ -28,6 +28,7 @@
 namespace dwyco {
 #define USER_BOMB(a, b) {return (b);}
 
+#ifdef DWYCO_DBG_CHECK_SQL
 // this is a hack to get around the "unbound arguments are treated as null"
 // peculiarity in sqlite. i've been burned directly by this problem several
 // times, usually thru typos. this is for debugging only, and
@@ -84,6 +85,7 @@ check_args(const char *sql, int count)
         oopanic("#args != speced args");
     }
 }
+#endif
 
 vc
 sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
@@ -97,6 +99,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     const char *tail = 0;
     int errcode;
 
+#ifdef DWYCO_DBG_CHECK_SQL
     GRTLOG("sql: %d %s", aa.num_elems(), (const char *)sql);
     {
         for(int i = 1; i < aa.num_elems(); ++i)
@@ -105,6 +108,8 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         }
     }
     check_args(sql, aa.num_elems() - 1);
+#endif
+
     if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
                                      &st, &tail)) != SQLITE_OK)
     {
