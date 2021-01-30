@@ -80,6 +80,8 @@ public:
     static DwString fromInt(int i);
     static DwString fromLong(long i);
     static DwString fromUint(unsigned int i);
+    static DwString from_hex(const DwString&);
+    static DwString to_hex(const DwString&);
 
 };
 
