@@ -6,7 +6,7 @@ namespace dwyco {
 int init_gj();
 int exit_gj();
 // initiator
-int start_gj(vc target_uid, vc password);
+int start_gj(vc target_uid, vc gname, vc password);
 int recv_gj2(vc from, vc msg, vc password);
 int install_group_key(vc from, vc msg, vc password);
 //responder

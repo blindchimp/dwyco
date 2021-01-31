@@ -1,4 +1,3 @@
-
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -713,10 +712,25 @@ int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, 
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
+
+// returns 1 if the message content was successfully loads, and 0 otherwise.
 int DWYCOEXPORT dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
-// the return codes for this api give you a little more info about
-// the message disposition on remote clients
+
+// returns -1, then there is no place we know where we might find
+// the mid. this could change if we connect to a client in the
+// future that has the message.
+//
+// returns -2, we initiated at least 1 pull
+// returns -3, we didn't initiate any pulls, but it might be available somewhere
+//
+#define DWYCO_GSM_ERROR (0)
+#define DWYCO_GSM_TRANSIENT_FAIL (-1)
+#define DWYCO_GSM_PULL_IN_PROGRESS (-2)
+#define DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE (-3)
+#define DWYCO_GSM_SUCCESS (1)
+
 int DWYCOEXPORT dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
+
 int DWYCOEXPORT dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback cb, void *mdc_arg1,
         DwycoStatusCallback scb, void *scb_arg1);
 void DWYCOEXPORT dwyco_cancel_message_fetch(int fetch_id);
@@ -757,6 +771,11 @@ int DWYCOEXPORT dwyco_is_pal(const char *user_id, int len_uid);
 DWYCO_LIST DWYCOEXPORT dwyco_pal_get_list();
 void DWYCOEXPORT dwyco_pal_relogin();
 int DWYCOEXPORT dwyco_get_pal_logged_in();
+
+// don't use these, but they can speed up situations where
+// you are setting a lot of tags at once
+void DWYCOEXPORT dwyco_start_bulk_update();
+void DWYCOEXPORT dwyco_end_bulk_update();
 
 void DWYCOEXPORT dwyco_set_fav_msg(const char *mid, int fav);
 int DWYCOEXPORT dwyco_get_fav_msg(const char *mid);
@@ -1454,6 +1473,7 @@ void DWYCOEXPORT dwyco_abort_autoupdate_download();
 // the exit will release the "lock" and allow the main app to continue
 // normally.
 int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
+int DWYCOEXPORT dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 // some more helper functions called from java for android related stuff
 // strings in this case are utf-8, null terminated i hope
 void DWYCOEXPORT dwyco_set_aux_string(const char *str);

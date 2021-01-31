@@ -68,6 +68,8 @@ msg_callback(int id, int what, const char *mid, void *)
             fetching.del(i);
         return;
     case DWYCO_MSG_DOWNLOAD_OK:
+        if(dwyco_is_special_message(mid, &what))
+            dwyco_set_msg_tag(mid, "_special");
     default:
         if(i >= 0)
             fetching.del(i);

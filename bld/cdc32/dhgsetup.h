@@ -18,12 +18,14 @@ class DH_alternate : public ssns::trackable {
     vc DH_static;
     vc uid;
     vc alternate_name;
-    vc password;
 
     int new_account();
     static int insert_record(vc uid, vc alt_name, vc dh_static);
 
 public:
+    // this needs to be filled in from somewhere before
+    // group join messages can be processed.
+    vc password;
 
     void init(vc uid, vc alternate_name);
     int load_account(vc alternate_name);

@@ -91,6 +91,8 @@ static
 vc
 xfer_enc(vc v, vc password)
 {
+    if(password.type() != VC_STRING)
+        return vcnil;
     vc k = vclh_sha3_256(password);
     k = vc(VC_BSTRING, (const char *)k, 16);
     vc enc_ctx = vclh_encdec_open();
@@ -108,7 +110,8 @@ xfer_dec(vc vs, vc password)
     vc v;
     if(!deserialize(vs, v))
         return vcnil;
-
+    if(password.type() != VC_STRING)
+        return vcnil;
     vc k = vclh_sha3_256(password);
     k = vc(VC_BSTRING, (const char *)k, 16);
     vc enc_ctx = vclh_encdec_open();
@@ -181,7 +184,7 @@ terminate(vc initiator, vc responder)
 //
 // CALLED IN INITIATOR, first state
 int
-start_gj(vc target_uid, vc password)
+start_gj(vc target_uid, vc gname, vc password)
 {
     DwString pers_id;
 
@@ -192,12 +195,14 @@ start_gj(vc target_uid, vc password)
     // eventually.
     vc pk;
     vc alt_pk;
-    vc alt_name;
+    vc alt_name = gname;
 
+#if 0
     if(!get_pk2(target_uid, pk, alt_pk, alt_name))
     {
         return 0;
     }
+#endif
 
     vc m(VC_VECTOR);
     m[0] = nonce;

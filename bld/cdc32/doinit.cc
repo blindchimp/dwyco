@@ -308,6 +308,19 @@ init_bg_msg_send(const char *logname)
             init_rtlog();
         }
 #endif
+        if(access(newfn("inprogress").c_str(), 0) == -1)
+            if(mkdir(newfn("inprogress").c_str()) == -1)
+                Log->make_entry("can't create inprogress dir");
+        if(access(newfn("outbox").c_str(), 0) == -1)
+            if(mkdir(newfn("outbox").c_str()) == -1)
+                Log->make_entry("can't create outbox dir");
+        if(access(newfn("trash").c_str(), 0) == -1)
+            if(mkdir(newfn("trash").c_str()) == -1)
+                Log->make_entry("can't create trash dir");
+        if(access(newfn("xfer").c_str(), 0) == -1)
+            if(mkdir(newfn("xfer").c_str()) == -1)
+                Log->make_entry("can't create xfer dir");
+
         Log->make_entry("background system starting up");
         init_sql_settings();
         init_aconn();

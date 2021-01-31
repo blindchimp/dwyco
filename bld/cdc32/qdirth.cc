@@ -392,6 +392,22 @@ dirth_send_get_group(vc id, QckDone d)
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
 }
 
+// this gets the group pk from the name
+// used for bootstrapping into a group if you
+// are brand new and don't know anyone else
+// in the group but you do know the group name
+void
+dirth_send_get_group_pk(vc id, vc gname, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("get-group-pk", ++Serial);
+    m[QTYPE] = reqtype("get-group-pk", d);
+    m[QFROM] = id;
+    m[2] = gname;
+    Waitq.append(d);
+    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+}
 
 
 void

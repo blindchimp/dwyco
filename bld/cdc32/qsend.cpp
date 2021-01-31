@@ -455,12 +455,12 @@ DwQSend::send_message()
 {
     if(cancel_op)
         return 0;
+    // note: >1 because you can *create* objects with the
+    // same qfn, but once you do, invoking send on either of them
+    // is going to be a problem.
+    if(Qbm.count_by_member(qfn, &DwQSend::qfn) > 1)
+        return 0;
 
-    {
-        DwVecP<DwQSend> c = Qbm.query_by_member(qfn, &DwQSend::qfn);
-        if(c.num_elems() > 1)
-            return 0;
-    }
     vc m;
     DwString afn = DwString("outbox" DIRSEPSTR "");
     afn += qfn;
@@ -500,10 +500,9 @@ DwQSend::send_message()
     // that include an attachment
     if(has_att)
     {
-        DwVecP<DwQSend> c = Qbm.query_by_member(1, &DwQSend::has_att);
-        if(c.num_elems() > 1)
+        int c = Qbm.count_by_member(1, &DwQSend::has_att);
+        if(c > 1)
             return 0;
-
     }
 
 #endif

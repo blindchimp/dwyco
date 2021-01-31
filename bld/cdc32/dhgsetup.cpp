@@ -80,6 +80,9 @@ init_dhg()
     grpname = getenv("DWYCO_GROUP");
     if(!grpname)
         grpname = "foo@bar.com";
+    const char *grp_pw;
+    grp_pw = getenv("DWYCO_GROUP_PW");
+
 
     DH_alternate *dha = new DH_alternate;
     dha->init(My_UID, grpname);
@@ -89,6 +92,8 @@ init_dhg()
     for(int i = 0; i <v.num_elems(); ++i)
         v2[i] = from_hex(v[i][0]);
     Group_uids = v2;
+    if(grp_pw)
+        dha->password = grp_pw;
     Current_alternate = dha;
     Group_uids.value_changed.connect_memfun(dha, &DH_alternate::update_group);
 }

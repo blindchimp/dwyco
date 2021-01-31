@@ -1604,7 +1604,7 @@ dwyco_bg_init()
     char *gm;
     if((gm = getenv("kk27g")) != 0)
         KKG = gm;
-
+    init_gj();
     Inited = 1;
     return 1;
 }
@@ -6806,22 +6806,44 @@ dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_o
     return 1;
 }
 
+static
+void
+group_result(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    vc pubkey = m[1][0];
+    vc group_uids = m[1][1];
+    Group_uids = group_uids;
+    if(group_uids.num_elems() == 0)
+    {
+        // noone in the group, so we are kinda all on our own
+        return;
+    }
+    // just pick the first one
+    start_gj(group_uids[0], Current_alternate->alt_name(), Current_alternate->password);
+}
+
 DWYCOEXPORT
 int
 dwyco_start_gj(const char *uid, int len_uid, const char *password)
 {
     vc vuid(VC_BSTRING, uid, len_uid);
-    start_gj(vuid, password);
+    dirth_send_get_group_pk(My_UID, Current_alternate->alt_name(), QckDone(group_result, 0));
+    //start_gj(vuid, password);
     return 1;
 }
 
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
+// 0 = message is bogus
+// 1 = message is join, and it was processed
+// -1 = message isn't a join message
 DWYCOEXPORT
 int
 dwyco_handle_join(const char *mid)
 {
-    vc password = "foo";
+    vc password = Current_alternate->password;
     DWYCO_SAVED_MSG_LIST l;
     if(!dwyco_get_saved_message(&l, 0, 0, mid))
         return 0;
@@ -6829,6 +6851,17 @@ dwyco_handle_join(const char *mid)
     int jstate;
     if(!dwyco_is_special_message(mid, &jstate))
         return 0;
+    switch(jstate)
+    {
+    case DWYCO_SUMMARY_JOIN1:
+    case DWYCO_SUMMARY_JOIN2:
+    case DWYCO_SUMMARY_JOIN3:
+    case DWYCO_SUMMARY_JOIN4:
+        break;
+    default:
+        return -1;
+    }
+
     const char *b;
     int len;
     if(!dwyco_get_user_payload(ql, &b, &len))
@@ -6854,7 +6887,7 @@ dwyco_handle_join(const char *mid)
         ret = install_group_key(from, msg, password);
         break;
     default:
-        return 0;
+        oopanic("huh?");
     }
     return ret;
 
@@ -8864,6 +8897,8 @@ get_funny_mutex(int port)
     return s;
 }
 
+static ssns::signal0 Bg_login_failed;
+
 static
 void
 DWYCOCALLCONV
@@ -8875,11 +8910,20 @@ dwyco_background_db_login_result(const char *str, int what)
         // we can do really, unless there are direct connects...
         // if there are no direct connections, for sure quit
         GRTLOG("bg db login fail %s", str, 0);
+        Bg_login_failed.emit();
     }
     else
     {
         GRTLOG("bg db login ok", 0, 0);
     }
+}
+
+static
+void
+bail_out()
+{
+    dwyco_bg_exit();
+    exit(0);
 }
 
 
@@ -8979,6 +9023,191 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 signaled = tmp;
                 dwyco_signal_msg_cond();
             }
+        }
+        // note: this is a bit sloppy... rather than trying to
+        // identify each socket that is waiting for write and
+        // creating an exact poll call to check for that, we just
+        // check to see if there is anything waiting to write
+        // and just check a little more often. since this is a situation
+        // that is pretty rare, it shouldn't be a huge problem (i hope.)
+        if(spin || Response_q.num_elems() > 0 ||
+                MMChannel::any_ctrl_q_pending() || SimpleSocket::any_waiting_for_write())
+        {
+            GRTLOG("spin %d short sleep", spin, 0);
+#ifdef WIN32
+            SleepEx(100, 0);
+#else
+            usleep(100000);
+#endif
+        }
+        else
+        {
+            //usleep(500000);
+            Socketvec res;
+
+            int secs = snooze / 1000;
+            // avoid problems with overflow, there is nothing here
+            // that requires usec accuracy
+            int usecs = (snooze % 1000) * 1000;
+            GRTLOG("longsleep %d %d", secs, usecs);
+            int n = vc_winsock::poll_all(VC_SOCK_READ, res, secs, usecs);
+            GRTLOG("wakeup %d", n, 0);
+            if(n < 0)
+                return 1;
+
+            for(int i = 0; i < res.num_elems(); ++i)
+            {
+                if(asock.socket_local_addr() == res[i]->socket_local_addr())
+                {
+                    GRTLOG("req to exit", 0, 0);
+                    goto out;
+                }
+            }
+        }
+    }
+out:
+    ;
+    // note: we don't close the "sync" socket here, so the
+    // requester will be blocked until we can clean up, and the
+    // caller can clean up too and exit the process
+
+    // explicitly stop transfers, even though we are not
+    // going to resume, just doing an exit may be too abrupt
+    // sometimes.
+    //dwyco_suspend();
+    dwyco_bg_exit();
+    //exit(0);
+    return 0;
+}
+
+static
+void
+process_joins()
+{
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, "_special");
+    simple_scoped qtl(tl);
+    for(int i = 0; i < qtl.rows(); ++i)
+    {
+        DwString mid = qtl.get<DwString>(i, DWYCO_TAGGED_MIDS_MID);
+        int d = dwyco_handle_join(mid.c_str());
+        if(d == -1)
+            continue;
+        //dwyco_unset_msg_tag(mid.c_str(), "_special");
+        DwString uid = DwString::from_hex(qtl.get<DwString>(i, DWYCO_TAGGED_MIDS_HEX_UID));
+        dwyco_delete_saved_message(uid.c_str(), uid.length(), mid.c_str());
+    }
+}
+
+static
+void
+DWYCOCALLCONV
+dwyco_sync_login_result(const char *str, int what)
+{
+    if(what == 0)
+    {
+        // exit the process since there isn't anything more
+        // we can do really, unless there are direct connects...
+        // if there are no direct connections, for sure quit
+        GRTLOG("bg db login fail %s", str, 0);
+        dwyco_bg_exit();
+        exit(0);
+    }
+    else
+    {
+        GRTLOG("bg db login ok", 0, 0);
+        dwyco_start_gj("", 0, "");
+    }
+}
+
+DWYCOEXPORT
+int
+dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
+{
+#ifndef WIN32
+    signal(SIGPIPE, SIG_IGN);
+#endif
+    //alarm(3600);
+    srand(time(0));
+
+    int s;
+    s = get_funny_mutex(port);
+    // first run, if the UI is blocking us, something is wrong
+    if(s == -1)
+        return 1;
+
+    //dwyco_set_login_result_callback(dwyco_db_login_result);
+    dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
+
+    dwyco_set_client_version("dwycobg-sync", 12);
+    dwyco_set_initial_invis(0);
+    dwyco_set_login_result_callback(dwyco_sync_login_result);
+    dwyco_bg_init();
+    if(token)
+        dwyco_write_token(token);
+
+    set_listen_state(1);
+    // for now, don't let any channels get setup via the
+    // server ... not strictly necessary, but until we get the
+    // calling stuff sorted out (needs a protocol change to alert
+    // regarding incoming calls, etc.) we just let everything go
+    // via the server.
+    dwyco_inhibit_sac(0);
+    dwyco_inhibit_pal(0);
+
+    dwyco_set_local_auth(1);
+    // note: if the account didn't exist (ie, fresh install) this
+    // will create a new uid. if for some reason, the server cannot be
+    // contacted and the account info recorded, you can still run
+    // the service loop and process direct connections. once the
+    // server is contacted you'll get proper offline messaging and so on.
+    dwyco_finish_startup();
+
+    //int comsock = -1;
+    vc asock = vc(VC_SOCKET_STREAM);
+    asock.socket_init(s, vctrue);
+    dwyco_signal_msg_cond();
+    int signaled = 0;
+    int started_fetches = 0;
+
+    while(1)
+    {
+        int spin = 0;
+        int snooze = dwyco_service_channels(&spin);
+
+#ifdef WIN32
+        if(accept(s, 0, 0) != INVALID_SOCKET)
+        {
+            break;
+        }
+        else
+        {
+            int e = WSAGetLastError();
+            if(e != WSAEWOULDBLOCK)
+                return 1;
+        }
+#else
+        if(accept(s, 0, 0) != -1)
+        {
+            break;
+        }
+        else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
+            return 1;
+#endif
+        if(dwyco_get_rescan_messages())
+        {
+            GRTLOG("rescan %d %d", started_fetches, signaled);
+            dwyco_set_rescan_messages(0);
+            ns_dwyco_background_processing::fetch_to_inbox();
+            GRTLOG("rescan2 %d %d", started_fetches, signaled);
+            int tmp;
+            if((tmp = sql_count_tag("_inbox")) > signaled)
+            {
+                GRTLOG("signaling newcount %d", tmp, 0);
+                signaled = tmp;
+                dwyco_signal_msg_cond();
+            }
+            process_joins();
         }
         // note: this is a bit sloppy... rather than trying to
         // identify each socket that is waiting for write and

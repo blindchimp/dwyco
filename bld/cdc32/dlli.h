@@ -1,4 +1,3 @@
-
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -1474,6 +1473,7 @@ void DWYCOEXPORT dwyco_abort_autoupdate_download();
 // the exit will release the "lock" and allow the main app to continue
 // normally.
 int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
+int DWYCOEXPORT dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 // some more helper functions called from java for android related stuff
 // strings in this case are utf-8, null terminated i hope
 void DWYCOEXPORT dwyco_set_aux_string(const char *str);
