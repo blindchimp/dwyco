@@ -41,7 +41,7 @@ rb_tweaked(vc name, vc val)
     {
         ExtAcquire *ea = dynamic_cast<ExtAcquire *>(TheAq);
         if(ea)
-            ea->set_swap_rb(atol((const char *)val));
+            ea->set_swap_rb((int)val);
     }
 }
 
