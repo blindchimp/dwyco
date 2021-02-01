@@ -6,17 +6,20 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#ifndef DWYCOLISTSCOPED_H
+#ifndef DWYCOLIST2_H
+#define DWYCOLIST2_H
 #include "dlli.h"
 #include <stdlib.h>
 
 struct dwyco_list
 {
 private:
-    dwyco_list();
-    dwyco_list(const dwyco_list&);
-    dwyco_list(const dwyco_list&&);
-    dwyco_list& operator=(const dwyco_list&);
+    dwyco_list() = delete;
+    dwyco_list(const dwyco_list&) = delete;
+    dwyco_list(const dwyco_list&&) = delete;
+    dwyco_list& operator=(const dwyco_list&) = delete;
+    dwyco_list& operator=(const dwyco_list&&) = delete;
+
     DWYCO_LIST value;
 public:
     dwyco_list(DWYCO_LIST v) {
@@ -94,9 +97,12 @@ public:
 struct simple_scoped : public dwyco_list
 {
 private:
-    simple_scoped();
-    simple_scoped(const simple_scoped&);
-    simple_scoped& operator=(const simple_scoped&);
+    simple_scoped() = delete;
+    simple_scoped(const simple_scoped&) = delete;
+    simple_scoped& operator=(const simple_scoped&) = delete;
+    simple_scoped& operator=(const simple_scoped&&) = delete;
+    simple_scoped(const simple_scoped&&) = delete;
+
 public:
     simple_scoped(DWYCO_LIST v): dwyco_list(v) {
     }
