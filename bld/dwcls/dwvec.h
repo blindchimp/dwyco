@@ -45,7 +45,7 @@
 // nice performance boost with them
 // defined.
 
-#if 0
+#ifdef DWYCO_DEBUG
 #undef DWVEC_INLINES
 #undef DWVEC_NO_INDEX_CHECK
 #else
