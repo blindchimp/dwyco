@@ -128,6 +128,7 @@ SOURCES += sqlite3.c
 }
 
 SOURCES += \
+    bgapp.cpp \
     ezset2.cpp \
 mmchan.cc \
 mmbld.cc \

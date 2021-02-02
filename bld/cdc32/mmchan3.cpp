@@ -381,7 +381,6 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
     }
     if(i == SSTRYAGAIN)
         return sproto::stay;
-    //p->watchdog.stop();
     if(rvc == vc("video ok"))
     {
         p->watchdog.stop();
@@ -416,7 +415,6 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
     }
     else if(rvc == vc("msync ok"))
     {
-        //msync_state = MEDIA_SESSION_UP;
         // NOTE: make sure timeout is right for syncing
         p->timeout.load(AUDIO_IDLE_TIMEOUT);
         p->timeout.set_oneshot(1);
@@ -427,8 +425,6 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
             tube->start_decrypt_chan(subchan);
             tube->start_encrypt_chan(subchan);
         }
-        //mms_sync_state = SEND_INIT;
-        //mmr_sync_state = RECV_INIT;
         return sproto::alt_next;
 
     }
@@ -477,14 +473,10 @@ MMChannel::check_sync_challenge_response(int subchan, sproto *p, const char *ev)
     }
     if(i == SSTRYAGAIN)
         return sproto::stay;
-    //p->watchdog.stop();
 
     if(p->user_info == rvc)
     {
         p->user_info = vcnil;
-//        msync_state = MEDIA_SESSION_UP;
-//        mms_sync_state = SEND_INIT;
-//        mmr_sync_state = RECV_INIT;
         return sproto::next;
     }
     return sproto::fail;
@@ -988,12 +980,6 @@ MMChannel::send_sync_resp(int subchan, sproto *p, const char *ev)
         return sproto::fail;
     if(i == SSTRYAGAIN)
         return sproto::stay;
-    //p->watchdog.stop();
-    // note: this is just for testing, can't really assume the channel is
-    // up just because we sent a response
-//            msync_state = MEDIA_SESSION_UP;
-//            mms_sync_state = SEND_INIT;
-//            mmr_sync_state = RECV_INIT;
     p->user_info = vcnil;
     return sproto::next;
 }
