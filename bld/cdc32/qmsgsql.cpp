@@ -250,8 +250,7 @@ sql_dump_mt()
     sql_start_transaction();
     sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore)");
     sql_simple("create table dump.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
-    // note: we only send "user generated" tags, and derive "_local" and _sent" on the remote side from the msg index
-    // its not clear i really even need to do this. also some tags are completely local, like "unviewed" and "remote" which we
+    // note: we only send "user generated" tags. also some tags are completely local, like "unviewed" and "remote" which we
     // don't really want to send at all.
     sql_simple("insert into dump.msg_tags2 select "
                "mid, "
@@ -577,13 +576,6 @@ init_qmsg_sql()
     // by default, our local index "local" is implied
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
 
-    // recreate local and sent tags (kinda of a hassle, may want to revisit this)
-    // note: tag triggers don't exist yet, so don't have to worry about them
-    //sql_simple("delete from mt.gmt where uid = ?1 and (tag = '_local' or tag = '_sent')", hmyuid);
-    //sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_local', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx", hmyuid);
-    //sql_simple("insert into mt.gmt (mid, tag, time, uid, guid) select mid, '_sent', strftime('%s', 'now'), ?1, lower(hex(randomblob(10))) from msg_idx where is_sent = 't'", hmyuid);
-
-
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
     sql_simple("create temp trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
@@ -664,27 +656,23 @@ sql_insert_record(vc entry, vc assoc_uid)
     a.append(to_hex(assoc_uid));
 
     sql_bulk_query(&a);
-
-    //sql_add_tag(entry[QM_IDX_MID], "_local");
-    //if(!entry[QM_IDX_IS_SENT].is_nil())
-    //    sql_add_tag(entry[QM_IDX_MID], "_sent");
 }
 
-static
-void
-sql_record_most_recent(vc uid)
-{
-    vc huid = to_hex(uid);
-    vc r = sql_simple("select max(date) from msg_idx where assoc_uid = ?1 limit 1", huid);
-    if(r[0][0].is_nil())
-    {
-        sql_simple("insert or replace into most_recent_msg (uid, date) values(?1, 0)", huid);
-    }
-    else
-    {
-        sql_simple("insert or replace into most_recent_msg (uid, date) values(?1, ?2)", huid, r[0][0]);
-    }
-}
+//static
+//void
+//sql_record_most_recent(vc uid)
+//{
+//    vc huid = to_hex(uid);
+//    vc r = sql_simple("select max(date) from msg_idx where assoc_uid = ?1 limit 1", huid);
+//    if(r[0][0].is_nil())
+//    {
+//        sql_simple("insert or replace into most_recent_msg (uid, date) values(?1, 0)", huid);
+//    }
+//    else
+//    {
+//        sql_simple("insert or replace into most_recent_msg (uid, date) values(?1, ?2)", huid, r[0][0]);
+//    }
+//}
 
 static
 void
@@ -726,7 +714,7 @@ sql_get_recent_users(int *total_out)
     {
         sql_start_transaction();
         sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid;");
-        sql_simple("insert into foo select date, uid from most_recent_msg;");
+        //sql_simple("insert into foo select date, uid from most_recent_msg;");
         vc res;
         if(total_out)
         {
@@ -761,7 +749,7 @@ sql_get_recent_users2(int max_age, int max_count)
     {
         sql_start_transaction();
         sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
-        sql_simple("insert into foo select date, uid from most_recent_msg");
+        //sql_simple("insert into foo select date, uid from most_recent_msg");
         vc res;
         res = sql_simple("select distinct assoc_uid from foo where strftime('%s', 'now') - \"max(date)\" < ?1 order by \"max(date)\" desc limit ?2;",
                          max_age, max_count);
@@ -811,43 +799,47 @@ sql_get_old_ignored_users()
 vc
 sql_get_empty_users()
 {
-    try
-    {
-        sql_start_transaction();
-        vc res = sql_simple("select uid from indexed_flag where not exists (select 1 from msg_idx where uid = assoc_uid);");
-        sql_commit_transaction();
-        vc ret(VC_VECTOR);
-        for(int i = 0; i < res.num_elems(); ++i)
-            ret.append(res[i][0]);
-        return ret;
-    }
-    catch(...)
-    {
-        sql_rollback_transaction();
-        return vcnil;
-    }
+    return vc(VC_VECTOR);
+
+//    try
+//    {
+//        sql_start_transaction();
+//        vc res = sql_simple("select uid from indexed_flag where not exists (select 1 from msg_idx where uid = assoc_uid);");
+//        sql_commit_transaction();
+//        vc ret(VC_VECTOR);
+//        for(int i = 0; i < res.num_elems(); ++i)
+//            ret.append(res[i][0]);
+//        return ret;
+//    }
+//    catch(...)
+//    {
+//        sql_rollback_transaction();
+//        return vcnil;
+//    }
 
 }
 
 vc
 sql_get_no_response_users()
 {
-    try
-    {
-        sql_start_transaction();
+    return vc(VC_VECTOR);
 
-        vc res = sql_simple("select uid from indexed_flag where not exists(select 1 from msg_idx where uid = assoc_uid and is_sent isnull)");
-        sql_commit_transaction();
-        vc ret(VC_VECTOR);
-        for(int i = 0; i < res.num_elems(); ++i)
-            ret.append(res[i][0]);
-        return ret;
-    }
-    catch(...)
-    {
-        sql_rollback_transaction();
-        return vcnil;
-    }
+//    try
+//    {
+//        sql_start_transaction();
+
+//        vc res = sql_simple("select uid from indexed_flag where not exists(select 1 from msg_idx where uid = assoc_uid and is_sent isnull)");
+//        sql_commit_transaction();
+//        vc ret(VC_VECTOR);
+//        for(int i = 0; i < res.num_elems(); ++i)
+//            ret.append(res[i][0]);
+//        return ret;
+//    }
+//    catch(...)
+//    {
+//        sql_rollback_transaction();
+//        return vcnil;
+//    }
 
 }
 
@@ -859,9 +851,9 @@ sql_remove_uid(vc uid)
     {
         sql_start_transaction();
         vc huid = to_hex(uid);
-        sql_simple("delete from indexed_flag where uid = ?1", huid);
+        //sql_simple("delete from indexed_flag where uid = ?1", huid);
         sql_simple("delete from msg_idx where assoc_uid = ?1", huid);
-        sql_simple("delete from most_recent_msg where uid = ?1", huid);
+        //sql_simple("delete from most_recent_msg where uid = ?1", huid);
         sql_commit_transaction();
     }
     catch(...)
@@ -1055,7 +1047,7 @@ create_date_index(vc uid)
         }
         delete_findvec(&fv2);
         sql_insert_indexed_flag(uid);
-        sql_record_most_recent(uid);
+        //sql_record_most_recent(uid);
         sql_simple("delete from midlog");
         sql_simple("delete from taglog");
         sql_commit_transaction();
@@ -1271,7 +1263,7 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
     {
         sql_start_transaction();
         sql_insert_record(nentry, uid);
-        sql_record_most_recent(uid);
+        //sql_record_most_recent(uid);
         sql_commit_transaction();
     }
     catch(...)
@@ -1382,7 +1374,6 @@ sql_index_all()
     {
         sql_sync_off();
         sql_start_transaction();
-        //sql_simple("delete from mt.gmt where (tag = '_local' or tag = '_sent') and uid = ?1", to_hex(My_UID));
         MsgFolders.foreach(vcnil, index_user);
         sql_commit_transaction();
     }
