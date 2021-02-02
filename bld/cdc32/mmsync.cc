@@ -28,12 +28,9 @@ void
 MMChannel::sync_recv(vc updates)
 {
     int nupdates = updates.num_elems();
-#ifdef SYNCDBG
-    VcError << "updates\n";
-    updates.print_top(VcError);
-    VcError << "\n";
-#endif
 
+    GRTLOG("chansync %d", nupdates, 0);
+    GRTLOGVC(updates);
 
     for(int i = 0; i < nupdates; ++i)
     {
