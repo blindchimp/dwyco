@@ -421,9 +421,11 @@ recv_gj3(vc from, vc msg, vc password)
 
     if(from == My_UID)
         return 0;
-
     try
     {
+        // if we're not current in a group, don't even try to send a key back
+        if(!Current_alternate)
+            throw -1;
         vc m = xfer_dec(msg, password);
 
         if(m.is_nil())

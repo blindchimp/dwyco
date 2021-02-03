@@ -11,10 +11,15 @@
 
 #include "vc.h"
 #include "ssns.h"
+#include "dwvp.h"
+#include "simple_property.h"
 
 namespace dwyco {
 
 class DH_alternate : public ssns::trackable {
+public:
+    DwVP vp;
+private:
     vc DH_static;
     vc uid;
     vc alternate_name;
@@ -23,6 +28,10 @@ class DH_alternate : public ssns::trackable {
     static int insert_record(vc uid, vc alt_name, vc dh_static);
 
 public:
+    DH_alternate() : vp(this) {}
+    ~DH_alternate() {
+        vp.invalidate();
+    }
     // this needs to be filled in from somewhere before
     // group join messages can be processed.
     vc password;
@@ -54,7 +63,7 @@ public:
 };
 
 void init_dhg();
-extern DH_alternate *Current_alternate;
+extern sigprop<dwyco::DH_alternate *> Current_alternate;
 
 }
 

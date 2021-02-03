@@ -2,6 +2,8 @@
 #define SIMPLE_PROPERTY_H
 
 #include "ssns.h"
+void oopanic(const char *);
+
 namespace dwyco {
 template<class T>
 class sigprop
@@ -32,6 +34,16 @@ public:
     }
     operator T() const {
         return val;
+    }
+    T operator->() const {
+        if(val == 0)
+            oopanic("splat null");
+        return val;
+    }
+    operator bool() const {
+        if(val == 0)
+            return false;
+        return true;
     }
 };
 

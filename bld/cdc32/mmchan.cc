@@ -2611,7 +2611,7 @@ MMChannel::channel_by_call_type(vc uid, vc call_type)
     for(; !cli.eol(); cli.forward())
     {
         MMChannel *mc = cli.getp();
-        if(uid == mc->remote_uid() && call_type == mc->remote_call_type())
+        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && call_type == mc->remote_call_type())
         {
             return mc;
         }
@@ -2629,7 +2629,7 @@ MMChannel::channels_by_call_type(vc call_type)
     for(; !cli.eol(); cli.forward())
     {
         MMChannel *mc = cli.getp();
-        if(call_type == mc->remote_call_type())
+        if(mc->do_destroy == KEEP && call_type == mc->remote_call_type())
         {
             ret.append(mc);
         }
@@ -2785,7 +2785,7 @@ MMChannel::recv_config(vc cfg)
                 send_error("sync needs pw");
                 goto cleanup;
             }
-            if(pw != Current_alternate->hash_key_material())
+            if(!Current_alternate || pw != Current_alternate->hash_key_material())
             {
                 send_error("sync wrong group");
                 goto cleanup;

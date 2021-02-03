@@ -71,6 +71,12 @@ public:
         return ptr;
     }
 
+    void *get_ptr() {
+        if(!is_valid())
+            oopanic("bad ptr");
+        return ptr;
+    }
+
     operator long() {
         if(!is_valid())
             oopanic("bad cookie");

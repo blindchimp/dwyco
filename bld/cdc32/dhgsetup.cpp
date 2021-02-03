@@ -31,6 +31,7 @@ using namespace dwyco;
 extern sigprop<vc> Group_uids;
 
 namespace dwyco {
+sigprop<DH_alternate *> Current_alternate;
 
 struct DHG_sql : public SimpleSql
 {
@@ -79,9 +80,11 @@ init_dhg()
     const char *grpname;
     grpname = getenv("DWYCO_GROUP");
     if(!grpname)
-        grpname = "foo@bar.com";
+        return;
     const char *grp_pw;
     grp_pw = getenv("DWYCO_GROUP_PW");
+    if(!grp_pw)
+        return;
 
 
     DH_alternate *dha = new DH_alternate;

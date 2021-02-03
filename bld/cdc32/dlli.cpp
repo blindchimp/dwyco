@@ -437,7 +437,7 @@ extern int Chat_online;
 
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
-DH_alternate *dwyco::Current_alternate;
+
 sigprop<vc> Group_uids;
 
 #undef CPPLEAK
@@ -459,6 +459,9 @@ extern int beginning_of_world;
 // this class is just a hanging place for holding the
 // context of a server message fetch.
 struct BodyView {
+    BodyView(const BodyView&) = delete;
+    BodyView& operator=(const BodyView&) = delete;
+
     BodyView ();
     ~BodyView ();
     static DwQueryByMember<BodyView> Bvqbm;
@@ -1760,6 +1763,8 @@ set_group_uids(vc m, void *, vc, ValidPtr)
 {
     if(m[1].is_nil())
         return;
+    // if the server doesn't know the group at all, you still get back
+    // a vector with your own uid in it.
     Group_uids = m[1];
 }
 
@@ -6425,6 +6430,29 @@ start_stalled_pulls()
 }
 }
 
+// this gets called when the alternate group config
+// changes. we drop all the sync channels so we can
+// reestablish channels in the new group.
+void
+drop_all_sync_calls(DH_alternate *)
+{
+    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    for(int i = 0; i < mmcl.num_elems(); ++i)
+    {
+        MMCall *mmc = mmcl[i];
+        MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
+        if(mc)
+            mc->schedule_destroy(MMChannel::HARD);
+    }
+
+    ChanList cl = MMChannel::channels_by_call_type("sync");
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        MMChannel *mc = cl[i];
+        mc->schedule_destroy(MMChannel::HARD);
+    }
+}
+
 static
 void
 sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const char *uid, int len_uid, const char *call_type, int len_call_type)
@@ -6808,10 +6836,13 @@ dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_o
 
 static
 void
-group_result(vc m, void *, vc, ValidPtr)
+group_result(vc m, void *, vc, ValidPtr vp)
 {
     if(m[1].is_nil())
         return;
+    if(!vp.is_valid())
+        return;
+    auto alt = reinterpret_cast<DH_alternate*>(vp.get_ptr());
     vc pubkey = m[1][0];
     vc group_uids = m[1][1];
     Group_uids = group_uids;
@@ -6821,29 +6852,30 @@ group_result(vc m, void *, vc, ValidPtr)
         return;
     }
     // just pick the first one
-    start_gj(group_uids[0], Current_alternate->alt_name(), Current_alternate->password);
+    start_gj(group_uids[0], alt->alt_name(), alt->password);
 }
 
 DWYCOEXPORT
 int
 dwyco_start_gj(const char *uid, int len_uid, const char *password)
 {
+    if(!Current_alternate)
+        return 0;
     vc vuid(VC_BSTRING, uid, len_uid);
-    dirth_send_get_group_pk(My_UID, Current_alternate->alt_name(), QckDone(group_result, 0));
-    //start_gj(vuid, password);
+    dirth_send_get_group_pk(My_UID, Current_alternate->alt_name(), QckDone(group_result, 0, vcnil, Current_alternate->vp));
     return 1;
 }
 
 #include "dwycolist2.h"
 
-// 0 = message is bogus
+// 0 = message is bogus, or group password isn't available
 // 1 = message is join, and it was processed
 // -1 = message isn't a join message
 DWYCOEXPORT
 int
 dwyco_handle_join(const char *mid)
 {
-    vc password = Current_alternate->password;
+
     DWYCO_SAVED_MSG_LIST l;
     if(!dwyco_get_saved_message(&l, 0, 0, mid))
         return 0;
@@ -6871,6 +6903,9 @@ dwyco_handle_join(const char *mid)
     vc msg(VC_BSTRING, b, len);
     dwyco_free_array((char *)b);
     int ret = 0;
+    if(!Current_alternate)
+        return 0;
+    vc password = Current_alternate->password;
     vc from = ql.get<vc>(DWYCO_QM_BODY_FROM);
     switch(jstate)
     {

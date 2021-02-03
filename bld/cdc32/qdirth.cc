@@ -345,9 +345,12 @@ dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_auth,
     vc static_public = dh_my_static();
     static_public = static_public[DH_STATIC_PUBLIC];
     m[QSTATIC_PUBLIC] = static_public;
-    static_public = Current_alternate->my_static_public();
-    m[QSTATIC_PUBLIC_ALTERNATE] = static_public[DH_STATIC_PUBLIC];
-    m[QSTATIC_ALT_NAME] = Current_alternate->alt_name();
+    if(Current_alternate)
+    {
+        static_public = Current_alternate->my_static_public();
+        m[QSTATIC_PUBLIC_ALTERNATE] = static_public[DH_STATIC_PUBLIC];
+        m[QSTATIC_ALT_NAME] = Current_alternate->alt_name();
+    }
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);
 }

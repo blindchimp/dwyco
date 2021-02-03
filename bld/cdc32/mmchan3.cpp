@@ -435,6 +435,8 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
 int
 MMChannel::send_sync_challenge(int subchan, sproto *p, const char *ev)
 {
+    if(!Current_alternate)
+        return sproto::fail;
     vc v;
     vc key;
     if(p->user_info.is_nil())
@@ -955,6 +957,8 @@ MMChannel::send_media_ok(int subchan, sproto *p, const char *ev)
 int
 MMChannel::wait_for_sync_challenge(int subchan, sproto *p, const char *ev)
 {
+    if(!Current_alternate)
+        return sproto::fail;
     int i;
     vc v;
 
