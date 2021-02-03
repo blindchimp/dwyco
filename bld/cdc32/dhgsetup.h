@@ -41,8 +41,8 @@ public:
     vc alt_name() {return alternate_name;}
     vc my_static();
     vc my_static_public();
-    // this is used as "password" to prove we have the
-    // private key.
+    // this is used as "password" to filter out some
+    // calls early if they obviously have the wrong key
     vc hash_key_material();
 
     // inserts a new key into the database, which we

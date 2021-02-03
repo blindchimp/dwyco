@@ -261,7 +261,6 @@ public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);
     void internal_cq_check(QString);
-    void internal_join_check(QString);
     void dir_download_finished(QNetworkReply *);
 
 signals:

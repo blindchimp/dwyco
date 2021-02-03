@@ -70,6 +70,7 @@ msg_callback(int id, int what, const char *mid, void *)
     case DWYCO_MSG_DOWNLOAD_OK:
         if(dwyco_is_special_message(mid, &what))
             dwyco_set_msg_tag(mid, "_special");
+        // FALLTHRU
     default:
         if(i >= 0)
             fetching.del(i);

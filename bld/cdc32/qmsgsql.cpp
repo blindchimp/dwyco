@@ -718,7 +718,7 @@ sql_get_recent_users(int *total_out)
         vc res;
         if(total_out)
         {
-            VCArglist a;
+            //VCArglist a;
             res = sql_simple("select count(distinct assoc_uid) from foo");
             *total_out = (int)res[0][0];
         }

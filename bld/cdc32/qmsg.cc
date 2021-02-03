@@ -1983,6 +1983,8 @@ store_direct(MMChannel *m, vc msg, void *)
             sql_add_tag(id, "_inbox");
             //sql_add_tag(id, "_local");
             sql_remove_mid_tag(id, "_remote");
+            if(!msg[QQM_BODY_SPECIAL_TYPE].is_nil())
+                sql_add_tag(id, "_special");
             DwString a("_");
             a += (const char *)to_hex(from);
             sql_remove_mid_tag(id, a.c_str());

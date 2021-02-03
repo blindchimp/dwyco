@@ -380,6 +380,7 @@ using namespace Weak;
 #include "grpmsg.h"
 #include "upnp.h"
 #include "pulls.h"
+#include "dwycolist2.h"
 
 using namespace dwyco;
 
@@ -6866,7 +6867,6 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
     return 1;
 }
 
-#include "dwycolist2.h"
 
 // 0 = message is bogus, or group password isn't available
 // 1 = message is join, and it was processed

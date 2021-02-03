@@ -1546,7 +1546,6 @@ DwycoCore::init()
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
-    //connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_join_check(QString)));
 
     if(dwyco_get_create_new_account())
         return;
@@ -2413,21 +2412,6 @@ DwycoCore::internal_cq_check(QString huid)
     dwyco_delete_user(Clbot.constData(), Clbot.length());
 }
 
-void
-DwycoCore::internal_join_check(QString huid)
-{
-    DWYCO_LIST tl;
-    dwyco_get_tagged_mids(&tl, "_special");
-    simple_scoped qtl(tl);
-    for(int i = 0; i < qtl.rows(); ++i)
-    {
-        QByteArray mid = qtl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
-        dwyco_handle_join(mid.constData());
-        dwyco_unset_msg_tag(mid.constData(), "_special");
-    }
-}
-
-
 QUrl
 DwycoCore::get_cq_results_url()
 {
@@ -2654,11 +2638,6 @@ fetch_special_msgs()
                 auto_fetch(mid);
                 continue;
             }
-            if(st.startsWith("join"))
-            {
-                QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
-                auto_fetch(mid);
-            }
         }
     }
 
@@ -2715,9 +2694,6 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
-
-        internal_join_check("");
-
     }
     update_unread_count(total_unviewed_msgs_count());
 #ifdef ANDROID

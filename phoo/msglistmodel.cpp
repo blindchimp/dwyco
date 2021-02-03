@@ -235,14 +235,6 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
     {
         msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
         mr->reload_inbox_model();
-        // kluge, really need to have different path for special messages
-        // instead of trying to shoehorn them in with regular messages
-        int stype;
-        if(dwyco_is_special_message(mid.constData(), &stype))
-        {
-            dwyco_set_msg_tag(mid.constData(), "_special");
-        }
-
         add_unviewed(buid, mid);
         TheDwycoCore->emit new_msg(shuid, "", smid);
         TheDwycoCore->emit decorate_user(shuid);
@@ -1035,20 +1027,7 @@ auto_fetch(QByteArray mid)
 
 //        }
 //        else
-        if(dwyco_is_special_message(mid.constData(), &special_type))
-        {
-            switch(special_type)
-            {
-            case DWYCO_SUMMARY_JOIN1:
-            case DWYCO_SUMMARY_JOIN2:
-            case DWYCO_SUMMARY_JOIN3:
-            case DWYCO_SUMMARY_JOIN4:
-                break;
-            default:
-                dwyco_delete_unfetched_message(mid.constData());
-                return 0;
-            }
-        }
+
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
         // note: we get msg_recv_status signals as the fetch proceeds
