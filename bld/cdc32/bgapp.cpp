@@ -262,7 +262,11 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     if(exit_if_outq_empty == 2)
     {
         int tmp = msg_outq_empty();
+#ifdef WIN32
+        closesocket(s);
+#else
         close(s);
+#endif
         return tmp;
     }
 
