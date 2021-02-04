@@ -1,3 +1,6 @@
+#ifdef DWYCO_TRACE
+#include "dwyco_rename.h"
+#endif
 #include "dlli.h"
 #include "fetch_to_inbox.h"
 #include "dwstr.h"

@@ -289,9 +289,6 @@ DWYCOEXPORT void _real_dwyco_network_diagnostics2(char **report_out, int *len_ou
 DWYCOEXPORT void _real_dwyco_estimate_bandwidth2(int *out_bw_out, int *in_bw_out);
 DWYCOEXPORT void _real_dwyco_set_alert(const char *uid, int len_uid, int val);
 DWYCOEXPORT int _real_dwyco_get_alert(const char *uid, int len_uid);
-DWYCOEXPORT void _real_dwyco_signal_msg_cond();
-DWYCOEXPORT void _real_dwyco_wait_msg_cond(int ms);
-DWYCOEXPORT int _real_dwyco_test_funny_mutex(int port);
 DWYCOEXPORT void _real_dwyco_create_backup();
 DWYCOEXPORT int _real_dwyco_copy_out_backup(const char *dir, int force);
 DWYCOEXPORT void _real_dwyco_remove_backup();
@@ -302,6 +299,10 @@ DWYCOEXPORT void _real_dwyco_clear_contact_list();
 DWYCOEXPORT int _real_dwyco_add_contact(const char *name, const char *phone, const char *email);
 DWYCOEXPORT int _real_dwyco_get_contact_list(DWYCO_LIST *list_out);
 DWYCOEXPORT int _real_dwyco_get_aux_string(const char **str_out, int *len_str_out);
+DWYCOEXPORT void _real_dwyco_signal_msg_cond();
+DWYCOEXPORT void _real_dwyco_wait_msg_cond(int ms);
+DWYCOEXPORT int _real_dwyco_test_funny_mutex(int port);
+DWYCOEXPORT int _real_dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 }
 void
 DWYCOCALLCONV
@@ -3842,36 +3843,6 @@ return(_ret);
 
 DWYCOEXPORT
 void
-dwyco_signal_msg_cond()
-{
-printfunname("dwyco_signal_msg_cond");
-_real_dwyco_signal_msg_cond();
-printret();
-}
-
-DWYCOEXPORT
-void
-dwyco_wait_msg_cond(int ms)
-{
-printfunname("dwyco_wait_msg_cond");
-printarg("int ", "ms",ms);
-_real_dwyco_wait_msg_cond(ms);
-printret();
-}
-
-DWYCOEXPORT
-int
-dwyco_test_funny_mutex(int port)
-{
-printfunname("dwyco_test_funny_mutex");
-printarg("int ", "port",port);
-int _ret = _real_dwyco_test_funny_mutex(port);
-printretval(_ret);
-return(_ret);
-}
-
-DWYCOEXPORT
-void
 dwyco_create_backup()
 {
 printfunname("dwyco_create_backup");
@@ -3975,6 +3946,51 @@ printarg("const char **", "str_out",str_out);
 printarg(" int *", "len_str_out",len_str_out);
 int _ret = _real_dwyco_get_aux_string(str_out,len_str_out);
 printargout("const char **", "str_out",str_out, " int *", "len_str_out", len_str_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+void
+dwyco_signal_msg_cond()
+{
+printfunname("dwyco_signal_msg_cond");
+_real_dwyco_signal_msg_cond();
+printret();
+}
+
+DWYCOEXPORT
+void
+dwyco_wait_msg_cond(int ms)
+{
+printfunname("dwyco_wait_msg_cond");
+printarg("int ", "ms",ms);
+_real_dwyco_wait_msg_cond(ms);
+printret();
+}
+
+DWYCOEXPORT
+int
+dwyco_test_funny_mutex(int port)
+{
+printfunname("dwyco_test_funny_mutex");
+printarg("int ", "port",port);
+int _ret = _real_dwyco_test_funny_mutex(port);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
+{
+printfunname("dwyco_background_sync");
+printarg("int ", "port",port);
+printarg(" const char *", "sys_pfx",sys_pfx);
+printarg(" const char *", "user_pfx",user_pfx);
+printarg(" const char *", "tmp_pfx",tmp_pfx);
+printarg(" const char *", "token",token);
+int _ret = _real_dwyco_background_sync(port,sys_pfx,user_pfx,tmp_pfx,token);
 printretval(_ret);
 return(_ret);
 }

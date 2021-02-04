@@ -269,9 +269,6 @@
 #define dwyco_estimate_bandwidth2 _real_dwyco_estimate_bandwidth2 
 #define dwyco_set_alert _real_dwyco_set_alert 
 #define dwyco_get_alert _real_dwyco_get_alert 
-#define dwyco_signal_msg_cond _real_dwyco_signal_msg_cond 
-#define dwyco_wait_msg_cond _real_dwyco_wait_msg_cond 
-#define dwyco_test_funny_mutex _real_dwyco_test_funny_mutex 
 #define dwyco_create_backup _real_dwyco_create_backup 
 #define dwyco_copy_out_backup _real_dwyco_copy_out_backup 
 #define dwyco_remove_backup _real_dwyco_remove_backup 
@@ -282,3 +279,7 @@
 #define dwyco_add_contact _real_dwyco_add_contact 
 #define dwyco_get_contact_list _real_dwyco_get_contact_list 
 #define dwyco_get_aux_string _real_dwyco_get_aux_string 
+#define dwyco_signal_msg_cond _real_dwyco_signal_msg_cond 
+#define dwyco_wait_msg_cond _real_dwyco_wait_msg_cond 
+#define dwyco_test_funny_mutex _real_dwyco_test_funny_mutex 
+#define dwyco_background_sync _real_dwyco_background_sync 
