@@ -2047,7 +2047,7 @@ load_users(int only_recent, int *total_out)
     {
 
         FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
-        int n = fv.num_elems();
+        auto n = fv.num_elems();
         TRACK_MAX(QM_UL_count, n);
         for(int i = 0; i < n; ++i)
         {

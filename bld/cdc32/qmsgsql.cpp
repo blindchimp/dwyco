@@ -13,6 +13,10 @@
 #endif
 #include <dos.h>
 #include <io.h>
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 #ifdef DWYCO_USE_STATIC_SQLITE
@@ -161,6 +165,8 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists date_idx on msg_idx(date desc)");
     sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
     sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
+
+    sql_simple("create table if not exists dir_meta(dirname text collate nocase primary key not null, time integer default 0)");
 
     // note: mid's are unique identifiers, so its meer existence here means it was
     // deleted.
@@ -1361,6 +1367,32 @@ index_user(vc v)
     ++dwyco::Index_progress;
 }
 
+void
+create_dir_meta()
+{
+    try
+    {
+        sql_start_transaction();
+        sql_simple("delete from dir_meta");
+        FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
+        auto n = fv.num_elems();
+        for(int i = 0; i < n; ++i)
+        {
+            WIN32_FIND_DATA& d = *fv[i];
+            DwString fdirname = newfn(d.cFileName);
+            struct stat s;
+            if(stat(fdirname.c_str(), &s) == -1)
+                continue;
+            sql_simple("insert into dir_meta(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
+        }
+        sql_commit_transaction();
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+    }
+}
+
 
 
 void
@@ -1383,7 +1415,50 @@ sql_index_all()
     {
         sql_rollback_transaction();
     }
+    create_dir_meta();
     sql_sync_on();
+}
+
+void
+reindex_possible_changes()
+{
+    try
+    {
+        sql_start_transaction();
+        sql_simple("create temp table foo(dirname text collate nocase primary key not null, time default 0)");
+        FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
+        auto n = fv.num_elems();
+        for(int i = 0; i < n; ++i)
+        {
+            WIN32_FIND_DATA& d = *fv[i];
+            DwString fdirname = newfn(d.cFileName);
+            struct stat s;
+            if(stat(fdirname.c_str(), &s) == -1)
+                continue;
+            sql_simple("insert into foo(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
+        }
+        vc needs_reindex = sql_simple("select replace(dirname, '.usr', '') from foo,dir_meta using(dirname) where foo.time != dir_meta.time");
+        // not sure about this: if a folder is missing now, if we do this, it effectively
+        // deletes the file everywhere. if we just ignore it, the files hang around, but
+        // are filtered out by tombstones.
+        sql_simple("create temp table bar as select dirname from dir_meta where not exists (select 1 from foo where dir_meta.dirname = foo.dirname)");
+        sql_simple("update bar set dirname = replace(dirname, '.usr', '')");
+        sql_simple("delete from msg_idx where assoc_uid in (select * from bar)");
+
+        for(int i = 0; i < needs_reindex.num_elems(); ++i)
+        {
+            vc huid = needs_reindex[i][0];
+            vc uid = from_hex(huid);
+            sql_simple("delete from indexed_flag where uid = ?1", huid);
+            load_msg_index(uid, 1);
+        }
+
+        sql_commit_transaction();
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+    }
 }
 
 // FAVMSG

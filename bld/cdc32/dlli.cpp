@@ -6521,6 +6521,8 @@ sync_call_setup()
             // to other group members to connect.
             if(Current_alternate)
                 pw = Current_alternate->hash_key_material();
+            else
+                pw = "";
             dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                               (const char *)pw, pw.len(), "sync", 4, 1);
         }
