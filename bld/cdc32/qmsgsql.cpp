@@ -383,7 +383,7 @@ void
 sync_files()
 {
 
-    load_users(0, 0);
+    load_users_from_files(0);
 
     try
     {
@@ -1368,12 +1368,14 @@ sql_index_all()
 {
     dwyco::Index_progress = 0;
     dwyco::Index_total = 0;
-    load_users(0, 0);
+    load_users_from_files(0);
     dwyco::Index_total = MsgFolders.num_elems();
     try
     {
         sql_sync_off();
         sql_start_transaction();
+        sql_simple("delete from indexed_flag");
+
         MsgFolders.foreach(vcnil, index_user);
         sql_commit_transaction();
     }

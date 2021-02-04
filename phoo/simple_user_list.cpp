@@ -75,13 +75,11 @@ void
 SimpleUserModel::delete_all_selected()
 {
     int n = count();
-    //QList<SimpleUser *> to_remove;
     for(int i = 0; i < n; ++i)
     {
         SimpleUser *c = at(i);
         if(c->get_selected())
         {
-            //to_remove.append(c);
             QByteArray buid = c->get_uid().toLatin1();
             buid = QByteArray::fromHex(buid);
             if(dwyco_is_pal(buid.constData(), buid.length()))
@@ -92,12 +90,10 @@ SimpleUserModel::delete_all_selected()
     }
     hack_unread_count();
 
-    //dwyco_load_users2(1, 0);
     int total = 0;
-    dwyco_load_users2(/*TheDwycoCore->get_use_archived() ? 0 : */1, &total);
+    dwyco_load_users2(1, &total);
     TheDwycoCore->update_total_users(total);
     load_users_to_model();
-
 }
 
 void
