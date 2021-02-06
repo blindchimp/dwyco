@@ -30,6 +30,7 @@ public:
     DwString& operator+=(const DwString&);
     DwString& operator+=(const char *);
     DwString& operator+=(char);
+    DwString operator+(const DwString& s) const;
     int operator==(const DwString& s) const {
         return DwVec<char>::operator==(s);
     }
@@ -173,6 +174,15 @@ DwString::operator+=(const DwString& s)
     memcpy(eos, &s[0], l);
     (*this)[count - 1] = 0;
     return *this;
+}
+
+inline
+DwString
+DwString::operator+(const DwString& s) const
+{
+    DwString res(*this);
+    res += s;
+    return res;
 }
 
 inline

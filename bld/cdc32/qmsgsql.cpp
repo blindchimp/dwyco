@@ -374,7 +374,7 @@ sync_user(vc v)
         mid.remove(20);
         vc v = sql_simple("select 1 from msg_idx where mid = ?1", mid.c_str());
         if(v.num_elems() == 0)
-            delete_body3(uid, mid.c_str(), 1);
+            trash_body(uid, mid.c_str(), 1);
 
     }
     delete_findvec(&fv);

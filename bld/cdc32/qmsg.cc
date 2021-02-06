@@ -2310,12 +2310,34 @@ clear_user(vc id, const char *pfx)
 }
 
 int
-trash_user(vc id)
+trash_file(const DwString& dir, const DwString& fn)
 {
-    if(id.len() == 0)
+    if(!is_msg_fn(fn) || !is_user_dir(dir))
+        return 0;
+
+    DwString s2(dir);
+    s2 = newfn(s2);
+    s2 += "" DIRSEPSTR "";
+    s2 += fn;
+    DwString trashdir = newfn("trash");
+    trashdir += DIRSEPSTR;
+    trashdir += dir;
+    mkdir(trashdir.c_str());
+    DwString trashfile = trashdir;
+    trashfile += "" DIRSEPSTR "";
+    trashfile += fn;
+    if(!move_replace(s2, trashfile))
+        return 0;
+    return 1;
+}
+
+int
+trash_user(vc dir)
+{
+    if(dir.len() == 0)
         return 0;
     int i;
-    DwString s((const char *)id);
+    DwString s((const char *)dir);
 
     if(s.length() == 0)
         return 0;
@@ -2348,7 +2370,7 @@ trash_user(vc id)
         if(strcmp(d.cFileName, ".") == 0 ||
                 strcmp(d.cFileName, "..") == 0)
             continue;
-        DwString s2((const char *)id);
+        DwString s2((const char *)dir);
         s2 = newfn(s2);
         s2 += "" DIRSEPSTR "";
         s2 += d.cFileName;
@@ -2359,7 +2381,7 @@ trash_user(vc id)
         if(!move_replace(s2, trashfile))
             retval = 0;
     }
-    if(!RemoveDirectory(newfn((const char *)id).c_str()))
+    if(!RemoveDirectory(newfn((const char *)dir).c_str()))
         retval = 0;
     delete_findvec(&fv);
     // note: when you trash a user, it was nice to leave the
@@ -2696,6 +2718,59 @@ delete_body3(vc user_id, vc msg_id, int inhibit_indexing)
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s2.c_str());
+        return;
+
+    }
+}
+
+void
+trash_body(vc user_id, vc msg_id, int inhibit_indexing)
+{
+    if(user_id.len() == 0)
+        return;
+    DwString s((const char *)to_hex(user_id));
+    DwString t((const char *)msg_id);
+
+    s += ".usr";
+    DwString userdir = s;
+    s = newfn(s);
+    s += DIRSEPSTR;
+    s += t;
+    DwString s2 = s;
+    s += ".bod";
+
+    vc msg;
+    if(load_info(msg, s.c_str(), 1))
+    {
+        if(!inhibit_indexing)
+        {
+            sql_start_transaction();
+            remove_msg_idx(user_id, msg_id);
+            sql_fav_remove_mid(msg_id);
+            sql_commit_transaction();
+        }
+        if(!msg[QM_BODY_ATTACHMENT].is_nil())
+            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
+            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
+        trash_file(userdir, (t + ".bod"));
+        //DeleteFile(s.c_str());
+        return;
+    }
+    s2 += ".snt";
+    if(load_info(msg, s2.c_str(), 1))
+    {
+        if(!inhibit_indexing)
+        {
+            sql_start_transaction();
+            remove_msg_idx(user_id, msg_id);
+            sql_fav_remove_mid(msg_id);
+            sql_commit_transaction();
+        }
+        if(!msg[QM_BODY_ATTACHMENT].is_nil())
+            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
+            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
+        trash_file(userdir, (t + ".snt"));
+        //DeleteFile(s2.c_str());
         return;
 
     }
@@ -3780,9 +3855,16 @@ pal_auth_results(vc m, void *t, vc u, ValidPtr)
 #endif
 
 
+// unfortunately, i think automatic cleaning like this isn't a good
+// idea in the new crdt world. the problem is that this uses heuristics
+// based on the locally available information, which we can't be sure
+// reflects the entire cluster if it isn't in sync. it would probably be
+// better to include some kind of user triggered cleanup, or filtering
+// based on time or something like that.
 void
 power_clean_safe()
 {
+    return;
     sql_index_all();
     int n;
     vc uids = sql_get_empty_users();
