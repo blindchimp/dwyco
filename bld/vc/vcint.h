@@ -38,7 +38,9 @@ public:
         vc_int(int64_t i2) ;
 	vc_int(const vc_int &v) ;
 	virtual ~vc_int() ;
+#ifdef _Windows
         operator int64_t() const;
+#endif
 	operator long() const ;
 	operator int () const ;
 	operator double() const ;
@@ -47,9 +49,9 @@ public:
 
 	const char *peek_str() const ;
 	void stringrep(VcIO o) const ;
-	//note: this is a hack that shouldn't
-	// be used.
-	void plus(int p) {i += p;}
+//	//note: this is a hack that shouldn't
+//	// be used.
+//	void plus(int p) {i += p;}
 
 	virtual vc operator+(const vc &v) const ;
 	virtual vc operator-(const vc &v) const ;

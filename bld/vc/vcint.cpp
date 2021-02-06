@@ -28,11 +28,12 @@ vc_int::vc_int(const vc_int &v) {  i = v.i; }
 
 vc_int::~vc_int() { }
 
-
+#ifdef _Windows
 vc_int::operator int64_t() const
 {
     return i;
 }
+#endif
 
 vc_int::operator long() const {
     if(sizeof(long) == sizeof(i))
