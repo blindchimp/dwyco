@@ -18,6 +18,7 @@
 #include "vc.h"
 #include "dwstr.h"
 #include "fnmod.h"
+using namespace dwyco;
 
 extern vc StackDump;
 

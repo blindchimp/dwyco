@@ -22,6 +22,8 @@
 #include "qauth.h"
 #include "dhgsetup.h"
 
+using namespace dwyco;
+
 #ifdef _MSC_VER
 #define ftello ftell
 #define fseeko fseek

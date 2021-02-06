@@ -58,6 +58,8 @@
 #include "ta.h"
 #include "dhgsetup.h"
 
+using namespace dwyco;
+
 vc Myhostname;
 DwLog *Log;
 CRITICAL_SECTION Audio_lock;
