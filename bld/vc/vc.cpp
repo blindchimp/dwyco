@@ -36,11 +36,12 @@ vc::vc(long i)
 {
 	rep = new vc_int(i);
 }
-
+#ifdef _Windows
 vc::vc(int64_t i)
 {
     rep = new vc_int(i);
 }
+#endif
 
 vc::vc(const char *s)
 {
