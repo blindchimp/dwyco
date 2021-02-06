@@ -23,16 +23,29 @@
 char vc_int::buf[100];
 
 vc_int::vc_int() { i = 0; }
-vc_int::vc_int(long i2) { i = i2; }
+vc_int::vc_int(int64_t i2) { i = i2; }
 vc_int::vc_int(const vc_int &v) {  i = v.i; }
 
 vc_int::~vc_int() { }
 
+
+vc_int::operator int64_t() const
+{
+    return i;
+}
+
 vc_int::operator long() const {
+    if(sizeof(long) == sizeof(i))
 		return i;
+    if(i > LONG_MAX || i < LONG_MIN)
+    {
+        USER_BOMB("integer truncation", 0);
+    }
+    else
+        return i;
 }
 vc_int::operator int () const {
-	if(sizeof(int) == sizeof(long))
+    if(sizeof(int) == sizeof(i))
 		return i;
 	if(i > INT_MAX || i < INT_MIN)
 	{

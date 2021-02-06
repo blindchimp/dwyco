@@ -37,6 +37,11 @@ vc::vc(long i)
 	rep = new vc_int(i);
 }
 
+vc::vc(int64_t i)
+{
+    rep = new vc_int(i);
+}
+
 vc::vc(const char *s)
 {
 		rep = new vc_string(s);
