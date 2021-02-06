@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #define dwmax(x, y) (((x) < (y)) ? (y) : (x))
 #define dwmin(x, y) (((x) > (y)) ? (y) : (x))
@@ -265,6 +266,7 @@ public:
 	vc(double d);
 	vc(int i);
 	vc(long i);
+        vc(int64_t);
 	vc(const char *s);
         vc(const char *s, int len);
 

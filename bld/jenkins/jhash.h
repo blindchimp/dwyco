@@ -4,11 +4,11 @@
  */
 #ifndef JHASH_H
 #define JHASH_H
-#ifdef _MSC_VER
-#include "msint.h"
-#else
+//#ifdef _MSC_VER
+//#include "msint.h"
+//#else
 #include <stdint.h>
-#endif
+//#endif
 
 #ifdef __cplusplus
 extern "C" {

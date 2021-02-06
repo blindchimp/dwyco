@@ -10,6 +10,7 @@
 #define VCINT_H
 // $Header: g:/dwight/repo/vc/rcs/vcint.h 1.47 1997/10/05 17:27:06 dwight Stable $
 
+#include <stdint.h>
 #include "vcatomic.h"
 #include "vcxstrm.h"
 
@@ -29,17 +30,15 @@ protected:
 // note: windows 64bit compilations "long" is 32 bit.
 // in a few places we assume we can fit a pointer into a long
 // which breaks ms 64bit builds.
-#ifdef _WIN64
-        long long i;
-#else
-	long i;
-#endif
+
+        int64_t i;
 	static char buf[100];
 public:
 	vc_int() ;
-	vc_int(long i2) ;
+        vc_int(int64_t i2) ;
 	vc_int(const vc_int &v) ;
 	virtual ~vc_int() ;
+        operator int64_t() const;
 	operator long() const ;
 	operator int () const ;
 	operator double() const ;
