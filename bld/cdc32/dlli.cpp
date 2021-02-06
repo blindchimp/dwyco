@@ -1543,6 +1543,7 @@ dwyco_init()
     // the user can override by calling this itself.
     dwyco_enable_activity_checking(1, Inactivity_time, internal_activity);
     init_gj();
+    reindex_possible_changes();
     Inited = 1;
     return 1;
 }

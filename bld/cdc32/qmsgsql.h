@@ -67,6 +67,8 @@ vc sql_get_non_local_messages_at_uid(vc uid);
 vc sql_dump_mi();
 vc sql_dump_mt();
 
+void reindex_possible_changes();
+
 }
 
 #endif
