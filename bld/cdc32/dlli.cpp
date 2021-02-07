@@ -747,6 +747,27 @@ dwyco_debug_dump()
         }
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
     }
+    (*dbg_msg_callback)(0, "Broadcasts", 0, 0);
+    v = vc::tree_to_vector(Broadcast_discoveries);
+    for(int i = 0; i < v.num_elems(); ++i)
+    {
+        DwString a(to_hex(v[i][0]));
+        a += " ";
+        vc h = v[i][1];
+        a += " ";
+        a += h[0].peek_str();
+        a += " ";
+        a += h[1].peek_str();
+        a += " ";
+        a += h[2].peek_str();
+        a += " ";
+        a += h[3].peek_str();
+        a += " ";
+        (*dbg_msg_callback)(0, a.c_str(), 0, 0);
+
+    }
+
+
 
     scoped_ptr<ChanList> chans(MMChannel::get_serviced_channels());
     ChanListIter i(chans.get());

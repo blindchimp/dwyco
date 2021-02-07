@@ -88,7 +88,8 @@ MMChannel::package_index()
     cmd[0] = "idx";
     cmd[1] = file_to_string((const char *)fn);
     cmd[2] = file_to_string((const char *)fn2);
-
+    remove((const char *)fn);
+    remove((const char *)fn2);
     return cmd;
 }
 
