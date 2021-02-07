@@ -6533,6 +6533,7 @@ sync_call_setup()
     // a call, instead waiting for another client to start things up.
     for(int i = 0; i < call_uids.num_elems(); ++i)
     {
+        GRTLOG("trying sync to %s", (const char *)to_hex(call_uids[i]), 0);
         if(call_uids[i] > My_UID)
         {
             vc pw;
@@ -6545,6 +6546,7 @@ sync_call_setup()
                 pw = Current_alternate->hash_key_material();
             else
                 pw = "";
+            GRTLOG("out trying sync to %s (%s)", (const char *)to_hex(call_uids[i]), (const char *)to_hex(pw));
             dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                               (const char *)pw, pw.len(), "sync", 4, 1);
         }
