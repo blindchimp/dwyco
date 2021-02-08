@@ -23,10 +23,6 @@ DwGrowingString::DwGrowingString(int len)
 	curlen = 0;
 }
 
-DwGrowingString::~DwGrowingString()
-{
-}
-
 long
 DwGrowingString::length()
 {
