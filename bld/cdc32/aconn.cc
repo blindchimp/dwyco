@@ -42,7 +42,8 @@ static int Inhibit_accept;
 static vc Local_discover;
 static vc Local_broadcast;
 vc Broadcast_discoveries;
-ssns::signal1<vc> Local_uid_discovered;
+static DwTreeKaz<time_t, vc> Freshness(0);
+ssns::signal2<vc, int> Local_uid_discovered;
 void set_listen_state(int on);
 
 // note: this slot is called whenever anything in the net
@@ -189,8 +190,6 @@ static
 int
 start_broadcaster()
 {
-//    if(LocalIP.is_nil())
-//        return 0;
     if(Broadcast_discoveries.is_nil())
         Broadcast_discoveries = vc(VC_TREE);
     Local_broadcast = vc(VC_SOCKET_DGRAM);
@@ -207,7 +206,6 @@ start_broadcaster()
         stop_broadcaster();
         return 0;
     }
-    //a = (const char *)LocalIP;
     a = "any:any";
     if(Local_broadcast.socket_init(a.c_str(), 0, 0).is_nil())
     {
@@ -251,11 +249,7 @@ static
 void
 broadcast_tick()
 {
-//    if((Local_broadcast.is_nil() || Local_discover.is_nil()) /*&& LocalIP.is_nil()*/)
-//    {
-//        return;
-//    }
-    if((Local_broadcast.is_nil() || Local_discover.is_nil())/* && !LocalIP.is_nil()*/)
+    if((Local_broadcast.is_nil() || Local_discover.is_nil()))
     {
         start_broadcaster();
         return;
@@ -272,7 +266,8 @@ broadcast_tick()
                 GRTLOGVC(data);
                 data[1][0] = strip_port(peer);
                 Broadcast_discoveries.add_kv(data[0], data[1]);
-                Local_uid_discovered.emit(data[0]);
+                Local_uid_discovered.emit(data[0], 1);
+                Freshness.replace(data[0], time(0));
             }
         }
     }
@@ -288,6 +283,22 @@ broadcast_tick()
     v.append(get_settings_value("net/pal_port"));
     announce[1] = v;
     sendvc(Local_broadcast, announce);
+    auto it = DwTreeKazIter<time_t, vc>(&Freshness);
+    DwVec<vc> kill;
+    for(; !it.eol(); it.forward())
+    {
+        auto a = it.get();
+        auto tm = time(0) - a.get_value();
+        if(tm  > (3 * BROADCAST_INTERVAL) / 1000)
+            kill.append(a.get_key());
+    }
+    for(int i = 0; i < kill.num_elems(); ++i)
+    {
+        Local_uid_discovered.emit(kill[i], 0);
+        Freshness.del(kill[i]);
+        Broadcast_discoveries.del(kill[i]);
+    }
+
     Broadcast_timer.start();
 }
 
