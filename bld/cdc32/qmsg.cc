@@ -2987,9 +2987,12 @@ decrypt_msg_body(vc body)
     // set up in the current group, if we have a group key available
     // we should be able to decrypt a message sent with that key.
     vc ak = DH_alternate::get_all_keys();
-    for(int i = 0; i < ak.num_elems(); ++i)
+    if(!ak.is_nil())
     {
-        prvkeys.append(ak[i]);
+        for(int i = 0; i < ak.num_elems(); ++i)
+        {
+            prvkeys.append(ak[i]);
+        }
     }
 
     //prvkeys[1] = Current_alternate->my_static();

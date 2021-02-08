@@ -218,6 +218,8 @@ DH_alternate::load_account(vc alternate_name)
 int
 DH_alternate::insert_new_key(vc alt_name, vc grp_key)
 {
+    if(!DHG_db)
+        return 0;
     if(!insert_record(My_UID, alt_name, grp_key))
         return 0;
     return 1;
@@ -226,6 +228,8 @@ DH_alternate::insert_new_key(vc alt_name, vc grp_key)
 int
 DH_alternate::remove_key(vc alt_name)
 {
+    if(!DHG_db)
+        return 0;
     DHG_db->sql_simple("delete from keys where alt_name = ?1", alt_name);
     return 1;
 }
@@ -269,6 +273,8 @@ DH_alternate::hash_key_material()
 vc
 DH_alternate::get_all_keys()
 {
+    if(!DHG_db)
+        return vcnil;
     vc res = DHG_db->sql_simple("select pubkey, privkey from keys order by time desc");
     vc ret(VC_VECTOR);
     int n = res.num_elems();
