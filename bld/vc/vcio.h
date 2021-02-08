@@ -60,6 +60,7 @@ public:
 	VcIOHack& operator<<(int);
 	VcIOHack& operator<<(unsigned int);
 	VcIOHack& operator<<(long);
+        VcIOHack& operator<<(long long);
 	VcIOHack& operator<<(unsigned long);
 	VcIOHack& operator<<(double);
     virtual VcIOHack& operator<<(vc);

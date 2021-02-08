@@ -212,6 +212,18 @@ VcIOHackStr::operator<<(long c)
 }
 
 VcIOHack&
+VcIOHackStr::operator<<(long long c)
+{
+    char a[TMPBUFSTR];
+    unsigned int i;
+    i = snprintf(a, sizeof(a) - 1, format ? format : "%lld", c);
+    if(i >= sizeof(a) - 1)
+        oopanic("snprintf pooched");
+    s.append(a, i);
+    return *this;
+}
+
+VcIOHack&
 VcIOHackStr::operator<<(unsigned long c)
 {
 	char a[TMPBUFSTR];

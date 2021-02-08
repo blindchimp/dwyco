@@ -268,9 +268,7 @@ public:
 	vc(double d);
 	vc(int i);
 	vc(long i);
-#ifdef _Windows
         vc(int64_t);
-#endif
 	vc(const char *s);
         vc(const char *s, int len);
 
