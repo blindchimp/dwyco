@@ -129,7 +129,7 @@ vc Chat_ips;
 vc Chat_ports;
 vc Session_infos;
 static vc In_progress;
-static long Logical_clock;
+static int64_t Logical_clock;
 // this is used in order to assign clock values to
 // messages when we first see them from the server.
 static vc Mid_to_logical_clock;
