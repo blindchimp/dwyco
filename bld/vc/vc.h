@@ -268,7 +268,7 @@ public:
 	vc(double d);
 	vc(int i);
 	vc(long i);
-        vc(int64_t);
+        vc(long long);
 	vc(const char *s);
         vc(const char *s, int len);
 
