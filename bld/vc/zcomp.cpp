@@ -104,7 +104,7 @@ buffer_uncompress(z_stream& z, char *input_buffer, int len, DwGrowingString *out
 
 static
 void
-compress_dtor(long ctx)
+compress_dtor(void *ctx)
 {
 	if(!ctx) return;
 	z_stream *d = (z_stream *)ctx;
@@ -114,7 +114,7 @@ compress_dtor(long ctx)
 
 static
 void
-decompress_dtor(long ctx)
+decompress_dtor(void *ctx)
 {
 	if(!ctx) return;
 	z_stream *d = (z_stream *)ctx;
@@ -132,7 +132,7 @@ vclh_compression_open(vc level)
 	z_stream *d = new z_stream;
 	memset(d, 0, sizeof(*d));
 	deflateInit2(d, (int)level, Z_DEFLATED, 9, 4, Z_DEFAULT_STRATEGY);
-	return vc(VC_INT_DTOR, (const char *)compress_dtor, (long)d);
+    return vc(VC_INT_DTOR, compress_dtor, d);
 }
 
 vc
@@ -148,7 +148,7 @@ vclh_decompression_open()
 	z_stream *d = new z_stream;
 	memset(d, 0, sizeof(*d));
 	inflateInit(d);
-	return vc(VC_INT_DTOR, (const char *)decompress_dtor, (long)d);
+    return vc(VC_INT_DTOR, decompress_dtor, d);
 }
 
 vc
