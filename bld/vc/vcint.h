@@ -111,8 +111,6 @@ public:
 	virtual long xfer_in(vcxstream&);
 };
 
-typedef void (*vc_int_dtor_fun)(long);
-
 class vc_int_dtor : public vc_int
 {
 protected:
@@ -120,9 +118,10 @@ protected:
 
 public:
 	vc_int_dtor(vc_int_dtor_fun d = 0) : vc_int() { dt = d;}
-	vc_int_dtor(long i2, vc_int_dtor_fun d = 0) : vc_int(i2) {dt = d;}
-	virtual ~vc_int_dtor() {if(dt) (*dt)(i); i = 0;}
+        //vc_int_dtor(int64_t i2, vc_int_dtor_fun d = 0) : vc_int(i2) {dt = d;}
+        vc_int_dtor(void *i2, vc_int_dtor_fun d = 0) : vc_int((int64_t)i2) {dt = d;}
+        virtual ~vc_int_dtor() {if(dt) (*dt)((void *)i); i = 0;}
 	virtual vc_default *do_copy() const {oopanic("copy int_dtor?"); return 0;}
-	virtual int close()  {if(dt) (*dt)(i); i = 0; return 0;}
+        virtual int close()  {if(dt) (*dt)((void *)i); i = 0; return 0;}
 };
 #endif
