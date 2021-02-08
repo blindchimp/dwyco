@@ -6,6 +6,8 @@ DEFINES += VCCFG_FILE
 
 CONFIG(debug): DEFINES += DWYCO_DEBUG
 
+CONFIG(debug): DEFINES += DWYCO_DEBUG
+
 linux-*|wasm-emscripten {
 DEFINES += LINUX
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
