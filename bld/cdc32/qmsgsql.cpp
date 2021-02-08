@@ -428,10 +428,8 @@ import_remote_mi(vc remote_uid)
         sql_simple("delete from crdt_tags");
         sql_simple("delete from current_clients where uid = ?1", huid);
 
-        //sql_simple("delete from main.gi where from_client_uid = ?1", huid);
-        //sql_simple("delete from mt.gmt where uid = ?1", huid);
-
         sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
+        boost_logical_clock();
         sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
         sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
 
@@ -484,6 +482,7 @@ import_remote_iupdate(vc remote_uid, vc vals)
             for(int i = 0; i < vals.num_elems(); ++i)
                 a.append(vals[i]);
             sql_bulk_query(&a);
+            boost_logical_clock();
         }
         else if(op == vc("d"))
         {
@@ -690,7 +689,7 @@ sql_delete_mid(vc mid)
 long
 sql_get_max_logical_clock()
 {
-    vc res = sql_simple("select max(logical_clock) from msg_idx");
+    vc res = sql_simple("select max(logical_clock) from gi");
     if(res[0][0].type() != VC_INT)
         return 0;
     return (long)res[0][0];

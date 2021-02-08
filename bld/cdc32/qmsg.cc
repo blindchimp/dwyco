@@ -141,6 +141,14 @@ int save_msg(vc m, vc msg_id);
 
 #include "qmsgsql.h"
 
+void
+boost_logical_clock()
+{
+    long tmplc = sql_get_max_logical_clock();
+    if(tmplc > Logical_clock)
+        Logical_clock = tmplc + 1;
+}
+
 #ifdef WIN32
 int
 move_replace(const DwString& s, const DwString& d)
@@ -435,9 +443,7 @@ init_qmsg()
     Chat_ports = vc(VC_TREE);
 
     init_qmsg_sql();
-    long tmplc = sql_get_max_logical_clock();
-    if(tmplc > Logical_clock)
-        Logical_clock = tmplc + 1;
+    boost_logical_clock();
 
     new_pipeline();
 
