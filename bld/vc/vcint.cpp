@@ -21,6 +21,7 @@
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcint.cpp 1.49 1998/12/09 05:12:00 dwight Exp $";
 
 char vc_int::buf[100];
+static VcIOHackStr intbuf;
 
 vc_int::vc_int() { i = 0; }
 vc_int::vc_int(int64_t i2) { i = i2; }
@@ -68,12 +69,11 @@ vc_int::operator const char *() const {USER_BOMB("can't convert int to string (u
 const char *
 vc_int::peek_str() const
 {
-#ifdef _WIN64
-    sprintf(buf, "%lld", i);
-#else
-	sprintf(buf, "%ld", i);
-#endif
-	return buf;
+    intbuf.reset();
+    intbuf << i;
+    char z = 0;
+    intbuf.append(&z, 1);
+    return intbuf.ref_str();
 }
 
 void
