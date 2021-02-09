@@ -7,6 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
+#include <time.h>
 #include "netvid.h"
 #include "netcod.h"
 #include "aconn.h"
