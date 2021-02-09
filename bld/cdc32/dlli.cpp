@@ -3091,7 +3091,7 @@ DWYCOEXPORT
 int
 dwyco_set_max_established_originated_calls(int n)
 {
-    int tmp = TheCallQ->max_established;
+    int tmp = TheCallQ->get_max_established();
     TheCallQ->set_max_established(n);
     return tmp;
 }

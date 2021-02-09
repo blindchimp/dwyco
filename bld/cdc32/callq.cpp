@@ -32,8 +32,28 @@ extern int Media_select;
 #define CQ_FAILED 3
 #define CQ_TERMINATED 4
 #define CALLQ_POLL_TIME (1000)
+#define CALLQ_SLOW_POLL_TIME (60000)
 
 namespace dwyco {
+struct callq
+{
+    ValidPtr vp;	// holds the MMCall pointer we are tracking
+    DwTimer timeout;
+    int status;
+    // we interpose our stuff so we can track the call status
+    CallStatusCallback user_cb;
+    void *arg1;
+    ValidPtr arg2;
+    int cancel;
+
+    callq(ValidPtr p) : vp(p) {
+        status = 0;
+        user_cb = 0;
+        arg1 = 0;
+        cancel = 0;
+    }
+};
+
 CallQ *TheCallQ;
 
 void
@@ -50,9 +70,15 @@ callq_tick()
         TheCallQ->tick();
 }
 
-CallQ::CallQ()
+CallQ::CallQ() : call_q_timer("callq")
 {
     max_established = 4;
+    call_q_timer.load(CALLQ_POLL_TIME);
+    //call_q_timer.set_oneshot(0);
+    call_q_timer.set_autoreload(1);
+    call_q_timer.set_interval(CALLQ_POLL_TIME);
+    call_q_timer.reset();
+    call_q_timer.start();
 }
 
 CallQ::~CallQ()
@@ -63,14 +89,22 @@ CallQ::~CallQ()
 }
 
 void
+CallQ::reset_poll_time(dwtime_t interval)
+{
+    call_q_timer.stop();
+    call_q_timer.set_interval(interval);
+    call_q_timer.start();
+}
+
+void
 CallQ::set_max_established(int n)
 {
     max_established = n;
 }
 
-static
+
 void
-cq_call_status(MMCall *mmc, int status, void *arg1, ValidPtr vp)
+CallQ::cq_call_status(MMCall *mmc, int status, void *arg1, ValidPtr vp)
 {
     if(!vp.is_valid())
         return;
@@ -95,6 +129,7 @@ cq_call_status(MMCall *mmc, int status, void *arg1, ValidPtr vp)
     {
         (*(cq[i]->user_cb))(mmc, status, cq[i]->arg1, cq[i]->arg2);
     }
+    TheCallQ->reset_poll_time(CALLQ_POLL_TIME);
 }
 
 int
@@ -125,14 +160,16 @@ CallQ::add_call(MMCall *mmc)
     cq->arg2 = mmc->scb_arg2;
     mmc->scb = cq_call_status;
     mmc->scb_arg2 = mmc->vp;
+    TheCallQ->reset_poll_time(CALLQ_POLL_TIME);
     return calls[i]->vp.cookie;
 }
 
-int
-CallQ::cancel_call(int n)
-{
-    return 0;
-}
+//int
+//CallQ::cancel_call(int n)
+//{
+//    oopanic("this doesn't work");
+//    return 0;
+//}
 
 int
 CallQ::cancel_all()
@@ -164,7 +201,7 @@ int
 CallQ::tick()
 {
     static int been_here;
-    static DwTimer call_q_timer("callq");
+
     if(!been_here)
     {
         call_q_timer.load(CALLQ_POLL_TIME);
@@ -226,6 +263,16 @@ CallQ::tick()
     // concurrent connection setups.
     if(connecting >= 3)
         return 0;
+
+    if(connected + connecting + waiting == 0)
+    {
+        // note: there may be connected calls sitting around for
+        // quite awhile, but they don't need any attention from the
+        // callq except when they are finally terminated.
+        // so reduce the polling interval to save some cycles
+        reset_poll_time(CALLQ_SLOW_POLL_TIME);
+        return 0;
+    }
 
     // find calls that are waiting to be started and get
     // enough of them going.

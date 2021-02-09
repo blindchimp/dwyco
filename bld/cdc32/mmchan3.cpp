@@ -11,6 +11,7 @@
 #ifdef LINUX
 #include <unistd.h>
 #endif
+#include <stdio.h>
 #include "mmchan.h"
 #include "sproto.h"
 #include "fnmod.h"
