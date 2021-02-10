@@ -1054,9 +1054,6 @@ public:
     void send_pull(vc mid, int pri);
 
     ssns::signal3<vc, vc, vc> pull_done;
-    int signal_setup;
-
-
 };
 
 #define PULLPRI_INTERACTIVE 0

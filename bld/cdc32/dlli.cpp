@@ -6419,13 +6419,11 @@ start_stalled_pulls()
             if(mc)
             {
                 DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mmc->uid);
+                if(stalled_pulls.num_elems() > 0)
+                    mc->pull_done.connect_ptrfun(pull_done_slot, 1);
+
                 for(int i = 0; i < stalled_pulls.num_elems(); ++i)
                 {
-                    if(!mc->signal_setup)
-                    {
-                        mc->pull_done.connect_ptrfun(pull_done_slot);
-                        mc->signal_setup = 1;
-                    }
                     stalled_pulls[i]->set_in_progress(1);
                     mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
                 }
@@ -6438,14 +6436,10 @@ start_stalled_pulls()
     {
         MMChannel *mc = cl[i];
         DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());
-
+        if(stalled_pulls.num_elems() > 0)
+            mc->pull_done.connect_ptrfun(pull_done_slot, 1);
         for(int i = 0; i < stalled_pulls.num_elems(); ++i)
         {
-            if(!mc->signal_setup)
-            {
-                mc->pull_done.connect_ptrfun(pull_done_slot);
-                mc->signal_setup = 1;
-            }
             stalled_pulls[i]->set_in_progress(1);
             mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
         }
@@ -6599,11 +6593,7 @@ pull_msg(vc uid, vc msg_id)
                 MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
                 if(mc)
                 {
-                    if(!mc->signal_setup)
-                    {
-                        mc->pull_done.connect_ptrfun(pull_done_slot);
-                        mc->signal_setup = 1;
-                    }
+                    mc->pull_done.connect_ptrfun(pull_done_slot, 1);
                     pulls::set_pull_in_progress(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
                     return -2;
@@ -6619,11 +6609,9 @@ pull_msg(vc uid, vc msg_id)
         {
             if(pulls::pull_in_progress(msg_id, mc->remote_uid()))
                 continue;
-            if(!mc->signal_setup)
-            {
-                mc->pull_done.connect_ptrfun(pull_done_slot);
-                mc->signal_setup = 1;
-            }
+
+            mc->pull_done.connect_ptrfun(pull_done_slot, 1);
+
             pulls::set_pull_in_progress(msg_id, mc->remote_uid());
             mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
             // note: this probably needs a heuristic to either send
@@ -6640,11 +6628,9 @@ assert_eager_pulls(MMChannel *mc, vc uid)
 {
     vc huid = to_hex(uid);
     vc mids = sql_get_non_local_messages_at_uid(uid);
-    if(!mc->signal_setup)
-    {
-        mc->pull_done.connect_ptrfun(pull_done_slot);
-        mc->signal_setup = 1;
-    }
+
+    mc->pull_done.connect_ptrfun(pull_done_slot, 1);
+
     for(int i = 0; i < mids.num_elems(); ++i)
     {
         vc mid = mids[i];
