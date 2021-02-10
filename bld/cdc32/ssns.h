@@ -57,8 +57,8 @@ public:
     ~mutex_locker();
 private:
     // No copy
-    mutex_locker(const mutex_locker& copy) { }
-    mutex_locker& operator=(const mutex_locker& copy) { }
+    mutex_locker(const mutex_locker& copy);// { }
+    mutex_locker& operator=(const mutex_locker& copy);// { }
 };
 
 // Slot bases
@@ -807,7 +807,7 @@ public:
 
 private:
     // The copy ctor copies connections, but assignment does not
-    trackable& operator=(const trackable& copy) { }
+    trackable& operator=(const trackable& copy);// { }
 
     // The signals connected to this trackable
     signal_set m_signals;
