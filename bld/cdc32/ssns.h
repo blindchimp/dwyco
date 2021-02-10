@@ -1,18 +1,10 @@
-
-/* ===
-; Copyright (c) 1995-present, Dwyco, Inc.
-; 
-; This Source Code Form is subject to the terms of the Mozilla Public
-; License, v. 2.0. If a copy of the MPL was not distributed with this file,
-; You can obtain one at https://mozilla.org/MPL/2.0/.
-*/
 // File:    ssns.h
 // Author:  Brian Allen Vanderburg II
 // Purpose: A simple signals and slots implemnetation
 // ---------------------------------------------------------------------
 
 // Configuration support
-#define SSNS_NO_THREADS // - No support for multiple threads, ansi/iso c++
+#define SSNS_NO_THREADS //- No support for multiple threads, ansi/iso c++
 // SSNS_WIN32_THREADS - Use Windows threads
 // SSNS_POSIX_THREADS - Use Posix threads
 // SSNS_DLL - Build or use as a shared library/DLL
@@ -24,21 +16,21 @@
 
 // Detect how to import/export symbols
 #if defined(WIN32)
-#define SSNS_IMPORT __declspec(dllimport)
-#define SSNS_EXPORT __declspec(dllexport)
+    #define SSNS_IMPORT __declspec(dllimport)
+    #define SSNS_EXPORT __declspec(dllexport)
 #else
-#define SSNS_IMPORT
-#define SSNS_EXPORT
+    #define SSNS_IMPORT
+    #define SSNS_EXPORT
 #endif
 
 #ifdef SSNS_DLL
-#ifdef SSNS_BUILDING
-#define SSNS_IMPEXP SSNS_EXPORT
+    #ifdef SSNS_BUILDING
+        #define SSNS_IMPEXP SSNS_EXPORT
+    #else
+        #define SSNS_IMPEXP SSNS_IMPORT
+    #endif
 #else
-#define SSNS_IMPEXP SSNS_IMPORT
-#endif
-#else
-#define SSNS_IMPEXP
+    #define SSNS_IMPEXP
 #endif
 
 // Includes
@@ -65,8 +57,8 @@ public:
     ~mutex_locker();
 private:
     // No copy
-    mutex_locker(const mutex_locker& copy);// { }
-    mutex_locker& operator=(const mutex_locker& copy);// { }
+    mutex_locker(const mutex_locker& copy) { }
+    mutex_locker& operator=(const mutex_locker& copy) { }
 };
 
 // Slot bases
@@ -151,6 +143,7 @@ public:
 
 class slot_ptrfun0 : public slot_base0
 {
+//friend class signal0;
 public:
     slot_ptrfun0() : m_fn(0)
     {
@@ -180,12 +173,13 @@ public:
         return 0;
     }
 
-private:
+public:
     void (*m_fn)();
 };
 template <typename T1>
 class slot_ptrfun1 : public slot_base1<T1>
 {
+//friend class signal1<T1>;
 public:
     slot_ptrfun1() : m_fn(0)
     {
@@ -215,12 +209,13 @@ public:
         return 0;
     }
 
-private:
+public:
     void (*m_fn)(T1);
 };
 template <typename T1, typename T2>
 class slot_ptrfun2 : public slot_base2<T1, T2>
 {
+//friend class signal2<T1, T2>;
 public:
     slot_ptrfun2() : m_fn(0)
     {
@@ -250,12 +245,13 @@ public:
         return 0;
     }
 
-private:
+public:
     void (*m_fn)(T1, T2);
 };
 template <typename T1, typename T2, typename T3>
 class slot_ptrfun3 : public slot_base3<T1, T2, T3>
 {
+//friend class signal3<T1, T2, T3>;
 public:
     slot_ptrfun3() : m_fn(0)
     {
@@ -285,12 +281,13 @@ public:
         return 0;
     }
 
-private:
+public:
     void (*m_fn)(T1, T2, T3);
 };
 template <typename T1, typename T2, typename T3, typename T4>
 class slot_ptrfun4 : public slot_base4<T1, T2, T3, T4>
 {
+//friend class signal4<T1, T2, T3, T4>;
 public:
     slot_ptrfun4() : m_fn(0)
     {
@@ -320,12 +317,13 @@ public:
         return 0;
     }
 
-private:
+public:
     void (*m_fn)(T1, T2, T3, T4);
 };
 template <typename T1, typename T2, typename T3, typename T4, typename T5>
 class slot_ptrfun5 : public slot_base5<T1, T2, T3, T4, T5>
 {
+//friend class signal5<T1, T2, T3, T4, T5>;
 public:
     slot_ptrfun5() : m_fn(0)
     {
@@ -355,12 +353,13 @@ public:
         return 0;
     }
 
-private:
+public:
     void (*m_fn)(T1, T2, T3, T4, T5);
 };
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
 class slot_ptrfun6 : public slot_base6<T1, T2, T3, T4, T5, T6>
 {
+//friend class signal6<T1, T2, T3, T4, T5, T6>;
 public:
     slot_ptrfun6() : m_fn(0)
     {
@@ -390,12 +389,13 @@ public:
         return 0;
     }
 
-private:
+public:
     void (*m_fn)(T1, T2, T3, T4, T5, T6);
 };
 template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
 class slot_ptrfun7 : public slot_base7<T1, T2, T3, T4, T5, T6, T7>
 {
+//friend class signal7<T1, T2, T3, T4, T5, T6, T7>;
 public:
     slot_ptrfun7() : m_fn(0)
     {
@@ -425,7 +425,7 @@ public:
         return 0;
     }
 
-private:
+public:
     void (*m_fn)(T1, T2, T3, T4, T5, T6, T7);
 };
 
@@ -438,7 +438,7 @@ public:
     slot_memfun0() : m_obj(0), m_fn(0)
     {
     }
-
+    
     slot_memfun0(T_obj* obj, void (T_obj::*fn)()) : m_obj(obj), m_fn(fn)
     {
     }
@@ -474,7 +474,7 @@ public:
     slot_memfun1() : m_obj(0), m_fn(0)
     {
     }
-
+    
     slot_memfun1(T_obj* obj, void (T_obj::*fn)(T1)) : m_obj(obj), m_fn(fn)
     {
     }
@@ -510,7 +510,7 @@ public:
     slot_memfun2() : m_obj(0), m_fn(0)
     {
     }
-
+    
     slot_memfun2(T_obj* obj, void (T_obj::*fn)(T1, T2)) : m_obj(obj), m_fn(fn)
     {
     }
@@ -546,7 +546,7 @@ public:
     slot_memfun3() : m_obj(0), m_fn(0)
     {
     }
-
+    
     slot_memfun3(T_obj* obj, void (T_obj::*fn)(T1, T2, T3)) : m_obj(obj), m_fn(fn)
     {
     }
@@ -582,7 +582,7 @@ public:
     slot_memfun4() : m_obj(0), m_fn(0)
     {
     }
-
+    
     slot_memfun4(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4)) : m_obj(obj), m_fn(fn)
     {
     }
@@ -618,7 +618,7 @@ public:
     slot_memfun5() : m_obj(0), m_fn(0)
     {
     }
-
+    
     slot_memfun5(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5)) : m_obj(obj), m_fn(fn)
     {
     }
@@ -654,7 +654,7 @@ public:
     slot_memfun6() : m_obj(0), m_fn(0)
     {
     }
-
+    
     slot_memfun6(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6)) : m_obj(obj), m_fn(fn)
     {
     }
@@ -690,7 +690,7 @@ public:
     slot_memfun7() : m_obj(0), m_fn(0)
     {
     }
-
+    
     slot_memfun7(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6, T7)) : m_obj(obj), m_fn(fn)
     {
     }
@@ -764,10 +764,10 @@ public:
         {
             // Tell the signal to duplicate any slots that are
             // connected to the copy, but make them connect to us
-            (*it)->trackable_duplicate(&copy, this);
-            m_signals.insert(*it);
-            ++it;
-        }
+   		    (*it)->trackable_duplicate(&copy, this);
+			m_signals.insert(*it);
+			++it;
+		}
     }
 
     ~trackable()
@@ -807,7 +807,7 @@ public:
 
 private:
     // The copy ctor copies connections, but assignment does not
-    trackable& operator=(const trackable& copy);// { }
+    trackable& operator=(const trackable& copy) { }
 
     // The signals connected to this trackable
     signal_set m_signals;
@@ -909,8 +909,8 @@ public:
     {
         mutex_locker lock;
 
-        slot_list::const_iterator it = copy.m_slots.begin();
-        slot_list::const_iterator itEnd = copy.m_slots.end();
+         slot_list::const_iterator it = copy.m_slots.begin();
+         slot_list::const_iterator itEnd = copy.m_slots.end();
 
         while(it != itEnd)
         {
@@ -933,12 +933,12 @@ public:
     {
         mutex_locker lock;
 
-        slot_list::iterator it = m_slots.begin();
-        slot_list::iterator itEnd = m_slots.end();
+         slot_list::iterator it = m_slots.begin();
+         slot_list::iterator itEnd = m_slots.end();
 
         while(it != itEnd)
         {
-            slot_list::iterator itNext = it;
+             slot_list::iterator itNext = it;
             ++itNext;
 
             if((*it)->get_dest() == obj)
@@ -955,8 +955,8 @@ public:
     {
         mutex_locker lock;
 
-        slot_list::iterator it = m_slots.begin();
-        slot_list::iterator itEnd = m_slots.end();
+         slot_list::iterator it = m_slots.begin();
+         slot_list::iterator itEnd = m_slots.end();
 
         while(it != itEnd)
         {
@@ -995,24 +995,38 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)())
+    connection connect_ptrfun(void (*fn)(), int unique = 0)
     {
         mutex_locker lock;
-
+        
         slot_ptrfun0* slot = new slot_ptrfun0(fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
         m_slots.push_back(slot);
 
         return connection(this, slot);
     }
-
+    
     template <typename T_obj>
     connection connect_memfun(T_obj* obj, void (T_obj::*fn)())
     {
         mutex_locker lock;
-
+        
         slot_memfun0<T_obj>* slot = new slot_memfun0<T_obj>(obj, fn);
         m_slots.push_back(slot);
-
+        
         obj->signal_connect(this);
 
         return connection(this, slot);
@@ -1022,14 +1036,14 @@ public:
     {
         mutex_locker lock;
 
-        slot_list::iterator it = m_slots.begin();
-        slot_list::iterator itEnd = m_slots.end();
+         slot_list::iterator it = m_slots.begin();
+         slot_list::iterator itEnd = m_slots.end();
 
         // Disconnect ALL slots that connect to the trackable,
         // not just the first one
         while(it != itEnd)
         {
-            slot_list::iterator itNext = it;
+             slot_list::iterator itNext = it;
             ++itNext;
 
             if((*it)->get_dest() == obj)
@@ -1049,8 +1063,8 @@ public:
     {
         mutex_locker lock;
 
-        slot_list::iterator it = m_slots.begin();
-        slot_list::iterator itEnd = m_slots.end();
+         slot_list::iterator it = m_slots.begin();
+         slot_list::iterator itEnd = m_slots.end();
         trackable* dest = 0;
 
         while(it != itEnd)
@@ -1095,8 +1109,8 @@ public:
     {
         mutex_locker lock;
 
-        slot_list::const_iterator it = m_slots.begin();
-        slot_list::const_iterator itEnd = m_slots.end();
+         slot_list::const_iterator it = m_slots.begin();
+         slot_list::const_iterator itEnd = m_slots.end();
 
         while(it != itEnd)
         {
@@ -1129,17 +1143,17 @@ public:
     void emit()
     {
         mutex_locker lock;
-
-        slot_list::const_iterator it = this->m_slots.begin();
-        slot_list::const_iterator itEnd = this->m_slots.end();
-
+        
+         slot_list::const_iterator it = this->m_slots.begin();
+         slot_list::const_iterator itEnd = this->m_slots.end();
+        
         while(it != itEnd)
         {
-            slot_list::const_iterator itNext = it;
+             slot_list::const_iterator itNext = it;
             ++itNext;
-
+            
             (*it)->emit();
-
+                
             it = itNext;
         }
     }
@@ -1254,24 +1268,38 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1))
+    connection connect_ptrfun(void (*fn)(T1), int unique = 0)
     {
         mutex_locker lock;
-
+        
         slot_ptrfun1<T1>* slot = new slot_ptrfun1<T1>(fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
         m_slots.push_back(slot);
 
         return connection(this, slot);
     }
-
+    
     template <typename T_obj>
     connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1))
     {
         mutex_locker lock;
-
+        
         slot_memfun1<T_obj, T1>* slot = new slot_memfun1<T_obj, T1>(obj, fn);
         m_slots.push_back(slot);
-
+        
         obj->signal_connect(this);
 
         return connection(this, slot);
@@ -1388,17 +1416,17 @@ public:
     void emit(T1 a1)
     {
         mutex_locker lock;
-
+        
         typename slot_list::const_iterator it = this->m_slots.begin();
         typename slot_list::const_iterator itEnd = this->m_slots.end();
-
+        
         while(it != itEnd)
         {
             typename slot_list::const_iterator itNext = it;
             ++itNext;
-
+            
             (*it)->emit(a1);
-
+                
             it = itNext;
         }
     }
@@ -1513,24 +1541,38 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2))
+    connection connect_ptrfun(void (*fn)(T1, T2), int unique = 0)
     {
         mutex_locker lock;
-
+        
         slot_ptrfun2<T1, T2>* slot = new slot_ptrfun2<T1, T2>(fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
         m_slots.push_back(slot);
 
         return connection(this, slot);
     }
-
+    
     template <typename T_obj>
     connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2))
     {
         mutex_locker lock;
-
+        
         slot_memfun2<T_obj, T1, T2>* slot = new slot_memfun2<T_obj, T1, T2>(obj, fn);
         m_slots.push_back(slot);
-
+        
         obj->signal_connect(this);
 
         return connection(this, slot);
@@ -1647,17 +1689,17 @@ public:
     void emit(T1 a1, T2 a2)
     {
         mutex_locker lock;
-
+        
         typename slot_list::const_iterator it = this->m_slots.begin();
         typename slot_list::const_iterator itEnd = this->m_slots.end();
-
+        
         while(it != itEnd)
         {
             typename slot_list::const_iterator itNext = it;
             ++itNext;
-
+            
             (*it)->emit(a1, a2);
-
+                
             it = itNext;
         }
     }
@@ -1772,24 +1814,38 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3))
+    connection connect_ptrfun(void (*fn)(T1, T2, T3), int unique = 0)
     {
         mutex_locker lock;
-
+        
         slot_ptrfun3<T1, T2, T3>* slot = new slot_ptrfun3<T1, T2, T3>(fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
         m_slots.push_back(slot);
 
         return connection(this, slot);
     }
-
+    
     template <typename T_obj>
     connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3))
     {
         mutex_locker lock;
-
+        
         slot_memfun3<T_obj, T1, T2, T3>* slot = new slot_memfun3<T_obj, T1, T2, T3>(obj, fn);
         m_slots.push_back(slot);
-
+        
         obj->signal_connect(this);
 
         return connection(this, slot);
@@ -1906,17 +1962,17 @@ public:
     void emit(T1 a1, T2 a2, T3 a3)
     {
         mutex_locker lock;
-
+        
         typename slot_list::const_iterator it = this->m_slots.begin();
         typename slot_list::const_iterator itEnd = this->m_slots.end();
-
+        
         while(it != itEnd)
         {
             typename slot_list::const_iterator itNext = it;
             ++itNext;
-
+            
             (*it)->emit(a1, a2, a3);
-
+                
             it = itNext;
         }
     }
@@ -2031,24 +2087,38 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4))
+    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4), int unique = 0)
     {
         mutex_locker lock;
-
+        
         slot_ptrfun4<T1, T2, T3, T4>* slot = new slot_ptrfun4<T1, T2, T3, T4>(fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
         m_slots.push_back(slot);
 
         return connection(this, slot);
     }
-
+    
     template <typename T_obj>
     connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4))
     {
         mutex_locker lock;
-
+        
         slot_memfun4<T_obj, T1, T2, T3, T4>* slot = new slot_memfun4<T_obj, T1, T2, T3, T4>(obj, fn);
         m_slots.push_back(slot);
-
+        
         obj->signal_connect(this);
 
         return connection(this, slot);
@@ -2165,17 +2235,17 @@ public:
     void emit(T1 a1, T2 a2, T3 a3, T4 a4)
     {
         mutex_locker lock;
-
+        
         typename slot_list::const_iterator it = this->m_slots.begin();
         typename slot_list::const_iterator itEnd = this->m_slots.end();
-
+        
         while(it != itEnd)
         {
             typename slot_list::const_iterator itNext = it;
             ++itNext;
-
+            
             (*it)->emit(a1, a2, a3, a4);
-
+                
             it = itNext;
         }
     }
@@ -2290,24 +2360,38 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5))
+    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5), int unique = 0)
     {
         mutex_locker lock;
-
+        
         slot_ptrfun5<T1, T2, T3, T4, T5>* slot = new slot_ptrfun5<T1, T2, T3, T4, T5>(fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
         m_slots.push_back(slot);
 
         return connection(this, slot);
     }
-
+    
     template <typename T_obj>
     connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5))
     {
         mutex_locker lock;
-
+        
         slot_memfun5<T_obj, T1, T2, T3, T4, T5>* slot = new slot_memfun5<T_obj, T1, T2, T3, T4, T5>(obj, fn);
         m_slots.push_back(slot);
-
+        
         obj->signal_connect(this);
 
         return connection(this, slot);
@@ -2424,17 +2508,17 @@ public:
     void emit(T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
     {
         mutex_locker lock;
-
+        
         typename slot_list::const_iterator it = this->m_slots.begin();
         typename slot_list::const_iterator itEnd = this->m_slots.end();
-
+        
         while(it != itEnd)
         {
             typename slot_list::const_iterator itNext = it;
             ++itNext;
-
+            
             (*it)->emit(a1, a2, a3, a4, a5);
-
+                
             it = itNext;
         }
     }
@@ -2549,24 +2633,38 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5, T6))
+    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5, T6), int unique = 0)
     {
         mutex_locker lock;
-
+        
         slot_ptrfun6<T1, T2, T3, T4, T5, T6>* slot = new slot_ptrfun6<T1, T2, T3, T4, T5, T6>(fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
         m_slots.push_back(slot);
 
         return connection(this, slot);
     }
-
+    
     template <typename T_obj>
     connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6))
     {
         mutex_locker lock;
-
+        
         slot_memfun6<T_obj, T1, T2, T3, T4, T5, T6>* slot = new slot_memfun6<T_obj, T1, T2, T3, T4, T5, T6>(obj, fn);
         m_slots.push_back(slot);
-
+        
         obj->signal_connect(this);
 
         return connection(this, slot);
@@ -2683,17 +2781,17 @@ public:
     void emit(T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
     {
         mutex_locker lock;
-
+        
         typename slot_list::const_iterator it = this->m_slots.begin();
         typename slot_list::const_iterator itEnd = this->m_slots.end();
-
+        
         while(it != itEnd)
         {
             typename slot_list::const_iterator itNext = it;
             ++itNext;
-
+            
             (*it)->emit(a1, a2, a3, a4, a5, a6);
-
+                
             it = itNext;
         }
     }
@@ -2808,24 +2906,38 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5, T6, T7))
+    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5, T6, T7), int unique = 0)
     {
         mutex_locker lock;
-
+        
         slot_ptrfun7<T1, T2, T3, T4, T5, T6, T7>* slot = new slot_ptrfun7<T1, T2, T3, T4, T5, T6, T7>(fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
         m_slots.push_back(slot);
 
         return connection(this, slot);
     }
-
+    
     template <typename T_obj>
     connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6, T7))
     {
         mutex_locker lock;
-
+        
         slot_memfun7<T_obj, T1, T2, T3, T4, T5, T6, T7>* slot = new slot_memfun7<T_obj, T1, T2, T3, T4, T5, T6, T7>(obj, fn);
         m_slots.push_back(slot);
-
+        
         obj->signal_connect(this);
 
         return connection(this, slot);
@@ -2942,17 +3054,17 @@ public:
     void emit(T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
     {
         mutex_locker lock;
-
+        
         typename slot_list::const_iterator it = this->m_slots.begin();
         typename slot_list::const_iterator itEnd = this->m_slots.end();
-
+        
         while(it != itEnd)
         {
             typename slot_list::const_iterator itNext = it;
             ++itNext;
-
+            
             (*it)->emit(a1, a2, a3, a4, a5, a6, a7);
-
+                
             it = itNext;
         }
     }

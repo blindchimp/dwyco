@@ -39,6 +39,7 @@ define([SLOT_PTRFUN],
 [ifelse($1,0,[],[template <loop($1,[i],[typename T[]i])>])
 class slot_ptrfun$1 : public slot_base$1[]ifelse($1,0,[],[<loop($1,[i],[T[]i])>])
 {
+//friend class signal$1[]ifelse($1,0,[],[<loop($1,[i],[T[]i])>]);
 public:
     slot_ptrfun$1() : m_fn(0)
     {
@@ -68,7 +69,7 @@ public:
         return 0;
     }
 
-private:
+public:
     void (*m_fn)(loop($1,[i],[T[]i]));
 };
 ])
@@ -216,11 +217,25 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(loop($1,[i],[T[]i])))
+    connection connect_ptrfun(void (*fn)(loop($1,[i],[T[]i])), int unique = 0)
     {
         mutex_locker lock;
         
         slot_ptrfun$1[]ifelse($1,0,[],[<loop($1,[i],[T[]i])>])* slot = new slot_ptrfun$1[]ifelse($1,0,[],[<loop($1,[i],[T[]i])>])(fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
         m_slots.push_back(slot);
 
         return connection(this, slot);
@@ -383,7 +398,7 @@ divert[]dnl
 // ---------------------------------------------------------------------
 
 // Configuration support
-// SSNS_NO_THREADS - No support for multiple threads, ansi/iso c++
+#define SSNS_NO_THREADS //- No support for multiple threads, ansi/iso c++
 // SSNS_WIN32_THREADS - Use Windows threads
 // SSNS_POSIX_THREADS - Use Posix threads
 // SSNS_DLL - Build or use as a shared library/DLL
