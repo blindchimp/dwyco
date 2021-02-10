@@ -48,13 +48,14 @@
 #include "vcxstrm.h"
 #include "ta.h"
 #include "ezset.h"
+#include "simple_property.h"
 
 using namespace dwyco;
 
 int Inhibit_database_thread;
 
 int Database_id = -1;
-int Database_online;
+sigprop<int> Database_online;
 int Database_starting;
 
 extern DwycoEmergencyCallback dwyco_emergency_callback;
@@ -688,6 +689,8 @@ start_encryption(vc m, void *, vc , ValidPtr vp)
         TRACK_ADD(DB_crypto_fail, 1);
         return;
     }
+    if(!mc)
+        return;
     mc->send_decrypt();
     mc->tube->set_key_iv(mc->agreed_key, 0);
     vc key = mc->agreed_key;

@@ -15,6 +15,7 @@
 
 #include "vc.h"
 #include "mmchan.h"
+#include "simple_property.h"
 
 class MessageDisplay;
 
@@ -37,7 +38,7 @@ int dirth_switch_to_chat_server(int, const char *pw);
 vc make_local_ports();
 vc make_fw_setup();
 
-extern int Database_online;
+extern dwyco::sigprop<int> Database_online;
 extern vc My_server_port;
 extern vc My_server_ip;
 extern vc My_server_name;

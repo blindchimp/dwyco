@@ -84,9 +84,10 @@ template<class UserClass, typename IndexKeyType, IndexKeyType UserClass::* Membe
 struct indexer
 {
 private:
-    indexer& operator=(const indexer&);
-    indexer(const indexer&);
-    ~indexer();
+    indexer& operator=(const indexer&) = delete;
+    indexer(const indexer&) = delete;
+    // note: no dtor because we don't destruct these things
+    ~indexer() = delete;
 public:
 
     typedef DwAssocImp<UserClass *, IndexKeyType> BagAssoc;
@@ -135,8 +136,8 @@ template<class T, class K = int, K T::* MemberPtr = nullptr>
 class DwQueryByMember2
 {
 private:
-    DwQueryByMember2& operator=(const DwQueryByMember2&);
-    DwQueryByMember2(const DwQueryByMember2&);
+    DwQueryByMember2& operator=(const DwQueryByMember2&) = delete;
+    DwQueryByMember2(const DwQueryByMember2&) = delete;
     typedef dwinternal_pos<DwAssocImp<T *, K> > jesus_fuck_me;
 
 public:
@@ -149,7 +150,9 @@ public:
         objs = new DwTreeKaz<jesus_fuck_me, T*>(0);
     }
     // note: since these objects are normally static, we don't bother
-    // destructing them.
+    // destructing them. if you are doing leak checking, you might
+    // want to consider proper deletion here
+    ~DwQueryByMember2() {}
 private:
     DwTreeKaz<jesus_fuck_me, T*> *objs;
     indexer<T, K, MemberPtr> *idx;

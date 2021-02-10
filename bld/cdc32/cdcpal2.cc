@@ -113,7 +113,17 @@ group_changed(vc)
     pal_relogin();
 }
 
-static ssns::connection *Grp_conn;
+static
+void
+clear_online(int i)
+{
+    if(i == 0)
+    {
+        Online = vc(VC_TREE);
+        Client_ports = vc(VC_TREE);
+        Client_types = vc(VC_TREE);
+    }
+}
 
 int
 init_pal()
@@ -122,13 +132,9 @@ init_pal()
         return 1;
     Last_sent = vc(VC_VECTOR);
     Init = 1;
-    if(Grp_conn)
-    {
-        Grp_conn->disconnect();
-        delete Grp_conn;
-    }
-    Grp_conn = new ssns::connection;
-    *Grp_conn = Group_uids.value_changed.connect_ptrfun(group_changed);
+
+    Group_uids.value_changed.connect_ptrfun(group_changed, 1);
+    Database_online.value_changed.connect_ptrfun(clear_online, 1);
     return 1;
 }
 
@@ -136,12 +142,6 @@ void
 exit_pal()
 {
     Last_sent = vc(VC_VECTOR);
-    if(Grp_conn)
-    {
-        Grp_conn->disconnect();
-        delete Grp_conn;
-        Grp_conn = 0;
-    }
     Init = 0;
 }
 
