@@ -43,12 +43,29 @@
 // destructor, make sure the del happens before you destroy the indexed member.
 //
 // the member to index is specified as a template argument.
-// the member is indexed, and the index is used for searching.
+// the member is indexed, and the index is used for searching *on that member*.
 // you can still search using other non-indexed members, but the search is linear.
 //
 // note: there is no destructor for this class right now. it is assumed
 // that it will be static most of the time, and short of leak checking this class
 // directly, destruction isn't too useful.
+//
+//
+// T is the class of objects you are creating, and want to search. queries return
+// vectors of T*
+//
+// U is the type of the member in T you are searching on. some member in T is declared
+// struct T {U mumble;}; NOTE: you do not have to specify the name of the member
+// ("mumble", in this case) in the template *declaration*, but you *do* specify it
+// in the query function call, eg query_by_member(... &T::mumble...)
+//
+// K is the type of the member in T that is used for indexing (the "key" type).
+// when using indexing, you must name a specific member whose value will be used
+// to create the index.
+// struct T { U mumble; K key; };
+//
+// this class figures out if you are querying the "key" member and uses the
+// index. otherwise, it uses linear search.
 
 #include "dwvecp.h"
 #include "dwtree2.h"

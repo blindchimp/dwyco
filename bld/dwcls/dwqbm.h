@@ -29,6 +29,13 @@
 // note: searches are linear, so this probably won't work too well if you have
 // 100's of objects extant. it wouldn't be hard to introduce indexing
 // and stuff, but for current use case, linear is fine.
+//
+// T is the class of objects you are creating, and want to search. queries return
+// vectors of T*
+//
+// U is the type of the member in T you are searching on. some member in T is declared
+// struct T {U mumble;};
+//
 
 #include  "dwvec.h"
 #include  "dwvecp.h"
