@@ -1386,6 +1386,7 @@ create_dir_meta(int update_existing)
             sql_simple("insert or replace into dir_meta(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
         }
         sql_commit_transaction();
+        delete_findvec(&fv);
     }
     catch (...)
     {
@@ -1411,6 +1412,7 @@ reindex_possible_changes()
                 continue;
             sql_simple("insert into foo(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
         }
+        delete_findvec(&fv);
         vc needs_reindex = sql_simple("select replace(dirname, '.usr', '') from foo,dir_meta using(dirname) where foo.time != dir_meta.time "
                                       "union select replace(dirname, '.usr', '') from foo where not exists(select 1 from dir_meta where foo.dirname = dir_meta.dirname)");
         // not sure about this: if a folder is missing now, if we do this, it effectively
