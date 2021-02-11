@@ -6488,24 +6488,69 @@ sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const 
     }
 }
 
+struct local_connect_timer : public ssns::trackable
+{
+    local_connect_timer() : connect_timer("sync-conn-setup"){
+        connect_timer.set_autoreload(1);
+        connect_timer.set_interval(60 * 1000);
+        connect_timer.set_oneshot(0);
+        connect_timer.reset();
+        connect_timer.start();
+    }
+
+    DwTimer connect_timer;
+
+    void throttle_up()
+    {
+        if(connect_timer.get_interval() == 10000)
+            return;
+        connect_timer.stop();
+        connect_timer.set_interval(10000);
+        connect_timer.start();
+    }
+
+
+    void throttle_down()
+    {
+        if(connect_timer.get_interval() == 60 * 1000)
+            return;
+        connect_timer.stop();
+        connect_timer.set_interval(60 * 1000);
+        connect_timer.start();
+    }
+
+    void db_state_change(int i) {
+        if(i)
+        {
+            throttle_up();
+        }
+        else
+        {
+            throttle_down();
+        }
+    }
+    void local_discovery(vc uid, int added) {
+        if(added)
+            throttle_up();
+    }
+};
+
+
 
 void
 sync_call_setup()
 {
-    static DwTimer connect_timer;
-    static int been_here;
-    if(!been_here)
+    static local_connect_timer *lct;
+    if(!lct)
     {
-        connect_timer.set_autoreload(1);
-        connect_timer.set_interval(10000);
-        connect_timer.set_oneshot(0);
-        connect_timer.reset();
-        connect_timer.start();
-        been_here = 1;
+        lct = new local_connect_timer;
+        Database_online.value_changed.connect_memfun(lct, &local_connect_timer::db_state_change);
+        //Local_uid_discovered.connect_memfun(lct, &local_connect_timer::local_discovery);
     }
-    if(!connect_timer.is_expired())
+
+    if(!lct->connect_timer.is_expired())
         return;
-    connect_timer.ack_expire();
+    lct->connect_timer.ack_expire();
 
     vc uids = uids_to_call();
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
@@ -6520,13 +6565,61 @@ sync_call_setup()
         if(!MMChannel::channel_by_call_type(uids[i], "sync"))
             call_uids.append(uids[i]);
     }
+
     // note: we only call uids that are lexicographically larger than
     // us. this is a klugey way to avoid getting two calls going between
     // two clients, one incomming and one outgoing. this isn't the best
     // necessarily because the largest guy in the list will never originate
     // a call, instead waiting for another client to start things up.
+    int succ = 0;
     for(int i = 0; i < call_uids.num_elems(); ++i)
     {
+        if(!Broadcast_discoveries.contains(call_uids[i]))
+        {
+            if(!Online.contains(call_uids[i]))
+            {
+                // we shoulder throttle down the checking at this point
+
+                if(!Database_online)
+                {
+                    // there is no chance a server assisted call is
+                    // going to work.
+                    continue;
+                }
+                else
+                {
+                    // there is a chance they are "invisible" or just not
+                    // showing up via the pal server, but for now, we just
+                    // give up, since that is probably pretty rare.
+                    continue;
+                }
+            }
+            else
+            {
+                if(!Database_online)
+                {
+                    continue;
+                }
+                else
+                {
+                    // possibly a server assisted call will work
+                }
+            }
+        }
+        else
+        {
+            // we have a local discovery, so keep trying it since we
+            // don't need a server to set that up.
+            // but don't pound it.
+            if(!Database_online)
+            {
+                //throttle down timer
+            }
+            else
+            {
+                // possibly a server assisted call will work
+            }
+        }
         GRTLOG("trying sync to %s", (const char *)to_hex(call_uids[i]), 0);
         if(call_uids[i] > My_UID)
         {
@@ -6535,15 +6628,25 @@ sync_call_setup()
             // screwing up and syncing with non-group members.
             // but doesn't work otherwise, since a phony could
             // connect normally and capture the hash, then present it
-            // to other group members to connect.
+            // to other group members to connect. the sync protocol
+            // contains a challenge to make sure both sides can
+            // decrypt group messages
             if(Current_alternate)
                 pw = Current_alternate->hash_key_material();
             else
                 pw = "";
             GRTLOG("out trying sync to %s (%s)", (const char *)to_hex(call_uids[i]), (const char *)to_hex(pw));
-            dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              (const char *)pw, pw.len(), "sync", 4, 1);
+            if(dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                              (const char *)pw, pw.len(), "sync", 4, 1))
+            {
+                succ = 1;
+            }
         }
+    }
+    if(!succ)
+    {
+        // if we didn't get at least one connection started, just throttle back
+        lct->throttle_down();
     }
     start_stalled_pulls();
 }
