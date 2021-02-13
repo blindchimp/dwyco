@@ -398,7 +398,8 @@ dirth_send_get_group(vc id, QckDone d)
 // this gets the group pk from the name
 // used for bootstrapping into a group if you
 // are brand new and don't know anyone else
-// in the group but you do know the group name
+// in the group but you do know the group name.
+// you also get the uid's in the group.
 void
 dirth_send_get_group_pk(vc id, vc gname, QckDone d)
 {

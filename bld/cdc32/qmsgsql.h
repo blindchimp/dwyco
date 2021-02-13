@@ -13,6 +13,8 @@
 namespace dwyco {
 void init_qmsg_sql();
 void exit_qmsg_sql();
+void init_group_map();
+
 vc load_msg_index(vc uid, int load_count);
 long sql_get_max_logical_clock();
 vc sql_get_recent_users(int *total_count);

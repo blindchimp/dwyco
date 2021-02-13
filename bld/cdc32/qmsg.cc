@@ -2106,13 +2106,10 @@ load_users_from_index(int *total_out)
 
     MsgFolders = vc(VC_TREE);
 
-
     vc ret = sql_get_recent_users(total_out);
     if(ret.is_nil())
     {
-
         TRACK_ADD(QM_UL_recent_fail, 1);
-
         if(total_out)
             *total_out = 0;
         return;

@@ -1,10 +1,13 @@
 #ifndef PROFILEDB_H
 #define PROFILEDB_H
 #include "vc.h"
+#include "ssns.h"
 
 namespace dwyco {
 void init_prfdb();
 void exit_prfdb();
+extern ssns::signal2<vc, int> Profile_updated;
+extern ssns::signal2<vc, int> Keys_updated;
 
 int get_pk(vc uid, vc& sfpk_out);
 int get_pk2(vc uid, vc& sfpk_out, vc& alt_sfpk_out, vc &alt_name);

@@ -57,6 +57,7 @@
 #include "qdirth.h"
 #include "ta.h"
 #include "dhgsetup.h"
+#include "qmsgsql.h"
 
 using namespace dwyco;
 
@@ -191,6 +192,7 @@ init_codec(const char *logname)
 #endif
         init_dirth();
         init_qmsg();
+        init_group_map();
 
         //stun_pool_init();
 #ifndef MACOSX

@@ -10,11 +10,14 @@
 #include "vcudh.h"
 #include "dwrtlog.h"
 #include "vccrypt2.h"
+#include "ssns.h"
 
 extern vc Session_infos;
 extern vc My_UID;
 
 namespace dwyco {
+ssns::signal2<vc, int> Profile_updated;
+ssns::signal2<vc, int> Keys_updated;
 
 struct Sql : public SimpleSql
 {
@@ -291,6 +294,7 @@ save_profile(vc uid, vc prf)
             set_settings_value("user/email", pack[vc("email")]);
         }
         se_emit(SE_USER_UID_RESOLVED, uid);
+        Profile_updated.emit(uid, 1);
     }
     return 1;
 }
@@ -325,6 +329,7 @@ prf_invalidate(vc uid)
 {
     prf_force_check(uid);
     sql_simple("delete from prf where uid = ?1", to_hex(uid));
+    Profile_updated.emit(uid, 0);
 }
 
 // pk related stuff
@@ -478,7 +483,7 @@ save_pk(vc uid, vc prf)
     a.append(blobnil(prf[PKC_ALT_GNAME]));
     sql_bulk_query(&a);
 
-
+    Keys_updated.emit(uid, 1);
     return 1;
 }
 
@@ -533,6 +538,7 @@ pk_invalidate(vc uid)
 {
     sql_simple("delete from pubkeys where uid = ?1", to_hex(uid));
     pk_force_check(uid);
+    Keys_updated.emit(uid, 0);
 }
 
 

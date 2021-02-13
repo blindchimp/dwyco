@@ -702,9 +702,70 @@ sql_is_mid_local(vc mid)
     if(res.num_elems() == 0)
         return 0;
     return 1;
-    int ret = (long)res[0][0];
+}
+
+// we're folding uid's together that appear to be in a group.
+// if that group is the one we're in now, don't fold. this gives
+// us a chance to send messages between our devices (dunno about this.)
+//
+// there are some heuristics going on when mapping the gid back to
+// a uid. ideally we would pick one that was currently active, and
+// that at least gives us a chance to get a direct connection to
+// that device.
+static
+vc
+blob(vc v)
+{
+    vc ret(VC_VECTOR);
+    ret[0] = "blob";
+    ret[1] = v;
     return ret;
 }
+
+void
+init_group_map()
+{
+    sql_simple("create temp table gid(uid, gid)");
+    // use the profile database to find candidates, which we can do without
+    // being connected to the server.
+    sDb->attach("prfdb.sql", "prf");
+    try
+    {
+        vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public having(count(*) > 1)");
+        for(int i = 0; i < keys.num_elems(); ++i)
+        {
+            vc k = keys[i][0];
+            DwString gid = (const char *)to_hex(vclh_sha3_256(k));
+            gid.remove(20);
+            sql_simple("insert into gid select uid, ?1 from prf.pubkeys where alt_static_public = ?2", gid.c_str(), blob(k));
+        }
+    }
+    catch(...)
+    {
+
+    }
+
+    sDb->detach("prf");
+}
+vc
+map_uid_to_gid(vc uid)
+{
+
+}
+
+vc
+map_gid_to_uid(vc gid)
+{
+
+}
+
+vc
+map_gid_to_uids(vc gid)
+{
+
+}
+
+
 
 // some users have 1000's of users in their list, and this can
 // cause some problems. most of those users are just old users
@@ -718,22 +779,20 @@ sql_get_recent_users(int *total_out)
     try
     {
         sql_start_transaction();
-        sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid;");
-        //sql_simple("insert into foo select date, uid from most_recent_msg;");
+        sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
         vc res;
         if(total_out)
         {
-            //VCArglist a;
             res = sql_simple("select count(distinct assoc_uid) from foo");
             *total_out = (int)res[0][0];
         }
 
 #ifdef ANDROID
-        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 20;");
+        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 20");
 #else
-        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 100;");
+        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 100");
 #endif
-        sql_simple("drop table foo;");
+        sql_simple("drop table foo");
         sql_commit_transaction();
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)
@@ -754,7 +813,6 @@ sql_get_recent_users2(int max_age, int max_count)
     {
         sql_start_transaction();
         sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
-        //sql_simple("insert into foo select date, uid from most_recent_msg");
         vc res;
         res = sql_simple("select distinct assoc_uid from foo where strftime('%s', 'now') - \"max(date)\" < ?1 order by \"max(date)\" desc limit ?2;",
                          max_age, max_count);
