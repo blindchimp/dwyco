@@ -12,7 +12,7 @@
 #include <QHash>
 #include <string.h>
 
-void cdcxpanic(const char *);
+[[noreturn]] void cdcxpanic(const char *);
 
 struct DwOString : public QByteArray
 {

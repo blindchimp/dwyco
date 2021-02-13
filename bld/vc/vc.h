@@ -42,7 +42,7 @@ class vcxstream;
 #define EXIN_DEV -1
 #define EXIN_PARSE -2
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 void user_panic(const char *);
 void user_warning(const char *);
 class VcIOHack;

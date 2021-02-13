@@ -24,7 +24,7 @@
 // pointer have not changed (ie, been deleted and then
 // recreated with possibly the same pointer.
 //
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 
 class DwVP

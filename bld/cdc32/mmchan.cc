@@ -351,7 +351,7 @@ MMChannel::exit_mmchan()
 
 restart:;
 
-    int n = MMChannels.num_elems();
+    auto n = MMChannels.num_elems();
     for(int i = 0; i < n; ++i)
     {
         MMChannel *m = MMChannels[i];

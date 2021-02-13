@@ -139,7 +139,9 @@ recvvc(vc sock, vc& v, vc& peer)
 {
     int len;
     vcxstream istrm(sock, (char *)packet_buf, plen, vcxstream::FIXED);
-
+    istrm.max_depth = 2;
+    istrm.max_element_len = 50;
+    istrm.max_elements = 6;
     if(!istrm.open(vcxstream::READABLE, vcxstream::ATOMIC))
         return 0;
     if((len = v.xfer_in(istrm)) < 0)

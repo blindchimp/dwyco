@@ -12,7 +12,7 @@
 #include <limits.h>
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcenco.cpp 1.47 1997/10/05 17:27:06 dwight Stable $";
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 #include "vcenco.h"
 
 // use explicit offsets and whatnot for encoding items

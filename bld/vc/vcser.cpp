@@ -54,7 +54,7 @@ vc::xfer_out(vcxstream& vcx)
 long
 vc::xfer_in(vcxstream& vcx)
 {
-    if(vcx.max_depth == 0)
+    if(vcx.max_depth == -1)
         return EXIN_PARSE;
     --vcx.max_depth;
     long ret = real_xfer_in(vcx);

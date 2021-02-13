@@ -33,7 +33,7 @@
 
 #define DWSVEC_INITIAL 8
 #define DWSVEC_DBG
-void oopanic(const char *a);
+[[noreturn]] void oopanic(const char *a);
 
 template<class T>
 class DwSVec

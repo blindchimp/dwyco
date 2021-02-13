@@ -12,7 +12,7 @@
 #define DWITER_H
 
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 // T is the container type, I is the element type
 // stored in the container
 template<class T, class I>

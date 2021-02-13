@@ -2,7 +2,7 @@
 #define SIMPLE_PROPERTY_H
 
 #include "ssns.h"
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 namespace dwyco {
 template<class T>

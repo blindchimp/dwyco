@@ -56,7 +56,7 @@
 #include "useful.h"
 #include "dwiter.h"
 #undef index
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 // non-polymorphic vector (vector of objects.)
 //

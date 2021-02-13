@@ -15,7 +15,7 @@
 #include "imgmisc.h"
 #include "jqtab.h"
 #include "jdct.h"
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 #if __GNUC_MINOR__ >= 7 || defined(__linux__)
 #include <netinet/in.h>
 #endif

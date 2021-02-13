@@ -12,7 +12,7 @@
  */
 #include "codec.h"
 #include "imgmisc.h"
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 int
 DwCodec::busy()

@@ -385,11 +385,19 @@ DwQSend::send_with_attachment()
         mc->tube = new DummyTube;
         mc->tube->connect((const char *)sip, 0, 0);
     }
+    else
+    {
+        move_back_to_outbox(qfn);
+        inprogress = 0;
+        return 0;
+    }
 
     int i = -1;
     int state;
-    if(sip.is_nil() || (state = mc->tube->gen_channel((int)send_port, i)) == SSERR)
+    if((state = mc->tube->gen_channel((int)send_port, i)) == SSERR)
     {
+        delete mc->tube;
+        delete mc;
         move_back_to_outbox(qfn);
         inprogress = 0;
         return 0;
