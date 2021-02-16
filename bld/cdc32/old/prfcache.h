@@ -8,7 +8,9 @@
 */
 #ifndef PRFCACHE_H
 #define PRFCACHE_H
+#include "vc.h"
 
+namespace dwyco {
 void init_prf_cache();
 void exit_prf_cache();
 int load_profile(vc uid, vc& prf_out);
@@ -18,6 +20,7 @@ int prf_already_cached(vc uid);
 void prf_force_check(vc uid);
 void prf_invalidate(vc uid);
 void prf_set_cached(vc uid);
+}
 
 #define PRF_PACK 0
 #define PRF_MEDIA 1

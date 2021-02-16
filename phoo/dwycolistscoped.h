@@ -7,6 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #ifndef DWYCOLISTSCOPED_H
+#define DWYCOLISTSCOPED_H
 #include "dlli.h"
 #include <stdlib.h>
 

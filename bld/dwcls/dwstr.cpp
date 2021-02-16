@@ -277,6 +277,68 @@ DwString::fromUint(unsigned int i)
     return(a);
 }
 
+static
+int
+hexd(char a)
+{
+    if(a >= '0' && a <= '9')
+        return a - '0';
+    if(a >= 'a' && a <= 'f')
+        return a - 'a' + 10;
+    if(a >= 'A' && a <= 'F')
+        return a - 'A' + 10;
+    return 0;
+}
+
+static
+void
+tohexd(char a, char *out)
+{
+    int d = a & 0xf;
+    if(d >= 0 && d <= 9)
+        d += '0';
+    else if(d >= 10 && d <= 15)
+        d = 'a' + (d - 10);
+    out[1] = d;
+
+    d = (a >> 4) & 0xf;
+    if(d >= 0 && d <= 9)
+        d += '0';
+    else if(d >= 10 && d <= 15)
+        d = 'a' + (d - 10);
+    out[0] = d;
+}
+
+DwString
+DwString::from_hex(const DwString& s)
+{
+    const char *a = &s[0];
+    int len = s.length();
+    DwString d;
+    //d.set_size(len / 2);
+    for(int i = 0; i < len / 2; ++i)
+    {
+        d += (hexd(a[i * 2]) << 4) | hexd(a[i * 2 + 1]);
+    }
+    return d;
+}
+
+DwString
+DwString::to_hex(const DwString& s)
+{
+    const char *a = &s[0];
+    int len = s.length();
+    DwString d;
+    d.set_size(len * 2 + 1);
+    for(int i = 0; i < len; ++i)
+    {
+        tohexd(a[i], &d[2 * i]);
+        //sprintf(&d[2 * i], "%02x", a[i] & 0xff);
+    }
+    d[2 * len] = 0;
+    return d;
+}
+
 
 
 #undef TESTSTR
