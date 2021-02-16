@@ -308,9 +308,13 @@ DISTFILES += \
 #        $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so
 #}
 
-ANDROID_EXTRA_LIBS = \
-$$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni_x86.so \
+#ANDROID_EXTRA_LIBS = \
+#$$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni_x86.so \
 
 #$$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni_armeabi-v7a.so \
 #$$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni_arm64-v8a.so \
 #$$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni_x86_64.so
+
+for (abi, ANDROID_ABIS): ANDROID_EXTRA_LIBS += $$PWD/../$$DWYCO_CONFDIR/libs/$${abi}/libdwyco_jni.so
+
+
