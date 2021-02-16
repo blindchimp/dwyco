@@ -278,6 +278,7 @@ HEADERS += \
 
 DISTFILES += \
     androidinst2/google-services.json \
+    androidinst2/gradle.properties \
     androidinst2/src/com/dwyco/cdc32/dwybg.java \
     androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
     androidinst2/src/com/dwyco/rando/app.java \
@@ -309,6 +310,7 @@ DISTFILES += \
 
 ANDROID_EXTRA_LIBS = \
 $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni_x86.so \
-$$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni_armeabi-v7a.so \
-$$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni_arm64-v8a.so \
-$$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni_x86_64.so
+
+#$$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni_armeabi-v7a.so \
+#$$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni_arm64-v8a.so \
+#$$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni_x86_64.so
