@@ -198,6 +198,7 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists gisent_idx on gi(is_sent)");
     sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
     sql_simple("create index if not exists gifrom_client_uid_idx on gi(from_client_uid)");
+    sql_simple("create index if not exists gimid on gi(mid)");
 
     sql_simple("drop table if exists midlog");
     sql_simple("create table midlog (mid text not null, to_uid text not null, op text not null, unique(mid,to_uid,op) on conflict ignore)");
