@@ -10,8 +10,12 @@
 #define VC_H
 // $Header: g:/dwight/repo/vc/rcs/vc.h 1.54 1998/12/14 05:10:41 dwight Exp $
 
+#ifdef VC_INTERNAL
 #ifdef VCCFG_FILE
 #include "vccfg.h"
+#endif
+#define FALSE 0
+#define TRUE 1
 #endif
 
 #ifdef _MSC_VER
@@ -29,19 +33,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <utility>
+#include <stdint.h>
 
 #define dwmax(x, y) (((x) < (y)) ? (y) : (x))
 #define dwmin(x, y) (((x) > (y)) ? (y) : (x))
-#include "useful.h"
-#include "vcfext.h"
+
 class vcxstream;
 #define EXIN_DEV -1
 #define EXIN_PARSE -2
-class VcLexer;
-
-#define FALSE 0
-#define TRUE 1
 
 void oopanic(const char *);
 void user_panic(const char *);
@@ -126,7 +125,8 @@ enum vcsocketmode {
 	VC_SET_SEND_BUF_SIZE,
 	VC_GET_SEND_BUF_SIZE,
 	VC_SET_TCP_NO_DELAY,
-	VC_BUFFER_SOCK
+        VC_BUFFER_SOCK,
+        VC_SET_BROADCAST
 };
 #define  VC_SOCK_ERROR 4
 #define  VC_SOCK_READ  2
@@ -141,15 +141,14 @@ const char *vc_wsget_errstr(int);
 #ifdef _Windows
 // can't do this, it causes compile errors, sigh.
 //#include <winsock.h>
-typedef unsigned int SOCKET;
+#ifdef _WIN64
+typedef unsigned long long SOCKET;
 #else
-typedef int SOCKET;
+typedef unsigned int SOCKET;
 #endif
 
-#if 0
-#ifdef USE_BERKSOCK
-#include "vcberk.h"
-#endif
+#else
+typedef int SOCKET;
 #endif
 
 typedef unsigned long hashValueType;
@@ -169,6 +168,9 @@ template<class T> class DwVec;
 #include "dwsvec.h"
 typedef DwSVec<vc> VCArglist;
 
+#ifndef VC_NOEVAL
+#include "vcfext.h"
+class VcLexer;
 typedef vc (*VCFUNCP0)();
 typedef vc (*VCFUNCP1)(vc);
 typedef vc (*VCFUNCP2)(vc, vc);
@@ -179,10 +181,12 @@ typedef vc (*VCFUNCPv)(VCArglist *);
 typedef vc (*VCFUNCPVP)(void *);
 
 typedef vc (*VCTRANSFUNCP)(VCArglist *, VcIO);
+#endif
 
 typedef int (*VC_ERR_CALLBACK)(vc *);
 typedef void (*VC_FOREACH_CALLBACK)(vc);
 typedef void (*VC_FOREACH_CALLBACK2)(vc, vc);
+typedef void (*vc_int_dtor_fun)(void *);
 
 extern const vc vcnil;
 extern const vc vctrue;
@@ -208,6 +212,7 @@ private:
 	vc_default *rep;
 	
 	void vc_init(enum vc_type, const char *, long extra_parm);
+
 	// this is an awful hack, should get rid of it.
 friend class vc_memberfun;
 friend class vc_object;
@@ -226,9 +231,7 @@ private:
 	static void init_rest(void);
 public:
 	static void init(void);
-	static void thread_init(void);
 	static void exit(void);
-	static void thread_exit(void);
 	static void non_lh_init(void);
 	static void non_lh_exit(void);
 	static void setup_logs(void);
@@ -250,6 +253,7 @@ public:
 	inline notvirtual vc& operator=(const vc& v);
         inline vc(vc&& v);
         inline vc& operator=(vc&& v);
+        inline notvirtual int is_nil() const ;
 #else
 	vc() ;
 	vc(const vc& v);
@@ -257,14 +261,21 @@ public:
 	notvirtual vc& operator=(const vc& v);
         vc(vc&& v);
         vc& operator=(vc&& v);
+        notvirtual int is_nil() const ;
 
 #endif
 	vc(double d);
 	vc(int i);
 	vc(long i);
+        vc(long long);
 	vc(const char *s);
-	vc(VcLexer&);
+        vc(const char *s, int len);
+
 	vc(enum vc_type, const char * = "nil", long extra_parm = 0);
+        vc(enum vc_type, vc_int_dtor_fun d, void *arg);
+
+#ifndef NO_VCEVAL
+    vc(VcLexer&);
     vc(VCFUNCP0, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCP1, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCP2, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
@@ -273,6 +284,7 @@ public:
     vc(VCFUNCP5, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCPVP, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCPv,const char *, const char *, int style = VC_FUNC_NORMAL|VC_FUNC_VARADIC, VCTRANSFUNCP = 0);
+#endif
 
 	notvirtual long xfer_in(vcxstream&);
 	notvirtual long xfer_out(vcxstream&);
@@ -294,7 +306,6 @@ public:
 	notvirtual void local_bremove() const ;
 	notvirtual void global_bremove() const ;
 	notvirtual enum vc_type type() const ;
-	notvirtual int is_nil() const ;
     notvirtual int is_decomposable() const ;
 	notvirtual vc copy() const ;
 	notvirtual vc get_special() const ;
@@ -323,7 +334,7 @@ public:
 
 	// functors 
 	notvirtual vc operator()(void) const ;
-	notvirtual vc operator()(void *p) const ;
+	//notvirtual vc operator()(void *p) const ;
 	notvirtual vc operator()(VCArglist *al) const ;
 
 	notvirtual vc operator()(vc v0) const ;
@@ -512,6 +523,13 @@ inline
 vc::vc()
 {
 	rep = vc_nil::vcnilrep;
+}
+
+inline
+int
+vc::is_nil() const
+{
+    return rep == vc_nil::vcnilrep;
 }
 
 

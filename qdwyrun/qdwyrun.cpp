@@ -1,3 +1,14 @@
+// note: this is a qt4 program that doesn't compile at the moment.
+// i'm not going to fix it because it is only used by CDC-X installs, and
+// i'm not sure i'm going to continue using it, as the functionality i put
+// in it hasn't been used that much (different methods of performing updates
+// which didn't work quite as well as i'd hoped, mainly due to virus checkers
+// and whatnot on windows.) in addition, the mac version doesn't work at all, and
+// the linux version has so few users it isn't worth it.)
+//
+// at some point, it might be useful once ported up to qt5 in situations where
+// there is no "app store" available to perform updates for you.
+
 #include <QFileInfo>
 #include <QProcess>
 #include <QDesktopWidget>
@@ -207,9 +218,11 @@ simple_update(DwString fn)
     vc arch;
     {
         vc ctx = vclh_decompression_open();
-        vc file = doopenfile(fn.c_str(), "rb");
-        vc str = docontents_of(file);
-
+        QFile f(fn.c_str());
+        if(!f.open(QIODevice::ReadOnly))
+            return 0;
+        QByteArray a = f.readAll();
+        vc str(VC_BSTRING, a.constData(), a.length());
         if(vclh_decompress_xfer(ctx, str, arch).is_nil())
             return 0;
     }
@@ -410,7 +423,7 @@ qdwyrun::run_update(QString fn)
     QString a(".\\");
 #endif
     a += fn;
-    chmod(fn.toAscii().constData(), 0755);
+    chmod(fn.toLatin1().constData(), 0755);
 
     ui->label_2->setText("Updating CDC-X...");
 
@@ -480,7 +493,7 @@ qdwyrun::idle()
         QString mn("dwyco-autoupdate-");
         mn += update_app;
         HANDLE h;
-        if((h = CreateMutex(NULL, TRUE, mn.toAscii())) == NULL)
+        if((h = CreateMutex(NULL, TRUE, mn.toLatin1())) == NULL)
         {
             run_app();
             return;
@@ -497,7 +510,7 @@ qdwyrun::idle()
             return;
         }
 
-        FILE *f = fopen(update_app.toAscii().constData(), "r");
+        FILE *f = fopen(update_app.toLatin1().constData(), "r");
         if(!f)
         {
             run_app();
@@ -517,7 +530,7 @@ qdwyrun::idle()
         }
 #endif
 
-        if(check_staged_update(update_app.toAscii().constData()))
+        if(check_staged_update(update_app.toLatin1().constData()))
         {
             run_update(update_app);
         }

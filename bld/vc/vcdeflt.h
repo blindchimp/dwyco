@@ -159,7 +159,7 @@ decl_rel(str)
 #undef decl_rel
 	// functors 
 	virtual vc operator()(void) const ;
-	virtual vc operator()(void *p) const ;
+	//virtual vc operator()(void *p) const ;
 	virtual vc operator()(VCArglist *al) const ;
 
 	virtual vc operator()(vc v0) const ;

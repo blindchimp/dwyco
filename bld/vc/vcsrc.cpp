@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+#ifndef NO_VCEVAL
 #include "vcsrc.h"
 #include "vclex.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcsrc.cpp 1.45 1996/11/17 05:59:13 dwight Stable $";
@@ -26,3 +27,4 @@ vc_cvar_src_coord::init(VcLexer *l)
 	abs_charnum = 0;
 	charnum = 0;
 }
+#endif

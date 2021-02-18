@@ -1,17 +1,17 @@
 #!/bin/bash
 pushd `dirname $0`
 . settings.sh
+. ndk_autoconf.sh
 
-if [ "$NDK_ABI" = "arm" ]
+# asm is currently only for arm32
+if [ $NDK_ABI = "arm64" ]
 then
-	abi="arm-linux-androideabi"
-	host="arm-linux"
-	export CFLAGS="-fPIC -DANDROID -D__thumb__ -mthumb -Wfatal-errors -Wno-deprecated"
+	disable_neon="--disable-neon"
 else
-	abi="i686-linux-android"
-	host="x86-linux"
-	export CFLAGS="-fPIC -DANDROID -Wfatal-errors -Wno-deprecated"
+	disable_neon=""
 fi
+
+export CFLAGS="-fPIC -DANDROID"
 
 thisdir=`pwd`
 
@@ -28,18 +28,17 @@ echo "**********"
 
 pushd libspeex
 
-export CC="$abi-gcc"
-export LD="$abi-ld"
-export RANLIB="$abi-ranlib"
-export AR="$abi-ar"
-
+autoreconf -if
 ./configure \
 --prefix=`pwd`/output \
---host=$host \
+--host=$TARGET_TAG \
 --disable-shared \
 --enable-static \
 --with-ogg=$oggdir \
 --with-vorbis=$vorbisdir \
---enable-fixed-point
+--enable-fixed-point \
+--disable-examples \
+$disable_neon
+
 
 popd;popd

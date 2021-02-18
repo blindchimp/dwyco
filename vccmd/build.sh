@@ -1,4 +1,6 @@
 #!/bin/sh
+# note: qt4 qmake doesn't work for this
+export QT_SELECT=5
 D=$HOME
 SHADOW_NAME=$D/git/build-lh
 
@@ -6,21 +8,16 @@ mkdir $SHADOW_NAME
 mkdir $SHADOW_NAME/lib
 mkdir $SHADOW_NAME/include
 
-(
-cd bld/libuv
+if [ ! -e $SHADOW_NAME/include/sp.h ]
+then
+( 
+cd bld/spread-hacked 
+cd `cat curver` 
+./configure --prefix=$SHADOW_NAME 
 make -j 8
-mkdir -p $SHADOW_NAME/bld/libuv
-cp libuv.a $SHADOW_NAME/bld/libuv
-#cp libuv.a $SHADOW_NAME/lib
-cp include/uv.h $SHADOW_NAME/include
-)
-
-(
-cd bld/spread-hacked
-cd `cat curver`
-./configure --prefix=$SHADOW_NAME
-make -j 8 install
-)
+make install 
+) 
+fi
 
 (
 opwd=$PWD

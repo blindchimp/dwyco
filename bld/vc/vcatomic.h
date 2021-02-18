@@ -19,12 +19,12 @@
 //
 class vc_atomic : public vc_default
 {
-public:
+protected:
 	void bomb_setop() const;
 	void bomb_str_rel() const;
 	void bomb_call_atom() const;
-	void bomb_op_func() const;
-	
+
+public:
 	vc_atomic();
 
 	virtual int visited();
@@ -51,7 +51,7 @@ public:
 	virtual int func_eq(const vc& v) const;
 
 	virtual vc operator()(void) const;
-	virtual vc operator()(void *p) const;
+	//virtual vc operator()(void *p) const;
 	virtual vc operator()(VCArglist *al) const;
 
 	virtual vc operator()(vc v0) const;

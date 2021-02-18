@@ -15,12 +15,7 @@
 #include "jtcode.h"
 #include "chroma.h"
 #include "imgmisc.h"
-#if __GNUC_MINOR__ >= 7 || defined(__linux__)
-#include <netinet/in.h>
-#endif
-#ifdef __WIN32__
-#include "winsock.h"
-#endif
+
 
 DwCoderColor::DwCoderColor()
 {

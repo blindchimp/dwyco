@@ -24,7 +24,6 @@ static char RcsId[] = "$Header: g:/dwight/repo/cdc32/rcs/netcod.cc 1.27 1999/01/
 #include "dwlog.h"
 #include "dwstr.h"
 #include "mmchan.h"
-#include "dumbass.h"
 #include "dwrtlog.h"
 #include "qauth.h"
 #include "ta.h"
@@ -667,7 +666,7 @@ Listener::init(const char *, const char *local_addr, int, HWND)
 }
 
 int
-Listener::init2(const char *local_addr, int outside_port)
+Listener::init2(const char *local_addr)
 {
     initsock();
     sock.set_err_callback(net_socket_error);
@@ -731,10 +730,12 @@ Listener::accept()
 
 FrameSocket::FrameSocket(unsigned int len)
 {
+#if 0
 #ifdef _Windows
     if(vc_winsock::wsa_data.iMaxUdpDg != 0
             && len > vc_winsock::wsa_data.iMaxUdpDg)
         len = vc_winsock::wsa_data.iMaxUdpDg;
+#endif
 #endif
     packet_buf = new DWBYTE[len];
     plen = len;
@@ -750,10 +751,12 @@ FrameSocket::FrameSocket(unsigned int len)
 FrameSocket::FrameSocket(vc sock, unsigned int len) :
     SimpleSocket(sock)
 {
+#if 0
 #ifdef _Windows
     if(vc_winsock::wsa_data.iMaxUdpDg != 0
             && len > vc_winsock::wsa_data.iMaxUdpDg)
         len = vc_winsock::wsa_data.iMaxUdpDg;
+#endif
 #endif
     packet_buf = new DWBYTE[len];
     plen = len;

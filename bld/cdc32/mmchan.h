@@ -40,6 +40,7 @@
 #include "sproto.h"
 #include "ssns.h"
 #include "audconv.h"
+#include "aconn.h"
 
 class MMTube;
 class VidAcquire;
@@ -51,10 +52,11 @@ class KeyboardAcquire;
 class AudioOutput;
 class AudioAcquire;
 class MessageDisplay;
-struct QckMsg;
+
 namespace dwyco {
 class DirectSend;
 class DwQSend;
+struct QckMsg;
 }
 
 typedef DwVecP<MMChannel> ChanList;
@@ -82,10 +84,7 @@ class MMChannel
 {
 
 public:
-    // this is only here because of a bug in the
-    // borland linker, seems calling "new" locally
-    // causes it to take a crap on itself... sigh.
-    static MMChannel *gen_chan();
+
     // initialized at create time so anyone that
     // caches pointers to these channels can
     // decide if one is still valid
@@ -174,7 +173,7 @@ private:
     DwTimer nego_timer;
 public:
 
-    int build_outgoing(int locally_invoked = 0, int inhibit_coder_display = 0);
+    int build_outgoing(int locally_invoked, int inhibit_coder_display, int max_fps);
     int build_incoming_video();
 #if 0
     int cfg_has_duplex(vc cfg, const char *what);
@@ -284,7 +283,7 @@ public:
         WAIT_FOR_MATCH,
         ESTABLISHED,
         FAILED,
-        RECV_FAILED,
+        //RECV_FAILED,
         WAIT_FOR_CLOSE,
         // state used while waiting for STUN setup
         WAIT_FOR_STUN,
@@ -350,7 +349,11 @@ private:
 
     // estimate for fps on channel
 public:
+#ifdef DWYCO_RATE_DISPLAY
     int rate_updated(int);
+#else
+    int rate_updated(int) {return 0;}
+#endif
     void enable_packet_drop_reporting(int);
 
 private:
@@ -600,7 +603,7 @@ private:
     friend class TMsgCompose;
     friend void send_qd_and_attachment(DwString qfn, vc m);
     friend int DWYCOCALLCONV dwyco_enable_video_capture_preview(int on);
-    friend void poll_listener();
+    friend void dwyco::poll_listener();
 private:
 
     friend void async_lookup_handler(HANDLE, DWORD);
@@ -615,9 +618,9 @@ public:
 private:
     char *resolve_buf;
     int resolve_result;
-    char official_name[255];
-    char addrstr[255];
-    char ouraddr[255];
+    //char official_name[255];
+    DwString addrstr;
+    DwString ouraddr;
 public:
     int call_setup;
     vc call_type;
@@ -808,7 +811,7 @@ public:
     int start_server_ops();
     static MMChannel * get_server_channel();
     static MMChannel * get_secondary_server_channel();
-    static void send_to_db(QckMsg& m, int chan_id);
+    static void send_to_db(dwyco::QckMsg& m, int chan_id);
     void server_response(vc v);
     void chat_response(vc);
     int disconnect_server();

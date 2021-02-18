@@ -14,7 +14,7 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <time.h>
-#if !defined(__MSDOS__) && !defined(_Windows) && !defined(_MSC_VER)
+#if !defined(_Windows) && !defined(_MSC_VER)
 #include <unistd.h>
 #endif
 #include "vc.h"
@@ -1306,12 +1306,14 @@ dotype3(vc v)
 }
 
 
+#ifndef NO_VCEVAL
 vc
 do_exploded_funcall(vc fun, vc argvec)
 {
 	VCArglist a;
 
 	int nargs = argvec.num_elems();
+	a.set_size(nargs);
 	for(int i = 0; i < nargs; ++i)
         a.append(argvec[i]);
 	return fun(&a);
@@ -2582,9 +2584,6 @@ doprog(VCArglist *)
 vc
 vclh_fmt(vc item, vc fmt)
 {
-#if defined(__BORLANDC__) && __BORLANDC__ < 0x500
-USER_BOMB("no fmt for this old version of bcc", vcnil);
-#else
 	char s[4096];
 	size_t len;
 	switch(item.type())
@@ -2648,7 +2647,6 @@ USER_BOMB("no fmt for this old version of bcc", vcnil);
 		USER_BOMB("can't format non-atomics", vcnil);
 	}
 	return vcnil;
-#endif
 }
 
 
@@ -2774,7 +2772,7 @@ vclh_tolower(vc s)
     return v;
 }
 
-
+#endif
 vc
 vclh_serialize(vc v)
 {
@@ -2934,18 +2932,6 @@ vclh_clear_objmap()
 }
 #endif
 
-static
-void
-makefun(const char *name, const vc& fun)
-{
-	vc(name).bind(fun);
-}
-
-
-#if defined(_Windows) || defined(_MSC_VER)
-#include <process.h>
-#endif
-
 void
 vc::setup_logs()
 {
@@ -2957,7 +2943,7 @@ vc::setup_logs()
 // mode any more, can do this later
 //#error "do multithreaded logging"
 #endif
-	
+#ifndef _Windows
 	if(getenv("VC_LOG_TO_FILE"))
 	{
 		sprintf(s1, "lhd%d.out", getpid());
@@ -2966,6 +2952,7 @@ vc::setup_logs()
 		freopen(s1, "w", stderr);
 		setbuf(stderr, 0);
 	}
+#endif
 }
 
 void
@@ -2985,16 +2972,6 @@ vc::non_lh_init()
 #endif
 }
 
-// call this in a thread but only
-// call this *after* one call to init has been
-// made sometime before threads are created.
-void
-vc::thread_init()
-{
-	vc_winsock::thread_startup();
-	Vcmap = new vcctx;
-	init_rest();
-}
 
 // call this once globally before any threads
 // are created. this is the usual single-threaded
@@ -3006,6 +2983,15 @@ vc::init()
 	Vcmap = new vcctx;
 	init_rest();
 }
+
+#ifndef NO_VCEVAL
+static
+void
+makefun(const char *name, const vc& fun)
+{
+    vc(name).bind(fun);
+}
+#endif
 
 #define VC(fun, nicename, attr) vc(fun, nicename, #fun, attr)
 #define VC2(fun, nicename, attr, trans) vc(fun, nicename, #fun, attr, trans)
@@ -3051,13 +3037,9 @@ vc::init_rest()
     makefun("div", VC2(dodiv, "div", VC_FUNC_BUILTIN_LEAF, trans_dodiv));
     makefun("mul", VC2(domul, "mul", VC_FUNC_BUILTIN_LEAF, trans_domul));
     makefun("add", VC2(doadd, "add", VC_FUNC_BUILTIN_LEAF, trans_doadd));
-	makefun("+", VC2(doadd, "+", VC_FUNC_BUILTIN_LEAF, trans_doadd));
     makefun("sub", VC2(dosub, "sub", VC_FUNC_BUILTIN_LEAF, trans_dosub));
-	makefun("-", VC2(dosub, "-", VC_FUNC_BUILTIN_LEAF, trans_dosub));
 	makefun("++", VC(incrfun, "++", VC_FUNC_BUILTIN_LEAF));
 	makefun("--", VC(decrfun, "--", VC_FUNC_BUILTIN_LEAF));
-	makefun("incr", VC(incrfun, "incr", VC_FUNC_BUILTIN_LEAF));
-	makefun("decr", VC(decrfun, "decr", VC_FUNC_BUILTIN_LEAF));
 
     // variable binding
 	makefun("bind", VC(bindfun, "bind", VC_FUNC_BUILTIN_LEAF));
@@ -3155,11 +3137,6 @@ vc::init_rest()
 	makefun("excdhandle", VC(doexcdhandle, "excdhandle", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 	makefun("excraise", VC(doexcraise, "excraise", VC_FUNC_BUILTIN_LEAF));
 	makefun("excset-handler-ret", VC(dosethandlerret, "excset-handler-ret", VC_FUNC_BUILTIN_LEAF));
-
-#if 0
-	makefun("excdisable", Doexcdisable);
-	makefun("excenable", Doexcenable);
-#endif
 	makefun("excbackout", VC(doexcbackout, "excbackout", VC_FUNC_CONSTRUCT|VC_FUNC_DONT_EVAL_ARGS));
 
 	// I/O
@@ -3406,24 +3383,6 @@ vc::init_rest()
 #endif
 	makefun("dump-flat-profile", VC(dump_flat_profile, "dump-flat-profile", VC_FUNC_BUILTIN_LEAF));
 
-#ifdef USE_VERFS
-	void vcverfs_lhinit();
-	vcverfs_lhinit();
-#endif
-
-
-#ifdef LH_WRAP_CURSES
-void wrapper_init_curses_xml();
-wrapper_init_curses_xml();
-#endif
-#ifdef LH_WRAP_CDK
-void wrapper_init_cdk_xml();
-wrapper_init_cdk_xml();
-#endif
-#ifdef LH_WRAP_DLLI
-void wrapper_init_dlli_xml();
-wrapper_init_dlli_xml();
-#endif
 #ifdef LH_WRAP_SQLITE3
 void wrapper_init_sqlite3();
 wrapper_init_sqlite3();
@@ -3451,15 +3410,6 @@ vc::exit()
 	non_lh_exit();
 }
 
-void
-vc::thread_exit()
-{
-	VcOutput.flush();
-	VcError.flush();
-	delete Vcmap;
-	Vcmap = 0;
-	vc_winsock::thread_shutoff();
-}
 
 void
 vc::non_lh_exit()

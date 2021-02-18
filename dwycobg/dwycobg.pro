@@ -35,9 +35,6 @@ $${D}/jenkins/libjenkins.a \
 
 macx-g++|macx-clang {
 D = $${OUT_PWD}/../bld
-QMAKE_LFLAGS += -mmacosx-version-min=10.9
-QMAKE_LFLAGS_X86_64 += -mmacosx-version-min=10.9
-QMAKE_LFLAGS -= -mmacosx-version-min=10.5
 LIBS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \

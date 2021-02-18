@@ -19,8 +19,6 @@
 
 #if defined(_Windows)
 #include <windows.h>
-#endif
-#if defined(__MSDOS__) || defined(_Windows)
 #include <io.h>
 #include <dos.h>
 #include <sys\stat.h>
@@ -31,6 +29,7 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/time.h>
 #endif
 #include <stdlib.h>
 #include <stdio.h>
@@ -115,7 +114,7 @@ vclh_file_exists(vc file)
 {
 	if(file.type() != VC_STRING)
 		USER_BOMB("first arg to exists must be string filename", vcnil);
-#if defined(__MSDOS__) || defined(_Windows)
+#if defined(_Windows)
 	if(access(file, 0) == 0)
 #else
 	if(access(file, F_OK) == 0)
@@ -132,7 +131,7 @@ vclh_file_access(vc file, vc how)
 	if(how.type() != VC_STRING)
 		USER_BOMB("second arg to access must be string from rwx", vcnil);
 		
-#if defined(__MSDOS__) || defined(_Windows)
+#if defined(_Windows)
 	int amode = 0;
 	if(strchr(how, 'r'))
 		amode |= 4;

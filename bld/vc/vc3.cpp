@@ -57,8 +57,10 @@ void
 vc::global_bremove() const { rep->global_bremove();}
 enum vc_type
 vc::type() const { return rep->type(); }
+#ifdef VC_DBG_ENVELOPE
 int
 vc::is_nil() const { return rep->is_nil(); }
+#endif
 int
 vc::is_decomposable() const { return rep->is_decomposable();}
 vc
@@ -102,8 +104,8 @@ vc::funmeta() const {return rep->funmeta();}
 // functor action
 vc
 vc::operator()(void) const {return (*rep)(); }
-vc
-vc::operator()(void *p) const { return (*rep)(p);}
+//vc
+//vc::operator()(void *p) const { return (*rep)(p);}
 vc
 vc::operator()(VCArglist *al) const { return (*rep)(al);}
 

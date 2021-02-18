@@ -19,24 +19,34 @@ $${VCCFG_COMP} \
 ../theora/include \
 ../ogg/include \
 ../vorbis112/include \
-../libuv/include
+../uv/include \
+../miniupnp/miniupnp-master/miniupnpc
 
-linux-g++*: INCLUDEPATH += ../v4lcap
+linux-*: INCLUDEPATH += ../v4lcap
 
-FORCE_DESKTOP_VGQT=0
+#FORCE_DESKTOP_VGQT=0
 
 DEFINES += \
 	VCCFG_FILE \
 	DWVEC_DOINIT \
         DWYCO_USE_SQLITE
     
+equals(DWYCO_APP, "rando") {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-#DEFINES += DW_RTLOG
 #DEFINES += DWYCO_TRACE
-#LCL_DFLAGS += -DLEAK_CLEANUP
+#DEFINES += DWYCO_FIELD_DEBUG
+#DEFINES += MINIUPNP_STATICLIB
+message("cdc32 setup for rando")
+} else {
+#DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
+DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
 DEFINES += DWYCO_FIELD_DEBUG
+DEFINES += MINIUPNP_STATICLIB
+message("generic setup for cdc32")
+}
 
-macx-g++|linux-g++|linux-g++-64|macx-ios-clang|macx-clang|android-* {
+macx-*|linux-*|macx-ios-clang|macx-clang|android-*|wasm-emscripten {
 QMAKE_CXXFLAGS += -fpermissive
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 INCLUDEPATH += winemu
@@ -45,7 +55,7 @@ SOURCES += winemu.cc linid.cpp
 
 macx-g++|macx-clang {
 DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100 
-DEFINES += MACOSX FREEBSD NEED_SHORT_EXTERNAL_NAMES
+DEFINES += MACOSX NEED_SHORT_EXTERNAL_NAMES
 QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
 DEFINES += DWYCO_USE_STATIC_SQLITE
 equals(DWYCOBG, 0) {
@@ -58,7 +68,7 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 
 macx-ios-clang {
-DEFINES += MACOSX FREEBSD NEED_SHORT_EXTERNAL_NAMES
+DEFINES += MACOSX NEED_SHORT_EXTERNAL_NAMES
 QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
 DEFINES += DWYCO_USE_STATIC_SQLITE
 SOURCES += sqlite3.c
@@ -66,16 +76,27 @@ SOURCES += sqlite3.c
 
 win32-* {
 DEFINES += CDCCORE_STATIC
-DEFINES += USE_VFW
 DEFINES += DWYCO_USE_STATIC_SQLITE
+equals(DWYCO_APP, "rando") {
+#DEFINES += USE_VFW
+#DEFINES += VIDGRAB_HACKS
+#DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
+#SOURCES += uniq.cpp aqaud.cc audwin.cc
+SOURCES += uniq.cpp audwin.cc aqaud.cc
+} else {
+#DEFINES += USE_VFW
 DEFINES += VIDGRAB_HACKS
-DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100 
-SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
+SOURCES += uniq.cpp aqaud.cc audwin.cc
+}
 SOURCES += sqlite3.c
 INCLUDEPATH += ../mtcap
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT
 }
+#equals(DWYCOBG, 0) {
+#DEFINES += DWYCO_CDC_LIBUV
+#}
 }
 
 android-g++ {
@@ -95,7 +116,19 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 }
 
+wasm-emscripten {
+DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
+DEFINES += DWYCO_USE_STATIC_SQLITE
+DEFINES += DWYCO_NO_UPNP
+QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
+equals(FORCE_DESKTOP_VGQT, 1) {
+DEFINES += DWYCO_FORCE_DESKTOP_VGQT
+}
+SOURCES += sqlite3.c
+}
+
 SOURCES += \
+    ezset2.cpp \
 mmchan.cc \
 mmbld.cc \
 mmaud.cc \
@@ -116,6 +149,7 @@ codec.cc \
 colcod.cc \
 coldec.cc \
 dchroma.cc \
+    profiledb.cpp \
 qtab.cc \
 dwrate.cc \
 dwrtlog.cc \
@@ -142,15 +176,7 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
-cllaccpt.cpp \
-ratetwkr.cpp \
-rawfiles.cpp \
 syncvar.cc \
-uicfg.cc \
-usercnfg.cpp \
-vfwinvst.cpp \
-vidinput.cpp \
-zapadv.cpp \
 doinit.cc \
 netcod.cc \
 netcod2.cc \
@@ -189,7 +215,6 @@ autoup.cpp \
 dmdsrv.cc \
 fnmod.cc \
 xinfo.cpp \
-prfcache.cpp \
 vidcvt.cc \
 callq.cpp \
 asshole.cpp \
@@ -208,7 +233,6 @@ chatgrid.cpp \
 chatq.cpp \
 sysattr.cpp \
 vorbconv.cc \
-ezset.cpp \
 se.cpp \
 theoracol.cc \
 ser.cpp \
@@ -217,7 +241,6 @@ sproto.cpp \
 dhsetup.cpp \
 trc.cpp \
 cdcpal2.cc \
-pkcache.cpp \
 ssns.cpp \
 qsend.cpp \
 directsend.cpp \
@@ -226,9 +249,13 @@ qmsgsql.cpp \
 fetch_to_inbox.cpp \
 backsql.cpp \
 sqlbq.cpp \
-favmsg.cpp \
-aqext_android.cpp
+aqext_android.cpp \
+    dhgsetup.cpp \
+    simplesql.cpp \
+    upnp.cpp \
+    aqkey.cpp
 
 HEADERS += \
-    vccfg.h
+    vccfg.h \
+    upnp.h
 

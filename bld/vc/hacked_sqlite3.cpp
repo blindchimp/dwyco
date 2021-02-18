@@ -19,8 +19,9 @@ static DwVec<vc> *outbind_long;
 static DwVec<vc> *outbind_str;
 static DwVec<vc> *outbind_double;
 typedef DwVec<vc> vvc;
+#define Mem sqlite3_value
 
-template class DwVecP<void>;
+//template class DwVecP<void>;
 static
 int
 start_wrapper()
@@ -157,7 +158,7 @@ wrap_sqlite3_bulk_query(VCArglist *a)
 	}
 	if(tail && *tail != 0)
 	{
-		USER_BOMB("must be exactly 1 sql statement in query", vcnil)
+        USER_BOMB("must be exactly 1 sql statement in query", vcnil);
 	}
 	// bind in vars
 	if(a->num_elems() > 3)
@@ -170,7 +171,7 @@ wrap_sqlite3_bulk_query(VCArglist *a)
 				if(sqlite3_bind_int(st, i - 2, (*a)[i]) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 			case VC_STRING:
@@ -178,21 +179,21 @@ wrap_sqlite3_bulk_query(VCArglist *a)
 				if(sqlite3_bind_text(st, i - 2, (*a)[i], (*a)[i].len(), SQLITE_TRANSIENT) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 			case VC_DOUBLE:
 				if(sqlite3_bind_double(st, i - 2, (*a)[i]) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 			case VC_NIL:
 				if(sqlite3_bind_null(st, i - 2) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 			case VC_VECTOR:
@@ -205,17 +206,17 @@ wrap_sqlite3_bulk_query(VCArglist *a)
 				if((*a)[i].num_elems() != 2 ||
 					(*a)[i][0] != vc("blob"))
 				{
-					USER_BOMB("sql bind error, explicit type vector must be (type value) pair (and only \"blob\" type is supported now.", vcnil)
+                    USER_BOMB("sql bind error, explicit type vector must be (type value) pair (and only \"blob\" type is supported now.", vcnil);
 				}
 				if(sqlite3_bind_blob(st, i - 2, (const void *)(const char *)((*a)[i][1]), (*a)[i][1].len(), SQLITE_TRANSIENT) != SQLITE_OK)
 				{
 					sqlite3_finalize(st);
-					USER_BOMB("sql bind error", vcnil)
+                    USER_BOMB("sql bind error", vcnil);
 				}
 				break;
 
 			default:
-				USER_BOMB("can't bind that in sql", vcnil)
+                USER_BOMB("can't bind that in sql", vcnil);
 			}
 		}
 	}
@@ -332,7 +333,7 @@ WRAP_END
 return ret;
 
 }
-#endif
+
 static vc
 wrap_sqlite3_enable_shared_cache(VCArglist *a)
 {
@@ -342,7 +343,7 @@ WRAP_END
 return ret;
 
 }
-#if 0
+
 static vc
 wrap_sqlite3_rollback_hook(VCArglist *a)
 {
@@ -1391,6 +1392,8 @@ WRAP_END
 return(vcnil);
 
 }
+
+#if 0
 static vc
 wrap_sqlite3_get_table(VCArglist *a)
 {
@@ -1405,6 +1408,8 @@ WRAP_END
 return ret;
 
 }
+#endif
+
 static vc
 wrap_sqlite3_busy_timeout(VCArglist *a)
 {
@@ -1527,7 +1532,7 @@ return ret;
 
 }
 static vc
-wrap_sqlite3_libversion_number(VCArglist *a)
+wrap_sqlite3_libversion_number(VCArglist *)
 {
 START_WRAP
 	vc ret = cvt__int(sqlite3_libversion_number());
@@ -1536,7 +1541,7 @@ return ret;
 
 }
 static vc
-wrap_sqlite3_libversion(VCArglist *a)
+wrap_sqlite3_libversion(VCArglist *)
 {
 START_WRAP
 	vc ret = cvt_pq_char(sqlite3_libversion());
@@ -1583,7 +1588,7 @@ makefun("wrap_sqlite3_finalize", VC(wrap_sqlite3_finalize, "wrap_sqlite3_finaliz
 
 //makefun("wrap_sqlite3_result_text16be", VC(wrap_sqlite3_result_text16be, "wrap_sqlite3_result_text16be", VC_FUNC_BUILTIN_LEAF));
 
-makefun("wrap_sqlite3_enable_shared_cache", VC(wrap_sqlite3_enable_shared_cache, "wrap_sqlite3_enable_shared_cache", VC_FUNC_BUILTIN_LEAF));
+//makefun("wrap_sqlite3_enable_shared_cache", VC(wrap_sqlite3_enable_shared_cache, "wrap_sqlite3_enable_shared_cache", VC_FUNC_BUILTIN_LEAF));
 
 makefun("wrap_sqlite3_exec", VC(wrap_sqlite3_exec, "wrap_sqlite3_exec", VC_FUNC_BUILTIN_LEAF));
 
@@ -1685,7 +1690,7 @@ makefun("wrap_sqlite3_prepare", VC(wrap_sqlite3_prepare, "wrap_sqlite3_prepare",
 
 makefun("wrap_sqlite3_libversion", VC(wrap_sqlite3_libversion, "wrap_sqlite3_libversion", VC_FUNC_BUILTIN_LEAF));
 
-makefun("wrap_sqlite3_get_table", VC(wrap_sqlite3_get_table, "wrap_sqlite3_get_table", VC_FUNC_BUILTIN_LEAF));
+//makefun("wrap_sqlite3_get_table", VC(wrap_sqlite3_get_table, "wrap_sqlite3_get_table", VC_FUNC_BUILTIN_LEAF));
 
 makefun("wrap_sqlite3_free_table", VC(wrap_sqlite3_free_table, "wrap_sqlite3_free_table", VC_FUNC_BUILTIN_LEAF));
 

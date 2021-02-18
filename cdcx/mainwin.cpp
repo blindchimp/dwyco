@@ -103,6 +103,8 @@ extern int Current_server;
 extern DwOString Current_server_id;
 extern int Last_server;
 extern DwOString Last_server_id;
+extern DwOString Last_selected_id;
+extern int Last_selected_idx;
 extern int Askup;
 static int Ask_lobby_pw;
 static DwOString Ask_lobby_pw_id;
@@ -572,6 +574,8 @@ set_current_server(int i)
     }
     Current_server = i;
     Current_server_id = "";
+    Last_selected_id = "";
+    Last_selected_idx = i;
     setting_put("server", i);
     setting_put("server_id", DwOString(""));
     settings_save();
@@ -656,6 +660,8 @@ set_current_server(const DwOString& id)
     }
     Current_server = -1;
     Current_server_id = id;
+    Last_selected_id = id;
+    Last_selected_idx = -1;
     // by avoiding setting the server to -1, we can make sure
     // we log into a system server
     //setting_put("server", -1);
@@ -713,7 +719,7 @@ less_than(const DwOString& u1, const DwOString& u2)
 {
     int o1;
     int o2;
-
+#if 0
     o1 = is_streaming_uid(u1);
     o2 = is_streaming_uid(u2);
 
@@ -721,6 +727,7 @@ less_than(const DwOString& u1, const DwOString& u2)
         return -1;
     else if(!o1 && o2)
         return 1;
+#endif
 
     o1 = any_unread_msg(u1);
     o2 = any_unread_msg(u2);
@@ -730,6 +737,7 @@ less_than(const DwOString& u1, const DwOString& u2)
     else if(!o1 && o2)
         return 1;
 
+#if 0
     // ignored users are greater than anyone else, so they always
     // end up at the bottom, which is why the test looks backwards
     o1 = dwyco_is_ignored(u1.c_str(), u1.length());
@@ -740,6 +748,7 @@ less_than(const DwOString& u1, const DwOString& u2)
     else if(!o1 && o2)
         return -1;
     // end backwards looking
+#endif
 
     o1 = recent_uid_operation(u1);
     o2 = recent_uid_operation(u2);
@@ -2295,6 +2304,33 @@ mainwinform::idle()
         prg.reset();
         Block_DLL = 0;
         setting_put("first214", 0);
+
+    }
+
+    static int chat_on = -1;
+    if(dwyco_chat_online())
+    {
+        if(chat_on != 1)
+        {
+
+            if(Initial_chat_mute == 1)
+            {
+                dwyco_chat_mute(0, 1);
+            }
+
+            emit chat_server_status(1);
+            chat_on = 1;
+        }
+    }
+    else
+    {
+        if(chat_on != 0)
+        {
+            //Current_server_id = "";
+            //Current_server = -1;
+            emit chat_server_status(0);
+            chat_on = 0;
+        }
 
     }
     // note: the reason for all this static variable stuff in
@@ -3899,6 +3935,7 @@ dwyco_chat_ctx_callback2(int cmd, int id,
 
 }
 
+#if 0
 void
 DWYCOCALLCONV
 dwyco_chat_server_status_callback(int id, const char *msg, int /*percent_done*/, void * /*user_arg*/)
@@ -3930,6 +3967,7 @@ dwyco_chat_server_status_callback(int id, const char *msg, int /*percent_done*/,
         Mainwinform-> emit chat_server_status(id, 0);
     }
 }
+#endif
 
 void
 DWYCOCALLCONV
@@ -4291,8 +4329,8 @@ void mainwinform::on_actionRemove_lobby_triggered()
 
 void mainwinform::on_actionMake_me_invisible_triggered(bool checked)
 {
-    int tmp1 = Current_server;
-    DwOString tmp2 = Current_server_id;
+    int tmp1 = Last_selected_idx;
+    DwOString tmp2 = Last_selected_id;
     dwyco_set_invisible_state(checked);
     // chat server will disconnect synchronously at this point, so we need to reissue a login
 

@@ -10,7 +10,6 @@
 #undef LOCAL_TEST
 #include "vc.h"
 #include "dwtimer.h"
-#include "vcdecom.h"
 #include "qmsg.h"
 #include "cdcver.h"
 #include "snds.h"
@@ -23,6 +22,10 @@
 #include "se.h"
 #include "qmsgsql.h"
 #include "qauth.h"
+#include "ezset.h"
+#include "dirth.h"
+
+using namespace dwyco;
 
 extern vc My_UID;
 extern vc Online;
@@ -78,7 +81,9 @@ transient_online_list()
         return p;
     for(int i = 0; i < rm.num_elems(); ++i)
     {
-        p.append(from_hex(rm[i]));
+        vc u = from_hex(rm[i]);
+        if(!pal_user(u))
+            p.append(u);
     }
     return p;
 }
@@ -249,20 +254,7 @@ pal_login()
     v[7] = vc(VC_VECTOR);
     v[8] = vc(VC_VECTOR);
 
-    vc fw(VC_VECTOR);
-    if(DwNetConfigData.get_advertise_nat_ports())
-    {
-        fw[0] = DwNetConfigData.get_nat_primary_port();
-        fw[1] = DwNetConfigData.get_nat_secondary_port();
-        fw[2] = DwNetConfigData.get_nat_pal_port();
-    }
-    else
-    {
-        fw[0] = DwNetConfigData.get_primary_port();
-        fw[1] = DwNetConfigData.get_secondary_port();
-        fw[2] = DwNetConfigData.get_pal_port();
-    }
-    v[4] = fw;
+    v[4] = make_fw_setup();
     dirth_send_set_interest_list(My_UID, v, QckDone());
     return 1;
 }

@@ -10,60 +10,6 @@
 #include "vcio.h"
 #define TMPBUFSTR 128000
 
-#if defined(__BORLANDC__) && __BORLANDC__ < 0x500
-#include <string.h>
-// eventually we'll need to do the range checking
-static
-int
-snprintf(char *a, int len, char *format, char c)
-{
-	sprintf(a, format, c);
-	return strlen(a);
-}
-static
-int
-snprintf(char *a, int len, char *format, int c)
-{
-	sprintf(a, format, c);
-	return strlen(a);
-}
-static
-int
-snprintf(char *a, int len, char *format, long c)
-{
-	sprintf(a, format, c);
-	return strlen(a);
-}
-static
-int
-snprintf(char *a, int len, char *format, double c)
-{
-	sprintf(a, format, c);
-	return strlen(a);
-}
-static
-int
-snprintf(char *a, int len, char *format, const char * c)
-{
-	sprintf(a, format, c);
-	return strlen(a);
-}
-static
-int
-snprintf(char *a, int len, char *format, unsigned long c)
-{
-	sprintf(a, format, c);
-	return strlen(a);
-}
-static
-int
-snprintf(char *a, int len, char *format, void *c)
-{
-	sprintf(a, format, c);
-	return strlen(a);
-}
-#endif
-
 
 VcIOHack::VcIOHack(FILE *s) : sio(s)
 {
@@ -132,6 +78,14 @@ VcIOHack::operator<<(long c)
 	fprintf(sio, format ? format : "%ld", c);
 	return *this;
 }
+
+VcIOHack&
+VcIOHack::operator<<(long long c)
+{
+    fprintf(sio, format ? format : "%lld", c);
+    return *this;
+}
+
 
 VcIOHack&
 VcIOHack::operator<<(unsigned long c)
@@ -255,6 +209,18 @@ VcIOHackStr::operator<<(long c)
 		oopanic("snprintf pooched");
 	s.append(a, i);
 	return *this;
+}
+
+VcIOHack&
+VcIOHackStr::operator<<(long long c)
+{
+    char a[TMPBUFSTR];
+    unsigned int i;
+    i = snprintf(a, sizeof(a) - 1, format ? format : "%lld", c);
+    if(i >= sizeof(a) - 1)
+        oopanic("snprintf pooched");
+    s.append(a, i);
+    return *this;
 }
 
 VcIOHack&

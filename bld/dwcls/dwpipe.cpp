@@ -1,20 +1,30 @@
 
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
+
 #define thdr template<class I, class O>
 #define tcls DwPipeline<I, O>
 
 static void
 ec_pthread_mutex_lock(pthread_mutex_t *m)
 {
-	if(pthread_mutex_lock(m) != 0)
-		::oopanic("mutexL");
-	return;
+    if(pthread_mutex_lock(m) != 0)
+        ::oopanic("mutexL");
+    return;
 }
 static void
 ec_pthread_mutex_unlock(pthread_mutex_t *m)
 {
-	if(pthread_mutex_unlock(m) != 0)
-		::oopanic("mutexU");
-	return;
+    if(pthread_mutex_unlock(m) != 0)
+        ::oopanic("mutexU");
+    return;
 }
 thdr
 static
@@ -64,16 +74,16 @@ tcls::~DwPipeline()
     pthread_cond_destroy(&q_cond);
     pthread_cond_destroy(&outq_cond);
     pthread_mutex_destroy(&q_mutex);
-	// really need to do some clean up of the
-	// partial results too...
+    // really need to do some clean up of the
+    // partial results too...
 }
 
 thdr
 int
 tcls::init()
 {
-	pthread_mutexattr_t m;
-	pthread_mutexattr_init(&m);
+    pthread_mutexattr_t m;
+    pthread_mutexattr_init(&m);
 #ifdef MACOSX
     pthread_mutexattr_settype(&m, PTHREAD_MUTEX_ERRORCHECK);
 #else
@@ -95,8 +105,8 @@ void
 tcls::thread_loop()
 {
 #if 0
-	struct timespec ts;
-	ts.tv_sec = 0;
+    struct timespec ts;
+    ts.tv_sec = 0;
     ts.tv_nsec = 1000000;
 #endif
 
@@ -124,7 +134,8 @@ tcls::thread_loop()
         //pthread_cond_timedwait(&q_cond, &q_mutex, &ts);
         pthread_cond_wait(&q_cond, &q_mutex);
     }
-out:;
+out:
+    ;
     ec_pthread_mutex_unlock(&q_mutex);
     return;
 }
@@ -315,10 +326,10 @@ thdr
 int
 tcls::num_inq()
 {
-	ec_pthread_mutex_lock(&q_mutex);
-	int cnt = inq.num_elems();
-	ec_pthread_mutex_unlock(&q_mutex);
-	return cnt;
+    ec_pthread_mutex_lock(&q_mutex);
+    int cnt = inq.num_elems();
+    ec_pthread_mutex_unlock(&q_mutex);
+    return cnt;
 }
 
 thdr
@@ -337,9 +348,6 @@ tcls::add_operation(DwPipelineOp<I,O> *o)
 // g++ -g -I../../ins/dbg/inc dwpipeline.cpp ../../ins/dbg/lib/dwcls.a ../../ins/dbg/lib/kazlib.a -lpthread
 #include <stdio.h>
 #include <unistd.h>
-
-class DwAllocator;
-DwAllocator *Default_alloc;
 
 void
 oopanic(const char *m)

@@ -6,9 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#if !defined(__BORLANDC__)
 #include <stdio.h>
-#endif
 #include "vc.h"
 #include "vcdbl.h"
 #include "vcint.h"
@@ -141,9 +139,6 @@ vc_double::hashValue() const {return (hashValueType)(d * 100.);}
 void
 vc_double::printOn(VcIO outputStream) {outputStream << d;}
 
-int
-vc_double::func_eq(const vc&) const {bomb_op_func(); return 0;}
-
 long
 vc_double::xfer_out(vcxstream& vcx)
 {
@@ -151,11 +146,7 @@ vc_double::xfer_out(vcxstream& vcx)
 	char buf[40];
 	char fbuf[2048];
 
-#ifdef __BORLANDC__
-	gcvt(d, 100, fbuf);
-#else
 	sprintf(fbuf, "%.*g", (int)(sizeof(fbuf) / 2), d);
-#endif
 
 	int flen = strlen(fbuf);
 	int len = encode_long(buf, flen);
@@ -179,8 +170,6 @@ vc_double::xfer_in(vcxstream& vcx)
 	if((cp = vcx.in_want(len)) == 0)
 		return EXIN_DEV;
 	long flen = decode_long(cp, len);
-    if(flen > vcx.max_element_len)
-        return EXIN_PARSE;
     // we know length has to be > 0
     if(flen == -1 || flen == 0)
 		return EXIN_PARSE;

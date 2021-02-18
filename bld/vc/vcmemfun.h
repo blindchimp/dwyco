@@ -52,7 +52,7 @@ private:
 	virtual vc operator()(vc v1, vc v2, vc v3) const {return vc_fundef::operator()(v1, v2, v3);}
 	virtual vc operator()(vc v1, vc v2, vc v3, vc v4) const {return vc_fundef::operator()(v1, v2, v3, v4);}
 	virtual vc operator()(void) const {return vc_fundef::operator()();}
-	virtual vc operator()(void *p) const {return vc_fundef::operator()(p);}
+	//virtual vc operator()(void *p) const {return vc_fundef::operator()(p);}
 	
 	void printOn(VcIO outputStream) ;
 

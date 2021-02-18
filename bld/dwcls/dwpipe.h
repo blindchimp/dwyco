@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #ifndef DWPIPE_H
 #define DWPIPE_H
 #ifndef __WIN32__
@@ -26,7 +36,10 @@ struct DwPipelineOp
 template<class I>
 struct ordered_q_item
 {
-    ordered_q_item() {serial = -1; item = 0;}
+    ordered_q_item() {
+        serial = -1;
+        item = 0;
+    }
     int operator==(const ordered_q_item& oqi) const {
         return serial == oqi.serial;
     }
@@ -52,7 +65,7 @@ public:
     int get(O* &); // polling, but simpler return
     // note: should provide a "get" that is unordered
     int num_results();
-	int num_inq();
+    int num_inq();
     int idle();
     int next_result_ready();
     void thread_loop();

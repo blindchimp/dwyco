@@ -1,3 +1,13 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #ifndef DWVP_H
 #define DWVP_H
 
@@ -20,39 +30,46 @@ void oopanic(const char *);
 class DwVP
 {
 public:
-	DwVP() {ptr = (void *)0xaaaaaaa5; cookie = 0x55555555;}
-	DwVP(void *p) {ptr = p; cookie = ++CookieGen; add_ptr(cookie, ptr); }
+    DwVP() {
+        ptr = (void *)0xaaaaaaa5;
+        cookie = 0x55555555;
+    }
+    DwVP(void *p) {
+        ptr = p;
+        cookie = ++CookieGen;
+        add_ptr(cookie, ptr);
+    }
 
-	int operator==(const DwVP& v) const {
-		if(ptr == v.ptr && cookie == v.cookie)
-			return 1;
-		return 0;
-	}
-	int operator!=(const DwVP& v) const {
-		return ! ((*this) == v);
-	}
-	int operator<(const DwVP& ) {
-		oopanic("pval bad op");
-		return 0;
-	}
-	int operator<=(const DwVP& ) {
-		oopanic("pval bad op");
-		return 0;
-	}
-	int operator>(const DwVP& ) {
-		oopanic("pval bad op");
-		return 0;
-	}
-	int operator>=(const DwVP& ) {
-		oopanic("pval bad op");
-		return 0;
-	}
-	
-	operator void *() {
-		if(!is_valid())
-			oopanic("bad ptr");
-		return ptr;
-	}
+    int operator==(const DwVP& v) const {
+        if(ptr == v.ptr && cookie == v.cookie)
+            return 1;
+        return 0;
+    }
+    int operator!=(const DwVP& v) const {
+        return ! ((*this) == v);
+    }
+    int operator<(const DwVP& ) {
+        oopanic("pval bad op");
+        return 0;
+    }
+    int operator<=(const DwVP& ) {
+        oopanic("pval bad op");
+        return 0;
+    }
+    int operator>(const DwVP& ) {
+        oopanic("pval bad op");
+        return 0;
+    }
+    int operator>=(const DwVP& ) {
+        oopanic("pval bad op");
+        return 0;
+    }
+
+    operator void *() {
+        if(!is_valid())
+            oopanic("bad ptr");
+        return ptr;
+    }
 
     operator long() {
         if(!is_valid())
@@ -60,28 +77,30 @@ public:
         return cookie;
     }
 
-	int is_valid() {
-		return valid_ptr(cookie);
-	}
-	void invalidate() {
-		del_ptr(cookie);
-	}
+    int is_valid() {
+        return valid_ptr(cookie);
+    }
+    void invalidate() {
+        del_ptr(cookie);
+    }
 
-    unsigned long hashValue() const {return ::hash(cookie);}
+    unsigned long hashValue() const {
+        return ::hash(cookie);
+    }
 
 
 public:
-	long cookie;
+    long cookie;
 private:
-	void *ptr;
-	static long CookieGen;
-	static void add_ptr(long p, void *);
-	static int valid_ptr(long p);
-	static void del_ptr(long p);
-	static DwTreeKaz<void *, long> *Ptr_listp;
+    void *ptr;
+    static long CookieGen;
+    static void add_ptr(long p, void *);
+    static int valid_ptr(long p);
+    static void del_ptr(long p);
+    static DwTreeKaz<void *, long> *Ptr_listp;
 public:
-	static DwVP cookie_to_ptr(long cookie);
-	static void init_dvp();
+    static DwVP cookie_to_ptr(long cookie);
+    static void init_dvp();
 };
 
 

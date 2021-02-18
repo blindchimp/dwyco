@@ -1,11 +1,21 @@
+
+/* ===
+; This is free and unencumbered software released into the public domain.
+;
+; For more information, please refer to <http://unlicense.org>
+;
+; Dwight Melcher
+; Dwyco, Inc.
+; 
+*/
 #ifndef DWHASH_H
 #define DWHASH_H
 
 template<class T>
-unsigned long 
+unsigned long
 hash(const T& val)
 {
-	return val.hashValue();
+    return val.hashValue();
 }
 
 unsigned long hash(int a);

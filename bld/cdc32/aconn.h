@@ -9,46 +9,19 @@
 #ifndef ACONN_H
 #define ACONN_H
 
-#include "uicfg.h"
 #include "dwstr.h"
 
-void turn_listen_off();
-void turn_listen_on();
+namespace dwyco {
+
+void init_aconn();
+void turn_accept_off();
+void turn_accept_on();
 void poll_listener();
 void set_listen_state(int on);
 int is_listening();
 
-struct DwNetConfig
-{
+}
 
-public:
-
-    DWUIDECL_BEGIN
-    DWUIDECLVAL(int, primary_port)
-    DWUIDECLVAL(int, secondary_port)
-    DWUIDECLVAL(int, pal_port)
-    DWUIDECLVAL(int, nat_primary_port)
-    DWUIDECLVAL(int, nat_secondary_port)
-    DWUIDECLVAL(int, nat_pal_port)
-    DWUIDECLVAL(bool, advertise_nat_ports)
-    DWUIDECLVAL(int, disable_upnp)
-    DWUIDECLVAL(int, call_setup_media_select)
-    DWUIDECL_END
-
-    DwNetConfig();
-    void load();
-    void save();
-
-    DwString get_primary_suffix(const char *ip);
-    DwString get_secondary_suffix(const char *ip);
-    DwString get_pal_suffix(const char *ip);
-
-    DwString get_nat_primary_suffix(const char *ip);
-    DwString get_nat_secondary_suffix(const char *ip);
-    DwString get_nat_pal_suffix(const char *ip);
-};
-
-extern DwNetConfig DwNetConfigData;
 #define CSMS_DIRECT_ONLY 0
 #define CSMS_TCP_ONLY 1
 #define CSMS_UDP_ONLY 2

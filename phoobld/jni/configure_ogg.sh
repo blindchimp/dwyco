@@ -1,17 +1,9 @@
 #!/bin/bash
 pushd `dirname $0`
 . settings.sh
+. ndk_autoconf.sh
 
-if [ "$NDK_ABI" = "arm" ]
-then
-	abi="arm-linux-androideabi"
-	host="arm-linux"
-	export CFLAGS="-fPIC -DANDROID -D__thumb__ -mthumb -Wfatal-errors -Wno-deprecated"
-else
-	abi="i686-linux-android"
-	host="x86-linux"
-	export CFLAGS="-fPIC -DANDROID -Wfatal-errors -Wno-deprecated"
-fi
+export CFLAGS="-fPIC -DANDROID"
 
 pushd libogg
 
@@ -19,14 +11,11 @@ thisdir=`pwd`
 prefixpath="/output"
 prefixdir=$thisdir$prefixpath
 
-export CC="$abi-gcc"
-export LD="$abi-ld"
-export RANLIB="$abi-ranlib"
-export AR="$abi-ar"
 
+autoreconf -if
 ./configure \
 --prefix=$prefixdir \
---host=$host \
+--host=$TARGET_TAG \
 --disable-shared \
 --enable-static 
 

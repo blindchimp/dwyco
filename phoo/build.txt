@@ -1,5 +1,24 @@
 Notes related to Qt for Android building
 
+ca 2018
+dwight melcher
+
+Building phoo on Windows using msvc2015
+
+The main gotcha is that the delay-loading of the mtcapxe.dll
+video drivers does not link anymore because of changes MS has
+made to the linker since MSVC2008. This is a problem because the
+DLL will crash unless it is delay-loaded. On the old CDC-X, since we
+use MSVC2008 to build it, there is no problem. With Qt5, we don't have
+support for MSVC2008, so we cannot use mtcapxe.dll. The reason it needs
+to be delay loaded is super-obscure... it caused weird crashes on
+some machines.
+
+Anyway, with phoo, you are stuck using the VGQT driver, which has its
+own set of problems on Windows (ie, it won't work prior to Qt5.11 because
+of a missing VideoProbe implementation in Qt, and
+in 5.11.1 the implementation is buggy.)
+
 Sun Feb 28 12:50:57 MST 2016
 dwight melcher
 

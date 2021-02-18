@@ -6,11 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
+import QtQuick 2.12
 import dwyco 1.0
-import QtQuick.Controls 2.1
-import QtQuick.Layouts 1.3
-import QtQml 2.2
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 
 Page {
     property int inh_content_warning: 1
@@ -18,6 +17,9 @@ Page {
 
     header: SimpleToolbar {
 
+    }
+    background: Rectangle {
+        color: amber_light
     }
 
     Component.onCompleted: {
@@ -45,6 +47,17 @@ Page {
             inh_content_warning = 0
         else
             inh_content_warning = 1
+
+        a = core.get_local_setting("show_hidden");
+        if(a === "" || a === "1") {
+            themsglist.set_show_hidden(1)
+            show_hidden_msgs.checked = true
+            show_hidden = true
+        } else {
+            themsglist.set_show_hidden(0)
+            show_hidden_msgs.checked = false
+            show_hidden = false
+        }
 
 
     }
@@ -78,8 +91,8 @@ Page {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: mm(3)
-        spacing: mm(3)
+        anchors.margins: mm(2)
+        spacing: mm(1)
 
         CheckBox {
             id: cb_pin_expire
@@ -105,6 +118,13 @@ Page {
             onCheckedChanged: {
                 show_unreviewed = checked
                 core.set_local_setting("show_unreviewed", checked ? "1" : "0")
+                if(Qt.platform.os == "android") {
+                    if(show_unreviewed)
+                        notificationClient.set_user_property("content", "unrev")
+                    else
+                        notificationClient.set_user_property("content", "rev")
+                }
+                SimpleDirectoryList.clear()
             }
             onClicked: {
                 if(checked) {
@@ -113,7 +133,57 @@ Page {
                     }
                 }
             }
+            Layout.fillWidth: true
         }
+        CheckBox {
+            id: show_hidden_msgs
+            text: "Show hidden messages"
+            onCheckedChanged: {
+                core.set_local_setting("show_hidden", checked ? "1" : "0")
+                themsglist.set_show_hidden(checked ? 1 : 0)
+                show_hidden = checked
+            }
+            Layout.fillWidth: true
+        }
+
+//        CheckBox {
+//            id: show_archived
+//            text: { "Show archived users (" + core.total_users.toString() + ")" }
+//            onCheckedChanged: {
+//                core.use_archived = checked
+//                show_archived_users = checked
+//            }
+//            Layout.fillWidth: true
+//        }
+
+
+        ItemDelegate {
+            id: block_list_button
+            text: qsTr("Block List")
+            onClicked: {
+                    stack.push(iglist_dialog)
+            }
+            Layout.fillWidth: true
+        }
+
+        ItemDelegate {
+            id: pin_lock_button
+            text: qsTr("PIN Lock Setup")
+            onClicked: {
+                stack.push(pwchange_dialog)
+            }
+
+            Layout.fillWidth: true
+        }
+        ItemDelegate {
+            id: about_button
+            text: qsTr("About")
+            onClicked: {
+                    stack.push(about_dialog)
+            }
+            Layout.fillWidth: true
+        }
+
 
         Item {
             Layout.fillHeight: true

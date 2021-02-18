@@ -122,8 +122,8 @@ void RegisterFactories()
 	RegisterSymmetricCipherDefaultFactories<XSalsa20>();
 	RegisterSymmetricCipherDefaultFactories<Sosemanuk>();
 	//RegisterSymmetricCipherDefaultFactories<Weak::MARC4>();
-	RegisterSymmetricCipherDefaultFactories<WAKE_OFB<LittleEndian> >();
-	RegisterSymmetricCipherDefaultFactories<WAKE_OFB<BigEndian> >();
+	//RegisterSymmetricCipherDefaultFactories<WAKE_OFB<LittleEndian> >();
+	//RegisterSymmetricCipherDefaultFactories<WAKE_OFB<BigEndian> >();
 	RegisterSymmetricCipherDefaultFactories<SEAL<LittleEndian> >();
 	RegisterAuthenticatedSymmetricCipherDefaultFactories<CCM<AES> >();
 	RegisterAuthenticatedSymmetricCipherDefaultFactories<GCM<AES> >();

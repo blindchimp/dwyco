@@ -12,8 +12,6 @@
  */
 #ifndef VCBERK_H
 #define VCBERK_H
-// this file provides some backward compatibility for berkeley sockets
-// under sunos4.1.1
 
 extern "C" {
 #include <errno.h>

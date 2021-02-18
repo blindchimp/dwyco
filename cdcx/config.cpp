@@ -96,7 +96,7 @@ configform::accept()
     // so we always make them accept.
     dwyco_set_setting("zap/always_accept", "1");
     // TCP only
-    dwyco_set_setting("net/media_select", "1");
+    dwyco_set_setting("net/call_setup_media_select", "1");
 
     // update the pals-only settings
     if(ui.pals_only->isChecked())
@@ -118,9 +118,12 @@ configform::accept()
     dwyco_set_codec_data(agc, denoise, audio_delay);
 
     // b/w settings
-    int up = ui.upload_speed->text().toInt();
-    int down = ui.download_speed->text().toInt();
-    dwyco_set_rate_tweaks(20, 65535, up, down);
+    //int up = ui.upload_speed->text().toInt();
+    //int down = ui.download_speed->text().toInt();
+    //dwyco_set_rate_tweaks(20, 65535, up, down);
+    dwyco_set_setting("rate/max_fps", "20");
+    dwyco_set_setting("rate/kbits_per_sec_out", ui.upload_speed->text().toLatin1());
+    dwyco_set_setting("rate/kbits_per_sec_in", ui.download_speed->text().toLatin1());
 
     setting_put("chat_dont_display_video", ui.chat_dont_display_video->isChecked());
     if(simple_public::Simple_publics.count() > 0)
@@ -199,12 +202,12 @@ configform::load()
     if(dwyco_get_pals_only())
     {
         ui.pals_only->setChecked(1);
-        ui.CDC_zap__send_auto_reply->setEnabled(1);
+        //ui.CDC_zap__send_auto_reply->setEnabled(1);
     }
     else
     {
         ui.pals_only->setChecked(0);
-        ui.CDC_zap__send_auto_reply->setEnabled(0);
+        //ui.CDC_zap__send_auto_reply->setEnabled(0);
     }
 
 
@@ -226,14 +229,17 @@ configform::load()
     ui.denoise->setChecked(denoise);
     ui.audio_delay->setValue(audio_delay);
 
-    long up;
-    long down;
-    long dum;
-    double ddum;
-    dwyco_get_rate_tweaks(&ddum, &dum, &up, &down);
-    QString st;
-    ui.upload_speed->setText(st.setNum(up));
-    ui.download_speed->setText(st.setNum(down));
+
+    {
+    const char *val;
+    int len;
+    int tp;
+    dwyco_get_setting("rate/kbits_per_sec_out", &val, &len, &tp);
+    ui.upload_speed->setText(val);
+    dwyco_get_setting("rate/kbits_per_sec_in", &val, &len, &tp);
+    ui.download_speed->setText(val);
+    }
+
 
     int val;
 
@@ -333,15 +339,19 @@ void configform::on_CDC_net__primary_port_cursorPositionChanged(int , int )
 
 void configform::on_create_auto_reply_clicked()
 {
+#if 0
     composer *c = new composer_autoreply(Mainwinform);
     //c->set_uid(uid);
     c->show();
     c->raise();
+#endif
 }
 
 void configform::on_revert_auto_reply_clicked()
 {
+#if 0
     dwyco_set_auto_reply_msg(0, 0, 0);
+#endif
 }
 
 void configform::on_CDC_call_acceptance__max_audio_textChanged(QString val)
@@ -395,7 +405,12 @@ get_a_backup_filename(QWidget *parent, QString filter)
     static QString last_directory;
     if(last_directory.length() == 0)
     {
+#ifdef DWYCO_QT5
+        QStringList sl = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+        last_directory = sl[0];
+#else
         last_directory = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif
     }
 #if (!defined(LINUX) && !defined(MAC_CLIENT))
 // windows wants to change the cwd on us, so tell it to

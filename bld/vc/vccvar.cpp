@@ -49,7 +49,7 @@ VcEvalDbgNode::printOn(VcIO os)
 {
 	VcDebugNode::printOn(os);
 	os << "Evaluating expression that began near line " <<
-		node->begin_scoord.filename << ":" << node->begin_scoord.linenum << "\n";
+        node->begin_scoord.filename.c_str() << ":" << node->begin_scoord.linenum << "\n";
 	os << "Expr num = " << expr_num << ", Accumulated result = \"" << var_name << "\"\n";
 	os << "\n";
 
@@ -96,7 +96,7 @@ vc_cvar::raise_compile_error()
 	vc exc("E:LH.COMPILE_ERROR");
 	VCArglist a;
     a.append(exc);
-    a.append(vc(lexer->input_description()));
+    a.append(vc(lexer->input_description().c_str()));
 	Vcmap->excraise(exc, &a);
 }
 
@@ -202,11 +202,11 @@ vc_cvar::performance_hack(vc& atom) const
 	vc tmp = vc_list.get_first();
 	if(tmp.type() != VC_STRING)
 	{
-		((vc_cvar *)this)->nopf = 1;
+        nopf = 1;
 		return 0;
 	}
-	((vc_cvar *)this)->cached_atom = tmp;
-	((vc_cvar *)this)->use_cached_atom = 1;
+    cached_atom = tmp;
+    use_cached_atom = 1;
 	if(dont_map)
 	{
 		atom = tmp;
@@ -358,9 +358,7 @@ vc_cvar::eval() const
 void
 vc_cvar::next_tok()
 {
-
 	tok = lexer->next_token(tokval, toklen, atom_type);
-
 }
 
 void
@@ -375,7 +373,7 @@ void
 vc_cvar::syntax_err(const char *msg, vc_cvar_src_coord start, vc_cvar_src_coord end)
 {
 	VcIO os = lexer->get_err_strm();
-	os << start.filename << ": syntax error in expression that began near line " <<
+    os << start.filename.c_str() << ": syntax error in expression that began near line " <<
 		start.linenum << "\n";
 	os << msg << " at line " << end.linenum << "\n";
 	error = 1;
@@ -508,30 +506,6 @@ vc_cvar::vprime(vc cvar)
 	}
 }
 
-
-#ifdef OLD_PARSE
-void
-vc_cvar::varlist(VCList *vlist)
-{
-	if(tok == ATOM || tok == LBRACKET || tok == LBRACE || tok == LTICK)
-    {
-		vc v = pvar();
-		vlist->append(v);
-		tail(vlist);
-	} // else expand empty
-}
-
-void
-vc_cvar::tail(VCList *vlist)
-{
-	if(tok == ATOM || tok == LBRACKET || tok == LBRACE || tok == LTICK)
-	{
-		varlist(vlist);
-		return;
-	}
-    // expand empty
-}
-#else
 void
 vc_cvar::varlist(VCList *vlist)
 {
@@ -541,8 +515,6 @@ vc_cvar::varlist(VCList *vlist)
 		vlist->append(v);
 	} // else expand empty
 }
-
-#endif
 
 void
 vc_cvar::stringrep(VcIO o) const
@@ -579,7 +551,7 @@ vc_cvar::dbg_print(int expr_num, const char *var_name) const
 {
 	dbg_print_date();
 	VcError << "Eval expr that began near line " <<
-		begin_scoord.filename << ":" << begin_scoord.linenum << "\n";
+        begin_scoord.filename.c_str() << ":" << begin_scoord.linenum << "\n";
 	dbg_print_date();
 	VcError << "Expr num = " << expr_num << ", Accumulated result = \"" << var_name << "\"\n";
 }
@@ -678,7 +650,7 @@ int vc_cvar::double_eq(const vc& v) const {return eval().double_eq(v);}
 int vc_cvar::double_ne(const vc& v) const {return eval().double_ne(v);}
 
 
-vc vc_cvar::operator()(void *p) const {return eval()(p);}
+//vc vc_cvar::operator()(void *p) const {return eval()(p);}
 vc vc_cvar::operator()(VCArglist *a) const {return eval()(a);}
 
 vc vc_cvar::operator()() const {return eval()();}

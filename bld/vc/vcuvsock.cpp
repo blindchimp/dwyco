@@ -17,12 +17,15 @@
 uv_loop_t *vc_uvsocket::uvs_loop;
 DwTreeKaz<vc_uvsocket *, long> *vc_uvsocket::Ready_q_p;
 
+#ifndef _WIN32
 static char *
 ultoa(unsigned long l, char *out, int radix)
 {
     sprintf(out, "%ld", l);
     return out;
 }
+#endif
+
 
 static
 void
@@ -117,7 +120,7 @@ close_cb(uv_handle_t *h)
     DwVP vp = DwVP::cookie_to_ptr((long)h->data);
 	if(vp.is_valid())
 	{
-		vc_uvsocket *vcu = (vc_uvsocket *)(void *)vp;
+        //vc_uvsocket *vcu = (vc_uvsocket *)(void *)vp;
 		// hmmm... what to do about the put and get q's?
 	}
     else
@@ -125,7 +128,7 @@ close_cb(uv_handle_t *h)
         // the dtor for uvsocket invalidates the object, but we
         // still need to delete the handle
     }
-	delete h;
+    delete (uv_tcp_t *)h;
 }
 
 // if we are destroying one of these things,

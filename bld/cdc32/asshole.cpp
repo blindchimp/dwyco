@@ -1,3 +1,4 @@
+#ifdef DWYCO_ASSHAT
 
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
@@ -157,3 +158,4 @@ display_asshole(vc uid)
     sprintf(a, "%02.0f", ah);
     return DwString(a);
 }
+#endif

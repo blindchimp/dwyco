@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#include <QApplication>
+#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QScreen>
@@ -14,6 +14,7 @@
 #include <QHostInfo>
 #include <QQuickStyle>
 #include <QDebug>
+#include <QQmlFileSelector>
 #ifdef ANDROID
 #include "notificationclient.h"
 #include <QAndroidJniObject>
@@ -45,14 +46,19 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ANDROID
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
 
     QGuiApplication app(argc, argv);
 
+#if defined(_WIN32)
+    QQuickStyle::setStyle("Fusion");
+    QQuickStyle::setFallbackStyle("Fusion");
+#else
     QQuickStyle::setStyle("Material");
     QQuickStyle::setFallbackStyle("Material");
+#endif
 
     qDebug() << QQuickStyle::availableStyles();
 
@@ -75,6 +81,17 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     TheEngine = &engine;
+    QQmlFileSelector *sel = QQmlFileSelector::get(TheEngine);
+    QStringList sels;
+#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+    sels.append("vgqt");
+#endif
+
+#if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
+    sels.append("desktop");
+#endif
+    if(sels.count() > 0)
+        sel->setExtraSelectors(sels);
 
 
 #ifdef ANDROID

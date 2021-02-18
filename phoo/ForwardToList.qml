@@ -6,10 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
+import QtQuick 2.12
 import dwyco 1.0
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.2
+import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.12
 
 Page {
     id: forward_list
@@ -32,8 +32,8 @@ Page {
             color: primary_dark
             border.width: 1
             gradient: Gradient {
-                GradientStop { position: 0.0; color: primary_light }
-                GradientStop { position: 1.0; color: primary_dark}
+                GradientStop { position: 0.0; color: "lightgreen" }
+                GradientStop { position: 1.0; color: "lightgrey"}
             }
 
             RowLayout {
@@ -46,7 +46,7 @@ Page {
                     //width: dp(80)
                     //height: dp(60)
                     source : {
-                        (!invalid && ((REVIEWED == 1 && REGULAR == 1) || show_unreviewed) && resolved_counter > -1) ?
+                        (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
                                     core.uid_to_profile_preview(uid) :
                                     "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                     }

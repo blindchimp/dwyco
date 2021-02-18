@@ -1,24 +1,28 @@
 dwight melcher
-Mon Apr 15 13:47:20 MST 2013
+Sat Sep 28 10:49:56 MDT 2019
+
+on Macos, using homebrew, be sure you have autoconf installed:
+
+brew install autoconf autotools libtool pkg-config
 
 basic idea for an android build:
-get version r13 of the NDK from google
+
+get version r20 of the NDK from google
 
 set up the env vars for it, and run the following scripts:
 export NDK=~/android/android-ndk (the default)
 
-the scripts here expect this:
-
-export NDK_ABI= "arm" or "x86" (arm is the default)
-
 sh mklinks.sh
-./create_toolchain.sh
 
-# to build external things like vorbis
-./config_make_everything.sh
+run the script
 
+./build-autoconf.sh
 
-# to build the rest of the lib
+this is needed because of the lame autoconf stuff
+in the xiph codecs.
+
+# to build the rest of the libs (this will
+# automatically build x86,armv7,arm64 libs
 ./mk.sh
 
 the resulting libs will be in ../libs and ../obj

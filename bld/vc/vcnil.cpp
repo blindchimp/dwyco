@@ -10,6 +10,7 @@
 #include "vcnil.h"
 #include "vcmap.h"
 #include "vcio.h"
+#include <new>
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcnil.cpp 1.46 1996/11/17 05:58:59 dwight Stable $";
 
 //
@@ -30,7 +31,7 @@
 // count will be incorrect if there are static inits
 // to vcnil that happen before the initial init of
 // TheNil. this may cause the deletion of nil, which
-// is a BAD THING. so, we kluge: we assume there are never
+// is bad. so, we kluge: we assume there are never
 // more than a few hundered static initializations that
 // happen before nil is initialized, and set the initial
 // value of the reference count of nil to (say) 200 and hope
@@ -49,7 +50,8 @@ void *
 vc_nil::operator new(size_t )
 {
 	oopanic("new nil?");
-	return 0;
+    throw std::bad_alloc();
+    //return 0;
 }
 
 vc_nil::vc_nil() {}
@@ -124,9 +126,6 @@ vc_nil::double_eq(const vc&) const {return FALSE;}
 int
 vc_nil::double_ne(const vc&) const {return TRUE;}
 
-int
-vc_nil::func_eq(const vc&) const {return FALSE;}
-
 enum vc_type
 vc_nil::type() const { return VC_NIL; }
 int
@@ -156,13 +155,13 @@ vc_nil::stringrep(VcIO os) const
 }
 
 long
-vc_nil::xfer_out(vcxstream& v)
+vc_nil::xfer_out(vcxstream& )
 {
 	return 0;
 }
 
 long
-vc_nil::xfer_in(vcxstream& v)
+vc_nil::xfer_in(vcxstream& )
 {
 	return 0;
 }

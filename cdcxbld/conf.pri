@@ -8,29 +8,36 @@
 VCCFG_COMP=$$PWD
 DWYCOBG=0
 DEFINES += VCCFG_FILE
-linux-g++*:DEFINES += LINUX 
+
+linux-g++* {
+DEFINES += LINUX
+DWYCO_USE_LINUX_AUDIO=0
+FORCE_DESKTOP_VGQT=0
+}
 macx-ios-clang {
 DEFINES += LINUX MACOSX DWYCO_IOS
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 }
-macx-ios-clang|macx-g++|macx-clang {
-#QMAKE_CXXFLAGS += -stdlib=libc++
-#QMAKE_LFLAGS += -stdlib=libstdc++
-#QMAKE_MAC_SDK.macos.version=10.11
-#QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.9
-QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
+macx-* {
+DEFINES += LINUX MACOSX DWYCO_FORCE_DESKTOP_VGQT
+FORCE_DESKTOP_VGQT=1
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 }
-macx-g++|macx-clang: DEFINES += LINUX MACOSX
+
 win32-* {
+FORCE_DESKTOP_VGQT=0
 DEFINES += _WIN32 _CRT_SECURE_NO_WARNINGS __WIN32__ #_MBCS
 DEFINES -= UNICODE
 QMAKE_CXXFLAGS_WARN_ON -= -W3
 QMAKE_CXXFLAGS += /wd4100 /wd4068 /wd4189 /wd4291
 DEFINES += _Windows
 }
-linux-g++|linux-g++-64|macx-g++|macx-clang: QMAKE_CXX=ccache g++
+linux-g++|linux-g++-64|macx-g++|macx-clang {
+QMAKE_CXX=ccache g++
 
-QMAKE_CFLAGS += -std=c++11 #-fsanitize=address
+QMAKE_CFLAGS += #-fsanitize=address
 QMAKE_CXXFLAGS += -std=c++11 #-fsanitize=address
 QMAKE_LFLAGS += -std=c++11 #-fsanitize=address
+}
 

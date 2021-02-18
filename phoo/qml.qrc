@@ -19,7 +19,6 @@
         <file>AdminBrowse.qml</file>
         <file>UserActionMenu.qml</file>
         <file>ConvList.qml</file>
-        <file>MsgActionMenu.qml</file>
         <file>ForwardToList.qml</file>
         <file>PINDialog.qml</file>
         <file>PINChangeDialog.qml</file>
@@ -45,6 +44,17 @@
         <file>SimpleMsgBrowse.qml</file>
         <file>VidCall.qml</file>
         <file>VidCallForm.ui.qml</file>
+        <file>CallButtonLink.qml</file>
+        <file>TipButton.qml</file>
+        <file>+vgqt/VidCamPreview.qml</file>
+        <file>SimpleGroupChat.qml</file>
+        <file>SimpleTagMsgBrowse.qml</file>
+        <file>GridToggle.qml</file>
+        <file>+desktop/GridToggle.qml</file>
+        <file>BareChatList.qml</file>
+        <file>+desktop/PublicChat.qml</file>
+        <file>MsgReview.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
+    <qresource prefix="/+vgqt"/>
 </RCC>

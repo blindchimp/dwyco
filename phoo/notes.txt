@@ -1,82 +1,55 @@
+Wed May  1 13:26:55 PDT 2019
+things that need to be fixed before first release on android
+
+* (done) remove status bar, or make it less obtrusive (ie, do a small x somewhere if server is offline.)
+* home (conv) button is being displayed even in cases where the back arrow is all you need, decide if that is ok.
+* (done) see if there is some way to display links in chat properly
+* (done) try to enable cut/paste in chat text somehow. (it appears you can cut and past ok in textedit, but not in plain "text". so, in order to copy text, you have to view it, and then do the copy there. actually somewhat better there anyway because the text can be display in larger font.
+* (done, workaround) try to figure out permissions, esp on camera since it seems to never start the first time the app is run
+* (done) toggling items in drawer should not close drawer
+* better look for the setting page, about box
+* (done, just put language in confirmation regarding hidden msgs) make sure that "clear msgs" only clears what is visible, or asks if you want to clear hidden stuff too. give it a confirmation too.
+* (not needed because you have to have at least one msg to forward, and hence one user in the list.) add help screen for empty forward list to explain how to get names on it
+* possible bug: profile update is nuking "mobile user" as the location and making it empty
+
 Fri Feb 19 07:23:55 MST 2016
 dwight melcher
 dwyco, inc.
 
 * partition app into 2 "modes": community and personal. in community mode, work as we do now, allowing messages to come in, become listed in public directories, ability to message anyone, and play competitive games. in personal mode, messages from people not in your "personal" list (which is more or less your "pal" list) are deferred (or optionally discarded.)
-* be sure to clear the main screen when putting in the background
-* add "grid" mode toggle for larger devices in places where lists are presented
-* NOTE NOTE: with genymotion, tell it to use the android SDK "adb" instead of whatever is installed in /usr/bin...
-* on first run, stay in a sensible state if the user backs out and comes back later
 * email verification
-* invisible in the main menu, possible a composite of "go invis, lock, and exit"
 * empty the trash at periodic intervals.
-* change locking to "explicit on exit, or after a period of inactivity"
-* add video mode to desktop version
 * add play for video profiles
-* show local time from the message in the "msgview", think about re-indexing to include local time in chat box like it is in cdc-x
 * do something files that are sent, show the name or something if they are not pictures
-* turn off http poller when main ui is up
 * switch to flock for semaphore
-* receiving a call and terminating it seems to cause the audio to be unavailable for playing messages after the call
 * need to improve protocol so that a client will not try to send media to the background processor. either say "i can't show video", or have some kind of alert if there is an incoming call. initial compat with cdc-x should be to just disallow media calls from the background processor
-* add "priority" messages that will make more noise, etc.
 * need "allow others to find my email" or whatever
-* look into displaying the last pic sent instead of the profile preview in the conversation list.
 * figure out when to probe the server for a profile update, maybe when you explicitly look at the msg list for a user. right now, the local profile isn't being updated until the user is deleted or something.
 * see if there is a way to avoid dropping all connections for a few minutes (esp media connections and whatnot)... msg send connections are probably ok to drop on it goes into the background, but not the other connections.
-* you can pull over the drawer at any point in the app, do an audit to make sure that all works right (workaround, drawer only available at top level)
-* option to delete all but favorites
 * Deferred send option... Allow there to be an amount of time between hitting send and actual send in that time user can cancel the send or hit a button to send immediately
-(done, but needs tweaking) * Put in favorites for users and messages 
-* Fix pin locking
 * Set archived users limit for mobile
 * Try streaming video to file and playing it at the same time then transforming it into a message that can be played a few times
-* Allow clicking on video to show full screen
-* Encrypt recorded streamed attachment to keep copying down
-* Turn down poll rate before release
 * Figure out 8khz audio playback for mobile
-* Accept direct may not be ephemeral, checkit
-* if someone doesn't set username, use email in display, or if they find someone via contact lookup
 * Only show emails that are verified
-(done-ish) * Remember to schedule get retry on error so that messages don't get stuck receive
-* text for forwarded messages doesn't show up
 * when there are lots of messages, option to "zoom out" to days or weeks and scroll those, then zoom in. maybe use a pinch gesture on mobile for that.
 * need a way of sending/exporting regular attachments
-* need go to bottom button in chat
-* remember to turn down the background polling rate to something reasonable
-* fix dups in contact list stuff
 * reinstate calls in desktop stuff
 * flip viewer for profiles in mobile
 * make profile viewer nicer looking
 * when net is off, turn off all bg processing
-* typing indicator is stuck when app goes into the background
-* fix reconnect to chat room when app goes into background
 * try detecting larger layout (like tablet) and using different layout
-* add throttling to chat server
 * add "report" to user list too
 * add ability to search for email/identifier to contact list thing
-* make clbot return "all id's with email" for single queries
 * if someone is "invis", and they send something to chat room, allow them to be selected somehow in case they get abusive.
-* on startup, need to restart the dwycobg service in case there are messages that are in the middle of being sent...
 * it is not obvious that "trivia" is what you want for current users. make it more explicit.
 * while the service is running in the background, it is getting presence updates. might be a buddy notification feature running around in there somewhere
-(done, i think) * dial down the entropy timers and other timers that aren't useful in background mode
 * note: interest list should also be used to filter out profile-invalidate messages, or get rid of all of those messages unless they are in your pal list or something
 * allow people to create "private" profiles that are not reviewed, and that can be sent and revoked as necessary (make hook into blocking)
 * think about avoiding direct connect attempt, as it is an info leak 
 * think about putting "always visible to pals" back in to allow direct connects in the background easier
 * Maybe it is time to move all settings to sql files
 * Have a database full of ack get calls locally that can be sent to server for filtering like the ignore list
-* Figure out how to put spinner up while processing a lot of messages
-* Gate the audio alerts so it only plays periodically
-* Put the unread index into message index then let the core provide that so messages can be process in the background completely
 * make updating profile a message send, could do more complicated profiles that way, and avoid a lot of problems with size restrictions.
-* switch to fifos for sync instead of tcp
-* fix problem where notification poller is going off while the UI is up
-* need better coordination between dwycobg and pin screen... i think it will deliver and notify even if the pin is up
-* put the cam icon down near the send button
-* make the chat icon a "home" icon, since that is what is really going on
-* combine some indication that messages are going direct vs. the server with the "online" indicator, which is only really valid for real-time media
 * add video profile playback properly
 * swap trivia and "players" since you really want to talk to someone other than play trivia in most cases
 * if you have no lock set, change the "lock and exit" to "cleanup and exit"

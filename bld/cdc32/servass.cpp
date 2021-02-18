@@ -25,6 +25,8 @@
 #include "calllive.h"
 #include "ta.h"
 
+using namespace dwyco;
+
 int Disable_SAC = 0;
 
 static void
@@ -75,20 +77,6 @@ serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv)
     else
     {
         GRTLOG("serv_recv_aux up", 0, 0);
-#if 0
-        // creating a subchannel, so special switch-o-change-o for that
-        // man this is NASTY
-        MMTube *tube = parent_mc->tube;
-        if(!tube)
-            oopanic("no tube?");
-        int c = tube->find_chan();
-        tube->set_channel(mc->tube->ctrl_sock, 0, 0, c);
-        //parent_mc->protos[c] = MMChannel::CHAN_GET_WHAT_TO_DO;
-        mc->tube->ctrl_sock = 0;
-        sproto *s = new sproto(c, recv_command, parent_mc->vp);
-        parent_mc->simple_protos[c] = s;
-        s->start();
-#endif
         // this setup just transfers the ctrl_sock which was
         // set up into a subchannel on the same mmchan, and
         // sets up a protocol object to get the first commands
@@ -115,7 +103,7 @@ serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv)
 // if we were the callee after the connection is completed.
 static
 void
-track_connect(MMChannel *, vc what, void *, ValidPtr)
+track_connect(MMChannel *mc, vc what, void *, ValidPtr)
 {
     if(what.is_nil())
     {
@@ -125,6 +113,18 @@ track_connect(MMChannel *, vc what, void *, ValidPtr)
     {
         TRACK_ADD(CLR_connect_succeeded, 1);
     }
+    // this is a bit of a hack... we know the proxy will die
+    // if the control connection gets set up and fails right away.
+    // that will signal the other side of a failure, and they can
+    // get on to trying another way of sending a message, etc.
+    // in the past, we just ignored the connection attempt, and it
+    // would result in the other side waiting around for things to
+    // time out, which was 30+ seconds. ideally we would send something
+    // to the server to tell it not to even attempt a server assisted
+    // set up, but that requires some extra protocol and server changes.
+    if(Disable_SAC)
+        mc->schedule_destroy(MMChannel::HARD);
+
 }
 
 void
@@ -158,15 +158,16 @@ start_serv_recv_thread(vc ip, vc port, ValidPtr mcv)
 }
 
 
-// this is called in the callee when they receive the initial
+// this is called in the CALLEE when they receive the initial
 // serv_r async msg from the msg server, this is the initial
 // control channel setup
 
 void
 got_serv_r(vc m, void *, vc, ValidPtr)
 {
-    if(Disable_SAC)
-        return;
+    // see comment is track_connect
+//    if(Disable_SAC)
+//        return;
     if(m[1].is_nil())
         return;
     vc ip = m[1][2];
@@ -192,26 +193,15 @@ servass_results(vc m, void *f, vc v, ValidPtr vp)
         stun_servass_failure("User not online.", to_uid, vp);
         if(md)
             md->show("User not online. Call failed.");
-        TRACK_ADD(CL_server_assist_failed, 1);	;
+        TRACK_ADD(CL_server_assist_failed, 1);
         return;
     }
     // return is vector(prox-ip prox-port callee-prox-ip callee-prox-port)
-#if 0
-    vc hostlist(VC_VECTOR);
-    vc portlist(VC_VECTOR);
-    vc uid_list(VC_VECTOR);
-    vc proxlist(VC_VECTOR);
 
-    hostlist.append(m[1][0]);
-    portlist.append(m[1][1]);
-    uid_list.append(to_uid);
-    proxlist.append(m[1]);
-#endif
     stun_connect(m[1][0], m[1][1], m[1], to_uid, media_select, vp, md);
-    //else
-    //	conference_connect(hostlist, portlist, proxlist, uid_list);
 }
 
+// note: this is called in the CALLER to start the server assisted setup
 void
 start_server_assisted_call(vc uid, int media_select, ValidPtr vp, MessageDisplay *md)
 {
@@ -222,13 +212,16 @@ start_server_assisted_call(vc uid, int media_select, ValidPtr vp, MessageDisplay
     TRACK_ADD(CL_server_assist_request, 1);
 }
 
-// this is called in the callee when they recv the "aux_r" control msg
+// this is called in the CALLEE when they recv the "aux_r" control msg
+// tnis is for setting up channels for streams like audio/video/data
+// rather than control channels. these channels can be created and
+// destroyed independently of the control channel.
 void
 aux_channel_setup(MMChannel *mc, vc v)
 {
-
-    if(Disable_SAC)
-        return;
+// see comment in track_connect
+//    if(Disable_SAC)
+//        return;
     // this is where we start an aux setup by calling out to the
     // same proxy that set up the control channel
     // this is called on the callee's client in response to another

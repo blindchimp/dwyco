@@ -33,7 +33,7 @@ public:
 	enum vc_type type() const { return VC_REGEX; }
 	virtual void stringrep(VcIO) const;
 	virtual vc operator()(void) const {bomb_call_atom(); return vcnil;}
-	virtual vc operator()(void *p) const {bomb_call_atom(); return vcnil;}
+	//virtual vc operator()(void *p) const {bomb_call_atom(); return vcnil;}
 	virtual vc operator()(VCArglist *al) const {bomb_call_atom(); return vcnil;}
 
 	virtual vc operator()(vc v0) const {bomb_call_atom(); return vcnil;}

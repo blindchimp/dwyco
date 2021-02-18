@@ -6,19 +6,22 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import QtQuick.Controls 2.1
-import QtQuick.Layouts 1.1
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 
 Page {
     anchors.fill: parent
     header: SimpleToolbar {
 
     }
+    background: Rectangle {
+        color: amber_light
+    }
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: mm(3)
-        spacing: mm(3)
+        //spacing: mm(3)
         //width: parent.width
         RowLayout {
             spacing: mm(3)
@@ -69,7 +72,7 @@ Page {
             text: "Privacy policy"
             onClicked: {
 
-                Qt.openUrlExternally("http://www.dwyco.citymax.com/privacy/policy.htm")
+                Qt.openUrlExternally("https://www.dwyco.net/privacy-policy")
             }
             Layout.fillWidth: true
         }
@@ -77,7 +80,7 @@ Page {
             text: "Terms of service"
             onClicked: {
 
-                Qt.openUrlExternally("http://www.dwyco.citymax.com/page/page/955930.htm")
+                Qt.openUrlExternally("https://www.dwyco.net/terms-of-service")
             }
             Layout.fillWidth: true
         }

@@ -6,18 +6,16 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import QtQuick.Controls 2.1
-import QtQuick.Layouts 1.3
-import QtQml.Models 2.2
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
+import QtQml.Models 2.12
 import dwyco 1.0
 
 Page {
     id: pchat
     anchors.fill: parent
     property alias model: listView1.model
-    //property alias listview : listView1
-    property bool chat_server_connected: false
     property int connect_server: 0
     
     background: Rectangle {
@@ -117,39 +115,18 @@ Page {
     }
     
     onVisibleChanged: {
-        if(visible && core.is_database_online === 1) {
-            core.switch_to_chat_server(connect_server)
-        } else {
-            //core.disconnect_chat_server()
+        if(visible) {
+            if(!core.is_chat_online) {
+                core.switch_to_chat_server(chat_server.connect_server)
+                chat_server.auto_connect = true
+            }
         }
+
     }
     
     
     Connections {
         target: core
-        onSys_chat_server_status: {
-            console.log("CHAT SERVER ", id, status)
-            if(status == 0)
-                chat_server_connected = false
-            else
-                chat_server_connected = true
-            
-        }
-        onQt_app_state_change: {
-            if(pchat.visible && app_state == 0) {
-                core.switch_to_chat_server(connect_server)
-            }
-            if(app_state !== 0)
-                chat_server_connected = false
-        }
-        
-        onServer_login: {
-            if(!pchat.visible)
-                return
-            if(what > 0 && !chat_server_connected) {
-                core.switch_to_chat_server(connect_server)
-            }
-        }
 
         onChat_event: {
             console.log("got chat event")
@@ -258,7 +235,16 @@ Page {
         // this is here because on iOS, when you pop this
         // item, the focus stays in here somehow and the keyboard
         // will pop up on the previous screen, wtf.
-        focus: visible
+        //focus: visible
+        // qt 5.11 seems focus is handled a little differently
+        onVisibleChanged: {
+            if(Qt.platform.os == "android") {
+            if(!visible)
+                focus = false
+            } else {
+                focus = visible
+            }
+        }
     }
     
     Button {
@@ -281,6 +267,7 @@ Page {
             id: bg
             color: "indigo"
             radius: 20
+            anchors.fill: toolButton1
         }
         contentItem: Text {
             color: toolButton1.enabled ? "white" : "gray"
@@ -298,6 +285,9 @@ Page {
             core.send_chat(textField1.text)
             textField1.text = ""
             listView1.positionViewAtBeginning()
+            if(Qt.platform.os == "android") {
+                notificationClient.set_user_property("triv_player", "t")
+            }
         }
 
         Component.onCompleted: {
@@ -310,7 +300,7 @@ Page {
     BusyIndicator {
         id: busy1
         
-        running: {!chat_server_connected}
+        running: {!core.is_chat_online}
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }

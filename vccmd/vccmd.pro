@@ -19,13 +19,13 @@ SOURCES += \
 
 macx-* {
 SOURCES += \
-../bld/vc/hacked_spread.xml.cpp 
+../bld/vc/hacked_sqlite3.cpp
 }
 
 INCLUDEPATH += ../$$DWYCO_CONFDIR  ../bld/dwcls ../bld/vc $${OUT_PWD}/../include
 
 linux-g++*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3 
-#macx-*: DEFINES += LH_WRAP_SPREAD 
+macx-*: DEFINES +=  LH_WRAP_SQLITE3
 
 D=$${OUT_PWD}/..
 LIBS += \
@@ -35,16 +35,22 @@ $${D}/bld/crypto5/libcrypto5.a \
 $${D}/bld/jenkins/libjenkins.a \
 $${D}/bld/kazlib/libkazlib.a \
 $${D}/bld/zlib/libzlib.a \
-$${D}/bld/libuv/libuv.a
+$${D}/bld/uv/libuv.a
+
+PRE_TARGETDEPS += \
+$${D}/bld/vc/libvc.a \
+$${D}/bld/dwcls/libdwcls.a \
+$${D}/bld/crypto5/libcrypto5.a \
+$${D}/bld/jenkins/libjenkins.a \
+$${D}/bld/kazlib/libkazlib.a \
+$${D}/bld/zlib/libzlib.a \
+$${D}/bld/uv/libuv.a
 
 
 
 macx-* {
-LIBS += \
-$${D}/lib/libspread.a \
-$${D}/lib/libuv.a
 
-LIBS += -framework Foundation -framework CoreServices -lpthread -ldl
+LIBS += -framework Foundation -framework CoreServices -lsqlite3 -lpthread -ldl
 }
 
 linux-g++* {

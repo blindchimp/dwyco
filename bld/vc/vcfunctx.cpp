@@ -17,22 +17,10 @@
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfunctx.cpp 1.46 1997/10/05 17:27:06 dwight Stable $";
 
-#ifndef BTYPES
 #ifdef PERFHACKS
 #include "dwamap.h"
 #else
 #include "dwmapr.h"
-#endif
-#else
-#include "dwmap.h"
-#endif
-
-#if 0
-unsigned long
-hash(const DwAssocImp<vc,vc>& a)
-{
-	return hash(a.peek_key());
-}
 #endif
 
 functx::functx(int tsize) {
@@ -57,7 +45,7 @@ functx::functx(int tsize) {
 	// this really needs to be fixed.
 	map->no_expand = 1;
 #else
-	map = new VMAP(vcnil, vcnil, tsize);
+    map = new VMAP(tsize);
 #endif
 	exc = 0;
 #ifdef LHOBJ
@@ -204,7 +192,7 @@ functx::get(const vc& key)
 }
 
 int
-functx::find(const vc& key, vc& out)
+functx::find(const vc& key, vc& out) const
 {
 	if(map->find(key, out))
 		return 1;
@@ -216,7 +204,7 @@ functx::find(const vc& key, vc& out)
 }
 
 int
-functx::find2(const vc& key, vc& out, vc*& wp)
+functx::find2(const vc& key, vc& out, vc*& wp) const
 {
 	if(map->find(key, out, &wp))
 		return 1;
@@ -246,31 +234,6 @@ functx::contains(const vc& v) const
 	return map->contains(v);
 }
 
-#if 0
-// supports "return" construct
-void
-functx::set_retval(const vc& v) {retval = v; doing_ret = 1;}
-int
-functx::ret_in_progress() const {return doing_ret;}
-vc
-functx::get_retval() {return retval;}
-
-// support looping constructs
-void
-functx::open_loop() {++loop_ctrl;++break_level;}
-void
-functx::close_loop() {
-	if(loop_ctrl == break_level)
-		--break_level;
-	if(--loop_ctrl < 0) oopanic("loop underflow");
-}
-int
-functx::break_in_progress() {
-	if(loop_ctrl > break_level)
-		return 1;
-	return 0;
-}
-#endif
 void
 functx::set_break_level(int n) {
 	break_level -= n;
@@ -298,13 +261,6 @@ functx::add_default_handler(const vc& pat, const vc& fun) {
 	if(exc == 0) exc = new excctx(this);
 	exc->add_default(pat, fun);
 }
-
-#if 0
-functx::void cancelhandler() {
-	if(exc == 0) return;
-	exc->cancel();
-}
-#endif
 
 void
 functx::addbackout(const vc& fun) {

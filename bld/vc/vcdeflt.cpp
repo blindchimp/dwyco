@@ -13,7 +13,17 @@
 
 #ifdef OBJTRACK
 #include "dwmapr.h"
-#include "bonehead.h"
+
+class Int
+{
+public:
+	int i;
+	Int() {i = 0;}
+	operator int() const {return i;}
+	Int(int i) {this->i = i;}
+	int operator==(const Int& i2) const {return i == i2.i;}
+	unsigned long hashValue() const {return i;}
+};
 struct TrackInfo
 {
 	int serial;
@@ -260,10 +270,10 @@ vc
 vc_default::socket_send_buf(vc item, const vc& send_info, const vc&) 
 {USER_BOMB("socket_send_buf on non-socket", vcnil);}
 
-vc vc_default::socket_get_obj(int& avail, vc& addr_info) {USER_BOMB("get obj not defined for socket", vcnil)}
-vc vc_default::socket_put_obj(vc obj, const vc& to_addr, int syntax) {USER_BOMB("put obj not defined for socket", vcnil)}
-int vc_default::socket_get_write_q_size() {USER_BOMB("get-write-q not defined for socket", vcnil)}
-int vc_default::socket_get_read_q_len() {USER_BOMB("get-read-q-len not defined for socket", -1)}
+vc vc_default::socket_get_obj(int& avail, vc& addr_info) {USER_BOMB("get obj not defined for socket", vcnil);}
+vc vc_default::socket_put_obj(vc obj, const vc& to_addr, int syntax) {USER_BOMB("put obj not defined for socket", vcnil);}
+int vc_default::socket_get_write_q_size() {USER_BOMB("get-write-q not defined for socket", vcnil);}
+int vc_default::socket_get_read_q_len() {USER_BOMB("get-read-q-len not defined for socket", -1);}
 
 VC_ERR_CALLBACK
 vc_default::set_err_callback(VC_ERR_CALLBACK) 
@@ -434,7 +444,7 @@ decl_rel(str)
 
 // functors 
 vc vc_default::operator()(void) const {USER_BOMB("undefined functor", vcnil);}
-vc vc_default::operator()(void *p) const {USER_BOMB("undefined functor", vcnil);}
+//vc vc_default::operator()(void *p) const {USER_BOMB("undefined functor", vcnil);}
 vc vc_default::operator()(VCArglist *al) const {USER_BOMB("undefined functor", vcnil);}
 
 vc vc_default::operator()(vc v0) const {USER_BOMB("undefined functor", vcnil);}

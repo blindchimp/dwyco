@@ -22,9 +22,6 @@
 #include "vcuvsock.h"
 #endif
 
-#include "vcmap.h"
-
-
 vc::vc(double d)
 {
 	rep = new vc_double(d);
@@ -40,9 +37,19 @@ vc::vc(long i)
 	rep = new vc_int(i);
 }
 
+vc::vc(long long i)
+{
+    rep = new vc_int(i);
+}
+
 vc::vc(const char *s)
 {
 		rep = new vc_string(s);
+}
+
+vc::vc(const char *s, int len)
+{
+        rep = new vc_string(s, len);
 }
 
 #ifndef NO_VCEVAL
@@ -143,6 +150,14 @@ vc::vc(enum vc_type type, const char *str, long extra_parm)
 	vc_init(type, str, extra_parm);
 }
 
+vc::vc(enum vc_type tp, vc_int_dtor_fun d, void *arg)
+{
+    if(tp != VC_INT_DTOR)
+        oopanic("don't do that");
+    rep = new vc_int_dtor(arg, d);
+
+}
+
 void
 vc::vc_init(enum vc_type type, const char *str, long extra_parm)
 {
@@ -160,7 +175,8 @@ vc::vc_init(enum vc_type type, const char *str, long extra_parm)
 		rep = new vc_string(str);
 		break;
 	case VC_INT_DTOR:
-		rep = new vc_int_dtor(extra_parm, (vc_int_dtor_fun)str);
+        oopanic("use the other ctor");
+        //rep = new vc_int_dtor(extra_parm, (vc_int_dtor_fun)str);
 		break;
 
 	case VC_INT:

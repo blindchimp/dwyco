@@ -35,7 +35,6 @@ dowiz()
     wiz->exec();
 
     QVariant qv;
-    QByteArray b;
 
     qv = wiz->field("name");
     QByteArray name = strip_html(qv.toString()).toAscii();
@@ -66,12 +65,16 @@ dowiz()
         up = 256;
     if(down == 0)
         down = 256;
-    dwyco_set_rate_tweaks(20, 65535, up, down);
+    //dwyco_set_rate_tweaks(20, 65535, up, down);
+    dwyco_set_setting("rate/max_fps", "20");
+    dwyco_set_setting("rate/kbits_per_sec_out", QByteArray::number(up).constData());
+    dwyco_set_setting("rate/kbits_per_sec_in", QByteArray::number(down).constData());
 
     setting_put("first-run", 0);
     settings_save();
     Block_DLL = 0;
     TheConfigForm->load();
+    Mainwinform->move(0, Mainwinform->y());
 }
 
 void

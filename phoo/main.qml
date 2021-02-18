@@ -6,14 +6,13 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.9
-import QtQml 2.2
-import QtQuick.Window 2.2
-import QtQuick.Controls 2.2
-import QtQuick.Controls.Material 2.2
-import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.2
-import QtMultimedia 5.4
+import QtQuick 2.12
+import QtQuick.Window 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Controls.Material 2.12
+import QtQuick.Layouts 1.12
+import QtQuick.Dialogs 1.3
+import QtMultimedia 5.12
 import dwyco 1.0
 
 ApplicationWindow {
@@ -104,6 +103,13 @@ ApplicationWindow {
     property bool dwy_quiet: false
     property bool show_unreviewed: false
     property bool expire_immediate: false
+    property bool show_hidden: true
+    property bool show_archived_users: true
+
+    property bool is_mobile
+
+    is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+
     function pin_expire() {
         var expire
         var duration
@@ -140,7 +146,7 @@ ApplicationWindow {
     onClosing: {
         // special cases, don't let them navigate around the
         // initial app setup
-        if(!profile_bootstrapped) {
+        if(profile_bootstrapped === 0) {
             close.accepted = false
             return
         }
@@ -159,6 +165,7 @@ ApplicationWindow {
             {
                 if(Qt.platform.os == "android") {
                     notificationClient.start_background()
+                    notificationClient.set_lastrun()
                 }
                 if(pwdialog.allow_access === 0)
                     expire_immediate = true
@@ -167,6 +174,10 @@ ApplicationWindow {
             close.accepted = false
             bounce_opacity.start()
         }
+    }
+
+    Component.onCompleted: {
+        AndroidPerms.request_sync("android.permission.CAMERA")
     }
 
 
@@ -195,42 +206,63 @@ ApplicationWindow {
     
     Drawer {
         id: drawer
-        interactive: {stack.depth === 1}
+        interactive: {stack.depth === 1 && pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created}
+        width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
+        height: applicationWindow1.height
 
         AppDrawer {
-
+            id: drawer_contents
             padding: 0
-            width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
-            height: applicationWindow1.height
+            //width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
+            //height: applicationWindow1.height
             onClose: {
                 drawer.close()
             }
 
+            Connections {
+                target: core
+                onProfile_update: {
+                    drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
+                    drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
+                }
+            }
+
+            onVisibleChanged: {
+                if(visible) {
+                    drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
+                    drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
+                }
+
+            }
         }
     }
 
 
-    footer: RowLayout {
-            Label {
-                id: ind_invis
-                text: "Invis"
-                visible: dwy_invis
-                color: "red"
+//    footer: RowLayout {
+//            Label {
+//                id: ind_invis
+//                text: "Invis"
+//                visible: dwy_invis
+//                color: "red"
 
-            }
-            Item {
-                Layout.fillWidth: true
-            }
+//            }
+//            Item {
+//                Layout.fillWidth: true
+//            }
 
-            Label {
-                id: hwtext
+//            Label {
+//                id: hwtext
 
-            }
-            Label {
-                id: db_status
-                text: core.is_database_online == 0 ? "offline" : "online"
-            }
-        }
+//            }
+//            Label {
+//                id: db_status
+//                text: core.is_database_online === 0 ? "db off" : "db on"
+//            }
+//            Label {
+//                id: chat_status
+//                text: core.is_chat_online === 0 ? "chat off" : "chat on"
+//            }
+//        }
 
     
     Menu {
@@ -247,11 +279,25 @@ ApplicationWindow {
         MenuItem {
             text: "Block and Delete user"
             onTriggered: {
-                core.set_ignore(chatbox.to_uid, 1)
-                core.delete_user(chatbox.to_uid)
-                themsglist.reload_model()
-                stack.pop()
+                confirm_block_delete.visible = true
+            }
+            MessageDialog {
+                id: confirm_block_delete
+                title: "Block and delete?"
+                icon: StandardIcon.Question
+                text: "Delete ALL messages from user and BLOCK them?"
+                informativeText: "This removes FAVORITE and HIDDEN messages too."
+                standardButtons: StandardButton.Yes | StandardButton.No
+                onYes: {
+                    core.set_ignore(chatbox.to_uid, 1)
+                    core.delete_user(chatbox.to_uid)
+                    themsglist.reload_model()
+                    stack.pop()
 
+                }
+                onNo: {
+                    stack.pop()
+                }
             }
         }
 
@@ -307,20 +353,26 @@ ApplicationWindow {
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/DeclarativeCamera.qml"
+                //vid_cam_preview.active = false
             }
         }
 
     }
 
-    Loader {
+//    Loader {
+//        id: settings_dialog
+//        visible: false
+
+//        onVisibleChanged: {
+//            if(visible) {
+//                source = "qrc:/DSettings.qml"
+//            }
+//        }
+//    }
+    DSettings {
         id: settings_dialog
         visible: false
 
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/DSettings.qml"
-            }
-        }
     }
 
     Loader {
@@ -340,9 +392,40 @@ ApplicationWindow {
     }
 
     ChatList {
-        
         id: chatlist
         visible: false
+    }
+
+    Item {
+        id: chat_server
+
+        property int connect_server: 0
+        property bool auto_connect: false
+
+        Connections {
+            target: core
+            onQt_app_state_change: {
+                if(app_state === 0) {
+                    console.log("CHAT SERVER RESUME ")
+
+                }
+                if(app_state !== 0) {
+                    console.log("CHAT SERVER PAUSE");
+
+                    //core.disconnect_chat_server()
+                }
+            }
+
+            onServer_login: {
+                console.log("CHAT SERVER RESTART ", what, chat_server.auto_connect)
+                if(what > 0) {
+                    if(chat_server.auto_connect) {
+                        core.switch_to_chat_server(chat_server.connect_server)
+                    }
+                }
+            }
+        }
+
     }
 
     ContactList {
@@ -374,20 +457,16 @@ ApplicationWindow {
     Loader {
         id: simpdir_rect
 
-        property url xml_url : ""
         visible: false
         onVisibleChanged: {
             if(visible) {
-                var tmp
-                tmp = core.get_simple_xml_url()
-                console.log("xml ", tmp)
-                if(xml_url !== tmp) {
-                    xml_url = tmp
-                }
                 source = "qrc:/SimpDir.qml"
             }
         }
-
+        onLoaded: {
+            if(SimpleDirectoryList.count === 0)
+                core.refresh_directory()
+        }
     }
 
 
@@ -431,6 +510,12 @@ ApplicationWindow {
         to_uid: top_dispatch.last_uid_selected
         visible: false
 
+    }
+
+    SimpleTagMsgBrowse {
+        id: simp_tag_browse
+        model: themsglist
+        visible: false
     }
 
 
@@ -608,11 +693,13 @@ ApplicationWindow {
 
     Loader {
         id: vid_cam_preview
-        active: visible
+        active: false
         visible: false
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/VidCamPreview.qml"
+                active = true
+
             }
         }
     }
@@ -633,6 +720,12 @@ ApplicationWindow {
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
+    SoundEffect {
+        id: sound_alert
+        source: "qrc:/androidinst/assets/space-incoming.wav"
+        volume: {dwy_quiet ? 0.0 : 1.0}
+        muted: dwy_quiet
+    }
 
     
     StackView {
@@ -640,6 +733,10 @@ ApplicationWindow {
         //initialItem: userlist
         anchors.fill: parent
         visible: {pwdialog.allow_access === 1}
+        onDepthChanged: {
+            if(depth === 1)
+                simp_tag_browse.to_tag = ""
+        }
 
         
     }
@@ -647,6 +744,7 @@ ApplicationWindow {
     DwycoCore {
         id: core
         property int is_database_online: -1
+        property int is_chat_online: -1
 
         objectName: "dwyco_singleton"
         client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
@@ -669,7 +767,7 @@ ApplicationWindow {
             } else {
                 server_account_created = true
             }
-            if(profile_bootstrapped && !server_account_created) {
+            if(profile_bootstrapped === 1 && !server_account_created) {
                 stack.push(blank_page)
             }
 
@@ -715,6 +813,7 @@ ApplicationWindow {
             console.log("die")
             if(Qt.platform.os == "android") {
                 notificationClient.cancel()
+                notificationClient.set_lastrun()
             }
             var expire = pin_expire()
             core.set_local_setting("pin_expire", expire.toString())
@@ -731,9 +830,11 @@ ApplicationWindow {
             }
             if(Qt.platform.os == "android") {
                 notificationClient.set_msg_count_url(core.get_msg_count_url())
+                notificationClient.log_event()
+                notificationClient.set_lastrun()
             }
-            if(simpdir_rect.visible && simpdir_rect.xml_url === "")
-                simpdir_rect.xml_url = core.get_simple_xml_url()
+            if(simpdir_rect.visible && SimpleDirectoryList.count === 0)
+                refresh_directory()
         }
 
         onNew_msg: {
@@ -741,13 +842,16 @@ ApplicationWindow {
             console.log(txt)
             console.log(mid)
             console.log("msglist", themsglist.uid)
-            if(from_uid == themsglist.uid) {
-                themsglist.reload_model()
+            if(from_uid === themsglist.uid) {
+                themsglist.reload_model();
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
                 // do this, or display a "go to bottom" icon
-                chatbox.listview.positionViewAtBeginning()
-                console.log("RELOAD")
+//                if(chatbox.listview.atYEnd) {
+//                    chatbox.listview.positionViewAtBeginning()
+//                }
+                console.log("RELOAD nm")
+                //themsglist.reload_model()
             }
             //notificationClient.notification = "New messages"
             sound_recv.play()
@@ -756,20 +860,21 @@ ApplicationWindow {
         onSys_msg_idx_updated: {
             console.log("update idx", uid)
             console.log("upd" + uid + " " + themsglist.uid)
-            if(uid == themsglist.uid) {
+            if(uid === themsglist.uid) {
                 themsglist.reload_model()
-                console.log("RELOAD")
+
+                console.log("RELOAD msg_idx")
             }
         }
 
         onMsg_send_status: {
             console.log(pers_id, status, recipient)
-            hwtext.text = status
+            //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
                 if(themsglist.uid == recipient) {
                     themsglist.reload_model()
-                    chatbox.listview.positionViewAtBeginning()
+
                 }
 
             }
@@ -777,7 +882,7 @@ ApplicationWindow {
 
         onMsg_progress: {
             console.log(pers_id, msg, percent_done)
-            hwtext.text = msg + " " + String(percent_done) + "%"
+            //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
         onProfile_update: {
@@ -791,7 +896,11 @@ ApplicationWindow {
                 themsglist.reload_model()
                 pwdialog.state = "resume"
             } else {
+                drawer.close()
                 pwdialog.state = "pause"
+            }
+            if(Qt.platform.os == "android") {
+                notificationClient.set_lastrun()
             }
 
         }
@@ -809,6 +918,10 @@ ApplicationWindow {
                 chatbox.android_hack = true
 
             }
+        }
+
+        onUnread_countChanged: {
+            set_badge_number(unread_count)
         }
 
     }
@@ -837,14 +950,39 @@ ApplicationWindow {
         id: service_timer
         interval: 30; running:true; repeat:true
         onTriggered: {
+            if(!pwdialog.allow_access)
+                return
             //time.text = Date().toString()
             if(core.database_online() !== core.is_database_online) {
                 core.is_database_online = core.database_online()
             }
-            if(core.service_channels() === 1)
+            if(core.chat_online() !== core.is_chat_online) {
+                core.is_chat_online = core.chat_online()
+            }
+
+            // note: trying to schedule out another service channels call
+            // this way doesn't work too well unless we can kick the
+            // timer into action based on a dwyco* call (for example, we might
+            // be in a situation where we are waiting 10 seconds for the next
+            // network event, but the user clicks something that causes a
+            // video to record, which we want to start servicing immediately.
+            // have to think about this. also, the networking stuff really needs to be
+            // integrated into qt event loop using qsocketnotifiers.
+            // as a side note: it might be advantageous to "synchronize" multiple timers
+            // for things like channel sockets, so they can be serviced in a batch with one
+            // call to service channels. if you leave them unsynchronized, you get "next"
+            // expirations that are more or less random based on when the timer was started,
+            // which isn't really necessary.
+            var sc_next = core.service_channels()
+            //console.log("next ", sc_next)
+            if(sc_next === 1 || sc_next < 0)
+            {
                 service_timer.interval = 1
+            }
             else
-                service_timer.interval = 30
+            {
+                service_timer.interval = (sc_next === 0 ? 100 : Math.min(100, sc_next))
+            }
         }
 
     }

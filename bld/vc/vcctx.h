@@ -70,10 +70,6 @@ public:
 	void open_ctx(functx * = 0) ;
 	void close_ctx();
 
-
-	//void set_retval(const vc& v) ;
-	//int ret_in_progress() ;
-	//vc retval() ;
 	void set_retval(const vc& v) { maps[ctx]->set_retval(v); }
 	int ret_in_progress() { return maps[ctx]->ret_in_progress(); }
 	vc retval() { return maps[ctx]->get_retval(); }
@@ -88,13 +84,6 @@ public:
 			break_in_progress() ||
 			exc_backout || dbg_backout;
 	}
-	
-	//void open_loop() ;
-	//void close_loop() ;
-	//int break_in_progress() ;
-	//void set_break_level(int n) ;
-
-	//int unwind_in_progress() ;
 
 	// exception handling support
 	int backed_out_to(excfun *handler) ;

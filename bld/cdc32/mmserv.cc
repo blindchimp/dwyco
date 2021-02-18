@@ -16,13 +16,11 @@
 #include "pgdll.h"
 #include "audout.h"
 #include "se.h"
-#include "lanmap.h"
 #include "ta.h"
-#include "prfcache.h"
+#include "profiledb.h"
 #include "dwscoped.h"
 using namespace dwyco;
 
-extern DwListA<vc> Response_q;
 extern vc Online;
 extern vc Chat_ips;
 extern vc Chat_ports;
@@ -157,8 +155,6 @@ MMChannel::chat_response(vc v)
     static vc del_lobby("del-lobby");
     static vc god_online("god-online");
     static vc god_offline("god-offline");
-    static vc add_lan_map("add-lan-map");
-    static vc del_lan_map("del-lan-map");
     static vc dbgreq("dbgreq");
     static vc invalidate_profile("invalidate-profile");
     static vc chatc("chatc");
@@ -210,7 +206,9 @@ MMChannel::chat_response(vc v)
         vc ah = v[4];
         vc ports = v[5];
         vc attrs = v[6];
+#ifdef DWYCO_ASSHAT
         new_asshole(uid, ah);
+#endif
         if(!uid_ignored(uid))
         {
             if(TheChatGrid)
@@ -267,8 +265,9 @@ MMChannel::chat_response(vc v)
             GRTLOGVC(ah);
             GRTLOGVC(ip);
             GRTLOGVC(attrs);
-
+#ifdef DWYCO_ASSHAT
             new_asshole(uid, ah);
+#endif
             if(!uid_ignored(uid))
             {
                 if(TheChatGrid)
@@ -290,7 +289,9 @@ MMChannel::chat_response(vc v)
     }
     else if(v[0] == asshole_update)
     {
+#ifdef DWYCO_ASSHAT
         new_asshole(v[1], v[2]);
+#endif
         if(TheChatGrid)
         {
             TheChatGrid->start_update();
@@ -346,6 +347,7 @@ MMChannel::chat_response(vc v)
     }
     else if(v[0] == data)
     {
+#ifdef DWYCO_AUDIO_PODIUM
         if(v[2] != My_UID)
         {
             // shouldn't happen that the server sends us our own stuff,
@@ -370,6 +372,7 @@ MMChannel::chat_response(vc v)
                                         subchan(AUDIO_SUBCHANNEL, payload), timecode);
             }
         }
+#endif
 
         if(TheChatGrid)
         {
@@ -513,20 +516,6 @@ MMChannel::chat_response(vc v)
             TheChatGrid->end_update();
         }
 
-    }
-    else if(v[0] == add_lan_map)
-    {
-        // lan mappings are
-        // vector(add-lan-map vector(uid inside-ip inside-ports outside-ip outside-ports))
-        LANmap.add_kv(v[1][0], v[1]);
-        GRTLOG("add LAN map", 0, 0);
-        GRTLOGVC(v);
-    }
-    else if(v[0] == del_lan_map)
-    {
-        // vector(del-lan-map vector(uid))
-        LANmap.del(v[1][0]);
-        GRTLOG("del LAN map %s", (const char *)to_hex(v[1][0]), 0);
     }
     else if(v[0] == dbgreq)
     {

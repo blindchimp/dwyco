@@ -7,30 +7,29 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-import QtQuick 2.6
+import QtQuick 2.12
 import dwyco 1.0
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.1
+import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.12
 
 ToolBar {
     property Component extras
+    property alias grid_checked: show_grid.grid_checked
+    property bool hide_grid: true
     background: Rectangle {
         color: accent
     }
 
     implicitWidth: parent.width
 
-
     RowLayout {
-
-
         Item {
             Layout.minimumHeight: cm(1)
         }
         anchors.fill: parent
         spacing: mm(2)
 
-        ToolButton {
+        TipButton {
             id: back_button
             contentItem: Image {
                 source: mi("ic_arrow_back_black_24dp.png")
@@ -41,18 +40,19 @@ ToolBar {
                 stack.pop()
             }
             Layout.fillHeight: true
-
+            ToolTip.text: "Go back"
         }
 
-
+        GridToggle {
+            id: show_grid
+            visible: !hide_grid
+            Layout.fillHeight: true
+        }
         Item {
-
             Layout.fillWidth: true
         }
 
         ConvToolButton {
-
-
         }
 
         Loader {

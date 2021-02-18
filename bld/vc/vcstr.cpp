@@ -7,14 +7,12 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include <ctype.h>
-//#include <stdint.h>
 #include "vc.h"
 #include "vcstr.h"
 #include "vcmap.h"
 #include "vcxstrm.h"
 #include "vcenco.h"
 #include <new>
-//#include <iomanip>
 #include "jhash.h"
 #include "vcio.h"
 
@@ -91,8 +89,8 @@ vc_string::bremove() const
 vc
 vc_string::eval() const
 {
-    oopanic("string eval?");
-    //return Vcmap->get(vc(VC_STRING, str, cached_len));
+    //oopanic("string eval?");
+    return Vcmap->get(vc(VC_STRING, str, cached_len));
     return vcnil;
 }
 
@@ -186,11 +184,6 @@ vc_string::operator%(const vc &v) const {bomb(); return v;}
 
 enum vc_type
 vc_string::type() const { return VC_STRING; }
-int
-vc_string::is_nil() const { 
-return 0;
-//return strncmp(str, "nil", 4) == 0; 
-}
 
 int
 vc_string::operator <(const vc &v) const { return v.str_lt(*this); }
@@ -213,8 +206,8 @@ vc_string::operator !=(const vc &v) const {return v.str_ne(*this); }
 // 
 vc
 vc_string::operator()(void) const {return eval()();}
-vc
-vc_string::operator()(void *p) const {return eval()(p);}
+//vc
+//vc_string::operator()(void *p) const {return eval()(p);}
 vc
 vc_string::operator()(VCArglist *al) const {return eval()(al);}
 
@@ -349,8 +342,6 @@ vc_string::printOn(VcIO outputStream)
 	}
 }
 
-int
-vc_string::func_eq(const vc&) const {bomb_op_func(); return 0;}
 
 long
 vc_string::xfer_out(vcxstream& vcx)

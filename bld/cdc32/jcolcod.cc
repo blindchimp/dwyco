@@ -7,7 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #ifdef _Windows
-#include <winsock.h>
+#include <winsock2.h>
 #endif
 #ifdef LINUX
 #include <arpa/inet.h>

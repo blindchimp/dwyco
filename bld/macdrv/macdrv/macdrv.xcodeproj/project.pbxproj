@@ -240,9 +240,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = macdrv_Prefix.pch;
 				HEADER_SEARCH_PATHS = (
-					/Users/dwight/depot/dwycore/bld/cdc32/winemu,
-					/Users/dwight/depot/dwycore/bld/dwcls,
-					/Users/dwight/depot/dwycore/bld/cdc32,
+					/Users/dwight/git/dwyco/bld/cdc32/winemu,
+					/Users/dwight/git/dwyco/bld/dwcls,
+					/Users/dwight/git/dwyco/bld/cdc32,
 				);
 				INSTALL_PATH = /Users/dwight/out;
 				ONLY_ACTIVE_ARCH = NO;

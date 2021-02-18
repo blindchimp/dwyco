@@ -21,21 +21,33 @@
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcint.cpp 1.49 1998/12/09 05:12:00 dwight Exp $";
 
 char vc_int::buf[100];
+static VcIOHackStr intbuf;
 
 vc_int::vc_int() { i = 0; }
-vc_int::vc_int(long i2) { i = i2; }
+vc_int::vc_int(int64_t i2) { i = i2; }
 vc_int::vc_int(const vc_int &v) {  i = v.i; }
 
 vc_int::~vc_int() { }
 
+#ifdef _Windows
+vc_int::operator int64_t() const
+{
+    return i;
+}
+#endif
+
 vc_int::operator long() const {
+    if(sizeof(long) == sizeof(i))
 		return i;
+    if(i > LONG_MAX || i < LONG_MIN)
+    {
+        USER_BOMB("integer truncation", 0);
+    }
+    else
+        return i;
 }
 vc_int::operator int () const {
-#if defined(__BORLANDC__) && __BORLANDC__ < 0x500
-	return i;
-#else
-	if(sizeof(int) == sizeof(long))
+    if(sizeof(int) == sizeof(i))
 		return i;
 	if(i > INT_MAX || i < INT_MIN)
 	{
@@ -43,23 +55,25 @@ vc_int::operator int () const {
 	}
 	else
 		return i;
-#endif
 }
 vc_int::operator void *() const {
 	if(sizeof(void *) < sizeof(i))
 	{
-		USER_BOMB("pointer truncation", 0)
+        USER_BOMB("pointer truncation", 0);
 	}
 	return (void *)i;
 }
 vc_int::operator double() const {return (double)i; }
-vc_int::operator const char *() const {USER_BOMB("can't convert int to string (unimp)", "0")}
+vc_int::operator const char *() const {USER_BOMB("can't convert int to string (unimp)", "0");}
 
 const char *
 vc_int::peek_str() const
 {
-	sprintf(buf, "%ld", i);
-	return buf;
+    intbuf.reset();
+    intbuf << i;
+    char z = 0;
+    intbuf.append(&z, 1);
+    return intbuf.ref_str();
 }
 
 void
@@ -133,7 +147,7 @@ vc vc_int::double_add(const vc& v) const {PROLOG; v1->d += i;EPILOG}
 vc vc_int::double_sub(const vc& v) const {PROLOG; v1->d -= i;EPILOG}
 vc vc_int::double_mul(const vc& v) const {PROLOG; v1->d *= i;EPILOG}
 vc vc_int::double_div(const vc& v) const {PROLOG; v1->d /= i;EPILOG}
-vc vc_int::double_mod(const vc& ) const {USER_BOMB("can't modulo floating numbers", vcnil)}
+vc vc_int::double_mod(const vc& ) const {USER_BOMB("can't modulo floating numbers", vcnil);}
 #undef PROLOG
 #undef EPILOG
 
@@ -154,9 +168,6 @@ int vc_int::double_gt(const vc& v) const {return ((vc_double&)v).d >  i;}
 int vc_int::double_ge(const vc& v) const {return  ((vc_double&)v).d >= i;}
 int vc_int::double_eq(const vc& v) const {return  ((vc_double&)v).d == i;}
 int vc_int::double_ne(const vc& v) const {return  ((vc_double&)v).d != i;}
-
-int vc_int::func_eq(const vc& ) const {bomb_op_func(); return 0;}
-
 
 
 long

@@ -1,4 +1,4 @@
-
+#ifndef NO_VCEVAL
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -70,14 +70,6 @@ vcpow(vc v, vc p)
 {
 	return pow((double)v, (double)p);
 }
-
-#if !defined(__GNUG__) && ((defined(__BORLANDC__) && __BORLANDC__ < 0x540) || defined(MSDOS))
-vc
-vcpow10(vc v)
-{
-	return pow10(v);
-}
-#endif
 
 vc
 vcacos(vc v)
@@ -231,3 +223,4 @@ vclhsum2(vc v)
 		sum = sum + (v[i] * v[i]);
 	return sum;
 }
+#endif

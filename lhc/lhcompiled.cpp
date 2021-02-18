@@ -9,7 +9,7 @@ static vc gensym3() {
 // N
 static const vc s_gensym4 = vc(VC_BSTRING, "\x4e", 1);
 #define gensym4() s_gensym4
-static const vc s_gensym5(320);
+static const vc s_gensym5(1000);
 #define gensym5() s_gensym5
 // gbind
 static const vc s_gensym6 = vc(VC_BSTRING, "\x67\x62\x69\x6e\x64", 5);
@@ -1473,7 +1473,7 @@ static vc gensym373() {
     vc ret;
     vc fnm = gensym23();
     VCArglist na;
-    na.set_size(1);
+    na.set_size(0);
     vc fdef = gensym371();
     vc_trans_fundef *f = new vc_trans_fundef(fnm, &na, fdef, VC_FUNC_NORMAL);
     vc v;

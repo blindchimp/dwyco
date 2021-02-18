@@ -4,15 +4,20 @@ CONFIG -= qt
 
 include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
-INCLUDEPATH +=  $${VCCFG_COMP} ../dwcls ../zlib ../crypto5 ../kazlib ../jenkins ../libuv/include
+INCLUDEPATH +=  $${VCCFG_COMP} ../dwcls ../zlib ../crypto5 ../kazlib ../jenkins ../uv/include
+DEFINES += VC_INTERNAL
+
 !win32 {
 DEFINES += UNIX
 QMAKE_CXXFLAGS += -fpermissive
-QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder
+#QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder
 }
 
 equals(LH_INTERPRETER, 1) {
-DEFINES += LHOBJ PERFHACKS FUNCACHE LH_WRAP_SPREAD LH_WRAP_SQLITE3
+DEFINES += LHOBJ PERFHACKS FUNCACHE
+}
+!equals(LH_INTERPRETER, 1) {
+DEFINES += NO_VCEVAL
 }
 
 SOURCES = \

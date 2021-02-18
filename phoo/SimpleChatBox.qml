@@ -6,17 +6,15 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
-import QtGraphicalEffects 1.0
-import QtQml 2.2
-import QtQuick.Controls 2.1
-import QtQuick.Dialogs 1.2
+import QtQuick 2.12
+import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.12
+import QtQuick.Dialogs 1.3
 import dwyco 1.0
 
 
 Page {
-    id: rectangle1
+    id: chatbox_page
     //anchors.fill: parent
     property alias model: listView1.model
     property alias listview: listView1
@@ -31,6 +29,8 @@ Page {
     property int inh_block_warning: 0
     property bool multiselect_mode: false
     property url cur_source
+    property var call_buttons_model
+    property bool lock_to_bottom: false
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -65,7 +65,28 @@ Page {
                         multiselect_mode = false
                     }
                 }
+                MenuItem {
+                    text: "Hide"
+                    onTriggered: {
+                        model.tag_all_selected("_hid")
+                        multiselect_mode = false
+                    }
+                }
+                MenuItem {
+                    text: "UnHide"
+                    onTriggered: {
+                        model.untag_all_selected("_hid")
+                        multiselect_mode = false
+                    }
+                }
+                MenuItem {
+                    text: "Select All"
+                    onTriggered: {
+                        model.set_all_selected()
+                    }
+                }
             }
+
         }
     }
 
@@ -99,7 +120,7 @@ Page {
                     Layout.minimumHeight: cm(1)
                 }
 
-                ToolButton {
+                TipButton {
                     id: back_button
                     contentItem: Image {
                         anchors.centerIn: parent
@@ -111,6 +132,8 @@ Page {
                         stack.pop()
                     }
                     Layout.fillHeight: true
+                    ToolTip.text: "Go back"
+
                     //Layout.maximumWidth: mm(3)
                     //Layout.rightMargin: 0
                 }
@@ -185,33 +208,167 @@ Page {
                     visible: {stack.depth > 2 || core.unread_count > 0}
                 }
 
-                ToolButton {
-                    id: pic_button
+                CallButtonLink {
+                    id: vidcall_button
+                    but_name: "send_video"
                     contentItem: Image {
                         anchors.centerIn: parent
-                        source: mi("ic_attachment_black_24dp.png")
+                        source: mi("ic_videocam_black_24dp.png")
                     }
-                    checkable: false
-                    visible: !cam.visible
-                    onClicked: {
-                        if(Qt.platform.os == "android") {
-                            // ugh, what a hack
-                            android_img_pick_hack = 0
-                            android_img_pick_hack = 2
-                            notificationClient.open_image()
-                        } else {
-                            picture_picker.visible = true
+                    ToolTip.text: "Request live video"
+                }
+                CallButtonLink {
+                    id: cancel_req_button
+                    but_name: "cancel_req"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink4
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: cancel_req_button.visible
+                            ColorAnimation {
+                                target: bgblink4
+                                property: "color"
+                                from: "red"
+                                to: "white"
+                                duration: 1000
+                            }
                         }
                     }
+                    ToolTip.text: "Hangup"
 
                 }
-                ToolButton {
+                CallButtonLink {
+                    but_name: "hangup"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+                    onVisibleChanged: {
+                        if(visible) {
+                            vidpanel.visible = true
+                            core.enable_video_capture_preview(1)
+                        } else {
+                            vidpanel.visible = false
+                            core.enable_video_capture_preview(0)
+                        }
+                    }
+                    ToolTip.text: "Hangup"
+
+                }
+                CallButtonLink {
+                    id: call_accept_button
+                    but_name: "accept"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_videocam_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_accept_button.visible
+                            ColorAnimation {
+                                target: bgblink
+                                property: "color"
+                                from: "white"
+                                to: "green"
+                                duration: 1000
+                            }
+                        }
+                    }
+                    ToolTip.text: "Accept live video"
+                }
+                CallButtonLink {
+                    id: call_send_accept_button
+                    but_name: "accept_and_send"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_videocam_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink2
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_send_accept_button.visible
+                            ColorAnimation {
+                                target: bgblink2
+                                property: "color"
+                                from: "white"
+                                to: "green"
+                                duration: 1000
+                            }
+                        }
+                    }
+                    ToolTip.text: "Start two-way video"
+                }
+                CallButtonLink {
+                    id: call_reject_button
+                    but_name: "reject"
+                    contentItem: Image {
+                        anchors.centerIn: parent
+                        source: mi("ic_cancel_black_24dp.png")
+                    }
+                    background: Rectangle {
+                        id: bgblink3
+                        ParallelAnimation {
+                            loops: Animation.Infinite
+                            running: call_reject_button.visible
+                            ColorAnimation {
+                                target: bgblink3
+                                property: "color"
+                                from: "red"
+                                to: "white"
+                                duration: 1000
+                            }
+                        }
+                    }
+                    ToolTip.text: "Decline live video"
+
+                }
+
+                CallButtonLink {
+                    id: mute_button
+                    but_name: "mute_button"
+                    contentItem: Image {
+                        id: mic_icon
+                        anchors.centerIn: parent
+                        source: mi("ic_mic_black_24dp.png")
+                    }
+                    onCheckedChanged: {
+                        mic_icon.source = checked ? mi("ic_mic_black_24dp.png") : mi("ic_mic_off_black_24dp.png")
+                    }
+
+//                    background: Rectangle {
+//                        id: bgblink3
+//                        ParallelAnimation {
+//                            loops: Animation.Infinite
+//                            running: call_reject_button.visible
+//                            ColorAnimation {
+//                                target: bgblink3
+//                                property: "color"
+//                                from: "red"
+//                                to: "white"
+//                                duration: 1000
+//                            }
+//                        }
+//                    }
+                    ToolTip.text: "Toggle mic"
+
+                }
+
+
+                TipButton {
                     contentItem: Image {
                         anchors.centerIn: parent
                         source: mi("ic_action_overflow.png")
                     }
                     onClicked: optionsMenu.open()
                     visible: chatbox.visible
+                    ToolTip.text: "More actions"
 
                     Menu {
 
@@ -226,6 +383,29 @@ Page {
                             }
                         }
                         MenuItem {
+                            text: "Send picture"
+                            onTriggered: {
+                                if(Qt.platform.os == "android") {
+                                    // ugh, what a hack
+                                    android_img_pick_hack = 0
+                                    android_img_pick_hack = 2
+                                    notificationClient.open_image()
+                                } else {
+                                    picture_picker.visible = true
+                                }
+
+                            }
+                        }
+                        MenuItem {
+                            text: "Send video message"
+                            onTriggered: {
+                                core.try_connect(to_uid)
+                                dwyco_vid_rec.uid = to_uid
+                                stack.push(dwyco_vid_rec)
+                            }
+                        }
+
+                        MenuItem {
                             text: "Browse Msgs"
                             onTriggered: {
                                 stack.push(simp_msg_browse)
@@ -235,9 +415,23 @@ Page {
                         MenuItem {
                             text: "Clear msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(chatbox.to_uid)
-
-                                themsglist.reload_model()
+                                confirm_clear.visible = true
+                            }
+                            MessageDialog {
+                                id: confirm_clear
+                                title: "Remove all msgs?"
+                                icon: StandardIcon.Question
+                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+                                informativeText: "This KEEPS FAVORITE messages."
+                                standardButtons: StandardButton.Yes | StandardButton.No
+                                onYes: {
+                                    core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.reload_model()
+                                    close()
+                                }
+                                onNo: {
+                                    close()
+                                }
                             }
                         }
 
@@ -251,7 +445,7 @@ Page {
                                 title: "Bulk delete?"
                                 icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE messages too."
+                                informativeText: "This removes FAVORITE and HIDDEN messages too."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
                                     core.delete_user(chatbox.to_uid)
@@ -278,35 +472,6 @@ Page {
         }
 
         }
-    CallButtons {
-        id: call_buttons
-        width: parent.width
-        height: parent.height
-        onButton_click: {
-            model.get(index).click()
-            console.log("button click ", model.get(index).objectName)
-            var objn = model.get(index).objectName
-            if(objn === "send_video" || objn === "accept_and_send" ||
-                    objn === "accept") {
-                //stack.push(vid_call_view)
-                vidpanel.visible = true
-                core.enable_video_capture_preview(1)
-            }
-        }
-        onButton_pressed: {
-            model.get(index).pressed()
-        }
-        onButton_released: {
-            model.get(index).released()
-        }
-        onButton_triggered: {
-            model.get(index).triggered(state)
-        }
-        onButton_toggled: {
-            model.get(index).toggled(state)
-        }
-        z: 5
-    }
 
     background: Rectangle {
         color: primary_dark
@@ -326,7 +491,7 @@ Page {
 
     Connections {
         target: core
-        onRem_keyboard_active : {
+        onSc_rem_keyboard_active : {
             if(uid === to_uid) {
                 ind_typing = active
             }
@@ -342,21 +507,21 @@ Page {
         }
         onSys_uid_resolved: {
             if(chatbox.to_uid === uid) {
-                // try to defeat caching since the actual name of the name
+                // try to defeat caching since the actual name
                 // of the "preview url" hasn't changed, but the contents have
                 cur_source = ""
                 cur_source = core.uid_to_profile_preview(uid)
                 top_toolbar_text.text = core.uid_to_name(uid)
             }
         }
-        onConnect_terminated: {
-            if(chatbox.to_uid == uid) {
+        onSc_connect_terminated: {
+            if(chatbox.to_uid === uid) {
                 console.log("CONNECT TERMINATED")
             }
         }
 
-        onConnectedChanged: {
-                if(chatbox.to_uid == uid) {
+        onSc_connectedChanged: {
+                if(chatbox.to_uid === uid) {
                     console.log("ConnectedChanged ", connected)
                     if(connected === 0 && vidpanel.visible) {
                         vidpanel.visible = false
@@ -365,10 +530,6 @@ Page {
                     ind_online = connected === 1 ? true : false
                 }
             }
-
-
-
-
 //        onIgnore_event: {
 //            if(uid === to_uid) {
 //               to_uid = ""
@@ -397,7 +558,7 @@ Page {
         top_toolbar_text.text = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
-        call_buttons.model = core.get_button_model(to_uid)
+        call_buttons_model = core.get_button_model(to_uid)
     }
 
     Loader {
@@ -462,21 +623,36 @@ Page {
 
         ListView {
             id: listView1
-//            anchors.bottom: textField1.top
-//            anchors.bottomMargin: 10
-//            anchors.right: parent.right
-//            anchors.rightMargin: 0
-//            anchors.left: parent.left
-//            anchors.leftMargin: 0
-//            anchors.top: parent.top
-//            anchors.topMargin: 0
             Layout.fillHeight: true
             Layout.fillWidth: true
             delegate: msglist_delegate
             clip: true
             spacing: 5
-            ScrollBar.vertical: ScrollBar { }
+            ScrollBar.vertical: ScrollBar {
+                onPressedChanged: {
+                    lock_to_bottom = false
+                }
+            }
             verticalLayoutDirection: ListView.BottomToTop
+            onMovementStarted: {
+                if(atYEnd)
+                    lock_to_bottom = false
+                //console.log("move start aty ", atYEnd, "lb ", lock_to_bottom)
+            }
+
+            onAtYEndChanged: {
+                //console.log("at y end ", atYEnd)
+                if(lock_to_bottom && !atYEnd)
+                {
+                    listView1.positionViewAtBeginning()
+                }
+                else if(atYEnd && !lock_to_bottom)
+                    lock_to_bottom = true
+
+            }
+            onAtYBeginningChanged: {
+                //console.log("at y beg ", atYBeginning)
+            }
         }
     }
 
@@ -499,6 +675,12 @@ Page {
             anchors.right: {(SENT == 1) ? parent.right : undefined}
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
+            onHeightChanged: {
+                //console.log("del ", model.index, "ch to ", ditem.height)
+//                if(lock_to_bottom) {
+//                    listView1.positionViewAtBeginning()
+//                }
+            }
 
             Image {
                 id: deco2
@@ -518,7 +700,7 @@ Page {
                 anchors.left: ditem.left
                 visible: {multiselect_mode && SELECTED}
                 opacity: 1.0
-                z: 2
+                z: 4
             }
             Rectangle {
                 id: isfav
@@ -527,7 +709,7 @@ Page {
                 anchors.top: ditem.top
                 anchors.left: ditem.left
                 visible: IS_FAVORITE === 1
-                z: 2
+                z: 3
                 color: primary_light
                 radius: width / 2
                 Image {
@@ -543,7 +725,7 @@ Page {
                 anchors.top: ditem.top
                 anchors.left: isfav.right
                 visible: IS_FORWARDED === 1
-                z: 2
+                z: 3
                 color: primary_light
                 radius: width / 2
                 Image {
@@ -551,6 +733,32 @@ Page {
                     anchors.margins: 2
                     source: mi("ic_open_in_new_black_24dp.png")
                 }
+            }
+            Rectangle {
+                id: multimedia
+                width: 16
+                height: 16
+                anchors.top: ditem.top
+                anchors.left: is_forwarded.right
+                visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
+                z: 3
+                color: primary_light
+                radius: width / 2
+                Image {
+                    anchors.fill: parent
+                    anchors.margins: 2
+                    source: mi("ic_videocam_black_24dp.png")
+                }
+            }
+            Rectangle {
+                id: hidden
+                width: 16
+                height: 16
+                anchors.right:ditem.right
+                anchors.top:ditem.top
+                visible: IS_HIDDEN === 1
+                z: 3
+                color: "orange"
             }
             z: 1
 
@@ -562,7 +770,7 @@ Page {
                 Image {
                     id: preview
 
-                    visible: {PREVIEW_FILENAME != "" || HAS_AUDIO}
+                    visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
@@ -587,16 +795,6 @@ Page {
                         }
                     }
 
-
-                    Image {
-                        id: deco
-                        visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
-                        source: decoration
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        width: 32
-                        height: 32
-                    }
                 }
 
 
@@ -619,14 +817,18 @@ Page {
                     id: msg
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     Layout.maximumWidth: (listView1.width * 3) / 4
-                    horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
+                    width: implicitWidth
+                    horizontalAlignment: { (SENT === 1) ? Text.AlignRight : Text.AlignLeft}
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
                     color: primary_text
-                    //font.family: "Noto Color Emoji"
+                    clip: true
+                    onLinkActivated: {
+                        console.log(link + " link activated")
+                        Qt.openUrlExternally(link)
+                    }
                 }
-
             }
         Loader {
             anchors.centerIn: ditem
@@ -647,16 +849,6 @@ Page {
             visible: IS_ACTIVE
             active: IS_ACTIVE
         }
-//        Loader {
-//            id: pulse
-//            anchors.centerIn: ditem
-//            anchors.fill: ditem
-//            anchors.margins: mm(1)
-//            visible: {IS_ACTIVE && ATTACHMENT_PERCENT === 0.0}
-//            source: "qrc:/PulseLoader.qml"
-//            active: IS_ACTIVE
-//        }
-
 
         MouseArea {
                 anchors.fill: parent
@@ -699,6 +891,7 @@ Page {
                             themsgview.view_id = -1
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
+                            themsgview.text_bg_color = ditem.color
                             if(model.IS_FILE === 1) {
                                 themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file:///" + String(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
@@ -707,7 +900,7 @@ Page {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
                                     var vid = core.make_zap_view(to_uid, model.mid)
                                     themsgview.view_id = vid
-                                    core.play_zap_view(vid)
+
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {
                                         themsgview.view_source = mi("ic_audiotrack_black_24dp.png")
                                     } else {
@@ -771,7 +964,7 @@ Page {
 
         onAccepted: {
             if(textField1.length > 0) {
-                core.simple_send(to_uid, textField1.text)
+                core.simple_send(to_uid, core.strip_html(textField1.text))
                 core.try_connect(to_uid)
 
                 themsglist.reload_model()
@@ -783,26 +976,18 @@ Page {
         // this is here because on iOS, when you pop this
         // item, the focus stays in here somehow and the keyboard
         // will pop up on the previous screen, wtf.
-        focus: visible
-        //font.family: "Noto Color Emoji"
-//        Label {
-//            id: typing
-//            anchors.bottom: parent.top
-//            anchors.left: parent.left
-//            anchors.margins: 3
-//            text: "(typing...)"
-//            color: "black"
-//            opacity: .5
-//            visible: {ind_typing === 1 && ind_online === 1}
-//            background: Rectangle {
-//                color: "red"
-//                opacity: .5
-//                radius: 6
-//            }
-//            z: 5
+        // qt 5.11 seems focus is handled a little differently
+        //focus: visible
+        onVisibleChanged: {
+            if(Qt.platform.os == "android") {
+            if(!visible)
+                focus = false
+            } else {
+                focus = visible
+            }
+        }
 
-//        }
-        ToolButton {
+        TipButton {
             id: cam_button
             anchors.verticalCenter: parent.verticalCenter
             anchors.right: parent.right
@@ -816,6 +1001,7 @@ Page {
             onClicked: {
                stack.push(cam, {"next_state" : "PhotoCapture"})
             }
+            ToolTip.text: "Take pic from camera"
         }
     }
 
@@ -838,13 +1024,14 @@ Page {
             id: bg
             color: accent
             radius: 20
+            // this is weird, setting size is supposed to be unnecessary...
+            // qt5.10 didn't have a problem with the previous code that was here.
+            anchors.fill: toolButton1
         }
-        contentItem: Text {
-            color: toolButton1.enabled ? primary_text : secondary_text
-            text: toolButton1.text
+        contentItem: Image {
             anchors.centerIn: bg
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
+            source: mi("ic_send_black_24dp.png")
+            opacity: toolButton1.enabled ? 1.0 : 0.3
         }
         
 
@@ -852,7 +1039,7 @@ Page {
         onClicked: {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
-            core.simple_send(to_uid, textField1.text)
+            core.simple_send(to_uid, core.strip_html(textField1.text))
             core.try_connect(to_uid)
             themsglist.reload_model()
             textField1.text = ""
@@ -864,6 +1051,116 @@ Page {
         }
         focusPolicy: Qt.NoFocus
     }
+
+    TipButton {
+        id: go_to_bottom
+        width: toolButton1.width
+        height: toolButton1.height
+        anchors.bottom: toolButton1.top
+        anchors.right: toolButton1.right
+
+        background: Rectangle {
+            id: gtb_bg
+            color: accent
+            radius: 20
+            opacity: .5
+        }
+
+        contentItem: Image {
+            id: gtb_img
+            anchors.centerIn: gtb_bg
+            source: mi("ic_system_update_alt_black_24dp.png")
+            opacity: .5
+        }
+
+        visible: !listView1.atYEnd
+
+        onClicked: {
+            listView1.positionViewAtBeginning()
+            lock_to_bottom = true
+        }
+        ToolTip.text: "Skip to bottom"
+
+    }
+
+    TipButton {
+        property int zid: -1
+        property int chan: -1
+
+        id: audio_zap_button
+        height: toolButton1.height
+        width: toolButton1.width
+
+        anchors.fill: toolButton1
+        //anchors.verticalCenter: textField1.verticalCenter
+
+        enabled: !toolButton1.enabled && core.has_audio_input
+        visible: !toolButton1.enabled && core.has_audio_input
+        z: 5
+        background: Rectangle {
+            id: bg2
+            color: audio_zap_button.zid === -1 ? accent : "lime"
+            radius: 20
+        }
+        contentItem: Image {
+            id: quick_audio
+            anchors.centerIn: bg2
+            source: mi("ic_mic_black_24dp.png")
+        }
+        ToolTip.text: "Press while talking to send audio msg"
+
+        onPressed: {
+            core.try_connect(to_uid)
+            zid = core.make_zap_composition()
+            chan = core.start_zap_record(zid, 0, 1)
+        }
+        onReleased: {
+            core.stop_zap_record(zid)
+
+        }
+        Connections {
+            target: core
+            onZap_stopped: {
+                if(zid === audio_zap_button.zid) {
+                    core.send_zap(zid, to_uid, 1)
+                    audio_zap_button.zid = -1
+                    themsglist.reload_model()
+                }
+            }
+        }
+
+        focusPolicy: Qt.NoFocus
+    }
+    ProgressBar {
+        id: progbar
+        anchors.fill: textField1
+        visible: audio_zap_button.pressed
+        background: Rectangle {
+                  color: "black"
+                  radius: 10
+              }
+        from: 0
+        to: 30
+        onVisibleChanged: {
+            if(visible) {
+                value = 0
+                sound_alert.play()
+            }
+        }
+        z: 5
+
+
+        Timer {
+            running: progbar.visible
+            repeat: true
+            interval: 100
+            triggeredOnStart: true
+            onTriggered: {
+                progbar.value = progbar.value + (interval / 1000.0)
+            }
+        }
+    }
+
     BusyIndicator {
         id: busy1
 

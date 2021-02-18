@@ -56,6 +56,7 @@ public slots:
     void uid_resolved(const QString& huid);
     void decorate(QString huid, QString txt, QString mid);
     void decorate(QString huid);
+    void ignore_state_change(QString huid);
 };
 
 class ChatSortFilterModel : public QSortFilterProxyModel
@@ -65,6 +66,7 @@ class ChatSortFilterModel : public QSortFilterProxyModel
 public:
     ChatSortFilterModel(QObject *p = 0);
     virtual bool lessThan(const QModelIndex& left, const QModelIndex& right) const;
+    virtual bool filterAcceptRows(int source_row, const QModelIndex& source_parent) const;
 
 };
 

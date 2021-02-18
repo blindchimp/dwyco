@@ -9,6 +9,7 @@
 //
 // call objects
 // these objects encapsulate a call that is in progress.
+//
 // the main reason we need these objects is because we
 // now have a complicated set of things we try in order to
 // get a call going between two computers. in the past, we just
@@ -23,7 +24,10 @@
 // objects could be used in that area as well.
 //
 // each call object represents a single call setup. once the call
-// is going (does/doesn't) the object get destroyed, not sure.
+// is terminated, the call object is deleted by the call setup logic.
+//
+// the call object calls callbacks (and emits corresponding signals, if
+// you prefer that api) as the call state progresses.
 
 //
 
@@ -33,6 +37,9 @@
 #include "qauth.h"
 #include "pval.h"
 #include "qmsg.h"
+#ifdef _Windows
+typedef unsigned long in_addr_t;
+#endif
 
 using namespace dwyco;
 
@@ -175,7 +182,7 @@ MMCall::start_call(int media_sel)
     this->media_select = media_sel;
     mc->call_type = call_type;
 
-    u_long addr;
+    in_addr_t addr;
     if((addr = inet_addr((const char *)host)) == INADDR_NONE)
     {
         // start connect process at resolve stage

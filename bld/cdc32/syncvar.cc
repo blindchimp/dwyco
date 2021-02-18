@@ -125,9 +125,6 @@ SyncManage::copy()
 vc
 SyncManage::diff()
 {
-#ifdef SYNCDBG
-    VcError << "diff \n";
-#endif
     SyncMapIter i(map);
     for(; !i.eol(); i.forward())
     {

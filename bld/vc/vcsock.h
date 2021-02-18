@@ -14,8 +14,8 @@
 #include "vcio.h"
 
 
-#define RAISE(fun, retval) {excretval = (retval); NONLH_CHECK_ANY_BO(retval) if((fun)() == VC_SOCKET_BACKOUT) return retval;}
-#define RAISEABORT(fun, retval) {last_wsa_error = WSAGetLastError(); excretval = (retval); NONLH_CHECK_ANY_BO(retval) if((fun)() == VC_SOCKET_RESUME) oopanic("resume after abort?"); return retval;}
+#define RAISE(fun, retval) do {excretval = (retval); NONLH_CHECK_ANY_BO(retval) if((fun)() == VC_SOCKET_BACKOUT) return retval;} while(0)
+#define RAISEABORT(fun, retval) do {last_wsa_error = WSAGetLastError(); excretval = (retval); NONLH_CHECK_ANY_BO(retval) if((fun)() == VC_SOCKET_RESUME) oopanic("resume after abort?"); return retval;} while (0)
 
 #define VC_SOCKET_RESUME 0
 #define VC_SOCKET_BACKOUT 1
@@ -75,7 +75,7 @@ public:
 
 	virtual vc_default *do_copy() const {oopanic("copy socket?"); return 0;}
 	enum vc_type type() const {return VC_SOCKET;}
-	int is_quoted() const {return TRUE;}
+    int is_quoted() const {return 1;}
 	void printOn(VcIO os) {os << "socket(errvc="; errvc.printOn(os); os << ")";}
 	void stringrep(VcIO os) const {os << "socket()";}
 	virtual vcsocketmode socket_get_mode() { return smode; }

@@ -12,15 +12,15 @@
 #include "dlli.h"
 #include "se.h"
 #include "msend.h"
-#include "zapadv.h"
 #include "qmsg.h"
 #include "xinfo.h"
+#include "ezset.h"
 
 namespace dwyco {
 
 static
 void
-qs_signal_bounce(int status, DwString qfn, vc ruid)
+qs_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
 {
     // avoid multiple start messages for one "round" of send attempts
     if(status == SE_MSG_SEND_START)
@@ -36,7 +36,7 @@ send_via_server_int(const DwString& qfn)
 {
     // assumes already in the outbox
 
-    DwQSend *qs = new DwQSend(qfn);
+    DwQSend *qs = new DwQSend(qfn, 0);
     qs->se_sig.connect_ptrfun(qs_signal_bounce);
     qs->status_sig.connect_ptrfun(se_emit_msg_status);
     int err;
@@ -61,7 +61,7 @@ send_via_server_int(const DwString& qfn)
 
 static
 void
-ds_signal_bounce(int status, DwString qfn, vc ruid)
+ds_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
 {
     if(status == SE_MSG_SEND_SUCCESS ||
             status == SE_MSG_SEND_START ||
@@ -86,6 +86,34 @@ send_via_server(const DwString& qfn)
     return send_via_server_int(qfn);
 }
 
+int
+send_via_server_deferred(const DwString& qfn)
+{
+    move_to_outbox(qfn);
+
+    DwQSend *qs = new DwQSend(qfn, 1);
+    qs->se_sig.connect_ptrfun(qs_signal_bounce);
+    qs->status_sig.connect_ptrfun(se_emit_msg_status);
+    int err;
+    err = qs->send_message();
+    if(err == -1)
+    {
+        // at this point, the message can never be sent
+        // because something is corrupted
+        se_emit_msg(SE_MSG_SEND_FAIL, qfn, vcnil);
+        delete qs;
+        return 0;
+    }
+    else if(err == 0)
+    {
+        // some transient error, but it is q'd
+        move_back_to_outbox(qfn);
+        se_emit_msg(SE_MSG_SEND_FAIL, qfn, vcnil);
+        delete qs;
+    }
+    return 1;
+}
+
 static
 int
 has_attachment(const DwString& qfn)
@@ -108,7 +136,7 @@ send_best_way(const DwString& qfn, vc ruid)
 {
     if(No_direct_msgs.contains(ruid) ||
             (No_direct_att.contains(ruid) && has_attachment(qfn))
-            || ZapAdvData.get_always_server())
+            || (int)get_settings_value("zap/always_server") == 1)
         return send_via_server(qfn);
 
     // basic idea is to try and send directly, which may involve some setup
@@ -148,7 +176,7 @@ send_best_way(const DwString& qfn, vc ruid)
 // message as well so it is never sent.
 static
 void
-delete_message(int, DwString qfn, vc)
+delete_message(enum dwyco_sys_event, DwString qfn, vc)
 {
     // note: on windows, we may not be able to delete a message if it is
     // still open. this is likely to happen more with attachments, so
@@ -164,7 +192,7 @@ kill_message(const DwString& qfn)
 {
     // get rid of it immediately if possible (we don't generally keep the
     // .q file open, so it can be almost always deleted, even on windows)
-    delete_message(0, qfn, vcnil);
+    delete_message(SE_NOTHING, qfn, vcnil);
 
     // note: for direct send cancels, any in-progress attachment send is synchronously
     // stopped, and any unanswered send callbacks are canceled. the message

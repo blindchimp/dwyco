@@ -20,7 +20,10 @@ void oopanic(const char *);
 #include <netinet/in.h>
 #endif
 #ifdef _Windows
-#include <winsock.h>
+#include <WinSock2.h>
+#endif
+#ifdef LINUX
+#include <arpa/inet.h>
 #endif
 
 JPEGTDecoderChroma::JPEGTDecoderChroma(int plane, JPEGTDecoder *l)

@@ -13,22 +13,6 @@
 #include "vc.h"
 #include "vccomp.h"
 
-// NOTE: the following is out of date, and must be
-// taken with a grain of salt.
-// END NOTE
-//
-// Function objects
-//
-// You can create vc's that, when operated on by operator(),
-// execute an arbitrary
-// function that returns a vc. The function is passed up to 3
-// vc or void * arguments. Vc's can be bound to either a normal non-member
-// function or to an (DwObj, memfunc) pair. In both cases, the function
-// must return a vc.
-//
-//
-// The functions are bound to vc's at vc creation time.
-//
 // This top level class simply provides a place to hang a lot of
 // common error functionality. The interesting stuff starts in the
 // classes that are children of this class.
@@ -86,7 +70,7 @@ public:
 	virtual vc operator()(vc v1, vc v2, vc v3) const {return vc_composite::operator()(v1, v2, v3);}
 	virtual vc operator()(vc v1, vc v2, vc v3, vc v4) const {return vc_composite::operator()(v1, v2, v3, v4);}
 	virtual vc operator()(void) const {return vc_composite::operator()();}
-	virtual vc operator()(void *p) const {return vc_composite::operator()(p);}
+	//virtual vc operator()(void *p) const {return vc_composite::operator()(p);}
 	enum vc_type type() const ;
 	virtual int operator ==(const vc &v) const ;
 	virtual int operator !=(const vc &v) const ;

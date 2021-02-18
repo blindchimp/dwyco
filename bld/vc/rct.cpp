@@ -30,6 +30,10 @@
 // pointers to be manipulated in both threads with minimal
 // barriers. i couldn't see this working without inserting
 // barriers in the ref counting stuff, which is an instant lose.
+// note: i just thought of something: maybe i can use some threadlocal
+// storage for the buffer pointers, and just synchronize and buffer
+// switch time. if performing dtors causes more dtors to fire, at least
+// then we would know that only one thread was fiddling the pointers
 
 // assume these are aligned on a large
 // boundary so we can mask for end of

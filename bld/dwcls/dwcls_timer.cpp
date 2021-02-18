@@ -55,6 +55,7 @@
 #endif
 #include "dwtree2.h"
 #include "dwvecp.h"
+#include "dwstr.h"
 #ifdef DWCLS_TIMER_DBG
 #include <stdio.h>
 #include <string.h>
@@ -67,18 +68,18 @@ clock_time_t
 clock_time()
 {
 #ifdef _Windows
-	return timeGetTime();
+    return timeGetTime();
 #elif defined(LINUX)
 #ifdef MACOSX
-	struct timeval tv;
-	gettimeofday(&tv, 0);
-	dwtime_t d = ((dwtime_t)tv.tv_sec * 1000 + tv.tv_usec / 1000);
-	return d;
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    dwtime_t d = ((dwtime_t)tv.tv_sec * 1000 + tv.tv_usec / 1000);
+    return d;
 #else
-	struct timespec ts;
+    struct timespec ts;
     clock_gettime(CLOCK_BOOTTIME, &ts);
-	dwtime_t d = ((dwtime_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
-	return d;
+    dwtime_t d = ((dwtime_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+    return d;
 #endif
 #else
 #error fix timer routines for this os
@@ -142,7 +143,7 @@ update_exp_time(struct timer *t, clock_time_t tm, clock_time_t interval)
 // polling it, it is removed here and no indication is
 // given that you should hurry up and poll it.
 clock_time_t
-timer_next_expire()
+timer::timer_next_expire(DwString &dbg)
 {
     if(!Timers)
     {
@@ -156,14 +157,18 @@ timer_next_expire()
         if(!v)
             return 0;
 #ifdef DWCLS_TIMER_DBG
-        fprintf(stderr, "dtmr min\n");
+        char dbg_buf[100];
         for(int i = 0; i < v->num_elems(); ++i)
-            (*v)[i]->print();
+        {
+            (*v)[i]->sprint(dbg_buf);
+            dbg += dbg_buf;
+            dbg += "\n";
+        }
 #endif
         if(mt < now)
         {
 #ifdef DWCLS_TIMER_DBG
-            fprintf(stderr, "delmin\n");
+            dbg += "delmin";
 #endif
             Timers->delmin();
             delete v;
@@ -176,9 +181,13 @@ timer_next_expire()
 
 #ifdef DWCLS_TIMER_DBG
 void
-timer::print()
+timer::sprint(char *buf)
 {
-    fprintf(stderr, "dtmr %s %ld %ld\n", lid, start, interval);
+#ifdef ANDROID
+    sprintf(buf, "dtmr %s %lld %lld\n", lid, start, interval);
+#else
+    sprintf(buf, "dtmr %s %ld %ld\n", lid, start, interval);
+#endif
 }
 
 #endif
@@ -190,7 +199,7 @@ timer::timer(const char *id)
     if(id)
         strcpy(lid, id);
     else
-        lid[0] = 0;
+        strcpy(lid, "timer");
 #endif
 }
 
@@ -220,9 +229,9 @@ timer::stop()
 void
 timer_set(struct timer *t, clock_time_t interval)
 {
-  //t->interval = interval;
-  //t->start = clock_time();
-  update_exp_time(t, clock_time(), interval);
+    //t->interval = interval;
+    //t->start = clock_time();
+    update_exp_time(t, clock_time(), interval);
 }
 /*---------------------------------------------------------------------------*/
 /**
@@ -276,7 +285,7 @@ timer_reset(struct timer *t)
 void
 timer_restart(struct timer *t)
 {
-  //t->start = clock_time();
+    //t->start = clock_time();
     update_exp_time(t, clock_time(), t->interval);
 }
 /*---------------------------------------------------------------------------*/
@@ -294,10 +303,10 @@ timer_restart(struct timer *t)
 int
 timer_expired(struct timer *t)
 {
-  /* Note: Can not return diff >= t->interval so we add 1 to diff and return
-     t->interval < diff - required to avoid an internal error in mspgcc. */
-  clock_time_t diff = (clock_time() - t->start) + 1;
-  return t->interval < diff;
+    /* Note: Can not return diff >= t->interval so we add 1 to diff and return
+       t->interval < diff - required to avoid an internal error in mspgcc. */
+    clock_time_t diff = (clock_time() - t->start) + 1;
+    return t->interval < diff;
 
 }
 /*---------------------------------------------------------------------------*/
@@ -314,7 +323,7 @@ timer_expired(struct timer *t)
 clock_time_t
 timer_remaining(struct timer *t)
 {
-  return t->start + t->interval - clock_time();
+    return t->start + t->interval - clock_time();
 }
 /*---------------------------------------------------------------------------*/
 }

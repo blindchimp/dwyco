@@ -80,8 +80,6 @@ typedef DwListAIter<vc> VCListIter;
 class vc_cvar : public vc_composite
 {
 friend class VcEvalDbgNode;
-friend long dovcinput(char *, long);
-friend vc doreadatoms(vc);
 
 private:
 	vc_cvar();
@@ -109,20 +107,11 @@ private:
 	// recursive decent parsing functions
 	void varlist(VCList *);
 	vc pvar(void);
-#ifdef OLD_PARSE
-	void tail(VCList *);
-#endif
 	vc vprime(vc);
 
 	vc make_atom();
 
 	void dbg_print(int expr_num, const char *var_name) const;
-#if 0
-// some compilers choke on this
-	static void syntax_err(const char *msg,
-		vc_cvar_src_coord start = vc_cvar_src_coord(),
-		vc_cvar_src_coord end = vc_cvar_src_coord());
-#endif
 	void syntax_err(const char *msg);
 	void syntax_err(const char *msg, vc_cvar_src_coord, vc_cvar_src_coord);
 	void raise_compile_error();
@@ -198,7 +187,7 @@ public:
 	int double_eq(const vc& v) const ;
 	int double_ne(const vc& v) const ;
 
-	vc operator()(void *p) const ;
+	//vc operator()(void *p) const ;
 	vc operator()(VCArglist *a) const ;
 
 	vc operator()() const ;

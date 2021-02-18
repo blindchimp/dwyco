@@ -49,6 +49,7 @@
 #include "dwrtlog.h"
 #include "ta.h"
 
+using namespace dwyco;
 
 sproto::sproto(int sc, strans *tr, ValidPtr v)
     : mvp(v), timeout("sproto-timeout"), watchdog("sproto-watchdog")
@@ -230,4 +231,5 @@ sproto::crank()
     oopanic("bogus handler return");
     return -1;
 }
+
 
