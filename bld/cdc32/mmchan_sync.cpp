@@ -282,8 +282,12 @@ void pull_target_destroyed(vc uid);
 void
 MMChannel::cleanup_pulls(int myid)
 {
-    pull_target_destroyed(remote_uid());
-    sql_run_sql("delete from current_clients where uid = ?1", to_hex(remote_uid()));
+    vc uid = remote_uid();
+    vc huid = to_hex(uid);
+    pull_target_destroyed(uid);
+    sql_run_sql("delete from current_clients where uid = ?1", huid);
+    sql_run_sql("delete from midlog where to_uid = ?1", huid);
+    sql_run_sql("delete from taglog where to_uid = ?1", huid);
 }
 
 void assert_eager_pulls(MMChannel *, vc uid);
