@@ -55,18 +55,22 @@ public:
     inline void append(T&&);
     //inline void append(void *);
     inline T& ref(int i);
+    inline const T &ref(int i) const;
     inline T get(int i) const;
     void set_size(int newsize);
 
     T& operator[](int i) {
         return ref(i);
     }
+    const T& operator[](int i) const {
+        return ref(i);
+    }
     int num_elems() const {
         return count;
     }
-    int operator==(const DwSVec& o) {
+    int operator==(const DwSVec& o) const {
         for(int i = 0; i < count; ++i)
-            if(!((*this)[i] == o[i]))
+            if(!(ref(i) == o.ref(i)))
                 return 0;
         return 1;
     }
@@ -148,6 +152,17 @@ T &DwSVec<T>::ref(int i)
         oopanic("bad svec ref");
 #endif
     return ((T*)big)[i];
+}
+
+template<class T>
+inline
+const T &DwSVec<T>::ref(int i) const
+{
+#ifdef DWSVEC_DBG
+    if(i >= count || i < 0)
+        oopanic("bad svec ref");
+#endif
+    return ((const T*)big)[i];
 }
 
 template<class T>

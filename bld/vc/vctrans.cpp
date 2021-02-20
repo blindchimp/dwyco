@@ -492,8 +492,6 @@ trans_doloop(VCArglist *a, VcIO o)
 
 }
 
-// note: obscure bug in interpreter too: the set expr is evaled before the var expr,
-// which is out of order according to spec's left to right ordering.
 vc
 trans_doforeach(VCArglist *a, VcIO o)
 {

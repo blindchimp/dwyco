@@ -58,7 +58,7 @@
 // Some departures:
 // Handlers and backout functions can be "cancelled"
 // by calling a special function that cancels the previously
-// set handler. This is no provision for cancelling an
+// set handler. There is no provision for cancelling an
 // arbitrary handler.
 //
 // Constructs:

@@ -175,8 +175,8 @@ vc_cfunc::vc_cfunc(VCFUNCPv p, const char *name, const char *impl_fun, int style
 #endif
 
 #define ctor(t,n, na) \
-    vc_cfunc::vc_cfunc(t##n p, const char *name, const char *impl_fun, int style, VCTRANSFUNCP tfp) \
-    : vc_func(vc(name), style) {funcp##n = p;nargs = na; transfunc = tfp; impl_name = impl_fun; }
+    vc_cfunc::vc_cfunc(t##n p, const char *cname, const char *impl_fun, int style, VCTRANSFUNCP tfp) \
+    : vc_func(vc(cname), style) {funcp##n = p;nargs = na; transfunc = tfp; impl_name = impl_fun; }
 ctor(VCFUNCP,0,0)
 ctor(VCFUNCP,1,1)
 ctor(VCFUNCP,2,2)
@@ -188,8 +188,8 @@ ctor(VCFUNCP,5,5)
 //vc_cfunc::vc_cfunc(VCFUNCPVP p, const char *name, const char *impl_fun, int style, VCTRANSFUNCP tfp)
 //     : vc_func(vc(name), style) {funcp_vp = p; nargs = 1; transfunc = tfp;}
 // varadic function
-vc_cfunc::vc_cfunc(VCFUNCPv p, const char *name, const char *impl_fun, int style, VCTRANSFUNCP tfp)
-    : vc_func(vc(name), style | VC_FUNC_VARADIC) {funcpv = p; nargs = -1; transfunc = tfp; impl_name = impl_fun; }
+vc_cfunc::vc_cfunc(VCFUNCPv p, const char *cname, const char *impl_fun, int style, VCTRANSFUNCP tfp)
+    : vc_func(vc(cname), style | VC_FUNC_VARADIC) {funcpv = p; nargs = -1; transfunc = tfp; impl_name = impl_fun; }
 
 // the following is a bit weird, but it is necessary
 // to ensure safety. even though we are in the "non-atomic"
