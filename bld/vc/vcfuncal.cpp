@@ -13,6 +13,7 @@
 #include "vcmap.h"
 #include "dwlista.h"
 #include "vcio.h"
+void dbg_print_date();
 unsigned long vc_funcall::Cache_counter;
 #ifndef NO_VCEVAL
 
@@ -400,7 +401,6 @@ vc_funcall::dbg_print(const vc& fun, int arg) const
 {
 	vc name;
 
-	void dbg_print_date();
 	dbg_print_date();
 	if(fun.type() != VC_FUNC && fun.type() != VC_MEMFUN)
 		name = vc("<<erroneous>>");
@@ -415,7 +415,6 @@ vc_funcall::dbg_print(const vc& fun, VCArglist *al) const
 {
 	vc name;
 
-	void dbg_print_date();
 	dbg_print_date();
 	if(fun.type() != VC_FUNC && fun.type() != VC_MEMFUN)
 		name = vc("<<erroneous>>");
