@@ -1010,7 +1010,7 @@ bf_ctx::init_key_cbc(byte *key1, int len_key1, byte *iv, int len_iv)
 }
 
 static void
-bf_dtor(long ctx)
+bf_dtor(void *ctx)
 {
 	if(!ctx) return;
 	bf_ctx *d = (bf_ctx *)ctx;
@@ -1021,7 +1021,7 @@ vc
 vclh_bf_open()
 {
 	bf_ctx *d = new bf_ctx;
-	return vc(VC_INT_DTOR, (const char *)bf_dtor, (long)d);
+    return vc(VC_INT_DTOR, bf_dtor, d);
 }
 
 vc
@@ -1247,7 +1247,7 @@ encdec_ctx::init_key(byte *key1, int len_key1, byte *iv, int len_iv)
 }
 
 static void
-encdec_dtor(long ctx)
+encdec_dtor(void *ctx)
 {
 	if(!ctx) return;
 	encdec_ctx *d = (encdec_ctx *)ctx;
@@ -1258,7 +1258,7 @@ vc
 vclh_encdec_open()
 {
 	encdec_ctx *d = new encdec_ctx;
-	return vc(VC_INT_DTOR, (const char *)encdec_dtor, (long)d);
+    return vc(VC_INT_DTOR, encdec_dtor, d);
 }
 
 vc

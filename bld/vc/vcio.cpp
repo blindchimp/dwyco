@@ -79,14 +79,13 @@ VcIOHack::operator<<(long c)
 	return *this;
 }
 
-#ifdef _WIN64
 VcIOHack&
 VcIOHack::operator<<(long long c)
 {
     fprintf(sio, format ? format : "%lld", c);
     return *this;
 }
-#endif
+
 
 VcIOHack&
 VcIOHack::operator<<(unsigned long c)
@@ -210,6 +209,18 @@ VcIOHackStr::operator<<(long c)
 		oopanic("snprintf pooched");
 	s.append(a, i);
 	return *this;
+}
+
+VcIOHack&
+VcIOHackStr::operator<<(long long c)
+{
+    char a[TMPBUFSTR];
+    unsigned int i;
+    i = snprintf(a, sizeof(a) - 1, format ? format : "%lld", c);
+    if(i >= sizeof(a) - 1)
+        oopanic("snprintf pooched");
+    s.append(a, i);
+    return *this;
 }
 
 VcIOHack&
