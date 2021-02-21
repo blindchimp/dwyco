@@ -14,7 +14,12 @@ QMAKE_CXXFLAGS += -fpermissive
 }
 
 equals(LH_INTERPRETER, 1) {
-DEFINES += LHOBJ PERFHACKS FUNCACHE CACHE_LOOKUPS
+# note: this simple lookup caching works, but is only really
+# useful in situations where a program doesn't make a lot of
+# function calls to user defined functions. in order to improve
+# it would require something quite a bit more complicated, or changing
+# some of the semantics of the language.
+DEFINES += LHOBJ PERFHACKS FUNCACHE #CACHE_LOOKUPS
 }
 !equals(LH_INTERPRETER, 1) {
 DEFINES += NO_VCEVAL
