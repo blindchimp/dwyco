@@ -1,7 +1,8 @@
 LH_INTERPRETER=1
 
-linux-g++*:DEFINES += LINUX 
-linux-g++*|macx-g++*|macx-clang*: QMAKE_CXX=ccache g++
+linux-*:DEFINES += LINUX
+linux-g++*|macx-g++*: QMAKE_CXX=ccache g++
+linux-clang-*|macx-clang-*: QMAKE_CXX=ccache clang++
 macx-*:DEFINES += LINUX MACOSX
 QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-reorder
