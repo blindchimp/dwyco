@@ -11,7 +11,7 @@
 int pmatch(const char *, const char *);
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcexcctx.cpp 1.45 1996/11/17 05:58:35 dwight Stable $";
 
-void force_termination(const char *reason, const vc& excstr);
+[[noreturn]] void force_termination(const char *reason, const vc& excstr);
 
 vc
 default_handlerfun::operator()(VCArglist *al)
