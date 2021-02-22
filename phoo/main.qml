@@ -238,7 +238,9 @@ ApplicationWindow {
     }
 
 
-    footer: RowLayout {
+    footer: ColumnLayout {
+        height: cm(2)
+        RowLayout {
             Label {
                 id: ind_invis
                 text: "Invis"
@@ -263,6 +265,37 @@ ApplicationWindow {
                 text: core.is_chat_online === 0 ? "chat off" : "chat on"
             }
         }
+    ListView {
+        id: synclist
+        anchors.fill: parent
+        model: SyncDescModel
+        delegate: Component {
+            RowLayout {
+                width: parent.width
+                height: implicitHeight
+                spacing: mm(1)
+                Label {
+                    text: uid
+                }
+                Label {
+                    text: status
+                }
+                Label {
+                    text: ip
+                    color: proxy ? "red" : "black"
+                }
+                Label {
+                    text: asserts
+                }
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
+        }
+
+        clip: true
+    }
+    }
 
     
     Menu {
@@ -946,6 +979,15 @@ ApplicationWindow {
         }
     }
 
+    Timer {
+        id: sync_debug
+        interval: 10000
+        repeat: true
+        running: server_account_created
+        onTriggered: {
+            SyncDescModel.load_model()
+        }
+    }
 
     Timer {
         id: service_timer

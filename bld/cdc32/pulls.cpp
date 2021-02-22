@@ -67,6 +67,12 @@ pulls::deassert_by_uid(vc uid)
         delete dm[i];
 }
 
+int
+pulls::count_by_uid(vc uid)
+{
+    return pulls::Qbm.count_by_member(uid, &pulls::uid);
+}
+
 void
 pulls::pull_failed(vc mid, vc uid)
 {

@@ -6447,6 +6447,111 @@ start_stalled_pulls()
 }
 }
 
+// UID, STATUS, IP, PROXY, LOCAL, GLOBAL, PULLS_ASSERT, PULLS_QED, SENDQ_COUNT, INQ_COUNT, TOMB_COUNT
+#define M_UID 0
+#define M_STATUS 1
+#define M_IP 2
+#define M_PROXY 3
+#define M_LOCAL 4
+#define M_GLOBAL 5
+#define M_PULLS_ASSERT 6
+#define M_PULLS_QED 7
+#define M_SENDQ_COUNT 8
+#define M_INQ_COUNT 9
+#define M_TOMB_COUNT 10
+
+static
+void
+sync_ip(MMChannel *mc, vc v)
+{
+    if(!mc->proxy_info.is_nil())
+    {
+        v[M_PROXY] = vctrue;
+        DwString ip = (const char *)mc->proxy_info[0];
+        ip += ":";
+        ip += mc->proxy_info[1].peek_str();
+        v[M_IP] = ip.c_str();
+    }
+    else
+    {
+        DwString ip = mc->addrstr;
+        if(ip.length() == 0 && mc->tube)
+            ip = (const char *)mc->tube->remote_addr_ctrl();
+        v[M_IP] = ip.c_str();
+    }
+}
+
+
+vc
+build_sync_status_model()
+{
+    vc ret(VC_VECTOR);
+    vc uids = uids_to_call();
+    DwVec<vc> cuids;
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        vc v(VC_VECTOR);
+        v[M_UID] = uids[i];
+        v[M_STATUS] = "d"; // disconnected
+        v[M_PULLS_ASSERT] = pulls::count_by_uid(uids[i]);
+        ret.append(v);
+        cuids.append(uids[i]);
+    }
+
+    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    for(int i = 0; i < mmcl.num_elems(); ++i)
+    {
+        MMCall *mmc = mmcl[i];
+        MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
+        auto j = cuids.index(mc->remote_uid());
+        if(j == -1)
+            continue;
+        vc v = ret[j];
+        v[M_STATUS] = "oi";
+        if(mc->mms_sync_state == MMChannel::NORMAL_SEND &&
+                mc->mmr_sync_state == MMChannel::NORMAL_RECV)
+        {
+            v[M_STATUS] = "oa";
+        }
+        sync_ip(mc, v);
+    }
+
+    ChanList cl = MMChannel::channels_by_call_type("sync");
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        MMChannel *mc = cl[i];
+        auto j = cuids.index(mc->remote_uid());
+        if(j == -1)
+            continue;
+        vc v = ret[j];
+        v[M_STATUS] = "ri";
+        if(mc->mms_sync_state == MMChannel::NORMAL_SEND &&
+                mc->mmr_sync_state == MMChannel::NORMAL_RECV)
+        {
+            v[M_STATUS] = "ra";
+        }
+        sync_ip(mc, v);
+    }
+
+    return ret;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out)
+{
+    vc& ret = *new vc;
+
+    ret = build_sync_status_model();
+    if(ret.is_nil())
+    {
+        delete &ret;
+        return 0;
+    }
+    *list_out = (DWYCO_SYNC_MODEL)&ret;
+    return 1;
+}
+
 // this gets called when the alternate group config
 // changes. we drop all the sync channels so we can
 // reestablish channels in the new group.

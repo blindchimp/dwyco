@@ -352,6 +352,8 @@ MMChannel::process_outgoing_sync()
     if(mms_sync_state == SEND_INIT)
     {
         vcx = package_index();
+        // note: this probably needs to be a unique signal, because the
+        // the receive part sets this up too
         destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls);
     }
     else if(mms_sync_state == MMSS_TRYAGAIN)
@@ -427,6 +429,8 @@ MMChannel::process_incoming_sync()
             {
                 unpack_index(rvc);
                 mmr_sync_state = NORMAL_RECV;
+                //note: this probably needs to be a unique signal, because the
+                // the receive part sets this up too
                 destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls);
             }
             else if(mmr_sync_state == NORMAL_RECV)

@@ -1,4 +1,3 @@
-
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -713,10 +712,25 @@ int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, 
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
+
+// returns 1 if the message content was successfully loads, and 0 otherwise.
 int DWYCOEXPORT dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
-// the return codes for this api give you a little more info about
-// the message disposition on remote clients
+
+// returns -1, then there is no place we know where we might find
+// the mid. this could change if we connect to a client in the
+// future that has the message.
+//
+// returns -2, we initiated at least 1 pull
+// returns -3, we didn't initiate any pulls, but it might be available somewhere
+//
+#define DWYCO_GSM_ERROR (0)
+#define DWYCO_GSM_TRANSIENT_FAIL (-1)
+#define DWYCO_GSM_PULL_IN_PROGRESS (-2)
+#define DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE (-3)
+#define DWYCO_GSM_SUCCESS (1)
+
 int DWYCOEXPORT dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
+
 int DWYCOEXPORT dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback cb, void *mdc_arg1,
         DwycoStatusCallback scb, void *scb_arg1);
 void DWYCOEXPORT dwyco_cancel_message_fetch(int fetch_id);
@@ -1459,6 +1473,7 @@ void DWYCOEXPORT dwyco_abort_autoupdate_download();
 // the exit will release the "lock" and allow the main app to continue
 // normally.
 int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
+int DWYCOEXPORT dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 // some more helper functions called from java for android related stuff
 // strings in this case are utf-8, null terminated i hope
 void DWYCOEXPORT dwyco_set_aux_string(const char *str);
@@ -1468,6 +1483,24 @@ int DWYCOEXPORT dwyco_add_contact(const char *name, const char *phone, const cha
 void DWYCOEXPORT dwyco_signal_msg_cond();
 void DWYCOEXPORT dwyco_wait_msg_cond(int ms);
 int DWYCOEXPORT dwyco_test_funny_mutex(int port);
+
+// this is mostly for debugging, most users won't need to know this info
+typedef DWYCO_LIST DWYCO_SYNC_MODEL;
+
+#define DWYCO_SM_UID "000"
+#define DWYCO_SM_STATUS "001"
+#define DWYCO_SM_IP "002"
+#define DWYCO_SM_PROXY "003"
+#define DWYCO_SM_LOCAL "004"
+#define DWYCO_SM_GLOBAL "005"
+#define DWYCO_SM_PULLS_ASSERT "006"
+#define DWYCO_SM_PULLS_QED "007"
+#define DWYCO_SM_SENDQ_COUNT "008"
+#define DWYCO_SM_INQ_COUNT "009"
+#define DWYCO_SM_TOMB_COUNT "010"
+
+int DWYCOEXPORT dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out);
+
 
 // api for creating a simple backup of messages and account info
 // "create_backup" creates an initial backup, then subsequent calls

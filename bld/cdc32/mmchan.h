@@ -85,6 +85,7 @@ extern "C" int DWYCOCALLCONV dwyco_enable_video_capture_preview(int);
 class MMChannel : public ssns::trackable
 {
 friend void dwyco_debug_dump();
+friend vc build_sync_status_model();
 
     MMChannel(const MMChannel&) = delete;
     MMChannel& operator=(const MMChannel&) = delete;
@@ -633,9 +634,9 @@ public:
 private:
     char *resolve_buf;
     int resolve_result;
+public:
     DwString addrstr;
     DwString ouraddr;
-public:
     int call_setup;
     vc call_type;
 

@@ -38,6 +38,7 @@
 #include "QQmlVarPropertyHelpers.h"
 #include "QQmlVariantListModel.h"
 #include "simpledirmodel.h"
+#include "syncmodel.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
@@ -3003,6 +3004,9 @@ dwyco_register_qml(QQmlContext *root)
     Conv_sort_proxy->setSourceModel(convlist);
     QObject::connect(convlist, SIGNAL(countChanged()), Conv_sort_proxy, SIGNAL(countChanged()));
     root->setContextProperty("ConvListModel", Conv_sort_proxy);
+
+    SyncDescModel *sdm = new SyncDescModel;
+    root->setContextProperty("SyncDescModel", sdm);
 
     IgnoreListModel *ignorelist = new IgnoreListModel;
     Ignore_sort_proxy = new IgnoreSortFilterModel;

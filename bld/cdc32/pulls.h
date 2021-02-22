@@ -61,6 +61,7 @@ public:
     static int count() {
         return Qbm.count();
     }
+    static int count_by_uid(vc uid);
 //    int uid_in_prog(const vc& uid, const int& inprog) {
 //        if(this->uid == uid && m_in_progress == inprog)
 //            return 1;
