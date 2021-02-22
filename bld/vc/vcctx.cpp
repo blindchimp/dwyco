@@ -202,6 +202,7 @@ vcctx::remove(const vc& v) const
 }
 
 
+[[noreturn]]
 void
 force_termination(const char *reason, const vc& excstr)
 {
