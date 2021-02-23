@@ -67,42 +67,60 @@ int Inhibit_pal;
 // online info will be slightly wrong, but
 // this is a best-guess protocol anyways, so
 // it is no big deal.
+static
+vc
+tree_to_vec(const DwTreeKaz<int, vc>& tr)
+{
+
+    vc ret(VC_VECTOR);
+    DwTreeKazIter<int, vc> i(&tr);
+    for(; !i.eol(); i.forward())
+    {
+        auto kv = i.get();
+        ret.append(kv.get_key());
+    }
+    return ret;
+}
 
 static
 vc
 transient_online_list()
 {
+    DwTreeKaz<int, vc> tmpl(0);
+
     vc p = pal_to_vector(0);
-    p.del(My_UID);
+    for(int i = 0; i < p.num_elems(); ++i)
+    {
+        tmpl.add(p[i], 0);
+    }
     vc gv = Group_uids;
     if(!gv.is_nil())
     {
         for(int i = 0; i < gv.num_elems(); ++i)
         {
-            if(gv[i] == My_UID)
-                continue;
-            if(!pal_user(gv[i]))
-                p.append(gv[i]);
+            tmpl.add(gv[i], 0);
         }
     }
     int left_over = MAXPALS - p.num_elems();
     if(left_over <= 0)
     {
-        return p;
+        tmpl.del(My_UID);
+        return tree_to_vec(tmpl);
     }
     // fill out remainder with recent conversations
     vc rm = sql_get_recent_users2(3600 * 24 * 365, left_over);
     if(rm.is_nil())
-        return p;
+    {
+        tmpl.del(My_UID);
+        return tree_to_vec(tmpl);
+    }
     for(int i = 0; i < rm.num_elems(); ++i)
     {
         vc u = from_hex(rm[i]);
-        if(u == My_UID)
-            continue;
-        if(!pal_user(u))
-            p.append(u);
+        tmpl.add(u, 0);
     }
-    return p;
+    tmpl.del(My_UID);
+    return tree_to_vec(tmpl);
 }
 
 
