@@ -57,7 +57,7 @@ void sql_commit_transaction();
 void sql_rollback_transaction();
 int sql_is_mid_local(vc mid);
 void import_remote_mi(vc remote_uid);
-vc sql_get_uid_from_mid2(vc mid);
+vc sql_find_who_has_mid(vc mid);
 
 int sql_run_sql(vc s, vc a1 = vcnil, vc a2 = vcnil, vc a3 = vcnil);
 vc package_downstream_sends(vc remote_uid);

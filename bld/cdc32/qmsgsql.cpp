@@ -474,7 +474,9 @@ import_remote_iupdate(vc remote_uid, vc vals)
         vc op = vals.remove_last();
         if(op == vc("a"))
         {
-            vals.append(0);
+            // note: we wouldn't be getting this update unless the remote side
+            // had the msg stored locally
+            vals.append(1);
             vals.append(huid);
             DwString sargs = make_sql_args(vals.num_elems());
             VCArglist a;
@@ -581,6 +583,7 @@ init_qmsg_sql()
     //sql_simple("insert into mt.gmt (mid, tag, uid, guid, time) values(?2, 'bar', ?1, 'mumble', 0)", hmyuid);
     // by default, our local index "local" is implied
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
+    sql_simple("delete from gi where mid in (select mid from msg_tomb)");
 
     sql_simple("create temp table rescan(flag integer)");
     sql_simple("insert into rescan (flag) values(0)");
@@ -1206,7 +1209,7 @@ flatten(vc sql_res)
 // this looks in all the loaded global indexes to see what uid's
 // might have the mid in their local cache
 vc
-sql_get_uid_from_mid2(vc mid)
+sql_find_who_has_mid(vc mid)
 {
     try
     {

@@ -6771,7 +6771,7 @@ pull_msg(vc uid, vc msg_id)
     // try to issue a pull to that client. we might have to set up a connection
     // as well before issuing the pull.
 
-    vc uids = sql_get_uid_from_mid2(msg_id);
+    vc uids = sql_find_who_has_mid(msg_id);
     if(uids.is_nil())
     {
         GRTLOG("cant find uid for mid %s", (const char *)msg_id, 0);
