@@ -179,7 +179,7 @@ run_dfilter(z_stream& z, const char *str, int len)
 vc
 vclh_compress(vc ctx, vc str)
 {
-	z_stream *d = (z_stream *)(long)ctx;
+    z_stream *d = (z_stream *)(void *)ctx;
 	int n;
 	DwGrowingString *ds = run_cfilter(*d, (const char *)str, str.len());
 	vc ret(VC_BSTRING, ds->ref_str(), ds->length());
@@ -190,7 +190,7 @@ vclh_compress(vc ctx, vc str)
 vc
 vclh_decompress(vc ctx, vc str)
 {
-	z_stream *d = (z_stream *)(long)ctx;
+    z_stream *d = (z_stream *)(void *)ctx;
 	DwGrowingString *ds = run_dfilter(*d, (const char *)str, str.len());
 	vc ret(VC_BSTRING, ds->ref_str(), ds->length());
 	delete ds;
@@ -208,7 +208,7 @@ vclh_compress_xfer(vc ctx, vc v)
 	if((len = v.xfer_out(vcx)) == -1)
 		return vcnil;
 
-	z_stream *d = (z_stream *)(long)ctx;
+    z_stream *d = (z_stream *)(void *)ctx;
 	DwGrowingString *b = run_cfilter(*d, vcx.buf, vcx.cur - vcx.buf);
 	vc ret(VC_BSTRING, b->ref_str(), b->length());
 	delete b;
@@ -218,7 +218,7 @@ vclh_compress_xfer(vc ctx, vc v)
 vc
 vclh_decompress_xfer(vc ctx, vc v, vc& out)
 {
-	z_stream *d = (z_stream *)(long)ctx;
+    z_stream *d = (z_stream *)(void *)ctx;
 	DwGrowingString *b = run_dfilter(*d, (const char *)v, v.len());
 
 	vcxstream vcx((const char *)b->ref_str(), b->length(), vcxstream::FIXED);

@@ -37,7 +37,7 @@ vc_int::operator int64_t() const
 #endif
 
 vc_int::operator long() const {
-    if(sizeof(long) == sizeof(i))
+    if(sizeof(long) <= sizeof(i))
 		return i;
     if(i > LONG_MAX || i < LONG_MIN)
     {
@@ -47,7 +47,7 @@ vc_int::operator long() const {
         return i;
 }
 vc_int::operator int () const {
-    if(sizeof(int) == sizeof(i))
+    if(sizeof(int) <= sizeof(i))
 		return i;
 	if(i > INT_MAX || i < INT_MIN)
 	{
@@ -57,7 +57,7 @@ vc_int::operator int () const {
 		return i;
 }
 vc_int::operator void *() const {
-	if(sizeof(void *) < sizeof(i))
+    if(sizeof(void *) > sizeof(i))
 	{
         USER_BOMB("pointer truncation", 0);
 	}
