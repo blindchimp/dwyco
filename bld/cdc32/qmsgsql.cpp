@@ -459,11 +459,14 @@ void
 import_remote_iupdate(vc remote_uid, vc vals)
 {
     vc huid = to_hex(remote_uid);
+    // this was mostly for debugging
+#if 0
     DwString fn = DwString("mi%1.sql").arg((const char *)huid);
     DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
 
     sDb->attach(fn, "mi2");
     sDb->attach(favfn, "fav2");
+#endif
 
     try
     {
@@ -491,9 +494,14 @@ import_remote_iupdate(vc remote_uid, vc vals)
         {
             vc mid = vals[0];
             sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
+#if 0
             sql_simple("delete from mi2.msg_idx where mid = ?1", mid);
+#endif
             sql_simple("delete from gi where mid = ?1", mid);
             // NOTE: if the transaction completes, need to delete the file too
+            // NOTE2: this doesn't do anything to the tags that might reference the msg,
+            // tho they could probably be nuked. there is no reason to do it
+            // immediately and incur the extra costs. might have to look into this
         }
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
@@ -502,20 +510,23 @@ import_remote_iupdate(vc remote_uid, vc vals)
     {
         sql_rollback_transaction();
     }
-
+#if 0
     sDb->detach("mi2");
     sDb->detach("fav2");
+#endif
 }
 
 void
 import_remote_tupdate(vc remote_uid, vc vals)
 {
     vc huid = to_hex(remote_uid);
+#if 0
     DwString fn = DwString("mi%1.sql").arg((const char *)huid);
     DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
 
     sDb->attach(fn, "mi2");
     sDb->attach(favfn, "fav2");
+#endif
 
     try
     {
@@ -563,9 +574,10 @@ import_remote_tupdate(vc remote_uid, vc vals)
     {
         sql_rollback_transaction();
     }
-
+#if 0
     sDb->detach("mi2");
     sDb->detach("fav2");
+#endif
 }
 
 void
