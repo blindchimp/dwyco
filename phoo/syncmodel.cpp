@@ -27,6 +27,7 @@ SyncDescModel::SyncDescModel(QObject *parent) :
 {
     if(TheSyncDescModel)
         ::abort();
+    m_connection_count = 0;
     TheSyncDescModel = this;
 
 }
@@ -66,6 +67,7 @@ SyncDescModel::load_model()
             c->update_uid(huid);
             append(c);
         }
+        connect(c, SIGNAL(statusChanged(QString)), this, SLOT(update_connections(QString)));
         c->update_status(sl.get<QByteArray>(i, DWYCO_SM_STATUS));
         c->update_ip(sl.get<QByteArray>(i, DWYCO_SM_IP));
         c->update_proxy(!sl.is_nil(i, DWYCO_SM_PROXY));
@@ -85,6 +87,21 @@ SyncDescModel::load_model()
         Sync_desc *c = dead[i];
         remove(c);
     }
+
+}
+
+void
+SyncDescModel::update_connections(QString state)
+{
+    int cnt = 0;
+    for(int i = 0; i < count(); ++i)
+    {
+        auto c = at(i);
+        auto state = c->get_status();
+        if(state == "oa" || state == "ra")
+            ++cnt;
+    }
+    update_connection_count(cnt);
 
 }
 

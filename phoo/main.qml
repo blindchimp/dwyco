@@ -238,9 +238,7 @@ ApplicationWindow {
     }
 
 
-    footer: ColumnLayout {
-        height: cm(2)
-        RowLayout {
+    footer: RowLayout {
             Label {
                 id: ind_invis
                 text: "Invis"
@@ -250,6 +248,12 @@ ApplicationWindow {
             }
             Item {
                 Layout.fillWidth: true
+            }
+
+
+            Label {
+                id: conns
+                text: "conns " + SyncDescModel.connection_count.toString()
             }
 
             Label {
@@ -264,37 +268,6 @@ ApplicationWindow {
                 id: chat_status
                 text: core.is_chat_online === 0 ? "chat off" : "chat on"
             }
-        }
-    ListView {
-        id: synclist
-        anchors.fill: parent
-        model: SyncDescModel
-        delegate: Component {
-            RowLayout {
-                width: parent.width
-                height: implicitHeight
-                spacing: mm(1)
-                Label {
-                    text: uid
-                }
-                Label {
-                    text: status
-                }
-                Label {
-                    text: ip
-                    color: proxy ? "red" : "black"
-                }
-                Label {
-                    text: asserts
-                }
-                Item {
-                    Layout.fillWidth: true
-                }
-            }
-        }
-
-        clip: true
-    }
     }
 
     
@@ -417,6 +390,11 @@ ApplicationWindow {
                 source = "qrc:/About.qml"
             }
         }
+    }
+
+    DevGroup {
+        id: device_group
+        visible: false
     }
 
     ConvList {

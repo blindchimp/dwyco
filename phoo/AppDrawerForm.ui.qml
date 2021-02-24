@@ -24,6 +24,7 @@ Pane {
     property alias quiet_switch: quiet_switch
     property alias browse_tags_button: browse_tags_button
     property alias browse_hidden_button: browse_hidden_button
+    property alias link_dev_button: link_dev_button
     property real ctrl_pad: 4
     property alias circularImage: circularImage
     property alias text1: text1
@@ -165,6 +166,15 @@ Pane {
         //            text: qsTr("About")
         //            Layout.fillWidth: true
         //        }
+        ItemDelegate {
+            id: link_dev_button
+            text: qsTr("Link other device")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
+            //visible: false
+            Layout.fillWidth: true
+        }
         ItemDelegate {
             id: vid_preview_button
             text: qsTr("Preview")

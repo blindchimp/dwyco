@@ -81,4 +81,10 @@ AppDrawerForm {
         //close()
     }
 
+    link_dev_button.onClicked: {
+        stack.push(device_group)
+        close()
+
+    }
+
 }

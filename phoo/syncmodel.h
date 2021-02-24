@@ -38,11 +38,17 @@ public:
 class SyncDescModel : public QQmlObjectListModel<Sync_desc>
 {
     Q_OBJECT
+
+    QML_READONLY_VAR_PROPERTY(int, connection_count)
+
 public:
     explicit SyncDescModel(QObject *parent = 0);
     ~SyncDescModel();
 
     Q_INVOKABLE void load_model();
+
+public slots:
+    void update_connections(QString status);
 
 };
 
