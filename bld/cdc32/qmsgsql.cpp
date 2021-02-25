@@ -766,19 +766,19 @@ init_group_map()
 vc
 map_uid_to_gid(vc uid)
 {
-
+return vcnil;
 }
 
 vc
 map_gid_to_uid(vc gid)
 {
-
+return vcnil;
 }
 
 vc
 map_gid_to_uids(vc gid)
 {
-
+return vcnil;
 }
 
 
