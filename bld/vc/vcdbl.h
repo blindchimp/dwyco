@@ -9,12 +9,10 @@
 #ifndef VCDBL_H
 #define VCDBL_H
 // $Header: g:/dwight/repo/vc/rcs/vcdbl.h 1.47 1997/10/05 17:27:06 dwight Stable $
-
 #include "vcint.h"
-#include "vcxstrm.h"
-
+class vcxstream;
 //
-// Floating point atoms (structurally the same as integer atoms...)
+// Floating point atoms
 //
 class vc_double : public vc_atomic
 {
