@@ -71,6 +71,13 @@ Page {
                     Label {
                         text: asserts
                     }
+                    Label {
+                        text: sendq_count
+                    }
+                    Label {
+                        text: percent_synced
+                    }
+
                     Item {
                         Layout.fillWidth: true
                     }

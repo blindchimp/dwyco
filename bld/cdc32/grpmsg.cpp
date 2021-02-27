@@ -1,6 +1,6 @@
 
 #include "simplesql.h"
-//#include "vc.h"
+#include "vc.h"
 #include "dlli.h"
 #include "qauth.h"
 #include "profiledb.h"
@@ -54,6 +54,8 @@ static struct skid_sql *SKID;
 int
 init_gj()
 {
+    if(SKID)
+        return 1;
     SKID = new struct skid_sql;
     SKID->init();
     return 1;
@@ -423,7 +425,7 @@ recv_gj3(vc from, vc msg, vc password)
         return 0;
     try
     {
-        // if we're not current in a group, don't even try to send a key back
+        // if we're not currently in a group, don't even try to send a key back
         if(!Current_alternate)
             throw -1;
         vc m = xfer_dec(msg, password);

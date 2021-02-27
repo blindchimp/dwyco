@@ -1828,17 +1828,17 @@ sql_get_rescan()
 // api generally. it is useful for running arbitrary sql from an app
 // assuming the app knows the schema.
 
-int
+vc
 sql_run_sql(vc s, vc a1, vc a2, vc a3)
 {
     try {
         sql_start_transaction();
-        sql_simple(s, a1, a2, a3);
+        vc res = sql_simple(s, a1, a2, a3);
         sql_commit_transaction();
-        return 1;
+        return res;
     } catch (...) {
         sql_rollback_transaction();
-        return 0;
+        return vcnil;
     }
 }
 }

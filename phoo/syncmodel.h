@@ -23,6 +23,8 @@ class Sync_desc : public QObject
     QML_READONLY_VAR_PROPERTY(QString, ip)
     QML_READONLY_VAR_PROPERTY(bool, proxy)
     QML_READONLY_VAR_PROPERTY(int, asserts)
+    QML_READONLY_VAR_PROPERTY(int, sendq_count)
+    QML_READONLY_VAR_PROPERTY(int, percent_synced)
 
 
 public:

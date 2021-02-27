@@ -10,8 +10,8 @@ using namespace dwyco;
 
 struct init_settings
 {
-	enum vc_type tp;
-	const char *name;
+    enum vc_type tp;
+    const char *name;
     const char *init_val_str;
     int init_val_int;
 };
@@ -65,6 +65,14 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_INT, rate/kbits_per_sec_in, "", 128),
     DWUIDECLVAL(VC_INT, rate/max_fps, "", 20),
     DWUIDECLVAL(VC_BSTRING, auth/uniq, "00000000000000000001", 0),
+
+    DWUIDECLVAL(VC_BSTRING, group/alt_name, "", 0),
+    // the "join key" is simply the key used for encrypting join messages.
+    // this protects the group private key. it isn't recorded anywhere
+    // on the server or anything, this is just something a potential
+    // group joiner needs to present in order to request the group private key.
+    DWUIDECLVAL(VC_BSTRING, group/join_key, "", 0),
+
     {VC_NIL,0, 0, 0}
 };
 

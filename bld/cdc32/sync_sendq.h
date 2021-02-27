@@ -88,6 +88,10 @@ public:
         }
         return ret;
     }
+
+    int count() const {
+        return q.num_elems();
+    }
 };
 
 }

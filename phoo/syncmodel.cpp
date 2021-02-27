@@ -72,6 +72,8 @@ SyncDescModel::load_model()
         c->update_ip(sl.get<QByteArray>(i, DWYCO_SM_IP));
         c->update_proxy(!sl.is_nil(i, DWYCO_SM_PROXY));
         c->update_asserts(sl.get_long(i, DWYCO_SM_PULLS_ASSERT));
+        c->update_sendq_count(sl.get_long(i, DWYCO_SM_SENDQ_COUNT));
+        c->update_percent_synced(sl.get_long(i, DWYCO_SM_PERCENT_SYNCED));
         c->update_counter = cnt;
     }
     QList<Sync_desc *> dead;

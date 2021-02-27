@@ -1699,7 +1699,7 @@ login_auth_results(vc m, void *, vc, ValidPtr)
     static vc invalid("invalid");
     static vc created("created");
 
-    if(m[2] == invalid)
+    if(m[1].is_nil() && m[2] == invalid)
     {
         // this means that the account doesn't exist
         // *and* the account could never exist in this
@@ -6459,6 +6459,7 @@ start_stalled_pulls()
 #define M_SENDQ_COUNT 8
 #define M_INQ_COUNT 9
 #define M_TOMB_COUNT 10
+#define M_PERCENT_SYNCED 11
 
 static
 void
@@ -6514,6 +6515,7 @@ build_sync_status_model()
             v[M_STATUS] = "oa";
         }
         sync_ip(mc, v);
+        v[M_SENDQ_COUNT] = mc->sync_sendq.count();
     }
 
     ChanList cl = MMChannel::channels_by_call_type("sync");
@@ -6531,7 +6533,19 @@ build_sync_status_model()
             v[M_STATUS] = "ra";
         }
         sync_ip(mc, v);
+        v[M_SENDQ_COUNT] = mc->sync_sendq.count();
     }
+    vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select count(*) from gi group by mid)), from_client_uid from gi group by from_client_uid");
+    for(int i = 0; i < res.num_elems(); ++i)
+    {
+        vc uid = from_hex(res[i][1]);
+        auto j = cuids.index(uid);
+        if(j == -1)
+            continue;
+        vc v = ret[j];
+        v[M_PERCENT_SYNCED] = res[i][0];
+    }
+
 
     return ret;
 }
