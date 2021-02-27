@@ -328,17 +328,29 @@ int
 install_group_key(vc from, vc msg, vc password)
 {
     vc m = xfer_dec(msg, password);
-    vc hfrom = to_hex(from);
 
     if(m.is_nil())
         return 0;
-
+    vc our_uid = to_hex(My_UID);
+    vc hfrom = to_hex(from);
     vc alt_name = m[0];
     vc grp_key = m[1];
-    // NOTE: need to tie this to proper round of protocol, otherwise
-    // phony message could cause you to install the wrong key
+    vc nonce1 = m[2];
+    vc nonce2 = m[3];
+
+    vc res = SKID->sql_simple("select 1 from pstate where "
+                              "initiating_uid = ?1 and nonce_1 = ?2 and nonce_2 = ?3 and "
+                                "responding_uid = ?4 and "
+                              "alt_name = ?5 and state = 3",
+                              our_uid, nonce1, nonce2, hfrom, alt_name);
+    if(res.num_elems() == 0)
+    {
+        terminate(our_uid, hfrom);
+        return 0;
+    }
+
     int ret = DH_alternate::insert_new_key(alt_name, grp_key);
-    terminate(to_hex(My_UID), hfrom);
+    terminate(our_uid, hfrom);
     return ret;
 }
 
@@ -473,6 +485,8 @@ recv_gj3(vc from, vc msg, vc password)
         vc mr(VC_VECTOR);
         mr[0] = alt_name;
         mr[1] = Current_alternate->my_static();
+        mr[2] = nonce;
+        mr[3] = nonce2;
 
         vc mrs = xfer_enc(mr, password);
         int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN4, "", (const char *)mrs, mrs.len());

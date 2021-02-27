@@ -1400,7 +1400,7 @@ encdec_xfer_dec_ctx(vc ctx, vc v, vc& out)
 		return vcnil;
 	}
 
-	vcxstream vcx((const char *)tmp, (long)tmp.len(), vcxstream::FIXED);
+    vcxstream vcx((const char *)tmp, tmp.len(), vcxstream::FIXED);
 
 	vc item;
 	long len;
