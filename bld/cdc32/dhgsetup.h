@@ -56,7 +56,7 @@ public:
     // get all the key-pairs we have
     static vc get_all_keys();
 
-    void update_group(vc);
+    static void update_group(vc);
 
     vc gen_challenge_msg(vc& nonce_out);
     int challenge_recv(vc m, vc& resp);

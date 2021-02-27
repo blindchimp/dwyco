@@ -23,6 +23,7 @@
 #include "aes.h"
 #include "modes.h"
 #include "simple_property.h"
+#include "ezset.h"
 
 
 using namespace CryptoPP;
@@ -74,31 +75,74 @@ sha3(vc s)
 
 static DHG_sql *DHG_db;
 
+static
+void
+change_current_group(vc, vc new_name)
+{
+    DH_alternate *dha = new DH_alternate;
+    dha->init(My_UID, new_name);
+    dha->load_account(new_name);
+
+    auto odha = Current_alternate;
+    Current_alternate = dha;
+    delete odha;
+}
+
+static
+void
+change_join_key(vc, vc new_key)
+{
+    if(!Current_alternate)
+        return;
+    Current_alternate->password = new_key;
+}
+
 void
 init_dhg()
 {
-    const char *grpname;
-    grpname = getenv("DWYCO_GROUP");
-    if(!grpname)
-        return;
-    const char *grp_pw;
-    grp_pw = getenv("DWYCO_GROUP_PW");
-    if(!grp_pw)
-        return;
+    vc alt_name;
+    vc pw;
+    {
+        const char *grp_name;
+        grp_name = getenv("DWYCO_GROUP");
+
+        if(!grp_name)
+        {
+            alt_name = get_settings_value("group/alt_name");
+            if(alt_name.is_nil() || alt_name.len() == 0)
+                return;
+            bind_sql_setting("group/alt_name", change_current_group);
+        }
+        else
+            alt_name = grp_name;
+
+        const char *grp_pw;
+        grp_pw = getenv("DWYCO_GROUP_PW");
+
+        if(!grp_pw)
+        {
+            pw = get_settings_value("group/join_key");
+            if(pw.is_nil() || pw.len() == 0)
+                return;
+            bind_sql_setting("group/join_key", change_join_key);
+        }
+        else
+            pw = grp_pw;
+    }
 
 
     DH_alternate *dha = new DH_alternate;
-    dha->init(My_UID, grpname);
-    dha->load_account(grpname);
+    dha->init(My_UID, alt_name);
+    dha->load_account(alt_name);
     vc v = DHG_db->sql_simple("select * from group_uids");
     vc v2(VC_VECTOR);
     for(int i = 0; i <v.num_elems(); ++i)
         v2[i] = from_hex(v[i][0]);
     Group_uids = v2;
-    if(grp_pw)
-        dha->password = grp_pw;
+
+    dha->password = pw;
     Current_alternate = dha;
-    Group_uids.value_changed.connect_memfun(dha, &DH_alternate::update_group);
+    Group_uids.value_changed.connect_ptrfun(&DH_alternate::update_group);
 }
 
 
@@ -163,7 +207,7 @@ DH_alternate::insert_record(vc uid, vc alt_name, vc dh_static)
         v2[0] = "blob";
         v2[1] = dh_static[DH_STATIC_PRIVATE];
         a.append(v2);
-        a.append((long)time(0));
+        a.append(time(0));
         DHG_db->query(&a);
         DHG_db->commit_transaction();
 

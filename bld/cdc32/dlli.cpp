@@ -7096,7 +7096,7 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
 {
     if(!Current_alternate)
         return 0;
-    vc vuid(VC_BSTRING, uid, len_uid);
+    //vc vuid(VC_BSTRING, uid, len_uid);
     dirth_send_get_group_pk(My_UID, Current_alternate->alt_name(), QckDone(group_result, 0, vcnil, Current_alternate->vp));
     return 1;
 }

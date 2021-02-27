@@ -1,4 +1,3 @@
-
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -1474,6 +1473,7 @@ void DWYCOEXPORT dwyco_abort_autoupdate_download();
 // the exit will release the "lock" and allow the main app to continue
 // normally.
 int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
+int DWYCOEXPORT dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
 // some more helper functions called from java for android related stuff
 // strings in this case are utf-8, null terminated i hope
 void DWYCOEXPORT dwyco_set_aux_string(const char *str);
@@ -1483,6 +1483,25 @@ int DWYCOEXPORT dwyco_add_contact(const char *name, const char *phone, const cha
 void DWYCOEXPORT dwyco_signal_msg_cond();
 void DWYCOEXPORT dwyco_wait_msg_cond(int ms);
 int DWYCOEXPORT dwyco_test_funny_mutex(int port);
+
+// this is mostly for debugging, most users won't need to know this info
+typedef DWYCO_LIST DWYCO_SYNC_MODEL;
+
+#define DWYCO_SM_UID "000"
+#define DWYCO_SM_STATUS "001"
+#define DWYCO_SM_IP "002"
+#define DWYCO_SM_PROXY "003"
+#define DWYCO_SM_LOCAL "004"
+#define DWYCO_SM_GLOBAL "005"
+#define DWYCO_SM_PULLS_ASSERT "006"
+#define DWYCO_SM_PULLS_QED "007"
+#define DWYCO_SM_SENDQ_COUNT "008"
+#define DWYCO_SM_INQ_COUNT "009"
+#define DWYCO_SM_TOMB_COUNT "010"
+#define DWYCO_SM_PERCENT_SYNCED "011"
+
+int DWYCOEXPORT dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out);
+
 
 // api for creating a simple backup of messages and account info
 // "create_backup" creates an initial backup, then subsequent calls
