@@ -410,7 +410,7 @@ process_joins()
     {
         DwString mid = qtl.get<DwString>(i, DWYCO_TAGGED_MIDS_MID);
         int d = dwyco_handle_join(mid.c_str());
-        if(d == -1)
+        if(d != 1)
             continue;
         //dwyco_unset_msg_tag(mid.c_str(), "_special");
         DwString uid = DwString::from_hex(qtl.get<DwString>(i, DWYCO_TAGGED_MIDS_HEX_UID));

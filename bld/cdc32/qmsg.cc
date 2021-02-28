@@ -1957,7 +1957,16 @@ get_special_done(vc m, void *, vc msg_id, ValidPtr vp)
         vc nmsg = decrypt_special(mid, msg);
         if(!nmsg.is_nil())
         {
-            process_join(nmsg);
+            if(process_join(nmsg) == 1)
+            {
+                // we processed it, so we delete it for everyone
+                // else in the group. hopefully that will short-circuit
+                // a lot of thrashing for bigger groups.
+                // this might be a problem if we can't follow up with the
+                // rest of the protocol for some reason, but a user can
+                // retry it explicitly if it doesn't work the first time.
+                dirth_send_addtag(My_UID, mid, "_del", QckDone(0, 0));
+            }
         }
     }
     // note: for now, we just delete all special msgs that are not

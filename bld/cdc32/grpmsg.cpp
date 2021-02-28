@@ -327,6 +327,8 @@ recv_gj2(vc from, vc msg, vc password)
 int
 install_group_key(vc from, vc msg, vc password)
 {
+    if(from == My_UID)
+        return 0;
     vc m = xfer_dec(msg, password);
 
     if(m.is_nil())
