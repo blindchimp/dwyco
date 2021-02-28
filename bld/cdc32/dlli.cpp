@@ -6504,6 +6504,8 @@ build_sync_status_model()
     {
         MMCall *mmc = mmcl[i];
         MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
+        if(!mc)
+            continue;
         auto j = cuids.index(mc->remote_uid());
         if(j == -1)
             continue;

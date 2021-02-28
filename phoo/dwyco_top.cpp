@@ -2676,7 +2676,7 @@ DwycoCore::service_channels()
         }
 
         // this initiates fetches of special messages
-        fetch_special_msgs();
+        //fetch_special_msgs();
 
         // the way this stands now, it just updates the "unviewed"
         // status, and basically allows us to display a notification before

@@ -93,8 +93,8 @@ using namespace CryptoPP;
 #include "dwyco_rand.h"
 #include "qmsgsql.h"
 #include "aconn.h"
-
 #include "ezset.h"
+#include "grpmsg.h"
 
 using namespace dwyco;
 
@@ -1763,6 +1763,212 @@ find_cur_msg(vc msg_id)
     return find_msg(Cur_msgs, msg_id);
 }
 
+static
+vc
+decrypt_special(vc mid, vc msg)
+{
+    vc dm(VC_VECTOR);
+    dm[QQM_RECIP_VEC] = vc(VC_VECTOR);
+    dm[QQM_RECIP_VEC][0] = My_UID;
+    vc dmsg = msg;
+    vc from = msg[QQM_BODY_FROM];
+    if(!msg[QQM_BODY_DHSF].is_nil())
+    {
+        dmsg = decrypt_msg_body(msg);
+        if(dmsg.is_nil())
+        {
+            // if we can't decrypt it, there is really something
+            // wrong with the message, but it could be a lot of things
+            // that we can't figure out easily (like the attachment
+            // might be corrupt or truncated, our local private
+            // key might have changed, etc.) chances are though, we
+            // will never be able to decrypt it, so we might as well
+            // delete it. if our key has gotten mucked up locally,
+            // we may also *never* be able to decrypt tons of things
+            // until the key is reset in the server.
+
+            // note: don't ack it automatically, since we *might* be in a situation where we
+            // are waiting for a group key. once the group key is installed we might be
+            // able to decrypt it. tag the msg locally in case our key situation changes
+            sql_add_tag(mid, "_decrypt_failed");
+            TRACK_ADD(MR_msg_decrypt_failed, 1);
+            return vcnil;
+        }
+        else
+        {
+            TRACK_ADD(MR_msg_decrypt_ok, 1);
+        }
+    }
+    dm[QQM_MSG_VEC] = dmsg;
+
+    //note: generate a new id for the message in its
+    // local form. there is a lot of code that
+    // depends on deleting the old message id
+    // after it is fetched from the server. so
+    // we just pretend this is a brand new message.
+
+    // note: the above confused people, just try to
+    // morph it into a different kind of message without
+    // changing the id
+    dm[QQM_LOCAL_ID] = mid;
+    return dm;
+//    if(store_direct(0, dm, 0) == -1)
+//    {
+//        return 0;
+//    }
+//    return 1;
+
+
+
+}
+
+struct special_map
+{
+    const char *name;
+    int code;
+};
+
+static special_map Sm[] = {
+    {"palreq", DWYCO_SUMMARY_PAL_AUTH_REQ},
+    {"palok", DWYCO_SUMMARY_PAL_OK},
+    {"palrej", DWYCO_SUMMARY_PAL_REJECT},
+    {"dlv", DWYCO_SUMMARY_DELIVERED},
+    {"user", DWYCO_SUMMARY_SPECIAL_USER_DEFINED},
+    {"join1", DWYCO_SUMMARY_JOIN1},
+    {"join2", DWYCO_SUMMARY_JOIN2},
+    {"join3", DWYCO_SUMMARY_JOIN3},
+    {"join4", DWYCO_SUMMARY_JOIN4},
+
+    {0, 0}
+};
+
+static
+int
+special_state(vc body, int& what_out)
+{
+    vc sv = body[QM_BODY_SPECIAL_TYPE];
+    if(sv.is_nil())
+        return 0;
+    vc what = sv[0];
+    const char *whats = (const char *)what;
+    // args are in a vector at sv[1]
+
+    struct special_map *sm = &Sm[0];
+    while(sm->name)
+    {
+        if(strcmp(sm->name, whats) == 0)
+        {
+            what_out = sm->code;
+            return 1;
+        }
+        ++sm;
+    }
+    what_out = DWYCO_SUMMARY_SPECIAL_USER_DEFINED;
+    return 1;
+}
+
+static
+int
+process_join(vc msg)
+{
+    vc body = direct_to_body2(msg[QQM_MSG_VEC]);
+    int jstate;
+    if(!special_state(body, jstate))
+        return 0;
+    switch(jstate)
+    {
+    case DWYCO_SUMMARY_JOIN1:
+    case DWYCO_SUMMARY_JOIN2:
+    case DWYCO_SUMMARY_JOIN3:
+    case DWYCO_SUMMARY_JOIN4:
+        break;
+    default:
+        return -1;
+    }
+
+    vc sv = body[QM_BODY_SPECIAL_TYPE];
+    vc msg_type_vec = sv[1];
+
+    vc payload = msg_type_vec[0];
+    if(payload.type() != VC_STRING)
+        return 0;
+    int ret = 0;
+    if(!Current_alternate)
+        return 0;
+    vc password = Current_alternate->password;
+    vc from = body[QM_BODY_FROM];
+    switch(jstate)
+    {
+    case DWYCO_SUMMARY_JOIN1:
+        ret = recv_gj1(from, payload, password);
+        break;
+    case DWYCO_SUMMARY_JOIN2:
+        ret = recv_gj2(from, payload, password);
+        break;
+    case DWYCO_SUMMARY_JOIN3:
+        ret = recv_gj3(from, payload, password);
+        break;
+    case DWYCO_SUMMARY_JOIN4:
+        ret = install_group_key(from, payload, password);
+        break;
+    default:
+        oopanic("huh?");
+    }
+    return ret;
+}
+
+static
+void
+get_special_done(vc m, void *, vc msg_id, ValidPtr vp)
+{
+    if(m[1].is_nil())
+    {
+        return;
+    }
+    // returned item is a vector of 2 items:
+    // 0: msg id
+    // 1: msg
+    //	msg is a vector:
+    // 0: sender id
+    // 1: the text message
+    // 2: id of any attachment
+    // 3: date vector
+    // 4: rating
+    // 5: authvec
+    // 6: forwarded body
+    // 7: new text
+    // 8: attachment loc
+    // 9: special type
+
+    vc msg = m[1][1];
+    vc mid = m[1][0];
+
+    if(msg.is_nil())
+    {
+        //q->MessageBox("Can't find message on server.");
+        dirth_send_ack_get2(My_UID, mid, QckDone(0, 0));
+        return;
+    }
+
+    //vc from = msg[QQM_BODY_FROM];
+
+    if(msg[QQM_BODY_ATTACHMENT].is_nil())
+    {
+        vc nmsg = decrypt_special(mid, msg);
+        if(!nmsg.is_nil())
+        {
+            process_join(nmsg);
+        }
+    }
+    // note: for now, we just delete all special msgs that are not
+    // join, since we don't understand them anyways.
+
+    // note: just send ack_get, with no return, assume it always works.
+    // if it doesn't work, it is no big deal, we just get a message
+    // twice.
+    dirth_send_ack_get2(My_UID, mid, QckDone(0, 0));
+}
+
 static void
 query_done(vc m, void *, vc, ValidPtr)
 {
@@ -1799,6 +2005,14 @@ query_done(vc m, void *, vc, ValidPtr)
             continue;
         }
         init_msg_folder(from);
+        // it was a problem trying to let special messages percolate
+        // thru into the client api. so, just strip them out and
+        // process them internally now
+        if(!v[QM_SPECIAL_TYPE].is_nil())
+        {
+            dirth_send_get2(My_UID, v[QM_ID], QckDone(get_special_done, 0));
+            continue;
+        }
 
         // this logical clock stuff corresponds to "receiving" the message
         // the first time we see the message summary from the server.
