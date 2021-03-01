@@ -7103,7 +7103,7 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
     return 1;
 }
 
-
+#if 0
 // 0 = message is bogus, or group password isn't available
 // 1 = message is join, and it was processed
 // -1 = message isn't a join message
@@ -7163,6 +7163,7 @@ dwyco_handle_join(const char *mid)
     return ret;
 
 }
+#endif
 
 DWYCOEXPORT
 int

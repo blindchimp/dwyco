@@ -399,6 +399,7 @@ out:
     return 0;
 }
 
+#if 0
 static
 void
 process_joins()
@@ -417,6 +418,7 @@ process_joins()
         dwyco_delete_saved_message(uid.c_str(), uid.length(), mid.c_str());
     }
 }
+#endif
 
 static
 void
@@ -478,6 +480,11 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
     dwyco_inhibit_sac(0);
     dwyco_inhibit_pal(0);
 
+    if(dwyco_get_create_new_account())
+    {
+        DwString grp(getenv("DWYCO_GROUP"));
+        dwyco_create_bootstrap_profile("bg-syncer", 9, grp.c_str(), grp.length(), "", 0, "", 0);
+    }
     dwyco_set_local_auth(1);
     // note: if the account didn't exist (ie, fresh install) this
     // will create a new uid. if for some reason, the server cannot be
@@ -530,7 +537,7 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
                 signaled = tmp;
                 dwyco_signal_msg_cond();
             }
-            process_joins();
+            //process_joins();
         }
         // note: this is a bit sloppy... rather than trying to
         // identify each socket that is waiting for write and

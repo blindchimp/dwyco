@@ -59,7 +59,7 @@ Page {
                     height: implicitHeight
                     spacing: mm(1)
                     Label {
-                        text: uid
+                        text: core.uid_to_name(uid)
                     }
                     Label {
                         text: status
