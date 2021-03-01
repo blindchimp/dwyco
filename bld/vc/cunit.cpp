@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+#define CACHE_LOOKUPS
 #include "dwstr.h"
 #include "vc.h"
 #include "vcmap.h"
@@ -16,6 +17,7 @@
 #include "vclhsys.h"
 #include "vclhnet.h"
 #include "vccrypt2.h"
+#include "vccvar.h"
 
 vc wrap_sqlite3_bulk_query(VCArglist *);
 

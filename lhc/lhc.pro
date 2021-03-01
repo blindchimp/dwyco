@@ -38,7 +38,7 @@ $${D}/bld/crypto5/libcrypto5.a \
 $${D}/bld/jenkins/libjenkins.a \
 $${D}/bld/kazlib/libkazlib.a \
 $${D}/bld/zlib/libzlib.a \
-$${D}/lib/libuv.a \
+$${D}/bld/uv/libuv.a \
 $${D}/lib/libspread.a
 
 macx-* {

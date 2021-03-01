@@ -125,7 +125,7 @@ private:
 #ifdef CACHE_LOOKUPS
 	mutable vc *range;
 	mutable unsigned long time_cached;
-	
+public:
 	static unsigned long Lookup_cache_counter;
 
 public:
