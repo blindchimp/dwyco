@@ -59,25 +59,35 @@ Page {
                     height: implicitHeight
                     spacing: mm(1)
                     Label {
+                        elide: Text.ElideRight
                         text: core.uid_to_name(uid)
+                        Layout.preferredWidth: cm(3)
                     }
                     Label {
                         text: status
+                        Layout.preferredWidth:  mm(5)
+                    }
+
+                    Label {
+                        text: asserts
+                        Layout.preferredWidth:  mm(15)
+                        horizontalAlignment: Text.AlignRight
+                    }
+                    Label {
+                        text: sendq_count
+                        Layout.preferredWidth:  mm(15)
+                        horizontalAlignment: Text.AlignRight
+                    }
+                    Label {
+                        text: percent_synced
+                        Layout.preferredWidth:  mm(10)
+                        horizontalAlignment: Text.AlignRight
                     }
                     Label {
                         text: ip
                         color: proxy ? "red" : "black"
+                        //Layout.preferredWidth: cm(4)
                     }
-                    Label {
-                        text: asserts
-                    }
-                    Label {
-                        text: sendq_count
-                    }
-                    Label {
-                        text: percent_synced
-                    }
-
                     Item {
                         Layout.fillWidth: true
                     }
