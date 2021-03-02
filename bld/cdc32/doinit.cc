@@ -70,7 +70,7 @@ extern vc Current_user_lobbies;
 extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
 void init_dct();
 void init_stats();
-void drop_all_sync_calls(DH_alternate *);
+//void drop_all_sync_calls(DH_alternate *);
 
 void
 init_codec(const char *logname)
@@ -204,7 +204,7 @@ init_codec(const char *logname)
 #endif
 
         init_sysattr();
-        Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);
+        //Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);
         init = 1;
         Log->make_entry("init done");
     }
@@ -370,7 +370,7 @@ init_bg_msg_send(const char *logname)
         init_callq();
 
         init_sysattr();
-        Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);
+        //Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);
         Bg_msg_send_init = 1;
         Log->make_entry("background init done");
     }

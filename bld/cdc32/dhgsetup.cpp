@@ -30,6 +30,7 @@ using namespace CryptoPP;
 using namespace dwyco;
 
 extern sigprop<vc> Group_uids;
+void drop_all_sync_calls(DH_alternate *);
 
 namespace dwyco {
 sigprop<DH_alternate *> Current_alternate;
@@ -97,11 +98,19 @@ change_join_key(vc, vc new_key)
     Current_alternate->password = new_key;
 }
 
+static
+void
+eager_changed(vc, vc)
+{
+    drop_all_sync_calls(0);
+}
+
 void
 init_dhg()
 {
     vc alt_name;
     vc pw;
+    bind_sql_setting("sync/eager", eager_changed);
     {
         const char *grp_name;
         grp_name = getenv("DWYCO_GROUP");
@@ -129,6 +138,7 @@ init_dhg()
         else
             pw = grp_pw;
     }
+    bind_sql_setting("sync/eager", eager_changed);
 
 
     DH_alternate *dha = new DH_alternate;
@@ -143,6 +153,7 @@ init_dhg()
     dha->password = pw;
     Current_alternate = dha;
     Group_uids.value_changed.connect_ptrfun(&DH_alternate::update_group);
+    Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);
 }
 
 
