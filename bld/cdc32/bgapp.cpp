@@ -441,10 +441,6 @@ dwyco_sync_login_result(const char *str, int what)
     }
 }
 
-namespace dwyco {
-extern int Eager_sync;
-}
-
 DWYCOEXPORT
 int
 dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
@@ -460,7 +456,7 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
         return 1;
-    dwyco::Eager_sync = 1;
+
     //dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
 
@@ -468,6 +464,7 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
     dwyco_set_initial_invis(0);
     dwyco_set_login_result_callback(dwyco_sync_login_result);
     dwyco_bg_init();
+    dwyco_set_setting("sync/eager", "1");
     if(token)
         dwyco_write_token(token);
 

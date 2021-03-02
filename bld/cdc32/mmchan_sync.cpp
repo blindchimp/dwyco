@@ -24,6 +24,7 @@
 #include "qmsgsql.h"
 #include "xinfo.h"
 #include "dwrtlog.h"
+#include "ezset.h"
 
 using namespace dwyco;
 
@@ -31,11 +32,6 @@ using namespace dwyco;
 #include "miscemu.h"
 #endif
 #include "sepstr.h"
-
-namespace dwyco {
-int Eager_sync = 0;
-}
-
 
 static
 vc
@@ -324,7 +320,7 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
     if(s == NORMAL_RECV)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
-        if(Eager_sync)
+        if((int)get_settings_value("sync/eager") == 1)
         {
             assert_eager_pulls(this, remote_uid());
         }
