@@ -80,6 +80,13 @@ static
 void
 change_current_group(vc, vc new_name)
 {
+    if(new_name.len() == 0)
+    {
+        auto odha = Current_alternate;
+        Current_alternate = 0;
+        delete odha;
+        return;
+    }
     DH_alternate *dha = new DH_alternate;
     dha->init(My_UID, new_name);
     dha->load_account(new_name);
@@ -138,8 +145,6 @@ init_dhg()
         else
             pw = grp_pw;
     }
-    bind_sql_setting("sync/eager", eager_changed);
-
 
     DH_alternate *dha = new DH_alternate;
     dha->init(My_UID, alt_name);
