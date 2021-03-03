@@ -1034,7 +1034,7 @@ vclh_bf_close(vc ctx)
 vc
 vclh_bf_init_key_stream_ctx(vc ctx, vc key1, vc key2)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1051,7 +1051,7 @@ vclh_bf_init_key_stream_ctx(vc ctx, vc key1, vc key2)
 vc
 vclh_bf_init_key_cbc_ctx(vc ctx, vc key, vc iv)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1075,7 +1075,7 @@ vclh_bf_init_key_cbc_ctx(vc ctx, vc key, vc iv)
 vc
 vclh_bf_enc_ctx(vc ctx, vc v)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1087,7 +1087,7 @@ vclh_bf_enc_ctx(vc ctx, vc v)
 vc
 vclh_bf_dec_ctx(vc ctx, vc v)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1099,7 +1099,7 @@ vclh_bf_dec_ctx(vc ctx, vc v)
 vc
 vclh_bf_xfer_enc_ctx(vc ctx, vc v)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1131,7 +1131,7 @@ vclh_bf_xfer_enc_ctx(vc ctx, vc v)
 vc
 bf_xfer_dec_ctx(vc ctx, vc v, vc& out)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1279,7 +1279,7 @@ vclh_encdec_close(vc ctx)
 vc
 vclh_encdec_init_key_ctx(vc ctx, vc key, vc iv)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad encdec context", vcnil);
@@ -1311,7 +1311,7 @@ vclh_encdec_init_key_ctx(vc ctx, vc key, vc iv)
 vc
 vclh_encdec_enc_ctx(vc ctx, vc v)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bef)
 	{
 		return vcnil;
@@ -1324,7 +1324,7 @@ vclh_encdec_enc_ctx(vc ctx, vc v)
 vc
 vclh_encdec_dec_ctx(vc ctx, vc v)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bdf)
 	{
 		return vcnil;
@@ -1337,7 +1337,7 @@ vclh_encdec_dec_ctx(vc ctx, vc v)
 vc
 vclh_encdec_xfer_enc_ctx(vc ctx, vc v)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Be)
 	{
 		return vcnil;
@@ -1370,7 +1370,7 @@ vclh_encdec_xfer_enc_ctx(vc ctx, vc v)
 vc
 encdec_xfer_dec_ctx(vc ctx, vc v, vc& out)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bd)
 	{
 		return vcnil;

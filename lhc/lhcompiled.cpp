@@ -77,7 +77,13 @@ static const vc s_gensym24 = vc(VC_BSTRING, "\x4e\x31", 2);
 #define gensym24() s_gensym24
 static vc gensym25() {
     static vc var = vc(VC_BSTRING, "\x4e", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym26(1);
 #define gensym26() s_gensym26
@@ -114,7 +120,13 @@ static const vc s_gensym35 = vc(VC_BSTRING, "\x42\x31", 2);
 #define gensym35() s_gensym35
 static vc gensym36() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym37(1);
 #define gensym37() s_gensym37
@@ -135,7 +147,13 @@ static vc gensym41() {
 }
 static vc gensym42() {
     static vc var = vc(VC_BSTRING, "\x73\x74\x64\x6f\x75\x74", 6);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // P4
 static const vc s_gensym43 = vc(VC_BSTRING, "\x50\x34", 2);
@@ -146,14 +164,26 @@ static const vc s_gensym44 = vc(VC_BSTRING, "\x0a", 1);
 #define gensym44() s_gensym44
 static vc gensym45() {
     static vc var = vc(VC_BSTRING, "\x4e", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 //
 static const vc s_gensym46 = vc(VC_BSTRING, "\x20", 1);
 #define gensym46() s_gensym46
 static vc gensym47() {
     static vc var = vc(VC_BSTRING, "\x4e", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 //
 
@@ -183,7 +213,13 @@ static const vc s_gensym53(0);
 #define gensym53() s_gensym53
 static vc gensym54() {
     static vc var = vc(VC_BSTRING, "\x4e\x31", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // c
 static const vc s_gensym55 = vc(VC_BSTRING, "\x63", 1);
@@ -226,11 +262,23 @@ static vc gensym66() {
 }
 static vc gensym67() {
     static vc var = vc(VC_BSTRING, "\x63", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym68() {
     static vc var = vc(VC_BSTRING, "\x4e", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // lt
 static const vc s_gensym69 = vc(VC_BSTRING, "\x6c\x74", 2);
@@ -244,7 +292,13 @@ static const vc s_gensym71 = vc(VC_BSTRING, "\x7a\x69", 2);
 #define gensym71() s_gensym71
 static vc gensym72() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym73(0.000000);
 #define gensym73() s_gensym73
@@ -272,7 +326,13 @@ static const vc s_gensym78 = vc(VC_BSTRING, "\x7a\x72", 2);
 #define gensym78() s_gensym78
 static vc gensym79() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym80(0.000000);
 #define gensym80() s_gensym80
@@ -300,7 +360,13 @@ static const vc s_gensym85 = vc(VC_BSTRING, "\x63\x72", 2);
 #define gensym85() s_gensym85
 static vc gensym86() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // vector2
 static const vc s_gensym87 = vc(VC_BSTRING, "\x76\x65\x63\x74\x6f\x72\x32", 7);
@@ -325,7 +391,13 @@ static const vc s_gensym91 = vc(VC_BSTRING, "\x63\x69", 2);
 #define gensym91() s_gensym91
 static vc gensym92() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // vector2
 static const vc s_gensym93 = vc(VC_BSTRING, "\x76\x65\x63\x74\x6f\x72\x32", 7);
@@ -350,7 +422,13 @@ static const vc s_gensym97 = vc(VC_BSTRING, "\x74\x72", 2);
 #define gensym97() s_gensym97
 static vc gensym98() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym99(0.000000);
 #define gensym99() s_gensym99
@@ -378,7 +456,13 @@ static const vc s_gensym104 = vc(VC_BSTRING, "\x74\x69", 2);
 #define gensym104() s_gensym104
 static vc gensym105() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym106(0.000000);
 #define gensym106() s_gensym106
@@ -408,25 +492,55 @@ static const vc s_gensym112(0);
 #define gensym112() s_gensym112
 static vc gensym113() {
     static vc var = vc(VC_BSTRING, "\x42\x31", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym114() {
     static vc var = vc(VC_BSTRING, "\x63\x72", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym115() {
     static vc var = vc(VC_BSTRING, "\x69", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym116(2.000000);
 #define gensym116() s_gensym116
 static vc gensym117() {
     static vc var = vc(VC_BSTRING, "\x63", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym118() {
     static vc var = vc(VC_BSTRING, "\x69", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // add
 static const vc s_gensym119 = vc(VC_BSTRING, "\x61\x64\x64", 3);
@@ -444,7 +558,13 @@ static vc gensym122() {
 }
 static vc gensym123() {
     static vc var = vc(VC_BSTRING, "\x4e", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // div
 static const vc s_gensym124 = vc(VC_BSTRING, "\x64\x69\x76", 3);
@@ -471,17 +591,35 @@ static vc gensym130() {
 }
 static vc gensym131() {
     static vc var = vc(VC_BSTRING, "\x63\x69", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym132() {
     static vc var = vc(VC_BSTRING, "\x69", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym133(2.000000);
 #define gensym133() s_gensym133
 static vc gensym134() {
     static vc var = vc(VC_BSTRING, "\x72", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // mul
 static const vc s_gensym135 = vc(VC_BSTRING, "\x6d\x75\x6c", 3);
@@ -492,7 +630,13 @@ static vc gensym136() {
 }
 static vc gensym137() {
     static vc var = vc(VC_BSTRING, "\x4e", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // div
 static const vc s_gensym138 = vc(VC_BSTRING, "\x64\x69\x76", 3);
@@ -553,7 +697,13 @@ static const vc s_gensym149 = vc(VC_BSTRING, "\x6d\x73", 2);
 #define gensym149() s_gensym149
 static vc gensym150() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym151(0);
 #define gensym151() s_gensym151
@@ -581,7 +731,13 @@ static const vc s_gensym156 = vc(VC_BSTRING, "\x69\x74\x65\x72", 4);
 #define gensym156() s_gensym156
 static vc gensym157() {
     static vc var = vc(VC_BSTRING, "\x49\x74\x65\x72", 4);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // lbind
 static const vc s_gensym158 = vc(VC_BSTRING, "\x6c\x62\x69\x6e\x64", 5);
@@ -593,7 +749,13 @@ static vc gensym159() {
 }
 static vc gensym160() {
     static vc var = vc(VC_BSTRING, "\x69\x74\x65\x72", 4);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym161(0);
 #define gensym161() s_gensym161
@@ -611,11 +773,23 @@ static const vc s_gensym165(2.000000);
 #define gensym165() s_gensym165
 static vc gensym166() {
     static vc var = vc(VC_BSTRING, "\x7a\x72", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym167() {
     static vc var = vc(VC_BSTRING, "\x7a\x69", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // mul
 static const vc s_gensym168 = vc(VC_BSTRING, "\x6d\x75\x6c", 3);
@@ -633,7 +807,13 @@ static vc gensym171() {
 }
 static vc gensym172() {
     static vc var = vc(VC_BSTRING, "\x63\x69", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // add
 static const vc s_gensym173 = vc(VC_BSTRING, "\x61\x64\x64", 3);
@@ -655,11 +835,23 @@ static const vc s_gensym177 = vc(VC_BSTRING, "\x7a\x72", 2);
 #define gensym177() s_gensym177
 static vc gensym178() {
     static vc var = vc(VC_BSTRING, "\x74\x72", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym179() {
     static vc var = vc(VC_BSTRING, "\x74\x69", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // sub
 static const vc s_gensym180 = vc(VC_BSTRING, "\x73\x75\x62", 3);
@@ -670,7 +862,13 @@ static vc gensym181() {
 }
 static vc gensym182() {
     static vc var = vc(VC_BSTRING, "\x63\x72", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // add
 static const vc s_gensym183 = vc(VC_BSTRING, "\x61\x64\x64", 3);
@@ -692,11 +890,23 @@ static const vc s_gensym187 = vc(VC_BSTRING, "\x74\x72", 2);
 #define gensym187() s_gensym187
 static vc gensym188() {
     static vc var = vc(VC_BSTRING, "\x7a\x72", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym189() {
     static vc var = vc(VC_BSTRING, "\x7a\x72", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // mul
 static const vc s_gensym190 = vc(VC_BSTRING, "\x6d\x75\x6c", 3);
@@ -718,11 +928,23 @@ static const vc s_gensym194 = vc(VC_BSTRING, "\x74\x69", 2);
 #define gensym194() s_gensym194
 static vc gensym195() {
     static vc var = vc(VC_BSTRING, "\x7a\x69", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym196() {
     static vc var = vc(VC_BSTRING, "\x7a\x69", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // mul
 static const vc s_gensym197 = vc(VC_BSTRING, "\x6d\x75\x6c", 3);
@@ -744,11 +966,23 @@ static const vc s_gensym201 = vc(VC_BSTRING, "\x74\x61", 2);
 #define gensym201() s_gensym201
 static vc gensym202() {
     static vc var = vc(VC_BSTRING, "\x74\x72", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym203() {
     static vc var = vc(VC_BSTRING, "\x74\x69", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // add
 static const vc s_gensym204 = vc(VC_BSTRING, "\x61\x64\x64", 3);
@@ -796,15 +1030,33 @@ static const vc s_gensym216 = vc(VC_BSTRING, "\x76", 1);
 #define gensym216() s_gensym216
 static vc gensym217() {
     static vc var = vc(VC_BSTRING, "\x74\x61", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym218() {
     static vc var = vc(VC_BSTRING, "\x76", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym219() {
     static vc var = vc(VC_BSTRING, "\x4c\x69\x6d\x69\x74\x32", 6);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // gt
 static const vc s_gensym220 = vc(VC_BSTRING, "\x67\x74", 2);
@@ -818,7 +1070,13 @@ static const vc s_gensym222 = vc(VC_BSTRING, "\x61\x6c\x6c", 3);
 #define gensym222() s_gensym222
 static vc gensym223() {
     static vc var = vc(VC_BSTRING, "\x61\x6c\x6c", 3);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym224(1);
 #define gensym224() s_gensym224
@@ -839,11 +1097,23 @@ static vc gensym228() {
 }
 static vc gensym229() {
     static vc var = vc(VC_BSTRING, "\x6d\x73", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym230() {
     static vc var = vc(VC_BSTRING, "\x69", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym231(1);
 #define gensym231() s_gensym231
@@ -878,7 +1148,13 @@ static const vc s_gensym238 = vc(VC_BSTRING, "\x69", 1);
 #define gensym238() s_gensym238
 static vc gensym239() {
     static vc var = vc(VC_BSTRING, "\x69", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym240(1);
 #define gensym240() s_gensym240
@@ -928,11 +1204,23 @@ static vc gensym248() {
 }
 static vc gensym250() {
     static vc var = vc(VC_BSTRING, "\x61\x6c\x6c", 3);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym251() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // eq
 static const vc s_gensym252 = vc(VC_BSTRING, "\x65\x71", 2);
@@ -968,7 +1256,13 @@ static const vc s_gensym259 = vc(VC_BSTRING, "\x69\x74\x65\x72", 4);
 #define gensym259() s_gensym259
 static vc gensym260() {
     static vc var = vc(VC_BSTRING, "\x69\x74\x65\x72", 4);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym261(1);
 #define gensym261() s_gensym261
@@ -1030,14 +1324,26 @@ static const vc s_gensym270 = vc(VC_BSTRING, "\x62", 1);
 #define gensym270() s_gensym270
 static vc gensym271() {
     static vc var = vc(VC_BSTRING, "\x6d\x73", 2);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // byte-acc
 static const vc s_gensym272 = vc(VC_BSTRING, "\x62\x79\x74\x65\x2d\x61\x63\x63", 8);
 #define gensym272() s_gensym272
 static vc gensym273() {
     static vc var = vc(VC_BSTRING, "\x62\x79\x74\x65\x2d\x61\x63\x63", 8);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym274(1);
 #define gensym274() s_gensym274
@@ -1050,7 +1356,13 @@ static vc gensym276() {
 }
 static vc gensym277() {
     static vc var = vc(VC_BSTRING, "\x62", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // bor
 static const vc s_gensym278 = vc(VC_BSTRING, "\x62\x6f\x72", 3);
@@ -1100,11 +1412,23 @@ static const vc s_gensym287 = vc(VC_BSTRING, "\x62\x69\x74\x2d\x6e\x75\x6d", 7);
 #define gensym287() s_gensym287
 static vc gensym288() {
     static vc var = vc(VC_BSTRING, "\x62\x69\x74\x2d\x6e\x75\x6d", 7);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym289() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // add
 static const vc s_gensym290 = vc(VC_BSTRING, "\x61\x64\x64", 3);
@@ -1123,7 +1447,13 @@ static vc gensym293() {
 }
 static vc gensym294() {
     static vc var = vc(VC_BSTRING, "\x62\x69\x74\x2d\x6e\x75\x6d", 7);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym295(8);
 #define gensym295() s_gensym295
@@ -1136,11 +1466,23 @@ static vc gensym297() {
 }
 static vc gensym298() {
     static vc var = vc(VC_BSTRING, "\x73\x74\x64\x6f\x75\x74", 6);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym299() {
     static vc var = vc(VC_BSTRING, "\x62\x79\x74\x65\x2d\x61\x63\x63", 8);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // string
 static const vc s_gensym300 = vc(VC_BSTRING, "\x73\x74\x72\x69\x6e\x67", 6);
@@ -1220,11 +1562,23 @@ static const vc s_gensym318 = vc(VC_BSTRING, "\x63", 1);
 #define gensym318() s_gensym318
 static vc gensym319() {
     static vc var = vc(VC_BSTRING, "\x63", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym320() {
     static vc var = vc(VC_BSTRING, "\x42", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // add
 static const vc s_gensym321 = vc(VC_BSTRING, "\x61\x64\x64", 3);
@@ -1285,7 +1639,13 @@ static vc gensym328() {
 }
 static vc gensym329() {
     static vc var = vc(VC_BSTRING, "\x4e", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym330(8);
 #define gensym330() s_gensym330
@@ -1310,13 +1670,25 @@ static const vc s_gensym336 = vc(VC_BSTRING, "\x62\x79\x74\x65\x2d\x61\x63\x63",
 #define gensym336() s_gensym336
 static vc gensym337() {
     static vc var = vc(VC_BSTRING, "\x62\x79\x74\x65\x2d\x61\x63\x63", 8);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym338(8);
 #define gensym338() s_gensym338
 static vc gensym339() {
     static vc var = vc(VC_BSTRING, "\x4e", 1);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static const vc s_gensym340(8);
 #define gensym340() s_gensym340
@@ -1351,11 +1723,23 @@ static vc gensym348() {
 }
 static vc gensym349() {
     static vc var = vc(VC_BSTRING, "\x73\x74\x64\x6f\x75\x74", 6);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 static vc gensym350() {
     static vc var = vc(VC_BSTRING, "\x62\x79\x74\x65\x2d\x61\x63\x63", 8);
-    return Vcmap->get(var);
+    static vc *range;
+    static unsigned long cached_when;
+    if(range && cached_when >= vc_cvar::Lookup_cache_counter) {
+        return *range;
+    }
+    cached_when = vc_cvar::Lookup_cache_counter;
+    return Vcmap->get2(var, range);
 }
 // string
 static const vc s_gensym351 = vc(VC_BSTRING, "\x73\x74\x72\x69\x6e\x67", 6);

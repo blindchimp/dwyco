@@ -187,6 +187,7 @@ init_rct();
 	return 0;
 }
 
+[[noreturn]]
 void
 oopanic(const char *s)
 {
