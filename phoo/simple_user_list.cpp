@@ -91,7 +91,7 @@ SimpleUserModel::delete_all_selected()
     hack_unread_count();
 
     int total = 0;
-    dwyco_load_users2(1, &total);
+    dwyco_load_users2(0, &total);
     TheDwycoCore->update_total_users(total);
     load_users_to_model();
 }

@@ -26,7 +26,7 @@ extern vc MsgFolders;
 void fetch_message(vc id);
 void load_users(int only_recent, int *total_out);
 void load_users_from_files(int *total_out);
-void load_users_from_index(int *total_out);
+void load_users_from_index(int recent, int *total_out);
 int remove_user(vc id, const char *pfx);
 int clear_user(vc id, const char *pfx);
 int add_user(vc info);

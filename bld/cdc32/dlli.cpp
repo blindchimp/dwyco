@@ -6225,7 +6225,7 @@ DWYCOEXPORT
 int
 dwyco_load_users2(int recent, int *total_out)
 {
-    load_users_from_index(total_out);
+    load_users_from_index(recent, total_out);
     return 1;
 }
 

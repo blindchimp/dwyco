@@ -2253,7 +2253,7 @@ load_users(int only_recent, int *total_out)
 
     if(only_recent)
     {
-        vc ret = sql_get_recent_users(total_out);
+        vc ret = sql_get_recent_users(only_recent, total_out);
         if(ret.is_nil() || ret.num_elems() == 0)
         {
             if(ret.is_nil())
@@ -2323,13 +2323,13 @@ load_users_from_files(int *total_out)
 }
 
 void
-load_users_from_index(int *total_out)
+load_users_from_index(int recent, int *total_out)
 {
     DwString s;
 
     MsgFolders = vc(VC_TREE);
 
-    vc ret = sql_get_recent_users(total_out);
+    vc ret = sql_get_recent_users(recent, total_out);
     if(ret.is_nil())
     {
         TRACK_ADD(QM_UL_recent_fail, 1);

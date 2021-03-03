@@ -475,6 +475,8 @@ import_remote_iupdate(vc remote_uid, vc vals)
         // received this from
         sql_simple("delete from current_clients where uid = ?1", huid);
         vc op = vals.remove_last();
+        vc uid;
+        vc mid;
         if(op == vc("a"))
         {
             // note: we wouldn't be getting this update unless the remote side
@@ -492,7 +494,8 @@ import_remote_iupdate(vc remote_uid, vc vals)
         }
         else if(op == vc("d"))
         {
-            vc mid = vals[0];
+            mid = vals[0];
+            uid = sql_get_uid_from_mid(mid);
             sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
 #if 0
             sql_simple("delete from mi2.msg_idx where mid = ?1", mid);
@@ -505,6 +508,10 @@ import_remote_iupdate(vc remote_uid, vc vals)
         }
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
+        if(!uid.is_nil() && !mid.is_nil())
+        {
+            trash_body(from_hex(uid), mid, 1);
+        }
     }
     catch(...)
     {
@@ -790,7 +797,7 @@ return vcnil;
 // those users that are not likely to be sending messages and so on, which
 // speeds up the ui significantly.
 vc
-sql_get_recent_users(int *total_out)
+sql_get_recent_users(int recent, int *total_out)
 {
     try
     {
@@ -806,7 +813,7 @@ sql_get_recent_users(int *total_out)
 #ifdef ANDROID
         res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 20");
 #else
-        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 100");
+        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit ?1", recent ? 100 : -1);
 #endif
         sql_simple("drop table foo");
         sql_commit_transaction();
