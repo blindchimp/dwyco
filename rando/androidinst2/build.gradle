@@ -27,10 +27,6 @@ dependencies {
 }
 
 android {
-defaultConfig {
-        applicationId "com.dwyco.rando"
-
-    }
     /*******************************************************
      * The following variables:
      * - androidBuildToolsVersion,
@@ -81,6 +77,7 @@ defaultConfig {
 
     defaultConfig {
         resConfig "en"
+        applicationId "com.dwyco.rando"
         minSdkVersion = qtMinSdkVersion
         targetSdkVersion = qtTargetSdkVersion
     }

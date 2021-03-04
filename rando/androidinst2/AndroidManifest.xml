@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <manifest package="com.dwyco.rando" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.94" android:versionCode="118" android:installLocation="auto">
-<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="29"/>
+<uses-sdk android:targetSdkVersion="29"/>
     <!-- The following comment will be replaced upon deployment with default permissions based on the dependencies of the application.
          Remove the comment if you do not require these default permissions. -->
 

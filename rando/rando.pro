@@ -45,6 +45,7 @@ SOURCES += main.cpp \
     androidperms.cpp
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
+ANDROID_TARGET_SDK_VERSION=29
 
 linux-* {
 DEFINES += LINUX
