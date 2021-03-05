@@ -70,7 +70,15 @@ private:
     DwString alternate_att_actual_fn;
 
     int has_att;
-    vc delivered_mid;
+    // this creates a subtle problem if we name messages locally
+    // from the server that end up on the recipient with a slightly
+    // different set of data (ie, it will be flagged "sent" here, and
+    // "received" at the recipient). which causes a situation where
+    // the group stuff gets confused because it is assuming messages
+    // have unique mid's. since we were only doing this because we thought
+    // we could do "delivery reports", and it didn't work out too well,
+    // we will just create new random mid's again like in the past.
+    //vc delivered_mid;
     int dont_save_sent;
     int att_size;
     QckDone send_done_future;

@@ -23,6 +23,7 @@
 #include "sepstr.h"
 #include "ta.h"
 #include "dhgsetup.h"
+#include "qauth.h"
 #ifdef WIN32
 #include <io.h>
 #endif
@@ -185,15 +186,16 @@ DwQSend::qd_send_done(vc m, void *, vc, ValidPtr vp)
         // newer servers return the server assigned mid so we can
         // associate a delivery response
 
-        if(m[3].type() == VC_VECTOR && !m[3][0].is_nil())
-            qs->delivered_mid = m[3][0];
+//        if(m[3].type() == VC_VECTOR && !m[3][0].is_nil())
+//            qs->delivered_mid = m[3][0];
         Log->make_entry("Sent q'd message.");
         DwString tmpfn = qs->qfn;
         tmpfn += ".tmp";
         move_in_progress(qs->qfn, tmpfn);
         if(!qs->dont_save_sent)
         {
-            do_local_store(tmpfn.c_str(), qs->delivered_mid);
+            DwString local_mid = gen_random_filename();
+            do_local_store(tmpfn.c_str(), local_mid.c_str());
         }
 
         DeleteFile(newfn(tmpfn).c_str());
