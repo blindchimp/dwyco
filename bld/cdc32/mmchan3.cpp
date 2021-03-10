@@ -947,9 +947,6 @@ MMChannel::send_media_ok(int subchan, sproto *p, const char *ev)
         tube->start_encrypt_chan(subchan);
         tube->start_decrypt_chan(subchan);
         return sproto::alt_next;
-//        msync_state = MEDIA_SESSION_UP;
-//        mms_sync_state = SEND_INIT;
-//        mmr_sync_state = RECV_INIT;
     }
     tube->set_key_iv(agreed_key, 0);
     tube->start_encrypt_chan(subchan);

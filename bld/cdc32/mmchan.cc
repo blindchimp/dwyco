@@ -853,7 +853,7 @@ MMChannel::is_receiver()
 void
 MMChannel::start_service()
 {
-    int i;
+    long i;
 
     if(MMChannels.index(this) != -1)
         return;
@@ -866,7 +866,7 @@ MMChannel::start_service()
 void
 MMChannel::stop_service()
 {
-    int i;
+    long i;
     if((i = MMChannels.index(this)) == -1)
         return;
     MMChannels[i] = 0;
@@ -3997,7 +3997,7 @@ MMChannel::service_channels(int *spin_out)
     int spin = 0;
     for(i = 0; i < MMChannels.num_elems(); ++i)
     {
-        MMChannel *mc = MMChannels[i];
+        MMChannel * const mc = MMChannels[i];
         if(!mc)
             continue;
 

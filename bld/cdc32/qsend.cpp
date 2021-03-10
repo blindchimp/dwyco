@@ -606,6 +606,21 @@ DwQSend::send_message()
         // it probably makes sense to try and fetch keys that are
         // likely to be used, but that complicates things. for now,
         // keep it simple.
+        // note: if encryption is *required* for the message for
+        // some reason, either set force_encryption or Force_pk
+        // and if there is no way to encrypt it now, the message is
+        // just stored and not sent. there is a bug though. even though
+        // the message is not sent, the "force_encyption" state isn't
+        // stored with the message, so the automated q processing stuff
+        // will not honor it on a per-message basis. this should be fixed
+        // (though, right now, i don't think there are any cases where
+        // encryption is forced on a per-message basis)
+        // note2: as an aside, this doesn't mean the message is
+        // sent in the clear, as all the connections to the server and other
+        // peers are encrypted. it just means that some messages might be
+        // temporarily stored on the server in the clear. usually the first
+        // message between two peers is the only one affected.
+        //
         if(!pk_session_cached(recip_uid))
         {
             fetch_info(recip_uid);
