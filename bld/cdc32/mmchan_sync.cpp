@@ -416,6 +416,8 @@ MMChannel::process_incoming_sync()
     vc rvc;
     if((ret = tube->recv_data(rvc, msync_chan)) >= 0)
     {
+        sync_pinger.load(2 * VIDEO_IDLE_TIMEOUT);
+        sync_pinger.start();
         if(rvc.type() == VC_VECTOR)
         {
             // drop pings
@@ -458,6 +460,7 @@ MMChannel::process_incoming_sync()
         drop_subchannel(msync_chan);
         msync_chan = -1;
         mms_sync_state = MMSS_ERR;
+        schedule_destroy(HARD);
     }
     return 0;
 }

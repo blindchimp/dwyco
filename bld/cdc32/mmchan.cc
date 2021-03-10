@@ -447,7 +447,8 @@ MMChannel::MMChannel() :
 
     //stun_socks(2, DWVEC_FIXED, !DWVEC_AUTO_EXPAND),
     granted(10, DWVEC_FIXED, !DWVEC_AUTO_EXPAND),
-    ctrl_q(VC_VECTOR)
+    ctrl_q(VC_VECTOR),
+    sync_pinger("sync-pinger")
 
 {
     tube = 0;
@@ -4693,6 +4694,11 @@ resume_ctrl_send:
 next_iter:
         continue;
 resume:
+        if(mc->sync_pinger.is_expired())
+        {
+            mc->schedule_destroy(HARD);
+            continue;
+        }
         if(t && mc->msync_state == MEDIA_SESSION_UP && t->has_data(mc->msync_chan))
         {
             mc->process_incoming_sync();
