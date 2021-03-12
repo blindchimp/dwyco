@@ -460,7 +460,7 @@ MMChannel::MMChannel() :
     do_destroy = KEEP;
     negotiating = 0;
     user_accept = NONE;
-    accept_box = 0;
+    //accept_box = 0;
     ctrl_send_watchdog.set_interval(10 * 60 * 1000);
     nego_timer.load(NEGO_TIMEOUT);
     nego_timer.set_oneshot(1);

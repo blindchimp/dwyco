@@ -568,7 +568,7 @@ public:
     enum accpt {NONE, ACCEPT, REJECT, ZACCEPT, ZACCEPT_ALWAYS,
                 ZREJECT, ZREJECT_IGNORE
                } user_accept;
-    int accept_box;
+    //int accept_box;
 
 private:
     int auto_quality_boost;

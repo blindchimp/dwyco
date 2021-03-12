@@ -3570,7 +3570,6 @@ dwyco_call_accept(int id)
         return 0;
     }
     m->user_accept = MMChannel::ACCEPT;
-    m->accept_box = 0;
     m->call_appearance_death_callback = 0;
     return 1;
 }
@@ -3587,7 +3586,6 @@ dwyco_call_reject(int id, int session_ignore)
         return 0;
     }
     m->user_accept = MMChannel::REJECT;
-    m->accept_box = 0;
     m->call_appearance_death_callback = 0;
     if(session_ignore)
     {
@@ -3651,7 +3649,6 @@ dwyco_zap_accept(int id, int always_accept)
     if(m)
     {
         m->user_accept = always_accept ? MMChannel::ZACCEPT_ALWAYS : MMChannel::ZACCEPT;
-        m->accept_box = 0;
         m->call_appearance_death_callback = 0;
         return 1;
     }
@@ -3667,7 +3664,6 @@ dwyco_zap_reject(int id, int session_ignore)
     if(m)
     {
         m->user_accept = session_ignore ? MMChannel::ZREJECT_IGNORE : MMChannel::ZREJECT;
-        m->accept_box = 0;
         m->call_appearance_death_callback = 0;
         return 1;
     }

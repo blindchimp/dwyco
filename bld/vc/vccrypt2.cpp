@@ -21,7 +21,7 @@
 #include "vcmap.h"
 #include "vccrypt2.h"
 #include "blowfish.h"
-#include "rng.h"
+//#include "rng.h"
 #include "files.h"
 #include "hex.h"
 #include "modes.h"
