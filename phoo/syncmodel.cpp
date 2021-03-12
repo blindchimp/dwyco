@@ -93,7 +93,7 @@ SyncDescModel::load_model()
 }
 
 void
-SyncDescModel::update_connections(QString state)
+SyncDescModel::update_connections(QString )
 {
     int cnt = 0;
     for(int i = 0; i < count(); ++i)

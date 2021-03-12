@@ -648,28 +648,6 @@ resume_qmsg()
     //Mid_to_logical_clock = vc(VC_TREE);
 }
 
-
-#if 0
-static int
-should_auto_reply(vc msg)
-{
-    if(Session_auto_replies.contains(msg[QM_FROM]))
-        return 0;
-    return 1;
-}
-
-static int
-gen_auto_reply(vc msg)
-{
-    if(!ZapAdvData.get_send_auto_reply() || !should_auto_reply(msg))
-        return 1;
-    int perform_auto_reply(vc recip_uid);
-    int ret = perform_auto_reply(msg[QM_FROM]);
-    Session_auto_replies.add(msg[QM_FROM]);
-    return ret;
-}
-#endif
-
 // need this because some info files get
 // trashed mysteriously...
 static
@@ -1128,8 +1106,6 @@ can_forward(vc body, vc att_dir)
     }
     return 1;
 }
-
-typedef DwVecP<WIN32_FIND_DATA> FindVec;
 
 vc
 dir_to_uid(DwString s)

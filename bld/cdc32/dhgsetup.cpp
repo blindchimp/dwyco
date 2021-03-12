@@ -151,7 +151,7 @@ init_dhg()
     dha->load_account(alt_name);
     vc v = DHG_db->sql_simple("select * from group_uids");
     vc v2(VC_VECTOR);
-    for(int i = 0; i <v.num_elems(); ++i)
+    for(int i = 0; i < v.num_elems(); ++i)
         v2[i] = from_hex(v[i][0]);
     Group_uids = v2;
 
@@ -165,7 +165,7 @@ init_dhg()
 
 // wip: this class can be used to encrypt messages with
 // an alternate DH key (for example, if a message needs to be
-// send to a group.) the "alternate_name" might be a token or
+// sent to a group.) the "alternate_name" might be a token or
 // email address or something that represents the group.
 //
 // this doesn't handle all the stuff related to

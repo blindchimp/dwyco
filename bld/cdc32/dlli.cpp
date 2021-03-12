@@ -7103,67 +7103,6 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
     return 1;
 }
 
-#if 0
-// 0 = message is bogus, or group password isn't available
-// 1 = message is join, and it was processed
-// -1 = message isn't a join message
-DWYCOEXPORT
-int
-dwyco_handle_join(const char *mid)
-{
-
-    DWYCO_SAVED_MSG_LIST l;
-    if(!dwyco_get_saved_message(&l, 0, 0, mid))
-        return 0;
-    simple_scoped ql(l);
-    int jstate;
-    if(!dwyco_is_special_message(mid, &jstate))
-        return 0;
-    switch(jstate)
-    {
-    case DWYCO_SUMMARY_JOIN1:
-    case DWYCO_SUMMARY_JOIN2:
-    case DWYCO_SUMMARY_JOIN3:
-    case DWYCO_SUMMARY_JOIN4:
-        break;
-    default:
-        return -1;
-    }
-
-    const char *b;
-    int len;
-    if(!dwyco_get_user_payload(ql, &b, &len))
-    {
-        return 0;
-    }
-    vc msg(VC_BSTRING, b, len);
-    dwyco_free_array((char *)b);
-    int ret = 0;
-    if(!Current_alternate)
-        return 0;
-    vc password = Current_alternate->password;
-    vc from = ql.get<vc>(DWYCO_QM_BODY_FROM);
-    switch(jstate)
-    {
-    case DWYCO_SUMMARY_JOIN1:
-        ret = recv_gj1(from, msg, password);
-        break;
-    case DWYCO_SUMMARY_JOIN2:
-        ret = recv_gj2(from, msg, password);
-        break;
-    case DWYCO_SUMMARY_JOIN3:
-        ret = recv_gj3(from, msg, password);
-        break;
-    case DWYCO_SUMMARY_JOIN4:
-        ret = install_group_key(from, msg, password);
-        break;
-    default:
-        oopanic("huh?");
-    }
-    return ret;
-
-}
-#endif
 
 DWYCOEXPORT
 int
