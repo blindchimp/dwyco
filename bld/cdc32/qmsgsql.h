@@ -21,7 +21,7 @@ vc sql_get_recent_users(int recent, int *total_count);
 vc sql_get_old_ignored_users();
 vc sql_get_empty_users();
 vc sql_get_no_response_users();
-void sql_index_all();
+//void sql_index_all();
 void clear_msg_idx_uid(vc uid);
 vc get_unfav_msgids(vc uid);
 void clear_indexed_flag(vc uid);

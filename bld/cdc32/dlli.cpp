@@ -1657,6 +1657,7 @@ dwyco_power_clean_safe()
     power_clean_safe();
 }
 
+#if 0
 namespace dwyco
 {
 extern int Index_progress;
@@ -1674,6 +1675,7 @@ dwyco_power_clean_progress_hack(int *done_out, int *total_out)
     *done_out = dwyco::Index_progress;
     *total_out = dwyco::Index_total;
 }
+#endif
 
 
 static void

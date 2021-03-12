@@ -1431,7 +1431,7 @@ clear_indexed_flag(vc uid)
 
 }
 
-
+#if 0
 int Index_progress;
 int Index_total;
 
@@ -1446,6 +1446,7 @@ index_user(vc v)
     load_msg_index(uid, 1);
     ++dwyco::Index_progress;
 }
+#endif
 
 void
 create_dir_meta(int update_existing)
@@ -1522,6 +1523,7 @@ reindex_possible_changes()
     }
 }
 
+#if 0
 void
 sql_index_all()
 {
@@ -1546,6 +1548,7 @@ sql_index_all()
     reindex_possible_changes();
     sql_sync_on();
 }
+#endif
 
 // FAVMSG
 

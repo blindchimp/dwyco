@@ -4072,6 +4072,7 @@ void
 power_clean_safe()
 {
     return;
+#if 0
     sql_index_all();
     int n;
     vc uids = sql_get_empty_users();
@@ -4123,6 +4124,7 @@ power_clean_safe()
             continue;
         trash_user(uid_to_dir(uid));
     }
+#endif
 
 }
 
