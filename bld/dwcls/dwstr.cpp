@@ -15,6 +15,17 @@
 #include <io.h>
 #endif
 
+DwString&
+DwString::tr(char from, char to)
+{
+    for(int i = 0; i < count - 1; ++i)
+    {
+        if(values[i] == from)
+            values[i] = to;
+    }
+    return (*this);
+}
+
 int
 DwString::find_first_of(const char *set) const
 {

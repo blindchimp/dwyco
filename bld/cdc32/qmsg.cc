@@ -2516,19 +2516,21 @@ clear_user(vc id, const char *pfx)
 int
 trash_file(const DwString& dir, const DwString& fn)
 {
-    if(!is_msg_fn(fn) || !is_user_dir(dir))
+    if(!is_user_dir(dir))
+        return 0;
+    if(!(is_msg_fn(fn) || is_attachment(fn)))
         return 0;
 
     DwString s2(dir);
     s2 = newfn(s2);
-    s2 += "" DIRSEPSTR "";
+    s2 += DIRSEPSTR;
     s2 += fn;
     DwString trashdir = newfn("trash");
     trashdir += DIRSEPSTR;
     trashdir += dir;
     mkdir(trashdir.c_str());
     DwString trashfile = trashdir;
-    trashfile += "" DIRSEPSTR "";
+    trashfile += DIRSEPSTR;
     trashfile += fn;
     if(!move_replace(s2, trashfile))
         return 0;

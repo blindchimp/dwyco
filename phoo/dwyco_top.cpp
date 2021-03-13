@@ -2432,6 +2432,8 @@ DwycoCore::retry_auto_fetch(QString mid)
     return ::retry_auto_fetch(bmid);
 }
 
+#if 0
+// this is a bunch of half-baked stuff that never worked
 static QMap<QString, QByteArray> Groups;
 
 static
@@ -2502,7 +2504,7 @@ send_group_add(QString name, QByteArray new_mem_huid)
     QList<QByteArray> send_list = Groups.values(name);
     for(int i = 0; i < send_list.count(); ++i)
     {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
+        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, cmd.constData(), cmd.length());
         QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
         if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(), "", 0, 0, 0, 0, 0))
         {
@@ -2519,7 +2521,7 @@ send_group_leave(QString name)
     QList<QByteArray> send_list = Groups.values(name);
     for(int i = 0; i < send_list.count(); ++i)
     {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
+        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, cmd.constData(), cmd.length());
         QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
         if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(), "", 0, 0, 0, 0, 0))
         {
@@ -2536,7 +2538,7 @@ send_group_msg(QString name, QByteArray msg)
     QList<QByteArray> send_list = Groups.values(name);
     for(int i = 0; i < send_list.count(); ++i)
     {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
+        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, cmd.constData(), cmd.length());
         QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
         // note: if my uid is in the group list, i'll get a copy of the message
         // saved as a sent message to myself. this is ok, but it needs to be tagged
@@ -2643,6 +2645,7 @@ fetch_special_msgs()
     }
 
 }
+#endif
 
 
 int

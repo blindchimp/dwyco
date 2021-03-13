@@ -1343,9 +1343,7 @@ int DWYCOEXPORT dwyco_make_forward_zap_composition(
     const char *msg_id,
     int strip_forward_text
 );
-int DWYCOEXPORT dwyco_make_special_zap_composition(
-    int special_type,
-    const char *user_id,
+int DWYCOEXPORT dwyco_make_special_zap_composition(int special_type,
     const char *user_block,
     int len_user_block
 );

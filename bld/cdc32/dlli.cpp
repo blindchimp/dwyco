@@ -5023,9 +5023,8 @@ dwyco_is_file_zap(int compid)
 
 DWYCOEXPORT
 int
-dwyco_make_special_zap_composition( int special_type, const char *user_id, const char *user_block, int len_user_block)
+dwyco_make_special_zap_composition( int special_type, const char *user_block, int len_user_block)
 {
-    user_id = "";
     TMsgCompose *m = new TMsgCompose;
     GRTLOG("WARNING: special zaps are mostly deprecated, tho if there is a good reason, they can be resurrected", 0, 0);
 

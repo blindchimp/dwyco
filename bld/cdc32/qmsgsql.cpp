@@ -384,7 +384,6 @@ sync_user(vc v)
 }
 
 
-
 static
 void
 sync_files()
@@ -397,6 +396,35 @@ sync_files()
         sql_start_transaction();
         sql_simple("delete from msg_idx where mid in (select mid from msg_tomb)");
         MsgFolders.foreach(vcnil, sync_user);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+}
+
+// call this to remove all the sync state from the database, and return
+// to "no group" status.
+// ASSUMES: there are no network connections, and that the system will be
+// exited and restarted in order to reset most of the state before out next login.
+void
+remove_sync_state()
+{
+    try
+    {
+        sql_start_transaction();
+        sync_files();
+        sql_simple("delete from current_clients");
+        // get rid of tags that might reference unknown mids
+        sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
+        sql_simple("delete from mt.gmt where mid not in (select mid from msg_idx)");
+        sql_simple("delete from mt.gtomb");
+        sql_simple("delete from msg_tomb");
+        sql_simple("delete from gi");
+        sql_simple("delete from dir_meta");
+        sql_simple("delete from midlog");
+        sql_simple("delete from mt.taglog");
         sql_commit_transaction();
     }
     catch(...)

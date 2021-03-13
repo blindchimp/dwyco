@@ -33,6 +33,7 @@ int prf_already_cached(vc uid);
 void prf_force_check(vc uid);
 void prf_invalidate(vc uid);
 void prf_set_cached(vc uid);
+vc find_alt_pubkey(vc alt_name, vc& uid_out);
 
 #define PRF_PACK 0
 #define PRF_MEDIA 1
