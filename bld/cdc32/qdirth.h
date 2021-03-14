@@ -172,6 +172,8 @@ void dirth_send_set_token(vc id, vc token, QckDone d);
 void dirth_send_check_set(vc uid, vc tag, QckDone d);
 void dirth_send_get_group(vc id, QckDone d);
 void dirth_send_get_group_pk(vc id, vc gname, QckDone d);
+void dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d);
+void dirth_send_group_chal(vc id, vc nonce, QckDone d);
 // used internally
 QckMsg dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d);
 vc generate_mac_msg(vc);
