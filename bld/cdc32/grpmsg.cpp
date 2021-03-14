@@ -70,6 +70,14 @@ exit_gj()
     return 1;
 }
 
+void
+clear_gj()
+{
+    SKID->start_transaction();
+    SKID->sql_simple("delete from pstate");
+    SKID->commit_transaction();
+}
+
 // protocol states
 
 /*
