@@ -51,6 +51,47 @@ Page {
             //anchors.fill: parent
             Layout.fillWidth: true
             Layout.fillHeight: true
+            header: Component {
+                RowLayout {
+                    width: parent.width
+                    height: implicitHeight
+                    spacing: mm(1)
+                    Label {
+                        elide: Text.ElideRight
+                        text: "Handle"
+                        Layout.preferredWidth: cm(3)
+                    }
+                    Label {
+                        text: "status"
+                        Layout.preferredWidth:  mm(5)
+                    }
+
+                    Label {
+                        text: "asserts"
+                        Layout.preferredWidth:  mm(15)
+                        horizontalAlignment: Text.AlignRight
+                    }
+                    Label {
+                        text: "q"
+                        Layout.preferredWidth:  mm(15)
+                        horizontalAlignment: Text.AlignRight
+                    }
+                    Label {
+                        text: "%"
+                        Layout.preferredWidth:  mm(10)
+                        horizontalAlignment: Text.AlignRight
+                    }
+                    Label {
+                        text: "ip"
+                        //color: proxy ? "red" : "black"
+                        //Layout.preferredWidth: cm(4)
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                    }
+                }
+
+            }
 
             model: SyncDescModel
             delegate: Component {
