@@ -438,8 +438,7 @@ is_my_uid(const char *uid, int len_uid)
 DwOString
 computer_gen_pw()
 {
-    // create a simple pw just so the server isn't
-    // sitting without one
+    // create a random pw
     char *rs;
     dwyco_random_string2(&rs, 10);
     DwOString a(rs, 0, 10);

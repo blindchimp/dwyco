@@ -173,7 +173,7 @@ init_entropy()
     char p[8];
     if(fd != -1)
     {
-        read(fd, p, 8);
+        read(fd, p, sizeof(p));
         close(fd);
     }
     // if open fails, just append whatever trash is on stack
