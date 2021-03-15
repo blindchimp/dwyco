@@ -2974,6 +2974,15 @@ DwycoCore::start_gj(QString uid, QString password)
 
 }
 
+void
+DwycoCore::start_gj2(QString gname, QString password)
+{
+    QByteArray gn = gname.toLatin1();
+    QByteArray pw = password.toLatin1();
+    dwyco_start_gj2(gn.constData(), pw.constData());
+
+}
+
 
 void
 dwyco_register_qml(QQmlContext *root)

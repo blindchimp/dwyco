@@ -36,7 +36,7 @@ Page {
             id: join_button
             text: qsTr("Click to link this device to group")
             onClicked: {
-
+                core.start_gj2("noexisto", "barf")
             }
             Layout.fillWidth: true
         }

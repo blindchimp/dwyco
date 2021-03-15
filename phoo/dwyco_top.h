@@ -253,6 +253,7 @@ public:
 
     // test stuff
     Q_INVOKABLE void start_gj(QString uid, QString password);
+    Q_INVOKABLE void start_gj2(QString gname, QString password);
 
     Q_INVOKABLE void set_badge_number(int i);
     Q_INVOKABLE void refresh_directory();

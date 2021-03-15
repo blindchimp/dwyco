@@ -188,6 +188,15 @@ DH_alternate::init(vc uid, vc alternate_name)
 }
 
 void
+DH_alternate::leave()
+{
+    DHG_db->start_transaction();
+    DHG_db->sql_simple("delete from group_uids");
+    DHG_db->sql_simple("delete from keys where alt_name = ?1", alternate_name);
+    DHG_db->commit_transaction();
+}
+
+void
 DH_alternate::update_group(vc uids)
 {
     try

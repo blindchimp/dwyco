@@ -2772,9 +2772,11 @@ MMChannel::recv_config(vc cfg)
     }
 
     {
-        // if the remote is requesting a user control channel
-        // ignore all the password and other settings and
-        // just create a clean channel
+        // if the remote is requesting a sync channel
+        // make sure we are at least in a group with
+        // the same hash (this is not a security check, just
+        // making sure we don't accept sync links from obviously
+        // wrong group)
         vc m;
         vc r;
         if(!remote_cfg.is_nil() && remote_call_type() == vc("sync"))

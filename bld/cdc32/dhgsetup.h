@@ -38,6 +38,7 @@ public:
 
     void init(vc uid, vc alternate_name);
     int load_account(vc alternate_name);
+    void leave();
     vc alt_name() {return alternate_name;}
     vc my_static();
     vc my_static_public();

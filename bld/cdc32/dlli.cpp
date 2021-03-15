@@ -381,6 +381,7 @@ using namespace Weak;
 #include "upnp.h"
 #include "pulls.h"
 #include "dwycolist2.h"
+#include "vcudh.h"
 
 using namespace dwyco;
 
@@ -6658,6 +6659,8 @@ struct local_connect_timer : public ssns::trackable
 void
 sync_call_setup()
 {
+    if(!Current_alternate)
+        return;
     static local_connect_timer *lct;
     if(!lct)
     {
@@ -7099,6 +7102,105 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
     dirth_send_get_group_pk(My_UID, Current_alternate->alt_name(), QckDone(group_result, 0, vcnil, Current_alternate->vp));
     return 1;
 }
+
+static
+void
+chal_res(vc m, void *, vc, ValidPtr vp)
+{
+    if(m[1].is_nil())
+    {
+        clear_gj();
+        return;
+    }
+    vc gname = m[1][0];
+    vc serialized_pk = m[1][1];
+    vc sig = m[1][2];
+    // if the signature checks out, we can just install this key
+    // directly, since the server says it is new and we have already
+    // generated the private key.
+    //
+    // note: i *really* wanted to avoid this kind of thing, using a server
+    // to validate some aspect of the keys. but i feel like solving that
+    // problem right away isn't worth the wait. this *does* solve the problem
+    // of trying to avoid relying on the server to store group private keys, so that's something.
+}
+
+static
+void
+group_enter_setup(vc m, void *, vc, ValidPtr vp)
+{
+    if(m[1].is_nil())
+        return;
+    if(!vp.is_valid())
+        return;
+    auto dha = reinterpret_cast<DH_alternate*>(vp.get_ptr());
+
+    vc what = m[3];
+    if(what[0] == vc("exists"))
+    {
+        // group already exists, replace provisional key with the server-provided signed public key
+        // then set about asking someone for the private key
+        vc pk = what[1];
+        vc members = what[2];
+    }
+    else if(what[0] == vc("chal"))
+    {
+        // server hasn't seen it before, so we respond to the challenge in order to prove
+        // we have the private key
+        vc sfpack = what[1];
+        vc enc_nonce = what[2];
+        vc skey;
+        vc our_material(VC_VECTOR);
+        our_material[0] = dha->my_static();
+        skey = dh_store_and_forward_get_key2(sfpack, our_material);
+        if(skey.is_nil())
+            return;
+        vc ctx = vclh_encdec_open();
+        if(vclh_encdec_init_key_ctx(ctx, skey, 0).is_nil())
+            return;
+        vc nonce;
+        if(encdec_xfer_dec_ctx(ctx, enc_nonce, nonce).is_nil())
+            return;
+        dirth_send_group_chal(My_UID, nonce, QckDone(chal_res, 0, vcnil, dha->vp));
+    }
+}
+
+DWYCOEXPORT
+int
+dwyco_start_gj2(const char *gname, const char *password)
+{
+    clear_gj();
+    if(!gname || strlen(gname) == 0)
+    {
+        // leave the current group
+        if(!Current_alternate)
+            return 1;
+        // drop all network connections
+        MMChannel::exit_mmchan();
+        // empty out all the system messages
+        while(se_process() || dirth_poll_response())
+            ;
+        Group_uids = vc(VC_VECTOR);
+        Current_alternate->leave();
+        set_settings_value("group/join_key", "");
+        set_settings_value("group/alt_name", "");
+        remove_sync_state();
+        return 1;
+    }
+    // you have to leave first, you can't change directly
+    if(Current_alternate)
+        return 0;
+    // create a provisional key, see what the server thinks about it
+    auto dha = new DH_alternate;
+    dha->init(My_UID, gname);
+    dha->remove_key(gname);
+    dha->load_account(gname);
+    dha->password = password;
+    dirth_send_set_get_group_pk(My_UID, dha->alt_name(), dha->my_static_public(), QckDone(group_enter_setup, 0, vcnil, dha->vp));
+    return 1;
+}
+
+
 
 
 DWYCOEXPORT
