@@ -7106,12 +7106,20 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
 static
 void
 chal_res(vc m, void *, vc, ValidPtr vp)
-{
-    if(m[1].is_nil())
+{        
+    if(!vp.is_valid())
     {
         clear_gj();
         return;
     }
+    auto dha = reinterpret_cast<DH_alternate*>(vp.get_ptr());
+    try
+    {
+    if(m[1].is_nil())
+    {
+        throw -1;
+    }
+
     vc gname = m[1][0];
     vc serialized_pk = m[1][1];
     vc sig = m[1][2];
@@ -7123,17 +7131,61 @@ chal_res(vc m, void *, vc, ValidPtr vp)
     // to validate some aspect of the keys. but i feel like solving that
     // problem right away isn't worth the wait. this *does* solve the problem
     // of trying to avoid relying on the server to store group private keys, so that's something.
+    vclh_dsa_init(newfn("dsadwyco.pub").c_str());
+    DwString a(dha->alt_name());
+    vc spk = serialize(dha->my_static_public());
+    if(spk != serialized_pk)
+    {
+        throw -1;
+    }
+
+    a += DwString((const char *)spk, spk.len());
+    vc h = vclh_sha(vc(VC_BSTRING, a.c_str(), a.length()));
+    if(vclh_dsa_verify(h, sig).is_nil())
+    {
+        throw -1;
+    }
+
+    // note: if this all works, the key is already in the
+    // db, we just have to activate it as our "current_alternate"
+    // and update the settings. we save the signature, it might
+    // be useful for validating profiles or something
+    set_settings_value("group/alt_name", dha->alt_name());
+    set_settings_value("group/join_key", dha->password);
+
+    DH_alternate::insert_sig(dha->alt_name(), sig);
+    delete dha;
+    // this reloads the key
+    init_dhg();
+    // note: since this is a new group, we are probably the only one in it,
+    // don't bother updating Group_uids at this point.
+    }
+    catch(...)
+    {
+        clear_gj();
+        // remove the provisional key info, since something didn't work out
+        dha->leave();
+        delete dha;
+    }
 }
 
 static
 void
 group_enter_setup(vc m, void *, vc, ValidPtr vp)
 {
-    if(m[1].is_nil())
-        return;
     if(!vp.is_valid())
+    {
+        clear_gj();
         return;
+    }
     auto dha = reinterpret_cast<DH_alternate*>(vp.get_ptr());
+    if(m[1].is_nil())
+    {
+        clear_gj();
+        dha->leave();
+        delete dha;
+        return;
+    }
 
     vc what = m[3];
     if(what[0] == vc("exists"))
@@ -7163,6 +7215,12 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
             return;
         dirth_send_group_chal(My_UID, nonce, QckDone(chal_res, 0, vcnil, dha->vp));
     }
+    else
+    {
+        clear_gj();
+        dha->leave();
+        delete dha;
+    }
 }
 
 DWYCOEXPORT
@@ -7173,15 +7231,16 @@ dwyco_start_gj2(const char *gname, const char *password)
     if(!gname || strlen(gname) == 0)
     {
         // leave the current group
-        if(!Current_alternate)
-            return 1;
+        //if(!Current_alternate)
+        //    return 1;
         // drop all network connections
         MMChannel::exit_mmchan();
         // empty out all the system messages
         while(se_process() || dirth_poll_response())
             ;
         Group_uids = vc(VC_VECTOR);
-        Current_alternate->leave();
+        if(Current_alternate)
+            Current_alternate->leave();
         set_settings_value("group/join_key", "");
         set_settings_value("group/alt_name", "");
         remove_sync_state();

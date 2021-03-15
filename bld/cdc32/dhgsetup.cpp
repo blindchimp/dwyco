@@ -53,6 +53,7 @@ struct DHG_sql : public SimpleSql
         sql_simple("create table if not exists group_uids ("
                    "uid text collate nocase unique on conflict ignore not null on conflict fail"
                    ")");
+        sql_simple("create table if not exists sigs (alt_name text primary key collate nocase not null, sig blob not null)");
 
 
     }
@@ -115,9 +116,12 @@ eager_changed(vc, vc)
 void
 init_dhg()
 {
+    if(Current_alternate)
+        return;
+
     vc alt_name;
     vc pw;
-    bind_sql_setting("sync/eager", eager_changed);
+
     {
         const char *grp_name;
         grp_name = getenv("DWYCO_GROUP");
@@ -145,7 +149,7 @@ init_dhg()
         else
             pw = grp_pw;
     }
-
+    bind_sql_setting("sync/eager", eager_changed);
     DH_alternate *dha = new DH_alternate;
     dha->init(My_UID, alt_name);
     dha->load_account(alt_name);
@@ -193,6 +197,7 @@ DH_alternate::leave()
     DHG_db->start_transaction();
     DHG_db->sql_simple("delete from group_uids");
     DHG_db->sql_simple("delete from keys where alt_name = ?1", alternate_name);
+    DHG_db->sql_simple("delete from sigs where alt_name = ?1", alternate_name);
     DHG_db->commit_transaction();
 }
 
@@ -291,6 +296,29 @@ DH_alternate::insert_new_key(vc alt_name, vc grp_key)
         return 0;
     if(!insert_record(My_UID, alt_name, grp_key))
         return 0;
+    return 1;
+}
+
+static
+vc
+blob(vc b)
+{
+    vc v(VC_VECTOR);
+    v[0] = "blob";
+    v[1] = b;
+    return v;
+}
+
+int
+DH_alternate::insert_sig(vc alt_name, vc sig)
+{
+    if(!DHG_db)
+        return 0;
+
+    DHG_db->sql_simple("insert or ignore into sigs (alt_name, sig) values(?1, ?2)",
+                       alt_name,
+                       blob(sig)
+                       );
     return 1;
 }
 
