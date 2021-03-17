@@ -7115,50 +7115,50 @@ chal_res(vc m, void *, vc, ValidPtr vp)
     auto dha = reinterpret_cast<DH_alternate*>(vp.get_ptr());
     try
     {
-    if(m[1].is_nil())
-    {
-        throw -1;
-    }
+        if(m[1].is_nil())
+        {
+            throw -1;
+        }
 
-    vc gname = m[1][0];
-    vc serialized_pk = m[1][1];
-    vc sig = m[1][2];
-    // if the signature checks out, we can just install this key
-    // directly, since the server says it is new and we have already
-    // generated the private key.
-    //
-    // note: i *really* wanted to avoid this kind of thing, using a server
-    // to validate some aspect of the keys. but i feel like solving that
-    // problem right away isn't worth the wait. this *does* solve the problem
-    // of trying to avoid relying on the server to store group private keys, so that's something.
-    vclh_dsa_pub_init(newfn("dsadwyco.pub").c_str());
-    DwString a(dha->alt_name());
-    vc spk = serialize(dha->my_static_public());
-    if(spk != serialized_pk)
-    {
-        throw -1;
-    }
+        vc gname = m[1][0];
+        vc serialized_pk = m[1][1];
+        vc sig = m[1][2];
+        // if the signature checks out, we can just install this key
+        // directly, since the server says it is new and we have already
+        // generated the private key.
+        //
+        // note: i *really* wanted to avoid this kind of thing, using a server
+        // to validate some aspect of the keys. but i feel like solving that
+        // problem right away isn't worth the wait. this *does* solve the problem
+        // of trying to avoid relying on the server to store group private keys, so that's something.
+        vclh_dsa_pub_init(newfn("dsadwyco.pub").c_str());
+        DwString a(dha->alt_name());
+        vc spk = serialize(dha->my_static_public());
+        if(spk != serialized_pk)
+        {
+            throw -1;
+        }
 
-    a += DwString((const char *)spk, spk.len());
-    vc h = vclh_sha(vc(VC_BSTRING, a.c_str(), a.length()));
-    if(vclh_dsa_verify(h, sig).is_nil())
-    {
-        throw -1;
-    }
+        a += DwString((const char *)spk, spk.len());
+        vc h = vclh_sha(vc(VC_BSTRING, a.c_str(), a.length()));
+        if(vclh_dsa_verify(h, sig).is_nil())
+        {
+            throw -1;
+        }
 
-    // note: if this all works, the key is already in the
-    // db, we just have to activate it as our "current_alternate"
-    // and update the settings. we save the signature, it might
-    // be useful for validating profiles or something
-    set_settings_value("group/alt_name", dha->alt_name());
-    set_settings_value("group/join_key", dha->password);
-    se_emit_join(dha->alt_name(), 1);
-    DH_alternate::insert_sig(dha->alt_name(), sig);
-    delete dha;
-    // this reloads the key
-    init_dhg();
-    // note: since this is a new group, we are probably the only one in it,
-    // don't bother updating Group_uids at this point.
+        // note: if this all works, the key is already in the
+        // db, we just have to activate it as our "current_alternate"
+        // and update the settings. we save the signature, it might
+        // be useful for validating profiles or something
+        set_settings_value("group/alt_name", dha->alt_name());
+        set_settings_value("group/join_key", dha->password);
+        se_emit_join(dha->alt_name(), 1);
+        DH_alternate::insert_sig(dha->alt_name(), sig);
+        delete dha;
+        // this reloads the key
+        init_dhg();
+        // note: since this is a new group, we are probably the only one in it,
+        // don't bother updating Group_uids at this point.
 
     }
     catch(...)
@@ -7182,57 +7182,55 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
         return;
     }
     auto dha = reinterpret_cast<DH_alternate*>(vp.get_ptr());
-    if(m[1].is_nil())
+    try
     {
-        clear_gj();
-        dha->leave();
-        delete dha;
-        return;
-    }
-
-    vc what = m[3];
-    if(what[0] == vc("exists"))
-    {
-        // group already exists, replace provisional key with the server-provided signed public key
-        // then set about asking someone for the private key
-        vc pk = what[1];
-        vc sig = what[2];
-        vc members = what[3];
-        // NOTE: if the members is empty, the group may be abandoned, in any case
-        // it is unlikely we will be able to find the private key because noone
-        // will be around to answer our queries. might want to just indicate that
-        // to the user now and ask them to pick another group or something.
-        if(members.num_elems() == 0)
+        if(m[1].is_nil())
         {
-            se_emit_join(dha->alt_name(), 0);
-            clear_gj();
-            dha->leave();
-            delete dha;
-            return;
+            throw -1;
         }
-        start_gj(members[0], dha->alt_name(), dha->password);
+
+        vc what = m[3];
+        if(what[0] == vc("exists"))
+        {
+            // group already exists, replace provisional key with the server-provided signed public key
+            // then set about asking someone for the private key
+            vc pk = what[1];
+            vc sig = what[2];
+            vc members = what[3];
+            // NOTE: if the members is empty, the group may be abandoned, in any case
+            // it is unlikely we will be able to find the private key because noone
+            // will be around to answer our queries. might want to just indicate that
+            // to the user now and ask them to pick another group or something.
+            if(members.num_elems() == 0)
+            {
+                throw -1;
+            }
+            start_gj(members[0], dha->alt_name(), dha->password);
+        }
+        else if(what[0] == vc("chal"))
+        {
+            // server hasn't seen it before, so we respond to the challenge in order to prove
+            // we have the private key
+            vc sfpack = what[1];
+            vc enc_nonce = what[2];
+            vc skey;
+            vc our_material(VC_VECTOR);
+            our_material[0] = dha->my_static();
+            skey = dh_store_and_forward_get_key2(sfpack, our_material);
+            if(skey.is_nil())
+                throw -1;
+            vc ctx = vclh_encdec_open();
+            if(vclh_encdec_init_key_ctx(ctx, skey, 0).is_nil())
+                throw -1;
+            vc nonce;
+            if(encdec_xfer_dec_ctx(ctx, enc_nonce, nonce).is_nil())
+                throw -1;
+            dirth_send_group_chal(My_UID, nonce, QckDone(chal_res, 0, vcnil, dha->vp));
+        }
+        else
+            throw -1;
     }
-    else if(what[0] == vc("chal"))
-    {
-        // server hasn't seen it before, so we respond to the challenge in order to prove
-        // we have the private key
-        vc sfpack = what[1];
-        vc enc_nonce = what[2];
-        vc skey;
-        vc our_material(VC_VECTOR);
-        our_material[0] = dha->my_static();
-        skey = dh_store_and_forward_get_key2(sfpack, our_material);
-        if(skey.is_nil())
-            return;
-        vc ctx = vclh_encdec_open();
-        if(vclh_encdec_init_key_ctx(ctx, skey, 0).is_nil())
-            return;
-        vc nonce;
-        if(encdec_xfer_dec_ctx(ctx, enc_nonce, nonce).is_nil())
-            return;
-        dirth_send_group_chal(My_UID, nonce, QckDone(chal_res, 0, vcnil, dha->vp));
-    }
-    else
+    catch(...)
     {
         clear_gj();
         se_emit_join(dha->alt_name(), 0);
