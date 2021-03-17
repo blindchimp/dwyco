@@ -7131,7 +7131,7 @@ chal_res(vc m, void *, vc, ValidPtr vp)
     // to validate some aspect of the keys. but i feel like solving that
     // problem right away isn't worth the wait. this *does* solve the problem
     // of trying to avoid relying on the server to store group private keys, so that's something.
-    vclh_dsa_init(newfn("dsadwyco.pub").c_str());
+    vclh_dsa_pub_init(newfn("dsadwyco.pub").c_str());
     DwString a(dha->alt_name());
     vc spk = serialize(dha->my_static_public());
     if(spk != serialized_pk)
@@ -7152,20 +7152,23 @@ chal_res(vc m, void *, vc, ValidPtr vp)
     // be useful for validating profiles or something
     set_settings_value("group/alt_name", dha->alt_name());
     set_settings_value("group/join_key", dha->password);
-
+    se_emit_join(dha->alt_name(), 1);
     DH_alternate::insert_sig(dha->alt_name(), sig);
     delete dha;
     // this reloads the key
     init_dhg();
     // note: since this is a new group, we are probably the only one in it,
     // don't bother updating Group_uids at this point.
+
     }
     catch(...)
     {
         clear_gj();
+        se_emit_join(dha->alt_name(), 0);
         // remove the provisional key info, since something didn't work out
         dha->leave();
         delete dha;
+
     }
 }
 
@@ -7193,7 +7196,21 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
         // group already exists, replace provisional key with the server-provided signed public key
         // then set about asking someone for the private key
         vc pk = what[1];
-        vc members = what[2];
+        vc sig = what[2];
+        vc members = what[3];
+        // NOTE: if the members is empty, the group may be abandoned, in any case
+        // it is unlikely we will be able to find the private key because noone
+        // will be around to answer our queries. might want to just indicate that
+        // to the user now and ask them to pick another group or something.
+        if(members.num_elems() == 0)
+        {
+            se_emit_join(dha->alt_name(), 0);
+            clear_gj();
+            dha->leave();
+            delete dha;
+            return;
+        }
+        start_gj(members[0], dha->alt_name(), dha->password);
     }
     else if(what[0] == vc("chal"))
     {
@@ -7218,6 +7235,7 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
     else
     {
         clear_gj();
+        se_emit_join(dha->alt_name(), 0);
         dha->leave();
         delete dha;
     }

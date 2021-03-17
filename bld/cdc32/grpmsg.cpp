@@ -358,8 +358,13 @@ install_group_key(vc from, vc msg, vc password)
         terminate(our_uid, hfrom);
         return 0;
     }
-
-    int ret = DH_alternate::insert_new_key(alt_name, grp_key);
+    // note: some basic checks should be dont to make sure the
+    // private key matches the public key. we got her presumably
+    // after we got the public key from the server (since we
+    // didn't generate ourselves). the server should have signed it.
+    // if the private key doesn't match for some reason, it probably
+    // isn't a security problem, but nothing else will work properly.
+    int ret = DH_alternate::insert_private_key(alt_name, grp_key);
     terminate(our_uid, hfrom);
     return ret;
 }

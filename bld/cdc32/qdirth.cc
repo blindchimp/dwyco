@@ -429,7 +429,7 @@ dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d)
     m[QTYPE] = reqtype("set-get-group-pk", d);
     m[QFROM] = id;
     m[2] = gname;
-    m[3] = prov_pk;
+    m[3] = prov_pk[DH_STATIC_PUBLIC];
 
     Waitq.append(d);
     dirth_send(m, Waitq[Waitq.num_elems() - 1]);

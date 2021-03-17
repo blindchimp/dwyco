@@ -323,11 +323,29 @@ DH_alternate::insert_sig(vc alt_name, vc sig)
 }
 
 int
+DH_alternate::insert_private_key(vc alt_name, vc grp_key)
+{
+    if(!DHG_db)
+        return 0;
+    DHG_db->start_transaction();
+    DHG_db->sql_simple("update keys set privkey = ?2 where alt_name = ?1 and pubkey = ?3",
+                       alt_name,
+                       blob(grp_key[DH_STATIC_PRIVATE]),
+                       blob(grp_key[DH_STATIC_PUBLIC])
+                       );
+    DHG_db->commit_transaction();
+    return 1;
+}
+
+int
 DH_alternate::remove_key(vc alt_name)
 {
     if(!DHG_db)
         return 0;
+    DHG_db->start_transaction();
     DHG_db->sql_simple("delete from keys where alt_name = ?1", alt_name);
+    DHG_db->sql_simple("delete from sigs where alt_name = ?1", alt_name);
+    DHG_db->commit_transaction();
     return 1;
 }
 

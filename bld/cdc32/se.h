@@ -85,6 +85,7 @@ void se_emit_msg_status(DwString qid, vc ruid, DwString msg, int percent);
 void se_emit_msg_progress(DwString mid, vc ruid, DwString msg, int percent);
 void se_emit_msg_pull_ok(vc mid, vc uid);
 void se_emit_msg_tag_change(vc mid, vc uid);
+void se_emit_join(vc gname, int res);
 int se_process();
 
 #endif

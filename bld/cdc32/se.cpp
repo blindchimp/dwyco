@@ -162,6 +162,17 @@ se_emit_msg_tag_change(vc mid, vc uid)
     GRTLOGVC(v);
 }
 
+void
+se_emit_join(vc gname, int res)
+{
+    vc v(VC_VECTOR);
+
+    v[0] = res ? SE_GRP_JOIN_OK : SE_GRP_JOIN_FAIL;
+    v[1] = gname;
+    Se_q.append(v);
+    GRTLOGVC(v);
+}
+
 int
 se_process()
 {
@@ -270,6 +281,17 @@ se_process()
                                            0,
                                            Se_q[i][1], Se_q[i][1].len(),
                                            Se_q[i][2], Se_q[i][2].len(),
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_GRP_JOIN_FAIL:
+        case SE_GRP_JOIN_OK:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           Se_q[i][1], Se_q[i][1].len(),
                                            0, 0, 0,
                                            0, 0
                                           );
