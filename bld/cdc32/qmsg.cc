@@ -1869,9 +1869,11 @@ process_join(vc msg)
     if(payload.type() != VC_STRING)
         return 0;
     int ret = 0;
-    if(!Current_alternate)
-        return 0;
-    vc password = Current_alternate->password;
+    vc password;
+    if(Current_alternate)
+        password = Current_alternate->password;
+    else
+        password = DH_alternate::Group_join_password;
     vc from = body[QM_BODY_FROM];
     switch(jstate)
     {

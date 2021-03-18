@@ -7174,6 +7174,14 @@ chal_res(vc m, void *, vc, ValidPtr vp)
 
 static
 void
+final_group_setup(vc gname)
+{
+    set_settings_value("group/alt_name", gname);
+    se_emit_join(gname, 1);
+}
+
+static
+void
 group_enter_setup(vc m, void *, vc, ValidPtr vp)
 {
     if(!vp.is_valid())
@@ -7205,6 +7213,8 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
             {
                 throw -1;
             }
+            DH_alternate::Group_join_password = dha->password;
+            Join_signal.connect_ptrfun(final_group_setup, 1);
             start_gj(members[0], dha->alt_name(), dha->password);
         }
         else if(what[0] == vc("chal"))

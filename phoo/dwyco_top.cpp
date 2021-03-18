@@ -2371,7 +2371,7 @@ process_contact_query_response(const QByteArray& mid)
     DWYCO_SAVED_MSG_LIST sm;
     if(!dwyco_get_saved_message(&sm, Clbot.constData(), Clbot.length(), mid.constData()))
     {
-        TheDwycoCore->emit cq_results_received(0);
+        emit TheDwycoCore->cq_results_received(0);
         return;
     }
     simple_scoped qsm(sm);
@@ -2379,13 +2379,13 @@ process_contact_query_response(const QByteArray& mid)
     if(qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT) ||
             qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
     {
-        TheDwycoCore->emit cq_results_received(0);
+        emit TheDwycoCore->cq_results_received(0);
         return;
     }
 
     QByteArray qrfn = get_cq_results_filename();
     int succ = dwyco_copy_out_file_zap(0, 0, mid.constData(), qrfn.constData());
-    TheDwycoCore->emit cq_results_received(succ);
+    emit TheDwycoCore->cq_results_received(succ);
 }
 
 void

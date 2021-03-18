@@ -61,6 +61,15 @@ public:
 
     static void update_group(vc);
 
+    // note: set this when you are working with a provisional
+    // key, trying to find the private key where you haven't
+    // successfully set up "current_alternate". note: this feels like
+    // a kluge. maybe figure out how to associate a provisional
+    // dh_alternate with the current round of joins (tho this might
+    // require us to keep more state, or break down and let the
+    // group processing stuff just use the value from settings directly
+    static vc Group_join_password;
+
     vc gen_challenge_msg(vc& nonce_out);
     int challenge_recv(vc m, vc& resp);
 };

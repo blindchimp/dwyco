@@ -10,12 +10,14 @@
 #include "msend.h"
 #include "dhgsetup.h"
 #include "dwrtlog.h"
+#include "grpmsg.h"
 
 extern DwVec<ValidPtr> CompositionDeleteQ;
 
 using namespace dwyco;
 
 namespace dwyco {
+ssns::signal1<vc> Join_signal;
 
 struct skid_sql : public SimpleSql
 {
@@ -359,13 +361,14 @@ install_group_key(vc from, vc msg, vc password)
         return 0;
     }
     // note: some basic checks should be dont to make sure the
-    // private key matches the public key. we got her presumably
+    // private key matches the public key. we got here presumably
     // after we got the public key from the server (since we
     // didn't generate ourselves). the server should have signed it.
     // if the private key doesn't match for some reason, it probably
-    // isn't a security problem, but nothing else will work properly.
+    // isn't a security problem,  nothing else will work properly.
     int ret = DH_alternate::insert_private_key(alt_name, grp_key);
     terminate(our_uid, hfrom);
+    Join_signal.emit(alt_name);
     return ret;
 }
 

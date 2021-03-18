@@ -1,6 +1,7 @@
 #ifndef GRPMSG_H
 #define GRPMSG_H
 #include "vc.h"
+#include "ssns.h"
 
 namespace dwyco {
 int init_gj();
@@ -14,5 +15,8 @@ int install_group_key(vc from, vc msg, vc password);
 //responder
 int recv_gj1(vc from, vc msg, vc password);
 int recv_gj3(vc from, vc msg, vc password);
+
+extern ssns::signal1<vc> Join_signal;
+
 }
 #endif
