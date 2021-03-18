@@ -339,16 +339,6 @@ record_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
 //---------------------------------------------------------------------------
 int  TMsgCompose::record_buttonClick()
 {
-    // avoid re-entering if we are in the middle of
-    // trying to shut down the video capture device...
-    // this is thanks to microsoft... the system will
-    // probably crash if you don't watch out here...
-
-    extern int Sleeping;
-
-    if(Sleeping)
-        return 0;
-
     if(record_pic)
     {
         return do_record_pic();

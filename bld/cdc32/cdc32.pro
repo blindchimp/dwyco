@@ -185,7 +185,6 @@ doinit.cc \
 netcod.cc \
 netcod2.cc \
 tcode.cc \
-sleep.cc \
 statfun.cc \
 dirth.cc \
 rlc.cc \

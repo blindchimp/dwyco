@@ -9555,22 +9555,4 @@ set_squelch(int a)
     Squelched = !a;
 }
 
-#ifdef __WIN32__
-void
-pump_messages()
-{
-}
-#endif
-
-#ifdef LINUX
-void
-pump_messages()
-{
-}
-
-void
-dwsleep(int, int *, int)
-{
-}
-#endif
 

@@ -20,7 +20,6 @@ static char RcsId[] = "$Header: g:/dwight/repo/cdc32/rcs/netcod.cc 1.27 1999/01/
 #include "vcwsock.h"
 #include "matcom.h"
 #include "vcxstrm.h"
-#include "sleep.h"
 #include "dwlog.h"
 #include "dwstr.h"
 #include "mmchan.h"
@@ -77,7 +76,6 @@ wouldblock_handler(vc *v)
             GRTLOG("max retry", 0, 0);
             return VC_SOCKET_BACKOUT;
         }
-        dwsleep(1, 0, 1);
         GRTLOG("resume", 0, 0);
         return VC_SOCKET_RESUME;
     }
