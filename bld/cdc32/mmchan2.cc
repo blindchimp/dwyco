@@ -15,7 +15,6 @@
 #include "senc.h"
 #include "qauth.h"
 #include "qmsg.h"
-#include "snds.h"
 #include "dwrtlog.h"
 #include "codec.h"
 #include "fnmod.h"

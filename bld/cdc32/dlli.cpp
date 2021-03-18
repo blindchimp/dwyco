@@ -656,7 +656,7 @@ DwycoSystemEventCallback dwyco_system_event_callback;
 //static DwycoStatusCallback dwyco_chat_server_status_callback;
 static DwycoUserControlCallback dwyco_user_control_callback;
 static DwycoCallScreeningCallback dwyco_call_screening_callback;
-static DwycoCommandCallback dwyco_alert_callback;
+//static DwycoCommandCallback dwyco_alert_callback;
 static DwycoStatusCallback dwyco_call_bandwidth_callback;
 static DwycoActivityCallback dwyco_activity_callback;
 
@@ -1164,12 +1164,12 @@ dwyco_set_user_control_callback(DwycoUserControlCallback cb)
     dwyco_user_control_callback = cb;
 }
 
-DWYCOEXPORT
-void
-dwyco_set_alert_callback(DwycoCommandCallback cb)
-{
-    dwyco_alert_callback = cb;
-}
+//DWYCOEXPORT
+//void
+//dwyco_set_alert_callback(DwycoCommandCallback cb)
+//{
+//    dwyco_alert_callback = cb;
+//}
 
 DWYCOEXPORT
 void
@@ -9279,48 +9279,6 @@ dwyco_get_aux_string(const char **str_out, int *len_str_out)
     return 1;
 }
 
-
-// these functions are called by the core when certain sounds
-// should be emitted. this is just a convenience, the user of the
-// dll can elect to do this all on their own if needed.
-// note: removed filtering via TheAudioOutput (presumable we don't want
-// sounds playing while we are outputting sound for some other channel)
-// because with the chat room with sound, the audio output is *always* up,
-// so we need to let the app do the filtering. for the audioinput it is
-// similar, it is too restrictive to limit the events here, gotta let the app
-// do it.
-void
-play_new_zap_alert()
-{
-    if(!dwyco_alert_callback)// || TheAudioOutput || TheAudioInput)
-        return;
-    (*dwyco_alert_callback)("alert_zap", 0, 1, 0);
-}
-
-// note: this is only called if the uid has the "alert" flag set
-void
-play_online_alert()
-{
-    if(!dwyco_alert_callback)// || TheAudioOutput || TheAudioInput)
-        return;
-    (*dwyco_alert_callback)("alert_online", 0, 1, 0);
-}
-
-void
-play_call_alert()
-{
-    if(!dwyco_alert_callback)// || TheAudioOutput || TheAudioInput)
-        return;
-    (*dwyco_alert_callback)("alert_call", 0, 1, 0);
-}
-
-void
-play_incoming_zap_alert()
-{
-    if(!dwyco_alert_callback)// || TheAudioOutput || TheAudioInput)
-        return;
-    (*dwyco_alert_callback)("alert_direct_zap", 0, 1, 0);
-}
 
 #define TEST_LAYER
 

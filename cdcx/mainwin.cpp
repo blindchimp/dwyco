@@ -2268,11 +2268,11 @@ mainwinform::idle()
         prg.setCancelButton(0);
         prg.show();
         ict.start();
-        int total = 0;
-        int done = 0;
+        int total = 1;
+        int done = 1;
         while(!ict.isFinished())
         {
-            dwyco_power_clean_progress_hack(&done, &total);
+            //dwyco_power_clean_progress_hack(&done, &total);
 
             if(total > 0)
                 prg.setValue(done * 100 / total);
@@ -2284,7 +2284,7 @@ mainwinform::idle()
             if(prg.wasCanceled())
             {
                 total = -1;
-                dwyco_power_clean_progress_hack(&done, &total);
+                //dwyco_power_clean_progress_hack(&done, &total);
                 break;
             }
             QWaitCondition wc;

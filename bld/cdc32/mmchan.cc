@@ -34,7 +34,6 @@
 #include "audi.h"
 #include "audth.h"
 #include "audchk.h"
-#include "snds.h"
 //#include "lpcconv.h"
 
 #include "dirth.h"
@@ -3033,7 +3032,7 @@ MMChannel::recv_config(vc cfg)
 
     // now pop up a dialog and wait for the user
     // to accept or reject the call.
-    play_call_alert();
+    //play_call_alert();
     if((int)get_settings_value("call_acceptance/auto_acccept") == 0)
     {
         vc name;

@@ -32,7 +32,6 @@
 #include "jchuff.h"
 #include "jdhuff.h"
 #include "audchk.h"
-#include "snds.h"
 #include "doinit.h"
 #include "jccolor.h"
 #include "jdcolor.h"

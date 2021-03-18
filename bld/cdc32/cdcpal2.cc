@@ -12,7 +12,6 @@
 #include "dwtimer.h"
 #include "qmsg.h"
 #include "cdcver.h"
-#include "snds.h"
 #include "qdirth.h"
 #include "dwrtlog.h"
 #include "dwstr.h"

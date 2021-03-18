@@ -95,7 +95,7 @@ int DWYCOCALLCONV dwyco_call_screening_callback(int chan_id,
         const char *uid, int len_uid,
         int *accept_call_style,
         char **error_msg);
-void DWYCOCALLCONV dwyco_alert_callback(const char *cmd, void *, int, const char *);
+//void DWYCOCALLCONV dwyco_alert_callback(const char *cmd, void *, int, const char *);
 void DWYCOCALLCONV dwyco_debug_callback(int status, const char *desc, int, void *);
 void DWYCOCALLCONV dwyco_call_bandwidth_callback(int chan_id, const char *txt, int, void *);
 
@@ -616,7 +616,7 @@ int main(int argc, char *argv[])
 
     //dwyco_set_pal_auth_callback(dwyco_pal_auth_callback);
     dwyco_set_call_screening_callback(dwyco_call_screening_callback);
-    dwyco_set_alert_callback(dwyco_alert_callback);
+    //dwyco_set_alert_callback(dwyco_alert_callback);
 #ifndef CDCX_RELEASE
     dwyco_set_debug_message_callback(dwyco_debug_callback);
 #endif
