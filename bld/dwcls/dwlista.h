@@ -62,6 +62,7 @@ public:
     virtual void append(const T&);
     virtual void prepend(const T&);
     T get() const ;
+    const T* peek_ptr() const;
     T get_last() const ;
     T get_first() const ;
     T read_back() ;
@@ -307,6 +308,17 @@ DwListA<T>::get() const
         return def;
     return current->clnt_data;
 }
+
+template<class T>
+inline
+const T*
+DwListA<T>::peek_ptr() const
+{
+    if (current == listheader)
+        return &def;
+    return &current->clnt_data;
+}
+
 
 template<class T>
 T
@@ -586,4 +598,6 @@ public:
 #define dwlista_foreach(e,list) for((list).rewind();!(list).eol() && (((e)=(list).get()), 1);(list).forward())
 #define dwlista_foreach_back(e,list) for((list).fastforward();!(list).eol() && (((e)=(list).get()), 1);(list).backward())
 #define dwlista_foreach_iter(i, e, list) for((i).rewind();!(i).eol() && (((e)=(i).get()), 1);(i).forward())
+#define dwlista_foreach_peek(e,list) for((list).rewind();!(list).eol() && (((e)=(list).peek_ptr()), 1);(list).forward())
+#define dwlista_foreach_peek_back(e,list) for((list).fastforward();!(list).eol() && (((e)=(list).peek_ptr()), 1);(list).backward())
 #endif

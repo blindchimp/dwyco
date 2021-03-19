@@ -175,7 +175,6 @@ void DWYCOEXPORT dwyco_set_pal_auth_callback(DwycoPalAuthCallback cb);
 #endif
 void DWYCOEXPORT dwyco_set_emergency_callback(DwycoEmergencyCallback cb);
 void DWYCOEXPORT dwyco_set_user_control_callback(DwycoUserControlCallback cb);
-void DWYCOEXPORT dwyco_set_alert_callback(DwycoCommandCallback cb);
 void DWYCOEXPORT dwyco_set_call_bandwidth_callback(DwycoStatusCallback cb);
 
 // Warning: call screening is in the process of changing
@@ -919,7 +918,7 @@ void DWYCOEXPORT dwyco_set_moron_dork_mode(int);
 int DWYCOEXPORT dwyco_get_moron_dork_mode();
 
 void DWYCOEXPORT dwyco_network_diagnostics2(char **res, int *len_res);
-// results are in BITS/second, you can leave any of these pointers NULL
+// results are in BITS/second, you can set any of these pointers 0
 // if you don't need that result.
 void DWYCOEXPORT dwyco_estimate_bandwidth2(int *out_bw, int *in_bw);
 
@@ -930,7 +929,6 @@ void DWYCOEXPORT dwyco_free_array(char *p);
 void DWYCOEXPORT dwyco_free_image(char *p, int rows);
 void DWYCOEXPORT dwyco_finish_startup();
 int DWYCOEXPORT dwyco_get_create_new_account();
-//int DWYCOEXPORT dwyco_check_password_against_local_hash(const char *pw, int len_pw);
 void DWYCOEXPORT dwyco_set_local_auth(int a);
 
 

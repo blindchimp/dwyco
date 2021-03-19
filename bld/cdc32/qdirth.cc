@@ -113,19 +113,20 @@ dirth_get_response()
 int
 dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, vc arg2)
 {
-    int n = Waitq.num_elems();
-    for(int i =  n - 1; i >= 0; --i)
+    const QckDone *wp;
+    dwlista_foreach_peek_back(wp, Waitq)
     {
+        const QckDone& w = *wp;
         //GRTLOG("PEND %s", (char *)Waitq[i].type, 0);
-        if(Waitq[i].callback == f)
+        if(w.callback == f)
         {
-            if(type.name.is_nil() || Waitq[i].type == type)
+            if(type.name.is_nil() || w.type == type)
             {
-                if(arg1 == 0 || Waitq[i].arg1 == arg1)
+                if(arg1 == 0 || w.arg1 == arg1)
                 {
-                    if(arg2.is_nil() || Waitq[i].arg2 == arg2)
+                    if(arg2.is_nil() || w.arg2 == arg2)
                     {
-                        GRTLOG("pend %s", (char *)Waitq[i].type, 0);
+                        GRTLOG("pend %s", (char *)w.type, 0);
                         return 1;
                     }
                 }
@@ -138,24 +139,23 @@ dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, vc arg2)
 void
 dirth_cancel_callbacks(QDFUNCP f, void *arg1, const ReqType& type)
 {
-restart:
-    int n = Waitq.num_elems();
-
-    for(int i = 0; i < n; ++i)
+    Waitq.rewind();
+    while(!Waitq.eol())
     {
-
-        if(Waitq[i].callback == f)
+        const QckDone& w = *Waitq.peek_ptr();
+        if(w.callback == f)
         {
-            if(type.name.is_nil() || (!type.name.is_nil() && Waitq[i].type == type))
+            if(type.name.is_nil() || (!type.name.is_nil() && w.type == type))
             {
-                if(arg1 == 0 || (arg1 != 0 && Waitq[i].arg1 == arg1))
+                if(arg1 == 0 || (arg1 != 0 && w.arg1 == arg1))
                 {
-                    GRTLOG("cancel %s", (char *)Waitq[i].type, 0);
-                    Waitq.del(i);
-                    goto restart;
+                    GRTLOG("cancel %s", (char *)w.type, 0);
+                    Waitq.remove();
+                    continue;
                 }
             }
         }
+        Waitq.forward();
     }
 }
 
@@ -163,25 +163,23 @@ void
 dirth_cancel_callbacks(QDFUNCP f, ValidPtr vp, const ReqType& type)
 {
     int vpvalid = vp.is_valid();
-
-restart:
-    int n = Waitq.num_elems();
-
-    for(int i = 0; i < n; ++i)
+    Waitq.rewind();
+    while(!Waitq.eol())
     {
-
-        if(Waitq[i].callback == f)
+        const QckDone& w = *Waitq.peek_ptr();
+        if(w.callback == f)
         {
-            if(type.name.is_nil() || Waitq[i].type == type)
+            if(type.name.is_nil() || w.type == type)
             {
-                if(vpvalid == 0 || Waitq[i].vp == vp)
+                if(vpvalid == 0 || w.vp == vp)
                 {
-                    GRTLOG("cancel %s", (char *)Waitq[i].type, 0);
-                    Waitq.del(i);
-                    goto restart;
+                    GRTLOG("cancel %s", (char *)w.type, 0);
+                    Waitq.remove();
+                    continue;
                 }
             }
         }
+        Waitq.forward();
     }
 }
 
@@ -193,14 +191,13 @@ restart:
 void
 dirth_dead_channel_cleanup(int chan)
 {
-    int n = Waitq.num_elems();
-
-    for(int i = 0; i < n; ++i)
+    const QckDone *wp;
+    dwlista_foreach_peek(wp, Waitq)
     {
-        if(Waitq[i].channel == chan)
+        if(wp->channel == chan)
         {
             vc resp(VC_VECTOR);
-            resp.append(Waitq[i].type.response_type());
+            resp.append(wp->type.response_type());
             // note: rest of response will look like
             // a generic error
             resp.append(vcnil);
@@ -213,21 +210,19 @@ dirth_dead_channel_cleanup(int chan)
 // when canceling a server operation, call this function
 // instead of the "cancel callbacks" functions above.
 // it fabricates error responses for
-// the schedules callback so anything waiting will get
+// the scheduled callback so anything waiting will get
 // what looks like an error response.
 void
 dirth_simulate_error_response(const QckDone& q)
 {
-
-    int n = Waitq.num_elems();
-
-    for(int i = 0; i < n; ++i)
+    const QckDone *wp;
+    dwlista_foreach_peek(wp, Waitq)
     {
-        if(Waitq[i] == q)
+        if(*wp == q)
         {
-            GRTLOG("simul err %s", (char *)Waitq[i].type, 0);
+            GRTLOG("simul err %s", (char *)wp->type, 0);
             vc resp(VC_VECTOR);
-            resp.append(Waitq[i].type.response_type());
+            resp.append(wp->type.response_type());
             // note: rest of response will look like
             // a generic error
             resp.append(vcnil);
@@ -254,15 +249,17 @@ dirth_poll_response()
             //oopanic("debug proto fail");
             continue;
         }
-        int n = Waitq.num_elems();
-        for(int i = 0; i < n; ++i)
+        Waitq.rewind();
+        while(!Waitq.eol())
         {
-            GRTLOG("wq %s", (char *)Waitq[i].type, 0);
-            if(strcmp(Waitq[i].type.name, v[0][0]) == 0 && Waitq[i].type.serial == (int)v[0][1])
+            const QckDone *wp;
+            wp = Waitq.peek_ptr();
+            GRTLOG("wq %s", (char *)wp->type, 0);
+            if(wp->type.name == v[0][0] && wp->type.serial == (int)v[0][1])
             {
-                QckDone q = Waitq[i];
+                QckDone q = *wp;
                 if(!q.permanent)
-                    Waitq.del(i);
+                    Waitq.remove();
                 // note: as long as you don't reference the Waitq after this
                 // it is safe for callbacks from "done" to call more commands
                 // that might q more commands
@@ -280,6 +277,7 @@ dirth_poll_response()
                 ret = 1;
                 break;
             }
+            Waitq.forward();
         }
     }
     return ret;
@@ -288,13 +286,13 @@ dirth_poll_response()
 void
 dirth_poll_timeouts()
 {
-    int n = Waitq.num_elems();
-    for(int i = 0; i < n; ++i)
+    const QckDone *wp;
+    dwlista_foreach_peek(wp, Waitq)
     {
-        if(Waitq[i].expired())
+        if(wp->expired())
         {
-            GRTLOG("wq expired %s", (char *)Waitq[i].type, 0);
-            QckDone q = Waitq[i];
+            GRTLOG("wq expired %s", (char *)wp->type, 0);
+            const QckDone& q = *wp;
 
             vc resp(VC_VECTOR);
             resp.append(q.type.response_type());

@@ -51,13 +51,13 @@ struct ReqType
             return name == rt.name && rt.serial == serial;
     }
 #ifdef DW_RTLOG
-    operator char *() {
-        static char a[1000];
+    operator char *() const {
+        static char a[128];
         sprintf(a, "%s %d", (const char *)name, serial);
         return a;
     }
 #endif
-    vc response_type() {
+    vc response_type() const {
         vc v(VC_VECTOR);
         v.append(name);
         v.append(serial);
@@ -114,10 +114,10 @@ struct QckDone
                vp == m.vp;
     }
 
-    void done(vc v) {
+    void done(vc v) const {
         if(callback) (*callback)(v, arg1, arg2, vp);
     }
-    int expired() {
+    int expired() const {
         if(timeout == -1)
             return 0;
         else
