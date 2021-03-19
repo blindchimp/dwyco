@@ -23,6 +23,9 @@ struct QckMsg
     vc& operator[](int a) {
         return v[a];
     }
+    const vc& operator[](int a) const {
+        return v[a];
+    }
 
 };
 
@@ -152,7 +155,6 @@ void dirth_dead_channel_cleanup(int chan);
 void dirth_send_ack_all(vc id, QckDone d);
 void dirth_send_clear_ignore(vc id, QckDone d);
 void dirth_q_local_action(vc response_vector, QckDone d);
-void dirth_send_misc_info(vc id, vc mi, QckDone d);
 void dirth_send_get_server_list2(vc id, QckDone d);
 void dirth_send_setup_session_key(vc id, vc dh_public, QckDone d);
 void dirth_send_set_interest_list(vc id, vc list, QckDone d);
@@ -178,7 +180,7 @@ void dirth_send_group_chal(vc id, vc nonce, QckDone d);
 QckMsg dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d);
 vc generate_mac_msg(vc);
 
-extern DwVec<QckDone> Waitq;
+extern DwListA<QckDone> Waitq;
 extern DwListA<vc> Response_q;
 extern int Serial;
 }

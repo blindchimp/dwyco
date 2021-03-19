@@ -390,7 +390,7 @@ void async_pal(vc, void *, vc, ValidPtr);
 void
 init_dirth()
 {
-    Waitq = DwVec<QckDone>();
+    Waitq = DwListA<QckDone>();
     Response_q = DwListA<vc>();
     Waitq.append(QckDone(got_sync, 0, vcnil, ValidPtr(0), "sync", 0, 1));
     Waitq.append(QckDone(got_serv_r, 0, vcnil, ValidPtr(0), "serv_r", 0, 1));

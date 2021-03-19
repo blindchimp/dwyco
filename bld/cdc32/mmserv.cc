@@ -79,7 +79,7 @@ MMChannel::get_secondary_server_channel()
 }
 
 void
-MMChannel::send_to_db(QckMsg& m, int chan_id)
+MMChannel::send_to_db(const QckMsg& m, int chan_id)
 {
     MMChannel *mcs;
     mcs = MMChannel::channel_by_id(chan_id);

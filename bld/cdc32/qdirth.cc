@@ -39,7 +39,7 @@ extern int Database_id;
 extern int Chat_id;
 
 namespace dwyco {
-DwVec<QckDone> Waitq;
+DwListA<QckDone> Waitq;
 DwListA<vc> Response_q;
 int Serial;
 
@@ -60,7 +60,7 @@ reqtype(const char *name, const QckDone& d)
 
 
 static void
-dirth_send(QckMsg& m, QckDone& d)
+dirth_send(const QckMsg& m, QckDone& d)
 {
     static vc cs1("create-user-lobby");
     static vc cs2("remove-user-lobby");
@@ -73,11 +73,13 @@ dirth_send(QckMsg& m, QckDone& d)
     if(what == cs1 || what == cs2)
     {
         d.channel = Chat_id;
+        Waitq.append(d);
         MMChannel::send_to_db(m, Chat_id);
     }
     else
     {
         d.channel = Database_id;
+        Waitq.append(d);
         // don't allow anything to happen until crypto is up
         if(what == dhsf)
         {
@@ -351,8 +353,7 @@ dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_auth,
         m[QSTATIC_PUBLIC_ALTERNATE] = static_public[DH_STATIC_PUBLIC];
         m[QSTATIC_ALT_NAME] = Current_alternate->alt_name();
     }
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -364,8 +365,7 @@ dirth_send_get_pk(vc id, vc uid, QckDone d)
     m[QTYPE] = reqtype("get-pk", d);
     m[QFROM] = id;
     m[2] = uid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -377,8 +377,7 @@ dirth_send_set_token(vc id, vc token, QckDone d)
     m[QTYPE] = reqtype("set-token", d);
     m[QFROM] = id;
     m[2] = token;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 // this asks for the current list of uid's that are in
@@ -391,8 +390,7 @@ dirth_send_get_group(vc id, QckDone d)
     d.type = ReqType("get-group", ++Serial);
     m[QTYPE] = reqtype("get-group", d);
     m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 // this gets the group pk from the name
@@ -409,8 +407,7 @@ dirth_send_get_group_pk(vc id, vc gname, QckDone d)
     m[QTYPE] = reqtype("get-group-pk", d);
     m[QFROM] = id;
     m[2] = gname;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 // attempt to create/enter group gname.
@@ -431,8 +428,7 @@ dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d)
     m[2] = gname;
     m[3] = prov_pk[DH_STATIC_PUBLIC];
 
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 // after you have decrypted the challenge nonce, you send it
@@ -450,8 +446,7 @@ dirth_send_group_chal(vc id, vc nonce, QckDone d)
     m[QFROM] = id;
     m[2] = nonce;
 
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -463,8 +458,7 @@ dirth_send_get(vc id, vc which, QckDone d)
     m[QTYPE] = reqtype("get", d);
     m[QFROM] = id;
     m[2] = which;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -476,8 +470,7 @@ dirth_send_get2(vc id, vc which, QckDone d)
     m[QTYPE] = reqtype("get2", d);
     m[QFROM] = id;
     m[2] = which;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -497,8 +490,7 @@ dirth_send_store(vc id, vc recipients, vc msg, QckDone d)
         vc name = get_server_name_by_uid(recipients[0], port);
         if(ip == My_server_ip && port == My_server_port)
         {
-            Waitq.append(d);
-            dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+            dirth_send(m, d);
         }
         else
         {
@@ -543,8 +535,7 @@ dirth_send_query(vc uid, QckDone d)
     d.type = ReqType("query", ++Serial);
     m[QTYPE] = reqtype("query", d);
     m[QFROM] = uid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -555,8 +546,7 @@ dirth_send_query2(vc uid, QckDone d)
     d.type = ReqType("query2", ++Serial);
     m[QTYPE] = reqtype("query2", d);
     m[QFROM] = uid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -568,8 +558,7 @@ dirth_send_ack_get(vc uid, vc mid, QckDone d)
     m[QTYPE] = reqtype("ack-get", d);
     m[QFROM] = uid;
     m[2] = mid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -581,8 +570,7 @@ dirth_send_ack_get2(vc uid, vc mid, QckDone d)
     m[QTYPE] = reqtype("ack-get2", d);
     m[QFROM] = uid;
     m[2] = mid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
     sql_add_tag(mid, "_ack");
 }
 
@@ -596,8 +584,7 @@ dirth_send_addtag(vc uid, vc mid, vc tag, QckDone d)
     m[QFROM] = uid;
     m[2] = mid;
     m[3] = tag;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 #if 0
@@ -613,8 +600,7 @@ dirth_send_check_set(vc uid, vc tag, QckDone d)
     m[3] = 30;
     m[4] = compute_tag_hash(tag, 30);
 
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 #endif
 
@@ -634,8 +620,7 @@ dirth_send_ignore(vc id, vc uid, QckDone d)
     m[QTYPE] = reqtype("ignore", d);
     m[QFROM] = id;
     m[2] = uid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -650,8 +635,7 @@ dirth_send_unignore(vc id, vc uid, QckDone d)
     m[QTYPE] = reqtype("unignore", d);
     m[QFROM] = id;
     m[2] = uid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 // note: this should go to the server of the *recipient* of the
@@ -673,8 +657,7 @@ dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d)
     vc name = get_server_name_by_uid(who, port);
     if(ip == My_server_ip && port == My_server_port)
     {
-        Waitq.append(d);
-        dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+        dirth_send(m, d);
     }
     else
     {
@@ -715,8 +698,7 @@ dirth_send_get_ignore(vc id, QckDone d)
     d.type = ReqType("get-ignore", ++Serial);
     m[QTYPE] = reqtype("get-ignore", d);
     m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 #endif
 }
 
@@ -729,8 +711,7 @@ dirth_send_ack_all(vc id, QckDone d)
     d.type = ReqType("ack-all", ++Serial);
     m[QTYPE] = reqtype("ack-all", d);
     m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -741,22 +722,7 @@ dirth_send_clear_ignore(vc id, QckDone d)
     d.type = ReqType("clear-ignore", ++Serial);
     m[QTYPE] = reqtype("clear-ignore", d);
     m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
-}
-
-void
-dirth_send_misc_info(vc id, vc mi, QckDone d)
-{
-    QckMsg m;
-
-    d.type = ReqType("auth3", ++Serial);
-    m[QTYPE] = reqtype("auth3", d);
-    m[QFROM] = id;
-    m[2] = mi;
-    // no response
-    //Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -767,8 +733,7 @@ dirth_send_get_server_list2(vc id, QckDone d)
     d.type = ReqType("get-server-list2", ++Serial);
     m[QTYPE] = reqtype("get-server-list2", d);
     m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 QckMsg
@@ -792,8 +757,7 @@ dirth_send_setup_session_key(vc id, vc sf_material, QckDone d)
     m[QTYPE] = reqtype("dhsf", d);
     m[QFROM] = id;
     m[2] = sf_material;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -805,8 +769,7 @@ dirth_send_set_interest_list(vc id, vc list, QckDone d)
     m[QTYPE] = reqtype("set-interest", d);
     m[QFROM] = id;
     m[2] = list;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 
@@ -821,8 +784,7 @@ dirth_send_debug(vc id, vc crashed, vc stack, vc field_track, QckDone d)
     m[2] = crashed;
     m[3] = stack;
     m[4] = field_track;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -835,8 +797,7 @@ dirth_send_recommend2(vc id, vc from, vc to, QckDone d)
     m[QFROM] = id;
     m[2] = from;
     m[3] = to;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -850,8 +811,7 @@ dirth_send_recommend3(vc id, vc from, vc to, vc email, QckDone d)
     m[2] = from;
     m[3] = to;
     m[4] = email;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -863,8 +823,7 @@ dirth_send_set_state(vc id, vc state, QckDone d)
     m[QTYPE] = reqtype("set-state", d);
     m[QFROM] = id;
     m[2] = state;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 vc
@@ -900,8 +859,7 @@ dirth_send_get_info(vc id, vc uid, vc cache_check, QckDone d)
     // use authenticator as a hash, server will send back
     // indication if our item is current
     m[3] = cache_check;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -913,8 +871,7 @@ dirth_send_set_info(vc id, vc info, QckDone d)
     m[QTYPE] = reqtype("set-info", d);
     m[QFROM] = id;
     m[2] = info;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -929,8 +886,7 @@ dirth_send_check_for_update(vc id, QckDone d)
     // hash value of the main executable
     m[2] = dwyco_get_version_string();
     m[3] = "";
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -948,8 +904,7 @@ dirth_send_get_pal_auth_state(vc id, vc who, QckDone d)
     vc name = get_server_name_by_uid(who, port);
     if(ip == My_server_ip && port == My_server_port)
     {
-        Waitq.append(d);
-        dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+        dirth_send(m, d);
     }
     else
     {
@@ -981,8 +936,7 @@ dirth_send_set_pal_auth_state(vc id, vc state, QckDone d)
     m[QTYPE] = reqtype("set-pal-auth", d);
     m[QFROM] = id;
     m[2] = state;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -1000,8 +954,7 @@ dirth_send_server_assist(vc id, vc to_id, QckDone d)
     vc name = get_server_name_by_uid(to_id, port);
     if(ip == My_server_ip && port == My_server_port)
     {
-        Waitq.append(d);
-        dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+        dirth_send(m, d);
     }
     else
     {
@@ -1054,8 +1007,7 @@ dirth_send_create_user_lobby(vc id, vc dispname, vc category, vc sub_god_uid, vc
         return;
     }
 
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -1068,7 +1020,6 @@ dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d)
     m[QFROM] = id;
     m[2] = lobby_id;
 
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 }
