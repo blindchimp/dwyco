@@ -11,6 +11,7 @@
 #include "dhgsetup.h"
 #include "dwrtlog.h"
 #include "grpmsg.h"
+#include "se.h"
 
 extern DwVec<ValidPtr> CompositionDeleteQ;
 
@@ -368,6 +369,7 @@ install_group_key(vc from, vc msg, vc password)
     // isn't a security problem,  nothing else will work properly.
     int ret = DH_alternate::insert_private_key(alt_name, grp_key);
     terminate(our_uid, hfrom);
+    se_emit_join(alt_name, 1);
     Join_signal.emit(alt_name);
     return ret;
 }

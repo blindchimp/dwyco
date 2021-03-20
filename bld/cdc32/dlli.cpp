@@ -426,7 +426,7 @@ int is_invisible();
 void set_invisible(int);
 void sync_call_setup();
 
-static int ReadOnlyMode;
+//static int ReadOnlyMode;
 extern int QSend_inprogress;
 extern int QSend_special_inprogress;
 extern int All_mute;
@@ -3768,7 +3768,7 @@ check_server_pw(const char *pw, vc spw)
     if(salt.type() != VC_STRING || hash.type() != VC_STRING)
         return 0;
 
-    CryptoPP::SHA1 shs;
+    SHA1 shs;
     SecByteBlock b(shs.DigestSize());
     shs.Update((const byte *)pw, strlen(pw));
     shs.Update((const byte *)(const char *)salt, salt.len());
@@ -3888,9 +3888,7 @@ DWYCOEXPORT
 int
 dwyco_get_invisible_state()
 {
-    //return ShowDirectoryData.get_invisible();
     return is_invisible();
-    return 0;
 }
 
 #if 0
@@ -6535,6 +6533,10 @@ build_sync_status_model()
         sync_ip(mc, v);
         v[M_SENDQ_COUNT] = mc->sync_sendq.count();
     }
+    // the reason this looks a little goofy is because
+    // i did some testing and "distinct(mid)" is a lot slower
+    // for some reason than using the similar "group by mid".
+    // never figured out why
     vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select count(*) from gi group by mid)), from_client_uid from gi group by from_client_uid");
     for(int i = 0; i < res.num_elems(); ++i)
     {
@@ -6563,6 +6565,35 @@ dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out)
         return 0;
     }
     *list_out = (DWYCO_SYNC_MODEL)&ret;
+    return 1;
+}
+
+// one row
+
+#define GS_GNAME 0
+#define GS_JOIN_KEY 1
+#define GS_IN_PROGRESS 2
+#define GS_VALID 3
+#define GS_PERCENT_SYNCED 4
+
+DWYCOEXPORT
+int
+dwyco_get_group_status(DWYCO_LIST *list_out)
+{
+    if(!Current_alternate)
+        return 0;
+    vc r(VC_VECTOR);
+    r[GS_GNAME] = Current_alternate->alt_name();
+    r[GS_JOIN_KEY] = Current_alternate->password;
+    r[GS_IN_PROGRESS] = vcnil;
+    r[GS_VALID] = 1;
+    vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select count(*) from gi group by mid)) from gi where from_client_uid = ?1", to_hex(My_UID));
+
+    r[GS_PERCENT_SYNCED] = res[0][0];
+
+    vc& ret = *new vc;
+    ret = r;
+    *list_out = DWYCO_LIST(&ret);
     return 1;
 }
 

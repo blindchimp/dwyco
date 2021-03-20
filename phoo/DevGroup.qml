@@ -6,6 +6,10 @@ import QtQuick.Dialogs 1.3
 import QtQuick.Controls 2.12
 Page {
 
+    property bool group_active
+
+    group_active: core.active_group_name.length > 0
+
     header: SimpleToolbar {
 
     }
@@ -13,18 +17,38 @@ Page {
         color: amber_light
     }
 
+    Connections {
+        target: core
+        onJoin_result: {
+            if(result === 1) {
+                Qt.quit()
+            }
+        }
+    }
+
+
+
     ColumnLayout {
         id: devcol
         anchors.fill: parent
         anchors.margins: mm(2)
         spacing: mm(1)
+        Label {
+            text: "Active: " + core.active_group_name
+            font.bold: true
+            font.pixelSize: 16
+            visible: group_active
+            Layout.fillWidth: true
+        }
 
         TextFieldX {
             id: group_name
             text_input: ""
             placeholder_text: "Enter group name (you can change it later)"
+            visible: !group_active
             Layout.fillWidth: true
         }
+
         TextFieldX {
             id: group_pw
             text_input: ""
@@ -32,14 +56,25 @@ Page {
             Layout.fillWidth: true
         }
 
-        ItemDelegate {
+        Switch {
             id: join_button
-            text: qsTr("Click to link this device to group")
+            text: qsTr("Enable to link this device (requires restart)")
             onClicked: {
                 core.start_gj2(group_name.text_input, group_pw.text_input)
             }
+            visible: !group_active
             Layout.fillWidth: true
         }
+        Switch {
+            id: unjoin_button
+            text: qsTr("Disable to UNlink this device (requires restart)")
+            onClicked: {
+                core.start_gj2("", "")
+            }
+            visible: group_active
+            Layout.fillWidth: true
+        }
+
 
         Label {
             text: "Status: unlinked"
