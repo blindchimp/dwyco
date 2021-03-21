@@ -37,7 +37,15 @@ Page {
             text: "Active: " + core.active_group_name
             font.bold: true
             font.pixelSize: 16
-            visible: group_active
+            visible: group_active && core.group_status === 0
+            Layout.fillWidth: true
+        }
+
+        Label {
+            text: "Requesting key for: " + core.active_group_name
+            font.bold: true
+            font.pixelSize: 16
+            visible: core.group_status !== 0
             Layout.fillWidth: true
         }
 

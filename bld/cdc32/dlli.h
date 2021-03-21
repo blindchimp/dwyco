@@ -501,6 +501,8 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_MSG_PULL_OK 36
 #define DWYCO_SE_MSG_TAG_CHANGE 37
 
+#define DWYCO_SE_GRP_STATUS_CHANGE 38
+
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
@@ -1498,6 +1500,13 @@ typedef DWYCO_LIST DWYCO_SYNC_MODEL;
 
 int DWYCOEXPORT dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out);
 
+#define DWYCO_GS_GNAME "000"
+#define DWYCO_GS_JOIN_KEY "001"
+#define DWYCO_GS_IN_PROGRESS "002"
+#define DWYCO_GS_VALID "003"
+#define DWYCO_GS_PERCENT_SYNCED "004"
+
+int DWYCOEXPORT dwyco_get_group_status(DWYCO_LIST *list_out);
 
 // api for creating a simple backup of messages and account info
 // "create_backup" creates an initial backup, then subsequent calls

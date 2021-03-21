@@ -456,19 +456,19 @@ dwyco_sys_event_callback(int cmd, int id,
 
     if(cmd == DWYCO_SE_USER_UID_RESOLVED)
     {
-        TheDwycoCore-> emit sys_uid_resolved(huid);
+        emit TheDwycoCore->sys_uid_resolved(huid);
     }
     else if(cmd == DWYCO_SE_USER_PROFILE_INVALIDATE)
     {
         //Session_uids.remove(suid);
-        TheDwycoCore->emit sys_invalidate_profile(huid);
+        emit TheDwycoCore->sys_invalidate_profile(huid);
         dwyco_fetch_info(uid, len_uid);
 
     }
     else if(cmd == DWYCO_SE_USER_MSG_IDX_UPDATED ||
             cmd == DWYCO_SE_USER_MSG_IDX_UPDATED_PREPEND)
     {
-        TheDwycoCore->emit sys_msg_idx_updated(huid);
+        emit TheDwycoCore->sys_msg_idx_updated(huid);
     }
     else if(cmd == DWYCO_SE_USER_ADD)
     {
@@ -485,13 +485,13 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_SEND_START:
     case DWYCO_SE_MSG_SEND_FAIL:
     case DWYCO_SE_MSG_SEND_SUCCESS:
-        TheDwycoCore->emit msg_send_status(cmd, huid, str_data);
+        emit TheDwycoCore->msg_send_status(cmd, huid, str_data);
         break;
     case DWYCO_SE_MSG_SEND_STATUS:
-        TheDwycoCore->emit msg_progress(str_data, huid, namestr, extra_arg);
+        emit TheDwycoCore->msg_progress(str_data, huid, namestr, extra_arg);
         break;
     case DWYCO_SE_MSG_DOWNLOAD_PROGRESS:
-        TheDwycoCore->emit msg_recv_progress(str_data, huid, namestr, extra_arg);
+        emit TheDwycoCore->msg_recv_progress(str_data, huid, namestr, extra_arg);
         break;
     case DWYCO_SE_MSG_DOWNLOAD_START:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED:
@@ -500,17 +500,29 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_DOWNLOAD_OK:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED:
-        TheDwycoCore->emit msg_recv_state(cmd, str_data, huid);
+        emit TheDwycoCore->msg_recv_state(cmd, str_data, huid);
         break;
 
     case DWYCO_SE_MSG_PULL_OK:
-        TheDwycoCore->emit msg_pull_ok(namestr, huid);
+        emit TheDwycoCore->msg_pull_ok(namestr, huid);
         break;
 
     case DWYCO_SE_MSG_TAG_CHANGE:
-        TheDwycoCore->emit msg_tag_change_global(namestr, huid);
+        emit TheDwycoCore->msg_tag_change_global(namestr, huid);
         break;
 
+    case DWYCO_SE_GRP_STATUS_CHANGE:
+    {
+        DWYCO_LIST l;
+        if(!dwyco_get_group_status(&l))
+            break;
+        simple_scoped gl(l);
+        TheDwycoCore->update_active_group_name(gl.get<QByteArray>(DWYCO_GS_GNAME));
+        TheDwycoCore->update_join_key(gl.get<QByteArray>(DWYCO_GS_JOIN_KEY));
+        TheDwycoCore->update_percent_synced(gl.get_long(DWYCO_GS_PERCENT_SYNCED));
+        TheDwycoCore->update_group_status(gl.get_long(DWYCO_GS_IN_PROGRESS));
+    }
+        break;
     default:
         break;
     }

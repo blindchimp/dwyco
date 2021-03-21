@@ -45,6 +45,9 @@ class DwycoCore : public QObject
 
     QML_READONLY_VAR_PROPERTY(QString, active_group_name)
     QML_READONLY_VAR_PROPERTY(QString, join_key)
+    QML_READONLY_VAR_PROPERTY(int, group_status)
+    QML_READONLY_VAR_PROPERTY(int, percent_synced)
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -64,6 +67,8 @@ public:
         m_directory_fetching = false;
         m_active_group_name = "";
         m_join_key = "";
+        m_percent_synced = 0;
+        m_group_status = 0;
     }
     static QByteArray My_uid;
 

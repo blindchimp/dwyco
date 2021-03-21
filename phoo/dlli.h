@@ -175,7 +175,6 @@ void DWYCOEXPORT dwyco_set_pal_auth_callback(DwycoPalAuthCallback cb);
 #endif
 void DWYCOEXPORT dwyco_set_emergency_callback(DwycoEmergencyCallback cb);
 void DWYCOEXPORT dwyco_set_user_control_callback(DwycoUserControlCallback cb);
-void DWYCOEXPORT dwyco_set_alert_callback(DwycoCommandCallback cb);
 void DWYCOEXPORT dwyco_set_call_bandwidth_callback(DwycoStatusCallback cb);
 
 // Warning: call screening is in the process of changing
@@ -501,6 +500,8 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 // you get this message to indicate a message has content that is now locally accessible
 #define DWYCO_SE_MSG_PULL_OK 36
 #define DWYCO_SE_MSG_TAG_CHANGE 37
+
+#define DWYCO_SE_GRP_STATUS_CHANGE 38
 
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
@@ -919,7 +920,7 @@ void DWYCOEXPORT dwyco_set_moron_dork_mode(int);
 int DWYCOEXPORT dwyco_get_moron_dork_mode();
 
 void DWYCOEXPORT dwyco_network_diagnostics2(char **res, int *len_res);
-// results are in BITS/second, you can leave any of these pointers NULL
+// results are in BITS/second, you can set any of these pointers 0
 // if you don't need that result.
 void DWYCOEXPORT dwyco_estimate_bandwidth2(int *out_bw, int *in_bw);
 
@@ -930,7 +931,6 @@ void DWYCOEXPORT dwyco_free_array(char *p);
 void DWYCOEXPORT dwyco_free_image(char *p, int rows);
 void DWYCOEXPORT dwyco_finish_startup();
 int DWYCOEXPORT dwyco_get_create_new_account();
-//int DWYCOEXPORT dwyco_check_password_against_local_hash(const char *pw, int len_pw);
 void DWYCOEXPORT dwyco_set_local_auth(int a);
 
 
@@ -1500,6 +1500,13 @@ typedef DWYCO_LIST DWYCO_SYNC_MODEL;
 
 int DWYCOEXPORT dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out);
 
+#define DWYCO_GS_GNAME "000"
+#define DWYCO_GS_JOIN_KEY "001"
+#define DWYCO_GS_IN_PROGRESS "002"
+#define DWYCO_GS_VALID "003"
+#define DWYCO_GS_PERCENT_SYNCED "004"
+
+int DWYCOEXPORT dwyco_get_group_status(DWYCO_LIST *list_out);
 
 // api for creating a simple backup of messages and account info
 // "create_backup" creates an initial backup, then subsequent calls

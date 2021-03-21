@@ -102,6 +102,7 @@ static
 void
 change_join_key(vc, vc new_key)
 {
+    DH_alternate::Group_join_password = new_key;
     if(!Current_alternate)
         return;
     Current_alternate->password = new_key;

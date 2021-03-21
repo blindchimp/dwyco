@@ -79,6 +79,16 @@ clear_gj()
     SKID->start_transaction();
     SKID->sql_simple("delete from pstate");
     SKID->commit_transaction();
+    se_emit_group_status_change();
+}
+
+vc
+get_status_gj()
+{
+    vc res = SKID->sql_simple("select alt_name, state, max(time) from pstate");
+    if(res.num_elems() == 0)
+        return vcnil;
+    return res[0];
 }
 
 // protocol states
@@ -183,6 +193,7 @@ terminate(vc initiator, vc responder)
 
     SKID->sql_simple("delete from pstate where initiating_uid = ?1 and responding_uid = ?2",
                      initiator, responder);
+    se_emit_group_status_change();
 
 }
 
@@ -241,6 +252,7 @@ start_gj(vc target_uid, vc gname, vc password)
                          nonce,
                          to_hex(My_UID)
                          );
+        se_emit_group_status_change();
         return 1;
     }
     catch(...)
@@ -320,6 +332,7 @@ recv_gj2(vc from, vc msg, vc password)
                          alt_name);
 
         SKID->commit_transaction();
+        se_emit_group_status_change();
         return 1;
     }
     catch (...)
@@ -368,8 +381,12 @@ install_group_key(vc from, vc msg, vc password)
     // if the private key doesn't match for some reason, it probably
     // isn't a security problem,  nothing else will work properly.
     int ret = DH_alternate::insert_private_key(alt_name, grp_key);
-    terminate(our_uid, hfrom);
+    // once it completes, just kill everything. this is not what you
+    // want to do if you are expecting to run this protocol on multiple
+    // groups at the same time, but we don't want to do that anyway.
+    clear_gj();
     se_emit_join(alt_name, 1);
+    se_emit_group_status_change();
     Join_signal.emit(alt_name);
     return ret;
 }

@@ -173,6 +173,15 @@ se_emit_join(vc gname, int res)
     GRTLOGVC(v);
 }
 
+void
+se_emit_group_status_change()
+{
+    vc v(VC_VECTOR);
+    v[0] = SE_GRP_STATUS_CHANGE;
+    Se_q.append(v);
+    GRTLOGVC(v);
+}
+
 int
 se_process()
 {
@@ -292,6 +301,16 @@ se_process()
                                            0,
                                            Se_q[i][1], Se_q[i][1].len(),
                                            Se_q[i][1], Se_q[i][1].len(),
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_GRP_STATUS_CHANGE:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           0, 0,
                                            0, 0, 0,
                                            0, 0
                                           );

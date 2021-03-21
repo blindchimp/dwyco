@@ -6568,7 +6568,7 @@ dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out)
     return 1;
 }
 
-// one row
+
 
 #define GS_GNAME 0
 #define GS_JOIN_KEY 1
@@ -6580,12 +6580,32 @@ DWYCOEXPORT
 int
 dwyco_get_group_status(DWYCO_LIST *list_out)
 {
-    if(!Current_alternate)
-        return 0;
     vc r(VC_VECTOR);
-    r[GS_GNAME] = Current_alternate->alt_name();
-    r[GS_JOIN_KEY] = Current_alternate->password;
-    r[GS_IN_PROGRESS] = vcnil;
+    vc gname;
+    vc pw;
+    if(!Current_alternate)
+    {
+        gname = "";
+        pw = DH_alternate::Group_join_password;
+    }
+    else
+    {
+        gname = Current_alternate->alt_name();
+        pw = Current_alternate->password;
+    }
+
+    r[GS_GNAME] = gname;
+    r[GS_JOIN_KEY] = pw;
+    vc gj = get_status_gj();
+    if(gj.is_nil())
+    {
+        r[GS_IN_PROGRESS] = 0;
+    }
+    else
+    {
+        r[GS_GNAME] = gj[0];
+        r[GS_IN_PROGRESS] = gj[1];
+    }
     r[GS_VALID] = 1;
     vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select count(*) from gi group by mid)) from gi where from_client_uid = ?1", to_hex(My_UID));
 
@@ -7207,8 +7227,8 @@ static
 void
 final_group_setup(vc gname)
 {
-    set_settings_value("group/alt_name", gname);
-    se_emit_join(gname, 1);
+    //set_settings_value("group/alt_name", gname);
+    //se_emit_join(gname, 1);
 }
 
 static
@@ -7245,7 +7265,7 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
                 throw -1;
             }
             DH_alternate::Group_join_password = dha->password;
-            Join_signal.connect_ptrfun(final_group_setup, 1);
+            //Join_signal.connect_ptrfun(final_group_setup, 1);
             start_gj(members[0], dha->alt_name(), dha->password);
         }
         else if(what[0] == vc("chal"))
