@@ -143,8 +143,8 @@ init_dhg()
         if(!grp_pw)
         {
             pw = get_settings_value("group/join_key");
-            if(pw.is_nil() || pw.len() == 0)
-                return;
+            //if(pw.is_nil() || pw.len() == 0)
+            //    return;
             bind_sql_setting("group/join_key", change_join_key);
         }
         else

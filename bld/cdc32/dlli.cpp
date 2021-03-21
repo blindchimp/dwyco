@@ -7164,7 +7164,7 @@ chal_res(vc m, void *, vc, ValidPtr vp)
         // of trying to avoid relying on the server to store group private keys, so that's something.
         vclh_dsa_pub_init(newfn("dsadwyco.pub").c_str());
         DwString a(dha->alt_name());
-        vc spk = serialize(dha->my_static_public());
+        vc spk = serialize(dha->my_static_public()[DH_STATIC_PUBLIC]);
         if(spk != serialized_pk)
         {
             throw -1;
