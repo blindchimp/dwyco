@@ -6612,8 +6612,10 @@ dwyco_get_group_status(DWYCO_LIST *list_out)
     r[GS_PERCENT_SYNCED] = res[0][0];
 
     vc& ret = *new vc;
-    ret = r;
-    *list_out = DWYCO_LIST(&ret);
+    vc v(VC_VECTOR);
+    v[0] = r;
+    ret = v;
+    *list_out = (DWYCO_LIST)&ret;
     return 1;
 }
 
@@ -7207,7 +7209,7 @@ chal_res(vc m, void *, vc, ValidPtr vp)
         DH_alternate::insert_sig(dha->alt_name(), sig);
         delete dha;
         // this reloads the key
-        init_dhg();
+        //init_dhg();
         // note: since this is a new group, we are probably the only one in it,
         // don't bother updating Group_uids at this point.
 
@@ -7321,6 +7323,7 @@ dwyco_start_gj2(const char *gname, const char *password)
         set_settings_value("group/join_key", "");
         set_settings_value("group/alt_name", "");
         remove_sync_state();
+        se_emit_group_status_change();
         return 1;
     }
     // you have to leave first, you can't change directly

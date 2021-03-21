@@ -511,6 +511,14 @@ dwyco_sys_event_callback(int cmd, int id,
         emit TheDwycoCore->msg_tag_change_global(namestr, huid);
         break;
 
+    case DWYCO_SE_GRP_JOIN_OK:
+        emit TheDwycoCore->join_result(namestr, 1);
+        break;
+
+    case DWYCO_SE_GRP_JOIN_FAIL:
+        emit TheDwycoCore->join_result(namestr, 0);
+        break;
+
     case DWYCO_SE_GRP_STATUS_CHANGE:
     {
         DWYCO_LIST l;
@@ -2986,13 +2994,12 @@ DwycoCore::start_gj(QString uid, QString password)
 
 }
 
-void
+int
 DwycoCore::start_gj2(QString gname, QString password)
 {
     QByteArray gn = gname.toLatin1();
     QByteArray pw = password.toLatin1();
-    dwyco_start_gj2(gn.constData(), pw.constData());
-
+    return dwyco_start_gj2(gn.constData(), pw.constData());
 }
 
 

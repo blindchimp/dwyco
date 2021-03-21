@@ -85,7 +85,7 @@ clear_gj()
 vc
 get_status_gj()
 {
-    vc res = SKID->sql_simple("select alt_name, state, max(time) from pstate");
+    vc res = SKID->sql_simple("select alt_name, state, time from pstate order by time desc limit 1");
     if(res.num_elems() == 0)
         return vcnil;
     return res[0];

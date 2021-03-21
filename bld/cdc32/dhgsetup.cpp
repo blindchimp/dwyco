@@ -24,6 +24,7 @@
 #include "modes.h"
 #include "simple_property.h"
 #include "ezset.h"
+#include "se.h"
 
 
 using namespace CryptoPP;
@@ -121,6 +122,8 @@ init_dhg()
     if(Current_alternate)
         return;
 
+    se_emit_group_status_change();
+
     vc alt_name;
     vc pw;
 
@@ -133,7 +136,7 @@ init_dhg()
             alt_name = get_settings_value("group/alt_name");
             if(alt_name.is_nil() || alt_name.len() == 0)
                 return;
-            bind_sql_setting("group/alt_name", change_current_group);
+            //bind_sql_setting("group/alt_name", change_current_group);
         }
         else
             alt_name = grp_name;

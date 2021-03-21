@@ -8,7 +8,7 @@ Page {
 
     property bool group_active
 
-    group_active: core.active_group_name.length > 0
+    group_active: core.active_group_name.length > 0 && core.group_status === 0
 
     header: SimpleToolbar {
 
@@ -21,6 +21,8 @@ Page {
         target: core
         onJoin_result: {
             if(result === 1) {
+                core.set_setting("group/alt_name", gname)
+                core.set_setting("group/join_key", "foo")
                 Qt.quit()
             }
         }
@@ -34,10 +36,10 @@ Page {
         anchors.margins: mm(2)
         spacing: mm(1)
         Label {
-            text: "Active: " + core.active_group_name
+            text: "Active: " + core.active_group_name + " (" + core.percent_synced + "%)"
             font.bold: true
             font.pixelSize: 16
-            visible: group_active && core.group_status === 0
+            visible: group_active
             Layout.fillWidth: true
         }
 
@@ -70,6 +72,7 @@ Page {
             onClicked: {
                 core.start_gj2(group_name.text_input, group_pw.text_input)
             }
+
             visible: !group_active
             Layout.fillWidth: true
         }
@@ -77,8 +80,11 @@ Page {
             id: unjoin_button
             text: qsTr("Disable to UNlink this device (requires restart)")
             onClicked: {
-                core.start_gj2("", "")
+                if(core.start_gj2("", "") === 1) {
+                    Qt.quit()
+                }
             }
+            checked: true
             visible: group_active
             Layout.fillWidth: true
         }
