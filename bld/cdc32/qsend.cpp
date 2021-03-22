@@ -128,6 +128,7 @@ DwQSend::save_aux()
     v[1] = try_count;
     v[2] = prev_ip;
     v[3] = prev_port;
+    v[4] = force_encryption;
     DwString fn = fn_base_wo_extension(qfn);
     fn += ".aux";
     save_info(v, fn.c_str());
@@ -146,6 +147,7 @@ DwQSend::load_aux()
         try_count = v[1];
         prev_ip = v[2];
         prev_port = v[3];
+        force_encryption = v[4];
         return 1;
     }
     return 0;
@@ -609,10 +611,7 @@ DwQSend::send_message()
         // note: if encryption is *required* for the message for
         // some reason, either set force_encryption or Force_pk
         // and if there is no way to encrypt it now, the message is
-        // just stored and not sent. there is a bug though. even though
-        // the message is not sent, the "force_encyption" state isn't
-        // stored with the message, so the automated q processing stuff
-        // will not honor it on a per-message basis. this should be fixed
+        // just stored and not sent.
         // (though, right now, i don't think there are any cases where
         // encryption is forced on a per-message basis)
         // note2: as an aside, this doesn't mean the message is

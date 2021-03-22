@@ -273,7 +273,7 @@ dh_store_and_forward_material(vc other_pub, vc& session_key_out)
 // and returns an array of encrypted keys and public key material to go with it.
 // this is used for multi-recipient encryption.
 // note: there is still only one session key returned. this means that any of the
-// public material can be used to decrypt the single key returned.
+// private material can be used to decrypt the single key returned.
 // note2: you *can* send the results of this function to the single-key
 // store_and_forward_get_key, which means old software should still be
 // able to decrypt messages
@@ -295,6 +295,7 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
         {
             ret[2 * j] = vcnil;
             ret[2 * j + 1] = vcnil;
+            continue;
         }
         // generate a key from their static public material
         SecByteBlock privk(EphDH->PrivateKeyLength());
@@ -474,6 +475,8 @@ check_and_get_key(vc pack, vc our_material, vc checkstr)
 vc
 dh_store_and_forward_get_key2(vc sfpack, vc our_material)
 {
+    if(sfpack.type() != VC_VECTOR || our_material.type() != VC_VECTOR)
+        return vcnil;
 
     if((sfpack.num_elems() & 1) != 1 || sfpack.num_elems() < 3)
     {
@@ -483,18 +486,27 @@ dh_store_and_forward_get_key2(vc sfpack, vc our_material)
 
     int n = sfpack.num_elems() / 2;
     vc checkstr = sfpack[2 * n];
-    vc rk = check_and_get_key(sfpack, our_material[0], checkstr);
-    if(!rk.is_nil())
-        return rk;
-
-    vc gpack(VC_VECTOR);
-    gpack[0] = sfpack[2];
-    gpack[1] = sfpack[3];
-    for(int i = 1; i < our_material.num_elems(); ++i)
+    // some message may not have a p2p key, but might have a
+    // group key (below)
+    vc rk;
+    if(sfpack[0].type() == VC_STRING && sfpack[1].type() == VC_STRING)
     {
-        rk = check_and_get_key(gpack, our_material[i], checkstr);
+        rk = check_and_get_key(sfpack, our_material[0], checkstr);
         if(!rk.is_nil())
             return rk;
+    }
+
+    if(sfpack[2].type() == VC_STRING && sfpack[3].type() == VC_STRING)
+    {
+        vc gpack(VC_VECTOR);
+        gpack[0] = sfpack[2];
+        gpack[1] = sfpack[3];
+        for(int i = 1; i < our_material.num_elems(); ++i)
+        {
+            rk = check_and_get_key(gpack, our_material[i], checkstr);
+            if(!rk.is_nil())
+                return rk;
+        }
     }
     return vcnil;
 }

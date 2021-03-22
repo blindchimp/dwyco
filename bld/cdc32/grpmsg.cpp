@@ -26,15 +26,9 @@ struct skid_sql : public SimpleSql
 
     void init_schema(const DwString&) {
         start_transaction();
-        sql_simple("create table if not exists keys ("
-                   "uid text collate nocase not null, "
-                   "alt_name text collate nocase not null, "
-                   "pubkey blob not null,"
-                   "privkey blob,"
-                   "time integer"
-                   ")");
-        sql_simple("create index if not exists keys_uid on keys(uid)");
-        sql_simple("create index if not exists keys_alt_name on keys(alt_name)");
+        sql_simple("drop table if exists keys");
+        //sql_simple("create index if not exists keys_uid on keys(uid)");
+        //sql_simple("create index if not exists keys_alt_name on keys(alt_name)");
         sql_simple("create table if not exists pstate ("
                    "initiating_uid text collate nocase not null,"
                    "responding_uid text collate nocase, "
@@ -91,22 +85,30 @@ get_status_gj()
     return res[0];
 }
 
-// protocol states
+// the basic idea here is that we don't know who has the
+// private key for the group. so we send a message to the
+// group, and the first one that responds and completes the
+// protocol, we use that private key, and ignore the rest of
+// the responses. we *could* do something along the lines of
+// letting all the responders finish the protocol and compare
+// the results, possibly getting some better confidence in
+// the key (since all the final keys should be the same),
+// but i haven't bothered with that here.
 
 /*
  * G is the group you want to join
- * P is the password for G
+ * P is the password for G (a pre-shared secret)
  * B is who wants to join
  * A is some member of G and can provide G's private key
  * Ek(m) is m encrypted with k = H(P) using GCM
  *
  * if any message fails to decrypt the protocol terminates with failure
  *
-B->A: create m = (rB, G) and send Ek(m) to G using only G's public key
-A->B: A decrypts m using k, m = Ek(G, rA, rB, B)
-B->A: B decrypts m using k, if rB != m's rB fail. if G or B don't match, fail. m = Ek(G, rB, rA, A)
-A receives and decrypts m, checks all items match. if so, it sends G's private key to B in
-a message that is encrypted using B's public key.
+B->A: create m1 = (rB, G) and send Ek(m) to G using only G's public key
+A->B: A decrypts m1 using k, m2 = Ek(G, rA, rB, B)
+B->A: B decrypts m2 using k, if rB != m1's rB fail. if G or B don't match, fail. m3 = Ek(G, rB, rA, A)
+A receives and decrypts m3, checks all items match. if so, it sends G's private key to B in
+a message that is encrypted using B's p2p public key.
 
 */
 
