@@ -78,6 +78,7 @@ sha3(vc s)
 }
 
 static DHG_sql *DHG_db;
+#define sql DHG_db->sql_simple
 
 static
 void
@@ -294,16 +295,6 @@ DH_alternate::load_account(vc alternate_name)
     return 1;
 }
 
-int
-DH_alternate::insert_new_key(vc alt_name, vc grp_key)
-{
-    if(!DHG_db)
-        return 0;
-    if(!insert_record(My_UID, alt_name, grp_key))
-        return 0;
-    return 1;
-}
-
 static
 vc
 blob(vc b)
@@ -313,6 +304,34 @@ blob(vc b)
     v[1] = b;
     return v;
 }
+
+// replaces existing pubkey and remove private key
+// used in the case we will be finding the private key from
+// another group member
+int
+DH_alternate::insert_public_key(vc alt_name, vc grp_key, vc sig)
+{
+    if(!DHG_db)
+        return 0;
+    try
+    {
+        DHG_db->start_transaction();
+        remove_key(alt_name);
+        sql("insert or replace into keys (alt_name, pubkey, privkey, uid, time) values(?1, ?2, ?3, ?4, strftime('%s', 'now'))",
+            alt_name, blob(grp_key), blob(""), to_hex(My_UID));
+        sql("insert or replace into sigs(alt_name, sig) values(?1, ?2)",
+            alt_name, blob(sig));
+        DHG_db->commit_transaction();
+    }
+    catch(...)
+    {
+        DHG_db->rollback_transaction();
+        return 0;
+    }
+    return 1;
+}
+
+
 
 int
 DH_alternate::insert_sig(vc alt_name, vc sig)

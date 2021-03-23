@@ -7212,6 +7212,9 @@ chal_res(vc m, void *, vc, ValidPtr vp)
         //init_dhg();
         // note: since this is a new group, we are probably the only one in it,
         // don't bother updating Group_uids at this point.
+        // NOTE: AT THIS POINT, IT IS BEST TO EXIT AND RESTART THE PROGRAM
+        // i haven't figured out all the group state that needs to be modified
+        // during a transition like this
 
     }
     catch(...)
@@ -7223,14 +7226,6 @@ chal_res(vc m, void *, vc, ValidPtr vp)
         delete dha;
 
     }
-}
-
-static
-void
-final_group_setup(vc gname)
-{
-    //set_settings_value("group/alt_name", gname);
-    //se_emit_join(gname, 1);
 }
 
 static
@@ -7255,8 +7250,8 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
         {
             // group already exists, replace provisional key with the server-provided signed public key
             // then set about asking someone for the private key
-            vc pk = what[1];
-            vc sig = what[2];
+            vc spk = what[1]; // serialized
+            vc sig = what[2]; // not serialized
             vc members = what[3];
             // NOTE: if the members is empty, the group may be abandoned, in any case
             // it is unlikely we will be able to find the private key because noone
@@ -7266,8 +7261,15 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
             {
                 throw -1;
             }
+            // store the pk that the server gave us, we may need it when
+            // searching for the private key if we can't find some public
+            // key info from profiles of the existing members.
+            vc pk;
+            if(!deserialize(spk, pk))
+                throw -1;
+            if(!DH_alternate::insert_public_key(dha->alt_name(), pk, sig))
+                throw -1;
             DH_alternate::Group_join_password = dha->password;
-            //Join_signal.connect_ptrfun(final_group_setup, 1);
             start_gj(members[0], dha->alt_name(), dha->password);
         }
         else if(what[0] == vc("chal"))
@@ -7338,9 +7340,6 @@ dwyco_start_gj2(const char *gname, const char *password)
     dirth_send_set_get_group_pk(My_UID, dha->alt_name(), dha->my_static_public(), QckDone(group_enter_setup, 0, vcnil, dha->vp));
     return 1;
 }
-
-
-
 
 DWYCOEXPORT
 int

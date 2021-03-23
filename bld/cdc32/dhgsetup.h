@@ -47,8 +47,8 @@ public:
     vc hash_key_material();
 
     // inserts a new key into the database, which we
-    // presumably got from another group member
-    static int insert_new_key(vc alt_name, vc grp_key);
+    // presumably got from another group member or the server
+    static int insert_public_key(vc alt_name, vc grp_key, vc sig);
     static int insert_private_key(vc alt_name, vc grp_key);
     static int insert_sig(vc alt_name, vc sig);
 
