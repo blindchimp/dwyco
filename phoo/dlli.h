@@ -1505,6 +1505,7 @@ int DWYCOEXPORT dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out);
 #define DWYCO_GS_IN_PROGRESS "002"
 #define DWYCO_GS_VALID "003"
 #define DWYCO_GS_PERCENT_SYNCED "004"
+#define DWYCO_GS_EAGER "005"
 
 int DWYCOEXPORT dwyco_get_group_status(DWYCO_LIST *list_out);
 

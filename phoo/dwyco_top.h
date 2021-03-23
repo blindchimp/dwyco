@@ -47,6 +47,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(QString, join_key)
     QML_READONLY_VAR_PROPERTY(int, group_status)
     QML_READONLY_VAR_PROPERTY(int, percent_synced)
+    QML_READONLY_VAR_PROPERTY(int, eager_pull)
 
 
 public:
@@ -69,6 +70,7 @@ public:
         m_join_key = "";
         m_percent_synced = 0;
         m_group_status = 0;
+        m_eager_pull = 0;
     }
     static QByteArray My_uid;
 

@@ -22,7 +22,7 @@ Page {
         onJoin_result: {
             if(result === 1) {
                 core.set_setting("group/alt_name", gname)
-                core.set_setting("group/join_key", "foo")
+                //core.set_setting("group/join_key", "foo")
                 Qt.quit()
             }
         }
@@ -36,14 +36,15 @@ Page {
         anchors.margins: mm(2)
         spacing: mm(1)
         Label {
-            text: "Active: " + core.active_group_name + " (" + core.percent_synced + "%)"
+            text: group_active ? "Active: " + core.active_group_name + " (" + core.percent_synced + "%)" : "Not Linked"
             font.bold: true
             font.pixelSize: 16
-            visible: group_active
+            visible: true
             Layout.fillWidth: true
         }
         RowLayout {
-            visible: core.group_status !== 0
+            //XXX FIX THIS, state 2 means we are serving up the key, otherwise requesting
+            visible: core.group_status === 1 || core.group_status === 3
             Button {
                 text: "Cancel"
                 onClicked: {
@@ -60,7 +61,6 @@ Page {
                 text: "Requesting key for: " + core.active_group_name
                 font.bold: true
                 font.pixelSize: 16
-                //visible: core.group_status !== 0
                 Layout.fillWidth: true
             }
             Layout.fillWidth: true
@@ -69,15 +69,47 @@ Page {
         TextFieldX {
             id: group_name
             text_input: ""
-            placeholder_text: "Enter group name (you can change it later)"
+            placeholder_text: "Account name (it can be anything you want)"
             visible: !group_active
+            inputMethodHints: Qt.ImhNoPredictiveText|Qt.ImhLowercaseOnly
             Layout.fillWidth: true
         }
+
+
 
         TextFieldX {
             id: group_pw
             text_input: ""
-            placeholder_text: "Enter group password"
+            placeholder_text: "Enter secret PIN (at least 4 digits)"
+            inputMethodHints: Qt.ImhDigitsOnly
+            onAcceptableInputChanged: {
+                if(acceptableInput) {
+                    core.set_setting("group/join_key", text_input)
+                } else {
+                    core.set_setting("group/join_key", "")
+                }
+            }
+            visible: !group_active
+
+            Layout.fillWidth: true
+        }
+
+        RowLayout {
+
+            visible: group_active
+            Button {
+                id: show_pin
+                text: "Show PIN"
+                checkable: true
+                Layout.alignment: Qt.AlignVCenter
+            }
+            Label {
+                id: label2
+                text: show_pin.checked ? core.join_key : "####"
+                font.bold: true
+                font.pixelSize: 16
+                Layout.fillWidth: true
+            }
             Layout.fillWidth: true
         }
 
@@ -89,6 +121,7 @@ Page {
             }
 
             visible: !group_active
+            enabled: group_pw.text_input.length >= 4 && group_name.text_input.length > 4
             Layout.fillWidth: true
         }
         Switch {
@@ -103,10 +136,19 @@ Page {
             visible: group_active
             Layout.fillWidth: true
         }
+        Switch {
+            id: server_mode
+            text: qsTr("Server mode (download and store all messages on this device)")
+            checked: core.eager_pull
+            onClicked: {
+                if(checked) {
+                    core.set_setting("sync/eager", "1")
+                } else {
+                    core.set_setting("sync/eager", "0")
+                }
+            }
 
-
-        Label {
-            text: "Status: unlinked"
+            visible: group_active
             Layout.fillWidth: true
         }
 

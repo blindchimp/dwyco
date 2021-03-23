@@ -6575,6 +6575,7 @@ dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out)
 #define GS_IN_PROGRESS 2
 #define GS_VALID 3
 #define GS_PERCENT_SYNCED 4
+#define GS_EAGER 5
 
 DWYCOEXPORT
 int
@@ -6610,6 +6611,7 @@ dwyco_get_group_status(DWYCO_LIST *list_out)
     vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select count(*) from gi group by mid)) from gi where from_client_uid = ?1", to_hex(My_UID));
 
     r[GS_PERCENT_SYNCED] = res[0][0];
+    r[GS_EAGER] = get_settings_value("sync/eager");
 
     vc& ret = *new vc;
     vc v(VC_VECTOR);
@@ -7324,6 +7326,7 @@ dwyco_start_gj2(const char *gname, const char *password)
             Current_alternate->leave();
         set_settings_value("group/join_key", "");
         set_settings_value("group/alt_name", "");
+        set_settings_value("sync/eager", 0);
         remove_sync_state();
         se_emit_group_status_change();
         return 1;
@@ -7337,6 +7340,7 @@ dwyco_start_gj2(const char *gname, const char *password)
     dha->remove_key(gname);
     dha->load_account(gname);
     dha->password = password;
+    set_settings_value("group/join_key", password);
     dirth_send_set_get_group_pk(My_UID, dha->alt_name(), dha->my_static_public(), QckDone(group_enter_setup, 0, vcnil, dha->vp));
     return 1;
 }

@@ -529,6 +529,7 @@ dwyco_sys_event_callback(int cmd, int id,
         TheDwycoCore->update_join_key(gl.get<QByteArray>(DWYCO_GS_JOIN_KEY));
         TheDwycoCore->update_percent_synced(gl.get_long(DWYCO_GS_PERCENT_SYNCED));
         TheDwycoCore->update_group_status(gl.get_long(DWYCO_GS_IN_PROGRESS));
+        TheDwycoCore->update_eager_pull(gl.get_long(DWYCO_GS_EAGER));
     }
         break;
     default:

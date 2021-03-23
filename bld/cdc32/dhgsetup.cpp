@@ -104,6 +104,7 @@ static
 void
 change_join_key(vc, vc new_key)
 {
+    se_emit_group_status_change();
     DH_alternate::Group_join_password = new_key;
     if(!Current_alternate)
         return;
@@ -115,6 +116,7 @@ void
 eager_changed(vc, vc)
 {
     drop_all_sync_calls(0);
+    se_emit_group_status_change();
 }
 
 void

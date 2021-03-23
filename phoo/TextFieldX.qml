@@ -13,6 +13,10 @@ import QtQuick.Layouts 1.12
 RowLayout {
     property alias text_input: textInput1.text
     property alias placeholder_text: textInput1.placeholderText
+    property alias inputMethodHints: textInput1.inputMethodHints
+    property alias inputMask: textInput1.inputMask
+    property alias acceptableInput: textInput1.acceptableInput
+
     TextField {
         id: textInput1
         Layout.fillWidth: true
