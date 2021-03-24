@@ -8,7 +8,7 @@ namespace dwyco {
 template<class T>
 class sigprop
 {
-private:
+protected:
     T val;
 
 public:
@@ -45,7 +45,20 @@ public:
             return false;
         return true;
     }
+
+    // surprising, but glad it works. if T doesn't have these members
+    // as long as you don't invoke these members, the compiler won't complain
+    void add(const T& e) {
+        val.add(e);
+        value_changed.emit(val);
+    }
+    void del(const T& e) {
+        val.del(e);
+        value_changed.emit(val);
+    }
 };
+
+
 
 }
 

@@ -25,6 +25,7 @@
 #include "simple_property.h"
 #include "ezset.h"
 #include "se.h"
+#include "qmsgsql.h"
 
 
 using namespace CryptoPP;
@@ -84,20 +85,12 @@ static
 void
 change_current_group(vc, vc new_name)
 {
-    if(new_name.len() == 0)
-    {
-        auto odha = Current_alternate;
-        Current_alternate = 0;
-        delete odha;
-        return;
-    }
-    DH_alternate *dha = new DH_alternate;
-    dha->init(My_UID, new_name);
-    dha->load_account(new_name);
-
-    auto odha = Current_alternate;
-    Current_alternate = dha;
-    delete odha;
+    // least surprise: when we change groups we discard our
+    // sync history state. this is mainly so we don't
+    // propagate tombstones that might delete things on
+    // other clients when we join a group we may have been in before.
+    remove_sync_state();
+    se_emit_group_status_change();
 }
 
 static
@@ -126,7 +119,8 @@ init_dhg()
         return;
 
     se_emit_group_status_change();
-
+    bind_sql_setting("group/alt_name", change_current_group);
+    bind_sql_setting("group/join_key", change_join_key);
     vc alt_name;
     vc pw;
 
@@ -139,7 +133,7 @@ init_dhg()
             alt_name = get_settings_value("group/alt_name");
             if(alt_name.is_nil() || alt_name.len() == 0)
                 return;
-            //bind_sql_setting("group/alt_name", change_current_group);
+
         }
         else
             alt_name = grp_name;
@@ -152,7 +146,7 @@ init_dhg()
             pw = get_settings_value("group/join_key");
             //if(pw.is_nil() || pw.len() == 0)
             //    return;
-            bind_sql_setting("group/join_key", change_join_key);
+
         }
         else
             pw = grp_pw;

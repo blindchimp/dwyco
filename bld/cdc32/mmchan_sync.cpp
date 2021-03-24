@@ -32,6 +32,8 @@ using namespace dwyco;
 #endif
 #include "sepstr.h"
 
+extern sigprop<vc> Group_uids;
+
 static
 vc
 file_to_string(DwString fn)
@@ -296,13 +298,10 @@ MMChannel::mms_sync_state_changed(enum syncstate s)
     if(s == NORMAL_SEND)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
-        // note: it is better to do this once on the recv side
+        // note: it is better to do assert eager pulls once on the recv side
         // since we get the signal right after we unpack the
-        // remotes latest info
-//        if(Eager_sync)
-//        {
-//            assert_eager_pulls(this, remote_uid());
-//        }
+        // remote client's latest info
+        Group_uids.add(remote_uid());
     }
     else
     {
