@@ -43,6 +43,7 @@ Page {
             Layout.fillWidth: true
         }
         RowLayout {
+            id: requesting
             //XXX FIX THIS, state 2 means we are serving up the key, otherwise requesting
             visible: core.group_status === 1 || core.group_status === 3
             Button {
@@ -68,11 +69,12 @@ Page {
 
         TextFieldX {
             id: group_name
-            text_input: ""
+            text_input: !enabled ? core.active_group_name : ""
             placeholder_text: "Account name (it can be anything you want)"
             visible: !group_active
             inputMethodHints: Qt.ImhNoPredictiveText|Qt.ImhLowercaseOnly
             Layout.fillWidth: true
+            enabled: !requesting.visible
         }
 
 
@@ -82,21 +84,13 @@ Page {
             text_input: ""
             placeholder_text: "Enter secret PIN (at least 4 digits)"
             inputMethodHints: Qt.ImhDigitsOnly
-            onAcceptableInputChanged: {
-                if(acceptableInput) {
-                    core.set_setting("group/join_key", text_input)
-                } else {
-                    core.set_setting("group/join_key", "")
-                }
-            }
-            visible: !group_active
-
+            visible: !group_active && !show_pin_layout.visible
             Layout.fillWidth: true
         }
 
         RowLayout {
-
-            visible: group_active
+            id: show_pin_layout
+            visible: group_active || requesting.visible
             Button {
                 id: show_pin
                 text: "Show PIN"
@@ -120,13 +114,13 @@ Page {
                 core.start_gj2(group_name.text_input, group_pw.text_input)
             }
 
-            visible: !group_active
+            visible: !(group_active || requesting.visible)
             enabled: group_pw.text_input.length >= 4 && group_name.text_input.length > 4
             Layout.fillWidth: true
         }
         Switch {
             id: unjoin_button
-            text: qsTr("Disable to UNlink this device (requires restart)")
+            text: qsTr("Disable to UNLINK this device (requires restart)")
             onClicked: {
                 if(core.start_gj2("", "") === 1) {
                     Qt.quit()

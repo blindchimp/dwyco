@@ -6489,7 +6489,7 @@ build_sync_status_model()
     {
         vc v(VC_VECTOR);
         v[M_UID] = uids[i];
-        v[M_STATUS] = "d"; // disconnected
+        v[M_STATUS] = uids[i] > My_UID ? "od" : "rd"; // disconnected
         v[M_PULLS_ASSERT] = pulls::count_by_uid(uids[i]);
         ret.append(v);
         cuids.append(uids[i]);
