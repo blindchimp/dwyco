@@ -300,6 +300,11 @@ configform::load()
     }
     ui.disable_backups->setChecked(val);
 
+    if(ui.CDC_group__alt_name->text().length() == 0)
+        ui.sync_enable->setChecked(false);
+    else
+        ui.sync_enable->setChecked(true);
+
 }
 
 
@@ -504,7 +509,25 @@ void configform::on_pals_only_clicked(bool checked)
 
 void configform::on_join_clicked()
 {
-    dwyco_set_setting("group/alt_name", ui.CDC_group__alt_name->text().toLatin1().constData());
-    dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
-    dwyco_start_gj(0, 0, 0);
+    //dwyco_set_setting("group/alt_name", ui.CDC_group__alt_name->text().toLatin1().constData());
+    //dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
+    //dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData());
 }
+
+void configform::on_sync_enable_clicked(bool checked)
+{
+    if(checked)
+    {
+        dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
+        dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData());
+    }
+    else
+    {
+        dwyco_set_setting("group/join_key", "");
+        if(dwyco_start_gj2("", ""))
+        {
+            exit(0);
+        }
+    }
+
+   }

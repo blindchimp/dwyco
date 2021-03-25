@@ -3541,6 +3541,10 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_USER_STATUS_CHANGE:
         Mainwinform->emit uid_status_change(suid);
         break;
+    case DWYCO_SE_GRP_JOIN_OK:
+        dwyco_set_setting("group/alt_name", TheConfigForm->ui.CDC_group__alt_name->text().toLatin1().constData());
+        DieDieDie = 1;
+        break;
     default:
         break;
     }
