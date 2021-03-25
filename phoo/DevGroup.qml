@@ -7,6 +7,7 @@ import QtQuick.Controls 2.12
 Page {
 
     property bool group_active
+    property bool show_failed
 
     group_active: core.active_group_name.length > 0 && core.group_status === 0
 
@@ -24,6 +25,9 @@ Page {
                 core.set_setting("group/alt_name", gname)
                 //core.set_setting("group/join_key", "foo")
                 Qt.quit()
+            } else {
+                show_failed = true
+                join_button.checked = false
             }
         }
     }
@@ -35,6 +39,13 @@ Page {
         anchors.fill: parent
         anchors.margins: mm(2)
         spacing: mm(1)
+        Label {
+            id: failed
+            text: "Linking to account failed, most likely it has been abandoned or you gave the wrong PIN.\nTry using a different account name or PIN."
+            visible: show_failed
+            Layout.fillWidth: true
+        }
+
         Label {
             text: group_active ? "Active: " + core.active_group_name + " (" + core.percent_synced + "%)" : "Not Linked"
             font.bold: true
@@ -112,6 +123,7 @@ Page {
             text: qsTr("Enable to link this device (requires restart)")
             onClicked: {
                 core.start_gj2(group_name.text_input, group_pw.text_input)
+                show_failed = false;
             }
 
             visible: !(group_active || requesting.visible)

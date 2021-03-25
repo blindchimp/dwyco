@@ -24,6 +24,7 @@
 #include "simple_property.h"
 #include "ezset.h"
 #include "dirth.h"
+#include "dhgsetup.h"
 
 using namespace dwyco;
 
@@ -37,7 +38,6 @@ extern vc I_grant;
 extern vc They_grant;
 extern vc Pals;
 extern vc Client_ports;
-extern sigprop<vc> Group_uids;
 
 int is_invisible();
 

@@ -31,12 +31,12 @@
 using namespace CryptoPP;
 using namespace dwyco;
 
-extern sigprop<vc> Group_uids;
 void drop_all_sync_calls(DH_alternate *);
 
 namespace dwyco {
 sigprop<DH_alternate *> Current_alternate;
 vc DH_alternate::Group_join_password;
+sigprop<vc> Group_uids;
 
 struct DHG_sql : public SimpleSql
 {

@@ -440,8 +440,6 @@ extern int Chat_online;
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
 
-sigprop<vc> Group_uids;
-
 #undef CPPLEAK
 #ifdef CPPLEAK
 extern int beginning_of_world;

@@ -24,6 +24,7 @@
 #include "xinfo.h"
 #include "dwrtlog.h"
 #include "ezset.h"
+#include "dhgsetup.h"
 
 using namespace dwyco;
 
@@ -31,8 +32,6 @@ using namespace dwyco;
 #include "miscemu.h"
 #endif
 #include "sepstr.h"
-
-extern sigprop<vc> Group_uids;
 
 static
 vc

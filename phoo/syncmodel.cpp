@@ -65,9 +65,9 @@ SyncDescModel::load_model()
         {
             c = new Sync_desc;
             c->update_uid(huid);
+            connect(c, SIGNAL(statusChanged(QString)), this, SLOT(update_connections(QString)));
             append(c);
         }
-        connect(c, SIGNAL(statusChanged(QString)), this, SLOT(update_connections(QString)));
         c->update_status(sl.get<QByteArray>(i, DWYCO_SM_STATUS));
         c->update_ip(sl.get<QByteArray>(i, DWYCO_SM_IP));
         c->update_proxy(!sl.is_nil(i, DWYCO_SM_PROXY));

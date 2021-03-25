@@ -307,6 +307,11 @@ recv_gj2(vc from, vc msg, vc password)
             throw -1;
         }
         }
+        // there is at least a chance they are in the group, because they
+        // got the password and nonce right, and it isn't a problem if
+        // they turn out not to be in the group... if they don't have the key
+        // no sync channel is set up anyway.
+        Group_uids.add(from);
 
         vc mr(VC_VECTOR);
         mr[0] = alt_name;
@@ -387,6 +392,7 @@ install_group_key(vc from, vc msg, vc password)
     // want to do if you are expecting to run this protocol on multiple
     // groups at the same time, but we don't want to do that anyway.
     clear_gj();
+    Group_uids.add(from);
     se_emit_join(alt_name, 1);
     se_emit_group_status_change();
     Join_signal.emit(alt_name);
@@ -431,6 +437,8 @@ recv_gj1(vc from, vc msg, vc password)
         mr[1] = nonce2;
         mr[2] = nonce;
         mr[3] = hfrom;
+
+        Group_uids.add(from);
 
         vc mrs = xfer_enc(mr, password);
         int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN2, (const char *)mrs, mrs.len());
@@ -512,6 +520,7 @@ recv_gj3(vc from, vc msg, vc password)
                 throw -1;
             }
         }
+        Group_uids.add(from);
         // note: for now, we are only in one group, and it should be the
         // same as the requester wanted. this ought to be fixed later
         // if we allow multiple groups for some reason

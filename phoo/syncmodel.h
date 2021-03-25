@@ -31,6 +31,8 @@ public:
     Sync_desc(QObject *parent = 0) : QObject(parent) {
         m_asserts = 0;
         m_proxy = false;
+        m_sendq_count = 0;
+        m_percent_synced = 0;
         update_counter = -1;
     }
     void load_external_state(const QByteArray& uid);

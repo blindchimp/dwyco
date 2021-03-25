@@ -76,6 +76,7 @@ public:
 
 void init_dhg();
 extern sigprop<dwyco::DH_alternate *> Current_alternate;
+extern sigprop<vc> Group_uids;
 
 }
 
