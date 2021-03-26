@@ -399,27 +399,6 @@ out:
     return 0;
 }
 
-#if 0
-static
-void
-process_joins()
-{
-    DWYCO_LIST tl;
-    dwyco_get_tagged_mids(&tl, "_special");
-    simple_scoped qtl(tl);
-    for(int i = 0; i < qtl.rows(); ++i)
-    {
-        DwString mid = qtl.get<DwString>(i, DWYCO_TAGGED_MIDS_MID);
-        int d = dwyco_handle_join(mid.c_str());
-        if(d != 1)
-            continue;
-        //dwyco_unset_msg_tag(mid.c_str(), "_special");
-        DwString uid = DwString::from_hex(qtl.get<DwString>(i, DWYCO_TAGGED_MIDS_HEX_UID));
-        dwyco_delete_saved_message(uid.c_str(), uid.length(), mid.c_str());
-    }
-}
-#endif
-
 static
 void
 DWYCOCALLCONV
@@ -437,7 +416,7 @@ dwyco_sync_login_result(const char *str, int what)
     else
     {
         GRTLOG("bg db login ok", 0, 0);
-        dwyco_start_gj("", 0, "");
+
     }
 }
 
@@ -469,11 +448,7 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
         dwyco_write_token(token);
 
     set_listen_state(1);
-    // for now, don't let any channels get setup via the
-    // server ... not strictly necessary, but until we get the
-    // calling stuff sorted out (needs a protocol change to alert
-    // regarding incoming calls, etc.) we just let everything go
-    // via the server.
+
     dwyco_inhibit_sac(0);
     dwyco_inhibit_pal(0);
 
@@ -534,7 +509,6 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
                 signaled = tmp;
                 dwyco_signal_msg_cond();
             }
-            //process_joins();
         }
         // note: this is a bit sloppy... rather than trying to
         // identify each socket that is waiting for write and

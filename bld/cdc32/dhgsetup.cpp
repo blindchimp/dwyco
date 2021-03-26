@@ -83,7 +83,7 @@ static DHG_sql *DHG_db;
 
 static
 void
-change_current_group(vc, vc new_name)
+change_current_group(vc, vc )
 {
     // least surprise: when we change groups we discard our
     // sync history state. this is mainly so we don't
