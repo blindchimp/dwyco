@@ -14,10 +14,12 @@
 struct dwyco_list
 {
 private:
-    dwyco_list();
-    dwyco_list(const dwyco_list&);
-    dwyco_list(const dwyco_list&&);
-    dwyco_list& operator=(const dwyco_list&);
+    dwyco_list() = delete;
+    dwyco_list(const dwyco_list&) = delete;
+    dwyco_list(const dwyco_list&&) = delete;
+    dwyco_list& operator=(const dwyco_list&) = delete;
+    dwyco_list& operator=(const dwyco_list&&) = delete;
+
     DWYCO_LIST value;
 public:
     dwyco_list(DWYCO_LIST v) {
@@ -95,9 +97,12 @@ public:
 struct simple_scoped : public dwyco_list
 {
 private:
-    simple_scoped();
-    simple_scoped(const simple_scoped&);
-    simple_scoped& operator=(const simple_scoped&);
+    simple_scoped() = delete;
+    simple_scoped(const simple_scoped&) = delete;
+    simple_scoped& operator=(const simple_scoped&) = delete;
+    simple_scoped& operator=(const simple_scoped&&) = delete;
+    simple_scoped(const simple_scoped&&) = delete;
+
 public:
     simple_scoped(DWYCO_LIST& v): dwyco_list(v) {
         v = 0;
