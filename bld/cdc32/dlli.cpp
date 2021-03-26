@@ -6482,6 +6482,8 @@ build_sync_status_model()
 {
     vc ret(VC_VECTOR);
     vc uids = uids_to_call();
+    GRTLOG("SYNCMOD ",0,0);
+    GRTLOGVC(uids);
     DwVec<vc> cuids;
     for(int i = 0; i < uids.num_elems(); ++i)
     {
@@ -6546,7 +6548,7 @@ build_sync_status_model()
         v[M_PERCENT_SYNCED] = res[i][0];
     }
 
-
+    GRTLOGVC(ret);
     return ret;
 }
 

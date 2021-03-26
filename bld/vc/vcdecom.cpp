@@ -145,6 +145,12 @@ vc_vector::find(const vc& v, vc& out)
 	return 1;
 }
 
+// UGH FIX THIS
+// this probably should be "set"-like add, instead of
+// append (since if append is what you want, then you should
+// use that operator). BUT this has been like this for a long
+// time and i would have to ferret out all the places it was
+// used before changing it.
 void
 vc_vector::add(const vc& v)
 {
@@ -863,6 +869,8 @@ vc_list_set::find(const vc& v, vc& out)
 	return list.exists(v, out);
 }
 
+// MAYBE FIX THIS
+// SEE COMMENT ABOVE FOR VECTOR "add"
 void
 vc_list_set::add(const vc& v)
 {

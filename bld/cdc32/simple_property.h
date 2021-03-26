@@ -49,6 +49,8 @@ public:
     // surprising, but glad it works. if T doesn't have these members
     // as long as you don't invoke these members, the compiler won't complain
     void add(const T& e) {
+        if(val.contains(e))
+            return;
         val.add(e);
         value_changed.emit(val);
     }
