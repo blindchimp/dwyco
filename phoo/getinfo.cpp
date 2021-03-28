@@ -24,14 +24,8 @@ dwyco_info_to_display2(const QByteArray& uid, const char *field)
         dwyco_fetch_info(uid.constData(), uid.length());
     }
 
-    const char *val;
-    int len, type;
-    dwyco_list_get(l, 0, field, &val, &len, &type);
-    if(type != DWYCO_TYPE_STRING)
-    {
-        return QString("<<bad>>");
-    }
-    QString ret = QString::fromUtf8(QByteArray(val, len));
+    auto qba = l.get<QByteArray>(field);
+    QString ret = QString::fromUtf8(qba);
     return ret;
 }
 

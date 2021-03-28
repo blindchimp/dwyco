@@ -170,29 +170,34 @@ Page {
                     spacing: mm(1)
                     Label {
                         elide: Text.ElideRight
+                        text: "Status"
+                        Layout.preferredWidth: cm(2)
+                    }
+                    Label {
+                        elide: Text.ElideRight
                         text: "Handle"
-                        Layout.preferredWidth: cm(3)
+                        Layout.preferredWidth: cm(2)
                     }
-                    Label {
-                        text: "status"
-                        Layout.preferredWidth:  mm(5)
-                    }
+//                    Label {
+//                        text: "status"
+//                        Layout.preferredWidth:  mm(5)
+//                    }
 
-                    Label {
-                        text: "asserts"
-                        Layout.preferredWidth:  mm(15)
-                        horizontalAlignment: Text.AlignRight
-                    }
-                    Label {
-                        text: "q"
-                        Layout.preferredWidth:  mm(15)
-                        horizontalAlignment: Text.AlignRight
-                    }
-                    Label {
-                        text: "%"
-                        Layout.preferredWidth:  mm(10)
-                        horizontalAlignment: Text.AlignRight
-                    }
+//                    Label {
+//                        text: "asserts"
+//                        Layout.preferredWidth:  mm(15)
+//                        horizontalAlignment: Text.AlignRight
+//                    }
+//                    Label {
+//                        text: "q"
+//                        Layout.preferredWidth:  mm(15)
+//                        horizontalAlignment: Text.AlignRight
+//                    }
+//                    Label {
+//                        text: "%"
+//                        Layout.preferredWidth:  mm(10)
+//                        horizontalAlignment: Text.AlignRight
+//                    }
                     Label {
                         text: "ip"
                         //color: proxy ? "red" : "black"
@@ -212,30 +217,35 @@ Page {
                     height: implicitHeight
                     spacing: mm(1)
                     Label {
-                        elide: Text.ElideRight
-                        text: core.uid_to_name(uid)
-                        Layout.preferredWidth: cm(3)
-                    }
-                    Label {
-                        text: status
-                        Layout.preferredWidth:  mm(5)
+                        text: status + " " + asserts + " " + sendq_count + " " + percent_synced
+                        Layout.preferredWidth: cm(2)
                     }
 
                     Label {
-                        text: asserts
-                        Layout.preferredWidth:  mm(15)
-                        horizontalAlignment: Text.AlignRight
+                        elide: Text.ElideRight
+                        text: core.uid_to_name(uid)
+                        Layout.preferredWidth: cm(2)
                     }
-                    Label {
-                        text: sendq_count
-                        Layout.preferredWidth:  mm(15)
-                        horizontalAlignment: Text.AlignRight
-                    }
-                    Label {
-                        text: percent_synced
-                        Layout.preferredWidth:  mm(10)
-                        horizontalAlignment: Text.AlignRight
-                    }
+//                    Label {
+//                        text: status
+//                        Layout.preferredWidth:  mm(5)
+//                    }
+
+//                    Label {
+//                        text: asserts
+//                        Layout.preferredWidth:  mm(15)
+//                        horizontalAlignment: Text.AlignRight
+//                    }
+//                    Label {
+//                        text: sendq_count
+//                        Layout.preferredWidth:  mm(15)
+//                        horizontalAlignment: Text.AlignRight
+//                    }
+//                    Label {
+//                        text: percent_synced
+//                        Layout.preferredWidth:  mm(10)
+//                        horizontalAlignment: Text.AlignRight
+//                    }
                     Label {
                         text: ip
                         color: proxy ? "red" : "black"
