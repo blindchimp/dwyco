@@ -57,8 +57,8 @@ public:
     ~mutex_locker();
 private:
     // No copy
-    mutex_locker(const mutex_locker& copy);// { }
-    mutex_locker& operator=(const mutex_locker& copy);// { }
+    mutex_locker(const mutex_locker& copy) = delete;
+    mutex_locker& operator=(const mutex_locker& copy) = delete;
 };
 
 // Slot bases
@@ -463,7 +463,7 @@ public:
         return new slot_memfun0<T_obj>((T_obj*)newdest, m_fn);
     }
 
-private:
+public:
     T_obj* m_obj;
     void (T_obj::*m_fn)();
 };
@@ -499,7 +499,7 @@ public:
         return new slot_memfun1<T_obj, T1>((T_obj*)newdest, m_fn);
     }
 
-private:
+public:
     T_obj* m_obj;
     void (T_obj::*m_fn)(T1);
 };
@@ -535,7 +535,7 @@ public:
         return new slot_memfun2<T_obj, T1, T2>((T_obj*)newdest, m_fn);
     }
 
-private:
+public:
     T_obj* m_obj;
     void (T_obj::*m_fn)(T1, T2);
 };
@@ -571,7 +571,7 @@ public:
         return new slot_memfun3<T_obj, T1, T2, T3>((T_obj*)newdest, m_fn);
     }
 
-private:
+public:
     T_obj* m_obj;
     void (T_obj::*m_fn)(T1, T2, T3);
 };
@@ -607,7 +607,7 @@ public:
         return new slot_memfun4<T_obj, T1, T2, T3, T4>((T_obj*)newdest, m_fn);
     }
 
-private:
+public:
     T_obj* m_obj;
     void (T_obj::*m_fn)(T1, T2, T3, T4);
 };
@@ -643,7 +643,7 @@ public:
         return new slot_memfun5<T_obj, T1, T2, T3, T4, T5>((T_obj*)newdest, m_fn);
     }
 
-private:
+public:
     T_obj* m_obj;
     void (T_obj::*m_fn)(T1, T2, T3, T4, T5);
 };
@@ -679,7 +679,7 @@ public:
         return new slot_memfun6<T_obj, T1, T2, T3, T4, T5, T6>((T_obj*)newdest, m_fn);
     }
 
-private:
+public:
     T_obj* m_obj;
     void (T_obj::*m_fn)(T1, T2, T3, T4, T5, T6);
 };
@@ -715,7 +715,7 @@ public:
         return new slot_memfun7<T_obj, T1, T2, T3, T4, T5, T6, T7>((T_obj*)newdest, m_fn);
     }
 
-private:
+public:
     T_obj* m_obj;
     void (T_obj::*m_fn)(T1, T2, T3, T4, T5, T6, T7);
 };
@@ -807,7 +807,7 @@ public:
 
 private:
     // The copy ctor copies connections, but assignment does not
-    trackable& operator=(const trackable& copy);// { }
+    trackable& operator=(const trackable& copy) = delete;
 
     // The signals connected to this trackable
     signal_set m_signals;
@@ -1006,7 +1006,10 @@ public:
             typename slot_list::iterator itEnd = m_slots.end();
             while(it != itEnd)
             {
-                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_fn == fn)
                 {
                     delete slot;
                     return connection();
@@ -1020,11 +1023,29 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)())
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(), int unique = 0)
     {
         mutex_locker lock;
         
         slot_memfun0<T_obj>* slot = new slot_memfun0<T_obj>(obj, fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_obj == obj && sp->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
+
         m_slots.push_back(slot);
         
         obj->signal_connect(this);
@@ -1279,7 +1300,10 @@ public:
             typename slot_list::iterator itEnd = m_slots.end();
             while(it != itEnd)
             {
-                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_fn == fn)
                 {
                     delete slot;
                     return connection();
@@ -1293,11 +1317,29 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1))
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1), int unique = 0)
     {
         mutex_locker lock;
         
         slot_memfun1<T_obj, T1>* slot = new slot_memfun1<T_obj, T1>(obj, fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_obj == obj && sp->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
+
         m_slots.push_back(slot);
         
         obj->signal_connect(this);
@@ -1552,7 +1594,10 @@ public:
             typename slot_list::iterator itEnd = m_slots.end();
             while(it != itEnd)
             {
-                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_fn == fn)
                 {
                     delete slot;
                     return connection();
@@ -1566,11 +1611,29 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2))
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2), int unique = 0)
     {
         mutex_locker lock;
         
         slot_memfun2<T_obj, T1, T2>* slot = new slot_memfun2<T_obj, T1, T2>(obj, fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_obj == obj && sp->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
+
         m_slots.push_back(slot);
         
         obj->signal_connect(this);
@@ -1825,7 +1888,10 @@ public:
             typename slot_list::iterator itEnd = m_slots.end();
             while(it != itEnd)
             {
-                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_fn == fn)
                 {
                     delete slot;
                     return connection();
@@ -1839,11 +1905,29 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3))
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3), int unique = 0)
     {
         mutex_locker lock;
         
         slot_memfun3<T_obj, T1, T2, T3>* slot = new slot_memfun3<T_obj, T1, T2, T3>(obj, fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_obj == obj && sp->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
+
         m_slots.push_back(slot);
         
         obj->signal_connect(this);
@@ -2098,7 +2182,10 @@ public:
             typename slot_list::iterator itEnd = m_slots.end();
             while(it != itEnd)
             {
-                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_fn == fn)
                 {
                     delete slot;
                     return connection();
@@ -2112,11 +2199,29 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4))
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4), int unique = 0)
     {
         mutex_locker lock;
         
         slot_memfun4<T_obj, T1, T2, T3, T4>* slot = new slot_memfun4<T_obj, T1, T2, T3, T4>(obj, fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_obj == obj && sp->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
+
         m_slots.push_back(slot);
         
         obj->signal_connect(this);
@@ -2371,7 +2476,10 @@ public:
             typename slot_list::iterator itEnd = m_slots.end();
             while(it != itEnd)
             {
-                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_fn == fn)
                 {
                     delete slot;
                     return connection();
@@ -2385,11 +2493,29 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5))
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5), int unique = 0)
     {
         mutex_locker lock;
         
         slot_memfun5<T_obj, T1, T2, T3, T4, T5>* slot = new slot_memfun5<T_obj, T1, T2, T3, T4, T5>(obj, fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_obj == obj && sp->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
+
         m_slots.push_back(slot);
         
         obj->signal_connect(this);
@@ -2644,7 +2770,10 @@ public:
             typename slot_list::iterator itEnd = m_slots.end();
             while(it != itEnd)
             {
-                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_fn == fn)
                 {
                     delete slot;
                     return connection();
@@ -2658,11 +2787,29 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6))
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6), int unique = 0)
     {
         mutex_locker lock;
         
         slot_memfun6<T_obj, T1, T2, T3, T4, T5, T6>* slot = new slot_memfun6<T_obj, T1, T2, T3, T4, T5, T6>(obj, fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_obj == obj && sp->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
+
         m_slots.push_back(slot);
         
         obj->signal_connect(this);
@@ -2917,7 +3064,10 @@ public:
             typename slot_list::iterator itEnd = m_slots.end();
             while(it != itEnd)
             {
-                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_fn == fn)
                 {
                     delete slot;
                     return connection();
@@ -2931,11 +3081,29 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6, T7))
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6, T7), int unique = 0)
     {
         mutex_locker lock;
         
         slot_memfun7<T_obj, T1, T2, T3, T4, T5, T6, T7>* slot = new slot_memfun7<T_obj, T1, T2, T3, T4, T5, T6, T7>(obj, fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_obj == obj && sp->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
+
         m_slots.push_back(slot);
         
         obj->signal_connect(this);

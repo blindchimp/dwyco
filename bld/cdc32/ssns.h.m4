@@ -108,7 +108,7 @@ public:
         return new slot_memfun$1<T_obj[]ifelse($1,0,[],[, loop($1,[i],[T[]i])])>((T_obj*)newdest, m_fn);
     }
 
-private:
+public:
     T_obj* m_obj;
     void (T_obj::*m_fn)(loop($1,[i],[T[]i]));
 };
@@ -228,7 +228,10 @@ public:
             typename slot_list::iterator itEnd = m_slots.end();
             while(it != itEnd)
             {
-                if(dynamic_cast<decltype(slot)>(*it)->m_fn == fn)
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_fn == fn)
                 {
                     delete slot;
                     return connection();
@@ -242,11 +245,29 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(loop($1,[i],[T[]i])))
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(loop($1,[i],[T[]i])), int unique = 0)
     {
         mutex_locker lock;
         
         slot_memfun$1<T_obj[]ifelse($1,0,[],[, loop($1,[i],[T[]i])])>* slot = new slot_memfun$1<T_obj[]ifelse($1,0,[],[, loop($1,[i],[T[]i])])>(obj, fn);
+        if(unique)
+        {
+            typename slot_list::iterator it = m_slots.begin();
+            typename slot_list::iterator itEnd = m_slots.end();
+            while(it != itEnd)
+            {
+                auto sp = dynamic_cast<decltype(slot)>(*it);
+                if(sp == nullptr)
+                    continue;
+                if(sp->m_obj == obj && sp->m_fn == fn)
+                {
+                    delete slot;
+                    return connection();
+                }
+                ++it;
+            }
+        }
+
         m_slots.push_back(slot);
         
         obj->signal_connect(this);
@@ -451,8 +472,8 @@ public:
     ~mutex_locker();
 private:
     // No copy
-    mutex_locker(const mutex_locker& copy) { }
-    mutex_locker& operator=(const mutex_locker& copy) { }
+    mutex_locker(const mutex_locker& copy) = delete;
+    mutex_locker& operator=(const mutex_locker& copy) = delete;
 };
 
 // Slot bases
@@ -561,7 +582,7 @@ public:
 
 private:
     // The copy ctor copies connections, but assignment does not
-    trackable& operator=(const trackable& copy) { }
+    trackable& operator=(const trackable& copy) = delete;
 
     // The signals connected to this trackable
     signal_set m_signals;
