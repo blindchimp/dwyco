@@ -55,6 +55,7 @@ SimpleSql::init()
         Db = 0;
         return 0;
     }
+    sync_off();
     init_schema(schema_names[0]);
     return 1;
 }
