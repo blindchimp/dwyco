@@ -78,7 +78,6 @@ syncvar.cc \
 doinit.cc \
 netcod.cc \
 tcode.cc \
-sleep.cc \
 statfun.cc \
 dirth.cc \
 rlc.cc \
