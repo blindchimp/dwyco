@@ -72,6 +72,9 @@ DEFINES += MACOSX NEED_SHORT_EXTERNAL_NAMES
 QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
 DEFINES += DWYCO_USE_STATIC_SQLITE
 SOURCES += sqlite3.c
+equals(DWYCOBG, 0) {
+DEFINES += DWYCO_CDC_LIBUV
+}
 }
 
 win32-* {
