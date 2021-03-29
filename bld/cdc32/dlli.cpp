@@ -837,6 +837,33 @@ dwyco_debug_dump()
 
 }
 
+// note: there are all kinda weird cases with this...
+// whether a channel is established or not, etc.
+// for now, we just return anything that might look like it
+// might be a sync channel, established or not, and it is
+// up to the caller to decide what they want.
+ChanList
+get_all_sync_chans()
+{
+    ChanList ret;
+    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    for(int i = 0; i < mmcl.num_elems(); ++i)
+    {
+        MMCall *mmc = mmcl[i];
+        MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
+        if(mc)
+            ret.append(mc);
+    }
+
+    ChanList cl = MMChannel::channels_by_call_type("sync");
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        if(ret.index(cl[i]) == -1)
+            ret.append(cl[i]);
+    }
+    return ret;
+}
+
 DWYCOEXPORT
 int
 dwyco_channel_attrs(int chan_id, int *is_sending_video, int *is_receiving_video, int *is_sending_audio, int *is_receiving_audio, int *is_private_chat, int *is_public_chat, int *is_msg_channel, int *is_server_channel)
@@ -6396,7 +6423,16 @@ pull_done_slot(vc mid, vc remote_uid, vc success)
     if(success.is_nil())
         pulls::pull_failed(mid, remote_uid);
     else
+    {
+        // if the pull succeeded, cancel all the
+        // extant pulls in other send_qs
         pulls::deassert_pull(mid);
+        ChanList cl = get_all_sync_chans();
+        for(int i = 0; i < cl.num_elems(); ++i)
+        {
+            cl[i]->sync_sendq.del_pull(mid);
+        }
+    }
 }
 
 namespace dwyco {
@@ -6627,21 +6663,9 @@ dwyco_get_group_status(DWYCO_LIST *list_out)
 void
 drop_all_sync_calls(DH_alternate *)
 {
-    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
-    for(int i = 0; i < mmcl.num_elems(); ++i)
-    {
-        MMCall *mmc = mmcl[i];
-        MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
-        if(mc)
-            mc->schedule_destroy(MMChannel::HARD);
-    }
-
-    ChanList cl = MMChannel::channels_by_call_type("sync");
+    ChanList cl = get_all_sync_chans();
     for(int i = 0; i < cl.num_elems(); ++i)
-    {
-        MMChannel *mc = cl[i];
-        mc->schedule_destroy(MMChannel::HARD);
-    }
+        cl[i]->schedule_destroy(MMChannel::HARD);
 }
 
 static

@@ -89,6 +89,17 @@ public:
         return ret;
     }
 
+    int del_pull(vc mid) {
+        qkey qk;
+        if(pull_set.find(mid, qk))
+        {
+            q.del(qk);
+            pull_set.del(mid);
+            return 1;
+        }
+        return 0;
+    }
+
     int count() const {
         return q.num_elems();
     }

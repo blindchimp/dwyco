@@ -1045,8 +1045,10 @@ private:
     void process_pull_resp(vc cmd);
     void process_iupdate(vc cmd);
     void process_tupdate(vc cmd);
+    // FIX THIS, should be private
+public:
     dwyco::sendq sync_sendq;
-
+private:
     void send_pull_resp(vc mid, vc uid, vc msg, vc att, vc pri);
     void send_pull_error(vc mid, vc pri);
 
