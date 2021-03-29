@@ -6926,6 +6926,10 @@ pull_msg(vc uid, vc msg_id)
     return -3;
 }
 
+// NOTE: when we are in eager mode, we should schedule
+// a periodic "reassert" across a connection if there have been any changes
+// to the global model from a connection (ie, someone says they might have
+// something new.)
 void
 assert_eager_pulls(MMChannel *mc, vc uid)
 {

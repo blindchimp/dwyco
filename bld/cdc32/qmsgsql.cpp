@@ -407,7 +407,7 @@ sync_files()
 // call this to remove all the sync state from the database, and return
 // to "no group" status.
 // ASSUMES: there are no network connections, and that the system will be
-// exited and restarted in order to reset most of the state before out next login.
+// exited and restarted in order to reset most of the state before the next login.
 void
 remove_sync_state()
 {
@@ -1303,7 +1303,7 @@ sql_get_non_local_messages()
 // this gets a list of mids that we don't have, that look like they might
 // be available at the given uid. when we connect to this uid with a sync
 // channel, we can assert pulls to this uid if we are in "eager" sync mode.
-// XXX WARNING, UNTESTED
+
 vc
 sql_get_non_local_messages_at_uid(vc uid)
 {
