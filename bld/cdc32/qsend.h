@@ -35,7 +35,12 @@ public:
     static dwyco::DwQueryByMember<DwQSend> Qbm;
     int inprogress;
     ValidPtr vp;
-    int force_encryption;
+    enum enc_mode {
+        DEFAULT = 0,
+        FORCE_ENCRYPTION = 1,
+        INHIBIT_ENCRYPTION = 2
+    };
+    enum enc_mode force_encryption;
 
     int send_message();
     void cancel();

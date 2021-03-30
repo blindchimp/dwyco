@@ -6778,7 +6778,9 @@ sync_call_setup()
         {
             if(!Online.contains(call_uids[i]))
             {
-                // we shoulder throttle down the checking at this point
+                // we should throttle down the checking at this point
+                // because we don't have any info that the target
+                // uid is online.
 
                 if(!Database_online)
                 {
@@ -6796,6 +6798,8 @@ sync_call_setup()
             }
             else
             {
+                // we have an ip address, which might be stale, but
+                // at least we know they were around recently
                 if(!Database_online)
                 {
                     continue;

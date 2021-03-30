@@ -2163,14 +2163,16 @@ kdf(vc agreed, int caller, vc my_uid, vc rem_uid)
 vc
 MMChannel::match_config(vc cfg, int caller)
 {
-    // pick smallest versions for various things
     vc pvers;
     if(!cfg.find("protocol version", pvers))
         return vcnil;
     vc ourvers;
     if(!config.find("protocol version", ourvers))
         return vcnil;
-    //pvers = (pvers < ourvers) ? pvers : ourvers;
+    // if the version isn't exact, just bail now.
+    // we have other channels to send messages that are less
+    // sensitive to the client versions, and this helps cut down
+    // on compatibility issues.
     if(pvers != ourvers)
         return vcnil;
 
