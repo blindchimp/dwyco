@@ -38,6 +38,7 @@
 #include "simplesql.h"
 #include "qmsgsql.h"
 #include "qdirth.h"
+#include "dwbag.h"
 
 namespace dwyco {
 
@@ -354,15 +355,22 @@ static
 void
 sync_user(vc v)
 {
-
     vc uid = v[0];
 
-    vc id = uid_to_dir(uid);
+    vc res = sql_simple("select mid from msg_idx where assoc_uid = ?1", to_hex(uid));
+    int nm = res.num_elems();
+    DwBag<vc> b(vcnil, nm / 3 + 1);
+    for(int i = 0; i < nm; ++i)
+    {
+        b.add(res[i][0]);
+    }
 
+    vc id = uid_to_dir(uid);
+    {
     DwString s((const char *)id);
     s = newfn(s);
     DwString ss = s;
-    s += "" DIRSEPSTR "*.*";
+    s += "" DIRSEPSTR "*.bod";
 
     FindVec& fv = *find_to_vec(s.c_str());
     auto n = fv.num_elems();
@@ -373,12 +381,33 @@ sync_user(vc v)
             continue;
         DwString mid(d.cFileName);
         mid.remove(20);
-        vc v = sql_simple("select 1 from msg_idx where mid = ?1", mid.c_str());
-        if(v.num_elems() == 0)
+        if(!b.contains(mid.c_str()))
             trash_body(uid, mid.c_str(), 1);
 
     }
     delete_findvec(&fv);
+    }
+    {
+    DwString s((const char *)id);
+    s = newfn(s);
+    DwString ss = s;
+    s += "" DIRSEPSTR "*.snt";
+
+    FindVec& fv = *find_to_vec(s.c_str());
+    auto n = fv.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        WIN32_FIND_DATA &d = *fv[i];
+        if(strlen(d.cFileName) != 24)
+            continue;
+        DwString mid(d.cFileName);
+        mid.remove(20);
+        if(!b.contains(mid.c_str()))
+            trash_body(uid, mid.c_str(), 1);
+
+    }
+    delete_findvec(&fv);
+    }
 
 
 }
@@ -420,6 +449,7 @@ remove_sync_state()
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         sql_simple("delete from mt.gmt where mid not in (select mid from msg_idx)");
         sql_simple("delete from mt.gtomb");
+        sql_simple("drop trigger if exists mtomb_log");
         sql_simple("delete from msg_tomb");
         sql_simple("delete from gi");
         sql_simple("delete from dir_meta");

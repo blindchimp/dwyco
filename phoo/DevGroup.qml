@@ -8,6 +8,8 @@ Page {
 
     property bool group_active
     property bool show_failed
+    property bool quitnow: false
+    property string provisional_group
 
     group_active: core.active_group_name.length > 0 && core.group_status === 0
 
@@ -23,8 +25,9 @@ Page {
         onJoin_result: {
             if(result === 1) {
                 core.set_setting("group/alt_name", gname)
-                //core.set_setting("group/join_key", "foo")
-                Qt.quit()
+                provisional_group = gname
+                quitnow = true
+                //Qt.quit()
             } else {
                 show_failed = true
                 join_button.checked = false
@@ -32,13 +35,31 @@ Page {
         }
     }
 
+    RowLayout {
+        id: quitit
+        anchors.fill: parent
+        anchors.margins: mm(2)
+        visible: quitnow
+        spacing: mm(3)
+        Button {
+            text: "Quit"
+            onClicked: {
+                Qt.quit()
+            }
+        }
+        Label {
+            text: "Success! " + provisional_group + " active. Click QUIT"
+            Layout.fillWidth: true
+        }
 
+    }
 
     ColumnLayout {
         id: devcol
         anchors.fill: parent
         anchors.margins: mm(2)
         spacing: mm(1)
+        visible: !quitnow
         Label {
             id: failed
             text: "Linking to account failed, most likely it has been abandoned or you gave the wrong PIN.\nTry using a different account name or PIN."
@@ -127,7 +148,7 @@ Page {
             }
 
             visible: !(group_active || requesting.visible)
-            enabled: group_pw.text_input.length >= 4 && group_name.text_input.length > 4
+            enabled: group_pw.text_input.length >= 3 && group_name.text_input.length > 4
             Layout.fillWidth: true
         }
         Switch {

@@ -181,7 +181,7 @@ bind_sql_setting(vc name, void (*fn)(vc, vc))
     setting *s;
     if(!Map->find(name, s))
         oopanic("bad setting");
-    s->setting_changed.connect_ptrfun(fn);
+    s->setting_changed.connect_ptrfun(fn, 1);
 }
 
 void
@@ -197,7 +197,7 @@ bind_sql_section(vc pfx, void (*fn)(vc, vc))
         if(strncmp(pfx, nm, pfx.len()) == 0)
         {
             setting *s = a.get_value();
-            s->setting_changed.connect_ptrfun(fn);
+            s->setting_changed.connect_ptrfun(fn, 1);
         }
 
     }
