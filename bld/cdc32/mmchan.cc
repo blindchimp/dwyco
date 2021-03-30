@@ -3346,13 +3346,6 @@ MMChannel::recv_confirm(vc v)
     }
 }
 
-
-int
-MMChannel::active()
-{
-    return tube != 0;
-}
-
 int
 MMChannel::compute_sync()
 {

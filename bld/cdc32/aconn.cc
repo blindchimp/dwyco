@@ -372,7 +372,6 @@ poll_listener()
         // subchannel, we set it so it can get an
         // initial command that will tell it to
         // associate with another primary channel
-        //chan->protos[ch] = MMChannel::CHAN_GET_WHAT_TO_DO;
         chan->start_service();
         sproto *s = new sproto(ch, recv_command, chan->vp);
         chan->simple_protos[ch] = s;

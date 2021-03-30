@@ -6409,11 +6409,6 @@ uids_to_call()
     ret = ret.copy();
     ret.del(My_UID);
     return ret;
-//    DwVec<vc> u = pulls::Qbm.project(&pulls::uid);
-//    vc ret(VC_SET);
-//    for(int i = 0; i < u.num_elems(); ++i)
-//        ret.add(u[i]);
-//    return vc::set_to_vector(ret);
 }
 
 static
@@ -6439,6 +6434,20 @@ namespace dwyco {
 void
 start_stalled_pulls()
 {
+    ChanList cl = get_all_sync_chans();
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        MMChannel *mc = cl[i];
+        DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());
+        if(stalled_pulls.num_elems() > 0)
+            mc->pull_done.connect_ptrfun(pull_done_slot, 1);
+        for(int i = 0; i < stalled_pulls.num_elems(); ++i)
+        {
+            //stalled_pulls[i]->set_in_progress(1);
+            mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
+        }
+    }
+#if 0
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
     for(int i = 0; i < mmcl.num_elems(); ++i)
     {
@@ -6474,6 +6483,7 @@ start_stalled_pulls()
             mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
         }
     }
+#endif
 }
 }
 

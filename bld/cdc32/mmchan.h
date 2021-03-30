@@ -154,7 +154,6 @@ public:
     MMChannel();
     ~MMChannel();
 
-    int active();
     int send_ref();
     int send_frame();
     int tick();
