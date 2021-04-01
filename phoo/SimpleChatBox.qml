@@ -375,12 +375,6 @@ Page {
                         id: optionsMenu
                         x: parent.width - width
                         transformOrigin: Menu.TopRight
-                        MenuItem {
-                            text: "gj"
-                            onTriggered: {
-                                core.start_gj(to_uid, "foo")
-                            }
-                        }
 
                         MenuItem {
                             text: "View profile"

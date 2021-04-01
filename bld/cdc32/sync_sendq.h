@@ -89,6 +89,10 @@ public:
         return ret;
     }
 
+    // this can be used to delete any pulls that are in the
+    // q, for example after successfully processing a pull-resp,
+    // there is no need to process other  pulls that might be
+    // pending to other clients.
     int del_pull(vc mid) {
         qkey qk;
         if(pull_set.find(mid, qk))

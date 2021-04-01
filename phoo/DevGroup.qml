@@ -27,6 +27,7 @@ Page {
                 core.set_setting("group/alt_name", gname)
                 provisional_group = gname
                 quitnow = true
+                header.visible = false
                 //Qt.quit()
             } else {
                 show_failed = true
@@ -64,6 +65,12 @@ Page {
             id: failed
             text: "Linking failed.\nTry using a different account name or PIN."
             visible: show_failed
+            Layout.fillWidth: true
+        }
+        Label {
+            id: unusable
+            text: "NO Data connection available, linking not possible right now."
+            visible: !group_active && !up_and_running
             Layout.fillWidth: true
         }
 

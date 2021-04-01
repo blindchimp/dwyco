@@ -6522,6 +6522,19 @@ sync_ip(MMChannel *mc, vc v)
     }
 }
 
+static
+int
+originate_calls(vc uid)
+{
+    time_t now = time(0);
+    now /= 60;
+    now /= 5;
+    if(now & 1)
+        return uid > My_UID;
+    else
+        return uid < My_UID;
+}
+
 
 vc
 build_sync_status_model()
@@ -6535,7 +6548,7 @@ build_sync_status_model()
     {
         vc v(VC_VECTOR);
         v[M_UID] = uids[i];
-        v[M_STATUS] = uids[i] > My_UID ? "od" : "rd"; // disconnected
+        v[M_STATUS] = originate_calls(uids[i]) ? "od" : "rd"; // disconnected
         v[M_PULLS_ASSERT] = pulls::count_by_uid(uids[i]);
         ret.append(v);
         cuids.append(uids[i]);
@@ -6835,7 +6848,7 @@ sync_call_setup()
             }
         }
         GRTLOG("trying sync to %s", (const char *)to_hex(call_uids[i]), 0);
-        if(call_uids[i] > My_UID)
+        if(originate_calls(call_uids[i]))
         {
             vc pw;
             // this is ok for testing, as it will keep us from
