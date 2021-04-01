@@ -10,14 +10,12 @@
 #ifndef LINUX
 #include <WinSock2.h>
 #endif
-//#include "vc.h"
+
 #include "vcwsock.h"
 #include "mmchan.h"
 #include "netvid.h"
 #include "msgdisp.h"
 #include "gvchild.h"
-//#include "aconn.h"
-//#include "qauth.h"
 #include "dwrtlog.h"
 
 using namespace dwyco;
@@ -358,7 +356,6 @@ MMChannel::poll_connect()
 int
 MMChannel::start_negotiation()
 {
-    //tube->init_listener();
     start_crypto();
     nego_timer.start();
     negotiating = 1;

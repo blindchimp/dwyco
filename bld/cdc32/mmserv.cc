@@ -537,12 +537,6 @@ MMChannel::chat_response(vc v)
 
 }
 
-int
-MMChannel::disconnect_server()
-{
-    return 0;
-}
-
 MMChannel *
 MMChannel::start_server_channel(enum resolve_how how, unsigned long addr, const char *name, int port)
 {

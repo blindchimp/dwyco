@@ -828,7 +828,6 @@ public:
     static void send_to_db(const dwyco::QckMsg& m, int chan_id);
     void server_response(vc v);
     void chat_response(vc);
-    int disconnect_server();
     static MMChannel *start_server_channel(enum resolve_how,
                                            unsigned long addr, const char *name, int port);
     int server_channel;

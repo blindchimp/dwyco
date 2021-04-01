@@ -62,7 +62,7 @@ Page {
         visible: !quitnow
         Label {
             id: failed
-            text: "Linking to account failed, most likely it has been abandoned or you gave the wrong PIN.\nTry using a different account name or PIN."
+            text: "Linking failed.\nTry using a different account name or PIN."
             visible: show_failed
             Layout.fillWidth: true
         }
@@ -148,7 +148,7 @@ Page {
             }
 
             visible: !(group_active || requesting.visible)
-            enabled: group_pw.text_input.length >= 3 && group_name.text_input.length > 4
+            enabled: up_and_running && group_pw.text_input.length >= 3 && group_name.text_input.length > 4
             Layout.fillWidth: true
         }
         Switch {

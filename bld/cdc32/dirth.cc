@@ -22,9 +22,6 @@
 #include "mmchan.h"
 #include "senc.h"
 #include "dwstr.h"
-#ifndef LINUX
-//#include "tbuy.h"
-#endif
 #include "gvchild.h"
 #include "chatops.h"
 #include "chatgrid.h"
@@ -49,6 +46,7 @@
 #include "ta.h"
 #include "ezset.h"
 #include "simple_property.h"
+#include "dhgsetup.h"
 
 using namespace dwyco;
 
@@ -382,10 +380,30 @@ invalidate_profile(vc m, void *, vc, ValidPtr)
 
 }
 
+static
+void
+set_group_uids(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    // if the server doesn't know the group at all, you still get back
+    // a vector with your own uid in it.
+    Group_uids = m[1];
+}
+
+static
+void
+invalidate_group(vc, void *, vc, ValidPtr)
+{
+    dirth_send_get_group(My_UID, QckDone(set_group_uids, 0));
+}
+
+
 void update_server_list(vc, void *, vc, ValidPtr);
 void ignoring_you_update(vc, void *, vc, ValidPtr);
 void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
 void async_pal(vc, void *, vc, ValidPtr);
+
 
 void
 init_dirth()
@@ -407,6 +425,7 @@ init_dirth()
 #endif
     Waitq.append(QckDone(invalidate_profile, 0, vcnil, ValidPtr(0), "invalidate-profile", 0, 1));
     Waitq.append(QckDone(reset_backups, 0, vcnil, ValidPtr(0), "reset-backups", 0, 1));
+    Waitq.append(QckDone(invalidate_group, 0, vcnil, ValidPtr(0), "invalidate-group", 0, 1));
     //get the server list set up
     if(!load_info(Server_list, "servers2") || Server_list.type() != VC_VECTOR ||
             Server_list.num_elems() < 1)
@@ -735,31 +754,25 @@ db_call_failed(MMChannel *mc, vc, void *, ValidPtr)
     //if(mc->resolve_failed)
     {
         MMChannel *mc = MMChannel::start_server_channel(
-                            MMChannel::BYNAME,
-                            0,
-#if 0
-                            inet_addr("204.75.209.40"),
-                            0,
-                            6703);
-#endif
-
-        My_server_name,
-        My_server_port);
+                    MMChannel::BYNAME,
+                    0,
+                    My_server_name,
+                    My_server_port);
 
         if(!mc)
-    {
-        Database_id = -1;
-        return;
+        {
+            Database_id = -1;
+            return;
+        }
+        mc->established_callback = db_online;
+        mc->destroy_callback = db_call_failed_last;
+        mc->set_string_id("Dwyco Database");
+        Database_id = mc->myid;
+        Database_online = 0;
+        //GRTLOG("db resolve failed", 0, 0);
+        //return;
     }
-    mc->established_callback = db_online;
-    mc->destroy_callback = db_call_failed_last;
-    mc->set_string_id("Dwyco Database");
-    Database_id = mc->myid;
-    Database_online = 0;
-    //GRTLOG("db resolve failed", 0, 0);
-    //return;
-}
-GRTLOG("db call failed", 0, 0);
+    GRTLOG("db call failed", 0, 0);
 }
 
 
@@ -768,10 +781,6 @@ start_database_thread()
 {
     if(Inhibit_database_thread)
         return;
-#if 0 && defined(CDC32_REGISTERED)
-    if(!reg_is_registered())
-        return;
-#endif
     if(Database_id != -1)
         return;
     MMChannel *mc = MMChannel::start_server_channel(
