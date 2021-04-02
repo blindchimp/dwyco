@@ -399,6 +399,37 @@ out:
     return 0;
 }
 
+enum gops {
+    NONE,
+    JOIN
+};
+
+gops Group_ops;
+DwString Group_to_join;
+DwString Group_pw;
+
+static
+void
+check_join(int cmd, int ctx_id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *value_elide, int val_len, int qid, int extra_arg)
+{
+    DwString nm;
+    if(name)
+    {
+        nm = DwString(name, len_name);
+    }
+    if(cmd == DWYCO_SE_GRP_JOIN_OK)
+    {
+        GRTLOG("JOIN GROUP %s OK", nm.c_str(), 0);
+        dwyco_set_setting("group/alt_name", nm.c_str());
+        exit(0);
+    }
+    else if(cmd == DWYCO_SE_GRP_JOIN_FAIL)
+    {
+        GRTLOG("JOIN GROUP %s FAIL", nm.c_str(), 0);
+    }
+
+}
+
 static
 void
 DWYCOCALLCONV
@@ -416,9 +447,18 @@ dwyco_sync_login_result(const char *str, int what)
     else
     {
         GRTLOG("bg db login ok", 0, 0);
+        if(Group_ops == JOIN)
+        {
+            if(!dwyco_start_gj2(Group_to_join.c_str(), Group_pw.c_str()))
+            {
+                exit(1);
+            }
+        }
 
     }
 }
+
+
 
 DWYCOEXPORT
 int
@@ -435,17 +475,78 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
         return 1;
+    const char *grpname = getenv("DWYCO_GROUP");
+    const char *grppw = getenv("DWYCO_GROUP_PW");
 
-    //dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
 
     dwyco_set_client_version("dwycobg-sync", 12);
     dwyco_set_initial_invis(0);
     dwyco_set_login_result_callback(dwyco_sync_login_result);
+    dwyco_set_system_event_callback(check_join);
     dwyco_bg_init();
     dwyco_set_setting("sync/eager", "1");
+    if(grppw)
+        dwyco_set_setting("group/join_key", grppw);
     if(token)
         dwyco_write_token(token);
+    DwString gname;
+    if(!grpname)
+    {
+        Group_ops = NONE;
+    }
+    else
+    {
+        if(!grppw)
+            exit(1);
+        gname = grpname;
+        // empty group means you want to just enter the "no group" mode
+        // and exit.
+        if(gname.length() == 0)
+        {
+            dwyco_start_gj2("", "");
+            exit(0);
+        }
+        const char *val;
+        int tp;
+        int len;
+        if(!dwyco_get_setting("group/alt_name", &val, &len, &tp))
+            exit(1);
+        if(tp != DWYCO_TYPE_STRING)
+            exit(1);
+        DwString alt_name(val, len);
+        if(alt_name.length() == 0)
+        {
+            DWYCO_LIST gs;
+            dwyco_get_group_status(&gs);
+            simple_scoped qgs(gs);
+            gs = 0;
+            if(qgs.get_long(DWYCO_GS_IN_PROGRESS))
+            {
+                if(qgs.get<DwString>(DWYCO_GS_GNAME) != alt_name)
+                    exit(1);
+                // just wait around until the protocol finishes
+                Group_ops = NONE;
+            }
+            else
+            {
+                // not current in group, so attempt a join operation, but only
+                // after we have successfully logged into the server. if the join
+                // is successful, we exit. this may take awhile if it needs to
+                // fetch a key from someone else
+                Group_ops = JOIN;
+                Group_to_join = gname;
+                Group_pw = grppw;
+            }
+        }
+        else if(alt_name != gname)
+        {
+            // asking for a group we aren't a part of, exit and make
+            // them exit the group explicitly
+            exit(1);
+        }
+
+    }
 
     set_listen_state(1);
 
@@ -454,8 +555,8 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
 
     if(dwyco_get_create_new_account())
     {
-        DwString grp(getenv("DWYCO_GROUP"));
-        dwyco_create_bootstrap_profile("bg-syncer", 9, grp.c_str(), grp.length(), "", 0, "", 0);
+
+        dwyco_create_bootstrap_profile("bg-syncer", 9, gname.c_str(), gname.length(), "", 0, "", 0);
     }
     dwyco_set_local_auth(1);
     // note: if the account didn't exist (ie, fresh install) this

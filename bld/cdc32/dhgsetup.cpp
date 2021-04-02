@@ -123,34 +123,11 @@ init_dhg()
     bind_sql_setting("group/join_key", change_join_key);
     vc alt_name;
     vc pw;
+    alt_name = get_settings_value("group/alt_name");
+    if(alt_name.is_nil() || alt_name.len() == 0)
+        return;
+    pw = get_settings_value("group/join_key");
 
-    {
-        const char *grp_name;
-        grp_name = getenv("DWYCO_GROUP");
-
-        if(!grp_name)
-        {
-            alt_name = get_settings_value("group/alt_name");
-            if(alt_name.is_nil() || alt_name.len() == 0)
-                return;
-
-        }
-        else
-            alt_name = grp_name;
-
-        const char *grp_pw;
-        grp_pw = getenv("DWYCO_GROUP_PW");
-
-        if(!grp_pw)
-        {
-            pw = get_settings_value("group/join_key");
-            //if(pw.is_nil() || pw.len() == 0)
-            //    return;
-
-        }
-        else
-            pw = grp_pw;
-    }
     bind_sql_setting("sync/eager", eager_changed);
     DH_alternate *dha = new DH_alternate;
     dha->init(My_UID, alt_name);

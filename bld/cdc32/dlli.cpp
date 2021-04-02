@@ -1657,6 +1657,7 @@ dwyco_bg_init()
     if((gm = getenv("kk27g")) != 0)
         KKG = gm;
     init_gj();
+    reindex_possible_changes();
     Inited = 1;
     return 1;
 }
