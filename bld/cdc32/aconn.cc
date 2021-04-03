@@ -85,7 +85,9 @@ net_section_changed(vc name, vc val)
 void
 init_aconn()
 {
+    Broadcast_discoveries = vc(VC_TREE);
     bind_sql_section("net/", net_section_changed);
+
 }
 // these just pause the connection accept
 // process, in order to serialize connection
@@ -254,7 +256,7 @@ broadcast_tick()
 {
     if((Local_broadcast.is_nil() || Local_discover.is_nil()))
     {
-        start_broadcaster();
+        //start_broadcaster();
         return;
     }
     if(has_data(Local_discover, 0, 0))
