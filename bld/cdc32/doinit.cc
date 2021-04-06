@@ -119,6 +119,7 @@ init_codec(const char *logname)
         if(access(newfn("xfer").c_str(), 0) == -1)
             if(mkdir(newfn("xfer").c_str()) == -1)
                 Log->make_entry("can't create xfer dir");
+        init_dhgdb();
         init_sql_settings();
         init_aconn();
         init_entropy();
@@ -326,6 +327,7 @@ init_bg_msg_send(const char *logname)
                 Log->make_entry("can't create xfer dir");
 
         Log->make_entry("background system starting up");
+        init_dhgdb();
         init_sql_settings();
         init_aconn();
         init_entropy();

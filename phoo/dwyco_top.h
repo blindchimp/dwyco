@@ -48,6 +48,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, group_status)
     QML_READONLY_VAR_PROPERTY(int, percent_synced)
     QML_READONLY_VAR_PROPERTY(int, eager_pull)
+    QML_READONLY_VAR_PROPERTY(int, group_private_key_valid)
 
 
 public:

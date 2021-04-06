@@ -113,6 +113,16 @@ eager_changed(vc, vc)
 }
 
 void
+init_dhgdb()
+{
+    if(!DHG_db)
+    {
+        DHG_db = new DHG_sql;
+        DHG_db->init();
+    }
+}
+
+void
 init_dhg()
 {
     if(Current_alternate)
@@ -134,7 +144,11 @@ init_dhg()
     bind_sql_setting("sync/eager", eager_changed);
     DH_alternate *dha = new DH_alternate;
     dha->init(My_UID, alt_name);
-    dha->load_account(alt_name);
+    if(!dha->load_account(alt_name))
+    {
+        delete dha;
+        return;
+    }
     vc v = DHG_db->sql_simple("select * from group_uids");
     vc v2(VC_VECTOR);
     for(int i = 0; i < v.num_elems(); ++i)
@@ -264,8 +278,11 @@ DH_alternate::load_account(vc alternate_name)
         GRTLOG("created new DH account", 0, 0);
         return 2;
     }
+    vc priv = res[0][1];
+    if(priv.is_nil() || priv.len() == 0)
+        return 0;
     DH_static = vc(VC_VECTOR);
-    DH_static[DH_STATIC_PRIVATE] = res[0][1];
+    DH_static[DH_STATIC_PRIVATE] = priv;
     DH_static[DH_STATIC_PUBLIC] = res[0][0];
     GRTLOG("loaded existing DH account", 0, 0);
     return 1;
@@ -348,6 +365,20 @@ DH_alternate::remove_key(vc alt_name)
     DHG_db->commit_transaction();
     return 1;
 }
+int
+DH_alternate::has_private_key(vc alt_name)
+{
+    if(!DHG_db)
+        return 0;
+    DHG_db->start_transaction();
+    vc res = DHG_db->sql_simple("select privkey from keys where alt_name = ?1", alt_name);
+    DHG_db->commit_transaction();
+    if(res.num_elems() == 0)
+        return 0;
+    if(res[0][0].is_nil() || res[0][0].len() == 0)
+        return 0;
+    return 1;
+}
 
 vc
 DH_alternate::my_static()
@@ -359,6 +390,7 @@ DH_alternate::my_static()
     ret[DH_STATIC_PRIVATE] = DH_static[DH_STATIC_PRIVATE];
     return ret;
 }
+
 
 vc
 DH_alternate::my_static_public()

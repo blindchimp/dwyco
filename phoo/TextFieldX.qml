@@ -31,6 +31,7 @@ RowLayout {
         Layout.maximumHeight: textInput1.height
         Layout.maximumWidth: textInput1.height
         Layout.alignment: Qt.AlignVCenter
+        activeFocusOnTab: false
     }
 
     //Layout.fillWidth: true

@@ -11,7 +11,7 @@ Page {
     property bool quitnow: false
     property string provisional_group
 
-    group_active: core.active_group_name.length > 0 //&& core.group_status === 0
+    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
     header: SimpleToolbar {
 
@@ -84,7 +84,7 @@ Page {
         RowLayout {
             id: requesting
             //XXX FIX THIS, state 2 means we are serving up the key, otherwise requesting
-            visible: core.group_status === 1 || core.group_status === 3
+            visible: core.group_status === 1
             Button {
                 text: "Cancel"
                 onClicked: {

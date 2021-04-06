@@ -359,6 +359,7 @@ recv_gj2(vc from, vc msg, vc password)
     {
         if(rollback)
             SKID->rollback_transaction();
+        se_emit_group_status_change();
         terminate(to_hex(My_UID), hfrom);
         dwyco_kill_message(pers_id.c_str(), pers_id.length());
 
@@ -391,6 +392,7 @@ install_group_key(vc from, vc msg, vc password)
                               our_uid, nonce1, nonce2, hfrom, alt_name);
     if(res.num_elems() == 0)
     {
+        se_emit_group_status_change();
         terminate(our_uid, hfrom);
         return 0;
     }

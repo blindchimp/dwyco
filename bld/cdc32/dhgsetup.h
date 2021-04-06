@@ -51,6 +51,7 @@ public:
     static int insert_public_key(vc alt_name, vc grp_key, vc sig);
     static int insert_private_key(vc alt_name, vc grp_key);
     static int insert_sig(vc alt_name, vc sig);
+    static int has_private_key(vc alt_name);
 
     // call this to remove a key from the database, as when
     // leaving a group.
@@ -74,6 +75,9 @@ public:
     int challenge_recv(vc m, vc& resp);
 };
 
+// keys can get inserted in the database from pure message handling, so
+// this needs to be called early.
+void init_dhgdb();
 void init_dhg();
 extern sigprop<dwyco::DH_alternate *> Current_alternate;
 extern sigprop<vc> Group_uids;
