@@ -6644,15 +6644,15 @@ dwyco_get_group_status(DWYCO_LIST *list_out)
     vc r(VC_VECTOR);
     vc gname;
     vc pw;
+    pw = DH_alternate::Group_join_password;
     if(!Current_alternate)
     {
         gname = "";
-        pw = DH_alternate::Group_join_password;
     }
     else
     {
         gname = Current_alternate->alt_name();
-        pw = Current_alternate->password;
+        //pw = Current_alternate->password;
     }
 
     r[GS_GNAME] = gname;
@@ -6664,7 +6664,7 @@ dwyco_get_group_status(DWYCO_LIST *list_out)
     }
     else
     {
-        r[GS_GNAME] = gj[0];
+        //r[GS_GNAME] = gj[0];
         r[GS_IN_PROGRESS] = gj[1];
     }
     r[GS_VALID] = 1;
@@ -7182,6 +7182,7 @@ dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_o
     return 1;
 }
 
+#if 0
 static
 void
 group_result(vc m, void *, vc, ValidPtr vp)
@@ -7213,6 +7214,7 @@ dwyco_start_gj(const char *uid, int len_uid, const char *password)
     dirth_send_get_group_pk(My_UID, Current_alternate->alt_name(), QckDone(group_result, 0, vcnil, Current_alternate->vp));
     return 1;
 }
+#endif
 
 static
 void
@@ -7262,7 +7264,7 @@ chal_res(vc m, void *, vc, ValidPtr vp)
         // and update the settings. we save the signature, it might
         // be useful for validating profiles or something
         set_settings_value("group/alt_name", dha->alt_name());
-        set_settings_value("group/join_key", dha->password);
+        //set_settings_value("group/join_key", dha->password);
         se_emit_join(dha->alt_name(), 1);
         DH_alternate::insert_sig(dha->alt_name(), sig);
         delete dha;
@@ -7327,8 +7329,8 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
                 throw -1;
             if(!DH_alternate::insert_public_key(dha->alt_name(), pk, sig))
                 throw -1;
-            DH_alternate::Group_join_password = dha->password;
-            start_gj(members[0], dha->alt_name(), dha->password);
+            //DH_alternate::Group_join_password = dha->password;
+            start_gj(members[0], dha->alt_name(), DH_alternate::Group_join_password);
         }
         else if(what[0] == vc("chal"))
         {
@@ -7395,7 +7397,7 @@ dwyco_start_gj2(const char *gname, const char *password)
     dha->init(My_UID, gname);
     dha->remove_key(gname);
     dha->load_account(gname);
-    dha->password = password;
+    //dha->password = password;
     set_settings_value("group/join_key", password);
     dirth_send_set_get_group_pk(My_UID, dha->alt_name(), dha->my_static_public(), QckDone(group_enter_setup, 0, vcnil, dha->vp));
     return 1;

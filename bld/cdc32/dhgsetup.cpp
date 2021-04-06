@@ -99,9 +99,9 @@ change_join_key(vc, vc new_key)
 {
     se_emit_group_status_change();
     DH_alternate::Group_join_password = new_key;
-    if(!Current_alternate)
-        return;
-    Current_alternate->password = new_key;
+    //if(!Current_alternate)
+        //return;
+    //Current_alternate->password = new_key;
 }
 
 static
@@ -123,10 +123,13 @@ init_dhg()
     bind_sql_setting("group/join_key", change_join_key);
     vc alt_name;
     vc pw;
+
+    pw = get_settings_value("group/join_key");
+    DH_alternate::Group_join_password = pw;
     alt_name = get_settings_value("group/alt_name");
     if(alt_name.is_nil() || alt_name.len() == 0)
         return;
-    pw = get_settings_value("group/join_key");
+
 
     bind_sql_setting("sync/eager", eager_changed);
     DH_alternate *dha = new DH_alternate;
@@ -138,7 +141,7 @@ init_dhg()
         v2[i] = from_hex(v[i][0]);
     Group_uids = v2;
 
-    dha->password = pw;
+    //dha->password = pw;
     Current_alternate = dha;
     Group_uids.value_changed.connect_ptrfun(&DH_alternate::update_group);
     Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);

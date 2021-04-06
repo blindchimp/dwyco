@@ -11,7 +11,7 @@ Page {
     property bool quitnow: false
     property string provisional_group
 
-    group_active: core.active_group_name.length > 0 && core.group_status === 0
+    group_active: core.active_group_name.length > 0 //&& core.group_status === 0
 
     header: SimpleToolbar {
 

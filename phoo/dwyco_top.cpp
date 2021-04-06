@@ -2985,7 +2985,7 @@ DwycoCore::play_zap_view(int view_id)
     return ui_id;
 }
 
-
+#if 0
 void
 DwycoCore::start_gj(QString uid, QString password)
 {
@@ -2994,6 +2994,7 @@ DwycoCore::start_gj(QString uid, QString password)
     dwyco_start_gj(ruid.constData(), ruid.length(), pw.constData());
 
 }
+#endif
 
 int
 DwycoCore::start_gj2(QString gname, QString password)

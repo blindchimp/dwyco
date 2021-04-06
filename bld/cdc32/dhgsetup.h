@@ -34,7 +34,7 @@ public:
     }
     // this needs to be filled in from somewhere before
     // group join messages can be processed.
-    vc password;
+    //vc password;
 
     void init(vc uid, vc alternate_name);
     int load_account(vc alternate_name);

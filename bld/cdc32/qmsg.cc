@@ -1870,9 +1870,9 @@ process_join(vc msg)
         return 0;
     int ret = 0;
     vc password;
-    if(Current_alternate)
-        password = Current_alternate->password;
-    else
+//    if(Current_alternate)
+//        password = Current_alternate->password;
+//    else
         password = DH_alternate::Group_join_password;
     vc from = body[QM_BODY_FROM];
     switch(jstate)
@@ -1943,7 +1943,7 @@ get_special_done(vc m, void *, vc msg_id, ValidPtr vp)
                 // this might be a problem if we can't follow up with the
                 // rest of the protocol for some reason, but a user can
                 // retry it explicitly if it doesn't work the first time.
-                dirth_send_addtag(My_UID, mid, "_del", QckDone(0, 0));
+                //dirth_send_addtag(My_UID, mid, "_del", QckDone(0, 0));
             }
         }
     }
