@@ -5,7 +5,6 @@ static DwycoVideoDisplayCallback  user_dwyco_set_video_display_callback;
 static DwycoCallAppearanceCallback  user_dwyco_set_call_acceptance_callback;
 static DwycoEmergencyCallback  user_dwyco_set_emergency_callback;
 static DwycoUserControlCallback  user_dwyco_set_user_control_callback;
-static DwycoCommandCallback  user_dwyco_set_alert_callback;
 static DwycoCallScreeningCallback  user_dwyco_set_call_screening_callback;
 static DwycoStatusCallback  user_dwyco_set_call_bandwidth_callback;
 static DwycoServerLoginCallback  user_dwyco_set_login_result_callback;
@@ -33,7 +32,6 @@ DWYCOEXPORT void _real_dwyco_set_video_display_callback(DwycoVideoDisplayCallbac
 DWYCOEXPORT void _real_dwyco_set_call_acceptance_callback(DwycoCallAppearanceCallback cb);
 DWYCOEXPORT void _real_dwyco_set_emergency_callback(DwycoEmergencyCallback cb);
 DWYCOEXPORT void _real_dwyco_set_user_control_callback(DwycoUserControlCallback cb);
-DWYCOEXPORT void _real_dwyco_set_alert_callback(DwycoCommandCallback cb);
 DWYCOEXPORT void _real_dwyco_set_call_screening_callback(DwycoCallScreeningCallback cb);
 DWYCOEXPORT void _real_dwyco_set_call_bandwidth_callback(DwycoStatusCallback cb);
 DWYCOEXPORT void _real_dwyco_finish_startup();
@@ -51,7 +49,6 @@ DWYCOEXPORT int _real_dwyco_init();
 DWYCOEXPORT int _real_dwyco_bg_init();
 DWYCOEXPORT int _real_dwyco_bg_exit();
 DWYCOEXPORT void _real_dwyco_power_clean_safe();
-DWYCOEXPORT void _real_dwyco_power_clean_progress_hack(int *done_out, int *total_out);
 DWYCOEXPORT int _real_dwyco_get_authenticator(const char **a_out, int *len_a_out);
 DWYCOEXPORT void _real_dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 DWYCOEXPORT void _real_dwyco_database_login();
@@ -162,7 +159,7 @@ DWYCOEXPORT int _real_dwyco_make_forward_zap_composition( const char *uid, int l
 DWYCOEXPORT int _real_dwyco_is_forward_composition(int compid);
 DWYCOEXPORT int _real_dwyco_flim(int compid);
 DWYCOEXPORT int _real_dwyco_is_file_zap(int compid);
-DWYCOEXPORT int _real_dwyco_make_special_zap_composition( int special_type, const char *user_id, const char *user_block, int len_user_block);
+DWYCOEXPORT int _real_dwyco_make_special_zap_composition( int special_type, const char *user_block, int len_user_block);
 DWYCOEXPORT int _real_dwyco_set_special_zap(int compid, int special_type);
 DWYCOEXPORT int _real_dwyco_make_file_zap_composition( const char *filename, int len_filename);
 DWYCOEXPORT int _real_dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
@@ -211,14 +208,15 @@ DWYCOEXPORT int _real_dwyco_qd_message_to_body(DWYCO_SAVED_MSG_LIST *list_out, c
 DWYCOEXPORT int _real_dwyco_get_message_bodies(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, int load_sent);
 DWYCOEXPORT void _real_dwyco_start_bulk_update();
 DWYCOEXPORT void _real_dwyco_end_bulk_update();
+DWYCOEXPORT int _real_dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out);
+DWYCOEXPORT int _real_dwyco_get_group_status(DWYCO_LIST *list_out);
 DWYCOEXPORT int _real_dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_get_unfetched_messages(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *uid, int len_uid);
 DWYCOEXPORT int _real_dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_id);
 DWYCOEXPORT int _real_dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
 DWYCOEXPORT int _real_dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_out);
-DWYCOEXPORT int _real_dwyco_start_gj(const char *uid, int len_uid, const char *password);
-DWYCOEXPORT int _real_dwyco_handle_join(const char *mid);
+DWYCOEXPORT int _real_dwyco_start_gj2(const char *gname, const char *password);
 DWYCOEXPORT int _real_dwyco_is_special_message(const char *msg_id, int *what_out);
 DWYCOEXPORT int _real_dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out, const char **dlv_mid_out, int *what_out);
 DWYCOEXPORT DWYCO_LIST _real_dwyco_get_body_text(DWYCO_SAVED_MSG_LIST m);
@@ -405,20 +403,6 @@ printarg("int ", "chan_id",chan_id);
 printarg(" const char *", "uid",uid, " int ", "len_uid", len_uid);
 printarg(" const char *", "data",data, " int ", "len_data", len_data);
 (*user_dwyco_set_user_control_callback)(chan_id,uid,len_uid,data,len_data);
-/*++Reentered;
-*/printcbret();
-}
-
-void
-DWYCOCALLCONV
-wrapped_cb_dwyco_set_alert_callback(const char *cmd, void *user_arg, int succ, const char *failed_reason)
-{
-printcbfunname("dwyco_set_alert_callback" "DwycoCommandCallback");
-printarg("const char *", "cmd",cmd);
-printarg(" void *", "user_arg",user_arg);
-printarg(" int ", "succ",succ);
-printarg(" const char *", "failed_reason",failed_reason);
-(*user_dwyco_set_alert_callback)(cmd,user_arg,succ,failed_reason);
 /*++Reentered;
 */printcbret();
 }
@@ -754,18 +738,6 @@ printret();
 
 DWYCOEXPORT
 void
-dwyco_set_alert_callback(DwycoCommandCallback cb)
-{
-printfunname("dwyco_set_alert_callback");
-printarg("DwycoCommandCallback ", "cb",(void *)cb);
-user_dwyco_set_alert_callback=cb;
-cb=wrapped_cb_dwyco_set_alert_callback;
-_real_dwyco_set_alert_callback(cb);
-printret();
-}
-
-DWYCOEXPORT
-void
 dwyco_set_call_screening_callback(DwycoCallScreeningCallback cb)
 {
 printfunname("dwyco_set_call_screening_callback");
@@ -944,19 +916,6 @@ dwyco_power_clean_safe()
 {
 printfunname("dwyco_power_clean_safe");
 _real_dwyco_power_clean_safe();
-printret();
-}
-
-DWYCOEXPORT
-void
-dwyco_power_clean_progress_hack(int *done_out, int *total_out)
-{
-printfunname("dwyco_power_clean_progress_hack");
-printarg("int *", "done_out",done_out);
-printarg(" int *", "total_out",total_out);
-_real_dwyco_power_clean_progress_hack(done_out,total_out);
-printargout("int *", "done_out",done_out);
-printargout(" int *", "total_out",total_out);
 printret();
 }
 
@@ -2267,13 +2226,12 @@ return(_ret);
 
 DWYCOEXPORT
 int
-dwyco_make_special_zap_composition( int special_type, const char *user_id, const char *user_block, int len_user_block)
+dwyco_make_special_zap_composition( int special_type, const char *user_block, int len_user_block)
 {
 printfunname("dwyco_make_special_zap_composition");
 printarg(" int ", "special_type",special_type);
-printarg(" const char *", "user_id",user_id);
 printarg(" const char *", "user_block",user_block, " int ", "len_user_block", len_user_block);
-int _ret = _real_dwyco_make_special_zap_composition(special_type,user_id,user_block,len_user_block);
+int _ret = _real_dwyco_make_special_zap_composition(special_type,user_block,len_user_block);
 printretval(_ret);
 return(_ret);
 }
@@ -2907,6 +2865,30 @@ printret();
 
 DWYCOEXPORT
 int
+dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out)
+{
+printfunname("dwyco_get_sync_model");
+printarg("DWYCO_SYNC_MODEL *", "list_out",list_out);
+int _ret = _real_dwyco_get_sync_model(list_out);
+printargout("DWYCO_SYNC_MODEL *", "list_out",list_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
+dwyco_get_group_status(DWYCO_LIST *list_out)
+{
+printfunname("dwyco_get_group_status");
+printarg("DWYCO_LIST *", "list_out",list_out);
+int _ret = _real_dwyco_get_group_status(list_out);
+printargout("DWYCO_LIST *", "list_out",list_out);
+printretval(_ret);
+return(_ret);
+}
+
+DWYCOEXPORT
+int
 dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
 {
 printfunname("dwyco_get_saved_message2");
@@ -2988,23 +2970,12 @@ return(_ret);
 
 DWYCOEXPORT
 int
-dwyco_start_gj(const char *uid, int len_uid, const char *password)
+dwyco_start_gj2(const char *gname, const char *password)
 {
-printfunname("dwyco_start_gj");
-printarg("const char *", "uid",uid, " int ", "len_uid", len_uid);
+printfunname("dwyco_start_gj2");
+printarg("const char *", "gname",gname);
 printarg(" const char *", "password",password);
-int _ret = _real_dwyco_start_gj(uid,len_uid,password);
-printretval(_ret);
-return(_ret);
-}
-
-DWYCOEXPORT
-int
-dwyco_handle_join(const char *mid)
-{
-printfunname("dwyco_handle_join");
-printarg("const char *", "mid",mid);
-int _ret = _real_dwyco_handle_join(mid);
+int _ret = _real_dwyco_start_gj2(gname,password);
 printretval(_ret);
 return(_ret);
 }

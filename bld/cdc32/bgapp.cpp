@@ -477,6 +477,7 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
         return 1;
     const char *grpname = getenv("DWYCO_GROUP");
     const char *grppw = getenv("DWYCO_GROUP_PW");
+    dwyco_trace_init();
 
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
 

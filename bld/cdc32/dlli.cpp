@@ -1684,26 +1684,6 @@ dwyco_power_clean_safe()
     power_clean_safe();
 }
 
-#if 0
-namespace dwyco
-{
-extern int Index_progress;
-extern int Index_total;
-}
-DWYCOEXPORT
-void
-dwyco_power_clean_progress_hack(int *done_out, int *total_out)
-{
-    if(*total_out < 0)
-    {
-        dwyco::Index_total = -1;
-        return;
-    }
-    *done_out = dwyco::Index_progress;
-    *total_out = dwyco::Index_total;
-}
-#endif
-
 
 static void
 add_to_mutual_ignore(vc v)
@@ -7183,39 +7163,6 @@ dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_o
     return 1;
 }
 
-#if 0
-static
-void
-group_result(vc m, void *, vc, ValidPtr vp)
-{
-    if(m[1].is_nil())
-        return;
-    if(!vp.is_valid())
-        return;
-    auto alt = reinterpret_cast<DH_alternate*>(vp.get_ptr());
-    vc pubkey = m[1][0];
-    vc group_uids = m[1][1];
-    Group_uids = group_uids;
-    if(group_uids.num_elems() == 0)
-    {
-        // noone in the group, so we are kinda all on our own
-        return;
-    }
-    // just pick the first one
-    start_gj(group_uids[0], alt->alt_name(), alt->password);
-}
-
-DWYCOEXPORT
-int
-dwyco_start_gj(const char *uid, int len_uid, const char *password)
-{
-    if(!Current_alternate)
-        return 0;
-    //vc vuid(VC_BSTRING, uid, len_uid);
-    dirth_send_get_group_pk(My_UID, Current_alternate->alt_name(), QckDone(group_result, 0, vcnil, Current_alternate->vp));
-    return 1;
-}
-#endif
 
 static
 void

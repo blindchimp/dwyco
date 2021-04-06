@@ -13,7 +13,6 @@
 #define dwyco_set_call_acceptance_callback _real_dwyco_set_call_acceptance_callback 
 #define dwyco_set_emergency_callback _real_dwyco_set_emergency_callback 
 #define dwyco_set_user_control_callback _real_dwyco_set_user_control_callback 
-#define dwyco_set_alert_callback _real_dwyco_set_alert_callback 
 #define dwyco_set_call_screening_callback _real_dwyco_set_call_screening_callback 
 #define dwyco_set_call_bandwidth_callback _real_dwyco_set_call_bandwidth_callback 
 #define dwyco_finish_startup _real_dwyco_finish_startup 
@@ -31,7 +30,6 @@
 #define dwyco_bg_init _real_dwyco_bg_init 
 #define dwyco_bg_exit _real_dwyco_bg_exit 
 #define dwyco_power_clean_safe _real_dwyco_power_clean_safe 
-#define dwyco_power_clean_progress_hack _real_dwyco_power_clean_progress_hack 
 #define dwyco_get_authenticator _real_dwyco_get_authenticator 
 #define dwyco_set_login_result_callback _real_dwyco_set_login_result_callback 
 #define dwyco_database_login _real_dwyco_database_login 
@@ -191,14 +189,15 @@
 #define dwyco_get_message_bodies _real_dwyco_get_message_bodies 
 #define dwyco_start_bulk_update _real_dwyco_start_bulk_update 
 #define dwyco_end_bulk_update _real_dwyco_end_bulk_update 
+#define dwyco_get_sync_model _real_dwyco_get_sync_model 
+#define dwyco_get_group_status _real_dwyco_get_group_status 
 #define dwyco_get_saved_message2 _real_dwyco_get_saved_message2 
 #define dwyco_get_saved_message _real_dwyco_get_saved_message 
 #define dwyco_get_unfetched_messages _real_dwyco_get_unfetched_messages 
 #define dwyco_get_unfetched_message _real_dwyco_get_unfetched_message 
 #define dwyco_is_special_message2 _real_dwyco_is_special_message2 
 #define dwyco_get_user_payload _real_dwyco_get_user_payload 
-#define dwyco_start_gj _real_dwyco_start_gj 
-#define dwyco_handle_join _real_dwyco_handle_join 
+#define dwyco_start_gj2 _real_dwyco_start_gj2 
 #define dwyco_is_special_message _real_dwyco_is_special_message 
 #define dwyco_is_delivery_report _real_dwyco_is_delivery_report 
 #define dwyco_get_body_text _real_dwyco_get_body_text 
