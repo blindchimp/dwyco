@@ -102,7 +102,14 @@ get_status_gj()
  * A is some member of G and can provide G's private key
  * Ek(m) is m encrypted with k = H(P) using GCM
  *
- * if any message fails to decrypt the protocol terminates with failure
+ * if any message fails to decrypt it is ignored.
+ * if a message arrives that fails to match the protocol state, it is ignored.
+ * the protocol only "terminates" on success, or after a timeout (error).
+ * (the reason i'm making this distinction is that because of the underlying
+ * transport, messages can occasionally be delivered more than once, and i don't
+ * want to terminate the protocol based on that. i'm not sure this is a good idea
+ * but it does allow more sequences of messages to result in the protocol
+ * succeeding.
  *
 B->A: create m1 = (rB, G) and send Ek(m) to G using only G's public key
 A->B: A decrypts m1 using k, m2 = Ek(G, rA, rB, B)
@@ -360,7 +367,9 @@ recv_gj2(vc from, vc msg, vc password)
         if(rollback)
             SKID->rollback_transaction();
         se_emit_group_status_change();
-        terminate(to_hex(My_UID), hfrom);
+        // don't terminate, in cast there are duplicate messages, we can just ignore
+        // the follow ons.
+        //terminate(to_hex(My_UID), hfrom);
         dwyco_kill_message(pers_id.c_str(), pers_id.length());
 
     }
@@ -436,14 +445,14 @@ recv_gj1(vc from, vc msg, vc password)
 
         SKID->start_transaction();
 
-        // look more closely at this... i think if a requester spams us
-        // with multiple requests, the implementation may end up in
-        // a weird state where none of the requests is processed because
-        // they are stepping on one another. need to reorganize a bit and
-        // arrange for follow on requests are simply ignored for some
-        // period of time, or allowed to progress until one of them
-        // completes, then terminate the remaining ones.
-        SKID->sql_simple("delete from pstate where initiating_uid = ?1", hfrom);
+        // yea, this is a problem... if we process duplicate messages
+        // only the *last* one we get will be retained if we delete the previous state.
+        // in that case, if the initiator sees multiple join2 messages, it only
+        // responds to the *first* one it got (throwing away duplicates)
+        //SKID->sql_simple("delete from pstate where initiating_uid = ?1", hfrom);
+        // if we process multiple duplicate messages, only one of them will
+        // cause the initiator's state machine to advance, and the rest will be
+        // ignored.
 
         vc nonce2 = to_hex(get_entropy());
 
@@ -485,7 +494,10 @@ recv_gj1(vc from, vc msg, vc password)
 }
 
 // final part of SKID, if everything matches up, send them
-// the private group key we have
+// the private group key we have.
+// note: since this is the last state, it makes sense to terminate
+// the protocol if there is an error, ignoring duplicate messages
+// results in the same actions (ie, the first one that succeeds wins.)
 
 // CALLED IN RESPONDER
 int
@@ -535,7 +547,7 @@ recv_gj3(vc from, vc msg, vc password)
                 throw -1;
             }
         }
-        Group_uids.add(from);
+
         // note: for now, we are only in one group, and it should be the
         // same as the requester wanted. this ought to be fixed later
         // if we allow multiple groups for some reason
@@ -544,7 +556,7 @@ recv_gj3(vc from, vc msg, vc password)
             //oopanic("protocol error");
             throw -1;
         }
-
+        Group_uids.add(from);
         vc mr(VC_VECTOR);
         mr[0] = alt_name;
         mr[1] = Current_alternate->my_static();
