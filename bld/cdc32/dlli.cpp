@@ -7718,8 +7718,13 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
             // note: don't ack it automatically, since we *might* be in a situation where we
             // are waiting for a group key. once the group key is installed we might be
             // able to decrypt it. tag the msg locally in case our key situation changes
-            //dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
-            sql_add_tag(q->msg_id, "_decrypt_failed");
+            //
+            // note: tried this, and trying to decrypt it later is really a
+            // losing proposition. it is better just to delete it. if we are
+            // in the right group eventually, we'll get it via syncing, just a little
+            // later.
+            dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
+            //sql_add_tag(q->msg_id, "_decrypt_failed");
 
             TRACK_ADD(MR_msg_decrypt_failed, 1);
             return;
