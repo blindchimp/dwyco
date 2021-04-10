@@ -6393,24 +6393,6 @@ uids_to_call()
     return ret;
 }
 
-static
-void
-pull_done_slot(vc mid, vc remote_uid, vc success)
-{
-    if(success.is_nil())
-        pulls::pull_failed(mid, remote_uid);
-    else
-    {
-        // if the pull succeeded, cancel all the
-        // extant pulls in other send_qs
-        pulls::deassert_pull(mid);
-        ChanList cl = get_all_sync_chans();
-        for(int i = 0; i < cl.num_elems(); ++i)
-        {
-            cl[i]->sync_sendq.del_pull(mid);
-        }
-    }
-}
 
 namespace dwyco {
 void
@@ -6421,8 +6403,6 @@ start_stalled_pulls()
     {
         MMChannel *mc = cl[i];
         DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());
-        if(stalled_pulls.num_elems() > 0)
-            mc->pull_done.connect_ptrfun(pull_done_slot, 1);
         for(int i = 0; i < stalled_pulls.num_elems(); ++i)
         {
             //stalled_pulls[i]->set_in_progress(1);
@@ -6906,7 +6886,6 @@ pull_msg(vc uid, vc msg_id)
                 MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
                 if(mc)
                 {
-                    mc->pull_done.connect_ptrfun(pull_done_slot, 1);
                     pulls::set_pull_in_progress(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
                     return -2;
@@ -6922,8 +6901,6 @@ pull_msg(vc uid, vc msg_id)
         {
             if(pulls::pull_in_progress(msg_id, mc->remote_uid()))
                 continue;
-
-            mc->pull_done.connect_ptrfun(pull_done_slot, 1);
 
             pulls::set_pull_in_progress(msg_id, mc->remote_uid());
             mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
@@ -6945,8 +6922,6 @@ assert_eager_pulls(MMChannel *mc, vc uid)
 {
     vc huid = to_hex(uid);
     vc mids = sql_get_non_local_messages_at_uid(uid);
-
-    mc->pull_done.connect_ptrfun(pull_done_slot, 1);
 
     for(int i = 0; i < mids.num_elems(); ++i)
     {

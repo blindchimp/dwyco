@@ -1051,11 +1051,12 @@ private:
     void send_pull_error(vc mid, vc pri);
 
     void cleanup_pulls(int myid);
+    void pull_done(vc mid, vc remote_uid, vc success);
 
 public:
     void send_pull(vc mid, int pri);
 
-    ssns::signal3<vc, vc, vc> pull_done;
+    //ssns::signal3<vc, vc, vc> pull_done;
 };
 
 #define PULLPRI_INTERACTIVE 0

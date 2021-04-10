@@ -25,6 +25,7 @@
 #include "dwrtlog.h"
 #include "ezset.h"
 #include "dhgsetup.h"
+#include "pulls.h"
 
 using namespace dwyco;
 
@@ -32,6 +33,7 @@ using namespace dwyco;
 #include "miscemu.h"
 #endif
 #include "sepstr.h"
+ChanList get_all_sync_chans();
 
 static
 vc
@@ -156,6 +158,24 @@ MMChannel::process_pull(vc cmd)
 }
 
 void
+MMChannel::pull_done(vc mid, vc remote_uid, vc success)
+{
+    if(success.is_nil())
+        pulls::pull_failed(mid, remote_uid);
+    else
+    {
+        // if the pull succeeded, cancel all the
+        // extant pulls in other send_qs
+        pulls::deassert_pull(mid);
+        ChanList cl = get_all_sync_chans();
+        for(int i = 0; i < cl.num_elems(); ++i)
+        {
+            cl[i]->sync_sendq.del_pull(mid);
+        }
+    }
+}
+
+void
 MMChannel::process_pull_resp(vc cmd)
 {
     // here is where we insert the fetched message into our
@@ -171,7 +191,7 @@ MMChannel::process_pull_resp(vc cmd)
 
     if(uid.is_nil())
     {
-        pull_done.emit(mid, remote_uid(), vcnil);
+        pull_done(mid, remote_uid(), vcnil);
         return;
     }
 
@@ -228,7 +248,7 @@ MMChannel::process_pull_resp(vc cmd)
     }
     sql_commit_transaction();
     se_emit_msg_pull_ok(mid, uid);
-    pull_done.emit(mid, remote_uid(), vctrue);
+    pull_done(mid, remote_uid(), vctrue);
 
 }
 
