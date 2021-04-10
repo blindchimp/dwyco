@@ -20,11 +20,12 @@ class Sync_desc : public QObject
 
     QML_READONLY_VAR_PROPERTY(QString, uid)
     QML_READONLY_VAR_PROPERTY(QString, status)
-    QML_READONLY_VAR_PROPERTY(QString, ip)
+    QML_READONLY_VAR_PROPERTY(QString, ip) // actual connected ip
     QML_READONLY_VAR_PROPERTY(bool, proxy)
     QML_READONLY_VAR_PROPERTY(int, asserts)
     QML_READONLY_VAR_PROPERTY(int, sendq_count)
     QML_READONLY_VAR_PROPERTY(int, percent_synced)
+    QML_READONLY_VAR_PROPERTY(QString, adv_ip) // advertised ip
 
 
 public:

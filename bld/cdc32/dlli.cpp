@@ -6190,12 +6190,13 @@ dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **st
         return 0;
     }
 #endif
-    char *c = inet_ntoa(in);
-    char *out = new char[strlen(c) + 1];
-    strncpy(out, c, strlen(c) + 1);
-
     if(str_out)
+    {
+        char *c = inet_ntoa(in);
+        char *out = new char[strlen(c) + 1];
+        strncpy(out, c, strlen(c) + 1);
         *str_out = out;
+    }
     return 1;
 }
 

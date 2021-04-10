@@ -74,6 +74,16 @@ SyncDescModel::load_model()
         c->update_asserts(sl.get_long(i, DWYCO_SM_PULLS_ASSERT));
         c->update_sendq_count(sl.get_long(i, DWYCO_SM_SENDQ_COUNT));
         c->update_percent_synced(sl.get_long(i, DWYCO_SM_PERCENT_SYNCED));
+        int can_do_direct = 0;
+        char *ip_out;
+        int o = dwyco_uid_to_ip2(uid.constData(), uid.length(), &can_do_direct, &ip_out);
+        if(!o)
+            c->update_adv_ip("");
+        else
+        {
+            c->update_adv_ip(ip_out);
+            dwyco_free_array(ip_out);
+        }
         c->update_counter = cnt;
     }
     QList<Sync_desc *> dead;

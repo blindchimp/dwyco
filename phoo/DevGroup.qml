@@ -122,7 +122,7 @@ Page {
             id: group_pw
             text_input: ""
             placeholder_text: "Enter secret PIN (at least 4 digits)"
-            inputMethodHints: Qt.ImhDigitsOnly
+            //inputMethodHints: Qt.ImhDigitsOnly
             visible: !group_active && !show_pin_layout.visible
             Layout.fillWidth: true
         }
@@ -155,7 +155,7 @@ Page {
             }
 
             visible: !(group_active || requesting.visible)
-            enabled: up_and_running && group_pw.text_input.length >= 3 && group_name.text_input.length > 4
+            enabled: up_and_running //&& group_pw.text_input.length >= 3 && group_name.text_input.length > 4
             Layout.fillWidth: true
         }
         Switch {
@@ -275,10 +275,18 @@ Page {
 //                        horizontalAlignment: Text.AlignRight
 //                    }
                     Label {
+                        id: conn_ip
                         text: ip
-                        color: proxy ? "red" : "black"
+                        color: proxy ? "red" : "green"
+                        visible: ip.length > 0
                         //Layout.preferredWidth: cm(4)
                     }
+                    Label {
+                        id: advertised_ip
+                        text: adv_ip
+                        visible: adv_ip.length > 0 && !conn_ip.visible
+                    }
+
                     Item {
                         Layout.fillWidth: true
                     }
