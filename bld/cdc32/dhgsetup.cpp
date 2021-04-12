@@ -78,6 +78,15 @@ sha3(vc s)
     return ret;
 }
 
+static
+vc
+to_lower(vc an)
+{
+    DwString a(an);
+    a.to_lower();
+    return a.c_str();
+}
+
 static DHG_sql *DHG_db;
 #define sql DHG_db->sql_simple
 
@@ -99,9 +108,6 @@ change_join_key(vc, vc new_key)
 {
     se_emit_group_status_change();
     DH_alternate::Group_join_password = new_key;
-    //if(!Current_alternate)
-        //return;
-    //Current_alternate->password = new_key;
 }
 
 static
@@ -179,7 +185,7 @@ void
 DH_alternate::init(vc uid, vc alternate_name)
 {
     this->uid = uid;
-    this->alternate_name = alternate_name;
+    this->alternate_name = to_lower(alternate_name);
     if(!DHG_db)
     {
         DHG_db = new DHG_sql;
@@ -308,6 +314,8 @@ DH_alternate::insert_public_key(vc alt_name, vc grp_key, vc sig)
         return 0;
     try
     {
+        DwString a(alt_name);
+        alt_name = to_lower(alt_name);
         DHG_db->start_transaction();
         remove_key(alt_name);
         sql("insert or replace into keys (alt_name, pubkey, privkey, uid, time) values(?1, ?2, ?3, ?4, strftime('%s', 'now'))",
@@ -331,7 +339,7 @@ DH_alternate::insert_sig(vc alt_name, vc sig)
 {
     if(!DHG_db)
         return 0;
-
+    alt_name = to_lower(alt_name);
     DHG_db->sql_simple("insert or ignore into sigs (alt_name, sig) values(?1, ?2)",
                        alt_name,
                        blob(sig)
@@ -345,6 +353,7 @@ DH_alternate::insert_private_key(vc alt_name, vc grp_key)
     if(!DHG_db)
         return 0;
     DHG_db->start_transaction();
+    alt_name = to_lower(alt_name);
     DHG_db->sql_simple("update keys set privkey = ?2 where alt_name = ?1 and pubkey = ?3",
                        alt_name,
                        blob(grp_key[DH_STATIC_PRIVATE]),
@@ -360,6 +369,7 @@ DH_alternate::remove_key(vc alt_name)
     if(!DHG_db)
         return 0;
     DHG_db->start_transaction();
+    alt_name = to_lower(alt_name);
     DHG_db->sql_simple("delete from keys where alt_name = ?1", alt_name);
     DHG_db->sql_simple("delete from sigs where alt_name = ?1", alt_name);
     DHG_db->commit_transaction();
