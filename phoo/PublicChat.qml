@@ -237,14 +237,14 @@ Page {
         // will pop up on the previous screen, wtf.
         //focus: visible
         // qt 5.11 seems focus is handled a little differently
-        onVisibleChanged: {
-            if(Qt.platform.os == "android") {
-            if(!visible)
-                focus = false
-            } else {
-                focus = visible
-            }
-        }
+//        onVisibleChanged: {
+//            if(Qt.platform.os == "android") {
+//            if(!visible)
+//                focus = false
+//            } else {
+//                focus = visible
+//            }
+//        }
     }
     
     Button {

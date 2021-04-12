@@ -978,14 +978,17 @@ Page {
         // will pop up on the previous screen, wtf.
         // qt 5.11 seems focus is handled a little differently
         //focus: visible
-        onVisibleChanged: {
-            if(Qt.platform.os == "android") {
-            if(!visible)
-                focus = false
-            } else {
-                focus = visible
-            }
-        }
+        // this appears to be fixed in qt5.12 on ios? fiddling
+        // with focus would pop up the keyboard when you showed
+        // the page, but now it appears that isn't a problem
+//        onVisibleChanged: {
+//            if(Qt.platform.os == "android") {
+//            if(!visible)
+//                focus = false
+//            } else {
+//                focus = visible
+//            }
+//        }
 
         TipButton {
             id: cam_button

@@ -7241,6 +7241,19 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
             // it is unlikely we will be able to find the private key because noone
             // will be around to answer our queries. might want to just indicate that
             // to the user now and ask them to pick another group or something.
+            // we might be able to solve this problem if we had a "send to group" that didn't
+            // need a specific uid. in that case, when someone assigned themselves to the
+            // group, they would receive the messages and could respond to them.
+            // this mostly affects situations where the initial group creator doesn't
+            // immediately log in with the new group, and successive attempts to enter
+            // the group fail because it looks empty. i hacked the server to automatically assign
+            // the group creator to the group at creation time, under the assumption
+            // that their next login they would be in the group. probably an ok assumption, but
+            // isn't a requirement.
+            // there is a another more interesting problem, what if all the devices that had the key
+            // are rendered unavailable, but haven't dropped out of the group explicitly. maybe we
+            // need to age them out in some way? maybe we can keep some kind of activity log that
+            // we can query to give us some information about who is likely to be gone.
             if(members.num_elems() == 0)
             {
                 throw -1;
