@@ -20,8 +20,6 @@
 #define NUMBER_CHUNK 8
 #define COMMENT_CHUNK 16
 
-int Emit_lexical_warnings;
-
 VcLexer::VcLexer(VcIO o)
 	: err_strm(o)
 {
@@ -30,6 +28,7 @@ VcLexer::VcLexer(VcIO o)
 	start_token = 0;
 	end_token = 0;
 	lexical_error = 0;
+    emit_lexical_warnings = 0;
 }
 
 VcLexer::Token
@@ -80,7 +79,7 @@ VcLexer::lex_error(const char *s)
 void
 VcLexer::lex_warning(const char *s)
 {
-	if(Emit_lexical_warnings)
+    if(emit_lexical_warnings)
 	{
 		err_strm << "lexical warning (near line " << lines_read + 1 << "): " << s;
 		err_strm << " (token probably recognized as symbolic atom)\n";
