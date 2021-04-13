@@ -286,6 +286,15 @@ start_gj(vc target_uid, vc gname, vc password)
 }
 
 // CALLED IN INITIATOR
+// note: the initial send was a broadcast, so we end up with
+// N replies. this function also essentially is broadcasting to
+// each of the responders (that is what the server does by default, even
+// if you are just sending to a single uid.)
+// so we end up in N*N messages being processed, which is a waste, especially
+// since most of the messages will be dropped because they have the wrong
+// nonces in them. we need a "store" that doesn't perform the group mapping,
+// essentially making it "point to point" instead of the broadcast.
+//
 int
 recv_gj2(vc from, vc msg, vc password)
 {
