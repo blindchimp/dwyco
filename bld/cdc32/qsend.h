@@ -41,6 +41,8 @@ public:
         INHIBIT_ENCRYPTION = 2
     };
     enum enc_mode force_encryption;
+    int no_self_send;
+    int no_group;
 
     int send_message();
     void cancel();

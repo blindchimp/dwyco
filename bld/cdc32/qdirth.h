@@ -139,7 +139,7 @@ void dirth_send_ack_get(vc id, vc mid, QckDone d);
 void dirth_send_ack_get2(vc id, vc mid, QckDone d);
 void dirth_send_query(vc uid, QckDone d);
 void dirth_send_query2(vc uid, QckDone d);
-void dirth_send_store(vc id, vc recipients, vc msg, QckDone d);
+void dirth_send_store(vc id, vc recipients, vc msg, vc no_group, vc no_self, QckDone d);
 void dirth_send_get(vc id, vc which, QckDone d);
 void dirth_send_get2(vc id, vc which, QckDone d);
 void dirth_send_addtag(vc uid, vc mid, vc tag, QckDone d);
@@ -212,8 +212,11 @@ extern int Serial;
 #define QSTATIC_ALT_NAME 19
 
 // store message has these fields
-#define QRECIPIENTS 2
-#define QMSG 4
+#define QSTORE_RECIPIENTS 2     // vector of recipients (must be 1 uid)
+// 3 ignored i think
+#define QSTORE_MSG 4            // message vector
+#define QSTORE_NO_GROUP 5       // t means do not deliver to group by default (p2p only)
+#define QSTORE_NO_SELF 6        // t means do not deliver to us if we are in the group
 
 // vector positions for info response
 #define QIR_FROM 0

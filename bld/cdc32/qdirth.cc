@@ -472,15 +472,17 @@ dirth_send_get2(vc id, vc which, QckDone d)
 }
 
 void
-dirth_send_store(vc id, vc recipients, vc msg, QckDone d)
+dirth_send_store(vc id, vc recipients, vc msg, vc no_group, vc no_self, QckDone d)
 {
     QckMsg m;
 
     d.type = ReqType("store", ++Serial);
     m[QTYPE] = reqtype("store", d);
     m[QFROM] = id;
-    m[QRECIPIENTS] = recipients;
-    m[QMSG] = msg;
+    m[QSTORE_RECIPIENTS] = recipients;
+    m[QSTORE_MSG] = msg;
+    m[QSTORE_NO_GROUP] = no_group;
+    m[QSTORE_NO_SELF] = no_self;
     if(recipients.num_elems() == 1)
     {
         vc port;
@@ -513,16 +515,7 @@ dirth_send_store(vc id, vc recipients, vc msg, QckDone d)
         }
         return;
     }
-    // here, we have to partition the receipients into
-    // sets for each remote server, then q messages
-    // for each server independently. there won't be
-    // any way to coordinate the responses like in
-    // the case where they all go to one server...
-    // possibly we'll just have to let the client
-    // handle sending the messages one by one and
-    // have the appropriate qckdone structures for
-    // each message (instead of clustering the
-    // messages as before.)
+    oopanic("multiple recipients not supported using this command anymore");
 }
 
 void

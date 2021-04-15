@@ -33,7 +33,7 @@ qs_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
 
 static
 int
-send_via_server_int(const DwString& qfn, int inhibit_encryption)
+send_via_server_int(const DwString& qfn, int inhibit_encryption, int no_group, int no_self)
 {
     // assumes already in the outbox
 
@@ -41,6 +41,8 @@ send_via_server_int(const DwString& qfn, int inhibit_encryption)
     qs->se_sig.connect_ptrfun(qs_signal_bounce);
     qs->status_sig.connect_ptrfun(se_emit_msg_status);
     qs->force_encryption = inhibit_encryption ? DwQSend::INHIBIT_ENCRYPTION : DwQSend::DEFAULT;
+    qs->no_group = no_group;
+    qs->no_self_send = no_self;
     int err;
     err = qs->send_message();
     if(err == -1)
@@ -77,15 +79,15 @@ ds_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
     // if it is a fail, try sending it via server
     No_direct_msgs.add(ruid);
     move_back_to_outbox(qfn);
-    send_via_server_int(qfn, 0);
+    send_via_server_int(qfn, 0, 0, 0);
 }
 
 int
-send_via_server(const DwString& qfn, int inhibit_encryption)
+send_via_server(const DwString& qfn, int inhibit_encryption, int no_group, int no_self)
 {
     move_to_outbox(qfn);
 
-    return send_via_server_int(qfn, inhibit_encryption);
+    return send_via_server_int(qfn, inhibit_encryption, no_group, no_self);
 }
 
 int
@@ -162,7 +164,7 @@ send_best_way(const DwString& qfn, vc ruid)
             move_back_to_outbox(qfn);
         }
         delete ds;
-        return send_via_server_int(qfn, 0);
+        return send_via_server_int(qfn, 0, 0, 0);
     }
     else if(dsres == -1)
     {

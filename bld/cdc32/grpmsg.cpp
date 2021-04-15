@@ -157,7 +157,7 @@ xfer_dec(vc vs, vc password)
 
 static
 int
-post_req(int compid, vc vuid, DwString& pers_id)
+post_req(int compid, vc vuid, DwString& pers_id, int no_group)
 {
     ValidPtr p = cookie_to_ptr(compid);
 
@@ -193,7 +193,7 @@ post_req(int compid, vc vuid, DwString& pers_id)
     // good as the pk stuff, but still reasonable. the underlying skid protocol
     // is supposedly resistant to attack even if it is done "in the clear", so
     // we are probably ok even if someone can decrypt the messages.
-    if(!send_via_server(m->qfn, 1))
+    if(!send_via_server(m->qfn, 1, no_group, 1))
     {
         GRTLOG("post_req: send startup failed", 0, 0);
         return 0;
@@ -260,7 +260,8 @@ start_gj(vc target_uid, vc gname, vc password)
     if(comp_id == -1)
         return 0;
 
-    if(!post_req(comp_id, target_uid, pers_id))
+    // send to group
+    if(!post_req(comp_id, target_uid, pers_id, 0))
     {
         dwyco_delete_zap_composition(comp_id);
         return 0;
@@ -353,7 +354,8 @@ recv_gj2(vc from, vc msg, vc password)
         if(comp_id == -1)
             throw -1;
 
-        if(!post_req(comp_id, from, pers_id))
+        // respond to just the sender (not group)
+        if(!post_req(comp_id, from, pers_id, 1))
         {
             dwyco_delete_zap_composition(comp_id);
             throw -1;
@@ -477,8 +479,8 @@ recv_gj1(vc from, vc msg, vc password)
         int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN2, (const char *)mrs, mrs.len());
         if(comp_id == -1)
             throw -1;
-
-        if(!post_req(comp_id, from, pers_id))
+        // respond to just the initiator (not any group they might accidently be in)
+        if(!post_req(comp_id, from, pers_id, 1))
         {
             dwyco_delete_zap_composition(comp_id);
             throw -1;
@@ -576,8 +578,8 @@ recv_gj3(vc from, vc msg, vc password)
         int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN4, (const char *)mrs, mrs.len());
         if(comp_id == -1)
             throw -1;
-
-        if(!post_req(comp_id, from, pers_id))
+        // respond to just the initiator (not any group they might accidently be in)
+        if(!post_req(comp_id, from, pers_id, 1))
         {
             dwyco_delete_zap_composition(comp_id);
             throw -1;

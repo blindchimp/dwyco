@@ -34,7 +34,7 @@ namespace dwyco {
 // times, usually thru typos. this is for debugging only, and
 // should be disabled in release. note that it assumes you won't have
 // more than ?31 as an arg, and it is broken in cases where you give
-// it ? is some other context.
+// it ? in some other context.
 static
 void
 check_args(const char *sql, int count)

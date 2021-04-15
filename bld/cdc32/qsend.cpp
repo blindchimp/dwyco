@@ -57,6 +57,8 @@ DwQSend::DwQSend(const DwString &qfn, int defer_send) :
     has_att = 0;
     force_encryption = DEFAULT;
     this->defer_send = defer_send;
+    no_self_send = 0;
+    no_group = 0;
     Qbm.add(this);
 }
 
@@ -129,6 +131,9 @@ DwQSend::save_aux()
     v[2] = prev_ip;
     v[3] = prev_port;
     v[4] = force_encryption;
+    v[5] = no_group;
+    v[6] = no_self_send;
+
     DwString fn = fn_base_wo_extension(qfn);
     fn += ".aux";
     save_info(v, fn.c_str());
@@ -148,6 +153,8 @@ DwQSend::load_aux()
         prev_ip = v[2];
         prev_port = v[3];
         force_encryption = (enc_mode)(int)v[4];
+        no_group = v[5];
+        no_self_send = v[6];
         return 1;
     }
     return 0;
@@ -240,7 +247,10 @@ DwQSend::do_store()
     send_done_future = QckDone(qd_send_done, 0, vcnil, vp);
     vc to_send = emsg.is_nil() ? msg[QQM_MSG_VEC] : emsg[QQM_MSG_VEC];
     to_send[QQM_BODY_ESTIMATED_SIZE] = att_size;
-    dirth_send_store(My_UID, msg[0], to_send, send_done_future);
+    dirth_send_store(My_UID, msg[0], to_send,
+            no_group ? vctrue : vcnil,
+            no_self_send ? vctrue : vcnil,
+            send_done_future);
 }
 
 
