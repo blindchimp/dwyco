@@ -83,7 +83,6 @@ Page {
         }
         RowLayout {
             id: requesting
-            //XXX FIX THIS, state 2 means we are serving up the key, otherwise requesting
             visible: core.group_status === 1
             Button {
                 text: "Cancel"

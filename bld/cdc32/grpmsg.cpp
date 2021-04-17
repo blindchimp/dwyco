@@ -185,14 +185,14 @@ post_req(int compid, vc vuid, DwString& pers_id, int no_group)
     // message and respond to the requests. the problem is that we may not
     // have a group key, especially early on before a client has a chance
     // to accumulate keys from other clients.
-    // we might end up sending a message to the serverm encrypted with the
+    // we might end up sending a message to the server encrypted with the
     // uid's pk, but with no group pk available, no other group member would
     // be able to decrypt the message. by just sending it with only the
     // password encryption, all the current group members can decrypt it.
     // note that message itself is encrypted with the password, not as
     // good as the pk stuff, but still reasonable. the underlying skid protocol
     // is supposedly resistant to attack even if it is done "in the clear", so
-    // we are probably ok even if someone can decrypt the messages.
+    // we are probably ok even if someone else can decrypt the messages.
     if(!send_via_server(m->qfn, 1, no_group, 1))
     {
         GRTLOG("post_req: send startup failed", 0, 0);

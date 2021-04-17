@@ -6603,37 +6603,47 @@ int
 dwyco_get_group_status(DWYCO_LIST *list_out)
 {
     vc r(VC_VECTOR);
-    vc gname;
-    vc pw;
-    pw = DH_alternate::Group_join_password;
+
+    r[GS_JOIN_KEY] = DH_alternate::Group_join_password;
+    r[GS_EAGER] = get_settings_value("sync/eager");
+
     if(!Current_alternate)
     {
-        gname = "";
+        r[GS_GNAME] = "";
+        r[GS_PERCENT_SYNCED] = 100;
+        r[GS_VALID] = 0;
+
+        vc gj = get_status_gj();
+        if(gj.is_nil())
+        {
+            r[GS_IN_PROGRESS] = 0;
+        }
+        else
+        {
+            int state = gj[1];
+            if(state == 1 || state == 3)
+            {
+                r[GS_IN_PROGRESS] = 1;
+                r[GS_GNAME] = gj[0];
+            }
+            else
+            {
+                r[GS_IN_PROGRESS] = 0;
+            }
+        }
     }
     else
     {
-        gname = Current_alternate->alt_name();
-        //pw = Current_alternate->password;
-    }
+        vc gname = Current_alternate->alt_name();
+        r[GS_GNAME] = gname;
+        r[GS_VALID] = DH_alternate::has_private_key(gname);
+        vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select count(*) from gi group by mid)) from gi where from_client_uid = ?1", to_hex(My_UID));
 
-    r[GS_GNAME] = gname;
-    r[GS_JOIN_KEY] = pw;
-    vc gj = get_status_gj();
-    if(gj.is_nil())
-    {
+        r[GS_PERCENT_SYNCED] = res[0][0];
         r[GS_IN_PROGRESS] = 0;
-    }
-    else
-    {
-        r[GS_GNAME] = gj[0];
-        int state = gj[1];
-        r[GS_IN_PROGRESS] = ((state == 1 || state == 3) ? 1 : 0);
-    }
-    r[GS_VALID] = DH_alternate::has_private_key(gname);
-    vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select count(*) from gi group by mid)) from gi where from_client_uid = ?1", to_hex(My_UID));
 
-    r[GS_PERCENT_SYNCED] = res[0][0];
-    r[GS_EAGER] = get_settings_value("sync/eager");
+    }
+
 
     vc& ret = *new vc;
     vc v(VC_VECTOR);
