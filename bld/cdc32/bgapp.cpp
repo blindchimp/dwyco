@@ -426,6 +426,7 @@ check_join(int cmd, int ctx_id, const char *uid, int len_uid, const char *name, 
     else if(cmd == DWYCO_SE_GRP_JOIN_FAIL)
     {
         GRTLOG("JOIN GROUP %s FAIL", nm.c_str(), 0);
+        exit(1);
     }
 
 }
