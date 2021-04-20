@@ -1034,6 +1034,7 @@ private:
     int process_outgoing_sync();
     int process_incoming_sync();
     DwTimer sync_pinger;
+    DwTimer downstream_timer;
 
     vc package_index();
     vc package_next_cmd();

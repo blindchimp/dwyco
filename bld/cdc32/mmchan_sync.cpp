@@ -375,17 +375,27 @@ MMChannel::process_outgoing_sync()
     }
     else if(mms_sync_state == NORMAL_SEND)
     {
-        vc ds = package_downstream_sends(remote_uid());
-        if(!ds.is_nil())
+        if(!downstream_timer.is_running())
         {
-            // NOTE: *may* want to consider sending tag updates
-            // before other updates (like pulls) since they are
-            // likely to be small and putting them behind other updates
-            // may cause them to never be updated in a timely manner
-            // likewise with pulls that are initiated from the
-            // model lookup, if we are doing eager updating.
-            for(int i = 0; i < ds.num_elems(); ++i)
-                sync_sendq.append(ds[i], PULLPRI_NORMAL);
+            downstream_timer.set_interval(5000);
+            downstream_timer.set_autoreload(1);
+            downstream_timer.start();
+        }
+        if(downstream_timer.is_expired())
+        {
+            downstream_timer.ack_expire();
+            vc ds = package_downstream_sends(remote_uid());
+            if(!ds.is_nil())
+            {
+                // NOTE: *may* want to consider sending tag updates
+                // before other updates (like pulls) since they are
+                // likely to be small and putting them behind other updates
+                // may cause them to never be updated in a timely manner
+                // likewise with pulls that are initiated from the
+                // model lookup, if we are doing eager updating.
+                for(int i = 0; i < ds.num_elems(); ++i)
+                    sync_sendq.append(ds[i], PULLPRI_NORMAL);
+            }
         }
 
         vcx = package_next_cmd();
@@ -444,8 +454,6 @@ MMChannel::process_incoming_sync()
             {
                 unpack_index(rvc);
                 mmr_sync_state = NORMAL_RECV;
-                //note: this probably needs to be a unique signal, because the
-                // the receive part sets this up too
                 destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
             }
             else if(mmr_sync_state == NORMAL_RECV)
