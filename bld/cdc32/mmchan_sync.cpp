@@ -34,6 +34,8 @@ using namespace dwyco;
 #endif
 #include "sepstr.h"
 ChanList get_all_sync_chans();
+void assert_eager_pulls(MMChannel *, vc uid);
+void start_stalled_pulls(MMChannel *);
 
 static
 vc
@@ -306,8 +308,6 @@ MMChannel::cleanup_pulls(int myid)
     sql_run_sql("delete from taglog where to_uid = ?1", huid);
 }
 
-void assert_eager_pulls(MMChannel *, vc uid);
-
 void
 MMChannel::mms_sync_state_changed(enum syncstate s)
 {
@@ -340,6 +340,10 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
         if((int)get_settings_value("sync/eager") == 1)
         {
             assert_eager_pulls(this, remote_uid());
+        }
+        else
+        {
+            start_stalled_pulls(this);
         }
     }
     else

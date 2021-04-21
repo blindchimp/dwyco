@@ -6393,61 +6393,17 @@ uids_to_call()
     return ret;
 }
 
-
-namespace dwyco {
 void
-start_stalled_pulls()
+start_stalled_pulls(MMChannel *mc)
 {
-    ChanList cl = get_all_sync_chans();
-    for(int i = 0; i < cl.num_elems(); ++i)
+    DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());
+    for(int i = 0; i < stalled_pulls.num_elems(); ++i)
     {
-        MMChannel *mc = cl[i];
-        DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());
-        for(int i = 0; i < stalled_pulls.num_elems(); ++i)
-        {
-            //stalled_pulls[i]->set_in_progress(1);
-            mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
-        }
+        stalled_pulls[i]->set_in_progress(1);
+        mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
     }
-#if 0
-    DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
-    for(int i = 0; i < mmcl.num_elems(); ++i)
-    {
-        MMCall *mmc = mmcl[i];
-        if(mmc->established)
-        {
-            MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
-            if(mc)
-            {
-                DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mmc->uid);
-                if(stalled_pulls.num_elems() > 0)
-                    mc->pull_done.connect_ptrfun(pull_done_slot, 1);
-
-                for(int i = 0; i < stalled_pulls.num_elems(); ++i)
-                {
-                    stalled_pulls[i]->set_in_progress(1);
-                    mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
-                }
-            }
-        }
-    }
-
-    ChanList cl = MMChannel::channels_by_call_type("sync");
-    for(int i = 0; i < cl.num_elems(); ++i)
-    {
-        MMChannel *mc = cl[i];
-        DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());
-        if(stalled_pulls.num_elems() > 0)
-            mc->pull_done.connect_ptrfun(pull_done_slot, 1);
-        for(int i = 0; i < stalled_pulls.num_elems(); ++i)
-        {
-            stalled_pulls[i]->set_in_progress(1);
-            mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
-        }
-    }
-#endif
 }
-}
+
 
 // UID, STATUS, IP, PROXY, LOCAL, GLOBAL, PULLS_ASSERT, PULLS_QED, SENDQ_COUNT, INQ_COUNT, TOMB_COUNT
 #define M_UID 0
@@ -6674,7 +6630,6 @@ sync_call_disposition(int call_id, int chan_id, int what, void *user_arg, const 
     case DWYCO_CALLDISP_STARTED:
         break;
     case DWYCO_CALLDISP_ESTABLISHED:
-        start_stalled_pulls();
         break;
     default:
         break;
@@ -6848,7 +6803,7 @@ sync_call_setup()
         // if we didn't get at least one connection started, just throttle back
         lct->throttle_down();
     }
-    start_stalled_pulls();
+    //start_stalled_pulls();
 }
 
 // returns -1, then there is no place we know where we might find

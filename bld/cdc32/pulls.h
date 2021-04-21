@@ -4,7 +4,6 @@
 #include "dwvecp.h"
 #include "dwqbm2.h"
 #include "vc.h"
-#include "simple_property.h"
 #include "dwtree2.h"
 #include "dlli.h"
 

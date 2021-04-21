@@ -3,6 +3,9 @@
 // obtain the mid from the associated uid. when we issue the pull
 // to that target uid, we set the in-progress flag.
 // if a pull is successful, all the records for that mid are deleted.
+// note that "inprogress" indicates a pull has been issued, not just that
+// it is in the send_q. so inprogress encompasses the time it is
+// queued to the time a response is received from the remote.
 //
 // note: we may want to put timeouts in here so that once something
 // is in progress, it times out if nothing happens for awhile.
@@ -98,6 +101,9 @@ pulls::set_pull_in_progress(vc mid, vc uid)
 DwVecP<pulls>
 pulls::get_stalled_pulls(vc uid)
 {
+    DwVecP<pulls> dm = pulls::Qbm.query_by_member(uid, &pulls::uid);
+    return dm;
+#if 0
     DwTreeKazIter<int, pulls *> i(&inp_set);
     DwVecP<pulls> ret;
     for(;!i.eol(); i.forward())
@@ -107,5 +113,6 @@ pulls::get_stalled_pulls(vc uid)
             ret.append(p);
     }
     return ret;
+#endif
 }
 }
