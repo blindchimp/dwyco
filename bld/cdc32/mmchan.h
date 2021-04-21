@@ -660,6 +660,7 @@ public:
     MessageDisplay *msg_output;
     void msg_out(const char *msg);
 
+private:
     // these are for keeping sets of variables synced
     // across the link
     SyncMap syncmap;
@@ -669,8 +670,6 @@ public:
     SyncVar available_audio_decoders;
     SyncVar available_audio_coders;
     SyncVar pinger;
-    SyncVar pause_audio;
-    SyncVar pause_video;
     SyncVar incoming_throttle;
 
     SyncMap remote_vars;
@@ -679,8 +678,6 @@ public:
     SyncVar rem_available_audio_decoders;
     SyncVar rem_available_audio_coders;
     SyncVar rem_pinger;
-    SyncVar rem_pause_audio;
-    SyncVar rem_pause_video;
     SyncVar rem_incoming_throttle;
     int remote_updated;
 
@@ -688,6 +685,12 @@ public:
     void sync_recv(vc);
     DwTimer sync_timer;
     DwTimer pinger_timer;
+
+public:
+    SyncVar pause_audio;
+    SyncVar pause_video;
+    SyncVar rem_pause_audio;
+    SyncVar rem_pause_video;
 
     int xfer_failed;
     int connect_failed;
