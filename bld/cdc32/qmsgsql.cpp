@@ -123,12 +123,16 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.gmti4 on gmt(uid)");
         sql_simple("create table if not exists mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
+
+        sql_simple("create temp table static_crdt_tags(tag text not null)");
+        sql_simple("insert into static_crdt_tags values('_fav')");
+        sql_simple("insert into static_crdt_tags values('_hid')");
+
+        // triggers use this table when reflecting changes downstream
+        // to disable the trigger, remove the tags from this table
         sql_simple("create temp table crdt_tags(tag text not null)");
-        sql_simple("insert into crdt_tags values('_fav')");
-        sql_simple("insert into crdt_tags values('_hid')");
-        //sql_simple("insert into crdt_tags values('_del')");
-        //vc v = sql_simple("pragma user_version");
-        //if(v[0][0] == vczero)
+        sql_simple("insert into crdt_tags select * from static_crdt_tags");
+
         commit_transaction();
     } catch(...) {
         rollback_transaction();
@@ -498,8 +502,9 @@ import_remote_mi(vc remote_uid)
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
         sql_simple("delete from mt.gmt where mid in (select mid from msg_tomb)");
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
-        sql_simple("insert into crdt_tags values('_fav')");
-        sql_simple("insert into crdt_tags values('_hid')");
+        //sql_simple("insert into crdt_tags values('_fav')");
+        //sql_simple("insert into crdt_tags values('_hid')");
+        sql_simple("insert into crdt_tags select * from static_crdt_tags");
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
     }
@@ -609,7 +614,8 @@ import_remote_tupdate(vc remote_uid, vc vals)
             vc guid = vals[3];
 
             sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select ?1, ?2, ?3, ?4, ?5 where not exists (select 1 from mt.gtomb where ?5 = guid)", mid, tag, tm, huid, guid);
-            if(tag == vc("_hid") || tag == vc("_fav"))
+            vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
+            if(res.num_elems() == 1)
             {
                 vc uid = sql_get_uid_from_mid(mid);
                 if(!uid.is_nil())
@@ -622,8 +628,8 @@ import_remote_tupdate(vc remote_uid, vc vals)
             vc mid = vals[1];
             vc tag = vals[2];
             sql_simple("insert or ignore into mt.gtomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
-            sql_simple("delete from gmt where guid = ?1", guid);
-            if(tag == vc("_hid") || tag == vc("_fav"))
+            vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
+            if(res.num_elems() == 1)
             {
                 vc uid = sql_get_uid_from_mid(mid);
                 if(!uid.is_nil())
