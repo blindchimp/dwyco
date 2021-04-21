@@ -100,11 +100,12 @@ MMChannel::package_next_cmd()
     return next_cmd;
 }
 
-void
+int
 MMChannel::unpack_index(vc cmd)
 {
     if(cmd[0] != vc("idx"))
-        return;
+        return 0;
+
     vc huid = to_hex(remote_uid());
     GRTLOG("unpack from %s", (const char *)huid, 0);
     DwString mifn("mi%1.sql");
@@ -117,6 +118,7 @@ MMChannel::unpack_index(vc cmd)
     string_to_file(cmd[1], mifn);
     string_to_file(cmd[2], favfn);
     import_remote_mi(remote_uid());
+    return 1;
 }
 
 void
@@ -442,49 +444,51 @@ MMChannel::process_outgoing_sync()
 int
 MMChannel::process_incoming_sync()
 {
-    int ret;
-
-    vc rvc;
-    if((ret = tube->recv_data(rvc, msync_chan)) >= 0)
+    try
     {
+        int ret;
+        vc rvc;
+        ret = tube->recv_data(rvc, msync_chan);
+        if(ret == SSERR)
+            throw -1;
+        if(ret == SSTRYAGAIN)
+            return 0;
+        if(rvc.type() != VC_VECTOR)
+            throw -1;
         sync_pinger.load(2 * VIDEO_IDLE_TIMEOUT);
         sync_pinger.start();
-        if(rvc.type() == VC_VECTOR)
-        {
-            // drop pings
-            if(rvc[0] == vc("!"))
-                return 1;
-            if(mmr_sync_state == RECV_INIT)
-            {
-                unpack_index(rvc);
-                mmr_sync_state = NORMAL_RECV;
-                destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
-            }
-            else if(mmr_sync_state == NORMAL_RECV)
-            {
-                GRTLOG("normal sync %d %s", myid, (const char *)to_hex(remote_uid()));
-                GRTLOGVC(rvc);
-                vc cmd = rvc[0];
-                if(cmd == vc("pull"))
-                    process_pull(rvc);
-                else if(cmd == vc("pull-resp"))
-                    process_pull_resp(rvc);
-                else if(cmd == vc("iupdate"))
-                {
-                    process_iupdate(rvc);
-                }
-                else if(cmd == vc("tupdate"))
-                {
-                    process_tupdate(rvc);
-                }
-            }
-            return 1;
-        }
-        else
-            ret = SSERR;
-    }
 
-    if(ret == SSERR)
+        // drop pings
+        if(rvc[0] == vc("!"))
+            return 1;
+        if(mmr_sync_state == RECV_INIT)
+        {
+            destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+            if(!unpack_index(rvc))
+                throw -1;
+            mmr_sync_state = NORMAL_RECV;
+        }
+        else if(mmr_sync_state == NORMAL_RECV)
+        {
+            GRTLOG("normal sync %d %s", myid, (const char *)to_hex(remote_uid()));
+            GRTLOGVC(rvc);
+            vc cmd = rvc[0];
+            if(cmd == vc("pull"))
+                process_pull(rvc);
+            else if(cmd == vc("pull-resp"))
+                process_pull_resp(rvc);
+            else if(cmd == vc("iupdate"))
+            {
+                process_iupdate(rvc);
+            }
+            else if(cmd == vc("tupdate"))
+            {
+                process_tupdate(rvc);
+            }
+        }
+        return 1;
+    }
+    catch(...)
     {
         drop_subchannel(msync_chan);
         msync_chan = -1;
