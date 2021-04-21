@@ -269,7 +269,7 @@ sql_dump_mt()
                "tag, "
                "time, "
                "guid "
-               "from mt.gmt where tag in (select * from crdt_tags)");
+               "from mt.gmt where tag in (select * from static_crdt_tags)");
     sql_simple("insert into dump.tomb select * from mt.gtomb");
     sql_commit_transaction();
     sDb->detach("dump");
@@ -306,7 +306,13 @@ package_downstream_sends(vc remote_uid)
         sql_start_transaction();
         vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a'", huid);
         vc mtombs = sql_simple("select mid, op from main.midlog where midlog.to_uid = ?1 and op = 'd'", huid);
-        vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a'", huid);
+
+        // note: put in the "group by" since it appears at some point i allowed duplicate
+        // guid's in the tag set (at some point i put the receiving uid in there, so we can get
+        // a picture of which client has which tags, and i'm not sure i use that info anywhere).
+        // the duplicates didn't cause an error, just lots of extra processing that was ignored.
+
+        vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' group by mt2.guid", huid);
         vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl where to_uid = ?1 and op = 'd'", huid);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0)
             GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), 0);
