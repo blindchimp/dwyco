@@ -18,7 +18,7 @@ class ProfileGrid
 {
 public:
     ProfileGrid();
-    virtual ~ProfileGrid();
+    ~ProfileGrid();
 
     void add_user(vc name, vc uid);
     void remove_user(vc uid);

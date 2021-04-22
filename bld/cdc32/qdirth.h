@@ -145,7 +145,7 @@ void dirth_send_get2(vc id, vc which, QckDone d);
 void dirth_send_addtag(vc uid, vc mid, vc tag, QckDone d);
 void dirth_send_ignore(vc id, vc uid, QckDone d);
 void dirth_send_unignore(vc id, vc uid, QckDone d);
-void dirth_send_get_ignore(vc id, QckDone d);
+//void dirth_send_get_ignore(vc id, QckDone d);
 void dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d);
 void dirth_cancel_callbacks(QDFUNCP f, void *arg1, const ReqType& type);
 void dirth_cancel_callbacks(QDFUNCP f, ValidPtr vp, const ReqType& type);

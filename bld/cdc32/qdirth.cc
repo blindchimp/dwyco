@@ -654,6 +654,7 @@ dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d)
     }
 }
 
+#if 0
 void
 dirth_send_get_ignore(vc id, QckDone d)
 {
@@ -675,6 +676,7 @@ dirth_send_get_ignore(vc id, QckDone d)
     dirth_send(m, d);
 #endif
 }
+#endif
 
 
 void

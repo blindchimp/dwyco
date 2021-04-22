@@ -334,8 +334,6 @@ void
 init_qmsg()
 {
     Cur_msgs = vc(VC_VECTOR);
-    Cur_ignore = get_local_ignore();
-    Session_ignore = vc(VC_SET);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
@@ -448,6 +446,8 @@ init_qmsg()
     new_pipeline();
 
     Mid_to_logical_clock = vc(VC_TREE);
+
+    Cur_ignore = get_local_ignore();
 }
 
 void
@@ -461,7 +461,7 @@ exit_qmsg()
 {
     exit_qmsg_sql();
     Cur_ignore = vcnil;
-    Session_ignore = vcnil;
+    //Session_ignore = vcnil;
     Mutual_ignore = vcnil;
     Online = vcnil;
     Client_types = vcnil;
@@ -528,8 +528,6 @@ void
 resume_qmsg()
 {
     Cur_msgs = vc(VC_VECTOR);
-    Cur_ignore = get_local_ignore();
-    Session_ignore = vc(VC_SET);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
@@ -641,6 +639,7 @@ resume_qmsg()
     long tmplc = sql_get_max_logical_clock();
     if(tmplc > Logical_clock)
         Logical_clock = tmplc + 1;
+    Cur_ignore = get_local_ignore();
     //init_fav_sql();
 
     //new_pipeline();
@@ -3898,7 +3897,7 @@ save_to_inbox(vc m)
 
 
 
-
+#if 0
 void
 got_ignore(vc m, void *, vc, ValidPtr)
 {
@@ -3910,6 +3909,7 @@ got_ignore(vc m, void *, vc, ValidPtr)
         Cur_ignore = m[1];
     //Refresh_users = 1;
 }
+#endif
 
 void
 add_ignore(vc id)
@@ -3917,7 +3917,7 @@ add_ignore(vc id)
     if(Cur_ignore.is_nil())
         Cur_ignore = vc(VC_SET);
     Cur_ignore.add(id);
-    Session_ignore.add(id);
+    sql_add_tag(to_hex(id), "_ignore");
 }
 
 void
@@ -3926,7 +3926,7 @@ del_ignore(vc id)
     if(Cur_ignore.is_nil())
         Cur_ignore = vc(VC_SET);
     Cur_ignore.del(id);
-    Session_ignore.del(id);
+    sql_remove_mid_tag(to_hex(id), "_ignore");
 }
 
 static
@@ -3967,7 +3967,7 @@ is_ignored_id_by_user(vc id)
 {
     if(Cur_ignore.is_nil())
         Cur_ignore = vc(VC_SET);
-    return Cur_ignore.contains(id) || Session_ignore.contains(id);
+    return Cur_ignore.contains(id);
 }
 
 
@@ -3981,10 +3981,11 @@ uid_ignored(vc uid)
     // if the uid currently has god powers, do not filter
     if(uid_has_god_power(uid))
         return 0;
-    return Cur_ignore.contains(uid) || Session_ignore.contains(uid) ||
+    return Cur_ignore.contains(uid) ||
            (!uid_has_god_power(My_UID) && Mutual_ignore.contains(uid));
 }
 
+#if 0
 void
 clear_local_ignore()
 {
@@ -4008,14 +4009,16 @@ del_local_ignore(vc uid)
     ign.del(uid);
     save_info(ign, "ignore");
 }
+#endif
 
 vc
 get_local_ignore()
 {
-    vc ign;
-    if(!load_info(ign, "ignore"))
-        ign = vc(VC_SET);
-    return ign;
+    vc res = sql_get_tagged_mids2("_ignore");
+    vc ret(VC_SET);
+    for(int i = 0; i < res.num_elems(); ++i)
+        ret.add(from_hex(res[i][0]));
+    return ret;
 }
 
 #if 0

@@ -386,7 +386,7 @@ using namespace Weak;
 using namespace dwyco;
 
 extern vc Pals;
-extern vc Session_ignore;
+//extern vc Session_ignore;
 extern vc Mutual_ignore;
 extern vc Server_list;
 extern int Send_auth;
@@ -8127,14 +8127,6 @@ dwyco_is_ignored(const char *user_id, int len_uid)
     return is_ignored_id_by_user(uid);
 }
 
-static void
-ignore_done(vc m, void *t, vc id, ValidPtr)
-{
-    if(m[1].is_nil())
-        return;
-    add_ignore(id);
-    //Refresh_users = 1;
-}
 
 DWYCOEXPORT
 void
@@ -8142,7 +8134,7 @@ dwyco_ignore(const char *user_id, int len_uid)
 {
     vc uid(VC_BSTRING, user_id, len_uid);
     add_ignore(uid);
-    add_local_ignore(uid);
+    //add_local_ignore(uid);
     //Refresh_users = 1;
     // NOTE: reinstate this when server-based ignore lists
     // arrive.
@@ -8167,27 +8159,9 @@ dwyco_unignore(const char *user_id, int len_uid)
 {
     vc uid(VC_BSTRING, user_id, len_uid);
     del_ignore(uid);
-    del_local_ignore(uid);
+    //del_local_ignore(uid);
     //Refresh_users = 1;
     dirth_send_unignore(My_UID, uid, QckDone(unignore_done, 0, uid));
-}
-
-DWYCOEXPORT
-void
-dwyco_session_ignore(const char *user_id, int len_uid)
-{
-    vc uid(VC_BSTRING, user_id, len_uid);
-    Session_ignore.add(uid);
-    //Refresh_users = 1;
-}
-
-DWYCOEXPORT
-void
-dwyco_session_unignore(const char *user_id, int len_uid)
-{
-    vc uid(VC_BSTRING, user_id, len_uid);
-    Session_ignore.del(uid);
-    //Refresh_users = 1;
 }
 
 DWYCOEXPORT
@@ -8195,13 +8169,6 @@ DWYCO_LIST
 dwyco_ignore_list_get()
 {
     return dwyco_list_from_vc(vc::set_to_vector(Cur_ignore));
-}
-
-DWYCOEXPORT
-DWYCO_LIST
-dwyco_session_ignore_list_get()
-{
-    return dwyco_list_from_vc(vc::set_to_vector(Session_ignore));
 }
 
 DWYCOEXPORT

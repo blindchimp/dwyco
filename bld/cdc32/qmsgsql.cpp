@@ -127,11 +127,15 @@ QMsgSql::init_schema_fav()
         sql_simple("create temp table static_crdt_tags(tag text not null)");
         sql_simple("insert into static_crdt_tags values('_fav')");
         sql_simple("insert into static_crdt_tags values('_hid')");
+        sql_simple("insert into static_crdt_tags values('_ignore')");
 
         // triggers use this table when reflecting changes downstream
         // to disable the trigger, remove the tags from this table
         sql_simple("create temp table crdt_tags(tag text not null)");
         sql_simple("insert into crdt_tags select * from static_crdt_tags");
+
+        sql_simple("create temp table static_uid_tags(tag text not null)");
+        sql_simple("insert into static_uid_tags values('_ignore')");
 
         commit_transaction();
     } catch(...) {
@@ -457,7 +461,7 @@ remove_sync_state()
         sql_simple("delete from current_clients");
         // get rid of tags that might reference unknown mids
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
-        sql_simple("delete from mt.gmt where mid not in (select mid from msg_idx)");
+        sql_simple("delete from mt.gmt where tag not in (select * from static_uid_tags) and mid not in (select mid from msg_idx)");
         sql_simple("delete from mt.gtomb");
         sql_simple("drop trigger if exists mtomb_log");
         sql_simple("delete from msg_tomb");
