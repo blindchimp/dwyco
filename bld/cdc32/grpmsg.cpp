@@ -157,7 +157,7 @@ xfer_dec(vc vs, vc password)
 
 static
 int
-post_req(int compid, vc vuid, DwString& pers_id, int no_group)
+post_req(int compid, vc vuid, DwString& pers_id, int no_group, int inhibit_encryption = 1)
 {
     ValidPtr p = cookie_to_ptr(compid);
 
@@ -193,7 +193,7 @@ post_req(int compid, vc vuid, DwString& pers_id, int no_group)
     // good as the pk stuff, but still reasonable. the underlying skid protocol
     // is supposedly resistant to attack even if it is done "in the clear", so
     // we are probably ok even if someone else can decrypt the messages.
-    if(!send_via_server(m->qfn, 1, no_group, 1))
+    if(!send_via_server(m->qfn, inhibit_encryption, no_group, 1))
     {
         GRTLOG("post_req: send startup failed", 0, 0);
         return 0;
@@ -579,7 +579,11 @@ recv_gj3(vc from, vc msg, vc password)
         if(comp_id == -1)
             throw -1;
         // respond to just the initiator (not any group they might accidently be in)
-        if(!post_req(comp_id, from, pers_id, 1))
+        // this is the money shot, so don't inhibit the encryption. we might have
+        // gotten the target's p2p key by now, so use it if possible. note that this
+        // is in *addition* to the shared key encryption (which, by itself, might be lame since it
+        // is user generated)
+        if(!post_req(comp_id, from, pers_id, 0))
         {
             dwyco_delete_zap_composition(comp_id);
             throw -1;
