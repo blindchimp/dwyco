@@ -859,14 +859,12 @@ int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
 
-//int DWYCOEXPORT dwyco_start_gj(const char *uid, int len_uid, const char *password);
 int DWYCOEXPORT dwyco_start_gj2(const char *gname, const char *password);
 
 int DWYCOEXPORT dwyco_is_ignored(const char *user_id, int len_uid);
 void DWYCOEXPORT dwyco_ignore(const char *user_id, int len_uid);
 void DWYCOEXPORT dwyco_unignore(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_session_ignore(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_session_unignore(const char *user_id, int len_uid);
+
 #if 0
 void DWYCOEXPORT dwyco_always_visible(const char *uid, int len_uid, int val);
 void DWYCOEXPORT dwyco_never_visible(const char *uid, int len_uid, int val);
@@ -874,7 +872,7 @@ int DWYCOEXPORT dwyco_is_never_visible(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_is_always_visible(const char *uid, int len_uid);
 #endif
 DWYCO_LIST DWYCOEXPORT dwyco_ignore_list_get();
-DWYCO_LIST DWYCOEXPORT dwyco_session_ignore_list_get();
+
 
 // pals-only filtering
 // if on == 1, then filtering is turned on, and all
@@ -1176,7 +1174,6 @@ int DWYCOEXPORT dwyco_bg_init();
 int DWYCOEXPORT dwyco_bg_exit();
 
 void DWYCOEXPORT dwyco_power_clean_safe();
-void DWYCOEXPORT dwyco_power_clean_progress_hack(int *done_out, int *total_out);
 int DWYCOEXPORT dwyco_empty_trash();
 int DWYCOEXPORT dwyco_count_trashed_users();
 void DWYCOEXPORT dwyco_untrash_users();

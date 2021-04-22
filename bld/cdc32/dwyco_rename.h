@@ -228,10 +228,7 @@
 #define dwyco_is_ignored _real_dwyco_is_ignored 
 #define dwyco_ignore _real_dwyco_ignore 
 #define dwyco_unignore _real_dwyco_unignore 
-#define dwyco_session_ignore _real_dwyco_session_ignore 
-#define dwyco_session_unignore _real_dwyco_session_unignore 
 #define dwyco_ignore_list_get _real_dwyco_ignore_list_get 
-#define dwyco_session_ignore_list_get _real_dwyco_session_ignore_list_get 
 #define dwyco_set_pals_only _real_dwyco_set_pals_only 
 #define dwyco_get_pals_only _real_dwyco_get_pals_only 
 #define dwyco_uid_to_info _real_dwyco_uid_to_info 

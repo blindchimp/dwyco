@@ -247,10 +247,7 @@ DWYCOEXPORT int _real_dwyco_run_sql(const char *stmt, const char *a1, const char
 DWYCOEXPORT int _real_dwyco_is_ignored(const char *user_id, int len_uid);
 DWYCOEXPORT void _real_dwyco_ignore(const char *user_id, int len_uid);
 DWYCOEXPORT void _real_dwyco_unignore(const char *user_id, int len_uid);
-DWYCOEXPORT void _real_dwyco_session_ignore(const char *user_id, int len_uid);
-DWYCOEXPORT void _real_dwyco_session_unignore(const char *user_id, int len_uid);
 DWYCOEXPORT DWYCO_LIST _real_dwyco_ignore_list_get();
-DWYCOEXPORT DWYCO_LIST _real_dwyco_session_ignore_list_get();
 DWYCOEXPORT void _real_dwyco_set_pals_only(int on);
 DWYCOEXPORT int _real_dwyco_get_pals_only();
 DWYCOEXPORT DWYCO_LIST _real_dwyco_uid_to_info(const char *user_id, int len_uid, int* cant_resolve_now_out);
@@ -3332,41 +3329,11 @@ printret();
 }
 
 DWYCOEXPORT
-void
-dwyco_session_ignore(const char *user_id, int len_uid)
-{
-printfunname("dwyco_session_ignore");
-printarg("const char *", "user_id",user_id, " int ", "len_uid", len_uid);
-_real_dwyco_session_ignore(user_id,len_uid);
-printret();
-}
-
-DWYCOEXPORT
-void
-dwyco_session_unignore(const char *user_id, int len_uid)
-{
-printfunname("dwyco_session_unignore");
-printarg("const char *", "user_id",user_id, " int ", "len_uid", len_uid);
-_real_dwyco_session_unignore(user_id,len_uid);
-printret();
-}
-
-DWYCOEXPORT
 DWYCO_LIST
 dwyco_ignore_list_get()
 {
 printfunname("dwyco_ignore_list_get");
 DWYCO_LIST _ret = _real_dwyco_ignore_list_get();
-printretval(_ret);
-return(_ret);
-}
-
-DWYCOEXPORT
-DWYCO_LIST
-dwyco_session_ignore_list_get()
-{
-printfunname("dwyco_session_ignore_list_get");
-DWYCO_LIST _ret = _real_dwyco_session_ignore_list_get();
 printretval(_ret);
 return(_ret);
 }
