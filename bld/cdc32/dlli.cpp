@@ -766,8 +766,6 @@ dwyco_debug_dump()
 
     }
 
-
-
     scoped_ptr<ChanList> chans(MMChannel::get_serviced_channels());
     ChanListIter i(chans.get());
     for(; !i.eol(); i.forward())
@@ -2092,6 +2090,7 @@ dwyco_service_channels(int *spin_out)
     se_process();
     crank_activity_timer();
     sync_call_setup();
+#ifdef DW_RTLOG
     {
         static DwTimer dump_timer("dump");
         static int been_here;
@@ -2109,6 +2108,7 @@ dwyco_service_channels(int *spin_out)
             dwyco_debug_dump();
         }
     }
+#endif
     {
     DwString str;
     dwtime_t nex = DwTimer::next_expire_time(str) - DwTimer::time_now();

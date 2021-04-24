@@ -1357,7 +1357,8 @@ fetch_pk_done(vc m, void *, vc uid, ValidPtr)
 
 
 
-static void
+static
+void
 fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
 {
 
@@ -3890,26 +3891,9 @@ save_to_inbox(vc m)
     // a message, then 20 minutes later google notifies about the same message.)
     // we only get sent google notifications for server messages...
     sql_add_tag(m[QQM_LOCAL_ID], "_inbox");
-    //sql_add_tag(m[QQM_LOCAL_ID], "_local");
     return 1;
 }
 
-
-
-
-#if 0
-void
-got_ignore(vc m, void *, vc, ValidPtr)
-{
-    if(m[1].is_nil())
-    {
-        Cur_ignore = vc(VC_SET);
-    }
-    else
-        Cur_ignore = m[1];
-    //Refresh_users = 1;
-}
-#endif
 
 void
 add_ignore(vc id)
@@ -3984,32 +3968,6 @@ uid_ignored(vc uid)
     return Cur_ignore.contains(uid) ||
            (!uid_has_god_power(My_UID) && Mutual_ignore.contains(uid));
 }
-
-#if 0
-void
-clear_local_ignore()
-{
-    DeleteFile(newfn("ignore").c_str());
-}
-void
-add_local_ignore(vc uid)
-{
-    vc ign;
-    if(!load_info(ign, "ignore"))
-        ign = vc(VC_SET);
-    ign.add(uid);
-    save_info(ign, "ignore");
-}
-void
-del_local_ignore(vc uid)
-{
-    vc ign;
-    if(!load_info(ign, "ignore"))
-        ign = vc(VC_SET);
-    ign.del(uid);
-    save_info(ign, "ignore");
-}
-#endif
 
 vc
 get_local_ignore()

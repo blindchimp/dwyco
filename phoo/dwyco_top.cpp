@@ -139,7 +139,8 @@ reload_conv_list()
     Conv_sort_proxy->setDynamicSortFilter(true);
 }
 
-static void
+static
+void
 reload_ignore_list()
 {
     Conv_sort_proxy->setDynamicSortFilter(false);
@@ -1990,18 +1991,17 @@ DwycoCore::clear_ignore_list()
     int n;
 
     l = dwyco_ignore_list_get();
-    dwyco_list_numelems(l, &n, 0);
+    simple_scoped ql(l);
+    n = ql.rows();
     for(int i = 0; i < n; ++i)
     {
-        QByteArray buid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
+        QByteArray buid = ql.get<QByteArray>(i);
         dwyco_unignore(buid.constData(), buid.length());
         emit ignore_event(buid.toHex());
 
     }
-    dwyco_list_release(l);
     // may involve resorting other lists too
     reload_ignore_list();
-
 }
 
 int

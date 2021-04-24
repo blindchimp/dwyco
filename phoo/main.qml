@@ -873,7 +873,7 @@ ApplicationWindow {
 
         onSys_msg_idx_updated: {
             console.log("update idx", uid)
-            console.log("upd" + uid + " " + themsglist.uid)
+            console.log("upd " + uid + " " + themsglist.uid)
             if(uid === themsglist.uid) {
                 themsglist.reload_model()
 
