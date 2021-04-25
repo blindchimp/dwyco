@@ -10,7 +10,7 @@
 */
 #ifndef DWQBM_H
 #define DWQBM_H
-// this template allows you to enter a list of objects via add/del, and
+// this template allows you to enter object pointers into a list via add/del, and
 // issue simple queries on members of the objects.
 // this is useful for situations where you have a bunch of structs
 // that have a field (like an identifier), and you want to search for
