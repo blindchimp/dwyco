@@ -128,14 +128,22 @@ QMsgSql::init_schema_fav()
         sql_simple("insert into static_crdt_tags values('_fav')");
         sql_simple("insert into static_crdt_tags values('_hid')");
         sql_simple("insert into static_crdt_tags values('_ignore')");
+        sql_simple("insert into static_crdt_tags values('_pal')");
 
         // triggers use this table when reflecting changes downstream
         // to disable the trigger, remove the tags from this table
         sql_simple("create temp table crdt_tags(tag text not null)");
         sql_simple("insert into crdt_tags select * from static_crdt_tags");
 
+        // this is a kluge, we set the mid field to a uid, and tag it according
+        // to the attributes we want on that user. the tags are replicated
+        // like mid tags, it just so happens that mids and uids are random
+        // 80bit numbers and are not likely to conflict. might be a good idea
+        // to separate them into another table and replicate them separately, but
+        // this should be ok for now.
         sql_simple("create temp table static_uid_tags(tag text not null)");
         sql_simple("insert into static_uid_tags values('_ignore')");
+        sql_simple("insert into static_uid_tags values('_pal')");
 
         commit_transaction();
     } catch(...) {
@@ -512,8 +520,6 @@ import_remote_mi(vc remote_uid)
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
         sql_simple("delete from mt.gmt where mid in (select mid from msg_tomb)");
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
-        //sql_simple("insert into crdt_tags values('_fav')");
-        //sql_simple("insert into crdt_tags values('_hid')");
         sql_simple("insert into crdt_tags select * from static_crdt_tags");
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
