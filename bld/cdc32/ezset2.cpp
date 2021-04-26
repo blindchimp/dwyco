@@ -35,7 +35,7 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_INT, call_acceptance/max_video_recv, "", 4),
     DWUIDECLVAL(VC_INT, call_acceptance/max_pchat, "", 4),
     DWUIDECLVAL(VC_BSTRING, call_acceptance/pw, "", 0),
-    DWUIDECLVAL(VC_INT, call_acceptance/auto_accept, "", 1),
+    DWUIDECLVAL(VC_INT, call_acceptance/auto_accept, "", 0),
     DWUIDECLVAL(VC_INT, call_acceptance/require_pw, "", 0),
     DWUIDECLVAL(VC_BSTRING, raw_files/raw_files_list, "", 0),
     DWUIDECLVAL(VC_BSTRING, raw_files/raw_files_pattern, "", 0),
