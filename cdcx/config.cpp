@@ -140,7 +140,7 @@ configform::accept()
     int old = 0;
     setting_get("chat_show_unreviewed", old);
     setting_put("chat_show_unreviewed", ui.chat_show_all->isChecked());
-    if(old != ui.chat_show_all->isChecked())
+    if(!!old != ui.chat_show_all->isChecked())
     {
         emit content_filter_event(!old);
     }

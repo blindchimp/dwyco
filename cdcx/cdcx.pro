@@ -197,7 +197,7 @@ DEFINES += CDCX_NO_SSL
 #D = \\Users\\dwight\\build-cdcx\\bld
 
 D = $$replace(OUT_PWD, /, \\)\\..\\bld
-S = debug
+S = release
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
 $${D}\\vc\\$${S}\\vc.lib \

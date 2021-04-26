@@ -1,6 +1,6 @@
 echo on
 
-set PATH=c:\qt\5.12.8\msvc2017\bin;%PATH%
+set PATH=c:\qt\5.12.9\msvc2017\bin;%PATH%
 
 
 cd "\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build"
