@@ -234,6 +234,9 @@ set_settings_value(const char *name, int val)
     return 1;
 }
 
+// XXX fix me, this really needs to explicitly
+// coerce the type of the value to whatever the
+// setting needs (like the above set_settings).
 int
 set_settings_value(const char *name, vc val)
 {
