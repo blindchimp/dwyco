@@ -534,6 +534,13 @@ dwyco_sys_event_callback(int cmd, int id,
         TheDwycoCore->update_group_private_key_valid(gl.get_long(DWYCO_GS_VALID));
     }
         break;
+
+    case DWYCO_SE_IGNORE_LIST_CHANGE:
+    {
+        TheIgnoreListModel->load_users_to_model();
+        TheConvListModel->load_users_to_model();
+        break;
+    }
     default:
         break;
     }

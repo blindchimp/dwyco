@@ -13,6 +13,7 @@
 #include "dwrtlog.h"
 #include "vc.h"
 #include "qauth.h"
+#include "qmsg.h"
 
 extern DwycoSystemEventCallback dwyco_system_event_callback;
 
@@ -65,6 +66,8 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_MSG_PULL_OK,
     DWYCO_SE_MSG_TAG_CHANGE,
     DWYCO_SE_GRP_STATUS_CHANGE,
+
+    DWYCO_SE_IGNORE_LIST_CHANGE
 };
 
 void
@@ -179,6 +182,18 @@ se_emit_group_status_change()
 {
     vc v(VC_VECTOR);
     v[0] = SE_GRP_STATUS_CHANGE;
+    Se_q.append(v);
+    GRTLOGVC(v);
+}
+
+extern vc Cur_ignore;
+
+void
+se_emit_uid_list_changed()
+{
+    Cur_ignore = get_local_ignore();
+    vc v(VC_VECTOR);
+    v[0] = SE_IGNORE_LIST_CHANGE;
     Se_q.append(v);
     GRTLOGVC(v);
 }
@@ -308,6 +323,16 @@ se_process()
             break;
 
         case SE_GRP_STATUS_CHANGE:
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           0, 0,
+                                           0, 0, 0,
+                                           0, 0
+                                          );
+            break;
+
+        case SE_IGNORE_LIST_CHANGE:
             (*dwyco_system_event_callback)(api_cmd,
                                            0,
                                            0, 0,

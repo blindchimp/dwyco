@@ -76,7 +76,9 @@ enum dwyco_sys_event {
     SE_MSG_PULL_OK,
     SE_MSG_TAG_CHANGE,
 
-    SE_GRP_STATUS_CHANGE
+    SE_GRP_STATUS_CHANGE,
+
+    SE_IGNORE_LIST_CHANGE
 };
 
 // at this point, the id can be a uid or a mid
@@ -89,6 +91,7 @@ void se_emit_msg_pull_ok(vc mid, vc uid);
 void se_emit_msg_tag_change(vc mid, vc uid);
 void se_emit_join(vc gname, int res);
 void se_emit_group_status_change();
+void se_emit_uid_list_changed();
 int se_process();
 
 #endif

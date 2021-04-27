@@ -502,6 +502,7 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_MSG_TAG_CHANGE 37
 
 #define DWYCO_SE_GRP_STATUS_CHANGE 38
+#define DWYCO_SE_IGNORE_LIST_CHANGE 39
 
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);

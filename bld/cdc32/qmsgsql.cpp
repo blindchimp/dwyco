@@ -121,6 +121,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.gmti2 on gmt(mid)");
         sql_simple("create index if not exists mt.gmti3 on gmt(tag)");
         sql_simple("create index if not exists mt.gmti4 on gmt(uid)");
+
         sql_simple("create table if not exists mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
 
@@ -515,14 +516,31 @@ import_remote_mi(vc remote_uid)
         sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
 
         sync_files();
-
+        sql_simple("create temp table reload_user_tags(flag)");
+        sql_simple("insert into reload_user_tags(flag) values(0)");
+        sql_simple("create temp trigger rut1 after insert on mt.gtomb begin "
+        "update reload_user_tags set flag = 1; "
+        "end"
+        );
+        sql_simple("create temp trigger rut2 after insert on mt.gmt begin "
+        "update reload_user_tags set flag = 1;"
+        "end"
+        );
         sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
         sql_simple("delete from mt.gmt where mid in (select mid from msg_tomb)");
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         sql_simple("insert into crdt_tags select * from static_crdt_tags");
         sql_simple("insert into current_clients values(?1)", huid);
+        vc update_tags = sql_simple("select flag from reload_user_tags");
+        sql_simple("drop table reload_user_tags");
+        sql_simple("drop trigger rut1");
+        sql_simple("drop trigger rut2");
         sql_commit_transaction();
+        if((int)update_tags[0][0] == 1)
+        {
+            se_emit_uid_list_changed();
+        }
     }
     catch(...)
     {
@@ -636,6 +654,14 @@ import_remote_tupdate(vc remote_uid, vc vals)
                 vc uid = sql_get_uid_from_mid(mid);
                 if(!uid.is_nil())
                     se_emit_msg_tag_change(mid, from_hex(uid));
+                else
+                    se_emit_uid_list_changed();
+            }
+            else
+            {
+                // hack, we know if it isn't an mid tag it is a uid tag, this should
+                // be fixed eventually
+                se_emit_uid_list_changed();
             }
         }
         else if (op == vc("d"))
@@ -650,6 +676,14 @@ import_remote_tupdate(vc remote_uid, vc vals)
                 vc uid = sql_get_uid_from_mid(mid);
                 if(!uid.is_nil())
                     se_emit_msg_tag_change(mid, from_hex(uid));
+                else
+                    se_emit_uid_list_changed();
+            }
+            else
+            {
+                // hack, we know if it isn't an mid tag it is a uid tag, this should
+                // be fixed eventually
+                se_emit_uid_list_changed();
             }
         }
         else
