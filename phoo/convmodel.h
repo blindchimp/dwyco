@@ -64,6 +64,7 @@ public:
     void load_users_to_model();
     void remove_uid_from_model(const QByteArray& uid);
     Conversation * add_uid_to_model(const QByteArray& uid);
+    void redecorate();
 
     void set_all_selected(bool);
     void delete_all_selected();

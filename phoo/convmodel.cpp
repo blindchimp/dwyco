@@ -56,6 +56,17 @@ init_convlist_model()
 {
 
 }
+void
+ConvListModel::redecorate()
+{
+    int n = count();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        QByteArray buid = QByteArray::fromHex(c->get_uid().toLatin1());
+        c->load_external_state(buid);
+    }
+}
 
 void
 ConvListModel::set_all_selected(bool b)
@@ -366,20 +377,20 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
     else if(!lsp && rsp)
         return false;
 
-    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
-    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
-    if(lreg && !rreg)
-        return true;
-    else if(!lreg && rreg)
-        return false;
+//    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
+//    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
+//    if(lreg && !rreg)
+//        return true;
+//    else if(!lreg && rreg)
+//        return false;
 
     // put blocked users down at the bottom?
-//    bool lreg = m->data(left, m->roleForName("is_blocked")).toBool();
-//    bool rreg = m->data(right, m->roleForName("is_blocked")).toBool();
-//    if(lreg && !rreg)
-//        return false;
-//    else if(!lreg && rreg)
-//        return true;
+    bool lreg = m->data(left, m->roleForName("is_blocked")).toBool();
+    bool rreg = m->data(right, m->roleForName("is_blocked")).toBool();
+    if(lreg && !rreg)
+        return false;
+    else if(!lreg && rreg)
+        return true;
 
     bool ret1 = QSortFilterProxyModel::lessThan(left, right);
     bool ret2 = QSortFilterProxyModel::lessThan(right, left);

@@ -537,8 +537,8 @@ dwyco_sys_event_callback(int cmd, int id,
 
     case DWYCO_SE_IGNORE_LIST_CHANGE:
     {
-        TheIgnoreListModel->load_users_to_model();
-        TheConvListModel->load_users_to_model();
+        reload_ignore_list();
+        TheConvListModel->redecorate();
         break;
     }
     default:
