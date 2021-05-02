@@ -41,6 +41,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
     QML_READONLY_VAR_PROPERTY(QString, this_uid)
+    QML_READONLY_VAR_PROPERTY(QString, this_handle)
     QML_READONLY_VAR_PROPERTY(bool, directory_fetching)
 
     QML_READONLY_VAR_PROPERTY(QString, active_group_name)
@@ -66,6 +67,7 @@ public:
         m_vid_dev_name = "";
         m_use_archived = true;
         m_this_uid = "";
+        m_this_handle = "";
         m_directory_fetching = false;
         m_active_group_name = "";
         m_join_key = "";

@@ -458,6 +458,10 @@ dwyco_sys_event_callback(int cmd, int id,
     if(cmd == DWYCO_SE_USER_UID_RESOLVED)
     {
         emit TheDwycoCore->sys_uid_resolved(huid);
+        if(huid == TheDwycoCore->get_this_uid())
+        {
+            TheDwycoCore->update_this_handle(TheDwycoCore->uid_to_name(TheDwycoCore->get_this_uid()));
+        }
     }
     else if(cmd == DWYCO_SE_USER_PROFILE_INVALIDATE)
     {
@@ -1593,6 +1597,7 @@ DwycoCore::init()
     dwyco_get_my_uid(&uid, &len_uid);
     My_uid = QByteArray(uid, len_uid);
     update_this_uid(My_uid.toHex());
+    update_this_handle(uid_to_name(get_this_uid()));
 
 
     // for easier testing, setup for raw file acq
