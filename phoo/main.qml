@@ -142,8 +142,11 @@ ApplicationWindow {
     // at the same time.
     //width: Screen.width
     //height: Screen.height
-    title: qsTr("Dwyco ")
-
+    title: {
+        qsTr("Dwyco ") + core.this_handle + (core.active_group_name.length > 0 ?
+                                                 " (" + core.active_group_name + " " + core.percent_synced + "%)" :
+                                                 "")
+    }
     property int close_bounce: 0
     onClosing: {
         // special cases, don't let them navigate around the
@@ -848,7 +851,7 @@ ApplicationWindow {
             }
             if(simpdir_rect.visible && SimpleDirectoryList.count === 0)
                 refresh_directory()
-            applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid());
+            //applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid())
         }
 
         onNew_msg: {

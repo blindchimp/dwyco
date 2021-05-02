@@ -184,6 +184,7 @@ chatq_send_update_call_accept()
     return send_to_chatserver(v);
 }
 
+#if 0
 int
 chatq_send_update_pals(vc pals)
 {
@@ -192,6 +193,7 @@ chatq_send_update_pals(vc pals)
     v[1] = pals;
     return send_to_chatserver(v);
 }
+#endif
 
 int
 chatq_send_activity_state(vc state)

@@ -36,7 +36,6 @@ extern vc Client_types;
 vc Pal_auth_state;
 extern vc I_grant;
 extern vc They_grant;
-extern vc Pals;
 extern vc Client_ports;
 
 int is_invisible();

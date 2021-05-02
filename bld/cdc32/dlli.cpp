@@ -385,7 +385,6 @@ using namespace Weak;
 
 using namespace dwyco;
 
-extern vc Pals;
 //extern vc Session_ignore;
 extern vc Mutual_ignore;
 extern vc Server_list;

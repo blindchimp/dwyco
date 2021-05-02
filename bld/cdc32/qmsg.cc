@@ -173,8 +173,16 @@ add_msg_folder(vc uid)
     return 1;
 }
 
-// note: this function is also used to transmit pal list to
-// chat server, so don't update it unless you have to.
+vc
+get_local_pals()
+{
+    vc res = sql_get_tagged_mids2("_pal");
+    vc ret(VC_TREE);
+    for(int i = 0; i < res.num_elems(); ++i)
+        ret.add_kv(from_hex(res[i][0]), vcnil);
+    return ret;
+}
+
 static vc Res;
 static
 void
@@ -196,6 +204,17 @@ pal_to_vector(int raw)
     Res = vc(VC_VECTOR);
     Pals.foreach(raw ? vctrue : vcnil, append_to_res);
     return Res;
+}
+
+static
+void
+pals_to_tags()
+{
+    vc v = pal_to_vector(1);
+    for(int i = 0; i < v.num_elems(); ++i)
+    {
+        sql_add_tag(to_hex(v[i]), "_pal");
+    }
 }
 
 int
@@ -431,6 +450,7 @@ init_qmsg()
         Pals = np;
         save_info(Pals, "pals");
     }
+
     Client_ports = vc(VC_TREE);
     if(!load_info(Session_infos, "sinfo") || Session_infos.type() != VC_MAP)
     {
@@ -441,6 +461,14 @@ init_qmsg()
     Chat_ports = vc(VC_TREE);
 
     init_qmsg_sql();
+
+    if(!Pals.is_nil())
+    {
+        pals_to_tags();
+        save_info(vcnil, "pals");
+    }
+    Pals = get_local_pals();
+
     boost_logical_clock();
 
     new_pipeline();
@@ -626,6 +654,12 @@ resume_qmsg()
         Pals = np;
         save_info(Pals, "pals");
     }
+    if(!Pals.is_nil())
+    {
+        pals_to_tags();
+        save_info(vcnil, "pals");
+    }
+    Pals = get_local_pals();
     Client_ports = vc(VC_TREE);
     if(!load_info(Session_infos, "sinfo") || Session_infos.type() != VC_MAP)
     {
@@ -4332,6 +4366,7 @@ clean_cruft()
     remove_all_but("*.aux", nodel);
     DwString d1, user, tmp;
     get_fn_prefixes(d1, user, tmp);
+#if 0
     // this is a bit dangerous, but for this one case where the
     // names are identical except for a "/tmp/" on the end of the
     // tmp pfx, we'll delete all the files in that path
@@ -4353,6 +4388,7 @@ clean_cruft()
         }
         delete_findvec(&fv);
     }
+#endif
 #endif
 
 }
@@ -4522,11 +4558,9 @@ pal_add(vc u)
     if(!Pals.contains(u))
     {
         Pals.add(u);
+        sql_add_tag(to_hex(u), "_pal");
         pal_relogin();
-
-        chatq_send_update_pals(pal_to_vector(0));
-
-        return save_info(Pals, "pals");
+        return 1;
     }
     return 1;
 }
@@ -4539,13 +4573,12 @@ pal_del(vc u, int norelogin)
         Pals.del(u);
         //i_grant_del(u);
         //they_grant_del(u);
+        sql_remove_mid_tag(to_hex(u), "_pal");
         if(!norelogin)
         {
             pal_relogin();
-
-            chatq_send_update_pals(pal_to_vector(0));
         }
-        return save_info(Pals, "pals");
+        return 1;
     }
     return 1;
 }

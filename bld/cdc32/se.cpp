@@ -187,11 +187,13 @@ se_emit_group_status_change()
 }
 
 extern vc Cur_ignore;
+extern vc Pals;
 
 void
 se_emit_uid_list_changed()
 {
     Cur_ignore = get_local_ignore();
+    Pals = get_local_pals();
     vc v(VC_VECTOR);
     v[0] = SE_IGNORE_LIST_CHANGE;
     Se_q.append(v);

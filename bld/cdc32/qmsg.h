@@ -80,6 +80,7 @@ int valid_qd_message(vc v);
 //void add_local_ignore(vc uid);
 //void del_local_ignore(vc uid);
 vc get_local_ignore();
+vc get_local_pals();
 void power_clean_safe();
 //vc power_query_users(int no_sent, int no_recv, int no_auto_accept);
 //int trash_user(vc dir);
