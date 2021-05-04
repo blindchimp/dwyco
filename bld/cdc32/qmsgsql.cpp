@@ -1935,6 +1935,38 @@ sql_count_tag(vc tag)
     return c;
 }
 
+int
+sql_count_valid_tag(vc tag)
+{
+    int c = 0;
+    try
+    {
+        vc res = sql_simple("select count(*) from gmt,gi using(mid) where tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid)", tag);
+        c = res[0][0];
+    }
+    catch(...)
+    {
+
+    }
+    return c;
+}
+
+bool
+sql_exists_valid_tag(vc tag)
+{
+    bool c = false;
+    try
+    {
+        vc res = sql_simple("select 1 from gmt,gi using(mid) where tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid) limit 1", tag);
+        c = res.num_elems() > 0;
+    }
+    catch(...)
+    {
+
+    }
+    return c;
+}
+
 void
 sql_set_rescan(int r)
 {

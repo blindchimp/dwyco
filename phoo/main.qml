@@ -937,8 +937,8 @@ ApplicationWindow {
             }
         }
 
-        onUnread_countChanged: {
-            set_badge_number(unread_count)
+        onAny_unviewedChanged: {
+            set_badge_number(1)
         }
 
     }

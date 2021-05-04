@@ -801,7 +801,10 @@ int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 // this returns just mid's, no uids, in a single column
 // it will return msgs that have not been downloaded yet as well.
 int DWYCOEXPORT dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag);
+
 int DWYCOEXPORT dwyco_count_tag(const char *tag);
+// a tag is considered "valid" if it currently refers to an mid in the global index
+int DWYCOEXPORT dwyco_valid_tag_exists(const char *tag);
 
 // note: the following functions will not return a msg if it hasn't been
 // downloaded.

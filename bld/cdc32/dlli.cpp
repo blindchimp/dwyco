@@ -8084,6 +8084,13 @@ dwyco_count_tag(const char *tag)
     return sql_count_tag(tag);
 }
 
+DWYCOEXPORT
+int
+dwyco_valid_tag_exists(const char *tag)
+{
+    return sql_exists_valid_tag(tag);
+}
+
 
 DWYCOEXPORT
 void

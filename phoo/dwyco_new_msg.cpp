@@ -104,10 +104,10 @@ uid_unviewed_msgs_count(const QByteArray &uid)
             dwyco_uid_count_tag(uid.constData(), uid.length(), "_inbox");
 }
 
-int
-total_unviewed_msgs_count()
+bool
+any_unviewed_msgs()
 {
-    return dwyco_count_tag("unviewed");
+    return dwyco_valid_tag_exists("unviewed");
 }
 
 void

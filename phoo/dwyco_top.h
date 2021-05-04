@@ -30,7 +30,7 @@ class DwycoCore : public QObject
     QML_WRITABLE_VAR_PROPERTY(QString, client_name)
     QML_WRITABLE_VAR_PROPERTY(bool, use_archived)
     QML_READONLY_VAR_PROPERTY(int, total_users)
-    QML_READONLY_VAR_PROPERTY(int, unread_count)
+    QML_READONLY_VAR_PROPERTY(bool, any_unviewed)
     QML_READONLY_VAR_PROPERTY(QString, buildtime)
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
     QML_READONLY_VAR_PROPERTY(QString, tmp_dir)
@@ -54,7 +54,6 @@ class DwycoCore : public QObject
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
-        m_unread_count = 0;
         m_client_name = "";
         m_buildtime = BUILDTIME;
         m_user_dir = ".";
@@ -74,6 +73,7 @@ public:
         m_percent_synced = 0;
         m_group_status = 0;
         m_eager_pull = 0;
+        m_any_unviewed = false;
     }
     static QByteArray My_uid;
 

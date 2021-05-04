@@ -25,7 +25,7 @@ class Conversation : public QObject
     QML_READONLY_VAR_PROPERTY(bool, REVIEWED)
     QML_READONLY_VAR_PROPERTY(bool, REGULAR)
     QML_READONLY_VAR_PROPERTY(int, resolved_counter)
-    QML_READONLY_VAR_PROPERTY(int, unseen_count)
+    //QML_READONLY_VAR_PROPERTY(int, unseen_count)
     QML_READONLY_VAR_PROPERTY(bool, is_blocked)
     QML_READONLY_VAR_PROPERTY(bool, any_unread)
     QML_READONLY_VAR_PROPERTY(bool, session_msg)
@@ -41,7 +41,7 @@ public:
         m_REVIEWED = false;
         m_REGULAR = false;
         m_resolved_counter = 0;
-        m_unseen_count = 0;
+        //m_unseen_count = 0;
         m_is_blocked = false;
         m_any_unread = false;
         m_session_msg = false;
