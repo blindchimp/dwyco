@@ -4093,7 +4093,7 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
         delete_body3(u, delmid[i], 0);
     }
     // bulk update the indexes
-    remove_msg_idx_uid(u);
+    //remove_msg_idx_uid(u);
     // even if there are some files left in the filesystem
     // that is ok, since they will get reindexed next time the
     // index is loaded.
@@ -4108,6 +4108,9 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
 
     Rescan_msgs = 1;
 
+    // this may need a revisit: basically it is saying anything that
+    // we haven't fetched yet can't be favorited, which may not be
+    // true if someone else has already fetched and favorited it
     ack_all(u);
     return 1;
 }
