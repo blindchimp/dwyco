@@ -1421,7 +1421,7 @@ DwycoCore::init()
 
 #if ((defined(LINUX)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
 
-#if 0&& defined(LINUX) && !defined(ANDROID) && !defined(MAC_CLIENT)
+#if 0 && defined(LINUX) && !defined(ANDROID) && !defined(MAC_CLIENT)
     dwyco_set_external_audio_output_callbacks(
         audout_sdl_new,
         audout_sdl_delete,
@@ -2997,17 +2997,6 @@ DwycoCore::play_zap_view(int view_id)
         return 0;
     return ui_id;
 }
-
-#if 0
-void
-DwycoCore::start_gj(QString uid, QString password)
-{
-    QByteArray ruid = QByteArray::fromHex(uid.toLatin1());
-    QByteArray pw = password.toLatin1();
-    dwyco_start_gj(ruid.constData(), ruid.length(), pw.constData());
-
-}
-#endif
 
 int
 DwycoCore::start_gj2(QString gname, QString password)

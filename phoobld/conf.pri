@@ -4,7 +4,7 @@ DWYCOBG=0
 DWYCO_USE_LINUX_AUDIO=0
 DEFINES += VCCFG_FILE
 
-CONFIG(debug): DEFINES += DWYCO_DEBUG
+CONFIG(debug, debug|release): DEFINES += DWYCO_DEBUG
 
 linux-*|wasm-emscripten {
 DEFINES += LINUX

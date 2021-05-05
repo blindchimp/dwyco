@@ -1,6 +1,18 @@
 #ifndef SIMPLE_PROPERTY_H
 #define SIMPLE_PROPERTY_H
 
+//
+// if T has =,==, default ctor, you get a signal when the value actually
+// changes.
+//
+// note: if T is a composite type that contains "add" and "del" methods
+// you can get signals when new or existing  elements of type T are added or removed  (resp)
+// from the set. note: this only works with vc right now, since elements and sets are the same type.
+//
+// WARNING: this is not a very robust class, and is really only intended to
+// accommodate simple intrinsic types and a couple of container classes
+// from dwcls.
+//
 #include "ssns.h"
 [[noreturn]] void oopanic(const char *);
 
@@ -55,8 +67,8 @@ public:
         value_changed.emit(val);
     }
     void del(const T& e) {
-        val.del(e);
-        value_changed.emit(val);
+        if(val.del(e))
+            value_changed.emit(val);
     }
 };
 

@@ -39,9 +39,13 @@ DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYC
 #DEFINES += MINIUPNP_STATICLIB
 message("cdc32 setup for rando")
 } else {
+CONFIG(debug,debug|release) {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
 DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
 #DEFINES += DWYCO_FIELD_DEBUG
+} else {
+message("release build")
+}
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
 }
