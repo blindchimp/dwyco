@@ -2021,7 +2021,7 @@ query_done(vc m, void *, vc, ValidPtr)
                 vc args(VC_VECTOR);
                 args.append(from);
                 args.append(v[QM_ID]);
-                dirth_send_ack_get2(My_UID, v[QM_ID], QckDone(ack_get_done2, 0, args));
+                dirth_send_ack_get(My_UID, v[QM_ID], QckDone(ack_get_done2, 0, args));
             }
             continue;
         }
@@ -2283,7 +2283,8 @@ load_users(int only_recent, int *total_out)
         for(int i = 0; i < n; ++i)
         {
             vc uid = from_hex(ret[i]);
-            MsgFolders.add_kv(uid, vcnil);
+            add_msg_folder(uid);
+            //MsgFolders.add_kv(uid, vcnil);
         }
     }
     else
@@ -2299,7 +2300,8 @@ load_users(int only_recent, int *total_out)
             vc uid = dir_to_uid(s);
             if(uid.len() != 10)
                 continue;
-            MsgFolders.add_kv(uid, vcnil);
+            add_msg_folder(uid);
+            //MsgFolders.add_kv(uid, vcnil);
         }
 
         delete_findvec(&fv);
@@ -2325,7 +2327,8 @@ load_users_from_files(int *total_out)
         vc uid = dir_to_uid(s);
         if(uid.len() != 10)
             continue;
-        MsgFolders.add_kv(uid, vcnil);
+        add_msg_folder(uid);
+        //MsgFolders.add_kv(uid, vcnil);
     }
 
     delete_findvec(&fv);
@@ -2356,7 +2359,8 @@ load_users_from_index(int recent, int *total_out)
         for(int i = 0; i < n; ++i)
         {
             vc uid = from_hex(ret[i]);
-            MsgFolders.add_kv(uid, vcnil);
+            add_msg_folder(uid);
+            //MsgFolders.add_kv(uid, vcnil);
         }
         if(total_out)
             *total_out = n;
@@ -2421,8 +2425,8 @@ ack_all(vc uid)
         vc args(VC_VECTOR);
         args.append(vcnil);
         args.append(ackset[i]);
-        //dirth_send_ack_get2(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
-        dirth_send_addtag(My_UID, ackset[i], "_del", QckDone(ack_get_done2, 0, args));
+        dirth_send_ack_get(My_UID, ackset[i], QckDone(ack_get_done2, 0, args));
+        //dirth_send_addtag(My_UID, ackset[i], "_del", QckDone(ack_get_done2, 0, args));
         delete_msg2(ackset[i]);
         sql_remove_mid_tag(ackset[i], "_remote");
     }

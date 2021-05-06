@@ -7955,8 +7955,8 @@ dwyco_delete_unfetched_message(const char *msg_id)
     vc args(VC_VECTOR);
     args.append(vcnil);
     args.append(id);
-    dirth_send_ack_get2(My_UID, id, QckDone(ack_get_done2, 0, args));
-    dirth_send_addtag(My_UID, id, "_del", QckDone(0, 0));
+    dirth_send_ack_get(My_UID, id, QckDone(ack_get_done2, 0, args));
+    //dirth_send_addtag(My_UID, id, "_del", QckDone(0, 0));
     return 1;
 }
 
@@ -7967,7 +7967,15 @@ dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id)
     vc uid(VC_BSTRING, user_id, len_uid);
     vc mid(msg_id);
     delete_body3(uid, mid, 0);
-    dirth_send_addtag(My_UID, mid, "_del", QckDone(0, 0));
+    vc args(VC_VECTOR);
+    args.append(vcnil);
+    args.append(mid);
+    // note: need to record that no other group member will see it
+    // but if we aren't ina group, this isn't necessary because the
+    // ack was done when the message was fetched
+    if(Current_alternate)
+        dirth_send_ack_get(My_UID, mid, QckDone(ack_get_done2, 0, args));
+    //dirth_send_addtag(My_UID, mid, "_del", QckDone(0, 0));
     return 1;
 }
 

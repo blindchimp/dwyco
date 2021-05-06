@@ -540,6 +540,7 @@ dirth_send_query2(vc uid, QckDone d)
     dirth_send(m, d);
 }
 
+// NOTE: this is now "delete the message for everyone in group"
 void
 dirth_send_ack_get(vc uid, vc mid, QckDone d)
 {
@@ -552,9 +553,17 @@ dirth_send_ack_get(vc uid, vc mid, QckDone d)
     dirth_send(m, d);
 }
 
+// NOTE: contrast to ack_get: ack_get2 is "don't return this
+// message to me anymore, but let others in the same group see it"
 void
 dirth_send_ack_get2(vc uid, vc mid, QckDone d)
 {
+//    // NOTE: in all cases, if you are not in a group, deleting a message
+//    // means just delete it, so there is no need to do the group-based
+//    // filtering.
+//    if(!Current_alternate)
+//        return dirth_send_ack_get(uid, mid, d);
+
     QckMsg m;
 
     d.type = ReqType("ack-get2", ++Serial);

@@ -222,6 +222,15 @@ ConvListModel::load_users_to_model()
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
+    DWYCO_LIST pl = dwyco_pal_get_list();
+    simple_scoped qpl(pl);
+    for(int i = 0; i < qpl.rows(); ++i)
+    {
+        QByteArray uid = qpl.get<QByteArray>(i);
+        Conversation *c = add_uid_to_model(uid);
+        c->update_counter = cnt;
+    }
+
     // find removed items
     // there is probably a faster way of doing this, but
     // given this should not happen often or with very long lists,

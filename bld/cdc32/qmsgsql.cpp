@@ -39,6 +39,7 @@
 #include "qmsgsql.h"
 #include "qdirth.h"
 #include "dwbag.h"
+#include "dhgsetup.h"
 
 namespace dwyco {
 
@@ -1523,9 +1524,15 @@ clear_msg_idx_uid(vc uid)
 {
     msg_idx_updated(uid, 0);
     vc mids = sql_clear_uid(uid);
-    for(int i = 0; i < mids.num_elems(); ++i)
+    // if we are not in a group, then don't bother with notifying the
+    // service, since it was done at fetch time
+    if(Current_alternate)
     {
-        dirth_send_addtag(uid, mids[i][0], "_del", QckDone(0, 0));
+        for(int i = 0; i < mids.num_elems(); ++i)
+        {
+            //dirth_send_addtag(uid, mids[i][0], "_del", QckDone(0, 0));
+            dirth_send_ack_get(My_UID, mids[i][0], QckDone(0, 0));
+        }
     }
 }
 
