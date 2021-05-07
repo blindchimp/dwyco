@@ -10,7 +10,6 @@
 #include "dlli.h"
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
-//#include "ignoremodel.h"
 #include "dwycolistscoped.h"
 
 

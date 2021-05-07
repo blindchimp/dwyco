@@ -1575,9 +1575,9 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString,QString)), mlm, SLOT(msg_recv_status(int,QString,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
-    connect(this, SIGNAL(msg_recv_progress(QString, QString, QString, int)), mlm, SLOT(msg_recv_progress(QString, QString, QString, int)));
-    connect(this, SIGNAL(msg_pull_ok(QByteArray, QString)), mlm, SLOT(invalidate_mid(QByteArray, QString)));
-    connect(this, SIGNAL(msg_tag_change_global(QByteArray, QString)), mlm, SLOT(invalidate_mid(QByteArray, QString)));
+    connect(this, SIGNAL(msg_recv_progress(QString,QString,QString,int)), mlm, SLOT(msg_recv_progress(QString,QString,QString,int)));
+    connect(this, SIGNAL(msg_pull_ok(QByteArray,QString)), mlm, SLOT(invalidate_mid(QByteArray,QString)));
+    connect(this, SIGNAL(msg_tag_change_global(QByteArray,QString)), mlm, SLOT(invalidate_mid(QByteArray QString)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
@@ -2691,12 +2691,7 @@ DwycoCore::service_channels()
     if(Suspended || !Init_ok)
         return 0;
     int next_expire = dwyco_service_channels(&spin);
-//    static int been_here;
-//    if(!been_here)
-//    {
-//        been_here = 1;
-//        send_group_add("mumble", My_uid.toHex());
-//    }
+
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);

@@ -801,22 +801,6 @@ sql_insert_record(vc entry, vc assoc_uid)
     sql_bulk_query(&a);
 }
 
-//static
-//void
-//sql_record_most_recent(vc uid)
-//{
-//    vc huid = to_hex(uid);
-//    vc r = sql_simple("select max(date) from msg_idx where assoc_uid = ?1 limit 1", huid);
-//    if(r[0][0].is_nil())
-//    {
-//        sql_simple("insert or replace into most_recent_msg (uid, date) values(?1, 0)", huid);
-//    }
-//    else
-//    {
-//        sql_simple("insert or replace into most_recent_msg (uid, date) values(?1, ?2)", huid, r[0][0]);
-//    }
-//}
-
 static
 void
 sql_delete_mid(vc mid)
@@ -836,7 +820,7 @@ sql_get_max_logical_clock()
 int
 sql_is_mid_local(vc mid)
 {
-    vc res = sql_simple("select 1 from msg_idx where mid = ?1", mid);
+    vc res = sql_simple("select 1 from msg_idx where mid = ?1 limit 1", mid);
     if(res.num_elems() == 0)
         return 0;
     return 1;
@@ -863,7 +847,8 @@ blob(vc v)
 void
 init_group_map()
 {
-    sql_simple("create temp table gid(uid, gid)");
+    sql_simple("drop table if exists group_map");
+    sql_simple("create table group_map(uid primary key, gid)");
     // use the profile database to find candidates, which we can do without
     // being connected to the server.
     sDb->attach("prfdb.sql", "prf");
@@ -873,9 +858,11 @@ init_group_map()
         for(int i = 0; i < keys.num_elems(); ++i)
         {
             vc k = keys[i][0];
+            // XXX leave as hex? if gid's are surrogates for
+            // for uids, it might be a problem.
             DwString gid = (const char *)to_hex(vclh_sha3_256(k));
             gid.remove(20);
-            sql_simple("insert into gid select uid, ?1 from prf.pubkeys where alt_static_public = ?2", gid.c_str(), blob(k));
+            sql_simple("insert into group_map select uid, ?1 from prf.pubkeys where alt_static_public = ?2", gid.c_str(), blob(k));
         }
     }
     catch(...)
@@ -885,22 +872,35 @@ init_group_map()
 
     sDb->detach("prf");
 }
+
 vc
 map_uid_to_gid(vc uid)
 {
-return vcnil;
+    vc res = sql_simple("select gid from group_map where uid = ?1", to_hex(uid));
+    if(res.num_elems() == 0)
+        return vcnil;
+    return from_hex(res[0][0]);
 }
 
 vc
 map_gid_to_uid(vc gid)
 {
-return vcnil;
+    vc res = sql_simple("select uid from group_map where gid = ?1 limit 1", gid);
+    if(res.num_elems() == 0)
+        return vcnil;
+    return from_hex(res[0][0]);
 }
 
 vc
 map_gid_to_uids(vc gid)
 {
-return vcnil;
+    vc res = sql_simple("select uid from group_map where gid = ?1", gid);
+    vc ret(VC_VECTOR);
+    for(int i = 0; i < res.num_elems(); ++i)
+    {
+        ret.append(from_hex(res[i][0]));
+    }
+    return ret;
 }
 
 
@@ -924,6 +924,9 @@ sql_get_recent_users(int recent, int *total_out)
             res = sql_simple("select count(distinct assoc_uid) from foo");
             *total_out = (int)res[0][0];
         }
+
+        sql_simple("update foo set assoc_uid = (select gid from group_map where uid = foo.assoc_uid) "
+            "where exists (select 1 from group_map where uid = foo.assoc_uid) ");
 
 #ifdef ANDROID
         res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 20");
@@ -952,9 +955,9 @@ sql_get_recent_users2(int max_age, int max_count)
         sql_start_transaction();
         sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
         vc res;
-        res = sql_simple("select distinct assoc_uid from foo where strftime('%s', 'now') - \"max(date)\" < ?1 order by \"max(date)\" desc limit ?2;",
+        res = sql_simple("select distinct assoc_uid from foo where strftime('%s', 'now') - \"max(date)\" < ?1 order by \"max(date)\" desc limit ?2",
                          max_age, max_count);
-        sql_simple("drop table foo;");
+        sql_simple("drop table foo");
         sql_commit_transaction();
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)
@@ -997,52 +1000,6 @@ sql_get_old_ignored_users()
     }
 }
 
-vc
-sql_get_empty_users()
-{
-    return vc(VC_VECTOR);
-
-//    try
-//    {
-//        sql_start_transaction();
-//        vc res = sql_simple("select uid from indexed_flag where not exists (select 1 from msg_idx where uid = assoc_uid);");
-//        sql_commit_transaction();
-//        vc ret(VC_VECTOR);
-//        for(int i = 0; i < res.num_elems(); ++i)
-//            ret.append(res[i][0]);
-//        return ret;
-//    }
-//    catch(...)
-//    {
-//        sql_rollback_transaction();
-//        return vcnil;
-//    }
-
-}
-
-vc
-sql_get_no_response_users()
-{
-    return vc(VC_VECTOR);
-
-//    try
-//    {
-//        sql_start_transaction();
-
-//        vc res = sql_simple("select uid from indexed_flag where not exists(select 1 from msg_idx where uid = assoc_uid and is_sent isnull)");
-//        sql_commit_transaction();
-//        vc ret(VC_VECTOR);
-//        for(int i = 0; i < res.num_elems(); ++i)
-//            ret.append(res[i][0]);
-//        return ret;
-//    }
-//    catch(...)
-//    {
-//        sql_rollback_transaction();
-//        return vcnil;
-//    }
-
-}
 
 static
 void
@@ -1115,12 +1072,30 @@ sql_reset_indexed_flag(vc uid)
     sql_simple("delete from indexed_flag where uid = ?1", to_hex(uid));
 }
 
-
+static
+vc
+sql_load_mapped_index(vc uid, int max_count)
+{
+    vc huid = to_hex(uid);
+    sql_simple("create temp table foo as select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
+    sql_simple("create temp table bar as select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+           "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
+           " from gi where assoc_uid in (select * from foo) and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
+                        to_hex(uid), max_count);
+    sql_simple("update bar set assoc_uid = (select gid from group_map where uid = bar.assoc_uid) "
+        "where exists (select 1 from group_map where uid = bar.assoc_uid) ");
+    sql_simple("drop table foo");
+    vc res = sql_simple("select * from bar");
+    sql_simple("drop table bar");
+    return res;
+}
 
 static
 vc
 sql_load_index(vc uid, int max_count)
 {
+    //return sql_load_mapped_index(uid, max_count);
+
     vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
            " from gi where assoc_uid = ?1 and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
@@ -1525,7 +1500,7 @@ clear_msg_idx_uid(vc uid)
     msg_idx_updated(uid, 0);
     vc mids = sql_clear_uid(uid);
     // if we are not in a group, then don't bother with notifying the
-    // service, since it was done at fetch time
+    // server, since it was done at fetch time
     if(Current_alternate)
     {
         for(int i = 0; i < mids.num_elems(); ++i)
