@@ -10,7 +10,7 @@
 #include "dlli.h"
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
-#include "ignoremodel.h"
+//#include "ignoremodel.h"
 #include "dwycolistscoped.h"
 
 
@@ -46,6 +46,15 @@ init_syncdesc_model()
 }
 
 void
+SyncDescModel::uid_resolved(QString huid)
+{
+    Sync_desc *c = getByUid(huid);
+    if(!c)
+        return;
+    c->update_handle(dwyco_info_to_display(QByteArray::fromHex(huid.toLatin1())));
+}
+
+void
 SyncDescModel::load_model()
 {
     DWYCO_SYNC_MODEL l;
@@ -65,6 +74,7 @@ SyncDescModel::load_model()
         {
             c = new Sync_desc;
             c->update_uid(huid);
+            c->update_handle(dwyco_info_to_display(uid));
             connect(c, SIGNAL(statusChanged(QString)), this, SLOT(update_connections(QString)));
             append(c);
         }

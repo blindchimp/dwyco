@@ -19,6 +19,7 @@ class Sync_desc : public QObject
     Q_OBJECT
 
     QML_READONLY_VAR_PROPERTY(QString, uid)
+    QML_READONLY_VAR_PROPERTY(QString, handle)
     QML_READONLY_VAR_PROPERTY(QString, status)
     QML_READONLY_VAR_PROPERTY(QString, ip) // actual connected ip
     QML_READONLY_VAR_PROPERTY(bool, proxy)
@@ -54,6 +55,7 @@ public:
 
 public slots:
     void update_connections(QString status);
+    void uid_resolved(QString huid);
 
 };
 

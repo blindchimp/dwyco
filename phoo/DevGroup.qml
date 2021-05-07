@@ -250,7 +250,7 @@ Page {
 
                     Label {
                         elide: Text.ElideRight
-                        text: core.uid_to_name(uid)
+                        text: handle
                         Layout.preferredWidth: cm(2)
                     }
 //                    Label {

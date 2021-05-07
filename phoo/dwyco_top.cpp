@@ -1582,6 +1582,8 @@ DwycoCore::init()
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
 
+    connect(this, SIGNAL(sys_uid_resolved(QString)), TheSyncDescModel, SLOT(uid_resolved(QString)));
+
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);
