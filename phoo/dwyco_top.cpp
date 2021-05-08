@@ -1577,7 +1577,7 @@ DwycoCore::init()
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
     connect(this, SIGNAL(msg_recv_progress(QString,QString,QString,int)), mlm, SLOT(msg_recv_progress(QString,QString,QString,int)));
     connect(this, SIGNAL(msg_pull_ok(QByteArray,QString)), mlm, SLOT(invalidate_mid(QByteArray,QString)));
-    connect(this, SIGNAL(msg_tag_change_global(QByteArray,QString)), mlm, SLOT(invalidate_mid(QByteArray QString)));
+    connect(this, SIGNAL(msg_tag_change_global(QByteArray,QString)), mlm, SLOT(invalidate_mid(QByteArray,QString)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
