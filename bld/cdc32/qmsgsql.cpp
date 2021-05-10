@@ -925,8 +925,14 @@ sql_get_recent_users(int recent, int *total_out)
             *total_out = (int)res[0][0];
         }
 
-        sql_simple("update foo set assoc_uid = (select gid from group_map where uid = foo.assoc_uid) "
-            "where exists (select 1 from group_map where uid = foo.assoc_uid) ");
+        // this swaps in the gid for uid's in a group, which isn't working too well
+        //sql_simple("update foo set assoc_uid = (select gid from group_map where uid = foo.assoc_uid) "
+        //    "where exists (select 1 from group_map where uid = foo.assoc_uid) ");
+
+        // remove all uid's from the user list except one that represents the group.
+        // arbitrary: the lowest one lexicographically, which might change
+        sql_simple("create temp table bar as select min(uid) from group_map group by gid");
+        sql_simple("delete from foo where assoc_uid in (select uid from group_map) and assoc_uid not in (select * from bar)");
 
 #ifdef ANDROID
         res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 20");
@@ -934,6 +940,7 @@ sql_get_recent_users(int recent, int *total_out)
         res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit ?1", recent ? 100 : -1);
 #endif
         sql_simple("drop table foo");
+        sql_simple("drop table bar");
         sql_commit_transaction();
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)
@@ -1077,16 +1084,20 @@ vc
 sql_load_group_index(vc uid, int max_count)
 {
     vc huid = to_hex(uid);
-    sql_simple("create temp table foo as select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
-    sql_simple("create temp table bar as select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+    //sql_simple("create temp table foo as select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
+
+    vc res = sql_simple("with foo(uid) as (select uid from group_map where gid = (select gid from group_map where uid = ?1)) "
+            "select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-           " from gi where assoc_uid in (select * from foo) and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
-                        to_hex(uid), max_count);
+           " from gi where "
+           " (case (select count(*) from foo) "
+           "when 0 then (assoc_uid = ?1)"
+           "else (assoc_uid in (select * from foo)) end)"
+                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
+                        huid, max_count);
     //sql_simple("update bar set assoc_uid = (select gid from group_map where uid = bar.assoc_uid) "
     //    "where exists (select 1 from group_map where uid = bar.assoc_uid) ");
-    sql_simple("drop table foo");
-    vc res = sql_simple("select * from bar");
-    sql_simple("drop table bar");
+
     return res;
 }
 
@@ -1094,7 +1105,7 @@ static
 vc
 sql_load_index(vc uid, int max_count)
 {
-    //return sql_load_mapped_index(uid, max_count);
+    return sql_load_group_index(uid, max_count);
 
     vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
