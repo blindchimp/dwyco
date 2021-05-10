@@ -1074,7 +1074,7 @@ sql_reset_indexed_flag(vc uid)
 
 static
 vc
-sql_load_mapped_index(vc uid, int max_count)
+sql_load_group_index(vc uid, int max_count)
 {
     vc huid = to_hex(uid);
     sql_simple("create temp table foo as select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
@@ -1082,8 +1082,8 @@ sql_load_mapped_index(vc uid, int max_count)
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
            " from gi where assoc_uid in (select * from foo) and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
                         to_hex(uid), max_count);
-    sql_simple("update bar set assoc_uid = (select gid from group_map where uid = bar.assoc_uid) "
-        "where exists (select 1 from group_map where uid = bar.assoc_uid) ");
+    //sql_simple("update bar set assoc_uid = (select gid from group_map where uid = bar.assoc_uid) "
+    //    "where exists (select 1 from group_map where uid = bar.assoc_uid) ");
     sql_simple("drop table foo");
     vc res = sql_simple("select * from bar");
     sql_simple("drop table bar");
