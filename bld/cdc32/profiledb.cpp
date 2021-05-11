@@ -537,9 +537,11 @@ pk_force_check(vc uid)
 void
 pk_invalidate(vc uid)
 {
+    vc res = sql_simple("select 1 from pubkeys where uid = ?1", to_hex(uid));
     sql_simple("delete from pubkeys where uid = ?1", to_hex(uid));
     pk_force_check(uid);
-    Keys_updated.emit(uid, 0);
+    if(res.num_elems() != 0)
+        Keys_updated.emit(uid, 0);
 }
 
 // this is probably only useful as a fall-back, since the info could be

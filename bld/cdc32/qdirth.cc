@@ -412,7 +412,8 @@ dirth_send_get_group_pk(vc id, vc gname, QckDone d)
 // prov_pk is the provisional public static group key
 // in case the group doesn't exist.
 // if the group already exists, this will return the key for the
-// group directly.
+// group directly, essentially ignoring the key you sent in.
+//
 // if the group does not exist, a challenge is returned, which
 // we must decrypt and issue another command (below)
 void
@@ -430,7 +431,7 @@ dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d)
 }
 
 // after you have decrypted the challenge nonce, you send it
-// back with this command. the server will answer with the group
+// back with this command. the server will answer with the group public
 // key and signature. (this just makes sure you have the private key
 // associated with the group and aren't asking us to just sign
 // some random stuff.)

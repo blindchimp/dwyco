@@ -40,6 +40,7 @@
 #include "qdirth.h"
 #include "dwbag.h"
 #include "dhgsetup.h"
+#include "profiledb.h"
 
 namespace dwyco {
 
@@ -702,6 +703,13 @@ import_remote_tupdate(vc remote_uid, vc vals)
 #endif
 }
 
+static
+void
+update_group_map(vc uid, int what)
+{
+    init_group_map();
+}
+
 void
 init_qmsg_sql()
 {
@@ -760,6 +768,7 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
     sql_commit_transaction();
+    Keys_updated.connect_ptrfun(update_group_map);
 
 #if 0
     // this is a hack for debugging, load existing data indexes. we expect we won't
