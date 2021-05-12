@@ -912,6 +912,23 @@ map_gid_to_uids(vc gid)
     return ret;
 }
 
+vc
+map_uid_to_uids(vc uid)
+{
+    vc res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", to_hex(uid));
+    vc ret(VC_VECTOR);
+    if(res.num_elems() == 0)
+    {
+        ret[0] = uid;
+        return ret;
+    }
+    for(int i = 0; i < res.num_elems(); ++i)
+    {
+        ret.append(from_hex(res[i][0]));
+    }
+    return ret;
+}
+
 
 
 // some users have 1000's of users in their list, and this can
@@ -939,7 +956,9 @@ sql_get_recent_users(int recent, int *total_out)
         //    "where exists (select 1 from group_map where uid = foo.assoc_uid) ");
 
         // remove all uid's from the user list except one that represents the group.
-        // arbitrary: the lowest one lexicographically, which might change
+        // arbitrary: the lowest one lexicographically, which might change.
+        // another option might be to return the one that us currently active,
+        // which means we might be able to direct message/call them
         sql_simple("create temp table bar as select min(uid) from group_map group by gid");
         sql_simple("delete from foo where assoc_uid in (select uid from group_map) and assoc_uid not in (select * from bar)");
 

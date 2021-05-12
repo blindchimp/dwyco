@@ -4528,30 +4528,44 @@ int
 pal_add(vc u)
 {
     //dirth_send_get_pal_auth_state(My_UID, u, QckDone(pal_auth_results, 0, u));
-    if(!Pals.contains(u))
+    int ret = 0;
+    sql_start_transaction();
+    vc uids = map_uid_to_uids(u);
+    for(int i = 0; i < uids.num_elems(); ++i)
     {
-        Pals.add(u);
-        sql_add_tag(to_hex(u), "_pal");
-        pal_relogin();
-        return 1;
+        vc uid = uids[i];
+        if(!Pals.contains(uid))
+        {
+            Pals.add(uid);
+            sql_add_tag(to_hex(uid), "_pal");
+            ret = 1;
+        }
     }
-    return 1;
+    sql_commit_transaction();
+    pal_relogin();
+    return ret;
 }
 
 int
 pal_del(vc u, int norelogin)
 {
-    if(Pals.contains(u))
+    sql_start_transaction();
+    vc uids = map_uid_to_uids(u);
+    for(int i = 0; i < uids.num_elems(); ++i)
     {
-        Pals.del(u);
-        //i_grant_del(u);
-        //they_grant_del(u);
-        sql_remove_mid_tag(to_hex(u), "_pal");
-        if(!norelogin)
+        vc uid = uids[i];
+        if(Pals.contains(uid))
         {
-            pal_relogin();
+            Pals.del(uid);
+            //i_grant_del(u);
+            //they_grant_del(u);
+            sql_remove_mid_tag(to_hex(uid), "_pal");
         }
-        return 1;
+    }
+    sql_commit_transaction();
+    if(!norelogin)
+    {
+        pal_relogin();
     }
     return 1;
 }
