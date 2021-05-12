@@ -115,7 +115,7 @@ vc Mutual_ignore;
 
 vc Online;
 vc Client_types;
-vc Online_noise;
+
 //vc Never_visible;
 //vc Always_visible;
 //vc I_grant;
@@ -363,12 +363,6 @@ init_qmsg()
     // not perfect, but better than scanning for a max value
     // somewhere.
     Logical_clock = time(0);
-
-    if(!load_info(Online_noise, "noise"))
-    {
-        Online_noise = vc(VC_SET);
-        save_info(Online_noise, "noise");
-    }
 #if 0
     if(!load_info(Never_visible, "never"))
     {
@@ -497,7 +491,7 @@ exit_qmsg()
     No_direct_att = vcnil;
 
     Cur_msgs = vcnil;
-    Online_noise = vcnil;
+    //Online_noise = vcnil;
     //Never_visible = vcnil;
     //Always_visible = vcnil;
     //I_grant = vcnil;
@@ -568,11 +562,6 @@ resume_qmsg()
     // somewhere.
     Logical_clock = time(0);
 
-    if(!load_info(Online_noise, "noise"))
-    {
-        Online_noise = vc(VC_SET);
-        save_info(Online_noise, "noise");
-    }
 #if 0
     if(!load_info(Never_visible, "never"))
     {
@@ -1292,7 +1281,7 @@ compare_date_vector(vc v1, vc v2)
 
 
 MMChannel *
-fetch_attachment(vc id, DestroyCallback dc, vc dcb_arg1, void *dcb_arg2, ValidPtr dcb_arg3,
+fetch_attachment(vc fn, DestroyCallback dc, vc dcb_arg1, void *dcb_arg2, ValidPtr dcb_arg3,
                  StatusCallback sc, void *scb_arg1, ValidPtr scb_arg2, vc sip, vc port)
 {
     if(sip.is_nil() || port.is_nil())
@@ -1311,7 +1300,7 @@ fetch_attachment(vc id, DestroyCallback dc, vc dcb_arg1, void *dcb_arg2, ValidPt
         delete mc;
         return 0;
     }
-    mc->remote_filename = id;
+    mc->remote_filename = fn;
     sproto *s = new sproto(i, recv_attachment_pull, mc->vp);
     mc->simple_protos[i] = s;
     s->start();
@@ -2382,16 +2371,16 @@ uid_to_short_text(vc id)
 }
 
 vc
-uid_to_handle(vc id, int *cant_resolve_now)
+uid_to_handle(vc uid, int *cant_resolve_now)
 {
-    vc ai = make_best_local_info(id, cant_resolve_now);
+    vc ai = make_best_local_info(uid, cant_resolve_now);
     return ai[0];
 }
 
 vc
-uid_to_handle2(vc id)
+uid_to_handle2(vc uid)
 {
-    vc ai = make_best_local_info(id, 0);
+    vc ai = make_best_local_info(uid, 0);
     return ai[0];
 }
 
@@ -2441,13 +2430,14 @@ ack_all(vc uid)
 
 }
 
+static
 int
-remove_user_files(vc id, const char *pfx, int keep_folder)
+remove_user_files(vc dir, const char *pfx, int keep_folder)
 {
     int i;
-    if(id.len() == 0)
+    if(dir.len() == 0)
         return 0;
-    DwString s((const char *)id);
+    DwString s((const char *)dir);
 
     if(s.length() == 0)
         return 0;
@@ -2479,7 +2469,7 @@ remove_user_files(vc id, const char *pfx, int keep_folder)
             continue;
         if(god && strcmp(d.cFileName, "info") == 0)
             continue;
-        DwString s2((const char *)id);
+        DwString s2((const char *)dir);
         DwString p2 = pfx;
         p2 += s2;
         p2 = newfn(p2);
@@ -2489,7 +2479,7 @@ remove_user_files(vc id, const char *pfx, int keep_folder)
             retval = 0;
     }
     p = pfx;
-    p += (const char *)id;
+    p += (const char *)dir;
     if(!god &&  (!keep_folder && !RemoveDirectory(newfn(p).c_str())))
         retval = 0;
     delete_findvec(&fv);
@@ -2508,11 +2498,11 @@ remove_user_files(vc id, const char *pfx, int keep_folder)
 }
 
 int
-remove_user(vc id, const char *pfx)
+remove_user(vc uid, const char *pfx)
 {
 
     // note: this removes pal auth stuff too
-    vc uid = dir_to_uid((const char *)id);
+    vc dir = uid_to_dir(uid);
     //always_vis_del(uid);
     // remove indexs so the msgs don't magically reappear
     sql_start_transaction();
@@ -2527,16 +2517,16 @@ remove_user(vc id, const char *pfx)
     }
     sql_commit_transaction();
     // when we unindex everything successfully, remove the files
-    remove_user_files(id, pfx, 0);
+    remove_user_files(dir, pfx, 0);
     MsgFolders.del(uid);
     se_emit(SE_USER_REMOVE, uid);
     return 1;
 }
 
 int
-clear_user(vc id, const char *pfx)
+clear_user(vc uid, const char *pfx)
 {
-    vc uid = dir_to_uid((const char *)id);
+    vc dir = uid_to_dir(uid);
     sql_start_transaction();
     sql_fav_remove_uid(uid);
     clear_msg_idx_uid(uid);
@@ -2548,7 +2538,7 @@ clear_user(vc id, const char *pfx)
         sql_fav_remove_mid(mids[i][0]);
     }
     sql_commit_transaction();
-    remove_user_files(id, pfx, 1);
+    remove_user_files(dir, pfx, 1);
     Rescan_msgs = 1;
     return 1;
 }
@@ -2778,10 +2768,10 @@ struct GroovyItem
 
 
 vc
-load_bodies(vc id, int load_sent)
+load_bodies(vc dir, int load_sent)
 {
     int i = 1;
-    DwString s((const char *)id);
+    DwString s((const char *)dir);
     vc ret(VC_VECTOR);
 
     DwTreeKaz<int, GroovyItem> sorter(0);
@@ -2885,13 +2875,11 @@ load_body(vc user_dir, vc msg_id)
 }
 
 vc
-load_body_by_id(vc user_id, vc msg_id)
+load_body_by_id(vc uid, vc msg_id)
 {
-    if(user_id.len() == 0)
+    if(uid.len() == 0)
         return vcnil;
-    DwString s = (const char *)to_hex(user_id);
-    s += ".usr";
-    return load_body(s.c_str(), msg_id);
+    return load_body(uid_to_dir(uid), msg_id);
 }
 
 void
@@ -2922,11 +2910,11 @@ delete_msg2(vc msg_id)
 //}
 
 void
-delete_body3(vc user_id, vc msg_id, int inhibit_indexing)
+delete_body3(vc uid, vc msg_id, int inhibit_indexing)
 {
-    if(user_id.len() == 0)
+    if(uid.len() == 0)
         return;
-    DwString s((const char *)to_hex(user_id));
+    DwString s((const char *)to_hex(uid));
     DwString t((const char *)msg_id);
 
     s += ".usr";
@@ -2942,12 +2930,12 @@ delete_body3(vc user_id, vc msg_id, int inhibit_indexing)
         if(!inhibit_indexing)
         {
             sql_start_transaction();
-            remove_msg_idx(user_id, msg_id);
+            remove_msg_idx(uid, msg_id);
             sql_fav_remove_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
-            delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
+            delete_attachment2(uid, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s.c_str());
         return;
     }
@@ -2957,12 +2945,12 @@ delete_body3(vc user_id, vc msg_id, int inhibit_indexing)
         if(!inhibit_indexing)
         {
             sql_start_transaction();
-            remove_msg_idx(user_id, msg_id);
+            remove_msg_idx(uid, msg_id);
             sql_fav_remove_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
-            delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
+            delete_attachment2(uid, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s2.c_str());
         return;
 
@@ -2970,11 +2958,11 @@ delete_body3(vc user_id, vc msg_id, int inhibit_indexing)
 }
 
 void
-trash_body(vc user_id, vc msg_id, int inhibit_indexing)
+trash_body(vc uid, vc msg_id, int inhibit_indexing)
 {
-    if(user_id.len() == 0)
+    if(uid.len() == 0)
         return;
-    DwString s((const char *)to_hex(user_id));
+    DwString s((const char *)to_hex(uid));
     DwString t((const char *)msg_id);
 
     s += ".usr";
@@ -2991,7 +2979,7 @@ trash_body(vc user_id, vc msg_id, int inhibit_indexing)
         if(!inhibit_indexing)
         {
             sql_start_transaction();
-            remove_msg_idx(user_id, msg_id);
+            remove_msg_idx(uid, msg_id);
             sql_fav_remove_mid(msg_id);
             sql_commit_transaction();
         }
@@ -3008,7 +2996,7 @@ trash_body(vc user_id, vc msg_id, int inhibit_indexing)
         if(!inhibit_indexing)
         {
             sql_start_transaction();
-            remove_msg_idx(user_id, msg_id);
+            remove_msg_idx(uid, msg_id);
             sql_fav_remove_mid(msg_id);
             sql_commit_transaction();
         }
@@ -3934,21 +3922,21 @@ save_to_inbox(vc m)
 
 
 void
-add_ignore(vc id)
+add_ignore(vc uid)
 {
     if(Cur_ignore.is_nil())
         Cur_ignore = vc(VC_SET);
-    Cur_ignore.add(id);
-    sql_add_tag(to_hex(id), "_ignore");
+    Cur_ignore.add(uid);
+    sql_add_tag(to_hex(uid), "_ignore");
 }
 
 void
-del_ignore(vc id)
+del_ignore(vc uid)
 {
     if(Cur_ignore.is_nil())
         Cur_ignore = vc(VC_SET);
-    Cur_ignore.del(id);
-    sql_remove_mid_tag(to_hex(id), "_ignore");
+    Cur_ignore.del(uid);
+    sql_remove_mid_tag(to_hex(uid), "_ignore");
 }
 
 static
@@ -4129,25 +4117,6 @@ power_clean_safe()
     }
 #endif
 
-}
-
-void
-online_noise_add(vc u)
-{
-    Online_noise.add(u);
-    save_info(Online_noise, "noise");
-}
-void
-online_noise_del(vc u)
-{
-    Online_noise.del(u);
-    save_info(Online_noise, "noise");
-}
-
-int
-online_noise(vc u)
-{
-    return Online_noise.contains(u);
 }
 
 int

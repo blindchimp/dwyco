@@ -816,9 +816,6 @@ int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *ta
 // INTERNAL API
 int DWYCOEXPORT dwyco_run_sql(const char *s, const char *a1, const char *a2, const char *a3);
 
-void DWYCOEXPORT dwyco_set_alert(const char *uid, int len_uid, int val);
-int DWYCOEXPORT dwyco_get_alert(const char *uid, int len_uid);
-
 #if 0
 // NOTE: ca nov 2009, pal authorization is defunct in favor
 // of "pals only" filtering and mutual ignore

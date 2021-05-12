@@ -355,7 +355,7 @@ dwyco_db_login_result(const char *str, int what)
 {
     if(!TheDwycoCore)
         return;
-    TheDwycoCore-> emit server_login(str, what);
+    emit TheDwycoCore->server_login(str, what);
     if(what > 0)
     {
         reload_conv_list();
@@ -692,7 +692,7 @@ emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name,
                 ChatUser *c = TheChatListModel->getByUid(huid);
                 if(c)
                     c->update_active(type == DWYCO_TYPE_NIL);
-                TheDwycoCore->emit decorate_user(huid);
+                emit TheDwycoCore->decorate_user(huid);
             }
             else
             {
@@ -1078,7 +1078,7 @@ dwyco_video_make_image(int ui_id, void *vimg, int cols, int rows, int depth)
         img_path = "image://dwyco_video_preview";
         img_path += "/";
         img_path += QString::number(frame_number);
-        TheDwycoCore-> emit video_capture_preview(img_path);
+        emit TheDwycoCore->video_capture_preview(img_path);
         return;
 
     }
@@ -1087,7 +1087,7 @@ dwyco_video_make_image(int ui_id, void *vimg, int cols, int rows, int depth)
     img_path += "/";
     img_path += QString::number(frame_number);
     Dwyco_video_provider->add_image(img_path, qi);
-    TheDwycoCore-> emit video_display(ui_id, frame_number, QString("image://dwyco_video_frame/") + img_path);
+    emit TheDwycoCore->video_display(ui_id, frame_number, QString("image://dwyco_video_frame/") + img_path);
 }
 
 static
@@ -1116,7 +1116,7 @@ dwyco_user_control(int chan_id, const char *suid, int len_uid, const char *data,
         dwyco_destroy_channel(chan_id);
         return;
     }
-    TheDwycoCore->emit user_control(chan_id, uid, com);
+    emit TheDwycoCore->user_control(chan_id, uid, com);
 }
 
 // probably need to do something rational here, esp for database changes
@@ -1220,7 +1220,7 @@ DwycoCore::select_vid_dev(int i)
     write_vid_setting(i);
     block_enable_video_capture_preview(1);
     HasCamera = 1;
-    TheDwycoCore->emit camera_change(HasCamera);
+    emit TheDwycoCore->camera_change(HasCamera);
 }
 
 static
@@ -1285,7 +1285,7 @@ static
 void
 emit_finished(int chan_id, void *)
 {
-    TheDwycoCore->emit zap_stopped(chan_id);
+    emit TheDwycoCore->zap_stopped(chan_id);
 }
 
 
@@ -1808,7 +1808,7 @@ void
 DwycoCore::try_connect(QString uid)
 {
     simple_call *c = simple_call::get_simple_call(QByteArray::fromHex(uid.toLatin1()));
-    c-> emit try_connect();
+    emit c->try_connect();
 
 }
 
@@ -1882,7 +1882,7 @@ set_profile_done(int succ, const char *reason,
 {
     if(!TheDwycoCore)
         return;
-    TheDwycoCore->emit profile_update(succ);
+    emit TheDwycoCore->profile_update(succ);
 
 }
 

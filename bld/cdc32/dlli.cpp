@@ -4051,8 +4051,8 @@ dwyco_delete_user(const char *uid, int len_uid)
     vc u(VC_BSTRING, uid, len_uid);
 
     Rescan_msgs = 1;
-    vc dir = uid_to_dir(u);
-    int ret = remove_user(dir, "");
+    //vc dir = uid_to_dir(u);
+    int ret = remove_user(uid, "");
     ack_all(u);
     pal_del(u, 1);
     prf_invalidate(u);
@@ -4067,8 +4067,8 @@ dwyco_clear_user(const char *uid, int len_uid)
     vc u(VC_BSTRING, uid, len_uid);
 
     Rescan_msgs = 1;
-    vc dir = uid_to_dir(u);
-    int ret = clear_user(dir, "");
+    //vc dir = uid_to_dir(u);
+    int ret = clear_user(uid, "");
     ack_all(u);
     return ret;
 }
@@ -9091,26 +9091,6 @@ dwyco_estimate_bandwidth2(int *out_bw_out, int *in_bw_out)
     if(in_bw_out)
         *in_bw_out = bwi;
 }
-
-DWYCOEXPORT
-void
-dwyco_set_alert(const char *uid, int len_uid, int val)
-{
-    vc u(VC_BSTRING, uid, len_uid);
-    if(val)
-        online_noise_add(u);
-    else
-        online_noise_del(u);
-}
-
-DWYCOEXPORT
-int
-dwyco_get_alert(const char *uid, int len_uid)
-{
-    vc u(VC_BSTRING, uid, len_uid);
-    return online_noise(u);
-}
-
 
 DWYCOEXPORT
 void
