@@ -570,7 +570,6 @@ MMChannel::MMChannel() :
     sync_timer.set_interval(1000);
     sync_timer.start();
 
-    remote_updated = 0;
     pinger_timer.set_autoreload(1);
     pinger_timer.set_interval(60 * 1000);
     pinger_timer.start();

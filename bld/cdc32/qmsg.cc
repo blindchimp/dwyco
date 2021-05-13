@@ -176,7 +176,8 @@ add_msg_folder(vc uid)
 vc
 get_local_pals()
 {
-    vc res = sql_get_tagged_mids2("_pal");
+    //vc res = sql_get_tagged_mids2("_pal");
+    vc res = map_uid_list_from_tag("_pal");
     vc ret(VC_TREE);
     for(int i = 0; i < res.num_elems(); ++i)
         ret.add_kv(from_hex(res[i][0]), vcnil);
@@ -3926,8 +3927,14 @@ add_ignore(vc uid)
 {
     if(Cur_ignore.is_nil())
         Cur_ignore = vc(VC_SET);
-    Cur_ignore.add(uid);
-    sql_add_tag(to_hex(uid), "_ignore");
+    sql_start_transaction();
+    vc uids = map_uid_to_uids(uid);
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        Cur_ignore.add(uids[i]);
+        sql_add_tag(to_hex(uids[i]), "_ignore");
+    }
+    sql_commit_transaction();
 }
 
 void
@@ -3935,8 +3942,14 @@ del_ignore(vc uid)
 {
     if(Cur_ignore.is_nil())
         Cur_ignore = vc(VC_SET);
-    Cur_ignore.del(uid);
-    sql_remove_mid_tag(to_hex(uid), "_ignore");
+    sql_start_transaction();
+    vc uids = map_uid_to_uids(uid);
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        Cur_ignore.del(uids[i]);
+        sql_remove_mid_tag(to_hex(uids[i]), "_ignore");
+    }
+    sql_commit_transaction();
 }
 
 static
@@ -3998,7 +4011,8 @@ uid_ignored(vc uid)
 vc
 get_local_ignore()
 {
-    vc res = sql_get_tagged_mids2("_ignore");
+    //vc res = sql_get_tagged_mids2("_ignore");
+    vc res = map_uid_list_from_tag("_ignore");
     vc ret(VC_SET);
     for(int i = 0; i < res.num_elems(); ++i)
         ret.add(from_hex(res[i][0]));
@@ -4896,11 +4910,19 @@ ignoring_you_update(vc m, void *, vc, ValidPtr)
         return;
     if(m[1][0] == vc("a"))
     {
-        Mutual_ignore.add(m[1][1]);
+        vc uids = map_uid_to_uids(m[1][1]);
+        for(int i = 0; i < uids.num_elems(); ++i)
+        {
+            Mutual_ignore.add(uids[i]);
+        }
     }
     else if(m[1][0] == vc("d"))
     {
-        Mutual_ignore.del(m[1][1]);
+        vc uids = map_uid_to_uids(m[1][1]);
+        for(int i = 0; i < uids.num_elems(); ++i)
+        {
+            Mutual_ignore.del(uids[i]);
+        }
     }
     // this is probably best left silent
     //Refresh_users = 1;

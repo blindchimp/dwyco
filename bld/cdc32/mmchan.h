@@ -679,7 +679,6 @@ private:
     SyncVar rem_available_audio_coders;
     SyncVar rem_pinger;
     SyncVar rem_incoming_throttle;
-    int remote_updated;
 
     void sync_send();
     void sync_recv(vc);

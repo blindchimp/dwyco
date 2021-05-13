@@ -517,7 +517,7 @@ import_remote_mi(vc remote_uid)
         sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
         sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
 
-        sync_files();
+        //sync_files();
         sql_simple("create temp table reload_user_tags(flag)");
         sql_simple("insert into reload_user_tags(flag) values(0)");
         sql_simple("create temp trigger rut1 after insert on mt.gtomb begin "
@@ -819,8 +819,7 @@ sql_delete_mid(vc mid)
 
 long
 sql_get_max_logical_clock()
-{
-    vc res = sql_simple("select max(logical_clock) from gi");
+{    vc res = sql_simple("select max(logical_clock) from gi");
     if(res[0][0].type() != VC_INT)
         return 0;
     return (long)res[0][0];
@@ -927,6 +926,24 @@ map_uid_to_uids(vc uid)
         ret.append(from_hex(res[i][0]));
     }
     return ret;
+}
+
+vc
+map_uid_list_from_tag(vc tag)
+{
+    sql_simple("create temp table foo as select distinct(mid) as uid from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid)",
+                 tag);
+    sql_simple("create temp table bar as select uid from group_map except select min(uid) from group_map group by gid");
+    vc res = sql_simple("select * from foo where uid not in (select * from bar)");
+    sql_simple("drop table foo");
+    sql_simple("drop table bar");
+    return res;
+//    vc ret(VC_VECTOR);
+//    for(int i = 0; i < res.num_elems(); ++i)
+//    {
+//        ret.append(from_hex(res[i][0]));
+//    }
+//    return ret;
 }
 
 

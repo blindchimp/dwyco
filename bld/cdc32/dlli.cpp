@@ -8161,11 +8161,11 @@ dwyco_ignore(const char *user_id, int len_uid)
 }
 
 static void
-unignore_done(vc m, void *t, vc id, ValidPtr)
+unignore_done(vc m, void *t, vc uid, ValidPtr)
 {
     if(m[1].is_nil())
         return;
-    del_ignore(id);
+    del_ignore(uid);
     //Refresh_users = 1;
 }
 
