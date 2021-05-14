@@ -72,6 +72,7 @@ void suspend_qmsg();
 void resume_qmsg();
 int valid_qd_message(vc v);
 vc get_local_ignore();
+vc get_local_ignore_mapped();
 vc get_local_pals();
 void power_clean_safe();
 //int trash_user(vc dir);

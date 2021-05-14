@@ -8184,7 +8184,7 @@ DWYCOEXPORT
 DWYCO_LIST
 dwyco_ignore_list_get()
 {
-    return dwyco_list_from_vc(vc::set_to_vector(Cur_ignore));
+    return dwyco_list_from_vc(vc::set_to_vector(get_local_ignore_mapped()));
 }
 
 DWYCOEXPORT
