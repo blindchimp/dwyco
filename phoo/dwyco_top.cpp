@@ -925,6 +925,7 @@ setup_locations()
 #else
     QFile::copy(":androidinst/assets/dwyco.dh", userdir + "dwyco.dh");
     QFile::copy(":androidinst/assets/license.txt", userdir + "license.txt");
+    QFile::remove(userdir + "no_img.png");
     QFile::copy(":androidinst/assets/no_img.png", userdir + "no_img.png");
     QFile::copy(":androidinst/assets/online.wav", userdir + "online.wav");
     QFile::copy(":androidinst/assets/relaxed-call.wav", userdir + "relaxed-call.wav");

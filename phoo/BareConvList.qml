@@ -46,7 +46,7 @@ Item {
                spacing: mm(1)
                anchors.fill: parent
 
-               Image {
+               CircularImage {
                    id: ppic
                    //width: dp(80)
                    //height: dp(60)
@@ -128,16 +128,7 @@ Item {
                        color: "orange"
                    }
                }
-//               OpacityMask {
-//                   anchors.fill: ppic
-//                   source: ppic
-//                   maskSource: Rectangle {
-//                       width: ppic.width
-//                       height: ppic.height
-//                       radius: 8
-//                       visible: false // this also needs to be invisible or it will cover up the image
-//                   }
-//               }
+
                Text {
                    text: display
                    elide: Text.ElideRight
