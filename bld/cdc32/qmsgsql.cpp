@@ -1074,6 +1074,27 @@ sql_remove_uid(vc uid)
 }
 
 static
+void
+create_uidset(vc uid)
+{
+    vc huid = to_hex(uid);
+
+    sql_simple("create temp table uidset as select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
+    vc res = sql_simple("select count(*) from uidset");
+    if((int)res[0][0] == 0)
+    {
+        sql_simple("insert into uidset values(?1)", huid);
+    }
+}
+
+static
+void
+drop_uidset()
+{
+    sql_simple("drop table uidset");
+}
+
+static
 vc
 sql_clear_uid(vc uid)
 {
@@ -1082,12 +1103,14 @@ sql_clear_uid(vc uid)
     {
         sql_start_transaction();
         vc huid = to_hex(uid);
-        vc mids = sql_simple("select distinct(mid) from gi where assoc_uid = ?1", huid);
-        sql_simple("delete from msg_idx where assoc_uid = ?1", huid);
+        create_uidset(uid);
+        vc mids = sql_simple("select distinct(mid) from gi where assoc_uid in (select * from uidset)");
+        sql_simple("delete from msg_idx where assoc_uid in (select * from uidset)");
         // note: there is a trigger to delete msg_idx things
         // this just gets all the stuff we don't have downloaded here
-        sql_simple("insert into msg_tomb select mid, strftime('%s', 'now') from gi where assoc_uid = ?1", huid);
-        sql_simple("delete from gi where assoc_uid = ?1", huid);
+        sql_simple("insert into msg_tomb select mid, strftime('%s', 'now') from gi where assoc_uid in (select * from uidset)");
+        sql_simple("delete from gi where assoc_uid in (select * from uidset)");
+        drop_uidset();
         sql_commit_transaction();
         return mids;
     }
@@ -1744,15 +1767,18 @@ sql_remove_tag(vc tag)
 
 }
 
+// remove all tags associated with all messages associated with uid
 void
 sql_fav_remove_uid(vc uid)
 {
     try
     {
         sql_start_transaction();
+        create_uidset(uid);
         // find all crdt tags associated with all mids, and perform crdt related things for each mid
-        sql_simple("delete from gmt where mid in (select distinct(mid) from gi where assoc_uid = ?1)",
+        sql_simple("delete from gmt where mid in (select distinct(mid) from gi where assoc_uid in (select * from uidset))",
                             to_hex(uid));
+        drop_uidset();
         sql_commit_transaction();
     }
     catch(...)
