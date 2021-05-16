@@ -198,6 +198,7 @@ Item {
        model: ConvListModel
        delegate: convlist_delegate
        clip: true
+       highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
        //spacing: 3
 
        ScrollBar.vertical: ScrollBar { 
