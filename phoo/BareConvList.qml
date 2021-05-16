@@ -199,6 +199,8 @@ Item {
        delegate: convlist_delegate
        clip: true
        highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
+       highlightMoveDuration: 200
+       highlightMoveVelocity: -1
        //spacing: 3
 
        ScrollBar.vertical: ScrollBar { 
