@@ -616,7 +616,7 @@ Page {
         Layout.margins: mm(1)
         BareConvList {
             id: conv_sidebar
-            visible: true
+            //visible: true
             Layout.fillHeight: true
             Layout.minimumWidth: parent.width / 5
         }

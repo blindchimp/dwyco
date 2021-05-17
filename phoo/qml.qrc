@@ -56,6 +56,7 @@
         <file>MsgReview.qml</file>
         <file>DevGroup.qml</file>
         <file>BareConvList.qml</file>
+        <file>+desktop/BareConvList.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>
