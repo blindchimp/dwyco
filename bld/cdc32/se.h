@@ -83,10 +83,10 @@ enum dwyco_sys_event {
 
 // at this point, the id can be a uid or a mid
 void se_emit(enum dwyco_sys_event cmd, vc id);
-void se_emit_msg(enum dwyco_sys_event cmd, DwString qid, vc uid);
+void se_emit_msg(enum dwyco_sys_event cmd, const DwString &qid, vc uid);
 void se_emit_msg(enum dwyco_sys_event cmd, vc qid, vc uid);
-void se_emit_msg_status(DwString qid, vc ruid, DwString msg, int percent);
-void se_emit_msg_progress(DwString mid, vc ruid, DwString msg, int percent);
+void se_emit_msg_status(const DwString &qid, vc ruid, const DwString &msg, int percent);
+void se_emit_msg_progress(const DwString &mid, vc ruid, const DwString &msg, int percent);
 void se_emit_msg_pull_ok(vc mid, vc uid);
 void se_emit_msg_tag_change(vc mid, vc uid);
 void se_emit_join(vc gname, int res);

@@ -95,7 +95,7 @@ se_emit(dwyco_sys_event cmd, vc id)
 }
 
 void
-se_emit_msg(dwyco_sys_event cmd, DwString qid, vc uid)
+se_emit_msg(dwyco_sys_event cmd, const DwString& qid, vc uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -113,7 +113,7 @@ se_emit_msg(dwyco_sys_event cmd, vc qid, vc uid)
 }
 
 void
-se_emit_msg_status(DwString qid, vc ruid, DwString msg, int percent)
+se_emit_msg_status(const DwString& qid, vc ruid, const DwString& msg, int percent)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_SEND_STATUS;
@@ -128,7 +128,7 @@ se_emit_msg_status(DwString qid, vc ruid, DwString msg, int percent)
 }
 
 void
-se_emit_msg_progress(DwString mid, vc ruid, DwString msg, int percent)
+se_emit_msg_progress(const DwString& mid, vc ruid, const DwString& msg, int percent)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_DOWNLOAD_PROGRESS;

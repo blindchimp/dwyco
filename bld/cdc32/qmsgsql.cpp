@@ -928,6 +928,13 @@ map_uid_to_uids(vc uid)
     return ret;
 }
 
+int
+map_is_mapped(vc uid)
+{
+    vc res = sql_simple("select count(*) from group_map where gid = (select gid from group_map where uid = ?1)", to_hex(uid));
+    return res[0][0];
+}
+
 vc
 map_uid_list_from_tag(vc tag)
 {

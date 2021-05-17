@@ -78,8 +78,8 @@ vc map_gid_to_uid(vc gid);
 vc map_gid_to_uids(vc gid);
 vc map_uid_to_uids(vc uid);
 vc map_uid_list_from_tag(vc tag);
-
-
+// returns number of uid's folded onto uid, or 0 if there is no folding
+int map_is_mapped(vc uid);
 
 }
 
