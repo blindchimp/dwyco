@@ -82,7 +82,7 @@ enum dwyco_sys_event {
 };
 
 // at this point, the id can be a uid or a mid
-void se_emit(enum dwyco_sys_event cmd, vc id);
+void se_emit(enum dwyco_sys_event cmd, vc uid);
 void se_emit_msg(enum dwyco_sys_event cmd, const DwString &qid, vc uid);
 void se_emit_msg(enum dwyco_sys_event cmd, vc qid, vc uid);
 void se_emit_msg_status(const DwString &qid, vc ruid, const DwString &msg, int percent);
@@ -92,6 +92,7 @@ void se_emit_msg_tag_change(vc mid, vc uid);
 void se_emit_join(vc gname, int res);
 void se_emit_group_status_change();
 void se_emit_uid_list_changed();
+void se_emit_chat(dwyco_sys_event cmd, vc server_id);
 int se_process();
 
 #endif

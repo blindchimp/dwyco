@@ -71,11 +71,11 @@ static int Se_cmd_to_api[] =
 };
 
 void
-se_emit(dwyco_sys_event cmd, vc id)
+se_emit(dwyco_sys_event cmd, vc uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
-    v[1] = id;
+    v[1] = uid;
 
     // don't filter out dups for now.
     // there may be ordering dependencies that are
@@ -91,6 +91,19 @@ se_emit(dwyco_sys_event cmd, vc id)
 #endif
     Se_q.append(v);
     GRTLOG("se_emit ", 0, 0);
+    GRTLOGVC(v);
+}
+
+void
+se_emit_chat(dwyco_sys_event cmd, vc server_id)
+{
+    vc v(VC_VECTOR);
+    v[0] = cmd;
+    v[1] = server_id;
+
+
+    Se_q.append(v);
+    GRTLOG("se_emit_chat ", 0, 0);
     GRTLOGVC(v);
 }
 
