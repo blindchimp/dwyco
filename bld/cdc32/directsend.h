@@ -54,11 +54,11 @@ public:
     // status is first arg
     // second arg is persistent id, ie, the name of the .q file
     // third arg is recipient uid
-    ssns::signal3<enum dwyco_sys_event, DwString, vc> se_sig;
+    ssns::signal3<enum dwyco_sys_event, const DwString&, vc> se_sig;
 
     // transfer statuses, useful for debugging
     // (pers-id, ruid, msg, percent)
-    ssns::signal4<DwString, vc, DwString, int> status_sig;
+    ssns::signal4<const DwString&, vc, const DwString&, int> status_sig;
 
     void send_direct();
     void send_with_attachment();

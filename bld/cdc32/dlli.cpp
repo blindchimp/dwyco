@@ -479,7 +479,7 @@ struct BodyView {
 
     // this is a signal that is emitted as a progress indicator during
     // file transfers. it is intended for display purposes only.
-    ssns::signal4<DwString, vc, DwString, int> progress_signal;
+    ssns::signal4<const DwString&, vc, const DwString&, int> progress_signal;
 };
 
 DwQueryByMember<BodyView> BodyView::Bvqbm;

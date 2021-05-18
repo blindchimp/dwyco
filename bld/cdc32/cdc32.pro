@@ -51,7 +51,7 @@ message("generic setup for cdc32")
 }
 
 macx-*|linux-*|macx-ios-clang|macx-clang|android-*|wasm-emscripten {
-QMAKE_CXXFLAGS += -fpermissive
+QMAKE_CXXFLAGS += #-fpermissive
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 INCLUDEPATH += winemu
 SOURCES += winemu.cc linid.cpp
