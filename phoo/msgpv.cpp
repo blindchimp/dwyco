@@ -105,7 +105,7 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
             // copy file out to random user_filename, scaling to preview size
             rfn = add_pfx(Tmp_pfx, rfn);
             full_size_filename = rfn;
-            if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.constData(), rfn.constData()))
+            if(!dwyco_copy_out_file_zap2(mid.constData(), rfn.constData()))
                 throw 0;
             preview_fn = rfn;
         }

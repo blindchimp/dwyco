@@ -167,8 +167,8 @@ public:
         return dwyco_is_file_zap(compid);
     }
 
-    Q_INVOKABLE int send_forward(QString recipient, QString add_text, QString uid_folder, QString mid_to_forward, int save_sent);
-    Q_INVOKABLE int flim(QString uid_folder, QString mid_to_forward);
+    Q_INVOKABLE int send_forward(QString recipient, QString add_text, QString mid_to_forward, int save_sent);
+    Q_INVOKABLE int flim(QString mid_to_forward);
 
     Q_INVOKABLE void send_chat(QString text);
 

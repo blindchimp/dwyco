@@ -29,7 +29,7 @@ Page {
             text: "Ok"
             onClicked: {
                 // note: don't save the message
-                core.send_forward(rando_bot, "Ok", uid, mid, 1)
+                core.send_forward(rando_bot, "Ok", mid, 1)
                 core.set_tag_message(mid, "_hid")
                 stack.pop()
             }

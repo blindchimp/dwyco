@@ -35,11 +35,10 @@ SimpleUserModel::~SimpleUserModel()
 
 static
 int
-send_forward(QString recipient, QString uid_folder, QString mid_to_forward)
+send_forward(QString recipient, QString mid_to_forward)
 {
-    QByteArray uid_f = QByteArray::fromHex(uid_folder.toLatin1());
     QByteArray bmid = mid_to_forward.toLatin1();
-    int compid = dwyco_make_forward_zap_composition(uid_f.constData(), uid_f.length(), bmid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(bmid.constData(), 1);
     if(compid == 0)
         return 0;
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
@@ -97,7 +96,7 @@ SimpleUserModel::delete_all_selected()
 }
 
 void
-SimpleUserModel::send_forward_selected(QString uid_folder, QString mid_to_forward)
+SimpleUserModel::send_forward_selected(QString mid_to_forward)
 {
     int n = count();
     for(int i = 0; i < n; ++i)
@@ -107,7 +106,7 @@ SimpleUserModel::send_forward_selected(QString uid_folder, QString mid_to_forwar
         {
             QString uid = c->get_uid();
 
-            send_forward(uid, uid_folder, mid_to_forward);
+            send_forward(uid, mid_to_forward);
         }
     }
 
@@ -377,12 +376,12 @@ SimpleUserSortFilterModel::delete_all_selected()
 }
 
 void
-SimpleUserSortFilterModel::send_forward_selected(QString uid_folder, QString mid_to_forward)
+SimpleUserSortFilterModel::send_forward_selected(QString mid_to_forward)
 {
     SimpleUserModel *m = dynamic_cast<SimpleUserModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->send_forward_selected(uid_folder, mid_to_forward);
+    m->send_forward_selected(mid_to_forward);
 
 }
 

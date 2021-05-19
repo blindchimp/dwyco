@@ -731,7 +731,7 @@ int DWYCOEXPORT dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const ch
 #define DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE (-3)
 #define DWYCO_GSM_SUCCESS (1)
 
-int DWYCOEXPORT dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
+int DWYCOEXPORT dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
 
 int DWYCOEXPORT dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback cb, void *mdc_arg1,
         DwycoStatusCallback scb, void *scb_arg1);
@@ -767,9 +767,9 @@ DWYCO_LIST DWYCOEXPORT dwyco_get_body_array(DWYCO_SAVED_MSG_LIST m);
 int DWYCOEXPORT dwyco_authenticate_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int unsaved);
 void DWYCOEXPORT dwyco_fetch_info(const char *uid, int len_uid);
 
-void DWYCOEXPORT dwyco_pal_add(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_pal_delete(const char *user_id, int len_uid);
-int DWYCOEXPORT dwyco_is_pal(const char *user_id, int len_uid);
+void DWYCOEXPORT dwyco_pal_add(const char *uid, int len_uid);
+void DWYCOEXPORT dwyco_pal_delete(const char *uid, int len_uid);
+int DWYCOEXPORT dwyco_is_pal(const char *uid, int len_uid);
 DWYCO_LIST DWYCOEXPORT dwyco_pal_get_list();
 void DWYCOEXPORT dwyco_pal_relogin();
 int DWYCOEXPORT dwyco_get_pal_logged_in();
@@ -862,9 +862,9 @@ int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 
 int DWYCOEXPORT dwyco_start_gj2(const char *gname, const char *password);
 
-int DWYCOEXPORT dwyco_is_ignored(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_ignore(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_unignore(const char *user_id, int len_uid);
+int DWYCOEXPORT dwyco_is_ignored(const char *uid, int len_uid);
+void DWYCOEXPORT dwyco_ignore(const char *uid, int len_uid);
+void DWYCOEXPORT dwyco_unignore(const char *uid, int len_uid);
 
 #if 0
 void DWYCOEXPORT dwyco_always_visible(const char *uid, int len_uid, int val);
@@ -907,7 +907,7 @@ int DWYCOEXPORT dwyco_get_pals_only();
 // provide an easier UI.
 int DWYCOEXPORT dwyco_set_auto_reply_msgNA(const char *text, int len_text, int compid);
 
-DWYCO_LIST DWYCOEXPORT dwyco_uid_to_info(const char *user_id, int len_uid, int *cant_resolve_now);
+DWYCO_LIST DWYCOEXPORT dwyco_uid_to_info(const char *uid, int len_uid, int *cant_resolve_now);
 int DWYCOEXPORT dwyco_delete_user(const char *uid, int uid_len);
 int DWYCOEXPORT dwyco_clear_user(const char *uid, int len_uid);
 
@@ -1186,7 +1186,6 @@ void DWYCOEXPORT dwyco_resume();
 
 int DWYCOEXPORT dwyco_service_channels(int *spin);
 void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
-//void DWYCOEXPORT dwyco_set_login_password(const char *pw, int len_pw);
 void DWYCOEXPORT dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 void DWYCOEXPORT dwyco_database_login();
 int DWYCOEXPORT dwyco_database_online();
@@ -1335,12 +1334,12 @@ int DWYCOEXPORT dwyco_make_zap_composition(char *must_be_zero);
 int DWYCOEXPORT dwyco_make_zap_composition_raw(const char *filename, const char *possible_extension);
 // WARNING: dup-ing should only be used in very specific cases.
 int DWYCOEXPORT dwyco_dup_zap_composition(int compid);
-int DWYCOEXPORT dwyco_make_forward_zap_composition(
-    const char *uid,
-    int len_uid,
+
+int DWYCOEXPORT dwyco_make_forward_zap_composition2(
     const char *msg_id,
     int strip_forward_text
 );
+
 int DWYCOEXPORT dwyco_make_special_zap_composition(int special_type,
     const char *user_block,
     int len_user_block
@@ -1352,16 +1351,15 @@ dwyco_make_file_zap_composition(
     const char *filename,
     int len_filename
 );
+
 int DWYCOEXPORT
-dwyco_copy_out_file_zap(
-    const char *uid,
-    int len_uid,
+dwyco_copy_out_file_zap2(
     const char *msg_id,
     const char *dst_filename
 );
 
 int DWYCOEXPORT
-dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max);
+dwyco_copy_out_file_zap_buf2(const char *msg_id, const char **buf_out, int *buf_len_out, int max);
 
 int DWYCOEXPORT
 dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
@@ -1421,7 +1419,7 @@ int DWYCOEXPORT dwyco_zap_create_preview(int viewid, const char *filename, int l
 // note: this is a hack, since the buf that comes back is really a ppm
 // (which isn't a straight block of memory), we can't really dump the
 // contents of buf_out in a generic way, so to avoid crashing the
-// debug stuff, i just mis-lable buf_out as buf, so it doesn't try to print it.
+// debug stuff, i just mis-label buf_out as buf, so it doesn't try to print it.
 int DWYCOEXPORT dwyco_zap_create_preview_buf(int viewid, const char **buf_out_elide, int *len_out, int *cols_out, int *rows_out);
 
 

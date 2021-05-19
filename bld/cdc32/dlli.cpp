@@ -4821,7 +4821,6 @@ dwyco_dup_zap_composition(int compid)
     {
         GRTLOG("dup_zap_composition: panic: cant dup forward or file comps (%d)", compid, 0);
         oopanic("can't dup forward or file compositions");
-        return 0;
     }
 
     TMsgCompose *m = new TMsgCompose(*old_m);
@@ -4854,7 +4853,7 @@ dwyco_dup_zap_composition(int compid)
 // uid.usr folder.
 DWYCOEXPORT
 int
-dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *msg_id, int strip_forward_text)
+dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
 {
     vc body;
     vc text;
@@ -4862,32 +4861,20 @@ dwyco_make_forward_zap_composition( const char *uid, int len_uid, const char *ms
     vc from;
 
     vc u;
-    if(uid == 0)
-    {
-        vc id(VC_BSTRING, msg_id, strlen(msg_id));
-        vc summary = find_cur_msg(id);
-        if(!summary.is_nil())
-        {
-            GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
-            return 0;
-        }
 
-        body = direct_to_body(id, u);
-        if(body.is_nil())
-        {
-            GRTLOG("make_forward_zap: cant find id %s", msg_id, 0);
-            return 0;
-        }
-    }
-    else
+    vc id(VC_BSTRING, msg_id, strlen(msg_id));
+    vc summary = find_cur_msg(id);
+    if(!summary.is_nil())
     {
-        u = vc(VC_BSTRING, uid, len_uid);
-        body = load_body_by_id(u, msg_id);
-        if(body.is_nil())
-        {
-            GRTLOG("make_forward_zap: cant load %s (uid: %s)", msg_id, (const char *)to_hex(u));
-            return 0;
-        }
+        GRTLOG("make_forward_zap: cant forward unfetched server message %s", msg_id, 0);
+        return 0;
+    }
+
+    body = direct_to_body(id, u);
+    if(body.is_nil())
+    {
+        GRTLOG("make_forward_zap: cant find id %s", msg_id, 0);
+        return 0;
     }
 
     from = body[QM_BODY_FROM];
@@ -5157,39 +5144,23 @@ dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename)
     return 1;
 }
 
-// if uid == 0, try to infer uid from mid.
-// otherwise, the msg_id is assumed to be filed in the
-// uid.usr folder.
 DWYCOEXPORT
 int
-dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const char *dst_filename)
+dwyco_copy_out_file_zap2(const char *msg_id, const char *dst_filename)
 {
     vc body;
     vc attachment;
     vc from;
-
     vc iuid;
 
-    if(uid == 0)
+    body = direct_to_body(msg_id, iuid);
+    if(body.is_nil())
     {
-        body = direct_to_body(msg_id, iuid);
-        if(body.is_nil())
-        {
-            return 0;
-        }
-    }
-    else
-    {
-        vc u(VC_BSTRING, uid, len_uid);
-        body = load_body_by_id(u, msg_id);
-        if(body.is_nil())
-            return 0;
-        iuid = u;
+        return 0;
     }
 
     from = body[QM_BODY_FROM];
     attachment = body[QM_BODY_ATTACHMENT];
-    //vc user_filename = body[QM_BODY_FILE_ATTACHMENT];
     if(attachment.is_nil())
         return 0;
     DwString a((const char *)attachment, 0, attachment.len());
@@ -5233,13 +5204,10 @@ dwyco_copy_out_file_zap( const char *uid, int len_uid, const char *msg_id, const
     return 1;
 }
 
-// if uid == 0, try to infer uid from mid
-// otherwise, the msg_id is assumed to be filed in the
-// uid.usr folder.
 // YOU MUST CALL dwyco_free_array on returned buffer
 DWYCOEXPORT
 int
-dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max)
+dwyco_copy_out_file_zap_buf2(const char *msg_id, const char **buf_out, int *buf_len_out, int max)
 {
     vc body;
     vc attachment;
@@ -5249,24 +5217,14 @@ dwyco_copy_out_file_zap_buf( const char *uid, int len_uid, const char *msg_id, c
     *buf_len_out = 0;
     vc u;
 
-    if(uid == 0)
+    vc id(VC_BSTRING, msg_id, strlen(msg_id));
+    vc summary = find_cur_msg(id);
+    if(!summary.is_nil())
+        return 0;
+    body = direct_to_body(id, u);
+    if(body.is_nil())
     {
-        vc id(VC_BSTRING, msg_id, strlen(msg_id));
-        vc summary = find_cur_msg(id);
-        if(!summary.is_nil())
-            return 0;
-        body = direct_to_body(id, u);
-        if(body.is_nil())
-        {
-            return 0;
-        }
-    }
-    else
-    {
-        u = vc (VC_BSTRING, uid, len_uid);
-        body = load_body_by_id(u, msg_id);
-        if(body.is_nil())
-            return 0;
+        return 0;
     }
 
     from = body[QM_BODY_FROM];
@@ -6904,40 +6862,23 @@ assert_eager_pulls(MMChannel *mc, vc uid)
 
 DWYCOEXPORT
 int
-dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
+dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
 {
-    vc iuid = sql_get_uid_from_mid(msg_id);
-    if(iuid.is_nil())
+    vc uid = sql_get_uid_from_mid(msg_id);
+    if(uid.is_nil())
         return 0;
-    iuid = from_hex(iuid);
-    vc u;
-    if(len_uid != 0)
-    {
-        u = vc(VC_BSTRING, uid, len_uid);
-        if(u != iuid)
-        {
-            oopanic("some problem with uid handling");
-            // NOTREACHED
-        }
-    }
-    else
-        u = iuid;
+    uid = from_hex(uid);
 
-    if(u.is_nil() || u.len() == 0)
-    {
-        oopanic("really bad problem with uid");
-        // NOTREACHED
-    }
     if(!sql_is_mid_local(msg_id))
     {
-        int disposition = pull_msg(u, msg_id);
+        int disposition = pull_msg(uid, msg_id);
         return disposition;
     }
 
-    vc body = load_body_by_id(u, msg_id);
+    vc body = load_body_by_id(uid, msg_id);
     if(body.is_nil())
     {
-        GRTLOG("get_saved_message: cant load body uid %s msg %s", (const char *)to_hex(u), msg_id);
+        GRTLOG("get_saved_message: cant load body uid %s msg %s", (const char *)to_hex(uid), msg_id);
         return 0;
     }
     vc& ret = *new vc(VC_VECTOR);
@@ -6948,9 +6889,9 @@ dwyco_get_saved_message2(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int le
 
 DWYCOEXPORT
 int
-dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
+dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *, int, const char *msg_id)
 {
-    int ret = dwyco_get_saved_message2(list_out, uid, len_uid, msg_id);
+    int ret = dwyco_get_saved_message3(list_out, msg_id);
     if(ret == 1)
         return 1;
     return 0;
@@ -7982,26 +7923,26 @@ dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id)
 
 DWYCOEXPORT
 void
-dwyco_pal_add(const char *user_id, int len_uid)
+dwyco_pal_add(const char *uid, int len_uid)
 {
-    vc uid(VC_BSTRING, user_id, len_uid);
-    pal_add(uid);
+    vc buid(VC_BSTRING, uid, len_uid);
+    pal_add(buid);
 }
 
 DWYCOEXPORT
 void
-dwyco_pal_delete(const char *user_id, int len_uid)
+dwyco_pal_delete(const char *uid, int len_uid)
 {
-    vc uid(VC_BSTRING, user_id, len_uid);
-    pal_del(uid);
+    vc buid(VC_BSTRING, uid, len_uid);
+    pal_del(buid);
 }
 
 DWYCOEXPORT
 int
-dwyco_is_pal(const char *user_id, int len_uid)
+dwyco_is_pal(const char *uid, int len_uid)
 {
-    vc uid(VC_BSTRING, user_id, len_uid);
-    return pal_user(uid);
+    vc buid(VC_BSTRING, uid, len_uid);
+    return pal_user(buid);
 }
 
 DWYCOEXPORT
@@ -8132,24 +8073,24 @@ dwyco_run_sql(const char *stmt, const char *a1, const char *a2, const char *a3)
 int is_ignored_id_by_user(vc);
 DWYCOEXPORT
 int
-dwyco_is_ignored(const char *user_id, int len_uid)
+dwyco_is_ignored(const char *uid, int len_uid)
 {
-    vc uid(VC_BSTRING, user_id, len_uid);
+    vc buid(VC_BSTRING, uid, len_uid);
     // note: this is a case where we don't want to allow
     // a user to know the mutual ignore list sent by the
     // server, so we just show them the ignores they have
     // set up explicitly
 
-    return is_ignored_id_by_user(uid);
+    return is_ignored_id_by_user(buid);
 }
 
 
 DWYCOEXPORT
 void
-dwyco_ignore(const char *user_id, int len_uid)
+dwyco_ignore(const char *uid, int len_uid)
 {
-    vc uid(VC_BSTRING, user_id, len_uid);
-    add_ignore(uid);
+    vc buid(VC_BSTRING, uid, len_uid);
+    add_ignore(buid);
     //add_local_ignore(uid);
     //Refresh_users = 1;
     // NOTE: reinstate this when server-based ignore lists
@@ -8171,13 +8112,13 @@ unignore_done(vc m, void *t, vc uid, ValidPtr)
 
 DWYCOEXPORT
 void
-dwyco_unignore(const char *user_id, int len_uid)
+dwyco_unignore(const char *uid, int len_uid)
 {
-    vc uid(VC_BSTRING, user_id, len_uid);
-    del_ignore(uid);
+    vc buid(VC_BSTRING, uid, len_uid);
+    del_ignore(buid);
     //del_local_ignore(uid);
     //Refresh_users = 1;
-    dirth_send_unignore(My_UID, uid, QckDone(unignore_done, 0, uid));
+    dirth_send_unignore(My_UID, buid, QckDone(unignore_done, 0, buid));
 }
 
 DWYCOEXPORT
@@ -8337,23 +8278,23 @@ perform_auto_reply(vc recip_uid)
 
 DWYCOEXPORT
 DWYCO_LIST
-dwyco_uid_to_info(const char *user_id, int len_uid, int* cant_resolve_now_out)
+dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
 {
     if(cant_resolve_now_out)
         *cant_resolve_now_out = 0;
-    vc uid(VC_BSTRING, user_id, len_uid);
+    vc buid(VC_BSTRING, uid, len_uid);
     vc v(VC_VECTOR);
-    vc ai = make_best_local_info(uid, cant_resolve_now_out);
+    vc ai = make_best_local_info(buid, cant_resolve_now_out);
     v.append(ai[0]);
     v.append(ai[2]);
     v.append(ai[1]);
 
     vc prf;
-    if(load_profile(uid, prf))
+    if(load_profile(buid, prf))
     {
         v.append(prf[PRF_REVIEWED]);
         v.append(prf[PRF_REGULAR]);
-        if(uid == My_UID)
+        if(buid == My_UID)
             v.append(get_settings_value("user/email"));
         else
             v.append("");

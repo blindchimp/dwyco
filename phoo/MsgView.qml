@@ -91,7 +91,7 @@ Page {
                     text: "Forward msg"
                     onTriggered: {
                         forward_dialog.mid_to_forward = mid
-                        forward_dialog.uid_folder = uid
+                        //forward_dialog.uid_folder = uid
                         stack.push(forward_dialog)
                     }
                 }

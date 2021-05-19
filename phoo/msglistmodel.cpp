@@ -1395,7 +1395,7 @@ msglist_raw::get_msg_text(int row) const
     if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_ASSOC_UID, buid))
         return "";
     buid = QByteArray::fromHex(buid);
-    int disp = dwyco_get_saved_message2(&sm, buid.constData(), buid.length(), mid.constData());
+    int disp = dwyco_get_saved_message3(&sm, mid.constData());
     switch(disp)
     {
     case -1:

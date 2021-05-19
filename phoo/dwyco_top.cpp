@@ -2421,7 +2421,7 @@ process_contact_query_response(const QByteArray& mid)
     }
 
     QByteArray qrfn = get_cq_results_filename();
-    int succ = dwyco_copy_out_file_zap(0, 0, mid.constData(), qrfn.constData());
+    int succ = dwyco_copy_out_file_zap2(mid.constData(), qrfn.constData());
     emit TheDwycoCore->cq_results_received(succ);
 }
 
@@ -2755,11 +2755,10 @@ DwycoCore::service_channels()
 
 
 int
-DwycoCore::send_forward(QString recipient, QString add_text, QString uid_folder, QString mid_to_forward, int save_sent)
+DwycoCore::send_forward(QString recipient, QString add_text, QString mid_to_forward, int save_sent)
 {
-    QByteArray uid_f = QByteArray::fromHex(uid_folder.toLatin1());
     QByteArray bmid = mid_to_forward.toLatin1();
-    int compid = dwyco_make_forward_zap_composition(uid_f.constData(), uid_f.length(), bmid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(bmid.constData(), 1);
     if(compid == 0)
         return 0;
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
@@ -2778,11 +2777,10 @@ DwycoCore::send_forward(QString recipient, QString add_text, QString uid_folder,
 }
 
 int
-DwycoCore::flim(QString uid_folder, QString mid_to_forward)
+DwycoCore::flim(QString mid_to_forward)
 {
-    QByteArray uid_f = QByteArray::fromHex(uid_folder.toLatin1());
     QByteArray bmid = mid_to_forward.toLatin1();
-    int compid = dwyco_make_forward_zap_composition(uid_f.constData(), uid_f.length(), bmid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(bmid.constData(), 1);
     int ret = dwyco_flim(compid);
 
     dwyco_delete_zap_composition(compid);
