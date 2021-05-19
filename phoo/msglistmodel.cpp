@@ -1391,10 +1391,6 @@ msglist_raw::get_msg_text(int row) const
         return "";
     DWYCO_SAVED_MSG_LIST sm;
 
-    QByteArray buid;
-    if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_ASSOC_UID, buid))
-        return "";
-    buid = QByteArray::fromHex(buid);
     int disp = dwyco_get_saved_message3(&sm, mid.constData());
     switch(disp)
     {
@@ -1453,7 +1449,7 @@ msglist_raw::preview_filename(int row) const
     buid = QByteArray::fromHex(buid);
     QByteArray full_size;
 
-    if(!preview_saved_msg(buid, mid, pfn, is_file, full_size, local_time))
+    if(!preview_saved_msg(mid, pfn, is_file, full_size, local_time))
         return "";
     return pfn;
 }

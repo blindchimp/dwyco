@@ -5669,7 +5669,7 @@ can_play_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int un
 //
 DWYCOEXPORT
 int
-dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_len, int qd)
+dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
 {
 #if 0
     if(Auto_authenticate)
@@ -5679,20 +5679,26 @@ dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_le
     }
 #endif
     vc ruid;
-    if(recip_uid != 0)
-    {
-        ruid = to_hex(vc(VC_BSTRING, recip_uid, uid_len));
-        if(!can_play_body(list, recip_uid, uid_len, 0))
-        {
-            GRTLOG("make_zap_view: cant play body (either authentication failed or msg is corrupt or tampered-with (recip_uid %s)", (const char *)ruid, 0);
-            return 0;
-        }
-    }
-    else
-    {
-        ruid = "<<q-d msg>>";
-    }
+//    if(recip_uid != 0)
+//    {
+//        ruid = to_hex(vc(VC_BSTRING, recip_uid, uid_len));
+//        if(!can_play_body(list, recip_uid, uid_len, 0))
+//        {
+//            GRTLOG("make_zap_view: cant play body (either authentication failed or msg is corrupt or tampered-with (recip_uid %s)", (const char *)ruid, 0);
+//            return 0;
+//        }
+//    }
+//    else
+//    {
+//        ruid = "<<q-d msg>>";
+//    }
+
     vc& v = *(vc *)list;
+    vc mid = v[0][QM_BODY_ID];
+    ruid = sql_get_uid_from_mid(mid);
+    if(ruid.is_nil())
+        return 0;
+    ruid = from_hex(ruid);
     if(v[0][QM_BODY_ATTACHMENT].is_nil())
     {
         GRTLOG("make_zap_view: fail, msg has no attachment (%s)", (const char *)ruid, 0);
@@ -5711,10 +5717,11 @@ dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int uid_le
     DwString s;
     if(!qd)
     {
-        if(v[0][QM_BODY_SENT].is_nil())
-            s = (const char *)uid_to_dir(v[0][QM_BODY_FROM]);
-        else
-            s = (const char *)uid_to_dir(vc(VC_BSTRING, recip_uid, uid_len));
+//        if(v[0][QM_BODY_SENT].is_nil())
+//            s = (const char *)uid_to_dir(v[0][QM_BODY_FROM]);
+//        else
+//            s = (const char *)uid_to_dir(vc(VC_BSTRING, recip_uid, uid_len));
+        s = (const char *)uid_to_dir(ruid);
         s += DIRSEPSTR;
     }
     s += (const char *)v[0][QM_BODY_ATTACHMENT];

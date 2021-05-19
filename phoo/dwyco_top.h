@@ -201,7 +201,7 @@ public:
 
     Q_INVOKABLE void reset_unviewed_msgs(QString uid);
 
-    Q_INVOKABLE int make_zap_view(QString uid, QString mid);
+    Q_INVOKABLE int make_zap_view(QString mid);
     Q_INVOKABLE int make_zap_view_file(QString fn);
     Q_INVOKABLE int delete_zap_view(int view_id) {
         return dwyco_delete_zap_view(view_id);

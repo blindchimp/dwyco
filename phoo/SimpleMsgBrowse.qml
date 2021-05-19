@@ -514,7 +514,7 @@ Page {
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(to_uid, model.mid)
+                                    var vid = core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
                                     //core.play_zap_view(vid)
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {

@@ -2949,18 +2949,17 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
 }
 
 int
-DwycoCore::make_zap_view(QString uid, QString mid)
+DwycoCore::make_zap_view(QString mid)
 {
-    QByteArray ruid = QByteArray::fromHex(uid.toLatin1());
     QByteArray rmid = mid.toLatin1();
 
     DWYCO_SAVED_MSG_LIST sm;
-    if(!dwyco_get_saved_message(&sm, ruid.constData(), ruid.length(), rmid.constData()))
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != 1)
     {
         return 0;
     }
 
-    int view_id = dwyco_make_zap_view(sm, ruid.constData(), ruid.length(), 0);
+    int view_id = dwyco_make_zap_view2(sm, 0);
 
     dwyco_list_release(sm);
     return view_id;
