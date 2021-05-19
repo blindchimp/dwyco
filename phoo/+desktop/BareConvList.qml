@@ -152,7 +152,7 @@ Item {
                            multiselect_mode = false
                    }   else {                     
                        if(mouse.button === Qt.LeftButton) {
-                           uid_selected(uid, "clicked")
+                           uid_selected(uid, "clicked-nopush")
                        } else if(mouse.button === Qt.RightButton) {
                            uid_selected(uid, "hold")
                        }

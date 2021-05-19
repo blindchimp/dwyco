@@ -936,6 +936,13 @@ map_is_mapped(vc uid)
 }
 
 vc
+map_to_representative_uid(vc uid)
+{
+    vc res = map_uid_to_uids(uid);
+    return res[0];
+}
+
+vc
 map_uid_list_from_tag(vc tag)
 {
     sql_simple("create temp table foo as select distinct(mid) as uid from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid)",

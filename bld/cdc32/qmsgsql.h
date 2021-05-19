@@ -80,6 +80,9 @@ vc map_uid_to_uids(vc uid);
 vc map_uid_list_from_tag(vc tag);
 // returns number of uid's folded onto uid, or 0 if there is no folding
 int map_is_mapped(vc uid);
+// returns the uid that represents the group uid is in.
+// this is the smallest uid in the current group.
+vc map_to_representative_uid(vc uid);
 
 }
 

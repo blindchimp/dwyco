@@ -333,7 +333,6 @@ ApplicationWindow {
             last_uid_selected = uid
 
             if(action === "clicked") {
-
                 stack.push(chatbox)
             }
             else if(action == "hold")
