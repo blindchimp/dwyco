@@ -2954,7 +2954,7 @@ DwycoCore::make_zap_view(QString mid)
     QByteArray rmid = mid.toLatin1();
 
     DWYCO_SAVED_MSG_LIST sm;
-    if(dwyco_get_saved_message3(&sm, rmid.constData()) != 1)
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
     {
         return 0;
     }

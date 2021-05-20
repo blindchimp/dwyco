@@ -44,7 +44,7 @@ preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByt
     file = 0;
 
     DWYCO_SAVED_MSG_LIST qsm;
-    if(dwyco_get_saved_message3(&qsm, mid.constData()) != 1)
+    if(dwyco_get_saved_message3(&qsm, mid.constData()) != DWYCO_GSM_SUCCESS)
     {
         return 0;
     }

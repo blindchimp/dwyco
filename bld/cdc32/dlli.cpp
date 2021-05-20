@@ -6791,7 +6791,7 @@ pull_msg(vc uid, vc msg_id)
     if(uids.is_nil())
     {
         GRTLOG("cant find uid for mid %s", (const char *)msg_id, 0);
-        return -1;
+        return DWYCO_GSM_TRANSIENT_FAIL;
     }
 
     for(int i = 0; i < uids.num_elems(); ++i)
@@ -6819,7 +6819,7 @@ pull_msg(vc uid, vc msg_id)
                 {
                     pulls::set_pull_in_progress(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
-                    return -2;
+                    return DWYCO_GSM_PULL_IN_PROGRESS;
                 }
             }
         }
@@ -6838,10 +6838,10 @@ pull_msg(vc uid, vc msg_id)
             // note: this probably needs a heuristic to either send
             // all pulls at once, or decide which one is most likely
             // to work. for now, we just do the first one.
-            return -2;
+            return DWYCO_GSM_PULL_IN_PROGRESS;
         }
     }
-    return -3;
+    return DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE;
 }
 
 // NOTE: when we are in eager mode, we should schedule
@@ -6873,7 +6873,7 @@ dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
 {
     vc uid = sql_get_uid_from_mid(msg_id);
     if(uid.is_nil())
-        return 0;
+        return DWYCO_GSM_ERROR;
     uid = from_hex(uid);
 
     if(!sql_is_mid_local(msg_id))
@@ -6886,12 +6886,12 @@ dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
     if(body.is_nil())
     {
         GRTLOG("get_saved_message: cant load body uid %s msg %s", (const char *)to_hex(uid), msg_id);
-        return 0;
+        return DWYCO_GSM_ERROR;
     }
     vc& ret = *new vc(VC_VECTOR);
     ret[0] = body;
     *list_out = (DWYCO_SAVED_MSG_LIST)&ret;
-    return 1;
+    return DWYCO_GSM_SUCCESS;
 }
 
 DWYCOEXPORT
@@ -6899,7 +6899,7 @@ int
 dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *, int, const char *msg_id)
 {
     int ret = dwyco_get_saved_message3(list_out, msg_id);
-    if(ret == 1)
+    if(ret == DWYCO_GSM_SUCCESS)
         return 1;
     return 0;
 }

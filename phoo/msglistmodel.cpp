@@ -1394,14 +1394,17 @@ msglist_raw::get_msg_text(int row) const
     int disp = dwyco_get_saved_message3(&sm, mid.constData());
     switch(disp)
     {
-    case -1:
+    case DWYCO_GSM_TRANSIENT_FAIL:
         return "(unknown)";
-    case -2:
+    case DWYCO_GSM_PULL_IN_PROGRESS:
         return "(fetching)";
-    case -3:
+    case DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE:
         return "(waiting to fetch)";
-    case 0:
+    case DWYCO_GSM_ERROR:
+    default:
         return "(failed)";
+    case DWYCO_GSM_SUCCESS:
+        break;
     }
     simple_scoped qsm(sm);
 

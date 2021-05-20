@@ -716,6 +716,7 @@ int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, con
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
 
 // returns 1 if the message content was successfully loads, and 0 otherwise.
+// NOTE: uid is ignored
 int DWYCOEXPORT dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
 
 // returns -1, then there is no place we know where we might find
@@ -2095,11 +2096,6 @@ void DWYCOEXPORT dwyco_set_external_audio_output_callbacks(
 // these functions return 1 if the operation is successful,
 // or 0 otherwise (usually you have a wrong setting name.)
 
-// SPECIAL NOTE: there are settings you can set with these functions
-// that aren't represented in the older functions below:
-// zap/send_auto_reply       = an integer, "0" = don't send, "1" = send auto reply
-// zap/auto_reply_mid        = string, the message-id of the auto-reply zap
-// video_format/swap_rb
 int DWYCOEXPORT dwyco_set_setting(const char *name, const char *value);
 int DWYCOEXPORT dwyco_get_setting(const char *name, const char **value, int *len, int *dwyco_type);
 
