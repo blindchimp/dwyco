@@ -193,7 +193,7 @@ start_chat_thread(vc ip, vc port, const char *pw, vc chat_name)
     Chat_online = 0;
     Chat_starting = 1;
     Chat_name = chat_name;
-    se_emit(SE_CHAT_SERVER_CONNECTING, Chat_name);
+    se_emit_chat(SE_CHAT_SERVER_CONNECTING, Chat_name);
     GRTLOG("chat start", 0, 0);
     GRTLOGVC(ip);
     GRTLOGVC(port);

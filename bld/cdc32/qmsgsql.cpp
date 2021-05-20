@@ -1790,8 +1790,7 @@ sql_fav_remove_uid(vc uid)
         sql_start_transaction();
         create_uidset(uid);
         // find all crdt tags associated with all mids, and perform crdt related things for each mid
-        sql_simple("delete from gmt where mid in (select distinct(mid) from gi where assoc_uid in (select * from uidset))",
-                            to_hex(uid));
+        sql_simple("delete from gmt where mid in (select distinct(mid) from gi where assoc_uid in (select * from uidset))");
         drop_uidset();
         sql_commit_transaction();
     }
@@ -1874,6 +1873,10 @@ sql_get_tagged_mids(vc tag)
                          tag);
         sql_simple("delete from foo where mid in (select mid from msg_tomb)");
         res = sql_simple("select * from foo");
+        for(int i = 0; i < res.num_elems(); ++i)
+        {
+            res[i][0] = to_hex(map_to_representative_uid(from_hex(res[i][0])));
+        }
         sql_simple("drop table foo");
         sql_commit_transaction();
     }
@@ -1963,9 +1966,11 @@ sql_uid_has_tag(vc uid, vc tag)
     int c = 0;
     try
     {
-        vc res = sql_simple("select 1 from gmt,gi using(mid) where assoc_uid = ?1 and tag = ?2 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
-                            to_hex(uid), tag);
+        create_uidset(uid);
+        vc res = sql_simple("select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
+                            tag);
         c = (res.num_elems() > 0);
+        drop_uidset();
     }
     catch(...)
     {
@@ -1983,9 +1988,11 @@ sql_uid_count_tag(vc uid, vc tag)
     int c = 0;
     try
     {
-        vc res = sql_simple("select count(distinct mid) from gmt,gi using(mid) where assoc_uid = ?1 and tag = ?2 and not exists (select 1 from gtomb where guid = gmt.guid)",
-                            to_hex(uid), tag);
+        create_uidset(uid);
+        vc res = sql_simple("select count(distinct mid) from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid)",
+                            tag);
         c = res[0][0];
+        drop_uidset();
     }
     catch(...)
     {

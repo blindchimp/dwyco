@@ -174,7 +174,7 @@ msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int per
     Mid_to_percent.insert(bmid, percent_done);
     int midi = mid_to_index(bmid);
     QModelIndex mi = index(midi, 0);
-    dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
+    emit dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
 }
 
 void
@@ -184,7 +184,7 @@ msglist_model::invalidate_mid(const QByteArray& mid, const QString& huid)
         return;
     int midi = mid_to_index(mid);
     QModelIndex mi = index(midi, 0);
-    dataChanged(mi, mi, QVector<int>());
+    emit dataChanged(mi, mi, QVector<int>());
 
 }
 
@@ -236,8 +236,8 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
         msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
         mr->reload_inbox_model();
         add_unviewed(buid, mid);
-        TheDwycoCore->emit new_msg(shuid, "", smid);
-        TheDwycoCore->emit decorate_user(shuid);
+        emit TheDwycoCore->new_msg(shuid, "", smid);
+        emit TheDwycoCore->decorate_user(shuid);
 
         dwyco_unset_msg_tag(mid.constData(), "_inbox");
         if(uid() == shuid)
@@ -259,7 +259,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
-    dataChanged(mi, mi, roles);
+    emit dataChanged(mi, mi, roles);
 }
 
 

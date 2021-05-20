@@ -14,6 +14,9 @@
 #include "vc.h"
 #include "qauth.h"
 #include "qmsg.h"
+#include "qmsgsql.h"
+
+using namespace dwyco;
 
 extern DwycoSystemEventCallback dwyco_system_event_callback;
 
@@ -75,7 +78,7 @@ se_emit(dwyco_sys_event cmd, vc uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
-    v[1] = uid;
+    v[1] = map_to_representative_uid(uid);
 
     // don't filter out dups for now.
     // there may be ordering dependencies that are
@@ -112,7 +115,7 @@ se_emit_msg(dwyco_sys_event cmd, const DwString& qid, vc uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
-    v[1] = uid;
+    v[1] = map_to_representative_uid(uid);
     v[2] = qid.c_str();
     Se_q.append(v);
     GRTLOG("se_emit_msg ", 0, 0);
@@ -160,7 +163,7 @@ se_emit_msg_pull_ok(vc mid, vc uid)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_PULL_OK;
-    v[1] = uid;
+    v[1] = map_to_representative_uid(uid);
     v[2] = mid;
     Se_q.append(v);
     GRTLOG("se_emit_msg_pull %s %s", (const char *)mid, (const char *)to_hex(uid));
@@ -172,7 +175,7 @@ se_emit_msg_tag_change(vc mid, vc uid)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_TAG_CHANGE;
-    v[1] = uid;
+    v[1] = map_to_representative_uid(uid);
     v[2] = mid;
     Se_q.append(v);
     GRTLOG("se_emit_msg_tag_change %s", (const char *)mid, 0);

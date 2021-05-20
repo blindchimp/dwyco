@@ -2722,7 +2722,9 @@ load_msgs(vc uid)
     {
         for(int i = 0; i < Cur_msgs.num_elems(); ++i)
         {
-            ret.append(Cur_msgs[i]);
+            vc cpy = Cur_msgs[i].copy();
+            cpy[QM_FROM] = map_to_representative_uid(cpy[QM_FROM]);
+            ret.append(cpy);
         }
     }
     return ret;
