@@ -123,7 +123,7 @@ Page {
             multiselect_mode = true
         } else {
             multiselect_mode = false
-            uid_folder = ""
+            //uid_folder = ""
             mid_to_forward = ""
         }
     }
