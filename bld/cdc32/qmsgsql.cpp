@@ -41,6 +41,7 @@
 #include "dwbag.h"
 #include "dhgsetup.h"
 #include "profiledb.h"
+#include "dirth.h"
 
 namespace dwyco {
 
@@ -703,6 +704,21 @@ import_remote_tupdate(vc remote_uid, vc vals)
 #endif
 }
 
+
+void
+refetch_pk(int online)
+{
+    if(!online)
+        return;
+    vc huids = sql_simple("select uid from group_map");
+    for(int i = 0; i < huids.num_elems(); ++i)
+    {
+        vc buid = from_hex(huids[i][0]);
+        pk_force_check(buid);
+        fetch_info(buid);
+    }
+}
+
 static
 void
 update_group_map(vc uid, int what)
@@ -768,6 +784,7 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
     sql_commit_transaction();
+    //Database_online.value_changed.connect_ptrfun(refetch_pk);
     Keys_updated.connect_ptrfun(update_group_map);
 
 #if 0
@@ -852,6 +869,18 @@ blob(vc v)
     return ret;
 }
 
+// this uses the current set of profiles stored in the client
+// into a mapping of (uid, gid) pairs, where the gid is just
+// the hash of the group public key in the profile. this gives us
+// a (possibly incorrect) mapping of which uid's are in device groups
+// without having to talk to a server. this mapping could be updated
+// once we do talk to a server or more authoritative source of group
+// info.
+// this mapping is used to automatically coalesce sets of uid's in order
+// to make the UI less confusing. for example, it is confusing if one
+// person is using several devices and messaging you. without this automatic
+// mapping, it would appear that the messages were coming from several
+// users.
 void
 init_group_map()
 {
@@ -911,6 +940,10 @@ map_gid_to_uids(vc gid)
     return ret;
 }
 
+// given a uid, return a vector that contains
+// all the known uids in the same group as uid.
+// if uid is not in a group, just returns a vector
+// with the uid in it.
 vc
 map_uid_to_uids(vc uid)
 {
@@ -935,6 +968,9 @@ map_is_mapped(vc uid)
     return res[0][0];
 }
 
+// we arbitrarily pick the lexicographically smallest uid in the set
+// as the "group representative". note this can change over time as uid's
+// enter and leave the group.
 vc
 map_to_representative_uid(vc uid)
 {
@@ -942,6 +978,10 @@ map_to_representative_uid(vc uid)
     return res[0];
 }
 
+// there are tags where the "mid" field is actually a uid.
+// this is a kluge, but it is useful, so we go with it for now.
+// this creates a list of uid's given a tag (eg, "_pal") where
+// grouped uid's are mapped to the group representative.
 vc
 map_uid_list_from_tag(vc tag)
 {

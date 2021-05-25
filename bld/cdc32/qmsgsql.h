@@ -83,6 +83,7 @@ int map_is_mapped(vc uid);
 // returns the uid that represents the group uid is in.
 // this is the smallest uid in the current group.
 vc map_to_representative_uid(vc uid);
+void refetch_pk(int online);
 
 }
 

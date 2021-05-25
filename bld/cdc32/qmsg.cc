@@ -1180,7 +1180,10 @@ init_msg_folder(vc uid, DwString* fn_out)
 int
 init_msg_folder(vc uid)
 {
-    return init_msg_folder(uid, 0);
+    vc uids = map_uid_to_uids(uid);
+    for(int i = 0; i < uids.num_elems(); ++i)
+        init_msg_folder(uids[i], 0);
+    return 1;
 }
 
 FindVec *
@@ -2017,6 +2020,7 @@ query_done(vc m, void *, vc, ValidPtr)
             continue;
         }
         init_msg_folder(from);
+        se_emit(SE_USER_ADD, from);
         // it was a problem trying to let special messages percolate
         // thru into the client api. so, just strip them out and
         // process them internally now
@@ -2712,10 +2716,17 @@ load_msgs(vc uid)
     vc ret(VC_VECTOR);
     if(!uid.is_nil())
     {
+        vc muid = map_to_representative_uid(uid);
+
         for(int i = 0; i < Cur_msgs.num_elems(); ++i)
         {
-            if(Cur_msgs[i][QM_FROM] == uid)
-                ret.append(Cur_msgs[i]);
+            vc fuid = map_to_representative_uid(Cur_msgs[i][QM_FROM]);
+            if(fuid == muid)
+            {
+                vc cpy = Cur_msgs[i].copy();
+                cpy[QM_FROM] = fuid;
+                ret.append(cpy);
+            }
         }
     }
     else

@@ -699,7 +699,6 @@ static void
 start_encryption(vc m, void *, vc , ValidPtr vp)
 {
     MMChannel *mc = vp.is_valid() ? (MMChannel *)(void *)vp : 0;
-    Database_online = 1;
     Database_starting = 0;
     if(m[1].is_nil())
     {
@@ -725,6 +724,7 @@ start_encryption(vc m, void *, vc , ValidPtr vp)
         init_qauth();
         Reauthorize = 0;
     }
+    Database_online = 1;
 }
 
 void

@@ -1771,6 +1771,7 @@ login_auth_results(vc m, void *, vc, ValidPtr)
             TRACK_ADD(MDB_login_ok, 1);
         }
     }
+    refetch_pk(1);
     // reset this so we don't keep sending it in over and over
     Crashed_last_time = 0;
 
@@ -5694,11 +5695,17 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
 //    }
 
     vc& v = *(vc *)list;
-    vc mid = v[0][QM_BODY_ID];
-    ruid = sql_get_uid_from_mid(mid);
-    if(ruid.is_nil())
-        return 0;
-    ruid = from_hex(ruid);
+    // qd's message don't have an mid, and attachments
+    // are not filed anywhere special. the q'd stuff seems
+    // like a hack, and probably needs to be figured out.
+    if(!qd)
+    {
+        vc mid = v[0][QM_BODY_ID];
+        ruid = sql_get_uid_from_mid(mid);
+        if(ruid.is_nil())
+            return 0;
+        ruid = from_hex(ruid);
+    }
     if(v[0][QM_BODY_ATTACHMENT].is_nil())
     {
         GRTLOG("make_zap_view: fail, msg has no attachment (%s)", (const char *)ruid, 0);
