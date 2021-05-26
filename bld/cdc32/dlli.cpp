@@ -4091,7 +4091,9 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
     int n = delmid.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        delete_body3(u, delmid[i], 0);
+        vc suid = from_hex(sql_get_uid_from_mid(delmid[i]));
+        if(!suid.is_nil())
+            delete_body3(suid, delmid[i], 0);
     }
     // bulk update the indexes
     //remove_msg_idx_uid(u);

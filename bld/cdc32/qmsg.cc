@@ -2532,7 +2532,6 @@ remove_user(vc uid, const char *pfx)
 int
 clear_user(vc uid, const char *pfx)
 {
-    vc dir = uid_to_dir(uid);
     sql_start_transaction();
     sql_fav_remove_uid(uid);
     clear_msg_idx_uid(uid);
@@ -2544,6 +2543,7 @@ clear_user(vc uid, const char *pfx)
         sql_fav_remove_mid(mids[i][0]);
     }
     sql_commit_transaction();
+    vc dir = uid_to_dir(uid);
     remove_user_files(dir, pfx, 1);
     Rescan_msgs = 1;
     return 1;

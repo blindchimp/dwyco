@@ -1604,9 +1604,10 @@ get_unfav_msgids(vc uid)
     try
     {
         sql_start_transaction();
-        vc res = sql_simple("select mid as foo from gi where assoc_uid = ?1 "
-                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') group by mid",
-                            to_hex(uid));
+        create_uidset(uid);
+        vc res = sql_simple("select mid as foo from gi where assoc_uid in (select * from uidset) "
+                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') group by mid");
+        drop_uidset();
         sql_commit_transaction();
         int n = res.num_elems();
         for(int i = 0; i < n; ++i)
