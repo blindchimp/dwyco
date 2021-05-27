@@ -872,7 +872,7 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
     popup_menu->insertAction(0, ui.actionUnblock_user);
     popup_menu->insertAction(0, ui.actionRemove_user);
     popup_menu->insertAction(0, ui.actionUpdate_info);
-    popup_menu->insertAction(0, ui.actionAlert_when_online);
+    //popup_menu->insertAction(0, ui.actionAlert_when_online);
 
     tray_menu = new QMenu(this);
     tray_menu->insertAction(0, ui.actionOpen);
@@ -1375,7 +1375,7 @@ mainwinform::contextMenuEvent(QContextMenuEvent *ev)
     if(single)
     {
         QByteArray uid = uids[0];
-        ui.actionAlert_when_online->setChecked(dwyco_get_alert(uid.constData(), uid.length()));
+        //ui.actionAlert_when_online->setChecked(dwyco_get_alert(uid.constData(), uid.length()));
         int pal = dwyco_is_pal(uid.constData(), uid.length());
 
         int ignored = dwyco_is_ignored(uid.constData(), uid.length());
@@ -1388,7 +1388,7 @@ mainwinform::contextMenuEvent(QContextMenuEvent *ev)
         ui.actionSend_file->setVisible(!ignored);
         ui.actionSend_message->setVisible(!ignored);
         ui.actionView_Profile->setVisible(!ignored);
-        ui.actionAlert_when_online->setVisible(1);
+        //ui.actionAlert_when_online->setVisible(1);
         ui.actionBrowse_saved_msgs->setVisible(1);
 
         DwOString u(uid.constData(), 0, uid.length());
@@ -1405,7 +1405,7 @@ mainwinform::contextMenuEvent(QContextMenuEvent *ev)
     if(multi)
     {
         //ui.actionHangup->setVisible(1);
-        ui.actionAlert_when_online->setVisible(0);
+        //ui.actionAlert_when_online->setVisible(0);
         ui.actionCompose_Message->setVisible(0);
         ui.actionDemote_to_Non_pal->setVisible(1);
         ui.actionPromote_to_Pal->setVisible(1);
@@ -1807,12 +1807,12 @@ mainwinform::on_actionRemove_user_triggered(bool)
 void
 mainwinform::on_actionAlert_when_online_triggered(bool state)
 {
-    QList<QByteArray> uids = get_selection(0);
-    int n = uids.count();
-    for(int i = 0; i < n; ++i)
-    {
-        dwyco_set_alert(uids[i].constData(), uids[i].length(), state);
-    }
+//    QList<QByteArray> uids = get_selection(0);
+//    int n = uids.count();
+//    for(int i = 0; i < n; ++i)
+//    {
+//        dwyco_set_alert(uids[i].constData(), uids[i].length(), state);
+//    }
 }
 
 void
@@ -4418,10 +4418,10 @@ mainwinform::online_status_change(DwOString uid)
     int online = dwyco_uid_online(uid.constData(), uid.length());
     if(online && !Online.contains(uid))
     {
-        if(dwyco_get_alert(uid.constData(), uid.length()))
-        {
-            play_sound("relaxed-online.wav");
-        }
+//        if(dwyco_get_alert(uid.constData(), uid.length()))
+//        {
+//            play_sound("relaxed-online.wav");
+//        }
         Online.insert(uid);
     }
     if(!online)
