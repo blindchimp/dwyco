@@ -737,6 +737,8 @@ init_qmsg_sql()
     sql_sync_off();
     vc hmyuid = to_hex(My_UID);
     sDb->attach("fav.sql", "mt");
+    sql_simple("pragma main.cache_size= -100000");
+    sql_simple("pragma mt.cache_size= -100000");
     sql_start_transaction();
     //sql_simple("insert into mt.gmt (mid, tag, uid, guid, time) values(?2, 'bar', ?1, 'mumble', 0)", hmyuid);
     // by default, our local index "local" is implied
