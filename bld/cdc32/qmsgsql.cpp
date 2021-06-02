@@ -1416,11 +1416,16 @@ msg_idx_get_new_msgs(vc uid, vc logical_clock)
     try
     {
         sql_start_transaction();
-        VCArglist a;
-        vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+        vc huid = to_hex(uid);
+        create_uidset(uid);
+        vc res = sql_simple(
+                "select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
                "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-               " from msg_idx where assoc_uid = ?1 and logical_clock > ?2 order by logical_clock desc",
-                   to_hex(uid), logical_clock);
+               " from gi where "
+               " assoc_uid in (select * from uidset)"
+                    " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) and logical_clock > ?1 group by mid order by logical_clock desc",
+                            logical_clock);
+        drop_uidset();
         sql_commit_transaction();
         return res;
     }
