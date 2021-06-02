@@ -354,6 +354,8 @@ dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_auth,
     dirth_send(m, d);
 }
 
+// this gets the public keys (including the group pk, if the
+// user is currently in a group) for a uid.
 void
 dirth_send_get_pk(vc id, vc uid, QckDone d)
 {
@@ -366,6 +368,7 @@ dirth_send_get_pk(vc id, vc uid, QckDone d)
     dirth_send(m, d);
 }
 
+// set the google FCM token
 void
 dirth_send_set_token(vc id, vc token, QckDone d)
 {
@@ -391,7 +394,7 @@ dirth_send_get_group(vc id, QckDone d)
     dirth_send(m, d);
 }
 
-// this gets the group pk from the name
+// this gets the group pk from the name.
 // used for bootstrapping into a group if you
 // are brand new and don't know anyone else
 // in the group but you do know the group name.

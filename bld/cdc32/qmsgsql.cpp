@@ -1209,18 +1209,17 @@ sql_load_group_index(vc uid, int max_count)
 {
     vc huid = to_hex(uid);
     //sql_simple("create temp table foo as select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
-
-    vc res = sql_simple("with foo(uid) as (select uid from group_map where gid = (select gid from group_map where uid = ?1)) "
+    create_uidset(uid);
+    vc res = sql_simple(
             "select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
            " from gi where "
-           " (case (select count(*) from foo) "
-           "when 0 then (assoc_uid = ?1)"
-           "else (assoc_uid in (select * from foo)) end)"
+           " assoc_uid in (select * from uidset)"
                 " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
                         huid, max_count);
     //sql_simple("update bar set assoc_uid = (select gid from group_map where uid = bar.assoc_uid) "
     //    "where exists (select 1 from group_map where uid = bar.assoc_uid) ");
+    drop_uidset();
 
     return res;
 }

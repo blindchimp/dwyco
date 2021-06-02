@@ -2730,8 +2730,8 @@ DwycoCore::service_channels()
             emit new_msg(QString(huid), "", "");
             emit decorate_user(huid);
         }
-        if(mlm)
-            mlm->reload_model();
+        //if(mlm)
+        //    mlm->reload_model();
     }
     update_any_unviewed(any_unviewed_msgs());
 #ifdef ANDROID
