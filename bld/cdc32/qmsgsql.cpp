@@ -1215,8 +1215,8 @@ sql_load_group_index(vc uid, int max_count)
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
            " from gi where "
            " assoc_uid in (select * from uidset)"
-                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
-                        huid, max_count);
+                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?1",
+                        max_count);
     //sql_simple("update bar set assoc_uid = (select gid from group_map where uid = bar.assoc_uid) "
     //    "where exists (select 1 from group_map where uid = bar.assoc_uid) ");
     drop_uidset();
@@ -1312,6 +1312,7 @@ int
 create_date_index(vc uid)
 {
     vc id = uid_to_dir(uid);
+    vc huid = to_hex(uid);
     int i = 1;
     DwString s((const char *)id);
     s = newfn(s);
@@ -1321,6 +1322,7 @@ create_date_index(vc uid)
     try
     {
         sql_start_transaction();
+        sql_simple("create temp table found_mid(mid text not null primary key)");
         FindVec& fv = *find_to_vec(s.c_str());
         auto n = fv.num_elems();
         for(i = 0; i < n; ++i)
@@ -1332,6 +1334,11 @@ create_date_index(vc uid)
             vc info;
             if(load_info(info, s2.c_str(), 1))
             {
+                vc mid = info[QM_BODY_ID];
+                sql_simple("insert into found_mid values(?1)", mid);
+                vc res = sql_simple("select 1 from msg_idx where mid = ?1", mid);
+                if(res.num_elems() > 0)
+                    continue;
                 sql_insert_record(index_from_body(uid, info), uid);
             }
         }
@@ -1352,14 +1359,21 @@ create_date_index(vc uid)
             if(load_info(info, s2.c_str(), 1))
             {
                 info[QM_BODY_SENT] = vctrue;
+                vc mid = info[QM_BODY_ID];
+                sql_simple("insert into found_mid values(?1)", mid);
+                vc res = sql_simple("select 1 from msg_idx where mid = ?1", mid);
+                if(res.num_elems() > 0)
+                    continue;
                 sql_insert_record(index_from_body(uid, info), uid);
             }
         }
+        sql_simple("delete from msg_idx where assoc_uid = ?1 and mid not in (select * from found_mid)", huid);
         delete_findvec(&fv2);
         sql_insert_indexed_flag(uid);
         //sql_record_most_recent(uid);
         sql_simple("delete from midlog");
         sql_simple("delete from taglog");
+        sql_simple("drop table found_mid");
         sql_commit_transaction();
         return 1;
     }
@@ -1726,6 +1740,7 @@ reindex_possible_changes()
             sql_simple("insert into foo(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
         }
         delete_findvec(&fv);
+        //sql_commit_transaction();
         vc needs_reindex = sql_simple("select replace(dirname, '.usr', '') from foo,dir_meta using(dirname) where foo.time != dir_meta.time "
                                       "union select replace(dirname, '.usr', '') from foo where not exists(select 1 from dir_meta where foo.dirname = dir_meta.dirname)");
         // not sure about this: if a folder is missing now, if we do this, it effectively
