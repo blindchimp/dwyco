@@ -5960,7 +5960,7 @@ dwyco_zap_create_preview_buf(int viewid, const char **buf_out_elide, int *len_ou
     DWBYTE *vidbuf;
     int len_vidbuf;
     int dummy;
-    int codec;
+    int codec = -1;
 
     DwDecoderColor *decoder = 0;
     void *vimg = 0;

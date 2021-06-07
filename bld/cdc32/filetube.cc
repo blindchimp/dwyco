@@ -845,8 +845,9 @@ SlippyTube::quick_stats(int max_read, int stop_after_n_video, int stop_after_n_a
                     continue;
                 }
             }
-            delete [] m.buf;
-            m.buf = 0;
+            // really old messages have no header
+            //delete [] m.buf;
+            //m.buf = 0;
         }
         if(m.time == -1)
             ++co;
