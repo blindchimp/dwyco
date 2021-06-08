@@ -25,7 +25,7 @@ dwyco_info_to_display2(const QByteArray& uid, const char *field)
     }
 
     auto qba = l.get<QByteArray>(field);
-    QString ret = QString::fromUtf8(qba);
+    QString ret = QString::fromLatin1(qba);
     return ret;
 }
 
