@@ -4445,7 +4445,7 @@ void mainwinform::on_actionIncrease_text_size_triggered()
 {
     QFont f(QGuiApplication::font());
     int sz = f.pointSize();
-    sz += 1;
+    sz += 2;
     setting_put("pointsize", sz);
     settings_save();
     QMessageBox::information(this, "Text size change", "Please quit and restart to see new size", QMessageBox::Ok);
