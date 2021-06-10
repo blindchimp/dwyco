@@ -4440,3 +4440,32 @@ void mainwinform::on_actionShow_Archived_Users_triggered(bool checked)
     cdcx_set_refresh_users(1);
 
 }
+
+void mainwinform::on_actionIncrease_text_size_triggered()
+{
+    QFont f(QGuiApplication::font());
+    int sz = f.pointSize();
+    sz += 1;
+    setting_put("pointsize", sz);
+    settings_save();
+    QMessageBox::information(this, "Text size change", "Please quit and restart to see new size", QMessageBox::Ok);
+}
+
+void mainwinform::on_actionDecrease_text_size_triggered()
+{
+    QFont f(QGuiApplication::font());
+    int sz = f.pointSize();
+    sz -= 1;
+    if(sz < 0)
+        sz = 0;
+    setting_put("pointsize", sz);
+    settings_save();
+    QMessageBox::information(this, "Text size change", "Please quit and restart to see new size", QMessageBox::Ok);
+}
+
+void mainwinform::on_actionReset_to_default_text_size_triggered()
+{
+    setting_put("pointsize", 0);
+    settings_save();
+    QMessageBox::information(this, "Text size change", "Please quit and restart to see new size", QMessageBox::Ok);
+}

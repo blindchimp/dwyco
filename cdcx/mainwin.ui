@@ -116,7 +116,7 @@ border-radius: 2px;
      <x>0</x>
      <y>0</y>
      <width>394</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSetup">
@@ -158,6 +158,9 @@ border-radius: 2px;
     <addaction name="actionShow_Offline_Users"/>
     <addaction name="actionAllow_multiple_profiles_and_browsers"/>
     <addaction name="actionMake_me_invisible"/>
+    <addaction name="actionIncrease_text_size"/>
+    <addaction name="actionDecrease_text_size"/>
+    <addaction name="actionReset_to_default_text_size"/>
    </widget>
    <widget class="QMenu" name="menuLobby">
     <property name="title">
@@ -588,6 +591,21 @@ border-radius: 2px;
    </property>
    <property name="text">
     <string>Show Archived Users</string>
+   </property>
+  </action>
+  <action name="actionIncrease_text_size">
+   <property name="text">
+    <string>Increase text size</string>
+   </property>
+  </action>
+  <action name="actionDecrease_text_size">
+   <property name="text">
+    <string>Decrease text size</string>
+   </property>
+  </action>
+  <action name="actionReset_to_default_text_size">
+   <property name="text">
+    <string>Reset to default text size</string>
    </property>
   </action>
  </widget>
