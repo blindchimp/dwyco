@@ -33,6 +33,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QPainter>
+#include <QPainterPath>
 
 #include <time.h>
 #include "ui_mainwin.h"
