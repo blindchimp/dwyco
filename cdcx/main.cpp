@@ -789,6 +789,19 @@ int main(int argc, char *argv[])
 
 
     ClientGod = !!getenv("kk27g");
+    int psz;
+    if(!setting_get("pointsize", psz))
+    {
+        setting_put("pointsize", 0);
+        settings_save();
+        psz = 0;
+    }
+    if(psz != 0)
+    {
+        QFont f(QGuiApplication::font());
+        f.setPointSize(psz);
+        QGuiApplication::setFont(f);
+    }
     mainwinform mainwin;
     adminw *admin = new adminw;
 
