@@ -73,7 +73,7 @@ using namespace CryptoPP;
 #include "netvid.h"
 #include "dwrtlog.h"
 #include "dwstr.h"
-#include "prfcache.h"
+#include "profiledb.h"
 #include "fnmod.h"
 #ifdef _Windows
 #define strcasecmp strcmpi
@@ -86,7 +86,6 @@ using namespace CryptoPP;
 #include "ser.h"
 #include "xinfo.h"
 #include "vcudh.h"
-#include "pkcache.h"
 #include "dhsetup.h"
 #include "qsend.h"
 #include "ssns.h"

@@ -9,7 +9,6 @@
 using namespace std;
 #include <new>
 
-class Allocator;
 #include "vc.h"
 #include "vcio.h"
 #include "vctrt.h"
@@ -19,6 +18,7 @@ class Allocator;
 #include "signal.h"
 #endif
 
+[[noreturn]]
 static void
 out_of_mem()
 {
@@ -26,13 +26,14 @@ out_of_mem()
 	::abort();
 }
 
+// compiler generates this as an entry point
+vc top();
+
 int
 main(int argc, char *argv[])
 {
 #ifdef LINUX
     signal(SIGPIPE, SIG_IGN);
-#endif
-#ifdef LINUX
 	siginterrupt(SIGALRM, 1);
 #endif
 
@@ -80,7 +81,7 @@ main(int argc, char *argv[])
 		args.append(vc(argv[j]));
 	}
 	vc("__argv").global_bind(args);
-	vc top();
+
     vc entry = top();
     vc (*p)() = (vc (*)())(long)entry;
     try
@@ -101,6 +102,7 @@ main(int argc, char *argv[])
 	return 0;
 }
 
+[[noreturn]]
 void
 oopanic(const char *s)
 {

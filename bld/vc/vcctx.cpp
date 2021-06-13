@@ -202,6 +202,7 @@ vcctx::remove(const vc& v) const
 }
 
 
+[[noreturn]]
 void
 force_termination(const char *reason, const vc& excstr)
 {
@@ -263,7 +264,7 @@ vcctx::excraise(const vc& str, VCArglist *al)
 	}
 	if(exc_doing_backouts)
 	{
-		force_termination("Can't raise exception in backout function", str);
+        force_termination("Can't raise exception in backout expr", str);
 		/*NOTREACHED*/
 	 }
 	char level = ((const char *)str)[0];

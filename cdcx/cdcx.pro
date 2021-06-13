@@ -29,7 +29,7 @@ INCLUDEPATH += .
 
 QT +=  core network webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
-macx-g++|macx-clang|win32|linux-g++|linux-g++-64:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
+macx-*|win32|linux-*:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
 
 RESOURCES=icons.qrc
 #CONFIG-=app_bundle
@@ -197,7 +197,7 @@ DEFINES += CDCX_NO_SSL
 #D = \\Users\\dwight\\build-cdcx\\bld
 
 D = $$replace(OUT_PWD, /, \\)\\..\\bld
-S = debug
+S = release
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
 $${D}\\vc\\$${S}\\vc.lib \

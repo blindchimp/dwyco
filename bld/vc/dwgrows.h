@@ -16,8 +16,7 @@
 class DwGrowingString
 {
 public:
-	DwGrowingString(int init_len = 128);
-	~DwGrowingString();
+        DwGrowingString(int init_len = 128);
 
 	void append(const char *, long len);
 	void mark();

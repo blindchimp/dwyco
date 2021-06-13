@@ -41,7 +41,8 @@
 #include "backsql.h"
 #include "sepstr.h"
 #include "ser.h"
-#include "prfcache.h"
+#include "profiledb.h"
+
 #include "ta.h"
 
 using namespace CryptoPP;
@@ -497,13 +498,21 @@ restore_account_info(const char *dbn)
     sv += rfn;
     move_replace(tf, sv);
 
+#ifdef _Windows
+    int fd = creat(newfn("auth").c_str(), _S_IWRITE);
+#else
     int fd = creat(newfn("auth").c_str(), 0666);
+#endif
     if(fd == -1)
         return 0;
     if(write(fd, (const char *)auth, auth.len()) != auth.len())
         return 0;
     close(fd);
+#ifdef _Windows
+    fd = creat(newfn("dh.dif").c_str(), _S_IWRITE);
+#else
     fd = creat(newfn("dh.dif").c_str(), 0666);
+#endif
     if(fd == -1)
         return 0;
     if(write(fd, (const char *)dh, dh.len()) != dh.len())

@@ -26,6 +26,8 @@ public:
             exit();
     }
 
+    // warning: this function doesn't allow you to send nil's
+    // into the query.
     vc sql_simple(const char *sql, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil, const vc& = vcnil);
 
     virtual void init_schema(const DwString& schema_name) {}

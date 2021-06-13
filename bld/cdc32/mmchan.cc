@@ -66,7 +66,7 @@
 #include "xinfo.h"
 #include "dhsetup.h"
 #include "vcudh.h"
-#include "pkcache.h"
+#include "profiledb.h"
 #include "sha.h"
 #include "qdirth.h"
 #include "dwscoped.h"
@@ -2933,7 +2933,7 @@ MMChannel::recv_config(vc cfg)
     // now pop up a dialog and wait for the user
     // to accept or reject the call.
     play_call_alert();
-    if((int)get_settings_value("call_acceptance/auto_acccept") == 0)
+    if((int)get_settings_value("call_acceptance/auto_accept") == 0)
     {
         vc name;
         if(!remote_cfg.is_nil() && !remote_cfg.find("username", name))

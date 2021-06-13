@@ -263,9 +263,9 @@ functx::add_default_handler(const vc& pat, const vc& fun) {
 }
 
 void
-functx::addbackout(const vc& fun) {
+functx::addbackout(const vc& expr) {
 	if(exc == 0) exc = new excctx(this);
-	exc->add(fun);
+    exc->add(expr);
 }
 
 // search for handler in this context

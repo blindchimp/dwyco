@@ -205,8 +205,8 @@ VidSel::on_devlist_currentRowChanged(int r)
     //emit camera_change(0);
     dwyco_shutdown_vfw();
     dwyco_set_setting("video_input/no_video", "1");
-    dwyco_set_setting("video_input/vfw", "0");
-    dwyco_set_setting("video_input/raw", "0");
+    //dwyco_set_setting("video_input/vfw", "0");
+    //dwyco_set_setting("video_input/raw", "0");
     ui->video_label->clear();
     if(r == -1)
     {
@@ -224,14 +224,16 @@ VidSel::on_devlist_currentRowChanged(int r)
             dwyco_start_vfw(r - FILES_OFFSET, 0, 0); // -2 for (files)
 #endif
             dwyco_set_setting("video_input/no_video", "0");
-            dwyco_set_setting("video_input/vfw", "1");
-            dwyco_set_setting("video_input/raw", "0");
+            dwyco_set_setting("video_input/source", "camera");
+            //dwyco_set_setting("video_input/vfw", "1");
+            //dwyco_set_setting("video_input/raw", "0");
         }
         else
         {
             dwyco_set_setting("video_input/no_video", "0");
-            dwyco_set_setting("video_input/vfw", "0");
-            dwyco_set_setting("video_input/raw", "1");
+            dwyco_set_setting("video_input/source", "raw");
+            //dwyco_set_setting("video_input/vfw", "0");
+            //dwyco_set_setting("video_input/raw", "1");
         }
         Block_DLL = 0;
         block_enable_video_capture_preview(1, &ui_id);

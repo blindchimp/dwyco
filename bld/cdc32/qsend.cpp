@@ -17,7 +17,7 @@
 #include "filetube.h"
 #include "xinfo.h"
 #include "doinit.h"
-#include "pkcache.h"
+#include "profiledb.h"
 #include "vccrypt2.h"
 #include "vcudh.h"
 #include "sepstr.h"

@@ -822,6 +822,7 @@ FrameSocket::send(DWBYTE *buf, int len, int chan, int user_byte, int user_len, i
     if(!send_seq(ostrm))
         return 0;
     vc vlen(len);
+    vc_composite::new_dfs();
     if(vlen.xfer_out(ostrm) < 0)
         return 0;
     obuf = ostrm.out_want(len + 1 + user_len + (user_seq != 0 ? 4 : 0));

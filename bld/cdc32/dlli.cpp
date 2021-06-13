@@ -321,8 +321,7 @@ using namespace Weak;
 #include "files.h"
 #include "autoup.h"
 #include "fnmod.h"
-#include "prfcache.h"
-#include "pkcache.h"
+#include "profiledb.h"
 #include "msgddll.h"
 #include "callq.h"
 #include "mmcall.h"
@@ -989,8 +988,7 @@ dwyco_suspend()
         ;
     save_qmsg_state();
     suspend_qmsg();
-    exit_prf_cache();
-    exit_pk_cache();
+    exit_prfdb();
     save_entropy();
     int current_listen = is_listening();
     Suspend_listen_mode = current_listen;
@@ -1024,8 +1022,7 @@ dwyco_resume()
     set_listen_state(Suspend_listen_state);
     init_pal();
     resume_qmsg();
-    init_prf_cache();
-    init_pk_cache();
+    init_prfdb();
     start_database_thread();
     Dwyco_suspended = 0;
 }
@@ -5899,7 +5896,7 @@ dwyco_zap_create_preview_buf(int viewid, const char **buf_out_elide, int *len_ou
     DWBYTE *vidbuf;
     int len_vidbuf;
     int dummy;
-    int codec;
+    int codec = -1;
 
     DwDecoderColor *decoder = 0;
     void *vimg = 0;

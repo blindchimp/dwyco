@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #define dwmax(x, y) (((x) < (y)) ? (y) : (x))
 #define dwmin(x, y) (((x) > (y)) ? (y) : (x))
@@ -185,6 +186,7 @@ typedef vc (*VCTRANSFUNCP)(VCArglist *, VcIO);
 typedef int (*VC_ERR_CALLBACK)(vc *);
 typedef void (*VC_FOREACH_CALLBACK)(vc);
 typedef void (*VC_FOREACH_CALLBACK2)(vc, vc);
+typedef void (*vc_int_dtor_fun)(void *);
 
 extern const vc vcnil;
 extern const vc vctrue;
@@ -210,6 +212,7 @@ private:
 	vc_default *rep;
 	
 	void vc_init(enum vc_type, const char *, long extra_parm);
+
 	// this is an awful hack, should get rid of it.
 friend class vc_memberfun;
 friend class vc_object;
@@ -264,10 +267,12 @@ public:
 	vc(double d);
 	vc(int i);
 	vc(long i);
+        vc(long long);
 	vc(const char *s);
         vc(const char *s, int len);
 
 	vc(enum vc_type, const char * = "nil", long extra_parm = 0);
+        vc(enum vc_type, vc_int_dtor_fun d, void *arg);
 
 #ifndef NO_VCEVAL
     vc(VcLexer&);

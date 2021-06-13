@@ -70,8 +70,8 @@
 #include "vcuvsock.h"
 #endif
 
-typedef long VC_INT_TYPE;
-typedef unsigned long VC_UINT_TYPE;
+typedef int64_t VC_INT_TYPE;
+typedef uint64_t VC_UINT_TYPE;
 
 const vc vctrue("t");
 const vc vcone(1);
@@ -1824,12 +1824,12 @@ dowhile(vc cond, vc expr)
 vc
 doforeach(vc var, vc set, vc expr)
 {
-	vc a = set.eval();
-    CHECK_ANY_BO(vcnil);
 	vc b = var.eval();
     CHECK_ANY_BO(vcnil);
 	if(b.type() != VC_STRING)
 		USER_BOMB("foreach variable must be string", vcnil);
+    vc a = set.eval();
+    CHECK_ANY_BO(vcnil);
 	a.foreach(b, expr);
 	return vcnil;
 }

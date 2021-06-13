@@ -40,7 +40,7 @@ DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYC
 message("cdc32 setup for rando")
 } else {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
+#DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
 DEFINES += DWYCO_FIELD_DEBUG
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
@@ -149,6 +149,7 @@ codec.cc \
 colcod.cc \
 coldec.cc \
 dchroma.cc \
+    profiledb.cpp \
 qtab.cc \
 dwrate.cc \
 dwrtlog.cc \
@@ -214,7 +215,6 @@ autoup.cpp \
 dmdsrv.cc \
 fnmod.cc \
 xinfo.cpp \
-prfcache.cpp \
 vidcvt.cc \
 callq.cpp \
 asshole.cpp \
@@ -241,7 +241,6 @@ sproto.cpp \
 dhsetup.cpp \
 trc.cpp \
 cdcpal2.cc \
-pkcache.cpp \
 ssns.cpp \
 qsend.cpp \
 directsend.cpp \

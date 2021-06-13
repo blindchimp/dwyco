@@ -1,4 +1,5 @@
 #!/bin/sh
+export PATH=$HOME/Qt/5.12.11/clang_64/bin:$PATH
 
 U=`uname`
 
