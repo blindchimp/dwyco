@@ -1312,7 +1312,7 @@ msglist_raw::get_msg_text(int row) const
     case DWYCO_GSM_PULL_IN_PROGRESS:
         return "(fetching)";
     case DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE:
-        return "(waiting to fetch)";
+        return "(fetching when available)";
     case DWYCO_GSM_ERROR:
     default:
         return "(failed)";

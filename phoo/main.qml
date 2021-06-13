@@ -143,9 +143,11 @@ ApplicationWindow {
     //width: Screen.width
     //height: Screen.height
     title: {
-        qsTr("Dwyco ") + core.this_handle + (core.active_group_name.length > 0 ?
+        qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
                                                  " (" + core.active_group_name + " " + core.percent_synced + "%)" :
-                                                 "")
+                                                 (core.group_status === 1 ?
+                                                      "(Requesting " + core.active_group_name + ")" : ""))
+
     }
     property int close_bounce: 0
     onClosing: {
@@ -399,6 +401,12 @@ ApplicationWindow {
     DevGroup {
         id: device_group
         visible: false
+        onQuitnowChanged: {
+            if(quitnow === true)
+            {
+                stack.push(device_group)
+            }
+        }
     }
 
     ConvList {
