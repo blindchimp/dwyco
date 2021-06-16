@@ -17,6 +17,7 @@
 #include "vcdecom.h"
 #include "vcmap.h"
 #include "vcenco.h"
+#include "vcxstrm.h"
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcint.cpp 1.49 1998/12/09 05:12:00 dwight Exp $";
 
@@ -141,12 +142,12 @@ vc_int::hashValue() const {return (hashValueType)(((i>>16)&0xffff) + (i&0xffff))
 void
 vc_int::printOn(VcIO outputStream) { outputStream << i;}
 
-#define PROLOG     vc retval;vc_double *v1 = new vc_double((const vc_double&)v);
-#define EPILOG   retval.redefine(v1);return retval;
-vc vc_int::double_add(const vc& v) const {PROLOG; v1->d += i;EPILOG}
-vc vc_int::double_sub(const vc& v) const {PROLOG; v1->d -= i;EPILOG}
-vc vc_int::double_mul(const vc& v) const {PROLOG; v1->d *= i;EPILOG}
-vc vc_int::double_div(const vc& v) const {PROLOG; v1->d /= i;EPILOG}
+#define PROLOG     vc retval;vc_double *v1 = new vc_double((const vc_double&)v)
+#define EPILOG   retval.redefine(v1);return retval
+vc vc_int::double_add(const vc& v) const {PROLOG; v1->d += i;EPILOG;}
+vc vc_int::double_sub(const vc& v) const {PROLOG; v1->d -= i;EPILOG;}
+vc vc_int::double_mul(const vc& v) const {PROLOG; v1->d *= i;EPILOG;}
+vc vc_int::double_div(const vc& v) const {PROLOG; v1->d /= i;EPILOG;}
 vc vc_int::double_mod(const vc& ) const {USER_BOMB("can't modulo floating numbers", vcnil);}
 #undef PROLOG
 #undef EPILOG
@@ -179,6 +180,7 @@ vc_int::xfer_out(vcxstream& vcx)
     int bytes = compat_ltoa(i, buf, sizeof(buf));
     if(pltoa(bytes, buf2, sizeof(buf2), 2) != 2)
         oopanic("bad int xfer out");
+
 	char *lp = vcx.out_want(bytes + 2); // +2 for length
 	if(lp == 0)
 		return -1;

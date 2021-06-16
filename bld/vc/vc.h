@@ -42,7 +42,7 @@ class vcxstream;
 #define EXIN_DEV -1
 #define EXIN_PARSE -2
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 void user_panic(const char *);
 void user_warning(const char *);
 class VcIOHack;
@@ -239,6 +239,7 @@ public:
 
         static vc set_to_vector(vc set);
         static vc map_to_vector(vc map);
+        static vc tree_to_vector(vc tree);
 
     // these are needed to support the lazy-Qmap stuff
 	void *operator new(size_t, vc *v) {return v;}

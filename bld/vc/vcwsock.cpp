@@ -2594,7 +2594,7 @@ vc_winsock_datagram::vc_winsock_datagram()
 #endif
 		{
 
-			// impose arbitrary 65k limit
+            // impose arbitrary limit
             iobuf = new char [32768];
             iobuflen = 32768;
 		}
@@ -2615,10 +2615,10 @@ vc_winsock_datagram::socket_init(SOCKET s, vc listening, int)
 }
 
 vc
-vc_winsock_datagram::socket_init(const vc& local_addr, int is_listen, int reuseaddr, int)
+vc_winsock_datagram::socket_init(const vc& laddr, int is_listen, int reuseaddr, int)
 {
 	// ignore "listen" request, since you can't do that on one of these.
-	return vc_winsock::socket_init(local_addr, 0, reuseaddr);
+    return vc_winsock::socket_init(laddr, 0, reuseaddr);
 }	
 
 vc

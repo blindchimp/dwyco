@@ -25,6 +25,8 @@ public:
 		LSBRACK, RSBRACK, EOS};
 	enum Atom {BOGUS_ATOM, STRING, INTEGER, FLOAT};
 
+        int emit_lexical_warnings;
+
 	virtual Token next_token();
 	virtual Token next_token(const char*&, long& len, Atom& );
 	virtual long token_linenum();
