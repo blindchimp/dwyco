@@ -265,14 +265,19 @@ broadcast_tick()
         vc peer;
         if(recvvc(Local_discover, data, peer) > 0)
         {
-            if(data[0] != My_UID)
+            if(data.type() == VC_VECTOR &&
+                    data[0].type() == VC_STRING &&
+                    data[1].type() == VC_VECTOR)
             {
-                GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
-                GRTLOGVC(data);
-                data[1][0] = strip_port(peer);
-                Broadcast_discoveries.add_kv(data[0], data[1]);
-                Local_uid_discovered.emit(data[0], 1);
-                Freshness.replace(data[0], time(0));
+                if(data[0] != My_UID)
+                {
+                    GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
+                    GRTLOGVC(data);
+                    data[1][0] = strip_port(peer);
+                    Broadcast_discoveries.add_kv(data[0], data[1]);
+                    Local_uid_discovered.emit(data[0], 1);
+                    Freshness.replace(data[0], time(0));
+                }
             }
         }
     }
