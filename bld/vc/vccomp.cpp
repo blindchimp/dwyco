@@ -219,9 +219,9 @@ vc_composite::int_gt(const vc& ) const {bomb_op();return 0;}
 int
 vc_composite::int_ge(const vc& ) const {bomb_op();return 0;}
 int
-vc_composite::int_eq(const vc& ) const {bomb_op();return 0;}
+vc_composite::int_eq(const vc& ) const {return FALSE;}
 int
-vc_composite::int_ne(const vc& ) const {bomb_op();return 0;}
+vc_composite::int_ne(const vc& ) const {return TRUE;}
 
 int
 vc_composite::double_lt(const vc& ) const {bomb_op();return 0;}
@@ -232,14 +232,14 @@ vc_composite::double_gt(const vc& ) const {bomb_op();return 0;}
 int
 vc_composite::double_ge(const vc& ) const {bomb_op();return 0;}
 int
-vc_composite::double_eq(const vc& ) const {bomb_op();return 0;}
+vc_composite::double_eq(const vc& ) const {return FALSE;}
 int
-vc_composite::double_ne(const vc& ) const {bomb_op();return 0;}
+vc_composite::double_ne(const vc& ) const {return TRUE;}
 
 int
-vc_composite::str_eq(const vc& ) const {bomb_op();return 0;}
+vc_composite::str_eq(const vc& ) const {return FALSE;}
 int
-vc_composite::str_ne(const vc& ) const {bomb_op();return 0;}
+vc_composite::str_ne(const vc& ) const {return TRUE;}
 int
 vc_composite::str_lt(const vc& ) const {bomb_op();return 0;}
 int

@@ -162,9 +162,17 @@ public:
     // memory had been allocated, but that is environment dependent
     // and would probably require some exception handling.
     // this should be adequate to allow limiting mischief for simple
-    // outward facing protocols where the form is fairly restricted.
+    // outward facing protocols where the expected form is fairly restricted.
+
+    // the max number of elements in a composite (like a vector)
     long max_elements;
+    // the max length in the representation (in bytes) of any non-composite (int, float, string)
     long max_element_len;
+    // the maximum number of levels of the structure to be parsed.
+    // for example, just a single composite (like an int) is 0 "levels".
+    // this excludes all composites.
+    // a single vector is 1 level. if the vector contains another vector, that is 2, and so on.
+    // setting this to -1 will return an error for any deserialization.
     long max_depth;
 
     int flushnb();

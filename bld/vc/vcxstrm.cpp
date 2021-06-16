@@ -19,7 +19,6 @@ void dwrtlog_vc(char *, int, vc);
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcxstrm.cpp 1.52 1998/12/09 05:12:37 dwight Exp $";
 
-void oopanic(const char *);
 
 long VCX_max_element_len = LONG_MAX;
 long VCX_max_elements = LONG_MAX;
