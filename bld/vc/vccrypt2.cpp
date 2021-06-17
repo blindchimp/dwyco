@@ -21,7 +21,7 @@
 #include "vcmap.h"
 #include "vccrypt2.h"
 #include "blowfish.h"
-#include "rng.h"
+//#include "rng.h"
 #include "files.h"
 #include "hex.h"
 #include "modes.h"
@@ -1274,7 +1274,7 @@ vclh_encdec_close(vc ctx)
 // basically, you are responsible for getting the iv around in this case.
 //
 // if you use the *xfer* functions below, the IV is done for you, so the
-// iv sent in here is basically ignored.
+// iv sent in here is ignored.
 // 
 vc
 vclh_encdec_init_key_ctx(vc ctx, vc key, vc iv)
@@ -1400,7 +1400,7 @@ encdec_xfer_dec_ctx(vc ctx, vc v, vc& out)
 		return vcnil;
 	}
 
-	vcxstream vcx((const char *)tmp, (long)tmp.len(), vcxstream::FIXED);
+    vcxstream vcx((const char *)tmp, tmp.len(), vcxstream::FIXED);
 
 	vc item;
 	long len;

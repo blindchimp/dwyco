@@ -22,14 +22,11 @@ class vcxstream;
 class vc_string : public vc_atomic
 {
 private:
-	char *str;
-#if (defined(__BCPLUSPLUS__) && __BCPLUSPLUS__ >= 0x500) || defined(__GNUG__) || defined(_MSC_VER)
-	mutable int is_cached;
+    char *str;
+
+    mutable int is_cached;
     mutable hashValueType cached_hv;
-#else
-	int is_cached;
-    hashValueType cached_hv;
-#endif
+
     long cached_len;
 
 	void bind(const vc& v) const;

@@ -9,7 +9,7 @@ DEFINES += VC_INTERNAL
 
 !win32 {
 DEFINES += UNIX
-QMAKE_CXXFLAGS += -fpermissive
+QMAKE_CXXFLAGS += #-fpermissive
 #QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder
 }
 

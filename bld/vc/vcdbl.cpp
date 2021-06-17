@@ -14,6 +14,7 @@
 #include "vcmap.h"
 #include "vcenco.h"
 #include "vcio.h"
+#include "vcxstrm.h"
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcdbl.cpp 1.49 1998/12/09 05:12:34 dwight Exp $";
 

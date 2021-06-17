@@ -24,7 +24,7 @@
 // pointer have not changed (ie, been deleted and then
 // recreated with possibly the same pointer.
 //
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 
 class DwVP
@@ -66,6 +66,12 @@ public:
     }
 
     operator void *() {
+        if(!is_valid())
+            oopanic("bad ptr");
+        return ptr;
+    }
+
+    void *get_ptr() {
         if(!is_valid())
             oopanic("bad ptr");
         return ptr;

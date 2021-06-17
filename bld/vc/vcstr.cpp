@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#include <ctype.h>
+
 #include "vc.h"
 #include "vcstr.h"
 #include "vcmap.h"
@@ -15,6 +15,7 @@
 #include <new>
 #include "jhash.h"
 #include "vcio.h"
+#include <ctype.h>
 
 using namespace std;
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcstr.cpp 1.51 1998/12/09 05:12:24 dwight Exp $";
@@ -325,7 +326,6 @@ void
 vc_string::printOn(VcIO outputStream)
 {
 	
-	//outputStream << str;
 	for(int i = 0; i < cached_len; ++i)
 	{
         if(!isprint(str[i] & 0xff) && !isspace(str[i] & 0xff))
@@ -363,7 +363,7 @@ vc_string::xfer_in(vcxstream& vcx)
 	char *cp;
 	if((cp = vcx.in_want(ENCODED_LEN_LEN)) == 0)
 		return EXIN_DEV;
-	long len = decode_len(cp);
+    int len = decode_len(cp);
     if(len == -1 || len == 0)
 		return EXIN_PARSE;
     if(len > vcx.max_element_len)

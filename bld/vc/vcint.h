@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 #include "vcatomic.h"
-#include "vcxstrm.h"
+class vcxstream;
 
 //
 // Integer atoms. The primary difference between this

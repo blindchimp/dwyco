@@ -751,7 +751,7 @@ vc_uvsocket::socket_get_write_q_size()
 {
     if(tcp_handle)
         return (long)tcp_handle->write_queue_size;
-    return vcnil;
+    return 0;
 }
 
 int
