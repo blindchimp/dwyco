@@ -14,7 +14,7 @@
    <enum>Qt::DefaultContextMenu</enum>
   </property>
   <property name="windowTitle">
-   <string>Dwyco (2.31)</string>
+   <string>Dwyco (2.32)</string>
   </property>
   <property name="windowIcon">
    <iconset resource="icons.qrc">
@@ -116,7 +116,7 @@ border-radius: 2px;
      <x>0</x>
      <y>0</y>
      <width>394</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSetup">
