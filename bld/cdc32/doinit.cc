@@ -80,6 +80,13 @@ init_codec(const char *logname)
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
         //No_direct_msgs = vc(VC_SET);
         Current_user_lobbies = vc(VC_TREE);
+        // ok, this is bad, but the man pages do spec numbers for upper bound
+        // and HOST_NAME_MAX seems to be missing in action some places.
+        char hostname[1024];
+        if(gethostname(hostname, sizeof(hostname)) != 0)
+            Myhostname = "unknown";
+        else
+            Myhostname = hostname;
 
         init_stats();
         Log = new DwLog(newfn(logname).c_str());
@@ -153,14 +160,6 @@ init_codec(const char *logname)
         vc::non_lh_init();
         vc_winsock::startup();
 
-        // ok, this is bad, but the man pages do spec numbers for upper bound
-        // and HOST_NAME_MAX seems to be missing in action some places.
-        char hostname[1024];
-        if(gethostname(hostname, sizeof(hostname)) != 0)
-            Myhostname = "unknown";
-        else
-            Myhostname = hostname;
-
         check_audio_device();
         if(!Audio_hw_full_duplex)
             Log->make_entry("audio hardware is half-duplex");
@@ -222,6 +221,12 @@ simple_init_codec(const char *logname)
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
         //No_direct_msgs = vc(VC_SET);
         Current_user_lobbies = vc(VC_TREE);
+        char hostname[255];
+        if(gethostname(hostname, sizeof(hostname)) != 0)
+            Myhostname = "unknown";
+        else
+            Myhostname = hostname;
+
         init_stats();
 #ifdef DW_RTLOG
         Log = new DwLog(logname);
@@ -272,12 +277,6 @@ simple_init_codec(const char *logname)
         vc::non_lh_init();
         vc_winsock::startup();
 
-        char hostname[255];
-        if(gethostname(hostname, sizeof(hostname)) != 0)
-            Myhostname = "unknown";
-        else
-            Myhostname = hostname;
-
         init_sysattr();
         init = 1;
         Log->make_entry("init done");
@@ -300,6 +299,11 @@ init_bg_msg_send(const char *logname)
         Current_user_lobbies = vc(VC_TREE);
         InitializeCriticalSection(&Audio_lock);
         InitializeCriticalSection(&Audio_mixer_shutdown_lock);
+        char hostname[255];
+        if(gethostname(hostname, sizeof(hostname)) != 0)
+            Myhostname = "unknown";
+        else
+            Myhostname = hostname;
         init_stats();
         if(!Log)
             Log = new DwLog(logname);
@@ -352,12 +356,6 @@ init_bg_msg_send(const char *logname)
         vc::setup_logs();
         vc::non_lh_init();
         vc_winsock::startup();
-
-        char hostname[255];
-        if(gethostname(hostname, sizeof(hostname)) != 0)
-            Myhostname = "unknown";
-        else
-            Myhostname = hostname;
 
         init_dirth();
         init_qauth();
