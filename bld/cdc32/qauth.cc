@@ -143,6 +143,11 @@ init_entropy()
     a += DwString((const char *)&t1, 0, sizeof(t1));
     // note: we know hostname won't be more than 1024, see doinit.cc
     a += DwString((const char *)Myhostname, 0, Myhostname.len());
+
+#if 1
+    // NOTE: ca 2021, this appears to take a significant amount of time
+    // on some platforms sometimes (when it can't find the hostname).
+    //
     // try to get an IP address, but it may not work...
     // oh well, if not, then at least we get some rubbish from
     // the stack.
@@ -155,6 +160,7 @@ init_entropy()
             a += DwString((const char *)h->h_addr_list[i], 0, h->h_length);
         }
     }
+#endif
 #ifdef _Windows
     DWORD w = GetCurrentProcessId();
     a += DwString((const char *)&w, 0, sizeof(w));
