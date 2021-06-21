@@ -1739,6 +1739,8 @@ login_auth_results(vc m, void *, vc, ValidPtr)
 
         if(!m[3].is_nil())
         {
+            // 0 = old ratings, not used anymore
+            // 1 = old server stored ignore list, not used anymore
             Current_authenticator = m[3][2];
             Pal_auth_state = m[3][3];
 #ifdef DWYCO_ASSHAT
@@ -6905,7 +6907,7 @@ dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
 
 DWYCOEXPORT
 int
-dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *, int, const char *msg_id)
+dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *uid, int len_uid, const char *msg_id)
 {
     int ret = dwyco_get_saved_message3(list_out, msg_id);
     if(ret == DWYCO_GSM_SUCCESS)

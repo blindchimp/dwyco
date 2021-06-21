@@ -136,7 +136,7 @@
 #define dwyco_make_zap_composition _real_dwyco_make_zap_composition 
 #define dwyco_make_zap_composition_raw _real_dwyco_make_zap_composition_raw 
 #define dwyco_dup_zap_composition _real_dwyco_dup_zap_composition 
-#define dwyco_make_forward_zap_composition _real_dwyco_make_forward_zap_composition 
+#define dwyco_make_forward_zap_composition2 _real_dwyco_make_forward_zap_composition2 
 #define dwyco_is_forward_composition _real_dwyco_is_forward_composition 
 #define dwyco_flim _real_dwyco_flim 
 #define dwyco_is_file_zap _real_dwyco_is_file_zap 
@@ -144,8 +144,8 @@
 #define dwyco_set_special_zap _real_dwyco_set_special_zap 
 #define dwyco_make_file_zap_composition _real_dwyco_make_file_zap_composition 
 #define dwyco_copy_out_qd_file_zap _real_dwyco_copy_out_qd_file_zap 
-#define dwyco_copy_out_file_zap _real_dwyco_copy_out_file_zap 
-#define dwyco_copy_out_file_zap_buf _real_dwyco_copy_out_file_zap_buf 
+#define dwyco_copy_out_file_zap2 _real_dwyco_copy_out_file_zap2 
+#define dwyco_copy_out_file_zap_buf2 _real_dwyco_copy_out_file_zap_buf2 
 #define dwyco_delete_zap_composition _real_dwyco_delete_zap_composition 
 #define dwyco_zap_record2 _real_dwyco_zap_record2 
 #define dwyco_zap_record _real_dwyco_zap_record 
@@ -158,7 +158,7 @@
 #define dwyco_zap_cancel _real_dwyco_zap_cancel 
 #define dwyco_zap_still_active _real_dwyco_zap_still_active 
 #define dwyco_kill_message _real_dwyco_kill_message 
-#define dwyco_make_zap_view _real_dwyco_make_zap_view 
+#define dwyco_make_zap_view2 _real_dwyco_make_zap_view2 
 #define dwyco_make_zap_view_file _real_dwyco_make_zap_view_file 
 #define dwyco_make_zap_view_file_raw _real_dwyco_make_zap_view_file_raw 
 #define dwyco_delete_zap_view _real_dwyco_delete_zap_view 
@@ -191,7 +191,7 @@
 #define dwyco_end_bulk_update _real_dwyco_end_bulk_update 
 #define dwyco_get_sync_model _real_dwyco_get_sync_model 
 #define dwyco_get_group_status _real_dwyco_get_group_status 
-#define dwyco_get_saved_message2 _real_dwyco_get_saved_message2 
+#define dwyco_get_saved_message3 _real_dwyco_get_saved_message3 
 #define dwyco_get_saved_message _real_dwyco_get_saved_message 
 #define dwyco_get_unfetched_messages _real_dwyco_get_unfetched_messages 
 #define dwyco_get_unfetched_message _real_dwyco_get_unfetched_message 
@@ -222,6 +222,7 @@
 #define dwyco_uid_has_tag _real_dwyco_uid_has_tag 
 #define dwyco_uid_count_tag _real_dwyco_uid_count_tag 
 #define dwyco_count_tag _real_dwyco_count_tag 
+#define dwyco_valid_tag_exists _real_dwyco_valid_tag_exists 
 #define dwyco_set_fav_msg _real_dwyco_set_fav_msg 
 #define dwyco_get_fav_msg _real_dwyco_get_fav_msg 
 #define dwyco_run_sql _real_dwyco_run_sql 
@@ -263,8 +264,6 @@
 #define dwyco_abort_autoupdate_download _real_dwyco_abort_autoupdate_download 
 #define dwyco_network_diagnostics2 _real_dwyco_network_diagnostics2 
 #define dwyco_estimate_bandwidth2 _real_dwyco_estimate_bandwidth2 
-#define dwyco_set_alert _real_dwyco_set_alert 
-#define dwyco_get_alert _real_dwyco_get_alert 
 #define dwyco_create_backup _real_dwyco_create_backup 
 #define dwyco_copy_out_backup _real_dwyco_copy_out_backup 
 #define dwyco_remove_backup _real_dwyco_remove_backup 
