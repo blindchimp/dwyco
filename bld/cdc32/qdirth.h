@@ -153,7 +153,7 @@ int dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, vc arg2 
 void dirth_simulate_error_response(const QckDone& q);
 void dirth_dead_channel_cleanup(int chan);
 void dirth_send_ack_all(vc id, QckDone d);
-void dirth_send_clear_ignore(vc id, QckDone d);
+//void dirth_send_clear_ignore(vc id, QckDone d);
 void dirth_q_local_action(vc response_vector, QckDone d);
 void dirth_send_get_server_list2(vc id, QckDone d);
 void dirth_send_setup_session_key(vc id, vc dh_public, QckDone d);

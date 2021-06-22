@@ -703,6 +703,7 @@ dirth_send_ack_all(vc id, QckDone d)
     dirth_send(m, d);
 }
 
+#if 0
 void
 dirth_send_clear_ignore(vc id, QckDone d)
 {
@@ -713,6 +714,8 @@ dirth_send_clear_ignore(vc id, QckDone d)
     m[QFROM] = id;
     dirth_send(m, d);
 }
+#endif
+
 
 void
 dirth_send_get_server_list2(vc id, QckDone d)
