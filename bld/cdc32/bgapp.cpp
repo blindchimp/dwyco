@@ -463,7 +463,7 @@ dwyco_sync_login_result(const char *str, int what)
 
 DWYCOEXPORT
 int
-dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
+dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token, const char *grpname, const char *grppw)
 {
 #ifndef WIN32
     signal(SIGPIPE, SIG_IGN);
@@ -476,8 +476,7 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
         return 1;
-    const char *grpname = getenv("DWYCO_GROUP");
-    const char *grppw = getenv("DWYCO_GROUP_PW");
+
     dwyco_trace_init();
 
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
