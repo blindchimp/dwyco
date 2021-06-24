@@ -152,6 +152,8 @@ init_codec(const char *logname)
         vc::setup_logs();
         vc::non_lh_init();
         vc_winsock::startup();
+        init_entropy();
+        dh_init();
 
         check_audio_device();
         if(!Audio_hw_full_duplex)
@@ -330,6 +332,8 @@ init_bg_msg_send(const char *logname)
         vc::setup_logs();
         vc::non_lh_init();
         vc_winsock::startup();
+        init_entropy();
+        dh_init();
 
         init_dirth();
         init_qauth();
