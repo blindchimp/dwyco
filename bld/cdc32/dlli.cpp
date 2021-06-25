@@ -7634,9 +7634,23 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
             // able to decrypt it. tag the msg locally in case our key situation changes
             //
             // note: tried this, and trying to decrypt it later is really a
-            // losing proposition. it is better just to delete it. if we are
+            // losing proposition. it is better just to ack it. if we are
             // in the right group eventually, we'll get it via syncing, just a little
             // later.
+            // NOTE: the application should NOT *delete* a message if the
+            // decrypt fails unless it absolutely knows it will never decrypt.
+            // there is a compat case where old software sends to a UID
+            // and the UID happens to be in a group. the message will not have
+            // any group key material, and thus will only be able to
+            // get decrypted by the target UID. if the application deletes
+            // a message because it is not the right target (it was
+            // delivered to anyone in the group), then none of the other
+            // group members will be able to fetch and decrypt the message.
+            // this makes it look like the message was never delivered.
+            // one solution to this would be to have an entry-point in the
+            // server that handles old software and sets the "no-group"
+            // flag by default so old software simply sends point-point
+            // as usual.
             dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
             //sql_add_tag(q->msg_id, "_decrypt_failed");
 

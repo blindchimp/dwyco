@@ -152,6 +152,11 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
         break;
 
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED:
+        // XXX fix this, if we can't decrypt it now, it might be
+        // because it went to a group but the sender was old software
+        // and didn't encrypt with the group key. "delete" means
+        // remove the message for the entire group, which we don't really
+        // want to do.
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED:
         // if this msg is ratholed, it can never be fetched, so just delete it.
         Dont_refetch.insert(mid);
