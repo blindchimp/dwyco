@@ -2220,6 +2220,13 @@ doflush()
 }
 
 vc
+doflushall()
+{
+    fflush(NULL);
+    return vcnil;
+}
+
+vc
 docontents_of(vc file)
 {
 	if(file.type() != VC_FILE)
@@ -3148,6 +3155,7 @@ vc::init_rest()
 	makefun("readatoms", VC(doreadatoms, "readatoms", VC_FUNC_BUILTIN_LEAF));
 	makefun("contents-of", VC(docontents_of, "contents-of", VC_FUNC_BUILTIN_LEAF));
 	makefun("flush-std", VC(doflush, "flush-std", VC_FUNC_BUILTIN_LEAF));
+    makefun("flush-all", VC(doflushall, "flush-all", VC_FUNC_BUILTIN_LEAF));
 	makefun("fgets", VC(dofgets, "fgets", VC_FUNC_BUILTIN_LEAF));
 	makefun("fputs", VC(dofputs, "fputs", VC_FUNC_BUILTIN_LEAF));
 	makefun("fread", VC(dofread, "fread", VC_FUNC_BUILTIN_LEAF));
