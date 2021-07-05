@@ -43,7 +43,7 @@ main(int argc, char *argv[])
 {
     if(access("stop", F_OK) == 0)
         exit(0);
-    if(argc < 4)
+    if(argc < 3)
         exit(1);
     signal(SIGPIPE, SIG_IGN);
 	alarm(3600);
@@ -56,8 +56,6 @@ main(int argc, char *argv[])
 
     const char *name = argv[1];
     const char *desc = argv[2];
-    char *cmd = strdup(argv[0]);
-    cmd = basename(cmd);
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
 
