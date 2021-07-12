@@ -76,7 +76,7 @@ $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\vorbis112\\$${S}\\vorbis.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
-user32.lib kernel32.lib wsock32.lib winmm.lib vfw32.lib advapi32.lib binmode.obj
+user32.lib kernel32.lib Ws2_32.lib winmm.lib vfw32.lib advapi32.lib binmode.obj
 
 DEFINES += USE_VFW  MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
 

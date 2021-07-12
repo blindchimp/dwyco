@@ -51,7 +51,12 @@ Rectangle {
         return Qt.md5(h)
     }
 
-    password_ok : { calc_pw(pw) === correct_pw || xhit === 5 }
+    password_ok : {
+        if(calc_pw(pw) === correct_pw || xhit === 5)
+            return 1
+        else
+            return 0
+    }
 
     MouseArea {
         anchors.fill: parent
