@@ -428,11 +428,11 @@ ApplicationWindow {
         Connections {
             target: core
             onQt_app_state_change: {
-                if(app_state === 0) {
+                if(core.app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
 
                 }
-                if(app_state !== 0) {
+                if(core.app_state !== 0) {
                     console.log("CHAT SERVER PAUSE");
 
                     //core.disconnect_chat_server()

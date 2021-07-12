@@ -1,15 +1,15 @@
-QT += core sql
+QT += core
 QT -= gui
 
 include(../$$DWYCO_CONFDIR/conf.pri)
-
 INCLUDEPATH += ../bld/dwcls ../bld/miscsrc
+CONFIG -= app_bundle
 
 SOURCES += \
-    clbot.cpp \
+    nobot.cpp \
     ../bld/miscsrc/dwyco_new_msg.cpp
 
-linux-* {
+linux-*|macx-* {
 
 D = $${OUT_PWD}/../bld
 
@@ -31,11 +31,9 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 -lsqlite3
 
-
 QMAKE_CXX=ccache g++
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder
 DEFINES += LINUX VCCFG_FILE
-
 #QMAKE_CXXFLAGS += -fsanitize=address
 #QMAKE_LFLAGS += -fsanitize=address
 #QMAKE_LFLAGS += --coverage

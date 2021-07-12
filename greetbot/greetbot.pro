@@ -9,7 +9,7 @@ SOURCES += \
     greetbot.cpp \
     ../bld/miscsrc/dwyco_new_msg.cpp
 
-linux-g++*|macx-clang {
+linux-*|macx-* {
 
 D = $${OUT_PWD}/../bld
 
