@@ -32,7 +32,7 @@ Pane {
 
     PINDialog {
         id: enter_new_pin
-        visible: confirm_old_pw.password_ok
+        visible: confirm_old_pw.password_ok === 1
         show_set_pin_button: true
         set_pin_button_text: {(pw.length > 0) ? qsTr("Set PIN") :
                                  qsTr("Turn off PIN")}
