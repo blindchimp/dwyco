@@ -397,7 +397,7 @@ init_qmsg()
     }
 #endif
 
-    if(!load_info(Pals, "pals"))
+    if(!load_info(Pals, "pals") || Pals.is_nil())
     {
         Pals = vc(VC_TREE);
         save_info(Pals, "pals");

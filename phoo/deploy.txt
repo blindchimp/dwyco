@@ -9,6 +9,7 @@ android
 nothing special here, qtcreator seems to be able to create an apk
 that can be used in the play store without much trouble. main thing is to
 make sure it gets signed with a real key instead of a debug key.
+ca. 2021: WARNING! Qt 5.12.9 MUST be used to compile and deploy to play store. Qt 5.12.11 has a "fix" that changes the folder returned from QStandardPaths even if you request legacy storage options. This change breaks Phoo, as it won't be able to write to external storage. With any luck, this will be resolved when I finally finish the alt-key stuff and get it integrated.
 
 linux
 -----
