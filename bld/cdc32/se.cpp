@@ -200,6 +200,7 @@ se_process()
         }
             break;
 
+        case SE_IDENT_TO_UID:
         case SE_MSG_SEND_START:
         case SE_MSG_SEND_FAIL:
         case SE_MSG_SEND_SUCCESS:

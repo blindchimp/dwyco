@@ -502,6 +502,10 @@ dwyco_sys_event_callback(int cmd, int id,
         TheDwycoCore->emit msg_recv_state(cmd, str_data, huid);
         break;
 
+    case DWYCO_SE_IDENT_TO_UID:
+        emit TheDwycoCore->name_to_uid_result(huid, QString::fromUtf8(str_data));
+        break;
+
     default:
         break;
     }

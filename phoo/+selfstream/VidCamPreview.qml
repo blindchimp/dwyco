@@ -67,6 +67,9 @@ Page {
                 }
             }
         }
+        onName_to_uid_result: {
+            console.log("GOT UID FOR NAME ", uid, handle)
+        }
     }
 
     Camera {
@@ -190,7 +193,9 @@ Page {
             text: "Watch Camera"
             onClicked: {
                 if(checked) {
-                    // disable camera,
+                    // disable camera, fetch last watched camera, lookup
+                    // uid, try connecting to that uid
+                    core.name_to_uid("SELFSTREAM:cam1")
                 }
             }
         }
