@@ -16,7 +16,7 @@ Page {
     id: pchat
     anchors.fill: parent
     property alias model: listView1.model
-    property int connect_server: 0
+    //property int connect_server: 0
     
     background: Rectangle {
         color: amber_dark
