@@ -83,12 +83,16 @@ int main(int argc, char *argv[])
     TheEngine = &engine;
     QQmlFileSelector *sel = QQmlFileSelector::get(TheEngine);
     QStringList sels;
+#ifdef SELFSTREAM
+    sels.append("selfstream");
+#else
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     sels.append("vgqt");
 #endif
 
 #if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
     sels.append("desktop");
+#endif
 #endif
     if(sels.count() > 0)
         sel->setExtraSelectors(sels);

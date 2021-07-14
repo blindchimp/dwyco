@@ -167,6 +167,7 @@ void dirth_send_server_assist(vc id, vc to_uid, QckDone d);
 void dirth_send_create_user_lobby(vc id, vc dispname, vc category, vc sub_god_uid, vc pw, vc user_limit, QckDone d);
 void dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d);
 void dirth_send_get_pk(vc id, vc uid, QckDone d);
+void dirth_send_get_uid(vc id, vc handle, QckDone d);
 void dirth_send_debug(vc id, vc crashed, vc stack, vc field_track, QckDone d);
 void dirth_send_set_token(vc id, vc token, QckDone d);
 // used internally

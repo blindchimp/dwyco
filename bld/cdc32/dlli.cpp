@@ -4488,6 +4488,25 @@ dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, in
     return viewid;
 }
 
+static
+void
+name_map_done(vc m, void *, vc handle, ValidPtr )
+{
+    if(m[1].is_nil())
+        return;
+    vc uid = m[1];
+    se_emit_msg(SE_IDENT_TO_UID, handle, uid);
+}
+
+DWYCOEXPORT
+void
+dwyco_name_to_uid(const char *handle, int len_handle)
+{
+    vc h(VC_BSTRING, handle, len_handle);
+
+    dirth_send_get_uid(My_UID, h, QckDone(name_map_done, 0, h, ValidPtr()));
+}
+
 int
 internal_boot_file(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email)
 {

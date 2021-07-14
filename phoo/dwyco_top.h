@@ -164,6 +164,7 @@ public:
     Q_INVOKABLE QUrl uid_to_http_profile_preview(QString uid);
     Q_INVOKABLE QUrl uid_to_profile_view(QString uid);
     Q_INVOKABLE QString uid_to_profile_image_filename(QString uid);
+    Q_INVOKABLE void name_to_uid(QString handle);
 
     Q_INVOKABLE int set_setting(QString name, QString value);
     Q_INVOKABLE QVariant get_setting(QString name);

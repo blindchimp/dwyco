@@ -816,6 +816,12 @@ DwycoCore::set_invisible_state(int s)
     dwyco_set_invisible_state(s);
 }
 
+void
+DwycoCore::name_to_uid(QString handle)
+{
+    QByteArray b = handle.toUtf8();
+    dwyco_name_to_uid(b.constData(), b.length());
+}
 
 static
 void
@@ -843,7 +849,7 @@ setup_locations()
     if(args.count() == 1)
     {
         userdir = QStandardPaths::writableLocation(filepath);
-        userdir += "/dwyco/phoo/";
+        userdir += "/dwyco/self/";
     }
     else
     {
@@ -1502,7 +1508,7 @@ DwycoCore::init()
         ::abort();
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
-    dwyco_set_setting("call_acceptance/auto_accept", "0");
+    dwyco_set_setting("call_acceptance/auto_accept", "1");
     dwyco_set_setting("net/listen", "1");
 
     new profpv;

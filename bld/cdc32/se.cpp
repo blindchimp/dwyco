@@ -58,6 +58,7 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_CHAT_SERVER_LOGIN_FAILED,
 
     DWYCO_SE_MSG_DOWNLOAD_PROGRESS,
+    DWYCO_SE_IDENT_TO_UID,
 };
 
 void
@@ -90,7 +91,7 @@ se_emit_msg(dwyco_sys_event cmd, DwString qid, vc uid)
     vc v(VC_VECTOR);
     v[0] = cmd;
     v[1] = uid;
-    v[2] = qid.c_str();
+    v[2] = vc(VC_BSTRING, qid.c_str(), qid.length());
     Se_q.append(v);
     GRTLOG("se_emit_msg ", 0, 0);
     GRTLOGVC(v);
@@ -99,7 +100,13 @@ se_emit_msg(dwyco_sys_event cmd, DwString qid, vc uid)
 void
 se_emit_msg(dwyco_sys_event cmd, vc qid, vc uid)
 {
-    se_emit_msg(cmd, DwString((const char *)qid, 0, qid.len()), uid);
+    vc v(VC_VECTOR);
+    v[0] = cmd;
+    v[1] = uid;
+    v[2] = qid;
+    Se_q.append(v);
+    GRTLOG("se_emit_msg ", 0, 0);
+    GRTLOGVC(v);
 }
 
 void
