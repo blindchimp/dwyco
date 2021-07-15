@@ -280,6 +280,7 @@ $${D}/qtdrv/libqtdrv.a
 
 android-* {
 DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
+DEFINES += SELFSTREAM
 
 D = $${OUT_PWD}/../bld
 
