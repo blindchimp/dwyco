@@ -686,23 +686,23 @@ ApplicationWindow {
         uid: top_dispatch.last_uid_selected
     }
 
-//    VidCamPreview {
-//        id: vid_cam_preview
-//        visible: false
-//    }
-
-    Loader {
+    VidCamPreview {
         id: vid_cam_preview
-        active: false
         visible: false
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/VidCamPreview.qml"
-                active = true
-
-            }
-        }
     }
+
+//    Loader {
+//        id: vid_cam_preview
+//        active: false
+//        visible: false
+//        onVisibleChanged: {
+//            if(visible) {
+//                source = "qrc:/VidCamPreview.qml"
+//                active = true
+
+//            }
+//        }
+//    }
 
     DwycoVidRec {
         id: dwyco_vid_rec

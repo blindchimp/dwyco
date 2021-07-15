@@ -225,7 +225,7 @@ public:
     Q_INVOKABLE int get_rem_keyboard_state(QString uid);
     Q_INVOKABLE void create_call_context(QString uid);
     Q_INVOKABLE void delete_call_context(QString uid);
-    Q_INVOKABLE void try_connect(QString uid);
+    Q_INVOKABLE void start_control(QString uid);
     Q_INVOKABLE int get_established_state(QString uid);
 
     Q_INVOKABLE void delete_file(QString fn);

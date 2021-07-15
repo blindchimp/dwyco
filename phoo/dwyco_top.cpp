@@ -1767,10 +1767,10 @@ DwycoCore::get_established_state(QString uid)
 }
 
 void
-DwycoCore::try_connect(QString uid)
+DwycoCore::start_control(QString uid)
 {
     simple_call *c = simple_call::get_simple_call(QByteArray::fromHex(uid.toLatin1()));
-    c-> emit try_connect();
+    c->start_control(true);
 
 }
 
