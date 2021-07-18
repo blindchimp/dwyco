@@ -1491,7 +1491,7 @@ DwycoCore::init()
     else
         inv = 1;
     dwyco_set_initial_invis(inv);
-    dwyco_inhibit_pal(1);
+    dwyco_inhibit_pal(0);
 #ifdef ANDROID
     // this is a kluge for android
     // the FCM token may or not be available at this point, but

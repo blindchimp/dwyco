@@ -89,6 +89,7 @@ Page {
         onName_to_uid_result: {
             console.log("GOT UID FOR NAME ", uid, handle)
             attempt_uid = uid
+            core.set_pal(uid, 1)
         }
 
         onSc_connect_terminated: {
