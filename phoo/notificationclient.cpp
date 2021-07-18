@@ -123,6 +123,7 @@ NotificationClient::set_service_params(int port, QString sys_pfx, QString user_p
 void
 NotificationClient::start_background()
 {
+	return;
     QAndroidJniObject::callStaticMethod<void>(
         "com/dwyco/android/NotificationClient",
         "start_background"

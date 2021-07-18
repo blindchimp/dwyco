@@ -151,7 +151,7 @@ reload_ignore_list()
 static void
 takeover_from_background(int port)
 {
-    //return;
+    return;
     if(!BGLockSock)
         BGLockSock = new QTcpServer;
 
@@ -1685,7 +1685,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
             delete BGLockSock;
             BGLockSock = 0;
         }
-#ifdef ANDROID
+#if 0 && ANDROID
         notificationClient->start_background();
         notificationClient->set_allow_notification(1);
 #endif

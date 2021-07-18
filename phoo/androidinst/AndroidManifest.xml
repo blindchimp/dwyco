@@ -52,11 +52,11 @@
 <action android:name="android.intent.action.MAIN"/>
 </intent-filter>
 </receiver>
-<service android:name="com.dwyco.android.Dwyco_Message" android:enabled="true" android:process=":dwycobg">
+<service android:name="com.dwyco.android.Dwyco_Message" android:enabled="false" android:process=":dwycobg">
 </service>
 <service android:name="com.dwyco.android.DwycoProbe" android:enabled="false" android:process=":dwycoprobe" android:permission="android.permission.BIND_JOB_SERVICE">
 </service>
-<service android:name="com.dwyco.android.DwycoSender" android:enabled="true" android:process=":dwycosend">
+<service android:name="com.dwyco.android.DwycoSender" android:enabled="false" android:process=":dwycosend">
 </service>
 <service android:name="com.dwyco.android.MyFirebaseMessagingService">
             <intent-filter>

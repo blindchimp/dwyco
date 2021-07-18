@@ -898,11 +898,11 @@ ApplicationWindow {
             } else {
                 drawer.close()
                 pwdialog.state = "pause"
+                Qt.quit()
             }
             if(Qt.platform.os == "android") {
                 notificationClient.set_lastrun()
             }
-
         }
 
         onImage_picked: {

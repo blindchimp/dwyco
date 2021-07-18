@@ -18,7 +18,7 @@ import QtMultimedia 5.12
 // security camera.
 
 Page {
-    property bool dragging
+    //property bool dragging
     property string serving_uid
     property string attempt_uid
     property var call_buttons_model
@@ -69,6 +69,7 @@ Page {
                 core.select_vid_dev(2)
                 core.enable_video_capture_preview(1)
                 cam_sender.checked = true
+                capture_name.text_input = core.uid_to_name(core.this_uid)
             }
         }
         else
@@ -85,21 +86,6 @@ Page {
 
     Connections {
         target: core
-//        onCamera_change: {
-//            if(visible) {
-//                if(cam_on === 1 && core.vid_dev_idx === 2) {
-//                    preview_cam.start()
-//                    core.enable_video_capture_preview(1)
-//                } else if(cam_on === 1 && core.vid_dev_idx === 1) {
-//                    preview_cam.stop()
-//                    core.enable_video_capture_preview(1)
-//                } else {
-//                    preview_cam.stop()
-//                    core.enable_video_capture_preview(0)
-//                    viewer.source = mi("ic_videocam_off_black_24dp.png")
-//                }
-//            }
-//        }
         onName_to_uid_result: {
             console.log("GOT UID FOR NAME ", uid, handle)
             attempt_uid = uid
@@ -195,6 +181,7 @@ Page {
                     core.enable_video_capture_preview(0)
                     //core.name_to_uid(watch_name.text_input)
                     core.set_local_setting("mode", "watch")
+                    viewer.source = ""
                 }
             }
         }
@@ -219,24 +206,24 @@ Page {
         }
 
 
-        Switch {
-            id: camtoggle
-            text: "Enable selfie-cam"
-            Layout.fillWidth: true
-            visible: cam_sender.checked
-            onClicked: {
-                if(checked) {
-                    core.select_vid_dev(2);
-                    preview_cam.start()
-                } else {
-                    preview_cam.stop()
-                    core.select_vid_dev(0);
-                    viewer.source = mi("ic_videocam_off_black_24dp.png")
-                }
+//        Switch {
+//            id: camtoggle
+//            text: "Enable selfie-cam"
+//            Layout.fillWidth: true
+//            visible: cam_sender.checked
+//            onClicked: {
+//                if(checked) {
+//                    core.select_vid_dev(2);
+//                    preview_cam.start()
+//                } else {
+//                    preview_cam.stop()
+//                    core.select_vid_dev(0);
+//                    viewer.source = mi("ic_videocam_off_black_24dp.png")
+//                }
 
-            }
+//            }
 
-        }
+//        }
 
 //        VideoOutput {
 //            id: pview
@@ -253,48 +240,14 @@ Page {
 
             Image {
                 id: viewer
-                anchors.top: dragging ? undefined : parent.top
-                anchors.right: dragging ? undefined : parent.right
-                anchors.left: dragging ? undefined : parent.left
-                anchors.bottom: dragging ? undefined : parent.bottom
+                anchors.fill: parent
                 //anchors.horizontalCenter: parent.horizontalCenter
                 fillMode: Image.PreserveAspectFit
-                onVisibleChanged: {
-                    dragging = false
-                    scale = 1.0
-                }
                 Connections {
                     target: core
                     onVideo_capture_preview: {
                         if(visible)
                             viewer.source = img_path
-                    }
-
-                }
-
-            }
-
-            PinchArea {
-                anchors.fill: parent
-                pinch.target: viewer
-                pinch.minimumScale: 0.1
-                pinch.maximumScale: 10
-                pinch.dragAxis: Pinch.XAndYAxis
-
-                MouseArea {
-                    id: dragArea
-                    hoverEnabled: true
-                    anchors.fill: parent
-                    drag.target: viewer
-                    scrollGestureEnabled: false
-
-                    onPressed: {
-                        dragging = true
-
-                    }
-                    onClicked: {
-                        stack.pop()
-
                     }
                 }
             }
