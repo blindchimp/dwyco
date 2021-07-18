@@ -237,7 +237,7 @@ Page {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-
+            visible: cam_sender.checked
             Image {
                 id: viewer
                 anchors.fill: parent
@@ -250,6 +250,45 @@ Page {
                             viewer.source = img_path
                     }
                 }
+            }
+            CallButtonLink {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                id: call_send_accept_button
+                but_name: "accept_and_send"
+                contentItem: Image {
+                    anchors.centerIn: parent
+                    source: mi("ic_videocam_black_24dp.png")
+                }
+                background: Rectangle {
+                    id: bgblink2
+                    ParallelAnimation {
+                        loops: Animation.Infinite
+                        running: call_send_accept_button.visible
+                        ColorAnimation {
+                            target: bgblink2
+                            property: "color"
+                            from: "white"
+                            to: "green"
+                            duration: 1000
+                        }
+                    }
+                }
+                ToolTip.text: "Start two-way video"
+            }
+        }
+        VidCall {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: cam_watcher.checked
+            CallButtonLink {
+                id: vidcall_button
+                but_name: "send_video"
+                contentItem: Image {
+                    anchors.centerIn: parent
+                    source: mi("ic_videocam_black_24dp.png")
+                }
+                ToolTip.text: "Request live video"
             }
         }
     }

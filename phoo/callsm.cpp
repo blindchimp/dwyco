@@ -247,8 +247,8 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
         QState *start_recv_and_send_machine = new QState;
 
         QObject::connect(start, SIGNAL(entered()), this, SLOT(initial_cam_setup()));
-        start->addTransition(this, SIGNAL(cam_is_off()), wait_for_call);
-        start->addTransition(this, SIGNAL(cam_is_on()), send_and_wait_for_call);
+        start->addTransition(this, SIGNAL(cam_is_off()), start_recv_machine);
+        start->addTransition(this, SIGNAL(cam_is_on()), start_send_machine);
         assign_button_states(start, 0, 0, 0, 0, 0, 0);
 
         wait_for_call->addTransition(this, SIGNAL(cam_is_on()), send_and_wait_for_call);
@@ -296,10 +296,10 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
         assign_button_states(wait_rem_response, 0, 0, 0, 0, 0, 1);
 
         QObject::connect(start_send_machine, SIGNAL(entered()), send_state_machine, SLOT(start()));
-        QObject::connect(start_send_machine, SIGNAL(entered()), recv_state_machine, SLOT(start()));
+        //QObject::connect(start_send_machine, SIGNAL(entered()), recv_state_machine, SLOT(start()));
 
         QObject::connect(start_recv_machine, SIGNAL(entered()), recv_state_machine, SLOT(start()));
-        QObject::connect(start_recv_machine, SIGNAL(entered()), send_state_machine, SLOT(start()));
+        //QObject::connect(start_recv_machine, SIGNAL(entered()), send_state_machine, SLOT(start()));
         assign_button_states(start_recv_machine, 0, 0, 0, 0, 1, 0);
 
 
