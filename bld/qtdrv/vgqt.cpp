@@ -33,9 +33,10 @@
 #endif
 #ifdef LINUX
 #include <unistd.h>
+#include <string.h>
 #endif
 
-
+#define USE_QML_CAMERA
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 //#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
