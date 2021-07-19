@@ -13,6 +13,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
+DEFINES += SELFSTREAM
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -91,7 +92,7 @@ DEFINES += DWYCO_APP_DEBUG
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
-DEFINES += SELFSTREAM
+
 
 INCLUDEPATH += $${DINC}/v4lcap
 

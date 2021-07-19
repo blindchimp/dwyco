@@ -33,18 +33,6 @@ Page {
     onVisibleChanged: {
         if(visible)
         {
-//            if(core.vid_dev_idx === 2) {
-//                preview_cam.start()
-//                core.enable_video_capture_preview(1)
-//            } else if(core.vid_dev_idx === 1) {
-//                // files
-//                preview_cam.stop()
-//                core.enable_video_capture_preview(1)
-//            } else {
-//                preview_cam.stop()
-//                core.enable_video_capture_preview(0)
-//                viewer.source = mi("ic_videocam_off_black_24dp.png")
-//            }
             var mode = core.get_local_setting("mode")
             if(mode === "") {
                 core.set_local_setting("mode", "watch")
@@ -205,35 +193,6 @@ Page {
                 core.set_local_setting("camera-to-watch", text)
             }
         }
-
-
-//        Switch {
-//            id: camtoggle
-//            text: "Enable selfie-cam"
-//            Layout.fillWidth: true
-//            visible: cam_sender.checked
-//            onClicked: {
-//                if(checked) {
-//                    core.select_vid_dev(2);
-//                    preview_cam.start()
-//                } else {
-//                    preview_cam.stop()
-//                    core.select_vid_dev(0);
-//                    viewer.source = mi("ic_videocam_off_black_24dp.png")
-//                }
-
-//            }
-
-//        }
-
-//        VideoOutput {
-//            id: pview
-//            Layout.fillHeight: true
-//            Layout.fillWidth: true
-//            source: preview_cam
-//            autoOrientation: true
-//            visible: true
-//        }
 
         Rectangle {
             Layout.fillWidth: true
