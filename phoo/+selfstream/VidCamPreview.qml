@@ -7,6 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick 2.12
+import QtQml 2.12
 import QtQuick.Controls 2.12
 import dwyco 1.0
 import QtQuick.Layouts 1.3
@@ -111,7 +112,7 @@ Page {
         id: preview_cam
         objectName: "qrCameraQML"
         viewfinder {
-            resolution: Qt.size(640, 480)
+            resolution: Qt.size(320, 240)
             //maximumFrameRate: 10
         }
         position: Camera.FrontFace
@@ -214,46 +215,12 @@ Page {
                     }
                 }
             }
-//            CallButtonLink {
-//                anchors.top: parent.top
-//                anchors.left: parent.left
-//                id: call_send_accept_button
-//                but_name: "accept_and_send"
-//                contentItem: Image {
-//                    anchors.centerIn: parent
-//                    source: mi("ic_videocam_black_24dp.png")
-//                }
-//                background: Rectangle {
-//                    id: bgblink2
-//                    ParallelAnimation {
-//                        loops: Animation.Infinite
-//                        running: call_send_accept_button.visible
-//                        ColorAnimation {
-//                            target: bgblink2
-//                            property: "color"
-//                            from: "white"
-//                            to: "green"
-//                            duration: 1000
-//                        }
-//                    }
-//                }
-//                ToolTip.text: "Start two-way video"
-//            }
         }
         VidCall {
             id: vid_panel
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: cam_watcher.checked
-//            CallButtonLink {
-//                id: vidcall_button
-//                but_name: "send_video"
-//                contentItem: Image {
-//                    anchors.centerIn: parent
-//                    source: mi("ic_videocam_black_24dp.png")
-//                }
-//                ToolTip.text: "Request live video"
-//            }
         }
     }
 
