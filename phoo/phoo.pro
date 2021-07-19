@@ -350,13 +350,13 @@ DEFINES += CDCCORE_STATIC
 # use this if you are building with qmake files
 D = $$OUT_PWD\\..\\bld
 
-CONFIG(debug) {
-S=debug
-}
-
-#CONFIG(release) {
-#S=release
+#CONFIG(debug) {
+#S=debug
 #}
+
+CONFIG(release) {
+S=release
+}
 
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
