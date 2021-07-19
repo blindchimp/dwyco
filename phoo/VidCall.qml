@@ -1,3 +1,4 @@
+import QtQml 2.12
 import QtQuick 2.12
 import dwyco 1.0
 
