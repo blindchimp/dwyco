@@ -210,7 +210,11 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
         QState *no_auto_retry = new QState;
         QFinalState *final = new QFinalState;
 
-        start->addTransition(this, SIGNAL(try_connect()), connecting);
+        //start->addTransition(this, SIGNAL(try_connect()), connecting);
+        // note: start connecting straight away instead of waiting for an initial
+        // "try_connect", this is easier than waiting for a "started" signal and
+        // then issuing the try_connect
+        start->addTransition(connecting);
         connecting->addTransition(this, SIGNAL(connect_established()), established);
         connecting->addTransition(this, SIGNAL(connect_failed()), no_auto_retry);
         connecting->addTransition(this, SIGNAL(connect_already_exists()), established);

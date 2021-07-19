@@ -68,40 +68,43 @@ Page {
     }
 
     onAttempt_uidChanged: {
-        if(attempt_uid.length > 0)
+        if(attempt_uid.length > 0) {
+            console.log("start control to ", attempt_uid)
             core.start_control(attempt_uid)
+        }
     }
 
     Connections {
         target: core
         onName_to_uid_result: {
             console.log("GOT UID FOR NAME ", uid, handle)
-            attempt_uid = uid
             core.set_pal(uid, 1)
+            attempt_uid = uid
         }
 
         onSc_connect_terminated: {
-                console.log("CONNECT TERMINATED ", uid)
-                serving_uid = ""
+            console.log("CONNECT TERMINATED ", uid)
+            serving_uid = ""
+            attempt_uid = ""
         }
 
         onSc_connectedChanged: {
-                    console.log("ConnectedChanged ", connected, uid)
-                    if(connected === 0) {
-                        if(serving_uid === uid)
-                        {
-                            serving_uid = ""
-                            call_buttons_model = null
-                        }
-
-                    } else {
-                        if(serving_uid === "")
-                        {
-                            serving_uid = uid
-                            call_buttons_model = core.get_button_model(serving_uid)
-                        }
-                    }
+            console.log("ConnectedChanged ", connected, uid)
+            if(connected === 0) {
+                if(serving_uid === uid)
+                {
+                    serving_uid = ""
+                    call_buttons_model = null
+                }
+                vid_panel.vid_incoming.source = mi("ic_videocam_off_black_24dp.png")
+            } else {
+                if(serving_uid === "")
+                {
+                    serving_uid = uid
+                    call_buttons_model = core.get_button_model(serving_uid)
+                }
             }
+        }
     }
 
     Camera {
@@ -211,45 +214,46 @@ Page {
                     }
                 }
             }
-            CallButtonLink {
-                anchors.top: parent.top
-                anchors.left: parent.left
-                id: call_send_accept_button
-                but_name: "accept_and_send"
-                contentItem: Image {
-                    anchors.centerIn: parent
-                    source: mi("ic_videocam_black_24dp.png")
-                }
-                background: Rectangle {
-                    id: bgblink2
-                    ParallelAnimation {
-                        loops: Animation.Infinite
-                        running: call_send_accept_button.visible
-                        ColorAnimation {
-                            target: bgblink2
-                            property: "color"
-                            from: "white"
-                            to: "green"
-                            duration: 1000
-                        }
-                    }
-                }
-                ToolTip.text: "Start two-way video"
-            }
+//            CallButtonLink {
+//                anchors.top: parent.top
+//                anchors.left: parent.left
+//                id: call_send_accept_button
+//                but_name: "accept_and_send"
+//                contentItem: Image {
+//                    anchors.centerIn: parent
+//                    source: mi("ic_videocam_black_24dp.png")
+//                }
+//                background: Rectangle {
+//                    id: bgblink2
+//                    ParallelAnimation {
+//                        loops: Animation.Infinite
+//                        running: call_send_accept_button.visible
+//                        ColorAnimation {
+//                            target: bgblink2
+//                            property: "color"
+//                            from: "white"
+//                            to: "green"
+//                            duration: 1000
+//                        }
+//                    }
+//                }
+//                ToolTip.text: "Start two-way video"
+//            }
         }
         VidCall {
+            id: vid_panel
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: cam_watcher.checked
-            CallButtonLink {
-                id: vidcall_button
-                but_name: "send_video"
-                contentItem: Image {
-                    anchors.centerIn: parent
-                    source: mi("ic_videocam_black_24dp.png")
-                }
-                ToolTip.text: "Request live video"
-            }
+//            CallButtonLink {
+//                id: vidcall_button
+//                but_name: "send_video"
+//                contentItem: Image {
+//                    anchors.centerIn: parent
+//                    source: mi("ic_videocam_black_24dp.png")
+//                }
+//                ToolTip.text: "Request live video"
+//            }
         }
     }
 
