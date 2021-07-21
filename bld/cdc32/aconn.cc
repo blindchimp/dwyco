@@ -278,10 +278,13 @@ broadcast_tick()
                     GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
                     GRTLOGVC(data);
                     data[1][BD_IP] = strip_port(peer);
-                    Broadcast_discoveries.add_kv(uid, data[1]);
-                    Local_uid_discovered.emit(uid, 1);
+                    if(!Broadcast_discoveries.contains(uid))
+                    {
+                        Broadcast_discoveries.add_kv(uid, data[1]);
+                        Local_uid_discovered.emit(uid, 1);
+                        se_emit(SE_STATUS_CHANGE, uid);
+                    }
                     Freshness.replace(uid, time(0));
-                    se_emit(SE_STATUS_CHANGE, uid);
                 }
             }
         }

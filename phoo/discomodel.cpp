@@ -11,6 +11,8 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "dwycolistscoped.h"
+#include "dwyco_top.h"
+extern DwycoCore *TheDwycoCore;
 
 DiscoverListModel *TheDiscoverListModel;
 
@@ -20,6 +22,7 @@ DiscoverListModel::DiscoverListModel(QObject *parent) :
     if(TheDiscoverListModel)
         ::abort();
     TheDiscoverListModel = this;
+    QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
 
 }
 
@@ -56,6 +59,8 @@ DiscoverListModel::remove_uid_from_model(const QByteArray& uid)
 void
 DiscoverListModel::load_users_to_model()
 {
+    QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
+
     DWYCO_LIST l;
 
     clear();
