@@ -47,6 +47,7 @@ RC_FILE=phoo.rc
 
 SOURCES += main.cpp \
     androidperms.cpp \
+    discomodel.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
     pfx.cpp \
@@ -449,6 +450,7 @@ include(deployment.pri)
 
 HEADERS += \
     androidperms.h \
+    discomodel.h \
 	dwyco_top.h \
     msglistmodel.h \
     dwycoimageprovider.h \

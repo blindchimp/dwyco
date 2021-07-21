@@ -39,6 +39,7 @@
 #include "QQmlVariantListModel.h"
 #include "simpledirmodel.h"
 #include "syncmodel.h"
+#include "discomodel.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
@@ -3048,6 +3049,9 @@ dwyco_register_qml(QQmlContext *root)
 
     SimpleDirInst = new SimpleDirModel;
     root->setContextProperty("SimpleDirectoryList", SimpleDirInst);
+
+    TheDiscoverListModel = new DiscoverListModel;
+    root->setContextProperty("DiscoverList", TheDiscoverListModel);
 
 //#ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;

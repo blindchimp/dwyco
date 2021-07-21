@@ -95,6 +95,7 @@ using namespace CryptoPP;
 #include "aconn.h"
 #include "ezset.h"
 #include "grpmsg.h"
+#include "aconn.h"
 
 using namespace dwyco;
 
@@ -223,6 +224,8 @@ uid_online_display(vc uid)
 {
     if(Online.contains(uid))
         return 1;
+    if(Broadcast_discoveries.contains(uid))
+        return 1;
     return 0;
 }
 
@@ -230,6 +233,8 @@ int
 uid_online(vc uid)
 {
     if(Online.contains(uid))
+        return 1;
+    if(Broadcast_discoveries.contains(uid))
         return 1;
     return 0;
 }
@@ -247,11 +252,12 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
     if(Broadcast_discoveries.find(uid, u))
     {
         can_do_direct = 1;
-        prim = u[1];
-        sec = u[2];
-        pal = u[3];
+        prim = u[BD_PRIMARY_PORT];
+        sec = u[BD_SECONDARY_PORT];
+        pal = u[BD_PAL_PORT];
         GRTLOGA("uid to ip locally ONLINE %s %d %d %d", (const char *)u[0], prim, sec, pal, 0);
-        return inet_addr((const char *)u[0]);
+        GRTLOGVC(u);
+        return inet_addr((const char *)u[BD_IP]);
     }
     if(Online.find(uid, u))
     {
@@ -1536,6 +1542,17 @@ make_best_local_info(vc uid, int *cant_resolve_now)
     }
     // this is an indicator that the profile isn't available in the main cache, and should
     // be fetched from the server
+
+    // if we found something on the local network, at least give a name for it
+    {
+        vc u;
+        if(Broadcast_discoveries.find(uid, u))
+        {
+            vc name = u[BD_NICE_NAME];
+            if(!name.is_nil())
+                return make_alt_info(name, "", "local-net");
+        }
+    }
     if(cant_resolve_now)
         *cant_resolve_now = 1;
     if(uid == My_UID)
