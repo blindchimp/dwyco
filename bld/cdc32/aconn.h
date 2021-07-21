@@ -26,6 +26,12 @@ extern ssns::signal2<vc, int> Local_uid_discovered;
 
 }
 
+#define BD_IP 0
+#define BD_PRIMARY_PORT 1
+#define BD_SECONDARY_PORT 2
+#define BD_PAL_PORT 3
+#define BD_NICE_NAME 4
+
 #define CSMS_DIRECT_ONLY 0
 #define CSMS_TCP_ONLY 1
 #define CSMS_UDP_ONLY 2
