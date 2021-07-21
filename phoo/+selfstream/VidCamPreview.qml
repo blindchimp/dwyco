@@ -197,6 +197,35 @@ Page {
                 core.set_local_setting("camera-to-watch", text)
             }
         }
+        ListView {
+            id: disco
+            model: DiscoverList
+            delegate: Component {
+                RowLayout {
+                    width: parent.width
+                    height: implicitHeight
+                    spacing: mm(1)
+                    Label {
+                        text: uid
+                        Layout.alignment: Qt.AlignLeft
+                        elide: Text.ElideRight
+                        Layout.preferredWidth: cm(2)
+                    }
+                    Label {
+                        text: display
+                        elide: Text.ElideRight
+                        Layout.alignment: Qt.AlignLeft
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                    }
+                }
+            }
+            clip: true
+            Layout.fillWidth: true
+            Layout.preferredHeight: cm(2)
+
+        }
 
         Rectangle {
             Layout.fillWidth: true
