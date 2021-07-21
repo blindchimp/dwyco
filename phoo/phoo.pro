@@ -307,6 +307,11 @@ include(/Users/dwight/android/astudio/android_openssl/openssl.pri)
 } else {
 include(/home/dwight/android/astudio/android_openssl/openssl.pri)
 }
+
+PRE_TARGETDEPS += \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/qtdrv/libqtdrv.a
+
 #LIBS += \
 #$${D}/libcdc32.a \
 #$${D}/libvc.a \

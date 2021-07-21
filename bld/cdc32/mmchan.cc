@@ -127,7 +127,7 @@ DwTreeKaz<MMChannel *, int> *MMChannel::AllChan2;
 int MMChannel::Sync_receivers = 1;
 int MMChannel::Auto_sync = 1;
 DwTimer MMChannel::Bw_adj_timer("bw_adj");
-#undef DWYCO_THREADED_ENCODE
+//#define DWYCO_THREADED_ENCODE
 
 #if defined(DWYCO_THREADED_ENCODE) && defined(LINUX)
 #include "dwpipe.h"
@@ -319,7 +319,7 @@ init_coder_pipe()
 {
     if(Coder_pipe)
         return;
-    Coder_pipe = new DwPipeline<coder_input, coder_finished>(1, 1);
+    Coder_pipe = new DwPipeline<coder_input, coder_finished>(1, 3);
     Coder_pipe->add_operation(new CoderOp);
     Coder_pipe->init();
 }

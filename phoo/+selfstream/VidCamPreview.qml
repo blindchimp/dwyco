@@ -113,7 +113,7 @@ Page {
         objectName: "qrCameraQML"
         viewfinder {
             resolution: Qt.size(320, 240)
-            //maximumFrameRate: 10
+            maximumFrameRate: 20
         }
         position: Camera.FrontFace
         captureMode: Camera.captureVideo
