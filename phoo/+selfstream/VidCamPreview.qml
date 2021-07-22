@@ -28,7 +28,7 @@ Page {
     anchors.fill: parent
 
     header: Label {
-        text: "Dwyco Selfie Stream"
+        text: "Dwyco Selfie Stream " + (core.is_database_online === 1 ? "(online)" : "(offline)")
         font.bold: true
         color: "white"
         background: Rectangle {
@@ -48,7 +48,7 @@ Page {
             if(wname.length === 0) {
                 watch_name.placeholderText = "enter name of camera to watch"
             } else {
-                watch_name.text = wname
+                watch_name.text_input = wname
             }
 
             if(mode === "watch") {
@@ -120,6 +120,10 @@ Page {
                 profile_sent = 0
                 animateOpacity.start()
             }
+        }
+
+        onPal_event: {
+            DiscoverList.load_users_to_model();
         }
     }
 
@@ -231,31 +235,66 @@ Page {
                 }
             }
         }
-        TextField {
+        TextFieldX {
             id: watch_name
             visible: cam_watcher.checked
             Layout.fillWidth: true
             onAccepted: {
                 console.log("WTF")
                 attempt_uid = ""
-                var sname = "selfs:" + text
+                var sname = "selfs:" + text_input
                 core.name_to_uid(sname)
-                core.set_local_setting("camera-to-watch", text)
+                core.set_local_setting("camera-to-watch", text_input)
             }
         }
         ListView {
             id: disco
             model: DiscoverList
-            delegate: Component {
+            highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
+            highlightMoveDuration: 100
+            highlightMoveVelocity: -1
+            visible: cam_watcher.checked
+            delegate: Item {
+                id: wrapper
+                width: parent.width
+                height: drow.implicitHeight
+                MouseArea {
+                    anchors.fill: drow
+                    onClicked: {
+                        disco.currentIndex = index
+                        attempt_uid = uid
+                        watch_name.text_input = display
+                    }
+                }
                 RowLayout {
-                    width: parent.width
-                    height: implicitHeight
+                    id: drow
+                    anchors.fill: parent
                     spacing: mm(1)
+                    Rectangle {
+                        Layout.minimumHeight: parent.height
+                        Layout.maximumHeight: parent.height
+                        Layout.minimumWidth: parent.height
+                        Layout.maximumWidth: parent.height
+                        color: wrapper.ListView.isCurrentItem ? "black" : "white"
+                        MouseArea {
+                            anchors.fill: parent
+                            z: 5
+                            cursorShape: Qt.CrossCursor
+                            onClicked: {
+                                core.set_pal(uid, 0)
+                            }
+                        }
+                    }
+
                     Label {
                         text: uid
                         Layout.alignment: Qt.AlignLeft
                         elide: Text.ElideRight
                         Layout.preferredWidth: cm(2)
+                        background: Rectangle {
+                            visible: online
+                            color: "green"
+                        }
                     }
                     Label {
                         text: display
@@ -266,6 +305,14 @@ Page {
                         Layout.fillWidth: true
                     }
                 }
+//                MouseArea {
+//                    anchors.fill: drow
+//                    onClicked: {
+//                        disco.currentIndex = index
+//                        attempt_uid = uid
+//                        watch_name.text_input = display
+//                    }
+//                }
             }
             clip: true
             Layout.fillWidth: true

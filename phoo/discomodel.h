@@ -20,6 +20,7 @@ class DiscoveredUser : public QObject
 
     QML_READONLY_VAR_PROPERTY(QString, uid)
     QML_READONLY_VAR_PROPERTY(QString, display)
+    QML_READONLY_VAR_PROPERTY(bool, online)
     QML_READONLY_VAR_PROPERTY(int, invalid)
     QML_READONLY_VAR_PROPERTY(int, resolved_counter)
 
@@ -27,6 +28,7 @@ public:
     DiscoveredUser(QObject *parent = 0) : QObject(parent) {
         m_resolved_counter = 0;
         m_invalid = 0;
+        m_online = false;
     }
 };
 
@@ -37,7 +39,7 @@ public:
     explicit DiscoverListModel(QObject *parent = 0);
     ~DiscoverListModel();
 
-    void load_users_to_model();
+    Q_INVOKABLE void load_users_to_model();
     void remove_uid_from_model(const QByteArray& uid);
     DiscoveredUser * add_uid_to_model(const QByteArray& uid);
 

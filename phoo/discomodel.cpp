@@ -41,6 +41,10 @@ DiscoverListModel::add_uid_to_model(const QByteArray& uid)
         append(c);
     }
     c->update_display(dwyco_info_to_display(uid));
+    if(dwyco_uid_online(uid.constData(), uid.length()))
+        c->update_online(true);
+    else
+        c->update_online(false);
     return c;
 }
 
@@ -69,10 +73,8 @@ DiscoverListModel::load_users_to_model()
     for(int i = 0; i < n; ++i)
     {
         QByteArray uid = ql.get<QByteArray>(i);
-        //if(dwyco_uid_online(uid.constData(), uid.length()))
-        //{
-            add_uid_to_model(uid);
-        //}
+
+        add_uid_to_model(uid);
     }
 }
 
