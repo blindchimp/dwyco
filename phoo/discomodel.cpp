@@ -22,8 +22,6 @@ DiscoverListModel::DiscoverListModel(QObject *parent) :
     if(TheDiscoverListModel)
         ::abort();
     TheDiscoverListModel = this;
-    QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
-
 }
 
 DiscoverListModel::~DiscoverListModel()

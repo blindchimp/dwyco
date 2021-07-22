@@ -23,6 +23,7 @@ Page {
     property string serving_uid
     property string attempt_uid
     property var call_buttons_model
+    property int profile_sent: 0
 
     anchors.fill: parent
 
@@ -75,6 +76,7 @@ Page {
         }
     }
 
+
     Connections {
         target: core
         onName_to_uid_result: {
@@ -104,6 +106,15 @@ Page {
                     serving_uid = uid
                     call_buttons_model = core.get_button_model(serving_uid)
                 }
+            }
+        }
+
+        onProfile_update: {
+            if(success === 1) {
+                profile_sent = 0
+            } else {
+                profile_sent = 0
+                animateOpacity.start()
             }
         }
     }
@@ -156,6 +167,10 @@ Page {
                     preview_cam.start()
                     core.select_vid_dev(2)
                     core.enable_video_capture_preview(1)
+                    if(attempt_uid.length > 0)
+                        core.delete_call_context(attempt_uid)
+                    if(serving_uid.length > 0)
+                        core.delete_call_context(serving_uid)
                 } else {
 
                 }
@@ -175,6 +190,10 @@ Page {
                     //core.name_to_uid(watch_name.text_input)
                     core.set_local_setting("mode", "watch")
                     viewer.source = ""
+                    if(attempt_uid.length > 0)
+                        core.delete_call_context(attempt_uid)
+                    if(serving_uid.length > 0)
+                        core.delete_call_context(serving_uid)
                 }
             }
         }
@@ -186,6 +205,27 @@ Page {
             id: capture_name
             visible: cam_sender.checked
             Layout.fillWidth: true
+            readOnly: {core.is_database_online !== 1}
+            onAccepted: {
+                console.log("UPDATE NAME")
+                done_button.clicked()
+            }
+            Button {
+                id: done_button
+
+                text: qsTr("Update")
+                enabled: {profile_sent === 0}
+                onClicked: {
+                    Qt.inputMethod.commit()
+                    if(core.set_simple_profile("selfs:" + capture_name.text_input, "", "", "") === 1) {
+                        profile_sent = 1
+                    }
+                    else
+                    {
+                        animateOpacity.start()
+                    }
+                }
+            }
         }
         TextField {
             id: watch_name
@@ -193,7 +233,8 @@ Page {
             Layout.fillWidth: true
             onAccepted: {
                 attempt_uid = ""
-                core.name_to_uid(text)
+                var sname = "selfs:" + text
+                core.name_to_uid(sname)
                 core.set_local_setting("camera-to-watch", text)
             }
         }
@@ -255,10 +296,28 @@ Page {
 
     BusyIndicator {
         id: busy1
-        running: {viewer.source === "" }
+        running: {profile_sent === 1}
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         z: 10
+    }
+
+    Text {
+        id: failed_msg
+        text: "Name update failed... " + ((core.is_database_online !== 1) ? "(offline)" : "")
+        anchors.centerIn: parent
+
+        opacity: 0.0
+        NumberAnimation {
+               id: animateOpacity
+               target: failed_msg
+               properties: "opacity"
+               from: 1.0
+               to: 0.0
+               duration: 3000
+
+
+          }
     }
 
 }
