@@ -387,88 +387,88 @@ ApplicationWindow {
         }
     }
 
-    ConvList {
-        id: convlist
-        visible: false
-    }
-
-    ChatList {
-        id: chatlist
-        visible: false
-    }
-
-    Item {
-        id: chat_server
-
-        property int connect_server: 0
-        property bool auto_connect: false
-
-        Connections {
-            target: core
-            onQt_app_state_change: {
-                if(core.app_state === 0) {
-                    console.log("CHAT SERVER RESUME ")
-
-                }
-                if(core.app_state !== 0) {
-                    console.log("CHAT SERVER PAUSE");
-
-                    //core.disconnect_chat_server()
-                }
-            }
-
-            onServer_login: {
-                console.log("CHAT SERVER RESTART ", what, chat_server.auto_connect)
-                if(what > 0) {
-                    if(chat_server.auto_connect) {
-                        core.switch_to_chat_server(chat_server.connect_server)
-                    }
-                }
-            }
-        }
-
-    }
-
-    ContactList {
-        id: contact_list
-        visible: false
-    }
-
-    Loader {
-        id: cqres
-        //anchors.fill: parent
-        visible: false
-        Component {
-            id: wtf
-            CQRes {}
-        }
-        onVisibleChanged: {
-            if(visible)
-                sourceComponent = wtf
-        }
-
-        //sourceComponent: wtf
-    }
-
-//    AdminBrowse {
-//        id: adminfolder
-//        folder: "file:///home/dwight/Downloads/tmp2"
+//    ConvList {
+//        id: convlist
+//        visible: false
 //    }
 
-    Loader {
-        id: simpdir_rect
+//    ChatList {
+//        id: chatlist
+//        visible: false
+//    }
 
-        visible: false
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/SimpDir.qml"
-            }
-        }
-        onLoaded: {
-            if(SimpleDirectoryList.count === 0)
-                core.refresh_directory()
-        }
-    }
+//    Item {
+//        id: chat_server
+
+//        property int connect_server: 0
+//        property bool auto_connect: false
+
+//        Connections {
+//            target: core
+//            onQt_app_state_change: {
+//                if(core.app_state === 0) {
+//                    console.log("CHAT SERVER RESUME ")
+
+//                }
+//                if(core.app_state !== 0) {
+//                    console.log("CHAT SERVER PAUSE");
+
+//                    //core.disconnect_chat_server()
+//                }
+//            }
+
+//            onServer_login: {
+//                console.log("CHAT SERVER RESTART ", what, chat_server.auto_connect)
+//                if(what > 0) {
+//                    if(chat_server.auto_connect) {
+//                        core.switch_to_chat_server(chat_server.connect_server)
+//                    }
+//                }
+//            }
+//        }
+
+//    }
+
+//    ContactList {
+//        id: contact_list
+//        visible: false
+//    }
+
+//    Loader {
+//        id: cqres
+//        //anchors.fill: parent
+//        visible: false
+//        Component {
+//            id: wtf
+//            CQRes {}
+//        }
+//        onVisibleChanged: {
+//            if(visible)
+//                sourceComponent = wtf
+//        }
+
+//        //sourceComponent: wtf
+//    }
+
+////    AdminBrowse {
+////        id: adminfolder
+////        folder: "file:///home/dwight/Downloads/tmp2"
+////    }
+
+//    Loader {
+//        id: simpdir_rect
+
+//        visible: false
+//        onVisibleChanged: {
+//            if(visible) {
+//                source = "qrc:/SimpDir.qml"
+//            }
+//        }
+//        onLoaded: {
+//            if(SimpleDirectoryList.count === 0)
+//                core.refresh_directory()
+//        }
+//    }
 
 
     FName {
@@ -476,48 +476,48 @@ ApplicationWindow {
     }
 
 
-    DwycoMsgList {
-        id: themsglist
-        uid: top_dispatch.last_uid_selected
-    }
+//    DwycoMsgList {
+//        id: themsglist
+//        uid: top_dispatch.last_uid_selected
+//    }
 
-    MsgView {
-        id: themsgview
-        //anchors.fill: parent
-        visible: false
-    }
+//    MsgView {
+//        id: themsgview
+//        //anchors.fill: parent
+//        visible: false
+//    }
 
-    ForwardToList {
-        id: forward_dialog
-        visible: false
-    }
+//    ForwardToList {
+//        id: forward_dialog
+//        visible: false
+//    }
 
-    SimpleChatBox {
-        id: chatbox
-        //anchors.fill: parent
-        model: themsglist
-        to_uid: top_dispatch.last_uid_selected
-        visible: false
+//    SimpleChatBox {
+//        id: chatbox
+//        //anchors.fill: parent
+//        model: themsglist
+//        to_uid: top_dispatch.last_uid_selected
+//        visible: false
 
-        onVisibleChanged: {
-            core.reset_unviewed_msgs(to_uid)
-        }
+//        onVisibleChanged: {
+//            core.reset_unviewed_msgs(to_uid)
+//        }
 
-    }
+//    }
 
-    SimpleMsgBrowse {
-        id: simp_msg_browse
-        model: themsglist
-        to_uid: top_dispatch.last_uid_selected
-        visible: false
+//    SimpleMsgBrowse {
+//        id: simp_msg_browse
+//        model: themsglist
+//        to_uid: top_dispatch.last_uid_selected
+//        visible: false
 
-    }
+//    }
 
-    SimpleTagMsgBrowse {
-        id: simp_tag_browse
-        model: themsglist
-        visible: false
-    }
+//    SimpleTagMsgBrowse {
+//        id: simp_tag_browse
+//        model: themsglist
+//        visible: false
+//    }
 
 
     ProfileView {
@@ -659,27 +659,27 @@ ApplicationWindow {
     }
 
 
-    ProfileUpdateDialog {
-        id: profile_update_dialog
-        visible: false
-    }
+//    ProfileUpdateDialog {
+//        id: profile_update_dialog
+//        visible: false
+//    }
 
-    Loader {
-        id: iglist_dialog
-        visible: false
+//    Loader {
+//        id: iglist_dialog
+//        visible: false
 
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/IgnoreListDialog.qml"
-            }
-        }
-    }
+//        onVisibleChanged: {
+//            if(visible) {
+//                source = "qrc:/IgnoreListDialog.qml"
+//            }
+//        }
+//    }
 
-    PublicChat {
-        id: public_chat
-        //anchors.fill: parent
-        visible: false
-    }
+//    PublicChat {
+//        id: public_chat
+//        //anchors.fill: parent
+//        visible: false
+//    }
 
 
     UserActionMenu {
@@ -687,46 +687,46 @@ ApplicationWindow {
         uid: top_dispatch.last_uid_selected
     }
 
-    VidCamPreview {
-        id: vid_cam_preview
-        visible: false
-    }
-
-//    Loader {
+//    VidCamPreview {
 //        id: vid_cam_preview
-//        active: false
 //        visible: false
-//        onVisibleChanged: {
-//            if(visible) {
-//                source = "qrc:/VidCamPreview.qml"
-//                active = true
-
-//            }
-//        }
 //    }
 
-    DwycoVidRec {
-        id: dwyco_vid_rec
+    Loader {
+        id: vid_cam_preview
+        active: false
         visible: false
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/VidCamPreview.qml"
+                active = true
+
+            }
+        }
     }
+
+//    DwycoVidRec {
+//        id: dwyco_vid_rec
+//        visible: false
+//    }
   
 
-    SoundEffect {
-        id: sound_sent
-        source: "qrc:/androidinst/assets/space-zap.wav"
-    }
-    SoundEffect {
-        id: sound_recv
-        source: "qrc:/androidinst/assets/space-zap.wav"
-        volume: {dwy_quiet ? 0.0 : 1.0}
-        muted: dwy_quiet
-    }
-    SoundEffect {
-        id: sound_alert
-        source: "qrc:/androidinst/assets/space-incoming.wav"
-        volume: {dwy_quiet ? 0.0 : 1.0}
-        muted: dwy_quiet
-    }
+//    SoundEffect {
+//        id: sound_sent
+//        source: "qrc:/androidinst/assets/space-zap.wav"
+//    }
+//    SoundEffect {
+//        id: sound_recv
+//        source: "qrc:/androidinst/assets/space-zap.wav"
+//        volume: {dwy_quiet ? 0.0 : 1.0}
+//        muted: dwy_quiet
+//    }
+//    SoundEffect {
+//        id: sound_alert
+//        source: "qrc:/androidinst/assets/space-incoming.wav"
+//        volume: {dwy_quiet ? 0.0 : 1.0}
+//        muted: dwy_quiet
+//    }
 
     
     StackView {
@@ -734,10 +734,10 @@ ApplicationWindow {
         //initialItem: userlist
         anchors.fill: parent
         visible: {pwdialog.allow_access === 1}
-        onDepthChanged: {
-            if(depth === 1)
-                simp_tag_browse.to_tag = ""
-        }
+//        onDepthChanged: {
+//            if(depth === 1)
+//                simp_tag_browse.to_tag = ""
+//        }
 
         
     }
@@ -754,11 +754,11 @@ ApplicationWindow {
             a = get_local_setting("first-run")
             if(a === "") {
                 //profile_dialog.visible = true
-                stack.push(convlist)
+                stack.push(vid_cam_preview)
                 stack.push(blank_page)
                 stack.push(profile_dialog)
             } else {
-                stack.push(convlist)
+                stack.push(vid_cam_preview)
                 profile_bootstrapped = 1
                 pwdialog.state = "start"
             }
@@ -834,8 +834,8 @@ ApplicationWindow {
                 notificationClient.log_event()
                 notificationClient.set_lastrun()
             }
-            if(simpdir_rect.visible && SimpleDirectoryList.count === 0)
-                refresh_directory()
+//            if(simpdir_rect.visible && SimpleDirectoryList.count === 0)
+//                refresh_directory()
         }
 
         onNew_msg: {

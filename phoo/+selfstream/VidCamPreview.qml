@@ -27,9 +27,13 @@ Page {
 
     anchors.fill: parent
 
-    header: SimpleToolbar {
-        //extras: extras_button
-
+    header: Label {
+        text: "Dwyco Selfie Stream"
+        font.bold: true
+        color: "white"
+        background: Rectangle {
+            color: "green"
+        }
     }
 
     onVisibleChanged: {
@@ -232,6 +236,7 @@ Page {
             visible: cam_watcher.checked
             Layout.fillWidth: true
             onAccepted: {
+                console.log("WTF")
                 attempt_uid = ""
                 var sname = "selfs:" + text
                 core.name_to_uid(sname)
