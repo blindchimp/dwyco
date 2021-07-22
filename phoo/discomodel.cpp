@@ -69,10 +69,10 @@ DiscoverListModel::load_users_to_model()
     for(int i = 0; i < n; ++i)
     {
         QByteArray uid = ql.get<QByteArray>(i);
-        if(dwyco_uid_online(uid.constData(), uid.length()))
-        {
+        //if(dwyco_uid_online(uid.constData(), uid.length()))
+        //{
             add_uid_to_model(uid);
-        }
+        //}
     }
 }
 
