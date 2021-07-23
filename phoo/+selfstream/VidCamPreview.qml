@@ -52,7 +52,7 @@ Page {
             }
             var wname = core.get_local_setting("camera-to-watch")
             if(wname.length === 0) {
-                watch_name.placeholderText = "enter name of camera to watch"
+                watch_name.placeholder_text = "enter name of camera to watch"
             } else {
                 watch_name.text_input = wname
             }

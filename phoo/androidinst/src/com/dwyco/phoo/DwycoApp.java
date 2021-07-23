@@ -5,7 +5,7 @@
 // app folder.
 
 package com.dwyco.android;
-import com.dwyco.phoo.R;
+import com.dwyco.selfs.R;
 
 public class DwycoApp {
     public static int notification_icon() {
@@ -13,16 +13,16 @@ public class DwycoApp {
         }
 
 	// socket lock used for shared prefs locks
-        final public static String lock_shared_prefs = "com.dwyco.phoo.prefs";
+        final public static String lock_shared_prefs = "com.dwyco.selfs.prefs";
 	// name of shared preferences
-        final public static String shared_prefs = "phoo";
+        final public static String shared_prefs = "selfs";
 	// notification message to use when a msg has been downloaded in the
 	// background and is available immediately
         final public static String new_received = "New msg received";
 	// notification message used for fcm notification that msg is available
         final public static String new_available = "New message";
 	// title used on all notifications
-        final public static String content_title = "Dwyco Phoo";
+        final public static String content_title = "Dwyco Selfs";
 	// tells whether the DwycoSender service should try to stay around
 	// after the send queue is empty. Setting to true will improve 
 	// msg receive performance on android 8+, but you also get an
