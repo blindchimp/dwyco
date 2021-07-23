@@ -1801,6 +1801,23 @@ DwycoCore::delete_call_context(QString uid)
 }
 
 void
+DwycoCore::delete_all_call_contexts()
+{
+    auto o = simple_call::Simple_calls.objs;
+
+    for(int i = 0; i < o.count(); ++i)
+    {
+        delete o[i];
+    }
+}
+
+void
+DwycoCore::hangup_all_calls()
+{
+    dwyco_hangup_all_calls();
+}
+
+void
 DwycoCore::uid_keyboard_input(QString uid)
 {
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());

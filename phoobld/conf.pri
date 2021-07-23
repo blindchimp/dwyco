@@ -3,7 +3,7 @@ DWYCO_APP=phoo
 DWYCOBG=0
 DWYCO_USE_LINUX_AUDIO=0
 DEFINES += VCCFG_FILE #register=
-
+DEFINES += USE_QML_CAMERA
 CONFIG(debug): DEFINES += DWYCO_DEBUG
 
 linux-*|wasm-emscripten {

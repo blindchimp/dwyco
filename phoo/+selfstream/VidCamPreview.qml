@@ -27,6 +27,12 @@ Page {
 
     anchors.fill: parent
 
+    function hangup() {
+        if(call_buttons_model != null) {
+            call_buttons_model.get("hangup").clicked()
+        }
+    }
+
     header: Label {
         text: "Dwyco Selfie Stream " + (core.is_database_online === 1 ? "(online)" : "(offline)")
         font.bold: true
@@ -76,7 +82,17 @@ Page {
     onAttempt_uidChanged: {
         if(attempt_uid.length > 0) {
             console.log("start control to ", attempt_uid)
+//            if(serving_uid.length > 0) {
+//                core.delete_call_context(serving_uid)
+//            }
+            hangup()
+
             core.start_control(attempt_uid)
+        } else {
+//            if(serving_uid.length > 0) {
+//                core.delete_call_context(serving_uid)
+//            }
+            hangup()
         }
     }
 
@@ -100,6 +116,7 @@ Page {
             if(connected === 0) {
                 if(serving_uid === uid)
                 {
+                    core.delete_call_context(serving_uid)
                     serving_uid = ""
                     call_buttons_model = null
                 }
@@ -170,15 +187,18 @@ Page {
             onClicked: {
                 if(checked) {
                     // set pw requirements, enable camera, etc
+                    core.hangup_all_calls()
                     capture_name.text_input = core.uid_to_name(core.this_uid)
                     core.set_local_setting("mode", "capture")
                     preview_cam.start()
                     core.select_vid_dev(2)
                     core.enable_video_capture_preview(1)
-                    if(attempt_uid.length > 0)
-                        core.delete_call_context(attempt_uid)
-                    if(serving_uid.length > 0)
-                        core.delete_call_context(serving_uid)
+//                    if(attempt_uid.length > 0)
+//                        core.delete_call_context(attempt_uid)
+//                    if(serving_uid.length > 0)
+//                        core.delete_call_context(serving_uid)
+                    attempt_uid = ""
+                    serving_uid = ""
                 } else {
 
                 }
@@ -192,6 +212,7 @@ Page {
                 if(checked) {
                     // disable camera, fetch last watched camera, lookup
                     // uid, try connecting to that uid
+                    core.hangup_all_calls()
                     preview_cam.stop()
                     core.select_vid_dev(0)
                     core.enable_video_capture_preview(0)
@@ -202,6 +223,8 @@ Page {
                         core.delete_call_context(attempt_uid)
                     if(serving_uid.length > 0)
                         core.delete_call_context(serving_uid)
+                    attempt_uid = ""
+                    serving_uid = ""
                 }
             }
         }
@@ -258,6 +281,9 @@ Page {
                 id: wrapper
                 width: parent.width
                 height: drow.implicitHeight
+                // note: this mousearea *must* be here to allow selecting
+                // the entire row, while allowing the mousearea for the little
+                // "delete" button to work properly below.
                 MouseArea {
                     anchors.fill: drow
                     onClicked: {
@@ -305,14 +331,6 @@ Page {
                         Layout.fillWidth: true
                     }
                 }
-//                MouseArea {
-//                    anchors.fill: drow
-//                    onClicked: {
-//                        disco.currentIndex = index
-//                        attempt_uid = uid
-//                        watch_name.text_input = display
-//                    }
-//                }
             }
             clip: true
             Layout.fillWidth: true

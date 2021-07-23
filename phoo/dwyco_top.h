@@ -227,6 +227,8 @@ public:
     Q_INVOKABLE void delete_call_context(QString uid);
     Q_INVOKABLE void start_control(QString uid);
     Q_INVOKABLE int get_established_state(QString uid);
+    Q_INVOKABLE void hangup_all_calls();
+    Q_INVOKABLE void delete_all_call_contexts();
 
     Q_INVOKABLE void delete_file(QString fn);
 
