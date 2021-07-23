@@ -7,6 +7,35 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
+// note: this is a proof of concept driver that uses qt5 qtmultimedia
+// to capture frames. as usual, there are a lot of gotchas:
+//
+// * in a qwidgets app, this is your *only* option for MacOS. there is
+//      no "native" driver for MacOS. This driver *might* work on other
+//      platforms, but the native drivers for windows and linux work much
+//      better. USE_QML_CAMERA must be undefined. on MacOS,
+//      DWYCO_FORCE_DESKTOP_VGQT must be defined. otherwise leave it undefined
+//      to use the native drivers.
+//
+// * in a QML app, you have some options:
+//      if you want to manipulate the Camera object using QML, but use this driver to
+//      capture video frames, you MUST put the following in the QML Camera object
+//      Camera { objectName: "qrCameraQML" ....}
+//      so this driver can find the camera object. you must also define USE_QML_CAMERA
+//      when compiling this file. this is your only option for camera capture on Android
+//      since qtmultimediawidgets is not supported on android.
+//
+//      for desktop QML apps, you *may* be able to get away with using this driver without
+//      USE_QML_CAMERA defined. i haven't tested it lately, but as long as you are not
+//      defining the camera object in QML, this driver might be able to enumerate and
+//      offer capture services for the camera in whatever default state it comes up in.
+//      webcams don't provide a lot of special configuration (unlike mobile cameras) so
+//      this might work ok for desktop.
+//
+// for testing, if you define TEST_THREAD, this driver creates a thread that will produce
+// video test frames without accessing a camera device. this is very useful if your video
+// device driver is fussy or crashes your computer during debugging.
+//
 #include <QList>
 #include <QVector>
 #include <QMutex>
@@ -36,7 +65,7 @@
 #include <string.h>
 #endif
 
-#define USE_QML_CAMERA
+//#define USE_QML_CAMERA
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 //#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
