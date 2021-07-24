@@ -193,13 +193,13 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     chan_id = -1;
     call_id = -1;
 
-    connect_state_machine = new QStateMachine();
-    call_setup_state_machine = new QStateMachine();
-    send_state_machine = new QStateMachine();
-    recv_state_machine = new QStateMachine();
-    audio_stream_state_machine = new QStateMachine();
-    full_duplex_audio_stream_state_machine = new QStateMachine();
-    mute_state_machine = new QStateMachine();
+    connect_state_machine = new QStateMachine(this);
+    call_setup_state_machine = new QStateMachine(this);
+    send_state_machine = new QStateMachine(this);
+    recv_state_machine = new QStateMachine(this);
+    audio_stream_state_machine = new QStateMachine(this);
+    full_duplex_audio_stream_state_machine = new QStateMachine(this);
+    mute_state_machine = new QStateMachine(this);
 
     {
         // state machine for keeping a control connection between caller and callee
@@ -828,14 +828,6 @@ simple_call::~simple_call()
     call_del(chan_id);
     vp.invalidate();
     Simple_calls.del(this);
-    delete connect_state_machine;
-    delete call_setup_state_machine;
-    delete send_state_machine;
-    delete recv_state_machine;
-    delete audio_stream_state_machine;
-    delete full_duplex_audio_stream_state_machine;
-    delete mute_state_machine;
-
 }
 
 void
