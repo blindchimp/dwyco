@@ -100,6 +100,7 @@
 #include "dlli.h"
 #include "ct.h"
 #include "callsm_objs.h"
+#include "ccmodel.h"
 
 extern int Public_chat_video_pause;
 //extern QByteArray My_uid;
@@ -127,7 +128,8 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     QObject(parent),
     vp(this),
     keyboard_active_timer(this),
-    uid(auid)
+    uid(auid),
+    m_uid(auid.toHex())
 {
     ui = &smo;
     ui->setupUi(this);
@@ -568,6 +570,7 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     cts = 0;
     mute = 0;
     m_connected = 0;
+    m_sending_video = false;
 }
 
 void
@@ -828,18 +831,21 @@ simple_call::~simple_call()
     call_del(chan_id);
     vp.invalidate();
     Simple_calls.del(this);
+    TheCallContextModel->remove(this);
 }
 
 void
 simple_call::start_stream()
 {
     dwyco_channel_send_video(chan_id, 0);
+    update_sending_video(true);
 }
 
 void
 simple_call::pause_stream()
 {
     dwyco_channel_stop_send_video(chan_id);
+    update_sending_video(false);
 }
 
 void
@@ -1097,6 +1103,7 @@ simple_call::get_simple_call(QByteArray uid)
     if(c.count() == 0)
     {
         sc = new simple_call(uid);
+        TheCallContextModel->append(sc);
     }
     else if(c.count() == 1)
     {
@@ -1671,6 +1678,7 @@ void simple_call::on_hangup_clicked()
     rmute = -1;
     rcts = -1;
     update_connected(0);
+    update_sending_video(false);
 }
 
 void simple_call::on_reject_clicked()

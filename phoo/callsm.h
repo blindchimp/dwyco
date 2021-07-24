@@ -20,7 +20,9 @@
 class simple_call : public QObject
 {
     Q_OBJECT
+    QML_CONSTANT_VAR_PROPERTY(QString, uid)
     QML_READONLY_VAR_PROPERTY(int, connected)
+    QML_READONLY_VAR_PROPERTY(bool, sending_video)
 
 private:
     friend class DwycoCore;

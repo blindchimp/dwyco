@@ -28,9 +28,7 @@ Page {
     anchors.fill: parent
 
     function hangup() {
-        if(call_buttons_model != null) {
-            call_buttons_model.get("hangup").clicked()
-        }
+        core.hangup_all_calls()
     }
 
     header: Label {
@@ -253,6 +251,73 @@ Page {
                 core.name_to_uid(sname)
                 core.set_local_setting("camera-to-watch", text_input)
             }
+        }
+        ListView {
+            id: clients
+            model: CallContextModel
+            highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
+            highlightMoveDuration: 100
+            highlightMoveVelocity: -1
+            visible: cam_sender.checked
+            delegate: Item {
+                id: wrapper2
+                width: parent.width
+                height: drow2.implicitHeight
+                // note: this mousearea *must* be here to allow selecting
+                // the entire row, while allowing the mousearea for the little
+                // "delete" button to work properly below.
+                MouseArea {
+                    anchors.fill: drow2
+                    onClicked: {
+                        clients.currentIndex = index
+                        //attempt_uid = uid
+                        //watch_name.text_input = display
+                    }
+                }
+                RowLayout {
+                    id: drow2
+                    anchors.fill: parent
+                    spacing: mm(1)
+                    Rectangle {
+                        Layout.minimumHeight: parent.height
+                        Layout.maximumHeight: parent.height
+                        Layout.minimumWidth: parent.height
+                        Layout.maximumWidth: parent.height
+                        color: wrapper2.ListView.isCurrentItem ? "black" : "white"
+                        MouseArea {
+                            anchors.fill: parent
+                            z: 5
+                            cursorShape: Qt.CrossCursor
+                            onClicked: {
+                                //core.set_pal(uid, 0)
+                            }
+                        }
+                    }
+
+                    Label {
+                        text: uid
+                        Layout.alignment: Qt.AlignLeft
+                        elide: Text.ElideRight
+                        Layout.preferredWidth: cm(2)
+                        background: Rectangle {
+                            visible: connected
+                            color: sending_video ? "yellow" : "red"
+                        }
+                    }
+                    Label {
+                        text: "foo"
+                        elide: Text.ElideRight
+                        Layout.alignment: Qt.AlignLeft
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                    }
+                }
+            }
+            clip: true
+            Layout.fillWidth: true
+            Layout.preferredHeight: cm(2)
+
         }
         ListView {
             id: disco

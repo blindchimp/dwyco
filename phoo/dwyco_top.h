@@ -288,7 +288,7 @@ signals:
     void sys_chat_server_status(int id, int status);
     void qt_app_state_change(int app_state);
 
-    // this are sent when a call context is up
+    // these are sent when a call context is up
     void sc_rem_keyboard_active(QString uid, int active);
     void sc_connect_terminated(QString uid);
     void sc_connectedChanged(QString uid, int connected);

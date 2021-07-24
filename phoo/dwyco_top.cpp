@@ -39,6 +39,7 @@
 #include "QQmlVariantListModel.h"
 #include "simpledirmodel.h"
 #include "discomodel.h"
+#include "ccmodel.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
@@ -1590,8 +1591,8 @@ DwycoCore::init()
 //    );
     dwyco_set_setting("video_format/swap_rb", "0");
     dwyco_set_setting("rate/max_fps", "20");
-    dwyco_set_setting("rate/kbits_per_sec_out", "1000");
-    dwyco_set_setting("rate/kbits_per_sec_in", "1000");
+    dwyco_set_setting("rate/kbits_per_sec_out", "128");
+    dwyco_set_setting("rate/kbits_per_sec_in", "128");
     dwyco_set_moron_dork_mode(0);
 
     dwyco_set_external_video(1);
@@ -3033,6 +3034,9 @@ dwyco_register_qml(QQmlContext *root)
 
     TheDiscoverListModel = new DiscoverListModel;
     root->setContextProperty("DiscoverList", TheDiscoverListModel);
+
+    new CallContextModel;
+    root->setContextProperty("CallContextModel", TheCallContextModel);
 
 //#ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;
