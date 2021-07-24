@@ -170,6 +170,7 @@ ApplicationWindow {
                 }
                 if(pwdialog.allow_access === 0)
                     expire_immediate = true
+                Qt.quit()
                 return
             }
             close.accepted = false

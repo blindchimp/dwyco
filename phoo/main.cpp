@@ -48,6 +48,7 @@ int main(int argc, char *argv[])
 #ifdef ANDROID
     QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
+    QGuiApplication::setQuitOnLastWindowClosed(true);
 
 
     QGuiApplication app(argc, argv);
