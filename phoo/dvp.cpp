@@ -22,7 +22,7 @@ DVP::init_dvp()
 #define Ptr_list (*Ptr_listp)
 
 
-DVP_COOKIE DVP::CookieGen;
+DVP_COOKIE DVP::CookieGen = 10000;
 void
 DVP::add_ptr(DVP_COOKIE p, void *v)
 {

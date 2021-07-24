@@ -82,16 +82,9 @@ Page {
     onAttempt_uidChanged: {
         if(attempt_uid.length > 0) {
             console.log("start control to ", attempt_uid)
-//            if(serving_uid.length > 0) {
-//                core.delete_call_context(serving_uid)
-//            }
             hangup()
-
             core.start_control(attempt_uid)
         } else {
-//            if(serving_uid.length > 0) {
-//                core.delete_call_context(serving_uid)
-//            }
             hangup()
         }
     }
@@ -116,7 +109,6 @@ Page {
             if(connected === 0) {
                 if(serving_uid === uid)
                 {
-                    core.delete_call_context(serving_uid)
                     serving_uid = ""
                     call_buttons_model = null
                 }
@@ -193,10 +185,6 @@ Page {
                     preview_cam.start()
                     core.select_vid_dev(2)
                     core.enable_video_capture_preview(1)
-//                    if(attempt_uid.length > 0)
-//                        core.delete_call_context(attempt_uid)
-//                    if(serving_uid.length > 0)
-//                        core.delete_call_context(serving_uid)
                     attempt_uid = ""
                     serving_uid = ""
                 } else {
@@ -219,10 +207,6 @@ Page {
                     //core.name_to_uid(watch_name.text_input)
                     core.set_local_setting("mode", "watch")
                     viewer.source = ""
-                    if(attempt_uid.length > 0)
-                        core.delete_call_context(attempt_uid)
-                    if(serving_uid.length > 0)
-                        core.delete_call_context(serving_uid)
                     attempt_uid = ""
                     serving_uid = ""
                 }

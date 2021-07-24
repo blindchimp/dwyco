@@ -224,10 +224,15 @@ public:
     Q_INVOKABLE void uid_keyboard_input(QString uid);
     Q_INVOKABLE int get_rem_keyboard_state(QString uid);
     Q_INVOKABLE void create_call_context(QString uid);
-    Q_INVOKABLE void delete_call_context(QString uid);
     Q_INVOKABLE void start_control(QString uid);
     Q_INVOKABLE int get_established_state(QString uid);
     Q_INVOKABLE void hangup_all_calls();
+    // WARNING: calling these are touchy, and you will crash if you
+    // call them within slots/handlers which are invoked via
+    // call-related signals. generally, it is better NOT to
+    // delete the call context, and just let it take care of
+    // itself.
+    Q_INVOKABLE void delete_call_context(QString uid);
     Q_INVOKABLE void delete_all_call_contexts();
 
     Q_INVOKABLE void delete_file(QString fn);
