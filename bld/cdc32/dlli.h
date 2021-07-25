@@ -496,6 +496,7 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_GRP_JOIN_OK 33
 #define DWYCO_SE_GRP_JOIN_FAIL 34
 #define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 35
+#define DWYCO_SE_IDENT_TO_UID 34
 
 // you get this message to indicate a message has content that is now locally accessible
 #define DWYCO_SE_MSG_PULL_OK 36
@@ -548,6 +549,8 @@ int DWYCOEXPORT dwyco_get_profile_to_viewer(const char *uid, int len_uid, DwycoP
 // you must call dwyco_free_array when you are done with fn_out
 //
 int DWYCOEXPORT dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
+void DWYCOEXPORT dwyco_name_to_uid(const char *handle, int len_handle);
+
 // not impl.
 int DWYCOEXPORT dwyco_remove_profile(DwycoProfileCallback cb, void *arg);
 int DWYCOEXPORT dwyco_update_profile(const char *text, int len_text, DwycoProfileCallback cb, void *arg);

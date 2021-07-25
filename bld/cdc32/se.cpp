@@ -71,6 +71,7 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_GRP_STATUS_CHANGE,
 
     DWYCO_SE_IGNORE_LIST_CHANGE
+    DWYCO_SE_IDENT_TO_UID,
 };
 
 void
@@ -116,7 +117,7 @@ se_emit_msg(dwyco_sys_event cmd, const DwString& qid, vc uid)
     vc v(VC_VECTOR);
     v[0] = cmd;
     v[1] = map_to_representative_uid(uid);
-    v[2] = qid.c_str();
+    v[2] = vc(VC_BSTRING, qid.c_str(), qid.length());
     Se_q.append(v);
     GRTLOG("se_emit_msg ", 0, 0);
     GRTLOGVC(v);
@@ -125,7 +126,13 @@ se_emit_msg(dwyco_sys_event cmd, const DwString& qid, vc uid)
 void
 se_emit_msg(dwyco_sys_event cmd, vc qid, vc uid)
 {
-    se_emit_msg(cmd, DwString((const char *)qid, 0, qid.len()), uid);
+    vc v(VC_VECTOR);
+    v[0] = cmd;
+    v[1] = uid;
+    v[2] = qid;
+    Se_q.append(v);
+    GRTLOG("se_emit_msg ", 0, 0);
+    GRTLOGVC(v);
 }
 
 void
@@ -277,6 +284,7 @@ se_process()
         }
             break;
 
+        case SE_IDENT_TO_UID:
         case SE_MSG_SEND_START:
         case SE_MSG_SEND_FAIL:
         case SE_MSG_SEND_SUCCESS:

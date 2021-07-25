@@ -370,6 +370,19 @@ dirth_send_get_pk(vc id, vc uid, QckDone d)
 
 // set the google FCM token
 void
+dirth_send_get_uid(vc id, vc handle, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("get-uid", ++Serial);
+    m[QTYPE] = reqtype("get-uid", d);
+    m[QFROM] = id;
+    m[2] = handle;
+    Waitq.append(d);
+    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+}
+
+void
 dirth_send_set_token(vc id, vc token, QckDone d)
 {
     QckMsg m;
