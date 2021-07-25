@@ -67,7 +67,8 @@ enum dwyco_sys_event {
     SE_CHAT_SERVER_LOGIN,
     SE_CHAT_SERVER_LOGIN_FAILED,
 
-    SE_MSG_DOWNLOAD_PROGRESS
+    SE_MSG_DOWNLOAD_PROGRESS,
+    SE_IDENT_TO_UID
 };
 
 // at this point, the id can be a uid or a mid

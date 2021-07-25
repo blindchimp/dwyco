@@ -7,6 +7,35 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
+// note: this is a proof of concept driver that uses qt5 qtmultimedia
+// to capture frames. as usual, there are a lot of gotchas:
+//
+// * in a qwidgets app, this is your *only* option for MacOS. there is
+//      no "native" driver for MacOS. This driver *might* work on other
+//      platforms, but the native drivers for windows and linux work much
+//      better. USE_QML_CAMERA must be undefined. on MacOS,
+//      DWYCO_FORCE_DESKTOP_VGQT must be defined. otherwise leave it undefined
+//      to use the native drivers.
+//
+// * in a QML app, you have some options:
+//      if you want to manipulate the Camera object using QML, but use this driver to
+//      capture video frames, you MUST put the following in the QML Camera object
+//      Camera { objectName: "qrCameraQML" ....}
+//      so this driver can find the camera object. you must also define USE_QML_CAMERA
+//      when compiling this file. this is your only option for camera capture on Android
+//      since qtmultimediawidgets is not supported on android.
+//
+//      for desktop QML apps, you *may* be able to get away with using this driver without
+//      USE_QML_CAMERA defined. i haven't tested it lately, but as long as you are not
+//      defining the camera object in QML, this driver might be able to enumerate and
+//      offer capture services for the camera in whatever default state it comes up in.
+//      webcams don't provide a lot of special configuration (unlike mobile cameras) so
+//      this might work ok for desktop.
+//
+// for testing, if you define TEST_THREAD, this driver creates a thread that will produce
+// video test frames without accessing a camera device. this is very useful if your video
+// device driver is fussy or crashes your computer during debugging.
+//
 #include <QList>
 #include <QVector>
 #include <QMutex>
@@ -33,9 +62,10 @@
 #endif
 #ifdef LINUX
 #include <unistd.h>
+#include <string.h>
 #endif
 
-
+//#define USE_QML_CAMERA
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 //#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_BOX
@@ -51,7 +81,7 @@
 extern QQmlApplicationEngine *TheEngine;
 #endif
 
-#define NB_BUFFER 2
+#define NB_BUFFER 5
 static QVector<unsigned long> y_bufs(NB_BUFFER);
 static QVector<unsigned int> lens(NB_BUFFER);
 static QVector<QVideoFrame> vbufs(NB_BUFFER);
@@ -295,7 +325,7 @@ get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu
     int ch_cols = ccols / subsample;
     int ch_rows = crows / subsample;
     int autoconfig = 0;
-    int upside_down = 1;
+    int upside_down = 0;
 
     gray **u_out = pgm_allocarray(ch_cols, ch_rows);
     gray **v_out = pgm_allocarray(ch_cols, ch_rows);
@@ -790,7 +820,10 @@ conv_data()
         gray **g = pgm_allocarray(SSCOLS, SSROWS);
         int ncols = SSCOLS;
         int nrows = SSROWS;
-        stbir_resize_uint8(c, cols, rows, 0, &g[0][0], SSCOLS, SSROWS, 0, 1);
+        if(cols == SSCOLS && rows == SSROWS)
+            memcpy(&g[0][0], c, cols * rows);
+        else
+            stbir_resize_uint8(c, cols, rows, 0, &g[0][0], SSCOLS, SSROWS, 0, 1);
 
         // NOTE: this flipping is for cdc-x compatibility.
         // the driver produces flipped images because the old ms
@@ -801,7 +834,7 @@ conv_data()
         // have to revisit this, because in that case, there are
         // other orientation issues.
 
-        flip_in_place(g, ncols, nrows);
+        //flip_in_place(g, ncols, nrows);
 
         //
         if(Orientation != 0)
@@ -813,20 +846,28 @@ conv_data()
 
         c += f.c * f.r;
         // note: 2 channels, cb and cr
-        gray **gc = pgm_allocarray(SSCOLS, SSROWS / 2);
-        stbir_resize_uint8(c, cols / 2, rows / 2, 0, &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, 2);
-
         gray **cr;
         gray **cb;
 
-        get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, &gc[0][0], cr, cb, 1);
+        if(cols == SSCOLS && rows == SSROWS)
+        {
+            get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, c, cr, cb, 1);
+        }
+        else
+        {
+            gray **gc = pgm_allocarray(SSCOLS, SSROWS / 2);
+            stbir_resize_uint8(c, cols / 2, rows / 2, 0, &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, 2);
+            get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, &gc[0][0], cr, cb, 1);
+            pgm_freearray(gc, SSROWS / 2);
+        }
+
         if(swap)
         {
             gray **tmp = cr;
             cr = cb;
             cb = tmp;
         }
-        pgm_freearray(gc, SSROWS / 2);
+
 
         if(Orientation != 0)
         {

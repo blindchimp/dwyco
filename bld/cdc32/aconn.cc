@@ -27,15 +27,18 @@
 #include "ssns.h"
 #include "calllive.h"
 #include "cdcpal.h"
+#include "se.h"
 
 // NOTENOTENOTE! fixme, look at the dlli.cpp section where some of these
 // settings are tweaked and set bindings somewhere so we can do the
 // machinations needed when network state changes
+// XXX NOTE, may want to turn broadcasting off if user is "invisible"
 
 extern vc LocalIP;
 extern int Media_select;
 
 namespace dwyco {
+#define DESERIALIZE_MAX_STRING_LEN (50)
 
 static Listener *Listen_sock;
 static Listener *Static_secondary_sock;
@@ -142,7 +145,7 @@ recvvc(vc sock, vc& v, vc& peer)
     int len;
     vcxstream istrm(sock, (char *)packet_buf, plen, vcxstream::FIXED);
     istrm.max_depth = 2;
-    istrm.max_element_len = 50;
+    istrm.max_element_len = DESERIALIZE_MAX_STRING_LEN;
     istrm.max_elements = 6;
     if(!istrm.open(vcxstream::READABLE, vcxstream::ATOMIC))
         return 0;
@@ -269,14 +272,19 @@ broadcast_tick()
                     data[0].type() == VC_STRING &&
                     data[1].type() == VC_VECTOR)
             {
-                if(data[0] != My_UID)
+                vc uid = data[0];
+                if(uid != My_UID)
                 {
                     GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
                     GRTLOGVC(data);
-                    data[1][0] = strip_port(peer);
-                    Broadcast_discoveries.add_kv(data[0], data[1]);
-                    Local_uid_discovered.emit(data[0], 1);
-                    Freshness.replace(data[0], time(0));
+                    data[1][BD_IP] = strip_port(peer);
+                    if(!Broadcast_discoveries.contains(uid))
+                    {
+                        Broadcast_discoveries.add_kv(uid, data[1]);
+                        Local_uid_discovered.emit(uid, 1);
+                        se_emit(SE_STATUS_CHANGE, uid);
+                    }
+                    Freshness.replace(uid, time(0));
                 }
             }
         }
@@ -287,10 +295,19 @@ broadcast_tick()
     vc announce(VC_VECTOR);
     announce[0] = My_UID;
     vc v(VC_VECTOR);
-    v.append(LocalIP);
-    v.append(get_settings_value("net/primary_port"));
-    v.append(get_settings_value("net/secondary_port"));
-    v.append(get_settings_value("net/pal_port"));
+    v[BD_IP] = LocalIP;
+    v[BD_PRIMARY_PORT] = get_settings_value("net/primary_port");
+    v[BD_SECONDARY_PORT] = get_settings_value("net/secondary_port");
+    v[BD_PAL_PORT] = get_settings_value("net/pal_port");
+    vc nicename = get_settings_value("user/username");
+    if(nicename.len() > DESERIALIZE_MAX_STRING_LEN - 20)
+    {
+        // arbitrary truncation. note, doesn't work if
+        // nicename has utf8 stuff in it or whatever
+        DwString d((const char *)nicename, 0, DESERIALIZE_MAX_STRING_LEN - 20);
+        nicename = vc(VC_BSTRING, d.c_str(), d.length());
+    }
+    v[BD_NICE_NAME] = nicename;
     announce[1] = v;
     sendvc(Local_broadcast, announce);
     auto it = DwTreeKazIter<time_t, vc>(&Freshness);
@@ -307,6 +324,7 @@ broadcast_tick()
         Local_uid_discovered.emit(kill[i], 0);
         Freshness.del(kill[i]);
         Broadcast_discoveries.del(kill[i]);
+        se_emit(SE_STATUS_CHANGE, kill[i]);
     }
 
     Broadcast_timer.start();
