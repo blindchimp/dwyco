@@ -47,9 +47,11 @@ rdtables.cpp \
 rijndael.cpp \
 rng.cpp \
 sha.cpp \
-sha3.cpp \
-    des.cpp \
-    dessp.cpp
+sha3.cpp
+
+#\
+#   des.cpp \
+#    dessp.cpp
 
 #ripemd.cpp \
 #wait.cpp \

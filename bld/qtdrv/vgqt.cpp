@@ -81,7 +81,7 @@
 extern QQmlApplicationEngine *TheEngine;
 #endif
 
-#define NB_BUFFER 2
+#define NB_BUFFER 5
 static QVector<unsigned long> y_bufs(NB_BUFFER);
 static QVector<unsigned int> lens(NB_BUFFER);
 static QVector<QVideoFrame> vbufs(NB_BUFFER);
@@ -325,7 +325,7 @@ get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu
     int ch_cols = ccols / subsample;
     int ch_rows = crows / subsample;
     int autoconfig = 0;
-    int upside_down = 1;
+    int upside_down = 0;
 
     gray **u_out = pgm_allocarray(ch_cols, ch_rows);
     gray **v_out = pgm_allocarray(ch_cols, ch_rows);
@@ -820,7 +820,10 @@ conv_data()
         gray **g = pgm_allocarray(SSCOLS, SSROWS);
         int ncols = SSCOLS;
         int nrows = SSROWS;
-        stbir_resize_uint8(c, cols, rows, 0, &g[0][0], SSCOLS, SSROWS, 0, 1);
+        if(cols == SSCOLS && rows == SSROWS)
+            memcpy(&g[0][0], c, cols * rows);
+        else
+            stbir_resize_uint8(c, cols, rows, 0, &g[0][0], SSCOLS, SSROWS, 0, 1);
 
         // NOTE: this flipping is for cdc-x compatibility.
         // the driver produces flipped images because the old ms
@@ -831,7 +834,7 @@ conv_data()
         // have to revisit this, because in that case, there are
         // other orientation issues.
 
-        flip_in_place(g, ncols, nrows);
+        //flip_in_place(g, ncols, nrows);
 
         //
         if(Orientation != 0)
@@ -843,20 +846,28 @@ conv_data()
 
         c += f.c * f.r;
         // note: 2 channels, cb and cr
-        gray **gc = pgm_allocarray(SSCOLS, SSROWS / 2);
-        stbir_resize_uint8(c, cols / 2, rows / 2, 0, &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, 2);
-
         gray **cr;
         gray **cb;
 
-        get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, &gc[0][0], cr, cb, 1);
+        if(cols == SSCOLS && rows == SSROWS)
+        {
+            get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, c, cr, cb, 1);
+        }
+        else
+        {
+            gray **gc = pgm_allocarray(SSCOLS, SSROWS / 2);
+            stbir_resize_uint8(c, cols / 2, rows / 2, 0, &gc[0][0], SSCOLS / 2, SSROWS / 2, 0, 2);
+            get_interleaved_chroma_planes(SSCOLS / 2, SSROWS / 2, &gc[0][0], cr, cb, 1);
+            pgm_freearray(gc, SSROWS / 2);
+        }
+
         if(swap)
         {
             gray **tmp = cr;
             cr = cb;
             cb = tmp;
         }
-        pgm_freearray(gc, SSROWS / 2);
+
 
         if(Orientation != 0)
         {

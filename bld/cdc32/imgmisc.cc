@@ -354,7 +354,7 @@ upsample0_2(gray **img, int *cols, int *rows)
         {
             gray t;
             gray *g;
-            loop_body(0);
+            loop_body(0)
         }
     }
     *rows = nrows;
