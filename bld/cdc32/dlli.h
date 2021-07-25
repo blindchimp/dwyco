@@ -496,7 +496,7 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_GRP_JOIN_OK 33
 #define DWYCO_SE_GRP_JOIN_FAIL 34
 #define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 35
-#define DWYCO_SE_IDENT_TO_UID 34
+
 
 // you get this message to indicate a message has content that is now locally accessible
 #define DWYCO_SE_MSG_PULL_OK 36
@@ -504,7 +504,7 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 
 #define DWYCO_SE_GRP_STATUS_CHANGE 38
 #define DWYCO_SE_IGNORE_LIST_CHANGE 39
-
+#define DWYCO_SE_IDENT_TO_UID 40
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 

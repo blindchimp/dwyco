@@ -368,7 +368,7 @@ dirth_send_get_pk(vc id, vc uid, QckDone d)
     dirth_send(m, d);
 }
 
-// set the google FCM token
+
 void
 dirth_send_get_uid(vc id, vc handle, QckDone d)
 {
@@ -379,9 +379,10 @@ dirth_send_get_uid(vc id, vc handle, QckDone d)
     m[QFROM] = id;
     m[2] = handle;
     Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
+// set the google FCM token
 void
 dirth_send_set_token(vc id, vc token, QckDone d)
 {

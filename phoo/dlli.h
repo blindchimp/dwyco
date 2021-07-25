@@ -497,13 +497,14 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_GRP_JOIN_FAIL 34
 #define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 35
 
+
 // you get this message to indicate a message has content that is now locally accessible
 #define DWYCO_SE_MSG_PULL_OK 36
 #define DWYCO_SE_MSG_TAG_CHANGE 37
 
 #define DWYCO_SE_GRP_STATUS_CHANGE 38
 #define DWYCO_SE_IGNORE_LIST_CHANGE 39
-
+#define DWYCO_SE_IDENT_TO_UID 40
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
@@ -548,6 +549,8 @@ int DWYCOEXPORT dwyco_get_profile_to_viewer(const char *uid, int len_uid, DwycoP
 // you must call dwyco_free_array when you are done with fn_out
 //
 int DWYCOEXPORT dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
+void DWYCOEXPORT dwyco_name_to_uid(const char *handle, int len_handle);
+
 // not impl.
 int DWYCOEXPORT dwyco_remove_profile(DwycoProfileCallback cb, void *arg);
 int DWYCOEXPORT dwyco_update_profile(const char *text, int len_text, DwycoProfileCallback cb, void *arg);
@@ -1468,7 +1471,7 @@ void DWYCOEXPORT dwyco_abort_autoupdate_download();
 // the exit will release the "lock" and allow the main app to continue
 // normally.
 int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
-int DWYCOEXPORT dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
+int DWYCOEXPORT dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token, const char *grpname, const char *grppw);
 // some more helper functions called from java for android related stuff
 // strings in this case are utf-8, null terminated i hope
 void DWYCOEXPORT dwyco_set_aux_string(const char *str);

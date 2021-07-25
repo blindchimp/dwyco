@@ -78,7 +78,7 @@ enum dwyco_sys_event {
 
     SE_GRP_STATUS_CHANGE,
 
-    SE_IGNORE_LIST_CHANGE
+    SE_IGNORE_LIST_CHANGE,
     SE_IDENT_TO_UID
 };
 
