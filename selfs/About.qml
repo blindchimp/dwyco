@@ -26,7 +26,7 @@ Page {
         RowLayout {
             spacing: mm(3)
             Label {
-                text: "phoo (open source):"
+                text: "Selfs (open source):"
             }
 
             Label {

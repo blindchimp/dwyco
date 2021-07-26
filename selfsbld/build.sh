@@ -1,6 +1,6 @@
 #!/bin/sh
 D=$HOME
-SHADOW_NAME=$D/git/build-phoo
+SHADOW_NAME=$D/git/build-selfs
 
 mkdir $SHADOW_NAME
 mkdir $SHADOW_NAME/lib
@@ -9,6 +9,6 @@ mkdir $SHADOW_NAME/include
 (
 opwd=$PWD
 cd $SHADOW_NAME
-qmake DWYCO_CONFDIR=phoobld $opwd/phoobld.pro
+qmake DWYCO_CONFDIR=selfsbld $opwd/selfsbld.pro
 make -j 8
 )

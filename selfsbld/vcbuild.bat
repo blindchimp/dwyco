@@ -7,7 +7,7 @@ call "c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
 echo on
 
 set D=c:\users\dwight
-set SHADOW_NAME=%D%\build-phoo
+set SHADOW_NAME=%D%\build-selfs
 
 mkdir %SHADOW_NAME%
 rem mkdir $SHADOW_NAME/lib
@@ -16,5 +16,5 @@ rem mkdir $SHADOW_NAME/include
 rem APPVEYOR_BUILD_FOLDER
 cd %SHADOW_NAME%
 qmake -v
-qmake CONFIG+=release -spec win32-msvc DWYCO_CONFDIR=phoobld %D%\dwyco\phoobld.pro
+qmake CONFIG+=release -spec win32-msvc DWYCO_CONFDIR=selfsbld %D%\dwyco\selfsbld.pro
 nmake

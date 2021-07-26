@@ -11,7 +11,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleExecutable</key>
-	<string>phoo</string>
+	<string>selfs</string>
 	<key>CFBundleIdentifier</key>
 	<string>test.${PRODUCT_NAME:rfc1034identifier}</string>
 	<key>CFBundleDisplayName</key>

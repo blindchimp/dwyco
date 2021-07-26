@@ -1,5 +1,5 @@
 
-Phoo is a Qt5 encrypted messenger.
+Selfs is a Qt5 simple camera watcher/capture app
 
 Current requirements:
 * Qt 5.12
@@ -17,31 +17,32 @@ cd git
 git clone https://github.com/blindchimp/dwyco
 
 cd dwyco
-sh phoobld/deps.sh (installs a few dev packages that are needed.)
+sh selfsbld/deps.sh (installs a few dev packages that are needed.)
 
 -----------
 
-* IN-TREE BUILD phoo and create AppDir in $(HOME)/git/dwyco/phoo/appdir:
+* IN-TREE BUILD selfs and create AppDir in $(HOME)/git/dwyco/selfs/appdir:
 cd $(HOME)/git/dwyco
-sh phoobld.sh
+sh selfsbld.sh
 
 -----------
 
-* SHADOW BUILD phoo:
+* SHADOW BUILD selfs:
 
 cd $(HOME)/git/dwyco
-phoobld/build.sh
+selfsbld/build.sh
 
 (note: there are some qmake peculiarities that seem to require the
 invocation to be done exactly as shown above.)
 
-The result should be in $(HOME)/git/build-phoo/phoo/phoo
+The result should be in $(HOME)/git/build-selfs/selfs/selfs
 -----------
 
-If you run "phoo", it will create its data directory in
-$(HOME)/Documents/dwyco/phoo. There should be no need for 
+If you run "selfs", it will create its data directory in
+$(HOME)/Documents/dwyco/selfs. There should be no need for 
 any other installation, as it "installs" everything it needs
-if it doesn't already exist. There is also no way to make
-it use another directory at the moment.
+if it doesn't already exist. On desktop, if there is an argument
+it uses that directory. On mobile, it uses internal app storage
+which is erased when the app is uninstalled.
 
 

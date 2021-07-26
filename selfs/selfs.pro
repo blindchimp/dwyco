@@ -18,9 +18,9 @@ DEFINES += SELFSTREAM
 CONFIG(appdir) {
 target.path=/usr/bin
 appdir_desktop.path=/usr/share/applications
-appdir_desktop.files=phoo.desktop
+appdir_desktop.files=selfs.desktop
 appdir_icon.path=/usr/share/icons/hicolor/256x256/apps
-appdir_icon.files=phoo.png
+appdir_icon.files=selfs.png
 INSTALLS += appdir_icon appdir_desktop
 }
 
@@ -41,7 +41,7 @@ INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD
 #QMAKE_MAC_SDK = macosx10.9
 DEFINES += DWYCO_RELEASE
 ICON=greenguy.icns
-RC_FILE=phoo.rc
+RC_FILE=selfs.rc
 
 SOURCES += main.cpp \
     androidperms.cpp \
@@ -468,7 +468,7 @@ DISTFILES += \
     androidinst/google-services.json \
     androidinst/src/com/dwyco/cdc32/dwybg.java \
     androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst/src/com/dwyco/phoo/app.java \
+    androidinst/src/com/dwyco/selfs/app.java \
     androidinst/src/com/dwyco/android/Dwyco_Message.java \
     androidinst/src/com/dwyco/android/DwycoProbe.java \
     androidinst/src/com/dwyco/android/DwycoSender.java \
@@ -477,5 +477,5 @@ DISTFILES += \
     androidinst/src/com/dwyco/android/Push_Notification.java \
     androidinst/src/com/dwyco/android/SocketLock.java \
     androidinst/src/com/dwyco/android/StickyIntentService.java \
-    androidinst/src/com/dwyco/phoo/DwycoApp.java
+    androidinst/src/com/dwyco/selfs/DwycoApp.java
 

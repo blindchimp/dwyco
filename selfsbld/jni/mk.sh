@@ -10,9 +10,9 @@ echo $NDK
 export NDK_CCACHE=ccache
 if [ "$NDK_ABI" = "arm" ]
 then
-export NDK_PROJECT_PATH=~/git/dwyco/phoobld
+export NDK_PROJECT_PATH=~/git/dwyco/selfsbld
 else
-export NDK_PROJECT_PATH=~/git/dwyco/phoobld
+export NDK_PROJECT_PATH=~/git/dwyco/selfsbld
 fi
 (cd ..;mkdir obj)
 # force rebuild all
