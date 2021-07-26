@@ -4,9 +4,9 @@
 
 Please read this agreement before continuing. 
 
-CDC32 and CDC-X are Copyright 1995-2017 (c) Dwyco, Inc., All rights reserved.
+Dwyco software is Copyright 1995-present (c) Dwyco, Inc., All rights reserved.
 
-This distribution of CDC-X is Freeware.
+This distribution of Dwyco software is Freeware.
 
 You are welcome to use it for as long as you like. There is no
 expiration on the software. If your usage of the system is
@@ -17,17 +17,10 @@ than a "chat" site, you may be asked to pay for a subscription
 to the Dwyco service.
 
 In addition, there may be several "Advanced features" in any
-given version of CDC-X that are enabled during a trial period (usually
+given version of the software that are enabled during a trial period (usually
 several weeks). You must buy a subscription to use them after the
 trial period. Currently, there are no "pay features", all features
 are available to all users for free.
-
-After the trial period, CDC-X remains completely functional except for
-these features.
-
-Note: for the Linux version of the software, the advanced features
-are provided for free. However, we encourage Linux users to buy
-subscriptions to help support further development of CDC-X for Linux.
 
 Instructions for buying a subscription to the Dwyco service are 
 available by clicking Help|How to buy a subscription...
@@ -37,7 +30,7 @@ You MAY make copies of the program for your personal or
 friends' use, upload it to Web sites, post it to newsgroups, or
 distribute it through other channels as long as no direct fee is charged
 for the software. No part of this license shall imply that
-copies of CDC-X can be redistributed or remarketed with other products
+copies of Dwyco software can be redistributed or remarketed with other products
 without the prior written consent of Dwyco, Inc.
 
 IN ANY CASE, NO MATTER WHAT THE DISTRIBUTION MEDIA,
@@ -60,7 +53,7 @@ You can also visit http://www.dwyco.com, where the latest
 software (or pointers to it) can be obtained.
 
 
-By proceeding to run CDC-X, hereinafter referred to as "Program",
+By proceeding to run Dwyco software , hereinafter referred to as "Program",
 you signify your acceptance of this license agreement. 
 EXCEPT AS EXPRESSLY SET FORTH IN THIS AGREEMENT, you may not use,
 copy, modify or transfer this program or any part thereof, and
