@@ -111,11 +111,14 @@ Page {
                     call_buttons_model = null
                 }
                 vid_panel.vid_incoming.source = mi("ic_videocam_off_black_24dp.png")
+                core.delete_all_call_contexts()
             } else {
                 if(serving_uid === "")
                 {
                     serving_uid = uid
                     call_buttons_model = core.get_button_model(serving_uid)
+                    if(cam_sender.checked)
+                        call_buttons_model.get("send_video").clicked()
                 }
             }
         }

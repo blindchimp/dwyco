@@ -1798,7 +1798,7 @@ DwycoCore::delete_call_context(QString uid)
     {
         return;
     }
-    delete c[0];
+    c[0]->deleteLater();
 }
 
 void
@@ -1808,7 +1808,7 @@ DwycoCore::delete_all_call_contexts()
 
     for(int i = 0; i < o.count(); ++i)
     {
-        delete o[i];
+        o[i]->deleteLater();
     }
 }
 
