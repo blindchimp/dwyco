@@ -860,7 +860,7 @@ setup_locations()
     if(args.count() == 1)
     {
         userdir = QStandardPaths::writableLocation(filepath);
-        userdir += "/dwyco/self/";
+        userdir += "/dwyco/selfs/";
     }
     else
     {
