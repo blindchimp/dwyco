@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "991200597525",
+    "project_id": "selfs-6ef4d",
+    "storage_bucket": "selfs-6ef4d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:991200597525:android:e59d36724c4b579a25a01c",
+        "android_client_info": {
+          "package_name": "com.dwyco.selfs"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "991200597525-4opeu0osq3virsss9rvmfas1orbrdcsj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKhVpIhuo81NPEr-GWX3hmqwg5me2RjLg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "991200597525-4opeu0osq3virsss9rvmfas1orbrdcsj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
