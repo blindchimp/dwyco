@@ -1846,6 +1846,7 @@ DwycoCore::bootstrap(QString name, QString email)
     int len_uid;
     dwyco_get_my_uid(&uid, &len_uid);
     My_uid = QByteArray(uid, len_uid);
+    update_this_uid(My_uid.toHex());
 }
 
 void
