@@ -14,6 +14,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
 DEFINES += SELFSTREAM
+DEFINES += NO_DWYCO_AUDIO
 
 CONFIG(appdir) {
 target.path=/usr/bin
