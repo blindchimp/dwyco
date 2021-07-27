@@ -23,9 +23,16 @@
 // of memory, and the pipeline assumes the chunks can be operated
 // on independently. the output of the pipeline is determined by the
 // operations that are given as arguments when the pipeline is
-// created. the outputs are produced in the same order as the chunks
+// created. the outputs are returned in the same order as the chunks
 // that are entered into the pipeline if you set the ordered flag on pipeline
 // creation.
+// NOTE: there is no guarantee of the order of processing if you have
+// more than 1 thread.
+// HOWEVER, if you specify one thread with ordering, you get a special case that is
+// useful: a thread that can do processing in the background and notifies you
+// when the result is ready. this is useful for cases where you don't need to
+// overlap processing of items, but just need to avoid the latency of doing the operation
+// in-line (like avoiding blocking a UI thread on an underpowered device, for example.)
 namespace dwyco {
 template<class I, class O>
 struct DwPipelineOp
