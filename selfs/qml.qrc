@@ -1,0 +1,61 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>SimpleChatBox.qml</file>
+        <file>SimpDir.qml</file>
+        <file>ProfileDialog.qml</file>
+        <file>ProfileView.qml</file>
+        <file>ProfileUpdateDialog.qml</file>
+        <file>DeclarativeCamera.qml</file>
+        <file>PhotoPreview.qml</file>
+        <file>PhotoCaptureControls.qml</file>
+        <file>CameraButton.qml</file>
+        <file>images/toolbutton.png</file>
+        <file>images/toolbutton.sci</file>
+        <file>MsgView.qml</file>
+        <file>PublicChat.qml</file>
+        <file>IgnoreListDialog.qml</file>
+        <file>ChatList.qml</file>
+        <file>AdminBrowse.qml</file>
+        <file>UserActionMenu.qml</file>
+        <file>ConvList.qml</file>
+        <file>ForwardToList.qml</file>
+        <file>PINDialog.qml</file>
+        <file>PINChangeDialog.qml</file>
+        <file>PicPreview.qml</file>
+        <file>ContactList.qml</file>
+        <file>SimpleToolbar.qml</file>
+        <file>CircularImage.qml</file>
+        <file>CQRes.qml</file>
+        <file>ConvToolButton.qml</file>
+        <file>MultiSelectToolbar.qml</file>
+        <file>About.qml</file>
+        <file>DSettings.qml</file>
+        <file>FName.qml</file>
+        <file>MsgReport.qml</file>
+        <file>Warning.qml</file>
+        <file>TextFieldX.qml</file>
+        <file>VidCamPreview.qml</file>
+        <file>CallButtons.qml</file>
+        <file>DwycoVidRec.qml</file>
+        <file>VidView.qml</file>
+        <file>AppDrawer.qml</file>
+        <file>AppDrawerForm.ui.qml</file>
+        <file>SimpleMsgBrowse.qml</file>
+        <file>VidCall.qml</file>
+        <file>VidCallForm.ui.qml</file>
+        <file>CallButtonLink.qml</file>
+        <file>TipButton.qml</file>
+        <file>+vgqt/VidCamPreview.qml</file>
+        <file>SimpleGroupChat.qml</file>
+        <file>SimpleTagMsgBrowse.qml</file>
+        <file>GridToggle.qml</file>
+        <file>+desktop/GridToggle.qml</file>
+        <file>BareChatList.qml</file>
+        <file>+desktop/PublicChat.qml</file>
+        <file>MsgReview.qml</file>
+        <file>+selfstream/VidCamPreview.qml</file>
+    </qresource>
+    <qresource prefix="/+linux"/>
+    <qresource prefix="/+vgqt"/>
+</RCC>

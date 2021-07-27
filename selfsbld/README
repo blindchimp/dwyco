@@ -1,0 +1,48 @@
+
+Selfs is a Qt5 simple camera watcher/capture app
+
+Current requirements:
+* Qt 5.12
+* For Linux: Ubuntu 16.04+
+
+To build on Linux:
+
+* Get Qt5 set up (make sure the default qmake gets the right version.)
+* Clone repo into the right place (the build scripts are a bit dumb about this
+right now, so do it this way):
+
+cd $(HOME)
+mkdir git
+cd git
+git clone https://github.com/blindchimp/dwyco
+
+cd dwyco
+sh selfsbld/deps.sh (installs a few dev packages that are needed.)
+
+-----------
+
+* IN-TREE BUILD selfs and create AppDir in $(HOME)/git/dwyco/selfs/appdir:
+cd $(HOME)/git/dwyco
+sh selfsbld.sh
+
+-----------
+
+* SHADOW BUILD selfs:
+
+cd $(HOME)/git/dwyco
+selfsbld/build.sh
+
+(note: there are some qmake peculiarities that seem to require the
+invocation to be done exactly as shown above.)
+
+The result should be in $(HOME)/git/build-selfs/selfs/selfs
+-----------
+
+If you run "selfs", it will create its data directory in
+$(HOME)/Documents/dwyco/selfs. There should be no need for 
+any other installation, as it "installs" everything it needs
+if it doesn't already exist. On desktop, if there is an argument
+it uses that directory. On mobile, it uses internal app storage
+which is erased when the app is uninstalled.
+
+
