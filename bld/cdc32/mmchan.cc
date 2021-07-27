@@ -319,7 +319,12 @@ init_coder_pipe()
 {
     if(Coder_pipe)
         return;
-    Coder_pipe = new DwPipeline<coder_input, coder_finished>(1, 3);
+    // WARNING: DO NOT SET THIS TO MORE THAN 1 THREAD!
+    // the coding objects are not thread-safe or re-entrant.
+    // this pipeline is just being used to allow the coding to
+    // happen in the background so we don't block for a long
+    // period of time in "service_channels"
+    Coder_pipe = new DwPipeline<coder_input, coder_finished>(1, 1);
     Coder_pipe->add_operation(new CoderOp);
     Coder_pipe->init();
 }
@@ -3809,6 +3814,19 @@ MMChannel::grab_and_code(int& len, unsigned long& captime, int& ref, int showonl
     init_coder_pipe();
     coder_input *ci = new coder_input;
     ci->coder = coder;
+    // WARNING: coding the video frames out of order only makes
+    // sense if they don't depend on each other, ie, they are all
+    // reference frames. this mean the bit rate is going to be
+    // increased (a lot).
+    // HOWEVER, since we are only using this pipeline to avoid blocking
+    // the UI thread, this is ok. it just puts the coding in the background
+    // thread, but the results are still being produced in order.
+    //
+    // as a side note: if you are willing to buffer up some frames, you
+    // *might* be able to overlap some of the coding by grouping the
+    // frames into IPPP groups or something. you would still need
+    // separate coding objects tho unless you went to the trouble to make
+    // them independent.
     ci->ref = send_ref();
     ci->bits = sampler->get_data(ci->cols, ci->rows, ci->y, ci->cb, ci->cr, ci->fmt, ci->captime);
     ci->show_only = showonly;

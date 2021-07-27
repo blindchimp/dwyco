@@ -11,6 +11,11 @@ randobld/jni/toolchain.x86/
 randobld/jni/NDK_ABI_X86
 randobld/obj/
 randobld/libs/
+selfsbld/jni/toolchain/
+selfsbld/jni/toolchain.x86/
+selfsbld/jni/NDK_ABI_X86
+selfsbld/obj/
+selfsbld/libs/
 build-*/
 phoobld.pro.user
 *.pro.user
