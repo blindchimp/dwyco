@@ -3,7 +3,7 @@ import QtQuick 2.12
 Image {
     property alias vid_incoming: vid_incoming
     property alias vid_preview: vid_preview
-    property alias vid_pause_button: vid_pause_button
+    //property alias vid_pause_button: vid_pause_button
     clip: true
 
     id: vid_incoming
@@ -16,12 +16,12 @@ Image {
         width: parent.width / 4
         height: parent.height / 4
         clip: true
-        CallButtonLink {
-            id: vid_pause_button
-            anchors.fill: parent
-            but_name: "actionPause"
-            opacity: checked ? .7 : (hovered ? .3 : 0)
-            hoverEnabled: true
-        }
+//        CallButtonLink {
+//            id: vid_pause_button
+//            anchors.fill: parent
+//            but_name: "actionPause"
+//            opacity: checked ? .7 : (hovered ? .3 : 0)
+//            hoverEnabled: true
+//        }
     }
 }
