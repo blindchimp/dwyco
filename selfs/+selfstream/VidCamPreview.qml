@@ -20,6 +20,7 @@ import QtMultimedia 5.12
 
 Page {
     //property bool dragging
+    id: campage
     property string serving_uid
     property string attempt_uid
     property var call_buttons_model
@@ -36,7 +37,7 @@ Page {
         font.bold: true
         color: "white"
         background: Rectangle {
-            color: "green"
+            color: core.is_database_online === 1 ? "green" : "red"
         }
     }
 
@@ -135,6 +136,18 @@ Page {
         onPal_event: {
             DiscoverList.load_users_to_model();
         }
+
+//        onQt_app_state_change: {
+//            console.log("app state change ", app_state)
+//            if(app_state === 0) {
+//                // resuming
+//                campage.visible = true
+//            } else {
+//                // pausing
+//                campage.visible = false
+//            }
+
+//        }
     }
 
     Camera {
@@ -233,7 +246,7 @@ Page {
                 enabled: {profile_sent === 0}
                 onClicked: {
                     Qt.inputMethod.commit()
-                    if(core.set_simple_profile("selfs:" + capture_name.text_input, "", "", "") === 1) {
+                    if(core.set_simple_profile(capture_name.text_input, "", "", "") === 1) {
                         profile_sent = 1
                     }
                     else
@@ -250,7 +263,7 @@ Page {
             onAccepted: {
                 console.log("WTF")
                 attempt_uid = ""
-                var sname = "selfs:" + text_input
+                var sname = text_input
                 core.name_to_uid(sname)
                 core.set_local_setting("camera-to-watch", text_input)
             }
@@ -262,6 +275,7 @@ Page {
             highlightMoveDuration: 100
             highlightMoveVelocity: -1
             visible: cam_sender.checked
+            spacing: mm(2)
             delegate: Item {
                 id: wrapper2
                 width: parent.width
@@ -280,7 +294,7 @@ Page {
                 RowLayout {
                     id: drow2
                     anchors.fill: parent
-                    spacing: mm(1)
+                    spacing: mm(3)
                     Rectangle {
                         Layout.minimumHeight: parent.height
                         Layout.maximumHeight: parent.height
@@ -328,6 +342,7 @@ Page {
             highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
             highlightMoveDuration: 100
             highlightMoveVelocity: -1
+            spacing: mm(2)
             visible: cam_watcher.checked
             delegate: Item {
                 id: wrapper
@@ -347,7 +362,7 @@ Page {
                 RowLayout {
                     id: drow
                     anchors.fill: parent
-                    spacing: mm(1)
+                    spacing: mm(3)
                     Rectangle {
                         Layout.minimumHeight: parent.height
                         Layout.maximumHeight: parent.height
@@ -378,7 +393,15 @@ Page {
                         text: display
                         elide: Text.ElideRight
                         Layout.alignment: Qt.AlignLeft
+                        Layout.preferredWidth: cm(2)
+                        font.bold: true
                     }
+                    Label {
+                        text: ip
+                        elide: Text.ElideRight
+                        Layout.alignment: Qt.AlignRight
+                    }
+
                     Item {
                         Layout.fillWidth: true
                     }

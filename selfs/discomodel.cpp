@@ -42,9 +42,21 @@ DiscoverListModel::add_uid_to_model(const QByteArray& uid)
     }
     c->update_display(dwyco_info_to_display(uid));
     if(dwyco_uid_online(uid.constData(), uid.length()))
+    {
         c->update_online(true);
+        int dum;
+        char *ip;
+        if(dwyco_uid_to_ip2(uid.constData(), uid.length(), &dum, &ip))
+        {
+            c->update_ip(ip);
+            dwyco_free_array(ip);
+        }
+    }
     else
+    {
         c->update_online(false);
+        c->update_ip("");
+    }
     return c;
 }
 

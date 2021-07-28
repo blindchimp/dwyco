@@ -81,7 +81,7 @@
 extern QQmlApplicationEngine *TheEngine;
 #endif
 
-#define NB_BUFFER 5
+#define NB_BUFFER 3
 static QVector<unsigned long> y_bufs(NB_BUFFER);
 static QVector<unsigned int> lens(NB_BUFFER);
 static QVector<QVideoFrame> vbufs(NB_BUFFER);

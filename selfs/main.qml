@@ -983,7 +983,7 @@ ApplicationWindow {
             }
             else
             {
-                service_timer.interval = (sc_next === 0 ? 100 : Math.min(100, sc_next))
+                service_timer.interval = (sc_next === 0 ? 30 : Math.min(30, sc_next))
             }
         }
 

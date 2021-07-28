@@ -21,6 +21,7 @@ class DiscoveredUser : public QObject
     QML_READONLY_VAR_PROPERTY(QString, uid)
     QML_READONLY_VAR_PROPERTY(QString, display)
     QML_READONLY_VAR_PROPERTY(bool, online)
+    QML_READONLY_VAR_PROPERTY(QString, ip)
     QML_READONLY_VAR_PROPERTY(int, invalid)
     QML_READONLY_VAR_PROPERTY(int, resolved_counter)
 

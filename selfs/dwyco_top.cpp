@@ -2684,12 +2684,8 @@ DwycoCore::service_channels()
     if(Suspended || !Init_ok)
         return 0;
     int next_expire = dwyco_service_channels(&spin);
-//    static int been_here;
-//    if(!been_here)
-//    {
-//        been_here = 1;
-//        send_group_add("mumble", My_uid.toHex());
-//    }
+
+#ifndef SELFSTREAM
     if(dwyco_get_rescan_messages())
     {
         dwyco_set_rescan_messages(0);
@@ -2726,6 +2722,7 @@ DwycoCore::service_channels()
 
     }
     update_unread_count(total_unviewed_msgs_count());
+#endif
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically
     // linked. discovered why: JNI won't find functions properly when statically linked.
