@@ -3,7 +3,7 @@ Selfs is a Qt5 simple camera watcher/capture app
 
 Current requirements:
 * Qt 5.12
-* For Linux: Ubuntu 16.04+
+* For Linux: Ubuntu 20.04+
 
 To build on Linux:
 
@@ -18,12 +18,6 @@ git clone https://github.com/blindchimp/dwyco
 
 cd dwyco
 sh selfsbld/deps.sh (installs a few dev packages that are needed.)
-
------------
-
-* IN-TREE BUILD selfs and create AppDir in $(HOME)/git/dwyco/selfs/appdir:
-cd $(HOME)/git/dwyco
-sh selfsbld.sh
 
 -----------
 
