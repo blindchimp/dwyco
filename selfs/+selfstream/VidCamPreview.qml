@@ -113,6 +113,8 @@ Page {
                 }
                 vid_panel.vid_incoming.source = mi("ic_videocam_off_black_24dp.png")
                 core.delete_all_call_contexts()
+                status_label.text = "(not connected)"
+                connect_button.enabled = true
             } else {
                 if(serving_uid === "")
                 {
@@ -121,7 +123,13 @@ Page {
                     if(cam_sender.checked)
                         call_buttons_model.get("send_video").clicked()
                 }
+                status_label.text = "(connected)"
+                connect_button.enabled = false
             }
+        }
+
+        onSc_connect_progress: {
+            status_label.text = msg
         }
 
         onProfile_update: {
@@ -201,6 +209,7 @@ Page {
                     core.enable_video_capture_preview(1)
                     attempt_uid = ""
                     serving_uid = ""
+                    status_label.text = ""
                 } else {
 
                 }
@@ -223,11 +232,18 @@ Page {
                     viewer.source = ""
                     attempt_uid = ""
                     serving_uid = ""
+                    status_label.text = ""
                 }
             }
         }
-        Label {
-            text: cam_watcher.checked ? "Camera to watch" : "Camera name"
+        RowLayout {
+            Label {
+                text: cam_watcher.checked ? "Camera to watch" : "Camera name"
+            }
+            Label {
+                id: status_label
+                Layout.fillWidth: true
+            }
         }
 
         TextFieldX {
@@ -266,6 +282,20 @@ Page {
                 var sname = text_input
                 core.name_to_uid(sname)
                 core.set_local_setting("camera-to-watch", text_input)
+            }
+            onText_inputChanged: {
+                core.set_local_setting("camera-to-watch", text_input)
+            }
+
+            Button {
+                id: connect_button
+
+                text: qsTr("Watch")
+                enabled: true
+                onClicked: {
+                    Qt.inputMethod.commit()
+                    watch_name.accepted()
+                }
             }
         }
         ListView {
@@ -322,7 +352,7 @@ Page {
                         }
                     }
                     Label {
-                        text: "foo"
+                        text: core.uid_to_name(uid)
                         elide: Text.ElideRight
                         Layout.alignment: Qt.AlignLeft
                     }

@@ -320,6 +320,9 @@ signals:
     void sc_rem_mute_off(QString uid);
     void sc_rem_mute_unknown(QString uid);
 
+    // this is mostly for debugging
+    void sc_connect_progress(QString uid, QString msg);
+
 
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
