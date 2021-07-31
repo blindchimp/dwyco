@@ -1,0 +1,12 @@
+* use uid's to allow sane connect/disconnect so a cam can broadcast.
+* on desktop, redo layout so video can be bigger
+* maybe add zoom on the video
+* reload all profiles in pal list on start so we get latest names
+* see if we can acquire wakelock so the phone doesn't sleep while we are on.
+* remove phone poweroff at 10pm
+* figure out why camera isn't blitting to screen
+* maybe use videooutput in cam mode when not connected to anyone
+* put an option to use back cam, so you can point it out a window
+* put fdroid repo on www.dwyco.com
+* maybe add landscape mode (rotate button or something)
+
