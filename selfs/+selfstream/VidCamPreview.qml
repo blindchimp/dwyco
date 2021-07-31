@@ -112,7 +112,10 @@ Page {
                     call_buttons_model = null
                 }
                 vid_panel.vid_incoming.source = mi("ic_videocam_off_black_24dp.png")
-                core.delete_all_call_contexts()
+                if(cam_sender.checked)
+                    core.delete_call_context(uid)
+                else
+                    core.delete_all_call_contexts()
                 status_label.text = "(not connected)"
                 connect_button.enabled = true
             } else {
