@@ -1,5 +1,6 @@
 * use uid's to allow sane connect/disconnect so a cam can broadcast.
 * on desktop, redo layout so video can be bigger
+  note: tried using a "gridlayout" and it was a total bust, more or less random layout dimensions and positions. it looks like the only good way to do it is going to be to copy the file and redo the layout "by hand" and use +desktop or something to select the right file. ugly.
 * maybe add zoom on the video
 * reload all profiles in pal list on start so we get latest names
 * see if we can acquire wakelock so the phone doesn't sleep while we are on.
@@ -9,4 +10,4 @@
 * put an option to use back cam, so you can point it out a window
 * put fdroid repo on www.dwyco.com
 * maybe add landscape mode (rotate button or something)
-
+* don't show "non-capture" discoveries in the "watch" list
