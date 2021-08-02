@@ -40,6 +40,7 @@
 #include "simpledirmodel.h"
 #include "syncmodel.h"
 #include "discomodel.h"
+#include "ccmodel.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
@@ -456,7 +457,12 @@ dwyco_sys_event_callback(int cmd, int id,
 
     //printf("SYS EVENT %d\n", cmd);
 
-    if(cmd == DWYCO_SE_USER_UID_RESOLVED)
+    if(cmd == DWYCO_SE_USER_STATUS_CHANGE)
+    {
+        dwyco_pal_add(uid, len_uid);
+        TheDiscoverListModel->load_users_to_model();
+    }
+    else if(cmd == DWYCO_SE_USER_UID_RESOLVED)
     {
         emit TheDwycoCore->sys_uid_resolved(huid);
         if(huid == TheDwycoCore->get_this_uid())
@@ -507,6 +513,10 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED:
         emit TheDwycoCore->msg_recv_state(cmd, str_data, huid);
+        break;
+
+    case DWYCO_SE_IDENT_TO_UID:
+        emit TheDwycoCore->name_to_uid_result(huid, QString::fromUtf8(str_data));
         break;
 
     case DWYCO_SE_MSG_PULL_OK:
@@ -860,6 +870,12 @@ DwycoCore::set_invisible_state(int s)
     dwyco_set_invisible_state(s);
 }
 
+void
+DwycoCore::name_to_uid(QString handle)
+{
+    QByteArray b = handle.toUtf8();
+    dwyco_name_to_uid(b.constData(), b.length());
+}
 
 static
 void
@@ -1807,10 +1823,10 @@ DwycoCore::get_established_state(QString uid)
 }
 
 void
-DwycoCore::try_connect(QString uid)
+DwycoCore::start_control(QString uid)
 {
     simple_call *c = simple_call::get_simple_call(QByteArray::fromHex(uid.toLatin1()));
-    emit c->try_connect();
+    c->start_control(true);
 
 }
 
@@ -1831,7 +1847,24 @@ DwycoCore::delete_call_context(QString uid)
     {
         return;
     }
-    delete c[0];
+    c[0]->deleteLater();
+}
+
+void
+DwycoCore::delete_all_call_contexts()
+{
+    auto o = simple_call::Simple_calls.objs;
+
+    for(int i = 0; i < o.count(); ++i)
+    {
+        o[i]->deleteLater();
+    }
+}
+
+void
+DwycoCore::hangup_all_calls()
+{
+    dwyco_hangup_all_calls();
 }
 
 void
@@ -1862,6 +1895,7 @@ DwycoCore::bootstrap(QString name, QString email)
     int len_uid;
     dwyco_get_my_uid(&uid, &len_uid);
     My_uid = QByteArray(uid, len_uid);
+    update_this_uid(My_uid.toHex());
 }
 
 void
@@ -3052,6 +3086,9 @@ dwyco_register_qml(QQmlContext *root)
 
     TheDiscoverListModel = new DiscoverListModel;
     root->setContextProperty("DiscoverList", TheDiscoverListModel);
+
+    new CallContextModel;
+    root->setContextProperty("CallContextModel", TheCallContextModel);
 
 //#ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;
