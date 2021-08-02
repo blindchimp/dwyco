@@ -31,7 +31,7 @@ public class DwycoApp {
         final public static boolean sender_sticky = true;
 	// false means set the FLAG_SECURE on the app so direct screenshots are not permitted
 	// (at least in some cases, seems a bit inconsistent depending on android version)
-        final public static boolean allow_screenshots = false;
+        final public static boolean allow_screenshots = true;
 
         final public static boolean is_rando = false;
 	

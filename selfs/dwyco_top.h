@@ -21,7 +21,9 @@
 #ifndef NO_BUILDTIME
 #include "buildtime.h"
 #else
+#ifndef BUILDTIME
 #define BUILDTIME "debug"
+#endif
 #endif
 class DwycoCore : public QObject
 {
@@ -319,6 +321,9 @@ signals:
     void sc_rem_mute_on(QString uid);
     void sc_rem_mute_off(QString uid);
     void sc_rem_mute_unknown(QString uid);
+
+    // this is mostly for debugging
+    void sc_connect_progress(QString uid, QString msg);
 
 
     void image_picked(const QString& fn);
