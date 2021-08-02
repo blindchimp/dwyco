@@ -21,7 +21,9 @@
 #ifndef NO_BUILDTIME
 #include "buildtime.h"
 #else
+#ifndef BUILDTIME
 #define BUILDTIME "debug"
+#endif
 #endif
 class DwycoCore : public QObject
 {
@@ -164,6 +166,7 @@ public:
     Q_INVOKABLE QUrl uid_to_http_profile_preview(QString uid);
     Q_INVOKABLE QUrl uid_to_profile_view(QString uid);
     Q_INVOKABLE QString uid_to_profile_image_filename(QString uid);
+    Q_INVOKABLE void name_to_uid(QString handle);
 
     Q_INVOKABLE int set_setting(QString name, QString value);
     Q_INVOKABLE QVariant get_setting(QString name);
@@ -223,9 +226,16 @@ public:
     Q_INVOKABLE void uid_keyboard_input(QString uid);
     Q_INVOKABLE int get_rem_keyboard_state(QString uid);
     Q_INVOKABLE void create_call_context(QString uid);
-    Q_INVOKABLE void delete_call_context(QString uid);
-    Q_INVOKABLE void try_connect(QString uid);
+    Q_INVOKABLE void start_control(QString uid);
     Q_INVOKABLE int get_established_state(QString uid);
+    Q_INVOKABLE void hangup_all_calls();
+    // WARNING: calling these are touchy, and you will crash if you
+    // call them within slots/handlers which are invoked via
+    // call-related signals. generally, it is better NOT to
+    // delete the call context, and just let it take care of
+    // itself.
+    Q_INVOKABLE void delete_call_context(QString uid);
+    Q_INVOKABLE void delete_all_call_contexts();
 
     Q_INVOKABLE void delete_file(QString fn);
 
@@ -280,7 +290,7 @@ signals:
     void sys_chat_server_status(int id, int status);
     void qt_app_state_change(int app_state);
 
-    // this are sent when a call context is up
+    // these are sent when a call context is up
     void sc_rem_keyboard_active(QString uid, int active);
     void sc_connect_terminated(QString uid);
     void sc_connectedChanged(QString uid, int connected);
@@ -312,6 +322,9 @@ signals:
     void sc_rem_mute_off(QString uid);
     void sc_rem_mute_unknown(QString uid);
 
+    // this is mostly for debugging
+    void sc_connect_progress(QString uid, QString msg);
+
 
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
@@ -323,6 +336,8 @@ signals:
     void zap_stopped(int zid);
 
     void mid_tag_changed(QString mid);
+
+    void name_to_uid_result(QString uid, QString handle);
 
 private:
 

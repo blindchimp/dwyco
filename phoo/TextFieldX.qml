@@ -11,14 +11,23 @@ import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
 
 RowLayout {
+    id: textfieldx
+
     property alias text_input: textInput1.text
     property alias placeholder_text: textInput1.placeholderText
+    property alias readOnly: textInput1.readOnly
+    signal accepted()
+
     TextField {
         id: textInput1
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignVCenter
+        onAccepted: {
+            textfieldx.accepted()
+        }
     }
     Button {
+        enabled: !textInput1.readOnly
         text: "x"
         onClicked: {
             textInput1.text = ""
