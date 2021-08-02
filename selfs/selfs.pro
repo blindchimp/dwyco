@@ -15,6 +15,8 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += NO_BUILDTIME
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
+# i'll shit myself if this works on all platforms
+DEFINES += BUILDTIME=\"\\\"1.04\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin

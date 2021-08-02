@@ -21,7 +21,9 @@
 #ifndef NO_BUILDTIME
 #include "buildtime.h"
 #else
+#ifndef BUILDTIME
 #define BUILDTIME "debug"
+#endif
 #endif
 class DwycoCore : public QObject
 {

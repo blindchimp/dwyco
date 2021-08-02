@@ -141,7 +141,7 @@ ApplicationWindow {
     // at the same time.
     //width: Screen.width
     //height: Screen.height
-    title: qsTr("Dwyco ")
+    title: qsTr("Dwyco ") + core.buildtime
 
     property int close_bounce: 0
     onClosing: {
