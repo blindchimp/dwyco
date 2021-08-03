@@ -33,7 +33,7 @@ Page {
     }
 
     header: Label {
-        text: "Dwyco Selfie Stream " + (core.is_database_online === 1 ? "(online)" : "(offline)")
+        text: "Dwyco Selfie Stream " + core.buildtime + " " + (core.is_database_online === 1 ? "(online)" : "(offline)")
         font.bold: true
         color: "white"
         background: Rectangle {
