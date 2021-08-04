@@ -16,7 +16,7 @@ DEFINES += NO_BUILDTIME
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"1.04\\\"\"
+DEFINES += BUILDTIME=\"\\\"1.05\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin

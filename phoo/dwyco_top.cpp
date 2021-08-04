@@ -455,12 +455,7 @@ dwyco_sys_event_callback(int cmd, int id,
 
     //printf("SYS EVENT %d\n", cmd);
 
-    if(cmd == DWYCO_SE_USER_STATUS_CHANGE)
-    {
-        dwyco_pal_add(uid, len_uid);
-        TheDiscoverListModel->load_users_to_model();
-    }
-    else if(cmd == DWYCO_SE_USER_UID_RESOLVED)
+    if(cmd == DWYCO_SE_USER_UID_RESOLVED)
     {
         TheDwycoCore-> emit sys_uid_resolved(huid);
     }

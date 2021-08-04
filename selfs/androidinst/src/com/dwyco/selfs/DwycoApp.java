@@ -34,6 +34,8 @@ public class DwycoApp {
         final public static boolean allow_screenshots = true;
 
         final public static boolean is_rando = false;
+
+	final public static boolean keep_screen_on = true;
 	
 
 }
