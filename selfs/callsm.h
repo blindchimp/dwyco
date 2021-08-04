@@ -157,12 +157,17 @@ signals:
     void rem_keyboard_active(int);
     void rem_keyboard_active(const QString& uid, int);
 
+    // this is mostly for debugging, the messages
+    // are not really interesting for end-users.
+    void connect_progress(QString);
+
 private slots:
     void on_actionPause_toggled(bool arg1);
 
     void signal_dispatcher();
     void signal_dispatcher_int(int i);
     void signal_dispatcher_bool(bool i);
+    void signal_dispatcher_string(QString i);
 
     void recv_control_msg(int ui_id, QByteArray com, int arg1, int arg2, QByteArray str);
     void keyboard_input();

@@ -601,6 +601,7 @@ simple_call::connect_signals()
     QMetaMethod mm_dispatch = mo->method(mo->indexOfSlot("signal_dispatcher()"));
     QMetaMethod mm_dispatch_int = mo->method(mo->indexOfSlot("signal_dispatcher_int(int)"));
     QMetaMethod mm_dispatch_bool = mo->method(mo->indexOfSlot("signal_dispatcher_bool(bool)"));
+    QMetaMethod mm_dispatch_string = mo->method(mo->indexOfSlot("signal_dispatcher_string(QString)"));
     int m = mo->methodOffset();
     int mc = mo->methodCount();
     for(; m < mc; ++m)
@@ -631,6 +632,14 @@ simple_call::connect_signals()
         if(mm.parameterCount() == mm_dispatch_bool.parameterCount() && QMetaObject::checkConnectArgs(mm, mm_dispatch_bool) == true)
         {
             if((bool)QObject::connect(this, mm, this, mm_dispatch_bool) == false)
+            {
+                qDebug() << "can't dispatch " << mm.methodSignature() << "\n";
+            }
+
+        }
+        if(mm.parameterCount() == mm_dispatch_string.parameterCount() && QMetaObject::checkConnectArgs(mm, mm_dispatch_string) == true)
+        {
+            if((bool)QObject::connect(this, mm, this, mm_dispatch_string) == false)
             {
                 qDebug() << "can't dispatch " << mm.methodSignature() << "\n";
             }
@@ -686,6 +695,23 @@ simple_call::signal_dispatcher_bool(bool i)
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
                               Q_ARG(QString, uid.toHex()),
                               Q_ARG(bool, i));
+
+}
+
+void
+simple_call::signal_dispatcher_string(QString i)
+{
+    int sig_idx = senderSignalIndex();
+    if(sig_idx == -1)
+        return;
+    QMetaMethod mm = metaObject()->method(sig_idx);
+    // here we see if there is an matching signal with a uid
+    // argument in the mainwinform, and invoke that
+    QByteArray b(mm.name());
+    b.prepend("sc_");
+    QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
+                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(QString, i));
 
 }
 
@@ -1264,7 +1290,9 @@ dwyco_simple_call_status2(int call_id, const char *msg, int percent, void *arg)
     DVP vp = DVP::cookie_to_ptr((DVP_COOKIE)arg);
     if(!vp.is_valid())
         return;
-    //simple_call *c = (simple_call *)(void *)vp;
+    simple_call *c = (simple_call *)(void *)vp;
+    emit c->connect_progress(msg);
+
     //c->setWindowTitle(msg);
 }
 

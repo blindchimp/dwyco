@@ -22,8 +22,6 @@ DiscoverListModel::DiscoverListModel(QObject *parent) :
     if(TheDiscoverListModel)
         ::abort();
     TheDiscoverListModel = this;
-    QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
-
 }
 
 DiscoverListModel::~DiscoverListModel()
@@ -43,6 +41,22 @@ DiscoverListModel::add_uid_to_model(const QByteArray& uid)
         append(c);
     }
     c->update_display(dwyco_info_to_display(uid));
+    if(dwyco_uid_online(uid.constData(), uid.length()))
+    {
+        c->update_online(true);
+        int dum;
+        char *ip;
+        if(dwyco_uid_to_ip2(uid.constData(), uid.length(), &dum, &ip))
+        {
+            c->update_ip(ip);
+            dwyco_free_array(ip);
+        }
+    }
+    else
+    {
+        c->update_online(false);
+        c->update_ip("");
+    }
     return c;
 }
 
@@ -71,10 +85,8 @@ DiscoverListModel::load_users_to_model()
     for(int i = 0; i < n; ++i)
     {
         QByteArray uid = ql.get<QByteArray>(i);
-        if(dwyco_uid_online(uid.constData(), uid.length()))
-        {
-            add_uid_to_model(uid);
-        }
+
+        add_uid_to_model(uid);
     }
 }
 

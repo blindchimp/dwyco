@@ -15,6 +15,8 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += NO_BUILDTIME
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
+# i'll shit myself if this works on all platforms
+DEFINES += BUILDTIME=\"\\\"1.05\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -304,12 +306,12 @@ ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 #        $$PWD/arm/libssl.so
 #}
 #message($$QMAKE_HOST.os)
-equals(QMAKE_HOST.os, Darwin) {
-message(MACOS)
-include(/Users/dwight/android/astudio/android_openssl/openssl.pri)
-} else {
-include(/home/dwight/android/astudio/android_openssl/openssl.pri)
-}
+#equals(QMAKE_HOST.os, Darwin) {
+#message(MACOS)
+#include(/Users/dwight/android/astudio/android_openssl/openssl.pri)
+#} else {
+#include(/home/dwight/android/astudio/android_openssl/openssl.pri)
+#}
 
 PRE_TARGETDEPS += \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \

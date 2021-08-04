@@ -69,6 +69,9 @@ public class NotificationClient extends QtActivity
         //alarm.setRepeating(AlarmManager.RTC_WAKEUP, cur_cal.getTimeInMillis(), 1000 * 60, pintent);
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+	if(DwycoApp.keep_screen_on)
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 

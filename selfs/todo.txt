@@ -1,0 +1,17 @@
+(done) * use uid's to allow sane connect/disconnect so a cam can broadcast.
+* on desktop, redo layout so video can be bigger
+  note: tried using a "gridlayout" and it was a total bust, more or less random layout dimensions and positions. it looks like the only good way to do it is going to be to copy the file and redo the layout "by hand" and use +desktop or something to select the right file. ugly.
+* maybe add zoom on the video
+(done) * reload all profiles in pal list on start so we get latest names
+(done, i think. no wakelock, just keep screen on) * see if we can acquire wakelock so the phone doesn't sleep while we are on.
+(done) * remove phone poweroff at 10pm
+* figure out why camera isn't blitting to screen
+* maybe use videooutput in cam mode when not connected to anyone
+* put an option to use back cam, so you can point it out a window
+(done) * put fdroid repo on www.dwyco.com
+* maybe add landscape mode (rotate button or something)
+* don't show "non-capture" discoveries in the "watch" list
+* show/hide name on camera so it isn't hanging out in the open
+* security note: if someone has access to the app, and is on your local wifi (you gave them access), they will get the broadcasts from  your cameras and will be able to see the camera locally. possibly we would need to have a secret locally to keep that from happening, but it may be too inconvenient, so make it an option.
+* security note: maybe have an option to only allow connects from local network. would reduce functionality, but security would be way less of a concern.
+* maybe someday: have it take snaps periodically and send messages to particular user for display. since it is point to point, might help with security issues if you just wanted to see the state of your cam periodically and not instantaneously.

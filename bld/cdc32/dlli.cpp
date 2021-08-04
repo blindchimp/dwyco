@@ -7509,6 +7509,14 @@ dwyco_uid_to_info(const char *user_id, int len_uid, int* cant_resolve_now_out)
     if(cant_resolve_now_out)
         *cant_resolve_now_out = 0;
     vc uid(VC_BSTRING, user_id, len_uid);
+    // note: have to think about this. it might be
+    // too expensive on mobile if you have lots of
+    // profiles. maybe need to just limit it to
+    // recently viewed ones or something
+    if(!prf_already_cached(uid))
+    {
+        fetch_info(uid);
+    }
     vc v(VC_VECTOR);
     vc ai = make_best_local_info(uid, cant_resolve_now_out);
     v.append(ai[0]);

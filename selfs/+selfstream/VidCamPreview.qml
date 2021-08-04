@@ -20,6 +20,7 @@ import QtMultimedia 5.12
 
 Page {
     //property bool dragging
+    id: campage
     property string serving_uid
     property string attempt_uid
     property var call_buttons_model
@@ -32,11 +33,11 @@ Page {
     }
 
     header: Label {
-        text: "Dwyco Selfie Stream " + (core.is_database_online === 1 ? "(online)" : "(offline)")
+        text: "Dwyco Selfie Stream " + core.buildtime + " " + (core.is_database_online === 1 ? "(online)" : "(offline)")
         font.bold: true
         color: "white"
         background: Rectangle {
-            color: "green"
+            color: core.is_database_online === 1 ? "green" : "red"
         }
     }
 
@@ -111,7 +112,12 @@ Page {
                     call_buttons_model = null
                 }
                 vid_panel.vid_incoming.source = mi("ic_videocam_off_black_24dp.png")
-                core.delete_all_call_contexts()
+                if(cam_sender.checked)
+                    core.delete_call_context(uid)
+                else
+                    core.delete_all_call_contexts()
+                status_label.text = "(not connected)"
+                connect_button.enabled = true
             } else {
                 if(serving_uid === "")
                 {
@@ -120,7 +126,13 @@ Page {
                     if(cam_sender.checked)
                         call_buttons_model.get("send_video").clicked()
                 }
+                status_label.text = "(connected)"
+                connect_button.enabled = false
             }
+        }
+
+        onSc_connect_progress: {
+            status_label.text = msg
         }
 
         onProfile_update: {
@@ -135,6 +147,18 @@ Page {
         onPal_event: {
             DiscoverList.load_users_to_model();
         }
+
+//        onQt_app_state_change: {
+//            console.log("app state change ", app_state)
+//            if(app_state === 0) {
+//                // resuming
+//                campage.visible = true
+//            } else {
+//                // pausing
+//                campage.visible = false
+//            }
+
+//        }
     }
 
     Camera {
@@ -188,6 +212,7 @@ Page {
                     core.enable_video_capture_preview(1)
                     attempt_uid = ""
                     serving_uid = ""
+                    status_label.text = ""
                 } else {
 
                 }
@@ -210,11 +235,18 @@ Page {
                     viewer.source = ""
                     attempt_uid = ""
                     serving_uid = ""
+                    status_label.text = ""
                 }
             }
         }
-        Label {
-            text: cam_watcher.checked ? "Camera to watch" : "Camera name"
+        RowLayout {
+            Label {
+                text: cam_watcher.checked ? "Camera to watch" : "Camera name"
+            }
+            Label {
+                id: status_label
+                Layout.fillWidth: true
+            }
         }
 
         TextFieldX {
@@ -233,7 +265,7 @@ Page {
                 enabled: {profile_sent === 0}
                 onClicked: {
                     Qt.inputMethod.commit()
-                    if(core.set_simple_profile("selfs:" + capture_name.text_input, "", "", "") === 1) {
+                    if(core.set_simple_profile(capture_name.text_input, "", "", "") === 1) {
                         profile_sent = 1
                     }
                     else
@@ -250,9 +282,23 @@ Page {
             onAccepted: {
                 console.log("WTF")
                 attempt_uid = ""
-                var sname = "selfs:" + text_input
+                var sname = text_input
                 core.name_to_uid(sname)
                 core.set_local_setting("camera-to-watch", text_input)
+            }
+            onText_inputChanged: {
+                core.set_local_setting("camera-to-watch", text_input)
+            }
+
+            Button {
+                id: connect_button
+
+                text: qsTr("Watch")
+                enabled: true
+                onClicked: {
+                    Qt.inputMethod.commit()
+                    watch_name.accepted()
+                }
             }
         }
         ListView {
@@ -262,6 +308,7 @@ Page {
             highlightMoveDuration: 100
             highlightMoveVelocity: -1
             visible: cam_sender.checked
+            spacing: mm(2)
             delegate: Item {
                 id: wrapper2
                 width: parent.width
@@ -280,7 +327,7 @@ Page {
                 RowLayout {
                     id: drow2
                     anchors.fill: parent
-                    spacing: mm(1)
+                    spacing: mm(3)
                     Rectangle {
                         Layout.minimumHeight: parent.height
                         Layout.maximumHeight: parent.height
@@ -308,7 +355,7 @@ Page {
                         }
                     }
                     Label {
-                        text: "foo"
+                        text: core.uid_to_name(uid)
                         elide: Text.ElideRight
                         Layout.alignment: Qt.AlignLeft
                     }
@@ -328,6 +375,7 @@ Page {
             highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
             highlightMoveDuration: 100
             highlightMoveVelocity: -1
+            spacing: mm(2)
             visible: cam_watcher.checked
             delegate: Item {
                 id: wrapper
@@ -347,7 +395,7 @@ Page {
                 RowLayout {
                     id: drow
                     anchors.fill: parent
-                    spacing: mm(1)
+                    spacing: mm(3)
                     Rectangle {
                         Layout.minimumHeight: parent.height
                         Layout.maximumHeight: parent.height
@@ -378,7 +426,15 @@ Page {
                         text: display
                         elide: Text.ElideRight
                         Layout.alignment: Qt.AlignLeft
+                        Layout.preferredWidth: cm(2)
+                        font.bold: true
                     }
+                    Label {
+                        text: ip
+                        elide: Text.ElideRight
+                        Layout.alignment: Qt.AlignRight
+                    }
+
                     Item {
                         Layout.fillWidth: true
                     }
