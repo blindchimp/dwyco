@@ -8338,9 +8338,9 @@ dwyco_uid_to_info(const char *uid, int len_uid, int* cant_resolve_now_out)
     // too expensive on mobile if you have lots of
     // profiles. maybe need to just limit it to
     // recently viewed ones or something
-    if(!prf_already_cached(uid))
+    if(!prf_already_cached(buid))
     {
-        fetch_info(uid);
+        fetch_info(buid);
     }
     vc v(VC_VECTOR);
     vc ai = make_best_local_info(buid, cant_resolve_now_out);

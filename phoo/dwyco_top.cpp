@@ -459,8 +459,10 @@ dwyco_sys_event_callback(int cmd, int id,
 
     if(cmd == DWYCO_SE_USER_STATUS_CHANGE)
     {
+#ifdef SELFSTREAM
         dwyco_pal_add(uid, len_uid);
         TheDiscoverListModel->load_users_to_model();
+#endif
     }
     else if(cmd == DWYCO_SE_USER_UID_RESOLVED)
     {
