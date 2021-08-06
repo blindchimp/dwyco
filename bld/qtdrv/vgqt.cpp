@@ -91,6 +91,7 @@ static int debug = 1;
 static QMutex mutex;
 static int Orientation;
 static QCamera *Cam;
+static QMetaObject::Connection Cam_sig;
 static QList<QCameraInfo> Cams;
 static int Cur_idx = -1;
 
@@ -565,6 +566,10 @@ vgqt_init(void *aqext, int frame_rate)
     Cam = find_qml_camera();
     if(!Cam)
         return 0;
+#ifdef MACOSX
+    QObject::disconnect(Cam_sig);
+    Cam_sig = QObject::connect(Cam, &QCamera::stateChanged, config_viewfinder);
+#endif
 #else
     qDebug() << QCameraInfo::defaultCamera() << "\n";
     if(!Cam)
@@ -609,7 +614,7 @@ vgqt_init(void *aqext, int frame_rate)
 
     if(Probe_handler->probe.setSource(Cam))
     {
-        //Cam->start();
+        Cam->load();
         return 1;
     }
     else
