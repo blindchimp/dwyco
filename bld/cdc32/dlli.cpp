@@ -6103,6 +6103,10 @@ DWYCOEXPORT
 int
 dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **str_out)
 {
+    // keep debugging from crashing
+    *str_out = new char[1];
+    *str_out[0] = 0;
+
     vc v(VC_BSTRING, uid, len_uid);
     int prim, sec, pal;
     unsigned long ip =  uid_to_ip(v, *can_do_direct_out, prim, sec, pal);
