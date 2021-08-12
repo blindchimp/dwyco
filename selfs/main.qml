@@ -267,43 +267,43 @@ ApplicationWindow {
 //        }
 
     
-    Menu {
-        id: moremenu
-        x: parent.width - width
-        transformOrigin: Menu.TopRight
-        MenuItem {
-            text: "Block user"
-            onTriggered: {
-                core.set_ignore(chatbox.to_uid, 1)
-                stack.pop()
-            }
-        }
-        MenuItem {
-            text: "Block and Delete user"
-            onTriggered: {
-                confirm_block_delete.visible = true
-            }
-            MessageDialog {
-                id: confirm_block_delete
-                title: "Block and delete?"
-                icon: StandardIcon.Question
-                text: "Delete ALL messages from user and BLOCK them?"
-                informativeText: "This removes FAVORITE and HIDDEN messages too."
-                standardButtons: StandardButton.Yes | StandardButton.No
-                onYes: {
-                    core.set_ignore(chatbox.to_uid, 1)
-                    core.delete_user(chatbox.to_uid)
-                    themsglist.reload_model()
-                    stack.pop()
+//    Menu {
+//        id: moremenu
+//        x: parent.width - width
+//        transformOrigin: Menu.TopRight
+//        MenuItem {
+//            text: "Block user"
+//            onTriggered: {
+//                core.set_ignore(chatbox.to_uid, 1)
+//                stack.pop()
+//            }
+//        }
+//        MenuItem {
+//            text: "Block and Delete user"
+//            onTriggered: {
+//                confirm_block_delete.visible = true
+//            }
+//            MessageDialog {
+//                id: confirm_block_delete
+//                title: "Block and delete?"
+//                icon: StandardIcon.Question
+//                text: "Delete ALL messages from user and BLOCK them?"
+//                informativeText: "This removes FAVORITE and HIDDEN messages too."
+//                standardButtons: StandardButton.Yes | StandardButton.No
+//                onYes: {
+//                    core.set_ignore(chatbox.to_uid, 1)
+//                    core.delete_user(chatbox.to_uid)
+//                    themsglist.reload_model()
+//                    stack.pop()
 
-                }
-                onNo: {
-                    stack.pop()
-                }
-            }
-        }
+//                }
+//                onNo: {
+//                    stack.pop()
+//                }
+//            }
+//        }
 
-    }
+//    }
 
 
     Item {
