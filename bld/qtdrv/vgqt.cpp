@@ -54,6 +54,7 @@
 #include "vgqt.h"
 #include "vidaq.h"
 #include "pgm.h"
+#include "vidcvt.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -487,7 +488,6 @@ vgqt_del(void *aqext)
     {
         vgqt_stop(0);
         vgqt_pass(0);
-
     }
 #ifndef USE_QML_CAMERA
     if(Cam)
@@ -811,9 +811,31 @@ conv_data()
             vf.unmap();
             vf = QVideoFrame();
             return f;
-
-
         }
+        else
+        {
+            // note: this was an attempt to convert yuy2 as returned by
+            // the qt camera system to something we can use. it gets the plane
+            // wrong so the pic doesn't look right. and capture stops after
+            // a few frames, probably gstreamer getting confused about something.
+        VidConvert cvt;
+        cvt.set_format(fmt);
+        int ccols = vf.width();
+        int crows = vf.height();
+        void *y;
+        void *cb;
+        void *cr;
+        int fmt_out;
+        void *r = cvt.convert_data(vf.bits(), vf.bytesPerLine() * vf.height(), ccols, crows, y, cb, cr, fmt_out, 0);
+        f.planes[0] = (gray **)r;
+        f.planes[1] = (gray **)cb;
+        f.planes[2] = (gray **)cr;
+
+        vf.unmap();
+        vf = QVideoFrame();
+        return f;
+        }
+
 #endif
 
         unsigned char *c = (unsigned char *)vf.bits();
