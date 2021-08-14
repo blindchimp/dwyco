@@ -706,6 +706,12 @@ ApplicationWindow {
         }
     }
 
+    VidGrid {
+        id: vid_watcher
+        visible: false
+
+    }
+
 //    DwycoVidRec {
 //        id: dwyco_vid_rec
 //        visible: false
@@ -755,11 +761,11 @@ ApplicationWindow {
             a = get_local_setting("first-run")
             if(a === "") {
                 //profile_dialog.visible = true
-                stack.push(vid_cam_preview)
+                stack.push(vid_watcher)
                 stack.push(blank_page)
                 stack.push(profile_dialog)
             } else {
-                stack.push(vid_cam_preview)
+                stack.push(vid_watcher)
                 profile_bootstrapped = 1
                 pwdialog.state = "start"
             }
