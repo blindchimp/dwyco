@@ -463,6 +463,8 @@ sync_files()
 // to "no group" status.
 // ASSUMES: there are no network connections, and that the system will be
 // exited and restarted in order to reset most of the state before the next login.
+// THERE is a bug in here, i think we need to weed out tags that we got from
+// other clients that might still be running around.
 void
 remove_sync_state()
 {
