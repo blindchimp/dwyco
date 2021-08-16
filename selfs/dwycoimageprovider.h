@@ -21,7 +21,11 @@ public:
     DwycoImageProvider();
     ~DwycoImageProvider();
 
+    // the id is assumed to be of the form "<ui_id>/<frame_number>"
+
     void add_image(const QString& id, QImage);
+    void clear_ui_id(int i_id);
+    void clear_all();
 
     virtual QImage	requestImage(const QString & id, QSize * size, const QSize & requestedSize);
 };

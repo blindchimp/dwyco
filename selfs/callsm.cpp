@@ -1357,6 +1357,7 @@ simple_call::dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg
     case DWYCO_CALLDISP_TERMINATED:
     {
         call_del_by_uid(c->uid);
+        emit c->call_death_cleanup(c->chan_id);
         c->emit connect_terminated();
         c->chan_id = -1;
         c->call_id = -1;

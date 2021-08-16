@@ -113,8 +113,13 @@ signals:
     void connect_established();
     void connect_failed();
     void connect_terminated();
-    void connect_terminated(QByteArray uid);
+    //void connect_terminated(QByteArray uid);
     void connect_already_exists();
+
+    // this is really an internal thing that is emitted
+    // on call termination. you can use it to clean up
+    // cached video frames or whatever.
+    void call_death_cleanup(int ui_id);
 
     // signals for call setup/screening
     void initial_cam_event();
