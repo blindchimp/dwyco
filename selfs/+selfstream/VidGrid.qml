@@ -10,6 +10,7 @@ import QtQml 2.12
 import QtQuick.Controls 2.12
 import dwyco 1.0
 import QtQuick.Layouts 1.3
+import QtQml.StateMachine 1.12 as DSM
 
 Page {
     anchors.fill: parent
@@ -30,12 +31,118 @@ Page {
         id: video_delegate
 
         ColumnLayout {
+            signal lookup_failed
+            signal lookup_succeeded
+            signal connect_succeeded
+            signal connect_failed
+
+            property string attempt_uid: ""
+            property string attempt_handle: ""
+            property var call_buttons_model
+
+            DSM.StateMachine {
+                id: sm
+                initialState: idle
+                running: true
+                DSM.State {
+                    id: idle
+                    onEntered: {
+                        if(attempt_uid != "")
+                            core.delete_call_context(attempt_uid)
+                        attempt_uid = ""
+                        attempt_handle = ""
+                    }
+
+                    DSM.SignalTransition {
+                        signal: connect_button.clicked
+                        targetState: lookup_name
+                    }
+                }
+
+                DSM.State {
+                    id: lookup_name
+                    onEntered: {
+                        attempt_handle = model.display
+                        core.name_to_uid(model.display)
+                    }
+                    DSM.SignalTransition {
+                        signal: lookup_failed
+                        targetState: idle
+                    }
+                    DSM.SignalTransition {
+                        signal: lookup_succeeded
+                        targetState: start_connect
+                    }
+                }
+
+                DSM.State {
+                    id: start_connect
+                    onEntered: {
+                        core.start_control(attempt_uid)
+                    }
+                    DSM.SignalTransition {
+                        signal: connect_failed
+                        targetState: idle
+                    }
+
+                    DSM.SignalTransition {
+                        signal: connect_succeeded
+                        targetState: streaming
+                    }
+                }
+
+                DSM.State {
+                    id: streaming
+                    DSM.SignalTransition {
+                        signal: cancel_button.clicked
+                        targetState: idle
+                    }
+                    DSM.SignalTransition {
+                        signal: connect_failed
+                        targetState: idle
+                    }
+                }
+            }
+
+            Connections {
+                target: core
+                onName_to_uid_result: {
+                    if(handle != attempt_handle)
+                        return
+                    console.log("GOT UID FOR NAME ", uid, handle)
+                    if(uid == "") {
+                        lookup_failed()
+                    } else {
+                        core.set_pal(uid, 1)
+                        attempt_uid = uid
+                        lookup_succeeded()
+                    }
+                }
+
+                onSc_connectedChanged: {
+                    if(uid != attempt_uid)
+                        return
+                    console.log("ConnectedChanged ", connected, uid)
+                    if(connected === 1) {
+                        connect_succeeded()
+                    } else {
+                        connect_failed()
+                    }
+                }
+                onSc_connect_progress: {
+                    if(uid != attempt_uid)
+                        return
+                    status_label.text = msg
+                }
+            }
+
             property int connected: 0
             width: gview.cellWidth
             height: gview.cellHeight
             RowLayout {
                 Layout.fillWidth: true
                 ToolButton {
+                    id: cancel_button
                     text: "X"
                     onClicked: {
                         console.log("delete ", model.uid)
@@ -52,6 +159,9 @@ Page {
                 Label {
                     text: model.ip
                 }
+                Label {
+                    id: status_label
+                }
 
                 Item {
                     Layout.fillWidth: true
@@ -59,16 +169,36 @@ Page {
 
             }
             Button {
+                id: connect_button
                 text: "connect"
                 Layout.fillHeight: true
                 Layout.fillWidth: true
-                visible: connected === 0 && model.online
+                visible: model.online && idle.active
+            }
+            Label {
+                text: "Connecting..."
+                font.bold: true
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                visible: !streaming.active && !idle.active
+            }
+            Label {
+                text: "Offline"
+                font.bold: true
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                visible: connected === 0 && !model.online
             }
 
             VidCall {
                 id: vc
-                visible: connected !== 0
+                visible: streaming.active
                 Layout.fillHeight: true
+                Layout.fillWidth: true
 
             }
         }

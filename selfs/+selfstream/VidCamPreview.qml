@@ -93,6 +93,8 @@ Page {
         target: core
         onName_to_uid_result: {
             console.log("GOT UID FOR NAME ", uid, handle)
+            if(uid === "")
+                return
             core.set_pal(uid, 1)
             attempt_uid = uid
         }
