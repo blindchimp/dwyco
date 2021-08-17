@@ -154,6 +154,7 @@ Page {
                 Label {
                     text: model.display
                     Layout.alignment: Qt.AlignLeft|Qt.AlignVCenter
+                    color: model.online ? "white" : "black"
                     background: Rectangle {
                         color: model.online ? "green" : "white"
                     }
