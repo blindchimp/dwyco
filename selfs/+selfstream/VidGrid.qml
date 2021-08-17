@@ -11,6 +11,7 @@ import QtQuick.Controls 2.12
 import dwyco 1.0
 import QtQuick.Layouts 1.3
 import QtQml.StateMachine 1.12 as DSM
+import SortFilterProxyModel 0.2
 
 Page {
     anchors.fill: parent
@@ -51,6 +52,7 @@ Page {
                             core.delete_call_context(attempt_uid)
                         attempt_uid = ""
                         attempt_handle = ""
+                        status_label.text = ""
                     }
 
                     DSM.SignalTransition {
@@ -161,6 +163,7 @@ Page {
                 }
                 Label {
                     id: status_label
+                    visible: !idle.active
                 }
 
                 Item {
@@ -204,13 +207,24 @@ Page {
         }
     }
 
+    SortFilterProxyModel {
+        id: filtered_discover
+        sourceModel: DiscoverList
+        filters: [
+            ValueFilter {
+                roleName: "online"
+                value: true
+            }
+        ]
+    }
+
     GridView {
         id: gview
         anchors.fill: parent
         cellHeight: parent.height / 2
         cellWidth: parent.width / 2
 
-        model: DiscoverList
+        model: filtered_discover
         delegate: video_delegate
 
     }

@@ -2,6 +2,7 @@ TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
 
 #macx-g++:dateincr.commands = ./dumptime-mac
 #macx-clang:dateincr.commands = ./dumptime-mac
@@ -17,6 +18,7 @@ DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"1.10\\\"\"
+CONFIG += c++11
 
 CONFIG(appdir) {
 target.path=/usr/bin
