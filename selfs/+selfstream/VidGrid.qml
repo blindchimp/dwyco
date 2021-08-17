@@ -136,6 +136,12 @@ Page {
                         return
                     status_label.text = msg
                 }
+
+                onSc_associate_uid_with_ui_id: {
+                    if(uid != attempt_uid)
+                        return
+                    vc.a_ui_id = ui_id
+                }
             }
 
             property int connected: 0

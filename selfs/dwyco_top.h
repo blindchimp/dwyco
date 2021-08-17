@@ -296,6 +296,7 @@ signals:
     void sc_connect_terminated(QString uid);
     void sc_connectedChanged(QString uid, int connected);
     void sc_call_death_cleanup(QString uid, int ui_id);
+    void sc_associate_uid_with_ui_id(QString uid, int ui_id);
 
     void sc_cam_is_off(QString uid);
     void sc_cam_is_on(QString uid);

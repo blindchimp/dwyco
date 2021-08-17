@@ -120,6 +120,7 @@ signals:
     // on call termination. you can use it to clean up
     // cached video frames or whatever.
     void call_death_cleanup(int ui_id);
+    void associate_uid_with_ui_id(int ui_id);
 
     // signals for call setup/screening
     void initial_cam_event();
