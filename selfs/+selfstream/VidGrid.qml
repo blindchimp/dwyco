@@ -25,9 +25,39 @@ Page {
                 color: core.is_database_online === 1 ? "green" : "red"
             }
     }
+    footer: ToolBar {
+        RowLayout {
+            CheckBox {
+                id: show_all_checkbox
+                text: "Show all"
+
+            }
+            Item {
+                Layout.fillWidth: true
+            }
+        }
+    }
+
+    Connections {
+        target: core
+
+        onPal_event: {
+            DiscoverList.load_users_to_model()
+        }
+    }
 
 
-
+    // note: this is a little bit dicey, since technically these delegates
+    // can be deleted and created as needed. but for now, since we only
+    // want to have a few on the screen, we'll just assume there aren't
+    // a bunch of deletegates streaming offscreen.
+    // to fix this, it might be possible to use a Repeater to just instantiate
+    // everything as the start, and avoid problems of dynamic creation
+    // and deletion. the SortProxy used below also seems to confuse/recreate
+    // delegates if the filters are changed. not unexpected, but something
+    // to take into account. currently, i just terminate all streams when
+    // the filter changes, since we are kinda changing "modes" to edit
+    // some item or other.
     Component {
         id: video_delegate
 
@@ -53,6 +83,9 @@ Page {
                         attempt_uid = ""
                         attempt_handle = ""
                         status_label.text = ""
+                        // if the show all checkbox is toggled,
+                        // act as if the cancel button is clicked
+                        show_all_checkbox.clicked.connect(cancel_button.clicked)
                     }
 
                     DSM.SignalTransition {
@@ -153,10 +186,21 @@ Page {
                     id: cancel_button
                     text: "X"
                     onClicked: {
-                        console.log("delete ", model.uid)
+                        console.log("cancel ", model.uid)
                     }
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
                 }
+                ToolButton {
+                    icon.source: mi("ic_delete_black_24dp.png")
+                    visible: show_all_checkbox.checked
+                    Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
+
+                    onClicked: {
+                        console.log("FUCK ", model.uid)
+                        core.set_pal(model.uid, 0)
+                    }
+                }
+
                 Label {
                     text: model.display
                     Layout.alignment: Qt.AlignLeft|Qt.AlignVCenter
@@ -221,6 +265,7 @@ Page {
             ValueFilter {
                 roleName: "online"
                 value: true
+                enabled: !show_all_checkbox.checked
             }
         ]
     }

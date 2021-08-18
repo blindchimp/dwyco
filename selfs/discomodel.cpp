@@ -96,7 +96,7 @@ DiscoverListModel::load_users_to_model()
     {
         auto c = at(i);
         if(c->modified < upd)
-            kill.append(c->get_uid().toLatin1());
+            kill.append(QByteArray::fromHex(c->get_uid().toLatin1()));
     }
     for(int i = 0; i < kill.count(); ++i)
     {
