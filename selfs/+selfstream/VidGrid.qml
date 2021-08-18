@@ -337,8 +337,8 @@ Page {
     GridView {
         id: gview
         anchors.fill: parent
-        cellHeight: model.count <= 2 ? parent.height : parent.height / 2
-        cellWidth: model.count == 1 ? parent.width : parent.width / 2
+        cellHeight: is_mobile ? parent.height : (model.count <= 2 ? parent.height : parent.height / 2)
+        cellWidth: is_mobile ? parent.width : (model.count == 1 ? parent.width : parent.width / 2)
 
         model: filtered_discover
         delegate: video_delegate
