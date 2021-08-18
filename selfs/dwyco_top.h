@@ -301,6 +301,7 @@ signals:
     // the call is rejected by the other side for some call
     // screening issue
     void sc_connect_failed(QString uid);
+    void sc_connect_established(QString uid);
 
     void sc_cam_is_off(QString uid);
     void sc_cam_is_on(QString uid);

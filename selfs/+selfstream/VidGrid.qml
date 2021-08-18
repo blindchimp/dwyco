@@ -43,6 +43,7 @@ Page {
             TextFieldX {
                 id: watch_name
                 //visible: cam_watcher.checked
+                placeholder_text: "Enter cam name"
                 Layout.maximumWidth: cm(6)
                 onAccepted: {
                     console.log("WTF")
@@ -105,6 +106,7 @@ Page {
             property string attempt_uid: ""
             property string attempt_handle: ""
             property var call_buttons_model
+
             Component.onDestruction: {
                 if(attempt_uid != "")
                     core.delete_call_context(attempt_uid)
@@ -118,6 +120,7 @@ Page {
                     onEntered: {
                         if(attempt_uid != "")
                             core.delete_call_context(attempt_uid)
+                        call_buttons_model = null
                         attempt_uid = ""
                         attempt_handle = ""
                         status_label.text = ""
@@ -139,6 +142,10 @@ Page {
                         core.name_to_uid(model.display)
                     }
                     DSM.SignalTransition {
+                        signal: cancel_button.clicked
+                        targetState: idle
+                    }
+                    DSM.SignalTransition {
                         signal: lookup_failed
                         targetState: idle
                     }
@@ -152,6 +159,11 @@ Page {
                     id: start_connect
                     onEntered: {
                         core.start_control(attempt_uid)
+                        call_buttons_model = core.get_button_model(attempt_uid)
+                    }
+                    DSM.SignalTransition {
+                        signal: cancel_button.clicked
+                        targetState: idle
                     }
                     DSM.SignalTransition {
                         signal: connect_failed
@@ -237,6 +249,8 @@ Page {
                     text: "X"
                     onClicked: {
                         console.log("cancel ", model.uid)
+                        if(call_buttons_model != null)
+                            call_buttons_model.get("cancel_req").clicked()
                     }
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
                 }
@@ -323,8 +337,8 @@ Page {
     GridView {
         id: gview
         anchors.fill: parent
-        cellHeight: parent.height / 2
-        cellWidth: parent.width / 2
+        cellHeight: model.count <= 2 ? parent.height : parent.height / 2
+        cellWidth: model.count == 1 ? parent.width : parent.width / 2
 
         model: filtered_discover
         delegate: video_delegate
