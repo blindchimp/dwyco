@@ -35,11 +35,41 @@ Page {
             Item {
                 Layout.fillWidth: true
             }
+
+            TextFieldX {
+                id: watch_name
+                //visible: cam_watcher.checked
+                //Layout.fillWidth: true
+                onAccepted: {
+                    console.log("WTF")
+                    var sname = text_input
+                    core.name_to_uid(sname)
+                    //core.set_local_setting("camera-to-watch", text_input)
+                }
+                onText_inputChanged: {
+                    //core.set_local_setting("camera-to-watch", text_input)
+                }
+
+
+            }
+            ToolButton {
+                id: add_button
+                text: qsTr("Add")
+                enabled: watch_name.text_input.length > 0
+                onClicked: {
+                    Qt.inputMethod.commit()
+                    watch_name.accepted()
+                }
+            }
         }
     }
 
     Connections {
         target: core
+        onName_to_uid_result: {
+            if(uid != "")
+                core.set_pal(uid, 1)
+        }
 
         onPal_event: {
             DiscoverList.load_users_to_model()
