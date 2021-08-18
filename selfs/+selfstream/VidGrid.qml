@@ -342,6 +342,16 @@ Page {
 
         model: filtered_discover
         delegate: video_delegate
+        visible: model.count > 0
+
+    }
+
+    Label {
+        anchors.fill: parent
+        horizontalAlignment: Qt.AlignHCenter
+        verticalAlignment: Qt.AlignVCenter
+        text: "No Cameras Found Online\n(use Edit Mode to add one)\nLocal network cams appear automatically."
+        visible: filtered_discover.count == 0
 
     }
 
