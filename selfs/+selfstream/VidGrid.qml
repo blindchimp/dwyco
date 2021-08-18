@@ -26,11 +26,15 @@ Page {
             }
     }
     footer: ToolBar {
+//        background: Rectangle {
+//            color: "green"
+//        }
+
         RowLayout {
+            width: parent.width
             CheckBox {
                 id: show_all_checkbox
-                text: "Show all"
-
+                text: "Edit mode"
             }
             Item {
                 Layout.fillWidth: true
@@ -39,7 +43,7 @@ Page {
             TextFieldX {
                 id: watch_name
                 //visible: cam_watcher.checked
-                //Layout.fillWidth: true
+                Layout.maximumWidth: cm(6)
                 onAccepted: {
                     console.log("WTF")
                     var sname = text_input
@@ -91,6 +95,7 @@ Page {
     Component {
         id: video_delegate
 
+
         ColumnLayout {
             signal lookup_failed
             signal lookup_succeeded
@@ -100,7 +105,10 @@ Page {
             property string attempt_uid: ""
             property string attempt_handle: ""
             property var call_buttons_model
-
+            Component.onDestruction: {
+                if(attempt_uid != "")
+                    core.delete_call_context(attempt_uid)
+            }
             DSM.StateMachine {
                 id: sm
                 initialState: idle
@@ -184,6 +192,18 @@ Page {
                     }
                 }
 
+                onSc_connect_failed : {
+                    if(uid != attempt_uid)
+                        return
+                    connect_failed()
+                }
+
+                onSc_connect_terminated: {
+                    if(uid != attempt_uid)
+                        return
+                    connect_failed()
+                }
+
                 onSc_connectedChanged: {
                     if(uid != attempt_uid)
                         return
@@ -226,7 +246,7 @@ Page {
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
 
                     onClicked: {
-                        console.log("FUCK ", model.uid)
+                        console.log("unpal ", model.uid)
                         core.set_pal(model.uid, 0)
                     }
                 }

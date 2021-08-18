@@ -297,6 +297,10 @@ signals:
     void sc_connectedChanged(QString uid, int connected);
     void sc_call_death_cleanup(QString uid, int ui_id);
     void sc_associate_uid_with_ui_id(QString uid, int ui_id);
+    // this is sent if the connection fails during setup, or
+    // the call is rejected by the other side for some call
+    // screening issue
+    void sc_connect_failed(QString uid);
 
     void sc_cam_is_off(QString uid);
     void sc_cam_is_on(QString uid);
