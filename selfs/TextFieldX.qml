@@ -26,7 +26,7 @@ RowLayout {
             textfieldx.accepted()
         }
     }
-    Button {
+    ToolButton {
         enabled: !textInput1.readOnly
         text: "x"
         onClicked: {

@@ -1328,6 +1328,7 @@ simple_call::dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg
         c->emit connect_established();
         c->call_setup_state_machine->start();
         c->mute_state_machine->start();
+        emit c->associate_uid_with_ui_id(chan_id);
         c->update_connected(1);
     }
     break;
@@ -1357,6 +1358,7 @@ simple_call::dwyco_simple_calldisp(int call_id, int chan_id, int what, void *arg
     case DWYCO_CALLDISP_TERMINATED:
     {
         call_del_by_uid(c->uid);
+        emit c->call_death_cleanup(c->chan_id);
         c->emit connect_terminated();
         c->chan_id = -1;
         c->call_id = -1;
@@ -1447,6 +1449,7 @@ simple_call::dwyco_call_accepted(int chan_id, const char *name, const char *loca
     sc->connect_state_machine->stop();
     sc->call_setup_state_machine->start();
     sc->mute_state_machine->start();
+    emit sc->associate_uid_with_ui_id(chan_id);
     sc->update_connected(1);
 }
 

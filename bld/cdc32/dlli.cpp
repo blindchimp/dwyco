@@ -4585,7 +4585,10 @@ void
 name_map_done(vc m, void *, vc handle, ValidPtr )
 {
     if(m[1].is_nil())
+    {
+        se_emit_msg(SE_IDENT_TO_UID, handle, vc(""));
         return;
+    }
     vc uid = m[1];
     se_emit_msg(SE_IDENT_TO_UID, handle, uid);
 }

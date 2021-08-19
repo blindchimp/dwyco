@@ -4,11 +4,15 @@ import dwyco 1.0
 
 VidCallForm {
     property bool paused: false
+    property int a_ui_id: -1
+    //property string a_uid: ""
 
     Connections {
         target: core
 
         onVideo_display: {
+            if(ui_id != a_ui_id)
+                return
             if(!paused) {
                 vid_incoming.source = img_path
             }

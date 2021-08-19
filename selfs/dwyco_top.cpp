@@ -1064,6 +1064,12 @@ dwyco_video_make_image(int ui_id, void *vimg, int cols, int rows, int depth)
     TheDwycoCore-> emit video_display(ui_id, frame_number, QString("image://dwyco_video_frame/") + img_path);
 }
 
+void
+DwycoCore::call_cleanup(QString uid, int ui_id)
+{
+    Dwyco_video_provider->clear_ui_id(ui_id);
+}
+
 static
 void
 DWYCOCALLCONV
@@ -1549,11 +1555,11 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString,QString)), mlm, SLOT(msg_recv_status(int,QString,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
-    connect(this, SIGNAL(msg_recv_progress(QString, QString, QString, int)), mlm, SLOT(msg_recv_progress(QString, QString, QString, int)));
+    connect(this, SIGNAL(msg_recv_progress(QString,QString,QString,int)), mlm, SLOT(msg_recv_progress(QString,QString,QString,int)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
-
+    connect(this, SIGNAL(sc_call_death_cleanup(QString,int)), this, SLOT(call_cleanup(QString,int)));
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);

@@ -83,7 +83,7 @@ ApplicationWindow {
 
     property color amber_light : "#FFECB3"
     property color amber_dark : "#FF6F00"
-    property color  amber_accent: "#FFAB00"
+    property color amber_accent: "#FFAB00"
     property int pct: 20
 
     property string the_man: "5a098f3df49015331d74"
@@ -94,7 +94,8 @@ ApplicationWindow {
 
     Material.theme: Material.Light
     Material.accent: accent
-    Material.primary: primary
+    Material.primary: Material.Lime
+
 
     property int profile_bootstrapped : 0
     property bool server_account_created: false
@@ -706,6 +707,12 @@ ApplicationWindow {
         }
     }
 
+    VidGrid {
+        id: vid_watcher
+        visible: false
+
+    }
+
 //    DwycoVidRec {
 //        id: dwyco_vid_rec
 //        visible: false
@@ -755,11 +762,11 @@ ApplicationWindow {
             a = get_local_setting("first-run")
             if(a === "") {
                 //profile_dialog.visible = true
-                stack.push(vid_cam_preview)
+                stack.push(vid_watcher)
                 stack.push(blank_page)
                 stack.push(profile_dialog)
             } else {
-                stack.push(vid_cam_preview)
+                stack.push(vid_watcher)
                 profile_bootstrapped = 1
                 pwdialog.state = "start"
             }
