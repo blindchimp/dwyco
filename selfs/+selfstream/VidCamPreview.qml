@@ -13,6 +13,9 @@ import dwyco 1.0
 import QtQuick.Layouts 1.3
 import QtMultimedia 5.12
 
+// NOTE! THIS IS HACKED SO IT WORKS FOR CAPTURE ON DESKTOP
+// (ie, it does NOT use the qrCameraQML objectName
+//
 // this is a simplified camera setup for android phone that will
 // automatically connect to the selfie-camera.
 // typically used if you are doing to use an old camera as a
@@ -21,8 +24,7 @@ import QtMultimedia 5.12
 Page {
     //property bool dragging
     id: campage
-    property string serving_uid
-    property string attempt_uid
+
     property var call_buttons_model
     property int profile_sent: 0
 
@@ -33,7 +35,7 @@ Page {
     }
 
     header: Label {
-        text: "Dwyco Selfie Stream " + core.buildtime + " " + (core.is_database_online === 1 ? "(online)" : "(offline)")
+        text: "Dwyco Selfie Stream Capture " + core.buildtime + " " + (core.is_database_online === 1 ? "(online)" : "(offline)")
         font.bold: true
         color: "white"
         background: Rectangle {
@@ -41,97 +43,102 @@ Page {
         }
     }
 
+    footer: ToolBar {
+//        background: Rectangle {
+//            color: "green"
+//        }
+
+        RowLayout {
+            width: parent.width
+//            CheckBox {
+//                id: show_all_checkbox
+//                text: "Edit mode"
+//            }
+            Item {
+                Layout.fillWidth: true
+            }
+
+            TextFieldX {
+                id: capture_name
+                placeholder_text: "Enter cam name"
+                Layout.maximumWidth: cm(6)
+                readOnly: {core.is_database_online !== 1}
+                onAccepted: {
+                    console.log("UPDATE NAME")
+                    done_button.clicked()
+                }
+            }
+            ToolButton {
+                id: done_button
+                text: qsTr("Update")
+                enabled: capture_name.text_input.length > 0 && profile_sent === 0
+                onClicked: {
+                    Qt.inputMethod.commit()
+                    if(core.set_simple_profile(capture_name.text_input, "", "", "") === 1) {
+                        profile_sent = 1
+                    }
+                    else
+                    {
+                        animateOpacity.start()
+                    }
+                }
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        core.hangup_all_calls()
+        core.set_local_setting("mode", "capture")
+        //preview_cam.start()
+        core.select_vid_dev(2)
+        core.enable_video_capture_preview(1)
+        capture_name.text_input = core.uid_to_name(core.this_uid)
+    }
+
     onVisibleChanged: {
         if(visible)
         {
-            var mode = core.get_local_setting("mode")
-            if(mode === "") {
-                core.set_local_setting("mode", "watch")
-                mode = "watch"
-            }
-            var wname = core.get_local_setting("camera-to-watch")
-            if(wname.length === 0) {
-                watch_name.placeholder_text = "enter name of camera to watch"
-            } else {
-                watch_name.text_input = wname
-            }
-
-            if(mode === "watch") {
-                preview_cam.stop()
-                core.enable_video_capture_preview(0)
-                core.select_vid_dev(0)
-                viewer.source = mi("ic_videocam_off_black_24dp.png")
-                cam_watcher.checked = true
-            }
-            else {
-                preview_cam.start()
-                core.select_vid_dev(2)
-                core.enable_video_capture_preview(1)
-                cam_sender.checked = true
-                capture_name.text_input = core.uid_to_name(core.this_uid)
-            }
+            core.hangup_all_calls()
+            core.set_local_setting("mode", "capture")
+            preview_cam.start()
+            core.select_vid_dev(2)
+            core.enable_video_capture_preview(1)
+            capture_name.text_input = core.uid_to_name(core.this_uid)
         }
         else
         {
+            core.hangup_all_calls()
+            //preview_cam.stop()
+            core.select_vid_dev(0)
             core.enable_video_capture_preview(0)
         }
 
     }
 
-    onAttempt_uidChanged: {
-        if(attempt_uid.length > 0) {
-            console.log("start control to ", attempt_uid)
-            hangup()
-            core.start_control(attempt_uid)
-        } else {
-            hangup()
-        }
-    }
 
 
     Connections {
         target: core
-        onName_to_uid_result: {
-            console.log("GOT UID FOR NAME ", uid, handle)
-            if(uid === "")
-                return
-            core.set_pal(uid, 1)
-            attempt_uid = uid
-        }
 
         onSc_connect_terminated: {
             console.log("CONNECT TERMINATED ", uid)
-            serving_uid = ""
-            attempt_uid = ""
         }
 
         onSc_connectedChanged: {
             console.log("ConnectedChanged ", connected, uid)
             if(connected === 0) {
-                if(serving_uid === uid)
-                {
-                    serving_uid = ""
-                    call_buttons_model = null
-                }
-                vid_panel.vid_incoming.source = mi("ic_videocam_off_black_24dp.png")
-                if(cam_sender.checked)
-                    core.delete_call_context(uid)
-                else
-                    core.delete_all_call_contexts()
-                status_label.text = "(not connected)"
-                connect_button.enabled = true
+                core.delete_call_context(uid)
+
+                //vid_panel.vid_incoming.source = mi("ic_videocam_off_black_24dp.png")
+
             } else {
-                if(serving_uid === "")
-                {
-                    serving_uid = uid
-                    call_buttons_model = core.get_button_model(serving_uid)
-                    if(cam_sender.checked)
-                        call_buttons_model.get("send_video").clicked()
-                }
-                status_label.text = "(connected)"
-                connect_button.enabled = false
+                call_buttons_model = core.get_button_model(uid)
+                call_buttons_model.get("send_video").clicked()
             }
+            //status_label.text = "(connected)"
+
         }
+
 
         onSc_connect_progress: {
             status_label.text = msg
@@ -149,309 +156,54 @@ Page {
         onPal_event: {
             DiscoverList.load_users_to_model();
         }
+    }
 
-//        onQt_app_state_change: {
-//            console.log("app state change ", app_state)
-//            if(app_state === 0) {
-//                // resuming
-//                campage.visible = true
-//            } else {
-//                // pausing
-//                campage.visible = false
+    Connections {
+        target: CallContextModel
+
+        onCountChanged: {
+            console.log("CALL COUNT ", count)
+        }
+    }
+
+//    Camera {
+//        id: preview_cam
+//        objectName: "qrCameraQML"
+//        viewfinder {
+//            resolution: Qt.size(320, 240)
+//            maximumFrameRate: 20
+//        }
+//        position: Camera.FrontFace
+//        captureMode: Camera.captureVideo
+//        onCameraStateChanged: {
+//            //if(state === Camera.ActiveState) {
+//                var res = preview_cam.supportedViewfinderResolutions();
+//                console.log("RESOLUTIONS ")
+//            for(var i = 0; i < res.length; i++) {
+//                console.log(res[i].width)
+//                console.log(res[i].height)
+//            }
+//            //}
+//        }
+//        onCameraStatusChanged: {
+//            //if(state === Camera.ActiveState) {
+//                var res = preview_cam.supportedViewfinderResolutions();
+//                console.log("RESOLUTIONS ")
+//            for(var i = 0; i < res.length; i++) {
+//                console.log(res[i].width)
+//                console.log(res[i].height)
 //            }
 
+//            //}
 //        }
-    }
-
-    Camera {
-        id: preview_cam
-        objectName: "qrCameraQML"
-        viewfinder {
-            resolution: Qt.size(320, 240)
-            maximumFrameRate: 20
-        }
-        position: Camera.FrontFace
-        captureMode: Camera.captureVideo
-        onCameraStateChanged: {
-            //if(state === Camera.ActiveState) {
-                var res = preview_cam.supportedViewfinderResolutions();
-                console.log("RESOLUTIONS ")
-            for(var i = 0; i < res.length; i++) {
-                console.log(res[i].width)
-                console.log(res[i].height)
-            }
-            //}
-        }
-        onCameraStatusChanged: {
-            //if(state === Camera.ActiveState) {
-                var res = preview_cam.supportedViewfinderResolutions();
-                console.log("RESOLUTIONS ")
-            for(var i = 0; i < res.length; i++) {
-                console.log(res[i].width)
-                console.log(res[i].height)
-            }
-
-            //}
-        }
-    }
+//    }
 
 
-    ColumnLayout {
+    Rectangle {
         anchors.fill: parent
-
-        RadioButton {
-            id: cam_sender
-            checked: false
-            text: "Capture Camera"
-            onClicked: {
-                if(checked) {
-                    // set pw requirements, enable camera, etc
-                    core.hangup_all_calls()
-                    capture_name.text_input = core.uid_to_name(core.this_uid)
-                    core.set_local_setting("mode", "capture")
-                    preview_cam.start()
-                    core.select_vid_dev(2)
-                    core.enable_video_capture_preview(1)
-                    attempt_uid = ""
-                    serving_uid = ""
-                    status_label.text = ""
-                } else {
-
-                }
-            }
-        }
-        RadioButton {
-            id: cam_watcher
-            checked: true
-            text: "Watch Camera"
-            onClicked: {
-                if(checked) {
-                    // disable camera, fetch last watched camera, lookup
-                    // uid, try connecting to that uid
-                    core.hangup_all_calls()
-                    preview_cam.stop()
-                    core.select_vid_dev(0)
-                    core.enable_video_capture_preview(0)
-                    //core.name_to_uid(watch_name.text_input)
-                    core.set_local_setting("mode", "watch")
-                    viewer.source = ""
-                    attempt_uid = ""
-                    serving_uid = ""
-                    status_label.text = ""
-                }
-            }
-        }
-        RowLayout {
-            Label {
-                text: cam_watcher.checked ? "Camera to watch" : "Camera name"
-            }
-            Label {
-                id: status_label
-                Layout.fillWidth: true
-            }
-        }
-
-        TextFieldX {
-            id: capture_name
-            visible: cam_sender.checked
-            Layout.fillWidth: true
-            readOnly: {core.is_database_online !== 1}
-            onAccepted: {
-                console.log("UPDATE NAME")
-                done_button.clicked()
-            }
-            Button {
-                id: done_button
-
-                text: qsTr("Update")
-                enabled: {profile_sent === 0}
-                onClicked: {
-                    Qt.inputMethod.commit()
-                    if(core.set_simple_profile(capture_name.text_input, "", "", "") === 1) {
-                        profile_sent = 1
-                    }
-                    else
-                    {
-                        animateOpacity.start()
-                    }
-                }
-            }
-        }
-        TextFieldX {
-            id: watch_name
-            visible: cam_watcher.checked
-            Layout.fillWidth: true
-            onAccepted: {
-                console.log("WTF")
-                attempt_uid = ""
-                var sname = text_input
-                core.name_to_uid(sname)
-                core.set_local_setting("camera-to-watch", text_input)
-            }
-            onText_inputChanged: {
-                core.set_local_setting("camera-to-watch", text_input)
-            }
-
-            Button {
-                id: connect_button
-
-                text: qsTr("Watch")
-                enabled: true
-                onClicked: {
-                    Qt.inputMethod.commit()
-                    watch_name.accepted()
-                }
-            }
-        }
-        ListView {
-            id: clients
-            model: CallContextModel
-            highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
-            highlightMoveDuration: 100
-            highlightMoveVelocity: -1
-            visible: cam_sender.checked
-            spacing: mm(2)
-            delegate: Item {
-                id: wrapper2
-                width: parent.width
-                height: drow2.implicitHeight
-                // note: this mousearea *must* be here to allow selecting
-                // the entire row, while allowing the mousearea for the little
-                // "delete" button to work properly below.
-                MouseArea {
-                    anchors.fill: drow2
-                    onClicked: {
-                        clients.currentIndex = index
-                        //attempt_uid = uid
-                        //watch_name.text_input = display
-                    }
-                }
-                RowLayout {
-                    id: drow2
-                    anchors.fill: parent
-                    spacing: mm(3)
-                    Rectangle {
-                        Layout.minimumHeight: parent.height
-                        Layout.maximumHeight: parent.height
-                        Layout.minimumWidth: parent.height
-                        Layout.maximumWidth: parent.height
-                        color: wrapper2.ListView.isCurrentItem ? "black" : "white"
-                        MouseArea {
-                            anchors.fill: parent
-                            z: 5
-                            cursorShape: Qt.CrossCursor
-                            onClicked: {
-                                //core.set_pal(uid, 0)
-                            }
-                        }
-                    }
-
-                    Label {
-                        text: uid
-                        Layout.alignment: Qt.AlignLeft
-                        elide: Text.ElideRight
-                        Layout.preferredWidth: cm(2)
-                        background: Rectangle {
-                            visible: connected
-                            color: sending_video ? "yellow" : "red"
-                        }
-                    }
-                    Label {
-                        text: core.uid_to_name(uid)
-                        elide: Text.ElideRight
-                        Layout.alignment: Qt.AlignLeft
-                    }
-                    Item {
-                        Layout.fillWidth: true
-                    }
-                }
-            }
-            clip: true
-            Layout.fillWidth: true
-            Layout.preferredHeight: cm(2)
-
-        }
-        ListView {
-            id: disco
-            model: DiscoverList
-            highlight: Rectangle { z:3 ; color: primary_light; opacity: .3}
-            highlightMoveDuration: 100
-            highlightMoveVelocity: -1
-            spacing: mm(2)
-            visible: cam_watcher.checked
-            delegate: Item {
-                id: wrapper
-                width: parent.width
-                height: drow.implicitHeight
-                // note: this mousearea *must* be here to allow selecting
-                // the entire row, while allowing the mousearea for the little
-                // "delete" button to work properly below.
-                MouseArea {
-                    anchors.fill: drow
-                    onClicked: {
-                        disco.currentIndex = index
-                        attempt_uid = uid
-                        watch_name.text_input = display
-                    }
-                }
-                RowLayout {
-                    id: drow
-                    anchors.fill: parent
-                    spacing: mm(3)
-                    Rectangle {
-                        Layout.minimumHeight: parent.height
-                        Layout.maximumHeight: parent.height
-                        Layout.minimumWidth: parent.height
-                        Layout.maximumWidth: parent.height
-                        color: wrapper.ListView.isCurrentItem ? "black" : "white"
-                        MouseArea {
-                            anchors.fill: parent
-                            z: 5
-                            cursorShape: Qt.CrossCursor
-                            onClicked: {
-                                core.set_pal(uid, 0)
-                            }
-                        }
-                    }
-
-                    Label {
-                        text: uid
-                        Layout.alignment: Qt.AlignLeft
-                        elide: Text.ElideRight
-                        Layout.preferredWidth: cm(2)
-                        background: Rectangle {
-                            visible: online
-                            color: "green"
-                        }
-                    }
-                    Label {
-                        text: display
-                        elide: Text.ElideRight
-                        Layout.alignment: Qt.AlignLeft
-                        Layout.preferredWidth: cm(2)
-                        font.bold: true
-                    }
-                    Label {
-                        text: ip
-                        elide: Text.ElideRight
-                        Layout.alignment: Qt.AlignRight
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                    }
-                }
-            }
-            clip: true
-            Layout.fillWidth: true
-            Layout.preferredHeight: cm(2)
-
-        }
-
+        // bottom rectangle is preview of video
         Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            visible: cam_sender.checked
+            anchors.fill: parent
             Image {
                 id: viewer
                 anchors.fill: parent
@@ -466,12 +218,47 @@ Page {
                 }
             }
         }
-        VidCall {
-            id: vid_panel
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            visible: cam_watcher.checked
+
+        // on top of that is the display of the model of who we
+        // are sending it to
+        ListView {
+            id: clients
+            model: CallContextModel
+            anchors.fill: parent
+
+            spacing: mm(2)
+            delegate: Item {
+                id: wrapper2
+                width: parent.width
+                height: drow2.implicitHeight
+                RowLayout {
+                    id: drow2
+                    anchors.fill: parent
+                    spacing: mm(3)
+                    Label {
+                        text: uid
+                        Layout.alignment: Qt.AlignLeft
+                        elide: Text.ElideRight
+                        Layout.preferredWidth: cm(2)
+                        background: Rectangle {
+                            visible: connected
+                            color: sending_video ? "yellow" : "red"
+                            opacity: .6
+                        }
+                    }
+                    Label {
+                        text: core.uid_to_name(uid)
+                        elide: Text.ElideRight
+                        Layout.alignment: Qt.AlignLeft
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                    }
+                }
+            }
+            clip: true
         }
+
     }
 
     BusyIndicator {

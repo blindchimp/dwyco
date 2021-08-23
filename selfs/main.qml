@@ -109,8 +109,10 @@ ApplicationWindow {
     property bool show_archived_users: true
 
     property bool is_mobile
-
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+
+    property bool is_camera_available
+    is_camera_available: QtMultimedia.availableCameras.length > 0
 
     function pin_expire() {
         var expire
@@ -209,7 +211,8 @@ ApplicationWindow {
     
     Drawer {
         id: drawer
-        interactive: {stack.depth === 1 && pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created}
+        //interactive: {stack.depth === 1 && pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created}
+        interactive: false
         width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
         height: applicationWindow1.height
 
@@ -694,6 +697,16 @@ ApplicationWindow {
 //        visible: false
 //    }
 
+    SelfsStartup {
+        id: select_mode_screen
+        watch.onClicked: {
+            stack.push(vid_watcher)
+        }
+        capture.onClicked: {
+            stack.push(vid_cam_preview)
+        }
+    }
+
     Loader {
         id: vid_cam_preview
         active: false
@@ -702,15 +715,20 @@ ApplicationWindow {
             if(visible) {
                 source = "qrc:/VidCamPreview.qml"
                 active = true
-
             }
         }
     }
 
-    VidGrid {
+    Loader {
         id: vid_watcher
+        active: false
         visible: false
-
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/VidGrid.qml"
+                active = true
+            }
+        }
     }
 
 //    DwycoVidRec {
@@ -762,11 +780,11 @@ ApplicationWindow {
             a = get_local_setting("first-run")
             if(a === "") {
                 //profile_dialog.visible = true
-                stack.push(vid_watcher)
+                stack.push(select_mode_screen)
                 stack.push(blank_page)
                 stack.push(profile_dialog)
             } else {
-                stack.push(vid_watcher)
+                stack.push(select_mode_screen)
                 profile_bootstrapped = 1
                 pwdialog.state = "start"
             }
