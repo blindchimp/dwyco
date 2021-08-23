@@ -709,7 +709,7 @@ ApplicationWindow {
 
     Loader {
         id: vid_cam_preview
-        active: false
+        active: visible
         visible: false
         onVisibleChanged: {
             if(visible) {
@@ -721,7 +721,7 @@ ApplicationWindow {
 
     Loader {
         id: vid_watcher
-        active: false
+        active: visible
         visible: false
         onVisibleChanged: {
             if(visible) {

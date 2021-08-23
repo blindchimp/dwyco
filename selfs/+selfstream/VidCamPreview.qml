@@ -12,6 +12,7 @@ import QtQuick.Controls 2.12
 import dwyco 1.0
 import QtQuick.Layouts 1.3
 import QtMultimedia 5.12
+import QtQml.StateMachine 1.12 as DSM
 
 // NOTE! THIS IS HACKED SO IT WORKS FOR CAPTURE ON DESKTOP
 // (ie, it does NOT use the qrCameraQML objectName
@@ -22,7 +23,6 @@ import QtMultimedia 5.12
 // security camera.
 
 Page {
-    //property bool dragging
     id: campage
 
     property var call_buttons_model
@@ -100,7 +100,7 @@ Page {
         {
             core.hangup_all_calls()
             core.set_local_setting("mode", "capture")
-            preview_cam.start()
+            //preview_cam.start()
             core.select_vid_dev(2)
             core.enable_video_capture_preview(1)
             capture_name.text_input = core.uid_to_name(core.this_uid)
@@ -113,6 +113,42 @@ Page {
             core.enable_video_capture_preview(0)
         }
 
+    }
+
+    DSM.StateMachine {
+        id: streaming_state_machine
+
+        initialState: idle
+        running: true
+
+        DSM.State {
+            id: idle
+            onEntered: {
+                console.log("IDLE")
+                core.enable_video_capture_preview(0)
+                viewer.source = mi("ic_videocam_off_black_24dp.png")
+            }
+
+            DSM.SignalTransition {
+                signal: CallContextModel.countChanged
+                guard: CallContextModel.count === 1
+                targetState: streaming
+            }
+        }
+
+        DSM.State {
+            id: streaming
+            onEntered: {
+                console.log("STREAMING")
+                core.enable_video_capture_preview(1)
+            }
+
+            DSM.SignalTransition {
+                signal: CallContextModel.countChanged
+                guard: CallContextModel.count === 0
+                targetState: idle
+            }
+        }
     }
 
 
@@ -135,13 +171,6 @@ Page {
                 call_buttons_model = core.get_button_model(uid)
                 call_buttons_model.get("send_video").clicked()
             }
-            //status_label.text = "(connected)"
-
-        }
-
-
-        onSc_connect_progress: {
-            status_label.text = msg
         }
 
         onProfile_update: {
@@ -152,17 +181,20 @@ Page {
                 animateOpacity.start()
             }
         }
-
-        onPal_event: {
-            DiscoverList.load_users_to_model();
-        }
     }
 
     Connections {
         target: CallContextModel
 
         onCountChanged: {
-            console.log("CALL COUNT ", count)
+            console.log("CALL COUNT ", CallContextModel.count)
+//            if(CallContextModel.count === 1) {
+//                preview_cam.start()
+//                core.enable_video_capture_preview(1)
+//            } else if(CallContextModel.count === 0) {
+//                preview_cam.stop()
+//                core.enable_video_capture_preview(0)
+//            }
         }
     }
 
@@ -174,7 +206,7 @@ Page {
 //            maximumFrameRate: 20
 //        }
 //        position: Camera.FrontFace
-//        captureMode: Camera.captureVideo
+//        captureMode: Camera.CaptureViewfinder
 //        onCameraStateChanged: {
 //            //if(state === Camera.ActiveState) {
 //                var res = preview_cam.supportedViewfinderResolutions();
