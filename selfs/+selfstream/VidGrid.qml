@@ -153,6 +153,10 @@ Page {
                         signal: lookup_succeeded
                         targetState: start_connect
                     }
+                    DSM.TimeoutTransition {
+                        timeout: 20000
+                        targetState: idle
+                    }
                 }
 
                 DSM.State {
@@ -167,6 +171,10 @@ Page {
                     }
                     DSM.SignalTransition {
                         signal: connect_failed
+                        targetState: idle
+                    }
+                    DSM.TimeoutTransition {
+                        timeout: 20000
                         targetState: idle
                     }
 
