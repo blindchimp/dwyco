@@ -713,7 +713,7 @@ ApplicationWindow {
         visible: false
         onVisibleChanged: {
             if(visible) {
-                source = "qrc:/VidCamPreview.qml"
+                source = "qrc:/VidCap.qml"
                 active = true
             }
         }
