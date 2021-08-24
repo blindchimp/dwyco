@@ -12,6 +12,7 @@ import dwyco 1.0
 import QtQuick.Layouts 1.3
 import QtQml.StateMachine 1.12 as DSM
 import SortFilterProxyModel 0.2
+import QtQuick.Controls.Universal 2.12
 
 Page {
     anchors.fill: parent
@@ -29,6 +30,9 @@ Page {
 //        background: Rectangle {
 //            color: "green"
 //        }
+        background: Rectangle {
+                    color: Universal.color(Universal.Lime)
+                }
 
         RowLayout {
             width: parent.width

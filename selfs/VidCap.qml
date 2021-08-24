@@ -13,6 +13,7 @@ import dwyco 1.0
 import QtQuick.Layouts 1.3
 import QtMultimedia 5.12
 import QtQml.StateMachine 1.12 as DSM
+import QtQuick.Controls.Universal 2.12
 
 // NOTE! THIS IS HACKED SO IT WORKS FOR CAPTURE ON DESKTOP
 // (ie, it does NOT use the qrCameraQML objectName
@@ -47,6 +48,10 @@ Page {
 //        background: Rectangle {
 //            color: "green"
 //        }
+        background: Rectangle {
+                    color: Universal.color(Universal.Lime)
+                }
+
 
         RowLayout {
             width: parent.width
