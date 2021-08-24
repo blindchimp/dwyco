@@ -1212,7 +1212,7 @@ load_cam_model()
 
     CamListModel->append("(Select this to disable video)");
     CamListModel->append("(Files)");
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if /*defined(DWYCO_FORCE_DESKTOP_VGQT) || */ defined(ANDROID) || defined(DWYCO_IOS)
     CamListModel->append("Camera");
     HasCamHardware = 1;
 #else
@@ -1458,19 +1458,28 @@ DwycoCore::init()
     );
 
 #endif
-
+// NOTE: we eliminate the device control items for android and ios
+    // since that is being handled "on the side" by the QML Camera object
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     dwyco_set_external_video_capture_callbacks(
-        vgqt_new,
-        vgqt_del,
-        vgqt_init,
-        vgqt_has_data,
-        vgqt_need,
-        vgqt_pass,
-        vgqt_stop,
-        vgqt_get_data,
-        vgqt_free_data,
-        0, 0, 0, 0, 0, 0, 0, 0
+                vgqt_new,
+                vgqt_del,
+                vgqt_init,
+                vgqt_has_data,
+                vgqt_need,
+                vgqt_pass,
+                vgqt_stop,
+                vgqt_get_data,
+                vgqt_free_data,
+#if defined(ANDROID) || defined(DWYCO_IOS)
+                0,0,0,0
+#else
+                vgqt_get_video_devices,
+                vgqt_free_video_devices,
+                vgqt_set_video_device,
+                vgqt_stop_video_device,
+#endif
+                0, 0, 0, 0
 
     );
 

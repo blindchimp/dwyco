@@ -3,7 +3,6 @@ DWYCO_APP=selfs
 DWYCOBG=0
 DWYCO_USE_LINUX_AUDIO=0
 DEFINES += VCCFG_FILE #register=
-DEFINES += USE_QML_CAMERA
 CONFIG(debug): DEFINES += DWYCO_DEBUG
 
 linux-*|wasm-emscripten {
@@ -15,11 +14,12 @@ QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-vari
 macx-ios-clang {
 DEFINES += LINUX MACOSX DWYCO_IOS
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+DEFINES += USE_QML_CAMERA
 }
 macx-g++*|macx-clang* {
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 DEFINES += LINUX MACOSX
-FORCE_DESKTOP_VGQT=0
+FORCE_DESKTOP_VGQT=1
 }
 
 win32-* {
@@ -35,6 +35,7 @@ linux-clang*|macx-clang*: QMAKE_CXX=ccache clang
 
 android-* {
 DEFINES += ANDROID LINUX
+DEFINES += USE_QML_CAMERA
 QMAKE_CXXFLAGS += -frtti -fexceptions
 QMAKE_CFLAGS += -frtti -fexceptions
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
