@@ -342,28 +342,28 @@ ApplicationWindow {
         }
     }
 
-    Loader {
-        id: cam
+//    Loader {
+//        id: cam
 
-        property string next_state
-        property string ok_text: "Send"
-        anchors.fill: parent
-        visible: false
-        active: visible
+//        property string next_state
+//        property string ok_text: "Send"
+//        anchors.fill: parent
+//        visible: false
+//        active: visible
 
-        onLoaded: {
-            item.state_on_close = cam.next_state
-            item.ok_pv_text = cam.ok_text
-        }
+//        onLoaded: {
+//            item.state_on_close = cam.next_state
+//            item.ok_pv_text = cam.ok_text
+//        }
 
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/DeclarativeCamera.qml"
-                //vid_cam_preview.active = false
-            }
-        }
+//        onVisibleChanged: {
+//            if(visible) {
+//                source = "qrc:/DeclarativeCamera.qml"
+//                //vid_cam_preview.active = false
+//            }
+//        }
 
-    }
+//    }
 
 //    Loader {
 //        id: settings_dialog

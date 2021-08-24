@@ -783,7 +783,7 @@ conv_data()
         // note for android, nv21 is standard, and we convert to
         // yuv12
         f.fmt = (AQ_COLOR|AQ_YUV12);
-#ifndef ANDROID
+#if !(defined(ANDROID) || defined(MACOSX))
         if(fmt & AQ_YUV12)
         {
             unsigned char *c = (unsigned char *)vf.bits();

@@ -21,7 +21,8 @@ Page {
             id: capture_button
             width: parent.width
             height: parent.height / 2
-            text: "Capture"
+            enabled: is_camera_available
+            text: is_camera_available ? "Capture" : "(No cameras found)"
 
         }
     }
