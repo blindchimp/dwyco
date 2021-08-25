@@ -13,9 +13,12 @@
 
 class MMChannel;
 class MessageDisplay;
-
+namespace dwyco {
 void start_serv_recv_thread(vc ip, vc port, ValidPtr);
 void got_serv_r(vc m, void *, vc, ValidPtr);
 void start_server_assisted_call(vc to_uid, int use_stun, ValidPtr, MessageDisplay * = 0);
 void aux_channel_setup(MMChannel *mc, vc v);
+void serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv);
+extern int Disable_incoming_SAC;
+}
 #endif

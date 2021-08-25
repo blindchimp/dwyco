@@ -14,9 +14,10 @@
 class MessageDisplay;
 class MMChannel;
 
+namespace dwyco {
 void stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr, MessageDisplay *md = 0);
 //void direct_conference_connect(vc hostlist, vc portlist, vc proxlist, vc uid_list, TEditId *mid = 0);
-
+void tcp_proxy_connect_and_decide(MMChannel *mc, vc, void *, ValidPtr vp);
 
 void timer1_expired(MMChannel *mc, vc, void *, ValidPtr vp);
 void direct_call_ok(MMChannel *mc, vc, void *, ValidPtr vp);
@@ -26,6 +27,8 @@ void stun_connect_ok(MMChannel *mc, vc, void *, ValidPtr vp);
 void stun_setup_timeout(MMChannel *mc, vc, void *, ValidPtr vp);
 void stun_connect_failed(MMChannel *mc, vc, void *, ValidPtr vp);
 void stun_servass_failure(const char *msg, vc to_uid, ValidPtr vp);
+extern int Disable_outgoing_SAC;
+}
 
 // time to set up a direct call (including initial negotiation).
 #define CALLLIVE_DIRECT_TIMEOUT (4000)
