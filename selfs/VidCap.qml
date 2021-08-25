@@ -20,7 +20,7 @@ import QtQuick.Controls.Universal 2.12
 //
 // this is a simplified camera setup for android phone that will
 // automatically connect to the selfie-camera.
-// typically used if you are doing to use an old camera as a
+// typically used if you are doing to use an old phone as a
 // security camera.
 
 Page {
@@ -45,9 +45,6 @@ Page {
     }
 
     footer: ToolBar {
-//        background: Rectangle {
-//            color: "green"
-//        }
         background: Rectangle {
                     color: Universal.color(Universal.Lime)
                 }
@@ -96,29 +93,38 @@ Page {
         core.set_local_setting("mode", "capture")
         //preview_cam.start()
         core.select_vid_dev(2)
-        core.enable_video_capture_preview(1)
+        //core.enable_video_capture_preview(1)
         capture_name.text_input = core.uid_to_name(core.this_uid)
     }
 
-    onVisibleChanged: {
-        if(visible)
-        {
-            core.hangup_all_calls()
-            core.set_local_setting("mode", "capture")
-            //preview_cam.start()
-            core.select_vid_dev(2)
-            core.enable_video_capture_preview(1)
-            capture_name.text_input = core.uid_to_name(core.this_uid)
-        }
-        else
-        {
-            core.hangup_all_calls()
-            //preview_cam.stop()
-            core.select_vid_dev(0)
-            core.enable_video_capture_preview(0)
-        }
-
+    Component.onDestruction: {
+        core.hangup_all_calls()
+        //preview_cam.stop()
+        core.select_vid_dev(0)
+        core.enable_video_capture_preview(0)
     }
+    // note: visible doesn't work too well if you are using Loader
+    // on this component. use complete/destruct instead
+
+//    onVisibleChanged: {
+//        if(visible)
+//        {
+//            core.hangup_all_calls()
+//            core.set_local_setting("mode", "capture")
+//            //preview_cam.start()
+//            core.select_vid_dev(2)
+//            core.enable_video_capture_preview(1)
+//            capture_name.text_input = core.uid_to_name(core.this_uid)
+//        }
+//        else
+//        {
+//            core.hangup_all_calls()
+//            //preview_cam.stop()
+//            core.select_vid_dev(0)
+//            core.enable_video_capture_preview(0)
+//        }
+
+//    }
 
     DSM.StateMachine {
         id: streaming_state_machine

@@ -709,24 +709,28 @@ ApplicationWindow {
 
     Loader {
         id: vid_cam_preview
-        active: visible
+        //active: visible
         visible: false
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/VidCap.qml"
-                active = true
+                //active = true
+            } else {
+                source = ""
             }
         }
     }
 
     Loader {
         id: vid_watcher
-        active: visible
+        //active: visible
         visible: false
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/VidGrid.qml"
-                active = true
+                //active = true
+            } else {
+                source = ""
             }
         }
     }

@@ -7,8 +7,19 @@ Page {
     property alias capture: capture_button
 
     anchors.fill: parent
+    header: Label {
+        text: "Dwyco Selfie Stream " + core.buildtime + " " + (core.is_database_online === 1 ? "(online)" : "(offline)")
+        font.bold: true
+        color: "white"
+        background: Rectangle {
+            color: core.is_database_online === 1 ? "green" : "red"
+        }
+    }
     Column {
+
+        spacing: mm(1)
         anchors.fill: parent
+        anchors.margins: mm(1)
         Button {
             id: watch_button
             width: parent.width
