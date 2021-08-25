@@ -264,6 +264,12 @@ public:
     Q_INVOKABLE void set_badge_number(int i);
     Q_INVOKABLE void refresh_directory();
 
+    // control whether we accept any calls from other clients
+    // this physically disconnects us from the net and from
+    // accepting server assisted calls. does not affect connection
+    // to server, so messages sent via the server will still be delivered.
+    Q_INVOKABLE void inhibit_all_incoming_calls(int i);
+
 public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);

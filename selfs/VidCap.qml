@@ -95,13 +95,18 @@ Page {
         core.select_vid_dev(2)
         //core.enable_video_capture_preview(1)
         capture_name.text_input = core.uid_to_name(core.this_uid)
+        core.set_invisible_state(0)
+        core.inhibit_all_incoming_calls(0)
     }
 
     Component.onDestruction: {
+        core.set_local_setting("mode", "")
         core.hangup_all_calls()
         //preview_cam.stop()
         core.select_vid_dev(0)
         core.enable_video_capture_preview(0)
+        core.set_invisible_state(1)
+        core.inhibit_all_incoming_calls(1)
     }
     // note: visible doesn't work too well if you are using Loader
     // on this component. use complete/destruct instead

@@ -73,6 +73,16 @@ Page {
         }
     }
 
+    Component.onCompleted: {
+        core.set_local_setting("mode", "watch")
+    }
+
+    Component.onDestruction: {
+        core.set_local_setting("mode", "")
+        core.set_invisible_state(1)
+        core.inhibit_all_incoming_calls(1)
+    }
+
     Connections {
         target: core
         onName_to_uid_result: {

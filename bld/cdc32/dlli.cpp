@@ -1879,6 +1879,28 @@ dwyco_inhibit_sac(int i)
 
 DWYCOEXPORT
 void
+dwyco_inhibit_incoming_sac(int i)
+{
+    dwyco::Disable_incoming_SAC = i;
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_outgoing_sac(int i)
+{
+    dwyco::Disable_outgoing_SAC = i;
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_all_incoming(int i)
+{
+    dwyco_inhibit_incoming_sac(i);
+    set_listen_state(!i);
+}
+
+DWYCOEXPORT
+void
 dwyco_fetch_info(const char *uid, int len_uid)
 {
     vc vuid(VC_BSTRING, uid, len_uid);

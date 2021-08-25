@@ -1374,6 +1374,12 @@ DwycoCore::refresh_directory()
     update_directory_fetching(true);
 }
 
+void
+DwycoCore::inhibit_all_incoming_calls(int i)
+{
+    dwyco_inhibit_all_incoming(i);
+}
+
 
 void
 DwycoCore::init()
@@ -1472,7 +1478,7 @@ DwycoCore::init()
                 vgqt_get_data,
                 vgqt_free_data,
 #if defined(ANDROID) || defined(DWYCO_IOS)
-                0,0,0,0
+                0,0,0,0,
 #else
                 vgqt_get_video_devices,
                 vgqt_free_video_devices,
@@ -1506,13 +1512,16 @@ DwycoCore::init()
 
     //settings_load();
     //dwyco_create_bootstrap_profile("qml", 3, "qml test", 8, "none", 4, "fcktola1@gmail.com", 18);
-    int inv = 0;
-    QString a = get_local_setting("invis");
-    if(a == "" || a == "false")
-        inv = 0;
-    else
-        inv = 1;
-    dwyco_set_initial_invis(inv);
+//    int inv = 0;
+//    QString a = get_local_setting("invis");
+//    if(a == "" || a == "false")
+//        inv = 0;
+//    else
+//        inv = 1;
+    // for self-stream, we start off invisible.
+    // when we become a watcher, we stay invisible
+    // when we become a capturer, we go visible
+    dwyco_set_initial_invis(1);
     dwyco_inhibit_pal(0);
 #ifdef ANDROID
     // this is a kluge for android
@@ -1535,7 +1544,8 @@ DwycoCore::init()
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "1");
-    dwyco_set_setting("net/listen", "1");
+    dwyco_set_setting("net/listen", "0");
+    dwyco_inhibit_all_incoming(1);
 
     new profpv;
     // the order of these is important, you have to clear the cache
