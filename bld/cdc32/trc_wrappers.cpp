@@ -58,6 +58,9 @@ DWYCOEXPORT int _real_dwyco_database_auth_remote();
 DWYCOEXPORT void _real_dwyco_inhibit_database(int i);
 DWYCOEXPORT void _real_dwyco_inhibit_pal(int i);
 DWYCOEXPORT void _real_dwyco_inhibit_sac(int i);
+DWYCOEXPORT void _real_dwyco_inhibit_incoming_sac(int i);
+DWYCOEXPORT void _real_dwyco_inhibit_outgoing_sac(int i);
+DWYCOEXPORT void _real_dwyco_inhibit_all_incoming(int i);
 DWYCOEXPORT void _real_dwyco_fetch_info(const char *uid, int len_uid);
 DWYCOEXPORT int _real_dwyco_service_channels(int *spin_out);
 DWYCOEXPORT void _real_dwyco_add_entropy_timer(const char *crap, int len_crap);
@@ -148,6 +151,7 @@ DWYCOEXPORT void _real_dwyco_untrash_users();
 DWYCOEXPORT int _real_dwyco_set_profile_from_composer(int compid, const char *txt, int txt_len, DwycoProfileCallback cb, void *arg);
 DWYCOEXPORT int _real_dwyco_get_profile_to_viewer(const char *uid, int len_uid, DwycoProfileCallback cb, void *arg);
 DWYCOEXPORT int _real_dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
+DWYCOEXPORT void _real_dwyco_name_to_uid(const char *handle, int len_handle);
 DWYCOEXPORT int _real_dwyco_create_bootstrap_profile(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email);
 DWYCOEXPORT int _real_dwyco_make_profile_pack(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email, const char **str_out, int *len_str_out);
 DWYCOEXPORT int _real_dwyco_set_setting(const char *name, const char *value);
@@ -1006,6 +1010,36 @@ dwyco_inhibit_sac(int i)
 printfunname("dwyco_inhibit_sac");
 printarg("int ", "i",i);
 _real_dwyco_inhibit_sac(i);
+printret();
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_incoming_sac(int i)
+{
+printfunname("dwyco_inhibit_incoming_sac");
+printarg("int ", "i",i);
+_real_dwyco_inhibit_incoming_sac(i);
+printret();
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_outgoing_sac(int i)
+{
+printfunname("dwyco_inhibit_outgoing_sac");
+printarg("int ", "i",i);
+_real_dwyco_inhibit_outgoing_sac(i);
+printret();
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_all_incoming(int i)
+{
+printfunname("dwyco_inhibit_all_incoming");
+printarg("int ", "i",i);
+_real_dwyco_inhibit_all_incoming(i);
 printret();
 }
 
@@ -2079,6 +2113,16 @@ int _ret = _real_dwyco_get_profile_to_viewer_sync(uid,len_uid,fn_out,len_fn_out)
 printargout(" char **", "fn_out",fn_out, " int *", "len_fn_out", len_fn_out);
 printretval(_ret);
 return(_ret);
+}
+
+DWYCOEXPORT
+void
+dwyco_name_to_uid(const char *handle, int len_handle)
+{
+printfunname("dwyco_name_to_uid");
+printarg("const char *", "handle",handle, " int ", "len_handle", len_handle);
+_real_dwyco_name_to_uid(handle,len_handle);
+printret();
 }
 
 DWYCOEXPORT
