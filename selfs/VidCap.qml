@@ -149,6 +149,7 @@ Page {
             onEntered: {
                 console.log("IDLE")
                 core.enable_video_capture_preview(0)
+                preview_cam.stop()
                 viewer.source = mi("ic_videocam_off_black_24dp.png")
             }
 
@@ -164,6 +165,7 @@ Page {
             onEntered: {
                 console.log("STREAMING")
                 core.enable_video_capture_preview(1)
+                preview_cam.start()
             }
 
             DSM.SignalTransition {
@@ -221,37 +223,10 @@ Page {
         }
     }
 
-//    Camera {
-//        id: preview_cam
-//        objectName: "qrCameraQML"
-//        viewfinder {
-//            resolution: Qt.size(320, 240)
-//            maximumFrameRate: 20
-//        }
-//        position: Camera.FrontFace
-//        captureMode: Camera.CaptureViewfinder
-//        onCameraStateChanged: {
-//            //if(state === Camera.ActiveState) {
-//                var res = preview_cam.supportedViewfinderResolutions();
-//                console.log("RESOLUTIONS ")
-//            for(var i = 0; i < res.length; i++) {
-//                console.log(res[i].width)
-//                console.log(res[i].height)
-//            }
-//            //}
-//        }
-//        onCameraStatusChanged: {
-//            //if(state === Camera.ActiveState) {
-//                var res = preview_cam.supportedViewfinderResolutions();
-//                console.log("RESOLUTIONS ")
-//            for(var i = 0; i < res.length; i++) {
-//                console.log(res[i].width)
-//                console.log(res[i].height)
-//            }
+    QmlCamera {
+        id: preview_cam
 
-//            //}
-//        }
-//    }
+    }
 
 
     Rectangle {

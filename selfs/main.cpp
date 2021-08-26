@@ -92,6 +92,9 @@ int main(int argc, char *argv[])
 #if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
     sels.append("desktop");
 #endif
+#ifdef USE_QML_CAMERA
+    sels.append("qmlcamera");
+#endif
 
     if(sels.count() > 0)
         sel->setExtraSelectors(sels);
