@@ -171,7 +171,7 @@ Page {
         }
         Switch {
             id: server_mode
-            text: qsTr("Server mode (download and store all messages on this device)")
+            text: qsTr("Server mode (download and store all messages to this device)")
             checked: core.eager_pull
             onClicked: {
                 if(checked) {

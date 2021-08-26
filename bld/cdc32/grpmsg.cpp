@@ -378,7 +378,7 @@ recv_gj2(vc from, vc msg, vc password)
         if(rollback)
             SKID->rollback_transaction();
         se_emit_group_status_change();
-        // don't terminate, in cast there are duplicate messages, we can just ignore
+        // don't terminate, in case there are duplicate messages, we can just ignore
         // the follow ons.
         //terminate(to_hex(My_UID), hfrom);
         dwyco_kill_message(pers_id.c_str(), pers_id.length());
@@ -416,7 +416,7 @@ install_group_key(vc from, vc msg, vc password)
         terminate(our_uid, hfrom);
         return 0;
     }
-    // note: some basic checks should be dont to make sure the
+    // note: some basic checks should be done to make sure the
     // private key matches the public key. we got here presumably
     // after we got the public key from the server (since we
     // didn't generate ourselves). the server should have signed it.
