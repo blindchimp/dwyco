@@ -13,6 +13,7 @@ import QtQuick.Layouts 1.3
 import QtQml.StateMachine 1.12 as DSM
 import SortFilterProxyModel 0.2
 import QtQuick.Controls.Universal 2.12
+import QtQuick.Window 2.12
 
 Page {
     anchors.fill: parent
@@ -36,6 +37,12 @@ Page {
 
         RowLayout {
             width: parent.width
+            ToolButton {
+                text: "Back"
+                onClicked: {
+                    stack.pop()
+                }
+            }
             CheckBox {
                 id: show_all_checkbox
                 text: "Edit mode"
@@ -359,8 +366,10 @@ Page {
     GridView {
         id: gview
         anchors.fill: parent
-        cellHeight: is_mobile ? parent.height : (model.count <= 2 ? parent.height : parent.height / 2)
-        cellWidth: is_mobile ? parent.width : (model.count == 1 ? parent.width : parent.width / 2)
+        property bool use_mobile_layout
+        use_mobile_layout: Screen.width < 640
+        cellHeight: use_mobile_layout ? parent.height : (model.count <= 2 ? parent.height : parent.height / 2)
+        cellWidth: use_mobile_layout ? parent.width : (model.count == 1 ? parent.width : parent.width / 2)
 
         model: filtered_discover
         delegate: video_delegate

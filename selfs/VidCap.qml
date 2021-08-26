@@ -52,6 +52,13 @@ Page {
 
         RowLayout {
             width: parent.width
+            ToolButton {
+                text: "Back"
+                onClicked: {
+                    stack.pop()
+                }
+            }
+
 //            CheckBox {
 //                id: show_all_checkbox
 //                text: "Edit mode"

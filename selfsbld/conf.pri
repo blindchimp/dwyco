@@ -19,7 +19,7 @@ DEFINES += USE_QML_CAMERA
 macx-g++*|macx-clang* {
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 DEFINES += LINUX MACOSX
-FORCE_DESKTOP_VGQT=1
+FORCE_DESKTOP_VGQT=0
 }
 
 win32-* {
