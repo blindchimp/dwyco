@@ -1159,7 +1159,7 @@ int DWYCOEXPORT dwyco_chat_online();
 int DWYCOEXPORT dwyco_database_auth_remote();
 void DWYCOEXPORT dwyco_inhibit_database(int i);
 void DWYCOEXPORT dwyco_inhibit_pal(int i);
-void DWYCOEXPORT dwyco_inhibit_sac(int incoming, int outgoing);
+void DWYCOEXPORT dwyco_inhibit_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_incoming_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_outgoing_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_all_incoming(int i);
