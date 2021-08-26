@@ -20,6 +20,7 @@
 #include "dwstr.h"
 #include "vccrypt2.h"
 #include "pval.h"
+#include "servass.h"
 
 // error returns
 // op not completed: <0
@@ -42,7 +43,7 @@ class MMChannel;
 class MMTube
 {
     friend class MMChannel;
-    friend void serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv);
+    friend void dwyco::serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv);
 
 protected:
     SimpleSocket *ctrl_sock;

@@ -413,7 +413,6 @@ static void  bounce_destroy(MMChannel *mc, vc their_arg, void *their_func, Valid
 DWYCO_LIST dwyco_list_from_vc(vc vec);
 TAutoUpdate *TheAutoUpdate;
 extern vc Pal_auth_state;
-extern int Disable_SAC;
 static int Disable_UPNP = 0;
 extern int Media_select;
 extern int Inhibit_database_thread;
@@ -1947,7 +1946,30 @@ DWYCOEXPORT
 void
 dwyco_inhibit_sac(int i)
 {
-    Disable_SAC = i;
+    dwyco::Disable_outgoing_SAC = i;
+    dwyco::Disable_incoming_SAC = i;
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_incoming_sac(int i)
+{
+    dwyco::Disable_incoming_SAC = i;
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_outgoing_sac(int i)
+{
+    dwyco::Disable_outgoing_SAC = i;
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_all_incoming(int i)
+{
+    dwyco_inhibit_incoming_sac(i);
+    set_listen_state(!i);
 }
 
 DWYCOEXPORT
@@ -4685,13 +4707,6 @@ dwyco_set_setting(const char *name, const char *value)
         return 0;
     }
     int ret = set_settings_value(name, value);
-#if 0
-    if(ret && b.eq("user"))
-    {
-        UserConfigData.set_sync(1);
-        update_server_info();
-    }
-#endif
     GRTLOGA("set_setting: %s %s returns %d", name, value, ret, 0, 0);
     return ret;
 }

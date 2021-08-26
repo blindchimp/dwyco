@@ -54,9 +54,9 @@
         <file>BareChatList.qml</file>
         <file>+desktop/PublicChat.qml</file>
         <file>MsgReview.qml</file>
-        <file>+selfstream/VidCamPreview.qml</file>
-        <file>+selfstream/VidGrid.qml</file>
         <file>VidGrid.qml</file>
+        <file>SelfsStartup.qml</file>
+        <file>VidCap.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

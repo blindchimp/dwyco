@@ -1212,7 +1212,7 @@ load_cam_model()
 
     CamListModel->append("(Select this to disable video)");
     CamListModel->append("(Files)");
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if /*defined(DWYCO_FORCE_DESKTOP_VGQT) || */ defined(ANDROID) || defined(DWYCO_IOS)
     CamListModel->append("Camera");
     HasCamHardware = 1;
 #else
@@ -1374,6 +1374,12 @@ DwycoCore::refresh_directory()
     update_directory_fetching(true);
 }
 
+void
+DwycoCore::inhibit_all_incoming_calls(int i)
+{
+    dwyco_inhibit_all_incoming(i);
+}
+
 
 void
 DwycoCore::init()
@@ -1458,19 +1464,28 @@ DwycoCore::init()
     );
 
 #endif
-
+// NOTE: we eliminate the device control items for android and ios
+    // since that is being handled "on the side" by the QML Camera object
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     dwyco_set_external_video_capture_callbacks(
-        vgqt_new,
-        vgqt_del,
-        vgqt_init,
-        vgqt_has_data,
-        vgqt_need,
-        vgqt_pass,
-        vgqt_stop,
-        vgqt_get_data,
-        vgqt_free_data,
-        0, 0, 0, 0, 0, 0, 0, 0
+                vgqt_new,
+                vgqt_del,
+                vgqt_init,
+                vgqt_has_data,
+                vgqt_need,
+                vgqt_pass,
+                vgqt_stop,
+                vgqt_get_data,
+                vgqt_free_data,
+#if defined(ANDROID) || defined(DWYCO_IOS)
+                0,0,0,0,
+#else
+                vgqt_get_video_devices,
+                vgqt_free_video_devices,
+                vgqt_set_video_device,
+                vgqt_stop_video_device,
+#endif
+                0, 0, 0, 0
 
     );
 
@@ -1497,13 +1512,16 @@ DwycoCore::init()
 
     //settings_load();
     //dwyco_create_bootstrap_profile("qml", 3, "qml test", 8, "none", 4, "fcktola1@gmail.com", 18);
-    int inv = 0;
-    QString a = get_local_setting("invis");
-    if(a == "" || a == "false")
-        inv = 0;
-    else
-        inv = 1;
-    dwyco_set_initial_invis(inv);
+//    int inv = 0;
+//    QString a = get_local_setting("invis");
+//    if(a == "" || a == "false")
+//        inv = 0;
+//    else
+//        inv = 1;
+    // for self-stream, we start off invisible.
+    // when we become a watcher, we stay invisible
+    // when we become a capturer, we go visible
+    dwyco_set_initial_invis(1);
     dwyco_inhibit_pal(0);
 #ifdef ANDROID
     // this is a kluge for android
@@ -1526,7 +1544,8 @@ DwycoCore::init()
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "1");
-    dwyco_set_setting("net/listen", "1");
+    dwyco_set_setting("net/listen", "0");
+    dwyco_inhibit_all_incoming(1);
 
     new profpv;
     // the order of these is important, you have to clear the cache

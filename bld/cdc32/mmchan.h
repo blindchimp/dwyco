@@ -43,6 +43,7 @@
 #include "aconn.h"
 #include "simple_property.h"
 #include "sync_sendq.h"
+#include "calllive.h"
 
 class MMTube;
 class VidAcquire;
@@ -327,7 +328,7 @@ public:
 private:
     vc ctrl_q;
 
-    friend void serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv);
+    friend void dwyco::serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv);
     friend void stun_connect(vc host, vc port, vc prox, vc uid, MessageDisplay *);
     friend class dwyco::DwQSend;
     friend class dwyco::DirectSend;
@@ -853,8 +854,8 @@ public:
     static void exit_mmchan();
 
 
-    friend void stun_connect_ok(MMChannel *mc, vc, void *, ValidPtr vp);
-    friend void tcp_proxy_connect_and_decide(MMChannel *mc, vc, void *, ValidPtr vp);
+    friend void dwyco::stun_connect_ok(MMChannel *mc, vc, void *, ValidPtr vp);
+    friend void dwyco::tcp_proxy_connect_and_decide(MMChannel *mc, vc, void *, ValidPtr vp);
 
     // used for server-assisted calls, this is the
     // ip and port of the proxy to rendezvous with
