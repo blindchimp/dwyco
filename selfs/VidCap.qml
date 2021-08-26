@@ -107,7 +107,7 @@ Page {
     }
 
     Component.onDestruction: {
-        core.set_local_setting("mode", "")
+        //core.set_local_setting("mode", "")
         core.hangup_all_calls()
         //preview_cam.stop()
         core.select_vid_dev(0)

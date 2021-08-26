@@ -705,6 +705,17 @@ ApplicationWindow {
         capture.onClicked: {
             stack.push(vid_cam_preview)
         }
+
+        onVisibleChanged: {
+            if(visible) {
+                var a = core.get_local_setting("mode");
+                if(a == "watch") {
+                    watch.clicked()
+                } else if(a == "capture") {
+                    capture.clicked()
+                }
+            }
+        }
     }
 
     Loader {

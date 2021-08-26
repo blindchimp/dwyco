@@ -85,7 +85,7 @@ Page {
     }
 
     Component.onDestruction: {
-        core.set_local_setting("mode", "")
+        //core.set_local_setting("mode", "")
         core.set_invisible_state(1)
         core.inhibit_all_incoming_calls(1)
     }
