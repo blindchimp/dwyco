@@ -15,12 +15,9 @@ import QtMultimedia 5.12
 import QtQml.StateMachine 1.12 as DSM
 import QtQuick.Controls.Universal 2.12
 
-// NOTE! THIS IS HACKED SO IT WORKS FOR CAPTURE ON DESKTOP
-// (ie, it does NOT use the qrCameraQML objectName
-//
 // this is a simplified camera setup for android phone that will
 // automatically connect to the selfie-camera.
-// typically used if you are doing to use an old phone as a
+// typically used if you are using an old phone as a
 // security camera.
 
 Page {
@@ -158,6 +155,11 @@ Page {
                 guard: CallContextModel.count === 1
                 targetState: streaming
             }
+
+            DSM.SignalTransition {
+                signal: preview_button.clicked
+                targetState: pview_on
+            }
         }
 
         DSM.State {
@@ -173,9 +175,38 @@ Page {
                 guard: CallContextModel.count === 0
                 targetState: idle
             }
+
+            DSM.SignalTransition {
+                signal: preview_button.clicked
+                targetState: pview_on
+            }
+        }
+
+        DSM.State {
+            id: pview_on
+            onEntered: {
+                core.inhibit_all_incoming_calls(1)
+                core.hangup_all_calls()
+                core.enable_video_capture_preview(1)
+                preview_cam.start()
+            }
+
+            onExited: {
+                core.inhibit_all_incoming_calls(0)
+            }
+
+            DSM.TimeoutTransition {
+                targetState: idle
+                timeout: 15000
+            }
+
+            DSM.SignalTransition {
+                targetState: idle
+                signal: stop_button.clicked
+            }
+
         }
     }
-
 
 
     Connections {
@@ -297,6 +328,23 @@ Page {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         z: 10
+    }
+
+    Button {
+        id: preview_button
+        text: "Preview"
+
+        anchors.top: parent.top
+        anchors.right: parent.right
+        visible: !pview_on.active
+    }
+    Button {
+        id: stop_button
+        text: "Done"
+
+        anchors.top: parent.top
+        anchors.right: parent.right
+        visible: pview_on.active
     }
 
     Text {

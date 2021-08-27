@@ -53,6 +53,7 @@ public:
     static void init(QObject *mainwin);
     static void suspend();
     static QObject *Mainwinform;
+    static int Reject_incoming_calls;
 
     int show_preview;
 

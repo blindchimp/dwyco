@@ -1378,6 +1378,7 @@ void
 DwycoCore::inhibit_all_incoming_calls(int i)
 {
     dwyco_inhibit_all_incoming(i);
+    simple_call::Reject_incoming_calls = i;
 }
 
 
