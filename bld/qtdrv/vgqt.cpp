@@ -83,11 +83,20 @@ extern QQmlApplicationEngine *TheEngine;
 #endif
 
 #define NB_BUFFER 3
-static QVector<unsigned long> y_bufs(NB_BUFFER);
-static QVector<unsigned int> lens(NB_BUFFER);
-static QVector<QVideoFrame> vbufs(NB_BUFFER);
-static int next_ibuf;
-static int next_buf;
+//static QVector<unsigned long> y_bufs(NB_BUFFER);
+//static QVector<unsigned int> lens(NB_BUFFER);
+//static QVector<QVideoFrame> vbufs(NB_BUFFER);
+struct vframe
+{
+    vframe() {captime = 0;}
+    QVideoFrame frm;
+    unsigned long captime;
+};
+
+static struct vframe Raw_frame;
+
+//static int next_ibuf;
+//static int next_buf;
 static int debug = 1;
 static QMutex mutex;
 static int Orientation;
@@ -473,6 +482,7 @@ vgqt_new(void *aqext)
     if(Probe_handler)
         return;
     Probe_handler = new probe_handler;
+    Raw_frame = vframe();
 #ifdef TEST_THREAD
     stop_thread = 0;
     pthread_create(&thread, 0, test_thread, 0);
@@ -499,6 +509,7 @@ vgqt_del(void *aqext)
     delete Probe_handler;
     Probe_handler = 0;
     stop_thread = 1;
+    Raw_frame = vframe();
 #ifdef TEST_THREAD
     pthread_join(thread, 0);
 #endif
@@ -645,12 +656,13 @@ DWYCOEXPORT
 vgqt_pass(void *aqext)
 {
     QMutexLocker ml(&mutex);
-    while(next_buf != next_ibuf)
-    {
-        vbufs[next_buf] = QVideoFrame();
-        //GRTLOG("chuck %d", (int)y_bufs[next_buf], 0);
-        next_buf = (next_buf + 1) % NB_BUFFER;
-    }
+    Raw_frame = vframe();
+//    while(next_buf != next_ibuf)
+//    {
+//        vbufs[next_buf] = QVideoFrame();
+//        //GRTLOG("chuck %d", (int)y_bufs[next_buf], 0);
+//        next_buf = (next_buf + 1) % NB_BUFFER;
+//    }
 }
 
 void
@@ -709,21 +721,21 @@ flip_in_place(T **img, int cols, int rows)
 
 static
 struct finished
-conv_data()
+conv_data(vframe ivf)
 {
 
     QMutexLocker ml(&mutex);
 
     struct finished f;
 
-    if(next_buf != next_ibuf)
-    {
-        int nb = next_buf;
+    //if(next_buf != next_ibuf)
+    //{
+        //int nb = next_buf;
         int cols, rows;
-        QVideoFrame vf = vbufs[nb];
-        f.captime = y_bufs[nb];
-        vbufs[nb] = QVideoFrame();
-        next_buf = (next_buf + 1) % NB_BUFFER;
+        QVideoFrame vf = ivf.frm;
+        f.captime = ivf.captime;
+        //vbufs[nb] = QVideoFrame();
+        //next_buf = (next_buf + 1) % NB_BUFFER;
         ml.unlock();
 
         if(!vf.map(QAbstractVideoBuffer::ReadOnly))
@@ -928,7 +940,7 @@ conv_data()
         vf.unmap();
         vf = QVideoFrame();
         return f;
-    }
+    //}
 
     oopanic("aqvfw get no data");
     // not reached
@@ -947,17 +959,20 @@ DWYCOEXPORT
 vgqt_need(void *aqext)
 {
     QMutexLocker ml(&mutex);
-    if(next_ibuf == next_buf)
-    {
-        // no raw frames to process
+    if(!Raw_frame.frm.isValid())
         return;
-    }
+//    if(next_ibuf == next_buf)
+//    {
+//        // no raw frames to process
+//        return;
+//    }
     if(next_cb == (next_icb + 1) % NB_BUFFER)
     {
         // no room to start another conversion
         return;
     }
-    futs[next_cb] = QtConcurrent::run(conv_data);
+    futs[next_cb] = QtConcurrent::run(conv_data, Raw_frame);
+    Raw_frame = vframe();
     next_cb = (next_cb + 1) % NB_BUFFER;
 }
 
@@ -967,27 +982,39 @@ probe_handler::handleFrame(const QVideoFrame& frm)
 {
     QMutexLocker ml(&mutex);
 
-    if(next_buf == (next_ibuf + 1) % NB_BUFFER)
-    {
-        // drop it for now, maybe something more complicated
-        // like overwriting next frame would look better
-        // in some cases, but not worth it at this point.
-        return;
-    }
+    Raw_frame.frm = frm;
 #ifdef __WIN32__
-    y_bufs[next_ibuf] = timeGetTime();
+    Raw_frame.captime = timeGetTime();
 #else
     struct timeval tm;
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     tm.tv_sec = ts.tv_sec;
     tm.tv_usec = ts.tv_nsec / 1000;
-    y_bufs[next_ibuf] = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
+    Raw_frame.captime = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
 #endif
 
-    vbufs[next_ibuf] = frm;
+//    if(next_buf == (next_ibuf + 1) % NB_BUFFER)
+//    {
+//        // drop it for now, maybe something more complicated
+//        // like overwriting next frame would look better
+//        // in some cases, but not worth it at this point.
+//        return;
+//    }
+//#ifdef __WIN32__
+//    y_bufs[next_ibuf] = timeGetTime();
+//#else
+//    struct timeval tm;
+//    struct timespec ts;
+//    clock_gettime(CLOCK_MONOTONIC, &ts);
+//    tm.tv_sec = ts.tv_sec;
+//    tm.tv_usec = ts.tv_nsec / 1000;
+//    y_bufs[next_ibuf] = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
+//#endif
 
-    next_ibuf = (next_ibuf + 1) % NB_BUFFER;
+//    vbufs[next_ibuf] = frm;
+
+//    next_ibuf = (next_ibuf + 1) % NB_BUFFER;
 }
 
 
