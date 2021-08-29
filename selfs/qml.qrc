@@ -57,6 +57,8 @@
         <file>VidGrid.qml</file>
         <file>SelfsStartup.qml</file>
         <file>VidCap.qml</file>
+        <file>QmlCamera.qml</file>
+        <file>+qmlcamera/QmlCamera.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

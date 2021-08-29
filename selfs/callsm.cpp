@@ -108,6 +108,7 @@ int HasCamera;
 int HasCamHardware;
 int HasAudioInput;
 int HasAudioOutput;
+int simple_call::Reject_incoming_calls;
 
 DwQueryByMember<simple_call> simple_call::Simple_calls;
 
@@ -1464,6 +1465,11 @@ simple_call::dwyco_call_screening_callback(int chan_id,
         int *accept_call_style,
         char **error_msg)
 {
+    if(Reject_incoming_calls)
+    {
+        *accept_call_style = DWYCO_CSC_REJECT_CALL;
+        return 0;
+    }
     QByteArray suid(uid, len_uid);
     QByteArray ct(call_type, len_call_type);
 

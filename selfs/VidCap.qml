@@ -15,12 +15,9 @@ import QtMultimedia 5.12
 import QtQml.StateMachine 1.12 as DSM
 import QtQuick.Controls.Universal 2.12
 
-// NOTE! THIS IS HACKED SO IT WORKS FOR CAPTURE ON DESKTOP
-// (ie, it does NOT use the qrCameraQML objectName
-//
 // this is a simplified camera setup for android phone that will
 // automatically connect to the selfie-camera.
-// typically used if you are doing to use an old phone as a
+// typically used if you are using an old phone as a
 // security camera.
 
 Page {
@@ -52,6 +49,13 @@ Page {
 
         RowLayout {
             width: parent.width
+            ToolButton {
+                text: "Back"
+                onClicked: {
+                    stack.pop()
+                }
+            }
+
 //            CheckBox {
 //                id: show_all_checkbox
 //                text: "Edit mode"
@@ -100,7 +104,7 @@ Page {
     }
 
     Component.onDestruction: {
-        core.set_local_setting("mode", "")
+        //core.set_local_setting("mode", "")
         core.hangup_all_calls()
         //preview_cam.stop()
         core.select_vid_dev(0)
@@ -142,6 +146,7 @@ Page {
             onEntered: {
                 console.log("IDLE")
                 core.enable_video_capture_preview(0)
+                preview_cam.stop()
                 viewer.source = mi("ic_videocam_off_black_24dp.png")
             }
 
@@ -150,6 +155,11 @@ Page {
                 guard: CallContextModel.count === 1
                 targetState: streaming
             }
+
+            DSM.SignalTransition {
+                signal: preview_button.clicked
+                targetState: pview_on
+            }
         }
 
         DSM.State {
@@ -157,6 +167,7 @@ Page {
             onEntered: {
                 console.log("STREAMING")
                 core.enable_video_capture_preview(1)
+                preview_cam.start()
             }
 
             DSM.SignalTransition {
@@ -164,9 +175,38 @@ Page {
                 guard: CallContextModel.count === 0
                 targetState: idle
             }
+
+            DSM.SignalTransition {
+                signal: preview_button.clicked
+                targetState: pview_on
+            }
+        }
+
+        DSM.State {
+            id: pview_on
+            onEntered: {
+                core.inhibit_all_incoming_calls(1)
+                core.hangup_all_calls()
+                core.enable_video_capture_preview(1)
+                preview_cam.start()
+            }
+
+            onExited: {
+                core.inhibit_all_incoming_calls(0)
+            }
+
+            DSM.TimeoutTransition {
+                targetState: idle
+                timeout: 15000
+            }
+
+            DSM.SignalTransition {
+                targetState: idle
+                signal: stop_button.clicked
+            }
+
         }
     }
-
 
 
     Connections {
@@ -214,37 +254,10 @@ Page {
         }
     }
 
-//    Camera {
-//        id: preview_cam
-//        objectName: "qrCameraQML"
-//        viewfinder {
-//            resolution: Qt.size(320, 240)
-//            maximumFrameRate: 20
-//        }
-//        position: Camera.FrontFace
-//        captureMode: Camera.CaptureViewfinder
-//        onCameraStateChanged: {
-//            //if(state === Camera.ActiveState) {
-//                var res = preview_cam.supportedViewfinderResolutions();
-//                console.log("RESOLUTIONS ")
-//            for(var i = 0; i < res.length; i++) {
-//                console.log(res[i].width)
-//                console.log(res[i].height)
-//            }
-//            //}
-//        }
-//        onCameraStatusChanged: {
-//            //if(state === Camera.ActiveState) {
-//                var res = preview_cam.supportedViewfinderResolutions();
-//                console.log("RESOLUTIONS ")
-//            for(var i = 0; i < res.length; i++) {
-//                console.log(res[i].width)
-//                console.log(res[i].height)
-//            }
+    QmlCamera {
+        id: preview_cam
 
-//            //}
-//        }
-//    }
+    }
 
 
     Rectangle {
@@ -315,6 +328,23 @@ Page {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         z: 10
+    }
+
+    Button {
+        id: preview_button
+        text: "Preview"
+
+        anchors.top: parent.top
+        anchors.right: parent.right
+        visible: !pview_on.active
+    }
+    Button {
+        id: stop_button
+        text: "Done"
+
+        anchors.top: parent.top
+        anchors.right: parent.right
+        visible: pview_on.active
     }
 
     Text {

@@ -1378,6 +1378,7 @@ void
 DwycoCore::inhibit_all_incoming_calls(int i)
 {
     dwyco_inhibit_all_incoming(i);
+    simple_call::Reject_incoming_calls = i;
 }
 
 
@@ -1616,8 +1617,8 @@ DwycoCore::init()
 //    );
     dwyco_set_setting("video_format/swap_rb", "0");
     dwyco_set_setting("rate/max_fps", "20");
-    dwyco_set_setting("rate/kbits_per_sec_out", "128");
-    dwyco_set_setting("rate/kbits_per_sec_in", "128");
+    dwyco_set_setting("rate/kbits_per_sec_out", "256");
+    dwyco_set_setting("rate/kbits_per_sec_in", "1024");
     dwyco_set_moron_dork_mode(0);
 
     dwyco_set_external_video(1);
