@@ -36,6 +36,8 @@
 #include "xinfo.h"
 #include "dwyco_rand.h"
 
+using namespace dwyco;
+
 vc vclh_sha(vc);
 
 vc My_UID;

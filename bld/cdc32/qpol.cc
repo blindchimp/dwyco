@@ -16,6 +16,7 @@
 #include "qpol.h"
 #include "dwlog.h"
 #include "fnmod.h"
+using namespace dwyco;
 
 extern DwLog *Log;
 // note: these structures are rather rickety, not
