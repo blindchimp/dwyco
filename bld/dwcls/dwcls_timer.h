@@ -101,6 +101,10 @@ typedef sdwtime_t clock_time_t;
 namespace dwyco {
 
 struct timer {
+    // copy things don't work atm
+    timer(const timer&) = delete;
+    timer& operator=(const timer&) = delete;
+
     timer(const char *id = 0);
     ~timer();
     void stop();
@@ -112,9 +116,7 @@ private:
     char lid[100];
     void sprint(char *buf = 0);
 #endif
-    // copy things don't work atm
-    timer(const timer&);
-    timer& operator=(const timer&);
+
 };
 
 void timer_set(struct timer *t, clock_time_t interval);
