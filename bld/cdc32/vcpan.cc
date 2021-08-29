@@ -37,6 +37,7 @@
 extern DwycoEmergencyCallback dwyco_emergency_callback;
 
 
+[[noreturn]]
 void
 oopanic(const char *s)
 {

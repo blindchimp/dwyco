@@ -2,6 +2,8 @@
 #define SIMPLE_PROPERTY_H
 
 #include "ssns.h"
+[[noreturn]] void oopanic(const char *);
+
 namespace dwyco {
 template<class T>
 class sigprop
