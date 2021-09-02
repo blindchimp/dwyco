@@ -1681,7 +1681,7 @@ login_auth_results(vc m, void *, vc, ValidPtr)
         if(!m[3].is_nil())
         {
             Current_authenticator = m[3][2];
-            Pal_auth_state = m[3][3];
+            //Pal_auth_state = m[3][3];
 #ifdef DWYCO_ASSHAT
             set_asshole_param(m[3][4]);
 #endif
@@ -1739,7 +1739,7 @@ send_new()
                     get_settings_value("user/email"),
                     vcnil,
                     My_server_key,
-                    Pal_auth_state,
+                    vcnil, //Pal_auth_state,
                     QckDone(login_auth_results, 0));
 
     // send whatever debug stuff might be available
