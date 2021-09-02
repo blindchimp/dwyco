@@ -130,7 +130,7 @@ struct finished
     unsigned long captime;
 };
 static QVector<QFuture<finished> > futs(NB_BUFFER);
-static QVector<finished> conv_buf(NB_BUFFER);
+//static QVector<finished> conv_buf(NB_BUFFER);
 static int next_cb;
 static int next_icb;
 
@@ -155,20 +155,14 @@ class vidsurf : public QAbstractVideoSurface
 public:
 
     virtual bool present(const QVideoFrame &frame) {return true;}
-
     virtual bool start(const QVideoSurfaceFormat &format) { return QAbstractVideoSurface::start(format);}
     virtual void stop() {QAbstractVideoSurface::stop();}
-
 
     virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(QAbstractVideoBuffer::HandleType type = QAbstractVideoBuffer::NoHandle) const {
         QList<QVideoFrame::PixelFormat> pf;
         pf.append(QVideoFrame::Format_NV12);
         return pf;
     }
-
-
-
-
 };
 
 #include "vgqt.moc"
@@ -199,6 +193,26 @@ clock_gettime(int, struct timespec *t)
     return 0;
 }
 #endif
+
+static
+void
+stop_all_conversions()
+{
+    for(int i = 0; i < NB_BUFFER; ++i)
+    {
+        // note: we can't cancel the future, but we
+        // did set it to an empty future, which the docs
+        // is "canceled"
+        if(!futs[i].isCanceled())
+        {
+            finished f = futs[i].result();
+            f.flush();
+            futs[i] = QFuture<finished>();
+        }
+    }
+    next_cb = 0;
+    next_icb = 0;
+}
 
 #ifdef TEST_THREAD
 static void
@@ -464,6 +478,8 @@ vgqt_stop_video_device()
         delete Probe_handler;
         Probe_handler = 0;
     }
+    stop_all_conversions();
+
 #ifndef USE_QML_CAMERA
     if(Cam)
     {
@@ -509,6 +525,8 @@ vgqt_del(void *aqext)
     delete Probe_handler;
     Probe_handler = 0;
     stop_thread = 1;
+    QMutexLocker ml(&mutex);
+    stop_all_conversions();
     Raw_frame = vframe();
 #ifdef TEST_THREAD
     pthread_join(thread, 0);
@@ -674,6 +692,7 @@ vgqt_stop(void *aqext)
     if(!Probe_handler)
         return;
     Probe_handler->probe.setSource((QMediaObject *)0);
+    stop_all_conversions();
 }
 
 void *
@@ -690,6 +709,11 @@ vgqt_get_data(
         oopanic("bad get data");
     f = new finished;
     *f = futs[next_icb].result();
+    // note kludge, so on shutdown, we can
+    // distinguish between unused futures and ones
+    // that might still be running, so we can
+    // flush them to avoid leaks
+    futs[next_icb] = QFuture<finished>();
     *c_out = f->c;
     *r_out = f->r;
     *bytes_out = f->bytes;

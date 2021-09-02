@@ -339,7 +339,7 @@ dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_auth,
     m[QEMAIL] = email;
     m[QUSER_SPECED_ID] = user_spec_id;
     m[QPW] = vclh_sha(pw);
-    m[QPAL_AUTH] = pal_auth;
+    //m[QPAL_AUTH] = pal_auth;
     m[QSTUFF] = build_directory_entry2();
     m[QIGNORE_LIST] = get_local_ignore();
     vc static_public = dh_my_static();
@@ -895,6 +895,7 @@ dirth_send_check_for_update(vc id, QckDone d)
     dirth_send(m, d);
 }
 
+#if 0
 void
 dirth_send_get_pal_auth_state(vc id, vc who, QckDone d)
 {
@@ -944,6 +945,7 @@ dirth_send_set_pal_auth_state(vc id, vc state, QckDone d)
     m[2] = state;
     dirth_send(m, d);
 }
+#endif
 
 void
 dirth_send_server_assist(vc id, vc to_id, QckDone d)
