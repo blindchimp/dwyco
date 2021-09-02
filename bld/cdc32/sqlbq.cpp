@@ -23,11 +23,13 @@
 #include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
+#include "dwstr.h"
 
 namespace dwyco {
 #define USER_BOMB(a, b) {return (b);}
 
 #ifdef DWYCO_DBG_CHECK_SQL
+
 // this is a hack to get around the "unbound arguments are treated as null"
 // peculiarity in sqlite. i've been burned directly by this problem several
 // times, usually thru typos. this is for debugging only, and
@@ -233,8 +235,8 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         }
         break;
         default:
-            sqlite3_finalize(st);
             oopanic(sqlite3_errmsg(dbs));
+            sqlite3_finalize(st);
             return vcnil;
         }
     }

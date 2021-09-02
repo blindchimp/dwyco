@@ -155,20 +155,14 @@ class vidsurf : public QAbstractVideoSurface
 public:
 
     virtual bool present(const QVideoFrame &frame) {return true;}
-
     virtual bool start(const QVideoSurfaceFormat &format) { return QAbstractVideoSurface::start(format);}
     virtual void stop() {QAbstractVideoSurface::stop();}
-
 
     virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(QAbstractVideoBuffer::HandleType type = QAbstractVideoBuffer::NoHandle) const {
         QList<QVideoFrame::PixelFormat> pf;
         pf.append(QVideoFrame::Format_NV12);
         return pf;
     }
-
-
-
-
 };
 
 #include "vgqt.moc"
