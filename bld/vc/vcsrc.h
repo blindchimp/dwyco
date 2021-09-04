@@ -13,13 +13,13 @@ class VcLexer;
 #include "dwstr.h"
 struct vc_cvar_src_coord
 {
-	long abs_charnum;
-	long linenum;
-	long charnum;
-        DwString filename;
+    long linenum;
+    long char_index_start;
+    long char_index_end;
+    DwString filename;
 
-	vc_cvar_src_coord();
-	void init(VcLexer *);
+    vc_cvar_src_coord();
+    void init(VcLexer *);
 };
 
 #endif

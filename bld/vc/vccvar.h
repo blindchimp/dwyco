@@ -100,6 +100,9 @@ private:
 	// source coordinates for the expression
 	vc_cvar_src_coord begin_scoord;
 	vc_cvar_src_coord end_scoord;
+        // source coordinate of the atom associated with the
+        // leaf node.
+        vc_cvar_src_coord atom_coord;
 	
 	// lexer functions
 	void next_tok(void);

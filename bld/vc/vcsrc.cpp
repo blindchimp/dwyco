@@ -11,20 +11,19 @@
 #include "vclex.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcsrc.cpp 1.45 1996/11/17 05:59:13 dwight Stable $";
 
-long Vctok_char_pos;
-long Vclinenum;
-
 vc_cvar_src_coord::vc_cvar_src_coord()
 {
-
+    linenum = -1;
+    char_index_start = -1;
+    char_index_end = -1;
 }
 
 void
 vc_cvar_src_coord::init(VcLexer *l)
 {
-	linenum = l->token_linenum();
-	filename = l->input_description();
-	abs_charnum = 0;
-	charnum = 0;
+    linenum = l->token_linenum();
+    filename = l->input_description();
+    char_index_start = l->char_start_token;
+    char_index_end = l->char_end_token;
 }
 #endif

@@ -138,7 +138,7 @@ vc_cvar::vc_cvar(const char *expr, int decrypt)
 	{
 		lexer->set_input_description(fn);
 	}
-	tok = lexer->next_token(tokval, toklen, atom_type);
+    next_tok();
 	begin_scoord.init(lexer);
 	error = 0;
 	varlist(&vc_list);
@@ -167,7 +167,7 @@ vc_cvar::vc_cvar(VcLexer *l)
 	time_cached = 0;
 #endif
 	lexer = l;
-	tok = lexer->next_token(tokval, toklen, atom_type);
+    next_tok();
 	begin_scoord.init(lexer);
 	error = 0;
 	varlist(&vc_list);
@@ -353,6 +353,9 @@ void
 vc_cvar::next_tok()
 {
 	tok = lexer->next_token(tokval, toklen, atom_type);
+
+    if(tok == VcLexer::ATOM)
+        atom_coord.init(lexer);
 }
 
 void
