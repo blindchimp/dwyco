@@ -234,7 +234,7 @@ vc_cvar::eval() const
 	if(exp_error)
 		USER_BOMB("attempt to eval erroneous expression", vcnil);
 
-
+    atom_coord.print();
 #ifdef PERFHACKS
 	if(!nopf)
 	{
@@ -429,6 +429,7 @@ vc_cvar::pvar()
         vc_cvar_src_coord begin_scoord;
 		next_tok();
 		begin_scoord.init(lexer);
+        vc_cvar_src_coord atom_coord = this->atom_coord;
 		vc_cvar *v = new vc_cvar;
 		varlist(&v->vc_list);
 		vc_cvar_src_coord end_scoord;
@@ -438,6 +439,7 @@ vc_cvar::pvar()
 		v->dont_map = inhibit_map;
 		v->begin_scoord = begin_scoord;
 		v->end_scoord = end_scoord;
+        v->atom_coord = atom_coord;
 		cvar.redefine(v);
 		if(!quot)
 		{

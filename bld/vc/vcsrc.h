@@ -11,8 +11,11 @@
 // $Header: g:/dwight/repo/vc/rcs/vcsrc.h 1.45 1996/11/17 05:59:14 dwight Stable $
 class VcLexer;
 #include "dwstr.h"
+#include <stdio.h>
 struct vc_cvar_src_coord
 {
+    static FILE *f;
+
     long linenum;
     long char_index_start;
     long char_index_end;
@@ -20,6 +23,8 @@ struct vc_cvar_src_coord
 
     vc_cvar_src_coord();
     void init(VcLexer *);
+
+    void print() const;
 };
 
 #endif

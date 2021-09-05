@@ -10,6 +10,8 @@
 #include "vcsrc.h"
 #include "vclex.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcsrc.cpp 1.45 1996/11/17 05:59:13 dwight Stable $";
+#include <stdio.h>
+FILE *vc_cvar_src_coord::f;
 
 vc_cvar_src_coord::vc_cvar_src_coord()
 {
@@ -25,5 +27,13 @@ vc_cvar_src_coord::init(VcLexer *l)
     filename = l->input_description();
     char_index_start = l->char_start_token;
     char_index_end = l->char_end_token;
+}
+
+void
+vc_cvar_src_coord::print() const
+{
+    if(!f)
+        f = fopen("color.out", "w");
+    fprintf(f, "%s %ld %ld\n", filename.c_str(), char_index_start, char_index_end);
 }
 #endif
