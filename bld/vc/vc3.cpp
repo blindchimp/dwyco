@@ -342,6 +342,13 @@ vc::force_eval() const
 vc
 vc::eval() const
 {
+#ifdef VCDBG
+    VcDebugNode *n = VcDbgInfo.get();
+    if(n->src_list)
+    {
+        (*n->src_list)[n->cur_idx].print();
+    }
+#endif
 	if(is_quoted())
 		return *this;
 	return rep->eval();

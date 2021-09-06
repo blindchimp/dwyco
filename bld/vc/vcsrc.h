@@ -26,5 +26,6 @@ struct vc_cvar_src_coord
 
     void print() const;
 };
+typedef DwVec<vc_cvar_src_coord> Src_coord_list;
 
 #endif

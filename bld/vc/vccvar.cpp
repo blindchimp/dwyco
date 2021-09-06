@@ -42,6 +42,7 @@ VcEvalDbgNode::VcEvalDbgNode(const vc_cvar *v)
 	node = v;
 	expr_num = -1;
 	var_name = "";
+    src_list = &v->clist;
 }
 
 void
@@ -141,7 +142,7 @@ vc_cvar::vc_cvar(const char *expr, int decrypt)
     next_tok();
 	begin_scoord.init(lexer);
 	error = 0;
-	varlist(&vc_list);
+    varlist(&vc_list, &clist);
 	memset(e1, 0, len);
 	delete [] e1;
 	is_root = 1;
@@ -170,7 +171,7 @@ vc_cvar::vc_cvar(VcLexer *l)
     next_tok();
 	begin_scoord.init(lexer);
 	error = 0;
-	varlist(&vc_list);
+    varlist(&vc_list, &clist);
 	is_root = 1;
 	//dont_map = 1;
 	quoted = 1;
@@ -234,7 +235,6 @@ vc_cvar::eval() const
 	if(exp_error)
 		USER_BOMB("attempt to eval erroneous expression", vcnil);
 
-    atom_coord.print();
 #ifdef PERFHACKS
 	if(!nopf)
 	{
@@ -291,6 +291,7 @@ vc_cvar::eval() const
 #ifdef VCDBG
 		dbg.expr_num = expr_num;
 		dbg.var_name = var_name;
+        dbg.cur_idx = expr_num;
 #endif
 			val = atom.eval();
 			// special case: we're unwinding due to a return/break/exc
@@ -353,9 +354,6 @@ void
 vc_cvar::next_tok()
 {
 	tok = lexer->next_token(tokval, toklen, atom_type);
-
-    if(tok == VcLexer::ATOM)
-        atom_coord.init(lexer);
 }
 
 void
@@ -402,7 +400,7 @@ vc_cvar::make_atom()
 }
 
 vc
-vc_cvar::pvar()
+vc_cvar::pvar(vc_cvar_src_coord& coord_out)
 {
 	vc cvar;
 	int quot = 0;
@@ -412,6 +410,7 @@ vc_cvar::pvar()
 	{
 	case ATOM:
 		cvar = make_atom();
+        coord_out.init(lexer);
 		next_tok();
 		break;
 
@@ -429,9 +428,9 @@ vc_cvar::pvar()
         vc_cvar_src_coord begin_scoord;
 		next_tok();
 		begin_scoord.init(lexer);
-        vc_cvar_src_coord atom_coord = this->atom_coord;
+
 		vc_cvar *v = new vc_cvar;
-		varlist(&v->vc_list);
+        varlist(&v->vc_list, &v->clist);
 		vc_cvar_src_coord end_scoord;
 		end_scoord.init(lexer);
 
@@ -439,7 +438,7 @@ vc_cvar::pvar()
 		v->dont_map = inhibit_map;
 		v->begin_scoord = begin_scoord;
 		v->end_scoord = end_scoord;
-        v->atom_coord = atom_coord;
+
 		cvar.redefine(v);
 		if(!quot)
 		{
@@ -476,11 +475,13 @@ vc_cvar::vprime(vc cvar)
 	start.init(lexer);
 
 	VCList tmp;
+    Src_coord_list tmpsc;
 	vc selector;
+    vc_cvar_src_coord selector_coord;
 	if(is_memselect)
-		selector = pvar();
+        selector = pvar(selector_coord);
 	else
-		varlist(&tmp);
+        varlist(&tmp, &tmpsc);
 
 	if(!is_memselect && tok != RPAREN)
 		syntax_err("expecting ')' after function arg list");
@@ -499,19 +500,21 @@ vc_cvar::vprime(vc cvar)
 	}
 	else
 	{
-		vc_funcall *vca = new vc_funcall(cvar, tmp, start, end);
+        vc_funcall *vca = new vc_funcall(cvar, tmp, start, end, tmpsc);
 		cvar.redefine(vca);
 		return vprime(cvar);
 	}
 }
 
 void
-vc_cvar::varlist(VCList *vlist)
+vc_cvar::varlist(VCList *vlist, Src_coord_list *clist)
 {
 	while(tok == ATOM || tok == LBRACKET || tok == LBRACE || tok == LTICK)
     {
-		vc v = pvar();
+        vc_cvar_src_coord s;
+        vc v = pvar(s);
 		vlist->append(v);
+        clist->append(s);
 	} // else expand empty
 }
 

@@ -31,7 +31,8 @@ friend class functx;
 
 private:
         DwVec<vc> arglist;			// list of argument expressions
-	vc func;					// function expression
+        Src_coord_list src_list;
+        vc func;					// function expression
 	vc_cvar_src_coord start;	// source code start
 	vc_cvar_src_coord end;      // source code end
 
@@ -46,7 +47,8 @@ private:
 	void flush_cache();
 
 	vc_funcall(const vc& v, const VCList& vl,
-		const vc_cvar_src_coord&, const vc_cvar_src_coord&);
+                const vc_cvar_src_coord&, const vc_cvar_src_coord&,
+                   const Src_coord_list& scl);
 	vc_funcall(const vc_funcall& v);
 	~vc_funcall();
 
