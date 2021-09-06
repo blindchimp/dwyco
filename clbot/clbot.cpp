@@ -172,7 +172,7 @@ main(int argc, char *argv[])
 
     dwyco_init();
 
-    dwyco_set_setting("call_acceptance/listen", "0");
+    dwyco_set_setting("net/listen", "0");
 
     if(dwyco_get_create_new_account())
     {
