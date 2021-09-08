@@ -25,6 +25,8 @@ struct vc_cvar_src_coord
     void init(VcLexer *);
 
     void print() const;
+private:
+    mutable bool already_printed;
 };
 typedef DwVec<vc_cvar_src_coord> Src_coord_list;
 

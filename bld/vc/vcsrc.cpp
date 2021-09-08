@@ -18,6 +18,7 @@ vc_cvar_src_coord::vc_cvar_src_coord()
     linenum = -1;
     char_index_start = -1;
     char_index_end = -1;
+    already_printed = false;
 }
 
 void
@@ -32,6 +33,8 @@ vc_cvar_src_coord::init(VcLexer *l)
 void
 vc_cvar_src_coord::print() const
 {
+    if(already_printed)
+        return;
     if(!f)
     {
         const char *p = getenv("DWYCO_COLORIZED_NAME");
@@ -40,6 +43,9 @@ vc_cvar_src_coord::print() const
         f = fopen(p, "w");
     }
     if(char_index_start != -1 && char_index_end != -1)
+    {
         fprintf(f, "%s %ld %ld\n", filename.c_str(), char_index_start, char_index_end);
+        already_printed = true;
+    }
 }
 #endif
