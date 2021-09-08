@@ -352,14 +352,36 @@ DH_alternate::insert_private_key(vc alt_name, vc grp_key)
 {
     if(!DHG_db)
         return 0;
-    DHG_db->start_transaction();
-    alt_name = to_lower(alt_name);
-    DHG_db->sql_simple("update keys set privkey = ?2 where alt_name = ?1 and pubkey = ?3",
-                       alt_name,
-                       blob(grp_key[DH_STATIC_PRIVATE]),
-                       blob(grp_key[DH_STATIC_PUBLIC])
-                       );
-    DHG_db->commit_transaction();
+    try
+    {
+        DHG_db->start_transaction();
+        alt_name = to_lower(alt_name);
+        vc res = DHG_db->sql_simple("select 1 from keys where alt_name = ?1 and pubkey = ?2",
+                                    alt_name,
+                                    blob(grp_key[DH_STATIC_PUBLIC]));
+        if(res.num_elems() != 1)
+        {
+            // this might happen if someone manages to confuse the server
+            // and is now giving us a different public key to go with the
+            // private key.
+            // note: there probably needs to be some validation in here at some
+            // point, like checking the signature etc.etc.
+            throw -1;
+        }
+
+        DHG_db->sql_simple("update keys set privkey = ?2 where alt_name = ?1 and pubkey = ?3",
+                           alt_name,
+                           blob(grp_key[DH_STATIC_PRIVATE]),
+                           blob(grp_key[DH_STATIC_PUBLIC])
+                           );
+        DHG_db->commit_transaction();
+    }
+    catch(...)
+    {
+        DHG_db->rollback_transaction();
+        return 0;
+    }
+
     return 1;
 }
 

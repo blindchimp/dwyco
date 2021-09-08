@@ -427,10 +427,18 @@ install_group_key(vc from, vc msg, vc password)
     // want to do if you are expecting to run this protocol on multiple
     // groups at the same time, but we don't want to do that anyway.
     clear_gj();
-    Group_uids.add(from);
-    se_emit_join(alt_name, 1);
+    if(ret)
+    {
+        Group_uids.add(from);
+        se_emit_join(alt_name, 1);
+        Join_signal.emit(alt_name);
+    }
+    else
+    {
+        se_emit_join(alt_name, 0);
+    }
     se_emit_group_status_change();
-    Join_signal.emit(alt_name);
+
     return ret;
 }
 
