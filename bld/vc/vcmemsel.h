@@ -12,6 +12,7 @@
 
 #include "vccomp.h"
 #include "vcsrc.h"
+#include "vcdbg.h"
 
 //
 // object that is used to represent object member selection in the
@@ -39,7 +40,7 @@ public:
 private:
     vc_cvar_src_coord start;
     vc_cvar_src_coord end;
-    vc_cvar_src_coord selector_coord;
+    Src_coord_list sel_list; // just a single item for now
     
 	vc obj_expr;
 	vc selector;

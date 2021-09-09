@@ -76,9 +76,9 @@ vc_memselect::vc_memselect(const vc& expr, const vc& selectr,
                            const vc_cvar_src_coord& s,
                            const vc_cvar_src_coord& e,
                            const vc_cvar_src_coord& sc)
-    : obj_expr(expr), selector(selectr), start(s), end(e), selector_coord(sc)
+    : obj_expr(expr), selector(selectr), start(s), end(e)
 {
-
+    sel_list.append(sc);
 }
 
 vc_memselect::~vc_memselect()
@@ -101,7 +101,7 @@ vc_memselect::eval() const
 #ifdef VCDBG
     VcMemSelectDbgNode dbg(this);
     dbg.state = "finding object";
-    //dbg.src_list =
+    dbg.src_list = &sel_list;
 #endif
     
 	vc obj;
