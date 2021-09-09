@@ -197,7 +197,7 @@ vc_cvar::performance_hack(vc& atom) const
 {
 	if(vc_list.num_elems() != 1)
 	{
-		((vc_cvar *)this)->nopf = 1;
+        nopf = 1;
 		return 0;
 	}
 	vc tmp = vc_list.get_first();
@@ -256,7 +256,12 @@ vc_cvar::eval() const
 		}
 		vc atom;
 		if(performance_hack(atom))
+        {
+#ifdef VCDBG
+            clist[0].print();
+#endif
 			return atom;
+        }
 	}
 #endif
 
@@ -494,7 +499,7 @@ vc_cvar::vprime(vc cvar)
 
 	if(is_memselect)
 	{
-		vc_memselect *ms = new vc_memselect(cvar, selector, start, end);
+        vc_memselect *ms = new vc_memselect(cvar, selector, start, end, selector_coord);
 		cvar.redefine(ms);
 		return vprime(cvar);
 	}

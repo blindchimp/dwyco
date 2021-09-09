@@ -23,7 +23,8 @@ class vc_memselect : public vc_composite
 friend class VcMemSelectDbgNode;
 public:
 	vc_memselect(const vc& expr, const vc& selector,
-                 const vc_cvar_src_coord& s, const vc_cvar_src_coord& e);
+                 const vc_cvar_src_coord& s, const vc_cvar_src_coord& e,
+                     const vc_cvar_src_coord& selector_coord);
 	~vc_memselect();
 
 	vc_default *do_copy() const {oopanic("copy memselect"); return 0;}
@@ -38,6 +39,7 @@ public:
 private:
     vc_cvar_src_coord start;
     vc_cvar_src_coord end;
+    vc_cvar_src_coord selector_coord;
     
 	vc obj_expr;
 	vc selector;

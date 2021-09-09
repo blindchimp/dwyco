@@ -73,8 +73,10 @@ VcMemSelectDbgNode::printOnBrief(VcIO os)
 #endif
 
 vc_memselect::vc_memselect(const vc& expr, const vc& selectr,
-                           const vc_cvar_src_coord& s, const vc_cvar_src_coord &e)
-	: obj_expr(expr), selector(selectr), start(s), end(e)
+                           const vc_cvar_src_coord& s,
+                           const vc_cvar_src_coord& e,
+                           const vc_cvar_src_coord& sc)
+    : obj_expr(expr), selector(selectr), start(s), end(e), selector_coord(sc)
 {
 
 }
@@ -99,6 +101,7 @@ vc_memselect::eval() const
 #ifdef VCDBG
     VcMemSelectDbgNode dbg(this);
     dbg.state = "finding object";
+    //dbg.src_list =
 #endif
     
 	vc obj;
