@@ -78,7 +78,7 @@ public:
 	virtual operator long() const ;
 	virtual operator char() const ;
 	virtual operator void *() const ;
-    virtual operator int64_t() const;
+    //virtual operator int64_t() const;
 
 	// default relationals
 	

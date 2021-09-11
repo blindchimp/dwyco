@@ -469,7 +469,7 @@ decl_rel(str)
 	notvirtual operator long() const ;
 	notvirtual operator char() const ;
 	notvirtual operator void *() const;
-    notvirtual operator int64_t() const;
+    //notvirtual operator int64_t() const;
 
 	void print_top(VcIO o);
 	void print(VcIO o);
