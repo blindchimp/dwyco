@@ -65,6 +65,7 @@ vc_int::operator void *() const {
 	return (void *)i;
 }
 vc_int::operator double() const {return (double)i; }
+vc_int::operator int64_t() const {return i; }
 vc_int::operator const char *() const {USER_BOMB("can't convert int to string (unimp)", "0");}
 
 const char *
