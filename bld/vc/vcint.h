@@ -46,6 +46,7 @@ public:
 	operator double() const ;
 	operator const char *() const ;
 	operator void *() const ;
+    operator int64_t() const;
 
 	const char *peek_str() const ;
 	void stringrep(VcIO o) const ;

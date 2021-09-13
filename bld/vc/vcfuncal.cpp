@@ -208,9 +208,10 @@ VcFuncallDbgNode::printOn(VcIO os)
 #endif
 
 vc_funcall::vc_funcall(const vc& v, const VCList& vl,
-	 const vc_cvar_src_coord& s, const vc_cvar_src_coord& e)
+     const vc_cvar_src_coord& s, const vc_cvar_src_coord& e, const Src_coord_list &scl)
 	 : start(s), end(e), func(v), cached_fun(new vc),
- cached_when(new unsigned long)
+       src_list(scl),
+       cached_when(new unsigned long)
 {
 	vc arg;
     VCListIter i(&vl);
@@ -222,8 +223,9 @@ vc_funcall::vc_funcall(const vc& v, const VCList& vl,
 }
 
 vc_funcall::vc_funcall(const vc_funcall& v)
-	: arglist(v.arglist), func(v.func), cached_fun(new vc), 
- cached_when(new unsigned long)
+    : arglist(v.arglist), func(v.func), cached_fun(new vc),
+      src_list(v.src_list),
+      cached_when(new unsigned long)
 {
 
 	*cached_when = *v.cached_when;
@@ -251,6 +253,8 @@ vc_funcall::eval() const
 
 #ifdef VCDBG
 	VcFuncallDbgNode _dbg(this);
+    _dbg.src_list = &src_list;
+
 #define dbg(x) _dbg.x
 	dbg(info) = "Finding function";
 #endif
@@ -343,6 +347,7 @@ vc_funcall::eval() const
 		{
 #ifdef VCDBG
 			dbg(argnum) = i;
+            _dbg.cur_idx = i;
 #endif
             al.append(arglist[i].eval());
 			if(Vcmap->dbg_backout_in_progress())

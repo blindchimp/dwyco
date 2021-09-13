@@ -400,7 +400,7 @@ Page {
                         MenuItem {
                             text: "Send video message"
                             onTriggered: {
-                                core.try_connect(to_uid)
+                                core.start_control(to_uid)
                                 dwyco_vid_rec.uid = to_uid
                                 stack.push(dwyco_vid_rec)
                             }
@@ -973,7 +973,7 @@ Page {
         onAccepted: {
             if(textField1.length > 0) {
                 core.simple_send(to_uid, core.strip_html(textField1.text))
-                core.try_connect(to_uid)
+                core.start_control(to_uid)
 
                 themsglist.reload_model()
                 textField1.text = ""
@@ -1051,7 +1051,7 @@ Page {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
             core.simple_send(to_uid, core.strip_html(textField1.text))
-            core.try_connect(to_uid)
+            core.start_control(to_uid)
             themsglist.reload_model()
             textField1.text = ""
             listView1.positionViewAtBeginning()
@@ -1121,7 +1121,7 @@ Page {
         ToolTip.text: "Press while talking to send audio msg"
 
         onPressed: {
-            core.try_connect(to_uid)
+            core.start_control(to_uid)
             zid = core.make_zap_composition()
             chan = core.start_zap_record(zid, 0, 1)
         }

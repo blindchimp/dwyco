@@ -29,21 +29,22 @@ VcLexer::VcLexer(VcIO o)
 	end_token = 0;
 	lexical_error = 0;
     emit_lexical_warnings = 0;
+    cur_char_index = 0;
 }
 
-VcLexer::Token
-VcLexer::next_token()
-{
-	tokval.reset();
-	set_beginning_of_scan();
-	if(get_toplev())
-	{
-		append_tok("\0", 1); // explicitly 0 terminate
-		set_end_of_token();
-		return token;
-	}
-	return EOS;
-}
+//VcLexer::Token
+//VcLexer::next_token()
+//{
+//	tokval.reset();
+//	set_beginning_of_scan();
+//	if(get_toplev())
+//	{
+//		append_tok("\0", 1); // explicitly 0 terminate
+//		set_end_of_token();
+//		return token;
+//	}
+//	return EOS;
+//}
 
 VcLexer::Token
 VcLexer::next_token(const char *& tv, long& len, Atom& tp_out)
@@ -93,12 +94,14 @@ void
 VcLexer::set_beginning_of_token()
 {
 	start_token = lines_read + 1;
+    char_start_token = cur_char_index;
 }
 
 void
 VcLexer::set_end_of_token()
 {
 	end_token = lines_read + 1;
+    char_end_token = cur_char_index;
 }
 
 void
@@ -118,7 +121,6 @@ VcLexer::token_linenum_start_scan()
 	return start_scan;
 }
 
-// note: half-assed, leaks here... need to clean this up
 DwString
 VcLexer::input_description()
 {
@@ -811,18 +813,16 @@ VcLexer::term_state(int more_input, char c, Token tok, Atom typ)
 // lex from a string
 //
 VcLexerString::VcLexerString(char *s, VcIO o)
-	: VcLexer(o)
+    : VcLexer(o), str(s)
 {
-	str = s;
 	len = strlen(s);
 	cur = str;
 	len_left = len;
 }
 
 VcLexerString::VcLexerString(char *s, long l, VcIO o)
-	: VcLexer(o)
+    : VcLexer(o), str(s)
 {
-	str = s;
 	len = l;
 	len_left = l;
 	cur = str;
@@ -838,6 +838,7 @@ VcLexerString::get_chars(char *& out_buf, long size)
 	cur += size;
 	decrypt(out_buf, size);
 	forward_track_source(out_buf, size);
+    cur_char_index = cur - str;
 	return size;
 }
 
@@ -850,6 +851,7 @@ VcLexerString::put_back(char *buf, long cnt)
 	encrypt(cur, cnt);
 	len_left += cnt;
 	backward_track_source(buf, cnt);
+    cur_char_index -= cnt;
 }
 
 int
@@ -862,14 +864,14 @@ VcLexerString::no_more_available()
 
 
 void
-VcLexerStringEncrypted::encrypt(char *buf, int len)
+VcLexerStringEncrypted::encrypt(char *buf, int buf_len)
 {
-	enc.mungeback(buf, len);
+    enc.mungeback(buf, buf_len);
 }
 void
-VcLexerStringEncrypted::decrypt(char *buf, int len)
+VcLexerStringEncrypted::decrypt(char *buf, int buf_len)
 {
-	enc.munge(buf, len);
+    enc.munge(buf, buf_len);
 }
 
 
@@ -896,6 +898,7 @@ VcLexerStdio::get_chars(char *& buf_out, long want)
 	len_left -= want;
 	cur += want;
 	forward_track_source(buf_out, want);
+    cur_char_index += want;
 	return want;
 }
 
@@ -919,6 +922,7 @@ VcLexerStdio::put_back(char *buf, long cnt)
 		cur = ourbuf;
 	}
 	backward_track_source(buf, cnt);
+    cur_char_index -= cnt;
 }
 
 int

@@ -88,6 +88,8 @@ VcDebugNode::VcDebugNode()
 	VcDbgInfo.callstack.append(this);
 	filename = "<<unknown>>";
 	linenum = 0;
+    src_list = 0;
+    cur_idx = 0;
 }
 
 VcDebugNode::~VcDebugNode()
