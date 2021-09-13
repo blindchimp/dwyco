@@ -168,7 +168,7 @@ template<class T> class DwVec;
 #include "dwsvec.h"
 typedef DwSVec<vc> VCArglist;
 
-#ifndef VC_NOEVAL
+#ifndef NO_VCEVAL
 #include "vcfext.h"
 class VcLexer;
 typedef vc (*VCFUNCP0)();

@@ -335,14 +335,21 @@ vc::printOn(VcIO outputStream)
 vc
 vc::force_eval() const
 {
+#ifdef NO_VCEVAL
+    oopanic("eval");
+#else
 	if(is_atomic())
 		return *this;
 	return rep->eval();
+#endif
 }
 
 vc
 vc::eval() const
 {
+#ifdef NO_VCEVAL
+    oopanic("eval2");
+#else
 #ifdef VCDBG
     VcDebugNode *n = VcDbgInfo.get();
     if(n->src_list)
@@ -353,6 +360,7 @@ vc::eval() const
 	if(is_quoted())
 		return *this;
 	return rep->eval();
+#endif
 }
 
 void
