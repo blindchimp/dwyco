@@ -49,7 +49,7 @@ public:
 	operator int() const ;
 	operator long() const ;
 	operator const char *() const ;
-    operator int64_t() const;
+    //operator int64_t() const;
 
 	const char *peek_str() const ;
 
