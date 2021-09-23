@@ -2,6 +2,7 @@ TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
 
 #macx-g++:dateincr.commands = ./dumptime-mac
 #macx-clang:dateincr.commands = ./dumptime-mac
@@ -16,7 +17,8 @@ DEFINES += NO_BUILDTIME
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"1.05\\\"\"
+DEFINES += BUILDTIME=\"\\\"1.33\\\"\"
+CONFIG += c++11
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -261,6 +263,27 @@ DEFINES += DWYCO_IOS
 #QTPLUGIN += qmlstatemachine
 D = $$OUT_PWD/../bld
 LIBS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${D}/jhead/libjhead.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/qtdrv/libqtdrv.a
+
+PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
 $${D}/crypto5/libcrypto5.a \

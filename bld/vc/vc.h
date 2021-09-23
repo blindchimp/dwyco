@@ -168,7 +168,7 @@ template<class T> class DwVec;
 #include "dwsvec.h"
 typedef DwSVec<vc> VCArglist;
 
-#ifndef VC_NOEVAL
+#ifndef NO_VCEVAL
 #include "vcfext.h"
 class VcLexer;
 typedef vc (*VCFUNCP0)();
@@ -469,7 +469,8 @@ decl_rel(str)
 	notvirtual operator long() const ;
 	notvirtual operator char() const ;
 	notvirtual operator void *() const;
-	
+    //notvirtual operator int64_t() const;
+
 	void print_top(VcIO o);
 	void print(VcIO o);
 	notvirtual void printOn(VcIO outputStream) ;

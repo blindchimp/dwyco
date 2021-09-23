@@ -1295,6 +1295,8 @@ fetch_attachment(vc id, DestroyCallback dc, vc dcb_arg1, void *dcb_arg2, ValidPt
     int state;
     if((state = mc->tube->gen_channel((int)port, i)) == SSERR)
     {
+        delete mc->tube;
+        delete mc;
         return 0;
     }
     mc->remote_filename = id;

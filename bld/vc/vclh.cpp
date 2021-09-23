@@ -2605,7 +2605,7 @@ vclh_fmt(vc item, vc fmt)
 			if(len >= new_len)
 			{
 				VcError << "warning: wierd snprintf return, output truncated.\n";
-				a[new_len] = 0;
+                a[new_len - 1] = 0;
 			}
 			vc ret(VC_BSTRING, a, new_len);
 			delete [] a;
@@ -2624,7 +2624,7 @@ vclh_fmt(vc item, vc fmt)
 			if(len >= new_len)
 			{
 				VcError << "warning: wierd snprintf return, output truncated.\n";
-				a[new_len] = 0;
+                a[new_len - 1] = 0;
 			}
 			vc ret(VC_BSTRING, a, new_len);
 			delete [] a;
@@ -2642,7 +2642,7 @@ vclh_fmt(vc item, vc fmt)
 			if(len >= new_len)
 			{
 				VcError << "warning: wierd snprintf return, output truncated.\n";
-				a[new_len] = 0;
+                a[new_len - 1] = 0;
 			}
 			vc ret(VC_BSTRING, a, new_len);
 			delete [] a;

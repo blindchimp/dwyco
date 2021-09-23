@@ -266,7 +266,7 @@ copy_and_tweak_jpg(const QString& fn, QByteArray& dest_out)
     return 0;
 }
 
-void
+[[noreturn]] void
 cdcxpanic(const char *)
 {
     ::abort();

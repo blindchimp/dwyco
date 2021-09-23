@@ -17,7 +17,7 @@
 #include "msgpv.h"
 #include "dwycolistscoped.h"
 
-void cdcxpanic(const char *);
+[[noreturn]] void cdcxpanic(const char *);
 
 struct img_info
 {

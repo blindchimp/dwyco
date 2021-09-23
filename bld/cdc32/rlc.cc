@@ -12,7 +12,7 @@
  */
 #include <stdlib.h>
 #include "rlc.h"
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 BinaryRLC::BinaryRLC()
 {

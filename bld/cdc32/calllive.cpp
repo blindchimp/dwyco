@@ -107,9 +107,13 @@
 typedef unsigned long in_addr_t;
 #endif
 
-extern int Disable_SAC;
-int Media_select = MEDIA_VIA_HANDSHAKE;
+using namespace dwyco;
 
+
+int Media_select = MEDIA_VIA_HANDSHAKE;
+namespace dwyco {
+
+int Disable_outgoing_SAC = 0;
 void
 call_terminated(MMChannel *mc, vc, void *, ValidPtr vp)
 {
@@ -519,7 +523,7 @@ direct_call_failed(MMChannel *mc, vc, void *, ValidPtr vp)
         delete mmc;
         return;
     }
-    if(Disable_SAC || (mmc && (mmc->media_select == MEDIA_TCP_DIRECT)))
+    if(Disable_outgoing_SAC || (mmc && (mmc->media_select == MEDIA_TCP_DIRECT)))
     {
         // signal call failure and stop the progression
         if(mmc)
@@ -593,5 +597,6 @@ timer1_expired(MMChannel *mc, vc, void *, ValidPtr vp)
         MMCall *mmc = (MMCall *)(void *)vp;
         mmc->timer1_expired();
     }
+}
 }
 

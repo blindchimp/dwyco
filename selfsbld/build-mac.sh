@@ -1,4 +1,5 @@
 #!/bin/sh
+export PATH=$PATH:$HOME/Qt/5.12.11/clang_64/bin
 D=$HOME
 SHADOW_NAME=$D/git/build-selfs
 

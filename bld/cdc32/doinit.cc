@@ -57,6 +57,8 @@
 #include "qdirth.h"
 #include "ta.h"
 
+using namespace dwyco;
+
 vc Myhostname;
 DwLog *Log;
 CRITICAL_SECTION Audio_lock;

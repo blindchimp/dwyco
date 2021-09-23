@@ -28,10 +28,10 @@
 // a dvp to the wrong place and have it be interpreted wrong, just like
 // regular c++.
 
-void cdcxpanic(const char *);
+[[noreturn]] void cdcxpanic(const char *);
 
 // pick a type that won't lose info when cast back and forth to void *
-typedef long DVP_COOKIE;
+typedef uint64_t DVP_COOKIE;
 typedef QHash<DVP_COOKIE, void *> DVP_MAP;
 
 class DVP

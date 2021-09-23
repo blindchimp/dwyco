@@ -414,7 +414,6 @@ static void  bounce_destroy(MMChannel *mc, vc their_arg, void *their_func, Valid
 DWYCO_LIST dwyco_list_from_vc(vc vec);
 TAutoUpdate *TheAutoUpdate;
 extern vc Pal_auth_state;
-extern int Disable_SAC;
 static int Disable_UPNP = 0;
 extern int Media_select;
 extern int Inhibit_database_thread;
@@ -1682,7 +1681,7 @@ login_auth_results(vc m, void *, vc, ValidPtr)
         if(!m[3].is_nil())
         {
             Current_authenticator = m[3][2];
-            Pal_auth_state = m[3][3];
+            //Pal_auth_state = m[3][3];
 #ifdef DWYCO_ASSHAT
             set_asshole_param(m[3][4]);
 #endif
@@ -1740,7 +1739,7 @@ send_new()
                     get_settings_value("user/email"),
                     vcnil,
                     My_server_key,
-                    Pal_auth_state,
+                    vcnil, //Pal_auth_state,
                     QckDone(login_auth_results, 0));
 
     // send whatever debug stuff might be available
@@ -1874,7 +1873,30 @@ DWYCOEXPORT
 void
 dwyco_inhibit_sac(int i)
 {
-    Disable_SAC = i;
+    dwyco::Disable_outgoing_SAC = i;
+    dwyco::Disable_incoming_SAC = i;
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_incoming_sac(int i)
+{
+    dwyco::Disable_incoming_SAC = i;
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_outgoing_sac(int i)
+{
+    dwyco::Disable_outgoing_SAC = i;
+}
+
+DWYCOEXPORT
+void
+dwyco_inhibit_all_incoming(int i)
+{
+    dwyco_inhibit_incoming_sac(i);
+    set_listen_state(!i);
 }
 
 DWYCOEXPORT
@@ -4493,7 +4515,10 @@ void
 name_map_done(vc m, void *, vc handle, ValidPtr )
 {
     if(m[1].is_nil())
+    {
+        se_emit_msg(SE_IDENT_TO_UID, handle, vc(""));
         return;
+    }
     vc uid = m[1];
     se_emit_msg(SE_IDENT_TO_UID, handle, uid);
 }
@@ -4590,13 +4615,6 @@ dwyco_set_setting(const char *name, const char *value)
         return 0;
     }
     int ret = set_settings_value(name, value);
-#if 0
-    if(ret && b.eq("user"))
-    {
-        UserConfigData.set_sync(1);
-        update_server_info();
-    }
-#endif
     GRTLOGA("set_setting: %s %s returns %d", name, value, ret, 0, 0);
     return ret;
 }
@@ -6103,6 +6121,10 @@ DWYCOEXPORT
 int
 dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **str_out)
 {
+    // keep debugging from crashing
+    *str_out = new char[1];
+    *str_out[0] = 0;
+
     vc v(VC_BSTRING, uid, len_uid);
     int prim, sec, pal;
     unsigned long ip =  uid_to_ip(v, *can_do_direct_out, prim, sec, pal);

@@ -41,6 +41,9 @@
 #define dwyco_inhibit_database _real_dwyco_inhibit_database 
 #define dwyco_inhibit_pal _real_dwyco_inhibit_pal 
 #define dwyco_inhibit_sac _real_dwyco_inhibit_sac 
+#define dwyco_inhibit_incoming_sac _real_dwyco_inhibit_incoming_sac 
+#define dwyco_inhibit_outgoing_sac _real_dwyco_inhibit_outgoing_sac 
+#define dwyco_inhibit_all_incoming _real_dwyco_inhibit_all_incoming 
 #define dwyco_fetch_info _real_dwyco_fetch_info 
 #define dwyco_service_channels _real_dwyco_service_channels 
 #define dwyco_add_entropy_timer _real_dwyco_add_entropy_timer 
@@ -131,6 +134,7 @@
 #define dwyco_set_profile_from_composer _real_dwyco_set_profile_from_composer 
 #define dwyco_get_profile_to_viewer _real_dwyco_get_profile_to_viewer 
 #define dwyco_get_profile_to_viewer_sync _real_dwyco_get_profile_to_viewer_sync 
+#define dwyco_name_to_uid _real_dwyco_name_to_uid 
 #define dwyco_create_bootstrap_profile _real_dwyco_create_bootstrap_profile 
 #define dwyco_make_profile_pack _real_dwyco_make_profile_pack 
 #define dwyco_set_setting _real_dwyco_set_setting 

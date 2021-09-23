@@ -22,7 +22,8 @@ ExtAcquireAndroid::get_data(int& c, int& r, void*& y, void*& cb, void *& cr,
     int bytes;
 
     // raw_data will be the address of 3 gray planes, hack but ok for now
-
+    // raw_data is actually a pointer to a "finished" struct, whose
+    // first member is pointer to the planes. this is really gross.
     void *raw_data = (*dwyco_vidacq_get_data)(this, &c, &r, &bytes, &fmt, &captime);
     gray ***p = (gray ***)raw_data;
     y = p[0];

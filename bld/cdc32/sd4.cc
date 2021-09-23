@@ -10,7 +10,7 @@
 #include <math.h>
 #include "sd4.h"
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 sd4::sd4()
 {

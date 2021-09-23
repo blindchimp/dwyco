@@ -14,6 +14,7 @@
 #include "dwvecp.h"
 #include "vcio.h"
 #include "dwstr.h"
+#include "vcsrc.h"
 
 //
 // This class is used to store and coordinate debugging
@@ -31,36 +32,45 @@ typedef DwVec<vc> VcVec;
 
 class VcDebugInfo
 {
-friend class VcDebugNode;
+    friend class VcDebugNode;
 
 private:
-	VcDbgNodeVec callstack;
-	VcVec map_bps;
-    VcVec func_bps;
+    VcDbgNodeVec callstack;
+    //VcVec map_bps;
+    //VcVec func_bps;
 
 public:
-	virtual ~VcDebugInfo() {}
+    virtual ~VcDebugInfo() {}
     void backtrace(VcIOHack &);
-	void backtrace_brief(VcIO, int start = 0, int num = -1);
-	virtual VcDebugNode *get(int n = -1);
-	virtual int num_elems() {return callstack.num_elems();}
+    void backtrace_brief(VcIO, int start = 0, int num = -1);
+    virtual VcDebugNode *get(int n = -1);
+    virtual int num_elems() {return callstack.num_elems();}
 
 };
 
 class VcDebugNode
 {
 public:
-	vc info;
+    vc info;
     DwString filename;
-	long linenum;
+    long linenum;
+    // this is a list of coordinates as determined from the
+    // lexer. this is used mainly for producing information
+    // about what exprs have been evaluated, for example to
+    // provide some simple coverage info.
+    const Src_coord_list *src_list;
+    // this is the index of the current expr being evaluated.
+    // it should refer to the src_list so you can emit
+    // some info related to what has been evaluated.
+    int cur_idx;
 
-	VcDebugNode();
-	VcDebugNode(const vc&);
-	virtual ~VcDebugNode();
+    VcDebugNode();
+    VcDebugNode(const vc&);
+    virtual ~VcDebugNode();
 
-	virtual void printOn(VcIO) ;
-	virtual int has_brief() {return 0;}
-	virtual void printOnBrief(VcIO);
+    virtual void printOn(VcIO) ;
+    virtual int has_brief() {return 0;}
+    virtual void printOnBrief(VcIO);
 };
 
 extern VcDebugInfo VcDbgInfo;

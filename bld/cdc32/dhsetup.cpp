@@ -17,6 +17,7 @@
 #include "qauth.h"
 #include "vcudh.h"
 #include "dhsetup.h"
+using namespace dwyco;
 
 static vc DH_static;
 vc Server_publics;

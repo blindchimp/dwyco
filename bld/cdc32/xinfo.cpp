@@ -17,6 +17,10 @@
 #include <unistd.h>
 #endif
 
+using namespace dwyco;
+
+namespace dwyco {
+
 int Dont_remove_bad_files = 1;
 
 static int
@@ -166,4 +170,5 @@ load_info_e(vc& info, const char *filename, int nomodify)
     }
     info = prf;
     return 1;
+}
 }

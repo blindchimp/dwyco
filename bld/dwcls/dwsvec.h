@@ -33,20 +33,21 @@
 
 #define DWSVEC_INITIAL 8
 #define DWSVEC_DBG
-void oopanic(const char *a);
+[[noreturn]] void oopanic(const char *a);
 
 template<class T>
 class DwSVec
 {
 private:
-    DwSVec(const DwSVec&);
-    DwSVec& operator=(const DwSVec&);
-public:
+    DwSVec(const DwSVec&) = delete;
+    DwSVec& operator=(const DwSVec&) = delete;
+
     char vec[DWSVEC_INITIAL * sizeof(T)];
     char *big;
     int count;
     int real_count;
 
+public:
     inline DwSVec();
     inline ~DwSVec();
 
@@ -202,7 +203,7 @@ void
 DwSVec<T>::del(int s, int n)
 {
 #ifdef DWSVEC_DBG
-    if(s != 0 || n > count)
+    if(s != 0 || n > count || n < 0)
         oopanic("bad svec del");
 #endif
     for(int i = 0; i < n; ++i)

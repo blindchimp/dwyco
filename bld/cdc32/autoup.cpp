@@ -29,6 +29,7 @@ using namespace CryptoPP;
 #include <fcntl.h>
 #endif
 #include "qmsg.h"
+using namespace dwyco;
 
 #define EXENAME "setup.exe"
 #ifdef _Windows

@@ -21,7 +21,6 @@ static DwVec<vc> *outbind_double;
 typedef DwVec<vc> vvc;
 #define Mem sqlite3_value
 
-//template class DwVecP<void>;
 static
 int
 start_wrapper()
