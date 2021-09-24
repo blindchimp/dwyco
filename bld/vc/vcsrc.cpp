@@ -36,7 +36,12 @@ the char-indexes start at 1 in the filename given.
 
 there are some tools that read the coverage info and output ansi-colorized versions of
 the source code to make it clear what parts of your program are not executed.
+the scripts are in the "coverage" directory, and consist of a couple of LH scripts.
 
+NOTE: as of Sep 24 2021, i think there are some minor problems
+with the coverage generator (like i might have missed a few places
+where it should output a coordinate on eval.) it works well enough for
+my quick one-and-done use of it for now tho, so i haven't bothered to fix it.
 */
 #ifndef NO_VCEVAL
 #include "vcsrc.h"
