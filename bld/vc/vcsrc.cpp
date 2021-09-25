@@ -80,6 +80,11 @@ vc_cvar_src_coord::print() const
         const char *a = getenv("DWYCO_COLORIZED_APPEND");
 
         f = fopen(p, a == 0 ? "w" : "a");
+        if(!f)
+        {
+            oopanic("can't open coverage file");
+        }
+        setlinebuf(f);
     }
     if(char_index_start != -1 && char_index_end != -1)
     {
