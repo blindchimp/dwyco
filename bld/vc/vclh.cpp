@@ -1824,20 +1824,34 @@ docond(VCArglist *a)
 vc
 doloop(vc var, vc lo, vc hi, vc expr)
 {
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+    c->cur_idx = 0;
+#endif
+    var = var.eval();
+    CHECK_ANY_BO(vcnil);
+    if(var.type() != VC_STRING)
+        USER_BOMB("for loop variable must be string", vcnil);
+#ifdef VCDBG
+    c->cur_idx = 1;
+#endif
 	long l = lo.eval();
     CHECK_ANY_BO(vcnil);
+#ifdef VCDBG
+    c->cur_idx = 2;
+#endif
 	long h = hi.eval();
     CHECK_ANY_BO(vcnil);
-	var = var.eval();
-    CHECK_ANY_BO(vcnil);
-	if(var.type() != VC_STRING)
-		USER_BOMB("for loop variable must be string", vcnil);
+
     Vcmap->open_loop();
 
 	long i;
 	for(i = l; i <= h; ++i)
 	{
 		Vcmap->local_add(var, vc(i));
+#ifdef VCDBG
+    c->cur_idx = 3;
+#endif
 		expr.eval();
 		CHECK_ANY_BO_LOOP;
 	}
@@ -1850,15 +1864,25 @@ doloop(vc var, vc lo, vc hi, vc expr)
 vc
 dowhile(vc cond, vc expr)
 {
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+    c->cur_idx = 0;
+#endif
 	
 	vc a = cond.eval();
     CHECK_ANY_BO(vcnil);
 	Vcmap->open_loop();
 	while(!a.is_nil())
     {
+#ifdef VCDBG
+    c->cur_idx = 1;
+#endif
 		expr.eval();
 		if(Vcmap->unwind_in_progress())
 			break;
+#ifdef VCDBG
+    c->cur_idx = 0;
+#endif
 		a = cond.eval();
 		CHECK_ANY_BO_LOOP;
 	}
@@ -1870,12 +1894,22 @@ dowhile(vc cond, vc expr)
 vc
 doforeach(vc var, vc set, vc expr)
 {
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+    c->cur_idx = 0;
+#endif
 	vc b = var.eval();
     CHECK_ANY_BO(vcnil);
 	if(b.type() != VC_STRING)
 		USER_BOMB("foreach variable must be string", vcnil);
+#ifdef VCDBG
+    c->cur_idx = 1;
+#endif
     vc a = set.eval();
     CHECK_ANY_BO(vcnil);
+#ifdef VCDBG
+    c->cur_idx = 2;
+#endif
 	a.foreach(b, expr);
 	return vcnil;
 }
