@@ -300,7 +300,7 @@ DWYCOEXPORT int _real_dwyco_get_aux_string(const char **str_out, int *len_str_ou
 DWYCOEXPORT void _real_dwyco_signal_msg_cond();
 DWYCOEXPORT void _real_dwyco_wait_msg_cond(int ms);
 DWYCOEXPORT int _real_dwyco_test_funny_mutex(int port);
-DWYCOEXPORT int _real_dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
+DWYCOEXPORT int _real_dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token, const char *grpname, const char *grppw);
 }
 void
 DWYCOCALLCONV
@@ -3947,7 +3947,7 @@ return(_ret);
 
 DWYCOEXPORT
 int
-dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
+dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token, const char *grpname, const char *grppw)
 {
 printfunname("dwyco_background_sync");
 printarg("int ", "port",port);
@@ -3955,7 +3955,9 @@ printarg(" const char *", "sys_pfx",sys_pfx);
 printarg(" const char *", "user_pfx",user_pfx);
 printarg(" const char *", "tmp_pfx",tmp_pfx);
 printarg(" const char *", "token",token);
-int _ret = _real_dwyco_background_sync(port,sys_pfx,user_pfx,tmp_pfx,token);
+printarg(" const char *", "grpname",grpname);
+printarg(" const char *", "grppw",grppw);
+int _ret = _real_dwyco_background_sync(port,sys_pfx,user_pfx,tmp_pfx,token,grpname,grppw);
 printretval(_ret);
 return(_ret);
 }
