@@ -434,7 +434,6 @@ extern vc StackDump;
 extern vc My_connection;
 extern vc KKG;
 extern int Chat_online;
-extern CallQ *TheCallQ;
 extern vc App_ID;
 
 int dllify(vc v, const char*& str_out, int& len_out);
