@@ -48,6 +48,7 @@ extern int Media_select;
 
 namespace dwyco {
 #define DESERIALIZE_MAX_STRING_LEN (50)
+vc App_ID;
 
 static Listener *Listen_sock;
 static Listener *Static_secondary_sock;
@@ -148,7 +149,7 @@ recvvc(vc sock, vc& v, vc& peer)
     vcxstream istrm(sock, (char *)packet_buf, plen, vcxstream::FIXED);
     istrm.max_depth = 2;
     istrm.max_element_len = DESERIALIZE_MAX_STRING_LEN;
-    istrm.max_elements = 6;
+    istrm.max_elements = BD_LIMIT;
     if(!istrm.open(vcxstream::READABLE, vcxstream::ATOMIC))
         return 0;
     if((len = v.xfer_in(istrm)) < 0)
@@ -322,6 +323,7 @@ broadcast_tick()
         nicename = vc(VC_BSTRING, d.c_str(), d.length());
     }
     v[BD_NICE_NAME] = nicename;
+    v[BD_APP_ID] = App_ID;
     announce[1] = v;
     sendvc(Local_broadcast, announce);
 
@@ -347,7 +349,7 @@ discover_tick()
                     data[1].type() == VC_VECTOR)
             {
                 vc uid = data[0];
-                if(uid != My_UID)
+                if(uid != My_UID || (!App_ID.is_nil() && App_ID == data[1][BD_APP_ID]))
                 {
                     GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
                     GRTLOGVC(data);
