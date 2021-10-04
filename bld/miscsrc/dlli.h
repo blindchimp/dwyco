@@ -1190,6 +1190,10 @@ void DWYCOEXPORT dwyco_resume();
 
 int DWYCOEXPORT dwyco_service_channels(int *spin);
 void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
+// use this to filter out local broadcasts and other online reporting
+// for dwyco apps using the same back end.
+void DWYCOEXPORT dwyco_set_app_id(const char *str, int len_str);
+//void DWYCOEXPORT dwyco_set_login_password(const char *pw, int len_pw);
 void DWYCOEXPORT dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 void DWYCOEXPORT dwyco_database_login();
 int DWYCOEXPORT dwyco_database_online();

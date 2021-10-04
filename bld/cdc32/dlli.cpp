@@ -434,6 +434,8 @@ extern vc StackDump;
 extern vc My_connection;
 extern vc KKG;
 extern int Chat_online;
+extern CallQ *TheCallQ;
+extern vc App_ID;
 
 int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
@@ -1411,6 +1413,16 @@ void
 dwyco_set_client_version(const char *str, int len_str)
 {
     Client_version = vc(VC_BSTRING, str, len_str);
+}
+
+DWYCOEXPORT
+void
+dwyco_set_app_id(const char *str, int len_str)
+{
+    if(str == 0)
+        dwyco::App_ID = vcnil;
+    else
+        dwyco::App_ID = vc(VC_BSTRING, str, len_str);
 }
 
 
