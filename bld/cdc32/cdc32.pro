@@ -187,6 +187,7 @@ qdirth.cc \
 qpol.cc \
 dwlog.cc \
     sync_sendq.cpp \
+    synccalls.cpp \
 syncvar.cc \
 doinit.cc \
 netcod.cc \

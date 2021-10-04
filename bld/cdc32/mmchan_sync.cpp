@@ -26,6 +26,7 @@
 #include "ezset.h"
 #include "dhgsetup.h"
 #include "pulls.h"
+#include "synccalls.h"
 
 using namespace dwyco;
 
@@ -33,9 +34,32 @@ using namespace dwyco;
 #include "miscemu.h"
 #endif
 #include "sepstr.h"
-ChanList get_all_sync_chans();
-void assert_eager_pulls(MMChannel *, vc uid);
+
 void start_stalled_pulls(MMChannel *);
+
+// NOTE: when we are in eager mode, we should schedule
+// a periodic "reassert" across a connection if there have been any changes
+// to the global model from a connection (ie, someone says they might have
+// something new.)
+static
+void
+assert_eager_pulls(MMChannel *mc, vc uid)
+{
+    vc huid = to_hex(uid);
+    vc mids = sql_get_non_local_messages_at_uid(uid);
+
+    for(int i = 0; i < mids.num_elems(); ++i)
+    {
+        vc mid = mids[i];
+        pulls::assert_pull(mid, uid, PULLPRI_BACKGROUND);
+        if(!pulls::pull_in_progress(mid, uid))
+        {
+            pulls::set_pull_in_progress(mid, uid);
+            mc->send_pull(mid, PULLPRI_BACKGROUND);
+        }
+    }
+
+}
 
 static
 vc
