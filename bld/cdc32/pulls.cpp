@@ -1,11 +1,13 @@
 // this is a set of (mid, uid, inprogress-flag) records
 // the existence of a record means we have some idea that we can
-// obtain the mid from the associated uid. when we issue the pull
-// to that target uid, we set the in-progress flag.
+// obtain the mid from the associated uid.
+//
+// note: clients can use the "in progress" flag, and we set it
+// to 0 when a pull failure is indicated. but otherwise we
+// ignore it.
+//
 // if a pull is successful, all the records for that mid are deleted.
-// note that "inprogress" indicates a pull has been issued, not just that
-// it is in the send_q. so inprogress encompasses the time it is
-// queued to the time a response is received from the remote.
+//
 //
 // note: we may want to put timeouts in here so that once something
 // is in progress, it times out if nothing happens for awhile.

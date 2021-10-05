@@ -6509,8 +6509,8 @@ pull_msg(vc uid, vc msg_id)
         MMCall *mmc = mmcl[i];
         if(uids.contains(mmc->uid))
         {
-            if(pulls::pull_in_progress(msg_id, mmc->uid))
-                continue;
+//            if(pulls::pull_in_progress(msg_id, mmc->uid))
+//                continue;
             // if there is an established call, just use that one and return.
             // this means we always try an established connection first.
             // if there are some number of connections in progress, we end up
@@ -6533,8 +6533,8 @@ pull_msg(vc uid, vc msg_id)
         MMChannel *mc;
         if((mc = MMChannel::channel_by_call_type(uids[i], "sync")))
         {
-            if(pulls::pull_in_progress(msg_id, mc->remote_uid()))
-                continue;
+//            if(pulls::pull_in_progress(msg_id, mc->remote_uid()))
+//                continue;
 
             pulls::set_pull_in_progress(msg_id, mc->remote_uid());
             mc->send_pull(msg_id, PULLPRI_INTERACTIVE);

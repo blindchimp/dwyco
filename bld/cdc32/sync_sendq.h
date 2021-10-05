@@ -104,6 +104,12 @@ public:
         return 0;
     }
 
+    bool contains(vc mid) {
+        if(pull_set.contains(mid))
+            return true;
+        return false;
+    }
+
     int count() const {
         return q.num_elems();
     }
