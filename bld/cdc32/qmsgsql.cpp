@@ -310,6 +310,16 @@ make_sql_args(int n)
     return ret;
 }
 
+static void
+msg_idx_updated(vc uid, int prepended)
+{
+    if(prepended)
+        se_emit(SE_USER_MSG_IDX_UPDATED_PREPEND, uid);
+    else
+        se_emit(SE_USER_MSG_IDX_UPDATED, uid);
+}
+
+
 vc
 package_downstream_sends(vc remote_uid)
 {
@@ -593,6 +603,8 @@ import_remote_iupdate(vc remote_uid, vc vals)
                 a.append(vals[i]);
             sql_bulk_query(&a);
             boost_logical_clock();
+            // vals[12] is the assoc_uid field in gi, ugh, fix this
+            uid = vals[12];
         }
         else if(op == vc("d"))
         {
@@ -610,9 +622,13 @@ import_remote_iupdate(vc remote_uid, vc vals)
         }
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
-        if(!uid.is_nil() && !mid.is_nil())
+        if(op == vc("d") && !uid.is_nil() && !mid.is_nil())
         {
             trash_body(from_hex(uid), mid, 1);
+        }
+        if(!uid.is_nil())
+        {
+            msg_idx_updated(from_hex(uid), 0);
         }
     }
     catch(...)
@@ -1548,15 +1564,6 @@ int
 msg_index_count(vc uid)
 {
     return sql_count_index(uid);
-}
-
-static void
-msg_idx_updated(vc uid, int prepended)
-{
-    if(prepended)
-        se_emit(SE_USER_MSG_IDX_UPDATED_PREPEND, uid);
-    else
-        se_emit(SE_USER_MSG_IDX_UPDATED, uid);
 }
 
 // note: before calling this, the msg body should be saved

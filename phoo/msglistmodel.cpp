@@ -38,11 +38,11 @@ msglist_model *mlm;
 static QSet<QByteArray> Selected;
 static QList<QByteArray> Fetching;
 static QSet<QByteArray> Dont_refetch;
-static QList<QByteArray> Delete_msgs;
 static QMap<QByteArray, int> Mid_to_percent;
 // messages are automatically fetched, unless it fails.
 // after that, the fetch can be initiated explicitly
 static QSet<QByteArray> Manual_fetch;
+static QSet<QByteArray> Failed_fetch;
 
 enum {
     MID = Qt::UserRole,
@@ -120,6 +120,8 @@ msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int per
     QByteArray bmid = mid.toLatin1();
     Mid_to_percent.insert(bmid, percent_done);
     int midi = mid_to_index(bmid);
+    if(midi == -1)
+        return;
     QModelIndex mi = index(midi, 0);
     emit dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
 }
@@ -130,6 +132,8 @@ msglist_model::invalidate_mid(const QByteArray& mid, const QString& huid)
     if(huid != uid())
         return;
     int midi = mid_to_index(mid);
+    if(midi == -1)
+        return;
     QModelIndex mi = index(midi, 0);
     emit dataChanged(mi, mi, QVector<int>());
 
@@ -159,13 +163,17 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
         // want to do.
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED:
         // if this msg is ratholed, it can never be fetched, so just delete it.
+    {
         Dont_refetch.insert(mid);
         if(i >= 0)
             Fetching.removeAt(i);
-        Delete_msgs.append(mid);
         Mid_to_percent.remove(mid);
+        Failed_fetch.insert(mid);
         Manual_fetch.insert(mid);
+        msglist_raw *mr = dynamic_cast<msglist_raw *>(sourceModel());
+        mr->reload_inbox_model();
         break;
+    }
 
     case DWYCO_SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED:
@@ -303,7 +311,10 @@ void
 msglist_model::mid_tag_changed(QString mid)
 {
     int midi = mid_to_index(mid.toLatin1());
+    if(midi == -1)
+        return;
     QModelIndex mi = index(midi, 0);
+
     QVector<int> roles;
     roles.append(IS_HIDDEN);
     roles.append(IS_FAVORITE);
@@ -939,7 +950,7 @@ clear_manual_gate()
 int
 auto_fetch(QByteArray mid)
 {
-    if(!(Fetching.contains(mid) || Manual_fetch.contains(mid)))
+    if(!(Fetching.contains(mid) || Manual_fetch.contains(mid) || Failed_fetch.contains(mid)))
     {
 //        int special_type;
 //        const char *uid;
@@ -1041,6 +1052,8 @@ msglist_raw::inbox_data (int r, int role ) const
     }
     case FETCH_STATE:
     {
+        if(Failed_fetch.contains(mid))
+            return QString("failed");
         if(Manual_fetch.contains(mid))
             return QString("manual");
         return QString("auto");

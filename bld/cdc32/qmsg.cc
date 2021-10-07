@@ -1747,41 +1747,19 @@ add_msg(vc vec, vc item)
         vec.append(item);
 }
 
-void
-del_msg(vc vec, vc msg_id)
-{
-    int n = vec.num_elems();
-    int i;
-    for(i = 0; i < n; ++i)
-    {
-        if(vec[i][QM_ID] == msg_id)
-        {
-            vec.remove(i, 1);
-            //Refresh_users = 1;
-            return;
-        }
-    }
-}
-
-static vc
-find_msg(vc vec, vc msg_id)
-{
-    int n = vec.num_elems();
-    int i;
-    for(i = 0; i < n; ++i)
-    {
-        if(vec[i][QM_ID] == msg_id)
-        {
-            return vec[i];
-        }
-    }
-    return vcnil;
-}
-
 vc
 find_cur_msg(vc msg_id)
 {
-    return find_msg(Cur_msgs, msg_id);
+    int n = Cur_msgs.num_elems();
+    int i;
+    for(i = 0; i < n; ++i)
+    {
+        if(Cur_msgs[i][QM_ID] == msg_id)
+        {
+            return Cur_msgs[i];
+        }
+    }
+    return vcnil;
 }
 
 static
@@ -2740,6 +2718,8 @@ load_msgs(vc uid)
             vc fuid = map_to_representative_uid(Cur_msgs[i][QM_FROM]);
             if(fuid == muid)
             {
+                if(sql_mid_has_tag(Cur_msgs[i][QM_ID], "_ack"))
+                    continue;
                 vc cpy = Cur_msgs[i].copy();
                 cpy[QM_FROM] = fuid;
                 ret.append(cpy);
@@ -2750,6 +2730,8 @@ load_msgs(vc uid)
     {
         for(int i = 0; i < Cur_msgs.num_elems(); ++i)
         {
+            if(sql_mid_has_tag(Cur_msgs[i][QM_ID], "_ack"))
+                continue;
             vc cpy = Cur_msgs[i].copy();
             cpy[QM_FROM] = map_to_representative_uid(cpy[QM_FROM]);
             ret.append(cpy);
@@ -2917,8 +2899,17 @@ load_body_by_id(vc uid, vc msg_id)
 void
 delete_msg2(vc msg_id)
 {
-    del_msg(Cur_msgs, msg_id);
-    Rescan_msgs = 1;
+    int n = Cur_msgs.num_elems();
+    int i;
+    for(i = 0; i < n; ++i)
+    {
+        if(Cur_msgs[i][QM_ID] == msg_id)
+        {
+            Cur_msgs.remove(i, 1);
+            Rescan_msgs = 1;
+            return;
+        }
+    }
 }
 
 
