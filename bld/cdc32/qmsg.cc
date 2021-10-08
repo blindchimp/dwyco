@@ -3243,6 +3243,9 @@ decrypt_msg_body(vc body)
     // this is something i have to think about. even if we are not
     // set up in the current group, if we have a group key available
     // we should be able to decrypt a message sent with that key.
+    // well, maybe not, this might mean we could decrypt something
+    // from a group we are not in anymore (like we might have gotten
+    // booted out of for some reason.)
     vc ak = DH_alternate::get_all_keys();
     if(!ak.is_nil())
     {

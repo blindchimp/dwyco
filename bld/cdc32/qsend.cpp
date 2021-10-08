@@ -633,7 +633,7 @@ DwQSend::send_message()
         if(!pk_session_cached(recip_uid))
         {
             fetch_info(recip_uid);
-            pk_set_session_cache(recip_uid);
+            //pk_set_session_cache(recip_uid);
         }
 
         vc alt_pk;
