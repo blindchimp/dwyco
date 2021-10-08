@@ -133,6 +133,7 @@ QMsgSql::init_schema_fav()
         sql_simple("insert into static_crdt_tags values('_hid')");
         sql_simple("insert into static_crdt_tags values('_ignore')");
         sql_simple("insert into static_crdt_tags values('_pal')");
+        sql_simple("insert into static_crdt_tags values('_leader')");
 
         // triggers use this table when reflecting changes downstream
         // to disable the trigger, remove the tags from this table
@@ -148,6 +149,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create temp table static_uid_tags(tag text not null)");
         sql_simple("insert into static_uid_tags values('_ignore')");
         sql_simple("insert into static_uid_tags values('_pal')");
+        sql_simple("insert into static_uid_tags values('_leader')");
 
         commit_transaction();
     } catch(...) {
@@ -486,6 +488,9 @@ remove_sync_state()
         // get rid of tags that might reference unknown mids
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
         sql_simple("delete from mt.gmt where tag not in (select * from static_uid_tags) and mid not in (select mid from msg_idx)");
+        // note: we keep the pal/ignore stuff intact, but the _leader tag doesn't
+        // make sense when you are outside a group, or when you re-enter a group.
+        sql_simple("delete from mt.gmt where tag = '_leader'");
         sql_simple("delete from mt.gtomb");
         sql_simple("drop trigger if exists mtomb_log");
         sql_simple("delete from msg_tomb");
