@@ -151,6 +151,13 @@ QMsgSql::init_schema_fav()
         sql_simple("insert into static_uid_tags values('_pal')");
         sql_simple("insert into static_uid_tags values('_leader')");
 
+        // this is an upgrade, the msg_tags2 stuff should be installed in gmt
+        // with proper guids. this should mostly only be done once, but there
+        // are cases where people reinstall old software that might trigger
+        // this more than once
+        sql_simple("insert into gmt select mid, tag, time, ?1, lower(hex(randomblob(8))) from msg_tags2", to_hex(My_UID));
+        sql_simple("delete from msg_tags2");
+
         commit_transaction();
     } catch(...) {
         rollback_transaction();
