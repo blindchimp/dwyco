@@ -7768,7 +7768,10 @@ dwyco_run_sql(const char *stmt, const char *a1, const char *a2, const char *a3)
     vc va1 = (a1 ? vc(a1) : vcnil);
     vc va2 = (a2 ? vc(a2) : vcnil);
     vc va3 = (a3 ? vc(a3) : vcnil);
-    return sql_run_sql(s, va1, va2, va3);
+    vc ret = sql_run_sql(s, va1, va2, va3);
+    if(ret.is_nil())
+        return 0;
+    return 1;
 }
 
 // ignore list stuff

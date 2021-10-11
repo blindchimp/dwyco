@@ -2878,7 +2878,7 @@ DwycoCore::send_forward(QString recipient, QString add_text, QString uid_folder,
 {
     QByteArray uid_f = QByteArray::fromHex(uid_folder.toLatin1());
     QByteArray bmid = mid_to_forward.toLatin1();
-    int compid = dwyco_make_forward_zap_composition(uid_f.constData(), uid_f.length(), bmid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(bmid.constData(), 1);
     if(compid == 0)
         return 0;
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
@@ -2901,7 +2901,7 @@ DwycoCore::flim(QString uid_folder, QString mid_to_forward)
 {
     QByteArray uid_f = QByteArray::fromHex(uid_folder.toLatin1());
     QByteArray bmid = mid_to_forward.toLatin1();
-    int compid = dwyco_make_forward_zap_composition(uid_f.constData(), uid_f.length(), bmid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(bmid.constData(), 1);
     int ret = dwyco_flim(compid);
 
     dwyco_delete_zap_composition(compid);
@@ -3092,7 +3092,7 @@ DwycoCore::make_zap_view(QString uid, QString mid)
         return 0;
     }
 
-    int view_id = dwyco_make_zap_view(sm, ruid.constData(), ruid.length(), 0);
+    int view_id = dwyco_make_zap_view2(sm, 0);
 
     dwyco_list_release(sm);
     return view_id;
