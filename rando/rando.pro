@@ -1,7 +1,12 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
+include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+
 DEFINES += NO_BUILDTIME
+DEFINES += NO_DWYCO_AUDIO
+# i'll shit myself if this works on all platforms
+DEFINES += BUILDTIME=\"\\\"1.97\\\"\"
 
 QT += core qml multimedia network
 QT += quickcontrols2
