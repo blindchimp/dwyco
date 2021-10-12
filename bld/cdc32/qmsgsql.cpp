@@ -155,8 +155,9 @@ QMsgSql::init_schema_fav()
         // with proper guids. this should mostly only be done once, but there
         // are cases where people reinstall old software that might trigger
         // this more than once
-        sql_simple("insert into gmt select mid, tag, time, ?1, lower(hex(randomblob(8))) from msg_tags2", to_hex(My_UID));
-        sql_simple("delete from msg_tags2");
+        sql_simple("create table if not exists mt.msg_tags2(mid text not null, tag text not null, time integer not null)");
+        sql_simple("insert into mt.gmt select mid, tag, time, ?1, lower(hex(randomblob(8))) from mt.msg_tags2", to_hex(My_UID));
+        sql_simple("delete from mt.msg_tags2");
 
         commit_transaction();
     } catch(...) {

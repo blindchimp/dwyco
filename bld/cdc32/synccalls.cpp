@@ -7,6 +7,9 @@
 #include "synccalls.h"
 #include "qmsgsql.h"
 #include "dirth.h"
+#ifdef _Windows
+#include <time.h>
+#endif
 
 using namespace dwyco;
 extern vc Online;

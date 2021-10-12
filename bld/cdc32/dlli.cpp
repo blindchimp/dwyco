@@ -1470,7 +1470,9 @@ dwyco_init()
 
     All_mute = 1;
 
-#ifdef LINUX
+    // note: this is for rando, the external audio drivers
+    // will return 0 since we haven't set them up.
+#if defined(LINUX) || defined(_Windows)
     // note: these must be 1 if you have external audio in linux, since
     // init_codec probes the devices to see if they are there and can
     // be used for full-duplex stuff. what a hack. really need to fix
