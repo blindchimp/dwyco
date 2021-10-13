@@ -2561,6 +2561,41 @@ DwycoCore::retry_auto_fetch(QString mid)
     return ::retry_auto_fetch(bmid);
 }
 
+// this is a bit of a hack, we know that the location and other
+// non-picture messages are small, so we fetch them automatically.
+// the larger picture messages are not fetched until the user
+// views the model they are in...
+static
+void
+fetch_small_msgs()
+{
+    DWYCO_LIST uml;
+
+    if(dwyco_get_unfetched_messages(&uml, 0, 0))
+    {
+        simple_scoped quml(uml);
+        int n = quml.rows();
+
+        if(n == 0)
+        {
+            return;
+        }
+
+        for(int i = 0; i < n; ++i)
+        {
+            if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
+            {
+                long len = quml.get_long(i, DWYCO_QMS_LEN);
+                if(len < 5000)
+                {
+                    QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
+                    auto_fetch(mid);
+                }
+            }
+        }
+    }
+
+}
 
 int
 DwycoCore::service_channels()
