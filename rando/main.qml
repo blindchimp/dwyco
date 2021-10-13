@@ -596,12 +596,12 @@ ApplicationWindow {
 //            }
 //        }
 
-        onAny_unviewedChanged: {
-            if(any_unviewed)
-                set_badge_number(1)
-            else
-                set_badge_number(0)
-        }
+//        onAny_unviewedChanged: {
+//            if(any_unviewed)
+//                set_badge_number(1)
+//            else
+//                set_badge_number(0)
+//        }
 
     }
 
