@@ -169,7 +169,7 @@ Page {
                 }
 
                 ConvToolButton {
-                    visible: {stack.depth > 2 || core.unread_count > 0}
+                    visible: {stack.depth > 2 || core.any_unviewed}
                 }
 
 
