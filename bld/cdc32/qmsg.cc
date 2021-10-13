@@ -4592,7 +4592,8 @@ pal_add(vc u)
         }
     }
     sql_commit_transaction();
-    pal_relogin();
+    if(ret)
+        pal_relogin();
     return ret;
 }
 
@@ -4601,6 +4602,7 @@ pal_del(vc u, int norelogin)
 {
     sql_start_transaction();
     vc uids = map_uid_to_uids(u);
+    int updated = 0;
     for(int i = 0; i < uids.num_elems(); ++i)
     {
         vc uid = uids[i];
@@ -4610,10 +4612,11 @@ pal_del(vc u, int norelogin)
             //i_grant_del(u);
             //they_grant_del(u);
             sql_remove_mid_tag(to_hex(uid), "_pal");
+            updated = 1;
         }
     }
     sql_commit_transaction();
-    if(!norelogin)
+    if(!norelogin && updated)
     {
         pal_relogin();
     }
