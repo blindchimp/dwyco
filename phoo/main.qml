@@ -946,7 +946,10 @@ ApplicationWindow {
         }
 
         onAny_unviewedChanged: {
-            set_badge_number(1)
+            if(any_unviewed)
+                set_badge_number(1)
+            else
+                set_badge_number(0)
         }
 
     }

@@ -75,7 +75,8 @@ SOURCES += main.cpp \
     resizeimage.cpp \
     simple_user_list.cpp \
     ctlist.cpp \
-    dwycovideopreviewprovider.cpp 
+    dwycovideopreviewprovider.cpp \
+syncmodel.cpp
 
 # note: you can *compile* the qt stuff on any platform, but
 # as of 2017, the videoprobing stuff only works on android
@@ -481,7 +482,8 @@ HEADERS += \
     simple_user_list.h \
     ctlist.h \
     dwycovideopreviewprovider.h \
-    simpledirmodel.h
+    simpledirmodel.h \
+syncmodel.h
 
 DISTFILES += \
     androidinst/gradle/wrapper/gradle-wrapper.jar \
