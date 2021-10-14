@@ -38,7 +38,7 @@ QMAKE_INFO_PLIST=Info.plist.mac
 CONFIG -= app_bundle
 }
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
 
 #QMAKE_MAC_SDK = macosx10.9
 DEFINES += DWYCO_RELEASE

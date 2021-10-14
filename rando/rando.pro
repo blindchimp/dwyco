@@ -28,7 +28,7 @@ macx-clang {
 QMAKE_INFO_PLIST=Info.plist.mac
 }
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/dwcls
 
 DEFINES += DWYCO_RELEASE
 ICON=rando.icns

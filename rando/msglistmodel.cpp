@@ -17,7 +17,7 @@
 #include "msglistmodel.h"
 #include "msgpv.h"
 #include "pfx.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 #include "dwyco_new_msg.h"
 #include "dwyco_top.h"
 #include "qloc.h"

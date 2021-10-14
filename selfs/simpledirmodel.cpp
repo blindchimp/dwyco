@@ -1,5 +1,5 @@
 #include "simpledirmodel.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
 SimpleDirModel::SimpleDirModel(QObject *parent) :
     QQmlObjectListModel<SimpleDirEntry>(parent, "handle", "uid")
