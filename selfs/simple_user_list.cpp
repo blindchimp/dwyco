@@ -15,7 +15,7 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "dwyco_top.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;

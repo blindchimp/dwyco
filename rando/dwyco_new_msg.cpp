@@ -16,7 +16,7 @@
 #include "dwyco_new_msg.h"
 #include "dlli.h"
 #include "pfx.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 #include "qloc.h"
 
 static QSet<QByteArray> Got_msg_from_this_session;
