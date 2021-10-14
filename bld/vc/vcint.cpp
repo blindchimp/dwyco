@@ -92,7 +92,7 @@ vc_int::operator/(const vc &v) const {return v.int_div(*this);}
 vc
 vc_int::operator%(const vc &v) const {return v.int_mod(*this);}
 
-#define PROLOG     vc retval;vc_int *v1 = new vc_int((const vc_int &)v);
+#define PROLOG     vc retval;vc_int *v1 = new vc_int((const vc_int &)v)
 #define EPILOG   retval.redefine(v1);return retval;
 vc
 vc_int::int_add(const vc& v) const {PROLOG; v1->i += i;EPILOG}
@@ -164,12 +164,12 @@ vc vc_int::vec_mod(const vc& v) const {PROLOG; v1->scal1_mod((const vc_vector&)v
 #undef PROLOG
 #undef EPILOG
 
-int vc_int::double_lt(const vc& v) const {return ((vc_double&)v).d <  i;}
-int vc_int::double_le(const vc& v) const {return  ((vc_double&)v).d <= i;}
-int vc_int::double_gt(const vc& v) const {return ((vc_double&)v).d >  i;}
-int vc_int::double_ge(const vc& v) const {return  ((vc_double&)v).d >= i;}
-int vc_int::double_eq(const vc& v) const {return  ((vc_double&)v).d == i;}
-int vc_int::double_ne(const vc& v) const {return  ((vc_double&)v).d != i;}
+int vc_int::double_lt(const vc& v) const {return ((const vc_double&)v).d <  i;}
+int vc_int::double_le(const vc& v) const {return  ((const vc_double&)v).d <= i;}
+int vc_int::double_gt(const vc& v) const {return ((const vc_double&)v).d >  i;}
+int vc_int::double_ge(const vc& v) const {return  ((const vc_double&)v).d >= i;}
+int vc_int::double_eq(const vc& v) const {return  ((const vc_double&)v).d == i;}
+int vc_int::double_ne(const vc& v) const {return  ((const vc_double&)v).d != i;}
 
 
 long

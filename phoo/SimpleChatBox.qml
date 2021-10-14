@@ -893,7 +893,7 @@ Page {
                             themsgview.uid = to_uid
                             themsgview.text_bg_color = ditem.color
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file:///" + String(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file://" + String(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {

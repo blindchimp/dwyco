@@ -273,7 +273,7 @@ Page {
         }
 
         Layout.fillWidth: true
-        Layout.maximumHeight: viewer_source === "" ? (parent.height * 6) / 10 : parent.height / 3
+        Layout.maximumHeight: viewer.source === "" ? (parent.height * 6) / 10 : parent.height / 3
 
         wrapMode: Text.Wrap
     }

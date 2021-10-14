@@ -15,7 +15,7 @@
 #include <QMap>
 #include "pfx.h"
 #include "msgpv.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
 [[noreturn]] void cdcxpanic(const char *);
 

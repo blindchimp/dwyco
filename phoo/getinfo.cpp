@@ -8,7 +8,7 @@
 */
 #include "dlli.h"
 #include "getinfo.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
 QString
 dwyco_info_to_display2(const QByteArray& uid, const char *field)

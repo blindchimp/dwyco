@@ -19,3 +19,5 @@
 (done) * add "setup mode" to video capture do you can see what it looks like before someone is connected.
 * if you uninstall, then reinstall and try to use the same name as the previous app install, other clients will be confused because the uid's are different. also the new install is confused as well, and won't accept calls (probably because it is calling someone with the wrong uid.) need to tighten this up a bit, and maybe make it error out if the name already exists.
 * it appears that coming back from "pause" mode may not be re-enabling the broadcaster
+* when the server is down, the capture device won't accept local calls, despite broadcasting on the local network.
+* make it so you can only start it once on windows
