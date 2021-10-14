@@ -19,7 +19,7 @@ private:
     dwyco_list(const dwyco_list&&) = delete;
     dwyco_list& operator=(const dwyco_list&) = delete;
     dwyco_list& operator=(const dwyco_list&&) = delete;
-
+protected:
     DWYCO_LIST value;
 public:
     dwyco_list(DWYCO_LIST v) {
@@ -86,6 +86,76 @@ public:
         }
         else
             return 0;
+    }
+
+    long get_long(const char *col) {
+        return get_long(0, col);
+    }
+
+};
+
+struct dwyco_list_throw : public dwyco_list
+{
+private:
+    dwyco_list_throw() = delete;
+    dwyco_list_throw(const dwyco_list_throw&) = delete;
+    dwyco_list_throw(const dwyco_list_throw&&) = delete;
+    dwyco_list_throw& operator=(const dwyco_list_throw&) = delete;
+    dwyco_list_throw& operator=(const dwyco_list_throw&&) = delete;
+
+public:
+    dwyco_list_throw(DWYCO_LIST l) : dwyco_list(l) {}
+
+    int rows() {
+        int n;
+        if(dwyco_list_numelems(value, &n, 0))
+            return n;
+        throw -1;
+    }
+
+    template<class T> T get(int row, const char *col) {
+        const char *val;
+        int len;
+        int type;
+        if(!dwyco_list_get(value, row, col, &val, &len, &type))
+            throw -1;
+        if(type != DWYCO_TYPE_STRING)
+            throw -1;
+        return T(val, len);
+    }
+    template<class T> T get(const char *col) {
+        return get<T>(0, col);
+    }
+    template<class T> T get(int row) {
+        return get<T>(row, DWYCO_NO_COLUMN);
+    }
+
+    bool is_nil(const char *col) {
+        return is_nil(0, col);
+    }
+    bool is_nil(int row, const char *col) {
+        const char *val;
+        int len;
+        int type;
+        if(!dwyco_list_get(value, row, col, &val, &len, &type))
+            throw -1;
+        if(type == DWYCO_TYPE_NIL)
+            return true;
+        else
+            return false;
+    }
+    long get_long(int row, const char *col) {
+        const char *val;
+        int len;
+        int type;
+        if(!dwyco_list_get(value, row, col, &val, &len, &type))
+            throw -1;
+        if(type == DWYCO_TYPE_INT)
+        {
+            return atol(val);
+        }
+        else
+            throw -1;
     }
 
     long get_long(const char *col) {
