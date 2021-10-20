@@ -436,6 +436,24 @@ DH_alternate::my_static_public()
 }
 
 vc
+DH_alternate::get_gid(vc pubkey)
+{
+    SHA3_256 md;
+    SecByteBlock b(md.DigestSize());
+    md.Update((const byte *)(const char *)pubkey, pubkey.len());
+    md.Final(b);
+    DwString gid((const char *)b.BytePtr(), b.SizeInBytes());
+    gid.remove(10);
+    return vc(VC_BSTRING, 0, gid.length());
+}
+
+vc
+DH_alternate::get_gid()
+{
+    return get_gid(DH_static[DH_STATIC_PUBLIC]);
+}
+
+vc
 DH_alternate::hash_key_material()
 {
     SHA3_256 md;

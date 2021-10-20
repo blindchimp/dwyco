@@ -1634,7 +1634,8 @@ fetch_info(vc uid)
 
 vc
 save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc authvec,
-          vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type)
+          vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type,
+          vc from_group)
 {
     DwString s;
     init_msg_folder(from, &s);
@@ -1654,6 +1655,7 @@ save_body(vc msg_id, vc from, vc text, vc attachment_id, vc date, vc rating, vc 
     v[QM_BODY_FILE_ATTACHMENT] = user_filename;
     v[QM_BODY_LOGICAL_CLOCK] = logical_clock;
     v[QM_BODY_SPECIAL_TYPE] = special_type;
+    v[QM_BODY_FROM_GROUP] = from_group;
     if(save_info(v, s.c_str(), 1))
     {
         // can't do this here anymore because the index needs to
@@ -1680,6 +1682,7 @@ direct_to_body2(vc m)
     v[QM_BODY_NO_FORWARD] = m[QQM_BODY_NO_FORWARD];
     v[QM_BODY_FILE_ATTACHMENT] = m[QQM_BODY_FILE_ATTACHMENT];
     v[QM_BODY_LOGICAL_CLOCK] = m[QQM_BODY_LOGICAL_CLOCK];
+    v[QM_BODY_FROM_GROUP] = m[QQM_BODY_FROM_GROUP];
 
     return v;
 }
@@ -2049,6 +2052,8 @@ query_done(vc m, void *, vc, ValidPtr)
             }
             Mid_to_logical_clock.add_kv(mid, lc);
         }
+        // NOTE: here is a case where if we already have the msg
+        // in our local index, we could just immediately ack it.
         add_msg(Cur_msgs, v);
         sql_add_tag(mid, "_remote");
         DwString a("_");
@@ -3180,6 +3185,17 @@ q_message2(vc recip, const char *attachment, vc& msg_out,
     m[QQM_BODY_NO_FORWARD] = no_forward;
     // inhibit server-based delivery reporting for now
     m[QQM_BODY_NO_DELIVERY_REPORT] = vctrue;
+    // this helps the recipient display the message in the right place.
+    // it can get out of date, which will lead to strangeness, and
+    // at the moment, we are not authenticating messages in a way that
+    // would keep spoofing from happening. if the client really wants it
+    // maybe they could verify the group membership of the uid, but that
+    // isn't implemented right now.
+    if(Current_alternate)
+        m[QQM_BODY_FROM_GROUP] = Current_alternate->get_gid();
+    else
+        m[QQM_BODY_FROM_GROUP] = vcnil;
+
     gen_authentication(qmsg, att_hash);
     // note: get rid of no-forward encoding hackery.
     // means old software will not be able to view
@@ -3507,6 +3523,7 @@ qd_body_to_saved_body(vc qb)
     v[QM_BODY_NO_FORWARD] = qb[QQM_BODY_NO_FORWARD];
     v[QM_BODY_FILE_ATTACHMENT] = qb[QQM_BODY_FILE_ATTACHMENT];
     v[QM_BODY_LOGICAL_CLOCK] = qb[QQM_BODY_LOGICAL_CLOCK];
+    v[QM_BODY_FROM_GROUP] = qb[QQM_BODY_FROM_GROUP];
     return v;
 }
 

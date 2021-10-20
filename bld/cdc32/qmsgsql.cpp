@@ -930,9 +930,8 @@ init_group_map()
             vc k = keys[i][0];
             // XXX leave as hex? if gid's are surrogates for
             // for uids, it might be a problem.
-            DwString gid = (const char *)to_hex(vclh_sha3_256(k));
-            gid.remove(20);
-            sql_simple("insert into group_map select uid, ?1 from prf.pubkeys where alt_static_public = ?2", gid.c_str(), blob(k));
+            vc gid = to_hex(DH_alternate::get_gid(k));
+            sql_simple("insert into group_map select uid, ?1 from prf.pubkeys where alt_static_public = ?2", gid, blob(k));
         }
     }
     catch(...)
@@ -1301,6 +1300,7 @@ index_from_body(vc recipient, vc body)
     nentry[QM_IDX_IS_FILE] = body[QM_BODY_FILE_ATTACHMENT].is_nil() ? vcnil : vctrue;
     nentry[QM_IDX_SPECIAL_TYPE] = body[QM_BODY_SPECIAL_TYPE].type() == VC_VECTOR ? body[QM_BODY_SPECIAL_TYPE][0] : vcnil;
     nentry[QM_IDX_HAS_ATTACHMENT] = body[QM_BODY_ATTACHMENT].is_nil() ? vcnil : vctrue;
+    nentry[QM_IDX_FROM_GROUP] = body[QM_BODY_FROM_GROUP];
     vc lc = body[QM_BODY_LOGICAL_CLOCK];
     // older messages won't have logical clock, so just fall back on the
     // date

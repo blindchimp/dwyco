@@ -37,7 +37,7 @@ void query_messages();
 MMChannel *fetch_attachment(vc fn, DestroyCallback, vc, void *, ValidPtr,
                             StatusCallback, void *, ValidPtr, vc server_ip = vcnil, vc server_port = vcnil);
 vc save_body(vc msgid, vc from, vc text, vc attachment_id, vc date, vc rating, vc authvec,
-             vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type);
+             vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type, vc from_group);
 int uid_ignored(vc uid);
 void delete_msg2(vc msgid);
 void delete_body3(vc uid, vc msgid, int inhibit_indexing);
@@ -232,6 +232,7 @@ void boost_logical_clock();
 #define QM_BODY_ESTIMATED_SIZE 15 // estimated size of attachments
 #define QM_BODY_NO_DELIVERY_REPORT 16 // t = don't give us a delivery report
 #define QM_BODY_LOGICAL_CLOCK 17 // used for msg sorting since physical clocks are usually off
+#define QM_BODY_FROM_GROUP 18
 
 // message as q'd and ready to send to
 // server or recipient (if direct)
@@ -254,6 +255,7 @@ void boost_logical_clock();
 #define     QQM_BODY_ESTIMATED_SIZE 14
 #define     QQM_BODY_NO_DELIVERY_REPORT 15
 #define     QQM_BODY_LOGICAL_CLOCK 16
+#define     QQM_BODY_FROM_GROUP 17
 #define QQM_LOCAL_ID 2 // added to direct messages locally
 // for database-less operation, this info can be used
 // when there is no other source of user info (ie, if
@@ -294,7 +296,9 @@ void boost_logical_clock();
 #define QM_IDX_ATT_HAS_AUDIO 9
 #define QM_IDX_ATT_IS_SHORT_VIDEO 10
 #define QM_IDX_LOGICAL_CLOCK 11
-#define NUM_QM_IDX_FIELDS 12
+#define QM_IDX_ASSOC_HUID 12
+#define QM_IDX_FROM_GROUP 13
+#define NUM_QM_IDX_FIELDS 14
 
 // special message structure
 //

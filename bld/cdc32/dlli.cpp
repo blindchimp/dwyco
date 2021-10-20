@@ -7238,7 +7238,8 @@ save_msg(vc m, vc msg_id)
                         msg[QQM_BODY_NO_FORWARD],
                         msg[QQM_BODY_FILE_ATTACHMENT],
                         msg[QQM_BODY_LOGICAL_CLOCK],
-                        msg[QQM_BODY_SPECIAL_TYPE]);
+                        msg[QQM_BODY_SPECIAL_TYPE],
+                        msg[QQM_BODY_FROM_GROUP]);
     if(body.is_nil())
     {
         return 0;

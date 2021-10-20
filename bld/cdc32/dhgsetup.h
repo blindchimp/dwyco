@@ -46,6 +46,12 @@ public:
     // calls early if they obviously have the wrong key
     vc hash_key_material();
 
+    // these functions return a "group id", which is an 80 bit
+    // binary id based on the hash of the public key.
+    vc get_gid();
+    // this does the same as get_gid, just on the given k.
+    static vc get_gid(vc k);
+
     // inserts a new key into the database, which we
     // presumably got from another group member or the server
     static int insert_public_key(vc alt_name, vc grp_key, vc sig);
