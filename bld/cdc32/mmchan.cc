@@ -71,6 +71,7 @@
 #include "dwscoped.h"
 #include "dhgsetup.h"
 #include "ezset.h"
+#include "qmsgsql.h"
 #ifdef _Windows
 //#include <winsock2.h>
 //#include <ws2tcpip.h>
@@ -79,6 +80,7 @@ using namespace dwyco;
 
 extern vc Current_room;
 extern vc My_connection;
+extern DwString dwyco::Schema_version_hack;
 
 #ifdef _Windows
 #define strcasecmp strcmpi
@@ -2792,9 +2794,19 @@ MMChannel::recv_config(vc cfg)
                 send_error("sync needs pw");
                 goto cleanup;
             }
-            if(!Current_alternate || pw != Current_alternate->hash_key_material())
+            if(!Current_alternate)
+
             {
                 send_error("sync wrong group");
+                goto cleanup;
+            }
+            vc ipw = Current_alternate->hash_key_material();
+            DwString ips((const char *)ipw, ipw.len());
+            ips += dwyco::Schema_version_hack;
+            ipw = vc(VC_BSTRING, ips.c_str(), ips.length());
+            if(pw != ipw)
+            {
+                send_error("sync wrong group or schema");
                 goto cleanup;
             }
             cfg.del("pw");

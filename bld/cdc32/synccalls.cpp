@@ -13,6 +13,7 @@
 
 using namespace dwyco;
 extern vc Online;
+extern DwString dwyco::Schema_version_hack;
 
 static
 vc
@@ -342,7 +343,16 @@ sync_call_setup()
             // contains a challenge to make sure both sides can
             // decrypt group messages
             if(Current_alternate)
+            {
+                // i'm adding the schema versions for the index
+                // databases too, just to keep us from connecting
+                // and being confused with message format differences
+                // this should probably be fixed in some other way.
                 pw = Current_alternate->hash_key_material();
+                DwString p((const char *)pw, pw.len());
+                p += Schema_version_hack;
+                pw = vc(VC_BSTRING, p.c_str(), p.length());
+            }
             else
                 pw = "";
             GRTLOG("out trying sync to %s (%s)", (const char *)to_hex(call_uids[i]), (const char *)to_hex(pw));

@@ -9,6 +9,7 @@
 #ifndef QMSGSQL
 #define QMSGSQL
 #include "vc.h"
+#include "dwstr.h"
 
 namespace dwyco {
 void init_qmsg_sql();
@@ -84,6 +85,8 @@ int map_is_mapped(vc uid);
 // this is the smallest uid in the current group.
 vc map_to_representative_uid(vc uid);
 void refetch_pk(int online);
+
+extern DwString Schema_version_hack;
 
 }
 

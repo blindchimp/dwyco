@@ -44,6 +44,7 @@
 #include "dirth.h"
 
 namespace dwyco {
+DwString Schema_version_hack;
 
 class QMsgSql : public SimpleSql
 {
@@ -158,6 +159,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create table if not exists mt.msg_tags2(mid text not null, tag text not null, time integer not null)");
         sql_simple("insert into mt.gmt select mid, tag, time, ?1, lower(hex(randomblob(8))) from mt.msg_tags2", to_hex(My_UID));
         sql_simple("delete from mt.msg_tags2");
+        sql_simple("pragma mt.user_version = 0");
 
         commit_transaction();
     } catch(...) {
@@ -233,6 +235,44 @@ QMsgSql::init_schema(const DwString& schema_name)
 
     sql_simple("drop table if exists midlog");
     sql_simple("create table midlog (mid text not null, to_uid text not null, op text not null, unique(mid,to_uid,op) on conflict ignore)");
+
+    vc res = sql_simple("pragma user_version");
+    if((int)res[0][0] == 0)
+    {
+        // schema upgrade to include new field in index
+        sql_start_transaction();
+        sql_simple("alter table msg_idx add column from_group");
+        sql_simple("drop table if exists gi");
+        sql_simple("create table if not exists gi ("
+                   "date integer,"
+                   "mid text not null,"
+                   "is_sent,"
+                   "is_forwarded,"
+                   "is_no_forward,"
+                   "is_file,"
+                   "special_type,"
+                   "has_attachment,"
+                   "att_has_video,"
+                   "att_has_audio,"
+                   "att_is_short_video,"
+                   "logical_clock,"
+                   "assoc_uid text not null,"
+                   "from_group,"
+                   "is_local,"
+                   "from_client_uid not null, unique(mid, from_client_uid) on conflict ignore)"
+                  );
+
+        sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
+        sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock desc)");
+        sql_simple("create index if not exists gidate_idx on gi(date desc)");
+        sql_simple("create index if not exists gisent_idx on gi(is_sent)");
+        sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
+        sql_simple("create index if not exists gifrom_client_uid_idx on gi(from_client_uid)");
+        sql_simple("create index if not exists gimid on gi(mid)");
+        sql_simple("create index if not exists gifrom_group on gi(from_group)");
+        sql_simple("pragma user_version = 1;");
+        sql_commit_transaction();
+    }
     }
     else if(schema_name.eq("mt"))
 	{
@@ -263,6 +303,7 @@ sql_dump_mi()
                "att_is_short_video,"
                "logical_clock,"
                "assoc_uid text not null,"
+               "from_group,"
                "is_local, "
                "from_client_uid "
                ");"
@@ -771,6 +812,13 @@ init_qmsg_sql()
     sql_simple("pragma main.cache_size= -100000");
     sql_simple("pragma mt.cache_size= -100000");
     sql_start_transaction();
+    vc sv = sql_simple("pragma main.user_version");
+    if((int)sv[0][0] != 0)
+        Schema_version_hack += sv[0][0].peek_str();
+    vc sv2 = sql_simple("pragma mt.user_version");
+    if((int)sv2[0][0] != 0)
+        Schema_version_hack += sv2[0][0].peek_str();
+
     //sql_simple("insert into mt.gmt (mid, tag, uid, guid, time) values(?2, 'bar', ?1, 'mumble', 0)", hmyuid);
     // by default, our local index "local" is implied
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);

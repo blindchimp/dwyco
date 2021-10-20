@@ -444,7 +444,7 @@ DH_alternate::get_gid(vc pubkey)
     md.Final(b);
     DwString gid((const char *)b.BytePtr(), b.SizeInBytes());
     gid.remove(10);
-    return vc(VC_BSTRING, 0, gid.length());
+    return vc(VC_BSTRING, gid.c_str(), gid.length());
 }
 
 vc
