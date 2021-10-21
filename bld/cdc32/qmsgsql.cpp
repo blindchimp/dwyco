@@ -898,12 +898,47 @@ void
 sql_insert_record(vc entry, vc assoc_uid)
 {
     VCArglist a;
-    a.set_size(NUM_QM_IDX_FIELDS + 2);
-    a.append("insert or ignore into msg_idx values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)");
-
+	// +1 because of the sql statement
+    a.set_size(NUM_QM_IDX_FIELDS + 1);
+    a.append("insert or replace into msg_idx "
+            "("
+               "date ,"
+               "mid ,"
+               "is_sent,"
+               "is_forwarded,"
+               "is_no_forward,"
+               "is_file,"
+               "special_type,"
+               "has_attachment,"
+               "att_has_video,"
+               "att_has_audio,"
+               "att_is_short_video,"
+               "logical_clock,"
+               "assoc_uid,"
+               "from_group"
+            ")"
+            "values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)");
+/*
+#define QM_IDX_DATE 0
+#define QM_IDX_MID 1
+#define QM_IDX_IS_SENT 2
+#define QM_IDX_IS_FORWARDED 3
+#define QM_IDX_IS_NO_FORWARD 4
+#define QM_IDX_IS_FILE 5
+#define QM_IDX_SPECIAL_TYPE 6
+#define QM_IDX_HAS_ATTACHMENT 7
+#define QM_IDX_ATT_HAS_VIDEO 8
+#define QM_IDX_ATT_HAS_AUDIO 9
+#define QM_IDX_ATT_IS_SHORT_VIDEO 10
+#define QM_IDX_LOGICAL_CLOCK 11
+#define QM_IDX_ASSOC_HUID 12
+#define QM_IDX_FROM_GROUP 13
+#define NUM_QM_IDX_FIELDS 14
+*/
     for(int i = 0; i < NUM_QM_IDX_FIELDS; ++i)
         a.append(entry[i]);
-    a.append(to_hex(assoc_uid));
+    a[QM_IDX_ASSOC_HUID + 1] = to_hex(assoc_uid);
+    a[QM_IDX_FROM_GROUP + 1] = to_hex(entry[QM_IDX_FROM_GROUP]);
 
     sql_bulk_query(&a);
 }
@@ -1286,7 +1321,6 @@ vc
 sql_load_group_index(vc uid, int max_count)
 {
     vc huid = to_hex(uid);
-    //sql_simple("create temp table foo as select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
     create_uidset(uid);
     vc res = sql_simple(
             "select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
@@ -1295,8 +1329,6 @@ sql_load_group_index(vc uid, int max_count)
            " assoc_uid in (select * from uidset)"
                 " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?1",
                         max_count);
-    //sql_simple("update bar set assoc_uid = (select gid from group_map where uid = bar.assoc_uid) "
-    //    "where exists (select 1 from group_map where uid = bar.assoc_uid) ");
     drop_uidset();
 
     return res;
