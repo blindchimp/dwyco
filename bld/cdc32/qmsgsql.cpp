@@ -270,6 +270,8 @@ QMsgSql::init_schema(const DwString& schema_name)
         sql_simple("create index if not exists gifrom_client_uid_idx on gi(from_client_uid)");
         sql_simple("create index if not exists gimid on gi(mid)");
         sql_simple("create index if not exists gifrom_group on gi(from_group)");
+        // force it to reindex
+        sql_simple("delete from dir_meta");
         sql_simple("pragma user_version = 1;");
         sql_commit_transaction();
     }
@@ -900,7 +902,7 @@ sql_insert_record(vc entry, vc assoc_uid)
     VCArglist a;
 	// +1 because of the sql statement
     a.set_size(NUM_QM_IDX_FIELDS + 1);
-    a.append("insert or replace into msg_idx "
+    a.append("insert or ignore into msg_idx "
             "("
                "date ,"
                "mid ,"
@@ -937,8 +939,12 @@ sql_insert_record(vc entry, vc assoc_uid)
 */
     for(int i = 0; i < NUM_QM_IDX_FIELDS; ++i)
         a.append(entry[i]);
+
     a[QM_IDX_ASSOC_HUID + 1] = to_hex(assoc_uid);
-    a[QM_IDX_FROM_GROUP + 1] = to_hex(entry[QM_IDX_FROM_GROUP]);
+    if(entry[QM_IDX_FROM_GROUP].type() != VC_STRING)
+        a[QM_IDX_FROM_GROUP + 1] = vcnil;
+    else
+        a[QM_IDX_FROM_GROUP + 1] = to_hex(entry[QM_IDX_FROM_GROUP]);
 
     sql_bulk_query(&a);
 }
