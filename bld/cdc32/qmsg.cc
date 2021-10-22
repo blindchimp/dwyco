@@ -2490,13 +2490,6 @@ remove_user_files(vc dir, const char *pfx, int keep_folder)
         retval = 0;
     delete_findvec(&fv);
 
-    // note: don't remove never vis attr, as it is
-    // possible someone wants to remain invisible to
-    // this person even after removing them, likewise
-    // with the ignore attribute.
-    // NOTE: the CALLER must save the infos file, since this
-    // is called to empty the trash can, and we don't want that
-    // to modify the infos files
     return 1; // tired of hearing tech support about not being able to
     // remove things, not sure why this happens (maybe they
     // have a video open when they try to remove it or something.)
@@ -2619,34 +2612,15 @@ trash_user(vc dir)
         DwString trashfile = trashdir;
         trashfile += "" DIRSEPSTR "";
         trashfile += d.cFileName;
-        //DeleteFile(newfn(trashfile).c_str());
         if(!move_replace(s2, trashfile))
             retval = 0;
     }
     if(!RemoveDirectory(newfn((const char *)dir).c_str()))
         retval = 0;
     delete_findvec(&fv);
-    // note: when you trash a user, it was nice to leave the
-    // aatributes alone, then an untrash would retrieve the
-    // attributes as well. but that led to problems where
-    // trashed users attributes would be sent to the pal server
-    // and stuff. what we really need is a new trash with the
-    // attributes in it. but for now, we just kill the attributes
-    // so when you untrash, you get the messages, but not the
-    // attributes back. there are other problems with users
-    // being in the trash, then reappearing on the pal list
-    // thru normal operation. fix those later.
-    // note: this removes pal auth stuff too
-    //always_vis_del(uid);
-    // note: don't remove never vis attr, as it is
-    // possible someone wants to remain invisible to
-    // this person even after removing them, likewise
-    // with the ignore attribute.
-    //infos_del(uid);
     MsgFolders.del(uid);
     remove_msg_idx_uid(uid);
     se_emit(SE_USER_REMOVE, uid);
-    //Refresh_users = 1;
     return retval;
 }
 
@@ -2669,8 +2643,6 @@ untrash_users()
         if(strcmp(d.cFileName, ".") == 0 ||
                 strcmp(d.cFileName, "..") == 0)
             continue;
-        // make target dir
-        //mkdir(newfn(d.cFileName).c_str());
         vc uid = dir_to_uid(d.cFileName);
         init_msg_folder(uid);
 
@@ -4434,92 +4406,6 @@ clean_cruft()
 }
 
 #if 0
-int
-is_always_vis(vc uid)
-{
-    return Always_visible.contains(uid);
-}
-
-int
-is_never_vis(vc uid)
-{
-    return Never_visible.contains(uid);
-}
-
-void
-always_vis_add(vc uid)
-{
-    Never_visible.del(uid);
-    Always_visible.add(uid);
-    save_info(Always_visible, "always");
-    save_info(Never_visible, "never");
-    pal_relogin();
-    se_emit(SE_STATUS_CHANGE, uid);
-}
-
-void
-always_vis_del(vc uid)
-{
-    // note: this can be called in cases
-    // were we just want to clear the always
-    // vis attr if it is there, and in that
-    // case, the never vis may be set, and we
-    // don't want to clear it.
-    if(!is_always_vis(uid))
-        return;
-    Never_visible.del(uid);
-    //Never_visible.del(uid);
-    Always_visible.del(uid);
-    save_info(Always_visible, "always");
-    save_info(Never_visible, "never");
-    pal_relogin();
-    se_emit(SE_STATUS_CHANGE, uid);
-}
-
-void
-never_vis_add(vc uid)
-{
-    Never_visible.add(uid);
-    Always_visible.del(uid);
-    save_info(Always_visible, "always");
-    save_info(Never_visible, "never");
-    pal_relogin();
-    se_emit(SE_STATUS_CHANGE, uid);
-}
-
-void
-never_vis_del(vc uid)
-{
-    // note: this can be called in cases
-    // were we just want to clear the never
-    // vis attr if it is there, and in that
-    // case, the always vis may be set, and we
-    // don't want to clear it.
-    if(!is_never_vis(uid))
-        return;
-    Never_visible.del(uid);
-    //Always_visible.del(uid);
-    save_info(Always_visible, "always");
-    save_info(Never_visible, "never");
-    pal_relogin();
-    se_emit(SE_STATUS_CHANGE, uid);
-}
-
-void
-reset_always_vis()
-{
-    Always_visible = vc(VC_SET);
-    save_info(Always_visible, "always");
-}
-
-void
-reset_never_vis()
-{
-    Never_visible = vc(VC_SET);
-    save_info(Never_visible, "never");
-}
-
-
 void
 they_grant_add(vc who, vc cookie)
 {
@@ -4675,284 +4561,6 @@ refile_attachment(vc filename, vc from_user)
 
     return 1;
 }
-
-#if 0
-
-static
-DwString
-pfx(const DwString& p, const char *str)
-{
-    DwString a(p);
-    a += DIRSEPSTR;
-    a += str;
-    return a;
-}
-
-static
-int
-copy_dir(const DwString& d1, const DwString& dest_dir)
-{
-    // d1 is of the form c:\...\...\foo
-    // dest_dir is of similar form, except foo will be copied
-    // into the dest dir as "foo"
-    // get last component of d1
-    DwString dirname(d1);
-    int i = dirname.rfind(DIRSEPSTR);
-    if(i == DwString::npos)
-        return 0;
-    dirname.erase(0, i + 1);
-    DwString ndest_dir(dest_dir);
-    ndest_dir += DIRSEPSTR;
-    ndest_dir += dirname;
-    mkdir(ndest_dir.c_str());
-
-    DwString pat(d1);
-    pat += DIRSEPSTR "*.*";
-    FindVec& fv = *find_to_vec(pat.c_str());
-    int n = fv.num_elems();
-    for(int j = 0; j < n; ++j)
-    {
-        WIN32_FIND_DATA& d = *fv[j];
-        if(strcmp(d.cFileName, ".") == 0 ||
-                strcmp(d.cFileName, "..") == 0)
-            continue;
-        DwString srcfile(d1);
-        srcfile += DIRSEPSTR;
-        srcfile += d.cFileName;
-        DwString ndest_file(ndest_dir);
-        ndest_file += DIRSEPSTR;
-        ndest_file += d.cFileName;
-        CopyFile(srcfile.c_str(), ndest_file.c_str(), 1);
-    }
-    delete_findvec(&fv);
-    return 0;
-}
-
-static int
-find_ini_key(const char *filename, const char *key, DwString& val_out)
-{
-    FILE *f = fopen(filename, "r");
-    if(!f)
-        return 0;
-    char a[100];
-    while(fgets(a, sizeof(a) - 1, f))
-    {
-        int m = (strlen(a) < strlen(key) ? strlen(a) : strlen(key));
-        if(strncmp(a, key, m) == 0)
-        {
-            char *i = strchr(a, '=');
-            if(i == 0)
-                continue;
-            DwString ret(i + 1, 0, strlen(a) - (i - a) - 1);
-            // strip off trailing \r\n mumbo jumbo
-            while(ret.length() >= 1 && (ret[ret.length() - 1] == '\n' || ret[ret.length() - 1] == '\r'))
-            {
-                ret.erase(ret.length() - 1);
-            }
-            val_out = ret;
-            fclose(f);
-            return 1;
-        }
-    }
-    fclose(f);
-    return 0;
-}
-
-static vc cvt_pals;
-static void
-append_pals(vc item)
-{
-    if(!cvt_pals.contains(item))
-        cvt_pals.append(item);
-}
-
-static void
-add_session_infos(vc item)
-{
-    if(!Session_infos.contains(item[0]))
-    {
-        Session_infos.add_kv(item[0], item[1]);
-    }
-}
-
-// two years on, no need for this anymore... plus it probably will screw up
-// a new install anyways.
-int
-upgrade_cdc32_account(const DwString &cdc32_dir, const DwString& cdcx_dir)
-{
-#define copy_there_here(f1) \
-	CopyFile(pfx(cdc32_dir, f1).c_str(), pfx(cdcx_dir, f1).c_str(), 0);
-
-    //copy_there_here("accept")
-    //copy_there_here("always")
-    //copy_there_here("igrant")
-    copy_there_here("infos")
-    //copy_there_here("never")
-    //copy_there_here("noise")
-    //copy_there_here("theygrnt")
-    //copy_there_here("timing")
-
-    int is_icu2 = 0;
-    if(access(pfx(cdc32_dir, "icuii.ini").c_str(), 0) == 0)
-        is_icu2 = 1;
-
-    // here is where we need to convert the "accept" list
-    // into the "pal" list
-    // note: the auth file might be problematic...
-    // maybe just instead of copying it, we just insert the new
-    // uid into it. have to force a restart as well to get the new
-    // uid. also, the password related stuff needs to be updated.
-    // ie, the settings.qds file is out of whack for the new uid.
-    // i'm guessing what we really need to do is make them pick
-    // a new password, and have the server accept that once when
-    // they create their new account.
-    // dwyco.ini will have some regcode infomation that needs to be
-    // imported. look for the "reg3" key
-    //
-    // for importing just msgs, if someone imports new msgs multiple times
-    // from cdc32, remove the index files, otherwise the msgs won't be seen.
-    vc always_accept;
-    // merge other pal list, in case they have been doing stuff
-    cvt_pals = vc(VC_VECTOR);
-    for(int i = 0; i < Pals.num_elems(); ++i)
-        cvt_pals.append(Pals[i]);
-    DwString palfile;
-    if(is_icu2)
-        palfile = pfx(cdc32_dir, "pals");
-    else
-        palfile = pfx(cdc32_dir, "accept");
-    if(load_info(always_accept, palfile.c_str()))
-    {
-        always_accept.foreach(vcnil, append_pals);
-        MoveFile(pfx(cdcx_dir, "pals").c_str(), pfx(cdcx_dir, "pals.cdcx").c_str());
-        save_info(cvt_pals, pfx(cdcx_dir, "pals").c_str());
-    }
-    DwString sifile = pfx(cdc32_dir, "sinfo");
-    vc si;
-    if(load_info(si, sifile.c_str()))
-    {
-        si.foreach(vcnil, add_session_infos);
-        MoveFile(pfx(cdcx_dir, "sinfo").c_str(), pfx(cdcx_dir, "sinfo.cdcx").c_str());
-        save_info(Session_infos, pfx(cdcx_dir, "sinfo").c_str());
-    }
-    MoveFile(pfx(cdcx_dir, "auth").c_str(), pfx(cdcx_dir, "auth.cdcx").c_str());
-    MoveFile(pfx(cdcx_dir, "settings.qds").c_str(), pfx(cdcx_dir, "settings.qds.cdcx").c_str());
-    copy_there_here("auth")
-    MoveFile(pfx(cdcx_dir, "auth").c_str(), pfx(cdcx_dir, "auth.upg").c_str());
-
-    if(!is_icu2)
-    {
-        DwString reg;
-        if(find_ini_key(pfx(cdc32_dir, "dwyco.ini").c_str(), "reg3", reg))
-        {
-            dwyco_set_regcode(reg.c_str());
-        }
-
-
-#define xfer_from_cdc32(cdc_setting, cdcx_setting) \
-{ \
-DwString tmp; \
-	if(find_ini_key(pfx(cdc32_dir, "dwyco.ini").c_str(), cdc_setting, tmp)) \
-	{ \
-		dwyco_set_setting(cdcx_setting, tmp.c_str()); \
-	} \
-}
-
-        xfer_from_cdc32("username", "user/username")
-        xfer_from_cdc32("description", "user/description")
-        xfer_from_cdc32("email", "user/email")
-    }
-    else
-    {
-#define xfer_from_icu2(cdc_setting, cdcx_setting) \
-{ \
-DwString tmp; \
-	if(find_ini_key(pfx(cdc32_dir, "icuii.ini").c_str(), cdc_setting, tmp)) \
-	{ \
-		dwyco_set_setting(cdcx_setting, tmp.c_str()); \
-	} \
-}
-
-        xfer_from_cdc32("NickName", "user/username")
-        xfer_from_cdc32("Comment", "user/description")
-        xfer_from_cdc32("Email", "user/email")
-    }
-
-    return 0;
-}
-
-int
-copy_cdc32_zaps(const DwString &cdc32_dir, const DwString& cdcx_dir, DwycoStatusCallback cb)
-{
-    //copy_dir(pfx(cdc32_dir, "trash"), cdcx_dir);
-    // copy all the *.usr files in the trash
-#if 0
-    {
-        DwString target_trash_dir(pfx(cdcx_dir, "trash"));
-        mkdir(target_trash_dir.c_str());
-        DwString pat(cdc32_dir);
-        pat += DIRSEPSTR "trash" DIRSEPSTR "*.usr";
-        FindVec& fv = *find_to_vec(pat.c_str());
-        int n = fv.num_elems();
-        for(int j = 0; j < n; ++j)
-        {
-            WIN32_FIND_DATA& d = *fv[j];
-            if(strcmp(d.cFileName, ".") == 0 ||
-                    strcmp(d.cFileName, "..") == 0)
-                continue;
-            DwString srcdir(cdc32_dir);
-            srcdir += DIRSEPSTR "trash" DIRSEPSTR "";
-            srcdir += d.cFileName;
-            copy_dir(srcdir.c_str(), target_trash_dir);
-            if(cb)
-            {
-                DwString msg("Copied trash ");
-                msg += d.cFileName;
-                int percent = (j * 100) / n;
-                (*cb)(0, msg.c_str(), percent, 0);
-            }
-        }
-        delete_findvec(&fv);
-    }
-#endif
-
-    {
-        // copy all the *.usr files
-        DwString pat(cdc32_dir);
-        pat += DIRSEPSTR "*.usr";
-        FindVec& fv = *find_to_vec(pat.c_str());
-        int n = fv.num_elems();
-        for(int j = 0; j < n; ++j)
-        {
-            WIN32_FIND_DATA& d = *fv[j];
-            if(strcmp(d.cFileName, ".") == 0 ||
-                    strcmp(d.cFileName, "..") == 0)
-                continue;
-            DwString srcdir(cdc32_dir);
-            srcdir += DIRSEPSTR "";
-            srcdir += d.cFileName;
-            copy_dir(srcdir.c_str(), cdcx_dir);
-            // delete whatever *.idx file might be in the dst
-            // in case this is a merge from a previous import
-            DwString idx(cdcx_dir);
-            idx += DIRSEPSTR "";
-            idx += d.cFileName;
-            idx += DIRSEPSTR "date.idx";
-            DeleteFile(idx.c_str());
-            if(cb)
-            {
-                DwString msg("Copied user ");
-                msg += d.cFileName;
-                int percent = (j * 100) / n;
-                (*cb)(0, msg.c_str(), percent, 0);
-            }
-        }
-        delete_findvec(&fv);
-    }
-
-    return 0;
-}
-#endif
 
 void
 ignoring_you_update(vc m, void *, vc, ValidPtr)
