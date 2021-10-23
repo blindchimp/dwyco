@@ -893,6 +893,8 @@ exit_qmsg_sql()
     if(!sDb)
         return;
     sDb->exit();
+    delete sDb;
+    sDb = 0;
 }
 
 static
@@ -1113,12 +1115,6 @@ map_uid_list_from_tag(vc tag)
     sql_simple("drop table foo");
     sql_simple("drop table bar");
     return res;
-//    vc ret(VC_VECTOR);
-//    for(int i = 0; i < res.num_elems(); ++i)
-//    {
-//        ret.append(from_hex(res[i][0]));
-//    }
-//    return ret;
 }
 
 
@@ -2196,7 +2192,7 @@ sql_count_valid_tag(vc tag)
     int c = 0;
     try
     {
-        vc res = sql_simple("select count(*) from gmt,gi using(mid) where tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid)", tag);
+        vc res = sql_simple("select count(distinct(mid)) from gmt,gi using(mid) where tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid)", tag);
         c = res[0][0];
     }
     catch(...)

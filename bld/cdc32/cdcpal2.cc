@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#ifndef DWYCO_UDP_PAL
+
 #undef LOCAL_TEST
 #include "vc.h"
 #include "dwtimer.h"
@@ -31,8 +31,6 @@ using namespace dwyco;
 extern vc My_UID;
 extern vc Online;
 extern vc Client_types;
-//extern int Refresh_users;
-
 //vc Pal_auth_state;
 extern vc I_grant;
 extern vc They_grant;
@@ -40,23 +38,14 @@ extern vc Client_ports;
 
 int is_invisible();
 
+namespace dwyco {
 // not perfect if packets are dropped, the
 // response we get may not match, but it isn't
 // fatal
 static vc Last_sent;
-
 static int Init;
+
 int Pal_logged_in;
-
-//void pal_login_failed(int);
-// note: there is a problem with the windows
-// implementation of UDP. it seams that even if
-// a socket is not connected, any error from that
-// socket closes the socket. so, once you get
-// an error, you have to completely reset the pal
-// client. this wasn't the case previously, and errors
-// could just be ignored, which was better.
-
 int Inhibit_pal;
 
 // note: this stuff is kinda bogus because
@@ -343,5 +332,5 @@ pal_reset()
     init_pal();
     pal_login();
 }
+}
 
-#endif

@@ -127,7 +127,6 @@ int pal_add(vc u);
 int pal_del(vc u, int norelogin = 0);
 int pal_user(vc u);
 int refile_attachment(vc filename, vc from_user);
-void pal_relogin();
 void save_msg_idxs();
 void save_qmsg_state();
 // note: this returns the total count of messages,

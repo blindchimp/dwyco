@@ -365,7 +365,7 @@ init_bg_msg_send(const char *logname)
         init_qmsg();
 
         // note: the background send does server-only sends, so this should never
-        // get used.
+        // get used. however, the syncing stuff might initiate some calls
         init_callq();
 
         init_sysattr();

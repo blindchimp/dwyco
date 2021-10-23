@@ -98,7 +98,6 @@ globs.cc \
 fl.cc \
 mmserv.cc \
 tl.cc \
-cdcpal.cc \
 cdcpal2.cc \
 dlli.cpp \
 mcc.cpp \

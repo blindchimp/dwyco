@@ -96,6 +96,7 @@ using namespace CryptoPP;
 #include "ezset.h"
 #include "grpmsg.h"
 #include "aconn.h"
+#include "cdcpal.h"
 
 using namespace dwyco;
 
@@ -136,7 +137,6 @@ static int64_t Logical_clock;
 static vc Mid_to_logical_clock;
 extern vc Current_chat_server_id;
 
-void pal_relogin();
 void new_pipeline();
 int save_msg(vc m, vc msg_id);
 

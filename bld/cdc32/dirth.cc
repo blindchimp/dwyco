@@ -47,6 +47,7 @@
 #include "ezset.h"
 #include "simple_property.h"
 #include "dhgsetup.h"
+#include "cdcpal.h"
 
 using namespace dwyco;
 
@@ -402,8 +403,6 @@ invalidate_group(vc, void *, vc, ValidPtr)
 void update_server_list(vc, void *, vc, ValidPtr);
 void ignoring_you_update(vc, void *, vc, ValidPtr);
 void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
-void async_pal(vc, void *, vc, ValidPtr);
-
 
 void
 init_dirth()
@@ -420,9 +419,7 @@ init_dirth()
     Waitq.append(QckDone(ignoring_you_update, 0, vcnil, ValidPtr(0), "iy", 0, 1));
     Waitq.append(QckDone(background_check_for_update_done, 0, vcnil, ValidPtr(0), "serv-check-update", 0, 1));
 
-#ifndef DWYCO_UDP_PAL
     Waitq.append(QckDone(async_pal, 0, vcnil, ValidPtr(0), "async-pal", 0, 1));
-#endif
     Waitq.append(QckDone(invalidate_profile, 0, vcnil, ValidPtr(0), "invalidate-profile", 0, 1));
     Waitq.append(QckDone(reset_backups, 0, vcnil, ValidPtr(0), "reset-backups", 0, 1));
     Waitq.append(QckDone(invalidate_group, 0, vcnil, ValidPtr(0), "invalidate-group", 0, 1));

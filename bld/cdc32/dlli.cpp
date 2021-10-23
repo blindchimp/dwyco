@@ -418,9 +418,7 @@ static int Disable_UPNP = 0;
 extern int Media_select;
 extern int Inhibit_database_thread;
 int Inhibit_auto_connect;
-extern int Inhibit_pal;
 vc Current_chat_server_id;
-extern int Pal_logged_in;
 int is_invisible();
 void set_invisible(int);
 

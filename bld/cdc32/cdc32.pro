@@ -212,7 +212,6 @@ globs.cc \
 fl.cc \
 mmserv.cc \
 tl.cc \
-cdcpal.cc \
 dlli.cpp \
 mcc.cpp \
 qmsg.cc \
