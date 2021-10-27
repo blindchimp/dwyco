@@ -1161,6 +1161,8 @@ sql_get_recent_users(int recent, int *total_out)
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)
             ret.append(res[i][0]);
+        if(total_out)
+            *total_out = res.num_elems();
         return ret;
     }
     catch(...)

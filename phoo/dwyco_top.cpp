@@ -926,6 +926,7 @@ setup_locations()
     }
 #ifdef ANDROID
     QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy("assets:/dsadwyco.pub", userdir + "dsadwyco.pub");
     QFile::copy("assets:/license.txt", userdir + "license.txt");
     QFile::copy("assets:/no_img.png", userdir + "no_img.png");
     QFile::copy("assets:/online.wav", userdir + "online.wav");
@@ -943,6 +944,7 @@ setup_locations()
     QFile::copy("assets:/zap.wav", userdir + "zap.wav");
 #else
     QFile::copy(":androidinst/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst/assets/dsadwyco.pub", userdir + "dsadwyco.pub");
     QFile::copy(":androidinst/assets/license.txt", userdir + "license.txt");
     QFile::remove(userdir + "no_img.png");
     QFile::copy(":androidinst/assets/no_img.png", userdir + "no_img.png");
