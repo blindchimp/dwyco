@@ -314,7 +314,7 @@ Page {
                }
 
                Text {
-                   text: display
+                   text: regular_profile(REVIEWED, REGULAR) ? display : censor_name(display)
                    elide: Text.ElideRight
                    clip: true
                    Layout.alignment: Qt.AlignLeft
@@ -488,7 +488,7 @@ Page {
            }
 
            Text {
-               text: display
+               text: regular_profile(REVIEWED, REGULAR) ? display : censor_name(display)
                elide: Text.ElideRight
                clip: true
                anchors.bottom: parent.bottom

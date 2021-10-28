@@ -165,6 +165,8 @@ Page {
                     Text {
                         id:top_toolbar_text
                         //width: dp(160)
+                        property string rawtext: ""
+                        text: to_uid.length == 0 ? "" : (core.uid_profile_regular(to_uid) ? rawtext : censor_name(rawtext))
                         clip: true
                         anchors.leftMargin: 2
                         fontSizeMode: Text.Fit
@@ -511,7 +513,8 @@ Page {
                 // of the "preview url" hasn't changed, but the contents have
                 cur_source = ""
                 cur_source = core.uid_to_profile_preview(uid)
-                top_toolbar_text.text = core.uid_to_name(uid)
+                top_toolbar_text.rawtext = ""
+                top_toolbar_text.rawtext = core.uid_to_name(uid)
             }
         }
         onSc_connect_terminated: {
@@ -554,8 +557,10 @@ Page {
             return
         textField1.text = ""
         core.reset_unviewed_msgs(to_uid)
+        cur_source = ""
         cur_source = core.uid_to_profile_preview(to_uid)
-        top_toolbar_text.text = core.uid_to_name(to_uid)
+        top_toolbar_text.rawtext = ""
+        top_toolbar_text.rawtext = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
         //call_buttons_model = core.get_button_model(to_uid)

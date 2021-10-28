@@ -11,6 +11,12 @@ import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
 
+// note: this page doesn't update its contents dynamically.
+// it loads a static page from the server and displays it.
+// to get a new page, you have to "refresh" the entire contents.
+// this is different from the "conversation" model, where
+// it listens for signals related to profile updates and
+// can update its contents piecemeal
 Page {
     id: simpdir_top
     anchors.fill: parent
@@ -74,7 +80,10 @@ Page {
                 anchors.fill: parent
                 CircularImage {
                     id: preview
-                    source: {has_preview ? core.uid_to_http_profile_preview(uid) : ""}
+                    source: {has_preview ?
+                                 (core.uid_profile_regular(uid) ?
+                                     core.uid_to_http_profile_preview(uid) :
+                                     "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                     fillMode: Image.PreserveAspectCrop
                     Layout.minimumWidth: picht()
                     Layout.maximumWidth: picht()
@@ -95,7 +104,7 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         id: nm
-                        text: handle
+                        text: core.uid_profile_regular(uid) ? handle : censor_name(handle)
                         clip: true
                         font.bold: true
                         elide: Text.ElideRight
@@ -104,7 +113,7 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        text: description
+                        text: core.uid_profile_regular(uid) ? description : censor_name(description)
                         clip: true
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
 
@@ -167,14 +176,17 @@ Page {
 
             CircularImage {
                 id: preview
-                source: {has_preview ? core.uid_to_http_profile_preview(uid) : ""}
+                source: {has_preview ?
+                             (core.uid_profile_regular(uid) ?
+                                 core.uid_to_http_profile_preview(uid) :
+                                 "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                 fillMode: Image.PreserveAspectCrop
                 height:parent.height
                 width: parent.height
                 visible: has_preview
             }
             Text {
-                text: handle
+                text: core.uid_profile_regular(uid) ? handle : censor_name(handle)
                 elide: Text.ElideRight
                 clip: true
                 anchors.bottom: parent.bottom
@@ -193,7 +205,7 @@ Page {
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
                     id: nm
-                    text: handle
+                    text: core.uid_profile_regular(uid) ? handle : censor_name(handle)
                     clip: true
                     font.bold: true
                     elide: Text.ElideRight
@@ -203,7 +215,7 @@ Page {
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: description
+                    text: core.uid_profile_regular(uid) ? description : censor_name(description)
                     clip: true
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                 }

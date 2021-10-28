@@ -23,8 +23,10 @@ Item {
     Component {
         id: chatlist_delegate
         Rectangle {
-            property int showit
-            showit: (REVIEWED && REGULAR) || show_unreviewed
+            property bool showit
+            showit: true // (REVIEWED && REGULAR) || show_unreviewed
+            property bool censor_it
+            censor_it: !regular_profile(REVIEWED, REGULAR)
             height: showit ? picht() : 0
             width: parent.width
             //opacity: {multiselect_mode && selected ? 0.5 : 1.0}
@@ -73,7 +75,7 @@ Item {
                     id: display_name
                     color: {active ? "red" : "black"}
                     font.italic: {active ? true : false}
-                    text: display
+                    text: censor_it ? censor_name(display) : display
                     //anchors.verticalCenter: parent.verticalCenter
 
                     elide: Text.ElideRight

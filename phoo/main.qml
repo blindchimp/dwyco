@@ -129,6 +129,15 @@ ApplicationWindow {
         return Math.round(Date.now() / 1000)
     }
 
+    function censor_name(namestr) {
+        var first = namestr.substr(0, 3)
+        return first.concat("***")
+
+    }
+    function regular_profile(reviewed, regular) {
+        return reviewed == 1 && regular == 1
+    }
+
     id: applicationWindow1
     visible: true
     // android will override this and go full screen, which is
@@ -796,7 +805,7 @@ ApplicationWindow {
             } else {
                 dwy_invis = true
             }
-
+            core.set_local_setting("show_unreviewed", "0")
             a = get_local_setting("show_unreviewed")
             if(a === "" || a === "0") {
                 show_unreviewed = false
