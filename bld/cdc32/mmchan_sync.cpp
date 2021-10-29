@@ -29,6 +29,7 @@
 #include "synccalls.h"
 
 using namespace dwyco;
+using namespace dwyco::qmsgsql;
 
 #ifdef LINUX
 #include "miscemu.h"

@@ -6367,14 +6367,14 @@ DWYCOEXPORT
 void
 dwyco_start_bulk_update()
 {
-    dwyco::sql_start_transaction();
+    dwyco::qmsgsql::sql_start_transaction();
 }
 
 DWYCOEXPORT
 void
 dwyco_end_bulk_update()
 {
-    dwyco::sql_commit_transaction();
+    dwyco::qmsgsql::sql_commit_transaction();
 }
 
 void

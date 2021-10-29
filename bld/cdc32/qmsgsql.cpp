@@ -625,8 +625,6 @@ import_remote_mi(vc remote_uid)
 
 }
 
-
-static
 void
 import_remote_iupdate(vc remote_uid, vc vals)
 {
