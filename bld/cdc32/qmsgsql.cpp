@@ -44,6 +44,7 @@
 #include "dirth.h"
 
 namespace dwyco {
+using namespace dwyco::qmsgsql;
 DwString Schema_version_hack;
 
 class QMsgSql : public SimpleSql
@@ -71,6 +72,7 @@ sql_bulk_query(const VCArglist *a)
     return sDb->query(a);
 }
 
+namespace qmsgsql {
 void
 sql_start_transaction()
 {
@@ -82,6 +84,13 @@ void
 sql_commit_transaction()
 {
     sDb->commit_transaction();
+}
+
+void
+sql_rollback_transaction()
+{
+    sDb->rollback_transaction();
+}
 }
 
 static
@@ -97,13 +106,6 @@ sql_sync_on()
 {
     sDb->sync_on();
 
-}
-
-
-void
-sql_rollback_transaction()
-{
-    sDb->rollback_transaction();
 }
 
 void
@@ -623,6 +625,8 @@ import_remote_mi(vc remote_uid)
 
 }
 
+
+static
 void
 import_remote_iupdate(vc remote_uid, vc vals)
 {

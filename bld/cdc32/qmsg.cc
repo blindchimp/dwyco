@@ -99,6 +99,7 @@ using namespace CryptoPP;
 #include "cdcpal.h"
 
 using namespace dwyco;
+using namespace dwyco::qmsgsql;
 
 vc MsgFolders;
 

@@ -14,6 +14,13 @@
 namespace dwyco {
 void init_qmsg_sql();
 void exit_qmsg_sql();
+
+namespace qmsgsql {
+void sql_start_transaction();
+void sql_commit_transaction();
+void sql_rollback_transaction();
+}
+
 void init_group_map();
 void remove_sync_state();
 
@@ -55,9 +62,6 @@ int sql_get_rescan();
 int sql_count_tag(vc tag);
 bool sql_exists_valid_tag(vc tag);
 int sql_count_valid_tag(vc tag);
-void sql_start_transaction();
-void sql_commit_transaction();
-void sql_rollback_transaction();
 int sql_is_mid_local(vc mid);
 void import_remote_mi(vc remote_uid);
 vc sql_find_who_has_mid(vc mid);

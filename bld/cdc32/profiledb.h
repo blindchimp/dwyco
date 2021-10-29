@@ -28,7 +28,7 @@ int pk_session_cached(vc uid);
 
 int load_profile(vc uid, vc& prf_out);
 int save_profile(vc uid, vc prf);
-void clean_profile_cache(int days_old, int max_left);
+//void clean_profile_cache(int days_old, int max_left);
 int prf_already_cached(vc uid);
 void prf_force_check(vc uid);
 void prf_invalidate(vc uid);

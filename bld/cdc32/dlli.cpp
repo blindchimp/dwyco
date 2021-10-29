@@ -4094,7 +4094,7 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
 
     try {
 
-    sql_start_transaction();
+    qmsgsql::sql_start_transaction();
     vc delmid = get_unfav_msgids(u);
 
     int n = delmid.num_elems();
@@ -4109,11 +4109,11 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
     // even if there are some files left in the filesystem
     // that is ok, since they will get reindexed next time the
     // index is loaded.
-    sql_commit_transaction();
+    qmsgsql::sql_commit_transaction();
     }
     catch(...)
     {
-        sql_rollback_transaction();
+        qmsgsql::sql_rollback_transaction();
         Rescan_msgs = 1;
         return 0;
     }

@@ -119,6 +119,9 @@ init_prfdb()
         return;
     sDb = new Sql;
     sDb->init();
+    // note: this is a cache and can be deleted if corrupted
+    // but we need to implement that somehow
+    sql_sync_off();
     Prf_session_cache = vc(VC_SET);
     Prf_memory_cache = vc(VC_TREE);
     Pk_session_cache = vc(VC_SET);
