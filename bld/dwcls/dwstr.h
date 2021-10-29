@@ -30,6 +30,7 @@ public:
     DwString& operator+=(const DwString&);
     DwString& operator+=(const char *);
     DwString& operator+=(char);
+    DwString operator+(const DwString& s) const;
     int operator==(const DwString& s) const {
         return DwVec<char>::operator==(s);
     }
@@ -53,6 +54,7 @@ public:
     int find_first_not_of(const char *) const;
     int find_last_of(const char *) const;
     int find_last_not_of(const char *) const;
+    DwString& tr(char from, char to);
     char at(int) const;
     void replace(int idx, int len, const DwString&);
     int compare(const DwString&) const;
@@ -173,6 +175,15 @@ DwString::operator+=(const DwString& s)
     memcpy(eos, &s[0], l);
     (*this)[count - 1] = 0;
     return *this;
+}
+
+inline
+DwString
+DwString::operator+(const DwString& s) const
+{
+    DwString res(*this);
+    res += s;
+    return res;
 }
 
 inline

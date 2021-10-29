@@ -83,7 +83,7 @@ ApplicationWindow {
 
     property color amber_light : "#FFECB3"
     property color amber_dark : "#FF6F00"
-    property color  amber_accent: "#FFAB00"
+    property color amber_accent: "#FFAB00"
     property int pct: 20
 
     property string the_man: "5a098f3df49015331d74"
@@ -94,7 +94,8 @@ ApplicationWindow {
 
     Material.theme: Material.Light
     Material.accent: accent
-    Material.primary: primary
+    Material.primary: Material.Lime
+
 
     property int profile_bootstrapped : 0
     property bool server_account_created: false
@@ -108,8 +109,10 @@ ApplicationWindow {
     property bool show_archived_users: true
 
     property bool is_mobile
-
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+
+    property bool is_camera_available
+    is_camera_available: QtMultimedia.availableCameras.length > 0
 
     function pin_expire() {
         var expire
@@ -208,7 +211,8 @@ ApplicationWindow {
     
     Drawer {
         id: drawer
-        interactive: {stack.depth === 1 && pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created}
+        //interactive: {stack.depth === 1 && pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created}
+        interactive: false
         width: Math.min(applicationWindow1.width, applicationWindow1.height) / 3 * 2
         height: applicationWindow1.height
 
@@ -267,43 +271,43 @@ ApplicationWindow {
 //        }
 
     
-    Menu {
-        id: moremenu
-        x: parent.width - width
-        transformOrigin: Menu.TopRight
-        MenuItem {
-            text: "Block user"
-            onTriggered: {
-                core.set_ignore(chatbox.to_uid, 1)
-                stack.pop()
-            }
-        }
-        MenuItem {
-            text: "Block and Delete user"
-            onTriggered: {
-                confirm_block_delete.visible = true
-            }
-            MessageDialog {
-                id: confirm_block_delete
-                title: "Block and delete?"
-                icon: StandardIcon.Question
-                text: "Delete ALL messages from user and BLOCK them?"
-                informativeText: "This removes FAVORITE and HIDDEN messages too."
-                standardButtons: StandardButton.Yes | StandardButton.No
-                onYes: {
-                    core.set_ignore(chatbox.to_uid, 1)
-                    core.delete_user(chatbox.to_uid)
-                    themsglist.reload_model()
-                    stack.pop()
+//    Menu {
+//        id: moremenu
+//        x: parent.width - width
+//        transformOrigin: Menu.TopRight
+//        MenuItem {
+//            text: "Block user"
+//            onTriggered: {
+//                core.set_ignore(chatbox.to_uid, 1)
+//                stack.pop()
+//            }
+//        }
+//        MenuItem {
+//            text: "Block and Delete user"
+//            onTriggered: {
+//                confirm_block_delete.visible = true
+//            }
+//            MessageDialog {
+//                id: confirm_block_delete
+//                title: "Block and delete?"
+//                icon: StandardIcon.Question
+//                text: "Delete ALL messages from user and BLOCK them?"
+//                informativeText: "This removes FAVORITE and HIDDEN messages too."
+//                standardButtons: StandardButton.Yes | StandardButton.No
+//                onYes: {
+//                    core.set_ignore(chatbox.to_uid, 1)
+//                    core.delete_user(chatbox.to_uid)
+//                    themsglist.reload_model()
+//                    stack.pop()
 
-                }
-                onNo: {
-                    stack.pop()
-                }
-            }
-        }
+//                }
+//                onNo: {
+//                    stack.pop()
+//                }
+//            }
+//        }
 
-    }
+//    }
 
 
     Item {
@@ -338,28 +342,28 @@ ApplicationWindow {
         }
     }
 
-    Loader {
-        id: cam
+//    Loader {
+//        id: cam
 
-        property string next_state
-        property string ok_text: "Send"
-        anchors.fill: parent
-        visible: false
-        active: visible
+//        property string next_state
+//        property string ok_text: "Send"
+//        anchors.fill: parent
+//        visible: false
+//        active: visible
 
-        onLoaded: {
-            item.state_on_close = cam.next_state
-            item.ok_pv_text = cam.ok_text
-        }
+//        onLoaded: {
+//            item.state_on_close = cam.next_state
+//            item.ok_pv_text = cam.ok_text
+//        }
 
-        onVisibleChanged: {
-            if(visible) {
-                source = "qrc:/DeclarativeCamera.qml"
-                //vid_cam_preview.active = false
-            }
-        }
+//        onVisibleChanged: {
+//            if(visible) {
+//                source = "qrc:/DeclarativeCamera.qml"
+//                //vid_cam_preview.active = false
+//            }
+//        }
 
-    }
+//    }
 
 //    Loader {
 //        id: settings_dialog
@@ -693,15 +697,51 @@ ApplicationWindow {
 //        visible: false
 //    }
 
+    SelfsStartup {
+        id: select_mode_screen
+        watch.onClicked: {
+            stack.push(vid_watcher)
+        }
+        capture.onClicked: {
+            stack.push(vid_cam_preview)
+        }
+
+        onVisibleChanged: {
+            if(visible) {
+                var a = core.get_local_setting("mode");
+                if(a == "watch") {
+                    watch.clicked()
+                } else if(a == "capture") {
+                    capture.clicked()
+                }
+            }
+        }
+    }
+
     Loader {
         id: vid_cam_preview
-        active: false
+        //active: visible
         visible: false
         onVisibleChanged: {
             if(visible) {
-                source = "qrc:/VidCamPreview.qml"
-                active = true
+                source = "qrc:/VidCap.qml"
+                //active = true
+            } else {
+                source = ""
+            }
+        }
+    }
 
+    Loader {
+        id: vid_watcher
+        //active: visible
+        visible: false
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/VidGrid.qml"
+                //active = true
+            } else {
+                source = ""
             }
         }
     }
@@ -755,11 +795,11 @@ ApplicationWindow {
             a = get_local_setting("first-run")
             if(a === "") {
                 //profile_dialog.visible = true
-                stack.push(vid_cam_preview)
+                stack.push(select_mode_screen)
                 stack.push(blank_page)
                 stack.push(profile_dialog)
             } else {
-                stack.push(vid_cam_preview)
+                stack.push(select_mode_screen)
                 profile_bootstrapped = 1
                 pwdialog.state = "start"
             }

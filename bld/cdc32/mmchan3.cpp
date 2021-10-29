@@ -21,6 +21,8 @@
 #include "ta.h"
 #include "qauth.h"
 
+using namespace dwyco;
+
 #ifdef _MSC_VER
 #define ftello ftell
 #define fseeko fseek

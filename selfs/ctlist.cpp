@@ -11,7 +11,7 @@
 #include "ctlist.h"
 #include "dlli.h"
 #include "getinfo.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
 SimpleContactModel::SimpleContactModel(QObject *parent) :
     QQmlObjectListModel<SimpleContact>(parent, "display")

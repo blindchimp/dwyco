@@ -1651,18 +1651,27 @@ doif(VCArglist *a)
 	// #1 is condition
 	// if #1 evals to non-nil, then #2 is evaled.
 	// otherwise, if #3 exists, it is evaled.
-
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+    c->cur_idx = 0;
+#endif
 	vc cond = ((*a)[0]).eval();
     CHECK_ANY_BO(vcnil);
-	vc ret = vcnil;
+    vc ret;
 	// note: no need to check_bo after these evals
     // since it is going to return immediately anyway.
 	if(!cond.is_nil())
 	{
+#ifdef VCDBG
+        c->cur_idx = 1;
+#endif
 		ret = ((*a)[1]).eval();
 	}
 	else if(a->num_elems() == 3)
 	{
+#ifdef VCDBG
+        c->cur_idx = 2;
+#endif
 		ret = ((*a)[2]).eval();
 	}
     return ret;
@@ -1675,8 +1684,14 @@ docand(VCArglist *a)
 	int n = a->num_elems();
 	if(n < 2)
 		USER_BOMB("conditional and must have at least 2 args", vcnil);
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+#endif
 	for(int i = 0; i < n; ++i)
 	{
+#ifdef VCDBG
+        c->cur_idx = i;
+#endif
 		vc ret = ((*a)[i]).eval();
 		CHECK_ANY_BO(vcnil);
 		if(ret.is_nil())
@@ -1692,8 +1707,14 @@ docor(VCArglist *a)
 	int n = a->num_elems();
 	if(n < 2)
 		USER_BOMB("conditional or must have at least 2 args", vcnil);
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+#endif
 	for(int i = 0; i < n; ++i)
 	{
+#ifdef VCDBG
+        c->cur_idx = i;
+#endif
 		vc ret = ((*a)[i]).eval();
 		CHECK_ANY_BO(vcnil);
 		if(!ret.is_nil())
@@ -1715,20 +1736,33 @@ doswitch(VCArglist *a)
 	int nargs = a->num_elems();
 	if(nargs <= 3 || nargs % 2 != 0)
 		USER_BOMB("must be an even number >= 4 arguments to 'switch'", vcnil);
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+    c->cur_idx = 0;
+#endif
 	vc val = (*a)[0].eval();
 	CHECK_ANY_BO(vcnil);
     int i;
 	for(i = 1; i < nargs - 1; i += 2)
 	{
+#ifdef VCDBG
+        c->cur_idx = i;
+#endif
 		vc val2 = (*a)[i].eval();
 		CHECK_ANY_BO(vcnil);
 		if(val == val2)
 		{
+#ifdef VCDBG
+        c->cur_idx = i + 1;
+#endif
 			vc ret = (*a)[i + 1].eval();
 			CHECK_ANY_BO(vcnil);
 			return ret;
 		}
 	}
+#ifdef VCDBG
+        c->cur_idx = i;
+#endif
 	vc val2 = (*a)[i].eval();
     CHECK_ANY_BO(vcnil);
 	return val2;
@@ -1754,13 +1788,22 @@ docond(VCArglist *a)
 		has_default = 1;
 		--nargs;
     }
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+#endif
 
 	for(int i = 0; i < nargs; i += 2)
 	{
-		vc c = (*a)[i].eval();
+#ifdef VCDBG
+        c->cur_idx = i;
+#endif
+        vc cnd = (*a)[i].eval();
 		CHECK_ANY_BO(vcnil);
-		if(!c.is_nil())
+        if(!cnd.is_nil())
 		{
+#ifdef VCDBG
+        c->cur_idx = i + 1;
+#endif
 			vc ret = (*a)[i + 1].eval();
 			CHECK_ANY_BO(vcnil);
             return ret;
@@ -1768,6 +1811,9 @@ docond(VCArglist *a)
 	}
 	if(has_default)
 	{
+#ifdef VCDBG
+        c->cur_idx = nargs;
+#endif
 		vc ret = (*a)[nargs].eval();
 		CHECK_ANY_BO(vcnil);
 		return ret;
@@ -1778,20 +1824,34 @@ docond(VCArglist *a)
 vc
 doloop(vc var, vc lo, vc hi, vc expr)
 {
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+    c->cur_idx = 0;
+#endif
+    var = var.eval();
+    CHECK_ANY_BO(vcnil);
+    if(var.type() != VC_STRING)
+        USER_BOMB("for loop variable must be string", vcnil);
+#ifdef VCDBG
+    c->cur_idx = 1;
+#endif
 	long l = lo.eval();
     CHECK_ANY_BO(vcnil);
+#ifdef VCDBG
+    c->cur_idx = 2;
+#endif
 	long h = hi.eval();
     CHECK_ANY_BO(vcnil);
-	var = var.eval();
-    CHECK_ANY_BO(vcnil);
-	if(var.type() != VC_STRING)
-		USER_BOMB("for loop variable must be string", vcnil);
+
     Vcmap->open_loop();
 
 	long i;
 	for(i = l; i <= h; ++i)
 	{
 		Vcmap->local_add(var, vc(i));
+#ifdef VCDBG
+    c->cur_idx = 3;
+#endif
 		expr.eval();
 		CHECK_ANY_BO_LOOP;
 	}
@@ -1804,15 +1864,25 @@ doloop(vc var, vc lo, vc hi, vc expr)
 vc
 dowhile(vc cond, vc expr)
 {
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+    c->cur_idx = 0;
+#endif
 	
 	vc a = cond.eval();
     CHECK_ANY_BO(vcnil);
 	Vcmap->open_loop();
 	while(!a.is_nil())
     {
+#ifdef VCDBG
+    c->cur_idx = 1;
+#endif
 		expr.eval();
 		if(Vcmap->unwind_in_progress())
 			break;
+#ifdef VCDBG
+    c->cur_idx = 0;
+#endif
 		a = cond.eval();
 		CHECK_ANY_BO_LOOP;
 	}
@@ -1824,12 +1894,22 @@ dowhile(vc cond, vc expr)
 vc
 doforeach(vc var, vc set, vc expr)
 {
+#ifdef VCDBG
+    auto c = VcDbgInfo.get();
+    c->cur_idx = 0;
+#endif
 	vc b = var.eval();
     CHECK_ANY_BO(vcnil);
 	if(b.type() != VC_STRING)
 		USER_BOMB("foreach variable must be string", vcnil);
+#ifdef VCDBG
+    c->cur_idx = 1;
+#endif
     vc a = set.eval();
     CHECK_ANY_BO(vcnil);
+#ifdef VCDBG
+    c->cur_idx = 2;
+#endif
 	a.foreach(b, expr);
 	return vcnil;
 }
@@ -2605,7 +2685,7 @@ vclh_fmt(vc item, vc fmt)
 			if(len >= new_len)
 			{
 				VcError << "warning: wierd snprintf return, output truncated.\n";
-				a[new_len] = 0;
+                a[new_len - 1] = 0;
 			}
 			vc ret(VC_BSTRING, a, new_len);
 			delete [] a;
@@ -2624,7 +2704,7 @@ vclh_fmt(vc item, vc fmt)
 			if(len >= new_len)
 			{
 				VcError << "warning: wierd snprintf return, output truncated.\n";
-				a[new_len] = 0;
+                a[new_len - 1] = 0;
 			}
 			vc ret(VC_BSTRING, a, new_len);
 			delete [] a;
@@ -2642,7 +2722,7 @@ vclh_fmt(vc item, vc fmt)
 			if(len >= new_len)
 			{
 				VcError << "warning: wierd snprintf return, output truncated.\n";
-				a[new_len] = 0;
+                a[new_len - 1] = 0;
 			}
 			vc ret(VC_BSTRING, a, new_len);
 			delete [] a;

@@ -60,7 +60,7 @@ public:
 };
 
 inline unsigned int
-Perfect_Hash::hash (register const char *str, register unsigned int len)
+Perfect_Hash::hash ( const char *str,  unsigned int len)
 {
     static unsigned char asso_values[] =
     {
@@ -91,7 +91,7 @@ Perfect_Hash::hash (register const char *str, register unsigned int len)
         122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
         122, 122, 122, 122, 122, 122, 122
     };
-    register int hval = len;
+     int hval = len;
 
     switch (hval)
     {
@@ -205,16 +205,16 @@ static struct fn_rules wordlist[] =
 };
 
 struct fn_rules *
-Perfect_Hash::in_word_set (register const char *str, register unsigned int len)
+Perfect_Hash::in_word_set ( const char *str,  unsigned int len)
 {
     if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
-        register int key = hash (str, len);
+         int key = hash (str, len);
 
         if (key <= MAX_HASH_VALUE && key >= 0)
             if (len == lengthtable[key])
             {
-                register const char *s = wordlist[key].name;
+                 const char *s = wordlist[key].name;
 
                 if (*str == *s && !memcmp (str + 1, s + 1, len - 1))
                     return &wordlist[key];

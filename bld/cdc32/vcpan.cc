@@ -26,6 +26,7 @@
 #include "dwrtlog.h"
 #include "dlli.h"
 #include "fnmod.h"
+using namespace dwyco;
 
 
 // note: all "soft crashes" stopped being reported when
@@ -37,6 +38,7 @@
 extern DwycoEmergencyCallback dwyco_emergency_callback;
 
 
+[[noreturn]]
 void
 oopanic(const char *s)
 {

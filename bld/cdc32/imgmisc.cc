@@ -18,7 +18,7 @@
 #include "imgmisc.h"
 #include "statfun.h"
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 static gray **
 allocarray(int c, int r, gray **dummy)

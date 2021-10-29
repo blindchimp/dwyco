@@ -1151,6 +1151,9 @@ void DWYCOEXPORT dwyco_resume();
 
 int DWYCOEXPORT dwyco_service_channels(int *spin);
 void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
+// use this to filter out local broadcasts and other online reporting
+// for dwyco apps using the same back end.
+void DWYCOEXPORT dwyco_set_app_id(const char *str, int len_str);
 //void DWYCOEXPORT dwyco_set_login_password(const char *pw, int len_pw);
 void DWYCOEXPORT dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 void DWYCOEXPORT dwyco_database_login();
@@ -1160,6 +1163,9 @@ int DWYCOEXPORT dwyco_database_auth_remote();
 void DWYCOEXPORT dwyco_inhibit_database(int i);
 void DWYCOEXPORT dwyco_inhibit_pal(int i);
 void DWYCOEXPORT dwyco_inhibit_sac(int i);
+void DWYCOEXPORT dwyco_inhibit_incoming_sac(int i);
+void DWYCOEXPORT dwyco_inhibit_outgoing_sac(int i);
+void DWYCOEXPORT dwyco_inhibit_all_incoming(int i);
 //void DWYCOEXPORT dwyco_inhibit_chat(int i);
 
 int DWYCOEXPORT dwyco_get_audio_hw(int *has_audio_input, int *has_audio_output, int *audio_hw_full_duplex);

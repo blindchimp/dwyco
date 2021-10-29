@@ -32,6 +32,27 @@ DwycoImageProvider::add_image(const QString &id, QImage qi)
     Dwyco_images.insert(id, qi);
 }
 
+void
+DwycoImageProvider::clear_all()
+{
+    QMutexLocker lock(&mutex);
+    Dwyco_images.clear();
+}
+
+void
+DwycoImageProvider::clear_ui_id(int ui_id)
+{
+    QMutexLocker lock(&mutex);
+    auto ks = Dwyco_images.keys();
+    QString us = QString::number(ui_id);
+    for(int i = 0; i < ks.count(); ++i)
+    {
+        if(ks.at(i).startsWith(us))
+            Dwyco_images.remove(ks.at(i));
+    }
+
+}
+
 QImage
 DwycoImageProvider::requestImage(const QString & id, QSize * size, const QSize & requestedSize)
 {

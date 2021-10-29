@@ -2,6 +2,8 @@ TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
 DEFINES += NO_BUILDTIME
+# i'll shit myself if this works on all platforms
+DEFINES += BUILDTIME=\"\\\"1.97\\\"\"
 
 QT += core qml multimedia network
 QT += quickcontrols2
@@ -23,7 +25,7 @@ macx-clang {
 QMAKE_INFO_PLIST=Info.plist.mac
 }
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/dwcls
 
 DEFINES += DWYCO_RELEASE
 ICON=rando.icns

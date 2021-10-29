@@ -63,7 +63,7 @@
 #ifdef _Windows
 #include <time.h>
 #endif
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 #include "dwyco_top.h"
 #include "callsm_objs.h"
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
@@ -1064,6 +1064,12 @@ dwyco_video_make_image(int ui_id, void *vimg, int cols, int rows, int depth)
     TheDwycoCore-> emit video_display(ui_id, frame_number, QString("image://dwyco_video_frame/") + img_path);
 }
 
+void
+DwycoCore::call_cleanup(QString uid, int ui_id)
+{
+    Dwyco_video_provider->clear_ui_id(ui_id);
+}
+
 static
 void
 DWYCOCALLCONV
@@ -1206,7 +1212,7 @@ load_cam_model()
 
     CamListModel->append("(Select this to disable video)");
     CamListModel->append("(Files)");
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if /*defined(DWYCO_FORCE_DESKTOP_VGQT) || */ defined(ANDROID) || defined(DWYCO_IOS)
     CamListModel->append("Camera");
     HasCamHardware = 1;
 #else
@@ -1368,6 +1374,13 @@ DwycoCore::refresh_directory()
     update_directory_fetching(true);
 }
 
+void
+DwycoCore::inhibit_all_incoming_calls(int i)
+{
+    dwyco_inhibit_all_incoming(i);
+    simple_call::Reject_incoming_calls = i;
+}
+
 
 void
 DwycoCore::init()
@@ -1452,19 +1465,28 @@ DwycoCore::init()
     );
 
 #endif
-
+// NOTE: we eliminate the device control items for android and ios
+    // since that is being handled "on the side" by the QML Camera object
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     dwyco_set_external_video_capture_callbacks(
-        vgqt_new,
-        vgqt_del,
-        vgqt_init,
-        vgqt_has_data,
-        vgqt_need,
-        vgqt_pass,
-        vgqt_stop,
-        vgqt_get_data,
-        vgqt_free_data,
-        0, 0, 0, 0, 0, 0, 0, 0
+                vgqt_new,
+                vgqt_del,
+                vgqt_init,
+                vgqt_has_data,
+                vgqt_need,
+                vgqt_pass,
+                vgqt_stop,
+                vgqt_get_data,
+                vgqt_free_data,
+#if defined(ANDROID) || defined(DWYCO_IOS)
+                0,0,0,0,
+#else
+                vgqt_get_video_devices,
+                vgqt_free_video_devices,
+                vgqt_set_video_device,
+                vgqt_stop_video_device,
+#endif
+                0, 0, 0, 0
 
     );
 
@@ -1491,13 +1513,16 @@ DwycoCore::init()
 
     //settings_load();
     //dwyco_create_bootstrap_profile("qml", 3, "qml test", 8, "none", 4, "fcktola1@gmail.com", 18);
-    int inv = 0;
-    QString a = get_local_setting("invis");
-    if(a == "" || a == "false")
-        inv = 0;
-    else
-        inv = 1;
-    dwyco_set_initial_invis(inv);
+//    int inv = 0;
+//    QString a = get_local_setting("invis");
+//    if(a == "" || a == "false")
+//        inv = 0;
+//    else
+//        inv = 1;
+    // for self-stream, we start off invisible.
+    // when we become a watcher, we stay invisible
+    // when we become a capturer, we go visible
+    dwyco_set_initial_invis(1);
     dwyco_inhibit_pal(0);
 #ifdef ANDROID
     // this is a kluge for android
@@ -1520,7 +1545,8 @@ DwycoCore::init()
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "1");
-    dwyco_set_setting("net/listen", "1");
+    dwyco_set_setting("net/listen", "0");
+    dwyco_inhibit_all_incoming(1);
 
     new profpv;
     // the order of these is important, you have to clear the cache
@@ -1549,11 +1575,11 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString,QString)), mlm, SLOT(msg_recv_status(int,QString,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
-    connect(this, SIGNAL(msg_recv_progress(QString, QString, QString, int)), mlm, SLOT(msg_recv_progress(QString, QString, QString, int)));
+    connect(this, SIGNAL(msg_recv_progress(QString,QString,QString,int)), mlm, SLOT(msg_recv_progress(QString,QString,QString,int)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
-
+    connect(this, SIGNAL(sc_call_death_cleanup(QString,int)), this, SLOT(call_cleanup(QString,int)));
     if(dwyco_get_create_new_account())
         return;
     dwyco_set_local_auth(1);
@@ -1591,8 +1617,8 @@ DwycoCore::init()
 //    );
     dwyco_set_setting("video_format/swap_rb", "0");
     dwyco_set_setting("rate/max_fps", "20");
-    dwyco_set_setting("rate/kbits_per_sec_out", "128");
-    dwyco_set_setting("rate/kbits_per_sec_in", "128");
+    dwyco_set_setting("rate/kbits_per_sec_out", "256");
+    dwyco_set_setting("rate/kbits_per_sec_in", "1024");
     dwyco_set_moron_dork_mode(0);
 
     dwyco_set_external_video(1);
@@ -2457,225 +2483,6 @@ DwycoCore::retry_auto_fetch(QString mid)
     return ::retry_auto_fetch(bmid);
 }
 
-static QMap<QString, QByteArray> Groups;
-
-static
-void
-group_create(QString name)
-{
-
-}
-
-static
-QByteArray
-group_add(QString name, QByteArray huid)
-{
-    Groups.insertMulti(name, huid);
-    QList<QByteArray> members = Groups.values(name);
-
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-add");
-    cmd.append(name);
-    for(int i = 0; i < members.count(); ++i)
-        cmd.append(members[i]);
-    out << cmd;
-    return payload;
-}
-
-static
-QByteArray
-group_msg(QString name)
-{
-    QList<QByteArray> members = Groups.values(name);
-
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-msg");
-    cmd.append(name);
-    out << cmd;
-    return payload;
-}
-
-static
-void
-group_delete(QString name)
-{
-    Groups.remove(name);
-}
-
-static
-QByteArray
-group_leave(QString name)
-{
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-leave");
-    cmd.append(name);
-    out << cmd;
-    return payload;
-}
-
-static
-void
-send_group_add(QString name, QByteArray new_mem_huid)
-{
-    QByteArray cmd = group_add(name, new_mem_huid);
-    QList<QByteArray> send_list = Groups.values(name);
-    for(int i = 0; i < send_list.count(); ++i)
-    {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(), "", 0, 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    }
-}
-
-static
-void
-send_group_leave(QString name)
-{
-    QByteArray cmd = group_leave(name);
-    QList<QByteArray> send_list = Groups.values(name);
-    for(int i = 0; i < send_list.count(); ++i)
-    {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(), "", 0, 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    }
-}
-
-static
-void
-send_group_msg(QString name, QByteArray msg)
-{
-    QByteArray cmd = group_msg(name);
-    QList<QByteArray> send_list = Groups.values(name);
-    for(int i = 0; i < send_list.count(); ++i)
-    {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        // note: if my uid is in the group list, i'll get a copy of the message
-        // saved as a sent message to myself. this is ok, but it needs to be tagged
-        // properly so it can be re-incorporated into the model. i think if the msg
-        // is text only, this should work as it will be delivered to the inbox
-        // as usual.
-        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
-                            msg.constData(), msg.length(), 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    }
-}
-
-
-static
-void
-process_special_msg(QByteArray mid)
-{
-    DWYCO_UNFETCHED_MSG_LIST uml;
-    if(!dwyco_get_unfetched_message(&uml, mid.constData()))
-        return;
-    simple_scoped quml(uml);
-
-    const char *str;
-    int len;
-
-    if(!dwyco_get_user_payload(quml, &str, &len))
-        return;
-
-    QByteArray b(str, len);
-    QList<QVariant> cmd;
-    QDataStream in(b);
-    in >> cmd;
-    QByteArray what = cmd[0].toByteArray();
-    QString name = cmd[1].toString();
-    if(what == QByteArray("group-add"))
-    {
-        for(int i = 2; i < cmd.count(); ++i)
-        {
-            Groups.insertMulti(name, cmd[i].toByteArray());
-        }
-        return;
-    }
-    else if(what == QByteArray("group-leave"))
-    {
-        QMutableMapIterator<QString, QByteArray> i(Groups);
-          while (i.findNext(DwycoCore::My_uid.toHex()))
-          {
-              if (i.key() == name)
-                  i.remove();
-          }
-    }
-    else if(what == QByteArray("group-msg"))
-    {
-        // this is where we could re-write the "from" field on the
-        // message to be SHA(group_name). then when we saved the
-        // message, it would get refiled into a normal folder and it
-        // could be manipulated as if it was from a single user.
-        // the actual user it came from could be stored... hmmm
-        // the profile would have to be auto-created...
-        // sounds like a lot of work
-        //
-        // alternately, we save the message as usual, and tag it
-        // with the group name.
-
-        dwyco_save_message(mid.constData());
-        dwyco_set_msg_tag(mid.constData(), name.toLatin1().constData());
-
-        // emit a signal for a new group message
-
-    }
-
-}
-
-static
-void
-scan_special_msgs()
-{
-    return;
-    DWYCO_LIST uml;
-
-    if(dwyco_get_unfetched_messages(&uml, 0, 0))
-    {
-        simple_scoped quml(uml);
-        int n = quml.rows();
-
-        if(n == 0)
-        {
-            return;
-        }
-
-        for(int i = 0; i < n; ++i)
-        {
-            if(quml.is_nil(i, DWYCO_QMS_SPECIAL_TYPE))
-                continue;
-            if(quml.get<QByteArray>(i, DWYCO_QMS_SPECIAL_TYPE) == QByteArray("user"))
-            {
-                QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
-                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
-                {
-                    auto_fetch(mid);
-                }
-                else
-                {
-                    process_special_msg(mid);
-                    dwyco_delete_unfetched_message(mid.constData());
-                }
-            }
-        }
-    }
-
-}
-
 
 int
 DwycoCore::service_channels()
@@ -2704,7 +2511,6 @@ DwycoCore::service_channels()
             }
         }
 
-        scan_special_msgs();
         dwyco_get_unfetched_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;

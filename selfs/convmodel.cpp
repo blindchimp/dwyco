@@ -11,7 +11,7 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "ignoremodel.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
 void hack_unread_count();
 void reload_conv_list();

@@ -21,6 +21,8 @@ DwString prepend_pfx(const char *subdir, const char *fn);
 DwString dwbasename(const char *name);
 int is_attachment(vc fn);
 int is_attachment(const DwString& fn);
+int is_msg_fn(vc fn);
+int is_msg_fn(const DwString& fn);
 DwString fn_extension(const DwString& fn);
 DwString fn_extension(vc fn);
 DwString fn_base_wo_extension(const DwString& fn);
@@ -38,7 +40,6 @@ get_fn_prefixes(
     DwString& tmp_pfx
 );
 }
-using namespace dwyco;
 
 #endif
 

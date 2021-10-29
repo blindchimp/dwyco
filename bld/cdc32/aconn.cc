@@ -33,12 +33,22 @@
 // settings are tweaked and set bindings somewhere so we can do the
 // machinations needed when network state changes
 // XXX NOTE, may want to turn broadcasting off if user is "invisible"
+//
+// NOTE: separate out broadcasting and discovery
+// discovery should probably go on whether we are accepting new connections
+// or not (this is needed for apps that want to connect and stream from a
+// "server", for example)
+//
+// broadcasting our whereabouts on the local net is tied to whether we are
+// accepting new connections. if you turn off listening, it turns off the
+// broadcasting as well.
 
 extern vc LocalIP;
 extern int Media_select;
 
 namespace dwyco {
 #define DESERIALIZE_MAX_STRING_LEN (50)
+vc App_ID;
 
 static Listener *Listen_sock;
 static Listener *Static_secondary_sock;
@@ -85,13 +95,6 @@ net_section_changed(vc name, vc val)
     }
 }
 
-void
-init_aconn()
-{
-    Broadcast_discoveries = vc(VC_TREE);
-    bind_sql_section("net/", net_section_changed);
-
-}
 // these just pause the connection accept
 // process, in order to serialize connection
 // setup. see below to really turn off the socket
@@ -146,7 +149,7 @@ recvvc(vc sock, vc& v, vc& peer)
     vcxstream istrm(sock, (char *)packet_buf, plen, vcxstream::FIXED);
     istrm.max_depth = 2;
     istrm.max_element_len = DESERIALIZE_MAX_STRING_LEN;
-    istrm.max_elements = 6;
+    istrm.max_elements = BD_LIMIT;
     if(!istrm.open(vcxstream::READABLE, vcxstream::ATOMIC))
         return 0;
     if((len = v.xfer_in(istrm)) < 0)
@@ -190,7 +193,6 @@ void
 stop_broadcaster()
 {
     Local_broadcast = vcnil;
-    Local_discover = vcnil;
     Broadcast_timer.stop();
 }
 
@@ -198,22 +200,10 @@ static
 int
 start_broadcaster()
 {
-    if(Broadcast_discoveries.is_nil())
-        Broadcast_discoveries = vc(VC_TREE);
     Local_broadcast = vc(VC_SOCKET_DGRAM);
     Local_broadcast.set_err_callback(net_socket_error);
-    Local_discover = vc(VC_SOCKET_DGRAM);
-    Local_discover.set_err_callback(net_socket_error);
 
     DwString a;
-    a = "any:";
-    a += BROADCAST_PORT;
-    // this didn't appear to work with just "ip:port" for broadcasts
-    if(Local_discover.socket_init(a.c_str(), 0, 0).is_nil())
-    {
-        stop_broadcaster();
-        return 0;
-    }
     a = "any:any";
     if(Local_broadcast.socket_init(a.c_str(), 0, 0).is_nil())
     {
@@ -221,11 +211,6 @@ start_broadcaster()
         return 0;
     }
     if(Local_broadcast.socket_set_option(VC_SET_BROADCAST, 1).is_nil())
-    {
-        stop_broadcaster();
-        return 0;
-    }
-    if(Local_discover.socket_set_option(VC_SET_BROADCAST, 1).is_nil())
     {
         stop_broadcaster();
         return 0;
@@ -238,6 +223,63 @@ start_broadcaster()
     Broadcast_timer.set_autoreload(0);
     Broadcast_timer.start();
     return 1;
+}
+
+static
+void
+stop_discover()
+{
+    Local_discover = vcnil;
+    auto it = DwTreeKazIter<time_t, vc>(&Freshness);
+    DwVec<vc> kill;
+    for(; !it.eol(); it.forward())
+    {
+        auto a = it.get();
+        kill.append(a.get_key());
+    }
+    for(int i = 0; i < kill.num_elems(); ++i)
+    {
+        Local_uid_discovered.emit(kill[i], 0);
+        Freshness.del(kill[i]);
+        Broadcast_discoveries.del(kill[i]);
+        se_emit(SE_STATUS_CHANGE, kill[i]);
+    }
+}
+
+static
+int
+start_discover()
+{
+    if(Broadcast_discoveries.is_nil())
+        Broadcast_discoveries = vc(VC_TREE);
+
+    Local_discover = vc(VC_SOCKET_DGRAM);
+    Local_discover.set_err_callback(net_socket_error);
+
+    DwString a;
+    a = "any:";
+    a += BROADCAST_PORT;
+    // this didn't appear to work with just "ip:port" for broadcasts
+    if(Local_discover.socket_init(a.c_str(), 0, 0).is_nil())
+    {
+        stop_discover();
+        return 0;
+    }
+    if(Local_discover.socket_set_option(VC_SET_BROADCAST, 1).is_nil())
+    {
+        stop_discover();
+        return 0;
+    }
+    return 1;
+}
+
+void
+init_aconn()
+{
+    Broadcast_discoveries = vc(VC_TREE);
+    bind_sql_section("net/", net_section_changed);
+    start_discover();
+
 }
 
 static
@@ -257,38 +299,11 @@ static
 void
 broadcast_tick()
 {
-    if((Local_broadcast.is_nil() || Local_discover.is_nil()))
+    if(Local_broadcast.is_nil())
     {
-        //start_broadcaster();
         return;
     }
-    if(has_data(Local_discover, 0, 0))
-    {
-        vc data;
-        vc peer;
-        if(recvvc(Local_discover, data, peer) > 0)
-        {
-            if(data.type() == VC_VECTOR &&
-                    data[0].type() == VC_STRING &&
-                    data[1].type() == VC_VECTOR)
-            {
-                vc uid = data[0];
-                if(uid != My_UID)
-                {
-                    GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
-                    GRTLOGVC(data);
-                    data[1][BD_IP] = strip_port(peer);
-                    if(!Broadcast_discoveries.contains(uid))
-                    {
-                        Broadcast_discoveries.add_kv(uid, data[1]);
-                        Local_uid_discovered.emit(uid, 1);
-                        se_emit(SE_STATUS_CHANGE, uid);
-                    }
-                    Freshness.replace(uid, time(0));
-                }
-            }
-        }
-    }
+
     if(!Broadcast_timer.is_expired())
         return;
     Broadcast_timer.ack_expire();
@@ -308,8 +323,49 @@ broadcast_tick()
         nicename = vc(VC_BSTRING, d.c_str(), d.length());
     }
     v[BD_NICE_NAME] = nicename;
+    v[BD_APP_ID] = App_ID;
     announce[1] = v;
     sendvc(Local_broadcast, announce);
+
+    Broadcast_timer.start();
+}
+
+static
+void
+discover_tick()
+{
+    if(Local_discover.is_nil())
+    {
+        return;
+    }
+    if(has_data(Local_discover, 0, 0))
+    {
+        vc data;
+        vc peer;
+        if(recvvc(Local_discover, data, peer) > 0)
+        {
+            if(data.type() == VC_VECTOR &&
+                    data[0].type() == VC_STRING &&
+                    data[1].type() == VC_VECTOR)
+            {
+                vc uid = data[0];
+                if(uid != My_UID || (!App_ID.is_nil() && App_ID == data[1][BD_APP_ID]))
+                {
+                    GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
+                    GRTLOGVC(data);
+                    data[1][BD_IP] = strip_port(peer);
+                    if(!Broadcast_discoveries.contains(uid))
+                    {
+                        Broadcast_discoveries.add_kv(uid, data[1]);
+                        Local_uid_discovered.emit(uid, 1);
+                        se_emit(SE_STATUS_CHANGE, uid);
+                    }
+                    Freshness.replace(uid, time(0));
+                }
+            }
+        }
+    }
+
     auto it = DwTreeKazIter<time_t, vc>(&Freshness);
     DwVec<vc> kill;
     for(; !it.eol(); it.forward())
@@ -326,8 +382,6 @@ broadcast_tick()
         Broadcast_discoveries.del(kill[i]);
         se_emit(SE_STATUS_CHANGE, kill[i]);
     }
-
-    Broadcast_timer.start();
 }
 
 
@@ -335,6 +389,8 @@ broadcast_tick()
 void
 poll_listener()
 {
+    broadcast_tick();
+    discover_tick();
     if(Inhibit_accept)
         return;
     if(Listen_sock && Listen_sock->accept_ready())
@@ -403,9 +459,6 @@ poll_listener()
         s->start();
         TRACK_ADD(DC_accept_direct_secondary, 1);
     }
-
-    broadcast_tick();
-
 }
 
 void

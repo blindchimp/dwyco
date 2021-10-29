@@ -63,7 +63,7 @@
 #ifdef _Windows
 #include <time.h>
 #endif
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 #include "dwyco_top.h"
 #include "callsm_objs.h"
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
@@ -266,7 +266,7 @@ copy_and_tweak_jpg(const QString& fn, QByteArray& dest_out)
     return 0;
 }
 
-void
+[[noreturn]] void
 cdcxpanic(const char *)
 {
     ::abort();
@@ -2452,225 +2452,6 @@ DwycoCore::retry_auto_fetch(QString mid)
     return ::retry_auto_fetch(bmid);
 }
 
-static QMap<QString, QByteArray> Groups;
-
-static
-void
-group_create(QString name)
-{
-
-}
-
-static
-QByteArray
-group_add(QString name, QByteArray huid)
-{
-    Groups.insertMulti(name, huid);
-    QList<QByteArray> members = Groups.values(name);
-
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-add");
-    cmd.append(name);
-    for(int i = 0; i < members.count(); ++i)
-        cmd.append(members[i]);
-    out << cmd;
-    return payload;
-}
-
-static
-QByteArray
-group_msg(QString name)
-{
-    QList<QByteArray> members = Groups.values(name);
-
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-msg");
-    cmd.append(name);
-    out << cmd;
-    return payload;
-}
-
-static
-void
-group_delete(QString name)
-{
-    Groups.remove(name);
-}
-
-static
-QByteArray
-group_leave(QString name)
-{
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-leave");
-    cmd.append(name);
-    out << cmd;
-    return payload;
-}
-
-static
-void
-send_group_add(QString name, QByteArray new_mem_huid)
-{
-    QByteArray cmd = group_add(name, new_mem_huid);
-    QList<QByteArray> send_list = Groups.values(name);
-    for(int i = 0; i < send_list.count(); ++i)
-    {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(), "", 0, 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    }
-}
-
-static
-void
-send_group_leave(QString name)
-{
-    QByteArray cmd = group_leave(name);
-    QList<QByteArray> send_list = Groups.values(name);
-    for(int i = 0; i < send_list.count(); ++i)
-    {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(), "", 0, 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    }
-}
-
-static
-void
-send_group_msg(QString name, QByteArray msg)
-{
-    QByteArray cmd = group_msg(name);
-    QList<QByteArray> send_list = Groups.values(name);
-    for(int i = 0; i < send_list.count(); ++i)
-    {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        // note: if my uid is in the group list, i'll get a copy of the message
-        // saved as a sent message to myself. this is ok, but it needs to be tagged
-        // properly so it can be re-incorporated into the model. i think if the msg
-        // is text only, this should work as it will be delivered to the inbox
-        // as usual.
-        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
-                            msg.constData(), msg.length(), 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    }
-}
-
-
-static
-void
-process_special_msg(QByteArray mid)
-{
-    DWYCO_UNFETCHED_MSG_LIST uml;
-    if(!dwyco_get_unfetched_message(&uml, mid.constData()))
-        return;
-    simple_scoped quml(uml);
-
-    const char *str;
-    int len;
-
-    if(!dwyco_get_user_payload(quml, &str, &len))
-        return;
-
-    QByteArray b(str, len);
-    QList<QVariant> cmd;
-    QDataStream in(b);
-    in >> cmd;
-    QByteArray what = cmd[0].toByteArray();
-    QString name = cmd[1].toString();
-    if(what == QByteArray("group-add"))
-    {
-        for(int i = 2; i < cmd.count(); ++i)
-        {
-            Groups.insertMulti(name, cmd[i].toByteArray());
-        }
-        return;
-    }
-    else if(what == QByteArray("group-leave"))
-    {
-        QMutableMapIterator<QString, QByteArray> i(Groups);
-          while (i.findNext(DwycoCore::My_uid.toHex()))
-          {
-              if (i.key() == name)
-                  i.remove();
-          }
-    }
-    else if(what == QByteArray("group-msg"))
-    {
-        // this is where we could re-write the "from" field on the
-        // message to be SHA(group_name). then when we saved the
-        // message, it would get refiled into a normal folder and it
-        // could be manipulated as if it was from a single user.
-        // the actual user it came from could be stored... hmmm
-        // the profile would have to be auto-created...
-        // sounds like a lot of work
-        //
-        // alternately, we save the message as usual, and tag it
-        // with the group name.
-
-        dwyco_save_message(mid.constData());
-        dwyco_set_msg_tag(mid.constData(), name.toLatin1().constData());
-
-        // emit a signal for a new group message
-
-    }
-
-}
-
-static
-void
-scan_special_msgs()
-{
-    return;
-    DWYCO_LIST uml;
-
-    if(dwyco_get_unfetched_messages(&uml, 0, 0))
-    {
-        simple_scoped quml(uml);
-        int n = quml.rows();
-
-        if(n == 0)
-        {
-            return;
-        }
-
-        for(int i = 0; i < n; ++i)
-        {
-            if(quml.is_nil(i, DWYCO_QMS_SPECIAL_TYPE))
-                continue;
-            if(quml.get<QByteArray>(i, DWYCO_QMS_SPECIAL_TYPE) == QByteArray("user"))
-            {
-                QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
-                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
-                {
-                    auto_fetch(mid);
-                }
-                else
-                {
-                    process_special_msg(mid);
-                    dwyco_delete_unfetched_message(mid.constData());
-                }
-            }
-        }
-    }
-
-}
-
 
 int
 DwycoCore::service_channels()
@@ -2703,7 +2484,6 @@ DwycoCore::service_channels()
             }
         }
 
-        scan_special_msgs();
         dwyco_get_unfetched_messages(&uml, 0, 0);
         // just save all the direct messages, since it is relatively cheap
         QSet<QByteArray> uids_out;

@@ -161,8 +161,10 @@ void dirth_send_check_for_update(vc id, QckDone d);
 //void dirth_send_get_profile(vc id, vc uid, vc cache_check, QckDone d);
 void dirth_send_get_info(vc id, vc uid, vc cache_check, QckDone d);
 void dirth_send_set_info(vc id, vc info, QckDone d);
+#if 0
 void dirth_send_get_pal_auth_state(vc id, vc who, QckDone d);
 void dirth_send_set_pal_auth_state(vc id, vc state, QckDone d);
+#endif
 void dirth_send_server_assist(vc id, vc to_uid, QckDone d);
 void dirth_send_create_user_lobby(vc id, vc dispname, vc category, vc sub_god_uid, vc pw, vc user_limit, QckDone d);
 void dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d);

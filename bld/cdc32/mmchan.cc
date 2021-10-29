@@ -355,7 +355,7 @@ MMChannel::exit_mmchan()
 
 restart:;
 
-    int n = MMChannels.num_elems();
+    auto n = MMChannels.num_elems();
     for(int i = 0; i < n; ++i)
     {
         MMChannel *m = MMChannels[i];
@@ -4619,7 +4619,7 @@ resume:
             if(mc->process_incoming_audio() == SSERR)
                 break;
         }
-        if(t && !mc->force_unreliable_video && mc->video_state == MEDIA_SESSION_UP && t->has_data(mc->video_chan))
+        while(t && !mc->force_unreliable_video && mc->video_state == MEDIA_SESSION_UP && t->has_data(mc->video_chan))
         {
             mc->process_incoming_reliable_video();
         }

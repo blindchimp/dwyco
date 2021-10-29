@@ -13,6 +13,8 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
+# i'll shit myself if this works on all platforms
+DEFINES += BUILDTIME=\"\\\"2.70\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -35,7 +37,7 @@ DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
 macx-clang: QMAKE_INFO_PLIST=Info.plist.mac
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
 
 #QMAKE_MAC_SDK = macosx10.9
 DEFINES += DWYCO_RELEASE

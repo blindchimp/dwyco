@@ -21,7 +21,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
-INCLUDEPATH += ../miscsrc ../pgm ../pbm
+INCLUDEPATH += ../miscsrc ../ppm ../pgm ../pbm ../cdc32
 
 SOURCES += \
     audi_qt.cpp \

@@ -32,7 +32,7 @@ extern vc Online;
 extern vc Client_types;
 //extern int Refresh_users;
 
-vc Pal_auth_state;
+//vc Pal_auth_state;
 extern vc I_grant;
 extern vc They_grant;
 extern vc Pals;
