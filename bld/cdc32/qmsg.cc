@@ -95,6 +95,7 @@ using namespace CryptoPP;
 #include "aconn.h"
 
 using namespace dwyco;
+using namespace dwyco::qmsgsql;
 
 vc MsgFolders;
 
@@ -438,7 +439,7 @@ init_qmsg()
     Chat_ips = vc(VC_TREE);
     Chat_ports = vc(VC_TREE);
 
-    init_qmsg_sql();
+    qmsgsql::init_qmsg_sql();
     long tmplc = sql_get_max_logical_clock();
     if(tmplc > Logical_clock)
         Logical_clock = tmplc + 1;
@@ -457,7 +458,7 @@ save_qmsg_state()
 void
 exit_qmsg()
 {
-    exit_qmsg_sql();
+    qmsgsql::exit_qmsg_sql();
     Cur_ignore = vcnil;
     Session_ignore = vcnil;
     Mutual_ignore = vcnil;
