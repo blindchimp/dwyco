@@ -116,7 +116,7 @@ SimpleSql::sync_off()
 void
 SimpleSql::sync_on()
 {
-    sql_simple("pragma synchronous=full;");
+    sql_simple("pragma synchronous=normal;");
 
 }
 

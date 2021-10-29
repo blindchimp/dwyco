@@ -11,8 +11,15 @@
 #include "vc.h"
 
 namespace dwyco {
+
+namespace qmsgsql {
 void init_qmsg_sql();
 void exit_qmsg_sql();
+void sql_start_transaction();
+void sql_commit_transaction();
+void sql_rollback_transaction();
+}
+
 vc load_msg_index(vc uid, int load_count);
 long sql_get_max_logical_clock();
 vc sql_get_recent_users(int *total_count);
@@ -50,9 +57,6 @@ vc sql_get_all_idx();
 void sql_set_rescan(int r);
 int sql_get_rescan();
 int sql_count_tag(vc tag);
-void sql_start_transaction();
-void sql_commit_transaction();
-void sql_rollback_transaction();
 
 int sql_run_sql(vc s, vc a1, vc a2, vc a3);
 

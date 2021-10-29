@@ -35,6 +35,7 @@
 #include "qmsgsql.h"
 
 namespace dwyco {
+using namespace dwyco::qmsgsql;
 
 class QMsgSql : public SimpleSql
 {
@@ -154,6 +155,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 
 }
 
+namespace qmsgsql {
 void
 init_qmsg_sql()
 {
@@ -193,6 +195,13 @@ sql_commit_transaction()
     sDb->commit_transaction();
 }
 
+void
+sql_rollback_transaction()
+{
+    sDb->rollback_transaction();
+}
+}
+
 static
 void
 sql_sync_off()
@@ -206,13 +215,6 @@ sql_sync_on()
 {
     sDb->sync_on();
 
-}
-
-
-void
-sql_rollback_transaction()
-{
-    sDb->rollback_transaction();
 }
 
 static
