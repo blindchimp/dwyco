@@ -53,6 +53,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, eager_pull)
     QML_READONLY_VAR_PROPERTY(int, group_private_key_valid)
 
+    QML_READONLY_VAR_PROPERTY(bool, invisible)
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -76,6 +78,7 @@ public:
         m_group_status = 0;
         m_eager_pull = 0;
         m_any_unviewed = false;
+        m_invisible = false;
     }
     static QByteArray My_uid;
 

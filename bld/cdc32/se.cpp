@@ -15,6 +15,7 @@
 #include "qauth.h"
 #include "qmsg.h"
 #include "qmsgsql.h"
+#include "pgdll.h"
 
 using namespace dwyco;
 
@@ -71,7 +72,9 @@ static int Se_cmd_to_api[] =
     DWYCO_SE_GRP_STATUS_CHANGE,
 
     DWYCO_SE_IGNORE_LIST_CHANGE,
-    DWYCO_SE_IDENT_TO_UID
+    DWYCO_SE_IDENT_TO_UID,
+
+    DWYCO_SE_SERVER_ATTR,
 };
 
 void
@@ -223,6 +226,17 @@ se_emit_uid_list_changed()
     GRTLOGVC(v);
 }
 
+void
+se_emit_server_attr(vc name, vc val)
+{
+    vc v(VC_VECTOR);
+    v[0] = SE_SERVER_ATTR;
+    v[1] = name;
+    v[2] = val;
+    Se_q.append(v);
+    GRTLOGVC(v);
+}
+
 int
 se_process()
 {
@@ -366,6 +380,22 @@ se_process()
                                            0, 0, 0,
                                            0, 0
                                           );
+            break;
+
+        case SE_SERVER_ATTR:
+        {
+            const char *val;
+            int len_val;
+            int tp = dllify(Se_q[i][2], val, len_val);
+
+            (*dwyco_system_event_callback)(api_cmd,
+                                           0,
+                                           0, 0,
+                                           Se_q[i][1], Se_q[i][1].len(),
+                                           tp, val, len_val,
+                                           0, 0
+                                          );
+        }
             break;
 
         default:

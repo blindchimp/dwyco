@@ -8,10 +8,12 @@
 */
 #ifndef CHATGRID_H
 #define CHATGRID_H
+namespace dwyco {
 class ProfileGrid;
 
 extern ProfileGrid *TheChatGrid;
 void hide_chat_grid();
 void show_chat_grid();
+}
 
 #endif

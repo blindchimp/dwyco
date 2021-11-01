@@ -79,7 +79,9 @@ enum dwyco_sys_event {
     SE_GRP_STATUS_CHANGE,
 
     SE_IGNORE_LIST_CHANGE,
-    SE_IDENT_TO_UID
+    SE_IDENT_TO_UID,
+
+    SE_SERVER_ATTR,
 };
 
 // at this point, the id can be a uid or a mid
@@ -94,6 +96,7 @@ void se_emit_join(vc gname, int res);
 void se_emit_group_status_change();
 void se_emit_uid_list_changed();
 void se_emit_chat(dwyco_sys_event cmd, vc server_id);
+void se_emit_server_attr(vc name, vc val);
 int se_process();
 
 #endif

@@ -434,7 +434,6 @@ extern vc KKG;
 extern int Chat_online;
 extern vc App_ID;
 
-int dllify(vc v, const char*& str_out, int& len_out);
 vc Client_version;
 
 #undef CPPLEAK
@@ -1743,6 +1742,14 @@ login_auth_results(vc m, void *, vc, ValidPtr)
             dwyco::Enable_backups = !m[3][9].is_nil();
             if(m[3][10].type() == VC_INT)
                 dwyco::Backup_freq = (int)m[3][10];
+            if(m[3][11].is_nil())
+            {
+                set_invisible(0);
+            }
+            else
+            {
+                set_invisible(1);
+            }
             pal_login();
         }
         if(m[2] == created)
@@ -3886,7 +3893,7 @@ DWYCOEXPORT
 void
 dwyco_set_initial_invis(int invis)
 {
-    set_invisible(!!invis);
+    //set_invisible(!!invis);
 }
 
 DWYCOEXPORT

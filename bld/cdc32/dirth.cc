@@ -399,6 +399,39 @@ invalidate_group(vc, void *, vc, ValidPtr)
     dirth_send_get_group(My_UID, QckDone(set_group_uids, 0));
 }
 
+// note: this whole thing with the invisible coming from the
+// server seems like a kluge. i suspect there is an easier way
+// to do this and it just isn't occurring to me.
+// with the other "client-side" lists, like ignore list and
+// pal list, they are propagated via the tag syncing mechanism,
+// which is unclear if it is good enough on its own. those items
+// are largely processed by the clients though, so it is a little
+// different from invis, where the server is mostly responsible
+// for that filtering.
+//
+void set_invisible(int);
+
+static
+void
+update_attr(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    vc attrvec = m[1];
+    if(attrvec[0] != vc("invis"))
+        return;
+    set_invisible(!attrvec[1].is_nil());
+    se_emit_server_attr(attrvec[0], attrvec[1]);
+}
+
+static
+void
+emit_invis_update(vc name, vc val)
+{
+    vc v = ((int)val == 0 ? vcnil : vctrue);
+    se_emit_server_attr("invis", v);
+}
+
 
 void update_server_list(vc, void *, vc, ValidPtr);
 void ignoring_you_update(vc, void *, vc, ValidPtr);
@@ -423,6 +456,8 @@ init_dirth()
     Waitq.append(QckDone(invalidate_profile, 0, vcnil, ValidPtr(0), "invalidate-profile", 0, 1));
     Waitq.append(QckDone(reset_backups, 0, vcnil, ValidPtr(0), "reset-backups", 0, 1));
     Waitq.append(QckDone(invalidate_group, 0, vcnil, ValidPtr(0), "invalidate-group", 0, 1));
+    Waitq.append(QckDone(update_attr, 0, vcnil, ValidPtr(0), "attr", 0, 1));
+
     //get the server list set up
     if(!load_info(Server_list, "servers2") || Server_list.type() != VC_VECTOR ||
             Server_list.num_elems() < 1)
@@ -453,6 +488,10 @@ init_dirth()
     BW_server_list = Server_list[5];
     vc tmp = Server_list[0];
     Server_list = tmp;
+
+    // this is kinda out of place here, but hard to find someplace where
+    // it makes sense
+    bind_sql_setting("server/invis", emit_invis_update);
 }
 
 // only call this *after* the server list is

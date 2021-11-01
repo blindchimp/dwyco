@@ -48,10 +48,7 @@ init_sysattr()
     Defaults.add_kv("us-video-coder-theora-quality-step", 5);
     Defaults.add_kv("us-video-coder-theora-quality-cbr", 0);
 
-
-
     Attrs = vc(VC_TREE);
-
 }
 
 int

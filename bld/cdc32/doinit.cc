@@ -57,8 +57,7 @@
 #include "ta.h"
 #include "dhgsetup.h"
 #include "qmsgsql.h"
-
-using namespace dwyco;
+#include "pgdll.h"
 
 using namespace dwyco;
 
@@ -67,7 +66,6 @@ DwLog *Log;
 CRITICAL_SECTION Audio_lock;
 vc TheMan;
 
-extern vc Current_user_lobbies;
 extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
 void init_dct();
 void init_stats();

@@ -14,6 +14,7 @@
 #include "vc.h"
 #include "pval.h"
 
+namespace dwyco {
 class ProfileGrid
 {
 public:
@@ -78,5 +79,8 @@ extern vc Current_gods;
 #define GT_DEMIGOD 3
 #define GT_SUBGOD 4
 #define GT_SERVER_ID 5
+
+int dllify(vc v, const char*& str_out, int& len_out);
+}
 
 #endif

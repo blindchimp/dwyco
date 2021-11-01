@@ -558,6 +558,17 @@ dwyco_sys_event_callback(int cmd, int id,
         TheConvListModel->redecorate();
         break;
     }
+    case DWYCO_SE_SERVER_ATTR:
+    {
+        if(namestr == "invis")
+        {
+            if(type == DWYCO_TYPE_NIL)
+                TheDwycoCore->update_invisible(false);
+            else
+                TheDwycoCore->update_invisible(true);
+        }
+        break;
+    }
     default:
         break;
     }
@@ -1539,13 +1550,13 @@ DwycoCore::init()
 
     //settings_load();
     //dwyco_create_bootstrap_profile("qml", 3, "qml test", 8, "none", 4, "fcktola1@gmail.com", 18);
-    int inv = 0;
-    QString a = get_local_setting("invis");
-    if(a == "" || a == "false")
-        inv = 0;
-    else
-        inv = 1;
-    dwyco_set_initial_invis(inv);
+//    int inv = 0;
+//    QString a = get_local_setting("invis");
+//    if(a == "" || a == "false")
+//        inv = 0;
+//    else
+//        inv = 1;
+    //dwyco_set_initial_invis(inv);
     //dwyco_inhibit_pal(1);
 #ifdef ANDROID
     // this is a kluge for android
@@ -1623,6 +1634,7 @@ DwycoCore::init()
     update_this_uid(My_uid.toHex());
     update_this_handle(uid_to_name(get_this_uid()));
 
+    update_invisible(dwyco_get_invisible_state());
 
     // for easier testing, setup for raw file acq
 //    dwyco_set_video_input(

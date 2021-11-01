@@ -74,6 +74,8 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_BSTRING, group/join_key, "", 0),
     DWUIDECLVAL(VC_INT, sync/eager, "", 0),
 
+    DWUIDECLVAL(VC_INT, server/invis, "", 0),
+
     {VC_NIL,0, 0, 0}
 };
 

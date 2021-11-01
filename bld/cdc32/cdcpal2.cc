@@ -130,6 +130,13 @@ clear_online(int i)
     }
 }
 
+static
+void
+invis_changed(vc, vc)
+{
+    pal_relogin();
+}
+
 int
 init_pal()
 {
@@ -140,6 +147,7 @@ init_pal()
 
     Group_uids.value_changed.connect_ptrfun(group_changed, 1);
     Database_online.value_changed.connect_ptrfun(clear_online, 1);
+    bind_sql_setting("server/invis", invis_changed);
     return 1;
 }
 

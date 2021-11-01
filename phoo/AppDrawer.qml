@@ -63,7 +63,7 @@ AppDrawerForm {
     }
 
     quiet_switch.checked: dwy_quiet
-    invisible_switch.checked: dwy_invis
+    invisible_switch.checked: core.invisible
 
     quiet_switch.onClicked: {
         dwy_quiet = quiet_switch.checked

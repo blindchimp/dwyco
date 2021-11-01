@@ -319,25 +319,19 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
     return 0;
 }
 
-static int Invis;
 int
 is_invisible()
 {
-#if 0
-    //no more invis
-    return 0;
-#endif
-    return Invis;
+    vc invis = get_settings_value("server/invis");
+    return (int)invis;
+    //return Invis;
 }
 
 void
 set_invisible(int i)
 {
-#if 0
-    //no more invis
-    return 0;
-#endif
-    Invis = !!i;
+    set_settings_value("server/invis", !!i);
+    //Invis = !!i;
 }
 
 void

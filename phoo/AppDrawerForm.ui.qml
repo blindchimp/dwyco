@@ -53,7 +53,7 @@ Pane {
                     text: {
 
                         (core.is_database_online === 0 ? "" : "Online ")
-                                + (dwy_invis ? "(Invisible)" : "")
+                                + (core.invisible ? "(Invisible)" : "")
                     }
                     color: "white"
                 }

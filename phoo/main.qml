@@ -250,7 +250,7 @@ ApplicationWindow {
             Label {
                 id: ind_invis
                 text: "Invis"
-                visible: dwy_invis
+                visible: core.invisible
                 color: "red"
 
             }
@@ -813,12 +813,12 @@ ApplicationWindow {
             }
 
 
-            a = get_local_setting("invis")
-            if(a === "" || a === "false") {
-                dwy_invis = false
-            } else {
-                dwy_invis = true
-            }
+//            a = get_local_setting("invis")
+//            if(a === "" || a === "false") {
+//                dwy_invis = false
+//            } else {
+//                dwy_invis = true
+//            }
 
             a = get_local_setting("show_unreviewed")
             if(a === "" || a === "0") {
