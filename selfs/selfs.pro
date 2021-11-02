@@ -505,3 +505,5 @@ DISTFILES += \
     androidinst/src/com/dwyco/android/StickyIntentService.java \
     androidinst/src/com/dwyco/selfs/DwycoApp.java
 
+ANDROID_EXTRA_LIBS = /Users/dwight/git/dwyco/selfs/../selfsbld/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../selfsbld/libs/arm64-v8a/libdwyco_jni.so
+
