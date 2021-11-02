@@ -315,7 +315,7 @@ D = $${OUT_PWD}/../bld
 
 L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 
-LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv_$${QT_ARCH}.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will
@@ -338,7 +338,7 @@ ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 
 PRE_TARGETDEPS += \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qtdrv/libqtdrv_$${QT_ARCH}.a
 
 #LIBS += \
 #$${D}/libcdc32.a \

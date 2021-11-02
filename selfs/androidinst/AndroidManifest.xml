@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<manifest package="com.dwyco.selfs" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.32" android:versionCode="2000132" android:installLocation="auto">
+<manifest package="com.dwyco.selfs" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.33" android:versionCode="2000133" android:installLocation="auto">
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="-- %%INSERT_APP_NAME%% --" android:icon="@drawable/icon">
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="com.dwyco.android.NotificationClient" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="unspecified" android:launchMode="singleTop" android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -54,7 +54,7 @@
             <meta-data android:name="android.app.lib_name" android:value="-- %%INSERT_APP_LIB_NAME%% --"/>
         </service>
     </application>
-    <uses-sdk android:minSdkVersion="17" android:targetSdkVersion="29"/>
+    <uses-sdk android:minSdkVersion="21"/>
     <supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
 
     <!-- The following comment will be replaced upon deployment with default permissions based on the dependencies of the application.

@@ -1,7 +1,7 @@
 QT -= gui
 QT += multimedia concurrent qml multimediawidgets
 android: QT += androidextras
-
+android: TARGET="qtdrv_$${QT_ARCH}"
 TEMPLATE = lib
 DEFINES += QTDRV_LIBRARY
 
