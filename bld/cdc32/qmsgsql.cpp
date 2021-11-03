@@ -1021,7 +1021,7 @@ init_group_map()
         sql_simple("create index gmidx on group_map(gid)");
         // use the profile database to find candidates, which we can do without
         // being connected to the server.
-        vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public having(count(*) > 1)");
+        vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public" /*"having(count(*) > 1)"*/);
         for(int i = 0; i < keys.num_elems(); ++i)
         {
             vc k = keys[i][0];
@@ -1332,15 +1332,39 @@ vc
 sql_load_group_index(vc uid, int max_count)
 {
     vc huid = to_hex(uid);
-    create_uidset(uid);
-    vc res = sql_simple(
-            "select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+    vc res;
+    try
+    {
+        create_uidset(uid);
+        vc gid = map_uid_to_gid(uid);
+
+        // the first part of this query gets all the messages for
+        // current group members. some messages may have been
+        // delivered from previous members of the group that are no
+        // longer in the group. since it is confusing to have messages
+        // disappear (or just show up someplace different), we include
+        // the messages from the group, using the group attribute on the
+        // message.
+        // NOTE: the messages of this sort will show up in two places, but
+        // if they are deleted in one place, they will be deleted from both places.
+        res = sql_simple(
+                    "select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
            " from gi where "
-           " assoc_uid in (select * from uidset)"
-                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?1",
-                        max_count);
-    drop_uidset();
+           " (assoc_uid in (select * from uidset)"
+            // messages from previous group members
+                    " or (is_sent isnull and length(?1) > 0 and from_group = ?1 ))"
+                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
+                    gid.is_nil() ? "" : to_hex(gid),
+                    max_count);
+        drop_uidset();
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        res = vc(VC_VECTOR);
+    }
 
     return res;
 }
@@ -2141,15 +2165,17 @@ sql_uid_has_tag(vc uid, vc tag)
     int c = 0;
     try
     {
+        sql_start_transaction();
         create_uidset(uid);
         vc res = sql_simple("select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
                             tag);
         c = (res.num_elems() > 0);
         drop_uidset();
+        sql_commit_transaction();
     }
     catch(...)
     {
-
+        sql_rollback_transaction();
     }
     return c;
 
@@ -2163,15 +2189,17 @@ sql_uid_count_tag(vc uid, vc tag)
     int c = 0;
     try
     {
+        sql_start_transaction();
         create_uidset(uid);
         vc res = sql_simple("select count(distinct mid) from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid)",
                             tag);
         c = res[0][0];
         drop_uidset();
+        sql_commit_transaction();
     }
     catch(...)
     {
-
+        sql_rollback_transaction();
     }
     return c;
 
