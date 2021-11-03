@@ -1010,13 +1010,17 @@ blob(vc v)
 void
 init_group_map()
 {
-    sql_simple("drop table if exists group_map");
-    sql_simple("create table group_map(uid primary key, gid)");
-    // use the profile database to find candidates, which we can do without
-    // being connected to the server.
     sDb->attach("prfdb.sql", "prf");
+    // note: this could be a temp table, just easier to debug this way
+
     try
     {
+        sql_start_transaction();
+        sql_simple("drop table if exists group_map");
+        sql_simple("create table group_map(uid primary key collate nocase not null, gid collate nocase not null)");
+        sql_simple("create index gmidx on group_map(gid)");
+        // use the profile database to find candidates, which we can do without
+        // being connected to the server.
         vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public having(count(*) > 1)");
         for(int i = 0; i < keys.num_elems(); ++i)
         {
@@ -1026,10 +1030,11 @@ init_group_map()
             vc gid = to_hex(DH_alternate::get_gid(k));
             sql_simple("insert into group_map select uid, ?1 from prf.pubkeys where alt_static_public = ?2", gid, blob(k));
         }
+        sql_commit_transaction();
     }
     catch(...)
     {
-
+        sql_rollback_transaction();
     }
 
     sDb->detach("prf");

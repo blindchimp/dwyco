@@ -2834,7 +2834,7 @@ mainwinform::load_users()
             }
         }
 
-        // add last 30 or so users we have seen some through the chat server
+        // add last 30 or so users we have seen come through the chat server
         n = Seen_in_chat.count();
         for(int i = 0; i < n; ++i)
         {
