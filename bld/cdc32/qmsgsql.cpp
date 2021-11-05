@@ -1021,7 +1021,7 @@ init_group_map()
         sql_simple("create index gmidx on group_map(gid)");
         // use the profile database to find candidates, which we can do without
         // being connected to the server.
-        vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public" /*"having(count(*) > 1)"*/);
+        vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public");
         for(int i = 0; i < keys.num_elems(); ++i)
         {
             vc k = keys[i][0];
@@ -1335,6 +1335,7 @@ sql_load_group_index(vc uid, int max_count)
     vc res;
     try
     {
+        sql_start_transaction();
         create_uidset(uid);
         vc gid = map_uid_to_gid(uid);
 
