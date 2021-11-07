@@ -1,11 +1,11 @@
 <RCC>
     <qresource prefix="/">
-        <file>androidinst/assets/dsadwyco.pub</file>
-        <file>androidinst/assets/dwyco.dh</file>
-        <file>androidinst/assets/license.txt</file>
-        <file>androidinst/assets/no_img.png</file>
-        <file>androidinst/assets/servers2</file>
-        <file>androidinst/assets/v21.ver</file>
+        <file>androidinst2/assets/dsadwyco.pub</file>
+        <file>androidinst2/assets/dwyco.dh</file>
+        <file>androidinst2/assets/license.txt</file>
+        <file>androidinst2/assets/no_img.png</file>
+        <file>androidinst2/assets/servers2</file>
+        <file>androidinst2/assets/v21.ver</file>
         <file>qtlabscontrols.conf</file>
         <file>qtquickcontrols2.conf</file>
     </qresource>
