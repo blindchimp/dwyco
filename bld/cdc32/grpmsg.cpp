@@ -19,6 +19,7 @@ using namespace dwyco;
 
 namespace dwyco {
 ssns::signal1<vc> Join_signal;
+ssns::signal2<vc, vc> Join_attempts;
 
 struct skid_sql : public SimpleSql
 {
@@ -27,8 +28,6 @@ struct skid_sql : public SimpleSql
     void init_schema(const DwString&) {
         start_transaction();
         sql_simple("drop table if exists keys");
-        //sql_simple("create index if not exists keys_uid on keys(uid)");
-        //sql_simple("create index if not exists keys_alt_name on keys(alt_name)");
         sql_simple("create table if not exists pstate ("
                    "initiating_uid text collate nocase not null,"
                    "responding_uid text collate nocase, "
@@ -39,6 +38,14 @@ struct skid_sql : public SimpleSql
                    "nonce_2 text collate nocase,"
                    "time integer"
                    ")");
+        //sql_simple("drop table if exists join_log");
+        sql_simple("create table if not exists join_log("
+        "msg text,"
+        "uid1 text,"
+        "uid2 text,"
+        "err,"
+        "time integer not null,"
+        "state integer)");
         commit_transaction();
 
     }
@@ -295,7 +302,8 @@ start_gj(vc target_uid, vc gname, vc password)
 // since most of the messages will be dropped because they have the wrong
 // nonces in them. we need a "store" that doesn't perform the group mapping,
 // essentially making it "point to point" instead of the broadcast.
-//
+// (note: fixed, we only respond in point-to-point mode to the first
+// valid message we get. other messages are dropped.)
 int
 recv_gj2(vc from, vc msg, vc password)
 {
@@ -309,6 +317,8 @@ recv_gj2(vc from, vc msg, vc password)
 
         if(m.is_nil())
         {
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj2: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+            Join_attempts.emit(hfrom, "decrypt failed");
             return 0;
         }
 
@@ -322,6 +332,8 @@ recv_gj2(vc from, vc msg, vc password)
         // looped to ourselves, ignore it.
         if(to_hex(My_UID) != our_uid || from == My_UID)
         {
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj2: mis-delivery', ?1, 'mis-delivery', strftime('%s', 'now'))", hfrom);
+            Join_attempts.emit(hfrom, "mis-delivery");
             return 0;
         }
 
@@ -378,6 +390,8 @@ recv_gj2(vc from, vc msg, vc password)
         if(rollback)
             SKID->rollback_transaction();
         se_emit_group_status_change();
+        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj2: failed advance', ?1, 'protocol fail', strftime('%s', 'now'))", hfrom);
+        Join_attempts.emit(hfrom, "protocol fail");
         // don't terminate, in case there are duplicate messages, we can just ignore
         // the follow ons.
         //terminate(to_hex(My_UID), hfrom);
@@ -394,12 +408,16 @@ install_group_key(vc from, vc msg, vc password)
 {
     if(from == My_UID)
         return 0;
+    vc hfrom = to_hex(from);
     vc m = xfer_dec(msg, password);
 
     if(m.is_nil())
+    {
+        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('install_key: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+        Join_attempts.emit(hfrom, "decrypt failed");
         return 0;
+    }
     vc our_uid = to_hex(My_UID);
-    vc hfrom = to_hex(from);
     vc alt_name = m[0];
     vc grp_key = m[1];
     vc nonce1 = m[2];
@@ -413,6 +431,8 @@ install_group_key(vc from, vc msg, vc password)
     if(res.num_elems() == 0)
     {
         se_emit_group_status_change();
+        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('install_key: failed advance', ?1, 'protocol fail', strftime('%s', 'now'))", hfrom);
+        Join_attempts.emit(hfrom, "protocol fail");
         terminate(our_uid, hfrom);
         return 0;
     }
@@ -457,7 +477,11 @@ recv_gj1(vc from, vc msg, vc password)
         vc m = xfer_dec(msg, password);
 
         if(m.is_nil())
+        {
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj1: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+            Join_attempts.emit(hfrom, "decrypt failed");
             return 0;
+        }
 
         vc nonce = m[0];
         vc alt_name = m[1];
@@ -506,6 +530,8 @@ recv_gj1(vc from, vc msg, vc password)
     catch (...)
     {
         SKID->rollback_transaction();
+        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj1: failed advance', ?1, 'protocol fail', strftime('%s', 'now'))", hfrom);
+        Join_attempts.emit(hfrom, "protocol fail");
         dwyco_kill_message(pers_id.c_str(), pers_id.length());
     }
 
@@ -537,6 +563,8 @@ recv_gj3(vc from, vc msg, vc password)
 
         if(m.is_nil())
         {
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj3: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+            Join_attempts.emit(hfrom, "decrypt failed");
             throw -1;
         }
 
@@ -600,7 +628,8 @@ recv_gj3(vc from, vc msg, vc password)
     }
     catch (...)
     {
-
+        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj3: failed advance', ?1, 'protocol fail', strftime('%s', 'now'))", hfrom);
+        Join_attempts.emit(hfrom, "protocol fail");
     }
 
     terminate(hfrom, to_hex(My_UID));

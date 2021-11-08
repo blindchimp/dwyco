@@ -18,6 +18,7 @@ int recv_gj1(vc from, vc msg, vc password);
 int recv_gj3(vc from, vc msg, vc password);
 
 extern ssns::signal1<vc> Join_signal;
+extern ssns::signal2<vc, vc> Join_attempts;
 
 }
 #endif
