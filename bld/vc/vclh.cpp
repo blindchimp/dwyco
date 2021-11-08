@@ -194,32 +194,43 @@ dump_flat_profile()
 		total_time += f->total_time;
 		total_real += f->total_real_time;
 	}
-	FILE *f = fopen("prof.out", "a");
+    const char *p = getenv("DWYCO_PROFILE_NAME");
+    if(!p)
+        p = "prof.out";
+    FILE *f = fopen(p, "a");
+
 	if(!f)
-		USER_BOMB("can't open prof.out", vcnil);
+    {
+        VcIOHackStr err;
+        err << "can't open " << p << '\0';
+        USER_BOMB(err.ref_str(), vcnil);
+    }
+    setlinebuf(f);
 	VcIOHack o(f);
 	o << "--- profile ---\n";
 	o << "calls\ttot\tt/callms\t%\ttotsys\tsys/callms\t%sys\treal\trt/callms\t%rt\tname\n";
-	for(i.rewind(); !i.eol(); i.forward())
-	{
-		vc_func *f = i.get();
-		if(f->call_count == 0)
-			continue;
-		//o.setf(ios::fixed);
-		//o.precision(4);
-		o <<  
-			f->call_count << "\t" <<
-			f->total_time << "\t" <<
-			1000 * f->total_time / f->call_count << "ms\t" <<
-			100 * f->total_time / total_time << "\t" << 
-			f->total_sys_time << "\t" <<
-			1000 * f->total_sys_time / f->call_count << "ms\t" <<
-			100 * f->total_sys_time / total_sys << "\t" << 
-			f->total_real_time << "\t" << 
-			1000 * f->total_real_time / f->call_count << "ms\t" <<
-			100 * f->total_real_time / total_real << "\t" << 
-			(const char *)f->name << "\t" <<
-			"\n";
+    for(i.rewind(); !i.eol(); i.forward())
+    {
+        vc_func *f = i.get();
+        if(f->call_count == 0)
+            continue;
+        char out[1024];
+        sprintf(out, "%ld\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%s\n",
+                f->call_count,
+                f->total_time,
+                1000 * f->total_time / f->call_count,
+                100 * f->total_time / total_time,
+
+                f->total_sys_time,
+                1000 * f->total_sys_time / f->call_count,
+                100 * f->total_sys_time / total_sys,
+
+                f->total_real_time,
+                1000 * f->total_real_time / f->call_count,
+                100 * f->total_real_time / total_real,
+                (const char *)f->name);
+        o << out;
+
 #ifdef LHPROF_HIST
 		o << "USER\n";
 		dump_histogram(f->hist_time, o);
