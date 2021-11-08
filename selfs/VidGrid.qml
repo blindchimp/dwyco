@@ -92,12 +92,12 @@ Page {
 
     Connections {
         target: core
-        onName_to_uid_result: {
+        function onName_to_uid_result(uid, handle) {
             if(uid != "")
                 core.set_pal(uid, 1)
         }
 
-        onPal_event: {
+        function onPal_event(uid) {
             DiscoverList.load_users_to_model()
         }
     }
@@ -220,7 +220,7 @@ Page {
 
             Connections {
                 target: core
-                onName_to_uid_result: {
+                function onName_to_uid_result(uid, handle) {
                     if(handle != attempt_handle)
                         return
                     console.log("GOT UID FOR NAME ", uid, handle)
@@ -233,19 +233,19 @@ Page {
                     }
                 }
 
-                onSc_connect_failed : {
+                function onSc_connect_failed(uid) {
                     if(uid != attempt_uid)
                         return
                     connect_failed()
                 }
 
-                onSc_connect_terminated: {
+                function onSc_connect_terminated(uid) {
                     if(uid != attempt_uid)
                         return
                     connect_failed()
                 }
 
-                onSc_connectedChanged: {
+                function onSc_connectedChanged(uid, connected) {
                     if(uid != attempt_uid)
                         return
                     console.log("ConnectedChanged ", connected, uid)
@@ -255,13 +255,13 @@ Page {
                         connect_failed()
                     }
                 }
-                onSc_connect_progress: {
+                function onSc_connect_progress(uid, msg) {
                     if(uid != attempt_uid)
                         return
                     status_label.text = msg
                 }
 
-                onSc_associate_uid_with_ui_id: {
+                function onSc_associate_uid_with_ui_id(uid, ui_id) {
                     if(uid != attempt_uid)
                         return
                     vc.a_ui_id = ui_id
