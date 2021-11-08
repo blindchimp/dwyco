@@ -30,13 +30,13 @@ Rectangle {
         TextFieldX {
             id: textInput1
             text_input: fname.fname()
-            placeholder_text: "Enter nickname (you can change it later)"
+            placeholder_text: "Enter camera name (you can change it later)"
             Layout.fillWidth: true
         }
 
         Label {
             id: label1
-            text: qsTr("Enter a short nick name that is displayed to other users. You can change it later.")
+            text: qsTr("Enter a short name that you use to connect to this camera. You can change it later.")
             font.italic: true
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
@@ -46,6 +46,7 @@ Rectangle {
             id: textInput2
             placeholder_text: qsTr("Email (optional)")
             Layout.fillWidth: true
+            visible: false
 
         }
         Label {
@@ -54,6 +55,7 @@ Rectangle {
             font.italic: true
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
+            visible: false
         }
         Item {
             Layout.fillHeight: true
@@ -61,7 +63,7 @@ Rectangle {
         }
         Label {
             id: label3
-            text: qsTr("By clicking OK, you agree to our Terms of Service and Privacy Policy. A quick summary: Your communications are encrypted so Dwyco cannot read them. Dwyco doesn't track you, data-mine your phone, or send you spam.")
+            text: qsTr("By clicking OK, you agree to our Terms of Service and Privacy Policy. A quick summary: Your communications are encrypted so Dwyco cannot access them. Dwyco doesn't track you, data-mine your phone, or send you spam.")
             font.italic: true
             color: amber_light
             wrapMode: Text.WordWrap
