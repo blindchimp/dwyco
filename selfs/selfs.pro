@@ -91,7 +91,7 @@ QT += concurrent
 INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
 }
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
 
 linux-* {
 DEFINES += LINUX
@@ -310,19 +310,19 @@ $${D}/qtdrv/libqtdrv.a
 android-* {
 DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
 DEFINES += SELFSTREAM
-
+ANDROID_TARGET_SDK_VERSION=30
 D = $${OUT_PWD}/../bld
 
 L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 
-LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv_$${QT_ARCH}.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will
 # work in the main executable if it is statically linked. that is a
 # limitation of java as far as i can tell.
 LIBS += $${L}/libdwyco_jni.so
-ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
+#ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 #contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 #    ANDROID_EXTRA_LIBS += \
 #        $$PWD/arm/libcrypto.so \
@@ -338,7 +338,7 @@ ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 
 PRE_TARGETDEPS += \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qtdrv/libqtdrv_$${QT_ARCH}.a
 
 #LIBS += \
 #$${D}/libcdc32.a \
@@ -361,10 +361,10 @@ $${D}/qtdrv/libqtdrv.a
 #$${D}/libjhead.a \
 #$${D}/libjenkins.a #-lgcc
 
-include(functions.pri)
+#include(functions.pri)
 
-QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava", "src/com/dwyco/android", $$files($$PWD/../bld/android/com/dwyco/android/*.java))
-QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava2", "src/com/dwyco/cdc32", $$files($$PWD/../bld/android/com/dwyco/cdc32/*.java))
+#QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava", "src/com/dwyco/android", $$files($$PWD/../bld/android/com/dwyco/android/*.java))
+#QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava2", "src/com/dwyco/cdc32", $$files($$PWD/../bld/android/com/dwyco/cdc32/*.java))
 
 }
 
@@ -484,24 +484,14 @@ HEADERS += \
     simpledirmodel.h
 
 DISTFILES += \
-    androidinst/gradle/wrapper/gradle-wrapper.jar \
-    androidinst/AndroidManifest.xml \
-    androidinst/gradle/wrapper/gradle-wrapper.properties \
-    androidinst/gradlew \
-    androidinst/gradlew.bat \
-    androidinst/res/values/libs.xml \
-    androidinst/build.gradle \
-    androidinst/google-services.json \
-    androidinst/src/com/dwyco/cdc32/dwybg.java \
-    androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst/src/com/dwyco/selfs/app.java \
-    androidinst/src/com/dwyco/android/Dwyco_Message.java \
-    androidinst/src/com/dwyco/android/DwycoProbe.java \
-    androidinst/src/com/dwyco/android/DwycoSender.java \
-    androidinst/src/com/dwyco/android/MyFirebaseMessagingService.java \
-    androidinst/src/com/dwyco/android/NotificationClient.java \
-    androidinst/src/com/dwyco/android/Push_Notification.java \
-    androidinst/src/com/dwyco/android/SocketLock.java \
-    androidinst/src/com/dwyco/android/StickyIntentService.java \
-    androidinst/src/com/dwyco/selfs/DwycoApp.java
+    androidinst2/AndroidManifest.xml \
+    androidinst2/build.gradle \
+    androidinst2/gradle.properties \
+    androidinst2/gradle/wrapper/gradle-wrapper.jar \
+    androidinst2/gradle/wrapper/gradle-wrapper.properties \
+    androidinst2/gradlew \
+    androidinst2/gradlew.bat \
+    androidinst2/res/values/libs.xml
+
+ANDROID_EXTRA_LIBS = /home/dwight/git/dwyco/selfs/../selfsbld/libs/armeabi-v7a/libdwyco_jni.so /home/dwight/git/dwyco/selfs/../selfsbld/libs/arm64-v8a/libdwyco_jni.so
 
