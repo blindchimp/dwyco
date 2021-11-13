@@ -17,7 +17,7 @@ DEFINES += NO_BUILDTIME
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"1.33\\\"\"
+DEFINES += BUILDTIME=\"\\\"1.34\\\"\"
 CONFIG += c++11
 
 CONFIG(appdir) {
