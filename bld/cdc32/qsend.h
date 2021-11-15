@@ -36,8 +36,15 @@ public:
     int inprogress;
     ValidPtr vp;
     enum enc_mode {
+        // use PK encryption if we have recipient's public key locally.
+        // otherwise, send the message as is, and initiate a fetch to
+        // get the public key.
         DEFAULT = 0,
+        // use PK encryption, but if we don't have the recipient's public key locally
+        // just defer sending the message, and initiate a fetch to get
+        // the public key. the caller will have to retry the send at a later time.
         FORCE_ENCRYPTION = 1,
+        // don't try to use PK encryption, the message is sent as is.
         INHIBIT_ENCRYPTION = 2
     };
     enum enc_mode force_encryption;
