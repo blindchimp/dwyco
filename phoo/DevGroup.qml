@@ -22,7 +22,7 @@ Page {
 
     Connections {
         target: core
-        onJoin_result: {
+        function onJoin_result(gname, result) {
             if(result === 1) {
                 core.set_setting("group/alt_name", gname)
                 provisional_group = gname
