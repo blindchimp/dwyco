@@ -229,7 +229,7 @@ ApplicationWindow {
 
             Connections {
                 target: core
-                onProfile_update: {
+                function onProfile_update(success) {
                     drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
                     drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
                 }
@@ -428,7 +428,7 @@ ApplicationWindow {
 
         Connections {
             target: core
-            onQt_app_state_change: {
+            function onQt_app_state_change(app_state) {
                 if(core.app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
 
@@ -440,7 +440,7 @@ ApplicationWindow {
                 }
             }
 
-            onServer_login: {
+            function onServer_login(msg, what) {
                 console.log("CHAT SERVER RESTART ", what, chat_server.auto_connect)
                 if(what > 0) {
                     if(chat_server.auto_connect) {

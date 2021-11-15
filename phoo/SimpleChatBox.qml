@@ -492,12 +492,12 @@ Page {
 
     Connections {
         target: core
-        onSc_rem_keyboard_active : {
+        function onSc_rem_keyboard_active(uid, active) {
             if(uid === to_uid) {
                 ind_typing = active
             }
         }
-        onNew_msg : {
+        function onNew_msg(from_uid, txt, mid) {
             // if we're visible, reset the unviewed msgs thing since presumably
             // we can see it. might want to set it if the view is scrolled up
             // and we can't actually see it until we scroll down, but for
@@ -506,7 +506,7 @@ Page {
                 core.reset_unviewed_msgs(to_uid)
             }
         }
-        onSys_uid_resolved: {
+        function onSys_uid_resolved(uid) {
             if(chatbox.to_uid === uid) {
                 // try to defeat caching since the actual name
                 // of the "preview url" hasn't changed, but the contents have
@@ -515,13 +515,13 @@ Page {
                 top_toolbar_text.text = core.uid_to_name(uid)
             }
         }
-        onSc_connect_terminated: {
+        function onSc_connect_terminated(uid) {
             if(chatbox.to_uid === uid) {
                 console.log("CONNECT TERMINATED")
             }
         }
 
-        onSc_connectedChanged: {
+        function onSc_connectedChanged(uid, connected) {
                 if(chatbox.to_uid === uid) {
                     console.log("ConnectedChanged ", connected)
                     if(connected === 0 && vidpanel.visible) {
@@ -1131,7 +1131,7 @@ Page {
         }
         Connections {
             target: core
-            onZap_stopped: {
+            function onZap_stopped(zid) {
                 if(zid === audio_zap_button.zid) {
                     core.send_zap(zid, to_uid, 1)
                     audio_zap_button.zid = -1
