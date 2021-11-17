@@ -41,7 +41,8 @@ JoinLogModel::uid_resolved(QString huid)
     for(int i = 0; i < n; ++i)
     {
         auto c = at(i);
-        c->update_handle(dwyco_info_to_display(QByteArray::fromHex(huid.toLatin1())));
+        if(c->get_uid() == huid)
+            c->update_handle(dwyco_info_to_display(QByteArray::fromHex(huid.toLatin1())));
     }
 }
 

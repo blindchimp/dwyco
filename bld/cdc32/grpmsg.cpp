@@ -477,6 +477,7 @@ install_group_key(vc from, vc msg, vc password)
         Group_uids.add(from);
         se_emit_join(alt_name, 1);
         Join_signal.emit(alt_name);
+        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('installed key', ?1, 'none', strftime('%s', 'now'))", hfrom);
     }
     else
     {
@@ -648,6 +649,7 @@ recv_gj3(vc from, vc msg, vc password)
             dwyco_delete_zap_composition(comp_id);
             throw -1;
         }
+        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('sent key', ?1, 'none', strftime('%s', 'now'))", hfrom);
         ret = 1;
     }
     catch (...)

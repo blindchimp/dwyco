@@ -345,7 +345,7 @@ Page {
                     }
 
                     Label {
-                        text: handle
+                        text: handle + "(" + uid + ")"
                     }
                     Item {
                         Layout.fillWidth: true
