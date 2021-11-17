@@ -294,5 +294,66 @@ Page {
 
             clip: true
         }
+
+        ListView {
+            id: join_log
+            //anchors.fill: parent
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            header: Component {
+                RowLayout {
+                    width: parent.width
+                    height: implicitHeight
+                    spacing: mm(1)
+                    Label {
+                        elide: Text.ElideRight
+                        text: "Time"
+                        Layout.preferredWidth: cm(5)
+                    }
+                    Label {
+                        elide: Text.ElideRight
+                        text: "Msg"
+                        Layout.preferredWidth: cm(8)
+                    }
+                    Label {
+                        text: "From Handle"
+                        //color: proxy ? "red" : "black"
+                        //Layout.preferredWidth: cm(4)
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                    }
+                }
+
+            }
+
+            model: JoinLogModel
+            delegate: Component {
+                RowLayout {
+                    width: parent.width
+                    height: implicitHeight
+                    spacing: mm(1)
+                    Label {
+                        text: Qt.formatDateTime(time)
+                        Layout.preferredWidth: cm(5)
+                    }
+
+                    Label {
+                        elide: Text.ElideRight
+                        text: msg
+                        Layout.preferredWidth: cm(8)
+                    }
+
+                    Label {
+                        text: handle
+                    }
+                    Item {
+                        Layout.fillWidth: true
+                    }
+                }
+            }
+
+            clip: true
+        }
     }
 }

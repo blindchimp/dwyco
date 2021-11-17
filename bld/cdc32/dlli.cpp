@@ -6417,6 +6417,22 @@ dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out)
     return 1;
 }
 
+DWYCOEXPORT
+int
+dwyco_get_join_log_model(DWYCO_JOIN_LOG_MODEL *list_out)
+{
+    vc& ret = *new vc;
+
+    ret = get_join_log();
+    if(ret.is_nil())
+    {
+        delete &ret;
+        return 0;
+    }
+    *list_out = (DWYCO_JOIN_LOG_MODEL)&ret;
+    return 1;
+}
+
 
 
 #define GS_GNAME 0

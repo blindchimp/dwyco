@@ -55,6 +55,20 @@ struct skid_sql : public SimpleSql
 
 static struct skid_sql *SKID;
 
+// note: this is a bit of a hack: if we get a message that doesn't
+// decrypt right or causes a protocol failuer, that is an external
+// event. in the past, the "group status change" was used to indicate
+// a change in status for some group operation WE initiated. i'm just
+// piggy-backing it on here so i can display some error info without
+// going to the trouble to create a brand new set of events.
+//
+static
+void
+external_join_event(vc, vc)
+{
+    se_emit_group_status_change();
+}
+
 int
 init_gj()
 {
@@ -62,6 +76,8 @@ init_gj()
         return 1;
     SKID = new struct skid_sql;
     SKID->init();
+    SKID->sql_simple("delete from join_log where time < strftime('%s', 'now') - 7 * 24 * 3600");
+    Join_attempts.connect_ptrfun(external_join_event, 1);
     return 1;
 }
 
@@ -90,6 +106,13 @@ get_status_gj()
     if(res.num_elems() == 0)
         return vcnil;
     return res[0];
+}
+
+vc
+get_join_log()
+{
+    vc res = SKID->sql_simple("select msg, uid1, time from join_log order by time desc limit 10");
+    return res;
 }
 
 // the basic idea here is that we don't know who has the

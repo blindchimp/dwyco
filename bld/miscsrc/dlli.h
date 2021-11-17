@@ -1517,6 +1517,13 @@ int DWYCOEXPORT dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out);
 
 int DWYCOEXPORT dwyco_get_group_status(DWYCO_LIST *list_out);
 
+typedef DWYCO_LIST DWYCO_JOIN_LOG_MODEL;
+#define DWYCO_JL_MSG "000"
+#define DWYCO_JL_HUID "001"
+#define DWYCO_JL_TIME "002"
+
+int DWYCOEXPORT dwyco_get_join_log_model(DWYCO_JOIN_LOG_MODEL *list_out);
+
 // api for creating a simple backup of messages and account info
 // "create_backup" creates an initial backup, then subsequent calls
 // create a smaller incremental backup.

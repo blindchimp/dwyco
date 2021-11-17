@@ -41,6 +41,7 @@
 #include "syncmodel.h"
 #include "discomodel.h"
 #include "ccmodel.h"
+#include "joinlogmodel.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
@@ -549,6 +550,7 @@ dwyco_sys_event_callback(int cmd, int id,
         TheDwycoCore->update_group_status(gl.get_long(DWYCO_GS_IN_PROGRESS));
         TheDwycoCore->update_eager_pull(gl.get_long(DWYCO_GS_EAGER));
         TheDwycoCore->update_group_private_key_valid(gl.get_long(DWYCO_GS_VALID));
+        TheJoinLogModel->load_model();
     }
         break;
 
@@ -1616,6 +1618,7 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
 
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheSyncDescModel, SLOT(uid_resolved(QString)));
+    connect(this, SIGNAL(sys_uid_resolved(QString)), TheJoinLogModel, SLOT(uid_resolved(QString)));
 
     if(dwyco_get_create_new_account())
         return;
@@ -2883,6 +2886,9 @@ dwyco_register_qml(QQmlContext *root)
 
     new CallContextModel;
     root->setContextProperty("CallContextModel", TheCallContextModel);
+
+    JoinLogModel *jlm = new JoinLogModel;
+    root->setContextProperty("JoinLogModel", jlm);
 
 //#ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;
