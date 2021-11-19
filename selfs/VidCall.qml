@@ -10,7 +10,7 @@ VidCallForm {
     Connections {
         target: core
 
-        onVideo_display: {
+        function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id != a_ui_id)
                 return
             if(!paused) {
@@ -18,7 +18,7 @@ VidCallForm {
             }
         }
 
-        onVideo_capture_preview: {
+        function onVideo_capture_preview(img_path) {
             vid_preview.source = img_path
         }
 
