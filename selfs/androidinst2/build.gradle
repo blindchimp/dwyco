@@ -1,44 +1,26 @@
 buildscript {
     repositories {
-	google()
+        google()
         jcenter()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.0'
-        classpath 'com.google.gms:google-services:4.3.3'
-	classpath 'com.google.firebase:firebase-crashlytics-gradle:2.1.1'
-
+        classpath 'com.android.tools.build:gradle:3.6.0'
     }
 }
 
-allprojects {
-    repositories {
-	maven {
-           url 'https://maven.google.com/'
-       }
-        jcenter()
-	/*google()*/
-
-    }
+repositories {
+    google()
+    jcenter()
 }
 
 apply plugin: 'com.android.application'
-apply plugin: 'com.google.firebase.crashlytics'
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-implementation "com.google.firebase:firebase-messaging:22.0.0"
-implementation 'com.google.firebase:firebase-crashlytics:18.0.1'
-implementation 'com.google.firebase:firebase-analytics:19.0.0'
-
+    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
 }
 
 android {
-defaultConfig {
-        applicationId "com.dwyco.selfs"
-
-    }
     /*******************************************************
      * The following variables:
      * - androidBuildToolsVersion,
@@ -54,7 +36,7 @@ defaultConfig {
 
     compileSdkVersion androidCompileSdkVersion.toInteger()
 
-    buildToolsVersion androidBuildToolsVersion
+    buildToolsVersion '28.0.3'
 
     sourceSets {
         main {
@@ -62,19 +44,34 @@ defaultConfig {
             java.srcDirs = [qt5AndroidDir + '/src', 'src', 'java']
             aidl.srcDirs = [qt5AndroidDir + '/src', 'src', 'aidl']
             res.srcDirs = [qt5AndroidDir + '/res', 'res']
-            resources.srcDirs = ['src']
+            resources.srcDirs = ['resources']
             renderscript.srcDirs = ['src']
             assets.srcDirs = ['assets']
             jniLibs.srcDirs = ['libs']
        }
     }
 
+    tasks.withType(JavaCompile) {
+        options.incremental = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     lintOptions {
         abortOnError false
     }
-    compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
+
+    // Do not compress Qt binary resources file
+    aaptOptions {
+        noCompress 'rcc'
+    }
+
+    defaultConfig {
+        resConfig "en"
+        minSdkVersion = qtMinSdkVersion
+        targetSdkVersion = qtTargetSdkVersion
     }
 }
-apply plugin: 'com.google.gms.google-services'

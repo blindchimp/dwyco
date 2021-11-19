@@ -838,8 +838,9 @@ static
 void
 setup_locations()
 {
+    // this is easier to debug since you don't need a rooted phone to look at it
     QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
-#if 0 && defined(ANDROID)
+#if defined(ANDROID)
     if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
         // we aren't going anywhere without being able to setup our state
@@ -850,7 +851,6 @@ setup_locations()
             // access your photos on the device easily. maybe need to just request "read"
             // in this case.
             filepath = QStandardPaths::AppDataLocation;
-            exit(0);
         }
     }
 #endif
@@ -983,6 +983,21 @@ setup_locations()
     }
 
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, userdir);
+    // this crashes because addflags needs to run on the ui thread, and this
+    // isn't in the ui thread. oh well.
+#if 0 && defined(ANDROID) && defined(SELFSTREAM)
+    {
+    QAndroidJniObject w = QtAndroid::androidActivity().callObjectMethod(
+                "getWindow",
+                "()Landroid/view/Window;");
+    jint keep_on = 128; // from android docs for Window.addFlags KEEP_SCREEN_ON
+    w.callMethod<void>(
+                "addFlags",
+                "(I)V",
+                keep_on
+                );
+    }
+#endif
 
 
 }
