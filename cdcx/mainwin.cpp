@@ -2562,6 +2562,7 @@ mainwinform::idle()
     {
         cdcx_set_refresh_users(0);
         //chatform2::update_chat_displays();
+        dwyco_load_users2(0, 0);
         load_users();
         decorate_users();
         emit refresh_users();
