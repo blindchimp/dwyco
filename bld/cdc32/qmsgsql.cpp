@@ -1139,6 +1139,7 @@ sql_get_recent_users(int recent, int *total_out)
     {
         sql_start_transaction();
         sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
+        sql_simple("insert into foo select strftime('%s', 'now'), uid from group_map");
         vc res;
         if(total_out)
         {
