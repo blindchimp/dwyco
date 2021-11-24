@@ -190,7 +190,7 @@ Page {
         
         Rectangle {
             id: ditem
-            width: parent.width
+            width: ListView.view.width
             //border.width: 1
             //border.color: "gray"
             height: msg.implicitHeight

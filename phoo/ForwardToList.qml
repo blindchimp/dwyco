@@ -28,7 +28,7 @@ Page {
         id: forward_list_delegate
         Rectangle {
             height: vh(pct)
-            width: parent.width
+            width: ListView.view.width
             opacity: {multiselect_mode && selected ? 0.5 : 1.0}
             color: primary_dark
             border.width: 1

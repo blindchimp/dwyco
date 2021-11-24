@@ -240,7 +240,7 @@ Page {
             model: SyncDescModel
             delegate: Component {
                 RowLayout {
-                    width: parent.width
+                    width: ListView.view.width
                     height: implicitHeight
                     spacing: mm(1)
                     Label {
@@ -330,7 +330,7 @@ Page {
             model: JoinLogModel
             delegate: Component {
                 RowLayout {
-                    width: parent.width
+                    width: ListView.view.width
                     height: implicitHeight
                     spacing: mm(1)
                     Label {
