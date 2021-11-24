@@ -20,7 +20,7 @@ Rectangle {
        id: userlist_delegate
        Item {
            height: drow.height
-           width: parent.width
+           width: ListView.view.width
            Row {
                id: drow
                spacing: dp(5)

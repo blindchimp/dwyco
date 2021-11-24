@@ -51,7 +51,7 @@ Page {
         id: iglist_delegate
         Rectangle {
             id: drow
-            width: parent.width
+            width: ListView.view.width
             height: mm(9)
             //border.width: 1
             anchors.margins: 2
