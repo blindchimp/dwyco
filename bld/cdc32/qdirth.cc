@@ -433,6 +433,7 @@ dirth_send_get_group_pk(vc id, vc gname, QckDone d)
 //
 // if the group does not exist, a challenge is returned, which
 // we must decrypt and issue another command (below)
+//
 void
 dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d)
 {
@@ -452,6 +453,14 @@ dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d)
 // key and signature. (this just makes sure you have the private key
 // associated with the group and aren't asking us to just sign
 // some random stuff.)
+// NOTE: the server provisionally puts records you in the group
+// if you succeed with the challenge. this helps make it a little less
+// confusing because group observers will get a message that you are
+// in the group before you login the next time. (it is assumed the
+// client will exit pretty quickly after succeeding in the challenge.)
+// note this provisional assignment isn't really a problem if it turns out
+// to be bogus, because you would be the only one in the group (ie, it is
+// brand new.)
 void
 dirth_send_group_chal(vc id, vc nonce, QckDone d)
 {
@@ -461,6 +470,23 @@ dirth_send_group_chal(vc id, vc nonce, QckDone d)
     m[QTYPE] = reqtype("group-chal", d);
     m[QFROM] = id;
     m[2] = nonce;
+
+    dirth_send(m, d);
+}
+
+// this is a command you can do *after* you have
+// deleted all the local information associated with
+// group sync state. it tells the server to record the
+// fact you have left the group, rather than waiting until you
+// login the next time (which may be never.)
+void
+dirth_send_prov_leave(vc id, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("prov-leave", ++Serial);
+    m[QTYPE] = reqtype("prov-leave", d);
+    m[QFROM] = id;
 
     dirth_send(m, d);
 }
