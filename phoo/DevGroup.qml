@@ -9,6 +9,7 @@ Page {
     property bool group_active
     property bool show_failed
     property bool quitnow: false
+    property bool waiting_for_leave_ack
     property string provisional_group
 
     group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
@@ -23,12 +24,17 @@ Page {
     Connections {
         target: core
         function onJoin_result(gname, result) {
-            if(result === 1) {
+            if(gname.length > 0 && result === 1) {
                 core.set_setting("group/alt_name", gname)
                 provisional_group = gname
                 quitnow = true
                 header.visible = false
                 //Qt.quit()
+            } if(gname.length === 0 && result === 1) {
+                // got an ack that we left the group
+                provisional_group = "<no group>"
+                quitnow = true
+                header.visible = false
             } else {
                 show_failed = true
                 join_button.checked = false
@@ -162,7 +168,8 @@ Page {
             text: qsTr("Disable to UNLINK this device (requires restart)")
             onClicked: {
                 if(core.start_gj2("", "") === 1) {
-                    Qt.quit()
+                    waiting_for_leave_ack = true
+                    //Qt.quit()
                 }
             }
             checked: true

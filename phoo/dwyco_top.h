@@ -360,11 +360,12 @@ signals:
     void mid_tag_changed(QString mid);
 
     void name_to_uid_result(QString uid, QString handle);
-
+    // WARNING: DO NOT USE THESE QBYTEARRAY THINGS IN QML, they are not
+    // auto-converted to strings
     void msg_pull_ok(const QByteArray& mid, const QString& huid);
     void msg_tag_change_global(const QByteArray& mid, const QString& huid);
 
-    void join_result(const QByteArray& gname, int result);
+    void join_result(QString gname, int result);
 
 private:
 

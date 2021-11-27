@@ -12,6 +12,7 @@
 #include "chatq.h"
 #include "dirth.h"
 #include "ezset.h"
+using namespace dwyco;
 
 extern vc My_UID;
 

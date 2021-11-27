@@ -15,6 +15,11 @@
 #include "simple_property.h"
 
 namespace dwyco {
+namespace dhg {
+void sql_start_transaction();
+void sql_commit_transaction();
+void sql_rollback_transaction();
+}
 
 class DH_alternate : public ssns::trackable {
 public:

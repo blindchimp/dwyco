@@ -15,6 +15,7 @@
 #include "sha.h"
 #include "ezset.h"
 using namespace CryptoPP;
+using namespace dwyco;
 
 #define HASH_MUMBLE "\x00\x94\x3d\x23\x98\x78\x01"
 static

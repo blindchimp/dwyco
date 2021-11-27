@@ -487,6 +487,9 @@ dirth_send_prov_leave(vc id, QckDone d)
     d.type = ReqType("prov-leave", ++Serial);
     m[QTYPE] = reqtype("prov-leave", d);
     m[QFROM] = id;
+    // note: we need to exit fairly quickly in this case, and it isn't
+    // crucial the command completes, so just give it a few seconds
+    d.set_timeout(5);
 
     dirth_send(m, d);
 }

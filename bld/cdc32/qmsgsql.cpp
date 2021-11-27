@@ -556,6 +556,7 @@ remove_sync_state()
     catch(...)
     {
         sql_rollback_transaction();
+        throw -1;
     }
 }
 

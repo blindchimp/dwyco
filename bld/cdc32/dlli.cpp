@@ -6832,6 +6832,13 @@ chal_res(vc m, void *, vc, ValidPtr vp)
 
 static
 void
+leave_ack(vc m, void *, vc, ValidPtr vp)
+{
+    se_emit_join("", 1);
+}
+
+static
+void
 group_enter_setup(vc m, void *, vc, ValidPtr vp)
 {
     if(!vp.is_valid())
@@ -6931,19 +6938,73 @@ dwyco_start_gj2(const char *gname, const char *password)
         // leave the current group
         //if(!Current_alternate)
         //    return 1;
+        // we don't do this now, except to get rid of sync
+        // channels.
+        // we want to issue one more command to server to
+        // indicate out provisional group change before we
+        // exit.
+#if 0
         // drop all network connections
         MMChannel::exit_mmchan();
         // empty out all the system messages
         while(se_process() || dirth_poll_response())
             ;
+#endif
+        drop_all_sync_calls(0);
         Group_uids = vc(VC_VECTOR);
-        if(Current_alternate)
-            Current_alternate->leave();
-        set_settings_value("group/join_key", "");
-        set_settings_value("group/alt_name", "");
-        set_settings_value("sync/eager", 0);
-        remove_sync_state();
-        se_emit_group_status_change();
+        // it would probably be better if this was all-or-nothing
+        // partial group state will confuse the shit out of everything.
+        // having all the different stuff in different database files
+        // is a bit of a problem. for now, just kluge it
+
+        try
+        {
+            if(Current_alternate)
+            {
+                dwyco::dhg::sql_start_transaction();
+                Current_alternate->leave();
+            }
+        }
+        catch(...)
+        {
+            dwyco::dhg::sql_rollback_transaction();
+            return 0;
+        }
+
+        try
+        {
+            dwyco::ezset::sql_start_transaction();
+            set_settings_value("group/join_key", "");
+            set_settings_value("group/alt_name", "");
+            set_settings_value("sync/eager", 0);
+        }
+        catch(...)
+        {
+            dwyco::dhg::sql_rollback_transaction();
+            dwyco::ezset::sql_rollback_transaction();
+            return 0;
+        }
+
+        try
+        {
+            dwyco::qmsgsql::sql_start_transaction();
+            remove_sync_state();
+        }
+        catch(...)
+        {
+            dwyco::dhg::sql_rollback_transaction();
+            dwyco::ezset::sql_rollback_transaction();
+            dwyco::qmsgsql::sql_rollback_transaction();
+            return 0;
+        }
+        // hokey, really need to get this done under one transaction
+        dwyco::dhg::sql_commit_transaction();
+        dwyco::ezset::sql_commit_transaction();
+        dwyco::qmsgsql::sql_commit_transaction();
+        //se_emit_group_status_change();
+        dirth_send_prov_leave(My_UID, QckDone(leave_ack, 0, vcnil));
+        delete Current_alternate;
+        Current_alternate = 0;
         return 1;
     }
     // you have to leave first, you can't change directly

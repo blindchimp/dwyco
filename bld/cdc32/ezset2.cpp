@@ -8,6 +8,9 @@ using namespace dwyco;
 #undef DWUIDECLVAL
 #define DWUIDECLVAL(tp, nm, ival_str, ival_int) { tp, #nm, ival_str, ival_int}
 
+namespace dwyco {
+using namespace dwyco::ezset;
+
 struct init_settings
 {
     enum vc_type tp;
@@ -165,6 +168,26 @@ init_sql_settings()
     Db->commit_transaction();
 }
 
+namespace ezset {
+
+void
+sql_start_transaction()
+{
+    Db->start_transaction();
+}
+void
+sql_commit_transaction()
+{
+    Db->commit_transaction();
+}
+void
+sql_rollback_transaction()
+{
+    Db->rollback_transaction();
+}
+
+}
+
 void
 exit_sql_settings()
 {
@@ -256,5 +279,6 @@ get_settings_value(const char *name)
     if(!Map->find(name, s))
         oopanic("bad setting");
     return s->value;
+}
 }
 

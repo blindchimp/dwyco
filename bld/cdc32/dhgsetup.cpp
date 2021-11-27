@@ -26,14 +26,15 @@
 #include "ezset.h"
 #include "se.h"
 #include "qmsgsql.h"
+#include "synccalls.h"
 
 
 using namespace CryptoPP;
 using namespace dwyco;
 
-void drop_all_sync_calls(DH_alternate *);
-
 namespace dwyco {
+using namespace dwyco::dhg;
+
 sigprop<DH_alternate *> Current_alternate;
 vc DH_alternate::Group_join_password;
 sigprop<vc> Group_uids;
@@ -89,6 +90,26 @@ to_lower(vc an)
 
 static DHG_sql *DHG_db;
 #define sql DHG_db->sql_simple
+
+namespace dhg {
+
+void
+sql_start_transaction()
+{
+    DHG_db->start_transaction();
+}
+void
+sql_commit_transaction()
+{
+    DHG_db->commit_transaction();
+}
+void
+sql_rollback_transaction()
+{
+    DHG_db->rollback_transaction();
+}
+
+}
 
 static
 void
@@ -196,11 +217,21 @@ DH_alternate::init(vc uid, vc alternate_name)
 void
 DH_alternate::leave()
 {
-    DHG_db->start_transaction();
-    DHG_db->sql_simple("delete from group_uids");
-    DHG_db->sql_simple("delete from keys where alt_name = ?1", alternate_name);
-    DHG_db->sql_simple("delete from sigs where alt_name = ?1", alternate_name);
-    DHG_db->commit_transaction();
+    try
+    {
+        DHG_db->start_transaction();
+        DHG_db->sql_simple("delete from group_uids");
+        DHG_db->sql_simple("delete from keys where alt_name = ?1", alternate_name);
+        DHG_db->sql_simple("delete from sigs where alt_name = ?1", alternate_name);
+        DHG_db->commit_transaction();
+        DH_static = vcnil;
+        alternate_name = vcnil;
+    }
+    catch(...)
+    {
+        DHG_db->rollback_transaction();
+        throw -1;
+    }
 }
 
 void
@@ -450,6 +481,8 @@ DH_alternate::get_gid(vc pubkey)
 vc
 DH_alternate::get_gid()
 {
+    if(DH_static.is_nil())
+        return vcnil;
     return get_gid(DH_static[DH_STATIC_PUBLIC]);
 }
 
