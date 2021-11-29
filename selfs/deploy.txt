@@ -1,5 +1,5 @@
 Wed Jul 28 08:51:15 MDT 2021
-dwight melcher
+dwightm
 
 deployment notes for selfs qml app for various platforms
 --------------------------------------------------

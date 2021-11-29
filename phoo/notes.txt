@@ -13,7 +13,7 @@ things that need to be fixed before first release on android
 * possible bug: profile update is nuking "mobile user" as the location and making it empty
 
 Fri Feb 19 07:23:55 MST 2016
-dwight melcher
+dwightm
 dwyco, inc.
 
 * partition app into 2 "modes": community and personal. in community mode, work as we do now, allowing messages to come in, become listed in public directories, ability to message anyone, and play competitive games. in personal mode, messages from people not in your "personal" list (which is more or less your "pal" list) are deferred (or optionally discarded.)

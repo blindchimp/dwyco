@@ -1,5 +1,5 @@
 Tue Jan  9 16:12:27 MST 2018
-dwight melcher
+dwightm
 
 deployment notes for qml app for various platforms
 --------------------------------------------------
