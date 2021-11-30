@@ -7692,8 +7692,12 @@ DWYCOEXPORT
 int
 dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id)
 {
-    vc uid(VC_BSTRING, user_id, len_uid);
+    //vc uid(VC_BSTRING, user_id, len_uid);
+    // don't trust what the user sends in, because we may be showing him
+    // a group representative
+
     vc mid(msg_id);
+    vc uid = from_hex(sql_get_uid_from_mid(mid));
     delete_body3(uid, mid, 0);
     vc args(VC_VECTOR);
     args.append(vcnil);
