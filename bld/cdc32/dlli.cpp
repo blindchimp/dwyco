@@ -7571,6 +7571,25 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
         return;
     }
 
+    // let's just see if we can decrypt anything right now, and if not,
+    // avoid the attachment download. this is mostly for compat with old
+    // clients that are more likely to send msgs that can't be decrypted.
+    // once old clients are nixed, maybe we can get rid of this.
+
+    if(!msg[QQM_BODY_DHSF].is_nil())
+    {
+        int can_decrypt = can_decrypt_msg_body(msg);
+        if(!can_decrypt)
+        {
+            if(q->msg_download_callback)
+                (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
+            se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
+            dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
+            delete q;
+            return;
+        }
+    }
+
     // need to fetch the attachment before saving
     // anything to the inbox.
 

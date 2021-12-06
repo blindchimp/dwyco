@@ -140,6 +140,7 @@ vc encrypt_msg_qqm(vc msg_to_send, vc dhsf, vc ectx, vc key);
 vc encrypt_msg_body(vc body, vc dhsf, vc ectx, vc key);
 vc decrypt_msg_qqm(vc emsg);
 vc decrypt_msg_body(vc body);
+int can_decrypt_msg_body(vc body);
 #ifdef DWYCO_CRYPTO_PIPELINE
 vc decrypt_msg_body2(vc body, DwString& src, DwString& dst, DwString& key_out);
 int decrypt_attachment2(const DwString& filename, const DwString& key, const DwString& filename_dst);

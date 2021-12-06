@@ -257,7 +257,7 @@ Page {
 
                     Label {
                         elide: Text.ElideRight
-                        text: handle
+                        text: "(" + uid.substring(0, 2) + ")" + handle
                         Layout.preferredWidth: cm(2)
                     }
 //                    Label {

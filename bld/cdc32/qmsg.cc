@@ -3214,6 +3214,48 @@ decrypt_msg_qqm(vc emsg)
 }
 #endif
 
+// note: this is used mainly for compat with older clients that may
+// send messages to clients that can't be decrypted. this is used to
+// short-circuit having to download any attachment that we ultimately
+// will not be able to decrypt.
+int
+can_decrypt_msg_body(vc body)
+{
+    vc prvkeys(VC_VECTOR);
+    prvkeys[0] = dh_my_static();
+
+    // this is something i have to think about. even if we are not
+    // set up in the current group, if we have a group key available
+    // we should be able to decrypt a message sent with that key.
+    // well, maybe not, this might mean we could decrypt something
+    // from a group we are not in anymore (like we might have gotten
+    // booted out of for some reason.)
+    vc ak = DH_alternate::get_all_keys();
+    if(!ak.is_nil())
+    {
+        for(int i = 0; i < ak.num_elems(); ++i)
+        {
+            prvkeys.append(ak[i]);
+        }
+    }
+
+    //prvkeys[1] = Current_alternate->my_static();
+
+    vc key = dh_store_and_forward_get_key2(body[QQM_BODY_DHSF], prvkeys);
+    if(key.type() != VC_STRING)
+        return 0;
+    vc ectx = vclh_encdec_open();
+    vclh_encdec_init_key_ctx(ectx, key, 0);
+    vc msg_out;
+    if(encdec_xfer_dec_ctx(ectx, body[QQM_BODY_EMSG], msg_out).is_nil())
+    {
+        GRTLOG("decrypt msg body failed %s", (const char *)to_hex(key), 0);
+        return 0;
+    }
+
+    return 1;
+}
+
 vc
 decrypt_msg_body(vc body)
 {
