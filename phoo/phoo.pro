@@ -92,7 +92,7 @@ QT += concurrent
 INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
 }
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
 
 linux-* {
 DEFINES += LINUX
@@ -482,24 +482,25 @@ HEADERS += \
     syncmodel.h
 
 DISTFILES += \
-    androidinst/gradle/wrapper/gradle-wrapper.jar \
-    androidinst/AndroidManifest.xml \
-    androidinst/gradle/wrapper/gradle-wrapper.properties \
-    androidinst/gradlew \
-    androidinst/gradlew.bat \
-    androidinst/res/values/libs.xml \
-    androidinst/build.gradle \
-    androidinst/google-services.json \
-    androidinst/src/com/dwyco/cdc32/dwybg.java \
-    androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst/src/com/dwyco/phoo/app.java \
-    androidinst/src/com/dwyco/android/Dwyco_Message.java \
-    androidinst/src/com/dwyco/android/DwycoProbe.java \
-    androidinst/src/com/dwyco/android/DwycoSender.java \
-    androidinst/src/com/dwyco/android/MyFirebaseMessagingService.java \
-    androidinst/src/com/dwyco/android/NotificationClient.java \
-    androidinst/src/com/dwyco/android/Push_Notification.java \
-    androidinst/src/com/dwyco/android/SocketLock.java \
-    androidinst/src/com/dwyco/android/StickyIntentService.java \
-    androidinst/src/com/dwyco/phoo/DwycoApp.java
+    androidinst2/google-services.json \
+    androidinst2/src/com/dwyco/cdc32/dwybg.java \
+    androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
+    androidinst2/src/com/dwyco/phoo/app.java \
+    androidinst2/src/com/dwyco/android/Dwyco_Message.java \
+    androidinst2/src/com/dwyco/android/DwycoProbe.java \
+    androidinst2/src/com/dwyco/android/DwycoSender.java \
+    androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst2/src/com/dwyco/android/NotificationClient.java \
+    androidinst2/src/com/dwyco/android/Push_Notification.java \
+    androidinst2/src/com/dwyco/android/SocketLock.java \
+    androidinst2/src/com/dwyco/android/StickyIntentService.java \
+    androidinst2/src/com/dwyco/phoo/DwycoApp.java \
+    androidinst2/AndroidManifest.xml \
+    androidinst2/build.gradle \
+    androidinst2/gradle.properties \
+    androidinst2/gradle/wrapper/gradle-wrapper.jar \
+    androidinst2/gradle/wrapper/gradle-wrapper.properties \
+    androidinst2/gradlew \
+    androidinst2/gradlew.bat \
+    androidinst2/res/values/libs.xml
 
