@@ -908,7 +908,7 @@ setup_locations()
             // access your photos on the device easily. maybe need to just request "read"
             // in this case.
             filepath = QStandardPaths::AppDataLocation;
-            exit(0);
+            //exit(0);
         }
     }
 #endif
