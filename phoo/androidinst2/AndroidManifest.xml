@@ -72,10 +72,11 @@
             <meta-data android:name="android.app.splash_screen_drawable_landscape" android:resource="@drawable/logo_landscape"/>
         </activity>
         <!-- For adding service(s) please check: https://wiki.qt.io/AndroidServices -->
-        <service android:name="com.dwyco.android.MyFirebaseMessagingService">
-            <meta-data android:name="android.app.background_running" android:value="true"/>
-            <meta-data android:name="android.app.lib_name" android:value="-- %%INSERT_APP_LIB_NAME%% --"/>
-        </service>
+<service android:name="com.dwyco.android.MyFirebaseMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+</service>
 <service android:name="com.dwyco.android.Dwyco_Message" android:enabled="true" android:process=":dwycobg">
 </service>
 <service android:name="com.dwyco.android.DwycoSender" android:enabled="true" android:process=":dwycosend">

@@ -231,9 +231,17 @@ public static String get_token() {
 
           // Get new FCM registration token
           String token = task.getResult();
-
+          prefs_lock.lock();
+          SharedPreferences sp;
+          sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
+          SharedPreferences.Editor pe = sp.edit();
+          pe.putString("token", token);
+          pe.commit();
+          prefs_lock.release();
+      
+          Log.d("wrote token: ", token);
           // Log and toast
-          Log.d("TOKEN", token);
+          //Log.d("TOKEN", token);
           
         }
     });
