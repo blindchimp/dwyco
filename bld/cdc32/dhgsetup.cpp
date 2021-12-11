@@ -27,6 +27,7 @@
 #include "se.h"
 #include "qmsgsql.h"
 #include "synccalls.h"
+#include "grpmsg.h"
 
 
 using namespace CryptoPP;
@@ -139,6 +140,13 @@ eager_changed(vc, vc)
     se_emit_group_status_change();
 }
 
+static
+void
+successful_join(vc alt_name)
+{
+    set_settings_value("group/alt_name", alt_name);
+}
+
 void
 init_dhgdb()
 {
@@ -158,6 +166,7 @@ init_dhg()
     se_emit_group_status_change();
     bind_sql_setting("group/alt_name", change_current_group);
     bind_sql_setting("group/join_key", change_join_key);
+    Join_signal.connect_ptrfun(successful_join);
     vc alt_name;
     vc pw;
 

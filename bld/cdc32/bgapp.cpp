@@ -241,6 +241,32 @@ bail_out()
     exit(0);
 }
 
+// need this in case a join was initiated in the UI and
+// it is completed in the background. we need to exit immediately
+// and let it re-initialize with the new group member.
+static
+void
+check_join_simple(int cmd, int ctx_id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *value_elide, int val_len, int qid, int extra_arg)
+{
+    DwString nm;
+    if(name)
+    {
+        nm = DwString(name, len_name);
+    }
+    if(cmd == DWYCO_SE_GRP_JOIN_OK)
+    {
+        GRTLOG("JOIN GROUP %s OK", nm.c_str(), 0);
+        //dwyco_set_setting("group/alt_name", nm.c_str());
+        exit(0);
+    }
+    else if(cmd == DWYCO_SE_GRP_JOIN_FAIL)
+    {
+        GRTLOG("JOIN GROUP %s FAIL", nm.c_str(), 0);
+        exit(1);
+    }
+
+}
+
 
 DWYCOEXPORT
 int
@@ -276,6 +302,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     dwyco_set_client_version("dwycobg", 7);
     dwyco_set_initial_invis(1);
     dwyco_set_login_result_callback(dwyco_background_db_login_result);
+    dwyco_set_system_event_callback(check_join_simple);
     dwyco_bg_init();
     if(token)
         dwyco_write_token(token);
@@ -286,8 +313,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     // calling stuff sorted out (needs a protocol change to alert
     // regarding incoming calls, etc.) we just let everything go
     // via the server.
-    dwyco_inhibit_sac(1);
-    dwyco_inhibit_pal(1);
+    dwyco_inhibit_sac(0);
+    dwyco_inhibit_pal(0);
 
     if(dwyco_get_create_new_account())
     {
@@ -404,9 +431,9 @@ enum gops {
     JOIN
 };
 
-gops Group_ops;
-DwString Group_to_join;
-DwString Group_pw;
+static gops Group_ops;
+static DwString Group_to_join;
+static DwString Group_pw;
 
 static
 void
