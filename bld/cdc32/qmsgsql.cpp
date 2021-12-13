@@ -230,8 +230,28 @@ sql_insert_record(vc entry, vc assoc_uid)
 {
     VCArglist a;
     a.set_size(NUM_QM_IDX_FIELDS + 2);
-    a.append("replace into msg_idx values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13);");
-
+    //a.append("replace into msg_idx values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13);");
+    // note: this is a compat hack, allowing this older software to run
+    // even tho the newer software has run and upgraded the schema.
+    // only really useful if someone downgrades their software and runs it
+    // *after* running the new stuff.
+    a.append("insert or ignore into msg_idx "
+            "("
+               "date ,"
+               "mid ,"
+               "is_sent,"
+               "is_forwarded,"
+               "is_no_forward,"
+               "is_file,"
+               "special_type,"
+               "has_attachment,"
+               "att_has_video,"
+               "att_has_audio,"
+               "att_is_short_video,"
+               "logical_clock,"
+               "assoc_uid"
+            ")"
+            "values(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)");
     for(int i = 0; i < NUM_QM_IDX_FIELDS; ++i)
         a.append(entry[i]);
     a.append(to_hex(assoc_uid));

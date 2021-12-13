@@ -63,7 +63,7 @@ Page {
     Component {
         id: simpdir_delegate
         Rectangle {
-            width: parent.width
+            width: ListView.view.width
             height: has_preview ? vh(pct) : vh(pct) / 2
             border.width: 1
 

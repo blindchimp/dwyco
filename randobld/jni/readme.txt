@@ -1,4 +1,3 @@
-dwight melcher
 Mon Apr 15 13:47:20 MST 2013
 
 basic idea for an android build:
