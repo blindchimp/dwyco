@@ -10,6 +10,7 @@
 #include "dlli.h"
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
+#include "dwycolist2.h"
 
 IgnoreListModel *TheIgnoreListModel;
 
@@ -26,35 +27,6 @@ IgnoreListModel::~IgnoreListModel()
 {
     TheIgnoreListModel = 0;
 }
-
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
-}
-
-static int
-dwyco_get_attr_int(DWYCO_LIST l, int row, const char *col, int& int_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_INT)
-        return 0;
-    QByteArray str_out = QByteArray(val, len);
-    int_out = str_out.toInt();
-    return 1;
-}
-
 
 IgnoredUser *
 IgnoreListModel::add_uid_to_model(const QByteArray& uid)
@@ -90,13 +62,13 @@ IgnoreListModel::load_users_to_model()
     clear();
 
     l = dwyco_ignore_list_get();
-    dwyco_list_numelems(l, &n, 0);
+    simple_scoped ql(l);
+    n = ql.rows();
     for(int i = 0; i < n; ++i)
     {
-        QByteArray uid = dwyco_get_attr(l, i, DWYCO_NO_COLUMN);
+        QByteArray uid = ql.get<QByteArray>(i);
         add_uid_to_model(uid);
     }
-    dwyco_list_release(l);
 }
 
 

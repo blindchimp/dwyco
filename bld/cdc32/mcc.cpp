@@ -339,16 +339,6 @@ record_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
 //---------------------------------------------------------------------------
 int  TMsgCompose::record_buttonClick()
 {
-    // avoid re-entering if we are in the middle of
-    // trying to shut down the video capture device...
-    // this is thanks to microsoft... the system will
-    // probably crash if you don't watch out here...
-
-    extern int Sleeping;
-
-    if(Sleeping)
-        return 0;
-
     if(record_pic)
     {
         return do_record_pic();
@@ -856,12 +846,35 @@ void  TMsgCompose::send_buttonClick()
         sp = pok;
     else if(pal_auth_rej_mode)
         sp = pnok;
-    else if(special_type == DWYCO_SPECIAL_TYPE_BACKUP)
-        sp = "backup";
-    else if(special_type == DWYCO_SPECIAL_TYPE_USER)
+    else
     {
-        sp = "user";
-        sp_payload = special_payload;
+        if(special_type != 0)
+        {
+            switch(special_type)
+            {
+            case DWYCO_SPECIAL_TYPE_BACKUP:
+                sp = "backup";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN1:
+                sp = "join1";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN2:
+                sp = "join2";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN3:
+                sp = "join3";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN4:
+                sp = "join4";
+                break;
+            case DWYCO_SPECIAL_TYPE_USER:
+                sp = "user";
+                break;
+            }
+            sp_payload = special_payload;
+            // for testing
+            msg_text = (const char *)sp;
+        }
     }
     // note: this is a little odd, two copies of the text will be
     // in the message, one for old clients, and one for

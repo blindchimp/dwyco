@@ -21,6 +21,7 @@ DwOString computer_gen_pw();
 void save_low_sec(const DwOString& a);
 void save_high_sec(const DwOString& a);
 DwOString get_low_sec();
+int check_pw_against_local_hash(const DwOString& pw);
 extern DwOString My_uid;
 
 pwform *ThePwForm;
@@ -38,8 +39,7 @@ pwform::pwform(QDialog *parent)
 static void
 change_done(const char *cmd, void *user_arg, int succ, const char *failed_reason)
 {
-    // for now, we ignore errors from the server since the server isn't
-    // checking the password. this is only temporary while we upgrade the system
+    // password is a local-only thing now. the server isn't involved
 #if 0
     if(succ == 0)
     {
@@ -120,7 +120,6 @@ pwform::accept()
         mode = m.eq("1");
     }
 
-    int check_pw_against_local_hash(const DwOString& pw);
     // if you are in low security mode, we let you change the
     // password or change the security mode at will.
     if(mode == 1 && !check_pw_against_local_hash(DwOString(opw.toAscii().constData(), 0,
@@ -131,13 +130,12 @@ pwform::accept()
     }
 
     // if the "start cdc without a password is checked" go into
-    // low security mode, but still try to change the pw on the
-    // server
+    // low security mode
 
     npw = ui.new_pw_edit->text();
     if(ui.save_pw_checkbox->checkState() == Qt::Unchecked && npw.length() == 0)
     {
-        QMessageBox::critical(this, "Error", "You new password shouldn't be empty.");
+        QMessageBox::critical(this, "Error", "Your new password shouldn't be empty.");
         return;
     }
     QString cpw = ui.confirm_edit->text();

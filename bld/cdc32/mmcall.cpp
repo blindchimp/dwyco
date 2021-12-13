@@ -17,7 +17,7 @@
 // now we can ask servers for setup, proxies of various kinds for
 // NAT/firewall info, etc.etc. MMChannels are already too complicated
 // to hang all this off of them, and it is better if they are just
-// lefts as "one shot" attempt objects rather than trying to extend them.
+// left as "one shot" objects rather than trying to extend them.
 //
 // in addition, we eventually want to have some kinda outgoing call
 // q in order to limit the number of simultaneous calls, and these
@@ -102,6 +102,12 @@ MMCall::channel_to_call(int chan_id)
         }
     }
     return 0;
+}
+
+DwVecP<MMCall>
+MMCall::calls_by_type(vc tp)
+{
+    return MMCalls_qbm.query_by_member(tp, &MMCall::call_type);
 }
 
 // this is called after a physical connect has occurred on a direct

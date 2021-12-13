@@ -7,6 +7,7 @@ Item {
         id: grid_tog
         text: "Show Grid"
         checkable: true
+        checked: true
     }
 
 }

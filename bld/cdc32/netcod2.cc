@@ -20,7 +20,6 @@
 #include "vcwsock.h"
 #include "matcom.h"
 #include "vcxstrm.h"
-#include "sleep.h"
 #include "dwlog.h"
 #include "dwstr.h"
 #include "mmchan.h"

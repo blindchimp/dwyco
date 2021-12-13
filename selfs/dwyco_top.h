@@ -32,7 +32,7 @@ class DwycoCore : public QObject
     QML_WRITABLE_VAR_PROPERTY(QString, client_name)
     QML_WRITABLE_VAR_PROPERTY(bool, use_archived)
     QML_READONLY_VAR_PROPERTY(int, total_users)
-    QML_READONLY_VAR_PROPERTY(int, unread_count)
+    QML_READONLY_VAR_PROPERTY(bool, any_unviewed)
     QML_READONLY_VAR_PROPERTY(QString, buildtime)
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
     QML_READONLY_VAR_PROPERTY(QString, tmp_dir)
@@ -43,11 +43,19 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
     QML_READONLY_VAR_PROPERTY(QString, this_uid)
+    QML_READONLY_VAR_PROPERTY(QString, this_handle)
     QML_READONLY_VAR_PROPERTY(bool, directory_fetching)
+
+    QML_READONLY_VAR_PROPERTY(QString, active_group_name)
+    QML_READONLY_VAR_PROPERTY(QString, join_key)
+    QML_READONLY_VAR_PROPERTY(int, group_status)
+    QML_READONLY_VAR_PROPERTY(int, percent_synced)
+    QML_READONLY_VAR_PROPERTY(int, eager_pull)
+    QML_READONLY_VAR_PROPERTY(int, group_private_key_valid)
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
-        m_unread_count = 0;
         m_client_name = "";
         m_buildtime = BUILDTIME;
         m_user_dir = ".";
@@ -60,7 +68,14 @@ public:
         m_vid_dev_name = "";
         m_use_archived = true;
         m_this_uid = "";
+        m_this_handle = "";
         m_directory_fetching = false;
+        m_active_group_name = "";
+        m_join_key = "";
+        m_percent_synced = 0;
+        m_group_status = 0;
+        m_eager_pull = 0;
+        m_any_unviewed = false;
     }
     static QByteArray My_uid;
 
@@ -154,8 +169,8 @@ public:
         return dwyco_is_file_zap(compid);
     }
 
-    Q_INVOKABLE int send_forward(QString recipient, QString add_text, QString uid_folder, QString mid_to_forward, int save_sent);
-    Q_INVOKABLE int flim(QString uid_folder, QString mid_to_forward);
+    Q_INVOKABLE int send_forward(QString recipient, QString add_text, QString mid_to_forward, int save_sent);
+    Q_INVOKABLE int flim(QString mid_to_forward);
 
     Q_INVOKABLE void send_chat(QString text);
 
@@ -189,7 +204,7 @@ public:
 
     Q_INVOKABLE void reset_unviewed_msgs(QString uid);
 
-    Q_INVOKABLE int make_zap_view(QString uid, QString mid);
+    Q_INVOKABLE int make_zap_view(QString mid);
     Q_INVOKABLE int make_zap_view_file(QString fn);
     Q_INVOKABLE int delete_zap_view(int view_id) {
         return dwyco_delete_zap_view(view_id);
@@ -260,6 +275,10 @@ public:
     // dwyco video camera api
     Q_INVOKABLE void select_vid_dev(int i);
     Q_INVOKABLE void enable_video_capture_preview(int i);
+
+    // test stuff
+    //Q_INVOKABLE void start_gj(QString uid, QString password);
+    Q_INVOKABLE int start_gj2(QString gname, QString password);
 
     Q_INVOKABLE void set_badge_number(int i);
     Q_INVOKABLE void refresh_directory();
@@ -352,6 +371,11 @@ signals:
     void mid_tag_changed(QString mid);
 
     void name_to_uid_result(QString uid, QString handle);
+
+    void msg_pull_ok(const QByteArray& mid, const QString& huid);
+    void msg_tag_change_global(const QByteArray& mid, const QString& huid);
+
+    void join_result(const QByteArray& gname, int result);
 
 private:
 

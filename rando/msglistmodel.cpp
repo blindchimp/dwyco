@@ -213,7 +213,7 @@ att_file_hash(const QByteArray& huid, const QByteArray& mid, QByteArray& hash_ou
 
     const char *buf = 0;
     int len = 0;
-    if(!dwyco_copy_out_file_zap_buf(uid.constData(), uid.length(), mid.constData(), &buf, &len, 4096))
+    if(!dwyco_copy_out_file_zap_buf2(mid.constData(), &buf, &len, 4096))
         return 0;
     QCryptographicHash ch(QCryptographicHash::Sha1);
     ch.addData(buf, len);

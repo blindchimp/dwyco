@@ -39,15 +39,19 @@ DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYC
 #DEFINES += MINIUPNP_STATICLIB
 message("cdc32 setup for rando")
 } else {
+CONFIG(debug,debug|release) {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-#DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
-DEFINES += DWYCO_FIELD_DEBUG
+DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
+#DEFINES += DWYCO_FIELD_DEBUG
+} else {
+message("release build")
+}
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
 }
 
 macx-*|linux-*|macx-ios-clang|macx-clang|android-*|wasm-emscripten {
-QMAKE_CXXFLAGS += -fpermissive
+QMAKE_CXXFLAGS += #-fpermissive
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 INCLUDEPATH += winemu
 SOURCES += winemu.cc linid.cpp
@@ -72,6 +76,9 @@ DEFINES += MACOSX NEED_SHORT_EXTERNAL_NAMES #DWYCO_THREADED_ENCODE
 QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
 DEFINES += DWYCO_USE_STATIC_SQLITE
 SOURCES += sqlite3.c
+equals(DWYCOBG, 0) {
+DEFINES += DWYCO_CDC_LIBUV
+}
 }
 
 win32-* {
@@ -128,11 +135,13 @@ SOURCES += sqlite3.c
 }
 
 SOURCES += \
+    bgapp.cpp \
     ezset2.cpp \
 mmchan.cc \
 mmbld.cc \
 mmaud.cc \
 mmband.cc \
+    mmchan_sync.cpp \
 mmconn.cc \
 mmctrl.cc \
 mmchan2.cc \
@@ -150,6 +159,7 @@ colcod.cc \
 coldec.cc \
 dchroma.cc \
     profiledb.cpp \
+    pulls.cpp \
 qtab.cc \
 dwrate.cc \
 dwrtlog.cc \
@@ -176,12 +186,13 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
+    sync_sendq.cpp \
+    synccalls.cpp \
 syncvar.cc \
 doinit.cc \
 netcod.cc \
 netcod2.cc \
 tcode.cc \
-sleep.cc \
 statfun.cc \
 dirth.cc \
 rlc.cc \
@@ -189,7 +200,6 @@ tdecode.cc \
 tpgmdec.cc \
 sqrs.cc \
 qauth.cc \
-rawconv.cc \
 senc.cc \
 aq.cc \
 vcpan.cc \
@@ -202,7 +212,6 @@ globs.cc \
 fl.cc \
 mmserv.cc \
 tl.cc \
-cdcpal.cc \
 dlli.cpp \
 mcc.cpp \
 qmsg.cc \
@@ -252,10 +261,14 @@ sqlbq.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
     simplesql.cpp \
+    grpmsg.cpp \
     upnp.cpp \
     aqkey.cpp
 
 HEADERS += \
-    vccfg.h \
-    upnp.h
+    profiledb.h \
+    pulls.h \
+    simple_property.h \
+    sync_sendq.h \
+    vccfg.h
 

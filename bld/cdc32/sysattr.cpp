@@ -16,7 +16,11 @@ void
 init_sysattr()
 {
     Defaults = vc(VC_TREE);
-    Defaults.add_kv("us-proxy-bw-limit", 64);
+    // note: this was originally used for audio/video channels. sync channels
+    // don't really follow this, but i think tally the data into the
+    // video channel, which is probably wrong. the whole thing needs to
+    // be revisited and fixed.
+    Defaults.add_kv("us-proxy-bw-limit", 384);
 #ifdef UWB_SAMPLING
     Defaults.add_kv("us-audio-sample-rate", UWB_SAMPLE_RATE);
 #else
@@ -44,10 +48,7 @@ init_sysattr()
     Defaults.add_kv("us-video-coder-theora-quality-step", 5);
     Defaults.add_kv("us-video-coder-theora-quality-cbr", 0);
 
-
-
     Attrs = vc(VC_TREE);
-
 }
 
 int

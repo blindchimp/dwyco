@@ -79,7 +79,7 @@ MMChannel::get_secondary_server_channel()
 }
 
 void
-MMChannel::send_to_db(QckMsg& m, int chan_id)
+MMChannel::send_to_db(const QckMsg& m, int chan_id)
 {
     MMChannel *mcs;
     mcs = MMChannel::channel_by_id(chan_id);
@@ -101,6 +101,8 @@ void
 MMChannel::server_response(vc v)
 {
     static vc sync("c");
+    GRTLOG("server resp %d", myid, 0);
+    GRTLOGVC(v);
     if(v == sync)
     {
         vc s(VC_VECTOR);
@@ -535,12 +537,6 @@ MMChannel::chat_response(vc v)
 
 }
 
-int
-MMChannel::disconnect_server()
-{
-    return 0;
-}
-
 MMChannel *
 MMChannel::start_server_channel(enum resolve_how how, unsigned long addr, const char *name, int port)
 {
@@ -593,6 +589,7 @@ MMChannel::keepalive_processing()
         // to drop if no activity is going on.
         if(!secondary_server_channel)
             send_ctrl("!");
+        break;
     default:; // do nothing
     }
 }

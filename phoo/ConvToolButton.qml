@@ -23,7 +23,7 @@ TipButton {
     }
     contentItem:  Rectangle {
         anchors.centerIn: parent
-        visible: core.unread_count > 0
+        visible: core.any_unviewed
         color: "indigo"
         anchors.margins: mm(1)
         anchors.fill: parent
@@ -31,9 +31,9 @@ TipButton {
         Text {
             anchors.centerIn: parent
             anchors.fill: parent
-            text: core.unread_count > 9 ? "9+" : String(core.unread_count)
+            text: "!"
             color: "white"
-            visible: core.unread_count > 0
+            visible: core.any_unviewed
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }

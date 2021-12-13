@@ -33,7 +33,8 @@ int Disable_incoming_SAC = 0;
 static void
 serv_recv_call_failed_last(MMChannel *mc, vc, void *, ValidPtr)
 {
-    GRTLOG("serv_recv call failed last", 0, 0);
+    if(mc)
+        GRTLOG("serv_recv call failed last %d", mc->myid, 0);
 }
 
 void

@@ -144,7 +144,7 @@ player::preview_saved_msg(DwOString uid, DwOString mid)
         // branch, we undo the contraint.
         ui.label->setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
         ui.play_button->setText("");
-        viewid = dwyco_make_zap_view(sm, uid.c_str(), uid.length(), 0);
+        viewid = dwyco_make_zap_view2(sm, 0);
         if(viewid == 0)
             return 0;
         if(!dwyco_zap_play_preview(viewid, preview_done, (void *)vp.cookie, &ui_id))
@@ -234,7 +234,7 @@ player::do_file_save()
 
     if(fn.length() == 0)
         return;
-    if(!dwyco_copy_out_file_zap(uid.c_str(), uid.length(), mid.c_str(), fn.toAscii().constData()))
+    if(!dwyco_copy_out_file_zap2(mid.c_str(), fn.toAscii().constData()))
     {
         QMessageBox::critical(this, "Save failed", QString("Save to file %1 failed.").arg(fn));
     }

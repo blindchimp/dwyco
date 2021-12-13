@@ -114,7 +114,7 @@ Item {
 
     Connections {
         target: core
-        onSys_invalidate_profile: {
+        function onSys_invalidate_profile(uid) {
             console.log("chatlist invalidate " + uid)
         }
     }

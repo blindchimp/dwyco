@@ -175,7 +175,7 @@ Page {
                 }
 
                 ConvToolButton {
-                    visible: {stack.depth > 2 || core.unread_count > 0}
+                    visible: {stack.depth > 2 || core.any_unviewed}
                 }
 
                 CallButtonLink {
@@ -783,7 +783,7 @@ Page {
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(to_uid, model.mid)
+                                    var vid = core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
 
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {

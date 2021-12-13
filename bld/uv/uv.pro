@@ -9,7 +9,7 @@ INCLUDEPATH += src include include/uv-private
 DEFINES += _LARGEFILE_SOURCE _FILE_OFFSET_BITS=64
 }
 
-macx-clang {
+macx-clang|macx-ios-clang {
 DEFINES += _DARWIN_USE_64_BIT_INODE=1
 }
 
@@ -91,7 +91,7 @@ SOURCES += \
             src/unix/linux-syscalls.h
 }
 
-macx-clang {
+macx-clang|macx-ios-clang {
 SOURCES += \
             src/unix/darwin.c \
             src/unix/fsevents.c \

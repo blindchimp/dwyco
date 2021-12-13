@@ -92,7 +92,7 @@ Page {
                     text: "Forward msg"
                     onTriggered: {
                         forward_dialog.mid_to_forward = mid
-                        forward_dialog.uid_folder = uid
+                        //forward_dialog.uid_folder = uid
                         stack.push(forward_dialog)
                     }
                 }
@@ -273,7 +273,7 @@ Page {
         }
 
         Layout.fillWidth: true
-        Layout.maximumHeight: viewer_source === "" ? (parent.height * 6) / 10 : parent.height / 3
+        Layout.maximumHeight: viewer.source === "" ? (parent.height * 6) / 10 : parent.height / 3
 
         wrapMode: Text.Wrap
     }

@@ -78,7 +78,6 @@ syncvar.cc \
 doinit.cc \
 netcod.cc \
 tcode.cc \
-sleep.cc \
 statfun.cc \
 dirth.cc \
 rlc.cc \
@@ -99,7 +98,6 @@ globs.cc \
 fl.cc \
 mmserv.cc \
 tl.cc \
-cdcpal.cc \
 cdcpal2.cc \
 dlli.cpp \
 mcc.cpp \
@@ -156,7 +154,14 @@ aqext_android.cpp \
 backsql.cpp \
 upnp.cpp \
 simplesql.cpp \
-aqkey.cpp
+aqkey.cpp \
+pulls.cpp \
+dhgsetup.cpp \
+grpmsg.cpp \
+mmchan_sync.cpp \
+sync_sendq.cpp \
+bgapp.cpp \
+synccalls.cpp
 
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls

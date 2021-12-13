@@ -20,7 +20,7 @@ namespace dwyco {
 
 static
 void
-qs_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
+qs_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, vc ruid)
 {
     // avoid multiple start messages for one "round" of send attempts
     if(status == SE_MSG_SEND_START)
@@ -31,14 +31,18 @@ qs_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
 
 }
 
-static int
-send_via_server_int(const DwString& qfn)
+static
+int
+send_via_server_int(const DwString& qfn, int inhibit_encryption, int no_group, int no_self)
 {
     // assumes already in the outbox
 
     DwQSend *qs = new DwQSend(qfn, 0);
     qs->se_sig.connect_ptrfun(qs_signal_bounce);
     qs->status_sig.connect_ptrfun(se_emit_msg_status);
+    qs->force_encryption = inhibit_encryption ? DwQSend::INHIBIT_ENCRYPTION : DwQSend::DEFAULT;
+    qs->no_group = no_group;
+    qs->no_self_send = no_self;
     int err;
     err = qs->send_message();
     if(err == -1)
@@ -61,7 +65,7 @@ send_via_server_int(const DwString& qfn)
 
 static
 void
-ds_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
+ds_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, vc ruid)
 {
     if(status == SE_MSG_SEND_SUCCESS ||
             status == SE_MSG_SEND_START ||
@@ -75,15 +79,15 @@ ds_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
     // if it is a fail, try sending it via server
     No_direct_msgs.add(ruid);
     move_back_to_outbox(qfn);
-    send_via_server_int(qfn);
+    send_via_server_int(qfn, 0, 0, 0);
 }
 
 int
-send_via_server(const DwString& qfn)
+send_via_server(const DwString& qfn, int inhibit_encryption, int no_group, int no_self)
 {
     move_to_outbox(qfn);
 
-    return send_via_server_int(qfn);
+    return send_via_server_int(qfn, inhibit_encryption, no_group, no_self);
 }
 
 int
@@ -160,7 +164,7 @@ send_best_way(const DwString& qfn, vc ruid)
             move_back_to_outbox(qfn);
         }
         delete ds;
-        return send_via_server_int(qfn);
+        return send_via_server_int(qfn, 0, 0, 0);
     }
     else if(dsres == -1)
     {
@@ -176,7 +180,7 @@ send_best_way(const DwString& qfn, vc ruid)
 // message as well so it is never sent.
 static
 void
-delete_message(enum dwyco_sys_event, DwString qfn, vc)
+delete_message(enum dwyco_sys_event, const DwString& qfn, vc)
 {
     // note: on windows, we may not be able to delete a message if it is
     // still open. this is likely to happen more with attachments, so

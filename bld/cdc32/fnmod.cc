@@ -286,6 +286,20 @@ is_msg_fn(const DwString& fn)
 }
 
 int
+is_user_dir(const DwString& fn)
+{
+    if(fn.length() != 24)
+        return 0;
+    DwString a = fn;
+    a.to_lower();
+    if(a.find_first_not_of("abcdef0123456789") != 20)
+        return 0;
+    if(a.rfind(".usr") != 20)
+        return 0;
+    return 1;
+}
+
+int
 is_attachment(vc fn)
 {
     if(fn.len() != 24)

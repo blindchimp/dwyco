@@ -11,6 +11,7 @@
 #ifdef LINUX
 #include <unistd.h>
 #endif
+#include <stdio.h>
 #include "mmchan.h"
 #include "sproto.h"
 #include "fnmod.h"
@@ -20,6 +21,9 @@
 #include "vcudh.h"
 #include "ta.h"
 #include "qauth.h"
+#include "dhgsetup.h"
+
+using namespace dwyco;
 
 using namespace dwyco;
 
@@ -93,7 +97,12 @@ struct strans recv_attachment_pull[] = {
 struct strans media_x_setup[] = {
     {"start", "i", &MMChannel::init_connect_media, "send-media-id"},
     {"send-media-id", "w", &MMChannel::send_media_id, "wait-for-ok"},
-    {"wait-for-ok", "r", &MMChannel::check_media_response, "ping"},
+    {"wait-for-ok", "r", &MMChannel::check_media_response, "ping", "send-chal"},
+    {"send-chal", "w", &MMChannel::send_sync_challenge, "wait-resp"},
+    {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "wait-chal"},
+    {"wait-chal", "r", &MMChannel::wait_for_sync_challenge, "send-resp"},
+    {"send-resp", "w", &MMChannel::send_sync_resp, "sync-ready"},
+    {"sync-ready", "i", &MMChannel::sync_ready, "ping"},
     {"ping", "t", 0, "send-ping"},
     {"send-ping", "w", &MMChannel::send_media_ping, "ping"},
     {0}
@@ -110,7 +119,12 @@ struct strans media_x_setup[] = {
 // take care of that here. the main reason we do the pinging at
 // all here is to keep NAT routers from timing out our mappings.
 static struct strans media_r_setup[] = {
-    {"start", "w", &MMChannel::send_media_ok, "ping"},
+    {"start", "w", &MMChannel::send_media_ok, "ping", "wait-chal"},
+    {"wait-chal", "r", &MMChannel::wait_for_sync_challenge, "send-resp"},
+    {"send-resp", "w", &MMChannel::send_sync_resp, "send-chal"},
+    {"send-chal", "w", &MMChannel::send_sync_challenge, "wait-resp"},
+    {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "sync-ready"},
+    {"sync-ready", "i", &MMChannel::sync_ready, "ping"},
     {"ping", "t", 0, "send-ping"},
     {"send-ping", "w", &MMChannel::send_media_ping, "ping"},
     {0}
@@ -157,6 +171,8 @@ MMChannel::init_connect_media(int subchan, sproto *p, const char *ev)
             audio_state = i;
         else if(subchan == video_chan)
             video_state = i;
+        else if(subchan == msync_chan)
+            msync_state = i;
 
         return sproto::next;
     }
@@ -177,6 +193,10 @@ MMChannel::send_media_id(int subchan, sproto *p, const char *ev)
     else if(subchan == video_chan)
     {
         v[0] = "video";
+    }
+    else if(subchan == msync_chan)
+    {
+        v[0] = "msync";
     }
     else
         oopanic("bad media protocol");
@@ -366,9 +386,9 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
     }
     if(i == SSTRYAGAIN)
         return sproto::stay;
-    p->watchdog.stop();
     if(rvc == vc("video ok"))
     {
+        p->watchdog.stop();
         video_state = MEDIA_SESSION_UP;
         p->timeout.load(VIDEO_IDLE_TIMEOUT);
         p->timeout.set_oneshot(1);
@@ -384,6 +404,7 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
     }
     else if(rvc == vc("audio ok"))
     {
+        p->watchdog.stop();
         audio_state = MEDIA_SESSION_UP;
         p->timeout.load(AUDIO_IDLE_TIMEOUT);
         p->timeout.set_oneshot(1);
@@ -397,8 +418,86 @@ MMChannel::check_media_response(int subchan, sproto *p, const char *ev)
         return sproto::next;
 
     }
+    else if(rvc == vc("msync ok"))
+    {
+        // NOTE: make sure timeout is right for syncing
+        p->timeout.load(AUDIO_IDLE_TIMEOUT);
+        p->timeout.set_oneshot(1);
+        p->timeout.start();
+        if(!agreed_key.is_nil())
+        {
+            tube->set_key_iv(agreed_key, 0);
+            tube->start_decrypt_chan(subchan);
+            tube->start_encrypt_chan(subchan);
+        }
+        return sproto::alt_next;
+
+    }
     return sproto::fail;
 
+}
+
+int
+MMChannel::send_sync_challenge(int subchan, sproto *p, const char *ev)
+{
+    if(!Current_alternate)
+        return sproto::fail;
+    vc v;
+    vc key;
+    if(p->user_info.is_nil())
+    {
+        vc nonce;
+        v = Current_alternate->gen_challenge_msg(nonce);
+        p->user_info = nonce;
+    }
+    // note: odd issue here with networking stuff. if it says "try again"
+    // what it really did was take a copy of what you first gave it, and
+    // stored it away, and the next time we come in here, we are basically
+    // pushing out the stuff we originally sent in.
+    // since dh_store_and_forward_material gives us a new session key for
+    // each call, we have to store what we sent and not recompute it on each
+    // try.
+    // this problem would be fixed if we had a network layer that didn't
+    // store things like that... or a call to dh.. that took the key to use
+
+    int i;
+    if((i = tube->send_data(v, subchan)) == SSERR)
+        return sproto::fail;
+    if(i == SSTRYAGAIN)
+        return sproto::stay;
+    return sproto::next;
+}
+
+int
+MMChannel::check_sync_challenge_response(int subchan, sproto *p, const char *ev)
+{
+    vc rvc;
+    int i;
+
+    if((i = tube->recv_data(rvc, subchan)) == SSERR)
+    {
+        return sproto::fail;
+    }
+    if(i == SSTRYAGAIN)
+        return sproto::stay;
+
+    if(p->user_info == rvc)
+    {
+        p->user_info = vcnil;
+        return sproto::next;
+    }
+    return sproto::fail;
+}
+
+
+int
+MMChannel::sync_ready(int subchan, sproto *p, const char *ev)
+{
+    p->watchdog.stop();
+    msync_state = MEDIA_SESSION_UP;
+    mms_sync_state = SEND_INIT;
+    mmr_sync_state = RECV_INIT;
+    return sproto::next;
 }
 
 int
@@ -561,7 +660,8 @@ MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
                 oopanic("unimp");
 
         }
-        else if(rvc[0] == vc("audio") || rvc[0] == vc("video"))
+        else if(rvc[0] == vc("audio") || rvc[0] == vc("video") ||
+                rvc[0] == vc("msync"))
         {
             int sid = (int)rvc[1];
             MMChannel *mc = get_channel_by_session_id(sid);
@@ -587,6 +687,11 @@ MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
             {
                 mc->video_chan = nc;
                 mc->video_state = MEDIA_SESSION_SETUP;
+            }
+            else if(rvc[0] == vc("msync"))
+            {
+                mc->msync_chan = nc;
+                mc->msync_state = MEDIA_SESSION_SETUP;
             }
             tube->set_channel(0, 0, 0, subchan);
             sproto *s = new sproto(nc, media_r_setup, mc->vp);
@@ -818,9 +923,10 @@ MMChannel::send_media_ok(int subchan, sproto *p, const char *ev)
         return sproto::fail;
     if(i == SSTRYAGAIN)
         return sproto::stay;
-    p->watchdog.stop();
+    //p->watchdog.stop();
     if(media == vc("audio"))
     {
+        p->watchdog.stop();
         p->timeout.load(AUDIO_IDLE_TIMEOUT);
         p->timeout.set_oneshot(1);
         p->timeout.start();
@@ -828,14 +934,59 @@ MMChannel::send_media_ok(int subchan, sproto *p, const char *ev)
     }
     else if(media == vc("video"))
     {
+        p->watchdog.stop();
         p->timeout.load(VIDEO_IDLE_TIMEOUT);
         p->timeout.set_oneshot(1);
         p->timeout.start();
         video_state = MEDIA_SESSION_UP;
     }
+    else if(media == vc("msync"))
+    {
+        p->timeout.load(AUDIO_IDLE_TIMEOUT);
+        p->timeout.set_oneshot(1);
+        p->timeout.start();
+        tube->set_key_iv(agreed_key, 0);
+        tube->start_encrypt_chan(subchan);
+        tube->start_decrypt_chan(subchan);
+        return sproto::alt_next;
+    }
     tube->set_key_iv(agreed_key, 0);
     tube->start_encrypt_chan(subchan);
     tube->start_decrypt_chan(subchan);
+    return sproto::next;
+}
+
+int
+MMChannel::wait_for_sync_challenge(int subchan, sproto *p, const char *ev)
+{
+    if(!Current_alternate)
+        return sproto::fail;
+    int i;
+    vc v;
+
+    if((i = tube->recv_data(v, subchan)) == SSERR)
+    {
+        return sproto::fail;
+    }
+    if(i == SSTRYAGAIN)
+        return sproto::stay;
+    vc resp;
+    int ret = Current_alternate->challenge_recv(v, resp);
+    if(ret == 0)
+        return sproto::fail;
+    p->user_info = resp;
+    return sproto::next;
+}
+
+int
+MMChannel::send_sync_resp(int subchan, sproto *p, const char *ev)
+{
+    int i;
+    if((i = tube->send_data(p->user_info, subchan)) == SSERR)
+        return sproto::fail;
+    if(i == SSTRYAGAIN)
+        return sproto::stay;
+    p->user_info = vcnil;
     return sproto::next;
 }
 

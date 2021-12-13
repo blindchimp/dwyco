@@ -35,7 +35,7 @@ namespace dwyco {
 // times, usually thru typos. this is for debugging only, and
 // should be disabled in release. note that it assumes you won't have
 // more than ?31 as an arg, and it is broken in cases where you give
-// it ? is some other context.
+// it ? in some other context.
 static
 void
 check_args(const char *sql, int count)
@@ -114,6 +114,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
                                      &st, &tail)) != SQLITE_OK)
     {
+        oopanic(sqlite3_errmsg(dbs));
         throw -1;
         return vcnil;
     }
@@ -127,7 +128,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         for(int i = 1; i < a->num_elems(); ++i)
         {
             vc val = aa.get(i);
-            switch(aa.get(i).type())
+            switch(val.type())
             {
             case VC_INT:
                 if(sqlite3_bind_int(st, i, val) != SQLITE_OK)
@@ -243,6 +244,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
 out:
     ;
     sqlite3_finalize(st);
+    GRTLOGVC(res);
     return res;
 }
 }

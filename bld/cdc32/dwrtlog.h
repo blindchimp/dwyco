@@ -20,7 +20,7 @@ class VcIOHackStr;
 
 #define RTLOG_DEFAULT_FILENAME "rtlog.out"
 #define RTLOG_DEFAULT_SIZE (100 * 1024)
-#define RTLOG_DEFAULT_TIME (30 * 60)
+#define RTLOG_DEFAULT_TIME (30)
 
 class DwRTLog
 {
