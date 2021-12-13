@@ -111,7 +111,7 @@ random_fn()
 void
 forward_msg(const QByteArray& mid, const QByteArray& uid)
 {
-    int compid = dwyco_make_forward_zap_composition(0, 0, mid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(mid.constData(), 1);
     if(compid == 0)
         return;
 
@@ -952,7 +952,7 @@ main(int argc, char *argv[])
                 HANDLE_MSG(mid);
                 continue;
             }
-            int compid = dwyco_make_forward_zap_composition(0, 0, mid.constData(), 1);
+            int compid = dwyco_make_forward_zap_composition2(mid.constData(), 1);
             int tmp = dwyco_flim(compid);
             dwyco_delete_zap_composition(compid);
             if(tmp)
@@ -972,7 +972,7 @@ main(int argc, char *argv[])
             QByteArray actual_b(Botfiles);
             actual_b += "/";
             actual_b += b;
-            dwyco_copy_out_file_zap(0, 0, mid.constData(), actual_b.constData());
+            dwyco_copy_out_file_zap2(mid.constData(), actual_b.constData());
 
             // mobile devices have a hard time hashing a lot of multi-MB
             // image data, so just hash the first 4k or so (which is ok since
@@ -982,7 +982,7 @@ main(int argc, char *argv[])
                 const char *buf;
                 int len_buf = 0;
 
-                dwyco_copy_out_file_zap_buf(0, 0, mid.constData(), &buf, &len_buf, 4096);
+                dwyco_copy_out_file_zap_buf2(mid.constData(), &buf, &len_buf, 4096);
                 QCryptographicHash h(QCryptographicHash::Sha1);
                 h.addData(buf, len_buf);
                 hash = h.result().toHex();
