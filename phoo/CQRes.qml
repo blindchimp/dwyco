@@ -217,7 +217,7 @@ Page {
     Component {
         id: cqres_delegate
         Rectangle {
-            width: parent.width
+            width: ListView.view.width
             height: {uid.length > 0 ? vh(pct) : 0}
             border.width: 1
 

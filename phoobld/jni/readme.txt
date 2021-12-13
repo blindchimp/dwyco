@@ -1,4 +1,3 @@
-dwight melcher
 Sat Sep 28 10:49:56 MDT 2019
 
 on Macos, using homebrew, be sure you have autoconf installed:
