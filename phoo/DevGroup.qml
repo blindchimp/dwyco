@@ -254,28 +254,36 @@ Page {
 //                        text: status + " " + asserts + " " + sendq_count + " " + percent_synced
 //                        Layout.preferredWidth: cm(2)
 //                    }
-
+                    Item {
+                        height: handle_label.height
+                        width: height
                     Image {
+                        anchors.fill: parent
                         source: mi("ic_cloud_off_black_24dp.png")
                         visible: !noip.visible && (model.status === "od" || model.status === "rd")
                     }
                     Image {
+                        anchors.fill: parent
                         source: mi("ic_cloud_download_black_24dp.png")
                         visible: !noip.visible && (asserts > 0 || sendq_count > 0) && (model.status === "oa" || model.status === "ra")
                     }
                     Image {
+                        anchors.fill: parent
                         source: mi("ic_lock_outline_black_24dp.png")
                         visible: !noip.visible && (model.status === "ri" || model.status === "oi")
                     }
                     Image {
+                        anchors.fill: parent
                         source: mi("ic_lock_black_24dp.png")
                         visible: !noip.visible && !(asserts > 0 || sendq_count > 0) && (model.status === "ra" || model.status === "oa")
                     }
 
                     Image {
+                        anchors.fill: parent
                         id: noip
                         source: mi("ic_visibility_off_black_24dp.png")
                         visible: ip.length === 0 && adv_ip.length === 0
+                    }
                     }
 
                     ProgressBar {
@@ -286,6 +294,7 @@ Page {
                     }
 
                     Label {
+                        id: handle_label
                         elide: Text.ElideRight
                         text: "(" + uid.substring(0, 2) + ")" + handle
                         //Layout.preferredWidth: cm(2)
@@ -331,12 +340,17 @@ Page {
 
             clip: true
         }
+        ItemDelegate {
+            id: show_join_log
+            checkable: true
+            text: checked ? "Hide join log" : "Show join log"
+        }
 
         ListView {
             id: join_log
             //anchors.fill: parent
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.fillHeight: show_join_log.checked ? true : false
             header: Component {
                 RowLayout {
                     width: parent.width
