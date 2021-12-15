@@ -197,52 +197,52 @@ Page {
             //anchors.fill: parent
             Layout.fillWidth: true
             Layout.fillHeight: true
-            header: Component {
-                RowLayout {
-                    width: parent.width
-                    height: implicitHeight
-                    spacing: mm(1)
-                    Label {
-                        elide: Text.ElideRight
-                        text: "Status"
-                        Layout.preferredWidth: cm(2)
-                    }
-                    Label {
-                        elide: Text.ElideRight
-                        text: "Handle"
-                        Layout.preferredWidth: cm(2)
-                    }
+//            header: Component {
+//                RowLayout {
+//                    width: parent.width
+//                    height: implicitHeight
+//                    spacing: mm(1)
 //                    Label {
-//                        text: "status"
-//                        Layout.preferredWidth:  mm(5)
+//                        elide: Text.ElideRight
+//                        text: "Status"
+//                        Layout.preferredWidth: cm(2)
 //                    }
+//                    Label {
+//                        elide: Text.ElideRight
+//                        text: "Handle"
+//                        Layout.preferredWidth: cm(2)
+//                    }
+////                    Label {
+////                        text: "status"
+////                        Layout.preferredWidth:  mm(5)
+////                    }
 
+////                    Label {
+////                        text: "asserts"
+////                        Layout.preferredWidth:  mm(15)
+////                        horizontalAlignment: Text.AlignRight
+////                    }
+////                    Label {
+////                        text: "q"
+////                        Layout.preferredWidth:  mm(15)
+////                        horizontalAlignment: Text.AlignRight
+////                    }
+////                    Label {
+////                        text: "%"
+////                        Layout.preferredWidth:  mm(10)
+////                        horizontalAlignment: Text.AlignRight
+////                    }
 //                    Label {
-//                        text: "asserts"
-//                        Layout.preferredWidth:  mm(15)
-//                        horizontalAlignment: Text.AlignRight
+//                        text: "ip"
+//                        //color: proxy ? "red" : "black"
+//                        //Layout.preferredWidth: cm(4)
 //                    }
-//                    Label {
-//                        text: "q"
-//                        Layout.preferredWidth:  mm(15)
-//                        horizontalAlignment: Text.AlignRight
+//                    Item {
+//                        Layout.fillWidth: true
 //                    }
-//                    Label {
-//                        text: "%"
-//                        Layout.preferredWidth:  mm(10)
-//                        horizontalAlignment: Text.AlignRight
-//                    }
-                    Label {
-                        text: "ip"
-                        //color: proxy ? "red" : "black"
-                        //Layout.preferredWidth: cm(4)
-                    }
-                    Item {
-                        Layout.fillWidth: true
-                    }
-                }
+//                }
 
-            }
+//            }
 
             model: SyncDescModel
             delegate: Component {
@@ -250,15 +250,45 @@ Page {
                     width: ListView.view.width
                     height: implicitHeight
                     spacing: mm(1)
-                    Label {
-                        text: status + " " + asserts + " " + sendq_count + " " + percent_synced
+//                    Label {
+//                        text: status + " " + asserts + " " + sendq_count + " " + percent_synced
+//                        Layout.preferredWidth: cm(2)
+//                    }
+
+                    Image {
+                        source: mi("ic_cloud_off_black_24dp.png")
+                        visible: !noip.visible && (model.status === "od" || model.status === "rd")
+                    }
+                    Image {
+                        source: mi("ic_cloud_download_black_24dp.png")
+                        visible: !noip.visible && (asserts > 0 || sendq_count > 0) && (model.status === "oa" || model.status === "ra")
+                    }
+                    Image {
+                        source: mi("ic_lock_outline_black_24dp.png")
+                        visible: !noip.visible && (model.status === "ri" || model.status === "oi")
+                    }
+                    Image {
+                        source: mi("ic_lock_black_24dp.png")
+                        visible: !noip.visible && !(asserts > 0 || sendq_count > 0) && (model.status === "ra" || model.status === "oa")
+                    }
+
+                    Image {
+                        id: noip
+                        source: mi("ic_visibility_off_black_24dp.png")
+                        visible: ip.length === 0 && adv_ip.length === 0
+                    }
+
+                    ProgressBar {
+                        from: 0
+                        to: 100
+                        value: percent_synced
                         Layout.preferredWidth: cm(2)
                     }
 
                     Label {
                         elide: Text.ElideRight
                         text: "(" + uid.substring(0, 2) + ")" + handle
-                        Layout.preferredWidth: cm(2)
+                        //Layout.preferredWidth: cm(2)
                     }
 //                    Label {
 //                        text: status
@@ -280,18 +310,18 @@ Page {
 //                        Layout.preferredWidth:  mm(10)
 //                        horizontalAlignment: Text.AlignRight
 //                    }
-                    Label {
-                        id: conn_ip
-                        text: ip
-                        color: proxy ? "red" : "green"
-                        visible: ip.length > 0
-                        //Layout.preferredWidth: cm(4)
-                    }
-                    Label {
-                        id: advertised_ip
-                        text: adv_ip
-                        visible: adv_ip.length > 0 && !conn_ip.visible
-                    }
+//                    Label {
+//                        id: conn_ip
+//                        text: ip
+//                        color: proxy ? "red" : "green"
+//                        visible: ip.length > 0
+//                        //Layout.preferredWidth: cm(4)
+//                    }
+//                    Label {
+//                        id: advertised_ip
+//                        text: adv_ip
+//                        visible: adv_ip.length > 0 && !conn_ip.visible
+//                    }
 
                     Item {
                         Layout.fillWidth: true
