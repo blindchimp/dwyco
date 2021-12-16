@@ -871,7 +871,7 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
     sql_commit_transaction();
     //Database_online.value_changed.connect_ptrfun(refetch_pk);
-    Keys_updated.connect_ptrfun(update_group_map);
+    Keys_updated.connect_ptrfun(update_group_map, 1);
 
 #if 0
     // this is a hack for debugging, load existing data indexes. we expect we won't
