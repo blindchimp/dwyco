@@ -95,6 +95,7 @@ clear_gj()
 {
     SKID->start_transaction();
     SKID->sql_simple("delete from pstate");
+    SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('clear state', ?1, 'clear', strftime('%s', 'now'))", to_hex(My_UID));
     SKID->commit_transaction();
     se_emit_group_status_change();
 }
