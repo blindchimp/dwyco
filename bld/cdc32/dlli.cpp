@@ -6179,9 +6179,12 @@ DWYCOEXPORT
 int
 dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **str_out)
 {
+#ifdef DWYCO_TRACE
     // keep debugging from crashing
+    // yes, this is a bit of a leak
     *str_out = new char[1];
     *str_out[0] = 0;
+#endif
 
     vc v(VC_BSTRING, uid, len_uid);
     int prim, sec, pal;
