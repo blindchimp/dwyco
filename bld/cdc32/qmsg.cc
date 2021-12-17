@@ -655,8 +655,15 @@ resume_qmsg()
     }
     if(!Pals.is_nil())
     {
-        pals_to_tags();
-        save_info(vcnil, "pals");
+        // compat hack. don't obliterate their old pal list
+        // leave it intact so the old software doesn't crash
+        // if they downgrade.
+        vc loaded_pals;
+        if(!load_info(loaded_pals, "loadpals.dif") || loaded_pals.is_nil())
+        {
+            pals_to_tags();
+            save_info(vctrue, "loadpals.dif");
+        }
     }
     Pals = get_local_pals();
     Client_ports = vc(VC_TREE);
