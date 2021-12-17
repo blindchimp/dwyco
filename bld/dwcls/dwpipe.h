@@ -99,6 +99,7 @@ private:
     int die;
 
     void process_next_item();
+    static void *pipe_thread(void *pipeline);
 };
 
 #include "dwpipe.cpp"
