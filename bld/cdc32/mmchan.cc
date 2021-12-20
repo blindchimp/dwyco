@@ -678,6 +678,7 @@ MMChannel::MMChannel() :
     mms_sync_state.value_changed.connect_memfun(this, &MMChannel::mms_sync_state_changed);
     mmr_sync_state.value_changed.connect_memfun(this, &MMChannel::mmr_sync_state_changed);
     package_index_future = nullptr;
+    unpack_index_future = nullptr;
 }
 
 MMChannel::~MMChannel()

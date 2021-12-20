@@ -508,8 +508,25 @@ MMChannel::process_incoming_sync()
         if(mmr_sync_state == RECV_INIT)
         {
             destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+#ifdef DWYCO_BACKGROUND_SYNC
+            if(unpack_index_future == nullptr)
+            {
+                unpack_index_future = new std::future<int>();
+                *unpack_index_future = std::async(std::launch::async, &MMChannel::unpack_index, this, rvc);
+            }
+            if(unpack_index_future->wait_for(std::chrono::seconds(0)) == std::future_status::timeout)
+            {
+                return 0;
+            }
+            int ret = unpack_index_future->get();
+            delete unpack_index_future;
+            unpack_index_future = nullptr;
+            if(!ret)
+                throw -1;
+#else
             if(!unpack_index(rvc))
                 throw -1;
+#endif
             mmr_sync_state = NORMAL_RECV;
         }
         else if(mmr_sync_state == NORMAL_RECV)

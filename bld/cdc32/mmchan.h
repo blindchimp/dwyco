@@ -1047,6 +1047,7 @@ private:
     vc package_index();
     vc package_next_cmd();
 
+    std::future<int> *unpack_index_future;
     int unpack_index(vc cmd);
     void process_pull(vc cmd);
     void process_pull_resp(vc cmd);
