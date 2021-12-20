@@ -21,6 +21,7 @@
 #ifdef _MSC_VER
 #include <sys/types.h>
 #endif
+#include <future>
 
 #include "dwvecp.h"
 #include "dwtimer.h"
@@ -1039,6 +1040,10 @@ private:
     DwTimer sync_pinger;
     DwTimer downstream_timer;
 
+    // why pointer? i don't want even a chance that this
+    // will block on delete... i'd rather have a little leak
+    // than block.
+    std::future<vc> *package_index_future;
     vc package_index();
     vc package_next_cmd();
 

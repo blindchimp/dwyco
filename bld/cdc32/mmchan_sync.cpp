@@ -27,6 +27,9 @@
 #include "dhgsetup.h"
 #include "pulls.h"
 #include "synccalls.h"
+#include <thread>
+#include <future>
+#include <chrono>
 
 using namespace dwyco;
 using namespace dwyco::qmsgsql;
@@ -395,7 +398,23 @@ MMChannel::process_outgoing_sync()
     vc vcx;
     if(mms_sync_state == SEND_INIT)
     {
+#ifdef DWYCO_BACKGROUND_SYNC
+        if(package_index_future == nullptr)
+        {
+            auto f = new std::future<vc>;
+            package_index_future = f;
+            *f = std::async(std::launch::async, &MMChannel::package_index, this);
+        }
+        if(package_index_future->wait_for(std::chrono::seconds(0)) == std::future_status::timeout)
+        {
+            return 0;
+        }
+        vcx = package_index_future->get();
+        delete package_index_future;
+        package_index_future = nullptr;
+#else
         vcx = package_index();
+#endif
         // note: this probably needs to be a unique signal, because the
         // the receive part sets this up too
         destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
