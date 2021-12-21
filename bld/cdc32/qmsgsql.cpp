@@ -131,7 +131,8 @@ QMsgSql::init_schema_fav()
         sql_simple("create table if not exists mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
 
-        sql_simple("create temp table static_crdt_tags(tag text not null)");
+        sql_simple("drop table if exists mt.static_crdt_tags");
+        sql_simple("create table mt.static_crdt_tags(tag text not null)");
         sql_simple("insert into static_crdt_tags values('_fav')");
         sql_simple("insert into static_crdt_tags values('_hid')");
         sql_simple("insert into static_crdt_tags values('_ignore')");
@@ -291,9 +292,12 @@ sql_dump_mi()
     DwString fn = gen_random_filename();
     fn += ".tmp";
     fn = newfn(fn);
-    sDb->attach(fn, "dump");
-    sql_start_transaction();
-    sql_simple("create table dump.msg_idx ("
+    SimpleSql s("mi.sql");
+    if(!s.init())
+        oopanic("can't dump index");
+    s.attach(fn, "dump");
+    s.start_transaction();
+    s.sql_simple("create table dump.msg_idx ("
                "date integer,"
                "mid,"
                "is_sent,"
@@ -312,14 +316,15 @@ sql_dump_mi()
                "from_client_uid "
                ");"
               );
-    sql_simple("insert into dump.msg_idx select "
+    s.sql_simple("insert into dump.msg_idx select "
                "*"
                " from main.gi");
 
-    sql_simple("create table dump.msg_tomb (mid, time)");
-    sql_simple("insert into dump.msg_tomb select * from main.msg_tomb");
-    sql_commit_transaction();
-    sDb->detach("dump");
+    s.sql_simple("create table dump.msg_tomb (mid, time)");
+    s.sql_simple("insert into dump.msg_tomb select * from main.msg_tomb");
+    s.commit_transaction();
+    s.detach("dump");
+    s.exit();
     return fn.c_str();
 }
 
@@ -329,21 +334,25 @@ sql_dump_mt()
     DwString fn = gen_random_filename();
     fn += ".tmp";
     fn = newfn(fn);
-    sDb->attach(fn, "dump");
-    sql_start_transaction();
-    sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore)");
-    sql_simple("create table dump.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
+    SimpleSql s("fav.sql");
+    if(!s.init())
+        oopanic("can't dump tags");
+    s.attach(fn, "dump");
+    s.start_transaction();
+    s.sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore)");
+    s.sql_simple("create table dump.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
     // note: we only send "user generated" tags. also some tags are completely local, like "unviewed" and "remote" which we
     // don't really want to send at all.
-    sql_simple("insert into dump.msg_tags2 select "
+    s.sql_simple("insert into dump.msg_tags2 select "
                "mid, "
                "tag, "
                "time, "
                "guid "
-               "from mt.gmt where tag in (select * from static_crdt_tags)");
-    sql_simple("insert into dump.tomb select * from mt.gtomb");
-    sql_commit_transaction();
-    sDb->detach("dump");
+               "from main.gmt where tag in (select * from main.static_crdt_tags)");
+    s.sql_simple("insert into dump.tomb select * from main.gtomb");
+    s.commit_transaction();
+    s.detach("dump");
+    s.exit();
     return fn.c_str();
 
 }
@@ -1116,12 +1125,9 @@ map_to_representative_uid(vc uid)
 vc
 map_uid_list_from_tag(vc tag)
 {
-    sql_simple("create temp table foo as select distinct(mid) as uid from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid)",
-                 tag);
-    sql_simple("create temp table bar as select uid from group_map except select min(uid) from group_map group by gid");
-    vc res = sql_simple("select * from foo where uid not in (select * from bar)");
-    sql_simple("drop table foo");
-    sql_simple("drop table bar");
+    vc res = sql_simple("with foo(uid) as (select distinct(mid) as uid from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid)),"
+    " bar(uid) as (select uid from group_map except select min(uid) from group_map group by gid) "
+    " select * from foo where uid not in (select * from bar)", tag);
     return res;
 }
 
@@ -2068,18 +2074,19 @@ sql_get_tagged_mids(vc tag)
     try
     {
         sql_start_transaction();
-        sql_simple("create temp table foo as select assoc_uid, mid from gmt,gi using(mid) where tag = ?1 "
+        res = sql_simple("select assoc_uid, mid from gmt,gi using(mid) where tag = ?1 "
                    "and not exists(select 1 from mt.gtomb where gmt.guid = guid) "
+                   "and not exists(select 1 from msg_tomb where mid = gi.mid)"
                          "group by mid "
                          "order by logical_clock asc",
                          tag);
-        sql_simple("delete from foo where mid in (select mid from msg_tomb)");
-        res = sql_simple("select * from foo");
+        //sql_simple("delete from foo where mid in (select mid from msg_tomb)");
+        //res = sql_simple("select * from foo");
         for(int i = 0; i < res.num_elems(); ++i)
         {
             res[i][0] = to_hex(map_to_representative_uid(from_hex(res[i][0])));
         }
-        sql_simple("drop table foo");
+        //sql_simple("drop table foo");
         sql_commit_transaction();
     }
     catch (...)
@@ -2114,16 +2121,17 @@ sql_get_tagged_idx(vc tag)
     try
     {
         sql_start_transaction();
-        sql_simple("create temp table foo as select "
+        res = sql_simple("select "
                  "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
                  "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
                  " from gmt,gi using(mid) where tag = ?1 and not exists(select 1 from mt.gtomb where guid = gmt.guid)"
+                         " and not exists(select 1 from msg_tomb where mid = gi.mid) "
                          "group by mid "
                          "order by logical_clock desc",
                             tag);
-        sql_simple("delete from foo where mid in (select mid from msg_tomb)");
-        res = sql_simple("select * from foo");
-        sql_simple("drop table foo");
+        //sql_simple("delete from foo where mid in (select mid from msg_tomb)");
+        //res = sql_simple("select * from foo");
+        //sql_simple("drop table foo");
         sql_commit_transaction();
     }
     catch (...)
