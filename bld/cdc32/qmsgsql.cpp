@@ -1261,18 +1261,15 @@ sql_remove_uid(vc uid)
 
 }
 
+#define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum "union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
+
 static
 void
 create_uidset(vc uid)
 {
     vc huid = to_hex(uid);
 
-    sql_simple("create temp table uidset as select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
-    vc res = sql_simple("select count(*) from uidset");
-    if((int)res[0][0] == 0)
-    {
-        sql_simple("insert into uidset values(?1)", huid);
-    }
+    sql_simple("create temp table uidset as select ?1 union select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
 }
 
 static
@@ -1344,7 +1341,7 @@ sql_load_group_index(vc uid, int max_count)
     try
     {
         sql_start_transaction();
-        create_uidset(uid);
+        //create_uidset(uid);
         vc gid = map_uid_to_gid(uid);
 
         // the first part of this query gets all the messages for
@@ -1357,6 +1354,7 @@ sql_load_group_index(vc uid, int max_count)
         // NOTE: the messages of this sort will show up in two places, but
         // if they are deleted in one place, they will be deleted from both places.
         res = sql_simple(
+                    with_create_uidset(3)
                     "select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
            "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
            " from gi where "
@@ -1365,8 +1363,9 @@ sql_load_group_index(vc uid, int max_count)
                     " or (is_sent isnull and length(?1) > 0 and from_group = ?1 ))"
                 " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
                     gid.is_nil() ? "" : to_hex(gid),
-                    max_count);
-        drop_uidset();
+                    max_count,
+                    huid);
+        //drop_uidset();
         sql_commit_transaction();
     }
     catch(...)
@@ -1572,15 +1571,17 @@ msg_idx_get_new_msgs(vc uid, vc logical_clock)
     {
         sql_start_transaction();
         vc huid = to_hex(uid);
-        create_uidset(uid);
+        //create_uidset(uid);
         vc res = sql_simple(
+                    with_create_uidset(2)
                 "select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
                "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
                " from gi where "
                " assoc_uid in (select * from uidset)"
                     " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) and logical_clock > ?1 group by mid order by logical_clock desc",
-                            logical_clock);
-        drop_uidset();
+                            logical_clock,
+                            huid);
+        //drop_uidset();
         sql_commit_transaction();
         return res;
     }
@@ -1770,10 +1771,12 @@ get_unfav_msgids(vc uid)
     try
     {
         sql_start_transaction();
-        create_uidset(uid);
-        vc res = sql_simple("select mid as foo from gi where assoc_uid in (select * from uidset) "
-                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') group by mid");
-        drop_uidset();
+        //create_uidset(uid);
+        vc res = sql_simple(
+                    with_create_uidset(1)
+                    "select mid as foo from gi where assoc_uid in (select * from uidset) "
+                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') group by mid", to_hex(uid));
+        //drop_uidset();
         sql_commit_transaction();
         int n = res.num_elems();
         for(int i = 0; i < n; ++i)
@@ -1996,10 +1999,13 @@ sql_fav_remove_uid(vc uid)
     try
     {
         sql_start_transaction();
-        create_uidset(uid);
+        //create_uidset(uid);
         // find all crdt tags associated with all mids, and perform crdt related things for each mid
-        sql_simple("delete from gmt where mid in (select distinct(mid) from gi where assoc_uid in (select * from uidset))");
-        drop_uidset();
+        sql_simple(
+                    with_create_uidset(1)
+                    "delete from gmt where mid in (select distinct(mid) from gi where assoc_uid in (select * from uidset))",
+                    to_hex(uid));
+        //drop_uidset();
         sql_commit_transaction();
     }
     catch(...)
@@ -2177,11 +2183,14 @@ sql_uid_has_tag(vc uid, vc tag)
     try
     {
         sql_start_transaction();
-        create_uidset(uid);
-        vc res = sql_simple("select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
-                            tag);
+        //create_uidset(uid);
+        vc res = sql_simple(
+                    with_create_uidset(2)
+                    "select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
+                            tag,
+                    to_hex(uid));
         c = (res.num_elems() > 0);
-        drop_uidset();
+        //drop_uidset();
         sql_commit_transaction();
     }
     catch(...)
@@ -2201,11 +2210,14 @@ sql_uid_count_tag(vc uid, vc tag)
     try
     {
         sql_start_transaction();
-        create_uidset(uid);
-        vc res = sql_simple("select count(distinct mid) from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid)",
-                            tag);
+        //create_uidset(uid);
+        vc res = sql_simple(
+                    with_create_uidset(2)
+                    "select count(distinct mid) from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid)",
+                            tag,
+                    to_hex(uid));
         c = res[0][0];
-        drop_uidset();
+        //drop_uidset();
         sql_commit_transaction();
     }
     catch(...)
