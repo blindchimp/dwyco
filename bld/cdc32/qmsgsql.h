@@ -63,7 +63,7 @@ int sql_count_tag(vc tag);
 bool sql_exists_valid_tag(vc tag);
 int sql_count_valid_tag(vc tag);
 int sql_is_mid_local(vc mid);
-void import_remote_mi(vc remote_uid);
+int import_remote_mi(vc remote_uid);
 vc sql_find_who_has_mid(vc mid);
 
 vc sql_run_sql(vc s, vc a1 = vcnil, vc a2 = vcnil, vc a3 = vcnil);

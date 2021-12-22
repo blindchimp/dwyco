@@ -144,6 +144,12 @@ int save_msg(vc m, vc msg_id);
 #include "qmsgsql.h"
 
 void
+update_global_logical_clock(int64_t lc)
+{
+    if(lc > Logical_clock)
+        Logical_clock = lc + 1;
+}
+void
 boost_logical_clock()
 {
     long tmplc = sql_get_max_logical_clock();

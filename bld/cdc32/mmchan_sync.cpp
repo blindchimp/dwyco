@@ -145,7 +145,8 @@ MMChannel::unpack_index(vc cmd)
     favfn = newfn(favfn);
     string_to_file(cmd[1], mifn);
     string_to_file(cmd[2], favfn);
-    import_remote_mi(remote_uid());
+    if(!import_remote_mi(remote_uid()))
+        return 0;
     return 1;
 }
 

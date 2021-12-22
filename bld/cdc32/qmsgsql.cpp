@@ -139,22 +139,6 @@ QMsgSql::init_schema_fav()
         sql_simple("insert into static_crdt_tags values('_pal')");
         sql_simple("insert into static_crdt_tags values('_leader')");
 
-        // triggers use this table when reflecting changes downstream
-        // to disable the trigger, remove the tags from this table
-        sql_simple("create temp table crdt_tags(tag text not null)");
-        sql_simple("insert into crdt_tags select * from static_crdt_tags");
-
-        // this is a kluge, we set the mid field to a uid, and tag it according
-        // to the attributes we want on that user. the tags are replicated
-        // like mid tags, it just so happens that mids and uids are random
-        // 80bit numbers and are not likely to conflict. might be a good idea
-        // to separate them into another table and replicate them separately, but
-        // this should be ok for now.
-        sql_simple("create temp table static_uid_tags(tag text not null)");
-        sql_simple("insert into static_uid_tags values('_ignore')");
-        sql_simple("insert into static_uid_tags values('_pal')");
-        sql_simple("insert into static_uid_tags values('_leader')");
-
         // this is an upgrade, the msg_tags2 stuff should be installed in gmt
         // with proper guids. this should mostly only be done once, but there
         // are cases where people reinstall old software that might trigger
@@ -572,53 +556,77 @@ remove_sync_state()
 
 // note: this is for testing, we're just assuming the index
 // has been materialized here so we can investigate things
-void
+int
 import_remote_mi(vc remote_uid)
 {
     vc huid = to_hex(remote_uid);
     DwString fn = DwString("mi%1.sql").arg((const char *)huid);
     DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
-
-    sDb->attach(fn, "mi2");
-    sDb->attach(favfn, "fav2");
-
+    SimpleSql s("mi.sql");
+    if(!s.init())
+        return 0;
+    s.attach("fav.sql", "mt");
+    s.attach(fn, "mi2");
+    s.attach(favfn, "fav2");
+    int ret = 1;
     try
     {
-        sql_start_transaction();
-        vc newuids = sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
+        s.start_transaction();
+        vc newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
         for(int i = 0; i < newuids.num_elems(); ++i)
         {
             se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
         }
-        sql_simple("delete from crdt_tags");
-        sql_simple("delete from current_clients where uid = ?1", huid);
+        // note sure what i was up to here... removing the contents
+        // of crdt_tags will effectively disable the triggers for
+        // creating the tag logs (that would get sent to other clients)
+        // however, i did *not* do the similar things with the current_clients,
+        // so importing the message index will cause midlog entries to be
+        // created for any other clients that are connected. which is
+        // sort of what you want (anything new we get here gets sent
+        // on down to other clients.) i would have thought this is what i
+        // wanted for tags as well, but i'll have to try and remember...
+        //
+        // since we switched to a different database connection to avoid
+        // getting hosed by the primary thread locking the database
+        // causing the detaches to fail, this crdt_tags table is a temp
+        // table that doesn't exist in this connection. fortunately, none
+        // of the triggers that are stored in the database reference it, so
+        // we are safe just ignoring it here.
+        //s.sql_simple("delete from crdt_tags");
+        s.sql_simple("delete from current_clients where uid = ?1", huid);
 
-        sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
-        boost_logical_clock();
-        sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
-        sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
+        s.sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
+        vc res = s.sql_simple("select max(logical_clock) from gi");
+        if(res[0][0].type() == VC_INT)
+        {
+            long lc = (long)res[0][0];
+            update_global_logical_clock(lc);
+        }
+        s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
+        s.sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
 
         //sync_files();
         bool update_tags = false;
-        vc c = sql_simple("select count(*) from mt.gtomb");
-        sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
-        vc c2 = sql_simple("select count(*) from mt.gtomb");
+        vc c = s.sql_simple("select count(*) from mt.gtomb");
+        s.sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
+        vc c2 = s.sql_simple("select count(*) from mt.gtomb");
         if(c[0][0] != c2[0][0])
             update_tags = true;
         if(!update_tags)
-            c = sql_simple("select count(*) from mt.gmt");
-        sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
+            c = s.sql_simple("select count(*) from mt.gmt");
+        s.sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
         if(!update_tags)
-            c2 = sql_simple("select count(*) from mt.gmt");
+            c2 = s.sql_simple("select count(*) from mt.gmt");
         if(c[0][0] != c2[0][0])
             update_tags = true;
-        sql_simple("delete from mt.gmt where mid in (select mid from msg_tomb)");
-        sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
+        s.sql_simple("delete from mt.gmt where mid in (select mid from msg_tomb)");
+        s.sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
 
-        sql_simple("insert into crdt_tags select * from static_crdt_tags");
-        sql_simple("insert into current_clients values(?1)", huid);
+        //s.sql_simple("insert into crdt_tags select * from static_crdt_tags");
+        s.sql_simple("insert into current_clients values(?1)", huid);
 
-        sql_commit_transaction();
+        s.commit_transaction();
         if(update_tags)
         {
             se_emit_uid_list_changed();
@@ -626,12 +634,14 @@ import_remote_mi(vc remote_uid)
     }
     catch(...)
     {
-        sql_rollback_transaction();
+        s.rollback_transaction();
+        ret = 0;
     }
 
-    sDb->detach("mi2");
-    sDb->detach("fav2");
-
+    s.detach("mi2");
+    s.detach("fav2");
+    s.exit();
+    return ret;
 }
 
 void
@@ -843,6 +853,22 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan2 after delete on main.msg_tomb begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
+
+    // triggers use this table when reflecting changes downstream.
+    // to disable the trigger, remove the tags from this table
+    sql_simple("create temp table crdt_tags(tag text not null)");
+    sql_simple("insert into crdt_tags select * from static_crdt_tags");
+
+    // this is a kluge, we set the mid field to a uid, and tag it according
+    // to the attributes we want on that user. the tags are replicated
+    // like mid tags, it just so happens that mids and uids are random
+    // 80bit numbers and are not likely to conflict. might be a good idea
+    // to separate them into another table and replicate them separately, but
+    // this should be ok for now.
+    sql_simple("create temp table static_uid_tags(tag text not null)");
+    sql_simple("insert into static_uid_tags values('_ignore')");
+    sql_simple("insert into static_uid_tags values('_pal')");
+    sql_simple("insert into static_uid_tags values('_leader')");
 
     sql_simple("drop table if exists current_clients");
     sql_simple("create table current_clients(uid text collate nocase unique on conflict ignore not null on conflict fail)");

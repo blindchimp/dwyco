@@ -155,6 +155,7 @@ int move_replace(const DwString& s, const DwString& d);
 vc pal_to_vector(int raw);
 void clean_cruft();
 void boost_logical_clock();
+void update_global_logical_clock(int64_t lc);
 
 #define VERF_AUTH_NO_INFO 0x1
 #define VERF_AUTH_FAILED 0x2
