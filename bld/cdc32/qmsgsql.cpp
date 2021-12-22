@@ -599,28 +599,27 @@ import_remote_mi(vc remote_uid)
         sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
 
         //sync_files();
-        sql_simple("create temp table reload_user_tags(flag)");
-        sql_simple("insert into reload_user_tags(flag) values(0)");
-        sql_simple("create temp trigger rut1 after insert on mt.gtomb begin "
-        "update reload_user_tags set flag = 1; "
-        "end"
-        );
-        sql_simple("create temp trigger rut2 after insert on mt.gmt begin "
-        "update reload_user_tags set flag = 1;"
-        "end"
-        );
+        bool update_tags = false;
+        vc c = sql_simple("select count(*) from mt.gtomb");
         sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
+        vc c2 = sql_simple("select count(*) from mt.gtomb");
+        if(c[0][0] != c2[0][0])
+            update_tags = true;
+        if(!update_tags)
+            c = sql_simple("select count(*) from mt.gmt");
         sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
+        if(!update_tags)
+            c2 = sql_simple("select count(*) from mt.gmt");
+        if(c[0][0] != c2[0][0])
+            update_tags = true;
         sql_simple("delete from mt.gmt where mid in (select mid from msg_tomb)");
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
+
         sql_simple("insert into crdt_tags select * from static_crdt_tags");
         sql_simple("insert into current_clients values(?1)", huid);
-        vc update_tags = sql_simple("select flag from reload_user_tags");
-        sql_simple("drop table reload_user_tags");
-        sql_simple("drop trigger rut1");
-        sql_simple("drop trigger rut2");
+
         sql_commit_transaction();
-        if((int)update_tags[0][0] == 1)
+        if(update_tags)
         {
             se_emit_uid_list_changed();
         }
