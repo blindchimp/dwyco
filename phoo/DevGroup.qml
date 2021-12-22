@@ -297,6 +297,7 @@ Page {
                         id: handle_label
                         elide: Text.ElideRight
                         text: "(" + uid.substring(0, 2) + ")" + handle
+                        color: proxy ? "red" : "black"
                         //Layout.preferredWidth: cm(2)
                     }
 //                    Label {
