@@ -128,7 +128,8 @@ init_sql_settings()
 	if(Db)
 		return;
     Db = new settings_sql;
-    Db->init();
+    if(!Db->init())
+        oopanic("can't init setting database set.sql");
     Map = new DwTreeKaz<setting *, vc>(0);
 
     vc db = sql("select * from settings");
