@@ -6808,10 +6808,10 @@ chal_res(vc m, void *, vc, ValidPtr vp)
         // db, we just have to activate it as our "current_alternate"
         // and update the settings. we save the signature, it might
         // be useful for validating profiles or something
+        DH_alternate::insert_sig(dha->alt_name(), sig);
         set_settings_value("group/alt_name", dha->alt_name());
         //set_settings_value("group/join_key", dha->password);
         se_emit_join(dha->alt_name(), 1);
-        DH_alternate::insert_sig(dha->alt_name(), sig);
         delete dha;
         // this reloads the key
         //init_dhg();
