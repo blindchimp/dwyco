@@ -152,7 +152,17 @@ update_global_logical_clock(int64_t lc)
 void
 boost_logical_clock()
 {
-    long tmplc = sql_get_max_logical_clock();
+    long tmplc;
+    try {
+        qmsgsql::sql_start_transaction();
+        tmplc = sql_get_max_logical_clock();
+        qmsgsql::sql_commit_transaction();
+    } catch (...) {
+        qmsgsql::sql_rollback_transaction();
+        ++Logical_clock;
+        return;
+    }
+
     if(tmplc > Logical_clock)
         Logical_clock = tmplc + 1;
 }
@@ -185,7 +195,12 @@ vc
 get_local_pals()
 {
     //vc res = sql_get_tagged_mids2("_pal");
+
     vc res = map_uid_list_from_tag("_pal");
+    // if the database is locked or something, just return the
+    // current set, and hope it gets updated at a later time.
+    if(res.is_nil())
+        return Pals;
     vc ret(VC_TREE);
     for(int i = 0; i < res.num_elems(); ++i)
         ret.add_kv(from_hex(res[i][0]), vcnil);
@@ -3617,7 +3632,13 @@ do_local_store(vc filename, vc speced_mid)
         }
         else
         {
-            update_msg_idx(recip[i], m[1]);
+            // we saved the message, but the indexing failed, need
+            // a fix for this. possibly we can just schedule a
+            // re-index for this user.
+            if(!update_msg_idx(recip[i], m[1]))
+            {
+                // FIGURE IT OUT
+            }
         }
     }
     return m[1];

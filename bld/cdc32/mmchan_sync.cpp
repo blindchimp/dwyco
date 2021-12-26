@@ -109,8 +109,18 @@ string_to_file(vc str, DwString fn)
 vc
 MMChannel::package_index()
 {
-    vc fn = sql_dump_mi();
-    vc fn2 = sql_dump_mt();
+    vc fn;
+    vc fn2;
+
+    try
+    {
+        fn = sql_dump_mi();
+        fn2 = sql_dump_mt();
+    }
+    catch(...)
+    {
+        return vcnil;
+    }
 
     vc cmd(VC_VECTOR);
     cmd[0] = "idx";
@@ -118,6 +128,8 @@ MMChannel::package_index()
     cmd[2] = file_to_string((const char *)fn2);
     remove((const char *)fn);
     remove((const char *)fn2);
+    if(cmd[1].is_nil() || cmd[2].is_nil())
+        return vcnil;
     return cmd;
 }
 
@@ -143,8 +155,10 @@ MMChannel::unpack_index(vc cmd)
     favfn.arg((const char *)huid);
     mifn = newfn(mifn);
     favfn = newfn(favfn);
-    string_to_file(cmd[1], mifn);
-    string_to_file(cmd[2], favfn);
+    if(!string_to_file(cmd[1], mifn))
+        return 0;
+    if(!string_to_file(cmd[2], favfn))
+        return 0;
     if(!import_remote_mi(remote_uid()))
         return 0;
     return 1;
@@ -154,7 +168,7 @@ void
 MMChannel::process_pull(vc cmd)
 {
     if(cmd[0] != vc("pull"))
-        return;
+        oopanic("pull");
     vc mid = cmd[1];
     vc pri = cmd[5];
     // load the msg and attachment, and send it back as a "pull-resp"
@@ -248,7 +262,8 @@ MMChannel::process_pull_resp(vc cmd)
             DwString fd = udir;
             fd += DIRSEPSTR;
             fd += (const char *)aname;
-            string_to_file(att, fd);
+            if(!string_to_file(att, fd))
+                oopanic("cant save att");
         }
         // note: this would do an se_emit to say the msg index had changed,
         // when in fact, it doesn't really change. we would not have been
@@ -256,7 +271,11 @@ MMChannel::process_pull_resp(vc cmd)
         // we do need to make a local record of it. we can either copy it
         // from the record that induced the pull, or we can just recreate it.
         // for now, we just recreate, and do not emit the msg_update
-        update_msg_idx(uid, m, 1);
+        if(!update_msg_idx(uid, m, 1))
+        {
+            // managed to save message, but indexing failed,
+            // schedule a reindex
+        }
     }
     else
     {
@@ -274,9 +293,14 @@ MMChannel::process_pull_resp(vc cmd)
                 DwString fd = udir;
                 fd += DIRSEPSTR;
                 fd += (const char *)aname;
-                string_to_file(att, fd);
+                if(!string_to_file(att, fd))
+                    oopanic("cant save att");
             }
-            update_msg_idx(uid, m, 1);
+            if(!update_msg_idx(uid, m, 1))
+            {
+                // managed to save message, but indexing failed,
+                // schedule a reindex
+            }
 
     }
     sql_commit_transaction();
@@ -418,6 +442,8 @@ MMChannel::process_outgoing_sync()
 #endif
         // note: this probably needs to be a unique signal, because the
         // the receive part sets this up too
+        if(vcx.is_nil())
+            return 0;
         destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
     }
     else if(mms_sync_state == MMSS_TRYAGAIN)

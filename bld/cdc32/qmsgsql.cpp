@@ -50,7 +50,7 @@ DwString Schema_version_hack;
 class QMsgSql : public SimpleSql
 {
 public:
-    QMsgSql() : SimpleSql("mi.sql") {}
+    QMsgSql() : SimpleSql("mi.sql") {check_txn = 1;}
     void init_schema(const DwString &schema_name);
     void init_schema_fav();
 };
@@ -159,6 +159,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 {
     if(schema_name.eq("main"))
     {
+        sql_start_transaction();
     sql_simple("pragma recursive_triggers=1");
     // WARNING: the order and number of the fields in this table
     // is the same as the #defines for the msg index in
@@ -262,6 +263,7 @@ QMsgSql::init_schema(const DwString& schema_name)
         sql_simple("pragma user_version = 1;");
         sql_commit_transaction();
     }
+    sql_commit_transaction();
     }
     else if(schema_name.eq("mt"))
 	{
@@ -279,6 +281,10 @@ sql_dump_mi()
     SimpleSql s("mi.sql");
     if(!s.init())
         oopanic("can't dump index");
+#ifdef DWYCO_BACKGROUND_SYNC
+    s.set_busy_timeout(10 * 1000);
+    s.check_txn = 1;
+#endif
     s.attach(fn, "dump");
     s.start_transaction();
     s.sql_simple("create table dump.msg_idx ("
@@ -321,6 +327,10 @@ sql_dump_mt()
     SimpleSql s("fav.sql");
     if(!s.init())
         oopanic("can't dump tags");
+#ifdef DWYCO_BACKGROUND_SYNC
+    s.set_busy_timeout(10 * 1000);
+    s.check_txn = 1;
+#endif
     s.attach(fn, "dump");
     s.start_transaction();
     s.sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore)");
@@ -390,6 +400,10 @@ package_downstream_sends(vc remote_uid)
         vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl where to_uid = ?1 and op = 'd'", huid);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0)
             GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), 0);
+        sql_simple("delete from midlog where to_uid = ?1", huid);
+        sql_simple("delete from taglog where to_uid = ?1", huid);
+        sql_commit_transaction();
+
         vc ret(VC_VECTOR);
         for(int i = 0; i < idxs.num_elems(); ++i)
         {
@@ -405,7 +419,6 @@ package_downstream_sends(vc remote_uid)
             cmd[1] = mtombs[i];
             ret.append(cmd);
         }
-        sql_simple("delete from midlog where to_uid = ?1", huid);
         for(int i = 0; i < tags.num_elems(); ++i)
         {
             vc cmd(VC_VECTOR);
@@ -420,10 +433,9 @@ package_downstream_sends(vc remote_uid)
             cmd[1] = tombs[i];
             ret.append(cmd);
         }
-        sql_simple("delete from taglog where to_uid = ?1", huid);
-        sql_commit_transaction();
         return ret;
-    } catch (...)
+    }
+    catch (...)
     {
         sql_rollback_transaction();
         return vcnil;
@@ -565,6 +577,11 @@ import_remote_mi(vc remote_uid)
     SimpleSql s("mi.sql");
     if(!s.init())
         return 0;
+    // let's hang around for 10 seconds if someone else has the
+    // database locked
+#ifdef DWYCO_BACKGROUND_SYNC
+    s.set_busy_timeout(10 * 1000);
+#endif
     s.attach("fav.sql", "mt");
     s.attach(fn, "mi2");
     s.attach(favfn, "fav2");
@@ -629,6 +646,7 @@ import_remote_mi(vc remote_uid)
         s.commit_transaction();
         if(update_tags)
         {
+            // NOTE: this will access the main connection to refresh the pal list
             se_emit_uid_list_changed();
         }
     }
@@ -832,9 +850,10 @@ init_qmsg_sql()
     sql_sync_off();
     vc hmyuid = to_hex(My_UID);
     sDb->attach("fav.sql", "mt");
+
+    sql_start_transaction();
     sql_simple("pragma main.cache_size= -100000");
     sql_simple("pragma mt.cache_size= -100000");
-    sql_start_transaction();
     vc sv = sql_simple("pragma main.user_version");
     if((int)sv[0][0] != 0)
         Schema_version_hack += sv[0][0].peek_str();
@@ -997,7 +1016,8 @@ sql_delete_mid(vc mid)
 
 long
 sql_get_max_logical_clock()
-{    vc res = sql_simple("select max(logical_clock) from gi");
+{
+    vc res = sql_simple("select max(logical_clock) from gi");
     if(res[0][0].type() != VC_INT)
         return 0;
     return (long)res[0][0];
@@ -1112,17 +1132,30 @@ map_gid_to_uids(vc gid)
 vc
 map_uid_to_uids(vc uid)
 {
-    vc res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", to_hex(uid));
+    vc res;
     vc ret(VC_VECTOR);
-    if(res.num_elems() == 0)
+    try
+    {
+        sql_start_transaction();
+        res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", to_hex(uid));
+        sql_commit_transaction();
+        if(res.num_elems() == 0)
+        {
+            ret[0] = uid;
+        }
+        else
+        {
+            for(int i = 0; i < res.num_elems(); ++i)
+            {
+                ret.append(from_hex(res[i][0]));
+            }
+        }
+    }
+    catch (...)
     {
         ret[0] = uid;
-        return ret;
     }
-    for(int i = 0; i < res.num_elems(); ++i)
-    {
-        ret.append(from_hex(res[i][0]));
-    }
+
     return ret;
 }
 
@@ -1150,9 +1183,20 @@ map_to_representative_uid(vc uid)
 vc
 map_uid_list_from_tag(vc tag)
 {
-    vc res = sql_simple("with foo(uid) as (select distinct(mid) as uid from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid)),"
-    " bar(uid) as (select uid from group_map except select min(uid) from group_map group by gid) "
-    " select * from foo where uid not in (select * from bar)", tag);
+    vc res;
+    try {
+        sql_start_transaction();
+        res = sql_simple("with foo(uid) as (select distinct(mid) as uid from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid)),"
+                         " bar(uid) as (select uid from group_map except select min(uid) from group_map group by gid) "
+                         " select * from foo where uid not in (select * from bar)", tag);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return vcnil;
+    }
+
     return res;
 }
 
@@ -1733,7 +1777,13 @@ msg_index_count(vc uid)
 // into the right place, since if the index doesn't exists, the
 // directory with all the messages is scanned and the index is
 // initialized.
-void
+// note: i changed this to return an error if the update fails
+// (which can happen a lot more frequently if we are using
+// multiple threads). it is a lot more important to index
+// things now that we are syncing. before, if the indexing failed
+// it just meant the message might not be seen until everything
+// was reindexed.
+int
 update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
 {
 
@@ -1759,13 +1809,14 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
 
     vc nentry = index_from_body(recip, body);
     GRTLOGVC(nentry);
-
+    int ret = 0;
     try
     {
         sql_start_transaction();
         sql_insert_record(nentry, uid);
         //sql_record_most_recent(uid);
         sql_commit_transaction();
+        ret = 1;
     }
     catch(...)
     {
@@ -1773,6 +1824,7 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
     }
     if(!inhibit_sysmsg)
         msg_idx_updated(uid, 0);
+    return ret;
 }
 
 void
@@ -2135,11 +2187,14 @@ sql_get_tagged_mids2(vc tag)
     vc res;
     try
     {
+        sql_start_transaction();
         res = sql_simple("select distinct(mid) from gmt where tag = ?1 and not exists(select 1 from gtomb where gmt.guid = guid)",
                          tag);
+        sql_commit_transaction();
     }
     catch (...)
     {
+        sql_rollback_transaction();
         res = vc(VC_VECTOR);
     }
     return res;
@@ -2293,12 +2348,14 @@ sql_exists_valid_tag(vc tag)
     bool c = false;
     try
     {
+        sql_start_transaction();
         vc res = sql_simple("select 1 from gmt,gi using(mid) where tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid) limit 1", tag);
         c = res.num_elems() > 0;
+        sql_commit_transaction();
     }
     catch(...)
     {
-
+        sql_rollback_transaction();
     }
     return c;
 }
@@ -2312,7 +2369,10 @@ sql_set_rescan(int r)
 int
 sql_get_rescan()
 {
+    int tmp = sDb->check_txn;
+    sDb->check_txn = 0;
     vc res = sql_simple("select flag from rescan");
+    sDb->check_txn = tmp;
     return (int)res[0][0];
 }
 

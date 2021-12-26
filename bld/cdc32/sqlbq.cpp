@@ -192,18 +192,17 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         {
         case SQLITE_DONE:
             goto out;
+
+
         case SQLITE_BUSY:
+        case SQLITE_IOERR:
             // need some indication of what we should do here.
             // retry or abort and error out. maybe do some exception
             // stuff here to allow the user to abort if they want to.
+            // the IOERR thing seems to be returned on some platforms
+            // like android for locking issues.
             res = "busy";
-            // note: because of bugs in sqlite, it appears that
-            // this case requires any transaction to be rolled back
-            // to avoid database corruption (wtf, that is pretty sad.)
-            // anyway, as long as you are 3.4+ on sqlite, the
-            // transaction will be rolled back for you. it doesn't
-            // really say how that affects other operations. it is
-            // probably best to just issue an explicit rollback sql
+            // it is probably best to just issue an explicit rollback sql
             // command just in case.
             break;
         case SQLITE_ROW:
