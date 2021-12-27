@@ -226,8 +226,10 @@ SimpleSql::rollback_transaction()
 vc
 SimpleSql::query(const VCArglist *a)
 {
+#if 0
     if(check_txn && tdepth == 0)
         oopanic("q out of txn");
+#endif
     vc res = sqlite3_bulk_query(Db, a);
     if(res.is_nil() || (res.type() == VC_STRING && res == vc("busy")))
         throw -1;

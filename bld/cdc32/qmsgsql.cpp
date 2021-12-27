@@ -647,7 +647,7 @@ import_remote_mi(vc remote_uid)
         if(update_tags)
         {
             // NOTE: this will access the main connection to refresh the pal list
-            se_emit_uid_list_changed();
+            //se_emit_uid_list_changed();
         }
     }
     catch(...)
@@ -823,7 +823,18 @@ refetch_pk(int online)
 {
     if(!online)
         return;
-    vc huids = sql_simple("select uid from group_map");
+    vc huids;
+    try {
+    sql_start_transaction();
+    huids = sql_simple("select uid from group_map");
+    sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return;
+    }
+
     for(int i = 0; i < huids.num_elems(); ++i)
     {
         vc buid = from_hex(huids[i][0]);
