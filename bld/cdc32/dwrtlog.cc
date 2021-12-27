@@ -47,6 +47,8 @@ init_rtlog()
         int l = strlen(buf);
         if(l == 0)
             break;
+        if(buf[0] == '#')
+            continue;
         if(buf[l - 1] == '\n')
             buf[l - 1] = 0;
         DwString f(buf);

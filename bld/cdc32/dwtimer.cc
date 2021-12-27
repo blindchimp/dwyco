@@ -44,7 +44,6 @@ DwTimer::DwTimer(const char *timer_id) :
     }
 #endif
 
-    oneshot = 1;
     interval = 0;
     enabled = 0;
     auto_reload = 0;
@@ -62,8 +61,6 @@ DwTimer::next_expire_time(DwString& dbgstr)
     return timer::timer_next_expire(dbgstr);
 }
 
-// make is_expired return 0, and if it is autoreload, reset
-// the timer and reenable so it can expire again
 void
 DwTimer::ack_expire()
 {
@@ -124,7 +121,7 @@ DwTimer::reset()
 void
 DwTimer::set_oneshot(int o)
 {
-    oneshot = !!o;
+    int oneshot = !!o;
     if(oneshot)
         auto_reload = 0;
 }
@@ -160,8 +157,6 @@ void
 DwTimer::set_autoreload(int a)
 {
     auto_reload = !!a;
-    if(auto_reload)
-        oneshot = 0;
 }
 
 int

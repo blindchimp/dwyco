@@ -8,7 +8,6 @@
 */
 // $Header: g:/dwight/repo/cdc32/rcs/mmctrl.cc 1.11 1999/01/10 16:09:45 dwight Checkpoint $
 #include "mmchan.h"
-#include "ratetwkr.h"
 #include "chatdisp.h"
 #include "dwrtlog.h"
 #include "qmsg.h"
@@ -165,7 +164,7 @@ MMChannel::send_decrypt()
 void
 MMChannel::regular_control_procedures(vc v)
 {
-    if(msg_chan || user_control_chan)
+    if(msg_chan || user_control_chan || is_sync_chan)
     {
         regular_control_procedures2(v);
         return;

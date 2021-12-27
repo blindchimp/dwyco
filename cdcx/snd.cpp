@@ -66,6 +66,7 @@ play_sound(const char *fn)
     play_sound_plat(fn);
 }
 
+#if 0
 void
 DWYCOCALLCONV
 dwyco_alert_callback(const char *cmd, void *, int, const char *)
@@ -82,3 +83,4 @@ dwyco_alert_callback(const char *cmd, void *, int, const char *)
         play_sound("relaxed-call.wav");
     }
 }
+#endif

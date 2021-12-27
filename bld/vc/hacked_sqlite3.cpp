@@ -21,7 +21,6 @@ static DwVec<vc> *outbind_double;
 typedef DwVec<vc> vvc;
 #define Mem sqlite3_value
 
-//template class DwVecP<void>;
 static
 int
 start_wrapper()
@@ -333,7 +332,7 @@ WRAP_END
 return ret;
 
 }
-#endif
+
 static vc
 wrap_sqlite3_enable_shared_cache(VCArglist *a)
 {
@@ -343,7 +342,7 @@ WRAP_END
 return ret;
 
 }
-#if 0
+
 static vc
 wrap_sqlite3_rollback_hook(VCArglist *a)
 {
@@ -1392,6 +1391,8 @@ WRAP_END
 return(vcnil);
 
 }
+
+#if 0
 static vc
 wrap_sqlite3_get_table(VCArglist *a)
 {
@@ -1406,6 +1407,8 @@ WRAP_END
 return ret;
 
 }
+#endif
+
 static vc
 wrap_sqlite3_busy_timeout(VCArglist *a)
 {
@@ -1528,7 +1531,7 @@ return ret;
 
 }
 static vc
-wrap_sqlite3_libversion_number(VCArglist *a)
+wrap_sqlite3_libversion_number(VCArglist *)
 {
 START_WRAP
 	vc ret = cvt__int(sqlite3_libversion_number());
@@ -1537,7 +1540,7 @@ return ret;
 
 }
 static vc
-wrap_sqlite3_libversion(VCArglist *a)
+wrap_sqlite3_libversion(VCArglist *)
 {
 START_WRAP
 	vc ret = cvt_pq_char(sqlite3_libversion());
@@ -1584,7 +1587,7 @@ makefun("wrap_sqlite3_finalize", VC(wrap_sqlite3_finalize, "wrap_sqlite3_finaliz
 
 //makefun("wrap_sqlite3_result_text16be", VC(wrap_sqlite3_result_text16be, "wrap_sqlite3_result_text16be", VC_FUNC_BUILTIN_LEAF));
 
-makefun("wrap_sqlite3_enable_shared_cache", VC(wrap_sqlite3_enable_shared_cache, "wrap_sqlite3_enable_shared_cache", VC_FUNC_BUILTIN_LEAF));
+//makefun("wrap_sqlite3_enable_shared_cache", VC(wrap_sqlite3_enable_shared_cache, "wrap_sqlite3_enable_shared_cache", VC_FUNC_BUILTIN_LEAF));
 
 makefun("wrap_sqlite3_exec", VC(wrap_sqlite3_exec, "wrap_sqlite3_exec", VC_FUNC_BUILTIN_LEAF));
 
@@ -1686,7 +1689,7 @@ makefun("wrap_sqlite3_prepare", VC(wrap_sqlite3_prepare, "wrap_sqlite3_prepare",
 
 makefun("wrap_sqlite3_libversion", VC(wrap_sqlite3_libversion, "wrap_sqlite3_libversion", VC_FUNC_BUILTIN_LEAF));
 
-makefun("wrap_sqlite3_get_table", VC(wrap_sqlite3_get_table, "wrap_sqlite3_get_table", VC_FUNC_BUILTIN_LEAF));
+//makefun("wrap_sqlite3_get_table", VC(wrap_sqlite3_get_table, "wrap_sqlite3_get_table", VC_FUNC_BUILTIN_LEAF));
 
 makefun("wrap_sqlite3_free_table", VC(wrap_sqlite3_free_table, "wrap_sqlite3_free_table", VC_FUNC_BUILTIN_LEAF));
 

@@ -21,14 +21,12 @@
 #endif
 #include <sys/stat.h>
 
-#ifdef _Windows
-#include "vfwmgr.h"
-#endif
 #include "aq.h"
 #include "vc.h"
 #include "dwrtlog.h"
 #include "dlli.h"
 #include "fnmod.h"
+using namespace dwyco;
 
 
 // note: all "soft crashes" stopped being reported when
@@ -40,6 +38,7 @@
 extern DwycoEmergencyCallback dwyco_emergency_callback;
 
 
+[[noreturn]]
 void
 oopanic(const char *s)
 {
@@ -67,9 +66,6 @@ oopanic(const char *s)
         (*dwyco_emergency_callback)(DWYCO_EMERGENCY_GENERAL_PANIC, 1, s);
     }
     exitaq();
-#if defined(_Windows) && defined(USE_VFW)
-    delete TheVFWMgr;
-#endif
 #ifdef DW_RTLOG
     delete RTLog;
 #endif

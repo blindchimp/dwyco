@@ -86,6 +86,7 @@ public:
     static MMCall *channel_to_call(int chan_id);
     static DwVec<ValidPtr> MMCalls;
     static dwyco::DwQueryByMember<MMCall> MMCalls_qbm;
+    static DwVecP<MMCall> calls_by_type(vc tp);
 
     // set to 1 means the call should be stopped during
     // setup. has no effect after the setup processing has

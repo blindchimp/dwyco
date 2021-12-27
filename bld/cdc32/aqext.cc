@@ -15,6 +15,8 @@
 #include "ezset.h"
 #include "vc.h"
 
+using namespace dwyco;
+
 extern DwycoVVCallback dwyco_vidacq_new;
 extern DwycoVVCallback dwyco_vidacq_delete;
 extern DwycoIVICallback dwyco_vidacq_init;

@@ -1,0 +1,53 @@
+Wed Jul 28 08:51:15 MDT 2021
+dwightm
+
+deployment notes for selfs qml app for various platforms
+--------------------------------------------------
+
+android
+-------
+nothing special here, qtcreator seems to be able to create an apk ok.
+
+linux
+-----
+Must build with Qt 5.12, which is included in Ubuntu 20.04.
+
+windows
+-------
+building on win10 using msvc 2017 32bit
+
+use windeployqt
+
+winxp is NOT supported.
+
+note: c:\users\dwight\dwyco is the git repo cloned from github
+like so:
+cd c:\users\dwight
+git clone https://github.com/blindchimp/dwyco
+
+perform build using qtcreator or the build scripts in selfsbld.
+
+copy <build-selfs.exe> c:\users\dwight\dwyco\deploy-selfs\vcdist
+set VCINSTALLDIR=c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC
+(or use vcvarsall.bat, i think this sets it)
+windeployqt --qmldir c:\Users\dwight\dwyco\selfs vcdist\selfs.exe
+
+note: you will need to remove all the Qt related stuff from the
+vcdist folder, as windeployqt doesn't seem to update things
+properly, esp if you update to new version of Qt.
+
+Updated September 11, 2015: App-local deployment of the Universal CRT is supported. To obtain the binaries for app-local deployment, install the Windows Software Development Kit (SDK) for Windows 10. The binaries will be installed to C:\Program Files (x86)\Windows Kits\10\Redist\ucrt. You will need to copy all of the DLLs with your app (note that the set of DLLs are necessary is different on different versions of Windows, so you must include all of the DLLs in order for your program to run on all supported versions of Windows). 
+
+
+MAC
+---
+use macdeployqt, works for qt5.12.
+NOTE: MUST USE -qmldir=$HOME/dwyco/selfs (ie, the directory with the qml source files
+which isn't obvious from the docs. it wants to scan *your* files to find
+out what it needs to import, even tho those files are put into a qrc file
+and not deployed separately.)
+
+
+iOS
+---
+Works in the simulator, couldn't be bothered with trying it on a device.

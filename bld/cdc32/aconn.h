@@ -9,50 +9,35 @@
 #ifndef ACONN_H
 #define ACONN_H
 
-#include "uicfg.h"
 #include "dwstr.h"
+#include "ssns.h"
+#include "vc.h"
 
 namespace dwyco {
 
+void init_aconn();
 void turn_accept_off();
 void turn_accept_on();
 void poll_listener();
 void set_listen_state(int on);
 int is_listening();
-
-struct DwNetConfig
-{
-
-public:
-
-    DWUIDECL_BEGIN
-    DWUIDECLVAL(int, primary_port)
-    DWUIDECLVAL(int, secondary_port)
-    DWUIDECLVAL(int, pal_port)
-    DWUIDECLVAL(int, nat_primary_port)
-    DWUIDECLVAL(int, nat_secondary_port)
-    DWUIDECLVAL(int, nat_pal_port)
-    DWUIDECLVAL(bool, advertise_nat_ports)
-    DWUIDECLVAL(int, disable_upnp)
-    DWUIDECLVAL(int, call_setup_media_select)
-    DWUIDECLVAL(int, listen)
-    DWUIDECL_END
-
-    DwNetConfig();
-    void load();
-    void save();
-
-    DwString get_primary_suffix(const char *ip);
-    DwString get_secondary_suffix(const char *ip);
-    DwString get_pal_suffix(const char *ip);
-
-    DwString get_nat_primary_suffix(const char *ip);
-    DwString get_nat_secondary_suffix(const char *ip);
-    DwString get_nat_pal_suffix(const char *ip);
-};
-
-extern DwNetConfig DwNetConfigData;
+extern vc Broadcast_discoveries;
+extern ssns::signal2<vc, int> Local_uid_discovered;
+extern vc App_ID;
 }
+
+#define BD_IP 0
+#define BD_PRIMARY_PORT 1
+#define BD_SECONDARY_PORT 2
+#define BD_PAL_PORT 3
+#define BD_NICE_NAME 4
+// we have lots of different apps, but don't really want them
+// interacting in most cases. set this to a unique id to filter
+// out unwanted broadcasts
+#define BD_APP_ID 5
+// note: this is used to tell the deserializer how to limit input
+// leaving a little slack is a good idea for forward compat
+#define BD_LIMIT 7
 
 #define CSMS_DIRECT_ONLY 0
 #define CSMS_TCP_ONLY 1

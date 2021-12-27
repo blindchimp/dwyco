@@ -23,7 +23,7 @@ int chatq_send_set_unblock_time(int q, vc uid, int tm, vc reason);
 int chatq_send_get_admin_info();
 int chatq_send_set_sys_attr(vc name, vc val);
 int chatq_send_update_call_accept();
-int chatq_send_update_pals(vc pals);
+//int chatq_send_update_pals(vc pals);
 int chatq_send_activity_state(vc state);
 int chatq_send_popup(vc text, int global);
 int chatq_send_chat(vc chan, vc chat, int pic_type, vc pic_data);

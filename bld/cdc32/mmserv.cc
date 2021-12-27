@@ -16,9 +16,8 @@
 #include "pgdll.h"
 #include "audout.h"
 #include "se.h"
-#include "lanmap.h"
 #include "ta.h"
-#include "prfcache.h"
+#include "profiledb.h"
 #include "dwscoped.h"
 using namespace dwyco;
 
@@ -80,7 +79,7 @@ MMChannel::get_secondary_server_channel()
 }
 
 void
-MMChannel::send_to_db(QckMsg& m, int chan_id)
+MMChannel::send_to_db(const QckMsg& m, int chan_id)
 {
     MMChannel *mcs;
     mcs = MMChannel::channel_by_id(chan_id);
@@ -102,6 +101,8 @@ void
 MMChannel::server_response(vc v)
 {
     static vc sync("c");
+    GRTLOG("server resp %d", myid, 0);
+    GRTLOGVC(v);
     if(v == sync)
     {
         vc s(VC_VECTOR);
@@ -156,8 +157,6 @@ MMChannel::chat_response(vc v)
     static vc del_lobby("del-lobby");
     static vc god_online("god-online");
     static vc god_offline("god-offline");
-    static vc add_lan_map("add-lan-map");
-    static vc del_lan_map("del-lan-map");
     static vc dbgreq("dbgreq");
     static vc invalidate_profile("invalidate-profile");
     static vc chatc("chatc");
@@ -520,20 +519,6 @@ MMChannel::chat_response(vc v)
         }
 
     }
-    else if(v[0] == add_lan_map)
-    {
-        // lan mappings are
-        // vector(add-lan-map vector(uid inside-ip inside-ports outside-ip outside-ports))
-        LANmap.add_kv(v[1][0], v[1]);
-        GRTLOG("add LAN map", 0, 0);
-        GRTLOGVC(v);
-    }
-    else if(v[0] == del_lan_map)
-    {
-        // vector(del-lan-map vector(uid))
-        LANmap.del(v[1][0]);
-        GRTLOG("del LAN map %s", (const char *)to_hex(v[1][0]), 0);
-    }
     else if(v[0] == dbgreq)
     {
         // here is where we can turn on and off some debugging
@@ -550,12 +535,6 @@ MMChannel::chat_response(vc v)
         se_emit(SE_USER_PROFILE_INVALIDATE, v[1]);
     }
 
-}
-
-int
-MMChannel::disconnect_server()
-{
-    return 0;
 }
 
 MMChannel *
@@ -610,6 +589,7 @@ MMChannel::keepalive_processing()
         // to drop if no activity is going on.
         if(!secondary_server_channel)
             send_ctrl("!");
+        break;
     default:; // do nothing
     }
 }

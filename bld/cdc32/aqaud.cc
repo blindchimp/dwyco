@@ -18,7 +18,7 @@
 #include "dwrtlog.h"
 #include "dwyco_rand.h"
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 #if 0
 AudioAquireWin32::AudioAquireWin32() :

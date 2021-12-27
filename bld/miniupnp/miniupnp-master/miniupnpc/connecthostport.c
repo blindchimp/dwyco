@@ -1,8 +1,8 @@
-/* $Id: connecthostport.c,v 1.15 2015/10/09 16:26:19 nanard Exp $ */
+/* $Id: connecthostport.c,v 1.24 2020/11/09 19:26:53 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * Project : miniupnp
  * Author : Thomas Bernard
- * Copyright (c) 2010-2018 Thomas Bernard
+ * Copyright (c) 2010-2020 Thomas Bernard
  * This software is subject to the conditions detailed in the
  * LICENCE file provided in this distribution. */
 
@@ -19,7 +19,7 @@
 #include <ws2tcpip.h>
 #include <io.h>
 #define MAXHOSTNAMELEN 64
-#define snprintf _snprintf
+#include "win32_snprintf.h"
 #define herror
 #define socklen_t int
 #else /* #ifdef _WIN32 */
@@ -116,8 +116,22 @@ SOCKET connecthostport(const char * host, unsigned short port,
 		int err;
 		FD_ZERO(&wset);
 		FD_SET(s, &wset);
-		if((n = select(s + 1, NULL, &wset, NULL, NULL)) == -1 && errno == EINTR)
+#ifdef MINIUPNPC_SET_SOCKET_TIMEOUT
+		timeout.tv_sec = 3;
+		timeout.tv_usec = 0;
+		n = select(s + 1, NULL, &wset, NULL, &timeout);
+#else
+		n = select(s + 1, NULL, &wset, NULL, NULL);
+#endif
+		if(n == -1 && errno == EINTR)
 			continue;
+#ifdef MINIUPNPC_SET_SOCKET_TIMEOUT
+		if(n == 0) {
+			errno = ETIMEDOUT;
+			n = -1;
+			break;
+		}
+#endif
 		/*len = 0;*/
 		/*n = getpeername(s, NULL, &len);*/
 		len = sizeof(err);
@@ -156,7 +170,7 @@ SOCKET connecthostport(const char * host, unsigned short port,
 		for(i = 0, j = 1; host[j] && (host[j] != ']') && i < MAXHOSTNAMELEN; i++, j++)
 		{
 			tmp_host[i] = host[j];
-			if(0 == memcmp(host+j, "%25", 3))	/* %25 is just url encoding for '%' */
+			if(0 == strncmp(host+j, "%25", 3))	/* %25 is just url encoding for '%' */
 				j+=2;							/* skip "25" */
 		}
 		tmp_host[i] = '\0';
@@ -179,6 +193,12 @@ SOCKET connecthostport(const char * host, unsigned short port,
 	s = INVALID_SOCKET;
 	for(p = ai; p; p = p->ai_next)
 	{
+		if(!ISINVALID(s))
+			closesocket(s);
+#ifdef DEBUG
+		printf("ai_family=%d ai_socktype=%d ai_protocol=%d (PF_INET=%d, PF_INET6=%d)\n",
+		       p->ai_family, p->ai_socktype, p->ai_protocol, PF_INET, PF_INET6);
+#endif
 		s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
 		if(ISINVALID(s))
 			continue;
@@ -213,8 +233,22 @@ SOCKET connecthostport(const char * host, unsigned short port,
 			int err;
 			FD_ZERO(&wset);
 			FD_SET(s, &wset);
-			if((n = select(s + 1, NULL, &wset, NULL, NULL)) == -1 && errno == EINTR)
+#ifdef MINIUPNPC_SET_SOCKET_TIMEOUT
+			timeout.tv_sec = 3;
+			timeout.tv_usec = 0;
+			n = select(s + 1, NULL, &wset, NULL, &timeout);
+#else
+			n = select(s + 1, NULL, &wset, NULL, NULL);
+#endif
+			if(n == -1 && errno == EINTR)
 				continue;
+#ifdef MINIUPNPC_SET_SOCKET_TIMEOUT
+			if(n == 0) {
+				errno = ETIMEDOUT;
+				n = -1;
+				break;
+			}
+#endif
 			/*len = 0;*/
 			/*n = getpeername(s, NULL, &len);*/
 			len = sizeof(err);
@@ -230,15 +264,8 @@ SOCKET connecthostport(const char * host, unsigned short port,
 			}
 		}
 #endif /* #ifdef MINIUPNPC_IGNORE_EINTR */
-		if(n < 0)
-		{
-			closesocket(s);
-			continue;
-		}
-		else
-		{
+		if(n >= 0)	/* connect() was successful */
 			break;
-		}
 	}
 	freeaddrinfo(ai);
 	if(ISINVALID(s))
@@ -249,6 +276,7 @@ SOCKET connecthostport(const char * host, unsigned short port,
 	if(n < 0)
 	{
 		PRINT_SOCKET_ERROR("connect");
+		closesocket(s);
 		return INVALID_SOCKET;
 	}
 #endif /* #ifdef USE_GETHOSTBYNAME */

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Dwyco Selfs
+Comment=Dwyco cam capture/watch
+Exec=selfs
+Icon=selfs
+Type=Application
+Categories=Network;

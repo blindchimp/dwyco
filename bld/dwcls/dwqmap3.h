@@ -16,7 +16,7 @@
 #include "dwassoc.h"
 #include "dwmaps.h"
 #include "dwhash.h"
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 //
 // fast closed hashing class for

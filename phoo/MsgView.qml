@@ -6,8 +6,9 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import QtQuick.Controls 2.5
+import QtQml 2.12
+import QtQuick 2.12
+import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
 import dwyco 1.0
 
@@ -24,7 +25,7 @@ Page {
     property bool hid
     property string text_bg_color: primary_dark
 
-    anchors.fill:parent
+    //anchors.fill:parent
 
 //    background: Rectangle {
 //        color: primary_dark
@@ -56,7 +57,7 @@ Page {
 
     Connections {
         target: core
-        onVideo_display: {
+        function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id === msgviewer.ui_id) {
                 view_source = img_path
             }
@@ -91,7 +92,7 @@ Page {
                     text: "Forward msg"
                     onTriggered: {
                         forward_dialog.mid_to_forward = mid
-                        forward_dialog.uid_folder = uid
+                        //forward_dialog.uid_folder = uid
                         stack.push(forward_dialog)
                     }
                 }
@@ -272,7 +273,7 @@ Page {
         }
 
         Layout.fillWidth: true
-        Layout.maximumHeight: viewer_source === "" ? (parent.height * 6) / 10 : parent.height / 3
+        Layout.maximumHeight: viewer.source === "" ? (parent.height * 6) / 10 : parent.height / 3
 
         wrapMode: Text.Wrap
     }

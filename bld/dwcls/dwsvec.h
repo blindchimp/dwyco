@@ -33,20 +33,21 @@
 
 #define DWSVEC_INITIAL 8
 #define DWSVEC_DBG
-void oopanic(const char *a);
+[[noreturn]] void oopanic(const char *a);
 
 template<class T>
 class DwSVec
 {
 private:
-    DwSVec(const DwSVec&);
-    DwSVec& operator=(const DwSVec&);
-public:
+    DwSVec(const DwSVec&) = delete;
+    DwSVec& operator=(const DwSVec&) = delete;
+
     char vec[DWSVEC_INITIAL * sizeof(T)];
     char *big;
     int count;
     int real_count;
 
+public:
     inline DwSVec();
     inline ~DwSVec();
 
@@ -54,18 +55,22 @@ public:
     inline void append(T&&);
     //inline void append(void *);
     inline T& ref(int i);
+    inline const T &ref(int i) const;
     inline T get(int i) const;
     void set_size(int newsize);
 
     T& operator[](int i) {
         return ref(i);
     }
+    const T& operator[](int i) const {
+        return ref(i);
+    }
     int num_elems() const {
         return count;
     }
-    int operator==(const DwSVec& o) {
+    int operator==(const DwSVec& o) const {
         for(int i = 0; i < count; ++i)
-            if(!((*this)[i] == o[i]))
+            if(!(ref(i) == o.ref(i)))
                 return 0;
         return 1;
     }
@@ -151,6 +156,17 @@ T &DwSVec<T>::ref(int i)
 
 template<class T>
 inline
+const T &DwSVec<T>::ref(int i) const
+{
+#ifdef DWSVEC_DBG
+    if(i >= count || i < 0)
+        oopanic("bad svec ref");
+#endif
+    return ((const T*)big)[i];
+}
+
+template<class T>
+inline
 T
 DwSVec<T>::get(int i) const
 {
@@ -187,7 +203,7 @@ void
 DwSVec<T>::del(int s, int n)
 {
 #ifdef DWSVEC_DBG
-    if(s != 0 || n > count)
+    if(s != 0 || n > count || n < 0)
         oopanic("bad svec del");
 #endif
     for(int i = 0; i < n; ++i)

@@ -1,5 +1,5 @@
 Thu Feb 25 12:11:34 MST 2016
-dwight melcher
+dwightm
 
 this is a tiny swig interface file to allow android to run a small
 message server as an android service, invoked from java.

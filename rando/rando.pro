@@ -1,7 +1,12 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
+include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+
 DEFINES += NO_BUILDTIME
+DEFINES += NO_DWYCO_AUDIO
+# i'll shit myself if this works on all platforms
+DEFINES += BUILDTIME=\"\\\"1.97\\\"\"
 
 QT += core qml multimedia network
 QT += quickcontrols2
@@ -23,7 +28,7 @@ macx-clang {
 QMAKE_INFO_PLIST=Info.plist.mac
 }
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/dwcls
 
 DEFINES += DWYCO_RELEASE
 ICON=rando.icns
@@ -216,13 +221,13 @@ DEFINES += CDCCORE_STATIC
 # use this if you are building with qmake files
 D = $$OUT_PWD\\..\\bld
 
-#CONFIG(debug) {
-#S=debug
-#}
-
-CONFIG(release) {
-S=release
+CONFIG(debug) {
+S=debug
 }
+
+#CONFIG(release) {
+#S=release
+#}
 
 LIBS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \
@@ -233,23 +238,23 @@ $${D}\\kazlib\\$${S}\\kazlib.lib \
 $${D}\\pbm\\$${S}\\pbm.lib \
 $${D}\\jenkins\\$${S}\\jenkins.lib \
 $${D}\\jhead\\$${S}\\jhead.lib \
-$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib \
+$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
 
 #delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
 #QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
 #QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
 
-#PRE_TARGETDEPS += \
-#$${D}\\cdc32\\$${S}\\cdc32.lib \
-#$${D}\\vc\\$${S}\\vc.lib \
-#$${D}\\crypto5\\$${S}\\crypto5.lib \
-#$${D}\\dwcls\\$${S}\\dwcls.lib \
-#$${D}\\kazlib\\$${S}\\kazlib.lib \
-#$${D}\\pbm\\$${S}\\pbm.lib \
-#$${D}\\jenkins\\$${S}\\jenkins.lib \
-#$${D}\\jhead\\$${S}\\jhead.lib \
-#$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib
+PRE_TARGETDEPS += \
+$${D}\\cdc32\\$${S}\\cdc32.lib \
+$${D}\\vc\\$${S}\\vc.lib \
+$${D}\\crypto5\\$${S}\\crypto5.lib \
+$${D}\\dwcls\\$${S}\\dwcls.lib \
+$${D}\\kazlib\\$${S}\\kazlib.lib \
+$${D}\\pbm\\$${S}\\pbm.lib \
+$${D}\\jenkins\\$${S}\\jenkins.lib \
+$${D}\\jhead\\$${S}\\jhead.lib \
+$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib
 
 }
 

@@ -19,7 +19,7 @@
 #include "jdcolor.h"
 #include "tpgmdec.h"
 #include "dwrtlog.h"
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 DwDecoderColor::DwDecoderColor()
 {

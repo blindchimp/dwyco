@@ -13,9 +13,9 @@
 #include "vccomp.h"
 #include "vcio.h"
 
-#define VCFILE_RAISE(exc, a1, a2, retval) {if(do_error_processing(exc, a1, a2) == VC_FILE_BACKOUT) return retval;}
-#define VCFILE_RAISEABORT(exc, a1, a2, retval) {if(do_error_processing(exc, a1, a2) == VC_FILE_RESUME) oopanic("resume after file abort?"); return retval;}
-#define VCFILE_RAISEABORT2(exc, a1, a2) {if(do_error_processing(exc, a1, a2) == VC_FILE_RESUME) oopanic("resume after file abort?"); return ;}
+#define VCFILE_RAISE(exc, a1, a2, retval) do {if(do_error_processing(exc, a1, a2) == VC_FILE_BACKOUT) return retval;} while(0)
+#define VCFILE_RAISEABORT(exc, a1, a2, retval) do {if(do_error_processing(exc, a1, a2) == VC_FILE_RESUME) oopanic("resume after file abort?"); return retval;} while(0)
+#define VCFILE_RAISEABORT2(exc, a1, a2) do {if(do_error_processing(exc, a1, a2) == VC_FILE_RESUME) oopanic("resume after file abort?"); return ;} while(0)
 
 #define VC_FILE_RESUME 0
 #define VC_FILE_BACKOUT 1

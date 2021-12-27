@@ -6,8 +6,8 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.9
-import QtQuick.Controls 2.2
+import QtQuick 2.12
+import QtQuick.Controls 2.12
 
 AppDrawerForm {
 
@@ -63,7 +63,7 @@ AppDrawerForm {
     }
 
     quiet_switch.checked: dwy_quiet
-    invisible_switch.checked: dwy_invis
+    invisible_switch.checked: core.invisible
 
     quiet_switch.onClicked: {
         dwy_quiet = quiet_switch.checked
@@ -79,6 +79,12 @@ AppDrawerForm {
         core.set_local_setting("invis", dwy_invis ? "true" : "false")
         core.set_invisible_state(dwy_invis ? 1 : 0)
         //close()
+    }
+
+    link_dev_button.onClicked: {
+        stack.push(device_group)
+        close()
+
     }
 
 }

@@ -6,9 +6,9 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.9
-import QtQuick.Controls 2.2
-import QtQuick.Layouts 1.3
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
 
 Pane {
     //width: 400
@@ -24,6 +24,7 @@ Pane {
     property alias quiet_switch: quiet_switch
     property alias browse_tags_button: browse_tags_button
     property alias browse_hidden_button: browse_hidden_button
+    property alias link_dev_button: link_dev_button
     property real ctrl_pad: 4
     property alias circularImage: circularImage
     property alias text1: text1
@@ -52,7 +53,7 @@ Pane {
                     text: {
 
                         (core.is_database_online === 0 ? "" : "Online ")
-                                + (dwy_invis ? "(Invisible)" : "")
+                                + (core.invisible ? "(Invisible)" : "")
                     }
                     color: "white"
                 }
@@ -165,6 +166,15 @@ Pane {
         //            text: qsTr("About")
         //            Layout.fillWidth: true
         //        }
+        ItemDelegate {
+            id: link_dev_button
+            text: qsTr("Link other device")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
+            //visible: false
+            Layout.fillWidth: true
+        }
         ItemDelegate {
             id: vid_preview_button
             text: qsTr("Preview")

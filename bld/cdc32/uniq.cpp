@@ -22,6 +22,7 @@
 using namespace CryptoPP;
 #include "dwrtlog.h"
 #include "fnmod.h"
+using namespace dwyco;
 
 #ifdef DISKID
 static vc

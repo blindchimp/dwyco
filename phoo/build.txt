@@ -1,7 +1,7 @@
 Notes related to Qt for Android building
 
 ca 2018
-dwight melcher
+dwightm
 
 Building phoo on Windows using msvc2015
 
@@ -20,7 +20,7 @@ of a missing VideoProbe implementation in Qt, and
 in 5.11.1 the implementation is buggy.)
 
 Sun Feb 28 12:50:57 MST 2016
-dwight melcher
+dwightm
 
 some of the build stuff depends on jre
 

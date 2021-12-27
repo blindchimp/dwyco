@@ -108,16 +108,18 @@ init_rct();
 	vc::init();
 
 #if defined(_Windows)
-	char *load_file = "c:\\lhlib\\load.lh";
+    DwString load_file("c:\\lhlib\\load.lh");
 #else
 	char *home = getenv("HOME");
-	static char homestr[512];
-	const char *load_file;
+    DwString homestr;
+    DwString load_file;
 	if(home == 0)
 		load_file = load_name;
 	else
 	{
-		sprintf(homestr, "%s/lhlib/%s", home, load_name);
+        homestr += home;
+        homestr += "/lhlib/";
+        homestr += load_name;
 		load_file = homestr;
 	}
 #endif
@@ -126,11 +128,11 @@ init_rct();
 	vc("__lh_start_debugger").global_bind("t");
 #endif
 	vc("__lh_enc").global_bind(dec ? vctrue : vcnil);
-	FILE *lf = fopen(load_file, dec ? "rb" : "r");
+    FILE *lf = fopen(load_file.c_str(), dec ? "rb" : "r");
 	if(lf != 0)
 	{
 		VcLexerStdio *lfstrm = dec ? new VcLexerStdioEncrypted(lf, VcError) : new VcLexerStdio(lf, VcError);
-		lfstrm->set_input_description(load_file);
+        lfstrm->set_input_description(load_file.c_str());
 		vc *lfvc = new vc(*lfstrm);
 		lfvc->force_eval();
 		fclose(lf);
@@ -187,6 +189,7 @@ init_rct();
 	return 0;
 }
 
+[[noreturn]]
 void
 oopanic(const char *s)
 {

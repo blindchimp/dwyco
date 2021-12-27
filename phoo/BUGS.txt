@@ -23,3 +23,6 @@ note: since update to tag based msg stuff:
 * the "aux" file will have a stale ip address if the servers2 file is updated while msgs are q-ed. need to give up after a certain number of tries and retry with new ip
 * there is a problem where the advanced power management stuff may be stopping the background processing, but the backgrounder still has the sockets "locking" the app. when the UI starts, it doesn't appear to restart the background thing (which would allow it to release the socket), and the UI ends up stuck. haven't verified this, just a suspicion. seems to happen when you are in power-saver mode.
 * when you forward a message, if even an old one, it should assign a new logical clock value to it so that it gets sorted into the right place in the model
+
+Wed May  5 15:53:11 MDT 2021
+* the logical clock probably needs to be set on send very close to when the API for send is called, rather than at physical send time. if the msg gets q'd and the clock is set to when the message gets closer to physical send, it might look out of order.

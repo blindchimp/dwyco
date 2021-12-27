@@ -6,10 +6,11 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import QtQuick.Controls 2.1
+import QtQml 2.12
+import QtQuick 2.12
+import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.3
-import QtQml.Models 2.2
+import QtQml.Models 2.12
 import dwyco 1.0
 
 Page {
@@ -189,7 +190,7 @@ Page {
         
         Rectangle {
             id: ditem
-            width: parent.width
+            width: ListView.view.width
             //border.width: 1
             //border.color: "gray"
             height: msg.implicitHeight

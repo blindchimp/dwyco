@@ -641,21 +641,27 @@ DummyTube::gen_channel(unsigned short remote_port, int& chan)
     }
     // XXX block/noblock on connect
     socks[chan]->non_blocking(1);
-    char peer[255];
-    char csps[20];
+    DwString peer;
+
     if(!retry)
     {
-        sprintf(csps, "%d", remote_port);
-        strcpy(peer, remote);
-        if(strchr(peer, ':') == 0)
+        char csps[20];
+        sprintf(csps, "%u", remote_port);
+        peer = (const char *)remote;
+        int c;
+        if((c = peer.find(":")) == DwString::npos)
         {
-            strcat(peer, ":");
-            strcat(peer, csps);
+            peer += ":";
+            peer += csps;
         }
         else
-            strcpy(strchr(peer, ':') + 1, csps);
+        {
+            peer.remove(c);
+            peer += ":";
+            peer += csps;
+        }
     }
-    if(!socks[chan]->init(retry ? 0 : peer, 0, retry))
+    if(!socks[chan]->init(retry ? 0 : peer.c_str(), 0, retry))
     {
         int ret = SSERR;
         if(socks[chan]->wouldblock())
@@ -839,8 +845,9 @@ SlippyTube::quick_stats(int max_read, int stop_after_n_video, int stop_after_n_a
                     continue;
                 }
             }
-            delete [] m.buf;
-            m.buf = 0;
+            // really old messages have no header
+            //delete [] m.buf;
+            //m.buf = 0;
         }
         if(m.time == -1)
             ++co;

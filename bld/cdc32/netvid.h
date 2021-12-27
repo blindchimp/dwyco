@@ -20,6 +20,7 @@
 #include "dwstr.h"
 #include "vccrypt2.h"
 #include "pval.h"
+#include "servass.h"
 
 // error returns
 // op not completed: <0
@@ -42,10 +43,9 @@ class MMChannel;
 class MMTube
 {
     friend class MMChannel;
-    friend void serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv);
+    friend void dwyco::serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv);
 
 protected:
-    //Listener *listener;
     SimpleSocket *ctrl_sock;
     FrameSocket *mm_sock;
 
@@ -70,9 +70,7 @@ public:
     // last socket errors
     vc last_ctrl_error;
     vc last_mm_error;
-    //unsigned short listen_port;
-    static DwString MyIP;
-    static void update_myip(DwString);
+
     virtual int is_connected();
 
     // returns 1 if the tube generates events that
@@ -96,7 +94,7 @@ public:
 
     // link setup and destroy
     virtual int connect(const char *remote_addr, const char *local_addr, int block = 0, HWND = 0, int setup_unreliable = 0);
-    int accept(SimpleSocket *, int setup_unreliable = 1);
+    int accept(SimpleSocket *);
     int disconnect();
     int disconnect_ctrl();
     vc remote_addr_ctrl();
@@ -169,20 +167,14 @@ public:
     enum wbok {WB_NOK = 0, WB_OK = 1};
     int send_data(vc v, int chan, int bwchan);
     int send_data(vc v, int chan);
-    int send_data(DWBYTE *buf, int len, int chan, enum wbok = WB_NOK);
+    //int send_data(DWBYTE *buf, int len, int chan, enum wbok = WB_NOK);
     // this version allows you to say what device
     // gets the data, and what channel gets the b/w tally for it.
     // what a hack.
-    int send_data(DWBYTE *buf, int len, int chan, int bwchan, enum wbok = WB_NOK);
+    //int send_data(DWBYTE *buf, int len, int chan, int bwchan, enum wbok = WB_NOK);
     int recv_data(vc& v, int chan);
-    int recv_data(DWBYTE *&buf, int& len, int chan);
+    //int recv_data(DWBYTE *&buf, int& len, int chan);
 
-#if 0
-    int accept_new_channel(int& chan);
-    int has_waiting_connections();
-    int stop_listener();
-    int init_listener();
-#endif
     int init_mm_listener(int port);
 
     // timer, rate control

@@ -26,32 +26,6 @@
 vc MMTube::Ping("vomit");
 int MMTube::dummy;
 int MMTube::always_zero;
-DwString MMTube::MyIP;
-
-void
-MMTube::update_myip(DwString a)
-{
-    if(MyIP.length() != 0)
-        return;
-    MyIP = a;
-    int i;
-    if((i = MyIP.find(":")) != DwString::npos)
-    {
-        MyIP.erase(i);
-    }
-}
-
-static int
-get_port(DwString a)
-{
-    int i;
-    if((i = a.find(":")) != DwString::npos)
-    {
-        a.erase(0, i + 1);
-        return atoi(a.c_str());
-    }
-    return 0;
-}
 
 MMTube::MMTube() :
     baud(0, !DWVEC_FIXED, DWVEC_AUTO_EXPAND),
@@ -63,12 +37,9 @@ MMTube::MMTube() :
     time = 0;
     keepalive_timer.set_interval(5000);
     keepalive_timer.set_autoreload(1);
-    //keepalive_timer.set_oneshot(0);
     connected = 0;
     ctrl_sock = 0;
     mm_sock = 0;
-    //listener = 0;
-    //listen_port = 0;
     last_tick = GetTickCount();
     enc_ctrl = 0;
     dec_ctrl = 0;
@@ -78,7 +49,6 @@ MMTube::~MMTube()
 {
     delete ctrl_sock;
     delete mm_sock;
-    //delete listener;
     for(int i = 2; i < socks.num_elems(); ++i)
         delete socks[i];
 }
@@ -105,8 +75,6 @@ MMTube::toss()
         last_mm_error = mm_sock->last_error;
     delete mm_sock;
     mm_sock = 0;
-    //delete listener;
-    //listener = 0;
     for(int i = 2; i < socks.num_elems(); ++i)
     {
         delete socks[i];
@@ -196,16 +164,17 @@ MMTube::gen_channel(unsigned short remote_port, int& chan)
     }
     // XXX block/noblock on connect
     socks[chan]->non_blocking(1);
-    char csps[20];
+
     DwString peer;
     if(!retry)
     {
+        char csps[20];
         if(!ctrl_sock)
         {
             drop_channel(chan);
             return SSERR;
         }
-        sprintf(csps, "%d", remote_port);
+        sprintf(csps, "%u", remote_port);
         peer = ctrl_sock->peer_addr();
         int i;
         if((i = peer.find(":")) == DwString::npos)
@@ -294,7 +263,7 @@ MMTube::remote_addr_ctrl()
 
 
 int
-MMTube::accept(SimpleSocket *s, int setup_unreliable)
+MMTube::accept(SimpleSocket *s)
 {
     if(connected)
         return SSERR;
@@ -304,10 +273,6 @@ MMTube::accept(SimpleSocket *s, int setup_unreliable)
         return SSERR;
     }
     ctrl_sock = s;
-    if(setup_unreliable)
-    {
-        oopanic("old unreliable2");
-    }
     connected = 1;
     return 1;
 
@@ -580,6 +545,7 @@ MMTube::send_data(vc v, int chan, int bwchan)
     return 1;
 }
 
+#if 0
 int
 MMTube::send_data(DWBYTE *buf, int len, int chan, enum wbok w)
 {
@@ -601,6 +567,7 @@ MMTube::send_data(DWBYTE *buf, int len, int chan, int bwchan, enum wbok w)
     in_bits[bwchan] += len * 8;
     return 1;
 }
+#endif
 
 int
 MMTube::recv_data(vc& v, int chan)
@@ -629,6 +596,7 @@ MMTube::recv_data(vc& v, int chan)
     return 1;
 }
 
+#if 0
 int
 MMTube::recv_data(DWBYTE *&buf, int& len, int chan)
 {
@@ -643,6 +611,7 @@ MMTube::recv_data(DWBYTE *&buf, int& len, int chan)
     }
     return 1;
 }
+#endif
 
 
 int

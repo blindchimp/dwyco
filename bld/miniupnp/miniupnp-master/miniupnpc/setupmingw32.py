@@ -1,11 +1,18 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 # vim: tabstop=8 shiftwidth=8 expandtab
-# $Id: setupmingw32.py,v 1.8 2012/05/23 08:50:10 nanard Exp $
-# the MiniUPnP Project (c) 2007-2014 Thomas Bernard
-# http://miniupnp.tuxfamily.org/ or http://miniupnp.free.fr/
+# $Id: setupmingw32.py,v 1.12 2020/04/06 10:23:02 nanard Exp $
+# the MiniUPnP Project (c) 2007-2020 Thomas Bernard
+# https://miniupnp.tuxfamily.org/ or http://miniupnp.free.fr/
 #
 # python script to build the miniupnpc module under windows (using mingw32)
 #
+import sys
+
+if (sys.version_info.major * 10 +  sys.version_info.minor) >= 35:
+        compat_lib = ["legacy_stdio_definitions"]
+else:
+        compat_lib = []
+
 try:
         from setuptools import setup, Extension
 except ImportError:
@@ -22,7 +29,7 @@ setup(name="miniupnpc",
       description='miniUPnP client',
       ext_modules=[
          Extension(name="miniupnpc", sources=["miniupnpcmodule.c"],
-                   libraries=["ws2_32", "iphlpapi"],
-                   extra_objects=["libminiupnpc.a"])
+                   libraries=["ws2_32", "iphlpapi"] + compat_lib,
+                   extra_objects=["miniupnpc.lib"])
       ])
 

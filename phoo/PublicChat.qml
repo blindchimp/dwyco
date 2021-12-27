@@ -6,18 +6,18 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import QtQuick.Controls 2.1
-import QtQuick.Layouts 1.3
-import QtQml.Models 2.2
-import QtQml 2.2
+import QtQml 2.12
+import QtQuick 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Layouts 1.12
+import QtQml.Models 2.12
 import dwyco 1.0
 
 Page {
     id: pchat
     anchors.fill: parent
     property alias model: listView1.model
-    property int connect_server: 0
+    //property int connect_server: 0
     
     background: Rectangle {
         color: amber_dark
@@ -129,7 +129,7 @@ Page {
     Connections {
         target: core
 
-        onChat_event: {
+        function onChat_event(cmd, sid, huid, sname, vdata, qid, extra_arg) {
             console.log("got chat event")
             console.log(cmd, sid)
             console.log(huid)
@@ -177,7 +177,7 @@ Page {
         
         Rectangle {
             id: ditem
-            width: parent.width
+            width: ListView.view.width
             //border.width: 1
             //border.color: "gray"
             height: msg.implicitHeight
@@ -238,14 +238,14 @@ Page {
         // will pop up on the previous screen, wtf.
         //focus: visible
         // qt 5.11 seems focus is handled a little differently
-        onVisibleChanged: {
-            if(Qt.platform.os == "android") {
-            if(!visible)
-                focus = false
-            } else {
-                focus = visible
-            }
-        }
+//        onVisibleChanged: {
+//            if(Qt.platform.os == "android") {
+//            if(!visible)
+//                focus = false
+//            } else {
+//                focus = visible
+//            }
+//        }
     }
     
     Button {

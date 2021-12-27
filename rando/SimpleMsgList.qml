@@ -81,6 +81,12 @@ Page {
                     visible: stack.depth === 1
                     Layout.fillHeight: true
                 }
+                Label {
+                    text: "Dwyco Rando"
+                   verticalAlignment: Text.AlignVCenter
+                    Layout.fillHeight: true
+                }
+
                 Item {
 
                     Layout.fillWidth: true
@@ -661,6 +667,9 @@ scrolling in the listview or doesn't recognizing the swipe.
         onClicked: {
             cam.next_state = "StopAndPop"
             cam.ok_text = "Upload"
+            if(Qt.platform.os == "android") {
+                notificationClient.log_event2("camclick", "regular")
+            }
             stack.push(cam)
         }
     }

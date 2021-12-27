@@ -27,7 +27,7 @@
 // fire any handlers for a set time, the protocol will be forced into the "fail" state.
 // this watchdog timer can be disabled or modified if the protocol has entered
 // a state that has different assumptions regarding how often i/o is performed.
-// for example, once the media channel protocol is set up, it can sit idle
+// for example, once the media subchannel protocol is set up, it can sit idle
 // except for the occasional (5 minutes) ping.
 //
 // the member function should be
@@ -35,11 +35,16 @@
 // return next for normal, transition to next state
 // return alt_next for normal, transition to alt-state
 // return stay to remain in current state
-// return fail to stop the protocol and drop the channel
+// return fail to stop the protocol and drop the entire channel (and
+// all subchannels too.)
 //
 // special state names:
-// "end" means stop the protocol and drop the channel
-// "stop" means stop the protocol but do not drop the channel
+// "end" means stop the protocol and drop the subchannel (but not the channel)
+//
+// "stop" means stop the protocol but do not drop the subchannel
+// this is only used when the subchannel needs to be handed off to
+// another protocol based on something more complicated, e.g.
+// the contents of incoming data determines the next protocol to use.
 //
 
 #include <string.h>

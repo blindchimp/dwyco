@@ -515,6 +515,7 @@ lh_sockset_option(VCArglist *al)
     unsigned long arg = 0;
     if(al->num_elems() > 2)
         arg = (unsigned long)(long)(*al)[2];
+
 	int bomb = 0;
 	vcsocketmode so = VC_BLOCKING;
 	if(option.type() != VC_STRING)
@@ -531,6 +532,7 @@ lh_sockset_option(VCArglist *al)
 	static vc set_send("set-send-buf-size");
 	static vc set_tcp_no_delay("set-tcp-no-delay");
 	static vc set_buffering("buffering");
+    static vc set_broadcast("set-broadcast");
 	if(!bomb)
 	{
 		if(option == nb)
@@ -553,12 +555,14 @@ lh_sockset_option(VCArglist *al)
 			so = VC_SET_SEND_BUF_SIZE;
 		else if(option == set_buffering)
 			so = VC_BUFFER_SOCK;
+        else if(option == set_broadcast)
+            so = VC_SET_BROADCAST;
 		else
 			bomb = 1;
 	}
 	if(bomb)
 	{
-		USER_BOMB("socket option is either \"blocking\", \"nonblocking\", \"close-on-exec\", \"no-close-on-exec\" or \"buffering\"", vcnil);
+        USER_BOMB("socket option is either \"blocking\", \"nonblocking\", \"close-on-exec\", \"no-close-on-exec\", \"buffering\", \"set-broadcast\"", vcnil);
 	}
 	vc ret = sock.socket_set_option(so, arg);
 	CHECK_ANY_BO(vcnil);

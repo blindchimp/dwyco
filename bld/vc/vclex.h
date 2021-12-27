@@ -25,7 +25,13 @@ public:
 		LSBRACK, RSBRACK, EOS};
 	enum Atom {BOGUS_ATOM, STRING, INTEGER, FLOAT};
 
-	virtual Token next_token();
+        int emit_lexical_warnings;
+
+        //virtual Token next_token();
+        // WARNING: the returned char pointers are reset
+        // on a call to next_token, if you need to keep the
+        // string, you must copy it out right after the call to
+        // next_token.
 	virtual Token next_token(const char*&, long& len, Atom& );
 	virtual long token_linenum();
 	virtual long token_linenum_start_scan();
@@ -35,6 +41,8 @@ public:
 	virtual VcIO get_err_strm() { return err_strm;}
 
 	int lexical_error;	// 1 if input is unlexable
+        long char_start_token;  // absolute char index of start of token
+        long char_end_token;    // absolute chat index of end of token
 
 private:
 
@@ -78,6 +86,7 @@ private:
 	
 protected:
         DwString inp_desc;
+        long cur_char_index;
 	void forward_track_source(const char *, long);
 	void backward_track_source(const char *, long);
 
@@ -96,9 +105,9 @@ public:
 	VcLexerString(char *, long, VcIO);
 
 protected:
-	char *str;
+        char * const str;
 	long len;
-	char *cur;
+        char *cur;
 	long len_left;
 
 	long get_chars(char *&, long);
@@ -110,7 +119,7 @@ protected:
 };
 #define VCLEX_READAHEAD 128
 
-
+// WARNING: this class mauls your string in place
 class VcLexerStringEncrypted : public VcLexerString
 {
 public:

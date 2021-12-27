@@ -13,7 +13,17 @@
 
 #ifdef OBJTRACK
 #include "dwmapr.h"
-#include "bonehead.h"
+
+class Int
+{
+public:
+	int i;
+	Int() {i = 0;}
+	operator int() const {return i;}
+	Int(int i) {this->i = i;}
+	int operator==(const Int& i2) const {return i == i2.i;}
+	unsigned long hashValue() const {return i;}
+};
 struct TrackInfo
 {
 	int serial;
@@ -287,6 +297,7 @@ vc_default::operator const char *() const { USER_BOMB("unimp cast to char *", ""
 vc_default::operator long() const { USER_BOMB("unimp cast to long", 0); }
 vc_default::operator char() const { USER_BOMB("unimp cast to char", 0); }
 vc_default::operator void *() const { USER_BOMB("unimp cast to void *", 0); }
+//vc_default::operator int64_t() const { USER_BOMB("unimp cast to int64_t", 0); }
 void
 vc_default::stringrep(VcIO ) const {USER_BOMB2("unimp stringrep");}
 

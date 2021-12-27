@@ -168,7 +168,10 @@ vc_cvar::translate(VcIO o) const
         vc val = vc_list.get_first();
         if(val.type() == VC_STRING)
         {
-            DwString tmpl("static vc %2() {static vc var = %1;\nreturn Vcmap->get(var);\n}\n");
+            DwString tmpl("static vc %2() {static vc var = %1;\nstatic vc *range;static unsigned long cached_when;\n"
+"if(range && cached_when >= vc_cvar::Lookup_cache_counter) {return *range;}\n"
+            "cached_when = vc_cvar::Lookup_cache_counter;\n"
+"return Vcmap->get2(var, range);\n}\n");
             vc ourname = gensym();
             tmpl.arg(vc_to_c_vc(val), (const char *)ourname);
             o << tmpl.c_str();
@@ -492,8 +495,6 @@ trans_doloop(VCArglist *a, VcIO o)
 
 }
 
-// note: obscure bug in interpreter too: the set expr is evaled before the var expr,
-// which is out of order according to spec's left to right ordering.
 vc
 trans_doforeach(VCArglist *a, VcIO o)
 {

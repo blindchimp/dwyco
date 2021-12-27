@@ -13,6 +13,8 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
+# i'll shit myself if this works on all platforms
+DEFINES += BUILDTIME=\"\\\"2.70\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -33,10 +35,12 @@ macx-clang: QT += macextras
 linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
-macx-clang: QMAKE_INFO_PLIST=Info.plist.mac
+macx-clang {
+QMAKE_INFO_PLIST=Info.plist.mac
 CONFIG -= app_bundle
+}
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
 
 #QMAKE_MAC_SDK = macosx10.9
 DEFINES += DWYCO_RELEASE
@@ -45,8 +49,11 @@ RC_FILE=phoo.rc
 
 SOURCES += main.cpp \
     androidperms.cpp \
+    ccmodel.cpp \
+    discomodel.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
+    joinlogmodel.cpp \
     pfx.cpp \
     msglistmodel.cpp \
     msgpv.cpp \
@@ -68,7 +75,8 @@ SOURCES += main.cpp \
     resizeimage.cpp \
     simple_user_list.cpp \
     ctlist.cpp \
-    dwycovideopreviewprovider.cpp 
+    dwycovideopreviewprovider.cpp  \
+    syncmodel.cpp
 
 # note: you can *compile* the qt stuff on any platform, but
 # as of 2017, the videoprobing stuff only works on android
@@ -84,7 +92,7 @@ QT += concurrent
 INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
 }
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
 
 linux-* {
 DEFINES += LINUX
@@ -125,8 +133,8 @@ $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qtdrv/libqtdrv.a \
--lsqlite3 \
--lv4l2
+-lv4l2 \
+-ldl
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -147,6 +155,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
 $${D}/qtdrv/libqtdrv.a
 
@@ -224,6 +233,29 @@ $${D}/uv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
 
+PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${D}/jhead/libjhead.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/uv/libuv.a \
+$${D}/qtdrv/libqtdrv.a
+
+
 }
 
 macx-ios-clang {
@@ -251,9 +283,30 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/uv/libuv.a \
 $${D}/qtdrv/libqtdrv.a
 
-
+PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${D}/jhead/libjhead.a \
+$${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/uv/libuv.a \
+$${D}/qtdrv/libqtdrv.a
 }
 
 android-* {
@@ -263,18 +316,30 @@ D = $${OUT_PWD}/../bld
 
 L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 
-LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv_$${QT_ARCH}.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will
 # work in the main executable if it is statically linked. that is a
 # limitation of java as far as i can tell.
 LIBS += $${L}/libdwyco_jni.so
-ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
-contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    ANDROID_EXTRA_LIBS += \
-        $$PWD/arm/libcrypto.so \
-        $$PWD/arm/libssl.so
+#ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
+ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
+
+ANDROID_TARGET_SDK_VERSION=30
+ANDROID_VERSION_CODE=99
+ANDROID_VERSION_NAME="3.0"
+#contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+#    ANDROID_EXTRA_LIBS += \
+#        $$PWD/arm/libcrypto.so \
+#        $$PWD/arm/libssl.so
+#}
+#message($$QMAKE_HOST.os)
+equals(QMAKE_HOST.os, Darwin) {
+message(MACOS)
+include(/Users/dwight/android/astudio/android_openssl/openssl.pri)
+} else {
+include(/home/dwight/android/astudio/android_openssl/openssl.pri)
 }
 #LIBS += \
 #$${D}/libcdc32.a \
@@ -347,7 +412,7 @@ $${D}\\jhead\\$${S}\\jhead.lib \
 $${D}\\uv\\$${S}\\uv.lib \
 $${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
 $${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
-winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
+winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
 $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
 
 #delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
@@ -394,7 +459,10 @@ include(deployment.pri)
 
 HEADERS += \
     androidperms.h \
+    ccmodel.h \
+    discomodel.h \
 	dwyco_top.h \
+    joinlogmodel.h \
     msglistmodel.h \
     dwycoimageprovider.h \
     notificationclient.h \
@@ -415,27 +483,29 @@ HEADERS += \
     simple_user_list.h \
     ctlist.h \
     dwycovideopreviewprovider.h \
-    simpledirmodel.h
+    simpledirmodel.h \
+    syncmodel.h
 
 DISTFILES += \
-    androidinst/gradle/wrapper/gradle-wrapper.jar \
-    androidinst/AndroidManifest.xml \
-    androidinst/gradle/wrapper/gradle-wrapper.properties \
-    androidinst/gradlew \
-    androidinst/gradlew.bat \
-    androidinst/res/values/libs.xml \
-    androidinst/build.gradle \
-    androidinst/google-services.json \
-    androidinst/src/com/dwyco/cdc32/dwybg.java \
-    androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst/src/com/dwyco/phoo/app.java \
-    androidinst/src/com/dwyco/android/Dwyco_Message.java \
-    androidinst/src/com/dwyco/android/DwycoProbe.java \
-    androidinst/src/com/dwyco/android/DwycoSender.java \
-    androidinst/src/com/dwyco/android/MyFirebaseMessagingService.java \
-    androidinst/src/com/dwyco/android/NotificationClient.java \
-    androidinst/src/com/dwyco/android/Push_Notification.java \
-    androidinst/src/com/dwyco/android/SocketLock.java \
-    androidinst/src/com/dwyco/android/StickyIntentService.java \
-    androidinst/src/com/dwyco/phoo/DwycoApp.java
+    androidinst2/google-services.json \
+    androidinst2/src/com/dwyco/cdc32/dwybg.java \
+    androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
+    androidinst2/src/com/dwyco/phoo/app.java \
+    androidinst2/src/com/dwyco/android/Dwyco_Message.java \
+    androidinst2/src/com/dwyco/android/DwycoProbe.java \
+    androidinst2/src/com/dwyco/android/DwycoSender.java \
+    androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst2/src/com/dwyco/android/NotificationClient.java \
+    androidinst2/src/com/dwyco/android/Push_Notification.java \
+    androidinst2/src/com/dwyco/android/SocketLock.java \
+    androidinst2/src/com/dwyco/android/StickyIntentService.java \
+    androidinst2/src/com/dwyco/phoo/DwycoApp.java \
+    androidinst2/AndroidManifest.xml \
+    androidinst2/build.gradle \
+    androidinst2/gradle.properties \
+    androidinst2/gradle/wrapper/gradle-wrapper.jar \
+    androidinst2/gradle/wrapper/gradle-wrapper.properties \
+    androidinst2/gradlew \
+    androidinst2/gradlew.bat \
+    androidinst2/res/values/libs.xml
 

@@ -7,7 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include "mmchan.h"
-#include "usercnfg.h"
 #include "qauth.h"
 #include "dwrtlog.h"
 #include "dwstr.h"
@@ -32,7 +31,6 @@ static int Chat_ready;
 int Chat_online;
 vc Chat_name;
 //static StatusCallback Chat_status_callback;
-extern vc Current_authenticator;
 
 extern vc LocalIP;
 int is_invisible();
@@ -41,7 +39,7 @@ extern vc KKG; //god pw
 void
 chat_offline(MMChannel *mc, vc, void *, ValidPtr)
 {
-    se_emit(SE_CHAT_SERVER_DISCONNECT, Chat_name);
+    se_emit_chat(SE_CHAT_SERVER_DISCONNECT, Chat_name);
     Chat_id = -1;
     Chat_starting = 0;
     Chat_ready = 0;
@@ -54,7 +52,7 @@ build_chat_entry(vc challenge, vc password)
 {
     vc v(VC_VECTOR);
     v[0] = "login";
-    v[1] = UserConfigData.get_username();
+    v[1] = get_settings_value("user/username");
     v[2] = My_UID;
     v[3] = KKG;
     v[4] = make_fw_setup();
@@ -79,7 +77,7 @@ build_chat_entry(vc challenge, vc password)
 void
 chat_call_failed_last(MMChannel *mc, vc, void *, ValidPtr)
 {
-    se_emit(SE_CHAT_SERVER_DISCONNECT, Chat_name);
+    se_emit_chat(SE_CHAT_SERVER_DISCONNECT, Chat_name);
     Chat_id = -1;
     Chat_starting = 0;
 
@@ -89,7 +87,7 @@ chat_call_failed_last(MMChannel *mc, vc, void *, ValidPtr)
 void
 chat_online_first(MMChannel *mc, vc which, void *, ValidPtr)
 {
-    se_emit(SE_CHAT_SERVER_CONNECTION_SUCCESSFUL, Chat_name);
+    se_emit_chat(SE_CHAT_SERVER_CONNECTION_SUCCESSFUL, Chat_name);
     show_chat_grid();
     mc->destroy_callback = chat_offline;
     // generate a proper authentication message
@@ -108,7 +106,7 @@ chat_online_first(MMChannel *mc, vc which, void *, ValidPtr)
 void
 chat_online(MMChannel *mc, vc challenge, void *, ValidPtr)
 {
-    se_emit(SE_CHAT_SERVER_LOGIN, Chat_name);
+    se_emit_chat(SE_CHAT_SERVER_LOGIN, Chat_name);
 
     mc->build_outgoing_chat(1);
     mc->chat_display = mc->gen_public_chat_display();
@@ -195,7 +193,7 @@ start_chat_thread(vc ip, vc port, const char *pw, vc chat_name)
     Chat_online = 0;
     Chat_starting = 1;
     Chat_name = chat_name;
-    se_emit(SE_CHAT_SERVER_CONNECTING, Chat_name);
+    se_emit_chat(SE_CHAT_SERVER_CONNECTING, Chat_name);
     GRTLOG("chat start", 0, 0);
     GRTLOGVC(ip);
     GRTLOGVC(port);

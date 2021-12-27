@@ -8,13 +8,13 @@
 VCCFG_COMP=$$PWD
 DWYCOBG=1
 DEFINES += VCCFG_FILE DWYCO_NO_UPNP
-linux-g++*:DEFINES += LINUX 
+linux-*:DEFINES += LINUX
 macx-ios-clang: DEFINES += LINUX MACOSX DWYCO_IOS
 macx-ios-clang: QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 #macx-ios-clang|macx-g++|macx-clang {
 #QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
 #}
-macx-g++|macx-clang: DEFINES += LINUX MACOSX 
+macx-*: DEFINES += LINUX MACOSX
 win32 {
 DEFINES += _WIN32 _CRT_SECURE_NO_WARNINGS __WIN32__ #_MBCS
 DEFINES -= UNICODE
@@ -24,9 +24,9 @@ DEFINES += _Windows
 DEFINES += CDCCORE_STATIC
 DEFINES += DWYCO_NO_VIDEO_CAPTURE
 }
-linux-g++|linux-g++-64|macx-g++|macx-clang: QMAKE_CXX=ccache g++
+linux-*|macx-*: QMAKE_CXX=ccache g++
 android: DEFINES += ANDROID LINUX
-linux-g++*:QMAKE_CXXFLAGS += -std=c++11
+linux-*:QMAKE_CXXFLAGS += -std=c++11
 
 #QMAKE_CFLAGS += -fsanitize=address
 #QMAKE_CXXFLAGS += -fsanitize=address

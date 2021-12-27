@@ -3,6 +3,9 @@ DWYCO_APP=phoo
 DWYCOBG=0
 DWYCO_USE_LINUX_AUDIO=0
 DEFINES += VCCFG_FILE
+
+CONFIG(debug, debug|release): DEFINES += DWYCO_DEBUG
+
 linux-*|wasm-emscripten {
 DEFINES += LINUX
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function

@@ -24,6 +24,13 @@ namespace dwyco {
 
 class DirectSend : public ssns::trackable
 {
+    DirectSend(const DirectSend&) = delete;
+    DirectSend& operator=(const DirectSend&) = delete;
+
+    // just a note: don't try to make this private unless you want a lot
+    // of grief. there are a lot of non-member functions that need access to this
+    // and i don't feel like calling them out as friends or statics in here.
+    //
 public:
 
     DirectSend(const DwString& fn);
@@ -47,11 +54,11 @@ public:
     // status is first arg
     // second arg is persistent id, ie, the name of the .q file
     // third arg is recipient uid
-    ssns::signal3<enum dwyco_sys_event, DwString, vc> se_sig;
+    ssns::signal3<enum dwyco_sys_event, const DwString&, vc> se_sig;
 
     // transfer statuses, useful for debugging
     // (pers-id, ruid, msg, percent)
-    ssns::signal4<DwString, vc, DwString, int> status_sig;
+    ssns::signal4<const DwString&, vc, const DwString&, int> status_sig;
 
     void send_direct();
     void send_with_attachment();

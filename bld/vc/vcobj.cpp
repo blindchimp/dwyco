@@ -84,17 +84,23 @@ VcObjectDbgNode::printOn(VcIO os)
 		os << "find in base objects the ";
 		break;
 	case LOCAL:
+        os << "find ";
+        break;
 	default:
 		os << "<<erroneous dbg state>>";
 	}
 	os << "selector \"";
 	sel.printOn(os);
-	if(find_state != ISA)
+    if(find_state == FORWARD || find_state == DELEGATE)
 	{
 		os << "\" to member \"";
 		trying.printOn(os);
 		os << "\"";
 	}
+    else
+    {
+        os << "\"";
+    }
 	os << "\n";
 }
 #endif

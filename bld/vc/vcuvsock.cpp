@@ -171,7 +171,7 @@ vc_uvsocket::parse_buffer(int once)
     vc obj;
     vcxstream& vcx = readx;
 
-    tmpbuf = tailstr.c_str();
+    tmpbuf = tailstr.ref_str();
     tmplen = tailstr.length();
     //long used = tailstr.length();
     try
@@ -278,9 +278,12 @@ vc_uvsocket::parse_buffer(int once)
 
     // note: it is ok if tmplen is 0
     if(tmplen == 0) // everything was consumed
-        tailstr = "";
+        tailstr.reset();
     else
-        tailstr = DwString(tmpbuf, 0, tmplen);
+    {
+        tailstr.reset();
+        tailstr.append(tmpbuf, tmplen);
+    }
 	return 1;
 }
 
@@ -356,7 +359,7 @@ read_cb(uv_stream_t *stream, ssize_t nread, uv_buf_t buf)
         free(buf.base);
         return;
     }
-    vcu->tailstr += DwString(buf.base, 0, nread);
+    vcu->tailstr.append(buf.base, nread);
     free(buf.base);
 
     vcu->parse_buffer(0);
@@ -751,7 +754,7 @@ vc_uvsocket::socket_get_write_q_size()
 {
     if(tcp_handle)
         return (long)tcp_handle->write_queue_size;
-    return vcnil;
+    return 0;
 }
 
 int

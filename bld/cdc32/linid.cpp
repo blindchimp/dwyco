@@ -12,22 +12,22 @@
 #include <unistd.h>
 #include "vc.h"
 #include "qauth.h"
-#include "uicfg.h"
 #include "sha.h"
+#include "ezset.h"
 using namespace CryptoPP;
+using namespace dwyco;
 
-#define HASH_SECRET "\x00\x94\x3d\x23\x98\x78\x01"
+#define HASH_MUMBLE "\x00\x94\x3d\x23\x98\x78\x01"
 static
 vc
 method_5(int& method)
 {
     method = 5;
-    TProfile p("admin", "");
-    char buf[100];
-    p.GetString("0102", buf, sizeof(buf) - 1, "");
-    if(strlen(buf) == 20)
+
+    vc v = get_settings_value("auth/uniq");
+    if(v != vc("00000000000000000001"))
     {
-        return from_hex(vc(buf));
+        return from_hex(v);
     }
     int f = open("/dev/urandom", O_RDONLY);
     if(f == -1)
@@ -44,7 +44,7 @@ method_5(int& method)
     }
     close(f);
     vc mid(VC_BSTRING, id, sizeof(id));
-    p.WriteString("0102", (const char *)to_hex(mid));
+    set_settings_value("auth/uniq", to_hex(mid));
     return mid;
 }
 
@@ -59,16 +59,15 @@ set_get_uniq(int& method)
 #ifdef MACOSX
     ret = system("/sbin/ifconfig | sed -n \"s/.*ether //p\" | head -1 >/tmp/.k");
 #else
-    ret = system("/sbin/ifconfig | sed -n \"s/.*HWaddr //p\" | head -1 >/tmp/.k");
+    ret = system("/sbin/ip link| sed -n \"s/.*ether //p\" | head -1 >/tmp/.k");
 #endif
     if(ret != 0)
     {
-        // just put the mid into a file in the admin.dif
         return method_5(method);
     }
     SHA sha;
-    byte *secret = (byte *)HASH_SECRET;
-    sha.Update(secret, sizeof(HASH_SECRET) - 1);
+    byte *secret = (byte *)HASH_MUMBLE;
+    sha.Update(secret, sizeof(HASH_MUMBLE) - 1);
     FILE *f = fopen("/tmp/.k", "r");
     if(!f)
         return method_5(method);

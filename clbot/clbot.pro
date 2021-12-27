@@ -9,7 +9,7 @@ SOURCES += \
     clbot.cpp \
     ../bld/miscsrc/dwyco_new_msg.cpp
 
-linux-g++* {
+linux-* {
 
 D = $${OUT_PWD}/../bld
 

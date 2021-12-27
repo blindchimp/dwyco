@@ -16,11 +16,11 @@
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcfundef.cpp 1.47 1997/10/05 17:27:06 dwight Stable $";
 
-vc_fundef::vc_fundef(const char *name, VCArglist *a, int sty, int decrypt)
-	: vc_func(vc(name), sty)
+vc_fundef::vc_fundef(const char *fname, VCArglist *a, int sty, int decrypt)
+    : vc_func(vc(fname), sty)
 {
 	int nargs = a->num_elems();
-    bindargs = new DwVec<vc>;
+    bindargs = new DwSVec<vc>;
 	// if a vector is passed as the first argument,
 	// we assume its is a list of arguments
 	// to be broken-out
@@ -33,13 +33,13 @@ vc_fundef::vc_fundef(const char *name, VCArglist *a, int sty, int decrypt)
 		int nvargs = (*a)[0].num_elems();
 		for(int i = 0; i < nvargs; ++i)
 		{
-			(*bindargs)[i] = (*a)[0][i];
+            (*bindargs).append((*a)[0][i]);
 		}
 	}
 	else
 	{
 		for(int i = 0; i < nargs - 1; ++i)
-			(*bindargs)[i] = (*a)[i];
+            (*bindargs).append((*a)[i]);
     }
 
 	fundef = (*a)[nargs - 1];
@@ -61,8 +61,8 @@ vc_fundef::vc_fundef(int sty) : vc_func(vc("<<internal>>"), sty)
 	bindargs = 0;
 }
 
-vc_fundef::vc_fundef(vc name, int sty) :
-    vc_func(name, sty)
+vc_fundef::vc_fundef(vc fname, int sty) :
+    vc_func(fname, sty)
 {
     bindargs = 0;
 }

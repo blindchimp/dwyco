@@ -9,14 +9,7 @@
 //$Header: g:/dwight/repo/cdc32/rcs/mmchan.cc 1.37 1999/01/10 16:09:35 dwight Checkpoint $
 #include <typeinfo>
 
-#include "usercnfg.h"
-#include "vfwinvst.h"
-#include "cllaccpt.h"
-#include "vidinput.h"
-#include "zapadv.h"
-#include "ratetwkr.h"
 #include "chatdisp.h"
-#include "aqvfw.h"
 #include "dwstr.h"
 #include "mmchan.h"
 #include "netvid.h"
@@ -41,7 +34,6 @@
 #include "audi.h"
 #include "audth.h"
 #include "audchk.h"
-#include "snds.h"
 //#include "lpcconv.h"
 
 #include "dirth.h"
@@ -73,10 +65,13 @@
 #include "xinfo.h"
 #include "dhsetup.h"
 #include "vcudh.h"
-#include "pkcache.h"
+#include "profiledb.h"
 #include "sha.h"
 #include "qdirth.h"
 #include "dwscoped.h"
+#include "dhgsetup.h"
+#include "ezset.h"
+#include "qmsgsql.h"
 #ifdef _Windows
 //#include <winsock2.h>
 //#include <ws2tcpip.h>
@@ -85,6 +80,7 @@ using namespace dwyco;
 
 extern vc Current_room;
 extern vc My_connection;
+extern DwString dwyco::Schema_version_hack;
 
 #ifdef _Windows
 #define strcasecmp strcmpi
@@ -98,12 +94,6 @@ using namespace CryptoPP;
 
 
 #define FAILRET(x) do { {fail_reason = (x); Log->make_entry(x); return 0;} } while(0)
-
-MMChannel *
-MMChannel::gen_chan()
-{
-    return new MMChannel;
-}
 
 GetWindowCallback MMChannel::get_mdi_client_window_callback;
 GetWindowCallback MMChannel::get_main_window_callback;
@@ -142,7 +132,7 @@ DwTreeKaz<MMChannel *, int> *MMChannel::AllChan2;
 int MMChannel::Sync_receivers = 1;
 int MMChannel::Auto_sync = 1;
 DwTimer MMChannel::Bw_adj_timer("bw_adj");
-#undef DWYCO_THREADED_ENCODE
+//#define DWYCO_THREADED_ENCODE
 
 #if defined(DWYCO_THREADED_ENCODE) && defined(LINUX)
 #include "dwpipe.h"
@@ -334,6 +324,11 @@ init_coder_pipe()
 {
     if(Coder_pipe)
         return;
+    // WARNING: DO NOT SET THIS TO MORE THAN 1 THREAD!
+    // the coding objects are not thread-safe or re-entrant.
+    // this pipeline is just being used to allow the coding to
+    // happen in the background so we don't block for a long
+    // period of time in "service_channels"
     Coder_pipe = new DwPipeline<coder_input, coder_finished>(1, 1);
     Coder_pipe->add_operation(new CoderOp);
     Coder_pipe->init();
@@ -375,7 +370,7 @@ MMChannel::exit_mmchan()
 
 restart:;
 
-    int n = MMChannels.num_elems();
+    auto n = MMChannels.num_elems();
     for(int i = 0; i < n; ++i)
     {
         MMChannel *m = MMChannels[i];
@@ -471,7 +466,8 @@ MMChannel::MMChannel() :
 
     //stun_socks(2, DWVEC_FIXED, !DWVEC_AUTO_EXPAND),
     granted(10, DWVEC_FIXED, !DWVEC_AUTO_EXPAND),
-    ctrl_q(VC_VECTOR)
+    ctrl_q(VC_VECTOR),
+    sync_pinger("sync-pinger")
 
 {
     tube = 0;
@@ -483,7 +479,7 @@ MMChannel::MMChannel() :
     do_destroy = KEEP;
     negotiating = 0;
     user_accept = NONE;
-    accept_box = 0;
+    //accept_box = 0;
     ctrl_send_watchdog.set_interval(10 * 60 * 1000);
     nego_timer.load(NEGO_TIMEOUT);
     nego_timer.set_oneshot(1);
@@ -559,6 +555,10 @@ MMChannel::MMChannel() :
     video_chan = -1;
     video_state = MEDIA_ERR;
 
+    msync_chan = -1;
+    msync_state = MEDIA_ERR;
+    is_sync_chan = false;
+
     auto_quality_boost = 0;
     private_chatbox_id = -1;
     private_chat_display = 0;
@@ -590,7 +590,6 @@ MMChannel::MMChannel() :
     sync_timer.set_interval(1000);
     sync_timer.start();
 
-    remote_updated = 0;
     pinger_timer.set_autoreload(1);
     pinger_timer.set_interval(60 * 1000);
     pinger_timer.start();
@@ -686,6 +685,13 @@ MMChannel::MMChannel() :
 
     file_xfer = 0;
     zreject = 0;
+
+    mms_sync_state = MMSS_NONE;
+    mmr_sync_state = MMSS_NONE;
+    mms_sync_state.value_changed.connect_memfun(this, &MMChannel::mms_sync_state_changed);
+    mmr_sync_state.value_changed.connect_memfun(this, &MMChannel::mmr_sync_state_changed);
+    package_index_future = nullptr;
+    unpack_index_future = nullptr;
 }
 
 MMChannel::~MMChannel()
@@ -868,7 +874,7 @@ MMChannel::is_receiver()
 void
 MMChannel::start_service()
 {
-    int i;
+    long i;
 
     if(MMChannels.index(this) != -1)
         return;
@@ -881,7 +887,7 @@ MMChannel::start_service()
 void
 MMChannel::stop_service()
 {
-    int i;
+    long i;
     if((i = MMChannels.index(this)) == -1)
         return;
     MMChannels[i] = 0;
@@ -1588,6 +1594,27 @@ MMChannel::local_media_setup_new()
                 simple_protos[video_chan] = s;
             }
         }
+
+        if(call_type == vc("sync"))
+        {
+            // for now, just set up a sync channel for each connection, like media channels
+            // this is ok for testing, but probably needs more thought
+            if(!proxy_info.is_nil())
+                send_ctrl(aux_r);  // this prompts the callee to setup a channel to the proxy
+            msync_chan = -1;
+            if((ret = tube->gen_channel(proxy_info.is_nil() ? remote_listening_port() : (int)proxy_info[1], msync_chan)) == SSERR)
+            {
+                msync_chan = -1;
+            }
+            else
+            {
+                msync_state = ret;
+                sproto *s = new sproto(msync_chan, media_x_setup, vp);
+                s->start();
+                simple_protos[msync_chan] = s;
+            }
+        }
+
     }
     negotiating = 0;
     return 1;
@@ -1717,7 +1744,7 @@ MMChannel::is_private_chatter()
 vc
 MMChannel::remote_iam()
 {
-    vc v("Bozo T. Clown");
+    vc v;
     if(!remote_cfg.is_atomic())
     {
         v = remote_username();
@@ -1740,7 +1767,7 @@ MMChannel::remote_iam()
 vc
 MMChannel::remote_uid()
 {
-    vc v("Mr. Green Jeans");
+    vc v;
     if(call_setup)
         return attempt_uid;
     if(!remote_cfg.is_atomic())
@@ -1766,14 +1793,14 @@ MMChannel::remote_session_id()
 vc
 MMChannel::username()
 {
-    vc v(UserConfigData.get_username());
+    vc v(get_settings_value("user/username"));
     return v;
 }
 
 vc
 MMChannel::remote_username()
 {
-    vc v("Mr. Moose");
+    vc v;
     if(!remote_cfg.is_atomic())
         remote_cfg.find("username", v);
     else
@@ -1919,8 +1946,8 @@ void
 MMChannel::init_config(int caller)
 {
     config = vc(VC_MAP, "", 31);
-    config.add_kv("username", UserConfigData.get_username());
-    config.add_kv("user description", UserConfigData.get_description());
+    config.add_kv("username", get_settings_value("user/username"));
+    config.add_kv("user description", get_settings_value("user/description"));
     // bumping the protocol version will make direct connections (even via
     // server) fail. this means that calling and direct messaging will fail, and
     // all messages will be sent via server (to older version).
@@ -1946,7 +1973,7 @@ MMChannel::init_config(int caller)
         config.add_kv("reliable video", 1);
     }
 
-    config.add_kv("location", UserConfigData.get_location());
+    config.add_kv("location", get_settings_value("user/location"));
     config.add_kv("call type", call_type);
     vc v(VC_VECTOR);
     v.append("dct");
@@ -2003,7 +2030,7 @@ MMChannel::init_config(int caller)
         MMCall *mmc = MMCall::channel_to_call(myid);
         if(mmc)
         {
-            if(!VidInputData.get_no_video() && mmc->send_video)
+            if((int)get_settings_value("video_input/no_video") == 0 && mmc->send_video)
                 v.append("send");
             if(mmc->recv_video)
                 v.append("recv");
@@ -2024,26 +2051,21 @@ MMChannel::init_config(int caller)
     }
     else
     {
-        if(!VidInputData.get_no_video() && CallAcceptanceData.get_max_video() > 0)
+        //if(!VidInputData.get_no_video() && CallAcceptanceData.get_max_video() > 0)
             v.append("send");
-        if(CallAcceptanceData.get_max_audio() > 0)
+        //if(CallAcceptanceData.get_max_audio() > 0)
             v.append("send audio");
-        if(CallAcceptanceData.get_max_chat() > 0)
+        //if(CallAcceptanceData.get_max_chat() > 0)
             v.append("chat");
-        if(CallAcceptanceData.get_max_pchat() > 0)
+        //if(CallAcceptanceData.get_max_pchat() > 0)
             v.append("pchat");
-        if(CallAcceptanceData.get_max_video_recv() > 0)
+        //if(CallAcceptanceData.get_max_video_recv() > 0)
             v.append("recv");
-        if(CallAcceptanceData.get_max_audio_recv() > 0)
+        //if(CallAcceptanceData.get_max_audio_recv() > 0)
             v.append("recv audio");
         v.append("uc"); // see above
     }
     config.add_kv("channel duplex", v);
-#if 0
-    channel_keys = dh_gen_combined_keys();
-    config.add_kv("udh pubkeys", udh_just_publics(channel_keys));
-#endif
-
 }
 
 void
@@ -2116,9 +2138,9 @@ MMChannel::requested_config()
 
     m.add_kv("audio codec", r);
 
-    m.add_kv("channel bandwidth", RTUserDefaults.get_link_speed());
-    m.add_kv("channel bandwidth recv", RTUserDefaults.get_link_speed_recv());
-    m.add_kv("max udp bytes", RTUserDefaults.get_max_udp_bytes());
+    m.add_kv("channel bandwidth", get_settings_value("rate/kbits_per_sec_out"));
+    m.add_kv("channel bandwidth recv", get_settings_value("rate/kbits_per_sec_in"));
+    //m.add_kv("max udp bytes", RTUserDefaults.get_max_udp_bytes());
     return m;
 }
 
@@ -2162,14 +2184,16 @@ kdf(vc agreed, int caller, vc my_uid, vc rem_uid)
 vc
 MMChannel::match_config(vc cfg, int caller)
 {
-    // pick smallest versions for various things
     vc pvers;
     if(!cfg.find("protocol version", pvers))
         return vcnil;
     vc ourvers;
     if(!config.find("protocol version", ourvers))
         return vcnil;
-    //pvers = (pvers < ourvers) ? pvers : ourvers;
+    // if the version isn't exact, just bail now.
+    // we have other channels to send messages that are less
+    // sensitive to the client versions, and this helps cut down
+    // on compatibility issues.
     if(pvers != ourvers)
         return vcnil;
 
@@ -2466,7 +2490,12 @@ MMChannel::crypto_agree(vc crypto, int caller)
         }
     }
     else
+    {
+        // NOTE: XXX HAVE TO BE CAREFUL HERE, THIS might OBLITERATE or block
+        // acquisition of
+        // ALT KEYS (check and fix)
         put_pk(rem_uid, dh_static_material(their_pubkeys), vcnil);
+    }
 
     vc agreed = udh_agree_auth(channel_keys, their_pubkeys);
     agreed = kdf(agreed, caller, My_UID, rem_uid);
@@ -2595,6 +2624,41 @@ MMChannel::already_connected(vc uid, int is_msg_chan, int is_user_control_chan)
     return 0;
 }
 
+MMChannel *
+MMChannel::channel_by_call_type(vc uid, vc call_type)
+{
+    // check current connections for uid
+    scoped_ptr<ChanList> cl(get_serviced_channels_net());
+    ChanListIter cli(cl.get());
+    for(; !cli.eol(); cli.forward())
+    {
+        MMChannel *mc = cli.getp();
+        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && call_type == mc->remote_call_type())
+        {
+            return mc;
+        }
+    }
+    return 0;
+}
+
+ChanList
+MMChannel::channels_by_call_type(vc call_type)
+{
+    // check current connections for uid
+    scoped_ptr<ChanList> cl(get_serviced_channels_net());
+    ChanListIter cli(cl.get());
+    ChanList ret;
+    for(; !cli.eol(); cli.forward())
+    {
+        MMChannel *mc = cli.getp();
+        if(mc->do_destroy == KEEP && call_type == mc->remote_call_type())
+        {
+            ret.append(mc);
+        }
+    }
+    return ret;
+}
+
 // this is called in the CALLEE when we receive
 // the CALLER's config
 void
@@ -2684,7 +2748,7 @@ MMChannel::recv_config(vc cfg)
                 send_error("busy");
                 goto cleanup;
             }
-            if(!call_screening_callback && ZapAdvData.get_ignore() && !pal_user(uid))
+            if(!call_screening_callback && (int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
                 Log->make_entry("call rejected, pals-only mode");
                 send_error("pals-only");
@@ -2724,6 +2788,46 @@ MMChannel::recv_config(vc cfg)
             cfg.del("pw");
             common_cfg.del("pw");
             remote_cfg.del("pw");
+            finish_connection_new();
+            return;
+        }
+    }
+
+    {
+        // if the remote is requesting a sync channel
+        // make sure we are at least in a group with
+        // the same hash (this is not a security check, just
+        // making sure we don't accept sync links from obviously
+        // wrong group)
+        vc m;
+        vc r;
+        if(!remote_cfg.is_nil() && remote_call_type() == vc("sync"))
+        {
+            vc pw;
+            if(!cfg.find("pw", pw))
+            {
+                send_error("sync needs pw");
+                goto cleanup;
+            }
+            if(!Current_alternate)
+
+            {
+                send_error("sync wrong group");
+                goto cleanup;
+            }
+            vc ipw = Current_alternate->hash_key_material();
+            DwString ips((const char *)ipw, ipw.len());
+            ips += dwyco::Schema_version_hack;
+            ipw = vc(VC_BSTRING, ips.c_str(), ips.length());
+            if(pw != ipw)
+            {
+                send_error("sync wrong group or schema");
+                goto cleanup;
+            }
+            cfg.del("pw");
+            common_cfg.del("pw");
+            remote_cfg.del("pw");
+            is_sync_chan = true;
             finish_connection_new();
             return;
         }
@@ -2829,7 +2933,6 @@ MMChannel::recv_config(vc cfg)
             case MMCHAN_US_REJECT_CALL:
                 send_error(error_msg);
                 goto cleanup;
-                break;
             case MMCHAN_US_ACCEPT_CALL:
                 prescreened = 1;
                 finish_connection_new();
@@ -2854,7 +2957,7 @@ MMChannel::recv_config(vc cfg)
         vc uid;
         if(!remote_cfg.is_nil() && remote_cfg.find("my uid", uid))
         {
-            if(ZapAdvData.get_ignore() && !pal_user(uid))
+            if((int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
                 Log->make_entry("call rejected, pals-only mode");
                 send_error("pals-only");
@@ -2866,7 +2969,7 @@ MMChannel::recv_config(vc cfg)
     // move password screening down here so that the app defined screening
     // more or less disabled password screening. may need to update app screening
     // to include stuff for doing password screening in the future.
-    if(!Conf && CallAcceptanceData.get_require_pw())
+    if(!Conf && (int)get_settings_value("call_acceptance/require_pw") == 1)
     {
         vc pw;
         if(!cfg.find("pw", pw))
@@ -2875,7 +2978,7 @@ MMChannel::recv_config(vc cfg)
             send_error("password required to connect");
             goto cleanup;
         }
-        if(strcmp((const char *)pw, CallAcceptanceData.get_pw()) != 0)
+        if(pw != get_settings_value("call_acceptance/pw"))
         {
             Log->make_entry("call rejected, incorrect pw.");
             send_error("incorrect password");
@@ -2962,8 +3065,8 @@ MMChannel::recv_config(vc cfg)
 
     // now pop up a dialog and wait for the user
     // to accept or reject the call.
-    play_call_alert();
-    if(!CallAcceptanceData.get_auto_accept())
+    //play_call_alert();
+    if((int)get_settings_value("call_acceptance/auto_accept") == 0)
     {
         vc name;
         if(!remote_cfg.is_nil() && !remote_cfg.find("username", name))
@@ -3186,7 +3289,7 @@ void
 MMChannel::finish_connection_new()
 {
     vc riam;
-    if(msg_chan || user_control_chan)
+    if(msg_chan || user_control_chan || is_sync_chan)
         goto done;
     if(call_accepted_callback)
         (*call_accepted_callback)(this, ca_arg1, ca_arg2, ca_arg3);
@@ -3272,13 +3375,6 @@ MMChannel::recv_confirm(vc v)
         // ignore unknown messages
         pstate = ESTABLISHED;
     }
-}
-
-
-int
-MMChannel::active()
-{
-    return tube != 0;
 }
 
 int
@@ -3723,14 +3819,6 @@ MMChannel::turn_off_color()
 #endif
         }
     }
-#if defined(_Windows) && defined(USE_VFW)
-    if(TheAq)
-    {
-        VFWAquire *va = TYPESAFE_DOWNCAST(TheAq, VFWAquire);
-        if(va)
-            va->force_gray = 1;
-    }
-#endif
 
 }
 
@@ -3753,6 +3841,19 @@ MMChannel::grab_and_code(int& len, unsigned long& captime, int& ref, int showonl
     init_coder_pipe();
     coder_input *ci = new coder_input;
     ci->coder = coder;
+    // WARNING: coding the video frames out of order only makes
+    // sense if they don't depend on each other, ie, they are all
+    // reference frames. this mean the bit rate is going to be
+    // increased (a lot).
+    // HOWEVER, since we are only using this pipeline to avoid blocking
+    // the UI thread, this is ok. it just puts the coding in the background
+    // thread, but the results are still being produced in order.
+    //
+    // as a side note: if you are willing to buffer up some frames, you
+    // *might* be able to overlap some of the coding by grouping the
+    // frames into IPPP groups or something. you would still need
+    // separate coding objects tho unless you went to the trouble to make
+    // them independent.
     ci->ref = send_ref();
     ci->bits = sampler->get_data(ci->cols, ci->rows, ci->y, ci->cb, ci->cr, ci->fmt, ci->captime);
     ci->show_only = showonly;
@@ -3938,7 +4039,7 @@ MMChannel::service_channels(int *spin_out)
     int spin = 0;
     for(i = 0; i < MMChannels.num_elems(); ++i)
     {
-        MMChannel *mc = MMChannels[i];
+        MMChannel * const mc = MMChannels[i];
         if(!mc)
             continue;
 
@@ -4391,7 +4492,10 @@ stun_done:
                     mc->send_reliable_video_proxy();
                 }
             }
-
+            if(t && mc->msync_state == MEDIA_SESSION_UP)
+            {
+                mc->process_outgoing_sync();
+            }
             //
             // check for availability of keyboard data and send out
             // a chat message if there is some available.
@@ -4631,6 +4735,15 @@ resume_ctrl_send:
 next_iter:
         continue;
 resume:
+        if(mc->sync_pinger.is_expired())
+        {
+            mc->schedule_destroy(HARD);
+            continue;
+        }
+        if(t && mc->msync_state == MEDIA_SESSION_UP && t->has_data(mc->msync_chan))
+        {
+            mc->process_incoming_sync();
+        }
         // note: don't check for paused here because
         // we want any data that might be q'd up to
         // come through before stopping (ie, pause
@@ -4640,7 +4753,7 @@ resume:
             if(mc->process_incoming_audio() == SSERR)
                 break;
         }
-        if(t && !mc->force_unreliable_video && mc->video_state == MEDIA_SESSION_UP && t->has_data(mc->video_chan))
+        while(t && !mc->force_unreliable_video && mc->video_state == MEDIA_SESSION_UP && t->has_data(mc->video_chan))
         {
             mc->process_incoming_reliable_video();
         }

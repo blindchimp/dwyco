@@ -1,32 +1,7 @@
-Sun Oct 20 14:19:31 MDT 2019
+Mon Sep  6 11:49:20 MDT 2021
 
-deploying with qt4 is easier, just make sure you compile the bot
-with qt4 installed on the same OS version as the target. this is because
-of incompatibilities with libc.
+on Ubuntu 20.04 server, install all the Qt 5.12 dependencies from the
+distro. Compile the bot using ubuntu 5.12. This is the easiest way to
+go about it. It is highly unlikely to work otherwise.
 
-also, the target installation will need the sqlite driver plugin:
 
-apt-get install libqt4-sql-sqlite
-
-Wed Jun  7 08:32:15 MDT 2017
-
-build the bot with qt5.6 requires some goofy stuff in order to
-deploy it properly. the sqlite plugin and some auxilliary "icu" plugins
-aren't normally available on every version of linux. so you need to have
-
-libicudata.so.56
-libicui18n.so.56
-libicuuc.so.56
-libqsqlite.so
-libQt5Core.so.5
-libQt5Sql.so.5
-
-and a qt.conf file like this might be needed, though i'm not sure.
-i couldn't get it to work, as i recall and just put everything in the
-same directory and it seemed to workout.
-
-[Paths]
-Plugins = /home/dwight/Downloads/bots/clbot/plugins
-
-then put this in plugins
-plugins/sqldrivers/libqsqlite.so

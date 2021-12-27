@@ -10,14 +10,12 @@
 #ifndef LINUX
 #include <WinSock2.h>
 #endif
-#include "vc.h"
+
 #include "vcwsock.h"
 #include "mmchan.h"
 #include "netvid.h"
 #include "msgdisp.h"
 #include "gvchild.h"
-#include "aconn.h"
-#include "qauth.h"
 #include "dwrtlog.h"
 
 using namespace dwyco;
@@ -311,14 +309,14 @@ MMChannel::start_connect()
         // for default OUTGOING port) to default outgoing port,
         // which is what we want to use if we don't have any
         // other information.
-        DwString b(DwNetConfigData.get_primary_suffix(addrstr.c_str()));
-        addrstr = b;
+        oopanic("what were you thinking");
+        //DwString b(DwNetConfigData.get_primary_suffix(addrstr.c_str()));
+        //addrstr = b;
     }
     else
     {
-        char b[255];
-        sprintf(b, ":%d", port);
-        addrstr += b;
+        addrstr += ":";
+        addrstr += DwString::fromInt(port);
     }
     ouraddr = "any:any";
     pstate = CONNECTING;
@@ -358,7 +356,6 @@ MMChannel::poll_connect()
 int
 MMChannel::start_negotiation()
 {
-    //tube->init_listener();
     start_crypto();
     nego_timer.start();
     negotiating = 1;
@@ -370,7 +367,7 @@ MMChannel::start_negotiation()
     return 1;
 }
 
-#define FAILNEGO(x) {negotiating = 0; FAILRET(x)}
+#define FAILNEGO(x) do {negotiating = 0; FAILRET(x)} while(0)
 #define FAILRET(x) {fail_reason = (x); msg_out(x); return 0;}
 
 int

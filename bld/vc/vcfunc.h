@@ -79,7 +79,7 @@ public:
 	int visited();
 #ifdef LHPROF
 	static DwSet<vc_func *> Func_list;
-	double call_count;
+        long call_count;
 	double total_time;
 	double total_time2;
 	double total_sys_time;

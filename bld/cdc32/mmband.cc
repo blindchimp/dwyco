@@ -11,14 +11,14 @@
  * $Header: g:/dwight/repo/cdc32/rcs/mmband.cc 1.5 1999/01/10 16:09:51 dwight Checkpoint $
  */
 #include "mmchan.h"
-#include "ratetwkr.h"
 #include "netvid.h"
 #include "dwrtlog.h"
 #include "dwscoped.h"
+#include "ezset.h"
 
 using namespace dwyco;
 
-#define MAXBW (1<<31)
+#define MAXBW (1<<30)
 //
 // each channel has 2 bandwidth limits, and 2
 // bandwidth current use variables. one each for
@@ -284,13 +284,13 @@ MMChannel::adjust_incoming_bandwidth()
 int
 MMChannel::get_available_output_bandwidth()
 {
-    return RTUserDefaults.get_link_speed();
+    return get_settings_value("rate/kbits_per_sec_out");
 }
 
 int
 MMChannel::get_available_input_bandwidth()
 {
-    return RTUserDefaults.get_link_speed_recv();
+    return get_settings_value("rate/kbits_per_sec_in");
 }
 
 int

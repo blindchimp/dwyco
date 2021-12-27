@@ -6,12 +6,12 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
-import QtQuick.Controls 2.1
+import QtQml 2.12
+import QtQuick 2.12
+import QtQuick.Controls 2.12
 import dwyco 1.0
-import QtQuick.Layouts 1.3
-import QtQml 2.2
-import QtQml.StateMachine 1.0 as DSM
+import QtQuick.Layouts 1.12
+import QtQml.StateMachine 1.12 as DSM
 
 Page {
     property string uid
@@ -44,14 +44,14 @@ Page {
 
     Connections {
         target: core
-        onVideo_display: {
+        function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id !== video_chan)
                 return
             viewer.source = img_path
             something_recorded = true
         }
 
-        onVideo_capture_preview: {
+        function onVideo_capture_preview(img_path) {
             if(!visible)
                 return
             if(start.active) {
@@ -62,14 +62,14 @@ Page {
             }
         }
 
-        onZap_stopped: {
+        function onZap_stopped(zid) {
             if(zid != rzid)
                 return
             video_chan = -1
 
         }
 
-        onQt_app_state_change: {
+        function onQt_app_state_change(app_state) {
             if(app_state === 0) {
                 // resuming
 //                if(visible) {

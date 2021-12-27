@@ -39,7 +39,7 @@
 ****************************************************************************/
 
 import QtQuick 2.12
-import QtQuick.Layouts 1.3
+import QtQuick.Layouts 1.12
 import QtMultimedia 5.12
 
 Item {
@@ -78,6 +78,9 @@ Item {
             id: ok
             text: "Send"
             onClicked: {
+                if(Qt.platform.os == "android") {
+                    notificationClient.log_event2("camsend", "regular")
+                }
                 cameraUI.snapshot(file_captured)
                 source = ""
                 file_captured = ""
@@ -90,6 +93,9 @@ Item {
             id: cancel
             text: "Retry"
             onClicked: {
+                if(Qt.platform.os == "android") {
+                    notificationClient.log_event2("camretry", "regular")
+                }
                 core.delete_file(file_captured)
                 source = ""
                 file_captured = ""

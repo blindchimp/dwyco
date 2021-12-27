@@ -9,12 +9,17 @@ DEFINES += VC_INTERNAL
 
 !win32 {
 DEFINES += UNIX
-QMAKE_CXXFLAGS += -fpermissive
+QMAKE_CXXFLAGS += #-fpermissive
 #QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder
 }
 
 equals(LH_INTERPRETER, 1) {
-DEFINES += LHOBJ PERFHACKS FUNCACHE LH_WRAP_SPREAD LH_WRAP_SQLITE3
+# note: this simple lookup caching works, but is only really
+# useful in situations where a program doesn't make a lot of
+# function calls to user defined functions. in order to improve
+# it would require something quite a bit more complicated, or changing
+# some of the semantics of the language.
+DEFINES += LHOBJ PERFHACKS FUNCACHE #CACHE_LOOKUPS
 }
 !equals(LH_INTERPRETER, 1) {
 DEFINES += NO_VCEVAL

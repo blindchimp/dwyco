@@ -633,6 +633,7 @@ CDCTheoraCoderColor::code_preprocess(gray **img_l, gray **img_cb, gray **img_cr,
             if(th_encode_ycbcr_in(cur_coder_ctx, tb) != 0)
             {
                 GRTLOG("bad theora encode", 0, 0);
+                set_busy(0);
                 return 0;
             }
             ogg_packet op;

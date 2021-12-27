@@ -74,19 +74,10 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
-cllaccpt.cpp \
-ratetwkr.cpp \
-rawfiles.cpp \
 syncvar.cc \
-uicfg.cc \
-usercnfg.cpp \
-vfwinvst.cpp \
-vidinput.cpp \
-zapadv.cpp \
 doinit.cc \
 netcod.cc \
 tcode.cc \
-sleep.cc \
 statfun.cc \
 dirth.cc \
 rlc.cc \
@@ -107,7 +98,6 @@ globs.cc \
 fl.cc \
 mmserv.cc \
 tl.cc \
-cdcpal.cc \
 cdcpal2.cc \
 dlli.cpp \
 mcc.cpp \
@@ -122,7 +112,7 @@ autoup.cpp \
 dmdsrv.cc \
 fnmod.cc \
 xinfo.cpp \
-prfcache.cpp \
+profiledb.cpp \
 vidcvt.cc \
 callq.cpp \
 asshole.cpp \
@@ -141,7 +131,7 @@ chatgrid.cpp \
 chatq.cpp \
 sysattr.cpp \
 vorbconv.cc \
-ezset.cpp \
+ezset2.cpp \
 linid.cpp \
 se.cpp \
 theoracol.cc \
@@ -151,7 +141,6 @@ sproto.cpp \
 mmchan3.cpp \
 trc.cpp \
 glob/glob.c \
-pkcache.cpp \
 ssns.cpp \
 qsend.cpp \
 directsend.cpp \
@@ -164,7 +153,15 @@ dwybg_wrap.c \
 aqext_android.cpp \
 backsql.cpp \
 upnp.cpp \
-simplesql.cpp
+simplesql.cpp \
+aqkey.cpp \
+pulls.cpp \
+dhgsetup.cpp \
+grpmsg.cpp \
+mmchan_sync.cpp \
+sync_sendq.cpp \
+bgapp.cpp \
+synccalls.cpp
 
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls

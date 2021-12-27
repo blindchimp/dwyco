@@ -32,6 +32,7 @@ public:
 	virtual VcIOHack& operator<<(int);
 	virtual VcIOHack& operator<<(unsigned int);
 	virtual VcIOHack& operator<<(long);
+        virtual VcIOHack& operator<<(long long);
 	virtual VcIOHack& operator<<(unsigned long);
 	virtual VcIOHack& operator<<(double);
     virtual VcIOHack& operator<<(vc);
@@ -59,6 +60,7 @@ public:
 	VcIOHack& operator<<(int);
 	VcIOHack& operator<<(unsigned int);
 	VcIOHack& operator<<(long);
+        VcIOHack& operator<<(long long);
 	VcIOHack& operator<<(unsigned long);
 	VcIOHack& operator<<(double);
     virtual VcIOHack& operator<<(vc);

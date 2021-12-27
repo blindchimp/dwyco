@@ -6,12 +6,12 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.6
+import QtQml 2.12
+import QtQuick 2.12
 import dwyco 1.0
-import QtQuick.Layouts 1.3
-import QtQml 2.2
-import QtQuick.Dialogs 1.2
-import QtQuick.Controls 2.1
+import QtQuick.Layouts 1.12
+import QtQuick.Dialogs 1.3
+import QtQuick.Controls 2.12
 
 Page {
     id: convlist_top
@@ -216,7 +216,7 @@ Page {
 
        Rectangle {
            height: vh(pct)
-           width: parent.width
+           width: ListView.view.width
            opacity: {multiselect_mode && selected ? 0.5 : 1.0}
            color: primary_dark
            border.width: 1
@@ -266,7 +266,7 @@ Page {
                        z:3
                        anchors.top:parent.top
                        anchors.left:parent.left
-                       visible: {unseen_count > 0 ? true : false }
+                       visible: any_unread
                    }
                    Rectangle {
                        id: ispal
@@ -401,8 +401,10 @@ Page {
            id: bgrec
            height: gridView1.cellHeight
            width: gridView1.cellWidth
+
            opacity: {multiselect_mode && selected ? 0.5 : 1.0}
            color: primary_dark
+           //scale: .5
            border.width: 1
            gradient: Gradient {
                GradientStop { position: 0.0; color: primary_light }
@@ -440,7 +442,7 @@ Page {
                    z:3
                    anchors.top:parent.top
                    anchors.left:parent.left
-                   visible: {unseen_count > 0 ? true : false }
+                   visible: any_unread
                }
                Rectangle {
                    id: ispal
@@ -531,7 +533,7 @@ Page {
    GridView {
        id: gridView1
        anchors.fill:parent
-       cellWidth: 160 ; cellHeight: 160
+       cellWidth: 80 ; cellHeight: 80
 
        visible: show_grid.grid_checked
 

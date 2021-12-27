@@ -23,7 +23,6 @@ static DwVec<vc> *outbind_str;
 static DwVec<vc> *outbind_double;
 typedef DwVec<vc> vvc;
 
-template class DwVecP<void>;
 static
 int
 start_wrapper()

@@ -41,11 +41,11 @@
 #include "backsql.h"
 #include "sepstr.h"
 #include "ser.h"
-#include "prfcache.h"
+#include "profiledb.h"
+
 #include "ta.h"
 
 using namespace CryptoPP;
-extern vc Pals;
 
 namespace dwyco {
 #define BACKUP_FREQ_DEFAULT (3 * 24 * 3600)
@@ -444,7 +444,6 @@ backup_account_info(const char *dbn)
     }
     // not a deal breaker if these don't make it in together
     backup_file("fav.sql", dbn);
-    backup_file("pals", dbn);
     return 1;
 }
 
@@ -464,13 +463,6 @@ get_file_contents(const char *name, const char *dbn)
 }
 
 static
-void
-append_to_pal(vc, vc kv)
-{
-    Pals.add_kv(kv[0], vcnil);
-}
-
-static
 int
 restore_account_info(const char *dbn)
 {
@@ -479,9 +471,6 @@ restore_account_info(const char *dbn)
         return 0;
     vc dh = get_file_contents("dh.dif", dbn);
     if(dh.is_nil())
-        return 0;
-    vc pals = get_file_contents("pals", dbn);
-    if(pals.is_nil())
         return 0;
     DwString rfn = gen_random_filename();
     DwString tf("auth");
@@ -497,25 +486,27 @@ restore_account_info(const char *dbn)
     sv += rfn;
     move_replace(tf, sv);
 
+#ifdef _Windows
+    int fd = creat(newfn("auth").c_str(), _S_IWRITE);
+#else
     int fd = creat(newfn("auth").c_str(), 0666);
+#endif
     if(fd == -1)
         return 0;
     if(write(fd, (const char *)auth, auth.len()) != auth.len())
         return 0;
     close(fd);
+#ifdef _Windows
+    fd = creat(newfn("dh.dif").c_str(), _S_IWRITE);
+#else
     fd = creat(newfn("dh.dif").c_str(), 0666);
+#endif
     if(fd == -1)
         return 0;
     if(write(fd, (const char *)dh, dh.len()) != dh.len())
         return 0;
     close(fd);
 
-    vc p;
-    if(!deserialize(pals, p))
-        return 0;
-    p.foreach(vcnil, append_to_pal);
-    if(!save_info(Pals, "pals"))
-        return 0;
     // invalidate the profile that might be cached locally
     vc new_id;
     vc sk;

@@ -45,7 +45,7 @@
 // nice performance boost with them
 // defined.
 
-#if 0
+#ifdef DWYCO_DEBUG
 #undef DWVEC_INLINES
 #undef DWVEC_NO_INDEX_CHECK
 #else
@@ -56,7 +56,7 @@
 #include "useful.h"
 #include "dwiter.h"
 #undef index
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 // non-polymorphic vector (vector of objects.)
 //
@@ -111,6 +111,8 @@ public:
 
     DwVec(const DwVec&);
     DwVec& operator=(const DwVec&);
+    DwVec(DwVec&&);
+    DwVec& operator=(DwVec&&);
     int operator==(const DwVec&) const;
     int operator!=(const DwVec& t) const {
         return !(*this == t);
@@ -207,6 +209,44 @@ DwVec<T>::operator=(const DwVec<T>& vec)
 
     return *this;
 
+}
+
+template<class T>
+DwVec<T>::DwVec(DwVec<T>&& vec)
+{
+    count = vec.count;
+    is_fixed = vec.is_fixed;
+    auto_expand = vec.auto_expand;
+    blocksize = vec.blocksize;
+    alloced_count = vec.alloced_count;
+    noinit = vec.noinit;
+#ifdef DWVEC_DOINIT
+    initfun = vec.initfun;
+#endif
+    values = vec.values;
+    vec.values = nullptr;
+}
+
+template<class T>
+DwVec<T>&
+DwVec<T>::operator=(DwVec<T>&& vec)
+{
+    if(this != &vec)
+    {
+        delete [] values;
+        count = vec.count;
+        is_fixed = vec.is_fixed;
+        auto_expand = vec.auto_expand;
+        blocksize = vec.blocksize;
+        alloced_count = vec.alloced_count;
+        noinit = vec.noinit;
+#ifdef DWVEC_DOINIT
+        initfun = vec.initfun;
+#endif
+        values = vec.values;
+        vec.values = nullptr;
+    }
+    return *this;
 }
 
 

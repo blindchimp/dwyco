@@ -95,7 +95,7 @@ int DWYCOCALLCONV dwyco_call_screening_callback(int chan_id,
         const char *uid, int len_uid,
         int *accept_call_style,
         char **error_msg);
-void DWYCOCALLCONV dwyco_alert_callback(const char *cmd, void *, int, const char *);
+//void DWYCOCALLCONV dwyco_alert_callback(const char *cmd, void *, int, const char *);
 void DWYCOCALLCONV dwyco_debug_callback(int status, const char *desc, int, void *);
 void DWYCOCALLCONV dwyco_call_bandwidth_callback(int chan_id, const char *txt, int, void *);
 
@@ -616,7 +616,7 @@ int main(int argc, char *argv[])
 
     //dwyco_set_pal_auth_callback(dwyco_pal_auth_callback);
     dwyco_set_call_screening_callback(dwyco_call_screening_callback);
-    dwyco_set_alert_callback(dwyco_alert_callback);
+    //dwyco_set_alert_callback(dwyco_alert_callback);
 #ifndef CDCX_RELEASE
     dwyco_set_debug_message_callback(dwyco_debug_callback);
 #endif
@@ -673,8 +673,9 @@ int main(int argc, char *argv[])
     dwyco_set_setting("zap/always_accept", "1");
     dwyco_set_setting("zap/always_server", "0");
     // TCP only calling
-    dwyco_set_setting("net/media_select", "1");
-    dwyco_set_setting("net/force_non_firewall_friendly", "0");
+    dwyco_set_setting("net/call_setup_media_select", "1");
+    //dwyco_set_setting("net/force_non_firewall_friendly", "0");
+    dwyco_set_setting("sync/eager", "1");
 
     // note: for video capture,
     // Linux & Mac ignore the setting and always uses external video
@@ -722,7 +723,6 @@ int main(int argc, char *argv[])
             0,
             0
         );
-#endif
         dwyco_set_raw_files(
             "vidfile.lst",
             "",
@@ -730,6 +730,7 @@ int main(int argc, char *argv[])
             0,
             0 // preload
         );
+#endif
 #if 0
         HasCamera = 1;
         HasCamHardware = 1;
@@ -788,6 +789,19 @@ int main(int argc, char *argv[])
 
 
     ClientGod = !!getenv("kk27g");
+    int psz;
+    if(!setting_get("pointsize", psz))
+    {
+        setting_put("pointsize", 0);
+        settings_save();
+        psz = 0;
+    }
+    if(psz != 0)
+    {
+        QFont f(QGuiApplication::font());
+        f.setPointSize(psz);
+        QGuiApplication::setFont(f);
+    }
     mainwinform mainwin;
     adminw *admin = new adminw;
 

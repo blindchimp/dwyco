@@ -17,7 +17,6 @@
 #include "audo.h"
 #include "audi.h"
 #include "audchk.h"
-#include "snds.h"
 //#include "lpcconv.h"
 #include "audth.h"
 #include "audmix.h"

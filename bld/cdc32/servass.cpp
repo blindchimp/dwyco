@@ -27,12 +27,14 @@
 
 using namespace dwyco;
 
-int Disable_SAC = 0;
+namespace dwyco {
+int Disable_incoming_SAC = 0;
 
 static void
 serv_recv_call_failed_last(MMChannel *mc, vc, void *, ValidPtr)
 {
-    GRTLOG("serv_recv call failed last", 0, 0);
+    if(mc)
+        GRTLOG("serv_recv call failed last %d", mc->myid, 0);
 }
 
 void
@@ -122,7 +124,7 @@ track_connect(MMChannel *mc, vc what, void *, ValidPtr)
     // time out, which was 30+ seconds. ideally we would send something
     // to the server to tell it not to even attempt a server assisted
     // set up, but that requires some extra protocol and server changes.
-    if(Disable_SAC)
+    if(Disable_incoming_SAC)
         mc->schedule_destroy(MMChannel::HARD);
 
 }
@@ -193,7 +195,7 @@ servass_results(vc m, void *f, vc v, ValidPtr vp)
         stun_servass_failure("User not online.", to_uid, vp);
         if(md)
             md->show("User not online. Call failed.");
-        TRACK_ADD(CL_server_assist_failed, 1);	;
+        TRACK_ADD(CL_server_assist_failed, 1);
         return;
     }
     // return is vector(prox-ip prox-port callee-prox-ip callee-prox-port)
@@ -228,5 +230,6 @@ aux_channel_setup(MMChannel *mc, vc v)
     // setup request from the caller.
     start_serv_recv_thread(mc->proxy_info[0], mc->proxy_info[1], mc->vp);
 
+}
 }
 

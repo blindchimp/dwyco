@@ -6,14 +6,14 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.9
-import QtQml 2.2
-import QtQuick.Window 2.2
-import QtQuick.Controls 2.2
-import QtQuick.Controls.Material 2.2
-import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.2
-import QtMultimedia 5.4
+import QtQml 2.12
+import QtQuick 2.12
+import QtQuick.Window 2.12
+import QtQuick.Controls 2.12
+import QtQuick.Controls.Material 2.12
+import QtQuick.Layouts 1.12
+import QtQuick.Dialogs 1.3
+import QtMultimedia 5.12
 import dwyco 1.0
 
 ApplicationWindow {
@@ -107,6 +107,8 @@ ApplicationWindow {
     property bool show_hidden: true
     property bool show_archived_users: true
 
+    property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
+
     property bool is_mobile
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
@@ -141,8 +143,13 @@ ApplicationWindow {
     // at the same time.
     //width: Screen.width
     //height: Screen.height
-    title: qsTr("Dwyco ")
+    title: {
+        qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
+                                                 " (" + core.active_group_name + " " + core.percent_synced + "%)" :
+                                                 (core.group_status === 1 ?
+                                                      "(Requesting " + core.active_group_name + ")" : ""))
 
+    }
     property int close_bounce: 0
     onClosing: {
         // special cases, don't let them navigate around the
@@ -222,7 +229,7 @@ ApplicationWindow {
 
             Connections {
                 target: core
-                onProfile_update: {
+                function onProfile_update(success) {
                     drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
                     drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
                 }
@@ -239,31 +246,37 @@ ApplicationWindow {
     }
 
 
-//    footer: RowLayout {
-//            Label {
-//                id: ind_invis
-//                text: "Invis"
-//                visible: dwy_invis
-//                color: "red"
+    footer: RowLayout {
+            Label {
+                id: ind_invis
+                text: "Invis"
+                visible: core.invisible
+                color: "red"
 
-//            }
-//            Item {
-//                Layout.fillWidth: true
-//            }
+            }
+            Item {
+                Layout.fillWidth: true
+            }
 
-//            Label {
-//                id: hwtext
 
-//            }
-//            Label {
-//                id: db_status
-//                text: core.is_database_online === 0 ? "db off" : "db on"
-//            }
-//            Label {
-//                id: chat_status
-//                text: core.is_chat_online === 0 ? "chat off" : "chat on"
-//            }
-//        }
+            Label {
+                id: conns
+                text: "conns " + SyncDescModel.connection_count.toString()
+            }
+
+            Label {
+                id: hwtext
+
+            }
+            Label {
+                id: db_status
+                text: core.is_database_online === 0 ? "db off" : "db on"
+            }
+            Label {
+                id: chat_status
+                text: core.is_chat_online === 0 ? "chat off" : "chat on"
+            }
+    }
 
     
     Menu {
@@ -323,7 +336,6 @@ ApplicationWindow {
             last_uid_selected = uid
 
             if(action === "clicked") {
-
                 stack.push(chatbox)
             }
             else if(action == "hold")
@@ -387,6 +399,17 @@ ApplicationWindow {
         }
     }
 
+    DevGroup {
+        id: device_group
+        visible: false
+        onQuitnowChanged: {
+            if(quitnow === true)
+            {
+                stack.push(device_group)
+            }
+        }
+    }
+
     ConvList {
         id: convlist
         visible: false
@@ -405,19 +428,19 @@ ApplicationWindow {
 
         Connections {
             target: core
-            onQt_app_state_change: {
-                if(app_state === 0) {
+            function onQt_app_state_change(app_state) {
+                if(core.app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
 
                 }
-                if(app_state !== 0) {
+                if(core.app_state !== 0) {
                     console.log("CHAT SERVER PAUSE");
 
                     //core.disconnect_chat_server()
                 }
             }
 
-            onServer_login: {
+            function onServer_login(msg, what) {
                 console.log("CHAT SERVER RESTART ", what, chat_server.auto_connect)
                 if(what > 0) {
                     if(chat_server.auto_connect) {
@@ -790,12 +813,12 @@ ApplicationWindow {
             }
 
 
-            a = get_local_setting("invis")
-            if(a === "" || a === "false") {
-                dwy_invis = false
-            } else {
-                dwy_invis = true
-            }
+//            a = get_local_setting("invis")
+//            if(a === "" || a === "false") {
+//                dwy_invis = false
+//            } else {
+//                dwy_invis = true
+//            }
 
             a = get_local_setting("show_unreviewed")
             if(a === "" || a === "0") {
@@ -836,6 +859,7 @@ ApplicationWindow {
             }
             if(simpdir_rect.visible && SimpleDirectoryList.count === 0)
                 refresh_directory()
+            //applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid())
         }
 
         onNew_msg: {
@@ -860,7 +884,7 @@ ApplicationWindow {
 
         onSys_msg_idx_updated: {
             console.log("update idx", uid)
-            console.log("upd" + uid + " " + themsglist.uid)
+            console.log("upd " + uid + " " + themsglist.uid)
             if(uid === themsglist.uid) {
                 themsglist.reload_model()
 
@@ -921,8 +945,11 @@ ApplicationWindow {
             }
         }
 
-        onUnread_countChanged: {
-            set_badge_number(unread_count)
+        onAny_unviewedChanged: {
+            if(any_unviewed)
+                set_badge_number(1)
+            else
+                set_badge_number(0)
         }
 
     }
@@ -946,12 +973,21 @@ ApplicationWindow {
         }
     }
 
+    Timer {
+        id: sync_debug
+        interval: 10000
+        repeat: true
+        running: server_account_created
+        onTriggered: {
+            SyncDescModel.load_model()
+        }
+    }
 
     Timer {
         id: service_timer
         interval: 30; running:true; repeat:true
         onTriggered: {
-            if(!pwdialog.allow_access)
+            if(pwdialog.allow_access === 0)
                 return
             //time.text = Date().toString()
             if(core.database_online() !== core.is_database_online) {
@@ -975,7 +1011,7 @@ ApplicationWindow {
             // expirations that are more or less random based on when the timer was started,
             // which isn't really necessary.
             var sc_next = core.service_channels()
-//            //console.log("next ", sc_next)
+            //console.log("next ", sc_next)
 //            if(sc_next === 1 || sc_next < 0)
 //            {
 //                service_timer.interval = 1

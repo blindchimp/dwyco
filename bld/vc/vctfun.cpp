@@ -15,7 +15,7 @@ vc_trans_fundef::vc_trans_fundef(vc nm, VCArglist *a, vc fdef, int sty)
     : vc_fundef(nm, sty)
 {
     int nargs = a->num_elems();
-    bindargs = new DwVec<vc>;
+    bindargs = new DwSVec<vc>;
     // if a vector is passed as the first argument,
     // we assume its is a list of arguments
     // to be broken-out
@@ -28,13 +28,13 @@ vc_trans_fundef::vc_trans_fundef(vc nm, VCArglist *a, vc fdef, int sty)
         int nvargs = (*a)[0].num_elems();
         for(int i = 0; i < nvargs; ++i)
         {
-            (*bindargs)[i] = (*a)[0][i];
+            (*bindargs).append((*a)[0][i]);
         }
     }
     else
     {
         for(int i = 0; i < nargs; ++i)
-            (*bindargs)[i] = (*a)[i];
+            (*bindargs).append((*a)[i]);
     }
 
     tfundef = fdef;

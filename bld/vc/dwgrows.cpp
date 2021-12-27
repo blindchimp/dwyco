@@ -14,17 +14,13 @@
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/dwgrows.cpp 1.47 1997/11/06 21:37:56 dwight Stable $";
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 DwGrowingString::DwGrowingString(int len)
     : str(len, !DWVEC_FIXED, DWVEC_AUTO_EXPAND, len, 0, 1)
 {
 	nmark = 0;
 	curlen = 0;
-}
-
-DwGrowingString::~DwGrowingString()
-{
 }
 
 long

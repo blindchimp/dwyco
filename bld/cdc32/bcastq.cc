@@ -13,7 +13,7 @@
 #include "bcastq.h"
 // note: HACK alert: the only shared Q is the audio block q,
 // so this is not quite right...
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 int BroadcastQ::Dummy;
 

@@ -7,9 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-/*
- * $Header: g:/dwight/repo/cdc32/rcs/aqvfw.h 1.25 1999/01/10 16:10:40 dwight Checkpoint $
- */
 #ifndef VIDCVT_H
 #define VIDCVT_H
 #include <string.h>

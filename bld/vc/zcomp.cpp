@@ -104,7 +104,7 @@ buffer_uncompress(z_stream& z, char *input_buffer, int len, DwGrowingString *out
 
 static
 void
-compress_dtor(long ctx)
+compress_dtor(void *ctx)
 {
 	if(!ctx) return;
 	z_stream *d = (z_stream *)ctx;
@@ -114,7 +114,7 @@ compress_dtor(long ctx)
 
 static
 void
-decompress_dtor(long ctx)
+decompress_dtor(void *ctx)
 {
 	if(!ctx) return;
 	z_stream *d = (z_stream *)ctx;
@@ -132,7 +132,7 @@ vclh_compression_open(vc level)
 	z_stream *d = new z_stream;
 	memset(d, 0, sizeof(*d));
 	deflateInit2(d, (int)level, Z_DEFLATED, 9, 4, Z_DEFAULT_STRATEGY);
-	return vc(VC_INT_DTOR, (const char *)compress_dtor, (long)d);
+    return vc(VC_INT_DTOR, compress_dtor, d);
 }
 
 vc
@@ -148,7 +148,7 @@ vclh_decompression_open()
 	z_stream *d = new z_stream;
 	memset(d, 0, sizeof(*d));
 	inflateInit(d);
-	return vc(VC_INT_DTOR, (const char *)decompress_dtor, (long)d);
+    return vc(VC_INT_DTOR, decompress_dtor, d);
 }
 
 vc
@@ -179,7 +179,7 @@ run_dfilter(z_stream& z, const char *str, int len)
 vc
 vclh_compress(vc ctx, vc str)
 {
-	z_stream *d = (z_stream *)(long)ctx;
+    z_stream *d = (z_stream *)(void *)ctx;
 	int n;
 	DwGrowingString *ds = run_cfilter(*d, (const char *)str, str.len());
 	vc ret(VC_BSTRING, ds->ref_str(), ds->length());
@@ -190,7 +190,7 @@ vclh_compress(vc ctx, vc str)
 vc
 vclh_decompress(vc ctx, vc str)
 {
-	z_stream *d = (z_stream *)(long)ctx;
+    z_stream *d = (z_stream *)(void *)ctx;
 	DwGrowingString *ds = run_dfilter(*d, (const char *)str, str.len());
 	vc ret(VC_BSTRING, ds->ref_str(), ds->length());
 	delete ds;
@@ -208,7 +208,7 @@ vclh_compress_xfer(vc ctx, vc v)
 	if((len = v.xfer_out(vcx)) == -1)
 		return vcnil;
 
-	z_stream *d = (z_stream *)(long)ctx;
+    z_stream *d = (z_stream *)(void *)ctx;
 	DwGrowingString *b = run_cfilter(*d, vcx.buf, vcx.cur - vcx.buf);
 	vc ret(VC_BSTRING, b->ref_str(), b->length());
 	delete b;
@@ -218,7 +218,7 @@ vclh_compress_xfer(vc ctx, vc v)
 vc
 vclh_decompress_xfer(vc ctx, vc v, vc& out)
 {
-	z_stream *d = (z_stream *)(long)ctx;
+    z_stream *d = (z_stream *)(void *)ctx;
 	DwGrowingString *b = run_dfilter(*d, (const char *)v, v.len());
 
 	vcxstream vcx((const char *)b->ref_str(), b->length(), vcxstream::FIXED);

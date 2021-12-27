@@ -100,6 +100,7 @@
 #include "dlli.h"
 #include "ct.h"
 #include "callsm_objs.h"
+#include "ccmodel.h"
 
 extern int Public_chat_video_pause;
 //extern QByteArray My_uid;
@@ -127,7 +128,8 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     QObject(parent),
     vp(this),
     keyboard_active_timer(this),
-    uid(auid)
+    uid(auid),
+    m_uid(auid.toHex())
 {
     ui = &smo;
     ui->setupUi(this);
@@ -564,6 +566,7 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     cts = 0;
     mute = 0;
     m_connected = 0;
+    m_sending_video = false;
 }
 
 void
@@ -590,10 +593,13 @@ simple_call::init(QObject *mainwin)
 void
 simple_call::connect_signals()
 {
-    const QMetaObject *mo = metaObject();
+    // note: it is probably safe to call the virtual method, but the
+    // compiler warns about it.
+    const QMetaObject *mo = simple_call::metaObject();
     QMetaMethod mm_dispatch = mo->method(mo->indexOfSlot("signal_dispatcher()"));
     QMetaMethod mm_dispatch_int = mo->method(mo->indexOfSlot("signal_dispatcher_int(int)"));
     QMetaMethod mm_dispatch_bool = mo->method(mo->indexOfSlot("signal_dispatcher_bool(bool)"));
+    QMetaMethod mm_dispatch_string = mo->method(mo->indexOfSlot("signal_dispatcher_string(QString)"));
     int m = mo->methodOffset();
     int mc = mo->methodCount();
     for(; m < mc; ++m)
@@ -624,6 +630,14 @@ simple_call::connect_signals()
         if(mm.parameterCount() == mm_dispatch_bool.parameterCount() && QMetaObject::checkConnectArgs(mm, mm_dispatch_bool) == true)
         {
             if((bool)QObject::connect(this, mm, this, mm_dispatch_bool) == false)
+            {
+                qDebug() << "can't dispatch " << mm.methodSignature() << "\n";
+            }
+
+        }
+        if(mm.parameterCount() == mm_dispatch_string.parameterCount() && QMetaObject::checkConnectArgs(mm, mm_dispatch_string) == true)
+        {
+            if((bool)QObject::connect(this, mm, this, mm_dispatch_string) == false)
             {
                 qDebug() << "can't dispatch " << mm.methodSignature() << "\n";
             }
@@ -679,6 +693,23 @@ simple_call::signal_dispatcher_bool(bool i)
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
                               Q_ARG(QString, uid.toHex()),
                               Q_ARG(bool, i));
+
+}
+
+void
+simple_call::signal_dispatcher_string(QString i)
+{
+    int sig_idx = senderSignalIndex();
+    if(sig_idx == -1)
+        return;
+    QMetaMethod mm = metaObject()->method(sig_idx);
+    // here we see if there is an matching signal with a uid
+    // argument in the mainwinform, and invoke that
+    QByteArray b(mm.name());
+    b.prepend("sc_");
+    QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
+                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(QString, i));
 
 }
 
@@ -824,18 +855,21 @@ simple_call::~simple_call()
     call_del(chan_id);
     vp.invalidate();
     Simple_calls.del(this);
+    TheCallContextModel->remove(this);
 }
 
 void
 simple_call::start_stream()
 {
     dwyco_channel_send_video(chan_id, 0);
+    update_sending_video(true);
 }
 
 void
 simple_call::pause_stream()
 {
     dwyco_channel_stop_send_video(chan_id);
+    update_sending_video(false);
 }
 
 void
@@ -1093,6 +1127,7 @@ simple_call::get_simple_call(QByteArray uid)
     if(c.count() == 0)
     {
         sc = new simple_call(uid);
+        TheCallContextModel->append(sc);
     }
     else if(c.count() == 1)
     {
@@ -1253,7 +1288,9 @@ dwyco_simple_call_status2(int call_id, const char *msg, int percent, void *arg)
     DVP vp = DVP::cookie_to_ptr((DVP_COOKIE)arg);
     if(!vp.is_valid())
         return;
-    //simple_call *c = (simple_call *)(void *)vp;
+    simple_call *c = (simple_call *)(void *)vp;
+    emit c->connect_progress(msg);
+
     //c->setWindowTitle(msg);
 }
 
@@ -1667,6 +1704,7 @@ void simple_call::on_hangup_clicked()
     rmute = -1;
     rcts = -1;
     update_connected(0);
+    update_sending_video(false);
 }
 
 void simple_call::on_reject_clicked()

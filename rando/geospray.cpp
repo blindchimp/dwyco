@@ -14,7 +14,7 @@
 #include "dlli.h"
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 #include "qloc.h"
 
 void hack_unread_count();

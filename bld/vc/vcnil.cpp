@@ -60,6 +60,7 @@ vc_nil::~vc_nil() { }
 vc_nil::operator double() const {return 0.0; }
 vc_nil::operator int() const {return 0;}
 vc_nil::operator long() const {return 0;}
+//vc_nil::operator int64_t() const {return 0;}
 vc_nil::operator const char *() const {return "nil";}
 
 const char *

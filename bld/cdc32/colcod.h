@@ -17,7 +17,7 @@
 #include "matcom.h"
 #include "codec.h"
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 // this class encapsulates 3 coders:
 // one for luma and 2 for chroma.

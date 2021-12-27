@@ -19,6 +19,7 @@
 #include "dwstr.h"
 #include "dwtree2.h"
 #include "vcio.h"
+#include "dwgrows.h"
 
 class vc_uvsocket;
 #define Ready_q (*Ready_q_p)
@@ -93,7 +94,7 @@ public:
 	int listening;
     // xstream we use to reconstruct objects as they come in
     vcxstream readx;
-    DwString tailstr;
+    DwGrowingString tailstr;
     const char *tmpbuf;
     int tmplen;
 

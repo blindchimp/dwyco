@@ -22,42 +22,14 @@
 #include "dwstr.h"
 #include "dwvec.h"
 #include "dwtree2.h"
+#include "dwycolist2.h"
 
 namespace ns_dwyco_background_processing {
-
-struct simple_scoped
-{
-    DWYCO_LIST value;
-    simple_scoped(DWYCO_LIST v) {
-        value = v;
-    }
-    ~simple_scoped() {
-        dwyco_list_release(value);
-    }
-    operator DWYCO_LIST() {
-        return value;
-    }
-};
 
 static DwVec<DwString> fetching;
 static DwTreeKaz<int, DwString> Dont_refetch(0);
 static DwVec<DwString> Delete_msgs;
 static DwTreeKaz<int, DwString> Already_returned(0);
-
-
-static int
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col, DwString& str_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_STRING)
-        return 0;
-    str_out = DwString(val, len);
-    return 1;
-}
 
 void
 DWYCOCALLCONV
@@ -72,8 +44,16 @@ msg_callback(int id, int what, const char *mid, void *)
         // immediately while the attachment is being downloaded in the background.
         return;
 
-    case DWYCO_MSG_DOWNLOAD_RATHOLED:
+        // note: do NOT delete a message whose decryption failed
+        // old software can send into group without a group key
+        // and only one of the members will be able to decrypt it.
     case DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED:
+        Dont_refetch.add(mid, 0);
+        if(i >= 0)
+            fetching.del(i);
+        break;
+    case DWYCO_MSG_DOWNLOAD_RATHOLED:
+
         // if this msg is ratholed, it can never be fetched, so just delete it.
         Dont_refetch.add(mid, 0);
         if(i >= 0)
@@ -96,6 +76,9 @@ msg_callback(int id, int what, const char *mid, void *)
             fetching.del(i);
         return;
     case DWYCO_MSG_DOWNLOAD_OK:
+        if(dwyco_is_special_message(mid, &what))
+            dwyco_set_msg_tag(mid, "_special");
+        // FALLTHRU
     default:
         if(i >= 0)
             fetching.del(i);
@@ -116,8 +99,7 @@ fetch_to_inbox()
     if(!dwyco_get_unfetched_messages(&qml, 0, 0))
         return 0;
     simple_scoped ml(qml);
-    int n;
-    dwyco_list_numelems(ml, &n, 0);
+    int n = ml.rows();
     if(n == 0)
     {
         return 0;
@@ -127,8 +109,12 @@ fetch_to_inbox()
     {
         //if(!dwyco_get_attr(ml, i, DWYCO_QMS_FROM, uid_out))
         //    continue;
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_ID, mid_out))
+        //if(!dwyco_get_attr(ml, i, DWYCO_QMS_ID, mid_out))
+        //    continue;
+        mid_out = ml.get<DwString>(i, DWYCO_QMS_ID);
+        if(mid_out.length() == 0)
             continue;
+
         if(Already_returned.contains(mid_out))
             continue;
         if(Dont_refetch.contains(mid_out) ||

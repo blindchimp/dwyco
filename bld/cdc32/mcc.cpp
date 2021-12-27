@@ -13,17 +13,13 @@
 #include "qauth.h"
 #include "dwstr.h"
 #include "filetube.h"
-#include "zapadv.h"
-#include "ratetwkr.h"
 #include "mmchan.h"
 #include "audout.h"
 #include "qmsg.h"
 #include "qdirth.h"
 #include "msgdisp.h"
-#include "vidinput.h"
 #include "audchk.h"
 #include "ta.h"
-#include "usercnfg.h"
 #include "dirth.h"
 #include "codec.h"
 #include "fnmod.h"
@@ -31,6 +27,7 @@
 #include "se.h"
 #include "sysattr.h"
 #include "xinfo.h"
+#include "ezset.h"
 #undef index
 
 #include "dlli.h"
@@ -342,16 +339,6 @@ record_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
 //---------------------------------------------------------------------------
 int  TMsgCompose::record_buttonClick()
 {
-    // avoid re-entering if we are in the middle of
-    // trying to shut down the video capture device...
-    // this is thanks to microsoft... the system will
-    // probably crash if you don't watch out here...
-
-    extern int Sleeping;
-
-    if(Sleeping)
-        return 0;
-
     if(record_pic)
     {
         return do_record_pic();
@@ -395,7 +382,7 @@ int  TMsgCompose::record_buttonClick()
     SlippyTube *ft =  new SlippyTube(actual_filename.c_str(), mode, FileTube::SINK);
     ft->bytes_left = max_bytes;
     ft->packet_count = max_frames;
-    ft->prefer_old_timing = ZapAdvData.get_use_old_timing();
+    ft->prefer_old_timing = get_settings_value("zap/use_old_timing");  //ZapAdvData.get_use_old_timing();
     // output regardless, so indexer knows new timing
     // info should be used, but the output block
     // is ignored by the old software
@@ -407,11 +394,7 @@ int  TMsgCompose::record_buttonClick()
     // rest of the system still uses these global
     // variables. should fix it sometime...
 
-    RateTweakerXferValid save_rt;
-    save_rt = RTUserDefaults;
-    RTUserDefaults.set_max_frame_rate(hiq ? 20 : 10);
-
-    MMChannel *mc = MMChannel::gen_chan();
+    MMChannel *mc = new MMChannel;
     mc->tube = ft;
     mc->init_config(1);
     mc->set_requested_audio_codec("qms");
@@ -434,11 +417,10 @@ int  TMsgCompose::record_buttonClick()
     {
         view_id = mc->myid;
         mc->gv_id = -1;
-        if(!mc->build_outgoing(1, 1))
+        if(!mc->build_outgoing(1, 1, hiq ? 20 : 10))
         {
             msgbox("Video recording device not available.", 0, MB_OK);
             stop_buttonClick();
-            RTUserDefaults = save_rt;
             do_append = 1;
             return 0;
         }
@@ -469,7 +451,6 @@ int  TMsgCompose::record_buttonClick()
         {
             msgbox("Audio recording device not available.", 0, MB_OK);
             stop_buttonClick();
-            RTUserDefaults = save_rt;
             do_append = 1;
             return 0;
         }
@@ -489,7 +470,6 @@ int  TMsgCompose::record_buttonClick()
         Auto_squelch = 0;
         ++Zaps_recording;
     }
-    RTUserDefaults = save_rt;
     do_append = 1;
     recording = 1;
     stop_button_enabled = 1;
@@ -577,7 +557,7 @@ void  TMsgCompose::play_buttonClick( int no_audio)
     send_button_enabled = 0;
     cancel_button_enabled = 0;
 
-    MMChannel *mc = MMChannel::gen_chan();
+    MMChannel *mc = new MMChannel;
 
     int codec = 0;
     {
@@ -604,7 +584,7 @@ void  TMsgCompose::play_buttonClick( int no_audio)
             // on the uid (for local override) if that's what we want.
             if(composer)
             {
-                st->use_old_timing = ZapAdvData.get_use_old_timing();
+                st->use_old_timing = get_settings_value("zap/use_old_timing");
             }
         }
         int dummy;
@@ -647,7 +627,7 @@ void  TMsgCompose::preview_play()
         return;
     play_button_enabled = 0;
 
-    MMChannel *mc = MMChannel::gen_chan();
+    MMChannel *mc = new MMChannel;
     mc->force_unreliable_audio = 1;
     mc->force_unreliable_video = 1;
 
@@ -769,7 +749,7 @@ TMsgCompose::init_av_buttons()
     stop_button_enabled = 0;
     play_button_enabled = 0;
     start_over_button_enabled = 0;
-    if(VidInputData.get_no_video())
+    if((int)get_settings_value("video_input/no_video") == 1)
     {
         record_video = 0;
     }
@@ -866,12 +846,35 @@ void  TMsgCompose::send_buttonClick()
         sp = pok;
     else if(pal_auth_rej_mode)
         sp = pnok;
-    else if(special_type == DWYCO_SPECIAL_TYPE_BACKUP)
-        sp = "backup";
-    else if(special_type == DWYCO_SPECIAL_TYPE_USER)
+    else
     {
-        sp = "user";
-        sp_payload = special_payload;
+        if(special_type != 0)
+        {
+            switch(special_type)
+            {
+            case DWYCO_SPECIAL_TYPE_BACKUP:
+                sp = "backup";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN1:
+                sp = "join1";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN2:
+                sp = "join2";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN3:
+                sp = "join3";
+                break;
+            case DWYCO_SPECIAL_TYPE_JOIN4:
+                sp = "join4";
+                break;
+            case DWYCO_SPECIAL_TYPE_USER:
+                sp = "user";
+                break;
+            }
+            sp_payload = special_payload;
+            // for testing
+            msg_text = (const char *)sp;
+        }
     }
     // note: this is a little odd, two copies of the text will be
     // in the message, one for old clients, and one for
@@ -937,7 +940,7 @@ TMsgCompose::do_record_pic()
         if(mc->tube)
             delete mc->tube;
         SlippyTube *ft =  new SlippyTube(actual_filename.c_str(), mode, FileTube::SINK);
-        ft->prefer_old_timing = ZapAdvData.get_use_old_timing();
+        ft->prefer_old_timing = get_settings_value("zap/use_old_timing");
         ft->reset_timer(MMChannel::codec_name_to_number(sysattr_get_vc("us-video-coder-qms")));
         ft->packet_count = 1;
         mc->tube = ft;
@@ -981,7 +984,7 @@ TMsgCompose::do_record_pic()
 
 
     SlippyTube *ft =  new SlippyTube(actual_filename.c_str(), mode, FileTube::SINK);
-    ft->prefer_old_timing = ZapAdvData.get_use_old_timing();
+    ft->prefer_old_timing = get_settings_value("zap/use_old_timing");
     // output regardless, so indexer knows new timing
     // info should be used, but the output block
     // is ignored by the old software
@@ -989,16 +992,7 @@ TMsgCompose::do_record_pic()
     ft->reset_timer(MMChannel::codec_name_to_number(sysattr_get_vc("us-video-coder-qms")));
     ft->packet_count = 1;
 
-    // this is a hack: we swap in some reasonable defaults
-    // for recording messages, because most of the
-    // rest of the system still uses these global
-    // variables. should fix it sometime...
-
-    RateTweakerXferValid save_rt;
-    save_rt = RTUserDefaults;
-    RTUserDefaults.set_max_frame_rate(12);
-
-    mc = MMChannel::gen_chan();
+    mc = new MMChannel;
     mc->tube = ft;
     mc->init_config(1);
     mc->recv_matches(mc->config);
@@ -1013,10 +1007,9 @@ TMsgCompose::do_record_pic()
     view_id = mc->myid;
 
     mc->gv_id = -1;
-    if(!mc->build_outgoing(1, 1))
+    if(!mc->build_outgoing(1, 1, 12))
     {
         msgbox("Video recording device not available.", 0, MB_OK);
-        RTUserDefaults = save_rt;
         return 0;
     }
     // set it high, so that a frame is emitted almost immediately
@@ -1032,7 +1025,6 @@ TMsgCompose::do_record_pic()
     }
     mc->vid_make_first_0 = 1;
 
-    RTUserDefaults = save_rt;
     recording = 1;
     start_over_button_enabled = 0;
     return 1;

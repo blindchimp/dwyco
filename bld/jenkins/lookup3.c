@@ -38,11 +38,11 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 
 #include <stdio.h>      /* defines printf for tests */
 #include <time.h>       /* defines time_t for timings in the test */
-#ifdef _MSC_VER
-#include "msint.h"     /* defines uint32_t etc */
-#else
+//#ifdef _MSC_VER
+//#include "msint.h"     /* defines uint32_t etc */
+//#else
 #include <stdint.h>
-#endif
+//#endif
 #ifdef linux
 #include <sys/param.h>  /* attempt to define endianness */
 # include <endian.h>    /* attempt to define endianness */

@@ -75,7 +75,7 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
 void
 forward_msg(const QByteArray& mid, const QByteArray& uid)
 {
-    int compid = dwyco_make_forward_zap_composition(0, 0, mid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(mid.constData(), 1);
     if(compid == 0)
         return;
 
@@ -172,7 +172,7 @@ main(int argc, char *argv[])
 
     dwyco_init();
 
-    dwyco_set_setting("call_acceptance/listen", "0");
+    dwyco_set_setting("net/listen", "0");
 
     if(dwyco_get_create_new_account())
     {
@@ -252,10 +252,16 @@ main(int argc, char *argv[])
             QByteArray attfn;
             if(!dwyco_get_attr(qsm, 0, DWYCO_QM_BODY_ATTACHMENT, attfn))
                 continue;
+            if(!dwyco_copy_out_file_zap2(mid.constData(), "mumble.qds"))
+                continue;
             QString huid = uid.toHex();
             QList<QString> addrs;
-            if(!load_it(addrs, attfn.constData()))
+            if(!load_it(addrs, "mumble.qds"))
+            {
+                processed_msg(mid);
+                dwyco_delete_saved_message(uid.constData(), uid.length(), mid.constData());
                 continue;
+            }
             int n = addrs.count();
 
 

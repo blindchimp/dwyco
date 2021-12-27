@@ -23,6 +23,9 @@ struct QckMsg
     vc& operator[](int a) {
         return v[a];
     }
+    const vc& operator[](int a) const {
+        return v[a];
+    }
 
 };
 
@@ -48,13 +51,13 @@ struct ReqType
             return name == rt.name && rt.serial == serial;
     }
 #ifdef DW_RTLOG
-    operator char *() {
-        static char a[1000];
+    operator char *() const {
+        static char a[128];
         sprintf(a, "%s %d", (const char *)name, serial);
         return a;
     }
 #endif
-    vc response_type() {
+    vc response_type() const {
         vc v(VC_VECTOR);
         v.append(name);
         v.append(serial);
@@ -111,10 +114,10 @@ struct QckDone
                vp == m.vp;
     }
 
-    void done(vc v) {
+    void done(vc v) const {
         if(callback) (*callback)(v, arg1, arg2, vp);
     }
-    int expired() {
+    int expired() const {
         if(timeout == -1)
             return 0;
         else
@@ -130,17 +133,19 @@ private:
 int dirth_poll_response();
 void dirth_poll_timeouts();
 
-//void dirth_send_new3(vc id, vc handle, vc email, vc icq, vc first, vc last, vc info,
-//	vc pw, vc rating, vc force_rating, vc pal_auth, QckDone);
 void dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_auth, QckDone d);
 
 void dirth_send_ack_get(vc id, vc mid, QckDone d);
-void dirth_send_query(vc id, QckDone d);
-void dirth_send_store(vc id, vc recipients, vc msg, QckDone d);
+void dirth_send_ack_get2(vc id, vc mid, QckDone d);
+void dirth_send_query(vc uid, QckDone d);
+void dirth_send_query2(vc uid, QckDone d);
+void dirth_send_store(vc id, vc recipients, vc msg, vc no_group, vc no_self, QckDone d);
 void dirth_send_get(vc id, vc which, QckDone d);
+void dirth_send_get2(vc id, vc which, QckDone d);
+void dirth_send_addtag(vc uid, vc mid, vc tag, QckDone d);
 void dirth_send_ignore(vc id, vc uid, QckDone d);
 void dirth_send_unignore(vc id, vc uid, QckDone d);
-void dirth_send_get_ignore(vc id, QckDone d);
+//void dirth_send_get_ignore(vc id, QckDone d);
 void dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d);
 void dirth_cancel_callbacks(QDFUNCP f, void *arg1, const ReqType& type);
 void dirth_cancel_callbacks(QDFUNCP f, ValidPtr vp, const ReqType& type);
@@ -148,32 +153,38 @@ int dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, vc arg2 
 void dirth_simulate_error_response(const QckDone& q);
 void dirth_dead_channel_cleanup(int chan);
 void dirth_send_ack_all(vc id, QckDone d);
-void dirth_send_clear_ignore(vc id, QckDone d);
+//void dirth_send_clear_ignore(vc id, QckDone d);
 void dirth_q_local_action(vc response_vector, QckDone d);
-void dirth_send_misc_info(vc id, vc mi, QckDone d);
 void dirth_send_get_server_list2(vc id, QckDone d);
 void dirth_send_setup_session_key(vc id, vc dh_public, QckDone d);
 void dirth_send_set_interest_list(vc id, vc list, QckDone d);
 void dirth_send_recommend2(vc id, vc from, vc to, QckDone d);
 void dirth_send_set_state(vc id, vc state, QckDone d);
 void dirth_send_check_for_update(vc id, QckDone d);
-//void dirth_send_set_profile(vc id, vc info, QckDone d);
-//void dirth_send_get_profile(vc id, vc uid, vc cache_check, QckDone d);
 void dirth_send_get_info(vc id, vc uid, vc cache_check, QckDone d);
 void dirth_send_set_info(vc id, vc info, QckDone d);
+#if 0
 void dirth_send_get_pal_auth_state(vc id, vc who, QckDone d);
 void dirth_send_set_pal_auth_state(vc id, vc state, QckDone d);
+#endif
 void dirth_send_server_assist(vc id, vc to_uid, QckDone d);
 void dirth_send_create_user_lobby(vc id, vc dispname, vc category, vc sub_god_uid, vc pw, vc user_limit, QckDone d);
 void dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d);
 void dirth_send_get_pk(vc id, vc uid, QckDone d);
+void dirth_send_get_uid(vc id, vc handle, QckDone d);
 void dirth_send_debug(vc id, vc crashed, vc stack, vc field_track, QckDone d);
 void dirth_send_set_token(vc id, vc token, QckDone d);
+void dirth_send_check_set(vc uid, vc tag, QckDone d);
+void dirth_send_get_group(vc id, QckDone d);
+void dirth_send_get_group_pk(vc id, vc gname, QckDone d);
+void dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d);
+void dirth_send_group_chal(vc id, vc nonce, QckDone d);
+void dirth_send_prov_leave(vc id, QckDone d);
 // used internally
 QckMsg dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d);
 vc generate_mac_msg(vc);
 
-extern DwVec<QckDone> Waitq;
+extern DwListA<QckDone> Waitq;
 extern DwListA<vc> Response_q;
 extern int Serial;
 }
@@ -201,10 +212,15 @@ extern int Serial;
 #define QPAL_AUTH 15
 #define QIGNORE_LIST 16
 #define QSTATIC_PUBLIC 17
+#define QSTATIC_PUBLIC_ALTERNATE 18
+#define QSTATIC_ALT_NAME 19
 
 // store message has these fields
-#define QRECIPIENTS 2
-#define QMSG 4
+#define QSTORE_RECIPIENTS 2     // vector of recipients (must be 1 uid)
+// 3 ignored i think
+#define QSTORE_MSG 4            // message vector
+#define QSTORE_NO_GROUP 5       // t means do not deliver to group by default (p2p only)
+#define QSTORE_NO_SELF 6        // t means do not deliver to us if we are in the group
 
 // vector positions for info response
 #define QIR_FROM 0

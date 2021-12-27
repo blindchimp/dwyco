@@ -1,8 +1,8 @@
-/* $Id: getifaddr.c,v 1.19 2013/12/13 14:28:40 nanard Exp $ */
+/* $Id: getifaddr.c,v 1.26 2019/05/20 19:54:08 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
  * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
- * (c) 2006-2018 Thomas Bernard
+ * (c) 2006-2019 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -47,7 +47,7 @@ getifaddr(const char * ifname, char * buf, int len,
 		syslog(LOG_ERR, "socket(PF_INET, SOCK_DGRAM): %m");
 		return -1;
 	}
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
 	ifr.ifr_name[IFNAMSIZ-1] = '\0';
 	if(ioctl(s, SIOCGIFFLAGS, &ifr, &ifrlen) < 0)
 	{
@@ -61,7 +61,8 @@ getifaddr(const char * ifname, char * buf, int len,
 		close(s);
 		return -1;
 	}
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
+	ifr.ifr_name[IFNAMSIZ-1] = '\0';
 	if(ioctl(s, SIOCGIFADDR, &ifr, &ifrlen) < 0)
 	{
 		syslog(LOG_ERR, "ioctl(s, SIOCGIFADDR, ...): %m");
@@ -81,7 +82,8 @@ getifaddr(const char * ifname, char * buf, int len,
 	}
 	if(mask)
 	{
-		strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+		strncpy(ifr.ifr_name, ifname, IFNAMSIZ-1);
+		ifr.ifr_name[IFNAMSIZ-1] = '\0';
 		if(ioctl(s, SIOCGIFNETMASK, &ifr, &ifrlen) < 0)
 		{
 			syslog(LOG_ERR, "ioctl(s, SIOCGIFNETMASK, ...): %m");
@@ -277,7 +279,7 @@ static const struct { uint32_t address; uint32_t rmask; } reserved[] = {
 	{ IP(192,  52, 193, 0), MSK(24) }, /* RFC7450 AMT */
 	{ IP(192,  88,  99, 0), MSK(24) }, /* RFC7526 6to4 Relay Anycast */
 	{ IP(192, 168,   0, 0), MSK(16) }, /* RFC1918 Private-Use */
-	{ IP(192, 175,  48, 0), MSK(16) }, /* RFC7534 Direct Delegation AS112 Service */
+	{ IP(192, 175,  48, 0), MSK(24) }, /* RFC7534 Direct Delegation AS112 Service */
 	{ IP(198,  18,   0, 0), MSK(15) }, /* RFC2544 Benchmarking */
 	{ IP(198,  51, 100, 0), MSK(24) }, /* RFC5737 Documentation (TEST-NET-2) */
 	{ IP(203,   0, 113, 0), MSK(24) }, /* RFC5737 Documentation (TEST-NET-3) */
