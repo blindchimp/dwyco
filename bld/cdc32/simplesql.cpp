@@ -122,7 +122,18 @@ SimpleSql::start_transaction()
     check_txn = 0;
     if(tdepth == 0)
     {
+        try {
         sql_simple("begin immediate transaction");
+        }
+        catch(...)
+        {
+            {
+            VCArglist a;
+            a.append("rollback transaction");
+            sqlite3_bulk_query(Db, &a);
+            }
+            throw;
+        }
     }
     else
     {
@@ -140,9 +151,9 @@ SimpleSql::commit_transaction()
     {
         oopanic("sqlsimple transaction");
     }
-    try {
-        int tmp = check_txn;
-        check_txn = 0;
+
+    int tmp = check_txn;
+    check_txn = 0;
     if(tdepth > 1)
     {
         sql_simple("release ss");
@@ -151,19 +162,35 @@ SimpleSql::commit_transaction()
     else
     {
         // note: if we are using immediate transactions, this is
-        // supposed not to throw busy, so we'll just assume if this
-        // completes everything is cool, and otherwise the tdepth
-        // will be screwed up. if this fails for some reason, the program
-        // is on the ropes, and probably needs to exit quickly
+        // supposed not to throw busy, but it does sometimes. wtf.
+        // oh well. the txn is toast anyway, so reduce the depth.
         --tdepth;
-        sql_simple("commit transaction");
+        try {
+            sql_simple("commit transaction");
+        }
+        catch(...)
+        {
+            // we'll do the rollback here, any rollback
+            // you have in your caller with also get called.
+            {
+                VCArglist a;
+                a.append("rollback transaction");
+                // the docs say the rollback might fail, but it is no bigs.
+                // what state the database is in, shrug.
+                try {
+                sqlite3_bulk_query(Db, &a);
+                }
+                catch(...)
+                {
+
+                }
+            }
+            throw;
+        }
     }
     check_txn = tmp;
-    }
-    catch(...)
-    {
-        oopanic("fuck not again");
-    }
+
+
 }
 
 
@@ -190,6 +217,14 @@ SimpleSql::rollback_transaction()
 {
     if(tdepth == 0)
     {
+        // let's just ignore rollbacks if there is no
+        // transaction going. this is useful since
+        // starting a transaction can fail (busy)
+        // and we put rollbacks in the failure arm
+        // of the calling logic. which we need when it is
+        // nested, but doesn't really do anything when
+        // it is top-level.
+        return;
         oopanic("sqlsimple transaction");
     }
     try {

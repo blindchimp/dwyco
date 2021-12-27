@@ -133,8 +133,8 @@ $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qtdrv/libqtdrv.a \
--lsqlite3 \
--lv4l2
+-lv4l2 \
+-ldl
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \

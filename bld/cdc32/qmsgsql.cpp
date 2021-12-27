@@ -590,10 +590,6 @@ import_remote_mi(vc remote_uid)
     {
         s.start_transaction();
         vc newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
-        for(int i = 0; i < newuids.num_elems(); ++i)
-        {
-            se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
-        }
         // note sure what i was up to here... removing the contents
         // of crdt_tags will effectively disable the triggers for
         // creating the tag logs (that would get sent to other clients)
@@ -648,6 +644,12 @@ import_remote_mi(vc remote_uid)
         {
             // NOTE: this will access the main connection to refresh the pal list
             //se_emit_uid_list_changed();
+        }
+        // likewise, this maps_uids, so probably need to either give it a connection
+        // or q it for later.
+        for(int i = 0; i < newuids.num_elems(); ++i)
+        {
+            se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
         }
     }
     catch(...)
@@ -2361,8 +2363,8 @@ sql_exists_valid_tag(vc tag)
     {
         sql_start_transaction();
         vc res = sql_simple("select 1 from gmt,gi using(mid) where tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid) limit 1", tag);
-        c = res.num_elems() > 0;
         sql_commit_transaction();
+        c = res.num_elems() > 0;
     }
     catch(...)
     {
