@@ -647,10 +647,10 @@ import_remote_mi(vc remote_uid)
         }
         // likewise, this maps_uids, so probably need to either give it a connection
         // or q it for later.
-        for(int i = 0; i < newuids.num_elems(); ++i)
-        {
-            se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
-        }
+//        for(int i = 0; i < newuids.num_elems(); ++i)
+//        {
+//            se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
+//        }
     }
     catch(...)
     {

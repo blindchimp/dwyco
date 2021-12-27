@@ -122,15 +122,16 @@ SimpleSql::start_transaction()
     check_txn = 0;
     if(tdepth == 0)
     {
-        try {
-        sql_simple("begin immediate transaction");
+        try
+        {
+            sql_simple("begin  transaction");
         }
         catch(...)
         {
             {
-            VCArglist a;
-            a.append("rollback transaction");
-            sqlite3_bulk_query(Db, &a);
+                VCArglist a;
+                a.append("rollback transaction");
+                sqlite3_bulk_query(Db, &a);
             }
             throw;
         }
@@ -225,30 +226,29 @@ SimpleSql::rollback_transaction()
         // nested, but doesn't really do anything when
         // it is top-level.
         return;
-        oopanic("sqlsimple transaction");
     }
     try {
-    if(tdepth > 1)
-    {
+        if(tdepth > 1)
         {
-            VCArglist a;
-            a.append("rollback to ss");
-            sqlite3_bulk_query(Db, &a);
+            {
+                VCArglist a;
+                a.append("rollback to ss");
+                sqlite3_bulk_query(Db, &a);
+            }
+            {
+                VCArglist a;
+                a.append("release ss");
+                sqlite3_bulk_query(Db, &a);
+            }
         }
+        else
         {
-            VCArglist a;
-            a.append("release ss");
-            sqlite3_bulk_query(Db, &a);
+            {
+                VCArglist a;
+                a.append("rollback transaction");
+                sqlite3_bulk_query(Db, &a);
+            }
         }
-    }
-    else
-    {
-        {
-        VCArglist a;
-        a.append("rollback transaction");
-        sqlite3_bulk_query(Db, &a);
-        }
-    }
     }
     catch(...)
     {
