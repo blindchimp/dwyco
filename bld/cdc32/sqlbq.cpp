@@ -204,7 +204,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             res = "busy";
             // it is probably best to just issue an explicit rollback sql
             // command just in case.
-            break;
+            goto out;
         case SQLITE_ROW:
         {
             vc resrow(VC_VECTOR, 0, cols);
