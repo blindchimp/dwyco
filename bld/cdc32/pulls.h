@@ -49,18 +49,18 @@ private:
 public:
     static DWQBM_W_IDX(Qbm, pulls, mid);
 
-    static void assert_pull(vc mid, vc uid, int pri);
-    static void deassert_pull(vc mid);
-    static int is_asserted(vc mid);
-    static int pull_in_progress(vc mid, vc uid);
-    static DwVecP<pulls> get_stalled_pulls(vc uid);
-    static void deassert_by_uid(vc uid);
-    static void pull_failed(vc mid, vc uid);
-    static void set_pull_in_progress(vc mid, vc uid);
+    static void assert_pull(const vc& mid, const vc& uid, int pri);
+    static void deassert_pull(const vc& mid);
+    static int is_asserted(const vc& mid);
+    //static int pull_in_progress(const vc& mid, const vc& uid);
+    static DwVecP<pulls> get_stalled_pulls(const vc& uid);
+    static void deassert_by_uid(const vc& uid);
+    static void pull_failed(const vc& mid, const vc& uid);
+    static int set_pull_in_progress(const vc &mid, const vc &uid);
     static int count() {
         return Qbm.count();
     }
-    static int count_by_uid(vc uid);
+    static int count_by_uid(const vc &uid);
 //    int uid_in_prog(const vc& uid, const int& inprog) {
 //        if(this->uid == uid && m_in_progress == inprog)
 //            return 1;

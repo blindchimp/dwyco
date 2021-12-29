@@ -18,7 +18,7 @@ DWQBM_W_IDX(pulls::Qbm, pulls, mid);
 DwTreeKaz<int, pulls *> pulls::inp_set(0);
 
 void
-pulls::assert_pull(vc mid, vc uid, int pri)
+pulls::assert_pull(const vc &mid, const vc &uid, int pri)
 {
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
     int nonew = 0;
@@ -39,7 +39,7 @@ pulls::assert_pull(vc mid, vc uid, int pri)
 }
 
 void
-pulls::deassert_pull(vc mid)
+pulls::deassert_pull(const vc& mid)
 {
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
     for(int i = 0; i < dm.num_elems(); ++i)
@@ -47,25 +47,25 @@ pulls::deassert_pull(vc mid)
 }
 
 int
-pulls::is_asserted(vc mid)
+pulls::is_asserted(const vc &mid)
 {
     return pulls::Qbm.exists_by_member(mid, &pulls::mid);
 }
 
-int
-pulls::pull_in_progress(vc mid, vc uid)
-{
-    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
-    for(int i = 0; i < dm.num_elems(); ++i)
-    {
-        if(dm[i]->uid == uid && dm[i]->m_in_progress)
-            return 1;
-    }
-    return 0;
-}
+//int
+//pulls::pull_in_progress(const vc& mid, const vc& uid)
+//{
+//    DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
+//    for(int i = 0; i < dm.num_elems(); ++i)
+//    {
+//        if(dm[i]->uid == uid && dm[i]->m_in_progress)
+//            return 1;
+//    }
+//    return 0;
+//}
 
 void
-pulls::deassert_by_uid(vc uid)
+pulls::deassert_by_uid(const vc &uid)
 {
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(uid, &pulls::uid);
     for(int i = 0; i < dm.num_elems(); ++i)
@@ -73,13 +73,13 @@ pulls::deassert_by_uid(vc uid)
 }
 
 int
-pulls::count_by_uid(vc uid)
+pulls::count_by_uid(const vc& uid)
 {
     return pulls::Qbm.count_by_member(uid, &pulls::uid);
 }
 
 void
-pulls::pull_failed(vc mid, vc uid)
+pulls::pull_failed(const vc &mid, const vc &uid)
 {
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
     for(int i = 0; i < dm.num_elems(); ++i)
@@ -89,19 +89,27 @@ pulls::pull_failed(vc mid, vc uid)
     }
 }
 
-void
-pulls::set_pull_in_progress(vc mid, vc uid)
+int
+pulls::set_pull_in_progress(const vc& mid, const vc& uid)
 {
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(mid, &pulls::mid);
     for(int i = 0; i < dm.num_elems(); ++i)
     {
         if(dm[i]->uid == uid)
-            dm[i]->set_in_progress(1);
+        {
+            if(!dm[i]->m_in_progress)
+            {
+                dm[i]->set_in_progress(1);
+                return 1;
+            }
+            return 0;
+        }
     }
+    return 0;
 }
 
 DwVecP<pulls>
-pulls::get_stalled_pulls(vc uid)
+pulls::get_stalled_pulls(const vc &uid)
 {
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(uid, &pulls::uid);
     return dm;

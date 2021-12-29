@@ -98,7 +98,7 @@ public:
     IndexKeyType UserClass::* memberp;
 
     indexer() {
-        b = new BagIdx(BagAssoc(), 101);
+        b = new BagIdx(BagAssoc(), 10009);
         memberp = MemberPtr;
     }
 

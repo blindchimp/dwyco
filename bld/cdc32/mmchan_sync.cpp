@@ -51,18 +51,15 @@ assert_eager_pulls(MMChannel *mc, vc uid)
 {
     vc huid = to_hex(uid);
     vc mids = sql_get_non_local_messages_at_uid(uid);
-
+    if(mids.is_nil())
+        return;
     for(int i = 0; i < mids.num_elems(); ++i)
     {
         vc mid = mids[i];
         pulls::assert_pull(mid, uid, PULLPRI_BACKGROUND);
-        if(!pulls::pull_in_progress(mid, uid))
-        {
-            pulls::set_pull_in_progress(mid, uid);
+        if(pulls::set_pull_in_progress(mid, uid))
             mc->send_pull(mid, PULLPRI_BACKGROUND);
-        }
     }
-
 }
 
 static
