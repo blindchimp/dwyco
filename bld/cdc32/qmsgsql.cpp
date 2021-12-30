@@ -1227,6 +1227,7 @@ sql_get_recent_users(int recent, int *total_out)
     try
     {
         sql_start_transaction();
+#if 0
         sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
         sql_simple("insert into foo select strftime('%s', 'now'), uid from group_map");
         vc res;
@@ -1235,10 +1236,6 @@ sql_get_recent_users(int recent, int *total_out)
             res = sql_simple("select count(distinct assoc_uid) from foo");
             *total_out = (int)res[0][0];
         }
-
-        // this swaps in the gid for uid's in a group, which isn't working too well
-        //sql_simple("update foo set assoc_uid = (select gid from group_map where uid = foo.assoc_uid) "
-        //    "where exists (select 1 from group_map where uid = foo.assoc_uid) ");
 
         // remove all uid's from the user list except one that represents the group.
         // arbitrary: the lowest one lexicographically, which might change.
@@ -1254,6 +1251,13 @@ sql_get_recent_users(int recent, int *total_out)
 #endif
         sql_simple("drop table foo");
         sql_simple("drop table bar");
+#endif
+	vc res = sql_simple(
+        "with uids(uid,lc) as (select assoc_uid, logical_clock from gi   group by assoc_uid having max(logical_clock)),"
+         "mins(muid) as (select min(uid) from group_map group by gid),"
+         "grps(guid) as (select uid from group_map)"
+        "select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
+	recent ? 100 : -1);
         sql_commit_transaction();
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)
@@ -1275,11 +1279,11 @@ sql_get_recent_users2(int max_age, int max_count)
     try
     {
         sql_start_transaction();
-        sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
+        //sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
         vc res;
-        res = sql_simple("select distinct assoc_uid from foo where strftime('%s', 'now') - \"max(date)\" < ?1 order by \"max(date)\" desc limit ?2",
+        res = sql_simple("select assoc_uid from gi where strftime('%s', 'now') - date < ?1 order by date desc limit ?2",
                          max_age, max_count);
-        sql_simple("drop table foo");
+        //sql_simple("drop table foo");
         sql_commit_transaction();
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)

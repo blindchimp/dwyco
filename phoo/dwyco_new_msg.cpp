@@ -95,8 +95,9 @@ del_unviewed_mid(const QByteArray& mid)
 bool
 uid_has_unviewed_msgs(const QByteArray &uid)
 {
-    return uid_has_unfetched(uid) > 0 || dwyco_uid_has_tag(uid.constData(), uid.length(), "unviewed")
-            || dwyco_uid_has_tag(uid.constData(), uid.length(), "_inbox");
+    return uid_has_unfetched(uid) > 0 ||
+            dwyco_uid_has_tag(uid.constData(), uid.length(), "unviewed") ||
+            dwyco_uid_has_tag(uid.constData(), uid.length(), "_inbox");
 }
 
 int
