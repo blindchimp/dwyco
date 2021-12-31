@@ -2501,6 +2501,9 @@ mainwinform::idle()
         reload_msgs();
         refetch_user_list();
         load_users();
+        // trigger initial msg rescan in case background thingy
+        // downloaded some messages
+        dwyco_set_rescan_messages(1);
 
         //dwyco_get_server_list(&Dwyco_server_list, &dum);
         // note: this won't work because we don't yet have

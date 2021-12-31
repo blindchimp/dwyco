@@ -53,7 +53,7 @@ main(int argc, char **argv)
 
     if(argc == 2)
     {
-        dwyco_background_processing(port, 1, 0, 0, 0, 0);
+        dwyco_background_processing(port, 0, 0, 0, 0, 0);
     }
     else if(argc == 4)
     {
