@@ -42,6 +42,7 @@
 #include "dhgsetup.h"
 #include "profiledb.h"
 #include "dirth.h"
+#include "pulls.h"
 
 namespace dwyco {
 using namespace dwyco::qmsgsql;
@@ -1388,10 +1389,8 @@ sql_clear_uid(vc uid)
     catch(...)
     {
         sql_rollback_transaction();
-        return vc(VC_VECTOR);
+        throw;
     }
-
-
 }
 
 static
@@ -1427,7 +1426,6 @@ sql_load_group_index(vc uid, int max_count)
     try
     {
         sql_start_transaction();
-        //create_uidset(uid);
         vc gid = map_uid_to_gid(uid);
 
         // the first part of this query gets all the messages for
@@ -1469,11 +1467,11 @@ sql_load_index(vc uid, int max_count)
 {
     return sql_load_group_index(uid, max_count);
 
-    vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
-           "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-           " from gi where assoc_uid = ?1 and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
-                        to_hex(uid), max_count);
-    return res;
+//    vc res = sql_simple("select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+//           "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
+//           " from gi where assoc_uid = ?1 and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
+//                        to_hex(uid), max_count);
+//    return res;
 }
 
 static
@@ -1705,7 +1703,7 @@ flatten(vc sql_res)
     vc ret(VC_VECTOR);
     for(int i = 0; i < sql_res.num_elems(); ++i)
     {
-        ret[i] = sql_res[i][0];
+        ret.append(sql_res[i][0]);
     }
     return ret;
 }
@@ -1861,27 +1859,21 @@ remove_msg_idx_uid(vc uid)
 vc
 get_unfav_msgids(vc uid)
 {
-    vc ret(VC_VECTOR);
+    vc ret;
     try
     {
         sql_start_transaction();
-        //create_uidset(uid);
         vc res = sql_simple(
                     with_create_uidset(1)
                     "select mid as foo from gi where assoc_uid in (select * from uidset) "
                  "and not exists (select 1 from gmt where mid = foo and tag = '_fav') group by mid", to_hex(uid));
-        //drop_uidset();
         sql_commit_transaction();
-        int n = res.num_elems();
-        for(int i = 0; i < n; ++i)
-        {
-            vc mid = res[i][0];
-            ret.append(mid);
-        }
+        ret = flatten(res);
     }
     catch(...)
     {
         sql_rollback_transaction();
+        throw;
     }
     return ret;
 }
@@ -1904,6 +1896,7 @@ clear_msg_idx_uid(vc uid)
         {
             //dirth_send_addtag(uid, mids[i][0], "_del", QckDone(0, 0));
             dirth_send_ack_get(My_UID, mids[i][0], QckDone(0, 0));
+            pulls::deassert_pull(mids[i][0]);
         }
     }
 }
@@ -2105,6 +2098,7 @@ sql_fav_remove_uid(vc uid)
     catch(...)
     {
         sql_rollback_transaction();
+        throw;
     }
 }
 

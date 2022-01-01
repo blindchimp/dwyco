@@ -4099,24 +4099,26 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
     if(!sql_fav_has_fav(u))
         return dwyco_clear_user(uid, len_uid);
 
-    try {
-
-    qmsgsql::sql_start_transaction();
-    vc delmid = get_unfav_msgids(u);
-
-    int n = delmid.num_elems();
-    for(int i = 0; i < n; ++i)
+    vc delmid;
+    try
     {
-        vc suid = from_hex(sql_get_uid_from_mid(delmid[i]));
-        if(!suid.is_nil())
+        // note: this is really problematic if the fav tags are not
+        // up to date locally, and we end up deleting a message here.
+        // maybe we should just move the msg to the trash, at least then
+        // there would be a chance to recover by untrashing and rescanning
+        qmsgsql::sql_start_transaction();
+        delmid = get_unfav_msgids(u);
+
+        int n = delmid.num_elems();
+        for(int i = 0; i < n; ++i)
+        {
+            vc suid = sql_get_uid_from_mid(delmid[i]);
+            if(suid.is_nil())
+                throw -1;
+            suid = from_hex(suid);
             delete_body3(suid, delmid[i], 0);
-    }
-    // bulk update the indexes
-    //remove_msg_idx_uid(u);
-    // even if there are some files left in the filesystem
-    // that is ok, since they will get reindexed next time the
-    // index is loaded.
-    qmsgsql::sql_commit_transaction();
+        }
+        qmsgsql::sql_commit_transaction();
     }
     catch(...)
     {
@@ -4126,7 +4128,13 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
     }
 
     Rescan_msgs = 1;
-
+    if(Current_alternate)
+    {
+        for(int i = 0; i < delmid.num_elems(); ++i)
+        {
+            pulls::deassert_pull(delmid[i]);
+        }
+    }
     // this may need a revisit: basically it is saying anything that
     // we haven't fetched yet can't be favorited, which may not be
     // true if someone else has already fetched and favorited it
@@ -6390,7 +6398,7 @@ dwyco_end_bulk_update()
 void
 pull_target_destroyed(vc uid)
 {
-    pulls::deassert_by_uid(uid);
+    //pulls::deassert_by_uid(uid);
 }
 
 void
@@ -7721,7 +7729,10 @@ dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id)
     // a group representative
 
     vc mid(msg_id);
-    vc uid = from_hex(sql_get_uid_from_mid(mid));
+    vc uid = sql_get_uid_from_mid(mid);
+    if(uid.is_nil())
+        return 0;
+    uid = from_hex(uid);
     delete_body3(uid, mid, 0);
     vc args(VC_VECTOR);
     args.append(vcnil);
@@ -7730,7 +7741,18 @@ dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id)
     // but if we aren't ina group, this isn't necessary because the
     // ack was done when the message was fetched
     if(Current_alternate)
+    {
         dirth_send_ack_get(My_UID, mid, QckDone(ack_get_done2, 0, args));
+        // note: this is relatively cheap and keeps the pull process from
+        // getting started again. there might be pulls q-ed referencing the mid
+        // but rummaging around to find them all is expensive. it is probably
+        // better just to let them complete (in the rare case they exist) and
+        // let the tombstones filter them out (there might end up being a
+        // a message stored in the filesystem that is referenced by a tombstone, but
+        // this won't be a problem unless the filesystem gets rescanned for some
+        // reason.)
+        pulls::deassert_pull(mid);
+    }
     //dirth_send_addtag(My_UID, mid, "_del", QckDone(0, 0));
     return 1;
 }

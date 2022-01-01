@@ -2529,22 +2529,28 @@ remove_user_files(vc dir, const char *pfx, int keep_folder)
 int
 remove_user(vc uid, const char *pfx)
 {
-
-    // note: this removes pal auth stuff too
     vc dir = uid_to_dir(uid);
-    //always_vis_del(uid);
     // remove indexs so the msgs don't magically reappear
-    sql_start_transaction();
-    sql_fav_remove_uid(uid);
-    clear_msg_idx_uid(uid);
-    DwString tag("_");
-    tag += (const char *)to_hex(uid);
-    vc mids = sql_get_tagged_mids2(tag.c_str());
-    for(int i = 0; i < mids.num_elems(); ++i)
+    try
     {
-        sql_fav_remove_mid(mids[i][0]);
+        sql_start_transaction();
+        sql_fav_remove_uid(uid);
+        clear_msg_idx_uid(uid);
+        DwString tag("_");
+        tag += (const char *)to_hex(uid);
+        vc mids = sql_get_tagged_mids2(tag.c_str());
+        for(int i = 0; i < mids.num_elems(); ++i)
+        {
+            sql_fav_remove_mid(mids[i][0]);
+        }
+        sql_commit_transaction();
     }
-    sql_commit_transaction();
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return 0;
+    }
+
     // when we unindex everything successfully, remove the files
     remove_user_files(dir, pfx, 0);
     MsgFolders.del(uid);
@@ -2555,17 +2561,26 @@ remove_user(vc uid, const char *pfx)
 int
 clear_user(vc uid, const char *pfx)
 {
-    sql_start_transaction();
-    sql_fav_remove_uid(uid);
-    clear_msg_idx_uid(uid);
-    DwString tag("_");
-    tag += (const char *)to_hex(uid);
-    vc mids = sql_get_tagged_mids2(tag.c_str());
-    for(int i = 0; i < mids.num_elems(); ++i)
+    try
     {
-        sql_fav_remove_mid(mids[i][0]);
+        sql_start_transaction();
+        sql_fav_remove_uid(uid);
+        clear_msg_idx_uid(uid);
+        DwString tag("_");
+        tag += (const char *)to_hex(uid);
+        vc mids = sql_get_tagged_mids2(tag.c_str());
+        for(int i = 0; i < mids.num_elems(); ++i)
+        {
+            sql_fav_remove_mid(mids[i][0]);
+        }
+        sql_commit_transaction();
     }
-    sql_commit_transaction();
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return 0;
+    }
+
     vc dir = uid_to_dir(uid);
     remove_user_files(dir, pfx, 1);
     Rescan_msgs = 1;
