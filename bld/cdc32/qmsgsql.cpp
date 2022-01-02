@@ -542,7 +542,15 @@ remove_sync_state()
     try
     {
         sql_start_transaction();
+        // note: syncing files like this is useful during debugging, but
+        // it really expensive and probably should be controlled by the
+        // user otherwise. by not doing this, we risk having the index
+        // not reflect the contents of the files (mainly because the files
+        // are not atomically in sync with the index. some day we might
+        // store the files in sqlite too, but that is pretty far off)
+#ifdef DWYCO_SYNC_DEBUG
         sync_files();
+#endif
         sql_simple("delete from current_clients");
         // get rid of tags that might reference unknown mids
         sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
@@ -550,6 +558,15 @@ remove_sync_state()
         // note: we keep the pal/ignore stuff intact, but the _leader tag doesn't
         // make sense when you are outside a group, or when you re-enter a group.
         sql_simple("delete from mt.gmt where tag = '_leader'");
+        // remove info we might have received from other clients regarding their tag state (which
+        // can be redundant)
+        sql_simple("delete from gmt where rowid not in (select max(rowid) from gmt group by mid,tag)");
+        // make it look like we created all the tags
+        sql_simple("update gmt set uid = ?1", to_hex(My_UID));
+        // interesting question: should we redo all the guids? if we enter the same group again
+        // if they are all new, it will appear as if we added all the tags again, possibly
+        // looking like some old items were re-tagged. if we leave them the same, existing
+        // tombstones in other clients might cover them.
         sql_simple("delete from mt.gtomb");
         sql_simple("drop trigger if exists mtomb_log");
         sql_simple("delete from msg_tomb");
