@@ -654,21 +654,29 @@ import_remote_mi(vc remote_uid)
         s.sql_simple("delete from mt.gmt where mid in (select mid from msg_tomb)");
         s.sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
 
+        // probably makes a lot of sense to clean out unknown uid's, if we have
+        // an "authoritative" idea what the current group membership is. it will keep
+        // those uids from propagating around to other clients, just in case the remote
+        // clients is having troubles getting cleaned up
+
         //s.sql_simple("insert into crdt_tags select * from static_crdt_tags");
         s.sql_simple("insert into current_clients values(?1)", huid);
 
         s.commit_transaction();
+#ifndef DWYCO_BACKGROUND_SYNC
+        // these will deadlock if done in the background in another thread
         if(update_tags)
         {
             // NOTE: this will access the main connection to refresh the pal list
-            //se_emit_uid_list_changed();
+            se_emit_uid_list_changed();
         }
         // likewise, this maps_uids, so probably need to either give it a connection
         // or q it for later.
-//        for(int i = 0; i < newuids.num_elems(); ++i)
-//        {
-//            se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
-//        }
+        for(int i = 0; i < newuids.num_elems(); ++i)
+        {
+            se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
+        }
+#endif
     }
     catch(...)
     {
@@ -1746,48 +1754,23 @@ sql_find_who_has_mid(vc mid)
     }
 }
 
-// this returns a list of all uid, mid pairs where mid is not local
-// this would be used in cases where we want to pull other messages
-// in an "eager" fashion rather than waiting for them to be requested
-// via some model lookup
 
-vc
-sql_get_non_local_messages()
-{
-
-    try
-    {
-        sql_start_transaction();
-        sql_simple("create temp table foo as select mid, from_client_uid from gi where mid not in (select mid from msg_idx)");
-        sql_simple("delete from foo where mid in (select mid from msg_tomb)");
-        vc res = sql_simple("select * from foo");
-        sql_simple("drop table foo");
-        sql_commit_transaction();
-        return res;
-    }
-    catch (...)
-    {
-        sql_rollback_transaction();
-        return vcnil;
-    }
-}
 
 // this gets a list of mids that we don't have, that look like they might
 // be available at the given uid. when we connect to this uid with a sync
 // channel, we can assert pulls to this uid if we are in "eager" sync mode.
 
 vc
-sql_get_non_local_messages_at_uid(vc uid)
+sql_get_non_local_messages_at_uid(vc uid, int max_count)
 {
     vc huid = to_hex(uid);
     try
     {
         sql_start_transaction();
-        sql_simple("create temp table foo as select mid from gi where from_client_uid = ?1 "
-                   "and not exists (select 1 from msg_idx where gi.mid = mid)", huid);
-        sql_simple("delete from foo where exists (select 1 from msg_tomb where mid = foo.mid)");
-        vc res = sql_simple("select * from foo");
-        sql_simple("drop table foo");
+        vc res = sql_simple("select mid from gi where from_client_uid = ?1 "
+                   "and not exists (select 1 from msg_idx where gi.mid = mid)"
+                            "and not exists (select 1 from msg_tomb where gi.mid = mid) limit ?2",
+                            huid, max_count);
         sql_commit_transaction();
         return flatten(res);
     }

@@ -1053,6 +1053,11 @@ private:
     void process_pull_resp(vc cmd);
     void process_iupdate(vc cmd);
     void process_tupdate(vc cmd);
+
+    DwTimer eager_pull_timer;
+    void assert_eager_pulls();
+    void start_stalled_pulls();
+    void eager_pull_processing();
     // FIX THIS, should be private
 public:
     dwyco::sendq sync_sendq;

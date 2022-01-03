@@ -88,7 +88,6 @@ originate_calls(vc uid)
         return uid < My_UID;
 }
 
-
 vc
 build_sync_status_model()
 {
@@ -240,8 +239,13 @@ struct local_connect_timer : public ssns::trackable
     }
 };
 
-
-
+// this is where we look at the set of group members, and
+// schedule call attempts to any that are online. throttling the
+// attempt-to-connect rate is based on whether we are
+// successful in at least trying connect. if we
+// can't find anyone to connect to, we reduce our rate of trying
+// so we can avoid using too many cpu cycles.
+//
 void
 sync_call_setup()
 {

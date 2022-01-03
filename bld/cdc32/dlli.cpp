@@ -1570,7 +1570,9 @@ dwyco_init()
     // the user can override by calling this itself.
     dwyco_enable_activity_checking(1, Inactivity_time, internal_activity);
     init_gj();
+#ifdef DWYCO_SYNC_DEBUG
     reindex_possible_changes();
+#endif
     Inited = 1;
     return 1;
 }
@@ -1637,7 +1639,9 @@ dwyco_bg_init()
     if((gm = getenv("kk27g")) != 0)
         KKG = gm;
     init_gj();
+#ifdef DWYCO_SYNC_DEBUG
     reindex_possible_changes();
+#endif
     Inited = 1;
     return 1;
 }
@@ -6399,17 +6403,6 @@ void
 pull_target_destroyed(vc uid)
 {
     //pulls::deassert_by_uid(uid);
-}
-
-void
-start_stalled_pulls(MMChannel *mc)
-{
-    DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());
-    for(int i = 0; i < stalled_pulls.num_elems(); ++i)
-    {
-        stalled_pulls[i]->set_in_progress(1);
-        mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
-    }
 }
 
 DWYCOEXPORT

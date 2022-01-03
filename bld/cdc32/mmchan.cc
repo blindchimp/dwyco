@@ -4434,7 +4434,7 @@ stun_done:
                         mc->schedule_destroy();
                         continue;
                     }
-                    if( t->buf_drained() && t->can_write_mmdata())
+                    if(t->buf_drained() && t->can_write_mmdata())
                     {
                         MMChannel *bcast = channel_by_id(mc->grab_coded_id);
                         GRTLOG("blast %d ourlast %d", (int)bcast->last_time_index, (int)mc->last_time_index);

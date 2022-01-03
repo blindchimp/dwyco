@@ -7,10 +7,17 @@
 // ignore it.
 //
 // if a pull is successful, all the records for that mid are deleted.
+// a pull record stays alive ("asserted") until we receive some kind
+// of resolution to searching for the mid from other clients (it is
+// NOT deasserted on failure, as the failure might be transient.)
 //
+// you can also clean out asserts if a uid will never be queried (like
+// if it drops out of the group of devices or becomes ignored, for example.)
+// or if the mid is deleted.
 //
 // note: we may want to put timeouts in here so that once something
 // is in progress, it times out if nothing happens for awhile.
+
 #include "pulls.h"
 namespace dwyco {
 
@@ -111,18 +118,18 @@ pulls::set_pull_in_progress(const vc& mid, const vc& uid)
 DwVecP<pulls>
 pulls::get_stalled_pulls(const vc &uid)
 {
+#if 1
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(uid, &pulls::uid);
     return dm;
-#if 0
-    DwTreeKazIter<int, pulls *> i(&inp_set);
-    DwVecP<pulls> ret;
-    for(;!i.eol(); i.forward())
-    {
-        auto p = i.get().get_key();
-        if(p->uid == uid)
-            ret.append(p);
-    }
-    return ret;
 #endif
+//    DwTreeKazIter<int, pulls *> i(&inp_set);
+//    DwVecP<pulls> ret;
+//    for(;!i.eol(); i.forward())
+//    {
+//        auto p = i.get().get_key();
+//        if(p->uid == uid)
+//            ret.append(p);
+//    }
+//    return ret;
 }
 }

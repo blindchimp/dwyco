@@ -39,18 +39,17 @@ using namespace dwyco::qmsgsql;
 #endif
 #include "sepstr.h"
 
-void start_stalled_pulls(MMChannel *);
-
 // NOTE: when we are in eager mode, we should schedule
 // a periodic "reassert" across a connection if there have been any changes
 // to the global model from a connection (ie, someone says they might have
 // something new.)
-static
+
 void
-assert_eager_pulls(MMChannel *mc, vc uid)
+MMChannel::assert_eager_pulls()
 {
+    vc uid = remote_uid();
     vc huid = to_hex(uid);
-    vc mids = sql_get_non_local_messages_at_uid(uid);
+    vc mids = sql_get_non_local_messages_at_uid(uid, 100);
     if(mids.is_nil())
         return;
     for(int i = 0; i < mids.num_elems(); ++i)
@@ -58,7 +57,18 @@ assert_eager_pulls(MMChannel *mc, vc uid)
         vc mid = mids[i];
         pulls::assert_pull(mid, uid, PULLPRI_BACKGROUND);
         if(pulls::set_pull_in_progress(mid, uid))
-            mc->send_pull(mid, PULLPRI_BACKGROUND);
+            send_pull(mid, PULLPRI_BACKGROUND);
+    }
+}
+
+void
+MMChannel::start_stalled_pulls()
+{
+    DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(remote_uid());
+    for(int i = 0; i < stalled_pulls.num_elems(); ++i)
+    {
+        stalled_pulls[i]->set_in_progress(1);
+        send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
     }
 }
 
@@ -391,11 +401,11 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
         sql_run_sql("insert into current_clients values(?1)", huid);
         if((int)get_settings_value("sync/eager") == 1)
         {
-            assert_eager_pulls(this, remote_uid());
+            assert_eager_pulls();
         }
         else
         {
-            start_stalled_pulls(this);
+            start_stalled_pulls();
         }
     }
     else
@@ -403,6 +413,35 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
         sql_run_sql("delete from current_clients where uid = ?1", huid);
     }
 
+}
+
+void
+MMChannel::eager_pull_processing()
+{
+    if((int)get_settings_value("sync/eager") == 0)
+        return;
+
+    if(!eager_pull_timer.is_running())
+    {
+        eager_pull_timer.set_interval(10000);
+        eager_pull_timer.set_autoreload(1);
+        eager_pull_timer.start();
+    }
+    if(eager_pull_timer.is_expired())
+    {
+        eager_pull_timer.ack_expire();
+        if((sync_sendq.count() == 0) &&
+                tube && msync_state == MEDIA_SESSION_UP && !tube->has_data(msync_chan))
+        {
+            // only assert if the incoming channel appears to be empty
+            // as well. this gives us a chance to process the results of
+            // all the previous requests, so we can make progress as the
+            // msgs are transferred and saved here (the index will be updated
+            // and we will avoid a lot of re-asserts of things we have already
+            // seen.)
+            assert_eager_pulls();
+        }
+    }
 }
 
 int
@@ -471,6 +510,7 @@ MMChannel::process_outgoing_sync()
                     sync_sendq.append(ds[i], PULLPRI_NORMAL);
             }
         }
+        eager_pull_processing();
 
         vcx = package_next_cmd();
         if(vcx.is_nil())
@@ -497,7 +537,7 @@ MMChannel::process_outgoing_sync()
     GRTLOG("msync output ok %d %s", myid, (const char *)to_hex(remote_uid()));
     if(mms_sync_state == NORMAL_SEND)
     {
-    GRTLOGVC(vcx);
+        GRTLOGVC(vcx);
     }
 
     mms_sync_state = NORMAL_SEND;
