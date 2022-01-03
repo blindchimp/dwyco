@@ -101,6 +101,26 @@ static settings_sql *Db;
 
 #define sql Db->sql_simple
 
+namespace ezset {
+
+void
+sql_start_transaction()
+{
+    Db->start_transaction();
+}
+void
+sql_commit_transaction()
+{
+    Db->commit_transaction();
+}
+void
+sql_rollback_transaction()
+{
+    Db->rollback_transaction();
+}
+
+}
+
 struct setting : public ssns::trackable
 {
     setting(const setting&) = delete;
@@ -116,7 +136,6 @@ struct setting : public ssns::trackable
     void update_db(vc val) {
         sql("update settings set value = ?1 where name = ?2", val, name);
         setting_changed.emit(name, val);
-
     }
 };
 
@@ -141,7 +160,7 @@ init_sql_settings()
         s->value.value_changed.connect_memfun(s, &setting::update_db);
         Map->add(s->name, s);
     }
-    Db->start_transaction();
+    sql_start_transaction();
     for(int i = 0; Initial_settings[i].name != 0; ++i)
     {
         if(Map->contains(Initial_settings[i].name))
@@ -166,27 +185,7 @@ init_sql_settings()
         }
         s->value.value_changed.connect_memfun(s, &setting::update_db);
     }
-    Db->commit_transaction();
-}
-
-namespace ezset {
-
-void
-sql_start_transaction()
-{
-    Db->start_transaction();
-}
-void
-sql_commit_transaction()
-{
-    Db->commit_transaction();
-}
-void
-sql_rollback_transaction()
-{
-    Db->rollback_transaction();
-}
-
+    sql_commit_transaction();
 }
 
 void

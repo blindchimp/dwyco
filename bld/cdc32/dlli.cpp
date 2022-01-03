@@ -6892,6 +6892,7 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
             // we can query to give us some information about who is likely to be gone.
             if(members.num_elems() == 0)
             {
+                add_join_log("group abandoned", My_UID);
                 Join_attempts.emit(My_UID, "group probably abandoned");
                 throw -1;
             }

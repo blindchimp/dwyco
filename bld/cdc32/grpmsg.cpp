@@ -116,6 +116,12 @@ get_join_log()
     return res;
 }
 
+void
+add_join_log(vc msg, vc uid)
+{
+    SKID->sql_simple("insert into join_log (msg, uid1, err, time) values(?1, ?2, 'external', strftime('%s', 'now'))", msg, to_hex(uid));
+}
+
 // the basic idea here is that we don't know who has the
 // private key for the group. so we send a message to the
 // group, and the first one that responds and completes the
