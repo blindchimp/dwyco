@@ -1282,7 +1282,9 @@ sql_get_recent_users(int recent, int *total_out)
         "with uids(uid,lc) as (select assoc_uid, logical_clock from gi   group by assoc_uid having max(logical_clock)),"
          "mins(muid) as (select min(uid) from group_map group by gid),"
          "grps(guid) as (select uid from group_map)"
-        "select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
+        //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
+                "select uid from uids where uid not in (select * from grps) union select * from mins limit ?1",
+
 	recent ? 100 : -1);
         sql_commit_transaction();
         vc ret(VC_VECTOR);

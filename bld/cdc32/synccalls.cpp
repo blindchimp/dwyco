@@ -148,7 +148,13 @@ build_sync_status_model()
     // i did some testing and "distinct(mid)" is a lot slower
     // for some reason than using the similar "group by mid".
     // never figured out why
-    vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select 1 from gi group by mid)), from_client_uid from gi group by from_client_uid");
+    // these two are about the same performance, just one is easier to
+    // understand...
+    vc res = sql_run_sql(
+    "with total_mids(cnt) as (select count(*) from (select 1 from gi group by mid))"
+    "select (count(*) * 100) / (select cnt from total_mids), from_client_uid from gi group by from_client_uid"
+                );
+    //vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select 1 from gi group by mid)), from_client_uid from gi group by from_client_uid");
     for(int i = 0; i < res.num_elems(); ++i)
     {
         vc uid = from_hex(res[i][1]);
