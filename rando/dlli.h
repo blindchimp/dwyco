@@ -817,6 +817,7 @@ int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
+int DWYCOEXPORT dwyco_mid_disposition(const char *mid);
 
 // INTERNAL API
 int DWYCOEXPORT dwyco_run_sql(const char *s, const char *a1, const char *a2, const char *a3);

@@ -95,7 +95,7 @@ del_unviewed_mid(const QByteArray& mid)
 bool
 uid_has_unviewed_msgs(const QByteArray &uid)
 {
-    return uid_has_unfetched(uid) > 0 ||
+    return //uid_has_unfetched(uid) > 0 ||
             dwyco_uid_has_tag(uid.constData(), uid.length(), "unviewed") ||
             dwyco_uid_has_tag(uid.constData(), uid.length(), "_inbox");
 }
@@ -150,7 +150,8 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
         // but the user would appear towards the top of the user list, which is weird.
         // this happens sometimes when attachments are not fetchable for whatever reason.
         Already_processed.insert(mid);
-        add_unviewed(uid_out, mid);
+        if(dwyco_mid_disposition(mid) == 0)
+            add_unviewed(uid_out, mid);
         uids.insert(uid_out);
     }
 

@@ -6644,6 +6644,15 @@ dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_
     return 1;
 }
 
+DWYCOEXPORT
+int
+dwyco_mid_disposition(const char *mid)
+{
+    if(sql_is_mid_anywhere(mid))
+        return 1;
+    return 0;
+}
+
 struct special_map
 {
     const char *name;

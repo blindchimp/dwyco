@@ -570,6 +570,7 @@ remove_sync_state()
         // looking like some old items were re-tagged. if we leave them the same, existing
         // tombstones in other clients might cover them.
         sql_simple("delete from mt.gtomb");
+        // drop triggers that might preclude the delete optimization in sqlite
         sql_simple("drop trigger if exists mtomb_log");
         sql_simple("delete from msg_tomb");
         sql_simple("drop trigger if exists temp.rescan7");
@@ -671,7 +672,7 @@ import_remote_mi(vc remote_uid)
         // these will deadlock if done in the background in another thread
         if(update_tags)
         {
-            // NOTE: this will access the main connection to refresh the pal list
+            // NOTE: this will access the main db connection to refresh the pal list
             se_emit_uid_list_changed();
         }
         // likewise, this maps_uids, so probably need to either give it a connection
@@ -1070,6 +1071,15 @@ int
 sql_is_mid_local(vc mid)
 {
     vc res = sql_simple("select 1 from msg_idx where mid = ?1 limit 1", mid);
+    if(res.num_elems() == 0)
+        return 0;
+    return 1;
+}
+
+int
+sql_is_mid_anywhere(vc mid)
+{
+    vc res = sql_simple("select 1 from gi where mid = ?1 limit 1", mid);
     if(res.num_elems() == 0)
         return 0;
     return 1;
