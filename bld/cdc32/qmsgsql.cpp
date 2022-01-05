@@ -264,6 +264,8 @@ QMsgSql::init_schema(const DwString& schema_name)
         sql_simple("pragma user_version = 1;");
         sql_commit_transaction();
     }
+    sql_simple("create index if not exists gi_uid_date on gi(assoc_uid, date)");
+    sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
     sql_commit_transaction();
     }
     else if(schema_name.eq("mt"))
@@ -570,6 +572,8 @@ remove_sync_state()
         sql_simple("delete from mt.gtomb");
         sql_simple("drop trigger if exists mtomb_log");
         sql_simple("delete from msg_tomb");
+        sql_simple("drop trigger if exists temp.rescan7");
+        sql_simple("drop trigger if exists temp.rescan5");
         sql_simple("delete from gi");
         sql_simple("delete from dir_meta");
         sql_simple("delete from midlog");
@@ -891,8 +895,8 @@ init_qmsg_sql()
     sDb->attach("fav.sql", "mt");
 
     sql_start_transaction();
-    sql_simple("pragma main.cache_size= -10000");
-    sql_simple("pragma mt.cache_size= -10000");
+    //sql_simple("pragma main.cache_size= -10000");
+    //sql_simple("pragma mt.cache_size= -10000");
     vc sv = sql_simple("pragma main.user_version");
     if((int)sv[0][0] != 0)
         Schema_version_hack += sv[0][0].peek_str();
@@ -931,31 +935,31 @@ init_qmsg_sql()
     sql_simple("drop table if exists current_clients");
     sql_simple("create table current_clients(uid text collate nocase unique on conflict ignore not null on conflict fail)");
 
-    sql_simple("drop trigger if exists miupdate");
+    //sql_simple("drop trigger if exists miupdate");
     sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid,op) select new.mid, uid, 'a' from current_clients; end");
-    sql_simple("drop trigger if exists mt.tagupdate");
+    //sql_simple("drop trigger if exists mt.tagupdate");
     sql_simple("create temp trigger if not exists tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
                "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
 
+    // note: this drop trigger is a good idea in case the UID changes externally (like they delete the auth file)
     sql_simple("drop trigger if exists xgi");
     sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid limit 1; end").arg((const char *)hmyuid).c_str());
     sql_simple("drop trigger if exists dgi");
     sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin "
                "delete from gi where mid = old.mid; "
                "insert into msg_tomb (mid, time) values(old.mid, strftime('%s', 'now')); "
-               //"insert into midlog (mid,to_uid,op) select old.mid, uid, 'd' from current_clients; "
                "end");
     sql_simple("create temp trigger mtomb_log after insert on msg_tomb begin "
                "insert into midlog(mid,to_uid,op) select new.mid, uid, 'd' from current_clients; "
                "end"
                );
-    sql_simple("drop trigger if exists mt.xgmt");
-    sql_simple("drop trigger if exists mt.dgmt");
+    //sql_simple("drop trigger if exists mt.xgmt");
+    //sql_simple("drop trigger if exists mt.dgmt");
 
-    sql_simple(DwString("create temp trigger if not exists dgmt after delete on mt.gmt begin "
+    sql_simple("create temp trigger if not exists dgmt after delete on mt.gmt begin "
                         "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
                         "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
-                        "end").arg((const char *)hmyuid).c_str());
+                        "end");
 
     sql_simple("create temp trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
@@ -1279,7 +1283,7 @@ sql_get_recent_users(int recent, int *total_out)
         sql_simple("drop table bar");
 #endif
 	vc res = sql_simple(
-        "with uids(uid,lc) as (select assoc_uid, logical_clock from gi   group by assoc_uid having max(logical_clock)),"
+        "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi   group by assoc_uid),"
          "mins(muid) as (select min(uid) from group_map group by gid),"
          "grps(guid) as (select uid from group_map)"
         //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
@@ -1309,9 +1313,13 @@ sql_get_recent_users2(int max_age, int max_count)
         sql_start_transaction();
         //sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
         vc res;
-        res = sql_simple("select assoc_uid from gi where strftime('%s', 'now') - date < ?1 order by date desc limit ?2",
+        // note: this doesn't get the "latest", putting in an order by doubles the amount of time
+        // it takes, and most of the time, the max_count is big enough to get everything anyway
+        res = sql_simple(
+                    "with latest(date, uid) as (select max(date) as md, assoc_uid from gi group by assoc_uid)"
+                    "select uid from latest where strftime('%s', 'now') - date < ?1 limit ?2",
                          max_age, max_count);
-        //sql_simple("drop table foo");
+
         sql_commit_transaction();
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)
@@ -1476,7 +1484,6 @@ sql_load_group_index(vc uid, int max_count)
                     gid.is_nil() ? "" : to_hex(gid),
                     max_count,
                     huid);
-        //drop_uidset();
         sql_commit_transaction();
     }
     catch(...)

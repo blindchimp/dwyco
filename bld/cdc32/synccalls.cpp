@@ -155,6 +155,8 @@ build_sync_status_model()
     "select (count(*) * 100) / (select cnt from total_mids), from_client_uid from gi group by from_client_uid"
                 );
     //vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select 1 from gi group by mid)), from_client_uid from gi group by from_client_uid");
+    if(!res.is_nil())
+    {
     for(int i = 0; i < res.num_elems(); ++i)
     {
         vc uid = from_hex(res[i][1]);
@@ -163,6 +165,7 @@ build_sync_status_model()
             continue;
         vc v = ret[j];
         v[M_PERCENT_SYNCED] = res[i][0];
+    }
     }
 
     GRTLOGVC(ret);

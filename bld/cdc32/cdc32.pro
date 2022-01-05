@@ -45,6 +45,7 @@ CONFIG(debug,debug|release) {
 #DEFINES += DWYCO_FIELD_DEBUG
 android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
 DEFINES += DWYCO_SYNC_DEBUG
+DEFINES += DWYCO_DBG_CHECK_SQL
 } else {
 message("release build")
 android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
