@@ -434,7 +434,8 @@ out:
 
 enum gops {
     NONE,
-    JOIN
+    JOIN,
+    LEAVE
 };
 
 static gops Group_ops;
@@ -488,6 +489,11 @@ dwyco_sync_login_result(const char *str, int what)
                 exit(1);
             }
         }
+        else if(Group_ops == LEAVE)
+        {
+            dwyco_start_gj2("", "");
+            exit(1);
+        }
 
     }
 }
@@ -538,9 +544,14 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
         // and exit.
         if(gname.length() == 0)
         {
-            dwyco_start_gj2("", "");
-            exit(0);
+            //dwyco_start_gj2("", "");
+            Group_ops = LEAVE;
+            // note: probably need a "force" leave that will work even if
+            // we can't contact the server.
+            //exit(0);
         }
+        else
+        {
         const char *val;
         int tp;
         int len;
@@ -578,6 +589,7 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
             // asking for a group we aren't a part of, exit and make
             // them exit the group explicitly
             exit(1);
+        }
         }
 
     }
