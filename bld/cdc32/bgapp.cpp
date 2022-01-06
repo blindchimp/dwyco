@@ -371,6 +371,9 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #if defined(MACOSX) && !defined(DWYCO_IOS)
                 system("/usr/bin/osascript -e 'display notification \"New message\" with title \"CDC-X\" sound name \"default\"'");
 #endif
+#ifdef WIN32
+                system("notify-send.exe \"CDC-X\" \"New message\"");
+#endif
             }
         }
         // note: this is a bit sloppy... rather than trying to
