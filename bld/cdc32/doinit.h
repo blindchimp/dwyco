@@ -15,7 +15,7 @@
 #include "vc.h"
 #include "dwlog.h"
 
-
+namespace dwyco {
 void init_codec(const char *logname = "dwyco.log");
 void exit_codec();
 
@@ -24,6 +24,8 @@ void exit_bg_msg_send();
 extern vc Myhostname;
 extern vc TheMan;
 extern DwLog *Log;
+}
+
 #define INI_FILENAME "dwyco.ini"
 
 #endif

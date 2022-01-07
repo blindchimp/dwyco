@@ -61,12 +61,16 @@
 
 using namespace dwyco;
 
+CRITICAL_SECTION Audio_lock;
+extern int Media_select;
+extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
+
+namespace dwyco {
+
 vc Myhostname;
 DwLog *Log;
-CRITICAL_SECTION Audio_lock;
 vc TheMan;
 
-extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
 void init_dct();
 void init_stats();
 
@@ -166,7 +170,6 @@ init_codec(const char *logname)
         else
             Log->make_entry("audio hardware claims full-duplex");
 
-        extern int Media_select;
         switch((int)get_settings_value("net/call_setup_media_select"))
         {
         default:
@@ -454,3 +457,4 @@ exit_codec()
 
 }
 
+}

@@ -132,9 +132,11 @@ if(Track_stats) \
 #define TRACK_MAX(var, num) do {} while(0)
 #endif
 
+namespace dwyco {
 extern vc Stats;
 extern int Track_stats;
 void init_stats();
+}
 #include "xinfo.h"
 
 

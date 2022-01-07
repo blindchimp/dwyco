@@ -31,9 +31,6 @@ using namespace dwyco;
 extern vc My_UID;
 extern vc Online;
 extern vc Client_types;
-//vc Pal_auth_state;
-extern vc I_grant;
-extern vc They_grant;
 extern vc Client_ports;
 
 int is_invisible();

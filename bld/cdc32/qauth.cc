@@ -40,6 +40,8 @@ using namespace dwyco;
 
 vc vclh_sha(vc);
 
+namespace dwyco {
+
 vc My_UID;
 vc My_MID;
 vc My_server_key;
@@ -423,6 +425,8 @@ qauth_check_account_exists()
     vc dum1;
     vc dum2;
     return(load_auth_info(dum1, dum2, "auth"));
+}
+
 }
 
 

@@ -45,11 +45,12 @@
 #include "dhsetup.h"
 #include "vcudh.h"
 #include "dwscoped.h"
+#include "qauth.h"
+
 using namespace dwyco;
 
-extern vc My_UID;
-
-static void
+static
+void
 hangup_all_servers()
 {
     scoped_ptr<ChanList> cl(MMChannel::get_serviced_channels_server());

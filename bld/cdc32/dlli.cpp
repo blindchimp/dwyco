@@ -389,7 +389,6 @@ using namespace dwyco;
 //extern vc Session_ignore;
 extern vc Mutual_ignore;
 extern vc Server_list;
-extern int Send_auth;
 extern vc Current_authenticator;
 extern vc Current_session_key;
 extern DwVec<ValidPtr> CompositionDeleteQ;
@@ -398,7 +397,7 @@ static void setup_callbacks();
 static int UI_ids = 1000000;
 static int Inited;
 HWND Main_window;
-extern int Create_new_account;
+//extern int Create_new_account;
 extern int Database_id;
 
 int uid_online(vc);
@@ -9237,7 +9236,6 @@ setup_callbacks()
     MMChannel::uc_message_callback = bounce_uc_callback;
     MMChannel::call_screening_callback = bounce_call_screening;
     TPGMMSWDecoderColor::display_info_in_titlebar_callback = caption_update;
-    extern void (*Entropy_display_callback)(int);
     Entropy_display_callback = entropy_display;
 }
 
