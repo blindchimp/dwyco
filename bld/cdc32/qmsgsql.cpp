@@ -264,6 +264,47 @@ QMsgSql::init_schema(const DwString& schema_name)
         sql_simple("pragma user_version = 1;");
         sql_commit_transaction();
     }
+
+    // vague info instead of complete info
+    res = sql_simple("pragma user_version");
+    if((int)res[0][0] == 1)
+    {
+        sql_start_transaction();
+        sql_simple("create table if not exists main.newgi ("
+                   "date integer,"
+                   "mid text not null primary key on conflict ignore,"
+                   "is_sent,"
+                   "is_forwarded,"
+                   "is_no_forward,"
+                   "is_file,"
+                   "special_type,"
+                   "has_attachment,"
+                   "att_has_video,"
+                   "att_has_audio,"
+                   "att_is_short_video,"
+                   "logical_clock,"
+                   "assoc_uid text not null,"
+                   "from_group,"
+                   "is_local,"
+                   "barf_dont_use)"
+                   );
+        sql_simple("insert into newgi select * from gi where rowid in (select max(rowid) from gi group by mid)");
+        sql_simple("drop trigger if exists xgi");
+        sql_simple("drop trigger if exists dgi");
+        sql_simple("drop table main.gi");
+        sql_simple("alter table newgi rename to gi");
+
+        sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
+        sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock desc)");
+        sql_simple("create index if not exists gidate_idx on gi(date desc)");
+        sql_simple("create index if not exists gisent_idx on gi(is_sent)");
+        sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
+        sql_simple("create index if not exists gifrom_group on gi(from_group)");
+
+        sql_simple("pragma user_version = 2");
+        sql_commit_transaction();
+    }
+
     sql_simple("create index if not exists gi_uid_date on gi(assoc_uid, date)");
     sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
     sql_commit_transaction();

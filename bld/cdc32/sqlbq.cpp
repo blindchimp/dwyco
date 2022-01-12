@@ -235,7 +235,8 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         }
         break;
         default:
-            //oopanic(sqlite3_errmsg(dbs));
+            const char *volatile a = sqlite3_errmsg(dbs);
+
             sqlite3_finalize(st);
             return vcnil;
         }
