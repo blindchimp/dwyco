@@ -320,7 +320,12 @@ void
 MMChannel::process_iupdate(vc cmd)
 {
     //GRTLOGVC(cmd);
-    import_remote_iupdate(remote_uid(), cmd[1]);
+    vc mid = import_remote_iupdate(remote_uid(), cmd[1]);
+    // this is the piecemeal restart of an assert
+    if(!mid.is_nil() && pulls::set_pull_in_progress(mid, remote_uid()))
+    {
+        send_pull(mid, PULLPRI_NORMAL);
+    }
 }
 
 void
@@ -390,6 +395,9 @@ MMChannel::mms_sync_state_changed(enum syncstate s)
     }
 }
 
+// note: when the mmr_sync_state changes to "NORMAL_RECV" we have
+// processed the remote client's index and merged it with our index,
+// so anything that depends on that is good to do here.
 void
 MMChannel::mmr_sync_state_changed(enum syncstate s)
 {

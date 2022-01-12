@@ -736,7 +736,7 @@ import_remote_mi(vc remote_uid)
     return ret;
 }
 
-void
+vc
 import_remote_iupdate(vc remote_uid, vc vals)
 {
     vc huid = to_hex(remote_uid);
@@ -772,8 +772,11 @@ import_remote_iupdate(vc remote_uid, vc vals)
                 a.append(vals[i]);
             sql_bulk_query(&a);
             boost_logical_clock();
-            // vals[12] is the assoc_uid field in gi, ugh, fix this
+            // vals[12] is the assoc_uid field in msg_idx, ugh, fix this
             uid = vals[12];
+            mid = vals[1];
+            // note: in this case, we should find any asserted pulls for this
+            // mid/uid and reissue the pull
         }
         else if(op == vc("d"))
         {
@@ -795,14 +798,21 @@ import_remote_iupdate(vc remote_uid, vc vals)
         {
             trash_body(from_hex(uid), mid, 1);
         }
+
         if(!uid.is_nil())
         {
             msg_idx_updated(from_hex(uid), 0);
         }
+        if(op == vc("a") && !mid.is_nil())
+        {
+            return mid;
+        }
+        return vcnil;
     }
     catch(...)
     {
         sql_rollback_transaction();
+        return vcnil;
     }
 #if 0
     sDb->detach("mi2");
