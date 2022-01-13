@@ -161,6 +161,17 @@ QMsgSql::init_schema(const DwString& schema_name)
     if(schema_name.eq("main"))
     {
         sql_start_transaction();
+        {
+            // note: do something sensible here, this just keeps
+            // us from mistakenly running on a database we have
+            // upgraded during debugging.remove this once
+            // experiments are merged.
+            vc res = sql_simple("pragma user_version");
+            if((int)res[0][0] > 1)
+            {
+                oopanic("incompatible schema");
+            }
+        }
     sql_simple("pragma recursive_triggers=1");
     // WARNING: the order and number of the fields in this table
     // is the same as the #defines for the msg index in
