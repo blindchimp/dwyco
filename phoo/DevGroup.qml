@@ -286,10 +286,14 @@ Page {
                     }
                     }
 
-                    ProgressBar {
-                        from: 0
-                        to: 100
-                        value: percent_synced
+//                    ProgressBar {
+//                        from: 0
+//                        to: 100
+//                        value: percent_synced
+//                        Layout.preferredWidth: cm(2)
+//                    }
+                    Label {
+                        text: asserts + " " + sendq_count
                         Layout.preferredWidth: cm(2)
                     }
 

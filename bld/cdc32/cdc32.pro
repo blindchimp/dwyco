@@ -46,7 +46,7 @@ CONFIG(debug,debug|release) {
 android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
 DEFINES += DWYCO_SYNC_DEBUG
 DEFINES += DWYCO_DBG_CHECK_SQL
-DEFINES += DWYCO_BACKGROUND_SYNC
+#DEFINES += DWYCO_BACKGROUND_SYNC
 message("DEBUG cdc32")
 } else {
 message("release build")
