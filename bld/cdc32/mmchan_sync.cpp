@@ -215,7 +215,10 @@ void
 MMChannel::pull_done(vc mid, vc remote_uid, vc success)
 {
     if(success.is_nil())
+    {
         pulls::pull_failed(mid, remote_uid);
+        add_pull_failed(mid, remote_uid);
+    }
     else
     {
         // if the pull succeeded, cancel all the
@@ -226,6 +229,7 @@ MMChannel::pull_done(vc mid, vc remote_uid, vc success)
         {
             cl[i]->sync_sendq.del_pull(mid);
         }
+        clean_pull_failed_mid(mid);
     }
 }
 
@@ -407,6 +411,7 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
     if(s == NORMAL_RECV)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
+        clean_pull_failed_uid(remote_uid());
         if((int)get_settings_value("sync/eager") == 1)
         {
             assert_eager_pulls();

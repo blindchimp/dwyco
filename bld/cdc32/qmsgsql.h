@@ -90,6 +90,10 @@ int map_is_mapped(vc uid);
 vc map_to_representative_uid(vc uid);
 void refetch_pk(int online);
 
+void add_pull_failed(vc mid, vc uid);
+void clean_pull_failed_mid(vc mid);
+void clean_pull_failed_uid(vc uid);
+
 extern DwString Schema_version_hack;
 
 }

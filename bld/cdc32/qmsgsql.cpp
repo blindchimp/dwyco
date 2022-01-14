@@ -307,6 +307,7 @@ QMsgSql::init_schema(const DwString& schema_name)
 
     sql_simple("create index if not exists gi_uid_date on gi(assoc_uid, date)");
     sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
+    sql_simple("create temp table pull_failed(mid not null, uid not null, unique(mid, uid) on conflict ignore)");
     sql_commit_transaction();
     }
     else if(schema_name.eq("mt"))
@@ -314,6 +315,26 @@ QMsgSql::init_schema(const DwString& schema_name)
 		init_schema_fav();
 	}
 
+}
+
+void
+add_pull_failed(vc mid, vc uid)
+{
+    vc huid = to_hex(uid);
+    sql_simple("insert into pull_failed(mid, uid) values(?1, ?2)", mid, huid);
+}
+
+void
+clean_pull_failed_mid(vc mid)
+{
+    sql_simple("delete from pull_failed where mid = ?1", mid);
+}
+
+void
+clean_pull_failed_uid(vc uid)
+{
+    vc huid = to_hex(uid);
+    sql_simple("delete from pull_failed where uid = ?1", huid);
 }
 
 vc
@@ -1837,7 +1858,8 @@ sql_get_non_local_messages_at_uid(vc uid, int max_count)
     try
     {
         sql_start_transaction();
-        vc res = sql_simple("select mid from gi where from_client_uid = ?1 "
+        vc res = sql_simple("select mid from gi where "
+"not exists(select 1 from pull_failed where gi.mid = mid and uid = ?1) "
                    "and not exists (select 1 from msg_idx where gi.mid = mid)"
                             "and not exists (select 1 from msg_tomb where gi.mid = mid) limit ?2",
                             huid, max_count);
