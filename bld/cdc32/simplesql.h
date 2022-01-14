@@ -9,6 +9,8 @@ struct sqlite3;
 
 namespace dwyco {
 
+// note: this base class provides NO schema initialization by default.
+// this is useful if you  know the database already has some schema.
 class SimpleSql
 {
 

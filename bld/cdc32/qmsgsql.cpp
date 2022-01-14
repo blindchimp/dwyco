@@ -307,7 +307,8 @@ QMsgSql::init_schema(const DwString& schema_name)
 
     sql_simple("create index if not exists gi_uid_date on gi(assoc_uid, date)");
     sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
-    sql_simple("create temp table pull_failed(mid not null, uid not null, unique(mid, uid) on conflict ignore)");
+    sql_simple("drop table if exists pull_failed");
+    sql_simple("create table if not exists pull_failed(mid not null, uid not null, unique(mid, uid) on conflict ignore)");
     sql_commit_transaction();
     }
     else if(schema_name.eq("mt"))
