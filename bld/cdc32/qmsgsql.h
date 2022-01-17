@@ -64,6 +64,7 @@ bool sql_exists_valid_tag(vc tag);
 int sql_count_valid_tag(vc tag);
 int sql_is_mid_local(vc mid);
 int sql_is_mid_anywhere(vc mid);
+int sql_mid_has_tombstone(vc mid);
 int import_remote_mi(vc remote_uid);
 vc sql_find_who_has_mid(vc mid);
 

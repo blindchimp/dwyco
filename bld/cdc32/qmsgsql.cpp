@@ -1158,6 +1158,15 @@ sql_is_mid_anywhere(vc mid)
     return 1;
 }
 
+int
+sql_mid_has_tombstone(vc mid)
+{
+    vc res = sql_simple("select 1 from msg_tomb where mid = ?1", mid);
+    if(res.num_elems() == 0)
+        return 0;
+    return 1;
+}
+
 // we're folding uid's together that appear to be in a group.
 // if that group is the one we're in now, don't fold. this gives
 // us a chance to send messages between our devices (dunno about this.)

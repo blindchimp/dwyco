@@ -2068,11 +2068,15 @@ query_done(vc m, void *, vc, ValidPtr)
         // needs to have its own lc
         vc mid = v[QM_ID];
         // if we have already fetched the message and it is local, just
-        // ack it automatically do we don't keep refetching it.
+        // ack it automatically so we don't keep refetching it.
         if(sql_is_mid_local(mid))
         {
             dirth_send_ack_get2(My_UID, mid, QckDone(0, 0));
             continue;
+        }
+        if(sql_mid_has_tombstone(mid))
+        {
+            dirth_send_ack_get(My_UID, mid, QckDone(0, 0));
         }
         if(!Mid_to_logical_clock.contains(mid))
         {
