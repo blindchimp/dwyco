@@ -758,18 +758,12 @@ import_remote_mi(vc remote_uid)
     return ret;
 }
 
+// returns the mid of any added index update so pulls can
+// be re-started by the caller
 vc
 import_remote_iupdate(vc remote_uid, vc vals)
 {
     vc huid = to_hex(remote_uid);
-    // this was mostly for debugging
-#if 0
-    DwString fn = DwString("mi%1.sql").arg((const char *)huid);
-    DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
-
-    sDb->attach(fn, "mi2");
-    sDb->attach(favfn, "fav2");
-#endif
 
     try
     {
@@ -780,39 +774,45 @@ import_remote_iupdate(vc remote_uid, vc vals)
         vc op = vals.remove_last();
         vc uid;
         vc mid;
+        bool index_changed = false;
         if(op == vc("a"))
         {
             // note: we wouldn't be getting this update unless the remote side
-            // had the msg stored locally
+            // had the msg stored locally. note that this isn't propagated
+            // like the deletes below. we set this local flag, even though it isn't
+            // used anywhere. but maybe it can be a hint if we put it in another
+            // table at some point.
             vals.append(1);
             vals.append(huid);
             DwString sargs = make_sql_args(vals.num_elems());
             VCArglist a;
             a.set_size(vals.num_elems() + 1);
-            a.append(DwString("insert or ignore into main.gi values(%1)").arg(sargs).c_str());
+            a.append(DwString("insert or ignore into main.gi values(%1) returning 1").arg(sargs).c_str());
             for(int i = 0; i < vals.num_elems(); ++i)
                 a.append(vals[i]);
-            sql_bulk_query(&a);
+            vc res = sql_bulk_query(&a);
+            if(res.num_elems() > 0)
+                index_changed = true;
             boost_logical_clock();
             // vals[12] is the assoc_uid field in msg_idx, ugh, fix this
             uid = vals[12];
             mid = vals[1];
-            // note: in this case, we should find any asserted pulls for this
-            // mid/uid and reissue the pull
         }
         else if(op == vc("d"))
         {
             mid = vals[0];
             uid = sql_get_uid_from_mid(mid);
-            sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
-#if 0
-            sql_simple("delete from mi2.msg_idx where mid = ?1", mid);
-#endif
-            sql_simple("delete from gi where mid = ?1", mid);
-            // NOTE: if the transaction completes, need to delete the file too
-            // NOTE2: this doesn't do anything to the tags that might reference the msg,
-            // tho they could probably be nuked. there is no reason to do it
-            // immediately and incur the extra costs. might have to look into this
+            //sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
+            //sql_simple("delete from gi where mid = ?1", mid);
+            // note: doing it this way causes log entries to be created by triggers
+            // which might lead to storms of propagated deletes in completely
+            // connected clusters. it might make sense to just remove all but one
+            // of the current_clients so that the updates propagate around to one
+            // client at a time.
+            vc res1 = sql_simple("delete from msg_idx where mid = ?1 returning 1", mid);
+            vc res2 = sql_simple("delete from gmt where mid = ?1 returning 1", mid);
+            if(res1.num_elems() > 0 || res2.num_elems() > 0)
+                index_changed = true;
         }
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
@@ -820,8 +820,7 @@ import_remote_iupdate(vc remote_uid, vc vals)
         {
             trash_body(from_hex(uid), mid, 1);
         }
-
-        if(!uid.is_nil())
+        if(index_changed && !uid.is_nil())
         {
             msg_idx_updated(from_hex(uid), 0);
         }
@@ -836,10 +835,6 @@ import_remote_iupdate(vc remote_uid, vc vals)
         sql_rollback_transaction();
         return vcnil;
     }
-#if 0
-    sDb->detach("mi2");
-    sDb->detach("fav2");
-#endif
 }
 
 void
