@@ -615,7 +615,6 @@ MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
             {
                 // firewall friendly case, v[2] is
                 // session id we are with.
-                MMChannel *newchan = new MMChannel;
                 int sid = (long)rvc[2];
                 MMChannel *pmc = get_channel_by_session_id(sid);
                 if(!pmc)
@@ -628,7 +627,7 @@ MMChannel::get_what_to_do(int subchan, sproto *p, const char *ev)
                                        tube->get_decrypt_chan(subchan), nc);
                 tube->set_channel(0, 0, 0, subchan);
 
-
+                MMChannel *newchan = new MMChannel;
                 newchan->remote_cfg = pmc->remote_cfg;
                 // this is horrifying, two channels referencing the same tube
                 newchan->tube = pmc->tube;
