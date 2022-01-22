@@ -309,6 +309,13 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
     sql_simple("drop table if exists pull_failed");
     sql_simple("create table if not exists pull_failed(mid not null, uid not null, unique(mid, uid) on conflict ignore)");
+    res = sql_simple("pragma user_version");
+    if((int)res[0][0] == 2)
+    {
+        sql_start_transaction();
+        sql_simple("create table if not exists deltas(from_client_uid primary key text not null, delta_id integer not null, on conflict replace)");
+        sql_commit_transaction();
+    }
     sql_commit_transaction();
     }
     else if(schema_name.eq("mt"))
@@ -336,6 +343,22 @@ clean_pull_failed_uid(vc uid)
 {
     vc huid = to_hex(uid);
     sql_simple("delete from pull_failed where uid = ?1", huid);
+}
+
+vc
+get_delta_id(vc uid)
+{
+    vc huid = to_hex(uid);
+    vc res = sql_simple("select delta_id from deltas where from_client_uid = ?1", huid);
+    if(res.num_elems() == 0)
+        return vcnil;
+    return res[0][0];
+}
+
+bool
+generate_delta(vc delta_id)
+{
+
 }
 
 vc

@@ -152,6 +152,9 @@ MMChannel::unpack_index(vc cmd)
 {
     if(cmd[0] != vc("idx"))
         return 0;
+    // deltas are coming as normal updates
+    if(cmd[1].is_nil())
+        return 1;
 
     vc huid = to_hex(remote_uid());
     GRTLOG("unpack from %s", (const char *)huid, 0);
@@ -462,6 +465,21 @@ MMChannel::process_outgoing_sync()
 {
     if(mms_sync_state == MMSS_ERR)
         return 0;
+    if(mms_sync_state == SEND_DELTA_OK)
+    {
+        // generate delta created entries on the midlog that can get sent
+        // normally without requiring a re-init on the receiver. so we
+        // transition straight into NORMAL state.
+        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+        // tell the other side there is no index to unpack
+        vc vcx(VC_VECTOR);
+        vcx[0] = "idx";
+        vcx[1] = vcnil;
+        sync_sendq.append(vcx, PULLPRI_INIT);
+        mms_sync_state = NORMAL_SEND;
+        return 1;
+    }
+
     if(!tube->can_write_data(msync_chan))
     {
         return 0;
