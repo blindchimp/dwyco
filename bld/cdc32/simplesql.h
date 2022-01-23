@@ -42,7 +42,7 @@ public:
     void attach(const DwString& dbname, const DwString& schema_name);
     void detach(const DwString& schema_name);
 
-    int init();
+    int init(int flags = -1);
     void exit();
     void start_transaction();
     void commit_transaction();

@@ -530,7 +530,7 @@ MMChannel::wait_for_delta(int subchan, sproto *p, const char *ev)
         return sproto::fail;
     }
     mmr_sync_state = RECV_INIT;
-    if(rvc[1].is_nil() || !generate_delta(rvc[1]))
+    if(rvc[1].is_nil() || !generate_delta(remote_uid(), rvc[1]))
     {
         // couldn't generate a delta, just tell it to send a full index
         mms_sync_state = SEND_INIT;

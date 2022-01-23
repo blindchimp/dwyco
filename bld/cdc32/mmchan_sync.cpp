@@ -117,7 +117,7 @@ vc
 MMChannel::package_index()
 {
     vc fn;
-    vc fn2;
+    //vc fn2;
 
     try
     {
@@ -133,10 +133,16 @@ MMChannel::package_index()
     cmd[0] = "idx";
     cmd[1] = file_to_string((const char *)fn);
     //cmd[2] = file_to_string((const char *)fn2);
-    remove((const char *)fn);
+    //remove((const char *)fn);
     //remove((const char *)fn2);
+    vc huid = to_hex(remote_uid());
+    DwString mfn = DwString("minew%1.sql").arg((const char *)huid);
+    mfn = newfn(mfn);
+    if(!move_replace((const char *)fn, mfn))
+        return vcnil;
     if(cmd[1].is_nil() /*|| cmd[2].is_nil()*/)
         return vcnil;
+    create_dump_indexes(mfn);
     return cmd;
 }
 
@@ -159,16 +165,16 @@ MMChannel::unpack_index(vc cmd)
     vc huid = to_hex(remote_uid());
     GRTLOG("unpack from %s", (const char *)huid, 0);
     DwString mifn("mi%1.sql");
-    DwString favfn("fav%1.sql");
+    //DwString favfn("fav%1.sql");
 
     mifn.arg((const char *)huid);
-    favfn.arg((const char *)huid);
+    //favfn.arg((const char *)huid);
     mifn = newfn(mifn);
-    favfn = newfn(favfn);
+    //favfn = newfn(favfn);
     if(!string_to_file(cmd[1], mifn))
         return 0;
-    if(!string_to_file(cmd[2], favfn))
-        return 0;
+    //if(!string_to_file(cmd[2], favfn))
+    //    return 0;
     if(!import_remote_mi(remote_uid()))
         return 0;
     return 1;

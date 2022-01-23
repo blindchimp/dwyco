@@ -48,11 +48,17 @@ SimpleSql::set_busy_timeout(int ms)
 }
 
 int
-SimpleSql::init()
+SimpleSql::init(int flags)
 {
     if(Db)
         oopanic("already init");
-    if(sqlite3_open(newfn(dbnames[0]).c_str(), &Db) != SQLITE_OK)
+    // note: i did it this way to avoid having to include sqlite.h in simplesql.h
+    // this assumes that flags == -1 is invalid for sqlite, which is a stretch, but
+    // probably ok. the alternative is to just let the sqlite api leak thru a bit
+    // more in the header.
+    if(flags == -1)
+        flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+    if(sqlite3_open_v2(newfn(dbnames[0]).c_str(), &Db, flags, 0) != SQLITE_OK)
     {
         Db = 0;
         return 0;
