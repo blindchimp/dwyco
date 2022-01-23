@@ -122,7 +122,7 @@ MMChannel::package_index()
     try
     {
         fn = sql_dump_mi();
-        fn2 = sql_dump_mt();
+        //fn2 = sql_dump_mt();
     }
     catch(...)
     {
@@ -132,10 +132,10 @@ MMChannel::package_index()
     vc cmd(VC_VECTOR);
     cmd[0] = "idx";
     cmd[1] = file_to_string((const char *)fn);
-    cmd[2] = file_to_string((const char *)fn2);
+    //cmd[2] = file_to_string((const char *)fn2);
     remove((const char *)fn);
-    remove((const char *)fn2);
-    if(cmd[1].is_nil() || cmd[2].is_nil())
+    //remove((const char *)fn2);
+    if(cmd[1].is_nil() /*|| cmd[2].is_nil()*/)
         return vcnil;
     return cmd;
 }

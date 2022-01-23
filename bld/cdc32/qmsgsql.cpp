@@ -374,6 +374,7 @@ sql_dump_mi()
     s.set_busy_timeout(10 * 1000);
     s.check_txn = 1;
 #endif
+    s.attach("fav.sql", "mt");
     s.attach(fn, "dump");
     s.start_transaction();
     s.sql_simple("create table dump.msg_idx ("
@@ -401,12 +402,29 @@ sql_dump_mi()
 
     s.sql_simple("create table dump.msg_tomb (mid, time)");
     s.sql_simple("insert into dump.msg_tomb select * from main.msg_tomb");
+
+    // tags
+    s.sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase)");
+    s.sql_simple("create table dump.tomb (guid text not null collate nocase, time integer)");
+    // note: we only send "user generated" tags. also some tags are completely local, like "unviewed" and "remote" which we
+    // don't really want to send at all.
+    s.sql_simple("insert into dump.msg_tags2 select "
+               "mid, "
+               "tag, "
+               "time, "
+               "guid "
+               "from mt.gmt where tag in (select * from mt.static_crdt_tags)");
+    s.sql_simple("insert into dump.tomb select * from mt.gtomb");
+    //
+    s.sql_simple("create table id(delta_id text)");
+    s.sql_simple("insert into id values(lower(hex(randomblob(8))))");
     s.commit_transaction();
     s.detach("dump");
     s.exit();
     return fn.c_str();
 }
 
+#if 0
 vc
 sql_dump_mt()
 {
@@ -422,8 +440,8 @@ sql_dump_mt()
 #endif
     s.attach(fn, "dump");
     s.start_transaction();
-    s.sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore)");
-    s.sql_simple("create table dump.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
+    s.sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase)");
+    s.sql_simple("create table dump.tomb (guid text not null collate nocase, time integer)");
     // note: we only send "user generated" tags. also some tags are completely local, like "unviewed" and "remote" which we
     // don't really want to send at all.
     s.sql_simple("insert into dump.msg_tags2 select "
@@ -439,6 +457,7 @@ sql_dump_mt()
     return fn.c_str();
 
 }
+#endif
 
 static
 DwString
