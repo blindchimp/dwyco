@@ -372,6 +372,14 @@ generate_delta(vc uid, vc delta_id)
     // ok, here is where we find the list of mid's that have been updated, and create
     // explicit midlog entries that will get sent down normally after the connection
     // is set up and rolling.
+    // note: this technique has a  lot of problem since i am not trying to integrate
+    // piecemeal updates from normal operations into these things. so what will happen
+    // is that a bunch of updates will get done while two things are connected normally
+    // and then those updates will be replayed on the next reconnect. not a disaster, but
+    // not what we want either. which makes me wonder if it might not be better to just
+    // not try to stay connected all the time. will have to think about this, as it seems
+    // like it might be reasonable for a chat app not to have the latest info necessarily
+    // while it is in the background all the time.
 
     try
     {
@@ -380,21 +388,37 @@ generate_delta(vc uid, vc delta_id)
         if(did.num_elems() != 1 || did[0][0] != delta_id)
             throw -1;
         vc r1 = s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
-                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning 1", huid);
+                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning mid", huid);
+        // just insert some dummy rows, since we know that we will never be resending this
+        // index database again. if the delta_ids don't match, this gets recreated from scratch
+        for(int i = 0; i < r1.num_elems(); ++i)
+        {
+            s.sql_simple("insert into main.msg_idx(mid) values(?1)", r1[i][0]);
+        }
         vc r2 = s.sql_simple("with newmids(mid) as (select mid from mi.msg_tomb where mid not in (select mid from main.msg_tomb)) "
-                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'd' from newmids returning 1", huid);
+                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'd' from newmids returning mid", huid);
+        for(int i = 0; i < r2.num_elems(); ++i)
+        {
+            s.sql_simple("insert into main.msg_tomb(mid) values(?1)", r2[i][0]);
+        }
         // tags
         vc r3 = s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
                      "guid not in (select guid from main.msg_tags2)) "
-                     "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning 1", huid);
+                     "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning guid", huid);
+        for(int i = 0; i < r3.num_elems(); ++i)
+        {
+            s.sql_simple("insert into main.msg_tags2(guid) values(?1)", r3[i][0]);
+        }
         // ok, here is a minor problem: we don't have the actual tag or mid in the dump, just the guid
         // so for now i'll just set the tag to the empty string, and figure it out later. the only
         // reason we were transmitting the mid and tag in this case was for display purposes ("we deleted
         // such and such a tag, here is what we have to update in the UI")
         vc r4 = s.sql_simple("with newguids(guid) as (select guid from mt.gtomb where guid not in (select guid from main.tomb)) "
-                     "insert into taglog(mid, tag, guid, to_uid, op) select '', '', guid, ?1, 'd' from newguids returning 1", huid);
-
-        // NOTE: need to integrate the results into the snapshot we have set up
+                     "insert into taglog(mid, tag, guid, to_uid, op) select '', '', guid, ?1, 'd' from newguids returning guid", huid);
+        for(int i = 0; i < r4.num_elems(); ++i)
+        {
+            s.sql_simple("insert into main.tomb(guid) values(?1)", r4[i][0]);
+        }
 
         if(r1.num_elems() > 0 || r2.num_elems() > 0 || r3.num_elems() > 0 || r4.num_elems() > 0)
         {
