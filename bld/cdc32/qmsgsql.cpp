@@ -399,7 +399,7 @@ generate_delta(vc uid, vc delta_id)
         if(r1.num_elems() > 0 || r2.num_elems() > 0 || r3.num_elems() > 0 || r4.num_elems() > 0)
         {
             vc new_delta_id = s.sql_simple("update id set delta_id = lower(hex(randomblob(8))) returning delta_id");
-            s.sql_simple("insert into taglog(guid, op) values(?1, 's')", new_delta_id[0][0]);
+            s.sql_simple("insert into taglog(mid, tag, to_uid, guid, op) values('', '', ?1, ?2, 's')", huid, new_delta_id[0][0]);
         }
         s.commit_transaction();
     }
