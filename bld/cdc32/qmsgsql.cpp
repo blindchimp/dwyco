@@ -379,22 +379,28 @@ generate_delta(vc uid, vc delta_id)
         vc did = s.sql_simple("select delta_id from id");
         if(did.num_elems() != 1 || did[0][0] != delta_id)
             throw -1;
-        s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
-                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids", huid);
-        s.sql_simple("with newmids(mid) as (select mid from mi.msg_tomb where mid not in (select mid from main.msg_tomb)) "
-                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'd' from newmids", huid);
+        vc r1 = s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
+                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning 1", huid);
+        vc r2 = s.sql_simple("with newmids(mid) as (select mid from mi.msg_tomb where mid not in (select mid from main.msg_tomb)) "
+                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'd' from newmids returning 1", huid);
         // tags
-        s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.msg_tags2 where guid not in (select guid from main.msg_tags2)) "
-                     "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids", huid);
+        vc r3 = s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
+                     "guid not in (select guid from main.msg_tags2)) "
+                     "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning 1", huid);
         // ok, here is a minor problem: we don't have the actual tag or mid in the dump, just the guid
         // so for now i'll just set the tag to the empty string, and figure it out later. the only
         // reason we were transmitting the mid and tag in this case was for display purposes ("we deleted
         // such and such a tag, here is what we have to update in the UI")
-        s.sql_simple("with newguids(guid) as (select guid from mt.gtomb where guid not in (select guid from main.tomb)) "
-                     "insert into taglog(mid, tag, guid, to_uid, op) select '', '', guid, ?1, 'd' from newguids", huid);
+        vc r4 = s.sql_simple("with newguids(guid) as (select guid from mt.gtomb where guid not in (select guid from main.tomb)) "
+                     "insert into taglog(mid, tag, guid, to_uid, op) select '', '', guid, ?1, 'd' from newguids returning 1", huid);
 
-        vc new_delta_id = s.sql_simple("update id set delta_id = lower(hex(randomblob(8))) returning delta_id");
-        s.sql_simple("insert into taglog(guid, op) values(?1, 's')", new_delta_id[0][0]);
+        // NOTE: need to integrate the results into the snapshot we have set up
+
+        if(r1.num_elems() > 0 || r2.num_elems() > 0 || r3.num_elems() > 0 || r4.num_elems() > 0)
+        {
+            vc new_delta_id = s.sql_simple("update id set delta_id = lower(hex(randomblob(8))) returning delta_id");
+            s.sql_simple("insert into taglog(guid, op) values(?1, 's')", new_delta_id[0][0]);
+        }
         s.commit_transaction();
     }
     catch (...)
@@ -582,7 +588,7 @@ package_downstream_sends(vc remote_uid)
         // the reason we order by rowid here is we want to apply the one that is
         // last in the log (in the odd case that multiple syncs are in the log
         // which is really something that "can't happen")
-        vc sync = sql_simple("select guid from taglog from mt.taglog where to_uid = ?1 and op = 's' order by rowid desc limit 1", huid);
+        vc sync = sql_simple("select guid from mt.taglog where to_uid = ?1 and op = 's' order by rowid desc limit 1", huid);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || sync.num_elems() > 0)
             GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d sync %d", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), sync.num_elems());
         sql_simple("delete from midlog where to_uid = ?1", huid);
@@ -961,6 +967,22 @@ import_remote_iupdate(vc remote_uid, vc vals)
     {
         sql_rollback_transaction();
         return vcnil;
+    }
+}
+
+void
+import_new_syncpoint(vc remote_uid, vc delta_id)
+{
+    vc huid = to_hex(remote_uid);
+    try
+    {
+        sql_start_transaction();
+        sql_simple("insert into deltas(from_client_uid, delta_id) values(?1, ?2)", huid, delta_id);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
     }
 }
 

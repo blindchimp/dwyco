@@ -349,6 +349,12 @@ MMChannel::process_tupdate(vc cmd)
 }
 
 void
+MMChannel::process_syncpoint(vc cmd)
+{
+    import_new_syncpoint(remote_uid(), cmd[1]);
+}
+
+void
 MMChannel::send_pull(vc mid, int pri)
 {
     vc cmd(VC_VECTOR);
@@ -646,6 +652,10 @@ MMChannel::process_incoming_sync()
             else if(cmd == vc("tupdate"))
             {
                 process_tupdate(rvc);
+            }
+            else if(cmd == vc("sync"))
+            {
+                process_syncpoint(rvc);
             }
         }
         return 1;

@@ -98,6 +98,7 @@ void clean_pull_failed_uid(vc uid);
 vc get_delta_id(vc uid);
 bool generate_delta(vc uid, vc delta_id);
 void create_dump_indexes(const DwString& fn);
+void import_new_syncpoint(vc remote_uid, vc delta_id);
 
 extern DwString Schema_version_hack;
 
