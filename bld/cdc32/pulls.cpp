@@ -119,7 +119,16 @@ DwVecP<pulls>
 pulls::get_stalled_pulls(const vc &uid)
 {
 #if 1
+    // any pull with a uid of nil means "any uid", so we assert pulls
+    // based on that, since this is called at the time we are first
+    // connecting to a client
+    auto wildcards = pulls::Qbm.query_by_member(vcnil, &pulls::mid);
+    for(int i = 0; i < wildcards.num_elems(); ++i)
+    {
+        assert_pull(wildcards[i]->mid, uid, wildcards[i]->pri);
+    }
     DwVecP<pulls> dm = pulls::Qbm.query_by_member(uid, &pulls::uid);
+
     return dm;
 #endif
 //    DwTreeKazIter<int, pulls *> i(&inp_set);

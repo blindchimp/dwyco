@@ -393,7 +393,7 @@ generate_delta(vc uid, vc delta_id)
         // index database again. if the delta_ids don't match, this gets recreated from scratch
         for(int i = 0; i < r1.num_elems(); ++i)
         {
-            s.sql_simple("insert into main.msg_idx(mid) values(?1)", r1[i][0]);
+            s.sql_simple("insert into main.msg_idx(mid, assoc_uid) values(?1, '')", r1[i][0]);
         }
         vc r2 = s.sql_simple("with newmids(mid) as (select mid from mi.msg_tomb where mid not in (select mid from main.msg_tomb)) "
                      "insert into midlog(mid, to_uid, op) select mid, ?1, 'd' from newmids returning mid", huid);
@@ -424,12 +424,18 @@ generate_delta(vc uid, vc delta_id)
         {
             vc new_delta_id = s.sql_simple("update id set delta_id = lower(hex(randomblob(8))) returning delta_id");
             s.sql_simple("insert into taglog(mid, tag, to_uid, guid, op) values('', '', ?1, ?2, 's')", huid, new_delta_id[0][0]);
+            GRTLOG("new delta id for %s %d", (const char *)huid, r1.num_elems() + r2.num_elems() + r3.num_elems() + r4.num_elems());
+        }
+        else
+        {
+            GRTLOG("no delta for %s", (const char *)huid, 0);
         }
         s.commit_transaction();
     }
     catch (...)
     {
         s.rollback_transaction();
+        GRTLOG("delta gen failed to %s", (const char *)huid, 0);
         return false;
     }
     return true;
