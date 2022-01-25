@@ -519,40 +519,6 @@ create_dump_indexes(const DwString& fn)
     }
 }
 
-#if 0
-vc
-sql_dump_mt()
-{
-    DwString fn = gen_random_filename();
-    fn += ".tmp";
-    fn = newfn(fn);
-    SimpleSql s("fav.sql");
-    if(!s.init())
-        oopanic("can't dump tags");
-#ifdef DWYCO_BACKGROUND_SYNC
-    s.set_busy_timeout(10 * 1000);
-    s.check_txn = 1;
-#endif
-    s.attach(fn, "dump");
-    s.start_transaction();
-    s.sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase)");
-    s.sql_simple("create table dump.tomb (guid text not null collate nocase, time integer)");
-    // note: we only send "user generated" tags. also some tags are completely local, like "unviewed" and "remote" which we
-    // don't really want to send at all.
-    s.sql_simple("insert into dump.msg_tags2 select "
-               "mid, "
-               "tag, "
-               "time, "
-               "guid "
-               "from main.gmt where tag in (select * from main.static_crdt_tags)");
-    s.sql_simple("insert into dump.tomb select * from main.gtomb");
-    s.commit_transaction();
-    s.detach("dump");
-    s.exit();
-    return fn.c_str();
-
-}
-#endif
 
 static
 DwString
@@ -826,7 +792,7 @@ import_remote_mi(vc remote_uid)
 #endif
     s.attach("fav.sql", "mt");
     s.attach(fn, "mi2");
-    //s.attach(favfn, "fav2");
+
     int ret = 1;
     try
     {
@@ -910,7 +876,7 @@ import_remote_mi(vc remote_uid)
     }
 
     s.detach("mi2");
-    //s.detach("fav2");
+
     s.exit();
     return ret;
 }
