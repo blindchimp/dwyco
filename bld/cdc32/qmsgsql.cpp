@@ -309,6 +309,14 @@ QMsgSql::init_schema(const DwString& schema_name)
     sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
     sql_simple("drop table if exists pull_failed");
     sql_simple("create table if not exists pull_failed(mid not null, uid not null, unique(mid, uid) on conflict ignore)");
+    res = sql_simple("pragma user_version");
+    if((int)res[0][0] == 2)
+    {
+        sql_start_transaction();
+        sql_simple("create table if not exists deltas(from_client_uid text not null primary key on conflict replace, delta_id text not null)");
+        sql_simple("pragma user_version = 3");
+        sql_commit_transaction();
+    }
     sql_commit_transaction();
     }
     else if(schema_name.eq("mt"))
@@ -339,6 +347,101 @@ clean_pull_failed_uid(vc uid)
 }
 
 vc
+get_delta_id(vc uid)
+{
+    vc huid = to_hex(uid);
+    vc res = sql_simple("select delta_id from deltas where from_client_uid = ?1", huid);
+    if(res.num_elems() == 0)
+        return vcnil;
+    return res[0][0];
+}
+
+bool
+generate_delta(vc uid, vc delta_id)
+{
+    vc huid = to_hex(uid);
+    DwString dbfn = DwString("minew%1.sql").arg((const char *)huid);
+    dbfn = newfn(dbfn);
+    SimpleSql s(dbfn);
+    if(!s.init(SQLITE_OPEN_READWRITE))
+        return false;
+
+    s.attach("mi.sql", "mi");
+    s.attach("fav.sql", "mt");
+
+    // ok, here is where we find the list of mid's that have been updated, and create
+    // explicit midlog entries that will get sent down normally after the connection
+    // is set up and rolling.
+    // note: this technique has a  lot of problem since i am not trying to integrate
+    // piecemeal updates from normal operations into these things. so what will happen
+    // is that a bunch of updates will get done while two things are connected normally
+    // and then those updates will be replayed on the next reconnect. not a disaster, but
+    // not what we want either. which makes me wonder if it might not be better to just
+    // not try to stay connected all the time. will have to think about this, as it seems
+    // like it might be reasonable for a chat app not to have the latest info necessarily
+    // while it is in the background all the time.
+
+    try
+    {
+        s.start_transaction();
+        vc did = s.sql_simple("select delta_id from id");
+        if(did.num_elems() != 1 || did[0][0] != delta_id)
+            throw -1;
+        vc r1 = s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
+                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning mid", huid);
+        // just insert some dummy rows, since we know that we will never be resending this
+        // index database again. if the delta_ids don't match, this gets recreated from scratch
+        for(int i = 0; i < r1.num_elems(); ++i)
+        {
+            s.sql_simple("insert into main.msg_idx(mid, assoc_uid) values(?1, '')", r1[i][0]);
+        }
+        vc r2 = s.sql_simple("with newmids(mid) as (select mid from mi.msg_tomb where mid not in (select mid from main.msg_tomb)) "
+                     "insert into midlog(mid, to_uid, op) select mid, ?1, 'd' from newmids returning mid", huid);
+        for(int i = 0; i < r2.num_elems(); ++i)
+        {
+            s.sql_simple("insert into main.msg_tomb(mid) values(?1)", r2[i][0]);
+        }
+        // tags
+        vc r3 = s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
+                     "guid not in (select guid from main.msg_tags2)) "
+                     "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning guid", huid);
+        for(int i = 0; i < r3.num_elems(); ++i)
+        {
+            s.sql_simple("insert into main.msg_tags2(guid) values(?1)", r3[i][0]);
+        }
+        // ok, here is a minor problem: we don't have the actual tag or mid in the dump, just the guid
+        // so for now i'll just set the tag to the empty string, and figure it out later. the only
+        // reason we were transmitting the mid and tag in this case was for display purposes ("we deleted
+        // such and such a tag, here is what we have to update in the UI")
+        vc r4 = s.sql_simple("with newguids(guid) as (select guid from mt.gtomb where guid not in (select guid from main.tomb)) "
+                     "insert into taglog(mid, tag, guid, to_uid, op) select '', '', guid, ?1, 'd' from newguids returning guid", huid);
+        for(int i = 0; i < r4.num_elems(); ++i)
+        {
+            s.sql_simple("insert into main.tomb(guid) values(?1)", r4[i][0]);
+        }
+
+        if(r1.num_elems() > 0 || r2.num_elems() > 0 || r3.num_elems() > 0 || r4.num_elems() > 0)
+        {
+            vc new_delta_id = s.sql_simple("update id set delta_id = lower(hex(randomblob(8))) returning delta_id");
+            s.sql_simple("insert into taglog(mid, tag, to_uid, guid, op) values('', '', ?1, ?2, 's')", huid, new_delta_id[0][0]);
+            GRTLOG("new delta id for %s %d", (const char *)huid, r1.num_elems() + r2.num_elems() + r3.num_elems() + r4.num_elems());
+        }
+        else
+        {
+            GRTLOG("no delta for %s", (const char *)huid, 0);
+        }
+        s.commit_transaction();
+    }
+    catch (...)
+    {
+        s.rollback_transaction();
+        GRTLOG("delta gen failed to %s", (const char *)huid, 0);
+        return false;
+    }
+    return true;
+}
+
+vc
 sql_dump_mi()
 {
     DwString fn = gen_random_filename();
@@ -351,6 +454,7 @@ sql_dump_mi()
     s.set_busy_timeout(10 * 1000);
     s.check_txn = 1;
 #endif
+    s.attach("fav.sql", "mt");
     s.attach(fn, "dump");
     s.start_transaction();
     s.sql_simple("create table dump.msg_idx ("
@@ -378,29 +482,10 @@ sql_dump_mi()
 
     s.sql_simple("create table dump.msg_tomb (mid, time)");
     s.sql_simple("insert into dump.msg_tomb select * from main.msg_tomb");
-    s.commit_transaction();
-    s.detach("dump");
-    s.exit();
-    return fn.c_str();
-}
 
-vc
-sql_dump_mt()
-{
-    DwString fn = gen_random_filename();
-    fn += ".tmp";
-    fn = newfn(fn);
-    SimpleSql s("fav.sql");
-    if(!s.init())
-        oopanic("can't dump tags");
-#ifdef DWYCO_BACKGROUND_SYNC
-    s.set_busy_timeout(10 * 1000);
-    s.check_txn = 1;
-#endif
-    s.attach(fn, "dump");
-    s.start_transaction();
-    s.sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase unique on conflict ignore)");
-    s.sql_simple("create table dump.tomb (guid text not null collate nocase, time integer, unique(guid) on conflict replace)");
+    // tags
+    s.sql_simple("create table dump.msg_tags2(mid text, tag text, time integer default 0, guid text collate nocase)");
+    s.sql_simple("create table dump.tomb (guid text not null collate nocase, time integer)");
     // note: we only send "user generated" tags. also some tags are completely local, like "unviewed" and "remote" which we
     // don't really want to send at all.
     s.sql_simple("insert into dump.msg_tags2 select "
@@ -408,14 +493,38 @@ sql_dump_mt()
                "tag, "
                "time, "
                "guid "
-               "from main.gmt where tag in (select * from main.static_crdt_tags)");
-    s.sql_simple("insert into dump.tomb select * from main.gtomb");
+               "from mt.gmt where tag in (select * from mt.static_crdt_tags) group by guid");
+    s.sql_simple("insert into dump.tomb select * from mt.gtomb");
+    //
+    s.sql_simple("create table dump.id(delta_id text)");
+    s.sql_simple("insert into dump.id values(lower(hex(randomblob(8))))");
     s.commit_transaction();
     s.detach("dump");
     s.exit();
     return fn.c_str();
-
 }
+
+void
+create_dump_indexes(const DwString& fn)
+{
+    SimpleSql s(fn);
+    if(!s.init())
+        oopanic("can't index dump");
+    try
+    {
+        s.start_transaction();
+        s.sql_simple("create index if not exists i1 on msg_idx(mid)");
+        s.sql_simple("create index if not exists i2 on msg_tomb(mid)");
+        s.sql_simple("create index if not exists i3 on msg_tags2(guid)");
+        s.sql_simple("create index if not exists i4 on tomb(guid)");
+        s.commit_transaction();
+    }
+    catch(...)
+    {
+        s.rollback_transaction();
+    }
+}
+
 
 static
 DwString
@@ -464,8 +573,20 @@ package_downstream_sends(vc remote_uid)
 
         vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' group by mt2.guid", huid);
         vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl where to_uid = ?1 and op = 'd'", huid);
-        if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0)
-            GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), 0);
+        // note: this sync thiing is supposed to be processed after all the updates
+        // that are received during a delta update, letting us know what we have integrated
+        // from the remote side. there really only should be 1, and really, this needs to be
+        // redesigned so that the ordering is explicit. for now, we just assume
+        // we are creating a block of updates which are applied in order on the remote
+        // side (along with maybe some other stuff too, but that is ok) and then
+        // this sync item is applied so the next cycle knows. it is easy for this
+        // to fail, but that will result in a new index being sent, which is ok.
+        // the reason we order by rowid here is we want to apply the one that is
+        // last in the log (in the odd case that multiple syncs are in the log
+        // which is really something that "can't happen")
+        vc sync = sql_simple("select guid from mt.taglog where to_uid = ?1 and op = 's' order by rowid desc limit 1", huid);
+        if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || sync.num_elems() > 0)
+            GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d sync %d", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), sync.num_elems());
         sql_simple("delete from midlog where to_uid = ?1", huid);
         sql_simple("delete from taglog where to_uid = ?1", huid);
         sql_commit_transaction();
@@ -497,6 +618,13 @@ package_downstream_sends(vc remote_uid)
             vc cmd(VC_VECTOR);
             cmd[0] = "tupdate";
             cmd[1] = tombs[i];
+            ret.append(cmd);
+        }
+        if(sync.num_elems() > 0)
+        {
+            vc cmd(VC_VECTOR);
+            cmd[0] = "sync";
+            cmd[1] = sync[0][0];
             ret.append(cmd);
         }
         return ret;
@@ -659,7 +787,7 @@ import_remote_mi(vc remote_uid)
 {
     vc huid = to_hex(remote_uid);
     DwString fn = DwString("mi%1.sql").arg((const char *)huid);
-    DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
+    //DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
     SimpleSql s("mi.sql");
     if(!s.init())
         return 0;
@@ -670,7 +798,7 @@ import_remote_mi(vc remote_uid)
 #endif
     s.attach("fav.sql", "mt");
     s.attach(fn, "mi2");
-    s.attach(favfn, "fav2");
+
     int ret = 1;
     try
     {
@@ -708,13 +836,13 @@ import_remote_mi(vc remote_uid)
         //sync_files();
         bool update_tags = false;
         vc c = s.sql_simple("select count(*) from mt.gtomb");
-        s.sql_simple("insert or ignore into mt.gtomb select guid, time from fav2.tomb");
+        s.sql_simple("insert or ignore into mt.gtomb select guid, time from mi2.tomb");
         vc c2 = s.sql_simple("select count(*) from mt.gtomb");
         if(c[0][0] != c2[0][0])
             update_tags = true;
         if(!update_tags)
             c = s.sql_simple("select count(*) from mt.gmt");
-        s.sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from fav2.msg_tags2", huid);
+        s.sql_simple("insert or ignore into mt.gmt select mid, tag, time, ?1, guid from mi2.msg_tags2", huid);
         if(!update_tags)
             c2 = s.sql_simple("select count(*) from mt.gmt");
         if(c[0][0] != c2[0][0])
@@ -730,6 +858,7 @@ import_remote_mi(vc remote_uid)
         //s.sql_simple("insert into crdt_tags select * from static_crdt_tags");
         s.sql_simple("insert into current_clients values(?1)", huid);
 
+        s.sql_simple("insert into deltas(from_client_uid, delta_id) select ?1, delta_id from id", huid);
         s.commit_transaction();
 #ifndef DWYCO_BACKGROUND_SYNC
         // these will deadlock if done in the background in another thread
@@ -753,7 +882,7 @@ import_remote_mi(vc remote_uid)
     }
 
     s.detach("mi2");
-    s.detach("fav2");
+
     s.exit();
     return ret;
 }
@@ -834,6 +963,22 @@ import_remote_iupdate(vc remote_uid, vc vals)
     {
         sql_rollback_transaction();
         return vcnil;
+    }
+}
+
+void
+import_new_syncpoint(vc remote_uid, vc delta_id)
+{
+    vc huid = to_hex(remote_uid);
+    try
+    {
+        sql_start_transaction();
+        sql_simple("insert into deltas(from_client_uid, delta_id) values(?1, ?2)", huid, delta_id);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
     }
 }
 

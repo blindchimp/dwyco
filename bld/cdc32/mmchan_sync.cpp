@@ -117,12 +117,10 @@ vc
 MMChannel::package_index()
 {
     vc fn;
-    vc fn2;
 
     try
     {
         fn = sql_dump_mi();
-        fn2 = sql_dump_mt();
     }
     catch(...)
     {
@@ -132,11 +130,15 @@ MMChannel::package_index()
     vc cmd(VC_VECTOR);
     cmd[0] = "idx";
     cmd[1] = file_to_string((const char *)fn);
-    cmd[2] = file_to_string((const char *)fn2);
-    remove((const char *)fn);
-    remove((const char *)fn2);
-    if(cmd[1].is_nil() || cmd[2].is_nil())
+
+    vc huid = to_hex(remote_uid());
+    DwString mfn = DwString("minew%1.sql").arg((const char *)huid);
+    mfn = newfn(mfn);
+    if(!move_replace((const char *)fn, mfn))
         return vcnil;
+    if(cmd[1].is_nil())
+        return vcnil;
+    create_dump_indexes(mfn);
     return cmd;
 }
 
@@ -152,19 +154,17 @@ MMChannel::unpack_index(vc cmd)
 {
     if(cmd[0] != vc("idx"))
         return 0;
+    // deltas are coming as normal updates
+    if(cmd[1].is_nil())
+        return 1;
 
     vc huid = to_hex(remote_uid());
     GRTLOG("unpack from %s", (const char *)huid, 0);
     DwString mifn("mi%1.sql");
-    DwString favfn("fav%1.sql");
 
     mifn.arg((const char *)huid);
-    favfn.arg((const char *)huid);
     mifn = newfn(mifn);
-    favfn = newfn(favfn);
     if(!string_to_file(cmd[1], mifn))
-        return 0;
-    if(!string_to_file(cmd[2], favfn))
         return 0;
     if(!import_remote_mi(remote_uid()))
         return 0;
@@ -340,6 +340,12 @@ MMChannel::process_tupdate(vc cmd)
 }
 
 void
+MMChannel::process_syncpoint(vc cmd)
+{
+    import_new_syncpoint(remote_uid(), cmd[1]);
+}
+
+void
 MMChannel::send_pull(vc mid, int pri)
 {
     vc cmd(VC_VECTOR);
@@ -462,6 +468,21 @@ MMChannel::process_outgoing_sync()
 {
     if(mms_sync_state == MMSS_ERR)
         return 0;
+    if(mms_sync_state == SEND_DELTA_OK)
+    {
+        // generate_delta created entries on the midlog that can get sent
+        // normally without requiring a re-init on the receiver. so we
+        // transition straight into NORMAL state.
+        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+        // tell the other side there is no index to unpack
+        vc vcx(VC_VECTOR);
+        vcx[0] = "idx";
+        vcx[1] = vcnil;
+        sync_sendq.append(vcx, PULLPRI_INIT);
+        mms_sync_state = NORMAL_SEND;
+        return 1;
+    }
+
     if(!tube->can_write_data(msync_chan))
     {
         return 0;
@@ -622,6 +643,10 @@ MMChannel::process_incoming_sync()
             else if(cmd == vc("tupdate"))
             {
                 process_tupdate(rvc);
+            }
+            else if(cmd == vc("sync"))
+            {
+                process_syncpoint(rvc);
             }
         }
         return 1;

@@ -1009,6 +1009,8 @@ public:
     int wait_for_sync_challenge(int subchan, sproto *p, const char *ev);
     int send_sync_resp(int subchan, sproto *p, const char *ev);
     int sync_ready(int subchan, sproto *p, const char *ev);
+    int send_delta(int subchan, sproto *p, const char *ev);
+    int wait_for_delta(int subchan, sproto *p, const char *ev);
 
     // set to 1 if attachment actively rejected (can never be sent,
     // usually because size is too big.
@@ -1021,6 +1023,7 @@ private:
         MMSS_ERR = -2,
         MMSS_NONE = -1,
         START = 0,
+        SEND_DELTA_OK,
         SEND_INIT,
         RECV_INIT,
         NORMAL_RECV,
@@ -1053,6 +1056,7 @@ private:
     void process_pull_resp(vc cmd);
     void process_iupdate(vc cmd);
     void process_tupdate(vc cmd);
+    void process_syncpoint(vc cmd);
 
     DwTimer eager_pull_timer;
     void assert_eager_pulls();
@@ -1074,9 +1078,10 @@ public:
     //ssns::signal3<vc, vc, vc> pull_done;
 };
 
-#define PULLPRI_INTERACTIVE 0
-#define PULLPRI_NORMAL 1
-#define PULLPRI_BACKGROUND 2
+#define PULLPRI_INIT 0
+#define PULLPRI_INTERACTIVE 1
+#define PULLPRI_NORMAL 2
+#define PULLPRI_BACKGROUND 3
 
 #define AUDIO_NUM_STATES 8
 #define AUDIO_TALK 0

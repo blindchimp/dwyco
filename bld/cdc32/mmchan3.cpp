@@ -22,8 +22,7 @@
 #include "ta.h"
 #include "qauth.h"
 #include "dhgsetup.h"
-
-using namespace dwyco;
+#include "qmsgsql.h"
 
 using namespace dwyco;
 
@@ -101,7 +100,9 @@ struct strans media_x_setup[] = {
     {"send-chal", "w", &MMChannel::send_sync_challenge, "wait-resp"},
     {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "wait-chal"},
     {"wait-chal", "r", &MMChannel::wait_for_sync_challenge, "send-resp"},
-    {"send-resp", "w", &MMChannel::send_sync_resp, "sync-ready"},
+    {"send-resp", "w", &MMChannel::send_sync_resp, "send-delta"},
+    {"send-delta", "w", &MMChannel::send_delta, "wait-for-delta"},
+    {"wait-for-delta", "r", &MMChannel::wait_for_delta, "sync-ready"},
     {"sync-ready", "i", &MMChannel::sync_ready, "ping"},
     {"ping", "t", 0, "send-ping"},
     {"send-ping", "w", &MMChannel::send_media_ping, "ping"},
@@ -123,7 +124,9 @@ static struct strans media_r_setup[] = {
     {"wait-chal", "r", &MMChannel::wait_for_sync_challenge, "send-resp"},
     {"send-resp", "w", &MMChannel::send_sync_resp, "send-chal"},
     {"send-chal", "w", &MMChannel::send_sync_challenge, "wait-resp"},
-    {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "sync-ready"},
+    {"wait-resp", "r", &MMChannel::check_sync_challenge_response, "send-delta"},
+    {"send-delta", "w", &MMChannel::send_delta, "wait-for-delta"},
+    {"wait-for-delta", "r", &MMChannel::wait_for_delta, "sync-ready"},
     {"sync-ready", "i", &MMChannel::sync_ready, "ping"},
     {"ping", "t", 0, "send-ping"},
     {"send-ping", "w", &MMChannel::send_media_ping, "ping"},
@@ -489,14 +492,62 @@ MMChannel::check_sync_challenge_response(int subchan, sproto *p, const char *ev)
     return sproto::fail;
 }
 
+int
+MMChannel::send_delta(int subchan, sproto *p, const char *ev)
+{
+    if(!Current_alternate)
+        return sproto::fail;
+
+    vc delta_id = get_delta_id(remote_uid());
+    vc vcx(VC_VECTOR);
+    vcx[0] = "delta";
+    vcx[1] = delta_id;
+
+    int i;
+    if((i = tube->send_data(vcx, subchan)) == SSERR)
+        return sproto::fail;
+    if(i == SSTRYAGAIN)
+        return sproto::stay;
+    return sproto::next;
+
+}
+
+int
+MMChannel::wait_for_delta(int subchan, sproto *p, const char *ev)
+{
+    vc rvc;
+    int i;
+
+    if((i = tube->recv_data(rvc, subchan)) == SSERR)
+    {
+        return sproto::fail;
+    }
+    if(i == SSTRYAGAIN)
+        return sproto::stay;
+
+    if(rvc[0] != vc("delta"))
+    {
+        return sproto::fail;
+    }
+    mmr_sync_state = RECV_INIT;
+    if(rvc[1].is_nil() || !generate_delta(remote_uid(), rvc[1]))
+    {
+        // couldn't generate a delta, just tell it to send a full index
+        mms_sync_state = SEND_INIT;
+        return sproto::next;
+    }
+    mms_sync_state = SEND_DELTA_OK;
+    return sproto::next;
+}
+
 
 int
 MMChannel::sync_ready(int subchan, sproto *p, const char *ev)
 {
     p->watchdog.stop();
     msync_state = MEDIA_SESSION_UP;
-    mms_sync_state = SEND_INIT;
-    mmr_sync_state = RECV_INIT;
+    //mms_sync_state = WAIT_FOR_DELTA;
+    //mmr_sync_state = SEND_DELTA;
     return sproto::next;
 }
 
