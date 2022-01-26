@@ -493,7 +493,7 @@ sql_dump_mi()
                "tag, "
                "time, "
                "guid "
-               "from mt.gmt where tag in (select * from mt.static_crdt_tags)");
+               "from mt.gmt where tag in (select * from mt.static_crdt_tags) group by guid");
     s.sql_simple("insert into dump.tomb select * from mt.gtomb");
     //
     s.sql_simple("create table dump.id(delta_id text)");
