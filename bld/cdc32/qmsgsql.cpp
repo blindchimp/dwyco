@@ -1748,7 +1748,8 @@ sql_count_index(vc uid)
     return (int)res[0][0];
 }
 
-static vc
+static
+vc
 index_from_body(vc recipient, vc body)
 {
     vc uid;
