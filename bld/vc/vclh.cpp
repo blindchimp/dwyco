@@ -70,8 +70,15 @@
 #include "vcuvsock.h"
 #endif
 
+// macos compiler seems fussy about this. seeing as this is a kluge
+// we'll just work around it for now.
+#ifdef MACOSX
+typedef long VC_INT_TYPE;
+typedef unsigned long VC_UINT_TYPE;
+#else
 typedef int64_t VC_INT_TYPE;
-typedef uint64_t VC_UINT_TYPE;
+typedef uint64_t long VC_UINT_TYPE;
+#endif
 
 const vc vctrue("t");
 const vc vcone(1);
@@ -3258,7 +3265,7 @@ vc::init_rest()
 	makefun("copy", VC(docopy, "copy", VC_FUNC_BUILTIN_LEAF));
 	makefun("void", VC(dovoid, "void", VC_FUNC_BUILTIN_LEAF));
     makefun("prog", VC2(doprog, "prog", VC_FUNC_BUILTIN_LEAF, trans_doprog));
-	makefun("eval", VC(evalfun, "eval", VC_FUNC_BUILTIN_LEAF));
+    makefun("eval", VC2(evalfun, "eval", VC_FUNC_BUILTIN_LEAF, trans_eval));
 
 	// string stuff
 	makefun("strlen", VC(vclh_strlen, "strlen", VC_FUNC_BUILTIN_LEAF));
