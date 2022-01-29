@@ -3458,7 +3458,7 @@ vc::init_rest()
     makefun("UDH-agree", VC(udh_agree_auth, "UDH-agree", VC_FUNC_BUILTIN_LEAF));
 
     makefun("UDH-sf-material", VC(vclh_sf_material, "UDH-sf-material", VC_FUNC_BUILTIN_LEAF));
-    makefun("UDH-sf-get-key", VC(dh_store_and_forward_get_key, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
+    makefun("UDH-sf-get-key", VC(dh_store_and_forward_get_key2, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
 #endif
 	makefun("GZ-compress-open", VC(vclh_compression_open, "GZ-compress-open", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-compress-close", VC(vclh_compression_close, "GZ-compress-close", VC_FUNC_BUILTIN_LEAF));
