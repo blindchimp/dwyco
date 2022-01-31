@@ -1625,6 +1625,8 @@ dwyco_bg_init()
 
     handle_crash_setup();
     load_info(Transmit_stats, "stats");
+    unlink(newfn("stats").c_str());
+
     setup_callbacks();
     init_bg_msg_send("bg.log");
     init_pal();
