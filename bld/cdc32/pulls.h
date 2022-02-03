@@ -61,6 +61,7 @@ public:
         return Qbm.count();
     }
     static int count_by_uid(const vc &uid);
+    static void clear_all_asserts();
 //    int uid_in_prog(const vc& uid, const int& inprog) {
 //        if(this->uid == uid && m_in_progress == inprog)
 //            return 1;

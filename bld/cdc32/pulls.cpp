@@ -53,6 +53,14 @@ pulls::deassert_pull(const vc& mid)
         delete dm[i];
 }
 
+void
+pulls::clear_all_asserts()
+{
+    DwVecP<pulls> dm = pulls::Qbm.get_all();
+    for(int i = 0; i < dm.num_elems(); ++i)
+        delete dm[i];
+}
+
 int
 pulls::is_asserted(const vc &mid)
 {
