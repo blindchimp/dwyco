@@ -132,7 +132,11 @@ vc Chat_ips;
 vc Chat_ports;
 vc Session_infos;
 static vc In_progress;
+
+
+
 static int64_t Logical_clock;
+
 // this is used in order to assign clock values to
 // messages when we first see them from the server.
 static vc Mid_to_logical_clock;
@@ -1447,7 +1451,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
     // in the past, we provided "alternate info" we could use if the
     // server failed, and this was derived from secondary like the
     // directory. but if those sources are not available that
-    // bogus info would get in and never cleaned out.
+    // bogus info would get in and never get cleaned out.
 #if 0
     static vc server_timeout("server timeout");
     static vc server_disconnected("server disconnected");
@@ -1844,14 +1848,6 @@ decrypt_special(vc mid, vc msg)
     // changing the id
     dm[QQM_LOCAL_ID] = mid;
     return dm;
-//    if(store_direct(0, dm, 0) == -1)
-//    {
-//        return 0;
-//    }
-//    return 1;
-
-
-
 }
 
 struct special_map
@@ -2077,6 +2073,9 @@ query_done(vc m, void *, vc, ValidPtr)
         if(sql_mid_has_tombstone(mid))
         {
             dirth_send_ack_get(My_UID, mid, QckDone(0, 0));
+            // hmmm, wonder what i was thinking here, i left the
+            // continue out  before...
+            continue;
         }
         if(!Mid_to_logical_clock.contains(mid))
         {
@@ -2882,6 +2881,11 @@ load_bodies(vc dir, int load_sent)
 }
 
 
+// note: this assumes that the largest logical_clock
+// is in the first item in the list. this may not  be
+// needed any longer, now that we have gone full koolaide
+// on the indexing, and sqlite can get the largest lc out
+// in an index without too much trouble.
 void
 boost_clock(vc mi)
 {
