@@ -70,8 +70,15 @@
 #include "vcuvsock.h"
 #endif
 
+// macos compiler seems fussy about this. seeing as this is a kluge
+// we'll just work around it for now.
+#ifdef MACOSX
+typedef long VC_INT_TYPE;
+typedef unsigned long VC_UINT_TYPE;
+#else
 typedef int64_t VC_INT_TYPE;
-typedef uint64_t VC_UINT_TYPE;
+typedef uint64_t long VC_UINT_TYPE;
+#endif
 
 const vc vctrue("t");
 const vc vcone(1);
@@ -3258,7 +3265,7 @@ vc::init_rest()
 	makefun("copy", VC(docopy, "copy", VC_FUNC_BUILTIN_LEAF));
 	makefun("void", VC(dovoid, "void", VC_FUNC_BUILTIN_LEAF));
     makefun("prog", VC2(doprog, "prog", VC_FUNC_BUILTIN_LEAF, trans_doprog));
-	makefun("eval", VC(evalfun, "eval", VC_FUNC_BUILTIN_LEAF));
+    makefun("eval", VC2(evalfun, "eval", VC_FUNC_BUILTIN_LEAF, trans_eval));
 
 	// string stuff
 	makefun("strlen", VC(vclh_strlen, "strlen", VC_FUNC_BUILTIN_LEAF));
@@ -3458,7 +3465,7 @@ vc::init_rest()
     makefun("UDH-agree", VC(udh_agree_auth, "UDH-agree", VC_FUNC_BUILTIN_LEAF));
 
     makefun("UDH-sf-material", VC(vclh_sf_material, "UDH-sf-material", VC_FUNC_BUILTIN_LEAF));
-    makefun("UDH-sf-get-key", VC(dh_store_and_forward_get_key, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
+    makefun("UDH-sf-get-key", VC(dh_store_and_forward_get_key2, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
 #endif
 	makefun("GZ-compress-open", VC(vclh_compression_open, "GZ-compress-open", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-compress-close", VC(vclh_compression_close, "GZ-compress-close", VC_FUNC_BUILTIN_LEAF));
