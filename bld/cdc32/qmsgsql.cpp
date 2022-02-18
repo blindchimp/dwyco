@@ -169,7 +169,7 @@ QMsgSql::init_schema(const DwString& schema_name)
             vc res = sql_simple("pragma user_version");
             if((int)res[0][0] > 1)
             {
-                oopanic("incompatible schema");
+                //oopanic("incompatible schema");
             }
         }
     sql_simple("pragma recursive_triggers=1");
@@ -1526,7 +1526,7 @@ sql_get_recent_users(int recent, int *total_out)
         sql_simple("drop table bar");
 #endif
 	vc res = sql_simple(
-        "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi   group by assoc_uid),"
+        "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi  where strftime('%s', 'now') - date < (365 * 24 * 3600) group by assoc_uid),"
          "mins(muid) as (select min(uid) from group_map group by gid),"
          "grps(guid) as (select uid from group_map)"
         //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
