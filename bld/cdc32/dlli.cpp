@@ -1625,6 +1625,8 @@ dwyco_bg_init()
 
     handle_crash_setup();
     load_info(Transmit_stats, "stats");
+    unlink(newfn("stats").c_str());
+
     setup_callbacks();
     init_bg_msg_send("bg.log");
     init_pal();
@@ -6517,17 +6519,23 @@ pull_msg(vc uid, vc msg_id)
     // here is where we look for where the msg might be available, and
     // try to issue a pull to that client. we might have to set up a connection
     // as well before issuing the pull.
-
+#if 0
     vc uids = sql_find_who_has_mid(msg_id);
+#else
+    vc uids = uids_to_call();
+#endif
     if(uids.is_nil())
     {
         GRTLOG("cant find uid for mid %s", (const char *)msg_id, 0);
+        pulls::assert_pull(msg_id, vcnil, PULLPRI_INTERACTIVE);
         return DWYCO_GSM_TRANSIENT_FAIL;
     }
 
     for(int i = 0; i < uids.num_elems(); ++i)
     {
+#if 0
         uids[i] = from_hex(uids[i]);
+#endif
         pulls::assert_pull(msg_id, uids[i], PULLPRI_INTERACTIVE);
     }
 

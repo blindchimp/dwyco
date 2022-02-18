@@ -7,6 +7,7 @@ ChanList get_all_sync_chans();
 vc build_sync_status_model();
 void sync_call_setup();
 void drop_all_sync_calls(dwyco::DH_alternate *);
+vc uids_to_call();
 
 // UID, STATUS, IP, PROXY, LOCAL, GLOBAL, PULLS_ASSERT, PULLS_QED, SENDQ_COUNT, INQ_COUNT, TOMB_COUNT
 #define M_UID 0

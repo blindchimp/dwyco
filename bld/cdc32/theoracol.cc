@@ -1272,7 +1272,7 @@ CDCTheoraDecoderColor::decode_postprocess(DWBYTE *buf, int len)
         set_busy(1);
     else
         oopanic("decode color busy");
-    void *vimg;
+    void *vimg = 0;
     int rows;
     int cols;
     decode_from_stream(buf, len, vimg, cols, rows);

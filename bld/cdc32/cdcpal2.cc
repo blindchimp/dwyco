@@ -302,7 +302,11 @@ pal_login()
     // people on your pal list
     //v[7] = copy_accept();
     // experiment abandoned. confused people a bit.
-    v[7] = vc(VC_VECTOR);
+    //v[7] = vc(VC_VECTOR);
+    // kluge, the server still honors "always visible" and even if we are
+    // in invisible mode, it is ok if we continue to sync with others
+    // in the group, so lets just say we are always visible to them.
+    v[7] = Group_uids;
     v[8] = vc(VC_VECTOR);
 
     v[4] = make_fw_setup();

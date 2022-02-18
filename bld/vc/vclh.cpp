@@ -77,7 +77,7 @@ typedef long VC_INT_TYPE;
 typedef unsigned long VC_UINT_TYPE;
 #else
 typedef int64_t VC_INT_TYPE;
-typedef uint64_t long VC_UINT_TYPE;
+typedef uint64_t VC_UINT_TYPE;
 #endif
 
 const vc vctrue("t");

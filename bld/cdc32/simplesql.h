@@ -9,6 +9,8 @@ struct sqlite3;
 
 namespace dwyco {
 
+// note: this base class provides NO schema initialization by default.
+// this is useful if you  know the database already has some schema.
 class SimpleSql
 {
 
@@ -40,7 +42,7 @@ public:
     void attach(const DwString& dbname, const DwString& schema_name);
     void detach(const DwString& schema_name);
 
-    int init();
+    int init(int flags = -1);
     void exit();
     void start_transaction();
     void commit_transaction();

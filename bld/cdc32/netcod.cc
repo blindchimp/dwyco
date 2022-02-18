@@ -402,7 +402,7 @@ SimpleSocket::active()
 	v->max_retries = 0; \
 	}
 
-#define RET(a) {if(sock.type() == VC_SOCKET) sock.set_err_callback(cb); return (a);}
+#define RET(a) do {if(sock.type() == VC_SOCKET) sock.set_err_callback(cb); return (a);} while(0)
 
 int
 SimpleSocket::sendlc(DWBYTE *buf, int len, int wbok)

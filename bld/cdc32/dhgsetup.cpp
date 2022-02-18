@@ -28,6 +28,7 @@
 #include "qmsgsql.h"
 #include "synccalls.h"
 #include "grpmsg.h"
+#include "pulls.h"
 
 
 using namespace CryptoPP;
@@ -138,6 +139,7 @@ eager_changed(vc, vc)
 {
     drop_all_sync_calls(0);
     se_emit_group_status_change();
+    pulls::clear_all_asserts();
 }
 
 static
