@@ -41,8 +41,8 @@ void remove_msg_idx(vc uid, vc mid);
 int update_msg_idx(vc recip, vc body, int inhibit_sysmsg = 0);
 int msg_index_count(vc uid);
 
-void sql_fav_remove_uid(vc uid);
-void sql_fav_remove_mid(vc mid);
+void sql_remove_uid(vc uid);
+void sql_remove_mid(vc mid);
 void sql_fav_set_fav(vc mid, int fav);
 int sql_fav_is_fav(vc mid);
 int sql_fav_has_fav(vc from_uid);

@@ -2117,8 +2117,6 @@ query_messages()
     dirth_send_query2(My_UID, QckDone(query_done, 0));
 }
 
-//static int Hack_first_load = 0;
-
 // return -1 if the message can never be delivered here
 // callers can use this to determine when to delete
 // messages that got delivered locally in error
@@ -2257,9 +2255,14 @@ store_direct(MMChannel *m, vc msg, void *)
         sql_start_transaction();
         if(save_msg(msg, id))
         {
-
+            // avoid creating extra _inbox in case it came from
+            // multiple sources. note, even tho the _inbox tag
+            // isn't synced, it participates in the default
+            // guid generation, so dups can occur. might want to
+            // redo this so we can avoid dups like this for tags
+            // that are only used locally.
+            sql_remove_mid_tag(id, "_inbox");
             sql_add_tag(id, "_inbox");
-            //sql_add_tag(id, "_local");
             sql_remove_mid_tag(id, "_remote");
             if(!msg[QQM_BODY_SPECIAL_TYPE].is_nil())
                 sql_add_tag(id, "_special");
@@ -2470,7 +2473,7 @@ ack_all(vc uid)
     vc mids = sql_get_tagged_mids2(tag.c_str());
     for(int i = 0; i < mids.num_elems(); ++i)
     {
-        sql_fav_remove_mid(mids[i][0]);
+        sql_remove_mid(mids[i][0]);
     }
     sql_commit_transaction();
 
@@ -2544,14 +2547,14 @@ remove_user(vc uid, const char *pfx)
     try
     {
         sql_start_transaction();
-        sql_fav_remove_uid(uid);
+        sql_remove_uid(uid);
         clear_msg_idx_uid(uid);
         DwString tag("_");
         tag += (const char *)to_hex(uid);
         vc mids = sql_get_tagged_mids2(tag.c_str());
         for(int i = 0; i < mids.num_elems(); ++i)
         {
-            sql_fav_remove_mid(mids[i][0]);
+            sql_remove_mid(mids[i][0]);
         }
         sql_commit_transaction();
     }
@@ -2574,14 +2577,14 @@ clear_user(vc uid, const char *pfx)
     try
     {
         sql_start_transaction();
-        sql_fav_remove_uid(uid);
+        sql_remove_uid(uid);
         clear_msg_idx_uid(uid);
         DwString tag("_");
         tag += (const char *)to_hex(uid);
         vc mids = sql_get_tagged_mids2(tag.c_str());
         for(int i = 0; i < mids.num_elems(); ++i)
         {
-            sql_fav_remove_mid(mids[i][0]);
+            sql_remove_mid(mids[i][0]);
         }
         sql_commit_transaction();
     }
@@ -2991,7 +2994,7 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_fav_remove_mid(msg_id);
+            sql_remove_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
@@ -3006,7 +3009,7 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_fav_remove_mid(msg_id);
+            sql_remove_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
@@ -3040,7 +3043,7 @@ trash_body(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_fav_remove_mid(msg_id);
+            sql_remove_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
@@ -3057,7 +3060,7 @@ trash_body(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_fav_remove_mid(msg_id);
+            sql_remove_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
@@ -4029,7 +4032,7 @@ qd_purge_outbox()
     delete_findvec(&fv);
 }
 
-
+#if 0
 int
 save_to_inbox(vc m)
 {
@@ -4042,6 +4045,7 @@ save_to_inbox(vc m)
     sql_add_tag(m[QQM_LOCAL_ID], "_inbox");
     return 1;
 }
+#endif
 
 
 void

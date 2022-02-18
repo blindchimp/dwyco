@@ -7806,7 +7806,22 @@ DWYCOEXPORT
 void
 dwyco_set_msg_tag(const char *mid, const char *tag)
 {
-    sql_add_tag(mid, tag);
+    try
+    {
+        qmsgsql::sql_start_transaction();
+        // note: the reason we do this is because "adding" a tag
+        // will create dups with new guid's (this is because of the
+        // crdt syncing stuff.) we don't really want the user
+        // defined tags to be synced by default, but i may change
+        // this
+        sql_remove_mid_tag(mid, tag);
+        sql_add_tag(mid, tag);
+        qmsgsql::sql_commit_transaction();
+    }
+    catch(...)
+    {
+        qmsgsql::sql_rollback_transaction();
+    }
 }
 
 DWYCOEXPORT

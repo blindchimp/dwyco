@@ -2335,7 +2335,7 @@ sql_remove_tag(vc tag)
 
 // remove all tags associated with all messages associated with uid
 void
-sql_fav_remove_uid(vc uid)
+sql_remove_uid(vc uid)
 {
     try
     {
@@ -2357,7 +2357,7 @@ sql_fav_remove_uid(vc uid)
 }
 
 void
-sql_fav_remove_mid(vc mid)
+sql_remove_mid(vc mid)
 {
     try
     {

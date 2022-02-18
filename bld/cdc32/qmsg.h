@@ -62,7 +62,7 @@ void got_ignore(vc m, void *, vc, ValidPtr);
 void add_ignore(vc uid);
 void del_ignore(vc uid);
 void ack_all(vc);
-int save_to_inbox(vc m);
+//int save_to_inbox(vc m);
 int store_direct(MMChannel *m, vc msg, void *);
 vc direct_to_server(vc msgid);
 void ack_all_direct();
