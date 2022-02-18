@@ -129,8 +129,8 @@ msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int per
 void
 msglist_model::invalidate_mid(const QByteArray& mid, const QString& huid)
 {
-    if(huid != uid())
-        return;
+    //if(huid != uid())
+    //    return;
     int midi = mid_to_index(mid);
     if(midi == -1)
         return;
