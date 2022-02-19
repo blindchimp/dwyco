@@ -2098,6 +2098,7 @@ query_done(vc m, void *, vc, ValidPtr)
         sql_add_tag(mid, "_remote");
         DwString a("_");
         a += (const char *)to_hex(from);
+        sql_remove_mid_tag(mid, a.c_str());
         sql_add_tag(mid, a.c_str());
     }
     sql_commit_transaction();
@@ -2473,7 +2474,7 @@ ack_all(vc uid)
     vc mids = sql_get_tagged_mids2(tag.c_str());
     for(int i = 0; i < mids.num_elems(); ++i)
     {
-        sql_remove_mid(mids[i][0]);
+        sql_remove_all_tags_mid(mids[i][0]);
     }
     sql_commit_transaction();
 
@@ -2547,14 +2548,14 @@ remove_user(vc uid, const char *pfx)
     try
     {
         sql_start_transaction();
-        sql_remove_uid(uid);
+        sql_remove_all_tags_uid(uid);
         clear_msg_idx_uid(uid);
         DwString tag("_");
         tag += (const char *)to_hex(uid);
         vc mids = sql_get_tagged_mids2(tag.c_str());
         for(int i = 0; i < mids.num_elems(); ++i)
         {
-            sql_remove_mid(mids[i][0]);
+            sql_remove_all_tags_mid(mids[i][0]);
         }
         sql_commit_transaction();
     }
@@ -2577,14 +2578,14 @@ clear_user(vc uid, const char *pfx)
     try
     {
         sql_start_transaction();
-        sql_remove_uid(uid);
+        sql_remove_all_tags_uid(uid);
         clear_msg_idx_uid(uid);
         DwString tag("_");
         tag += (const char *)to_hex(uid);
         vc mids = sql_get_tagged_mids2(tag.c_str());
         for(int i = 0; i < mids.num_elems(); ++i)
         {
-            sql_remove_mid(mids[i][0]);
+            sql_remove_all_tags_mid(mids[i][0]);
         }
         sql_commit_transaction();
     }
@@ -2994,7 +2995,7 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_remove_mid(msg_id);
+            sql_remove_all_tags_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
@@ -3009,7 +3010,7 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_remove_mid(msg_id);
+            sql_remove_all_tags_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
@@ -3043,7 +3044,7 @@ trash_body(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_remove_mid(msg_id);
+            sql_remove_all_tags_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
@@ -3060,7 +3061,7 @@ trash_body(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_remove_mid(msg_id);
+            sql_remove_all_tags_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())

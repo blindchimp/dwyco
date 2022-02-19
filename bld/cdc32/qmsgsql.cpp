@@ -1608,7 +1608,7 @@ sql_get_old_ignored_users()
 
 static
 void
-sql_remove_uid(vc uid)
+sql_remove_uid_msg_idx(vc uid)
 {
     try
     {
@@ -1933,7 +1933,6 @@ msg_idx_get_new_msgs(vc uid, vc logical_clock)
     {
         sql_start_transaction();
         vc huid = to_hex(uid);
-        //create_uidset(uid);
         vc res = sql_simple(
                     with_create_uidset(2)
                 "select date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
@@ -1943,7 +1942,6 @@ msg_idx_get_new_msgs(vc uid, vc logical_clock)
                     " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) and logical_clock > ?1 group by mid order by logical_clock desc",
                             logical_clock,
                             huid);
-        //drop_uidset();
         sql_commit_transaction();
         return res;
     }
@@ -2107,7 +2105,7 @@ void
 remove_msg_idx_uid(vc uid)
 {
     msg_idx_updated(uid, 0);
-    sql_remove_uid(uid);
+    sql_remove_uid_msg_idx(uid);
 }
 
 vc
@@ -2335,18 +2333,15 @@ sql_remove_tag(vc tag)
 
 // remove all tags associated with all messages associated with uid
 void
-sql_remove_uid(vc uid)
+sql_remove_all_tags_uid(vc uid)
 {
     try
     {
         sql_start_transaction();
-        //create_uidset(uid);
-        // find all crdt tags associated with all mids, and perform crdt related things for each mid
         sql_simple(
                     with_create_uidset(1)
                     "delete from gmt where mid in (select distinct(mid) from gi where assoc_uid in (select * from uidset))",
                     to_hex(uid));
-        //drop_uidset();
         sql_commit_transaction();
     }
     catch(...)
@@ -2357,7 +2352,7 @@ sql_remove_uid(vc uid)
 }
 
 void
-sql_remove_mid(vc mid)
+sql_remove_all_tags_mid(vc mid)
 {
     try
     {
@@ -2555,14 +2550,12 @@ sql_uid_count_tag(vc uid, vc tag)
     try
     {
         sql_start_transaction();
-        //create_uidset(uid);
         vc res = sql_simple(
                     with_create_uidset(2)
                     "select count(distinct mid) from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists (select 1 from gtomb where guid = gmt.guid)",
                             tag,
                     to_hex(uid));
         c = res[0][0];
-        //drop_uidset();
         sql_commit_transaction();
     }
     catch(...)
