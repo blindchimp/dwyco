@@ -328,6 +328,9 @@ QMsgSql::init_schema(const DwString& schema_name)
         sql_simple("pragma user_version = 3");
         sql_commit_transaction();
     }
+    // this one seems to speed up the "uid_has_tag" query by light years if
+    // analyze is done periodically.
+    sql_simple("create index if not exists gi_assoc_uid_mid on gi(assoc_uid, mid)");
     sql_commit_transaction();
     }
     else if(schema_name.eq("mt"))
@@ -1216,6 +1219,7 @@ exit_qmsg_sql()
 {
     if(!sDb)
         return;
+    sDb->optimize();
     sDb->exit();
     delete sDb;
     sDb = 0;

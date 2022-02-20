@@ -32,8 +32,8 @@ Conversation::load_external_state(const QByteArray& uid)
     update_any_unread(uid_has_unviewed_msgs(uid));
     update_session_msg(got_msg_this_session(uid));
     update_pal(dwyco_is_pal(uid.constData(), uid.length()));
-    //update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
-    update_has_hidden(false);
+    update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
+    //update_has_hidden(false);
 }
 
 ConvListModel::ConvListModel(QObject *parent) :

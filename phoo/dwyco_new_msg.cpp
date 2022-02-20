@@ -74,7 +74,7 @@ void
 del_unviewed_uid(const QByteArray& uid)
 {
     DWYCO_LIST tm;
-    if(!dwyco_get_tagged_mids2(&tm, "unviewed"))
+    if(!dwyco_get_tagged_mids(&tm, "unviewed"))
         return;
     simple_scoped qtm(tm);
     for(int i = 0; i < qtm.rows(); ++i)

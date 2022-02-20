@@ -417,6 +417,9 @@ exit_codec()
 {
     save_qmsg_state();
     save_entropy();
+    // note: this analyzes the database, which can be a huge
+    // win with sqlite
+    exit_qmsg();
     Log->make_entry("exit");
 
     vc::non_lh_exit();

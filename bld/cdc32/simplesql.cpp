@@ -81,6 +81,19 @@ SimpleSql::exit()
 }
 
 void
+SimpleSql::optimize()
+{
+    try
+    {
+        sql_simple("pragma optimize");
+    }
+    catch (...)
+    {
+
+    }
+}
+
+void
 SimpleSql::attach(const DwString& dbname, const DwString& schema_name)
 {
     DwString ndbname = newfn(dbname);
