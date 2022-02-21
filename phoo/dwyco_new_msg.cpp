@@ -100,12 +100,14 @@ uid_has_unviewed_msgs(const QByteArray &uid)
             dwyco_uid_has_tag(uid.constData(), uid.length(), "_inbox");
 }
 
+#if 0
 int
 uid_unviewed_msgs_count(const QByteArray &uid)
 {
     return uid_has_unfetched(uid) + dwyco_uid_count_tag(uid.constData(), uid.length(), "unviewed") +
             dwyco_uid_count_tag(uid.constData(), uid.length(), "_inbox");
 }
+#endif
 
 bool
 any_unviewed_msgs()
@@ -151,8 +153,14 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
         // this happens sometimes when attachments are not fetchable for whatever reason.
         Already_processed.insert(mid);
         if(dwyco_mid_disposition(mid) == 0)
+        {
+            // this corresponds to the case where the index seems to show
+            // the mid is somewhere, which means it at least has been seen
+            // somewhere else in the cluster. so we don't need to flag it as
+            // something that needs attention.
             add_unviewed(uid_out, mid);
-        uids.insert(uid_out);
+            uids.insert(uid_out);
+        }
     }
 
     return 0;

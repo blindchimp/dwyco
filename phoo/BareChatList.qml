@@ -65,7 +65,7 @@ Item {
                         z:3
                         anchors.top:parent.top
                         anchors.left:parent.left
-                        visible: {unseen_count > 0 ? true : false }
+                        visible: any_unviewed
                     }
                 }
 
