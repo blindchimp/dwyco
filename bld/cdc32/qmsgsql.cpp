@@ -587,7 +587,7 @@ package_downstream_sends(vc remote_uid)
 
         vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' group by mt2.guid", huid);
         vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl where to_uid = ?1 and op = 'd'", huid);
-        // note: this sync thiing is supposed to be processed after all the updates
+        // note: this sync thing is supposed to be processed after all the updates
         // that are received during a delta update, letting us know what we have integrated
         // from the remote side. there really only should be 1, and really, this needs to be
         // redesigned so that the ordering is explicit. for now, we just assume
@@ -1016,14 +1016,6 @@ void
 import_remote_tupdate(vc remote_uid, vc vals)
 {
     vc huid = to_hex(remote_uid);
-#if 0
-    DwString fn = DwString("mi%1.sql").arg((const char *)huid);
-    DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
-
-    sDb->attach(fn, "mi2");
-    sDb->attach(favfn, "fav2");
-#endif
-
     try
     {
         sql_start_transaction();
@@ -1087,10 +1079,6 @@ import_remote_tupdate(vc remote_uid, vc vals)
     {
         sql_rollback_transaction();
     }
-#if 0
-    sDb->detach("mi2");
-    sDb->detach("fav2");
-#endif
 }
 
 
@@ -1212,22 +1200,6 @@ init_qmsg_sql()
     sql_commit_transaction();
     //Database_online.value_changed.connect_ptrfun(refetch_pk);
     Keys_updated.connect_ptrfun(update_group_map, 1);
-
-#if 0
-    // this is a hack for debugging, load existing data indexes. we expect we won't
-    // obliterate gi and gmt on each restart in the future
-    FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
-    for(int i = 0; i < fv->num_elems(); ++i)
-    {
-        WIN32_FIND_DATA *w = (*fv)[i];
-        DwString a(w->cFileName);
-        a.erase(0, 2);
-        a.erase(20, 4);
-        vc uid = from_hex(a.c_str());
-        import_remote_mi(uid);
-    }
-    delete_findvec(fv);
-#endif
 }
 
 void
@@ -1361,7 +1333,7 @@ blob(vc v)
 // the hash of the group public key in the profile. this gives us
 // a (possibly incorrect) mapping of which uid's are in device groups
 // without having to talk to a server. this mapping could be updated
-// once we do talk to a server or more authoritative source of group
+// once we do talk to a server or a more authoritative source of group
 // info.
 // this mapping is used to automatically coalesce sets of uid's in order
 // to make the UI less confusing. for example, it is confusing if one
@@ -1574,7 +1546,6 @@ sql_get_recent_users2(int max_age, int max_count)
     try
     {
         sql_start_transaction();
-        //sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
         vc res;
         // note: this doesn't get the "latest", putting in an order by doubles the amount of time
         // it takes, and most of the time, the max_count is big enough to get everything anyway
@@ -1634,9 +1605,7 @@ sql_remove_uid_msg_idx(vc uid)
     {
         sql_start_transaction();
         vc huid = to_hex(uid);
-        //sql_simple("delete from indexed_flag where uid = ?1", huid);
         sql_simple("delete from msg_idx where assoc_uid = ?1", huid);
-        //sql_simple("delete from most_recent_msg where uid = ?1", huid);
         sql_commit_transaction();
     }
     catch(...)
@@ -1906,7 +1875,6 @@ create_date_index(vc uid)
         sql_simple("delete from msg_idx where assoc_uid = ?1 and mid not in (select * from found_mid)", huid);
         delete_findvec(&fv2);
         sql_insert_indexed_flag(uid);
-        //sql_record_most_recent(uid);
         sql_simple("delete from midlog");
         sql_simple("delete from taglog");
         sql_simple("drop table found_mid");
@@ -2101,7 +2069,6 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
     {
         sql_start_transaction();
         sql_insert_record(nentry, uid);
-        //sql_record_most_recent(uid);
         sql_commit_transaction();
         ret = 1;
     }
@@ -2253,7 +2220,6 @@ reindex_possible_changes()
             sql_simple("insert into foo(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
         }
         delete_findvec(&fv);
-        //sql_commit_transaction();
         vc needs_reindex = sql_simple("select replace(dirname, '.usr', '') from foo,dir_meta using(dirname) where foo.time != dir_meta.time "
                                       "union select replace(dirname, '.usr', '') from foo where not exists(select 1 from dir_meta where foo.dirname = dir_meta.dirname)");
         // not sure about this: if a folder is missing now, if we do this, it effectively
@@ -2377,7 +2343,6 @@ sql_remove_all_tags_mid(vc mid)
     try
     {
         sql_start_transaction();
-        // find all crdt tags, and perform crdt related things for each mid
         sql_simple("delete from gmt where mid = ?1", mid);
         sql_commit_transaction();
     }
@@ -2393,7 +2358,6 @@ sql_remove_mid_tag(vc mid, vc tag)
     try
     {
         sql_start_transaction();
-        // if the tag is a crdt tag, perform ops for that tag
         sql_simple("delete from gmt where mid = ?1 and tag = ?2", mid, tag);
         sql_commit_transaction();
     }
@@ -2443,13 +2407,12 @@ sql_get_tagged_mids(vc tag)
                          "group by mid "
                          "order by logical_clock asc",
                          tag);
-        //sql_simple("delete from foo where mid in (select mid from msg_tomb)");
-        //res = sql_simple("select * from foo");
+
         for(int i = 0; i < res.num_elems(); ++i)
         {
             res[i][0] = to_hex(map_to_representative_uid(from_hex(res[i][0])));
         }
-        //sql_simple("drop table foo");
+
         sql_commit_transaction();
     }
     catch (...)
@@ -2495,9 +2458,6 @@ sql_get_tagged_idx(vc tag)
                          "group by mid "
                          "order by logical_clock desc",
                             tag);
-        //sql_simple("delete from foo where mid in (select mid from msg_tomb)");
-        //res = sql_simple("select * from foo");
-        //sql_simple("drop table foo");
         sql_commit_transaction();
     }
     catch (...)

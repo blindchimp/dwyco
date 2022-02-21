@@ -63,7 +63,6 @@ SimpleSql::init(int flags)
         Db = 0;
         return 0;
     }
-    //sqlite3_busy_timeout(Db, 1000);
     sync_off();
     init_schema(schema_names[0]);
     return 1;
@@ -196,21 +195,22 @@ SimpleSql::commit_transaction()
                 VCArglist a;
                 a.append("rollback transaction");
                 // the docs say the rollback might fail, but it is no bigs.
-                // what state the database is in, shrug.
+                // what state the database ends up in? shrug.
                 try {
-                sqlite3_bulk_query(Db, &a);
+                    sqlite3_bulk_query(Db, &a);
                 }
                 catch(...)
                 {
 
                 }
             }
+            // i'm not even sure you want to continue on at this
+            // point, if your commits are failing
+            check_txn = tmp;
             throw;
         }
     }
     check_txn = tmp;
-
-
 }
 
 
