@@ -785,6 +785,22 @@ remove_sync_state()
         sql_simple("delete from midlog");
         sql_simple("delete from mt.taglog");
         sql_commit_transaction();
+        {
+            FindVec *fv = find_to_vec(newfn("minew????????????????????.sql").c_str());
+            for(int i = 0; i < fv->num_elems(); ++i)
+            {
+                DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+            }
+            delete_findvec(fv);
+        }
+        {
+            FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
+            for(int i = 0; i < fv->num_elems(); ++i)
+            {
+                DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+            }
+            delete_findvec(fv);
+        }
     }
     catch(...)
     {

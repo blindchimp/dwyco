@@ -7021,7 +7021,8 @@ dwyco_start_gj2(const char *gname, const char *password)
             return 0;
         }
         // hokey, really need to get this done under one transaction
-        dwyco::dhg::sql_commit_transaction();
+        if(Current_alternate)
+            dwyco::dhg::sql_commit_transaction();
         dwyco::ezset::sql_commit_transaction();
         dwyco::qmsgsql::sql_commit_transaction();
         //se_emit_group_status_change();
