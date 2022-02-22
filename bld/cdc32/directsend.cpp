@@ -262,8 +262,11 @@ DirectSend::load_small_attachment()
         return 0;
     if(sb.st_size > 20 * 1024)
         return 0;
-    char *buf = new char[sb.st_size];
+
     FILE *f = fopen(actual_filename.c_str(), "rb");
+    if(!f)
+        return 0;
+    char *buf = new char[sb.st_size];
     if(fread(buf, sb.st_size, 1, f) != 1)
     {
         delete [] buf;
@@ -365,10 +368,10 @@ DirectSend::send_with_attachment()
 
         m->agreed_key = mp->agreed_key;
         sproto *s = new sproto(chan, file_send, m->vp);
-        // note: this is for message attachment encryption
-        // note note: we don't need to incur extra encryption
+
+        // note: we don't need to incur extra encryption
         // cost here because the channel is already encrypted.
-        //s->file_key = key;
+
         m->simple_protos[chan] = s;
         s->start();
 
@@ -522,7 +525,7 @@ DirectSend::send_message()
                 return 1;
             }
             TRACK_ADD(DS_dchan_not_established, 1);
-            ret[i]->call_sig.connect_memfun(this, &DirectSend::call_disposition);
+            ret[i]->call_sig.connect_memfun(this, &DirectSend::call_disposition, 1);
             return 1;
         }
     }

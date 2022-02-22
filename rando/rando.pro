@@ -1,7 +1,10 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
 
+include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
+
 DEFINES += NO_BUILDTIME
+DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"1.97\\\"\"
 
@@ -242,16 +245,16 @@ winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib 
 #QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
 #QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
 
-#PRE_TARGETDEPS += \
-#$${D}\\cdc32\\$${S}\\cdc32.lib \
-#$${D}\\vc\\$${S}\\vc.lib \
-#$${D}\\crypto5\\$${S}\\crypto5.lib \
-#$${D}\\dwcls\\$${S}\\dwcls.lib \
-#$${D}\\kazlib\\$${S}\\kazlib.lib \
-#$${D}\\pbm\\$${S}\\pbm.lib \
-#$${D}\\jenkins\\$${S}\\jenkins.lib \
-#$${D}\\jhead\\$${S}\\jhead.lib \
-#$${D}\\qt-qml-models\\$${S}\\QtQmlModels.lib
+PRE_TARGETDEPS += \
+$${D}\\cdc32\\$${S}\\cdc32.lib \
+$${D}\\vc\\$${S}\\vc.lib \
+$${D}\\crypto5\\$${S}\\crypto5.lib \
+$${D}\\dwcls\\$${S}\\dwcls.lib \
+$${D}\\kazlib\\$${S}\\kazlib.lib \
+$${D}\\pbm\\$${S}\\pbm.lib \
+$${D}\\jenkins\\$${S}\\jenkins.lib \
+$${D}\\jhead\\$${S}\\jhead.lib \
+$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib
 
 }
 

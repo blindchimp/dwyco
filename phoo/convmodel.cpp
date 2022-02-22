@@ -28,11 +28,12 @@ Conversation::load_external_state(const QByteArray& uid)
     get_review_status(uid, reviewed, regular);
     update_REGULAR(regular);
     update_REVIEWED(reviewed);
-    update_unseen_count(uid_unviewed_msgs_count(uid));
+    //update_unseen_count(uid_unviewed_msgs_count(uid));
     update_any_unread(uid_has_unviewed_msgs(uid));
     update_session_msg(got_msg_this_session(uid));
     update_pal(dwyco_is_pal(uid.constData(), uid.length()));
     update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
+    //update_has_hidden(false);
 }
 
 ConvListModel::ConvListModel(QObject *parent) :
@@ -55,6 +56,17 @@ void
 init_convlist_model()
 {
 
+}
+void
+ConvListModel::redecorate()
+{
+    int n = count();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        QByteArray buid = QByteArray::fromHex(c->get_uid().toLatin1());
+        c->load_external_state(buid);
+    }
 }
 
 void
@@ -156,8 +168,8 @@ ConvListModel::decorate(QString huid, QString txt, QString mid)
     Conversation *c = getByUid(huid);
     if(!c)
         return;
-    int cnt = uid_unviewed_msgs_count(uid);
-    c->update_unseen_count(cnt);
+    //int cnt = uid_unviewed_msgs_count(uid);
+    //c->update_unseen_count(cnt);
     c->update_any_unread(uid_has_unviewed_msgs(uid));
     c->update_is_blocked(dwyco_is_ignored(uid.constData(), uid.length()));
     c->update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
@@ -211,6 +223,17 @@ ConvListModel::load_users_to_model()
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
+#if 0
+    DWYCO_LIST pl = dwyco_pal_get_list();
+    simple_scoped qpl(pl);
+    for(int i = 0; i < qpl.rows(); ++i)
+    {
+        QByteArray uid = qpl.get<QByteArray>(i);
+        Conversation *c = add_uid_to_model(uid);
+        c->update_counter = cnt;
+    }
+#endif
+
     // find removed items
     // there is probably a faster way of doing this, but
     // given this should not happen often or with very long lists,
@@ -366,20 +389,20 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
     else if(!lsp && rsp)
         return false;
 
-    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
-    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
-    if(lreg && !rreg)
-        return true;
-    else if(!lreg && rreg)
-        return false;
+//    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
+//    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
+//    if(lreg && !rreg)
+//        return true;
+//    else if(!lreg && rreg)
+//        return false;
 
     // put blocked users down at the bottom?
-//    bool lreg = m->data(left, m->roleForName("is_blocked")).toBool();
-//    bool rreg = m->data(right, m->roleForName("is_blocked")).toBool();
-//    if(lreg && !rreg)
-//        return false;
-//    else if(!lreg && rreg)
-//        return true;
+    bool lreg = m->data(left, m->roleForName("is_blocked")).toBool();
+    bool rreg = m->data(right, m->roleForName("is_blocked")).toBool();
+    if(lreg && !rreg)
+        return false;
+    else if(!lreg && rreg)
+        return true;
 
     bool ret1 = QSortFilterProxyModel::lessThan(left, right);
     bool ret2 = QSortFilterProxyModel::lessThan(right, left);

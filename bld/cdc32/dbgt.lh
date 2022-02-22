@@ -2,7 +2,7 @@
 ; create tracing wrappers for dlli api
 ;
 ; invoke with
-; cat dlli.h dlli.cpp >/tmp/k
+; cat dlli.h dlli.cpp bgapp.cpp >/tmp/k
 ; vc dbgt.lh /tmp/k
 ;
 ;

@@ -5,7 +5,7 @@ CONFIG -= qt
 include(../$$DWYCO_CONFDIR/conf.pri)
 
 #QMAKE_LFLAGS_RELEASE += -static
-
+INCLUDEPATH += $${PWD}/../bld/miscsrc
 SOURCES += \
     dwycobg.cpp
 
@@ -31,6 +31,24 @@ $${D}/jenkins/libjenkins.a \
 -lsqlite3 \
 -lpthread \
 -ldl
+
+PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora/libtheora.a \
+$${D}/speex/libspeex.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a
+
 }
 
 macx-g++|macx-clang {

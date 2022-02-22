@@ -8,6 +8,8 @@
 */
 #include "vc.h"
 
+namespace dwyco {
+
 vc Stats;
 int Track_stats;
 
@@ -15,4 +17,5 @@ void
 init_stats()
 {
     Stats = vc(VC_MAP, "", 31);
+}
 }

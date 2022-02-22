@@ -266,7 +266,7 @@ Page {
                        z:3
                        anchors.top:parent.top
                        anchors.left:parent.left
-                       visible: {unseen_count > 0 ? true : false }
+                       visible: any_unread
                    }
                    Rectangle {
                        id: ispal
@@ -401,8 +401,10 @@ Page {
            id: bgrec
            height: gridView1.cellHeight
            width: gridView1.cellWidth
+
            opacity: {multiselect_mode && selected ? 0.5 : 1.0}
            color: primary_dark
+           //scale: .5
            border.width: 1
            gradient: Gradient {
                GradientStop { position: 0.0; color: primary_light }
@@ -440,7 +442,7 @@ Page {
                    z:3
                    anchors.top:parent.top
                    anchors.left:parent.left
-                   visible: {unseen_count > 0 ? true : false }
+                   visible: any_unread
                }
                Rectangle {
                    id: ispal
@@ -531,7 +533,7 @@ Page {
    GridView {
        id: gridView1
        anchors.fill:parent
-       cellWidth: 160 ; cellHeight: 160
+       cellWidth: 80 ; cellHeight: 80
 
        visible: show_grid.grid_checked
 

@@ -50,14 +50,14 @@ SyncVar::operator vc()
     return vcnil;
 }
 
-SyncVar::operator const char *()
-{
-// dicey, probably should copy it out or remove this function somehow
-    vc v;
-    if(map->find(name, v))
-        return (const char *)v;
-    return 0;
-}
+//SyncVar::operator const char *()
+//{
+//// dicey, probably should copy it out or remove this function somehow
+//    vc v;
+//    if(map->find(name, v))
+//        return (const char *)v;
+//    return 0;
+//}
 
 SyncVar&
 SyncVar::operator=(int i)
@@ -82,12 +82,12 @@ SyncVar::operator=(vc v)
     return *this;
 }
 
-SyncVar&
-SyncVar::operator=(const char *v)
-{
-    map->replace(name, vc(v));
-    return *this;
-}
+//SyncVar&
+//SyncVar::operator=(const char *v)
+//{
+//    map->replace(name, vc(v));
+//    return *this;
+//}
 
 
 SyncManage::SyncManage(SyncMap *m) :

@@ -28,5 +28,6 @@ vc trans_docand(VCArglist *a, VcIO o);
 vc trans_docor(VCArglist *a, VcIO o);
 vc trans_doswitch(VCArglist *a, VcIO o);
 vc trans_docond(VCArglist *a, VcIO o);
+vc trans_eval(VCArglist *a, VcIO o);
 
 #endif

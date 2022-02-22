@@ -20,7 +20,6 @@ static char RcsId[] = "$Header: g:/dwight/repo/cdc32/rcs/netcod.cc 1.27 1999/01/
 #include "vcwsock.h"
 #include "matcom.h"
 #include "vcxstrm.h"
-#include "sleep.h"
 #include "dwlog.h"
 #include "dwstr.h"
 #include "mmchan.h"
@@ -77,7 +76,6 @@ wouldblock_handler(vc *v)
             GRTLOG("max retry", 0, 0);
             return VC_SOCKET_BACKOUT;
         }
-        dwsleep(1, 0, 1);
         GRTLOG("resume", 0, 0);
         return VC_SOCKET_RESUME;
     }
@@ -404,7 +402,7 @@ SimpleSocket::active()
 	v->max_retries = 0; \
 	}
 
-#define RET(a) {if(sock.type() == VC_SOCKET) sock.set_err_callback(cb); return (a);}
+#define RET(a) do {if(sock.type() == VC_SOCKET) sock.set_err_callback(cb); return (a);} while(0)
 
 int
 SimpleSocket::sendlc(DWBYTE *buf, int len, int wbok)

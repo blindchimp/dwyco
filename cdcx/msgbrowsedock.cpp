@@ -47,7 +47,7 @@ MsgBrowseDock::MsgBrowseDock(QWidget *parent) :
     popup_menu->addSeparator();
     popup_menu->addAction(ui->actionDelete);
 
-    connect(Mainwinform, SIGNAL(uid_selected(DwOString, int)), this, SLOT(uid_selected_event(DwOString,int)));
+    connect(Mainwinform, SIGNAL(uid_selected(DwOString,int)), this, SLOT(uid_selected_event(DwOString,int)));
     connect(this, SIGNAL(visibilityChanged(bool)), this, SLOT(deferred_load(bool)));
     connect(this, SIGNAL(visibilityChanged(bool)), this, SLOT(vis_change(bool)));
     connect(Mainwinform, SIGNAL(ignore_event(DwOString)), this, SLOT(process_ignore_event(DwOString)));
@@ -210,8 +210,8 @@ MsgBrowseDock::load_model(DwOString auid, int init)
     QItemSelectionModel *ism = ui->msglist->selectionModel();
     if(!ism)
         return 0;
-    connect(ism, SIGNAL(currentChanged(const QModelIndex& , const QModelIndex& )), this, SLOT(cur_change(const QModelIndex& , const QModelIndex& )));
-    connect(ism, SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(track_multiselect(QItemSelection, QItemSelection)));
+    connect(ism, SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(cur_change(QModelIndex,QModelIndex)));
+    connect(ism, SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(track_multiselect(QItemSelection,QItemSelection)));
     if(first_visible != -1)
         ui->msglist->setCurrentIndex(mm->index(first_visible));
     return 1;
@@ -440,26 +440,27 @@ void MsgBrowseDock::on_actionDelete_All_triggered()
         return;
     }
 
-    DWYCO_LIST l = mm->msg_idx;
-    if(!l)
-        return;
-    const char *mid;
-    int len_mid;
-    int type_out;
-    int n;
-    dwyco_list_numelems(l, &n, 0);
-    for(int row = 0; row < n; ++row)
-    {
-        if(!dwyco_list_get(l, row, DWYCO_MSG_IDX_MID,
-                           &mid, &len_mid, &type_out) || type_out != DWYCO_TYPE_STRING)
-            continue;
-        // i don't think the list_get thing guarantees the result is 0
-        // terminated, so just to be sure, do this
-        DwOString zmid(mid, 0, len_mid);
+//    DWYCO_LIST l = mm->msg_idx;
+//    if(!l)
+//        return;
+//    const char *mid;
+//    int len_mid;
+//    int type_out;
+//    int n;
+//    dwyco_list_numelems(l, &n, 0);
+//    for(int row = 0; row < n; ++row)
+//    {
+//        if(!dwyco_list_get(l, row, DWYCO_MSG_IDX_MID,
+//                           &mid, &len_mid, &type_out) || type_out != DWYCO_TYPE_STRING)
+//            continue;
+//        // i don't think the list_get thing guarantees the result is 0
+//        // terminated, so just to be sure, do this
+//        DwOString zmid(mid, 0, len_mid);
 
-        if(!dwyco_delete_saved_message(uid.c_str(), uid.length(), zmid.c_str()))
-            continue;
-    }
+//        if(!dwyco_delete_saved_message(uid.c_str(), uid.length(), zmid.c_str()))
+//            continue;
+//    }
+    dwyco_clear_user(uid.c_str(), uid.length());
 
     // there has got to be a more efficient way to do this, but
     // it is just so convoluted i haven't figured it out yet.

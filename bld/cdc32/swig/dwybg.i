@@ -2,6 +2,7 @@
 %inline %{
 int dwyco_test_funny_mutex(int port);
 int dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
+int dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token, const char *grpname, const char *grppw);
 void dwyco_set_aux_string(const char *str);
 void dwyco_clear_contact_list();
 int dwyco_add_contact(const char *name, const char *phone, const char *email);

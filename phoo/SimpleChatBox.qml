@@ -208,7 +208,7 @@ Page {
                 }
 
                 ConvToolButton {
-                    visible: {stack.depth > 2 || core.unread_count > 0}
+                    visible: {stack.depth > 2 || core.any_unviewed}
                 }
 
 //                CallButtonLink {
@@ -493,12 +493,12 @@ Page {
 
     Connections {
         target: core
-        onSc_rem_keyboard_active : {
+        function onSc_rem_keyboard_active(uid, active) {
             if(uid === to_uid) {
                 ind_typing = active
             }
         }
-        onNew_msg : {
+        function onNew_msg(from_uid, txt, mid) {
             // if we're visible, reset the unviewed msgs thing since presumably
             // we can see it. might want to set it if the view is scrolled up
             // and we can't actually see it until we scroll down, but for
@@ -507,7 +507,7 @@ Page {
                 core.reset_unviewed_msgs(to_uid)
             }
         }
-        onSys_uid_resolved: {
+        function onSys_uid_resolved(uid) {
             if(chatbox.to_uid === uid) {
                 // try to defeat caching since the actual name
                 // of the "preview url" hasn't changed, but the contents have
@@ -517,13 +517,13 @@ Page {
                 top_toolbar_text.rawtext = core.uid_to_name(uid)
             }
         }
-        onSc_connect_terminated: {
+        function onSc_connect_terminated(uid) {
             if(chatbox.to_uid === uid) {
                 console.log("CONNECT TERMINATED")
             }
         }
 
-        onSc_connectedChanged: {
+        function onSc_connectedChanged(uid, connected) {
                 if(chatbox.to_uid === uid) {
                     console.log("ConnectedChanged ", connected)
                     if(connected === 0 && vidpanel.visible) {
@@ -619,6 +619,13 @@ Page {
         anchors.top: parent.top
         anchors.topMargin: 0
         Layout.margins: mm(1)
+        BareConvList {
+            id: conv_sidebar
+            //visible: true
+            Layout.fillHeight: true
+            Layout.minimumWidth: parent.width / 5
+        }
+
         VidCall {
             id: vidpanel
             visible: false
@@ -676,8 +683,9 @@ Page {
             border.color: divider
             color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
 
-            anchors.left: {(SENT == 0) ? parent.left : undefined}
-            anchors.right: {(SENT == 1) ? parent.right : undefined}
+            //anchors.left: {(SENT == 0) ? parent.left : undefined}
+            x: (SENT === 1) ? listView1.width - ditem.width - 3 : 3
+            //anchors.right: {(SENT == 1) ? parent.right : undefined}
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             onHeightChanged: {
@@ -787,7 +795,7 @@ Page {
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
                     //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                    source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) :
+                    source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
                     asynchronous: true
@@ -903,7 +911,7 @@ Page {
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(to_uid, model.mid)
+                                    var vid = core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
 
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {
@@ -983,14 +991,17 @@ Page {
         // will pop up on the previous screen, wtf.
         // qt 5.11 seems focus is handled a little differently
         //focus: visible
-        onVisibleChanged: {
-            if(Qt.platform.os == "android") {
-            if(!visible)
-                focus = false
-            } else {
-                focus = visible
-            }
-        }
+        // this appears to be fixed in qt5.12 on ios? fiddling
+        // with focus would pop up the keyboard when you showed
+        // the page, but now it appears that isn't a problem
+//        onVisibleChanged: {
+//            if(Qt.platform.os == "android") {
+//            if(!visible)
+//                focus = false
+//            } else {
+//                focus = visible
+//            }
+//        }
 
         TipButton {
             id: cam_button
@@ -1125,7 +1136,7 @@ Page {
         }
         Connections {
             target: core
-            onZap_stopped: {
+            function onZap_stopped(zid) {
                 if(zid === audio_zap_button.zid) {
                     core.send_zap(zid, to_uid, 1)
                     audio_zap_button.zid = -1

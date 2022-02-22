@@ -14,6 +14,5 @@ RECT ScreenSize;
 vc Transmit_stats;
 int Crashed_last_time;
 vc StackDump;
-int Sleeping;
 
 unsigned int dwyco_rand_state;

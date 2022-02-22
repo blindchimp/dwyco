@@ -32,7 +32,6 @@
 #include "jchuff.h"
 #include "jdhuff.h"
 #include "audchk.h"
-#include "snds.h"
 #include "doinit.h"
 #include "jccolor.h"
 #include "jdcolor.h"
@@ -56,16 +55,22 @@
 #include "se.h"
 #include "qdirth.h"
 #include "ta.h"
+#include "dhgsetup.h"
+#include "qmsgsql.h"
+#include "pgdll.h"
 
 using namespace dwyco;
 
+CRITICAL_SECTION Audio_lock;
+extern int Media_select;
+extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
+
+namespace dwyco {
+
 vc Myhostname;
 DwLog *Log;
-CRITICAL_SECTION Audio_lock;
 vc TheMan;
 
-extern vc Current_user_lobbies;
-extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
 void init_dct();
 void init_stats();
 
@@ -93,7 +98,7 @@ init_codec(const char *logname)
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
-            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str(), 1000);
+            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str());
             RTLog = tmp;
             init_rtlog();
         }
@@ -125,8 +130,12 @@ init_codec(const char *logname)
         if(access(newfn("xfer").c_str(), 0) == -1)
             if(mkdir(newfn("xfer").c_str()) == -1)
                 Log->make_entry("can't create xfer dir");
+        init_dhgdb();
         init_sql_settings();
         init_aconn();
+        init_entropy();
+        dh_init();
+
         // this is so important, don't leave it till later
         init_qauth();
         init_prfdb();
@@ -154,8 +163,6 @@ init_codec(const char *logname)
         vc::setup_logs();
         vc::non_lh_init();
         vc_winsock::startup();
-        init_entropy();
-        dh_init();
 
         check_audio_device();
         if(!Audio_hw_full_duplex)
@@ -163,7 +170,6 @@ init_codec(const char *logname)
         else
             Log->make_entry("audio hardware claims full-duplex");
 
-        extern int Media_select;
         switch((int)get_settings_value("net/call_setup_media_select"))
         {
         default:
@@ -198,6 +204,7 @@ init_codec(const char *logname)
 #endif
 
         init_sysattr();
+        //Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);
         init = 1;
         Log->make_entry("init done");
     }
@@ -229,14 +236,15 @@ simple_init_codec(const char *logname)
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
-            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str(), 1000);
+            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str());
             RTLog = tmp;
             init_rtlog();
         }
 #endif
         Log->make_entry("system starting up");
         init_sql_settings();
-        init_aconn();
+        //init_aconn();
+        //init_dhg();
 
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
@@ -306,14 +314,31 @@ init_bg_msg_send(const char *logname)
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
-            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str(), 1000);
+            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str());
             RTLog = tmp;
             init_rtlog();
         }
 #endif
+        if(access(newfn("inprogress").c_str(), 0) == -1)
+            if(mkdir(newfn("inprogress").c_str()) == -1)
+                Log->make_entry("can't create inprogress dir");
+        if(access(newfn("outbox").c_str(), 0) == -1)
+            if(mkdir(newfn("outbox").c_str()) == -1)
+                Log->make_entry("can't create outbox dir");
+        if(access(newfn("trash").c_str(), 0) == -1)
+            if(mkdir(newfn("trash").c_str()) == -1)
+                Log->make_entry("can't create trash dir");
+        if(access(newfn("xfer").c_str(), 0) == -1)
+            if(mkdir(newfn("xfer").c_str()) == -1)
+                Log->make_entry("can't create xfer dir");
+
         Log->make_entry("background system starting up");
+        init_dhgdb();
         init_sql_settings();
         init_aconn();
+        init_entropy();
+        dh_init();
+        //init_dhg();
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -334,8 +359,6 @@ init_bg_msg_send(const char *logname)
         vc::setup_logs();
         vc::non_lh_init();
         vc_winsock::startup();
-        init_entropy();
-        dh_init();
 
         init_dirth();
         init_qauth();
@@ -343,10 +366,11 @@ init_bg_msg_send(const char *logname)
         init_qmsg();
 
         // note: the background send does server-only sends, so this should never
-        // get used.
-        //init_callq();
+        // get used. however, the syncing stuff might initiate some calls
+        init_callq();
 
         init_sysattr();
+
         Bg_msg_send_init = 1;
         Log->make_entry("background init done");
     }
@@ -393,6 +417,9 @@ exit_codec()
 {
     save_qmsg_state();
     save_entropy();
+    // note: this analyzes the database, which can be a huge
+    // win with sqlite
+    exit_qmsg();
     Log->make_entry("exit");
 
     vc::non_lh_exit();
@@ -433,3 +460,4 @@ exit_codec()
 
 }
 
+}

@@ -1813,7 +1813,7 @@ preview_file_zap(DWYCO_SAVED_MSG_LIST sm, vidlab *lab, DwOString filename, QByte
     rfn = add_pfx(Tmp_pfx, rfn);
     // copy file out to random filename, scaling to preview size, then emitting the
     // html.
-    if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.c_str(), rfn.c_str()))
+    if(!dwyco_copy_out_file_zap2(mid.c_str(), rfn.c_str()))
         return;
     QPixmap q(rfn.c_str());
     if(q.isNull())
@@ -1844,7 +1844,7 @@ composer_forward::init(QByteArray uid_prev, DwOString mid)
     // because the user has to select who to send it to.
     multi_recipient = 1;
     // we need this in order to play the forwarded message
-    compid = dwyco_make_forward_zap_composition(uid_prev.constData(), uid_prev.length(), mid.c_str(), 1);
+    compid = dwyco_make_forward_zap_composition2(mid.c_str(), 1);
     if(compid == 0)
         return 0;
     DWYCO_LIST l = dwyco_pal_get_list();
@@ -1970,8 +1970,7 @@ composer_forward::camera_event(int)
 int
 composer_forward::get_composition()
 {
-    int cid = dwyco_make_forward_zap_composition(uid_of_previous_sender.constData(),
-              uid_of_previous_sender.length(), mid_to_forward.c_str(), 1);
+    int cid = dwyco_make_forward_zap_composition2(mid_to_forward.c_str(), 1);
     return cid;
 }
 

@@ -6,16 +6,18 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-// send commands to the chat server related to audio q-ing
+// send commands to the chat server
 #include "vc.h"
 #include "mmchan.h"
 #include "chatq.h"
 #include "dirth.h"
 #include "ezset.h"
+#include "qauth.h"
 
-extern vc My_UID;
+using namespace dwyco;
 
-static int
+static
+int
 send_to_chatserver(vc v)
 {
     extern int Chat_id;
@@ -184,6 +186,7 @@ chatq_send_update_call_accept()
     return send_to_chatserver(v);
 }
 
+#if 0
 int
 chatq_send_update_pals(vc pals)
 {
@@ -192,6 +195,7 @@ chatq_send_update_pals(vc pals)
     v[1] = pals;
     return send_to_chatserver(v);
 }
+#endif
 
 int
 chatq_send_activity_state(vc state)

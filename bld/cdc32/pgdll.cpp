@@ -16,6 +16,7 @@ extern DwycoChatCtxCallback2 dwyco_pg_callback2;
 void internal_list_release(DWYCO_LIST l);
 DWYCO_LIST dwyco_list_from_vc(vc vec);
 
+namespace dwyco {
 vc Current_user_lobbies;
 vc Current_gods;
 
@@ -329,4 +330,5 @@ ProfileGrid::simple_data(vc qid, vc display_name, vc uid, vc data)
                              qid, 0);
     internal_list_release((DWYCO_LIST)out_str);
 
+}
 }

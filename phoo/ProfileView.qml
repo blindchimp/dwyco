@@ -38,12 +38,12 @@ Page {
 
     Connections {
         target: core
-        onSys_uid_resolved: {
+        function onSys_uid_resolved(uid) {
             if(uid === profview.uid) {
                 update_profile(uid)
             }
         }
-        onSys_invalidate_profile: {
+        function onSys_invalidate_profile(uid) {
             if(uid === profview.uid) {
                 preview_source = ""
                 preview_text = ""

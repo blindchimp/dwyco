@@ -44,8 +44,16 @@ msg_callback(int id, int what, const char *mid, void *)
         // immediately while the attachment is being downloaded in the background.
         return;
 
-    case DWYCO_MSG_DOWNLOAD_RATHOLED:
+        // note: do NOT delete a message whose decryption failed
+        // old software can send into group without a group key
+        // and only one of the members will be able to decrypt it.
     case DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED:
+        Dont_refetch.add(mid, 0);
+        if(i >= 0)
+            fetching.del(i);
+        break;
+    case DWYCO_MSG_DOWNLOAD_RATHOLED:
+
         // if this msg is ratholed, it can never be fetched, so just delete it.
         Dont_refetch.add(mid, 0);
         if(i >= 0)
@@ -68,6 +76,9 @@ msg_callback(int id, int what, const char *mid, void *)
             fetching.del(i);
         return;
     case DWYCO_MSG_DOWNLOAD_OK:
+        if(dwyco_is_special_message(mid, &what))
+            dwyco_set_msg_tag(mid, "_special");
+        // FALLTHRU
     default:
         if(i >= 0)
             fetching.del(i);

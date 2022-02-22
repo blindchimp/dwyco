@@ -9,6 +9,8 @@
 
 #include "pgdll.h"
 
+namespace dwyco {
+
 ProfileGrid *TheChatGrid;
 
 void
@@ -27,4 +29,5 @@ hide_chat_grid()
         return;
     delete TheChatGrid;
     TheChatGrid = 0;
+}
 }

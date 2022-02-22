@@ -22,11 +22,12 @@
 #include "vcudh.h"
 #include "sepstr.h"
 #include "ta.h"
+#include "dhgsetup.h"
+#include "qauth.h"
 #ifdef WIN32
 #include <io.h>
 #endif
 extern vc My_UID;
-
 
 // these are a bit longer because we are at the end of
 // the road... either we send or the message gets stuck
@@ -54,7 +55,10 @@ DwQSend::DwQSend(const DwString &qfn, int defer_send) :
     xfer_chan_id = -1;
     att_size = 0;
     has_att = 0;
+    force_encryption = DEFAULT;
     this->defer_send = defer_send;
+    no_self_send = 0;
+    no_group = 0;
     Qbm.add(this);
 }
 
@@ -126,6 +130,10 @@ DwQSend::save_aux()
     v[1] = try_count;
     v[2] = prev_ip;
     v[3] = prev_port;
+    v[4] = force_encryption;
+    v[5] = no_group;
+    v[6] = no_self_send;
+
     DwString fn = fn_base_wo_extension(qfn);
     fn += ".aux";
     save_info(v, fn.c_str());
@@ -144,6 +152,9 @@ DwQSend::load_aux()
         try_count = v[1];
         prev_ip = v[2];
         prev_port = v[3];
+        force_encryption = (enc_mode)(int)v[4];
+        no_group = v[5];
+        no_self_send = v[6];
         return 1;
     }
     return 0;
@@ -184,15 +195,16 @@ DwQSend::qd_send_done(vc m, void *, vc, ValidPtr vp)
         // newer servers return the server assigned mid so we can
         // associate a delivery response
 
-        if(m[3].type() == VC_VECTOR && !m[3][0].is_nil())
-            qs->delivered_mid = m[3][0];
+//        if(m[3].type() == VC_VECTOR && !m[3][0].is_nil())
+//            qs->delivered_mid = m[3][0];
         Log->make_entry("Sent q'd message.");
         DwString tmpfn = qs->qfn;
         tmpfn += ".tmp";
         move_in_progress(qs->qfn, tmpfn);
         if(!qs->dont_save_sent)
         {
-            do_local_store(tmpfn.c_str(), qs->delivered_mid);
+            DwString local_mid = gen_random_filename();
+            do_local_store(tmpfn.c_str(), local_mid.c_str());
         }
 
         DeleteFile(newfn(tmpfn).c_str());
@@ -235,7 +247,10 @@ DwQSend::do_store()
     send_done_future = QckDone(qd_send_done, 0, vcnil, vp);
     vc to_send = emsg.is_nil() ? msg[QQM_MSG_VEC] : emsg[QQM_MSG_VEC];
     to_send[QQM_BODY_ESTIMATED_SIZE] = att_size;
-    dirth_send_store(My_UID, msg[0], to_send, send_done_future);
+    dirth_send_store(My_UID, msg[0], to_send,
+            no_group ? vctrue : vcnil,
+            no_self_send ? vctrue : vcnil,
+            send_done_future);
 }
 
 
@@ -462,12 +477,12 @@ DwQSend::send_message()
 {
     if(cancel_op)
         return 0;
+    // note: >1 because you can *create* objects with the
+    // same qfn, but once you do, invoking send on either of them
+    // is going to be a problem.
+    if(Qbm.count_by_member(qfn, &DwQSend::qfn) > 1)
+        return 0;
 
-    {
-        DwVecP<DwQSend> c = Qbm.query_by_member(qfn, &DwQSend::qfn);
-        if(c.num_elems() > 1)
-            return 0;
-    }
     vc m;
     DwString afn = DwString("outbox" DIRSEPSTR "");
     afn += qfn;
@@ -507,10 +522,9 @@ DwQSend::send_message()
     // that include an attachment
     if(has_att)
     {
-        DwVecP<DwQSend> c = Qbm.query_by_member(1, &DwQSend::has_att);
-        if(c.num_elems() > 1)
+        int c = Qbm.count_by_member(1, &DwQSend::has_att);
+        if(c > 1)
             return 0;
-
     }
 
 #endif
@@ -602,16 +616,40 @@ DwQSend::send_message()
         // if the key hasn't been fetched before, the message
         // will be sent unencrypted until the key is fetched.
         // it probably makes sense to try and fetch keys that are
-        // likely to be used, but that complicates things, for now,
+        // likely to be used, but that complicates things. for now,
         // keep it simple.
+        // note: if encryption is *required* for the message for
+        // some reason, either set force_encryption or Force_pk
+        // and if there is no way to encrypt it now, the message is
+        // just stored and not sent.
+        // (though, right now, i don't think there are any cases where
+        // encryption is forced on a per-message basis)
+        // note2: as an aside, this doesn't mean the message is
+        // sent in the clear, as all the connections to the server and other
+        // peers are encrypted. it just means that some messages might be
+        // temporarily stored on the server in the clear. usually the first
+        // message between two peers is the only one affected.
+        //
         if(!pk_session_cached(recip_uid))
         {
             fetch_info(recip_uid);
-            pk_set_session_cache(recip_uid);
+            //pk_set_session_cache(recip_uid);
         }
-        if(!Avoid_pk && get_pk(recip_uid, pk))
+
+        vc alt_pk;
+        vc alt_name;
+
+        if(!(Avoid_pk || force_encryption == INHIBIT_ENCRYPTION) && get_pk2(recip_uid, pk, alt_pk, alt_name))
         {
-            dhsf = dh_store_and_forward_material(pk, key);
+            vc pkeys(VC_VECTOR);
+            pkeys[0] = pk;
+            // note: this was just for testing
+            //pkeys[1] = Current_alternate->my_static_public();
+            if(!alt_pk.is_nil())
+            {
+                pkeys[1] = alt_pk;
+            }
+            dhsf = dh_store_and_forward_material2(pkeys, key);
             if(dhsf.is_nil())
             {
                 // this is one of those queasy cases where there is something
@@ -624,7 +662,6 @@ DwQSend::send_message()
                 emsg = vcnil;
                 pk_invalidate(recip_uid);
                 TRACK_ADD(QS_pk_problem, 1);
-
             }
             else
             {
@@ -658,10 +695,13 @@ DwQSend::send_message()
         {
             if(!Avoid_pk)
                 TRACK_ADD(QS_enc_pk_not_available, 1);
+            if(force_encryption == INHIBIT_ENCRYPTION)
+                TRACK_ADD(QS_enc_pk_clear_msg, 1);
+
         }
 
     }
-    if(Force_pk && emsg.is_nil())
+    if((Force_pk || force_encryption == FORCE_ENCRYPTION) && emsg.is_nil())
     {
         // just defer the send, with any luck we have sent the
         // request for the key and the server will have responded

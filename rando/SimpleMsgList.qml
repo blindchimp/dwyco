@@ -81,6 +81,12 @@ Page {
                     visible: stack.depth === 1
                     Layout.fillHeight: true
                 }
+                Label {
+                    text: "Dwyco Rando"
+                   verticalAlignment: Text.AlignVCenter
+                    Layout.fillHeight: true
+                }
+
                 Item {
 
                     Layout.fillWidth: true

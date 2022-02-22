@@ -75,7 +75,7 @@ dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
 void
 forward_msg(const QByteArray& mid, const QByteArray& uid)
 {
-    int compid = dwyco_make_forward_zap_composition(0, 0, mid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(mid.constData(), 1);
     if(compid == 0)
         return;
 
@@ -252,7 +252,7 @@ main(int argc, char *argv[])
             QByteArray attfn;
             if(!dwyco_get_attr(qsm, 0, DWYCO_QM_BODY_ATTACHMENT, attfn))
                 continue;
-            if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.constData(), "mumble.qds"))
+            if(!dwyco_copy_out_file_zap2(mid.constData(), "mumble.qds"))
                 continue;
             QString huid = uid.toHex();
             QList<QString> addrs;

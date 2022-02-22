@@ -20,10 +20,9 @@
 #include "dwlog.h"
 #include "jdct.h"
 #include "fnmod.h"
+#include "doinit.h"
 
 using namespace dwyco;
-
-extern DwLog *Log;
 
 QTABTAB QTables;
 QIDTAB QidTables;

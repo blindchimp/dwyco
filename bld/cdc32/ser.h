@@ -8,6 +8,7 @@
 */
 #ifndef SER_H
 #define SER_H
+#include "vc.h"
 
 vc serialize(vc v);
 int deserialize(vc v, vc& out);

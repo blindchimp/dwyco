@@ -10,11 +10,15 @@
 #include "vcudh.h"
 #include "dwrtlog.h"
 #include "vccrypt2.h"
+#include "ssns.h"
+#include "fnmod.h"
 
 extern vc Session_infos;
 extern vc My_UID;
 
 namespace dwyco {
+ssns::signal2<vc, int> Profile_updated;
+ssns::signal2<vc, int> Keys_updated;
 
 struct Sql : public SimpleSql
 {
@@ -294,6 +298,7 @@ save_profile(vc uid, vc prf)
             set_settings_value("user/email", pack[vc("email")]);
         }
         se_emit(SE_USER_UID_RESOLVED, uid);
+        Profile_updated.emit(uid, 1);
     }
     return 1;
 }
@@ -328,6 +333,7 @@ prf_invalidate(vc uid)
 {
     prf_force_check(uid);
     sql_simple("delete from prf where uid = ?1", to_hex(uid));
+    Profile_updated.emit(uid, 0);
 }
 
 // pk related stuff
@@ -481,7 +487,7 @@ save_pk(vc uid, vc prf)
     a.append(blobnil(prf[PKC_ALT_GNAME]));
     sql_bulk_query(&a);
 
-
+    Keys_updated.emit(uid, 1);
     return 1;
 }
 
@@ -534,8 +540,35 @@ pk_force_check(vc uid)
 void
 pk_invalidate(vc uid)
 {
+    vc res = sql_simple("select 1 from pubkeys where uid = ?1", to_hex(uid));
     sql_simple("delete from pubkeys where uid = ?1", to_hex(uid));
     pk_force_check(uid);
+    if(res.num_elems() != 0)
+        Keys_updated.emit(uid, 0);
+}
+
+// this is probably only useful as a fall-back, since the info could be
+// stale, and we could end up asking a particular uid for a private key
+// they don't have anymore. it might be useful in situations where
+// you can't access the server, and the uid is on the local network.
+vc
+find_alt_pubkey(vc alt_name, vc& uid_out)
+{
+    vc res = sql_simple("select uid, alt_static_public, alt_server_sig from pubkeys where alt_gname = ?1 order by time desc");
+    vclh_dsa_pub_init(newfn("dsadwyco.pub").c_str());
+    for(int i = 0; i < res.num_elems(); ++i)
+    {
+        vc r = res[i];
+        vc spk = serialize(r[1]);
+        DwString a(alt_name, alt_name.len());
+        a += DwString(spk, spk.len());
+        vc h = vclh_sha(vc(VC_BSTRING, a.c_str(), a.length()));
+        if(vclh_dsa_verify(h, r[2]).is_nil())
+            continue;
+        uid_out = from_hex(r[0]);
+        return r[1];
+    }
+    return vcnil;
 }
 
 

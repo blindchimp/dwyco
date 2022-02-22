@@ -40,9 +40,12 @@ using namespace dwyco;
 
 vc vclh_sha(vc);
 
+namespace dwyco {
+
 vc My_UID;
 vc My_MID;
 vc My_server_key;
+extern vc Myhostname;
 static vc Entropy;
 int Send_auth;
 int Create_new_account;
@@ -134,7 +137,6 @@ init_entropy()
         add_entropy((char *)&t, sizeof(t));
     }
     // first time init of entropy pool...
-    extern vc Myhostname;
 
     unsigned long t0 = DwTimer::time_now();
     time_t t1 = time(0);
@@ -179,7 +181,7 @@ init_entropy()
     char p[8];
     if(fd != -1)
     {
-        read(fd, p, 8);
+        read(fd, p, sizeof(p));
         close(fd);
     }
     // if open fails, just append whatever trash is on stack
@@ -423,6 +425,8 @@ qauth_check_account_exists()
     vc dum1;
     vc dum2;
     return(load_auth_info(dum1, dum2, "auth"));
+}
+
 }
 
 

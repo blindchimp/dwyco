@@ -10,6 +10,8 @@
 #define CDCPAL_H
 
 #include "vc.h"
+#include "pval.h"
+namespace dwyco {
 int init_pal();
 void exit_pal();
 int pal_logout();
@@ -17,9 +19,11 @@ int pal_set_state(vc state);
 int pal_tick();
 void pal_reset();
 int pal_login();
+void pal_relogin();
+void async_pal(vc, void *, vc, ValidPtr);
 
-#define PAL_LIST_CANT_SEND 0
-#define PAL_LIST_CANT_LOGIN 1
-#define PAL_LIST_TOO_MANY_FAILURES   2
+extern int Inhibit_pal;
+extern int Pal_logged_in;
+}
 
 #endif

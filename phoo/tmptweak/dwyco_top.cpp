@@ -486,7 +486,14 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_MSG_DOWNLOAD_OK:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED:
     case DWYCO_SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED:
-        TheDwycoCore->emit msg_recv_state(cmd, str_data);
+        TheDwycoCore->emit msg_recv_state(cmd, str_data, huid);
+        break;
+
+    case DWYCO_SE_GRP_JOIN_FAIL:
+        TheDwycoCore->emit join_result(namestr, 0);
+        break;
+    case DWYCO_SE_GRP_JOIN_OK:
+        TheDwycoCore->emit join_result(namestr, 1);
         break;
 
     default:
@@ -794,6 +801,7 @@ setup_locations()
     }
 #ifdef ANDROID
     QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy("assets:/dsadwyco.pub", userdir + "dsadwyco.pub");
     QFile::copy("assets:/license.txt", userdir + "license.txt");
     QFile::copy("assets:/no_img.png", userdir + "no_img.png");
     QFile::copy("assets:/online.wav", userdir + "online.wav");
@@ -811,6 +819,7 @@ setup_locations()
     QFile::copy("assets:/zap.wav", userdir + "zap.wav");
 #else
     QFile::copy(":androidinst/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst/assets/dsadwyco.pub", userdir + "dsadwyco.pub");
     QFile::copy(":androidinst/assets/license.txt", userdir + "license.txt");
     QFile::copy(":androidinst/assets/no_img.png", userdir + "no_img.png");
     QFile::copy(":androidinst/assets/online.wav", userdir + "online.wav");

@@ -389,6 +389,9 @@ border-radius: 2px;
    <property name="text">
     <string>Alert when online</string>
    </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
   </action>
   <action name="actionSend_message">
    <property name="text">

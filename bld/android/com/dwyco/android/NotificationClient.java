@@ -34,6 +34,9 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import android.app.job.JobScheduler;
 import android.app.job.JobInfo;
 import android.app.job.JobInfo.Builder;
@@ -216,6 +219,33 @@ public static String get_token() {
     SharedPreferences sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
     String token = sp.getString("token", "notoken");
     prefs_lock.release();
+
+    FirebaseMessaging.getInstance().getToken()
+    .addOnCompleteListener(new OnCompleteListener<String>() {
+        @Override
+        public void onComplete(Task<String> task) {
+          if (!task.isSuccessful()) {
+            Log.w("TOKEN", "Fetching FCM registration token failed", task.getException());
+            return;
+          }
+
+          // Get new FCM registration token
+          String token = task.getResult();
+          prefs_lock.lock();
+          SharedPreferences sp;
+          sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
+          SharedPreferences.Editor pe = sp.edit();
+          pe.putString("token", token);
+          pe.commit();
+          prefs_lock.release();
+      
+          Log.d("wrote token: ", token);
+          // Log and toast
+          //Log.d("TOKEN", token);
+          
+        }
+    });
+
     return token;
 
     }
