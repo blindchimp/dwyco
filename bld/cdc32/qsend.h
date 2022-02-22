@@ -35,6 +35,21 @@ public:
     static dwyco::DwQueryByMember<DwQSend> Qbm;
     int inprogress;
     ValidPtr vp;
+    enum enc_mode {
+        // use PK encryption if we have recipient's public key locally.
+        // otherwise, send the message as is, and initiate a fetch to
+        // get the public key.
+        DEFAULT = 0,
+        // use PK encryption, but if we don't have the recipient's public key locally
+        // just defer sending the message, and initiate a fetch to get
+        // the public key. the caller will have to retry the send at a later time.
+        FORCE_ENCRYPTION = 1,
+        // don't try to use PK encryption, the message is sent as is.
+        INHIBIT_ENCRYPTION = 2
+    };
+    enum enc_mode force_encryption;
+    int no_self_send;
+    int no_group;
 
     int send_message();
     void cancel();
@@ -45,11 +60,11 @@ public:
     // status is first arg
     // second arg is persistent id, ie, the name of the .q file
     // third arg is recipient uid
-    ssns::signal3<enum dwyco_sys_event, DwString, vc> se_sig;
+    ssns::signal3<enum dwyco_sys_event, const DwString&, vc> se_sig;
 
     // transfer statuses, useful for debugging
     // (pers-id, ruid, msg, percent)
-    ssns::signal4<DwString, vc, DwString, int> status_sig;
+    ssns::signal4<const DwString&, vc, const DwString&, int> status_sig;
 
 private:
 
@@ -69,7 +84,15 @@ private:
     DwString alternate_att_actual_fn;
 
     int has_att;
-    vc delivered_mid;
+    // this creates a subtle problem if we name messages locally
+    // from the server that end up on the recipient with a slightly
+    // different set of data (ie, it will be flagged "sent" here, and
+    // "received" at the recipient). which causes a situation where
+    // the group stuff gets confused because it is assuming messages
+    // have unique mid's. since we were only doing this because we thought
+    // we could do "delivery reports", and it didn't work out too well,
+    // we will just create new random mid's again like in the past.
+    //vc delivered_mid;
     int dont_save_sent;
     int att_size;
     QckDone send_done_future;

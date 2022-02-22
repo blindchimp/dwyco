@@ -164,16 +164,17 @@ MMTube::gen_channel(unsigned short remote_port, int& chan)
     }
     // XXX block/noblock on connect
     socks[chan]->non_blocking(1);
-    char csps[20];
+
     DwString peer;
     if(!retry)
     {
+        char csps[20];
         if(!ctrl_sock)
         {
             drop_channel(chan);
             return SSERR;
         }
-        sprintf(csps, "%d", remote_port);
+        sprintf(csps, "%u", remote_port);
         peer = ctrl_sock->peer_addr();
         int i;
         if((i = peer.find(":")) == DwString::npos)
@@ -544,6 +545,7 @@ MMTube::send_data(vc v, int chan, int bwchan)
     return 1;
 }
 
+#if 0
 int
 MMTube::send_data(DWBYTE *buf, int len, int chan, enum wbok w)
 {
@@ -565,6 +567,7 @@ MMTube::send_data(DWBYTE *buf, int len, int chan, int bwchan, enum wbok w)
     in_bits[bwchan] += len * 8;
     return 1;
 }
+#endif
 
 int
 MMTube::recv_data(vc& v, int chan)
@@ -593,6 +596,7 @@ MMTube::recv_data(vc& v, int chan)
     return 1;
 }
 
+#if 0
 int
 MMTube::recv_data(DWBYTE *&buf, int& len, int chan)
 {
@@ -607,6 +611,7 @@ MMTube::recv_data(DWBYTE *&buf, int& len, int chan)
     }
     return 1;
 }
+#endif
 
 
 int

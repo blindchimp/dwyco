@@ -1807,7 +1807,7 @@ simple_call::preview_saved_msg(DwOString mid, DwOString& preview_fn, int& video,
         // copy file out to random filename, scaling to preview size, then emitting the
         // html.
         rfn = add_pfx(Tmp_pfx, rfn);
-        if(!dwyco_copy_out_file_zap(uid.c_str(), uid.length(), mid.c_str(), rfn.c_str()))
+        if(!dwyco_copy_out_file_zap2(mid.c_str(), rfn.c_str()))
             return 0;
         QPixmap q(rfn.c_str());
         if(q.isNull())
@@ -1833,7 +1833,7 @@ simple_call::preview_saved_msg(DwOString mid, DwOString& preview_fn, int& video,
         //dwyco_list_release(sm);
         return 0;
     }
-    int viewid = dwyco_make_zap_view(sm, uid.c_str(), uid.length(), 0);
+    int viewid = dwyco_make_zap_view2(sm, 0);
     if(viewid == 0)
     {
         //dwyco_list_release(sm);

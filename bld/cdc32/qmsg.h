@@ -23,30 +23,29 @@ extern vc No_direct_att;
 extern vc Session_infos;
 extern vc MsgFolders;
 
-void fetch_message(vc id);
 void load_users(int only_recent, int *total_out);
-int remove_user(vc id, const char *pfx);
-int clear_user(vc id, const char *pfx);
-int add_user(vc info);
-vc load_msgs(vc id);
-vc load_bodies(vc id, int load_sent);
-vc load_body(vc user_dir, vc msg_id);
-vc load_body_by_id(vc user_id, vc msg_id);
+void load_users_from_files(int *total_out);
+void load_users_from_index(int recent, int *total_out);
+int remove_user(vc uid, const char *pfx);
+int clear_user(vc uid, const char *pfx);
+vc load_msgs(vc uid);
+vc load_bodies(vc dir, int load_sent);
+vc load_body_by_id(vc uid, vc msg_id);
 vc load_qd_msgs(vc uid, int load_special);
 vc load_qd_to_body(vc qid);
 void query_messages();
-MMChannel *fetch_attachment(vc id, DestroyCallback, vc, void *, ValidPtr,
+MMChannel *fetch_attachment(vc fn, DestroyCallback, vc, void *, ValidPtr,
                             StatusCallback, void *, ValidPtr, vc server_ip = vcnil, vc server_port = vcnil);
 vc save_body(vc msgid, vc from, vc text, vc attachment_id, vc date, vc rating, vc authvec,
-             vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type);
+             vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type, vc from_group);
 int uid_ignored(vc uid);
 void delete_msg2(vc msgid);
-//void delete_body2(vc user_id, vc msgid);
-void delete_body3(vc user_id, vc msgid, int inhibit_indexing);
+void delete_body3(vc uid, vc msgid, int inhibit_indexing);
+void trash_body(vc uid, vc msg_id, int inhibit_indexing);
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,
               vc body_to_forward, const char *new_text, vc att_hash, vc special_type, vc st_arg1, int no_forward, vc user_filename, int save_sent);
-void fetch_info(vc id);
+void fetch_info(vc uid);
 int qd_send_one();
 int msg_outq_empty();
 void qd_purge_outbox();
@@ -57,35 +56,30 @@ void remove_in_progress(const DwString& fn);
 void remove_from_outbox(const DwString&);
 void recover_inprogress();
 void del_msg(vc vec, vc item);
-vc uid_to_handle2(vc id);
+vc uid_to_handle2(vc uid);
 vc find_cur_msg(vc msg_id);
 void got_ignore(vc m, void *, vc, ValidPtr);
-void add_ignore(vc);
-void del_ignore(vc);
+void add_ignore(vc uid);
+void del_ignore(vc uid);
 void ack_all(vc);
-int save_to_inbox(vc m);
+//int save_to_inbox(vc m);
 int store_direct(MMChannel *m, vc msg, void *);
 vc direct_to_server(vc msgid);
 void ack_all_direct();
-void ack_all_direct_from(vc id);
 void init_qmsg();
 void exit_qmsg();
 void suspend_qmsg();
 void resume_qmsg();
 int valid_qd_message(vc v);
-void clear_local_ignore();
-void add_local_ignore(vc uid);
-void del_local_ignore(vc uid);
 vc get_local_ignore();
+vc get_local_ignore_mapped();
+vc get_local_pals();
 void power_clean_safe();
-vc power_query_users(int no_sent, int no_recv, int no_auto_accept);
-int trash_user(vc id);
+//int trash_user(vc dir);
+int trash_file(const DwString& dir, const DwString& fn);
 void untrash_users();
 vc uid_to_dir(vc uid);
 vc dir_to_uid(DwString s);
-void online_noise_add(vc u);
-void online_noise_del(vc u);
-int online_noise(vc u);
 int count_trashed_users();
 int empty_trash();
 void append_forwarded_text(DwString& s, vc body);
@@ -133,7 +127,6 @@ int pal_add(vc u);
 int pal_del(vc u, int norelogin = 0);
 int pal_user(vc u);
 int refile_attachment(vc filename, vc from_user);
-void pal_relogin();
 void save_msg_idxs();
 void save_qmsg_state();
 // note: this returns the total count of messages,
@@ -142,10 +135,12 @@ void save_qmsg_state();
 vc do_local_store(vc filename, vc speced_mid);
 vc make_best_local_info(vc uid, int *cant_resolve_now);
 int init_msg_folder(vc uid);
+int init_msg_folder(vc uid, DwString* fn_out);
 vc encrypt_msg_qqm(vc msg_to_send, vc dhsf, vc ectx, vc key);
 vc encrypt_msg_body(vc body, vc dhsf, vc ectx, vc key);
 vc decrypt_msg_qqm(vc emsg);
 vc decrypt_msg_body(vc body);
+int can_decrypt_msg_body(vc body);
 #ifdef DWYCO_CRYPTO_PIPELINE
 vc decrypt_msg_body2(vc body, DwString& src, DwString& dst, DwString& key_out);
 int decrypt_attachment2(const DwString& filename, const DwString& key, const DwString& filename_dst);
@@ -159,6 +154,8 @@ void boost_clock(vc mi);
 int move_replace(const DwString& s, const DwString& d);
 vc pal_to_vector(int raw);
 void clean_cruft();
+void boost_logical_clock();
+void update_global_logical_clock(int64_t lc);
 
 #define VERF_AUTH_NO_INFO 0x1
 #define VERF_AUTH_FAILED 0x2
@@ -236,6 +233,7 @@ void clean_cruft();
 #define QM_BODY_ESTIMATED_SIZE 15 // estimated size of attachments
 #define QM_BODY_NO_DELIVERY_REPORT 16 // t = don't give us a delivery report
 #define QM_BODY_LOGICAL_CLOCK 17 // used for msg sorting since physical clocks are usually off
+#define QM_BODY_FROM_GROUP 18
 
 // message as q'd and ready to send to
 // server or recipient (if direct)
@@ -258,6 +256,7 @@ void clean_cruft();
 #define     QQM_BODY_ESTIMATED_SIZE 14
 #define     QQM_BODY_NO_DELIVERY_REPORT 15
 #define     QQM_BODY_LOGICAL_CLOCK 16
+#define     QQM_BODY_FROM_GROUP 17
 #define QQM_LOCAL_ID 2 // added to direct messages locally
 // for database-less operation, this info can be used
 // when there is no other source of user info (ie, if
@@ -298,7 +297,9 @@ void clean_cruft();
 #define QM_IDX_ATT_HAS_AUDIO 9
 #define QM_IDX_ATT_IS_SHORT_VIDEO 10
 #define QM_IDX_LOGICAL_CLOCK 11
-#define NUM_QM_IDX_FIELDS 12
+#define QM_IDX_ASSOC_HUID 12
+#define QM_IDX_FROM_GROUP 13
+#define NUM_QM_IDX_FIELDS 14
 
 // special message structure
 //

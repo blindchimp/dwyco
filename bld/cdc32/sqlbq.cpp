@@ -35,7 +35,7 @@ namespace dwyco {
 // times, usually thru typos. this is for debugging only, and
 // should be disabled in release. note that it assumes you won't have
 // more than ?31 as an arg, and it is broken in cases where you give
-// it ? is some other context.
+// it ? in some other context.
 static
 void
 check_args(const char *sql, int count)
@@ -114,6 +114,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
                                      &st, &tail)) != SQLITE_OK)
     {
+        oopanic(sqlite3_errmsg(dbs));
         throw -1;
         return vcnil;
     }
@@ -127,7 +128,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         for(int i = 1; i < a->num_elems(); ++i)
         {
             vc val = aa.get(i);
-            switch(aa.get(i).type())
+            switch(val.type())
             {
             case VC_INT:
                 if(sqlite3_bind_int(st, i, val) != SQLITE_OK)
@@ -191,20 +192,19 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         {
         case SQLITE_DONE:
             goto out;
+
+
         case SQLITE_BUSY:
+        case SQLITE_IOERR:
             // need some indication of what we should do here.
             // retry or abort and error out. maybe do some exception
             // stuff here to allow the user to abort if they want to.
+            // the IOERR thing seems to be returned on some platforms
+            // like android for locking issues.
             res = "busy";
-            // note: because of bugs in sqlite, it appears that
-            // this case requires any transaction to be rolled back
-            // to avoid database corruption (wtf, that is pretty sad.)
-            // anyway, as long as you are 3.4+ on sqlite, the
-            // transaction will be rolled back for you. it doesn't
-            // really say how that affects other operations. it is
-            // probably best to just issue an explicit rollback sql
+            // it is probably best to just issue an explicit rollback sql
             // command just in case.
-            break;
+            goto out;
         case SQLITE_ROW:
         {
             vc resrow(VC_VECTOR, 0, cols);
@@ -235,7 +235,8 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         }
         break;
         default:
-            oopanic(sqlite3_errmsg(dbs));
+            const char *volatile a = sqlite3_errmsg(dbs);
+
             sqlite3_finalize(st);
             return vcnil;
         }
@@ -243,6 +244,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
 out:
     ;
     sqlite3_finalize(st);
+    GRTLOGVC(res);
     return res;
 }
 }

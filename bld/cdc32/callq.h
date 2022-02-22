@@ -8,46 +8,34 @@
 */
 #ifndef CALLQ_H
 #define CALLQ_H
-#include "pval.h"
-#include "dwtimer.h"
 #include "mmcall.h"
 #include "dwvecp.h"
 
-struct callq
-{
-    ValidPtr vp;	// holds the MMCall pointer we are tracking
-    DwTimer timeout;
-    int status;
-    // we interpose our stuff so we can track the call status
-    CallStatusCallback user_cb;
-    void *arg1;
-    ValidPtr arg2;
-    int cancel;
+namespace dwyco {
 
-    callq(ValidPtr p) : vp(p) {
-        status = 0;
-        user_cb = 0;
-        arg1 = 0;
-        cancel = 0;
-    }
-};
+struct callq;
 
 class CallQ
 {
 public:
     CallQ();
-    virtual ~CallQ();
+    ~CallQ();
 
     //int add_call(vc uid, vc host, vc port, vc proxinfo);
     int add_call(MMCall*);
-    int cancel_call(int);
+    //int cancel_call(int);
     int cancel_all();
     void set_max_established(int);
+    int get_max_established() {return max_established;}
     int tick();
+
+private:
 
     DwVecP<struct callq> calls;
     int max_established;
-
+    DwTimer call_q_timer;
+    void reset_poll_time(dwtime_t);
+    static void cq_call_status(MMCall *mmc, int status, void *arg1, ValidPtr vp);
 };
 
 // it is conceivable that you might want
@@ -55,5 +43,7 @@ public:
 extern CallQ *TheCallQ;
 void init_callq();
 void callq_tick();
+
+}
 
 #endif

@@ -41,6 +41,8 @@
 #include "dwrtlog.h"
 #include "dwyco_rand.h"
 
+#define DWYCO_NO_PRF_ENC
+
 #define PROFILE_KEY "\x66\x43\xe6\x63\xe8\x4e\x8f\x3d\x08\xf5\xbe\x65\xd0\x42\xf7\x51"
 #define PRF_DIR "pk"
 
@@ -215,12 +217,17 @@ load_pk(vc uid, vc& prf_out)
     }
 
     vc prf;
+#ifdef DWYCO_NO_PRF_ENC
+    prf = c;
+#else
     if(encdec_xfer_dec_ctx(enc_ctx, c, prf).is_nil())
     {
         pk_force_check(uid);
         unlink(fn.c_str());
         return 0;
     }
+#endif
+
     if(!check_profile(prf) || !verify_sig(prf))
     {
         pk_force_check(uid);
@@ -249,6 +256,31 @@ get_pk(vc uid, vc& sfpk_out)
     return 1;
 }
 
+int
+get_pk2(vc uid, vc& sfpk_out, vc& alt_sfpk_out, vc& alt_name)
+{
+    vc prf_out;
+    if(!load_pk(uid, prf_out))
+        return 0;
+
+    vc ret(VC_VECTOR);
+    ret[DH_STATIC_PUBLIC] = prf_out[PKC_STATIC_PUBLIC];
+
+    sfpk_out = ret;
+
+    vc ret2(VC_VECTOR);
+    if(prf_out[PKC_ALT_STATIC_PUBLIC].is_nil())
+    {
+        alt_sfpk_out = vcnil;
+        return 1;
+    }
+    ret2[DH_STATIC_PUBLIC] = prf_out[PKC_ALT_STATIC_PUBLIC];
+    alt_sfpk_out = ret2;
+    alt_name = prf_out[PKC_ALT_GNAME];
+
+    return 1;
+}
+
 static int
 save_pk(vc uid, vc prf)
 {
@@ -267,7 +299,12 @@ save_pk(vc uid, vc prf)
         return 0;
     vc prfe;
 
+#ifdef DWYCO_NO_PRF_ENC
+    prfe = prf;
+#else
+
     prfe = vclh_encdec_xfer_enc_ctx(enc_ctx, prf);
+#endif
     if(prfe.is_nil())
         return 0;
     // note: prf_cache_name added any prefix already
@@ -282,6 +319,18 @@ put_pk(vc uid, vc sfpk, vc sig)
     vc pk(VC_VECTOR);
     pk[PKC_STATIC_PUBLIC] = sfpk[DH_STATIC_PUBLIC];
     pk[PKC_DWYCO_SIGNATURE] = sig;
+    return save_pk(uid, pk);
+}
+
+int
+put_pk2(vc uid, vc sfpk, vc sig, vc alt_pk, vc server_sig, vc gname)
+{
+    vc pk(VC_VECTOR);
+    pk[PKC_STATIC_PUBLIC] = sfpk[DH_STATIC_PUBLIC];
+    pk[PKC_DWYCO_SIGNATURE] = sig;
+    pk[PKC_ALT_STATIC_PUBLIC] = alt_pk[DH_STATIC_PUBLIC];
+    pk[PKC_ALT_SERVER_SIG] = server_sig;
+    pk[PKC_ALT_GNAME] = gname;
     return save_pk(uid, pk);
 }
 

@@ -13,8 +13,10 @@
 #include "matcom.h"
 
 void prepare_range_limit_table();
+namespace dwyco {
 void
 init_dct()
 {
     prepare_range_limit_table();
+}
 }

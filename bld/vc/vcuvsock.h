@@ -19,6 +19,7 @@
 #include "dwstr.h"
 #include "dwtree2.h"
 #include "vcio.h"
+#include "dwgrows.h"
 
 class vc_uvsocket;
 #define Ready_q (*Ready_q_p)
@@ -26,7 +27,34 @@ class vc_uvsocket;
 typedef DwTreeKazIter<vc_uvsocket *, long> UV_READY_Q_ITER;
 class vc_uvsocket : public vc_composite
 {
+    friend vc lh_uv_get_all();
 private:
+    DwVP vp;
+
+    static vc sockaddr_to_vc(struct sockaddr *sapi, int len);
+
+    static void read_cb(uv_stream_t *stream, ssize_t nread, uv_buf_t buf);
+    static void connect_cb(uv_connect_t *req, int status);
+    static void listen_cb(uv_stream_t *req, int status);
+    static void write_cb(uv_write_t *req, int status);
+    static void close_cb(uv_handle_t *h);
+    static void shutdown_cb(uv_shutdown_t *req, int status);
+
+    static uv_loop_t *uvs_loop;
+
+    int parse_buffer(int once);
+    void add_error(vc v);
+    int listening;
+    uv_tcp_t *tcp_handle;
+    // xstream we use to reconstruct objects as they come in
+    vcxstream readx;
+    DwGrowingString tailstr;
+    const char *tmpbuf;
+    int tmplen;
+
+    // for use by length-encoding syntax
+    int state;
+    int32_t len_to_read;
 
     // note: used to be private inh, but that cause some problems
     // elsewhere. this isn't the best idea, just a hackaround so i
@@ -63,43 +91,24 @@ private:
        // DwListA<vc>::get_first;
     };
 
-protected:
+    static DwTreeKaz<vc_uvsocket *, long> *Ready_q_p;
+
+    list2 getq;
+    list2 putq;
+
+    // this is needed since errors in the UV socket like
+    // "connection reset by peer" obliterate the peer information.
+    vc cached_peer;
+    int syntax;
 
 public:
-	DwVP vp;
 	vc_uvsocket();
 	~vc_uvsocket();
 
-    int syntax;
-
-    // for use by length-encoding syntax
-    int state;
-    int32_t len_to_read;
-
     int set_syntax(int);
-    int parse_buffer(int once);
 
-	static uv_loop_t *uvs_loop;
 	static int init_uvs_loop();
 	static int run_loop_once();
-	// this monkey-biz with the ready-q and pointers is to avoid
-	// problems related to destructors being called at exit time.
-    static DwTreeKaz<vc_uvsocket *, long> *Ready_q_p;
-    void add_error(vc v);
-
-	uv_tcp_t *tcp_handle;
-    list2 getq;
-    list2 putq;
-	int listening;
-    // xstream we use to reconstruct objects as they come in
-    vcxstream readx;
-    DwString tailstr;
-    const char *tmpbuf;
-    int tmplen;
-
-	// this is needed since errors in the UV socket like
-	// "connection reset by peer" obliterate the peer information.
-	vc cached_peer;
 	
     // note: it would be possible to have these different syntaxes
     // interleaved on one stream, but it would require either some kind
@@ -128,7 +137,7 @@ public:
     long underflow(vcxstream&, char *buf, long min, long max);
 	virtual vc_default *do_copy() const {oopanic("copy uvsocket?"); return 0;}
 	enum vc_type type() const {return VC_SOCKET;}
-        int is_quoted() const {return 1;}
+    int is_quoted() const {return 1;}
     void printOn(VcIO os);
 	void stringrep(VcIO os) const {os << "uvsocket()";}
 };

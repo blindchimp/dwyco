@@ -98,7 +98,7 @@ public:
     IndexKeyType UserClass::* memberp;
 
     indexer() {
-        b = new BagIdx(BagAssoc(), 101);
+        b = new BagIdx(BagAssoc(), 10009);
         memberp = MemberPtr;
     }
 
@@ -172,6 +172,7 @@ public:
     int exists_by_member(const K& val, K T::*memberp);
 
     int count() {return objs->num_elems();}
+    DwVecP<T> get_all();
 
 #if 0
     template<typename U> DwVec<U> project(U T::*memberp);
@@ -213,6 +214,20 @@ DwQueryByMember2<T, K, memp>::del(T *a)
     if(!objs->del(a))
         oopanic("qbm2 del fail");
 
+}
+
+template<class T, class K, K T::* memp>
+DwVecP<T>
+DwQueryByMember2<T, K, memp>::get_all()
+{
+    DwTreeKazIter<jesus_fuck_me, T*> i(objs);
+    DwVecP<T> ret;
+    for(;!i.eol(); i.forward())
+    {
+        auto p = i.get().peek_key();
+        ret.append(p);
+    }
+    return ret;
 }
 
 template<class T, class K, K T::* memp>

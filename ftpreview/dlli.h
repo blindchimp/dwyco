@@ -1,4 +1,3 @@
-
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -176,7 +175,6 @@ void DWYCOEXPORT dwyco_set_pal_auth_callback(DwycoPalAuthCallback cb);
 #endif
 void DWYCOEXPORT dwyco_set_emergency_callback(DwycoEmergencyCallback cb);
 void DWYCOEXPORT dwyco_set_user_control_callback(DwycoUserControlCallback cb);
-void DWYCOEXPORT dwyco_set_alert_callback(DwycoCommandCallback cb);
 void DWYCOEXPORT dwyco_set_call_bandwidth_callback(DwycoStatusCallback cb);
 
 // Warning: call screening is in the process of changing
@@ -495,9 +493,19 @@ void DWYCOEXPORT dwyco_chat_send_data(const char *txt, int txt_len, int pic_type
 #define DWYCO_SE_CHAT_SERVER_LOGIN 31
 #define DWYCO_SE_CHAT_SERVER_LOGIN_FAILED 32
 
-#define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 33
-#define DWYCO_SE_IDENT_TO_UID 34
+#define DWYCO_SE_GRP_JOIN_OK 33
+#define DWYCO_SE_GRP_JOIN_FAIL 34
+#define DWYCO_SE_MSG_DOWNLOAD_PROGRESS 35
 
+
+// you get this message to indicate a message has content that is now locally accessible
+#define DWYCO_SE_MSG_PULL_OK 36
+#define DWYCO_SE_MSG_TAG_CHANGE 37
+
+#define DWYCO_SE_GRP_STATUS_CHANGE 38
+#define DWYCO_SE_IGNORE_LIST_CHANGE 39
+#define DWYCO_SE_IDENT_TO_UID 40
+#define DWYCO_SE_SERVER_ATTR 41
 
 void DWYCOEXPORT dwyco_set_system_event_callback(DwycoSystemEventCallback cb);
 
@@ -710,7 +718,26 @@ int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, 
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
+
+// returns 1 if the message content was successfully loads, and 0 otherwise.
+// NOTE: uid is ignored
 int DWYCOEXPORT dwyco_get_saved_message(DWYCO_SAVED_MSG_LIST *list_out, const char *user_id, int len_uid, const char *msg_id);
+
+// returns -1, then there is no place we know where we might find
+// the mid. this could change if we connect to a client in the
+// future that has the message.
+//
+// returns -2, we initiated at least 1 pull
+// returns -3, we didn't initiate any pulls, but it might be available somewhere
+//
+#define DWYCO_GSM_ERROR (0)
+#define DWYCO_GSM_TRANSIENT_FAIL (-1)
+#define DWYCO_GSM_PULL_IN_PROGRESS (-2)
+#define DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE (-3)
+#define DWYCO_GSM_SUCCESS (1)
+
+int DWYCOEXPORT dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id);
+
 int DWYCOEXPORT dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback cb, void *mdc_arg1,
         DwycoStatusCallback scb, void *scb_arg1);
 void DWYCOEXPORT dwyco_cancel_message_fetch(int fetch_id);
@@ -745,12 +772,17 @@ DWYCO_LIST DWYCOEXPORT dwyco_get_body_array(DWYCO_SAVED_MSG_LIST m);
 int DWYCOEXPORT dwyco_authenticate_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int unsaved);
 void DWYCOEXPORT dwyco_fetch_info(const char *uid, int len_uid);
 
-void DWYCOEXPORT dwyco_pal_add(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_pal_delete(const char *user_id, int len_uid);
-int DWYCOEXPORT dwyco_is_pal(const char *user_id, int len_uid);
+void DWYCOEXPORT dwyco_pal_add(const char *uid, int len_uid);
+void DWYCOEXPORT dwyco_pal_delete(const char *uid, int len_uid);
+int DWYCOEXPORT dwyco_is_pal(const char *uid, int len_uid);
 DWYCO_LIST DWYCOEXPORT dwyco_pal_get_list();
 void DWYCOEXPORT dwyco_pal_relogin();
 int DWYCOEXPORT dwyco_get_pal_logged_in();
+
+// don't use these, but they can speed up situations where
+// you are setting a lot of tags at once
+void DWYCOEXPORT dwyco_start_bulk_update();
+void DWYCOEXPORT dwyco_end_bulk_update();
 
 void DWYCOEXPORT dwyco_set_fav_msg(const char *mid, int fav);
 int DWYCOEXPORT dwyco_get_fav_msg(const char *mid);
@@ -774,7 +806,10 @@ int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 // this returns just mid's, no uids, in a single column
 // it will return msgs that have not been downloaded yet as well.
 int DWYCOEXPORT dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag);
+
 int DWYCOEXPORT dwyco_count_tag(const char *tag);
+// a tag is considered "valid" if it currently refers to an mid in the global index
+int DWYCOEXPORT dwyco_valid_tag_exists(const char *tag);
 
 // note: the following functions will not return a msg if it hasn't been
 // downloaded.
@@ -782,12 +817,10 @@ int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
+int DWYCOEXPORT dwyco_mid_disposition(const char *mid);
 
 // INTERNAL API
 int DWYCOEXPORT dwyco_run_sql(const char *s, const char *a1, const char *a2, const char *a3);
-
-void DWYCOEXPORT dwyco_set_alert(const char *uid, int len_uid, int val);
-int DWYCOEXPORT dwyco_get_alert(const char *uid, int len_uid);
 
 #if 0
 // NOTE: ca nov 2009, pal authorization is defunct in favor
@@ -833,11 +866,12 @@ int DWYCOEXPORT dwyco_handle_pal_auth(const char *uid, int len_uid, const char *
 int DWYCOEXPORT dwyco_handle_pal_auth2(DWYCO_UNSAVED_MSG_LIST ml, int add_them);
 #endif
 
-int DWYCOEXPORT dwyco_is_ignored(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_ignore(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_unignore(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_session_ignore(const char *user_id, int len_uid);
-void DWYCOEXPORT dwyco_session_unignore(const char *user_id, int len_uid);
+int DWYCOEXPORT dwyco_start_gj2(const char *gname, const char *password);
+
+int DWYCOEXPORT dwyco_is_ignored(const char *uid, int len_uid);
+void DWYCOEXPORT dwyco_ignore(const char *uid, int len_uid);
+void DWYCOEXPORT dwyco_unignore(const char *uid, int len_uid);
+
 #if 0
 void DWYCOEXPORT dwyco_always_visible(const char *uid, int len_uid, int val);
 void DWYCOEXPORT dwyco_never_visible(const char *uid, int len_uid, int val);
@@ -845,7 +879,7 @@ int DWYCOEXPORT dwyco_is_never_visible(const char *uid, int len_uid);
 int DWYCOEXPORT dwyco_is_always_visible(const char *uid, int len_uid);
 #endif
 DWYCO_LIST DWYCOEXPORT dwyco_ignore_list_get();
-DWYCO_LIST DWYCOEXPORT dwyco_session_ignore_list_get();
+
 
 // pals-only filtering
 // if on == 1, then filtering is turned on, and all
@@ -879,7 +913,7 @@ int DWYCOEXPORT dwyco_get_pals_only();
 // provide an easier UI.
 int DWYCOEXPORT dwyco_set_auto_reply_msgNA(const char *text, int len_text, int compid);
 
-DWYCO_LIST DWYCOEXPORT dwyco_uid_to_info(const char *user_id, int len_uid, int *cant_resolve_now);
+DWYCO_LIST DWYCOEXPORT dwyco_uid_to_info(const char *uid, int len_uid, int *cant_resolve_now);
 int DWYCOEXPORT dwyco_delete_user(const char *uid, int uid_len);
 int DWYCOEXPORT dwyco_clear_user(const char *uid, int len_uid);
 
@@ -891,7 +925,7 @@ void DWYCOEXPORT dwyco_set_moron_dork_mode(int);
 int DWYCOEXPORT dwyco_get_moron_dork_mode();
 
 void DWYCOEXPORT dwyco_network_diagnostics2(char **res, int *len_res);
-// results are in BITS/second, you can leave any of these pointers NULL
+// results are in BITS/second, you can set any of these pointers 0
 // if you don't need that result.
 void DWYCOEXPORT dwyco_estimate_bandwidth2(int *out_bw, int *in_bw);
 
@@ -902,7 +936,6 @@ void DWYCOEXPORT dwyco_free_array(char *p);
 void DWYCOEXPORT dwyco_free_image(char *p, int rows);
 void DWYCOEXPORT dwyco_finish_startup();
 int DWYCOEXPORT dwyco_get_create_new_account();
-//int DWYCOEXPORT dwyco_check_password_against_local_hash(const char *pw, int len_pw);
 void DWYCOEXPORT dwyco_set_local_auth(int a);
 
 
@@ -1061,6 +1094,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_MSG_IDX_ASSOC_UID "012"
 #define DWYCO_MSG_IDX_IS_DELIVERED "013"
 #define DWYCO_MSG_IDX_IS_VIEWED "014"
+#define DWYCO_MSG_IDX_IS_LOCAL "015"
 
 
 // DWYCO_QD_MSG_LIST, list of messages that are not sent yet.
@@ -1084,6 +1118,10 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_SPECIAL_TYPE_BACKUP 5
 #define DWYCO_SPECIAL_TYPE_DELIVERED 6
 #define DWYCO_SPECIAL_TYPE_VIEWED 7
+#define DWYCO_SPECIAL_TYPE_JOIN1 8
+#define DWYCO_SPECIAL_TYPE_JOIN2 9
+#define DWYCO_SPECIAL_TYPE_JOIN3 10
+#define DWYCO_SPECIAL_TYPE_JOIN4 11
 
 // the following id's show up in
 // the message summary field DWYCO_QMS_BODY_SPECIAL_TYPE,
@@ -1105,7 +1143,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
 int DWYCOEXPORT dwyco_is_special_message(const char *msg_id, int *what_out);
 int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
-int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out);
+int DWYCOEXPORT dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_out);
 
 // "what" returns from the dwyco_is_special_message function
 #define DWYCO_SUMMARY_PAL_AUTH_REQ 0
@@ -1124,6 +1162,10 @@ int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char *
 // sending both.
 #define DWYCO_SUMMARY_DELIVERED 8
 #define DWYCO_SUMMARY_VIEWED 9
+#define DWYCO_SUMMARY_JOIN1 10
+#define DWYCO_SUMMARY_JOIN2 11
+#define DWYCO_SUMMARY_JOIN3 12
+#define DWYCO_SUMMARY_JOIN4 13
 
 int DWYCOEXPORT dwyco_is_delivery_report(const char *mid, const char **uid_out, int *len_uid_out, const char **msg_id_out, int *what_out);
 
@@ -1139,7 +1181,6 @@ int DWYCOEXPORT dwyco_bg_init();
 int DWYCOEXPORT dwyco_bg_exit();
 
 void DWYCOEXPORT dwyco_power_clean_safe();
-void DWYCOEXPORT dwyco_power_clean_progress_hack(int *done_out, int *total_out);
 int DWYCOEXPORT dwyco_empty_trash();
 int DWYCOEXPORT dwyco_count_trashed_users();
 void DWYCOEXPORT dwyco_untrash_users();
@@ -1224,7 +1265,7 @@ dwyco_connect_uid(const char *uid, int len_uid,
                   int send_video, int recv_video,
                   int send_audio, int recv_audio,
                   int private_chat, int public_chat,
-                  const char *pw,
+                  const char *pw, int len_pw,
                   const char *call_type, int len_call_type, int q_call);
 
 void DWYCOEXPORT
@@ -1306,15 +1347,13 @@ int DWYCOEXPORT dwyco_make_zap_composition(char *must_be_zero);
 int DWYCOEXPORT dwyco_make_zap_composition_raw(const char *filename, const char *possible_extension);
 // WARNING: dup-ing should only be used in very specific cases.
 int DWYCOEXPORT dwyco_dup_zap_composition(int compid);
-int DWYCOEXPORT dwyco_make_forward_zap_composition(
-    const char *uid,
-    int len_uid,
+
+int DWYCOEXPORT dwyco_make_forward_zap_composition2(
     const char *msg_id,
     int strip_forward_text
 );
-int DWYCOEXPORT dwyco_make_special_zap_composition(
-    int special_type,
-    const char *user_id,
+
+int DWYCOEXPORT dwyco_make_special_zap_composition(int special_type,
     const char *user_block,
     int len_user_block
 );
@@ -1325,16 +1364,15 @@ dwyco_make_file_zap_composition(
     const char *filename,
     int len_filename
 );
+
 int DWYCOEXPORT
-dwyco_copy_out_file_zap(
-    const char *uid,
-    int len_uid,
+dwyco_copy_out_file_zap2(
     const char *msg_id,
     const char *dst_filename
 );
 
 int DWYCOEXPORT
-dwyco_copy_out_file_zap_buf(const char *uid, int len_uid, const char *msg_id, const char **buf_out, int *buf_len_out, int max);
+dwyco_copy_out_file_zap_buf2(const char *msg_id, const char **buf_out, int *buf_len_out, int max);
 
 int DWYCOEXPORT
 dwyco_copy_out_qd_file_zap(DWYCO_SAVED_MSG_LIST m, const char *dst_filename);
@@ -1377,7 +1415,7 @@ int DWYCOEXPORT dwyco_zap_still_active(int compid);
 int DWYCOEXPORT dwyco_kill_message(const char *pers_id, int len_pers_id);
 
 // functions for just viewing a zap message attachment
-int DWYCOEXPORT dwyco_make_zap_view(DWYCO_SAVED_MSG_LIST list, const char *recip_uid, int len_uid, int qd);
+int DWYCOEXPORT dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd);
 int DWYCOEXPORT dwyco_make_zap_view_file(const char *filename);
 int DWYCOEXPORT dwyco_make_zap_view_file_raw(const char *filename);
 int DWYCOEXPORT dwyco_delete_zap_view(int viewid);
@@ -1394,7 +1432,7 @@ int DWYCOEXPORT dwyco_zap_create_preview(int viewid, const char *filename, int l
 // note: this is a hack, since the buf that comes back is really a ppm
 // (which isn't a straight block of memory), we can't really dump the
 // contents of buf_out in a generic way, so to avoid crashing the
-// debug stuff, i just mis-lable buf_out as buf, so it doesn't try to print it.
+// debug stuff, i just mis-label buf_out as buf, so it doesn't try to print it.
 int DWYCOEXPORT dwyco_zap_create_preview_buf(int viewid, const char **buf_out_elide, int *len_out, int *cols_out, int *rows_out);
 
 
@@ -1442,6 +1480,7 @@ void DWYCOEXPORT dwyco_abort_autoupdate_download();
 // the exit will release the "lock" and allow the main app to continue
 // normally.
 int DWYCOEXPORT dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token);
+int DWYCOEXPORT dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token, const char *grpname, const char *grppw);
 // some more helper functions called from java for android related stuff
 // strings in this case are utf-8, null terminated i hope
 void DWYCOEXPORT dwyco_set_aux_string(const char *str);
@@ -1451,6 +1490,40 @@ int DWYCOEXPORT dwyco_add_contact(const char *name, const char *phone, const cha
 void DWYCOEXPORT dwyco_signal_msg_cond();
 void DWYCOEXPORT dwyco_wait_msg_cond(int ms);
 int DWYCOEXPORT dwyco_test_funny_mutex(int port);
+
+// this is mostly for debugging, most users won't need to know this info
+typedef DWYCO_LIST DWYCO_SYNC_MODEL;
+
+#define DWYCO_SM_UID "000"
+#define DWYCO_SM_STATUS "001"
+#define DWYCO_SM_IP "002"
+#define DWYCO_SM_PROXY "003"
+#define DWYCO_SM_LOCAL "004"
+#define DWYCO_SM_GLOBAL "005"
+#define DWYCO_SM_PULLS_ASSERT "006"
+#define DWYCO_SM_PULLS_QED "007"
+#define DWYCO_SM_SENDQ_COUNT "008"
+#define DWYCO_SM_INQ_COUNT "009"
+#define DWYCO_SM_TOMB_COUNT "010"
+#define DWYCO_SM_PERCENT_SYNCED "011"
+
+int DWYCOEXPORT dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out);
+
+#define DWYCO_GS_GNAME "000"
+#define DWYCO_GS_JOIN_KEY "001"
+#define DWYCO_GS_IN_PROGRESS "002"
+#define DWYCO_GS_VALID "003"
+#define DWYCO_GS_PERCENT_SYNCED "004"
+#define DWYCO_GS_EAGER "005"
+
+int DWYCOEXPORT dwyco_get_group_status(DWYCO_LIST *list_out);
+
+typedef DWYCO_LIST DWYCO_JOIN_LOG_MODEL;
+#define DWYCO_JL_MSG "000"
+#define DWYCO_JL_HUID "001"
+#define DWYCO_JL_TIME "002"
+
+int DWYCOEXPORT dwyco_get_join_log_model(DWYCO_JOIN_LOG_MODEL *list_out);
 
 // api for creating a simple backup of messages and account info
 // "create_backup" creates an initial backup, then subsequent calls
@@ -2042,11 +2115,6 @@ void DWYCOEXPORT dwyco_set_external_audio_output_callbacks(
 // these functions return 1 if the operation is successful,
 // or 0 otherwise (usually you have a wrong setting name.)
 
-// SPECIAL NOTE: there are settings you can set with these functions
-// that aren't represented in the older functions below:
-// zap/send_auto_reply       = an integer, "0" = don't send, "1" = send auto reply
-// zap/auto_reply_mid        = string, the message-id of the auto-reply zap
-// video_format/swap_rb
 int DWYCOEXPORT dwyco_set_setting(const char *name, const char *value);
 int DWYCOEXPORT dwyco_get_setting(const char *name, const char **value, int *len, int *dwyco_type);
 

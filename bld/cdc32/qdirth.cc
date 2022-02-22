@@ -20,7 +20,9 @@
 #include "sha.h"
 #include "profiledb.h"
 #include "dhsetup.h"
+#include "dhgsetup.h"
 #include "vcudh.h"
+#include "qmsgsql.h"
 
 using namespace dwyco;
 
@@ -37,7 +39,7 @@ extern int Database_id;
 extern int Chat_id;
 
 namespace dwyco {
-DwVec<QckDone> Waitq;
+DwListA<QckDone> Waitq;
 DwListA<vc> Response_q;
 int Serial;
 
@@ -58,7 +60,7 @@ reqtype(const char *name, const QckDone& d)
 
 
 static void
-dirth_send(QckMsg& m, QckDone& d)
+dirth_send(const QckMsg& m, QckDone& d)
 {
     static vc cs1("create-user-lobby");
     static vc cs2("remove-user-lobby");
@@ -71,11 +73,13 @@ dirth_send(QckMsg& m, QckDone& d)
     if(what == cs1 || what == cs2)
     {
         d.channel = Chat_id;
+        Waitq.append(d);
         MMChannel::send_to_db(m, Chat_id);
     }
     else
     {
         d.channel = Database_id;
+        Waitq.append(d);
         // don't allow anything to happen until crypto is up
         if(what == dhsf)
         {
@@ -109,19 +113,20 @@ dirth_get_response()
 int
 dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, vc arg2)
 {
-    int n = Waitq.num_elems();
-    for(int i =  n - 1; i >= 0; --i)
+    const QckDone *wp;
+    dwlista_foreach_peek_back(wp, Waitq)
     {
+        const QckDone& w = *wp;
         //GRTLOG("PEND %s", (char *)Waitq[i].type, 0);
-        if(Waitq[i].callback == f)
+        if(w.callback == f)
         {
-            if(type.name.is_nil() || Waitq[i].type == type)
+            if(type.name.is_nil() || w.type == type)
             {
-                if(arg1 == 0 || Waitq[i].arg1 == arg1)
+                if(arg1 == 0 || w.arg1 == arg1)
                 {
-                    if(arg2.is_nil() || Waitq[i].arg2 == arg2)
+                    if(arg2.is_nil() || w.arg2 == arg2)
                     {
-                        GRTLOG("pend %s", (char *)Waitq[i].type, 0);
+                        GRTLOG("pend %s", (char *)w.type, 0);
                         return 1;
                     }
                 }
@@ -134,24 +139,23 @@ dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, vc arg2)
 void
 dirth_cancel_callbacks(QDFUNCP f, void *arg1, const ReqType& type)
 {
-restart:
-    int n = Waitq.num_elems();
-
-    for(int i = 0; i < n; ++i)
+    Waitq.rewind();
+    while(!Waitq.eol())
     {
-
-        if(Waitq[i].callback == f)
+        const QckDone& w = *Waitq.peek_ptr();
+        if(w.callback == f)
         {
-            if(type.name.is_nil() || (!type.name.is_nil() && Waitq[i].type == type))
+            if(type.name.is_nil() || (!type.name.is_nil() && w.type == type))
             {
-                if(arg1 == 0 || (arg1 != 0 && Waitq[i].arg1 == arg1))
+                if(arg1 == 0 || (arg1 != 0 && w.arg1 == arg1))
                 {
-                    GRTLOG("cancel %s", (char *)Waitq[i].type, 0);
-                    Waitq.del(i);
-                    goto restart;
+                    GRTLOG("cancel %s", (char *)w.type, 0);
+                    Waitq.remove();
+                    continue;
                 }
             }
         }
+        Waitq.forward();
     }
 }
 
@@ -159,25 +163,23 @@ void
 dirth_cancel_callbacks(QDFUNCP f, ValidPtr vp, const ReqType& type)
 {
     int vpvalid = vp.is_valid();
-
-restart:
-    int n = Waitq.num_elems();
-
-    for(int i = 0; i < n; ++i)
+    Waitq.rewind();
+    while(!Waitq.eol())
     {
-
-        if(Waitq[i].callback == f)
+        const QckDone& w = *Waitq.peek_ptr();
+        if(w.callback == f)
         {
-            if(type.name.is_nil() || Waitq[i].type == type)
+            if(type.name.is_nil() || w.type == type)
             {
-                if(vpvalid == 0 || Waitq[i].vp == vp)
+                if(vpvalid == 0 || w.vp == vp)
                 {
-                    GRTLOG("cancel %s", (char *)Waitq[i].type, 0);
-                    Waitq.del(i);
-                    goto restart;
+                    GRTLOG("cancel %s", (char *)w.type, 0);
+                    Waitq.remove();
+                    continue;
                 }
             }
         }
+        Waitq.forward();
     }
 }
 
@@ -189,14 +191,13 @@ restart:
 void
 dirth_dead_channel_cleanup(int chan)
 {
-    int n = Waitq.num_elems();
-
-    for(int i = 0; i < n; ++i)
+    const QckDone *wp;
+    dwlista_foreach_peek(wp, Waitq)
     {
-        if(Waitq[i].channel == chan)
+        if(wp->channel == chan)
         {
             vc resp(VC_VECTOR);
-            resp.append(Waitq[i].type.response_type());
+            resp.append(wp->type.response_type());
             // note: rest of response will look like
             // a generic error
             resp.append(vcnil);
@@ -209,21 +210,19 @@ dirth_dead_channel_cleanup(int chan)
 // when canceling a server operation, call this function
 // instead of the "cancel callbacks" functions above.
 // it fabricates error responses for
-// the schedules callback so anything waiting will get
+// the scheduled callback so anything waiting will get
 // what looks like an error response.
 void
 dirth_simulate_error_response(const QckDone& q)
 {
-
-    int n = Waitq.num_elems();
-
-    for(int i = 0; i < n; ++i)
+    const QckDone *wp;
+    dwlista_foreach_peek(wp, Waitq)
     {
-        if(Waitq[i] == q)
+        if(*wp == q)
         {
-            GRTLOG("simul err %s", (char *)Waitq[i].type, 0);
+            GRTLOG("simul err %s", (char *)wp->type, 0);
             vc resp(VC_VECTOR);
-            resp.append(Waitq[i].type.response_type());
+            resp.append(wp->type.response_type());
             // note: rest of response will look like
             // a generic error
             resp.append(vcnil);
@@ -250,15 +249,17 @@ dirth_poll_response()
             //oopanic("debug proto fail");
             continue;
         }
-        int n = Waitq.num_elems();
-        for(int i = 0; i < n; ++i)
+        Waitq.rewind();
+        while(!Waitq.eol())
         {
-            GRTLOG("wq %s", (char *)Waitq[i].type, 0);
-            if(strcmp(Waitq[i].type.name, v[0][0]) == 0 && Waitq[i].type.serial == (int)v[0][1])
+            const QckDone *wp;
+            wp = Waitq.peek_ptr();
+            GRTLOG("wq %s", (char *)wp->type, 0);
+            if(wp->type.name == v[0][0] && wp->type.serial == (int)v[0][1])
             {
-                QckDone q = Waitq[i];
+                QckDone q = *wp;
                 if(!q.permanent)
-                    Waitq.del(i);
+                    Waitq.remove();
                 // note: as long as you don't reference the Waitq after this
                 // it is safe for callbacks from "done" to call more commands
                 // that might q more commands
@@ -276,6 +277,7 @@ dirth_poll_response()
                 ret = 1;
                 break;
             }
+            Waitq.forward();
         }
     }
     return ret;
@@ -284,13 +286,13 @@ dirth_poll_response()
 void
 dirth_poll_timeouts()
 {
-    int n = Waitq.num_elems();
-    for(int i = 0; i < n; ++i)
+    const QckDone *wp;
+    dwlista_foreach_peek(wp, Waitq)
     {
-        if(Waitq[i].expired())
+        if(wp->expired())
         {
-            GRTLOG("wq expired %s", (char *)Waitq[i].type, 0);
-            QckDone q = Waitq[i];
+            GRTLOG("wq expired %s", (char *)wp->type, 0);
+            const QckDone& q = *wp;
 
             vc resp(VC_VECTOR);
             resp.append(q.type.response_type());
@@ -343,10 +345,17 @@ dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_auth,
     vc static_public = dh_my_static();
     static_public = static_public[DH_STATIC_PUBLIC];
     m[QSTATIC_PUBLIC] = static_public;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    if(Current_alternate)
+    {
+        static_public = Current_alternate->my_static_public();
+        m[QSTATIC_PUBLIC_ALTERNATE] = static_public[DH_STATIC_PUBLIC];
+        m[QSTATIC_ALT_NAME] = Current_alternate->alt_name();
+    }
+    dirth_send(m, d);
 }
 
+// this gets the public keys (including the group pk, if the
+// user is currently in a group) for a uid.
 void
 dirth_send_get_pk(vc id, vc uid, QckDone d)
 {
@@ -356,9 +365,9 @@ dirth_send_get_pk(vc id, vc uid, QckDone d)
     m[QTYPE] = reqtype("get-pk", d);
     m[QFROM] = id;
     m[2] = uid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
+
 
 void
 dirth_send_get_uid(vc id, vc handle, QckDone d)
@@ -370,9 +379,10 @@ dirth_send_get_uid(vc id, vc handle, QckDone d)
     m[QFROM] = id;
     m[2] = handle;
     Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
+// set the google FCM token
 void
 dirth_send_set_token(vc id, vc token, QckDone d)
 {
@@ -382,10 +392,107 @@ dirth_send_set_token(vc id, vc token, QckDone d)
     m[QTYPE] = reqtype("set-token", d);
     m[QFROM] = id;
     m[2] = token;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
+// this asks for the current list of uid's that are in
+// the group we are currently logged in with
+void
+dirth_send_get_group(vc id, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("get-group", ++Serial);
+    m[QTYPE] = reqtype("get-group", d);
+    m[QFROM] = id;
+    dirth_send(m, d);
+}
+
+// this gets the group pk from the name.
+// used for bootstrapping into a group if you
+// are brand new and don't know anyone else
+// in the group but you do know the group name.
+// you also get the uid's in the group.
+void
+dirth_send_get_group_pk(vc id, vc gname, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("get-group-pk", ++Serial);
+    m[QTYPE] = reqtype("get-group-pk", d);
+    m[QFROM] = id;
+    m[2] = gname;
+    dirth_send(m, d);
+}
+
+// attempt to create/enter group gname.
+// prov_pk is the provisional public static group key
+// in case the group doesn't exist.
+// if the group already exists, this will return the key for the
+// group directly, essentially ignoring the key you sent in.
+//
+// if the group does not exist, a challenge is returned, which
+// we must decrypt and issue another command (below)
+//
+void
+dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("set-get-group-pk", ++Serial);
+    m[QTYPE] = reqtype("set-get-group-pk", d);
+    m[QFROM] = id;
+    m[2] = gname;
+    m[3] = prov_pk[DH_STATIC_PUBLIC];
+
+    dirth_send(m, d);
+}
+
+// after you have decrypted the challenge nonce, you send it
+// back with this command. the server will answer with the group public
+// key and signature. (this just makes sure you have the private key
+// associated with the group and aren't asking us to just sign
+// some random stuff.)
+// NOTE: the server provisionally puts records you in the group
+// if you succeed with the challenge. this helps make it a little less
+// confusing because group observers will get a message that you are
+// in the group before you login the next time. (it is assumed the
+// client will exit pretty quickly after succeeding in the challenge.)
+// note this provisional assignment isn't really a problem if it turns out
+// to be bogus, because you would be the only one in the group (ie, it is
+// brand new.)
+void
+dirth_send_group_chal(vc id, vc nonce, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("group-chal", ++Serial);
+    m[QTYPE] = reqtype("group-chal", d);
+    m[QFROM] = id;
+    m[2] = nonce;
+
+    dirth_send(m, d);
+}
+
+// this is a command you can do *after* you have
+// deleted all the local information associated with
+// group sync state. it tells the server to record the
+// fact you have left the group, rather than waiting until you
+// login the next time (which may be never.)
+void
+dirth_send_prov_leave(vc id, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("prov-leave", ++Serial);
+    m[QTYPE] = reqtype("prov-leave", d);
+    m[QFROM] = id;
+    // note: we need to exit fairly quickly in this case, and it isn't
+    // crucial the command completes, so just give it a few seconds
+    d.set_timeout(5);
+
+    dirth_send(m, d);
+}
 
 void
 dirth_send_get(vc id, vc which, QckDone d)
@@ -396,20 +503,33 @@ dirth_send_get(vc id, vc which, QckDone d)
     m[QTYPE] = reqtype("get", d);
     m[QFROM] = id;
     m[2] = which;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
-dirth_send_store(vc id, vc recipients, vc msg, QckDone d)
+dirth_send_get2(vc id, vc which, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("get2", ++Serial);
+    m[QTYPE] = reqtype("get2", d);
+    m[QFROM] = id;
+    m[2] = which;
+    dirth_send(m, d);
+}
+
+void
+dirth_send_store(vc id, vc recipients, vc msg, vc no_group, vc no_self, QckDone d)
 {
     QckMsg m;
 
     d.type = ReqType("store", ++Serial);
     m[QTYPE] = reqtype("store", d);
     m[QFROM] = id;
-    m[QRECIPIENTS] = recipients;
-    m[QMSG] = msg;
+    m[QSTORE_RECIPIENTS] = recipients;
+    m[QSTORE_MSG] = msg;
+    m[QSTORE_NO_GROUP] = no_group;
+    m[QSTORE_NO_SELF] = no_self;
     if(recipients.num_elems() == 1)
     {
         vc port;
@@ -417,8 +537,7 @@ dirth_send_store(vc id, vc recipients, vc msg, QckDone d)
         vc name = get_server_name_by_uid(recipients[0], port);
         if(ip == My_server_ip && port == My_server_port)
         {
-            Waitq.append(d);
-            dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+            dirth_send(m, d);
         }
         else
         {
@@ -443,41 +562,76 @@ dirth_send_store(vc id, vc recipients, vc msg, QckDone d)
         }
         return;
     }
-    // here, we have to partition the receipients into
-    // sets for each remote server, then q messages
-    // for each server independently. there won't be
-    // any way to coordinate the responses like in
-    // the case where they all go to one server...
-    // possibly we'll just have to let the client
-    // handle sending the messages one by one and
-    // have the appropriate qckdone structures for
-    // each message (instead of clustering the
-    // messages as before.)
+    oopanic("multiple recipients not supported using this command anymore");
 }
 
 void
-dirth_send_query(vc id, QckDone d)
+dirth_send_query(vc uid, QckDone d)
 {
     QckMsg m;
 
     d.type = ReqType("query", ++Serial);
     m[QTYPE] = reqtype("query", d);
-    m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    m[QFROM] = uid;
+    dirth_send(m, d);
 }
 
 void
-dirth_send_ack_get(vc id, vc mid, QckDone d)
+dirth_send_query2(vc uid, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("query2", ++Serial);
+    m[QTYPE] = reqtype("query2", d);
+    m[QFROM] = uid;
+    dirth_send(m, d);
+}
+
+// NOTE: this is now "delete the message for everyone in group"
+void
+dirth_send_ack_get(vc uid, vc mid, QckDone d)
 {
     QckMsg m;
 
     d.type = ReqType("ack-get", ++Serial);
     m[QTYPE] = reqtype("ack-get", d);
-    m[QFROM] = id;
+    m[QFROM] = uid;
     m[2] = mid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
+}
+
+// NOTE: contrast to ack_get: ack_get2 is "don't return this
+// message to me anymore, but let others in the same group see it"
+void
+dirth_send_ack_get2(vc uid, vc mid, QckDone d)
+{
+//    // NOTE: in all cases, if you are not in a group, deleting a message
+//    // means just delete it, so there is no need to do the group-based
+//    // filtering.
+//    if(!Current_alternate)
+//        return dirth_send_ack_get(uid, mid, d);
+
+    QckMsg m;
+
+    d.type = ReqType("ack-get2", ++Serial);
+    m[QTYPE] = reqtype("ack-get2", d);
+    m[QFROM] = uid;
+    m[2] = mid;
+    dirth_send(m, d);
+    sql_add_tag(mid, "_ack");
+}
+
+void
+dirth_send_addtag(vc uid, vc mid, vc tag, QckDone d)
+{
+    QckMsg m;
+
+    d.type = ReqType("addtag", ++Serial);
+    m[QTYPE] = reqtype("addtag", d);
+    m[QFROM] = uid;
+    m[2] = mid;
+    m[3] = tag;
+    dirth_send(m, d);
 }
 
 void
@@ -496,8 +650,7 @@ dirth_send_ignore(vc id, vc uid, QckDone d)
     m[QTYPE] = reqtype("ignore", d);
     m[QFROM] = id;
     m[2] = uid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -512,8 +665,7 @@ dirth_send_unignore(vc id, vc uid, QckDone d)
     m[QTYPE] = reqtype("unignore", d);
     m[QFROM] = id;
     m[2] = uid;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 // note: this should go to the server of the *recipient* of the
@@ -535,8 +687,7 @@ dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d)
     vc name = get_server_name_by_uid(who, port);
     if(ip == My_server_ip && port == My_server_port)
     {
-        Waitq.append(d);
-        dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+        dirth_send(m, d);
     }
     else
     {
@@ -559,6 +710,7 @@ dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d)
     }
 }
 
+#if 0
 void
 dirth_send_get_ignore(vc id, QckDone d)
 {
@@ -577,10 +729,10 @@ dirth_send_get_ignore(vc id, QckDone d)
     d.type = ReqType("get-ignore", ++Serial);
     m[QTYPE] = reqtype("get-ignore", d);
     m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 #endif
 }
+#endif
 
 
 void
@@ -591,10 +743,10 @@ dirth_send_ack_all(vc id, QckDone d)
     d.type = ReqType("ack-all", ++Serial);
     m[QTYPE] = reqtype("ack-all", d);
     m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
+#if 0
 void
 dirth_send_clear_ignore(vc id, QckDone d)
 {
@@ -603,23 +755,10 @@ dirth_send_clear_ignore(vc id, QckDone d)
     d.type = ReqType("clear-ignore", ++Serial);
     m[QTYPE] = reqtype("clear-ignore", d);
     m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
+#endif
 
-void
-dirth_send_misc_info(vc id, vc mi, QckDone d)
-{
-    QckMsg m;
-
-    d.type = ReqType("auth3", ++Serial);
-    m[QTYPE] = reqtype("auth3", d);
-    m[QFROM] = id;
-    m[2] = mi;
-    // no response
-    //Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
-}
 
 void
 dirth_send_get_server_list2(vc id, QckDone d)
@@ -629,8 +768,7 @@ dirth_send_get_server_list2(vc id, QckDone d)
     d.type = ReqType("get-server-list2", ++Serial);
     m[QTYPE] = reqtype("get-server-list2", d);
     m[QFROM] = id;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 QckMsg
@@ -654,8 +792,7 @@ dirth_send_setup_session_key(vc id, vc sf_material, QckDone d)
     m[QTYPE] = reqtype("dhsf", d);
     m[QFROM] = id;
     m[2] = sf_material;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -667,8 +804,7 @@ dirth_send_set_interest_list(vc id, vc list, QckDone d)
     m[QTYPE] = reqtype("set-interest", d);
     m[QFROM] = id;
     m[2] = list;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 
@@ -683,8 +819,7 @@ dirth_send_debug(vc id, vc crashed, vc stack, vc field_track, QckDone d)
     m[2] = crashed;
     m[3] = stack;
     m[4] = field_track;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -697,8 +832,7 @@ dirth_send_recommend2(vc id, vc from, vc to, QckDone d)
     m[QFROM] = id;
     m[2] = from;
     m[3] = to;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -712,8 +846,7 @@ dirth_send_recommend3(vc id, vc from, vc to, vc email, QckDone d)
     m[2] = from;
     m[3] = to;
     m[4] = email;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -725,8 +858,7 @@ dirth_send_set_state(vc id, vc state, QckDone d)
     m[QTYPE] = reqtype("set-state", d);
     m[QFROM] = id;
     m[2] = state;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 vc
@@ -762,8 +894,7 @@ dirth_send_get_info(vc id, vc uid, vc cache_check, QckDone d)
     // use authenticator as a hash, server will send back
     // indication if our item is current
     m[3] = cache_check;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -775,8 +906,7 @@ dirth_send_set_info(vc id, vc info, QckDone d)
     m[QTYPE] = reqtype("set-info", d);
     m[QFROM] = id;
     m[2] = info;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -791,8 +921,7 @@ dirth_send_check_for_update(vc id, QckDone d)
     // hash value of the main executable
     m[2] = dwyco_get_version_string();
     m[3] = "";
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 #if 0
@@ -811,8 +940,7 @@ dirth_send_get_pal_auth_state(vc id, vc who, QckDone d)
     vc name = get_server_name_by_uid(who, port);
     if(ip == My_server_ip && port == My_server_port)
     {
-        Waitq.append(d);
-        dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+        dirth_send(m, d);
     }
     else
     {
@@ -844,8 +972,7 @@ dirth_send_set_pal_auth_state(vc id, vc state, QckDone d)
     m[QTYPE] = reqtype("set-pal-auth", d);
     m[QFROM] = id;
     m[2] = state;
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 #endif
 
@@ -864,8 +991,7 @@ dirth_send_server_assist(vc id, vc to_id, QckDone d)
     vc name = get_server_name_by_uid(to_id, port);
     if(ip == My_server_ip && port == My_server_port)
     {
-        Waitq.append(d);
-        dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+        dirth_send(m, d);
     }
     else
     {
@@ -918,8 +1044,7 @@ dirth_send_create_user_lobby(vc id, vc dispname, vc category, vc sub_god_uid, vc
         return;
     }
 
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 
 void
@@ -932,7 +1057,6 @@ dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d)
     m[QFROM] = id;
     m[2] = lobby_id;
 
-    Waitq.append(d);
-    dirth_send(m, Waitq[Waitq.num_elems() - 1]);
+    dirth_send(m, d);
 }
 }

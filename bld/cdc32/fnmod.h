@@ -23,6 +23,7 @@ int is_attachment(vc fn);
 int is_attachment(const DwString& fn);
 int is_msg_fn(vc fn);
 int is_msg_fn(const DwString& fn);
+int is_user_dir(const DwString& fn);
 DwString fn_extension(const DwString& fn);
 DwString fn_extension(vc fn);
 DwString fn_base_wo_extension(const DwString& fn);

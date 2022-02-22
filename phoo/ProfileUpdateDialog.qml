@@ -200,7 +200,7 @@ Page {
     Connections {
         target: top_dispatch
 
-        onProfile_updated: {
+        function onProfile_updated(success) {
             if(success === 1) {
                 profile_sent = 0
                 img_filename = ""

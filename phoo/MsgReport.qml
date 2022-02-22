@@ -41,7 +41,7 @@ Page {
             text: "SEND for review"
             onClicked: {
                 // note: don't save the message
-                core.send_forward(the_man, "Abuse report", uid, mid, 0)
+                core.send_forward(the_man, "Abuse report", mid, 0)
                 stack.pop()
             }
             Layout.fillWidth: true

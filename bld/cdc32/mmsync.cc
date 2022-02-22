@@ -39,15 +39,12 @@ MMChannel::sync_recv(vc updates)
         {
         case 'a':
             remote_vars.add(updates[i][1], updates[i][2]);
-            remote_updated = 1;
             break;
         case 'r':
             remote_vars.replace(updates[i][1], updates[i][2]);
-            remote_updated = 1;
             break;
         case 'd':
             remote_vars.del(updates[i][1]);
-            remote_updated = 1;
             break;
         }
     }

@@ -12,6 +12,7 @@
 
 #include "vc.h"
 #include "dwstr.h"
+namespace dwyco {
 int qauth_check_account_exists();
 void init_qauth();
 vc to_hex(vc s);
@@ -33,6 +34,10 @@ extern vc My_UID;
 extern vc My_MID;
 extern vc My_server_key;
 extern int Auth_remote;
+extern int Create_new_account;
+extern int Send_auth;
+extern void (*Entropy_display_callback)(int);
+}
 
 #define ECHARGE 30
 

@@ -105,9 +105,6 @@ TPGMMSWDecoder::display_decoded(void *v, int cols, int rows)
 int
 TPGMMSWDecoder::finish_line()
 {
-    // NOTE: XXXX possible reentrancy problems? XXX
-    void pump_messages();
-    pump_messages();
     return 1;
 }
 

@@ -142,9 +142,9 @@ $${D}/jenkins/libjenkins.a \
 $${D}/qtdrv/libqtdrv.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
--lsqlite3 \
 $${D}/v4lcap/libv4lcap.a \
--lv4l2
+-lv4l2 \
+-ldl
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \

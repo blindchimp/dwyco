@@ -8,10 +8,13 @@ using namespace dwyco;
 #undef DWUIDECLVAL
 #define DWUIDECLVAL(tp, nm, ival_str, ival_int) { tp, #nm, ival_str, ival_int}
 
+namespace dwyco {
+using namespace dwyco::ezset;
+
 struct init_settings
 {
-	enum vc_type tp;
-	const char *name;
+    enum vc_type tp;
+    const char *name;
     const char *init_val_str;
     int init_val_int;
 };
@@ -65,6 +68,17 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_INT, rate/kbits_per_sec_in, "", 128),
     DWUIDECLVAL(VC_INT, rate/max_fps, "", 20),
     DWUIDECLVAL(VC_BSTRING, auth/uniq, "00000000000000000001", 0),
+
+    DWUIDECLVAL(VC_BSTRING, group/alt_name, "", 0),
+    // the "join key" is simply the key used for encrypting join messages.
+    // this protects the group private key. it isn't recorded anywhere
+    // on the server or anything, this is just something a potential
+    // group joiner needs to have in order to request the group private key.
+    DWUIDECLVAL(VC_BSTRING, group/join_key, "", 0),
+    DWUIDECLVAL(VC_INT, sync/eager, "", 0),
+
+    DWUIDECLVAL(VC_INT, server/invis, "", 0),
+
     {VC_NIL,0, 0, 0}
 };
 
@@ -87,8 +101,33 @@ static settings_sql *Db;
 
 #define sql Db->sql_simple
 
+namespace ezset {
+
+void
+sql_start_transaction()
+{
+    Db->start_transaction();
+}
+void
+sql_commit_transaction()
+{
+    Db->commit_transaction();
+}
+void
+sql_rollback_transaction()
+{
+    Db->rollback_transaction();
+}
+
+}
+
 struct setting : public ssns::trackable
 {
+    setting(const setting&) = delete;
+    setting& operator=(const setting&) = delete;
+
+    setting() {}
+
     vc name;
     sigprop<vc> value;
 
@@ -97,7 +136,6 @@ struct setting : public ssns::trackable
     void update_db(vc val) {
         sql("update settings set value = ?1 where name = ?2", val, name);
         setting_changed.emit(name, val);
-
     }
 };
 
@@ -109,7 +147,8 @@ init_sql_settings()
 	if(Db)
 		return;
     Db = new settings_sql;
-    Db->init();
+    if(!Db->init())
+        oopanic("can't init setting database set.sql");
     Map = new DwTreeKaz<setting *, vc>(0);
 
     vc db = sql("select * from settings");
@@ -121,7 +160,7 @@ init_sql_settings()
         s->value.value_changed.connect_memfun(s, &setting::update_db);
         Map->add(s->name, s);
     }
-    Db->start_transaction();
+    sql_start_transaction();
     for(int i = 0; Initial_settings[i].name != 0; ++i)
     {
         if(Map->contains(Initial_settings[i].name))
@@ -146,7 +185,7 @@ init_sql_settings()
         }
         s->value.value_changed.connect_memfun(s, &setting::update_db);
     }
-    Db->commit_transaction();
+    sql_commit_transaction();
 }
 
 void
@@ -167,7 +206,7 @@ bind_sql_setting(vc name, void (*fn)(vc, vc))
     setting *s;
     if(!Map->find(name, s))
         oopanic("bad setting");
-    s->setting_changed.connect_ptrfun(fn);
+    s->setting_changed.connect_ptrfun(fn, 1);
 }
 
 void
@@ -183,7 +222,7 @@ bind_sql_section(vc pfx, void (*fn)(vc, vc))
         if(strncmp(pfx, nm, pfx.len()) == 0)
         {
             setting *s = a.get_value();
-            s->setting_changed.connect_ptrfun(fn);
+            s->setting_changed.connect_ptrfun(fn, 1);
         }
 
     }
@@ -240,5 +279,6 @@ get_settings_value(const char *name)
     if(!Map->find(name, s))
         oopanic("bad setting");
     return s->value;
+}
 }
 

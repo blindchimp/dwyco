@@ -22,6 +22,8 @@
 #include "aqext.h"
 
 #include "dwrtlog.h"
+using namespace dwyco;
+
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
 #include "aqext_android.h"
 #endif

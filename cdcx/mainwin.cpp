@@ -439,8 +439,7 @@ is_my_uid(const char *uid, int len_uid)
 DwOString
 computer_gen_pw()
 {
-    // create a simple pw just so the server isn't
-    // sitting without one
+    // create a random pw
     char *rs;
     dwyco_random_string2(&rs, 10);
     DwOString a(rs, 0, 10);
@@ -874,7 +873,7 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
     popup_menu->insertAction(0, ui.actionUnblock_user);
     popup_menu->insertAction(0, ui.actionRemove_user);
     popup_menu->insertAction(0, ui.actionUpdate_info);
-    popup_menu->insertAction(0, ui.actionAlert_when_online);
+    //popup_menu->insertAction(0, ui.actionAlert_when_online);
 
     tray_menu = new QMenu(this);
     tray_menu->insertAction(0, ui.actionOpen);
@@ -1377,7 +1376,7 @@ mainwinform::contextMenuEvent(QContextMenuEvent *ev)
     if(single)
     {
         QByteArray uid = uids[0];
-        ui.actionAlert_when_online->setChecked(dwyco_get_alert(uid.constData(), uid.length()));
+        //ui.actionAlert_when_online->setChecked(dwyco_get_alert(uid.constData(), uid.length()));
         int pal = dwyco_is_pal(uid.constData(), uid.length());
 
         int ignored = dwyco_is_ignored(uid.constData(), uid.length());
@@ -1390,7 +1389,7 @@ mainwinform::contextMenuEvent(QContextMenuEvent *ev)
         ui.actionSend_file->setVisible(!ignored);
         ui.actionSend_message->setVisible(!ignored);
         ui.actionView_Profile->setVisible(!ignored);
-        ui.actionAlert_when_online->setVisible(1);
+        //ui.actionAlert_when_online->setVisible(1);
         ui.actionBrowse_saved_msgs->setVisible(1);
 
         DwOString u(uid.constData(), 0, uid.length());
@@ -1407,7 +1406,7 @@ mainwinform::contextMenuEvent(QContextMenuEvent *ev)
     if(multi)
     {
         //ui.actionHangup->setVisible(1);
-        ui.actionAlert_when_online->setVisible(0);
+        //ui.actionAlert_when_online->setVisible(0);
         ui.actionCompose_Message->setVisible(0);
         ui.actionDemote_to_Non_pal->setVisible(1);
         ui.actionPromote_to_Pal->setVisible(1);
@@ -1809,12 +1808,12 @@ mainwinform::on_actionRemove_user_triggered(bool)
 void
 mainwinform::on_actionAlert_when_online_triggered(bool state)
 {
-    QList<QByteArray> uids = get_selection(0);
-    int n = uids.count();
-    for(int i = 0; i < n; ++i)
-    {
-        dwyco_set_alert(uids[i].constData(), uids[i].length(), state);
-    }
+//    QList<QByteArray> uids = get_selection(0);
+//    int n = uids.count();
+//    for(int i = 0; i < n; ++i)
+//    {
+//        dwyco_set_alert(uids[i].constData(), uids[i].length(), state);
+//    }
 }
 
 void
@@ -2270,11 +2269,11 @@ mainwinform::idle()
         prg.setCancelButton(0);
         prg.show();
         ict.start();
-        int total = 0;
-        int done = 0;
+        int total = 1;
+        int done = 1;
         while(!ict.isFinished())
         {
-            dwyco_power_clean_progress_hack(&done, &total);
+            //dwyco_power_clean_progress_hack(&done, &total);
 
             if(total > 0)
                 prg.setValue(done * 100 / total);
@@ -2286,7 +2285,7 @@ mainwinform::idle()
             if(prg.wasCanceled())
             {
                 total = -1;
-                dwyco_power_clean_progress_hack(&done, &total);
+                //dwyco_power_clean_progress_hack(&done, &total);
                 break;
             }
             QWaitCondition wc;
@@ -2502,6 +2501,9 @@ mainwinform::idle()
         reload_msgs();
         refetch_user_list();
         load_users();
+        // trigger initial msg rescan in case background thingy
+        // downloaded some messages
+        dwyco_set_rescan_messages(1);
 
         //dwyco_get_server_list(&Dwyco_server_list, &dum);
         // note: this won't work because we don't yet have
@@ -2563,6 +2565,7 @@ mainwinform::idle()
     {
         cdcx_set_refresh_users(0);
         //chatform2::update_chat_displays();
+        dwyco_load_users2(0, 0);
         load_users();
         decorate_users();
         emit refresh_users();
@@ -2835,7 +2838,7 @@ mainwinform::load_users()
             }
         }
 
-        // add last 30 or so users we have seen some through the chat server
+        // add last 30 or so users we have seen come through the chat server
         n = Seen_in_chat.count();
         for(int i = 0; i < n; ++i)
         {
@@ -3542,6 +3545,10 @@ dwyco_sys_event_callback(int cmd, int id,
         break;
     case DWYCO_SE_USER_STATUS_CHANGE:
         Mainwinform->emit uid_status_change(suid);
+        break;
+    case DWYCO_SE_GRP_JOIN_OK:
+        dwyco_set_setting("group/alt_name", TheConfigForm->ui.CDC_group__alt_name->text().toLatin1().constData());
+        DieDieDie = 1;
         break;
     default:
         break;
@@ -4416,10 +4423,10 @@ mainwinform::online_status_change(DwOString uid)
     int online = dwyco_uid_online(uid.constData(), uid.length());
     if(online && !Online.contains(uid))
     {
-        if(dwyco_get_alert(uid.constData(), uid.length()))
-        {
-            play_sound("relaxed-online.wav");
-        }
+//        if(dwyco_get_alert(uid.constData(), uid.length()))
+//        {
+//            play_sound("relaxed-online.wav");
+//        }
         Online.insert(uid);
     }
     if(!online)

@@ -10,7 +10,14 @@
 #define EZSET_H
 
 #include "vc.h"
+
+namespace dwyco {
 void init_sql_settings();
+namespace ezset {
+void sql_start_transaction();
+void sql_commit_transaction();
+void sql_rollback_transaction();
+}
 
 vc get_settings_value(const char *name);
 int set_settings_value(const char *name, const char *value);
@@ -18,5 +25,6 @@ int set_settings_value(const char *name, int);
 int set_settings_value(const char *name, vc);
 void bind_sql_setting(vc name, void (*fn)(vc, vc));
 void bind_sql_section(vc pfx, void (*fn)(vc, vc));
+}
 //template<class T> int set_settings_value(const char *name, T val);
 #endif

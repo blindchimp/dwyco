@@ -17,7 +17,7 @@ Page {
     //anchors.fill: parent
     property bool multiselect_mode : true
     property string mid_to_forward
-    property string uid_folder
+    //property string uid_folder
     property int limited_forward: 0
 
     header: SimpleToolbar {
@@ -115,7 +115,7 @@ Page {
 
     onVisibleChanged: {
         if(visible) {
-            limited_forward = core.flim(uid_folder, mid_to_forward)
+            limited_forward = core.flim(mid_to_forward)
             if(limited_forward) {
                 user_model.load_admin_users_to_model()
             } else {
@@ -124,7 +124,7 @@ Page {
             multiselect_mode = true
         } else {
             multiselect_mode = false
-            uid_folder = ""
+            //uid_folder = ""
             mid_to_forward = ""
         }
     }
@@ -183,7 +183,7 @@ Page {
                 // sort proxy doesn't play well since you have to forward stuff
                 // out to the source model which is tedious.
                 // instead, i just implement the send in c++ in the model
-                user_model.send_forward_selected(uid_folder, mid_to_forward)
+                user_model.send_forward_selected(mid_to_forward)
                 themsglist.reload_model()
                 chatbox.listview.positionViewAtBeginning()
                 //

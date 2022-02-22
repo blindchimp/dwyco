@@ -17,5 +17,5 @@ extern QByteArray Tmp_pfx;
 
 QByteArray add_pfx(const QByteArray& pfx, const QByteArray& fn);
 QByteArray random_fn();
-QString get_extended(QString txt);
+QByteArray get_extended(QByteArray txt);
 #endif

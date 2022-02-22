@@ -26,7 +26,7 @@
 #include "audmixs.h"
 #include "audmix.h"
 //#include "lpcconv.h"
-#include "rawconv.h"
+//#include "rawconv.h"
 #include "gsmconv.h"
 #include "spxconv.h"
 #include "vorbconv.h"
@@ -69,7 +69,7 @@ MMChannel::audio_decoder_from_config()
 #else
     audio_decoders[PAYLOAD_MSGSM610] = 0;
 #endif
-    audio_decoders[PAYLOAD_RAW8KHZ] = new RawConverter(1);
+    audio_decoders[PAYLOAD_RAW8KHZ] =  0; //new RawConverter(1);
     // default, narrow band
 #ifdef DWYCO_USE_SPEEX
     audio_decoders[PAYLOAD_SPEEX] = new SpeexConverter(1, 8000, 8000);
@@ -173,7 +173,7 @@ MMChannel::audio_coder_from_config()
 #else
     audio_coders[PAYLOAD_MSGSM610] = 0;
 #endif
-    audio_coders[PAYLOAD_RAW8KHZ] = new RawConverter(0);
+    audio_coders[PAYLOAD_RAW8KHZ] = 0; //new RawConverter(0);
     // default, narrow band
 #ifdef DWYCO_USE_SPEEX
     audio_coders[PAYLOAD_SPEEX] = new SpeexConverter(0, 8000, 8000);

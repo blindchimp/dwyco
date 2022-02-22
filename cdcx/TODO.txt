@@ -176,3 +176,5 @@ Thu Aug 25 10:46:45 MDT 2016
 * make "query" command into something that returns a model
 * have group messaging attached to an identifier, and model is accumulated as messages are received to that id.
 * bug: if you  have save-sent disabled and send yourself a message with an attachment, it disappears... need to override this case and just file the message as a sent message
+* FOR group key handling: rather than try to make it a complete group-ready client, initially just have it "compatible", ie, make it fold uid's for group members, and know how to encrypt with the group key. with those two things, other group-ready clients should be ok.
+

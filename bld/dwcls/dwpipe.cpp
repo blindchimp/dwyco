@@ -26,10 +26,10 @@ ec_pthread_mutex_unlock(pthread_mutex_t *m)
         ::oopanic("mutexU");
     return;
 }
+
 thdr
-static
 void *
-pipe_thread(void *pipeline)
+tcls::pipe_thread(void *pipeline)
 {
     tcls *p = (tcls *)pipeline;
     p->thread_loop();
@@ -94,7 +94,7 @@ tcls::init()
     pthread_cond_init(&q_cond, 0);
     pthread_cond_init(&outq_cond, 0);
     for(int i = 0; i < threads.num_elems(); ++i)
-        if(pthread_create(&threads[i], 0, pipe_thread<I,O>, this) != 0)
+        if(pthread_create(&threads[i], 0, pipe_thread, this) != 0)
             oopanic("can't create pipeline thread");
 
     return 1;

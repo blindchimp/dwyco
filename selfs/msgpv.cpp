@@ -17,7 +17,7 @@
 #include "msgpv.h"
 #include "dwycolist2.h"
 
-void cdcxpanic(const char *);
+[[noreturn]] void cdcxpanic(const char *);
 
 struct img_info
 {
@@ -38,13 +38,13 @@ image_cleanup(void *info)
 }
 
 int
-preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
+preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
 {
     preview_fn = add_pfx(Sys_pfx, "no_img.png");
     file = 0;
 
     DWYCO_SAVED_MSG_LIST qsm;
-    if(!dwyco_get_saved_message(&qsm, uid.constData(), uid.length(), mid.constData()))
+    if(dwyco_get_saved_message3(&qsm, mid.constData()) != DWYCO_GSM_SUCCESS)
     {
         return 0;
     }
@@ -105,7 +105,7 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
             // copy file out to random user_filename, scaling to preview size
             rfn = add_pfx(Tmp_pfx, rfn);
             full_size_filename = rfn;
-            if(!dwyco_copy_out_file_zap(uid.constData(), uid.length(), mid.constData(), rfn.constData()))
+            if(!dwyco_copy_out_file_zap2(mid.constData(), rfn.constData()))
                 throw 0;
             preview_fn = rfn;
         }
@@ -120,7 +120,7 @@ preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& prev
         return 1;
     }
 
-    int viewid = dwyco_make_zap_view(sm, uid.constData(), uid.length(), 0);
+    int viewid = dwyco_make_zap_view2(sm, 0);
     if(viewid == 0)
     {
         return 0;
@@ -231,7 +231,7 @@ preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QB
         return 1;
     }
 
-    int viewid = dwyco_make_zap_view(sm, 0, 0, 1);
+    int viewid = dwyco_make_zap_view2(sm, 1);
     if(viewid == 0)
     {
         return 0;

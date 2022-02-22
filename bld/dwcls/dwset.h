@@ -24,9 +24,9 @@ public:
         DwBag<T>(def, t) {}
 
 
-    void add(const T& key) {
+    void add(const T& key, T** wp = 0) {
         if(!this->contains(key))
-            DwBag<T>::add(key);
+            DwBag<T>::add(key, wp);
     }
     T get_by_iter(DwIter<DwSet<T>, T > *a) const {
         DwSetIter<T> *dbi = (DwSetIter<T> *)a;
