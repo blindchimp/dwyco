@@ -1518,20 +1518,32 @@ sql_get_recent_users(int recent, int *total_out)
         sql_simple("drop table foo");
         sql_simple("drop table bar");
 #endif
-	vc res = sql_simple(
-        "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi  where strftime('%s', 'now') - date < (365 * 24 * 3600) group by assoc_uid),"
-         "mins(muid) as (select min(uid) from group_map group by gid),"
-         "grps(guid) as (select uid from group_map)"
-        //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
-                "select uid from uids where uid not in (select * from grps) union select * from mins limit ?1",
+        vc res = sql_simple(
+                    "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi  "
+                    "where strftime('%s', 'now') - date < ?2 "
+                    "group by assoc_uid),"
+                    "mins(muid) as (select min(uid) from group_map group by gid),"
+                    "grps(guid) as (select uid from group_map)"
+                    //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
+                    "select uid from uids where uid not in (select * from grps) union select * from mins limit ?1",
+                    recent ? 100 : -1,
+                    recent ? (365 * 24 * 3600) : 50 * (365 * 24 * 3600));
 
-	recent ? 100 : -1);
+        if(total_out)
+        {
+            // note: total out is just an estimate of the number of
+            // uid's we are not returning. this is really intended just to
+            // give the user some idea of how many users are being hidden,
+            // and might just as easily be a boolean.
+            vc res2 = sql_simple("select count(*) from (select 1 from gi group by assoc_uid)");
+            *total_out = (long)res2[0][0];
+        }
         sql_commit_transaction();
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)
             ret.append(res[i][0]);
-        if(total_out)
-            *total_out = res.num_elems();
+        //    if(total_out)
+        //        *total_out = res.num_elems();
         return ret;
     }
     catch(...)

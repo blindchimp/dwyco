@@ -2294,7 +2294,7 @@ store_direct(MMChannel *m, vc msg, void *)
     return 1;
 }
 
-
+#if 0
 void
 load_users(int only_recent, int *total_out)
 {
@@ -2302,52 +2302,30 @@ load_users(int only_recent, int *total_out)
 
     MsgFolders = vc(VC_TREE);
 
-    if(only_recent)
+    vc ret = sql_get_recent_users(only_recent, total_out);
+    if(ret.is_nil() || ret.num_elems() == 0)
     {
-        vc ret = sql_get_recent_users(only_recent, total_out);
-        if(ret.is_nil() || ret.num_elems() == 0)
+        if(ret.is_nil())
         {
-            if(ret.is_nil())
-            {
-                TRACK_ADD(QM_UL_recent_fail, 1);
-            }
-            else
-            {
-                TRACK_ADD(QM_UL_recent_empty, 1);
-            }
+            TRACK_ADD(QM_UL_recent_fail, 1);
+        }
+        else
+        {
+            TRACK_ADD(QM_UL_recent_empty, 1);
+        }
+        if(only_recent)
             return load_users(0, total_out);
-        }
-        int n = ret.num_elems();
-        TRACK_MAX(QM_UL_recent_count, n);
-        for(int i = 0; i < n; ++i)
-        {
-            vc uid = from_hex(ret[i]);
-            add_msg_folder(uid);
-            //MsgFolders.add_kv(uid, vcnil);
-        }
     }
-    else
+    int n = ret.num_elems();
+    TRACK_MAX(QM_UL_recent_count, n);
+    for(int i = 0; i < n; ++i)
     {
-
-        FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
-        auto n = fv.num_elems();
-        TRACK_MAX(QM_UL_count, n);
-        for(int i = 0; i < n; ++i)
-        {
-            WIN32_FIND_DATA &d = *fv[i];
-            s = d.cFileName;
-            vc uid = dir_to_uid(s);
-            if(uid.len() != 10)
-                continue;
-            add_msg_folder(uid);
-            //MsgFolders.add_kv(uid, vcnil);
-        }
-
-        delete_findvec(&fv);
-        if(total_out)
-            *total_out = MsgFolders.num_elems();
+        vc uid = from_hex(ret[i]);
+        add_msg_folder(uid);
     }
 }
+#endif
+
 
 void
 load_users_from_files(int *total_out)
@@ -2379,8 +2357,6 @@ load_users_from_files(int *total_out)
 void
 load_users_from_index(int recent, int *total_out)
 {
-    DwString s;
-
     MsgFolders = vc(VC_TREE);
 
     vc ret = sql_get_recent_users(recent, total_out);
@@ -2399,12 +2375,8 @@ load_users_from_index(int recent, int *total_out)
         {
             vc uid = from_hex(ret[i]);
             add_msg_folder(uid);
-            //MsgFolders.add_kv(uid, vcnil);
         }
-        if(total_out)
-            *total_out = n;
     }
-
 }
 
 

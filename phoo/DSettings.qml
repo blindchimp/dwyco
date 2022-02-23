@@ -147,15 +147,15 @@ Page {
             Layout.fillWidth: true
         }
 
-//        CheckBox {
-//            id: show_archived
-//            text: { "Show archived users (" + core.total_users.toString() + ")" }
-//            onCheckedChanged: {
-//                core.use_archived = checked
-//                show_archived_users = checked
-//            }
-//            Layout.fillWidth: true
-//        }
+        CheckBox {
+            id: show_archived
+            text: { "Show archived users (" + core.total_users.toString() + ")" }
+            onCheckedChanged: {
+                core.use_archived = checked
+                show_archived_users = checked
+            }
+            Layout.fillWidth: true
+        }
 
 
         ItemDelegate {

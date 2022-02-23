@@ -12,6 +12,7 @@
 #include "getinfo.h"
 #include "ignoremodel.h"
 #include "dwycolist2.h"
+#include <QAbstractItemModelTester>
 
 void hack_unread_count();
 void reload_conv_list();
@@ -42,6 +43,9 @@ ConvListModel::ConvListModel(QObject *parent) :
     if(TheConvListModel)
         ::abort();
     TheConvListModel = this;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 
 }
 
@@ -290,6 +294,9 @@ ConvSortFilterModel::ConvSortFilterModel(QObject *p)
     setSortCaseSensitivity(Qt::CaseInsensitive);
     sort(0);
     m_count = 0;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 }
 
 void

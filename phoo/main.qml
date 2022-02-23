@@ -105,7 +105,7 @@ ApplicationWindow {
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
-    property bool show_archived_users: true
+    property bool show_archived_users: false
 
     property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
 

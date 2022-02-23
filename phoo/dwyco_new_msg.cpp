@@ -16,7 +16,7 @@
 #include "dwycolist2.h"
 
 [[noreturn]] void cdcxpanic(const char *);
-
+extern QByteArray Clbot;
 static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Already_processed;
 
@@ -137,7 +137,7 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
     for(int i = 0; i < n; ++i)
     {
         uid_out = qml.get<QByteArray>(i, DWYCO_QMS_FROM);
-        if(uid_out == QByteArray::fromHex("f6006af180260669eafc"))
+        if(uid_out == Clbot)
             continue;
         mid = qml.get<QByteArray>(i, DWYCO_QMS_ID);
         if(Already_processed.contains(mid))
@@ -154,10 +154,10 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
         Already_processed.insert(mid);
         if(dwyco_mid_disposition(mid) == 0)
         {
-            // this corresponds to the case where the index seems to show
-            // the mid is somewhere, which means it at least has been seen
-            // somewhere else in the cluster. so we don't need to flag it as
-            // something that needs attention.
+            // this corresponds to the case where the index doesn't have any
+            // record of this mid anywhere else. so we tag it in a way that will
+            // show it to the user as a "new message"
+
             add_unviewed(uid_out, mid);
             uids.insert(uid_out);
         }

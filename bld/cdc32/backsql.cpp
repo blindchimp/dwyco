@@ -568,7 +568,8 @@ static
 int
 create_full_backup()
 {
-    load_users(0, 0);
+    // we can really only back up the ones we have locally.
+    load_users_from_files(0);
     sql_start_transaction();
     MsgFolders.foreach(vcnil, backup_user);
     sql_simple("update bu set state = 1;");

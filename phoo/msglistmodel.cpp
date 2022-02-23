@@ -12,6 +12,7 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
+#include <QAbstractItemModelTester>
 #include <stdlib.h>
 #include "msglistmodel.h"
 #include "msgpv.h"
@@ -234,6 +235,9 @@ msglist_model::msglist_model(QObject *p) :
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
     mlm = this;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 }
 
 msglist_model::~msglist_model()
@@ -530,6 +534,9 @@ msglist_raw::msglist_raw(QObject *p)
     count_inbox_msgs = 0;
     count_msg_idx = 0;
     count_qd_msgs = 0;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 }
 
 msglist_raw::~msglist_raw()
@@ -952,25 +959,6 @@ auto_fetch(QByteArray mid)
 {
     if(!(Fetching.contains(mid) || Manual_fetch.contains(mid) || Failed_fetch.contains(mid)))
     {
-//        int special_type;
-//        const char *uid;
-//        int len_uid;
-//        const char *dlv_mid;
-//        if(dwyco_is_delivery_report(mid.constData(), &uid, &len_uid, &dlv_mid, &special_type))
-//        {
-//            // process pal authorization stuff here
-//            if(special_type == DWYCO_SUMMARY_DELIVERED)
-//            {
-//                // NOTE: uid, dlv_mid must be copied out before next
-//                // dll call
-//                // hmmm, need new api to get uid/mid_out of delivered msg
-//                dwyco_delete_unfetched_message(mid.constData());
-//                return 0;
-//            }
-
-//        }
-//        else
-
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
         // note: we get msg_recv_status signals as the fetch proceeds

@@ -109,7 +109,8 @@ extern int HasCamera;
 extern int HasCamHardware;
 static QNetworkAccessManager *Net_access;
 
-static QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
+// kluge
+QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -136,7 +137,7 @@ reload_conv_list()
 {
     Conv_sort_proxy->setDynamicSortFilter(false);
     int total = 0;
-    dwyco_load_users2(0, &total);
+    dwyco_load_users2(!TheDwycoCore->get_use_archived(), &total);
     TheDwycoCore->update_total_users(total);
     TheConvListModel->load_users_to_model();
     Conv_sort_proxy->setDynamicSortFilter(true);
@@ -2685,7 +2686,6 @@ send_contact_query(QList<QString> emails)
     int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
     if(compid == 0)
         return;
-    //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
     if(!dwyco_zap_send5(compid, Clbot.constData(), Clbot.length(),
                         "", 0,
