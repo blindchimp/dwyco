@@ -784,6 +784,7 @@ remove_sync_state()
         sql_simple("delete from dir_meta");
         sql_simple("delete from midlog");
         sql_simple("delete from mt.taglog");
+        sql_simple("delete from deltas");
         sql_commit_transaction();
         {
             FindVec *fv = find_to_vec(newfn("minew????????????????????.sql").c_str());
