@@ -12,7 +12,9 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
+#ifdef DWYCO_MODEL_TEST
 #include <QAbstractItemModelTester>
+#endif
 #include <stdlib.h>
 #include "msglistmodel.h"
 #include "msgpv.h"

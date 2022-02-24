@@ -12,7 +12,9 @@
 #include "getinfo.h"
 #include "ignoremodel.h"
 #include "dwycolist2.h"
+#ifdef DWYCO_MODEL_TEST
 #include <QAbstractItemModelTester>
+#endif
 
 void hack_unread_count();
 void reload_conv_list();

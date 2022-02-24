@@ -28,8 +28,8 @@ INSTALLS += appdir_icon appdir_desktop
 
 QT += core qml quick multimedia network #widgets #positioning
 QT += quickcontrols2
-QT += testlib
-DEFINES += DWYCO_MODEL_TEST
+#QT += testlib
+#DEFINES += DWYCO_MODEL_TEST
 
 android: QT += androidextras
 macx-clang: QT += macextras
@@ -39,7 +39,7 @@ DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
 macx-clang {
 QMAKE_INFO_PLIST=Info.plist.mac
-#CONFIG -= app_bundle
+CONFIG -= app_bundle
 }
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
