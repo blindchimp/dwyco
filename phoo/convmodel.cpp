@@ -301,6 +301,30 @@ ConvSortFilterModel::ConvSortFilterModel(QObject *p)
 #endif
 }
 
+// WARNING: the index is interpreted as a SOURCE model index
+// we is kinda useless in QML, now that i think about it.
+// when i need this, will have to provide some mapping
+QObject *
+ConvSortFilterModel::get(int source_idx)
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->get(source_idx);
+}
+
+int
+ConvSortFilterModel::get_by_uid(QString uid)
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    int i = m->indexOf(uid);
+    if(i == -1)
+        return -1;
+    return mapFromSource(m->index(i)).row();
+}
+
 void
 ConvSortFilterModel::toggle_selected(QString uid)
 {

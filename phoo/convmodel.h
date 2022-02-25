@@ -101,7 +101,8 @@ public:
         }
         return 0;
     }
-
+    Q_INVOKABLE QObject *get(int source_idx);
+    Q_INVOKABLE int get_by_uid(QString uid);
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void set_all_selected(bool);
     Q_INVOKABLE void delete_all_selected();
