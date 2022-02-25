@@ -1165,6 +1165,10 @@ init_qmsg_sql()
     sql_simple("insert into static_uid_tags values('_pal')");
     sql_simple("insert into static_uid_tags values('_leader')");
 
+    // this is just a scratch table, i put it up here to avoid "create temp"
+    // (which is a schema operation, and locks tons of stuff)
+    sql_simple("create temp table uidset(uid text not null)");
+
     sql_simple("drop table if exists current_clients");
     sql_simple("create table current_clients(uid text collate nocase unique on conflict ignore not null on conflict fail)");
 
@@ -1493,31 +1497,10 @@ sql_get_recent_users(int recent, int *total_out)
     try
     {
         sql_start_transaction();
-#if 0
-        sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
-        sql_simple("insert into foo select strftime('%s', 'now'), uid from group_map");
-        vc res;
-        if(total_out)
-        {
-            res = sql_simple("select count(distinct assoc_uid) from foo");
-            *total_out = (int)res[0][0];
-        }
-
         // remove all uid's from the user list except one that represents the group.
         // arbitrary: the lowest one lexicographically, which might change.
         // another option might be to return the one that us currently active,
         // which means we might be able to direct message/call them
-        sql_simple("create temp table bar as select min(uid) from group_map group by gid");
-        sql_simple("delete from foo where assoc_uid in (select uid from group_map) and assoc_uid not in (select * from bar)");
-
-#ifdef ANDROID
-        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 20");
-#else
-        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit ?1", recent ? 100 : -1);
-#endif
-        sql_simple("drop table foo");
-        sql_simple("drop table bar");
-#endif
         vc res = sql_simple(
                     "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi  "
                     "where strftime('%s', 'now') - date < ?2 "
@@ -1542,8 +1525,6 @@ sql_get_recent_users(int recent, int *total_out)
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)
             ret.append(res[i][0]);
-        //    if(total_out)
-        //        *total_out = res.num_elems();
         return ret;
     }
     catch(...)
@@ -1562,6 +1543,8 @@ sql_get_recent_users2(int max_age, int max_count)
         vc res;
         // note: this doesn't get the "latest", putting in an order by doubles the amount of time
         // it takes, and most of the time, the max_count is big enough to get everything anyway
+        // note also, this doesn't fold uid's by group, as this is used in situations where you
+        // want to know the uid's status individually.
         res = sql_simple(
                     "with latest(date, uid) as (select max(date) as md, assoc_uid from gi group by assoc_uid)"
                     "select uid from latest where strftime('%s', 'now') - date < ?1 limit ?2",
@@ -1635,15 +1618,15 @@ void
 create_uidset(vc uid)
 {
     vc huid = to_hex(uid);
-
-    sql_simple("create temp table uidset as select ?1 union select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
+    sql_simple("delete from uidset");
+    sql_simple("insert into uidset select ?1 union select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
 }
 
 static
 void
 drop_uidset()
 {
-    sql_simple("drop table uidset");
+
 }
 
 static
@@ -1715,7 +1698,7 @@ sql_load_group_index(vc uid, int max_count)
         // disappear (or just show up someplace different), we include
         // the messages from the group, using the group attribute on the
         // message.
-        // NOTE: the messages of this sort will show up in two places, but
+        // NOTE: the messages of this type will show up in two places, but
         // if they are deleted in one place, they will be deleted from both places.
         res = sql_simple(
                     with_create_uidset(3)
