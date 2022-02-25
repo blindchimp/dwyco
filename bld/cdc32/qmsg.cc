@@ -3641,7 +3641,7 @@ do_local_store(vc filename, vc speced_mid)
             // we saved the message, but the indexing failed, need
             // a fix for this. possibly we can just schedule a
             // re-index for this user.
-            if(!update_msg_idx(recip[i], m[1]))
+            if(!update_msg_idx(recip[i], m[1], 0))
             {
                 // FIGURE IT OUT
             }

@@ -84,18 +84,27 @@ se_emit(dwyco_sys_event cmd, vc uid)
     v[0] = cmd;
     v[1] = map_to_representative_uid(uid);
 
-    // don't filter out dups for now.
-    // there may be ordering dependencies that are
-    // more important than just processing a dup command
-    //
-#if 0
-    int n = Se_q.num_elems();
-    for(int i = 0; i < n; ++i)
+    // this is a little dicey since we haven't really
+    // thought about the exact issues related to having
+    // multiple undelivered dups (like what if processing
+    // a message multiple times in a row is what we want)
+    // there is also issues with duplicate sequences of different
+    // messages, especially if processing some message induces
+    // more messages in here.
+    // for now, we just check for one duplicate message on the
+    // end of the q, and ignore it. this stops situations where
+    // a bulk operation is stacking a bunch of the same
+    // notification up, most of which aren't useful.
+    // but really, this needs to be addressed on a
+    // message-by-message basis.
+
+    int n = Se_q.num_elems() - 1;
+    if(n >= 0)
     {
-        if((int)Se_q[i][0] == cmd && Se_q[i][1] == id)
+        if((int)Se_q[n][0] == cmd && Se_q[n][1] == uid)
             return;
     }
-#endif
+
     Se_q.append(v);
     GRTLOG("se_emit ", 0, 0);
     GRTLOGVC(v);

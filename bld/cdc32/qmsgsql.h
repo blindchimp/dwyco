@@ -38,7 +38,7 @@ vc msg_idx_get_new_msgs(vc uid, vc logical_clock);
 vc sql_get_uid_from_mid(vc mid);
 void remove_msg_idx_uid(vc uid);
 void remove_msg_idx(vc uid, vc mid);
-int update_msg_idx(vc recip, vc body, int inhibit_sysmsg = 0);
+int update_msg_idx(vc recip, vc body, int inhibit_sysmsg);
 int msg_index_count(vc uid);
 
 void sql_remove_all_tags_uid(vc uid);

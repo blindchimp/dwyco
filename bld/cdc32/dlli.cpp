@@ -7354,7 +7354,7 @@ save_msg(vc m, vc msg_id)
 
     if(msg[QQM_BODY_ATTACHMENT].is_nil())
     {
-        if(!update_msg_idx(vcnil, body))
+        if(!update_msg_idx(vcnil, body, 0))
             return 0;
         //ack_direct(msg_id);
         delete_msg2(msg_id);
@@ -7364,7 +7364,7 @@ save_msg(vc m, vc msg_id)
     // the attachment was sent direct as well.
     if(!refile_attachment(msg[QQM_BODY_ATTACHMENT], msg[QQM_BODY_FROM]))
         return 0;
-    if(!update_msg_idx(vcnil, body))
+    if(!update_msg_idx(vcnil, body, 0))
         return 0;
     //ack_direct(msg_id);
     delete_msg2(msg_id);
