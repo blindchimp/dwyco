@@ -2562,7 +2562,7 @@ DwycoCore::service_channels()
         {
             QByteArray huid = buid.toHex();
             emit new_msg(QString(huid), "", "");
-            emit decorate_user(huid);
+            //emit decorate_user(huid);
         }
         //if(mlm)
         //    mlm->reload_model();
