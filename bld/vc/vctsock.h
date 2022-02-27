@@ -7,9 +7,12 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include "vc.h"
-#ifndef DWYCO_NO_TSOCK
+//#ifndef DWYCO_NO_TSOCK
 #ifndef VCTSOCK_H
 #define VCTSOCK_H
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "vcnil.h"
 #include "vccomp.h"
@@ -23,6 +26,7 @@ class vc_tsocket : public vc_composite
 {
 private:
     DwVP vp;
+    int sock;
 
     static vc sockaddr_to_vc(struct sockaddr *sapi, int len);
 
@@ -72,8 +76,28 @@ private:
 
     static DwTreeKaz<vc_tsocket *, long> *Ready_q_p;
 
+    std::mutex recv_mutex;
+    std::mutex send_mutex;
+    std::condition_variable putq_wait;
+
+    struct cbuf
+    {
+        cbuf() {
+            buf = 0;
+            len = -1;
+        }
+
+        char *buf;
+        int len;
+
+        void done() {
+            delete [] buf;
+            buf = 0;
+        }
+    };
+
     list2 getq;
-    list2 putq;
+    DwListA<cbuf> putq;
 
     // this is needed since errors in the UV socket like
     // "connection reset by peer" obliterate the peer information.
@@ -129,5 +153,5 @@ public:
 };
 
 #endif
-#endif
+//#endif
 

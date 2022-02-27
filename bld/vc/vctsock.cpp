@@ -7,12 +7,12 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include "vc.h"
-#ifndef DWYCO_NO_UVSOCK
+//#ifndef DWYCO_NO_TSOCK
 #include <stdlib.h>
 #include "vctsock.h"
 #include "dwstr.h"
 #include "vcxstrm.h"
-
+#include <sys/socket.h>
 
 #ifndef _WIN32
 static char *
@@ -22,8 +22,79 @@ ultoa(unsigned long l, char *out, int radix)
     return out;
 }
 #endif
+static
+int
+vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
+{
+    unsigned short in_port = 0;
 
+    DwString inp((const char *)v);
 
+    int colpos = inp.find(":");
+    DwString ip;
+    if(colpos != DwString::npos)
+    {
+        ip = inp;
+        ip.remove(colpos);
+        DwString sport = inp;
+        sport.erase(0, colpos + 1);
+        if(!sport.eq("any"))
+            in_port = htons(atoi(sport.c_str()));
+    }
+    else
+        ip = inp;
+
+    struct in_addr in_addr;
+    in_addr.s_addr = INADDR_ANY;
+
+    if(!ip.eq("any"))
+    {
+        int res = inet_pton(AF_INET, ip.c_str(), &in_addr);
+        // bogus, doesn't work right for broadcast address
+        // need to use updated version of inet_addr
+        if(res == 0)
+        {
+            return 0;
+        }
+    }
+
+    struct sockaddr_in *sap = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+
+    memset(sap, 0, sizeof(*sap));
+
+    sap->sin_family = AF_INET;
+    sap->sin_addr = in_addr;
+    sap->sin_port = in_port;
+    sapr = (struct sockaddr *)sap;
+    len = sizeof(*sap);
+    return 1;
+}
+
+static
+vc
+sockaddr_to_vc(struct sockaddr *sapi, int len)
+{
+    char tmp_str[128];
+
+    struct sockaddr_in *sap = (struct sockaddr_in *)sapi;
+
+    memset(tmp_str, 0, sizeof(tmp_str));
+    char *str = inet_ntoa(sap->sin_addr);
+    if(str == 0)
+        return vcnil;
+    DwString in_addrstr(str);
+
+    if(sap->sin_port != 0)
+    {
+        in_addrstr += ':';
+        in_addrstr += DwString::fromUint(ntohs(sap->sin_port));
+    }
+
+    vc ret(in_addrstr.c_str());
+    return ret;
+}
+
+#if 0
 static
 void
 vc_to_sockaddr(const vc& addr, sockaddr_in& out)
@@ -67,11 +138,54 @@ vc_tsocket::sockaddr_to_vc(struct sockaddr *sapi, int len)
     return addr.c_str();
 
 }
+#endif
+
+int
+vc_tsocket::recv_loop()
+{
+    while(1)
+    {
+        vc item;
+        long len;
+        if((len = item.xfer_in(readx)) < 0)
+        {
+            // terminate thread
+            return len;
+        }
+        recv_mutex.lock();
+        getq.append(item);
+        item = vcnil;
+        recv_mutex.unlock();
+    }
+}
+
+
+
+int
+vc_tsocket::send_loop()
+{
+    while(1)
+    {
+        send_mutex.lock();
+        putq_wait.wait(send_mutex, [](){return putq.num_elems() > 0;});
+        cbuf b = putq.get_first();
+        putq.remove_first();
+        send_mutex.unlock();
+        auto n = send(sock, b.buf, b.len);
+        if(n == -1)
+            return -1;
+        if(n < b.len)
+        {
+            oopanic("what? blocking socket partial send");
+        }
+        b.done();
+    }
+}
 
 vc_tsocket::vc_tsocket() :
     vp(this),
     getq(this),
-    putq(this),
+    //putq(this),
     readx(this, 0, 0, vcxstream::CONTINUOUS_READAHEAD)
 {
     listening = 0;
@@ -114,13 +228,30 @@ vc_tsocket::add_error(vc v)
 long
 vc_tsocket::underflow(vcxstream&, char *buf, long min, long max)
 {
-    if(tmplen < min)
-        return -1;
-    long n = max < tmplen ? max : tmplen;
-    memcpy(buf, tmpbuf, n);
-    tmpbuf += n;
-    tmplen -= n;
-    return n;
+    long got = 0;
+    auto to_get = max;
+    while(to_get > 0)
+    {
+        auto n = recv(sock, buf, to_get);
+        if(n == -1)
+        {
+            // even if we got some, this means some kind of
+            // unexpected thing happened, so we bail on the
+            // data instead of returning a partial amount.
+            return -1;
+        }
+        if(n == 0)
+        {
+            if(got < min)
+                return -1;
+            else
+                break;
+        }
+        got += n;
+        buf += n;
+        to_get -= n;
+    }
+    return got;
 }
 
 
@@ -227,40 +358,32 @@ vc_tsocket::socket_connect(const vc& addr)
 vc
 vc_tsocket::socket_get_obj(int& avail, vc& addr_info)
 {
+    recv_mutex.lock();
     if(getq.num_elems() == 0)
     {
         avail = 0;
+        recv_mutex.unlock();
         return vcnil;
     }
     vc ret = getq.get_first();
     getq.remove_first();
     avail = 1;
+    recv_mutex.unlock();
     return ret;
-
 }
 
 
 long
 vc_tsocket::overflow(vcxstream&, char *buf, long len)
 {
-    uv_write_t *req = new uv_write_t;
-    overflow_req *o = new overflow_req;
-    o->cookie = vp.cookie;
-    o->buf = new char [len];
-
-    req->data = o;
-
-    memcpy(o->buf, buf, len);
-    o->ubuf = uv_buf_init(o->buf, len);
-
-    if(uv_write(req, (uv_stream_t *)tcp_handle, &o->ubuf, 1, write_cb) == -1)
-    {
-        delete [] o->buf;
-        delete o;
-        delete req;
-        return -1;
-    }
-    return len;
+    send_mutex.lock();
+    cbuf b;
+    b.buf = new char[len];
+    memcpy(b.buf, buf, len);
+    b.len = len;
+    putq.append(b);
+    send_mutex.unlock();
+    putq_wait.notify_one();
 }
 
 // note: the syntax is a bit of a hack right now.
@@ -276,6 +399,9 @@ vc_tsocket::socket_put_obj(vc obj, const vc& to_addr, int syntax)
     // serialize the object immediately and write the buffer out.
     // this avoids problems with attempting to serialize the
     // object while it is being updated by the caller.
+    // NOTE! serialization is NOT thread safe, and will never be
+    // for this setup. it is best to just serialize into bytes
+    // that are shuffled out by another thread.
 
     vcxstream ox(this, 0, 0, vcxstream::CONTINUOUS);
     // note: we could make this MULTIPLE if you were sending really
@@ -397,4 +523,4 @@ vc_tsocket::printOn(VcIO os)
 }
 
 
-#endif
+//#endif
