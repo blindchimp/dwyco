@@ -92,7 +92,7 @@ vc_uvsocket::run_loop_once()
 vc_uvsocket::vc_uvsocket() :
     vp(this),
     getq(this),
-    putq(this),
+    //putq(this),
     readx(this, 0, 0, vcxstream::CONTINUOUS_READAHEAD)
 {
 	listening = 0;
