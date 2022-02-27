@@ -94,7 +94,7 @@ private:
     static DwTreeKaz<vc_uvsocket *, long> *Ready_q_p;
 
     list2 getq;
-    list2 putq;
+    //list2 putq;
 
     // this is needed since errors in the UV socket like
     // "connection reset by peer" obliterate the peer information.
