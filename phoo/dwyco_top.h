@@ -308,7 +308,8 @@ signals:
     void video_capture_preview(QString img_path);
 // this is used internally, should not fiddle with it via QML
     void user_control(int, QByteArray, QByteArray);
-    void decorate_user(const QString& uid);
+
+    void decorate_user(QString uid);
     void sys_chat_server_status(int id, int status);
     void qt_app_state_change(int app_state);
 

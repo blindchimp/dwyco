@@ -88,9 +88,9 @@ se_emit(dwyco_sys_event cmd, vc uid)
     // thought about the exact issues related to having
     // multiple undelivered dups (like what if processing
     // a message multiple times in a row is what we want)
-    // there is also issues with duplicate sequences of different
+    // there are also issues with duplicate sequences of different
     // messages, especially if processing some message induces
-    // more messages in here.
+    // more messages in this q.
     // for now, we just check for one duplicate message on the
     // end of the q, and ignore it. this stops situations where
     // a bulk operation is stacking a bunch of the same

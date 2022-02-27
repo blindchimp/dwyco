@@ -863,10 +863,7 @@ ApplicationWindow {
         }
 
         onNew_msg: {
-            console.log(from_uid)
-            console.log(txt)
-            console.log(mid)
-            console.log("new msglist ", themsglist.uid)
+            console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
             if(from_uid === themsglist.uid) {
                 themsglist.reload_model();
                 // note: this could be annoying if the person is
