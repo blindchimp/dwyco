@@ -498,7 +498,7 @@ vc_uvsocket::socket_close(int close_info)
 
     tcp_handle = 0;
     getq.clear();
-    putq.clear();
+    //putq.clear();
     return vctrue;
 }
 
