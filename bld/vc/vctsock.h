@@ -30,7 +30,6 @@ private:
 
     static vc sockaddr_to_vc(struct sockaddr *sapi, int len);
 
-    void add_error(vc v);
     int listening;
     // xstream we use to reconstruct objects as they come in
     vcxstream readx;
@@ -94,10 +93,14 @@ private:
             delete [] buf;
             buf = 0;
         }
+
     };
 
     list2 getq;
     DwListA<cbuf> putq;
+    int recv_loop();
+    int send_loop();
+    int accept_loop();
 
     // this is needed since errors in the UV socket like
     // "connection reset by peer" obliterate the peer information.

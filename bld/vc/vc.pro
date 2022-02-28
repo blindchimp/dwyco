@@ -77,4 +77,5 @@ vcuvsock.cpp \
 lhuvsock.cpp \
 vctrans.cpp \
 vcudh.cpp \
-reobj.cpp
+reobj.cpp \
+vctsock.cpp

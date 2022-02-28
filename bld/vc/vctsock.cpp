@@ -7,12 +7,39 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include "vc.h"
-//#ifndef DWYCO_NO_TSOCK
+#ifndef DWYCO_NO_TSOCK
 #include <stdlib.h>
 #include "vctsock.h"
 #include "dwstr.h"
 #include "vcxstrm.h"
 #include <sys/socket.h>
+
+#ifdef USE_BERKSOCK
+#include "vcberk.h"
+
+static int
+WSAGetLastError()
+{
+    return errno;
+}
+
+static int
+WSASetLastError(int e)
+{
+    errno = e;
+    return 0;
+}
+
+#endif
+
+struct scoped_sockaddr
+{
+    struct sockaddr *value;
+    explicit scoped_sockaddr(struct sockaddr *&v) {value = v; v = 0;}
+    ~scoped_sockaddr() {if(value) free(value);}
+    operator struct sockaddr *() {return value;}
+};
+
 
 #ifndef _WIN32
 static char *
@@ -140,6 +167,15 @@ vc_tsocket::sockaddr_to_vc(struct sockaddr *sapi, int len)
 }
 #endif
 
+static
+void
+add_error(vc v, int e)
+{
+    v[1] = vcnil;
+    v[2] = e;
+    v[3] = vc_wsget_errstr(e);
+}
+
 int
 vc_tsocket::recv_loop()
 {
@@ -147,11 +183,16 @@ vc_tsocket::recv_loop()
     {
         vc item;
         long len;
+        if(!readx.open2(vcxstream::READABLE, vcxstream::MULTIPLE))
+            return -1;
         if((len = item.xfer_in(readx)) < 0)
         {
             // terminate thread
+            readx.close(vcxstream::FLUSH);
             return len;
         }
+        if(!readx.close2(vcxstream::FLUSH))
+            return -1;
         recv_mutex.lock();
         getq.append(item);
         item = vcnil;
@@ -164,14 +205,15 @@ vc_tsocket::recv_loop()
 int
 vc_tsocket::send_loop()
 {
+    std::unique_lock<std::mutex> ul(send_mutex);
     while(1)
     {
         send_mutex.lock();
-        putq_wait.wait(send_mutex, [](){return putq.num_elems() > 0;});
+        putq_wait.wait(ul, [=](){return putq.num_elems() > 0;});
         cbuf b = putq.get_first();
         putq.remove_first();
         send_mutex.unlock();
-        auto n = send(sock, b.buf, b.len);
+        auto n = send(sock, b.buf, b.len, 0);
         if(n == -1)
             return -1;
         if(n < b.len)
@@ -179,6 +221,67 @@ vc_tsocket::send_loop()
             oopanic("what? blocking socket partial send");
         }
         b.done();
+    }
+}
+
+int
+vc_tsocket::accept_loop()
+{
+    while(1)
+    {
+        SOCKET s;
+        sockaddr sa;
+        socklen_t slen = 0;
+        try
+        {
+            if((s = accept(sock, &sa, &slen)) == SOCKET_ERROR)
+            {
+                throw -1;
+            }
+            auto ts = new vc_tsocket;
+            ts->sock = s;
+            ts->cached_peer = sockaddr_to_vc(&sa, slen);
+            ts->syntax = syntax;
+            vc nsock;
+            nsock.redefine(ts);
+            vc v(VC_VECTOR);
+            v[0] = "listen-accept";
+            v[1] = vctrue;
+            v[2] = nsock;
+
+            // build and install the first couple of messages on
+            // the new socket, and start the data transfer threads
+            vc v2(VC_VECTOR);
+            v2[0] = "accept";
+            v2[1] = vctrue;
+            ts->getq.append(v2);
+
+            vc vcc(VC_VECTOR);
+            vcc[0] = "connect";
+            vcc[1] = vctrue;
+            ts->getq.append(vcc);
+
+            std::thread rl(&vc_tsocket::recv_loop, ts);
+            std::thread sl(&vc_tsocket::send_loop, ts);
+            recv_mutex.lock();
+            getq.append(v);
+            recv_mutex.unlock();
+
+        }
+        catch(...)
+        {
+            int err = WSAGetLastError();
+            vc v(VC_VECTOR);
+            v[0] = "listen-accept";
+            add_error(v, err);
+            recv_mutex.lock();
+            getq.append(v);
+            recv_mutex.unlock();
+            if(sock != INVALID_SOCKET)
+                ::close(sock);
+            sock = INVALID_SOCKET;
+            return -1;
+        }
     }
 }
 
@@ -191,6 +294,7 @@ vc_tsocket::vc_tsocket() :
     listening = 0;
     syntax = 0;
     state = 0;
+    sock = INVALID_SOCKET;
 }
 
 // note: 0 = xfer rep, 1 = length encoded, 2 = raw?, 3 = ogg?
@@ -209,20 +313,14 @@ vc_tsocket::set_syntax(int s)
 // "data" members are checked properly
 vc_tsocket::~vc_tsocket()
 {
-    if(tcp_handle)
-        uv_close((uv_handle_t *)tcp_handle, close_cb);
-    tcp_handle = 0;
-    Ready_q.del(vp.cookie);
+    if(sock != INVALID_SOCKET)
+    {
+        ::shutdown(sock, SHUT_RDWR);
+        ::close(sock);
+    }
+    sock = INVALID_SOCKET;
+    //Ready_q.del(vp.cookie);
     vp.invalidate();
-}
-
-void
-vc_tsocket::add_error(vc v)
-{
-    v[1] = vcnil;
-    uv_err_t err = uv_last_error(vc_tsocket::uvs_loop);
-    v[2] = err.code;
-    v[3] = uv_strerror(err);
 }
 
 long
@@ -232,7 +330,7 @@ vc_tsocket::underflow(vcxstream&, char *buf, long min, long max)
     auto to_get = max;
     while(to_get > 0)
     {
-        auto n = recv(sock, buf, to_get);
+        auto n = recv(sock, buf, to_get, 0);
         if(n == -1)
         {
             // even if we got some, this means some kind of
@@ -254,40 +352,50 @@ vc_tsocket::underflow(vcxstream&, char *buf, long min, long max)
     return got;
 }
 
-
+// note: if you call init after calling connect, fireworks will ensue.
+// this is assumed to run in the calling thread and there are no other
+// threads running on this object
 vc
 vc_tsocket::socket_init(const vc& local_addr, int listen, int reuse, int syntax)
 {
-    tcp_handle = new uv_tcp_t;
-    tcp_handle->data = (void *)vp.cookie;
     try
     {
-        if(uv_tcp_init(uvs_loop, tcp_handle) == -1)
+        sock = socket(PF_INET, SOCK_STREAM, 0);
+        if(sock == SOCKET_ERROR)
             throw -1;
 
         vc laddr = local_addr;
         if(local_addr.is_nil())
             laddr = "any:any";
-        struct sockaddr_in sa;
-        vc_to_sockaddr(laddr, sa);
-        if(uv_tcp_bind(tcp_handle, sa) == -1)
+        struct sockaddr *_sa = 0;
+        int len_addr;
+        if(!vc_to_sockaddr(laddr, _sa, len_addr))
+            throw -1;
+
+        scoped_sockaddr sa(_sa);
+        if(::bind(sock, sa, len_addr) == -1)
             throw -1;
 
         if(listen)
         {
-            if(uv_listen((uv_stream_t *)tcp_handle, 128, listen_cb) == -1)
+            if(::listen(sock, 128) == -1)
                 throw -1;
             listening = 1;
+            std::thread al(&vc_tsocket::accept_loop, this);
         }
     }
-    catch(int i)
+    catch(...)
     {
+        // NOTE: any allocations may tweak error return global, so we
+        // do this before anything else, and hope we didnt get hosed.
+        int err = WSAGetLastError();
         vc v(VC_VECTOR);
         v[0] = "init";
-        add_error(v);
+        add_error(v, err);
         getq.append(v);
-        uv_close((uv_handle_t *)tcp_handle, close_cb);
-        tcp_handle = 0;
+        if(sock != INVALID_SOCKET)
+            ::close(sock);
+        sock = INVALID_SOCKET;
         return vcnil;
     }
     this->syntax = syntax;
@@ -301,12 +409,17 @@ vc_tsocket::socket_init(const vc& local_addr, int listen, int reuse, int syntax)
 vc
 vc_tsocket::socket_close(int close_info)
 {
-    if(tcp_handle)
-        uv_close((uv_handle_t *)tcp_handle, close_cb);
-
-    tcp_handle = 0;
-    getq.clear();
-    putq.clear();
+    if(sock != INVALID_SOCKET)
+    {
+        ::shutdown(sock, SHUT_RDWR);
+        ::close(sock);
+        sock = INVALID_SOCKET;
+    }
+    // NOTE: the cleanup of these items should be handled in the
+    // threads, blocking here waiting for the threads to end is not
+    // a good idea.
+    //getq.clear();
+    //putq.clear();
     return vctrue;
 }
 
@@ -314,18 +427,12 @@ vc_tsocket::socket_close(int close_info)
 vc
 vc_tsocket::socket_shutdown(int how)
 {
-    if(!tcp_handle)
-        return vcnil;
-    uv_shutdown_t *req = new uv_shutdown_t;
-    req->data = (void *)vp.cookie;
-    if(uv_shutdown(req, (uv_stream_t *)tcp_handle, shutdown_cb) != UV_OK)
+    // i'm not sure this is used anywhere, will have to check it out
+    if(sock != INVALID_SOCKET)
     {
-        vc v(VC_VECTOR);
-        v[0] = "shutdown";
-        add_error(v);
-        getq.append(v);
-        delete req;
-        return vcnil;
+        ::shutdown(sock, SHUT_RDWR);
+        ::close(sock);
+        sock = INVALID_SOCKET;
     }
     return vctrue;
 }
@@ -334,6 +441,12 @@ vc_tsocket::socket_shutdown(int how)
 vc
 vc_tsocket::socket_connect(const vc& addr)
 {
+    if(sock == INVALID_SOCKET)
+        return vcnil;
+    if(listening)
+        return vcnil;
+
+
     if(!tcp_handle)
         return vcnil;
     struct sockaddr_in sa;
@@ -446,44 +559,70 @@ vc_tsocket::socket_put_obj(vc obj, const vc& to_addr, int syntax)
 int
 vc_tsocket::socket_get_write_q_size()
 {
-    if(tcp_handle)
-        return (long)tcp_handle->write_queue_size;
+    // NOTE: add up all the bytes in the write q
     return 0;
 }
 
 int
 vc_tsocket::socket_get_read_q_len()
 {
-    return getq.num_elems();
+    recv_mutex.lock();
+    int i = getq.num_elems();
+    recv_mutex.unlock();
+    return i;
+}
+
+static
+struct sockaddr *
+get_sockaddr()
+{
+    struct sockaddr_in *sa;
+    sa = (struct sockaddr_in *)malloc(sizeof(*sa));
+    return (struct sockaddr *)sa;
+}
+
+static
+int
+get_sockaddr_len()
+{
+    return sizeof(struct sockaddr_in);
 }
 
 vc
 vc_tsocket::socket_local_addr()
 {
-    if(tcp_handle == 0)
-        return vcnil;
-    struct sockaddr sa;
-    int salen = sizeof(sa);
-    if(uv_tcp_getsockname(tcp_handle, &sa, &salen) == UV_OK)
+    struct sockaddr *_sa = get_sockaddr();
+    scoped_sockaddr sa(_sa);
+#ifdef UNIX
+    socklen_t len = get_sockaddr_len();
+#else
+    int len = get_sockaddr_len();
+#endif
+    if(getsockname(sock, sa, &len) == SOCKET_ERROR)
     {
-        return sockaddr_to_vc(&sa, salen);
-
+        return vcnil;
     }
-    return vcnil;
+    vc local_addr = sockaddr_to_vc(sa, get_sockaddr_len());
+    return local_addr;
 }
 
 vc
 vc_tsocket::socket_peer_addr()
 {
-    if(tcp_handle == 0)
+    if(sock == INVALID_SOCKET)
         return vcnil;
-    struct sockaddr sa;
-    int salen = sizeof(sa);
-    if(uv_tcp_getpeername(tcp_handle, &sa, &salen) == UV_OK)
+    struct sockaddr *_sa = get_sockaddr();
+    scoped_sockaddr sa(_sa);
+#ifdef UNIX
+    socklen_t len = get_sockaddr_len();
+#else
+    int len = get_sockaddr_len();
+#endif
+    if(getpeername(sock, sa, &len) == SOCKET_ERROR)
     {
-        return sockaddr_to_vc(&sa, salen);
-
+        return cached_peer;
     }
+    cached_peer = sockaddr_to_vc(sa, get_sockaddr_len());
     return cached_peer;
 }
 
@@ -491,7 +630,7 @@ vc_tsocket::socket_peer_addr()
 void
 vc_tsocket::printOn(VcIO os)
 {
-    if(tcp_handle == 0)
+    if(sock == INVALID_SOCKET)
     {
         os << "tsocket(uninit)";
         return;
@@ -523,4 +662,4 @@ vc_tsocket::printOn(VcIO os)
 }
 
 
-//#endif
+#endif
