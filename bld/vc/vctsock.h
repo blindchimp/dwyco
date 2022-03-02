@@ -7,7 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include "vc.h"
-//#ifndef DWYCO_NO_TSOCK
+#ifndef DWYCO_NO_TSOCK
 #ifndef VCTSOCK_H
 #define VCTSOCK_H
 #include <thread>
@@ -161,5 +161,5 @@ public:
 };
 
 #endif
-//#endif
+#endif
 

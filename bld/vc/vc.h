@@ -98,7 +98,9 @@ enum vc_type {
 	VC_SET_N = 32,
     VC_BAG_N = 33,
     VC_UVSOCKET_STREAM = 34,
-    VC_UVSOCKET_DGRAM = 35
+    VC_UVSOCKET_DGRAM = 35,
+    VC_TSOCKET_STREAM = 36,
+    VC_TSOCKET_DGRAM = 37
 };
 
 // note: the new gcc's are too pissy about

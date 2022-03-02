@@ -14,6 +14,8 @@
 #include "vcxstrm.h"
 #include <sys/socket.h>
 
+DwTreeKaz<vc_tsocket *, long> *vc_tsocket::Ready_q_p;
+
 #ifdef USE_BERKSOCK
 #include "vcberk.h"
 
@@ -97,9 +99,8 @@ vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
     return 1;
 }
 
-static
 vc
-sockaddr_to_vc(struct sockaddr *sapi, int len)
+vc_tsocket::sockaddr_to_vc(struct sockaddr *sapi, int len)
 {
     char tmp_str[128];
 
