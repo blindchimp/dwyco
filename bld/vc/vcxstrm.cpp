@@ -342,9 +342,7 @@ vcxstream::close2(how_close how)
         case CONTINUE:
             log.reset();
             chit_destroy_table();
-            //delete chit_table;
-            //chit_table = 0;
-            stat = CLOSED;
+            //stat = CLOSED;
             return 1;
             break;
         default:
@@ -574,7 +572,7 @@ vcxstream::flush()
     case WRITEABLE:
 		if(buf != cur)
 		{
-			if(do_overflow(buf, cur - buf) < 0)
+            if(do_overflow(buf, cur - buf) < cur - buf)
 				return 0;
         	cur = buf;
 		}

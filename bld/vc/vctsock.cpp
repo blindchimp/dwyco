@@ -179,19 +179,20 @@ add_error(vc v, int e)
 int
 vc_tsocket::recv_loop()
 {
+    if(!readx.open2(vcxstream::READABLE, vcxstream::MULTIPLE))
+        return -1;
     while(1)
     {
         vc item;
         long len;
-        if(!readx.open2(vcxstream::READABLE, vcxstream::MULTIPLE))
-            return -1;
+
         if((len = item.xfer_in(readx)) < 0)
         {
             // terminate thread
             readx.close(vcxstream::FLUSH);
             return len;
         }
-        if(!readx.close2(vcxstream::FLUSH))
+        if(!readx.close2(vcxstream::CONTINUE))
             return -1;
         recv_mutex.lock();
         getq.append(item);
@@ -199,8 +200,6 @@ vc_tsocket::recv_loop()
         recv_mutex.unlock();
     }
 }
-
-
 
 int
 vc_tsocket::send_loop()
@@ -234,7 +233,7 @@ vc_tsocket::accept_loop()
         socklen_t slen = 0;
         try
         {
-            if((s = accept(sock, &sa, &slen)) == SOCKET_ERROR)
+            if((s = ::accept(sock, &sa, &slen)) == SOCKET_ERROR)
             {
                 throw -1;
             }
@@ -262,11 +261,12 @@ vc_tsocket::accept_loop()
             ts->getq.append(vcc);
 
             std::thread rl(&vc_tsocket::recv_loop, ts);
+            rl.detach();
             std::thread sl(&vc_tsocket::send_loop, ts);
+            sl.detach();
             recv_mutex.lock();
             getq.append(v);
             recv_mutex.unlock();
-
         }
         catch(...)
         {
@@ -283,6 +283,44 @@ vc_tsocket::accept_loop()
             return -1;
         }
     }
+}
+
+int
+vc_tsocket::async_connect()
+{
+    struct sockaddr  *_sa;
+    int alen;
+    vc_to_sockaddr(cached_peer, _sa, alen);
+    scoped_sockaddr sa(_sa);
+    if(::connect(sock, sa, alen) == -1)
+    {
+        recv_mutex.lock();
+        vc v(VC_VECTOR);
+        v[0] = "connect";
+        add_error(v, WSAGetLastError());
+        getq.append(v);
+        recv_mutex.unlock();
+        return -1;
+    }
+    // build and install the first couple of messages on
+    // the new socket, and start the data transfer threads
+    recv_mutex.lock();
+    vc v2(VC_VECTOR);
+    v2[0] = "accept";
+    v2[1] = vctrue;
+    getq.append(v2);
+
+    vc vcc(VC_VECTOR);
+    vcc[0] = "connect";
+    vcc[1] = vctrue;
+    getq.append(vcc);
+    recv_mutex.unlock();
+
+    std::thread rl(&vc_tsocket::recv_loop, this);
+    rl.detach();
+    std::thread sl(&vc_tsocket::send_loop, this);
+    sl.detach();
+    return 1;
 }
 
 vc_tsocket::vc_tsocket() :
@@ -382,6 +420,7 @@ vc_tsocket::socket_init(const vc& local_addr, int listen, int reuse, int syntax)
                 throw -1;
             listening = 1;
             std::thread al(&vc_tsocket::accept_loop, this);
+            al.detach();
         }
     }
     catch(...)
@@ -445,26 +484,10 @@ vc_tsocket::socket_connect(const vc& addr)
         return vcnil;
     if(listening)
         return vcnil;
-
-
-    if(!tcp_handle)
-        return vcnil;
-    struct sockaddr_in sa;
-    vc_to_sockaddr(addr, sa);
-    uv_connect_t *conn_handle = new uv_connect_t;
-    if(uv_tcp_connect(conn_handle, tcp_handle, sa, connect_cb) == -1)
-    {
-        vc v(VC_VECTOR);
-        v[0] = "connect";
-        add_error(v);
-        getq.append(v);
-        delete conn_handle;
-        return vcnil;
-    }
-    tcp_handle->data = (void *)vp.cookie;
-    conn_handle->data = (void *)vp.cookie;
     // in this case, the cached_peer become a "provisional peer"
     cached_peer = addr;
+    std::thread ac(&vc_tsocket::async_connect, this);
+    ac.detach();
     return vctrue;
 }
 
@@ -497,6 +520,7 @@ vc_tsocket::overflow(vcxstream&, char *buf, long len)
     putq.append(b);
     send_mutex.unlock();
     putq_wait.notify_one();
+    return len;
 }
 
 // note: the syntax is a bit of a hack right now.
@@ -507,7 +531,7 @@ vc_tsocket::overflow(vcxstream&, char *buf, long len)
 vc
 vc_tsocket::socket_put_obj(vc obj, const vc& to_addr, int syntax)
 {
-    if(!tcp_handle)
+    if(sock == INVALID_SOCKET)
         return vcnil;
     // serialize the object immediately and write the buffer out.
     // this avoids problems with attempting to serialize the
@@ -635,26 +659,12 @@ vc_tsocket::printOn(VcIO os)
         os << "tsocket(uninit)";
         return;
     }
-    struct sockaddr sa;
-    int salen = sizeof(sa);
 
-    vc local;
-    vc peer;
-    if(uv_tcp_getsockname(tcp_handle, &sa, &salen) == UV_OK)
-    {
-        local = sockaddr_to_vc(&sa, salen);
-    }
-
-    salen = sizeof(sa);
-    if(uv_tcp_getpeername(tcp_handle, &sa, &salen) == UV_OK)
-    {
-        peer = sockaddr_to_vc(&sa, salen);
-    }
 
     os << "tsocket(lo=";
-    local.printOn(os);
+    socket_local_addr().printOn(os);
     os << " peer=";
-    peer.printOn(os);
+    socket_peer_addr().printOn(os);
     os << " cached= ";
     cached_peer.printOn(os);
     os << ")";

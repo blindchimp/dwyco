@@ -86,6 +86,10 @@ private:
             len = -1;
         }
 
+        int operator==(const cbuf&) const {
+            oopanic("no searches please");
+        }
+
         char *buf;
         int len;
 
@@ -101,6 +105,7 @@ private:
     int recv_loop();
     int send_loop();
     int accept_loop();
+    int async_connect();
 
     // this is needed since errors in the UV socket like
     // "connection reset by peer" obliterate the peer information.
