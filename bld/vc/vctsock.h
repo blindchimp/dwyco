@@ -49,7 +49,7 @@ private:
         void append(const vc& v) {
             if(num_elems() == 0)
             {
-                vc_tsocket::Ready_q_p->add(container->vp.cookie, container);
+                //vc_tsocket::Ready_q_p->add(container->vp.cookie, container);
             }
             DwListA<vc>::append(v);
 
@@ -58,14 +58,14 @@ private:
         int remove_first() {
             if(num_elems() == 1)
             {
-                vc_tsocket::Ready_q_p->del(container->vp.cookie);
+                //vc_tsocket::Ready_q_p->del(container->vp.cookie);
             }
             return DwListA<vc>::remove_first();
         }
         void clear() {
             if(num_elems() >= 1)
             {
-                vc_tsocket::Ready_q_p->del(container->vp.cookie);
+                //vc_tsocket::Ready_q_p->del(container->vp.cookie);
             }
             DwListA<vc>::clear();
         }
@@ -78,6 +78,14 @@ private:
     std::mutex recv_mutex;
     std::mutex send_mutex;
     std::condition_variable putq_wait;
+    // this is for use by calling context, not send_loop
+    std::unique_lock<std::mutex> send_lock;
+
+    std::thread *accept_thread;
+    std::thread *send_thread;
+    std::thread *recv_thread;
+    std::thread *connect_thread;
+    int foad;
 
     struct cbuf
     {

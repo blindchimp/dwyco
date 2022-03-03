@@ -195,9 +195,17 @@ vc_tsocket::recv_loop()
         }
         if(!readx.close2(vcxstream::CONTINUE))
             return -1;
+        vc v(VC_VECTOR);
+        v[0] = "data";
+        // note: queasy about using "vctrue" here since
+        // we aren't doing the rc using thread safety
+        v[1] = vc("t");
+        v[2] = item;
+        v[3] = len;
         recv_mutex.lock();
-        getq.append(item);
+        getq.append(v);
         item = vcnil;
+        v = vcnil;
         recv_mutex.unlock();
     }
 }
@@ -205,14 +213,19 @@ vc_tsocket::recv_loop()
 int
 vc_tsocket::send_loop()
 {
-    std::unique_lock<std::mutex> ul(send_mutex);
+    std::unique_lock<std::mutex> ul(send_mutex, std::defer_lock);
     while(1)
     {
-        send_mutex.lock();
-        putq_wait.wait(ul, [=](){return putq.num_elems() > 0;});
+        ul.lock();
+        putq_wait.wait(ul, [=](){return putq.num_elems() > 0 || foad == 1;});
+        if(foad)
+        {
+            ul.unlock();
+            return 0;
+        }
         cbuf b = putq.get_first();
         putq.remove_first();
-        send_mutex.unlock();
+        ul.unlock();
         auto n = send(sock, b.buf, b.len, 0);
         if(n == -1)
             return -1;
@@ -261,10 +274,10 @@ vc_tsocket::accept_loop()
             vcc[1] = vctrue;
             ts->getq.append(vcc);
 
-            std::thread rl(&vc_tsocket::recv_loop, ts);
-            rl.detach();
-            std::thread sl(&vc_tsocket::send_loop, ts);
-            sl.detach();
+            ts->recv_thread = new std::thread(&vc_tsocket::recv_loop, ts);
+            //rl.detach();
+            ts->send_thread = new std::thread(&vc_tsocket::send_loop, ts);
+            //sl.detach();
             recv_mutex.lock();
             getq.append(v);
             recv_mutex.unlock();
@@ -317,10 +330,10 @@ vc_tsocket::async_connect()
     getq.append(vcc);
     recv_mutex.unlock();
 
-    std::thread rl(&vc_tsocket::recv_loop, this);
-    rl.detach();
-    std::thread sl(&vc_tsocket::send_loop, this);
-    sl.detach();
+    recv_thread = new std::thread(&vc_tsocket::recv_loop, this);
+    //rl.detach();
+    send_thread = new std::thread(&vc_tsocket::send_loop, this);
+    //sl.detach();
     return 1;
 }
 
@@ -328,12 +341,18 @@ vc_tsocket::vc_tsocket() :
     vp(this),
     getq(this),
     //putq(this),
-    readx(this, 0, 0, vcxstream::CONTINUOUS_READAHEAD)
+    readx(this, 0, 0, vcxstream::CONTINUOUS_READAHEAD),
+    send_lock(send_mutex, std::defer_lock)
 {
     listening = 0;
     syntax = 0;
     state = 0;
     sock = INVALID_SOCKET;
+    accept_thread = nullptr;
+    send_thread = nullptr;
+    recv_thread = nullptr;
+    connect_thread = nullptr;
+    foad = 0;
 }
 
 // note: 0 = xfer rep, 1 = length encoded, 2 = raw?, 3 = ogg?
@@ -345,19 +364,26 @@ vc_tsocket::set_syntax(int s)
     return 1;
 }
 
-
-// if we are destroying one of these things,
-// we need to close everything down, and make sure
-// the callbacks end up properly nulled out (make sure
-// "data" members are checked properly
 vc_tsocket::~vc_tsocket()
 {
+    foad = 1;
     if(sock != INVALID_SOCKET)
     {
         ::shutdown(sock, SHUT_RDWR);
         ::close(sock);
     }
     sock = INVALID_SOCKET;
+    // this is probably a bad idea to potentially block here,
+    // but for testing right now, we'll do it.
+    putq_wait.notify_all();
+    if(accept_thread)
+        accept_thread->join();
+    if(send_thread)
+        send_thread->join();
+    if(recv_thread)
+        recv_thread->join();
+    if(connect_thread)
+        connect_thread->join();
     //Ready_q.del(vp.cookie);
     vp.invalidate();
 }
@@ -367,7 +393,7 @@ vc_tsocket::underflow(vcxstream&, char *buf, long min, long max)
 {
     long got = 0;
     auto to_get = max;
-    while(to_get > 0)
+    while(got < min)
     {
         auto n = recv(sock, buf, to_get, 0);
         if(n == -1)
@@ -420,8 +446,8 @@ vc_tsocket::socket_init(const vc& local_addr, int listen, int reuse, int syntax)
             if(::listen(sock, 128) == -1)
                 throw -1;
             listening = 1;
-            std::thread al(&vc_tsocket::accept_loop, this);
-            al.detach();
+            accept_thread = new std::thread(&vc_tsocket::accept_loop, this);
+            //al.detach();
         }
     }
     catch(...)
@@ -487,8 +513,8 @@ vc_tsocket::socket_connect(const vc& addr)
         return vcnil;
     // in this case, the cached_peer become a "provisional peer"
     cached_peer = addr;
-    std::thread ac(&vc_tsocket::async_connect, this);
-    ac.detach();
+    connect_thread = new std::thread(&vc_tsocket::async_connect, this);
+    //ac.detach();
     return vctrue;
 }
 
@@ -513,13 +539,13 @@ vc_tsocket::socket_get_obj(int& avail, vc& addr_info)
 long
 vc_tsocket::overflow(vcxstream&, char *buf, long len)
 {
-    send_mutex.lock();
+    send_lock.lock();
     cbuf b;
     b.buf = new char[len];
     memcpy(b.buf, buf, len);
     b.len = len;
     putq.append(b);
-    send_mutex.unlock();
+    send_lock.unlock();
     putq_wait.notify_one();
     return len;
 }
