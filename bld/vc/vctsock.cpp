@@ -12,7 +12,20 @@
 #include "vctsock.h"
 #include "dwstr.h"
 #include "vcxstrm.h"
+#ifdef LINUX
 #include <sys/socket.h>
+#endif
+#ifdef USE_WINSOCK
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#define SHUT_RDWR SD_BOTH
+static
+int
+close(int sock)
+{
+    return ::closesocket(sock);
+}
+#endif
 
 DwTreeKaz<vc_tsocket *, long> *vc_tsocket::Ready_q_p;
 
@@ -190,7 +203,7 @@ vc_tsocket::recv_loop()
         if((len = item.xfer_in(readx)) < 0)
         {
             // terminate thread
-            readx.close(vcxstream::FLUSH);
+            readx.close2(vcxstream::FLUSH);
             return len;
         }
         if(!readx.close2(vcxstream::CONTINUE))
