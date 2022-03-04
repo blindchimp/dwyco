@@ -202,6 +202,24 @@ vc_tsocket::recv_loop()
 
         if((len = item.xfer_in(readx)) < 0)
         {
+            recv_mutex.lock();
+            if(len == EXIN_DEV)
+            {
+                vc v(VC_VECTOR);
+                v[0] = "eof";
+                v[1] = vc("t");
+                getq.append(v);
+                v = vcnil;
+            }
+            else if(len == EXIN_PARSE)
+            {
+                vc v(VC_VECTOR);
+                v[0] = "error";
+                v[1] = vcnil;
+                getq.append(v);
+                v = vcnil;
+            }
+            recv_mutex.unlock();
             // terminate thread
             readx.close2(vcxstream::FLUSH);
             return len;
@@ -635,8 +653,15 @@ vc_tsocket::socket_put_obj(vc obj, const vc& to_addr, int syntax)
 int
 vc_tsocket::socket_get_write_q_size()
 {
-    // NOTE: add up all the bytes in the write q
-    return 0;
+    send_lock.lock();
+    const cbuf *cb;
+    int len = 0;
+    dwlista_foreach_peek(cb, putq)
+    {
+        len += cb->len;
+    }
+    send_lock.unlock();
+    return len;
 }
 
 int
