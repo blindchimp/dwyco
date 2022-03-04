@@ -1484,9 +1484,8 @@ dwyco_init()
         if(!Disable_UPNP)
         {
         int rport = (dwyco_rand() % (65500 - 10000)) + 10000;
-//        dwyco_set_net_data(rport, rport + 1, rport + 2,
-//                           rport, rport + 1, rport + 2,
-//                           1, 0, CSMS_TCP_ONLY, 1);
+        dwyco_inhibit_pal(1);
+        set_settings_value("net/listen", 0);
         set_settings_value("net/primary_port", rport);
         set_settings_value("net/secondary_port", rport + 1);
         set_settings_value("net/pal_port", rport + 2);
@@ -1498,6 +1497,7 @@ dwyco_init()
         set_settings_value("net/advertise_nat_ports", 1);
         set_settings_value("net/disable_upnp", 0);
         set_settings_value("net/call_setup_media_select", CSMS_TCP_ONLY);
+        dwyco_inhibit_pal(0);
         set_settings_value("net/listen", 1);
 #ifndef DWYCO_NO_UPNP
         bg_upnp(rport, rport + 1, rport, rport + 1);
