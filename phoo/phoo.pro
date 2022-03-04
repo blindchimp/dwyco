@@ -209,6 +209,8 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 #QMAKE_CXXFLAGS += -stdlib=libc++
 #QMAKE_LIBS += -lc++
+QMAKE_CXXFLAGS += -g -fsanitize=address #-O2
+QMAKE_LFLAGS += -g -fsanitize=address
 D = $$OUT_PWD/../bld
 SHADOW=$$OUT_PWD/..
 LIBS += \

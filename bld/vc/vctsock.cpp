@@ -21,7 +21,7 @@
 #define SHUT_RDWR SD_BOTH
 static
 int
-close(int sock)
+close(SOCKET sock)
 {
     return ::closesocket(sock);
 }
@@ -211,7 +211,9 @@ vc_tsocket::recv_loop()
         vc v(VC_VECTOR);
         v[0] = "data";
         // note: queasy about using "vctrue" here since
-        // we aren't doing the rc using thread safety
+        // we aren't doing the rc using thread safety.
+        // we have this problem with vcnil all over the place
+        // too.
         v[1] = vc("t");
         v[2] = item;
         v[3] = len;
@@ -293,6 +295,7 @@ vc_tsocket::accept_loop()
             //sl.detach();
             recv_mutex.lock();
             getq.append(v);
+            v = vcnil;
             recv_mutex.unlock();
         }
         catch(...)
@@ -303,6 +306,7 @@ vc_tsocket::accept_loop()
             add_error(v, err);
             recv_mutex.lock();
             getq.append(v);
+            v = vcnil;
             recv_mutex.unlock();
             if(sock != INVALID_SOCKET)
                 ::close(sock);
@@ -326,12 +330,15 @@ vc_tsocket::async_connect()
         v[0] = "connect";
         add_error(v, WSAGetLastError());
         getq.append(v);
+        v = vcnil;
         recv_mutex.unlock();
         return -1;
     }
     // build and install the first couple of messages on
     // the new socket, and start the data transfer threads
     recv_mutex.lock();
+    // note: scope block to ensure dtors are called while locked
+    {
     vc v2(VC_VECTOR);
     v2[0] = "accept";
     v2[1] = vctrue;
@@ -341,6 +348,7 @@ vc_tsocket::async_connect()
     vcc[0] = "connect";
     vcc[1] = vctrue;
     getq.append(vcc);
+    }
     recv_mutex.unlock();
 
     recv_thread = new std::thread(&vc_tsocket::recv_loop, this);
@@ -397,6 +405,15 @@ vc_tsocket::~vc_tsocket()
         recv_thread->join();
     if(connect_thread)
         connect_thread->join();
+    delete accept_thread;
+    delete send_thread;
+    delete connect_thread;
+    delete recv_thread;
+    cbuf c;
+    dwlista_foreach(c, putq)
+    {
+        c.done();
+    }
     //Ready_q.del(vp.cookie);
     vp.invalidate();
 }
@@ -494,11 +511,6 @@ vc_tsocket::socket_close(int close_info)
         ::close(sock);
         sock = INVALID_SOCKET;
     }
-    // NOTE: the cleanup of these items should be handled in the
-    // threads, blocking here waiting for the threads to end is not
-    // a good idea.
-    //getq.clear();
-    //putq.clear();
     return vctrue;
 }
 
