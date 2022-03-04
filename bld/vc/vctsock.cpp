@@ -308,9 +308,9 @@ vc_tsocket::accept_loop()
             getq.append(v);
             v = vcnil;
             recv_mutex.unlock();
-            if(sock != INVALID_SOCKET)
-                ::close(sock);
-            sock = INVALID_SOCKET;
+            //if(sock != INVALID_SOCKET)
+            //    ::close(sock);
+            //sock = INVALID_SOCKET;
             return -1;
         }
     }

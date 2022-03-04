@@ -328,6 +328,9 @@ RCQDEC(rep)
 		{
 			delete rep;
 		}
+#ifdef DWYCO_VC_THREADED
+        if(v != vc_nil::vcnilrep)
+#endif
 		++v->ref_count;
 #endif
 		rep = v;

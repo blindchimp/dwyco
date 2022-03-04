@@ -551,6 +551,9 @@ vc::vc(const vc& v)
 #ifdef USE_RCT
 RCQINC(v.rep)
 #else
+#ifdef DWYCO_VC_THREADED
+    if(v.rep != vc_nil::vcnilrep)
+#endif
 	++v.rep->ref_count;
 #endif
 	rep = v.rep;
@@ -582,6 +585,9 @@ vc::operator=(const vc& v)
 RCQINC(v.rep)
 RCQDEC(rep)
 #else
+#ifdef DWYCO_VC_THREADED
+        if(v.rep != vc_nil::vcnilrep)
+#endif
 		++v.rep->ref_count;
 		if(rep != vc_nil::vcnilrep && --rep->ref_count == 0) 
 		{

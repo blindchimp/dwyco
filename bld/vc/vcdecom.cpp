@@ -15,15 +15,25 @@
 #ifdef _Windows
 #include <windows.h>
 #endif
+#ifdef DWYCO_VC_THREADED
+#include <mutex>
+std::mutex SN_mutex;
+#endif
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcdecom.cpp 1.50 1998/12/09 05:12:20 dwight Exp $";
 
-long vc_decomposable::SN;	// serial number for id's of decompoables
+long vc_decomposable::SN;	// serial number for id's of decomposables
 
 static vc bogus;
 vc_decomposable::vc_decomposable()
 {
+#ifdef DWYCO_VC_THREADED
+    SN_mutex.lock();
+#endif
 	serial_number = SN++;
+#ifdef DWYCO_VC_THREADED
+    SN_mutex.unlock();
+#endif
 	iterators = 0;
 }
 
