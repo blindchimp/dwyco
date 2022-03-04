@@ -208,6 +208,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
 
     }
     // FALLTHRU
+        [[clang::fallthrough]];
     default:
         if(i >= 0)
             Fetching.removeAt(i);
@@ -603,6 +604,7 @@ msglist_raw::check_inbox_model()
             endRemoveRows();
             return 1;
         }
+        qnew_im.release();
     }
     return 0;
 }
