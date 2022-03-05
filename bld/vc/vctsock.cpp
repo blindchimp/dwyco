@@ -250,7 +250,7 @@ vc_tsocket::send_loop()
     while(1)
     {
         ul.lock();
-        putq_wait.wait(ul, [=](){return putq.num_elems() > 0 || foad == 1;});
+        putq_wait.wait(ul, [=](){return foad == 1 || putq.num_elems() > 0;});
         if(foad)
         {
             ul.unlock();
@@ -259,13 +259,17 @@ vc_tsocket::send_loop()
         cbuf b = putq.get_first();
         putq.remove_first();
         ul.unlock();
-        auto n = send(sock, b.buf, b.len, 0);
-        if(n == -1)
-            return -1;
-        if(n < b.len)
+        // ok, so send on blocking socket *can* return less than n
+        cbuf tmp = b;
+        do
         {
-            oopanic("what? blocking socket partial send");
+            auto n = send(sock, tmp.buf, tmp.len, 0);
+            if(n == -1)
+                return -1;
+            tmp.buf += n;
+            tmp.len -= n;
         }
+        while(tmp.len > 0);
         b.done();
     }
 }
