@@ -81,6 +81,7 @@ private:
     // this is for use by calling context, not send_loop
     std::unique_lock<std::mutex> send_lock;
 
+    std::mutex thread_start_mutex;
     std::thread *accept_thread;
     std::thread *send_thread;
     std::thread *recv_thread;

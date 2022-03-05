@@ -306,11 +306,10 @@ vc_tsocket::accept_loop()
             vcc[0] = "connect";
             vcc[1] = vc("t");
             ts->getq.append(vcc);
-
+            ts->thread_start_mutex.lock();
             ts->recv_thread = new std::thread(&vc_tsocket::recv_loop, ts);
-            //rl.detach();
             ts->send_thread = new std::thread(&vc_tsocket::send_loop, ts);
-            //sl.detach();
+            ts->thread_start_mutex.unlock();
             recv_mutex.lock();
             getq.append(v);
             v = vcnil;
@@ -368,11 +367,10 @@ vc_tsocket::async_connect()
     getq.append(vcc);
     }
     recv_mutex.unlock();
-
+    thread_start_mutex.lock();
     recv_thread = new std::thread(&vc_tsocket::recv_loop, this);
-    //rl.detach();
     send_thread = new std::thread(&vc_tsocket::send_loop, this);
-    //sl.detach();
+    thread_start_mutex.unlock();
     return 1;
 }
 
@@ -416,16 +414,20 @@ vc_tsocket::~vc_tsocket()
     putq_wait.notify_all();
     if(accept_thread)
         accept_thread->join();
+    if(connect_thread)
+        connect_thread->join();
+    delete accept_thread;
+    delete connect_thread;
+
+    thread_start_mutex.lock();
     if(send_thread)
         send_thread->join();
     if(recv_thread)
         recv_thread->join();
-    if(connect_thread)
-        connect_thread->join();
-    delete accept_thread;
     delete send_thread;
-    delete connect_thread;
     delete recv_thread;
+    thread_start_mutex.unlock();
+
     cbuf c;
     dwlista_foreach(c, putq)
     {
@@ -561,7 +563,6 @@ vc_tsocket::socket_connect(const vc& addr)
     // in this case, the cached_peer become a "provisional peer"
     cached_peer = addr;
     connect_thread = new std::thread(&vc_tsocket::async_connect, this);
-    //ac.detach();
     return vctrue;
 }
 
