@@ -292,19 +292,19 @@ vc_tsocket::accept_loop()
             nsock.redefine(ts);
             vc v(VC_VECTOR);
             v[0] = "listen-accept";
-            v[1] = vctrue;
+            v[1] = vc("t");
             v[2] = nsock;
 
             // build and install the first couple of messages on
             // the new socket, and start the data transfer threads
             vc v2(VC_VECTOR);
             v2[0] = "accept";
-            v2[1] = vctrue;
+            v2[1] = vc("t");
             ts->getq.append(v2);
 
             vc vcc(VC_VECTOR);
             vcc[0] = "connect";
-            vcc[1] = vctrue;
+            vcc[1] = vc("t");
             ts->getq.append(vcc);
 
             ts->recv_thread = new std::thread(&vc_tsocket::recv_loop, ts);
@@ -359,12 +359,12 @@ vc_tsocket::async_connect()
     {
     vc v2(VC_VECTOR);
     v2[0] = "accept";
-    v2[1] = vctrue;
+    v2[1] = vc("t");
     getq.append(v2);
 
     vc vcc(VC_VECTOR);
     vcc[0] = "connect";
-    vcc[1] = vctrue;
+    vcc[1] = vc("t");
     getq.append(vcc);
     }
     recv_mutex.unlock();
@@ -379,7 +379,6 @@ vc_tsocket::async_connect()
 vc_tsocket::vc_tsocket() :
     vp(this),
     getq(this),
-    //putq(this),
     readx(this, 0, 0, vcxstream::CONTINUOUS_READAHEAD),
     send_lock(send_mutex, std::defer_lock)
 {
@@ -409,9 +408,9 @@ vc_tsocket::~vc_tsocket()
     if(sock != INVALID_SOCKET)
     {
         ::shutdown(sock, SHUT_RDWR);
-        ::close(sock);
+        //::close(sock);
     }
-    sock = INVALID_SOCKET;
+    //sock = INVALID_SOCKET;
     // this is probably a bad idea to potentially block here,
     // but for testing right now, we'll do it.
     putq_wait.notify_all();
@@ -433,6 +432,11 @@ vc_tsocket::~vc_tsocket()
         c.done();
     }
     //Ready_q.del(vp.cookie);
+    if(sock != INVALID_SOCKET)
+    {
+        ::close(sock);
+        sock = INVALID_SOCKET;
+    }
     vp.invalidate();
 }
 
@@ -526,8 +530,8 @@ vc_tsocket::socket_close(int close_info)
     if(sock != INVALID_SOCKET)
     {
         ::shutdown(sock, SHUT_RDWR);
-        ::close(sock);
-        sock = INVALID_SOCKET;
+        //::close(sock);
+        //sock = INVALID_SOCKET;
     }
     return vctrue;
 }
@@ -540,8 +544,8 @@ vc_tsocket::socket_shutdown(int how)
     if(sock != INVALID_SOCKET)
     {
         ::shutdown(sock, SHUT_RDWR);
-        ::close(sock);
-        sock = INVALID_SOCKET;
+        //::close(sock);
+        //sock = INVALID_SOCKET;
     }
     return vctrue;
 }
