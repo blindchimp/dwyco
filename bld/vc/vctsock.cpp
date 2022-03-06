@@ -281,7 +281,7 @@ vc_tsocket::accept_loop()
     {
         SOCKET s;
         sockaddr sa;
-        socklen_t slen = 0;
+        socklen_t slen = sizeof(sa);
         try
         {
             if((s = ::accept(sock, &sa, &slen)) == SOCKET_ERROR)
@@ -409,8 +409,39 @@ vc_tsocket::~vc_tsocket()
     foad = 1;
     if(sock != INVALID_SOCKET)
     {
-        ::shutdown(sock, SHUT_RDWR);
-        //::close(sock);
+        // note: don't close the socket until all
+        // the threads are done, that way we don't
+        // have problems with the socket being
+        // reallocated by another thread.
+        if(::shutdown(sock, SHUT_RDWR) == -1)
+        {
+#ifdef MACOSX
+            // there is likely just a straight up bug in macos.
+            // all other platforms (haven't checked ios)
+            // the shutdown will cause the accept to
+            // return an error even if it is blocked. the docs on macos say the
+            // shutdown must be called on a "connected" socket
+            // but the accept docs say "accept fails if the socket
+            // is not willing to accept connections" as well as
+            // "connection is aborted" which i guess means accept
+            // got a wake up, but it can't finish putting the connection
+            // together internally. anyway, this is different from the
+            // other unix-like platforms. instead of trying to do signals
+            // and polling, condition variable side-channels, or
+            // other mickey-mouse work-arounds, we'll just
+            // accept the slight chance of file-descriptor confusion.
+            // if the shutdown doesn't succeed, the join below on the
+            // accepter-thread ends up deadlocking the program in most cases.
+            //
+#endif
+            // note: this is necessary for sockets that might be
+            // in connect/read/write if the shutdown fails for some reason.
+            // or already shutdown internally or whatever. shutdown seems to
+            // fail in odd cases.
+            ::close(sock);
+            sock = INVALID_SOCKET;
+
+        }
     }
     //sock = INVALID_SOCKET;
     // this is probably a bad idea to potentially block here,
