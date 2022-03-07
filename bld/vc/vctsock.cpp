@@ -261,15 +261,14 @@ vc_tsocket::send_loop()
         ul.unlock();
         // ok, so send on blocking socket *can* return less than n
         cbuf tmp = b;
-        do
+        while(tmp.len > 0)
         {
             auto n = send(sock, tmp.buf, tmp.len, 0);
-            if(n == -1)
+            if(n <= 0)
                 return -1;
             tmp.buf += n;
             tmp.len -= n;
         }
-        while(tmp.len > 0);
         b.done();
     }
 }
