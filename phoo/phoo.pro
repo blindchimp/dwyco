@@ -39,7 +39,7 @@ DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
 macx-clang {
 QMAKE_INFO_PLIST=Info.plist.mac
-CONFIG -= app_bundle
+#CONFIG -= app_bundle
 }
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
@@ -209,8 +209,8 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 #QMAKE_CXXFLAGS += -stdlib=libc++
 #QMAKE_LIBS += -lc++
-QMAKE_CXXFLAGS += -g -fsanitize=address #-O2
-QMAKE_LFLAGS += -g -fsanitize=address
+#QMAKE_CXXFLAGS += -g -fsanitize=address #-O2
+#QMAKE_LFLAGS += -g -fsanitize=address
 D = $$OUT_PWD/../bld
 SHADOW=$$OUT_PWD/..
 LIBS += \

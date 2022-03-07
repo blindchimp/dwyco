@@ -43,6 +43,6 @@ wasm-emscripten {
 DEFINES += EMSCRIPTEN
 }
 
-QMAKE_CFLAGS += -fsanitize=thread -O
-QMAKE_CXXFLAGS += -fsanitize=thread -O
+#QMAKE_CFLAGS += -fsanitize=address
+#QMAKE_CXXFLAGS += -fsanitize=address
 
