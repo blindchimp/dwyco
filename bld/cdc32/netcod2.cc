@@ -72,7 +72,7 @@ SimpleSocket::~SimpleSocket()
 void
 SimpleSocket::initsock()
 {
-    sock = vc(VC_TSOCKET_STREAM);
+    sock = vc(VC_UVSOCKET_STREAM);
 }
 
 int

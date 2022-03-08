@@ -279,8 +279,7 @@ vc_uvsocket::parse_buffer(int once)
         tailstr.reset();
     else
     {
-        tailstr.reset();
-        tailstr.append(tmpbuf, tmplen);
+        tailstr.consume_all_but(tmplen);
     }
 	return 1;
 }

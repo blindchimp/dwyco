@@ -61,6 +61,19 @@ DwGrowingString::append(const char *s, long len)
 }
 
 void
+DwGrowingString::consume_all_but(long len)
+{
+    if(len >= curlen)
+    {
+        reset();
+        return;
+    }
+    memmove(&str[0], &str[curlen - len], len);
+    curlen = len;
+    nmark = 0;
+}
+
+void
 DwGrowingString::mark()
 {
 	if(nmark >= NMARKS)
