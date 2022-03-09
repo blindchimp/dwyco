@@ -30,7 +30,7 @@ long VCX_max_elements = 1024;
 long VCX_max_depth = 7;
 #endif
 
-#define VCX_ILOG 4
+#define VCX_ILOG 128
 
 int
 vcxstream::check_status(enum status s)

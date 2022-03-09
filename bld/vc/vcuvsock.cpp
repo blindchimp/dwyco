@@ -280,6 +280,13 @@ vc_uvsocket::parse_buffer(int once)
     else
     {
         tailstr.consume_all_but(tmplen);
+#if 0
+        if(!(tmpbuf == tailstr.ref_str() && tailstr.length() == tmplen))
+        {
+            tailstr.reset();
+            tailstr.append(tmpbuf, tmplen);
+        }
+#endif
     }
 	return 1;
 }
