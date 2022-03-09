@@ -104,8 +104,8 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 INCLUDEPATH += $${DINC}/v4lcap
 
-QMAKE_CXXFLAGS += -g -fsanitize=thread -O #-O2
-QMAKE_LFLAGS += -g -fsanitize=thread -O
+#QMAKE_CXXFLAGS += -g -fsanitize=address -O #-O2
+#QMAKE_LFLAGS += -g -fsanitize=address -O
 linux-g++*:QMAKE_CXX=ccache g++
 linux-clang*:QMAKE_CXX=ccache clang
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
