@@ -6539,26 +6539,34 @@ pull_msg(vc uid, vc msg_id)
         pulls::assert_pull(msg_id, uids[i], PULLPRI_INTERACTIVE);
     }
 
+    //
+    // note: this probably needs a heuristic to either send
+    // all pulls at once, or decide which one is most likely
+    // to work. for now, try everyone we are connected to.
+    // since this is along the "interactive" path, this seems
+    // ok, since it is unlikely to be a lot of them, and
+    // the user as indicated they want to see it. which means
+    // a little extra thrashing might be ok as long as the
+    // message shows up pretty quickly.
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    bool started_one = false;
     for(int i = 0; i < mmcl.num_elems(); ++i)
     {
         MMCall *mmc = mmcl[i];
         if(uids.contains(mmc->uid))
         {
-//            if(pulls::pull_in_progress(msg_id, mmc->uid))
-//                continue;
-            // if there is an established call, just use that one and return.
-            // this means we always try an established connection first.
-            // if there are some number of connections in progress, we end up
-            // q-ing the pull to all the connections.
             if(mmc->established)
             {
                 MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
                 if(mc)
                 {
+                    // don't resend if it failed last time we asked
+                    if(pull_failed(msg_id, mc->remote_uid()))
+                        continue;
                     pulls::set_pull_in_progress(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
-                    return DWYCO_GSM_PULL_IN_PROGRESS;
+                    started_one = true;
+                    //return DWYCO_GSM_PULL_IN_PROGRESS;
                 }
             }
         }
@@ -6569,17 +6577,16 @@ pull_msg(vc uid, vc msg_id)
         MMChannel *mc;
         if((mc = MMChannel::channel_by_call_type(uids[i], "sync")))
         {
-//            if(pulls::pull_in_progress(msg_id, mc->remote_uid()))
-//                continue;
-
+            if(pull_failed(msg_id, mc->remote_uid()))
+                continue;
             pulls::set_pull_in_progress(msg_id, mc->remote_uid());
             mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
-            // note: this probably needs a heuristic to either send
-            // all pulls at once, or decide which one is most likely
-            // to work. for now, we just do the first one.
-            return DWYCO_GSM_PULL_IN_PROGRESS;
+            started_one = true;
+            //return DWYCO_GSM_PULL_IN_PROGRESS;
         }
     }
+    if(started_one)
+        return DWYCO_GSM_PULL_IN_PROGRESS;
     return DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE;
 }
 

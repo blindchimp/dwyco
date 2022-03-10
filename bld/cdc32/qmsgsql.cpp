@@ -341,20 +341,28 @@ QMsgSql::init_schema(const DwString& schema_name)
 }
 
 void
-add_pull_failed(vc mid, vc uid)
+add_pull_failed(const vc& mid, const vc& uid)
 {
     vc huid = to_hex(uid);
     sql_simple("insert into pull_failed(mid, uid) values(?1, ?2)", mid, huid);
 }
 
+bool
+pull_failed(const vc& mid, const vc& uid)
+{
+    vc huid = to_hex(uid);
+    vc res = sql_simple("select 1 from pull_failed where mid = ?1 and uid = ?2 limit 1", mid, huid);
+    return res.num_elems() > 0;
+}
+
 void
-clean_pull_failed_mid(vc mid)
+clean_pull_failed_mid(const vc& mid)
 {
     sql_simple("delete from pull_failed where mid = ?1", mid);
 }
 
 void
-clean_pull_failed_uid(vc uid)
+clean_pull_failed_uid(const vc& uid)
 {
     vc huid = to_hex(uid);
     sql_simple("delete from pull_failed where uid = ?1", huid);
