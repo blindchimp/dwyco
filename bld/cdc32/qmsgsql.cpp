@@ -1716,7 +1716,7 @@ sql_load_group_index(vc uid, int max_count)
            " (assoc_uid in (select * from uidset)"
             // messages from previous group members
                     " or (is_sent isnull and length(?1) > 0 and from_group = ?1 ))"
-                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
+                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) order by logical_clock desc limit ?2",
                     gid.is_nil() ? "" : to_hex(gid),
                     max_count,
                     huid);
@@ -1931,7 +1931,7 @@ msg_idx_get_new_msgs(vc uid, vc logical_clock)
                "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
                " from gi where "
                " assoc_uid in (select * from uidset)"
-                    " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) and logical_clock > ?1 group by mid order by logical_clock desc",
+                    " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) and logical_clock > ?1 order by logical_clock desc",
                             logical_clock,
                             huid);
         sql_commit_transaction();
@@ -2114,7 +2114,7 @@ get_unfav_msgids(vc uid)
         vc res = sql_simple(
                     with_create_uidset(1)
                     "select mid as foo from gi where assoc_uid in (select * from uidset) "
-                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') group by mid", to_hex(uid));
+                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') ", to_hex(uid));
         sql_commit_transaction();
         ret = flatten(res);
     }
