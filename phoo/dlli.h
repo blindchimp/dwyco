@@ -718,6 +718,7 @@ int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, 
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
+int DWYCOEXPORT dwyco_get_updated_uids(DWYCO_USER_LIST *list_out, long time);
 
 // returns 1 if the message content was successfully loads, and 0 otherwise.
 // NOTE: uid is ignored

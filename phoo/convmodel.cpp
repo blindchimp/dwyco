@@ -214,6 +214,19 @@ ConvListModel::remove_uid_from_model(const QByteArray& uid)
 }
 
 void
+ConvListModel::reload_possible_changes(long time)
+{
+    DWYCO_LIST ul;
+    if(!dwyco_get_updated_uids(&ul, time))
+        return;
+    simple_scoped qul(ul);
+    for(int i = 0; i < qul.rows(); ++i)
+    {
+        add_uid_to_model(qul.get<QByteArray>(i));
+    }
+}
+
+void
 ConvListModel::load_users_to_model()
 {
     DWYCO_LIST l;

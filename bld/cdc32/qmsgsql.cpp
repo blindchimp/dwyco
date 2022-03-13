@@ -132,6 +132,7 @@ QMsgSql::init_schema_fav()
 
         sql_simple("create table if not exists mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
+        sql_simple("create index if not exists mt.gtombi2 on gtomb(time)");
 
         sql_simple("drop table if exists mt.static_crdt_tags");
         sql_simple("create table mt.static_crdt_tags(tag text not null)");
@@ -205,6 +206,7 @@ QMsgSql::init_schema(const DwString& schema_name)
     // note: mid's are unique identifiers, so its meer existence here means it was
     // deleted.
     sql_simple("create table if not exists msg_tomb(mid text not null, time integer, unique(mid) on conflict ignore)");
+    sql_simple("create index if not exists mtombi_time on msg_tomb(time)");
 
     //sql_simple("drop table if exists gi");
     sql_simple("create table if not exists gi ("
@@ -2529,6 +2531,46 @@ sql_uid_has_tag(vc uid, vc tag)
     }
     return c;
 
+}
+
+// return a list of uid's that appear to have updates since
+// the given time. takes into account tags and tag tombstones
+// and potentially new messages only. if the sync stuff loads
+// old messages in the background, this would not be reflected in
+// these queries. we would need some kind of other update indicator
+// for that (maybe that could be handled with a trigger.)
+// note: this is expected to be used with relatively small intervals of
+// time, like for a mobile device switching in and out of the app, so the
+// result sets will likely be tiny.
+vc
+sql_uid_updated_since(vc time)
+{
+    vc ret(VC_VECTOR);
+    try
+    {
+        sql_start_transaction();
+        vc res = sql_simple(
+                    "WITH "
+                    "newtags(mid) as (select mid from gmt where time > ?1 union select mid from gmt,gtomb using(guid) where gtomb.time > ?1) "
+                    "select distinct assoc_uid from gi,newtags using(mid) union select assoc_uid from gi where date > ?1",
+                    time);
+        sql_commit_transaction();
+        // map down the results
+        for(int i = 0; i < res.num_elems(); ++i)
+        {
+            vc uid = from_hex(res[i][0]);
+            uid = map_to_representative_uid(uid);
+            if(!ret.contains(uid))
+            {
+                ret.append(uid);
+            }
+        }
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+    return ret;
 }
 
 // NOTE: if a message hasn't been indexed (ie, it hasn't been downloaded and filed

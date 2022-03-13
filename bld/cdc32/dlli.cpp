@@ -6280,6 +6280,17 @@ dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out)
 
 DWYCOEXPORT
 int
+dwyco_get_updated_uids(DWYCO_USER_LIST *list_out, long time)
+{
+    vc& ret = *new vc(VC_VECTOR);
+    ret = sql_uid_updated_since(time);
+    *list_out = (DWYCO_USER_LIST)&ret;
+    return 1;
+}
+
+
+DWYCOEXPORT
+int
 dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid)
 {
     if(len_uid <= 0)

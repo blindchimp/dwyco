@@ -143,6 +143,14 @@ reload_conv_list()
     Conv_sort_proxy->setDynamicSortFilter(true);
 }
 
+void
+reload_conv_list_since(long time)
+{
+    Conv_sort_proxy->setDynamicSortFilter(false);
+    TheConvListModel->reload_possible_changes(time);
+    Conv_sort_proxy->setDynamicSortFilter(true);
+}
+
 static
 void
 reload_ignore_list()
@@ -1751,7 +1759,8 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
 {
     // note: comment out the "inactive" normally, but put it back in
     // when testing "background" stuff on desktop
-    if(as == Qt::ApplicationSuspended  /*|| as == Qt::ApplicationInactive*/)
+    static long time_suspended;
+    if(as == Qt::ApplicationSuspended  || as == Qt::ApplicationInactive)
     {
         Suspended = 1;
         simple_call::suspend();
@@ -1766,7 +1775,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         notificationClient->start_background();
         notificationClient->set_allow_notification(1);
 #endif
-
+        time_suspended = time(0);
         emit qt_app_state_change(1);
     }
     else if(as == Qt::ApplicationActive && Suspended)
@@ -1778,7 +1787,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         // in case.
         QSet<QByteArray> dum;
         load_inbox_tags_to_unviewed(dum);
-        reload_conv_list();
+        reload_conv_list_since(time_suspended);
         Suspended = 0;
 #ifdef ANDROID
         notificationClient->set_allow_notification(0);
