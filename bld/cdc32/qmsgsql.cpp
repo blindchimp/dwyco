@@ -128,6 +128,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.gmti2 on gmt(mid)");
         sql_simple("create index if not exists mt.gmti3 on gmt(tag)");
         sql_simple("create index if not exists mt.gmti4 on gmt(uid)");
+        sql_simple("create index if not exists mt.gmti5 on gmt(time)");
 
         sql_simple("create table if not exists mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
@@ -204,7 +205,6 @@ QMsgSql::init_schema(const DwString& schema_name)
     // note: mid's are unique identifiers, so its meer existence here means it was
     // deleted.
     sql_simple("create table if not exists msg_tomb(mid text not null, time integer, unique(mid) on conflict ignore)");
-
 
     //sql_simple("drop table if exists gi");
     sql_simple("create table if not exists gi ("
@@ -331,6 +331,10 @@ QMsgSql::init_schema(const DwString& schema_name)
     // this one seems to speed up the "uid_has_tag" query by light years if
     // analyze is done periodically.
     sql_simple("create index if not exists gi_assoc_uid_mid on gi(assoc_uid, mid)");
+
+    // a simple map for presentation purposes that can be derived without talking to a server
+    sql_simple("create table if not exists group_map(uid primary key collate nocase not null, gid collate nocase not null)");
+    sql_simple("create index if not exists gmidx on group_map(gid)");
     sql_commit_transaction();
     }
     else if(schema_name.eq("mt"))
@@ -1362,9 +1366,8 @@ init_group_map()
     try
     {
         sql_start_transaction();
-        sql_simple("drop table if exists group_map");
-        sql_simple("create table group_map(uid primary key collate nocase not null, gid collate nocase not null)");
-        sql_simple("create index gmidx on group_map(gid)");
+        sql_simple("delete from group_map");
+
         // use the profile database to find candidates, which we can do without
         // being connected to the server.
         vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public");
@@ -1383,7 +1386,7 @@ init_group_map()
         sql_rollback_transaction();
     }
 
-    sDb->detach("prf");
+    //sDb->detach("prf");
 }
 
 vc
@@ -2512,14 +2515,12 @@ sql_uid_has_tag(vc uid, vc tag)
     try
     {
         sql_start_transaction();
-        //create_uidset(uid);
         vc res = sql_simple(
                     with_create_uidset(2)
                     "select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
                             tag,
                     to_hex(uid));
         c = (res.num_elems() > 0);
-        //drop_uidset();
         sql_commit_transaction();
     }
     catch(...)
