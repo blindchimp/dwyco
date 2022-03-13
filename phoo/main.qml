@@ -973,7 +973,7 @@ ApplicationWindow {
         id: sync_debug
         interval: 10000
         repeat: true
-        running: server_account_created
+        running: server_account_created && core.app_state === 0
         onTriggered: {
             SyncDescModel.load_model()
         }
