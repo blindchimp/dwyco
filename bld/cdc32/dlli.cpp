@@ -1030,7 +1030,7 @@ dwyco_suspend()
         ;
     save_qmsg_state();
     suspend_qmsg();
-    exit_prfdb();
+    //exit_prfdb();
     save_entropy();
     int current_listen = is_listening();
     Suspend_listen_mode = current_listen;
@@ -1064,7 +1064,7 @@ dwyco_resume()
     set_listen_state(Suspend_listen_state);
     init_pal();
     resume_qmsg();
-    init_prfdb();
+    //init_prfdb();
     start_database_thread();
     Dwyco_suspended = 0;
 }
