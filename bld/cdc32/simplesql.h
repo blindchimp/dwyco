@@ -45,6 +45,7 @@ public:
     int init(int flags = -1);
     void exit();
     void optimize();
+    void set_cache_size(int);
     void start_transaction();
     void commit_transaction();
     void sync_off();

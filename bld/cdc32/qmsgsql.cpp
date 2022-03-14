@@ -1144,6 +1144,7 @@ init_qmsg_sql()
     sql_start_transaction();
     //sql_simple("pragma main.cache_size= -10000");
     //sql_simple("pragma mt.cache_size= -10000");
+    sDb->set_cache_size(5000);
     vc sv = sql_simple("pragma main.user_version");
     if((int)sv[0][0] != 0)
         Schema_version_hack += sv[0][0].peek_str();
