@@ -370,8 +370,8 @@ dwyco_db_login_result(const char *str, int what)
     emit TheDwycoCore->server_login(str, what);
     if(what > 0)
     {
-        reload_conv_list();
-        reload_ignore_list();
+        //reload_conv_list();
+        //reload_ignore_list();
         //dwyco_switch_to_chat_server(0);
     }
 }

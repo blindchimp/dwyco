@@ -108,7 +108,7 @@ ApplicationWindow {
     property bool show_archived_users: false
 
     property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
-
+    property int qt_application_state: 0
     property bool is_mobile
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
@@ -429,11 +429,11 @@ ApplicationWindow {
         Connections {
             target: core
             function onQt_app_state_change(app_state) {
-                if(core.app_state === 0) {
+                if(app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
 
                 }
-                if(core.app_state !== 0) {
+                if(app_state !== 0) {
                     console.log("CHAT SERVER PAUSE");
 
                     //core.disconnect_chat_server()
@@ -923,7 +923,7 @@ ApplicationWindow {
             if(Qt.platform.os == "android") {
                 notificationClient.set_lastrun()
             }
-
+            qt_application_state = app_state
         }
 
         onImage_picked: {
@@ -973,7 +973,7 @@ ApplicationWindow {
         id: sync_debug
         interval: 10000
         repeat: true
-        running: server_account_created && core.app_state === 0
+        running: server_account_created && qt_application_state === 0
         onTriggered: {
             SyncDescModel.load_model()
         }
