@@ -1760,7 +1760,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     // note: comment out the "inactive" normally, but put it back in
     // when testing "background" stuff on desktop
     static long time_suspended;
-    if(as == Qt::ApplicationSuspended  || as == Qt::ApplicationInactive)
+    if(as == Qt::ApplicationSuspended  /*|| as == Qt::ApplicationInactive*/)
     {
         Suspended = 1;
         simple_call::suspend();
