@@ -113,6 +113,9 @@ ApplicationWindow {
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
+    property bool group_active
+    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
+
     function pin_expire() {
         var expire
         var duration
@@ -973,7 +976,7 @@ ApplicationWindow {
         id: sync_debug
         interval: 10000
         repeat: true
-        running: server_account_created && qt_application_state === 0
+        running: group_active && server_account_created && qt_application_state === 0
         onTriggered: {
             SyncDescModel.load_model()
         }

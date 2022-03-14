@@ -6,13 +6,10 @@ import QtQuick.Dialogs 1.3
 import QtQuick.Controls 2.12
 Page {
 
-    property bool group_active
     property bool show_failed
     property bool quitnow: false
     property bool waiting_for_leave_ack
     property string provisional_group
-
-    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
     header: SimpleToolbar {
 
