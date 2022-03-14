@@ -1216,6 +1216,28 @@ init_qmsg_sql()
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
+
+    sql_simple("create table if not exists uid_updated(uid text not null collate nocase unique on conflict ignore)");
+    sql_simple("create temp trigger uid_update1 after insert on  main.gi begin "
+               "insert into uid_updated(uid) values(new.assoc_uid); "
+               "end"
+               );
+    sql_simple("create temp trigger uid_update2 after delete on  main.gi begin "
+               "insert into uid_updated(uid) values(old.assoc_uid); "
+               "end"
+               );
+    sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
+               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
+               "end"
+               );
+    sql_simple("create temp trigger uid_update4 after delete on mt.gmt begin "
+               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = old.mid; "
+               "end"
+               );
+    sql_simple("create temp trigger uid_update5 after insert on mt.gtomb begin "
+               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = (select mid from mt.gmt where guid = new.guid); "
+               "end"
+               );
     sql_commit_transaction();
     //Database_online.value_changed.connect_ptrfun(refetch_pk);
     Keys_updated.connect_ptrfun(update_group_map, 1);
