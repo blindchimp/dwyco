@@ -313,8 +313,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     // calling stuff sorted out (needs a protocol change to alert
     // regarding incoming calls, etc.) we just let everything go
     // via the server.
-    dwyco_inhibit_sac(0);
-    dwyco_inhibit_pal(0);
+    dwyco_inhibit_sac(1);
+    dwyco_inhibit_pal(1);
 
     if(dwyco_get_create_new_account())
     {
