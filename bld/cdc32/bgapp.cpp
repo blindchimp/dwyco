@@ -386,13 +386,17 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 MMChannel::any_ctrl_q_pending() || SimpleSocket::any_waiting_for_write())
         {
             GRTLOG("spin %d short sleep", spin, 0);
+#if 0
 #ifdef WIN32
             SleepEx(100, 0);
 #else
             usleep(100000);
 #endif
+#endif
+            // override, make is 20ms
+            snooze = 20;
         }
-        else
+        //else
         {
             //usleep(500000);
             Socketvec res;
@@ -667,13 +671,17 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
                 MMChannel::any_ctrl_q_pending() || SimpleSocket::any_waiting_for_write())
         {
             GRTLOG("spin %d short sleep", spin, 0);
+#if 0
 #ifdef WIN32
             SleepEx(100, 0);
 #else
             usleep(100000);
 #endif
+#endif
+            // override, make is 20ms
+            snooze = 20;
         }
-        else
+        //else
         {
             //usleep(500000);
             Socketvec res;
