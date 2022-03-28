@@ -284,10 +284,5 @@ aqext_android.cpp \
     upnp.cpp \
     aqkey.cpp
 
-HEADERS += \
-    profiledb.h \
-    pulls.h \
-    simple_property.h \
-    sync_sendq.h \
-    vccfg.h
+
 

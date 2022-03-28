@@ -480,7 +480,6 @@ HEADERS += \
     dwycoprofilepreviewprovider.h \
     convmodel.h \
     getinfo.h \
-    dwycolistscoped.h \
     ignoremodel.h \
     qlimitedbuffer.h \
     resizeimage.h \
