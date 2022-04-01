@@ -116,7 +116,7 @@ QMsgSql::init_schema_fav()
     {
         start_transaction();
         vc res = sql_simple("pragma mt.user_version");
-        if((int)res[0][0] == 1)
+        if((int)res[0][0] == 2)
             throw 0;
         sql_simple("create table if not exists mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
         sql_simple("create table if not exists mt.gmt("
@@ -151,7 +151,7 @@ QMsgSql::init_schema_fav()
         sql_simple("create table if not exists mt.msg_tags2(mid text not null, tag text not null, time integer not null)");
         sql_simple("insert into mt.gmt select mid, tag, time, ?1, lower(hex(randomblob(8))) from mt.msg_tags2", to_hex(My_UID));
         sql_simple("drop table mt.msg_tags2");
-        sql_simple("pragma mt.user_version = 1");
+        sql_simple("pragma mt.user_version = 2");
 
         commit_transaction();
     }
@@ -188,11 +188,13 @@ QMsgSql::init_schema(const DwString& schema_name)
                 // upgraded during debugging.remove this once
                 // experiments are merged.
                 vc res = sql_simple("pragma user_version");
-                if((int)res[0][0] == 5)
+                if((int)res[0][0] == 6)
                 {
                     throw 0;
                 }
             }
+
+            sql_simple("create table schema_sections(name primary key not null, val)");
 
             // WARNING: the order and number of the fields in this table
             // is the same as the #defines for the msg index in
@@ -272,7 +274,7 @@ QMsgSql::init_schema(const DwString& schema_name)
             // a simple map for presentation purposes that can be derived without talking to a server
             sql_simple("create table if not exists group_map(uid primary key collate nocase not null, gid collate nocase not null)");
             sql_simple("create index if not exists gmidx on group_map(gid)");
-            sql_simple("pragma user_version = 5");
+            sql_simple("pragma user_version = 6");
             sql_commit_transaction();
         }
         catch(...)
@@ -1082,6 +1084,65 @@ update_group_map(vc uid, int what)
     init_group_map();
 }
 
+static
+void
+setup_update_triggers()
+{
+    try {
+        sql_start_transaction();
+
+        vc res = sql_simple("select val from schema_sections where name = 'update_triggers'");
+        if(res.num_elems() == 0)
+        {
+            sql_simple("insert into schema_sections (name, val) values('update_triggers', 0)");
+        }
+        else if((int)res[0][0] == 1)
+            throw 0;
+        sql_simple("create table rescan(flag integer)");
+        sql_simple("insert into rescan (flag) values(0)");
+        sql_simple("create trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
+        sql_simple("create trigger rescan2 after delete on main.msg_tomb begin update rescan set flag = 1; end");
+        sql_simple("create trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
+        sql_simple("create trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
+
+        sql_simple("create trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
+        sql_simple("create trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
+
+        sql_simple("create table if not exists uid_updated(uid text not null collate nocase unique on conflict ignore)");
+        sql_simple("create trigger uid_update1 after insert on  main.gi begin "
+                   "insert into uid_updated(uid) values(new.assoc_uid); "
+                   "end"
+                   );
+        sql_simple("create trigger uid_update2 after delete on  main.gi begin "
+                   "insert into uid_updated(uid) values(old.assoc_uid); "
+                   "end"
+                   );
+
+        sql_simple("update schema_sections set val = 1 where name = 'update_triggers'");
+        sql_commit_transaction();
+    }  catch (...) {
+        sql_rollback_transaction();
+    }
+    // not sure if this is peculiarity of sqlite or what, since we want to update a table in main
+    // based on update to mt...
+    sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
+               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
+               "end"
+               );
+    sql_simple("create temp trigger uid_update4 after delete on mt.gmt begin "
+               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = old.mid; "
+               "end"
+               );
+    sql_simple("create temp trigger uid_update5 after insert on mt.gtomb begin "
+               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = (select mid from mt.gmt where guid = new.guid); "
+               "end"
+               );
+
+
+}
+
 void
 init_qmsg_sql()
 {
@@ -1114,13 +1175,6 @@ init_qmsg_sql()
     // mode or something.
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
     sql_simple("delete from gi where mid in (select mid from msg_tomb)");
-
-    sql_simple("create temp table rescan(flag integer)");
-    sql_simple("insert into rescan (flag) values(0)");
-    sql_simple("create temp trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan2 after delete on main.msg_tomb begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
     // triggers use this table when reflecting changes downstream.
     // to disable the trigger, remove the tags from this table
@@ -1168,32 +1222,8 @@ init_qmsg_sql()
                         "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
                         "end");
 
-    sql_simple("create temp trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
+    setup_update_triggers();
 
-    sql_simple("create table if not exists uid_updated(uid text not null collate nocase unique on conflict ignore)");
-    sql_simple("create temp trigger uid_update1 after insert on  main.gi begin "
-               "insert into uid_updated(uid) values(new.assoc_uid); "
-               "end"
-               );
-    sql_simple("create temp trigger uid_update2 after delete on  main.gi begin "
-               "insert into uid_updated(uid) values(old.assoc_uid); "
-               "end"
-               );
-    sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
-               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
-               "end"
-               );
-    sql_simple("create temp trigger uid_update4 after delete on mt.gmt begin "
-               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = old.mid; "
-               "end"
-               );
-    sql_simple("create temp trigger uid_update5 after insert on mt.gtomb begin "
-               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = (select mid from mt.gmt where guid = new.guid); "
-               "end"
-               );
     sql_commit_transaction();
     //Database_online.value_changed.connect_ptrfun(refetch_pk);
     Keys_updated.connect_ptrfun(update_group_map, 1);
