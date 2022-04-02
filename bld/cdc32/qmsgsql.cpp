@@ -118,6 +118,11 @@ QMsgSql::init_schema_fav()
         vc res = sql_simple("pragma mt.user_version");
         if((int)res[0][0] == 2)
             throw 0;
+        if((int)res[0][0] != 0)
+        {
+            // note: remove and rebuild old databases during debugging
+            oopanic("old tags found");
+        }
         sql_simple("create table if not exists mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
         sql_simple("create table if not exists mt.gmt("
                    "mid text not null, "
@@ -191,6 +196,12 @@ QMsgSql::init_schema(const DwString& schema_name)
                 if((int)res[0][0] == 6)
                 {
                     throw 0;
+                }
+                if((int)res[0][0] != 0)
+                {
+                    // note: remove and rebuild old databases during debugging
+
+                    oopanic("old database found");
                 }
             }
 
