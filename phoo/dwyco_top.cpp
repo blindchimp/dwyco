@@ -2575,8 +2575,9 @@ DwycoCore::service_channels()
         }
         //if(mlm)
         //    mlm->reload_model();
+
+        update_any_unviewed(any_unviewed_msgs());
     }
-    update_any_unviewed(any_unviewed_msgs());
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically
     // linked. discovered why: JNI won't find functions properly when statically linked.
