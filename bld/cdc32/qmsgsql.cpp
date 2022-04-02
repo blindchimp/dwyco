@@ -1240,6 +1240,7 @@ init_qmsg_sql()
     // they are useful for debugging to keep things in sync, but in normal
     // usage, this might be something you could relegate to a "maintenance"
     // mode or something.
+    sql_simple("delete from msg_idx where mid in (select mid from msg_tomb)");
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
     sql_simple("delete from gi where mid in (select mid from msg_tomb)");
 
