@@ -11,27 +11,33 @@ import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import dwyco 1.0
 
-Rectangle {
+Pane {
     anchors.fill: parent
     // this just makes sure mouse events don't go down to other
     // components
-    MouseArea {
-        anchors.fill: parent
-    }
-    gradient: Gradient {
+//    MouseArea {
+//        anchors.fill: parent
+//    }
+
+    background: Rectangle {
+        gradient: Gradient {
         GradientStop { position: 0.0; color: primary_light }
         GradientStop { position: 1.0; color: primary_dark}
+        }
     }
+    focusPolicy: Qt.StrongFocus
+
     ColumnLayout {
 
         anchors.fill:parent
         anchors.margins: mm(3)
 
-        TextFieldX {
+        TextField {
             id: textInput1
-            text_input: fname.fname()
-            placeholder_text: "Enter camera name (you can change it later)"
+            text: fname.fname()
+            placeholderText: "Enter camera name (you can change it later)"
             Layout.fillWidth: true
+            //activeFocusOnTab: true
         }
 
         Label {
@@ -73,13 +79,20 @@ Rectangle {
             id: done_button
             text: qsTr("OK")
             Layout.fillWidth: true
+            focus: true
+            Component.onCompleted: {
+                forceActiveFocus()
+            }
+
+            KeyNavigation.up: textInput1
+
             onClicked: {
                 Qt.inputMethod.commit()
                 var name;
-                if(textInput1.text_input.length === 0) {
+                if(textInput1.text.length === 0) {
                     name = "ShinyHappyRock"
                 } else {
-                    name = textInput1.text_input
+                    name = textInput1.text
                 }
 
                 core.bootstrap(name, textInput2.text_input)
