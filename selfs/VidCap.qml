@@ -212,11 +212,11 @@ Page {
     Connections {
         target: core
 
-        onSc_connect_terminated: {
+        function onSc_connect_terminated(uid) {
             console.log("CONNECT TERMINATED ", uid)
         }
 
-        onSc_connectedChanged: {
+        function onSc_connectedChanged(uid, connected) {
             console.log("ConnectedChanged ", connected, uid)
             if(connected === 0) {
                 core.delete_call_context(uid)
@@ -229,7 +229,7 @@ Page {
             }
         }
 
-        onProfile_update: {
+        function onProfile_update(success) {
             if(success === 1) {
                 profile_sent = 0
             } else {
@@ -242,7 +242,7 @@ Page {
     Connections {
         target: CallContextModel
 
-        onCountChanged: {
+        function onCountChanged() {
             console.log("CALL COUNT ", CallContextModel.count)
 //            if(CallContextModel.count === 1) {
 //                preview_cam.start()
@@ -272,7 +272,7 @@ Page {
                 fillMode: Image.PreserveAspectFit
                 Connections {
                     target: core
-                    onVideo_capture_preview: {
+                    function onVideo_capture_preview(img_path) {
                         if(visible)
                             viewer.source = img_path
                     }
