@@ -883,9 +883,10 @@ static
 void
 setup_locations()
 {
+
+#if 0 && defined(ANDROID)
     // this is easier to debug since you don't need a rooted phone to look at it
     QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
-#if defined(ANDROID)
     if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
         // we aren't going anywhere without being able to setup our state
@@ -898,6 +899,8 @@ setup_locations()
             filepath = QStandardPaths::AppDataLocation;
         }
     }
+#else
+    QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
 #endif
     //
     QStringList args = QGuiApplication::arguments();
