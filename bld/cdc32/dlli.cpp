@@ -1410,17 +1410,6 @@ dwyco_set_client_version(const char *str, int len_str)
     Client_version = vc(VC_BSTRING, str, len_str);
 }
 
-DWYCOEXPORT
-void
-dwyco_set_app_id(const char *str, int len_str)
-{
-    if(str == 0)
-        dwyco::App_ID = vcnil;
-    else
-        dwyco::App_ID = vc(VC_BSTRING, str, len_str);
-}
-
-
 //
 // call this once at startup, preferably before doing
 // anything else (do it before starting the main

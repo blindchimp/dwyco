@@ -1,6 +1,6 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
-
+CONFIG += c++11
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
 
@@ -18,7 +18,7 @@ DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"1.50\\\"\"
-CONFIG += c++11
+
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -475,7 +475,6 @@ HEADERS += \
     dwycoprofilepreviewprovider.h \
     convmodel.h \
     getinfo.h \
-    dwycolistscoped.h \
     ignoremodel.h \
     qlimitedbuffer.h \
     resizeimage.h \

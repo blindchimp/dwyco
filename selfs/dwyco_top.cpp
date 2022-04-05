@@ -1609,6 +1609,8 @@ DwycoCore::init()
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "1");
     dwyco_set_setting("net/listen", "0");
+    dwyco_set_setting("net/app_id", "selfs");
+    dwyco_set_setting("net/broadcast_port", "48902");
     dwyco_inhibit_all_incoming(1);
 
     new profpv;

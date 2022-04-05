@@ -68,6 +68,8 @@ void set_listen_state(int on);
 void
 net_section_changed(vc name, vc val)
 {
+    App_ID = get_settings_value("net/app_id");
+
     if(is_listening())
     {
         set_listen_state(0);
@@ -121,7 +123,6 @@ is_listening()
 static char packet_buf[32768];
 static int plen = sizeof(packet_buf);
 static DwTimer Broadcast_timer("broadcast");
-#define BROADCAST_INTERVAL (10 * 1000)
 
 static
 int
@@ -177,7 +178,6 @@ has_data(vc sock, int sec, int usec)
     return 0;
 }
 
-#define BROADCAST_PORT "48901"
 static
 int
 net_socket_error(vc *v)
@@ -216,10 +216,10 @@ start_broadcaster()
         return 0;
     }
     a = "255.255.255.255:";
-    a += BROADCAST_PORT;
+    a += DwString::fromInt((int)get_settings_value("net/broadcast_port"));
     Local_broadcast.socket_connect(a.c_str());
     Broadcast_timer.reset();
-    Broadcast_timer.set_interval(BROADCAST_INTERVAL);
+    Broadcast_timer.set_interval((int)get_settings_value("net/broadcast_interval") * 1000);
     Broadcast_timer.set_autoreload(0);
     Broadcast_timer.start();
     return 1;
@@ -258,7 +258,7 @@ start_discover()
 
     DwString a;
     a = "any:";
-    a += BROADCAST_PORT;
+    a += DwString::fromInt((int)get_settings_value("net/broadcast_port"));
     // this didn't appear to work with just "ip:port" for broadcasts
     if(Local_discover.socket_init(a.c_str(), 0, 0).is_nil())
     {
@@ -278,6 +278,7 @@ init_aconn()
 {
     Broadcast_discoveries = vc(VC_TREE);
     bind_sql_section("net/", net_section_changed);
+    App_ID = get_settings_value("net/app_id");
     start_discover();
 
 }
@@ -349,7 +350,7 @@ discover_tick()
                     data[1].type() == VC_VECTOR)
             {
                 vc uid = data[0];
-                if(uid != My_UID || (!App_ID.is_nil() && App_ID == data[1][BD_APP_ID]))
+                if(uid != My_UID && (!App_ID.is_nil() && App_ID == data[1][BD_APP_ID]))
                 {
                     GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
                     GRTLOGVC(data);
@@ -372,7 +373,7 @@ discover_tick()
     {
         auto a = it.get();
         auto tm = time(0) - a.get_value();
-        if(tm  > (3 * BROADCAST_INTERVAL) / 1000)
+        if(tm  > (3 * (int)get_settings_value("net/broadcast_interval")))
             kill.append(a.get_key());
     }
     for(int i = 0; i < kill.num_elems(); ++i)
