@@ -337,18 +337,18 @@ Page {
                 visible: model.online && idle.active
                 focus: true
                 onActiveFocusChanged: {
-                    console.log("focus ", attempt_uid)
+                    console.log("focus ", index, " ", attempt_uid)
                 }
 
                 onVisibleChanged: {
                     if(!visible)
                         return
                     if(fuck_me_with_a_brick.GridView.isCurrentItem) {
-                        console.log("FUCK")
+                        console.log("FUCK ", index)
                         forceActiveFocus()
                     }
                     else {
-                        console.log("NOT FUCK")
+                        console.log("NOT FUCK ", index)
                     }
                 }
             }
@@ -404,15 +404,17 @@ Page {
         model: filtered_discover
         delegate: video_delegate
         visible: model.count > 0
-        onActiveFocusChanged: {
-            if(activeFocus) {
-                console.log("FUCKING HELL")
-                currentIndex = 0
-                positionViewAtBeginning()
-                //currentItem.connect_button.forceActiveFocus()
+//        onActiveFocusChanged: {
+//            if(activeFocus) {
+//                console.log("FUCKING HELL")
+//                currentIndex = 0
+//                positionViewAtBeginning()
+//                //currentItem.connect_button.forceActiveFocus()
 
-            }
-        }
+//            }
+//        }
+        //keyNavigationEnabled: true
+        onCurrentItemChanged: {currentItem.forceActiveFocus()}
 
     }
 
