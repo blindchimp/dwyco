@@ -1054,7 +1054,13 @@ dwyco_resume()
     if(!Dwyco_suspended)
         return;
     handle_crash_setup();
-    init_entropy();
+    //init_entropy();
+    // just give it a little nudge
+    // yep, a couple of trash bytes in here
+    char a[4];
+    a[0] = (char)dwyco_rand();
+    a[3] = (char)dwyco_rand();
+    add_entropy(a, sizeof(a));
     Inhibit_database_thread = 0;
     Inhibit_pal = 0;
     Inhibit_auto_connect = 0;
