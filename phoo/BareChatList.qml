@@ -26,7 +26,7 @@ Item {
             property int showit
             showit: (REVIEWED && REGULAR) || show_unreviewed
             height: showit ? picht() : 0
-            width: parent.width
+            width: ListView.view.width
             //opacity: {multiselect_mode && selected ? 0.5 : 1.0}
             color: primary_dark
             border.width: 1
