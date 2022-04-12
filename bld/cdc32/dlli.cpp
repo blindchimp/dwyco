@@ -1789,6 +1789,8 @@ set_group_uids(vc m, void *, vc, ValidPtr)
     // if the server doesn't know the group at all, you still get back
     // a vector with your own uid in it.
     Group_uids = m[1];
+    // update profiles, since this is an "authoritative" group membership
+    update_profiles_for_new_membership();
 }
 
 // NOTE: before this is called, all the static public keys and
