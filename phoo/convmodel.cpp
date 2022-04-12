@@ -414,12 +414,12 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
     else if(!lsm && rsm)
         return false;
 
-    bool lau = m->data(left, m->roleForName("any_unread")).toBool();
-    bool rau = m->data(right, m->roleForName("any_unread")).toBool();
-    if(lau && !rau)
-        return true;
-    else if(!lau && rau)
-        return false;
+//    bool lau = m->data(left, m->roleForName("any_unread")).toBool();
+//    bool rau = m->data(right, m->roleForName("any_unread")).toBool();
+//    if(lau && !rau)
+//        return true;
+//    else if(!lau && rau)
+//        return false;
 
     bool lsp = m->data(left, m->roleForName("pal")).toBool();
     bool rsp = m->data(right, m->roleForName("pal")).toBool();

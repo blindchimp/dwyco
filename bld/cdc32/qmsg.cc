@@ -2105,6 +2105,8 @@ query_done(vc m, void *, vc, ValidPtr)
     }
     catch(...)
     {
+        // we could probably restore the previous value of Cur_msgs here, but
+        // if this happens, the system is probably on its way out
         Cur_msgs = vc(VC_VECTOR);
         sql_rollback_transaction();
     }
