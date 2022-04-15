@@ -42,6 +42,7 @@
 #include "sepstr.h"
 #include "ser.h"
 #include "profiledb.h"
+#include "qmsgsql.h"
 
 #include "ta.h"
 
@@ -443,7 +444,7 @@ backup_account_info(const char *dbn)
         sql_rollback_transaction();
     }
     // not a deal breaker if these don't make it in together
-    backup_file("fav.sql", dbn);
+    backup_file(TAG_DB, dbn);
     return 1;
 }
 
@@ -521,8 +522,8 @@ static
 int
 create_incr_backup()
 {
-    DwString mfn = newfn("mi.sql");
-    DwString ffn = newfn("fav.sql");
+    DwString mfn = newfn(MSG_IDX_DB);
+    DwString ffn = newfn(TAG_DB);
     //DwString dfn = newfn("dbu.sql");
 
     try
@@ -894,7 +895,7 @@ restore_msgs(const char *cfn, int msgs_only)
 	}
         // we are likely to be loading something at this point,
         // so kill the index so it is rebuilt
-        DeleteFile(newfn("mi.sql").c_str());
+        DeleteFile(newfn(MSG_IDX_DB).c_str());
         // kill the previous message backup too since it will
         // need to be rebuilt
         reset_msg_backup();

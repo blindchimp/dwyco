@@ -51,7 +51,7 @@ DwString Schema_version_hack;
 class QMsgSql : public SimpleSql
 {
 public:
-    QMsgSql() : SimpleSql("mi.sql") {check_txn = 1;}
+    QMsgSql() : SimpleSql(MSG_IDX_DB) {check_txn = 1;}
     void init_schema(const DwString &schema_name);
     void init_schema_fav();
 };
@@ -360,8 +360,8 @@ generate_delta(vc uid, vc delta_id)
     if(!s.init(SQLITE_OPEN_READWRITE))
         return false;
 
-    s.attach("mi.sql", "mi");
-    s.attach("fav.sql", "mt");
+    s.attach(MSG_IDX_DB, "mi");
+    s.attach(TAG_DB, "mt");
 
     // ok, here is where we find the list of mid's that have been updated, and create
     // explicit midlog entries that will get sent down normally after the connection
@@ -441,14 +441,14 @@ sql_dump_mi()
     DwString fn = gen_random_filename();
     fn += ".tmp";
     fn = newfn(fn);
-    SimpleSql s("mi.sql");
+    SimpleSql s(MSG_IDX_DB);
     if(!s.init())
         oopanic("can't dump index");
 #ifdef DWYCO_BACKGROUND_SYNC
     s.set_busy_timeout(10 * 1000);
     s.check_txn = 1;
 #endif
-    s.attach("fav.sql", "mt");
+    s.attach(TAG_DB, "mt");
     s.attach(fn, "dump");
     s.start_transaction();
     s.sql_simple("create table dump.msg_idx ("
@@ -717,6 +717,28 @@ sync_files()
     }
 }
 
+static
+void
+remove_delta_databases()
+{
+    {
+        FindVec *fv = find_to_vec(newfn("minew????????????????????.sql").c_str());
+        for(int i = 0; i < fv->num_elems(); ++i)
+        {
+            DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+        }
+        delete_findvec(fv);
+    }
+    {
+        FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
+        for(int i = 0; i < fv->num_elems(); ++i)
+        {
+            DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+        }
+        delete_findvec(fv);
+    }
+}
+
 // call this to remove all the sync state from the database, and return
 // to "no group" status.
 // ASSUMES: there are no network connections, and that the system will be
@@ -766,22 +788,7 @@ remove_sync_state()
         sql_simple("delete from mt.taglog");
         sql_simple("delete from deltas");
         sql_commit_transaction();
-        {
-            FindVec *fv = find_to_vec(newfn("minew????????????????????.sql").c_str());
-            for(int i = 0; i < fv->num_elems(); ++i)
-            {
-                DeleteFile(newfn((*fv)[i]->cFileName).c_str());
-            }
-            delete_findvec(fv);
-        }
-        {
-            FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
-            for(int i = 0; i < fv->num_elems(); ++i)
-            {
-                DeleteFile(newfn((*fv)[i]->cFileName).c_str());
-            }
-            delete_findvec(fv);
-        }
+        remove_delta_databases();
     }
     catch(...)
     {
@@ -799,7 +806,7 @@ import_remote_mi(vc remote_uid)
     vc huid = to_hex(remote_uid);
     DwString fn = DwString("mi%1.sql").arg((const char *)huid);
     //DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
-    SimpleSql s("mi.sql");
+    SimpleSql s(MSG_IDX_DB);
     if(!s.init())
         return 0;
     // let's hang around for 10 seconds if someone else has the
@@ -807,7 +814,7 @@ import_remote_mi(vc remote_uid)
 #ifdef DWYCO_BACKGROUND_SYNC
     s.set_busy_timeout(10 * 1000);
 #endif
-    s.attach("fav.sql", "mt");
+    s.attach(TAG_DB, "mt");
     s.attach(fn, "mi2");
 
     int ret = 1;
@@ -1215,12 +1222,21 @@ init_qmsg_sql()
 {
     if(sDb)
         oopanic("already init");
+    int force_reindex = 0;
+    if(access(MSG_IDX_DB, F_OK) == -1)
+    {
+        // major update, remove the old databases, and force a reindex
+        DeleteFile("mi.sql");
+        DeleteFile("fav.sql");
+        remove_delta_databases();
+        force_reindex = 1;
+    }
     sDb = new QMsgSql;
 
     if(!sDb->init())
         throw -1;
     vc hmyuid = to_hex(My_UID);
-    sDb->attach("fav.sql", "mt");
+    sDb->attach(TAG_DB, "mt");
     sql_simple("pragma recursive_triggers=1");
     sql_start_transaction();
     init_index_data();
@@ -1271,6 +1287,8 @@ init_qmsg_sql()
     setup_update_triggers();
 
     sql_commit_transaction();
+    if(force_reindex)
+        reindex_possible_changes();
     //Database_online.value_changed.connect_ptrfun(refetch_pk);
     Keys_updated.connect_ptrfun(update_group_map, 1);
 }

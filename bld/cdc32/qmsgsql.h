@@ -104,6 +104,21 @@ void import_new_syncpoint(vc remote_uid, vc delta_id);
 
 extern DwString Schema_version_hack;
 
+// note: the message index is disposable, and can be rebuilt
+// from the files stored locally.
+// the tag database contains items the user has created
+// and that have been gleaned from other tag databases
+// in the device group. it *can* be disposed of, but you
+// may lose some information if it hasn't been propagated to
+// another device. the information isn't crucial for operation
+// though...
+// note: these files got created 4/15/2022, sacrificing
+// previous databases (mostly internal and from debugging.)
+// cdc-x users will have to wait for indexing on the first
+// run, so might want to include something to account for that.
+#define MSG_IDX_DB "msgs.sql"
+#define TAG_DB "tags.sql"
+
 }
 
 #endif
