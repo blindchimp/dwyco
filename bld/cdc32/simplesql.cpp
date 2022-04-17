@@ -114,7 +114,11 @@ SimpleSql::set_cache_size(int n)
 void
 SimpleSql::attach(const DwString& dbname, const DwString& schema_name)
 {
-    DwString ndbname = newfn(dbname);
+    DwString ndbname;
+    if(!dbname.eq(":memory:"))
+        ndbname = newfn(dbname);
+    else
+        ndbname = dbname;
     if(dbnames.contains(ndbname) || schema_names.contains(schema_name))
         return;
     int tmp = check_txn;

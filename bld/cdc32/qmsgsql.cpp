@@ -1211,10 +1211,6 @@ setup_crdt_triggers()
                         "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
                         "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
                         "end");
-
-
-
-
 }
 
 void
@@ -1223,11 +1219,13 @@ init_qmsg_sql()
     if(sDb)
         oopanic("already init");
     int force_reindex = 0;
-    if(access(MSG_IDX_DB, F_OK) == -1)
+
+    if(access(newfn(MSG_IDX_DB).c_str(), F_OK) == -1)
     {
         // major update, remove the old databases, and force a reindex
-        DeleteFile("mi.sql");
-        DeleteFile("fav.sql");
+        DeleteFile(newfn("mi.sql").c_str());
+        // note: we try to import old tags below
+        //DeleteFile(newfn("fav.sql").c_str());
         remove_delta_databases();
         force_reindex = 1;
     }
@@ -1287,8 +1285,35 @@ init_qmsg_sql()
     setup_update_triggers();
 
     sql_commit_transaction();
+    // this happens one time, the sql file names are changed and old
+    // files are deleted. we try to bring in tags from really old
+    // databases, not sure if this will work all the time though.
+    // note: cdcx as of 2.3x doesn't have any tags that the user created, so
+    // we shouldn't have to do anything.
     if(force_reindex)
+    {
+        if(access(newfn("fav.sql").c_str(), F_OK) == 0)
+        {
+            sDb->attach("fav.sql", "old");
+            sql_start_transaction();
+
+            sql_simple("insert into mt.gmt select mid, tag, time, uid, guid from old.gmt where tag in ('_hid', '_fav', '_ignore', '_pal')");
+            // really old tags, for upgrading old android installs of phoo and rando
+            sql_simple("create table if not exists msg_tags2(mid, tag)");
+            sql_simple("insert into mt.gmt select mid, tag, strftime('%s', 'now'), ?1, lower(hex(randomblob(8))) from msg_tags2 where tag in ('_hid', '_fav', '_ignore', '_pal')",
+                       to_hex(My_UID));
+            sql_simple("drop table msg_tags2");
+            sql_commit_transaction();
+            sDb->detach("old");
+            DeleteFile(newfn("fav.sql").c_str());
+        }
+        sql_start_transaction();
         reindex_possible_changes();
+        sql_simple("delete from midlog");
+        sql_simple("delete from taglog");
+        sql_commit_transaction();
+
+    }
     //Database_online.value_changed.connect_ptrfun(refetch_pk);
     Keys_updated.connect_ptrfun(update_group_map, 1);
 }
