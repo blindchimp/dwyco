@@ -13,6 +13,7 @@
 #endif
 #include <dos.h>
 #include <io.h>
+#define F_OK (0)
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
