@@ -783,9 +783,14 @@ remove_sync_state()
         // msg_tomb isn't that big, so probably not a huge deal
         //sql_simple("drop trigger if exists mtomb_log");
         sql_simple("delete from msg_tomb");
-        sql_simple("drop trigger if exists temp.rescan7");
-        sql_simple("drop trigger if exists temp.rescan5");
+
+        // here we might want to remove all the triggers on gi
+        // so sqlite can do it's optimization, then recreate the triggers
+        // remove_gi_triggers
+
         sql_simple("delete from gi");
+        // reinstall_gi_triggers
+
         sql_simple("delete from dir_meta");
         sql_simple("delete from midlog");
         sql_simple("delete from mt.taglog");
@@ -1175,7 +1180,7 @@ setup_crdt_triggers()
         {
             sql_simple("insert into schema_sections (name, val) values('crdt_triggers', 0)");
         }
-        else if((int)res[0][0] == 2)
+        else if((int)res[0][0] == 3)
             throw 0;
         sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid,op) select new.mid, uid, 'a' from current_clients; end");
         sql_simple("drop trigger if exists mt.tagupdate");
@@ -1200,7 +1205,7 @@ setup_crdt_triggers()
 //                            "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
 //                            "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
 //                            "end");
-        sql_simple("update schema_sections set val = 2 where name = 'crdt_triggers'");
+        sql_simple("update schema_sections set val = 3 where name = 'crdt_triggers'");
 
         sql_commit_transaction();
     }  catch (...) {
