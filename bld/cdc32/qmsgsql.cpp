@@ -779,7 +779,9 @@ remove_sync_state()
         // tombstones in other clients might cover them.
         sql_simple("delete from mt.gtomb");
         // drop triggers that might preclude the delete optimization in sqlite
-        sql_simple("drop trigger if exists mtomb_log");
+        // note: bug, don't drop a schema item that we aren't re-creating.
+        // msg_tomb isn't that big, so probably not a huge deal
+        //sql_simple("drop trigger if exists mtomb_log");
         sql_simple("delete from msg_tomb");
         sql_simple("drop trigger if exists temp.rescan7");
         sql_simple("drop trigger if exists temp.rescan5");
