@@ -1729,7 +1729,7 @@ sql_remove_uid_msg_idx(vc uid)
 
 }
 
-#define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum "union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
+#define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
 
 static
 void

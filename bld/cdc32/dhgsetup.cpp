@@ -121,6 +121,9 @@ change_current_group(vc, vc )
     // sync history state. this is mainly so we don't
     // propagate tombstones that might delete things on
     // other clients when we join a group we may have been in before.
+    // note: it is probably better not to generate the tombstones
+    // in the first place if we are not in "group mode", but
+    // that will need some schema changes
     remove_sync_state();
     se_emit_group_status_change();
 }
