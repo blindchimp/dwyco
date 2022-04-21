@@ -282,7 +282,8 @@ aqext_android.cpp \
     simplesql.cpp \
     grpmsg.cpp \
     upnp.cpp \
-    aqkey.cpp
+    aqkey.cpp \
+    netlog.cpp
 
 HEADERS += \
     netlog.h

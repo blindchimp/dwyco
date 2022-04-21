@@ -2629,9 +2629,27 @@ MMChannel::channel_by_call_type(vc uid, vc call_type)
 }
 
 ChanList
+MMChannel::channels_by_call_type(vc uid, vc call_type)
+{
+    // return all channels for uid of call_type
+    scoped_ptr<ChanList> cl(get_serviced_channels_net());
+    ChanListIter cli(cl.get());
+    ChanList ret;
+    for(; !cli.eol(); cli.forward())
+    {
+        MMChannel *mc = cli.getp();
+        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && call_type == mc->remote_call_type())
+        {
+            ret.append(mc);
+        }
+    }
+    return ret;
+}
+
+ChanList
 MMChannel::channels_by_call_type(vc call_type)
 {
-    // check current connections for uid
+    // check current connections for call_type
     scoped_ptr<ChanList> cl(get_serviced_channels_net());
     ChanListIter cli(cl.get());
     ChanList ret;
@@ -2815,6 +2833,23 @@ MMChannel::recv_config(vc cfg)
             common_cfg.del("pw");
             remote_cfg.del("pw");
             is_sync_chan = true;
+
+            ChanList cl = channels_by_call_type(remote_uid(), "sync");
+            if(cl.num_elems() > 1)
+            {
+                // maybe there is a channel the process of timing out,
+                // we just assume this current one will be better than
+                // the previous one (we definitely don't want more than
+                // one at a time.
+                // NOTE: have to check that the cleanup of the old
+                // channel won't interfere with setup of this one.
+                // alternatively, we can just kill both of them and let
+                // it reconnect, as this should be fairly rare.
+                for(int i = 0; i < cl.num_elems(); ++i)
+                    if(cl[i] != this)
+                        cl[i]->schedule_destroy();
+            }
+
             finish_connection_new();
             return;
         }
