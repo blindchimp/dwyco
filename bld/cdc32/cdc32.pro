@@ -284,5 +284,8 @@ aqext_android.cpp \
     upnp.cpp \
     aqkey.cpp
 
+HEADERS += \
+    netlog.h
+
 
 

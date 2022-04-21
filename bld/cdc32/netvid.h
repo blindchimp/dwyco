@@ -21,6 +21,7 @@
 #include "vccrypt2.h"
 #include "pval.h"
 #include "servass.h"
+#include "ssns.h"
 
 // error returns
 // op not completed: <0
@@ -224,6 +225,12 @@ private:
     static vc Ping;
     int keepalive();
     void toss();
+
+    vc tubeid;
+public:
+    vc mklog(vc = vcnil, vc = vcnil, vc = vcnil, vc = vcnil);
+    ssns::signal1<vc> log_signal;
+
 
 };
 

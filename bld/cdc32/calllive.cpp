@@ -451,6 +451,8 @@ stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr vp, M
             mc->schedule_destroy(MMChannel::HARD);
         }
 
+        mc->tube->mklog("peer_uid", to_hex(mc->attempt_uid));
+
     }
 
 }

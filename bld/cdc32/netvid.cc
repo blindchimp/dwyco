@@ -22,10 +22,40 @@
 #include "dwvec.h"
 #include "dwrtlog.h"
 #include "dwstr.h"
+#include "netlog.h"
+#include "dwyco_rand.h"
+using namespace dwyco;
 
 vc MMTube::Ping("vomit");
 int MMTube::dummy;
 int MMTube::always_zero;
+
+
+vc
+MMTube::mklog(vc v1, vc v2, vc v3, vc v4)
+{
+    vc v(VC_VECTOR);
+    if(ctrl_sock)
+    {
+    v.append("local_ip");
+    v.append(ctrl_sock->local_addr().c_str());
+    v.append("peer_ip");
+    v.append(ctrl_sock->peer_addr().c_str());
+    }
+    v.append("tube_id");
+    v.append(tubeid);
+    if(!v1.is_nil())
+    {
+        v.append(v1);
+        v.append(v2);
+    }
+    if(!v3.is_nil())
+    {
+        v.append(v3);
+        v.append(v4);
+    }
+    return v;
+}
 
 MMTube::MMTube() :
     baud(0, !DWVEC_FIXED, DWVEC_AUTO_EXPAND),
@@ -43,10 +73,15 @@ MMTube::MMTube() :
     last_tick = GetTickCount();
     enc_ctrl = 0;
     dec_ctrl = 0;
+    init_netlog();
+    tubeid = dwyco_rand();
+    log_signal.connect_ptrfun(netlog::netlog_slot);
 }
 
 MMTube::~MMTube()
 {
+    if(ctrl_sock)
+        log_signal.emit(mklog("event", "tube destroy"));
     delete ctrl_sock;
     delete mm_sock;
     for(int i = 2; i < socks.num_elems(); ++i)
@@ -63,6 +98,7 @@ MMTube::toss()
     {
         last_ctrl_error = ctrl_sock->last_error;
         GRTLOG("toss %s %s", (const char *)last_ctrl_error, ctrl_sock->peer_addr().c_str());
+        log_signal.emit(mklog("event", "ctrl toss"));
     }
     else
     {
@@ -125,6 +161,7 @@ MMTube::set_channel(SimpleSocket *s, int enc, int dec, int chan)
     socks[chan] = s;
     enc_chan[chan] = enc;
     dec_chan[chan] = dec;
+    log_signal.emit(mklog("event", "chan import", "chan_id", chan));
     // what about in_bits and baud... hmmm
 }
 
@@ -139,6 +176,7 @@ MMTube::drop_channel(int chan)
 {
     if(!connected)
         return;
+    log_signal.emit(mklog("event", "chan drop", "chan_id", chan));
     delete socks[chan];
     socks[chan] = 0;
     enc_chan[chan] = 0;
@@ -190,6 +228,7 @@ MMTube::gen_channel(unsigned short remote_port, int& chan)
         drop_channel(chan);
         return ret;
     }
+    log_signal.emit(mklog("event", "chan connected", "chan_id", chan));
     return 1;
 }
 
@@ -225,6 +264,7 @@ MMTube::connect(const char *remote_addr, const char *local_addr, int block, HWND
 
     }
     connected = 1;
+    log_signal.emit(mklog("event", "ctrl connected"));
     return 1;
 }
 
@@ -274,6 +314,7 @@ MMTube::accept(SimpleSocket *s)
     }
     ctrl_sock = s;
     connected = 1;
+    log_signal.emit(mklog("event", "ctrl accepted"));
     return 1;
 
 }
@@ -291,6 +332,7 @@ MMTube::disconnect_ctrl()
     if(!ctrl_sock)
         return 1;
     last_ctrl_error = ctrl_sock->last_error;
+    log_signal.emit(mklog("event", "ctrl terminated"));
     delete ctrl_sock;
     ctrl_sock = 0;
     GRTLOG("toss ctrl %s", (const char *)last_ctrl_error, 0);
