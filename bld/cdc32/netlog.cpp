@@ -87,6 +87,15 @@ init_netlog()
     return 1;
 }
 
+void
+exit_netlog()
+{
+    if(!Netlog)
+        return;
+    delete Netlog;
+    Netlog = 0;
+}
+
 static
 DwString
 make_columns(int n)

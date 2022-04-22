@@ -27,6 +27,7 @@ private:
 
 };
 int init_netlog();
+void exit_netlog();
 
 }
 
