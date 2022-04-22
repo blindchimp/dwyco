@@ -1,6 +1,7 @@
 #ifndef NETLOG_H
 #define NETLOG_H
 #include "simplesql.h"
+#include "ssns.h"
 
 namespace dwyco {
 class netlog
@@ -28,6 +29,7 @@ private:
 };
 int init_netlog();
 void exit_netlog();
+extern ssns::signal1<vc> Netlog_signal;
 
 }
 

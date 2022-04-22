@@ -44,6 +44,10 @@ MMTube::mklog(vc v1, vc v2, vc v3, vc v4)
     }
     v.append("tube_id");
     v.append(tubeid);
+    v.append("bytes_out");
+    v.append(total_sent);
+    v.append("bytes_in");
+    v.append(total_recv);
     if(!v1.is_nil())
     {
         v.append(v1);
@@ -76,6 +80,8 @@ MMTube::MMTube() :
     init_netlog();
     tubeid = dwyco_rand();
     log_signal.connect_ptrfun(netlog::netlog_slot);
+    total_recv = 0;
+    total_sent = 0;
 }
 
 MMTube::~MMTube()
@@ -584,6 +590,7 @@ MMTube::send_data(vc v, int chan, int bwchan)
         return SSERR;
     }
     in_bits[bwchan] += len * 8;
+    total_sent += len;
     return 1;
 }
 

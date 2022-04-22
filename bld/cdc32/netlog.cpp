@@ -6,6 +6,7 @@ using namespace dwyco;
 namespace dwyco {
 
 netlog::sqldb *netlog::db;
+ssns::signal1<vc> Netlog_signal;
 
 netlog::sqldb::sqldb() :
     SimpleSql("netlog.sql")
@@ -84,6 +85,7 @@ init_netlog()
         Netlog = 0;
         return 0;
     }
+    Netlog_signal.connect_ptrfun(netlog::netlog_slot, 1);
     return 1;
 }
 
