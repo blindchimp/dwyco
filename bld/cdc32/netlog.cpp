@@ -147,6 +147,7 @@ netlog::netlog_slot(vc v)
     }
     q += make_columns(vvec.num_elems());
     VCArglist a;
+    a.set_size(vvec.num_elems() + 2);
     a.append(q.c_str());
     for(int i = 0; i < vvec.num_elems(); ++i)
         a.append(vvec[i]);
@@ -161,5 +162,9 @@ netlog::netlog_slot(vc v)
     }
 
 }
+/*
+with contime(tube_id, tm) as (select tube_id,max(n1.time) - min(n1.time) from netlog n1,netlog n2 using (tube_id) group by tube_id)
+select peer_ip, tm from contime,netlog using(tube_id) where peer_ip notnull and peer_ip != 'nil' group by tube_id order by min(time)
+*/
 
 }
