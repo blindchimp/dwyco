@@ -422,6 +422,9 @@ exit_codec()
     exit_qmsg();
     Log->make_entry("exit");
 
+    // do this here mainly so we can get some network
+    // debugging output when the program exits
+    MMChannel::exit_mmchan();
     vc::non_lh_exit();
     vc::shutdown_logs();
 
