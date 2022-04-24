@@ -32,7 +32,7 @@ int MMTube::always_zero;
 
 
 vc
-MMTube::mklog(vc v1, vc v2, vc v3, vc v4)
+MMTube::mklog(vc v1, vc v2, vc v3, vc v4, vc v5, vc v6, vc v7, vc v8)
 {
     vc v(VC_VECTOR);
     if(ctrl_sock)
@@ -57,6 +57,16 @@ MMTube::mklog(vc v1, vc v2, vc v3, vc v4)
     {
         v.append(v3);
         v.append(v4);
+    }
+    if(!v5.is_nil())
+    {
+        v.append(v5);
+        v.append(v6);
+    }
+    if(!v7.is_nil())
+    {
+        v.append(v7);
+        v.append(v8);
     }
     return v;
 }
@@ -623,13 +633,17 @@ MMTube::recv_data(vc& v, int chan)
 {
     if(socks[chan] == 0)
         return SSERR;
-    if(!socks[chan]->recvvc(v))
+    // check all recvvc returns len properly
+    // libuv version does...
+    int len = 0;
+    if(!(len = socks[chan]->recvvc(v)))
     {
         if(socks[chan]->wouldblock())
             return SSTRYAGAIN;
         drop_channel(chan);
         return SSERR;
     }
+    total_recv += len;
     if(dec_chan[chan])
     {
         GRTLOG("DEC chan %d ", chan, 0);
