@@ -415,6 +415,9 @@ exit_bg_msg_send()
 void
 exit_codec()
 {
+    // do this here mainly so we can get some network
+    // debugging output when the program exits
+    MMChannel::exit_mmchan();
     save_qmsg_state();
     save_entropy();
     // note: this analyzes the database, which can be a huge
@@ -422,9 +425,8 @@ exit_codec()
     exit_qmsg();
     Log->make_entry("exit");
 
-    // do this here mainly so we can get some network
-    // debugging output when the program exits
-    MMChannel::exit_mmchan();
+
+
     vc::non_lh_exit();
     vc::shutdown_logs();
 

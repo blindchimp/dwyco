@@ -24,8 +24,15 @@ netlog::sqldb::init_schema(const DwString&)
 " time, "
 " tube_id, chan_id, "
 " event, bytes_out, bytes_in)"
-
 );
+    sql_simple("drop view if exists connection_times");
+
+    sql_simple("create view if not exists connection_times(peer_ip, start_tm, secs, uid) as "
+"with contime(tube_id, tm) as (select tube_id,max(n1.time) - min(n1.time) from netlog n1,netlog n2 using (tube_id) group by tube_id),"
+"pu(uid, tube_id) as (select peer_uid, tube_id from netlog where peer_uid notnull)"
+"select peer_ip, min(time), tm, (select uid from pu where tube_id = contime.tube_id)  from contime,netlog using(tube_id) where peer_ip notnull and peer_ip != 'nil' group by tube_id order by min(time)"
+);
+
 }
 
 netlog::netlog()
