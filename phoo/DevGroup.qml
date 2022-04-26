@@ -343,6 +343,16 @@ Page {
             clip: true
         }
         ItemDelegate {
+            id: send_netlog
+            checkable: false
+            text: "net report"
+            onClicked: {
+                core.send_report(the_man)
+            }
+
+            //visible: JoinLogModel.count > 0
+        }
+        ItemDelegate {
             id: show_join_log
             checkable: true
             text: checked ? "Hide join log" : "Show join log"

@@ -46,14 +46,16 @@ Page {
             if(view_id !== -1) {
                 ui_id = core.play_zap_view(view_id)
             }
+            fav = core.has_tag_message(mid, "_fav")
+            hid = core.has_tag_message(mid, "_hid")
         }
     }
 
-    fav: { (mid.length > 0) ?
-             (core.get_fav_message(mid) === 1) : false
-    }
+//    fav: { (mid.length > 0) ?
+//             (core.get_fav_message(mid) === 1) : false
+//    }
 
-    hid: {mid.length > 0 ? core.has_tag_message(mid, "_hid") === 1 : false}
+//    hid: {mid.length > 0 ? core.has_tag_message(mid, "_hid") === 1 : false}
 
     Connections {
         target: core
@@ -61,6 +63,18 @@ Page {
             if(ui_id === msgviewer.ui_id) {
                 view_source = img_path
             }
+        }
+        function onMid_tag_changed(changed_mid) {
+            if(changed_mid != mid)
+                return
+            fav = core.has_tag_message(mid, "_fav")
+            hid = core.has_tag_message(mid, "_hid")
+        }
+        function onMsg_tag_change_global(changed_mid, huid) {
+            if(changed_mid != mid)
+                return
+            fav = core.has_tag_message(mid, "_fav")
+            hid = core.has_tag_message(mid, "_hid")
         }
     }
 
@@ -101,15 +115,6 @@ Page {
                     text: fav ? "Unfavorite" : "Favorite"
                     onTriggered: {
                         core.set_fav_message(mid, !fav)
-                        // oops, breaks binding
-                        //fav = !fav
-                        // this just causes the binding to be
-                        // recomputed, probably a better way of doing this
-                        // eventually, like onMid_tag_changed signal
-                        var save_mid = mid
-                        mid = ""
-                        mid = save_mid
-                        //themsglist.reload_model()
                     }
                 }
                 MenuItem {
@@ -119,10 +124,6 @@ Page {
                             core.unset_tag_message(mid, "_hid")
                         else
                             core.set_tag_message(mid, "_hid")
-                        var save_mid = mid
-                        mid = ""
-                        mid = save_mid
-                        //themsglist.reload_model()
                     }
                 }
                 MenuItem {
@@ -168,6 +169,74 @@ Page {
     header: SimpleToolbar {
         extras: extras_button
 
+    }
+
+    footer: ToolBar {
+        implicitWidth: parent.width
+        RowLayout {
+            width: parent.width
+            TipButton {
+                id: fav_button
+                contentItem: Image {
+                    source: mi("ic_star_black_24dp.png")
+
+                }
+                background: Rectangle {
+                    visible: fav
+                    color: primary_light
+                    radius: width / 2
+                }
+                onCheckedChanged: {
+                    core.set_fav_message(mid, checked)
+                }
+
+                checkable: true
+                checked: fav
+                ToolTip.text: "Favorite msg"
+                Layout.fillHeight: true
+            }
+            Item {
+                Layout.fillWidth: true
+            }
+            TipButton {
+                id: save_button
+                contentItem: Image {
+                    source: mi("ic_share_black_24dp.png")
+
+                }
+
+                onClicked: {
+                    core.export_attachment(mid)
+                }
+
+                ToolTip.text: "Save attachment"
+                Layout.fillHeight: true
+            }
+            Item {
+                Layout.fillWidth: true
+            }
+            TipButton {
+                id: hid_button
+                contentItem: Image {
+                    source: mi("ic_visibility_off_black_24dp.png")
+                }
+                background: Rectangle {
+                    visible: hid
+                    color: "orange"
+
+                }
+                onCheckedChanged: {
+                if(checked)
+                    core.set_tag_message(mid, "_hid")
+                else
+                    core.unset_tag_message(mid, "_hid")
+                }
+                checkable: true
+                checked: hid
+                ToolTip.text: "Hide msg"
+                Layout.fillHeight: true
+            }
+        }
     }
 
     Rectangle {

@@ -2795,6 +2795,98 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     return compid;
 }
 
+namespace dwyco {
+// this is mostly for debugging, so for now, just dig in
+int init_netlog();
+void exit_netlog();
+}
+
+int
+DwycoCore::send_report(QString uid)
+{
+    QByteArray ruid = QByteArray::fromHex(uid.toLatin1());
+    dwyco::exit_netlog();
+    QByteArray filename = add_pfx(User_pfx, "netlog.sql");
+
+    char *rs;
+    dwyco_random_string2(&rs, 2);
+    QByteArray rsb(rs, 2);
+    dwyco_free_array(rs);
+    rsb = rsb.toHex();
+
+    QByteArray target = add_pfx(Tmp_pfx, QByteArray("nl") + rsb + ".sql");
+
+    QFile::remove(target);
+    if(!QFile::copy(filename, target))
+    {
+        dwyco::init_netlog();
+        return 0;
+    }
+    dwyco::init_netlog();
+
+
+    int compid = dwyco_make_file_zap_composition(target.constData(), target.length());
+    if(compid == 0)
+    {
+        QFile::remove(target);
+        return 0;
+    }
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        "netlog", 6, 0, 0,
+                        0, 0)
+      )
+
+    {
+        dwyco_delete_zap_composition(compid);
+        QFile::remove(target);
+        return 0;
+    }
+    QFile::remove(target);
+    return compid;
+
+}
+
+int
+DwycoCore::export_attachment(QString mid)
+{
+    QByteArray rmid = mid.toLatin1();
+    QString userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    // using the name in the message is dicey. it might be utf8, might be unicode,
+    // might be from case-sensitive fs, might not. almost certainly it is a security problem.
+    // so punt, and just create a random filename, and try to add a file extension if
+    // it looks like there is one.
+    DWYCO_SAVED_MSG_LIST sm;
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
+    {
+        return 0;
+    }
+    simple_scoped qsm(sm);
+    if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+        return 0;
+    QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    // look for file extension
+    int dot = scary_fn.lastIndexOf('.');
+    if(dot != -1)
+    {
+        scary_fn.remove(0, dot);
+    }
+    else
+        scary_fn = "";
+    QByteArray dstfn("/phooatt");
+    dstfn += QByteArray::number(csum, 16);
+    dstfn += scary_fn;
+    userdir += dstfn;
+    // note: this is probably broken on windows, have to check it out.
+    QByteArray lfn = QFile::encodeName(userdir);
+    if(!dwyco_copy_out_file_zap2(rmid.constData(), lfn.constData()))
+    {
+        return 0;
+    }
+    return 1;
+}
+
+
 int
 DwycoCore::make_zap_view(QString mid)
 {
