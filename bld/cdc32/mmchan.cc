@@ -72,6 +72,7 @@
 #include "dhgsetup.h"
 #include "ezset.h"
 #include "qmsgsql.h"
+#include "netlog.h"
 #ifdef _Windows
 //#include <winsock2.h>
 //#include <ws2tcpip.h>
@@ -2846,8 +2847,16 @@ MMChannel::recv_config(vc cfg)
                 // alternatively, we can just kill both of them and let
                 // it reconnect, as this should be fairly rare.
                 for(int i = 0; i < cl.num_elems(); ++i)
+                {
                     if(cl[i] != this)
+                    {
+                        if(cl[i]->tube)
+                        {
+                            Netlog_signal.emit(cl[i]->tube->mklog("event", "dup sync"));
+                        }
                         cl[i]->schedule_destroy();
+                    }
+                }
             }
 
             finish_connection_new();
@@ -3763,7 +3772,13 @@ MMChannel::tick()
         int p1 = (int)pinger;
         int p2 = (int)rem_pinger;
         if(abs(p1 - p2) > 3)
+        {
+            if(tube)
+            {
+                Netlog_signal.emit(tube->mklog("event", "timeout pinger"));
+            }
             schedule_destroy();
+        }
     }
 
     if(pinger_timer.is_expired())
@@ -4661,6 +4676,10 @@ ctrl_processing:
                     }
                     if(mc->ctrl_send_watchdog.is_expired())
                     {
+                        if(mc->tube)
+                        {
+                            Netlog_signal.emit(mc->tube->mklog("event", "ctrl watchdog timeout"));
+                        }
                         mc->schedule_destroy();
                         goto next_iter_ctrl_send;
                     }
@@ -4758,6 +4777,10 @@ next_iter:
 resume:
         if(mc->sync_pinger.is_expired())
         {
+            if(mc->tube)
+            {
+                Netlog_signal.emit(mc->tube->mklog("event", "sync pinger timeout"));
+            }
             mc->schedule_destroy(HARD);
             continue;
         }

@@ -699,6 +699,7 @@ MMTube::tick()
         keepalive_timer.ack_expire();
         if(!keepalive())
         {
+            log_signal.emit(mklog("event", "keepalive failed"));
             toss();
             return 0;
         }

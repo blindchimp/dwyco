@@ -53,6 +53,7 @@
 #include "mmchan.h"
 #include "dwrtlog.h"
 #include "ta.h"
+#include "netlog.h"
 
 using namespace dwyco;
 
@@ -117,6 +118,7 @@ sproto::crank()
         ret = fail;
         GRTLOGA("watchdog timeout %p", this, 0, 0, 0, 0);
         TRACK_ADD(SPROTO_watchdog_timeout, 1);
+        Netlog_signal.emit(m->tube->mklog("event", "sproto watchdog timeout"));
     }
     else
     {
