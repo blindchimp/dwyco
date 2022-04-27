@@ -74,6 +74,8 @@ protected:
 
     virtual void initsock();
     int polling_for_connect;
+private:
+    int working_len;
 };
 
 class Listener : public SimpleSocket

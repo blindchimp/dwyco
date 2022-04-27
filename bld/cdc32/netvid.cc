@@ -585,14 +585,14 @@ MMTube::send_data(vc v, int chan, int bwchan)
         if(tmp.is_nil())
             return SSERR;
         v = tmp;
-        len = v[1].len();
+        //len = v[1].len();
     }
     else
     {
         // guestimate
-        len = v.len();
+        //len = v.len();
     }
-    if(!socks[chan]->sendvc(v))
+    if((len = socks[chan]->sendvc(v)) == 0)
     {
         if(socks[chan]->wouldblock())
             return SSTRYAGAIN;
