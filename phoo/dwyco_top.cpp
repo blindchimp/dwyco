@@ -2846,7 +2846,7 @@ DwycoCore::send_report(QString uid)
 
 }
 
-int
+QString
 DwycoCore::export_attachment(QString mid)
 {
     QByteArray rmid = mid.toLatin1();
@@ -2858,11 +2858,11 @@ DwycoCore::export_attachment(QString mid)
     DWYCO_SAVED_MSG_LIST sm;
     if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
     {
-        return 0;
+        return "";
     }
     simple_scoped qsm(sm);
     if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
-        return 0;
+        return "";
     QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
     quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
     // look for file extension
@@ -2881,9 +2881,9 @@ DwycoCore::export_attachment(QString mid)
     QByteArray lfn = QFile::encodeName(userdir);
     if(!dwyco_copy_out_file_zap2(rmid.constData(), lfn.constData()))
     {
-        return 0;
+        return "";
     }
-    return 1;
+    return QFile::decodeName(lfn);
 }
 
 

@@ -287,7 +287,7 @@ public:
     Q_INVOKABLE void refresh_directory();
 
     Q_INVOKABLE int send_report(QString uid);
-    Q_INVOKABLE int export_attachment(QString mid);
+    Q_INVOKABLE QString export_attachment(QString mid);
 
 public slots:
     void app_state_change(Qt::ApplicationState);

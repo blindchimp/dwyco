@@ -24,6 +24,7 @@ Page {
     property bool fav
     property bool hid
     property string text_bg_color: primary_dark
+    property string export_result
 
     //anchors.fill:parent
 
@@ -167,11 +168,15 @@ Page {
     }
 
     header: SimpleToolbar {
+        id: headbar
+        visible: !clean_button.checked
         extras: extras_button
 
     }
 
     footer: ToolBar {
+        id: footbar
+        visible: !clean_button.checked
         implicitWidth: parent.width
         RowLayout {
             width: parent.width
@@ -195,6 +200,22 @@ Page {
                 ToolTip.text: "Favorite msg"
                 Layout.fillHeight: true
             }
+            TipButton {
+                id: show_text_button
+                checkable: true
+                Layout.fillHeight: true
+                ToolTip.text: "Show msg text"
+                text: "Msg text"
+
+            }
+            TipButton {
+                id: clean_button
+                checkable: true
+                Layout.fillHeight: true
+                ToolTip.text: "clean"
+                text: "clean"
+            }
+
             Item {
                 Layout.fillWidth: true
             }
@@ -206,7 +227,13 @@ Page {
                 }
 
                 onClicked: {
-                    core.export_attachment(mid)
+                    var export_name = core.export_attachment(mid)
+                    if(export_name.length > 0)
+                        export_result = "Saved to " + export_name
+                    else
+                        export_result = "FAILED save " + export_name
+                    toast_opacity.stop()
+                    toast_opacity.start()
                 }
 
                 ToolTip.text: "Save attachment"
@@ -245,7 +272,7 @@ Page {
         height: 32
         anchors.top: parent.top
         anchors.left: parent.left
-        visible: fav
+        visible: fav && !clean_button.checked
         z: 3
         color: primary_light
         radius: width / 2
@@ -261,7 +288,7 @@ Page {
         height: 32
         anchors.right:parent.right
         anchors.top:parent.top
-        visible: hid
+        visible: hid && !clean_button.checked
         z: 3
         color: "orange"
     }
@@ -317,6 +344,9 @@ Page {
                     core.delete_zap_view(view_id)
                     stack.pop()
                 }
+                onPressAndHold: {
+                    clean_button.checked = false
+                }
             }
         }
     }
@@ -345,9 +375,38 @@ Page {
         Layout.maximumHeight: viewer.source === "" ? (parent.height * 6) / 10 : parent.height / 3
 
         wrapMode: Text.Wrap
+        visible: show_text_button.checked
     }
     //}
 
+    }
+
+    Label {
+        id: save_toast
+        text: export_result
+        color: "white"
+        anchors.centerIn: parent
+        z: 5
+        background: Rectangle {
+            radius: 3
+            color: "black"
+        }
+
+        opacity: 0.0
+        NumberAnimation {
+            id: toast_opacity
+            target: save_toast
+            easing: Easing.InQuart
+            properties: "opacity"
+            from: 1.0
+            to: 0.0
+            duration: 5000
+        }
+
+        onVisibleChanged: {
+            toast_opacity.stop()
+            opacity = 0.0
+        }
     }
 
     BusyIndicator {
