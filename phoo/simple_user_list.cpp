@@ -400,12 +400,12 @@ SimpleUserSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& 
     else if(!lsm && rsm)
         return false;
 
-    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
-    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
-    if(lreg && !rreg)
-        return true;
-    else if(!lreg && rreg)
-        return false;
+//    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
+//    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
+//    if(lreg && !rreg)
+//        return true;
+//    else if(!lreg && rreg)
+//        return false;
 
     int ret1 = QSortFilterProxyModel::lessThan(left, right);
     int ret2 = QSortFilterProxyModel::lessThan(right, left);

@@ -30,7 +30,7 @@ Page {
 
     Connections {
         target: core
-        onCq_results_received : {
+        function onCq_results_received(succ) {
             if(succ) {
                 cq_res_model.load_from_cq_file()
                 query_succeeded = 1

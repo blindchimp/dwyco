@@ -518,6 +518,11 @@ ApplicationWindow {
         visible: false
     }
 
+    SendMulti {
+        id: send_multi_report
+        visible: false
+    }
+
     SimpleChatBox {
         id: chatbox
         //anchors.fill: parent

@@ -347,7 +347,8 @@ Page {
             checkable: false
             text: "net report"
             onClicked: {
-                core.send_report(the_man)
+                //core.send_report(the_man)
+                stack.push(send_multi_report)
             }
 
             //visible: JoinLogModel.count > 0

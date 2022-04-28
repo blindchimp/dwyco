@@ -2653,6 +2653,9 @@ DwycoCore::simple_send(QString recipient, QString msg)
         dwyco_delete_zap_composition(compid);
         return 0;
     }
+    // we sent them something, so sort them towards the top
+    // where needed
+    add_got_msg_from(ruid);
     return compid;
 }
 

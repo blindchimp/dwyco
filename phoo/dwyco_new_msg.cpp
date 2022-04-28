@@ -39,6 +39,12 @@ add_unviewed(const QByteArray& uid, const QByteArray& mid)
 }
 
 void
+add_got_msg_from(const QByteArray& uid)
+{
+    Got_msg_from_this_session.insert(uid);
+}
+
+void
 load_inbox_tags_to_unviewed(QSet<QByteArray>& uids_out)
 {
     // use this after resume to make sure new messages
