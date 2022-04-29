@@ -114,63 +114,58 @@ Page {
             mid_to_forward = ""
         }
     }
-    ColumnLayout {
+
+    ListView {
+        id: listView2
         anchors.fill: parent
-        spacing: mm(2)
-
-        ListView {
-            id: listView2
-
-            model: user_model
-            delegate: forward_list_delegate
-            clip: true
-            //spacing: 5
-            ScrollBar.vertical: ScrollBar {
-                background: Rectangle {
-                    color: "green"
-                }
-            }
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-
-        }
-
-        Button {
-            id:send_button
-            Layout.fillWidth: true
-            Layout.margins: mm(5)
-            enabled: {user_model.selected_count > 0 ? true : false}
-
+        model: user_model
+        delegate: forward_list_delegate
+        clip: true
+        //spacing: 5
+        ScrollBar.vertical: ScrollBar {
             background: Rectangle {
-                id: bg
-                color: "indigo"
-                radius: 20
+                color: "green"
             }
-            contentItem: Text {
-                color: send_button.enabled ? "white" : "gray"
-                text: send_button.text
-                anchors.centerIn: bg
-                verticalAlignment: Text.AlignVCenter
-                horizontalAlignment: Text.AlignHCenter
-            }
-            text: send_button.enabled ? "Send" : "Select Recipients"
-
-            onClicked: {
-                console.log("MULTI COUNT ", user_model.count)
-                for(var i = 0; i < user_model.count; ++i) {
-                    if(user_model.at(i).selected) {
-                        var recip_uid = user_model.at(i).uid
-                        core.send_report(recip_uid)
-                        console.log(" selected ", recip_uid)
-                    }
-                }
-                themsglist.reload_model()
-                //chatbox.listview.positionViewAtBeginning()
-                //
-                stack.pop()
-            }
-
         }
     }
+
+    Button {
+        id:send_button
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+
+        enabled: {user_model.selected_count > 0 ? true : false}
+
+        background: Rectangle {
+            id: bg
+            color: "indigo"
+            radius: 20
+        }
+        contentItem: Text {
+            color: send_button.enabled ? "white" : "gray"
+            text: send_button.text
+            anchors.centerIn: bg
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+        }
+        text: send_button.enabled ? "Send" : "Select Recipients"
+
+        onClicked: {
+            console.log("MULTI COUNT ", user_model.count)
+            for(var i = 0; i < user_model.count; ++i) {
+                if(user_model.at(i).selected) {
+                    var recip_uid = user_model.at(i).uid
+                    core.send_report(recip_uid)
+                    console.log(" selected ", recip_uid)
+                }
+            }
+            themsglist.reload_model()
+            //chatbox.listview.positionViewAtBeginning()
+            //
+            stack.pop()
+        }
+
+    }
+
 
 }
