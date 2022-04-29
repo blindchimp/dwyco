@@ -1,10 +1,10 @@
 #ifndef DWYCO_NO_UPNP
 #include "upnp.h"
-#ifndef ANDROID
+//#ifndef ANDROID
 #include "miniupnpc.h"
 #include "upnpcommands.h"
 #include "upnperrors.h"
-#endif
+//#endif
 #include "dwrtlog.h"
 #ifdef _WIN32
 #include <windows.h>
@@ -65,7 +65,7 @@ bg_upnp(int natport1, int natport2, int local_port1, int local_port2)
 int
 do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 {
-#if !(defined(ANDROID) || defined(DWYCO_NO_UPNP))
+#if !(0 || defined(DWYCO_NO_UPNP))
     struct UPNPDev *devlist;
     int error = 0;
 

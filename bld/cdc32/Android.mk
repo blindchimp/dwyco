@@ -168,7 +168,7 @@ netlog.cpp
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls
 else
-LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls
+LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls miniupnpc
 endif
 
 LOCAL_C_INCLUDES := \
@@ -189,6 +189,7 @@ $(LOCAL_PATH)/../speex/include \
 $(LOCAL_PATH)/../theora/include \
 $(LOCAL_PATH)/../ogg/include \
 $(LOCAL_PATH)/../vorbis/include \
+$(LOCAL_PATH)/../miniupnp/miniupnp-master/miniupnpc \
 $(APP_PROJECT_PATH)
 
 LOCAL_CPPFLAGS += -fpermissive -frtti
