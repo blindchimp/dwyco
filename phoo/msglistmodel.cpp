@@ -1343,12 +1343,12 @@ msglist_raw::get_msg_text(int row) const
             return "";
         simple_scoped qbt(bt);
         auto ftxt = qbt.get<QByteArray>(0);
-        return QString::fromLatin1(get_extended(ftxt));
+        return QString::fromUtf8(get_extended(ftxt));
     }
 
 
     auto txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
-    return QString::fromLatin1(get_extended(txt));
+    return QString::fromUtf8(get_extended(txt));
 }
 
 QString
