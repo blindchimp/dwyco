@@ -307,7 +307,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     if(token)
         dwyco_write_token(token);
 
-    set_listen_state(0);
+    set_listen_state(1);
     // for now, don't let any channels get setup via the
     // server ... not strictly necessary, but until we get the
     // calling stuff sorted out (needs a protocol change to alert
