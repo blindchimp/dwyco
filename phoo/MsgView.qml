@@ -212,8 +212,11 @@ Page {
                 id: clean_button
                 checkable: true
                 Layout.fillHeight: true
-                ToolTip.text: "clean"
-                text: "clean"
+                ToolTip.text: "Full screen"
+                contentItem: Image {
+                    source: mi("ic_fullscreen_black_24dp.png")
+
+                }
             }
 
             Item {
@@ -231,7 +234,7 @@ Page {
                     if(export_name.length > 0)
                         export_result = "Saved to " + export_name
                     else
-                        export_result = "FAILED save " + export_name
+                        export_result = "FAILED save "
                     toast_opacity.stop()
                     toast_opacity.start()
                 }
