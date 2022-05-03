@@ -584,13 +584,23 @@ suspend_qmsg()
 void
 resume_qmsg()
 {
+    // these items will get updates when we connect
+    // to a server, so just clear them out.
     Cur_msgs = vc(VC_VECTOR);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
-    No_direct_msgs = vc(VC_SET);
-    No_direct_att = vc(VC_SET);
-    MsgFolders = vc(VC_TREE);
+
+    // let's keep this info, since it is unlikely to
+    // change while we were suspended
+    //No_direct_msgs = vc(VC_SET);
+    //No_direct_att = vc(VC_SET);
+
+    // keep this info, since we load new stuff incrementally now
+    // this might have to change if we reload everything in the
+    // future
+    //MsgFolders = vc(VC_TREE);
+
     In_progress = vc(VC_TREE);
     
     // not perfect, but better than scanning for a max value
