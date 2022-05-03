@@ -29,6 +29,9 @@
 #include "filetube.h"
 #include "dwrtlog.h"
 #include "fnmod.h"
+#include "netlog.h"
+
+using namespace dwyco;
 
 // switch little-endian stuff in files
 #ifdef __ppc__
@@ -669,7 +672,7 @@ DummyTube::gen_channel(unsigned short remote_port, int& chan)
         drop_channel(chan);
         return ret;
     }
-    log_signal.emit(mklog("event", "dchan connected", "chan_id", chan,
+    Netlog_signal.emit(mklog("event", "dchan connected", "chan_id", chan,
                           "local_ip", socks[chan]->local_addr().c_str(),
                           "peer_ip", socks[chan]->peer_addr().c_str()
                           ));

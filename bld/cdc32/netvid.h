@@ -233,8 +233,6 @@ private:
 public:
     vc mklog(vc = vcnil, vc = vcnil, vc = vcnil, vc = vcnil,
              vc = vcnil, vc = vcnil, vc = vcnil, vc = vcnil);
-    ssns::signal1<vc> log_signal;
-
 
 };
 

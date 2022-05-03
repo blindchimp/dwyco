@@ -83,6 +83,10 @@ static netlog *Netlog;
 int
 init_netlog()
 {
+#ifndef DWYCO_NETLOG
+        return 0;
+#endif
+
     if(Netlog)
         return 0;
     Netlog = new netlog;
