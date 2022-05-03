@@ -331,7 +331,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     asock.socket_init(s, vctrue);
     dwyco_signal_msg_cond();
     int signaled = 0;
-    //int started_fetches = 0;
+    int started_fetches = 0;
     while(1)
     {
         int spin = 0;
