@@ -6240,9 +6240,16 @@ dwyco_uid_g(const char *uid, int len_uid)
     return 0;
 }
 
+// WARNING: this function does not do the group folding, it just loads
+// using what is in the file system. it should be the same if you are not
+// using any group stuff (but note, even if you yourself are not in a group
+// you still need the folding, otherwise it will look really confusing
+// seeing multiple entries for users that *are* in a group.)
+// this should probably be an internal API, only available for doing
+// low level stuff, like backups or something.
 DWYCOEXPORT
 int
-dwyco_load_users()
+dwyco_load_users_internal()
 {
     load_users_from_files(0);
     return 1;

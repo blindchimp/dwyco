@@ -706,7 +706,7 @@ int DWYCOEXPORT dwyco_uid_status(const char *uid, int len_uid);
 void DWYCOEXPORT dwyco_uid_to_ip(const char *uid, int len_uid, int *can_do_direct, char **str_out);
 int DWYCOEXPORT dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **str_out);
 int DWYCOEXPORT dwyco_uid_g(const char *uid, int len_uid);
-int DWYCOEXPORT dwyco_load_users();
+int DWYCOEXPORT dwyco_load_users_internal();
 int DWYCOEXPORT dwyco_load_users2(int recent, int *total_out);
 int DWYCOEXPORT dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out);
 int DWYCOEXPORT dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid);
