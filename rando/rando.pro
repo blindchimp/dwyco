@@ -6,7 +6,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += NO_BUILDTIME
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"1.97\\\"\"
+DEFINES += BUILDTIME=\"\\\"2.00\\\"\"
 
 QT += core qml multimedia network
 QT += quickcontrols2
@@ -75,7 +75,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
--lsqlite3
+-ldl
 
 #PRE_TARGETDEPS += \
 #$${D}/cdc32/libcdc32.a \

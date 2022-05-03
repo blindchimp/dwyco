@@ -1565,7 +1565,7 @@ DwycoCore::init()
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
 
-    dwyco_run_sql("delete from msg_tags2 where mid not in (select mid from msg_idx)", 0, 0, 0);
+    //dwyco_run_sql("delete from msg_tags2 where mid not in (select mid from msg_idx)", 0, 0, 0);
     dwyco_unset_all_msg_tag("_seen");
 
     load_unviewed();
