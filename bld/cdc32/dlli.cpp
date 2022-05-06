@@ -6205,7 +6205,7 @@ dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **st
     struct in_addr in;
     in.s_addr = ip;
 
-    // we an use this once the winsock2 stuff works
+    // we can use this once the winsock2 stuff works
 #if 0
     char *out = new char[INET_ADDRSTRLEN + 1];
     if(inet_ntop(AF_INET, &in, out, INET_ADDRSTRLEN + 1) == 0)
@@ -6217,8 +6217,12 @@ dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **st
     if(str_out)
     {
         char *c = inet_ntoa(in);
-        char *out = new char[strlen(c) + 1];
-        strncpy(out, c, strlen(c) + 1);
+        DwString a(c);
+        a += ":";
+        a += DwString::fromInt(prim);
+        char *out = new char[a.length() + 1];
+        memcpy(out, a.c_str(), a.length());
+        out[a.length()] = 0;
         *str_out = out;
     }
     return 1;

@@ -247,6 +247,8 @@ Page {
                     width: ListView.view.width
                     height: implicitHeight
                     spacing: mm(1)
+                    property bool orig
+                    orig: { model.status === "od" || model.status === "oa" || model.status === "oi"}
 //                    Label {
 //                        text: status + " " + asserts + " " + sendq_count + " " + percent_synced
 //                        Layout.preferredWidth: cm(2)
@@ -297,9 +299,21 @@ Page {
                     Label {
                         id: handle_label
                         elide: Text.ElideRight
-                        text: "(" + uid.substring(0, 2) + ")" + handle
+                        text: (orig ? "(" : "]") + uid.substring(0, 2) + (orig ? ")" : "[") + handle
                         color: proxy ? "red" : "black"
                         //Layout.preferredWidth: cm(2)
+                    }
+                    Label {
+                        id: conn_ip
+                        text: ip
+                        //color: proxy ? "red" : "green"
+                        visible: ip.length > 0
+                        //Layout.preferredWidth: cm(4)
+                    }
+                    Label {
+                        id: advertised_ip
+                        text: adv_ip
+                        visible: adv_ip.length > 0
                     }
 //                    Label {
 //                        text: status
