@@ -266,6 +266,8 @@ public:
     // of where your pic has been sent.)
     Q_INVOKABLE int geo_count_from_hash(QString hash);
 
+    Q_INVOKABLE QString export_attachment(QString mid);
+
 public:
 
 public slots:

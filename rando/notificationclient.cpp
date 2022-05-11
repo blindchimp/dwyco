@@ -171,6 +171,20 @@ NotificationClient::set_user_property(QString name, QString value)
 }
 
 void
+NotificationClient::share_to_mediastore(QString filename)
+{
+    QAndroidJniObject jname = QAndroidJniObject::fromString(filename);
+
+
+    QAndroidJniObject::callStaticMethod<void>("com/dwyco/android/NotificationClient",
+                                              "notifyMediaStoreScanner",
+                                              "(Ljava/lang/String;)V",
+
+                                              jname.object<jstring>()
+                                              );
+}
+
+void
 NotificationClient::load_contacts()
 {
     QAndroidJniObject::callStaticMethod<void>(

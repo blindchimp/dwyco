@@ -302,4 +302,5 @@ DISTFILES += \
     androidinst2/gradle/wrapper/gradle-wrapper.properties \
     androidinst2/gradlew \
     androidinst2/gradlew.bat \
-    androidinst2/res/values/libs.xml
+    androidinst2/res/values/libs.xml \
+    androidinst2/res/xml/provider_paths.xml
