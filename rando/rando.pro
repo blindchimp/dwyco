@@ -6,7 +6,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += NO_BUILDTIME
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"2.00\\\"\"
+DEFINES += BUILDTIME=\"\\\"2.50\\\"\"
 
 QT += core qml multimedia network
 QT += quickcontrols2
@@ -172,10 +172,15 @@ LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 # limitation of java as far as i can tell.
 LIBS += $${L}/libdwyco_jni.so
 #ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
-ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
+ANDROID_EXTRA_LIBS = \
+    $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so \
+    $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so \
+    $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so \
+    $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
+
 ANDROID_TARGET_SDK_VERSION=30
 ANDROID_VERSION_CODE=123
-ANDROID_VERSION_NAME="2.00"
+ANDROID_VERSION_NAME="2.50"
 #LIBS += \
 #$${D}/libcdc32.a \
 #$${D}/libvc.a \

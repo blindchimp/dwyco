@@ -857,6 +857,8 @@ setup_locations()
 {
     QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
 #ifdef ANDROID
+    filepath = QStandardPaths::AppDataLocation;
+#if 0
     if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
         // we aren't going anywhere without being able to setup our state
@@ -870,6 +872,8 @@ setup_locations()
             //exit(0);
         }
     }
+#endif
+
 #endif
     //
     QStringList args = QGuiApplication::arguments();

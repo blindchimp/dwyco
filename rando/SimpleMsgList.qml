@@ -771,7 +771,6 @@ scrolling in the listview or doesn't recognizing the swipe.
         z: 3
         warning: "WARNING: if you uninstall Rando, all of the pictures in this app are removed. In order to SAVE A PICTURE you want to keep: view it, and click the \"share\" button to save it to your phone."
         inhibit_key: "storage_warning"
-        //oops_text: "Quit (give storage permission next time)"
         got_it_forever_text: "Got it"
 
         onVisibleChanged: {
@@ -784,11 +783,6 @@ scrolling in the listview or doesn't recognizing the swipe.
                     storage_warning = 0
             }
         }
-
-//        onOopsChanged: {
-//            if(oops)
-//                Qt.quit()
-//        }
     }
 
 

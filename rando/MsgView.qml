@@ -169,11 +169,19 @@ Page {
                 }
 
                 onClicked: {
+                    if(!AndroidPerms.external_storage_permission) {
+                        if(!AndroidPerms.request_sync("android.permission.WRITE_EXTERNAL_STORAGE"))
+                            return
+                    }
+
                     var export_name = core.export_attachment(mid)
-                    if(export_name.length > 0)
-                        export_result = "Saved to " + export_name
-                    else
+                    if(export_name.length > 0) {
+                        export_result = "Saved to " + export_name.substring(export_name.lastIndexOf('/') + 1)
+                        notificationClient.share_to_mediastore(export_name)
+                    }
+                    else {
                         export_result = "FAILED save "
+                    }
                     toast_opacity.stop()
                     toast_opacity.start()
                 }
