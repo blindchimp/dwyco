@@ -2895,8 +2895,9 @@ QString
 DwycoCore::export_attachment(QString mid)
 {
     QByteArray rmid = mid.toLatin1();
-    QString userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    userdir += "/dwyco/rando/shares/";
+    //QString userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QByteArray userdir;
+    userdir = add_pfx(User_pfx, "shares");
     // using the name in the message is dicey. it might be utf8, might be unicode,
     // might be from case-sensitive fs, might not. almost certainly it is a security problem.
     // so punt, and just create a random filename, and try to add a file extension if
