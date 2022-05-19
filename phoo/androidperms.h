@@ -17,6 +17,7 @@ public:
     Q_INVOKABLE void load();
     Q_INVOKABLE void toggle();
     Q_INVOKABLE bool request_sync(QString);
+    Q_INVOKABLE int android_api();
 
 signals:
 
