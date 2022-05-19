@@ -150,7 +150,7 @@ public class NotificationClient extends QtActivity
 
         Intent notintent = new Intent(m_instance, NotificationClient.class);
         notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent p = PendingIntent.getActivity(m_instance, 1, notintent, 0);
+        PendingIntent p = PendingIntent.getActivity(m_instance, 1, notintent, PendingIntent.FLAG_IMMUTABLE);
         m_builder.setContentIntent(p);
 
         Notification not = m_builder.getNotification();
