@@ -107,6 +107,8 @@ extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
 
+int DwycoCore::Android_migrate;
+
 QMap<QByteArray, QLoc> Hash_to_loc;
 QMap<QByteArray,QByteArray> Hash_to_review;
 QMap<QByteArray, long> Hash_to_max_lc;
@@ -850,6 +852,50 @@ DwycoCore::set_invisible_state(int s)
     dwyco_set_invisible_state(s);
 }
 
+// if they installed externally, copy the files in to the local
+// app storage, and rename the data folder.
+// this should only need to be done once, and the process should be
+// exited immediately after doing the dir name swap
+//
+// both dirs should be absolute paths (this appears to be ok with current
+// version of android)
+// src_dir will be something like '/storage/emulated/yada/.../Documents'
+// target_pfx should be something for the internal storage for the app, usually
+// like '/data/com.dwyco.rando/yada/files'
+// the files from src_dir are recursively copied into "target_pfx" + "/upg/"
+// and the migration should rename "upg" to dwyco/rando as if doing
+// mv "target"+ "dwyco" "target" + "dwyco.old", in case it got created before
+// if "dwyco.old" already exists, try dwyco.old2, etc. only try a few before giving up.
+// mkdir target/rando
+// mv target/upg target/dwyco/rando
+//
+static
+void
+one_time_migrate(const QString& src_dir, const QString& target_pfx)
+{
+    QDirIterator di(src_dir, QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDirIterator::Subdirectories);
+    //QString target_pfx = "/home/dwight/Downloads/";
+    while(di.hasNext())
+    {
+        QString sfn = di.next();
+        QString dfn = sfn;
+        int i = dfn.indexOf("dwyco/rando");
+        if(i != -1)
+        {
+            dfn.remove(0, i + 11);
+            dfn.prepend("upg/");
+            dfn.prepend(target_pfx);
+            QString path = dfn;
+            path.truncate(path.lastIndexOf("/"));
+            //printf("%s\n", path.toLatin1().constData());
+            QDir d(path);
+            d.mkpath(path);
+        }
+        //printf("%s %s\n", sfn.toLatin1().constData(), dfn.toLatin1().constData());
+        QFile::copy(sfn, dfn);
+    }
+}
+
 
 static
 void
@@ -995,6 +1041,28 @@ setup_locations()
     }
 
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, userdir);
+
+    // this is where we would set a flag if a one-time upgrade is needed.
+    // the qml would immediately put up a "wait..." dialog and launch the
+    // copy operation in a background thread, without initializing anything else.
+    //
+    // note: we *know* that if we are getting the settings here we are running
+    // on some kind of install. if that looks like it is in the "documents" folder
+    // we assume it is on android "external storage" and needs to be imported.
+#if 1 || defined( ANDROID)
+    QString am;
+    if(!setting_get("android-migrate", am))
+    {
+        // haven't completed it yet, so check to see if it looks like we are on
+        // external storage. note: do not check "write" permission, because that might
+        // have been revoked at some point (maybe?) not sure.
+        if(userdir.contains(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)))
+        {
+            DwycoCore::Android_migrate = 1;
+        }
+
+    }
+#endif
 
 
 }
@@ -2901,6 +2969,12 @@ DwycoCore::export_attachment(QString mid)
     QByteArray rmid = mid.toLatin1();
     //QString userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QByteArray userdir;
+    // note: on android, we export the attachment to a writable sub-directory called
+    // "shares", and the java android support stuff has a "fileprovider" that
+    // can share items from that directory via mediastore. it is the caller's
+    // responsibility to initiate the notification to mediastore to pick up the new image.
+    // on desktop, we don't need to do all this garbage, just write it to documents or
+    // pictures and we're done.
     userdir = add_pfx(User_pfx, "shares");
     // using the name in the message is dicey. it might be utf8, might be unicode,
     // might be from case-sensitive fs, might not. almost certainly it is a security problem.

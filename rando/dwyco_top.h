@@ -43,6 +43,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
     QML_READONLY_VAR_PROPERTY(bool, has_unseen_rando)
     QML_READONLY_VAR_PROPERTY(bool, has_unseen_geo)
+    QML_READONLY_VAR_PROPERTY(int, android_migrate)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -62,8 +63,10 @@ public:
         m_use_archived = false;
         m_has_unseen_geo = false;
         m_has_unseen_rando = false;
+        m_android_migrate = Android_migrate;
     }
     static QByteArray My_uid;
+    static int Android_migrate;
 
 
     enum System_event {

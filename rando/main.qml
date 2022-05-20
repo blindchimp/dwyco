@@ -418,6 +418,11 @@ ApplicationWindow {
         objectName: "dwyco_singleton"
         client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
+            if(core.android_migrate === 1)
+            {
+                Qt.quit()
+            }
+
             var a
             a = get_local_setting("first-run")
             if(a === "") {
