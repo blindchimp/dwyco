@@ -9,7 +9,8 @@ import com.dwyco.selfs.R;
 
 public class DwycoApp {
     public static int notification_icon() {
-        return R.drawable.ic_stat_not_icon2;
+        //return R.drawable.ic_stat_not_icon2;
+	return 0;
         }
 
 	// socket lock used for shared prefs locks
