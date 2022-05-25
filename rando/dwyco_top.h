@@ -270,6 +270,7 @@ public:
     Q_INVOKABLE int geo_count_from_hash(QString hash);
 
     Q_INVOKABLE QString export_attachment(QString mid);
+    Q_INVOKABLE void one_time_copy_files();
 
 public:
 

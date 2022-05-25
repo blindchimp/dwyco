@@ -420,7 +420,9 @@ ApplicationWindow {
         Component.onCompleted: {
             if(core.android_migrate === 1)
             {
-                Qt.quit()
+                stack.push(migrate_page)
+                core.one_time_copy_files()
+                return
             }
 
             var a
@@ -620,6 +622,10 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
         z: 5
+    }
+
+    Migrate {
+        id: migrate_page
     }
 
 

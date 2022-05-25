@@ -28,6 +28,7 @@
         <file>Help.qml</file>
         <file>MapImage.qml</file>
         <file>GeoListView.qml</file>
+        <file>Migrate.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

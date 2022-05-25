@@ -896,6 +896,16 @@ one_time_migrate(const QString& src_dir, const QString& target_pfx)
     }
 }
 
+void
+DwycoCore::one_time_copy_files()
+{
+    QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    src += "/dwyco/rando";
+    QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    dst += "/";
+    one_time_migrate(src, dst);
+}
+
 
 static
 void
