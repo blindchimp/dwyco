@@ -913,8 +913,8 @@ setup_locations()
 {
     QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
 #ifdef ANDROID
-    filepath = QStandardPaths::AppDataLocation;
-#if 0
+    //filepath = QStandardPaths::AppDataLocation;
+#if 1
     if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
         // we aren't going anywhere without being able to setup our state
@@ -925,6 +925,21 @@ setup_locations()
             // access your photos on the device easily. maybe need to just request "read"
             // in this case.
             filepath = QStandardPaths::AppDataLocation;
+            //exit(0);
+        }
+    }
+
+    if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+    {
+        // we aren't going anywhere without being able to setup our state
+        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+        if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        {
+            // this needs to be thought out a little more... if you deny this, you can't
+            // access your photos on the device easily. maybe need to just request "read"
+            // in this case.
+            //filepath = QStandardPaths::AppDataLocation;
+            cdcxpanic("sorry");
             //exit(0);
         }
     }
