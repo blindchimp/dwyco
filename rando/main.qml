@@ -421,7 +421,7 @@ ApplicationWindow {
             if(core.android_migrate === 1)
             {
                 stack.push(migrate_page)
-                core.one_time_copy_files()
+                //core.background_migrate()
                 return
             }
 
@@ -495,6 +495,10 @@ ApplicationWindow {
             }
             exit()
         }
+
+//        onMigration_complete: {
+//            Qt.quit()
+//        }
 
         onServer_login: {
            

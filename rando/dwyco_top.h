@@ -270,13 +270,16 @@ public:
     Q_INVOKABLE int geo_count_from_hash(QString hash);
 
     Q_INVOKABLE QString export_attachment(QString mid);
-    Q_INVOKABLE void one_time_copy_files();
+    static void one_time_copy_files();
+    Q_INVOKABLE void background_migrate();
+    Q_INVOKABLE void directory_swap();
 
 public:
 
 public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);
+
 
 signals:
     void server_login(const QString& msg, int what);
@@ -341,6 +344,7 @@ signals:
     void zap_stopped(int zid);
 
     void mid_tag_changed(QString mid);
+    void migration_complete();
 
 private:
 

@@ -3,6 +3,9 @@ import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
 
 Rectangle {
+
+    property bool migration_in_progress
+    property bool migration_done
     z: 5
     color: primary_light
 //    MouseArea {
@@ -11,13 +14,19 @@ Rectangle {
 //            Qt.quit()
 //        }
 //    }
+    Connections {
+        target: core
+        function onMigration_complete() {
+            migration_done = true
+        }
+    }
 
     ColumnLayout {
         spacing: mm(1)
         anchors.fill: parent
 
         Label {
-            text: "Doing Android file migration, please be patient..."
+            text: "Android files must be copied."
             Layout.fillWidth: true
             Layout.leftMargin: mm(3)
 
@@ -35,21 +44,31 @@ Rectangle {
 
         }
         Label {
-            text: "Remember: SAVE Pictures you want to keep before uninstalling Rando"
+            text: "Please SAVE pictures you want\n  to keep before uninstalling Rando"
             Layout.fillWidth: true
             Layout.leftMargin: mm(3)
 
         }
+        Button {
+            text: "Tap to start migration"
+            Layout.fillWidth: true
+            onClicked: {
+                core.background_migrate()
+                migration_in_progress = true
+            }
+            visible: !migration_in_progress && !migration_done
+        }
 
         Button {
-            text: "Tap to finish migraton"
+            text: "Tap to finish migration"
             //Layout.horizontalCenter: true
             Layout.fillWidth: true
             onClicked: {
                 // do directory swap, and exit immediately
+                core.directory_swap();
                 Qt.quit()
             }
-            visible: !busy.running
+            visible: migration_done
         }
         Button {
             text: "Stop"
@@ -63,7 +82,7 @@ Rectangle {
 
         BusyIndicator {
             id: busy
-            running: parent.visible
+            running: migration_in_progress && !migration_done
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
         }

@@ -348,6 +348,7 @@ copy_and_tweak_jpg(const QString& fn, QByteArray& dest_out)
     return 0;
 }
 
+[[noreturn]]
 void
 cdcxpanic(const char *)
 {
@@ -883,7 +884,7 @@ one_time_migrate(const QString& src_dir, const QString& target_pfx)
         if(i != -1)
         {
             dfn.remove(0, i + 11);
-            dfn.prepend("upg/");
+            dfn.prepend("/");
             dfn.prepend(target_pfx);
             QString path = dfn;
             path.truncate(path.lastIndexOf("/"));
@@ -902,8 +903,50 @@ DwycoCore::one_time_copy_files()
     QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     src += "/dwyco/rando";
     QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    dst += "/";
+    dst += "/dwyco/upg";
     one_time_migrate(src, dst);
+    QThread::sleep(10);
+}
+
+void
+DwycoCore::background_migrate()
+{
+    QThread *q = QThread::create(&DwycoCore::one_time_copy_files);
+    connect(q, SIGNAL(finished()), this, SIGNAL(migration_complete()));
+    q->start();
+}
+
+void
+DwycoCore::directory_swap()
+{
+    // note: we update the User_pfx so we can update the settings file to
+    // flag that it has been migrated.
+    // then rename the "upg" to "rando"
+    QString src = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    src += "/dwyco/upg";
+    QDir dsrc(src);
+    if(!dsrc.exists())
+        return;
+    // if the target already exists, it might be a partial migration, try to get
+    // rid of it
+    QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    dst += "/dwyco/rando";
+    QDir ddst(dst);
+    if(ddst.exists())
+    {
+        int i;
+        for(i = 0; i < 10; ++i)
+            if(ddst.rename(dst, dst + "." + QString::number(i)))
+                break;
+        if(i == 10)
+            return;
+    }
+    User_pfx = src.toUtf8();
+    settings_load();
+    setting_put("android-migrate", "done");
+    if(!dsrc.rename(src, dst))
+        cdcxpanic("failed migratio");
+
 }
 
 
