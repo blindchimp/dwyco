@@ -14,6 +14,7 @@
 #include <QObject>
 #include <QVariant>
 #include <QUrl>
+#include <QThread>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -349,6 +350,15 @@ signals:
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
+
+};
+
+class fuck_me_with_a_brick : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::one_time_copy_files();
+    }
 
 };
 

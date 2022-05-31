@@ -905,13 +905,15 @@ DwycoCore::one_time_copy_files()
     QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     dst += "/dwyco/upg";
     one_time_migrate(src, dst);
-    QThread::sleep(10);
+    //QThread::sleep(10);
 }
 
 void
 DwycoCore::background_migrate()
 {
-    QThread *q = QThread::create(&DwycoCore::one_time_copy_files);
+    // sigh, this won't compile with android ndk's up to 23.2
+    //QThread *q = QThread::create(DwycoCore::one_time_copy_files);
+    auto q = new fuck_me_with_a_brick;
     connect(q, SIGNAL(finished()), this, SIGNAL(migration_complete()));
     q->start();
 }
