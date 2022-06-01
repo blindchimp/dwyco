@@ -630,6 +630,7 @@ ApplicationWindow {
 
     Migrate {
         id: migrate_page
+        visible: false
     }
 
 

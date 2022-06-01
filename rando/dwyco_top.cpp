@@ -956,9 +956,28 @@ static
 void
 setup_locations()
 {
-    QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
+    QStandardPaths::StandardLocation filepath;
+
+    filepath = QStandardPaths::DocumentsLocation;
+
 #ifdef ANDROID
-    //filepath = QStandardPaths::AppDataLocation;
+    // determine if we've already done the migration, and just skip all the permissions stuff
+    bool migrated = false;
+    {
+        QString userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        userdir += "/dwyco/rando/";
+        User_pfx = userdir.toUtf8();
+        settings_load();
+        QString am;
+        if(setting_get("android-migrate", am) && am == "done")
+            migrated = true;
+    }
+    if(migrated)
+    {
+        filepath = QStandardPaths::AppDataLocation;
+    }
+    else
+    {
 #if 1
     if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
@@ -989,6 +1008,7 @@ setup_locations()
         }
     }
 #endif
+    }
 
 #endif
     //

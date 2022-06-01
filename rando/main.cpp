@@ -39,19 +39,6 @@ myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString
 
 }
 
-#include "androidperms.h"
-
-static
-void
-perm_setup(QGuiApplication& app)
-{
-    QQmlApplicationEngine engine;
-    AndroidPerms *a = new AndroidPerms;
-    engine.rootContext()->setContextProperty("AndroidPerms", a);
-    engine.load(QUrl(QStringLiteral("qrc:/perm.qml")));
-    app.exec();
-}
-
 int main(int argc, char *argv[])
 {
 #if defined(DWYCO_RELEASE)
