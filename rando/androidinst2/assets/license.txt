@@ -36,9 +36,6 @@ without the prior written consent of Dwyco, Inc.
 IN ANY CASE, NO MATTER WHAT THE DISTRIBUTION MEDIA,
 THE DISTRIBUTION FILE MUST NOT BE MODIFIED IN ANY WAY.
 The name of the distribution file is:
-	* Windows: cdcxdwy.exe
-	* Linux: cdcx-linux-<arch>.sh
-	* MacOS: CDC-X.dmg
     * Mobile versions: from your app store
 
 If you'd like to distribute the software in a compilation 
