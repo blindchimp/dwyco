@@ -947,7 +947,7 @@ DwycoCore::directory_swap()
     settings_load();
     setting_put("android-migrate", "done");
     if(!dsrc.rename(src, dst))
-        cdcxpanic("failed migratio");
+        cdcxpanic("failed migration");
 
 }
 
@@ -958,19 +958,30 @@ setup_locations()
 {
     QStandardPaths::StandardLocation filepath;
 
-    filepath = QStandardPaths::DocumentsLocation;
+    filepath = QStandardPaths::AppDataLocation;
 
 #ifdef ANDROID
     // determine if we've already done the migration, and just skip all the permissions stuff
     bool migrated = false;
+    bool need_permissions = false;
     {
         QString userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
         userdir += "/dwyco/rando/";
         User_pfx = userdir.toUtf8();
-        settings_load();
         QString am;
-        if(setting_get("android-migrate", am) && am == "done")
-            migrated = true;
+        if(settings_load())
+        {
+            if(setting_get("android-migrate", am) && am == "done")
+                migrated = true;
+            else
+                need_permissions = true;
+        }
+        else
+        {
+            // settings file not found, probably a new install or it needs
+            // migration.
+            need_permissions = false;
+        }
     }
     if(migrated)
     {
@@ -979,6 +990,9 @@ setup_locations()
     else
     {
 #if 1
+
+        if(need_permissions)
+        {
     if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
         // we aren't going anywhere without being able to setup our state
@@ -1007,6 +1021,7 @@ setup_locations()
             //exit(0);
         }
     }
+        }
 #endif
     }
 
@@ -1055,13 +1070,13 @@ setup_locations()
         QFile::copy("assets:/servers2", userdir + "servers2");
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
 #else
-    QFile::copy(":androidinst/assets/dwyco.dh", userdir + "dwyco.dh");
-    QFile::copy(":androidinst/assets/license.txt", userdir + "license.txt");
-    QFile::copy(":androidinst/assets/no_img.png", userdir + "no_img.png");
+    QFile::copy(":androidinst2/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst2/assets/license.txt", userdir + "license.txt");
+    QFile::copy(":androidinst2/assets/no_img.png", userdir + "no_img.png");
     if(!QFile(userdir + "servers2").exists())
-        QFile::copy(":androidinst/assets/servers2", userdir + "servers2");
+        QFile::copy(":androidinst2/assets/servers2", userdir + "servers2");
     QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
-    QFile::copy(":androidinst/assets/v21.ver", userdir + "v21.ver");
+    QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
 #endif
     dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
     // can't do this call until prefixes are set since it wants to init the log file
@@ -1149,6 +1164,12 @@ setup_locations()
         if(userdir.contains(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)))
         {
             DwycoCore::Android_migrate = 1;
+        }
+        else
+        {
+            // we probably already were in the app data location, so just pretend we
+            // migrated
+            setting_put("android-migrate", "done");
         }
 
     }
