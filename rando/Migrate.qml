@@ -26,7 +26,7 @@ Rectangle {
         anchors.fill: parent
 
         Label {
-            text: "Android files must be copied."
+            text: "Rando files must be copied."
             Layout.fillWidth: true
             Layout.leftMargin: mm(3)
 
@@ -50,7 +50,7 @@ Rectangle {
 
         }
         Button {
-            text: "Tap to start migration"
+            text: "Tap to start copy"
             Layout.fillWidth: true
             onClicked: {
                 core.background_migrate()
@@ -60,7 +60,7 @@ Rectangle {
         }
 
         Button {
-            text: "Tap to finish migration"
+            text: "Tap to finish"
             //Layout.horizontalCenter: true
             Layout.fillWidth: true
             onClicked: {

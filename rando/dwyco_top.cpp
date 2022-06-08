@@ -961,68 +961,59 @@ setup_locations()
     filepath = QStandardPaths::AppDataLocation;
 
 #ifdef ANDROID
-    // determine if we've already done the migration, and just skip all the permissions stuff
-    bool migrated = false;
-    bool need_permissions = false;
+    QString localdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    localdir += "/dwyco/rando/";
+    User_pfx = localdir.toUtf8();
+    QString am;
+    if(!settings_load())
     {
-        QString userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-        userdir += "/dwyco/rando/";
-        User_pfx = userdir.toUtf8();
-        QString am;
+        // either new or they have something in documents that needs to be migrated
+        QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        src += "/dwyco/rando";
+        User_pfx = src.toUtf8();
         if(settings_load())
         {
-            if(setting_get("android-migrate", am) && am == "done")
-                migrated = true;
+            // do the migration
+            if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+            {
+                // we aren't going anywhere without being able to setup our state
+                QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
+                if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                {
+                    // this needs to be thought out a little more... if you deny this, you can't
+                    // access your photos on the device easily. maybe need to just request "read"
+                    // in this case.
+                    filepath = QStandardPaths::AppDataLocation;
+                    //exit(0);
+                }
+                else
+                {
+                    filepath = QStandardPaths::DocumentsLocation;
+                    DwycoCore::Android_migrate = 1;
+                }
+                if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                {
+                    // we aren't going anywhere without being able to setup our state
+                    QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+                    if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                    {
+                        // can't do migration, we'll probably crash soon since we won't be able to get
+                        // access to documents location.
+                    }
+                    else
+                    {
+                        filepath = QStandardPaths::DocumentsLocation;
+                        DwycoCore::Android_migrate = 1;
+                    }
+                }
+
+            }
             else
-                need_permissions = true;
+            {
+                filepath = QStandardPaths::DocumentsLocation;
+                DwycoCore::Android_migrate = 1;
+            }
         }
-        else
-        {
-            // settings file not found, probably a new install or it needs
-            // migration.
-            need_permissions = false;
-        }
-    }
-    if(migrated)
-    {
-        filepath = QStandardPaths::AppDataLocation;
-    }
-    else
-    {
-#if 1
-
-        if(need_permissions)
-        {
-    if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
-    {
-        // we aren't going anywhere without being able to setup our state
-        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
-        if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
-        {
-            // this needs to be thought out a little more... if you deny this, you can't
-            // access your photos on the device easily. maybe need to just request "read"
-            // in this case.
-            filepath = QStandardPaths::AppDataLocation;
-            //exit(0);
-        }
-    }
-
-    if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
-    {
-        // we aren't going anywhere without being able to setup our state
-        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
-        if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
-        {
-            // this needs to be thought out a little more... if you deny this, you can't
-            // access your photos on the device easily. maybe need to just request "read"
-            // in this case.
-            //filepath = QStandardPaths::AppDataLocation;
-            cdcxpanic("sorry");
-            //exit(0);
-        }
-    }
-        }
-#endif
     }
 
 #endif
@@ -1154,7 +1145,7 @@ setup_locations()
     // note: we *know* that if we are getting the settings here we are running
     // on some kind of install. if that looks like it is in the "documents" folder
     // we assume it is on android "external storage" and needs to be imported.
-#if 1 || defined( ANDROID)
+#if 0 && defined( ANDROID)
     QString am;
     if(!setting_get("android-migrate", am))
     {
