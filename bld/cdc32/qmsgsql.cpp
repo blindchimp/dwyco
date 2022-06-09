@@ -1309,11 +1309,11 @@ init_qmsg_sql()
             sql_simple("create table if not exists old.gmt(mid, tag, time, uid, guid)");
             sql_simple("insert into mt.gmt select mid, tag, time, uid, guid from old.gmt where tag in ('_hid', '_fav', '_ignore', '_pal')");
             // really old tags, for upgrading old android installs of phoo and rando
-            sql_simple("create table if not exists msg_tags2(mid, tag)");
+            sql_simple("create table if not exists old.msg_tags2(mid, tag)");
             // note: rando used tags for _json and hashes, so don't filter them
-            sql_simple("insert into mt.gmt select mid, tag, strftime('%s', 'now'), ?1, lower(hex(randomblob(8))) from msg_tags2", //where tag in ('_hid', '_fav', '_ignore', '_pal')",
+            sql_simple("insert into mt.gmt select mid, tag, strftime('%s', 'now'), ?1, lower(hex(randomblob(8))) from old.msg_tags2", //where tag in ('_hid', '_fav', '_ignore', '_pal')",
                        to_hex(My_UID));
-            sql_simple("drop table msg_tags2");
+            //sql_simple("drop table msg_tags2");
             sql_commit_transaction();
             sDb->detach("old");
             DeleteFile(newfn("fav.sql").c_str());
