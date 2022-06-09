@@ -960,7 +960,7 @@ setup_locations()
 
     filepath = QStandardPaths::AppDataLocation;
 
-#ifdef ANDROID
+#if defined(ANDROID)
     QString localdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     localdir += "/dwyco/rando/";
     User_pfx = localdir.toUtf8();
@@ -971,7 +971,26 @@ setup_locations()
         QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
         src += "/dwyco/rando";
         User_pfx = src.toUtf8();
-        if(settings_load())
+#ifdef ANDROID
+        bool check_for_update = false;
+
+        if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        {
+            // if they let us, check if there is anything out there
+            QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
+            if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+            {
+
+            }
+            else
+            {
+                check_for_update = true;
+            }
+        }
+        else
+            check_for_update = true;
+
+        if(check_for_update && settings_load())
         {
             // do the migration
             if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
@@ -1009,6 +1028,7 @@ setup_locations()
 
             }
             else
+#endif
             {
                 filepath = QStandardPaths::DocumentsLocation;
                 DwycoCore::Android_migrate = 1;
