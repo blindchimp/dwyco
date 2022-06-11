@@ -124,7 +124,7 @@ Page {
             id: group_pw
             text_input: ""
             placeholder_text: "Enter secret PIN (at least 4 digits)"
-            inputMethodHints: Qt.ImhNoAutoUppercase //Qt.ImhDigitsOnly
+            inputMethodHints: Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText | Qt.ImhSensitiveData //Qt.ImhDigitsOnly
             visible: !group_active && !show_pin_layout.visible
             Layout.fillWidth: true
         }
