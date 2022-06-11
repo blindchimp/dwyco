@@ -21,6 +21,9 @@
 #ifndef DWYCO_NO_UVSOCK
 #include "vcuvsock.h"
 #endif
+#ifndef DWYCO_NO_TSOCK
+#include "vctsock.h"
+#endif
 
 vc::vc(double d)
 {
@@ -297,6 +300,11 @@ vc::vc_init(enum vc_type type, const char *str, long extra_parm)
         rep = new vc_uvsocket;
         break;
 #endif
+#ifndef DWYCO_NO_TSOCK
+    case VC_TSOCKET_STREAM:
+        rep = new vc_tsocket;
+        break;
+#endif
 
 	default:
 			oopanic("bad type in vc conversion");
@@ -320,6 +328,9 @@ RCQDEC(rep)
 		{
 			delete rep;
 		}
+#ifdef DWYCO_VC_THREADED
+        if(v != vc_nil::vcnilrep)
+#endif
 		++v->ref_count;
 #endif
 		rep = v;

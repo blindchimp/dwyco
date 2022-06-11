@@ -28,7 +28,7 @@ Item {
             property bool censor_it
             censor_it: !regular_profile(REVIEWED, REGULAR)
             height: showit ? picht() : 0
-            width: parent.width
+            width: ListView.view.width
             //opacity: {multiselect_mode && selected ? 0.5 : 1.0}
             color: primary_dark
             border.width: 1

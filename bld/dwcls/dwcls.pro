@@ -17,7 +17,4 @@ dwcls_timer.cpp
 
 INCLUDEPATH = ../kazlib
 
-HEADERS += \
-    dwqbm.h \
-    dwqbm2.h
 

@@ -6,13 +6,10 @@ import QtQuick.Dialogs 1.3
 import QtQuick.Controls 2.12
 Page {
 
-    property bool group_active
     property bool show_failed
     property bool quitnow: false
     property bool waiting_for_leave_ack
     property string provisional_group
-
-    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
     header: SimpleToolbar {
 
@@ -127,7 +124,7 @@ Page {
             id: group_pw
             text_input: ""
             placeholder_text: "Enter secret PIN (at least 4 digits)"
-            inputMethodHints: Qt.ImhNoAutoUppercase //Qt.ImhDigitsOnly
+            inputMethodHints: Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText | Qt.ImhSensitiveData //Qt.ImhDigitsOnly
             visible: !group_active && !show_pin_layout.visible
             Layout.fillWidth: true
         }
@@ -250,6 +247,8 @@ Page {
                     width: ListView.view.width
                     height: implicitHeight
                     spacing: mm(1)
+                    property bool orig
+                    orig: { model.status === "od" || model.status === "oa" || model.status === "oi"}
 //                    Label {
 //                        text: status + " " + asserts + " " + sendq_count + " " + percent_synced
 //                        Layout.preferredWidth: cm(2)
@@ -300,9 +299,21 @@ Page {
                     Label {
                         id: handle_label
                         elide: Text.ElideRight
-                        text: "(" + uid.substring(0, 2) + ")" + handle
+                        text: (orig ? "(" : "]") + uid.substring(0, 2) + (orig ? ")" : "[") + handle
                         color: proxy ? "red" : "black"
                         //Layout.preferredWidth: cm(2)
+                    }
+                    Label {
+                        id: conn_ip
+                        text: ip
+                        //color: proxy ? "red" : "green"
+                        visible: ip.length > 0
+                        //Layout.preferredWidth: cm(4)
+                    }
+                    Label {
+                        id: advertised_ip
+                        text: adv_ip
+                        visible: adv_ip.length > 0
                     }
 //                    Label {
 //                        text: status
@@ -346,42 +357,55 @@ Page {
             clip: true
         }
         ItemDelegate {
+            id: send_netlog
+            checkable: false
+            text: "net report"
+            onClicked: {
+                //core.send_report(the_man)
+                stack.push(send_multi_report)
+            }
+
+            //visible: JoinLogModel.count > 0
+        }
+        ItemDelegate {
             id: show_join_log
             checkable: true
             text: checked ? "Hide join log" : "Show join log"
+            visible: JoinLogModel.count > 0
         }
 
         ListView {
             id: join_log
             //anchors.fill: parent
+            visible: show_join_log.visible
             Layout.fillWidth: true
             Layout.fillHeight: show_join_log.checked ? true : false
-            header: Component {
-                RowLayout {
-                    width: parent.width
-                    height: implicitHeight
-                    spacing: mm(1)
-                    Label {
-                        elide: Text.ElideRight
-                        text: "Time"
-                        Layout.preferredWidth: cm(5)
-                    }
-                    Label {
-                        elide: Text.ElideRight
-                        text: "Msg"
-                        Layout.preferredWidth: cm(8)
-                    }
-                    Label {
-                        text: "From Handle"
-                        //color: proxy ? "red" : "black"
-                        //Layout.preferredWidth: cm(4)
-                    }
-                    Item {
-                        Layout.fillWidth: true
-                    }
-                }
+//            header: Component {
+//                RowLayout {
+//                    width: parent.width
+//                    height: implicitHeight
+//                    spacing: mm(1)
+//                    Label {
+//                        elide: Text.ElideRight
+//                        text: "Time"
+//                        Layout.preferredWidth: cm(5)
+//                    }
+//                    Label {
+//                        elide: Text.ElideRight
+//                        text: "Msg"
+//                        Layout.preferredWidth: cm(8)
+//                    }
+//                    Label {
+//                        text: "From Handle"
+//                        //color: proxy ? "red" : "black"
+//                        //Layout.preferredWidth: cm(4)
+//                    }
+//                    Item {
+//                        Layout.fillWidth: true
+//                    }
+//                }
 
-            }
+//            }
 
             model: JoinLogModel
             delegate: Component {
@@ -391,13 +415,13 @@ Page {
                     spacing: mm(1)
                     Label {
                         text: Qt.formatDateTime(time)
-                        Layout.preferredWidth: cm(5)
+                        Layout.preferredWidth: is_mobile ? -1 : cm(5)
                     }
 
                     Label {
                         elide: Text.ElideRight
                         text: msg
-                        Layout.preferredWidth: cm(8)
+                        Layout.preferredWidth: is_mobile ? -1 : cm(8)
                     }
 
                     Label {

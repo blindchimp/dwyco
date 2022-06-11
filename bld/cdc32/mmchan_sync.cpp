@@ -179,7 +179,16 @@ MMChannel::process_pull(vc cmd)
     vc mid = cmd[1];
     vc pri = cmd[5];
     // load the msg and attachment, and send it back as a "pull-resp"
-
+    // XXX note this probably needs to be done in one query, but
+    // this is a weird case anywhere, where a client has sent us
+    // a request thinking it is still in the global index...
+    // this is kinda a race if there are tombstones propagating
+    // while a bunch of pulls are getting done.
+    if(!sql_is_mid_local(mid) || sql_mid_has_tombstone(mid))
+    {
+        send_pull_error(mid, pri);
+        return;
+    }
     vc huid = sql_get_uid_from_mid(mid);
     if(huid.is_nil())
     {

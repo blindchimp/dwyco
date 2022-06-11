@@ -68,7 +68,7 @@ public:
         m_audio_full_duplex = 0;
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
-        m_use_archived = true;
+        m_use_archived = false;
         m_this_uid = "";
         m_this_handle = "";
         m_directory_fetching = false;
@@ -286,6 +286,9 @@ public:
     Q_INVOKABLE void set_badge_number(int i);
     Q_INVOKABLE void refresh_directory();
 
+    Q_INVOKABLE int send_report(QString uid);
+    Q_INVOKABLE QString export_attachment(QString mid);
+
 public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);
@@ -308,7 +311,8 @@ signals:
     void video_capture_preview(QString img_path);
 // this is used internally, should not fiddle with it via QML
     void user_control(int, QByteArray, QByteArray);
-    void decorate_user(const QString& uid);
+
+    void decorate_user(QString uid);
     void sys_chat_server_status(int id, int status);
     void qt_app_state_change(int app_state);
 

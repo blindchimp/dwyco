@@ -338,13 +338,14 @@ SimpleSocket::sendvc(vc v)
 {
     if(sock.is_nil())
         return 0;
-    if(sock.socket_put_obj(v, vcnil, 0).is_nil())
+    vc len = sock.socket_put_obj(v, vcnil, 0);
+    if(len.is_nil())
         return 0;
     GRTLOG("sendvc ", 0, 0);
     GRTLOGVC(sock);
     GRTLOGVC(v);
 
-    return 1;
+    return len;
 }
 
 int

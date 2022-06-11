@@ -105,13 +105,16 @@ ApplicationWindow {
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
-    property bool show_archived_users: true
+    property bool show_archived_users: false
 
     property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
-
+    property int qt_application_state: 0
     property bool is_mobile
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+
+    property bool group_active
+    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
     function pin_expire() {
         var expire
@@ -438,11 +441,11 @@ ApplicationWindow {
         Connections {
             target: core
             function onQt_app_state_change(app_state) {
-                if(core.app_state === 0) {
+                if(app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
 
                 }
-                if(core.app_state !== 0) {
+                if(app_state !== 0) {
                     console.log("CHAT SERVER PAUSE");
 
                     //core.disconnect_chat_server()
@@ -521,6 +524,11 @@ ApplicationWindow {
 
     ForwardToList {
         id: forward_dialog
+        visible: false
+    }
+
+    SendMulti {
+        id: send_multi_report
         visible: false
     }
 
@@ -745,17 +753,17 @@ ApplicationWindow {
 
     SoundEffect {
         id: sound_sent
-        source: "qrc:/androidinst/assets/space-zap.wav"
+        source: "qrc:/androidinst2/assets/space-zap.wav"
     }
     SoundEffect {
         id: sound_recv
-        source: "qrc:/androidinst/assets/space-zap.wav"
+        source: "qrc:/androidinst2/assets/space-zap.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
     SoundEffect {
         id: sound_alert
-        source: "qrc:/androidinst/assets/space-incoming.wav"
+        source: "qrc:/androidinst2/assets/space-incoming.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
@@ -872,10 +880,7 @@ ApplicationWindow {
         }
 
         onNew_msg: {
-            console.log(from_uid)
-            console.log(txt)
-            console.log(mid)
-            console.log("msglist", themsglist.uid)
+            console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
             if(from_uid === themsglist.uid) {
                 themsglist.reload_model();
                 // note: this could be annoying if the person is
@@ -892,7 +897,6 @@ ApplicationWindow {
         }
 
         onSys_msg_idx_updated: {
-            console.log("update idx", uid)
             console.log("upd " + uid + " " + themsglist.uid)
             if(uid === themsglist.uid) {
                 themsglist.reload_model()
@@ -936,7 +940,7 @@ ApplicationWindow {
             if(Qt.platform.os == "android") {
                 notificationClient.set_lastrun()
             }
-
+            qt_application_state = app_state
         }
 
         onImage_picked: {
@@ -986,7 +990,7 @@ ApplicationWindow {
         id: sync_debug
         interval: 10000
         repeat: true
-        running: server_account_created
+        running: group_active && server_account_created && qt_application_state === 0
         onTriggered: {
             SyncDescModel.load_model()
         }

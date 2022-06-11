@@ -12,6 +12,9 @@
 #include "getinfo.h"
 #include "ignoremodel.h"
 #include "dwycolist2.h"
+#ifdef DWYCO_MODEL_TEST
+#include <QAbstractItemModelTester>
+#endif
 
 void hack_unread_count();
 void reload_conv_list();
@@ -42,6 +45,9 @@ ConvListModel::ConvListModel(QObject *parent) :
     if(TheConvListModel)
         ::abort();
     TheConvListModel = this;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 
 }
 
@@ -208,6 +214,19 @@ ConvListModel::remove_uid_from_model(const QByteArray& uid)
 }
 
 void
+ConvListModel::reload_possible_changes(long time)
+{
+    DWYCO_LIST ul;
+    if(!dwyco_get_updated_uids(&ul, time))
+        return;
+    simple_scoped qul(ul);
+    for(int i = 0; i < qul.rows(); ++i)
+    {
+        add_uid_to_model(qul.get<QByteArray>(i));
+    }
+}
+
+void
 ConvListModel::load_users_to_model()
 {
     DWYCO_LIST l;
@@ -290,6 +309,33 @@ ConvSortFilterModel::ConvSortFilterModel(QObject *p)
     setSortCaseSensitivity(Qt::CaseInsensitive);
     sort(0);
     m_count = 0;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
+}
+
+// WARNING: the index is interpreted as a SOURCE model index
+// we is kinda useless in QML, now that i think about it.
+// when i need this, will have to provide some mapping
+QObject *
+ConvSortFilterModel::get(int source_idx)
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->get(source_idx);
+}
+
+int
+ConvSortFilterModel::get_by_uid(QString uid)
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    int i = m->indexOf(uid);
+    if(i == -1)
+        return -1;
+    return mapFromSource(m->index(i)).row();
 }
 
 void
@@ -368,19 +414,12 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
     else if(!lsm && rsm)
         return false;
 
-//    int luc = m->data(left, m->roleForName("unseen_count")).toInt();
-//    int ruc = m->data(right, m->roleForName("unseen_count")).toInt();
-//    if(luc < ruc)
-//        return false;
-//    else if(ruc < luc)
+//    bool lau = m->data(left, m->roleForName("any_unread")).toBool();
+//    bool rau = m->data(right, m->roleForName("any_unread")).toBool();
+//    if(lau && !rau)
 //        return true;
-
-    bool lau = m->data(left, m->roleForName("any_unread")).toBool();
-    bool rau = m->data(right, m->roleForName("any_unread")).toBool();
-    if(lau && !rau)
-        return true;
-    else if(!lau && rau)
-        return false;
+//    else if(!lau && rau)
+//        return false;
 
     bool lsp = m->data(left, m->roleForName("pal")).toBool();
     bool rsp = m->data(right, m->roleForName("pal")).toBool();

@@ -47,6 +47,10 @@ msg_callback(int id, int what, const char *mid, void *)
         // note: do NOT delete a message whose decryption failed
         // old software can send into group without a group key
         // and only one of the members will be able to decrypt it.
+        // however, we will never be able to decrypt it, so we can
+        // at least "ack2" the message so we don't repeatedly have it
+        // presented to us (note this is handled automatically by the
+        // msg system.)
     case DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED:
         Dont_refetch.add(mid, 0);
         if(i >= 0)

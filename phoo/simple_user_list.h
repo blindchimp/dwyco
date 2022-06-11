@@ -95,6 +95,15 @@ public:
         return 0;
     }
 
+    Q_INVOKABLE QObject *at(int i) const {
+        QModelIndex mi = index(i, 0);
+        auto model = dynamic_cast<SimpleUserModel *>(sourceModel());
+        if(model) {
+            return model->at(mapToSource(mi).row());
+        }
+        return 0;
+    }
+
     Q_INVOKABLE void load_users_to_model();
     Q_INVOKABLE void load_admin_users_to_model();
     Q_INVOKABLE void load_from_cq_file();

@@ -10,10 +10,10 @@ DWYCOBG=1
 DEFINES += VCCFG_FILE DWYCO_NO_UPNP
 linux-*:DEFINES += LINUX
 macx-ios-clang: DEFINES += LINUX MACOSX DWYCO_IOS
-macx-ios-clang: QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
-#macx-ios-clang|macx-g++|macx-clang {
-#QMAKE_CXXFLAGS_X86_64 += -mmacosx-version-min=10.9
-#}
+macx-*|linux-* {
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+}
 macx-*: DEFINES += LINUX MACOSX
 win32 {
 DEFINES += _WIN32 _CRT_SECURE_NO_WARNINGS __WIN32__ #_MBCS

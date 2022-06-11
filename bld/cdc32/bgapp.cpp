@@ -307,13 +307,14 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     if(token)
         dwyco_write_token(token);
 
-    set_listen_state(0);
+    set_listen_state(1);
     // for now, don't let any channels get setup via the
     // server ... not strictly necessary, but until we get the
     // calling stuff sorted out (needs a protocol change to alert
     // regarding incoming calls, etc.) we just let everything go
     // via the server.
-    dwyco_inhibit_sac(0);
+    dwyco_inhibit_incoming_sac(0);
+    dwyco_inhibit_outgoing_sac(0);
     dwyco_inhibit_pal(0);
 
     if(dwyco_get_create_new_account())
@@ -386,13 +387,17 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 MMChannel::any_ctrl_q_pending() || SimpleSocket::any_waiting_for_write())
         {
             GRTLOG("spin %d short sleep", spin, 0);
+#if 0
 #ifdef WIN32
             SleepEx(100, 0);
 #else
             usleep(100000);
 #endif
+#endif
+            // override, make is 20ms
+            snooze = 20;
         }
-        else
+        //else
         {
             //usleep(500000);
             Socketvec res;
@@ -667,13 +672,17 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
                 MMChannel::any_ctrl_q_pending() || SimpleSocket::any_waiting_for_write())
         {
             GRTLOG("spin %d short sleep", spin, 0);
+#if 0
 #ifdef WIN32
             SleepEx(100, 0);
 #else
             usleep(100000);
 #endif
+#endif
+            // override, make is 20ms
+            snooze = 20;
         }
-        else
+        //else
         {
             //usleep(500000);
             Socketvec res;

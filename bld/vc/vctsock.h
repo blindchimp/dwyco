@@ -10,6 +10,9 @@
 #ifndef DWYCO_NO_TSOCK
 #ifndef VCTSOCK_H
 #define VCTSOCK_H
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "vcnil.h"
 #include "vccomp.h"
@@ -19,14 +22,27 @@
 #include "vcio.h"
 #include "dwgrows.h"
 
+/*
+punt on threaded socket stuff
+
+can't really rely on the "close the socket in another thread" trick,
+and it needs to be replaced with a "control" socketpair scheme probably.
+this implementation does seem to work,
+but there a lot of these that just make me queasy about it,
+not the least of which is most of the rest of the code is not thread safe.
+it works in this case because of very careful access to internals,
+and avoiding use of some common global variables.
+
+ */
+
 class vc_tsocket : public vc_composite
 {
 private:
     DwVP vp;
+    int sock;
 
     static vc sockaddr_to_vc(struct sockaddr *sapi, int len);
 
-    void add_error(vc v);
     int listening;
     // xstream we use to reconstruct objects as they come in
     vcxstream readx;
@@ -46,7 +62,7 @@ private:
         void append(const vc& v) {
             if(num_elems() == 0)
             {
-                vc_tsocket::Ready_q_p->add(container->vp.cookie, container);
+                //vc_tsocket::Ready_q_p->add(container->vp.cookie, container);
             }
             DwListA<vc>::append(v);
 
@@ -55,14 +71,14 @@ private:
         int remove_first() {
             if(num_elems() == 1)
             {
-                vc_tsocket::Ready_q_p->del(container->vp.cookie);
+                //vc_tsocket::Ready_q_p->del(container->vp.cookie);
             }
             return DwListA<vc>::remove_first();
         }
         void clear() {
             if(num_elems() >= 1)
             {
-                vc_tsocket::Ready_q_p->del(container->vp.cookie);
+                //vc_tsocket::Ready_q_p->del(container->vp.cookie);
             }
             DwListA<vc>::clear();
         }
@@ -72,8 +88,46 @@ private:
 
     static DwTreeKaz<vc_tsocket *, long> *Ready_q_p;
 
+    std::mutex recv_mutex;
+    std::mutex send_mutex;
+    std::condition_variable putq_wait;
+    // this is for use by calling context, not send_loop
+    std::unique_lock<std::mutex> send_lock;
+
+    std::mutex thread_start_mutex;
+    std::thread *accept_thread;
+    std::thread *send_thread;
+    std::thread *recv_thread;
+    std::thread *connect_thread;
+    int foad;
+
+    struct cbuf
+    {
+        cbuf() {
+            buf = 0;
+            len = -1;
+        }
+
+        int operator==(const cbuf&) const {
+            oopanic("no searches please");
+        }
+
+        char *buf;
+        int len;
+
+        void done() {
+            delete [] buf;
+            buf = 0;
+        }
+
+    };
+
     list2 getq;
-    list2 putq;
+    DwListA<cbuf> putq;
+    int recv_loop();
+    int send_loop();
+    int accept_loop();
+    int async_connect();
 
     // this is needed since errors in the UV socket like
     // "connection reset by peer" obliterate the peer information.

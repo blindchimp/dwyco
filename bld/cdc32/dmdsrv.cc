@@ -46,6 +46,7 @@
 #include "vcudh.h"
 #include "dwscoped.h"
 #include "qauth.h"
+#include "netlog.h"
 
 using namespace dwyco;
 
@@ -312,6 +313,7 @@ secondary_db_call_failed(MMChannel *md, vc m, void *v, ValidPtr)
     mc->timer1.reset();
     mc->timer1.start();
     GRTLOG("sec sec db resolve failed", 0, 0);
+    Netlog_signal.emit(mc->tube->mklog("event", "secondary"));
     return;
     //}
 fail:

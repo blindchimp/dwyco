@@ -31,6 +31,14 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_INT, net/disable_upnp, "", 0),
     DWUIDECLVAL(VC_INT, net/call_setup_media_select, "", CSMS_TCP_ONLY),
     DWUIDECLVAL(VC_INT, net/listen, "", 1),
+    // for broadcasting on the local network
+    // generally, each app should have a different app_id and port
+    // so they don't step on each others toes.
+    DWUIDECLVAL(VC_BSTRING, net/app_id, "dwyco", 0),
+    DWUIDECLVAL(VC_INT, net/broadcast_port, "", 48901),
+    // in seconds
+    DWUIDECLVAL(VC_INT, net/broadcast_interval, "", 10),
+
     DWUIDECLVAL(VC_INT, call_acceptance/max_audio, "", 4),
     DWUIDECLVAL(VC_INT, call_acceptance/max_chat, "", 4),
     DWUIDECLVAL(VC_INT, call_acceptance/max_video, "", 4),
@@ -255,6 +263,9 @@ set_settings_value(const char *name, int val)
     setting *s;
     if(!Map->find(name, s))
         oopanic("bad setting");
+    vc tmp = s->value;
+    if(tmp.type() != VC_INT)
+        oopanic("attempt to change to int");
     s->value = val;
     return 1;
 }
@@ -268,6 +279,9 @@ set_settings_value(const char *name, vc val)
     setting *s;
     if(!Map->find(name, s))
         oopanic("bad setting");
+    vc tmp = s->value;
+    if(tmp.type() != val.type())
+        oopanic("attempt to change setting type");
     s->value = val;
     return 1;
 }

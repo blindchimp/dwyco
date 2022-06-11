@@ -17,6 +17,8 @@ Rectangle {
     property string inhibit_key
     property bool oops: false
     property alias oops_text : oops_button.text
+    property alias got_it_forever_text: gotit_forever.text
+
 
     anchors.margins: mm(1)
     anchors.fill: parent
@@ -65,6 +67,7 @@ Rectangle {
             onClicked: {
                 popupid.visible = false
             }
+            visible: text != gotit_forever.text
 
             Layout.fillWidth: true
         }

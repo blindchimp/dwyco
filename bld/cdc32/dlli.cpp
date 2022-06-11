@@ -1030,7 +1030,7 @@ dwyco_suspend()
         ;
     save_qmsg_state();
     suspend_qmsg();
-    exit_prfdb();
+    //exit_prfdb();
     save_entropy();
     int current_listen = is_listening();
     Suspend_listen_mode = current_listen;
@@ -1054,7 +1054,13 @@ dwyco_resume()
     if(!Dwyco_suspended)
         return;
     handle_crash_setup();
-    init_entropy();
+    //init_entropy();
+    // just give it a little nudge
+    // yep, a couple of trash bytes in here
+    char a[4];
+    a[0] = (char)dwyco_rand();
+    a[3] = (char)dwyco_rand();
+    add_entropy(a, sizeof(a));
     Inhibit_database_thread = 0;
     Inhibit_pal = 0;
     Inhibit_auto_connect = 0;
@@ -1064,7 +1070,7 @@ dwyco_resume()
     set_listen_state(Suspend_listen_state);
     init_pal();
     resume_qmsg();
-    init_prfdb();
+    //init_prfdb();
     start_database_thread();
     Dwyco_suspended = 0;
 }
@@ -1410,17 +1416,6 @@ dwyco_set_client_version(const char *str, int len_str)
     Client_version = vc(VC_BSTRING, str, len_str);
 }
 
-DWYCOEXPORT
-void
-dwyco_set_app_id(const char *str, int len_str)
-{
-    if(str == 0)
-        dwyco::App_ID = vcnil;
-    else
-        dwyco::App_ID = vc(VC_BSTRING, str, len_str);
-}
-
-
 //
 // call this once at startup, preferably before doing
 // anything else (do it before starting the main
@@ -1484,9 +1479,8 @@ dwyco_init()
         if(!Disable_UPNP)
         {
         int rport = (dwyco_rand() % (65500 - 10000)) + 10000;
-//        dwyco_set_net_data(rport, rport + 1, rport + 2,
-//                           rport, rport + 1, rport + 2,
-//                           1, 0, CSMS_TCP_ONLY, 1);
+        dwyco_inhibit_pal(1);
+        set_settings_value("net/listen", 0);
         set_settings_value("net/primary_port", rport);
         set_settings_value("net/secondary_port", rport + 1);
         set_settings_value("net/pal_port", rport + 2);
@@ -1498,6 +1492,7 @@ dwyco_init()
         set_settings_value("net/advertise_nat_ports", 1);
         set_settings_value("net/disable_upnp", 0);
         set_settings_value("net/call_setup_media_select", CSMS_TCP_ONLY);
+        dwyco_inhibit_pal(0);
         set_settings_value("net/listen", 1);
 #ifndef DWYCO_NO_UPNP
         bg_upnp(rport, rport + 1, rport, rport + 1);
@@ -1794,6 +1789,8 @@ set_group_uids(vc m, void *, vc, ValidPtr)
     // if the server doesn't know the group at all, you still get back
     // a vector with your own uid in it.
     Group_uids = m[1];
+    // update profiles, since this is an "authoritative" group membership
+    update_profiles_for_new_membership();
 }
 
 // NOTE: before this is called, all the static public keys and
@@ -6208,7 +6205,7 @@ dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **st
     struct in_addr in;
     in.s_addr = ip;
 
-    // we an use this once the winsock2 stuff works
+    // we can use this once the winsock2 stuff works
 #if 0
     char *out = new char[INET_ADDRSTRLEN + 1];
     if(inet_ntop(AF_INET, &in, out, INET_ADDRSTRLEN + 1) == 0)
@@ -6220,8 +6217,12 @@ dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **st
     if(str_out)
     {
         char *c = inet_ntoa(in);
-        char *out = new char[strlen(c) + 1];
-        strncpy(out, c, strlen(c) + 1);
+        DwString a(c);
+        a += ":";
+        a += DwString::fromInt(prim);
+        char *out = new char[a.length() + 1];
+        memcpy(out, a.c_str(), a.length());
+        out[a.length()] = 0;
         *str_out = out;
     }
     return 1;
@@ -6243,9 +6244,16 @@ dwyco_uid_g(const char *uid, int len_uid)
     return 0;
 }
 
+// WARNING: this function does not do the group folding, it just loads
+// using what is in the file system. it should be the same if you are not
+// using any group stuff (but note, even if you yourself are not in a group
+// you still need the folding, otherwise it will look really confusing
+// seeing multiple entries for users that *are* in a group.)
+// this should probably be an internal API, only available for doing
+// low level stuff, like backups or something.
 DWYCOEXPORT
 int
-dwyco_load_users()
+dwyco_load_users_internal()
 {
     load_users_from_files(0);
     return 1;
@@ -6277,6 +6285,17 @@ dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out)
     *nelems_out = n;
     return 1;
 }
+
+DWYCOEXPORT
+int
+dwyco_get_updated_uids(DWYCO_USER_LIST *list_out, long time)
+{
+    vc& ret = *new vc(VC_VECTOR);
+    ret = sql_uid_updated_since(time);
+    *list_out = (DWYCO_USER_LIST)&ret;
+    return 1;
+}
+
 
 DWYCOEXPORT
 int
@@ -6539,26 +6558,34 @@ pull_msg(vc uid, vc msg_id)
         pulls::assert_pull(msg_id, uids[i], PULLPRI_INTERACTIVE);
     }
 
+    //
+    // note: this probably needs a heuristic to either send
+    // all pulls at once, or decide which one is most likely
+    // to work. for now, try everyone we are connected to.
+    // since this is along the "interactive" path, this seems
+    // ok, since it is unlikely to be a lot of them, and
+    // the user as indicated they want to see it. which means
+    // a little extra thrashing might be ok as long as the
+    // message shows up pretty quickly.
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    bool started_one = false;
     for(int i = 0; i < mmcl.num_elems(); ++i)
     {
         MMCall *mmc = mmcl[i];
         if(uids.contains(mmc->uid))
         {
-//            if(pulls::pull_in_progress(msg_id, mmc->uid))
-//                continue;
-            // if there is an established call, just use that one and return.
-            // this means we always try an established connection first.
-            // if there are some number of connections in progress, we end up
-            // q-ing the pull to all the connections.
             if(mmc->established)
             {
                 MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
                 if(mc)
                 {
+                    // don't resend if it failed last time we asked
+                    if(pull_failed(msg_id, mc->remote_uid()))
+                        continue;
                     pulls::set_pull_in_progress(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
-                    return DWYCO_GSM_PULL_IN_PROGRESS;
+                    started_one = true;
+                    //return DWYCO_GSM_PULL_IN_PROGRESS;
                 }
             }
         }
@@ -6569,17 +6596,16 @@ pull_msg(vc uid, vc msg_id)
         MMChannel *mc;
         if((mc = MMChannel::channel_by_call_type(uids[i], "sync")))
         {
-//            if(pulls::pull_in_progress(msg_id, mc->remote_uid()))
-//                continue;
-
+            if(pull_failed(msg_id, mc->remote_uid()))
+                continue;
             pulls::set_pull_in_progress(msg_id, mc->remote_uid());
             mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
-            // note: this probably needs a heuristic to either send
-            // all pulls at once, or decide which one is most likely
-            // to work. for now, we just do the first one.
-            return DWYCO_GSM_PULL_IN_PROGRESS;
+            started_one = true;
+            //return DWYCO_GSM_PULL_IN_PROGRESS;
         }
     }
+    if(started_one)
+        return DWYCO_GSM_PULL_IN_PROGRESS;
     return DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE;
 }
 
@@ -7354,7 +7380,7 @@ save_msg(vc m, vc msg_id)
 
     if(msg[QQM_BODY_ATTACHMENT].is_nil())
     {
-        if(!update_msg_idx(vcnil, body))
+        if(!update_msg_idx(vcnil, body, 0))
             return 0;
         //ack_direct(msg_id);
         delete_msg2(msg_id);
@@ -7364,7 +7390,7 @@ save_msg(vc m, vc msg_id)
     // the attachment was sent direct as well.
     if(!refile_attachment(msg[QQM_BODY_ATTACHMENT], msg[QQM_BODY_FROM]))
         return 0;
-    if(!update_msg_idx(vcnil, body))
+    if(!update_msg_idx(vcnil, body, 0))
         return 0;
     //ack_direct(msg_id);
     delete_msg2(msg_id);

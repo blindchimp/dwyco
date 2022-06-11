@@ -38,7 +38,7 @@ vc msg_idx_get_new_msgs(vc uid, vc logical_clock);
 vc sql_get_uid_from_mid(vc mid);
 void remove_msg_idx_uid(vc uid);
 void remove_msg_idx(vc uid, vc mid);
-int update_msg_idx(vc recip, vc body, int inhibit_sysmsg = 0);
+int update_msg_idx(vc recip, vc body, int inhibit_sysmsg);
 int msg_index_count(vc uid);
 
 void sql_remove_all_tags_uid(vc uid);
@@ -73,6 +73,7 @@ vc package_downstream_sends(vc remote_uid);
 vc import_remote_iupdate(vc remote_uid, vc vals);
 void import_remote_tupdate(vc remote_uid, vc vals);
 vc sql_get_non_local_messages_at_uid(vc uid, int max_count);
+vc sql_uid_updated_since(vc time);
 
 vc sql_dump_mi();
 vc sql_dump_mt();
@@ -91,9 +92,10 @@ int map_is_mapped(vc uid);
 vc map_to_representative_uid(vc uid);
 void refetch_pk(int online);
 
-void add_pull_failed(vc mid, vc uid);
-void clean_pull_failed_mid(vc mid);
-void clean_pull_failed_uid(vc uid);
+void add_pull_failed(const vc &mid, const vc &uid);
+void clean_pull_failed_mid(const vc &mid);
+void clean_pull_failed_uid(const vc& uid);
+bool pull_failed(const vc& mid, const vc& uid);
 
 vc get_delta_id(vc uid);
 bool generate_delta(vc uid, vc delta_id);
@@ -101,6 +103,21 @@ void create_dump_indexes(const DwString& fn);
 void import_new_syncpoint(vc remote_uid, vc delta_id);
 
 extern DwString Schema_version_hack;
+
+// note: the message index is disposable, and can be rebuilt
+// from the files stored locally.
+// the tag database contains items the user has created
+// and that have been gleaned from other tag databases
+// in the device group. it *can* be disposed of, but you
+// may lose some information if it hasn't been propagated to
+// another device. the information isn't crucial for operation
+// though...
+// note: these files got created 4/15/2022, sacrificing
+// previous databases (mostly internal and from debugging.)
+// cdc-x users will have to wait for indexing on the first
+// run, so might want to include something to account for that.
+#define MSG_IDX_DB "msgs.sql"
+#define TAG_DB "tags.sql"
 
 }
 

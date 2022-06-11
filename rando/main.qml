@@ -418,6 +418,13 @@ ApplicationWindow {
         objectName: "dwyco_singleton"
         client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
+            if(core.android_migrate === 1)
+            {
+                stack.push(migrate_page)
+                //core.background_migrate()
+                return
+            }
+
             var a
             a = get_local_setting("first-run")
             if(a === "") {
@@ -488,6 +495,10 @@ ApplicationWindow {
             }
             exit()
         }
+
+//        onMigration_complete: {
+//            Qt.quit()
+//        }
 
         onServer_login: {
            
@@ -615,6 +626,11 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
         z: 5
+    }
+
+    Migrate {
+        id: migrate_page
+        visible: false
     }
 
 

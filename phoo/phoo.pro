@@ -14,7 +14,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"2.72\\\"\"
+DEFINES += BUILDTIME=\"\\\"3.31\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -28,6 +28,8 @@ INSTALLS += appdir_icon appdir_desktop
 
 QT += core qml quick multimedia network #widgets #positioning
 QT += quickcontrols2
+#QT += testlib
+#DEFINES += DWYCO_MODEL_TEST
 
 android: QT += androidextras
 macx-clang: QT += macextras
@@ -37,7 +39,7 @@ DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
 macx-clang {
 QMAKE_INFO_PLIST=Info.plist.mac
-CONFIG -= app_bundle
+#CONFIG -= app_bundle
 }
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
@@ -102,8 +104,8 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 INCLUDEPATH += $${DINC}/v4lcap
 
-QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
-QMAKE_LFLAGS += -g #-fsanitize=address
+#QMAKE_CXXFLAGS += -g -fsanitize=address -O #-O2
+#QMAKE_LFLAGS += -g -fsanitize=address -O
 linux-g++*:QMAKE_CXX=ccache g++
 linux-clang*:QMAKE_CXX=ccache clang
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
@@ -207,6 +209,8 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 #QMAKE_CXXFLAGS += -stdlib=libc++
 #QMAKE_LIBS += -lc++
+#QMAKE_CXXFLAGS += -g -fsanitize=address #-O2
+#QMAKE_LFLAGS += -g -fsanitize=address
 D = $$OUT_PWD/../bld
 SHADOW=$$OUT_PWD/..
 LIBS += \
@@ -476,7 +480,6 @@ HEADERS += \
     dwycoprofilepreviewprovider.h \
     convmodel.h \
     getinfo.h \
-    dwycolistscoped.h \
     ignoremodel.h \
     qlimitedbuffer.h \
     resizeimage.h \
