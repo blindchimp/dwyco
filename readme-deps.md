@@ -19,7 +19,7 @@ sudo apt install libv4l-dev
 
 for android codec builds, sadly, you'll need autoconf:
 
-sudo apt install autoconf
+sudo apt install autoconf libtool
 
 
 Thu Apr 18 09:37:39 PDT 2019
