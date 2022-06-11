@@ -519,15 +519,23 @@ void configform::on_sync_enable_clicked(bool checked)
     if(checked)
     {
         dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
-        dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData());
+        if(!dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData()))
+        {
+            QMessageBox::information(this, "Account linking failed",
+                                     "Can't perform linking now, try again later.",
+                                     QMessageBox::Ok);
+        }
     }
     else
     {
-        dwyco_set_setting("group/join_key", "");
-        if(dwyco_start_gj2("", ""))
+        //dwyco_set_setting("group/join_key", "");
+        if(!dwyco_start_gj2("", ""))
         {
-            exit(0);
+            QMessageBox::information(this, "Account UNLINKING failed",
+                                     "Can't perform UNLINKING now, try again later.",
+                                     QMessageBox::Ok);
         }
+        ui.CDC_group__join_key->setText("");
     }
 
    }

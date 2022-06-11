@@ -31,7 +31,7 @@ $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
--lsqlite3
+-ldl
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \

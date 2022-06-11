@@ -98,7 +98,9 @@ enum vc_type {
 	VC_SET_N = 32,
     VC_BAG_N = 33,
     VC_UVSOCKET_STREAM = 34,
-    VC_UVSOCKET_DGRAM = 35
+    VC_UVSOCKET_DGRAM = 35,
+    VC_TSOCKET_STREAM = 36,
+    VC_TSOCKET_DGRAM = 37
 };
 
 // note: the new gcc's are too pissy about
@@ -549,6 +551,9 @@ vc::vc(const vc& v)
 #ifdef USE_RCT
 RCQINC(v.rep)
 #else
+#ifdef DWYCO_VC_THREADED
+    if(v.rep != vc_nil::vcnilrep)
+#endif
 	++v.rep->ref_count;
 #endif
 	rep = v.rep;
@@ -580,6 +585,9 @@ vc::operator=(const vc& v)
 RCQINC(v.rep)
 RCQDEC(rep)
 #else
+#ifdef DWYCO_VC_THREADED
+        if(v.rep != vc_nil::vcnilrep)
+#endif
 		++v.rep->ref_count;
 		if(rep != vc_nil::vcnilrep && --rep->ref_count == 0) 
 		{

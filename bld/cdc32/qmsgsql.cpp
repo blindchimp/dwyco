@@ -13,6 +13,7 @@
 #endif
 #include <dos.h>
 #include <io.h>
+#define F_OK (0)
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -51,7 +52,7 @@ DwString Schema_version_hack;
 class QMsgSql : public SimpleSql
 {
 public:
-    QMsgSql() : SimpleSql("mi.sql") {check_txn = 1;}
+    QMsgSql() : SimpleSql(MSG_IDX_DB) {check_txn = 1;}
     void init_schema(const DwString &schema_name);
     void init_schema_fav();
 };
@@ -112,11 +113,18 @@ sql_sync_on()
 void
 QMsgSql::init_schema_fav()
 {
-    try {
+    try
+    {
         start_transaction();
-        sql_simple("drop table if exists mt.taglog");
-        sql_simple("create table mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
-        //sql_simple("drop table if exists mt.gmt");
+        vc res = sql_simple("pragma mt.user_version");
+        if((int)res[0][0] == 2)
+            throw 0;
+        if((int)res[0][0] != 0)
+        {
+            // note: remove and rebuild old databases during debugging
+            oopanic("old tags found");
+        }
+        sql_simple("create table if not exists mt.taglog (mid text not null, tag text not null, guid text not null collate nocase, to_uid text not null, op text not null, unique(mid, tag, guid, to_uid, op) on conflict ignore)");
         sql_simple("create table if not exists mt.gmt("
                    "mid text not null, "
                    "tag text not null, "
@@ -128,12 +136,14 @@ QMsgSql::init_schema_fav()
         sql_simple("create index if not exists mt.gmti2 on gmt(mid)");
         sql_simple("create index if not exists mt.gmti3 on gmt(tag)");
         sql_simple("create index if not exists mt.gmti4 on gmt(uid)");
+        sql_simple("create index if not exists mt.gmti5 on gmt(time)");
 
         sql_simple("create table if not exists mt.gtomb (guid text not null collate nocase, time integer, unique(guid) on conflict ignore)");
         sql_simple("create index if not exists mt.gtombi1 on gtomb(guid)");
+        sql_simple("create index if not exists mt.gtombi2 on gtomb(time)");
 
         sql_simple("drop table if exists mt.static_crdt_tags");
-        sql_simple("create table mt.static_crdt_tags(tag text not null)");
+        sql_simple("create table mt.static_crdt_tags(tag text primary key on conflict ignore not null on conflict fail)");
         sql_simple("insert into static_crdt_tags values('_fav')");
         sql_simple("insert into static_crdt_tags values('_hid')");
         sql_simple("insert into static_crdt_tags values('_ignore')");
@@ -146,12 +156,27 @@ QMsgSql::init_schema_fav()
         // this more than once
         sql_simple("create table if not exists mt.msg_tags2(mid text not null, tag text not null, time integer not null)");
         sql_simple("insert into mt.gmt select mid, tag, time, ?1, lower(hex(randomblob(8))) from mt.msg_tags2", to_hex(My_UID));
-        sql_simple("delete from mt.msg_tags2");
-        sql_simple("pragma mt.user_version = 0");
+        sql_simple("drop table mt.msg_tags2");
+        sql_simple("pragma mt.user_version = 2");
 
         commit_transaction();
-    } catch(...) {
+    }
+    catch(...)
+    {
         rollback_transaction();
+    }
+}
+
+void
+init_tag_data()
+{
+    try {
+        sql_start_transaction();
+        sql_simple("delete from mt.taglog");
+        sql_commit_transaction();
+
+    }  catch (...) {
+        sql_rollback_transaction();
     }
 }
 
@@ -160,23 +185,33 @@ QMsgSql::init_schema(const DwString& schema_name)
 {
     if(schema_name.eq("main"))
     {
-        sql_start_transaction();
+        try
         {
-            // note: do something sensible here, this just keeps
-            // us from mistakenly running on a database we have
-            // upgraded during debugging.remove this once
-            // experiments are merged.
-            vc res = sql_simple("pragma user_version");
-            if((int)res[0][0] > 1)
+            sql_start_transaction();
             {
-                //oopanic("incompatible schema");
+                // note: do something sensible here, this just keeps
+                // us from mistakenly running on a database we have
+                // upgraded during debugging.remove this once
+                // experiments are merged.
+                vc res = sql_simple("pragma user_version");
+                if((int)res[0][0] == 6)
+                {
+                    throw 0;
+                }
+                if((int)res[0][0] != 0)
+                {
+                    // note: remove and rebuild old databases during debugging
+
+                    oopanic("old database found");
+                }
             }
-        }
-    sql_simple("pragma recursive_triggers=1");
-    // WARNING: the order and number of the fields in this table
-    // is the same as the #defines for the msg index in
-    // qmsg.h
-    sql_simple("create table if not exists msg_idx ("
+
+            sql_simple("create table schema_sections(name primary key not null, val)");
+
+            // WARNING: the order and number of the fields in this table
+            // is the same as the #defines for the msg index in
+            // qmsg.h
+            sql_simple("create table if not exists msg_idx ("
                "date integer,"
                "mid text primary key,"
                "is_sent,"
@@ -189,99 +224,28 @@ QMsgSql::init_schema(const DwString& schema_name)
                "att_has_audio,"
                "att_is_short_video,"
                "logical_clock,"
-               "assoc_uid text not null);"
-              );
-    sql_simple("create table if not exists most_recent_msg (uid text primary key not null on conflict ignore, date integer not null on conflict ignore)");
-    sql_simple("create table if not exists indexed_flag (uid text primary key)");
-    sql_simple("create index if not exists assoc_uid_idx on msg_idx(assoc_uid)");
-    sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock desc)");
-    sql_simple("create index if not exists date_idx on msg_idx(date desc)");
-    sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
-    sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
-
-    sql_simple("create table if not exists dir_meta(dirname text collate nocase primary key not null, time integer default 0)");
-
-    // note: mid's are unique identifiers, so its meer existence here means it was
-    // deleted.
-    sql_simple("create table if not exists msg_tomb(mid text not null, time integer, unique(mid) on conflict ignore)");
-
-
-    //sql_simple("drop table if exists gi");
-    sql_simple("create table if not exists gi ("
-               "date integer,"
-               "mid text not null,"
-               "is_sent,"
-               "is_forwarded,"
-               "is_no_forward,"
-               "is_file,"
-               "special_type,"
-               "has_attachment,"
-               "att_has_video,"
-               "att_has_audio,"
-               "att_is_short_video,"
-               "logical_clock,"
                "assoc_uid text not null,"
-               "is_local,"
-               "from_client_uid not null, unique(mid, from_client_uid) on conflict ignore)"
+               "from_group);"
               );
+            sql_simple("create table if not exists most_recent_msg (uid text primary key not null on conflict ignore, date integer not null on conflict ignore)");
+            sql_simple("create table if not exists indexed_flag (uid text primary key)");
+            sql_simple("create index if not exists assoc_uid_idx on msg_idx(assoc_uid)");
+            sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock)");
+            sql_simple("create index if not exists date_idx on msg_idx(date)");
+            sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
+            sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
 
-    sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
-    sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock desc)");
-    sql_simple("create index if not exists gidate_idx on gi(date desc)");
-    sql_simple("create index if not exists gisent_idx on gi(is_sent)");
-    sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
-    //sql_simple("create index if not exists gifrom_client_uid_idx on gi(from_client_uid)");
-    //sql_simple("create index if not exists gimid on gi(mid)");
+            sql_simple("create table if not exists dir_meta(dirname text collate nocase primary key not null, time integer default 0)");
 
-    sql_simple("drop table if exists midlog");
-    sql_simple("create table midlog (mid text not null, to_uid text not null, op text not null, unique(mid,to_uid,op) on conflict ignore)");
+            // note: mid's are unique identifiers, so its existence here means it was
+            // deleted.
+            sql_simple("create table if not exists msg_tomb(mid text not null, time integer, unique(mid) on conflict ignore)");
+            sql_simple("create index if not exists mtombi_time on msg_tomb(time)");
 
-    vc res = sql_simple("pragma user_version");
-    if((int)res[0][0] == 0)
-    {
-        // schema upgrade to include new field in index
-        sql_start_transaction();
-        sql_simple("alter table msg_idx add column from_group");
-        sql_simple("drop table if exists gi");
-        sql_simple("create table if not exists gi ("
-                   "date integer,"
-                   "mid text not null,"
-                   "is_sent,"
-                   "is_forwarded,"
-                   "is_no_forward,"
-                   "is_file,"
-                   "special_type,"
-                   "has_attachment,"
-                   "att_has_video,"
-                   "att_has_audio,"
-                   "att_is_short_video,"
-                   "logical_clock,"
-                   "assoc_uid text not null,"
-                   "from_group,"
-                   "is_local,"
-                   "from_client_uid not null, unique(mid, from_client_uid) on conflict ignore)"
-                  );
+            sql_simple("create table if not exists midlog (mid text not null, to_uid text not null, op text not null, unique(mid,to_uid,op) on conflict ignore)");
 
-        sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
-        sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock desc)");
-        sql_simple("create index if not exists gidate_idx on gi(date desc)");
-        sql_simple("create index if not exists gisent_idx on gi(is_sent)");
-        sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
-        sql_simple("create index if not exists gifrom_client_uid_idx on gi(from_client_uid)");
-        sql_simple("create index if not exists gimid on gi(mid)");
-        sql_simple("create index if not exists gifrom_group on gi(from_group)");
-        // force it to reindex
-        sql_simple("delete from dir_meta");
-        sql_simple("pragma user_version = 1;");
-        sql_commit_transaction();
-    }
-
-    // vague info instead of complete info
-    res = sql_simple("pragma user_version");
-    if((int)res[0][0] == 1)
-    {
-        sql_start_transaction();
-        sql_simple("create table if not exists main.newgi ("
+            // WARNING: the order of these fields correspond to msg_idx
+            sql_simple("create table if not exists gi ("
                    "date integer,"
                    "mid text not null primary key on conflict ignore,"
                    "is_sent,"
@@ -299,62 +263,79 @@ QMsgSql::init_schema(const DwString& schema_name)
                    "is_local,"
                    "barf_dont_use)"
                    );
-        sql_simple("insert into newgi select * from gi where rowid in (select max(rowid) from gi group by mid)");
-        sql_simple("drop trigger if exists xgi");
-        sql_simple("drop trigger if exists dgi");
-        sql_simple("drop table main.gi");
-        sql_simple("alter table newgi rename to gi");
 
-        sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
-        sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock desc)");
-        sql_simple("create index if not exists gidate_idx on gi(date desc)");
-        sql_simple("create index if not exists gisent_idx on gi(is_sent)");
-        sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
-        sql_simple("create index if not exists gifrom_group on gi(from_group)");
+            sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
+            sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock)");
+            sql_simple("create index if not exists gidate_idx on gi(date)");
+            sql_simple("create index if not exists gisent_idx on gi(is_sent)");
+            sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
+            sql_simple("create index if not exists gifrom_group on gi(from_group)");
 
-        sql_simple("pragma user_version = 2");
-        sql_commit_transaction();
-    }
 
-    sql_simple("create index if not exists gi_uid_date on gi(assoc_uid, date)");
-    sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
-    sql_simple("drop table if exists pull_failed");
-    sql_simple("create table if not exists pull_failed(mid not null, uid not null, unique(mid, uid) on conflict ignore)");
-    res = sql_simple("pragma user_version");
-    if((int)res[0][0] == 2)
-    {
-        sql_start_transaction();
-        sql_simple("create table if not exists deltas(from_client_uid text not null primary key on conflict replace, delta_id text not null)");
-        sql_simple("pragma user_version = 3");
-        sql_commit_transaction();
-    }
-    // this one seems to speed up the "uid_has_tag" query by light years if
-    // analyze is done periodically.
-    sql_simple("create index if not exists gi_assoc_uid_mid on gi(assoc_uid, mid)");
-    sql_commit_transaction();
+            sql_simple("create index if not exists gi_uid_date on gi(assoc_uid, date)");
+            sql_simple("create index if not exists gi_uid_logical_clock on gi(assoc_uid, logical_clock)");
+
+            sql_simple("create table if not exists pull_failed(mid not null, uid not null, unique(mid, uid) on conflict ignore)");
+
+            sql_simple("create table if not exists deltas(from_client_uid text not null primary key on conflict replace, delta_id text not null)");
+
+            // this one seems to speed up the "uid_has_tag" query by light years if
+            // analyze is done periodically.
+            sql_simple("create index if not exists gi_assoc_uid_mid on gi(assoc_uid, mid)");
+
+            // a simple map for presentation purposes that can be derived without talking to a server
+            sql_simple("create table if not exists group_map(uid primary key collate nocase not null, gid collate nocase not null)");
+            sql_simple("create index if not exists gmidx on group_map(gid)");
+            sql_simple("pragma user_version = 6");
+            sql_commit_transaction();
+        }
+        catch(...)
+        {
+            sql_rollback_transaction();
+        }
     }
     else if(schema_name.eq("mt"))
-	{
-		init_schema_fav();
-	}
-
+    {
+        init_schema_fav();
+    }
 }
 
 void
-add_pull_failed(vc mid, vc uid)
+init_index_data()
+{
+    try {
+        sql_start_transaction();
+        sql_simple("delete from pull_failed");
+        sql_simple("delete from midlog");
+        sql_commit_transaction();
+    }  catch (...) {
+        sql_rollback_transaction();
+    }
+}
+
+void
+add_pull_failed(const vc& mid, const vc& uid)
 {
     vc huid = to_hex(uid);
     sql_simple("insert into pull_failed(mid, uid) values(?1, ?2)", mid, huid);
 }
 
+bool
+pull_failed(const vc& mid, const vc& uid)
+{
+    vc huid = to_hex(uid);
+    vc res = sql_simple("select 1 from pull_failed where mid = ?1 and uid = ?2 limit 1", mid, huid);
+    return res.num_elems() > 0;
+}
+
 void
-clean_pull_failed_mid(vc mid)
+clean_pull_failed_mid(const vc& mid)
 {
     sql_simple("delete from pull_failed where mid = ?1", mid);
 }
 
 void
-clean_pull_failed_uid(vc uid)
+clean_pull_failed_uid(const vc& uid)
 {
     vc huid = to_hex(uid);
     sql_simple("delete from pull_failed where uid = ?1", huid);
@@ -380,8 +361,8 @@ generate_delta(vc uid, vc delta_id)
     if(!s.init(SQLITE_OPEN_READWRITE))
         return false;
 
-    s.attach("mi.sql", "mi");
-    s.attach("fav.sql", "mt");
+    s.attach(MSG_IDX_DB, "mi");
+    s.attach(TAG_DB, "mt");
 
     // ok, here is where we find the list of mid's that have been updated, and create
     // explicit midlog entries that will get sent down normally after the connection
@@ -461,14 +442,14 @@ sql_dump_mi()
     DwString fn = gen_random_filename();
     fn += ".tmp";
     fn = newfn(fn);
-    SimpleSql s("mi.sql");
+    SimpleSql s(MSG_IDX_DB);
     if(!s.init())
         oopanic("can't dump index");
 #ifdef DWYCO_BACKGROUND_SYNC
     s.set_busy_timeout(10 * 1000);
     s.check_txn = 1;
 #endif
-    s.attach("fav.sql", "mt");
+    s.attach(TAG_DB, "mt");
     s.attach(fn, "dump");
     s.start_transaction();
     s.sql_simple("create table dump.msg_idx ("
@@ -737,6 +718,28 @@ sync_files()
     }
 }
 
+static
+void
+remove_delta_databases()
+{
+    {
+        FindVec *fv = find_to_vec(newfn("minew????????????????????.sql").c_str());
+        for(int i = 0; i < fv->num_elems(); ++i)
+        {
+            DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+        }
+        delete_findvec(fv);
+    }
+    {
+        FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
+        for(int i = 0; i < fv->num_elems(); ++i)
+        {
+            DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+        }
+        delete_findvec(fv);
+    }
+}
+
 // call this to remove all the sync state from the database, and return
 // to "no group" status.
 // ASSUMES: there are no network connections, and that the system will be
@@ -776,31 +779,24 @@ remove_sync_state()
         // tombstones in other clients might cover them.
         sql_simple("delete from mt.gtomb");
         // drop triggers that might preclude the delete optimization in sqlite
-        sql_simple("drop trigger if exists mtomb_log");
+        // note: bug, don't drop a schema item that we aren't re-creating.
+        // msg_tomb isn't that big, so probably not a huge deal
+        //sql_simple("drop trigger if exists mtomb_log");
         sql_simple("delete from msg_tomb");
-        sql_simple("drop trigger if exists temp.rescan7");
-        sql_simple("drop trigger if exists temp.rescan5");
+
+        // here we might want to remove all the triggers on gi
+        // so sqlite can do it's optimization, then recreate the triggers
+        // remove_gi_triggers
+
         sql_simple("delete from gi");
+        // reinstall_gi_triggers
+
         sql_simple("delete from dir_meta");
         sql_simple("delete from midlog");
         sql_simple("delete from mt.taglog");
+        sql_simple("delete from deltas");
         sql_commit_transaction();
-        {
-            FindVec *fv = find_to_vec(newfn("minew????????????????????.sql").c_str());
-            for(int i = 0; i < fv->num_elems(); ++i)
-            {
-                DeleteFile(newfn((*fv)[i]->cFileName).c_str());
-            }
-            delete_findvec(fv);
-        }
-        {
-            FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
-            for(int i = 0; i < fv->num_elems(); ++i)
-            {
-                DeleteFile(newfn((*fv)[i]->cFileName).c_str());
-            }
-            delete_findvec(fv);
-        }
+        remove_delta_databases();
     }
     catch(...)
     {
@@ -818,7 +814,7 @@ import_remote_mi(vc remote_uid)
     vc huid = to_hex(remote_uid);
     DwString fn = DwString("mi%1.sql").arg((const char *)huid);
     //DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
-    SimpleSql s("mi.sql");
+    SimpleSql s(MSG_IDX_DB);
     if(!s.init())
         return 0;
     // let's hang around for 10 seconds if someone else has the
@@ -826,7 +822,7 @@ import_remote_mi(vc remote_uid)
 #ifdef DWYCO_BACKGROUND_SYNC
     s.set_busy_timeout(10 * 1000);
 #endif
-    s.attach("fav.sql", "mt");
+    s.attach(TAG_DB, "mt");
     s.attach(fn, "mi2");
 
     int ret = 1;
@@ -1114,21 +1110,146 @@ update_group_map(vc uid, int what)
     init_group_map();
 }
 
+static
+void
+setup_update_triggers()
+{
+    try {
+        sql_start_transaction();
+
+        vc res = sql_simple("select val from schema_sections where name = 'update_triggers'");
+        if(res.num_elems() == 0)
+        {
+            sql_simple("insert into schema_sections (name, val) values('update_triggers', 0)");
+        }
+        else if((int)res[0][0] == 1)
+            throw 0;
+        sql_simple("create table rescan(flag integer)");
+        sql_simple("insert into rescan (flag) values(0)");
+        sql_simple("create trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
+        sql_simple("create trigger rescan2 after delete on main.msg_tomb begin update rescan set flag = 1; end");
+        sql_simple("create trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
+        sql_simple("create trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
+
+        sql_simple("create trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
+        sql_simple("create trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
+
+        sql_simple("create table if not exists uid_updated(uid text not null collate nocase unique on conflict ignore)");
+        sql_simple("create trigger uid_update1 after insert on  main.gi begin "
+                   "insert into uid_updated(uid) values(new.assoc_uid); "
+                   "end"
+                   );
+        sql_simple("create trigger uid_update2 after delete on  main.gi begin "
+                   "insert into uid_updated(uid) values(old.assoc_uid); "
+                   "end"
+                   );
+
+        sql_simple("update schema_sections set val = 1 where name = 'update_triggers'");
+        sql_commit_transaction();
+    }  catch (...) {
+        sql_rollback_transaction();
+    }
+    // not sure if this is peculiarity of sqlite or what, since we want to update a table in main
+    // based on update to mt...
+    sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
+    sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
+               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
+               "end"
+               );
+    sql_simple("create temp trigger uid_update4 after delete on mt.gmt begin "
+               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = old.mid; "
+               "end"
+               );
+    sql_simple("create temp trigger uid_update5 after insert on mt.gtomb begin "
+               "insert into uid_updated(uid) select assoc_uid from main.gi where mid = (select mid from mt.gmt where guid = new.guid); "
+               "end"
+               );
+
+
+}
+
+static
+void
+setup_crdt_triggers()
+{
+    try {
+        sql_start_transaction();
+        vc res = sql_simple("select val from schema_sections where name = 'crdt_triggers'");
+        if(res.num_elems() == 0)
+        {
+            sql_simple("insert into schema_sections (name, val) values('crdt_triggers', 0)");
+        }
+        else if((int)res[0][0] == 3)
+            throw 0;
+        sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid,op) select new.mid, uid, 'a' from current_clients; end");
+        sql_simple("drop trigger if exists mt.tagupdate");
+//        sql_simple("create trigger if not exists mt.tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
+//                   "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
+
+        // note: this drop trigger is a good idea in case the UID changes externally (like they delete the auth file)
+        //sql_simple("drop trigger if exists xgi");
+        sql_simple("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, null from msg_idx where mid = new.mid limit 1; end");
+        //sql_simple("drop trigger if exists dgi");
+        sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin "
+                   "delete from gi where mid = old.mid; "
+                   "insert into msg_tomb (mid, time) values(old.mid, strftime('%s', 'now')); "
+                   "end");
+        sql_simple("create trigger if not exists mtomb_log after insert on msg_tomb begin "
+                   "insert into midlog(mid,to_uid,op) select new.mid, uid, 'd' from current_clients; "
+                   "end"
+                   );
+
+            sql_simple("drop trigger if exists mt.dgmt");
+//        sql_simple("create trigger if not exists mt.dgmt after delete on mt.gmt begin "
+//                            "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
+//                            "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
+//                            "end");
+        sql_simple("update schema_sections set val = 3 where name = 'crdt_triggers'");
+
+        sql_commit_transaction();
+    }  catch (...) {
+        sql_rollback_transaction();
+
+    }
+
+    sql_simple("create temp trigger if not exists tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
+               "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
+    sql_simple("create temp trigger if not exists dgmt after delete on mt.gmt begin "
+                        "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
+                        "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
+                        "end");
+}
+
 void
 init_qmsg_sql()
 {
     if(sDb)
         oopanic("already init");
+    int force_reindex = 0;
+
+    if(access(newfn(MSG_IDX_DB).c_str(), F_OK) == -1)
+    {
+        // major update, remove the old databases, and force a reindex
+        DeleteFile(newfn("mi.sql").c_str());
+        // note: we try to import old tags below
+        //DeleteFile(newfn("fav.sql").c_str());
+        remove_delta_databases();
+        force_reindex = 1;
+    }
     sDb = new QMsgSql;
+
     if(!sDb->init())
         throw -1;
-    sql_sync_off();
     vc hmyuid = to_hex(My_UID);
-    sDb->attach("fav.sql", "mt");
-
+    sDb->attach(TAG_DB, "mt");
+    sql_simple("pragma recursive_triggers=1");
     sql_start_transaction();
+    init_index_data();
+    init_tag_data();
     //sql_simple("pragma main.cache_size= -10000");
     //sql_simple("pragma mt.cache_size= -10000");
+    sDb->set_cache_size(5000);
     vc sv = sql_simple("pragma main.user_version");
     if((int)sv[0][0] != 0)
         Schema_version_hack += sv[0][0].peek_str();
@@ -1136,17 +1257,14 @@ init_qmsg_sql()
     if((int)sv2[0][0] != 0)
         Schema_version_hack += sv2[0][0].peek_str();
 
-    //sql_simple("insert into mt.gmt (mid, tag, uid, guid, time) values(?2, 'bar', ?1, 'mumble', 0)", hmyuid);
     // by default, our local index "local" is implied
+    // note: these next two can be expensive, and can probably be avoided.
+    // they are useful for debugging to keep things in sync, but in normal
+    // usage, this might be something you could relegate to a "maintenance"
+    // mode or something.
+    sql_simple("delete from msg_idx where mid in (select mid from msg_tomb)");
     sql_simple("insert into gi select *, 1, ?1 from msg_idx", hmyuid);
     sql_simple("delete from gi where mid in (select mid from msg_tomb)");
-
-    sql_simple("create temp table rescan(flag integer)");
-    sql_simple("insert into rescan (flag) values(0)");
-    sql_simple("create temp trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan2 after delete on main.msg_tomb begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan3 after delete on main.msg_idx begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan4 after insert on main.msg_idx begin update rescan set flag = 1; end");
 
     // triggers use this table when reflecting changes downstream.
     // to disable the trigger, remove the tags from this table
@@ -1164,40 +1282,49 @@ init_qmsg_sql()
     sql_simple("insert into static_uid_tags values('_pal')");
     sql_simple("insert into static_uid_tags values('_leader')");
 
+    // this is just a scratch table, i put it up here to avoid "create temp"
+    // (which is a schema operation, and locks tons of stuff)
+    sql_simple("create temp table uidset(uid text not null)");
+
     sql_simple("drop table if exists current_clients");
     sql_simple("create table current_clients(uid text collate nocase unique on conflict ignore not null on conflict fail)");
 
-    //sql_simple("drop trigger if exists miupdate");
-    sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid,op) select new.mid, uid, 'a' from current_clients; end");
-    //sql_simple("drop trigger if exists mt.tagupdate");
-    sql_simple("create temp trigger if not exists tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
-               "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
+    setup_crdt_triggers();
+    setup_update_triggers();
 
-    // note: this drop trigger is a good idea in case the UID changes externally (like they delete the auth file)
-    sql_simple("drop trigger if exists xgi");
-    sql_simple(DwString("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, '%1' from msg_idx where mid = new.mid limit 1; end").arg((const char *)hmyuid).c_str());
-    sql_simple("drop trigger if exists dgi");
-    sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin "
-               "delete from gi where mid = old.mid; "
-               "insert into msg_tomb (mid, time) values(old.mid, strftime('%s', 'now')); "
-               "end");
-    sql_simple("create temp trigger mtomb_log after insert on msg_tomb begin "
-               "insert into midlog(mid,to_uid,op) select new.mid, uid, 'd' from current_clients; "
-               "end"
-               );
-    //sql_simple("drop trigger if exists mt.xgmt");
-    //sql_simple("drop trigger if exists mt.dgmt");
-
-    sql_simple("create temp trigger if not exists dgmt after delete on mt.gmt begin "
-                        "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
-                        "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
-                        "end");
-
-    sql_simple("create temp trigger rescan5 after insert on main.gi begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan7 after delete on main.gi begin update rescan set flag = 1; end");
-    sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
     sql_commit_transaction();
+    // this happens one time, the sql file names are changed and old
+    // files are deleted. we try to bring in tags from really old
+    // databases, not sure if this will work all the time though.
+    // note: cdcx as of 2.3x doesn't have any tags that the user created, so
+    // we shouldn't have to do anything.
+    if(force_reindex)
+    {
+        if(access(newfn("fav.sql").c_str(), F_OK) == 0)
+        {
+            sDb->attach("fav.sql", "old");
+            sql_start_transaction();
+            // note: really old databases will not have a gmt table, so fake one up
+            // so we don't crash
+            sql_simple("create table if not exists old.gmt(mid, tag, time, uid, guid)");
+            sql_simple("insert into mt.gmt select mid, tag, time, uid, guid from old.gmt where tag in ('_hid', '_fav', '_ignore', '_pal')");
+            // really old tags, for upgrading old android installs of phoo and rando
+            sql_simple("create table if not exists old.msg_tags2(mid, tag)");
+            // note: rando used tags for _json and hashes, so don't filter them
+            sql_simple("insert into mt.gmt select mid, tag, strftime('%s', 'now'), ?1, lower(hex(randomblob(8))) from old.msg_tags2", //where tag in ('_hid', '_fav', '_ignore', '_pal')",
+                       to_hex(My_UID));
+            //sql_simple("drop table msg_tags2");
+            sql_commit_transaction();
+            sDb->detach("old");
+            DeleteFile(newfn("fav.sql").c_str());
+        }
+        sql_start_transaction();
+        reindex_possible_changes();
+        sql_simple("delete from midlog");
+        sql_simple("delete from taglog");
+        sql_commit_transaction();
+
+    }
     //Database_online.value_changed.connect_ptrfun(refetch_pk);
     Keys_updated.connect_ptrfun(update_group_map, 1);
 }
@@ -1349,9 +1476,8 @@ init_group_map()
     try
     {
         sql_start_transaction();
-        sql_simple("drop table if exists group_map");
-        sql_simple("create table group_map(uid primary key collate nocase not null, gid collate nocase not null)");
-        sql_simple("create index gmidx on group_map(gid)");
+        sql_simple("delete from group_map");
+
         // use the profile database to find candidates, which we can do without
         // being connected to the server.
         vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public");
@@ -1370,7 +1496,7 @@ init_group_map()
         sql_rollback_transaction();
     }
 
-    sDb->detach("prf");
+    //sDb->detach("prf");
 }
 
 vc
@@ -1492,45 +1618,34 @@ sql_get_recent_users(int recent, int *total_out)
     try
     {
         sql_start_transaction();
-#if 0
-        sql_simple("create temp table foo as select max(date), assoc_uid from gi group by assoc_uid");
-        sql_simple("insert into foo select strftime('%s', 'now'), uid from group_map");
-        vc res;
-        if(total_out)
-        {
-            res = sql_simple("select count(distinct assoc_uid) from foo");
-            *total_out = (int)res[0][0];
-        }
-
         // remove all uid's from the user list except one that represents the group.
         // arbitrary: the lowest one lexicographically, which might change.
         // another option might be to return the one that us currently active,
         // which means we might be able to direct message/call them
-        sql_simple("create temp table bar as select min(uid) from group_map group by gid");
-        sql_simple("delete from foo where assoc_uid in (select uid from group_map) and assoc_uid not in (select * from bar)");
+        vc res = sql_simple(
+                    "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi  "
+                    "where strftime('%s', 'now') - date < ?2 "
+                    "group by assoc_uid),"
+                    "mins(muid) as (select min(uid) from group_map group by gid),"
+                    "grps(guid) as (select uid from group_map)"
+                    //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
+                    "select uid from uids where uid not in (select * from grps) union select * from mins limit ?1",
+                    recent ? 100 : -1,
+                    recent ? (365 * 24 * 3600) : 50 * (365 * 24 * 3600));
 
-#ifdef ANDROID
-        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit 20");
-#else
-        res = sql_simple("select distinct assoc_uid from foo order by \"max(date)\" desc limit ?1", recent ? 100 : -1);
-#endif
-        sql_simple("drop table foo");
-        sql_simple("drop table bar");
-#endif
-	vc res = sql_simple(
-        "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi  where strftime('%s', 'now') - date < (365 * 24 * 3600) group by assoc_uid),"
-         "mins(muid) as (select min(uid) from group_map group by gid),"
-         "grps(guid) as (select uid from group_map)"
-        //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
-                "select uid from uids where uid not in (select * from grps) union select * from mins limit ?1",
-
-	recent ? 100 : -1);
+        if(total_out)
+        {
+            // note: total out is just an estimate of the number of
+            // uid's we are not returning. this is really intended just to
+            // give the user some idea of how many users are being hidden,
+            // and might just as easily be a boolean.
+            vc res2 = sql_simple("select count(*) from (select 1 from gi group by assoc_uid)");
+            *total_out = (long)res2[0][0];
+        }
         sql_commit_transaction();
         vc ret(VC_VECTOR);
         for(int i = 0; i < res.num_elems(); ++i)
             ret.append(res[i][0]);
-        if(total_out)
-            *total_out = res.num_elems();
         return ret;
     }
     catch(...)
@@ -1549,6 +1664,8 @@ sql_get_recent_users2(int max_age, int max_count)
         vc res;
         // note: this doesn't get the "latest", putting in an order by doubles the amount of time
         // it takes, and most of the time, the max_count is big enough to get everything anyway
+        // note also, this doesn't fold uid's by group, as this is used in situations where you
+        // want to know the uid's status individually.
         res = sql_simple(
                     "with latest(date, uid) as (select max(date) as md, assoc_uid from gi group by assoc_uid)"
                     "select uid from latest where strftime('%s', 'now') - date < ?1 limit ?2",
@@ -1615,22 +1732,22 @@ sql_remove_uid_msg_idx(vc uid)
 
 }
 
-#define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum "union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
+#define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
 
 static
 void
 create_uidset(vc uid)
 {
     vc huid = to_hex(uid);
-
-    sql_simple("create temp table uidset as select ?1 union select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
+    sql_simple("delete from uidset");
+    sql_simple("insert into uidset select ?1 union select uid from group_map where gid = (select gid from group_map where uid = ?1)", huid);
 }
 
 static
 void
 drop_uidset()
 {
-    sql_simple("drop table uidset");
+
 }
 
 static
@@ -1702,7 +1819,7 @@ sql_load_group_index(vc uid, int max_count)
         // disappear (or just show up someplace different), we include
         // the messages from the group, using the group attribute on the
         // message.
-        // NOTE: the messages of this sort will show up in two places, but
+        // NOTE: the messages of this type will show up in two places, but
         // if they are deleted in one place, they will be deleted from both places.
         res = sql_simple(
                     with_create_uidset(3)
@@ -1712,7 +1829,7 @@ sql_load_group_index(vc uid, int max_count)
            " (assoc_uid in (select * from uidset)"
             // messages from previous group members
                     " or (is_sent isnull and length(?1) > 0 and from_group = ?1 ))"
-                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) group by mid order by logical_clock desc limit ?2",
+                " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) order by logical_clock desc limit ?2",
                     gid.is_nil() ? "" : to_hex(gid),
                     max_count,
                     huid);
@@ -1927,7 +2044,7 @@ msg_idx_get_new_msgs(vc uid, vc logical_clock)
                "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
                " from gi where "
                " assoc_uid in (select * from uidset)"
-                    " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) and logical_clock > ?1 group by mid order by logical_clock desc",
+                    " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) and logical_clock > ?1 order by logical_clock desc",
                             logical_clock,
                             huid);
         sql_commit_transaction();
@@ -2068,6 +2185,11 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
     try
     {
         sql_start_transaction();
+        vc res = sql_simple("select 1 from gi where assoc_uid = ?1 limit 1", to_hex(uid));
+        if(res.num_elems() > 1)
+        {
+            se_emit(SE_USER_ADD, uid);
+        }
         sql_insert_record(nentry, uid);
         sql_commit_transaction();
         ret = 1;
@@ -2105,7 +2227,7 @@ get_unfav_msgids(vc uid)
         vc res = sql_simple(
                     with_create_uidset(1)
                     "select mid as foo from gi where assoc_uid in (select * from uidset) "
-                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') group by mid", to_hex(uid));
+                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') ", to_hex(uid));
         sql_commit_transaction();
         ret = flatten(res);
     }
@@ -2503,14 +2625,12 @@ sql_uid_has_tag(vc uid, vc tag)
     try
     {
         sql_start_transaction();
-        //create_uidset(uid);
         vc res = sql_simple(
                     with_create_uidset(2)
                     "select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
                             tag,
                     to_hex(uid));
         c = (res.num_elems() > 0);
-        //drop_uidset();
         sql_commit_transaction();
     }
     catch(...)
@@ -2519,6 +2639,46 @@ sql_uid_has_tag(vc uid, vc tag)
     }
     return c;
 
+}
+
+// return a list of uid's that appear to have updates since
+// the given time. takes into account tags and tag tombstones
+// and potentially new messages only. if the sync stuff loads
+// old messages in the background, this would not be reflected in
+// these queries. we would need some kind of other update indicator
+// for that (maybe that could be handled with a trigger.)
+// note: this is expected to be used with relatively small intervals of
+// time, like for a mobile device switching in and out of the app, so the
+// result sets will likely be tiny.
+vc
+sql_uid_updated_since(vc time)
+{
+    vc ret(VC_VECTOR);
+    try
+    {
+        sql_start_transaction();
+        vc res = sql_simple(
+                    "WITH "
+                    "newtags(mid) as (select mid from gmt where time > ?1 union select mid from gmt,gtomb using(guid) where gtomb.time > ?1) "
+                    "select distinct assoc_uid from gi,newtags using(mid) union select assoc_uid from gi where date > ?1",
+                    time);
+        sql_commit_transaction();
+        // map down the results
+        for(int i = 0; i < res.num_elems(); ++i)
+        {
+            vc uid = from_hex(res[i][0]);
+            uid = map_to_representative_uid(uid);
+            if(!ret.contains(uid))
+            {
+                ret.append(uid);
+            }
+        }
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+    return ret;
 }
 
 // NOTE: if a message hasn't been indexed (ie, it hasn't been downloaded and filed

@@ -19,6 +19,8 @@
 #include "ta.h"
 #include "profiledb.h"
 #include "dwscoped.h"
+#include "netlog.h"
+
 using namespace dwyco;
 
 extern vc Online;
@@ -573,6 +575,8 @@ MMChannel::start_server_channel(enum resolve_how how, unsigned long addr, const 
     m->bps_audio_recv.stop();
     m->bps_file_xfer.stop();
     m->pinger_timer.stop();
+
+    Netlog_signal.emit(m->tube->mklog("event", "server"));
 
     return m;
 }

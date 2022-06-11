@@ -109,7 +109,8 @@ extern int HasCamera;
 extern int HasCamHardware;
 static QNetworkAccessManager *Net_access;
 
-static QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
+// kluge
+QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -136,9 +137,17 @@ reload_conv_list()
 {
     Conv_sort_proxy->setDynamicSortFilter(false);
     int total = 0;
-    dwyco_load_users2(0, &total);
+    dwyco_load_users2(!TheDwycoCore->get_use_archived(), &total);
     TheDwycoCore->update_total_users(total);
     TheConvListModel->load_users_to_model();
+    Conv_sort_proxy->setDynamicSortFilter(true);
+}
+
+void
+reload_conv_list_since(long time)
+{
+    Conv_sort_proxy->setDynamicSortFilter(false);
+    TheConvListModel->reload_possible_changes(time);
     Conv_sort_proxy->setDynamicSortFilter(true);
 }
 
@@ -361,8 +370,8 @@ dwyco_db_login_result(const char *str, int what)
     emit TheDwycoCore->server_login(str, what);
     if(what > 0)
     {
-        reload_conv_list();
-        reload_ignore_list();
+        //reload_conv_list();
+        //reload_ignore_list();
         //dwyco_switch_to_chat_server(0);
     }
 }
@@ -957,25 +966,25 @@ setup_locations()
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
     QFile::copy("assets:/zap.wav", userdir + "zap.wav");
 #else
-    QFile::copy(":androidinst/assets/dwyco.dh", userdir + "dwyco.dh");
-    QFile::copy(":androidinst/assets/dsadwyco.pub", userdir + "dsadwyco.pub");
-    QFile::copy(":androidinst/assets/license.txt", userdir + "license.txt");
+    QFile::copy(":androidinst2/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst2/assets/dsadwyco.pub", userdir + "dsadwyco.pub");
+    QFile::copy(":androidinst2/assets/license.txt", userdir + "license.txt");
     QFile::remove(userdir + "no_img.png");
-    QFile::copy(":androidinst/assets/no_img.png", userdir + "no_img.png");
-    QFile::copy(":androidinst/assets/online.wav", userdir + "online.wav");
-    QFile::copy(":androidinst/assets/relaxed-call.wav", userdir + "relaxed-call.wav");
-    QFile::copy(":androidinst/assets/relaxed-incoming.wav", userdir + "relaxed-incoming.wav");
-    QFile::copy(":androidinst/assets/relaxed-online.wav", userdir + "relaxed-online.wav");
-    QFile::copy(":androidinst/assets/relaxed-zap.wav", userdir + "relaxed-zap.wav");
+    QFile::copy(":androidinst2/assets/no_img.png", userdir + "no_img.png");
+    QFile::copy(":androidinst2/assets/online.wav", userdir + "online.wav");
+    QFile::copy(":androidinst2/assets/relaxed-call.wav", userdir + "relaxed-call.wav");
+    QFile::copy(":androidinst2/assets/relaxed-incoming.wav", userdir + "relaxed-incoming.wav");
+    QFile::copy(":androidinst2/assets/relaxed-online.wav", userdir + "relaxed-online.wav");
+    QFile::copy(":androidinst2/assets/relaxed-zap.wav", userdir + "relaxed-zap.wav");
     if(!QFile(userdir + "servers2").exists())
-        QFile::copy(":androidinst/assets/servers2", userdir + "servers2");
+        QFile::copy(":androidinst2/assets/servers2", userdir + "servers2");
     QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
-    QFile::copy(":androidinst/assets/space-call.wav", userdir + "space-call.wav");
-    QFile::copy(":androidinst/assets/space-incoming.wav", userdir + "space-incoming.wav");
-    QFile::copy(":androidinst/assets/space-online.wav", userdir + "space-online.wav");
-    QFile::copy(":androidinst/assets/space-zap.wav", userdir + "space-zap.wav");
-    QFile::copy(":androidinst/assets/v21.ver", userdir + "v21.ver");
-    QFile::copy(":androidinst/assets/zap.wav", userdir + "zap.wav");
+    QFile::copy(":androidinst2/assets/space-call.wav", userdir + "space-call.wav");
+    QFile::copy(":androidinst2/assets/space-incoming.wav", userdir + "space-incoming.wav");
+    QFile::copy(":androidinst2/assets/space-online.wav", userdir + "space-online.wav");
+    QFile::copy(":androidinst2/assets/space-zap.wav", userdir + "space-zap.wav");
+    QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
+    QFile::copy(":androidinst2/assets/zap.wav", userdir + "zap.wav");
 #endif
     dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
     // can't do this call until prefixes are set since it wants to init the log file
@@ -1583,6 +1592,8 @@ DwycoCore::init()
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
     dwyco_set_setting("net/listen", "1");
+    dwyco_set_setting("net/app_id", "phoo");
+    dwyco_set_setting("net/broadcast_port", "48903");
 
     new profpv;
     // the order of these is important, you have to clear the cache
@@ -1750,6 +1761,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
 {
     // note: comment out the "inactive" normally, but put it back in
     // when testing "background" stuff on desktop
+    static long time_suspended;
     if(as == Qt::ApplicationSuspended  /*|| as == Qt::ApplicationInactive*/)
     {
         Suspended = 1;
@@ -1765,7 +1777,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         notificationClient->start_background();
         notificationClient->set_allow_notification(1);
 #endif
-
+        time_suspended = time(0);
         emit qt_app_state_change(1);
     }
     else if(as == Qt::ApplicationActive && Suspended)
@@ -1777,7 +1789,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         // in case.
         QSet<QByteArray> dum;
         load_inbox_tags_to_unviewed(dum);
-        reload_conv_list();
+        reload_conv_list_since(time_suspended);
         Suspended = 0;
 #ifdef ANDROID
         notificationClient->set_allow_notification(0);
@@ -2561,12 +2573,13 @@ DwycoCore::service_channels()
         {
             QByteArray huid = buid.toHex();
             emit new_msg(QString(huid), "", "");
-            emit decorate_user(huid);
+            //emit decorate_user(huid);
         }
         //if(mlm)
         //    mlm->reload_model();
+
+        update_any_unviewed(any_unviewed_msgs());
     }
-    update_any_unviewed(any_unviewed_msgs());
 #ifdef ANDROID
     // NOTE: bug: this doesn't work if the android version is statically
     // linked. discovered why: JNI won't find functions properly when statically linked.
@@ -2640,6 +2653,9 @@ DwycoCore::simple_send(QString recipient, QString msg)
         dwyco_delete_zap_composition(compid);
         return 0;
     }
+    // we sent them something, so sort them towards the top
+    // where needed
+    add_got_msg_from(ruid);
     return compid;
 }
 
@@ -2685,7 +2701,6 @@ send_contact_query(QList<QString> emails)
     int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
     if(compid == 0)
         return;
-    //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
     if(!dwyco_zap_send5(compid, Clbot.constData(), Clbot.length(),
                         "", 0,
@@ -2782,6 +2797,98 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     QFile::remove(dest);
     return compid;
 }
+
+namespace dwyco {
+// this is mostly for debugging, so for now, just dig in
+int init_netlog();
+void exit_netlog();
+}
+
+int
+DwycoCore::send_report(QString uid)
+{
+    QByteArray ruid = QByteArray::fromHex(uid.toLatin1());
+    dwyco::exit_netlog();
+    QByteArray filename = add_pfx(User_pfx, "netlog.sql");
+
+    char *rs;
+    dwyco_random_string2(&rs, 2);
+    QByteArray rsb(rs, 2);
+    dwyco_free_array(rs);
+    rsb = rsb.toHex();
+
+    QByteArray target = add_pfx(Tmp_pfx, QByteArray("nl") + rsb + ".sql");
+
+    QFile::remove(target);
+    if(!QFile::copy(filename, target))
+    {
+        dwyco::init_netlog();
+        return 0;
+    }
+    dwyco::init_netlog();
+
+
+    int compid = dwyco_make_file_zap_composition(target.constData(), target.length());
+    if(compid == 0)
+    {
+        QFile::remove(target);
+        return 0;
+    }
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        "netlog", 6, 0, 0,
+                        0, 0)
+      )
+
+    {
+        dwyco_delete_zap_composition(compid);
+        QFile::remove(target);
+        return 0;
+    }
+    QFile::remove(target);
+    return compid;
+
+}
+
+QString
+DwycoCore::export_attachment(QString mid)
+{
+    QByteArray rmid = mid.toLatin1();
+    QString userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    // using the name in the message is dicey. it might be utf8, might be unicode,
+    // might be from case-sensitive fs, might not. almost certainly it is a security problem.
+    // so punt, and just create a random filename, and try to add a file extension if
+    // it looks like there is one.
+    DWYCO_SAVED_MSG_LIST sm;
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
+    {
+        return "";
+    }
+    simple_scoped qsm(sm);
+    if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+        return "";
+    QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    // look for file extension
+    int dot = scary_fn.lastIndexOf('.');
+    if(dot != -1)
+    {
+        scary_fn.remove(0, dot);
+    }
+    else
+        scary_fn = "";
+    QByteArray dstfn("/phooatt");
+    dstfn += QByteArray::number(csum, 16);
+    dstfn += scary_fn;
+    userdir += dstfn;
+    // note: this is probably broken on windows, have to check it out.
+    QByteArray lfn = QFile::encodeName(userdir);
+    if(!dwyco_copy_out_file_zap2(rmid.constData(), lfn.constData()))
+    {
+        return "";
+    }
+    return QFile::decodeName(lfn);
+}
+
 
 int
 DwycoCore::make_zap_view(QString mid)

@@ -883,9 +883,10 @@ static
 void
 setup_locations()
 {
+
+#if 0 && defined(ANDROID)
     // this is easier to debug since you don't need a rooted phone to look at it
     QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
-#if defined(ANDROID)
     if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
         // we aren't going anywhere without being able to setup our state
@@ -898,6 +899,8 @@ setup_locations()
             filepath = QStandardPaths::AppDataLocation;
         }
     }
+#else
+    QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
 #endif
     //
     QStringList args = QGuiApplication::arguments();
@@ -942,22 +945,22 @@ setup_locations()
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
     //QFile::copy("assets:/zap.wav", userdir + "zap.wav");
 #else
-    QFile::copy(":androidinst/assets/dwyco.dh", userdir + "dwyco.dh");
-    QFile::copy(":androidinst/assets/license.txt", userdir + "license.txt");
-    QFile::copy(":androidinst/assets/no_img.png", userdir + "no_img.png");
+    QFile::copy(":androidinst2/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst2/assets/license.txt", userdir + "license.txt");
+    QFile::copy(":androidinst2/assets/no_img.png", userdir + "no_img.png");
 //    QFile::copy(":androidinst/assets/online.wav", userdir + "online.wav");
 //    QFile::copy(":androidinst/assets/relaxed-call.wav", userdir + "relaxed-call.wav");
 //    QFile::copy(":androidinst/assets/relaxed-incoming.wav", userdir + "relaxed-incoming.wav");
 //    QFile::copy(":androidinst/assets/relaxed-online.wav", userdir + "relaxed-online.wav");
 //    QFile::copy(":androidinst/assets/relaxed-zap.wav", userdir + "relaxed-zap.wav");
     if(!QFile(userdir + "servers2").exists())
-        QFile::copy(":androidinst/assets/servers2", userdir + "servers2");
+        QFile::copy(":androidinst2/assets/servers2", userdir + "servers2");
     QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
 //    QFile::copy(":androidinst/assets/space-call.wav", userdir + "space-call.wav");
 //    QFile::copy(":androidinst/assets/space-incoming.wav", userdir + "space-incoming.wav");
 //    QFile::copy(":androidinst/assets/space-online.wav", userdir + "space-online.wav");
 //    QFile::copy(":androidinst/assets/space-zap.wav", userdir + "space-zap.wav");
-    QFile::copy(":androidinst/assets/v21.ver", userdir + "v21.ver");
+    QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
     //QFile::copy(":androidinst/assets/zap.wav", userdir + "zap.wav");
 #endif
     dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
@@ -1606,6 +1609,8 @@ DwycoCore::init()
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "1");
     dwyco_set_setting("net/listen", "0");
+    dwyco_set_setting("net/app_id", "selfs");
+    dwyco_set_setting("net/broadcast_port", "48902");
     dwyco_inhibit_all_incoming(1);
 
     new profpv;

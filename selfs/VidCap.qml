@@ -54,6 +54,12 @@ Page {
                 onClicked: {
                     stack.pop()
                 }
+                focus: true
+                Component.onCompleted: {
+                    forceActiveFocus()
+                }
+                KeyNavigation.right: capture_name
+                KeyNavigation.up: preview_button
             }
 
 //            CheckBox {
@@ -64,23 +70,25 @@ Page {
                 Layout.fillWidth: true
             }
 
-            TextFieldX {
+            TextField {
                 id: capture_name
-                placeholder_text: "Enter cam name"
+                placeholderText: "Enter cam name"
                 Layout.maximumWidth: cm(6)
                 readOnly: {core.is_database_online !== 1}
                 onAccepted: {
                     console.log("UPDATE NAME")
                     done_button.clicked()
                 }
+                KeyNavigation.right: done_button
+                KeyNavigation.up: preview_button
             }
             ToolButton {
                 id: done_button
                 text: qsTr("Update")
-                enabled: capture_name.text_input.length > 0 && profile_sent === 0
+                enabled: capture_name.text.length > 0 && profile_sent === 0
                 onClicked: {
                     Qt.inputMethod.commit()
-                    if(core.set_simple_profile(capture_name.text_input, "", "", "") === 1) {
+                    if(core.set_simple_profile(capture_name.text, "", "", "") === 1) {
                         profile_sent = 1
                     }
                     else
@@ -88,6 +96,7 @@ Page {
                         animateOpacity.start()
                     }
                 }
+                KeyNavigation.up: preview_button
             }
         }
     }
@@ -98,7 +107,7 @@ Page {
         //preview_cam.start()
         core.select_vid_dev(2)
         //core.enable_video_capture_preview(1)
-        capture_name.text_input = core.uid_to_name(core.this_uid)
+        capture_name.text = core.uid_to_name(core.this_uid)
         core.set_invisible_state(0)
         core.inhibit_all_incoming_calls(0)
     }
@@ -212,11 +221,11 @@ Page {
     Connections {
         target: core
 
-        onSc_connect_terminated: {
+        function onSc_connect_terminated(uid) {
             console.log("CONNECT TERMINATED ", uid)
         }
 
-        onSc_connectedChanged: {
+        function onSc_connectedChanged(uid, connected) {
             console.log("ConnectedChanged ", connected, uid)
             if(connected === 0) {
                 core.delete_call_context(uid)
@@ -229,7 +238,7 @@ Page {
             }
         }
 
-        onProfile_update: {
+        function onProfile_update(success) {
             if(success === 1) {
                 profile_sent = 0
             } else {
@@ -242,7 +251,7 @@ Page {
     Connections {
         target: CallContextModel
 
-        onCountChanged: {
+        function onCountChanged() {
             console.log("CALL COUNT ", CallContextModel.count)
 //            if(CallContextModel.count === 1) {
 //                preview_cam.start()
@@ -272,7 +281,7 @@ Page {
                 fillMode: Image.PreserveAspectFit
                 Connections {
                     target: core
-                    onVideo_capture_preview: {
+                    function onVideo_capture_preview(img_path) {
                         if(visible)
                             viewer.source = img_path
                     }
@@ -337,6 +346,13 @@ Page {
         anchors.top: parent.top
         anchors.right: parent.right
         visible: !pview_on.active
+        onVisibleChanged: {
+            if(visible) {
+                if(stop_button.activeFocus) {
+                    forceActiveFocus()
+                }
+            }
+        }
     }
     Button {
         id: stop_button
@@ -345,6 +361,13 @@ Page {
         anchors.top: parent.top
         anchors.right: parent.right
         visible: pview_on.active
+        onVisibleChanged: {
+            if(visible) {
+                if(preview_button.activeFocus) {
+                    forceActiveFocus()
+                }
+            }
+        }
     }
 
     Text {

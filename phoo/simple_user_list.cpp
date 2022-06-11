@@ -90,7 +90,7 @@ SimpleUserModel::delete_all_selected()
     hack_unread_count();
 
     int total = 0;
-    dwyco_load_users2(0, &total);
+    dwyco_load_users2(!TheDwycoCore->get_use_archived(), &total);
     TheDwycoCore->update_total_users(total);
     load_users_to_model();
 }
@@ -400,12 +400,12 @@ SimpleUserSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& 
     else if(!lsm && rsm)
         return false;
 
-    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
-    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
-    if(lreg && !rreg)
-        return true;
-    else if(!lreg && rreg)
-        return false;
+//    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
+//    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
+//    if(lreg && !rreg)
+//        return true;
+//    else if(!lreg && rreg)
+//        return false;
 
     int ret1 = QSortFilterProxyModel::lessThan(left, right);
     int ret2 = QSortFilterProxyModel::lessThan(right, left);

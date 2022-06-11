@@ -187,6 +187,15 @@ Item {
    onVisibleChanged: {
        multiselect_mode = false
    }
+
+   Connections {
+       target: top_dispatch
+       function onUid_selected(uid, action) {
+           var i
+           i = listView2.model.get_by_uid(uid)
+           listView2.currentIndex = i
+       }
+   }
    
    
    ListView {

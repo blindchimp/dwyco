@@ -1,10 +1,10 @@
 #ifndef DWYCO_NO_UPNP
 #include "upnp.h"
-#ifndef ANDROID
+//#ifndef ANDROID
 #include "miniupnpc.h"
 #include "upnpcommands.h"
 #include "upnperrors.h"
-#endif
+//#endif
 #include "dwrtlog.h"
 #ifdef _WIN32
 #include <windows.h>
@@ -39,7 +39,7 @@ threaded_upnp(void *)
 int
 bg_upnp(int natport1, int natport2, int local_port1, int local_port2)
 {
-#ifndef ANDROID
+#ifndef DWYCO_NO_UPNP
     Natport1 = natport1;
     Natport2 = natport2;
     Local_port1 = local_port1;
@@ -65,7 +65,7 @@ bg_upnp(int natport1, int natport2, int local_port1, int local_port2)
 int
 do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 {
-#if !(defined(ANDROID) || defined(DWYCO_NO_UPNP))
+#if !(0 || defined(DWYCO_NO_UPNP))
     struct UPNPDev *devlist;
     int error = 0;
 
@@ -108,8 +108,16 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
     sprintf(p1, "%d", natport1);
     sprintf(p2, "%d", local_port1);
 
+#ifdef ANDROID
+#define NM1 "android1"
+#define NM2 "android2"
+#else
+#define NM1 "dwyco1"
+#define NM2 "dwyco2"
+#endif
+
     r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
-                            p1, p2, lanaddr, "cdc-upnp1",
+                            p1, p2, lanaddr, NM1,
                             "TCP", 0, "86400");
     if(r!=UPNPCOMMAND_SUCCESS)
     {
@@ -123,7 +131,7 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
     sprintf(p2, "%d", local_port2);
 
     r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
-                            p1, p2, lanaddr, "cdc-upnp2",
+                            p1, p2, lanaddr, NM2,
                             "TCP", 0, "86400");
     if(r!=UPNPCOMMAND_SUCCESS)
     {

@@ -105,6 +105,7 @@ SimpleSocket::SimpleSocket()
     istream = 0;
     ostream = 0;
     polling_for_connect = 0;
+    working_len = 0;
     SSQbm.add(this);
 }
 
@@ -116,6 +117,7 @@ SimpleSocket::SimpleSocket(vc sock)
     istream = 0;
     ostream = 0;
     polling_for_connect = 0;
+    working_len = 0;
     this->sock = sock;
 
 #ifdef _Windows
@@ -554,6 +556,7 @@ SimpleSocket::sendvc(vc v)
             vc_composite::new_dfs();
             if((len = v.xfer_out(ostrm)) < 0)
                 RET(0);
+            working_len = len;
         }
         else
         {
@@ -567,7 +570,7 @@ SimpleSocket::sendvc(vc v)
             GRTLOG("flush nb done", 0, 0);
             if(!ostrm.close(vcxstream::DISCARD))
                 RET(0);
-            RET(1);
+            RET(working_len);
         case NB_RETRY:
             GRTLOG("flush nb retry", 0, 0);
             if(!ostrm.close(vcxstream::RETRY))
@@ -594,19 +597,6 @@ SimpleSocket::sendvc(vc v)
             RET(0);
     }
 
-#if 0
-    vc f(VC_FILE);
-    f.open("ser.out", VCFILE_WRITE);
-    vcxstream tstrm(f);
-    if(!tstrm.open(vcxstream::WRITEABLE))
-        return 0;
-    vc_composite::new_dfs();
-    if((len = v.xfer_out(tstrm)) < 0)
-        return 0;
-    if(!tstrm.close(vcxstream::FLUSH))
-        return 0;
-    f.close();
-#endif
     return len;
 }
 

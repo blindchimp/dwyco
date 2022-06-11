@@ -22,11 +22,12 @@ include $(MY_CONF_LOCAL_PATH)/libvorbis/Android.mk
 include $(MY_CONF_LOCAL_PATH)/libvorbis/Android2.mk
 include $(MY_CONF_LOCAL_PATH)/libvorbis/Android3.mk
 include $(MY_CONF_LOCAL_PATH)/libspeex/Android.mk
+include $(MY_CONF_LOCAL_PATH)/miniupnpc/Android.mk
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := dwyco_jni
 LOCAL_PATH := $(call my-dir)
 
-LOCAL_WHOLE_STATIC_LIBRARIES := jhead cdc32 gsm ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls
+LOCAL_WHOLE_STATIC_LIBRARIES := jhead cdc32 gsm ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls miniupnpc
 #LOCAL_SRC_FILES := foo.cpp
 include $(BUILD_SHARED_LIBRARY)

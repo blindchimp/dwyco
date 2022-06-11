@@ -92,7 +92,7 @@ vc_uvsocket::run_loop_once()
 vc_uvsocket::vc_uvsocket() :
     vp(this),
     getq(this),
-    putq(this),
+    //putq(this),
     readx(this, 0, 0, vcxstream::CONTINUOUS_READAHEAD)
 {
 	listening = 0;
@@ -279,8 +279,14 @@ vc_uvsocket::parse_buffer(int once)
         tailstr.reset();
     else
     {
-        tailstr.reset();
-        tailstr.append(tmpbuf, tmplen);
+        tailstr.consume_all_but(tmplen);
+#if 0
+        if(!(tmpbuf == tailstr.ref_str() && tailstr.length() == tmplen))
+        {
+            tailstr.reset();
+            tailstr.append(tmpbuf, tmplen);
+        }
+#endif
     }
 	return 1;
 }
@@ -498,7 +504,7 @@ vc_uvsocket::socket_close(int close_info)
 
     tcp_handle = 0;
     getq.clear();
-    putq.clear();
+    //putq.clear();
     return vctrue;
 }
 

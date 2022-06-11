@@ -706,7 +706,7 @@ int DWYCOEXPORT dwyco_uid_status(const char *uid, int len_uid);
 void DWYCOEXPORT dwyco_uid_to_ip(const char *uid, int len_uid, int *can_do_direct, char **str_out);
 int DWYCOEXPORT dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **str_out);
 int DWYCOEXPORT dwyco_uid_g(const char *uid, int len_uid);
-int DWYCOEXPORT dwyco_load_users();
+int DWYCOEXPORT dwyco_load_users_internal();
 int DWYCOEXPORT dwyco_load_users2(int recent, int *total_out);
 int DWYCOEXPORT dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out);
 int DWYCOEXPORT dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid);
@@ -718,6 +718,7 @@ int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, 
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
+int DWYCOEXPORT dwyco_get_updated_uids(DWYCO_USER_LIST *list_out, long time);
 
 // returns 1 if the message content was successfully loads, and 0 otherwise.
 // NOTE: uid is ignored
@@ -1192,9 +1193,6 @@ void DWYCOEXPORT dwyco_resume();
 
 int DWYCOEXPORT dwyco_service_channels(int *spin);
 void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
-// use this to filter out local broadcasts and other online reporting
-// for dwyco apps using the same back end.
-void DWYCOEXPORT dwyco_set_app_id(const char *str, int len_str);
 //void DWYCOEXPORT dwyco_set_login_password(const char *pw, int len_pw);
 void DWYCOEXPORT dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 void DWYCOEXPORT dwyco_database_login();

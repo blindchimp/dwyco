@@ -43,16 +43,16 @@ CONFIG(debug,debug|release) {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
 #DEFINES += DWYCO_TRACE
 #DEFINES += DWYCO_THREADED_ENCODE
-DEFINES += DW_RTLOG
+#DEFINES += DW_RTLOG
 #DEFINES += DWYCO_FIELD_DEBUG
-android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
+#android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
 DEFINES += DWYCO_SYNC_DEBUG
-DEFINES += DWYCO_DBG_CHECK_SQL
+#DEFINES += DWYCO_DBG_CHECK_SQL
 #DEFINES += DWYCO_BACKGROUND_SYNC
 message("DEBUG cdc32")
 } else {
 message("release build")
-android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
+#android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
 }
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
@@ -72,6 +72,9 @@ QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
 DEFINES += DWYCO_USE_STATIC_SQLITE
 equals(DWYCOBG, 0) {
 DEFINES += DWYCO_CDC_LIBUV
+}
+equals(DWYCOBG, 1) {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 }
 SOURCES += sqlite3.c
 equals(FORCE_DESKTOP_VGQT, 1) {
@@ -112,6 +115,9 @@ DEFINES += DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT
 #equals(DWYCOBG, 0) {
 #DEFINES += DWYCO_CDC_LIBUV
 #}
+equals(DWYCOBG, 1) {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
+}
 }
 
 android-g++ {
@@ -127,6 +133,9 @@ DEFINES += DWYCO_USE_STATIC_SQLITE
 SOURCES += sqlite3.c
 equals(DWYCOBG, 0) {
 DEFINES += DWYCO_CDC_LIBUV
+}
+equals(DWYCOBG, 1) {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 }
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
@@ -273,12 +282,11 @@ aqext_android.cpp \
     simplesql.cpp \
     grpmsg.cpp \
     upnp.cpp \
-    aqkey.cpp
+    aqkey.cpp \
+    netlog.cpp
 
 HEADERS += \
-    profiledb.h \
-    pulls.h \
-    simple_property.h \
-    sync_sendq.h \
-    vccfg.h
+    netlog.h
+
+
 

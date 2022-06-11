@@ -254,7 +254,7 @@ Page {
 
     Connections {
         target: core
-        onIgnore_event: {
+        function onIgnore_event() {
             if(simpdir_top.visible)
                 core.refresh_directory()
         }

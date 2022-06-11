@@ -27,6 +27,7 @@ Page {
                 color: core.is_database_online === 1 ? "green" : "red"
             }
     }
+    focusPolicy: Qt.StrongFocus
     footer: ToolBar {
 //        background: Rectangle {
 //            color: "green"
@@ -38,40 +39,45 @@ Page {
         RowLayout {
             width: parent.width
             ToolButton {
+                id: back_button
                 text: "Back"
                 onClicked: {
                     stack.pop()
                 }
+                focus: true
+                Component.onCompleted: {
+                    forceActiveFocus()
+                }
+                KeyNavigation.right: show_all_checkbox
+                KeyNavigation.up: gview
             }
             CheckBox {
                 id: show_all_checkbox
                 text: "Edit mode"
+                KeyNavigation.right: watch_name
             }
             Item {
                 Layout.fillWidth: true
             }
 
-            TextFieldX {
+            TextField {
                 id: watch_name
                 //visible: cam_watcher.checked
-                placeholder_text: "Enter cam name"
+                placeholderText: "Enter cam name"
                 Layout.maximumWidth: cm(6)
                 onAccepted: {
                     console.log("WTF")
-                    var sname = text_input
+                    var sname = text
                     core.name_to_uid(sname)
                     //core.set_local_setting("camera-to-watch", text_input)
                 }
-                onText_inputChanged: {
-                    //core.set_local_setting("camera-to-watch", text_input)
-                }
 
-
+                KeyNavigation.right: add_button
             }
             ToolButton {
                 id: add_button
                 text: qsTr("Add")
-                enabled: watch_name.text_input.length > 0
+                enabled: watch_name.text.length > 0
                 onClicked: {
                     Qt.inputMethod.commit()
                     watch_name.accepted()
@@ -119,6 +125,7 @@ Page {
 
 
         ColumnLayout {
+            id: fuck_me_with_a_brick
             signal lookup_failed
             signal lookup_succeeded
             signal connect_succeeded
@@ -132,6 +139,10 @@ Page {
                 if(attempt_uid != "")
                     core.delete_call_context(attempt_uid)
             }
+            Component.onCompleted: {
+
+            }
+
             DSM.StateMachine {
                 id: sm
                 initialState: idle
@@ -148,6 +159,9 @@ Page {
                         // if the show all checkbox is toggled,
                         // act as if the cancel button is clicked
                         show_all_checkbox.clicked.connect(cancel_button.clicked)
+                        // something like this might make sense on a firetv or something
+                        // as well as a no-scroll fixed grid setup
+                        //connect_button.clicked()
                     }
 
                     DSM.SignalTransition {
@@ -321,6 +335,22 @@ Page {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 visible: model.online && idle.active
+                focus: true
+                onActiveFocusChanged: {
+                    console.log("focus ", index, " ", attempt_uid)
+                }
+
+                onVisibleChanged: {
+                    if(!visible)
+                        return
+                    if(fuck_me_with_a_brick.GridView.isCurrentItem) {
+                        console.log("FUCK ", index)
+                        forceActiveFocus()
+                    }
+                    else {
+                        console.log("NOT FUCK ", index)
+                    }
+                }
             }
             Label {
                 text: "Connecting..."
@@ -369,11 +399,22 @@ Page {
         property bool use_mobile_layout
         use_mobile_layout: Screen.width < 640
         cellHeight: use_mobile_layout ? parent.height : (model.count <= 2 ? parent.height : parent.height / 2)
-        cellWidth: use_mobile_layout ? parent.width : (model.count == 1 ? parent.width : parent.width / 2)
+        cellWidth: use_mobile_layout ? parent.width : (model.count === 1 ? parent.width : parent.width / 2)
 
         model: filtered_discover
         delegate: video_delegate
         visible: model.count > 0
+//        onActiveFocusChanged: {
+//            if(activeFocus) {
+//                console.log("FUCKING HELL")
+//                currentIndex = 0
+//                positionViewAtBeginning()
+//                //currentItem.connect_button.forceActiveFocus()
+
+//            }
+//        }
+        //keyNavigationEnabled: true
+        onCurrentItemChanged: {currentItem.forceActiveFocus()}
 
     }
 

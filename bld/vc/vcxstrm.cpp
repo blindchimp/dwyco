@@ -30,7 +30,7 @@ long VCX_max_elements = 1024;
 long VCX_max_depth = 7;
 #endif
 
-#define VCX_ILOG 4
+#define VCX_ILOG 128
 
 int
 vcxstream::check_status(enum status s)
@@ -342,9 +342,7 @@ vcxstream::close2(how_close how)
         case CONTINUE:
             log.reset();
             chit_destroy_table();
-            //delete chit_table;
-            //chit_table = 0;
-            stat = CLOSED;
+            //stat = CLOSED;
             return 1;
             break;
         default:
@@ -574,7 +572,7 @@ vcxstream::flush()
     case WRITEABLE:
 		if(buf != cur)
 		{
-			if(do_overflow(buf, cur - buf) < 0)
+            if(do_overflow(buf, cur - buf) < cur - buf)
 				return 0;
         	cur = buf;
 		}

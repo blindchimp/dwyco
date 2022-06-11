@@ -584,13 +584,23 @@ suspend_qmsg()
 void
 resume_qmsg()
 {
+    // these items will get updates when we connect
+    // to a server, so just clear them out.
     Cur_msgs = vc(VC_VECTOR);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
     Client_types = vc(VC_TREE);
-    No_direct_msgs = vc(VC_SET);
-    No_direct_att = vc(VC_SET);
-    MsgFolders = vc(VC_TREE);
+
+    // let's keep this info, since it is unlikely to
+    // change while we were suspended
+    //No_direct_msgs = vc(VC_SET);
+    //No_direct_att = vc(VC_SET);
+
+    // keep this info, since we load new stuff incrementally now
+    // this might have to change if we reload everything in the
+    // future
+    //MsgFolders = vc(VC_TREE);
+
     In_progress = vc(VC_TREE);
     
     // not perfect, but better than scanning for a max value
@@ -2105,6 +2115,8 @@ query_done(vc m, void *, vc, ValidPtr)
     }
     catch(...)
     {
+        // we could probably restore the previous value of Cur_msgs here, but
+        // if this happens, the system is probably on its way out
         Cur_msgs = vc(VC_VECTOR);
         sql_rollback_transaction();
     }
@@ -2294,7 +2306,7 @@ store_direct(MMChannel *m, vc msg, void *)
     return 1;
 }
 
-
+#if 0
 void
 load_users(int only_recent, int *total_out)
 {
@@ -2302,52 +2314,30 @@ load_users(int only_recent, int *total_out)
 
     MsgFolders = vc(VC_TREE);
 
-    if(only_recent)
+    vc ret = sql_get_recent_users(only_recent, total_out);
+    if(ret.is_nil() || ret.num_elems() == 0)
     {
-        vc ret = sql_get_recent_users(only_recent, total_out);
-        if(ret.is_nil() || ret.num_elems() == 0)
+        if(ret.is_nil())
         {
-            if(ret.is_nil())
-            {
-                TRACK_ADD(QM_UL_recent_fail, 1);
-            }
-            else
-            {
-                TRACK_ADD(QM_UL_recent_empty, 1);
-            }
+            TRACK_ADD(QM_UL_recent_fail, 1);
+        }
+        else
+        {
+            TRACK_ADD(QM_UL_recent_empty, 1);
+        }
+        if(only_recent)
             return load_users(0, total_out);
-        }
-        int n = ret.num_elems();
-        TRACK_MAX(QM_UL_recent_count, n);
-        for(int i = 0; i < n; ++i)
-        {
-            vc uid = from_hex(ret[i]);
-            add_msg_folder(uid);
-            //MsgFolders.add_kv(uid, vcnil);
-        }
     }
-    else
+    int n = ret.num_elems();
+    TRACK_MAX(QM_UL_recent_count, n);
+    for(int i = 0; i < n; ++i)
     {
-
-        FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
-        auto n = fv.num_elems();
-        TRACK_MAX(QM_UL_count, n);
-        for(int i = 0; i < n; ++i)
-        {
-            WIN32_FIND_DATA &d = *fv[i];
-            s = d.cFileName;
-            vc uid = dir_to_uid(s);
-            if(uid.len() != 10)
-                continue;
-            add_msg_folder(uid);
-            //MsgFolders.add_kv(uid, vcnil);
-        }
-
-        delete_findvec(&fv);
-        if(total_out)
-            *total_out = MsgFolders.num_elems();
+        vc uid = from_hex(ret[i]);
+        add_msg_folder(uid);
     }
 }
+#endif
+
 
 void
 load_users_from_files(int *total_out)
@@ -2379,8 +2369,6 @@ load_users_from_files(int *total_out)
 void
 load_users_from_index(int recent, int *total_out)
 {
-    DwString s;
-
     MsgFolders = vc(VC_TREE);
 
     vc ret = sql_get_recent_users(recent, total_out);
@@ -2399,12 +2387,8 @@ load_users_from_index(int recent, int *total_out)
         {
             vc uid = from_hex(ret[i]);
             add_msg_folder(uid);
-            //MsgFolders.add_kv(uid, vcnil);
         }
-        if(total_out)
-            *total_out = n;
     }
-
 }
 
 
@@ -3669,7 +3653,7 @@ do_local_store(vc filename, vc speced_mid)
             // we saved the message, but the indexing failed, need
             // a fix for this. possibly we can just schedule a
             // re-index for this user.
-            if(!update_msg_idx(recip[i], m[1]))
+            if(!update_msg_idx(recip[i], m[1], 0))
             {
                 // FIGURE IT OUT
             }

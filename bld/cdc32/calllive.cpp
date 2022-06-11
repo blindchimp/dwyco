@@ -103,6 +103,8 @@
 #include "mmcall.h"
 #include "dwrtlog.h"
 #include "sysattr.h"
+#include "netlog.h"
+
 #ifdef _Windows
 typedef unsigned long in_addr_t;
 #endif
@@ -450,6 +452,8 @@ stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr vp, M
         {
             mc->schedule_destroy(MMChannel::HARD);
         }
+
+        Netlog_signal.emit(mc->tube->mklog("peer_uid", to_hex(mc->attempt_uid)));
 
     }
 

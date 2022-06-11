@@ -1,6 +1,6 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
-
+CONFIG += c++11
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
 
@@ -17,8 +17,8 @@ DEFINES += NO_BUILDTIME
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"1.50\\\"\"
-CONFIG += c++11
+DEFINES += BUILDTIME=\"\\\"1.51\\\"\"
+
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -135,8 +135,8 @@ $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qtdrv/libqtdrv.a \
--lsqlite3 \
--lv4l2
+-lv4l2 \
+-ldl
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -475,7 +475,6 @@ HEADERS += \
     dwycoprofilepreviewprovider.h \
     convmodel.h \
     getinfo.h \
-    dwycolistscoped.h \
     ignoremodel.h \
     qlimitedbuffer.h \
     resizeimage.h \

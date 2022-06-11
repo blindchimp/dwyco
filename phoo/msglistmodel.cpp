@@ -12,6 +12,9 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
+#ifdef DWYCO_MODEL_TEST
+#include <QAbstractItemModelTester>
+#endif
 #include <stdlib.h>
 #include "msglistmodel.h"
 #include "msgpv.h"
@@ -205,6 +208,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
 
     }
     // FALLTHRU
+        [[clang::fallthrough]];
     default:
         if(i >= 0)
             Fetching.removeAt(i);
@@ -234,6 +238,9 @@ msglist_model::msglist_model(QObject *p) :
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
     mlm = this;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 }
 
 msglist_model::~msglist_model()
@@ -530,6 +537,9 @@ msglist_raw::msglist_raw(QObject *p)
     count_inbox_msgs = 0;
     count_msg_idx = 0;
     count_qd_msgs = 0;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 }
 
 msglist_raw::~msglist_raw()
@@ -594,6 +604,7 @@ msglist_raw::check_inbox_model()
             endRemoveRows();
             return 1;
         }
+        qnew_im.release();
     }
     return 0;
 }
@@ -952,25 +963,6 @@ auto_fetch(QByteArray mid)
 {
     if(!(Fetching.contains(mid) || Manual_fetch.contains(mid) || Failed_fetch.contains(mid)))
     {
-//        int special_type;
-//        const char *uid;
-//        int len_uid;
-//        const char *dlv_mid;
-//        if(dwyco_is_delivery_report(mid.constData(), &uid, &len_uid, &dlv_mid, &special_type))
-//        {
-//            // process pal authorization stuff here
-//            if(special_type == DWYCO_SUMMARY_DELIVERED)
-//            {
-//                // NOTE: uid, dlv_mid must be copied out before next
-//                // dll call
-//                // hmmm, need new api to get uid/mid_out of delivered msg
-//                dwyco_delete_unfetched_message(mid.constData());
-//                return 0;
-//            }
-
-//        }
-//        else
-
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
         // note: we get msg_recv_status signals as the fetch proceeds
@@ -1351,12 +1343,12 @@ msglist_raw::get_msg_text(int row) const
             return "";
         simple_scoped qbt(bt);
         auto ftxt = qbt.get<QByteArray>(0);
-        return QString::fromLatin1(get_extended(ftxt));
+        return QString::fromUtf8(get_extended(ftxt));
     }
 
 
     auto txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
-    return QString::fromLatin1(get_extended(txt));
+    return QString::fromUtf8(get_extended(txt));
 }
 
 QString

@@ -14,6 +14,7 @@
 #include <QObject>
 #include <QVariant>
 #include <QUrl>
+#include <QThread>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -43,6 +44,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
     QML_READONLY_VAR_PROPERTY(bool, has_unseen_rando)
     QML_READONLY_VAR_PROPERTY(bool, has_unseen_geo)
+    QML_READONLY_VAR_PROPERTY(int, android_migrate)
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -62,8 +64,10 @@ public:
         m_use_archived = false;
         m_has_unseen_geo = false;
         m_has_unseen_rando = false;
+        m_android_migrate = Android_migrate;
     }
     static QByteArray My_uid;
+    static int Android_migrate;
 
 
     enum System_event {
@@ -266,11 +270,17 @@ public:
     // of where your pic has been sent.)
     Q_INVOKABLE int geo_count_from_hash(QString hash);
 
+    Q_INVOKABLE QString export_attachment(QString mid);
+    static void one_time_copy_files();
+    Q_INVOKABLE void background_migrate();
+    Q_INVOKABLE void directory_swap();
+
 public:
 
 public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);
+
 
 signals:
     void server_login(const QString& msg, int what);
@@ -335,10 +345,20 @@ signals:
     void zap_stopped(int zid);
 
     void mid_tag_changed(QString mid);
+    void migration_complete();
 
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
+
+};
+
+class fuck_me_with_a_brick : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::one_time_copy_files();
+    }
 
 };
 

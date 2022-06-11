@@ -121,6 +121,9 @@ change_current_group(vc, vc )
     // sync history state. this is mainly so we don't
     // propagate tombstones that might delete things on
     // other clients when we join a group we may have been in before.
+    // note: it is probably better not to generate the tombstones
+    // in the first place if we are not in "group mode", but
+    // that will need some schema changes
     remove_sync_state();
     se_emit_group_status_change();
 }
@@ -575,6 +578,46 @@ DH_alternate::challenge_recv(vc m, vc& resp)
 
     resp = sha3(vc(VC_BSTRING, (const char *)checkstr, sizeof(checkstr)));
     return 1;
+}
+
+void
+update_profiles_for_new_membership()
+{
+    if(!DHG_db)
+        return;
+    if(!Current_alternate)
+        return;
+    DHG_db->attach("prfdb.sql", "prf");
+
+    try
+    {
+        sql_start_transaction();
+        // find all uid's that proport to have our public alt_key
+        // if they aren't in the current set of group uid's, get rid of them
+        // so they are refetched.
+        sql(
+            "with foo(uid) as (select uid from pubkeys where alt_static_public = (select pubkey from keys where alt_name = ?1))"
+             "delete from prf.pubkeys where uid in (select uid from foo except select uid from group_uids)",
+                    Current_alternate->alt_name()
+        );
+
+        // if there are new members in the group, but their pub keys in the profile cache
+        // don't match, delete them
+        sql(
+            "with foo(uid) as (select uid from pubkeys,group_uids using(uid) where pubkeys.alt_static_public != (select pubkey from keys where alt_name = ?1))"
+             "delete from prf.pubkeys where uid in (select * from foo)",
+                    Current_alternate->alt_name()
+                    );
+
+
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+
+    //DHG_db->detach("prf");
 }
 
 }

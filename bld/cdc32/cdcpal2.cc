@@ -85,6 +85,10 @@ transient_online_list()
             tmpl.add(gv[i], 0);
         }
     }
+    // it is debatable whether having notifications of online
+    // for others in your msg list is really what you want.
+    // for now, we get rid of it.
+#if 0
     int left_over = MAXPALS - p.num_elems();
     if(left_over <= 0)
     {
@@ -103,6 +107,7 @@ transient_online_list()
         vc u = from_hex(rm[i]);
         tmpl.add(u, 0);
     }
+#endif
     tmpl.del(My_UID);
     return tree_to_vec(tmpl);
 }

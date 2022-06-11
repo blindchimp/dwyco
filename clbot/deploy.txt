@@ -1,7 +1,7 @@
 Mon Sep  6 11:49:20 MDT 2021
 
 on Ubuntu 20.04 server, install all the Qt 5.12 dependencies from the
-distro. Compile the bot using ubuntu 5.12. This is the easiest way to
+distro. Compile the bot using ubuntu 20.04 with qt 5.12. This is the easiest way to
 go about it. It is highly unlikely to work otherwise.
 
 

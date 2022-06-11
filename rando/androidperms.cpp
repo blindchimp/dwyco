@@ -10,6 +10,16 @@ AndroidPerms::AndroidPerms(QObject *parent) : QObject(parent)
 
 }
 
+int
+AndroidPerms::android_api()
+{
+#ifndef ANDROID
+    return 0;
+#else
+    return QtAndroid::androidSdkVersion();
+#endif
+}
+
 void
 AndroidPerms::load()
 {

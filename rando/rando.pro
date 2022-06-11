@@ -6,7 +6,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += NO_BUILDTIME
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"1.97\\\"\"
+DEFINES += BUILDTIME=\"\\\"2.50\\\"\"
 
 QT += core qml multimedia network
 QT += quickcontrols2
@@ -49,7 +49,7 @@ SOURCES += main.cpp \
     resizeimage.cpp \
     androidperms.cpp
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
 
 linux-* {
 DEFINES += LINUX
@@ -75,7 +75,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
--lsqlite3
+-ldl
 
 #PRE_TARGETDEPS += \
 #$${D}/cdc32/libcdc32.a \
@@ -171,7 +171,16 @@ LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 # work in the main executable if it is statically linked. that is a
 # limitation of java as far as i can tell.
 LIBS += $${L}/libdwyco_jni.so
-ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
+#ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
+ANDROID_EXTRA_LIBS = \
+    $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so \
+    $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so \
+    $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so \
+    $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
+
+ANDROID_TARGET_SDK_VERSION=30
+ANDROID_VERSION_CODE=3000124
+ANDROID_VERSION_NAME="2.52"
 #LIBS += \
 #$${D}/libcdc32.a \
 #$${D}/libvc.a \
@@ -282,32 +291,21 @@ HEADERS += \
     androidperms.h
 
 DISTFILES += \
-    androidinst/gradle/wrapper/gradle-wrapper.jar \
-    androidinst/AndroidManifest.xml \
-    androidinst/res/values/libs.xml \
-    androidinst/build.gradle \
-    androidinst/gradle/wrapper/gradle-wrapper.properties \
-    androidinst/gradlew \
-    androidinst/gradlew.bat \
-    androidinst/google-services.json \
-    androidinst/src/com/dwyco/cdc32/dwybg.java \
-    androidinst/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst/src/com/dwyco/rando/app.java \
-    androidinst/src/com/dwyco/android/DwycoSender.java \
-    androidinst/src/com/dwyco/android/MyFirebaseMessagingService.java \
-    androidinst/src/com/dwyco/android/NotificationClient.java \
-    androidinst/src/com/dwyco/android/SocketLock.java \
-    androidinst/src/com/dwyco/rando/DwycoApp.java
-
-contains(ANDROID_TARGET_ARCH,x86) {
-    ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
-}
-
-contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    ANDROID_EXTRA_LIBS = \
-        $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so
-}
-contains(ANDROID_TARGET_ARCH,arm64-v8a) {
-    ANDROID_EXTRA_LIBS = \
-        $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so
-}
+    androidinst2/google-services.json \
+    androidinst2/src/com/dwyco/cdc32/dwybg.java \
+    androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
+    androidinst2/src/com/dwyco/rando/app.java \
+    androidinst2/src/com/dwyco/android/DwycoSender.java \
+    androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst2/src/com/dwyco/android/NotificationClient.java \
+    androidinst2/src/com/dwyco/android/SocketLock.java \
+    androidinst2/src/com/dwyco/rando/DwycoApp.java \
+    androidinst2/AndroidManifest.xml \
+    androidinst2/build.gradle \
+    androidinst2/gradle.properties \
+    androidinst2/gradle/wrapper/gradle-wrapper.jar \
+    androidinst2/gradle/wrapper/gradle-wrapper.properties \
+    androidinst2/gradlew \
+    androidinst2/gradlew.bat \
+    androidinst2/res/values/libs.xml \
+    androidinst2/res/xml/provider_paths.xml

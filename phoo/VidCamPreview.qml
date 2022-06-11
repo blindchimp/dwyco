@@ -45,7 +45,7 @@ Page {
 
     Connections {
         target: core
-        onCamera_change: {
+        function onCamera_change(cam_on) {
             if(visible) {
                 if(cam_on) {
                     core.enable_video_capture_preview(1)
@@ -113,7 +113,7 @@ Page {
                 }
                 Connections {
                     target: core
-                    onVideo_capture_preview: {
+                    function onVideo_capture_preview(img_path) {
                         if(visible)
                             viewer.source = img_path
                     }
