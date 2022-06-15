@@ -275,6 +275,11 @@ public:
     Q_INVOKABLE void background_migrate();
     Q_INVOKABLE void directory_swap();
 
+    // this can sometime take awhile, so we handle it in a thread, then
+    // cause the user to exit and restart
+    Q_INVOKABLE void background_reindex();
+    static void do_reindex();
+
 public:
 
 public slots:
@@ -347,6 +352,8 @@ signals:
     void mid_tag_changed(QString mid);
     void migration_complete();
 
+    void reindex_complete();
+
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
@@ -358,6 +365,15 @@ class fuck_me_with_a_brick : public QThread
     Q_OBJECT
     void run() {
         DwycoCore::one_time_copy_files();
+    }
+
+};
+
+class fuck_me_with_a_brick2 : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::do_reindex();
     }
 
 };

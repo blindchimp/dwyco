@@ -919,6 +919,22 @@ DwycoCore::background_migrate()
 }
 
 void
+DwycoCore::background_reindex()
+{
+    auto q = new fuck_me_with_a_brick2;
+    connect(q, SIGNAL(finished()), this, SIGNAL(reindex_complete()));
+    q->start();
+}
+
+void
+DwycoCore::do_reindex()
+{
+    dwyco_init();
+    dwyco_exit();
+    QThread::sleep(10);
+}
+
+void
 DwycoCore::directory_swap()
 {
     // note: we update the User_pfx so we can update the settings file to
