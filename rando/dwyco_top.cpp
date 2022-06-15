@@ -931,7 +931,7 @@ DwycoCore::do_reindex()
 {
     dwyco_init();
     dwyco_exit();
-    QThread::sleep(10);
+    //QThread::sleep(10);
 }
 
 void
