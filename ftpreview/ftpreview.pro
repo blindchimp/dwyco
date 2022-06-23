@@ -28,8 +28,7 @@ $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
--lsqlite3 \
--lpthread \
+-pthread \
 -ldl
 }
 
