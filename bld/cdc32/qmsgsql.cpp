@@ -375,6 +375,13 @@ generate_delta(vc uid, vc delta_id)
     // not try to stay connected all the time. will have to think about this, as it seems
     // like it might be reasonable for a chat app not to have the latest info necessarily
     // while it is in the background all the time.
+    // **note ca 6/2022, in the wild, i've seen an uncommon issue with tombstone updates
+    // being lost, despite the sync state being updated (so you end up with situations
+    // where someone keeps trying to refetch messages that have been deleted.)
+    // this is almost certainly an ordering issue with the wrong sync marker
+    // being committed or something. see the comment in the "package_downstream" functions
+    // for more details. we probably need to make the ordering explicit somehow or other on
+    // these updates.
 
     try
     {
@@ -806,8 +813,11 @@ remove_sync_state()
 }
 
 
-// note: this is for testing, we're just assuming the index
-// has been materialized here so we can investigate things
+// note: keeping the mi<uid>.sql file around
+// is for testing, we're just assuming the index
+// has been materialized here so we can investigate things.
+// once it is integrated into the main database, it could be
+// deleted.
 int
 import_remote_mi(vc remote_uid)
 {
@@ -857,7 +867,7 @@ import_remote_mi(vc remote_uid)
             update_global_logical_clock(lc);
         }
         s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
-        s.sql_simple("delete from main.gi where mid in (select mid from msg_tomb)");
+        s.sql_simple("delete from main.gi where mid in (select mid from main.msg_tomb)");
 
         //sync_files();
         bool update_tags = false;
@@ -873,7 +883,7 @@ import_remote_mi(vc remote_uid)
             c2 = s.sql_simple("select count(*) from mt.gmt");
         if(c[0][0] != c2[0][0])
             update_tags = true;
-        s.sql_simple("delete from mt.gmt where mid in (select mid from msg_tomb)");
+        s.sql_simple("delete from mt.gmt where mid in (select mid from main.msg_tomb)");
         s.sql_simple("delete from mt.gmt where guid in (select guid from mt.gtomb)");
 
         // probably makes a lot of sense to clean out unknown uid's, if we have
