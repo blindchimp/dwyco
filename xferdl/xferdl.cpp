@@ -172,7 +172,7 @@ got_alarm(int)
 // this thread stuff is just a poor-mans watchdog timer so we don't end up
 // with these things lingering around if they get stuck for some reason.
 static
-DWORD ThreadProc (LPVOID lpdwThreadParam )
+DWORD __RPC_CALLEE ThreadProc (LPVOID lpdwThreadParam )
 {
     Sleep(20 * 60 * 1000);
     ExitProcess(1);
@@ -182,7 +182,7 @@ static int ourmain(int argc, char **argv);
 #ifdef __BORLANDC__
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
-int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 #endif
 {
     LPTSTR *av;
@@ -190,7 +190,9 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdL
     char **argv = 0;
 
     /*******************************************************
-     * WIN32 command line parser function********************************************************/	int    argc, BuffSize, i;
+     * WIN32 command line parser function
+     ********************************************************/
+    int    argc, BuffSize, i;
     WCHAR  *wcCommandLine;
     LPWSTR *argw;		// Get a WCHAR version of the parsed commande line
     wcCommandLine = GetCommandLineW();
