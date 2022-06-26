@@ -89,6 +89,7 @@ public:
 // keys can get inserted in the database from pure message handling, so
 // this needs to be called early.
 void init_dhgdb();
+void exit_dhgdb();
 void init_dhg();
 void update_profiles_for_new_membership();
 extern sigprop<dwyco::DH_alternate *> Current_alternate;

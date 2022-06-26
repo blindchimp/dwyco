@@ -430,6 +430,12 @@ backup_account_info(const char *dbn)
     // new key, and update it with the server. at this time (ca 2017), the
     // server will refuse to sign it (ie, it thinks it is suspicious), but
     // will disseminate it anyway.
+    // note: the tag database probably needs to be trimmed before backup (or maybe
+    // as restore time.)
+    // also note: we do not store the group names and keys, because presumably, after
+    // the restore, they should be able to re-enter the group (the first time they
+    // restart cdc-x after the restore, they will be removed from the group by the
+    // server.)
 
     try
     {
@@ -465,6 +471,39 @@ get_file_contents(const char *name, const char *dbn)
 
 static
 int
+restore_blob(const char *name, const char *dbn)
+{
+    vc blob = get_file_contents(name, dbn);
+    if(blob.is_nil())
+        return 0;
+    // this works if the file is open too on windows, which is likely
+    // with a database file.
+    DwString rfn = gen_random_filename();
+    DwString tf(name);
+    tf = newfn(tf);
+    DwString sv(tf);
+    sv += ".";
+    sv += rfn;
+    move_replace(tf, sv);
+
+#ifdef _Windows
+    int fd = creat(newfn(name).c_str(), _S_IWRITE);
+#else
+    int fd = creat(newfn(name).c_str(), 0666);
+#endif
+    if(fd == -1)
+        return 0;
+    int ret = 1;
+    if(write(fd, (const char *)blob, blob.len()) != blob.len())
+    {
+        ret = 0;
+    }
+    close(fd);
+    return ret;
+}
+
+static
+int
 restore_account_info(const char *dbn)
 {
     vc auth = get_file_contents("auth", dbn);
@@ -473,40 +512,31 @@ restore_account_info(const char *dbn)
     vc dh = get_file_contents("dh.dif", dbn);
     if(dh.is_nil())
         return 0;
-    DwString rfn = gen_random_filename();
-    DwString tf("auth");
-    tf = newfn(tf);
-    DwString sv(tf);
-    sv += ".";
-    sv += rfn;
-    move_replace(tf, sv);
 
-    tf = newfn("dh.dif");
-    sv = tf;
-    sv += ".";
-    sv += rfn;
-    move_replace(tf, sv);
+//    // if there are existing auth/dh.dif files, move them
+//    // out of the way instead of overwriting them
+//    DwString rfn = gen_random_filename();
+//    DwString tf("auth");
+//    tf = newfn(tf);
+//    DwString sv(tf);
+//    sv += ".";
+//    sv += rfn;
+//    move_replace(tf, sv);
 
-#ifdef _Windows
-    int fd = creat(newfn("auth").c_str(), _S_IWRITE);
-#else
-    int fd = creat(newfn("auth").c_str(), 0666);
-#endif
-    if(fd == -1)
+//    tf = newfn("dh.dif");
+//    sv = tf;
+//    sv += ".";
+//    sv += rfn;
+//    move_replace(tf, sv);
+
+    if(!restore_blob("auth", dbn))
         return 0;
-    if(write(fd, (const char *)auth, auth.len()) != auth.len())
+    if(!restore_blob("dh.dif", dbn))
         return 0;
-    close(fd);
-#ifdef _Windows
-    fd = creat(newfn("dh.dif").c_str(), _S_IWRITE);
-#else
-    fd = creat(newfn("dh.dif").c_str(), 0666);
-#endif
-    if(fd == -1)
-        return 0;
-    if(write(fd, (const char *)dh, dh.len()) != dh.len())
-        return 0;
-    close(fd);
+    // if we can't restore the tags, we can still get going
+    // without them, so don't error out.
+    restore_blob(TAG_DB, dbn);
+
 
     // invalidate the profile that might be cached locally
     vc new_id;
@@ -515,6 +545,7 @@ restore_account_info(const char *dbn)
     if(!load_auth_info(new_id, sk, "auth"))
         return 0;
     prf_invalidate(new_id);
+
     return 1;
 }
 

@@ -810,6 +810,10 @@ int main(int argc, char *argv[])
     mainwin.restoreGeometry(settings.value("mainwin-geometry").toByteArray());
 
     int i = app.exec();
+    // this is more or less an emergency where the system state may be
+    // goofy, like after a panic or restore operation.
+    if(DieDieDie == 1)
+        return 0;
     //dwyco_empty_trash();
     if(!Inhibit_powerclean)
         dwyco_power_clean_safe();

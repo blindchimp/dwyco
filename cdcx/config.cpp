@@ -492,13 +492,17 @@ void configform::on_restore_button_clicked()
                                 QMessageBox::Ok|QMessageBox::Cancel, QMessageBox::Cancel) == QMessageBox::Cancel)
         return;
 
-    dwyco_restore_from_backup(bufn.toLatin1().constData(), msgs_only);
-    // if we get here, something went wrong
+    if(dwyco_restore_from_backup(bufn.toLatin1().constData(), msgs_only))
+    {
+        DieDieDie = 1;
+        return;
+    }
+
 
     QMessageBox::information(this, "Restore",
                              "Restore encountered an error. Don't worry, most of it may have worked fine. Click OK to exit. Then restart CDC-X.",
                              QMessageBox::Ok);
-    exit(0);
+    DieDieDie = 1;
 }
 
 void configform::on_pals_only_clicked(bool checked)

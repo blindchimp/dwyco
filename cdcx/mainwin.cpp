@@ -4392,7 +4392,7 @@ void mainwinform::on_actionHide_triggered()
 
 void mainwinform::on_actionExit_2_triggered()
 {
-    DieDieDie = 1;
+    DieDieDie = 2;
 }
 
 

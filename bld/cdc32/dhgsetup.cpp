@@ -163,6 +163,17 @@ init_dhgdb()
 }
 
 void
+exit_dhgdb()
+{
+    if(DHG_db)
+    {
+        DHG_db->exit();
+        delete DHG_db;
+        DHG_db = 0;
+    }
+}
+
+void
 init_dhg()
 {
     if(Current_alternate)
