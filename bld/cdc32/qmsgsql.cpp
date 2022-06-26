@@ -1649,7 +1649,7 @@ sql_get_recent_users(int recent, int *total_out)
             // uid's we are not returning. this is really intended just to
             // give the user some idea of how many users are being hidden,
             // and might just as easily be a boolean.
-            vc res2 = sql_simple("select count(*) from (select 1 from gi group by assoc_uid)");
+            vc res2 = sql_simple("select count(distinct assoc_uid) from gi");
             *total_out = (long)res2[0][0];
         }
         sql_commit_transaction();
