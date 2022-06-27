@@ -837,7 +837,7 @@ int main(int argc, char *argv[])
     if(!d)
     {
 #if defined(LINUX) || defined(MAC_CLIENT)
-        QProcess::startDetached(QString("./dwycobg ") + sport);
+        QProcess::startDetached(QString("./dwycobg"), QStringList(sport));
 #else
 
         PROCESS_INFORMATION pi;
@@ -867,6 +867,14 @@ int main(int argc, char *argv[])
 #ifdef LEAK_CLEANUP
     void mainwin_leak_cleanup();
     mainwin_leak_cleanup();
+#endif
+#ifdef LINUX
+    // on linux + qt5.12, there is some problem with the exit processing, maybe having something
+    // to do with webengine that causes the "return" to just hang for seconds.
+    // as much as i hate to do this, i think flushing fd's is already
+    // done at this point, so i'm just hacking this to quit immediately.
+    //
+    _exit(0);
 #endif
     return i;
 }

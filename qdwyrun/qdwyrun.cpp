@@ -1,3 +1,13 @@
+// ca 6/2022
+// this appears to compile and work ok with qt5 now, but with the
+// new background processing, the update aspects of this are even
+// harder to justify (we'd have to figure out a way of shutting down
+// the background processing before running the update. maybe
+// putting some of this into cdcx as a "self update" mode before
+// it starts normal processing would make sense. but i'm not interested in
+// doing something that complicated for an app that is basically
+// being decommissioned.)
+//
 // note: this is a qt4 program that doesn't compile at the moment.
 // i'm not going to fix it because it is only used by CDC-X installs, and
 // i'm not sure i'm going to continue using it, as the functionality i put
@@ -333,7 +343,7 @@ qdwyrun::run_app()
     }
     proc = new QProcess;
     connect(proc, SIGNAL(started()), this, SLOT(app_started()));
-    connect(proc, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(too_quick(int, QProcess::ExitStatus)));
+    connect(proc, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(too_quick(int,QProcess::ExitStatus)));
     connect(proc, SIGNAL(error(QProcess::ProcessError)), this, SLOT(proc_error(QProcess::ProcessError)));
     run_proc(app_to_run, args);
 }
@@ -428,7 +438,7 @@ qdwyrun::run_update(QString fn)
     ui->label_2->setText("Updating CDC-X...");
 
     proc = new QProcess;
-    connect(proc, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(update_finished(int, QProcess::ExitStatus)));
+    connect(proc, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(update_finished(int,QProcess::ExitStatus)));
     connect(proc, SIGNAL(error(QProcess::ProcessError)), this, SLOT(update_error(QProcess::ProcessError)));
     run_proc(a, args);
 }
