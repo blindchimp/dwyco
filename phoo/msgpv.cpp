@@ -13,6 +13,7 @@
 #include <QImage>
 #include <QFileDevice>
 #include <QMap>
+#include <QDir>
 #include "pfx.h"
 #include "msgpv.h"
 #include "dwycolist2.h"
@@ -105,7 +106,8 @@ preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByt
             // copy file out to random user_filename, scaling to preview size
             rfn = add_pfx(Tmp_pfx, rfn);
             full_size_filename = rfn;
-            if(!dwyco_copy_out_file_zap2(mid.constData(), rfn.constData()))
+            QByteArray rfn_native = QDir::toNativeSeparators(rfn).toLatin1();
+            if(!dwyco_copy_out_file_zap2(mid.constData(), rfn_native.constData()))
                 throw 0;
             preview_fn = rfn;
         }
@@ -215,7 +217,8 @@ preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QB
             // copy file out to random user_filename, scaling to preview size
             rfn = add_pfx(Tmp_pfx, rfn);
             full_size_filename = rfn;
-            if(!dwyco_copy_out_qd_file_zap(sm, rfn.constData()))
+            QByteArray rfn_native = QDir::toNativeSeparators(rfn).toLatin1();
+            if(!dwyco_copy_out_qd_file_zap(sm, rfn_native.constData()))
                 throw 0;
 
             preview_fn = rfn;

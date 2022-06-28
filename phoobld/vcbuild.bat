@@ -1,10 +1,11 @@
 echo on
+set PATH=c:\qt\5.15.2\msvc2019\bin;%PATH%
 
 rem run this in a qt for msvc window
 
-call "c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
-
-echo on
+cd "\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build"
+call vcvarsall x86
+cd \users\dwight\dwyco
 
 set D=c:\users\dwight
 set SHADOW_NAME=%D%\build-phoo
