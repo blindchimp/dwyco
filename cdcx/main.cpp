@@ -672,6 +672,8 @@ int main(int argc, char *argv[])
     dwyco_set_setting("net/call_setup_media_select", "1");
     //dwyco_set_setting("net/force_non_firewall_friendly", "0");
     dwyco_set_setting("sync/eager", "1");
+    dwyco_set_setting("net/app_id", "phoo");
+    dwyco_set_setting("net/broadcast_port", "48903");
 
     // note: for video capture,
     // Linux & Mac ignore the setting and always uses external video
