@@ -355,7 +355,14 @@ discover_tick()
                     GRTLOG("FOUND LOCAL from %s", (const char *)peer, 0);
                     GRTLOGVC(data);
                     data[1][BD_IP] = strip_port(peer);
-                    if(!Broadcast_discoveries.contains(uid))
+                    vc new_d = data[1];
+                    vc d;
+                    if(!Broadcast_discoveries.find(uid, d) ||
+                            new_d[BD_IP] != d[BD_IP] ||
+                            new_d[BD_PRIMARY_PORT] != d[BD_PRIMARY_PORT] ||
+                            new_d[BD_SECONDARY_PORT] != d[BD_SECONDARY_PORT] ||
+                            new_d[BD_PAL_PORT] != d[BD_PAL_PORT]
+                            )
                     {
                         Broadcast_discoveries.add_kv(uid, data[1]);
                         Local_uid_discovered.emit(uid, 1);
