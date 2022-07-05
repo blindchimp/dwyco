@@ -643,6 +643,14 @@ void DWYCOEXPORT dwyco_set_channel_destroy_callback(int chan_id,
 // while it is being used under Windows
 #define DWYCO_AUTOUPDATE_IN_PROGRESS 3
 
+// NOTE: this mutex is used on windows to coordinate
+// the autoupdate and installer process. it is referenced
+// explicitly in the InnoSetup scripts, and in the
+// (completely antique) "waitwrap" exe to smooth the
+// update process. DO NOT CHANGE THIS.
+// note: this should NOT be used to try and coordinate
+// mutual exclusion between different clients using
+// the same data directories.
 #ifndef DWYCO_AUTOUPDATE_MUTEX_NAME
 #define DWYCO_AUTOUPDATE_MUTEX_NAME "dwyco cdcx mutex2"
 #endif
