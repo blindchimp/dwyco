@@ -410,6 +410,11 @@ ApplicationWindow {
         id: fname
     }
 
+    Reindex {
+        id: background_reindex
+        visible: false
+    }
+
     DwycoCore {
         id: core
         property int is_database_online: -1
@@ -421,7 +426,6 @@ ApplicationWindow {
             if(core.android_migrate === 1)
             {
                 stack.push(migrate_page)
-                //core.background_migrate()
                 return
             }
 
@@ -431,7 +435,17 @@ ApplicationWindow {
                 //stack.push(simple_msg_list)
                 //stack.push(blank_page)
                 stack.push(profile_dialog)
+                // don't need a reindex_complete
+                set_local_setting("reindex1", "1")
+
             } else {
+                a = get_local_setting("reindex1")
+                if(a === "")
+                {
+                    stack.push(background_reindex)
+                    return
+                }
+
                 init()
                 stack.push(simple_msg_list)
                 profile_bootstrapped = 1

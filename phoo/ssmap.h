@@ -11,7 +11,7 @@
 class QString;
 
 void settings_save();
-void settings_load();
+int settings_load();
 int setting_get(const QString& key, QString& out);
 int setting_put(const QString& key, const QString& value);
 

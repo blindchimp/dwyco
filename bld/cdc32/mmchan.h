@@ -110,9 +110,6 @@ public:
     // the sampler is a device that can provide
     // uncoded data. if this member is null, the
     // channel produces no original coded video
-    // (though, in the future it may be possible to
-    // use channels as reflectors, but that isn't
-    // possible now.)
     VidAcquire *sampler;
 
     // the coder member can be null, in which

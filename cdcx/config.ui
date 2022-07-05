@@ -787,7 +787,21 @@ to forward outside ports to this machine.</string>
        <string>Account</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_4">
-       <item row="10" column="0">
+       <item row="2" column="0">
+        <widget class="QPushButton" name="empty_trash">
+         <property name="text">
+          <string>Empty trash</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_21">
+         <property name="text">
+          <string>They are copied to your Documents folder.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -796,6 +810,43 @@ to forward outside ports to this machine.</string>
           <size>
            <width>20</width>
            <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="5" column="0">
+        <widget class="QCheckBox" name="disable_backups">
+         <property name="text">
+          <string>Disable Automatic Backups</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QPushButton" name="restore_button">
+         <property name="text">
+          <string>Restore from backup...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QPushButton" name="reset_backup_button">
+         <property name="toolTip">
+          <string>Creates a new full backup next time you quit the app</string>
+         </property>
+         <property name="text">
+          <string>Delete and Redo Backup</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
           </size>
          </property>
         </spacer>
@@ -823,22 +874,46 @@ to forward outside ports to this machine.</string>
          <item>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QLineEdit" name="CDC_group__alt_name"/>
+            <widget class="QLineEdit" name="CDC_group__alt_name">
+             <property name="inputMethodHints">
+              <set>Qt::ImhLatinOnly|Qt::ImhNoAutoUppercase|Qt::ImhNoPredictiveText</set>
+             </property>
+             <property name="placeholderText">
+              <string>any name you want</string>
+             </property>
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="CDC_group__join_key"/>
+            <widget class="QLineEdit" name="CDC_group__join_key">
+             <property name="echoMode">
+              <enum>QLineEdit::Password</enum>
+             </property>
+             <property name="placeholderText">
+              <string>case-insensitive string</string>
+             </property>
+             <property name="clearButtonEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
         </layout>
        </item>
-       <item row="6" column="0">
-        <widget class="QPushButton" name="reset_backup_button">
-         <property name="toolTip">
-          <string>Creates a new full backup next time you quit the app</string>
-         </property>
+       <item row="9" column="0">
+        <widget class="QCheckBox" name="sync_enable">
          <property name="text">
-          <string>Delete and Redo Backup</string>
+          <string>Enable account syncing</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="untrash">
+         <property name="text">
+          <string>PushButton</string>
          </property>
         </widget>
        </item>
@@ -867,58 +942,10 @@ to forward outside ports to this machine.</string>
          </item>
         </layout>
        </item>
-       <item row="7" column="0">
-        <widget class="QPushButton" name="restore_button">
+       <item row="10" column="0">
+        <widget class="QCheckBox" name="show_password">
          <property name="text">
-          <string>Restore from backup...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QCheckBox" name="disable_backups">
-         <property name="text">
-          <string>Disable Automatic Backups</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="untrash">
-         <property name="text">
-          <string>PushButton</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QPushButton" name="empty_trash">
-         <property name="text">
-          <string>Empty trash</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_21">
-         <property name="text">
-          <string>They are copied to your Documents folder.</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <spacer name="horizontalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="9" column="0">
-        <widget class="QCheckBox" name="sync_enable">
-         <property name="text">
-          <string>Enable account syncing</string>
+          <string>Show password</string>
          </property>
         </widget>
        </item>

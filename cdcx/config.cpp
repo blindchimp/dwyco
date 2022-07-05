@@ -492,26 +492,23 @@ void configform::on_restore_button_clicked()
                                 QMessageBox::Ok|QMessageBox::Cancel, QMessageBox::Cancel) == QMessageBox::Cancel)
         return;
 
-    dwyco_restore_from_backup(bufn.toLatin1().constData(), msgs_only);
-    // if we get here, something went wrong
+    if(dwyco_restore_from_backup(bufn.toLatin1().constData(), msgs_only))
+    {
+        DieDieDie = 1;
+        return;
+    }
+
 
     QMessageBox::information(this, "Restore",
                              "Restore encountered an error. Don't worry, most of it may have worked fine. Click OK to exit. Then restart CDC-X.",
                              QMessageBox::Ok);
-    exit(0);
+    DieDieDie = 1;
 }
 
 void configform::on_pals_only_clicked(bool checked)
 {
     if(checked)
         dwyco_field_debug("cfg-pals-only", 1);
-}
-
-void configform::on_join_clicked()
-{
-    //dwyco_set_setting("group/alt_name", ui.CDC_group__alt_name->text().toLatin1().constData());
-    //dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
-    //dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData());
 }
 
 void configform::on_sync_enable_clicked(bool checked)
@@ -521,9 +518,15 @@ void configform::on_sync_enable_clicked(bool checked)
         dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
         if(!dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData()))
         {
-            QMessageBox::information(this, "Account linking failed",
+            QMessageBox warn(QMessageBox::Warning, "Account linking failed",
                                      "Can't perform linking now, try again later.",
                                      QMessageBox::Ok);
+            warn.exec();
+        }
+        else
+        {
+            ui.CDC_group__alt_name->setReadOnly(true);
+            ui.sync_enable->setText(ui.sync_enable->text() + "(Working...)");
         }
     }
     else
@@ -536,6 +539,20 @@ void configform::on_sync_enable_clicked(bool checked)
                                      QMessageBox::Ok);
         }
         ui.CDC_group__join_key->setText("");
+        ui.CDC_group__alt_name->setReadOnly(false);
     }
 
    }
+
+void configform::on_show_password_clicked(bool checked)
+{
+    if(checked)
+    {
+        ui.CDC_group__join_key->setEchoMode(QLineEdit::Normal);
+    }
+    else
+    {
+        ui.CDC_group__join_key->setEchoMode(QLineEdit::Password);
+    }
+}
+

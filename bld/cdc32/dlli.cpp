@@ -272,6 +272,7 @@
 //
 //
 
+#include "vclhsys.h"
 #ifdef DWYCO_TRACE
 #include "dwyco_rename.h"
 #endif
@@ -1564,6 +1565,8 @@ dwyco_init()
     // the user can override by calling this itself.
     dwyco_enable_activity_checking(1, Inactivity_time, internal_activity);
     init_gj();
+    if(vclh_file_exists(newfn(MSG_IDX_DB).c_str()).is_nil())
+        reindex_possible_changes();
 #ifdef DWYCO_SYNC_DEBUG
     reindex_possible_changes();
 #endif
@@ -1635,6 +1638,8 @@ dwyco_bg_init()
     if((gm = getenv("kk27g")) != 0)
         KKG = gm;
     init_gj();
+    if(vclh_file_exists(newfn(MSG_IDX_DB).c_str()).is_nil())
+        reindex_possible_changes();
 #ifdef DWYCO_SYNC_DEBUG
     reindex_possible_changes();
 #endif
@@ -9012,6 +9017,8 @@ dwyco_remove_backup()
     DeleteFile(fn.c_str());
 }
 
+// NOTE NOTE!
+// YOU MUST EXIT IMMEDIATELY IF THIS RETURNS 1
 DWYCOEXPORT
 int
 dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
@@ -9025,8 +9032,25 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
     dfn.insert(pos + 13, "diff-");
     if(!restore_msgs(dfn.c_str(), msgs_only))
         return 0;
-
-    exit(0);
+    // this is special, we need to get out of here without
+    // any of the usual exit processing
+    // this is for windows, since we can't really delete a file
+    // of an open database
+    exit_qmsg();
+    exit_gj();
+    exit_dhgdb();
+    DeleteFile(newfn("msgs.sql").c_str());
+    // remove the group info, they can re-enter the group
+    DeleteFile(newfn("dhg.sql").c_str());
+    // this will terminate any group key protocol stuff that
+    // was in progress
+    DeleteFile(newfn("skid.sql").c_str());
+    // we'll just have to note that you MUST EXIT immediately after this.
+    // unforunately, on windows, it crashes the qt process for some
+    // reason, so i'll have to leave it to the caller to schedule
+    // a quick graceful exit.
+    return 1;
+    //exit(0);
 }
 
 // these are some functions that are called from java (via swig interface)

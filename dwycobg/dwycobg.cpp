@@ -1,17 +1,26 @@
 #include "dlli.h"
 #include <stdlib.h>
+#include <string.h>
 
 // small background app for desktop, can either be invoked to
 // finish sending queued messages then exit, or as a
 // background "sync" process to act like a server to
 // store all the messages for a given linked-device group.
+//
 // if invoked like this:
 // dwycobg <port>
-// the background process just runs sending any queued messages, then exits.
+// the background process just runs sending and receiving messages
+// in the background, performing sync services if the uid is in a group,
+// and attempting to perform desktop notifications if new messages arrive.
+//
+// dwycobg <port> exit-outq-empty
+// this is identical to the above mode, except, as soon as the output
+// message queue is empty, the process exits.
 //
 // if invoked like this:
 // dwycobg <port> <group-name> <group-pw>
-// the process enters "sync" mode.
+// the process enters "group" mode. this mode is intended to allow the
+// manipulation of the group state of the uid.
 //
 // if "group-name" is "", the background process LEAVES the existing group, then exits.
 //
@@ -54,6 +63,10 @@ main(int argc, char **argv)
     if(argc == 2)
     {
         dwyco_background_processing(port, 0, 0, 0, 0, 0);
+    }
+    else if(argc == 3 && strcmp(argv[2], "exit-outq-empty") == 0)
+    {
+        dwyco_background_processing(port, 1, 0, 0, 0, 0);
     }
     else if(argc == 4)
     {

@@ -44,9 +44,9 @@ private slots:
 
     void on_pals_only_clicked(bool checked);
 
-    void on_join_clicked();
-
     void on_sync_enable_clicked(bool checked);
+
+    void on_show_password_clicked(bool checked);
 
 signals:
     void content_filter_event(int);
