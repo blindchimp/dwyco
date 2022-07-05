@@ -818,6 +818,39 @@ remove_sync_state()
 // has been materialized here so we can investigate things.
 // once it is integrated into the main database, it could be
 // deleted.
+// oh wait, i just thought of a use for it...
+// since we changed the protocol for building gi to not have the
+// originating uid for each mid, there is a problem when a group
+// member appears to leave the group.
+// imagine a case where A and B with mostly disjoint
+// sets of mid's connect... the mid's from A union B will be stored
+// in gi. but gi doesn't know who exactly has what at this point.
+// if B disappears for good, A is left with a large index full of stuff
+// it may never be able to get, making it appear like it isn't syncing
+// right.
+// now, if we have this information, and it appears that B has left,
+// and we have queried all the other members to no avail, we could
+// exclude that mid from the list.
+//
+// one other thing we might do, if someone appears to have left
+// (maybe use the server's authoritative group membership response
+// as a cue), we just drop all sync connections, and delete
+// all the other sync info (get brand new indexes from everyone
+// currently in the group) and reinitialize gi from our existing msg_idx.
+// this is a bit more expensive, but is much more straight forward,
+// as it will clean out everything B contributed to the index, but
+// never contributed in the way of data.
+// note that if we do this, it will happen on all clients, since
+// presumably they would notice B was gone too.
+// tombstones are another issue, since we don't know who they came from.
+// maybe we can just use a heuristic like "if B's tombstones are not
+// in any other group member's list, remove them from our list."
+// though there are plenty of weird cases where if B is admitted to the
+// group, deletes mid's, disappears. we still have their tombstones with no
+// real way to decide what to do with them. i think this is a case where
+// the operation is stored, and is pretty much reflected in the data
+// until a client themselves leaves the group.
+//
 int
 import_remote_mi(vc remote_uid)
 {
