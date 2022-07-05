@@ -2565,7 +2565,7 @@ mainwinform::idle()
     {
         cdcx_set_refresh_users(0);
         //chatform2::update_chat_displays();
-        dwyco_load_users2(0, 0);
+        dwyco_load_users2(!Display_archived_users, 0);
         load_users();
         decorate_users();
         emit refresh_users();
@@ -4392,7 +4392,7 @@ void mainwinform::on_actionHide_triggered()
 
 void mainwinform::on_actionExit_2_triggered()
 {
-    DieDieDie = 1;
+    DieDieDie = 2;
 }
 
 

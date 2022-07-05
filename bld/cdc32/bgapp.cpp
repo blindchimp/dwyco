@@ -164,7 +164,7 @@ get_funny_mutex(int port)
     sap.sin_addr.s_addr = inet_addr("127.0.0.1");
     sap.sin_port = htons(port);
     int i;
-    const int tries = 100;
+    const int tries = 1000;
     for(i = 0; i < tries; ++i)
     {
         if(bind(s, (struct sockaddr *)&sap, sizeof(sap)) == -1)

@@ -71,11 +71,8 @@ int main(int argc, char *argv[])
     // things like dropbox and btsync.
     QCoreApplication::setOrganizationName("dwyco");
     QCoreApplication::setOrganizationDomain("dwyco.com");
-    // if we run one copy of a cdc-x install on multiple machines,
-    // identify the settings for the machine by local hostname.
-    // this allows for differences in devices and stuff on that host.
-    QString LocalHostName = QHostInfo::localHostName();
-    QCoreApplication::setApplicationName(QString("selfs") + LocalHostName);
+
+    QCoreApplication::setApplicationName(QString("selfs"));
     QSettings::setDefaultFormat(QSettings::IniFormat);
     // note: need to set the path to the right place, same as fn_pfx for dll
     //QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);

@@ -351,11 +351,7 @@ int main(int argc, char *argv[])
     // things like dropbox and btsync.
     QCoreApplication::setOrganizationName("dwyco");
     QCoreApplication::setOrganizationDomain("dwyco.com");
-    // if we run one copy of a cdc-x install on multiple machines,
-    // identify the settings for the machine by local hostname.
-    // this allows for differences in devices and stuff on that host.
-    QString LocalHostName = QHostInfo::localHostName();
-    QCoreApplication::setApplicationName(QString("cdc-x") + LocalHostName);
+    QCoreApplication::setApplicationName(QString("cdc-x"));
     QSettings::setDefaultFormat(QSettings::IniFormat);
     // note: need to set the path to the right place, same as fn_pfx for dll
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);
@@ -676,6 +672,8 @@ int main(int argc, char *argv[])
     dwyco_set_setting("net/call_setup_media_select", "1");
     //dwyco_set_setting("net/force_non_firewall_friendly", "0");
     dwyco_set_setting("sync/eager", "1");
+    dwyco_set_setting("net/app_id", "phoo");
+    dwyco_set_setting("net/broadcast_port", "48903");
 
     // note: for video capture,
     // Linux & Mac ignore the setting and always uses external video
@@ -814,6 +812,10 @@ int main(int argc, char *argv[])
     mainwin.restoreGeometry(settings.value("mainwin-geometry").toByteArray());
 
     int i = app.exec();
+    // this is more or less an emergency where the system state may be
+    // goofy, like after a panic or restore operation.
+    if(DieDieDie == 1)
+        return 0;
     //dwyco_empty_trash();
     if(!Inhibit_powerclean)
         dwyco_power_clean_safe();
@@ -837,7 +839,7 @@ int main(int argc, char *argv[])
     if(!d)
     {
 #if defined(LINUX) || defined(MAC_CLIENT)
-        QProcess::startDetached(QString("./dwycobg ") + sport);
+        QProcess::startDetached(QString("./dwycobg"), QStringList(sport));
 #else
 
         PROCESS_INFORMATION pi;
@@ -867,6 +869,14 @@ int main(int argc, char *argv[])
 #ifdef LEAK_CLEANUP
     void mainwin_leak_cleanup();
     mainwin_leak_cleanup();
+#endif
+#ifdef LINUX
+    // on linux + qt5.12, there is some problem with the exit processing, maybe having something
+    // to do with webengine that causes the "return" to just hang for seconds.
+    // as much as i hate to do this, i think flushing fd's is already
+    // done at this point, so i'm just hacking this to quit immediately.
+    //
+    _exit(0);
 #endif
     return i;
 }

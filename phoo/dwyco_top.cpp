@@ -986,7 +986,9 @@ setup_locations()
     QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
     QFile::copy(":androidinst2/assets/zap.wav", userdir + "zap.wav");
 #endif
-    dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
+    QString native_userdir = QDir::toNativeSeparators(userdir);
+    QString native_tmp = QDir::toNativeSeparators(userdir + "tmp/");
+    dwyco_set_fn_prefixes(native_userdir.toLatin1().constData(), native_userdir.toLatin1().constData(), native_tmp.toLatin1().constData());
     // can't do this call until prefixes are set since it wants to init the log file
     dwyco_trace_init();
     {
@@ -998,15 +1000,21 @@ setup_locations()
         int len_tmp = sizeof(tmp);
 
         dwyco_get_fn_prefixes(sys, &len_sys, user, &len_user, tmp, &len_tmp);
-        Sys_pfx = QByteArray(sys, len_sys - 1);
-        User_pfx = QByteArray(user, len_user - 1);
-        Tmp_pfx = QByteArray(tmp, len_tmp - 1);
-        if(Sys_pfx.length() == 0)
+        Sys_pfx_native = QByteArray(sys, len_sys - 1);
+        User_pfx_native = QByteArray(user, len_user - 1);
+        Tmp_pfx_native = QByteArray(tmp, len_tmp - 1);
+        if(Sys_pfx_native.length() == 0)
             Sys_pfx = ".";
-        if(User_pfx.length() == 0)
+        else
+            Sys_pfx = QDir::fromNativeSeparators(Sys_pfx_native).toLatin1();
+        if(User_pfx_native.length() == 0)
             User_pfx = ".";
-        if(Tmp_pfx.length() == 0)
+        else
+            User_pfx = QDir::fromNativeSeparators(User_pfx_native).toLatin1();
+        if(Tmp_pfx_native.length() == 0)
             Tmp_pfx = ".";
+        else
+            Tmp_pfx = QDir::fromNativeSeparators(Tmp_pfx_native).toLatin1();
 
     }
 
@@ -2698,7 +2706,8 @@ send_contact_query(QList<QString> emails)
 {
     QByteArray fn = add_pfx(Tmp_pfx, random_fn());
     save_it(emails, fn.constData());
-    int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
+    QByteArray fn_native = QDir::toNativeSeparators(fn).toLatin1();
+    int compid = dwyco_make_file_zap_composition(fn_native.constData(), fn_native.length());
     if(compid == 0)
         return;
 
@@ -2752,6 +2761,7 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
     QByteArray txt = msg.toUtf8();
     QByteArray fn = filename.toLatin1();
+    QByteArray fn_native = QDir::toNativeSeparators(filename).toLatin1();
 
     // if for some reason we can't strip out the exif stuff, then
     // don't send the image. it could be that it isn't a jpg file or something
@@ -2777,8 +2787,8 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     dest = add_pfx(Tmp_pfx, dest);
     f.copy(dest);
     f.remove();
-
-    int compid = dwyco_make_file_zap_composition(dest.constData(), dest.length());
+    QByteArray dest_native = QDir::toNativeSeparators(dest).toLatin1();
+    int compid = dwyco_make_file_zap_composition(dest_native.constData(), dest_native.length());
     if(compid == 0)
     {
         QFile::remove(dest);
@@ -2827,8 +2837,8 @@ DwycoCore::send_report(QString uid)
     }
     dwyco::init_netlog();
 
-
-    int compid = dwyco_make_file_zap_composition(target.constData(), target.length());
+    QByteArray target_native = QDir::toNativeSeparators(target).toLatin1();
+    int compid = dwyco_make_file_zap_composition(target_native.constData(), target_native.length());
     if(compid == 0)
     {
         QFile::remove(target);

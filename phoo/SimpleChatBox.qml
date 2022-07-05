@@ -789,8 +789,8 @@ Page {
                     fillMode: Image.PreserveAspectFit
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
-                    //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                    source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
+                    source: { PREVIEW_FILENAME != "" ? ("file:///" + PREVIEW_FILENAME) :
+                    //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
                     asynchronous: true
@@ -901,7 +901,9 @@ Page {
                             themsgview.uid = to_uid
                             themsgview.text_bg_color = ditem.color
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file://" + String(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file:///" + model.PREVIEW_FILENAME)
+
+                                // PREVIEW_FILENAME != "" ? ("file:///" + PREVIEW_FILENAME) :
                                 stack.push(themsgview)
                             }
                             else {

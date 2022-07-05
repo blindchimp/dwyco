@@ -79,7 +79,7 @@ static init_settings Initial_settings[] =
 
     DWUIDECLVAL(VC_BSTRING, group/alt_name, "", 0),
     // the "join key" is simply the key used for encrypting join messages.
-    // this protects the group private key. it isn't recorded anywhere
+    // this protects the group private key in flight. it isn't recorded anywhere
     // on the server or anything, this is just something a potential
     // group joiner needs to have in order to request the group private key.
     DWUIDECLVAL(VC_BSTRING, group/join_key, "", 0),
