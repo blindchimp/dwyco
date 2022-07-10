@@ -65,6 +65,15 @@ Page {
         spacing: mm(1)
         visible: !quitnow
         Label {
+            id: helpme
+            text: "<a href=\"https://www.dwyco.net/general-5\">What is account linking?</a>"
+            textFormat: Text.RichText
+            onLinkActivated: {
+                Qt.openUrlExternally(link)
+            }
+        }
+
+        Label {
             id: failed
             text: "Linking failed.\nTry using a different account name or PIN."
             visible: show_failed
