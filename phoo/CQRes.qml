@@ -76,30 +76,50 @@ Page {
             text: qsTr("PRIVACY NOTE: We DO NOT keep a copy of your contact list. Click the PRIVACY button for more details.")
             horizontalAlignment: Text.AlignHCenter
         }
+        TextFieldX {
+            id: single_email
+            placeholder_text: "Enter Email to search for"
+            inputMethodHints: Qt.ImhEmailCharactersOnly
+            visible: !is_mobile
+        }
+
         Button {
             Layout.alignment: Qt.AlignCenter
-            text: "Send Email Contacts Securely"
+            text: is_mobile ? "Send Email Contacts Securely" : "Search for email"
             onClicked: {
                 core.delete_cq_results()
-                if(core.load_contacts() === 0) {
-                    // permission denied
-                    return;
-                }
+                if(is_mobile)
+                {
+                    if(core.load_contacts() === 0) {
+                        // permission denied
+                        return;
+                    }
 
-                user_model.load_users_to_model()
-                if(user_model.count > 0) {
+                    user_model.load_users_to_model()
+                    if(user_model.count > 0) {
+                        user_model.send_query()
+                        query_in_progress = 1
+                        query_succeeded = 0
+                        core.set_local_setting("cq-in-progress", "1")
+                        core.set_local_setting("cq-succeeded", "0")
+                        no_contacts = false
+                    } else {
+                        query_in_progress = 0
+                        query_succeeded = 0
+                        core.set_local_setting("cq-in-progress", "0")
+                        core.set_local_setting("cq-succeeded", "0")
+                        no_contacts = true
+                    }
+                }
+                else
+                {
+                    user_model.set_model_to_single_email(single_email.text_input)
                     user_model.send_query()
                     query_in_progress = 1
                     query_succeeded = 0
                     core.set_local_setting("cq-in-progress", "1")
                     core.set_local_setting("cq-succeeded", "0")
                     no_contacts = false
-                } else {
-                    query_in_progress = 0
-                    query_succeeded = 0
-                    core.set_local_setting("cq-in-progress", "0")
-                    core.set_local_setting("cq-succeeded", "0")
-                    no_contacts = true
                 }
             }
             enabled: query_in_progress === 0
@@ -186,25 +206,36 @@ Page {
                     onTriggered: {
                         core.delete_cq_results()
                         cq_res_model.load_from_cq_file()
-                        if(core.load_contacts() === 0) {
-                            return
-                        }
+                        if(is_mobile)
+                        {
+                            if(core.load_contacts() === 0) {
+                                return
+                            }
 
-                        user_model.load_users_to_model()
-                        if(user_model.count > 0) {
-                            user_model.send_query()
-                            query_in_progress = 1
-                            query_succeeded = 0
-                            core.set_local_setting("cq-in-progress", "1")
-                            core.set_local_setting("cq-succeeded", "0")
-                            no_contacts = false
-                        } else {
+                            user_model.load_users_to_model()
+                            if(user_model.count > 0) {
+                                user_model.send_query()
+                                query_in_progress = 1
+                                query_succeeded = 0
+                                core.set_local_setting("cq-in-progress", "1")
+                                core.set_local_setting("cq-succeeded", "0")
+                                no_contacts = false
+                            } else {
+                                query_in_progress = 0
+                                query_succeeded = 0
+                                core.set_local_setting("cq-in-progress", "0")
+                                core.set_local_setting("cq-succeeded", "0")
+                                no_contacts = true
+
+                            }
+                        }
+                        else
+                        {
+                            single_email.text_input = ""
                             query_in_progress = 0
                             query_succeeded = 0
                             core.set_local_setting("cq-in-progress", "0")
                             core.set_local_setting("cq-succeeded", "0")
-                            no_contacts = true
-
                         }
                     }
                 }

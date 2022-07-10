@@ -455,10 +455,6 @@ ApplicationWindow {
 
     }
 
-    ContactList {
-        id: contact_list
-        visible: false
-    }
 
     Loader {
         id: cqres
