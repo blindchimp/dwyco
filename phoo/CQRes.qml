@@ -246,7 +246,7 @@ Page {
                     Layout.margins: mm(.125)
                     Connections {
                         target: core
-                        onSys_uid_resolved : {
+                        function onSys_uid_resolved(uid) {
                             if(uid === model.uid) {
                                 preview.source = core.uid_profile_regular(uid) ? core.uid_to_profile_preview(uid) : ""
                             }
@@ -269,7 +269,7 @@ Page {
                         elide: Text.ElideRight
                         Connections {
                             target: core
-                            onSys_uid_resolved : {
+                            function onSys_uid_resolved(uid) {
                                 if(uid === model.uid) {
                                     nm.text = core.uid_profile_regular(uid) ? core.uid_to_profile_info(uid, DwycoCore.HANDLE) : "<<hidden>>"
                                 }
@@ -298,7 +298,7 @@ Page {
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         Connections {
                             target: core
-                            onSys_uid_resolved : {
+                            function onSys_uid_resolved(uid) {
                                 if(uid === model.uid) {
                                     desc.text = core.uid_profile_regular(uid) ? core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION) : "<<hidden>>"
                                 }
@@ -338,8 +338,26 @@ Page {
 
     Component.onCompleted: {
         cqres_top.uid_selected.connect(top_dispatch.uid_selected)
-        query_in_progress = parseInt(core.get_local_setting("cq-in-progress"))
-        query_succeeded = parseInt(core.get_local_setting("cq-succeeded"))
+        var q = core.get_local_setting("cq-in-progress")
+        if(q === "")
+        {
+            query_in_progress = 0
+            core.set_local_setting("cq-in-progress", "0")
+        }
+        else
+        {
+            query_in_progress = parseInt(core.get_local_setting("cq-in-progress"))
+        }
+        q = core.get_local_setting("cq-succeeded")
+        if(q === "")
+        {
+            query_succeeded = 0;
+            core.set_local_setting("cq-succeeded", "0")
+        }
+        else
+        {
+            query_succeeded = parseInt(core.get_local_setting("cq-succeeded"))
+        }
         cq_res_model.load_from_cq_file()
     }
 
