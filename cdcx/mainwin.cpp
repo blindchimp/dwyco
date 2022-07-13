@@ -2736,7 +2736,7 @@ mainwinform::load_users()
             if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                 cdcxpanic("wtf5");
             QString info = dwyco_info_to_display(uid);
-            QVariant disp_name = umodel->data(ql[0]);
+            auto disp_name = umodel->data(ql[0]).toString();
             if(info == disp_name)
                 continue;
             else
@@ -2784,7 +2784,7 @@ mainwinform::load_users()
             if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                 cdcxpanic("wtf5");
             QString info = dwyco_info_to_display(uid);
-            QVariant disp_name = umodel->data(ql[0]);
+            auto disp_name = umodel->data(ql[0]).toString();
             if(info == disp_name)
                 continue;
             else
@@ -2827,7 +2827,7 @@ mainwinform::load_users()
                 if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                     cdcxpanic("wtf5");
                 QString info = dwyco_info_to_display(uid);
-                QVariant disp_name = umodel->data(ql[0]);
+                auto disp_name = umodel->data(ql[0]).toString();
                 if(info == disp_name)
                     continue;
                 else
@@ -2868,7 +2868,7 @@ mainwinform::load_users()
                 if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                     cdcxpanic("wtf5");
                 QString info = dwyco_info_to_display(uid);
-                QVariant disp_name = umodel->data(ql[0]);
+                auto disp_name = umodel->data(ql[0]).toString();
                 if(info == disp_name)
                     continue;
                 else
