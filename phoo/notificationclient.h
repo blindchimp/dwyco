@@ -66,6 +66,7 @@ public slots:
     void log_event2(QString name, QString method);
     void set_user_property(QString name, QString value);
     void set_lastrun();
+    void share_to_mediastore(QString filename);
 
 private:
     QString m_notification;

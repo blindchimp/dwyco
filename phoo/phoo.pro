@@ -14,7 +14,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"3.31\\\"\"
+DEFINES += BUILDTIME=\"\\\"3.32\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -343,7 +343,7 @@ equals(QMAKE_HOST.os, Darwin) {
 message(MACOS)
 include(/Users/dwight/android/astudio/android_openssl/openssl.pri)
 } else {
-include(/home/dwight/android/astudio/android_openssl/openssl.pri)
+include(/home/dwight/Android/Sdk/android_openssl/openssl.pri)
 }
 #LIBS += \
 #$${D}/libcdc32.a \
@@ -510,5 +510,6 @@ DISTFILES += \
     androidinst2/gradle/wrapper/gradle-wrapper.properties \
     androidinst2/gradlew \
     androidinst2/gradlew.bat \
-    androidinst2/res/values/libs.xml
+    androidinst2/res/values/libs.xml \
+    androidinst2/res/xml/provider_paths.xml
 
