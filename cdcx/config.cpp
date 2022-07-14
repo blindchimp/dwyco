@@ -397,8 +397,8 @@ void configform::on_reset_backup_button_clicked()
                        "Your backup has been reset. "
                        "A new backup will be created the next time you exit CDC-X (unless you have "
                        "disabled backups.)",
-                       QMessageBox::Ok);
-    msgBox.setWindowFlags(Qt::WindowStaysOnTopHint);
+                       QMessageBox::Ok, this);
+    msgBox.setWindowFlag(Qt::WindowStaysOnTopHint, true);
     int ret = msgBox.exec();
 
 }

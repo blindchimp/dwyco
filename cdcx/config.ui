@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>528</width>
-    <height>509</height>
+    <height>511</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -897,7 +897,7 @@ to forward outside ports to this machine.</string>
               <set>Qt::ImhLatinOnly|Qt::ImhNoAutoUppercase|Qt::ImhNoPredictiveText</set>
              </property>
              <property name="placeholderText">
-              <string>any name you want</string>
+              <string>eg. dave45</string>
              </property>
              <property name="clearButtonEnabled">
               <bool>true</bool>
@@ -910,7 +910,7 @@ to forward outside ports to this machine.</string>
               <enum>QLineEdit::Password</enum>
              </property>
              <property name="placeholderText">
-              <string>case-insensitive string</string>
+              <string>eg. notpassword123</string>
              </property>
              <property name="clearButtonEnabled">
               <bool>true</bool>
