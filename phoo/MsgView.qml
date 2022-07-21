@@ -238,10 +238,17 @@ Page {
                     }
 
                     var export_name = core.export_attachment(mid)
-                    if(export_name.length > 0)
-                        export_result = "Saved to " + export_name
-                    else
+                    if(export_name.length > 0) {
+                        export_result = "Saved to " + export_name.substring(export_name.lastIndexOf('/') + 1)
+                        if(Qt.platform.os == "android") {
+                            notificationClient.share_to_mediastore(export_name)
+                        } else {
+
+                        }
+                    }
+                    else {
                         export_result = "FAILED save "
+                    }
                     toast_opacity.stop()
                     toast_opacity.start()
                 }

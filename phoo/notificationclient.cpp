@@ -34,6 +34,7 @@
 #include "notificationclient.h"
 
 #include <QtAndroidExtras/QAndroidJniObject>
+#include <QtAndroidExtras>
 
 NotificationClient::NotificationClient(QObject *parent)
     : QObject(parent)
@@ -171,6 +172,20 @@ NotificationClient::set_user_property(QString name, QString value)
 }
 
 void
+NotificationClient::share_to_mediastore(QString filename)
+{
+    QAndroidJniObject jname = QAndroidJniObject::fromString(filename);
+
+
+    QAndroidJniObject::callStaticMethod<void>("com/dwyco/android/NotificationClient",
+                                              "notifyMediaStoreScanner",
+                                              "(Ljava/lang/String;)V",
+
+                                              jname.object<jstring>()
+                                              );
+}
+
+void
 NotificationClient::load_contacts()
 {
     QAndroidJniObject::callStaticMethod<void>(
@@ -183,6 +198,14 @@ NotificationClient::load_contacts()
 void
 NotificationClient::open_image()
 {
+    if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+    {
+        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+        if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        {
+            return;
+        }
+    }
     QAndroidJniObject::callStaticMethod<void>(
         "com/dwyco/android/NotificationClient",
         "openAnImage"

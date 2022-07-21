@@ -653,7 +653,7 @@ simple_call::signal_dispatcher()
     if(sig_idx == -1)
         return;
     QMetaMethod mm = metaObject()->method(sig_idx);
-    // here we see if there is an matching signal with a uid
+    // here we see if there is a matching signal with a uid
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
@@ -669,7 +669,7 @@ simple_call::signal_dispatcher_int(int i)
     if(sig_idx == -1)
         return;
     QMetaMethod mm = metaObject()->method(sig_idx);
-    // here we see if there is an matching signal with a uid
+    // here we see if there is a matching signal with a uid
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
@@ -686,7 +686,7 @@ simple_call::signal_dispatcher_bool(bool i)
     if(sig_idx == -1)
         return;
     QMetaMethod mm = metaObject()->method(sig_idx);
-    // here we see if there is an matching signal with a uid
+    // here we see if there is a matching signal with a uid
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
@@ -703,7 +703,7 @@ simple_call::signal_dispatcher_string(QString i)
     if(sig_idx == -1)
         return;
     QMetaMethod mm = metaObject()->method(sig_idx);
-    // here we see if there is an matching signal with a uid
+    // here we see if there is a matching signal with a uid
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
