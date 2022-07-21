@@ -580,7 +580,7 @@ public static void set_user_property(String name, String value) {
             Log.e(TAG, "file doesn't exist");
             throw new IOException("file to share doesn't exist");
         }
-        cacheImageUri = FileProvider.getUriForFile(mContext, "com.dwyco.rando.provider", f);
+        cacheImageUri = FileProvider.getUriForFile(mContext, DwycoApp.file_provider, f);
         Uri newImageUri = createImageInMediaStore(mContext, cacheImageUri);
         ContentResolver resolver = mContext
                 .getContentResolver();

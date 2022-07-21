@@ -266,6 +266,12 @@ ApplicationWindow {
                 color: "red"
 
             }
+            Label {
+                text: "Archived " + (core.total_users - ConvListModel.count).toString()
+                visible: core.total_users > ConvListModel.count
+                color: "red"
+            }
+
             Item {
                 Layout.fillWidth: true
             }
@@ -464,10 +470,6 @@ ApplicationWindow {
 
     }
 
-    ContactList {
-        id: contact_list
-        visible: false
-    }
 
     Loader {
         id: cqres

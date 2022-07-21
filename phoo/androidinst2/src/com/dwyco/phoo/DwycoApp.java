@@ -16,6 +16,10 @@ public class DwycoApp {
         final public static String lock_shared_prefs = "com.dwyco.phoo.prefs";
 	// name of shared preferences
         final public static String shared_prefs = "phoo";
+	// name of file provider for sharing files into the mediastore
+	// warning! there is a bunch of other stupid glue in res/xml/provider_paths.xml
+	// and  AndroidManifest.xml <provider... yada> needed to get this working.
+	final public static String file_provider = "com.dwyco.phoo.provider";
 	// notification message to use when a msg has been downloaded in the
 	// background and is available immediately
         final public static String new_received = "New msg received";

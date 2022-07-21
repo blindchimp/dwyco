@@ -53,6 +53,7 @@ Pane {
                     text: {
 
                         (core.is_database_online === 0 ? "" : "Online ")
+                                + (SyncDescModel.connection_count === 0 ? "" : "Syncing ")
                                 + (core.invisible ? "(Invisible)" : "")
                     }
                     color: "white"

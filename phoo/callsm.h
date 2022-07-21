@@ -113,7 +113,7 @@ signals:
     void connect_established();
     void connect_failed();
     void connect_terminated();
-    void connect_terminated(QByteArray uid);
+    //void connect_terminated(QByteArray uid);
     void connect_already_exists();
 
     // signals for call setup/screening

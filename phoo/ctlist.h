@@ -47,6 +47,7 @@ public:
 
     Q_INVOKABLE void toggle_selected(int r);
     Q_INVOKABLE void send_query();
+    Q_INVOKABLE void set_model_to_single_email(const QString& email);
 
 public slots:
     void decr_selected_count(QObject*);

@@ -65,6 +65,15 @@ Page {
         spacing: mm(1)
         visible: !quitnow
         Label {
+            id: helpme
+            text: "<a href=\"https://www.dwyco.net/general-5\">What is account linking?</a>"
+            textFormat: Text.RichText
+            onLinkActivated: {
+                Qt.openUrlExternally(link)
+            }
+        }
+
+        Label {
             id: failed
             text: "Linking failed.\nTry using a different account name or PIN."
             visible: show_failed
@@ -111,7 +120,7 @@ Page {
         TextFieldX {
             id: group_name
             text_input: !enabled ? core.active_group_name : ""
-            placeholder_text: "Account name (it can be anything you want)"
+            placeholder_text: "Account name (4+ chars, e.g. jane@mumble)"
             visible: !group_active
             inputMethodHints: Qt.ImhNoPredictiveText|Qt.ImhLowercaseOnly
             Layout.fillWidth: true
@@ -123,7 +132,7 @@ Page {
         TextFieldX {
             id: group_pw
             text_input: ""
-            placeholder_text: "Enter secret PIN (at least 4 digits)"
+            placeholder_text: "Account entry password (4+ chars, e.g. notpassword123)"
             inputMethodHints: Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText | Qt.ImhSensitiveData //Qt.ImhDigitsOnly
             visible: !group_active && !show_pin_layout.visible
             Layout.fillWidth: true
@@ -134,7 +143,7 @@ Page {
             visible: group_active || requesting.visible
             Button {
                 id: show_pin
-                text: "Show PIN"
+                text: "Show password"
                 checkable: true
                 Layout.alignment: Qt.AlignVCenter
             }
@@ -157,7 +166,7 @@ Page {
             }
 
             visible: !(group_active || requesting.visible)
-            enabled: up_and_running //&& group_pw.text_input.length >= 3 && group_name.text_input.length > 4
+            enabled: up_and_running && group_pw.text_input.length >= 3 && group_name.text_input.length >= 4
             Layout.fillWidth: true
         }
         Switch {
