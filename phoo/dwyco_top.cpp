@@ -52,7 +52,6 @@
 #include "v4lcapexp.h"
 //#include "esdaudin.h"
 #include "audi_qt.h"
-#include "aextsdl.h"
 #include "audo_qt.h"
 #endif
 #if defined(DWYCO_IOS) || defined(MAC_CLIENT)
@@ -901,6 +900,119 @@ DwycoCore::name_to_uid(QString handle)
     dwyco_name_to_uid(b.constData(), b.length());
 }
 
+// if they installed externally, copy the files in to the local
+// app storage, and rename the data folder.
+// this should only need to be done once, and the process should be
+// exited immediately after doing the dir name swap
+//
+// both dirs should be absolute paths (this appears to be ok with current
+// version of android)
+// src_dir will be something like '/storage/emulated/yada/.../Documents'
+// target_pfx should be something for the internal storage for the app, usually
+// like '/data/com.dwyco.rando/yada/files'
+// the files from src_dir are recursively copied into "target_pfx" + "/upg/"
+// and the migration should rename "upg" to dwyco/rando as if doing
+// mv "target"+ "dwyco" "target" + "dwyco.old", in case it got created before
+// if "dwyco.old" already exists, try dwyco.old2, etc. only try a few before giving up.
+// mkdir target/rando
+// mv target/upg target/dwyco/rando
+//
+static
+void
+one_time_migrate(const QString& src_dir, const QString& target_pfx)
+{
+    QDirIterator di(src_dir, QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDirIterator::Subdirectories);
+    //QString target_pfx = "/home/dwight/Downloads/";
+    while(di.hasNext())
+    {
+        QString sfn = di.next();
+        QString dfn = sfn;
+        int i = dfn.indexOf("dwyco/phoo");
+        if(i != -1)
+        {
+            dfn.remove(0, i + 11);
+            dfn.prepend("/");
+            dfn.prepend(target_pfx);
+            QString path = dfn;
+            path.truncate(path.lastIndexOf("/"));
+            //printf("%s\n", path.toLatin1().constData());
+            QDir d(path);
+            d.mkpath(path);
+        }
+        //printf("%s %s\n", sfn.toLatin1().constData(), dfn.toLatin1().constData());
+        QFile::copy(sfn, dfn);
+    }
+}
+
+void
+DwycoCore::one_time_copy_files()
+{
+    QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    src += "/dwyco/phoo";
+    QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    dst += "/dwyco/upg";
+    one_time_migrate(src, dst);
+    //QThread::sleep(10);
+}
+
+void
+DwycoCore::background_migrate()
+{
+    // sigh, this won't compile with android ndk's up to 23.2
+    //QThread *q = QThread::create(DwycoCore::one_time_copy_files);
+    auto q = new fuck_me_with_a_brick;
+    connect(q, SIGNAL(finished()), this, SIGNAL(migration_complete()));
+    q->start();
+}
+
+void
+DwycoCore::background_reindex()
+{
+    auto q = new fuck_me_with_a_brick2;
+    connect(q, SIGNAL(finished()), this, SIGNAL(reindex_complete()));
+    q->start();
+}
+
+void
+DwycoCore::do_reindex()
+{
+    dwyco_init();
+    dwyco_exit();
+    //QThread::sleep(10);
+}
+
+void
+DwycoCore::directory_swap()
+{
+    // note: we update the User_pfx so we can update the settings file to
+    // flag that it has been migrated.
+    // then rename the "upg" to "rando"
+    QString src = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    src += "/dwyco/upg";
+    QDir dsrc(src);
+    if(!dsrc.exists())
+        return;
+    // if the target already exists, it might be a partial migration, try to get
+    // rid of it
+    QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    dst += "/dwyco/rando";
+    QDir ddst(dst);
+    if(ddst.exists())
+    {
+        int i;
+        for(i = 0; i < 10; ++i)
+            if(ddst.rename(dst, dst + "." + QString::number(i)))
+                break;
+        if(i == 10)
+            return;
+    }
+    User_pfx = src.toUtf8();
+    settings_load();
+    setting_put("android-migrate", "done");
+    if(!dsrc.rename(src, dst))
+        cdcxpanic("failed migration");
+
+}
 static
 void
 setup_locations()
