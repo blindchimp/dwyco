@@ -55,6 +55,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, group_private_key_valid)
 
     QML_READONLY_VAR_PROPERTY(bool, invisible)
+    QML_READONLY_VAR_PROPERTY(int, android_migrate)
 
 
 public:
