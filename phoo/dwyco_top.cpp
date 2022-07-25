@@ -1102,8 +1102,8 @@ static
 void
 setup_locations()
 {
-    //QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
-QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
+    QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
+//QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
     //DwycoCore::Android_migrate = 1;
 #ifdef ANDROID
     filepath = determine_android_migration();
