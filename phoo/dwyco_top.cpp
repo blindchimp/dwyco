@@ -108,6 +108,8 @@ extern int HasCamera;
 extern int HasCamHardware;
 static QNetworkAccessManager *Net_access;
 
+int DwycoCore::Android_migrate;
+
 // kluge
 QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
 
@@ -909,13 +911,13 @@ DwycoCore::name_to_uid(QString handle)
 // version of android)
 // src_dir will be something like '/storage/emulated/yada/.../Documents'
 // target_pfx should be something for the internal storage for the app, usually
-// like '/data/com.dwyco.rando/yada/files'
+// like '/data/com.dwyco.phoo/yada/files'
 // the files from src_dir are recursively copied into "target_pfx" + "/upg/"
-// and the migration should rename "upg" to dwyco/rando as if doing
+// and the migration should rename "upg" to dwyco/phoo as if doing
 // mv "target"+ "dwyco" "target" + "dwyco.old", in case it got created before
 // if "dwyco.old" already exists, try dwyco.old2, etc. only try a few before giving up.
-// mkdir target/rando
-// mv target/upg target/dwyco/rando
+// mkdir target/phoo
+// mv target/upg target/dwyco/phoo
 //
 static
 void
@@ -986,7 +988,7 @@ DwycoCore::directory_swap()
 {
     // note: we update the User_pfx so we can update the settings file to
     // flag that it has been migrated.
-    // then rename the "upg" to "rando"
+    // then rename the "upg" to "phoo"
     QString src = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     src += "/dwyco/upg";
     QDir dsrc(src);
@@ -995,7 +997,7 @@ DwycoCore::directory_swap()
     // if the target already exists, it might be a partial migration, try to get
     // rid of it
     QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    dst += "/dwyco/rando";
+    dst += "/dwyco/phoo";
     QDir ddst(dst);
     if(ddst.exists())
     {
@@ -1013,13 +1015,98 @@ DwycoCore::directory_swap()
         cdcxpanic("failed migration");
 
 }
+
+#ifdef ANDROID
+static
+QStandardPaths::StandardLocation
+determine_android_migration()
+{
+    QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
+
+    QString localdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    localdir += "/dwyco/phoo/";
+    User_pfx = localdir.toUtf8();
+    if(!settings_load())
+    {
+        // either new or they have something in documents that needs to be migrated
+        QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        src += "/dwyco/phoo";
+        User_pfx = src.toUtf8();
+
+        bool check_for_update = false;
+
+        if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        {
+            // if they let us, check if there is anything out there
+            QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+            if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+            {
+
+            }
+            else
+            {
+                check_for_update = true;
+            }
+        }
+        else
+            check_for_update = true;
+
+        if(check_for_update && settings_load())
+        {
+            // do the migration
+            if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+            {
+                // we aren't going anywhere without being able to setup our state
+                QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
+                if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                {
+                    // this needs to be thought out a little more... if you deny this, you can't
+                    // access your photos on the device easily. maybe need to just request "read"
+                    // in this case.
+                    filepath = QStandardPaths::AppDataLocation;
+                }
+                else
+                {
+                    filepath = QStandardPaths::DocumentsLocation;
+                    DwycoCore::Android_migrate = 1;
+                }
+                if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                {
+                    // we aren't going anywhere without being able to setup our state
+                    QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+                    if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                    {
+                        // can't do migration, we'll probably crash soon since we won't be able to get
+                        // access to documents location.
+                    }
+                    else
+                    {
+                        filepath = QStandardPaths::DocumentsLocation;
+                        DwycoCore::Android_migrate = 1;
+                    }
+                }
+
+            }
+            else
+            {
+                filepath = QStandardPaths::DocumentsLocation;
+                DwycoCore::Android_migrate = 1;
+            }
+        }
+    }
+    return filepath;
+}
+#endif
+
 static
 void
 setup_locations()
 {
-    QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
+    //QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
+QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
+    //DwycoCore::Android_migrate = 1;
 #ifdef ANDROID
-    filepath = QStandardPaths::AppDataLocation;
+    filepath = determine_android_migration();
 #endif
     //
     QStringList args = QGuiApplication::arguments();

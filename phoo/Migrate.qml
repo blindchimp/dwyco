@@ -79,17 +79,16 @@ Rectangle {
             }
             visible: busy.running
         }
-
-        BusyIndicator {
-            id: busy
-            running: migration_in_progress && !migration_done
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.verticalCenter: parent.verticalCenter
-        }
         Item {
             Layout.fillHeight: true
         }
 
+    }
+    BusyIndicator {
+        id: busy
+        running: migration_in_progress && !migration_done
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
     }
 
 }

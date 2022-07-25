@@ -81,6 +81,7 @@ public:
         m_eager_pull = 0;
         m_any_unviewed = false;
         m_invisible = false;
+        m_android_migrate = Android_migrate;
     }
     static QByteArray My_uid;
     static int Android_migrate;

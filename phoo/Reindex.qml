@@ -74,16 +74,16 @@ Rectangle {
             visible: busy.running
         }
 
-        BusyIndicator {
-            id: busy
-            running: reindex_in_progress && !reindex_done
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.verticalCenter: parent.verticalCenter
-        }
         Item {
             Layout.fillHeight: true
         }
 
+    }
+    BusyIndicator {
+        id: busy
+        running: reindex_in_progress && !reindex_done
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
     }
 
 }
