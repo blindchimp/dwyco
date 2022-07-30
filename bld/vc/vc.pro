@@ -12,6 +12,9 @@ DEFINES += UNIX
 QMAKE_CXXFLAGS += #-fpermissive
 #QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder
 }
+win32 {
+DEFINES += _CRT_NO_POSIX_ERROR_CODES
+}
 
 equals(LH_INTERPRETER, 1) {
 # note: this simple lookup caching works, but is only really

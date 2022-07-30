@@ -13,8 +13,9 @@
 #include "aqext.h"
 #include "dlli.h"
 #include "vc.h"
+#include "ezset.h"
 
-//using namespace dwyco;
+using namespace dwyco;
 
 extern DwycoVVCallback dwyco_vidacq_new;
 extern DwycoVVCallback dwyco_vidacq_delete;
