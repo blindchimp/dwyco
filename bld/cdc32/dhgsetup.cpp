@@ -12,14 +12,12 @@
 #endif
 
 #include "vc.h"
-#include "xinfo.h"
 #include "dwrtlog.h"
 #include "qauth.h"
 #include "vcudh.h"
 #include "dhgsetup.h"
 #include "simplesql.h"
 #include "sha3.h"
-#include "rng.h"
 #include "aes.h"
 #include "modes.h"
 #include "simple_property.h"

@@ -297,11 +297,9 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "dirth.h"
 #include "qauth.h"
 #include "vccrypt2.h"
-#include "msgdisp.h"
 #include "mcc.h"
 #include "aqkey.h"
 #include "chatdisp.h"
-#include "pbmcfg.h"
 #include "qdirth.h"
 
 #include "vccomp.h"
@@ -311,17 +309,11 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "codec.h"
 #include "filetube.h"
 
-#define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
-#include "md5.h"
 #include "sha.h"
 using namespace CryptoPP;
-using namespace Weak;
-#include "filters.h"
-#include "files.h"
 #include "autoup.h"
 #include "fnmod.h"
 #include "profiledb.h"
-#include "msgddll.h"
 #include "callq.h"
 #include "mmcall.h"
 #include "calldll.h"

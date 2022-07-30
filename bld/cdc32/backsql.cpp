@@ -33,20 +33,16 @@
 #include "qmsg.h"
 #include "vc.h"
 #include "xinfo.h"
-#include "se.h"
-#include "filetube.h"
 #include "sepstr.h"
 #include "sqlbq.h"
-#include "sha3.h"
 #include "backsql.h"
-#include "sepstr.h"
 #include "ser.h"
 #include "profiledb.h"
 #include "qmsgsql.h"
 
 #include "ta.h"
 
-using namespace CryptoPP;
+//using namespace CryptoPP;
 
 namespace dwyco {
 #define BACKUP_FREQ_DEFAULT (3 * 24 * 3600)
