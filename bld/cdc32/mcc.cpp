@@ -241,6 +241,8 @@ TMsgCompose::TMsgCompose(const TMsgCompose& m)
     user_filename = m.user_filename;
     dont_save_sent = m.dont_save_sent;
     special_type = m.special_type;
+    hiq = m.hiq;
+    view_id = -1;
 }
 
 TMsgCompose::~TMsgCompose()

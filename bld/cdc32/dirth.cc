@@ -536,7 +536,7 @@ system_info()
     screen.append(ScreenSize.bottom);
 
     OSVERSIONINFO o;
-    memset(&o, 0, sizeof(0));
+    memset(&o, 0, sizeof(o));
     o.dwOSVersionInfoSize = sizeof(o);
     GetVersionEx(&o);
 
