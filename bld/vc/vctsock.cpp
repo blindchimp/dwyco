@@ -29,7 +29,7 @@ close(SOCKET sock)
 
 DwTreeKaz<vc_tsocket *, long> *vc_tsocket::Ready_q_p;
 
-#ifdef USE_BERKSOCK
+#ifndef USE_WINSOCK
 #include "vcberk.h"
 
 static int

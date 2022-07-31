@@ -98,7 +98,7 @@ unsigned long hash(vc_winsock *a)
 #endif
 #endif
 
-#ifdef USE_BERKSOCK
+#ifndef USE_WINSOCK
 #include "vcberk.h"
 
 static int
@@ -1846,8 +1846,7 @@ vc_winsock::socket_recv_raw(void *ibuf, long& len, long timeout, vc& addr_info)
 #ifdef USE_WINSOCK
 		long klen;
 		if(ioctlsocket(sock, FIONREAD, (unsigned long *)&klen) == SOCKET_ERROR)
-#endif
-#ifdef USE_BERKSOCK
+#else
 		int klen;
 		if(ioctl(sock, FIONREAD, &klen) == SOCKET_ERROR)
 #endif
@@ -2422,7 +2421,7 @@ vc_winsock::socket_set_option(vcsocketmode m,
 	{
 		RAISEABORT(generic_problem, vcnil);
 	}
-#elif defined(USE_BERKSOCK)
+#else
 	int f;
 	if((f = fcntl(sock, F_GETFL, 0)) == -1)
 	{
@@ -2436,8 +2435,6 @@ vc_winsock::socket_set_option(vcsocketmode m,
 	{
 		RAISEABORT(generic_problem, vcnil);
 	}
-#else
-	return vcnil;
 #endif
 	smode = m;
 	return vctrue;
@@ -2826,8 +2823,7 @@ vc_winsock_datagram::socket_recv_raw(void *ibuf, long& len, long timeout, vc& ad
 		long klen;
 #ifdef USE_WINSOCK
 		if(ioctlsocket(sock, FIONREAD, (unsigned long *)&klen) == SOCKET_ERROR)
-#endif
-#ifdef USE_BERKSOCK
+#else
 		if(ioctl(sock, FIONREAD, &klen) == SOCKET_ERROR)
 #endif
 		{

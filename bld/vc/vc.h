@@ -26,8 +26,6 @@
 
 #ifdef _Windows
 #define USE_WINSOCK
-#else
-#define USE_BERKSOCK
 #endif
 
 #include <stdlib.h>
