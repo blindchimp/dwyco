@@ -4623,6 +4623,18 @@ dwyco_name_to_uid(const char *handle, int len_handle)
     dirth_send_get_uid(My_UID, h, QckDone(name_map_done, 0, h, ValidPtr()));
 }
 
+DWYCOEXPORT
+int
+dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    vc repuid = map_to_representative_uid(buid);
+    vc ret(VC_VECTOR);
+    ret[0] = repuid;
+    *list_out = dwyco_list_from_vc(ret);
+    return 1;
+}
+
 int
 internal_boot_file(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email)
 {

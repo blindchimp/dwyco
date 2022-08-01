@@ -550,8 +550,14 @@ int DWYCOEXPORT dwyco_get_profile_to_viewer(const char *uid, int len_uid, DwycoP
 // you must call dwyco_free_array when you are done with fn_out
 //
 int DWYCOEXPORT dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
+// look up exact name, and emit an IDENT message with the uid.
+// it is random if the handle results in multiple uid's.
 void DWYCOEXPORT dwyco_name_to_uid(const char *handle, int len_handle);
 
+// NOTE: returns the current group representative from our current
+// local cache. NOTE: this is EPHEMERAL, the representative can change.
+// XXX: need a message to indicate the groups we observe have changed.
+int dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out);
 // not impl.
 int DWYCOEXPORT dwyco_remove_profile(DwycoProfileCallback cb, void *arg);
 int DWYCOEXPORT dwyco_update_profile(const char *text, int len_text, DwycoProfileCallback cb, void *arg);
