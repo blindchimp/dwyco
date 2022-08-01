@@ -214,7 +214,7 @@ Item {
 
        ScrollBar.vertical: ScrollBar { 
            background: Rectangle {
-               color: "green"
+               color: "lightgreen"
            }
 
        }

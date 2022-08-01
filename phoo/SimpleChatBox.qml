@@ -615,12 +615,12 @@ Page {
         anchors.top: parent.top
         anchors.topMargin: 0
         Layout.margins: mm(1)
-        BareConvList {
-            id: conv_sidebar
-            //visible: true
-            Layout.fillHeight: true
-            Layout.minimumWidth: parent.width / 5
-        }
+//        BareConvList {
+//            id: conv_sidebar
+//            //visible: true
+//            Layout.fillHeight: true
+//            Layout.minimumWidth: parent.width / 5
+//        }
 
         VidCall {
             id: vidpanel
@@ -661,6 +661,12 @@ Page {
             onAtYBeginningChanged: {
                 //console.log("at y beg ", atYBeginning)
             }
+        }
+        BareConvList {
+            id: conv_sidebar
+            //visible: true
+            Layout.fillHeight: true
+            Layout.minimumWidth: parent.width / 5
         }
     }
 
