@@ -1453,6 +1453,46 @@ sql_get_max_logical_clock()
     return (long)res[0][0];
 }
 
+// what we need here is a "what was the system time locally of
+// the last message we got from this uid"
+// we don't have this, so we estimate by just using the date
+// in the index, which is the creation date, which might be
+// screwed up pretty bad.
+// note that this does not do the uid folding, since we use this
+// in a situation where we are trying to pick out a good uid
+// from a group of uid's.
+// note: it might be better just to return a couple of lists
+// with all the uid's in it to avoid multiple calls to this,
+// but i'm not even sure this will work, so keep it simpler.
+bool
+sql_has_msg_recently(vc uid, long num_seconds)
+{
+    vc huid = to_hex(uid);
+    vc res = sql_simple("select max(logical_clock) from gi where assoc_uid = ?1", huid);
+    // we try two things: first check to see if the logical clock we are currently
+    // on minus what is in the index is in the interval now - num_seconds.
+    // if we just return "yes" as it is most likely ok.
+    // so, logical clocks don't have units, but it is sorta "seconds"-ish.
+
+    // if not, just check the dates directly in case the logical clocks have
+    // drifted apart.
+    if(res.num_elems() != 1)
+        return false;
+    int64_t mlc = (long)res[0][0];
+    int64_t diff = diff_logical_clock(mlc);
+    // diff should be positive, but if it isn't, it isn't
+    // a big deal
+    if(diff < num_seconds)
+        return true;
+    res = sql_simple("select max(date) from gi where assoc_uid = ?1", huid);
+    if(res.num_elems() != 1)
+        return false;
+    int64_t dm = res[0][0];
+    if(time(0) - dm < num_seconds)
+        return true;
+    return false;
+}
+
 int
 sql_is_mid_local(vc mid)
 {

@@ -171,6 +171,12 @@ boost_logical_clock()
         Logical_clock = tmplc + 1;
 }
 
+int64_t
+diff_logical_clock(int64_t tm)
+{
+    return Logical_clock - tm;
+}
+
 #ifdef WIN32
 int
 move_replace(const DwString& s, const DwString& d)

@@ -67,6 +67,7 @@ int sql_is_mid_anywhere(vc mid);
 int sql_mid_has_tombstone(vc mid);
 int import_remote_mi(vc remote_uid);
 vc sql_find_who_has_mid(vc mid);
+bool sql_has_msg_recently(vc uid, long num_seconds);
 
 vc sql_run_sql(vc s, vc a1 = vcnil, vc a2 = vcnil, vc a3 = vcnil);
 vc package_downstream_sends(vc remote_uid);
