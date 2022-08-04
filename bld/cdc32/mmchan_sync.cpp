@@ -132,7 +132,7 @@ MMChannel::package_index()
     cmd[1] = file_to_string((const char *)fn);
 
     vc huid = to_hex(remote_uid());
-    DwString mfn = DwString("minew%1.sql").arg((const char *)huid);
+    DwString mfn = DwString("minew%1.tdb").arg((const char *)huid);
     mfn = newfn(mfn);
     if(!move_replace((const char *)fn, mfn))
         return vcnil;
@@ -160,7 +160,7 @@ MMChannel::unpack_index(vc cmd)
 
     vc huid = to_hex(remote_uid());
     GRTLOG("unpack from %s", (const char *)huid, 0);
-    DwString mifn("mi%1.sql");
+    DwString mifn("mi%1.tdb");
 
     mifn.arg((const char *)huid);
     mifn = newfn(mifn);
