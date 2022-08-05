@@ -50,6 +50,7 @@ public:
     void commit_transaction();
     void sync_off();
     void sync_on();
+    void vacuum();
     void rollback_transaction();
     void set_busy_timeout(int ms);
 

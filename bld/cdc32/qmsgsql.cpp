@@ -803,6 +803,7 @@ remove_sync_state()
         sql_simple("delete from mt.taglog");
         sql_simple("delete from deltas");
         sql_commit_transaction();
+        sDb->vacuum();
         remove_delta_databases();
     }
     catch(...)
