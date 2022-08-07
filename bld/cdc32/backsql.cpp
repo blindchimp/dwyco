@@ -428,6 +428,7 @@ backup_account_info(const char *dbn)
     // will disseminate it anyway.
     // note: the tag database probably needs to be trimmed before backup (or maybe
     // as restore time.)
+    //
     // also note: we do not store the group names and keys, because presumably, after
     // the restore, they should be able to re-enter the group (the first time they
     // restart cdc-x after the restore, they will be removed from the group by the
@@ -447,6 +448,14 @@ backup_account_info(const char *dbn)
     }
     // not a deal breaker if these don't make it in together
     backup_file(TAG_DB, dbn);
+    // don't back this up, it is just user settings they may
+    // want to adjust when they get their messages, but it isn't
+    // necessary to reload it, possibly coming up in a weird state.
+    //backup_file("set.sql", dbn);
+    // this file is useful if you restore but don't have
+    // access to the internet to download profiles from
+    // the servers.
+    backup_file("sinfo", dbn);
     return 1;
 }
 
@@ -457,12 +466,19 @@ get_file_contents(const char *name, const char *dbn)
     VCArglist a;
     a.append(DwString("select data from %1.misc_blobs where name = ?1;").arg(dbn).c_str());
     a.append(name);
-    vc res = sqlite3_bulk_query(Db, &a);
-    if(res.is_nil())
+    try
+    {
+        vc res = sqlite3_bulk_query(Db, &a);
+        if(res.is_nil())
+            return vcnil;
+        if(res.num_elems() == 0)
+            return vcnil;
+        return res[0][0];
+    }
+    catch(...)
+    {
         return vcnil;
-    if(res.num_elems() == 0)
-        return vcnil;
-    return res[0][0];
+    }
 }
 
 static
@@ -532,6 +548,8 @@ restore_account_info(const char *dbn)
     // if we can't restore the tags, we can still get going
     // without them, so don't error out.
     restore_blob(TAG_DB, dbn);
+    // likewise with sinfo
+    restore_blob("sinfo", dbn);
 
 
     // invalidate the profile that might be cached locally
