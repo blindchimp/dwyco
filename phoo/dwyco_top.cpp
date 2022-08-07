@@ -983,6 +983,18 @@ DwycoCore::do_reindex()
     //QThread::sleep(10);
 }
 
+QUrl
+DwycoCore::from_local_file(const QString& s)
+{
+    return QUrl::fromLocalFile(s);
+}
+
+QString
+DwycoCore::to_local_file(const QUrl& u)
+{
+    return u.toLocalFile();
+}
+
 void
 DwycoCore::directory_swap()
 {
