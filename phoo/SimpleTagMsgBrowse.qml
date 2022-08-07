@@ -321,7 +321,7 @@ Page {
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
-                source: { PREVIEW_FILENAME != "" ? ("file:///" + PREVIEW_FILENAME) :
+                source: { PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                 //source: {PREVIEW_FILENAME !== "" ? ("file://" + PREVIEW_FILENAME) :
                                                   (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
