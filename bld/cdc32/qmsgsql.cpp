@@ -355,7 +355,7 @@ bool
 generate_delta(vc uid, vc delta_id)
 {
     vc huid = to_hex(uid);
-    DwString dbfn = DwString("minew%1.sql").arg((const char *)huid);
+    DwString dbfn = DwString("minew%1.tdb").arg((const char *)huid);
     dbfn = newfn(dbfn);
     SimpleSql s(dbfn);
     if(!s.init(SQLITE_OPEN_READWRITE))
@@ -730,7 +730,7 @@ void
 remove_delta_databases()
 {
     {
-        FindVec *fv = find_to_vec(newfn("minew????????????????????.sql").c_str());
+        FindVec *fv = find_to_vec(newfn("minew????????????????????.tdb").c_str());
         for(int i = 0; i < fv->num_elems(); ++i)
         {
             DeleteFile(newfn((*fv)[i]->cFileName).c_str());
@@ -738,7 +738,7 @@ remove_delta_databases()
         delete_findvec(fv);
     }
     {
-        FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
+        FindVec *fv = find_to_vec(newfn("mi????????????????????.tdb").c_str());
         for(int i = 0; i < fv->num_elems(); ++i)
         {
             DeleteFile(newfn((*fv)[i]->cFileName).c_str());
@@ -803,6 +803,7 @@ remove_sync_state()
         sql_simple("delete from mt.taglog");
         sql_simple("delete from deltas");
         sql_commit_transaction();
+        sDb->vacuum();
         remove_delta_databases();
     }
     catch(...)
@@ -855,7 +856,7 @@ int
 import_remote_mi(vc remote_uid)
 {
     vc huid = to_hex(remote_uid);
-    DwString fn = DwString("mi%1.sql").arg((const char *)huid);
+    DwString fn = DwString("mi%1.tdb").arg((const char *)huid);
     //DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
     SimpleSql s(MSG_IDX_DB);
     if(!s.init())

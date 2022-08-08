@@ -301,6 +301,9 @@ public:
     Q_INVOKABLE void background_reindex();
     static void do_reindex();
 
+    Q_INVOKABLE QUrl from_local_file(const QString&);
+    Q_INVOKABLE QString to_local_file(const QUrl& url);
+
 public:
 
 public slots:

@@ -42,7 +42,7 @@ public:
     //vc password;
 
     void init(vc uid, vc alternate_name);
-    int load_account(vc alternate_name);
+    int load_account(vc alternate_name, bool create_if_not_exists);
     void leave();
     vc alt_name() {return alternate_name;}
     vc my_static();

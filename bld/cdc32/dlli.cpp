@@ -7070,7 +7070,7 @@ dwyco_start_gj2(const char *gname, const char *password)
     auto dha = new DH_alternate;
     dha->init(My_UID, gname);
     dha->remove_key(gname);
-    dha->load_account(gname);
+    dha->load_account(gname, true);
     //dha->password = password;
     set_settings_value("group/join_key", password);
     dirth_send_set_get_group_pk(My_UID, dha->alt_name(), dha->my_static_public(), QckDone(group_enter_setup, 0, vcnil, dha->vp));
