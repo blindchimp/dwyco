@@ -28,7 +28,6 @@
 #include "mmchan.h"
 #include "filetube.h"
 #include "vc.h"
-#include "vccomp.h"
 #include "dwstr.h"
 #include "qauth.h"
 #include "dirth.h"

@@ -35,7 +35,6 @@
 #include "syncvar.h"
 #include "pval.h"
 //#include "sd3.h"
-#include "dwmapr.h"
 #include "dlli.h"
 #include "netvid.h"
 #include "sproto.h"
