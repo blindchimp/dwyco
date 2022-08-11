@@ -787,7 +787,7 @@ MMChannel::accept_att(int subchan, sproto *p, const char *ev)
     if(!write_fd)
     {
         if(popup_message_box_callback)
-            (*popup_message_box_callback)(this, "Problems opening local file (maybe file is read-only?)", MB_OK, vcnil);
+            (*popup_message_box_callback)(this, "Problems opening local file (maybe file is read-only?)", vcnil, vcnil);
         return sproto::fail;
     }
 
@@ -876,7 +876,7 @@ MMChannel::recv_pull_info(int subchan, sproto *p, const char *ev)
     if(!write_fd || fseeko(write_fd, write_fd_offset, SEEK_SET) != 0)
     {
         if(popup_message_box_callback)
-            (*popup_message_box_callback)(this, "Problems opening local file (maybe you are out of disk space)", MB_OK, vcnil);
+            (*popup_message_box_callback)(this, "Problems opening local file (maybe you are out of disk space)", vcnil, vcnil);
         if(write_fd)
         {
             fclose(write_fd);

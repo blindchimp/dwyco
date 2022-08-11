@@ -39,28 +39,13 @@ DWORD GetCurrentThreadId();
 #define WAIT_OBJECT_0 2
 #define WAIT_ERROR 3
 
-#define MB_OK 0
-#define MB_ICONQUESTION 1
-#define MB_YESNO 2
-#define IDNO 3
-#define MB_ICONHAND 4
-#define MB_RETRYCANCEL 5
-#define MB_TOPMOST 6
-#define IDRETRY 7
-#define IDCANCEL 8
-#define IDYES 9
-#define MB_DEFBUTTON2 10
-
-#define _USERENTRY
-
-struct foo
+struct foo_gibble
 {
 	char cFileName[256];
 };
 
 
-typedef struct foo WIN32_FIND_DATA;
-#define INVALID_HANDLE_VALUE 0
+typedef struct foo_gibble WIN32_FIND_DATA;
 
 struct RECT 
 {
