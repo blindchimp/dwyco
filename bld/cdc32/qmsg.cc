@@ -79,7 +79,6 @@ using namespace CryptoPP;
 #endif
 #include "dwtree2.h"
 #include "se.h"
-#include "chatq.h"
 #include "pgdll.h"
 #include "sepstr.h"
 #include "ser.h"

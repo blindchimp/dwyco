@@ -94,7 +94,6 @@
 #include "mmchan.h"
 
 #include "servass.h"
-#include "gvchild.h"
 #include "ta.h"
 #include "qauth.h"
 #include "mmcall.h"

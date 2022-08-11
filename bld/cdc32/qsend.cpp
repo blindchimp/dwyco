@@ -22,7 +22,6 @@
 #include "vcudh.h"
 #include "sepstr.h"
 #include "ta.h"
-#include "dhgsetup.h"
 #include "qauth.h"
 #ifdef WIN32
 #include <io.h>

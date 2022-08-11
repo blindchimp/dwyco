@@ -5,8 +5,6 @@
 #include "ser.h"
 #include "qdirth.h"
 #include "se.h"
-#include "dhsetup.h"
-#include "dhgsetup.h"
 #include "vcudh.h"
 #include "dwrtlog.h"
 #include "vccrypt2.h"

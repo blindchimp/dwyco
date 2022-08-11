@@ -9,7 +9,6 @@
 
 #undef LOCAL_TEST
 #include "vc.h"
-#include "dwtimer.h"
 #include "qmsg.h"
 #include "cdcver.h"
 #include "qdirth.h"
@@ -17,9 +16,7 @@
 #include "dwstr.h"
 #include "cdcpal.h"
 #include "dwrtlog.h"
-#include "aconn.h"
 #include "se.h"
-#include "qmsgsql.h"
 #include "qauth.h"
 #include "simple_property.h"
 #include "ezset.h"

@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include "matcom.h"
 #include "dwtimer.h"
-#include "dwvecp.h"
+#include "dwvec.h"
 #include "netvid.h"
 #include "tl.h"
 #include "dwstr.h"

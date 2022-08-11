@@ -16,17 +16,13 @@
 #include "mmchan.h"
 #include "audout.h"
 #include "qmsg.h"
-#include "qdirth.h"
-#include "msgdisp.h"
 #include "audchk.h"
 #include "ta.h"
 #include "dirth.h"
 #include "codec.h"
 #include "fnmod.h"
 #include "mcc.h"
-#include "se.h"
 #include "sysattr.h"
-#include "xinfo.h"
 #include "ezset.h"
 #undef index
 

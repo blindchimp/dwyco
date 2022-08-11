@@ -20,7 +20,6 @@
 #include "netvid.h"
 #include "doinit.h"
 #include "qdirth.h"
-#include "gvchild.h"
 #include "msgdisp.h"
 #include "calllive.h"
 #include "ta.h"

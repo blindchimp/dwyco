@@ -15,7 +15,6 @@
 #include "mmchan.h"
 #include "sproto.h"
 #include "fnmod.h"
-#include "dwrtlog.h"
 #include "qmsg.h"
 #include "dhsetup.h"
 #include "vcudh.h"
