@@ -19,7 +19,6 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <strings.h>
-#include "dwyco_rand.h"
 
 [[noreturn]] void oopanic(const char *);
 
@@ -337,14 +336,6 @@ filelength(int fd)
     lseek(fd, old, SEEK_SET);
     return sz;
 }
-
-#ifdef __GNUG__
-void
-itoa(int i, char *out, int)
-{
-    sprintf(out, "%d", i);
-}
-#endif
 
 int
 mkdir(const char *p)

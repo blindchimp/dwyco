@@ -10,14 +10,12 @@
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/aq.cc 1.15 1999/01/10 16:09:23 dwight Checkpoint $
  */
-#include "gvchild.h"
 #include "dwstr.h"
 #include "aq.h"
 
 #include "acqfile.h"
 #include "aqkey.h"
 #include "mmchan.h"
-#include "chatgrid.h"
 #include "ezset.h"
 #include "aqext.h"
 

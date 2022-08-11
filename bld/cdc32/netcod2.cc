@@ -16,16 +16,14 @@
 //#include <windows.h>
 #include <string.h>
 #include "vc.h"
+#include "vccomp.h"
 #include "netcod2.h"
-#include "vcwsock.h"
 #include "matcom.h"
 #include "vcxstrm.h"
-#include "dwlog.h"
 #include "dwstr.h"
 #include "mmchan.h"
 
 #include "dwrtlog.h"
-#include "qauth.h"
 #include "ta.h"
 #include "dwstr.h"
 #include "dwqbm.h"

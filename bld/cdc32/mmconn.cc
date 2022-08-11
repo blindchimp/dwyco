@@ -15,7 +15,6 @@
 #include "mmchan.h"
 #include "netvid.h"
 #include "msgdisp.h"
-#include "gvchild.h"
 #include "dwrtlog.h"
 
 using namespace dwyco;

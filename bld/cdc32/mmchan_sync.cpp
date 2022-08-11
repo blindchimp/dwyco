@@ -18,7 +18,6 @@
 #include "dwrtlog.h"
 #include "fnmod.h"
 #include "se.h"
-#include "dwscoped.h"
 #include "qauth.h"
 #include "qmsgsql.h"
 #include "xinfo.h"
@@ -27,9 +26,11 @@
 #include "dhgsetup.h"
 #include "pulls.h"
 #include "synccalls.h"
+#ifdef DWYCO_BACKGROUND_SYNC
 #include <thread>
 #include <future>
 #include <chrono>
+#endif
 
 using namespace dwyco;
 using namespace dwyco::qmsgsql;

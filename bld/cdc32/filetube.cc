@@ -22,13 +22,10 @@
 #include <errno.h>
 #include <stdlib.h>
 #include "netvid.h"
-#include "dwlog.h"
-#include "doinit.h"
 #include "vc.h"
 #include "dwvec.h"
 #include "filetube.h"
 #include "dwrtlog.h"
-#include "fnmod.h"
 #include "netlog.h"
 
 using namespace dwyco;

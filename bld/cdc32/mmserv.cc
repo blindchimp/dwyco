@@ -8,7 +8,6 @@
 */
 #include "mmchan.h"
 #include "qdirth.h"
-#include "dirth.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "chatgrid.h"

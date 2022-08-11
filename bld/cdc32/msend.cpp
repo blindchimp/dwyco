@@ -9,7 +9,6 @@
 
 #include "directsend.h"
 #include "qsend.h"
-#include "dlli.h"
 #include "se.h"
 #include "msend.h"
 #include "qmsg.h"

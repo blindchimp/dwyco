@@ -28,7 +28,6 @@
 #include "mmchan.h"
 #include "filetube.h"
 #include "vc.h"
-#include "vccomp.h"
 #include "dwstr.h"
 #include "qauth.h"
 #include "dirth.h"
@@ -80,7 +79,6 @@ using namespace CryptoPP;
 #endif
 #include "dwtree2.h"
 #include "se.h"
-#include "chatq.h"
 #include "pgdll.h"
 #include "sepstr.h"
 #include "ser.h"

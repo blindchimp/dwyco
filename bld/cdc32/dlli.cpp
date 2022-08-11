@@ -7719,7 +7719,7 @@ dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback dcb,
     if(BodyView::Bvqbm.exists_by_member(m, &BodyView::msg_id))
         return 0;
     // if we're trying to fetch a message that we already have or
-    // that has been deleted showhow or other, just ignore the
+    // that has been deleted somehow or other, just ignore the
     // request.
     if(sql_is_mid_local(m) || sql_mid_has_tombstone(m))
         return 0;

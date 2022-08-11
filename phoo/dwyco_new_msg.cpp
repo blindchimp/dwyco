@@ -12,7 +12,6 @@
 #include <QDataStream>
 #include "dwyco_new_msg.h"
 #include "dlli.h"
-#include "pfx.h"
 #include "dwycolist2.h"
 
 [[noreturn]] void cdcxpanic(const char *);

@@ -5,7 +5,6 @@
 #include <sqlite3.h>
 #endif
 
-#include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
 #include "fnmod.h"
