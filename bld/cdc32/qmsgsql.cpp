@@ -1356,6 +1356,7 @@ init_qmsg_sql()
     sql_simple("insert into static_uid_tags values('_leader')");
 
     // this is just a scratch table, i put it up here to avoid "create temp"
+    // during normal operations...
     // (which is a schema operation, and locks tons of stuff)
     sql_simple("create temp table uidset(uid text not null)");
 
@@ -1865,8 +1866,8 @@ static
 int
 sql_check_indexed_flag(vc uid)
 {
-    vc res = sql_simple("select count(*) from indexed_flag where uid = ?1", to_hex(uid));
-    if(res[0][0] == vc(0))
+    vc res = sql_simple("select 1 from indexed_flag where uid = ?1", to_hex(uid));
+    if(res.num_elems() == 0)
         return 0;
     return 1;
 }
