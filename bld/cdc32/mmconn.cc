@@ -288,35 +288,20 @@ MMChannel::poll_resolve()
 #endif
 
 int
-MMChannel::start_connect()
+MMChannel::start_connect(vc ip, int port)
 {
     GRTLOG("connect started", 0, 0);
     call_setup = 1;
-    char *a = inet_ntoa(addr_out);
-    if(a == 0)
+    if(!inet_aton(ip, &addr_out) || port == 0)
     {
         msg_out("address isn't a valid internet address");
         return 0;
     }
-    addrstr = a;
-    if(port == 0)
-    {
-        //strcat(addrstr, DEFAULT_PORT_SUFFIX);
-        // note this is WRONG... need to pick up port from
-        // directory (or same place we got the IP)
-        // this should actually be hardwired (or another option
-        // for default OUTGOING port) to default outgoing port,
-        // which is what we want to use if we don't have any
-        // other information.
-        oopanic("what were you thinking");
-        //DwString b(DwNetConfigData.get_primary_suffix(addrstr.c_str()));
-        //addrstr = b;
-    }
-    else
-    {
-        addrstr += ":";
-        addrstr += DwString::fromInt(port);
-    }
+    this->port = port;
+    addrstr = (const char *)ip;
+    addrstr += ":";
+    addrstr += DwString::fromInt(port);
+
     ouraddr = "any:any";
     pstate = CONNECTING;
     msg_out("Connecting...");

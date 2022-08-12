@@ -646,7 +646,7 @@ private:
 public:
     enum resolve_how {BYNAME=0, BYADDR=1};
     int start_resolve(enum resolve_how how, unsigned long addr, const char *hostname);
-    int start_connect();
+    int start_connect(vc ip, int port);
     in_addr addr_out;
     int port;
 

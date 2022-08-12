@@ -446,8 +446,8 @@ stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr vp, M
     else
     {
         // start connect process with ip
-        mc->addr_out.s_addr = addr;
-        if(!mc->start_connect())
+        //mc->addr_out.s_addr = addr;
+        if(!mc->start_connect(host, port))
         {
             mc->schedule_destroy(MMChannel::HARD);
         }
