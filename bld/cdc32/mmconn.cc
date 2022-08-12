@@ -19,7 +19,7 @@
 
 using namespace dwyco;
 
-
+#if 0
 #ifdef _Windows
 void
 async_handler(SOCKET s, DWORD lp)
@@ -58,6 +58,7 @@ async_lookup_handler(HANDLE h, DWORD lp)
     delete &cl;
 }
 
+#endif
 #endif
 
 void
@@ -175,6 +176,7 @@ MMChannel::poll_resolve()
 }
 
 #else
+#if 0
 int
 MMChannel::start_resolve(enum resolve_how how, unsigned long addr, const char *hostname)
 {
@@ -218,7 +220,9 @@ fail:
 #endif
     return 0;
 }
+#endif
 
+#if 0
 void
 MMChannel::cancel_resolve()
 {
@@ -285,6 +289,7 @@ MMChannel::poll_resolve()
 #endif
 }
 
+#endif
 #endif
 
 int

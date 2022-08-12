@@ -434,28 +434,12 @@ stun_connect(vc host, vc port, vc prox, vc uid, int media_select, ValidPtr vp, M
         mc->call_type = mmc->call_type;
     }
 
-    in_addr_t addr;
-    if((addr = inet_addr((const char *)host)) == INADDR_NONE)
+    if(!mc->start_connect(host, port))
     {
-        // start connect process at resolve stage
-        if(!mc->start_resolve(MMChannel::BYNAME, 0, (const char *)host))
-        {
-            mc->schedule_destroy(MMChannel::HARD);
-        }
-    }
-    else
-    {
-        // start connect process with ip
-        //mc->addr_out.s_addr = addr;
-        if(!mc->start_connect(host, port))
-        {
-            mc->schedule_destroy(MMChannel::HARD);
-        }
-
-        Netlog_signal.emit(mc->tube->mklog("peer_uid", to_hex(mc->attempt_uid)));
-
+        mc->schedule_destroy(MMChannel::HARD);
     }
 
+    Netlog_signal.emit(mc->tube->mklog("peer_uid", to_hex(mc->attempt_uid)));
 }
 
 void
