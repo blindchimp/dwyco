@@ -429,7 +429,7 @@ MMChannel::MMChannel() :
     ctrl_timer("ctrl-timer"),
     keepalive_timer("keepalive"),
     nego_timer("nego"),
-    resolve_timer("resolve"),
+    //resolve_timer("resolve"),
     ctrl_send_watchdog("ctrl-send-watchdog"),
     syncmap(vcnil),
     remote_vars(vcnil),
@@ -561,6 +561,7 @@ MMChannel::MMChannel() :
 
     gv_id = 0;
 
+#if 0
     // resolve and connection
     hr = 0;
     resolve_done = 0;
@@ -568,6 +569,7 @@ MMChannel::MMChannel() :
     resolve_buf = 0;
     resolve_result = -1;
     resolve_failed = 0;
+#endif
     memset(&addr_out, 0, sizeof(addr_out));
 
     msg_output = 0;
@@ -4109,8 +4111,6 @@ MMChannel::service_channels(int *spin_out)
         {
             mc->msg_out("Connection stopped.");
             mc->schedule_destroy(HARD);
-            if(mc->pstate == RESOLVING_NAME)
-                mc->cancel_resolve();
             mc->destroy();
             mc->stop_service();
             delete mc;
@@ -4182,27 +4182,7 @@ MMChannel::service_channels(int *spin_out)
             spin = 1;
             continue;
         }
-        if(mc->pstate == RESOLVING_NAME)
-        {
-            switch(mc->poll_resolve())
-            {
-            case -1:
-                continue;
-            case 0:
-                mc->schedule_destroy();
-                continue;
-            case 1:
-                if(mc->start_connect() == 1)
-                {
-                    goto try_connect;
-                }
-                mc->schedule_destroy();
-                continue;
-            default:
-                oopanic("resolve prog error");
-            }
-            continue;
-        }
+
 try_connect:
         if(mc->pstate == CONNECTING)
         {

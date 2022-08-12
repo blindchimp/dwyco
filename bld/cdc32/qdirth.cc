@@ -31,7 +31,7 @@ void add_local_ignore(vc uid);
 void del_local_ignore(vc uid);
 vc get_local_ignore();
 
-int send_to_secondary(vc name, vc ip, vc port, QckMsg m, QckDone d);
+int send_to_secondary(vc ip, vc port, QckMsg m, QckDone d);
 vc to_hex(vc);
 vc vclh_serialize(vc);
 vc vclh_sha(vc);
@@ -552,7 +552,7 @@ dirth_send_store(vc id, vc recipients, vc msg, vc no_group, vc no_self, QckDone 
             m2[QTYPE] = reqtype("auth-command", d);
             m2[QFROM] = id;
             m2[2] = mm;
-            if(mm.is_nil() || !send_to_secondary(name, ip, port, m2, d))
+            if(mm.is_nil() || !send_to_secondary(ip, port, m2, d))
             {
                 vc resp(VC_VECTOR);
                 resp[0] = vcnil;
@@ -700,7 +700,7 @@ dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d)
         m2[QTYPE] = reqtype("auth-command", d);
         m2[QFROM] = id;
         m2[2] = mm;
-        if(mm.is_nil() || !send_to_secondary(name, ip, port, m2, d))
+        if(mm.is_nil() || !send_to_secondary(ip, port, m2, d))
         {
             vc resp(VC_VECTOR);
             resp[0] = vcnil;
@@ -1004,7 +1004,7 @@ dirth_send_server_assist(vc id, vc to_id, QckDone d)
         m2[QTYPE] = reqtype("auth-command", d);
         m2[QFROM] = id;
         m2[2] = mm;
-        if(mm.is_nil() || !send_to_secondary(name, ip, port, m2, d))
+        if(mm.is_nil() || !send_to_secondary(ip, port, m2, d))
         {
             vc resp(VC_VECTOR);
             resp[0] = vcnil;

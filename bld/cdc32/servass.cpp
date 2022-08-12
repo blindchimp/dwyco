@@ -18,7 +18,6 @@
 #include "dwstr.h"
 #include "servass.h"
 #include "netvid.h"
-#include "doinit.h"
 #include "qdirth.h"
 #include "msgdisp.h"
 #include "calllive.h"
@@ -134,11 +133,8 @@ void
 start_serv_recv_thread(vc ip, vc port, ValidPtr mcv)
 {
 
-    MMChannel *mc = MMChannel::start_server_channel(
-                        MMChannel::BYADDR,
-                        inet_addr(ip),
-                        0,
-                        port);
+    MMChannel *mc = MMChannel::start_server_channel(ip, port);
+
     if(!mc)
     {
         serv_recv_call_failed_last(0, vcnil, 0, ValidPtr());

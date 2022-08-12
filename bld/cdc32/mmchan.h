@@ -278,7 +278,7 @@ public:
     enum state {
         IDLE,
         // initial connection setup
-        RESOLVING_NAME,
+        //RESOLVING_NAME,
         CONNECTING,
 
         // post-connection, initial capability negotiation
@@ -620,18 +620,18 @@ private:
     friend void dwyco::poll_listener();
 private:
 
-    friend void async_lookup_handler(HANDLE, DWORD);
-    void cancel_resolve();
-    HANDLE hr;
-    DwTimer resolve_timer;
-    int resolve_done;
-    int resolve_len;
+    //friend void async_lookup_handler(HANDLE, DWORD);
+    //void cancel_resolve();
+    //HANDLE hr;
+    //DwTimer resolve_timer;
+//    int resolve_done;
+//    int resolve_len;
 public:
-    int resolve_failed;
+    //int resolve_failed;
     vc attempt_uid;
 private:
-    char *resolve_buf;
-    int resolve_result;
+    //char *resolve_buf;
+    //int resolve_result;
 public:
     DwString addrstr;
     DwString ouraddr;
@@ -641,12 +641,12 @@ public:
 private:
 
     int poll_connect();
-    int poll_resolve();
+    //int poll_resolve();
     void show_winsock_error(int err);
 public:
-    enum resolve_how {BYNAME=0, BYADDR=1};
-    int start_resolve(enum resolve_how how, unsigned long addr, const char *hostname);
-    int start_connect();
+    //enum resolve_how {BYNAME=0, BYADDR=1};
+    //int start_resolve(enum resolve_how how, unsigned long addr, const char *hostname);
+    int start_connect(vc ip, int port);
     in_addr addr_out;
     int port;
 
@@ -829,8 +829,7 @@ public:
     static void send_to_db(const dwyco::QckMsg& m, int chan_id);
     void server_response(vc v);
     void chat_response(vc);
-    static MMChannel *start_server_channel(enum resolve_how,
-                                           unsigned long addr, const char *name, int port);
+    static MMChannel *start_server_channel(vc ip, int port);
     int server_channel;
     int secondary_server_channel;
     vc password;
@@ -839,7 +838,7 @@ public:
     // can q things to it before it is connected.
     vc attempt_ip;
     vc attempt_port;
-    vc attempt_name;
+    //vc attempt_name;
 
     // this is used to lightly scramble the  output
     // of a coder (input to decoder). for use with
