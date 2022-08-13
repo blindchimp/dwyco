@@ -8669,6 +8669,7 @@ DWYCOEXPORT
 void
 dwyco_handle_msg(const char *msg, int len_msg, unsigned int message, unsigned int wp, unsigned int lp)
 {
+#if 0
     if(message == WM_USER + 400)
     {
 
@@ -8679,6 +8680,7 @@ dwyco_handle_msg(const char *msg, int len_msg, unsigned int message, unsigned in
     {
         async_lookup_handler((HANDLE)wp, lp);
     }
+#endif
     add_entropy_timer((char *)msg, len_msg);
 
 }
