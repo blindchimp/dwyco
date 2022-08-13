@@ -25,7 +25,9 @@
 #include "ta.h"
 #include "dwstr.h"
 #include "dwqbm.h"
-#ifndef _Windows
+#ifdef _Windows
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
 #endif
 

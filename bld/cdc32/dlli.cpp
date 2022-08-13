@@ -272,6 +272,15 @@
 //
 //
 
+#ifdef _Windows
+#include <io.h>
+#include <direct.h>
+#include <sys/utime.h>
+#include <sys\stat.h>
+#include <time.h>
+#include <winsock2.h>
+#endif
+
 #include "vclhsys.h"
 #ifdef DWYCO_TRACE
 #include "dwyco_rename.h"
@@ -281,7 +290,6 @@
 static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 
 
-//#undef NO_RTLOG
 #include "dlli.h"
 #include "trc.h"
 #include "doinit.h"
@@ -331,18 +339,6 @@ using namespace CryptoPP;
 #include "tpgmdec.h"
 #include "imgmisc.h"
 #include "ser.h"
-#if defined(_MSC_VER)
-#include <io.h>
-#endif
-#ifdef _Windows
-#include <io.h>
-#ifdef _MSC_VER
-#include <direct.h>
-#include <sys/utime.h>
-#endif
-#include <sys\stat.h>
-#include <time.h>
-#endif
 
 #ifdef VIDGRAB_HACKS
 #include "vgexp.h"
