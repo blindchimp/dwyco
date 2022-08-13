@@ -11,7 +11,6 @@
  */
 #ifndef FILETUBE_H
 #define FILETUBE_H
-#include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "matcom.h"
@@ -167,7 +166,7 @@ public:
     ~DummyTube();
 
     // link setup and destroy
-    virtual int connect(const char *remote_addr, const char *local_addr, int block = 0, HWND = 0, int setup_unreliable = 0);
+    virtual int connect(const char *remote_addr, const char *local_addr, int block = 0, int setup_unreliable = 0);
     virtual int gen_channel(unsigned short remote_port, int& chan);
 
     // primitive link status

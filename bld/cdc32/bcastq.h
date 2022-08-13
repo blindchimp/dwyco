@@ -12,7 +12,7 @@
  */
 #ifndef BCASTQ_H
 #define BCASTQ_H
-#include "windows.h"
+#include <windows.h>
 #include "matcom.h"
 #include "dwvec.h"
 #include "dwvecp.h"

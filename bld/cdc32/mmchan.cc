@@ -61,8 +61,6 @@
 #include "ta.h"
 #include "fnmod.h"
 #include "sysattr.h"
-#include "se.h"
-#include "xinfo.h"
 #include "dhsetup.h"
 #include "vcudh.h"
 #include "profiledb.h"
@@ -73,10 +71,8 @@
 #include "ezset.h"
 #include "qmsgsql.h"
 #include "netlog.h"
-#ifdef _Windows
-//#include <winsock2.h>
-//#include <ws2tcpip.h>
-#endif
+#include "vccrypt2.h"
+
 using namespace dwyco;
 
 extern vc Current_room;
