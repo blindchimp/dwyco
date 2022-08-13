@@ -8,7 +8,8 @@
 */
 // $Header: g:/dwight/repo/cdc32/rcs/mmconn.cc 1.11 1999/01/10 16:09:47 dwight Checkpoint $
 #ifndef LINUX
-#include <WinSock2.h>
+//#include <WinSock2.h>
+#include <Ws2tcpip.h>
 #endif
 
 #include "vcwsock.h"
@@ -297,7 +298,7 @@ MMChannel::start_connect(vc ip, int port)
 {
     GRTLOG("connect started", 0, 0);
     call_setup = 1;
-    if(!inet_aton(ip, &addr_out) || port == 0)
+    if(!inet_pton(AF_INET, ip, &addr_out) || port == 0)
     {
         msg_out("address isn't a valid internet address");
         return 0;

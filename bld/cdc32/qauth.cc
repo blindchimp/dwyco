@@ -13,9 +13,9 @@
 #include <io.h>
 #include <fcntl.h>
 #endif
+#include <windows.h>
 #include "vc.h"
 #include "dwtimer.h"
-#include "netvid.h"
 #include "qauth.h"
 #include "asshole.h"
 #ifdef LINUX

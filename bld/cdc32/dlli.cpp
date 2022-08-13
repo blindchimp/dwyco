@@ -272,6 +272,15 @@
 //
 //
 
+#ifdef _Windows
+#include <io.h>
+#include <direct.h>
+#include <sys/utime.h>
+#include <sys\stat.h>
+#include <time.h>
+#include <winsock2.h>
+#endif
+
 #include "vclhsys.h"
 #ifdef DWYCO_TRACE
 #include "dwyco_rename.h"
@@ -281,7 +290,6 @@
 static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 
 
-//#undef NO_RTLOG
 #include "dlli.h"
 #include "trc.h"
 #include "doinit.h"
@@ -331,18 +339,6 @@ using namespace CryptoPP;
 #include "tpgmdec.h"
 #include "imgmisc.h"
 #include "ser.h"
-#if defined(_MSC_VER)
-#include <io.h>
-#endif
-#ifdef _Windows
-#include <io.h>
-#ifdef _MSC_VER
-#include <direct.h>
-#include <sys/utime.h>
-#endif
-#include <sys\stat.h>
-#include <time.h>
-#endif
 
 #ifdef VIDGRAB_HACKS
 #include "vgexp.h"
@@ -8681,6 +8677,7 @@ DWYCOEXPORT
 void
 dwyco_handle_msg(const char *msg, int len_msg, unsigned int message, unsigned int wp, unsigned int lp)
 {
+#if 0
     if(message == WM_USER + 400)
     {
 
@@ -8691,6 +8688,7 @@ dwyco_handle_msg(const char *msg, int len_msg, unsigned int message, unsigned in
     {
         async_lookup_handler((HANDLE)wp, lp);
     }
+#endif
     add_entropy_timer((char *)msg, len_msg);
 
 }

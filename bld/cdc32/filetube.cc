@@ -614,7 +614,7 @@ DummyTube::can_write_mmdata()
 
 
 int
-DummyTube::connect(const char *remote_addr, const char *local_addr, int block, HWND hwnd, int setup_unreliable)
+DummyTube::connect(const char *remote_addr, const char *local_addr, int block, int setup_unreliable)
 {
     if(connected)
         return SSERR;

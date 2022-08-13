@@ -95,6 +95,7 @@ using namespace CryptoPP;
 #include "grpmsg.h"
 #include "aconn.h"
 #include "cdcpal.h"
+#include "vccrypt2.h"
 
 using namespace dwyco;
 using namespace dwyco::qmsgsql;

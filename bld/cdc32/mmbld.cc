@@ -8,7 +8,6 @@
 */
 // $Header: g:/dwight/repo/cdc32/rcs/mmbld.cc 1.16 1999/01/10 16:09:44 dwight Checkpoint $
 
-#include <windows.h>
 #include "mmchan.h"
 #include "aq.h"
 #include "codec.h"
@@ -21,7 +20,6 @@
 #include "audout.h"
 #include "audo.h"
 #include "audi.h"
-#include "audchk.h"
 #include "audth.h"
 #include "audmixs.h"
 #include "audmix.h"

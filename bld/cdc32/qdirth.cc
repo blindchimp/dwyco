@@ -7,18 +7,14 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 // $Header: g:/dwight/repo/cdc32/rcs/qdirth.cc 1.9 1999/01/10 16:09:50 dwight Checkpoint $
-#include <windows.h>
+
 #include "dirth.h"
 #include "qdirth.h"
 #include "dwvec.h"
 #include "dwrtlog.h"
 #include "dwstr.h"
-#include "senc.h"
 #include "mmchan.h"
 #include "cdcver.h"
-#include "files.h"
-#include "sha.h"
-#include "profiledb.h"
 #include "dhsetup.h"
 #include "dhgsetup.h"
 #include "vcudh.h"

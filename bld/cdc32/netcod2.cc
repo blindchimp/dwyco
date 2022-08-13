@@ -13,7 +13,6 @@
 // note: this stuff is screaming for exceptions, but we don't got it
 // yet in enough compilers to use it... sigh.
 
-//#include <windows.h>
 #include <string.h>
 #include "vc.h"
 #include "vccomp.h"
@@ -21,12 +20,17 @@
 #include "matcom.h"
 #include "vcxstrm.h"
 #include "dwstr.h"
-#include "mmchan.h"
 
 #include "dwrtlog.h"
 #include "ta.h"
 #include "dwstr.h"
 #include "dwqbm.h"
+#ifdef _Windows
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 using namespace dwyco;
 
 static DwQueryByMember<SimpleSocket> SSQbm;
@@ -123,7 +127,7 @@ SimpleSocket::reconnect(const char *remote_addr)
 }
 
 int
-SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry, HWND hwnd)
+SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry)
 {
     if(!retry)
         initsock();
@@ -401,7 +405,7 @@ SimpleSocket::recvvc(vc& v)
 
 
 int
-Listener::init(const char *, const char *local_addr, int, HWND)
+Listener::init(const char *, const char *local_addr, int)
 {
     initsock();
 
