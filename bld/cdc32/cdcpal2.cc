@@ -279,9 +279,6 @@ pal_login()
     v[1] = My_UID;
     v[2] = transient_online_list();
     Last_sent = v[2];
-    vc v2(VC_VECTOR);
-    v2[0] = v;
-
     v[3] = is_invisible() ? "invis" : "vis";
 
     // note: manual pal auth, always/never stuff is done ca 1/2011

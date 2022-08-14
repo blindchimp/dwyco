@@ -1958,6 +1958,14 @@ dwyco_inhibit_all_incoming(int i)
 
 DWYCOEXPORT
 void
+dwyco_set_disposition(const char *str, int len_str)
+{
+    vc s(VC_BSTRING, str, len_str);
+    MMChannel::My_disposition = s;
+}
+
+DWYCOEXPORT
+void
 dwyco_fetch_info(const char *uid, int len_uid)
 {
     vc vuid(VC_BSTRING, uid, len_uid);

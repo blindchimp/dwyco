@@ -1219,6 +1219,7 @@ void DWYCOEXPORT dwyco_inhibit_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_incoming_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_outgoing_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_all_incoming(int i);
+void DWYCOEXPORT dwyco_set_disposition(const char *str, int len_str);
 //void DWYCOEXPORT dwyco_inhibit_chat(int i);
 
 int DWYCOEXPORT dwyco_get_audio_hw(int *has_audio_input, int *has_audio_output, int *audio_hw_full_duplex);

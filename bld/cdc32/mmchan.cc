@@ -17,7 +17,6 @@
 #include "vidaq.h"
 #include "aqkey.h"
 
-#include "tdecode.h"
 #include "tpgmdec.h"
 #include "aq.h"
 #include "tpgmcod.h"
@@ -38,13 +37,10 @@
 
 #include "dirth.h"
 
-#include "jccolor.h"
-#include "jdcolor.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "cdcver.h"
 #include "filetube.h"
-#include "imgmisc.h"
 #include "vidaq.h"
 #include "callq.h"
 #ifdef SPAZ_CODEC
@@ -126,6 +122,7 @@ DwTreeKaz<MMChannel *, int> *MMChannel::AllChan2;
 int MMChannel::Sync_receivers = 1;
 int MMChannel::Auto_sync = 1;
 DwTimer MMChannel::Bw_adj_timer("bw_adj");
+vc MMChannel::My_disposition;
 //#define DWYCO_THREADED_ENCODE
 
 #if defined(DWYCO_THREADED_ENCODE) && defined(LINUX)
@@ -1808,6 +1805,23 @@ MMChannel::remote_call_type()
     return v;
 }
 
+// return background for older software that doesn't
+// have a disposition, because foreground is treated
+// specially and gets higher priority.
+vc
+MMChannel::remote_disposition()
+{
+    vc v;
+    if(!remote_cfg.is_atomic())
+    {
+        if(!remote_cfg.find("disposition", v))
+            return "background";
+    }
+    else
+        return "background";
+    return v;
+}
+
 unsigned short
 MMChannel::remote_listening_port()
 {
@@ -2052,6 +2066,7 @@ MMChannel::init_config(int caller)
         v.append("uc"); // see above
     }
     config.add_kv("channel duplex", v);
+    config.add_kv("disposition", My_disposition);
 }
 
 void
