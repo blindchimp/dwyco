@@ -14,6 +14,7 @@
 #include "qmsg.h"
 #include "xinfo.h"
 #include "ezset.h"
+#include "activeuid.h"
 
 namespace dwyco {
 
@@ -151,6 +152,8 @@ send_best_way(const DwString& qfn, vc ruid)
     // maybe just through the server.) so we need a place to q up the message
     // that will cause it not to be picked up while we are operating on it, but
     // that will eventually be picked up and sent.
+
+    vc best_uid = find_best_candidate_for_initial_send(ruid);
 
     DirectSend *ds = new DirectSend(qfn);
     ds->se_sig.connect_ptrfun(ds_signal_bounce);

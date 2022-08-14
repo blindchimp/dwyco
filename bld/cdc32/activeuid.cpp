@@ -18,7 +18,7 @@ namespace dwyco {
 vc
 find_best_candidate_for_initial_send(vc uid)
 {
-    vc uids = map_to_representative_uid(uid);
+    vc uids = map_uid_to_uids(uid);
     if(uids.num_elems() <= 1)
         return uid;
 
@@ -46,7 +46,7 @@ find_best_candidate_for_initial_send(vc uid)
         }
         if(Chat_ips.contains(u))
             score += 1;
-        // it would time out of this if it wasn't around, so
+        // uid would time out of if it wasn't around, so
         // this is a better candidate
         if(Broadcast_discoveries.contains(u))
             score += 5;
@@ -59,7 +59,7 @@ find_best_candidate_for_initial_send(vc uid)
         if(sql_has_msg_recently(u, 5 * 60))
             score += 5;
 
-        scores[i] = score;
+        scores.append(score);
         if(score > maxscore)
         {
             maxscore = score;

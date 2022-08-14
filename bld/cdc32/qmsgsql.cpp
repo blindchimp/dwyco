@@ -49,6 +49,8 @@ namespace dwyco {
 using namespace dwyco::qmsgsql;
 DwString Schema_version_hack;
 
+#define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
+
 class QMsgSql : public SimpleSql
 {
 public:
@@ -1499,7 +1501,7 @@ bool
 sql_has_msg_recently(vc uid, long num_seconds)
 {
     vc huid = to_hex(uid);
-    vc res = sql_simple("select max(logical_clock) from gi where assoc_uid = ?1", huid);
+    vc res = sql_simple("select max(logical_clock) from gi where assoc_uid = ?1 and is_sent isnull", huid);
     // we try two things: first check to see if the logical clock we are currently
     // on minus what is in the index is in the interval now - num_seconds.
     // if we just return "yes" as it is most likely ok.
@@ -1515,13 +1517,32 @@ sql_has_msg_recently(vc uid, long num_seconds)
     // a big deal
     if(diff < num_seconds)
         return true;
-    res = sql_simple("select max(date) from gi where assoc_uid = ?1", huid);
+    res = sql_simple("select max(date) from gi where assoc_uid = ?1 and is_sent isnull", huid);
     if(res.num_elems() != 1)
         return false;
     int64_t dm = res[0][0];
     if(time(0) - dm < num_seconds)
         return true;
     return false;
+}
+
+vc
+sql_last_recved_msg(vc uid)
+{
+    vc huid = to_hex(uid);
+    vc res = sql_simple(
+                with_create_uidset(1)
+                "select uid, max(logical_clock), max(date) from gi,uidset "
+                "where assoc_uid = uidset.uid and is_sent isnull group by assoc_uid", huid);
+
+    // we try two things: first check to see if the logical clock we are currently
+    // on minus what is in the index is in the interval now - num_seconds.
+    // if we just return "yes" as it is most likely ok.
+    // so, logical clocks don't have units, but it is sorta "seconds"-ish.
+
+    // if not, just check the dates directly in case the logical clocks have
+    // drifted apart.
+    return res;
 }
 
 int
@@ -1849,8 +1870,6 @@ sql_remove_uid_msg_idx(vc uid)
     }
 
 }
-
-#define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
 
 static
 void
