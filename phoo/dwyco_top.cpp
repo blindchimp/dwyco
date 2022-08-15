@@ -1672,6 +1672,7 @@ DwycoCore::init()
     dwyco_set_video_display_callback(dwyco_video_make_image);
     dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
+    dwyco_set_disposition("foreground", 10);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
 #if ((defined(LINUX)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
