@@ -116,7 +116,7 @@ vc Mutual_ignore;
 
 
 vc Online;
-vc Client_types;
+vc Client_disposition;
 
 //vc Never_visible;
 //vc Always_visible;
@@ -387,7 +387,7 @@ init_qmsg()
     Cur_msgs = vc(VC_VECTOR);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
-    Client_types = vc(VC_TREE);
+    Client_disposition = vc(VC_TREE);
     No_direct_msgs = vc(VC_SET);
     No_direct_att = vc(VC_SET);
     MsgFolders = vc(VC_TREE);
@@ -526,7 +526,7 @@ exit_qmsg()
     //Session_ignore = vcnil;
     Mutual_ignore = vcnil;
     Online = vcnil;
-    Client_types = vcnil;
+    Client_disposition = vcnil;
     No_direct_msgs = vcnil;
     No_direct_att = vcnil;
 
@@ -594,7 +594,7 @@ resume_qmsg()
     Cur_msgs = vc(VC_VECTOR);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
-    Client_types = vc(VC_TREE);
+    Client_disposition = vc(VC_TREE);
 
     // let's keep this info, since it is unlikely to
     // change while we were suspended

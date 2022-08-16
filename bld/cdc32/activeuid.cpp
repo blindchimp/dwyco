@@ -7,6 +7,7 @@
 
 extern vc Online;
 extern vc Chat_ips;
+extern vc Client_disposition;
 namespace dwyco {
 
 // given a candidate uid, which is expected to be some member
@@ -72,6 +73,9 @@ find_best_candidate_for_initial_send(vc uid)
             score += 5;
         if(Online.contains(u))
             score += 1;
+        vc cd;
+        if(Client_disposition.find(u, cd) && cd == vc("foreground"))
+            score += 10;
 
         // if we received a message from them recently
         // give them a higher score.

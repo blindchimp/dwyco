@@ -7,10 +7,10 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
+#include "qmsgsql.h"
 #undef LOCAL_TEST
 #include "vc.h"
 #include "qmsg.h"
-#include "cdcver.h"
 #include "qdirth.h"
 #include "dwrtlog.h"
 #include "dwstr.h"
@@ -27,7 +27,7 @@ using namespace dwyco;
 
 extern vc My_UID;
 extern vc Online;
-extern vc Client_types;
+extern vc Client_disposition;
 extern vc Client_ports;
 
 int is_invisible();
@@ -70,9 +70,14 @@ transient_online_list()
     DwTreeKaz<int, vc> tmpl(0);
 
     vc p = pal_to_vector(0);
+    // note that p may contain group representatives, but we
+    // really need the group uid's explicitly since we are going
+    // to use the info try and target message delivery.
     for(int i = 0; i < p.num_elems(); ++i)
     {
-        tmpl.add(p[i], 0);
+        vc uids = map_uid_to_uids(p[i]);
+        for(int i = 0; i < uids.num_elems(); ++i)
+            tmpl.add(uids[i], 0);
     }
     vc gv = Group_uids;
     if(!gv.is_nil())
@@ -125,7 +130,7 @@ clear_online(int i)
     {
         Online = vc(VC_TREE);
         Client_ports = vc(VC_TREE);
-        Client_types = vc(VC_TREE);
+        Client_disposition = vc(VC_TREE);
     }
 }
 
@@ -193,7 +198,7 @@ process_pal_resp(vc v)
         {
             cal.del(uo[i][0]);
             Online.add_kv(uo[i][0], uo[i][1]);
-            Client_types.add_kv(uo[i][0], uo[i][2]);
+            Client_disposition.add_kv(uo[i][0], uo[i][2]);
             Client_ports.add_kv(uo[i][0], uo[i][3]);
             se_emit(SE_STATUS_CHANGE, uo[i][0]);
         }
@@ -202,7 +207,7 @@ process_pal_resp(vc v)
         for(i = 0; i < n; ++i)
         {
             Online.del(cal[i]);
-            Client_types.del(cal[i]);
+            Client_disposition.del(cal[i]);
             Client_ports.del(cal[i]);
             se_emit(SE_STATUS_CHANGE, cal[i]);
         }
@@ -225,7 +230,7 @@ process_pal_resp(vc v)
         for(i = 0; i < n; ++i)
         {
             Online.add_kv(uo[i][0], uo[i][1]);
-            Client_types.add_kv(uo[i][0], uo[i][2]);
+            Client_disposition.add_kv(uo[i][0], uo[i][2]);
             Client_ports.add_kv(uo[i][0], uo[i][3]);
             se_emit(SE_STATUS_CHANGE, uo[i][0]);
         }
@@ -238,7 +243,7 @@ process_pal_resp(vc v)
     else if(v[0] == vcoff)
     {
         Online.del(v[1]);
-        Client_types.del(v[1]);
+        Client_disposition.del(v[1]);
         Client_ports.del(v[1]);
         se_emit(SE_STATUS_CHANGE, v[1]);
     }
@@ -310,6 +315,7 @@ pal_login()
 
     v[4] = make_fw_setup();
     dirth_send_set_interest_list(My_UID, v, QckDone());
+    v[9] = MMChannel::My_disposition;
     return 1;
 }
 
