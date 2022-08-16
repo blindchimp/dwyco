@@ -1533,15 +1533,9 @@ sql_last_recved_msg(vc uid)
     vc res = sql_simple(
                 with_create_uidset(1)
                 "select uid, max(logical_clock), max(date) from gi,uidset "
-                "where assoc_uid = uidset.uid and is_sent isnull group by assoc_uid", huid);
+                "where assoc_uid = uidset.uid and is_sent isnull group by assoc_uid "
+                "order by 2 desc, 3 desc", huid);
 
-    // we try two things: first check to see if the logical clock we are currently
-    // on minus what is in the index is in the interval now - num_seconds.
-    // if we just return "yes" as it is most likely ok.
-    // so, logical clocks don't have units, but it is sorta "seconds"-ish.
-
-    // if not, just check the dates directly in case the logical clocks have
-    // drifted apart.
     return res;
 }
 

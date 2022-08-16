@@ -1,5 +1,6 @@
 #include "mmchan.h"
 #include "activeuid.h"
+#include "qauth.h"
 #include "qmsg.h"
 #include "qmsgsql.h"
 #include "aconn.h"
@@ -22,6 +23,25 @@ find_best_candidate_for_initial_send(vc uid)
     if(uids.num_elems() <= 1)
         return uid;
 
+    vc last_recv = sql_last_recved_msg(uid);
+    // here is where we find the slam-dunks. if we are connected to a
+    // "foreground" process and it sent us the latest message, then send it
+    // straight back to that uid.
+    for(int i = 0; i < last_recv.num_elems(); ++i)
+    {
+        // note: we know the results are returned with the most recent
+        // message first, so once we find it, we're done.
+        vc muid = from_hex(last_recv[i][0]);
+        MMChannel *mc = MMChannel::already_connected(muid, 1);
+        if(mc && mc->remote_disposition() == vc("foreground"))
+        {
+            return muid;
+        }
+    }
+    //
+    // if there are no foreground processes that have sent us anything,
+    // we just make an educated guess about where to send the message.
+    //
     // we assign a score to various levels of information we
     // have gathered about the uid
     int n = uids.num_elems();
