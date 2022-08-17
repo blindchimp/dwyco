@@ -2758,7 +2758,10 @@ sql_uid_has_tag(vc uid, vc tag)
         sql_start_transaction();
         vc res = sql_simple(
                     with_create_uidset(2)
-                    "select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
+                    "select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 "
+                    "and not exists(select 1 from gtomb where guid = gmt.guid) "
+                    "and not exists(select 1 from msg_tomb where mid = gi.mid) "
+                    "limit 1",
                             tag,
                     to_hex(uid));
         c = (res.num_elems() > 0);

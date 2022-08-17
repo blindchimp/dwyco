@@ -56,14 +56,11 @@ find_best_candidate_for_initial_send(vc uid)
     {
         vc u = uids[i];
         int score = 0;
+        // note: we can directly connect to some background processing
+        // clients.
         if(MMChannel::already_connected(u, 1))
         {
-            // if we are connected to this exact uid, then
-            // almost certainly that is where we should send
-            if(u == uid)
-                score += 1000;
-            else
-                score += 100;
+            score += 1;
         }
         if(Chat_ips.contains(u))
             score += 1;
