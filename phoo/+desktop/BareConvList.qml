@@ -197,7 +197,9 @@ Item {
        }
    }
    
-   
+   Rectangle {
+       color: "dimgray"
+       anchors.fill: parent
    ListView {
        id: listView2
        anchors.fill:parent
@@ -219,6 +221,7 @@ Item {
 
        }
 
+   }
    }
 
    Label {

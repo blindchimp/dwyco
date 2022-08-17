@@ -155,6 +155,7 @@ SOURCES += sqlite3.c
 }
 
 SOURCES += \
+    activeuid.cpp \
     bgapp.cpp \
     ezset2.cpp \
 mmchan.cc \
@@ -286,8 +287,7 @@ aqext_android.cpp \
     aqkey.cpp \
     netlog.cpp
 
-HEADERS += \
-    netlog.h
+
 
 
 

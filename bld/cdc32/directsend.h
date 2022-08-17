@@ -13,12 +13,10 @@
 #include "dwstr.h"
 #include "ssns.h"
 #include "dwqbm.h"
-#include "qdirth.h"
-#include "qmsg.h"
-#include "filetube.h"
 #include "se.h"
 
 class MMCall;
+class MMChannel;
 
 namespace dwyco {
 

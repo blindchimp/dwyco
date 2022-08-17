@@ -156,6 +156,7 @@ vc pal_to_vector(int raw);
 void clean_cruft();
 void boost_logical_clock();
 void update_global_logical_clock(int64_t lc);
+int64_t diff_logical_clock(int64_t tm);
 
 #define VERF_AUTH_NO_INFO 0x1
 #define VERF_AUTH_FAILED 0x2

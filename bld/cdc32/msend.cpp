@@ -14,6 +14,7 @@
 #include "qmsg.h"
 #include "xinfo.h"
 #include "ezset.h"
+#include "activeuid.h"
 
 namespace dwyco {
 
@@ -151,6 +152,30 @@ send_best_way(const DwString& qfn, vc ruid)
     // maybe just through the server.) so we need a place to q up the message
     // that will cause it not to be picked up while we are operating on it, but
     // that will eventually be picked up and sent.
+
+    // note: the recipient of a message isn't considered "part of the message"
+    // for purposes of delivery. but, we store the recipient uid in the file
+    // that is created and stored while delivery is attempted. unfortunately,
+    // sometimes the best place to deliver a message is different than what
+    // is initially stored in the message. the current send state-machines
+    // pretty much assume the recipient is a contant, and will use whatever
+    // is stored in the message while it is trying to deliver it.
+    // the api for "directsend" probably needs to be augmented with something
+    // like "ignore what is in the message and try to send it here first",
+    // and since if there is any error
+    // at all, it switches to server send, things shouldn't need to get too
+    // much more complicated.
+    // XXX note also, if we are in a group and we are sending to ourselves
+    // or anyone in the group, we probably need to special case that, short-circuiting
+    // it seems like a good idea.
+    vc best_uid = find_best_candidate_for_initial_send(ruid);
+    vc m;
+    // kluge: update recipient
+    if(!load_info(m, qfn.c_str()))
+        return 0;
+    m[QQM_RECIP_VEC][0] = best_uid;
+    if(!save_info(m, qfn.c_str()))
+        return 0;
 
     DirectSend *ds = new DirectSend(qfn);
     ds->se_sig.connect_ptrfun(ds_signal_bounce);

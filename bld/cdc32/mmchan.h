@@ -193,6 +193,7 @@ public:
     vc remote_connection();
     int remote_session_id();
     vc remote_call_type();
+    vc remote_disposition();
     DwCoder *coder_from_config();
     DwDecoder *decoder_from_config();
     static MMChannel *already_connected(vc uid, int is_msg_chan = 0, int is_user_control_chan = 0);
@@ -1072,6 +1073,13 @@ public:
     void send_pull(vc mid, int pri);
 
     //ssns::signal3<vc, vc, vc> pull_done;
+
+public:
+    // this is sent in direct connections, and is used to
+    // indicate whether the system is in "foreground" or
+    // "background". this is usefu when you are trying to
+    // figure out where to initially send a message.
+    static vc My_disposition;
 };
 
 #define PULLPRI_INIT 0

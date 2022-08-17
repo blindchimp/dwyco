@@ -1958,6 +1958,14 @@ dwyco_inhibit_all_incoming(int i)
 
 DWYCOEXPORT
 void
+dwyco_set_disposition(const char *str, int len_str)
+{
+    vc s(VC_BSTRING, str, len_str);
+    MMChannel::My_disposition = s;
+}
+
+DWYCOEXPORT
+void
 dwyco_fetch_info(const char *uid, int len_uid)
 {
     vc vuid(VC_BSTRING, uid, len_uid);
@@ -4614,6 +4622,18 @@ dwyco_name_to_uid(const char *handle, int len_handle)
     vc h(VC_BSTRING, handle, len_handle);
 
     dirth_send_get_uid(My_UID, h, QckDone(name_map_done, 0, h, ValidPtr()));
+}
+
+DWYCOEXPORT
+int
+dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    vc repuid = map_to_representative_uid(buid);
+    vc ret(VC_VECTOR);
+    ret[0] = repuid;
+    *list_out = dwyco_list_from_vc(ret);
+    return 1;
 }
 
 int

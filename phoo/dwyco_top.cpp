@@ -85,8 +85,8 @@ DwycoCore *TheDwycoCore;
 static QQmlContext *TheRootCtx;
 QByteArray DwycoCore::My_uid;
 static int AvoidSSL = 0;
-typedef QHash<QByteArray, QByteArray> UID_ATTR_MAP;
-typedef QHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
+typedef QMultiHash<QByteArray, QByteArray> UID_ATTR_MAP;
+typedef QMultiHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
 static UID_ATTR_MAP Uid_attrs;
 static int Init_ok;
 
@@ -294,7 +294,7 @@ uid_attrs_clear()
 void
 uid_attrs_add(const QByteArray& uid, const QByteArray& attr)
 {
-    Uid_attrs.insertMulti(uid, attr);
+    Uid_attrs.insert(uid, attr);
 }
 
 void
@@ -1672,6 +1672,7 @@ DwycoCore::init()
     dwyco_set_video_display_callback(dwyco_video_make_image);
     dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
+    dwyco_set_disposition("foreground", 10);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
 #if ((defined(LINUX)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
