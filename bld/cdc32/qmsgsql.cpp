@@ -1520,6 +1520,8 @@ sql_has_msg_recently(vc uid, long num_seconds)
     res = sql_simple("select max(date) from gi where assoc_uid = ?1 and is_sent isnull", huid);
     if(res.num_elems() != 1)
         return false;
+    if(res[0][0].is_nil())
+        return false;
     auto dm = static_cast<long long>(res[0][0]);
     if(time(0) - dm < num_seconds)
         return true;

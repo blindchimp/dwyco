@@ -528,7 +528,7 @@ Page {
                         vidpanel.visible = false
                         core.enable_video_capture_preview(0)
                     }
-                    ind_online = connected === 1 ? true : false
+                    ind_online = connected
                 }
             }
 //        onIgnore_event: {

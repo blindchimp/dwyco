@@ -32,6 +32,9 @@ find_best_candidate_for_initial_send(vc uid)
     {
         // note: we know the results are returned with the most recent
         // message first, so once we find it, we're done.
+        // WARNING: in weird cases, the time columns returned might
+        // be NULL (thanks to sql). if you update this to include
+        // checking the times, take that into account.
         vc muid = from_hex(last_recv[i][0]);
         MMChannel *mc = MMChannel::already_connected(muid, 1);
         if(mc && mc->remote_disposition() == vc("foreground"))
