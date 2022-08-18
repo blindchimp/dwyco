@@ -14,7 +14,6 @@
 #define DIRTH_H
 
 #include "vc.h"
-#include "mmchan.h"
 #include "simple_property.h"
 
 class MessageDisplay;

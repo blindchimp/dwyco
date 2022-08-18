@@ -10,9 +10,8 @@
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/netvid.cc 1.27 1999/01/10 16:09:38 dwight Checkpoint $
  */
-#ifdef _Windows
+
 #include <windows.h>
-#endif
 #include <stdio.h>
 #include <string.h>
 #include "netvid.h"
@@ -24,6 +23,7 @@
 #include "dwstr.h"
 #include "netlog.h"
 #include "dwyco_rand.h"
+#include "vccrypt2.h"
 using namespace dwyco;
 
 vc MMTube::Ping("vomit");
@@ -248,7 +248,7 @@ MMTube::gen_channel(unsigned short remote_port, int& chan)
 }
 
 int
-MMTube::connect(const char *remote_addr, const char *local_addr, int block, HWND hwnd, int setup_unreliable)
+MMTube::connect(const char *remote_addr, const char *local_addr, int block, int setup_unreliable)
 {
     if(connected)
         return SSERR;
@@ -263,7 +263,7 @@ MMTube::connect(const char *remote_addr, const char *local_addr, int block, HWND
 
     // XXX block/noblock on connect
     ctrl_sock->non_blocking(!block);
-    if(!ctrl_sock->init(remote_addr, local_addr, retry, hwnd))
+    if(!ctrl_sock->init(remote_addr, local_addr, retry))
     {
         int ret = SSERR;
         if(ctrl_sock->wouldblock())

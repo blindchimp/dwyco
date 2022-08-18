@@ -8,12 +8,7 @@
 */
 #ifndef CDCVER_H
 #define CDCVER_H
-//
-// checklist-
-// disable logging
-// turn off god mode
-// turn off test menus
-// turn off memory checking in gnumal.c
+#include "vc.h"
 #if defined(_Windows)
 #define CDC_PLATFORM "win"
 #elif defined(MACOSX)
@@ -35,7 +30,5 @@
 #define IVERSION "CDCX-" CDC_PLATFORM "-" __DATE__ "-" __TIME__
 
 vc dwyco_get_version_string();
-
-#define PALTYPE "cdc297"
 
 #endif

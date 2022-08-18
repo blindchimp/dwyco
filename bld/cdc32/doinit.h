@@ -26,6 +26,4 @@ extern vc TheMan;
 extern DwLog *Log;
 }
 
-#define INI_FILENAME "dwyco.ini"
-
 #endif

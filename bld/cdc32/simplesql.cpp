@@ -5,7 +5,6 @@
 #include <sqlite3.h>
 #endif
 
-#include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
 #include "fnmod.h"
@@ -252,6 +251,26 @@ SimpleSql::sync_on()
     int tmp = check_txn;
     check_txn = 0;
     sql_simple("pragma synchronous=normal;");
+    check_txn = tmp;
+}
+
+void
+SimpleSql::vacuum()
+{
+    int tmp = check_txn;
+    check_txn = 0;
+    try
+    {
+        for(int i = 0; i < schema_names.num_elems(); ++i)
+        {
+            DwString a = DwString("vacuum %1").arg(schema_names[i]);
+            sql_simple(a.c_str());
+        }
+    }
+    catch (...)
+    {
+
+    }
     check_txn = tmp;
 }
 

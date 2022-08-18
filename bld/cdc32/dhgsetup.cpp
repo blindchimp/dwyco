@@ -12,14 +12,12 @@
 #endif
 
 #include "vc.h"
-#include "xinfo.h"
 #include "dwrtlog.h"
 #include "qauth.h"
 #include "vcudh.h"
 #include "dhgsetup.h"
 #include "simplesql.h"
 #include "sha3.h"
-#include "rng.h"
 #include "aes.h"
 #include "modes.h"
 #include "simple_property.h"
@@ -196,9 +194,14 @@ init_dhg()
     bind_sql_setting("sync/eager", eager_changed);
     DH_alternate *dha = new DH_alternate;
     dha->init(My_UID, alt_name);
-    if(!dha->load_account(alt_name))
+    if(!dha->load_account(alt_name, false))
     {
+        // can't find the given name, something may have happened
+        // to our key, maybe restoring from a backup or whatever.
+        // revert back to "no group" mode
         delete dha;
+        set_settings_value("group/alt_name", "");
+        set_settings_value("group/join_key", "");
         return;
     }
     vc v = DHG_db->sql_simple("select * from group_uids");
@@ -320,7 +323,7 @@ DH_alternate::new_account()
 // return 2 means account was created, and the public static info will
 // have to be refreshed in the profile, etc.
 int
-DH_alternate::load_account(vc alternate_name)
+DH_alternate::load_account(vc alternate_name, bool create_if_not_exists)
 {
     vc res;
     try {
@@ -332,7 +335,7 @@ DH_alternate::load_account(vc alternate_name)
     }
     if(res.num_elems() == 0)
     {
-        if(!new_account())
+        if(!create_if_not_exists || !new_account())
         {
             GRTLOG("cant create DH account", 0, 0);
             return 0;

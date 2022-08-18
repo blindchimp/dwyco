@@ -12,7 +12,6 @@
  */
 #include <math.h>
 #include "macs.h"
-#include "sqrs.h"
 #include "pbmcfg.h"
 #include "matcom.h"
 #include "imgmisc.h"

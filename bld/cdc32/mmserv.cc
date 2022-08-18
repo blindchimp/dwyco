@@ -8,7 +8,6 @@
 */
 #include "mmchan.h"
 #include "qdirth.h"
-#include "dirth.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "chatgrid.h"
@@ -540,29 +539,18 @@ MMChannel::chat_response(vc v)
 }
 
 MMChannel *
-MMChannel::start_server_channel(enum resolve_how how, unsigned long addr, const char *name, int port)
+MMChannel::start_server_channel(vc ip, int port)
 {
     MMChannel *m = new MMChannel;
     m->server_channel = 1;
     m->port = port;
-    if(how == BYNAME)
+
+    if(!m->start_connect(ip, port))
     {
-        if(!m->start_resolve(how, addr, name))
-        {
-            delete m;
-            return 0;
-        }
+        delete m;
+        return 0;
     }
-    else
-    {
-        // start straight with the ip
-        m->addr_out.s_addr = addr;
-        if(!m->start_connect())
-        {
-            delete m;
-            return 0;
-        }
-    }
+
     m->start_service();
     m->frame_timer.stop();
     m->ref_timer.stop();

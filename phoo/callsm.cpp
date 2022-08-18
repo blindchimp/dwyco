@@ -101,6 +101,7 @@
 #include "ct.h"
 #include "callsm_objs.h"
 #include "ccmodel.h"
+#include "dwycolist2.h"
 
 extern int Public_chat_video_pause;
 //extern QByteArray My_uid;
@@ -646,6 +647,17 @@ simple_call::connect_signals()
     }
 }
 
+static
+QByteArray
+map_down(const QByteArray& uid)
+{
+    DWYCO_LIST r;
+    dwyco_map_uid_to_representative(uid.constData(), uid.length(), &r);
+    simple_scoped q(r);
+    QByteArray ruid = q.get<QByteArray>(0);
+    return ruid;
+}
+
 void
 simple_call::signal_dispatcher()
 {
@@ -657,8 +669,9 @@ simple_call::signal_dispatcher()
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
+    QByteArray ruid = map_down(uid);
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
-                              Q_ARG(QString, uid.toHex()));
+                              Q_ARG(QString, ruid.toHex()));
 
 }
 
@@ -673,8 +686,9 @@ simple_call::signal_dispatcher_int(int i)
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
+    QByteArray ruid = map_down(uid);
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
-                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(QString, ruid.toHex()),
                               Q_ARG(int, i));
 
 }
@@ -690,8 +704,9 @@ simple_call::signal_dispatcher_bool(bool i)
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
+    QByteArray ruid = map_down(uid);
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
-                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(QString, ruid.toHex()),
                               Q_ARG(bool, i));
 
 }
@@ -707,8 +722,9 @@ simple_call::signal_dispatcher_string(QString i)
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
+    QByteArray ruid = map_down(uid);
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
-                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(QString, ruid.toHex()),
                               Q_ARG(QString, i));
 
 }

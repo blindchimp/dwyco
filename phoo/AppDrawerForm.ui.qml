@@ -28,7 +28,7 @@ Pane {
     property real ctrl_pad: 4
     property alias circularImage: circularImage
     property alias text1: text1
-    padding: 6
+    padding: 0
 
     ColumnLayout {
         id: columnLayout
@@ -37,10 +37,13 @@ Pane {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            //Layout.fillHeight: true
+            implicitHeight: topbox.implicitHeight
+            implicitWidth: topbox.implicitWidth
             color: primary_dark
 
             ColumnLayout {
+                id: topbox
                 anchors.fill: parent
                 anchors.margins: mm(1)
                 Text {

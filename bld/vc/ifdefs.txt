@@ -5,7 +5,6 @@ VCDBG
 
 environment:
 
-USE_BERKSOCK
 USE_WINSOCK
 UNIX
 

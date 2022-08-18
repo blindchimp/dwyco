@@ -49,6 +49,8 @@ namespace dwyco {
 using namespace dwyco::qmsgsql;
 DwString Schema_version_hack;
 
+#define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
+
 class QMsgSql : public SimpleSql
 {
 public:
@@ -355,7 +357,7 @@ bool
 generate_delta(vc uid, vc delta_id)
 {
     vc huid = to_hex(uid);
-    DwString dbfn = DwString("minew%1.sql").arg((const char *)huid);
+    DwString dbfn = DwString("minew%1.tdb").arg((const char *)huid);
     dbfn = newfn(dbfn);
     SimpleSql s(dbfn);
     if(!s.init(SQLITE_OPEN_READWRITE))
@@ -426,6 +428,7 @@ generate_delta(vc uid, vc delta_id)
         {
             vc new_delta_id = s.sql_simple("update id set delta_id = lower(hex(randomblob(8))) returning delta_id");
             s.sql_simple("insert into taglog(mid, tag, to_uid, guid, op) values('', '', ?1, ?2, 's')", huid, new_delta_id[0][0]);
+            s.sql_simple("insert into midlog(to_uid, mid, op) values(?1, ?2, 's')", huid, new_delta_id[0][0]);
             GRTLOG("new delta id for %s %d", (const char *)huid, r1.num_elems() + r2.num_elems() + r3.num_elems() + r4.num_elems());
         }
         else
@@ -565,32 +568,60 @@ package_downstream_sends(vc remote_uid)
         // containing both index and tag updates, then perform all of them
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
-        vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a'", huid);
-        vc mtombs = sql_simple("select mid, op from main.midlog where midlog.to_uid = ?1 and op = 'd'", huid);
+
+        // note: this sync thing is supposed to be processed after all the updates
+        // that are received during a delta update, letting us know what we have integrated
+        // from the remote side. for now, we just assume
+        // we are creating a block of updates which are applied in order on the remote
+        // side and then
+        // this sync id is stored remotely and will match our delta id. it is easy for this
+        // to fail, but mismatches in the delta id just result in a full index send.
+        // we are relying on sqlite's pseudo-autoincrement stuff with the rowid to
+        // process only updates up to the next sync point.
+        // there are two copies of the syncpoint, only because we have two logs: one for
+        // messages and one for tags. it might make sense to change this to one table
+        // in the future so simplify things here.
+
+        vc next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
+        vc next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
+        vc sync_id;
+        vc next_tag_sync;
+        vc next_mid_sync;
+        if(next_tag_sync_res.num_elems() != next_mid_sync_res.num_elems())
+            oopanic("missing sync");
+        if(next_tag_sync_res.num_elems() == 0)
+        {
+            // no sync points found, just process the entire log
+            next_mid_sync = vc(INT32_MAX);
+            next_tag_sync = vc(INT32_MAX);
+        }
+        else
+        {
+            if(next_mid_sync_res[0][0] != next_tag_sync_res[0][0])
+                oopanic("missing sync2");
+            next_mid_sync = next_mid_sync_res[0][1];
+            sync_id = next_tag_sync_res[0][0];
+            next_tag_sync = next_tag_sync_res[0][1];
+        }
+
+        vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
+                             "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2", huid, next_mid_sync);
+        vc mtombs = sql_simple("select mid, op from main.midlog "
+                               "where midlog.to_uid = ?1 and op = 'd' and rowid < ?2", huid, next_mid_sync);
 
         // note: put in the "group by" since it appears at some point i allowed duplicate
         // guid's in the tag set (at some point i put the receiving uid in there, so we can get
         // a picture of which client has which tags, and i'm not sure i use that info anywhere).
         // the duplicates didn't cause an error, just lots of extra processing that was ignored.
 
-        vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' group by mt2.guid", huid);
-        vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl where to_uid = ?1 and op = 'd'", huid);
-        // note: this sync thing is supposed to be processed after all the updates
-        // that are received during a delta update, letting us know what we have integrated
-        // from the remote side. there really only should be 1, and really, this needs to be
-        // redesigned so that the ordering is explicit. for now, we just assume
-        // we are creating a block of updates which are applied in order on the remote
-        // side (along with maybe some other stuff too, but that is ok) and then
-        // this sync item is applied so the next cycle knows. it is easy for this
-        // to fail, but that will result in a new index being sent, which is ok.
-        // the reason we order by rowid here is we want to apply the one that is
-        // last in the log (in the odd case that multiple syncs are in the log
-        // which is really something that "can't happen")
-        vc sync = sql_simple("select guid from mt.taglog where to_uid = ?1 and op = 's' order by rowid desc limit 1", huid);
-        if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || sync.num_elems() > 0)
-            GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d sync %d", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), sync.num_elems());
-        sql_simple("delete from midlog where to_uid = ?1", huid);
-        sql_simple("delete from taglog where to_uid = ?1", huid);
+        vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
+                             "where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
+        vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
+                              "where to_uid = ?1 and op = 'd' and tl.rowid < ?2", huid, next_tag_sync);
+        if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || !sync_id.is_nil())
+            GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d sync %s", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), (const char *)sync_id);
+        sql_simple("delete from midlog where to_uid = ?1 and rowid <= ?2", huid, next_mid_sync);
+        sql_simple("delete from taglog where to_uid = ?1 and rowid <= ?2", huid, next_tag_sync);
         sql_commit_transaction();
 
         vc ret(VC_VECTOR);
@@ -622,11 +653,11 @@ package_downstream_sends(vc remote_uid)
             cmd[1] = tombs[i];
             ret.append(cmd);
         }
-        if(sync.num_elems() > 0)
+        if(!sync_id.is_nil())
         {
             vc cmd(VC_VECTOR);
             cmd[0] = "sync";
-            cmd[1] = sync[0][0];
+            cmd[1] = sync_id;
             ret.append(cmd);
         }
         return ret;
@@ -730,7 +761,7 @@ void
 remove_delta_databases()
 {
     {
-        FindVec *fv = find_to_vec(newfn("minew????????????????????.sql").c_str());
+        FindVec *fv = find_to_vec(newfn("minew????????????????????.tdb").c_str());
         for(int i = 0; i < fv->num_elems(); ++i)
         {
             DeleteFile(newfn((*fv)[i]->cFileName).c_str());
@@ -738,7 +769,7 @@ remove_delta_databases()
         delete_findvec(fv);
     }
     {
-        FindVec *fv = find_to_vec(newfn("mi????????????????????.sql").c_str());
+        FindVec *fv = find_to_vec(newfn("mi????????????????????.tdb").c_str());
         for(int i = 0; i < fv->num_elems(); ++i)
         {
             DeleteFile(newfn((*fv)[i]->cFileName).c_str());
@@ -803,6 +834,7 @@ remove_sync_state()
         sql_simple("delete from mt.taglog");
         sql_simple("delete from deltas");
         sql_commit_transaction();
+        sDb->vacuum();
         remove_delta_databases();
     }
     catch(...)
@@ -855,7 +887,7 @@ int
 import_remote_mi(vc remote_uid)
 {
     vc huid = to_hex(remote_uid);
-    DwString fn = DwString("mi%1.sql").arg((const char *)huid);
+    DwString fn = DwString("mi%1.tdb").arg((const char *)huid);
     //DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
     SimpleSql s(MSG_IDX_DB);
     if(!s.init())
@@ -1326,6 +1358,7 @@ init_qmsg_sql()
     sql_simple("insert into static_uid_tags values('_leader')");
 
     // this is just a scratch table, i put it up here to avoid "create temp"
+    // during normal operations...
     // (which is a schema operation, and locks tons of stuff)
     sql_simple("create temp table uidset(uid text not null)");
 
@@ -1451,6 +1484,61 @@ sql_get_max_logical_clock()
     if(res[0][0].type() != VC_INT)
         return 0;
     return (long)res[0][0];
+}
+
+// what we need here is a "what was the system time locally of
+// the last message we got from this uid"
+// we don't have this, so we estimate by just using the date
+// in the index, which is the creation date, which might be
+// screwed up pretty bad.
+// note that this does not do the uid folding, since we use this
+// in a situation where we are trying to pick out a good uid
+// from a group of uid's.
+// note: it might be better just to return a couple of lists
+// with all the uid's in it to avoid multiple calls to this,
+// but i'm not even sure this will work, so keep it simpler.
+bool
+sql_has_msg_recently(vc uid, long num_seconds)
+{
+    vc huid = to_hex(uid);
+    vc res = sql_simple("select max(logical_clock) from gi where assoc_uid = ?1 and is_sent isnull", huid);
+    // we try two things: first check to see if the logical clock we are currently
+    // on minus what is in the index is in the interval now - num_seconds.
+    // if we just return "yes" as it is most likely ok.
+    // so, logical clocks don't have units, but it is sorta "seconds"-ish.
+
+    // if not, just check the dates directly in case the logical clocks have
+    // drifted apart.
+    if(res.num_elems() != 1)
+        return false;
+    int64_t mlc = (long)res[0][0];
+    int64_t diff = diff_logical_clock(mlc);
+    // diff should be positive, but if it isn't, it isn't
+    // a big deal
+    if(diff < num_seconds)
+        return true;
+    res = sql_simple("select max(date) from gi where assoc_uid = ?1 and is_sent isnull", huid);
+    if(res.num_elems() != 1)
+        return false;
+    if(res[0][0].is_nil())
+        return false;
+    auto dm = static_cast<long long>(res[0][0]);
+    if(time(0) - dm < num_seconds)
+        return true;
+    return false;
+}
+
+vc
+sql_last_recved_msg(vc uid)
+{
+    vc huid = to_hex(uid);
+    vc res = sql_simple(
+                with_create_uidset(1)
+                "select uid, max(logical_clock), max(date) from gi,uidset "
+                "where assoc_uid = uidset.uid and is_sent isnull group by assoc_uid "
+                "order by 2 desc, 3 desc", huid);
+
+    return res;
 }
 
 int
@@ -1779,8 +1867,6 @@ sql_remove_uid_msg_idx(vc uid)
 
 }
 
-#define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
-
 static
 void
 create_uidset(vc uid)
@@ -1835,8 +1921,8 @@ static
 int
 sql_check_indexed_flag(vc uid)
 {
-    vc res = sql_simple("select count(*) from indexed_flag where uid = ?1", to_hex(uid));
-    if(res[0][0] == vc(0))
+    vc res = sql_simple("select 1 from indexed_flag where uid = ?1", to_hex(uid));
+    if(res.num_elems() == 0)
         return 0;
     return 1;
 }
@@ -2674,7 +2760,10 @@ sql_uid_has_tag(vc uid, vc tag)
         sql_start_transaction();
         vc res = sql_simple(
                     with_create_uidset(2)
-                    "select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 and not exists(select 1 from gtomb where guid = gmt.guid) limit 1",
+                    "select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 "
+                    "and not exists(select 1 from gtomb where guid = gmt.guid) "
+                    "and not exists(select 1 from msg_tomb where mid = gi.mid) "
+                    "limit 1",
                             tag,
                     to_hex(uid));
         c = (res.num_elems() > 0);

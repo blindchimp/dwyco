@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+#include <QApplication>
 #include <QDialog>
 #include <QSettings>
 #include <QtNetwork/QHostInfo>
@@ -24,13 +25,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "ui_mainwin.h"
 #include "mainwin.h"
 #include "adminw.h"
 #include "autoupdate.h"
 #include "dlli.h"
 #include "dvp.h"
-#include "dwstr.h"
 #include "tfhex.h"
 #if 0
 #if defined(LINUX) && !defined(MAC_CLIENT)
@@ -541,7 +540,7 @@ int main(int argc, char *argv[])
     );
 #endif
 
-
+    dwyco_set_disposition("foreground", 10);
     dwyco_init();
     //printf("%s\n", a);
     //fflush(stdout);

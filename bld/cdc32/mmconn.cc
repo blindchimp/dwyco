@@ -8,19 +8,19 @@
 */
 // $Header: g:/dwight/repo/cdc32/rcs/mmconn.cc 1.11 1999/01/10 16:09:47 dwight Checkpoint $
 #ifndef LINUX
-#include <WinSock2.h>
+//#include <WinSock2.h>
+#include <Ws2tcpip.h>
 #endif
 
 #include "vcwsock.h"
 #include "mmchan.h"
 #include "netvid.h"
 #include "msgdisp.h"
-#include "gvchild.h"
 #include "dwrtlog.h"
 
 using namespace dwyco;
 
-
+#if 0
 #ifdef _Windows
 void
 async_handler(SOCKET s, DWORD lp)
@@ -59,6 +59,7 @@ async_lookup_handler(HANDLE h, DWORD lp)
     delete &cl;
 }
 
+#endif
 #endif
 
 void
@@ -176,6 +177,7 @@ MMChannel::poll_resolve()
 }
 
 #else
+#if 0
 int
 MMChannel::start_resolve(enum resolve_how how, unsigned long addr, const char *hostname)
 {
@@ -219,7 +221,9 @@ fail:
 #endif
     return 0;
 }
+#endif
 
+#if 0
 void
 MMChannel::cancel_resolve()
 {
@@ -287,37 +291,23 @@ MMChannel::poll_resolve()
 }
 
 #endif
+#endif
 
 int
-MMChannel::start_connect()
+MMChannel::start_connect(vc ip, int port)
 {
     GRTLOG("connect started", 0, 0);
     call_setup = 1;
-    char *a = inet_ntoa(addr_out);
-    if(a == 0)
+    if(!inet_pton(AF_INET, ip, &addr_out) || port == 0)
     {
         msg_out("address isn't a valid internet address");
         return 0;
     }
-    addrstr = a;
-    if(port == 0)
-    {
-        //strcat(addrstr, DEFAULT_PORT_SUFFIX);
-        // note this is WRONG... need to pick up port from
-        // directory (or same place we got the IP)
-        // this should actually be hardwired (or another option
-        // for default OUTGOING port) to default outgoing port,
-        // which is what we want to use if we don't have any
-        // other information.
-        oopanic("what were you thinking");
-        //DwString b(DwNetConfigData.get_primary_suffix(addrstr.c_str()));
-        //addrstr = b;
-    }
-    else
-    {
-        addrstr += ":";
-        addrstr += DwString::fromInt(port);
-    }
+    this->port = port;
+    addrstr = (const char *)ip;
+    addrstr += ":";
+    addrstr += DwString::fromInt(port);
+
     ouraddr = "any:any";
     pstate = CONNECTING;
     msg_out("Connecting...");

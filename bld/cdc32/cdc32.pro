@@ -29,7 +29,8 @@ linux-*: INCLUDEPATH += ../v4lcap
 DEFINES += \
 	VCCFG_FILE \
 	DWVEC_DOINIT \
-        DWYCO_USE_SQLITE
+        DWYCO_USE_SQLITE \
+        DWYCO_NO_VIDEO_FROM_PPM
     
 equals(DWYCO_APP, "rando") {
 DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
@@ -154,6 +155,7 @@ SOURCES += sqlite3.c
 }
 
 SOURCES += \
+    activeuid.cpp \
     bgapp.cpp \
     ezset2.cpp \
 mmchan.cc \
@@ -285,8 +287,7 @@ aqext_android.cpp \
     aqkey.cpp \
     netlog.cpp
 
-HEADERS += \
-    netlog.h
+
 
 
 

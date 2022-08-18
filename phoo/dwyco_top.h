@@ -15,6 +15,7 @@
 #include <QVariant>
 #include <QUrl>
 #include <QNetworkReply>
+#include <QThread>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -54,6 +55,7 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, group_private_key_valid)
 
     QML_READONLY_VAR_PROPERTY(bool, invisible)
+    QML_READONLY_VAR_PROPERTY(int, android_migrate)
 
 
 public:
@@ -79,8 +81,10 @@ public:
         m_eager_pull = 0;
         m_any_unviewed = false;
         m_invisible = false;
+        m_android_migrate = Android_migrate;
     }
     static QByteArray My_uid;
+    static int Android_migrate;
 
 
     enum System_event {
@@ -288,6 +292,19 @@ public:
 
     Q_INVOKABLE int send_report(QString uid);
     Q_INVOKABLE QString export_attachment(QString mid);
+    static void one_time_copy_files();
+    Q_INVOKABLE void background_migrate();
+    Q_INVOKABLE void directory_swap();
+
+    // this can sometime take awhile, so we handle it in a thread, then
+    // cause the user to exit and restart
+    Q_INVOKABLE void background_reindex();
+    static void do_reindex();
+
+    Q_INVOKABLE QUrl from_local_file(const QString&);
+    Q_INVOKABLE QString to_local_file(const QUrl& url);
+
+public:
 
 public slots:
     void app_state_change(Qt::ApplicationState);
@@ -362,6 +379,8 @@ signals:
     void zap_stopped(int zid);
 
     void mid_tag_changed(QString mid);
+    void migration_complete();
+	void reindex_complete();
 
     void name_to_uid_result(QString uid, QString handle);
     // WARNING: DO NOT USE THESE QBYTEARRAY THINGS IN QML, they are not
@@ -374,6 +393,24 @@ signals:
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
+
+};
+
+class fuck_me_with_a_brick : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::one_time_copy_files();
+    }
+
+};
+
+class fuck_me_with_a_brick2 : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::do_reindex();
+    }
 
 };
 

@@ -17,6 +17,7 @@
 #include "fnmod.h"
 #include "qmsg.h"
 #include "sepstr.h"
+#include "filetube.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>

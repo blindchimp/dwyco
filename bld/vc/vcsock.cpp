@@ -18,6 +18,9 @@ vc_socket::vc_socket()
 	err_callback = 0;
 	exc_level = 'U';
 	last_wsa_error = 0;
+    status = 0;
+    retries = 0;
+    max_retries = 0;
 }
 
 int

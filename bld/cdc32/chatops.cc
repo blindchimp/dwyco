@@ -174,11 +174,8 @@ start_chat_thread(vc ip, vc port, const char *pw, vc chat_name)
     //if(Current_authenticator.is_nil())
     //return 0;
 
-    MMChannel *mc = MMChannel::start_server_channel(
-                        MMChannel::BYADDR,
-                        inet_addr(ip),
-                        0,
-                        port);
+    MMChannel *mc = MMChannel::start_server_channel(ip, port);
+
     if(!mc)
     {
         Chat_id = -1;

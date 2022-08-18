@@ -1200,6 +1200,8 @@ dotype(vc v)
 		return "socket";
     case VC_UVSOCKET_STREAM:
     case VC_UVSOCKET_DGRAM:
+    case VC_TSOCKET_DGRAM:
+    case VC_TSOCKET_STREAM:
         return "uvsocket";
 	case VC_CHIT:
 		return "chit";
@@ -1295,6 +1297,10 @@ dotype3(vc v)
         return "uvsocket_stream";
     case VC_UVSOCKET_DGRAM:
         return "uvsocket_dgram";
+    case VC_TSOCKET_DGRAM:
+        return "tsocket_dgram";
+    case VC_TSOCKET_STREAM:
+        return "tsocket_stream";
 	case VC_CHIT:
 		return "chit";
 	case VC_OBJECT:

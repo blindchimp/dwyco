@@ -197,7 +197,9 @@ Item {
        }
    }
    
-   
+   Rectangle {
+       color: "dimgray"
+       anchors.fill: parent
    ListView {
        id: listView2
        anchors.fill:parent
@@ -214,11 +216,12 @@ Item {
 
        ScrollBar.vertical: ScrollBar { 
            background: Rectangle {
-               color: "green"
+               color: "lightgreen"
            }
 
        }
 
+   }
    }
 
    Label {

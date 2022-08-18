@@ -17,7 +17,6 @@
 #include "vidaq.h"
 #include "aqkey.h"
 
-#include "tdecode.h"
 #include "tpgmdec.h"
 #include "aq.h"
 #include "tpgmcod.h"
@@ -38,13 +37,10 @@
 
 #include "dirth.h"
 
-#include "jccolor.h"
-#include "jdcolor.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "cdcver.h"
 #include "filetube.h"
-#include "imgmisc.h"
 #include "vidaq.h"
 #include "callq.h"
 #ifdef SPAZ_CODEC
@@ -61,8 +57,6 @@
 #include "ta.h"
 #include "fnmod.h"
 #include "sysattr.h"
-#include "se.h"
-#include "xinfo.h"
 #include "dhsetup.h"
 #include "vcudh.h"
 #include "profiledb.h"
@@ -73,10 +67,8 @@
 #include "ezset.h"
 #include "qmsgsql.h"
 #include "netlog.h"
-#ifdef _Windows
-//#include <winsock2.h>
-//#include <ws2tcpip.h>
-#endif
+#include "vccrypt2.h"
+
 using namespace dwyco;
 
 extern vc Current_room;
@@ -130,6 +122,7 @@ DwTreeKaz<MMChannel *, int> *MMChannel::AllChan2;
 int MMChannel::Sync_receivers = 1;
 int MMChannel::Auto_sync = 1;
 DwTimer MMChannel::Bw_adj_timer("bw_adj");
+vc MMChannel::My_disposition;
 //#define DWYCO_THREADED_ENCODE
 
 #if defined(DWYCO_THREADED_ENCODE) && defined(LINUX)
@@ -429,7 +422,7 @@ MMChannel::MMChannel() :
     ctrl_timer("ctrl-timer"),
     keepalive_timer("keepalive"),
     nego_timer("nego"),
-    resolve_timer("resolve"),
+    //resolve_timer("resolve"),
     ctrl_send_watchdog("ctrl-send-watchdog"),
     syncmap(vcnil),
     remote_vars(vcnil),
@@ -561,6 +554,7 @@ MMChannel::MMChannel() :
 
     gv_id = 0;
 
+#if 0
     // resolve and connection
     hr = 0;
     resolve_done = 0;
@@ -568,6 +562,7 @@ MMChannel::MMChannel() :
     resolve_buf = 0;
     resolve_result = -1;
     resolve_failed = 0;
+#endif
     memset(&addr_out, 0, sizeof(addr_out));
 
     msg_output = 0;
@@ -1810,6 +1805,23 @@ MMChannel::remote_call_type()
     return v;
 }
 
+// return background for older software that doesn't
+// have a disposition, because foreground is treated
+// specially and gets higher priority.
+vc
+MMChannel::remote_disposition()
+{
+    vc v;
+    if(!remote_cfg.is_atomic())
+    {
+        if(!remote_cfg.find("disposition", v))
+            return "background";
+    }
+    else
+        return "background";
+    return v;
+}
+
 unsigned short
 MMChannel::remote_listening_port()
 {
@@ -2054,6 +2066,7 @@ MMChannel::init_config(int caller)
         v.append("uc"); // see above
     }
     config.add_kv("channel duplex", v);
+    config.add_kv("disposition", My_disposition);
 }
 
 void
@@ -4109,8 +4122,6 @@ MMChannel::service_channels(int *spin_out)
         {
             mc->msg_out("Connection stopped.");
             mc->schedule_destroy(HARD);
-            if(mc->pstate == RESOLVING_NAME)
-                mc->cancel_resolve();
             mc->destroy();
             mc->stop_service();
             delete mc;
@@ -4182,27 +4193,7 @@ MMChannel::service_channels(int *spin_out)
             spin = 1;
             continue;
         }
-        if(mc->pstate == RESOLVING_NAME)
-        {
-            switch(mc->poll_resolve())
-            {
-            case -1:
-                continue;
-            case 0:
-                mc->schedule_destroy();
-                continue;
-            case 1:
-                if(mc->start_connect() == 1)
-                {
-                    goto try_connect;
-                }
-                mc->schedule_destroy();
-                continue;
-            default:
-                oopanic("resolve prog error");
-            }
-            continue;
-        }
+
 try_connect:
         if(mc->pstate == CONNECTING)
         {
