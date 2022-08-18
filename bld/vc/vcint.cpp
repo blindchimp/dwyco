@@ -27,6 +27,7 @@ static VcIOHackStr intbuf;
 vc_int::vc_int() { i = 0; }
 vc_int::vc_int(int64_t i2) { i = i2; }
 vc_int::vc_int(const vc_int &v) {  i = v.i; }
+vc_int::vc_int(long long i2) {i = i2;}
 
 vc_int::~vc_int() { }
 
@@ -65,6 +66,16 @@ vc_int::operator void *() const {
 	return (void *)i;
 }
 vc_int::operator double() const {return (double)i; }
+vc_int::operator long long() const {
+    if(sizeof(long long) <= sizeof(i))
+        return i;
+    if(i > LONG_LONG_MAX || i < LONG_LONG_MIN)
+    {
+        USER_BOMB("integer truncation", 0);
+    }
+    else
+        return i;
+}
 //vc_int::operator int64_t() const {return i; }
 vc_int::operator const char *() const {USER_BOMB("can't convert int to string (unimp)", "0");}
 

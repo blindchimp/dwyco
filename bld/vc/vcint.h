@@ -26,17 +26,18 @@ protected:
 	// note: may want to force this to 32bits
 	// optionally in 64bit environments, for compat
 	// with older interpreters.
+    // note: windows 64bit compilations "long" is 32 bit.
+    // in a few places we assume we can fit a pointer into a long
+    // which breaks ms 64bit builds.
 
-// note: windows 64bit compilations "long" is 32 bit.
-// in a few places we assume we can fit a pointer into a long
-// which breaks ms 64bit builds.
-
-        int64_t i;
+    int64_t i;
 	static char buf[100];
+
 public:
 	vc_int() ;
-        vc_int(int64_t i2) ;
+    vc_int(int64_t i2) ;
 	vc_int(const vc_int &v) ;
+    vc_int(long long);
 	virtual ~vc_int() ;
 #ifdef _Windows
         operator int64_t() const;
@@ -47,6 +48,7 @@ public:
 	operator const char *() const ;
 	operator void *() const ;
     //operator int64_t() const;
+    operator long long() const;
 
 	const char *peek_str() const ;
 	void stringrep(VcIO o) const ;
