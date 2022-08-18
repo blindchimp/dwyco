@@ -303,6 +303,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     dwyco_set_initial_invis(1);
     dwyco_set_login_result_callback(dwyco_background_db_login_result);
     dwyco_set_system_event_callback(check_join_simple);
+    dwyco_set_disposition("background", 10);
     dwyco_bg_init();
     if(token)
         dwyco_write_token(token);
@@ -374,6 +375,9 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #endif
 #ifdef WIN32
                 system("notify-send.exe \"CDC-X\" \"New message\"");
+#endif
+#if defined(LINUX) && !defined(MACOS) && !defined(DWYCO_IOS) && !defined(ANDROID)
+                system("notify-send \"CDC-X\" \"New message\"");
 #endif
             }
         }
@@ -529,6 +533,7 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
     dwyco_set_initial_invis(0);
     dwyco_set_login_result_callback(dwyco_sync_login_result);
     dwyco_set_system_event_callback(check_join);
+    dwyco_set_disposition("background", 10);
     dwyco_bg_init();
     dwyco_set_setting("sync/eager", "1");
     if(grppw)

@@ -51,3 +51,4 @@ xfer, &User_prefix, 1
 .sql, &User_prefix, 0
 .pat, &System_prefix, 0
 .urd, &User_prefix, 0
+.tdb, &Tmp_prefix, 0

@@ -26,8 +26,6 @@
 
 #ifdef _Windows
 #define USE_WINSOCK
-#else
-#define USE_BERKSOCK
 #endif
 
 #include <stdlib.h>
@@ -270,9 +268,9 @@ public:
 	vc(double d);
 	vc(int i);
 	vc(long i);
-        vc(long long);
+    vc(long long);
 	vc(const char *s);
-        vc(const char *s, int len);
+    vc(const char *s, int len);
 
 	vc(enum vc_type, const char * = "nil", long extra_parm = 0);
         vc(enum vc_type, vc_int_dtor_fun d, void *arg);
@@ -471,7 +469,7 @@ decl_rel(str)
 	notvirtual operator long() const ;
 	notvirtual operator char() const ;
 	notvirtual operator void *() const;
-    //notvirtual operator int64_t() const;
+    notvirtual operator long long() const;
 
 	void print_top(VcIO o);
 	void print(VcIO o);

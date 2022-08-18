@@ -14,7 +14,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"3.33\\\"\"
+DEFINES += BUILDTIME=\"\\\"3.40\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin

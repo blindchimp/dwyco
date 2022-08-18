@@ -13,10 +13,8 @@
 #ifndef NETCOD2_H
 #define NETCOD2_H
 #ifdef DWYCO_CDC_LIBUV
-#include <windows.h>
 #include "vc.h"
 #include "matcom.h"
-#include "dwvecp.h"
 #include "vcxstrm.h"
 #include "dwstr.h"
 
@@ -35,7 +33,7 @@ public:
     int saw_hard_error;
     int q_empty;
 
-    virtual int init(const char *remote_addr, const char *local_addr = 0, int retry = 0, HWND = 0);
+    virtual int init(const char *remote_addr, const char *local_addr = 0, int retry = 0);
     void exit();
     int can_write();
     int has_data(int sec = 0, int usec = 0);
@@ -72,7 +70,7 @@ protected:
 class Listener : public SimpleSocket
 {
 public:
-    int init(const char *, const char *local_addr = 0, int retry = 0, HWND = 0);
+    int init(const char *, const char *local_addr = 0, int retry = 0);
     int init2(const char *local_addr = 0);
     int accept_ready();
     SimpleSocket *accept();

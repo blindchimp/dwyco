@@ -272,6 +272,15 @@
 //
 //
 
+#ifdef _Windows
+#include <io.h>
+#include <direct.h>
+#include <sys/utime.h>
+#include <sys\stat.h>
+#include <time.h>
+#include <winsock2.h>
+#endif
+
 #include "vclhsys.h"
 #ifdef DWYCO_TRACE
 #include "dwyco_rename.h"
@@ -281,7 +290,6 @@
 static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 
 
-//#undef NO_RTLOG
 #include "dlli.h"
 #include "trc.h"
 #include "doinit.h"
@@ -297,11 +305,9 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "dirth.h"
 #include "qauth.h"
 #include "vccrypt2.h"
-#include "msgdisp.h"
 #include "mcc.h"
 #include "aqkey.h"
 #include "chatdisp.h"
-#include "pbmcfg.h"
 #include "qdirth.h"
 
 #include "vccomp.h"
@@ -311,17 +317,11 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "codec.h"
 #include "filetube.h"
 
-#define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
-#include "md5.h"
 #include "sha.h"
 using namespace CryptoPP;
-using namespace Weak;
-#include "filters.h"
-#include "files.h"
 #include "autoup.h"
 #include "fnmod.h"
 #include "profiledb.h"
-#include "msgddll.h"
 #include "callq.h"
 #include "mmcall.h"
 #include "calldll.h"
@@ -339,18 +339,6 @@ using namespace Weak;
 #include "tpgmdec.h"
 #include "imgmisc.h"
 #include "ser.h"
-#if defined(_MSC_VER)
-#include <io.h>
-#endif
-#ifdef _Windows
-#include <io.h>
-#ifdef _MSC_VER
-#include <direct.h>
-#include <sys/utime.h>
-#endif
-#include <sys\stat.h>
-#include <time.h>
-#endif
 
 #ifdef VIDGRAB_HACKS
 #include "vgexp.h"
@@ -367,13 +355,11 @@ using namespace Weak;
 #include "dhsetup.h"
 #include "dhgsetup.h"
 #include "qsend.h"
-#include "directsend.h"
 #include "msend.h"
 #include "cdcpal.h"
 #include "dwyco_rand.h"
 #include "dwscoped.h"
 #include "ta.h"
-#include "cdcver.h"
 #include "dwcls_timer.h"
 #include "qmsgsql.h"
 #include "vcwsock.h"
@@ -381,7 +367,6 @@ using namespace Weak;
 #include "grpmsg.h"
 #include "upnp.h"
 #include "pulls.h"
-#include "dwycolist2.h"
 #include "vcudh.h"
 #include "synccalls.h"
 
@@ -1969,6 +1954,14 @@ dwyco_inhibit_all_incoming(int i)
 {
     dwyco_inhibit_incoming_sac(i);
     set_listen_state(!i);
+}
+
+DWYCOEXPORT
+void
+dwyco_set_disposition(const char *str, int len_str)
+{
+    vc s(VC_BSTRING, str, len_str);
+    MMChannel::My_disposition = s;
 }
 
 DWYCOEXPORT
@@ -4631,6 +4624,18 @@ dwyco_name_to_uid(const char *handle, int len_handle)
     dirth_send_get_uid(My_UID, h, QckDone(name_map_done, 0, h, ValidPtr()));
 }
 
+DWYCOEXPORT
+int
+dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    vc repuid = map_to_representative_uid(buid);
+    vc ret(VC_VECTOR);
+    ret[0] = repuid;
+    *list_out = dwyco_list_from_vc(ret);
+    return 1;
+}
+
 int
 internal_boot_file(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email)
 {
@@ -7069,7 +7074,7 @@ dwyco_start_gj2(const char *gname, const char *password)
     auto dha = new DH_alternate;
     dha->init(My_UID, gname);
     dha->remove_key(gname);
-    dha->load_account(gname);
+    dha->load_account(gname, true);
     //dha->password = password;
     set_settings_value("group/join_key", password);
     dirth_send_set_get_group_pk(My_UID, dha->alt_name(), dha->my_static_public(), QckDone(group_enter_setup, 0, vcnil, dha->vp));
@@ -7718,7 +7723,7 @@ dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback dcb,
     if(BodyView::Bvqbm.exists_by_member(m, &BodyView::msg_id))
         return 0;
     // if we're trying to fetch a message that we already have or
-    // that has been deleted showhow or other, just ignore the
+    // that has been deleted somehow or other, just ignore the
     // request.
     if(sql_is_mid_local(m) || sql_mid_has_tombstone(m))
         return 0;
@@ -8680,6 +8685,7 @@ DWYCOEXPORT
 void
 dwyco_handle_msg(const char *msg, int len_msg, unsigned int message, unsigned int wp, unsigned int lp)
 {
+#if 0
     if(message == WM_USER + 400)
     {
 
@@ -8690,6 +8696,7 @@ dwyco_handle_msg(const char *msg, int len_msg, unsigned int message, unsigned in
     {
         async_lookup_handler((HANDLE)wp, lp);
     }
+#endif
     add_entropy_timer((char *)msg, len_msg);
 
 }

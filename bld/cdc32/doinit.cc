@@ -24,11 +24,9 @@
 
 #include "vc.h"
 #include "vcwsock.h"
-#include "vccrypt2.h"
 
 #include "aq.h"
 #include "dwlog.h"
-#include "gvchild.h"
 #include "jchuff.h"
 #include "jdhuff.h"
 #include "audchk.h"
@@ -47,7 +45,6 @@
 #include "aconn.h"
 #include "sysattr.h"
 #include "fnmod.h"
-#include "xinfo.h"
 #include "dhsetup.h"
 #include "dwyco_rand.h"
 #include "dirth.h"
@@ -56,7 +53,6 @@
 #include "qdirth.h"
 #include "ta.h"
 #include "dhgsetup.h"
-#include "qmsgsql.h"
 #include "pgdll.h"
 
 using namespace dwyco;

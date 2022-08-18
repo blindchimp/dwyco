@@ -11,12 +11,10 @@
 #ifndef VCUVSOCK_H
 #define VCUVSOCK_H
 
-#include "vcnil.h"
 #include "vccomp.h"
 #include "dwvp.h"
 #include "uv.h"
 #include "vcxstrm.h"
-#include "dwstr.h"
 #include "dwtree2.h"
 #include "vcio.h"
 #include "dwgrows.h"

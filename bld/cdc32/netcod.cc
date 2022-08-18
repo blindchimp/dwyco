@@ -205,7 +205,7 @@ SimpleSocket::reconnect(const char *remote_addr)
 }
 
 int
-SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry, HWND hwnd)
+SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry)
 {
     if(!retry)
         initsock();
@@ -637,7 +637,7 @@ SimpleSocket::recvvc(vc& v)
 
 
 int
-Listener::init(const char *, const char *local_addr, int, HWND)
+Listener::init(const char *, const char *local_addr, int)
 {
     initsock();
     sock.set_err_callback(net_socket_error);

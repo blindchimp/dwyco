@@ -14,23 +14,17 @@
 #include "doinit.h"
 #include "dirth.h"
 #include "vc.h"
-#include "vcmap.h"
 #include "qdirth.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "cdcver.h"
 #include "mmchan.h"
-#include "senc.h"
 #include "dwstr.h"
-#include "gvchild.h"
 #include "chatops.h"
-#include "chatgrid.h"
 #include "asshole.h"
 #include "servass.h"
-#include "aconn.h"
 #include "fnmod.h"
 #include "chatops.h"
-#include "pgdll.h"
 #include "xinfo.h"
 #include "vcudh.h"
 #include "dhsetup.h"
@@ -536,7 +530,7 @@ system_info()
     screen.append(ScreenSize.bottom);
 
     OSVERSIONINFO o;
-    memset(&o, 0, sizeof(0));
+    memset(&o, 0, sizeof(o));
     o.dwOSVersionInfoSize = sizeof(o);
     GetVersionEx(&o);
 
@@ -785,34 +779,6 @@ db_call_failed_last(MMChannel *mc, vc, void *, ValidPtr)
     TRACK_ADD(DB_hard_fail, 1);
 }
 
-void
-db_call_failed(MMChannel *mc, vc, void *, ValidPtr)
-{
-    Database_id = -1;
-    //if(mc->resolve_failed)
-    {
-        MMChannel *mc = MMChannel::start_server_channel(
-                    MMChannel::BYNAME,
-                    0,
-                    My_server_name,
-                    My_server_port);
-
-        if(!mc)
-        {
-            Database_id = -1;
-            return;
-        }
-        mc->established_callback = db_online;
-        mc->destroy_callback = db_call_failed_last;
-        mc->set_string_id("Dwyco Database");
-        Database_id = mc->myid;
-        Database_online = 0;
-        //GRTLOG("db resolve failed", 0, 0);
-        //return;
-    }
-    GRTLOG("db call failed", 0, 0);
-}
-
 
 void
 start_database_thread()
@@ -821,21 +787,18 @@ start_database_thread()
         return;
     if(Database_id != -1)
         return;
-    MMChannel *mc = MMChannel::start_server_channel(
-                        MMChannel::BYADDR,
-                        inet_addr(My_server_ip),
-                        0,
-                        My_server_port);
+
+    MMChannel *mc = MMChannel::start_server_channel(My_server_ip, My_server_port);
+
     if(!mc)
     {
         // maybe DNS hosed right off the bat, so
         // go straight to next stage
         Database_id = -1;
-        db_call_failed(0, vcnil, 0, ValidPtr());
         return;
     }
     mc->established_callback = db_online;
-    mc->destroy_callback = db_call_failed;
+    mc->destroy_callback = db_call_failed_last;
     mc->set_string_id("Dwyco Database");
     Database_id = mc->myid;
     Database_online = 0;

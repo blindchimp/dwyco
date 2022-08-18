@@ -188,29 +188,12 @@ MMCall::start_call(int media_sel)
     this->media_select = media_sel;
     mc->call_type = call_type;
 
-    in_addr_t addr;
-    if((addr = inet_addr((const char *)host)) == INADDR_NONE)
+    if(!mc->start_connect(host, port))
     {
-        // start connect process at resolve stage
-        if(!mc->start_resolve(MMChannel::BYNAME, 0, (const char *)host))
-        {
-            mc->schedule_destroy(MMChannel::HARD);
-            return 0;
-        }
-
-
+        mc->schedule_destroy(MMChannel::HARD);
+        return 0;
     }
-    else
-    {
-        // start connect process with ip
-        mc->addr_out.s_addr = addr;
-        if(!mc->start_connect())
-        {
-            mc->schedule_destroy(MMChannel::HARD);
-            return 0;
-        }
 
-    }
     call_started();
     return 1;
 }

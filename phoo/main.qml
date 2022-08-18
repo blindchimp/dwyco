@@ -775,6 +775,16 @@ ApplicationWindow {
         
     }
 
+    Migrate {
+        id: migrate_page
+        visible: false
+    }
+
+    Reindex {
+        id: background_reindex
+        visible: false
+    }
+
     DwycoCore {
         id: core
         property int is_database_online: -1
@@ -783,14 +793,27 @@ ApplicationWindow {
         objectName: "dwyco_singleton"
         client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
+            if(core.android_migrate === 1)
+            {
+                stack.push(migrate_page)
+                return
+            }
             var a
             a = get_local_setting("first-run")
             if(a === "") {
                 //profile_dialog.visible = true
+                // don't need a reindex_complete
+                set_local_setting("reindex1", "1")
                 stack.push(convlist)
                 stack.push(blank_page)
                 stack.push(profile_dialog)
             } else {
+                a = get_local_setting("reindex1")
+                if(a === "")
+                {
+                    stack.push(background_reindex)
+                    return
+                }
                 stack.push(convlist)
                 profile_bootstrapped = 1
                 pwdialog.state = "start"

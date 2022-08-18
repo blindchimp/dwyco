@@ -25,9 +25,7 @@
 #include <fcntl.h>
 #endif
 #include "dh.h"
-#include "rng.h"
 #include "dh2.h"
-#include "files.h"
 #include "hex.h"
 #include "vcudh.h"
 #include "randpool.h"

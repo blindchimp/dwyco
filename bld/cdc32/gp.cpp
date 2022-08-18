@@ -1,13 +1,5 @@
-
-/* ===
-; Copyright (c) 1995-present, Dwyco, Inc.
-; 
-; This Source Code Form is subject to the terms of the Mozilla Public
-; License, v. 2.0. If a copy of the MPL was not distributed with this file,
-; You can obtain one at https://mozilla.org/MPL/2.0/.
-*/
-/* C++ code produced by gperf version 3.0.4 */
-/* Command-line: gperf -L C++ -t -l -G  */
+/* C++ code produced by gperf version 3.1 */
+/* Command-line: gperf -L C++ -t -l -G gperf.spec  */
 /* Computed positions: -k'1-3' */
 
 #if !((' ' == 32) && ('!' == 33) && ('"' == 34) && ('#' == 35) \
@@ -34,191 +26,244 @@
       && ('w' == 119) && ('x' == 120) && ('y' == 121) && ('z' == 122) \
       && ('{' == 123) && ('|' == 124) && ('}' == 125) && ('~' == 126))
 /* The character set is not based on ISO-646.  */
-#error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gnu-gperf@gnu.org>."
+#error "gperf generated tables don't work with this execution character set. Please report a bug to <bug-gperf@gnu.org>."
 #endif
 
-struct fn_rules  {
-    const char *name;
-    char **pfx;
-    int cacheable;
-    DwString *cached_val;
-};
+#line 1 "gperf.spec"
+struct fn_rules  {const char *name; char **pfx; int cacheable; DwString *cached_val;};
 
-#define TOTAL_KEYWORDS 51
+#define TOTAL_KEYWORDS 52
 #define MIN_WORD_LENGTH 2
 #define MAX_WORD_LENGTH 10
-#define MIN_HASH_VALUE 4
-#define MAX_HASH_VALUE 121
-/* maximum key range = 118, duplicates = 0 */
+#define MIN_HASH_VALUE 2
+#define MAX_HASH_VALUE 126
+/* maximum key range = 125, duplicates = 0 */
 
 class Perfect_Hash
 {
 private:
-    static inline unsigned int hash (const char *str, unsigned int len);
+  static inline unsigned int hash (const char *str, size_t len);
 public:
-    static struct fn_rules *in_word_set (const char *str, unsigned int len);
+  static struct fn_rules *in_word_set (const char *str, size_t len);
 };
 
 inline unsigned int
-Perfect_Hash::hash ( const char *str,  unsigned int len)
+Perfect_Hash::hash (const char *str, size_t len)
 {
-    static unsigned char asso_values[] =
+  static unsigned char asso_values[] =
     {
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122,   0, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122,  45,  30,  25,
-        45,   0,  40,   5,   0,  20,  45,   0,  36,  45,
-        5,   5,  25,   5,  35,   0,  10,   0,  35,   0,
-        15,   1,  55, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122, 122, 122, 122,
-        122, 122, 122, 122, 122, 122, 122
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127,   0, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127,  40,  25,  20,
+        1,   0,  60,  10,   0,  25,   1,   5,  55,  20,
+       20,  15,  30,   0,  35,   5,   0,   5,  30,  56,
+        0,   6,  10, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+      127, 127, 127, 127, 127, 127, 127
     };
-     int hval = len;
+  unsigned int hval = len;
 
-    switch (hval)
+  switch (hval)
     {
-    default:
-        hval += asso_values[(unsigned char)str[2]+1];
-    /*FALLTHROUGH*/
-    case 2:
-        hval += asso_values[(unsigned char)str[1]];
-    /*FALLTHROUGH*/
-    case 1:
-        hval += asso_values[(unsigned char)str[0]];
+      default:
+        hval += asso_values[static_cast<unsigned char>(str[2]+1)];
+      /*FALLTHROUGH*/
+      case 2:
+        hval += asso_values[static_cast<unsigned char>(str[1])];
+      /*FALLTHROUGH*/
+      case 1:
+        hval += asso_values[static_cast<unsigned char>(str[0])];
         break;
     }
-    return hval;
+  return hval;
 }
 
 static unsigned char lengthtable[] =
-{
-    0,  0,  0,  0,  4,  4,  0,  2,  8,  4,  5,  6,  7,  0,
-    4,  0,  0,  0,  0,  4,  9,  0,  0,  0,  4,  0,  0,  2,
-    0,  4,  5,  6,  0,  0,  4,  5,  6,  0,  0,  4, 10,  6,
-    0,  0,  4,  5,  0,  0,  0,  4,  5,  0,  0,  0,  4,  5,
-    0,  0,  8,  4,  5,  0,  0,  0,  4,  4,  0,  0,  3,  4,
-    0,  0,  0,  0,  4,  0,  0,  0,  0,  4,  5,  0,  0,  0,
-    4,  0,  0,  6,  0,  4,  0,  0,  0,  0,  4,  0,  0,  7,
-    0,  4,  5,  6,  6,  0,  4,  0,  0,  0,  8,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  4,  0,  6
-};
+  {
+     0,  0,  2,  0,  4,  4,  4,  0,  0,  4,  4,  0,  0,  0,
+     4,  4,  0,  0,  8,  4,  9,  0,  0,  0,  4,  4,  0,  0,
+     0,  4,  5,  6,  7,  0,  4,  5,  0,  2,  0,  4,  0,  5,
+     0,  0,  4,  0,  6,  0,  0,  4,  5,  6,  0,  0,  4, 10,
+     6,  0,  0,  4,  5,  0,  6,  0,  4,  5,  0,  6,  8,  4,
+     5,  0,  0,  0,  4,  8,  0,  0,  3,  4,  0,  5,  0,  0,
+     4,  0,  0,  7,  0,  4,  5,  0,  0,  0,  4,  0,  0,  0,
+     0,  0,  0,  6,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  4,  0,
+     6
+  };
 
 static struct fn_rules wordlist[] =
-{
-    {""}, {""}, {""}, {""},
-    {".urd", &User_prefix, 0},
-    {".exe", &System_prefix, 0},
-    {""},
+  {
+    {""}, {""},
+#line 40 "gperf.spec"
     {".q", &User_prefix, 0},
-    {"servers2", &System_prefix, 1},
-    {".enc", &User_prefix, 0},
-    {"never", &User_prefix, 1},
-    {"outbox", &User_prefix, 1},
-    {"entropy", &User_prefix, 1},
     {""},
-    {".usr", &User_prefix, 0},
-    {""}, {""}, {""}, {""},
-    {".tmp", &Tmp_prefix, 0},
-    {"system.dh", &System_prefix, 1},
-    {""}, {""}, {""},
-    {".idx", &User_prefix, 0},
-    {""}, {""},
-    {"pk", &User_prefix, 1},
-    {""},
-    {".prv", &User_prefix, 0},
-    {"sinfo", &User_prefix, 1},
-    {"igrant", &User_prefix, 1},
-    {""}, {""},
-    {".ppm", &Tmp_prefix, 0},
-    {"infos", &User_prefix, 1},
-    {"ignore", &User_prefix, 1},
-    {""}, {""},
-    {".sql", &User_prefix, 0},
-    {"inprogress", &User_prefix, 1},
-    {"timing", &User_prefix, 1},
-    {""}, {""},
-    {".out", &Tmp_prefix, 0},
-    {"stats", &User_prefix, 1},
-    {""}, {""}, {""},
-    {"auth", &User_prefix, 1},
-    {"qtabs", &System_prefix, 1},
-    {""}, {""}, {""},
+#line 54 "gperf.spec"
+    {".tdb", &Tmp_prefix, 0},
+#line 42 "gperf.spec"
     {".jpg", &Tmp_prefix, 0},
-    {"inbox", &User_prefix, 1},
-    {""}, {""},
-    {"theygrnt", &User_prefix, 1},
-    {".pat", &System_prefix, 0},
-    {"noise", &User_prefix, 1},
-    {""}, {""}, {""},
-    {".pub", &User_prefix, 0},
-    {".log", &Tmp_prefix, 0},
-    {""}, {""},
-    {"prf", &User_prefix, 1},
-    {"prf2", &User_prefix, 1},
-    {""}, {""}, {""}, {""},
-    {".dbg", &System_prefix, 0},
-    {""}, {""}, {""}, {""},
-    {"poli", &System_prefix, 1},
-    {"trash", &User_prefix, 1},
-    {""}, {""}, {""},
-    {".aux", &User_prefix, 0},
-    {""}, {""},
-    {"lhcore", &User_prefix, 1},
-    {""},
-    {".fle", &User_prefix, 0},
-    {""}, {""}, {""}, {""},
+#line 36 "gperf.spec"
     {".dif", &User_prefix, 0},
     {""}, {""},
+#line 35 "gperf.spec"
+    {".usr", &User_prefix, 0},
+#line 45 "gperf.spec"
+    {".exe", &System_prefix, 0},
+    {""}, {""}, {""},
+#line 53 "gperf.spec"
+    {".urd", &User_prefix, 0},
+#line 46 "gperf.spec"
+    {".dyc", &User_prefix, 0},
+    {""}, {""},
+#line 4 "gperf.spec"
+    {"servers2", &System_prefix, 1},
+#line 41 "gperf.spec"
+    {".enc", &User_prefix, 0},
+#line 6 "gperf.spec"
+    {"system.dh", &System_prefix, 1},
+    {""}, {""}, {""},
+#line 43 "gperf.spec"
+    {".tmp", &Tmp_prefix, 0},
+#line 34 "gperf.spec"
+    {".dbg", &System_prefix, 0},
+    {""}, {""}, {""},
+#line 48 "gperf.spec"
+    {".idx", &User_prefix, 0},
+#line 9 "gperf.spec"
+    {"qtabs", &System_prefix, 1},
+#line 28 "gperf.spec"
+    {"outbox", &User_prefix, 1},
+#line 5 "gperf.spec"
+    {"entropy", &User_prefix, 1},
+    {""},
+#line 44 "gperf.spec"
+    {".ppm", &Tmp_prefix, 0},
+#line 20 "gperf.spec"
+    {"stats", &User_prefix, 1},
+    {""},
+#line 32 "gperf.spec"
+    {"pk", &User_prefix, 1},
+    {""},
+#line 50 "gperf.spec"
+    {".prv", &User_prefix, 0},
+    {""},
+#line 15 "gperf.spec"
+    {"noise", &User_prefix, 1},
+    {""}, {""},
+#line 51 "gperf.spec"
+    {".sql", &User_prefix, 0},
+    {""},
+#line 19 "gperf.spec"
+    {"igrant", &User_prefix, 1},
+    {""}, {""},
+#line 39 "gperf.spec"
+    {".out", &Tmp_prefix, 0},
+#line 25 "gperf.spec"
+    {"sinfo", &User_prefix, 1},
+#line 14 "gperf.spec"
+    {"timing", &User_prefix, 1},
+    {""}, {""},
+#line 10 "gperf.spec"
+    {"auth", &User_prefix, 1},
+#line 26 "gperf.spec"
+    {"inprogress", &User_prefix, 1},
+#line 16 "gperf.spec"
+    {"ignore", &User_prefix, 1},
+    {""}, {""},
+#line 52 "gperf.spec"
+    {".pat", &System_prefix, 0},
+#line 24 "gperf.spec"
+    {"infos", &User_prefix, 1},
+    {""},
+#line 22 "gperf.spec"
+    {"lhcore", &User_prefix, 1},
+    {""},
+#line 49 "gperf.spec"
+    {".pub", &User_prefix, 0},
+#line 27 "gperf.spec"
+    {"trash", &User_prefix, 1},
+    {""},
+#line 11 "gperf.spec"
+    {"accept", &User_prefix, 1},
+#line 18 "gperf.spec"
+    {"theygrnt", &User_prefix, 1},
+#line 8 "gperf.spec"
+    {"poli", &System_prefix, 1},
+#line 29 "gperf.spec"
+    {"inbox", &User_prefix, 1},
+    {""}, {""}, {""},
+#line 37 "gperf.spec"
+    {".aux", &User_prefix, 0},
+#line 7 "gperf.spec"
+    {"dwyco.dh", &System_prefix, 1},
+    {""}, {""},
+#line 30 "gperf.spec"
+    {"prf", &User_prefix, 1},
+#line 31 "gperf.spec"
+    {"prf2", &User_prefix, 1},
+    {""},
+#line 17 "gperf.spec"
+    {"never", &User_prefix, 1},
+    {""}, {""},
+#line 47 "gperf.spec"
+    {".fle", &User_prefix, 0},
+    {""}, {""},
+#line 21 "gperf.spec"
     {"crashed", &User_prefix, 1},
     {""},
-    {"xfer", &User_prefix, 1},
+#line 38 "gperf.spec"
+    {".log", &Tmp_prefix, 0},
+#line 23 "gperf.spec"
     {"crumb", &User_prefix, 1},
-    {"xferdl", &System_prefix, 1},
-    {"always", &User_prefix, 1},
-    {""},
-    {".dyc", &User_prefix, 0},
     {""}, {""}, {""},
-    {"dwyco.dh", &System_prefix, 1},
-    {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
-    {""},
+#line 13 "gperf.spec"
     {"pals", &User_prefix, 1},
+    {""}, {""}, {""}, {""}, {""}, {""},
+#line 12 "gperf.spec"
+    {"always", &User_prefix, 1},
+    {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
+    {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""}, {""},
+    {""}, {""}, {""}, {""},
+#line 33 "gperf.spec"
+    {"xfer", &User_prefix, 1},
     {""},
-    {"accept", &User_prefix, 1}
-};
+#line 3 "gperf.spec"
+    {"xferdl", &System_prefix, 1}
+  };
 
 struct fn_rules *
-Perfect_Hash::in_word_set ( const char *str,  unsigned int len)
+Perfect_Hash::in_word_set (const char *str, size_t len)
 {
-    if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
+  if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
-         int key = hash (str, len);
+      unsigned int key = hash (str, len);
 
-        if (key <= MAX_HASH_VALUE && key >= 0)
-            if (len == lengthtable[key])
-            {
-                 const char *s = wordlist[key].name;
+      if (key <= MAX_HASH_VALUE)
+        if (len == lengthtable[key])
+          {
+            const char *s = wordlist[key].name;
 
-                if (*str == *s && !memcmp (str + 1, s + 1, len - 1))
-                    return &wordlist[key];
-            }
+            if (*str == *s && !memcmp (str + 1, s + 1, len - 1))
+              return &wordlist[key];
+          }
     }
-    return 0;
+  return 0;
 }

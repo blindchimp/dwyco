@@ -13,19 +13,11 @@
 #include <io.h>
 #include <fcntl.h>
 #endif
+#include <windows.h>
 #include "vc.h"
-#include "vcxstrm.h"
-#include "vccomp.h"
-#include "qdirth.h"
-#include "gvchild.h"
 #include "dwtimer.h"
-#include "netvid.h"
 #include "qauth.h"
-#include "dirth.h"
-#include "pval.h"
-#include "qmsg.h"
 #include "asshole.h"
-#include "dlli.h"
 #ifdef LINUX
 #include <netdb.h>
 #include <unistd.h>

@@ -298,7 +298,7 @@ Page {
         NumberAnimation {
             id: toast_opacity
             target: save_toast
-            easing: Easing.InQuart
+            easing.type: Easing.InQuart
             properties: "opacity"
             from: 1.0
             to: 0.0
