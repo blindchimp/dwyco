@@ -376,6 +376,9 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #ifdef WIN32
                 system("notify-send.exe \"CDC-X\" \"New message\"");
 #endif
+#if defined(LINUX) && !defined(MACOS) && !defined(DWYCO_IOS) && !defined(ANDROID)
+                system("notify-send \"CDC-X\" \"New message\"");
+#endif
             }
         }
         // note: this is a bit sloppy... rather than trying to
