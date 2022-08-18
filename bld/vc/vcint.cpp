@@ -25,7 +25,7 @@ char vc_int::buf[100];
 static VcIOHackStr intbuf;
 
 vc_int::vc_int() { i = 0; }
-vc_int::vc_int(int64_t i2) { i = i2; }
+//vc_int::vc_int(int64_t i2) { i = i2; }
 vc_int::vc_int(const vc_int &v) {  i = v.i; }
 vc_int::vc_int(long long i2) {i = i2;}
 

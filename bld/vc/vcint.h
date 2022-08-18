@@ -30,12 +30,12 @@ protected:
     // in a few places we assume we can fit a pointer into a long
     // which breaks ms 64bit builds.
 
-    int64_t i;
+    long long i;
 	static char buf[100];
 
 public:
 	vc_int() ;
-    vc_int(int64_t i2) ;
+    //vc_int(int64_t i2) ;
 	vc_int(const vc_int &v) ;
     vc_int(long long);
 	virtual ~vc_int() ;
