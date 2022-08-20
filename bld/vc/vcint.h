@@ -40,7 +40,7 @@ public:
     vc_int(long long);
 	virtual ~vc_int() ;
 #ifdef _Windows
-        operator int64_t() const;
+        //operator int64_t() const;
 #endif
 	operator long() const ;
 	operator int () const ;
