@@ -1797,7 +1797,7 @@ sql_get_recent_users2(int max_age, int max_count)
     {
         sql_start_transaction();
         vc res;
-        // note: this doesn't get the "latest", putting in an order by doubles the amount of time
+        // note: this doesn't get the "latest", putting in an "order by" doubles the amount of time
         // it takes, and most of the time, the max_count is big enough to get everything anyway
         // note also, this doesn't fold uid's by group, as this is used in situations where you
         // want to know the uid's status individually.

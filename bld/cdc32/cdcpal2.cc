@@ -90,7 +90,7 @@ transient_online_list()
     // it is debatable whether having notifications of online
     // for others in your msg list is really what you want.
     // for now, we get rid of it.
-#if 0
+#if 1
     int left_over = MAXPALS - p.num_elems();
     if(left_over <= 0)
     {

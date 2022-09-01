@@ -16,12 +16,14 @@
 #include "mmchan.h"
 #include "pval.h"
 
+namespace dwyco {
 extern int Rescan_msgs;
 extern vc Cur_ignore;
 extern vc No_direct_msgs;
 extern vc No_direct_att;
 extern vc Session_infos;
 extern vc MsgFolders;
+}
 
 //void load_users(int only_recent, int *total_out);
 void load_users_from_files(int *total_out);

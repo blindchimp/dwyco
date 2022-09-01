@@ -100,14 +100,18 @@ using namespace CryptoPP;
 using namespace dwyco;
 using namespace dwyco::qmsgsql;
 
-vc MsgFolders;
-
+namespace dwyco {
 int Rescan_msgs;
+vc Cur_ignore;
+vc No_direct_msgs;
+vc No_direct_att;
+vc Session_infos;
+vc MsgFolders;
+}
 
 // list of message summaries both from server and direct
 static vc Cur_msgs;
 
-vc Cur_ignore;
 vc Session_ignore;
 // mutual is separated out because we want to have a
 // part of the ignore list that cannot be maniplated
@@ -122,14 +126,11 @@ vc Client_disposition;
 //vc Always_visible;
 //vc I_grant;
 //vc They_grant;
-vc No_direct_msgs;
-vc No_direct_att;
 //int Pal_auth_warn;
 vc Pals;
 vc Client_ports;
 vc Chat_ips;
 vc Chat_ports;
-vc Session_infos;
 static vc In_progress;
 
 

@@ -221,7 +221,6 @@ se_emit_group_status_change()
     GRTLOGVC(v);
 }
 
-extern vc Cur_ignore;
 extern vc Pals;
 
 void

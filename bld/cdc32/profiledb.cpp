@@ -10,8 +10,8 @@
 #include "vccrypt2.h"
 #include "ssns.h"
 #include "fnmod.h"
+#include "qmsg.h"
 
-extern vc Session_infos;
 extern vc My_UID;
 
 namespace dwyco {
