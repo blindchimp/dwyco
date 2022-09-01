@@ -98,7 +98,7 @@ transient_online_list()
         return tree_to_vec(tmpl);
     }
     // fill out remainder with recent conversations
-    vc rm = sql_get_recent_users2(3600 * 24 * 365, left_over);
+    vc rm = sql_get_recent_users2(3600 * 24 * 14, left_over);
     if(rm.is_nil())
     {
         tmpl.del(My_UID);
