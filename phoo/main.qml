@@ -1041,14 +1041,14 @@ ApplicationWindow {
             // which isn't really necessary.
             var sc_next = core.service_channels()
             //console.log("next ", sc_next)
-//            if(sc_next === 1 || sc_next < 0)
-//            {
-//                service_timer.interval = 1
-//            }
-//            else
-//            {
-//                service_timer.interval = (sc_next === 0 ? 100 : Math.min(100, sc_next))
-//            }
+            if(sc_next === 1 || sc_next < 0)
+            {
+                service_timer.interval = 1
+            }
+            else
+            {
+                service_timer.interval = (sc_next === 0 ? 100 : Math.min(100, sc_next))
+            }
         }
 
     }

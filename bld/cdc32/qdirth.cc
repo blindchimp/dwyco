@@ -364,7 +364,9 @@ dirth_send_get_pk(vc id, vc uid, QckDone d)
     dirth_send(m, d);
 }
 
-
+// this is a kluge for "selfs", map handle to
+// uid. if handle isn't unique, uid returned
+// is a random one. don't use this.
 void
 dirth_send_get_uid(vc id, vc handle, QckDone d)
 {
@@ -449,7 +451,7 @@ dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d)
 // key and signature. (this just makes sure you have the private key
 // associated with the group and aren't asking us to just sign
 // some random stuff.)
-// NOTE: the server provisionally puts records you in the group
+// NOTE: the server provisionally puts you in the group
 // if you succeed with the challenge. this helps make it a little less
 // confusing because group observers will get a message that you are
 // in the group before you login the next time. (it is assumed the

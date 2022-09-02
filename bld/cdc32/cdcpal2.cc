@@ -314,8 +314,9 @@ pal_login()
     v[8] = vc(VC_VECTOR);
 
     v[4] = make_fw_setup();
-    dirth_send_set_interest_list(My_UID, v, QckDone());
     v[9] = MMChannel::My_disposition;
+    dirth_send_set_interest_list(My_UID, v, QckDone());
+
     return 1;
 }
 
