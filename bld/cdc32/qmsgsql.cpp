@@ -1160,9 +1160,9 @@ refetch_pk(int online)
         return;
     vc huids;
     try {
-    sql_start_transaction();
-    huids = sql_simple("select uid from group_map");
-    sql_commit_transaction();
+        sql_start_transaction();
+        huids = sql_simple("select uid from group_map");
+        sql_commit_transaction();
     }
     catch(...)
     {

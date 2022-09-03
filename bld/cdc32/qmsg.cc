@@ -1385,7 +1385,80 @@ fetch_attachment(vc fn, DestroyCallback dc, vc dcb_arg1, void *dcb_arg2, ValidPt
 }
 
 static void
-fetch_pk_done(vc m, void *, vc uid, ValidPtr)
+fetch_pk_done2(vc m, void *, vc uid, ValidPtr)
+{
+    if(m[1].is_nil())
+    {
+        if(m[2] == vc("no-key"))
+        {
+            pk_invalidate(uid);
+            // to avoid repeatedly fetching a key that may never exist
+            // (like it was an old account that never had a key generated
+            // for it), for this session we'll just cache this response
+            // from the server.
+            pk_set_session_cache(uid);
+            TRACK_ADD(QM_fetch_pk_no_key2, 1);
+        }
+        else
+        {
+            // if it was a failure (most likely went offline
+            // while trying to deliver a message), cause a new
+            // fetch to happen next time the send is attempted
+            pk_force_check(uid);
+            TRACK_ADD(QM_fetch_pk_failed2, 1);
+        }
+        return;
+    }
+    if(m[1].type() != VC_VECTOR)
+    {
+        TRACK_ADD(QM_fetch_pk_bogus_return2, 1);
+        return;
+    }
+    vc static_public(VC_VECTOR);
+    static_public[DH_STATIC_PUBLIC] = m[1][0];
+    vc sig = m[1][1];
+    // next is a vector containing the alt key
+    vc alt = m[1][2];
+    if(!alt.is_nil())
+    {
+        vc alt_pk = alt[0];
+        vc alt_static_public(VC_VECTOR);
+        alt_static_public[DH_STATIC_PUBLIC] = alt_pk;
+        vc server_sig = alt[1];
+        vc gname = alt[2];
+        put_pk2(uid, static_public, sig, alt_static_public, server_sig, gname);
+    }
+    else
+    {
+        put_pk(uid, static_public, sig);
+    }
+
+    pk_set_session_cache(uid);
+    TRACK_ADD(QM_fetch_pk_ok2, 1);
+
+}
+
+static void
+fetch_group_uids(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    const vc pk = m[1][0];
+    const vc uids = m[1][1];
+
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc uid = uids[i];
+        if(dirth_pending_callbacks(fetch_pk_done2, 0, ReqType(), uid))
+            return;
+        dirth_send_get_pk(My_UID, uid, QckDone(fetch_pk_done2, 0, uid));
+    }
+
+}
+
+
+static void
+fetch_pk_done(vc m, void *user_arg, vc uid, ValidPtr)
 {
     if(m[1].is_nil())
     {
@@ -1427,6 +1500,14 @@ fetch_pk_done(vc m, void *, vc uid, ValidPtr)
         vc server_sig = alt[1];
         vc gname = alt[2];
         put_pk2(uid, static_public, sig, alt_static_public, server_sig, gname);
+        // force fetch of all profiles in the gname
+        // this probably needs to be changed so that a list of other uid's in
+        // the group are returned as well, for consistency reasons (ie, things
+        // might change while this operation in flight.
+        // for now, we'll do it this way to see how things work out.
+        int get_members = (user_arg == nullptr);
+        if(get_members)
+            dirth_send_get_group_pk(My_UID, gname, QckDone(fetch_group_uids, 0));
 
     }
     else
@@ -1438,8 +1519,6 @@ fetch_pk_done(vc m, void *, vc uid, ValidPtr)
     TRACK_ADD(QM_fetch_pk_ok, 1);
 
 }
-
-
 
 static
 void
@@ -1456,7 +1535,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
 //    vc desc = other[1][1];
 //    vc location = other[1][2];
 
-    static vc invalid("invalid");
+    static const vc invalid("invalid");
 
     vc v;
     // special case: if issuing this command results in a local

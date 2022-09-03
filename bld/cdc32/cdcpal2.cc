@@ -75,11 +75,11 @@ transient_online_list()
     // to use the info try and target message delivery.
     for(int i = 0; i < p.num_elems(); ++i)
     {
-        vc uids = map_uid_to_uids(p[i]);
+        const vc uids = map_uid_to_uids(p[i]);
         for(int i = 0; i < uids.num_elems(); ++i)
             tmpl.add(uids[i], 0);
     }
-    vc gv = Group_uids;
+    const vc gv = Group_uids;
     if(!gv.is_nil())
     {
         for(int i = 0; i < gv.num_elems(); ++i)
@@ -106,8 +106,11 @@ transient_online_list()
     }
     for(int i = 0; i < rm.num_elems(); ++i)
     {
-        vc u = from_hex(rm[i]);
-        tmpl.add(u, 0);
+        const vc u = from_hex(rm[i]);
+        const vc uids = map_uid_to_uids(u);
+        for(int i = 0; i < uids.num_elems(); ++i)
+            tmpl.add(uids[i], 0);
+        //tmpl.add(u, 0);
     }
 #endif
     tmpl.del(My_UID);
