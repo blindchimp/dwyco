@@ -4085,7 +4085,7 @@ dwyco_clear_user(const char *uid, int len_uid)
 
     Rescan_msgs = 1;
     //vc dir = uid_to_dir(u);
-    int ret = clear_user(u, "");
+    int ret = clear_user(u);
     ack_all(u);
     return ret;
 }
