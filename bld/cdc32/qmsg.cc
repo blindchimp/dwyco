@@ -191,7 +191,8 @@ move_replace(const DwString& s, const DwString& d)
 }
 #endif
 
-static int
+static
+int
 add_msg_folder(vc uid)
 {
     if(MsgFolders.contains(uid))
@@ -1220,12 +1221,10 @@ init_msg_folder(vc uid, DwString* fn_out)
     s = newfn(s);
     if(fn_out)
         *fn_out = s;
-    int do_fetch = 0;
-    if(mkdir(s.c_str()) == 0)
-    {
-        do_fetch = 1;
-        add_msg_folder(uid);
-    }
+    mkdir(s.c_str());
+
+    int do_fetch = add_msg_folder(uid);
+
     if(do_fetch || !Session_infos.contains(uid))
     {
         fetch_info(uid);
@@ -2139,7 +2138,7 @@ query_done(vc m, void *, vc, ValidPtr)
             continue;
         }
         init_msg_folder(from);
-        se_emit(SE_USER_ADD, from);
+        //se_emit(SE_USER_ADD, from);
         // it was a problem trying to let special messages percolate
         // thru into the client api. so, just strip them out and
         // process them internally now
