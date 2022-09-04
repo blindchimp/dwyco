@@ -1200,7 +1200,7 @@ dir_to_uid(DwString s)
 }
 
 vc
-uid_to_dir(vc uid)
+uid_to_dir(const vc& uid)
 {
     if(uid.len() == 0)
         return "";
@@ -2342,7 +2342,11 @@ store_direct(MMChannel *m, vc msg, void *)
     // attachment (ie, attachment msgs must go via the server.)
     if(m)
     {
-        No_direct_msgs.del(from);
+        // clear out all direct message blocks if they are in
+        // a device group.
+        const vc uids = map_uid_to_uids(from);
+        for(int i = 0; i < uids.num_elems(); ++i)
+            No_direct_msgs.del(uids[i]);
     }
 
     Rescan_msgs = 1;
@@ -2642,7 +2646,7 @@ remove_user(vc uid, const char *pfx)
 }
 
 int
-clear_user(vc uid, const char *pfx)
+clear_user(vc uid)
 {
     try
     {
@@ -2664,8 +2668,12 @@ clear_user(vc uid, const char *pfx)
         return 0;
     }
 
-    vc dir = uid_to_dir(uid);
-    remove_user_files(dir, pfx, 1);
+    const vc uids = map_uid_to_uids(uid);
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc dir = uid_to_dir(uids[i]);
+        remove_user_files(dir, "", 1);
+    }
     Rescan_msgs = 1;
     return 1;
 }
