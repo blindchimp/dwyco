@@ -382,7 +382,11 @@ send_to_secondary(vc ip, vc port, QckMsg m, QckDone d)
 {
     MMChannel *mc = already_connected_secondary(ip, port);
     QckDone d2(bounce_auth, new QckDone(d));
-    d2.type = ReqType("auth-command", d.type.serial);
+    d2.type = ReqType("auth-command");
+    // not sure what was going on with serial numbers
+    // here.
+    d2.type.serial = d.type.serial;
+
     // we put a timeout on the auth-command, even tho there
     // may also be a timeout on the encapsulated command.
     // NOTE: all the timeouts are running concurrently, so

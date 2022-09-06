@@ -37,7 +37,7 @@ extern int Chat_id;
 namespace dwyco {
 DwListA<QckDone> Waitq;
 DwListA<vc> Response_q;
-int Serial;
+int ReqType::Serial;
 
 // this is used to figure out if there is a bulk operation
 // in progress and we want to eliminate timeouts
@@ -254,7 +254,7 @@ dirth_poll_response()
             if(wp->type.name == v[0][0] && wp->type.serial == (int)v[0][1])
             {
                 QckDone q = *wp;
-                if(!q.permanent)
+                if(q.permanent == QckDone::TRANSIENT)
                     Waitq.remove();
                 // note: as long as you don't reference the Waitq after this
                 // it is safe for callbacks from "done" to call more commands
@@ -309,7 +309,7 @@ dirth_poll_timeouts()
 void
 dirth_q_local_action(vc response_vector, QckDone d)
 {
-    d.type = ReqType("local", ++Serial);
+    d.type = ReqType("local");
     vc type = reqtype("local", d);
     Waitq.append(d);
     // now stick a response in the response q to
@@ -328,7 +328,7 @@ dirth_send_new4(vc id, vc handle, vc email, vc user_spec_id, vc pw, vc pal_auth,
 {
     QckMsg m;
 
-    d.type = ReqType("new4", ++Serial);
+    d.type = ReqType("new4");
     m[QTYPE] = reqtype("new4", d);
     m[QFROM] = id;
     m[QHANDLE] = handle;
@@ -357,7 +357,7 @@ dirth_send_get_pk(vc id, vc uid, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("get-pk", ++Serial);
+    d.type = ReqType("get-pk");
     m[QTYPE] = reqtype("get-pk", d);
     m[QFROM] = id;
     m[2] = uid;
@@ -372,7 +372,7 @@ dirth_send_get_uid(vc id, vc handle, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("get-uid", ++Serial);
+    d.type = ReqType("get-uid");
     m[QTYPE] = reqtype("get-uid", d);
     m[QFROM] = id;
     m[2] = handle;
@@ -386,7 +386,7 @@ dirth_send_set_token(vc id, vc token, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("set-token", ++Serial);
+    d.type = ReqType("set-token");
     m[QTYPE] = reqtype("set-token", d);
     m[QFROM] = id;
     m[2] = token;
@@ -400,7 +400,7 @@ dirth_send_get_group(vc id, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("get-group", ++Serial);
+    d.type = ReqType("get-group");
     m[QTYPE] = reqtype("get-group", d);
     m[QFROM] = id;
     dirth_send(m, d);
@@ -416,7 +416,7 @@ dirth_send_get_group_pk(vc id, vc gname, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("get-group-pk", ++Serial);
+    d.type = ReqType("get-group-pk");
     m[QTYPE] = reqtype("get-group-pk", d);
     m[QFROM] = id;
     m[2] = gname;
@@ -437,7 +437,7 @@ dirth_send_set_get_group_pk(vc id, vc gname, vc prov_pk, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("set-get-group-pk", ++Serial);
+    d.type = ReqType("set-get-group-pk");
     m[QTYPE] = reqtype("set-get-group-pk", d);
     m[QFROM] = id;
     m[2] = gname;
@@ -464,7 +464,7 @@ dirth_send_group_chal(vc id, vc nonce, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("group-chal", ++Serial);
+    d.type = ReqType("group-chal");
     m[QTYPE] = reqtype("group-chal", d);
     m[QFROM] = id;
     m[2] = nonce;
@@ -482,7 +482,7 @@ dirth_send_prov_leave(vc id, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("prov-leave", ++Serial);
+    d.type = ReqType("prov-leave");
     m[QTYPE] = reqtype("prov-leave", d);
     m[QFROM] = id;
     // note: we need to exit fairly quickly in this case, and it isn't
@@ -497,7 +497,7 @@ dirth_send_get(vc id, vc which, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("get", ++Serial);
+    d.type = ReqType("get");
     m[QTYPE] = reqtype("get", d);
     m[QFROM] = id;
     m[2] = which;
@@ -509,7 +509,7 @@ dirth_send_get2(vc id, vc which, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("get2", ++Serial);
+    d.type = ReqType("get2");
     m[QTYPE] = reqtype("get2", d);
     m[QFROM] = id;
     m[2] = which;
@@ -521,7 +521,7 @@ dirth_send_store(vc id, vc recipients, vc msg, vc no_group, vc no_self, QckDone 
 {
     QckMsg m;
 
-    d.type = ReqType("store", ++Serial);
+    d.type = ReqType("store");
     m[QTYPE] = reqtype("store", d);
     m[QFROM] = id;
     m[QSTORE_RECIPIENTS] = recipients;
@@ -568,7 +568,7 @@ dirth_send_query(vc uid, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("query", ++Serial);
+    d.type = ReqType("query");
     m[QTYPE] = reqtype("query", d);
     m[QFROM] = uid;
     dirth_send(m, d);
@@ -579,7 +579,7 @@ dirth_send_query2(vc uid, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("query2", ++Serial);
+    d.type = ReqType("query2");
     m[QTYPE] = reqtype("query2", d);
     m[QFROM] = uid;
     dirth_send(m, d);
@@ -591,7 +591,7 @@ dirth_send_ack_get(vc uid, vc mid, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("ack-get", ++Serial);
+    d.type = ReqType("ack-get");
     m[QTYPE] = reqtype("ack-get", d);
     m[QFROM] = uid;
     m[2] = mid;
@@ -611,7 +611,7 @@ dirth_send_ack_get2(vc uid, vc mid, QckDone d)
 
     QckMsg m;
 
-    d.type = ReqType("ack-get2", ++Serial);
+    d.type = ReqType("ack-get2");
     m[QTYPE] = reqtype("ack-get2", d);
     m[QFROM] = uid;
     m[2] = mid;
@@ -624,7 +624,7 @@ dirth_send_addtag(vc uid, vc mid, vc tag, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("addtag", ++Serial);
+    d.type = ReqType("addtag");
     m[QTYPE] = reqtype("addtag", d);
     m[QFROM] = uid;
     m[2] = mid;
@@ -644,7 +644,7 @@ dirth_send_ignore(vc id, vc uid, QckDone d)
 // update the asshole factor, nothing else is
 // updated
 
-    d.type = ReqType("ignore", ++Serial);
+    d.type = ReqType("ignore");
     m[QTYPE] = reqtype("ignore", d);
     m[QFROM] = id;
     m[2] = uid;
@@ -659,7 +659,7 @@ dirth_send_unignore(vc id, vc uid, QckDone d)
 // ignore lists are used. we don't send commands
 // to the server to store the ignore info.
 
-    d.type = ReqType("unignore", ++Serial);
+    d.type = ReqType("unignore");
     m[QTYPE] = reqtype("unignore", d);
     m[QFROM] = id;
     m[2] = uid;
@@ -673,7 +673,7 @@ dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("ignore-count", ++Serial);
+    d.type = ReqType("ignore-count");
     m[QTYPE] = reqtype("ignore-count", d);
     m[QFROM] = id;
     m[2] = uid;
@@ -724,7 +724,7 @@ dirth_send_get_ignore(vc id, QckDone d)
     return;
 
 #if 0
-    d.type = ReqType("get-ignore", ++Serial);
+    d.type = ReqType("get-ignore");
     m[QTYPE] = reqtype("get-ignore", d);
     m[QFROM] = id;
     dirth_send(m, d);
@@ -738,7 +738,7 @@ dirth_send_ack_all(vc id, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("ack-all", ++Serial);
+    d.type = ReqType("ack-all");
     m[QTYPE] = reqtype("ack-all", d);
     m[QFROM] = id;
     dirth_send(m, d);
@@ -750,7 +750,7 @@ dirth_send_clear_ignore(vc id, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("clear-ignore", ++Serial);
+    d.type = ReqType("clear-ignore");
     m[QTYPE] = reqtype("clear-ignore", d);
     m[QFROM] = id;
     dirth_send(m, d);
@@ -763,7 +763,7 @@ dirth_send_get_server_list2(vc id, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("get-server-list2", ++Serial);
+    d.type = ReqType("get-server-list2");
     m[QTYPE] = reqtype("get-server-list2", d);
     m[QFROM] = id;
     dirth_send(m, d);
@@ -774,7 +774,7 @@ dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d)
 {
     QckMsg m;
 
-    d.type = ReqType("dhsf", ++Serial);
+    d.type = ReqType("dhsf");
     m[QTYPE] = reqtype("dhsf", d);
     m[QFROM] = id;
     m[2] = sf_material;
@@ -786,7 +786,7 @@ dirth_send_setup_session_key(vc id, vc sf_material, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("dhsf", ++Serial);
+    d.type = ReqType("dhsf");
     m[QTYPE] = reqtype("dhsf", d);
     m[QFROM] = id;
     m[2] = sf_material;
@@ -798,7 +798,7 @@ dirth_send_set_interest_list(vc id, vc list, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("set-interest", ++Serial);
+    d.type = ReqType("set-interest");
     m[QTYPE] = reqtype("set-interest", d);
     m[QFROM] = id;
     m[2] = list;
@@ -811,7 +811,7 @@ dirth_send_debug(vc id, vc crashed, vc stack, vc field_track, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("debug", ++Serial);
+    d.type = ReqType("debug");
     m[QTYPE] = reqtype("debug", d);
     m[QFROM] = id;
     m[2] = crashed;
@@ -825,7 +825,7 @@ dirth_send_recommend2(vc id, vc from, vc to, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("recommend2", ++Serial);
+    d.type = ReqType("recommend2");
     m[QTYPE] = reqtype("recommend2", d);
     m[QFROM] = id;
     m[2] = from;
@@ -838,7 +838,7 @@ dirth_send_recommend3(vc id, vc from, vc to, vc email, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("recommend3", ++Serial);
+    d.type = ReqType("recommend3");
     m[QTYPE] = reqtype("recommend3", d);
     m[QFROM] = id;
     m[2] = from;
@@ -852,7 +852,7 @@ dirth_send_set_state(vc id, vc state, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("set-state", ++Serial);
+    d.type = ReqType("set-state");
     m[QTYPE] = reqtype("set-state", d);
     m[QFROM] = id;
     m[2] = state;
@@ -885,7 +885,7 @@ void
 dirth_send_get_info(vc id, vc uid, vc cache_check, QckDone d)
 {
     QckMsg m;
-    d.type = ReqType("get-info", ++Serial);
+    d.type = ReqType("get-info");
     m[QTYPE] = reqtype("get-info", d);
     m[QFROM] = id;
     m[2] = uid;
@@ -900,7 +900,7 @@ dirth_send_set_info(vc id, vc info, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("set-info", ++Serial);
+    d.type = ReqType("set-info");
     m[QTYPE] = reqtype("set-info", d);
     m[QFROM] = id;
     m[2] = info;
@@ -912,7 +912,7 @@ dirth_send_check_for_update(vc id, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("check-update", ++Serial);
+    d.type = ReqType("check-update");
     m[QTYPE] = reqtype("check-update", d);
     m[QFROM] = id;
     // send in a version number
@@ -928,7 +928,7 @@ dirth_send_get_pal_auth_state(vc id, vc who, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("get-pal-auth", ++Serial);
+    d.type = ReqType("get-pal-auth");
     m[QTYPE] = reqtype("get-pal-auth", d);
     m[QFROM] = id;
     m[2] = who;
@@ -966,7 +966,7 @@ dirth_send_set_pal_auth_state(vc id, vc state, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("set-pal-auth", ++Serial);
+    d.type = ReqType("set-pal-auth");
     m[QTYPE] = reqtype("set-pal-auth", d);
     m[QFROM] = id;
     m[2] = state;
@@ -979,7 +979,7 @@ dirth_send_server_assist(vc id, vc to_id, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("server-assist", ++Serial);
+    d.type = ReqType("server-assist");
     m[QTYPE] = reqtype("server-assist", d);
     m[QFROM] = id;
     m[2] = to_id;
@@ -1019,7 +1019,7 @@ dirth_send_create_user_lobby(vc id, vc dispname, vc category, vc sub_god_uid, vc
 {
     QckMsg m;
 
-    d.type = ReqType("create-user-lobby", ++Serial);
+    d.type = ReqType("create-user-lobby");
     m[QTYPE] = reqtype("create-user-lobby", d);
     m[QFROM] = id;
     m[2] = dispname;
@@ -1050,7 +1050,7 @@ dirth_send_remove_user_lobby(vc id, vc lobby_id, QckDone d)
 {
     QckMsg m;
 
-    d.type = ReqType("remove-user-lobby", ++Serial);
+    d.type = ReqType("remove-user-lobby");
     m[QTYPE] = reqtype("remove-user-lobby", d);
     m[QFROM] = id;
     m[2] = lobby_id;

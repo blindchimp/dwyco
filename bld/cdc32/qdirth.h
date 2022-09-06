@@ -33,15 +33,18 @@ typedef void (*QDFUNCP)(vc, void *, vc, ValidPtr);
 
 struct ReqType
 {
+private:
+    static int Serial;
+public:
     vc name;
     int serial;
 
     ReqType() {
         serial = 0;
     }
-    ReqType(vc n, int s) {
+    ReqType(vc n) {
         name = n;
-        serial = s;
+        serial = ++Serial;
     }
 
     int operator==(const ReqType& rt) const {
@@ -67,11 +70,13 @@ struct ReqType
 
 struct QckDone
 {
+    enum permanent_flag {TRANSIENT = 0, PERMANENT = 1};
+
     ReqType type;
     QDFUNCP callback;
     void *arg1;
     vc arg2;
-    int permanent;
+    enum permanent_flag permanent;
     ValidPtr vp;
     // this is used to mark callbacks with the channel
     // the response that would trigger it should come from.
@@ -83,26 +88,32 @@ struct QckDone
     time_t time_qed;
 
 
+
     QckDone() {
         callback = 0;
         arg1 = 0;
-        permanent = 0;
+        permanent = TRANSIENT;
         channel = -1;
         timeout = -1;
         time_qed = -1;
     }
     QckDone(QDFUNCP cb, void *user_arg,
-            vc user_arg2 = vcnil, ValidPtr v = ValidPtr(), vc t = vcnil, int s = 0, int p = 0, int chan = -1, int tmout = -1)
-        : vp(v), type(t, s) {
+            vc user_arg2 = vcnil, ValidPtr v = ValidPtr(), vc t = vcnil, enum permanent_flag p = TRANSIENT)
+        : vp(v), type(t) {
         callback = cb;
         arg1 = user_arg;
         permanent = p;
+        type.name = t;
+        if(p == PERMANENT)
+            type.serial = 0;
         arg2 = user_arg2;
-        channel = chan;
-        if(tmout != -1)
-            this->timeout = tmout + time(0);
-        else
-            this->timeout = -1;
+//        channel = chan;
+//        if(tmout != -1)
+//            this->timeout = tmout + time(0);
+//        else
+//            this->timeout = -1;
+        this->timeout = -1;
+        this->channel = -1;
         time_qed = -1;
     }
 
@@ -186,7 +197,7 @@ vc generate_mac_msg(vc);
 
 extern DwListA<QckDone> Waitq;
 extern DwListA<vc> Response_q;
-extern int Serial;
+//extern int Serial;
 }
 
 // all msgs to server start with these two things
