@@ -8008,6 +8008,7 @@ dwyco_ignore(const char *uid, int len_uid)
     //dirth_send_ignore(My_UID, uid, QckDone(ignore_done, 0, uid));
 
     // just get the assbase update, no other server storage is done
+    MMChannel::destroy_by_uid(buid);
     dirth_send_ignore(My_UID, uid, QckDone());
 }
 
