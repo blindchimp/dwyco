@@ -47,7 +47,7 @@ void trash_body(vc uid, vc msg_id, int inhibit_indexing);
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,
               vc body_to_forward, const char *new_text, vc att_hash, vc special_type, vc st_arg1, int no_forward, vc user_filename, int save_sent);
-void fetch_info(vc uid);
+void fetch_info(const vc &uid);
 int qd_send_one();
 int msg_outq_empty();
 void qd_purge_outbox();

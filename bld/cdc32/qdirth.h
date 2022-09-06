@@ -149,7 +149,7 @@ void dirth_send_unignore(vc id, vc uid, QckDone d);
 void dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d);
 void dirth_cancel_callbacks(QDFUNCP f, void *arg1, const ReqType& type);
 void dirth_cancel_callbacks(QDFUNCP f, ValidPtr vp, const ReqType& type);
-int dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, vc arg2 = vcnil);
+int dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, const vc &arg2);
 void dirth_simulate_error_response(const QckDone& q);
 void dirth_dead_channel_cleanup(int chan);
 void dirth_send_ack_all(vc id, QckDone d);

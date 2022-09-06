@@ -1716,7 +1716,7 @@ make_best_local_info(vc uid, int *cant_resolve_now)
 }
 
 void
-fetch_info(vc uid)
+fetch_info(const vc& uid)
 {
 // fetch info is now a "get-profile", though for compat, we
 // morph the profile info to old format for now.

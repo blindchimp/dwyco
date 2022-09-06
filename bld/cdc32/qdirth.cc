@@ -107,7 +107,7 @@ dirth_get_response()
 }
 
 int
-dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, vc arg2)
+dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, const vc& arg2)
 {
     const QckDone *wp;
     dwlista_foreach_peek_back(wp, Waitq)
@@ -1034,7 +1034,7 @@ dirth_send_create_user_lobby(vc id, vc dispname, vc category, vc sub_god_uid, vc
     // there is *any* create-user-lobby command q-d up, but
     // we don't have a function that checks that right now, so for
     // this hack, we just assume the callback is unique
-    if(dirth_pending_callbacks(d.callback, 0, ReqType()))
+    if(dirth_pending_callbacks(d.callback, 0, ReqType(), vcnil))
     {
         vc resp(VC_VECTOR);
         resp[0] = vcnil;
