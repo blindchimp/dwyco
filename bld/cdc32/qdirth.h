@@ -77,6 +77,11 @@ struct QckDone
     void *arg1;
     vc arg2;
     enum permanent_flag permanent;
+    // NOTE: this isn't used like other "vp" members
+    // since it is set to what the user supplies rather than
+    // referring to ourself. in
+    // other words, it is the context we are passing
+    // back to the callback for the user.
     ValidPtr vp;
     // this is used to mark callbacks with the channel
     // the response that would trigger it should come from.
@@ -107,11 +112,6 @@ struct QckDone
         if(p == PERMANENT)
             type.serial = 0;
         arg2 = user_arg2;
-//        channel = chan;
-//        if(tmout != -1)
-//            this->timeout = tmout + time(0);
-//        else
-//            this->timeout = -1;
         this->timeout = -1;
         this->channel = -1;
         time_qed = -1;
@@ -119,6 +119,10 @@ struct QckDone
 
     // note: we don't check arg1 and arg2 because they are user supplied
     // and we don't know what "==" means for them in general.
+    // using == here is a bit sketchy, and we should probably
+    // just change it to a member name, since this is used
+    // mainly for finding and canceling operations, so we
+    // are looking for "X request destined for callback with context vp"
     int operator==(const QckDone& m) const {
         return callback == m.callback &&
                type == m.type &&
