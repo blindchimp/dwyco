@@ -40,7 +40,7 @@ MMChannel *fetch_attachment(vc fn, DestroyCallback, vc, void *, ValidPtr,
                             StatusCallback, void *, ValidPtr, vc server_ip = vcnil, vc server_port = vcnil);
 vc save_body(vc msgid, vc from, vc text, vc attachment_id, vc date, vc rating, vc authvec,
              vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type, vc from_group);
-int uid_ignored(vc uid);
+int uid_ignored(const vc &uid);
 void delete_msg2(vc msgid);
 void delete_body3(vc uid, vc msgid, int inhibit_indexing);
 void trash_body(vc uid, vc msg_id, int inhibit_indexing);

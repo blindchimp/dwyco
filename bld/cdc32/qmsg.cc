@@ -4198,7 +4198,7 @@ is_ignored_id_by_user(vc id)
 
 
 int
-uid_ignored(vc uid)
+uid_ignored(const vc& uid)
 {
     if(uid.type() != VC_STRING)
         return 1;
