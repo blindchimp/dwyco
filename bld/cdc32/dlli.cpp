@@ -6622,8 +6622,10 @@ pull_msg(vc uid, vc msg_id)
 
 DWYCOEXPORT
 int
-dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
+dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *a_msg_id)
 {
+    const vc msg_id(a_msg_id);
+
     vc uid = sql_get_uid_from_mid(msg_id);
     if(uid.is_nil())
         return DWYCO_GSM_ERROR;
@@ -6638,7 +6640,7 @@ dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
     vc body = load_body_by_id(uid, msg_id);
     if(body.is_nil())
     {
-        GRTLOG("get_saved_message: cant load body uid %s msg %s", (const char *)to_hex(uid), msg_id);
+        GRTLOG("get_saved_message: cant load body uid %s msg %s", (const char *)to_hex(uid), (const char *)msg_id);
         return DWYCO_GSM_ERROR;
     }
     vc& ret = *new vc(VC_VECTOR);

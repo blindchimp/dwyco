@@ -3775,6 +3775,7 @@ MMChannel::tick()
     {
         nego_timer.ack_expire();
         schedule_destroy();
+        GRTLOG("nego timed out on chan %d", myid, 0);
         return 0;
     }
 

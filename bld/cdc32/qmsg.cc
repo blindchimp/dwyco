@@ -30,7 +30,6 @@
 #include "vc.h"
 #include "dwstr.h"
 #include "qauth.h"
-#include "dirth.h"
 #include "qdirth.h"
 #ifdef _Windows
 #ifdef _MSC_VER
@@ -60,7 +59,6 @@
 #include "pval.h"
 #include "doinit.h"
 #include "ta.h"
-#include "cdcver.h"
 #include "files.h"
 #include "sha.h"
 #include "aes.h"
@@ -107,6 +105,7 @@ vc No_direct_msgs;
 vc No_direct_att;
 vc Session_infos;
 vc MsgFolders;
+vc Pals;
 }
 
 // list of message summaries both from server and direct
@@ -127,7 +126,7 @@ vc Client_disposition;
 //vc I_grant;
 //vc They_grant;
 //int Pal_auth_warn;
-vc Pals;
+
 vc Client_ports;
 vc Chat_ips;
 vc Chat_ports;
@@ -2827,12 +2826,13 @@ load_msgs(vc uid)
 
         for(int i = 0; i < Cur_msgs.num_elems(); ++i)
         {
-            vc fuid = map_to_representative_uid(Cur_msgs[i][QM_FROM]);
+            const vc& cm = Cur_msgs[i];
+            vc fuid = map_to_representative_uid(cm[QM_FROM]);
             if(fuid == muid)
             {
-                if(sql_mid_has_tag(Cur_msgs[i][QM_ID], "_ack"))
+                if(sql_mid_has_tag(cm[QM_ID], "_ack"))
                     continue;
-                vc cpy = Cur_msgs[i].copy();
+                vc cpy = cm.copy();
                 cpy[QM_FROM] = fuid;
                 ret.append(cpy);
             }
@@ -2842,9 +2842,10 @@ load_msgs(vc uid)
     {
         for(int i = 0; i < Cur_msgs.num_elems(); ++i)
         {
-            if(sql_mid_has_tag(Cur_msgs[i][QM_ID], "_ack"))
+            const vc& cm = Cur_msgs[i];
+            if(sql_mid_has_tag(cm[QM_ID], "_ack"))
                 continue;
-            vc cpy = Cur_msgs[i].copy();
+            vc cpy = cm.copy();
             cpy[QM_FROM] = map_to_representative_uid(cpy[QM_FROM]);
             ret.append(cpy);
         }

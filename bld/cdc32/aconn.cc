@@ -463,6 +463,7 @@ poll_listener()
         sproto *s = new sproto(ch, recv_command, chan->vp);
         chan->simple_protos[ch] = s;
         s->start();
+        GRTLOG("new secondary chan %d", chan->myid, 0);
         TRACK_ADD(DC_accept_direct_secondary, 1);
     }
 }
