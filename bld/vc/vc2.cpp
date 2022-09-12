@@ -8,7 +8,6 @@
 */
 #include "vc.h"
 #include "vcdeflt.h"
-#include "vcmap.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vc2.cpp 1.48 1998/08/06 04:44:12 dwight Exp $";
 
 vc
