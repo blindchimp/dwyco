@@ -16,18 +16,21 @@
 #include "mmchan.h"
 #include "pval.h"
 
+namespace dwyco {
 extern int Rescan_msgs;
 extern vc Cur_ignore;
 extern vc No_direct_msgs;
 extern vc No_direct_att;
 extern vc Session_infos;
 extern vc MsgFolders;
+extern vc Pals;
+}
 
 //void load_users(int only_recent, int *total_out);
 void load_users_from_files(int *total_out);
 void load_users_from_index(int recent, int *total_out);
 int remove_user(vc uid, const char *pfx);
-int clear_user(vc uid, const char *pfx);
+int clear_user(vc uid);
 vc load_msgs(vc uid);
 vc load_bodies(vc dir, int load_sent);
 vc load_body_by_id(vc uid, vc msg_id);
@@ -38,14 +41,14 @@ MMChannel *fetch_attachment(vc fn, DestroyCallback, vc, void *, ValidPtr,
                             StatusCallback, void *, ValidPtr, vc server_ip = vcnil, vc server_port = vcnil);
 vc save_body(vc msgid, vc from, vc text, vc attachment_id, vc date, vc rating, vc authvec,
              vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type, vc from_group);
-int uid_ignored(vc uid);
+int uid_ignored(const vc &uid);
 void delete_msg2(vc msgid);
 void delete_body3(vc uid, vc msgid, int inhibit_indexing);
 void trash_body(vc uid, vc msg_id, int inhibit_indexing);
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,
               vc body_to_forward, const char *new_text, vc att_hash, vc special_type, vc st_arg1, int no_forward, vc user_filename, int save_sent);
-void fetch_info(vc uid);
+void fetch_info(const vc &uid);
 int qd_send_one();
 int msg_outq_empty();
 void qd_purge_outbox();
@@ -78,7 +81,7 @@ void power_clean_safe();
 //int trash_user(vc dir);
 int trash_file(const DwString& dir, const DwString& fn);
 void untrash_users();
-vc uid_to_dir(vc uid);
+vc uid_to_dir(const vc &uid);
 vc dir_to_uid(DwString s);
 int count_trashed_users();
 int empty_trash();

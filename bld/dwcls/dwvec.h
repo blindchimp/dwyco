@@ -53,7 +53,6 @@
 #define DWVEC_NO_INDEX_CHECK
 #endif
 #include <stdlib.h>
-#include "useful.h"
 #include "dwiter.h"
 #undef index
 [[noreturn]] void oopanic(const char *);

@@ -22,6 +22,7 @@
 #include "vc.h"
 #include "dwstr.h"
 
+namespace dwyco {
 // WARNING: if you change this enum, you have to update the table in se.cpp!
 enum dwyco_sys_event {
     SE_NOTHING = 0,
@@ -98,5 +99,6 @@ void se_emit_uid_list_changed();
 void se_emit_chat(dwyco_sys_event cmd, vc server_id);
 void se_emit_server_attr(vc name, vc val);
 int se_process();
+}
 
 #endif

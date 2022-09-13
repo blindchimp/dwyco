@@ -21,6 +21,7 @@ using namespace dwyco;
 
 extern DwycoSystemEventCallback dwyco_system_event_callback;
 
+namespace dwyco {
 static DwVec<vc> Se_q;
 // this table is a quick hack, it is indexed by the enum in se.h
 // if you change that, you need to change this accordingly.
@@ -221,9 +222,6 @@ se_emit_group_status_change()
     GRTLOGVC(v);
 }
 
-extern vc Cur_ignore;
-extern vc Pals;
-
 void
 se_emit_uid_list_changed()
 {
@@ -415,4 +413,5 @@ se_process()
     if(n > 0)
         return 1;
     return 0;
+}
 }

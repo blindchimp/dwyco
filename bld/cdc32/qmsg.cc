@@ -30,7 +30,6 @@
 #include "vc.h"
 #include "dwstr.h"
 #include "qauth.h"
-#include "dirth.h"
 #include "qdirth.h"
 #ifdef _Windows
 #ifdef _MSC_VER
@@ -60,7 +59,6 @@
 #include "pval.h"
 #include "doinit.h"
 #include "ta.h"
-#include "cdcver.h"
 #include "files.h"
 #include "sha.h"
 #include "aes.h"
@@ -100,14 +98,19 @@ using namespace CryptoPP;
 using namespace dwyco;
 using namespace dwyco::qmsgsql;
 
-vc MsgFolders;
-
+namespace dwyco {
 int Rescan_msgs;
+vc Cur_ignore;
+vc No_direct_msgs;
+vc No_direct_att;
+vc Session_infos;
+vc MsgFolders;
+vc Pals;
+}
 
 // list of message summaries both from server and direct
 static vc Cur_msgs;
 
-vc Cur_ignore;
 vc Session_ignore;
 // mutual is separated out because we want to have a
 // part of the ignore list that cannot be maniplated
@@ -122,14 +125,11 @@ vc Client_disposition;
 //vc Always_visible;
 //vc I_grant;
 //vc They_grant;
-vc No_direct_msgs;
-vc No_direct_att;
 //int Pal_auth_warn;
-vc Pals;
+
 vc Client_ports;
 vc Chat_ips;
 vc Chat_ports;
-vc Session_infos;
 static vc In_progress;
 
 
@@ -190,7 +190,8 @@ move_replace(const DwString& s, const DwString& d)
 }
 #endif
 
-static int
+static
+int
 add_msg_folder(vc uid)
 {
     if(MsgFolders.contains(uid))
@@ -1199,7 +1200,7 @@ dir_to_uid(DwString s)
 }
 
 vc
-uid_to_dir(vc uid)
+uid_to_dir(const vc& uid)
 {
     if(uid.len() == 0)
         return "";
@@ -1219,12 +1220,10 @@ init_msg_folder(vc uid, DwString* fn_out)
     s = newfn(s);
     if(fn_out)
         *fn_out = s;
-    int do_fetch = 0;
-    if(mkdir(s.c_str()) == 0)
-    {
-        do_fetch = 1;
-        add_msg_folder(uid);
-    }
+    mkdir(s.c_str());
+
+    int do_fetch = add_msg_folder(uid);
+
     if(do_fetch || !Session_infos.contains(uid))
     {
         fetch_info(uid);
@@ -1384,7 +1383,80 @@ fetch_attachment(vc fn, DestroyCallback dc, vc dcb_arg1, void *dcb_arg2, ValidPt
 }
 
 static void
-fetch_pk_done(vc m, void *, vc uid, ValidPtr)
+fetch_pk_done2(vc m, void *, vc uid, ValidPtr)
+{
+    if(m[1].is_nil())
+    {
+        if(m[2] == vc("no-key"))
+        {
+            pk_invalidate(uid);
+            // to avoid repeatedly fetching a key that may never exist
+            // (like it was an old account that never had a key generated
+            // for it), for this session we'll just cache this response
+            // from the server.
+            pk_set_session_cache(uid);
+            TRACK_ADD(QM_fetch_pk_no_key2, 1);
+        }
+        else
+        {
+            // if it was a failure (most likely went offline
+            // while trying to deliver a message), cause a new
+            // fetch to happen next time the send is attempted
+            pk_force_check(uid);
+            TRACK_ADD(QM_fetch_pk_failed2, 1);
+        }
+        return;
+    }
+    if(m[1].type() != VC_VECTOR)
+    {
+        TRACK_ADD(QM_fetch_pk_bogus_return2, 1);
+        return;
+    }
+    vc static_public(VC_VECTOR);
+    static_public[DH_STATIC_PUBLIC] = m[1][0];
+    vc sig = m[1][1];
+    // next is a vector containing the alt key
+    vc alt = m[1][2];
+    if(!alt.is_nil())
+    {
+        vc alt_pk = alt[0];
+        vc alt_static_public(VC_VECTOR);
+        alt_static_public[DH_STATIC_PUBLIC] = alt_pk;
+        vc server_sig = alt[1];
+        vc gname = alt[2];
+        put_pk2(uid, static_public, sig, alt_static_public, server_sig, gname);
+    }
+    else
+    {
+        put_pk(uid, static_public, sig);
+    }
+
+    pk_set_session_cache(uid);
+    TRACK_ADD(QM_fetch_pk_ok2, 1);
+
+}
+
+static void
+fetch_group_uids(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    const vc pk = m[1][0];
+    const vc uids = m[1][1];
+
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc uid = uids[i];
+        if(dirth_pending_callbacks(fetch_pk_done2, 0, ReqType(), uid))
+            return;
+        dirth_send_get_pk(My_UID, uid, QckDone(fetch_pk_done2, 0, uid));
+    }
+
+}
+
+
+static void
+fetch_pk_done(vc m, void *user_arg, vc uid, ValidPtr)
 {
     if(m[1].is_nil())
     {
@@ -1426,6 +1498,14 @@ fetch_pk_done(vc m, void *, vc uid, ValidPtr)
         vc server_sig = alt[1];
         vc gname = alt[2];
         put_pk2(uid, static_public, sig, alt_static_public, server_sig, gname);
+        // force fetch of all profiles in the gname
+        // this probably needs to be changed so that a list of other uid's in
+        // the group are returned as well, for consistency reasons (ie, things
+        // might change while this operation in flight.
+        // for now, we'll do it this way to see how things work out.
+        int get_members = (user_arg == nullptr);
+        if(get_members)
+            dirth_send_get_group_pk(My_UID, gname, QckDone(fetch_group_uids, 0));
 
     }
     else
@@ -1437,8 +1517,6 @@ fetch_pk_done(vc m, void *, vc uid, ValidPtr)
     TRACK_ADD(QM_fetch_pk_ok, 1);
 
 }
-
-
 
 static
 void
@@ -1455,7 +1533,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
 //    vc desc = other[1][1];
 //    vc location = other[1][2];
 
-    static vc invalid("invalid");
+    static const vc invalid("invalid");
 
     vc v;
     // special case: if issuing this command results in a local
@@ -1637,7 +1715,7 @@ make_best_local_info(vc uid, int *cant_resolve_now)
 }
 
 void
-fetch_info(vc uid)
+fetch_info(const vc& uid)
 {
 // fetch info is now a "get-profile", though for compat, we
 // morph the profile info to old format for now.
@@ -2059,7 +2137,7 @@ query_done(vc m, void *, vc, ValidPtr)
             continue;
         }
         init_msg_folder(from);
-        se_emit(SE_USER_ADD, from);
+        //se_emit(SE_USER_ADD, from);
         // it was a problem trying to let special messages percolate
         // thru into the client api. so, just strip them out and
         // process them internally now
@@ -2262,7 +2340,11 @@ store_direct(MMChannel *m, vc msg, void *)
     // attachment (ie, attachment msgs must go via the server.)
     if(m)
     {
-        No_direct_msgs.del(from);
+        // clear out all direct message blocks if they are in
+        // a device group.
+        const vc uids = map_uid_to_uids(from);
+        for(int i = 0; i < uids.num_elems(); ++i)
+            No_direct_msgs.del(uids[i]);
     }
 
     Rescan_msgs = 1;
@@ -2562,7 +2644,7 @@ remove_user(vc uid, const char *pfx)
 }
 
 int
-clear_user(vc uid, const char *pfx)
+clear_user(vc uid)
 {
     try
     {
@@ -2584,8 +2666,12 @@ clear_user(vc uid, const char *pfx)
         return 0;
     }
 
-    vc dir = uid_to_dir(uid);
-    remove_user_files(dir, pfx, 1);
+    const vc uids = map_uid_to_uids(uid);
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc dir = uid_to_dir(uids[i]);
+        remove_user_files(dir, "", 1);
+    }
     Rescan_msgs = 1;
     return 1;
 }
@@ -2740,12 +2826,13 @@ load_msgs(vc uid)
 
         for(int i = 0; i < Cur_msgs.num_elems(); ++i)
         {
-            vc fuid = map_to_representative_uid(Cur_msgs[i][QM_FROM]);
+            const vc& cm = Cur_msgs[i];
+            vc fuid = map_to_representative_uid(cm[QM_FROM]);
             if(fuid == muid)
             {
-                if(sql_mid_has_tag(Cur_msgs[i][QM_ID], "_ack"))
+                if(sql_mid_has_tag(cm[QM_ID], "_ack"))
                     continue;
-                vc cpy = Cur_msgs[i].copy();
+                vc cpy = cm.copy();
                 cpy[QM_FROM] = fuid;
                 ret.append(cpy);
             }
@@ -2755,9 +2842,10 @@ load_msgs(vc uid)
     {
         for(int i = 0; i < Cur_msgs.num_elems(); ++i)
         {
-            if(sql_mid_has_tag(Cur_msgs[i][QM_ID], "_ack"))
+            const vc& cm = Cur_msgs[i];
+            if(sql_mid_has_tag(cm[QM_ID], "_ack"))
                 continue;
-            vc cpy = Cur_msgs[i].copy();
+            vc cpy = cm.copy();
             cpy[QM_FROM] = map_to_representative_uid(cpy[QM_FROM]);
             ret.append(cpy);
         }
@@ -4111,7 +4199,7 @@ is_ignored_id_by_user(vc id)
 
 
 int
-uid_ignored(vc uid)
+uid_ignored(const vc& uid)
 {
     if(uid.type() != VC_STRING)
         return 1;

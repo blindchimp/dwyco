@@ -158,7 +158,7 @@ send_best_way(const DwString& qfn, vc ruid)
     // that is created and stored while delivery is attempted. unfortunately,
     // sometimes the best place to deliver a message is different than what
     // is initially stored in the message. the current send state-machines
-    // pretty much assume the recipient is a contant, and will use whatever
+    // pretty much assume the recipient is a constant, and will use whatever
     // is stored in the message while it is trying to deliver it.
     // the api for "directsend" probably needs to be augmented with something
     // like "ignore what is in the message and try to send it here first",

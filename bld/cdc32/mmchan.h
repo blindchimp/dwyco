@@ -200,6 +200,7 @@ public:
     static MMChannel *channel_by_call_type(vc uid, vc call_type);
     static ChanList channels_by_call_type(vc call_type);
     static ChanList channels_by_call_type(vc uid, vc call_type);
+    static void destroy_by_uid(vc uid);
     static int Sync_receivers;
     static int Auto_sync;
     static int compute_sync();

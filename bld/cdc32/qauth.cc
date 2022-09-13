@@ -46,7 +46,7 @@ int Entropy_charge;
 void (*Entropy_display_callback)(int);
 
 vc
-to_hex(vc s)
+to_hex(const vc& s)
 {
     const char *a = (const char *)s;
     int len = s.len();
@@ -73,7 +73,7 @@ hexd(char a)
 }
 
 vc
-from_hex(vc s)
+from_hex(const vc& s)
 {
     const char *a = (const char *)s;
     int len = s.len();

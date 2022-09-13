@@ -300,7 +300,7 @@ is_user_dir(const DwString& fn)
 }
 
 int
-is_attachment(vc fn)
+is_attachment(const vc& fn)
 {
     if(fn.len() != 24)
         return 0;

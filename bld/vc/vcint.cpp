@@ -31,13 +31,6 @@ vc_int::vc_int(long long i2) {i = i2;}
 
 vc_int::~vc_int() { }
 
-#ifdef _Windows
-vc_int::operator long long() const
-{
-    return i;
-}
-#endif
-
 vc_int::operator long() const {
     if(sizeof(long) <= sizeof(i))
 		return i;
@@ -69,7 +62,7 @@ vc_int::operator double() const {return (double)i; }
 vc_int::operator long long() const {
     if(sizeof(long long) <= sizeof(i))
         return i;
-    if(i > LONG_LONG_MAX || i < LONG_LONG_MIN)
+    if(i > LLONG_MAX || i < LLONG_MIN)
     {
         USER_BOMB("integer truncation", 0);
     }

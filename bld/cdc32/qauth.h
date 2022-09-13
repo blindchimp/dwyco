@@ -15,8 +15,8 @@
 namespace dwyco {
 int qauth_check_account_exists();
 void init_qauth();
-vc to_hex(vc s);
-vc from_hex(vc);
+vc to_hex(const vc &s);
+vc from_hex(const vc &);
 vc gen_pass(vc phrase, vc& salt);
 vc gen_id();
 void qauth_get_password();
