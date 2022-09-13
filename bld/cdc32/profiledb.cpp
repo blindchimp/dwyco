@@ -10,8 +10,8 @@
 #include "vccrypt2.h"
 #include "ssns.h"
 #include "fnmod.h"
+#include "qmsg.h"
 
-extern vc Session_infos;
 extern vc My_UID;
 
 namespace dwyco {
@@ -180,7 +180,7 @@ check_profile(vc prf)
 }
 
 int
-load_profile(vc uid, vc& prf_out)
+load_profile(const vc& uid, vc& prf_out)
 {
     if(uid.type() != VC_STRING)
         return 0;
@@ -229,7 +229,7 @@ load_profile(vc uid, vc& prf_out)
 
 static
 vc
-blob(vc v)
+blob(const vc& v)
 {
     vc ret(VC_VECTOR);
     ret[0] = "blob";
@@ -302,7 +302,7 @@ save_profile(vc uid, vc prf)
 }
 
 int
-prf_already_cached(vc uid)
+prf_already_cached(const vc& uid)
 {
     if(uid == My_UID)
     {
@@ -511,7 +511,7 @@ put_pk2(vc uid, vc sfpk, vc sig, vc alt_pk, vc server_sig, vc gname)
 }
 
 int
-pk_session_cached(vc uid)
+pk_session_cached(const vc& uid)
 {
     if(uid == My_UID)
     {

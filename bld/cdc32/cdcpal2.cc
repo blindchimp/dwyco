@@ -75,11 +75,11 @@ transient_online_list()
     // to use the info try and target message delivery.
     for(int i = 0; i < p.num_elems(); ++i)
     {
-        vc uids = map_uid_to_uids(p[i]);
+        const vc uids = map_uid_to_uids(p[i]);
         for(int i = 0; i < uids.num_elems(); ++i)
             tmpl.add(uids[i], 0);
     }
-    vc gv = Group_uids;
+    const vc gv = Group_uids;
     if(!gv.is_nil())
     {
         for(int i = 0; i < gv.num_elems(); ++i)
@@ -90,7 +90,7 @@ transient_online_list()
     // it is debatable whether having notifications of online
     // for others in your msg list is really what you want.
     // for now, we get rid of it.
-#if 0
+#if 1
     int left_over = MAXPALS - p.num_elems();
     if(left_over <= 0)
     {
@@ -98,7 +98,7 @@ transient_online_list()
         return tree_to_vec(tmpl);
     }
     // fill out remainder with recent conversations
-    vc rm = sql_get_recent_users2(3600 * 24 * 365, left_over);
+    vc rm = sql_get_recent_users2(3600 * 24 * 14, left_over);
     if(rm.is_nil())
     {
         tmpl.del(My_UID);
@@ -106,8 +106,11 @@ transient_online_list()
     }
     for(int i = 0; i < rm.num_elems(); ++i)
     {
-        vc u = from_hex(rm[i]);
-        tmpl.add(u, 0);
+        const vc u = from_hex(rm[i]);
+        const vc uids = map_uid_to_uids(u);
+        for(int i = 0; i < uids.num_elems(); ++i)
+            tmpl.add(uids[i], 0);
+        //tmpl.add(u, 0);
     }
 #endif
     tmpl.del(My_UID);
@@ -314,8 +317,9 @@ pal_login()
     v[8] = vc(VC_VECTOR);
 
     v[4] = make_fw_setup();
-    dirth_send_set_interest_list(My_UID, v, QckDone());
     v[9] = MMChannel::My_disposition;
+    dirth_send_set_interest_list(My_UID, v, QckDone());
+
     return 1;
 }
 

@@ -18,7 +18,7 @@ int put_pk2(vc uid, vc sfpk, vc sig, vc alt_pk, vc server_sig, vc gname);
 void pk_force_check(vc uid);
 void pk_invalidate(vc uid);
 void pk_set_session_cache(vc uid);
-int pk_session_cached(vc uid);
+int pk_session_cached(const vc &uid);
 
 #define PKC_STATIC_PUBLIC 0
 #define PKC_DWYCO_SIGNATURE 1
@@ -26,10 +26,10 @@ int pk_session_cached(vc uid);
 #define PKC_ALT_SERVER_SIG 3
 #define PKC_ALT_GNAME 4
 
-int load_profile(vc uid, vc& prf_out);
+int load_profile(const vc &uid, vc& prf_out);
 int save_profile(vc uid, vc prf);
 //void clean_profile_cache(int days_old, int max_left);
-int prf_already_cached(vc uid);
+int prf_already_cached(const vc &uid);
 void prf_force_check(vc uid);
 void prf_invalidate(vc uid);
 void prf_set_cached(vc uid);

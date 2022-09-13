@@ -1,7 +1,6 @@
 #include "mmchan.h"
 #include "activeuid.h"
 #include "qauth.h"
-#include "qmsg.h"
 #include "qmsgsql.h"
 #include "aconn.h"
 
@@ -90,6 +89,10 @@ find_best_candidate_for_initial_send(vc uid)
             maxi = i;
         }
     }
+    // note: this is really a programming error, as n >= 1 at this point
+    // but naturally, that will get screwed up eventually.
+    if(maxi == -1)
+        return uid;
     return uids[maxi];
 
 }

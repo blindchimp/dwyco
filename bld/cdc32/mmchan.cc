@@ -2660,6 +2660,23 @@ MMChannel::channels_by_call_type(vc uid, vc call_type)
     return ret;
 }
 
+void
+MMChannel::destroy_by_uid(vc uid)
+{
+    scoped_ptr<ChanList> cl(get_serviced_channels_net());
+    ChanListIter cli(cl.get());
+
+    for(; !cli.eol(); cli.forward())
+    {
+        MMChannel *mc = cli.getp();
+        if(mc->do_destroy == KEEP && uid == mc->remote_uid())
+        {
+            mc->schedule_destroy(HARD);
+        }
+    }
+
+}
+
 ChanList
 MMChannel::channels_by_call_type(vc call_type)
 {
@@ -3758,6 +3775,7 @@ MMChannel::tick()
     {
         nego_timer.ack_expire();
         schedule_destroy();
+        GRTLOG("nego timed out on chan %d", myid, 0);
         return 0;
     }
 

@@ -154,7 +154,7 @@ DirectSend::send_direct()
     }
     QckDone d(send_done, 0, vcnil, vp);
     d.set_timeout(10);
-    d.type = ReqType("msg", ++Serial);
+    d.type = ReqType("msg");
     v[0] = d.type.response_type();
     v[1] = msg_to_send;
     v[2] = small_attachment;
