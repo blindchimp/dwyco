@@ -195,7 +195,7 @@ NotificationClient::load_contacts()
 
 }
 
-void
+int
 NotificationClient::open_image()
 {
     if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
@@ -203,14 +203,14 @@ NotificationClient::open_image()
         QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
         if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
         {
-            return;
+            return 0;
         }
     }
     QAndroidJniObject::callStaticMethod<void>(
         "com/dwyco/android/NotificationClient",
         "openAnImage"
     );
-
+    return 1;
 }
 
 void
