@@ -66,7 +66,7 @@ Page {
         visible: !quitnow
         Label {
             id: helpme
-            text: "<a href=\"https://www.dwyco.net/general-5\">What is account linking?</a>"
+            text: "<a href=\"https://www.dwyco.net/general-5\">What is device linking?</a>"
             textFormat: Text.RichText
             onLinkActivated: {
                 Qt.openUrlExternally(link)
@@ -75,7 +75,7 @@ Page {
 
         Label {
             id: failed
-            text: "Linking failed.\nTry using a different account name or PIN."
+            text: "Linking failed.\nTry using a different group name or PIN."
             visible: show_failed
             Layout.fillWidth: true
         }
@@ -120,7 +120,7 @@ Page {
         TextFieldX {
             id: group_name
             text_input: !enabled ? core.active_group_name : ""
-            placeholder_text: "Account name (4+ chars, e.g. jane@mumble)"
+            placeholder_text: "Group name (4+ chars, e.g. jane@mumble)"
             visible: !group_active
             inputMethodHints: Qt.ImhNoPredictiveText|Qt.ImhLowercaseOnly
             Layout.fillWidth: true
@@ -132,7 +132,7 @@ Page {
         TextFieldX {
             id: group_pw
             text_input: ""
-            placeholder_text: "Account entry password (4+ chars, e.g. notpassword123)"
+            placeholder_text: "Group entry password (4+ chars, e.g. notpassword123)"
             inputMethodHints: Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText | Qt.ImhSensitiveData //Qt.ImhDigitsOnly
             visible: !group_active && !show_pin_layout.visible
             Layout.fillWidth: true
@@ -184,7 +184,7 @@ Page {
         }
         Switch {
             id: server_mode
-            text: qsTr("Server mode (download and store all messages to this device)")
+            text: qsTr("Server mode (store all messages to this device)")
             checked: core.eager_pull
             onClicked: {
                 if(checked) {
