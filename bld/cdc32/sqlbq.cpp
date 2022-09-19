@@ -131,7 +131,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             switch(val.type())
             {
             case VC_INT:
-                if(sqlite3_bind_int(st, i, val) != SQLITE_OK)
+                if(sqlite3_bind_int64(st, i, val) != SQLITE_OK)
                 {
                     sqlite3_finalize(st);
                     USER_BOMB("sql bind error", vcnil)
@@ -213,7 +213,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
                 switch(sqlite3_column_type(st, i))
                 {
                 case SQLITE_INTEGER:
-                    resrow[i] = sqlite3_column_int(st, i);
+                    resrow[i] = sqlite3_column_int64(st, i);
                     break;
                 case SQLITE_FLOAT:
                     resrow[i] = sqlite3_column_double(st, i);
