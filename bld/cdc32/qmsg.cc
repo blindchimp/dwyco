@@ -192,7 +192,7 @@ move_replace(const DwString& s, const DwString& d)
 
 static
 int
-add_msg_folder(vc uid)
+add_msg_folder(const vc& uid)
 {
     if(MsgFolders.contains(uid))
         return 0;
@@ -2440,7 +2440,7 @@ load_users_from_files(int *total_out)
     {
         WIN32_FIND_DATA &d = *fv[i];
         s = d.cFileName;
-        vc uid = dir_to_uid(s);
+        const vc uid = dir_to_uid(s);
         if(uid.len() != 10)
             continue;
         add_msg_folder(uid);
@@ -3909,7 +3909,7 @@ sort_on_time(vc vec, int field)
 
 static
 void
-load_q_files(const DwString& dir, vc uid, int load_special, vc vec)
+load_q_files(const DwString& dir, const vc& uid, int load_special, vc vec)
 {
     DwString pat(dir);
     pat += DIRSEPSTR;
@@ -4061,12 +4061,17 @@ qd_send_one()
 
 // find all outbox and inprogress message id's (*.q)
 vc
-load_qd_msgs(vc uid, int load_special)
+load_qd_msgs(const vc& uid, int load_special)
 {
     vc ret(VC_VECTOR);
-
-    load_q_files("outbox", uid, load_special, ret);
-    load_q_files("inprogress", uid, load_special, ret);
+    const vc uids = map_uid_to_uids(uid);
+    int n = uids.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        const vc u(uids[i]);
+        load_q_files("outbox", u, load_special, ret);
+        load_q_files("inprogress", u, load_special, ret);
+    }
     sort_on_time(ret, 2);
 
     return ret;
