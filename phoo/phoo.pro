@@ -14,7 +14,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"3.40\\\"\"
+DEFINES += BUILDTIME=\"\\\"3.44\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -331,8 +331,8 @@ LIBS += $${L}/libdwyco_jni.so
 ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
 
 ANDROID_TARGET_SDK_VERSION=30
-ANDROID_VERSION_CODE=2000103
-ANDROID_VERSION_NAME="3.01"
+ANDROID_VERSION_CODE=2000104
+ANDROID_VERSION_NAME="3.04"
 #contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 #    ANDROID_EXTRA_LIBS += \
 #        $$PWD/arm/libcrypto.so \
