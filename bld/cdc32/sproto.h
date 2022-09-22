@@ -29,8 +29,12 @@ struct strans
 class sproto
 {
     friend class MMChannel;
+    sproto(const sproto&) = delete;
+    sproto& operator=(const sproto&) = delete;
 
 public:
+    // the ValidPtr in this case is a backpointer to the
+    // MMChannel this sproto is a subchannel of
     sproto(int sc, strans *tr, ValidPtr v);
     void start();
 
@@ -43,7 +47,7 @@ private:
         fail
     };
 
-    ValidPtr mvp;
+    ValidPtr mvp; // backpointer to MMChannel
     int cur_state;
     int running;
     strans *trans;

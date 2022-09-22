@@ -287,6 +287,7 @@ vc::operator int() const { return (int)*rep; }
 vc::operator double() const { return (double)*rep;}
 vc::operator const char *() const { return (const char *)*rep; }
 vc::operator long() const { return (long)*rep;}
+vc::operator long long() const { return (long long)*rep;}
 vc::operator char() const { return (char)*rep;}
 vc::operator void *() const { return (void *)*rep;}
 
@@ -334,17 +335,32 @@ vc::printOn(VcIO outputStream)
 vc
 vc::force_eval() const
 {
+#ifdef NO_VCEVAL
+    oopanic("eval");
+#else
 	if(is_atomic())
 		return *this;
 	return rep->eval();
+#endif
 }
 
 vc
 vc::eval() const
 {
+#ifdef NO_VCEVAL
+    oopanic("eval2");
+#else
+#ifdef VCDBG
+    VcDebugNode *n = VcDbgInfo.get();
+    if(n->src_list)
+    {
+        (*n->src_list)[n->cur_idx].print();
+    }
+#endif
 	if(is_quoted())
 		return *this;
 	return rep->eval();
+#endif
 }
 
 void

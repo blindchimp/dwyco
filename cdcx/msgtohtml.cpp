@@ -121,7 +121,7 @@ insert_icons(DWYCO_SAVED_MSG_LIST m, QTextCursor tc)
         return 1;
     }
 
-    int viewid = dwyco_make_zap_view(m, 0, 0, 0);
+    int viewid = dwyco_make_zap_view2(m, 0);
     int audio = 0;
     int video = 0;
     int short_video = 0;

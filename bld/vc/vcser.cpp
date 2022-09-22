@@ -54,7 +54,7 @@ vc::xfer_out(vcxstream& vcx)
 long
 vc::xfer_in(vcxstream& vcx)
 {
-    if(vcx.max_depth == 0)
+    if(vcx.max_depth == -1)
         return EXIN_PARSE;
     --vcx.max_depth;
     long ret = real_xfer_in(vcx);
@@ -69,11 +69,12 @@ vc::real_xfer_in(vcxstream& vcx)
 	long n = 0;
     int tlen;
     vc_default *nrep;
-
+    {
 	char *tp = vcx.in_want(ENCODED_TYPE_LEN);
 	if(tp == 0)
 		return EXIN_DEV;
 	t = decode_type(tp);
+    }
 	if(t == -1)
 		return EXIN_PARSE;
 	switch(t)

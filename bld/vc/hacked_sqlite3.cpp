@@ -21,7 +21,6 @@ static DwVec<vc> *outbind_double;
 typedef DwVec<vc> vvc;
 #define Mem sqlite3_value
 
-//template class DwVecP<void>;
 static
 int
 start_wrapper()
@@ -136,7 +135,11 @@ Ctx_kill.append(idp);\
 }
 
 
+#ifdef DWYCO_USE_STATIC_SQLITE
+#include "sqlite/sqlite3.h"
+#else
 #include <sqlite3.h>
+#endif
 static vc
 wrap_sqlite3_bulk_query(VCArglist *a)
 {

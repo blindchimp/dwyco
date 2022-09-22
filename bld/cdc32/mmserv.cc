@@ -8,7 +8,6 @@
 */
 #include "mmchan.h"
 #include "qdirth.h"
-#include "dirth.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "chatgrid.h"
@@ -16,10 +15,11 @@
 #include "pgdll.h"
 #include "audout.h"
 #include "se.h"
-#include "lanmap.h"
 #include "ta.h"
-#include "prfcache.h"
+#include "profiledb.h"
 #include "dwscoped.h"
+#include "netlog.h"
+
 using namespace dwyco;
 
 extern vc Online;
@@ -80,7 +80,7 @@ MMChannel::get_secondary_server_channel()
 }
 
 void
-MMChannel::send_to_db(QckMsg& m, int chan_id)
+MMChannel::send_to_db(const QckMsg& m, int chan_id)
 {
     MMChannel *mcs;
     mcs = MMChannel::channel_by_id(chan_id);
@@ -102,6 +102,8 @@ void
 MMChannel::server_response(vc v)
 {
     static vc sync("c");
+    GRTLOG("server resp %d", myid, 0);
+    GRTLOGVC(v);
     if(v == sync)
     {
         vc s(VC_VECTOR);
@@ -156,8 +158,6 @@ MMChannel::chat_response(vc v)
     static vc del_lobby("del-lobby");
     static vc god_online("god-online");
     static vc god_offline("god-offline");
-    static vc add_lan_map("add-lan-map");
-    static vc del_lan_map("del-lan-map");
     static vc dbgreq("dbgreq");
     static vc invalidate_profile("invalidate-profile");
     static vc chatc("chatc");
@@ -203,12 +203,12 @@ MMChannel::chat_response(vc v)
     else if(v[0] == chat_on)
     {
         GRTLOGVC(v);
-        vc uid = v[2];
-        vc name = v[1];
-        vc ip = v[3];
-        vc ah = v[4];
-        vc ports = v[5];
-        vc attrs = v[6];
+        const vc& uid = v[2];
+        const vc& name = v[1];
+        const vc& ip = v[3];
+        const vc& ah = v[4];
+        const vc& ports = v[5];
+        const vc& attrs = v[6];
 #ifdef DWYCO_ASSHAT
         new_asshole(uid, ah);
 #endif
@@ -235,33 +235,33 @@ MMChannel::chat_response(vc v)
     }
     else if(v[0] == chat_off)
     {
-        vc uid = v[1];
+        const vc& uid = v[1];
         if(!uid_ignored(uid))
         {
             if(TheChatGrid)
             {
                 TheChatGrid->start_update();
-                TheChatGrid->remove_user(v[1]);
+                TheChatGrid->remove_user(uid);
                 TheChatGrid->end_update();
             }
         }
     }
     else if(v[0] == currently_on)
     {
-        vc ul = v[1];
+        const vc& ul = v[1];
         GRTLOG("CURRENT", 0, 0);
         GRTLOGVC(ul);
-        int n = v[1].num_elems();
+        int n = ul.num_elems();
         if(TheChatGrid)
             TheChatGrid->start_update();
         for(int i = 0; i < n; ++i)
         {
-            vc uid = ul[i][0][1];
-            vc name = ul[i][0][0];
-            vc ports = ul[i][0][3];
-            vc ah = ul[i][2];
-            vc ip = ul[i][1];
-            vc attrs = ul[i][3];
+            const vc& uid = ul[i][0][1];
+            const vc& name = ul[i][0][0];
+            const vc& ports = ul[i][0][3];
+            const vc& ah = ul[i][2];
+            const vc& ip = ul[i][1];
+            const vc& attrs = ul[i][3];
             GRTLOGVC(uid);
             GRTLOGVC(name);
             GRTLOGVC(ports);
@@ -475,7 +475,7 @@ MMChannel::chat_response(vc v)
         // here is where we need *all* the servers, so they can be
         // broken out into their components and saved for use by
         // other parts of the DLL
-        void update_server_list(vc m, void *, vc, ValidPtr);
+        //void update_server_list(vc m, void *, vc, ValidPtr);
         vc m(VC_VECTOR);
         m[1] = v[2];
         update_server_list(m, 0, vcnil, ValidPtr());
@@ -520,20 +520,6 @@ MMChannel::chat_response(vc v)
         }
 
     }
-    else if(v[0] == add_lan_map)
-    {
-        // lan mappings are
-        // vector(add-lan-map vector(uid inside-ip inside-ports outside-ip outside-ports))
-        LANmap.add_kv(v[1][0], v[1]);
-        GRTLOG("add LAN map", 0, 0);
-        GRTLOGVC(v);
-    }
-    else if(v[0] == del_lan_map)
-    {
-        // vector(del-lan-map vector(uid))
-        LANmap.del(v[1][0]);
-        GRTLOG("del LAN map %s", (const char *)to_hex(v[1][0]), 0);
-    }
     else if(v[0] == dbgreq)
     {
         // here is where we can turn on and off some debugging
@@ -552,36 +538,19 @@ MMChannel::chat_response(vc v)
 
 }
 
-int
-MMChannel::disconnect_server()
-{
-    return 0;
-}
-
 MMChannel *
-MMChannel::start_server_channel(enum resolve_how how, unsigned long addr, const char *name, int port)
+MMChannel::start_server_channel(vc ip, int port)
 {
     MMChannel *m = new MMChannel;
     m->server_channel = 1;
     m->port = port;
-    if(how == BYNAME)
+
+    if(!m->start_connect(ip, port))
     {
-        if(!m->start_resolve(how, addr, name))
-        {
-            delete m;
-            return 0;
-        }
+        delete m;
+        return 0;
     }
-    else
-    {
-        // start straight with the ip
-        m->addr_out.s_addr = addr;
-        if(!m->start_connect())
-        {
-            delete m;
-            return 0;
-        }
-    }
+
     m->start_service();
     m->frame_timer.stop();
     m->ref_timer.stop();
@@ -594,6 +563,8 @@ MMChannel::start_server_channel(enum resolve_how how, unsigned long addr, const 
     m->bps_audio_recv.stop();
     m->bps_file_xfer.stop();
     m->pinger_timer.stop();
+
+    Netlog_signal.emit(m->tube->mklog("event", "server"));
 
     return m;
 }
@@ -610,6 +581,7 @@ MMChannel::keepalive_processing()
         // to drop if no activity is going on.
         if(!secondary_server_channel)
             send_ctrl("!");
+        break;
     default:; // do nothing
     }
 }

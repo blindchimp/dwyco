@@ -33,19 +33,16 @@
 #include "qmsg.h"
 #include "vc.h"
 #include "xinfo.h"
-#include "se.h"
-#include "filetube.h"
 #include "sepstr.h"
 #include "sqlbq.h"
-#include "sha3.h"
 #include "backsql.h"
-#include "sepstr.h"
 #include "ser.h"
-#include "prfcache.h"
+#include "profiledb.h"
+#include "qmsgsql.h"
+
 #include "ta.h"
 
-using namespace CryptoPP;
-extern vc Pals;
+//using namespace CryptoPP;
 
 namespace dwyco {
 #define BACKUP_FREQ_DEFAULT (3 * 24 * 3600)
@@ -429,6 +426,13 @@ backup_account_info(const char *dbn)
     // new key, and update it with the server. at this time (ca 2017), the
     // server will refuse to sign it (ie, it thinks it is suspicious), but
     // will disseminate it anyway.
+    // note: the tag database probably needs to be trimmed before backup (or maybe
+    // as restore time.)
+    //
+    // also note: we do not store the group names and keys, because presumably, after
+    // the restore, they should be able to re-enter the group (the first time they
+    // restart cdc-x after the restore, they will be removed from the group by the
+    // server.)
 
     try
     {
@@ -443,8 +447,15 @@ backup_account_info(const char *dbn)
         sql_rollback_transaction();
     }
     // not a deal breaker if these don't make it in together
-    backup_file("fav.sql", dbn);
-    backup_file("pals", dbn);
+    backup_file(TAG_DB, dbn);
+    // don't back this up, it is just user settings they may
+    // want to adjust when they get their messages, but it isn't
+    // necessary to reload it, possibly coming up in a weird state.
+    //backup_file("set.sql", dbn);
+    // this file is useful if you restore but don't have
+    // access to the internet to download profiles from
+    // the servers.
+    backup_file("sinfo", dbn);
     return 1;
 }
 
@@ -455,19 +466,52 @@ get_file_contents(const char *name, const char *dbn)
     VCArglist a;
     a.append(DwString("select data from %1.misc_blobs where name = ?1;").arg(dbn).c_str());
     a.append(name);
-    vc res = sqlite3_bulk_query(Db, &a);
-    if(res.is_nil())
+    try
+    {
+        vc res = sqlite3_bulk_query(Db, &a);
+        if(res.is_nil())
+            return vcnil;
+        if(res.num_elems() == 0)
+            return vcnil;
+        return res[0][0];
+    }
+    catch(...)
+    {
         return vcnil;
-    if(res.num_elems() == 0)
-        return vcnil;
-    return res[0][0];
+    }
 }
 
 static
-void
-append_to_pal(vc, vc kv)
+int
+restore_blob(const char *name, const char *dbn)
 {
-    Pals.add_kv(kv[0], vcnil);
+    vc blob = get_file_contents(name, dbn);
+    if(blob.is_nil())
+        return 0;
+    // this works if the file is open too on windows, which is likely
+    // with a database file.
+    DwString rfn = gen_random_filename();
+    DwString tf(name);
+    tf = newfn(tf);
+    DwString sv(tf);
+    sv += ".";
+    sv += rfn;
+    move_replace(tf, sv);
+
+#ifdef _Windows
+    int fd = creat(newfn(name).c_str(), _S_IWRITE);
+#else
+    int fd = creat(newfn(name).c_str(), 0666);
+#endif
+    if(fd == -1)
+        return 0;
+    int ret = 1;
+    if(write(fd, (const char *)blob, blob.len()) != blob.len())
+    {
+        ret = 0;
+    }
+    close(fd);
+    return ret;
 }
 
 static
@@ -480,42 +524,34 @@ restore_account_info(const char *dbn)
     vc dh = get_file_contents("dh.dif", dbn);
     if(dh.is_nil())
         return 0;
-    vc pals = get_file_contents("pals", dbn);
-    if(pals.is_nil())
-        return 0;
-    DwString rfn = gen_random_filename();
-    DwString tf("auth");
-    tf = newfn(tf);
-    DwString sv(tf);
-    sv += ".";
-    sv += rfn;
-    move_replace(tf, sv);
 
-    tf = newfn("dh.dif");
-    sv = tf;
-    sv += ".";
-    sv += rfn;
-    move_replace(tf, sv);
+//    // if there are existing auth/dh.dif files, move them
+//    // out of the way instead of overwriting them
+//    DwString rfn = gen_random_filename();
+//    DwString tf("auth");
+//    tf = newfn(tf);
+//    DwString sv(tf);
+//    sv += ".";
+//    sv += rfn;
+//    move_replace(tf, sv);
 
-    int fd = creat(newfn("auth").c_str(), 0666);
-    if(fd == -1)
-        return 0;
-    if(write(fd, (const char *)auth, auth.len()) != auth.len())
-        return 0;
-    close(fd);
-    fd = creat(newfn("dh.dif").c_str(), 0666);
-    if(fd == -1)
-        return 0;
-    if(write(fd, (const char *)dh, dh.len()) != dh.len())
-        return 0;
-    close(fd);
+//    tf = newfn("dh.dif");
+//    sv = tf;
+//    sv += ".";
+//    sv += rfn;
+//    move_replace(tf, sv);
 
-    vc p;
-    if(!deserialize(pals, p))
+    if(!restore_blob("auth", dbn))
         return 0;
-    p.foreach(vcnil, append_to_pal);
-    if(!save_info(Pals, "pals"))
+    if(!restore_blob("dh.dif", dbn))
         return 0;
+    // if we can't restore the tags, we can still get going
+    // without them, so don't error out.
+    restore_blob(TAG_DB, dbn);
+    // likewise with sinfo
+    restore_blob("sinfo", dbn);
+
+
     // invalidate the profile that might be cached locally
     vc new_id;
     vc sk;
@@ -523,6 +559,7 @@ restore_account_info(const char *dbn)
     if(!load_auth_info(new_id, sk, "auth"))
         return 0;
     prf_invalidate(new_id);
+
     return 1;
 }
 
@@ -530,8 +567,8 @@ static
 int
 create_incr_backup()
 {
-    DwString mfn = newfn("mi.sql");
-    DwString ffn = newfn("fav.sql");
+    DwString mfn = newfn(MSG_IDX_DB);
+    DwString ffn = newfn(TAG_DB);
     //DwString dfn = newfn("dbu.sql");
 
     try
@@ -577,7 +614,8 @@ static
 int
 create_full_backup()
 {
-    load_users(0, 0);
+    // we can really only back up the ones we have locally.
+    load_users_from_files(0);
     sql_start_transaction();
     MsgFolders.foreach(vcnil, backup_user);
     sql_simple("update bu set state = 1;");
@@ -902,7 +940,7 @@ restore_msgs(const char *cfn, int msgs_only)
 	}
         // we are likely to be loading something at this point,
         // so kill the index so it is rebuilt
-        DeleteFile(newfn("mi.sql").c_str());
+        DeleteFile(newfn(MSG_IDX_DB).c_str());
         // kill the previous message backup too since it will
         // need to be rebuilt
         reset_msg_backup();

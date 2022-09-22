@@ -10,11 +10,12 @@
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/dct.cc 1.3 1997/11/25 20:41:03 dwight Stable095 $
  */
-#include "matcom.h"
 
 void prepare_range_limit_table();
+namespace dwyco {
 void
 init_dct()
 {
     prepare_range_limit_table();
+}
 }

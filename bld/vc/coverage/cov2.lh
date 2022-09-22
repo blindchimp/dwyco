@@ -1,0 +1,70 @@
+;
+; this script reads the output of the LH interpreter's
+; coverage file. it creates a simple, ansi colorized
+; version of the source file that you can use to eyeball
+; what parts of your program are actually being executed.
+;
+; argv[0] should be name of color.out file
+; this is otherwise hard-wired to find source files
+; in the dwyco server directory, as this is a one-and-done
+; thingy for now.
+;
+
+lbind(stdout openfile(/dev/stdout w))
+
+compile(read-coverage-dump fn `
+	lbind(a openfile(<fn> r))
+	lbind(h tree())
+
+	lbind(ln readatoms(<a>))
+	while(<ln> prog(
+		lbind(lst get(<h> ln[0]))
+		if(not(<lst>) prog(
+			lbind(lst vector())
+			putkv(<h> ln[0] <lst>)
+		))
+		append(<lst> vector(ln[1] ln[2]))
+		lbind(ln readatoms(<a>))
+	))
+	return(<h>)
+')
+
+
+lbind(red |[31m|)
+lbind(normal |\[0m|)
+
+compile(colorize fn token-list out-fn `
+	lbind(a openfile(<fn> r))
+	lbind(outf openfile(<out-fn> w))
+	lbind(s1 token-list[0][0])
+	fputs(<outf> fread(<a> sub(<s1> 1)))
+	foreach(tok <token-list> prog(
+		fputs(<outf> fread(<a> sub(tok[0] <s1>) ))
+		fputs(<outf> <red>)
+		fputs(<outf> fread(<a> add( 1 sub(tok[1] tok[0]))))
+		fputs(<outf> <normal>)
+		lbind(s1 tok[1])
+		lbind(s1 add(<s1> 1))
+	))
+	fputs(<outf> fread(<a> sub(<s1> 1)))
+')
+
+; argv[0] should be name of color.out file
+gbind(pfx .)
+gbind(outpfx cov)
+system(|mkdir cov|)
+gbind(orig-fn {<pfx> / __argv[0]})
+gbind(orig-fn-u {<outpfx> / __argv[0]})
+
+system({|sort -u -k 1,1 -k 2,2n  |  <orig-fn> | \| egrep -v \"(lhlib\|cfg-)\" > | <orig-fn-u>})
+
+lbind(cdump read-coverage-dump(<orig-fn-u>))
+foreach(cfn <cdump> prog(
+	; filename for lightly processed output
+	lbind(ifn cfn[0])
+	lbind(token-list cfn[1])
+	lbind(ofn {<outpfx> / <ifn>})
+	system({|cp | <pfx> / <ifn> | | <outpfx>})
+	colorize(<ofn> <token-list> {<ofn> .cov})
+))
+

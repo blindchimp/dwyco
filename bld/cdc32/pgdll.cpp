@@ -16,6 +16,7 @@ extern DwycoChatCtxCallback2 dwyco_pg_callback2;
 void internal_list_release(DWYCO_LIST l);
 DWYCO_LIST dwyco_list_from_vc(vc vec);
 
+namespace dwyco {
 vc Current_user_lobbies;
 vc Current_gods;
 
@@ -46,7 +47,7 @@ ProfileGrid::~ProfileGrid()
 }
 
 void
-ProfileGrid::add_user(vc name, vc uid)
+ProfileGrid::add_user(const vc& name, const vc& uid)
 {
     if(!vp.is_valid())
         ::abort();
@@ -188,7 +189,7 @@ dllify(vc v, const char*& str_out, int& len_out)
 }
 
 void
-ProfileGrid::sys_attr(vc uid, vc name, vc val)
+ProfileGrid::sys_attr(const vc &uid, const vc &name, const vc &val)
 {
     if(!vp.is_valid())
         ::abort();
@@ -219,7 +220,7 @@ ProfileGrid::sys_attr(vc uid, vc name, vc val)
 }
 
 void
-ProfileGrid::update_attr(vc uid, vc name, vc val)
+ProfileGrid::update_attr(const vc& uid, const vc& name, const vc& val)
 {
     if(!vp.is_valid())
         ::abort();
@@ -329,4 +330,5 @@ ProfileGrid::simple_data(vc qid, vc display_name, vc uid, vc data)
                              qid, 0);
     internal_list_release((DWYCO_LIST)out_str);
 
+}
 }

@@ -250,6 +250,12 @@ private slots:
 
     void on_actionShow_Archived_Users_triggered(bool checked);
 
+    void on_actionIncrease_text_size_triggered();
+
+    void on_actionDecrease_text_size_triggered();
+
+    void on_actionReset_to_default_text_size_triggered();
+
 signals:
     void mic_mute_changed(int);
 

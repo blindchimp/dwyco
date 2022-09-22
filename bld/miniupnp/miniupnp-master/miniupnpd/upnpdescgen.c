@@ -1,14 +1,15 @@
-/* $Id: upnpdescgen.c,v 1.83 2017/05/27 07:47:57 nanard Exp $ */
+/* $Id: upnpdescgen.c,v 1.87 2020/05/30 09:05:46 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * MiniUPnP project
- * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2018 Thomas Bernard
+ * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
+ * (c) 2006-2020 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 
 #include "config.h"
 #ifdef ENABLE_EVENTS
@@ -816,7 +817,10 @@ strcat_str(char * str, int * len, int * tmplen, const char * s2)
 			newlen = *tmplen + s2len + 1;
 		p = (char *)realloc(str, newlen);
 		if(p == NULL) /* handle a failure of realloc() */
+		{
+			syslog(LOG_ERR, "strcat_str: Failed to realloc %d bytes", newlen);
 			return str;
+		}
 		str = p;
 		*tmplen = newlen;
 	}
@@ -840,6 +844,7 @@ strcat_char(char * str, int * len, int * tmplen, char c)
 		p = (char *)realloc(str, *tmplen);
 		if(p == NULL) /* handle a failure of realloc() */
 		{
+			syslog(LOG_ERR, "strcat_char: Failed to realloc %d bytes", *tmplen);
 			*tmplen -= 256;
 			return str;
 		}
@@ -1024,7 +1029,6 @@ genServiceDesc(int * len, const struct serviceDesc * s)
 	const struct action * acts;
 	const struct stateVar * vars;
 	const struct argument * args;
-	const char * p;
 	char * str;
 	int tmplen;
 	tmplen = 2048;
@@ -1061,17 +1065,20 @@ genServiceDesc(int * len, const struct serviceDesc * s)
 			j = 0;
 			while(args[j].dir)
 			{
+				const char * p;
+				size_t plen;
 				str = strcat_str(str, len, &tmplen, "<argument><name>");
 				if((args[j].dir & 0x80) == 0) {
 					str = strcat_str(str, len, &tmplen, "New");
 				}
 				p = vars[args[j].relatedVar].name;
+				plen = strlen(p);
 				if(args[j].dir & 0x7c) {
 					/* use magic values ... */
 					str = strcat_str(str, len, &tmplen, magicargname[(args[j].dir & 0x7c) >> 2]);
-				} else if(0 == memcmp(p, "PortMapping", 11)
-				   && 0 != memcmp(p + 11, "Description", 11)) {
-					if(0 == memcmp(p + 11, "NumberOfEntries", 15)) {
+				} else if(plen >= 11 && 0 == memcmp(p, "PortMapping", 11)
+				   && (plen < 22 || 0 != memcmp(p + 11, "Description", 11))) {
+					if(plen >= (11+15) && 0 == memcmp(p + 11, "NumberOfEntries", 15)) {
 						/* PortMappingNumberOfEntries */
 #ifdef IGD_V2
 						if(0 == memcmp(acts[i].name, "GetListOfPortMappings", 22)) {
@@ -1089,9 +1096,9 @@ genServiceDesc(int * len, const struct serviceDesc * s)
 						str = strcat_str(str, len, &tmplen, p + 11);
 					}
 #ifdef IGD_V2
-				} else if(0 == memcmp(p, "A_ARG_TYPE_", 11)) {
+				} else if(plen >= 11 && 0 == memcmp(p, "A_ARG_TYPE_", 11)) {
 					str = strcat_str(str, len, &tmplen, p + 11);
-				} else if(0 == memcmp(p, "ExternalPort", 13)
+				} else if(plen >= 13 && 0 == memcmp(p, "ExternalPort", 13)
 				          && args[j].dir == 2
 				          && 0 == memcmp(acts[i].name, "AddAnyPortMapping", 18)) {
 					str = strcat_str(str, len, &tmplen, "ReservedPort");

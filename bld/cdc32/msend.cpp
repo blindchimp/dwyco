@@ -9,18 +9,18 @@
 
 #include "directsend.h"
 #include "qsend.h"
-#include "dlli.h"
 #include "se.h"
 #include "msend.h"
-#include "zapadv.h"
 #include "qmsg.h"
 #include "xinfo.h"
+#include "ezset.h"
+#include "activeuid.h"
 
 namespace dwyco {
 
 static
 void
-qs_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
+qs_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, vc ruid)
 {
     // avoid multiple start messages for one "round" of send attempts
     if(status == SE_MSG_SEND_START)
@@ -31,14 +31,18 @@ qs_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
 
 }
 
-static int
-send_via_server_int(const DwString& qfn)
+static
+int
+send_via_server_int(const DwString& qfn, int inhibit_encryption, int no_group, int no_self)
 {
     // assumes already in the outbox
 
     DwQSend *qs = new DwQSend(qfn, 0);
     qs->se_sig.connect_ptrfun(qs_signal_bounce);
     qs->status_sig.connect_ptrfun(se_emit_msg_status);
+    qs->force_encryption = inhibit_encryption ? DwQSend::INHIBIT_ENCRYPTION : DwQSend::DEFAULT;
+    qs->no_group = no_group;
+    qs->no_self_send = no_self;
     int err;
     err = qs->send_message();
     if(err == -1)
@@ -61,7 +65,7 @@ send_via_server_int(const DwString& qfn)
 
 static
 void
-ds_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
+ds_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, vc ruid)
 {
     if(status == SE_MSG_SEND_SUCCESS ||
             status == SE_MSG_SEND_START ||
@@ -75,15 +79,15 @@ ds_signal_bounce(enum dwyco_sys_event status, DwString qfn, vc ruid)
     // if it is a fail, try sending it via server
     No_direct_msgs.add(ruid);
     move_back_to_outbox(qfn);
-    send_via_server_int(qfn);
+    send_via_server_int(qfn, 0, 0, 0);
 }
 
 int
-send_via_server(const DwString& qfn)
+send_via_server(const DwString& qfn, int inhibit_encryption, int no_group, int no_self)
 {
     move_to_outbox(qfn);
 
-    return send_via_server_int(qfn);
+    return send_via_server_int(qfn, inhibit_encryption, no_group, no_self);
 }
 
 int
@@ -136,7 +140,7 @@ send_best_way(const DwString& qfn, vc ruid)
 {
     if(No_direct_msgs.contains(ruid) ||
             (No_direct_att.contains(ruid) && has_attachment(qfn))
-            || ZapAdvData.get_always_server())
+            || (int)get_settings_value("zap/always_server") == 1)
         return send_via_server(qfn);
 
     // basic idea is to try and send directly, which may involve some setup
@@ -149,6 +153,30 @@ send_best_way(const DwString& qfn, vc ruid)
     // that will cause it not to be picked up while we are operating on it, but
     // that will eventually be picked up and sent.
 
+    // note: the recipient of a message isn't considered "part of the message"
+    // for purposes of delivery. but, we store the recipient uid in the file
+    // that is created and stored while delivery is attempted. unfortunately,
+    // sometimes the best place to deliver a message is different than what
+    // is initially stored in the message. the current send state-machines
+    // pretty much assume the recipient is a constant, and will use whatever
+    // is stored in the message while it is trying to deliver it.
+    // the api for "directsend" probably needs to be augmented with something
+    // like "ignore what is in the message and try to send it here first",
+    // and since if there is any error
+    // at all, it switches to server send, things shouldn't need to get too
+    // much more complicated.
+    // XXX note also, if we are in a group and we are sending to ourselves
+    // or anyone in the group, we probably need to special case that, short-circuiting
+    // it seems like a good idea.
+    vc best_uid = find_best_candidate_for_initial_send(ruid);
+    vc m;
+    // kluge: update recipient
+    if(!load_info(m, qfn.c_str()))
+        return 0;
+    m[QQM_RECIP_VEC][0] = best_uid;
+    if(!save_info(m, qfn.c_str()))
+        return 0;
+
     DirectSend *ds = new DirectSend(qfn);
     ds->se_sig.connect_ptrfun(ds_signal_bounce);
     ds->status_sig.connect_ptrfun(se_emit_msg_status);
@@ -160,7 +188,7 @@ send_best_way(const DwString& qfn, vc ruid)
             move_back_to_outbox(qfn);
         }
         delete ds;
-        return send_via_server_int(qfn);
+        return send_via_server_int(qfn, 0, 0, 0);
     }
     else if(dsres == -1)
     {
@@ -176,7 +204,7 @@ send_best_way(const DwString& qfn, vc ruid)
 // message as well so it is never sent.
 static
 void
-delete_message(enum dwyco_sys_event, DwString qfn, vc)
+delete_message(enum dwyco_sys_event, const DwString& qfn, vc)
 {
     // note: on windows, we may not be able to delete a message if it is
     // still open. this is likely to happen more with attachments, so

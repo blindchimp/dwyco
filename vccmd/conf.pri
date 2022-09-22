@@ -1,9 +1,13 @@
 LH_INTERPRETER=1
 
-linux-g++*|macx-*:DEFINES += LINUX
-linux-g++*|macx-g++*|macx-clang*: QMAKE_CXX=ccache g++
+linux-*|macx-* {
+DEFINES += LINUX
+QMAKE_CXX=ccache g++
+QMAKE_CC=ccache gcc
+}
 
-macx-*:DEFINES += MACOSX
+linux-*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3
+macx-*: DEFINES +=  MACOSX LH_WRAP_SQLITE3
 
 #QMAKE_CFLAGS += -g -pg #-fsanitize=address
 #QMAKE_CXXFLAGS += -g -pg #-fsanitize=address

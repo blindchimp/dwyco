@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+import QtQml 2.12
 import QtQuick 2.12
 import QtQuick.Window 2.12
 import QtQuick.Controls 2.12
@@ -38,7 +39,8 @@ ApplicationWindow {
         str += icon
         return str
     }
-
+    // attempt to convert an absolute length into the
+    // number of pixels on the screen
     function cm(cm){
         if(Screen.pixelDensity)
             return cm*Screen.pixelDensity*10
@@ -57,6 +59,10 @@ ApplicationWindow {
         console.warn("Could not calculate 'inch' based on Screen.pixelDensity.")
         return 0
     }
+    // takes a percent, and returns the number of pixels
+    // corresponding that percentage of the given dimension
+    // used when you just want to estimate that something should
+    // take a certain percentage of the screen
     function vw(i){
         if(Screen.width)
             return i*(Screen.width/100)
@@ -104,11 +110,16 @@ ApplicationWindow {
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
-    property bool show_archived_users: true
+    property bool show_archived_users: false
 
+    property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
+    property int qt_application_state: 0
     property bool is_mobile
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+
+    property bool group_active
+    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
     function pin_expire() {
         var expire
@@ -140,8 +151,13 @@ ApplicationWindow {
     // at the same time.
     //width: Screen.width
     //height: Screen.height
-    title: qsTr("Dwyco ")
+    title: {
+        qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
+                                                 " (" + core.active_group_name + " " + core.percent_synced + "%)" :
+                                                 (core.group_status === 1 ?
+                                                      "(Requesting " + core.active_group_name + ")" : ""))
 
+    }
     property int close_bounce: 0
     onClosing: {
         // special cases, don't let them navigate around the
@@ -221,7 +237,7 @@ ApplicationWindow {
 
             Connections {
                 target: core
-                onProfile_update: {
+                function onProfile_update(success) {
                     drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
                     drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
                 }
@@ -238,31 +254,43 @@ ApplicationWindow {
     }
 
 
-//    footer: RowLayout {
-//            Label {
-//                id: ind_invis
-//                text: "Invis"
-//                visible: dwy_invis
-//                color: "red"
+    footer: RowLayout {
+            Label {
+                id: ind_invis
+                text: "Invis"
+                visible: core.invisible
+                color: "red"
 
-//            }
-//            Item {
-//                Layout.fillWidth: true
-//            }
+            }
+            Label {
+                text: "Archived " + (core.total_users - ConvListModel.count).toString()
+                visible: core.total_users > ConvListModel.count
+                color: "red"
+            }
 
-//            Label {
-//                id: hwtext
+            Item {
+                Layout.fillWidth: true
+            }
 
-//            }
-//            Label {
-//                id: db_status
-//                text: core.is_database_online === 0 ? "db off" : "db on"
-//            }
-//            Label {
-//                id: chat_status
-//                text: core.is_chat_online === 0 ? "chat off" : "chat on"
-//            }
-//        }
+
+            Label {
+                id: conns
+                text: "conns " + SyncDescModel.connection_count.toString()
+            }
+
+            Label {
+                id: hwtext
+
+            }
+            Label {
+                id: db_status
+                text: core.is_database_online === 0 ? "db off" : "db on"
+            }
+            Label {
+                id: chat_status
+                text: core.is_chat_online === 0 ? "chat off" : "chat on"
+            }
+    }
 
     
     Menu {
@@ -322,7 +350,6 @@ ApplicationWindow {
             last_uid_selected = uid
 
             if(action === "clicked") {
-
                 stack.push(chatbox)
             }
             else if(action == "hold")
@@ -386,6 +413,17 @@ ApplicationWindow {
         }
     }
 
+    DevGroup {
+        id: device_group
+        visible: false
+        onQuitnowChanged: {
+            if(quitnow === true)
+            {
+                stack.push(device_group)
+            }
+        }
+    }
+
     ConvList {
         id: convlist
         visible: false
@@ -404,7 +442,7 @@ ApplicationWindow {
 
         Connections {
             target: core
-            onQt_app_state_change: {
+            function onQt_app_state_change(app_state) {
                 if(app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
 
@@ -416,7 +454,7 @@ ApplicationWindow {
                 }
             }
 
-            onServer_login: {
+            function onServer_login(msg, what) {
                 console.log("CHAT SERVER RESTART ", what, chat_server.auto_connect)
                 if(what > 0) {
                     if(chat_server.auto_connect) {
@@ -428,10 +466,6 @@ ApplicationWindow {
 
     }
 
-    ContactList {
-        id: contact_list
-        visible: false
-    }
 
     Loader {
         id: cqres
@@ -488,6 +522,11 @@ ApplicationWindow {
 
     ForwardToList {
         id: forward_dialog
+        visible: false
+    }
+
+    SendMulti {
+        id: send_multi_report
         visible: false
     }
 
@@ -712,17 +751,17 @@ ApplicationWindow {
 
     SoundEffect {
         id: sound_sent
-        source: "qrc:/androidinst/assets/space-zap.wav"
+        source: "qrc:/androidinst2/assets/space-zap.wav"
     }
     SoundEffect {
         id: sound_recv
-        source: "qrc:/androidinst/assets/space-zap.wav"
+        source: "qrc:/androidinst2/assets/space-zap.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
     SoundEffect {
         id: sound_alert
-        source: "qrc:/androidinst/assets/space-incoming.wav"
+        source: "qrc:/androidinst2/assets/space-incoming.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
@@ -741,6 +780,16 @@ ApplicationWindow {
         
     }
 
+    Migrate {
+        id: migrate_page
+        visible: false
+    }
+
+    Reindex {
+        id: background_reindex
+        visible: false
+    }
+
     DwycoCore {
         id: core
         property int is_database_online: -1
@@ -749,14 +798,27 @@ ApplicationWindow {
         objectName: "dwyco_singleton"
         client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
+            if(core.android_migrate === 1)
+            {
+                stack.push(migrate_page)
+                return
+            }
             var a
             a = get_local_setting("first-run")
             if(a === "") {
                 //profile_dialog.visible = true
+                // don't need a reindex_complete
+                set_local_setting("reindex1", "1")
                 stack.push(convlist)
                 stack.push(blank_page)
                 stack.push(profile_dialog)
             } else {
+                a = get_local_setting("reindex1")
+                if(a === "")
+                {
+                    stack.push(background_reindex)
+                    return
+                }
                 stack.push(convlist)
                 profile_bootstrapped = 1
                 pwdialog.state = "start"
@@ -789,12 +851,12 @@ ApplicationWindow {
             }
 
 
-            a = get_local_setting("invis")
-            if(a === "" || a === "false") {
-                dwy_invis = false
-            } else {
-                dwy_invis = true
-            }
+//            a = get_local_setting("invis")
+//            if(a === "" || a === "false") {
+//                dwy_invis = false
+//            } else {
+//                dwy_invis = true
+//            }
 
             a = get_local_setting("show_unreviewed")
             if(a === "" || a === "0") {
@@ -835,13 +897,11 @@ ApplicationWindow {
             }
             if(simpdir_rect.visible && SimpleDirectoryList.count === 0)
                 refresh_directory()
+            //applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid())
         }
 
         onNew_msg: {
-            console.log(from_uid)
-            console.log(txt)
-            console.log(mid)
-            console.log("msglist", themsglist.uid)
+            console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
             if(from_uid === themsglist.uid) {
                 themsglist.reload_model();
                 // note: this could be annoying if the person is
@@ -858,8 +918,7 @@ ApplicationWindow {
         }
 
         onSys_msg_idx_updated: {
-            console.log("update idx", uid)
-            console.log("upd" + uid + " " + themsglist.uid)
+            console.log("upd " + uid + " " + themsglist.uid)
             if(uid === themsglist.uid) {
                 themsglist.reload_model()
 
@@ -902,7 +961,7 @@ ApplicationWindow {
             if(Qt.platform.os == "android") {
                 notificationClient.set_lastrun()
             }
-
+            qt_application_state = app_state
         }
 
         onImage_picked: {
@@ -920,8 +979,11 @@ ApplicationWindow {
             }
         }
 
-        onUnread_countChanged: {
-            set_badge_number(unread_count)
+        onAny_unviewedChanged: {
+            if(any_unviewed)
+                set_badge_number(1)
+            else
+                set_badge_number(0)
         }
 
     }
@@ -945,12 +1007,21 @@ ApplicationWindow {
         }
     }
 
+    Timer {
+        id: sync_debug
+        interval: 10000
+        repeat: true
+        running: group_active && server_account_created && qt_application_state === 0
+        onTriggered: {
+            SyncDescModel.load_model()
+        }
+    }
 
     Timer {
         id: service_timer
         interval: 30; running:true; repeat:true
         onTriggered: {
-            if(!pwdialog.allow_access)
+            if(pwdialog.allow_access === 0)
                 return
             //time.text = Date().toString()
             if(core.database_online() !== core.is_database_online) {

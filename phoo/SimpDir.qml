@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+import QtQml 2.12
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
@@ -56,7 +57,7 @@ Page {
     Component {
         id: simpdir_delegate
         Rectangle {
-            width: parent.width
+            width: ListView.view.width
             height: has_preview ? vh(pct) : vh(pct) / 2
             border.width: 1
 
@@ -253,7 +254,7 @@ Page {
 
     Connections {
         target: core
-        onIgnore_event: {
+        function onIgnore_event() {
             if(simpdir_top.visible)
                 core.refresh_directory()
         }

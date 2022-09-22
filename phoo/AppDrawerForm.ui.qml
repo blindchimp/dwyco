@@ -24,10 +24,11 @@ Pane {
     property alias quiet_switch: quiet_switch
     property alias browse_tags_button: browse_tags_button
     property alias browse_hidden_button: browse_hidden_button
+    property alias link_dev_button: link_dev_button
     property real ctrl_pad: 4
     property alias circularImage: circularImage
     property alias text1: text1
-    padding: 6
+    padding: 0
 
     ColumnLayout {
         id: columnLayout
@@ -36,10 +37,13 @@ Pane {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            //Layout.fillHeight: true
+            implicitHeight: topbox.implicitHeight
+            implicitWidth: topbox.implicitWidth
             color: primary_dark
 
             ColumnLayout {
+                id: topbox
                 anchors.fill: parent
                 anchors.margins: mm(1)
                 Text {
@@ -52,7 +56,8 @@ Pane {
                     text: {
 
                         (core.is_database_online === 0 ? "" : "Online ")
-                                + (dwy_invis ? "(Invisible)" : "")
+                                + (SyncDescModel.connection_count === 0 ? "" : "Syncing ")
+                                + (core.invisible ? "(Invisible)" : "")
                     }
                     color: "white"
                 }
@@ -165,6 +170,15 @@ Pane {
         //            text: qsTr("About")
         //            Layout.fillWidth: true
         //        }
+        ItemDelegate {
+            id: link_dev_button
+            text: qsTr("Link other device")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
+            //visible: false
+            Layout.fillWidth: true
+        }
         ItemDelegate {
             id: vid_preview_button
             text: qsTr("Preview")

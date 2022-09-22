@@ -20,6 +20,16 @@
 
 template <class T> class DwBagIter;
 
+// note: this is gross. this provides a way to
+// delete an item without searching for it first.
+// used for performance stuff, it is easy to create
+// dangling refs and other bad stuff using this.
+template<class T> struct dwinternal_pos {
+    dwinternal_pos(listelem<T> *p = 0, int i = -1) : pos(p), idx(i) {}
+    listelem<T> *pos;
+    int idx;
+};
+
 template<class T>
 class DwBag
 {
@@ -36,6 +46,7 @@ private:
     }
 
 public:
+
     DwBag(T def, int tabsize);
     DwBag(const DwBag&);
     virtual ~DwBag();
@@ -47,8 +58,14 @@ public:
     }
     int contains(const T&);
     int del(const T&);
+    int del_all(const T&);
     int find(const T&, T& out, T** wp = 0);
+    DwVec<T> find(const T&);
     virtual void add(const T&, T** wp = 0);
+    dwinternal_pos<T> add2(const T&);
+    void del2(dwinternal_pos<T>);
+    int count_keys(const T&);
+    // warning, this replaces *all* existing keys
     int replace(const T&, T** wp = 0);
     void set_size(int);
     void clear();
@@ -141,6 +158,31 @@ DwBag<T>::add(const T& key, T **wp)
 }
 
 template<class T>
+dwinternal_pos<T>
+DwBag<T>::add2(const T& key)
+{
+    unsigned long hval = ::hash(key) % table_size;
+    init(hval);
+    table[hval]->prepend(key);
+    table[hval]->rewind();
+    ++count;
+
+    return dwinternal_pos<T>(table[hval]->getpos(), hval);
+}
+
+template<class T>
+void
+DwBag<T>::del2(dwinternal_pos<T> p)
+{
+    table[p.idx]->setpos(p.pos);
+    table[p.idx]->remove();
+    count--;
+    return;
+}
+
+// warning: this version of replaces *all* the existing keys
+//
+template<class T>
 int
 DwBag<T>::replace(const T& key, T** wp)
 {
@@ -148,6 +190,17 @@ DwBag<T>::replace(const T& key, T** wp)
     while(del(key))
         ret = 1;
     add(key, wp);
+    return ret;
+}
+
+
+template<class T>
+int
+DwBag<T>::del_all(const T& key)
+{
+    int ret = 0;
+    while(del(key))
+        ret = 1;
     return ret;
 }
 
@@ -187,6 +240,44 @@ DwBag<T>::find(const T& key, T& out, T **wp)
     if(!table[hval]->exists(key, out))
         return 0;
     return 1;
+}
+
+template<class T>
+DwVec<T>
+DwBag<T>::find(const T& key)
+{
+    unsigned long hval = ::hash(key) % table_size;
+    DwVec<T> ret;
+    if(table[hval] == 0)
+        return ret;
+    DwListA<T> *l = table[hval];
+    l->rewind();
+    while(!l->eol())
+    {
+        const T& d = l->peek_read();
+        if(d == key)
+            ret.append(d);
+    }
+    return ret;
+}
+
+template<class T>
+int
+DwBag<T>::count_keys(const T& key)
+{
+    unsigned long hval = ::hash(key) % table_size;
+    if(table[hval] == 0)
+        return 0;
+    DwListA<T> *l = table[hval];
+    l->rewind();
+    int cnt = 0;
+    while(!l->eol())
+    {
+        const T& d = l->peek_read();
+        if(d == key)
+            ++cnt;
+    }
+    return cnt;
 }
 
 template <class T> class DwSet;

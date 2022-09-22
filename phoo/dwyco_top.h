@@ -15,13 +15,16 @@
 #include <QVariant>
 #include <QUrl>
 #include <QNetworkReply>
+#include <QThread>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
 #ifndef NO_BUILDTIME
 #include "buildtime.h"
 #else
+#ifndef BUILDTIME
 #define BUILDTIME "debug"
+#endif
 #endif
 class DwycoCore : public QObject
 {
@@ -30,7 +33,7 @@ class DwycoCore : public QObject
     QML_WRITABLE_VAR_PROPERTY(QString, client_name)
     QML_WRITABLE_VAR_PROPERTY(bool, use_archived)
     QML_READONLY_VAR_PROPERTY(int, total_users)
-    QML_READONLY_VAR_PROPERTY(int, unread_count)
+    QML_READONLY_VAR_PROPERTY(bool, any_unviewed)
     QML_READONLY_VAR_PROPERTY(QString, buildtime)
     QML_READONLY_VAR_PROPERTY(QString, user_dir)
     QML_READONLY_VAR_PROPERTY(QString, tmp_dir)
@@ -41,11 +44,22 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, vid_dev_idx)
     QML_READONLY_VAR_PROPERTY(QString, vid_dev_name)
     QML_READONLY_VAR_PROPERTY(QString, this_uid)
+    QML_READONLY_VAR_PROPERTY(QString, this_handle)
     QML_READONLY_VAR_PROPERTY(bool, directory_fetching)
+
+    QML_READONLY_VAR_PROPERTY(QString, active_group_name)
+    QML_READONLY_VAR_PROPERTY(QString, join_key)
+    QML_READONLY_VAR_PROPERTY(int, group_status)
+    QML_READONLY_VAR_PROPERTY(int, percent_synced)
+    QML_READONLY_VAR_PROPERTY(int, eager_pull)
+    QML_READONLY_VAR_PROPERTY(int, group_private_key_valid)
+
+    QML_READONLY_VAR_PROPERTY(bool, invisible)
+    QML_READONLY_VAR_PROPERTY(int, android_migrate)
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
-        m_unread_count = 0;
         m_client_name = "";
         m_buildtime = BUILDTIME;
         m_user_dir = ".";
@@ -56,11 +70,21 @@ public:
         m_audio_full_duplex = 0;
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
-        m_use_archived = true;
+        m_use_archived = false;
         m_this_uid = "";
+        m_this_handle = "";
         m_directory_fetching = false;
+        m_active_group_name = "";
+        m_join_key = "";
+        m_percent_synced = 0;
+        m_group_status = 0;
+        m_eager_pull = 0;
+        m_any_unviewed = false;
+        m_invisible = false;
+        m_android_migrate = Android_migrate;
     }
     static QByteArray My_uid;
+    static int Android_migrate;
 
 
     enum System_event {
@@ -152,8 +176,8 @@ public:
         return dwyco_is_file_zap(compid);
     }
 
-    Q_INVOKABLE int send_forward(QString recipient, QString add_text, QString uid_folder, QString mid_to_forward, int save_sent);
-    Q_INVOKABLE int flim(QString uid_folder, QString mid_to_forward);
+    Q_INVOKABLE int send_forward(QString recipient, QString add_text, QString mid_to_forward, int save_sent);
+    Q_INVOKABLE int flim(QString mid_to_forward);
 
     Q_INVOKABLE void send_chat(QString text);
 
@@ -164,6 +188,7 @@ public:
     Q_INVOKABLE QUrl uid_to_http_profile_preview(QString uid);
     Q_INVOKABLE QUrl uid_to_profile_view(QString uid);
     Q_INVOKABLE QString uid_to_profile_image_filename(QString uid);
+    Q_INVOKABLE void name_to_uid(QString handle);
 
     Q_INVOKABLE int set_setting(QString name, QString value);
     Q_INVOKABLE QVariant get_setting(QString name);
@@ -186,7 +211,7 @@ public:
 
     Q_INVOKABLE void reset_unviewed_msgs(QString uid);
 
-    Q_INVOKABLE int make_zap_view(QString uid, QString mid);
+    Q_INVOKABLE int make_zap_view(QString mid);
     Q_INVOKABLE int make_zap_view_file(QString fn);
     Q_INVOKABLE int delete_zap_view(int view_id) {
         return dwyco_delete_zap_view(view_id);
@@ -223,9 +248,16 @@ public:
     Q_INVOKABLE void uid_keyboard_input(QString uid);
     Q_INVOKABLE int get_rem_keyboard_state(QString uid);
     Q_INVOKABLE void create_call_context(QString uid);
-    Q_INVOKABLE void delete_call_context(QString uid);
-    Q_INVOKABLE void try_connect(QString uid);
+    Q_INVOKABLE void start_control(QString uid);
     Q_INVOKABLE int get_established_state(QString uid);
+    Q_INVOKABLE void hangup_all_calls();
+    // WARNING: calling these are touchy, and you will crash if you
+    // call them within slots/handlers which are invoked via
+    // call-related signals. generally, it is better NOT to
+    // delete the call context, and just let it take care of
+    // itself.
+    Q_INVOKABLE void delete_call_context(QString uid);
+    Q_INVOKABLE void delete_all_call_contexts();
 
     Q_INVOKABLE void delete_file(QString fn);
 
@@ -251,8 +283,28 @@ public:
     Q_INVOKABLE void select_vid_dev(int i);
     Q_INVOKABLE void enable_video_capture_preview(int i);
 
+    // test stuff
+    //Q_INVOKABLE void start_gj(QString uid, QString password);
+    Q_INVOKABLE int start_gj2(QString gname, QString password);
+
     Q_INVOKABLE void set_badge_number(int i);
     Q_INVOKABLE void refresh_directory();
+
+    Q_INVOKABLE int send_report(QString uid);
+    Q_INVOKABLE QString export_attachment(QString mid);
+    static void one_time_copy_files();
+    Q_INVOKABLE void background_migrate();
+    Q_INVOKABLE void directory_swap();
+
+    // this can sometime take awhile, so we handle it in a thread, then
+    // cause the user to exit and restart
+    Q_INVOKABLE void background_reindex();
+    static void do_reindex();
+
+    Q_INVOKABLE QUrl from_local_file(const QString&);
+    Q_INVOKABLE QString to_local_file(const QUrl& url);
+
+public:
 
 public slots:
     void app_state_change(Qt::ApplicationState);
@@ -276,11 +328,12 @@ signals:
     void video_capture_preview(QString img_path);
 // this is used internally, should not fiddle with it via QML
     void user_control(int, QByteArray, QByteArray);
-    void decorate_user(const QString& uid);
+
+    void decorate_user(QString uid);
     void sys_chat_server_status(int id, int status);
     void qt_app_state_change(int app_state);
 
-    // this are sent when a call context is up
+    // these are sent when a call context is up
     void sc_rem_keyboard_active(QString uid, int active);
     void sc_connect_terminated(QString uid);
     void sc_connectedChanged(QString uid, int connected);
@@ -312,6 +365,9 @@ signals:
     void sc_rem_mute_off(QString uid);
     void sc_rem_mute_unknown(QString uid);
 
+    // this is mostly for debugging
+    void sc_connect_progress(QString uid, QString msg);
+
 
     void image_picked(const QString& fn);
     void cq_results_received(int succ);
@@ -323,10 +379,38 @@ signals:
     void zap_stopped(int zid);
 
     void mid_tag_changed(QString mid);
+    void migration_complete();
+	void reindex_complete();
+
+    void name_to_uid_result(QString uid, QString handle);
+    // WARNING: DO NOT USE THESE QBYTEARRAY THINGS IN QML, they are not
+    // auto-converted to strings
+    void msg_pull_ok(const QByteArray& mid, const QString& huid);
+    void msg_tag_change_global(const QByteArray& mid, const QString& huid);
+
+    void join_result(QString gname, int result);
 
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
+
+};
+
+class fuck_me_with_a_brick : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::one_time_copy_files();
+    }
+
+};
+
+class fuck_me_with_a_brick2 : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::do_reindex();
+    }
 
 };
 

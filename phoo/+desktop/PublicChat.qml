@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+import QtQml 2.12
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.3
@@ -128,7 +129,7 @@ Page {
     Connections {
         target: core
 
-        onChat_event: {
+        function onChat_event(cmd, sid, huid, sname, vdata, qid, extra_arg) {
             console.log("got chat event")
             console.log(cmd, sid)
             console.log(huid)
@@ -189,7 +190,7 @@ Page {
         
         Rectangle {
             id: ditem
-            width: parent.width
+            width: ListView.view.width
             //border.width: 1
             //border.color: "gray"
             height: msg.implicitHeight

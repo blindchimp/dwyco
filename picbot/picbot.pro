@@ -7,7 +7,7 @@ SOURCES += \
     picbot.cpp \
     ../bld/miscsrc/dwyco_new_msg.cpp
 
-linux-g++* {
+linux-* {
 
 D = $${OUT_PWD}/../bld
 
@@ -27,7 +27,7 @@ $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
--lsqlite3
+-ldl
 
 
 QMAKE_CXX=ccache g++

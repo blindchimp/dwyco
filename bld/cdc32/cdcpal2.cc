@@ -6,54 +6,40 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#ifndef DWYCO_UDP_PAL
+
+#include "qmsgsql.h"
 #undef LOCAL_TEST
 #include "vc.h"
-#include "dwtimer.h"
 #include "qmsg.h"
-#include "cdcver.h"
-#include "snds.h"
 #include "qdirth.h"
 #include "dwrtlog.h"
 #include "dwstr.h"
 #include "cdcpal.h"
 #include "dwrtlog.h"
-#include "aconn.h"
 #include "se.h"
-#include "qmsgsql.h"
 #include "qauth.h"
+#include "simple_property.h"
+#include "ezset.h"
+#include "dirth.h"
+#include "dhgsetup.h"
 
 using namespace dwyco;
 
 extern vc My_UID;
 extern vc Online;
-extern vc Client_types;
-//extern int Refresh_users;
-
-vc Pal_auth_state;
-extern vc I_grant;
-extern vc They_grant;
-extern vc Pals;
+extern vc Client_disposition;
 extern vc Client_ports;
+
 int is_invisible();
 
+namespace dwyco {
 // not perfect if packets are dropped, the
 // response we get may not match, but it isn't
 // fatal
 static vc Last_sent;
-
 static int Init;
+
 int Pal_logged_in;
-
-//void pal_login_failed(int);
-// note: there is a problem with the windows
-// implementation of UDP. it seams that even if
-// a socket is not connected, any error from that
-// socket closes the socket. so, once you get
-// an error, you have to completely reset the pal
-// client. this wasn't the case previously, and errors
-// could just be ignored, which was better.
-
 int Inhibit_pal;
 
 // note: this stuff is kinda bogus because
@@ -62,36 +48,113 @@ int Inhibit_pal;
 // online info will be slightly wrong, but
 // this is a best-guess protocol anyways, so
 // it is no big deal.
+static
+vc
+tree_to_vec(const DwTreeKaz<int, vc>& tr)
+{
+
+    vc ret(VC_VECTOR);
+    DwTreeKazIter<int, vc> i(&tr);
+    for(; !i.eol(); i.forward())
+    {
+        auto kv = i.get();
+        ret.append(kv.get_key());
+    }
+    return ret;
+}
 
 static
 vc
 transient_online_list()
 {
+    DwTreeKaz<int, vc> tmpl(0);
+
     vc p = pal_to_vector(0);
+    // note that p may contain group representatives, but we
+    // really need the group uid's explicitly since we are going
+    // to use the info try and target message delivery.
+    for(int i = 0; i < p.num_elems(); ++i)
+    {
+        const vc uids = map_uid_to_uids(p[i]);
+        for(int i = 0; i < uids.num_elems(); ++i)
+            tmpl.add(uids[i], 0);
+    }
+    const vc gv = Group_uids;
+    if(!gv.is_nil())
+    {
+        for(int i = 0; i < gv.num_elems(); ++i)
+        {
+            tmpl.add(gv[i], 0);
+        }
+    }
+    // it is debatable whether having notifications of online
+    // for others in your msg list is really what you want.
+    // for now, we get rid of it.
+#if 1
     int left_over = MAXPALS - p.num_elems();
     if(left_over <= 0)
     {
-        return p;
+        tmpl.del(My_UID);
+        return tree_to_vec(tmpl);
     }
     // fill out remainder with recent conversations
-    vc rm = sql_get_recent_users2(3600 * 24 * 365, left_over);
+    vc rm = sql_get_recent_users2(3600 * 24 * 14, left_over);
     if(rm.is_nil())
-        return p;
+    {
+        tmpl.del(My_UID);
+        return tree_to_vec(tmpl);
+    }
     for(int i = 0; i < rm.num_elems(); ++i)
     {
-        vc u = from_hex(rm[i]);
-        if(!pal_user(u))
-            p.append(u);
+        const vc u = from_hex(rm[i]);
+        const vc uids = map_uid_to_uids(u);
+        for(int i = 0; i < uids.num_elems(); ++i)
+            tmpl.add(uids[i], 0);
+        //tmpl.add(u, 0);
     }
-    return p;
+#endif
+    tmpl.del(My_UID);
+    return tree_to_vec(tmpl);
 }
 
+
+static
+void
+group_changed(vc)
+{
+    pal_relogin();
+}
+
+static
+void
+clear_online(int i)
+{
+    if(i == 0)
+    {
+        Online = vc(VC_TREE);
+        Client_ports = vc(VC_TREE);
+        Client_disposition = vc(VC_TREE);
+    }
+}
+
+static
+void
+invis_changed(vc, vc)
+{
+    pal_relogin();
+}
 
 int
 init_pal()
 {
+    if(Init)
+        return 1;
     Last_sent = vc(VC_VECTOR);
     Init = 1;
+
+    Group_uids.value_changed.connect_ptrfun(group_changed, 1);
+    Database_online.value_changed.connect_ptrfun(clear_online, 1);
+    bind_sql_setting("server/invis", invis_changed);
     return 1;
 }
 
@@ -138,7 +201,7 @@ process_pal_resp(vc v)
         {
             cal.del(uo[i][0]);
             Online.add_kv(uo[i][0], uo[i][1]);
-            Client_types.add_kv(uo[i][0], uo[i][2]);
+            Client_disposition.add_kv(uo[i][0], uo[i][2]);
             Client_ports.add_kv(uo[i][0], uo[i][3]);
             se_emit(SE_STATUS_CHANGE, uo[i][0]);
         }
@@ -147,7 +210,7 @@ process_pal_resp(vc v)
         for(i = 0; i < n; ++i)
         {
             Online.del(cal[i]);
-            Client_types.del(cal[i]);
+            Client_disposition.del(cal[i]);
             Client_ports.del(cal[i]);
             se_emit(SE_STATUS_CHANGE, cal[i]);
         }
@@ -170,7 +233,7 @@ process_pal_resp(vc v)
         for(i = 0; i < n; ++i)
         {
             Online.add_kv(uo[i][0], uo[i][1]);
-            Client_types.add_kv(uo[i][0], uo[i][2]);
+            Client_disposition.add_kv(uo[i][0], uo[i][2]);
             Client_ports.add_kv(uo[i][0], uo[i][3]);
             se_emit(SE_STATUS_CHANGE, uo[i][0]);
         }
@@ -183,7 +246,7 @@ process_pal_resp(vc v)
     else if(v[0] == vcoff)
     {
         Online.del(v[1]);
-        Client_types.del(v[1]);
+        Client_disposition.del(v[1]);
         Client_ports.del(v[1]);
         se_emit(SE_STATUS_CHANGE, v[1]);
     }
@@ -224,9 +287,6 @@ pal_login()
     v[1] = My_UID;
     v[2] = transient_online_list();
     Last_sent = v[2];
-    vc v2(VC_VECTOR);
-    v2[0] = v;
-
     v[3] = is_invisible() ? "invis" : "vis";
 
     // note: manual pal auth, always/never stuff is done ca 1/2011
@@ -249,24 +309,17 @@ pal_login()
     // people on your pal list
     //v[7] = copy_accept();
     // experiment abandoned. confused people a bit.
-    v[7] = vc(VC_VECTOR);
+    //v[7] = vc(VC_VECTOR);
+    // kluge, the server still honors "always visible" and even if we are
+    // in invisible mode, it is ok if we continue to sync with others
+    // in the group, so lets just say we are always visible to them.
+    v[7] = Group_uids;
     v[8] = vc(VC_VECTOR);
 
-    vc fw(VC_VECTOR);
-    if(DwNetConfigData.get_advertise_nat_ports())
-    {
-        fw[0] = DwNetConfigData.get_nat_primary_port();
-        fw[1] = DwNetConfigData.get_nat_secondary_port();
-        fw[2] = DwNetConfigData.get_nat_pal_port();
-    }
-    else
-    {
-        fw[0] = DwNetConfigData.get_primary_port();
-        fw[1] = DwNetConfigData.get_secondary_port();
-        fw[2] = DwNetConfigData.get_pal_port();
-    }
-    v[4] = fw;
+    v[4] = make_fw_setup();
+    v[9] = MMChannel::My_disposition;
     dirth_send_set_interest_list(My_UID, v, QckDone());
+
     return 1;
 }
 
@@ -297,5 +350,5 @@ pal_reset()
     init_pal();
     pal_login();
 }
+}
 
-#endif

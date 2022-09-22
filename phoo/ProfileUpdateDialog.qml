@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+import QtQml 2.12
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import dwyco 1.0
@@ -110,7 +111,10 @@ Page {
                             // ugh, what a hack
                             android_img_pick_hack = 0
                             android_img_pick_hack = 1
-                            notificationClient.open_image()
+                            if(notificationClient.open_image() === 0) {
+                                failed_msg.text = "Android blocked access to images."
+                                animateOpacity.start()
+                            }
                         } else {
                             picture_picker.visible = true
 
@@ -199,7 +203,7 @@ Page {
     Connections {
         target: top_dispatch
 
-        onProfile_updated: {
+        function onProfile_updated(success) {
             if(success === 1) {
                 profile_sent = 0
                 img_filename = ""
@@ -207,6 +211,7 @@ Page {
                 stack.pop()
             } else {
                 profile_sent = 0
+                failed_msg.text = "Update failed..."
                 animateOpacity.start()
             }
         }
@@ -225,10 +230,20 @@ Page {
         anchors.fill: parent
     }
 
+    Rectangle {
+        anchors.fill: failed_msg
+        color: "black"
+        z: 9
+        opacity: failed_msg.opacity
+    }
+
     Text {
         id: failed_msg
         text: "Update failed... "
+        font.bold: true
+        color: "white"
         anchors.centerIn: parent
+        z: 10
 
         opacity: 0.0
         NumberAnimation {
@@ -238,8 +253,6 @@ Page {
                from: 1.0
                to: 0.0
                duration: 3000
-
-
           }
     }
     
@@ -318,6 +331,7 @@ Page {
                     }
                     else
                     {
+                        failed_msg.text = "Update failed..."
                         animateOpacity.start()
                     }
                 }

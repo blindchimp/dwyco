@@ -11,16 +11,10 @@
 #include "mmchan.h"
 #include "netvid.h"
 
-#include "gvchild.h"
-#include "senc.h"
 #include "qauth.h"
-#include "zapadv.h"
-#include "qmsg.h"
-#include "snds.h"
 #include "dwrtlog.h"
 #include "codec.h"
 #include "fnmod.h"
-#include "se.h"
 #include "dwscoped.h"
 using namespace dwyco;
 
@@ -58,6 +52,8 @@ MMChannel::drop_subchannel(int i)
         audio_state = MEDIA_ERR;
     if(i == video_chan)
         video_state = MEDIA_ERR;
+    if(i == msync_chan)
+        msync_state = MEDIA_ERR;
     tube->drop_channel(i);
 }
 

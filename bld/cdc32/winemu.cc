@@ -19,9 +19,8 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <strings.h>
-#include "dwyco_rand.h"
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 
 // WARNING: don't use these time things to initialize
 // entropy sources... on non-windows system, they tend to
@@ -337,14 +336,6 @@ filelength(int fd)
     lseek(fd, old, SEEK_SET);
     return sz;
 }
-
-#ifdef __GNUG__
-void
-itoa(int i, char *out, int)
-{
-    sprintf(out, "%d", i);
-}
-#endif
 
 int
 mkdir(const char *p)

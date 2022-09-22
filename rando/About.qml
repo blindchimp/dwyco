@@ -18,6 +18,7 @@ Page {
     background: Rectangle {
         color: amber_light
     }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: mm(3)
@@ -26,12 +27,9 @@ Page {
         RowLayout {
             spacing: mm(3)
             Label {
-                text: "Dwyco Rando (open source):"
-            }
-
-            Label {
-                text: core.client_name
+                text: "Dwyco Rando (open source): " + core.client_name
                 Layout.fillWidth: true
+                fontSizeMode: Text.Fit
             }
 
         }

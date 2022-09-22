@@ -5,6 +5,7 @@ include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 TARGET = theora
 TEMPLATE = lib
 CONFIG += staticlib
+QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-shift-op-parentheses
 
 INCLUDEPATH += include ../ogg/include ../vorbis/include
 

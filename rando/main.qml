@@ -410,6 +410,11 @@ ApplicationWindow {
         id: fname
     }
 
+    Reindex {
+        id: background_reindex
+        visible: false
+    }
+
     DwycoCore {
         id: core
         property int is_database_online: -1
@@ -418,13 +423,29 @@ ApplicationWindow {
         objectName: "dwyco_singleton"
         client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
+            if(core.android_migrate === 1)
+            {
+                stack.push(migrate_page)
+                return
+            }
+
             var a
             a = get_local_setting("first-run")
             if(a === "") {
                 //stack.push(simple_msg_list)
                 //stack.push(blank_page)
                 stack.push(profile_dialog)
+                // don't need a reindex_complete
+                set_local_setting("reindex1", "1")
+
             } else {
+                a = get_local_setting("reindex1")
+                if(a === "")
+                {
+                    stack.push(background_reindex)
+                    return
+                }
+
                 init()
                 stack.push(simple_msg_list)
                 profile_bootstrapped = 1
@@ -488,6 +509,10 @@ ApplicationWindow {
             }
             exit()
         }
+
+//        onMigration_complete: {
+//            Qt.quit()
+//        }
 
         onServer_login: {
            
@@ -596,9 +621,12 @@ ApplicationWindow {
 //            }
 //        }
 
-        onUnread_countChanged: {
-            set_badge_number(unread_count)
-        }
+//        onAny_unviewedChanged: {
+//            if(any_unviewed)
+//                set_badge_number(1)
+//            else
+//                set_badge_number(0)
+//        }
 
     }
 
@@ -612,6 +640,11 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
         z: 5
+    }
+
+    Migrate {
+        id: migrate_page
+        visible: false
     }
 
 

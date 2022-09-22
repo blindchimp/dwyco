@@ -1,7 +1,7 @@
-/* $Id: iptpinhole.c,v 1.18 2018/03/13 23:05:21 nanard Exp $ */
+/* $Id: iptpinhole.c,v 1.21 2020/05/10 17:49:33 nanard Exp $ */
 /* MiniUPnP project
- * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2012-2018 Thomas Bernard
+ * http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
+ * (c) 2012-2020 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -12,7 +12,7 @@
 #include <arpa/inet.h>
 #include <sys/queue.h>
 
-#include "../config.h"
+#include "config.h"
 #include "../macros.h"
 #include "iptpinhole.h"
 #include "../upnpglobalvars.h"
@@ -27,6 +27,8 @@
 #define IP6TC_HANDLE struct ip6tc_handle *
 
 static int next_uid = 1;
+
+static const char * miniupnpd_v6_filter_chain = "MINIUPNPD";
 
 static LIST_HEAD(pinhole_list_t, pinhole_t) pinhole_list;
 
@@ -186,6 +188,7 @@ ip6tc_init_verify_append(const char * table,
 		syslog(LOG_ERR, "ip6tc_commit() error : %s", ip6tc_strerror(errno));
 		goto error;
 	}
+	ip6tc_free(h);
 	return 0;	/* ok */
 error:
 	ip6tc_free(h);

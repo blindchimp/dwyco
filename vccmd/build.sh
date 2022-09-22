@@ -1,4 +1,6 @@
 #!/bin/sh
+# note: qt4 qmake doesn't work for this
+export QT_SELECT=5
 D=$HOME
 SHADOW_NAME=$D/git/build-lh
 

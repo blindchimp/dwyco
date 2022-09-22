@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+import QtQml 2.12
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
@@ -29,7 +30,7 @@ Page {
 
     Connections {
         target: core
-        onCq_results_received : {
+        function onCq_results_received(succ) {
             if(succ) {
                 cq_res_model.load_from_cq_file()
                 query_succeeded = 1
@@ -75,30 +76,50 @@ Page {
             text: qsTr("PRIVACY NOTE: We DO NOT keep a copy of your contact list. Click the PRIVACY button for more details.")
             horizontalAlignment: Text.AlignHCenter
         }
+        TextFieldX {
+            id: single_email
+            placeholder_text: "Enter Email to search for"
+            inputMethodHints: Qt.ImhEmailCharactersOnly
+            visible: !is_mobile
+        }
+
         Button {
             Layout.alignment: Qt.AlignCenter
-            text: "Send Email Contacts Securely"
+            text: is_mobile ? "Send Email Contacts Securely" : "Search for email"
             onClicked: {
                 core.delete_cq_results()
-                if(core.load_contacts() === 0) {
-                    // permission denied
-                    return;
-                }
+                if(is_mobile)
+                {
+                    if(core.load_contacts() === 0) {
+                        // permission denied
+                        return;
+                    }
 
-                user_model.load_users_to_model()
-                if(user_model.count > 0) {
+                    user_model.load_users_to_model()
+                    if(user_model.count > 0) {
+                        user_model.send_query()
+                        query_in_progress = 1
+                        query_succeeded = 0
+                        core.set_local_setting("cq-in-progress", "1")
+                        core.set_local_setting("cq-succeeded", "0")
+                        no_contacts = false
+                    } else {
+                        query_in_progress = 0
+                        query_succeeded = 0
+                        core.set_local_setting("cq-in-progress", "0")
+                        core.set_local_setting("cq-succeeded", "0")
+                        no_contacts = true
+                    }
+                }
+                else
+                {
+                    user_model.set_model_to_single_email(single_email.text_input)
                     user_model.send_query()
                     query_in_progress = 1
                     query_succeeded = 0
                     core.set_local_setting("cq-in-progress", "1")
                     core.set_local_setting("cq-succeeded", "0")
                     no_contacts = false
-                } else {
-                    query_in_progress = 0
-                    query_succeeded = 0
-                    core.set_local_setting("cq-in-progress", "0")
-                    core.set_local_setting("cq-succeeded", "0")
-                    no_contacts = true
                 }
             }
             enabled: query_in_progress === 0
@@ -185,25 +206,36 @@ Page {
                     onTriggered: {
                         core.delete_cq_results()
                         cq_res_model.load_from_cq_file()
-                        if(core.load_contacts() === 0) {
-                            return
-                        }
+                        if(is_mobile)
+                        {
+                            if(core.load_contacts() === 0) {
+                                return
+                            }
 
-                        user_model.load_users_to_model()
-                        if(user_model.count > 0) {
-                            user_model.send_query()
-                            query_in_progress = 1
-                            query_succeeded = 0
-                            core.set_local_setting("cq-in-progress", "1")
-                            core.set_local_setting("cq-succeeded", "0")
-                            no_contacts = false
-                        } else {
+                            user_model.load_users_to_model()
+                            if(user_model.count > 0) {
+                                user_model.send_query()
+                                query_in_progress = 1
+                                query_succeeded = 0
+                                core.set_local_setting("cq-in-progress", "1")
+                                core.set_local_setting("cq-succeeded", "0")
+                                no_contacts = false
+                            } else {
+                                query_in_progress = 0
+                                query_succeeded = 0
+                                core.set_local_setting("cq-in-progress", "0")
+                                core.set_local_setting("cq-succeeded", "0")
+                                no_contacts = true
+
+                            }
+                        }
+                        else
+                        {
+                            single_email.text_input = ""
                             query_in_progress = 0
                             query_succeeded = 0
                             core.set_local_setting("cq-in-progress", "0")
                             core.set_local_setting("cq-succeeded", "0")
-                            no_contacts = true
-
                         }
                     }
                 }
@@ -216,7 +248,7 @@ Page {
     Component {
         id: cqres_delegate
         Rectangle {
-            width: parent.width
+            width: ListView.view.width
             height: {uid.length > 0 ? vh(pct) : 0}
             border.width: 1
 
@@ -245,7 +277,7 @@ Page {
                     Layout.margins: mm(.125)
                     Connections {
                         target: core
-                        onSys_uid_resolved : {
+                        function onSys_uid_resolved(uid) {
                             if(uid === model.uid) {
                                 preview.source = core.uid_profile_regular(uid) ? core.uid_to_profile_preview(uid) : ""
                             }
@@ -268,7 +300,7 @@ Page {
                         elide: Text.ElideRight
                         Connections {
                             target: core
-                            onSys_uid_resolved : {
+                            function onSys_uid_resolved(uid) {
                                 if(uid === model.uid) {
                                     nm.text = core.uid_profile_regular(uid) ? core.uid_to_profile_info(uid, DwycoCore.HANDLE) : "<<hidden>>"
                                 }
@@ -297,7 +329,7 @@ Page {
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         Connections {
                             target: core
-                            onSys_uid_resolved : {
+                            function onSys_uid_resolved(uid) {
                                 if(uid === model.uid) {
                                     desc.text = core.uid_profile_regular(uid) ? core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION) : "<<hidden>>"
                                 }
@@ -337,8 +369,26 @@ Page {
 
     Component.onCompleted: {
         cqres_top.uid_selected.connect(top_dispatch.uid_selected)
-        query_in_progress = parseInt(core.get_local_setting("cq-in-progress"))
-        query_succeeded = parseInt(core.get_local_setting("cq-succeeded"))
+        var q = core.get_local_setting("cq-in-progress")
+        if(q === "")
+        {
+            query_in_progress = 0
+            core.set_local_setting("cq-in-progress", "0")
+        }
+        else
+        {
+            query_in_progress = parseInt(core.get_local_setting("cq-in-progress"))
+        }
+        q = core.get_local_setting("cq-succeeded")
+        if(q === "")
+        {
+            query_succeeded = 0;
+            core.set_local_setting("cq-succeeded", "0")
+        }
+        else
+        {
+            query_succeeded = parseInt(core.get_local_setting("cq-succeeded"))
+        }
         cq_res_model.load_from_cq_file()
     }
 

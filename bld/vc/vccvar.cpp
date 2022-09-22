@@ -14,7 +14,6 @@
 #include "vcmap.h"
 #include "vcfuncal.h"
 #include "vcmemsel.h"
-#include "dwdate.h"
 #include "vcio.h"
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vccvar.cpp 1.52 1998/10/26 02:48:42 dwight Exp $";
@@ -42,6 +41,7 @@ VcEvalDbgNode::VcEvalDbgNode(const vc_cvar *v)
 	node = v;
 	expr_num = -1;
 	var_name = "";
+    src_list = &v->clist;
 }
 
 void
@@ -138,10 +138,10 @@ vc_cvar::vc_cvar(const char *expr, int decrypt)
 	{
 		lexer->set_input_description(fn);
 	}
-	tok = lexer->next_token(tokval, toklen, atom_type);
+    next_tok();
 	begin_scoord.init(lexer);
 	error = 0;
-	varlist(&vc_list);
+    varlist(&vc_list, &clist);
 	memset(e1, 0, len);
 	delete [] e1;
 	is_root = 1;
@@ -167,10 +167,10 @@ vc_cvar::vc_cvar(VcLexer *l)
 	time_cached = 0;
 #endif
 	lexer = l;
-	tok = lexer->next_token(tokval, toklen, atom_type);
+    next_tok();
 	begin_scoord.init(lexer);
 	error = 0;
-	varlist(&vc_list);
+    varlist(&vc_list, &clist);
 	is_root = 1;
 	//dont_map = 1;
 	quoted = 1;
@@ -196,7 +196,7 @@ vc_cvar::performance_hack(vc& atom) const
 {
 	if(vc_list.num_elems() != 1)
 	{
-		((vc_cvar *)this)->nopf = 1;
+        nopf = 1;
 		return 0;
 	}
 	vc tmp = vc_list.get_first();
@@ -234,7 +234,6 @@ vc_cvar::eval() const
 	if(exp_error)
 		USER_BOMB("attempt to eval erroneous expression", vcnil);
 
-
 #ifdef PERFHACKS
 	if(!nopf)
 	{
@@ -256,7 +255,12 @@ vc_cvar::eval() const
 		}
 		vc atom;
 		if(performance_hack(atom))
+        {
+#ifdef VCDBG
+            clist[0].print();
+#endif
 			return atom;
+        }
 	}
 #endif
 
@@ -291,6 +295,7 @@ vc_cvar::eval() const
 #ifdef VCDBG
 		dbg.expr_num = expr_num;
 		dbg.var_name = var_name;
+        dbg.cur_idx = expr_num;
 #endif
 			val = atom.eval();
 			// special case: we're unwinding due to a return/break/exc
@@ -399,7 +404,7 @@ vc_cvar::make_atom()
 }
 
 vc
-vc_cvar::pvar()
+vc_cvar::pvar(vc_cvar_src_coord& coord_out)
 {
 	vc cvar;
 	int quot = 0;
@@ -409,6 +414,7 @@ vc_cvar::pvar()
 	{
 	case ATOM:
 		cvar = make_atom();
+        coord_out.init(lexer);
 		next_tok();
 		break;
 
@@ -426,8 +432,9 @@ vc_cvar::pvar()
         vc_cvar_src_coord begin_scoord;
 		next_tok();
 		begin_scoord.init(lexer);
+
 		vc_cvar *v = new vc_cvar;
-		varlist(&v->vc_list);
+        varlist(&v->vc_list, &v->clist);
 		vc_cvar_src_coord end_scoord;
 		end_scoord.init(lexer);
 
@@ -435,6 +442,7 @@ vc_cvar::pvar()
 		v->dont_map = inhibit_map;
 		v->begin_scoord = begin_scoord;
 		v->end_scoord = end_scoord;
+
 		cvar.redefine(v);
 		if(!quot)
 		{
@@ -471,11 +479,13 @@ vc_cvar::vprime(vc cvar)
 	start.init(lexer);
 
 	VCList tmp;
+    Src_coord_list tmpsc;
 	vc selector;
+    vc_cvar_src_coord selector_coord;
 	if(is_memselect)
-		selector = pvar();
+        selector = pvar(selector_coord);
 	else
-		varlist(&tmp);
+        varlist(&tmp, &tmpsc);
 
 	if(!is_memselect && tok != RPAREN)
 		syntax_err("expecting ')' after function arg list");
@@ -488,25 +498,27 @@ vc_cvar::vprime(vc cvar)
 
 	if(is_memselect)
 	{
-		vc_memselect *ms = new vc_memselect(cvar, selector, start, end);
+        vc_memselect *ms = new vc_memselect(cvar, selector, start, end, selector_coord);
 		cvar.redefine(ms);
 		return vprime(cvar);
 	}
 	else
 	{
-		vc_funcall *vca = new vc_funcall(cvar, tmp, start, end);
+        vc_funcall *vca = new vc_funcall(cvar, tmp, start, end, tmpsc);
 		cvar.redefine(vca);
 		return vprime(cvar);
 	}
 }
 
 void
-vc_cvar::varlist(VCList *vlist)
+vc_cvar::varlist(VCList *vlist, Src_coord_list *clist)
 {
 	while(tok == ATOM || tok == LBRACKET || tok == LBRACE || tok == LTICK)
     {
-		vc v = pvar();
+        vc_cvar_src_coord s;
+        vc v = pvar(s);
 		vlist->append(v);
+        clist->append(s);
 	} // else expand empty
 }
 

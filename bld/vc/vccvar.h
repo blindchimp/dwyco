@@ -100,13 +100,16 @@ private:
 	// source coordinates for the expression
 	vc_cvar_src_coord begin_scoord;
 	vc_cvar_src_coord end_scoord;
+        // source coordinate of the atom associated with the
+        // leaf node.
+        Src_coord_list clist;
 	
 	// lexer functions
 	void next_tok(void);
 
 	// recursive decent parsing functions
-	void varlist(VCList *);
-	vc pvar(void);
+        void varlist(VCList *, Src_coord_list *clist);
+        vc pvar(vc_cvar_src_coord&);
 	vc vprime(vc);
 
 	vc make_atom();
@@ -125,7 +128,7 @@ private:
 #ifdef CACHE_LOOKUPS
 	mutable vc *range;
 	mutable unsigned long time_cached;
-	
+public:
 	static unsigned long Lookup_cache_counter;
 
 public:

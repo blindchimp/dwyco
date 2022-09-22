@@ -11,19 +11,12 @@
  * $Header: g:/dwight/repo/cdc32/rcs/doinit.cc 1.27 1999/01/10 16:09:31 dwight Checkpoint $
  */
 
-#include "uicfg.h"
+#include "ezset.h"
 #ifndef LINUX
 #include <direct.h>
 #include <io.h>
 #endif
 #include "dirth.h"
-#include "ratetwkr.h"
-#include "usercnfg.h"
-#include "vfwinvst.h"
-#include "rawfiles.h"
-#include "vidinput.h"
-#include "cllaccpt.h"
-#include "zapadv.h"
 #include "qtab.h"
 #include "jqtab.h"
 #include "qpol.h"
@@ -31,23 +24,19 @@
 
 #include "vc.h"
 #include "vcwsock.h"
-#include "vccrypt2.h"
 
 #include "aq.h"
 #include "dwlog.h"
-#include "gvchild.h"
 #include "jchuff.h"
 #include "jdhuff.h"
 #include "audchk.h"
-#include "snds.h"
 #include "doinit.h"
 #include "jccolor.h"
 #include "jdcolor.h"
 #include "dwrtlog.h"
 #include "qauth.h"
 #include "qmsg.h"
-#include "prfcache.h"
-#include "pkcache.h"
+#include "profiledb.h"
 #include "mmchan.h"
 #include "callq.h"
 #include "asshole.h"
@@ -56,7 +45,6 @@
 #include "aconn.h"
 #include "sysattr.h"
 #include "fnmod.h"
-#include "xinfo.h"
 #include "dhsetup.h"
 #include "dwyco_rand.h"
 #include "dirth.h"
@@ -64,14 +52,21 @@
 #include "se.h"
 #include "qdirth.h"
 #include "ta.h"
+#include "dhgsetup.h"
+#include "pgdll.h"
+
+using namespace dwyco;
+
+CRITICAL_SECTION Audio_lock;
+extern int Media_select;
+extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
+
+namespace dwyco {
 
 vc Myhostname;
 DwLog *Log;
-CRITICAL_SECTION Audio_lock;
 vc TheMan;
 
-extern vc Current_user_lobbies;
-extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
 void init_dct();
 void init_stats();
 
@@ -85,6 +80,13 @@ init_codec(const char *logname)
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
         //No_direct_msgs = vc(VC_SET);
         Current_user_lobbies = vc(VC_TREE);
+        // ok, this is bad, but the man pages do spec numbers for upper bound
+        // and HOST_NAME_MAX seems to be missing in action some places.
+        char hostname[1024];
+        if(gethostname(hostname, sizeof(hostname)) != 0)
+            Myhostname = "unknown";
+        else
+            Myhostname = hostname;
 
         init_stats();
         Log = new DwLog(newfn(logname).c_str());
@@ -92,7 +94,7 @@ init_codec(const char *logname)
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
-            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str(), 1000);
+            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str());
             RTLog = tmp;
             init_rtlog();
         }
@@ -124,9 +126,15 @@ init_codec(const char *logname)
         if(access(newfn("xfer").c_str(), 0) == -1)
             if(mkdir(newfn("xfer").c_str()) == -1)
                 Log->make_entry("can't create xfer dir");
+        init_dhgdb();
+        init_sql_settings();
+        init_aconn();
+        init_entropy();
+        dh_init();
+
         // this is so important, don't leave it till later
-        init_prf_cache();
-        init_pk_cache();
+        init_qauth();
+        init_prfdb();
 
         //Cur_msgs = vc(VC_VECTOR);
         InitializeCriticalSection(&Audio_lock);
@@ -152,37 +160,13 @@ init_codec(const char *logname)
         vc::non_lh_init();
         vc_winsock::startup();
 
-        // ok, this is bad, but the man pages do spec numbers for upper bound
-        // and HOST_NAME_MAX seems to be missing in action some places.
-        char hostname[1024];
-        if(gethostname(hostname, sizeof(hostname)) != 0)
-            Myhostname = "unknown";
-        else
-            Myhostname = hostname;
-
-        init_entropy();
-        dh_init();
-        RTUserDefaults.load();
-        TProfile t("admin", INI_FILENAME);
-        // note: initvfw makes tweaks to default values
-        // based on whether we are doing the wizard or not.
-        initvfw();
         check_audio_device();
         if(!Audio_hw_full_duplex)
             Log->make_entry("audio hardware is half-duplex");
         else
             Log->make_entry("audio hardware claims full-duplex");
 
-        VFWInvestigateData.load();
-        //CTUserDefaults.load();
-        RawFilesData.load();
-        VidInputData.load();
-        CallAcceptanceData.load();
-
-        ZapAdvData.load();
-        DwNetConfigData.load();
-        extern int Media_select;
-        switch(DwNetConfigData.get_call_setup_media_select())
+        switch((int)get_settings_value("net/call_setup_media_select"))
         {
         default:
         case CSMS_VIA_HANDSHAKE:
@@ -200,15 +184,10 @@ init_codec(const char *logname)
         // for testing
         //Media_select = MEDIA_TCP_VIA_PROXY;
 
-        //ShowDirectoryData.load();
-
 #ifdef DWYCO_CODEC
         EntropyModel::init_all();
 #endif
         init_dirth();
-        init_qauth();
-        UserConfigData.load();
-        // note: qmsg now depends on My_UID
         init_qmsg();
 
         //stun_pool_init();
@@ -221,6 +200,7 @@ init_codec(const char *logname)
 #endif
 
         init_sysattr();
+        //Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);
         init = 1;
         Log->make_entry("init done");
     }
@@ -240,18 +220,27 @@ simple_init_codec(const char *logname)
         TheMan = vc(VC_BSTRING, "\x5a\x09\x8f\x3d\xf4\x90\x15\x33\x1d\x74", 10);
         //No_direct_msgs = vc(VC_SET);
         Current_user_lobbies = vc(VC_TREE);
+        char hostname[255];
+        if(gethostname(hostname, sizeof(hostname)) != 0)
+            Myhostname = "unknown";
+        else
+            Myhostname = hostname;
+
         init_stats();
 #ifdef DW_RTLOG
         Log = new DwLog(logname);
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
-            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str(), 1000);
+            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str());
             RTLog = tmp;
             init_rtlog();
         }
 #endif
         Log->make_entry("system starting up");
+        init_sql_settings();
+        //init_aconn();
+        //init_dhg();
 
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
@@ -287,25 +276,6 @@ simple_init_codec(const char *logname)
         vc::non_lh_init();
         vc_winsock::startup();
 
-        char hostname[255];
-        if(gethostname(hostname, sizeof(hostname)) != 0)
-            Myhostname = "unknown";
-        else
-            Myhostname = hostname;
-
-        RTUserDefaults.load();
-        TProfile t("admin", INI_FILENAME);
-
-        // have to reconfigure a little bit for 0.80
-        UserConfigData.load();
-        VFWInvestigateData.load();
-        //CTUserDefaults.load();
-        RawFilesData.load();
-        VidInputData.load();
-        CallAcceptanceData.load();
-        ZapAdvData.load();
-        DwNetConfigData.load();
-
         init_sysattr();
         init = 1;
         Log->make_entry("init done");
@@ -328,6 +298,11 @@ init_bg_msg_send(const char *logname)
         Current_user_lobbies = vc(VC_TREE);
         InitializeCriticalSection(&Audio_lock);
         InitializeCriticalSection(&Audio_mixer_shutdown_lock);
+        char hostname[255];
+        if(gethostname(hostname, sizeof(hostname)) != 0)
+            Myhostname = "unknown";
+        else
+            Myhostname = hostname;
         init_stats();
         if(!Log)
             Log = new DwLog(logname);
@@ -335,13 +310,31 @@ init_bg_msg_send(const char *logname)
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
-            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str(), 1000);
+            DwRTLog *tmp = new DwRTLog(newfn("rtlog.out").c_str());
             RTLog = tmp;
             init_rtlog();
         }
 #endif
-        Log->make_entry("background system starting up");
+        if(access(newfn("inprogress").c_str(), 0) == -1)
+            if(mkdir(newfn("inprogress").c_str()) == -1)
+                Log->make_entry("can't create inprogress dir");
+        if(access(newfn("outbox").c_str(), 0) == -1)
+            if(mkdir(newfn("outbox").c_str()) == -1)
+                Log->make_entry("can't create outbox dir");
+        if(access(newfn("trash").c_str(), 0) == -1)
+            if(mkdir(newfn("trash").c_str()) == -1)
+                Log->make_entry("can't create trash dir");
+        if(access(newfn("xfer").c_str(), 0) == -1)
+            if(mkdir(newfn("xfer").c_str()) == -1)
+                Log->make_entry("can't create xfer dir");
 
+        Log->make_entry("background system starting up");
+        init_dhgdb();
+        init_sql_settings();
+        init_aconn();
+        init_entropy();
+        dh_init();
+        //init_dhg();
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
         // curses
@@ -354,8 +347,7 @@ init_bg_msg_send(const char *logname)
         setbuf(stderr, 0);
 
         // this is important, don't leave it till later
-        init_prf_cache();
-        init_pk_cache();
+        init_prfdb();
         recover_inprogress();
 
         //Cur_msgs = vc(VC_VECTOR);
@@ -364,37 +356,17 @@ init_bg_msg_send(const char *logname)
         vc::non_lh_init();
         vc_winsock::startup();
 
-        char hostname[255];
-        if(gethostname(hostname, sizeof(hostname)) != 0)
-            Myhostname = "unknown";
-        else
-            Myhostname = hostname;
-
-        init_entropy();
-        dh_init();
-
-        RTUserDefaults.load();
-
         init_dirth();
         init_qauth();
-
-        UserConfigData.load();
         // note: qmsg now depends on My_UID
         init_qmsg();
 
         // note: the background send does server-only sends, so this should never
-        // get used.
-        //init_callq();
-
-        VFWInvestigateData.load();
-        //CTUserDefaults.load();
-        RawFilesData.load();
-        VidInputData.load();
-        CallAcceptanceData.load();
-        ZapAdvData.load();
-        DwNetConfigData.load();
+        // get used. however, the syncing stuff might initiate some calls
+        init_callq();
 
         init_sysattr();
+
         Bg_msg_send_init = 1;
         Log->make_entry("background init done");
     }
@@ -423,8 +395,7 @@ exit_bg_msg_send()
 
     exit_qmsg();
     exit_pal();
-    exit_prf_cache();
-    exit_pk_cache();
+    exit_prfdb();
 
     vc::non_lh_exit();
     vc::shutdown_logs();
@@ -440,21 +411,31 @@ exit_bg_msg_send()
 void
 exit_codec()
 {
+    // do this here mainly so we can get some network
+    // debugging output when the program exits
+    MMChannel::exit_mmchan();
     save_qmsg_state();
     save_entropy();
+    // note: this analyzes the database, which can be a huge
+    // win with sqlite
+    exit_qmsg();
     Log->make_entry("exit");
+
+
 
     vc::non_lh_exit();
     vc::shutdown_logs();
 
 #ifndef DWYCO_POWERBROWSE
     clean_cruft();
+#if 0
 #ifdef ANDROID
     clean_profile_cache(60, 1000);
 #else
     clean_profile_cache(120, 6000);
 #endif
     clean_pk_cache(365, 1500);
+#endif
 #endif
 #ifdef DW_RTLOG
     RTLog->flush_to_file();
@@ -480,3 +461,4 @@ exit_codec()
 
 }
 
+}

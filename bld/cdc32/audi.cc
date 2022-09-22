@@ -25,6 +25,8 @@
 #include "mmchan.h"
 #include "doinit.h"
 
+using namespace dwyco;
+
 AudioAcquire *TheAudioInput;
 int ExternalAudioAcquisition;
 extern CRITICAL_SECTION Audio_lock;

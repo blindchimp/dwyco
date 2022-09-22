@@ -21,7 +21,7 @@
 #include "vcmap.h"
 #include "vccrypt2.h"
 #include "blowfish.h"
-#include "rng.h"
+//#include "rng.h"
 #include "files.h"
 #include "hex.h"
 #include "modes.h"
@@ -1010,7 +1010,7 @@ bf_ctx::init_key_cbc(byte *key1, int len_key1, byte *iv, int len_iv)
 }
 
 static void
-bf_dtor(long ctx)
+bf_dtor(void *ctx)
 {
 	if(!ctx) return;
 	bf_ctx *d = (bf_ctx *)ctx;
@@ -1021,7 +1021,7 @@ vc
 vclh_bf_open()
 {
 	bf_ctx *d = new bf_ctx;
-	return vc(VC_INT_DTOR, (const char *)bf_dtor, (long)d);
+    return vc(VC_INT_DTOR, bf_dtor, d);
 }
 
 vc
@@ -1034,7 +1034,7 @@ vclh_bf_close(vc ctx)
 vc
 vclh_bf_init_key_stream_ctx(vc ctx, vc key1, vc key2)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1051,7 +1051,7 @@ vclh_bf_init_key_stream_ctx(vc ctx, vc key1, vc key2)
 vc
 vclh_bf_init_key_cbc_ctx(vc ctx, vc key, vc iv)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1075,7 +1075,7 @@ vclh_bf_init_key_cbc_ctx(vc ctx, vc key, vc iv)
 vc
 vclh_bf_enc_ctx(vc ctx, vc v)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1087,7 +1087,7 @@ vclh_bf_enc_ctx(vc ctx, vc v)
 vc
 vclh_bf_dec_ctx(vc ctx, vc v)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1099,7 +1099,7 @@ vclh_bf_dec_ctx(vc ctx, vc v)
 vc
 vclh_bf_xfer_enc_ctx(vc ctx, vc v)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1131,7 +1131,7 @@ vclh_bf_xfer_enc_ctx(vc ctx, vc v)
 vc
 bf_xfer_dec_ctx(vc ctx, vc v, vc& out)
 {
-	bf_ctx *b = (bf_ctx *)(long)ctx;
+    bf_ctx *b = (bf_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad blowfish context", vcnil);
@@ -1247,7 +1247,7 @@ encdec_ctx::init_key(byte *key1, int len_key1, byte *iv, int len_iv)
 }
 
 static void
-encdec_dtor(long ctx)
+encdec_dtor(void *ctx)
 {
 	if(!ctx) return;
 	encdec_ctx *d = (encdec_ctx *)ctx;
@@ -1258,7 +1258,7 @@ vc
 vclh_encdec_open()
 {
 	encdec_ctx *d = new encdec_ctx;
-	return vc(VC_INT_DTOR, (const char *)encdec_dtor, (long)d);
+    return vc(VC_INT_DTOR, encdec_dtor, d);
 }
 
 vc
@@ -1274,12 +1274,12 @@ vclh_encdec_close(vc ctx)
 // basically, you are responsible for getting the iv around in this case.
 //
 // if you use the *xfer* functions below, the IV is done for you, so the
-// iv sent in here is basically ignored.
+// iv sent in here is ignored.
 // 
 vc
 vclh_encdec_init_key_ctx(vc ctx, vc key, vc iv)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b)
 	{
 		USER_BOMB("bad encdec context", vcnil);
@@ -1311,7 +1311,7 @@ vclh_encdec_init_key_ctx(vc ctx, vc key, vc iv)
 vc
 vclh_encdec_enc_ctx(vc ctx, vc v)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bef)
 	{
 		return vcnil;
@@ -1324,7 +1324,7 @@ vclh_encdec_enc_ctx(vc ctx, vc v)
 vc
 vclh_encdec_dec_ctx(vc ctx, vc v)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bdf)
 	{
 		return vcnil;
@@ -1337,7 +1337,7 @@ vclh_encdec_dec_ctx(vc ctx, vc v)
 vc
 vclh_encdec_xfer_enc_ctx(vc ctx, vc v)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Be)
 	{
 		return vcnil;
@@ -1370,7 +1370,7 @@ vclh_encdec_xfer_enc_ctx(vc ctx, vc v)
 vc
 encdec_xfer_dec_ctx(vc ctx, vc v, vc& out)
 {
-	encdec_ctx *b = (encdec_ctx *)(long)ctx;
+    encdec_ctx *b = (encdec_ctx *)(void *)ctx;
 	if(!b || !b->Bd)
 	{
 		return vcnil;
@@ -1400,7 +1400,7 @@ encdec_xfer_dec_ctx(vc ctx, vc v, vc& out)
 		return vcnil;
 	}
 
-	vcxstream vcx((const char *)tmp, (long)tmp.len(), vcxstream::FIXED);
+    vcxstream vcx((const char *)tmp, tmp.len(), vcxstream::FIXED);
 
 	vc item;
 	long len;

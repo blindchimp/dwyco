@@ -54,7 +54,7 @@ struct simple_scoped
 void
 forward_msg(const QByteArray& mid, const QByteArray& uid)
 {
-    int compid = dwyco_make_forward_zap_composition(0, 0, mid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(mid.constData(), 1);
     if(compid == 0)
         return;
 

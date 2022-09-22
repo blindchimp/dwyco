@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#ifndef ANDROID
+//#ifndef ANDROID
 //
 // stuff related to the system LH is running in
 //
@@ -491,4 +491,4 @@ vclh_kill(vc pid, vc sig)
 		USER_BOMB("kill not implemented", vcnil);
 #endif
 }
-#endif
+

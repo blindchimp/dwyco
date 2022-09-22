@@ -16,9 +16,10 @@
 
 // defs:
 // one-shot: timer is initially loaded and counts down to 0, sets "expired"
-//		and stops. otherwise, timer runs continuously.
+//		and stops.
 // auto-reload: when the timer hits 0 or less, the timer is automatically reloaded
-//	with the auto-reload value (but not necessarily started).
+//	with the interval value and continues running.
+// these two modes are mutually exclusive.
 //
 #ifndef __LP64__
 #ifdef _Windows
@@ -62,7 +63,6 @@ private:
     DwTimer(const DwTimer&);
     DwTimer& operator=(const DwTimer&);
     struct dwyco::timer timer;
-    int oneshot;
     int auto_reload;
     int enabled;
 

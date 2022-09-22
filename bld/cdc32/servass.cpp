@@ -18,21 +18,22 @@
 #include "dwstr.h"
 #include "servass.h"
 #include "netvid.h"
-#include "doinit.h"
 #include "qdirth.h"
-#include "gvchild.h"
 #include "msgdisp.h"
 #include "calllive.h"
 #include "ta.h"
+#include "netlog.h"
 
 using namespace dwyco;
 
-int Disable_SAC = 0;
+namespace dwyco {
+int Disable_incoming_SAC = 0;
 
 static void
 serv_recv_call_failed_last(MMChannel *mc, vc, void *, ValidPtr)
 {
-    GRTLOG("serv_recv call failed last", 0, 0);
+    if(mc)
+        GRTLOG("serv_recv call failed last %d", mc->myid, 0);
 }
 
 void
@@ -71,7 +72,7 @@ serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv)
         // we may end up waiting awhile if the accept/rej box gets popped up,
         // so wait till later to get the STUN sockets set up.
         TRACK_ADD(CLR_control_established, 1);
-
+        Netlog_signal.emit(chan->tube->mklog("event", "proxy recv ctrl"));
         mc->schedule_destroy(MMChannel::HARD);
     }
     else
@@ -89,6 +90,7 @@ serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv)
         sproto *s = new sproto(c, recv_command, mc->vp);
         mc->simple_protos[c] = s;
         s->start();
+        Netlog_signal.emit(mc->tube->mklog("event", "proxy recv chan"));
 
         TRACK_ADD(CLR_subchan_established, 1);
     }
@@ -122,7 +124,7 @@ track_connect(MMChannel *mc, vc what, void *, ValidPtr)
     // time out, which was 30+ seconds. ideally we would send something
     // to the server to tell it not to even attempt a server assisted
     // set up, but that requires some extra protocol and server changes.
-    if(Disable_SAC)
+    if(Disable_incoming_SAC)
         mc->schedule_destroy(MMChannel::HARD);
 
 }
@@ -131,11 +133,8 @@ void
 start_serv_recv_thread(vc ip, vc port, ValidPtr mcv)
 {
 
-    MMChannel *mc = MMChannel::start_server_channel(
-                        MMChannel::BYADDR,
-                        inet_addr(ip),
-                        0,
-                        port);
+    MMChannel *mc = MMChannel::start_server_channel(ip, port);
+
     if(!mc)
     {
         serv_recv_call_failed_last(0, vcnil, 0, ValidPtr());
@@ -228,5 +227,6 @@ aux_channel_setup(MMChannel *mc, vc v)
     // setup request from the caller.
     start_serv_recv_thread(mc->proxy_info[0], mc->proxy_info[1], mc->vp);
 
+}
 }
 

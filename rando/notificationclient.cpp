@@ -90,6 +90,7 @@ void NotificationClient::set_lastrun()
         "com/dwyco/android/NotificationClient",
         "set_lastrun");
 }
+
 void
 NotificationClient::set_msg_count_url(QString s)
 {
@@ -140,6 +141,21 @@ NotificationClient::log_event()
 }
 
 void
+NotificationClient::log_event2(QString name, QString method)
+{
+    QAndroidJniObject jname = QAndroidJniObject::fromString(name);
+    QAndroidJniObject jval = QAndroidJniObject::fromString(method);
+    QAndroidJniObject::callStaticMethod<void>(
+        "com/dwyco/android/NotificationClient",
+        "log_event2",
+      "(Ljava/lang/String;Ljava/lang/String;)V",
+      jname.object<jstring>(),
+      jval.object<jstring>()
+    );
+
+}
+
+void
 NotificationClient::set_user_property(QString name, QString value)
 {
     QAndroidJniObject jname = QAndroidJniObject::fromString(name);
@@ -151,6 +167,20 @@ NotificationClient::set_user_property(QString name, QString value)
 
                                               jname.object<jstring>(),
                                               jval.object<jstring>()
+                                              );
+}
+
+void
+NotificationClient::share_to_mediastore(QString filename)
+{
+    QAndroidJniObject jname = QAndroidJniObject::fromString(filename);
+
+
+    QAndroidJniObject::callStaticMethod<void>("com/dwyco/android/NotificationClient",
+                                              "notifyMediaStoreScanner",
+                                              "(Ljava/lang/String;)V",
+
+                                              jname.object<jstring>()
                                               );
 }
 

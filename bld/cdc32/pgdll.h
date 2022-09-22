@@ -14,13 +14,14 @@
 #include "vc.h"
 #include "pval.h"
 
+namespace dwyco {
 class ProfileGrid
 {
 public:
     ProfileGrid();
-    virtual ~ProfileGrid();
+    ~ProfileGrid();
 
-    void add_user(vc name, vc uid);
+    void add_user(const vc &name, const vc &uid);
     void remove_user(vc uid);
     void update_ah(vc uid);
     //void display_video_in_listbox(pixel **img, int cols, int rows, vc uid);
@@ -37,8 +38,8 @@ public:
 
     // attribute updates
 
-    void sys_attr(vc uid, vc name, vc val);
-    void update_attr(vc uid, vc name, vc val);
+    void sys_attr(const vc& uid, const vc& name, const vc& val);
+    void update_attr(const vc &uid, const vc &name, const vc &val);
 
     // user lobbies
     void add_user_lobby(vc info);
@@ -78,5 +79,8 @@ extern vc Current_gods;
 #define GT_DEMIGOD 3
 #define GT_SUBGOD 4
 #define GT_SERVER_ID 5
+
+int dllify(vc v, const char*& str_out, int& len_out);
+}
 
 #endif

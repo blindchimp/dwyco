@@ -13,20 +13,11 @@
 #include <io.h>
 #include <fcntl.h>
 #endif
+#include <windows.h>
 #include "vc.h"
-#include "vcxstrm.h"
-#include "vccomp.h"
-#include "qdirth.h"
-#include "gvchild.h"
-#include "usercnfg.h"
 #include "dwtimer.h"
-#include "netvid.h"
 #include "qauth.h"
-#include "dirth.h"
-#include "pval.h"
-#include "qmsg.h"
 #include "asshole.h"
-#include "dlli.h"
 #ifdef LINUX
 #include <netdb.h>
 #include <unistd.h>
@@ -37,11 +28,16 @@
 #include "xinfo.h"
 #include "dwyco_rand.h"
 
+using namespace dwyco;
+
 vc vclh_sha(vc);
+
+namespace dwyco {
 
 vc My_UID;
 vc My_MID;
 vc My_server_key;
+extern vc Myhostname;
 static vc Entropy;
 int Send_auth;
 int Create_new_account;
@@ -50,7 +46,7 @@ int Entropy_charge;
 void (*Entropy_display_callback)(int);
 
 vc
-to_hex(vc s)
+to_hex(const vc& s)
 {
     const char *a = (const char *)s;
     int len = s.len();
@@ -77,7 +73,7 @@ hexd(char a)
 }
 
 vc
-from_hex(vc s)
+from_hex(const vc& s)
 {
     const char *a = (const char *)s;
     int len = s.len();
@@ -133,7 +129,6 @@ init_entropy()
         add_entropy((char *)&t, sizeof(t));
     }
     // first time init of entropy pool...
-    extern vc Myhostname;
 
     unsigned long t0 = DwTimer::time_now();
     time_t t1 = time(0);
@@ -144,6 +139,11 @@ init_entropy()
     a += DwString((const char *)&t1, 0, sizeof(t1));
     // note: we know hostname won't be more than 1024, see doinit.cc
     a += DwString((const char *)Myhostname, 0, Myhostname.len());
+
+#if 1
+    // NOTE: ca 2021, this appears to take a significant amount of time
+    // on some platforms sometimes (when it can't find the hostname).
+    //
     // try to get an IP address, but it may not work...
     // oh well, if not, then at least we get some rubbish from
     // the stack.
@@ -156,6 +156,7 @@ init_entropy()
             a += DwString((const char *)h->h_addr_list[i], 0, h->h_length);
         }
     }
+#endif
 #ifdef _Windows
     DWORD w = GetCurrentProcessId();
     a += DwString((const char *)&w, 0, sizeof(w));
@@ -172,7 +173,7 @@ init_entropy()
     char p[8];
     if(fd != -1)
     {
-        read(fd, p, 8);
+        read(fd, p, sizeof(p));
         close(fd);
     }
     // if open fails, just append whatever trash is on stack
@@ -416,6 +417,8 @@ qauth_check_account_exists()
     vc dum1;
     vc dum2;
     return(load_auth_info(dum1, dum2, "auth"));
+}
+
 }
 
 

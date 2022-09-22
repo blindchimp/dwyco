@@ -7,9 +7,9 @@
 # change all occurances of "10.5" to "10.9"
 VCCFG_COMP=$$PWD
 DWYCOBG=0
-DEFINES += VCCFG_FILE
+DEFINES += VCCFG_FILE #DWYCO_VC_THREADED
 
-linux-g++* {
+linux-* {
 DEFINES += LINUX
 DWYCO_USE_LINUX_AUDIO=0
 FORCE_DESKTOP_VGQT=0
@@ -33,7 +33,7 @@ QMAKE_CXXFLAGS_WARN_ON -= -W3
 QMAKE_CXXFLAGS += /wd4100 /wd4068 /wd4189 /wd4291
 DEFINES += _Windows
 }
-linux-g++|linux-g++-64|macx-g++|macx-clang {
+linux-*|macx-* {
 QMAKE_CXX=ccache g++
 
 QMAKE_CFLAGS += #-fsanitize=address

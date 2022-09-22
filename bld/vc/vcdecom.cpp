@@ -15,15 +15,25 @@
 #ifdef _Windows
 #include <windows.h>
 #endif
+#ifdef DWYCO_VC_THREADED
+#include <mutex>
+std::mutex SN_mutex;
+#endif
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcdecom.cpp 1.50 1998/12/09 05:12:20 dwight Exp $";
 
-long vc_decomposable::SN;	// serial number for id's of decompoables
+long vc_decomposable::SN;	// serial number for id's of decomposables
 
 static vc bogus;
 vc_decomposable::vc_decomposable()
 {
+#ifdef DWYCO_VC_THREADED
+    SN_mutex.lock();
+#endif
 	serial_number = SN++;
+#ifdef DWYCO_VC_THREADED
+    SN_mutex.unlock();
+#endif
 	iterators = 0;
 }
 
@@ -145,6 +155,12 @@ vc_vector::find(const vc& v, vc& out)
 	return 1;
 }
 
+// UGH FIX THIS
+// this probably should be "set"-like add, instead of
+// append (since if append is what you want, then you should
+// use that operator). BUT this has been like this for a long
+// time and i would have to ferret out all the places it was
+// used before changing it.
 void
 vc_vector::add(const vc& v)
 {
@@ -863,6 +879,8 @@ vc_list_set::find(const vc& v, vc& out)
 	return list.exists(v, out);
 }
 
+// MAYBE FIX THIS
+// SEE COMMENT ABOVE FOR VECTOR "add"
 void
 vc_list_set::add(const vc& v)
 {
@@ -1687,6 +1705,24 @@ vc::map_to_vector(vc map)
     vc v(VC_VECTOR);
     vc_map *vs = (vc_map *)map.nonono();
     VcMapIter i(&vs->map);
+
+    for(; !i.eol(); i.forward())
+    {
+        vc vec(VC_VECTOR);
+        DwAssocImp<vc, vc> a = i.get();
+        vec[0] = a.peek_key();
+        vec[1] = a.peek_value();
+        v.append(vec);
+    }
+    return v;
+}
+
+vc
+vc::tree_to_vector(vc map)
+{
+    vc v(VC_VECTOR);
+    vc_tree *vs = (vc_tree *)map.nonono();
+    VcTreeIter i(&vs->tree);
 
     for(; !i.eol(); i.forward())
     {

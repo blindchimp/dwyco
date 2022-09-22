@@ -34,6 +34,7 @@
 #include "notificationclient.h"
 
 #include <QtAndroidExtras/QAndroidJniObject>
+#include <QtAndroidExtras>
 
 NotificationClient::NotificationClient(QObject *parent)
     : QObject(parent)
@@ -141,6 +142,21 @@ NotificationClient::log_event()
 }
 
 void
+NotificationClient::log_event2(QString name, QString method)
+{
+    QAndroidJniObject jname = QAndroidJniObject::fromString(name);
+    QAndroidJniObject jval = QAndroidJniObject::fromString(method);
+    QAndroidJniObject::callStaticMethod<void>(
+        "com/dwyco/android/NotificationClient",
+        "log_event2",
+      "(Ljava/lang/String;Ljava/lang/String;)V",
+      jname.object<jstring>(),
+      jval.object<jstring>()
+    );
+
+}
+
+void
 NotificationClient::set_user_property(QString name, QString value)
 {
     QAndroidJniObject jname = QAndroidJniObject::fromString(name);
@@ -156,6 +172,20 @@ NotificationClient::set_user_property(QString name, QString value)
 }
 
 void
+NotificationClient::share_to_mediastore(QString filename)
+{
+    QAndroidJniObject jname = QAndroidJniObject::fromString(filename);
+
+
+    QAndroidJniObject::callStaticMethod<void>("com/dwyco/android/NotificationClient",
+                                              "notifyMediaStoreScanner",
+                                              "(Ljava/lang/String;)V",
+
+                                              jname.object<jstring>()
+                                              );
+}
+
+void
 NotificationClient::load_contacts()
 {
     QAndroidJniObject::callStaticMethod<void>(
@@ -165,14 +195,22 @@ NotificationClient::load_contacts()
 
 }
 
-void
+int
 NotificationClient::open_image()
 {
+    if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+    {
+        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+        if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        {
+            return 0;
+        }
+    }
     QAndroidJniObject::callStaticMethod<void>(
         "com/dwyco/android/NotificationClient",
         "openAnImage"
     );
-
+    return 1;
 }
 
 void

@@ -29,7 +29,7 @@ INCLUDEPATH += .
 
 QT +=  core network webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
-macx-g++|macx-clang|win32|linux-g++|linux-g++-64:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
+macx-*|win32|linux-*:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
 
 RESOURCES=icons.qrc
 #CONFIG-=app_bundle
@@ -142,9 +142,30 @@ $${D}/jenkins/libjenkins.a \
 $${D}/qtdrv/libqtdrv.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
--lsqlite3 \
 $${D}/v4lcap/libv4lcap.a \
--lv4l2
+-lv4l2 \
+-ldl
+
+PRE_TARGETDEPS += \
+$${D}/cdc32/libcdc32.a \
+$${D}/vc/libvc.a \
+$${D}/crypto5/libcrypto5.a \
+$${D}/dwcls/libdwcls.a \
+$${D}/gsm/libgsm.a \
+$${D}/kazlib/libkazlib.a \
+$${D}/ppm/libppm.a \
+$${D}/pgm/libpgm.a \
+$${D}/pbm/libpbm.a \
+$${D}/zlib/libzlib.a \
+$${D}/theora.1.2.x/libtheora.1.2.x.a \
+$${D}/vorbis112/libvorbis.a \
+$${D}/ogg/libogg.a \
+$${D}/jenkins/libjenkins.a \
+$${D}/speex/libspeex.a \
+$${D}/uv/libuv.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qtdrv/libqtdrv.a
+
 
 #-lesd \
 #-lSDL \
@@ -160,7 +181,7 @@ DEFINES += LINUX VCCFG_FILE
 
 win32 {
 
-DEFINES += USE_VFW  MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
+DEFINES += MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
 
 INCLUDEPATH += dllwin
 # use this for linking to dynamic cdcdll
@@ -195,7 +216,7 @@ $${D}\\speex\\$${S}\\speex.lib \
 $${D}\\ogg\\$${S}\\ogg.lib \
 $${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
 $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib \
-winmm.lib user32.lib kernel32.lib wsock32.lib vfw32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
+winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
 
 PRE_TARGETDEPS += \
 $${D}\\cdc32\\$${S}\\cdc32.lib \

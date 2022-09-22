@@ -3,7 +3,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := vc
 
-LOCAL_CPPFLAGS := $(MY_CONF_LOCAL_CPPFLAGS) -DANDROID -DVC_INTERNAL
+LOCAL_CPPFLAGS := $(MY_CONF_LOCAL_CPPFLAGS) -DANDROID -DVC_INTERNAL -DDWYCO_NO_TSOCK
 
 LOCAL_SRC_FILES=  \
 vclhnet.cpp \
@@ -56,7 +56,8 @@ vcio.cpp \
 vcuvsock.cpp \
 lhuvsock.cpp \
 vctrans.cpp \
-vcudh.cpp
+vcudh.cpp \
+vctsock.cpp
 
 
 #LOCAL_STATIC_LIBRARIES := crypto5 zlib kazlib jenkins dwcls

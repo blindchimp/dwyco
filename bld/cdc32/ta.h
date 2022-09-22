@@ -25,7 +25,7 @@ if(Track_stats) \
 	{ \
         Stats.add_kv(#var, static_cast<int>(num)); \
 	} \
-	save_info(Stats, "stats"); \
+        dwyco::save_info(Stats, "stats"); \
 } \
 } while(0)
 
@@ -44,7 +44,7 @@ if(Track_stats) \
 	{ \
         Stats.add_kv(var, static_cast<int>(num)); \
 	} \
-	save_info(Stats, "stats"); \
+        dwyco::save_info(Stats, "stats"); \
 } \
 } while(0)
 
@@ -81,7 +81,7 @@ if(Track_stats) \
         { \
                 Stats.add_kv(#var "_max", int(num)); \
         } \
-        save_info(Stats, "stats"); \
+        dwyco::save_info(Stats, "stats"); \
 } \
 } while(0)
 
@@ -101,7 +101,7 @@ if(Track_stats) \
 	{ \
                 Stats.add_kv(__var, int(num)); \
 	} \
-    save_info(Stats, "stats"); \
+    dwyco::save_info(Stats, "stats"); \
 } \
 } while(0)
 
@@ -132,9 +132,11 @@ if(Track_stats) \
 #define TRACK_MAX(var, num) do {} while(0)
 #endif
 
+namespace dwyco {
 extern vc Stats;
 extern int Track_stats;
 void init_stats();
+}
 #include "xinfo.h"
 
 

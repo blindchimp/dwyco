@@ -12,9 +12,10 @@
 #include <QDataStream>
 #include "dwyco_new_msg.h"
 #include "dlli.h"
-#include "pfx.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
+[[noreturn]] void cdcxpanic(const char *);
+extern QByteArray Clbot;
 static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Already_processed;
 
@@ -33,6 +34,12 @@ void
 add_unviewed(const QByteArray& uid, const QByteArray& mid)
 {
     dwyco_set_msg_tag(mid.constData(), "unviewed");
+    Got_msg_from_this_session.insert(uid);
+}
+
+void
+add_got_msg_from(const QByteArray& uid)
+{
     Got_msg_from_this_session.insert(uid);
 }
 
@@ -93,21 +100,28 @@ del_unviewed_mid(const QByteArray& mid)
 bool
 uid_has_unviewed_msgs(const QByteArray &uid)
 {
-    return uid_has_unfetched(uid) > 0 || dwyco_uid_has_tag(uid.constData(), uid.length(), "unviewed")
-            || dwyco_uid_has_tag(uid.constData(), uid.length(), "_inbox");
+    return uid_has_unfetched(uid) > 0 ||
+            dwyco_uid_has_tag(uid.constData(), uid.length(), "unviewed")
+            ;
+#if 0
+    ||
+            dwyco_uid_has_tag(uid.constData(), uid.length(), "_inbox");
+#endif
 }
 
+#if 0
 int
 uid_unviewed_msgs_count(const QByteArray &uid)
 {
     return uid_has_unfetched(uid) + dwyco_uid_count_tag(uid.constData(), uid.length(), "unviewed") +
             dwyco_uid_count_tag(uid.constData(), uid.length(), "_inbox");
 }
+#endif
 
-int
-total_unviewed_msgs_count()
+bool
+any_unviewed_msgs()
 {
-    return dwyco_count_tag("unviewed");
+    return dwyco_valid_tag_exists("unviewed");
 }
 
 void
@@ -116,29 +130,13 @@ clear_unviewed_msgs()
     dwyco_unset_all_msg_tag("unviewed");
 }
 
-static int
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_STRING)
-        return 0;
-    str_out = QByteArray(val, len);
-    return 1;
-}
-
 
 int
 dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids)
 {
     int n;
-    const char *val;
-    int len;
-    int type;
-    dwyco_list_numelems(ml, &n, 0);
+    dwyco_list qml(ml);
+    n = qml.rows();
     if(n == 0)
     {
         return 0;
@@ -147,30 +145,31 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
     QByteArray mid;
     for(int i = 0; i < n; ++i)
     {
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_FROM, uid_out))
+        uid_out = qml.get<QByteArray>(i, DWYCO_QMS_FROM);
+        if(uid_out == Clbot)
             continue;
-        if(uid_out == QByteArray::fromHex("f6006af180260669eafc"))
-            continue;
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_ID, mid))
-            continue;
+        mid = qml.get<QByteArray>(i, DWYCO_QMS_ID);
         if(Already_processed.contains(mid))
             continue;
-        if(!dwyco_list_get(ml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
-            continue;
-
-        if(type != DWYCO_TYPE_NIL)
+        if(!qml.is_nil(i, DWYCO_QMS_IS_DIRECT))
         {
-            ::abort();
+            cdcxpanic("direct msgs api is different now");
         }
 
         // ok, at least it is likely the person will see it now
         // if there are any errors above, people may not be able to see a message
         // but the user would appear towards the top of the user list, which is weird.
         // this happens sometimes when attachments are not fetchable for whatever reason.
-        Got_msg_from_this_session.insert(uid_out);
         Already_processed.insert(mid);
-        add_unviewed(uid_out, mid);
-        uids.insert(uid_out);
+        if(dwyco_mid_disposition(mid) == 0)
+        {
+            // this corresponds to the case where the index doesn't have any
+            // record of this mid anywhere else. so we tag it in a way that will
+            // show it to the user as a "new message"
+
+            add_unviewed(uid_out, mid);
+            uids.insert(uid_out);
+        }
     }
 
     return 0;

@@ -20,7 +20,6 @@ static char RcsId[] = "$Header: g:/dwight/repo/cdc32/rcs/netcod.cc 1.27 1999/01/
 #include "vcwsock.h"
 #include "matcom.h"
 #include "vcxstrm.h"
-#include "sleep.h"
 #include "dwlog.h"
 #include "dwstr.h"
 #include "mmchan.h"
@@ -77,7 +76,6 @@ wouldblock_handler(vc *v)
             GRTLOG("max retry", 0, 0);
             return VC_SOCKET_BACKOUT;
         }
-        dwsleep(1, 0, 1);
         GRTLOG("resume", 0, 0);
         return VC_SOCKET_RESUME;
     }
@@ -107,6 +105,7 @@ SimpleSocket::SimpleSocket()
     istream = 0;
     ostream = 0;
     polling_for_connect = 0;
+    working_len = 0;
     SSQbm.add(this);
 }
 
@@ -118,6 +117,7 @@ SimpleSocket::SimpleSocket(vc sock)
     istream = 0;
     ostream = 0;
     polling_for_connect = 0;
+    working_len = 0;
     this->sock = sock;
 
 #ifdef _Windows
@@ -205,7 +205,7 @@ SimpleSocket::reconnect(const char *remote_addr)
 }
 
 int
-SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry, HWND hwnd)
+SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry)
 {
     if(!retry)
         initsock();
@@ -404,7 +404,7 @@ SimpleSocket::active()
 	v->max_retries = 0; \
 	}
 
-#define RET(a) {if(sock.type() == VC_SOCKET) sock.set_err_callback(cb); return (a);}
+#define RET(a) do {if(sock.type() == VC_SOCKET) sock.set_err_callback(cb); return (a);} while(0)
 
 int
 SimpleSocket::sendlc(DWBYTE *buf, int len, int wbok)
@@ -556,6 +556,7 @@ SimpleSocket::sendvc(vc v)
             vc_composite::new_dfs();
             if((len = v.xfer_out(ostrm)) < 0)
                 RET(0);
+            working_len = len;
         }
         else
         {
@@ -569,7 +570,7 @@ SimpleSocket::sendvc(vc v)
             GRTLOG("flush nb done", 0, 0);
             if(!ostrm.close(vcxstream::DISCARD))
                 RET(0);
-            RET(1);
+            RET(working_len);
         case NB_RETRY:
             GRTLOG("flush nb retry", 0, 0);
             if(!ostrm.close(vcxstream::RETRY))
@@ -596,19 +597,6 @@ SimpleSocket::sendvc(vc v)
             RET(0);
     }
 
-#if 0
-    vc f(VC_FILE);
-    f.open("ser.out", VCFILE_WRITE);
-    vcxstream tstrm(f);
-    if(!tstrm.open(vcxstream::WRITEABLE))
-        return 0;
-    vc_composite::new_dfs();
-    if((len = v.xfer_out(tstrm)) < 0)
-        return 0;
-    if(!tstrm.close(vcxstream::FLUSH))
-        return 0;
-    f.close();
-#endif
     return len;
 }
 
@@ -649,7 +637,7 @@ SimpleSocket::recvvc(vc& v)
 
 
 int
-Listener::init(const char *, const char *local_addr, int, HWND)
+Listener::init(const char *, const char *local_addr, int)
 {
     initsock();
     sock.set_err_callback(net_socket_error);
@@ -822,6 +810,7 @@ FrameSocket::send(DWBYTE *buf, int len, int chan, int user_byte, int user_len, i
     if(!send_seq(ostrm))
         return 0;
     vc vlen(len);
+    vc_composite::new_dfs();
     if(vlen.xfer_out(ostrm) < 0)
         return 0;
     obuf = ostrm.out_want(len + 1 + user_len + (user_seq != 0 ? 4 : 0));

@@ -7,6 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick 2.12
+import QtQml 2.12
 import QtQuick.Controls 2.12
 import dwyco 1.0
 
@@ -51,7 +52,7 @@ Page {
 
     Connections {
         target: core
-        onVideo_display: {
+        function onVideo_display(ui_id, frame_number, img_path) {
             view_source = img_path
         }
     }

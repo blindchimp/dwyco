@@ -13,11 +13,11 @@
 #include "qauth.h"
 #include "calllive.h"
 #include "dwrtlog.h"
-#include "zapadv.h"
 #include "se.h"
 #include "fnmod.h"
 #include "qmsg.h"
 #include "sepstr.h"
+#include "filetube.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -28,7 +28,7 @@
 #define CHANNEL_SETUP_TIMEOUT (1000 * 4)
 #define XFER_WATCHDOG_TIMEOUT (1000 * 20)
 
-using namespace dwyco;
+namespace dwyco {
 DwQueryByMember<DirectSend> DirectSend::Qbm;
 
 DirectSend::DirectSend(const DwString& fn) :
@@ -59,17 +59,17 @@ async_delete(vc, void *, vc, ValidPtr vp)
     delete (DirectSend *)(void *)vp;
 }
 
-static
+
 void
-delete_later(DirectSend *d)
+DirectSend::delete_later(DirectSend *d)
 {
     d->disconnect_all();
     dirth_q_local_action(vc(VC_VECTOR), QckDone(async_delete, 0, vcnil, d->vp));
 }
 
-static
+
 void
-send_done(vc m, void *, vc, ValidPtr vp)
+DirectSend::send_done(vc m, void *, vc, ValidPtr vp)
 {
     if(!vp.is_valid())
         return;
@@ -154,7 +154,7 @@ DirectSend::send_direct()
     }
     QckDone d(send_done, 0, vcnil, vp);
     d.set_timeout(10);
-    d.type = ReqType("msg", ++Serial);
+    d.type = ReqType("msg");
     v[0] = d.type.response_type();
     v[1] = msg_to_send;
     v[2] = small_attachment;
@@ -166,8 +166,8 @@ DirectSend::send_direct()
 
 }
 
-static void
-eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
+void
+DirectSend::eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
 {
     mc->timer1.stop();
     if(!vp.is_valid())
@@ -210,8 +210,8 @@ eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
     q->send_direct();
 }
 
-static void
-set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
+void
+DirectSend::set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
 {
     mc->timer1.stop();
     mc->timer1.load(XFER_WATCHDOG_TIMEOUT);
@@ -247,8 +247,8 @@ xfer_chan_call_succeeded(MMChannel *mc, int chan, vc, void *, ValidPtr)
     // timer1 callback still set to xfer_chan_setup_timeout
 }
 
-static void
-xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp)
+void
+DirectSend::xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp)
 {
     eo_direct_xfer(mc, arg1, arg2, vp);
 }
@@ -263,8 +263,11 @@ DirectSend::load_small_attachment()
         return 0;
     if(sb.st_size > 20 * 1024)
         return 0;
-    char *buf = new char[sb.st_size];
+
     FILE *f = fopen(actual_filename.c_str(), "rb");
+    if(!f)
+        return 0;
+    char *buf = new char[sb.st_size];
     if(fread(buf, sb.st_size, 1, f) != 1)
     {
         delete [] buf;
@@ -311,7 +314,7 @@ DirectSend::send_with_attachment()
         return;
     }
 
-    MMChannel *m = MMChannel::gen_chan();
+    MMChannel *m = new MMChannel;
     m->tube = new DummyTube;
     DwString remote((const char *)mp->tube->remote_addr_ctrl());
     int c = remote.find(":");
@@ -366,10 +369,10 @@ DirectSend::send_with_attachment()
 
         m->agreed_key = mp->agreed_key;
         sproto *s = new sproto(chan, file_send, m->vp);
-        // note: this is for message attachment encryption
-        // note note: we don't need to incur extra encryption
+
+        // note: we don't need to incur extra encryption
         // cost here because the channel is already encrypted.
-        //s->file_key = key;
+
         m->simple_protos[chan] = s;
         s->start();
 
@@ -505,8 +508,6 @@ DirectSend::send_message()
         return 1;
     }
 
-
-
     // just return ok if we are in the process of setting up a direct
     // channel, or the channel is already set up
     DwVecP<MMCall> ret = MMCall::MMCalls_qbm.query_by_member(uid, &MMCall::uid);
@@ -523,7 +524,7 @@ DirectSend::send_message()
                 return 1;
             }
             TRACK_ADD(DS_dchan_not_established, 1);
-            ret[i]->call_sig.connect_memfun(this, &DirectSend::call_disposition);
+            ret[i]->call_sig.connect_memfun(this, &DirectSend::call_disposition, 1);
             return 1;
         }
     }
@@ -674,4 +675,5 @@ DirectSend::canceled()
     se_sig.emit(SE_MSG_SEND_CANCELED, qfn, r);
     delete_later(this);
 
+}
 }

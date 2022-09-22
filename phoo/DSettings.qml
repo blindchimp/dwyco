@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+import QtQml 2.12
 import QtQuick 2.12
 import dwyco 1.0
 import QtQuick.Controls 2.12
@@ -146,15 +147,15 @@ Page {
             Layout.fillWidth: true
         }
 
-//        CheckBox {
-//            id: show_archived
-//            text: { "Show archived users (" + core.total_users.toString() + ")" }
-//            onCheckedChanged: {
-//                core.use_archived = checked
-//                show_archived_users = checked
-//            }
-//            Layout.fillWidth: true
-//        }
+        CheckBox {
+            id: show_archived
+            text: { "Show archived users (" + core.total_users.toString() + ")" }
+            onCheckedChanged: {
+                core.use_archived = checked
+                show_archived_users = checked
+            }
+            Layout.fillWidth: true
+        }
 
 
         ItemDelegate {

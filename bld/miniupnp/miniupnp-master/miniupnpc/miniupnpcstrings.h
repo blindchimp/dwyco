@@ -8,8 +8,8 @@
 #ifndef MINIUPNPCSTRINGS_H_INCLUDED
 #define MINIUPNPCSTRINGS_H_INCLUDED
 
-#define OS_STRING "app"
-#define MINIUPNPC_VERSION_STRING "2.1"
+#define OS_STRING "Ubuntu/18.04"
+#define MINIUPNPC_VERSION_STRING "2.2.1"
 
 #if 0
 /* according to "UPnP Device Architecture 1.0" */

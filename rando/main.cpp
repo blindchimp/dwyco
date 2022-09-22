@@ -39,19 +39,6 @@ myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString
 
 }
 
-#include "androidperms.h"
-
-static
-void
-perm_setup(QGuiApplication& app)
-{
-    QQmlApplicationEngine engine;
-    AndroidPerms *a = new AndroidPerms;
-    engine.rootContext()->setContextProperty("AndroidPerms", a);
-    engine.load(QUrl(QStringLiteral("qrc:/perm.qml")));
-    app.exec();
-}
-
 int main(int argc, char *argv[])
 {
 #if defined(DWYCO_RELEASE)
@@ -85,11 +72,7 @@ int main(int argc, char *argv[])
     // things like dropbox and btsync.
     QCoreApplication::setOrganizationName("dwyco");
     QCoreApplication::setOrganizationDomain("dwyco.com");
-    // if we run one copy of a cdc-x install on multiple machines,
-    // identify the settings for the machine by local hostname.
-    // this allows for differences in devices and stuff on that host.
-    QString LocalHostName = QHostInfo::localHostName();
-    QCoreApplication::setApplicationName(QString("rando") + LocalHostName);
+    QCoreApplication::setApplicationName(QString("rando"));
     QSettings::setDefaultFormat(QSettings::IniFormat);
     // note: need to set the path to the right place, same as fn_pfx for dll
     //QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);

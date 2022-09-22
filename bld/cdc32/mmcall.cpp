@@ -17,7 +17,7 @@
 // now we can ask servers for setup, proxies of various kinds for
 // NAT/firewall info, etc.etc. MMChannels are already too complicated
 // to hang all this off of them, and it is better if they are just
-// lefts as "one shot" attempt objects rather than trying to extend them.
+// left as "one shot" objects rather than trying to extend them.
 //
 // in addition, we eventually want to have some kinda outgoing call
 // q in order to limit the number of simultaneous calls, and these
@@ -104,6 +104,12 @@ MMCall::channel_to_call(int chan_id)
     return 0;
 }
 
+DwVecP<MMCall>
+MMCall::calls_by_type(vc tp)
+{
+    return MMCalls_qbm.query_by_member(tp, &MMCall::call_type);
+}
+
 // this is called after a physical connect has occurred on a direct
 // connection attempt. we boost the timeout to something larger
 // so that the user has a chance to respond to accept/reject
@@ -182,29 +188,12 @@ MMCall::start_call(int media_sel)
     this->media_select = media_sel;
     mc->call_type = call_type;
 
-    in_addr_t addr;
-    if((addr = inet_addr((const char *)host)) == INADDR_NONE)
+    if(!mc->start_connect(host, port))
     {
-        // start connect process at resolve stage
-        if(!mc->start_resolve(MMChannel::BYNAME, 0, (const char *)host))
-        {
-            mc->schedule_destroy(MMChannel::HARD);
-            return 0;
-        }
-
-
+        mc->schedule_destroy(MMChannel::HARD);
+        return 0;
     }
-    else
-    {
-        // start connect process with ip
-        mc->addr_out.s_addr = addr;
-        if(!mc->start_connect())
-        {
-            mc->schedule_destroy(MMChannel::HARD);
-            return 0;
-        }
 
-    }
     call_started();
     return 1;
 }

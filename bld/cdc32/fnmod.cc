@@ -250,7 +250,7 @@ DwString
 dwbasename(const char *name)
 {
     DwString f(name);
-    size_t b = f.rfind(DIRSEPSTR);
+    auto b = f.rfind(DIRSEPSTR);
     if(b == DwString::npos)
         return f;
     f.erase(0, b + 1);
@@ -258,7 +258,49 @@ dwbasename(const char *name)
 }
 
 int
-is_attachment(vc fn)
+is_msg_fn(vc fn)
+{
+    if(fn.len() != 24)
+        return 0;
+    DwString a((const char *)fn);
+    a.to_lower();
+    if(a.find_first_not_of("abcdef0123456789") != 20)
+        return 0;
+    if(a.rfind(".snt") != 20 && a.rfind(".bod") != 20)
+        return 0;
+    return 1;
+}
+
+int
+is_msg_fn(const DwString& fn)
+{
+    if(fn.length() != 24)
+        return 0;
+    DwString a = fn;
+    a.to_lower();
+    if(a.find_first_not_of("abcdef0123456789") != 20)
+        return 0;
+    if(a.rfind(".snt") != 20 && a.rfind(".bod") != 20)
+        return 0;
+    return 1;
+}
+
+int
+is_user_dir(const DwString& fn)
+{
+    if(fn.length() != 24)
+        return 0;
+    DwString a = fn;
+    a.to_lower();
+    if(a.find_first_not_of("abcdef0123456789") != 20)
+        return 0;
+    if(a.rfind(".usr") != 20)
+        return 0;
+    return 1;
+}
+
+int
+is_attachment(const vc& fn)
 {
     if(fn.len() != 24)
         return 0;

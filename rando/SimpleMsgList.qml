@@ -43,7 +43,7 @@ Page {
             else
                 storage_warning = 0
             AndroidPerms.load()
-            if(storage_warning === 1 && !AndroidPerms.external_storage_permission) {
+            if(storage_warning === 1) {
                 warn.visible = true
             }
         }
@@ -81,6 +81,12 @@ Page {
                     visible: stack.depth === 1
                     Layout.fillHeight: true
                 }
+                Label {
+                    text: "Dwyco Rando"
+                   verticalAlignment: Text.AlignVCenter
+                    Layout.fillHeight: true
+                }
+
                 Item {
 
                     Layout.fillWidth: true
@@ -661,6 +667,9 @@ scrolling in the listview or doesn't recognizing the swipe.
         onClicked: {
             cam.next_state = "StopAndPop"
             cam.ok_text = "Upload"
+            if(Qt.platform.os == "android") {
+                notificationClient.log_event2("camclick", "regular")
+            }
             stack.push(cam)
         }
     }
@@ -760,9 +769,9 @@ scrolling in the listview or doesn't recognizing the swipe.
         id: warn
         visible: false
         z: 3
-        warning: "You denied access to storage, which is OK. BUT if you uninstall the app, the pictures stored by this app are also removed. IF YOU WOULD LIKE TO KEEP THE PICTURES YOU GET, EVEN IF YOU UNINSTALL, click the button below to quit the app. Then restart the app, and when it asks for permission to access storage, answer YES."
+        warning: "WARNING: if you uninstall Rando, all of the pictures in this app are removed. In order to SAVE A PICTURE you want to keep: view it, and click the \"share\" button to save it to your phone."
         inhibit_key: "storage_warning"
-        oops_text: "Quit (give storage permission next time)"
+        got_it_forever_text: "Got it"
 
         onVisibleChanged: {
             if(visible) {
@@ -773,11 +782,6 @@ scrolling in the listview or doesn't recognizing the swipe.
                 else
                     storage_warning = 0
             }
-        }
-
-        onOopsChanged: {
-            if(oops)
-                Qt.quit()
         }
     }
 

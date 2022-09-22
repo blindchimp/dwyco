@@ -20,18 +20,21 @@ typedef DwTreeKazIter<vc, vc> SyncMapIter;
 
 class SyncVar
 {
+    SyncVar(const SyncVar&) = delete;
+    SyncVar& operator=(const SyncVar&) = delete;
+
 public:
     SyncVar(const char *name, SyncMap *map);
-    virtual ~SyncVar();
+    ~SyncVar();
 
     SyncVar& operator=(int);
     SyncVar& operator=(bool);
     SyncVar& operator=(vc);
-    SyncVar& operator=(const char *);
+    //SyncVar& operator=(const char *);
     operator int();
     operator bool();
     operator vc();
-    operator const char *();
+    //operator const char *();
     int valid();
 
 private:
@@ -41,9 +44,12 @@ private:
 
 class SyncManage
 {
+    SyncManage(const SyncManage&) = delete;
+    SyncManage& operator=(const SyncManage&) = delete;
+
 public:
     SyncManage(SyncMap *m);
-    virtual ~SyncManage();
+    ~SyncManage();
 
     vc diff();
     void snapshot();

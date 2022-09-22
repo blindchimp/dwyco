@@ -25,7 +25,7 @@ class Conversation : public QObject
     QML_READONLY_VAR_PROPERTY(bool, REVIEWED)
     QML_READONLY_VAR_PROPERTY(bool, REGULAR)
     QML_READONLY_VAR_PROPERTY(int, resolved_counter)
-    QML_READONLY_VAR_PROPERTY(int, unseen_count)
+    //QML_READONLY_VAR_PROPERTY(int, unseen_count)
     QML_READONLY_VAR_PROPERTY(bool, is_blocked)
     QML_READONLY_VAR_PROPERTY(bool, any_unread)
     QML_READONLY_VAR_PROPERTY(bool, session_msg)
@@ -41,7 +41,7 @@ public:
         m_REVIEWED = false;
         m_REGULAR = false;
         m_resolved_counter = 0;
-        m_unseen_count = 0;
+        //m_unseen_count = 0;
         m_is_blocked = false;
         m_any_unread = false;
         m_session_msg = false;
@@ -64,6 +64,8 @@ public:
     void load_users_to_model();
     void remove_uid_from_model(const QByteArray& uid);
     Conversation * add_uid_to_model(const QByteArray& uid);
+    void redecorate();
+    void reload_possible_changes(long time);
 
     void set_all_selected(bool);
     void delete_all_selected();
@@ -100,7 +102,8 @@ public:
         }
         return 0;
     }
-
+    Q_INVOKABLE QObject *get(int source_idx);
+    Q_INVOKABLE int get_by_uid(QString uid);
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void set_all_selected(bool);
     Q_INVOKABLE void delete_all_selected();

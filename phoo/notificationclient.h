@@ -60,11 +60,13 @@ public slots:
     void set_service_params(int port, QString sys_pfx, QString user_pfx, QString tmp_pfx);
     void start_background();
     void load_contacts();
-    void open_image();
+    int open_image();
     void vibrate(long ms);
     void log_event();
+    void log_event2(QString name, QString method);
     void set_user_property(QString name, QString value);
     void set_lastrun();
+    void share_to_mediastore(QString filename);
 
 private:
     QString m_notification;

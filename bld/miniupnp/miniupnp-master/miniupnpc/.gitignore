@@ -1,5 +1,6 @@
 deb_dist/
 build/
+.*.swp
 *.o
 *.a
 *.so
@@ -9,6 +10,8 @@ build/
 *.lib
 *.dylib
 Makefile.bak
+miniupnpcstrings.h
+rc_version.h
 pythonmodule
 pythonmodule3
 upnpc-shared
@@ -34,3 +37,6 @@ dist/
 miniupnpc.egg-info/
 init
 miniupnpc.pc
+testaddr_is_reserved
+validateaddr_is_reserved
+wingenminiupnpcstrings

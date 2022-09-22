@@ -15,7 +15,7 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "dwyco_top.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
@@ -35,11 +35,10 @@ SimpleUserModel::~SimpleUserModel()
 
 static
 int
-send_forward(QString recipient, QString uid_folder, QString mid_to_forward)
+send_forward(QString recipient, QString mid_to_forward)
 {
-    QByteArray uid_f = QByteArray::fromHex(uid_folder.toLatin1());
     QByteArray bmid = mid_to_forward.toLatin1();
-    int compid = dwyco_make_forward_zap_composition(uid_f.constData(), uid_f.length(), bmid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(bmid.constData(), 1);
     if(compid == 0)
         return 0;
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
@@ -75,13 +74,11 @@ void
 SimpleUserModel::delete_all_selected()
 {
     int n = count();
-    //QList<SimpleUser *> to_remove;
     for(int i = 0; i < n; ++i)
     {
         SimpleUser *c = at(i);
         if(c->get_selected())
         {
-            //to_remove.append(c);
             QByteArray buid = c->get_uid().toLatin1();
             buid = QByteArray::fromHex(buid);
             if(dwyco_is_pal(buid.constData(), buid.length()))
@@ -92,16 +89,14 @@ SimpleUserModel::delete_all_selected()
     }
     hack_unread_count();
 
-    //dwyco_load_users2(1, 0);
     int total = 0;
-    dwyco_load_users2(TheDwycoCore->get_use_archived() ? 0 : 1, &total);
+    dwyco_load_users2(!TheDwycoCore->get_use_archived(), &total);
     TheDwycoCore->update_total_users(total);
     load_users_to_model();
-
 }
 
 void
-SimpleUserModel::send_forward_selected(QString uid_folder, QString mid_to_forward)
+SimpleUserModel::send_forward_selected(QString mid_to_forward)
 {
     int n = count();
     for(int i = 0; i < n; ++i)
@@ -111,7 +106,7 @@ SimpleUserModel::send_forward_selected(QString uid_folder, QString mid_to_forwar
         {
             QString uid = c->get_uid();
 
-            send_forward(uid, uid_folder, mid_to_forward);
+            send_forward(uid, mid_to_forward);
         }
     }
 
@@ -381,12 +376,12 @@ SimpleUserSortFilterModel::delete_all_selected()
 }
 
 void
-SimpleUserSortFilterModel::send_forward_selected(QString uid_folder, QString mid_to_forward)
+SimpleUserSortFilterModel::send_forward_selected(QString mid_to_forward)
 {
     SimpleUserModel *m = dynamic_cast<SimpleUserModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->send_forward_selected(uid_folder, mid_to_forward);
+    m->send_forward_selected(mid_to_forward);
 
 }
 
@@ -405,12 +400,12 @@ SimpleUserSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& 
     else if(!lsm && rsm)
         return false;
 
-    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
-    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
-    if(lreg && !rreg)
-        return true;
-    else if(!lreg && rreg)
-        return false;
+//    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
+//    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
+//    if(lreg && !rreg)
+//        return true;
+//    else if(!lreg && rreg)
+//        return false;
 
     int ret1 = QSortFilterProxyModel::lessThan(left, right);
     int ret2 = QSortFilterProxyModel::lessThan(right, left);

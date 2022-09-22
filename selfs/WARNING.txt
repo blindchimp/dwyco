@@ -1,0 +1,9 @@
+Tue Mar 15 11:31:13 MDT 2022
+
+i partially updated this to Qt 5.15, which doesn't work on older Android phones (i think api 21 is the oldest 5.15 will work on, or Android 5.0). since i still have some old 4.4 devices, trying to rebuild from the lastest will not work on those old devices. also, there are some weird permission problems that crash it on some newer android devices, which i can't be bothered to debug since all the phones i'm using now don't seem to have a problem. 
+
+anyway, going forward, selfs will need a going over to update it completely to 5.15, including some of the build stuff (i think there are some missing android config files like DwycoApp.java).
+
+
+
+

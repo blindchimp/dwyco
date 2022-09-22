@@ -168,7 +168,10 @@ vc_cvar::translate(VcIO o) const
         vc val = vc_list.get_first();
         if(val.type() == VC_STRING)
         {
-            DwString tmpl("static vc %2() {static vc var = %1;\nreturn Vcmap->get(var);\n}\n");
+            DwString tmpl("static vc %2() {static vc var = %1;\nstatic vc *range;static unsigned long cached_when;\n"
+"if(range && cached_when >= vc_cvar::Lookup_cache_counter) {return *range;}\n"
+            "cached_when = vc_cvar::Lookup_cache_counter;\n"
+"return Vcmap->get2(var, range);\n}\n");
             vc ourname = gensym();
             tmpl.arg(vc_to_c_vc(val), (const char *)ourname);
             o << tmpl.c_str();
@@ -478,6 +481,29 @@ trans_doprog(VCArglist *a, VcIO o)
 }
 
 vc
+trans_eval(VCArglist *a, VcIO o)
+{
+    // evaluate our only argument
+    o << "vc arg = ";
+    o << (*a)[0] << "();";
+    // this is a problem, because we  have folded "unevaled exprs"
+    // onto integers. i think the interpreter would be fine with
+    // something like eval(1), the force_eval just returns 1.
+    // here, we assume we got back a quoted dealy-bobber, which is
+    // a function pointer to be called to evaluate the expression.
+    // what might work better is either changing the definition of
+    // eval to reject unquoted expressions, or changing this to
+    // have a new type of vc that is explicitly "unevaled expression"
+    // so we can differentiate between regular old vc and vc's that
+    // refer to code. so, "eval" of an unquoted expression will
+    // cause your compiled code to crash.
+    o << "vc (*p)();\n";
+    o << "p = (vc (*)())(long)arg;\n";
+    o << "return (*p)();\n";
+    return vcnil;
+}
+
+vc
 trans_doloop(VCArglist *a, VcIO o)
 {
     DwString tmpl("vc ret;long l = %1();\nlong h = %2();\nvc var = %3();\n");
@@ -492,8 +518,6 @@ trans_doloop(VCArglist *a, VcIO o)
 
 }
 
-// note: obscure bug in interpreter too: the set expr is evaled before the var expr,
-// which is out of order according to spec's left to right ordering.
 vc
 trans_doforeach(VCArglist *a, VcIO o)
 {

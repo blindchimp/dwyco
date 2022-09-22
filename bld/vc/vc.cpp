@@ -21,6 +21,9 @@
 #ifndef DWYCO_NO_UVSOCK
 #include "vcuvsock.h"
 #endif
+#ifndef DWYCO_NO_TSOCK
+#include "vctsock.h"
+#endif
 
 vc::vc(double d)
 {
@@ -35,6 +38,11 @@ vc::vc(int i)
 vc::vc(long i)
 {
 	rep = new vc_int(i);
+}
+
+vc::vc(long long i)
+{
+    rep = new vc_int(i);
 }
 
 vc::vc(const char *s)
@@ -145,6 +153,14 @@ vc::vc(enum vc_type type, const char *str, long extra_parm)
 	vc_init(type, str, extra_parm);
 }
 
+vc::vc(enum vc_type tp, vc_int_dtor_fun d, void *arg)
+{
+    if(tp != VC_INT_DTOR)
+        oopanic("don't do that");
+    rep = new vc_int_dtor(arg, d);
+
+}
+
 void
 vc::vc_init(enum vc_type type, const char *str, long extra_parm)
 {
@@ -162,7 +178,8 @@ vc::vc_init(enum vc_type type, const char *str, long extra_parm)
 		rep = new vc_string(str);
 		break;
 	case VC_INT_DTOR:
-		rep = new vc_int_dtor(extra_parm, (vc_int_dtor_fun)str);
+        oopanic("use the other ctor");
+        //rep = new vc_int_dtor(extra_parm, (vc_int_dtor_fun)str);
 		break;
 
 	case VC_INT:
@@ -283,6 +300,11 @@ vc::vc_init(enum vc_type type, const char *str, long extra_parm)
         rep = new vc_uvsocket;
         break;
 #endif
+#ifndef DWYCO_NO_TSOCK
+    case VC_TSOCKET_STREAM:
+        rep = new vc_tsocket;
+        break;
+#endif
 
 	default:
 			oopanic("bad type in vc conversion");
@@ -306,6 +328,9 @@ RCQDEC(rep)
 		{
 			delete rep;
 		}
+#ifdef DWYCO_VC_THREADED
+        if(v != vc_nil::vcnilrep)
+#endif
 		++v->ref_count;
 #endif
 		rep = v;

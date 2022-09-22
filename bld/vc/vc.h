@@ -26,13 +26,12 @@
 
 #ifdef _Windows
 #define USE_WINSOCK
-#else
-#define USE_BERKSOCK
 #endif
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #define dwmax(x, y) (((x) < (y)) ? (y) : (x))
 #define dwmin(x, y) (((x) > (y)) ? (y) : (x))
@@ -41,7 +40,7 @@ class vcxstream;
 #define EXIN_DEV -1
 #define EXIN_PARSE -2
 
-void oopanic(const char *);
+[[noreturn]] void oopanic(const char *);
 void user_panic(const char *);
 void user_warning(const char *);
 class VcIOHack;
@@ -97,7 +96,9 @@ enum vc_type {
 	VC_SET_N = 32,
     VC_BAG_N = 33,
     VC_UVSOCKET_STREAM = 34,
-    VC_UVSOCKET_DGRAM = 35
+    VC_UVSOCKET_DGRAM = 35,
+    VC_TSOCKET_STREAM = 36,
+    VC_TSOCKET_DGRAM = 37
 };
 
 // note: the new gcc's are too pissy about
@@ -124,7 +125,8 @@ enum vcsocketmode {
 	VC_SET_SEND_BUF_SIZE,
 	VC_GET_SEND_BUF_SIZE,
 	VC_SET_TCP_NO_DELAY,
-	VC_BUFFER_SOCK
+        VC_BUFFER_SOCK,
+        VC_SET_BROADCAST
 };
 #define  VC_SOCK_ERROR 4
 #define  VC_SOCK_READ  2
@@ -166,7 +168,7 @@ template<class T> class DwVec;
 #include "dwsvec.h"
 typedef DwSVec<vc> VCArglist;
 
-#ifndef VC_NOEVAL
+#ifndef NO_VCEVAL
 #include "vcfext.h"
 class VcLexer;
 typedef vc (*VCFUNCP0)();
@@ -184,6 +186,7 @@ typedef vc (*VCTRANSFUNCP)(VCArglist *, VcIO);
 typedef int (*VC_ERR_CALLBACK)(vc *);
 typedef void (*VC_FOREACH_CALLBACK)(vc);
 typedef void (*VC_FOREACH_CALLBACK2)(vc, vc);
+typedef void (*vc_int_dtor_fun)(void *);
 
 extern const vc vcnil;
 extern const vc vctrue;
@@ -209,6 +212,7 @@ private:
 	vc_default *rep;
 	
 	void vc_init(enum vc_type, const char *, long extra_parm);
+
 	// this is an awful hack, should get rid of it.
 friend class vc_memberfun;
 friend class vc_object;
@@ -235,6 +239,7 @@ public:
 
         static vc set_to_vector(vc set);
         static vc map_to_vector(vc map);
+        static vc tree_to_vector(vc tree);
 
     // these are needed to support the lazy-Qmap stuff
 	void *operator new(size_t, vc *v) {return v;}
@@ -263,10 +268,12 @@ public:
 	vc(double d);
 	vc(int i);
 	vc(long i);
+    vc(long long);
 	vc(const char *s);
-        vc(const char *s, int len);
+    vc(const char *s, int len);
 
 	vc(enum vc_type, const char * = "nil", long extra_parm = 0);
+        vc(enum vc_type, vc_int_dtor_fun d, void *arg);
 
 #ifndef NO_VCEVAL
     vc(VcLexer&);
@@ -462,7 +469,8 @@ decl_rel(str)
 	notvirtual operator long() const ;
 	notvirtual operator char() const ;
 	notvirtual operator void *() const;
-	
+    notvirtual operator long long() const;
+
 	void print_top(VcIO o);
 	void print(VcIO o);
 	notvirtual void printOn(VcIO outputStream) ;
@@ -541,6 +549,9 @@ vc::vc(const vc& v)
 #ifdef USE_RCT
 RCQINC(v.rep)
 #else
+#ifdef DWYCO_VC_THREADED
+    if(v.rep != vc_nil::vcnilrep)
+#endif
 	++v.rep->ref_count;
 #endif
 	rep = v.rep;
@@ -572,6 +583,9 @@ vc::operator=(const vc& v)
 RCQINC(v.rep)
 RCQDEC(rep)
 #else
+#ifdef DWYCO_VC_THREADED
+        if(v.rep != vc_nil::vcnilrep)
+#endif
 		++v.rep->ref_count;
 		if(rep != vc_nil::vcnilrep && --rep->ref_count == 0) 
 		{

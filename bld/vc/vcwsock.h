@@ -12,13 +12,6 @@
 
 #include "vc.h"
 //// Winsock implementation of vc sockets
-//#ifdef USE_WINSOCK
-//#include <WinSock2.h>
-//#endif
-
-//#ifdef USE_BERKSOCK
-//#include "vcberk.h"
-//#endif
 
 #include "vcsock.h"
 class vc_winsock;

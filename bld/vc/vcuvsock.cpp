@@ -50,9 +50,8 @@ vc_to_sockaddr(const vc& addr, sockaddr_in& out)
     out = uv_ip4_addr(ip.c_str(), port);
 }
 
-static
 vc
-sockaddr_to_vc(struct sockaddr *sapi, int len)
+vc_uvsocket::sockaddr_to_vc(struct sockaddr *sapi, int len)
 {
     char dst[2048];
     char tmp_str[2048];
@@ -93,7 +92,7 @@ vc_uvsocket::run_loop_once()
 vc_uvsocket::vc_uvsocket() :
     vp(this),
     getq(this),
-    putq(this),
+    //putq(this),
     readx(this, 0, 0, vcxstream::CONTINUOUS_READAHEAD)
 {
 	listening = 0;
@@ -113,9 +112,8 @@ vc_uvsocket::set_syntax(int s)
     return 1;
 }
 
-static
 void
-close_cb(uv_handle_t *h)
+vc_uvsocket::close_cb(uv_handle_t *h)
 {
     DwVP vp = DwVP::cookie_to_ptr((long)h->data);
 	if(vp.is_valid())
@@ -171,7 +169,7 @@ vc_uvsocket::parse_buffer(int once)
     vc obj;
     vcxstream& vcx = readx;
 
-    tmpbuf = tailstr.c_str();
+    tmpbuf = tailstr.ref_str();
     tmplen = tailstr.length();
     //long used = tailstr.length();
     try
@@ -278,9 +276,18 @@ vc_uvsocket::parse_buffer(int once)
 
     // note: it is ok if tmplen is 0
     if(tmplen == 0) // everything was consumed
-        tailstr = "";
+        tailstr.reset();
     else
-        tailstr = DwString(tmpbuf, 0, tmplen);
+    {
+        tailstr.consume_all_but(tmplen);
+#if 0
+        if(!(tmpbuf == tailstr.ref_str() && tailstr.length() == tmplen))
+        {
+            tailstr.reset();
+            tailstr.append(tmpbuf, tmplen);
+        }
+#endif
+    }
 	return 1;
 }
 
@@ -294,9 +301,9 @@ alloc_cb(uv_handle_t *handle, size_t sugg_size)
     return buf;
 }
 
-static
+
 void
-read_cb(uv_stream_t *stream, ssize_t nread, uv_buf_t buf)
+vc_uvsocket::read_cb(uv_stream_t *stream, ssize_t nread, uv_buf_t buf)
 {
     if(nread == 0)
     {
@@ -356,15 +363,14 @@ read_cb(uv_stream_t *stream, ssize_t nread, uv_buf_t buf)
         free(buf.base);
         return;
     }
-    vcu->tailstr += DwString(buf.base, 0, nread);
+    vcu->tailstr.append(buf.base, nread);
     free(buf.base);
 
     vcu->parse_buffer(0);
 }
 
-static
 void
-listen_cb(uv_stream_t *req, int status)
+vc_uvsocket::listen_cb(uv_stream_t *req, int status)
 {
     DwVP p = DwVP::cookie_to_ptr((long)req->data);
     if(!p.is_valid())
@@ -498,13 +504,13 @@ vc_uvsocket::socket_close(int close_info)
 
     tcp_handle = 0;
     getq.clear();
-    putq.clear();
+    //putq.clear();
     return vctrue;
 }
 
-static
+
 void
-shutdown_cb(uv_shutdown_t *req, int status)
+vc_uvsocket::shutdown_cb(uv_shutdown_t *req, int status)
 {
     DwVP p = DwVP::cookie_to_ptr((long)req->data);
     if(!p.is_valid())
@@ -541,9 +547,8 @@ vc_uvsocket::socket_shutdown(int how)
     return vctrue;
 }
 
-static
 void
-connect_cb(uv_connect_t *req, int status)
+vc_uvsocket::connect_cb(uv_connect_t *req, int status)
 {
     DwVP p = DwVP::cookie_to_ptr((long)req->data);
 	if(!p.is_valid())
@@ -637,8 +642,8 @@ struct overflow_req
     uv_buf_t ubuf;
 };
 
-static void
-write_cb(uv_write_t *req, int status)
+void
+vc_uvsocket::write_cb(uv_write_t *req, int status)
 {
     overflow_req *o = (overflow_req *)req->data;
     DwVP p = DwVP::cookie_to_ptr(o->cookie);
@@ -751,7 +756,7 @@ vc_uvsocket::socket_get_write_q_size()
 {
     if(tcp_handle)
         return (long)tcp_handle->write_queue_size;
-    return vcnil;
+    return 0;
 }
 
 int

@@ -25,6 +25,7 @@ ifeq ($(DWYCO_APP), "rando")
 LOCAL_CPPFLAGS += -DDWYCO_NO_THEORA_CODEC -DDWYCO_NO_GSM -DDWYCO_NO_VORBIS -DDWYCO_NO_UPNP -DDWYCO_NO_VIDEO_MSGS -DDWYCO_NO_VIDEO_FROM_PPM
 else
 LOCAL_CPPFLAGS += -DDWYCO_THREADED_ENCODE
+#LOCAL_CPPFLAGS += -DDWYCO_BACKGROUND_SYNC
 endif
 
 LOCAL_SRC_FILES=  \
@@ -74,19 +75,10 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
-cllaccpt.cpp \
-ratetwkr.cpp \
-rawfiles.cpp \
 syncvar.cc \
-uicfg.cc \
-usercnfg.cpp \
-vfwinvst.cpp \
-vidinput.cpp \
-zapadv.cpp \
 doinit.cc \
 netcod.cc \
 tcode.cc \
-sleep.cc \
 statfun.cc \
 dirth.cc \
 rlc.cc \
@@ -107,7 +99,6 @@ globs.cc \
 fl.cc \
 mmserv.cc \
 tl.cc \
-cdcpal.cc \
 cdcpal2.cc \
 dlli.cpp \
 mcc.cpp \
@@ -122,7 +113,7 @@ autoup.cpp \
 dmdsrv.cc \
 fnmod.cc \
 xinfo.cpp \
-prfcache.cpp \
+profiledb.cpp \
 vidcvt.cc \
 callq.cpp \
 asshole.cpp \
@@ -141,7 +132,7 @@ chatgrid.cpp \
 chatq.cpp \
 sysattr.cpp \
 vorbconv.cc \
-ezset.cpp \
+ezset2.cpp \
 linid.cpp \
 se.cpp \
 theoracol.cc \
@@ -151,7 +142,6 @@ sproto.cpp \
 mmchan3.cpp \
 trc.cpp \
 glob/glob.c \
-pkcache.cpp \
 ssns.cpp \
 qsend.cpp \
 directsend.cpp \
@@ -165,12 +155,21 @@ aqext_android.cpp \
 backsql.cpp \
 upnp.cpp \
 simplesql.cpp \
-aqkey.cpp
+aqkey.cpp \
+pulls.cpp \
+dhgsetup.cpp \
+grpmsg.cpp \
+mmchan_sync.cpp \
+sync_sendq.cpp \
+bgapp.cpp \
+synccalls.cpp \
+netlog.cpp \
+activeuid.cpp
 
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls
 else
-LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls
+LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls miniupnpc
 endif
 
 LOCAL_C_INCLUDES := \
@@ -191,6 +190,7 @@ $(LOCAL_PATH)/../speex/include \
 $(LOCAL_PATH)/../theora/include \
 $(LOCAL_PATH)/../ogg/include \
 $(LOCAL_PATH)/../vorbis/include \
+$(LOCAL_PATH)/../miniupnp/miniupnp-master/miniupnpc \
 $(APP_PROJECT_PATH)
 
 LOCAL_CPPFLAGS += -fpermissive -frtti

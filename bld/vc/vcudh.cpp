@@ -25,9 +25,7 @@
 #include <fcntl.h>
 #endif
 #include "dh.h"
-#include "rng.h"
 #include "dh2.h"
-#include "files.h"
 #include "hex.h"
 #include "vcudh.h"
 #include "randpool.h"
@@ -48,7 +46,6 @@ using namespace CryptoPP;
 static DH *EphDH;
 static DH2 *UDH;
 
-//static AutoSeededRandomPool *Rng;
 static RandomPool *Rng;
 
 // XXX this really needs to be beefed up on windows... if we have access
@@ -58,7 +55,7 @@ init_rng(vc entropy)
 {
     // seed, don't bother with it, just use
     // whatever rubbish is on the stack.
-    // this bothers valgrind, so init it.
+    // but, this bothers valgrind, so init it.
 #define N 8
     byte a[N];
     byte k[N];
@@ -270,11 +267,14 @@ dh_store_and_forward_material(vc other_pub, vc& session_key_out)
     return ret;
 }
 
-// this is like the above, except it expects an array pubkey vectors
+// this is like the above, except it expects an array of pubkey vectors
 // and returns an array of encrypted keys and public key material to go with it.
 // this is used for multi-recipient encryption.
 // note: there is still only one session key returned. this means that any of the
-// public material can be used to decrypt the single key returned.
+// private material can be used to decrypt the single key returned.
+// note2: you *can* send the results of this function to the single-key
+// store_and_forward_get_key, which means old software should still be
+// able to decrypt messages
 vc
 dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
 {
@@ -289,6 +289,12 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
     for(int j = 0; j < other_pub_vec.num_elems(); ++j)
     {
         vc other_pub = other_pub_vec[j];
+        if(other_pub.is_nil())
+        {
+            ret[2 * j] = vcnil;
+            ret[2 * j + 1] = vcnil;
+            continue;
+        }
         // generate a key from their static public material
         SecByteBlock privk(EphDH->PrivateKeyLength());
         SecByteBlock pubk(EphDH->PublicKeyLength());
@@ -331,9 +337,9 @@ dh_store_and_forward_material2(vc other_pub_vec, vc& session_key_out)
     // keys in a messages, just in case.
     ECB_Mode<AES>::Encryption kc;
     kc.SetKey(skey, skey.SizeInBytes());
-    byte buf[8];
+    byte buf[16];
     memset(buf, 0, sizeof(buf));
-    byte checkstr[8];
+    byte checkstr[sizeof(buf)];
     kc.ProcessData(checkstr, buf, sizeof(checkstr));
     // use just first 3 bytes
     ret.append(vc(VC_BSTRING, (const char *)checkstr, 3));
@@ -357,6 +363,8 @@ vclh_sf_material(vc other_pub, vc key_out)
 
 // sfpack is the package of info created by dh_store_and_forward_material, presumably
 // created by the sender. here is where we do the agreement and recover the session key.
+
+static
 vc
 dh_store_and_forward_get_key(vc sfpack, vc our_material)
 {
@@ -401,60 +409,103 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
     return ret;
 }
 
-// sfpack is the package of info created by dh_store_and_forward_material, presumably
+// sfpack is the package of info created by dh_store_and_forward_material2, presumably
 // created by the sender. here is where we do the agreement and recover the session key.
+// the first key that checks out with the key check string is returned.
+// since the key check string is only 24 bits long, there is a tiny chance the wrong
+// key will be returned.
+// note: for compatibility, we assume index 0 of sf_pack and
+// our_material correspond to one set of keys (the old set of
+// non-group keys).
+// the second item in sfpack is the group encrypted key, and
+// since we might have multiple group keys, each of the items
+// in our_material is checked to see if it can decrypt the key.
+// this is a bit of a kluge i will have to think about, since
+// it is mainly used because remote senders may not have the latest
+// group public key if a recipient is changing groups.
+
+static
+vc
+check_and_get_key(vc pack, vc our_material, vc checkstr)
+{
+    SecByteBlock akey(EphDH->AgreedValueLength());
+    ECB_Mode<AES>::Encryption kc;
+
+    if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[DH_STATIC_PRIVATE],
+                     (const byte *)(const char *)pack[1]))
+        return vcnil;
+
+    vc kdk(VC_BSTRING, (const char *)akey.data(), akey.SizeInBytes());
+
+    kdk = sha(kdk);
+
+    vc sk_enc = pack[0];
+    if(!(sk_enc.type() == VC_STRING && sk_enc.len() <= kdk.len()))
+    {
+        return vcnil;
+    }
+
+    const byte *k = (const byte *)(const char *)sk_enc;
+    SecByteBlock sk(sk_enc.len());
+    const byte *k2 = (const byte *)(const char *)kdk;
+
+    for(int ki = 0; ki < sk_enc.len(); ++ki)
+    {
+        sk[ki] = k[ki] ^ k2[ki];
+    }
+
+    // test the key, return if it looks ok
+
+    kc.SetKey(sk, sk.SizeInBytes());
+    byte buf[16];
+    memset(buf, 0, sizeof(buf));
+    byte ck_str[sizeof(buf)];
+    kc.ProcessData(ck_str, buf, sizeof(ck_str));
+    // use just first 3 bytes
+    if(checkstr == vc(VC_BSTRING, (const char *)ck_str, 3))
+    {
+        vc ret(VC_BSTRING, (const char *)sk.BytePtr(), sk.SizeInBytes());
+        return ret;
+    }
+    return vcnil;
+}
+
 vc
 dh_store_and_forward_get_key2(vc sfpack, vc our_material)
 {
-
-    if((sfpack.num_elems() & 1) != 1 || sfpack.num_elems() < 3)
+    if(sfpack.type() != VC_VECTOR || our_material.type() != VC_VECTOR)
         return vcnil;
 
-    int n = sfpack.num_elems() / 2;
-    vc checkstr = sfpack[2 * n + 1];
-    SecByteBlock akey(EphDH->AgreedValueLength());
-    ECB_Mode<AES>::Encryption kc;
-    for(int i = 0; i < n; ++i)
+    if((sfpack.num_elems() & 1) != 1 || sfpack.num_elems() < 3)
     {
-        if(!EphDH->Agree(akey, (const byte *)(const char *)our_material[i][DH_STATIC_PRIVATE],
-                         (const byte *)(const char *)sfpack[2 * i + 1]))
-            return vcnil;
-
-        vc kdk(VC_BSTRING, (const char *)akey.data(), akey.SizeInBytes());
-
-        kdk = sha(kdk);
-
-        vc sk_enc = sfpack[2 * i];
-        if(!(sk_enc.type() == VC_STRING && sk_enc.len() <= kdk.len()))
-        {
-            return vcnil;
-        }
-
-        const byte *k = (const byte *)(const char *)sk_enc;
-        SecByteBlock sk(sk_enc.len());
-        const byte *k2 = (const byte *)(const char *)kdk;
-
-        for(int i = 0; i < sk_enc.len(); ++i)
-        {
-            sk[i] = k[i] ^ k2[i];
-        }
-
-        // test the key, return if it looks ok
-
-        kc.SetKey(sk, sk.SizeInBytes());
-        byte buf[8];
-        memset(buf, 0, sizeof(buf));
-        byte ck_str[8];
-        kc.ProcessData(ck_str, buf, sizeof(ck_str));
-        // use just first 3 bytes
-        if(checkstr == vc(VC_BSTRING, (const char *)checkstr, 3))
-        {
-            vc ret(VC_BSTRING, (const char *)sk.BytePtr(), sk.SizeInBytes());
-            return ret;
-        }
-
+        // maybe it is an old pack, try the old decryption
+        return dh_store_and_forward_get_key(sfpack, our_material[0]);
     }
 
+    int n = sfpack.num_elems() / 2;
+    vc checkstr = sfpack[2 * n];
+    // some message may not have a p2p key, but might have a
+    // group key (below)
+    vc rk;
+    if(sfpack[0].type() == VC_STRING && sfpack[1].type() == VC_STRING)
+    {
+        rk = check_and_get_key(sfpack, our_material[0], checkstr);
+        if(!rk.is_nil())
+            return rk;
+    }
+
+    if(sfpack[2].type() == VC_STRING && sfpack[3].type() == VC_STRING)
+    {
+        vc gpack(VC_VECTOR);
+        gpack[0] = sfpack[2];
+        gpack[1] = sfpack[3];
+        for(int i = 1; i < our_material.num_elems(); ++i)
+        {
+            rk = check_and_get_key(gpack, our_material[i], checkstr);
+            if(!rk.is_nil())
+                return rk;
+        }
+    }
     return vcnil;
 }
 

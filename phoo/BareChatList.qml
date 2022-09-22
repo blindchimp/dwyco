@@ -11,6 +11,7 @@
 // attached to a chatbox or something as a side-bar, since you have more
 // room.
 
+import QtQml 2.12
 import QtQuick 2.12
 import dwyco 1.0
 import QtQuick.Layouts 1.12
@@ -25,7 +26,7 @@ Item {
             property int showit
             showit: (REVIEWED && REGULAR) || show_unreviewed
             height: showit ? picht() : 0
-            width: parent.width
+            width: ListView.view.width
             //opacity: {multiselect_mode && selected ? 0.5 : 1.0}
             color: primary_dark
             border.width: 1
@@ -64,7 +65,7 @@ Item {
                         z:3
                         anchors.top:parent.top
                         anchors.left:parent.left
-                        visible: {unseen_count > 0 ? true : false }
+                        visible: any_unviewed
                     }
                 }
 
@@ -113,7 +114,7 @@ Item {
 
     Connections {
         target: core
-        onSys_invalidate_profile: {
+        function onSys_invalidate_profile(uid) {
             console.log("chatlist invalidate " + uid)
         }
     }

@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+#include <QApplication>
 #include <QDialog>
 #include <QSettings>
 #include <QtNetwork/QHostInfo>
@@ -24,13 +25,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "ui_mainwin.h"
 #include "mainwin.h"
 #include "adminw.h"
 #include "autoupdate.h"
 #include "dlli.h"
 #include "dvp.h"
-#include "dwstr.h"
 #include "tfhex.h"
 #if 0
 #if defined(LINUX) && !defined(MAC_CLIENT)
@@ -95,7 +94,7 @@ int DWYCOCALLCONV dwyco_call_screening_callback(int chan_id,
         const char *uid, int len_uid,
         int *accept_call_style,
         char **error_msg);
-void DWYCOCALLCONV dwyco_alert_callback(const char *cmd, void *, int, const char *);
+//void DWYCOCALLCONV dwyco_alert_callback(const char *cmd, void *, int, const char *);
 void DWYCOCALLCONV dwyco_debug_callback(int status, const char *desc, int, void *);
 void DWYCOCALLCONV dwyco_call_bandwidth_callback(int chan_id, const char *txt, int, void *);
 
@@ -351,11 +350,7 @@ int main(int argc, char *argv[])
     // things like dropbox and btsync.
     QCoreApplication::setOrganizationName("dwyco");
     QCoreApplication::setOrganizationDomain("dwyco.com");
-    // if we run one copy of a cdc-x install on multiple machines,
-    // identify the settings for the machine by local hostname.
-    // this allows for differences in devices and stuff on that host.
-    QString LocalHostName = QHostInfo::localHostName();
-    QCoreApplication::setApplicationName(QString("cdc-x") + LocalHostName);
+    QCoreApplication::setApplicationName(QString("cdc-x"));
     QSettings::setDefaultFormat(QSettings::IniFormat);
     // note: need to set the path to the right place, same as fn_pfx for dll
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);
@@ -545,7 +540,7 @@ int main(int argc, char *argv[])
     );
 #endif
 
-
+    dwyco_set_disposition("foreground", 10);
     dwyco_init();
     //printf("%s\n", a);
     //fflush(stdout);
@@ -616,7 +611,7 @@ int main(int argc, char *argv[])
 
     //dwyco_set_pal_auth_callback(dwyco_pal_auth_callback);
     dwyco_set_call_screening_callback(dwyco_call_screening_callback);
-    dwyco_set_alert_callback(dwyco_alert_callback);
+    //dwyco_set_alert_callback(dwyco_alert_callback);
 #ifndef CDCX_RELEASE
     dwyco_set_debug_message_callback(dwyco_debug_callback);
 #endif
@@ -673,8 +668,11 @@ int main(int argc, char *argv[])
     dwyco_set_setting("zap/always_accept", "1");
     dwyco_set_setting("zap/always_server", "0");
     // TCP only calling
-    dwyco_set_setting("net/media_select", "1");
-    dwyco_set_setting("net/force_non_firewall_friendly", "0");
+    dwyco_set_setting("net/call_setup_media_select", "1");
+    //dwyco_set_setting("net/force_non_firewall_friendly", "0");
+    dwyco_set_setting("sync/eager", "1");
+    dwyco_set_setting("net/app_id", "phoo");
+    dwyco_set_setting("net/broadcast_port", "48903");
 
     // note: for video capture,
     // Linux & Mac ignore the setting and always uses external video
@@ -722,7 +720,6 @@ int main(int argc, char *argv[])
             0,
             0
         );
-#endif
         dwyco_set_raw_files(
             "vidfile.lst",
             "",
@@ -730,6 +727,7 @@ int main(int argc, char *argv[])
             0,
             0 // preload
         );
+#endif
 #if 0
         HasCamera = 1;
         HasCamHardware = 1;
@@ -788,6 +786,19 @@ int main(int argc, char *argv[])
 
 
     ClientGod = !!getenv("kk27g");
+    int psz;
+    if(!setting_get("pointsize", psz))
+    {
+        setting_put("pointsize", 0);
+        settings_save();
+        psz = 0;
+    }
+    if(psz != 0)
+    {
+        QFont f(QGuiApplication::font());
+        f.setPointSize(psz);
+        QGuiApplication::setFont(f);
+    }
     mainwinform mainwin;
     adminw *admin = new adminw;
 
@@ -800,6 +811,10 @@ int main(int argc, char *argv[])
     mainwin.restoreGeometry(settings.value("mainwin-geometry").toByteArray());
 
     int i = app.exec();
+    // this is more or less an emergency where the system state may be
+    // goofy, like after a panic or restore operation.
+    if(DieDieDie == 1)
+        return 0;
     //dwyco_empty_trash();
     if(!Inhibit_powerclean)
         dwyco_power_clean_safe();
@@ -823,7 +838,7 @@ int main(int argc, char *argv[])
     if(!d)
     {
 #if defined(LINUX) || defined(MAC_CLIENT)
-        QProcess::startDetached(QString("./dwycobg ") + sport);
+        QProcess::startDetached(QString("./dwycobg"), QStringList(sport));
 #else
 
         PROCESS_INFORMATION pi;
@@ -853,6 +868,14 @@ int main(int argc, char *argv[])
 #ifdef LEAK_CLEANUP
     void mainwin_leak_cleanup();
     mainwin_leak_cleanup();
+#endif
+#ifdef LINUX
+    // on linux + qt5.12, there is some problem with the exit processing, maybe having something
+    // to do with webengine that causes the "return" to just hang for seconds.
+    // as much as i hate to do this, i think flushing fd's is already
+    // done at this point, so i'm just hacking this to quit immediately.
+    //
+    _exit(0);
 #endif
     return i;
 }

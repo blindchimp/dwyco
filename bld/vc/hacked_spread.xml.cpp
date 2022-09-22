@@ -11,7 +11,6 @@
 #include "vccomp.h"
 #include "sp.h"
 #include "dwvecp.h"
-#include "vcmap.h"
 #include "vcxstrm.h"
 
 static DwVecP<void> Arg_stk;
@@ -23,7 +22,6 @@ static DwVec<vc> *outbind_str;
 static DwVec<vc> *outbind_double;
 typedef DwVec<vc> vvc;
 
-template class DwVecP<void>;
 static
 int
 start_wrapper()

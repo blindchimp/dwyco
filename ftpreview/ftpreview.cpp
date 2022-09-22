@@ -11,13 +11,16 @@
 #include <stdio.h>
 #include "dwstr.h"
 
+namespace dwyco {
+void simple_init_codec(const char *);
+}
+
 int
 main(int argc, char **argv)
 {
     if(argc != 2)
 	exit(1);
-    void simple_init_codec(const char *);
-    simple_init_codec("log.out");
+    dwyco::simple_init_codec("log.out");
     DwString out(argv[1]);
     out += ".ppm";
     int viewid = dwyco_make_zap_view_file_raw(argv[1]);

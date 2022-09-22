@@ -11,7 +11,7 @@
 #include "ctlist.h"
 #include "dlli.h"
 #include "getinfo.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 
 SimpleContactModel::SimpleContactModel(QObject *parent) :
     QQmlObjectListModel<SimpleContact>(parent, "display")
@@ -93,6 +93,13 @@ SimpleContactModel::load_users_to_model()
         QByteArray phone = ql.get<QByteArray>(i, DWYCO_CONTACT_LIST_PHONE);
         add_contact_to_model(name, phone, email);
     }
+}
+
+void
+SimpleContactModel::set_model_to_single_email(const QString& email)
+{
+    clear();
+    add_contact_to_model("", "", email.toLatin1());
 }
 
 void send_contact_query(QList<QString> emails);

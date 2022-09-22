@@ -60,7 +60,7 @@
 #ifdef _Windows
 #include <time.h>
 #endif
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
 #include "dwyco_top.h"
 //#include "callsm_objs.h"
 //#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
@@ -106,6 +106,8 @@ extern int HasAudioInput;
 extern int HasAudioOutput;
 extern int HasCamera;
 extern int HasCamHardware;
+
+int DwycoCore::Android_migrate;
 
 QMap<QByteArray, QLoc> Hash_to_loc;
 QMap<QByteArray,QByteArray> Hash_to_review;
@@ -346,6 +348,7 @@ copy_and_tweak_jpg(const QString& fn, QByteArray& dest_out)
     return 0;
 }
 
+[[noreturn]]
 void
 cdcxpanic(const char *)
 {
@@ -850,26 +853,205 @@ DwycoCore::set_invisible_state(int s)
     dwyco_set_invisible_state(s);
 }
 
+// if they installed externally, copy the files in to the local
+// app storage, and rename the data folder.
+// this should only need to be done once, and the process should be
+// exited immediately after doing the dir name swap
+//
+// both dirs should be absolute paths (this appears to be ok with current
+// version of android)
+// src_dir will be something like '/storage/emulated/yada/.../Documents'
+// target_pfx should be something for the internal storage for the app, usually
+// like '/data/com.dwyco.rando/yada/files'
+// the files from src_dir are recursively copied into "target_pfx" + "/upg/"
+// and the migration should rename "upg" to dwyco/rando as if doing
+// mv "target"+ "dwyco" "target" + "dwyco.old", in case it got created before
+// if "dwyco.old" already exists, try dwyco.old2, etc. only try a few before giving up.
+// mkdir target/rando
+// mv target/upg target/dwyco/rando
+//
+static
+void
+one_time_migrate(const QString& src_dir, const QString& target_pfx)
+{
+    QDirIterator di(src_dir, QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDirIterator::Subdirectories);
+    //QString target_pfx = "/home/dwight/Downloads/";
+    while(di.hasNext())
+    {
+        QString sfn = di.next();
+        QString dfn = sfn;
+        int i = dfn.indexOf("dwyco/rando");
+        if(i != -1)
+        {
+            dfn.remove(0, i + 11);
+            dfn.prepend("/");
+            dfn.prepend(target_pfx);
+            QString path = dfn;
+            path.truncate(path.lastIndexOf("/"));
+            //printf("%s\n", path.toLatin1().constData());
+            QDir d(path);
+            d.mkpath(path);
+        }
+        //printf("%s %s\n", sfn.toLatin1().constData(), dfn.toLatin1().constData());
+        QFile::copy(sfn, dfn);
+    }
+}
+
+void
+DwycoCore::one_time_copy_files()
+{
+    QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    src += "/dwyco/rando";
+    QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    dst += "/dwyco/upg";
+    one_time_migrate(src, dst);
+    //QThread::sleep(10);
+}
+
+void
+DwycoCore::background_migrate()
+{
+    // sigh, this won't compile with android ndk's up to 23.2
+    //QThread *q = QThread::create(DwycoCore::one_time_copy_files);
+    auto q = new fuck_me_with_a_brick;
+    connect(q, SIGNAL(finished()), this, SIGNAL(migration_complete()));
+    q->start();
+}
+
+void
+DwycoCore::background_reindex()
+{
+    auto q = new fuck_me_with_a_brick2;
+    connect(q, SIGNAL(finished()), this, SIGNAL(reindex_complete()));
+    q->start();
+}
+
+void
+DwycoCore::do_reindex()
+{
+    dwyco_init();
+    dwyco_exit();
+    //QThread::sleep(10);
+}
+
+void
+DwycoCore::directory_swap()
+{
+    // note: we update the User_pfx so we can update the settings file to
+    // flag that it has been migrated.
+    // then rename the "upg" to "rando"
+    QString src = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    src += "/dwyco/upg";
+    QDir dsrc(src);
+    if(!dsrc.exists())
+        return;
+    // if the target already exists, it might be a partial migration, try to get
+    // rid of it
+    QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    dst += "/dwyco/rando";
+    QDir ddst(dst);
+    if(ddst.exists())
+    {
+        int i;
+        for(i = 0; i < 10; ++i)
+            if(ddst.rename(dst, dst + "." + QString::number(i)))
+                break;
+        if(i == 10)
+            return;
+    }
+    User_pfx = src.toUtf8();
+    settings_load();
+    setting_put("android-migrate", "done");
+    if(!dsrc.rename(src, dst))
+        cdcxpanic("failed migration");
+
+}
+
 
 static
 void
 setup_locations()
 {
-    QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
-#ifdef ANDROID
-    if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+    QStandardPaths::StandardLocation filepath;
+
+    filepath = QStandardPaths::AppDataLocation;
+
+#if defined(ANDROID)
+    QString localdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    localdir += "/dwyco/rando/";
+    User_pfx = localdir.toUtf8();
+    QString am;
+    if(!settings_load())
     {
-        // we aren't going anywhere without being able to setup our state
-        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
-        if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        // either new or they have something in documents that needs to be migrated
+        QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        src += "/dwyco/rando";
+        User_pfx = src.toUtf8();
+#ifdef ANDROID
+        bool check_for_update = false;
+
+        if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
         {
-            // this needs to be thought out a little more... if you deny this, you can't
-            // access your photos on the device easily. maybe need to just request "read"
-            // in this case.
-            filepath = QStandardPaths::AppDataLocation;
-            //exit(0);
+            // if they let us, check if there is anything out there
+            QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+            if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+            {
+
+            }
+            else
+            {
+                check_for_update = true;
+            }
+        }
+        else
+            check_for_update = true;
+
+        if(check_for_update && settings_load())
+        {
+            // do the migration
+            if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+            {
+                // we aren't going anywhere without being able to setup our state
+                QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
+                if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                {
+                    // this needs to be thought out a little more... if you deny this, you can't
+                    // access your photos on the device easily. maybe need to just request "read"
+                    // in this case.
+                    filepath = QStandardPaths::AppDataLocation;
+                    //exit(0);
+                }
+                else
+                {
+                    filepath = QStandardPaths::DocumentsLocation;
+                    DwycoCore::Android_migrate = 1;
+                }
+                if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                {
+                    // we aren't going anywhere without being able to setup our state
+                    QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+                    if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                    {
+                        // can't do migration, we'll probably crash soon since we won't be able to get
+                        // access to documents location.
+                    }
+                    else
+                    {
+                        filepath = QStandardPaths::DocumentsLocation;
+                        DwycoCore::Android_migrate = 1;
+                    }
+                }
+
+            }
+            else
+#endif
+            {
+                filepath = QStandardPaths::DocumentsLocation;
+                DwycoCore::Android_migrate = 1;
+            }
         }
     }
+
 #endif
     //
     QStringList args = QGuiApplication::arguments();
@@ -903,6 +1085,10 @@ setup_locations()
         }
 
     }
+    {
+        QDir shares(userdir + "shares");
+        shares.mkpath(userdir + "shares");
+    }
 #ifdef ANDROID
     QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
     QFile::copy("assets:/license.txt", userdir + "license.txt");
@@ -911,13 +1097,13 @@ setup_locations()
         QFile::copy("assets:/servers2", userdir + "servers2");
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
 #else
-    QFile::copy(":androidinst/assets/dwyco.dh", userdir + "dwyco.dh");
-    QFile::copy(":androidinst/assets/license.txt", userdir + "license.txt");
-    QFile::copy(":androidinst/assets/no_img.png", userdir + "no_img.png");
+    QFile::copy(":androidinst2/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst2/assets/license.txt", userdir + "license.txt");
+    QFile::copy(":androidinst2/assets/no_img.png", userdir + "no_img.png");
     if(!QFile(userdir + "servers2").exists())
-        QFile::copy(":androidinst/assets/servers2", userdir + "servers2");
+        QFile::copy(":androidinst2/assets/servers2", userdir + "servers2");
     QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
-    QFile::copy(":androidinst/assets/v21.ver", userdir + "v21.ver");
+    QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
 #endif
     dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
     // can't do this call until prefixes are set since it wants to init the log file
@@ -987,6 +1173,34 @@ setup_locations()
     }
 
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, userdir);
+
+    // this is where we would set a flag if a one-time upgrade is needed.
+    // the qml would immediately put up a "wait..." dialog and launch the
+    // copy operation in a background thread, without initializing anything else.
+    //
+    // note: we *know* that if we are getting the settings here we are running
+    // on some kind of install. if that looks like it is in the "documents" folder
+    // we assume it is on android "external storage" and needs to be imported.
+#if 0 && defined( ANDROID)
+    QString am;
+    if(!setting_get("android-migrate", am))
+    {
+        // haven't completed it yet, so check to see if it looks like we are on
+        // external storage. note: do not check "write" permission, because that might
+        // have been revoked at some point (maybe?) not sure.
+        if(userdir.contains(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)))
+        {
+            DwycoCore::Android_migrate = 1;
+        }
+        else
+        {
+            // we probably already were in the app data location, so just pretend we
+            // migrated
+            setting_put("android-migrate", "done");
+        }
+
+    }
+#endif
 
 
 }
@@ -1526,7 +1740,7 @@ DwycoCore::init()
     Init_ok = 1;
     dwyco_set_setting("zap/always_server", "0");
     dwyco_set_setting("call_acceptance/auto_accept", "0");
-    dwyco_set_setting("net/listen", "1");
+    dwyco_set_setting("net/listen", "0");
 
     //new profpv;
     // the order of these is important, you have to clear the cache
@@ -1555,7 +1769,7 @@ DwycoCore::init()
     //connect(this, SIGNAL(sys_invalidate_profile(QString)), TheIgnoreListModel, SLOT(uid_invalidate_profile(QString)));
     connect(this, SIGNAL(msg_recv_state(int,QString,QString)), mlm, SLOT(msg_recv_status(int,QString,QString)));
     connect(this, SIGNAL(mid_tag_changed(QString)), mlm, SLOT(mid_tag_changed(QString)));
-    connect(this, SIGNAL(msg_recv_progress(QString, QString, QString, int)), mlm, SLOT(msg_recv_progress(QString, QString, QString, int)));
+    connect(this, SIGNAL(msg_recv_progress(QString,QString,QString,int)), mlm, SLOT(msg_recv_progress(QString,QString,QString,int)));
     connect(this, SIGNAL(client_nameChanged(QString)), this, SLOT(update_dwyco_client_name(QString)));
     connect(this, &DwycoCore::use_archivedChanged, reload_conv_list);
     //connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
@@ -1565,7 +1779,7 @@ DwycoCore::init()
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
 
-    dwyco_run_sql("delete from msg_tags2 where mid not in (select mid from msg_idx)", 0, 0, 0);
+    //dwyco_run_sql("delete from msg_tags2 where mid not in (select mid from msg_idx)", 0, 0, 0);
     dwyco_unset_all_msg_tag("_seen");
 
     load_unviewed();
@@ -1653,31 +1867,7 @@ DwycoCore::init()
     //update_this_uid(My_uid.toHex());
 
 
-    // for easier testing, setup for raw file acq
-    dwyco_set_video_input(
-        "",
-        0,
-        0, // raw files
-        0, // vfw
-        1,
-        0
-    );
 
-//    dwyco_set_raw_files(
-//        "/home/dwight/vidfile.lst",
-//        "/1204/dwight/stuff/320x240/ml%04d.ppm",
-//        0, // use list of files
-//        1,
-//        0 // preload
-//    );
-//    dwyco_set_setting("video_format/swap_rb", "0");
-//    dwyco_set_rate_tweaks(20.0, 65535, 1000, 1000);
-//    dwyco_set_moron_dork_mode(0);
-
-//    dwyco_set_external_video(1);
-
-    //load_cam_model();
-    //dwyco_enable_video_capture_preview(1);
 #if 0
     int audio_full_duplex = 0;
 
@@ -2585,227 +2775,6 @@ DwycoCore::retry_auto_fetch(QString mid)
     return ::retry_auto_fetch(bmid);
 }
 
-
-#if 0
-static QMap<QString, QByteArray> Groups;
-static
-void
-group_create(QString name)
-{
-
-}
-
-static
-QByteArray
-group_add(QString name, QByteArray huid)
-{
-    Groups.insertMulti(name, huid);
-    QList<QByteArray> members = Groups.values(name);
-
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-add");
-    cmd.append(name);
-    for(int i = 0; i < members.count(); ++i)
-        cmd.append(members[i]);
-    out << cmd;
-    return payload;
-}
-
-static
-QByteArray
-group_msg(QString name)
-{
-    QList<QByteArray> members = Groups.values(name);
-
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-msg");
-    cmd.append(name);
-    out << cmd;
-    return payload;
-}
-
-static
-void
-group_delete(QString name)
-{
-    Groups.remove(name);
-}
-
-static
-QByteArray
-group_leave(QString name)
-{
-    QByteArray payload;
-    QDataStream out(&payload, QIODevice::WriteOnly);
-    QList<QVariant> cmd;
-    cmd.append("group-leave");
-    cmd.append(name);
-    out << cmd;
-    return payload;
-}
-
-static
-void
-send_group_add(QString name, QByteArray new_mem_huid)
-{
-    QByteArray cmd = group_add(name, new_mem_huid);
-    QList<QByteArray> send_list = Groups.values(name);
-    for(int i = 0; i < send_list.count(); ++i)
-    {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(), "", 0, 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    }
-}
-
-static
-void
-send_group_leave(QString name)
-{
-    QByteArray cmd = group_leave(name);
-    QList<QByteArray> send_list = Groups.values(name);
-    for(int i = 0; i < send_list.count(); ++i)
-    {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(), "", 0, 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    }
-}
-
-static
-void
-send_group_msg(QString name, QByteArray msg)
-{
-    QByteArray cmd = group_msg(name);
-    QList<QByteArray> send_list = Groups.values(name);
-    for(int i = 0; i < send_list.count(); ++i)
-    {
-        int compid = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_USER, 0, cmd.constData(), cmd.length());
-        QByteArray ruid = QByteArray::fromHex(send_list[i]).constData();
-        // note: if my uid is in the group list, i'll get a copy of the message
-        // saved as a sent message to myself. this is ok, but it needs to be tagged
-        // properly so it can be re-incorporated into the model. i think if the msg
-        // is text only, this should work as it will be delivered to the inbox
-        // as usual.
-        if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
-                            msg.constData(), msg.length(), 0, 0, 0, 0))
-        {
-            dwyco_delete_zap_composition(compid);
-        }
-    }
-}
-
-
-static
-void
-process_special_msg(QByteArray mid)
-{
-    DWYCO_UNFETCHED_MSG_LIST uml;
-    if(!dwyco_get_unfetched_message(&uml, mid.constData()))
-        return;
-    simple_scoped quml(uml);
-
-    const char *str;
-    int len;
-
-    if(!dwyco_get_user_payload(quml, &str, &len))
-        return;
-
-    QByteArray b(str, len);
-    QList<QVariant> cmd;
-    QDataStream in(b);
-    in >> cmd;
-    QByteArray what = cmd[0].toByteArray();
-    QString name = cmd[1].toString();
-    if(what == QByteArray("group-add"))
-    {
-        for(int i = 2; i < cmd.count(); ++i)
-        {
-            Groups.insertMulti(name, cmd[i].toByteArray());
-        }
-        return;
-    }
-    else if(what == QByteArray("group-leave"))
-    {
-        QMutableMapIterator<QString, QByteArray> i(Groups);
-          while (i.findNext(DwycoCore::My_uid.toHex()))
-          {
-              if (i.key() == name)
-                  i.remove();
-          }
-    }
-    else if(what == QByteArray("group-msg"))
-    {
-        // this is where we could re-write the "from" field on the
-        // message to be SHA(group_name). then when we saved the
-        // message, it would get refiled into a normal folder and it
-        // could be manipulated as if it was from a single user.
-        // the actual user it came from could be stored... hmmm
-        // the profile would have to be auto-created...
-        // sounds like a lot of work
-        //
-        // alternately, we save the message as usual, and tag it
-        // with the group name.
-
-        dwyco_save_message(mid.constData());
-        dwyco_set_msg_tag(mid.constData(), name.toLatin1().constData());
-
-        // emit a signal for a new group message
-
-    }
-
-}
-
-static
-void
-scan_special_msgs()
-{
-    return;
-    DWYCO_LIST uml;
-
-    if(dwyco_get_unfetched_messages(&uml, 0, 0))
-    {
-        simple_scoped quml(uml);
-        int n = quml.rows();
-
-        if(n == 0)
-        {
-            return;
-        }
-
-        for(int i = 0; i < n; ++i)
-        {
-            if(quml.is_nil(i, DWYCO_QMS_SPECIAL_TYPE))
-                continue;
-            if(quml.get<QByteArray>(i, DWYCO_QMS_SPECIAL_TYPE) == QByteArray("user"))
-            {
-                QByteArray mid = quml.get<QByteArray>(i, DWYCO_QMS_ID);
-                if(quml.is_nil(i, DWYCO_QMS_IS_DIRECT))
-                {
-                    auto_fetch(mid);
-                }
-                else
-                {
-                    process_special_msg(mid);
-                    dwyco_delete_unfetched_message(mid.constData());
-                }
-            }
-        }
-    }
-
-}
-#endif
-
 // this is a bit of a hack, we know that the location and other
 // non-picture messages are small, so we fetch them automatically.
 // the larger picture messages are not fetched until the user
@@ -2841,7 +2810,6 @@ fetch_small_msgs()
     }
 
 }
-
 
 int
 DwycoCore::service_channels()
@@ -2902,7 +2870,7 @@ DwycoCore::send_forward(QString recipient, QString add_text, QString uid_folder,
 {
     QByteArray uid_f = QByteArray::fromHex(uid_folder.toLatin1());
     QByteArray bmid = mid_to_forward.toLatin1();
-    int compid = dwyco_make_forward_zap_composition(uid_f.constData(), uid_f.length(), bmid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(bmid.constData(), 1);
     if(compid == 0)
         return 0;
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
@@ -2925,7 +2893,7 @@ DwycoCore::flim(QString uid_folder, QString mid_to_forward)
 {
     QByteArray uid_f = QByteArray::fromHex(uid_folder.toLatin1());
     QByteArray bmid = mid_to_forward.toLatin1();
-    int compid = dwyco_make_forward_zap_composition(uid_f.constData(), uid_f.length(), bmid.constData(), 1);
+    int compid = dwyco_make_forward_zap_composition2(bmid.constData(), 1);
     int ret = dwyco_flim(compid);
 
     dwyco_delete_zap_composition(compid);
@@ -3116,7 +3084,7 @@ DwycoCore::make_zap_view(QString uid, QString mid)
         return 0;
     }
 
-    int view_id = dwyco_make_zap_view(sm, ruid.constData(), ruid.length(), 0);
+    int view_id = dwyco_make_zap_view2(sm, 0);
 
     dwyco_list_release(sm);
     return view_id;
@@ -3131,6 +3099,56 @@ DwycoCore::make_zap_view_file(QString fn)
 
 
     return view_id;
+}
+
+QString
+DwycoCore::export_attachment(QString mid)
+{
+    QByteArray rmid = mid.toLatin1();
+    //QString userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QByteArray userdir;
+    // note: on android, we export the attachment to a writable sub-directory called
+    // "shares", and the java android support stuff has a "fileprovider" that
+    // can share items from that directory via mediastore. it is the caller's
+    // responsibility to initiate the notification to mediastore to pick up the new image.
+    // on desktop, we don't need to do all this garbage, just write it to documents or
+    // pictures and we're done.
+    userdir = add_pfx(User_pfx, "shares");
+    // using the name in the message is dicey. it might be utf8, might be unicode,
+    // might be from case-sensitive fs, might not. almost certainly it is a security problem.
+    // so punt, and just create a random filename, and try to add a file extension if
+    // it looks like there is one.
+    DWYCO_SAVED_MSG_LIST sm;
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
+    {
+        return "";
+    }
+    simple_scoped qsm(sm);
+    if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+        return "";
+    QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    // look for file extension
+    int dot = scary_fn.lastIndexOf('.');
+    if(dot != -1)
+    {
+        scary_fn.remove(0, dot);
+    }
+    else
+        scary_fn = "";
+    // maybe try sticking a place name in here? just
+    // an idea
+    QByteArray dstfn("/rando");
+    dstfn += QByteArray::number(csum, 16);
+    dstfn += scary_fn;
+    userdir += dstfn;
+    // note: this is probably broken on windows, have to check it out.
+    QByteArray lfn = QFile::encodeName(userdir);
+    if(!dwyco_copy_out_file_zap2(rmid.constData(), lfn.constData()))
+    {
+        return "";
+    }
+    return QFile::decodeName(lfn);
 }
 
 static

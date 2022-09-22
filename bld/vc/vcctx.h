@@ -71,15 +71,15 @@ public:
 	void close_ctx();
 
 	void set_retval(const vc& v) { maps[ctx]->set_retval(v); }
-	int ret_in_progress() { return maps[ctx]->ret_in_progress(); }
+    int ret_in_progress() const { return maps[ctx]->ret_in_progress(); }
 	vc retval() { return maps[ctx]->get_retval(); }
 
 	void open_loop() {maps[ctx]->open_loop();}
 	void close_loop() {maps[ctx]->close_loop();}
-	int break_in_progress() {return maps[ctx]->break_in_progress();}
+    int break_in_progress() const {return maps[ctx]->break_in_progress();}
 	void set_break_level(int n) {maps[ctx]->set_break_level(n);}
 
-	int unwind_in_progress() {
+    int unwind_in_progress() const {
 		return ret_in_progress() ||
 			break_in_progress() ||
 			exc_backout || dbg_backout;

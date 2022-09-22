@@ -67,7 +67,7 @@ public:
 			--break_level;
 		if(--loop_ctrl < 0) oopanic("loop underflow");
 	}
-	int break_in_progress() {
+    int break_in_progress() const {
 		if(loop_ctrl > break_level)
 			return 1;
 		return 0;
@@ -78,7 +78,7 @@ public:
 	excfun *addhandler(const vc& pat, const vc& fun) ;
 	excfun *add_instant_backout_handler(const vc& pat) ;
 	void add_default_handler(const vc& pat, const vc& fun) ;
-	void addbackout(const vc& fun) ;
+        void addbackout(const vc& expr) ;
 	
 
     // search for handler in this context

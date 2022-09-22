@@ -12,36 +12,23 @@
  */
 #include <string.h>
 #include "doinit.h"
-#include "usercnfg.h"
-#include "cllaccpt.h"
-#include "vidinput.h"
 #include "dirth.h"
 #include "vc.h"
-#include "vcmap.h"
 #include "qdirth.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "cdcver.h"
-#include "zapadv.h"
 #include "mmchan.h"
-#include "senc.h"
 #include "dwstr.h"
-#ifndef LINUX
-//#include "tbuy.h"
-#endif
-#include "gvchild.h"
 #include "chatops.h"
-#include "chatgrid.h"
 #include "asshole.h"
 #include "servass.h"
-#include "aconn.h"
 #include "fnmod.h"
 #include "chatops.h"
-#include "pgdll.h"
 #include "xinfo.h"
 #include "vcudh.h"
 #include "dhsetup.h"
-#include "prfcache.h"
+#include "profiledb.h"
 #include "se.h"
 #include "backsql.h"
 #include "dwrtlog.h"
@@ -51,13 +38,17 @@
 #endif
 #include "vcxstrm.h"
 #include "ta.h"
+#include "ezset.h"
+#include "simple_property.h"
+#include "dhgsetup.h"
+#include "cdcpal.h"
 
 using namespace dwyco;
 
 int Inhibit_database_thread;
 
 int Database_id = -1;
-int Database_online;
+sigprop<int> Database_online;
 int Database_starting;
 
 extern DwycoEmergencyCallback dwyco_emergency_callback;
@@ -379,35 +370,90 @@ invalidate_profile(vc m, void *, vc, ValidPtr)
         return;
     GRTLOG("msgb invalidate profile %s", (const char *)to_hex(m[1]), 0);
     prf_invalidate(m[1]);
+    pk_invalidate(m[1]);
     se_emit(SE_USER_PROFILE_INVALIDATE, m[1]);
 
 }
 
+static
+void
+set_group_uids(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    // if the server doesn't know the group at all, you still get back
+    // a vector with your own uid in it.
+    Group_uids = m[1];
+    // update profiles, since this is an "authoritative" group membership
+    update_profiles_for_new_membership();
+}
+
+static
+void
+invalidate_group(vc, void *, vc, ValidPtr)
+{
+    dirth_send_get_group(My_UID, QckDone(set_group_uids, 0));
+}
+
+// note: this whole thing with the invisible coming from the
+// server seems like a kluge. i suspect there is an easier way
+// to do this and it just isn't occurring to me.
+// with the other "client-side" lists, like ignore list and
+// pal list, they are propagated via the tag syncing mechanism,
+// which is unclear if it is good enough on its own. those items
+// are largely processed by the clients though, so it is a little
+// different from invis, where the server is mostly responsible
+// for that filtering.
+//
+void set_invisible(int);
+
+static
+void
+update_attr(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    vc attrvec = m[1];
+    if(attrvec[0] != vc("invis"))
+        return;
+    set_invisible(!attrvec[1].is_nil());
+    se_emit_server_attr(attrvec[0], attrvec[1]);
+}
+
+static
+void
+emit_invis_update(vc name, vc val)
+{
+    vc v = ((int)val == 0 ? vcnil : vctrue);
+    se_emit_server_attr("invis", v);
+}
+
+
 void update_server_list(vc, void *, vc, ValidPtr);
 void ignoring_you_update(vc, void *, vc, ValidPtr);
 void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
-void async_pal(vc, void *, vc, ValidPtr);
 
 void
 init_dirth()
 {
-    Waitq = DwVec<QckDone>();
+    Waitq = DwListA<QckDone>();
     Response_q = DwListA<vc>();
-    Waitq.append(QckDone(got_sync, 0, vcnil, ValidPtr(0), "sync", 0, 1));
-    Waitq.append(QckDone(got_serv_r, 0, vcnil, ValidPtr(0), "serv_r", 0, 1));
-    Waitq.append(QckDone(got_inhibit, 0, vcnil, ValidPtr(0), "inhibit", 0, 1));
-    Waitq.append(QckDone(got_purge_outbox, 0, vcnil, ValidPtr(0), "purge_outbox", 0, 1));
+    Waitq.append(QckDone(got_sync, 0, vcnil, ValidPtr(0), "sync", QckDone::PERMANENT));
+    Waitq.append(QckDone(got_serv_r, 0, vcnil, ValidPtr(0), "serv_r", QckDone::PERMANENT));
+    Waitq.append(QckDone(got_inhibit, 0, vcnil, ValidPtr(0), "inhibit", QckDone::PERMANENT));
+    Waitq.append(QckDone(got_purge_outbox, 0, vcnil, ValidPtr(0), "purge_outbox", QckDone::PERMANENT));
     //void got_mailbox_full(vc m, void *, vc, ValidPtr);
-    //Waitq.append(QckDone(got_mailbox_full, 0, vcnil, ValidPtr(0), "mailbox_full", 0, 1));
-    Waitq.append(QckDone(update_server_list, 0, vcnil, ValidPtr(0), "nsl", 0, 1));
-    Waitq.append(QckDone(ignoring_you_update, 0, vcnil, ValidPtr(0), "iy", 0, 1));
-    Waitq.append(QckDone(background_check_for_update_done, 0, vcnil, ValidPtr(0), "serv-check-update", 0, 1));
+    //Waitq.append(QckDone(got_mailbox_full, 0, vcnil, ValidPtr(0), "mailbox_full", QckDone::PERMANENT));
+    Waitq.append(QckDone(update_server_list, 0, vcnil, ValidPtr(0), "nsl", QckDone::PERMANENT));
+    Waitq.append(QckDone(ignoring_you_update, 0, vcnil, ValidPtr(0), "iy", QckDone::PERMANENT));
+    Waitq.append(QckDone(background_check_for_update_done, 0, vcnil, ValidPtr(0), "serv-check-update", QckDone::PERMANENT));
 
-#ifndef DWYCO_UDP_PAL
-    Waitq.append(QckDone(async_pal, 0, vcnil, ValidPtr(0), "async-pal", 0, 1));
-#endif
-    Waitq.append(QckDone(invalidate_profile, 0, vcnil, ValidPtr(0), "invalidate-profile", 0, 1));
-    Waitq.append(QckDone(reset_backups, 0, vcnil, ValidPtr(0), "reset-backups", 0, 1));
+    Waitq.append(QckDone(async_pal, 0, vcnil, ValidPtr(0), "async-pal", QckDone::PERMANENT));
+    Waitq.append(QckDone(invalidate_profile, 0, vcnil, ValidPtr(0), "invalidate-profile", QckDone::PERMANENT));
+    Waitq.append(QckDone(reset_backups, 0, vcnil, ValidPtr(0), "reset-backups", QckDone::PERMANENT));
+    Waitq.append(QckDone(invalidate_group, 0, vcnil, ValidPtr(0), "invalidate-group", QckDone::PERMANENT));
+    Waitq.append(QckDone(update_attr, 0, vcnil, ValidPtr(0), "attr", QckDone::PERMANENT));
+
     //get the server list set up
     if(!load_info(Server_list, "servers2") || Server_list.type() != VC_VECTOR ||
             Server_list.num_elems() < 1)
@@ -438,6 +484,10 @@ init_dirth()
     BW_server_list = Server_list[5];
     vc tmp = Server_list[0];
     Server_list = tmp;
+
+    // this is kinda out of place here, but hard to find someplace where
+    // it makes sense
+    bind_sql_setting("server/invis", emit_invis_update);
 }
 
 // only call this *after* the server list is
@@ -480,7 +530,7 @@ system_info()
     screen.append(ScreenSize.bottom);
 
     OSVERSIONINFO o;
-    memset(&o, 0, sizeof(0));
+    memset(&o, 0, sizeof(o));
     o.dwOSVersionInfoSize = sizeof(o);
     GetVersionEx(&o);
 
@@ -552,30 +602,30 @@ system_info()
 vc
 make_fw_setup()
 {
-    vc v(VC_VECTOR);
-    if(DwNetConfigData.get_advertise_nat_ports())
+    vc fw(VC_VECTOR);
+    if((int)get_settings_value("net/advertise_nat_ports") == 1)
     {
-        v.append(DwNetConfigData.get_nat_primary_port());
-        v.append(DwNetConfigData.get_nat_secondary_port());
-        v.append(DwNetConfigData.get_nat_pal_port());
+        fw[0] = get_settings_value("net/nat_primary_port");
+        fw[1] = get_settings_value("net/nat_secondary_port");
+        fw[2] = get_settings_value("net/nat_pal_port");
     }
     else
     {
-        v.append(DwNetConfigData.get_primary_port());
-        v.append(DwNetConfigData.get_secondary_port());
-        v.append(DwNetConfigData.get_pal_port());
+        fw[0] = get_settings_value("net/primary_port");
+        fw[1] = get_settings_value("net/secondary_port");
+        fw[2] = get_settings_value("net/pal_port");
     }
-    return v;
+    return fw;
 }
 
 vc
 make_local_ports()
 {
-    vc v(VC_VECTOR);
-    v.append(DwNetConfigData.get_primary_port());
-    v.append(DwNetConfigData.get_secondary_port());
-    v.append(DwNetConfigData.get_pal_port());
-    return v;
+    vc fw(VC_VECTOR);
+    fw[0] = get_settings_value("net/primary_port");
+    fw[1] = get_settings_value("net/secondary_port");
+    fw[2] = get_settings_value("net/pal_port");
+    return fw;
 }
 
 vc
@@ -583,24 +633,31 @@ build_directory_entry()
 {
     vc v(VC_VECTOR);
     v.append(Myhostname);
-    v.append(UserConfigData.get_username());
-    v.append(UserConfigData.get_description());
-    CallAcceptanceXfer& c = CallAcceptanceData;
+    v.append(get_settings_value("user/username"));
+    v.append(get_settings_value("user/description"));
+    //CallAcceptanceXfer& c = CallAcceptanceData;
     vc v2(VC_VECTOR);
-    v2.append(c.get_max_audio());
-    v2.append(VidInputData.get_no_video() ? 0 : c.get_max_video());
-    v2.append(c.get_max_chat());
-    v2.append(c.get_max_audio_recv());
-    v2.append(c.get_max_video_recv());
+    v2.append(0);
+    v2.append(0);
+    v2.append(0);
+    v2.append(0);
+    v2.append(0);
+
+
+//    v2.append(c.get_max_audio());
+//    v2.append(VidInputData.get_no_video() ? 0 : c.get_max_video());
+//    v2.append(c.get_max_chat());
+//    v2.append(c.get_max_audio_recv());
+//    v2.append(c.get_max_video_recv());
     v.append(v2);
     v.append(1); // "registered"
     v.append(dwyco_get_version_string());
-    v.append(UserConfigData.get_email());
+    v.append(get_settings_value("user/email"));
     v.append(My_UID);
     v.append(vcnil); // was DH_public
     v.append(vcnil); // was "rating"
     v.append(system_info());
-    v.append(ZapAdvData.get_always_server() ? vcnil : vctrue); // can do direct msgs
+    v.append((int)get_settings_value("zap/always_server") == 1 ? vcnil : vctrue); // can do direct msgs
     // note: no more invisible
     v.append(vcnil);
     //v.append(ShowDirectoryData.get_invisible() ? vctrue : vcnil);
@@ -609,7 +666,7 @@ build_directory_entry()
 // XXXXXX note: this needs to be FIXED, it is always mucked up
 // after an integrate.
 // 13
-    v.append(UserConfigData.get_location());
+    v.append(get_settings_value("user/location"));
     v.append(vcnil);
     // note: to support old crappy clients, this element
     // must be nil (this is ui-speced-peer in server, and the
@@ -647,7 +704,7 @@ build_directory_entry2()
     v.append(1); // was "registered"
     v.append(dwyco_get_version_string());
     v.append(system_info());
-    v.append(ZapAdvData.get_always_server() ? vcnil : vctrue);
+    v.append((int)get_settings_value("zap/always_server") == 1 ? vcnil : vctrue);
     v.append(make_fw_setup());
 
     v.append(KKG);
@@ -674,7 +731,6 @@ static void
 start_encryption(vc m, void *, vc , ValidPtr vp)
 {
     MMChannel *mc = vp.is_valid() ? (MMChannel *)(void *)vp : 0;
-    Database_online = 1;
     Database_starting = 0;
     if(m[1].is_nil())
     {
@@ -683,6 +739,8 @@ start_encryption(vc m, void *, vc , ValidPtr vp)
         TRACK_ADD(DB_crypto_fail, 1);
         return;
     }
+    if(!mc)
+        return;
     mc->send_decrypt();
     mc->tube->set_key_iv(mc->agreed_key, 0);
     vc key = mc->agreed_key;
@@ -698,6 +756,7 @@ start_encryption(vc m, void *, vc , ValidPtr vp)
         init_qauth();
         Reauthorize = 0;
     }
+    Database_online = 1;
 }
 
 void
@@ -720,67 +779,26 @@ db_call_failed_last(MMChannel *mc, vc, void *, ValidPtr)
     TRACK_ADD(DB_hard_fail, 1);
 }
 
-void
-db_call_failed(MMChannel *mc, vc, void *, ValidPtr)
-{
-    Database_id = -1;
-    //if(mc->resolve_failed)
-    {
-        MMChannel *mc = MMChannel::start_server_channel(
-                            MMChannel::BYNAME,
-                            0,
-#if 0
-                            inet_addr("204.75.209.40"),
-                            0,
-                            6703);
-#endif
-
-        My_server_name,
-        My_server_port);
-
-        if(!mc)
-    {
-        Database_id = -1;
-        return;
-    }
-    mc->established_callback = db_online;
-    mc->destroy_callback = db_call_failed_last;
-    mc->set_string_id("Dwyco Database");
-    Database_id = mc->myid;
-    Database_online = 0;
-    //GRTLOG("db resolve failed", 0, 0);
-    //return;
-}
-GRTLOG("db call failed", 0, 0);
-}
-
 
 void
 start_database_thread()
 {
     if(Inhibit_database_thread)
         return;
-#if 0 && defined(CDC32_REGISTERED)
-    if(!reg_is_registered())
-        return;
-#endif
     if(Database_id != -1)
         return;
-    MMChannel *mc = MMChannel::start_server_channel(
-                        MMChannel::BYADDR,
-                        inet_addr(My_server_ip),
-                        0,
-                        My_server_port);
+
+    MMChannel *mc = MMChannel::start_server_channel(My_server_ip, My_server_port);
+
     if(!mc)
     {
         // maybe DNS hosed right off the bat, so
         // go straight to next stage
         Database_id = -1;
-        db_call_failed(0, vcnil, 0, ValidPtr());
         return;
     }
     mc->established_callback = db_online;
-    mc->destroy_callback = db_call_failed;
+    mc->destroy_callback = db_call_failed_last;
     mc->set_string_id("Dwyco Database");
     Database_id = mc->myid;
     Database_online = 0;

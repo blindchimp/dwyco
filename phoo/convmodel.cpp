@@ -11,7 +11,10 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "ignoremodel.h"
-#include "dwycolistscoped.h"
+#include "dwycolist2.h"
+#ifdef DWYCO_MODEL_TEST
+#include <QAbstractItemModelTester>
+#endif
 
 void hack_unread_count();
 void reload_conv_list();
@@ -28,11 +31,12 @@ Conversation::load_external_state(const QByteArray& uid)
     get_review_status(uid, reviewed, regular);
     update_REGULAR(regular);
     update_REVIEWED(reviewed);
-    update_unseen_count(uid_unviewed_msgs_count(uid));
+    //update_unseen_count(uid_unviewed_msgs_count(uid));
     update_any_unread(uid_has_unviewed_msgs(uid));
     update_session_msg(got_msg_this_session(uid));
     update_pal(dwyco_is_pal(uid.constData(), uid.length()));
     update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
+    //update_has_hidden(false);
 }
 
 ConvListModel::ConvListModel(QObject *parent) :
@@ -41,6 +45,9 @@ ConvListModel::ConvListModel(QObject *parent) :
     if(TheConvListModel)
         ::abort();
     TheConvListModel = this;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 
 }
 
@@ -55,6 +62,17 @@ void
 init_convlist_model()
 {
 
+}
+void
+ConvListModel::redecorate()
+{
+    int n = count();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        QByteArray buid = QByteArray::fromHex(c->get_uid().toLatin1());
+        c->load_external_state(buid);
+    }
 }
 
 void
@@ -156,8 +174,8 @@ ConvListModel::decorate(QString huid, QString txt, QString mid)
     Conversation *c = getByUid(huid);
     if(!c)
         return;
-    int cnt = uid_unviewed_msgs_count(uid);
-    c->update_unseen_count(cnt);
+    //int cnt = uid_unviewed_msgs_count(uid);
+    //c->update_unseen_count(cnt);
     c->update_any_unread(uid_has_unviewed_msgs(uid));
     c->update_is_blocked(dwyco_is_ignored(uid.constData(), uid.length()));
     c->update_has_hidden(dwyco_uid_has_tag(uid.constData(), uid.length(), "_hid"));
@@ -196,6 +214,19 @@ ConvListModel::remove_uid_from_model(const QByteArray& uid)
 }
 
 void
+ConvListModel::reload_possible_changes(long time)
+{
+    DWYCO_LIST ul;
+    if(!dwyco_get_updated_uids(&ul, time))
+        return;
+    simple_scoped qul(ul);
+    for(int i = 0; i < qul.rows(); ++i)
+    {
+        add_uid_to_model(qul.get<QByteArray>(i));
+    }
+}
+
+void
 ConvListModel::load_users_to_model()
 {
     DWYCO_LIST l;
@@ -211,6 +242,17 @@ ConvListModel::load_users_to_model()
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
+#if 0
+    DWYCO_LIST pl = dwyco_pal_get_list();
+    simple_scoped qpl(pl);
+    for(int i = 0; i < qpl.rows(); ++i)
+    {
+        QByteArray uid = qpl.get<QByteArray>(i);
+        Conversation *c = add_uid_to_model(uid);
+        c->update_counter = cnt;
+    }
+#endif
+
     // find removed items
     // there is probably a faster way of doing this, but
     // given this should not happen often or with very long lists,
@@ -267,6 +309,33 @@ ConvSortFilterModel::ConvSortFilterModel(QObject *p)
     setSortCaseSensitivity(Qt::CaseInsensitive);
     sort(0);
     m_count = 0;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
+}
+
+// WARNING: the index is interpreted as a SOURCE model index
+// we is kinda useless in QML, now that i think about it.
+// when i need this, will have to provide some mapping
+QObject *
+ConvSortFilterModel::get(int source_idx)
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    return m->get(source_idx);
+}
+
+int
+ConvSortFilterModel::get_by_uid(QString uid)
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    int i = m->indexOf(uid);
+    if(i == -1)
+        return -1;
+    return mapFromSource(m->index(i)).row();
 }
 
 void
@@ -345,19 +414,12 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
     else if(!lsm && rsm)
         return false;
 
-//    int luc = m->data(left, m->roleForName("unseen_count")).toInt();
-//    int ruc = m->data(right, m->roleForName("unseen_count")).toInt();
-//    if(luc < ruc)
-//        return false;
-//    else if(ruc < luc)
+//    bool lau = m->data(left, m->roleForName("any_unread")).toBool();
+//    bool rau = m->data(right, m->roleForName("any_unread")).toBool();
+//    if(lau && !rau)
 //        return true;
-
-    bool lau = m->data(left, m->roleForName("any_unread")).toBool();
-    bool rau = m->data(right, m->roleForName("any_unread")).toBool();
-    if(lau && !rau)
-        return true;
-    else if(!lau && rau)
-        return false;
+//    else if(!lau && rau)
+//        return false;
 
     bool lsp = m->data(left, m->roleForName("pal")).toBool();
     bool rsp = m->data(right, m->roleForName("pal")).toBool();
@@ -366,20 +428,20 @@ ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right)
     else if(!lsp && rsp)
         return false;
 
-    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
-    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
-    if(lreg && !rreg)
-        return true;
-    else if(!lreg && rreg)
-        return false;
+//    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
+//    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
+//    if(lreg && !rreg)
+//        return true;
+//    else if(!lreg && rreg)
+//        return false;
 
     // put blocked users down at the bottom?
-//    bool lreg = m->data(left, m->roleForName("is_blocked")).toBool();
-//    bool rreg = m->data(right, m->roleForName("is_blocked")).toBool();
-//    if(lreg && !rreg)
-//        return false;
-//    else if(!lreg && rreg)
-//        return true;
+    bool lreg = m->data(left, m->roleForName("is_blocked")).toBool();
+    bool rreg = m->data(right, m->roleForName("is_blocked")).toBool();
+    if(lreg && !rreg)
+        return false;
+    else if(!lreg && rreg)
+        return true;
 
     bool ret1 = QSortFilterProxyModel::lessThan(left, right);
     bool ret2 = QSortFilterProxyModel::lessThan(right, left);

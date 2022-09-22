@@ -29,7 +29,8 @@ linux-*: INCLUDEPATH += ../v4lcap
 DEFINES += \
 	VCCFG_FILE \
 	DWVEC_DOINIT \
-        DWYCO_USE_SQLITE
+        DWYCO_USE_SQLITE \
+        DWYCO_NO_VIDEO_FROM_PPM
     
 equals(DWYCO_APP, "rando") {
 DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
@@ -39,15 +40,27 @@ DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYC
 #DEFINES += MINIUPNP_STATICLIB
 message("cdc32 setup for rando")
 } else {
+CONFIG(debug,debug|release) {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT
-DEFINES += DWYCO_FIELD_DEBUG
+#DEFINES += DWYCO_TRACE
+#DEFINES += DWYCO_THREADED_ENCODE
+#DEFINES += DW_RTLOG
+#DEFINES += DWYCO_FIELD_DEBUG
+#android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
+DEFINES += DWYCO_SYNC_DEBUG
+#DEFINES += DWYCO_DBG_CHECK_SQL
+#DEFINES += DWYCO_BACKGROUND_SYNC
+message("DEBUG cdc32")
+} else {
+message("release build")
+#android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
+}
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
 }
 
 macx-*|linux-*|macx-ios-clang|macx-clang|android-*|wasm-emscripten {
-QMAKE_CXXFLAGS += -fpermissive
+QMAKE_CXXFLAGS += #-fpermissive
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 INCLUDEPATH += winemu
 SOURCES += winemu.cc linid.cpp
@@ -61,6 +74,9 @@ DEFINES += DWYCO_USE_STATIC_SQLITE
 equals(DWYCOBG, 0) {
 DEFINES += DWYCO_CDC_LIBUV
 }
+equals(DWYCOBG, 1) {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
+}
 SOURCES += sqlite3.c
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
@@ -68,10 +84,13 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 
 macx-ios-clang {
-DEFINES += MACOSX NEED_SHORT_EXTERNAL_NAMES
+DEFINES += MACOSX NEED_SHORT_EXTERNAL_NAMES #DWYCO_THREADED_ENCODE
 QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
 DEFINES += DWYCO_USE_STATIC_SQLITE
 SOURCES += sqlite3.c
+equals(DWYCOBG, 0) {
+DEFINES += DWYCO_CDC_LIBUV
+}
 }
 
 win32-* {
@@ -81,13 +100,13 @@ equals(DWYCO_APP, "rando") {
 #DEFINES += USE_VFW
 #DEFINES += VIDGRAB_HACKS
 #DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
-#SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+#SOURCES += uniq.cpp aqaud.cc audwin.cc
 SOURCES += uniq.cpp audwin.cc aqaud.cc
 } else {
-DEFINES += USE_VFW
+#DEFINES += USE_VFW
 DEFINES += VIDGRAB_HACKS
 DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100
-SOURCES += aqvfw.cc uniq.cpp aqaud.cc vfwdll.cc audwin.cc vfwmgr.cc
+SOURCES += uniq.cpp aqaud.cc audwin.cc
 }
 SOURCES += sqlite3.c
 INCLUDEPATH += ../mtcap
@@ -97,6 +116,9 @@ DEFINES += DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT
 #equals(DWYCOBG, 0) {
 #DEFINES += DWYCO_CDC_LIBUV
 #}
+equals(DWYCOBG, 1) {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
+}
 }
 
 android-g++ {
@@ -108,8 +130,13 @@ SOURCES += sqlite3.c glob/glob.c
 
 linux-* {
 DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100 
+DEFINES += DWYCO_USE_STATIC_SQLITE
+SOURCES += sqlite3.c
 equals(DWYCOBG, 0) {
 DEFINES += DWYCO_CDC_LIBUV
+}
+equals(DWYCOBG, 1) {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 }
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
@@ -128,10 +155,14 @@ SOURCES += sqlite3.c
 }
 
 SOURCES += \
+    activeuid.cpp \
+    bgapp.cpp \
+    ezset2.cpp \
 mmchan.cc \
 mmbld.cc \
 mmaud.cc \
 mmband.cc \
+    mmchan_sync.cpp \
 mmconn.cc \
 mmctrl.cc \
 mmchan2.cc \
@@ -148,6 +179,8 @@ codec.cc \
 colcod.cc \
 coldec.cc \
 dchroma.cc \
+    profiledb.cpp \
+    pulls.cpp \
 qtab.cc \
 dwrate.cc \
 dwrtlog.cc \
@@ -174,20 +207,13 @@ packbits.cc \
 qdirth.cc \
 qpol.cc \
 dwlog.cc \
-cllaccpt.cpp \
-ratetwkr.cpp \
-rawfiles.cpp \
+    sync_sendq.cpp \
+    synccalls.cpp \
 syncvar.cc \
-uicfg.cc \
-usercnfg.cpp \
-vfwinvst.cpp \
-vidinput.cpp \
-zapadv.cpp \
 doinit.cc \
 netcod.cc \
 netcod2.cc \
 tcode.cc \
-sleep.cc \
 statfun.cc \
 dirth.cc \
 rlc.cc \
@@ -195,7 +221,6 @@ tdecode.cc \
 tpgmdec.cc \
 sqrs.cc \
 qauth.cc \
-rawconv.cc \
 senc.cc \
 aq.cc \
 vcpan.cc \
@@ -208,7 +233,6 @@ globs.cc \
 fl.cc \
 mmserv.cc \
 tl.cc \
-cdcpal.cc \
 dlli.cpp \
 mcc.cpp \
 qmsg.cc \
@@ -221,7 +245,6 @@ autoup.cpp \
 dmdsrv.cc \
 fnmod.cc \
 xinfo.cpp \
-prfcache.cpp \
 vidcvt.cc \
 callq.cpp \
 asshole.cpp \
@@ -240,7 +263,6 @@ chatgrid.cpp \
 chatq.cpp \
 sysattr.cpp \
 vorbconv.cc \
-ezset.cpp \
 se.cpp \
 theoracol.cc \
 ser.cpp \
@@ -249,7 +271,6 @@ sproto.cpp \
 dhsetup.cpp \
 trc.cpp \
 cdcpal2.cc \
-pkcache.cpp \
 ssns.cpp \
 qsend.cpp \
 directsend.cpp \
@@ -261,10 +282,12 @@ sqlbq.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
     simplesql.cpp \
+    grpmsg.cpp \
     upnp.cpp \
-    aqkey.cpp
+    aqkey.cpp \
+    netlog.cpp
 
-HEADERS += \
-    vccfg.h \
-    upnp.h
+
+
+
 

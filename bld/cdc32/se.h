@@ -22,6 +22,8 @@
 #include "vc.h"
 #include "dwstr.h"
 
+namespace dwyco {
+// WARNING: if you change this enum, you have to update the table in se.cpp!
 enum dwyco_sys_event {
     SE_NOTHING = 0,
     SE_STATUS_CHANGE = 1,
@@ -66,16 +68,37 @@ enum dwyco_sys_event {
     SE_CHAT_SERVER_DISCONNECT,
     SE_CHAT_SERVER_LOGIN,
     SE_CHAT_SERVER_LOGIN_FAILED,
+    SE_GRP_JOIN_OK,
+    SE_GRP_JOIN_FAIL,
 
-    SE_MSG_DOWNLOAD_PROGRESS
+    SE_MSG_DOWNLOAD_PROGRESS,
+
+    // this is what you get when you pull a msg from another client
+    SE_MSG_PULL_OK,
+    SE_MSG_TAG_CHANGE,
+
+    SE_GRP_STATUS_CHANGE,
+
+    SE_IGNORE_LIST_CHANGE,
+    SE_IDENT_TO_UID,
+
+    SE_SERVER_ATTR,
 };
 
 // at this point, the id can be a uid or a mid
-void se_emit(enum dwyco_sys_event cmd, vc id);
-void se_emit_msg(enum dwyco_sys_event cmd, DwString qid, vc uid);
+void se_emit(enum dwyco_sys_event cmd, vc uid);
+void se_emit_msg(enum dwyco_sys_event cmd, const DwString &qid, vc uid);
 void se_emit_msg(enum dwyco_sys_event cmd, vc qid, vc uid);
-void se_emit_msg_status(DwString qid, vc ruid, DwString msg, int percent);
-void se_emit_msg_progress(DwString mid, vc ruid, DwString msg, int percent);
+void se_emit_msg_status(const DwString &qid, vc ruid, const DwString &msg, int percent);
+void se_emit_msg_progress(const DwString &mid, vc ruid, const DwString &msg, int percent);
+void se_emit_msg_pull_ok(vc mid, vc uid);
+void se_emit_msg_tag_change(vc mid, vc uid);
+void se_emit_join(vc gname, int res);
+void se_emit_group_status_change();
+void se_emit_uid_list_changed();
+void se_emit_chat(dwyco_sys_event cmd, vc server_id);
+void se_emit_server_attr(vc name, vc val);
 int se_process();
+}
 
 #endif

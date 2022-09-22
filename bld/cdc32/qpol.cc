@@ -16,8 +16,9 @@
 #include "qpol.h"
 #include "dwlog.h"
 #include "fnmod.h"
+#include "doinit.h"
+using namespace dwyco;
 
-extern DwLog *Log;
 // note: these structures are rather rickety, not
 // a good idea to muck with them after they are
 // built. this really should be done via LH

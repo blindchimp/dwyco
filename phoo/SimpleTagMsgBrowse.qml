@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-
+import QtQml 2.12
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
@@ -169,7 +169,7 @@ Page {
                 }
 
                 ConvToolButton {
-                    visible: {stack.depth > 2 || core.unread_count > 0}
+                    visible: {stack.depth > 2 || core.any_unviewed}
                 }
 
 
@@ -231,7 +231,7 @@ Page {
             radius: 3
             border.width: 1
             border.color: divider
-            color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
+            color: {(IS_QD === 1) ? "gray" : ((SENT === 0) ? accent : primary_light)}
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             z: 1
             clip: true
@@ -321,8 +321,8 @@ Page {
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
-                //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                source: {PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) :
+                source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                //source: {PREVIEW_FILENAME !== "" ? ("file://" + PREVIEW_FILENAME) :
                                                   (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
                 asynchronous: true
@@ -414,12 +414,12 @@ Page {
                             themsgview.mid = model.mid
                             themsgview.uid = model.ASSOC_UID
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file:///" + String(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file://" + String(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(model.ASSOC_UID, model.mid)
+                                    var vid = core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
                                     //core.play_zap_view(vid)
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {

@@ -45,11 +45,13 @@
 #include "dhsetup.h"
 #include "vcudh.h"
 #include "dwscoped.h"
+#include "qauth.h"
+#include "netlog.h"
+
 using namespace dwyco;
 
-extern vc My_UID;
-
-static void
+static
+void
 hangup_all_servers()
 {
     scoped_ptr<ChanList> cl(MMChannel::get_serviced_channels_server());
@@ -277,17 +279,8 @@ secondary_db_call_failed(MMChannel *md, vc m, void *v, ValidPtr)
 
     QckDone& d = *(QckDone *)v;     // LEAK
 
-    //if(md->resolve_failed)
-    //{
-    MMChannel *mc = MMChannel::start_server_channel(
-                        MMChannel::BYADDR,
-#ifdef LOCAL_TEST
-                        inet_addr("204.75.209.40"),
-#else
-                        inet_addr(m[0]),
-#endif
-                        0,
-                        m[1]);
+    MMChannel *mc = MMChannel::start_server_channel(m[0], m[1]);
+
     if(!mc)
     {
         goto fail;
@@ -303,7 +296,7 @@ secondary_db_call_failed(MMChannel *md, vc m, void *v, ValidPtr)
     mc->secondary_server_channel = 1;
     mc->attempt_ip = m[4]; //md->attempt_ip;
     mc->attempt_port = m[5]; //md->attempt_port;
-    mc->attempt_name = m[3]; //md->attempt_name;
+    //mc->attempt_name = m[3]; //md->attempt_name;
     mc->timer1_callback = connect_timeout;
     mc->t1cb_arg2 = new QckDone(d); // LEAK
     mc->timer1.set_oneshot(1);
@@ -311,8 +304,9 @@ secondary_db_call_failed(MMChannel *md, vc m, void *v, ValidPtr)
     mc->timer1.reset();
     mc->timer1.start();
     GRTLOG("sec sec db resolve failed", 0, 0);
+    Netlog_signal.emit(mc->tube->mklog("event", "secondary"));
     return;
-    //}
+
 fail:
     vc bad_resp(VC_VECTOR);
     bad_resp.append(d.type.response_type()); // qckmsg type
@@ -325,53 +319,22 @@ fail:
 
 static
 int
-start_secondary_database_thread(vc name, vc ip, vc port, QckMsg m, QckDone d)
+start_secondary_database_thread(vc ip, vc port, QckMsg m, QckDone d)
 {
     GRTLOG("sec trying", 0 , 0);
-    GRTLOGVC(name);
+    //GRTLOGVC(name);
     GRTLOGVC(port);
     vc v(VC_VECTOR);
     v[0] = ip;
     v[1] = port;
     // this is bad
     v[2] = m.v;
-    v[3] = name;
+    //v[3] = name;
     v[4] = ip;
     v[5] = port;
-    // note: it takes too long to do the DNS crap
-    // in some cases, so we just go straigh for IP now.
-#if 0
-    MMChannel *mc = MMChannel::start_server_channel(
-                        MMChannel::BYNAME,
-                        0,
-#ifdef LOCAL_TEST
-                        "shinbiter.dwyco.com",
-#else
-                        name,
-#endif
-                        port);
-    if(!mc)
-    {
-#endif
-        secondary_db_call_failed(0, v, new QckDone(d), ValidPtr());
-        return 1;
-#if 0
-    }
-    mc->established_callback = secondary_db_online;
-    mc->ecb_arg1 = m.v; //this is bad
-    mc->ecb_arg2 = new QckDone(d);
-    mc->destroy_callback = secondary_db_call_failed;
-    mc->secondary_server_channel = 1;
-    mc->attempt_name = name;
-    mc->attempt_ip = ip;
-    mc->attempt_port = port;
-    mc->dcb_arg1 = v;
-    mc->dcb_arg2 = new QckDone(d);
 
-    mc->set_string_id("Dwyco Secondary Database");
-    GRTLOG("secondary db start", 0, 0);
+    secondary_db_call_failed(0, v, new QckDone(d), ValidPtr());
     return 1;
-#endif
 }
 
 static
@@ -415,11 +378,15 @@ already_connected_secondary(vc ip, vc port)
 // responses to come back as usual.
 //
 int
-send_to_secondary(vc name, vc ip, vc port, QckMsg m, QckDone d)
+send_to_secondary(vc ip, vc port, QckMsg m, QckDone d)
 {
     MMChannel *mc = already_connected_secondary(ip, port);
     QckDone d2(bounce_auth, new QckDone(d));
-    d2.type = ReqType("auth-command", d.type.serial);
+    d2.type = ReqType("auth-command");
+    // not sure what was going on with serial numbers
+    // here.
+    d2.type.serial = d.type.serial;
+
     // we put a timeout on the auth-command, even tho there
     // may also be a timeout on the encapsulated command.
     // NOTE: all the timeouts are running concurrently, so
@@ -440,7 +407,7 @@ send_to_secondary(vc name, vc ip, vc port, QckMsg m, QckDone d)
     // give it a little more time to connect
     d2.set_timeout(15);
     // note: wait until we are actually connected to put it on the Waitq
-    if(!start_secondary_database_thread(name, ip, port, m, d2))
+    if(!start_secondary_database_thread(ip, port, m, d2))
         return 0;
     return 1;
 }

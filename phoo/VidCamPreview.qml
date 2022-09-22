@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+import QtQml 2.12
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import dwyco 1.0
@@ -44,7 +45,7 @@ Page {
 
     Connections {
         target: core
-        onCamera_change: {
+        function onCamera_change(cam_on) {
             if(visible) {
                 if(cam_on) {
                     core.enable_video_capture_preview(1)
@@ -112,7 +113,7 @@ Page {
                 }
                 Connections {
                     target: core
-                    onVideo_capture_preview: {
+                    function onVideo_capture_preview(img_path) {
                         if(visible)
                             viewer.source = img_path
                     }

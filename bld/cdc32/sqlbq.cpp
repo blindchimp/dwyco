@@ -23,9 +23,70 @@
 #include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
+#include "dwstr.h"
 
 namespace dwyco {
 #define USER_BOMB(a, b) {return (b);}
+
+#ifdef DWYCO_DBG_CHECK_SQL
+
+// this is a hack to get around the "unbound arguments are treated as null"
+// peculiarity in sqlite. i've been burned directly by this problem several
+// times, usually thru typos. this is for debugging only, and
+// should be disabled in release. note that it assumes you won't have
+// more than ?31 as an arg, and it is broken in cases where you give
+// it ? in some other context.
+static
+void
+check_args(const char *sql, int count)
+{
+    static DwString qargs[32];
+    static int been_here;
+    if(!been_here)
+    {
+        for(int i = 0; i < 32; ++i)
+        {
+            qargs[i] = DwString("?");
+            qargs[i] += DwString::fromInt(i + 1);
+        }
+        been_here = 1;
+    }
+    unsigned int found = 0;
+    DwString a(sql);
+    int dense = 0;
+    for(int i = 31; i >= 0; --i)
+    {
+        int gotit = a.srep(qargs[i], "", 1);
+        if(gotit)
+        {
+            dense = 1;
+            found |= (1 << i);
+        }
+        else if(dense)
+        {
+            oopanic("nondense args to sql");
+        }
+    }
+    int cnt = 0;
+    for(int i = 0; i < count; ++i)
+    {
+        if(!(found & (1 << i)))
+        {
+            oopanic("unused sql arg");
+        }
+        found &= ~(1 << i);
+        ++cnt;
+    }
+    if(found)
+    {
+        oopanic("unspeced sql arg, ?x treated as null");
+    }
+    if(cnt != count)
+    {
+        oopanic("#args != speced args");
+    }
+}
+#endif
 
 vc
 sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
@@ -38,9 +99,22 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     sqlite3_stmt *st = 0;
     const char *tail = 0;
     int errcode;
+
+#ifdef DWYCO_DBG_CHECK_SQL
+    GRTLOG("sql: %d %s", aa.num_elems(), (const char *)sql);
+    {
+        for(int i = 1; i < aa.num_elems(); ++i)
+        {
+            GRTLOGVC(aa.get(i));
+        }
+    }
+    check_args(sql, aa.num_elems() - 1);
+#endif
+
     if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
                                      &st, &tail)) != SQLITE_OK)
     {
+        oopanic(sqlite3_errmsg(dbs));
         throw -1;
         return vcnil;
     }
@@ -54,10 +128,10 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         for(int i = 1; i < a->num_elems(); ++i)
         {
             vc val = aa.get(i);
-            switch(aa.get(i).type())
+            switch(val.type())
             {
             case VC_INT:
-                if(sqlite3_bind_int(st, i, val) != SQLITE_OK)
+                if(sqlite3_bind_int64(st, i, val) != SQLITE_OK)
                 {
                     sqlite3_finalize(st);
                     USER_BOMB("sql bind error", vcnil)
@@ -118,20 +192,19 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         {
         case SQLITE_DONE:
             goto out;
+
+
         case SQLITE_BUSY:
+        case SQLITE_IOERR:
             // need some indication of what we should do here.
             // retry or abort and error out. maybe do some exception
             // stuff here to allow the user to abort if they want to.
+            // the IOERR thing seems to be returned on some platforms
+            // like android for locking issues.
             res = "busy";
-            // note: because of bugs in sqlite, it appears that
-            // this case requires any transaction to be rolled back
-            // to avoid database corruption (wtf, that is pretty sad.)
-            // anyway, as long as you are 3.4+ on sqlite, the
-            // transaction will be rolled back for you. it doesn't
-            // really say how that affects other operations. it is
-            // probably best to just issue an explicit rollback sql
+            // it is probably best to just issue an explicit rollback sql
             // command just in case.
-            break;
+            goto out;
         case SQLITE_ROW:
         {
             vc resrow(VC_VECTOR, 0, cols);
@@ -140,7 +213,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
                 switch(sqlite3_column_type(st, i))
                 {
                 case SQLITE_INTEGER:
-                    resrow[i] = sqlite3_column_int(st, i);
+                    resrow[i] = sqlite3_column_int64(st, i);
                     break;
                 case SQLITE_FLOAT:
                     resrow[i] = sqlite3_column_double(st, i);
@@ -162,14 +235,16 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         }
         break;
         default:
+            const char *volatile a = sqlite3_errmsg(dbs);
+
             sqlite3_finalize(st);
-            oopanic(sqlite3_errmsg(dbs));
             return vcnil;
         }
     }
 out:
     ;
     sqlite3_finalize(st);
+    GRTLOGVC(res);
     return res;
 }
 }

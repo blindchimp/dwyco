@@ -34,10 +34,20 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import android.app.job.JobScheduler;
 import android.app.job.JobInfo;
 import android.app.job.JobInfo.Builder;
 import android.content.ComponentName;
+import androidx.core.content.FileProvider;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import android.os.ParcelFileDescriptor;
+import android.content.ContentValues;
+import java.io.IOException;
+import java.io.File;
 
 // note: use notificationcompat stuff for older androids
 
@@ -48,6 +58,7 @@ public class NotificationClient extends QtActivity
     private static SocketLock prefs_lock;
     public static int allow_notification = 1;
     private static FirebaseAnalytics mFirebaseAnalytics;
+    private static String TAG = "notification_client";
 
     public NotificationClient()
     {
@@ -69,6 +80,9 @@ public class NotificationClient extends QtActivity
         //alarm.setRepeating(AlarmManager.RTC_WAKEUP, cur_cal.getTimeInMillis(), 1000 * 60, pintent);
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+	if(DwycoApp.keep_screen_on)
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
@@ -136,7 +150,7 @@ public class NotificationClient extends QtActivity
 
         Intent notintent = new Intent(m_instance, NotificationClient.class);
         notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent p = PendingIntent.getActivity(m_instance, 1, notintent, 0);
+        PendingIntent p = PendingIntent.getActivity(m_instance, 1, notintent, PendingIntent.FLAG_IMMUTABLE);
         m_builder.setContentIntent(p);
 
         Notification not = m_builder.getNotification();
@@ -213,6 +227,33 @@ public static String get_token() {
     SharedPreferences sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
     String token = sp.getString("token", "notoken");
     prefs_lock.release();
+
+    FirebaseMessaging.getInstance().getToken()
+    .addOnCompleteListener(new OnCompleteListener<String>() {
+        @Override
+        public void onComplete(Task<String> task) {
+          if (!task.isSuccessful()) {
+            Log.w("TOKEN", "Fetching FCM registration token failed", task.getException());
+            return;
+          }
+
+          // Get new FCM registration token
+          String token = task.getResult();
+          prefs_lock.lock();
+          SharedPreferences sp;
+          sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
+          SharedPreferences.Editor pe = sp.edit();
+          pe.putString("token", token);
+          pe.commit();
+          prefs_lock.release();
+      
+          Log.d("wrote token: ", token);
+          // Log and toast
+          //Log.d("TOKEN", token);
+          
+        }
+    });
+
     return token;
 
     }
@@ -280,6 +321,14 @@ public static void log_event() {
     mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.LOGIN, bundle);
 
     }
+
+public static void log_event2(String name, String method) {
+    Bundle bundle = new Bundle();
+    bundle.putString(FirebaseAnalytics.Param.METHOD, method);
+    mFirebaseAnalytics.logEvent(name, bundle);
+
+    }
+
 public static void set_user_property(String name, String value) {
     mFirebaseAnalytics.setUserProperty(name, value);
     }
@@ -520,6 +569,69 @@ public static void set_user_property(String name, String value) {
      */
     public static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
+    public static  void notifyMediaStoreScanner(String filepath) throws IOException {
+
+        Context mContext = m_instance.getApplicationContext();
+        Uri cacheImageUri;
+        File f = new File(filepath);
+        if(!f.exists()) {
+            Log.e(TAG, "file doesn't exist");
+            throw new IOException("file to share doesn't exist");
+        }
+        cacheImageUri = FileProvider.getUriForFile(mContext, DwycoApp.file_provider, f);
+        Uri newImageUri = createImageInMediaStore(mContext, cacheImageUri);
+        ContentResolver resolver = mContext
+                .getContentResolver();
+        FileInputStream input ;
+        FileOutputStream outputStream ;
+        try (ParcelFileDescriptor pfd = resolver
+                .openFileDescriptor(newImageUri, "w", null)) {
+            // Write data into the pending image.
+            try(ParcelFileDescriptor  pfdInput  = resolver.openFileDescriptor(cacheImageUri , "r",null)){
+
+                outputStream =new FileOutputStream(pfd.getFileDescriptor());
+                input = new FileInputStream(pfdInput.getFileDescriptor());
+                int  readResponse;
+                do {
+                    byte[] bytes = new byte[1024];
+                    readResponse = input.read(bytes);
+                    outputStream.write(bytes);
+                }while (readResponse !=-1);
+                input.close();
+                outputStream.close();
+            } catch (IOException e) {
+                Log.e(TAG, e.getMessage());
+                throw  new IOException("Error saving image ");
+            }
+
+        } catch (IOException e) {
+            Log.e(TAG, e.getMessage());
+            throw  new IOException("Error saving image ");
+        }
+    }
+
+
+    private static Uri createImageInMediaStore(Context mContext, Uri cacheImageUri){
+        if (mContext== null)
+            throw new IllegalArgumentException("mContext can not be null");
+        if(cacheImageUri == null)
+            throw new IllegalArgumentException("cacheImageUri can not be null");
+
+        String imageName = cacheImageUri.getLastPathSegment();
+        ContentResolver contentResolver = mContext.getContentResolver();
+        Uri imagesCollection;
+
+        if(Build.VERSION.SDK_INT  <= Build.VERSION_CODES.P){
+            imagesCollection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+        }else{
+            imagesCollection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        }
+
+        ContentValues newImageContentValues = new ContentValues();
+        newImageContentValues.put(MediaStore.Images.ImageColumns.DISPLAY_NAME, imageName);
+        return  contentResolver.insert(imagesCollection, newImageContentValues);
     }
 
     private static void catchLog(String log) {
