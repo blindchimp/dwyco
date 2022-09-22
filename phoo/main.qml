@@ -39,7 +39,8 @@ ApplicationWindow {
         str += icon
         return str
     }
-
+    // attempt to convert an absolute length into the
+    // number of pixels on the screen
     function cm(cm){
         if(Screen.pixelDensity)
             return cm*Screen.pixelDensity*10
@@ -58,6 +59,10 @@ ApplicationWindow {
         console.warn("Could not calculate 'inch' based on Screen.pixelDensity.")
         return 0
     }
+    // takes a percent, and returns the number of pixels
+    // corresponding that percentage of the given dimension
+    // used when you just want to estimate that something should
+    // take a certain percentage of the screen
     function vw(i){
         if(Screen.width)
             return i*(Screen.width/100)
