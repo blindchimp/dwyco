@@ -10,7 +10,7 @@ fi
 
 export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
 NDK_API_LEVEL=17
-if [ $NDK_ABI = "arm64" ]
+if [ $NDK_ABI = "arm64" -o $NDK_ABI = "x86_64" ]
 then
 NDK_API_LEVEL=21
 fi
