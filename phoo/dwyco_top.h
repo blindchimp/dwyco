@@ -146,12 +146,21 @@ public:
     Q_INVOKABLE void init();
     Q_INVOKABLE int service_channels();
     Q_INVOKABLE void exit() {
-        //dwyco_empty_trash();
-        //dwyco_power_clean_safe();
+        // note: this will clean some parts of the
+        // system that might be in use by the client
+        // as well, and ignore some parts. like files
+        // ending in .jpeg will not be removed from
+        // the tmp folder. it is probably a mistake
+        // for the client to be using the same tmp
+        // folder as the dwyco* api, since it might
+        // clean some things the client isn't expecting.
         dwyco_exit();
     }
 
     Q_INVOKABLE void power_clean() {
+        // note: this is disabled right now, pending some
+        // better definition of "clean". it doesn't jive
+        // with the syncing stuff we do now.
         dwyco_power_clean_safe();
     }
 
