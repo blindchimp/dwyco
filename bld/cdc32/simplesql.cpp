@@ -275,6 +275,16 @@ SimpleSql::vacuum()
 }
 
 void
+SimpleSql::set_max_size(int mb)
+{
+   vc pagesize = sql_simple("pragma page_size");
+   int sz = pagesize[0][0];
+
+   int pages = (mb * 1024 * 1024) / sz;
+   sql_simple(DwString("pragma max_page_count=%1").arg(DwString::fromInt(pages)).c_str());
+}
+
+void
 SimpleSql::rollback_transaction()
 {
     if(tdepth == 0)
@@ -329,6 +339,8 @@ SimpleSql::query(const VCArglist *a)
     vc res = sqlite3_bulk_query(Db, a);
     if(res.is_nil() || (res.type() == VC_STRING && res == vc("busy")))
         throw -1;
+    if(res.type() == VC_STRING && res == vc("full"))
+        throw res;
     return res;
 }
 

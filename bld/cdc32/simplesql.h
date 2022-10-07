@@ -51,6 +51,7 @@ public:
     void sync_off();
     void sync_on();
     void vacuum();
+    void set_max_size(int mb);
     void rollback_transaction();
     void set_busy_timeout(int ms);
 
