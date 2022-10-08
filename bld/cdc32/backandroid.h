@@ -3,6 +3,7 @@
 
 namespace dwyco {
 void android_backup();
+int android_restore_msgs();
 
 }
 

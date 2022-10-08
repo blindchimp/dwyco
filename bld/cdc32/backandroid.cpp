@@ -5,6 +5,7 @@
 #include "qmsg.h"
 #include "qauth.h"
 #include "ser.h"
+#include "xinfo.h"
 
 
 #ifdef _WIN32
@@ -313,6 +314,135 @@ android_backup()
     Db->exit();
     delete Db;
     Db = 0;
+}
+
+// note: uid is assumed be hex already here
+static
+int
+make_msg_folder(const vc& uid, DwString* fn_out)
+{
+    if(uid.len() == 0)
+        return 0;
+    DwString s((const char *)uid);
+    s += ".usr";
+    s = newfn(s);
+    if(fn_out)
+        *fn_out = s;
+    mkdir(s.c_str());
+    return 1;
+}
+
+// note: uid is assumed to hex
+static
+int
+restore_msg(const vc& uid, const vc& mid)
+{
+    try
+    {
+    const vc res = sql("select msg, attfn, att from msgs where mid = ?1", mid);
+
+    vc msg;
+    if(!deserialize(res[0][0], msg))
+        return 0;
+    const vc& attfn = res[0][1];
+    const vc& att = res[0][2];
+
+    DwString dir = (const char *)uid;
+    dir += ".usr";
+    dir = newfn(dir);
+    DwString fn = (const char *)mid;
+    fn += msg[QM_BODY_SENT].is_nil() ? ".bod" : ".snt";
+    dir += DIRSEPSTR;
+    DwString ffn = dir;
+    ffn += fn;
+    if(!save_info(msg, ffn.c_str(), 1))
+        return 0;
+    if(attfn.len() > 0)
+    {
+        DwString actual_attfn = dir;
+        actual_attfn += (const char *)attfn;
+        //don't overwrite attachments if it already exists
+#ifdef _Windows
+        if(_access(actual_attfn.c_str(), 0) == 0)
+            return 1;
+        int fd = _creat(actual_attfn.c_str(), _S_IWRITE);
+#else
+        if(access(actual_attfn.c_str(), F_OK) == 0)
+            return 1;
+        int fd = creat(actual_attfn.c_str(), 0666);
+#endif
+        if(fd == -1)
+            return 0;
+        if(write(fd, (const char *)att, att.len()) != att.len())
+        {
+            close(fd);
+            DeleteFile(actual_attfn.c_str());
+            return 0;
+        }
+        close(fd);
+    }
+    }
+    catch(...)
+    {
+        return 0;
+    }
+
+    return 1;
+
+}
+
+int
+android_restore_msgs()
+{
+    int ret = 1;
+    if(Db)
+        return 0;
+    Db = new backup_sql;
+    if(!Db->init())
+        oopanic("can't init backup");
+    //Db->attach(newfn(MSG_IDX_DB), "mi");
+    Db->attach(newfn(TAG_DB), "mt");
+    Db->sync_off();
+
+    try
+    {
+        vc res;
+
+        res = sql("select distinct(from_uid) from main.msgs");
+
+        // we are likely to be loading something at this point,
+        // so kill the index so it is rebuilt
+        DeleteFile(newfn(MSG_IDX_DB).c_str());
+
+        for(int i = 0; i < res.num_elems(); ++i)
+        {
+            const vc& uid = res[i][0];
+            make_msg_folder(uid, 0);
+        }
+
+        res = sql("select from_uid, mid from main.msgs");
+
+        for(int i = 0; i < res.num_elems(); ++i)
+        {
+            const vc& uid = res[i][0];
+            const vc& mid = res[i][1];
+            restore_msg(uid, mid);
+        }
+
+        // merge in the tags from the backup
+        sql_start_transaction();
+        sql("insert into mt.gmt select * from main.tags");
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        ret = 0;
+    }
+    Db->exit();
+    delete Db;
+    Db = 0;
+    return ret;
 }
 
 
