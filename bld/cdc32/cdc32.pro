@@ -156,6 +156,7 @@ SOURCES += sqlite3.c
 
 SOURCES += \
     activeuid.cpp \
+    backandroid.cpp \
     bgapp.cpp \
     ezset2.cpp \
 mmchan.cc \
@@ -286,6 +287,9 @@ aqext_android.cpp \
     upnp.cpp \
     aqkey.cpp \
     netlog.cpp
+
+HEADERS += \
+    backandroid.h
 
 
 

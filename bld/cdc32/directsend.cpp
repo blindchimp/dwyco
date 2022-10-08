@@ -28,7 +28,7 @@
 #define CHANNEL_SETUP_TIMEOUT (1000 * 4)
 #define XFER_WATCHDOG_TIMEOUT (1000 * 20)
 
-using namespace dwyco;
+namespace dwyco {
 DwQueryByMember<DirectSend> DirectSend::Qbm;
 
 DirectSend::DirectSend(const DwString& fn) :
@@ -59,17 +59,17 @@ async_delete(vc, void *, vc, ValidPtr vp)
     delete (DirectSend *)(void *)vp;
 }
 
-static
+
 void
-delete_later(DirectSend *d)
+DirectSend::delete_later(DirectSend *d)
 {
     d->disconnect_all();
     dirth_q_local_action(vc(VC_VECTOR), QckDone(async_delete, 0, vcnil, d->vp));
 }
 
-static
+
 void
-send_done(vc m, void *, vc, ValidPtr vp)
+DirectSend::send_done(vc m, void *, vc, ValidPtr vp)
 {
     if(!vp.is_valid())
         return;
@@ -166,8 +166,8 @@ DirectSend::send_direct()
 
 }
 
-static void
-eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
+void
+DirectSend::eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
 {
     mc->timer1.stop();
     if(!vp.is_valid())
@@ -210,8 +210,8 @@ eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
     q->send_direct();
 }
 
-static void
-set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
+void
+DirectSend::set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
 {
     mc->timer1.stop();
     mc->timer1.load(XFER_WATCHDOG_TIMEOUT);
@@ -247,8 +247,8 @@ xfer_chan_call_succeeded(MMChannel *mc, int chan, vc, void *, ValidPtr)
     // timer1 callback still set to xfer_chan_setup_timeout
 }
 
-static void
-xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp)
+void
+DirectSend::xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp)
 {
     eo_direct_xfer(mc, arg1, arg2, vp);
 }
@@ -508,8 +508,6 @@ DirectSend::send_message()
         return 1;
     }
 
-
-
     // just return ok if we are in the process of setting up a direct
     // channel, or the channel is already set up
     DwVecP<MMCall> ret = MMCall::MMCalls_qbm.query_by_member(uid, &MMCall::uid);
@@ -677,4 +675,5 @@ DirectSend::canceled()
     se_sig.emit(SE_MSG_SEND_CANCELED, qfn, r);
     delete_later(this);
 
+}
 }

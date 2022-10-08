@@ -164,7 +164,8 @@ sync_sendq.cpp \
 bgapp.cpp \
 synccalls.cpp \
 netlog.cpp \
-activeuid.cpp
+activeuid.cpp \
+backandroid.cpp
 
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls

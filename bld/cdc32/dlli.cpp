@@ -369,6 +369,7 @@ using namespace CryptoPP;
 #include "pulls.h"
 #include "vcudh.h"
 #include "synccalls.h"
+#include "backandroid.h"
 
 using namespace dwyco;
 
@@ -1579,6 +1580,8 @@ dwyco_exit()
     exit_audio_input();
     exit_audio_output();
     exit_codec();
+    //android_backup();
+    //android_restore_msgs();
 
     // don't delete, since there may be post-dwyco_exit calls come
     // in from global dtors and stuff, just log them

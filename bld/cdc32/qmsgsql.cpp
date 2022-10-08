@@ -561,7 +561,7 @@ msg_idx_updated(vc uid, int prepended)
 vc
 package_downstream_sends(vc remote_uid)
 {
-    vc huid = to_hex(remote_uid);
+    const vc huid = to_hex(remote_uid);
     try
     {
         // NOTE: may want to package this as a single command
@@ -582,8 +582,8 @@ package_downstream_sends(vc remote_uid)
         // messages and one for tags. it might make sense to change this to one table
         // in the future so simplify things here.
 
-        vc next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
-        vc next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
+        const vc next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
+        const vc next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
         vc sync_id;
         vc next_tag_sync;
         vc next_mid_sync;
@@ -604,9 +604,9 @@ package_downstream_sends(vc remote_uid)
             next_tag_sync = next_tag_sync_res[0][1];
         }
 
-        vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
+        const vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
                              "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2", huid, next_mid_sync);
-        vc mtombs = sql_simple("select mid, op from main.midlog "
+        const vc mtombs = sql_simple("select mid, op from main.midlog "
                                "where midlog.to_uid = ?1 and op = 'd' and rowid < ?2", huid, next_mid_sync);
 
         // note: put in the "group by" since it appears at some point i allowed duplicate
@@ -614,9 +614,9 @@ package_downstream_sends(vc remote_uid)
         // a picture of which client has which tags, and i'm not sure i use that info anywhere).
         // the duplicates didn't cause an error, just lots of extra processing that was ignored.
 
-        vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
+        const vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
                              "where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
-        vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
+        const vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
                               "where to_uid = ?1 and op = 'd' and tl.rowid < ?2", huid, next_tag_sync);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || !sync_id.is_nil())
             GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d sync %s", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), (const char *)sync_id);
@@ -993,7 +993,7 @@ import_remote_mi(vc remote_uid)
 vc
 import_remote_iupdate(vc remote_uid, vc vals)
 {
-    vc huid = to_hex(remote_uid);
+    const vc huid = to_hex(remote_uid);
 
     try
     {
@@ -1665,7 +1665,7 @@ map_gid_to_uids(vc gid)
 // if uid is not in a group, just returns a vector
 // with the uid in it.
 vc
-map_uid_to_uids(vc uid)
+map_uid_to_uids(const vc& uid)
 {
     vc res;
     vc ret(VC_VECTOR);
@@ -1766,7 +1766,7 @@ sql_get_recent_users(int recent, int *total_out)
                     //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
                     "select uid from uids where uid not in (select * from grps) union select * from mins limit ?1",
                     recent ? 100 : -1,
-                    recent ? (365 * 24 * 3600) : 50 * (365 * 24 * 3600));
+                    recent ? (365L * 24 * 3600) : (100L * (365 * 24 * 3600)));
 
         if(total_out)
         {

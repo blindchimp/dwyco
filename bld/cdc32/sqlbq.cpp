@@ -92,7 +92,7 @@ vc
 sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
 {
     const VCArglist &aa = *a;
-    vc sql = aa.get(0);
+    const vc sql = aa.get(0);
     //vc err = aa[2];
     // everything after err is considered to be a binding to be
     // set into the sql
@@ -131,7 +131,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             switch(val.type())
             {
             case VC_INT:
-                if(sqlite3_bind_int(st, i, val) != SQLITE_OK)
+                if(sqlite3_bind_int64(st, i, val) != SQLITE_OK)
                 {
                     sqlite3_finalize(st);
                     USER_BOMB("sql bind error", vcnil)
@@ -205,6 +205,17 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             // it is probably best to just issue an explicit rollback sql
             // command just in case.
             goto out;
+
+            // note: this one is mostly for situations where we are
+            // limiting the size of the resulting database for backups
+            // or something like that. best thing to do is abort, then
+            // vacuum and retry, or maybe adjust the info you are trying
+            // to backup. this is mostly for android, where there is a limit
+            // on the automatic backup of about 25MB.
+        case SQLITE_FULL:
+            res = "full";
+            goto out;
+
         case SQLITE_ROW:
         {
             vc resrow(VC_VECTOR, 0, cols);
@@ -213,7 +224,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
                 switch(sqlite3_column_type(st, i))
                 {
                 case SQLITE_INTEGER:
-                    resrow[i] = sqlite3_column_int(st, i);
+                    resrow[i] = sqlite3_column_int64(st, i);
                     break;
                 case SQLITE_FLOAT:
                     resrow[i] = sqlite3_column_double(st, i);
@@ -235,6 +246,9 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         }
         break;
         default:
+            // note: the volatile here is for debugging, hoping
+            // the compiler won't elide it before we can inspect it
+            // in the debugger.
             const char *volatile a = sqlite3_errmsg(dbs);
 
             sqlite3_finalize(st);

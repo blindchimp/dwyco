@@ -13,13 +13,19 @@ fi
 
 if [ -z "$NDK_ABI" ]
 then
-	echo NDK_ABI should be \"arm\", \"x86\", or \"arm64\"
+	echo NDK_ABI should be \"arm\", \"x86\", \"arm64\", \"x86_64\"
 	if [ -f NDK_ABI_X86 ]
 	then
 		echo setting NDK_ABI to \"x86\"
 		export NDK_ABI="x86"
 		export TARGET_TAG="i686-linux-android"
 		export NDK_ABI_NAME="x86"
+	elif [ -f NDK_ABI_X86_64 ]
+	then
+		echo setting NDK_ABI to \"x86_64\"
+		export NDK_ABI="x86_64"
+		export TARGET_TAG="x86_64-linux-android"
+		export NDK_ABI_NAME="x86_64"
 	elif [ -f NDK_ABI_ARM64 ]
 	then
 		echo setting NDK_ABI to \"arm64\"
