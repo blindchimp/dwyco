@@ -111,7 +111,10 @@ Page {
                             // ugh, what a hack
                             android_img_pick_hack = 0
                             android_img_pick_hack = 1
-                            notificationClient.open_image()
+                            if(notificationClient.open_image() === 0) {
+                                failed_msg.text = "Android blocked access to images."
+                                animateOpacity.start()
+                            }
                         } else {
                             picture_picker.visible = true
 
@@ -208,6 +211,7 @@ Page {
                 stack.pop()
             } else {
                 profile_sent = 0
+                failed_msg.text = "Update failed..."
                 animateOpacity.start()
             }
         }
@@ -226,10 +230,20 @@ Page {
         anchors.fill: parent
     }
 
+    Rectangle {
+        anchors.fill: failed_msg
+        color: "black"
+        z: 9
+        opacity: failed_msg.opacity
+    }
+
     Text {
         id: failed_msg
         text: "Update failed... "
+        font.bold: true
+        color: "white"
         anchors.centerIn: parent
+        z: 10
 
         opacity: 0.0
         NumberAnimation {
@@ -239,8 +253,6 @@ Page {
                from: 1.0
                to: 0.0
                duration: 3000
-
-
           }
     }
     
@@ -319,6 +331,7 @@ Page {
                     }
                     else
                     {
+                        failed_msg.text = "Update failed..."
                         animateOpacity.start()
                     }
                 }

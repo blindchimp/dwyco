@@ -391,11 +391,13 @@ Page {
                                     // ugh, what a hack
                                     android_img_pick_hack = 0
                                     android_img_pick_hack = 2
-                                    notificationClient.open_image()
+                                    if(notificationClient.open_image() === 0) {
+                                        failed_msg.text = "Android blocked access to images."
+                                        animateOpacity.start()
+                                    }
                                 } else {
                                     picture_picker.visible = true
                                 }
-
                             }
                         }
 //                        MenuItem {
@@ -1193,6 +1195,32 @@ Page {
         anchors.verticalCenter: parent.verticalCenter
         z: 20
 
+    }
+
+    Rectangle {
+        anchors.fill: failed_msg
+        color: "black"
+        z: 9
+        opacity: failed_msg.opacity
+    }
+
+    Text {
+        id: failed_msg
+        text: "Failed..."
+        font.bold: true
+        anchors.centerIn: parent
+        z: 10
+        color: "white"
+
+        opacity: 0.0
+        NumberAnimation {
+               id: animateOpacity
+               target: failed_msg
+               properties: "opacity"
+               from: 1.0
+               to: 0.0
+               duration: 3000
+          }
     }
 
     Warning {

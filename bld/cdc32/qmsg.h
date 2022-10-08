@@ -34,7 +34,7 @@ int clear_user(vc uid);
 vc load_msgs(vc uid);
 vc load_bodies(vc dir, int load_sent);
 vc load_body_by_id(vc uid, vc msg_id);
-vc load_qd_msgs(vc uid, int load_special);
+vc load_qd_msgs(const vc &uid, int load_special);
 vc load_qd_to_body(vc qid);
 void query_messages();
 MMChannel *fetch_attachment(vc fn, DestroyCallback, vc, void *, ValidPtr,

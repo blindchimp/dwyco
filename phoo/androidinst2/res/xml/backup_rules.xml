@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
- <exclude domain="file" path="dwyco/phoo/tmp"/>
- <exclude domain="file" path="dwyco/phoo/msgs.sql"/>
- <exclude domain="file" path="dwyco/phoo/prfdb.sql"/>
- <exclude domain="file" path="dwyco/phoo/shares" />
- <exclude domain="file" path="dwyco/phoo/trash" />
- <exclude domain="file" path="dwyco/phoo/xfer" />
- <exclude domain="file" path="dwyco/phoo/skid.sql" />
+ <include domain="file" path="dwyco/phoo/aback.sql"/>
 </full-backup-content>
 

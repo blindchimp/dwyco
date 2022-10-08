@@ -11,7 +11,6 @@
 #include "vccomp.h"
 #include "sp.h"
 #include "dwvecp.h"
-#include "vcmap.h"
 #include "vcxstrm.h"
 
 static DwVecP<void> Arg_stk;

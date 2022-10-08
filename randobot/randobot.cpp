@@ -13,10 +13,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "libgen.h"
 #include "dlli.h"
 #include "dwyco_new_msg.h"
-#include "dwycolistscoped.h"
 #include "simplesql.h"
 #include <QCryptographicHash>
 #include <QList>
@@ -48,7 +46,7 @@ struct rando_sql : public SimpleSql
 {
     rando_sql() : SimpleSql("rando.sql") {}
 
-    void init_schema() {
+    void init_schema(const DwString& schema_name) {
         sql_simple("create table if not exists randos(from_uid text collate nocase, "
                    "mid text collate nocase,"
                    "filename text, time integer, hash text collate nocase unique, loc_lat, loc_long)");
