@@ -22,6 +22,13 @@
 #include <fcntl.h>
 #endif
 
+// this autobackup is really not a good archive solution. it is just
+// good enough to get you going again with a basic set of messages
+// after you have uninstalled/reinstalled or loaded fresh on a new
+// phone or something.
+// there are lots of problems with the size limit of 25MB, especially
+// with attachments that are large.
+
 namespace dwyco {
 
 struct backup_sql : public SimpleSql
@@ -92,7 +99,7 @@ blob(vc m)
 
 static
 void
-sql_insert_record(vc from_uid, vc mid, vc msg, vc attfn, vc att)
+sql_insert_record(const vc& from_uid, const vc& mid, const vc& msg, const vc& attfn, const vc& att)
 {
 
     sql("replace into main.msgs values(?1,?2,?3,?4,?5)",
@@ -108,18 +115,18 @@ static
 void
 backup_msg(const vc& uid, const vc& mid)
 {
-    DwString dir = (const char *)uid_to_dir(uid);
+    const DwString dir = (const char *)uid_to_dir(uid);
     vc ret = load_body_by_id(uid, mid);
     if(ret.is_nil())
         return;
 
     if(ret[QM_BODY_ATTACHMENT].is_nil())
     {
-        sql_insert_record(uid, mid, ret, vcnil, vcnil);
+        sql_insert_record(uid, mid, ret, "", "");
     }
     else
     {
-        vc attfn = ret[QM_BODY_ATTACHMENT];
+        const vc attfn = ret[QM_BODY_ATTACHMENT];
         char *buf = 0;
         int fd = -1;
         try
@@ -162,7 +169,7 @@ backup_msg(const vc& uid, const vc& mid)
 
 static
 bool
-attempt_backup(vc v)
+attempt_backup(const vc& v)
 {
     try
     {
@@ -174,8 +181,8 @@ attempt_backup(vc v)
         for(int i = 0; i < msgs.num_elems(); ++i)
         {
             sql_start_transaction();
-            vc uid = from_hex(msgs[i][0]);
-            vc mid = msgs[i][1];
+            const vc uid = from_hex(msgs[i][0]);
+            const vc mid = msgs[i][1];
             backup_msg(uid, mid);
             sql_commit_transaction();
         }
@@ -205,28 +212,12 @@ android_backup()
         sql_start_transaction();
         sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
         sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
+        sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
         sql("delete from main.tags");
         sql_commit_transaction();
         Db->vacuum();
         // android autobackup limit
         Db->set_max_size(24);
-
-        // plain texts that are favorited
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
-                   "and not exists (select 1 from main.msgs where favmid = mid)"
-                   " order by logical_clock desc"))
-        {
-            goto done;
-        }
-        // favorites with attachments
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
-                   "and not exists (select 1 from main.msgs where favmid = mid)"
-                   " order by logical_clock desc"))
-        {
-            goto done;
-        }
 
         try
         {
@@ -237,6 +228,54 @@ android_backup()
         catch(...)
         {
             sql_rollback_transaction();
+            goto done;
+        }
+
+        // plain texts that are favorited from pals
+        if(!attempt_backup(
+                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
+                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+                   "and not exists (select 1 from main.msgs where favmid = mid) "
+                   " order by logical_clock desc"))
+        {
+            goto done;
+        }
+
+        // plain texts that are favorited
+        if(!attempt_backup(
+                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment isnull "
+                   "and not exists (select 1 from main.msgs where favmid = mid)"
+                   " order by logical_clock desc"))
+        {
+            goto done;
+        }
+
+        // favorites with attachments from pals
+        if(!attempt_backup(
+                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
+                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+                   "and not exists (select 1 from main.msgs where favmid = mid)"
+                   " order by logical_clock desc"))
+        {
+            goto done;
+        }
+
+        // favorites with attachments
+        if(!attempt_backup(
+                    "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
+                   "and not exists (select 1 from main.msgs where favmid = mid)"
+                   " order by logical_clock desc"))
+        {
+            goto done;
+        }
+
+        // plain texts from pals
+        if(!attempt_backup(
+                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
+                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+                   "and not exists (select 1 from main.msgs where favmid = mid)"
+                   " order by logical_clock desc"))
+        {
             goto done;
         }
 
