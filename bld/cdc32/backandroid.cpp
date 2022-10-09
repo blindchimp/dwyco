@@ -117,7 +117,7 @@ void
 backup_msg(const vc& uid, const vc& mid)
 {
     const DwString dir = (const char *)uid_to_dir(uid);
-    vc ret = load_body_by_id(uid, mid);
+    const vc ret = load_body_by_id(uid, mid);
     if(ret.is_nil())
         return;
 
@@ -174,7 +174,7 @@ attempt_backup(const vc& v)
 {
     try
     {
-        const vc msgs = sql(v);
+        const vc& msgs = sql(v);
         // note: commit after every message, to try and sneak right up
         // to the limit. if there is a large query result
         // we want to get as much as possible in, instead of just failing
@@ -182,8 +182,8 @@ attempt_backup(const vc& v)
         for(int i = 0; i < msgs.num_elems(); ++i)
         {
             sql_start_transaction();
-            const vc uid = from_hex(msgs[i][0]);
-            const vc mid = msgs[i][1];
+            const vc& uid = from_hex(msgs[i][0]);
+            const vc& mid = msgs[i][1];
             backup_msg(uid, mid);
             sql_commit_transaction();
         }
@@ -196,6 +196,24 @@ attempt_backup(const vc& v)
     return false;
 }
 
+int
+android_days_since_last_backup()
+{
+    auto db = new backup_sql;
+    if(!db->init())
+        oopanic("can't init backup");
+
+    vc res = db->sql_simple("select date_updated from main.bu");
+    db->exit();
+    delete db;
+    long long du = res[0][0];
+    if(du == 0)
+        return 0;
+    long long now = time(0);
+    return (now - du) / (24L * 3600);
+}
+
+
 void
 android_backup()
 {
@@ -204,22 +222,26 @@ android_backup()
     Db = new backup_sql;
     if(!Db->init())
         oopanic("can't init backup");
+    Db->sync_off();
+    Db->optimize();
     Db->attach(newfn(MSG_IDX_DB), "mi");
     Db->attach(newfn(TAG_DB), "mt");
-    Db->sync_off();
 
     try
     {
+
         sql_start_transaction();
         sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
         sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
         sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
         sql("delete from main.tags");
+        sql("update main.bu set date_updated = strftime('%s', 'now')");
         sql_commit_transaction();
         Db->vacuum();
         // android autobackup limit
         Db->set_max_size(24);
 
+        // these tags are user-generated and usually pretty small
         try
         {
             sql_start_transaction();
