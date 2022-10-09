@@ -56,8 +56,9 @@ Pane {
                     text: {
 
                         (core.is_database_online === 0 ? "" : "Online ")
-                                + (SyncDescModel.connection_count === 0 ? "" : "Syncing ")
-                                + (core.invisible ? "(Invisible)" : "")
+                                + (SyncDescModel.connection_count === 0 ? "" : "Sync ")
+                                + (core.invisible ? "(Invis)" : "")
+                                + "(Arch: " + (core.total_users - ConvListModel.count).toString() + ")"
                     }
                     color: "white"
                 }
@@ -87,6 +88,17 @@ Pane {
                         Layout.margins: ctrl_pad
                         font.pixelSize: 12
                         color: "white"
+                    }
+
+                    Text {
+                        visible: group_active
+                        text:  core.active_group_name + " (" + core.percent_synced + "%)"
+                        color: "white"
+                        clip: true
+                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        Layout.fillWidth: true
+                        Layout.margins: ctrl_pad
+                        font.pixelSize: 12
                     }
                 }
             }

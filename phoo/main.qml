@@ -255,6 +255,7 @@ ApplicationWindow {
 
 
     footer: RowLayout {
+        visible: dwyco_debug
             Label {
                 id: ind_invis
                 text: "Invis"
