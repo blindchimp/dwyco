@@ -374,7 +374,7 @@ Page {
                 stack.push(send_multi_report)
             }
 
-            //visible: JoinLogModel.count > 0
+            visible: dwyco_debug
         }
         ItemDelegate {
             id: show_join_log
