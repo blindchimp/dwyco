@@ -296,8 +296,8 @@ background_android_backup()
         backup_done = nullptr;
         return ret;
     }
-    //if(android_days_since_last_backup() == 0)
-    //    return -1;
+    if(android_days_since_last_backup() < 1)
+        return -1;
     auto f = new std::future<int>;
     backup_done = f;
     *f = std::async(std::launch::async, &do_android_backup);

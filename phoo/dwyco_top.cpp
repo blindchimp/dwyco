@@ -1924,6 +1924,16 @@ DwycoCore::init()
         clear_unviewed_msgs();
         setting_put("bugfix1", "");
     }
+
+    update_android_backup_available(dwyco_get_android_backup_state() == 1);
+
+}
+
+int
+DwycoCore::load_backup()
+{
+    int ret = dwyco_restore_android_backup();
+    return ret;
 }
 
 void

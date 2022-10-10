@@ -215,6 +215,43 @@ android_days_since_last_backup()
     return (now - du) / (24L * 3600);
 }
 
+int
+android_get_backup_state()
+{
+    auto db = new backup_sql;
+    if(!db->init())
+        oopanic("can't init backup");
+
+    vc res = db->sql_simple("select state from main.bu");
+    db->exit();
+    delete db;
+    return res[0][0];
+}
+
+int
+android_set_backup_state(int i)
+{
+    auto db = new backup_sql;
+    if(!db->init())
+        oopanic("can't init backup");
+    int ret = 1;
+    try
+    {
+        db->start_transaction();
+        db->sql_simple("update main.bu set state = ?1", i);
+        db->commit_transaction();
+    }
+    catch(...)
+    {
+        db->rollback_transaction();
+        ret = 0;
+    }
+
+    db->exit();
+    delete db;
+    return ret;
+}
+
 
 void
 android_backup()
@@ -237,7 +274,7 @@ android_backup()
         sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
         sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
         sql("delete from main.tags");
-        sql("update main.bu set date_updated = strftime('%s', 'now')");
+        sql("update main.bu set date_updated = strftime('%s', 'now'), state = 1");
         sql_commit_transaction();
         Db->vacuum();
         // android autobackup limit

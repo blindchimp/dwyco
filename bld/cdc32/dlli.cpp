@@ -9071,6 +9071,32 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
     //exit(0);
 }
 
+// special hacks for android
+DWYCOEXPORT
+int
+dwyco_get_android_backup_state()
+{
+    int ret = android_get_backup_state();
+    return ret;
+}
+
+DWYCOEXPORT
+int
+dwyco_set_android_backup_state(int i)
+{
+    int ret = android_set_backup_state(i);
+    return ret;
+}
+
+// NOTE: IF THIS RETURNS 1, you have to exit immediately
+DWYCOEXPORT
+int
+dwyco_restore_android_backup()
+{
+    int ret = android_restore_msgs();
+    return ret;
+}
+
 // these are some functions that are called from java (via swig interface)
 // that are just helpers for importing data from an android environment
 // back into the c++ environment

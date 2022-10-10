@@ -1552,6 +1552,10 @@ int DWYCOEXPORT dwyco_copy_out_backup(const char *dir, int force);
 void DWYCOEXPORT dwyco_remove_backup();
 int DWYCOEXPORT dwyco_restore_from_backup(const char *bu_fn, int msgs_only);
 
+int DWYCOEXPORT dwyco_get_android_backup_state();
+int DWYCOEXPORT dwyco_set_android_backup_state(int i);
+int DWYCOEXPORT dwyco_restore_android_backup();
+
 
 // not called from java
 #define DWYCO_CONTACT_LIST_NAME "000"

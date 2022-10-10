@@ -56,6 +56,7 @@ class DwycoCore : public QObject
 
     QML_READONLY_VAR_PROPERTY(bool, invisible)
     QML_READONLY_VAR_PROPERTY(int, android_migrate)
+    QML_READONLY_VAR_PROPERTY(bool, android_backup_available)
 
 
 public:
@@ -82,6 +83,7 @@ public:
         m_any_unviewed = false;
         m_invisible = false;
         m_android_migrate = Android_migrate;
+        m_android_backup_available = false;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -312,6 +314,8 @@ public:
 
     Q_INVOKABLE QUrl from_local_file(const QString&);
     Q_INVOKABLE QString to_local_file(const QUrl& url);
+
+    Q_INVOKABLE int load_backup();
 
 public:
 
