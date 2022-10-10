@@ -4,6 +4,7 @@
 namespace dwyco {
 void android_backup();
 int android_restore_msgs();
+int android_days_since_last_backup();
 
 }
 

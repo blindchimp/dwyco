@@ -46,7 +46,7 @@ struct backup_sql : public SimpleSql
                   );
         sql_simple("create table if not exists misc_blobs (name text unique on conflict replace, data blob);");
         sql_simple("create table if not exists bu (lock integer not null default 0, "
-                   "state integer not null, date_sent integer default 0, date_ack integer default 0, date_updated default 0, version default 0, primary key (lock), check (lock = 0));");
+                   "state integer not null, date_sent integer default 0, date_ack integer default 0, date_updated integer default 0, version integer default 0, primary key (lock), check (lock = 0));");
         sql_simple("insert or ignore into bu(lock, state) values(0, 0);");
 
         sql_simple("create index if not exists from_uid_idx on msgs(from_uid);");
@@ -174,7 +174,9 @@ attempt_backup(const vc& v)
 {
     try
     {
+        sql_start_transaction();
         const vc& msgs = sql(v);
+        sql_commit_transaction();
         // note: commit after every message, to try and sneak right up
         // to the limit. if there is a large query result
         // we want to get as much as possible in, instead of just failing
@@ -191,6 +193,7 @@ attempt_backup(const vc& v)
         return true;
 
     } catch (...) {
+        sql_rollback_transaction();
 
     }
     return false;
@@ -206,9 +209,8 @@ android_days_since_last_backup()
     vc res = db->sql_simple("select date_updated from main.bu");
     db->exit();
     delete db;
+
     long long du = res[0][0];
-    if(du == 0)
-        return 0;
     long long now = time(0);
     return (now - du) / (24L * 3600);
 }
