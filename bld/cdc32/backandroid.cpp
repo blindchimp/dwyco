@@ -6,6 +6,7 @@
 #include "qauth.h"
 #include "ser.h"
 #include "xinfo.h"
+#include "sepstr.h"
 
 
 #ifdef _WIN32
