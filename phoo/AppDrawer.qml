@@ -87,4 +87,11 @@ AppDrawerForm {
 
     }
 
+    load_backup_button.onClicked: {
+        core.load_backup()
+        core.set_local_setting("reindex1", "")
+        core.exit()
+        Qt.quit()
+    }
+
 }

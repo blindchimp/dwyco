@@ -390,7 +390,9 @@ make_msg_folder(const vc& uid, DwString* fn_out)
     s = newfn(s);
     if(fn_out)
         *fn_out = s;
-    mkdir(s.c_str());
+    GRTLOG("restoring user %s", s.c_str(), 0);
+    int ret = mkdir(s.c_str());
+    GRTLOG("mkdir %d", ret, 0);
     return 1;
 }
 
@@ -399,6 +401,7 @@ static
 int
 restore_msg(const vc& uid, const vc& mid)
 {
+    GRTLOG("restore msg %s %s", (const char *)uid, (const char *)mid);
     try
     {
     const vc res = sql("select msg, attfn, att from msgs where mid = ?1", mid);
@@ -465,6 +468,7 @@ android_restore_msgs()
     //Db->attach(newfn(MSG_IDX_DB), "mi");
     Db->attach(newfn(TAG_DB), "mt");
     Db->sync_off();
+    GRTLOG("android restore", 0, 0);
 
     try
     {

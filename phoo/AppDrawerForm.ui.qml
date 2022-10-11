@@ -25,6 +25,7 @@ Pane {
     property alias browse_tags_button: browse_tags_button
     property alias browse_hidden_button: browse_hidden_button
     property alias link_dev_button: link_dev_button
+    property alias load_backup_button: load_backup_button
     property real ctrl_pad: 4
     property alias circularImage: circularImage
     property alias text1: text1
@@ -198,6 +199,15 @@ Pane {
             topPadding: ctrl_pad
             padding: ctrl_pad
             //visible: false
+            Layout.fillWidth: true
+        }
+        ItemDelegate {
+            id: load_backup_button
+            text: qsTr("Load backup")
+            bottomPadding: ctrl_pad
+            topPadding: ctrl_pad
+            padding: ctrl_pad
+            visible: core.android_backup_available
             Layout.fillWidth: true
         }
 
