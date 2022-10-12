@@ -1925,7 +1925,7 @@ DwycoCore::init()
         setting_put("bugfix1", "");
     }
 
-    update_android_backup_available(dwyco_get_android_backup_state() == 1);
+    update_android_backup_available(dwyco_get_android_backup_state());
 
 }
 

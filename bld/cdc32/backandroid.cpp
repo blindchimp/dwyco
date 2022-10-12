@@ -24,6 +24,12 @@
 #include <fcntl.h>
 #endif
 
+#ifdef DWYCO_USE_STATIC_SQLITE
+#include "sqlite/sqlite3.h"
+#else
+#include <sqlite3.h>
+#endif
+
 // this autobackup is really not a good archive solution. it is just
 // good enough to get you going again with a basic set of messages
 // after you have uninstalled/reinstalled or loaded fresh on a new
@@ -220,8 +226,11 @@ int
 android_get_backup_state()
 {
     auto db = new backup_sql;
-    if(!db->init())
-        oopanic("can't init backup");
+    // note: if the backup file doesn't exist, same
+    // as empty backup file, but don't create one
+    // if it isn't there.
+    if(!db->init(SQLITE_OPEN_READWRITE))
+        return 0;
 
     vc res = db->sql_simple("select state from main.bu");
     db->exit();

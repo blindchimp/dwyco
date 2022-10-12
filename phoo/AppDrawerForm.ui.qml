@@ -207,7 +207,7 @@ Pane {
             bottomPadding: ctrl_pad
             topPadding: ctrl_pad
             padding: ctrl_pad
-            visible: core.android_backup_available
+            visible: core.android_backup_available > 0
             Layout.fillWidth: true
         }
 
