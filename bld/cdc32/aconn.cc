@@ -148,7 +148,7 @@ recvvc(vc sock, vc& v, vc& peer)
     vcxstream istrm(sock, (char *)packet_buf, plen, vcxstream::FIXED);
     istrm.max_depth = 2;
     istrm.max_element_len = DESERIALIZE_MAX_STRING_LEN;
-    istrm.max_elements = BD_LIMIT;
+    istrm.max_elements = BD_DESERIALIZE_LIMIT;
     if(!istrm.open(vcxstream::READABLE, vcxstream::ATOMIC))
         return 0;
     if((len = v.xfer_in(istrm)) < 0)
@@ -313,6 +313,7 @@ broadcast_tick()
     v[BD_PRIMARY_PORT] = get_settings_value("net/primary_port");
     v[BD_SECONDARY_PORT] = get_settings_value("net/secondary_port");
     v[BD_PAL_PORT] = get_settings_value("net/pal_port");
+
     vc nicename = get_settings_value("user/username");
     if(nicename.len() > DESERIALIZE_MAX_STRING_LEN - 20)
     {
@@ -323,6 +324,7 @@ broadcast_tick()
     }
     v[BD_NICE_NAME] = nicename;
     v[BD_APP_ID] = App_ID;
+    v[BD_DISPOSITION] = MMChannel::My_disposition;
     announce[1] = v;
     sendvc(Local_broadcast, announce);
 
@@ -359,7 +361,8 @@ discover_tick()
                             new_d[BD_IP] != d[BD_IP] ||
                             new_d[BD_PRIMARY_PORT] != d[BD_PRIMARY_PORT] ||
                             new_d[BD_SECONDARY_PORT] != d[BD_SECONDARY_PORT] ||
-                            new_d[BD_PAL_PORT] != d[BD_PAL_PORT]
+                            new_d[BD_PAL_PORT] != d[BD_PAL_PORT] ||
+                            new_d[BD_DISPOSITION] != d[BD_DISPOSITION]
                             )
                     {
                         Broadcast_discoveries.add_kv(uid, data[1]);
