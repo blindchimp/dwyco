@@ -316,6 +316,7 @@ public:
     Q_INVOKABLE QString to_local_file(const QUrl& url);
 
     Q_INVOKABLE int load_backup();
+    Q_INVOKABLE int get_android_backup_state();
 
 public:
 

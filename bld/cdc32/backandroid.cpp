@@ -262,6 +262,9 @@ android_set_backup_state(int i)
     return ret;
 }
 
+// note: this should probably be updated to allow newer messages to
+// be loaded into the backup, erasing older ones. for now it is ok, but
+// this will be more useful if it has the latest information in it i think.
 
 void
 android_backup()

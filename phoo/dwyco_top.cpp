@@ -1936,6 +1936,12 @@ DwycoCore::load_backup()
     return ret;
 }
 
+int
+DwycoCore::get_android_backup_state()
+{
+    return dwyco_get_android_backup_state();
+}
+
 void
 DwycoCore::set_badge_number(int i)
 {

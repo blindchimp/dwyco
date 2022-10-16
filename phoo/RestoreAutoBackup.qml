@@ -39,6 +39,13 @@ Rectangle {
             Layout.fillWidth: true
 
         }
+        Label {
+            id: restore_note
+            text: qsTr("NOTE: This does not restore your profile, device linking, or other account related things. You'll have to update those manually.")
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+
+        }
         Button {
             id: restore_backup
             text: qsTr("Restore previous pals and messages? (requires restart)")
