@@ -844,7 +844,7 @@ DwycoCore::strip_html(QString txt)
     // as needed, but that would involve finding all those places the
     // text was used,which is a pain right now
 
-    QRegularExpression re("http.*?://([^\\s)\\\"](?!ttp:))+");
+    static QRegularExpression re("http.*?://([^\\s)\\\"](?!ttp:))+");
 
 //    bool v = re.isValid();
 
@@ -865,7 +865,7 @@ DwycoCore::strip_html(QString txt)
             first = false;
         }
 
-        res += ret.mid(last_start, last_len);
+        res += ret.midRef(last_start, last_len);
         res += "<a href=\"";
         res += match.captured();
         res += "\">";
@@ -877,7 +877,7 @@ DwycoCore::strip_html(QString txt)
         //++n;
         // ...
     }
-    res += ret.mid(last_start + last_len);
+    res += ret.midRef(last_start + last_len);
 
     return res;
 }
