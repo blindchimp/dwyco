@@ -3,7 +3,6 @@
 
 struct sqlite3;
 #include "vc.h"
-#include "sqlbq.h"
 #include "dwstr.h"
 
 

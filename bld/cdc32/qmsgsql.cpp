@@ -1766,7 +1766,7 @@ sql_get_recent_users(int recent, int *total_out)
                     //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
                     "select uid from uids where uid not in (select * from grps) union select * from mins limit ?1",
                     recent ? 100 : -1,
-                    recent ? (365L * 24 * 3600) : (100L * (365 * 24 * 3600)));
+                    recent ? (365LL * 24 * 3600) : (100LL * (365 * 24 * 3600)));
 
         if(total_out)
         {

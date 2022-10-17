@@ -6,6 +6,7 @@
 #include "qauth.h"
 #include "ser.h"
 #include "xinfo.h"
+#include "sepstr.h"
 
 
 #ifdef _WIN32
@@ -21,6 +22,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#endif
+
+#ifdef DWYCO_USE_STATIC_SQLITE
+#include "sqlite/sqlite3.h"
+#else
+#include <sqlite3.h>
 #endif
 
 // this autobackup is really not a good archive solution. it is just
@@ -46,7 +53,7 @@ struct backup_sql : public SimpleSql
                   );
         sql_simple("create table if not exists misc_blobs (name text unique on conflict replace, data blob);");
         sql_simple("create table if not exists bu (lock integer not null default 0, "
-                   "state integer not null, date_sent integer default 0, date_ack integer default 0, date_updated default 0, version default 0, primary key (lock), check (lock = 0));");
+                   "state integer not null, date_sent integer default 0, date_ack integer default 0, date_updated integer default 0, version integer default 0, primary key (lock), check (lock = 0));");
         sql_simple("insert or ignore into bu(lock, state) values(0, 0);");
 
         sql_simple("create index if not exists from_uid_idx on msgs(from_uid);");
@@ -117,7 +124,7 @@ void
 backup_msg(const vc& uid, const vc& mid)
 {
     const DwString dir = (const char *)uid_to_dir(uid);
-    vc ret = load_body_by_id(uid, mid);
+    const vc ret = load_body_by_id(uid, mid);
     if(ret.is_nil())
         return;
 
@@ -174,7 +181,9 @@ attempt_backup(const vc& v)
 {
     try
     {
-        const vc msgs = sql(v);
+        sql_start_transaction();
+        const vc& msgs = sql(v);
+        sql_commit_transaction();
         // note: commit after every message, to try and sneak right up
         // to the limit. if there is a large query result
         // we want to get as much as possible in, instead of just failing
@@ -182,8 +191,8 @@ attempt_backup(const vc& v)
         for(int i = 0; i < msgs.num_elems(); ++i)
         {
             sql_start_transaction();
-            const vc uid = from_hex(msgs[i][0]);
-            const vc mid = msgs[i][1];
+            const vc& uid = from_hex(msgs[i][0]);
+            const vc& mid = msgs[i][1];
             backup_msg(uid, mid);
             sql_commit_transaction();
         }
@@ -191,10 +200,71 @@ attempt_backup(const vc& v)
         return true;
 
     } catch (...) {
+        sql_rollback_transaction();
 
     }
     return false;
 }
+
+int
+android_days_since_last_backup()
+{
+    auto db = new backup_sql;
+    if(!db->init())
+        oopanic("can't init backup");
+
+    vc res = db->sql_simple("select date_updated from main.bu");
+    db->exit();
+    delete db;
+
+    long long du = res[0][0];
+    long long now = time(0);
+    return (now - du) / (24L * 3600);
+}
+
+int
+android_get_backup_state()
+{
+    auto db = new backup_sql;
+    // note: if the backup file doesn't exist, same
+    // as empty backup file, but don't create one
+    // if it isn't there.
+    if(!db->init(SQLITE_OPEN_READWRITE))
+        return 0;
+
+    vc res = db->sql_simple("select state from main.bu");
+    db->exit();
+    delete db;
+    return res[0][0];
+}
+
+int
+android_set_backup_state(int i)
+{
+    auto db = new backup_sql;
+    if(!db->init())
+        oopanic("can't init backup");
+    int ret = 1;
+    try
+    {
+        db->start_transaction();
+        db->sql_simple("update main.bu set state = ?1", i);
+        db->commit_transaction();
+    }
+    catch(...)
+    {
+        db->rollback_transaction();
+        ret = 0;
+    }
+
+    db->exit();
+    delete db;
+    return ret;
+}
+
+// note: this should probably be updated to allow newer messages to
+// be loaded into the backup, erasing older ones. for now it is ok, but
+// this will be more useful if it has the latest information in it i think.
 
 void
 android_backup()
@@ -204,22 +274,26 @@ android_backup()
     Db = new backup_sql;
     if(!Db->init())
         oopanic("can't init backup");
+    Db->sync_off();
+    Db->optimize();
     Db->attach(newfn(MSG_IDX_DB), "mi");
     Db->attach(newfn(TAG_DB), "mt");
-    Db->sync_off();
 
     try
     {
+
         sql_start_transaction();
         sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
         sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
         sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
         sql("delete from main.tags");
+        sql("update main.bu set date_updated = strftime('%s', 'now'), state = 1");
         sql_commit_transaction();
         Db->vacuum();
         // android autobackup limit
         Db->set_max_size(24);
 
+        // these tags are user-generated and usually pretty small
         try
         {
             sql_start_transaction();
@@ -328,7 +402,9 @@ make_msg_folder(const vc& uid, DwString* fn_out)
     s = newfn(s);
     if(fn_out)
         *fn_out = s;
-    mkdir(s.c_str());
+    GRTLOG("restoring user %s", s.c_str(), 0);
+    int ret = mkdir(s.c_str());
+    GRTLOG("mkdir %d", ret, 0);
     return 1;
 }
 
@@ -337,6 +413,7 @@ static
 int
 restore_msg(const vc& uid, const vc& mid)
 {
+    GRTLOG("restore msg %s %s", (const char *)uid, (const char *)mid);
     try
     {
     const vc res = sql("select msg, attfn, att from msgs where mid = ?1", mid);
@@ -403,6 +480,7 @@ android_restore_msgs()
     //Db->attach(newfn(MSG_IDX_DB), "mi");
     Db->attach(newfn(TAG_DB), "mt");
     Db->sync_off();
+    GRTLOG("android restore", 0, 0);
 
     try
     {

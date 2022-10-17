@@ -62,7 +62,7 @@ main(int argc, char **argv)
 
     if(argc == 2)
     {
-        dwyco_background_processing(port, 0, 0, 0, 0, 0);
+        dwyco_background_processing(port, 0, "./", "./", "./tmp/", 0);
     }
     else if(argc == 3 && strcmp(argv[2], "exit-outq-empty") == 0)
     {

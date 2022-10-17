@@ -28,6 +28,7 @@ init_rtlog()
 {
     RTLogOn = vc(VC_VECTOR);
 #ifdef ANDROID
+    RTLogOn.add("*");
     RTLogOn.add("dlli.cpp");
     RTLogOn.add("netcod.cc");
     RTLogOn.add("netvid.cc");
