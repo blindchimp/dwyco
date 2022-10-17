@@ -66,7 +66,7 @@ find_best_candidate_for_initial_send(vc uid)
         }
         if(Chat_ips.contains(u))
             score += 1;
-        // uid would time out of if it wasn't around, so
+        // uid would time out if it wasn't around, so
         // this is a better candidate
         if(Broadcast_discoveries.contains(u))
             score += 5;

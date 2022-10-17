@@ -176,6 +176,24 @@ Page {
 
             Layout.fillWidth: true
         }
+
+        ItemDelegate {
+            id: load_backup_button
+            text: qsTr("Load backup\n(quits Phoo, restarting finishes load.)")
+            onClicked: {
+                core.load_backup()
+                core.set_local_setting("reindex1", "")
+                core.set_local_setting("restore-prompt", "1")
+                core.exit()
+                Qt.quit()
+            }
+            onVisibleChanged: {
+                enabled = (core.get_android_backup_state() > 0)
+            }
+
+            Layout.fillWidth: true
+        }
+
         ItemDelegate {
             id: about_button
             text: qsTr("About")

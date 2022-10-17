@@ -697,6 +697,8 @@ dbgdump(int id, const char *msg, int percent_done, void *user_arg)
 extern vc Online;
 extern vc Cur_uids;
 extern vc Client_ports;
+extern vc Client_disposition;
+
 
 DWYCOEXPORT
 void
@@ -715,6 +717,18 @@ dwyco_debug_dump()
         vc h = to_hex(v[i][0]);
         DwString a((const char *)h);
         a += " ";
+        vc disp;
+        if(Client_disposition.find(v[i][0], disp))
+        {
+            if(disp == vc("foreground"))
+                a += "fg ";
+            else
+                a += "bg ";
+        }
+        else
+        {
+            a += "xx ";
+        }
         a += (const char *)v[i][1];
         if(Client_ports.find(v[i][0], h))
         {
@@ -728,24 +742,34 @@ dwyco_debug_dump()
         }
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
     }
-    (*dbg_msg_callback)(0, "Broadcasts", 0, 0);
-    v = vc::tree_to_vector(Broadcast_discoveries);
-    for(int i = 0; i < v.num_elems(); ++i)
-    {
-        DwString a(to_hex(v[i][0]));
-        a += " ";
-        vc h = v[i][1];
-        a += " ";
-        a += h[0].peek_str();
-        a += " ";
-        a += h[1].peek_str();
-        a += " ";
-        a += h[2].peek_str();
-        a += " ";
-        a += h[3].peek_str();
-        a += " ";
-        (*dbg_msg_callback)(0, a.c_str(), 0, 0);
 
+    v = vc::tree_to_vector(Broadcast_discoveries);
+    if(v.num_elems() > 0)
+    {
+        (*dbg_msg_callback)(0, "Broadcasts", 0, 0);
+        for(int i = 0; i < v.num_elems(); ++i)
+        {
+            DwString a(to_hex(v[i][0]));
+            a += " ";
+            const vc& h = v[i][1];
+            a += h[BD_DISPOSITION].peek_str();
+            a += " ";
+            a += h[BD_IP].peek_str();
+            a += " ";
+            a += h[BD_NICE_NAME].peek_str();
+            a += " ";
+            a += h[BD_PRIMARY_PORT].peek_str();
+            a += " ";
+            a += h[BD_SECONDARY_PORT].peek_str();
+            a += " ";
+
+            (*dbg_msg_callback)(0, a.c_str(), 0, 0);
+
+        }
+    }
+    else
+    {
+        (*dbg_msg_callback)(0, "No local discoveries", 0, 0);
     }
 
     scoped_ptr<ChanList> chans(MMChannel::get_serviced_channels());
@@ -9069,6 +9093,32 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
     // a quick graceful exit.
     return 1;
     //exit(0);
+}
+
+// special hacks for android
+DWYCOEXPORT
+int
+dwyco_get_android_backup_state()
+{
+    int ret = android_get_backup_state();
+    return ret;
+}
+
+DWYCOEXPORT
+int
+dwyco_set_android_backup_state(int i)
+{
+    int ret = android_set_backup_state(i);
+    return ret;
+}
+
+// NOTE: IF THIS RETURNS 1, you have to exit immediately
+DWYCOEXPORT
+int
+dwyco_restore_android_backup()
+{
+    int ret = android_restore_msgs();
+    return ret;
 }
 
 // these are some functions that are called from java (via swig interface)

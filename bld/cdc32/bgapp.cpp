@@ -13,6 +13,10 @@
 #include "dwycolist2.h"
 #include "qdirth.h"
 #include "qmsg.h"
+#include "backandroid.h"
+#include <thread>
+#include <future>
+#include <chrono>
 
 using namespace dwyco;
 
@@ -267,6 +271,87 @@ check_join_simple(int cmd, int ctx_id, const char *uid, int len_uid, const char 
 
 }
 
+static
+int
+do_android_backup()
+{
+    GRTLOG("backup start", 0, 0);
+    android_backup();
+    GRTLOG("backup done", 0, 0);
+    return 0;
+}
+
+static
+int
+background_android_backup()
+{
+    static std::future<int> *backup_done = nullptr;
+
+    if(backup_done != nullptr)
+    {
+        if(backup_done->wait_for(std::chrono::seconds(0)) == std::future_status::timeout)
+            return -1;
+        auto ret = backup_done->get();
+        delete backup_done;
+        backup_done = nullptr;
+        return ret;
+    }
+    if(android_days_since_last_backup() < 1)
+        return -1;
+    auto f = new std::future<int>;
+    backup_done = f;
+    *f = std::async(std::launch::async, &do_android_backup);
+    return 1;
+}
+
+// why all this threading mickey-mouse?
+// we need something that is synchronous (most of the
+// rest of the msg processing doesn't really work if
+// it gets "busy", something that i should fix) and interruptible
+// if user starts up the main app. in that case,
+// we just exit, leaving the backup in whatever
+// state... sqlite takes care of keeping it
+// reasonably sane.
+static
+void
+check_background_backup(vc asock)
+{
+    static DwTimer bu_poll;
+    static int been_here;
+    if(!been_here)
+    {
+        bu_poll.set_autoreload(1);
+        bu_poll.set_interval(60 * 60 * 1000);
+        bu_poll.start();
+        been_here = 1;
+    }
+    if(!bu_poll.is_expired())
+        return;
+    bu_poll.ack_expire();
+    int state = background_android_backup();
+    if(state == 1)
+    {
+        do
+        {
+            if(asock.socket_poll(VC_SOCK_READ|VC_SOCK_ERROR, 1, 0) == 0)
+            {
+                if(background_android_backup() == 0)
+                {
+                    // backup done
+                    return;
+                }
+            }
+            else
+            {
+                // user requests an exit
+                dwyco_bg_exit();
+                exit(0);
+            }
+        }
+        while(1);
+    }
+}
+
 
 DWYCOEXPORT
 int
@@ -339,6 +424,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         int snooze = dwyco_service_channels(&spin);
         if(exit_if_outq_empty && msg_outq_empty())
             break;
+        check_background_backup(asock);
 #ifdef WIN32
         if(accept(s, 0, 0) != INVALID_SOCKET)
         {

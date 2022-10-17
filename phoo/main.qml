@@ -414,6 +414,11 @@ ApplicationWindow {
         }
     }
 
+    RestoreAutoBackup {
+        id: restore_auto_backup
+        visible: false
+    }
+
     DevGroup {
         id: device_group
         visible: false
@@ -985,6 +990,23 @@ ApplicationWindow {
                 set_badge_number(1)
             else
                 set_badge_number(0)
+        }
+
+//        onAndroid_backup_availableChanged: {
+//            if(android_backup_available === 1) {
+//                var a = core.get_local_setting("restore-prompt")
+//                if(a === "")
+//                    stack.push(restore_auto_backup)
+//            }
+//        }
+
+    }
+
+    onUp_and_runningChanged: {
+        if(core.get_android_backup_state() === 1) {
+            var a = core.get_local_setting("restore-prompt")
+            if(a === "")
+                stack.push(restore_auto_backup)
         }
 
     }

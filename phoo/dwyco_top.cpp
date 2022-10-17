@@ -17,6 +17,7 @@
 #include <QGuiApplication>
 #include <QTextDocumentFragment>
 #include <QNetworkAccessManager>
+#include <unistd.h>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -185,6 +186,41 @@ takeover_from_background(int port)
 //            //conn.waitForReadyRead();
 //        }
     }
+}
+
+void
+start_desktop_background()
+{
+#if !defined(ANDROID) && !defined(DWYCO_IOS)
+#if defined(LINUX) || defined(MAC_CLIENT)
+    if(chdir(User_pfx_native.constData()) != 0)
+        return;
+    QProcess::startDetached(QString("./dwycobg"), QStringList(QString::number(BGLockPort)));
+#else
+
+        PROCESS_INFORMATION pi;
+        STARTUPINFO si;
+
+        memset(&si, 0, sizeof(si));
+        GetStartupInfo(&si);
+        si.dwFlags = 0;
+        wchar_t wtf[128];
+        QByteArray b("dwycobg.exe ");
+        mbstowcs(wtf, "dwycobg.exe", sizeof(wtf) - 1);
+        QByteArray p = sport;
+        b += p;
+        wchar_t wtfp[128];
+        mbstowcs(wtfp, b.constData(), sizeof(wtfp) - 1);
+
+        if (!CreateProcess(wtf,wtfp,NULL,NULL,
+                           0, //TRUE, // inherit handles
+                           CREATE_NO_WINDOW,NULL,NULL,&si,&pi) ) {
+
+            i = GetLastError();
+        }
+
+#endif
+#endif
 }
 
 static
@@ -808,7 +844,7 @@ DwycoCore::strip_html(QString txt)
     // as needed, but that would involve finding all those places the
     // text was used,which is a pain right now
 
-    QRegularExpression re("http.*?://([^\\s)\\\"](?!ttp:))+");
+    static QRegularExpression re("http.*?://([^\\s)\\\"](?!ttp:))+");
 
 //    bool v = re.isValid();
 
@@ -829,7 +865,7 @@ DwycoCore::strip_html(QString txt)
             first = false;
         }
 
-        res += ret.mid(last_start, last_len);
+        res += ret.midRef(last_start, last_len);
         res += "<a href=\"";
         res += match.captured();
         res += "\">";
@@ -841,7 +877,7 @@ DwycoCore::strip_html(QString txt)
         //++n;
         // ...
     }
-    res += ret.mid(last_start + last_len);
+    res += ret.midRef(last_start + last_len);
 
     return res;
 }
@@ -1924,6 +1960,22 @@ DwycoCore::init()
         clear_unviewed_msgs();
         setting_put("bugfix1", "");
     }
+
+    update_android_backup_available(dwyco_get_android_backup_state());
+
+}
+
+int
+DwycoCore::load_backup()
+{
+    int ret = dwyco_restore_android_backup();
+    return ret;
+}
+
+int
+DwycoCore::get_android_backup_state()
+{
+    return dwyco_get_android_backup_state();
 }
 
 void
