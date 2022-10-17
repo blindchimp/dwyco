@@ -23,6 +23,8 @@
 QQmlApplicationEngine *TheEngine;
 
 void dwyco_register_qml(QQmlContext *root);
+void start_desktop_background();
+
 #ifdef ANDROID
 NotificationClient *notificationClient;
 #endif
@@ -129,5 +131,9 @@ int main(int argc, char *argv[])
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
-    return app.exec();
+    int ret;
+    ret = app.exec();
+    start_desktop_background();
+
+    return ret;
 }

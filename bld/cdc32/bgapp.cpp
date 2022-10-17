@@ -321,7 +321,7 @@ check_background_backup(vc asock)
     if(!been_here)
     {
         bu_poll.set_autoreload(1);
-        bu_poll.set_interval(10 * 1000);
+        bu_poll.set_interval(60 * 60 * 1000);
         bu_poll.start();
         been_here = 1;
     }

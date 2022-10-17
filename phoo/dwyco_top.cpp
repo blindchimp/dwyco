@@ -17,6 +17,7 @@
 #include <QGuiApplication>
 #include <QTextDocumentFragment>
 #include <QNetworkAccessManager>
+#include <unistd.h>
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -185,6 +186,41 @@ takeover_from_background(int port)
 //            //conn.waitForReadyRead();
 //        }
     }
+}
+
+void
+start_desktop_background()
+{
+#if !defined(ANDROID) && !defined(DWYCO_IOS)
+#if defined(LINUX) || defined(MAC_CLIENT)
+    if(chdir(User_pfx_native.constData()) != 0)
+        return;
+    QProcess::startDetached(QString("./dwycobg"), QStringList(QString::number(BGLockPort)));
+#else
+
+        PROCESS_INFORMATION pi;
+        STARTUPINFO si;
+
+        memset(&si, 0, sizeof(si));
+        GetStartupInfo(&si);
+        si.dwFlags = 0;
+        wchar_t wtf[128];
+        QByteArray b("dwycobg.exe ");
+        mbstowcs(wtf, "dwycobg.exe", sizeof(wtf) - 1);
+        QByteArray p = sport;
+        b += p;
+        wchar_t wtfp[128];
+        mbstowcs(wtfp, b.constData(), sizeof(wtfp) - 1);
+
+        if (!CreateProcess(wtf,wtfp,NULL,NULL,
+                           0, //TRUE, // inherit handles
+                           CREATE_NO_WINDOW,NULL,NULL,&si,&pi) ) {
+
+            i = GetLastError();
+        }
+
+#endif
+#endif
 }
 
 static
