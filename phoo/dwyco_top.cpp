@@ -17,7 +17,9 @@
 #include <QGuiApplication>
 #include <QTextDocumentFragment>
 #include <QNetworkAccessManager>
+#ifdef LINUX
 #include <unistd.h>
+#endif
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -63,6 +65,9 @@
 #include "callsm.h"
 #include "resizeimage.h"
 #ifdef _Windows
+#define UNICODE
+#include <windows.h>
+#include <processthreadsapi.h>
 #include <time.h>
 #endif
 #include "dwycolist2.h"
@@ -207,7 +212,7 @@ start_desktop_background()
         wchar_t wtf[128];
         QByteArray b("dwycobg.exe ");
         mbstowcs(wtf, "dwycobg.exe", sizeof(wtf) - 1);
-        QByteArray p = sport;
+        QByteArray p = QByteArray::number(BGLockPort);
         b += p;
         wchar_t wtfp[128];
         mbstowcs(wtfp, b.constData(), sizeof(wtfp) - 1);
@@ -216,7 +221,9 @@ start_desktop_background()
                            0, //TRUE, // inherit handles
                            CREATE_NO_WINDOW,NULL,NULL,&si,&pi) ) {
 
-            i = GetLastError();
+            // note: just so i can get it in the debugger
+            volatile int i = GetLastError();
+            i = i;
         }
 
 #endif

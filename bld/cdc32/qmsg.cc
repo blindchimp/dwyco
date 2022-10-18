@@ -1571,7 +1571,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         // fetch it
         if(m[2] == invalid)
             prf_set_cached(uid);
-        vc ai = make_best_local_info(uid, 0);
+        const vc ai = make_best_local_info(uid, 0);
         v = vc(VC_VECTOR);
         v[QIR_FROM] = uid;
         v[QIR_HANDLE] = ai[0];
@@ -1588,7 +1588,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         if(m[1].type() == VC_STRING && m[1] == vc("ok"))
         {
             prf_set_cached(uid);
-            vc ai = make_best_local_info(uid, 0);
+            const vc ai = make_best_local_info(uid, 0);
             v = vc(VC_VECTOR);
             v[QIR_FROM] = uid;
             v[QIR_HANDLE] = ai[0];
@@ -1603,7 +1603,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         {
             // create an old-style info vec
             prf_set_cached(uid);
-            vc ai = make_best_local_info(uid, 0);
+            const vc ai = make_best_local_info(uid, 0);
             v = vc(VC_VECTOR);
             v[QIR_FROM] = uid;
             v[QIR_HANDLE] = ai[0];
@@ -1621,7 +1621,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         {
             // had to use alternate info, don't set as cached
             v = vc(VC_VECTOR);
-            vc ai = make_best_local_info(uid, 0);
+            const vc ai = make_best_local_info(uid, 0);
             v[QIR_FROM] = uid;
             v[QIR_HANDLE] = ai[0];
             v[QIR_EMAIL] = "";
@@ -1635,7 +1635,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
     }
     if(valid_info(v))
     {
-        vc user_id = v[0];
+        const vc user_id = v[0];
 
         Session_infos.add_kv(user_id, v);
     }
@@ -1643,7 +1643,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
 
 static
 vc
-make_alt_info(vc name, vc desc, vc location)
+make_alt_info(const vc& name, const vc& desc, const vc& location)
 {
     vc r(VC_VECTOR);
     r.append(name);
@@ -1653,7 +1653,7 @@ make_alt_info(vc name, vc desc, vc location)
 }
 
 vc
-make_best_local_info(vc uid, int *cant_resolve_now)
+make_best_local_info(const vc& uid, int *cant_resolve_now)
 {
     if(cant_resolve_now)
         *cant_resolve_now = 0;
@@ -1664,7 +1664,10 @@ make_best_local_info(vc uid, int *cant_resolve_now)
         vc pack;
         if(deserialize(prf[PRF_PACK], pack))
         {
-            return make_alt_info(pack[vc("handle")], pack[vc("desc")], pack[vc("loc")]);
+            static vc h("handle");
+            static vc d("desc");
+            static vc l("loc");
+            return make_alt_info(pack[h], pack[d], pack[l]);
         }
     }
     // this is an indicator that the profile isn't available in the main cache, and should
@@ -1675,7 +1678,7 @@ make_best_local_info(vc uid, int *cant_resolve_now)
         vc u;
         if(Broadcast_discoveries.find(uid, u))
         {
-            vc name = u[BD_NICE_NAME];
+            const vc name = u[BD_NICE_NAME];
             if(!name.is_nil())
                 return make_alt_info(name, "", "local-net");
         }
