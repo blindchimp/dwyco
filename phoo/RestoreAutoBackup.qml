@@ -34,21 +34,28 @@ Rectangle {
         }
         Label {
             id: backup_available
-            text: qsTr("There is an android auto-backup available from a previous app installation. It has a small partial backup of your pals and messages, enough to get you going. If you don't restore it now, you can load it later.")
+            text: qsTr("There is an Android auto-backup available from a previous app installation. It has a partial backup of your pals and messages, enough to get you going. If you don't restore it now, you can load it later.")
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
 
         }
         Label {
-            id: restore_note
+            id: restore_note1
             text: qsTr("NOTE: This does not restore your profile, device linking, or other account related things. You'll have to update those manually.")
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+
+        }
+        Label {
+            id: restore_note2
+            text: qsTr("No messages are deleted when you reload this backup.")
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
 
         }
         Button {
             id: restore_backup
-            text: qsTr("Restore previous pals and messages? (requires restart)")
+            text: qsTr("Restore previous pals and messages? (quits now, requires restart)")
             onClicked: {
                 core.load_backup()
                 core.set_local_setting("reindex1", "")
