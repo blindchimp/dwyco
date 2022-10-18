@@ -136,7 +136,7 @@ void save_qmsg_state();
 // which is different than the number of entries in
 // the current index.
 vc do_local_store(vc filename, vc speced_mid);
-vc make_best_local_info(vc uid, int *cant_resolve_now);
+vc make_best_local_info(const vc& uid, int *cant_resolve_now);
 int init_msg_folder(vc uid);
 int init_msg_folder(vc uid, DwString* fn_out);
 vc encrypt_msg_qqm(vc msg_to_send, vc dhsf, vc ectx, vc key);
