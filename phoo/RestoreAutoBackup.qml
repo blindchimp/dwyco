@@ -55,7 +55,7 @@ Rectangle {
         }
         Button {
             id: restore_backup
-            text: qsTr("Restore previous pals and messages? (quits now, requires restart)")
+            text: qsTr("Restore previous pals and messages?\n(quits now, requires restart)")
             onClicked: {
                 core.load_backup()
                 core.set_local_setting("reindex1", "")
