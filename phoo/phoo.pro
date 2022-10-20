@@ -331,7 +331,7 @@ LIBS += $${L}/libdwyco_jni.so
 ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
 
 ANDROID_TARGET_SDK_VERSION=30
-ANDROID_VERSION_CODE=2000104
+ANDROID_VERSION_CODE=2000107
 ANDROID_VERSION_NAME="3.10"
 #contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 #    ANDROID_EXTRA_LIBS += \
