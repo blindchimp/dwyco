@@ -137,6 +137,7 @@ Item {
                    Layout.fillWidth: true
                    color: "white"
                    font.weight: Font.Light
+                   font.pixelSize: applicationWindow1.font.pixelSize
                }
            }
            MouseArea {

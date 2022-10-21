@@ -307,6 +307,7 @@ Page {
                             }
 
                         }
+                        font.pixelSize: applicationWindow1.font.pixelSize
 
                     }
                     Text {
@@ -315,6 +316,7 @@ Page {
                         text: email
                         clip: true
                         elide: Text.ElideRight
+                        font.pixelSize: applicationWindow1.font.pixelSize
                     }
 
                     Text {
@@ -324,6 +326,7 @@ Page {
                         Layout.fillHeight: true
                         text: {core.uid_profile_regular(uid) ? core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION) : "<<hidden>>"}
                         clip: true
+                        font.pixelSize: applicationWindow1.font.pixelSize
                         //width: parent.width - (nm.width + preview.width)
 
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
