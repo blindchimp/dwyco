@@ -909,7 +909,7 @@ ApplicationWindow {
 
         onNew_msg: {
             console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
-            if(from_uid === themsglist.uid) {
+            if(from_uid === themsglist.uid || core.map_to_representative(from_uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model();
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
@@ -926,7 +926,7 @@ ApplicationWindow {
 
         onSys_msg_idx_updated: {
             console.log("upd " + uid + " " + themsglist.uid)
-            if(uid === themsglist.uid) {
+            if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model()
 
                 console.log("RELOAD msg_idx")
@@ -938,7 +938,7 @@ ApplicationWindow {
             //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
-                if(themsglist.uid == recipient) {
+                if(themsglist.uid == recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
                     themsglist.reload_model()
 
                 }
