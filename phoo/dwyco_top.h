@@ -318,6 +318,8 @@ public:
     Q_INVOKABLE int load_backup();
     Q_INVOKABLE int get_android_backup_state();
 
+    Q_INVOKABLE QString map_to_representative(const QString& uid);
+
 public:
 
 public slots:
