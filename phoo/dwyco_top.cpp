@@ -1988,6 +1988,18 @@ DwycoCore::get_android_backup_state()
     return dwyco_get_android_backup_state();
 }
 
+QString
+DwycoCore::map_to_representative(const QString& uid)
+{
+    QByteArray b = uid.toLatin1();
+    b = QByteArray::fromHex(b);
+    DWYCO_LIST urep;
+    dwyco_map_uid_to_representative(b.constData(), b.length(), &urep);
+    simple_scoped qurep(urep);
+    b = qurep.get<QByteArray>(0);
+    return b.toHex();
+}
+
 void
 DwycoCore::set_badge_number(int i)
 {
