@@ -1198,6 +1198,13 @@ simple_call::stop_retry_timer()
 simple_call *
 simple_call::get_simple_call(DwOString uid)
 {
+    DWYCO_LIST ur;
+    if(!dwyco_map_uid_to_representative(uid.c_str(), uid.length(), &ur))
+        return 0;
+    simple_scoped qur(ur);
+    auto ruid = qur.get<QByteArray>(DWYCO_NO_COLUMN);
+    uid = ruid;
+
     QList<simple_call *> c = Simple_calls.query_by_member(uid, &simple_call::uid);
     simple_call *sc = 0;
     if(c.count() == 0)
