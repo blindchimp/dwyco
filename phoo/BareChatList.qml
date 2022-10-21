@@ -80,6 +80,7 @@ Item {
                     clip: true
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
+                    font.pixelSize: applicationWindow1.font.pixelSize
 
                 }
             }

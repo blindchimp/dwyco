@@ -191,6 +191,7 @@ Page {
                 wrapMode: Text.Wrap
                 opacity: 1.0
                 color: primary_text
+                font: applicationWindow1.font
                 
             }
             

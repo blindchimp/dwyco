@@ -75,6 +75,7 @@ ApplicationWindow {
         console.warn("Could not calculate 'vh' based on Screen.height.")
         return 0
     }
+    font.pixelSize: Screen.pixelDensity * 3
     
     
     property color primary : "#673AB7"
