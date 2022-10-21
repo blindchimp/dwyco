@@ -843,6 +843,7 @@ Page {
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
+                    font: applicationWindow1.font
                     color: primary_text
                     clip: true
                     onLinkActivated: {

@@ -317,6 +317,7 @@ Page {
                    text: regular_profile(REVIEWED, REGULAR) ? display : censor_name(display)
                    elide: Text.ElideRight
                    clip: true
+                   font: applicationWindow1.font
                    Layout.alignment: Qt.AlignLeft
                    Layout.fillWidth: true
 
