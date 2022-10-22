@@ -168,7 +168,8 @@ send_best_way(const DwString& qfn, vc ruid)
     // XXX note also, if we are in a group and we are sending to ourselves
     // or anyone in the group, we probably need to special case that, short-circuiting
     // it seems like a good idea.
-    vc best_uid = find_best_candidate_for_initial_send(ruid);
+    int skip_direct = 0;
+    vc best_uid = find_best_candidate_for_initial_send(ruid, skip_direct);
     vc m;
     // kluge: update recipient
     if(!load_info(m, qfn.c_str()))
@@ -176,6 +177,12 @@ send_best_way(const DwString& qfn, vc ruid)
     m[QQM_RECIP_VEC][0] = best_uid;
     if(!save_info(m, qfn.c_str()))
         return 0;
+
+    if(skip_direct)
+    {
+        move_to_outbox(qfn);
+        return send_via_server_int(qfn, 0, 0, 0);
+    }
 
     DirectSend *ds = new DirectSend(qfn);
     ds->se_sig.connect_ptrfun(ds_signal_bounce);
