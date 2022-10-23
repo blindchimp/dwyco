@@ -45,11 +45,11 @@ Page {
     onMultiselect_modeChanged: {
         model.set_all_unselected()
     }
-    onVisibleChanged: {
-        multiselect_mode = false
-        filter_show_only_fav = 0
-        filter_show_sent = 1
-    }
+//    onVisibleChanged: {
+//        multiselect_mode = false
+//        filter_show_only_fav = 0
+//        filter_show_sent = 1
+//    }
 
     Component {
         id: extras_button
