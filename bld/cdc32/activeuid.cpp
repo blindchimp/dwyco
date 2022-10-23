@@ -17,8 +17,9 @@ namespace dwyco {
 // disaster, just the message will probably be sent through the
 // server or some other path this isn't quite as good.
 vc
-find_best_candidate_for_initial_send(vc uid)
+find_best_candidate_for_initial_send(vc uid, int& skip_direct)
 {
+    skip_direct = 0;
     vc uids = map_uid_to_uids(uid);
     if(uids.num_elems() <= 1)
         return uid;
@@ -41,6 +42,15 @@ find_best_candidate_for_initial_send(vc uid)
             return muid;
         }
     }
+    // for now, just keep it simple, and send it via server.
+    // this will avoid situations where a message gets sent to
+    // a background receiver, only to get "stuck". we might be
+    // able to do this in the future when we propagate some
+    // notification to others regarding the send, but for now, just
+    // let the server broadcast it.
+    skip_direct = 1;
+    return uid;
+#if 0
     //
     // if there are no foreground processes that have sent us anything,
     // we just make an educated guess about where to send the message.
@@ -94,6 +104,7 @@ find_best_candidate_for_initial_send(vc uid)
     if(maxi == -1)
         return uid;
     return uids[maxi];
+#endif
 
 }
 
