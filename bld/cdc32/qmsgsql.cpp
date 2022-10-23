@@ -1761,12 +1761,12 @@ sql_get_recent_users(int recent, int *total_out)
                     // group representatives with no messages. the group_map is
                     // derived from the profile database, which is not trimmed
                     // or anything and may contain profiles we have no messages from.
-                    "mins(muid) as (select min(uid) from group_map,uids using(uid) group by gid),"
+                    "mins(muid) as (select min(uid) from group_map group by gid),"
                     "grps(guid) as (select uid from group_map)"
                     //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
                     "select uid from uids where uid not in (select * from grps) union select * from mins limit ?1",
                     recent ? 100 : -1,
-                    recent ? (365LL * 24 * 3600) : (100LL * (365 * 24 * 3600)));
+                    recent ? (365LL * 24 * 3600) : (100LL * (365LL * 24 * 3600)));
 
         if(total_out)
         {
