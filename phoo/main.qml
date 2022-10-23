@@ -414,10 +414,16 @@ ApplicationWindow {
             }
         }
     }
-
-    RestoreAutoBackup {
+    Loader {
         id: restore_auto_backup
         visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/RestoreAutoBackup.qml"
+            }
+        }
+
     }
 
     DevGroup {
@@ -527,14 +533,26 @@ ApplicationWindow {
         visible: false
     }
 
-    ForwardToList {
+    Loader {
         id: forward_dialog
+        property string mid_to_forward
         visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible)
+                source = "qrc:/ForwardToList.qml"
+        }
     }
 
-    SendMulti {
+    Loader {
         id: send_multi_report
         visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible)
+                source = "qrc:/SendMulti.qml"
+        }
+
     }
 
     SimpleChatBox {
@@ -992,24 +1010,6 @@ ApplicationWindow {
             else
                 set_badge_number(0)
         }
-
-//        onAndroid_backup_availableChanged: {
-//            if(android_backup_available === 1) {
-//                var a = core.get_local_setting("restore-prompt")
-//                if(a === "")
-//                    stack.push(restore_auto_backup)
-//            }
-//        }
-
-    }
-
-    onUp_and_runningChanged: {
-        if(core.get_android_backup_state() === 1) {
-            var a = core.get_local_setting("restore-prompt")
-            if(a === "")
-                stack.push(restore_auto_backup)
-        }
-
     }
 
     Rectangle {

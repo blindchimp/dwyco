@@ -324,7 +324,7 @@ Page {
             radius: 3
             border.width: 1
             border.color: divider
-            color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
+            color: {(IS_QD === 1) ? "gray" : ((SENT === 0) ? accent : primary_light)}
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             z: 1
             clip: true

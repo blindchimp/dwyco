@@ -34,32 +34,32 @@ Rectangle {
         }
         Label {
             id: backup_available
-            text: qsTr("There is an Android auto-backup available from a previous app installation. It has a partial backup of your pals and messages, enough to get you going. If you don't restore it now, you can load it later.")
+            text: qsTr("This is an Android auto-backup from a previous app installation. It has a partial backup of your pals and messages, enough to get you going.")
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
 
         }
         Label {
             id: restore_note1
-            text: qsTr("NOTE: This does not restore your profile, device linking, or other account related things. You'll have to update those manually.")
+            text: qsTr("NOTE: Loading does not change your profile, device linking, or other account related things.")
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
 
         }
         Label {
             id: restore_note2
-            text: qsTr("No messages are deleted when you reload this backup.")
+            text: qsTr("No messages are deleted when you load this backup.")
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
 
         }
         Button {
             id: restore_backup
-            text: qsTr("Restore previous pals and messages?\n(quits now, requires restart)")
+            text: qsTr("Add previous pals and messages?\n(quits now, requires restart)")
             onClicked: {
                 core.load_backup()
                 core.set_local_setting("reindex1", "")
-                core.set_local_setting("restore-prompt", "1")
+                //core.set_local_setting("restore-prompt", "1")
                 core.exit()
                 Qt.quit()
             }
@@ -75,7 +75,7 @@ Rectangle {
             id: not_now
             text: qsTr("Not now")
             onClicked: {
-                core.set_local_setting("restore-prompt", "1")
+                //core.set_local_setting("restore-prompt", "1")
                 stack.pop()
             }
             Layout.fillWidth: true

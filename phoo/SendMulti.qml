@@ -21,6 +21,12 @@ Page {
     header: SimpleToolbar {
 
     }
+    // note: this is needed since visible doesn't seem to
+    // propagated if you use this via a loader
+    Component.onCompleted: {
+        user_model.load_users_to_model()
+        multiselect_mode = true
+    }
 
     Component {
         id: forward_list_delegate
