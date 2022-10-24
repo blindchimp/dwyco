@@ -872,7 +872,7 @@ DwycoCore::strip_html(QString txt)
             first = false;
         }
 
-        res += ret.midRef(last_start, last_len);
+        res += ret.mid(last_start, last_len);
         res += "<a href=\"";
         res += match.captured();
         res += "\">";
@@ -884,7 +884,7 @@ DwycoCore::strip_html(QString txt)
         //++n;
         // ...
     }
-    res += ret.midRef(last_start + last_len);
+    res += ret.mid(last_start + last_len);
 
     return res;
 }
