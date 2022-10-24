@@ -197,10 +197,18 @@ void
 start_desktop_background()
 {
 #if !defined(ANDROID) && !defined(DWYCO_IOS)
-#if defined(LINUX) || defined(MAC_CLIENT)
+#if defined(LINUX)
+#if !defined(MAC_CLIENT)
+    // linux, we'll just use the data dir for now
     if(chdir(User_pfx_native.constData()) != 0)
         return;
     QProcess::startDetached(QString("./dwycobg"), QStringList(QString::number(BGLockPort)));
+#else
+    // macos
+    if(chdir(User_pfx_native.constData()) != 0)
+        return;
+    QProcess::startDetached(QCoreApplication::applicationDirPath() + QString("/dwycobg"), QStringList(QString::number(BGLockPort)));
+#endif
 #else
 
         PROCESS_INFORMATION pi;
