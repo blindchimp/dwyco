@@ -1,3 +1,4 @@
+#include "ezset.h"
 #ifdef DWYCO_TRACE
 #include "dwyco_rename.h"
 #endif
@@ -418,6 +419,25 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     dwyco_signal_msg_cond();
     int signaled = 0;
     int started_fetches = 0;
+    vc nicename = get_settings_value("app/nicename");
+    DwString notify_str;
+    bool desktop_notify = false;
+#if defined(MACOSX) && !defined(DWYCO_IOS)
+                //system("/usr/bin/osascript -e 'display notification \"New message\" with title \"CDC-X\" sound name \"default\"'");
+    notify_str = DwString("/usr/bin/osascript -e 'display notification \"New message\" with title \"%1\" sound name \"default\"'").arg((const char *)nicename);
+    desktop_notify = true;
+#endif
+#ifdef WIN32
+                //system("notify-send.exe \"CDC-X\" \"New message\"");
+                notify_str = DwString("notify-send.exe \"%1\" \"New message\"").arg((const char *)nicename);
+                desktop_notify = true;
+#endif
+#if defined(LINUX) && !defined(MACOS) && !defined(DWYCO_IOS) && !defined(ANDROID)
+                notify_str = DwString("notify-send \"%1\" \"New message\"").arg((const char *)nicename);
+                desktop_notify = true;
+                    //system("notify-send " DWYCO_APP_NICENAME " \"New message\"");
+#endif
+
     while(1)
     {
         int spin = 0;
@@ -456,15 +476,8 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 GRTLOG("signaling newcount %d", tmp, 0);
                 signaled = tmp;
                 dwyco_signal_msg_cond();
-#if defined(MACOSX) && !defined(DWYCO_IOS)
-                system("/usr/bin/osascript -e 'display notification \"New message\" with title \"CDC-X\" sound name \"default\"'");
-#endif
-#ifdef WIN32
-                system("notify-send.exe \"CDC-X\" \"New message\"");
-#endif
-#if defined(LINUX) && !defined(MACOS) && !defined(DWYCO_IOS) && !defined(ANDROID)
-                system("notify-send \"CDC-X\" \"New message\"");
-#endif
+                if(desktop_notify)
+                    system(notify_str.c_str());
             }
         }
         // note: this is a bit sloppy... rather than trying to
