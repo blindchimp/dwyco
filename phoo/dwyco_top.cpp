@@ -202,12 +202,14 @@ start_desktop_background()
     // linux, we'll just use the data dir for now
 //    if(chdir(User_pfx_native.constData()) != 0)
 //        return;
-    QProcess::startDetached(add_pfx(User_pfx_native, "dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
+    //QProcess::startDetached(add_pfx(User_pfx_native, "dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
+    QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
 #else
     // macos
-    if(chdir(User_pfx_native.constData()) != 0)
-        return;
-    QProcess::startDetached(QCoreApplication::applicationDirPath() + QString("/dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
+    //if(chdir(User_pfx_native.constData()) != 0)
+    //    return;
+    //QProcess::startDetached(QCoreApplication::applicationDirPath() + QString("/dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
+    QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
 #endif
 #else
 
