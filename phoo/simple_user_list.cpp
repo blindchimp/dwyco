@@ -195,6 +195,7 @@ SimpleUserModel::load_users_to_model()
     int n;
     clear();
     QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
+    dwyco_load_users2(1, 0);
     dwyco_get_user_list2(&l, &n);
     simple_scoped ql(l);
     for(int i = 0; i < n; ++i)
