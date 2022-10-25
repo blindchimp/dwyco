@@ -68,7 +68,7 @@ Page {
                 id: name
 
                 text: modelData
-                verticalAlignment: Text.verticalCenter
+                verticalAlignment: Text.AlignVCenter
                 Layout.fillWidth: true
 
                 MouseArea {
