@@ -838,7 +838,9 @@ int main(int argc, char *argv[])
     if(!d)
     {
 #if defined(LINUX) || defined(MAC_CLIENT)
-        QProcess::startDetached(QString("./dwycobg"), QStringList(sport));
+        QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(sport));
+
+        //QProcess::startDetached(QString("./dwycobg"), QStringList(sport));
 #else
 
         PROCESS_INFORMATION pi;
