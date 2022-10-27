@@ -837,34 +837,7 @@ int main(int argc, char *argv[])
     exit_sound();
     if(!d)
     {
-#if defined(LINUX) || defined(MAC_CLIENT)
         QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(sport));
-
-        //QProcess::startDetached(QString("./dwycobg"), QStringList(sport));
-#else
-
-        PROCESS_INFORMATION pi;
-        STARTUPINFO si;
-
-        memset(&si, 0, sizeof(si));
-        GetStartupInfo(&si);
-        si.dwFlags = 0;
-        wchar_t wtf[128];
-        QByteArray b("dwycobg.exe ");
-        mbstowcs(wtf, "dwycobg.exe", sizeof(wtf) - 1);
-        QByteArray p = sport;
-        b += p;
-        wchar_t wtfp[128];
-        mbstowcs(wtfp, b.constData(), sizeof(wtfp) - 1);
-
-        if (!CreateProcess(wtf,wtfp,NULL,NULL,
-                           0, //TRUE, // inherit handles
-                           CREATE_NO_WINDOW,NULL,NULL,&si,&pi) ) {
-
-            i = GetLastError();
-        }
-
-#endif
     }
 
 #ifdef LEAK_CLEANUP
