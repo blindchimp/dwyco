@@ -4337,7 +4337,7 @@ dwyco_set_profile_from_composer(int compid, const char *txt, int txt_len, DwycoP
     // for the bogus file.
     //v[2] = gen_profile_authenticator(v, m->filehash);
     vc vv(VC_VECTOR);
-    vv[0] = vc((long)cb);
+    vv[0] = vc(VC_INT_DTOR, (vc_int_dtor_fun)0, (void *)cb);
     vv[1] = My_UID;
     vv[2] = v;
     // compat hack, if this is a file zap, move it to another slot in the
