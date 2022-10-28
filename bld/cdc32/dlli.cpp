@@ -1447,9 +1447,9 @@ dwyco_init()
     // note: race condition here, but it isn't too likely
     // to be a problem and i can't be bothered to fix it at
     // the moment.
-    if(OpenMutex(MUTEX_ALL_ACCESS, FALSE, DWYCO_AUTOUPDATE_MUTEX_NAME) == NULL)
+    if(OpenMutex(MUTEX_ALL_ACCESS, FALSE, DWYCO_AUTOUPDATE_MUTEX_NAME(DWYCO_MUTEX_NAME)) == NULL)
     {
-        DLL_mutex = CreateMutex(NULL, FALSE, DWYCO_AUTOUPDATE_MUTEX_NAME);
+        DLL_mutex = CreateMutex(NULL, FALSE, DWYCO_AUTOUPDATE_MUTEX_NAME(DWYCO_MUTEX_NAME));
     }
     else
     {
