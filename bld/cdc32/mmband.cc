@@ -269,11 +269,11 @@ MMChannel::adjust_incoming_bandwidth()
                 mc->proxy_outgoing_bw_limit < client_bw)
         {
             mc->incoming_throttle = mc->proxy_outgoing_bw_limit;
-            GRTLOG("force incoming to %d", mc->myid, mc->proxy_outgoing_bw_limit);
+            GRTLOG("force incoming to %d to %dkbps", mc->myid, mc->proxy_outgoing_bw_limit);
         }
         else
         {
-            GRTLOG("incoming on %d to %d", mc->myid, client_bw);
+            GRTLOG("incoming on %d to %dkbps", mc->myid, client_bw);
             mc->incoming_throttle = (int)client_bw;
         }
         ++cnt;

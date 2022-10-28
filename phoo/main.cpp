@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     QQuickStyle::setFallbackStyle("Material");
 #endif
 
-    qDebug() << QQuickStyle::availableStyles();
+    //qDebug() << QQuickStyle::availableStyles();
 
     // note: qt seems to use some of these names in constructing
     // file names. this can be a problem if different FS's with different

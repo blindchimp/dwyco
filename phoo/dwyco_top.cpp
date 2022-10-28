@@ -197,36 +197,7 @@ void
 start_desktop_background()
 {
 #if !defined(ANDROID) && !defined(DWYCO_IOS)
-#if defined(LINUX) || defined(MAC_CLIENT)
-    if(chdir(User_pfx_native.constData()) != 0)
-        return;
-    QProcess::startDetached(QString("./dwycobg"), QStringList(QString::number(BGLockPort)));
-#else
-
-        PROCESS_INFORMATION pi;
-        STARTUPINFO si;
-
-        memset(&si, 0, sizeof(si));
-        GetStartupInfo(&si);
-        si.dwFlags = 0;
-        wchar_t wtf[128];
-        QByteArray b("dwycobg.exe ");
-        mbstowcs(wtf, "dwycobg.exe", sizeof(wtf) - 1);
-        QByteArray p = QByteArray::number(BGLockPort);
-        b += p;
-        wchar_t wtfp[128];
-        mbstowcs(wtfp, b.constData(), sizeof(wtfp) - 1);
-
-        if (!CreateProcess(wtf,wtfp,NULL,NULL,
-                           0, //TRUE, // inherit handles
-                           CREATE_NO_WINDOW,NULL,NULL,&si,&pi) ) {
-
-            // note: just so i can get it in the debugger
-            volatile int i = GetLastError();
-            i = i;
-        }
-
-#endif
+    QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
 #endif
 }
 
@@ -872,7 +843,7 @@ DwycoCore::strip_html(QString txt)
             first = false;
         }
 
-        res += ret.midRef(last_start, last_len);
+        res += ret.mid(last_start, last_len);
         res += "<a href=\"";
         res += match.captured();
         res += "\">";
@@ -884,7 +855,7 @@ DwycoCore::strip_html(QString txt)
         //++n;
         // ...
     }
-    res += ret.midRef(last_start + last_len);
+    res += ret.mid(last_start + last_len);
 
     return res;
 }
@@ -1230,6 +1201,17 @@ setup_locations()
     QFile::copy(":androidinst2/assets/space-zap.wav", userdir + "space-zap.wav");
     QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
     QFile::copy(":androidinst2/assets/zap.wav", userdir + "zap.wav");
+#ifdef _WIN32
+    // kluge for windows, we copy the notify-send.exe thing into the
+    // data directory so the background processor can execute it.
+    // there are a bunch of ways i could do this:
+    // * putting notify-send.exe into resources (would have to do it conditionally)
+    // * telling dwycobg to take an arg/env var to say where the notify-send thing is
+    // * have the installer put notify-send into documents dir (installer doesn't currently know
+    //  anything about target data dir in phoo, like it does in cdc-x. updates might be
+    //  problematic as well.
+    QFile::copy(QCoreApplication::applicationDirPath() + "/notify-send.exe", userdir + "notify-send.exe");
+#endif
 #endif
     QString native_userdir = QDir::toNativeSeparators(userdir);
     QString native_tmp = QDir::toNativeSeparators(userdir + "tmp/");
