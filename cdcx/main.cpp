@@ -198,47 +198,10 @@ int main(int argc, char *argv[])
     signal(SIGPIPE, SIG_IGN);
 #endif
 
-    // this has to happen way early because the logging stuff
-    // needs to know where to send stuff
-#if 0 //defined(DWYCO_QT5)
-#define FPATH userdir
-    QString userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    userdir += "/dwyco/cdc-x/";
-    {
-        QDir d;
-        d.mkpath(userdir);
-    }
-    QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
-    QFile::copy("assets:/license.txt", userdir + "license.txt");
-    QFile::copy("assets:/no_img.png", userdir + "no_img.png");
-    QFile::copy("assets:/online.wav", userdir + "online.wav");
-    QFile::copy("assets:/relaxed-call.wav", userdir + "relaxed-call.wav");
-    QFile::copy("assets:/relaxed-incoming.wav", userdir + "relaxed-incoming.wav");
-    QFile::copy("assets:/relaxed-online.wav", userdir + "relaxed-online.wav");
-    QFile::copy("assets:/relaxed-zap.wav", userdir + "relaxed-zap.wav");
-    QFile::copy("assets:/servers2", userdir + "servers2");
-    QFile::copy("assets:/space-call.wav", userdir + "space-call.wav");
-    QFile::copy("assets:/space-incoming.wav", userdir + "space-incoming.wav");
-    QFile::copy("assets:/space-online.wav", userdir + "space-online.wav");
-    QFile::copy("assets:/space-zap.wav", userdir + "space-zap.wav");
-    QFile::copy("assets:/v21.ver", userdir + "v21.ver");
-    QFile::copy("assets:/zap.wav", userdir + "zap.wav");
 
-    dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
-    //QString q = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    //char a[1000];
-    //strncpy(a, q.toLatin1().constData(), q.toLatin1().count());
-
-#else
-    // note: other platforms use "chdir" to place where user data is...
 #define FPATH "./"
-    //dwyco_set_fn_prefixes(FPATH, FPATH, FPATH);
-#endif
 
-//#define FPATH "/home/dwight/cdcx-user/"
-//    dwyco_set_fn_prefixes("/home/dwight/cdcx/", "/home/dwight/cdcx-user/", "/home/dwight/cdcx-tmp/");
-//    chdir("/home/dwight/barf");
-
+    dwyco_set_fn_prefixes(0, 0, "./tmp/");
     {
         char sys[1024];
         char user[1024];
@@ -259,14 +222,14 @@ int main(int argc, char *argv[])
             Tmp_pfx = ".";
 
     }
-#ifdef __WIN32__
-    _mkdir(Tmp_pfx.c_str());
-    _mkdir(User_pfx.c_str());
-#else
-    mkdir(Tmp_pfx.c_str(), 0777);
-    mkdir(User_pfx.c_str(), 0777);
-#endif
-    //mkdir(Sys_pfx.c_str(), 0777);
+    {
+        QDir d;
+        d.mkpath(User_pfx);
+    }
+    {
+        QDir d;
+        d.mkpath(Tmp_pfx);
+    }
 
     dwyco_trace_init();
     int dum;
@@ -837,32 +800,7 @@ int main(int argc, char *argv[])
     exit_sound();
     if(!d)
     {
-#if defined(LINUX) || defined(MAC_CLIENT)
-        QProcess::startDetached(QString("./dwycobg"), QStringList(sport));
-#else
-
-        PROCESS_INFORMATION pi;
-        STARTUPINFO si;
-
-        memset(&si, 0, sizeof(si));
-        GetStartupInfo(&si);
-        si.dwFlags = 0;
-        wchar_t wtf[128];
-        QByteArray b("dwycobg.exe ");
-        mbstowcs(wtf, "dwycobg.exe", sizeof(wtf) - 1);
-        QByteArray p = sport;
-        b += p;
-        wchar_t wtfp[128];
-        mbstowcs(wtfp, b.constData(), sizeof(wtfp) - 1);
-
-        if (!CreateProcess(wtf,wtfp,NULL,NULL,
-                           0, //TRUE, // inherit handles
-                           CREATE_NO_WINDOW,NULL,NULL,&si,&pi) ) {
-
-            i = GetLastError();
-        }
-
-#endif
+        QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(sport));
     }
 
 #ifdef LEAK_CLEANUP

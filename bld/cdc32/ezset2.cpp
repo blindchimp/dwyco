@@ -87,6 +87,13 @@ static init_settings Initial_settings[] =
 
     DWUIDECLVAL(VC_INT, server/invis, "", 0),
 
+    // cosmetics
+#ifdef DWYCO_APP_NICENAME
+    DWUIDECLVAL(VC_BSTRING, app/nicename, DWYCO_APP_NICENAME, 0),
+#else
+    DWUIDECLVAL(VC_BSTRING, app/nicename, "dwyco", 0),
+#endif
+
     {VC_NIL,0, 0, 0}
 };
 
