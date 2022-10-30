@@ -29,6 +29,7 @@ INSTALLS += appdir_icon appdir_desktop
 
 QT += core qml quick multimedia network #widgets #positioning
 QT += quickcontrols2
+#QT += statemachine
 #QT += testlib
 #DEFINES += DWYCO_MODEL_TEST
 
