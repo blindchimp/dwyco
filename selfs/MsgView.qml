@@ -60,7 +60,7 @@ Page {
 
     Connections {
         target: core
-        onVideo_display: {
+        function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id === msgviewer.ui_id) {
                 view_source = img_path
             }

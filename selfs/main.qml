@@ -114,6 +114,8 @@ ApplicationWindow {
     property bool show_hidden: true
     property bool show_archived_users: true
 
+    property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
+    property int qt_application_state: 0
     property bool is_mobile
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 

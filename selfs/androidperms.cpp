@@ -29,14 +29,19 @@ AndroidPerms::load()
 #else
     if(QtAndroid::androidSdkVersion() < 23)
     {
-        update_external_storage_permission(false);
+        update_external_storage_permission(true);
         update_camera_permission(true);
     }
     else
     {
-
-        update_external_storage_permission(false);
-
+        if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Granted)
+        {
+            update_external_storage_permission(true);
+        }
+        else
+        {
+            update_external_storage_permission(false);
+        }
 
         if(QtAndroid::checkPermission("android.permission.CAMERA") == QtAndroid::PermissionResult::Granted)
         {

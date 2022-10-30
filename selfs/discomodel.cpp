@@ -73,13 +73,11 @@ DiscoverListModel::remove_uid_from_model(const QByteArray& uid)
 void
 DiscoverListModel::load_users_to_model()
 {
-    static int upd = 0;
-
     QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
 
     DWYCO_LIST l;
 
-    //clear();
+    clear();
 
     l = dwyco_pal_get_list();
     simple_scoped ql(l);
@@ -88,21 +86,8 @@ DiscoverListModel::load_users_to_model()
     {
         QByteArray uid = ql.get<QByteArray>(i);
 
-        DiscoveredUser *c = add_uid_to_model(uid);
-        c->modified = upd;
+        add_uid_to_model(uid);
     }
-    QList<QByteArray> kill;
-    for(int i = 0; i < count(); ++i)
-    {
-        auto c = at(i);
-        if(c->modified < upd)
-            kill.append(QByteArray::fromHex(c->get_uid().toLatin1()));
-    }
-    for(int i = 0; i < kill.count(); ++i)
-    {
-        remove_uid_from_model(kill[i]);
-    }
-    ++upd;
 }
 
 void

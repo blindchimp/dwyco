@@ -15,7 +15,7 @@
 #include "dwycolist2.h"
 
 [[noreturn]] void cdcxpanic(const char *);
-
+extern QByteArray Clbot;
 static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Already_processed;
 
@@ -100,16 +100,23 @@ del_unviewed_mid(const QByteArray& mid)
 bool
 uid_has_unviewed_msgs(const QByteArray &uid)
 {
-    return uid_has_unfetched(uid) > 0 || dwyco_uid_has_tag(uid.constData(), uid.length(), "unviewed")
-            || dwyco_uid_has_tag(uid.constData(), uid.length(), "_inbox");
+    return uid_has_unfetched(uid) > 0 ||
+            dwyco_uid_has_tag(uid.constData(), uid.length(), "unviewed")
+            ;
+#if 0
+    ||
+            dwyco_uid_has_tag(uid.constData(), uid.length(), "_inbox");
+#endif
 }
 
+#if 0
 int
 uid_unviewed_msgs_count(const QByteArray &uid)
 {
     return uid_has_unfetched(uid) + dwyco_uid_count_tag(uid.constData(), uid.length(), "unviewed") +
             dwyco_uid_count_tag(uid.constData(), uid.length(), "_inbox");
 }
+#endif
 
 bool
 any_unviewed_msgs()
@@ -139,7 +146,7 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
     for(int i = 0; i < n; ++i)
     {
         uid_out = qml.get<QByteArray>(i, DWYCO_QMS_FROM);
-        if(uid_out == QByteArray::fromHex("f6006af180260669eafc"))
+        if(uid_out == Clbot)
             continue;
         mid = qml.get<QByteArray>(i, DWYCO_QMS_ID);
         if(Already_processed.contains(mid))
@@ -154,8 +161,15 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
         // but the user would appear towards the top of the user list, which is weird.
         // this happens sometimes when attachments are not fetchable for whatever reason.
         Already_processed.insert(mid);
-        add_unviewed(uid_out, mid);
-        uids.insert(uid_out);
+        if(dwyco_mid_disposition(mid) == 0)
+        {
+            // this corresponds to the case where the index doesn't have any
+            // record of this mid anywhere else. so we tag it in a way that will
+            // show it to the user as a "new message"
+
+            add_unviewed(uid_out, mid);
+            uids.insert(uid_out);
+        }
     }
 
     return 0;

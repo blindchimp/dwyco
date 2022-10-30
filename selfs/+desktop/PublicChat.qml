@@ -17,7 +17,7 @@ Page {
     id: pchat
     anchors.fill: parent
     property alias model: listView1.model
-    //property int connect_server: 0
+    property int connect_server: 0
     
     background: Rectangle {
         color: amber_dark
@@ -190,7 +190,7 @@ Page {
         
         Rectangle {
             id: ditem
-            width: parent.width
+            width: ListView.view.width
             //border.width: 1
             //border.color: "gray"
             height: msg.implicitHeight
