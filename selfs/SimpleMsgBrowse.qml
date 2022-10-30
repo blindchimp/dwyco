@@ -45,11 +45,11 @@ Page {
     onMultiselect_modeChanged: {
         model.set_all_unselected()
     }
-    onVisibleChanged: {
-        multiselect_mode = false
-        filter_show_only_fav = 0
-        filter_show_sent = 1
-    }
+//    onVisibleChanged: {
+//        multiselect_mode = false
+//        filter_show_only_fav = 0
+//        filter_show_sent = 1
+//    }
 
     Component {
         id: extras_button
@@ -324,7 +324,7 @@ Page {
             radius: 3
             border.width: 1
             border.color: divider
-            color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
+            color: {(IS_QD === 1) ? "gray" : ((SENT === 0) ? accent : primary_light)}
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             z: 1
             clip: true
@@ -414,8 +414,8 @@ Page {
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
-                //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
+                source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                   (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
                 asynchronous: true

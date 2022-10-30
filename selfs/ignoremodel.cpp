@@ -8,7 +8,6 @@
 */
 #include "ignoremodel.h"
 #include "dlli.h"
-#include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "dwycolist2.h"
 

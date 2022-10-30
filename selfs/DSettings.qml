@@ -176,6 +176,20 @@ Page {
 
             Layout.fillWidth: true
         }
+
+        ItemDelegate {
+            id: load_backup_button
+            text: qsTr("Load backup\n(quits Phoo, restarting finishes load.)")
+            onClicked: {
+                stack.push(restore_auto_backup)
+            }
+            onVisibleChanged: {
+                enabled = (core.get_android_backup_state() > 0)
+            }
+
+            Layout.fillWidth: true
+        }
+
         ItemDelegate {
             id: about_button
             text: qsTr("About")

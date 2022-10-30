@@ -27,7 +27,7 @@ Pane {
     property real ctrl_pad: 4
     property alias circularImage: circularImage
     property alias text1: text1
-    padding: 6
+    padding: 0
 
     ColumnLayout {
         id: columnLayout
@@ -36,10 +36,13 @@ Pane {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            //Layout.fillHeight: true
+            implicitHeight: topbox.implicitHeight
+            implicitWidth: topbox.implicitWidth
             color: primary_dark
 
             ColumnLayout {
+                id: topbox
                 anchors.fill: parent
                 anchors.margins: mm(1)
                 Text {
@@ -82,6 +85,17 @@ Pane {
                         Layout.margins: ctrl_pad
                         font.pixelSize: 12
                         color: "white"
+                    }
+
+                    Text {
+                        visible: group_active
+                        text:  core.active_group_name + " (" + core.percent_synced + "%)"
+                        color: "white"
+                        clip: true
+                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                        Layout.fillWidth: true
+                        Layout.margins: ctrl_pad
+                        font.pixelSize: 12
                     }
                 }
             }

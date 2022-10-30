@@ -23,7 +23,6 @@
         <file>PINDialog.qml</file>
         <file>PINChangeDialog.qml</file>
         <file>PicPreview.qml</file>
-        <file>ContactList.qml</file>
         <file>SimpleToolbar.qml</file>
         <file>CircularImage.qml</file>
         <file>CQRes.qml</file>

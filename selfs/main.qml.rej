@@ -1,0 +1,240 @@
+***************
+*** 250,255 ****
+  
+  
+      footer: RowLayout {
+              Label {
+                  id: ind_invis
+                  text: "Invis"
+--- 256,262 ----
+  
+  
+      footer: RowLayout {
++         visible: dwyco_debug
+              Label {
+                  id: ind_invis
+                  text: "Invis"
+***************
+*** 257,262 ****
+                  color: "red"
+  
+              }
+              Item {
+                  Layout.fillWidth: true
+              }
+--- 264,275 ----
+                  color: "red"
+  
+              }
++             Label {
++                 text: "Archived " + (core.total_users - ConvListModel.count).toString()
++                 visible: core.total_users > ConvListModel.count
++                 color: "red"
++             }
++ 
+              Item {
+                  Layout.fillWidth: true
+              }
+***************
+*** 445,454 ****
+  
+      }
+  
+-     ContactList {
+-         id: contact_list
+-         visible: false
+-     }
+  
+      Loader {
+          id: cqres
+--- 469,474 ----
+  
+      }
+  
+  
+      Loader {
+          id: cqres
+***************
+*** 503,511 ****
+          visible: false
+      }
+  
+-     ForwardToList {
+          id: forward_dialog
+          visible: false
+      }
+  
+      SimpleChatBox {
+--- 523,548 ----
+          visible: false
+      }
+  
++     Loader {
+          id: forward_dialog
++         property string mid_to_forward
++         visible: false
++         active: visible
++         onVisibleChanged: {
++             if(visible)
++                 source = "qrc:/ForwardToList.qml"
++         }
++     }
++ 
++     Loader {
++         id: send_multi_report
+          visible: false
++         active: visible
++         onVisibleChanged: {
++             if(visible)
++                 source = "qrc:/SendMulti.qml"
++         }
++ 
+      }
+  
+      SimpleChatBox {
+***************
+*** 729,745 ****
+  
+      SoundEffect {
+          id: sound_sent
+-         source: "qrc:/androidinst/assets/space-zap.wav"
+      }
+      SoundEffect {
+          id: sound_recv
+-         source: "qrc:/androidinst/assets/space-zap.wav"
+          volume: {dwy_quiet ? 0.0 : 1.0}
+          muted: dwy_quiet
+      }
+      SoundEffect {
+          id: sound_alert
+-         source: "qrc:/androidinst/assets/space-incoming.wav"
+          volume: {dwy_quiet ? 0.0 : 1.0}
+          muted: dwy_quiet
+      }
+--- 766,782 ----
+  
+      SoundEffect {
+          id: sound_sent
++         source: "qrc:/androidinst2/assets/space-zap.wav"
+      }
+      SoundEffect {
+          id: sound_recv
++         source: "qrc:/androidinst2/assets/space-zap.wav"
+          volume: {dwy_quiet ? 0.0 : 1.0}
+          muted: dwy_quiet
+      }
+      SoundEffect {
+          id: sound_alert
++         source: "qrc:/androidinst2/assets/space-incoming.wav"
+          volume: {dwy_quiet ? 0.0 : 1.0}
+          muted: dwy_quiet
+      }
+***************
+*** 791,804 ****
+          objectName: "dwyco_singleton"
+          client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
+          Component.onCompleted: {
+              var a
+              a = get_local_setting("first-run")
+              if(a === "") {
+                  //profile_dialog.visible = true
+                  stack.push(convlist)
+                  stack.push(blank_page)
+                  stack.push(profile_dialog)
+              } else {
+                  stack.push(convlist)
+                  profile_bootstrapped = 1
+                  pwdialog.state = "start"
+--- 838,864 ----
+          objectName: "dwyco_singleton"
+          client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
+          Component.onCompleted: {
++             if(core.android_migrate === 1)
++             {
++                 stack.push(migrate_page)
++                 return
++             }
+              var a
+              a = get_local_setting("first-run")
+              if(a === "") {
+                  //profile_dialog.visible = true
++                 // don't need a reindex_complete
++                 set_local_setting("reindex1", "1")
+                  stack.push(convlist)
+                  stack.push(blank_page)
+                  stack.push(profile_dialog)
+              } else {
++                 a = get_local_setting("reindex1")
++                 if(a === "")
++                 {
++                     stack.push(background_reindex)
++                     return
++                 }
+                  stack.push(convlist)
+                  profile_bootstrapped = 1
+                  pwdialog.state = "start"
+***************
+*** 882,888 ****
+  
+          onNew_msg: {
+              console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
+-             if(from_uid === themsglist.uid) {
+                  themsglist.reload_model();
+                  // note: this could be annoying if the person is
+                  // browsing back, need to check to see if so and not
+--- 942,948 ----
+  
+          onNew_msg: {
+              console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
++             if(from_uid === themsglist.uid || core.map_to_representative(from_uid) === core.map_to_representative(themsglist.uid)) {
+                  themsglist.reload_model();
+                  // note: this could be annoying if the person is
+                  // browsing back, need to check to see if so and not
+***************
+*** 899,905 ****
+  
+          onSys_msg_idx_updated: {
+              console.log("upd " + uid + " " + themsglist.uid)
+-             if(uid === themsglist.uid) {
+                  themsglist.reload_model()
+  
+                  console.log("RELOAD msg_idx")
+--- 959,965 ----
+  
+          onSys_msg_idx_updated: {
+              console.log("upd " + uid + " " + themsglist.uid)
++             if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
+                  themsglist.reload_model()
+  
+                  console.log("RELOAD msg_idx")
+***************
+*** 1029,1042 ****
+              // which isn't really necessary.
+              var sc_next = core.service_channels()
+              //console.log("next ", sc_next)
+- //            if(sc_next === 1 || sc_next < 0)
+- //            {
+- //                service_timer.interval = 1
+- //            }
+- //            else
+- //            {
+- //                service_timer.interval = (sc_next === 0 ? 100 : Math.min(100, sc_next))
+- //            }
+          }
+  
+      }
+--- 1088,1101 ----
+              // which isn't really necessary.
+              var sc_next = core.service_channels()
+              //console.log("next ", sc_next)
++             if(sc_next === 1 || sc_next < 0)
++             {
++                 service_timer.interval = 1
++             }
++             else
++             {
++                 service_timer.interval = (sc_next === 0 ? 100 : Math.min(100, sc_next))
++             }
+          }
+  
+      }

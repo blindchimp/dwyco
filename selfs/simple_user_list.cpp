@@ -195,6 +195,7 @@ SimpleUserModel::load_users_to_model()
     int n;
     clear();
     QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
+    dwyco_load_users2(1, 0);
     dwyco_get_user_list2(&l, &n);
     simple_scoped ql(l);
     for(int i = 0; i < n; ++i)
@@ -400,12 +401,12 @@ SimpleUserSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& 
     else if(!lsm && rsm)
         return false;
 
-    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
-    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
-    if(lreg && !rreg)
-        return true;
-    else if(!lreg && rreg)
-        return false;
+//    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
+//    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
+//    if(lreg && !rreg)
+//        return true;
+//    else if(!lreg && rreg)
+//        return false;
 
     int ret1 = QSortFilterProxyModel::lessThan(left, right);
     int ret2 = QSortFilterProxyModel::lessThan(right, left);

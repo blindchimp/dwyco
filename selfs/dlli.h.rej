@@ -1,0 +1,122 @@
+***************
+*** 550,557 ****
+  // you must call dwyco_free_array when you are done with fn_out
+  //
+  int DWYCOEXPORT dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
+  void DWYCOEXPORT dwyco_name_to_uid(const char *handle, int len_handle);
+  
+  // not impl.
+  int DWYCOEXPORT dwyco_remove_profile(DwycoProfileCallback cb, void *arg);
+  int DWYCOEXPORT dwyco_update_profile(const char *text, int len_text, DwycoProfileCallback cb, void *arg);
+--- 550,563 ----
+  // you must call dwyco_free_array when you are done with fn_out
+  //
+  int DWYCOEXPORT dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
++ // look up exact name, and emit an IDENT message with the uid.
++ // it is random if the handle results in multiple uid's.
+  void DWYCOEXPORT dwyco_name_to_uid(const char *handle, int len_handle);
+  
++ // NOTE: returns the current group representative from our current
++ // local cache. NOTE: this is EPHEMERAL, the representative can change.
++ // XXX: need a message to indicate the groups we observe have changed.
++ int dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out);
+  // not impl.
+  int DWYCOEXPORT dwyco_remove_profile(DwycoProfileCallback cb, void *arg);
+  int DWYCOEXPORT dwyco_update_profile(const char *text, int len_text, DwycoProfileCallback cb, void *arg);
+***************
+*** 643,650 ****
+  // while it is being used under Windows
+  #define DWYCO_AUTOUPDATE_IN_PROGRESS 3
+  
+  #ifndef DWYCO_AUTOUPDATE_MUTEX_NAME
+- #define DWYCO_AUTOUPDATE_MUTEX_NAME "dwyco cdcx mutex2"
+  #endif
+  
+  // autoupdate check status
+--- 649,664 ----
+  // while it is being used under Windows
+  #define DWYCO_AUTOUPDATE_IN_PROGRESS 3
+  
++ // NOTE: this mutex is used on windows to coordinate
++ // the autoupdate and installer process. it is referenced
++ // explicitly in the InnoSetup scripts, and in the
++ // (completely antique) "waitwrap" exe to smooth the
++ // update process. DO NOT CHANGE THIS.
++ // note: this should NOT be used to try and coordinate
++ // mutual exclusion between different clients using
++ // the same data directories.
+  #ifndef DWYCO_AUTOUPDATE_MUTEX_NAME
++ #define DWYCO_AUTOUPDATE_MUTEX_NAME(app) "dwyco " app " mutex2"
+  #endif
+  
+  // autoupdate check status
+***************
+*** 706,712 ****
+  void DWYCOEXPORT dwyco_uid_to_ip(const char *uid, int len_uid, int *can_do_direct, char **str_out);
+  int DWYCOEXPORT dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **str_out);
+  int DWYCOEXPORT dwyco_uid_g(const char *uid, int len_uid);
+- int DWYCOEXPORT dwyco_load_users();
+  int DWYCOEXPORT dwyco_load_users2(int recent, int *total_out);
+  int DWYCOEXPORT dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out);
+  int DWYCOEXPORT dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid);
+--- 720,726 ----
+  void DWYCOEXPORT dwyco_uid_to_ip(const char *uid, int len_uid, int *can_do_direct, char **str_out);
+  int DWYCOEXPORT dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **str_out);
+  int DWYCOEXPORT dwyco_uid_g(const char *uid, int len_uid);
++ int DWYCOEXPORT dwyco_load_users_internal();
+  int DWYCOEXPORT dwyco_load_users2(int recent, int *total_out);
+  int DWYCOEXPORT dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out);
+  int DWYCOEXPORT dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid);
+***************
+*** 1193,1201 ****
+  
+  int DWYCOEXPORT dwyco_service_channels(int *spin);
+  void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
+- // use this to filter out local broadcasts and other online reporting
+- // for dwyco apps using the same back end.
+- void DWYCOEXPORT dwyco_set_app_id(const char *str, int len_str);
+  //void DWYCOEXPORT dwyco_set_login_password(const char *pw, int len_pw);
+  void DWYCOEXPORT dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
+  void DWYCOEXPORT dwyco_database_login();
+--- 1207,1212 ----
+  
+  int DWYCOEXPORT dwyco_service_channels(int *spin);
+  void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
+  //void DWYCOEXPORT dwyco_set_login_password(const char *pw, int len_pw);
+  void DWYCOEXPORT dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
+  void DWYCOEXPORT dwyco_database_login();
+***************
+*** 1208,1213 ****
+  void DWYCOEXPORT dwyco_inhibit_incoming_sac(int i);
+  void DWYCOEXPORT dwyco_inhibit_outgoing_sac(int i);
+  void DWYCOEXPORT dwyco_inhibit_all_incoming(int i);
+  //void DWYCOEXPORT dwyco_inhibit_chat(int i);
+  
+  int DWYCOEXPORT dwyco_get_audio_hw(int *has_audio_input, int *has_audio_output, int *audio_hw_full_duplex);
+--- 1219,1225 ----
+  void DWYCOEXPORT dwyco_inhibit_incoming_sac(int i);
+  void DWYCOEXPORT dwyco_inhibit_outgoing_sac(int i);
+  void DWYCOEXPORT dwyco_inhibit_all_incoming(int i);
++ void DWYCOEXPORT dwyco_set_disposition(const char *str, int len_str);
+  //void DWYCOEXPORT dwyco_inhibit_chat(int i);
+  
+  int DWYCOEXPORT dwyco_get_audio_hw(int *has_audio_input, int *has_audio_output, int *audio_hw_full_duplex);
+***************
+*** 1540,1545 ****
+  void DWYCOEXPORT dwyco_remove_backup();
+  int DWYCOEXPORT dwyco_restore_from_backup(const char *bu_fn, int msgs_only);
+  
+  
+  // not called from java
+  #define DWYCO_CONTACT_LIST_NAME "000"
+--- 1552,1561 ----
+  void DWYCOEXPORT dwyco_remove_backup();
+  int DWYCOEXPORT dwyco_restore_from_backup(const char *bu_fn, int msgs_only);
+  
++ int DWYCOEXPORT dwyco_get_android_backup_state();
++ int DWYCOEXPORT dwyco_set_android_backup_state(int i);
++ int DWYCOEXPORT dwyco_restore_android_backup();
++ 
+  
+  // not called from java
+  #define DWYCO_CONTACT_LIST_NAME "000"

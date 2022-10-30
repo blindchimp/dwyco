@@ -390,11 +390,13 @@ Page {
                                     // ugh, what a hack
                                     android_img_pick_hack = 0
                                     android_img_pick_hack = 2
-                                    notificationClient.open_image()
+                                    if(notificationClient.open_image() === 0) {
+                                        failed_msg.text = "Android blocked access to images."
+                                        animateOpacity.start()
+                                    }
                                 } else {
                                     picture_picker.visible = true
                                 }
-
                             }
                         }
                         MenuItem {
@@ -528,7 +530,7 @@ Page {
                         vidpanel.visible = false
                         core.enable_video_capture_preview(0)
                     }
-                    ind_online = connected === 1 ? true : false
+                    ind_online = connected
                 }
             }
 //        onIgnore_event: {
@@ -654,6 +656,12 @@ Page {
             onAtYBeginningChanged: {
                 //console.log("at y beg ", atYBeginning)
             }
+        }
+        BareConvList {
+            id: conv_sidebar
+            //visible: true
+            Layout.fillHeight: true
+            Layout.minimumWidth: parent.width / 5
         }
     }
 
@@ -782,8 +790,8 @@ Page {
                     fillMode: Image.PreserveAspectFit
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
-                    //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                    source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
+                    source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                    //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
                     asynchronous: true
@@ -823,6 +831,7 @@ Page {
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
+                    font: applicationWindow1.font
                     color: primary_text
                     clip: true
                     onLinkActivated: {
@@ -894,7 +903,9 @@ Page {
                             themsgview.uid = to_uid
                             themsgview.text_bg_color = ditem.color
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file://" + String(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
+
+                                // PREVIEW_FILENAME != "" ? ("file:///" + PREVIEW_FILENAME) :
                                 stack.push(themsgview)
                             }
                             else {
@@ -1173,6 +1184,32 @@ Page {
         anchors.verticalCenter: parent.verticalCenter
         z: 20
 
+    }
+
+    Rectangle {
+        anchors.fill: failed_msg
+        color: "black"
+        z: 9
+        opacity: failed_msg.opacity
+    }
+
+    Text {
+        id: failed_msg
+        text: "Failed..."
+        font.bold: true
+        anchors.centerIn: parent
+        z: 10
+        color: "white"
+
+        opacity: 0.0
+        NumberAnimation {
+               id: animateOpacity
+               target: failed_msg
+               properties: "opacity"
+               from: 1.0
+               to: 0.0
+               duration: 3000
+          }
     }
 
     Warning {

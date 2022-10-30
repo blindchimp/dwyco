@@ -12,7 +12,6 @@
 #include <QDataStream>
 #include "dwyco_new_msg.h"
 #include "dlli.h"
-#include "pfx.h"
 #include "dwycolist2.h"
 
 [[noreturn]] void cdcxpanic(const char *);
@@ -35,6 +34,12 @@ void
 add_unviewed(const QByteArray& uid, const QByteArray& mid)
 {
     dwyco_set_msg_tag(mid.constData(), "unviewed");
+    Got_msg_from_this_session.insert(uid);
+}
+
+void
+add_got_msg_from(const QByteArray& uid)
+{
     Got_msg_from_this_session.insert(uid);
 }
 

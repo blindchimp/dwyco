@@ -1,0 +1,45 @@
+***************
+*** 1,21 ****
+  <RCC>
+      <qresource prefix="/">
+-         <file>androidinst/assets/dsadwyco.pub</file>
+-         <file>androidinst/assets/dwyco.dh</file>
+-         <file>androidinst/assets/license.txt</file>
+-         <file>androidinst/assets/no_img.png</file>
+-         <file>androidinst/assets/online.wav</file>
+-         <file>androidinst/assets/relaxed-call.wav</file>
+-         <file>androidinst/assets/relaxed-incoming.wav</file>
+-         <file>androidinst/assets/relaxed-online.wav</file>
+-         <file>androidinst/assets/relaxed-zap.wav</file>
+-         <file>androidinst/assets/servers2</file>
+-         <file>androidinst/assets/space-call.wav</file>
+-         <file>androidinst/assets/space-incoming.wav</file>
+-         <file>androidinst/assets/space-online.wav</file>
+-         <file>androidinst/assets/space-zap.wav</file>
+-         <file>androidinst/assets/v21.ver</file>
+-         <file>androidinst/assets/zap.wav</file>
+          <file>qtlabscontrols.conf</file>
+          <file>qtquickcontrols2.conf</file>
+      </qresource>
+--- 1,21 ----
+  <RCC>
+      <qresource prefix="/">
++         <file>androidinst2/assets/dsadwyco.pub</file>
++         <file>androidinst2/assets/dwyco.dh</file>
++         <file>androidinst2/assets/license.txt</file>
++         <file>androidinst2/assets/no_img.png</file>
++         <file>androidinst2/assets/online.wav</file>
++         <file>androidinst2/assets/relaxed-call.wav</file>
++         <file>androidinst2/assets/relaxed-incoming.wav</file>
++         <file>androidinst2/assets/relaxed-online.wav</file>
++         <file>androidinst2/assets/relaxed-zap.wav</file>
++         <file>androidinst2/assets/servers2</file>
++         <file>androidinst2/assets/space-call.wav</file>
++         <file>androidinst2/assets/space-incoming.wav</file>
++         <file>androidinst2/assets/space-online.wav</file>
++         <file>androidinst2/assets/space-zap.wav</file>
++         <file>androidinst2/assets/v21.ver</file>
++         <file>androidinst2/assets/zap.wav</file>
+          <file>qtlabscontrols.conf</file>
+          <file>qtquickcontrols2.conf</file>
+      </qresource>

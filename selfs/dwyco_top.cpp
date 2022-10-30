@@ -17,6 +17,9 @@
 #include <QGuiApplication>
 #include <QTextDocumentFragment>
 #include <QNetworkAccessManager>
+#ifdef LINUX
+#include <unistd.h>
+#endif
 #ifdef ANDROID
 #include <QtAndroid>
 #endif
@@ -51,7 +54,6 @@
 #include "v4lcapexp.h"
 //#include "esdaudin.h"
 #include "audi_qt.h"
-#include "aextsdl.h"
 #include "audo_qt.h"
 #endif
 #if defined(DWYCO_IOS) || defined(MAC_CLIENT)
@@ -62,6 +64,9 @@
 #include "callsm.h"
 #include "resizeimage.h"
 #ifdef _Windows
+#define UNICODE
+#include <windows.h>
+#include <processthreadsapi.h>
 #include <time.h>
 #endif
 #include "dwycolist2.h"
@@ -85,8 +90,8 @@ DwycoCore *TheDwycoCore;
 static QQmlContext *TheRootCtx;
 QByteArray DwycoCore::My_uid;
 static int AvoidSSL = 0;
-typedef QHash<QByteArray, QByteArray> UID_ATTR_MAP;
-typedef QHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
+typedef QMultiHash<QByteArray, QByteArray> UID_ATTR_MAP;
+typedef QMultiHash<QByteArray, QByteArray>::iterator UID_ATTR_MAP_ITER;
 static UID_ATTR_MAP Uid_attrs;
 static int Init_ok;
 
@@ -174,6 +179,14 @@ takeover_from_background(int port)
 //            //conn.waitForReadyRead();
 //        }
     }
+}
+
+void
+start_desktop_background()
+{
+#if !defined(ANDROID) && !defined(DWYCO_IOS)
+    QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(QString::number(BGLockPort)), User_pfx_native);
+#endif
 }
 
 static
@@ -283,7 +296,7 @@ uid_attrs_clear()
 void
 uid_attrs_add(const QByteArray& uid, const QByteArray& attr)
 {
-    Uid_attrs.insertMulti(uid, attr);
+    Uid_attrs.insert(uid, attr);
 }
 
 void
@@ -785,7 +798,7 @@ DwycoCore::strip_html(QString txt)
     // as needed, but that would involve finding all those places the
     // text was used,which is a pain right now
 
-    QRegularExpression re("http.*?://([^\\s)\\\"](?!ttp:))+");
+    static QRegularExpression re("http.*?://([^\\s)\\\"](?!ttp:))+");
 
 //    bool v = re.isValid();
 
@@ -915,7 +928,7 @@ setup_locations()
         userdir = args[1];
         userdir += "/";
     }
-    //QString userdir("/home/dwight/Downloads/n7phoo/");
+
     {
         QDir d(userdir);
         d.mkpath(userdir);
@@ -926,6 +939,10 @@ setup_locations()
         f.open(QIODevice::WriteOnly);
         f.putChar(0);
         f.close();
+    }
+    {
+        QDir shares(userdir + "shares");
+        shares.mkpath(userdir + "shares");
     }
 #ifdef ANDROID
     QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
@@ -975,15 +992,21 @@ setup_locations()
         int len_tmp = sizeof(tmp);
 
         dwyco_get_fn_prefixes(sys, &len_sys, user, &len_user, tmp, &len_tmp);
-        Sys_pfx = QByteArray(sys, len_sys - 1);
-        User_pfx = QByteArray(user, len_user - 1);
-        Tmp_pfx = QByteArray(tmp, len_tmp - 1);
-        if(Sys_pfx.length() == 0)
+        Sys_pfx_native = QByteArray(sys, len_sys - 1);
+        User_pfx_native = QByteArray(user, len_user - 1);
+        Tmp_pfx_native = QByteArray(tmp, len_tmp - 1);
+        if(Sys_pfx_native.length() == 0)
             Sys_pfx = ".";
-        if(User_pfx.length() == 0)
+        else
+            Sys_pfx = QDir::fromNativeSeparators(Sys_pfx_native).toLatin1();
+        if(User_pfx_native.length() == 0)
             User_pfx = ".";
-        if(Tmp_pfx.length() == 0)
+        else
+            User_pfx = QDir::fromNativeSeparators(User_pfx_native).toLatin1();
+        if(Tmp_pfx_native.length() == 0)
             Tmp_pfx = ".";
+        else
+            Tmp_pfx = QDir::fromNativeSeparators(Tmp_pfx_native).toLatin1();
 
     }
 
@@ -1467,6 +1490,7 @@ DwycoCore::init()
     dwyco_set_video_display_callback(dwyco_video_make_image);
     dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
+    dwyco_set_disposition("foreground", 10);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
 #if ((defined(LINUX)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
@@ -1729,6 +1753,34 @@ DwycoCore::init()
         clear_unviewed_msgs();
         setting_put("bugfix1", "");
     }
+
+    update_android_backup_available(dwyco_get_android_backup_state());
+
+}
+
+int
+DwycoCore::load_backup()
+{
+    int ret = dwyco_restore_android_backup();
+    return ret;
+}
+
+int
+DwycoCore::get_android_backup_state()
+{
+    return dwyco_get_android_backup_state();
+}
+
+QString
+DwycoCore::map_to_representative(const QString& uid)
+{
+    QByteArray b = uid.toLatin1();
+    b = QByteArray::fromHex(b);
+    DWYCO_LIST urep;
+    dwyco_map_uid_to_representative(b.constData(), b.length(), &urep);
+    simple_scoped qurep(urep);
+    b = qurep.get<QByteArray>(0);
+    return b.toHex();
 }
 
 void
@@ -2670,6 +2722,9 @@ DwycoCore::simple_send(QString recipient, QString msg)
         dwyco_delete_zap_composition(compid);
         return 0;
     }
+    // we sent them something, so sort them towards the top
+    // where needed
+    add_got_msg_from(ruid);
     return compid;
 }
 
@@ -2712,7 +2767,8 @@ send_contact_query(QList<QString> emails)
 {
     QByteArray fn = add_pfx(Tmp_pfx, random_fn());
     save_it(emails, fn.constData());
-    int compid = dwyco_make_file_zap_composition(fn.constData(), fn.length());
+    QByteArray fn_native = QDir::toNativeSeparators(fn).toLatin1();
+    int compid = dwyco_make_file_zap_composition(fn_native.constData(), fn_native.length());
     if(compid == 0)
         return;
     //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
@@ -2767,6 +2823,7 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     QByteArray ruid = QByteArray::fromHex(recipient.toLatin1());
     QByteArray txt = msg.toUtf8();
     QByteArray fn = filename.toLatin1();
+    QByteArray fn_native = QDir::toNativeSeparators(filename).toLatin1();
 
     // if for some reason we can't strip out the exif stuff, then
     // don't send the image. it could be that it isn't a jpg file or something
@@ -2792,8 +2849,8 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     dest = add_pfx(Tmp_pfx, dest);
     f.copy(dest);
     f.remove();
-
-    int compid = dwyco_make_file_zap_composition(dest.constData(), dest.length());
+    QByteArray dest_native = QDir::toNativeSeparators(dest).toLatin1();
+    int compid = dwyco_make_file_zap_composition(dest_native.constData(), dest_native.length());
     if(compid == 0)
     {
         QFile::remove(dest);
@@ -2812,6 +2869,150 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     QFile::remove(dest);
     return compid;
 }
+
+namespace dwyco {
+// this is mostly for debugging, so for now, just dig in
+int init_netlog();
+void exit_netlog();
+}
+
+int
+DwycoCore::send_report(QString uid)
+{
+    QByteArray ruid = QByteArray::fromHex(uid.toLatin1());
+    dwyco::exit_netlog();
+    QByteArray filename = add_pfx(User_pfx, "netlog.sql");
+
+    char *rs;
+    dwyco_random_string2(&rs, 2);
+    QByteArray rsb(rs, 2);
+    dwyco_free_array(rs);
+    rsb = rsb.toHex();
+
+    QByteArray target = add_pfx(Tmp_pfx, QByteArray("nl") + rsb + ".sql");
+
+    QFile::remove(target);
+    if(!QFile::copy(filename, target))
+    {
+        dwyco::init_netlog();
+        return 0;
+    }
+    dwyco::init_netlog();
+
+    QByteArray target_native = QDir::toNativeSeparators(target).toLatin1();
+    int compid = dwyco_make_file_zap_composition(target_native.constData(), target_native.length());
+    if(compid == 0)
+    {
+        QFile::remove(target);
+        return 0;
+    }
+    if(!dwyco_zap_send5(compid, ruid.constData(), ruid.length(),
+                        "netlog", 6, 0, 0,
+                        0, 0)
+      )
+
+    {
+        dwyco_delete_zap_composition(compid);
+        QFile::remove(target);
+        return 0;
+    }
+    QFile::remove(target);
+    return compid;
+
+}
+
+#ifdef ANDROID
+QString
+DwycoCore::export_attachment(QString mid)
+{
+    QByteArray rmid = mid.toLatin1();
+    //QString userdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QByteArray userdir;
+    // note: on android, we export the attachment to a writable sub-directory called
+    // "shares", and the java android support stuff has a "fileprovider" that
+    // can share items from that directory via mediastore. it is the caller's
+    // responsibility to initiate the notification to mediastore to pick up the new image.
+    // on desktop, we don't need to do all this garbage, just write it to documents or
+    // pictures and we're done.
+    userdir = add_pfx(User_pfx, "shares");
+    // using the name in the message is dicey. it might be utf8, might be unicode,
+    // might be from case-sensitive fs, might not. almost certainly it is a security problem.
+    // so punt, and just create a random filename, and try to add a file extension if
+    // it looks like there is one.
+    DWYCO_SAVED_MSG_LIST sm;
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
+    {
+        return "";
+    }
+    simple_scoped qsm(sm);
+    if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+        return "";
+    QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    // look for file extension
+    int dot = scary_fn.lastIndexOf('.');
+    if(dot != -1)
+    {
+        scary_fn.remove(0, dot);
+    }
+    else
+        scary_fn = "";
+    // maybe try sticking a place name in here? just
+    // an idea
+    QByteArray dstfn("/phoo");
+    dstfn += QByteArray::number(csum, 16);
+    dstfn += scary_fn;
+    userdir += dstfn;
+    // note: this is probably broken on windows, have to check it out.
+    QByteArray lfn = QFile::encodeName(userdir);
+    if(!dwyco_copy_out_file_zap2(rmid.constData(), lfn.constData()))
+    {
+        return "";
+    }
+    return QFile::decodeName(lfn);
+}
+#else
+QString
+DwycoCore::export_attachment(QString mid)
+{
+    QByteArray rmid = mid.toLatin1();
+    QString userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    // using the name in the message is dicey. it might be utf8, might be unicode,
+    // might be from case-sensitive fs, might not. almost certainly it is a security problem.
+    // so punt, and just create a random filename, and try to add a file extension if
+    // it looks like there is one.
+    DWYCO_SAVED_MSG_LIST sm;
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
+    {
+        return "";
+    }
+    simple_scoped qsm(sm);
+    if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+        return "";
+    QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    // look for file extension
+    int dot = scary_fn.lastIndexOf('.');
+    if(dot != -1)
+    {
+        scary_fn.remove(0, dot);
+    }
+    else
+        scary_fn = "";
+    QByteArray dstfn("/phooatt");
+    dstfn += QByteArray::number(csum, 16);
+    dstfn += scary_fn;
+    userdir += dstfn;
+    // note: this is probably broken on windows, have to check it out.
+    QByteArray lfn = QFile::encodeName(userdir);
+    if(!dwyco_copy_out_file_zap2(rmid.constData(), lfn.constData()))
+    {
+        return "";
+    }
+    return QFile::decodeName(lfn);
+}
+#endif
+
 
 int
 DwycoCore::make_zap_view(QString mid)

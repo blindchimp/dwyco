@@ -23,15 +23,16 @@ typedef QMap<QString, QString> SSMap;
 
 static SSMap Settings;
 
-void
+int
 settings_load()
 {
 
     QFile f(add_pfx(User_pfx, "settings.q2"));
     if(!f.open(QIODevice::ReadOnly))
-        return;
+        return 0;
     QDataStream in(&f);
     in >> Settings;
+    return 1;
 }
 
 void

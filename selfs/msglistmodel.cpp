@@ -20,6 +20,10 @@
 #include "dwyco_new_msg.h"
 #include "dwyco_top.h"
 
+#if defined(LINUX) && !(defined(ANDROID) || defined(MACOSX))
+#define LINUX_EMOJI_CRASH_HACK
+#endif
+
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
 
@@ -865,7 +869,11 @@ msglist_raw::qd_data ( int r, int role ) const
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
         QByteArray txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
-        return QString(txt);
+#ifdef LINUX_EMOJI_CRASH_HACK
+        return QString::fromLatin1(txt);
+#else
+        return QString::fromUtf8(txt);
+#endif
     }
     case SENT:
         return 1;
@@ -1351,12 +1359,20 @@ msglist_raw::get_msg_text(int row) const
             return "";
         simple_scoped qbt(bt);
         auto ftxt = qbt.get<QByteArray>(0);
+#ifdef LINUX_EMOJI_CRASH_HACK
         return QString::fromLatin1(get_extended(ftxt));
+#else
+        return QString::fromUtf8(get_extended(ftxt));
+#endif
     }
 
 
     auto txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
+#ifdef LINUX_EMOJI_CRASH_HACK
     return QString::fromLatin1(get_extended(txt));
+#else
+    return QString::fromUtf8(get_extended(txt));
+#endif
 }
 
 QString

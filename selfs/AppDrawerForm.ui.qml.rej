@@ -1,0 +1,19 @@
+***************
+*** 52,58 ****
+                      text: {
+  
+                          (core.is_database_online === 0 ? "" : "Online ")
+-                                 + (core.invisible ? "(Invisible)" : "")
+                      }
+                      color: "white"
+                  }
+--- 55,63 ----
+                      text: {
+  
+                          (core.is_database_online === 0 ? "" : "Online ")
++                                 + (SyncDescModel.connection_count === 0 ? "" : "Sync ")
++                                 + (core.invisible ? "(Invis)" : "")
++                                 + "(Arch: " + (core.total_users - ConvListModel.count).toString() + ")"
+                      }
+                      color: "white"
+                  }

@@ -15,6 +15,7 @@
 #include <QVariant>
 #include <QUrl>
 #include <QNetworkReply>
+#include <QThread>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -139,12 +140,21 @@ public:
     Q_INVOKABLE void init();
     Q_INVOKABLE int service_channels();
     Q_INVOKABLE void exit() {
-        //dwyco_empty_trash();
-        //dwyco_power_clean_safe();
+        // note: this will clean some parts of the
+        // system that might be in use by the client
+        // as well, and ignore some parts. like files
+        // ending in .jpeg will not be removed from
+        // the tmp folder. it is probably a mistake
+        // for the client to be using the same tmp
+        // folder as the dwyco* api, since it might
+        // clean some things the client isn't expecting.
         dwyco_exit();
     }
 
     Q_INVOKABLE void power_clean() {
+        // note: this is disabled right now, pending some
+        // better definition of "clean". it doesn't jive
+        // with the syncing stuff we do now.
         dwyco_power_clean_safe();
     }
 
@@ -289,6 +299,27 @@ public:
     // to server, so messages sent via the server will still be delivered.
     Q_INVOKABLE void inhibit_all_incoming_calls(int i);
 
+    Q_INVOKABLE int send_report(QString uid);
+    Q_INVOKABLE QString export_attachment(QString mid);
+    static void one_time_copy_files();
+    Q_INVOKABLE void background_migrate();
+    Q_INVOKABLE void directory_swap();
+
+    // this can sometime take awhile, so we handle it in a thread, then
+    // cause the user to exit and restart
+    Q_INVOKABLE void background_reindex();
+    static void do_reindex();
+
+    Q_INVOKABLE QUrl from_local_file(const QString&);
+    Q_INVOKABLE QString to_local_file(const QUrl& url);
+
+    Q_INVOKABLE int load_backup();
+    Q_INVOKABLE int get_android_backup_state();
+
+    Q_INVOKABLE QString map_to_representative(const QString& uid);
+
+public:
+
 public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);
@@ -369,6 +400,8 @@ signals:
     void zap_stopped(int zid);
 
     void mid_tag_changed(QString mid);
+    void migration_complete();
+	void reindex_complete();
 
     void name_to_uid_result(QString uid, QString handle);
 
@@ -380,6 +413,24 @@ signals:
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
+
+};
+
+class fuck_me_with_a_brick : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::one_time_copy_files();
+    }
+
+};
+
+class fuck_me_with_a_brick2 : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::do_reindex();
+    }
 
 };
 

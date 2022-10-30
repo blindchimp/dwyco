@@ -129,7 +129,7 @@ Page {
     Connections {
         target: core
 
-        onChat_event: {
+        function onChat_event(cmd, sid, huid, sname, vdata, qid, extra_arg) {
             console.log("got chat event")
             console.log(cmd, sid)
             console.log(huid)

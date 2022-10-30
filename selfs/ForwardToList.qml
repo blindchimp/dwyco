@@ -24,6 +24,16 @@ Page {
 
     }
 
+    Component.onCompleted: {
+        limited_forward = core.flim(mid_to_forward)
+        if(limited_forward) {
+            user_model.load_admin_users_to_model()
+        } else {
+            user_model.load_users_to_model()
+        }
+        multiselect_mode = true
+    }
+
     Component {
         id: forward_list_delegate
         Rectangle {
