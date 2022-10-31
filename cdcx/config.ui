@@ -924,7 +924,7 @@ to forward outside ports to this machine.</string>
        <item row="10" column="0">
         <widget class="QCheckBox" name="sync_enable">
          <property name="text">
-          <string>Enable account syncing</string>
+          <string>Enable device linking</string>
          </property>
         </widget>
        </item>
@@ -952,7 +952,7 @@ to forward outside ports to this machine.</string>
        <item row="8" column="0">
         <widget class="QLabel" name="label_24">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://www.dwyco.net/general-5&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;What is Account Linking?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;a href=&quot;https://www.dwyco.net/general-5&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;What is Device Linking?&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="openExternalLinks">
           <bool>true</bool>
