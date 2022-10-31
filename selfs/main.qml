@@ -112,7 +112,7 @@ ApplicationWindow {
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
     property bool is_camera_available
-    is_camera_available: QtMultimedia.availableCameras.length > 0
+    is_camera_available: camListModel.count > 2 || QtMultimedia.availableCameras.length > 0
 
     function pin_expire() {
         var expire
