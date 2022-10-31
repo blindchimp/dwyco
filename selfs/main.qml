@@ -112,15 +112,19 @@ ApplicationWindow {
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
-    property bool show_archived_users: true
+    property bool show_archived_users: false
 
     property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
     property int qt_application_state: 0
     property bool is_mobile
+
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
     property bool is_camera_available
     is_camera_available: QtMultimedia.availableCameras.length > 0
+
+    property bool group_active
+    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
     function pin_expire() {
         var expire
@@ -152,8 +156,13 @@ ApplicationWindow {
     // at the same time.
     //width: Screen.width
     //height: Screen.height
-    title: qsTr("Dwyco ") + core.buildtime
+    title: {
+        qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
+                                                 " (" + core.active_group_name + " " + core.percent_synced + "%)" :
+                                                 (core.group_status === 1 ?
+                                                      "(Requesting " + core.active_group_name + ")" : ""))
 
+    }
     property int close_bounce: 0
     onClosing: {
         // special cases, don't let them navigate around the
@@ -336,7 +345,6 @@ ApplicationWindow {
             last_uid_selected = uid
 
             if(action === "clicked") {
-
                 stack.push(chatbox)
             }
             else if(action == "hold")
@@ -409,6 +417,17 @@ ApplicationWindow {
             }
         }
 
+    }
+
+    DevGroup {
+        id: device_group
+        visible: false
+        onQuitnowChanged: {
+            if(quitnow === true)
+            {
+                stack.push(device_group)
+            }
+        }
     }
 
 //    ConvList {
@@ -929,9 +948,8 @@ ApplicationWindow {
         }
 
         onSys_msg_idx_updated: {
-            console.log("update idx", uid)
-            console.log("upd" + uid + " " + themsglist.uid)
-            if(uid === themsglist.uid) {
+            console.log("upd " + uid + " " + themsglist.uid)
+            if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model()
 
                 console.log("RELOAD msg_idx")
@@ -974,6 +992,7 @@ ApplicationWindow {
             if(Qt.platform.os == "android") {
                 notificationClient.set_lastrun()
             }
+            qt_application_state = app_state
         }
 
         onImage_picked: {
@@ -1018,6 +1037,15 @@ ApplicationWindow {
         }
     }
 
+    Timer {
+        id: sync_debug
+        interval: 10000
+        repeat: true
+        running: group_active && server_account_created && qt_application_state === 0
+        onTriggered: {
+            SyncDescModel.load_model()
+        }
+    }
 
     Timer {
         id: service_timer

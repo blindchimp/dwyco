@@ -54,6 +54,10 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, eager_pull)
     QML_READONLY_VAR_PROPERTY(int, group_private_key_valid)
 
+    QML_READONLY_VAR_PROPERTY(bool, invisible)
+    QML_READONLY_VAR_PROPERTY(int, android_migrate)
+    QML_READONLY_VAR_PROPERTY(int, android_backup_available)
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -67,7 +71,7 @@ public:
         m_audio_full_duplex = 0;
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
-        m_use_archived = true;
+        m_use_archived = false;
         m_this_uid = "";
         m_this_handle = "";
         m_directory_fetching = false;
@@ -77,8 +81,12 @@ public:
         m_group_status = 0;
         m_eager_pull = 0;
         m_any_unviewed = false;
+        m_invisible = false;
+        m_android_migrate = Android_migrate;
+        m_android_backup_available = 0;
     }
     static QByteArray My_uid;
+    static int Android_migrate;
 
 
     enum System_event {
@@ -343,7 +351,8 @@ signals:
     void video_capture_preview(QString img_path);
 // this is used internally, should not fiddle with it via QML
     void user_control(int, QByteArray, QByteArray);
-    void decorate_user(const QString& uid);
+
+    void decorate_user(QString uid);
     void sys_chat_server_status(int id, int status);
     void qt_app_state_change(int app_state);
 
@@ -404,11 +413,12 @@ signals:
 	void reindex_complete();
 
     void name_to_uid_result(QString uid, QString handle);
-
+    // WARNING: DO NOT USE THESE QBYTEARRAY THINGS IN QML, they are not
+    // auto-converted to strings
     void msg_pull_ok(const QByteArray& mid, const QString& huid);
     void msg_tag_change_global(const QByteArray& mid, const QString& huid);
 
-    void join_result(const QByteArray& gname, int result);
+    void join_result(QString gname, int result);
 
 private:
 

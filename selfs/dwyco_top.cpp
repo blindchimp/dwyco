@@ -44,6 +44,7 @@
 #include "syncmodel.h"
 #include "discomodel.h"
 #include "ccmodel.h"
+#include "joinlogmodel.h"
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
@@ -113,7 +114,10 @@ extern int HasCamera;
 extern int HasCamHardware;
 static QNetworkAccessManager *Net_access;
 
-static QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
+int DwycoCore::Android_migrate;
+
+// kluge
+QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -140,9 +144,17 @@ reload_conv_list()
 {
     Conv_sort_proxy->setDynamicSortFilter(false);
     int total = 0;
-    dwyco_load_users2(TheDwycoCore->get_use_archived() ? 0 : 1, &total);
+    dwyco_load_users2(!TheDwycoCore->get_use_archived(), &total);
     TheDwycoCore->update_total_users(total);
     TheConvListModel->load_users_to_model();
+    Conv_sort_proxy->setDynamicSortFilter(true);
+}
+
+void
+reload_conv_list_since(long time)
+{
+    Conv_sort_proxy->setDynamicSortFilter(false);
+    TheConvListModel->reload_possible_changes(time);
     Conv_sort_proxy->setDynamicSortFilter(true);
 }
 
@@ -373,8 +385,8 @@ dwyco_db_login_result(const char *str, int what)
     emit TheDwycoCore->server_login(str, what);
     if(what > 0)
     {
-        reload_conv_list();
-        reload_ignore_list();
+        //reload_conv_list();
+        //reload_ignore_list();
         //dwyco_switch_to_chat_server(0);
     }
 }
@@ -562,6 +574,7 @@ dwyco_sys_event_callback(int cmd, int id,
         TheDwycoCore->update_group_status(gl.get_long(DWYCO_GS_IN_PROGRESS));
         TheDwycoCore->update_eager_pull(gl.get_long(DWYCO_GS_EAGER));
         TheDwycoCore->update_group_private_key_valid(gl.get_long(DWYCO_GS_VALID));
+        TheJoinLogModel->load_model();
     }
         break;
 
@@ -569,6 +582,17 @@ dwyco_sys_event_callback(int cmd, int id,
     {
         reload_ignore_list();
         TheConvListModel->redecorate();
+        break;
+    }
+    case DWYCO_SE_SERVER_ATTR:
+    {
+        if(namestr == "invis")
+        {
+            if(type == DWYCO_TYPE_NIL)
+                TheDwycoCore->update_invisible(false);
+            else
+                TheDwycoCore->update_invisible(true);
+        }
         break;
     }
     default:
@@ -946,6 +970,7 @@ setup_locations()
     }
 #ifdef ANDROID
     QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy("assets:/dsadwyco.pub", userdir + "dsadwyco.pub");
     QFile::copy("assets:/license.txt", userdir + "license.txt");
     QFile::copy("assets:/no_img.png", userdir + "no_img.png");
 //    QFile::copy("assets:/online.wav", userdir + "online.wav");
@@ -963,7 +988,9 @@ setup_locations()
     //QFile::copy("assets:/zap.wav", userdir + "zap.wav");
 #else
     QFile::copy(":androidinst2/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst2/assets/dsadwyco.pub", userdir + "dsadwyco.pub");
     QFile::copy(":androidinst2/assets/license.txt", userdir + "license.txt");
+    QFile::remove(userdir + "no_img.png");
     QFile::copy(":androidinst2/assets/no_img.png", userdir + "no_img.png");
 //    QFile::copy(":androidinst/assets/online.wav", userdir + "online.wav");
 //    QFile::copy(":androidinst/assets/relaxed-call.wav", userdir + "relaxed-call.wav");
@@ -1672,6 +1699,7 @@ DwycoCore::init()
     connect(this, SIGNAL(sys_msg_idx_updated(QString)), this, SLOT(internal_cq_check(QString)));
     connect(this, SIGNAL(sc_call_death_cleanup(QString,int)), this, SLOT(call_cleanup(QString,int)));
     connect(this, SIGNAL(sys_uid_resolved(QString)), TheSyncDescModel, SLOT(uid_resolved(QString)));
+    connect(this, SIGNAL(sys_uid_resolved(QString)), TheJoinLogModel, SLOT(uid_resolved(QString)));
 
     if(dwyco_get_create_new_account())
         return;
@@ -1690,6 +1718,7 @@ DwycoCore::init()
     update_this_uid(My_uid.toHex());
     update_this_handle(uid_to_name(get_this_uid()));
 
+    update_invisible(dwyco_get_invisible_state());
 
     // for easier testing, setup for raw file acq
 //    dwyco_set_video_input(
@@ -1829,6 +1858,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
 {
     // note: comment out the "inactive" normally, but put it back in
     // when testing "background" stuff on desktop
+    static long time_suspended;
     if(as == Qt::ApplicationSuspended  /*|| as == Qt::ApplicationInactive*/)
     {
         Suspended = 1;
@@ -1844,7 +1874,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         notificationClient->start_background();
         notificationClient->set_allow_notification(1);
 #endif
-
+        time_suspended = time(0);
         emit qt_app_state_change(1);
     }
     else if(as == Qt::ApplicationActive && Suspended)
@@ -1856,7 +1886,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         // in case.
         QSet<QByteArray> dum;
         load_inbox_tags_to_unviewed(dum);
-        reload_conv_list();
+        reload_conv_list_since(time_suspended);
         Suspended = 0;
 #ifdef ANDROID
         notificationClient->set_allow_notification(0);
@@ -2771,7 +2801,6 @@ send_contact_query(QList<QString> emails)
     int compid = dwyco_make_file_zap_composition(fn_native.constData(), fn_native.length());
     if(compid == 0)
         return;
-    //QByteArray Clbot(QByteArray::fromHex("f6006af180260669eafc"));
 
     if(!dwyco_zap_send5(compid, Clbot.constData(), Clbot.length(),
                         "", 0,
@@ -3118,6 +3147,9 @@ dwyco_register_qml(QQmlContext *root)
 
     new CallContextModel;
     root->setContextProperty("CallContextModel", TheCallContextModel);
+
+    JoinLogModel *jlm = new JoinLogModel;
+    root->setContextProperty("JoinLogModel", jlm);
 
 //#ifdef ANDROID
     AndroidPerms *a = new AndroidPerms;
