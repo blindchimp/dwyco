@@ -314,6 +314,11 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("dwyco");
     QCoreApplication::setOrganizationDomain("dwyco.com");
     QCoreApplication::setApplicationName(QString("cdc-x"));
+    QString ver(DWYCO_NICE_VERSION);
+#ifndef CDCX_RELEASE
+    ver += " debug ";
+#endif
+    QCoreApplication::setApplicationVersion(ver);
     QSettings::setDefaultFormat(QSettings::IniFormat);
     // note: need to set the path to the right place, same as fn_pfx for dll
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);
