@@ -1104,7 +1104,7 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
 
     QString ttl = windowTitle();
     ttl += "(";
-    ttl += Version.c_str();
+    ttl += QCoreApplication::applicationVersion();
     ttl += ")";
     setWindowTitle(ttl);
 

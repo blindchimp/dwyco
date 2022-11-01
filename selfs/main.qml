@@ -121,7 +121,7 @@ ApplicationWindow {
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
     property bool is_camera_available
-    is_camera_available: QtMultimedia.availableCameras.length > 0
+    is_camera_available: camListModel.count > 2 || QtMultimedia.availableCameras.length > 0
 
     property bool group_active
     group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1

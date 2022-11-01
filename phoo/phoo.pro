@@ -13,7 +13,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="3.63"
+VER="3.64"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 
@@ -29,6 +29,7 @@ INSTALLS += appdir_icon appdir_desktop
 
 QT += core qml quick multimedia network #widgets #positioning
 QT += quickcontrols2
+#QT += statemachine
 #QT += testlib
 #DEFINES += DWYCO_MODEL_TEST
 
