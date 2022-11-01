@@ -54,6 +54,7 @@ SOURCES += main.cpp \
     discomodel.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
+    joinlogmodel.cpp \
     pfx.cpp \
     msglistmodel.cpp \
     msgpv.cpp \
@@ -462,6 +463,7 @@ HEADERS += \
     ccmodel.h \
     discomodel.h \
 	dwyco_top.h \
+    joinlogmodel.h \
     msglistmodel.h \
     dwycoimageprovider.h \
     notificationclient.h \
