@@ -1010,6 +1010,10 @@ ApplicationWindow {
             else
                 set_badge_number(0)
         }
+
+        onClient_nameChanged: {
+            core.update_dwyco_client_name(core.client_name)
+        }
     }
 
     Rectangle {
