@@ -130,6 +130,9 @@ SOURCES += sqlite3.c glob/glob.c
 }
 
 linux-* {
+# useful for static qt build
+QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
+
 DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100 
 DEFINES += DWYCO_USE_STATIC_SQLITE
 SOURCES += sqlite3.c

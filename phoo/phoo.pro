@@ -32,6 +32,9 @@ QT += quickcontrols2
 #QT += statemachine
 #QT += testlib
 #DEFINES += DWYCO_MODEL_TEST
+# someday, linux static build? fuck me
+#QTPLUGIN.platforms = qminimal qeglfs
+#CONFIG += static
 
 android: QT += androidextras
 macx-clang: QT += macextras
