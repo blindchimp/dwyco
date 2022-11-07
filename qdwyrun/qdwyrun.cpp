@@ -22,6 +22,7 @@
 #include <QFileInfo>
 #include <QProcess>
 #include <QDesktopWidget>
+#include <QApplication>
 #include <stdio.h>
 #include "qdwyrun.h"
 #include "ui_qdwyrun.h"
