@@ -503,7 +503,7 @@ qdwyrun::idle()
 #if defined(_Windows) || defined(_WIN32)
         // if there is anyone around even thinking of using the file, punt
         QString mn("dwyco-autoupdate-");
-        mn += update_app;
+        mn += Update_app_name;
         HANDLE h;
         if((h = CreateMutex(NULL, TRUE, mn.toLatin1())) == NULL)
         {
