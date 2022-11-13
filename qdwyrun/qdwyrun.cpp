@@ -47,18 +47,18 @@
 #endif
 
 #include "vc.h"
-#include "vccomp.h"
 #include "vclhsys.h"
 #include "dwstr.h"
 #include "sha.h"
 #include "vccrypt2.h"
 #include "zcomp.h"
-#include "vclh.h"
 
 using namespace CryptoPP;
 
-extern QString app_to_run;
-extern QString update_app;
+extern QString App_to_run;
+extern QString Update_app_name;
+extern QString App_nice_name;
+
 static int Did_simple_update;
 
 qdwyrun::qdwyrun(QWidget *parent) :
@@ -71,6 +71,7 @@ qdwyrun::qdwyrun(QWidget *parent) :
     idle_timer.setSingleShot(1);
     idle_timer.start();
     ui->done_button->setVisible(0);
+    ui->launch_label->setText("Launching " + App_nice_name + "...");
 }
 
 qdwyrun::~qdwyrun()
@@ -338,7 +339,7 @@ qdwyrun::run_app()
     been_here = 1;
     QStringList args;
     int n = qApp->arguments().count();
-    for(int i = 3; i < n; ++i)
+    for(int i = 4; i < n; ++i)
     {
         args.append(qApp->arguments().at(i));
     }
@@ -346,7 +347,7 @@ qdwyrun::run_app()
     connect(proc, SIGNAL(started()), this, SLOT(app_started()));
     connect(proc, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(too_quick(int,QProcess::ExitStatus)));
     connect(proc, SIGNAL(error(QProcess::ProcessError)), this, SLOT(proc_error(QProcess::ProcessError)));
-    run_proc(app_to_run, args);
+    run_proc(App_to_run, args);
 }
 
 void
@@ -398,9 +399,9 @@ qdwyrun::update_finished(int exitcode, QProcess::ExitStatus estatus)
         ui->label_2->setText("Update failed");
 
     QFile::remove("run-update");
-    QFile::remove(update_app);
-    QString chkfn = update_app + ".chk";
-    QString sigfn = update_app + ".sig";
+    QFile::remove(Update_app_name);
+    QString chkfn = Update_app_name + ".chk";
+    QString sigfn = Update_app_name + ".sig";
     QFile::remove(chkfn);
     QFile::remove(sigfn);
 
@@ -436,7 +437,7 @@ qdwyrun::run_update(QString fn)
     a += fn;
     chmod(fn.toLatin1().constData(), 0755);
 
-    ui->label_2->setText("Updating CDC-X...");
+    ui->label_2->setText("Updating " + App_nice_name + "...");
 
     proc = new QProcess;
     connect(proc, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(update_finished(int,QProcess::ExitStatus)));
@@ -521,7 +522,7 @@ qdwyrun::idle()
             return;
         }
 
-        FILE *f = fopen(update_app.toLatin1().constData(), "r");
+        FILE *f = fopen(Update_app_name.toLatin1().constData(), "r");
         if(!f)
         {
             run_app();
@@ -541,9 +542,9 @@ qdwyrun::idle()
         }
 #endif
 
-        if(check_staged_update(update_app.toLatin1().constData()))
+        if(check_staged_update(Update_app_name.toLatin1().constData()))
         {
-            run_update(update_app);
+            run_update(Update_app_name);
         }
         else
             run_app();
