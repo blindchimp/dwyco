@@ -39,8 +39,10 @@ Page {
     onVisibleChanged: {
         if(!visible)
         {
+            if(view_id !== -1) {
             core.stop_zap_view(view_id)
             core.delete_zap_view(view_id)
+            }
         }
         else
         {

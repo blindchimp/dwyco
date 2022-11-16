@@ -1215,7 +1215,12 @@ setup_locations()
 #endif
     QString native_userdir = QDir::toNativeSeparators(userdir);
     QString native_tmp = QDir::toNativeSeparators(userdir + "tmp/");
-    dwyco_set_fn_prefixes(native_userdir.toLatin1().constData(), native_userdir.toLatin1().constData(), native_tmp.toLatin1().constData());
+    // WARNING: this is a BIG change: we are assuming he CWD of the process is set
+    // to the location where all the other helper exe's are. during debugging, it is useful
+    // to have all that stuff in the "userdir" (we like to delete the build dir a lot.)
+    // on release, we aren't moving the helper exe's around, but it might make sense to do
+    // that in some cases (like for debugging.)
+    dwyco_set_fn_prefixes(0, native_userdir.toLatin1().constData(), native_tmp.toLatin1().constData());
     // can't do this call until prefixes are set since it wants to init the log file
     dwyco_trace_init();
     {

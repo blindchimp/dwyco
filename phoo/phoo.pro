@@ -13,7 +13,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="3.64"
+VER="3.65"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 
@@ -32,6 +32,9 @@ QT += quickcontrols2
 #QT += statemachine
 #QT += testlib
 #DEFINES += DWYCO_MODEL_TEST
+# someday, linux static build? fuck me
+#QTPLUGIN.platforms = qminimal qeglfs
+#CONFIG += static
 
 android: QT += androidextras
 macx-clang: QT += macextras
@@ -332,8 +335,8 @@ LIBS += $${L}/libdwyco_jni.so
 #ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
 
-ANDROID_TARGET_SDK_VERSION=30
-ANDROID_VERSION_CODE=2000111
+ANDROID_TARGET_SDK_VERSION=31
+ANDROID_VERSION_CODE=2000112
 ANDROID_VERSION_NAME=$$VER
 #contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 #    ANDROID_EXTRA_LIBS += \
@@ -387,63 +390,60 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 
 # use this for linking with static cdc lib
 DEFINES += CDCCORE_STATIC
-# use this if you are building with qmake files
-D = $$OUT_PWD\\..\\bld
-
-CONFIG(debug) {
-S=debug
+D=$${OUT_PWD}/../bld
+CONFIG(debug, debug|release) {
+    S=debug
+}
+CONFIG(release, debug|release) {
+    S=release
 }
 
-#CONFIG(release) {
-#S=release
-#}
-
 LIBS += \
-$${D}\\cdc32\\$${S}\\cdc32.lib \
-$${D}\\vc\\$${S}\\vc.lib \
-$${D}\\crypto5\\$${S}\\crypto5.lib \
-$${D}\\dwcls\\$${S}\\dwcls.lib \
-$${D}\\gsm\\$${S}\\gsm.lib \
-$${D}\\kazlib\\$${S}\\kazlib.lib \
-$${D}\\ppm\\$${S}\\ppm.lib \
-$${D}\\pgm\\$${S}\\pgm.lib \
-$${D}\\pbm\\$${S}\\pbm.lib \
-$${D}\\zlib\\$${S}\\zlib.lib \
-$${D}\\jenkins\\$${S}\\jenkins.lib \
-$${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
-$${D}\\speex\\$${S}\\speex.lib \
-$${D}\\ogg\\$${S}\\ogg.lib \
-$${D}\\jhead\\$${S}\\jhead.lib \
-$${D}\\uv\\$${S}\\uv.lib \
-$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
-$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
+$${D}/cdc32/$${S}/cdc32.lib \
+$${D}/vc/$${S}/vc.lib \
+$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/dwcls/$${S}/dwcls.lib \
+$${D}/gsm/$${S}/gsm.lib \
+$${D}/kazlib/$${S}/kazlib.lib \
+$${D}/ppm/$${S}/ppm.lib \
+$${D}/pgm/$${S}/pgm.lib \
+$${D}/pbm/$${S}/pbm.lib \
+$${D}/zlib/$${S}/zlib.lib \
+$${D}/jenkins/$${S}/jenkins.lib \
+$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
+$${D}/speex/$${S}/speex.lib \
+$${D}/ogg/$${S}/ogg.lib \
+$${D}/jhead/$${S}/jhead.lib \
+$${D}/uv/$${S}/uv.lib \
+$${D}/qt-qml-models/$${S}/QtQmlModels_$${QT_ARCH}.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
-$${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
+$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
 
-#delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
+#delayimp.lib $${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
 #QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
 #QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
 
 PRE_TARGETDEPS += \
-$${D}\\cdc32\\$${S}\\cdc32.lib \
-$${D}\\vc\\$${S}\\vc.lib \
-$${D}\\crypto5\\$${S}\\crypto5.lib \
-$${D}\\dwcls\\$${S}\\dwcls.lib \
-$${D}\\gsm\\$${S}\\gsm.lib \
-$${D}\\kazlib\\$${S}\\kazlib.lib \
-$${D}\\ppm\\$${S}\\ppm.lib \
-$${D}\\pgm\\$${S}\\pgm.lib \
-$${D}\\pbm\\$${S}\\pbm.lib \
-$${D}\\zlib\\$${S}\\zlib.lib \
-$${D}\\jenkins\\$${S}\\jenkins.lib \
-$${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
-$${D}\\speex\\$${S}\\speex.lib \
-$${D}\\ogg\\$${S}\\ogg.lib \
-$${D}\\jhead\\$${S}\\jhead.lib \
-$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
-$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib
+$${D}/cdc32/$${S}/cdc32.lib \
+$${D}/vc/$${S}/vc.lib \
+$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/dwcls/$${S}/dwcls.lib \
+$${D}/gsm/$${S}/gsm.lib \
+$${D}/kazlib/$${S}/kazlib.lib \
+$${D}/ppm/$${S}/ppm.lib \
+$${D}/pgm/$${S}/pgm.lib \
+$${D}/pbm/$${S}/pbm.lib \
+$${D}/zlib/$${S}/zlib.lib \
+$${D}/jenkins/$${S}/jenkins.lib \
+$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
+$${D}/speex/$${S}/speex.lib \
+$${D}/ogg/$${S}/ogg.lib \
+$${D}/jhead/$${S}/jhead.lib \
+$${D}/qt-qml-models/$${S}/QtQmlModels_$${QT_ARCH}.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\vorbis112\\win32\\vs2003\\libvorbis\\Debug\\libvorbis.lib \
 #\\mk\\depot\\dwycore\\bld\\theora\\win32\\vs2008\\win32\\Debug\\libtheora_static.lib \
