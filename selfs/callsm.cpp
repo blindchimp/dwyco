@@ -599,7 +599,9 @@ simple_call::init(QObject *mainwin)
 void
 simple_call::connect_signals()
 {
-    const QMetaObject *mo = metaObject();
+    // note: it is probably safe to call the virtual method, but the
+    // compiler warns about it.
+    const QMetaObject *mo = simple_call::metaObject();
     QMetaMethod mm_dispatch = mo->method(mo->indexOfSlot("signal_dispatcher()"));
     QMetaMethod mm_dispatch_int = mo->method(mo->indexOfSlot("signal_dispatcher_int(int)"));
     QMetaMethod mm_dispatch_bool = mo->method(mo->indexOfSlot("signal_dispatcher_bool(bool)"));
