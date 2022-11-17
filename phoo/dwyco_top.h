@@ -58,6 +58,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, android_migrate)
     QML_READONLY_VAR_PROPERTY(int, android_backup_available)
 
+    QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready);
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -84,6 +86,7 @@ public:
         m_invisible = false;
         m_android_migrate = Android_migrate;
         m_android_backup_available = 0;
+        m_desktop_update_ready = false;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -409,6 +412,7 @@ signals:
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
+    static void DWYCOCALLCONV dwyco_check_for_update_done(int status, const char *desc);
 
 };
 
