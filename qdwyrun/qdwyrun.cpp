@@ -58,6 +58,7 @@ using namespace CryptoPP;
 extern QString App_to_run;
 extern QString Update_app_name;
 extern QString App_nice_name;
+int Run_update_on_exit;
 
 static int Did_simple_update;
 
@@ -422,6 +423,10 @@ qdwyrun::update_error(QProcess::ProcessError)
 void
 qdwyrun::run_update(QString fn)
 {
+    Run_update_on_exit = 1;
+    QApplication::quit();
+    return;
+#if 0
     static int been_here;
     if(been_here)
         return;
@@ -443,6 +448,7 @@ qdwyrun::run_update(QString fn)
     connect(proc, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(update_finished(int,QProcess::ExitStatus)));
     connect(proc, SIGNAL(error(QProcess::ProcessError)), this, SLOT(update_error(QProcess::ProcessError)));
     run_proc(a, args);
+#endif
 }
 
 static int
