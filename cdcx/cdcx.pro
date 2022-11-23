@@ -10,6 +10,7 @@ TEMPLATE = app
 TARGET = CDC-X
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += UNICODE
+DEFINES += DWYCO_NICE_VERSION=\\\"3.68\\\"
 
 DEPENDPATH += .
 INCLUDEPATH += .
@@ -193,48 +194,54 @@ DEFINES += CDCCORE_STATIC
 # compile out parts that aren't available in qt4
 DEFINES += CDCX_NO_SSL
 
-# use this if you are building with qmake files
-#D = \\Users\\dwight\\build-cdcx\\bld
+#D = $$replace(OUT_PWD, /, \\)\\..\\bld
+#S = release
 
-D = $$replace(OUT_PWD, /, \\)\\..\\bld
-S = release
+D=$${OUT_PWD}/../bld
+CONFIG(debug, debug|release) {
+    S=debug
+}
+CONFIG(release, debug|release) {
+    S=release
+}
+
 LIBS += \
-$${D}\\cdc32\\$${S}\\cdc32.lib \
-$${D}\\vc\\$${S}\\vc.lib \
-$${D}\\crypto5\\$${S}\\crypto5.lib \
-$${D}\\dwcls\\$${S}\\dwcls.lib \
-$${D}\\gsm\\$${S}\\gsm.lib \
-$${D}\\kazlib\\$${S}\\kazlib.lib \
-$${D}\\ppm\\$${S}\\ppm.lib \
-$${D}\\pgm\\$${S}\\pgm.lib \
-$${D}\\pbm\\$${S}\\pbm.lib \
-$${D}\\zlib\\$${S}\\zlib.lib \
-$${D}\\jenkins\\$${S}\\jenkins.lib \
-$${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
-$${D}\\speex\\$${S}\\speex.lib \
-$${D}\\ogg\\$${S}\\ogg.lib \
-$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
-$${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib \
+$${D}/cdc32/$${S}/cdc32.lib \
+$${D}/vc/$${S}/vc.lib \
+$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/dwcls/$${S}/dwcls.lib \
+$${D}/gsm/$${S}/gsm.lib \
+$${D}/kazlib/$${S}/kazlib.lib \
+$${D}/ppm/$${S}/ppm.lib \
+$${D}/pgm/$${S}/pgm.lib \
+$${D}/pbm/$${S}/pbm.lib \
+$${D}/zlib/$${S}/zlib.lib \
+$${D}/jenkins/$${S}/jenkins.lib \
+$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
+$${D}/speex/$${S}/speex.lib \
+$${D}/ogg/$${S}/ogg.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
+$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
 
 PRE_TARGETDEPS += \
-$${D}\\cdc32\\$${S}\\cdc32.lib \
-$${D}\\vc\\$${S}\\vc.lib \
-$${D}\\crypto5\\$${S}\\crypto5.lib \
-$${D}\\dwcls\\$${S}\\dwcls.lib \
-$${D}\\gsm\\$${S}\\gsm.lib \
-$${D}\\kazlib\\$${S}\\kazlib.lib \
-$${D}\\ppm\\$${S}\\ppm.lib \
-$${D}\\pgm\\$${S}\\pgm.lib \
-$${D}\\pbm\\$${S}\\pbm.lib \
-$${D}\\zlib\\$${S}\\zlib.lib \
-$${D}\\jenkins\\$${S}\\jenkins.lib \
-$${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
-$${D}\\speex\\$${S}\\speex.lib \
-$${D}\\ogg\\$${S}\\ogg.lib \
-$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib
+$${D}/cdc32/$${S}/cdc32.lib \
+$${D}/vc/$${S}/vc.lib \
+$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/dwcls/$${S}/dwcls.lib \
+$${D}/gsm/$${S}/gsm.lib \
+$${D}/kazlib/$${S}/kazlib.lib \
+$${D}/ppm/$${S}/ppm.lib \
+$${D}/pgm/$${S}/pgm.lib \
+$${D}/pbm/$${S}/pbm.lib \
+$${D}/zlib/$${S}/zlib.lib \
+$${D}/jenkins/$${S}/jenkins.lib \
+$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
+$${D}/speex/$${S}/speex.lib \
+$${D}/ogg/$${S}/ogg.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\cdc32\\win32\\vs2008\\Debug\\cdcdll.lib \
 

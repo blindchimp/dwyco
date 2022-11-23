@@ -325,6 +325,25 @@ android_backup()
             goto done;
         }
 
+        // plain texts from pals
+        if(!attempt_backup(
+                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
+                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
+                   "and not exists (select 1 from main.msgs where favmid = mid)"
+                   " order by logical_clock desc"))
+        {
+            goto done;
+        }
+
+        // plain texts
+        if(!attempt_backup(
+                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
+                   "and not exists (select 1 from main.msgs where favmid = mid)"
+                   " order by logical_clock desc"))
+        {
+            goto done;
+        }
+
         // favorites with attachments from pals
         if(!attempt_backup(
                     "select assoc_uid, mid as favmid from mi.msg_idx,mt.gmt using(mid) where tag = '_fav' and has_attachment notnull "
@@ -344,24 +363,6 @@ android_backup()
             goto done;
         }
 
-        // plain texts from pals
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
-                    "and assoc_uid in (select mid from mt.gmt where tag = '_pal') "
-                   "and not exists (select 1 from main.msgs where favmid = mid)"
-                   " order by logical_clock desc"))
-        {
-            goto done;
-        }
-
-        // plain texts
-        if(!attempt_backup(
-                    "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment isnull "
-                   "and not exists (select 1 from main.msgs where favmid = mid)"
-                   " order by logical_clock desc"))
-        {
-            goto done;
-        }
         // with attachments
         if(!attempt_backup(
                     "select assoc_uid, mid as favmid from mi.msg_idx where has_attachment notnull "

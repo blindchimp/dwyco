@@ -65,19 +65,19 @@ Item {
 
                    Image {
                        id: ggtiny
-                       width: .3 * ppic.height
-                       height: .3 * ppic.height
+                       width: ppic.height
+                       height: ppic.height
                        source: "qrc:/new/prefix1/icons/ggtiny.png"
                        anchors.top: parent.top
-                       anchors.left: has_msgs.right
+                       anchors.left: parent.left
                        visible: selected
-                       z: 3
+                       z: 4
                        opacity: 1.0
                    }
                    Image {
                        id: has_msgs
-                       width: .3 * ppic.height
-                       height: .3 * ppic.height
+                       width: ppic.height
+                       height: ppic.height
                        source: "qrc:/new/red32/icons/red-32x32/arrow right-32x32.png"
                        z:3
                        anchors.top:parent.top
@@ -102,8 +102,8 @@ Item {
                    }
                    Rectangle {
                        id: blocked
-                       width: .3 * ppic.height
-                       height: .3 * ppic.height
+                       width: ppic.height
+                       height: ppic.height
                        anchors.top: parent.top
                        anchors.left: parent.left
                        visible: is_blocked

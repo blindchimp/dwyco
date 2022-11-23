@@ -38,10 +38,17 @@ image_cleanup(void *info)
     delete pvi;
 }
 
+static
+QByteArray
+get_no_img()
+{
+    return add_pfx(User_pfx, "no_img.png");
+}
+
 int
 preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
 {
-    preview_fn = add_pfx(Sys_pfx, "no_img.png");
+    preview_fn = get_no_img();
     file = 0;
 
     DWYCO_SAVED_MSG_LIST qsm;
@@ -113,7 +120,7 @@ preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByt
         }
         catch(...)
         {
-            QByteArray mumble = add_pfx(Sys_pfx, "no_img.png");
+            QByteArray mumble = get_no_img();
 
             QFile s(mumble);
             s.copy(cached_name + ".png");
@@ -156,7 +163,7 @@ preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByt
 int
 preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QByteArray& full_size_filename,  QString& local_time)
 {
-    preview_fn = add_pfx(Sys_pfx, "no_img.png");
+    preview_fn = get_no_img();
     file = 0;
 
     //local_time = gen_time(sm, 0);
@@ -225,7 +232,7 @@ preview_msg_body(DWYCO_SAVED_MSG_LIST qsm, QByteArray& preview_fn, int& file, QB
         }
         catch(...)
         {
-            QByteArray mumble = add_pfx(Sys_pfx, "no_img.png");
+            QByteArray mumble = get_no_img();
 
             QFile s(mumble);
             s.copy(cached_name + ".png");

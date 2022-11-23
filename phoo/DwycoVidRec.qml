@@ -349,7 +349,7 @@ Page {
             }
             width: parent.width
             z: 20
-            opacity: .7
+            opacity: .9
             visible: sm.running
 
             Button {

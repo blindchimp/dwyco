@@ -216,6 +216,24 @@ int
 main(int argc, char **argv)
 #endif
 {
+    // arguments are
+    // ip:port to connect to
+    // name of file to fetch (no paths, no crazy characters)
+    // hex signature to check
+    //
+    // this downloads the file, creates an SHA1 hash of the file
+    // then checks the dsa signature of the hash of the downloaded file.
+    //
+    // if there is a partial download of the file, it restarts the download
+    //
+    // if this is successful, there should be 3 files created:
+    // name, name.chk, name.sig
+    // name is the file, .chk is the binary sha1 hash of the file, and .sig
+    // is the binary dsa signature (using the hash.)
+    //
+    // if the signature verification fails, the file and file.chk are deleted
+    // (essentially causing the download to start from scratch next time.)
+
     if(argc < 4)
         exit(1);
 #ifdef LINUX
