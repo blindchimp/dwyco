@@ -1215,7 +1215,12 @@ setup_locations()
 #endif
     QString native_userdir = QDir::toNativeSeparators(userdir);
     QString native_tmp = QDir::toNativeSeparators(userdir + "tmp/");
-    dwyco_set_fn_prefixes(native_userdir.toLatin1().constData(), native_userdir.toLatin1().constData(), native_tmp.toLatin1().constData());
+    // WARNING: this is a BIG change: we are assuming he CWD of the process is set
+    // to the location where all the other helper exe's are. during debugging, it is useful
+    // to have all that stuff in the "userdir" (we like to delete the build dir a lot.)
+    // on release, we aren't moving the helper exe's around, but it might make sense to do
+    // that in some cases (like for debugging.)
+    dwyco_set_fn_prefixes(0, native_userdir.toLatin1().constData(), native_tmp.toLatin1().constData());
     // can't do this call until prefixes are set since it wants to init the log file
     dwyco_trace_init();
     {
@@ -1675,6 +1680,62 @@ DwycoCore::refresh_directory()
 }
 
 
+// note: for phoo, we don't allow the user to control
+// the update process like we did in the old days.
+void
+DWYCOCALLCONV
+DwycoCore::dwyco_check_for_update_done(int status, const char *desc)
+{
+
+    switch(status)
+    {
+    case DWYCO_AUTOUPDATE_CHECK_FAILED:
+
+    case DWYCO_AUTOUPDATE_CHECK_NOT_NEEDED:
+
+    case DWYCO_AUTOUPDATE_CHECK_AVAILABLE:
+    case DWYCO_AUTOUPDATE_CHECK_AVAILABLE_COMPULSORY1:
+    case DWYCO_AUTOUPDATE_CHECK_AVAILABLE_COMPULSORY2:
+
+
+        // note: on the mac and linux, we just give them a link
+        // and make them do the update "by hand" for now.
+
+        break;
+    case DWYCO_AUTOUPDATE_CHECK_USER1:
+    {
+        // this just checks and stages an update, but doesn't run it
+        dwyco_start_autoupdate_download_bg();
+        QFile::remove(add_pfx(Sys_pfx, "run-update"));
+
+    }
+
+    break;
+    case DWYCO_AUTOUPDATE_CHECK_USER2:
+        // this creates the flag that will cause the update to be launched
+        // the next time the launcher is run, in addition to downloading the
+        // update. this allows us to "gate" an update so everyone gets it
+        // at roughly the same time.
+        // this just checks and stages an update, but doesn't run it
+        if(dwyco_start_autoupdate_download_bg() == 2)
+        {
+            // staged and ready to go
+            QFile qf(add_pfx(Sys_pfx, "run-update"));
+
+            if(qf.open(QFile::WriteOnly))
+            {
+                qf.putChar('r');
+                qf.close();
+            }
+            if(TheDwycoCore)
+                TheDwycoCore->update_desktop_update_ready(true);
+
+        }
+
+        break;
+    }
+}
+
 void
 DwycoCore::init()
 {
@@ -1700,6 +1761,11 @@ DwycoCore::init()
     dwyco_set_video_display_callback(dwyco_video_make_image);
     dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
+#if (defined(_Windows) || defined(LINUX) || defined(MAC_CLIENT)) && !defined(DWYCO_IOS) && !defined(ANDROID)
+    // note: this is desktop windows only, we'll have to notify
+    // other users without app stores to visit a link or something
+    dwyco_set_autoupdate_status_callback(dwyco_check_for_update_done);
+#endif
     dwyco_set_disposition("foreground", 10);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 

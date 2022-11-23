@@ -350,7 +350,11 @@ get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu
     int ch_cols = ccols / subsample;
     int ch_rows = crows / subsample;
     int autoconfig = 0;
+#ifdef MACOSX
+    int upside_down = 1;
+#else
     int upside_down = 0;
+#endif
 
     gray **u_out = pgm_allocarray(ch_cols, ch_rows);
     gray **v_out = pgm_allocarray(ch_cols, ch_rows);
@@ -612,12 +616,13 @@ vgqt_init(void *aqext, int frame_rate)
     Cam->load();
     //Cam->start();
 #endif
-#ifdef DWYCO_IOS
+#if defined(DWYCO_IOS) || defined(MACOSX)
     QCameraViewfinderSettings vfs;
     vfs = Cam->viewfinderSettings();
     vfs.setPixelFormat(QVideoFrame::Format_NV12);
+    vfs.setResolution(640, 480);
     Cam->setViewfinderSettings(vfs);
-#elif !defined(ANDROID)
+//#elif !defined(ANDROID)
     // NOTE: qt5.10.1 doesn't support videoprobe on windows
     // other platforms, not sure. rgb and 420p seem to be returned tho.
     // on linux, i think yv12 is returned, but not sure.
@@ -875,7 +880,7 @@ conv_data(vframe ivf)
 #endif
 
         unsigned char *c = (unsigned char *)vf.bits();
-#define SSCOLS (320)
+#define SSCOLS (640)
 #define SSROWS (calcrows)
         int calcrows = (float)rows / ((float)cols / SSCOLS);
         if(calcrows % 2 != 0) ++calcrows;
@@ -896,8 +901,9 @@ conv_data(vframe ivf)
         // get rid of mose of this other stuff. on android, i'll
         // have to revisit this, because in that case, there are
         // other orientation issues.
-
-        //flip_in_place(g, ncols, nrows);
+#ifdef MACOSX
+        flip_in_place(g, ncols, nrows);
+#endif
 
         //
         if(Orientation != 0)

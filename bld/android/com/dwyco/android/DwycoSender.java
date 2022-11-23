@@ -183,7 +183,7 @@ public class DwycoSender extends Service {
         
         Intent notintent = new Intent(context, NotificationClient.class);
         notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent p = PendingIntent.getActivity(context, 1, notintent, 0);
+        PendingIntent p = PendingIntent.getActivity(context, 1, notintent, PendingIntent.FLAG_IMMUTABLE);
         m_builder.setContentIntent(p);
 
         Notification not = m_builder.getNotification();

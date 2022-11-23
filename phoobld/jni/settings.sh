@@ -3,7 +3,8 @@
 # set to path of your NDK (or export NDK to environment)
 
 if [[ "x$NDK" == "x" ]]; then
-NDK=~/android/android-ndk
+#NDK=~/android/android-ndk
+NDK=~/Android/Sdk/ndk/21.3.6528147
 fi
 # i use only a small number of formats - set this to 0 if you want everything.
 # changed 0 to the default, so it'll compile shitloads of codecs normally

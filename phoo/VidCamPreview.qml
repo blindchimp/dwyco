@@ -25,9 +25,11 @@ Page {
 
     }
 
-    onVisibleChanged: {
-        if(visible)
-        {
+
+
+    Component.onCompleted: {
+        //if(visible)
+        //{
             if(core.vid_dev_idx !== 0) {
                 core.enable_video_capture_preview(1)
             } else {
@@ -35,8 +37,12 @@ Page {
                 viewer.source = mi("ic_videocam_off_black_24dp.png")
 
             }
-        }
-        else
+            camlist.currentIndex = core.vid_dev_idx
+            console.log("CAM IDX ", camlist.currentIndex)
+        //}
+        //else
+    }
+    Component.onDestruction: {
         {
             core.enable_video_capture_preview(0)
         }
@@ -76,23 +82,30 @@ Page {
                     onClicked: {
                         camlist.currentIndex = index
                         core.select_vid_dev(index)
+
+                        console.log("CAM IDX ", index)
                     }
                 }
             }
         }
+
     }
 
     ColumnLayout {
         anchors.fill: parent
         ListView {
+            id: camlist
+
             Layout.fillWidth: true
             //Layout.fillHeight: true
             Layout.preferredHeight: contentHeight
-            id: camlist
             model: camListModel
             delegate: camlist_delegate
             clip: true
             spacing: 5
+            highlight: Rectangle { z:3 ; color: amber_accent; opacity: .3}
+            highlightMoveDuration: 200
+            highlightMoveVelocity: -1
         }
 
         Rectangle {
