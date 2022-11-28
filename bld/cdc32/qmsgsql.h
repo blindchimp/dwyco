@@ -19,6 +19,7 @@ namespace qmsgsql {
 void sql_start_transaction();
 void sql_commit_transaction();
 void sql_rollback_transaction();
+void sql_vacuum();
 }
 
 void init_group_map();

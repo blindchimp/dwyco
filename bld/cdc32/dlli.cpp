@@ -7079,6 +7079,9 @@ dwyco_start_gj2(const char *gname, const char *password)
         try
         {
             dwyco::qmsgsql::sql_start_transaction();
+            // note: this might have already been done when the
+            // alt_name was changed above. just making sure at this
+            // point.
             remove_sync_state();
         }
         catch(...)
@@ -7093,6 +7096,7 @@ dwyco_start_gj2(const char *gname, const char *password)
             dwyco::dhg::sql_commit_transaction();
         dwyco::ezset::sql_commit_transaction();
         dwyco::qmsgsql::sql_commit_transaction();
+        dwyco::qmsgsql::sql_vacuum();
         //se_emit_group_status_change();
         dirth_send_prov_leave(My_UID, QckDone(leave_ack, 0, vcnil));
         delete Current_alternate;

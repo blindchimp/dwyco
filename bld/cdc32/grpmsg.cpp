@@ -56,7 +56,7 @@ struct skid_sql : public SimpleSql
 static struct skid_sql *SKID;
 
 // note: this is a bit of a hack: if we get a message that doesn't
-// decrypt right or causes a protocol failuer, that is an external
+// decrypt right or causes a protocol failure, that is an external
 // event. in the past, the "group status change" was used to indicate
 // a change in status for some group operation WE initiated. i'm just
 // piggy-backing it on here so i can display some error info without
