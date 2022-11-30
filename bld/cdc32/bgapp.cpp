@@ -432,7 +432,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 notify_str = DwString("notify-send.exe \"%1\" \"New message\"").arg((const char *)nicename);
                 desktop_notify = true;
 #endif
-#if defined(LINUX) && !defined(MACOS) && !defined(DWYCO_IOS) && !defined(ANDROID)
+#if defined(LINUX) && !defined(MACOSX) && !defined(DWYCO_IOS) && !defined(ANDROID)
                 notify_str = DwString("notify-send \"%1\" \"New message\"").arg((const char *)nicename);
                 desktop_notify = true;
                     //system("notify-send " DWYCO_APP_NICENAME " \"New message\"");
