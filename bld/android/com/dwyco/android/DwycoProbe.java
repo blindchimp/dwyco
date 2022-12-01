@@ -6,6 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.app.PendingIntent;
 import android.util.Log;
+import android.app.Service;
+import android.os.Binder;
+import android.os.IBinder;
 import android.content.SharedPreferences;
 
 import java.io.ByteArrayOutputStream;
@@ -17,22 +20,41 @@ import java.io.File;
 import java.util.Arrays;
 import android.os.Build;
 import android.os.Build.VERSION;
-import androidx.work;
+import android.app.job.JobParameters;
+import android.app.job.JobService;
 
-public class DwycoProbe extends Worker {
+
+public class DwycoProbe extends JobService {
 
     private static Context context;
+    private static String[] local_files = {};
     private static SocketLock prefs_lock;
 
-    public DwycoProbe(
-        @NonNull Context context,
-        @NonNull WorkerParameters params) {
-            super(context, params)
+    public DwycoProbe() {
+        //super("DwycoProbe");
         prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
+
     }
 
     @Override
-    public Result doWork() {
+    public void onCreate() {
+        // TODO Auto-generated method stub
+        super.onCreate();
+        catchLog("DwycoProbe Service got created");
+        context = this;
+        System.loadLibrary("c++_shared");
+        System.loadLibrary("dwyco_jni");
+    }
+
+
+    @Override
+    public boolean onStartJob(final JobParameters params) {
+        //JobWorkItem jwi = params.dequeueWork();
+        //if(jwi == null)
+        //    return false;
+
+        Thread t = new Thread(new Runnable() {
+            public void run() {
         catchLog("DwycoProbe starting");
         prefs_lock.lock();
         SharedPreferences sp;
@@ -42,28 +64,50 @@ public class DwycoProbe extends Worker {
         String tmp_pfx;
         String token;
 
-        sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
-        port = sp.getInt("lockport", 4500);
-        sys_pfx = sp.getString("sys_pfx", ".");
-        user_pfx = sp.getString("user_pfx", ".");
-        tmp_pfx = sp.getString("tmp_pfx", ".");
-        token = sp.getString("token", "notoken");
+            sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
+            port = sp.getInt("lockport", 4500);
+            sys_pfx = sp.getString("sys_pfx", ".");
+            user_pfx = sp.getString("user_pfx", ".");
+            tmp_pfx = sp.getString("tmp_pfx", ".");
+            token = sp.getString("token", "notoken");
         
-        prefs_lock.release();
+    prefs_lock.release();
         catchLog(sys_pfx);
         catchLog(user_pfx);
         catchLog(tmp_pfx);
         catchLog(String.valueOf(port));
         catchLog(token);
-        // note: this is just in case we get a received message while
-        // we are doing the sends. might want to consider just inhibiting
-        // anything in the way of receive processing, but i don't think
-        // this hurts anything.
         poller_thread();
         
+        //set_notification();
         dwybg.dwyco_background_processing(port, 1, sys_pfx, user_pfx, tmp_pfx, token);
         catchLog("job end");
-        return Result.success();
+        // release wakelock, we don't really need it after sending
+        // whatever is in the q
+        jobFinished(params, true);
+        // ok, this is a little sneaky... it appears that the jobscheduler does not
+        // immediately destroy the process, keeping it around for a few minutes
+        // after there are no wakelocks (killing the process because it is "empty").
+        // this is ok for us, because a few minutes after a send is probably the most
+        // likely time we will get a reply, and this will expedite it in most cases
+        // (since FCM takes 15 or 20 minutes sometimes to deliver a "high" priority
+        // message). 
+        dwybg.dwyco_background_processing(port, 0, sys_pfx, user_pfx, tmp_pfx, token);
+        catchLog("job end2");
+        System.exit(0);
+            }
+        }
+        );
+        t.start();
+        return true;
+        //System.exit(0);
+
+    }
+    @Override
+    public boolean onStopJob(JobParameters params) {
+        catchLog("STOP JOB");
+        System.exit(0);
+        return true;
     }
 
     private void poller_thread() {
