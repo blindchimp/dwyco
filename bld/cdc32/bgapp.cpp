@@ -373,18 +373,6 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     //dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
 
-    // quick check, and nothing else
-    if(exit_if_outq_empty == 2)
-    {
-        int tmp = msg_outq_empty();
-#ifdef WIN32
-        closesocket(s);
-#else
-        close(s);
-#endif
-        return tmp;
-    }
-
     dwyco_set_client_version("dwycobg", 7);
     dwyco_set_initial_invis(1);
     dwyco_set_login_result_callback(dwyco_background_db_login_result);
