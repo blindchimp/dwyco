@@ -17,18 +17,38 @@ import java.io.File;
 import java.util.Arrays;
 import android.os.Build;
 import android.os.Build.VERSION;
-import androidx.work;
+import androidx.work.Worker;
+import androidx.work.ForegroundInfo;
+import androidx.work.WorkerParameters;
 
 public class DwycoProbe extends Worker {
 
-    private static Context context;
+    private Context context;
     private static SocketLock prefs_lock;
 
     public DwycoProbe(
-        @NonNull Context context,
-        @NonNull WorkerParameters params) {
-            super(context, params)
+        Context context,
+        WorkerParameters params) {
+        super(context, params);
+        this.context = context;
         prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
+        // note, docs seem to indicate loading a library
+        // multiple times results in the second and further
+        // loads being ignored. i hope so.
+        System.loadLibrary("c++_shared");
+        System.loadLibrary("dwyco_jni");
+    }
+
+    public ForegroundInfo getForegroundInfo() {
+        Notification.Builder m_builder;
+        m_builder = new Notification.Builder(context, "dwyco");
+        m_builder.setContentTitle("Dwyco");
+        m_builder.setAutoCancel(true);
+        m_builder.setContentText("Uploading");
+        m_builder.setOnlyAlertOnce(true);
+        Notification not = m_builder.getNotification();
+        ForegroundInfo f = new ForegroundInfo(1, not);
+        return f;
     }
 
     @Override
@@ -42,7 +62,7 @@ public class DwycoProbe extends Worker {
         String tmp_pfx;
         String token;
 
-        sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
+        sp = context.getSharedPreferences(DwycoApp.shared_prefs, Context.MODE_PRIVATE);
         port = sp.getInt("lockport", 4500);
         sys_pfx = sp.getString("sys_pfx", ".");
         user_pfx = sp.getString("user_pfx", ".");
@@ -59,7 +79,7 @@ public class DwycoProbe extends Worker {
         // we are doing the sends. might want to consider just inhibiting
         // anything in the way of receive processing, but i don't think
         // this hurts anything.
-        poller_thread();
+        //poller_thread();
         
         dwybg.dwyco_background_processing(port, 1, sys_pfx, user_pfx, tmp_pfx, token);
         catchLog("job end");
@@ -85,7 +105,7 @@ public class DwycoProbe extends Worker {
         
         SharedPreferences sp;
         prefs_lock.lock();
-        sp = context.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
+        sp = context.getSharedPreferences(DwycoApp.shared_prefs, Context.MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
         Notification.Builder m_builder;

@@ -37,9 +37,9 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import android.app.job.JobScheduler;
-import android.app.job.JobInfo;
-import android.app.job.JobInfo.Builder;
+//import android.app.job.JobScheduler;
+//import android.app.job.JobInfo;
+//import android.app.job.JobInfo.Builder;
 import android.content.ComponentName;
 import androidx.core.content.FileProvider;
 import java.io.FileInputStream;
@@ -48,6 +48,15 @@ import android.os.ParcelFileDescriptor;
 import android.content.ContentValues;
 import java.io.IOException;
 import java.io.File;
+
+import androidx.work.Constraints;
+import androidx.work.Data;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
+import androidx.work.OutOfQuotaPolicy;
 
 // note: use notificationcompat stuff for older androids
 
@@ -259,6 +268,24 @@ public static String get_token() {
     }
 
     public static void start_background() {
+        // this is just a hack to avoid a crash in android O
+        // this disables the background processing that happens when the
+        // main app goes to sleep, which means delivery of large messages
+        // will not work quite right (only happens when the app is
+        // active). this will have to be fixed eventually.
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .build();
+
+            WorkManager.getInstance().enqueue(uploadWorkRequest);
+
+
+        return;
+
+        }
+        else {
         prefs_lock.lock();
         SharedPreferences sp;
 
@@ -269,40 +296,6 @@ public static String get_token() {
         String tmp_pfx = sp.getString("tmp_pfx", ".");
         String token = sp.getString("token", "notoken");
         prefs_lock.release();
-        // this is just a hack to avoid a crash in android O
-        // this disables the background processing that happens when the
-        // main app goes to sleep, which means delivery of large messages
-        // will not work quite right (only happens when the app is
-        // active). this will have to be fixed eventually.
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            Intent i = new Intent(m_instance, DwycoSender.class);
-        i.putExtra("lockport", port);
-        i.putExtra("sys_pfx", sys_pfx);
-        i.putExtra("user_pfx", user_pfx);
-        i.putExtra("tmp_pfx", tmp_pfx);
-        i.putExtra("token", token);
-            m_instance.startForegroundService(i);
-
-            // JobScheduler js = (JobScheduler)m_instance.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-            // ComponentName jobService =  new ComponentName("com.dwyco.rando", DwycoProbe.class.getName());
-            // JobInfo.Builder jib = new JobInfo.Builder(1, jobService);
-            // JobInfo ji = jib.
-            //    setPeriodic(60 * 15  * 1000).
-            //    setPersisted(true).
-            //    setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).
-            //    build();
-            // int i = js.schedule(ji);
-            // if(i == JobScheduler.RESULT_FAILURE)
-            //     catchLog("JOB SCHED FAIL");
-            //     else
-            //     catchLog("JOB OK");
-            return;
-
-
-            }
-            else {
                 Intent i = new Intent(m_instance, Dwyco_Message.class);
         i.putExtra("lockport", port);
         i.putExtra("sys_pfx", sys_pfx);
