@@ -1024,6 +1024,13 @@ static int Suspend_listen_state;
 static int Suspend_listen_mode;
 
 DWYCOEXPORT
+int
+dwyco_get_suspend_state()
+{
+    return Dwyco_suspended;
+}
+
+DWYCOEXPORT
 void
 dwyco_suspend()
 {

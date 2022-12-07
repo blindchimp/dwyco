@@ -369,6 +369,20 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
         return 1;
+    int just_suspend = false;
+    if(dwyco_get_suspend_state())
+    {
+        // if we are here and we are in the suspended state, it
+        // is because this background processing is being
+        // started while the UI is temporarily suspended in another
+        // thread.
+        // so just resume, and start processing without
+        // re-establishing state.
+        dwyco_resume();
+        just_suspend = true;
+    }
+    else
+    {
 
     //dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
@@ -412,6 +426,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
+    }
 
     //int comsock = -1;
     vc asock = vc(VC_SOCKET_STREAM);
@@ -535,7 +550,10 @@ out:
     // going to resume, just doing an exit may be too abrupt
     // sometimes.
     //dwyco_suspend();
-    dwyco_bg_exit();
+    if(just_suspend)
+        dwyco_suspend();
+    else
+        dwyco_bg_exit();
     //exit(0);
     return 0;
 }
