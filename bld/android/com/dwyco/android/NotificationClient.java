@@ -276,7 +276,7 @@ public static String get_token() {
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build();
 
             WorkManager.getInstance().enqueue(uploadWorkRequest);
