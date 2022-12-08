@@ -1087,6 +1087,7 @@ dwyco_resume()
     turn_accept_on();
     set_listen_state(Suspend_listen_state);
     init_pal();
+    recover_inprogress();
     resume_qmsg();
     //init_prfdb();
     start_database_thread();

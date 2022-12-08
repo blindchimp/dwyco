@@ -313,6 +313,9 @@ background_android_backup()
 // we just exit, leaving the backup in whatever
 // state... sqlite takes care of keeping it
 // reasonably sane.
+// NOTE: this assumes you are in a separate process
+// that can be exited. it probably needs to return and
+// let the caller decide how to clean up.
 static
 void
 check_background_backup(vc asock)
@@ -459,7 +462,15 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         int snooze = dwyco_service_channels(&spin);
         if(exit_if_outq_empty && msg_outq_empty())
             break;
-        check_background_backup(asock);
+        if(!just_suspend)
+        {
+            // note: this currently doesn't work nice
+            // if this background processing is done
+            // in a thread (via workmanager).
+            // in that case, it might make more sense to just
+            // define the backup as another workrequest
+            check_background_backup(asock);
+        }
 #ifdef WIN32
         if(accept(s, 0, 0) != INVALID_SOCKET)
         {
@@ -551,7 +562,12 @@ out:
     // sometimes.
     //dwyco_suspend();
     if(just_suspend)
+    {
+        // note in the case of running in the same thread
+        // as the main ui, the "lock socket" will be closed
+        // when the destructor asock is run.
         dwyco_suspend();
+    }
     else
         dwyco_bg_exit();
     //exit(0);
