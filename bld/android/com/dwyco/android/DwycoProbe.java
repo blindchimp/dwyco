@@ -15,6 +15,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.File;
 import java.util.Arrays;
+import java.net.*;
 import android.os.Build;
 import android.os.Build.VERSION;
 import androidx.work.Worker;
@@ -49,6 +50,30 @@ public class DwycoProbe extends Worker {
         Notification not = m_builder.getNotification();
         ForegroundInfo f = new ForegroundInfo(1, not);
         return f;
+    }
+
+    public void onStopped() {
+        
+        prefs_lock.lock();
+        SharedPreferences sp;
+        int port;
+        sp = context.getSharedPreferences(DwycoApp.shared_prefs, Context.MODE_PRIVATE);
+        port = sp.getInt("lockport", 4500);
+        prefs_lock.release();
+        try
+        {
+            Socket s = new Socket(Inet4Address.getLoopbackAddress(), port);       
+        }
+        catch(Exception e)
+        {
+            catchLog("work stopped (already dead)");
+            catchLog(e.getMessage());
+        }
+        finally
+        {
+            catchLog("work stopped");
+        }
+        
     }
 
     @Override
