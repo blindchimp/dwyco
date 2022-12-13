@@ -464,8 +464,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 GRTLOG("signaling newcount %d", tmp, 0);
                 signaled = tmp;
                 dwyco_signal_msg_cond();
+#ifndef DWYCO_IOS
                 if(desktop_notify)
                     system(notify_str.c_str());
+#endif
             }
         }
         // note: this is a bit sloppy... rather than trying to
