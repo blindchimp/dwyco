@@ -25,7 +25,7 @@ import androidx.work.WorkerParameters;
 public class DwycoProbe extends Worker {
 
     private Context context;
-    private static SocketLock prefs_lock;
+    private SocketLock prefs_lock;
 
     public DwycoProbe(
         Context context,
