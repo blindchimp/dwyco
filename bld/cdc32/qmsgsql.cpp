@@ -95,6 +95,13 @@ sql_rollback_transaction()
 {
     sDb->rollback_transaction();
 }
+void
+sql_vacuum()
+{
+    if(sDb)
+        sDb->vacuum();
+}
+
 }
 
 static
@@ -834,7 +841,12 @@ remove_sync_state()
         sql_simple("delete from mt.taglog");
         sql_simple("delete from deltas");
         sql_commit_transaction();
-        sDb->vacuum();
+        // note: we might be getting called while inside a nested
+        // transaction, and the vacuum fails. which might be ok, but
+        // it makes me queasy. it is probably better to just make a vacuum
+        // part of a periodic cleanup where we have control over the
+        // transaction situation.
+        //sDb->vacuum();
         remove_delta_databases();
     }
     catch(...)

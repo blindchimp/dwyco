@@ -1024,6 +1024,13 @@ static int Suspend_listen_state;
 static int Suspend_listen_mode;
 
 DWYCOEXPORT
+int
+dwyco_get_suspend_state()
+{
+    return Dwyco_suspended;
+}
+
+DWYCOEXPORT
 void
 dwyco_suspend()
 {
@@ -1080,6 +1087,7 @@ dwyco_resume()
     turn_accept_on();
     set_listen_state(Suspend_listen_state);
     init_pal();
+    recover_inprogress();
     resume_qmsg();
     //init_prfdb();
     start_database_thread();
@@ -1472,9 +1480,12 @@ dwyco_init()
 
     All_mute = 1;
 
-    // note: this is for rando, the external audio drivers
+    // note: for rando, the external audio drivers
     // will return 0 since we haven't set them up.
-#if defined(LINUX) || defined(_Windows)
+    // this was a kluge, need to just have rando
+    // explicitly avoid including any audio stuff.
+
+#if defined(LINUX)
     // note: these must be 1 if you have external audio in linux, since
     // init_codec probes the devices to see if they are there and can
     // be used for full-duplex stuff. what a hack. really need to fix
@@ -7076,6 +7087,9 @@ dwyco_start_gj2(const char *gname, const char *password)
         try
         {
             dwyco::qmsgsql::sql_start_transaction();
+            // note: this might have already been done when the
+            // alt_name was changed above. just making sure at this
+            // point.
             remove_sync_state();
         }
         catch(...)
@@ -7090,6 +7104,7 @@ dwyco_start_gj2(const char *gname, const char *password)
             dwyco::dhg::sql_commit_transaction();
         dwyco::ezset::sql_commit_transaction();
         dwyco::qmsgsql::sql_commit_transaction();
+        dwyco::qmsgsql::sql_vacuum();
         //se_emit_group_status_change();
         dirth_send_prov_leave(My_UID, QckDone(leave_ack, 0, vcnil));
         delete Current_alternate;

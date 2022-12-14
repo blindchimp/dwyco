@@ -178,7 +178,7 @@ ANDROID_EXTRA_LIBS = \
     $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so \
     $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
 
-ANDROID_TARGET_SDK_VERSION=30
+ANDROID_TARGET_SDK_VERSION=33
 ANDROID_VERSION_CODE=3000128
 ANDROID_VERSION_NAME="2.56"
 #LIBS += \
@@ -210,6 +210,7 @@ QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavastickyintent", "src/com/dw
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaNotification", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/NotificationClient.java)
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaSocketLock", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/SocketLock.java)
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaMyFirebase", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/MyFirebaseMessagingService.java)
+QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojavaDwycoProbe", "src/com/dwyco/android", $$PWD/../bld/android/com/dwyco/android/DwycoProbe.java)
 
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycojava2", "src/com/dwyco/cdc32", $$files($$PWD/../bld/android/com/dwyco/cdc32/*.java))
 QMAKE_EXTRA_TARGETS += $$copyAndroidSources("dwycorandodeploy", ".", $$PWD/../../deploy-rando/google-services.json)
@@ -296,6 +297,7 @@ DISTFILES += \
     androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
     androidinst2/src/com/dwyco/rando/app.java \
     androidinst2/src/com/dwyco/android/DwycoSender.java \
+    androidinst2/src/com/dwyco/android/DwycoProbe.java \
     androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
     androidinst2/src/com/dwyco/android/NotificationClient.java \
     androidinst2/src/com/dwyco/android/SocketLock.java \

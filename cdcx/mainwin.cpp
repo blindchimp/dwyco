@@ -3548,13 +3548,13 @@ dwyco_sys_event_callback(int cmd, int id,
         break;
     case DWYCO_SE_GRP_JOIN_OK:
         dwyco_set_setting("group/alt_name", namestr.c_str());
-        QMessageBox::information(Mainwinform, "Account group changed", QString("Linked to %1, CDC-X must quit now").
+        QMessageBox::information(Mainwinform, "Device group changed", QString("Linked to %1, CDC-X must quit now").
                                  arg(namestr.length() == 0 ? "<no group>" : namestr.c_str()));
         DieDieDie = 1;
         break;
     case DWYCO_SE_GRP_JOIN_FAIL:
         dwyco_set_setting("group/alt_name", "");
-        QMessageBox::information(Mainwinform, "Account group change failed", QString("Account linking failed, try again later (%1)").arg(namestr.c_str()));
+        QMessageBox::information(Mainwinform, "Device group change failed", QString("Account linking failed, try again later (%1)").arg(namestr.c_str()));
         break;
     default:
         break;

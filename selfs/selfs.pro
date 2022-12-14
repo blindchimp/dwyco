@@ -86,11 +86,12 @@ syncmodel.cpp
 # used only on desktop platforms)
 
 DINC=$${PWD}/../bld
-equals(FORCE_DESKTOP_VGQT,1)|android-*|macx-ios-clang {
+equals(FORCE_DESKTOP_VGQT,1)|android-*|macx-* {
 QT += concurrent
 #SOURCES += vgqt.cpp
 #HEADERS += vgqt.h
 INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
+DEFINES += USE_QML_CAMERA
 }
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
@@ -167,9 +168,9 @@ wasm-emscripten {
 DEFINES += LINUX
 DEFINES += DWYCO_APP_DEBUG
 DEFINES += NO_DWYCO_AUDIO
-equals(FORCE_DESKTOP_VGQT, 1) {
+#equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
-}
+#}
 #INCLUDEPATH += $${DINC}/v4lcap
 
 #QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
