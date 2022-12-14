@@ -313,6 +313,9 @@ background_android_backup()
 // we just exit, leaving the backup in whatever
 // state... sqlite takes care of keeping it
 // reasonably sane.
+// NOTE: this assumes you are in a separate process
+// that can be exited. it probably needs to return and
+// let the caller decide how to clean up.
 static
 void
 check_background_backup(vc asock)
@@ -369,6 +372,20 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
         return 1;
+    int just_suspend = false;
+    if(dwyco_get_suspend_state())
+    {
+        // if we are here and we are in the suspended state, it
+        // is because this background processing is being
+        // started while the UI is temporarily suspended in another
+        // thread.
+        // so just resume, and start processing without
+        // re-establishing state.
+        dwyco_resume();
+        just_suspend = true;
+    }
+    else
+    {
 
     //dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
@@ -400,6 +417,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
+    }
 
     //int comsock = -1;
     vc asock = vc(VC_SOCKET_STREAM);
@@ -432,7 +450,15 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         int snooze = dwyco_service_channels(&spin);
         if(exit_if_outq_empty && msg_outq_empty())
             break;
-        check_background_backup(asock);
+        if(!just_suspend)
+        {
+            // note: this currently doesn't work nice
+            // if this background processing is done
+            // in a thread (via workmanager).
+            // in that case, it might make more sense to just
+            // define the backup as another workrequest
+            check_background_backup(asock);
+        }
 #ifdef WIN32
         if(accept(s, 0, 0) != INVALID_SOCKET)
         {
@@ -525,7 +551,15 @@ out:
     // going to resume, just doing an exit may be too abrupt
     // sometimes.
     //dwyco_suspend();
-    dwyco_bg_exit();
+    if(just_suspend)
+    {
+        // note in the case of running in the same thread
+        // as the main ui, the "lock socket" will be closed
+        // when the destructor asock is run.
+        dwyco_suspend();
+    }
+    else
+        dwyco_bg_exit();
     //exit(0);
     return 0;
 }

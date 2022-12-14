@@ -1204,6 +1204,7 @@ void DWYCOEXPORT dwyco_untrash_users();
 // experimental.
 void DWYCOEXPORT dwyco_suspend();
 void DWYCOEXPORT dwyco_resume();
+int DWYCOEXPORT dwyco_get_suspend_state();
 
 int DWYCOEXPORT dwyco_service_channels(int *spin);
 void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
