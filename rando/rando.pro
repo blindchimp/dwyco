@@ -179,7 +179,7 @@ ANDROID_EXTRA_LIBS = \
     $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
 
 ANDROID_TARGET_SDK_VERSION=33
-ANDROID_VERSION_CODE=3000128
+ANDROID_VERSION_CODE=3000129
 ANDROID_VERSION_NAME="2.56"
 #LIBS += \
 #$${D}/libcdc32.a \
@@ -289,7 +289,6 @@ DISTFILES += \
     androidinst2/src/com/dwyco/cdc32/dwybg.java \
     androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
     androidinst2/src/com/dwyco/rando/app.java \
-    androidinst2/src/com/dwyco/android/DwycoSender.java \
     androidinst2/src/com/dwyco/android/DwycoProbe.java \
     androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
     androidinst2/src/com/dwyco/android/NotificationClient.java \
