@@ -83,10 +83,6 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
 </service>
-<service android:name="com.dwyco.android.Dwyco_Message" android:enabled="true" android:process=":dwycobg">
-</service>
-<service android:name="com.dwyco.android.DwycoSender" android:enabled="true" android:process=":dwycosend">
-</service>
 <provider
     android:name="androidx.core.content.FileProvider"
     android:authorities="com.dwyco.phoo.provider"
