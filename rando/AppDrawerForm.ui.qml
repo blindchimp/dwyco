@@ -144,7 +144,7 @@ Pane {
         }
         ItemDelegate {
             id: load_backup_button
-            text: qsTr("Load backup...\n(quits Rando, restarting finishes load.)")
+            text: qsTr("Load backup...\n(quits Rando,\nrestarting finishes load.)")
 
             onVisibleChanged: {
                 enabled = (core.get_android_backup_state() > 0)

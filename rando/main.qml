@@ -194,6 +194,7 @@ font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
 
     Component.onCompleted: {
         AndroidPerms.request_sync("android.permission.CAMERA")
+        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
 
