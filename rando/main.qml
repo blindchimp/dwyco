@@ -322,6 +322,17 @@ font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
     }
 
     Loader {
+        id: restore_auto_backup
+        visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/RestoreAutoBackup.qml"
+            }
+        }
+    }
+
+    Loader {
         id: help_dialog
         visible: false
         active: visible

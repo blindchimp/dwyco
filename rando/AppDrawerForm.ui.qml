@@ -25,6 +25,7 @@ Pane {
     property alias clear_nonfav: clear_nonfav
     property alias delete_all: delete_all
     property alias freebies_switch: freebies_switch
+    property alias load_backup_button: load_backup_button
 
     //focusPolicy: Qt.NoFocus
     padding: 6
@@ -140,6 +141,17 @@ Pane {
             text: qsTr("About")
             Layout.fillWidth: true
             icon.source: mi("ic_info_outline_black_24dp.png")
+        }
+        ItemDelegate {
+            id: load_backup_button
+            text: qsTr("Load backup...\n(quits Rando, restarting finishes load.)")
+
+            onVisibleChanged: {
+                enabled = (core.get_android_backup_state() > 0)
+            }
+
+            Layout.fillWidth: true
+            icon.source: mi("ic_cloud_download_black_24dp.png")
         }
     }
 }

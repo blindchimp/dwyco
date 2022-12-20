@@ -318,10 +318,14 @@ background_android_backup()
 // let the caller decide how to clean up.
 static
 void
-check_background_backup(vc asock)
+check_background_backup(vc asock, bool just_check_once)
 {
     static DwTimer bu_poll;
     static int been_here;
+    static bool already_checked = false;
+
+    if(already_checked)
+        return;
     if(!been_here)
     {
         bu_poll.set_autoreload(1);
@@ -329,10 +333,14 @@ check_background_backup(vc asock)
         bu_poll.start();
         been_here = 1;
     }
-    if(!bu_poll.is_expired())
-        return;
-    bu_poll.ack_expire();
+    if(!just_check_once)
+    {
+        if(!bu_poll.is_expired())
+            return;
+        bu_poll.ack_expire();
+    }
     int state = background_android_backup();
+    already_checked = just_check_once;
     if(state == 1)
     {
         do
@@ -357,6 +365,12 @@ check_background_backup(vc asock)
 }
 
 
+// note: if exit_if_outq_empty is non-zero, this function returns
+// when it discovers there is no more stuff to send. otherwise, this
+// function runs until it is stopped either by the main UI starting, or
+// the OS kills it.
+// if exit_if_outq_empty & 2 != 0, it disables the "check once per hour"
+// filtering for the android backup checking. this means it will check
 DWYCOEXPORT
 int
 dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
@@ -448,8 +462,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     {
         int spin = 0;
         int snooze = dwyco_service_channels(&spin);
-        if(exit_if_outq_empty && msg_outq_empty())
-            break;
+
         if(!just_suspend)
         {
             // note: this currently doesn't work nice
@@ -457,8 +470,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             // in a thread (via workmanager).
             // in that case, it might make more sense to just
             // define the backup as another workrequest
-            check_background_backup(asock);
+            check_background_backup(asock, (exit_if_outq_empty & 2) ? true : false);
         }
+        if(exit_if_outq_empty && msg_outq_empty())
+            break;
 #ifdef WIN32
         if(accept(s, 0, 0) != INVALID_SOCKET)
         {

@@ -934,6 +934,18 @@ DwycoCore::do_reindex()
     //QThread::sleep(10);
 }
 
+QUrl
+DwycoCore::from_local_file(const QString& s)
+{
+    return QUrl::fromLocalFile(s);
+}
+
+QString
+DwycoCore::to_local_file(const QUrl& u)
+{
+    return u.toLocalFile();
+}
+
 void
 DwycoCore::directory_swap()
 {
@@ -1897,6 +1909,33 @@ DwycoCore::init()
         dwyco_set_setting("call_acceptance/max_audio_recv", "0");
     }
 #endif
+    update_android_backup_available(dwyco_get_android_backup_state());
+
+}
+
+int
+DwycoCore::load_backup()
+{
+    int ret = dwyco_restore_android_backup();
+    return ret;
+}
+
+int
+DwycoCore::get_android_backup_state()
+{
+    return dwyco_get_android_backup_state();
+}
+
+QString
+DwycoCore::map_to_representative(const QString& uid)
+{
+    QByteArray b = uid.toLatin1();
+    b = QByteArray::fromHex(b);
+    DWYCO_LIST urep;
+    dwyco_map_uid_to_representative(b.constData(), b.length(), &urep);
+    simple_scoped qurep(urep);
+    b = qurep.get<QByteArray>(0);
+    return b.toHex();
 }
 
 void
