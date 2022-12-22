@@ -156,6 +156,7 @@ $${D}/kazlib/libkazlib.a \
 $${D}/pbm/libpbm.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/jhead/libjhead.a \
+$${D}/uv/libuv.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a
 
 }
