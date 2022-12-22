@@ -5,8 +5,9 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 
 DEFINES += NO_BUILDTIME
 DEFINES += NO_DWYCO_AUDIO
+VER="2.71"
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"2.70\\\"\"
+DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 
 QT += core qml multimedia network
 QT += quickcontrols2
@@ -179,8 +180,8 @@ ANDROID_EXTRA_LIBS = \
     $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
 
 ANDROID_TARGET_SDK_VERSION=33
-ANDROID_VERSION_CODE=3000130
-ANDROID_VERSION_NAME="2.70"
+ANDROID_VERSION_CODE=3000131
+ANDROID_VERSION_NAME=$$VER
 #LIBS += \
 #$${D}/libcdc32.a \
 #$${D}/libvc.a \

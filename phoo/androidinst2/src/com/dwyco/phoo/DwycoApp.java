@@ -32,7 +32,9 @@ public class DwycoApp {
 	// msg receive performance on android 8+, but you also get an
 	// annoying notification. if typical fcm performance of msg delivery in 15
 	// or 20 minutes is not a problem, then set to false.
+	// note: this isn't really used any more
         final public static boolean sender_sticky = true;
+
 	// false means set the FLAG_SECURE on the app so direct screenshots are not permitted
 	// (at least in some cases, seems a bit inconsistent depending on android version)
         final public static boolean allow_screenshots = false;
@@ -40,5 +42,11 @@ public class DwycoApp {
         final public static boolean is_rando = false;
 
 	final public static boolean keep_screen_on = false;
+
+	// note: this is for telling the background running how to behave.
+	// "or" these together. ca 12/2022, this will change for sure
+	// depending on what i do with workmanager, etc.
+	final public static int exit_if_outq_empty = 1;
+	final public static int check_backup_once = 2;
 	
 }
