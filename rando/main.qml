@@ -75,7 +75,8 @@ ApplicationWindow {
         return 0
     }
 
-font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+    font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+    font.weight: Font.Bold
 
     function sec_to_hours(s) {
         return Math.trunc(s / 3600)
