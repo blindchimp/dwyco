@@ -70,7 +70,7 @@
 #include "geospray.h"
 
 
-#ifdef MACOSX
+#if defined(MACOSX)  && !defined(DWYCO_IOS)
 #include <QtMacExtras>
 #endif
 
@@ -1941,7 +1941,7 @@ DwycoCore::map_to_representative(const QString& uid)
 void
 DwycoCore::set_badge_number(int i)
 {
-#ifdef MACOSX
+#if defined(MACOSX)  && !defined(DWYCO_IOS)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else
