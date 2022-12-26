@@ -45,6 +45,10 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(bool, has_unseen_rando)
     QML_READONLY_VAR_PROPERTY(bool, has_unseen_geo)
     QML_READONLY_VAR_PROPERTY(int, android_migrate)
+    QML_READONLY_VAR_PROPERTY(int, android_backup_available)
+
+    QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready);
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -65,6 +69,8 @@ public:
         m_has_unseen_geo = false;
         m_has_unseen_rando = false;
         m_android_migrate = Android_migrate;
+        m_android_backup_available = 0;
+        m_desktop_update_ready = false;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -279,6 +285,14 @@ public:
     // cause the user to exit and restart
     Q_INVOKABLE void background_reindex();
     static void do_reindex();
+
+    Q_INVOKABLE QUrl from_local_file(const QString&);
+    Q_INVOKABLE QString to_local_file(const QUrl& url);
+
+    Q_INVOKABLE int load_backup();
+    Q_INVOKABLE int get_android_backup_state();
+
+    Q_INVOKABLE QString map_to_representative(const QString& uid);
 
 public:
 

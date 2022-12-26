@@ -15,6 +15,7 @@ rm -f  zlib
 rm -f  ppm
 rm -f  pbm
 rm -f  pgm
+rm -f miniupnpc
 
 ln -s  ../../bld/jhead
 ln -s  ../../bld/cdc32
@@ -24,7 +25,7 @@ ln -s ../../bld/gsm
 ln -s ../../bld/jenkins
 ln -s ../../bld/kazlib
 ln -s ../../bld/libogg-1.3.3 libogg
-ln -s  ../../bld/speexdsp-1.2rc3 libspeex
+ln -s  ../../bld/speexdsp libspeex
 ln -s ../../bld/theora.1.2.x libtheora
 ln -s  ../../bld/libvorbis-1.3.6 libvorbis
 ln -s ../../bld/vc
@@ -32,3 +33,4 @@ ln -s ../../bld/zlib
 ln -s ../../bld/ppm
 ln -s ../../bld/pbm
 ln -s ../../bld/pgm
+ln -s ../../bld/miniupnp/miniupnp-master/miniupnpc

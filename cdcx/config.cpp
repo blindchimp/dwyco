@@ -518,7 +518,7 @@ void configform::on_sync_enable_clicked(bool checked)
         dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
         if(!dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData()))
         {
-            QMessageBox warn(QMessageBox::Warning, "Account linking failed",
+            QMessageBox warn(QMessageBox::Warning, "Device linking failed",
                                      "Can't perform linking now, try again later.",
                                      QMessageBox::Ok);
             warn.exec();
@@ -534,7 +534,7 @@ void configform::on_sync_enable_clicked(bool checked)
         //dwyco_set_setting("group/join_key", "");
         if(!dwyco_start_gj2("", ""))
         {
-            QMessageBox::information(this, "Account UNLINKING failed",
+            QMessageBox::information(this, "Device UNLINKING failed",
                                      "Can't perform UNLINKING now, try again later.",
                                      QMessageBox::Ok);
         }

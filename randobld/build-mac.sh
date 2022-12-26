@@ -1,4 +1,5 @@
 #!/bin/sh
+export PATH=~/Qt/5.15.2/clang_64/bin:$PATH
 D=$HOME
 SHADOW_NAME=$D/git/build-rando
 

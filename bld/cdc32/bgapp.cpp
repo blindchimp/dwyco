@@ -313,12 +313,19 @@ background_android_backup()
 // we just exit, leaving the backup in whatever
 // state... sqlite takes care of keeping it
 // reasonably sane.
+// NOTE: this assumes you are in a separate process
+// that can be exited. it probably needs to return and
+// let the caller decide how to clean up.
 static
 void
-check_background_backup(vc asock)
+check_background_backup(vc asock, bool just_check_once)
 {
     static DwTimer bu_poll;
     static int been_here;
+    static bool already_checked = false;
+
+    if(already_checked)
+        return;
     if(!been_here)
     {
         bu_poll.set_autoreload(1);
@@ -326,10 +333,14 @@ check_background_backup(vc asock)
         bu_poll.start();
         been_here = 1;
     }
-    if(!bu_poll.is_expired())
-        return;
-    bu_poll.ack_expire();
+    if(!just_check_once)
+    {
+        if(!bu_poll.is_expired())
+            return;
+        bu_poll.ack_expire();
+    }
     int state = background_android_backup();
+    already_checked = just_check_once;
     if(state == 1)
     {
         do
@@ -354,6 +365,12 @@ check_background_backup(vc asock)
 }
 
 
+// note: if exit_if_outq_empty is non-zero, this function returns
+// when it discovers there is no more stuff to send. otherwise, this
+// function runs until it is stopped either by the main UI starting, or
+// the OS kills it.
+// if exit_if_outq_empty & 2 != 0, it disables the "check once per hour"
+// filtering for the android backup checking. this means it will check
 DWYCOEXPORT
 int
 dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
@@ -369,21 +386,23 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
         return 1;
+    int just_suspend = false;
+    if(dwyco_get_suspend_state())
+    {
+        // if we are here and we are in the suspended state, it
+        // is because this background processing is being
+        // started while the UI is temporarily suspended in another
+        // thread.
+        // so just resume, and start processing without
+        // re-establishing state.
+        dwyco_resume();
+        just_suspend = true;
+    }
+    else
+    {
 
     //dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
-
-    // quick check, and nothing else
-    if(exit_if_outq_empty == 2)
-    {
-        int tmp = msg_outq_empty();
-#ifdef WIN32
-        closesocket(s);
-#else
-        close(s);
-#endif
-        return tmp;
-    }
 
     dwyco_set_client_version("dwycobg", 7);
     dwyco_set_initial_invis(1);
@@ -412,6 +431,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
+    }
 
     //int comsock = -1;
     vc asock = vc(VC_SOCKET_STREAM);
@@ -432,7 +452,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 notify_str = DwString("notify-send.exe \"%1\" \"New message\"").arg((const char *)nicename);
                 desktop_notify = true;
 #endif
-#if defined(LINUX) && !defined(MACOS) && !defined(DWYCO_IOS) && !defined(ANDROID)
+#if defined(LINUX) && !defined(MACOSX) && !defined(DWYCO_IOS) && !defined(ANDROID)
                 notify_str = DwString("notify-send \"%1\" \"New message\"").arg((const char *)nicename);
                 desktop_notify = true;
                     //system("notify-send " DWYCO_APP_NICENAME " \"New message\"");
@@ -442,9 +462,18 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     {
         int spin = 0;
         int snooze = dwyco_service_channels(&spin);
+
+        if(!just_suspend)
+        {
+            // note: this currently doesn't work nice
+            // if this background processing is done
+            // in a thread (via workmanager).
+            // in that case, it might make more sense to just
+            // define the backup as another workrequest
+            check_background_backup(asock, (exit_if_outq_empty & 2) ? true : false);
+        }
         if(exit_if_outq_empty && msg_outq_empty())
             break;
-        check_background_backup(asock);
 #ifdef WIN32
         if(accept(s, 0, 0) != INVALID_SOCKET)
         {
@@ -476,8 +505,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 GRTLOG("signaling newcount %d", tmp, 0);
                 signaled = tmp;
                 dwyco_signal_msg_cond();
+#ifndef DWYCO_IOS
                 if(desktop_notify)
                     system(notify_str.c_str());
+#endif
             }
         }
         // note: this is a bit sloppy... rather than trying to
@@ -535,7 +566,15 @@ out:
     // going to resume, just doing an exit may be too abrupt
     // sometimes.
     //dwyco_suspend();
-    dwyco_bg_exit();
+    if(just_suspend)
+    {
+        // note in the case of running in the same thread
+        // as the main ui, the "lock socket" will be closed
+        // when the destructor asock is run.
+        dwyco_suspend();
+    }
+    else
+        dwyco_bg_exit();
     //exit(0);
     return 0;
 }

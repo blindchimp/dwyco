@@ -86,6 +86,11 @@ AppDrawerForm {
         //close()
     }
 
+    load_backup_button.onClicked: {
+        stack.push(restore_auto_backup)
+        close()
+    }
+
 
 
 }

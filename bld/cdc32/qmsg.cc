@@ -3957,6 +3957,8 @@ msg_outq_empty()
     else
         outbox_empty = 1;
     closedir(d);
+    if(!outbox_empty)
+        return 0;
 
     d = opendir(newfn("inprogress").c_str());
     if(!d)
