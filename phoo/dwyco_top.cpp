@@ -2095,7 +2095,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     if(as == Qt::ApplicationSuspended  /*|| as == Qt::ApplicationInactive*/)
     {
         Suspended = 1;
-        simple_call::suspend();
+        //simple_call::suspend();
         dwyco_suspend();
         if(BGLockSock)
         {

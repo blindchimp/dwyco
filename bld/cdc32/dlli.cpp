@@ -1041,8 +1041,8 @@ dwyco_suspend()
     Dwyco_suspended = 1;
     // note: this pal stuff won't be necessary once we switch to regular
     // server-based interest list.
-    exit_pal();
-    MMChannel::exit_mmchan();
+    //exit_pal();
+    //MMChannel::exit_mmchan();
     // empty out all the system messages
     while(se_process() || dirth_poll_response())
         ;
@@ -1053,10 +1053,10 @@ dwyco_suspend()
     int current_listen = is_listening();
     Suspend_listen_mode = current_listen;
     Suspend_listen_state = (int)get_settings_value("net/listen");
-    set_listen_state(0);
-    Inhibit_database_thread = 1;
-    Inhibit_auto_connect = 1;
-    Inhibit_pal = 1;
+    //set_listen_state(0);
+    //Inhibit_database_thread = 1;
+    //Inhibit_auto_connect = 1;
+    //Inhibit_pal = 1;
     // mobile platforms like to kill suspended processes, but that isn't
     // really a "crash"
     handle_crash_done();
@@ -1079,16 +1079,16 @@ dwyco_resume()
     a[0] = (char)dwyco_rand();
     a[3] = (char)dwyco_rand();
     add_entropy(a, sizeof(a));
-    Inhibit_database_thread = 0;
-    Inhibit_pal = 0;
-    Inhibit_auto_connect = 0;
-    QSend_inprogress = 0;
-    QSend_special_inprogress = 0;
-    turn_accept_on();
-    set_listen_state(Suspend_listen_state);
-    init_pal();
-    recover_inprogress();
-    resume_qmsg();
+    //Inhibit_database_thread = 0;
+    //Inhibit_pal = 0;
+    //Inhibit_auto_connect = 0;
+    //QSend_inprogress = 0;
+    //QSend_special_inprogress = 0;
+    //turn_accept_on();
+    //set_listen_state(Suspend_listen_state);
+    //init_pal();
+    //recover_inprogress();
+    //resume_qmsg();
     //init_prfdb();
     start_database_thread();
     Dwyco_suspended = 0;
@@ -2056,7 +2056,7 @@ handle_deferred_msg_send()
 // wake you up. you can also safely ignore this and
 // just call at fixed intervals to simplify things.
 //
-// if spin_out is non-zero, it means the core wants to
+// if *spin_out is non-zero, it means the core wants to
 // be called continuously.
 // sometimes the core needs
 // spinning to make things work properly (like
