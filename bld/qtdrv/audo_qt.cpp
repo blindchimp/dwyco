@@ -83,7 +83,7 @@ public:
         //qio_dev->open(QIODevice::ReadOnly);
         qio_dev = 0;
         audio_output = 0;
-        audio_poll_timer = new QTimer(this);
+        audio_poll_timer = new QTimer;
         audio_poll_timer->setTimerType(Qt::PreciseTimer);
         audio_poll_timer->setSingleShot(false);
         connect(audio_poll_timer, SIGNAL(timeout()), this, SLOT(qt_pushmore()));
@@ -95,6 +95,8 @@ public:
         qio_dev = 0;
         delete audio_output;
         audio_output = 0;
+        audio_poll_timer->deleteLater();
+        audio_poll_timer = 0;
     }
     QIODevice *qio_dev;
     QAudioOutput *audio_output;
