@@ -419,16 +419,16 @@ ApplicationWindow {
 
     }
 
-    DevGroup {
-        id: device_group
-        visible: false
-        onQuitnowChanged: {
-            if(quitnow === true)
-            {
-                stack.push(device_group)
-            }
-        }
-    }
+//    DevGroup {
+//        id: device_group
+//        visible: false
+//        onQuitnowChanged: {
+//            if(quitnow === true)
+//            {
+//                stack.push(device_group)
+//            }
+//        }
+//    }
 
 //    ConvList {
 //        id: convlist
@@ -821,15 +821,15 @@ ApplicationWindow {
         
     }
 
-    Migrate {
-        id: migrate_page
-        visible: false
-    }
+//    Migrate {
+//        id: migrate_page
+//        visible: false
+//    }
 
-    Reindex {
-        id: background_reindex
-        visible: false
-    }
+//    Reindex {
+//        id: background_reindex
+//        visible: false
+//    }
 
     DwycoCore {
         id: core
