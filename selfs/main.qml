@@ -837,7 +837,7 @@ ApplicationWindow {
         property int is_chat_online: -1
 
         objectName: "dwyco_singleton"
-        client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
+        client_name: {"selfs-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
             var a
             a = get_local_setting("first-run")

@@ -916,30 +916,220 @@ DwycoCore::name_to_uid(QString handle)
     dwyco_name_to_uid(b.constData(), b.length());
 }
 
+// if they installed externally, copy the files in to the local
+// app storage, and rename the data folder.
+// this should only need to be done once, and the process should be
+// exited immediately after doing the dir name swap
+//
+// both dirs should be absolute paths (this appears to be ok with current
+// version of android)
+// src_dir will be something like '/storage/emulated/yada/.../Documents'
+// target_pfx should be something for the internal storage for the app, usually
+// like '/data/com.dwyco.phoo/yada/files'
+// the files from src_dir are recursively copied into "target_pfx" + "/upg/"
+// and the migration should rename "upg" to dwyco/phoo as if doing
+// mv "target"+ "dwyco" "target" + "dwyco.old", in case it got created before
+// if "dwyco.old" already exists, try dwyco.old2, etc. only try a few before giving up.
+// mkdir target/phoo
+// mv target/upg target/dwyco/phoo
+//
+static
+void
+one_time_migrate(const QString& src_dir, const QString& target_pfx)
+{
+    QDirIterator di(src_dir, QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDirIterator::Subdirectories);
+    //QString target_pfx = "/home/dwight/Downloads/";
+    while(di.hasNext())
+    {
+        QString sfn = di.next();
+        QString dfn = sfn;
+        int i = dfn.indexOf("dwyco/phoo");
+        if(i != -1)
+        {
+            dfn.remove(0, i + 11);
+            dfn.prepend("/");
+            dfn.prepend(target_pfx);
+            QString path = dfn;
+            path.truncate(path.lastIndexOf("/"));
+            //printf("%s\n", path.toLatin1().constData());
+            QDir d(path);
+            d.mkpath(path);
+        }
+        //printf("%s %s\n", sfn.toLatin1().constData(), dfn.toLatin1().constData());
+        QFile::copy(sfn, dfn);
+    }
+}
+
+void
+DwycoCore::one_time_copy_files()
+{
+    QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    src += "/dwyco/phoo";
+    QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    dst += "/dwyco/upg";
+    one_time_migrate(src, dst);
+    //QThread::sleep(10);
+}
+
+void
+DwycoCore::background_migrate()
+{
+    // sigh, this won't compile with android ndk's up to 23.2
+    //QThread *q = QThread::create(DwycoCore::one_time_copy_files);
+    auto q = new fuck_me_with_a_brick;
+    connect(q, SIGNAL(finished()), this, SIGNAL(migration_complete()));
+    q->start();
+}
+
+void
+DwycoCore::background_reindex()
+{
+    auto q = new fuck_me_with_a_brick2;
+    connect(q, SIGNAL(finished()), this, SIGNAL(reindex_complete()));
+    q->start();
+}
+
+void
+DwycoCore::do_reindex()
+{
+    dwyco_init();
+    dwyco_exit();
+    //QThread::sleep(10);
+}
+
+QUrl
+DwycoCore::from_local_file(const QString& s)
+{
+    return QUrl::fromLocalFile(s);
+}
+
+QString
+DwycoCore::to_local_file(const QUrl& u)
+{
+    return u.toLocalFile();
+}
+
+void
+DwycoCore::directory_swap()
+{
+    // note: we update the User_pfx so we can update the settings file to
+    // flag that it has been migrated.
+    // then rename the "upg" to "phoo"
+    QString src = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    src += "/dwyco/upg";
+    QDir dsrc(src);
+    if(!dsrc.exists())
+        return;
+    // if the target already exists, it might be a partial migration, try to get
+    // rid of it
+    QString dst = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    dst += "/dwyco/phoo";
+    QDir ddst(dst);
+    if(ddst.exists())
+    {
+        int i;
+        for(i = 0; i < 10; ++i)
+            if(ddst.rename(dst, dst + "." + QString::number(i)))
+                break;
+        if(i == 10)
+            return;
+    }
+    User_pfx = src.toUtf8();
+    settings_load();
+    setting_put("android-migrate", "done");
+    if(!dsrc.rename(src, dst))
+        cdcxpanic("failed migration");
+
+}
+
+#ifdef ANDROID
+static
+QStandardPaths::StandardLocation
+determine_android_migration()
+{
+    QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
+
+    QString localdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    localdir += "/dwyco/phoo/";
+    User_pfx = localdir.toUtf8();
+    if(!settings_load())
+    {
+        // either new or they have something in documents that needs to be migrated
+        QString src = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+        src += "/dwyco/phoo";
+        User_pfx = src.toUtf8();
+
+        bool check_for_update = false;
+
+        if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        {
+            // if they let us, check if there is anything out there
+            QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+            if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+            {
+
+            }
+            else
+            {
+                check_for_update = true;
+            }
+        }
+        else
+            check_for_update = true;
+
+        if(check_for_update && settings_load())
+        {
+            // do the migration
+            if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+            {
+                // we aren't going anywhere without being able to setup our state
+                QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
+                if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                {
+                    // this needs to be thought out a little more... if you deny this, you can't
+                    // access your photos on the device easily. maybe need to just request "read"
+                    // in this case.
+                    filepath = QStandardPaths::AppDataLocation;
+                }
+                else
+                {
+                    filepath = QStandardPaths::DocumentsLocation;
+                    DwycoCore::Android_migrate = 1;
+                }
+                if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                {
+                    // we aren't going anywhere without being able to setup our state
+                    QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+                    if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+                    {
+                        // can't do migration, we'll probably crash soon since we won't be able to get
+                        // access to documents location.
+                    }
+                    else
+                    {
+                        filepath = QStandardPaths::DocumentsLocation;
+                        DwycoCore::Android_migrate = 1;
+                    }
+                }
+
+            }
+            else
+            {
+                filepath = QStandardPaths::DocumentsLocation;
+                DwycoCore::Android_migrate = 1;
+            }
+        }
+    }
+    return filepath;
+}
+#endif
+
 static
 void
 setup_locations()
 {
 
-#if 0 && defined(ANDROID)
-    // this is easier to debug since you don't need a rooted phone to look at it
-    QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
-    if(QtAndroid::checkPermission("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
-    {
-        // we aren't going anywhere without being able to setup our state
-        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.WRITE_EXTERNAL_STORAGE"));
-        if(m.value("android.permission.WRITE_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
-        {
-            // this needs to be thought out a little more... if you deny this, you can't
-            // access your photos on the device easily. maybe need to just request "read"
-            // in this case.
-            filepath = QStandardPaths::AppDataLocation;
-        }
-    }
-#else
     QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
-#endif
-    //
     QStringList args = QGuiApplication::arguments();
     QString userdir;
     if(args.count() == 1)
@@ -1005,9 +1195,27 @@ setup_locations()
 //    QFile::copy(":androidinst/assets/space-online.wav", userdir + "space-online.wav");
 //    QFile::copy(":androidinst/assets/space-zap.wav", userdir + "space-zap.wav");
     QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
-    //QFile::copy(":androidinst/assets/zap.wav", userdir + "zap.wav");
+//    QFile::copy(":androidinst2/assets/zap.wav", userdir + "zap.wav");
+#ifdef _WIN32
+    // kluge for windows, we copy the notify-send.exe thing into the
+    // data directory so the background processor can execute it.
+    // there are a bunch of ways i could do this:
+    // * putting notify-send.exe into resources (would have to do it conditionally)
+    // * telling dwycobg to take an arg/env var to say where the notify-send thing is
+    // * have the installer put notify-send into documents dir (installer doesn't currently know
+    //  anything about target data dir in phoo, like it does in cdc-x. updates might be
+    //  problematic as well.
+    QFile::copy(QCoreApplication::applicationDirPath() + "/notify-send.exe", userdir + "notify-send.exe");
 #endif
-    dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
+#endif
+    QString native_userdir = QDir::toNativeSeparators(userdir);
+    QString native_tmp = QDir::toNativeSeparators(userdir + "tmp/");
+    // WARNING: this is a BIG change: we are assuming he CWD of the process is set
+    // to the location where all the other helper exe's are. during debugging, it is useful
+    // to have all that stuff in the "userdir" (we like to delete the build dir a lot.)
+    // on release, we aren't moving the helper exe's around, but it might make sense to do
+    // that in some cases (like for debugging.)
+    dwyco_set_fn_prefixes(0, native_userdir.toLatin1().constData(), native_tmp.toLatin1().constData());
     // can't do this call until prefixes are set since it wants to init the log file
     dwyco_trace_init();
     {
@@ -1174,7 +1382,7 @@ dwyco_video_make_image(int ui_id, void *vimg, int cols, int rows, int depth)
     img_path += "/";
     img_path += QString::number(frame_number);
     Dwyco_video_provider->add_image(img_path, qi);
-    TheDwycoCore-> emit video_display(ui_id, frame_number, QString("image://dwyco_video_frame/") + img_path);
+    emit TheDwycoCore->video_display(ui_id, frame_number, QString("image://dwyco_video_frame/") + img_path);
 }
 
 void
