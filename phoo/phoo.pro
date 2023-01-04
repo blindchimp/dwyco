@@ -13,7 +13,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="3.69"
+VER="3.70"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 
@@ -496,14 +496,10 @@ DISTFILES += \
     androidinst2/src/com/dwyco/cdc32/dwybg.java \
     androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
     androidinst2/src/com/dwyco/phoo/app.java \
-    androidinst2/src/com/dwyco/android/Dwyco_Message.java \
     androidinst2/src/com/dwyco/android/DwycoProbe.java \
-    androidinst2/src/com/dwyco/android/DwycoSender.java \
     androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
     androidinst2/src/com/dwyco/android/NotificationClient.java \
-    androidinst2/src/com/dwyco/android/Push_Notification.java \
     androidinst2/src/com/dwyco/android/SocketLock.java \
-    androidinst2/src/com/dwyco/android/StickyIntentService.java \
     androidinst2/src/com/dwyco/phoo/DwycoApp.java \
     androidinst2/AndroidManifest.xml \
     androidinst2/build.gradle \

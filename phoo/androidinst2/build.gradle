@@ -24,10 +24,16 @@ apply plugin: 'com.google.firebase.crashlytics'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
-implementation platform('com.google.firebase:firebase-bom:30.0.1')
+implementation platform('com.google.firebase:firebase-bom:30.1.0')
 implementation 'com.google.firebase:firebase-messaging'
 implementation 'com.google.firebase:firebase-analytics'
 implementation 'com.google.firebase:firebase-crashlytics'
+
+    def work_version = "2.7.1"
+    // (Java only)
+    implementation "androidx.work:work-runtime:$work_version"
+    // optional - Multiprocess support
+    implementation "androidx.work:work-multiprocess:$work_version"
 
 }
 

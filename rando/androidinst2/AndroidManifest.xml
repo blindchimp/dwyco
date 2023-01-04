@@ -10,7 +10,11 @@
 
     <supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="rando" android:extractNativeLibs="true" android:icon="@drawable/icon"
-	 android:requestLegacyExternalStorage="true" android:preserveLegacyExternalStorage="true">
+	android:fullBackupContent="@xml/backup_rules" 
+	android:hasFragileUserData="true"
+	android:requestLegacyExternalStorage="true"
+	android:preserveLegacyExternalStorage="true" 
+	android:dataExtractionRules="@xml/a33backup_rules" >
 
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:name="com.dwyco.android.NotificationClient" android:label="-- %%INSERT_APP_NAME%% --" android:screenOrientation="unspecified" android:launchMode="singleTop"
 		android:exported="true"
@@ -80,10 +84,6 @@
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
-</service>
-<service android:name="com.dwyco.android.Dwyco_Message" android:enabled="true" android:process=":dwycobg">
-</service>
-<service android:name="com.dwyco.android.DwycoSender" android:enabled="true" android:process=":dwycosend">
 </service>
 <provider
     android:name="androidx.core.content.FileProvider"

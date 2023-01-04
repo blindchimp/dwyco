@@ -37,9 +37,6 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-//import android.app.job.JobScheduler;
-//import android.app.job.JobInfo;
-//import android.app.job.JobInfo.Builder;
 import android.content.ComponentName;
 import androidx.core.content.FileProvider;
 import java.io.FileInputStream;
@@ -49,14 +46,7 @@ import android.content.ContentValues;
 import java.io.IOException;
 import java.io.File;
 
-import androidx.work.Constraints;
-import androidx.work.Data;
-import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkInfo;
-import androidx.work.WorkManager;
-import androidx.work.OutOfQuotaPolicy;
+import androidx.work.*;
 
 // note: use notificationcompat stuff for older androids
 
@@ -78,15 +68,7 @@ public class NotificationClient extends QtActivity
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
-        //Intent i = new Intent(m_instance, Push_Notification_Service.class);
-        //startService(i);
-
-        //Calendar cur_cal = Calendar.getInstance();
-        //cur_cal.setTimeInMillis(System.currentTimeMillis());
-        //Intent i2 = new Intent(m_instance, Push_Notification_Service.class);
-        //PendingIntent pintent = PendingIntent.getService(m_instance, 0, i2, 0);
-        //AlarmManager alarm = (AlarmManager) m_instance.getSystemService(Context.ALARM_SERVICE);
-        //alarm.setRepeating(AlarmManager.RTC_WAKEUP, cur_cal.getTimeInMillis(), 1000 * 60, pintent);
+        
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
 	if(DwycoApp.keep_screen_on)
@@ -268,44 +250,13 @@ public static String get_token() {
     }
 
     public static void start_background() {
-        // this is just a hack to avoid a crash in android O
-        // this disables the background processing that happens when the
-        // main app goes to sleep, which means delivery of large messages
-        // will not work quite right (only happens when the app is
-        // active). this will have to be fixed eventually.
+        // tested this all the way back to api 22, seems to work.
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
             //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build();
 
-            WorkManager.getInstance().enqueue(uploadWorkRequest);
-
-
-        return;
-
-        }
-        else {
-        prefs_lock.lock();
-        SharedPreferences sp;
-
-        sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
-        int port = sp.getInt("lockport", 4500);
-        String sys_pfx = sp.getString("sys_pfx", ".");
-        String user_pfx = sp.getString("user_pfx", ".");
-        String tmp_pfx = sp.getString("tmp_pfx", ".");
-        String token = sp.getString("token", "notoken");
-        prefs_lock.release();
-                Intent i = new Intent(m_instance, Dwyco_Message.class);
-        i.putExtra("lockport", port);
-        i.putExtra("sys_pfx", sys_pfx);
-        i.putExtra("user_pfx", user_pfx);
-        i.putExtra("tmp_pfx", tmp_pfx);
-        i.putExtra("token", token);
-
-            m_instance.startService(i);
-            }
-
+            WorkManager.getInstance().enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
     }
 
 public static void log_event() {

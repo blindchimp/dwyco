@@ -75,7 +75,8 @@ ApplicationWindow {
         return 0
     }
 
-font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+    font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+    font.weight: Font.Bold
 
     function sec_to_hours(s) {
         return Math.trunc(s / 3600)
@@ -194,6 +195,7 @@ font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
 
     Component.onCompleted: {
         AndroidPerms.request_sync("android.permission.CAMERA")
+        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
 
@@ -317,6 +319,17 @@ font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/About.qml"
+            }
+        }
+    }
+
+    Loader {
+        id: restore_auto_backup
+        visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/RestoreAutoBackup.qml"
             }
         }
     }

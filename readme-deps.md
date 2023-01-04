@@ -16,6 +16,12 @@ libGL.so, but I didn't try this.
 for v4l, use this
 
 sudo apt install libv4l-dev
+or
+sudo apt install libv4l-0
+
+WARNING: you will need to set the permissions on /dev/videoX, or put
+your user into the "video" group on some systems.
+
 
 for android codec builds, sadly, you'll need autoconf:
 
