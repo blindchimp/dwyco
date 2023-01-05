@@ -1,6 +1,6 @@
 TEMPLATE = app
 FORCE_DESKTOP_VGQT=0
-CONFIG += c++11
+
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
 
@@ -14,11 +14,11 @@ include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
+VER="1.60"
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
-DEFINES += BUILDTIME=\"\\\"1.60\\\"\"
-
+DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -39,7 +39,10 @@ macx-clang: QT += macextras
 linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
-macx-clang: QMAKE_INFO_PLIST=Info.plist.mac
+macx-clang {
+QMAKE_INFO_PLIST=Info.plist.mac
+#CONFIG -= app_bundle
+}
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
 
@@ -76,8 +79,8 @@ SOURCES += main.cpp \
     resizeimage.cpp \
     simple_user_list.cpp \
     ctlist.cpp \
-    dwycovideopreviewprovider.cpp \
-syncmodel.cpp
+    dwycovideopreviewprovider.cpp  \
+    syncmodel.cpp
 
 # note: you can *compile* the qt stuff on any platform, but
 # as of 2017, the videoprobing stuff only works on android
@@ -159,6 +162,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
 $${D}/qtdrv/libqtdrv.a
 
@@ -254,6 +258,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
 $${D}/qtdrv/libqtdrv.a
 
@@ -284,6 +289,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/uv/libuv.a \
 $${D}/qtdrv/libqtdrv.a
 
 PRE_TARGETDEPS += \
@@ -303,8 +309,9 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
-$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/uv/libuv.a \
 $${D}/qtdrv/libqtdrv.a
 
 
@@ -313,7 +320,7 @@ $${D}/qtdrv/libqtdrv.a
 android-* {
 DEFINES += LINUX VCCFG_FILE CDCCORE_STATIC ANDROID
 DEFINES += SELFSTREAM
-ANDROID_TARGET_SDK_VERSION=30
+
 D = $${OUT_PWD}/../bld
 
 L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
@@ -326,6 +333,11 @@ LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv_$${QT_
 # limitation of java as far as i can tell.
 LIBS += $${L}/libdwyco_jni.so
 #ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
+ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
+
+ANDROID_TARGET_SDK_VERSION=33
+ANDROID_VERSION_CODE=2000113
+ANDROID_VERSION_NAME=$$VER
 #contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 #    ANDROID_EXTRA_LIBS += \
 #        $$PWD/arm/libcrypto.so \
@@ -383,63 +395,60 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 
 # use this for linking with static cdc lib
 DEFINES += CDCCORE_STATIC
-# use this if you are building with qmake files
-D = $$OUT_PWD\\..\\bld
-
-#CONFIG(debug) {
-#S=debug
-#}
-
-CONFIG(release) {
-S=release
+D=$${OUT_PWD}/../bld
+CONFIG(debug, debug|release) {
+    S=debug
+}
+CONFIG(release, debug|release) {
+    S=release
 }
 
 LIBS += \
-$${D}\\cdc32\\$${S}\\cdc32.lib \
-$${D}\\vc\\$${S}\\vc.lib \
-$${D}\\crypto5\\$${S}\\crypto5.lib \
-$${D}\\dwcls\\$${S}\\dwcls.lib \
-$${D}\\gsm\\$${S}\\gsm.lib \
-$${D}\\kazlib\\$${S}\\kazlib.lib \
-$${D}\\ppm\\$${S}\\ppm.lib \
-$${D}\\pgm\\$${S}\\pgm.lib \
-$${D}\\pbm\\$${S}\\pbm.lib \
-$${D}\\zlib\\$${S}\\zlib.lib \
-$${D}\\jenkins\\$${S}\\jenkins.lib \
-$${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
-$${D}\\speex\\$${S}\\speex.lib \
-$${D}\\ogg\\$${S}\\ogg.lib \
-$${D}\\jhead\\$${S}\\jhead.lib \
-$${D}\\uv\\$${S}\\uv.lib \
-$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
-$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
+$${D}/cdc32/$${S}/cdc32.lib \
+$${D}/vc/$${S}/vc.lib \
+$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/dwcls/$${S}/dwcls.lib \
+$${D}/gsm/$${S}/gsm.lib \
+$${D}/kazlib/$${S}/kazlib.lib \
+$${D}/ppm/$${S}/ppm.lib \
+$${D}/pgm/$${S}/pgm.lib \
+$${D}/pbm/$${S}/pbm.lib \
+$${D}/zlib/$${S}/zlib.lib \
+$${D}/jenkins/$${S}/jenkins.lib \
+$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
+$${D}/speex/$${S}/speex.lib \
+$${D}/ogg/$${S}/ogg.lib \
+$${D}/jhead/$${S}/jhead.lib \
+$${D}/uv/$${S}/uv.lib \
+$${D}/qt-qml-models/$${S}/QtQmlModels_$${QT_ARCH}.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
-$${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
+$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
 
-#delayimp.lib $${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib
+#delayimp.lib $${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
 #QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
 #QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
 
 PRE_TARGETDEPS += \
-$${D}\\cdc32\\$${S}\\cdc32.lib \
-$${D}\\vc\\$${S}\\vc.lib \
-$${D}\\crypto5\\$${S}\\crypto5.lib \
-$${D}\\dwcls\\$${S}\\dwcls.lib \
-$${D}\\gsm\\$${S}\\gsm.lib \
-$${D}\\kazlib\\$${S}\\kazlib.lib \
-$${D}\\ppm\\$${S}\\ppm.lib \
-$${D}\\pgm\\$${S}\\pgm.lib \
-$${D}\\pbm\\$${S}\\pbm.lib \
-$${D}\\zlib\\$${S}\\zlib.lib \
-$${D}\\jenkins\\$${S}\\jenkins.lib \
-$${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
-$${D}\\speex\\$${S}\\speex.lib \
-$${D}\\ogg\\$${S}\\ogg.lib \
-$${D}\\jhead\\$${S}\\jhead.lib \
-$${D}\\qt-qml-models\\$${S}\\QtQmlModels_$${QT_ARCH}.lib \
-$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib
+$${D}/cdc32/$${S}/cdc32.lib \
+$${D}/vc/$${S}/vc.lib \
+$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/dwcls/$${S}/dwcls.lib \
+$${D}/gsm/$${S}/gsm.lib \
+$${D}/kazlib/$${S}/kazlib.lib \
+$${D}/ppm/$${S}/ppm.lib \
+$${D}/pgm/$${S}/pgm.lib \
+$${D}/pbm/$${S}/pbm.lib \
+$${D}/zlib/$${S}/zlib.lib \
+$${D}/jenkins/$${S}/jenkins.lib \
+$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
+$${D}/speex/$${S}/speex.lib \
+$${D}/ogg/$${S}/ogg.lib \
+$${D}/jhead/$${S}/jhead.lib \
+$${D}/qt-qml-models/$${S}/QtQmlModels_$${QT_ARCH}.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\vorbis112\\win32\\vs2003\\libvorbis\\Debug\\libvorbis.lib \
 #\\mk\\depot\\dwycore\\bld\\theora\\win32\\vs2008\\win32\\Debug\\libtheora_static.lib \
@@ -485,7 +494,7 @@ HEADERS += \
     ctlist.h \
     dwycovideopreviewprovider.h \
     simpledirmodel.h \
-syncmodel.h
+    syncmodel.h
 
 DISTFILES += \
     androidinst2/AndroidManifest.xml \
@@ -497,5 +506,4 @@ DISTFILES += \
     androidinst2/gradlew.bat \
     androidinst2/res/values/libs.xml
 
-ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so
 
