@@ -26,6 +26,7 @@ public class DwycoProbe extends Worker {
 
     private Context context;
     private SocketLock prefs_lock;
+    private boolean stop_poller;
 
     public DwycoProbe(
         Context context,
@@ -33,6 +34,7 @@ public class DwycoProbe extends Worker {
         super(context, params);
         this.context = context;
         prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
+        stop_poller = false;
         // note, docs seem to indicate loading a library
         // multiple times results in the second and further
         // loads being ignored. i hope so.
@@ -60,6 +62,7 @@ public class DwycoProbe extends Worker {
         sp = context.getSharedPreferences(DwycoApp.shared_prefs, Context.MODE_PRIVATE);
         port = sp.getInt("lockport", 4500);
         prefs_lock.release();
+        stop_poller = true;
         try
         {
             Socket s = new Socket(Inet4Address.getLoopbackAddress(), port);       
@@ -104,9 +107,11 @@ public class DwycoProbe extends Worker {
         // we are doing the sends. might want to consider just inhibiting
         // anything in the way of receive processing, but i don't think
         // this hurts anything.
-        //poller_thread();
+        poller_thread();
         
         dwybg.dwyco_background_processing(port, 0/*DwycoApp.exit_if_outq_empty|DwycoApp.check_backup_once*/, sys_pfx, user_pfx, tmp_pfx, token);
+        stop_poller = true;
+        dwybg.dwyco_signal_msg_cond();
         catchLog("job end");
         return Result.success();
     }
@@ -115,11 +120,15 @@ public class DwycoProbe extends Worker {
         Thread t = new Thread(new Runnable() {
             public void run() {
                 catchLog("poll thread");
-                while(true)
+                while(!stop_poller)
                 {
                     dwybg.dwyco_wait_msg_cond(0);
+                    if(stop_poller) {
+                        break;
+                    }
                     set_notification();
                 }
+                catchLog("poll done");
             }
         });
         t.start();
