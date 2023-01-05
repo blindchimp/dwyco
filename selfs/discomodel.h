@@ -16,6 +16,8 @@
 
 class DiscoveredUser : public QObject
 {
+    friend class DiscoverListModel;
+
     Q_OBJECT
 
     QML_READONLY_VAR_PROPERTY(QString, uid)
@@ -30,7 +32,11 @@ public:
         m_resolved_counter = 0;
         m_invalid = 0;
         m_online = false;
+        modified = -1;
     }
+
+private:
+    int modified;
 };
 
 class DiscoverListModel : public QQmlObjectListModel<DiscoveredUser>
