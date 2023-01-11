@@ -613,11 +613,13 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     }
 }
 
-static void
-emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name,
+void
+DwycoCore::emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name,
                 int type, const char *val, int len_val,
                 int qid, int extra_arg)
 {
+    if(DwycoCore::Suspended)
+        return;
     QByteArray buid(uid, len_uid);
     QString huid = buid.toHex();
     QString sname(QByteArray(name, len_name));
@@ -2111,6 +2113,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     {
         Suspended = 1;
         simple_call::suspend();
+        dwyco_disconnect_chat_server();
         dwyco_suspend();
         if(BGLockSock)
         {
