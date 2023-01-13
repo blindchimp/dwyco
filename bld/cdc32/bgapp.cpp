@@ -35,11 +35,16 @@ using namespace dwyco;
 #include <fcntl.h>
 #include <signal.h>
 
+namespace dwyco {
+extern DwycoPublicChatDisplayCallback dwyco_bgapp_msg_callback;
+}
+
 // this is a simple condition variable we use to signal
 // the java stuff to re-check for messages (so it can post
 // a notification.)
 static pthread_cond_t Msg_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t Msg_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int New_msg;
 #endif
 
 DWYCOEXPORT
@@ -48,6 +53,7 @@ dwyco_signal_msg_cond()
 {
 #ifndef WIN32
     pthread_mutex_lock(&Msg_cond_mutex);
+    New_msg = 1;
     pthread_cond_signal(&Msg_cond);
     pthread_mutex_unlock(&Msg_cond_mutex);
 #endif
@@ -62,10 +68,26 @@ dwyco_wait_msg_cond(int ms)
 {
 #ifndef WIN32
     pthread_mutex_lock(&Msg_cond_mutex);
-    pthread_cond_wait(&Msg_cond, &Msg_cond_mutex);
+    while(New_msg == 0)
+        pthread_cond_wait(&Msg_cond, &Msg_cond_mutex);
+    New_msg = 0;
     pthread_mutex_unlock(&Msg_cond_mutex);
+    // the "work" to be done in this case is done when we
+    // return to java and it sets the notification
 #endif
 
+}
+
+DWYCOEXPORT
+void
+dwyco_stop_msg_cond()
+{
+#ifndef WIN32
+    pthread_mutex_lock(&Msg_cond_mutex);
+    New_msg = -1;
+    pthread_cond_signal(&Msg_cond);
+    pthread_mutex_unlock(&Msg_cond_mutex);
+#endif
 }
 
 
@@ -436,7 +458,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     //int comsock = -1;
     vc asock = vc(VC_SOCKET_STREAM);
     asock.socket_init(s, vctrue);
-    dwyco_signal_msg_cond();
+
     int signaled = 0;
     int started_fetches = 0;
     vc nicename = get_settings_value("app/nicename");

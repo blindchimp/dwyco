@@ -2375,6 +2375,7 @@ namespace dwyco {
 double Audio_delay = 2.0;
 int Audio_agc;
 int Audio_denoise;
+DwycoPublicChatDisplayCallback dwyco_bgapp_msg_callback;
 }
 
 
@@ -2785,6 +2786,13 @@ void
 dwyco_set_public_chat_display_callback(DwycoPublicChatDisplayCallback cb)
 {
     public_chat_display_callback = cb;
+}
+
+DWYCOEXPORT
+void
+dwyco_set_bgapp_msg_callback(DwycoPublicChatDisplayCallback cb)
+{
+    dwyco::dwyco_bgapp_msg_callback = cb;
 }
 
 extern KeyboardAcquire *TheMsgAq;

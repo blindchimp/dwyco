@@ -176,6 +176,7 @@ void DWYCOEXPORT dwyco_set_pal_auth_callback(DwycoPalAuthCallback cb);
 void DWYCOEXPORT dwyco_set_emergency_callback(DwycoEmergencyCallback cb);
 void DWYCOEXPORT dwyco_set_user_control_callback(DwycoUserControlCallback cb);
 void DWYCOEXPORT dwyco_set_call_bandwidth_callback(DwycoStatusCallback cb);
+void DWYCOEXPORT dwyco_set_bgapp_msg_callback(DwycoPublicChatDisplayCallback cb);
 
 // Warning: call screening is in the process of changing
 // some of this may not be as advertised... XXX clean it up XXX
