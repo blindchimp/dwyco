@@ -65,7 +65,7 @@ public class DwycoProbe extends Worker {
         stop_poller = true;
         try
         {
-            Socket s = new Socket(Inet4Address.getLoopbackAddress(), port);       
+            Socket s = new Socket(Inet4Address.getByName("127.0.0.1"), port);       
         }
         catch(Exception e)
         {
