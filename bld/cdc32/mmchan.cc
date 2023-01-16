@@ -1508,8 +1508,6 @@ finish:
 int
 MMChannel::local_media_setup_new()
 {
-    vc msgs(VC_VECTOR);
-    msgs.append(vc(match_notes.c_str()));
     // we merge all the media to one control
     // point on the UI
 
@@ -1520,24 +1518,28 @@ MMChannel::local_media_setup_new()
 
     if(connection_list_changed_callback)
         (*connection_list_changed_callback)(0, clc_arg1, clc_arg2, clc_arg3);
-    // always set ourselves up to receive video
-    if(!build_incoming_video())
-    {
-        // maybe set flags to say we can't recv video
-    }
-    // ... and audio
-    if(!build_incoming_audio(1))
-    {
-        // set flags saying we can't receive audio
-    }
-    // use old private chat channel for app-level control msgs
-    // that need to be tightly-bound to channel existence
-    if(!build_outgoing_chat_private(1))
-    {
-    }
 
+    // note: for msg and uc chans, don't set up devices either, since
+    // we aren't expecting media to come in on those things anyway.
     if(!msg_chan && !user_control_chan)
     {
+        // always set ourselves up to receive video
+        if(!build_incoming_video())
+        {
+            // maybe set flags to say we can't recv video
+        }
+        // ... and audio
+        if(!build_incoming_audio(1))
+        {
+            // set flags saying we can't receive audio
+        }
+        // use old private chat channel for app-level control msgs
+        // that need to be tightly-bound to channel existence
+        if(!build_outgoing_chat_private(1))
+        {
+        }
+
+
         audio_chan = -1;
         int ret;
         vc aux_r(VC_VECTOR);
@@ -3350,45 +3352,50 @@ void
 MMChannel::finish_connection_new()
 {
     vc riam;
-    if(msg_chan || user_control_chan || is_sync_chan)
-        goto done;
-    if(call_accepted_callback)
-        (*call_accepted_callback)(this, ca_arg1, ca_arg2, ca_arg3);
-    call_accepted_callback_called = 1;
-done:
+    bool media_channel = !(msg_chan || user_control_chan || is_sync_chan);
+    if(media_channel)
+    {
+        if(call_accepted_callback)
+            (*call_accepted_callback)(this, ca_arg1, ca_arg2, ca_arg3);
+        call_accepted_callback_called = 1;
+    }
+
     send_ctrl(config);
     if(use_stun)
         pstate = WAIT_FOR_STUN;
     else
         pstate = ESTABLISHED;
 
-    // always set ourselves up to receive video
-    if(!build_incoming_video())
+    if(media_channel)
     {
-        // maybe set flags to say we can't recv video
-    }
-    // ... and audio
-    if(!build_incoming_audio(0))
-    {
-        // set flags saying we can't receive audio
-    }
-    if(!build_outgoing_chat_private(0))
-    {
-        // error, prolly need to bail
+        // always set ourselves up to receive video
+        if(!build_incoming_video())
+        {
+            // maybe set flags to say we can't recv video
+        }
+        // ... and audio
+        if(!build_incoming_audio(0))
+        {
+            // set flags saying we can't receive audio
+        }
+        if(!build_outgoing_chat_private(0))
+        {
+            // error, prolly need to bail
+        }
     }
 
     riam = remote_username();
-    {
-        DwString a((const char *)riam);
 
-        set_string_id(a);
+    DwString a((const char *)riam);
 
-        if(connection_list_changed_callback)
-            (*connection_list_changed_callback)(0, clc_arg1, clc_arg2, clc_arg3);
-        negotiating = 0;
-        turn_accept_on();
-        nego_timer.reset();
-    }
+    set_string_id(a);
+
+    if(connection_list_changed_callback)
+        (*connection_list_changed_callback)(0, clc_arg1, clc_arg2, clc_arg3);
+    negotiating = 0;
+    turn_accept_on();
+    nego_timer.reset();
+
     return;
 cleanup:
     pstate = WAIT_FOR_CLOSE;

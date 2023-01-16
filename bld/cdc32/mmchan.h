@@ -258,7 +258,6 @@ private:
 
     void init_config(int caller);
     vc match_config(vc, int caller);
-    DwString match_notes;
     vc requested_config();
 
     void recv_config(vc);
