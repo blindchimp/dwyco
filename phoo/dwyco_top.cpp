@@ -1731,9 +1731,7 @@ DwycoCore::dwyco_check_for_update_done(int status, const char *desc)
     case DWYCO_AUTOUPDATE_CHECK_USER2:
         // this creates the flag that will cause the update to be launched
         // the next time the launcher is run, in addition to downloading the
-        // update. this allows us to "gate" an update so everyone gets it
-        // at roughly the same time.
-        // this just checks and stages an update, but doesn't run it
+        // update.
         if(dwyco_start_autoupdate_download_bg() == 2)
         {
             // staged and ready to go
