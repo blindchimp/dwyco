@@ -256,7 +256,7 @@ public static String get_token() {
             //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build();
 
-            WorkManager.getInstance().enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
+            WorkManager.getInstance(m_instance).enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
     }
 
 public static void log_event() {
