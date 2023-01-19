@@ -21,12 +21,14 @@ import android.os.Build.VERSION;
 import androidx.work.Worker;
 import androidx.work.ForegroundInfo;
 import androidx.work.WorkerParameters;
+import java.net.InetSocketAddress;
 
 public class DwycoProbe extends Worker {
 
     private Context context;
     private SocketLock prefs_lock;
     private boolean stop_poller;
+    private static int wtf = 0;
 
     public DwycoProbe(
         Context context,
@@ -55,7 +57,7 @@ public class DwycoProbe extends Worker {
     }
 
     public void onStopped() {
-        
+        //System.exit(0);
         prefs_lock.lock();
         SharedPreferences sp;
         int port;
@@ -63,9 +65,25 @@ public class DwycoProbe extends Worker {
         port = sp.getInt("lockport", 4500);
         prefs_lock.release();
         stop_poller = true;
+        catchLog("wtf " + String.valueOf(wtf));
         try
         {
-            Socket s = new Socket(Inet4Address.getByName("127.0.0.1"), port);       
+            // don't use "getLoopback" in here, as it will try to use
+            // ipv6 despite ipv4address being specified
+            Socket s = new Socket(); 
+            InetSocketAddress address=new InetSocketAddress(Inet4Address.getByName("127.0.0.1"), port);
+            s.connect(address, 1000);   
+             
+        }
+        catch(SocketTimeoutException e)
+        {
+            catchLog("work stopped (timeout)");
+            catchLog(e.getMessage());
+            // note: this appears to happen when the battery saver
+            // comes on... the worker thread is stuck holding all the
+            // mutexs and other stuff, and we can't really do anything about
+            // it. so, it is time to die.
+            System.exit(0);
         }
         catch(Exception e)
         {
@@ -103,6 +121,7 @@ public class DwycoProbe extends Worker {
         catchLog(tmp_pfx);
         catchLog(String.valueOf(port));
         catchLog(token);
+        catchLog("wtf2 " + String.valueOf(wtf));
         // note: this is just in case we get a received message while
         // we are doing the sends. might want to consider just inhibiting
         // anything in the way of receive processing, but i don't think
@@ -113,13 +132,15 @@ public class DwycoProbe extends Worker {
         stop_poller = true;
         dwybg.dwyco_signal_msg_cond();
         catchLog("job end");
+        catchLog("wtf3 " + String.valueOf(wtf));
         return Result.success();
     }
 
     private void poller_thread() {
         Thread t = new Thread(new Runnable() {
             public void run() {
-                catchLog("poll thread");
+                catchLog("poll thread " + String.valueOf(wtf));
+                ++wtf;
                 while(!stop_poller)
                 {
                     dwybg.dwyco_wait_msg_cond(0);
@@ -129,6 +150,7 @@ public class DwycoProbe extends Worker {
                     set_notification();
                 }
                 catchLog("poll done");
+                --wtf;
             }
         });
         t.start();
