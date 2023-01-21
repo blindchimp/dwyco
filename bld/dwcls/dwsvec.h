@@ -53,6 +53,7 @@ public:
 
     inline void append(const T&);
     inline void append(T&&);
+    inline void append2(T);
     //inline void append(void *);
     inline T& ref(int i);
     inline const T &ref(int i) const;
@@ -124,6 +125,19 @@ DwSVec<T>::append(const T& c)
         oopanic("bad svec append");
 #endif
     new (&((T*)big)[count]) T(c);
+    ++count;
+}
+
+template<class T>
+inline
+void
+DwSVec<T>::append2(T c)
+{
+#ifdef DWSVEC_DBG
+    if(count >= real_count)
+        oopanic("bad svec append");
+#endif
+    ((T*)big)[count] = c;
     ++count;
 }
 
