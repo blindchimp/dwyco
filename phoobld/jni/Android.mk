@@ -27,6 +27,7 @@ include $(MY_CONF_LOCAL_PATH)/miniupnpc/Android.mk
 include $(CLEAR_VARS)
 LOCAL_MODULE := dwyco_jni
 LOCAL_PATH := $(call my-dir)
+LOCAL_LDLIBS := -llog
 
 LOCAL_WHOLE_STATIC_LIBRARIES := jhead cdc32 gsm ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls miniupnpc
 #LOCAL_SRC_FILES := foo.cpp

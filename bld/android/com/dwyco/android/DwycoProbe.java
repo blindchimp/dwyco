@@ -22,6 +22,8 @@ import androidx.work.Worker;
 import androidx.work.ForegroundInfo;
 import androidx.work.WorkerParameters;
 import java.net.InetSocketAddress;
+import android.net.LocalSocket;
+import android.net.LocalSocketAddress;
 
 public class DwycoProbe extends Worker {
 
@@ -70,9 +72,14 @@ public class DwycoProbe extends Worker {
         {
             // don't use "getLoopback" in here, as it will try to use
             // ipv6 despite ipv4address being specified
-            Socket s = new Socket(); 
-            InetSocketAddress address=new InetSocketAddress(Inet4Address.getByName("127.0.0.1"), port);
-            s.connect(address, 1000);   
+            //Socket s = new Socket(); 
+            //InetSocketAddress address=new InetSocketAddress(Inet4Address.getByName("127.0.0.1"), port);
+            //s.connect(address, 1000);   
+
+            LocalSocket s = new LocalSocket();
+            LocalSocketAddress a = new LocalSocketAddress("mumble");
+            s.connect(a);
+            s.getInputStream().read();
              
         }
         catch(SocketTimeoutException e)
@@ -85,9 +92,14 @@ public class DwycoProbe extends Worker {
             // it. so, it is time to die.
             System.exit(0);
         }
-        catch(Exception e)
+        catch(IOException e)
         {
             catchLog("work stopped (already dead)");
+            catchLog(e.getMessage());
+        }
+        catch(Exception e)
+        {
+            catchLog("some exception");
             catchLog(e.getMessage());
         }
         finally

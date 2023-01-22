@@ -2999,7 +2999,7 @@ vc_winsock_unix::vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
 	memcpy(sap->sun_path, (const char *)v, v.len());
 
 	sapr = (struct sockaddr *)sap;
-	len = sizeof(*sap);
+    len = offsetof(struct sockaddr_un, sun_path) + v.len(); //sizeof(*sap);
 	return 1;
 }
 

@@ -47,6 +47,18 @@ static pthread_mutex_t Msg_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int New_msg;
 #endif
 
+#ifdef ANDROID
+#include <android/log.h>
+#define LOG_TAG "dwyco-bg"
+#define ALOGI(msg, ...) \
+    __android_log_print(ANDROID_LOG_INFO, LOG_TAG, (msg), __VA_ARGS__)
+#define ALOGE(msg, ...) \
+    __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, (msg), __VA_ARGS__)
+#else
+#define ALOGI(msg, ...)
+#define ALOGE(msg, ...)
+#endif
+
 DWYCOEXPORT
 void
 dwyco_signal_msg_cond()
@@ -402,9 +414,22 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #endif
     //alarm(3600);
     srand(time(0));
+    ALOGI("bg-start %d", 0);
+
+    vc usock(VC_SOCKET_STREAM_UNIX);
+    if(usock.socket_init(vc(VC_BSTRING, "\0mumble", 7), 1, 0).is_nil())
+    {
+        ALOGI("no-u", 0);
+    }
+    else
+    {
+        ALOGI("u %s", (const char *)usock.socket_local_addr());
+        usock.socket_set_option(VC_NONBLOCKING);
+    }
 
     int s;
     s = get_funny_mutex(port);
+    ALOGI("mutex %d", s);
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
         return 1;
@@ -514,6 +539,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         }
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
             return 1;
+        if(usock.socket_poll(VC_SOCK_READ, 0, 0) != 0)
+        {
+            break;
+        }
 #endif
         if(dwyco_get_rescan_messages())
         {
@@ -563,8 +592,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             // that requires usec accuracy
             int usecs = (snooze % 1000) * 1000;
             GRTLOG("longsleep %d %d", secs, usecs);
+            ALOGI("long sleep %d %d", secs, usecs);
             int n = vc_winsock::poll_all(VC_SOCK_READ, res, secs, usecs);
             GRTLOG("wakeup %d", n, 0);
+            ALOGI("wakeup %d", n);
             if(n < 0)
                 return 1;
 
