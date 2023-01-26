@@ -6,6 +6,7 @@
 #include "upnperrors.h"
 //#endif
 #include "dwrtlog.h"
+#include "dwstr.h"
 #ifdef _WIN32
 #include <windows.h>
 #include <process.h>
@@ -102,11 +103,8 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 
     int r;
 
-    char p1[64];
-    char p2[64];
-
-    sprintf(p1, "%d", natport1);
-    sprintf(p2, "%d", local_port1);
+    DwString p1 = DwString::fromInt(natport1);
+    DwString p2 = DwString::fromInt(local_port1);
 
 #ifdef ANDROID
 #define NM1 "android1"
@@ -117,7 +115,7 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
 #endif
 
     r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
-                            p1, p2, lanaddr, NM1,
+                            p1.c_str(), p2.c_str(), lanaddr, NM1,
                             "TCP", 0, "86400");
     if(r!=UPNPCOMMAND_SUCCESS)
     {
@@ -127,11 +125,10 @@ do_upnp(int natport1, int natport2, int local_port1, int local_port2)
         return 0;
     }
 
-    sprintf(p1, "%d", natport2);
-    sprintf(p2, "%d", local_port2);
-
+    p1 = DwString::fromInt(natport2);
+    p2 = DwString::fromInt(local_port2);
     r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
-                            p1, p2, lanaddr, NM2,
+                            p1.c_str(), p2.c_str(), lanaddr, NM2,
                             "TCP", 0, "86400");
     if(r!=UPNPCOMMAND_SUCCESS)
     {
