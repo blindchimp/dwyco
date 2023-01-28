@@ -59,6 +59,12 @@ static int New_msg;
 #define ALOGE(msg, ...)
 #endif
 
+void
+android_log_stuff(const char *str, const char *s1, int s2)
+{
+    ALOGI("als %s %s %d", str, s1, s2);
+}
+
 DWYCOEXPORT
 void
 dwyco_signal_msg_cond()
@@ -423,7 +429,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     }
     else
     {
-        ALOGI("u %s", (const char *)usock.socket_local_addr());
+        ALOGI("u (%s) %ld", (const char *)usock.socket_local_addr(), usock.socket_local_addr().len());
         usock.socket_set_option(VC_NONBLOCKING);
     }
 
@@ -541,6 +547,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             return 1;
         if(usock.socket_poll(VC_SOCK_READ, 0, 0) != 0)
         {
+            ALOGI("ubreak", 0);
             break;
         }
 #endif
@@ -604,6 +611,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 if(asock.socket_local_addr() == res[i]->socket_local_addr())
                 {
                     GRTLOG("req to exit", 0, 0);
+                    ALOGI("post sleep exit", 0);
                     goto out;
                 }
             }
@@ -625,9 +633,13 @@ out:
         // as the main ui, the "lock socket" will be closed
         // when the destructor asock is run.
         dwyco_suspend();
+        ALOGI("exit thread", 0);
     }
     else
+    {
         dwyco_bg_exit();
+        ALOGI("exit proc", 0);
+    }
     //exit(0);
     return 0;
 }

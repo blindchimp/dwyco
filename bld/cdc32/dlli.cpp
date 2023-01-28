@@ -2164,10 +2164,13 @@ dwyco_service_channels(int *spin_out)
     }
 #endif
     {
+        void
+        android_log_stuff(const char *str, const char *s1, int s2);
     DwString str;
     dwtime_t nex = DwTimer::next_expire_time(str) - DwTimer::time_now();
     GRTLOG("next timer %ld", nex, 0);
     GRTLOG("(%s)", str.c_str(), 0);
+    android_log_stuff("dsc tmr ", str.c_str(), nex);
     entered = 0;
     return nex;
     }
