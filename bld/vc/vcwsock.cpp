@@ -55,7 +55,7 @@
 struct scoped_sockaddr
 {
     struct sockaddr *value;
-    explicit scoped_sockaddr(struct sockaddr *v) {value = v;}
+    explicit scoped_sockaddr(struct sockaddr *&v) {value = v; v = nullptr;}
     ~scoped_sockaddr() {if(value) free(value);}
     operator struct sockaddr *() {return value;}
 };
@@ -93,10 +93,12 @@ unsigned long hash(vc_winsock *a)
 #include <sys/un.h>
 #include <sys/param.h>
 #else
+#include <sys/socket.h>
 #include <sys/un.h>
 #include <limits.h>
 #endif
 #endif
+#include <cstddef>
 
 #ifndef USE_WINSOCK
 #include "vcberk.h"
@@ -2111,11 +2113,8 @@ vc_winsock::vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
 vc
 vc_winsock::sockaddr_to_vc(struct sockaddr *sapi, int len)
 {
-    char tmp_str[128];
-
     struct sockaddr_in *sap = (struct sockaddr_in *)sapi;
 
-    memset(tmp_str, 0, sizeof(tmp_str));
     char *str = inet_ntoa(sap->sin_addr);
     if(str == 0)
         return vcnil;
@@ -2999,10 +2998,19 @@ vc_winsock_unix::vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
 	memcpy(sap->sun_path, (const char *)v, v.len());
 
 	sapr = (struct sockaddr *)sap;
-    len = offsetof(struct sockaddr_un, sun_path) + v.len(); //sizeof(*sap);
+    len = offsetof(sockaddr_un, sun_path) + v.len(); //sizeof(*sap);
+    // note: we know this is going to a "bind" call, so don't try
+    // to finess the length, just give it the size of the whole thing.
+    //len = sizeof(*sap);
 	return 1;
 }
 
+// NOTE: the len here is assumed to be a len returned from one of
+// the system calls like accept, getsockname, etc.
+// NOT a len cobbled together that might be sent into
+// connect or whatever (the reason for this is because there
+// are slightly different rules for determining the sun_path
+// depending on platform.)
 vc
 vc_winsock_unix::sockaddr_to_vc(struct sockaddr *sapi, int len)
 {
@@ -3017,7 +3025,7 @@ vc_winsock_unix::sockaddr_to_vc(struct sockaddr *sapi, int len)
     // names, fwiw.
     // note: probably need an "offset" to take into account
     // padding here too
-    int prefix_len = sizeof(*sap) - sizeof(sap->sun_path);
+    int prefix_len = offsetof(sockaddr_un, sun_path);
     // note: some man pages claim to return 0 length for
     // unamed sockets, some say "sizeof stuff at the beginning"
     // so hedging here
@@ -3033,7 +3041,11 @@ vc_winsock_unix::sockaddr_to_vc(struct sockaddr *sapi, int len)
         return vc(VC_BSTRING, sap->sun_path, len - prefix_len);
     }
 
-    vc ret(sap->sun_path);
+    // a filesystem path, null termination is a mystery, so
+    // make sure we do it explicitly.
+    int plen = strnlen(sap->sun_path, len - prefix_len);
+
+    vc ret(VC_BSTRING, sap->sun_path, plen);
     return ret;
 }
 
