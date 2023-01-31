@@ -73,7 +73,7 @@
 #ifndef DWCLS_TIMER_H_
 #define DWCLS_TIMER_H_
 
-#define DWCLS_TIMER_DBG
+#undef DWCLS_TIMER_DBG
 /**
  * A timer.
  *

@@ -28,6 +28,7 @@ using namespace dwyco;
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/un.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <errno.h>
@@ -107,6 +108,118 @@ dwyco_stop_msg_cond()
     pthread_mutex_unlock(&Msg_cond_mutex);
 #endif
 }
+
+#if 1 // ANDROID
+// this is needed on android because when the battery saver
+// comes on, it interferes with the networking so that we
+// can't tell our worker thread to exit. this uses unix abstract
+// domain sockets instead of internet loopback.
+
+DWYCOEXPORT
+int
+dwyco_request_singleton_lock(const char *name, int port)
+{
+    int s = socket(AF_UNIX, SOCK_STREAM,  0);
+    if(s == -1)
+        return -1;
+
+    if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+        return -1;
+
+    DwString aname;
+    aname += '\0';
+    aname += name;
+    aname += DwString::fromInt(port);
+    struct sockaddr_un sap;
+    memset(&sap, 0, sizeof(sap));
+    sap.sun_family = AF_UNIX;
+    memcpy(sap.sun_path, aname.c_str(), dwmin(aname.length(), sizeof(sap.sun_path)));
+    int tlen = offsetof(sockaddr_un, sun_path) + aname.length();
+
+    while(1)
+    {
+        if(bind(s, (struct sockaddr *)&sap, tlen) == -1)
+        {
+            if(errno == EADDRINUSE)
+            {
+                // issue a connect and see if we can get
+                // the background guy to relinquish the lock
+                int s2;
+                s2 = socket(AF_UNIX, SOCK_STREAM, 0);
+                if(fcntl(s2, F_SETFL, O_NONBLOCK) == -1)
+                    return -1;
+
+                if(connect(s2, (struct sockaddr *)&sap, aname.length()) == -1)
+                {
+                    close(s2);
+                    usleep(10000);
+                    continue;
+                }
+                close(s2);
+                usleep(10000);
+                continue;
+            }
+            close(s);
+            return -1;
+        }
+        else
+            break;
+    }
+    return s;
+}
+
+//static
+int
+get_singleton_lock(const char *name, int port)
+{
+    int s = socket(AF_UNIX, SOCK_STREAM,  0);
+    if(s == -1)
+        return -1;
+
+    if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+        return -1;
+
+    DwString aname;
+    aname += '\0';
+    aname += name;
+    aname += DwString::fromInt(port);
+    struct sockaddr_un sap;
+    memset(&sap, 0, sizeof(sap));
+    sap.sun_family = AF_UNIX;
+    memcpy(sap.sun_path, aname.c_str(), dwmin(aname.length(), sizeof(sap.sun_path)));
+    int tlen = offsetof(sockaddr_un, sun_path) + aname.length();
+
+    int tries = 2000;
+    int i;
+    for(i = 0; i < tries; ++i)
+    {
+        if(bind(s, (struct sockaddr *)&sap, tlen) == -1)
+        {
+            if(errno == EADDRINUSE)
+            {
+                usleep(10000);
+                continue;
+            }
+            close(s);
+            return -1;
+        }
+        else
+            break;
+    }
+    if(i == tries)
+    {
+
+        close(s);
+        return -1;
+    }
+    if(listen(s, 5) == -1)
+    {
+        close(s);
+        return -1;
+    }
+    return s;
+}
+#endif
 
 
 // this is just a goofy way to keep this background
@@ -410,7 +523,8 @@ check_background_backup(vc asock, bool just_check_once)
 // function runs until it is stopped either by the main UI starting, or
 // the OS kills it.
 // if exit_if_outq_empty & 2 != 0, it disables the "check once per hour"
-// filtering for the android backup checking. this means it will check
+// filtering for the android backup checking. which means it will check
+// once (the first time it is called.)
 DWYCOEXPORT
 int
 dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
