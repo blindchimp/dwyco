@@ -165,6 +165,11 @@ dwyco_request_singleton_lock(const char *name, int port)
         else
             break;
     }
+    if(listen(s, 5) == -1)
+    {
+        close(s);
+        return -1;
+    }
     return s;
 }
 
@@ -535,7 +540,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     //alarm(3600);
     srand(time(0));
     ALOGI("bg-start %d", 0);
-
+#if 0
     vc usock(VC_SOCKET_STREAM_UNIX);
     if(usock.socket_init(vc(VC_BSTRING, "\0mumble", 7), 1, 0).is_nil())
     {
@@ -546,9 +551,11 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         ALOGI("u (%s) %ld", (const char *)usock.socket_local_addr(), usock.socket_local_addr().len());
         usock.socket_set_option(VC_NONBLOCKING);
     }
+#endif
 
     int s;
-    s = get_funny_mutex(port);
+    //s = get_funny_mutex(port);
+    s = get_singleton_lock("mumble", 0);
     ALOGI("mutex %d", s);
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
@@ -601,7 +608,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     }
 
     //int comsock = -1;
-    vc asock = vc(VC_SOCKET_STREAM);
+    vc asock = vc(VC_SOCKET_STREAM_UNIX);
     asock.socket_init(s, vctrue);
 
     int signaled = 0;
@@ -659,11 +666,13 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         }
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
             return 1;
+#if 0
         if(usock.socket_poll(VC_SOCK_READ, 0, 0) != 0)
         {
             ALOGI("ubreak", 0);
             break;
         }
+#endif
 #endif
         if(dwyco_get_rescan_messages())
         {
