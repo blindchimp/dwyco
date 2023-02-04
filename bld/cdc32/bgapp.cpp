@@ -149,7 +149,7 @@ dwyco_request_singleton_lock(const char *name, int port)
                 if(fcntl(s2, F_SETFL, O_NONBLOCK) == -1)
                     return -1;
 
-                if(connect(s2, (struct sockaddr *)&sap, aname.length()) == -1)
+                if(connect(s2, (struct sockaddr *)&sap, tlen) == -1)
                 {
                     close(s2);
                     usleep(10000);
@@ -173,7 +173,7 @@ dwyco_request_singleton_lock(const char *name, int port)
     return s;
 }
 
-//static
+static
 int
 get_singleton_lock(const char *name, int port)
 {
@@ -554,8 +554,12 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #endif
 
     int s;
-    //s = get_funny_mutex(port);
+#ifdef ANDROID
     s = get_singleton_lock("mumble", 0);
+#else
+    s = get_funny_mutex(port);
+#endif
+
     ALOGI("mutex %d", s);
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
@@ -608,7 +612,15 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     }
 
     //int comsock = -1;
+#ifdef ANDROID
+    // WARNING: creating a socket in VC like this tweaks some
+    // global structures used to provide bulk poll results.
+    // YOU MUST BE CERTAIN OTHER THREADS ARE NOT CALLING INTO
+    // THE MAIN API or VC, the lib itself is not thread-safe
     vc asock = vc(VC_SOCKET_STREAM_UNIX);
+#else
+    vc asock = vc(VC_SOCKET_STREAM);
+#endif
     asock.socket_init(s, vctrue);
 
     int signaled = 0;

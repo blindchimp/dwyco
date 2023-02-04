@@ -170,25 +170,22 @@ reload_ignore_list()
 }
 
 static
-int
+void
 takeover_from_background(int port)
 {
-
-    int
-    dwyco_request_singleton_lock(const char *name, int port);
-    int
-    get_singleton_lock(const char *name, int port);
-
+#ifdef ANDROID
     int c = dwyco_request_singleton_lock("mumble", 0);
     if(c < 0)
         exit(0);
+#endif
 
-
-    //return;
     if(!BGLockSock)
         BGLockSock = new QTcpServer;
+
+#ifdef ANDROID
     BGLockSock->setSocketDescriptor(c);
-    return c;
+    return;
+#endif
 
     while(!BGLockSock->isListening() &&
             !BGLockSock->listen(QHostAddress("127.0.0.1"), port))
@@ -2121,7 +2118,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     // note: comment out the "inactive" normally, but put it back in
     // when testing "background" stuff on desktop
     static long time_suspended;
-    if(as == Qt::ApplicationSuspended  || as == Qt::ApplicationInactive)
+    if(as == Qt::ApplicationSuspended /* || as == Qt::ApplicationInactive*/)
     {
         Suspended = 1;
         simple_call::suspend();
@@ -2137,8 +2134,6 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         notificationClient->start_background();
         notificationClient->set_allow_notification(1);
 #endif
-        dwyco_background_processing(0, 0, 0, 0, 0, 0);
-        ::exit(0);
         time_suspended = time(0);
         emit qt_app_state_change(1);
     }

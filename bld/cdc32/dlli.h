@@ -1505,6 +1505,10 @@ int DWYCOEXPORT dwyco_add_contact(const char *name, const char *phone, const cha
 void DWYCOEXPORT dwyco_signal_msg_cond();
 void DWYCOEXPORT dwyco_wait_msg_cond(int ms);
 int DWYCOEXPORT dwyco_test_funny_mutex(int port);
+// this is for the unix-domain lock. only used on android
+// where the battery saver interfers with local networking
+// for background tasks.
+int dwyco_request_singleton_lock(const char *name, int port);
 
 // this is mostly for debugging, most users won't need to know this info
 typedef DWYCO_LIST DWYCO_SYNC_MODEL;
