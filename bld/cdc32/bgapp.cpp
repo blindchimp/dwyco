@@ -138,7 +138,7 @@ dwyco_request_singleton_lock(const char *name, int port)
 
     while(1)
     {
-        if(bind(s, (struct sockaddr *)&sap, tlen) == -1)
+        if(bind(s, (const struct sockaddr *)&sap, tlen) == -1)
         {
             if(errno == EADDRINUSE)
             {
@@ -149,7 +149,7 @@ dwyco_request_singleton_lock(const char *name, int port)
                 if(fcntl(s2, F_SETFL, O_NONBLOCK) == -1)
                     return -1;
 
-                if(connect(s2, (struct sockaddr *)&sap, tlen) == -1)
+                if(connect(s2, (const struct sockaddr *)&sap, tlen) == -1)
                 {
                     close(s2);
                     usleep(10000);
@@ -198,7 +198,7 @@ get_singleton_lock(const char *name, int port)
     int i;
     for(i = 0; i < tries; ++i)
     {
-        if(bind(s, (struct sockaddr *)&sap, tlen) == -1)
+        if(bind(s, (const struct sockaddr *)&sap, tlen) == -1)
         {
             if(errno == EADDRINUSE)
             {
@@ -540,18 +540,6 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     //alarm(3600);
     srand(time(0));
     ALOGI("bg-start %d", 0);
-#if 0
-    vc usock(VC_SOCKET_STREAM_UNIX);
-    if(usock.socket_init(vc(VC_BSTRING, "\0mumble", 7), 1, 0).is_nil())
-    {
-        ALOGI("no-u", 0);
-    }
-    else
-    {
-        ALOGI("u (%s) %ld", (const char *)usock.socket_local_addr(), usock.socket_local_addr().len());
-        usock.socket_set_option(VC_NONBLOCKING);
-    }
-#endif
 
     int s;
 #ifdef ANDROID
@@ -674,17 +662,15 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #else
         if(accept(s, 0, 0) != -1)
         {
+            ALOGI("accept to exit %d", s);
             break;
         }
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
-            return 1;
-#if 0
-        if(usock.socket_poll(VC_SOCK_READ, 0, 0) != 0)
         {
-            ALOGI("ubreak", 0);
-            break;
+            ALOGI("bad accept %d", errno);
+            close(s);
+            return 1;
         }
-#endif
 #endif
         if(dwyco_get_rescan_messages())
         {
@@ -714,6 +700,12 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 MMChannel::any_ctrl_q_pending() || SimpleSocket::any_waiting_for_write())
         {
             GRTLOG("spin %d short sleep", spin, 0);
+            ALOGI("fast poll spin %d rq %d cq %d writes %d",
+                  spin,
+                  Response_q.num_elems(),
+                  MMChannel::any_ctrl_q_pending(),
+                  SimpleSocket::any_waiting_for_write()
+                  );
 #if 0
 #ifdef WIN32
             SleepEx(100, 0);
