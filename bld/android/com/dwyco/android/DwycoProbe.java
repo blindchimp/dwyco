@@ -48,11 +48,19 @@ public class DwycoProbe extends Worker {
 
     public ForegroundInfo getForegroundInfo() {
         Notification.Builder m_builder;
-        m_builder = new Notification.Builder(context, "dwyco");
+        m_builder = new Notification.Builder(context, "dwycobg");
         m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("Uploading");
+        m_builder.setContentText("Waiting");
         m_builder.setOnlyAlertOnce(true);
+        m_builder.setSmallIcon(DwycoApp.notification_icon());
+        int def = Notification.DEFAULT_ALL;
+        def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+        m_builder.setDefaults(def);
+        Intent notintent = new Intent(context, NotificationClient.class);
+        notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent p = PendingIntent.getActivity(context, 1, notintent, PendingIntent.FLAG_IMMUTABLE);
+        m_builder.setContentIntent(p);
         Notification not = m_builder.getNotification();
         ForegroundInfo f = new ForegroundInfo(1, not);
         return f;

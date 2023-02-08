@@ -59,7 +59,7 @@ static int New_msg;
 #define ALOGI(msg, ...)
 #define ALOGE(msg, ...)
 #endif
-
+#define ANDROID
 void
 android_log_stuff(const char *str, const char *s1, int s2)
 {
@@ -696,53 +696,51 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         // check to see if there is anything waiting to write
         // and just check a little more often. since this is a situation
         // that is pretty rare, it shouldn't be a huge problem (i hope.)
-        if(spin || Response_q.num_elems() > 0 ||
-                MMChannel::any_ctrl_q_pending() || SimpleSocket::any_waiting_for_write())
+        if(
+                snooze < 20 || // clamp so we always wait at least 20ms even if service_channels wants otherwise
+                spin || // service_channels wants us to spin
+                Response_q.num_elems() > 0 || // we have items that need processing now
+                MMChannel::any_ctrl_q_pending() || // we have ctrl messages waiting to send
+                SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
+                )
         {
-            GRTLOG("spin %d short sleep", spin, 0);
-            ALOGI("fast poll spin %d rq %d cq %d writes %d",
+            GRTLOG("spin %d snooze %d", spin, snooze);
+            ALOGI("fast poll snooze %d spin %d rq %d cq %d writes %d",
+                  snooze,
                   spin,
                   Response_q.num_elems(),
                   MMChannel::any_ctrl_q_pending(),
                   SimpleSocket::any_waiting_for_write()
                   );
-#if 0
-#ifdef WIN32
-            SleepEx(100, 0);
-#else
-            usleep(100000);
-#endif
-#endif
-            // override, make is 20ms
+            // override, make it 20ms
+            // in the background, we aren't in a huge hurry to get
+            // things done, and don't want to spin too fast.
             snooze = 20;
         }
-        //else
+        Socketvec res;
+
+        int secs = snooze / 1000;
+        // avoid problems with overflow, there is nothing here
+        // that requires usec accuracy
+        int usecs = (snooze % 1000) * 1000;
+        GRTLOG("longsleep %d %d", secs, usecs);
+        ALOGI("long sleep %d %d", secs, usecs);
+        int n = vc_winsock::poll_all(VC_SOCK_READ, res, secs, usecs);
+        GRTLOG("wakeup %d", n, 0);
+        ALOGI("wakeup %d", n);
+        if(n < 0)
+            return 1;
+
+        for(int i = 0; i < res.num_elems(); ++i)
         {
-            //usleep(500000);
-            Socketvec res;
-
-            int secs = snooze / 1000;
-            // avoid problems with overflow, there is nothing here
-            // that requires usec accuracy
-            int usecs = (snooze % 1000) * 1000;
-            GRTLOG("longsleep %d %d", secs, usecs);
-            ALOGI("long sleep %d %d", secs, usecs);
-            int n = vc_winsock::poll_all(VC_SOCK_READ, res, secs, usecs);
-            GRTLOG("wakeup %d", n, 0);
-            ALOGI("wakeup %d", n);
-            if(n < 0)
-                return 1;
-
-            for(int i = 0; i < res.num_elems(); ++i)
+            if(asock.socket_local_addr() == res[i]->socket_local_addr())
             {
-                if(asock.socket_local_addr() == res[i]->socket_local_addr())
-                {
-                    GRTLOG("req to exit", 0, 0);
-                    ALOGI("post sleep exit", 0);
-                    goto out;
-                }
+                GRTLOG("req to exit", 0, 0);
+                ALOGI("post sleep exit", 0);
+                goto out;
             }
         }
+
     }
 out:
     ;
