@@ -244,7 +244,8 @@ SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry)
                 GRTLOGVC(vcra);
                 if(!wouldblock())
                     bad_op();
-                polling_for_connect = 1;
+                else
+                    polling_for_connect = 1;
                 return 0;
             }
         }
