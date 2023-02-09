@@ -424,17 +424,16 @@ MMChannel::MMChannel() :
     nego_timer("nego"),
     //resolve_timer("resolve"),
     ctrl_send_watchdog("ctrl-send-watchdog"),
-    syncmap(vcnil),
-    remote_vars(vcnil),
-    sync_manager(&syncmap),
-    bw_limit_incoming("bw_limit_incoming", &syncmap),
-    bw_limit_outgoing("bw_limit_outgoing", &syncmap),
-    available_audio_decoders("available_audio_decoders", &syncmap),
-    available_audio_coders("available_audio_coders", &syncmap),
-    pinger("pinger", &syncmap),
-    pause_audio("pause_audio", &syncmap),
-    pause_video("pause_video", &syncmap),
-    incoming_throttle("incoming_throttle", &syncmap),
+    remote_vars(),
+    sync_manager(),
+    bw_limit_incoming("bw_limit_incoming", &sync_manager),
+    bw_limit_outgoing("bw_limit_outgoing", &sync_manager),
+    available_audio_decoders("available_audio_decoders", &sync_manager),
+    available_audio_coders("available_audio_coders", &sync_manager),
+    pinger("pinger", &sync_manager),
+    pause_audio("pause_audio", &sync_manager),
+    pause_video("pause_video", &sync_manager),
+    incoming_throttle("incoming_throttle", &sync_manager),
 
     rem_bw_limit_incoming("bw_limit_incoming", &remote_vars),
     rem_bw_limit_outgoing("bw_limit_outgoing", &remote_vars),
@@ -569,9 +568,9 @@ MMChannel::MMChannel() :
     call_setup = 0;
 
     // sync variables at this rate
-    sync_timer.set_autoreload(1);
-    sync_timer.set_interval(1000);
-    sync_timer.start();
+    //sync_timer.set_autoreload(1);
+    //sync_timer.set_interval(1000);
+    //sync_timer.start();
 
     pinger_timer.set_autoreload(1);
     pinger_timer.set_interval(60 * 1000);
@@ -3797,10 +3796,18 @@ MMChannel::tick()
 
     if(pstate == ESTABLISHED && !server_channel)
     {
+        if(sync_manager.update_available() && !sync_timer.is_running())
+        {
+            sync_timer.set_interval(5 * 1000);
+            sync_timer.set_autoreload(0);
+            sync_timer.start();
+        }
         if(sync_timer.is_expired())
         {
             sync_timer.ack_expire();
+            // note: this resets update_available
             sync_send();
+
         }
         // this is a hack to check to see if the other side is still there
         // in cases where they drop off without cleanly closing.

@@ -30,19 +30,19 @@
 #include "matcom.h"
 #include "bcastq.h"
 #include "dwstr.h"
-//#include "audstats.h"
-//#include "sd.h"
 #include "syncvar.h"
 #include "pval.h"
-//#include "sd3.h"
 #include "dlli.h"
 #include "netvid.h"
 #include "sproto.h"
 #include "ssns.h"
 #include "audconv.h"
-#include "aconn.h"
 #include "simple_property.h"
 #include "sync_sendq.h"
+#include "syncvar.h"
+// DON'T REMOVE THESE
+// there are namespace decls that need them
+#include "aconn.h"
 #include "calllive.h"
 
 class MMTube;
@@ -663,7 +663,6 @@ public:
 private:
     // these are for keeping sets of variables synced
     // across the link
-    SyncMap syncmap;
     SyncManage sync_manager;
     SyncVar bw_limit_incoming;
     SyncVar bw_limit_outgoing;
@@ -672,7 +671,7 @@ private:
     SyncVar pinger;
     SyncVar incoming_throttle;
 
-    SyncMap remote_vars;
+    SyncManage remote_vars;
     SyncVar rem_bw_limit_incoming;
     SyncVar rem_bw_limit_outgoing;
     SyncVar rem_available_audio_decoders;
