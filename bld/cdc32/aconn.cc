@@ -26,6 +26,7 @@
 #include "calllive.h"
 #include "cdcpal.h"
 #include "se.h"
+#include "dhgsetup.h"
 
 // NOTENOTENOTE! fixme, look at the dlli.cpp section where some of these
 // settings are tweaked and set bindings somewhere so we can do the
@@ -40,6 +41,13 @@
 // broadcasting our whereabouts on the local net is tied to whether we are
 // accepting new connections. if you turn off listening, it turns off the
 // broadcasting as well.
+// ca 2023, broadcasting on the local net i thought would be a good idea
+// in the case of using a local sync situation. if you aren't in a sync
+// group, it makes less sense, since it is unlikely to improve situations
+// for messaging. for streaming a security camera, it might make sense, so
+// maybe a better api is needed to decide whether local broadcasting is useful.
+// for now, if you are not in a sync group, we turn off the broadcasting, since it
+// is unlikely to improve service.
 
 extern vc LocalIP;
 extern int Media_select;
@@ -271,6 +279,23 @@ start_discover()
     return 1;
 }
 
+static
+void
+broadcast_check(DH_alternate *d)
+{
+    if(d == nullptr)
+    {
+        stop_broadcaster();
+    }
+    else
+    {
+        if(Listen_sock)
+            start_broadcaster();
+        else
+            stop_broadcaster();
+    }
+}
+
 void
 init_aconn()
 {
@@ -278,6 +303,7 @@ init_aconn()
     bind_sql_section("net/", net_section_changed);
     App_ID = get_settings_value("net/app_id");
     start_discover();
+    Current_alternate.value_changed.connect_ptrfun(broadcast_check, 1);
 
 }
 
@@ -501,7 +527,8 @@ set_listen_state(int on)
                 delete Listen_sock;
                 Listen_sock = 0;
             }
-            start_broadcaster();
+            if(Current_alternate)
+                start_broadcaster();
         }
     }
     else
