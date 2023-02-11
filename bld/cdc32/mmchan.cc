@@ -426,19 +426,19 @@ MMChannel::MMChannel() :
     ctrl_send_watchdog("ctrl-send-watchdog"),
     remote_vars(),
     sync_manager(),
-    bw_limit_incoming("bw_limit_incoming", &sync_manager),
-    bw_limit_outgoing("bw_limit_outgoing", &sync_manager),
-    available_audio_decoders("available_audio_decoders", &sync_manager),
-    available_audio_coders("available_audio_coders", &sync_manager),
+    //bw_limit_incoming("bw_limit_incoming", &sync_manager),
+    //bw_limit_outgoing("bw_limit_outgoing", &sync_manager),
+    //available_audio_decoders("available_audio_decoders", &sync_manager),
+    //available_audio_coders("available_audio_coders", &sync_manager),
     pinger("pinger", &sync_manager),
     pause_audio("pause_audio", &sync_manager),
     pause_video("pause_video", &sync_manager),
     incoming_throttle("incoming_throttle", &sync_manager),
 
-    rem_bw_limit_incoming("bw_limit_incoming", &remote_vars),
-    rem_bw_limit_outgoing("bw_limit_outgoing", &remote_vars),
-    rem_available_audio_decoders("available_audio_decoders", &remote_vars),
-    rem_available_audio_coders("available_audio_coders", &remote_vars),
+    //rem_bw_limit_incoming("bw_limit_incoming", &remote_vars),
+    //rem_bw_limit_outgoing("bw_limit_outgoing", &remote_vars),
+    //rem_available_audio_decoders("available_audio_decoders", &remote_vars),
+    //rem_available_audio_coders("available_audio_coders", &remote_vars),
     rem_pinger("pinger", &remote_vars),
     rem_pause_audio("pause_audio", &remote_vars),
     rem_pause_video("pause_video", &remote_vars),
@@ -873,6 +873,13 @@ MMChannel::stop_service()
     if((i = MMChannels.index(this)) == -1)
         return;
     MMChannels[i] = 0;
+    // this is the point in the channel destruction
+    // process where the channel become invisible to
+    // the bandwidth thing, so redo that now just
+    // to let the system respond to new bandwidth
+    // allocation.
+    adjust_outgoing_bandwidth();
+    adjust_incoming_bandwidth();
 }
 
 int
@@ -4076,8 +4083,17 @@ MMChannel::service_channels(int *spin_out)
     static int been_here;
     if(!been_here)
     {
+        // note: this used to be our only time we adjusted the
+        // bandwidth, polling all network items once every
+        // 3 seconds and adjusting it based on what channels
+        // were setup, rather than what channels were actually
+        // doing. this is ok on desktop, but for mobile it was
+        // a lot of wakeups for mostly no reason. i keep this
+        // here just as a stopgap in case i screw up getting the
+        // adjustment calls done at the right time... at least we'll
+        // get an adjustment once a minute.
         Bw_adj_timer.set_autoreload(1);
-        Bw_adj_timer.set_interval(3000);
+        Bw_adj_timer.set_interval(60 * 1000);
         Bw_adj_timer.start();
         been_here = 1;
     }

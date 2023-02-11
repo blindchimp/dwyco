@@ -3231,6 +3231,19 @@ dwyco_channel_create(const char *uid, int len_uid, DwycoCallDispositionCallback 
     return 1;
 }
 
+// note: adjusting the b/w throttles at start/stop of
+// streaming media is an optimization. in the past, we
+// just polled the state of the system and adjusted
+// every few seconds, which was a lot simpler in terms
+// of debugging and allowing changes to the system
+// that would not end up breaking the bandwidth allocation.
+// but, it was also wasteful, since most of the time the
+// allocation never changed. this way new way of doing it
+// just reflects the fact that video (and to a much less
+// extent audio and data-sync) is what uses the most
+// bandwidth in most situations. so we just adjust
+// when we think video may end up streaming.
+
 DWYCOEXPORT
 int
 dwyco_channel_send_video(int chan_id, int vid_dev)
@@ -3243,7 +3256,13 @@ dwyco_channel_send_video(int chan_id, int vid_dev)
     // video for some reason.
     // note: build_outgoing calls callbacks for video display init which
     // we probably need to modify in some way.
-    return mc->build_outgoing(1, 1, (int)get_settings_value("rate/max_fps"));
+    int ret = mc->build_outgoing(1, 1, (int)get_settings_value("rate/max_fps"));
+    if(ret)
+    {
+        MMChannel::adjust_outgoing_bandwidth();
+        MMChannel::adjust_incoming_bandwidth();
+    }
+    return ret;
 }
 
 DWYCOEXPORT
@@ -3255,6 +3274,8 @@ dwyco_channel_stop_send_video(int chan_id)
         return 0;
     mc->grab_coded_id = -1;
     // maybe check for no other senders and shutdown acq as well
+    MMChannel::adjust_outgoing_bandwidth();
+    MMChannel::adjust_incoming_bandwidth();
     return 1;
 }
 
@@ -3270,7 +3291,13 @@ dwyco_channel_send_audio(int chan_id, int aud_dev)
     // video for some reason.
     // note: build_outgoing calls callbacks for video display init which
     // we probably need to modify in some way.
-    return mc->build_outgoing_audio(1);
+    int ret = mc->build_outgoing_audio(1);
+    if(ret)
+    {
+        MMChannel::adjust_outgoing_bandwidth();
+        MMChannel::adjust_incoming_bandwidth();
+    }
+    return ret;
 }
 
 DWYCOEXPORT
@@ -3282,6 +3309,8 @@ dwyco_channel_stop_send_audio(int chan_id)
         return 0;
     mc->grab_audio_id = -1;
     // maybe check for no other senders and shutdown acq as well
+    MMChannel::adjust_outgoing_bandwidth();
+    MMChannel::adjust_incoming_bandwidth();
     return 1;
 }
 

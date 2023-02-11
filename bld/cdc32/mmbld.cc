@@ -242,7 +242,7 @@ MMChannel::build_incoming_audio(int locally_invoked)
         }
     }
 
-    available_audio_decoders = v;
+    //available_audio_decoders = v;
 
     if(cnt >= 1)
     {
@@ -250,39 +250,14 @@ MMChannel::build_incoming_audio(int locally_invoked)
         {
             FAILRET("can't setup requested audio decoder");
         }
-        // this level of back and forth negotiation is more complicated
-        // than we needed. autoupdate keeps clients close enough that
-        // this isn't really necessary
-#if 0
-        // couldn't init the one we want, so select something
-        // else, and make sure the other side gets a control
-        // message indicating it should send that.
-        int cnt = 0;
-        int i;
-        for(i = 0; i < PAYLOAD_NUM; ++i)
-        {
-            if(audio_decoders[i] == 0)
-                continue;
-            // XXX NEED TO INCLUDE BITRATE IN DECISION ON
-            // WHETHER TO USE THE PAYLOAD.
-            current_payload_type = i;
-            break;
-        }
-        if(i == PAYLOAD_NUM)
-        {
-            FAILRET("can't setup any audio decoders");
-        }
     }
-#endif
-
-}
-else
-{
-    FAILRET("can't create any audio decoders");
-}
-if(gv_id == 0)
-    gv_id = gen_new_grayview(myid);
-return 1;
+    else
+    {
+        FAILRET("can't create any audio decoders");
+    }
+    if(gv_id == 0)
+        gv_id = gen_new_grayview(myid);
+    return 1;
 }
 
 int
@@ -341,7 +316,7 @@ MMChannel::build_outgoing_audio(int locally_invoked)
             }
         }
     }
-    available_audio_coders = v;
+    //available_audio_coders = v;
     // end of story, if the receiver wants us to
     // change coders, we'll do that when we receive
     // a message. NOTE: must CHANGE CAPABILTIES TO
@@ -356,6 +331,9 @@ MMChannel::build_outgoing_audio(int locally_invoked)
         gv_id = gen_new_grayview(myid);
     tube->set_est_baud(14000, AUDIO_CHANNEL_V2);
     tube->clear_buf_ctrl(AUDIO_CHANNEL_V2);
+
+    adjust_outgoing_bandwidth();
+    adjust_incoming_bandwidth();
 
     return 1;
 }

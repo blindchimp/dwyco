@@ -664,18 +664,18 @@ private:
     // these are for keeping sets of variables synced
     // across the link
     SyncManage sync_manager;
-    SyncVar bw_limit_incoming;
-    SyncVar bw_limit_outgoing;
-    SyncVar available_audio_decoders;
-    SyncVar available_audio_coders;
+    //SyncVar bw_limit_incoming;
+    //SyncVar bw_limit_outgoing;
+    //SyncVar available_audio_decoders;
+    //SyncVar available_audio_coders;
     SyncVar pinger;
     SyncVar incoming_throttle;
 
     SyncManage remote_vars;
-    SyncVar rem_bw_limit_incoming;
-    SyncVar rem_bw_limit_outgoing;
-    SyncVar rem_available_audio_decoders;
-    SyncVar rem_available_audio_coders;
+    //SyncVar rem_bw_limit_incoming;
+    //SyncVar rem_bw_limit_outgoing;
+    //SyncVar rem_available_audio_decoders;
+    //SyncVar rem_available_audio_coders;
     SyncVar rem_pinger;
     SyncVar rem_incoming_throttle;
 
@@ -807,9 +807,10 @@ public:
     DwTimer keepalive_timer; // used for pinging servers
     void keepalive_processing();
 
-private:
+public:
     static int adjust_outgoing_bandwidth();
     static int adjust_incoming_bandwidth();
+private:
     static int get_available_output_bandwidth();
     static int get_available_input_bandwidth();
     int adjust_outgoing_throttle(int);
