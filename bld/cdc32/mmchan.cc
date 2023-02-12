@@ -466,7 +466,7 @@ MMChannel::MMChannel() :
 
     ref_timer.set_interval(10000);
     ref_timer.set_autoreload(1);
-    ref_timer.start();
+    //ref_timer.start();
 
     ready_for_ref = 1;
 

@@ -478,6 +478,8 @@ MMChannel::build_outgoing(int locally_invoked, int inhibit_coder_display, int ma
         mcx->frame_timer.set_interval(intval);
         mcx->frame_timer.reset();
         mcx->frame_timer.start();
+        mcx->ref_timer.reset();
+        mcx->ref_timer.start();
         mcx->ready_for_ref = 1;
     }
 
