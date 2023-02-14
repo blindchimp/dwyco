@@ -9,7 +9,6 @@
 
 #include <time.h>
 #include "netvid.h"
-#include "netcod.h"
 #include "aconn.h"
 #include "mmchan.h"
 #include "filetube.h"
@@ -344,16 +343,13 @@ strip_port(vc ip)
 
 static
 void
-broadcast_tick()
+broadcast_announcement()
 {
     if(Local_broadcast.is_nil())
     {
         return;
     }
 
-    if(!Broadcast_timer.is_expired())
-        return;
-    Broadcast_timer.ack_expire();
     vc announce(VC_VECTOR);
     announce[0] = My_UID;
     vc v(VC_VECTOR);
@@ -375,6 +371,22 @@ broadcast_tick()
     v[BD_DISPOSITION] = MMChannel::My_disposition;
     announce[1] = v;
     sendvc(Local_broadcast, announce);
+}
+
+static
+void
+broadcast_tick()
+{
+    if(Local_broadcast.is_nil())
+    {
+        return;
+    }
+
+    if(!Broadcast_timer.is_expired())
+        return;
+    Broadcast_timer.ack_expire();
+
+    broadcast_announcement();
 
     // this is a compat hack
     int iv = (int)get_settings_value("net/broadcast_interval");
@@ -425,6 +437,10 @@ discover_tick()
                         Broadcast_discoveries.add_kv(uid, data[1]);
                         Local_uid_discovered.emit(uid, 1);
                         se_emit(SE_STATUS_CHANGE, uid);
+                        // it might make sense to just do a unicast send back to
+                        // the newly discovered address, instead of a broadcast.
+                        // this might cause a little mini-storm of announcements
+                        broadcast_announcement();
                     }
                     Freshness.replace(uid, time(0));
                 }

@@ -59,7 +59,7 @@ static int New_msg;
 #define ALOGI(msg, ...)
 #define ALOGE(msg, ...)
 #endif
-#define ANDROID
+//#undef ANDROID
 void
 android_log_stuff(const char *str, const char *s1, int s2)
 {
@@ -109,7 +109,7 @@ dwyco_stop_msg_cond()
 #endif
 }
 
-#if 1 // ANDROID
+#if defined(ANDROID)
 // this is needed on android because when the battery saver
 // comes on, it interferes with the networking so that we
 // can't tell our worker thread to exit. this uses unix abstract
@@ -580,11 +580,13 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         dwyco_write_token(token);
 
     set_listen_state(1);
-    // for now, don't let any channels get setup via the
-    // server ... not strictly necessary, but until we get the
-    // calling stuff sorted out (needs a protocol change to alert
-    // regarding incoming calls, etc.) we just let everything go
-    // via the server.
+    // allowing incoming calls needs to happen for
+    // syncing. but, we really beed some extra logic to
+    // handle audio/video call stuff if we are just
+    // syncing in the background in our own process
+    // on desktop, as most people don't want calls unless
+    // the client is up and running. dunno, needs some more
+    // thought.
     dwyco_inhibit_incoming_sac(0);
     dwyco_inhibit_outgoing_sac(0);
     dwyco_inhibit_pal(0);
