@@ -4130,9 +4130,7 @@ MMChannel::service_channels(int *spin_out)
     }
     callq_tick();
     int dont_restart_listening = 0;
-    int num_active_channels = 0;
-    int blocked_on_link = 0;
-    int used_cpu = 0;
+
     int spin = 0;
     for(i = 0; i < MMChannels.num_elems(); ++i)
     {
@@ -4211,7 +4209,7 @@ MMChannel::service_channels(int *spin_out)
                 oopanic("nego prog error");
             }
         }
-        ++num_active_channels;
+
         if(mc->pstate == WAIT_FOR_USER_ACCEPT)
         {
             switch(mc->user_accept)
@@ -4401,7 +4399,7 @@ stun_done:
                     {
                         int len;
                         DWBYTE *b;
-                        ++used_cpu;
+
                         GRTLOG("grab1", 0, 0);
                         unsigned long captime;
                         int ref;
@@ -4485,7 +4483,7 @@ stun_done:
                     if(Moron_dork_mode)
                     {
                         int len;
-                        ++used_cpu;
+
                         GRTLOG("moron grab1", 0, 0);
                         unsigned long captime;
                         int ref;
@@ -4555,10 +4553,6 @@ stun_done:
                         }
                         // note: no place to display send statistics unless
                         // we cook up something special.
-                    }
-                    else
-                    {
-                        ++blocked_on_link;
                     }
                 }
                 else
@@ -4867,7 +4861,6 @@ resume:
                     // awhile for the reliable channel to come up...)
                     if(decoder && !decoder->busy())
                     {
-                        ++used_cpu;
                         decoder->decode_postprocess(b, len);
                         GRTLOG("sent to decoder", 0, 0);
                         mc->fps_recv.add_units(1);
