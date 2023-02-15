@@ -512,7 +512,7 @@ set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
     int p = (int)(((double)mc->total_got * 100) / e);
     if(q->status_callback)
     {
-        (*q->status_callback)((int)q->vp, msg, p, q->scb_arg1);
+        (*q->status_callback)(q->vp.cookie, msg, p, q->scb_arg1);
     }
     q->progress_signal.emit(DwString(q->msg_id), My_UID, DwString(msg), p);
 }
@@ -4824,7 +4824,7 @@ dwyco_make_zap_composition( char *dum)
     m->composer = 1;
     m->FormShow();
     GRTLOG("make_zap_composition: ret %d", (int)m->vp, 0);
-    return m->vp;
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -4883,7 +4883,7 @@ dwyco_make_zap_composition_raw(const char *filename, const char *possible_extens
         }
         m->user_filename = base.c_str();
     }
-    return m->vp;
+    return m->vp.cookie;
 }
 
 // this is used when doing multi-sends, you need to
@@ -4936,7 +4936,7 @@ dwyco_dup_zap_composition(int compid)
 
 
     GRTLOG("dup_zap_composition: ret %d", (int)m->vp, 0);
-    return m->vp;
+    return m->vp.cookie;
 
 }
 
@@ -5062,7 +5062,7 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
     m->composer = 1;
     m->FormShow();
     GRTLOG("make_forward_zap: ret %d", (int)m->vp, 0);
-    return m->vp;
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -5145,7 +5145,7 @@ dwyco_make_special_zap_composition( int special_type, const char *user_block, in
         return -1;
     }
     m->FormShow();
-    return m->vp;
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -5190,7 +5190,7 @@ dwyco_make_file_zap_composition( const char *filename, int len_filename)
     m->composer = 1;
     m->FormShow();
     GRTLOG("make_file_zap: ret %d", (int)m->vp, 0);
-    return m->vp;
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -5827,7 +5827,7 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
     m->actual_filename = newfn(s).c_str();
     m->inhibit_hashing = 1;
     GRTLOG("make_zap_view: ret %d", (int)m->vp, 0);
-    return m->vp;
+    return m->vp.cookie;
 }
 
 // the filename should be a basename with no path. this is intended for
@@ -5844,7 +5844,7 @@ dwyco_make_zap_view_file(const char *filename)
     m->actual_filename = newfn(filename);
     m->file_basename = filename;
     m->inhibit_hashing = 1;
-    return m->vp;
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -5859,7 +5859,7 @@ dwyco_make_zap_view_file_raw(const char *filename)
     m->actual_filename = filename;
     m->file_basename = dwbasename(filename);
     m->inhibit_hashing = 1;
-    return m->vp;
+    return m->vp.cookie;
 }
 
 // use this to CANCEL a composition without sending it.
@@ -7489,7 +7489,7 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
             // we may also *never* be able to decrypt tons of things
             // until the key is reset in the server.
             if(q->msg_download_callback)
-                (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
+                (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
             se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
             // note: don't ack it automatically, since we *might* be in a situation where we
             // are waiting for a group key. once the group key is installed we might be
@@ -7547,13 +7547,13 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
     if(store_direct(0, dm, 0) == -1)
     {
         if(q->msg_download_callback)
-            (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_RATHOLED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_RATHOLED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED, q->msg_id, from);
         return;
     }
 
     if(q->msg_download_callback)
-        (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_OK, q->msg_id, q->mdc_arg1);
+        (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_OK, q->msg_id, q->mdc_arg1);
     se_emit_msg(SE_MSG_DOWNLOAD_OK, q->msg_id, from);
     // note: just send ack_get, with no return, assume it always works.
     // if it doesn't work, it is no big deal, we just get a message
@@ -7578,7 +7578,7 @@ eo_xfer(MMChannel *mc, vc m, void *, ValidPtr vp)
     {
         //q->MessageBox("Get failed, try again later.");
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, vcnil);
         q->cancel();
         delete q;
@@ -7621,7 +7621,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     if(m[1].is_nil())
     {
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
         q->cancel();
         delete q;
@@ -7648,7 +7648,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     {
         //q->MessageBox("Can't find message on server.");
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
         q->cancel();
         delete q;
@@ -7670,7 +7670,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     {
 
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, from);
         q->cancel();
         delete q;
@@ -7688,7 +7688,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
         if(!can_decrypt)
         {
             if(q->msg_download_callback)
-                (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
+                (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
             se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
             dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
             delete q;
@@ -7721,14 +7721,14 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
                                set_status, 0, q->vp, ip, port)))
     {
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, from);
         q->cancel();
         delete q;
         return;
     }
     if(q->msg_download_callback)
-        (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FETCHING_ATTACHMENT, q->msg_id, q->mdc_arg1);
+        (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_FETCHING_ATTACHMENT, q->msg_id, q->mdc_arg1);
     se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_START, q->msg_id, from);
     q->xfer_channel = mc;
 
@@ -7782,7 +7782,7 @@ dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback dcb,
     dirth_send_get2(My_UID, bv->msg_id, QckDone(get_done, bv, bv->msg_id, bv->vp));
     se_emit_msg(SE_MSG_DOWNLOAD_START, m, vcnil);
     bv->progress_signal.connect_ptrfun(se_emit_msg_progress);
-    return (int)bv->vp;
+    return bv->vp.cookie;
 }
 
 DWYCOEXPORT
