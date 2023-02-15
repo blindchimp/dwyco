@@ -4823,7 +4823,7 @@ dwyco_make_zap_composition( char *dum)
 
     m->composer = 1;
     m->FormShow();
-    GRTLOG("make_zap_composition: ret %d", (int)m->vp, 0);
+    GRTLOG("make_zap_composition: ret %d", m->vp.cookie, 0);
     return m->vp.cookie;
 }
 
@@ -4935,7 +4935,7 @@ dwyco_dup_zap_composition(int compid)
     }
 
 
-    GRTLOG("dup_zap_composition: ret %d", (int)m->vp, 0);
+    GRTLOG("dup_zap_composition: ret %d", m->vp.cookie, 0);
     return m->vp.cookie;
 
 }
@@ -5061,7 +5061,7 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
     m->msg_text = (const char *)text;
     m->composer = 1;
     m->FormShow();
-    GRTLOG("make_forward_zap: ret %d", (int)m->vp, 0);
+    GRTLOG("make_forward_zap: ret %d", m->vp.cookie, 0);
     return m->vp.cookie;
 }
 
@@ -5189,7 +5189,7 @@ dwyco_make_file_zap_composition( const char *filename, int len_filename)
     m->user_filename = dwbasename(a.c_str()).c_str();
     m->composer = 1;
     m->FormShow();
-    GRTLOG("make_file_zap: ret %d", (int)m->vp, 0);
+    GRTLOG("make_file_zap: ret %d", m->vp.cookie, 0);
     return m->vp.cookie;
 }
 
@@ -5826,7 +5826,7 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
     m->file_basename = (const char *)v[0][QM_BODY_ATTACHMENT];
     m->actual_filename = newfn(s).c_str();
     m->inhibit_hashing = 1;
-    GRTLOG("make_zap_view: ret %d", (int)m->vp, 0);
+    GRTLOG("make_zap_view: ret %d", m->vp.cookie, 0);
     return m->vp.cookie;
 }
 
