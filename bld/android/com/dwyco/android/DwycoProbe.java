@@ -24,6 +24,8 @@ import androidx.work.WorkerParameters;
 import java.net.InetSocketAddress;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 public class DwycoProbe extends Worker {
 
@@ -47,21 +49,21 @@ public class DwycoProbe extends Worker {
     }
 
     public ForegroundInfo getForegroundInfo() {
-        Notification.Builder m_builder;
-        m_builder = new Notification.Builder(context, "dwycobg");
+        NotificationCompat.Builder m_builder;
+        m_builder = new NotificationCompat.Builder(context, "dwycobg");
         m_builder.setContentTitle("Dwyco");
         m_builder.setAutoCancel(true);
         m_builder.setContentText("Waiting");
         m_builder.setOnlyAlertOnce(true);
         m_builder.setSmallIcon(DwycoApp.notification_icon());
-        int def = Notification.DEFAULT_ALL;
-        def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+        int def = NotificationCompat.DEFAULT_ALL;
+        def = def & (~(NotificationCompat.DEFAULT_SOUND|NotificationCompat.DEFAULT_VIBRATE));
         m_builder.setDefaults(def);
         Intent notintent = new Intent(context, NotificationClient.class);
         notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent p = PendingIntent.getActivity(context, 1, notintent, PendingIntent.FLAG_IMMUTABLE);
         m_builder.setContentIntent(p);
-        Notification not = m_builder.getNotification();
+        Notification not = m_builder.build();
         ForegroundInfo f = new ForegroundInfo(1, not);
         return f;
     }
@@ -184,18 +186,18 @@ public class DwycoProbe extends Worker {
         sp = context.getSharedPreferences(DwycoApp.shared_prefs, Context.MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
-        Notification.Builder m_builder;
+        NotificationCompat.Builder m_builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if(quiet == 0) 
-                m_builder = new Notification.Builder(context, "dwyco");
+                m_builder = new NotificationCompat.Builder(context, "dwyco");
             else
-                m_builder = new Notification.Builder(context, "dwyco-quiet");
+                m_builder = new NotificationCompat.Builder(context, "dwyco-quiet");
 
         } else {
-        m_builder = new Notification.Builder(context);
-        int def = Notification.DEFAULT_ALL;
+        m_builder = new NotificationCompat.Builder(context);
+        int def = NotificationCompat.DEFAULT_ALL;
         if(quiet == 1)
-            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+            def = def & (~(NotificationCompat.DEFAULT_SOUND|NotificationCompat.DEFAULT_VIBRATE));
         m_builder.setDefaults(def);
         }
         //m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
@@ -211,7 +213,7 @@ public class DwycoProbe extends Worker {
         PendingIntent p = PendingIntent.getActivity(context, 1, notintent, PendingIntent.FLAG_IMMUTABLE);
         m_builder.setContentIntent(p);
 
-        Notification not = m_builder.getNotification();
+        Notification not = m_builder.build();
         m_notificationManager.notify(1, not);
     }
 
