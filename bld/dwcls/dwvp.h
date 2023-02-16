@@ -76,12 +76,13 @@ public:
             oopanic("bad ptr");
         return ptr;
     }
-
+#if 0
     operator long() {
         if(!is_valid())
             oopanic("bad cookie");
         return cookie;
     }
+#endif
 
     int is_valid() {
         return valid_ptr(cookie);
