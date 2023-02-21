@@ -87,6 +87,7 @@ public:
         m_android_migrate = Android_migrate;
         m_android_backup_available = 0;
         m_desktop_update_ready = false;
+        m_total_users = 0;
     }
     static QByteArray My_uid;
     static int Android_migrate;

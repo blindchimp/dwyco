@@ -6594,7 +6594,7 @@ dwyco_get_group_status(DWYCO_LIST *list_out)
         vc gname = Current_alternate->alt_name();
         r[GS_GNAME] = gname;
         r[GS_VALID] = DH_alternate::has_private_key(gname);
-        vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select 1 from gi group by mid)) from msg_idx");
+        vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from gi) from msg_idx");
         if(res.is_nil())
             r[GS_PERCENT_SYNCED] = 0;
         else
