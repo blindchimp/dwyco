@@ -48,7 +48,7 @@ static pthread_mutex_t Msg_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int New_msg;
 #endif
 
-#ifdef ANDROID
+#if defined(ANDROID) && defined(DW_ANDROID_LOG)
 #include <android/log.h>
 #define LOG_TAG "dwyco-bg"
 #define ALOGI(msg, ...) \
@@ -59,7 +59,7 @@ static int New_msg;
 #define ALOGI(msg, ...)
 #define ALOGE(msg, ...)
 #endif
-//#undef ANDROID
+
 void
 android_log_stuff(const char *str, const char *s1, int s2)
 {
