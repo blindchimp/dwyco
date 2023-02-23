@@ -48,6 +48,7 @@
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
+void android_log_stuff(const char *str, const char *s1, int s2);
 #endif
 #include "androidperms.h"
 #include "profpv.h"
@@ -2156,9 +2157,16 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         // may be wrong.
         // note: this should be really rare since group changes are
         // rare, so immediate exit it probably ok for now.
-        QVariant alt_name = get_setting("group/alt_name");
-        if(alt_name.toString() != get_active_group_name())
+        DWYCO_LIST gs;
+        dwyco_get_group_status(&gs);
+        simple_scoped qgs(gs);
+        QByteArray alt_name = qgs.get<QByteArray>(DWYCO_GS_GNAME);
+        if(alt_name != get_active_group_name())
         {
+#if 1
+        android_log_stuff("FUCK QUIT ", alt_name.constData(), 0);
+        android_log_stuff("FUCK QUIT2 ", get_active_group_name().toUtf8().constData(), 0);
+#endif
             QGuiApplication::quit();
         }
         Suspended = 0;
