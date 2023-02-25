@@ -21,6 +21,7 @@
 #include "callq.h"
 #include "mmcall.h"
 #include "dwrtlog.h"
+#include "qauth.h"
 
 using namespace dwyco;
 extern int Media_select;

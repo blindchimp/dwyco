@@ -36,6 +36,7 @@
 #include "dwrtlog.h"
 #include "pval.h"
 #include "qmsg.h"
+#include "qauth.h"
 #ifdef _Windows
 typedef unsigned long in_addr_t;
 #endif
