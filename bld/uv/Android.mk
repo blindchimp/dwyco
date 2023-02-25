@@ -5,7 +5,7 @@ LOCAL_MODULE := uv
 
 # NOTE: self-contained, so don't import any project-level
 # defines or config
-LOCAL_C_FLAGS := -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
+LOCAL_C_FLAGS := -DANDROID -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
 	-D_GNU_SOURCE -D_POSIX_C_SOURCE=200112
 
 
