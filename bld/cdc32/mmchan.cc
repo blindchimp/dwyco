@@ -2850,12 +2850,13 @@ MMChannel::recv_config(vc cfg)
             vc pw;
             if(!cfg.find("pw", pw))
             {
+                Netlog_signal.emit(tube->mklog("event", "no sync pw"));
                 send_error("sync needs pw");
                 goto cleanup;
             }
             if(!Current_alternate)
-
             {
+                Netlog_signal.emit(tube->mklog("event", "wrong sync group"));
                 send_error("sync wrong group");
                 goto cleanup;
             }
@@ -2866,6 +2867,8 @@ MMChannel::recv_config(vc cfg)
             if(pw != ipw)
             {
                 send_error("sync wrong group or schema");
+                Netlog_signal.emit(tube->mklog("event", "wrong sync pw"));
+                GRTLOG("wrong group pw them %s us %s", (const char *)to_hex(pw), (const char *)to_hex(ipw));
                 goto cleanup;
             }
             cfg.del("pw");
