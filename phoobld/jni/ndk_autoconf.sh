@@ -9,11 +9,11 @@ export HOST_TAG="linux-x86_64"
 fi
 
 export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
-NDK_API_LEVEL=17
-if [ $NDK_ABI = "arm64" -o $NDK_ABI = "x86_64" ]
-then
-NDK_API_LEVEL=21
-fi
+NDK_API_LEVEL=24
+#if [ $NDK_ABI = "arm64" -o $NDK_ABI = "x86_64" ]
+#then
+#NDK_API_LEVEL=21
+#fi
 
 export CC=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang
 export CXX=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang++
