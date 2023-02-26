@@ -122,7 +122,7 @@ DwTreeKaz<MMChannel *, int> *MMChannel::AllChan2;
 int MMChannel::Sync_receivers = 1;
 int MMChannel::Auto_sync = 1;
 DwTimer MMChannel::Bw_adj_timer("bw_adj");
-vc MMChannel::My_disposition;
+dwyco::sigprop<vc> MMChannel::My_disposition;
 //#define DWYCO_THREADED_ENCODE
 
 #if defined(DWYCO_THREADED_ENCODE) && defined(LINUX)

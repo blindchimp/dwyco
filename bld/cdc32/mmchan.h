@@ -1079,7 +1079,7 @@ public:
     // indicate whether the system is in "foreground" or
     // "background". this is usefu when you are trying to
     // figure out where to initially send a message.
-    static vc My_disposition;
+    static dwyco::sigprop<vc> My_disposition;
 };
 
 #define PULLPRI_INIT 0
