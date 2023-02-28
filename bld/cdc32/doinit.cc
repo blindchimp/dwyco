@@ -396,8 +396,12 @@ exit_bg_msg_send()
     exit_pal();
     exit_prfdb();
 
-
-    vc::non_lh_exit();
+    // note: don't bother turning off network since
+    // we are going to exit soon anyways. note this
+    // is just to avoid a crash with uv sockets. really
+    // the whole init/exit thing needs to be cleaned up
+    // in VC.
+    //vc::non_lh_exit();
     vc::shutdown_logs();
 
 #ifdef DW_RTLOG

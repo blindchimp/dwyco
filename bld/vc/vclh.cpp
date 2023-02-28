@@ -3521,5 +3521,8 @@ vc::exit()
 void
 vc::non_lh_exit()
 {
+#ifndef DWYCO_NO_UVSOCK
+    vc_uvsocket::exit_uvs_loop();
+#endif
 	vc_winsock::shutoff();
 }

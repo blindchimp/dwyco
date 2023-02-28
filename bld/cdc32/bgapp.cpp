@@ -35,6 +35,9 @@ using namespace dwyco;
 #include <stdlib.h>
 #include <fcntl.h>
 #include <signal.h>
+#ifdef DWYCO_CDC_LIBUV
+#include "vcuvsock.h"
+#endif
 
 namespace dwyco {
 extern DwycoPublicChatDisplayCallback dwyco_bgapp_msg_callback;
@@ -522,6 +525,23 @@ check_background_backup(vc asock, bool just_check_once)
     }
 }
 
+static
+void
+uv_tmr(uv_timer_t *h, int status)
+{
+    // pop uv_run out
+    uv_stop(vc_uvsocket::uvs_loop);
+}
+
+static int Exit_now;
+static
+void
+uv_poll_results(uv_poll_t *h, int status, int events)
+{
+    // pop uv_run out
+    uv_stop(vc_uvsocket::uvs_loop);
+    Exit_now = 1;
+}
 
 // note: if exit_if_outq_empty is non-zero, this function returns
 // when it discovers there is no more stuff to send. otherwise, this
@@ -601,7 +621,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     dwyco_finish_startup();
     }
 
-    //int comsock = -1;
+
     // note: for UV socket, we don't use this asock thing, just
     // create a poll watcher, and get the appropriate cleanups
     // done for that.
@@ -614,7 +634,31 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #else
     vc asock = vc(VC_SOCKET_STREAM);
 #endif
+    // XXX WARNING, on linux, closing the socket twice is
+    // not usually a problem. windows might squawk about it tho
     asock.socket_init(s, vctrue);
+
+#ifdef DWYCO_CDC_LIBUV
+    struct scoped_poll
+    {
+        uv_poll_t singleton_lock;
+        int fd;
+        scoped_poll(int sock) {
+            if(uv_poll_init_socket(vc_uvsocket::uvs_loop, &singleton_lock, sock) != 0)
+                oopanic("can't init poller");
+            if(uv_poll_start(&singleton_lock, UV_READABLE, uv_poll_results) != 0)
+                oopanic("can't start poller");
+            this->fd = sock;
+        }
+        ~scoped_poll() {
+            uv_poll_stop(&singleton_lock);
+            close(fd);
+        }
+    };
+    Exit_now = 0;
+    scoped_poll poller(s);
+
+#endif
 
     int signaled = 0;
     int started_fetches = 0;
@@ -747,7 +791,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             }
         }
 #else
-        // with libuv, we just set a poll watcher on the singleton lock
+        // XXX nope: with libuv, we just set a poll watcher on the singleton lock
         // descriptor, and set a timer based on the snooze value. then
         // tell the uv_run thing to sleep instead of polling. if the
         // timer or any socket comes ready, it should pop out and the
@@ -766,6 +810,18 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         // core works. the side effect is that the data would be parsed and loaded
         // into the queues, but i don't think that is a problem, just a slight
         // difference to what was going on using the old wsock stuff.
+
+        uv_timer_t snoozer;
+        if(uv_timer_init(vc_uvsocket::uvs_loop, &snoozer) != 0)
+            goto out;
+        if(uv_timer_start(&snoozer, uv_tmr, snooze, 0) != 0)
+            goto out;
+        int ret = uv_run(vc_uvsocket::uvs_loop, UV_RUN_ONCE);
+        uv_timer_stop(&snoozer);
+        uv_close((uv_handle_t *)&snoozer, (uv_close_cb)nullptr);
+        if(Exit_now)
+            goto out;
+
 #endif
 
     }
