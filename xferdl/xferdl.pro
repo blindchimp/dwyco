@@ -24,7 +24,9 @@ $$L/vc/libvc.a \
 $$L/dwcls/libdwcls.a \
 $$L/jenkins/libjenkins.a \
 $$L/kazlib/libkazlib.a \
-$$L/crypto5/libcrypto5.a
+$$L/crypto5/libcrypto5.a \
+$$L/uv/libuv.a \
+-pthread
 }
 
 win32* {

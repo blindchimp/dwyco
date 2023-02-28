@@ -46,7 +46,8 @@ $$L/dwcls/libdwcls.a \
 $$L/jenkins/libjenkins.a \
 $$L/kazlib/libkazlib.a \
 $$L/crypto5/libcrypto5.a \
-$$L/zlib/libzlib.a
+$$L/zlib/libzlib.a \
+$$L/uv/libuv.a
 }
 
 win32* {
