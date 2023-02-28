@@ -525,6 +525,7 @@ check_background_backup(vc asock, bool just_check_once)
     }
 }
 
+#ifdef DWYCO_CDC_LIBUV
 static
 void
 uv_tmr(uv_timer_t *h, int status)
@@ -542,6 +543,7 @@ uv_poll_results(uv_poll_t *h, int status, int events)
     uv_stop(vc_uvsocket::uvs_loop);
     Exit_now = 1;
 }
+#endif
 
 // note: if exit_if_outq_empty is non-zero, this function returns
 // when it discovers there is no more stuff to send. otherwise, this
