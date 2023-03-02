@@ -1971,7 +1971,6 @@ MMChannel::init_config(int caller)
     config.add_kv("my uid", My_UID);
     config.add_kv("my connection", My_connection);
     config.add_kv("room", Current_room);
-    config.add_kv("msging", 1);
     config.add_kv("msg_chan", msg_chan);
     config.add_kv("user_control_chan", user_control_chan);
 

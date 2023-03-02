@@ -351,9 +351,9 @@ MMChannel::build_outgoing_chat(int locally_invoked)
             mcx = this;
         if(!TheMsgAq)
         {
-            DwString fail_reason;
-            if(!init_msgaq(locally_invoked, fail_reason))
-                FAILRET(fail_reason.c_str());
+            DwString fr;
+            if(!init_msgaq(locally_invoked, fr))
+                FAILRET(fr.c_str());
         }
         mcx->kaq = TheMsgAq;
         mcx->chat_master = 1;
