@@ -1527,7 +1527,9 @@ MMChannel::local_media_setup_new()
 
     // note: for msg and uc chans, don't set up devices either, since
     // we aren't expecting media to come in on those things anyway.
-    if(!msg_chan && !user_control_chan)
+    vc aux_r(VC_VECTOR);
+    aux_r.append("aux_r");
+    if(!msg_chan && !user_control_chan && call_type != vc("sync"))
     {
         // always set ourselves up to receive video
         if(!build_incoming_video())
@@ -1545,11 +1547,9 @@ MMChannel::local_media_setup_new()
         {
         }
 
-
         audio_chan = -1;
         int ret;
-        vc aux_r(VC_VECTOR);
-        aux_r.append("aux_r");
+
         if(!force_unreliable_audio)
         {
             if(!proxy_info.is_nil())
@@ -1585,27 +1585,26 @@ MMChannel::local_media_setup_new()
                 simple_protos[video_chan] = s;
             }
         }
-
-        if(call_type == vc("sync"))
+    }
+    else if(call_type == vc("sync"))
+    {
+        // for now, just set up a sync channel for each connection, like media channels
+        // this is ok for testing, but probably needs more thought
+        if(!proxy_info.is_nil())
+            send_ctrl(aux_r);  // this prompts the callee to setup a channel to the proxy
+        msync_chan = -1;
+        int ret;
+        if((ret = tube->gen_channel(proxy_info.is_nil() ? remote_listening_port() : (int)proxy_info[1], msync_chan)) == SSERR)
         {
-            // for now, just set up a sync channel for each connection, like media channels
-            // this is ok for testing, but probably needs more thought
-            if(!proxy_info.is_nil())
-                send_ctrl(aux_r);  // this prompts the callee to setup a channel to the proxy
             msync_chan = -1;
-            if((ret = tube->gen_channel(proxy_info.is_nil() ? remote_listening_port() : (int)proxy_info[1], msync_chan)) == SSERR)
-            {
-                msync_chan = -1;
-            }
-            else
-            {
-                msync_state = ret;
-                sproto *s = new sproto(msync_chan, media_x_setup, vp);
-                s->start();
-                simple_protos[msync_chan] = s;
-            }
         }
-
+        else
+        {
+            msync_state = ret;
+            sproto *s = new sproto(msync_chan, media_x_setup, vp);
+            s->start();
+            simple_protos[msync_chan] = s;
+        }
     }
     negotiating = 0;
     return 1;
