@@ -2124,7 +2124,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         Suspended = 1;
         dwyco_set_disposition("background", 10);
         simple_call::suspend();
-        //dwyco_disconnect_chat_server();
+        dwyco_disconnect_chat_server();
         dwyco_suspend();
         if(BGLockSock)
         {
@@ -2165,7 +2165,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         QByteArray alt_name = qgs.get<QByteArray>(DWYCO_GS_GNAME);
         if(alt_name != get_active_group_name())
         {
-#if 1
+#if 0
         android_log_stuff("FUCK QUIT ", alt_name.constData(), 0);
         android_log_stuff("FUCK QUIT2 ", get_active_group_name().toUtf8().constData(), 0);
 #endif
