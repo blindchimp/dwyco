@@ -2456,7 +2456,7 @@ vc_winsock::socket_local_addr()
 	{
 		RAISEABORT(generic_problem, vcnil);
 	}
-	local_addr = sockaddr_to_vc(sa, get_sockaddr_len());
+    local_addr = sockaddr_to_vc(sa, len);
 	return local_addr;
 }
 
@@ -2478,7 +2478,9 @@ vc_winsock::socket_peer_addr()
 	{
 		RAISEABORT(generic_problem, vcnil);
 	}
-	peer_addr = sockaddr_to_vc(sa, get_sockaddr_len());
+    // note: the len is the actual len returned at this point, which
+    // may be different than what we sent in, especially with unix sockets.
+    peer_addr = sockaddr_to_vc(sa, len);
 	return peer_addr;
 	
 }
@@ -2941,7 +2943,7 @@ vc_winsock_datagram::socket_recv_raw(void *ibuf, long& len, long timeout, vc& ad
 	if(used_connect)
 		addr_info = peer_addr;
 	else
-		addr_info = sockaddr_to_vc(sin, get_sockaddr_len());
+        addr_info = sockaddr_to_vc(sin, sinlen);
 	return vc(nread);
 }
 
@@ -2985,6 +2987,12 @@ vc_winsock_unix::vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
 
 	struct sockaddr_un *sap = (struct sockaddr_un *)malloc(sizeof(struct sockaddr_un));
 
+    if(v.len() > sizeof(sap->sun_path) - 1)
+    {
+        free(sap);
+        return 0;
+    }
+
 	memset(sap, 0, sizeof(*sap));
 
 	sap->sun_family = AF_UNIX;
@@ -2998,7 +3006,34 @@ vc_winsock_unix::vc_to_sockaddr(const vc& v, struct sockaddr *& sapr, int& len)
 vc
 vc_winsock_unix::sockaddr_to_vc(struct sockaddr *sapi, int len)
 {
-	vc ret(((struct sockaddr_un *)sapi)->sun_path);
+    struct sockaddr_un *sap = (struct sockaddr_un *)sapi;
+
+    // naming for unix domain sockets is really goofy, having
+    // unnamed and abstract named sockets, all depends on platform too.
+    // using rules from https://www.man7.org/linux/man-pages/man7/unix.7.html
+    // ca 2023 as a guide. note, this man page has an error regarding
+    // length of abstract names, not taking into account "extra" items that
+    // might be before "family" field. also, macos doesn't have abstract
+    // names, fwiw.
+    // note: probably need an "offset" to take into account
+    // padding here too
+    int prefix_len = sizeof(*sap) - sizeof(sap->sun_path);
+    // note: some man pages claim to return 0 length for
+    // unamed sockets, some say "sizeof stuff at the beginning"
+    // so hedging here
+    if(len <= prefix_len)
+    {
+        // unnamed socket
+        return vc("");
+    }
+    // this is linux only i'm guessing
+    if(sap->sun_path[0] == '\0')
+    {
+        // abstract namespace
+        return vc(VC_BSTRING, sap->sun_path, len - prefix_len);
+    }
+
+    vc ret(sap->sun_path);
     return ret;
 }
 

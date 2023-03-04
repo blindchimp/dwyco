@@ -26,5 +26,7 @@
 	<string>@EXECUTABLE@ wants to access the camera</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>@EXECUTABLE@ wants to access the microphone</string>
+	<key>NSRequiresAquaSystemAppearance</key>
+        <true/>
 </dict>
 </plist>
