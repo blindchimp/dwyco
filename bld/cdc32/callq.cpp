@@ -31,7 +31,7 @@ extern int Media_select;
 #define CQ_CONNECTING 2
 #define CQ_FAILED 3
 #define CQ_TERMINATED 4
-#define CALLQ_POLL_TIME (1000)
+#define CALLQ_POLL_TIME (10000)
 #define CALLQ_SLOW_POLL_TIME (60000)
 
 namespace dwyco {
