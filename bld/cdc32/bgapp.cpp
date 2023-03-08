@@ -748,11 +748,11 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         // and just check a little more often. since this is a situation
         // that is pretty rare, it shouldn't be a huge problem (i hope.)
         if(
-                snooze < 20 || // clamp so we always wait at least 20ms even if service_channels wants otherwise
+                snooze < 100 || // clamp so we always wait at least 20ms even if service_channels wants otherwise
                 spin || // service_channels wants us to spin
                 Response_q.num_elems() > 0 || // we have items that need processing now
-                MMChannel::any_ctrl_q_pending() || // we have ctrl messages waiting to send
-                SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
+                MMChannel::any_ctrl_q_pending() // we have ctrl messages waiting to send
+                //|| SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
                 )
         {
             GRTLOG("spin %d snooze %d", spin, snooze);
@@ -763,10 +763,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                   MMChannel::any_ctrl_q_pending(),
                   SimpleSocket::any_waiting_for_write()
                   );
-            // override, make it 20ms
+            // override,
             // in the background, we aren't in a huge hurry to get
             // things done, and don't want to spin too fast.
-            snooze = 20;
+            snooze = 100;
         }
 #ifndef DWYCO_CDC_LIBUV
         Socketvec res;
@@ -777,7 +777,12 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         int usecs = (snooze % 1000) * 1000;
         GRTLOG("longsleep %d %d", secs, usecs);
         ALOGI("long sleep %d %d", secs, usecs);
-        int n = vc_winsock::poll_all(VC_SOCK_READ, res, secs, usecs);
+        int w = SimpleSocket::load_write_set();
+        if(w > 0)
+            ALOGI("write set %d", w);
+        // this polls everything for read, and just the few other sockets
+        // waiting for write (usually wait for connect)
+        int n = vc_winsock::poll_sets(VC_SOCK_READ, res, secs, usecs);
         GRTLOG("wakeup %d", n, 0);
         ALOGI("wakeup %d", n);
         if(n < 0)
