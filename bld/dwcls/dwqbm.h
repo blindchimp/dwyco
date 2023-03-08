@@ -61,6 +61,7 @@ public:
     template<typename U> DwVec<U> project(U T::*memberp);
     int exists_by_fun(int (T::*memfun)(), int val);
     template<typename U, typename V> DwVecP<T> query_by_fun(const U& a1, const V& a2, int (T::*memfun)(const U&, const V&), int val);
+    DwVecP<T> query_by_fun(int (T::*memfun)(), int val);
     int count() {return objs.num_elems();}
 
 };
@@ -165,6 +166,21 @@ DwQueryByMember<T>::query_by_fun(const U& a1, const V& a2, int (T::*memfun)(cons
     for(int i = 0; i < n; ++i)
     {
         int r = (objs[i]->*memfun)(a1, a2);
+        if(r == val)
+            ret.append(objs[i]);
+    }
+    return ret;
+}
+
+template<class T>
+DwVecP<T>
+DwQueryByMember<T>::query_by_fun(int (T::*memfun)(), int val)
+{
+    int n = objs.num_elems();
+    DwVecP<T> ret;
+    for(int i = 0; i < n; ++i)
+    {
+        int r = (objs[i]->*memfun)();
         if(r == val)
             ret.append(objs[i]);
     }
