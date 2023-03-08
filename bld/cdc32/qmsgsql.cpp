@@ -575,6 +575,13 @@ package_downstream_sends(vc remote_uid)
         // containing both index and tag updates, then perform all of them
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
+        // most of the time, the logs are empty, so just shortcut that case
+        const vc chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
+        if((int)chk[0][0] == 0)
+        {
+            sql_commit_transaction();
+            return vcnil;
+        }
 
         // note: this sync thing is supposed to be processed after all the updates
         // that are received during a delta update, letting us know what we have integrated
