@@ -1777,12 +1777,19 @@ sql_get_recent_users(int recent, int *total_out)
                     "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi  "
                     "where strftime('%s', 'now') - date < ?2 "
                     "group by assoc_uid),"
+
                     // note: the join here just makes sure the mins table doesn't include
                     // group representatives with no messages. the group_map is
                     // derived from the profile database, which is not trimmed
                     // or anything and may contain profiles we have no messages from.
-                    "mins(muid) as (select min(uid) from group_map group by gid),"
-                    "grps(guid) as (select uid from group_map)"
+
+                    // find the groups that are referenced by at least one message
+                    "gids(gid) as (select gid from group_map,uids using(uid) group by gid), "
+                    // map the gids to the min uid in the group, even if the uid isn't in the
+                    // list so far.
+                    "mins(muid) as (select min(uid) from group_map,gids using(gid) group by gid),"
+                    "grps(guid) as (select uid from group_map) "
+
                     //"select uid from uids where uid not in (select * from grps) or (uid in (select * from mins)) order by lc desc limit ?1",
                     "select uid from uids where uid not in (select * from grps) union select * from mins limit ?1",
                     recent ? 100 : -1,
