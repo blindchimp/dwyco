@@ -798,14 +798,14 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             }
         }
 #else
-        // XXX nope: with libuv, we just set a poll watcher on the singleton lock
+        // with libuv, we just set a poll watcher on the singleton lock
         // descriptor, and set a timer based on the snooze value. then
         // tell the uv_run thing to sleep instead of polling. if the
         // timer or any socket comes ready, it should pop out and the
         // accept check above will work, or the poll callback we could
         // set a flag to exit the loop as well.
         //
-        // this sounds better, at least initially. there are a couple of
+        // there are a couple of
         // places where event processing might need to be rearranged in the
         // core to make timeouts more timely, and processing can be
         // turned around a little more quickly, but it might also impact
