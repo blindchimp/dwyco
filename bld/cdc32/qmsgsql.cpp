@@ -48,6 +48,7 @@
 namespace dwyco {
 using namespace dwyco::qmsgsql;
 DwString Schema_version_hack;
+ssns::signal1<vc> Qmsg_update;
 
 #define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
 
@@ -1315,6 +1316,18 @@ setup_crdt_triggers()
                         "end");
 }
 
+static
+void
+sql_update_hook(void *user_arg, int op, const char *db, const char *table, sqlite3_int64 rowid)
+{
+    if(op != SQLITE_INSERT)
+        return;
+    if(!(strcmp(table, "midlog") == 0 || (strcmp(table, "taglog") == 0)))
+        return;
+    Qmsg_update.emit(table);
+}
+
+
 void
 init_qmsg_sql()
 {
@@ -1338,6 +1351,7 @@ init_qmsg_sql()
     vc hmyuid = to_hex(My_UID);
     sDb->attach(TAG_DB, "mt");
     sql_simple("pragma recursive_triggers=1");
+    sDb->set_update_hook(sql_update_hook, 0);
     sql_start_transaction();
     init_index_data();
     init_tag_data();

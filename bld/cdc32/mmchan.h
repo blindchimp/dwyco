@@ -1039,6 +1039,7 @@ private:
     int process_incoming_sync();
     DwTimer sync_pinger;
     DwTimer downstream_timer;
+    void throttle_downstream_timer(vc);
 
     // why pointer? i don't want even a chance that this
     // will block on delete... i'd rather have a little leak
