@@ -593,7 +593,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
 
     dwyco_set_client_version("dwycobg", 7);
-    dwyco_set_initial_invis(1);
+    //dwyco_set_initial_invis(1);
     dwyco_set_login_result_callback(dwyco_background_db_login_result);
     dwyco_set_system_event_callback(check_join_simple);
     dwyco_set_disposition("background", 10);
@@ -616,6 +616,9 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     if(dwyco_get_create_new_account())
     {
         // only run on existing accounts
+        dwyco_set_login_result_callback(0);
+        dwyco_set_system_event_callback(0);
+        dwyco_bg_exit();
         return 1;
     }
 
@@ -852,6 +855,15 @@ out:
     }
     else
     {
+        // note: on android, this thing might be a thread
+        // started without the main UI. in which case, the
+        // main ui is going to be started, and a plain
+        // dwyco_init is going to be called. i checked things, and
+        // it appears that what little bit is initialized by bg_init
+        // can be safely re-initialized (or at least used ok, as long
+        // as the threads are not calling into the API at the same time.)
+        dwyco_set_login_result_callback(0);
+        dwyco_set_system_event_callback(0);
         dwyco_bg_exit();
         ALOGI("exit proc", 0);
     }

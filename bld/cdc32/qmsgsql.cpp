@@ -1319,7 +1319,7 @@ void
 init_qmsg_sql()
 {
     if(sDb)
-        oopanic("already init");
+        return;
     int force_reindex = 0;
 
     if(access(newfn(MSG_IDX_DB).c_str(), F_OK) == -1)

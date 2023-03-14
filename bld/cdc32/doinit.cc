@@ -392,7 +392,7 @@ exit_bg_msg_send()
     while(se_process() || dirth_poll_response())
         ;
 
-    exit_qmsg();
+    //exit_qmsg();
     exit_pal();
     exit_prfdb();
 
