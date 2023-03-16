@@ -57,6 +57,9 @@
 
 using namespace dwyco;
 
+namespace dwyco {
+DwQueryByMember<sproto> sproto::Qbm;
+
 sproto::sproto(int sc, strans *tr, ValidPtr v)
     : mvp(v), timeout("sproto-timeout"), watchdog("sproto-watchdog")
 {
@@ -64,6 +67,40 @@ sproto::sproto(int sc, strans *tr, ValidPtr v)
     trans = tr;
     subchan = sc;
     running = 0;
+    Qbm.add(this);
+}
+
+sproto::~sproto()
+{
+    Qbm.del(this);
+}
+
+int
+sproto::quick_transition()
+{
+    if(!running)
+        return 0;
+    const char *ev = trans[cur_state].events;
+    if(!mvp.is_valid())
+    {
+        return 0;
+    }
+    MMChannel *m = (MMChannel *)(void *)mvp;
+    if(strchr(ev, 'i'))
+        return 1;
+    if(strchr(ev, 'w') && m->tube->can_write_data(subchan))
+        return 1;
+    if(strchr(ev, 'r') && m->tube->has_data(subchan))
+        return 1;
+    if(strchr(ev, 't') && timeout.is_expired())
+        return 1;
+    return 0;
+}
+
+int
+sproto::any_quick_transitions()
+{
+    return Qbm.exists_by_fun(&sproto::quick_transition, 1);
 }
 
 void
@@ -237,6 +274,7 @@ sproto::crank()
     }
     oopanic("bogus handler return");
     return -1;
+}
 }
 
 

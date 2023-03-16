@@ -751,20 +751,27 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         // and just check a little more often. since this is a situation
         // that is pretty rare, it shouldn't be a huge problem (i hope.)
         if(
-                snooze < 100 || // clamp so we always wait at least 20ms even if service_channels wants otherwise
+                snooze < 100 || // clamp so we always wait at least a little bit, even if service_channels wants otherwise
                 spin || // service_channels wants us to spin
                 Response_q.num_elems() > 0 || // we have items that need processing now
-                MMChannel::any_ctrl_q_pending() // we have ctrl messages waiting to send
+                MMChannel::any_ctrl_q_pending() || // we have ctrl messages waiting to send
+                dwyco::sproto::any_quick_transitions()
                 //|| SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
                 )
         {
-            GRTLOG("spin %d snooze %d", spin, snooze);
-            ALOGI("fast poll snooze %d spin %d rq %d cq %d writes %d",
+            GRTLOGA("fast poll snooze %d spin %d rq %d cq %d proto %d",
+                    spin,
+                    snooze,
+                    Response_q.num_elems(),
+                    MMChannel::any_ctrl_q_pending(),
+                    dwyco::sproto::any_quick_transitions()
+                    );
+            ALOGI("fast poll snooze %d spin %d rq %d cq %d proto %d",
                   snooze,
                   spin,
                   Response_q.num_elems(),
                   MMChannel::any_ctrl_q_pending(),
-                  SimpleSocket::any_waiting_for_write()
+                  dwyco::sproto::any_quick_transitions()
                   );
             // override,
             // in the background, we aren't in a huge hurry to get

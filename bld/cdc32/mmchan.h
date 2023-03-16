@@ -56,11 +56,19 @@ class AudioOutput;
 class AudioAcquire;
 class MessageDisplay;
 
+// fyi: this is a little weird, but for the friend
+// decls below, we need this namespace thing
+// instead of something like "using dwyco::DirectSend"
+// which requires the class definition for some reason.
+// oh well.
 namespace dwyco {
 class DirectSend;
 class DwQSend;
 struct QckMsg;
 }
+
+using dwyco::sproto;
+using dwyco::strans;
 
 typedef DwVecP<MMChannel> ChanList;
 typedef DwVecPIter<MMChannel> ChanListIter;
