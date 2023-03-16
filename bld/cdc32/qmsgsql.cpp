@@ -2359,12 +2359,18 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
     try
     {
         sql_start_transaction();
+        // WARNING: we are checking the global index, but actually inserting
+        // into the local index (msg_idx), assuming that the update will make
+        // its way into the global index. what we probably need to do is
+        // use a trigger directly on the global index to create the events
+        // somehow. the reason this bug went for so long was probably
+        // because it was masked by the "rescan" triggers being updated.
         vc res = sql_simple("select 1 from gi where assoc_uid = ?1 limit 1", to_hex(uid));
-        if(res.num_elems() > 1)
+        sql_insert_record(nentry, uid);
+        if(res.num_elems() == 0)
         {
             se_emit(SE_USER_ADD, uid);
         }
-        sql_insert_record(nentry, uid);
         sql_commit_transaction();
         ret = 1;
     }
