@@ -26,6 +26,7 @@ include $(MY_CONF_LOCAL_PATH)/cdc32/Android.mk
 include $(CLEAR_VARS)
 LOCAL_MODULE := dwyco_jni
 LOCAL_PATH := $(call my-dir)
+LOCAL_LDLIBS := -llog
 
 LOCAL_WHOLE_STATIC_LIBRARIES := jhead cdc32 pbm vc crypto5 zlib kazlib jenkins dwcls
 #LOCAL_SRC_FILES := foo.cpp
