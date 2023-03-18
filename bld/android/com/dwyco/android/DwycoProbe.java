@@ -150,7 +150,7 @@ public class DwycoProbe extends Worker {
         // this hurts anything.
         poller_thread();
         
-        dwybg.dwyco_background_processing(port, 0/*DwycoApp.exit_if_outq_empty|DwycoApp.check_backup_once*/, sys_pfx, user_pfx, tmp_pfx, token);
+        dwybg.dwyco_background_processing(port, DwycoApp.is_rando ? (DwycoApp.exit_if_outq_empty|DwycoApp.check_backup_once) : 0, sys_pfx, user_pfx, tmp_pfx, token);
         stop_poller = true;
         dwybg.dwyco_signal_msg_cond();
         catchLog("job end");
