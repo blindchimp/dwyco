@@ -87,7 +87,7 @@ public class DwycoProbe extends Worker {
             //s.connect(address, 1000);   
 
             LocalSocket s = new LocalSocket();
-            LocalSocketAddress a = new LocalSocketAddress("mumble0");
+            LocalSocketAddress a = new LocalSocketAddress("dwyco" + port);
             s.connect(a);
             s.getInputStream().read();
              

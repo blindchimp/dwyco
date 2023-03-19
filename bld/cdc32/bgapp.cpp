@@ -565,7 +565,7 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 
     int s;
 #ifdef ANDROID
-    s = get_singleton_lock("mumble", 0);
+    s = get_singleton_lock("dwyco", port);
 #else
     s = get_funny_mutex(port);
 #endif
