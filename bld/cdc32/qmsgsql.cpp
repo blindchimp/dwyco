@@ -44,6 +44,7 @@
 #include "profiledb.h"
 #include "dirth.h"
 #include "pulls.h"
+#include "synccalls.h"
 
 namespace dwyco {
 using namespace dwyco::qmsgsql;
@@ -348,6 +349,20 @@ clean_pull_failed_uid(const vc& uid)
 {
     vc huid = to_hex(uid);
     sql_simple("delete from pull_failed where uid = ?1", huid);
+}
+
+// cancel all the
+// extant pulls in other send_qs
+static
+void
+stop_existing_pulls(const vc& mid)
+{
+    pulls::deassert_pull(mid);
+    ChanList cl = get_all_sync_chans();
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        cl[i]->sync_sendq.del_pull(mid);
+    }
 }
 
 vc
@@ -943,7 +958,7 @@ import_remote_mi(vc remote_uid)
             long lc = (long)res[0][0];
             update_global_logical_clock(lc);
         }
-        s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb");
+        vc newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
         s.sql_simple("delete from main.gi where mid in (select mid from main.msg_tomb)");
 
         //sync_files();
@@ -986,6 +1001,11 @@ import_remote_mi(vc remote_uid)
         {
             se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
         }
+        for(int i = 0; i < newtombs.num_elems(); ++i)
+        {
+            const vc mid = newtombs[i][0];
+            stop_existing_pulls(mid);
+        }
 #endif
     }
     catch(...)
@@ -999,6 +1019,7 @@ import_remote_mi(vc remote_uid)
     s.exit();
     return ret;
 }
+
 
 // returns the mid of any added index update so pulls can
 // be re-started by the caller
@@ -1061,6 +1082,9 @@ import_remote_iupdate(vc remote_uid, vc vals)
         if(op == vc("d") && !uid.is_nil() && !mid.is_nil())
         {
             trash_body(from_hex(uid), mid, 1);
+            // once we see a tombstone, that means we should not
+            // be fetching it from anywhere.
+            stop_existing_pulls(mid);
         }
         if(index_changed && !uid.is_nil())
         {
