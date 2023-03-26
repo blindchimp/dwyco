@@ -14,6 +14,7 @@ import android.app.PendingIntent;
 import android.os.Bundle;
 import android.app.AlarmManager;
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 import android.content.SharedPreferences;
 
 import android.content.ContentResolver;
@@ -257,12 +258,18 @@ public static String get_token() {
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build();
 
-        OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
+        //OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
+            //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+        //    .setConstraints(constraints)
+        //    .build();
+            PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 1, TimeUnit.HOURS)
             //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setConstraints(constraints)
             .build();
-
-            WorkManager.getInstance(m_instance).enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
+            //WorkManager.getInstance(m_instance).enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
+            WorkManager.getInstance(m_instance)
+                .enqueueUniquePeriodicWork("upload_only", 
+                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, uploadWorkRequest);
     }
 
 public static void log_event() {

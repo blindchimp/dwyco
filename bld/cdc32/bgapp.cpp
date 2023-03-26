@@ -686,6 +686,26 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                     //system("notify-send " DWYCO_APP_NICENAME " \"New message\"");
 #endif
 
+#ifdef ANDROID
+                // note: on android, the workmanager is being used to
+                // start us periodically, so if we aren't processing
+                // messages or getting sync events for some time, we just
+                // shut down and rely on the various android platform
+                // things to fire us back up again.
+                // android claims they give us about 10 minutes, but
+                // it is different for every platform... later platforms
+                // let us go for a long time if the system is otherwise idle
+                // and older systems will only give you a few minutes.
+                // 8 minutes is just something i pulled out of my ass
+                // as a reasonable time if someone doesn't respond to
+                // something, the conversation is probably over.
+#define WORKTIMER (8 * 60 * 1000)
+                DwTimer worktimer;
+                worktimer.set_interval(WORKTIMER);
+                worktimer.set_oneshot(1);
+                worktimer.start();
+                bool inactivity_exit = false;
+#endif
     while(1)
     {
         int spin = 0;
@@ -701,7 +721,19 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
             check_background_backup(asock, (exit_if_outq_empty & 2) ? true : false);
         }
         if(exit_if_outq_empty && msg_outq_empty())
+        {
             break;
+        }
+        else
+        {
+#ifdef ANDROID
+            if(worktimer.is_expired())
+            {
+                inactivity_exit = true;
+                break;
+            }
+#endif
+        }
 #ifdef WIN32
         if(accept(s, 0, 0) != INVALID_SOCKET)
         {
@@ -728,6 +760,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #endif
         if(dwyco_get_rescan_messages())
         {
+#ifdef ANDROID
+            worktimer.load(WORKTIMER);
+            worktimer.start();
+#endif
             GRTLOG("rescan %d %d", started_fetches, signaled);
             dwyco_set_rescan_messages(0);
             ns_dwyco_background_processing::fetch_to_inbox();
@@ -857,6 +893,18 @@ out:
         // note in the case of running in the same thread
         // as the main ui, the "lock socket" will be closed
         // when the destructor asock is run.
+#ifdef ANDROID
+        if(inactivity_exit)
+        {
+            // note: if we are stopping processing, it is better to
+            // just close all the connections we have rather than
+            // keeping them around in some state that is still open
+            // but unserviced. at least the other side will
+            // see the channel shutdown. note: the suspend
+            // call will process whatever events are generated here
+            MMChannel::exit_mmchan();
+        }
+#endif
         dwyco_suspend();
         ALOGI("exit thread", 0);
     }
