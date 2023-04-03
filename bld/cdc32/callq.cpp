@@ -49,7 +49,7 @@ struct callq
     int cancel;
 
     callq(ValidPtr p) : vp(p) {
-        status = 0;
+        status = CQ_WAITING;
         user_cb = 0;
         arg1 = 0;
         cancel = 0;
@@ -178,6 +178,8 @@ CallQ::add_call(MMCall *mmc)
     cq->user_cb = mmc->scb;
     cq->arg1 = mmc->scb_arg1;
     cq->arg2 = mmc->scb_arg2;
+    cq->timeout.set_interval(5 * 60 * 1000);
+    cq->timeout.start();
     mmc->scb = cq_call_status;
     mmc->scb_arg2 = mmc->vp;
     TheCallQ->reset_poll_time(CALLQ_POLL_TIME);
@@ -270,8 +272,20 @@ CallQ::tick()
                     delete calls[i];
                     calls[i] = 0;
                 }
+                else if(calls[i]->status == CQ_WAITING)
+                {
+                    if(calls[i]->timeout.is_expired())
+                    {
+                        delete calls[i];
+                        calls[i] = 0;
+                    }
+                    else
+                        ++waiting;
+                }
                 else
-                    ++waiting;
+                {
+                    oopanic("callq error");
+                }
             }
         }
     }
@@ -308,6 +322,9 @@ CallQ::tick()
         {
             if(((MMCall *)(void *)calls[i]->vp)->start_call(Media_select))
             {
+                // stop the timeout, once it is connecting, other timers
+                // cause the state to progress
+                calls[i]->timeout.stop();
                 calls[i]->status = CQ_CONNECTING;
                 ++connecting;
             }
