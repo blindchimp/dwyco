@@ -7002,8 +7002,8 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
             vc sfpack = what[1];
             vc enc_nonce = what[2];
             vc skey;
-
-            vc our_material = dha->my_static();
+            vc our_material(VC_VECTOR);
+            our_material[0] = dha->my_static();
             skey = dh_store_and_forward_get_key2(sfpack, our_material);
             if(skey.is_nil())
                 throw -1;
