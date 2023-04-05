@@ -38,8 +38,6 @@ private:
     static void close_cb(uv_handle_t *h);
     static void shutdown_cb(uv_shutdown_t *req, int status);
 
-    static uv_loop_t *uvs_loop;
-
     int parse_buffer(int once);
     void add_error(vc v);
     int listening;
@@ -105,7 +103,11 @@ public:
 
     int set_syntax(int);
 
+    // this is public mainly for integrating with other
+    // event loops. don't change it directly.
+    static uv_loop_t *uvs_loop;
 	static int init_uvs_loop();
+    static void exit_uvs_loop();
 	static int run_loop_once();
 	
     // note: it would be possible to have these different syntaxes

@@ -18,51 +18,56 @@ typedef DwTreeKaz<vc, vc> SyncMap;
 typedef DwAssocImp<vc, vc> SyncMapAssoc;
 typedef DwTreeKazIter<vc, vc> SyncMapIter;
 
-class SyncVar
-{
-    SyncVar(const SyncVar&) = delete;
-    SyncVar& operator=(const SyncVar&) = delete;
-
-public:
-    SyncVar(const char *name, SyncMap *map);
-    ~SyncVar();
-
-    SyncVar& operator=(int);
-    SyncVar& operator=(bool);
-    SyncVar& operator=(vc);
-    //SyncVar& operator=(const char *);
-    operator int();
-    operator bool();
-    operator vc();
-    //operator const char *();
-    int valid();
-
-private:
-    SyncMap *map;
-    vc name;
-};
 
 class SyncManage
 {
+    friend class SyncVar;
+    friend class MMChannel;
+
     SyncManage(const SyncManage&) = delete;
     SyncManage& operator=(const SyncManage&) = delete;
 
 public:
-    SyncManage(SyncMap *m);
+    SyncManage();
     ~SyncManage();
 
     vc diff();
     void snapshot();
+    bool update_available();
 
 private:
     vc sendq;
     SyncMap *oldmap;
     SyncMap *map;
+    bool m_update_available;
 
     void send(const char *, vc);
     void send(const char *, const SyncMapAssoc& a);
     SyncMap *copy();
 
 };
+
+class SyncVar
+{
+    SyncVar(const SyncVar&) = delete;
+    SyncVar& operator=(const SyncVar&) = delete;
+
+public:
+    SyncVar(const char *name, SyncManage *map);
+    ~SyncVar();
+
+    SyncVar& operator=(int);
+    SyncVar& operator=(vc);
+
+    operator int();
+    operator vc();
+
+    int valid();
+
+private:
+    SyncManage *manager;
+    vc name;
+};
+
 
 #endif

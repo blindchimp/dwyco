@@ -16,7 +16,10 @@ LOCAL_CFLAGS := $(MY_CONF_LOCAL_CFLAGS) \
 
 LOCAL_CPP_EXTENSION := .cc .cpp
 
-LOCAL_CPPFLAGS += #-DDW_RTLOG -DDWYCO_NO_CLEANUP_ON_EXIT -DDWYCO_APP_DEBUG
+LOCAL_CPPFLAGS += -DDW_RTLOG #-DDWYCO_NO_CLEANUP_ON_EXIT -DDWYCO_APP_DEBUG
+LOCAL_CPPFLAGS += -DDWYCO_NETLOG
+LOCAL_CPPFLAGS += -DDW_ANDROID_LOG
+#LOCAL_CPPFLAGS += -DDWYCO_CDC_LIBUV
 #LOCAL_CPPFLAGS += -DDWYCO_TRACE 
 #LOCAL_CPPFLAGS += -DLEAK_CLEANUP
 #LOCAL_CPPFLAGS += -DDWYCO_FIELD_DEBUG
@@ -78,6 +81,7 @@ dwlog.cc \
 syncvar.cc \
 doinit.cc \
 netcod.cc \
+netcod2.cc \
 tcode.cc \
 statfun.cc \
 dirth.cc \
@@ -192,6 +196,7 @@ $(LOCAL_PATH)/../theora/include \
 $(LOCAL_PATH)/../ogg/include \
 $(LOCAL_PATH)/../vorbis/include \
 $(LOCAL_PATH)/../miniupnp/miniupnp-master/miniupnpc \
+$(LOCAL_PATH)/../uv/include \
 $(APP_PROJECT_PATH)
 
 LOCAL_CPPFLAGS += -fpermissive -frtti

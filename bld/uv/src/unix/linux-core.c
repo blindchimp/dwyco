@@ -123,10 +123,15 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
     uv__epoll_ctl(loop->backend_fd, UV__EPOLL_CTL_DEL, fd, &dummy);
 }
 
-
 void uv__io_poll(uv_loop_t* loop, int timeout) {
   static int no_epoll_pwait;
-  static int no_epoll_wait;
+#ifdef ANDROID
+  // turns out if you try to probe this system call on android
+  // you get an instant security signal, crashing your app
+  static int no_epoll_wait = 1;
+#else
+  static int no_epoll_wait = 0;
+#endif
   struct uv__epoll_event events[1024];
   struct uv__epoll_event* pe;
   struct uv__epoll_event e;

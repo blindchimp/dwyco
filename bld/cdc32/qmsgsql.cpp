@@ -49,6 +49,7 @@
 namespace dwyco {
 using namespace dwyco::qmsgsql;
 DwString Schema_version_hack;
+ssns::signal1<vc> Qmsg_update;
 
 #define with_create_uidset(argnum) "with uidset(uid) as (select ?" #argnum " union select uid from group_map where gid = (select gid from group_map where uid = ?" #argnum "))"
 
@@ -590,6 +591,13 @@ package_downstream_sends(vc remote_uid)
         // containing both index and tag updates, then perform all of them
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
+        // most of the time, the logs are empty, so just shortcut that case
+        const vc chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
+        if((int)chk[0][0] == 0)
+        {
+            sql_commit_transaction();
+            return vcnil;
+        }
 
         // note: this sync thing is supposed to be processed after all the updates
         // that are received during a delta update, letting us know what we have integrated
@@ -1332,11 +1340,23 @@ setup_crdt_triggers()
                         "end");
 }
 
+static
+void
+sql_update_hook(void *user_arg, int op, const char *db, const char *table, sqlite3_int64 rowid)
+{
+    if(op != SQLITE_INSERT)
+        return;
+    if(!(strcmp(table, "midlog") == 0 || (strcmp(table, "taglog") == 0)))
+        return;
+    Qmsg_update.emit(table);
+}
+
+
 void
 init_qmsg_sql()
 {
     if(sDb)
-        oopanic("already init");
+        return;
     int force_reindex = 0;
 
     if(access(newfn(MSG_IDX_DB).c_str(), F_OK) == -1)
@@ -1355,6 +1375,7 @@ init_qmsg_sql()
     vc hmyuid = to_hex(My_UID);
     sDb->attach(TAG_DB, "mt");
     sql_simple("pragma recursive_triggers=1");
+    sDb->set_update_hook(sql_update_hook, 0);
     sql_start_transaction();
     init_index_data();
     init_tag_data();
@@ -1362,6 +1383,7 @@ init_qmsg_sql()
     //sql_simple("pragma mt.cache_size= -10000");
     sDb->set_cache_size(5000);
     vc sv = sql_simple("pragma main.user_version");
+    Schema_version_hack = DwString();
     if((int)sv[0][0] != 0)
         Schema_version_hack += sv[0][0].peek_str();
     vc sv2 = sql_simple("pragma mt.user_version");
@@ -2361,12 +2383,18 @@ update_msg_idx(vc recip, vc body, int inhibit_sysmsg)
     try
     {
         sql_start_transaction();
+        // WARNING: we are checking the global index, but actually inserting
+        // into the local index (msg_idx), assuming that the update will make
+        // its way into the global index. what we probably need to do is
+        // use a trigger directly on the global index to create the events
+        // somehow. the reason this bug went for so long was probably
+        // because it was masked by the "rescan" triggers being updated.
         vc res = sql_simple("select 1 from gi where assoc_uid = ?1 limit 1", to_hex(uid));
-        if(res.num_elems() > 1)
+        sql_insert_record(nentry, uid);
+        if(res.num_elems() == 0)
         {
             se_emit(SE_USER_ADD, uid);
         }
-        sql_insert_record(nentry, uid);
         sql_commit_transaction();
         ret = 1;
     }

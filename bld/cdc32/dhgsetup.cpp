@@ -171,13 +171,22 @@ exit_dhgdb()
     }
 }
 
+static int Init;
+// note: there is no "exit" for this, which should probably
+// be revisited. for now, we just ignore multiple init's, as
+// we don't really need to redo everything even when switching
+// threads.
 void
 init_dhg()
 {
-    if(Current_alternate)
-        return;
-
+    // emit this message to prompt clients to re-read the state
+    // if necessary. but this is a kluge, should just have clients
+    // initialize themselves properly.
     se_emit_group_status_change();
+    if(Init)
+        return;
+    Init = 1;
+
     bind_sql_setting("group/alt_name", change_current_group);
     bind_sql_setting("group/join_key", change_join_key);
     Join_signal.connect_ptrfun(successful_join, 1);

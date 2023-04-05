@@ -43,10 +43,10 @@ public class DwycoApp {
 
 	final public static boolean keep_screen_on = false;
 
-	/// note: this is for telling the background running how to behave.
-        // "or" these together. ca 12/2022, this will change for sure
-        // depending on what i do with workmanager, etc.
-        final public static int exit_if_outq_empty = 1;
-        final public static int check_backup_once = 2;
+	// note: this is for telling the background running how to behave.
+	// "or" these together. ca 12/2022, this will change for sure
+	// depending on what i do with workmanager, etc.
+	final public static int exit_if_outq_empty = 1;
+	final public static int check_backup_once = 2;
 	
 }

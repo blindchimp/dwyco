@@ -31,13 +31,15 @@ extern int Media_select;
 #define CQ_CONNECTING 2
 #define CQ_FAILED 3
 #define CQ_TERMINATED 4
-#define CALLQ_POLL_TIME (1000)
+#define CALLQ_POLL_TIME (10000)
 #define CALLQ_SLOW_POLL_TIME (60000)
 
 namespace dwyco {
 struct callq
 {
-    ValidPtr vp;	// holds the MMCall pointer we are tracking
+    // holds the MMCall pointer we are tracking
+    // which is why we don't invalidate it here
+    ValidPtr vp;
     DwTimer timeout;
     int status;
     // we interpose our stuff so we can track the call status
@@ -63,6 +65,16 @@ init_callq()
         TheCallQ = new CallQ;
 }
 
+// note: this isn't useful except for
+// leak tracing. generally, it is better to
+// just cancel existing calls.
+void
+exit_callq()
+{
+    delete TheCallQ;
+    TheCallQ = nullptr;
+}
+
 void
 callq_tick()
 {
@@ -83,9 +95,17 @@ CallQ::CallQ() : call_q_timer("callq")
 
 CallQ::~CallQ()
 {
-    // need to destroy call the call objs we have q'ed but
-    // since this is called at exit time, i'm just ignoring it for
-    // now. maybe someday when we figure out who owns what.
+#if 0
+    // note: these objects reference mmcall
+    // objects, but only weakly.
+    // at the point this dtor is used, the system
+    // is shutting down, so worrying about graceful
+    // cancellation is probably not useful.
+    for(int i = 0; i < calls.num_elems(); ++i)
+    {
+        delete calls[i];
+    }
+#endif
 }
 
 void
@@ -106,7 +126,7 @@ CallQ::set_max_established(int n)
 void
 CallQ::cq_call_status(MMCall *mmc, int status, void *arg1, ValidPtr vp)
 {
-    if(!vp.is_valid())
+    if(!TheCallQ || !vp.is_valid())
         return;
     int i;
     DwVecP<struct callq> &cq = TheCallQ->calls;

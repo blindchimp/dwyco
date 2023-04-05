@@ -30,19 +30,19 @@
 #include "matcom.h"
 #include "bcastq.h"
 #include "dwstr.h"
-//#include "audstats.h"
-//#include "sd.h"
 #include "syncvar.h"
 #include "pval.h"
-//#include "sd3.h"
 #include "dlli.h"
 #include "netvid.h"
 #include "sproto.h"
 #include "ssns.h"
 #include "audconv.h"
-#include "aconn.h"
 #include "simple_property.h"
 #include "sync_sendq.h"
+#include "syncvar.h"
+// DON'T REMOVE THESE
+// there are namespace decls that need them
+#include "aconn.h"
 #include "calllive.h"
 
 class MMTube;
@@ -56,11 +56,19 @@ class AudioOutput;
 class AudioAcquire;
 class MessageDisplay;
 
+// fyi: this is a little weird, but for the friend
+// decls below, we need this namespace thing
+// instead of something like "using dwyco::DirectSend"
+// which requires the class definition for some reason.
+// oh well.
 namespace dwyco {
 class DirectSend;
 class DwQSend;
 struct QckMsg;
 }
+
+using dwyco::sproto;
+using dwyco::strans;
 
 typedef DwVecP<MMChannel> ChanList;
 typedef DwVecPIter<MMChannel> ChanListIter;
@@ -258,7 +266,6 @@ private:
 
     void init_config(int caller);
     vc match_config(vc, int caller);
-    DwString match_notes;
     vc requested_config();
 
     void recv_config(vc);
@@ -664,20 +671,19 @@ public:
 private:
     // these are for keeping sets of variables synced
     // across the link
-    SyncMap syncmap;
     SyncManage sync_manager;
-    SyncVar bw_limit_incoming;
-    SyncVar bw_limit_outgoing;
-    SyncVar available_audio_decoders;
-    SyncVar available_audio_coders;
+    //SyncVar bw_limit_incoming;
+    //SyncVar bw_limit_outgoing;
+    //SyncVar available_audio_decoders;
+    //SyncVar available_audio_coders;
     SyncVar pinger;
     SyncVar incoming_throttle;
 
-    SyncMap remote_vars;
-    SyncVar rem_bw_limit_incoming;
-    SyncVar rem_bw_limit_outgoing;
-    SyncVar rem_available_audio_decoders;
-    SyncVar rem_available_audio_coders;
+    SyncManage remote_vars;
+    //SyncVar rem_bw_limit_incoming;
+    //SyncVar rem_bw_limit_outgoing;
+    //SyncVar rem_available_audio_decoders;
+    //SyncVar rem_available_audio_coders;
     SyncVar rem_pinger;
     SyncVar rem_incoming_throttle;
 
@@ -809,9 +815,10 @@ public:
     DwTimer keepalive_timer; // used for pinging servers
     void keepalive_processing();
 
-private:
+public:
     static int adjust_outgoing_bandwidth();
     static int adjust_incoming_bandwidth();
+private:
     static int get_available_output_bandwidth();
     static int get_available_input_bandwidth();
     int adjust_outgoing_throttle(int);
@@ -1040,6 +1047,7 @@ private:
     int process_incoming_sync();
     DwTimer sync_pinger;
     DwTimer downstream_timer;
+    void throttle_downstream_timer(vc);
 
     // why pointer? i don't want even a chance that this
     // will block on delete... i'd rather have a little leak
@@ -1080,7 +1088,7 @@ public:
     // indicate whether the system is in "foreground" or
     // "background". this is usefu when you are trying to
     // figure out where to initially send a message.
-    static vc My_disposition;
+    static dwyco::sigprop<vc> My_disposition;
 };
 
 #define PULLPRI_INIT 0

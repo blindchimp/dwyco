@@ -15,7 +15,7 @@
 #include "vc.h"
 #include "dwstr.h"
 
-// class used to encapsulate aquiring text from the user's
+// class used to encapsulate acquiring text from the user's
 // keyboard. subclasses handle the system dependent things
 // that actually get the data to the client of this class.
 
