@@ -235,7 +235,7 @@ Page {
                    //width: dp(80)
                    //height: dp(60)
                    source : { 
-                       (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                       (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
                                    core.uid_to_profile_preview(uid) :
                                    "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png" 
                    }
@@ -416,7 +416,7 @@ Page {
                id: ppic
                anchors.centerIn: parent
                source : {
-                   (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                   (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
                                core.uid_to_profile_preview(uid) :
                                "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                }

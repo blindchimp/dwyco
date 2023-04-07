@@ -21,16 +21,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.media.RingtoneManager;
 import android.net.Uri;
-//import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.content.SharedPreferences;
-
-//import com.firebase.jobdispatcher.Constraint;
-//import com.firebase.jobdispatcher.FirebaseJobDispatcher;
-//import com.firebase.jobdispatcher.GooglePlayDriver;
-//import com.firebase.jobdispatcher.Job;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import android.os.Build;
@@ -41,7 +34,7 @@ import java.util.Map;
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "MyFirebaseMsgService";
-    private static SocketLock prefs_lock;
+    private SocketLock prefs_lock;
     private static Context context;
 
 @Override

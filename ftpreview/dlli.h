@@ -176,6 +176,7 @@ void DWYCOEXPORT dwyco_set_pal_auth_callback(DwycoPalAuthCallback cb);
 void DWYCOEXPORT dwyco_set_emergency_callback(DwycoEmergencyCallback cb);
 void DWYCOEXPORT dwyco_set_user_control_callback(DwycoUserControlCallback cb);
 void DWYCOEXPORT dwyco_set_call_bandwidth_callback(DwycoStatusCallback cb);
+void DWYCOEXPORT dwyco_set_bgapp_msg_callback(DwycoPublicChatDisplayCallback cb);
 
 // Warning: call screening is in the process of changing
 // some of this may not be as advertised... XXX clean it up XXX
@@ -1204,6 +1205,7 @@ void DWYCOEXPORT dwyco_untrash_users();
 // experimental.
 void DWYCOEXPORT dwyco_suspend();
 void DWYCOEXPORT dwyco_resume();
+int DWYCOEXPORT dwyco_get_suspend_state();
 
 int DWYCOEXPORT dwyco_service_channels(int *spin);
 void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
@@ -1503,6 +1505,10 @@ int DWYCOEXPORT dwyco_add_contact(const char *name, const char *phone, const cha
 void DWYCOEXPORT dwyco_signal_msg_cond();
 void DWYCOEXPORT dwyco_wait_msg_cond(int ms);
 int DWYCOEXPORT dwyco_test_funny_mutex(int port);
+// this is for the unix-domain lock. only used on android
+// where the battery saver interfers with local networking
+// for background tasks.
+int dwyco_request_singleton_lock(const char *name, int port);
 
 // this is mostly for debugging, most users won't need to know this info
 typedef DWYCO_LIST DWYCO_SYNC_MODEL;

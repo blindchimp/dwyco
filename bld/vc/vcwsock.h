@@ -195,6 +195,7 @@ public:
 	vc_winsock_unix(SOCKET, const vc_winsock&);
 	vc_winsock_unix();
 
+protected:
 	virtual SOCKET get_socket();
 	virtual int vc_to_sockaddr(const vc& v, struct sockaddr *&, int& len);
 	virtual vc sockaddr_to_vc(struct sockaddr *, int len);

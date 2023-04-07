@@ -87,6 +87,7 @@ public:
         m_android_migrate = Android_migrate;
         m_android_backup_available = 0;
         m_desktop_update_ready = false;
+        m_total_users = 0;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -413,6 +414,17 @@ private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
     static void DWYCOCALLCONV dwyco_check_for_update_done(int status, const char *desc);
+    static void DWYCOCALLCONV dwyco_sys_event_callback(int cmd, int id,
+                             const char *uid, int len_uid,
+                             const char *name, int len_name,
+                             int type, const char *val, int len_val,
+                             int qid,
+                             int extra_arg);
+    static void DWYCOCALLCONV
+    emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name,
+                    int type, const char *val, int len_val,
+                    int qid, int extra_arg);
+    static int Suspended;
 
 };
 

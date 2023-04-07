@@ -66,6 +66,17 @@ void NotificationClient::updateAndroidNotification()
             "(Ljava/lang/String;)V",
             javaNotification.object<jstring>());
 }
+
+void NotificationClient::postAndroidNotification(const QString& notification)
+{
+
+    QAndroidJniObject javaNotification = QAndroidJniObject::fromString(notification);
+    QAndroidJniObject::callStaticMethod<void>("com/dwyco/android/NotificationClient",
+            "notify",
+            "(Ljava/lang/String;)V",
+            javaNotification.object<jstring>());
+}
+
 void
 NotificationClient::set_allow_notification(int a)
 {

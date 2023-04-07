@@ -13,8 +13,11 @@
 #include "dwtimer.h"
 #include "vc.h"
 #include "dwstr.h"
+#include "dwqbm.h"
 
 class MMChannel;
+
+namespace dwyco {
 class sproto;
 
 struct strans
@@ -28,7 +31,7 @@ struct strans
 
 class sproto
 {
-    friend class MMChannel;
+    friend class ::MMChannel;
     sproto(const sproto&) = delete;
     sproto& operator=(const sproto&) = delete;
 
@@ -36,7 +39,9 @@ public:
     // the ValidPtr in this case is a backpointer to the
     // MMChannel this sproto is a subchannel of
     sproto(int sc, strans *tr, ValidPtr v);
+    ~sproto();
     void start();
+    static int any_quick_transitions();
 
 private:
     enum handler_ret {
@@ -64,7 +69,12 @@ private:
     int find(const char *state);
     void end();
 
+    static DwQueryByMember<sproto> Qbm;
+    int quick_transition();
+
+
 };
+}
 
 
 // this one is for protocol that allows restart on sends

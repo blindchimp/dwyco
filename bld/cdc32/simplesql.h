@@ -4,6 +4,11 @@
 struct sqlite3;
 #include "vc.h"
 #include "dwstr.h"
+#ifdef DWYCO_USE_STATIC_SQLITE
+#include "sqlite/sqlite3.h"
+#else
+#include <sqlite3.h>
+#endif
 
 
 namespace dwyco {
@@ -20,6 +25,7 @@ private:
     int tdepth;
 
 public:
+    typedef void(*update_hook)(void *,int ,char const *,char const *, sqlite3_int64);
     SimpleSql(const DwString& nm) {
         dbnames[0] = nm;
         schema_names[0] = "main";
@@ -53,6 +59,7 @@ public:
     void set_max_size(int mb);
     void rollback_transaction();
     void set_busy_timeout(int ms);
+    void set_update_hook(update_hook, void *user_arg);
 
     vc query(const VCArglist *a);
 };

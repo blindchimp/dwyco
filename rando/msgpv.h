@@ -12,6 +12,6 @@
 #include <QString>
 #include "dlli.h"
 
-int preview_saved_msg(const QByteArray& uid, const QByteArray& mid, QByteArray& preview_fn, int& file, QByteArray &full_size_filename, QString& local_time);
+int preview_saved_msg(const QByteArray& mid, QByteArray& preview_fn, int& file, QByteArray &full_size_filename, QString& local_time);
 int preview_msg_body(DWYCO_SAVED_MSG_LIST sm, QByteArray& preview_fn, int& file, QByteArray &full_size_filename, QString& local_time);
 #endif

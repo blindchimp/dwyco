@@ -28,19 +28,46 @@ using namespace dwyco;
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/un.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <signal.h>
+#ifdef DWYCO_CDC_LIBUV
+#include "vcuvsock.h"
+#endif
+
+namespace dwyco {
+extern DwycoPublicChatDisplayCallback dwyco_bgapp_msg_callback;
+}
 
 // this is a simple condition variable we use to signal
 // the java stuff to re-check for messages (so it can post
 // a notification.)
 static pthread_cond_t Msg_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t Msg_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int New_msg;
 #endif
+
+#if defined(ANDROID) && defined(DW_ANDROID_LOG)
+#include <android/log.h>
+#define LOG_TAG "dwyco-bg"
+#define ALOGI(msg, ...) \
+    __android_log_print(ANDROID_LOG_INFO, LOG_TAG, (msg), __VA_ARGS__)
+#define ALOGE(msg, ...) \
+    __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, (msg), __VA_ARGS__)
+#else
+#define ALOGI(msg, ...)
+#define ALOGE(msg, ...)
+#endif
+
+void
+android_log_stuff(const char *str, const char *s1, int s2)
+{
+    ALOGI("als %s %s %d", str, s1, s2);
+}
 
 DWYCOEXPORT
 void
@@ -48,6 +75,7 @@ dwyco_signal_msg_cond()
 {
 #ifndef WIN32
     pthread_mutex_lock(&Msg_cond_mutex);
+    New_msg = 1;
     pthread_cond_signal(&Msg_cond);
     pthread_mutex_unlock(&Msg_cond_mutex);
 #endif
@@ -62,11 +90,144 @@ dwyco_wait_msg_cond(int ms)
 {
 #ifndef WIN32
     pthread_mutex_lock(&Msg_cond_mutex);
-    pthread_cond_wait(&Msg_cond, &Msg_cond_mutex);
+    while(New_msg == 0)
+        pthread_cond_wait(&Msg_cond, &Msg_cond_mutex);
+    New_msg = 0;
     pthread_mutex_unlock(&Msg_cond_mutex);
+    // the "work" to be done in this case is done when we
+    // return to java and it sets the notification
 #endif
 
 }
+
+DWYCOEXPORT
+void
+dwyco_stop_msg_cond()
+{
+#ifndef WIN32
+    pthread_mutex_lock(&Msg_cond_mutex);
+    New_msg = -1;
+    pthread_cond_signal(&Msg_cond);
+    pthread_mutex_unlock(&Msg_cond_mutex);
+#endif
+}
+
+#if defined(ANDROID)
+// this is needed on android because when the battery saver
+// comes on, it interferes with the networking so that we
+// can't tell our worker thread to exit. this uses unix abstract
+// domain sockets instead of internet loopback.
+
+DWYCOEXPORT
+int
+dwyco_request_singleton_lock(const char *name, int port)
+{
+    int s = socket(AF_UNIX, SOCK_STREAM,  0);
+    if(s == -1)
+        return -1;
+
+    if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+        return -1;
+
+    DwString aname;
+    aname += '\0';
+    aname += name;
+    aname += DwString::fromInt(port);
+    struct sockaddr_un sap;
+    memset(&sap, 0, sizeof(sap));
+    sap.sun_family = AF_UNIX;
+    memcpy(sap.sun_path, aname.c_str(), dwmin(aname.length(), sizeof(sap.sun_path)));
+    int tlen = offsetof(sockaddr_un, sun_path) + aname.length();
+
+    while(1)
+    {
+        if(bind(s, (const struct sockaddr *)&sap, tlen) == -1)
+        {
+            if(errno == EADDRINUSE)
+            {
+                // issue a connect and see if we can get
+                // the background guy to relinquish the lock
+                int s2;
+                s2 = socket(AF_UNIX, SOCK_STREAM, 0);
+                if(fcntl(s2, F_SETFL, O_NONBLOCK) == -1)
+                    return -1;
+
+                if(connect(s2, (const struct sockaddr *)&sap, tlen) == -1)
+                {
+                    close(s2);
+                    usleep(10000);
+                    continue;
+                }
+                close(s2);
+                usleep(10000);
+                continue;
+            }
+            close(s);
+            return -1;
+        }
+        else
+            break;
+    }
+    if(listen(s, 5) == -1)
+    {
+        close(s);
+        return -1;
+    }
+    return s;
+}
+
+static
+int
+get_singleton_lock(const char *name, int port)
+{
+    int s = socket(AF_UNIX, SOCK_STREAM,  0);
+    if(s == -1)
+        return -1;
+
+    if(fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+        return -1;
+
+    DwString aname;
+    aname += '\0';
+    aname += name;
+    aname += DwString::fromInt(port);
+    struct sockaddr_un sap;
+    memset(&sap, 0, sizeof(sap));
+    sap.sun_family = AF_UNIX;
+    memcpy(sap.sun_path, aname.c_str(), dwmin(aname.length(), sizeof(sap.sun_path)));
+    int tlen = offsetof(sockaddr_un, sun_path) + aname.length();
+
+    int tries = 2000;
+    int i;
+    for(i = 0; i < tries; ++i)
+    {
+        if(bind(s, (const struct sockaddr *)&sap, tlen) == -1)
+        {
+            if(errno == EADDRINUSE)
+            {
+                usleep(10000);
+                continue;
+            }
+            close(s);
+            return -1;
+        }
+        else
+            break;
+    }
+    if(i == tries)
+    {
+
+        close(s);
+        return -1;
+    }
+    if(listen(s, 5) == -1)
+    {
+        close(s);
+        return -1;
+    }
+    return s;
+}
+#endif
 
 
 // this is just a goofy way to keep this background
@@ -313,12 +474,19 @@ background_android_backup()
 // we just exit, leaving the backup in whatever
 // state... sqlite takes care of keeping it
 // reasonably sane.
+// NOTE: this assumes you are in a separate process
+// that can be exited. it probably needs to return and
+// let the caller decide how to clean up.
 static
 void
-check_background_backup(vc asock)
+check_background_backup(vc asock, bool just_check_once)
 {
     static DwTimer bu_poll;
     static int been_here;
+    static bool already_checked = false;
+
+    if(already_checked)
+        return;
     if(!been_here)
     {
         bu_poll.set_autoreload(1);
@@ -326,10 +494,14 @@ check_background_backup(vc asock)
         bu_poll.start();
         been_here = 1;
     }
-    if(!bu_poll.is_expired())
-        return;
-    bu_poll.ack_expire();
+    if(!just_check_once)
+    {
+        if(!bu_poll.is_expired())
+            return;
+        bu_poll.ack_expire();
+    }
     int state = background_android_backup();
+    already_checked = just_check_once;
     if(state == 1)
     {
         do
@@ -353,7 +525,33 @@ check_background_backup(vc asock)
     }
 }
 
+#ifdef DWYCO_CDC_LIBUV
+static
+void
+uv_tmr(uv_timer_t *h, int status)
+{
+    // pop uv_run out
+    uv_stop(vc_uvsocket::uvs_loop);
+}
 
+static int Exit_now;
+static
+void
+uv_poll_results(uv_poll_t *h, int status, int events)
+{
+    // pop uv_run out
+    uv_stop(vc_uvsocket::uvs_loop);
+    Exit_now = 1;
+}
+#endif
+
+// note: if exit_if_outq_empty is non-zero, this function returns
+// when it discovers there is no more stuff to send. otherwise, this
+// function runs until it is stopped either by the main UI starting, or
+// the OS kills it.
+// if exit_if_outq_empty & 2 != 0, it disables the "check once per hour"
+// filtering for the android backup checking. which means it will check
+// once (the first time it is called.)
 DWYCOEXPORT
 int
 dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pfx, const char *user_pfx, const char *tmp_pfx, const char *token)
@@ -363,30 +561,39 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #endif
     //alarm(3600);
     srand(time(0));
+    ALOGI("bg-start %d", 0);
 
     int s;
+#ifdef ANDROID
+    s = get_singleton_lock("dwyco", port);
+#else
     s = get_funny_mutex(port);
+#endif
+
+    ALOGI("mutex %d", s);
     // first run, if the UI is blocking us, something is wrong
     if(s == -1)
         return 1;
+    int just_suspend = false;
+    if(dwyco_get_suspend_state())
+    {
+        // if we are here and we are in the suspended state, it
+        // is because this background processing is being
+        // started while the UI is temporarily suspended in another
+        // thread.
+        // so just resume, and start processing without
+        // re-establishing state.
+        dwyco_resume();
+        just_suspend = true;
+    }
+    else
+    {
 
     //dwyco_set_login_result_callback(dwyco_db_login_result);
     dwyco_set_fn_prefixes(sys_pfx, user_pfx, tmp_pfx);
 
-    // quick check, and nothing else
-    if(exit_if_outq_empty == 2)
-    {
-        int tmp = msg_outq_empty();
-#ifdef WIN32
-        closesocket(s);
-#else
-        close(s);
-#endif
-        return tmp;
-    }
-
     dwyco_set_client_version("dwycobg", 7);
-    dwyco_set_initial_invis(1);
+    //dwyco_set_initial_invis(1);
     dwyco_set_login_result_callback(dwyco_background_db_login_result);
     dwyco_set_system_event_callback(check_join_simple);
     dwyco_set_disposition("background", 10);
@@ -395,11 +602,13 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         dwyco_write_token(token);
 
     set_listen_state(1);
-    // for now, don't let any channels get setup via the
-    // server ... not strictly necessary, but until we get the
-    // calling stuff sorted out (needs a protocol change to alert
-    // regarding incoming calls, etc.) we just let everything go
-    // via the server.
+    // allowing incoming calls needs to happen for
+    // syncing. but, we really beed some extra logic to
+    // handle audio/video call stuff if we are just
+    // syncing in the background in our own process
+    // on desktop, as most people don't want calls unless
+    // the client is up and running. dunno, needs some more
+    // thought.
     dwyco_inhibit_incoming_sac(0);
     dwyco_inhibit_outgoing_sac(0);
     dwyco_inhibit_pal(0);
@@ -407,16 +616,55 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
     if(dwyco_get_create_new_account())
     {
         // only run on existing accounts
+        dwyco_set_login_result_callback(0);
+        dwyco_set_system_event_callback(0);
+        dwyco_bg_exit();
         return 1;
     }
 
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
+    }
 
-    //int comsock = -1;
+
+    // note: for UV socket, we don't use this asock thing, just
+    // create a poll watcher, and get the appropriate cleanups
+    // done for that.
+#ifdef ANDROID
+    // WARNING: creating a socket in VC like this tweaks some
+    // global structures used to provide bulk poll results.
+    // YOU MUST BE CERTAIN OTHER THREADS ARE NOT CALLING INTO
+    // THE MAIN API or VC, the lib itself is not thread-safe
+    vc asock = vc(VC_SOCKET_STREAM_UNIX);
+#else
     vc asock = vc(VC_SOCKET_STREAM);
+#endif
+    // XXX WARNING, on linux, closing the socket twice is
+    // not usually a problem. windows might squawk about it tho
     asock.socket_init(s, vctrue);
-    dwyco_signal_msg_cond();
+
+#ifdef DWYCO_CDC_LIBUV
+    struct scoped_poll
+    {
+        uv_poll_t singleton_lock;
+        int fd;
+        scoped_poll(int sock) {
+            if(uv_poll_init_socket(vc_uvsocket::uvs_loop, &singleton_lock, sock) != 0)
+                oopanic("can't init poller");
+            if(uv_poll_start(&singleton_lock, UV_READABLE, uv_poll_results) != 0)
+                oopanic("can't start poller");
+            this->fd = sock;
+        }
+        ~scoped_poll() {
+            uv_poll_stop(&singleton_lock);
+            close(fd);
+        }
+    };
+    Exit_now = 0;
+    scoped_poll poller(s);
+
+#endif
+
     int signaled = 0;
     int started_fetches = 0;
     vc nicename = get_settings_value("app/nicename");
@@ -432,19 +680,60 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 notify_str = DwString("notify-send.exe \"%1\" \"New message\"").arg((const char *)nicename);
                 desktop_notify = true;
 #endif
-#if defined(LINUX) && !defined(MACOS) && !defined(DWYCO_IOS) && !defined(ANDROID)
+#if defined(LINUX) && !defined(MACOSX) && !defined(DWYCO_IOS) && !defined(ANDROID)
                 notify_str = DwString("notify-send \"%1\" \"New message\"").arg((const char *)nicename);
                 desktop_notify = true;
                     //system("notify-send " DWYCO_APP_NICENAME " \"New message\"");
 #endif
 
+#ifdef ANDROID
+                // note: on android, the workmanager is being used to
+                // start us periodically, so if we aren't processing
+                // messages or getting sync events for some time, we just
+                // shut down and rely on the various android platform
+                // things to fire us back up again.
+                // android claims they give us about 10 minutes, but
+                // it is different for every platform... later platforms
+                // let us go for a long time if the system is otherwise idle
+                // and older systems will only give you a few minutes.
+                // 8 minutes is just something i pulled out of my ass
+                // as a reasonable time if someone doesn't respond to
+                // something, the conversation is probably over.
+#define WORKTIMER (8 * 60 * 1000)
+                DwTimer worktimer;
+                worktimer.set_interval(WORKTIMER);
+                worktimer.set_oneshot(1);
+                worktimer.start();
+                bool inactivity_exit = false;
+#endif
     while(1)
     {
         int spin = 0;
         int snooze = dwyco_service_channels(&spin);
+
+        if(!just_suspend)
+        {
+            // note: this currently doesn't work nice
+            // if this background processing is done
+            // in a thread (via workmanager).
+            // in that case, it might make more sense to just
+            // define the backup as another workrequest
+            check_background_backup(asock, (exit_if_outq_empty & 2) ? true : false);
+        }
         if(exit_if_outq_empty && msg_outq_empty())
+        {
             break;
-        check_background_backup(asock);
+        }
+        else
+        {
+#ifdef ANDROID
+            if(worktimer.is_expired())
+            {
+                inactivity_exit = true;
+                break;
+            }
+#endif
+        }
 #ifdef WIN32
         if(accept(s, 0, 0) != INVALID_SOCKET)
         {
@@ -459,13 +748,22 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
 #else
         if(accept(s, 0, 0) != -1)
         {
+            ALOGI("accept to exit %d", s);
             break;
         }
         else if(!(errno == EWOULDBLOCK || errno == EAGAIN))
+        {
+            ALOGI("bad accept %d", errno);
+            close(s);
             return 1;
+        }
 #endif
         if(dwyco_get_rescan_messages())
         {
+#ifdef ANDROID
+            worktimer.load(WORKTIMER);
+            worktimer.start();
+#endif
             GRTLOG("rescan %d %d", started_fetches, signaled);
             dwyco_set_rescan_messages(0);
             ns_dwyco_background_processing::fetch_to_inbox();
@@ -476,8 +774,10 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
                 GRTLOG("signaling newcount %d", tmp, 0);
                 signaled = tmp;
                 dwyco_signal_msg_cond();
+#ifndef DWYCO_IOS
                 if(desktop_notify)
                     system(notify_str.c_str());
+#endif
             }
         }
         // note: this is a bit sloppy... rather than trying to
@@ -486,44 +786,97 @@ dwyco_background_processing(int port, int exit_if_outq_empty, const char *sys_pf
         // check to see if there is anything waiting to write
         // and just check a little more often. since this is a situation
         // that is pretty rare, it shouldn't be a huge problem (i hope.)
-        if(spin || Response_q.num_elems() > 0 ||
-                MMChannel::any_ctrl_q_pending() || SimpleSocket::any_waiting_for_write())
+        if(
+                snooze < 100 || // clamp so we always wait at least a little bit, even if service_channels wants otherwise
+                spin || // service_channels wants us to spin
+                Response_q.num_elems() > 0 || // we have items that need processing now
+                MMChannel::any_ctrl_q_pending() || // we have ctrl messages waiting to send
+                dwyco::sproto::any_quick_transitions()
+                //|| SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
+                )
         {
-            GRTLOG("spin %d short sleep", spin, 0);
-#if 0
-#ifdef WIN32
-            SleepEx(100, 0);
-#else
-            usleep(100000);
-#endif
-#endif
-            // override, make is 20ms
-            snooze = 20;
+            GRTLOGA("fast poll snooze %d spin %d rq %d cq %d proto %d",
+                    spin,
+                    snooze,
+                    Response_q.num_elems(),
+                    MMChannel::any_ctrl_q_pending(),
+                    dwyco::sproto::any_quick_transitions()
+                    );
+            ALOGI("fast poll snooze %d spin %d rq %d cq %d proto %d",
+                  snooze,
+                  spin,
+                  Response_q.num_elems(),
+                  MMChannel::any_ctrl_q_pending(),
+                  dwyco::sproto::any_quick_transitions()
+                  );
+            // override,
+            // in the background, we aren't in a huge hurry to get
+            // things done, and don't want to spin too fast.
+            snooze = 100;
         }
-        //else
+#ifndef DWYCO_CDC_LIBUV
+        Socketvec res;
+
+        int secs = snooze / 1000;
+        // avoid problems with overflow, there is nothing here
+        // that requires usec accuracy
+        int usecs = (snooze % 1000) * 1000;
+        GRTLOG("longsleep %d %d", secs, usecs);
+        ALOGI("long sleep %d %d", secs, usecs);
+        int w = SimpleSocket::load_write_set();
+        if(w > 0)
+            ALOGI("write set %d", w);
+        // this polls everything for read, and just the few other sockets
+        // waiting for write (usually wait for connect)
+        int n = vc_winsock::poll_sets(VC_SOCK_READ, res, secs, usecs);
+        GRTLOG("wakeup %d", n, 0);
+        ALOGI("wakeup %d", n);
+        if(n < 0)
+            return 1;
+
+        for(int i = 0; i < res.num_elems(); ++i)
         {
-            //usleep(500000);
-            Socketvec res;
-
-            int secs = snooze / 1000;
-            // avoid problems with overflow, there is nothing here
-            // that requires usec accuracy
-            int usecs = (snooze % 1000) * 1000;
-            GRTLOG("longsleep %d %d", secs, usecs);
-            int n = vc_winsock::poll_all(VC_SOCK_READ, res, secs, usecs);
-            GRTLOG("wakeup %d", n, 0);
-            if(n < 0)
-                return 1;
-
-            for(int i = 0; i < res.num_elems(); ++i)
+            if(asock.socket_local_addr() == res[i]->socket_local_addr())
             {
-                if(asock.socket_local_addr() == res[i]->socket_local_addr())
-                {
-                    GRTLOG("req to exit", 0, 0);
-                    goto out;
-                }
+                GRTLOG("req to exit", 0, 0);
+                ALOGI("post sleep exit", 0);
+                goto out;
             }
         }
+#else
+        // with libuv, we just set a poll watcher on the singleton lock
+        // descriptor, and set a timer based on the snooze value. then
+        // tell the uv_run thing to sleep instead of polling. if the
+        // timer or any socket comes ready, it should pop out and the
+        // accept check above will work, or the poll callback we could
+        // set a flag to exit the loop as well.
+        //
+        // there are a couple of
+        // places where event processing might need to be rearranged in the
+        // core to make timeouts more timely, and processing can be
+        // turned around a little more quickly, but it might also impact
+        // the ordering of things, which of course is likely to cause some
+        // things to break.
+        //
+        // alternately, we could just call the uv_run directly here with
+        // the blocking the way we want it rather than trying to change how the
+        // core works. the side effect is that the data would be parsed and loaded
+        // into the queues, but i don't think that is a problem, just a slight
+        // difference to what was going on using the old wsock stuff.
+
+        uv_timer_t snoozer;
+        if(uv_timer_init(vc_uvsocket::uvs_loop, &snoozer) != 0)
+            goto out;
+        if(uv_timer_start(&snoozer, uv_tmr, snooze, 0) != 0)
+            goto out;
+        int ret = uv_run(vc_uvsocket::uvs_loop, UV_RUN_ONCE);
+        uv_timer_stop(&snoozer);
+        uv_close((uv_handle_t *)&snoozer, (uv_close_cb)nullptr);
+        if(Exit_now)
+            goto out;
+
+#endif
+
     }
 out:
     ;
@@ -535,7 +888,40 @@ out:
     // going to resume, just doing an exit may be too abrupt
     // sometimes.
     //dwyco_suspend();
-    dwyco_bg_exit();
+    if(just_suspend)
+    {
+        // note in the case of running in the same thread
+        // as the main ui, the "lock socket" will be closed
+        // when the destructor asock is run.
+#ifdef ANDROID
+        if(inactivity_exit)
+        {
+            // note: if we are stopping processing, it is better to
+            // just close all the connections we have rather than
+            // keeping them around in some state that is still open
+            // but unserviced. at least the other side will
+            // see the channel shutdown. note: the suspend
+            // call will process whatever events are generated here
+            MMChannel::exit_mmchan();
+        }
+#endif
+        dwyco_suspend();
+        ALOGI("exit thread", 0);
+    }
+    else
+    {
+        // note: on android, this thing might be a thread
+        // started without the main UI. in which case, the
+        // main ui is going to be started, and a plain
+        // dwyco_init is going to be called. i checked things, and
+        // it appears that what little bit is initialized by bg_init
+        // can be safely re-initialized (or at least used ok, as long
+        // as the threads are not calling into the API at the same time.)
+        dwyco_set_login_result_callback(0);
+        dwyco_set_system_event_callback(0);
+        dwyco_bg_exit();
+        ALOGI("exit proc", 0);
+    }
     //exit(0);
     return 0;
 }

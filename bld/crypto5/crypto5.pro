@@ -2,7 +2,13 @@ TEMPLATE = lib
 CONFIG += staticlib
 CONFIG -= qt
 CONFIG += warn_off
-macx-g++|macx-clang|linux-g++: QMAKE_CXXFLAGS += -Wno-unused-variable -Wno-unused-parameter
+macx-g++|macx-clang|linux-g++ {
+QMAKE_CXXFLAGS -= -std=c++1z
+QMAKE_CXXFLAGS -= -std=gnu++1z
+QMAKE_CXXFLAGS_CXX1Z=""
+QMAKE_CXXFLAGS_GNUCXX1Z=""
+QMAKE_CXXFLAGS += -Wno-unused-variable -Wno-unused-parameter $$QMAKE_CXXFLAGS_CXX11
+}
 
 include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += NDEBUG 

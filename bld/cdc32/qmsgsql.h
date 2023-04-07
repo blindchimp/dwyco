@@ -10,6 +10,7 @@
 #define QMSGSQL
 #include "vc.h"
 #include "dwstr.h"
+#include "ssns.h"
 
 namespace dwyco {
 void init_qmsg_sql();
@@ -19,6 +20,7 @@ namespace qmsgsql {
 void sql_start_transaction();
 void sql_commit_transaction();
 void sql_rollback_transaction();
+void sql_vacuum();
 }
 
 void init_group_map();
@@ -120,6 +122,8 @@ extern DwString Schema_version_hack;
 // run, so might want to include something to account for that.
 #define MSG_IDX_DB "msgs.sql"
 #define TAG_DB "tags.sql"
+
+extern ssns::signal1<vc> Qmsg_update;
 
 }
 

@@ -14,3 +14,4 @@ libqtavwidgets1
 qtmultimedia5-dev
 qml-module-qtquick-layouts
 qml-module-qtgraphicaleffects
+v4l2-utils

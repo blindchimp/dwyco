@@ -13,7 +13,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="3.68"
+VER="3.72"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 
@@ -335,7 +335,8 @@ LIBS += $${L}/libdwyco_jni.so
 #ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
 
-ANDROID_TARGET_SDK_VERSION=31
+ANDROID_TARGET_SDK_VERSION=33
+#ANDROID_MIN_SDK_VERSION=24
 ANDROID_VERSION_CODE=2000112
 ANDROID_VERSION_NAME=$$VER
 #contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
@@ -496,14 +497,10 @@ DISTFILES += \
     androidinst2/src/com/dwyco/cdc32/dwybg.java \
     androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
     androidinst2/src/com/dwyco/phoo/app.java \
-    androidinst2/src/com/dwyco/android/Dwyco_Message.java \
     androidinst2/src/com/dwyco/android/DwycoProbe.java \
-    androidinst2/src/com/dwyco/android/DwycoSender.java \
     androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
     androidinst2/src/com/dwyco/android/NotificationClient.java \
-    androidinst2/src/com/dwyco/android/Push_Notification.java \
     androidinst2/src/com/dwyco/android/SocketLock.java \
-    androidinst2/src/com/dwyco/android/StickyIntentService.java \
     androidinst2/src/com/dwyco/phoo/DwycoApp.java \
     androidinst2/AndroidManifest.xml \
     androidinst2/build.gradle \

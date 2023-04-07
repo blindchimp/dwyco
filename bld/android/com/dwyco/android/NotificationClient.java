@@ -14,6 +14,7 @@ import android.app.PendingIntent;
 import android.os.Bundle;
 import android.app.AlarmManager;
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 import android.content.SharedPreferences;
 
 import android.content.ContentResolver;
@@ -37,9 +38,6 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import android.app.job.JobScheduler;
-import android.app.job.JobInfo;
-import android.app.job.JobInfo.Builder;
 import android.content.ComponentName;
 import androidx.core.content.FileProvider;
 import java.io.FileInputStream;
@@ -48,6 +46,10 @@ import android.os.ParcelFileDescriptor;
 import android.content.ContentValues;
 import java.io.IOException;
 import java.io.File;
+
+import androidx.work.*;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 // note: use notificationcompat stuff for older androids
 
@@ -69,15 +71,7 @@ public class NotificationClient extends QtActivity
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
-        //Intent i = new Intent(m_instance, Push_Notification_Service.class);
-        //startService(i);
-
-        //Calendar cur_cal = Calendar.getInstance();
-        //cur_cal.setTimeInMillis(System.currentTimeMillis());
-        //Intent i2 = new Intent(m_instance, Push_Notification_Service.class);
-        //PendingIntent pintent = PendingIntent.getService(m_instance, 0, i2, 0);
-        //AlarmManager alarm = (AlarmManager) m_instance.getSystemService(Context.ALARM_SERVICE);
-        //alarm.setRepeating(AlarmManager.RTC_WAKEUP, cur_cal.getTimeInMillis(), 1000 * 60, pintent);
+        
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
 	if(DwycoApp.keep_screen_on)
@@ -126,11 +120,11 @@ public class NotificationClient extends QtActivity
         if(allow_notification == 0)
             return;
         NotificationManager m_notificationManager = (NotificationManager)m_instance.getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification.Builder m_builder;
+        NotificationCompat.Builder m_builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        m_builder = new Notification.Builder(m_instance, "dwyco");
+        m_builder = new NotificationCompat.Builder(m_instance, "dwyco");
         } else {
-        m_builder = new Notification.Builder(m_instance);
+        m_builder = new NotificationCompat.Builder(m_instance);
         }
         m_builder.setSmallIcon(DwycoApp.notification_icon());
         //m_builder.setColor(m_instance.getResources().getColor(R.color.green));
@@ -143,9 +137,9 @@ public class NotificationClient extends QtActivity
         sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
-        int def = Notification.DEFAULT_ALL;
+        int def = NotificationCompat.DEFAULT_ALL;
         if(quiet == 1)
-            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+            def = def & (~(NotificationCompat.DEFAULT_SOUND|NotificationCompat.DEFAULT_VIBRATE));
         m_builder.setDefaults(def);
 
         Intent notintent = new Intent(m_instance, NotificationClient.class);
@@ -153,7 +147,7 @@ public class NotificationClient extends QtActivity
         PendingIntent p = PendingIntent.getActivity(m_instance, 1, notintent, PendingIntent.FLAG_IMMUTABLE);
         m_builder.setContentIntent(p);
 
-        Notification not = m_builder.getNotification();
+        Notification not = m_builder.build();
         m_notificationManager.notify(1, not);
 
     }
@@ -259,60 +253,23 @@ public static String get_token() {
     }
 
     public static void start_background() {
-        prefs_lock.lock();
-        SharedPreferences sp;
+        // tested this all the way back to api 22, seems to work.
+        Constraints constraints = new Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build();
 
-        sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
-        int port = sp.getInt("lockport", 4500);
-        String sys_pfx = sp.getString("sys_pfx", ".");
-        String user_pfx = sp.getString("user_pfx", ".");
-        String tmp_pfx = sp.getString("tmp_pfx", ".");
-        String token = sp.getString("token", "notoken");
-        prefs_lock.release();
-        // this is just a hack to avoid a crash in android O
-        // this disables the background processing that happens when the
-        // main app goes to sleep, which means delivery of large messages
-        // will not work quite right (only happens when the app is
-        // active). this will have to be fixed eventually.
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            Intent i = new Intent(m_instance, DwycoSender.class);
-        i.putExtra("lockport", port);
-        i.putExtra("sys_pfx", sys_pfx);
-        i.putExtra("user_pfx", user_pfx);
-        i.putExtra("tmp_pfx", tmp_pfx);
-        i.putExtra("token", token);
-            m_instance.startForegroundService(i);
-
-            // JobScheduler js = (JobScheduler)m_instance.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-            // ComponentName jobService =  new ComponentName("com.dwyco.rando", DwycoProbe.class.getName());
-            // JobInfo.Builder jib = new JobInfo.Builder(1, jobService);
-            // JobInfo ji = jib.
-            //    setPeriodic(60 * 15  * 1000).
-            //    setPersisted(true).
-            //    setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).
-            //    build();
-            // int i = js.schedule(ji);
-            // if(i == JobScheduler.RESULT_FAILURE)
-            //     catchLog("JOB SCHED FAIL");
-            //     else
-            //     catchLog("JOB OK");
-            return;
-
-
-            }
-            else {
-                Intent i = new Intent(m_instance, Dwyco_Message.class);
-        i.putExtra("lockport", port);
-        i.putExtra("sys_pfx", sys_pfx);
-        i.putExtra("user_pfx", user_pfx);
-        i.putExtra("tmp_pfx", tmp_pfx);
-        i.putExtra("token", token);
-
-            m_instance.startService(i);
-            }
-
+        //OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
+            //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+        //    .setConstraints(constraints)
+        //    .build();
+            PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 1, TimeUnit.HOURS)
+            //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .setConstraints(constraints)
+            .build();
+            //WorkManager.getInstance(m_instance).enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
+            WorkManager.getInstance(m_instance)
+                .enqueueUniquePeriodicWork("upload_only", 
+                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, uploadWorkRequest);
     }
 
 public static void log_event() {

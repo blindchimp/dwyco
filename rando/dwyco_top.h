@@ -45,6 +45,10 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(bool, has_unseen_rando)
     QML_READONLY_VAR_PROPERTY(bool, has_unseen_geo)
     QML_READONLY_VAR_PROPERTY(int, android_migrate)
+    QML_READONLY_VAR_PROPERTY(int, android_backup_available)
+
+    QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready);
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -65,6 +69,8 @@ public:
         m_has_unseen_geo = false;
         m_has_unseen_rando = false;
         m_android_migrate = Android_migrate;
+        m_android_backup_available = 0;
+        m_desktop_update_ready = false;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -280,6 +286,14 @@ public:
     Q_INVOKABLE void background_reindex();
     static void do_reindex();
 
+    Q_INVOKABLE QUrl from_local_file(const QString&);
+    Q_INVOKABLE QString to_local_file(const QUrl& url);
+
+    Q_INVOKABLE int load_backup();
+    Q_INVOKABLE int get_android_backup_state();
+
+    Q_INVOKABLE QString map_to_representative(const QString& uid);
+
 public:
 
 public slots:
@@ -357,6 +371,18 @@ signals:
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
+    static void DWYCOCALLCONV dwyco_check_for_update_done(int status, const char *desc);
+    static void DWYCOCALLCONV dwyco_sys_event_callback(int cmd, int id,
+                             const char *uid, int len_uid,
+                             const char *name, int len_name,
+                             int type, const char *val, int len_val,
+                             int qid,
+                             int extra_arg);
+    static void DWYCOCALLCONV
+    emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name,
+                    int type, const char *val, int len_val,
+                    int qid, int extra_arg);
+    static int Suspended;
 
 };
 

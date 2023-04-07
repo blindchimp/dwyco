@@ -99,6 +99,21 @@ SimpleSocket::any_waiting_for_write()
     return SSQbm.exists_by_fun(&SimpleSocket::waiting_for_write, 1);
 }
 
+int
+SimpleSocket::load_write_set()
+{
+    vc_winsock::clear_write_set();
+    auto res = SSQbm.query_by_fun(&SimpleSocket::waiting_for_write, 1);
+    if(res.num_elems() == 0)
+        return 0;
+    for(int i = 0; i < res.num_elems(); ++i)
+    {
+        auto ss = res[i];
+        ss->sock.socket_add_write_set();
+    }
+    return 1;
+}
+
 SimpleSocket::SimpleSocket()
 {
     noblock = 0;
@@ -244,7 +259,8 @@ SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry)
                 GRTLOGVC(vcra);
                 if(!wouldblock())
                     bad_op();
-                polling_for_connect = 1;
+                else
+                    polling_for_connect = 1;
                 return 0;
             }
         }

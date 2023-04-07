@@ -9,7 +9,6 @@
 
 #include <time.h>
 #include "netvid.h"
-#include "netcod.h"
 #include "aconn.h"
 #include "mmchan.h"
 #include "filetube.h"
@@ -26,6 +25,7 @@
 #include "calllive.h"
 #include "cdcpal.h"
 #include "se.h"
+#include "dhgsetup.h"
 
 // NOTENOTENOTE! fixme, look at the dlli.cpp section where some of these
 // settings are tweaked and set bindings somewhere so we can do the
@@ -40,6 +40,32 @@
 // broadcasting our whereabouts on the local net is tied to whether we are
 // accepting new connections. if you turn off listening, it turns off the
 // broadcasting as well.
+//
+// ca 2023, broadcasting on the local net i thought would be a good idea
+// in the case of using a local sync situation. if you aren't in a sync
+// group, it makes less sense, since it is unlikely to improve situations
+// for messaging. for streaming a security camera, it might make sense, so
+// maybe a better api is needed to decide whether local broadcasting is useful.
+// for now, if you are not in a sync group, we turn off the broadcasting, since it
+// is unlikely to improve service.
+
+// ca 2023, decided to try something a little different.
+// i started with a continuous broadcast at a particular interval, and if
+// a receiver did not see a broadcast in awhile, it assumed the information
+// was stale and removed the IP from our discovery table. this gives better
+// liveness information, but it also means there is a lot more broadcasting
+// than we really need. in addition, "status change" messages were emitted
+// which the app could use to update its display (not sure this was a good
+// idea, essentially coupling the IP discovery with "liveness".)
+//
+// try this instead:
+// broadcast more slowly, but just accumulate all the results without
+// timing them out. if we receive updated information for a uid, then
+// replace it in the discovery table with new info. stale ip addresses
+// aren't really a huge problem, since we usually have a "try it, if it fails
+// try the next thing" protocol. possibly add an api to remove an ip from the
+// table, so stale info could be removed more promptly.
+//
 
 extern vc LocalIP;
 extern int Media_select;
@@ -216,8 +242,11 @@ start_broadcaster()
     a = "255.255.255.255:";
     a += DwString::fromInt((int)get_settings_value("net/broadcast_port"));
     Local_broadcast.socket_connect(a.c_str());
+
     Broadcast_timer.reset();
-    Broadcast_timer.set_interval((int)get_settings_value("net/broadcast_interval") * 1000);
+
+    // we want the first broadcast to happen fairly quickly.
+    Broadcast_timer.set_interval(1);
     Broadcast_timer.set_autoreload(0);
     Broadcast_timer.start();
     return 1;
@@ -238,10 +267,10 @@ stop_discover()
     for(int i = 0; i < kill.num_elems(); ++i)
     {
         Local_uid_discovered.emit(kill[i], 0);
-        Freshness.del(kill[i]);
-        Broadcast_discoveries.del(kill[i]);
         se_emit(SE_STATUS_CHANGE, kill[i]);
     }
+    Freshness.clear();
+    Broadcast_discoveries = vc(VC_TREE);
 }
 
 static
@@ -271,6 +300,23 @@ start_discover()
     return 1;
 }
 
+static
+void
+broadcast_check(DH_alternate *d)
+{
+    if(d == nullptr)
+    {
+        stop_broadcaster();
+    }
+    else
+    {
+        if(Listen_sock)
+            start_broadcaster();
+        else
+            stop_broadcaster();
+    }
+}
+
 void
 init_aconn()
 {
@@ -278,6 +324,7 @@ init_aconn()
     bind_sql_section("net/", net_section_changed);
     App_ID = get_settings_value("net/app_id");
     start_discover();
+    Current_alternate.value_changed.connect_ptrfun(broadcast_check, 1);
 
 }
 
@@ -296,16 +343,13 @@ strip_port(vc ip)
 
 static
 void
-broadcast_tick()
+broadcast_announcement()
 {
     if(Local_broadcast.is_nil())
     {
         return;
     }
 
-    if(!Broadcast_timer.is_expired())
-        return;
-    Broadcast_timer.ack_expire();
     vc announce(VC_VECTOR);
     announce[0] = My_UID;
     vc v(VC_VECTOR);
@@ -327,7 +371,32 @@ broadcast_tick()
     v[BD_DISPOSITION] = MMChannel::My_disposition;
     announce[1] = v;
     sendvc(Local_broadcast, announce);
+}
 
+static
+void
+broadcast_tick()
+{
+    if(Local_broadcast.is_nil())
+    {
+        return;
+    }
+
+    if(!Broadcast_timer.is_expired())
+        return;
+    Broadcast_timer.ack_expire();
+
+    broadcast_announcement();
+
+    // this is a compat hack
+    int iv = (int)get_settings_value("net/broadcast_interval");
+    if(iv <= 10)
+    {
+        iv = 60;
+        set_settings_value("net/broadcast_interval", iv);
+    }
+
+    Broadcast_timer.set_interval(iv * 1000);
     Broadcast_timer.start();
 }
 
@@ -368,6 +437,10 @@ discover_tick()
                         Broadcast_discoveries.add_kv(uid, data[1]);
                         Local_uid_discovered.emit(uid, 1);
                         se_emit(SE_STATUS_CHANGE, uid);
+                        // it might make sense to just do a unicast send back to
+                        // the newly discovered address, instead of a broadcast.
+                        // this might cause a little mini-storm of announcements
+                        broadcast_announcement();
                     }
                     Freshness.replace(uid, time(0));
                 }
@@ -375,6 +448,7 @@ discover_tick()
         }
     }
 
+#if 0
     auto it = DwTreeKazIter<time_t, vc>(&Freshness);
     DwVec<vc> kill;
     for(; !it.eol(); it.forward())
@@ -391,6 +465,7 @@ discover_tick()
         Broadcast_discoveries.del(kill[i]);
         se_emit(SE_STATUS_CHANGE, kill[i]);
     }
+#endif
 }
 
 
@@ -501,7 +576,8 @@ set_listen_state(int on)
                 delete Listen_sock;
                 Listen_sock = 0;
             }
-            start_broadcaster();
+            if(Current_alternate)
+                start_broadcaster();
         }
     }
     else

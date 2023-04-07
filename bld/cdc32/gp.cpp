@@ -134,7 +134,7 @@ static struct fn_rules wordlist[] =
     {".dyc", &User_prefix, 0},
     {""}, {""},
 #line 4 "gperf.spec"
-    {"servers2", &System_prefix, 1},
+    {"servers2", &User_prefix, 1},
 #line 41 "gperf.spec"
     {".enc", &User_prefix, 0},
 #line 6 "gperf.spec"
@@ -143,7 +143,7 @@ static struct fn_rules wordlist[] =
 #line 43 "gperf.spec"
     {".tmp", &Tmp_prefix, 0},
 #line 34 "gperf.spec"
-    {".dbg", &System_prefix, 0},
+    {".dbg", &User_prefix, 0},
     {""}, {""}, {""},
 #line 48 "gperf.spec"
     {".idx", &User_prefix, 0},

@@ -146,6 +146,18 @@ int save_msg(vc m, vc msg_id);
 
 #include "qmsgsql.h"
 
+// XXX there is a problem with just fetching the logical clock
+// from the msg index... there are paths through the code where
+// we create a message, use the logical clock (and increment it) but
+// then we never store the message (ie, a sent message that isn't saved.)
+// if we quit and restart, our logical clock will not reflect that we
+// sent that message. so, we really need to make sure the logical clock
+// is stored somewhere persistently to get the best presentation of the
+// message ordering.
+// note that using the max value from the index is a perfectly reasonable
+// estimate. likewise for the current system time, if it looks sane.
+//
+
 void
 update_global_logical_clock(int64_t lc)
 {
@@ -3957,6 +3969,8 @@ msg_outq_empty()
     else
         outbox_empty = 1;
     closedir(d);
+    if(!outbox_empty)
+        return 0;
 
     d = opendir(newfn("inprogress").c_str());
     if(!d)

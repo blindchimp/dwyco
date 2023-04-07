@@ -70,7 +70,7 @@
 #include "geospray.h"
 
 
-#ifdef MACOSX
+#if defined(MACOSX)  && !defined(DWYCO_IOS)
 #include <QtMacExtras>
 #endif
 
@@ -198,12 +198,23 @@ reload_ignore_list()
 #endif
 }
 
-static void
+static
+void
 takeover_from_background(int port)
 {
-    //return;
+#ifdef ANDROID
+    int c = dwyco_request_singleton_lock("mumble", 1);
+    if(c < 0)
+        exit(0);
+#endif
+
     if(!BGLockSock)
         BGLockSock = new QTcpServer;
+
+#ifdef ANDROID
+    BGLockSock->setSocketDescriptor(c);
+    return;
+#endif
 
     while(!BGLockSock->isListening() &&
             !BGLockSock->listen(QHostAddress("127.0.0.1"), port))
@@ -509,10 +520,9 @@ dwyco_type_to_qv(int type, const char *val, int len)
     return ret;
 }
 
-static
 void
 DWYCOCALLCONV
-dwyco_sys_event_callback(int cmd, int id,
+DwycoCore::dwyco_sys_event_callback(int cmd, int id,
                          const char *uid, int len_uid,
                          const char *name, int len_name,
                          int type, const char *val, int len_val,
@@ -520,6 +530,19 @@ dwyco_sys_event_callback(int cmd, int id,
                          int extra_arg)
 {
     if(!TheDwycoCore)
+        return;
+    // note: these events can originate from a background thread
+    // in android when the app is suspended. since most of these
+    // calls end up doing something to objects that are created in the
+    // main thread, or end up tweaking the UI in some way, we can't
+    // really do this. instead, what we do is just reestablish the state
+    // of the UI when the app is brought back to life.
+    // note that some of this *might* work, as qt is reasonable about
+    // queuing signals to other objects. but there are cases where
+    // new object might get created in models, but qt doesn't like that.
+    // so unless we find a clever way of using signals to perform those
+    // sorts of operations, the method mentioned above will have to do.
+    if(DwycoCore::Suspended)
         return;
     if(uid == 0)
     {
@@ -594,8 +617,8 @@ dwyco_sys_event_callback(int cmd, int id,
     }
 }
 
-static void
-emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name,
+void
+DwycoCore::emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name,
                 int type, const char *val, int len_val,
                 int qid, int extra_arg)
 {
@@ -932,6 +955,18 @@ DwycoCore::do_reindex()
     dwyco_init();
     dwyco_exit();
     //QThread::sleep(10);
+}
+
+QUrl
+DwycoCore::from_local_file(const QString& s)
+{
+    return QUrl::fromLocalFile(s);
+}
+
+QString
+DwycoCore::to_local_file(const QUrl& u)
+{
+    return u.toLocalFile();
 }
 
 void
@@ -1285,6 +1320,7 @@ dwyco_video_make_image(int ui_id, void *vimg, int cols, int rows, int depth)
 
 }
 
+#if 0
 static
 void
 DWYCOCALLCONV
@@ -1311,8 +1347,9 @@ dwyco_user_control(int chan_id, const char *suid, int len_uid, const char *data,
         dwyco_destroy_channel(chan_id);
         return;
     }
-    TheDwycoCore->emit user_control(chan_id, uid, com);
+    emit TheDwycoCore->user_control(chan_id, uid, com);
 }
+#endif
 
 // probably need to do something rational here, esp for database changes
 // this is good enough for debugging
@@ -1584,7 +1621,7 @@ DwycoCore::init()
     //dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
     dwyco_set_system_event_callback(dwyco_sys_event_callback);
     //dwyco_set_video_display_callback(dwyco_video_make_image);
-    dwyco_set_user_control_callback(dwyco_user_control);
+    //dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
@@ -1897,12 +1934,39 @@ DwycoCore::init()
         dwyco_set_setting("call_acceptance/max_audio_recv", "0");
     }
 #endif
+    update_android_backup_available(dwyco_get_android_backup_state());
+
+}
+
+int
+DwycoCore::load_backup()
+{
+    int ret = dwyco_restore_android_backup();
+    return ret;
+}
+
+int
+DwycoCore::get_android_backup_state()
+{
+    return dwyco_get_android_backup_state();
+}
+
+QString
+DwycoCore::map_to_representative(const QString& uid)
+{
+    QByteArray b = uid.toLatin1();
+    b = QByteArray::fromHex(b);
+    DWYCO_LIST urep;
+    dwyco_map_uid_to_representative(b.constData(), b.length(), &urep);
+    simple_scoped qurep(urep);
+    b = qurep.get<QByteArray>(0);
+    return b.toHex();
 }
 
 void
 DwycoCore::set_badge_number(int i)
 {
-#ifdef MACOSX
+#if defined(MACOSX)  && !defined(DWYCO_IOS)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else
@@ -1941,7 +2005,7 @@ DwycoCore::load_contacts()
 }
 #endif
 
-static int Suspended;
+int DwycoCore::Suspended;
 void
 DwycoCore::app_state_change(Qt::ApplicationState as)
 {
@@ -1950,7 +2014,9 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     if(as == Qt::ApplicationSuspended  /*|| as == Qt::ApplicationInactive*/)
     {
         Suspended = 1;
+        dwyco_set_disposition("background", 10);
         //simple_call::suspend();
+        dwyco_disconnect_chat_server();
         dwyco_suspend();
         if(BGLockSock)
         {
@@ -1969,9 +2035,12 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     {
         takeover_from_background(BGLockPort);
         dwyco_resume();
+        //simple_call::resume();
         // note: background process may have updated messages on disk
         // *and* we may not get to the server, so force a reload here just
         // in case.
+        dwyco_set_disposition("foreground", 10);
+        update_dwyco_client_name(m_client_name);
         QSet<QByteArray> dum;
         load_inbox_tags_to_unviewed(dum);
         reload_conv_list();

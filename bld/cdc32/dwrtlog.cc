@@ -15,6 +15,11 @@
 #include "sepstr.h"
 #include "fnmod.h"
 
+#if defined(ANDROID) && defined(DW_ANDROID_LOG)
+#include <android/log.h>
+#define DWRTLOG_TAG "dwyco-rtlog"
+#endif
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
@@ -28,7 +33,7 @@ init_rtlog()
 {
     RTLogOn = vc(VC_VECTOR);
 #ifdef ANDROID
-    RTLogOn.add("*");
+    //RTLogOn.add("*");
     RTLogOn.add("dlli.cpp");
     RTLogOn.add("netcod.cc");
     RTLogOn.add("netvid.cc");
@@ -137,13 +142,20 @@ DwRTLog::log(const char *fmt, const char *file, int line,
         i = a.rfind("/");
     if(i != -1)
         a.remove(0, i + 1);
+#ifndef ANDROID
     DWORD tid = GetCurrentThreadId();
     snprintf(tmp, sizeof(tmp) - 1, "%08lx %8.3f %s:%d ", tid, (float)time/1000, a.c_str(), line);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp;
+#endif
     snprintf(tmp, sizeof(tmp) - 1, fmt, a1, a2, a3, a4, a5, a6);
     tmp[sizeof(tmp) - 1] = 0;
-    (*os) << tmp << "\r\n";
+    (*os) << tmp << "\n";
+#ifdef ANDROID
+    (*os) << '\0';
+    __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
+    os->reset();
+#endif
     LeaveCriticalSection(&cs);
 }
 void
@@ -162,13 +174,20 @@ DwRTLog::log(const char *fmt, const char *file, int line,
         i = a.rfind("/");
     if(i != -1)
         a.remove(0, i + 1);
+#ifndef ANDROID
     DWORD tid = GetCurrentThreadId();
     snprintf(tmp, sizeof(tmp) - 1, "%08lx %8.3f %s:%d ", tid, (double)time/1000, a.c_str(), line);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp;
+#endif
     snprintf(tmp, sizeof(tmp) - 1, fmt, a1, a2, a3, a4, a5);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp << "\n";
+#ifdef ANDROID
+    (*os) << '\0';
+    __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
+    os->reset();
+#endif
     LeaveCriticalSection(&cs);
 }
 
@@ -191,13 +210,20 @@ DwRTLog::vlog(const char *fmt, const char *file, int line, ...)
         i = a.rfind("/");
     if(i != -1)
         a.remove(0, i + 1);
+#ifndef ANDROID
     DWORD tid = GetCurrentThreadId();
     snprintf(tmp, sizeof(tmp) - 1, "%08lx %8.3f %s:%d ", tid, (double)time/1000, a.c_str(), line);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp;
+#endif
     vsnprintf(tmp, sizeof(tmp) - 1, fmt, ap);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp << "\n";
+#ifdef ANDROID
+    (*os) << '\0';
+    __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
+    os->reset();
+#endif
     LeaveCriticalSection(&cs);
     va_end(ap);
 }
@@ -218,12 +244,19 @@ DwRTLog::log(const char *file, int line, vc v)
         i = a.rfind("/");
     if(i != -1)
         a.remove(0, i + 1);
+#ifndef ANDROID
     DWORD tid = GetCurrentThreadId();
     snprintf(tmp, sizeof(tmp) - 1, "%08lx %8.3f %s:%d ", tid, (double)time/1000, a.c_str(), line);
     tmp[sizeof(tmp) - 1] = 0;
     (*os) << tmp;
+#endif
     v.print_top(*os);
     (*os) << "\n";
+#ifdef ANDROID
+    (*os) << '\0';
+    __android_log_write(ANDROID_LOG_DEBUG, DWRTLOG_TAG, os->ref_str());
+    os->reset();
+#endif
     LeaveCriticalSection(&cs);
 }
 

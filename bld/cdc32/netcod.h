@@ -30,6 +30,7 @@ public:
     virtual ~SimpleSocket();
 
     static int any_waiting_for_write();
+    static int load_write_set();
 
     vc last_error;
 

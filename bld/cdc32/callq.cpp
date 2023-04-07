@@ -31,13 +31,15 @@ extern int Media_select;
 #define CQ_CONNECTING 2
 #define CQ_FAILED 3
 #define CQ_TERMINATED 4
-#define CALLQ_POLL_TIME (1000)
+#define CALLQ_POLL_TIME (10000)
 #define CALLQ_SLOW_POLL_TIME (60000)
 
 namespace dwyco {
 struct callq
 {
-    ValidPtr vp;	// holds the MMCall pointer we are tracking
+    // holds the MMCall pointer we are tracking
+    // which is why we don't invalidate it here
+    ValidPtr vp;
     DwTimer timeout;
     int status;
     // we interpose our stuff so we can track the call status
@@ -47,7 +49,7 @@ struct callq
     int cancel;
 
     callq(ValidPtr p) : vp(p) {
-        status = 0;
+        status = CQ_WAITING;
         user_cb = 0;
         arg1 = 0;
         cancel = 0;
@@ -61,6 +63,16 @@ init_callq()
 {
     if(!TheCallQ)
         TheCallQ = new CallQ;
+}
+
+// note: this isn't useful except for
+// leak tracing. generally, it is better to
+// just cancel existing calls.
+void
+exit_callq()
+{
+    delete TheCallQ;
+    TheCallQ = nullptr;
 }
 
 void
@@ -83,9 +95,17 @@ CallQ::CallQ() : call_q_timer("callq")
 
 CallQ::~CallQ()
 {
-    // need to destroy call the call objs we have q'ed but
-    // since this is called at exit time, i'm just ignoring it for
-    // now. maybe someday when we figure out who owns what.
+#if 0
+    // note: these objects reference mmcall
+    // objects, but only weakly.
+    // at the point this dtor is used, the system
+    // is shutting down, so worrying about graceful
+    // cancellation is probably not useful.
+    for(int i = 0; i < calls.num_elems(); ++i)
+    {
+        delete calls[i];
+    }
+#endif
 }
 
 void
@@ -106,7 +126,7 @@ CallQ::set_max_established(int n)
 void
 CallQ::cq_call_status(MMCall *mmc, int status, void *arg1, ValidPtr vp)
 {
-    if(!vp.is_valid())
+    if(!TheCallQ || !vp.is_valid())
         return;
     int i;
     DwVecP<struct callq> &cq = TheCallQ->calls;
@@ -158,6 +178,8 @@ CallQ::add_call(MMCall *mmc)
     cq->user_cb = mmc->scb;
     cq->arg1 = mmc->scb_arg1;
     cq->arg2 = mmc->scb_arg2;
+    cq->timeout.set_interval(5 * 60 * 1000);
+    cq->timeout.start();
     mmc->scb = cq_call_status;
     mmc->scb_arg2 = mmc->vp;
     TheCallQ->reset_poll_time(CALLQ_POLL_TIME);
@@ -250,8 +272,20 @@ CallQ::tick()
                     delete calls[i];
                     calls[i] = 0;
                 }
+                else if(calls[i]->status == CQ_WAITING)
+                {
+                    if(calls[i]->timeout.is_expired())
+                    {
+                        delete calls[i];
+                        calls[i] = 0;
+                    }
+                    else
+                        ++waiting;
+                }
                 else
-                    ++waiting;
+                {
+                    oopanic("callq error");
+                }
             }
         }
     }
@@ -288,6 +322,9 @@ CallQ::tick()
         {
             if(((MMCall *)(void *)calls[i]->vp)->start_call(Media_select))
             {
+                // stop the timeout, once it is connecting, other timers
+                // cause the state to progress
+                calls[i]->timeout.stop();
                 calls[i]->status = CQ_CONNECTING;
                 ++connecting;
             }

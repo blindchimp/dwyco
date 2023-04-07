@@ -38,7 +38,8 @@ ApplicationWindow {
         str += icon
         return str
     }
-
+    // attempt to convert an absolute length into the
+    // number of pixels on the screen
     function cm(cm){
         if(Screen.pixelDensity)
             return cm*Screen.pixelDensity*10
@@ -57,6 +58,10 @@ ApplicationWindow {
         console.warn("Could not calculate 'inch' based on Screen.pixelDensity.")
         return 0
     }
+    // takes a percent, and returns the number of pixels
+    // corresponding that percentage of the given dimension
+    // used when you just want to estimate that something should
+    // take a certain percentage of the screen
     function vw(i){
         if(Screen.width)
             return i*(Screen.width/100)
@@ -69,6 +74,9 @@ ApplicationWindow {
         console.warn("Could not calculate 'vh' based on Screen.height.")
         return 0
     }
+
+    font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+    font.weight: Font.Bold
 
     function sec_to_hours(s) {
         return Math.trunc(s / 3600)
@@ -129,6 +137,9 @@ ApplicationWindow {
     property bool expire_immediate: false
     property bool show_hidden: true
     property bool show_archived_users: false
+    property bool is_mobile
+
+    is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
     function datesec() {
         return Math.round(Date.now() / 1000)
@@ -184,6 +195,7 @@ ApplicationWindow {
 
     Component.onCompleted: {
         AndroidPerms.request_sync("android.permission.CAMERA")
+        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
 
@@ -307,6 +319,17 @@ ApplicationWindow {
         onVisibleChanged: {
             if(visible) {
                 source = "qrc:/About.qml"
+            }
+        }
+    }
+
+    Loader {
+        id: restore_auto_backup
+        visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/RestoreAutoBackup.qml"
             }
         }
     }

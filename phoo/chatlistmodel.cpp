@@ -9,7 +9,7 @@
 
 // this is the model that encapsulates the list of current users in the
 // chat server (ie, playing trivia or public chatting.)
-
+#include <QGuiApplication>
 #include "chatlistmodel.h"
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
@@ -82,7 +82,8 @@ ChatListModel::add_uid_to_model(const QByteArray& uid)
     ChatUser *c = getByUid(huid);
     if(!c)
     {
-        c = new ChatUser(this);
+        c = new ChatUser(0);
+        c->moveToThread(QGuiApplication::instance()->thread());
         c->update_uid(huid);
         append(c);
     }
