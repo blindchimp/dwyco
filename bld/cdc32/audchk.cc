@@ -19,6 +19,7 @@ int Audio_full_duplex;		// 1 if hardware should be used in full duplex mode
 int Has_audio_output;
 int Has_audio_input;
 
+static
 int
 check_duplex()
 {

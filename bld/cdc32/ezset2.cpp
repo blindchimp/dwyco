@@ -37,7 +37,7 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_BSTRING, net/app_id, "dwyco", 0),
     DWUIDECLVAL(VC_INT, net/broadcast_port, "", 48901),
     // in seconds
-    DWUIDECLVAL(VC_INT, net/broadcast_interval, "", 10),
+    DWUIDECLVAL(VC_INT, net/broadcast_interval, "", 60),
 
     DWUIDECLVAL(VC_INT, call_acceptance/max_audio, "", 4),
     DWUIDECLVAL(VC_INT, call_acceptance/max_chat, "", 4),

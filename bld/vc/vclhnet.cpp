@@ -11,6 +11,7 @@
 
 #include "vclhnet.h"
 #include "dwvec.h"
+#include "dwstr.h"
 #include "vcmap.h"
 #include "vcsock.h"
 #include "vcwsock.h"
@@ -31,14 +32,14 @@ lh_socket_error(vc *vs)
 	if(v->emode == EXCEPTIONS)
 	{
 		// construct exception string and raise LH exception
-		char exc[80]; //XXX fix this
-		exc[0] = v->exc_level;
-		exc[1] = ':';
-		exc[2] = 0;
-		strcat(exc, "LHNET.");
-		strcat(exc, (const char *)v->errvc);
+        DwString exc;
+
+        exc += v->exc_level;
+        exc += ":LHNET.";
+        exc += (const char *)v->errvc;
+
 		VCArglist a;
-		vc excstr(exc);
+        vc excstr(exc.c_str());
         a.append(excstr);
 		vc v2;
 		v2.attach(v);

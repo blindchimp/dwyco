@@ -79,6 +79,18 @@ Page {
             fav = core.has_tag_message(mid, "_fav")
             hid = core.has_tag_message(mid, "_hid")
         }
+        function onQt_app_state_change(app_state) {
+            if(app_state === 0) {
+
+
+            }
+            if(app_state !== 0) {
+                if(view_id !== -1) {
+                core.stop_zap_view(view_id)
+                core.delete_zap_view(view_id)
+                }
+            }
+        }
     }
 
     Component {

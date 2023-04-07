@@ -23,6 +23,7 @@ $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
 $${D}/zlib/libzlib.a \
 $${D}/jenkins/libjenkins.a \
+$${D}/uv/libuv.a \
 -lpthread \
 -ldl
 

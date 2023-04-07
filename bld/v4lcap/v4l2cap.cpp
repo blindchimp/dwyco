@@ -91,7 +91,7 @@ probe_v4l(const char *dev, int cols, int rows, DwString& name_out, int& cap_form
         return 0;
     }
     struct v4l2_capability cap;
-    memset (&cap, 0, sizeof (struct v4l2_capability));
+    memset (&cap, 0, sizeof (cap));
     ret = ioctl (fd, VIDIOC_QUERYCAP, &cap);
     if (ret < 0) {
 
@@ -115,12 +115,18 @@ probe_v4l(const char *dev, int cols, int rows, DwString& name_out, int& cap_form
         V4L2_PIX_FMT_UYVY,
         V4L2_PIX_FMT_YUYV
     };
+    static const char *nice_names[] = {
+        "YUV420",
+        "RGB24",
+        "UYVY",
+        "YUYV"
+    };
 #define FMTS (sizeof(formats)/sizeof(formats[0]))
     int i;
     struct v4l2_format fmt;
     for(i = 0; i < FMTS; ++i)
     {
-        memset (&fmt, 0, sizeof (struct v4l2_format));
+        memset (&fmt, 0, sizeof (fmt));
         fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         fmt.fmt.pix.width = cols;
         fmt.fmt.pix.height = rows;
@@ -128,12 +134,13 @@ probe_v4l(const char *dev, int cols, int rows, DwString& name_out, int& cap_form
         fmt.fmt.pix.field = V4L2_FIELD_ANY;
         ret = ioctl (fd, VIDIOC_S_FMT, &fmt);
         if (ret < 0) {
+            fprintf (stderr, " format %s unavailable\n", nice_names[i]);
             continue;
         }
         if ((fmt.fmt.pix.width != cols) ||
                 (fmt.fmt.pix.height != rows)) {
-            fprintf (stderr, " format asked unavailable get width %d height %d \n",
-                     fmt.fmt.pix.width, fmt.fmt.pix.height);
+            fprintf (stderr, " format %s unavailable ask (%d %d) get (%d %d)\n",
+                     nice_names[i], cols, rows, fmt.fmt.pix.width, fmt.fmt.pix.height);
             continue;
         }
         break;
@@ -437,7 +444,7 @@ vginit(void *aqext, int frame_rate)
 
     int i;
     struct v4l2_format fmt;
-    memset (&fmt, 0, sizeof (struct v4l2_format));
+    memset (&fmt, 0, sizeof (fmt));
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     fmt.fmt.pix.width = Devs[Cur_dev].cols;
     fmt.fmt.pix.height = Devs[Cur_dev].rows;
@@ -450,7 +457,7 @@ vginit(void *aqext, int frame_rate)
 
     struct v4l2_requestbuffers rb;
 
-    memset (&rb, 0, sizeof (struct v4l2_requestbuffers));
+    memset (&rb, 0, sizeof (rb));
     rb.count = NB_BUFFER;
     rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     rb.memory = V4L2_MEMORY_MMAP;
@@ -465,7 +472,7 @@ vginit(void *aqext, int frame_rate)
     {
         struct v4l2_buffer buf;
 
-        memset (&buf, 0, sizeof (struct v4l2_buffer));
+        memset (&buf, 0, sizeof (buf));
         buf.index = i;
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
@@ -490,7 +497,7 @@ vginit(void *aqext, int frame_rate)
     /* Queue the buffers. */
     for (i = 0; i < NB_BUFFER; ++i) {
         struct v4l2_buffer buf;
-        memset (&buf, 0, sizeof (struct v4l2_buffer));
+        memset (&buf, 0, sizeof (buf));
         buf.index = i;
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;

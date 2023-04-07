@@ -3465,8 +3465,11 @@ vc::init_rest()
     makefun("UDH-just-publics", VC(udh_just_publics, "UDH-just-publics", VC_FUNC_BUILTIN_LEAF));
     makefun("UDH-agree", VC(udh_agree_auth, "UDH-agree", VC_FUNC_BUILTIN_LEAF));
 
+    // WARNING: these functions use the old single-key API for these functions
+    // this is used for setting up simple GCM encryption with clients of cdc-x
+    // servers. also used for some group-entry protocol stuff.
     makefun("UDH-sf-material", VC(vclh_sf_material, "UDH-sf-material", VC_FUNC_BUILTIN_LEAF));
-    makefun("UDH-sf-get-key", VC(dh_store_and_forward_get_key2, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
+    makefun("UDH-sf-get-key", VC(vclh_dh_store_and_forward_get_key, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
 #endif
 	makefun("GZ-compress-open", VC(vclh_compression_open, "GZ-compress-open", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-compress-close", VC(vclh_compression_close, "GZ-compress-close", VC_FUNC_BUILTIN_LEAF));
@@ -3521,5 +3524,8 @@ vc::exit()
 void
 vc::non_lh_exit()
 {
+#ifndef DWYCO_NO_UVSOCK
+    vc_uvsocket::exit_uvs_loop();
+#endif
 	vc_winsock::shutoff();
 }

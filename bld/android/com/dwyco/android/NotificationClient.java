@@ -14,6 +14,7 @@ import android.app.PendingIntent;
 import android.os.Bundle;
 import android.app.AlarmManager;
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 import android.content.SharedPreferences;
 
 import android.content.ContentResolver;
@@ -47,6 +48,8 @@ import java.io.IOException;
 import java.io.File;
 
 import androidx.work.*;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 // note: use notificationcompat stuff for older androids
 
@@ -117,11 +120,11 @@ public class NotificationClient extends QtActivity
         if(allow_notification == 0)
             return;
         NotificationManager m_notificationManager = (NotificationManager)m_instance.getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification.Builder m_builder;
+        NotificationCompat.Builder m_builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        m_builder = new Notification.Builder(m_instance, "dwyco");
+        m_builder = new NotificationCompat.Builder(m_instance, "dwyco");
         } else {
-        m_builder = new Notification.Builder(m_instance);
+        m_builder = new NotificationCompat.Builder(m_instance);
         }
         m_builder.setSmallIcon(DwycoApp.notification_icon());
         //m_builder.setColor(m_instance.getResources().getColor(R.color.green));
@@ -134,9 +137,9 @@ public class NotificationClient extends QtActivity
         sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
-        int def = Notification.DEFAULT_ALL;
+        int def = NotificationCompat.DEFAULT_ALL;
         if(quiet == 1)
-            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+            def = def & (~(NotificationCompat.DEFAULT_SOUND|NotificationCompat.DEFAULT_VIBRATE));
         m_builder.setDefaults(def);
 
         Intent notintent = new Intent(m_instance, NotificationClient.class);
@@ -144,7 +147,7 @@ public class NotificationClient extends QtActivity
         PendingIntent p = PendingIntent.getActivity(m_instance, 1, notintent, PendingIntent.FLAG_IMMUTABLE);
         m_builder.setContentIntent(p);
 
-        Notification not = m_builder.getNotification();
+        Notification not = m_builder.build();
         m_notificationManager.notify(1, not);
 
     }
@@ -251,12 +254,22 @@ public static String get_token() {
 
     public static void start_background() {
         // tested this all the way back to api 22, seems to work.
-        
-        OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
-            //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-            .build();
+        Constraints constraints = new Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build();
 
-            WorkManager.getInstance().enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
+        //OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
+            //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+        //    .setConstraints(constraints)
+        //    .build();
+            PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 1, TimeUnit.HOURS)
+            //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .setConstraints(constraints)
+            .build();
+            //WorkManager.getInstance(m_instance).enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
+            WorkManager.getInstance(m_instance)
+                .enqueueUniquePeriodicWork("upload_only", 
+                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, uploadWorkRequest);
     }
 
 public static void log_event() {

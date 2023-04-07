@@ -1725,7 +1725,7 @@ msglist_raw::preview_filename(int row) const
     buid = QByteArray::fromHex(buid);
     QByteArray full_size;
 
-    if(!preview_saved_msg(buid, mid, pfn, is_file, full_size, local_time))
+    if(!preview_saved_msg(mid, pfn, is_file, full_size, local_time))
         return "";
     return pfn;
 }

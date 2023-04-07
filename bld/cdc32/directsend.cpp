@@ -261,7 +261,10 @@ DirectSend::load_small_attachment()
     struct stat sb;
     if(stat(actual_filename.c_str(), &sb) == -1)
         return 0;
-    if(sb.st_size > 20 * 1024)
+    // ca 2023, boost this to 50k since cameras
+    // are sending bigger items now, and network
+    // speeds are quite a bit better now.
+    if(sb.st_size > 50 * 1024)
         return 0;
 
     FILE *f = fopen(actual_filename.c_str(), "rb");
