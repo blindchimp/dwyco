@@ -34,6 +34,7 @@
 #include "notificationclient.h"
 
 #include <QtAndroidExtras/QAndroidJniObject>
+#include <QtAndroidExtras>
 
 NotificationClient::NotificationClient(QObject *parent)
     : QObject(parent)
@@ -65,6 +66,17 @@ void NotificationClient::updateAndroidNotification()
             "(Ljava/lang/String;)V",
             javaNotification.object<jstring>());
 }
+
+void NotificationClient::postAndroidNotification(const QString& notification)
+{
+
+    QAndroidJniObject javaNotification = QAndroidJniObject::fromString(notification);
+    QAndroidJniObject::callStaticMethod<void>("com/dwyco/android/NotificationClient",
+            "notify",
+            "(Ljava/lang/String;)V",
+            javaNotification.object<jstring>());
+}
+
 void
 NotificationClient::set_allow_notification(int a)
 {
@@ -194,14 +206,22 @@ NotificationClient::load_contacts()
 
 }
 
-void
+int
 NotificationClient::open_image()
 {
+    if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+    {
+        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+        if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        {
+            return 0;
+        }
+    }
     QAndroidJniObject::callStaticMethod<void>(
         "com/dwyco/android/NotificationClient",
         "openAnImage"
     );
-
+    return 1;
 }
 
 void
