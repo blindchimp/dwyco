@@ -55,7 +55,7 @@ protected:
     static void DWYCOCALLCONV dwyco_record_done(int /*id*/, void *arg);
 
 public:
-    composer(int style = 0, int special_type = 0, QWidget *parent = 0, Qt::WindowFlags f = 0);
+    composer(int style = 0, int special_type = 0, QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     virtual ~composer();
     static QList<DVP> Composers;
 
@@ -150,7 +150,7 @@ class composer_profile : public composer
     static void DWYCOCALLCONV dwyco_record_profile_done(int /*id*/, void *arg);
 
 public:
-    composer_profile(QWidget *parent = 0, Qt::WindowFlags f = 0) ;
+    composer_profile(QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags()) ;
     static composer_profile *get_composer_profile(const DwOString& uid);
 
     int viewid;
@@ -180,7 +180,7 @@ class viewer_profile : public composer
                              int reviewed, int regular,
                              void *arg);
 public:
-    viewer_profile(QWidget *parent = 0, Qt::WindowFlags f = 0) ;
+    viewer_profile(QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags()) ;
     virtual ~viewer_profile() {}
     int viewid;
     static viewer_profile *get_viewer_profile(const DwOString& uid);
@@ -202,7 +202,7 @@ class composer_file : public composer
     Q_OBJECT
 
 public:
-    composer_file(QString fn, QWidget *parent = 0, Qt::WindowFlags f = 0);
+    composer_file(QString fn, QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     virtual ~composer_file() {}
     QString filename;
 protected:
@@ -221,7 +221,7 @@ class composer_forward : public composer
     Q_OBJECT
 public:
 
-    composer_forward(QWidget *par = 0, Qt::WindowFlags f = 0);
+    composer_forward(QWidget *par = 0, Qt::WindowFlags f = Qt::WindowFlags());
     virtual ~composer_forward() {}
 
     int init(QByteArray uid, DwOString mid);

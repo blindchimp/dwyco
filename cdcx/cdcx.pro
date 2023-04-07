@@ -28,7 +28,7 @@ INCLUDEPATH += .
 #QMAKE_EXTRA_TARGETS += dateincr
 #PRE_TARGETDEPS += dateincr
 
-QT +=  core network webenginewidgets
+QT +=  core network statemachine webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
 macx-*|win32|linux-*:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
 
@@ -51,6 +51,7 @@ DEFINES += WHATBOX=BrowseBox
 #DEFINES += NO_BUILDTIME
 DEFINES += CDCX_WEBKIT
 greaterThan(QT_MAJOR_VERSION, 4): DEFINES += DWYCO_QT5
+greaterThan(QT_MAJOR_VERSION, 5): DEFINES += DWYCO_QT6
 greaterThan(QT_MAJOR_VERSION, 4): DEFINES += toAscii=toLatin1
 #DEFINES += NO_DWYCO_AUDIO
 #DEFINES += LEAK_CLEANUP
@@ -262,7 +263,7 @@ QMAKE_CXXFLAGS += /wd4100 /wd4068
 
 macx-g++|macx-clang|macx-xcode {
 OBJECTIVE_SOURCES  += mactards.mm
-INCLUDEPATH += ../bld/qtdrv
+#INCLUDEPATH += ../bld/qtdrv
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
@@ -282,9 +283,11 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
 -Wl,-framework,CoreFoundation \
 -Wl,-framework,Cocoa
+
+#$${D}/qtdrv/libqtdrv.a \
+
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -303,8 +306,10 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
-$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
+
+
+#$${D}/qtdrv/libqtdrv.a
 
 QMAKE_CXX=ccache g++
 #QMAKE_CXXFLAGS +=  -fsanitize=address

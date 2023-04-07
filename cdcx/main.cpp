@@ -10,7 +10,7 @@
 #include <QDialog>
 #include <QSettings>
 #include <QtNetwork/QHostInfo>
-#include <QDesktopWidget>
+//#include <QDesktopWidget>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QProcess>
@@ -49,9 +49,12 @@
 #endif
 
 #if defined(MAC_CLIENT) || defined(LINUX)
+#ifdef DWYCO_QT6
+#else
 #include "vgqt.h"
 #include "audi_qt.h"
 #include "audo_qt.h"
+#endif
 #endif
 
 #include "ssmap.h"

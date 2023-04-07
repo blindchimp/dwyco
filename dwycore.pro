@@ -20,6 +20,6 @@ bld/miniupnp/miniupnp-master/miniupnpc \
 bld/uv
 
 linux-*:SUBDIRS += bld/qtdrv bld/v4lcap
-macx-*:SUBDIRS += bld/qtdrv
+macx-*:SUBDIRS += #bld/qtdrv
 
 SUBDIRS += cdcx
