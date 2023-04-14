@@ -1856,30 +1856,35 @@ send_new()
 
 }
 
-static void
+namespace dwyco {
+DwTimer Db_timer("db_timer");
+}
+
+static
+void
 db_reconnect()
 {
     if(Inhibit_auto_connect)
         return;
-    static DwTimer db_timer("db_timer");
+
     static int been_here;
     if(Database_id == -1)
     {
         if(!been_here)
         {
-            db_timer.set_oneshot(1);
-            db_timer.load(1);
-            db_timer.start();
+            Db_timer.set_oneshot(1);
+            Db_timer.load(1);
+            Db_timer.start();
             been_here = 1;
         }
-        if(!db_timer.is_running())
+        if(!Db_timer.is_running())
         {
-            db_timer.load((10 + (dwyco_rand() % 45)) * 1000);
-            db_timer.start();
+            Db_timer.load((10 + (dwyco_rand() % 45)) * 1000);
+            Db_timer.start();
         }
-        if(db_timer.is_expired())
+        if(Db_timer.is_expired())
         {
-            db_timer.ack_expire();
+            Db_timer.ack_expire();
             start_database_thread();
         }
 
