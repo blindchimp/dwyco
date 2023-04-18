@@ -195,6 +195,7 @@ ApplicationWindow {
 
     Component.onCompleted: {
         AndroidPerms.request_sync("android.permission.CAMERA")
+        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
 
