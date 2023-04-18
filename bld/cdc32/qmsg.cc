@@ -2630,7 +2630,7 @@ int
 remove_user(vc uid, const char *pfx)
 {
     vc dir = uid_to_dir(uid);
-    // remove indexs so the msgs don't magically reappear
+    // remove indexes so the msgs don't magically reappear
     try
     {
         sql_start_transaction();
