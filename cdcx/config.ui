@@ -876,7 +876,7 @@ to forward outside ports to this machine.</string>
            <item>
             <widget class="QLabel" name="label_22">
              <property name="text">
-              <string>Account</string>
+              <string>Device</string>
              </property>
             </widget>
            </item>

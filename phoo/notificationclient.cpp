@@ -36,6 +36,9 @@
 #include <QtAndroidExtras/QAndroidJniObject>
 #include <QtAndroidExtras>
 
+void android_log_stuff(const char *str, const char *s1, int s2);
+
+
 NotificationClient::NotificationClient(QObject *parent)
     : QObject(parent)
 {
@@ -209,14 +212,27 @@ NotificationClient::load_contacts()
 int
 NotificationClient::open_image()
 {
-    if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+    QtAndroid::PermissionResultMap m;
+
+    if(QtAndroid::checkPermission("android.permission.READ_MEDIA_IMAGES") == QtAndroid::PermissionResult::Granted)
+        goto ok;
+
+
+    m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_MEDIA_IMAGES"));
+    if(m.value("android.permission.READ_MEDIA_IMAGES") == QtAndroid::PermissionResult::Granted)
+        goto ok;
+
+
+    if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Granted)
+        goto ok;
+
+    m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+    if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
     {
-        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
-        if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
-        {
-            return 0;
-        }
+        return 0;
     }
+
+ok:;
     QAndroidJniObject::callStaticMethod<void>(
         "com/dwyco/android/NotificationClient",
         "openAnImage"

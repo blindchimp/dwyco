@@ -113,6 +113,11 @@ dwyco_stop_msg_cond()
 }
 
 #if defined(ANDROID)
+
+namespace dwyco {
+extern DwTimer Db_timer;
+}
+
 // this is needed on android because when the battery saver
 // comes on, it interferes with the networking so that we
 // can't tell our worker thread to exit. this uses unix abstract
@@ -903,9 +908,19 @@ out:
             // see the channel shutdown. note: the suspend
             // call will process whatever events are generated here
             MMChannel::exit_mmchan();
+            dwyco_suspend();
+            dwyco::Db_timer.stop();
+            dwyco::Db_timer.load(1);
+            dwyco::Db_timer.start();
         }
-#endif
+        else
+        {
+            dwyco_suspend();
+        }
+#else
         dwyco_suspend();
+#endif
+
         ALOGI("exit thread", 0);
     }
     else

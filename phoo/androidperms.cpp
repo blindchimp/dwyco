@@ -56,11 +56,11 @@ AndroidPerms::load()
         }
         if(QtAndroid::checkPermission("android.permission.POST_NOTIFICATIONS") == QtAndroid::PermissionResult::Granted)
         {
-            update_camera_permission(true);
+            update_post_notifications_permission(true);
         }
         else
         {
-            update_camera_permission(false);
+            update_post_notifications_permission(false);
         }
     }
 #endif
