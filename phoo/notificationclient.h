@@ -47,6 +47,7 @@ public:
     QString notification() const;
     void set_allow_notification(int);
     QString get_token();
+    void postAndroidNotification(const QString& notification);
 
 
 signals:

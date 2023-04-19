@@ -604,13 +604,17 @@ vgqt_init(void *aqext, int frame_rate)
     Cam_sig = QObject::connect(Cam, &QCamera::stateChanged, config_viewfinder);
 #endif
 #else
-    qDebug() << QCameraInfo::defaultCamera() << "\n";
+    qDebug() << "DEFAULT " << QCameraInfo::defaultCamera() << "\n";
     if(!Cam)
     {
         if(Cur_idx < 0 || Cur_idx >= Cams.count())
             return 0;
         Cam = new QCamera(Cams[Cur_idx]);
         QObject::connect(Cam, &QCamera::stateChanged, config_viewfinder);
+    }
+    if(Cam->status() == QCamera::UnavailableStatus)
+    {
+        return 0;
     }
     Cam->setCaptureMode(QCamera::CaptureViewfinder);
     Cam->load();
@@ -632,6 +636,11 @@ vgqt_init(void *aqext, int frame_rate)
     // stick with older mtcapxe stuff.
 
     QList<QVideoFrame::PixelFormat> pf = Cam->supportedViewfinderPixelFormats();
+    if(pf.count() == 0)
+    {
+        qDebug() << "NO FORMATS\n";
+        return 0;
+    }
     qDebug() << "FORMATS\n";
     for(int i = 0; i < pf.count(); ++i)
     {
@@ -642,6 +651,11 @@ vgqt_init(void *aqext, int frame_rate)
     qDebug() << sz << "\n";
 #endif
     QCameraInfo caminfo(*Cam);
+    if(caminfo.isNull())
+    {
+        qDebug() << "NO CAMINFO\n";
+        return 0;
+    }
     Orientation = caminfo.orientation();
     QObject::connect(&Probe_handler->probe, SIGNAL(videoFrameProbed(QVideoFrame)),
                      Probe_handler, SLOT(handleFrame(QVideoFrame)), Qt::UniqueConnection);

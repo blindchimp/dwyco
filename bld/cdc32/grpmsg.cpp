@@ -155,7 +155,8 @@ B->A: B decrypts m2 using k, if rB != m1's rB fail. if G or B don't match, fail.
     send m3 to A directly p2p.
 A receives and decrypts m3, checks all items match. if so, it sends G's private key to B in
 a message that is encrypted using B's p2p public key.
-
+(ref: this is a SKID-like protocol, used mainly to make sure the messages are fresh and there is
+not a man-in-the-middle tampering with things.)
 */
 
 static
@@ -179,6 +180,8 @@ vc
 xfer_dec(vc vs, vc password)
 {
     vc v;
+    // XXX there are probably some reasonable
+    // constraints we can put on the deserialization
     if(!deserialize(vs, v))
         return vcnil;
     if(password.type() != VC_STRING)

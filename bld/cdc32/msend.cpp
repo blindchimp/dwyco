@@ -8,6 +8,7 @@
 */
 
 #include "directsend.h"
+#include "qmsgsql.h"
 #include "qsend.h"
 #include "se.h"
 #include "msend.h"
@@ -72,6 +73,12 @@ ds_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, vc ruid)
             status == SE_MSG_SEND_DELIVERY_SUCCESS ||
             status == SE_MSG_SEND_CANCELED)
     {
+        if(status == SE_MSG_SEND_SUCCESS)
+        {
+            const vc uids = map_uid_to_uids(ruid);
+            for(int i = 0; i < uids.num_elems(); ++i)
+                No_direct_msgs.del(uids[i]);
+        }
         se_emit_msg(status, qfn, ruid);
         return;
     }

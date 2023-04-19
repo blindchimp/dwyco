@@ -74,9 +74,22 @@ vc_uvsocket::sockaddr_to_vc(struct sockaddr *sapi, int len)
 int
 vc_uvsocket::init_uvs_loop()
 {
+    if(uvs_loop != nullptr)
+        return 1;
     uvs_loop = uv_loop_new();
 	Ready_q_p = new DwTreeKaz<vc_uvsocket *, long>(0);
     return 1;
+}
+
+void
+vc_uvsocket::exit_uvs_loop()
+{
+    if(uvs_loop == nullptr)
+        return;
+    uv_loop_delete(uvs_loop);
+    uvs_loop = nullptr;
+    delete Ready_q_p;
+    Ready_q_p = 0;
 }
 
 int

@@ -4,7 +4,12 @@
 
 if [[ "x$NDK" == "x" ]]; then
 #NDK=~/android/android-ndk
-NDK=~/Android/Sdk/ndk/21.3.6528147
+	if [ `uname` = "Darwin" ]
+	then
+	NDK=~/Library/Android/sdk/ndk/21.3.6528147/
+	else
+	NDK=~/Android/Sdk/ndk/21.3.6528147
+	fi
 fi
 # i use only a small number of formats - set this to 0 if you want everything.
 # changed 0 to the default, so it'll compile shitloads of codecs normally

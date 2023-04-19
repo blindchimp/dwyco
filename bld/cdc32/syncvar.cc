@@ -9,35 +9,27 @@
 // $Header: g:/dwight/repo/cdc32/rcs/syncvar.cc 1.10 1999/01/10 16:09:48 dwight Checkpoint $
 #include "syncvar.h"
 
-
-SyncVar::SyncVar(const char *n, SyncMap *m) :
-    name(n), map(m)
+SyncVar::SyncVar(const char *n, SyncManage *m) :
+    name(n), manager(m)
 {
 }
 
 SyncVar::~SyncVar()
 {
-    map->del(name);
+    manager->map->del(name);
+    manager->m_update_available = true;
 }
 
 int
 SyncVar::valid()
 {
-    return map->contains(name);
+    return manager->map->contains(name);
 }
 
 SyncVar::operator int()
 {
     vc v;
-    if(map->find(name, v))
-        return (int)v;
-    return 0;
-}
-
-SyncVar::operator bool()
-{
-    vc v;
-    if(map->find(name, v))
+    if(manager->map->find(name, v))
         return (int)v;
     return 0;
 }
@@ -45,61 +37,50 @@ SyncVar::operator bool()
 SyncVar::operator vc()
 {
     vc v;
-    if(map->find(name, v))
+    if(manager->map->find(name, v))
         return v;
     return vcnil;
 }
-
-//SyncVar::operator const char *()
-//{
-//// dicey, probably should copy it out or remove this function somehow
-//    vc v;
-//    if(map->find(name, v))
-//        return (const char *)v;
-//    return 0;
-//}
 
 SyncVar&
 SyncVar::operator=(int i)
 {
     vc var = vc(i);
-    map->replace(name, var);
-    return *this;
-}
-
-SyncVar&
-SyncVar::operator=(bool i)
-{
-    vc var = vc((int)i);
-    map->replace(name, var);
+    vc oval;
+    if(!manager->map->find(name, oval) || oval != var)
+        manager->m_update_available = true;
+    manager->map->replace(name, var);
     return *this;
 }
 
 SyncVar&
 SyncVar::operator=(vc v)
 {
-    map->replace(name, v);
+    vc oval;
+    if(!manager->map->find(name, oval) || oval != v)
+        manager->m_update_available = true;
+    manager->map->replace(name, v);
     return *this;
 }
 
-//SyncVar&
-//SyncVar::operator=(const char *v)
-//{
-//    map->replace(name, vc(v));
-//    return *this;
-//}
-
-
-SyncManage::SyncManage(SyncMap *m) :
+SyncManage::SyncManage() :
     sendq(vc(VC_VECTOR))
 {
-    map = m;
+    map = new SyncMap(vcnil);
     oldmap = new SyncMap(vcnil);
+    m_update_available = false;
 }
 
 SyncManage::~SyncManage()
 {
     delete oldmap;
+    delete map;
+}
+
+bool
+SyncManage::update_available()
+{
+    return m_update_available;
 }
 
 void
@@ -156,6 +137,7 @@ SyncManage::diff()
 
     vc tmp = sendq;
     sendq = vc(VC_VECTOR);
+    m_update_available = false;
     return tmp;
 }
 
@@ -221,3 +203,4 @@ main(int argc, char **argv)
 }
 
 #endif
+

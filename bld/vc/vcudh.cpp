@@ -409,6 +409,12 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
     return ret;
 }
 
+vc
+vclh_dh_store_and_forward_get_key(vc sfpack, vc our_material)
+{
+    return dh_store_and_forward_get_key(sfpack, our_material);
+}
+
 // sfpack is the package of info created by dh_store_and_forward_material2, presumably
 // created by the sender. here is where we do the agreement and recover the session key.
 // the first key that checks out with the key check string is returned.
@@ -420,9 +426,15 @@ dh_store_and_forward_get_key(vc sfpack, vc our_material)
 // the second item in sfpack is the group encrypted key, and
 // since we might have multiple group keys, each of the items
 // in our_material is checked to see if it can decrypt the key.
+// note that "our_material" is a vector(vector(priv pub) vector(priv pub)....)
+// structure.
 // this is a bit of a kluge i will have to think about, since
 // it is mainly used because remote senders may not have the latest
 // group public key if a recipient is changing groups.
+// note that we try sfpack0 combined with our_material[0]
+// THEN sfpack1 with our_material[1..n].
+// ca 2023, our_material will never have more than 2 keys
+// (ie, no multiple group keys.)
 
 static
 vc

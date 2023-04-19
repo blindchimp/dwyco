@@ -19,7 +19,7 @@
 // to hang all this off of them, and it is better if they are just
 // left as "one shot" objects rather than trying to extend them.
 //
-// in addition, we eventually want to have some kinda outgoing call
+// in addition, we eventually want to have some kind of outgoing call
 // q in order to limit the number of simultaneous calls, and these
 // objects could be used in that area as well.
 //
@@ -34,9 +34,9 @@
 #include "mmcall.h"
 #include "calllive.h"
 #include "dwrtlog.h"
-#include "qauth.h"
 #include "pval.h"
 #include "qmsg.h"
+#include "qauth.h"
 #ifdef _Windows
 typedef unsigned long in_addr_t;
 #endif

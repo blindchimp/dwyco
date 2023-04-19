@@ -518,7 +518,8 @@ MMTube::send_ctrl_data(vc v)
             return SSERR;
         v = tmp;
     }
-    if(!ctrl_sock->sendvc(v))
+    int len = 0;
+    if((len = ctrl_sock->sendvc(v)) == 0)
     {
         if(ctrl_sock->wouldblock())
             return SSTRYAGAIN;
@@ -528,6 +529,7 @@ MMTube::send_ctrl_data(vc v)
     // assume control and data are going over
     // same link
     //in_bits += 8 * (long)len;
+    total_sent += len;
     return 1;
 }
 
@@ -539,13 +541,15 @@ MMTube::recv_ctrl_data(vc& v)
     // eat keepalive messages
     do
     {
-        if(!ctrl_sock->recvvc(v))
+        int len = 0;
+        if((len = ctrl_sock->recvvc(v)) == 0)
         {
             if(ctrl_sock->wouldblock())
                 return SSTRYAGAIN;
             disconnect_ctrl();
             return SSERR;
         }
+        total_recv += len;
         if(dec_ctrl)
         {
             GRTLOG("DEC ctrl ", 0, 0);

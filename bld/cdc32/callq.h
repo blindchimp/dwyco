@@ -42,6 +42,7 @@ private:
 // multiple call q's, but not now.
 extern CallQ *TheCallQ;
 void init_callq();
+void exit_callq();
 void callq_tick();
 
 }

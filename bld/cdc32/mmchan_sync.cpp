@@ -108,6 +108,7 @@ string_to_file(vc str, DwString fn)
     if(write(fd, (const char *)str, str.len()) != str.len())
     {
         close(fd);
+        DeleteFile(fn.c_str());
         return 0;
     }
     close(fd);
@@ -473,6 +474,18 @@ MMChannel::eager_pull_processing()
     }
 }
 
+void
+MMChannel::throttle_downstream_timer(vc)
+{
+    if(downstream_timer.get_interval() != 5000)
+    {
+        downstream_timer.stop();
+        downstream_timer.set_interval(5000);
+    }
+    downstream_timer.start();
+
+}
+
 int
 MMChannel::process_outgoing_sync()
 {
@@ -484,6 +497,8 @@ MMChannel::process_outgoing_sync()
         // normally without requiring a re-init on the receiver. so we
         // transition straight into NORMAL state.
         destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, 1);
+        throttle_downstream_timer(vcnil);
         // tell the other side there is no index to unpack
         vc vcx(VC_VECTOR);
         vcx[0] = "idx";
@@ -525,6 +540,7 @@ MMChannel::process_outgoing_sync()
         if(vcx.is_nil())
             return 0;
         destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, 1);
     }
     else if(mms_sync_state == MMSS_TRYAGAIN)
     {
@@ -532,12 +548,12 @@ MMChannel::process_outgoing_sync()
     }
     else if(mms_sync_state == NORMAL_SEND)
     {
-        if(!downstream_timer.is_running())
-        {
-            downstream_timer.set_interval(5000);
-            downstream_timer.set_autoreload(1);
-            downstream_timer.start();
-        }
+//        if(!downstream_timer.is_running())
+//        {
+//            downstream_timer.set_interval(5000);
+//            downstream_timer.set_autoreload(0);
+//            downstream_timer.start();
+//        }
         if(downstream_timer.is_expired())
         {
             downstream_timer.ack_expire();
@@ -552,6 +568,10 @@ MMChannel::process_outgoing_sync()
                 // model lookup, if we are doing eager updating.
                 for(int i = 0; i < ds.num_elems(); ++i)
                     sync_sendq.append(ds[i], PULLPRI_NORMAL);
+            }
+            else
+            {
+                downstream_timer.stop();
             }
         }
         eager_pull_processing();

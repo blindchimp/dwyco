@@ -49,12 +49,19 @@ image_cleanup(void *info)
     delete pvi;
 }
 
+static
+QByteArray
+get_no_img()
+{
+    return add_pfx(User_pfx, "no_img.png");
+}
+
 profpv::profpv()
 {
     if(ThePreviewCache)
         ::abort();
     ThePreviewCache = this;
-    QByteArray pfn = add_pfx(Sys_pfx, "no_img.png");
+    QByteArray pfn = get_no_img();
     No_img_fn = pfn;
     No_img = new QImage(pfn);
 

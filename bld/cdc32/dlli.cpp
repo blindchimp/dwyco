@@ -1041,8 +1041,8 @@ dwyco_suspend()
     Dwyco_suspended = 1;
     // note: this pal stuff won't be necessary once we switch to regular
     // server-based interest list.
-    exit_pal();
-    MMChannel::exit_mmchan();
+    //exit_pal();
+    //MMChannel::exit_mmchan();
     // empty out all the system messages
     while(se_process() || dirth_poll_response())
         ;
@@ -1053,10 +1053,10 @@ dwyco_suspend()
     int current_listen = is_listening();
     Suspend_listen_mode = current_listen;
     Suspend_listen_state = (int)get_settings_value("net/listen");
-    set_listen_state(0);
-    Inhibit_database_thread = 1;
-    Inhibit_auto_connect = 1;
-    Inhibit_pal = 1;
+    //set_listen_state(0);
+    //Inhibit_database_thread = 1;
+    //Inhibit_auto_connect = 1;
+    //Inhibit_pal = 1;
     // mobile platforms like to kill suspended processes, but that isn't
     // really a "crash"
     handle_crash_done();
@@ -1079,16 +1079,16 @@ dwyco_resume()
     a[0] = (char)dwyco_rand();
     a[3] = (char)dwyco_rand();
     add_entropy(a, sizeof(a));
-    Inhibit_database_thread = 0;
-    Inhibit_pal = 0;
-    Inhibit_auto_connect = 0;
-    QSend_inprogress = 0;
-    QSend_special_inprogress = 0;
-    turn_accept_on();
-    set_listen_state(Suspend_listen_state);
-    init_pal();
-    recover_inprogress();
-    resume_qmsg();
+    //Inhibit_database_thread = 0;
+    //Inhibit_pal = 0;
+    //Inhibit_auto_connect = 0;
+    //QSend_inprogress = 0;
+    //QSend_special_inprogress = 0;
+    //turn_accept_on();
+    //set_listen_state(Suspend_listen_state);
+    //init_pal();
+    //recover_inprogress();
+    //resume_qmsg();
     //init_prfdb();
     start_database_thread();
     Dwyco_suspended = 0;
@@ -1856,30 +1856,35 @@ send_new()
 
 }
 
-static void
+namespace dwyco {
+DwTimer Db_timer("db_timer");
+}
+
+static
+void
 db_reconnect()
 {
     if(Inhibit_auto_connect)
         return;
-    static DwTimer db_timer("db_timer");
+
     static int been_here;
     if(Database_id == -1)
     {
         if(!been_here)
         {
-            db_timer.set_oneshot(1);
-            db_timer.load(1);
-            db_timer.start();
+            Db_timer.set_oneshot(1);
+            Db_timer.load(1);
+            Db_timer.start();
             been_here = 1;
         }
-        if(!db_timer.is_running())
+        if(!Db_timer.is_running())
         {
-            db_timer.load((10 + (dwyco_rand() % 45)) * 1000);
-            db_timer.start();
+            Db_timer.load((10 + (dwyco_rand() % 45)) * 1000);
+            Db_timer.start();
         }
-        if(db_timer.is_expired())
+        if(Db_timer.is_expired())
         {
-            db_timer.ack_expire();
+            Db_timer.ack_expire();
             start_database_thread();
         }
 
@@ -2056,7 +2061,7 @@ handle_deferred_msg_send()
 // wake you up. you can also safely ignore this and
 // just call at fixed intervals to simplify things.
 //
-// if spin_out is non-zero, it means the core wants to
+// if *spin_out is non-zero, it means the core wants to
 // be called continuously.
 // sometimes the core needs
 // spinning to make things work properly (like
@@ -2164,11 +2169,16 @@ dwyco_service_channels(int *spin_out)
     }
 #endif
     {
-    DwString str;
-    dwtime_t nex = DwTimer::next_expire_time(str) - DwTimer::time_now();
-    GRTLOG("next timer %ld", nex, 0);
-    GRTLOG("(%s)", str.c_str(), 0);
-    entered = 0;
+        DwString str;
+        dwtime_t nex = DwTimer::next_expire_time(str) - DwTimer::time_now();
+#if 0
+        GRTLOG("next timer %ld", nex, 0);
+        GRTLOG("(%s)", str.c_str(), 0);
+
+        void android_log_stuff(const char *str, const char *s1, int s2);
+        android_log_stuff("dsc tmr ", str.c_str(), nex);
+#endif
+        entered = 0;
     return nex;
     }
 }
@@ -2375,6 +2385,7 @@ namespace dwyco {
 double Audio_delay = 2.0;
 int Audio_agc;
 int Audio_denoise;
+DwycoPublicChatDisplayCallback dwyco_bgapp_msg_callback;
 }
 
 
@@ -2785,6 +2796,13 @@ void
 dwyco_set_public_chat_display_callback(DwycoPublicChatDisplayCallback cb)
 {
     public_chat_display_callback = cb;
+}
+
+DWYCOEXPORT
+void
+dwyco_set_bgapp_msg_callback(DwycoPublicChatDisplayCallback cb)
+{
+    dwyco::dwyco_bgapp_msg_callback = cb;
 }
 
 extern KeyboardAcquire *TheMsgAq;
@@ -3219,6 +3237,19 @@ dwyco_channel_create(const char *uid, int len_uid, DwycoCallDispositionCallback 
     return 1;
 }
 
+// note: adjusting the b/w throttles at start/stop of
+// streaming media is an optimization. in the past, we
+// just polled the state of the system and adjusted
+// every few seconds, which was a lot simpler in terms
+// of debugging and allowing changes to the system
+// that would not end up breaking the bandwidth allocation.
+// but, it was also wasteful, since most of the time the
+// allocation never changed. this way new way of doing it
+// just reflects the fact that video (and to a much less
+// extent audio and data-sync) is what uses the most
+// bandwidth in most situations. so we just adjust
+// when we think video may end up streaming.
+
 DWYCOEXPORT
 int
 dwyco_channel_send_video(int chan_id, int vid_dev)
@@ -3231,7 +3262,13 @@ dwyco_channel_send_video(int chan_id, int vid_dev)
     // video for some reason.
     // note: build_outgoing calls callbacks for video display init which
     // we probably need to modify in some way.
-    return mc->build_outgoing(1, 1, (int)get_settings_value("rate/max_fps"));
+    int ret = mc->build_outgoing(1, 1, (int)get_settings_value("rate/max_fps"));
+    if(ret)
+    {
+        MMChannel::adjust_outgoing_bandwidth();
+        MMChannel::adjust_incoming_bandwidth();
+    }
+    return ret;
 }
 
 DWYCOEXPORT
@@ -3243,6 +3280,8 @@ dwyco_channel_stop_send_video(int chan_id)
         return 0;
     mc->grab_coded_id = -1;
     // maybe check for no other senders and shutdown acq as well
+    MMChannel::adjust_outgoing_bandwidth();
+    MMChannel::adjust_incoming_bandwidth();
     return 1;
 }
 
@@ -3258,7 +3297,13 @@ dwyco_channel_send_audio(int chan_id, int aud_dev)
     // video for some reason.
     // note: build_outgoing calls callbacks for video display init which
     // we probably need to modify in some way.
-    return mc->build_outgoing_audio(1);
+    int ret = mc->build_outgoing_audio(1);
+    if(ret)
+    {
+        MMChannel::adjust_outgoing_bandwidth();
+        MMChannel::adjust_incoming_bandwidth();
+    }
+    return ret;
 }
 
 DWYCOEXPORT
@@ -3270,6 +3315,8 @@ dwyco_channel_stop_send_audio(int chan_id)
         return 0;
     mc->grab_audio_id = -1;
     // maybe check for no other senders and shutdown acq as well
+    MMChannel::adjust_outgoing_bandwidth();
+    MMChannel::adjust_incoming_bandwidth();
     return 1;
 }
 
@@ -6553,7 +6600,7 @@ dwyco_get_group_status(DWYCO_LIST *list_out)
         vc gname = Current_alternate->alt_name();
         r[GS_GNAME] = gname;
         r[GS_VALID] = DH_alternate::has_private_key(gname);
-        vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select 1 from gi group by mid)) from msg_idx");
+        vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from gi) from msg_idx");
         if(res.is_nil())
             r[GS_PERCENT_SYNCED] = 0;
         else

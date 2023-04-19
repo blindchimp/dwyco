@@ -191,9 +191,7 @@ init_codec(const char *logname)
         init_qmsg();
 
         //stun_pool_init();
-#ifndef MACOSX
         init_netdiag(); // note: can't do netdiag until stun_server is known.
-#endif
         init_callq();
 #ifdef DWYCO_ASSHAT
         init_assholes();
@@ -363,6 +361,9 @@ init_bg_msg_send(const char *logname)
 
         // note: the background send does server-only sends, so this should never
         // get used. however, the syncing stuff might initiate some calls
+        // note also there is no reason to exit the callq. it *might* make sense
+        // to cancel calls that are being set up if, for example, you are
+        // switching the service channels from one thread to another.
         init_callq();
 
         init_sysattr();
@@ -372,8 +373,6 @@ init_bg_msg_send(const char *logname)
     }
 }
 
-// this doesn't do a perfect cleanup, mainly because we assume the
-// process is going to be exiting afterwards.
 
 void
 exit_bg_msg_send()
@@ -393,11 +392,16 @@ exit_bg_msg_send()
     while(se_process() || dirth_poll_response())
         ;
 
-    exit_qmsg();
+    //exit_qmsg();
     exit_pal();
     exit_prfdb();
 
-    vc::non_lh_exit();
+    // note: don't bother turning off network since
+    // we are going to exit soon anyways. note this
+    // is just to avoid a crash with uv sockets. really
+    // the whole init/exit thing needs to be cleaned up
+    // in VC.
+    //vc::non_lh_exit();
     vc::shutdown_logs();
 
 #ifdef DW_RTLOG

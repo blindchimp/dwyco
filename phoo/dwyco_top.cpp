@@ -48,6 +48,7 @@
 #ifdef ANDROID
 #include "notificationclient.h"
 #include "audi_qt.h"
+void android_log_stuff(const char *str, const char *s1, int s2);
 #endif
 #include "androidperms.h"
 #include "profpv.h"
@@ -169,12 +170,23 @@ reload_ignore_list()
     Conv_sort_proxy->setDynamicSortFilter(true);
 }
 
-static void
+static
+void
 takeover_from_background(int port)
 {
-    //return;
+#ifdef ANDROID
+    int c = dwyco_request_singleton_lock("dwyco", port);
+    if(c < 0)
+        exit(0);
+#endif
+
     if(!BGLockSock)
         BGLockSock = new QTcpServer;
+
+#ifdef ANDROID
+    BGLockSock->setSocketDescriptor(c);
+    return;
+#endif
 
     while(!BGLockSock->isListening() &&
             !BGLockSock->listen(QHostAddress("127.0.0.1"), port))
@@ -451,10 +463,10 @@ dwyco_type_to_qv(int type, const char *val, int len)
     return ret;
 }
 
-static
+
 void
 DWYCOCALLCONV
-dwyco_sys_event_callback(int cmd, int id,
+DwycoCore::dwyco_sys_event_callback(int cmd, int id,
                          const char *uid, int len_uid,
                          const char *name, int len_name,
                          int type, const char *val, int len_val,
@@ -462,6 +474,19 @@ dwyco_sys_event_callback(int cmd, int id,
                          int extra_arg)
 {
     if(!TheDwycoCore)
+        return;
+    // note: these events can originate from a background thread
+    // in android when the app is suspended. since most of these
+    // calls end up doing something to objects that are created in the
+    // main thread, or end up tweaking the UI in some way, we can't
+    // really do this. instead, what we do is just reestablish the state
+    // of the UI when the app is brought back to life.
+    // note that some of this *might* work, as qt is reasonable about
+    // queuing signals to other objects. but there are cases where
+    // new object might get created in models, but qt doesn't like that.
+    // so unless we find a clever way of using signals to perform those
+    // sorts of operations, the method mentioned above will have to do.
+    if(DwycoCore::Suspended)
         return;
     if(uid == 0)
     {
@@ -600,11 +625,13 @@ dwyco_sys_event_callback(int cmd, int id,
     }
 }
 
-static void
-emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name,
+void
+DwycoCore::emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name,
                 int type, const char *val, int len_val,
                 int qid, int extra_arg)
 {
+//    if(DwycoCore::Suspended)
+//        return;
     QByteArray buid(uid, len_uid);
     QString huid = buid.toHex();
     QString sname(QByteArray(name, len_name));
@@ -1375,6 +1402,7 @@ dwyco_video_make_image(int ui_id, void *vimg, int cols, int rows, int depth)
     emit TheDwycoCore->video_display(ui_id, frame_number, QString("image://dwyco_video_frame/") + img_path);
 }
 
+#if 0
 static
 void
 DWYCOCALLCONV
@@ -1403,6 +1431,7 @@ dwyco_user_control(int chan_id, const char *suid, int len_uid, const char *data,
     }
     emit TheDwycoCore->user_control(chan_id, uid, com);
 }
+#endif
 
 // probably need to do something rational here, esp for database changes
 // this is good enough for debugging
@@ -1754,7 +1783,7 @@ DwycoCore::init()
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
     dwyco_set_system_event_callback(dwyco_sys_event_callback);
     dwyco_set_video_display_callback(dwyco_video_make_image);
-    dwyco_set_user_control_callback(dwyco_user_control);
+    //dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
 #if (defined(_Windows) || defined(LINUX) || defined(MAC_CLIENT)) && !defined(DWYCO_IOS) && !defined(ANDROID)
     // note: this is desktop windows only, we'll have to notify
@@ -2083,17 +2112,19 @@ DwycoCore::load_contacts()
 #endif
 }
 
-static int Suspended;
+int DwycoCore::Suspended;
 void
 DwycoCore::app_state_change(Qt::ApplicationState as)
 {
     // note: comment out the "inactive" normally, but put it back in
     // when testing "background" stuff on desktop
     static long time_suspended;
-    if(as == Qt::ApplicationSuspended  /*|| as == Qt::ApplicationInactive*/)
+    if(as == Qt::ApplicationSuspended /* || as == Qt::ApplicationInactive*/)
     {
         Suspended = 1;
+        dwyco_set_disposition("background", 10);
         simple_call::suspend();
+        dwyco_disconnect_chat_server();
         dwyco_suspend();
         if(BGLockSock)
         {
@@ -2112,12 +2143,35 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
     {
         takeover_from_background(BGLockPort);
         dwyco_resume();
+        simple_call::resume();
         // note: background process may have updated messages on disk
         // *and* we may not get to the server, so force a reload here just
         // in case.
+        dwyco_set_disposition("foreground", 10);
+        update_dwyco_client_name(m_client_name);
         QSet<QByteArray> dum;
         load_inbox_tags_to_unviewed(dum);
         reload_conv_list_since(time_suspended);
+        // note that here, if there was a new group installed during some
+        // background processing, we need to detect that, and quit the
+        // application (we almost certainly have stale group info
+        // at this point.) unfortunately, the current api is a little broken
+        // since it returns group status based on the "current_group" which
+        // may be wrong.
+        // note: this should be really rare since group changes are
+        // rare, so immediate exit it probably ok for now.
+        DWYCO_LIST gs;
+        dwyco_get_group_status(&gs);
+        simple_scoped qgs(gs);
+        QByteArray alt_name = qgs.get<QByteArray>(DWYCO_GS_GNAME);
+        if(alt_name != get_active_group_name())
+        {
+#if 0
+        android_log_stuff("FUCK QUIT ", alt_name.constData(), 0);
+        android_log_stuff("FUCK QUIT2 ", get_active_group_name().toUtf8().constData(), 0);
+#endif
+            QGuiApplication::quit();
+        }
         Suspended = 0;
 #ifdef ANDROID
         notificationClient->set_allow_notification(0);

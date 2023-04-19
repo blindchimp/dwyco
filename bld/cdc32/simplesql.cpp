@@ -46,6 +46,12 @@ SimpleSql::set_busy_timeout(int ms)
     sqlite3_busy_timeout(Db, ms);
 }
 
+void
+SimpleSql::set_update_hook(update_hook fun, void *user_arg)
+{
+    sqlite3_update_hook(Db, fun, user_arg);
+}
+
 int
 SimpleSql::init(int flags)
 {
