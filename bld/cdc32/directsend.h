@@ -70,6 +70,7 @@ public:
     void cancel();
     int inprogress;
     DwString qfn;
+    static int Inline_attach_size;
 
     // status is first arg
     // second arg is persistent id, ie, the name of the .q file
