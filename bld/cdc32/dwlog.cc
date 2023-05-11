@@ -16,21 +16,36 @@
 #include "dwdate.h"
 #include "dwlog.h"
 #include "vcio.h"
+#include "netlog.h"
+
 using namespace dwyco;
 
 DwLog::DwLog(const char *f)
 {
-    filename = strdup(f);
+    filename = f;
+    init_netlog();
 }
 
 DwLog::~DwLog()
 {
-    free(filename);
+
 }
 
 void
 DwLog::make_entry(const char *s, const char *s2, const char *s3)
 {
+    DwString all("log: ");
+
+    if(s)
+        all += s;
+    if(s2)
+        all += s2;
+    if(s3)
+        all += s3;
+    vc v(VC_VECTOR);
+    v.append("event");
+    v.append(all.c_str());
+    Netlog_signal.emit(v);
 #ifdef DWLOG
     FILE *f = fopen(filename, "a");
     if(!f)
@@ -52,6 +67,7 @@ DwLog::make_entry(const char *s, const char *s2, const char *s3)
 #endif
 }
 
+#if 0
 void
 DwLog::make_entry(vc v)
 {
@@ -70,4 +86,5 @@ DwLog::make_entry(vc v)
     fclose(f);
 #endif
 }
+#endif
 #endif
