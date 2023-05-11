@@ -30,8 +30,8 @@ public:
     void make_entry(const char *str = 0, const char * = 0, const char * = 0);
     //void make_entry(vc v);
 #else
-    DwLog(const char *filename = DWLOG_DEFAULT) {
-        this->filename = 0;
+    DwLog(const char *fn = DWLOG_DEFAULT) {
+        filename = fn;
     }
     ~DwLog() {}
     void make_entry(const char *str = 0, const char * = 0, const char * = 0) {}
