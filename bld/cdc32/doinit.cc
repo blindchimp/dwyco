@@ -225,7 +225,6 @@ simple_init_codec(const char *logname)
 
         init_stats();
 #ifdef DW_RTLOG
-        Log = new DwLog(logname);
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
