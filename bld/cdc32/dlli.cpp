@@ -370,6 +370,7 @@ using namespace CryptoPP;
 #include "vcudh.h"
 #include "synccalls.h"
 #include "backandroid.h"
+#include "directsend.h"
 
 using namespace dwyco;
 
@@ -1777,6 +1778,10 @@ login_auth_results(vc m, void *, vc, ValidPtr)
             else
             {
                 set_invisible(1);
+            }
+            if(m[3][12].type() == VC_INT)
+            {
+                dwyco::DirectSend::Inline_attach_size = (int)m[3][12];
             }
             pal_login();
         }

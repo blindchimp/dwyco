@@ -19,6 +19,9 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QUrl>
 #endif
 #include <stdlib.h>
 #include <fcntl.h>
@@ -176,6 +179,38 @@ set_main_win()
     dwyco_set_main_msg_window(Mainhwnd);
 }
 #endif
+
+// this just downloads the current servers2 file from
+// a website using whatever dns is setup for dwyco.com.
+// normally we avoid using dns. this is useful if we
+// really need to move someplace in case there is a large
+// outage or something.
+
+void
+install_emergency_servers2(QNetworkReply *reply)
+{
+    if (reply->error() == QNetworkReply::NoError)
+    {
+        QFile file("servers2.eme");
+        if (file.open(QIODevice::WriteOnly))
+        {
+            file.write(reply->readAll());
+            file.close();
+        }
+    }
+    reply->manager()->deleteLater();
+    reply->deleteLater();
+}
+
+void
+setup_emergency_servers()
+{
+    auto manager = new QNetworkAccessManager;
+    QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
+    QNetworkReply *reply = manager->get(QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme")));
+
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -777,6 +812,8 @@ int main(int argc, char *argv[])
     mainwin.show();
     QSettings settings;
     mainwin.restoreGeometry(settings.value("mainwin-geometry").toByteArray());
+
+    setup_emergency_servers();
 
     int i = app.exec();
     // this is more or less an emergency where the system state may be
