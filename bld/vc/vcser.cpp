@@ -74,9 +74,10 @@ vc::real_xfer_in(vcxstream& vcx)
 	if(tp == 0)
 		return EXIN_DEV;
 	t = decode_type(tp);
-    }
+
 	if(t == -1)
 		return EXIN_PARSE;
+    }
 	switch(t)
 	{
 	case VC_INT:
