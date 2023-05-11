@@ -1200,8 +1200,6 @@ MMChannel::destroy()
     {
         if(num_chans_with_tube(tube) == 1)
         {
-            if(typeid(*tube) != typeid(SlippyTube))
-                Log->make_entry("destroy link to ", remote_iam(), "");
             delete tube;
             tube = 0;
         }
