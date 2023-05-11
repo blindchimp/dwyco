@@ -18,24 +18,23 @@
 
 #define DWLOG_DEFAULT "dwyco.log"
 
+namespace dwyco {
 class DwLog
 {
+    friend void
+    Log_make_entry(const char *s1, const char *s2, const char *s3);
 private:
     DwString filename;
-
-public:
-#ifdef DWYCO_DO_USER_LOG
+    static DwLog *Log;
     DwLog(const char *filename = DWLOG_DEFAULT);
     ~DwLog();
+
     void make_entry(const char *str = 0, const char * = 0, const char * = 0);
     //void make_entry(vc v);
-#else
-    DwLog(const char *fn = DWLOG_DEFAULT) {
-        filename = fn;
-    }
-    ~DwLog() {}
-    void make_entry(const char *str = 0, const char * = 0, const char * = 0) {}
-    void make_entry(vc v) {}
-#endif
+    void init();
 };
+
+void Log_make_entry(const char *s1 = 0, const char *s2 = 0, const char *s3 = 0);
+}
+
 #endif

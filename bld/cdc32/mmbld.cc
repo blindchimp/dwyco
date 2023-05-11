@@ -39,7 +39,7 @@ extern double Audio_delay;
 }
 using namespace dwyco;
 
-#define FAILRET(x) do {fail_reason = (x); Log->make_entry(x); return 0;} while(0)
+#define FAILRET(x) do {fail_reason = (x); Log_make_entry(x); return 0;} while(0)
 
 int
 MMChannel::audio_decoder_from_config()

@@ -64,7 +64,6 @@ extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
 namespace dwyco {
 
 vc Myhostname;
-DwLog *Log;
 vc TheMan;
 
 void init_dct();
@@ -89,7 +88,7 @@ init_codec(const char *logname)
             Myhostname = hostname;
 
         init_stats();
-        Log = new DwLog(newfn(logname).c_str());
+
 #ifdef DW_RTLOG
         if(!RTLog)
         {
@@ -99,7 +98,7 @@ init_codec(const char *logname)
             init_rtlog();
         }
 #endif
-        Log->make_entry("system starting up");
+        Log_make_entry("system starting up");
 
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
@@ -107,25 +106,25 @@ init_codec(const char *logname)
         // attach stdout to a file
 #if 0
         if(!freopen(newfn("c.out").c_str(), "w", stdout))
-            Log->make_entry("can't redirect stdout");
+            Log_make_entry("can't redirect stdout");
         if(!freopen(newfn("c.out").c_str(), "w", stderr))
-            Log->make_entry("can't redirect stderr");
+            Log_make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
 #endif
 
         if(access(newfn("inprogress").c_str(), 0) == -1)
             if(mkdir(newfn("inprogress").c_str()) == -1)
-                Log->make_entry("can't create inprogress dir");
+                Log_make_entry("can't create inprogress dir");
         if(access(newfn("outbox").c_str(), 0) == -1)
             if(mkdir(newfn("outbox").c_str()) == -1)
-                Log->make_entry("can't create outbox dir");
+                Log_make_entry("can't create outbox dir");
         if(access(newfn("trash").c_str(), 0) == -1)
             if(mkdir(newfn("trash").c_str()) == -1)
-                Log->make_entry("can't create trash dir");
+                Log_make_entry("can't create trash dir");
         if(access(newfn("xfer").c_str(), 0) == -1)
             if(mkdir(newfn("xfer").c_str()) == -1)
-                Log->make_entry("can't create xfer dir");
+                Log_make_entry("can't create xfer dir");
         init_dhgdb();
         init_sql_settings();
         init_aconn();
@@ -162,9 +161,9 @@ init_codec(const char *logname)
 
         check_audio_device();
         if(!Audio_hw_full_duplex)
-            Log->make_entry("audio hardware is half-duplex");
+            Log_make_entry("audio hardware is half-duplex");
         else
-            Log->make_entry("audio hardware claims full-duplex");
+            Log_make_entry("audio hardware claims full-duplex");
 
         switch((int)get_settings_value("net/call_setup_media_select"))
         {
@@ -200,7 +199,7 @@ init_codec(const char *logname)
         init_sysattr();
         //Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);
         init = 1;
-        Log->make_entry("init done");
+        Log_make_entry("init done");
     }
 }
 
@@ -235,7 +234,7 @@ simple_init_codec(const char *logname)
             init_rtlog();
         }
 #endif
-        Log->make_entry("system starting up");
+        Log_make_entry("system starting up");
         init_sql_settings();
         //init_aconn();
         //init_dhg();
@@ -245,9 +244,9 @@ simple_init_codec(const char *logname)
         // curses
         // attach stdout to a file
         if(!freopen(newfn("c.out").c_str(), "w", stdout))
-            Log->make_entry("can't redirect stdout");
+            Log_make_entry("can't redirect stdout");
         if(!freopen(newfn("c.out").c_str(), "w", stderr))
-            Log->make_entry("can't redirect stderr");
+            Log_make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
 
@@ -276,7 +275,7 @@ simple_init_codec(const char *logname)
 
         init_sysattr();
         init = 1;
-        Log->make_entry("init done");
+        Log_make_entry("init done");
     }
 }
 
@@ -302,8 +301,7 @@ init_bg_msg_send(const char *logname)
         else
             Myhostname = hostname;
         init_stats();
-        if(!Log)
-            Log = new DwLog(logname);
+
 #ifdef DW_RTLOG
         if(!RTLog)
         {
@@ -315,18 +313,18 @@ init_bg_msg_send(const char *logname)
 #endif
         if(access(newfn("inprogress").c_str(), 0) == -1)
             if(mkdir(newfn("inprogress").c_str()) == -1)
-                Log->make_entry("can't create inprogress dir");
+                Log_make_entry("can't create inprogress dir");
         if(access(newfn("outbox").c_str(), 0) == -1)
             if(mkdir(newfn("outbox").c_str()) == -1)
-                Log->make_entry("can't create outbox dir");
+                Log_make_entry("can't create outbox dir");
         if(access(newfn("trash").c_str(), 0) == -1)
             if(mkdir(newfn("trash").c_str()) == -1)
-                Log->make_entry("can't create trash dir");
+                Log_make_entry("can't create trash dir");
         if(access(newfn("xfer").c_str(), 0) == -1)
             if(mkdir(newfn("xfer").c_str()) == -1)
-                Log->make_entry("can't create xfer dir");
+                Log_make_entry("can't create xfer dir");
 
-        Log->make_entry("background system starting up");
+        Log_make_entry("background system starting up");
         init_dhgdb();
         init_sql_settings();
         init_aconn();
@@ -338,9 +336,9 @@ init_bg_msg_send(const char *logname)
         // curses
         // attach stdout to a file
         if(!freopen(newfn("c.out").c_str(), "w", stdout))
-            Log->make_entry("can't redirect stdout");
+            Log_make_entry("can't redirect stdout");
         if(!freopen(newfn("c.out").c_str(), "w", stderr))
-            Log->make_entry("can't redirect stderr");
+            Log_make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
 
@@ -369,7 +367,7 @@ init_bg_msg_send(const char *logname)
         init_sysattr();
 
         Bg_msg_send_init = 1;
-        Log->make_entry("background init done");
+        Log_make_entry("background init done");
     }
 }
 
@@ -382,7 +380,7 @@ exit_bg_msg_send()
 
     save_qmsg_state();
     save_entropy();
-    Log->make_entry("background exit");
+    Log_make_entry("background exit");
 
     // note: mmchan depends on being able to use some of the
     // other stuff below, so we clean it up first. there
@@ -423,7 +421,7 @@ exit_codec()
     // note: this analyzes the database, which can be a huge
     // win with sqlite
     exit_qmsg();
-    Log->make_entry("exit");
+    Log_make_entry("exit");
 
 
 
