@@ -937,6 +937,9 @@ out:
         dwyco_bg_exit();
         ALOGI("exit proc", 0);
     }
+#ifndef ANDROID
+    clean_cruft();
+#endif
     //exit(0);
     return 0;
 }
