@@ -3,6 +3,10 @@ CONFIG += staticlib
 CONFIG -= qt
 CONFIG += warn_off
 macx-g++|macx-clang|linux-g++ {
+# this monkey business forces the use of c++11 when
+# compiling with newer versions of qt, which puts
+# flags on the command line for newer c++ versions, which
+# breaks compilation of this library.
 QMAKE_CXXFLAGS -= -std=c++1z
 QMAKE_CXXFLAGS -= -std=gnu++1z
 QMAKE_CXXFLAGS_CXX1Z=""

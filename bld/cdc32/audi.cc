@@ -36,7 +36,7 @@ extern CRITICAL_SECTION Audio_lock;
 	{ \
 		(*MMChannel::popup_message_box_callback)(0, s, vcnil, vcnil); \
 	} \
-	Log->make_entry(s); \
+	Log_make_entry(s); \
 	return 0; \
 }
 

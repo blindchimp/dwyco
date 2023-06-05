@@ -30,6 +30,7 @@
 
 namespace dwyco {
 DwQueryByMember<DirectSend> DirectSend::Qbm;
+int DirectSend::Inline_attach_size = 50 * 1024;
 
 DirectSend::DirectSend(const DwString& fn) :
     vp(this)
@@ -264,7 +265,13 @@ DirectSend::load_small_attachment()
     // ca 2023, boost this to 50k since cameras
     // are sending bigger items now, and network
     // speeds are quite a bit better now.
-    if(sb.st_size > 50 * 1024)
+
+    // note: clamp this in case something weird comes in
+    if(Inline_attach_size < 0 || Inline_attach_size > 500 * 1024)
+    {
+        Inline_attach_size = 50 * 1024;
+    }
+    if(sb.st_size > Inline_attach_size)
         return 0;
 
     FILE *f = fopen(actual_filename.c_str(), "rb");

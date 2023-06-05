@@ -94,7 +94,7 @@ Rectangle {
                     name += textInput1.text
                 }
                 core.init()
-                core.bootstrap(name, "no@email.com")
+                core.bootstrap(name, "rando")
                 core.set_local_setting("first-run", "done")
                 profile_bootstrapped = 1
                 busy.running = true

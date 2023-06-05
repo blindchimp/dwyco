@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#ifdef DWYCO_DO_USER_LOG
+
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/dwlog.cc 1.4 1997/11/25 20:41:03 dwight Stable095 $
  */
@@ -16,21 +16,55 @@
 #include "dwdate.h"
 #include "dwlog.h"
 #include "vcio.h"
+#include "netlog.h"
+
 using namespace dwyco;
+
+namespace dwyco {
+DwLog *DwLog::Log;
 
 DwLog::DwLog(const char *f)
 {
-    filename = strdup(f);
+    filename = f;
+    init_netlog();
 }
 
 DwLog::~DwLog()
 {
-    free(filename);
+
+}
+
+void
+DwLog::init()
+{
+    Log = new DwLog;
+}
+
+void
+Log_make_entry(const char *s1, const char *s2, const char *s3)
+{
+#ifdef DWYCO_DO_USER_LOG
+    DwLog::Log->make_entry(s1, s2, s3);
+#endif
 }
 
 void
 DwLog::make_entry(const char *s, const char *s2, const char *s3)
 {
+    if(!Log)
+        init();
+    DwString all("log: ");
+
+    if(s)
+        all += s;
+    if(s2)
+        all += s2;
+    if(s3)
+        all += s3;
+    vc v(VC_VECTOR);
+    v.append("event");
+    v.append(all.c_str());
+    Netlog_signal.emit(v);
 #ifdef DWLOG
     FILE *f = fopen(filename, "a");
     if(!f)
@@ -52,6 +86,7 @@ DwLog::make_entry(const char *s, const char *s2, const char *s3)
 #endif
 }
 
+#if 0
 void
 DwLog::make_entry(vc v)
 {
@@ -71,3 +106,5 @@ DwLog::make_entry(vc v)
 #endif
 }
 #endif
+}
+

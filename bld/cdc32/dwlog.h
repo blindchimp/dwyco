@@ -14,27 +14,27 @@
 #define DWLOG_H
 
 #include "vc.h"
+#include "dwstr.h"
 
 #define DWLOG_DEFAULT "dwyco.log"
 
+namespace dwyco {
 class DwLog
 {
+    friend void
+    Log_make_entry(const char *s1, const char *s2, const char *s3);
 private:
-    char *filename;
-
-public:
-#ifdef DWYCO_DO_USER_LOG
+    DwString filename;
+    static DwLog *Log;
     DwLog(const char *filename = DWLOG_DEFAULT);
     ~DwLog();
+
     void make_entry(const char *str = 0, const char * = 0, const char * = 0);
-    void make_entry(vc v);
-#else
-    DwLog(const char *filename = DWLOG_DEFAULT) {
-        this->filename = 0;
-    }
-    ~DwLog() {}
-    void make_entry(const char *str = 0, const char * = 0, const char * = 0) {}
-    void make_entry(vc v) {}
-#endif
+    //void make_entry(vc v);
+    void init();
 };
+
+void Log_make_entry(const char *s1 = 0, const char *s2 = 0, const char *s3 = 0);
+}
+
 #endif

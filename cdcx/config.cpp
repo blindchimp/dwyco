@@ -515,6 +515,16 @@ void configform::on_sync_enable_clicked(bool checked)
 {
     if(checked)
     {
+        if(ui.CDC_group__alt_name->text().toLatin1().length() < 4 ||
+            ui.CDC_group__join_key->text().toLatin1().length() < 4)
+        {
+            QMessageBox warn(QMessageBox::Warning, "Device linking failed",
+                             "The device name and password must be at least 4 characters.",
+                             QMessageBox::Ok);
+            warn.exec();
+            ui.sync_enable->setChecked(false);
+            return;
+        }
         dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
         if(!dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData()))
         {

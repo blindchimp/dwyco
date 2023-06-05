@@ -26,22 +26,28 @@
 using namespace dwyco;
 extern int Media_select;
 
-#define CQ_WAITING 0
-#define CQ_CONNECTED 1
-#define CQ_CONNECTING 2
-#define CQ_FAILED 3
-#define CQ_TERMINATED 4
 #define CALLQ_POLL_TIME (10000)
 #define CALLQ_SLOW_POLL_TIME (60000)
 
 namespace dwyco {
+
+enum call_state
+{
+    CQ_WAITING,
+    CQ_CONNECTED,
+    CQ_CONNECTING,
+    CQ_FAILED,
+    CQ_TERMINATED
+};
+
 struct callq
 {
+
     // holds the MMCall pointer we are tracking
     // which is why we don't invalidate it here
     ValidPtr vp;
     DwTimer timeout;
-    int status;
+    enum call_state status;
     // we interpose our stuff so we can track the call status
     CallStatusCallback user_cb;
     void *arg1;
@@ -139,15 +145,35 @@ CallQ::cq_call_status(MMCall *mmc, int status, void *arg1, ValidPtr vp)
     if(i == n)
         return;
     GRTLOG("callq status %d: %d", vp.cookie, status);
-    if(status == MMCALL_ESTABLISHED)
+    switch(status)
+    {
+    case MMCALL_ESTABLISHED:
         cq[i]->status = CQ_CONNECTED;
-    else if(status == MMCALL_TERMINATED)
+        break;
+    case MMCALL_TERMINATED:
         cq[i]->status = CQ_TERMINATED;
-    else
+        break;
+    case MMCALL_CANCELED:
+    case MMCALL_FAILED:
+    case MMCALL_REJECTED:
         cq[i]->status = CQ_FAILED;
+        break;
+    case MMCALL_STARTED:
+        // leave the status alone
+        break;
+    default:
+        oopanic("callq program error");
+    }
     if(cq[i]->user_cb)
     {
         (*(cq[i]->user_cb))(mmc, status, cq[i]->arg1, cq[i]->arg2);
+    }
+    // note: remove terminated and failed calls immediately
+    // so a subsequent add doesn't have to wait around
+    if(cq[i]->status == CQ_TERMINATED || cq[i]->status == CQ_FAILED)
+    {
+        delete cq[i];
+        cq[i] = 0;
     }
     TheCallQ->reset_poll_time(CALLQ_POLL_TIME);
 }
@@ -320,6 +346,9 @@ CallQ::tick()
             continue;
         if(calls[i]->status == CQ_WAITING && !calls[i]->cancel)
         {
+            // NOTE: WARNING: this start_call does an immediate callback
+            // with "call_started", so callback should be aware of this
+            // probably needs to be fixed.
             if(((MMCall *)(void *)calls[i]->vp)->start_call(Media_select))
             {
                 // stop the timeout, once it is connecting, other timers
