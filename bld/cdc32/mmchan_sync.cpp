@@ -108,6 +108,7 @@ string_to_file(vc str, DwString fn)
     if(write(fd, (const char *)str, str.len()) != str.len())
     {
         close(fd);
+        DeleteFile(fn.c_str());
         return 0;
     }
     close(fd);

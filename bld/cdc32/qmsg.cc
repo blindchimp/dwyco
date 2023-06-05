@@ -2630,7 +2630,7 @@ int
 remove_user(vc uid, const char *pfx)
 {
     vc dir = uid_to_dir(uid);
-    // remove indexs so the msgs don't magically reappear
+    // remove indexes so the msgs don't magically reappear
     try
     {
         sql_start_transaction();
@@ -4515,7 +4515,7 @@ find_files_to_keep(DwString subdir, DwString pat, vc nodel)
             if(!valid_qd_message(m))
             {
                 DeleteFile(d.c_str());
-                Log->make_entry("deleting bogus item.");
+                Log_make_entry("deleting bogus item.");
             }
             else
             {
@@ -4533,7 +4533,7 @@ find_files_to_keep(DwString subdir, DwString pat, vc nodel)
                     if(!valid_qd_message(em))
                     {
                         DeleteFile(newfn(fn).c_str());
-                        Log->make_entry("deleteing bogus encrypted package");
+                        Log_make_entry("deleteing bogus encrypted package");
                     }
                     else
                     {
