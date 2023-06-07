@@ -85,35 +85,6 @@ enum {
     SENT_TO_LON,
 };
 
-static int
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col, QByteArray& str_out)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_STRING)
-        return 0;
-    str_out = QByteArray(val, len);
-    return 1;
-}
-
-static int
-dwyco_get_attr_bool(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        return 0;
-    if(type != DWYCO_TYPE_STRING)
-        return 0;
-    QByteArray str_out(val, len);
-    if(str_out == "t")
-        return 1;
-    return 0;
-}
 
 static
 QString
@@ -162,10 +133,10 @@ gen_time_unsaved(DWYCO_UNFETCHED_MSG_LIST l, int row)
 
 static
 int
-att_file_hash(const QByteArray& huid, const QByteArray& mid, QByteArray& hash_out)
+att_file_hash(const QByteArray& mid, QByteArray& hash_out)
 {
     DWYCO_SAVED_MSG_LIST qsm;
-    QByteArray uid = QByteArray::fromHex(huid);
+    QByteArray uid;
     if(!dwyco_get_saved_message(&qsm, uid.constData(), uid.length(), mid.constData()))
     {
         return 0;
@@ -182,7 +153,7 @@ att_file_hash(const QByteArray& huid, const QByteArray& mid, QByteArray& hash_ou
         hash_out = Mid_to_hash.value(mid);
         return 1;
     }
-    QByteArray fn;
+
     QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
     int is_file = user_filename.length() > 0;
     if(!is_file)
@@ -376,10 +347,6 @@ msglist_model::invalidate_sent_to()
         v.append(IS_UNSEEN);
 
         emit dataChanged(mi, mi, v);
-        //emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LAT));
-        //emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LON));
-        //emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
-        //emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
     }
     if(special_sort)
         sort(0, Qt::DescendingOrder);
@@ -1502,78 +1469,50 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     }
     else if(role == SENT_TO_LOCATION)
     {
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QByteArray("");
-        QByteArray huid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
-        {
-            return QByteArray("");
-        }
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
+
         QByteArray h;
-        if(!att_file_hash(huid, mid, h))
+        if(!att_file_hash(mid, h))
             return QByteArray("");
         QByteArray l = Hash_to_loc.value(h).loc;
         return l;
     }
     else if(role == SENT_TO_LAT)
     {
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QByteArray("");
-        QByteArray huid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
-        {
-            return QByteArray("");
-        }
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
+
         QByteArray h;
-        if(!att_file_hash(huid, mid, h))
+        if(!att_file_hash(mid, h))
             return QByteArray("");
         QByteArray l = Hash_to_loc.value(h).lat;
         return l;
     }
     else if(role == SENT_TO_LON)
     {
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QByteArray("");
-        QByteArray huid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
-        {
-            return QByteArray("");
-        }
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
+
         QByteArray h;
-        if(!att_file_hash(huid, mid, h))
+        if(!att_file_hash(mid, h))
             return QByteArray("");
         QByteArray l = Hash_to_loc.value(h).lon;
         return l;
     }
     else if(role == REVIEW_RESULTS)
     {
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QByteArray("");
-        QByteArray huid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
-        {
-            return QByteArray("");
-        }
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
+
         QByteArray h;
-        if(!att_file_hash(huid, mid, h))
+        if(!att_file_hash(mid, h))
             return QByteArray("");
         QByteArray l = Hash_to_review.value(h, "Unknown");
         return l;
     }
     else if(role == IS_UNSEEN)
     {
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return 0;
-        QByteArray huid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
-            return 0;
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
+
         QByteArray h;
-        if(!att_file_hash(huid, mid, h))
+        if(!att_file_hash(mid, h))
             return 0;
         h = h.toHex();
         if(hash_has_tag(h, "unviewed"))
@@ -1582,16 +1521,10 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     }
     else if(role == ASSOC_HASH)
     {
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QByteArray("");
-        QByteArray huid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
-        {
-            return QByteArray("");
-        }
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
+
         QByteArray h;
-        if(!att_file_hash(huid, mid, h))
+        if(!att_file_hash(mid, h))
             return QByteArray("");
         return QString(h.toHex());
     }
