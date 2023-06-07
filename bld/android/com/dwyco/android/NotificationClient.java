@@ -258,18 +258,36 @@ public static String get_token() {
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build();
 
-        //OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
-            //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-        //    .setConstraints(constraints)
-        //    .build();
-            PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 1, TimeUnit.HOURS)
-            //.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-            .setConstraints(constraints)
-            .build();
+        if(DwycoApp.is_rando)
+        {
+            //OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
+            //    .setConstraints(constraints)
+            //   .build();
             //WorkManager.getInstance(m_instance).enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
+            // note: this is a kluge right now, we can't do a backup if the main IU is alive in any way,
+            // so we just kinda hope it gets killed off when this work is done so the backup gets
+            // remade once in awhile. best way to fix this is to have the backup done in a separate
+            // work thing. the reason i don't fix it is because i'm unsure how useful the backup
+            // feature actually is for rando.
+            PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 12, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build();
+            
             WorkManager.getInstance(m_instance)
                 .enqueueUniquePeriodicWork("upload_only", 
                 ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, uploadWorkRequest);
+        }
+        else
+        {
+        
+            PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 1, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build();
+            
+            WorkManager.getInstance(m_instance)
+                .enqueueUniquePeriodicWork("upload_only", 
+                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, uploadWorkRequest);
+        }
     }
 
 public static void log_event() {
