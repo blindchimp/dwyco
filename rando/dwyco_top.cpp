@@ -3170,6 +3170,7 @@ DwycoCore::make_zap_view_file(QString fn)
     return view_id;
 }
 
+#ifdef ANDROID
 QString
 DwycoCore::export_attachment(QString mid)
 {
@@ -3219,6 +3220,47 @@ DwycoCore::export_attachment(QString mid)
     }
     return QFile::decodeName(lfn);
 }
+#else
+QString
+DwycoCore::export_attachment(QString mid)
+{
+    QByteArray rmid = mid.toLatin1();
+    QString userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    // using the name in the message is dicey. it might be utf8, might be unicode,
+    // might be from case-sensitive fs, might not. almost certainly it is a security problem.
+    // so punt, and just create a random filename, and try to add a file extension if
+    // it looks like there is one.
+    DWYCO_SAVED_MSG_LIST sm;
+    if(dwyco_get_saved_message3(&sm, rmid.constData()) != DWYCO_GSM_SUCCESS)
+    {
+        return "";
+    }
+    simple_scoped qsm(sm);
+    if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+        return "";
+    QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    // look for file extension
+    int dot = scary_fn.lastIndexOf('.');
+    if(dot != -1)
+    {
+        scary_fn.remove(0, dot);
+    }
+    else
+        scary_fn = "";
+    QByteArray dstfn("/rando");
+    dstfn += QByteArray::number(csum, 16);
+    dstfn += scary_fn;
+    userdir += dstfn;
+    // note: this is probably broken on windows, have to check it out.
+    QByteArray lfn = QFile::encodeName(userdir);
+    if(!dwyco_copy_out_file_zap2(rmid.constData(), lfn.constData()))
+    {
+        return "";
+    }
+    return QFile::decodeName(lfn);
+}
+#endif
 
 static
 void
