@@ -123,26 +123,15 @@ gen_time(DWYCO_SAVED_MSG_LIST l, int row)
     int minute;
     int second;
 
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, DWYCO_QM_BODY_DATE_HOUR, &val, &len, &type))
+    dwyco_list_throw m(l);
+    try {
+        hour = m.get_long(row, DWYCO_QM_BODY_DATE_HOUR);
+        minute = m.get_long(row, DWYCO_QM_BODY_DATE_MINUTE);
+        second = m.get_long(row, DWYCO_QM_BODY_DATE_SECOND);
+    }
+    catch (...) {
         return "";
-    if(type != DWYCO_TYPE_INT)
-        return "";
-    hour = atoi(val);
-
-    if(!dwyco_list_get(l, row, DWYCO_QM_BODY_DATE_MINUTE, &val, &len, &type))
-        return "";
-    if(type != DWYCO_TYPE_INT)
-        return "";
-    minute = atoi(val);
-
-    if(!dwyco_list_get(l, row, DWYCO_QM_BODY_DATE_SECOND, &val, &len, &type))
-        return "";
-    if(type != DWYCO_TYPE_INT)
-        return "";
-    second = atoi(val);
+    }
 
     QTime qt(hour, minute, second);
     QString t = qt.toString("hh:mm ap");
@@ -157,26 +146,14 @@ gen_time_unsaved(DWYCO_UNFETCHED_MSG_LIST l, int row)
     int minute;
     int second;
 
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, DWYCO_QMS_DS_HOUR, &val, &len, &type))
+    dwyco_list_throw m(l);
+    try {
+        hour = m.get_long(row, DWYCO_QMS_DS_HOUR);
+        minute = m.get_long(row, DWYCO_QMS_DS_MINUTE);
+        second = m.get_long(row, DWYCO_QMS_DS_SECOND);
+    }  catch (...) {
         return "";
-    if(type != DWYCO_TYPE_INT)
-        return "";
-    hour = atoi(val);
-
-    if(!dwyco_list_get(l, row, DWYCO_QMS_DS_MINUTE, &val, &len, &type))
-        return "";
-    if(type != DWYCO_TYPE_INT)
-        return "";
-    minute = atoi(val);
-
-    if(!dwyco_list_get(l, row, DWYCO_QMS_DS_SECOND, &val, &len, &type))
-        return "";
-    if(type != DWYCO_TYPE_INT)
-        return "";
-    second = atoi(val);
+    }
 
     QTime qt(hour, minute, second);
     QString t = qt.toString("hh:mm ap");
@@ -391,11 +368,18 @@ msglist_model::invalidate_sent_to()
     for(int i = 0; i < n; ++i)
     {
         QModelIndex mi = index(i, 0);
-        emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LOCATION));
-        emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LAT));
-        emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LON));
-        emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
-        emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
+        QVector<int> v;
+        v.append(SENT_TO_LOCATION);
+        v.append(SENT_TO_LAT);
+        v.append(SENT_TO_LON);
+        v.append(REVIEW_RESULTS);
+        v.append(IS_UNSEEN);
+
+        emit dataChanged(mi, mi, v);
+        //emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LAT));
+        //emit dataChanged(mi, mi, QVector<int>(1, SENT_TO_LON));
+        //emit dataChanged(mi, mi, QVector<int>(1, REVIEW_RESULTS));
+        //emit dataChanged(mi, mi, QVector<int>(1, IS_UNSEEN));
     }
     if(special_sort)
         sort(0, Qt::DescendingOrder);
@@ -469,7 +453,6 @@ msglist_model::delete_all_selected()
 void
 msglist_model::fav_all_selected(int f)
 {
-    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     foreach (const QString &value, Selected)
     {
         QByteArray b = value.toLatin1();
@@ -487,7 +470,6 @@ msglist_model::fav_all_selected(int f)
 void
 msglist_model::tag_all_selected(QByteArray tag)
 {
-    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     foreach (const QString &value, Selected)
     {
         QByteArray b = value.toLatin1();
@@ -505,7 +487,6 @@ msglist_model::tag_all_selected(QByteArray tag)
 void
 msglist_model::untag_all_selected(QByteArray tag)
 {
-    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     foreach (const QString &value, Selected)
     {
         QByteArray b = value.toLatin1();
@@ -774,6 +755,7 @@ msglist_raw::check_inbox_model()
             endRemoveRows();
             return 1;
         }
+        qnew_im.release();
     }
     return 0;
 }
@@ -1017,15 +999,16 @@ QVariant
 msglist_raw::qd_data ( int r, int role ) const
 {
     QByteArray pers_id;
-    dwyco_get_attr(qd_msgs, r, DWYCO_QD_MSG_PERS_ID, pers_id);
+
+    dwyco_list m(qd_msgs);
+    pers_id = m.get<QByteArray>(r, DWYCO_QD_MSG_PERS_ID);
 
     DWYCO_SAVED_MSG_LIST sm;
     if(!dwyco_qd_message_to_body(&sm, pers_id.constData(), pers_id.length()))
         return QVariant();
     simple_scoped qsm(sm);
 
-    // there is not "mid" per-se for qd messages, as the id needs to be
-    // assigned by the server (for associating read-indications as stuff.)
+    // there is not "mid" per-se for qd messages.
     // but we know the pers-id and mid are unique so we just use pers-id
     // this will allow people to cancel half-sent messages.
     switch(role)
@@ -1046,11 +1029,12 @@ msglist_raw::qd_data ( int r, int role ) const
     {
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
-        QByteArray txt;
-        if(!dwyco_get_attr(qba, 0, DWYCO_QM_BODY_NEW_TEXT2, txt))
-            return "";
-
-        return QString(txt);
+        QByteArray txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
+#ifdef LINUX_EMOJI_CRASH_HACK
+        return QString::fromLatin1(txt);
+#else
+        return QString::fromUtf8(txt);
+#endif
     }
     case SENT:
         return 1;
@@ -1070,17 +1054,8 @@ msglist_raw::qd_data ( int r, int role ) const
     {
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
-        QByteArray txt;
-        const char *out;
-        int len_out;
-        int type_out;
-        if(!dwyco_list_get(qba, 0, DWYCO_QM_BODY_DATE_SECONDS_SINCE_JAN1_1970,
-                           &out, &len_out, &type_out))
-            return 0;
-        if(type_out != DWYCO_TYPE_INT)
-            return 0;
         QVariant v;
-        v.setValue(QString(out).toLong());
+        v.setValue(qba.get_long(DWYCO_QM_BODY_DATE_SECONDS_SINCE_JAN1_1970));
         return v;
 
     }
@@ -1089,17 +1064,8 @@ msglist_raw::qd_data ( int r, int role ) const
     {
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
-        QByteArray txt;
-        const char *out;
-        int len_out;
-        int type_out;
-        if(!dwyco_list_get(qba, 0, DWYCO_QM_BODY_DATE_SECONDS_SINCE_JAN1_1970,
-                           &out, &len_out, &type_out))
-            return 0;
-        if(type_out != DWYCO_TYPE_INT)
-            return 0;
         QDateTime dt;
-        dt = QDateTime::fromSecsSinceEpoch(QString(out).toLong());
+        dt = QDateTime::fromSecsSinceEpoch(qba.get_long(DWYCO_QM_BODY_DATE_SECONDS_SINCE_JAN1_1970));
         return dt.toString("hh:mm ap");
     }
 
@@ -1118,10 +1084,7 @@ msglist_raw::qd_data ( int r, int role ) const
     {
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
-        int n;
-        if(!dwyco_list_numelems(qba, &n, 0))
-            return 0;
-        if(n > 1)
+        if(qba.rows() > 1)
             return 1;
         return 0;
     }
@@ -1196,7 +1159,7 @@ retry_auto_fetch(QByteArray mid)
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
-    mlm->dataChanged(mi, mi, roles);
+    emit mlm->dataChanged(mi, mi, roles);
     return tmp;
 }
 
@@ -1232,10 +1195,13 @@ msglist_raw::inbox_data (int r, int role ) const
     int type_out;
 
     int n = count_inbox_msgs;
-    //dwyco_list_numelems(inbox_msgs, &n, 0);
+    dwyco_list_throw m(inbox_msgs);
+
     // inbox msgs are sorted in the opposite order (newest last)
     r = n - r - 1;
-    dwyco_get_attr(inbox_msgs, r, DWYCO_QMS_ID, mid);
+    try {
+    mid = m.get<QByteArray>(r, DWYCO_QMS_ID);
+
     if(role == MID)
         return mid;
 
@@ -1273,13 +1239,8 @@ msglist_raw::inbox_data (int r, int role ) const
 
     case DATE_CREATED:
     {
-        if(!dwyco_list_get(inbox_msgs, r, DWYCO_QMS_DS_SECONDS_SINCE_JAN1_1970,
-                           &out, &len_out, &type_out))
-            return QVariant();
-        if(type_out != DWYCO_TYPE_INT)
-            return QVariant();
         QVariant v;
-        v.setValue(QString(out).toLong());
+        v.setValue(m.get_long(r, DWYCO_QMS_DS_SECONDS_SINCE_JAN1_1970));
         return v;
     }
 
@@ -1334,6 +1295,12 @@ msglist_raw::inbox_data (int r, int role ) const
     default:
         return QVariant();
     }
+    }
+    catch(...)
+    {
+
+    }
+    return QVariant();
 
 }
 
@@ -1374,14 +1341,13 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         return QVariant(0);
     }
 
-    dwyco_list dmil(msg_idx);
+    dwyco_list_throw m(msg_idx);
+
+    try {
 
     if(role == MID)
     {
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QVariant();
-
+        QByteArray mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
         return mid;
     }
     if(role == SELECTED)
@@ -1390,29 +1356,18 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     }
     if(role == Qt::DisplayRole)
     {
-        if(!dwyco_list_get(msg_idx, r, DWYCO_MSG_IDX_DATE,
-                           &out, &len_out, &type_out))
-            return QVariant();
-        if(type_out != DWYCO_TYPE_INT)
-            return QVariant();
-        QDateTime q(QDateTime::fromSecsSinceEpoch(atol(out)));
+        QDateTime q(QDateTime::fromSecsSinceEpoch(m.get_long(r, DWYCO_MSG_IDX_DATE)));
         return QVariant(q);
     }
     else if(role == DATE_CREATED)
     {
-        if(!dwyco_list_get(msg_idx, r, DWYCO_MSG_IDX_DATE,
-                           &out, &len_out, &type_out))
-            return QVariant();
-        if(type_out != DWYCO_TYPE_INT)
-            return QVariant();
         QVariant v;
-        v.setValue(QString(out).toLong());
+        v.setValue(m.get_long(r, DWYCO_MSG_IDX_DATE));
         return v;
-
     }
     else if(role == SENT)
     {
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_IS_SENT))
+        if(!m.is_nil(r, DWYCO_MSG_IDX_IS_SENT))
         {
             return QVariant(1);
         }
@@ -1420,22 +1375,22 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     }
     else if( role == Qt::DecorationRole)
     {
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_HAS_ATTACHMENT) == 0)
+        if(m.is_nil(r, DWYCO_MSG_IDX_HAS_ATTACHMENT))
         {
             return QVariant("");
         }
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_IS_FILE) != 0)
+        if(!m.is_nil(r, DWYCO_MSG_IDX_IS_FILE))
         {
             return QVariant("qrc:///new/prefix1/icons/downlaod-16x16.png");
         }
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_ATT_HAS_VIDEO) != 0)
+        if(!m.is_nil(r, DWYCO_MSG_IDX_ATT_HAS_VIDEO))
         {
-            if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_ATT_IS_SHORT_VIDEO) != 0)
+            if(!m.is_nil(r, DWYCO_MSG_IDX_ATT_IS_SHORT_VIDEO))
                 return QVariant("qrc:///new/prefix1/icons/media-1-16x16.png");
             else
                 return QVariant("qrc:///new/prefix1/icons/media 2-16x16.png");
         }
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_ATT_HAS_AUDIO) != 0)
+        if(!m.is_nil(r, DWYCO_MSG_IDX_ATT_HAS_AUDIO))
             return QVariant("qrc:///new/prefix1/icons/music 2-16x16.png");
         return QVariant("qrc:///new/prefix1/icons/stop.png");
     }
@@ -1445,11 +1400,11 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     }
     else if(role == HAS_VIDEO)
     {
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_HAS_ATTACHMENT) == 0)
+        if(m.is_nil(r, DWYCO_MSG_IDX_HAS_ATTACHMENT))
         {
             return 0;
         }
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_ATT_HAS_VIDEO) != 0)
+        if(!m.is_nil(r, DWYCO_MSG_IDX_ATT_HAS_VIDEO))
         {
             return 1;
         }
@@ -1458,31 +1413,31 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     }
     else if(role == HAS_SHORT_VIDEO)
     {
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_HAS_ATTACHMENT) == 0)
+        if(m.is_nil(r, DWYCO_MSG_IDX_HAS_ATTACHMENT))
         {
             return 0;
         }
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_ATT_IS_SHORT_VIDEO) == 1)
+        if(!m.is_nil(r, DWYCO_MSG_IDX_ATT_IS_SHORT_VIDEO))
             return 1;
         return 0;
     }
     else if(role == HAS_AUDIO)
     {
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_HAS_ATTACHMENT) == 0)
+        if(m.is_nil(r, DWYCO_MSG_IDX_HAS_ATTACHMENT))
         {
             return 0;
         }
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_ATT_HAS_AUDIO) == 1)
+        if(!m.is_nil(r, DWYCO_MSG_IDX_ATT_HAS_AUDIO))
             return 1;
         return 0;
     }
     else if(role == IS_FILE)
     {
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_HAS_ATTACHMENT) == 0)
+        if(m.is_nil(r, DWYCO_MSG_IDX_HAS_ATTACHMENT))
         {
             return 0;
         }
-        if(dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_IS_FILE) != 0)
+        if(!m.is_nil(r, DWYCO_MSG_IDX_IS_FILE))
         {
             return 1;
         }
@@ -1491,7 +1446,7 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     }
     else if (role == IS_FORWARDED)
     {
-        if(!dwyco_get_attr_bool(msg_idx, r, DWYCO_MSG_IDX_IS_FORWARDED))
+        if(m.is_nil(r, DWYCO_MSG_IDX_IS_FORWARDED))
             return 0;
         return 1;
     }
@@ -1501,41 +1456,30 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         // we would have to read in the message to get it, which may be
         // too expensive. we know the local time is only really displayed for
         // "extra info", so it isn't used all that much
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return "unknown";
-        QByteArray buid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, buid))
-        {
-            return "unknown";
-        }
-        buid = QByteArray::fromHex(buid);
+
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
+        //auto buid = m.get<QByteArray>(r, DWYCO_MSG_IDX_ASSOC_UID);
+
+        //buid = QByteArray::fromHex(buid);
         DWYCO_SAVED_MSG_LIST sm;
-        if(!dwyco_get_saved_message(&sm, buid.constData(), buid.length(), mid.constData()))
+        if(dwyco_get_saved_message3(&sm, mid.constData()) != DWYCO_GSM_SUCCESS)
             return "unknown";
         simple_scoped qsm(sm);
 
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
         simple_scoped qba(ba);
-        return gen_time(ba, 0);
+        return gen_time(qba, 0);
     }
     else if(role == IS_FAVORITE)
     {
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QVariant();
-
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
         if(dwyco_get_fav_msg(mid.constData()))
             return 1;
         return 0;
-
     }
     else if(role == IS_HIDDEN)
     {
-        QByteArray mid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_MID, mid))
-            return QVariant();
-
+        auto mid = m.get<QByteArray>(r, DWYCO_MSG_IDX_MID);
         if(dwyco_mid_has_tag(mid.constData(), "_hid"))
             return 1;
         return 0;
@@ -1553,12 +1497,8 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         return QString("fetched");
     else if(role == ASSOC_UID)
     {
-        QByteArray huid;
-        if(!dwyco_get_attr(msg_idx, r, DWYCO_MSG_IDX_ASSOC_UID, huid))
-        {
-            return "unknown";
-        }
-        return QString(huid);
+        auto huid = m.get<QByteArray>(r, DWYCO_MSG_IDX_ASSOC_UID);
+        return huid;
     }
     else if(role == SENT_TO_LOCATION)
     {
@@ -1657,7 +1597,12 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     }
     else if(role == LOGICAL_CLOCK)
     {
-        return (qlonglong)dmil.get_long(r, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+        return (qlonglong)m.get_long(r, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+    }
+    }
+    catch(...)
+    {
+
     }
 
     return QVariant();
@@ -1668,61 +1613,81 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
 QString
 msglist_raw::get_msg_text(int row) const
 {
+    dwyco_list_throw m(msg_idx);
     QByteArray mid;
-    if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_MID, mid))
+    try
+    {
+        mid = m.get<QByteArray>(row, DWYCO_MSG_IDX_MID);
+    }
+    catch(...)
+    {
         return "";
+    }
+
     DWYCO_SAVED_MSG_LIST sm;
 
-    QByteArray buid;
-    if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_ASSOC_UID, buid))
-        return "";
-    buid = QByteArray::fromHex(buid);
-    if(!dwyco_get_saved_message(&sm, buid.constData(), buid.length(), mid.constData()))
-        return "";
+    int disp = dwyco_get_saved_message3(&sm, mid.constData());
+    switch(disp)
+    {
+    case DWYCO_GSM_TRANSIENT_FAIL:
+        return "(unknown)";
+    case DWYCO_GSM_PULL_IN_PROGRESS:
+        return "(fetching)";
+    case DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE:
+        return "(fetching when available)";
+    case DWYCO_GSM_ERROR:
+    default:
+        return "(failed)";
+    case DWYCO_GSM_SUCCESS:
+        break;
+    }
     simple_scoped qsm(sm);
 
     DWYCO_LIST ba = dwyco_get_body_array(qsm);
     simple_scoped qba(ba);
 
-    int n;
-    if(dwyco_list_numelems(qba, &n, 0))
+    if(qba.rows() > 1)
     {
-        if(n > 1)
-        {
-            // forwarded message, for now just return the
-            // yucky dll formatted message
-            QByteArray ftxt;
-            DWYCO_LIST bt = dwyco_get_body_text(qba);
-            if(!bt)
-                return "";
-            simple_scoped qbt(bt);
-            if(!dwyco_get_attr(qbt, 0, DWYCO_NO_COLUMN, ftxt))
-                return "";
-            return get_extended(ftxt);
-        }
+        // forwarded message, for now just return the
+        // yucky dll formatted message
+        DWYCO_LIST bt = dwyco_get_body_text(qba);
+        if(!bt)
+            return "";
+        simple_scoped qbt(bt);
+        auto ftxt = qbt.get<QByteArray>(0);
+#ifdef LINUX_EMOJI_CRASH_HACK
+        return QString::fromLatin1(get_extended(ftxt));
+#else
+        return QString::fromUtf8(get_extended(ftxt));
+#endif
     }
 
-    QByteArray txt;
-    if(!dwyco_get_attr(qba, 0, DWYCO_QM_BODY_NEW_TEXT2, txt))
-        return "";
 
-    return get_extended(txt);
+    auto txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
+#ifdef LINUX_EMOJI_CRASH_HACK
+    return QString::fromLatin1(get_extended(txt));
+#else
+    return QString::fromUtf8(get_extended(txt));
+#endif
 }
 
 QString
 msglist_raw::preview_filename(int row) const
 {
     QByteArray pfn;
-    QByteArray buid;
+    //QByteArray buid;
     QByteArray mid;
     int is_file;
     QString local_time;
+    dwyco_list_throw m(msg_idx);
+    try {
+        mid = m.get<QByteArray>(row, DWYCO_MSG_IDX_MID);
+    }
+    catch(...)
+    {
+        return "";
+    }
 
-    if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_MID, mid))
-        return "";
-    if(!dwyco_get_attr(msg_idx, row, DWYCO_MSG_IDX_ASSOC_UID, buid))
-        return "";
-    buid = QByteArray::fromHex(buid);
     QByteArray full_size;
 
     if(!preview_saved_msg(mid, pfn, is_file, full_size, local_time))

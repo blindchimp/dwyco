@@ -203,7 +203,7 @@ void
 takeover_from_background(int port)
 {
 #ifdef ANDROID
-    int c = dwyco_request_singleton_lock("mumble", 1);
+    int c = dwyco_request_singleton_lock("dwyco", port);
     if(c < 0)
         exit(0);
 #endif
