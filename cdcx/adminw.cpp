@@ -141,7 +141,7 @@ get_time_item(DWYCO_LIST v, const char *col)
         return 0;
     time_t tm = atol(val);
     QDateTime qdt;
-    qdt.setTime_t(tm);
+    qdt.setSecsSinceEpoch(tm);
 
     return new QTableWidgetItem(qdt.toString());
 }
@@ -152,7 +152,7 @@ get_time_item(QList<QVariant> v, const char *col)
 {
     time_t tm = v[atoi(col)].toInt();
     QDateTime qdt;
-    qdt.setTime_t(tm);
+    qdt.setSecsSinceEpoch(tm);
 
     return new QTableWidgetItem(qdt.toString());
 }

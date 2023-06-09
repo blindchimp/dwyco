@@ -31,6 +31,24 @@ exit_sound()
 }
 #else
 
+#ifdef DWYCO_QT6
+void
+play_sound_plat(const char *fn)
+{
+
+}
+
+void
+init_sound()
+{
+}
+
+void
+exit_sound()
+{
+}
+
+#else
 #include <QSound>
 #include "pfx.h"
 
@@ -50,6 +68,7 @@ void
 exit_sound()
 {
 }
+#endif
 
 #endif
 

@@ -78,7 +78,7 @@ class mainwinform : public QMainWindow
     friend class simple_call;
 
 public:
-    mainwinform(QWidget *parent = 0, Qt::WindowFlags flags = 0);
+    mainwinform(QWidget *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
     ~mainwinform();
     void load_users();
     void decorate_users();

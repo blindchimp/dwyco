@@ -30,7 +30,7 @@ static QSet<QByteArray> Got_msg_from;
 static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Dont_refetch;
 static QList<QByteArray> Delete_msgs;
-typedef QHash<QByteArray, QByteArray> UID_MID_MAP;
+typedef QMultiHash<QByteArray, QByteArray> UID_MID_MAP;
 static UID_MID_MAP Unviewed_msgs;
 
 int
@@ -51,7 +51,7 @@ save_unviewed()
 void
 add_unviewed(const QByteArray& uid, const QByteArray& mid, int no_save)
 {
-    Unviewed_msgs.insertMulti(uid, mid);
+    Unviewed_msgs.insert(uid, mid);
     // note: ideally we would sort it in by the time the msg was sent, tho this
     // method usually works (messages can appear from different
     // sources like server vs. direct at different times.)

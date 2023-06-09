@@ -18,7 +18,7 @@
 #include <QSettings>
 #include <QScrollBar>
 #include <QDesktopServices>
-#include <QDesktopWidget>
+//#include <QDesktopWidget>
 #include <QVector>
 #include <QVariant>
 #include <QList>
@@ -114,8 +114,8 @@ static QHash<DwOString, DwOString> Animate_uids;
 static QList<DwOString> Reset_animations_uids;
 static QHash<DwOString, font_animation_timer *> Animate_uids_font;
 
-typedef QHash<DwOString, DwOString> UID_ATTR_MAP;
-typedef QHash<DwOString, DwOString>::iterator UID_ATTR_MAP_ITER;
+typedef QMultiHash<DwOString, DwOString> UID_ATTR_MAP;
+typedef QMultiHash<DwOString, DwOString>::iterator UID_ATTR_MAP_ITER;
 
 static UID_ATTR_MAP Uid_attrs;
 QList<user_lobby> User_lobbies;
@@ -287,7 +287,7 @@ uid_attrs_clear()
 void
 uid_attrs_add(const DwOString& uid, const DwOString& attr)
 {
-    Uid_attrs.insertMulti(uid, attr);
+    Uid_attrs.insert(uid, attr);
 }
 
 void
@@ -2932,7 +2932,7 @@ decorate(const DwOString& uid, QStandardItemModel *umodel, QModelIndex mi)
     {
         umodel->setData(mi, QImage(":/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/Eye-32x32.png").scaled(QSize(sz, sz)), Qt::DecorationRole);
         inhibit_default_decorations = 1;
-        umodel->setData(mi, QColor(255, 128, 242), Qt::TextColorRole);
+        umodel->setData(mi, QColor(255, 128, 242), Qt::ForegroundRole);
     }
     else if((uid_from_online = dwyco_uid_online(uid.c_str(), uid.length())) || (uid_from_lobby = uid_in_lobby(uid)))
     {
@@ -2940,14 +2940,14 @@ decorate(const DwOString& uid, QStandardItemModel *umodel, QModelIndex mi)
         {
             umodel->setData(mi, QImage(":/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/arrow right-32x32.png").scaled(QSize(sz, sz)), Qt::DecorationRole);
             inhibit_default_decorations = 1;
-            umodel->setData(mi, QColor(255, 128, 242), Qt::TextColorRole);
+            umodel->setData(mi, QColor(255, 128, 242), Qt::ForegroundRole);
         }
         else
         {
             if(uid_from_online)
-                umodel->setData(mi, QColor(Qt::red), Qt::TextColorRole);
+                umodel->setData(mi, QColor(Qt::red), Qt::ForegroundRole);
             else
-                umodel->setData(mi, QColor(Qt::darkMagenta), Qt::TextColorRole);
+                umodel->setData(mi, QColor(Qt::darkMagenta), Qt::ForegroundRole);
             if(Display_pics_in_user_list)
             {
                 QPixmap pm = ThePreviewCache->get_preview_by_uid(uid);
@@ -2978,11 +2978,11 @@ decorate(const DwOString& uid, QStandardItemModel *umodel, QModelIndex mi)
         {
             umodel->setData(mi, QImage(":/new/red32/icons/PrimaryCons_Red_KenSaunders/PNGs/32x32/arrow right-32x32.png").scaled(QSize(sz, sz)), Qt::DecorationRole);
             inhibit_default_decorations = 1;
-            umodel->setData(mi, QColor(Qt::blue), Qt::TextColorRole);
+            umodel->setData(mi, QColor(Qt::blue), Qt::ForegroundRole);
         }
         else
         {
-            umodel->setData(mi, QColor(Qt::black), Qt::TextColorRole);
+            umodel->setData(mi, QColor(Qt::black), Qt::ForegroundRole);
             if(Display_pics_in_user_list)
             {
                 QPixmap pm = ThePreviewCache->get_preview_by_uid(uid);
