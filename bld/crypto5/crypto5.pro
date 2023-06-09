@@ -14,6 +14,11 @@ QMAKE_CXXFLAGS_GNUCXX1Z=""
 QMAKE_CXXFLAGS += -Wno-unused-variable -Wno-unused-parameter $$QMAKE_CXXFLAGS_CXX11
 }
 
+windows {
+# get rid of c++17, this lib doesn't need it
+QMAKE_CXXFLAGS_CXX1Z=""
+}
+
 include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += NDEBUG 
 

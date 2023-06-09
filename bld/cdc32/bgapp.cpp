@@ -909,14 +909,18 @@ out:
             // call will process whatever events are generated here
             MMChannel::exit_mmchan();
             dwyco_suspend();
-            dwyco::Db_timer.stop();
-            dwyco::Db_timer.load(1);
-            dwyco::Db_timer.start();
         }
         else
         {
             dwyco_suspend();
         }
+        // note that the Db_timer is partially used for avoid the
+        // thundering herd thing, but since this is a mobile device
+        // and a once in awhile thing in the background, that probably
+        // isn't a problem. so just restart as quickly as possible.
+        dwyco::Db_timer.stop();
+        dwyco::Db_timer.load(1);
+        dwyco::Db_timer.start();
 #else
         dwyco_suspend();
 #endif

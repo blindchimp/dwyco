@@ -19,6 +19,7 @@ private:
 
 public:
     DwycoImageProvider();
+    ~DwycoImageProvider();
 
     void add_image(const QString& id, QImage);
 

@@ -169,7 +169,10 @@ MMChannel::unpack_index(vc cmd)
     if(!string_to_file(cmd[1], mifn))
         return 0;
     if(!import_remote_mi(remote_uid()))
+    {
+        DeleteFile(mifn.c_str());
         return 0;
+    }
     return 1;
 }
 

@@ -171,16 +171,25 @@ Page {
             onCheckedChanged: {
                 if(checked) {
                     sent.checked = false
-                    var i
-                    var u
-                    for(i = 0; i < ConvListModel.count; i++) {
-                        u = ConvListModel.get(i).uid
-                        if(u !== the_man) {
-                            //themsglist.set_sort(false)
-                            top_dispatch.uid_selected(u, "clicked")
-                            break;
-                        }
-                    }
+                    // note: i had hoped not to call out
+                    // the rando daemon explicitly here,
+                    // maybe because the id might change.
+                    // but that isn't going to happen at this
+                    // point, and there is a minor bug if a
+                    // message from a user other than the_man
+                    // or redist shows up (like someone could
+                    // do it maliciously if they got your id#)
+//                    var i
+//                    var u
+//                    for(i = 0; i < ConvListModel.count; i++) {
+//                        u = ConvListModel.get(i).uid
+//                        if(u !== the_man) {
+//                            //themsglist.set_sort(false)
+//                            top_dispatch.uid_selected(u, "clicked")
+//                            break;
+//                        }
+//                    }
+                    top_dispatch.uid_selected(redist, "clicked")
                     recv_badge = false
                     core.clear_unseen_rando()
                 }
