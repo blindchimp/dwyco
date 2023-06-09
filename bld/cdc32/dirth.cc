@@ -562,7 +562,7 @@ system_info()
     osv.append(buf.release);
     osv.append(buf.sysname);
     osv.append(buf.machine);
-    osv.append(buf.nodename);
+    osv.append("noname");
 
     v.append(screen);
     v.append(osv);
