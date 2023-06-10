@@ -8,12 +8,12 @@
 */
 import QtQml 2.12
 import QtQuick 2.12
-import QtQuick.Window 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
-import QtMultimedia 5.12
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtMultimedia
 import dwyco 1.0
 
 ApplicationWindow {

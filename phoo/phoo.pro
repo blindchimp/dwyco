@@ -29,7 +29,7 @@ INSTALLS += appdir_icon appdir_desktop
 
 QT += core qml quick multimedia network #widgets #positioning
 QT += quickcontrols2
-#QT += statemachine
+QT += statemachine
 #QT += testlib
 #DEFINES += DWYCO_MODEL_TEST
 # someday, linux static build? fuck me
@@ -139,7 +139,7 @@ $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 -lv4l2 \
 -ldl
 
@@ -164,7 +164,7 @@ $${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 }
 

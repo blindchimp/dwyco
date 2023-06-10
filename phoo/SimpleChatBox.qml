@@ -8,10 +8,11 @@
 */
 import QtQuick 2.12
 import QtQml 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
-import QtQuick.Dialogs 1.3
+import QtQuick.Layouts
+import QtQuick.Controls
+import QtQuick.Dialogs
 import dwyco 1.0
+import Qt.labs.platform as Mumble
 
 
 Page {
@@ -420,19 +421,19 @@ Page {
                             onTriggered: {
                                 confirm_clear.visible = true
                             }
-                            MessageDialog {
+                            Mumble.MessageDialog {
                                 id: confirm_clear
                                 title: "Remove all msgs?"
-                                icon: StandardIcon.Question
+                                //icon: StandardIcon.Question
                                 text: "Delete ALL (including HIDDEN) msgs from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
+                                buttons: MessageDialog.Yes | MessageDialog.No
+                                onYesClicked: {
                                     core.clear_messages_unfav(chatbox.to_uid)
                                     themsglist.reload_model()
                                     close()
                                 }
-                                onNo: {
+                                onNoClicked: {
                                     close()
                                 }
                             }
@@ -443,20 +444,20 @@ Page {
                             onTriggered: {
                                 confirm_delete.visible = true
                             }
-                            MessageDialog {
+                            Mumble.MessageDialog {
                                 id: confirm_delete
                                 title: "Bulk delete?"
-                                icon: StandardIcon.Question
+                                //icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
                                 informativeText: "This removes FAVORITE and HIDDEN messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
+                                buttons: Yes | No
+                                onYesClicked: {
                                     core.delete_user(chatbox.to_uid)
                                     themsglist.reload_model()
                                     close()
                                     stack.pop()
                                 }
-                                onNo: {
+                                onNoClicked: {
                                     close()
                                 }
                             }
@@ -570,7 +571,7 @@ Page {
         visible: false
 
 
-        sourceComponent: FileDialog {
+        sourceComponent: Mumble.FileDialog {
 
             title: "Pick a picture"
             folder: shortcuts.pictures

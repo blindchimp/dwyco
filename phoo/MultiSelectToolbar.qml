@@ -8,9 +8,10 @@
 */
 import QtQuick 2.12
 import dwyco 1.0
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import Qt.labs.platform
 
 ToolBar {
     property Component extras
@@ -88,16 +89,16 @@ ToolBar {
             MessageDialog {
                 id: confirm_delete
                 title: "Bulk delete?"
-                icon: StandardIcon.Question
+                //icon: StandardIcon.Question
                 text: "Delete ALL messages from selected users?"
                 informativeText: "This removes FAVORITE messages too."
-                standardButtons: StandardButton.Yes | StandardButton.No
-                onYes: {
+                buttons: MessageDialog.Yes | MessageDialog.No
+                onYesClicked: {
                     model.delete_all_selected()
                     multiselect_mode = false
                     close()
                 }
-                onNo: {
+                onNoClicked: {
                     close()
                 }
             }
