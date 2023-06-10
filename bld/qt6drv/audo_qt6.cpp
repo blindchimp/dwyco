@@ -8,12 +8,13 @@
 */
 #include <QList>
 #include <QAudioOutput>
-#include <QMutex>
+#include <QRecursiveMutex>
 #include <QMutexLocker>
 #include <QGuiApplication>
 #include <QObject>
 #include <QIODevice>
 #include <QTimer>
+#include <QAudioSink>
 
 #include "dlli.h"
 
@@ -46,7 +47,7 @@ struct audpack
 static QList<audpack> *devq_p;
 static QList<audpack> *doneq;
 static int Init;
-static QMutex audio_mutex(QMutex::Recursive);
+static QRecursiveMutex audio_mutex;
 
 class Audo_qio : public QIODevice
 {
@@ -99,7 +100,7 @@ public:
         audio_poll_timer = 0;
     }
     QIODevice *qio_dev;
-    QAudioOutput *audio_output;
+    QAudioSink *audio_output;
     QTimer *audio_poll_timer;
 
 
@@ -149,13 +150,10 @@ public slots:
         }
         QAudioFormat af;
         af.setSampleRate(UWB_SAMPLE_RATE);
-        af.setSampleSize(16);
-        af.setSampleType(QAudioFormat::SignedInt);
-        af.setByteOrder(QAudioFormat::LittleEndian);
+        af.setSampleFormat(QAudioFormat::Int16);
         af.setChannelCount(1);
-        af.setCodec("audio/pcm");
 
-        audio_output = new QAudioOutput(af);
+        audio_output = new QAudioSink(af);
         audio_output->setBufferSize(3 * AUDBUF_LEN);
         connect(audio_output, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handle_stateChange(QAudio::State)));
 

@@ -26,12 +26,7 @@ INCLUDEPATH += ../miscsrc ../ppm ../pgm ../pbm ../cdc32
 SOURCES += \
     audi_qt6.cpp \
     audo_qt6.cpp \
-    vgqt.cpp
-
-HEADERS += \
-    audi_qt6.h \
-    audo_qt6.h \
-    vgqt.h
+    vgqt6.cpp
 
 # Default rules for deployment.
 unix {
