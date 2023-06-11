@@ -503,7 +503,7 @@ Page {
            MouseArea {
                anchors.fill: parent
                acceptedButtons: Qt.LeftButton|Qt.RightButton
-               onClicked: {
+               onClicked: (mouse)=> {
                    console.log("click")
                    console.log(index)
                    gridView1.currentIndex = index

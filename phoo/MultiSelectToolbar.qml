@@ -11,7 +11,7 @@ import dwyco 1.0
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import Qt.labs.platform
+//import Qt.labs.platform
 
 ToolBar {
     property Component extras
@@ -93,14 +93,29 @@ ToolBar {
                 text: "Delete ALL messages from selected users?"
                 informativeText: "This removes FAVORITE messages too."
                 buttons: MessageDialog.Yes | MessageDialog.No
-                onYesClicked: {
-                    model.delete_all_selected()
-                    multiselect_mode = false
-                    close()
-                }
-                onNoClicked: {
-                    close()
-                }
+                onButtonClicked: (button, role)=> {
+                                     switch(button) {
+                                         case MessageDialog.Yes: {
+                                             model.delete_all_selected()
+                                             multiselect_mode = false
+                                             close()
+                                             break
+                                         }
+                                         case MessageDialog.No: {
+                                             close()
+                                             break
+                                         }
+                                     }
+                                 }
+
+//                onYesClicked: {
+//                    model.delete_all_selected()
+//                    multiselect_mode = false
+//                    close()
+//                }
+//                onNoClicked: {
+//                    close()
+//                }
             }
 
             Layout.fillHeight: true

@@ -143,7 +143,7 @@ Item {
            MouseArea {
                anchors.fill: drow
                acceptedButtons: Qt.LeftButton|Qt.RightButton
-               onClicked: {
+               onClicked: (mouse)=> {
                    console.log("click")
                    console.log(index)
                    listView2.currentIndex = index

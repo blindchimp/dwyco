@@ -13,6 +13,7 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import dwyco 1.0
 import Qt.labs.platform as Mumble
+import QtCore
 
 
 Page {
@@ -427,7 +428,7 @@ Page {
                                 //icon: StandardIcon.Question
                                 text: "Delete ALL (including HIDDEN) msgs from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                buttons: MessageDialog.Yes | MessageDialog.No
+                                buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
                                 onYesClicked: {
                                     core.clear_messages_unfav(chatbox.to_uid)
                                     themsglist.reload_model()
@@ -450,7 +451,7 @@ Page {
                                 //icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
                                 informativeText: "This removes FAVORITE and HIDDEN messages too."
-                                buttons: Yes | No
+                                buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
                                 onYesClicked: {
                                     core.delete_user(chatbox.to_uid)
                                     themsglist.reload_model()
@@ -571,15 +572,15 @@ Page {
         visible: false
 
 
-        sourceComponent: Mumble.FileDialog {
+        sourceComponent: FileDialog {
 
             title: "Pick a picture"
-            folder: shortcuts.pictures
+            currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
             onAccepted: {
-                console.log("PICK ", fileUrl)
-                console.log("PICKU ", Qt.resolvedUrl(fileUrl))
+                console.log("PICK ", selectedFile)
+                console.log("PICKU ", Qt.resolvedUrl(selectedFile))
                 //img_preview.source = fileUrl
-                chat_pic_preview.source = fileUrl
+                chat_pic_preview.source = selectedFile
                 chat_pic_preview.ok_vis = true
                 stack.push(chat_pic_preview)
             }
