@@ -115,6 +115,7 @@ Rectangle {
                 //console.log("focus auto ",focus.isFocusModeSupported(CameraFocus.FocusAuto))
                 //camera.unlock()
                 //photoPreview.ok_vis = false
+                console.log("CAPTURED ", img_cap.preview)
             }
 
             onErrorOccurred: {
@@ -123,10 +124,11 @@ Rectangle {
             }
 
             onImageSaved: (req, path)=> {
-                file_captured = path
-                //photoPreview.ok_vis = true
+                              file_captured = path
+                              console.log("SAVED ", file_captured)
+                              //photoPreview.ok_vis = true
 
-            }
+                          }
         }
         camera: camera
         videoOutput: viewfinder
@@ -154,7 +156,7 @@ Rectangle {
     PhotoPreview {
         id : photoPreview
         anchors.fill : parent
-        onClosed: {
+        onClosed:(ok)=> {
             if(ok)
                 cameraUI.state = state_on_close //"PhotoCapture"
             else
