@@ -36,8 +36,9 @@ QT += statemachine
 #QTPLUGIN.platforms = qminimal qeglfs
 #CONFIG += static
 
-android: QT += androidextras
+
 !equals(QT_MAJOR_VERSION, 6) {
+android: QT += androidextras
 macx-clang: QT += macextras
 }
 

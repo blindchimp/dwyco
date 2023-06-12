@@ -21,7 +21,7 @@
 #include <QAudioSource>
 
 #ifdef ANDROID
-#include <QtAndroid>
+//#include <QtAndroid>
 #endif
 
 void oopanic(const char *);
