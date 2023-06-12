@@ -66,4 +66,3 @@ SOURCES += \
 
 }
 
-HEADERS +=

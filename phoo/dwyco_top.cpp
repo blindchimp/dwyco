@@ -79,7 +79,7 @@ void android_log_stuff(const char *str, const char *s1, int s2);
 #endif
 
 
-#if defined(MACOSX) && !defined(DWYCO_IOS)
+#if defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
 #include <QtMacExtras>
 #endif
 
@@ -2075,7 +2075,7 @@ DwycoCore::map_to_representative(const QString& uid)
 void
 DwycoCore::set_badge_number(int i)
 {
-#if  defined(MACOSX) && !defined(DWYCO_IOS)
+#if  defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else

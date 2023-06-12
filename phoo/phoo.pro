@@ -37,7 +37,9 @@ QT += statemachine
 #CONFIG += static
 
 android: QT += androidextras
+!equals(QT_MAJOR_VERSION, 6) {
 macx-clang: QT += macextras
+}
 
 linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
@@ -237,7 +239,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 $${D}/uv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
@@ -262,7 +264,7 @@ $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 
 }
@@ -293,7 +295,7 @@ $${D}/jhead/libjhead.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -315,7 +317,7 @@ $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 }
 
 android-* {
