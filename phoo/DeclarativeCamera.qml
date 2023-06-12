@@ -8,8 +8,8 @@
 */
 import QtQml 2.12
 import QtQuick 2.12
-import QtMultimedia 5.12
-import QtQuick.Controls 2.12
+import QtMultimedia
+import QtQuick.Controls
 
 // the API to this object is ugly... essentially, the requirement is
 // that the user of the object must reside in a stackview, and
@@ -62,7 +62,7 @@ Rectangle {
             name: "PhotoCapture"
             StateChangeScript {
                 script: {
-                    camera.captureMode = Camera.CaptureStillImage
+                    //camera.captureMode = Camera.CaptureStillImage
                     camera.start()
                 }
             }
@@ -99,48 +99,54 @@ Rectangle {
             }
         }
     ]
-    
-    Camera {
-        id: camera
-        captureMode: Camera.CaptureStillImage
 
-        imageCapture {
+    MediaDevices {
+        id: devices
+    }
 
+    CaptureSession {
+        id: capture_session
+        imageCapture: ImageCapture {
+               id: img_cap
             onImageCaptured: {
-                photoPreview.source = preview
+                photoPreview.source = img_cap.preview
                 cameraUI.state = "PhotoPreview"
-                console.log("orientation ", camera.orientation)
-                console.log("focus auto ",focus.isFocusModeSupported(CameraFocus.FocusAuto))
-                camera.unlock()
+                //console.log("orientation ", camera.orientation)
+                //console.log("focus auto ",focus.isFocusModeSupported(CameraFocus.FocusAuto))
+                //camera.unlock()
                 //photoPreview.ok_vis = false
             }
 
-            onCaptureFailed: {
+            onErrorOccurred: {
                 console.log("cap failed ", message)
-                camera.unlock()
+                //camera.unlock()
             }
 
-            onImageSaved: {
+            onImageSaved: (req, path)=> {
                 file_captured = path
                 //photoPreview.ok_vis = true
-                
-            }
-        }
-
-        focus {
-            focusMode: CameraFocus.FocusAuto
-        }
-
-        imageProcessing.whiteBalanceMode: CameraImageProcessing.WhiteBalanceAuto
-
-        onLockStatusChanged: {
-            console.log("lock status ", lockStatus)
-            if(lockStatus == Camera.Locked) {
-                camera.imageCapture.captureToLocation(core.tmp_dir)
 
             }
-
         }
+        camera: camera
+        videoOutput: viewfinder
+    }
+
+    Camera {
+        id: camera
+        active: cameraUI.visible
+        //captureMode: Camera.CaptureStillImage
+        focusMode: Camera.FocusModeAuto
+        whiteBalanceMode: Camera.WhiteBalanceAuto
+
+//        onLockStatusChanged: {
+//            console.log("lock status ", lockStatus)
+//            if(lockStatus == Camera.Locked) {
+//                camera.imageCapture.captureToLocation(core.tmp_dir)
+
+//            }
+
+//        }
 
 
     }
@@ -165,8 +171,8 @@ Rectangle {
         visible: cameraUI.state == "PhotoCapture" || cameraUI.state == "VideoCapture"
 
         anchors.fill: parent
-        source: camera
-        autoOrientation: true
+        //source: camera
+        //autoOrientation: true
         
         PhotoCaptureControls {
             id: stillControls
@@ -178,7 +184,7 @@ Rectangle {
         BusyIndicator {
             id: busy1
 
-            running: {stillControls.visible && !camera.imageCapture.ready}
+            running: {stillControls.visible && !capture_session.imageCapture.readyForCapture}
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -196,7 +202,7 @@ Rectangle {
 
         text: qsTr("(No camera devices available)")
         z: 6
-        visible: {QtMultimedia.availableCameras.length === 0}
+        visible: {devices.videoInputs.length === 0}
         Button {
             anchors.left: parent.left
             anchors.bottom: parent.bottom
