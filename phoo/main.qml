@@ -77,7 +77,7 @@ ApplicationWindow {
         return 0
     }
     font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
-    
+    font.weight: Font.Bold
     
     property color primary : "#673AB7"
     property color primary_dark : "#512DA8"
