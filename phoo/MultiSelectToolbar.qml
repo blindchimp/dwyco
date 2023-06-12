@@ -86,36 +86,38 @@ ToolBar {
                 // remove whatever is selected
                 confirm_delete.visible = true
             }
-            MessageDialog {
+            MessageYN {
                 id: confirm_delete
                 title: "Bulk delete?"
                 //icon: StandardIcon.Question
                 text: "Delete ALL messages from selected users?"
-                informativeText: "This removes FAVORITE messages too."
-                buttons: MessageDialog.Yes | MessageDialog.No
-                onButtonClicked: (button, role)=> {
-                                     switch(button) {
-                                         case MessageDialog.Yes: {
-                                             model.delete_all_selected()
-                                             multiselect_mode = false
-                                             close()
-                                             break
-                                         }
-                                         case MessageDialog.No: {
-                                             close()
-                                             break
-                                         }
-                                     }
-                                 }
+                informativeText: "This REMOVES FAVORITE messages too."
+                detailedText: "This is what you use to completely obliterate all messages from selected users, including favorite and hidden messages."
+                //detailedText: informativeText
+                //buttons: MessageDialog.Yes | MessageDialog.No
+//                onButtonClicked: (button, role)=> {
+//                                     switch(button) {
+//                                         case MessageDialog.Yes: {
+//                                             model.delete_all_selected()
+//                                             multiselect_mode = false
+//                                             close()
+//                                             break
+//                                         }
+//                                         case MessageDialog.No: {
+//                                             close()
+//                                             break
+//                                         }
+//                                     }
+//                                 }
 
-//                onYesClicked: {
-//                    model.delete_all_selected()
-//                    multiselect_mode = false
-//                    close()
-//                }
-//                onNoClicked: {
-//                    close()
-//                }
+                onYesClicked: {
+                    model.delete_all_selected()
+                    multiselect_mode = false
+                    close()
+                }
+                onNoClicked: {
+                    close()
+                }
             }
 
             Layout.fillHeight: true

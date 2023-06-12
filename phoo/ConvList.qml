@@ -12,7 +12,7 @@ import dwyco 1.0
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtQuick.Controls
-import Qt.labs.platform as Mumble
+//import Qt.labs.platform as Mumble
 
 Page {
     id: convlist_top
@@ -70,13 +70,13 @@ Page {
                     onTriggered: {
                         confirm_delete.visible = true
                     }
-                    Mumble.MessageDialog {
+                    MessageYN {
                         id: confirm_delete
                         title: "Block and Bulk delete?"
                         //icon: StandardIcon.Question
                         text: "Delete ALL messages from selected users?"
                         informativeText: "This removes FAVORITE messages too."
-                        buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                        //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
                         onYesClicked: {
                             ConvListModel.block_all_selected()
                             ConvListModel.delete_all_selected()

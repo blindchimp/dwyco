@@ -15,7 +15,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtMultimedia
 import dwyco 1.0
-import Qt.labs.platform as Mumble
+//import Qt.labs.platform as Mumble
 
 ApplicationWindow {
     property real contentScaleFactor: screenDpi / 160
@@ -77,7 +77,7 @@ ApplicationWindow {
         return 0
     }
     font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
-    font.weight: Font.Bold
+    //font.weight: Font.Bold
     
     property color primary : "#673AB7"
     property color primary_dark : "#512DA8"
@@ -313,13 +313,13 @@ ApplicationWindow {
             onTriggered: {
                 confirm_block_delete.visible = true
             }
-            Mumble.MessageDialog {
+            MessageYN {
                 id: confirm_block_delete
                 title: "Block and delete?"
                 //icon: StandardIcon.Question
                 text: "Delete ALL messages from user and BLOCK them?"
                 informativeText: "This removes FAVORITE and HIDDEN messages too."
-                buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
                 onYesClicked: {
                     core.set_ignore(chatbox.to_uid, 1)
                     core.delete_user(chatbox.to_uid)

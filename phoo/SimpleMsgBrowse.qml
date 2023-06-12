@@ -11,7 +11,7 @@ import QtQuick 2.12
 import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Dialogs
-import Qt.labs.platform 1.0 as Mumble
+//import Qt.labs.platform 1.0 as Mumble
 
 Page {
     property alias model: grid.model
@@ -257,13 +257,13 @@ Page {
                             onTriggered: {
                                 confirm_delete2.visible = true
                             }
-                            Mumble.MessageDialog {
+                            MessageYN {
                                 id: confirm_delete2
                                 title: "Clear?"
                                 //icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
                                 onYesClicked: {
                                     core.clear_messages_unfav(simp_msg_browse.to_uid)
                                     themsglist.reload_model()
@@ -281,13 +281,13 @@ Page {
                             onTriggered: {
                                 confirm_delete.visible = true
                             }
-                            Mumble.MessageDialog {
+                            MessageYN {
                                 id: confirm_delete
                                 title: "Bulk delete?"
                                 //icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
                                 informativeText: "This removes FAVORITE messages too."
-                                buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
                                 onYesClicked: {
                                     core.delete_user(simp_msg_browse.to_uid)
                                     themsglist.reload_model()

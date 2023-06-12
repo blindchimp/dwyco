@@ -12,7 +12,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Dialogs
 import dwyco 1.0
-import Qt.labs.platform as Mumble
+//import Qt.labs.platform as Mumble
 import QtCore
 
 
@@ -422,13 +422,13 @@ Page {
                             onTriggered: {
                                 confirm_clear.visible = true
                             }
-                            Mumble.MessageDialog {
+                            MessageYN {
                                 id: confirm_clear
                                 title: "Remove all msgs?"
                                 //icon: StandardIcon.Question
                                 text: "Delete ALL (including HIDDEN) msgs from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
                                 onYesClicked: {
                                     core.clear_messages_unfav(chatbox.to_uid)
                                     themsglist.reload_model()
@@ -445,13 +445,13 @@ Page {
                             onTriggered: {
                                 confirm_delete.visible = true
                             }
-                            Mumble.MessageDialog {
+                            MessageYN {
                                 id: confirm_delete
                                 title: "Bulk delete?"
                                 //icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
                                 informativeText: "This removes FAVORITE and HIDDEN messages too."
-                                buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
                                 onYesClicked: {
                                     core.delete_user(chatbox.to_uid)
                                     themsglist.reload_model()
