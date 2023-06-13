@@ -118,7 +118,7 @@ Rectangle {
                 console.log("CAPTURED ", img_cap.preview)
             }
 
-            onErrorOccurred: {
+            onErrorOccurred: (req, error, message)=> {
                 console.log("cap failed ", message)
                 //camera.unlock()
             }
