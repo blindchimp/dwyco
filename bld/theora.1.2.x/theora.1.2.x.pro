@@ -53,7 +53,7 @@ SOURCES += \
 }
 
 win32-* {
-DEFINES += OC_X86_ASM
+DEFINES += OC_X86_64_ASM
 SOURCES += \
         lib/x86_vc/x86cpu.c \
         lib/x86_vc/mmxencfrag.c \
