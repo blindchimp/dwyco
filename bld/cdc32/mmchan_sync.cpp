@@ -222,6 +222,8 @@ MMChannel::process_pull(vc cmd)
             return;
         }
     }
+    // XXX: this is where we would encrypt to an UNTRUSTED client
+    // unless we ourselves are untrusted, then just send the ecnrypted stuff
     send_pull_resp(mid, from_hex(huid), body, att, pri);
 }
 
@@ -267,6 +269,9 @@ MMChannel::process_pull_resp(vc cmd)
         return;
     }
 
+    // XXX: HERE IS WHERE WE DECRYPT FROM AN UNTRUSTED PULL
+    // unless we ourselves are untrusted, in which case we just
+    // save it as is. note problem below...
     vc m = body;
     DwString udir;
     init_msg_folder(uid, &udir);
@@ -296,6 +301,11 @@ MMChannel::process_pull_resp(vc cmd)
         // we do need to make a local record of it. we can either copy it
         // from the record that induced the pull, or we can just recreate it.
         // for now, we just recreate, and do not emit the msg_update
+        //
+        // note: if we are untrusted ourselves, the index has to be
+        // derived differently. since we don't really need most of the info
+        // to sync, maybe some abbreviated info can be sent from the
+        // other client.
         if(!update_msg_idx(uid, m, 1))
         {
             // managed to save message, but indexing failed,
