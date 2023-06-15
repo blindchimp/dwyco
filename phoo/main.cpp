@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     TheEngine = &engine;
-    QQmlFileSelector *sel = QQmlFileSelector::get(TheEngine);
+    QQmlFileSelector *sel = new QQmlFileSelector(TheEngine);
     QStringList sels;
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     sels.append("vgqt");

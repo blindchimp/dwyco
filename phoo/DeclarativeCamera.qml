@@ -127,6 +127,7 @@ Rectangle {
                               file_captured = path
                               console.log("SAVED ", file_captured)
                               //photoPreview.ok_vis = true
+                              photoPreview.source = "file://" + file_captured
 
                           }
         }
