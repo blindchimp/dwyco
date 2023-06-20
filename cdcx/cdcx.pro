@@ -30,7 +30,7 @@ INCLUDEPATH += .
 
 QT +=  core network statemachine webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
-macx-*|win32|linux-*:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
+macx-*|win32|linux-*:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets core5compat
 
 RESOURCES=icons.qrc
 #CONFIG-=app_bundle
@@ -263,7 +263,7 @@ QMAKE_CXXFLAGS += /wd4100 /wd4068
 
 macx-g++|macx-clang|macx-xcode {
 OBJECTIVE_SOURCES  += mactards.mm
-#INCLUDEPATH += ../bld/qtdrv
+INCLUDEPATH += ../bld/qt6drv
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
@@ -283,11 +283,9 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qt6drv/libqt6drv.a \
 -Wl,-framework,CoreFoundation \
 -Wl,-framework,Cocoa
-
-#$${D}/qtdrv/libqtdrv.a \
-
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -306,10 +304,8 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
-$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
-
-
-#$${D}/qtdrv/libqtdrv.a
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qt6drv/libqt6drv.a
 
 QMAKE_CXX=ccache g++
 #QMAKE_CXXFLAGS +=  -fsanitize=address

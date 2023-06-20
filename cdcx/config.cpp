@@ -9,6 +9,8 @@
 #include <QtGui>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QRegExp>
+#include <QDialog>
 #include "ui_config.h"
 #include "config.h"
 #include "dlli.h"

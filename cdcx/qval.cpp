@@ -7,6 +7,8 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include <QRegExpValidator>
+#include <QRegExp>
+#include <QValidator>
 #include "qval.h"
 static QRegExp EmailRegex("^[a-zA-Z0-9._%+-]+@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,4}$",
                           Qt::CaseSensitive, QRegExp::RegExp2);

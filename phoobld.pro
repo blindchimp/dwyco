@@ -1,6 +1,5 @@
 TEMPLATE = subdirs
 CONFIG += ordered
-QTDRV=qtdrv
 
 equals(QT_MAJOR_VERSION, 6) {
 QTDRV=qt6drv

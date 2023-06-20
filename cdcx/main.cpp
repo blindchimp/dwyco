@@ -10,7 +10,7 @@
 #include <QDialog>
 #include <QSettings>
 #include <QtNetwork/QHostInfo>
-//#include <QDesktopWidget>
+#include <QScreen>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QProcess>
@@ -52,12 +52,9 @@
 #endif
 
 #if defined(MAC_CLIENT) || defined(LINUX)
-#ifdef DWYCO_QT6
-#else
 #include "vgqt.h"
 #include "audi_qt.h"
 #include "audo_qt.h"
-#endif
 #endif
 
 #include "ssmap.h"
@@ -370,8 +367,11 @@ int main(int argc, char *argv[])
             AvoidSSL = 1;
     }
 
-    QDesktopWidget *desktop = QApplication::desktop();
-    MainScreenRect = desktop->availableGeometry(desktop->primaryScreen());
+    //QDesktopWidget *desktop = QApplication::desktop();
+    //MainScreenRect = desktop->availableGeometry(desktop->primaryScreen());
+
+    QScreen *screen = QGuiApplication::primaryScreen();
+    MainScreenRect = screen->availableGeometry();
 
 
     //Q_INIT_RESOURCE(icons);
