@@ -30,7 +30,7 @@ INCLUDEPATH += .
 
 QT +=  core network statemachine webenginewidgets
 equals(QT_MAJOR_VERSION, 4): QT += webkit
-macx-*|win32|linux-*:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets core5compat
+macx-*|win32|linux-*:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
 
 RESOURCES=icons.qrc
 #CONFIG-=app_bundle
@@ -121,7 +121,7 @@ SOURCES += main.cpp tfhex.cpp mainwin.cpp dwyco_new_msg.cpp evret.cpp dvp.cc abo
 
 
 linux-* {
-INCLUDEPATH += ./dllwin ../bld/qtdrv
+INCLUDEPATH += ./dllwin ../bld/qt6drv
 
 D = $${OUT_PWD}/../bld
 
@@ -141,7 +141,7 @@ $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/v4lcap/libv4lcap.a \
@@ -166,7 +166,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 
 #-lesd \

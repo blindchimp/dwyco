@@ -9,7 +9,7 @@
 #include <QtGui>
 #include <QMessageBox>
 #include <QFileDialog>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QDialog>
 #include "ui_config.h"
 #include "config.h"
@@ -68,7 +68,7 @@ configform::accept()
 
     {
         QList<QCheckBox *> cb;
-        QRegExp r("CDC_*", Qt::CaseSensitive, QRegExp::Wildcard);
+        QRegularExpression r = QRegularExpression::fromWildcard(QString("CDC_*"), Qt::CaseSensitive);
         cb = findChildren<QCheckBox *>(r);
         for(int i = 0; i < cb.count(); ++i)
         {
@@ -82,7 +82,8 @@ configform::accept()
     }
     {
         QList<QLineEdit *> cb;
-        cb = findChildren<QLineEdit *>(QRegExp("CDC_*", Qt::CaseSensitive, QRegExp::Wildcard));
+        QRegularExpression r = QRegularExpression::fromWildcard(QString("CDC_*"), Qt::CaseSensitive);
+        cb = findChildren<QLineEdit *>(r);
         for(int i = 0; i < cb.count(); ++i)
         {
             QLineEdit *c = cb.value(i);
@@ -164,7 +165,8 @@ configform::load()
 {
     {
         QList<QCheckBox *> cb;
-        cb = findChildren<QCheckBox *>(QRegExp("CDC_*", Qt::CaseSensitive, QRegExp::Wildcard));
+        QRegularExpression r = QRegularExpression::fromWildcard(QString("CDC_*"), Qt::CaseSensitive);
+        cb = findChildren<QCheckBox *>(r);
         for(int i = 0; i < cb.count(); ++i)
         {
             QCheckBox *c = cb.value(i);
@@ -183,7 +185,8 @@ configform::load()
     }
     {
         QList<QLineEdit *> cb;
-        cb = findChildren<QLineEdit *>(QRegExp("CDC_*", Qt::CaseSensitive, QRegExp::Wildcard));
+        QRegularExpression r = QRegularExpression::fromWildcard(QString("CDC_*"), Qt::CaseSensitive);
+        cb = findChildren<QLineEdit *>(r);
         for(int i = 0; i < cb.count(); ++i)
         {
             QLineEdit *c = cb.value(i);
