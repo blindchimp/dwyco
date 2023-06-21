@@ -69,7 +69,7 @@ lobbybox3::add_lobby(user_lobby ul)
 
         QVariant q;
         q = qtwi->data(Qt::UserRole);
-        if(q != QVariant::Invalid)
+        if(q.isValid())
         {
             if(ul.id.eq(q.toList()[0].toString().toAscii().constData()))
             {
@@ -86,7 +86,7 @@ lobbybox3::add_lobby(user_lobby ul)
 
     QListWidgetItem *qtwi = new QListWidgetItem;
     qtwi->setText(ul.dispname.c_str());
-    qtwi->setData(Qt::UserRole, qvl);
+    qtwi->setData(Qt::UserRole, QVariant(qvl));
     ui->tw->addItem(qtwi);
     if(ul.id == Last_selected_id)
     {
@@ -106,7 +106,7 @@ lobbybox3::del_lobby(DwOString id)
 
         QVariant q;
         q = qtwi->data(Qt::UserRole);
-        if(q != QVariant::Invalid)
+        if(q.isValid())
         {
             if(id.eq(q.toList()[0].toString().toAscii().constData()))
             {
@@ -127,14 +127,14 @@ lobbybox3::clear_lobbies()
 {
     // clear just user lobbies
     int n = ui->tw->count();
-    QList<QListWidgetItem *> del_list;
+    //QList<QListWidgetItem *> del_list;
     for(int i = 0; i < n; ++i)
     {
         QListWidgetItem *qtwi = ui->tw->item(i);
 
         QVariant q;
         q = qtwi->data(Qt::UserRole);
-        if(q != QVariant::Invalid)
+        if(q.isValid())
         {
             ui->tw->takeItem(i);
             delete qtwi;
@@ -160,7 +160,7 @@ lobbybox3::on_tw_itemDoubleClicked(QListWidgetItem *item)
 
         QVariant q;
         q = item->data(Qt::UserRole);
-        if(q == QVariant::Invalid)
+        if(!q.isValid())
             return;
         QString id = q.toList()[0].toString();
 
