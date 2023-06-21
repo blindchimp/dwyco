@@ -21,7 +21,6 @@ import android.os.Build.VERSION;
 import androidx.work.Worker;
 import androidx.work.ForegroundInfo;
 import androidx.work.WorkerParameters;
-import java.net.InetSocketAddress;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 import androidx.core.app.NotificationCompat;
@@ -203,9 +202,9 @@ public class DwycoProbe extends Worker {
         //m_builder.setSmallIcon(R.drawable.ic_stat_not_icon2);
         m_builder.setSmallIcon(DwycoApp.notification_icon());
         //m_builder.setColor(context.getResources().getColor(R.color.green));
-        m_builder.setContentTitle("Dwyco");
+        m_builder.setContentTitle(DwycoApp.content_title);
         m_builder.setAutoCancel(true);
-        m_builder.setContentText("Message received");
+        m_builder.setContentText(DwycoApp.new_available);
         m_builder.setOnlyAlertOnce(true);
         
         Intent notintent = new Intent(context, NotificationClient.class);
