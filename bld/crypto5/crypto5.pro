@@ -2,7 +2,7 @@ TEMPLATE = lib
 CONFIG += staticlib
 CONFIG -= qt
 CONFIG += warn_off
-macx-g++|macx-clang|linux-g++ {
+macx-g++|macx-clang|linux-g++|macx-ios-* {
 # this monkey business forces the use of c++11 when
 # compiling with newer versions of qt, which puts
 # flags on the command line for newer c++ versions, which
