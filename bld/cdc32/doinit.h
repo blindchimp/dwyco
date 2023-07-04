@@ -23,7 +23,6 @@ void init_bg_msg_send(const char *logname);
 void exit_bg_msg_send();
 extern vc Myhostname;
 extern vc TheMan;
-extern DwLog *Log;
 }
 
 #endif

@@ -83,7 +83,7 @@ QTAB::qtab_init()
     FILE *f = fopen(newfn("qtabs").c_str(), "rt");
     if(f == 0)
     {
-        Log->make_entry("no quantization tables?");
+        Log_make_entry("no quantization tables?");
         return;
     }
 
@@ -105,7 +105,7 @@ QTAB::qtab_init()
     }
     char s[100];
     sprintf(s, "%d dwyco quantization tables", i);
-    Log->make_entry(s);
+    Log_make_entry(s);
     fclose(f);
 }
 

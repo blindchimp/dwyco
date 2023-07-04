@@ -86,7 +86,7 @@ using namespace CryptoPP;
 #define PACKET_DROP_INTERVAL 10000
 
 
-#define FAILRET(x) do { {fail_reason = (x); Log->make_entry(x); return 0;} } while(0)
+#define FAILRET(x) do { {fail_reason = (x); Log_make_entry(x); return 0;} } while(0)
 
 GetWindowCallback MMChannel::get_mdi_client_window_callback;
 GetWindowCallback MMChannel::get_main_window_callback;
@@ -1213,7 +1213,7 @@ MMChannel::destroy()
             // finish xferring files or whatever.
             //tube->disconnect_ctrl();
             tube = 0;
-            Log->make_entry("disconnect shared link to ", remote_iam(), "");
+            Log_make_entry("disconnect shared link to ", remote_iam(), "");
         }
     }
     if(private_kaq)
@@ -1222,7 +1222,7 @@ MMChannel::destroy()
         private_kaq = 0;
         delete private_chat_display;
         private_chat_display = 0;
-        Log->make_entry("private chat shutdown");
+        Log_make_entry("private chat shutdown");
     }
 
     if(do_destroy == HARD || (do_destroy == SOFT &&
@@ -1241,7 +1241,7 @@ MMChannel::destroy()
             // we know there is only one sampler
             // in this version...
             exitaq();
-            Log->make_entry("sampler shutdown");
+            Log_make_entry("sampler shutdown");
         }
     }
     grab_coded_id = -1;
@@ -1266,7 +1266,7 @@ MMChannel::destroy()
         if(audio_sampler)
         {
             exit_audio_input();
-            Log->make_entry("audio sampler shutdown");
+            Log_make_entry("audio sampler shutdown");
             audio_sampler = 0;
         }
         if(audio_output)
@@ -1280,7 +1280,7 @@ MMChannel::destroy()
             else
                 delete audio_output;
             audio_output = 0;
-            Log->make_entry("audio output shutdown");
+            Log_make_entry("audio output shutdown");
         }
     }
     // check to see if there are any other audio
@@ -2784,13 +2784,13 @@ MMChannel::recv_config(vc cfg)
         {
             if(uid_ignored(uid))
             {
-                Log->make_entry("call rejected, on ignore list");
+                Log_make_entry("call rejected, on ignore list");
                 send_error("busy");
                 goto cleanup;
             }
             if(!call_screening_callback && (int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
-                Log->make_entry("call rejected, pals-only mode");
+                Log_make_entry("call rejected, pals-only mode");
                 send_error("pals-only");
                 goto cleanup;
             }
@@ -3027,7 +3027,7 @@ MMChannel::recv_config(vc cfg)
         {
             if((int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
-                Log->make_entry("call rejected, pals-only mode");
+                Log_make_entry("call rejected, pals-only mode");
                 send_error("pals-only");
                 goto cleanup;
             }
@@ -3042,13 +3042,13 @@ MMChannel::recv_config(vc cfg)
         vc pw;
         if(!cfg.find("pw", pw))
         {
-            Log->make_entry("call rejected, password required");
+            Log_make_entry("call rejected, password required");
             send_error("password required to connect");
             goto cleanup;
         }
         if(pw != get_settings_value("call_acceptance/pw"))
         {
-            Log->make_entry("call rejected, incorrect pw.");
+            Log_make_entry("call rejected, incorrect pw.");
             send_error("incorrect password");
             goto cleanup;
         }
@@ -3067,7 +3067,7 @@ MMChannel::recv_config(vc cfg)
     {
         if(num_video_recvs() >= CallAcceptanceData.get_max_video_recv())
         {
-            Log->make_entry("video rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("video rejected from ", remote_iam(), " (busy)");
             send_error("video busy");
             goto cleanup;
         }
@@ -3082,7 +3082,7 @@ MMChannel::recv_config(vc cfg)
         if(num_audio_recvs() >= CallAcceptanceData.get_max_audio_recv())
         {
             send_error("audio busy");
-            Log->make_entry("audio rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("audio rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_send += "audio ";
@@ -3093,7 +3093,7 @@ MMChannel::recv_config(vc cfg)
         if(num_video_sends() >= CallAcceptanceData.get_max_video())
         {
             send_error("video busy");
-            Log->make_entry("video send req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("video send req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_recv += "video ";
@@ -3104,7 +3104,7 @@ MMChannel::recv_config(vc cfg)
         if(num_audio_sends() >= CallAcceptanceData.get_max_audio())
         {
             send_error("audio busy");
-            Log->make_entry("audio send req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("audio send req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_recv += "audio ";
@@ -3114,7 +3114,7 @@ MMChannel::recv_config(vc cfg)
         if(num_chats() >= CallAcceptanceData.get_max_chat())
         {
             send_error("chat busy");
-            Log->make_entry("chat req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("chat req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_recv += "chat ";
@@ -3124,7 +3124,7 @@ MMChannel::recv_config(vc cfg)
         if(num_chats_private() >= CallAcceptanceData.get_max_pchat())
         {
             send_error("private chat busy");
-            Log->make_entry("private chat req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("private chat req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_recv += "private-chat";
@@ -3176,7 +3176,7 @@ MMChannel::finish_connection()
     {
         if(!prescreened && num_video_recvs() >= CallAcceptanceData.get_max_video_recv())
         {
-            Log->make_entry("video rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("video rejected from ", remote_iam(), " (busy)");
             send_error("video busy");
             goto cleanup;
         }
@@ -3188,7 +3188,7 @@ MMChannel::finish_connection()
             send_error("can't create decoder (either not enough memory or incompatible)");
             goto cleanup;
         }
-        Log->make_entry("video coming from ", remote_iam(), "");
+        Log_make_entry("video coming from ", remote_iam(), "");
 
     }
     // must set up outgoing audio first to audio sampler
@@ -3199,7 +3199,7 @@ MMChannel::finish_connection()
         if(!prescreened && num_audio_sends() >= CallAcceptanceData.get_max_audio())
         {
             send_error("audio busy");
-            Log->make_entry("audio send req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("audio send req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
 #ifdef CDC32
@@ -3215,7 +3215,7 @@ MMChannel::finish_connection()
             send_error(fail_reason);
             goto cleanup;
         }
-        Log->make_entry("serving audio to ", remote_iam(), "");
+        Log_make_entry("serving audio to ", remote_iam(), "");
     }
     if(local_recv_audio())
     {
@@ -3233,12 +3233,12 @@ MMChannel::finish_connection()
                 gv_id = -1;
 #endif
             build_incoming_audio(0);
-            Log->make_entry("audio coming from ", remote_iam(), "");
+            Log_make_entry("audio coming from ", remote_iam(), "");
         }
         else
         {
             send_error("audio busy");
-            Log->make_entry("audio rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("audio rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
     }
@@ -3248,7 +3248,7 @@ MMChannel::finish_connection()
         if(!prescreened && num_video_sends() >= CallAcceptanceData.get_max_video())
         {
             send_error("video busy");
-            Log->make_entry("video send req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("video send req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
 #ifdef CDC32
@@ -3264,7 +3264,7 @@ MMChannel::finish_connection()
             send_error(fail_reason);
             goto cleanup;
         }
-        Log->make_entry("serving video to ", remote_iam(), "");
+        Log_make_entry("serving video to ", remote_iam(), "");
     }
 
     if(local_chat())
@@ -3272,7 +3272,7 @@ MMChannel::finish_connection()
         if(!prescreened && num_chats() >= CallAcceptanceData.get_max_chat())
         {
             send_error("chat busy");
-            Log->make_entry("chat req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("chat req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         if(!build_outgoing_chat(0))
@@ -3282,14 +3282,14 @@ MMChannel::finish_connection()
         }
         chat_display = gen_public_chat_display();
         //chat_display = new ChatCharOwl;
-        Log->make_entry("remote chat from ", remote_iam(), " accepted");
+        Log_make_entry("remote chat from ", remote_iam(), " accepted");
     }
     if(local_chat_private())
     {
         if(!prescreened && num_chats_private() >= CallAcceptanceData.get_max_pchat())
         {
             send_error("private chat busy");
-            Log->make_entry("private chat req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("private chat req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         if(!build_outgoing_chat_private(0))
@@ -3297,7 +3297,7 @@ MMChannel::finish_connection()
             send_error(fail_reason);
             goto cleanup;
         }
-        Log->make_entry("remote private chat from ", remote_iam(), " accepted");
+        Log_make_entry("remote private chat from ", remote_iam(), " accepted");
     }
     //vc v(VC_VECTOR);
     //v[0] = matches;

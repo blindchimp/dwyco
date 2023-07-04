@@ -42,7 +42,7 @@ JQTAB::jqtab_init()
 #if 0
         char s[100];
         sprintf(s, "jqtab %d", qp->id);
-        Log->make_entry(s);
+        Log_make_entry(s);
 #endif
 
         QTables.add(qp->name, qp);

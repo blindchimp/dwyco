@@ -201,7 +201,7 @@ DwQSend::qd_send_done(vc m, void *, vc, ValidPtr vp)
 
 //        if(m[3].type() == VC_VECTOR && !m[3][0].is_nil())
 //            qs->delivered_mid = m[3][0];
-        Log->make_entry("Sent q'd message.");
+        Log_make_entry("Sent q'd message.");
         DwString tmpfn = qs->qfn;
         tmpfn += ".tmp";
         move_in_progress(qs->qfn, tmpfn);
@@ -493,13 +493,13 @@ DwQSend::send_message()
     if(!load_info(m, afn.c_str()))
     {
         // corrupt or something
-        Log->make_entry("deleting corrupt message");
+        Log_make_entry("deleting corrupt message");
         DeleteFile(newfn(afn).c_str());
         return -1;
     }
     if(!valid_qd_message(m))
     {
-        Log->make_entry("bogus message deleted");
+        Log_make_entry("bogus message deleted");
         DeleteFile(newfn(afn).c_str());
         return -1;
     }
@@ -509,7 +509,7 @@ DwQSend::send_message()
         att_actual_fn = newfn(att_basename);
         if(access(att_actual_fn.c_str(), 0) != 0)
         {
-            Log->make_entry("deleting corrupt message (no attachment)");
+            Log_make_entry("deleting corrupt message (no attachment)");
             DeleteFile(newfn(afn).c_str());
             return -1;
         }
@@ -577,7 +577,7 @@ DwQSend::send_message()
         if(!load_info(emsg, efn.c_str()))
         {
             // corrupt or something
-            Log->make_entry("deleting corrupt emsg");
+            Log_make_entry("deleting corrupt emsg");
             DeleteFile(newfn(efn).c_str());
             emsg = vcnil;
             TRACK_ADD(QS_restart_enc_bad_load, 1);
@@ -590,7 +590,7 @@ DwQSend::send_message()
                 DwString tmp_att_actual_fn = newfn(tmp_att_basename);
                 if(access(tmp_att_actual_fn.c_str(), 0) != 0)
                 {
-                    Log->make_entry("deleting corrupt enc message (no attachment)");
+                    Log_make_entry("deleting corrupt enc message (no attachment)");
                     DeleteFile(newfn(efn).c_str());
                     emsg = vcnil;
                     TRACK_ADD(QS_restart_enc_bad_att, 1);

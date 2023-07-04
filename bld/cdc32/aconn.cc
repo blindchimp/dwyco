@@ -65,7 +65,16 @@
 // aren't really a huge problem, since we usually have a "try it, if it fails
 // try the next thing" protocol. possibly add an api to remove an ip from the
 // table, so stale info could be removed more promptly.
+// NOTE: 5/2023, reinstate freshness, but at the slower refresh rate. if we
+// keep the stale info around for a long time (ie, like in a background process
+// that runs for months) the stale ip would result in essentially "hiding" the
+// more up to date info we get from the server. this means our "try it, then go
+// via server" protocol wpuld never direct connect.
 //
+// the API for getting an ip from a uid should probably be updated to take into
+// account the freshness of the info. another thing might be to try multiple "direct"
+// attempts simultaneously and use the one that finishes first, but that is a major
+// change for some minor gains.
 
 extern vc LocalIP;
 extern int Media_select;
@@ -448,14 +457,15 @@ discover_tick()
         }
     }
 
-#if 0
+#if 1
     auto it = DwTreeKazIter<time_t, vc>(&Freshness);
     DwVec<vc> kill;
+    int time_limit = (3 * (int)get_settings_value("net/broadcast_interval"));
     for(; !it.eol(); it.forward())
     {
         auto a = it.get();
         auto tm = time(0) - a.get_value();
-        if(tm  > (3 * (int)get_settings_value("net/broadcast_interval")))
+        if(tm  > time_limit)
             kill.append(a.get_key());
     }
     for(int i = 0; i < kill.num_elems(); ++i)

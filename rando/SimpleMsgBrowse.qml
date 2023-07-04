@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-
+import QtQml 2.12
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
@@ -45,11 +45,11 @@ Page {
     onMultiselect_modeChanged: {
         model.set_all_unselected()
     }
-    onVisibleChanged: {
-        multiselect_mode = false
-        filter_show_only_fav = 0
-        filter_show_sent = 1
-    }
+//    onVisibleChanged: {
+//        multiselect_mode = false
+//        filter_show_only_fav = 0
+//        filter_show_sent = 1
+//    }
 
     Component {
         id: extras_button
@@ -206,7 +206,7 @@ Page {
                 }
 
                 ConvToolButton {
-                    visible: {stack.depth > 2 || core.unread_count > 0}
+                    visible: {stack.depth > 2 || core.any_unviewed}
                 }
 
 
@@ -254,9 +254,24 @@ Page {
                         MenuItem {
                             text: "Clear msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(simp_msg_browse.to_uid)
-
-                                themsglist.reload_model()
+                                confirm_delete2.visible = true
+                            }
+                            MessageDialog {
+                                id: confirm_delete2
+                                title: "Clear?"
+                                icon: StandardIcon.Question
+                                text: "Delete ALL messages from user?"
+                                informativeText: "This KEEPS FAVORITE messages."
+                                standardButtons: StandardButton.Yes | StandardButton.No
+                                onYes: {
+                                    core.clear_messages_unfav(simp_msg_browse.to_uid)
+                                    themsglist.reload_model()
+                                    close()
+                                    stack.pop()
+                                }
+                                onNo: {
+                                    close()
+                                }
                             }
                         }
 
@@ -309,8 +324,10 @@ Page {
             radius: 3
             border.width: 1
             border.color: divider
-            color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
+            color: {(IS_QD === 1) ? "gray" : ((SENT === 0) ? accent : primary_light)}
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
+            z: 1
+            clip: true
             Image {
                 id: deco2
                 visible: IS_QD
@@ -390,82 +407,76 @@ Page {
                 color: "orange"
             }
 
-            z: 1
+            Image {
+                id: preview
+                anchors.fill: parent
+                visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
+                fillMode: Image.PreserveAspectFit
+                // note: the extra "/" in file:// is to accomodate
+                // windows which may return "c:/mumble"
+                source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
+                                                  (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
-            clip: true
-            ColumnLayout {
-                id: clayout
-                z: 1
-                Layout.margins: 3
-                width: parent.width
-                height: parent.height
-                //anchors.centerIn: ditem
-                Image {
-                    id: preview
-
-                    visible: {PREVIEW_FILENAME != "" || HAS_AUDIO}
-                    Layout.fillHeight: true
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
-
-                    fillMode: Image.PreserveAspectFit
-                    // note: the extra "/" in file:// is to accomodate
-                    // windows which may return "c:/mumble"
-                    //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                    source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) :
-                                                      (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
-
-                    asynchronous: true
-                    sourceSize.height: 256
-                    sourceSize.width: 256
-                    onStatusChanged: {
-                        if (preview.status == Image.Ready) {
-                            //preview.source = "file:///" + String(PREVIEW_FILENAME)
-                            console.log(PREVIEW_FILENAME)
-                        }
+                asynchronous: true
+                sourceSize.height: 256
+                sourceSize.width: 256
+                onStatusChanged: {
+                    if (preview.status == Image.Ready) {
+                        //preview.source = "file:///" + String(PREVIEW_FILENAME)
+                        console.log(PREVIEW_FILENAME)
                     }
-
-
-//                    Image {
-//                        id: deco
-//                        visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
-//                        source: decoration
-//                        anchors.left: parent.left
-//                        anchors.top: parent.top
-//                        width: 32
-//                        height: 32
-//                    }
                 }
-                Item {
-                    Layout.fillHeight: true
-                }
-
-                Text {
-                    function gentext(msg, tm) {
-                        var dt = new Date(tm * 1000)
-                        if(Date.now() - dt.getTime() > 86400 * 1000) {
-                            return "<html>" + msg + " " + Qt.formatDate(dt) + "</html>"
-                        } else {
-                            return "<html>" + msg + " " + Qt.formatTime(dt) + "</html>"
-                        }
-
-                    }
-
-                    id: msg
-                    text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
-                    //Layout.maximumWidth: (listView1.width * 3) / 4
-                    Layout.fillWidth: true
-                    Layout.maximumHeight: 10
-                    //horizontalAlignment: { (SENT == 1) ? Text.AlignRight : Text.AlignLeft}
-                    verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.NoWrap
-                    textFormat: Text.StyledText
-                    color: primary_text
-                    clip: true
-
-                }
-
             }
+
+            Text {
+                function gentext(msg) {
+                    return "<html>" + msg + "</html>"
+                }
+
+                id: msg
+                anchors.bottom: datetext.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                //anchors.top: preview.visible ? undefined : parent.top
+                height: preview.visible ? parent.height : implicitHeight
+                text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT))
+                verticalAlignment: Text.AlignBottom
+                wrapMode: preview.visible ? Text.NoWrap : Text.WordWrap
+                elide: Text.ElideRight
+                textFormat: Text.StyledText
+                color: amber_light
+                style: Text.Outline
+                styleColor: "black"
+
+                clip: true
+            }
+
+            Text {
+                function gendate(tm) {
+                    var dt = new Date(tm * 1000)
+                    if(Date.now() - dt.getTime() > 86400 * 1000) {
+                        return Qt.formatDate(dt)
+                    } else {
+                        return Qt.formatTime(dt)
+                    }
+
+                }
+                id: datetext
+                anchors.bottom: parent.bottom
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.NoWrap
+                color: primary_text
+                clip: true
+                font.italic: true
+                //font.weight: Font.Light
+                style: Text.Sunken
+                styleColor: "white"
+                scale: .75
+                text: gendate(DATE_CREATED)
+            }
+
+
             MouseArea {
                 anchors.fill: parent
                 enabled: !(optionsMenu.visible || moremenu.visible)
@@ -498,12 +509,12 @@ Page {
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file:///" + String(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file://" + String(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(to_uid, model.mid)
+                                    var vid = core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
                                     //core.play_zap_view(vid)
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {
@@ -531,7 +542,7 @@ Page {
         //width: 200; height: 400
         id: grid
         anchors.fill: parent
-        cellWidth: 160 ; cellHeight: 130
+        cellWidth: 160 ; cellHeight: 140
         delegate: msgdelegate
         clip: true
         ScrollBar.vertical: ScrollBar { }

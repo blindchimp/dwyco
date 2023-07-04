@@ -120,6 +120,11 @@ int main(int argc, char *argv[])
 
 
     engine.rootContext()->setContextProperty("screenDpi", dpi);
+#ifdef DWYCO_DEBUG
+    engine.rootContext()->setContextProperty("dwyco_debug", true);
+#else
+    engine.rootContext()->setContextProperty("dwyco_debug", false);
+#endif
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 

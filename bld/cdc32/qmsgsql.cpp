@@ -414,7 +414,7 @@ generate_delta(vc uid, vc delta_id)
         vc did = s.sql_simple("select delta_id from id");
         if(did.num_elems() != 1 || did[0][0] != delta_id)
             throw -1;
-        vc r1 = s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
+        const vc r1 = s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
                      "insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning mid", huid);
         // just insert some dummy rows, since we know that we will never be resending this
         // index database again. if the delta_ids don't match, this gets recreated from scratch
@@ -422,14 +422,14 @@ generate_delta(vc uid, vc delta_id)
         {
             s.sql_simple("insert into main.msg_idx(mid, assoc_uid) values(?1, '')", r1[i][0]);
         }
-        vc r2 = s.sql_simple("with newmids(mid) as (select mid from mi.msg_tomb where mid not in (select mid from main.msg_tomb)) "
+        const vc r2 = s.sql_simple("with newmids(mid) as (select mid from mi.msg_tomb where mid not in (select mid from main.msg_tomb)) "
                      "insert into midlog(mid, to_uid, op) select mid, ?1, 'd' from newmids returning mid", huid);
         for(int i = 0; i < r2.num_elems(); ++i)
         {
             s.sql_simple("insert into main.msg_tomb(mid) values(?1)", r2[i][0]);
         }
         // tags
-        vc r3 = s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
+        const vc r3 = s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
                      "guid not in (select guid from main.msg_tags2)) "
                      "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning guid", huid);
         for(int i = 0; i < r3.num_elems(); ++i)
@@ -440,7 +440,7 @@ generate_delta(vc uid, vc delta_id)
         // so for now i'll just set the tag to the empty string, and figure it out later. the only
         // reason we were transmitting the mid and tag in this case was for display purposes ("we deleted
         // such and such a tag, here is what we have to update in the UI")
-        vc r4 = s.sql_simple("with newguids(guid) as (select guid from mt.gtomb where guid not in (select guid from main.tomb)) "
+        const vc r4 = s.sql_simple("with newguids(guid) as (select guid from mt.gtomb where guid not in (select guid from main.tomb)) "
                      "insert into taglog(mid, tag, guid, to_uid, op) select '', '', guid, ?1, 'd' from newguids returning guid", huid);
         for(int i = 0; i < r4.num_elems(); ++i)
         {
@@ -458,6 +458,9 @@ generate_delta(vc uid, vc delta_id)
         {
             GRTLOG("no delta for %s", (const char *)huid, 0);
         }
+        // ok, this is a problem. we don't want to commit updates to our notion of the REMOTE end
+        // until we have some idea that we actually sent them and they are incorporated there.
+        // now, i thought i figured that out with the "syncpoint" idea, but maybe it isn't working.
         s.commit_transaction();
     }
     catch (...)
@@ -939,7 +942,7 @@ import_remote_mi(vc remote_uid)
     try
     {
         s.start_transaction();
-        vc newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
+        const vc newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
         // note sure what i was up to here... removing the contents
         // of crdt_tags will effectively disable the triggers for
         // creating the tag logs (that would get sent to other clients)
@@ -966,7 +969,7 @@ import_remote_mi(vc remote_uid)
             long lc = (long)res[0][0];
             update_global_logical_clock(lc);
         }
-        vc newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
+        const vc newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
         s.sql_simple("delete from main.gi where mid in (select mid from main.msg_tomb)");
 
         //sync_files();
@@ -1338,6 +1341,9 @@ setup_crdt_triggers()
                         "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
                         "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
                         "end");
+    // XXX i wonder why i left out a trigger on insert of gtomb (like the one above for mtomb).
+    // possibly to avoid storms? the only time there is a direct insert to the gtomb is when
+    // a receiver processes a 'd' update or we get an index from another group member.
 }
 
 static

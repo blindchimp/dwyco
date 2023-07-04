@@ -909,14 +909,18 @@ out:
             // call will process whatever events are generated here
             MMChannel::exit_mmchan();
             dwyco_suspend();
-            dwyco::Db_timer.stop();
-            dwyco::Db_timer.load(1);
-            dwyco::Db_timer.start();
         }
         else
         {
             dwyco_suspend();
         }
+        // note that the Db_timer is partially used for avoid the
+        // thundering herd thing, but since this is a mobile device
+        // and a once in awhile thing in the background, that probably
+        // isn't a problem. so just restart as quickly as possible.
+        dwyco::Db_timer.stop();
+        dwyco::Db_timer.load(1);
+        dwyco::Db_timer.start();
 #else
         dwyco_suspend();
 #endif
@@ -937,6 +941,9 @@ out:
         dwyco_bg_exit();
         ALOGI("exit proc", 0);
     }
+#ifndef ANDROID
+    clean_cruft();
+#endif
     //exit(0);
     return 0;
 }
@@ -1173,21 +1180,34 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
         // check to see if there is anything waiting to write
         // and just check a little more often. since this is a situation
         // that is pretty rare, it shouldn't be a huge problem (i hope.)
-        if(spin || Response_q.num_elems() > 0 ||
-                MMChannel::any_ctrl_q_pending() || SimpleSocket::any_waiting_for_write())
+        if(
+            snooze < 100 || // clamp so we always wait at least a little bit, even if service_channels wants otherwise
+            spin || // service_channels wants us to spin
+            Response_q.num_elems() > 0 || // we have items that need processing now
+            MMChannel::any_ctrl_q_pending() || // we have ctrl messages waiting to send
+            dwyco::sproto::any_quick_transitions()
+            //|| SimpleSocket::any_waiting_for_write() // we are waiting to write/connect to some socket
+            )
         {
-            GRTLOG("spin %d short sleep", spin, 0);
-#if 0
-#ifdef WIN32
-            SleepEx(100, 0);
-#else
-            usleep(100000);
-#endif
-#endif
-            // override, make is 20ms
-            snooze = 20;
+            GRTLOGA("fast poll snooze %d spin %d rq %d cq %d proto %d",
+                    spin,
+                    snooze,
+                    Response_q.num_elems(),
+                    MMChannel::any_ctrl_q_pending(),
+                    dwyco::sproto::any_quick_transitions()
+                    );
+            ALOGI("fast poll snooze %d spin %d rq %d cq %d proto %d",
+                  snooze,
+                  spin,
+                  Response_q.num_elems(),
+                  MMChannel::any_ctrl_q_pending(),
+                  dwyco::sproto::any_quick_transitions()
+                  );
+            // override,
+            // in the background, we aren't in a huge hurry to get
+            // things done, and don't want to spin too fast.
+            snooze = 100;
         }
-        //else
         {
             //usleep(500000);
             Socketvec res;
@@ -1197,6 +1217,9 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
             // that requires usec accuracy
             int usecs = (snooze % 1000) * 1000;
             GRTLOG("longsleep %d %d", secs, usecs);
+#ifndef DWYCO_CDC_LIBUV
+            int w = SimpleSocket::load_write_set();
+#endif
             int n = vc_winsock::poll_all(VC_SOCK_READ, res, secs, usecs);
             GRTLOG("wakeup %d", n, 0);
             if(n < 0)
@@ -1223,6 +1246,9 @@ out:
     // sometimes.
     //dwyco_suspend();
     dwyco_bg_exit();
+#ifndef ANDROID
+    clean_cruft();
+#endif
     //exit(0);
     return 0;
 }
