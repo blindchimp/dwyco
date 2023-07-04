@@ -31,18 +31,8 @@ private:
 
     void make_entry(const char *str = 0, const char * = 0, const char * = 0);
     //void make_entry(vc v);
-<<<<<<< HEAD
-#else
-    DwLog(const char *fn = DWLOG_DEFAULT) {
-        filename = fn;
-    }
-    ~DwLog() {}
-    void make_entry(const char *str = 0, const char * = 0, const char * = 0) {}
-    void make_entry(vc v) {}
-#endif
-=======
+
     void init();
->>>>>>> master
 };
 
 void Log_make_entry(const char *s1 = 0, const char *s2 = 0, const char *s3 = 0);
