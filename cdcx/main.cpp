@@ -233,10 +233,61 @@ int main(int argc, char *argv[])
     signal(SIGPIPE, SIG_IGN);
 #endif
 
+#if defined(LINUX) && !defined(MAC_CLIENT)
+    // this is mainly for appimage-type installation. the read-only stuff
+    // it in the appimage, and the rest of the user data will be in
+    // documents/dwyco/cdc-x.
+    // for debugging, you can use the --path /mumble
+    // to override the default
+    QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
+    QString userdir;
+    {
+    QStringList args = QGuiApplication::arguments();
+
+    for(int i = 1; i < args.count(); ++i)
+    {
+            if(args[i] == "--path")
+            {
+                if(i + 1 < args.count())
+                {
+                    userdir = args[i + 1];
+                    break;
+                }
+            }
+    }
+
+    if(userdir.length() == 0)
+    {
+        userdir = QStandardPaths::writableLocation(filepath);
+        userdir += "/dwyco/cdc-x/";
+    }
+    else
+    {
+        userdir += "/";
+    }
+
+    {
+        QDir d(userdir);
+        d.mkpath(userdir);
+        // this is just a stopgap, really need to do something to obfuscate the files
+        // a little bit to avoid apps indexing temp images on all platforms
+        QString fp = d.filePath(".nomedia");
+        QFile f(fp);
+        f.open(QIODevice::WriteOnly);
+        f.putChar(0);
+        f.close();
+    }
+    {
+        QDir shares(userdir + "shares");
+        shares.mkpath(userdir + "shares");
+    }
+    }
+#endif
+
 
 #define FPATH "./"
 
-    dwyco_set_fn_prefixes(0, 0, "./tmp/");
+    dwyco_set_fn_prefixes(0, userdir.toLatin1().constData(), (userdir.toLatin1() + QByteArray("/tmp/")).constData());
     {
         char sys[1024];
         char user[1024];
@@ -265,6 +316,14 @@ int main(int argc, char *argv[])
         QDir d;
         d.mkpath(Tmp_pfx);
     }
+    // this is the one goofy thing... we have a servers2 that is
+    // distributed with the read-only stuff, but it needs to be
+    // writable so the servers can update it if needed.
+    // so we "install" it once if it doesn't exists. if it
+    // doesn't exist, and the "install" fails, the core dll
+    // has a compiled in version as a last resort.
+    if(!QFile(userdir + "servers2").exists())
+        QFile::copy(Sys_pfx + "/servers2", userdir + "servers2");
 
     dwyco_trace_init();
     int dum;
@@ -358,7 +417,7 @@ int main(int argc, char *argv[])
     // note: need to set the path to the right place, same as fn_pfx for dll
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);
 
-    QStringList args = QCoreApplication::arguments();
+    QStringList args = QGuiApplication::arguments();
     for(int i = 1; i < args.count(); ++i)
     {
         if(args[i] == "--avoid-camera")
