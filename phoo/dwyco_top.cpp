@@ -1854,7 +1854,7 @@ DwycoCore::init()
 
 #endif
 
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) //|| defined(DWYCO_IOS)
     dwyco_set_external_video_capture_callbacks(
         vgqt_new,
         vgqt_del,
