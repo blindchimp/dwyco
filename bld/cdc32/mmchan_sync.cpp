@@ -295,6 +295,11 @@ MMChannel::process_pull_resp(vc cmd)
             if(!string_to_file(att, fd))
                 oopanic("cant save att");
         }
+        // if the msg is already in the list of messages from the
+        // server, nuke it here so it won't show up in the
+        // message models as if it needs fetching.
+        delete_msg2(mid);
+
         // note: this would do an se_emit to say the msg index had changed,
         // when in fact, it doesn't really change. we would not have been
         // able to do the pull if it wasn't already in some part of the index
