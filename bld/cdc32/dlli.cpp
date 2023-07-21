@@ -2512,7 +2512,6 @@ DWYCOEXPORT
 int
 dwyco_get_audio_output_in_progress()
 {
-    extern CRITICAL_SECTION Audio_lock;
     EnterCriticalSection(&Audio_lock);
     int spk = TheAudioOutput && TheAudioOutput->device_bufs_playing();
     LeaveCriticalSection(&Audio_lock);
