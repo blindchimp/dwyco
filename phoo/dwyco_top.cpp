@@ -537,7 +537,8 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     else if(cmd == DWYCO_SE_USER_ADD)
     {
         TheConvListModel->add_uid_to_model(suid);
-        dwyco_fetch_info(uid, len_uid);
+        // adding it to the model causes info to be fetched
+        //dwyco_fetch_info(uid, len_uid);
     }
     else if(cmd == DWYCO_SE_USER_DEL)
     {
@@ -1775,6 +1776,23 @@ DwycoCore::init()
     DVP::init_dvp();
     simple_call::init(this);
     AvoidSSL = !QSslSocket::supportsSsl();
+    if(!AvoidSSL)
+    {
+        // this is a silly hack for linux desktop where we end up
+        // having to compile on some old stuff, but the newer
+        // desktops have openssl with newer versions with missing
+        // symbols...
+#if defined(LINUX) && !(defined(MAC_CLIENT) || defined(ANDROID))
+        QString ssl1 = QSslSocket::sslLibraryBuildVersionString();
+        ssl1.truncate(9);
+        QString ssl2 = QSslSocket::sslLibraryVersionString();
+        ssl2.truncate(9);
+        if(ssl1 != ssl2)
+            AvoidSSL = 1;
+#endif
+    }
+
+
     Net_access = new QNetworkAccessManager(this);
     connect(Net_access, &QNetworkAccessManager::finished,
             this, &DwycoCore::dir_download_finished);
@@ -1969,7 +1987,10 @@ DwycoCore::init()
     load_unviewed();
     update_any_unviewed(any_unviewed_msgs());
     reload_conv_list();
-    reload_ignore_list();
+    // don't do this, we'll load it when they display the dialog.
+    // this causes a lot of "fetch_info"'s to happen at start up
+    // that aren't really needed.
+    //reload_ignore_list();
 
     const char *uid;
     int len_uid;
