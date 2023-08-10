@@ -153,6 +153,7 @@ int decrypt_attachment(vc filename, vc key, vc filename_dst);
 
 unsigned long uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal);
 int uid_online(vc uid);
+int uid_online_display(const vc& uid);
 void boost_clock(vc mi);
 int move_replace(const DwString& s, const DwString& d);
 vc pal_to_vector(int raw);
