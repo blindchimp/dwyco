@@ -185,16 +185,20 @@ set_main_win()
 // normally we avoid using dns. this is useful if we
 // really need to move someplace in case there is a large
 // outage or something.
-
+static
 void
 install_emergency_servers2(QNetworkReply *reply)
 {
     if (reply->error() == QNetworkReply::NoError)
     {
         QFile file("servers2.eme");
-        if (file.open(QIODevice::WriteOnly))
+        QByteArray em = reply->readAll();
+        // note: we can have an "error" if file not found or
+        // redirect isn't handled properly, and it will still count
+        // as "NoError", it just gives you no bytes in the download.
+        if (em.length() > 0 && file.open(QIODevice::WriteOnly))
         {
-            file.write(reply->readAll());
+            file.write(em);
             file.close();
         }
     }
@@ -207,9 +211,9 @@ setup_emergency_servers()
 {
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
-    QNetworkReply *reply = manager->get(QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme")));
-
-
+    auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
+    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    QNetworkReply *reply = manager->get(r);
 }
 
 int main(int argc, char *argv[])
