@@ -26,6 +26,7 @@
 #include "cdcpal.h"
 #include "se.h"
 #include "dhgsetup.h"
+#include "dirth.h"
 
 // NOTENOTENOTE! fixme, look at the dlli.cpp section where some of these
 // settings are tweaked and set bindings somewhere so we can do the
@@ -326,6 +327,16 @@ broadcast_check(DH_alternate *d)
     }
 }
 
+static
+void
+broadcast_check2(int d)
+{
+    if(d && Listen_sock)
+        start_broadcaster();
+    else
+        stop_broadcaster();
+}
+
 void
 init_aconn()
 {
@@ -334,6 +345,7 @@ init_aconn()
     App_ID = get_settings_value("net/app_id");
     start_discover();
     Current_alternate.value_changed.connect_ptrfun(broadcast_check, 1);
+    Database_online.value_changed.connect_ptrfun(broadcast_check2, 1);
 
 }
 
