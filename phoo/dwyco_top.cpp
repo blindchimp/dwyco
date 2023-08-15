@@ -1776,6 +1776,23 @@ DwycoCore::init()
     DVP::init_dvp();
     simple_call::init(this);
     AvoidSSL = !QSslSocket::supportsSsl();
+    if(!AvoidSSL)
+    {
+        // this is a silly hack for linux desktop where we end up
+        // having to compile on some old stuff, but the newer
+        // desktops have openssl with newer versions with missing
+        // symbols...
+#if defined(LINUX) && !(defined(MAC_CLIENT) || defined(ANDROID))
+        QString ssl1 = QSslSocket::sslLibraryBuildVersionString();
+        ssl1.truncate(9);
+        QString ssl2 = QSslSocket::sslLibraryVersionString();
+        ssl2.truncate(9);
+        if(ssl1 != ssl2)
+            AvoidSSL = 1;
+#endif
+    }
+
+
     Net_access = new QNetworkAccessManager(this);
     connect(Net_access, &QNetworkAccessManager::finished,
             this, &DwycoCore::dir_download_finished);
@@ -3378,7 +3395,7 @@ DwycoCore::play_zap_view(int view_id)
 int
 DwycoCore::start_gj2(QString gname, QString password)
 {
-    QByteArray gn = gname.toLatin1();
+    QByteArray gn = gname.trimmed().toLatin1();
     QByteArray pw = password.toLatin1();
     return dwyco_start_gj2(gn.constData(), pw.constData());
 }
