@@ -34,6 +34,9 @@ namespace dwyco {
 // the corpus is mostly copied, the size of this queue is tiny, and
 // is probably total overkill.
 //
+// note2: this queue also will have the piecemeal update commands for
+// the index and tags (iupdate, tupdate, sync)
+//
 class sendq {
 
     struct qkey {
