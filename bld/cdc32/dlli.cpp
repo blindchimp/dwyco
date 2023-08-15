@@ -388,8 +388,6 @@ HWND Main_window;
 //extern int Create_new_account;
 extern int Database_id;
 
-int uid_online(vc);
-int uid_online_display(vc);
 unsigned long uid_to_ip(vc, int&, int&prim, int&sec, int&pal);
 void exit_conf_mode();
 void enter_conf_mode();
@@ -7936,7 +7934,27 @@ DWYCOEXPORT
 DWYCO_LIST
 dwyco_pal_get_list()
 {
-    return dwyco_list_from_vc(pal_to_vector(1));
+    // this isn't used so much by clients anymore, but
+    // in its current form it will return lots of uid's
+    // that are supposed to be just one representative.
+    // this is confusing... but there are some situations
+    // where this might be useful. if this ever happens,
+    // i think i'll just have "raw" api's that do not do
+    // the folding. for now, we just do the folding.
+    vc v = pal_to_vector(1);
+    vc folded(VC_SET);
+    vc newv(VC_VECTOR);
+    for(int i = 0; i < v.num_elems(); ++i)
+    {
+        const vc e = map_to_representative_uid(v[i]);
+        if(!folded.contains(e))
+        {
+            folded.add(e);
+            newv.append(e);
+        }
+    }
+
+    return dwyco_list_from_vc(newv);
 }
 
 DWYCOEXPORT

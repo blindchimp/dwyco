@@ -263,13 +263,41 @@ pals_to_tags()
     }
 }
 
-int
-uid_online_display(vc uid)
+static
+bool
+is_foreground(const vc& uid)
 {
-    if(Online.contains(uid))
+    vc disp;
+    if(Client_disposition.find(uid, disp))
+    {
+        if(disp == vc("foreground"))
+            return 1;
+    }
+    return 0;
+}
+
+
+int
+uid_online_display(const vc& uid)
+{
+    if(Online.contains(uid) && is_foreground(uid))
         return 1;
     if(Broadcast_discoveries.contains(uid))
         return 1;
+    const vc uids = map_uid_to_uids(uid);
+    if(uids.num_elems() == 1)
+        return 0;
+
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc& tuid = uids[i];
+        if(Online.contains(tuid) && is_foreground(uid))
+            return 1;
+        if(Broadcast_discoveries.contains(tuid))
+            return 1;
+
+    }
+
     return 0;
 }
 

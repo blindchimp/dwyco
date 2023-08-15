@@ -19,6 +19,7 @@
 #include "profiledb.h"
 #include "dwscoped.h"
 #include "netlog.h"
+#include "qmsgsql.h"
 
 using namespace dwyco;
 
@@ -138,6 +139,10 @@ background_check_for_update_done(vc m, void *, vc, ValidPtr)
 }
 
 
+// NOTE: ca 2023, the chat server does not do the uid folding, so
+// we do it here. not sure if i should go ahead and do it remotely,
+// or just leave it as a presentation thing for the ui to take care
+// of.
 void
 MMChannel::chat_response(vc v)
 {
@@ -203,7 +208,7 @@ MMChannel::chat_response(vc v)
     else if(v[0] == chat_on)
     {
         GRTLOGVC(v);
-        const vc& uid = v[2];
+        const vc& uid = map_to_representative_uid(v[2]);
         const vc& name = v[1];
         const vc& ip = v[3];
         const vc& ah = v[4];
@@ -235,7 +240,7 @@ MMChannel::chat_response(vc v)
     }
     else if(v[0] == chat_off)
     {
-        const vc& uid = v[1];
+        const vc& uid = map_to_representative_uid(v[1]);
         if(!uid_ignored(uid))
         {
             if(TheChatGrid)
@@ -256,7 +261,7 @@ MMChannel::chat_response(vc v)
             TheChatGrid->start_update();
         for(int i = 0; i < n; ++i)
         {
-            const vc& uid = ul[i][0][1];
+            const vc& uid = map_to_representative_uid(ul[i][0][1]);
             const vc& name = ul[i][0][0];
             const vc& ports = ul[i][0][3];
             const vc& ah = ul[i][2];
@@ -419,7 +424,7 @@ MMChannel::chat_response(vc v)
         GRTLOGVC(v);
         if(TheChatGrid)
         {
-            TheChatGrid->update_attr(v[1], v[2], v[3]);
+            TheChatGrid->update_attr(map_to_representative_uid(v[1]), v[2], v[3]);
         }
     }
     else if(v[0] == admin_info)
