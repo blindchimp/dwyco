@@ -6,12 +6,12 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import QtQml 2.12
+import QtQuick
+import QtQml
 import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Dialogs
-import dwyco 1.0
+import dwyco
 //import Qt.labs.platform as Mumble
 import QtCore
 

@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick
 
 Image {
     property alias vid_incoming: vid_incoming

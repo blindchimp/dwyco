@@ -38,11 +38,11 @@
 **
 ****************************************************************************/
 
-import QtQuick 2.12
+import QtQuick
 import QtMultimedia
 import QtQuick.Layouts
 import QtQuick.Controls
-import dwyco 1.0
+import dwyco
 
 Item {
     //property Camera camera

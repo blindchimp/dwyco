@@ -1,7 +1,7 @@
-import QtQuick 2.12
-import QtQml.Models 2.12
-import QtQuick.Controls 2.12
-import dwyco 1.0
+import QtQuick
+import QtQml.Models
+import QtQuick.Controls
+import dwyco
 
 
 TipButton {

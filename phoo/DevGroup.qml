@@ -1,6 +1,6 @@
 
-import QtQuick 2.12
-import dwyco 1.0
+import QtQuick
+import dwyco
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtQuick.Controls
