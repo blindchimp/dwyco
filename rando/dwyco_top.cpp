@@ -70,7 +70,7 @@
 #include "geospray.h"
 
 
-#if defined(MACOSX)  && !defined(DWYCO_IOS)
+#if defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
 #include <QtMacExtras>
 #endif
 
@@ -109,7 +109,7 @@ extern int HasCamHardware;
 
 int DwycoCore::Android_migrate;
 
-QMap<QByteArray, QLoc> Hash_to_loc;
+QMultiMap<QByteArray, QLoc> Hash_to_loc;
 QMap<QByteArray,QByteArray> Hash_to_review;
 QMap<QByteArray, long> Hash_to_max_lc;
 
@@ -1709,7 +1709,7 @@ DwycoCore::init()
 
 #endif
 
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) //|| defined(DWYCO_IOS)
     dwyco_set_external_video_capture_callbacks(
         vgqt_new,
         vgqt_del,
@@ -1724,7 +1724,7 @@ DwycoCore::init()
 
     );
 
-#elif defined(LINUX)
+#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT) && defined(DWYCO_VIdEO)
     dwyco_set_external_video_capture_callbacks(
         vgnew,
         vgdel,
@@ -1966,7 +1966,7 @@ DwycoCore::map_to_representative(const QString& uid)
 void
 DwycoCore::set_badge_number(int i)
 {
-#if defined(MACOSX)  && !defined(DWYCO_IOS)
+#if  defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else

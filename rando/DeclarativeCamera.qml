@@ -6,10 +6,10 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-
+import QtQml 2.12
 import QtQuick 2.12
-import QtMultimedia 5.12
-import QtQuick.Controls 2.12
+import QtMultimedia
+import QtQuick.Controls
 
 // the API to this object is ugly... essentially, the requirement is
 // that the user of the object must reside in a stackview, and
@@ -62,7 +62,7 @@ Rectangle {
             name: "PhotoCapture"
             StateChangeScript {
                 script: {
-                    camera.captureMode = Camera.CaptureStillImage
+                    //camera.captureMode = Camera.CaptureStillImage
                     camera.start()
                 }
             }
@@ -99,57 +99,57 @@ Rectangle {
             }
         }
     ]
-    
+
+    MediaDevices {
+        id: devices
+    }
+
+    CaptureSession {
+        id: capture_session
+        imageCapture: ImageCapture {
+               id: img_cap
+            onImageCaptured: {
+                photoPreview.source = img_cap.preview
+                cameraUI.state = "PhotoPreview"
+                //console.log("orientation ", camera.orientation)
+                //console.log("focus auto ",focus.isFocusModeSupported(CameraFocus.FocusAuto))
+                //camera.unlock()
+                //photoPreview.ok_vis = false
+                console.log("CAPTURED ", img_cap.preview)
+            }
+
+            onErrorOccurred: (req, error, message)=> {
+                console.log("cap failed ", message)
+                //camera.unlock()
+            }
+
+            onImageSaved: (req, path)=> {
+                              file_captured = path
+                              console.log("SAVED ", file_captured)
+                              //photoPreview.ok_vis = true
+                              photoPreview.source = "file://" + file_captured
+
+                          }
+        }
+        camera: camera
+        videoOutput: viewfinder
+    }
+
     Camera {
         id: camera
-        captureMode: Camera.CaptureStillImage
-        position: Camera.BackFace
+        active: cameraUI.visible
+        //captureMode: Camera.CaptureStillImage
+        focusMode: Camera.FocusModeAuto
+        whiteBalanceMode: Camera.WhiteBalanceAuto
 
-        imageCapture {
+//        onLockStatusChanged: {
+//            console.log("lock status ", lockStatus)
+//            if(lockStatus == Camera.Locked) {
+//                camera.imageCapture.captureToLocation(core.tmp_dir)
 
-            onImageCaptured: {
+//            }
 
-                photoPreview.source = preview
-                console.log("preview url ", preview)
-                cameraUI.state = "PhotoPreview"
-                console.log("orientation ", camera.orientation)
-                console.log("orientation c ", camera.metaData.cameraManufacturer)
-                console.log("focus auto ",focus.isFocusModeSupported(CameraFocus.FocusAuto))
-                camera.unlock()
-                //photoPreview.ok_vis = false
-            }
-
-            onCaptureFailed: {
-                console.log("cap failed ", message)
-                camera.unlock()
-            }
-
-            onImageSaved: {
-                console.log("save fn ", path)
-                if(Qt.platform.os === "ios") {
-                    core.rotate_in_place(path, 6, camera.position === Camera.FrontFace ? 1 : 0)
-                }
-                photoPreview.source = "file:///" + path
-                file_captured = path
-                //photoPreview.ok_vis = true
-                
-            }
-        }
-
-        focus {
-            focusMode: CameraFocus.FocusAuto
-        }
-
-        imageProcessing.whiteBalanceMode: CameraImageProcessing.WhiteBalanceAuto
-
-        onLockStatusChanged: {
-            console.log("lock status ", lockStatus)
-            if(lockStatus == Camera.Locked) {
-                camera.imageCapture.captureToLocation(core.tmp_dir)
-
-            }
-
-        }
+//        }
 
 
     }
@@ -157,7 +157,7 @@ Rectangle {
     PhotoPreview {
         id : photoPreview
         anchors.fill : parent
-        onClosed: {
+        onClosed:(ok)=> {
             if(ok)
                 cameraUI.state = state_on_close //"PhotoCapture"
             else
@@ -174,17 +174,8 @@ Rectangle {
         visible: cameraUI.state == "PhotoCapture" || cameraUI.state == "VideoCapture"
 
         anchors.fill: parent
-        source: camera
-        autoOrientation: true
-        Component.onCompleted: {
-            console.log("pic Orientation:", orientation, Qt.platform.os)
-
-            if (Qt.platform.os === "ios") {
-                autoOrientation = false;
-                // camera orientation always returns 270 on iPhone. Is this expected?
-                orientation = Qt.binding(function () { return camera.orientation; } );
-            }
-        }
+        //source: camera
+        //autoOrientation: true
         
         PhotoCaptureControls {
             id: stillControls
@@ -196,7 +187,7 @@ Rectangle {
         BusyIndicator {
             id: busy1
 
-            running: {stillControls.visible && !camera.imageCapture.ready}
+            running: {stillControls.visible && !capture_session.imageCapture.readyForCapture}
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -214,7 +205,7 @@ Rectangle {
 
         text: qsTr("(No camera devices available)")
         z: 6
-        visible: {QtMultimedia.availableCameras.length === 0}
+        visible: {devices.videoInputs.length === 0}
         Button {
             anchors.left: parent.left
             anchors.bottom: parent.bottom

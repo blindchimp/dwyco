@@ -8,9 +8,10 @@
 */
 import QtQml 2.12
 import QtQuick 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
-import QtQuick.Dialogs 1.3
+import QtQuick.Layouts
+import QtQuick.Controls
+import QtQuick.Dialogs
+//import Qt.labs.platform 1.0 as Mumble
 
 Page {
     property alias model: grid.model
@@ -256,20 +257,20 @@ Page {
                             onTriggered: {
                                 confirm_delete2.visible = true
                             }
-                            MessageDialog {
+                            MessageYN {
                                 id: confirm_delete2
                                 title: "Clear?"
-                                icon: StandardIcon.Question
+                                //icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
+                                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                                onYesClicked: {
                                     core.clear_messages_unfav(simp_msg_browse.to_uid)
                                     themsglist.reload_model()
                                     close()
                                     stack.pop()
                                 }
-                                onNo: {
+                                onNoClicked: {
                                     close()
                                 }
                             }
@@ -280,20 +281,20 @@ Page {
                             onTriggered: {
                                 confirm_delete.visible = true
                             }
-                            MessageDialog {
+                            MessageYN {
                                 id: confirm_delete
                                 title: "Bulk delete?"
-                                icon: StandardIcon.Question
+                                //icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
                                 informativeText: "This removes FAVORITE messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
+                                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                                onYesClicked: {
                                     core.delete_user(simp_msg_browse.to_uid)
                                     themsglist.reload_model()
                                     close()
                                     stack.pop()
                                 }
-                                onNo: {
+                                onNoClicked: {
                                     close()
                                 }
                             }

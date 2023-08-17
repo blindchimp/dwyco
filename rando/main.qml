@@ -160,7 +160,7 @@ ApplicationWindow {
     title: qsTr("Dwyco Rando")
 
     property int close_bounce: 0
-    onClosing: {
+    onClosing: (close)=> {
         // special cases, don't let them navigate around the
         // initial app setup
         if(profile_bootstrapped === 0) {
@@ -277,7 +277,7 @@ ApplicationWindow {
         visible: false
         enabled: false
 
-        onUid_selected: {
+        onUid_selected: (uid, action) => {
             console.log("UID SELECTED", uid)
             last_uid_selected = uid
         }
@@ -537,7 +537,7 @@ ApplicationWindow {
 //            Qt.quit()
 //        }
 
-        onServer_login: {
+        onServer_login: (msg, what)=> {
            
             console.log(msg)
             console.log(what)
@@ -603,16 +603,16 @@ ApplicationWindow {
             }
         }
 
-        onMsg_progress: {
+        onMsg_progress: (pers_id, recipient, msg, percent_done)=> {
             console.log(pers_id, msg, percent_done)
             //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
-        onProfile_update: {
+        onProfile_update: (success)=> {
             top_dispatch.profile_updated(success)
         }
 
-        onQt_app_state_change: {
+        onQt_app_state_change: (app_state)=> {
             console.log("app state change ", app_state)
             if(app_state === 0) {
                 // resuming
