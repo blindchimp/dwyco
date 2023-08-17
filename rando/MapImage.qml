@@ -1,8 +1,8 @@
 
-import QtQuick 2.6
-import QtQuick.Controls 2.2
-import QtLocation 5.12
-import QtPositioning 5.12
+import QtQuick
+import QtQuick.Controls
+import QtLocation
+import QtPositioning
 
 Page {
     //property real lat: 59.91 //39.739200
