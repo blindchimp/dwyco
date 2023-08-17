@@ -6,14 +6,14 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.9
-import QtQml 2.2
-import QtQuick.Window 2.2
-import QtQuick.Controls 2.2
-import QtQuick.Controls.Material 2.2
-import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.2
-import dwyco 1.0
+import QtQuick
+import QtQml
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import dwyco
 
 ApplicationWindow {
     property real contentScaleFactor: screenDpi / 160
