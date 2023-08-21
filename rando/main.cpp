@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
     //perm_setup(app);
 
-    qDebug() << QQuickStyle::availableStyles();
+    //qDebug() << QQuickStyle::availableStyles();
 
     // note: qt seems to use some of these names in constructing
     // file names. this can be a problem if different FS's with different
@@ -79,14 +79,17 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     TheEngine = &engine;
-    QQmlFileSelector *sel = QQmlFileSelector::get(TheEngine);
-#if defined(FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
-    sel->setExtraSelectors(QStringList("vgqt"));
+    QQmlFileSelector *sel = new QQmlFileSelector(TheEngine);
+    QStringList sels;
+#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+    sels.append("vgqt");
 #endif
 
 #if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)
-    //sel->setExtraSelectors(QStringList("desktop"));
+    //sels.append("desktop");
 #endif
+    if(sels.count() > 0)
+        sel->setExtraSelectors(sels);
 
 
 #ifdef ANDROID

@@ -6,13 +6,13 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import dwyco 1.0
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
-//import Qt.labs.platform 1.1 as NL
+import QtQml
+import QtQuick
+import QtQuick.Controls
+import dwyco
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import Qt.labs.platform as Mumble
 
 Page {
     id: rectangle1
@@ -159,7 +159,7 @@ Page {
 
         visible: false
         active: visible
-        sourceComponent: FileDialog {
+        sourceComponent: Mumble.FileDialog {
                 title: "Pick a picture"
                 folder: shortcuts.pictures
                 onAccepted: {

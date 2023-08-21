@@ -1,6 +1,6 @@
-import QtQml 2.12
-import QtQuick 2.12
-import dwyco 1.0
+import QtQml
+import QtQuick
+import dwyco
 
 VidCallForm {
     property bool paused: false

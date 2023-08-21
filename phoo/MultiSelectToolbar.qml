@@ -6,11 +6,12 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQuick 2.12
-import dwyco 1.0
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
+import QtQuick
+import dwyco
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Dialogs
+//import Qt.labs.platform
 
 ToolBar {
     property Component extras
@@ -85,19 +86,36 @@ ToolBar {
                 // remove whatever is selected
                 confirm_delete.visible = true
             }
-            MessageDialog {
+            MessageYN {
                 id: confirm_delete
                 title: "Bulk delete?"
-                icon: StandardIcon.Question
+                //icon: StandardIcon.Question
                 text: "Delete ALL messages from selected users?"
-                informativeText: "This removes FAVORITE messages too."
-                standardButtons: StandardButton.Yes | StandardButton.No
-                onYes: {
+                informativeText: "This REMOVES FAVORITE messages too."
+                detailedText: "This is what you use to completely obliterate all messages from selected users, including favorite and hidden messages."
+                //detailedText: informativeText
+                //buttons: MessageDialog.Yes | MessageDialog.No
+//                onButtonClicked: (button, role)=> {
+//                                     switch(button) {
+//                                         case MessageDialog.Yes: {
+//                                             model.delete_all_selected()
+//                                             multiselect_mode = false
+//                                             close()
+//                                             break
+//                                         }
+//                                         case MessageDialog.No: {
+//                                             close()
+//                                             break
+//                                         }
+//                                     }
+//                                 }
+
+                onYesClicked: {
                     model.delete_all_selected()
                     multiselect_mode = false
                     close()
                 }
-                onNo: {
+                onNoClicked: {
                     close()
                 }
             }

@@ -72,6 +72,9 @@ extern vc My_connection;
 
 void exit_conf_mode();
 vc set_get_uniq(int&);
+void update_server_list(vc, void *, vc, ValidPtr);
+void ignoring_you_update(vc, void *, vc, ValidPtr);
+void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
 
 #ifdef LEAK_CLEANUP
 void
@@ -428,10 +431,6 @@ emit_invis_update(vc name, vc val)
     se_emit_server_attr("invis", v);
 }
 
-
-void update_server_list(vc, void *, vc, ValidPtr);
-void ignoring_you_update(vc, void *, vc, ValidPtr);
-void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
 
 void
 init_dirth()

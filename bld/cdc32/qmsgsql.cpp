@@ -1341,6 +1341,9 @@ setup_crdt_triggers()
                         "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
                         "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
                         "end");
+    // XXX i wonder why i left out a trigger on insert of gtomb (like the one above for mtomb).
+    // possibly to avoid storms? the only time there is a direct insert to the gtomb is when
+    // a receiver processes a 'd' update or we get an index from another group member.
 }
 
 static
@@ -2031,7 +2034,7 @@ sql_load_group_index(vc uid, int max_count)
             // messages from previous group members
                     " or (is_sent isnull and length(?1) > 0 and from_group = ?1 ))"
                 " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid) order by logical_clock desc limit ?2",
-                    gid.is_nil() ? "" : to_hex(gid),
+            gid.is_nil() ? vc("") : to_hex(gid),
                     max_count,
                     huid);
         sql_commit_transaction();

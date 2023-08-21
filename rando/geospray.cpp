@@ -20,7 +20,7 @@
 void hack_unread_count();
 
 GeoSprayListModel *TheGeoSprayListModel;
-extern QMap<QByteArray, QLoc> Hash_to_loc;
+extern QMultiMap<QByteArray, QLoc> Hash_to_loc;
 
 int
 GeoSent::load_external_state(const QLoc& ql)

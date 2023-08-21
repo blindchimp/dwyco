@@ -31,6 +31,7 @@
         <file>Migrate.qml</file>
         <file>Reindex.qml</file>
         <file>RestoreAutoBackup.qml</file>
+        <file>MessageYN.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

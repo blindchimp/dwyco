@@ -8,9 +8,9 @@
 */
 import QtQuick 2.12
 import dwyco 1.0
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
-import QtQuick.Controls 2.12
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtQuick.Controls
 //import QtGraphicalEffects 1.0
 
 Item {
@@ -143,7 +143,7 @@ Item {
            MouseArea {
                anchors.fill: drow
                acceptedButtons: Qt.LeftButton|Qt.RightButton
-               onClicked: {
+               onClicked: (mouse)=> {
                    console.log("click")
                    console.log(index)
                    listView2.currentIndex = index

@@ -121,7 +121,7 @@ SOURCES += main.cpp tfhex.cpp mainwin.cpp dwyco_new_msg.cpp evret.cpp dvp.cc abo
 
 
 linux-* {
-INCLUDEPATH += ./dllwin ../bld/qtdrv
+INCLUDEPATH += ./dllwin ../bld/qt6drv
 
 D = $${OUT_PWD}/../bld
 
@@ -141,7 +141,7 @@ $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/v4lcap/libv4lcap.a \
@@ -166,7 +166,7 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 
 #-lesd \
@@ -263,7 +263,7 @@ QMAKE_CXXFLAGS += /wd4100 /wd4068
 
 macx-g++|macx-clang|macx-xcode {
 OBJECTIVE_SOURCES  += mactards.mm
-#INCLUDEPATH += ../bld/qtdrv
+INCLUDEPATH += ../bld/qt6drv
 D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
@@ -283,11 +283,9 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qt6drv/libqt6drv.a \
 -Wl,-framework,CoreFoundation \
 -Wl,-framework,Cocoa
-
-#$${D}/qtdrv/libqtdrv.a \
-
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -306,10 +304,8 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
-$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
-
-
-#$${D}/qtdrv/libqtdrv.a
+$${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
+$${D}/qt6drv/libqt6drv.a
 
 QMAKE_CXX=ccache g++
 #QMAKE_CXXFLAGS +=  -fsanitize=address

@@ -9,11 +9,12 @@
 #include <QtGui>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QRegularExpression>
+#include <QDialog>
 #include "ui_config.h"
 #include "config.h"
 #include "dlli.h"
 #include "ssmap.h"
-#include "composer.h"
 #include "mainwin.h"
 #include "simple_public.h"
 #include "tfhex.h"
@@ -66,7 +67,7 @@ configform::accept()
 
     {
         QList<QCheckBox *> cb;
-        QRegExp r("CDC_*", Qt::CaseSensitive, QRegExp::Wildcard);
+        QRegularExpression r = QRegularExpression::fromWildcard(QString("CDC_*"), Qt::CaseSensitive);
         cb = findChildren<QCheckBox *>(r);
         for(int i = 0; i < cb.count(); ++i)
         {
@@ -80,7 +81,8 @@ configform::accept()
     }
     {
         QList<QLineEdit *> cb;
-        cb = findChildren<QLineEdit *>(QRegExp("CDC_*", Qt::CaseSensitive, QRegExp::Wildcard));
+        QRegularExpression r = QRegularExpression::fromWildcard(QString("CDC_*"), Qt::CaseSensitive);
+        cb = findChildren<QLineEdit *>(r);
         for(int i = 0; i < cb.count(); ++i)
         {
             QLineEdit *c = cb.value(i);
@@ -162,7 +164,8 @@ configform::load()
 {
     {
         QList<QCheckBox *> cb;
-        cb = findChildren<QCheckBox *>(QRegExp("CDC_*", Qt::CaseSensitive, QRegExp::Wildcard));
+        QRegularExpression r = QRegularExpression::fromWildcard(QString("CDC_*"), Qt::CaseSensitive);
+        cb = findChildren<QCheckBox *>(r);
         for(int i = 0; i < cb.count(); ++i)
         {
             QCheckBox *c = cb.value(i);
@@ -181,7 +184,8 @@ configform::load()
     }
     {
         QList<QLineEdit *> cb;
-        cb = findChildren<QLineEdit *>(QRegExp("CDC_*", Qt::CaseSensitive, QRegExp::Wildcard));
+        QRegularExpression r = QRegularExpression::fromWildcard(QString("CDC_*"), Qt::CaseSensitive);
+        cb = findChildren<QLineEdit *>(r);
         for(int i = 0; i < cb.count(); ++i)
         {
             QLineEdit *c = cb.value(i);
@@ -515,8 +519,10 @@ void configform::on_sync_enable_clicked(bool checked)
 {
     if(checked)
     {
-        if(ui.CDC_group__alt_name->text().toLatin1().length() < 4 ||
-            ui.CDC_group__join_key->text().toLatin1().length() < 4)
+        QString gtrim = ui.CDC_group__alt_name->text().trimmed();
+        QString key = ui.CDC_group__join_key->text();
+        if(gtrim.toLatin1().length() < 4 ||
+            key.toLatin1().length() < 4)
         {
             QMessageBox warn(QMessageBox::Warning, "Device linking failed",
                              "The device name and password must be at least 4 characters.",
@@ -525,8 +531,9 @@ void configform::on_sync_enable_clicked(bool checked)
             ui.sync_enable->setChecked(false);
             return;
         }
-        dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
-        if(!dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData()))
+        dwyco_set_setting("group/join_key", key.toLatin1().constData());
+
+        if(!dwyco_start_gj2(gtrim.toLatin1().constData(), key.toLatin1().constData()))
         {
             QMessageBox warn(QMessageBox::Warning, "Device linking failed",
                                      "Can't perform linking now, try again later.",

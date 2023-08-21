@@ -1196,6 +1196,27 @@ int DWYCOEXPORT dwyco_exit();
 int DWYCOEXPORT dwyco_bg_init();
 int DWYCOEXPORT dwyco_bg_exit();
 
+// call this AFTER calling dwyco_init_*
+// it is OPTIONAL, as the servers and core services
+// normally handle this for you.
+// it installs a new server list, and if it is
+// different from the list on the disk, you'll get
+// callbacks for exiting the program, and it also
+// updates the server list on disk so the next restart
+// will use the new list you just installed.
+// WARNING! this call may instantly exit the program if the server
+// list has changed in some significant way.
+// this call is primarily used in order to avoid introducing a
+// dependency on DNS into this library. this usually uses IP addresses
+// only. the client can usually handle DNS issues, and can fetch
+// a server list from our web servers using the usual techniques, then
+// install the list using this function.
+// our servers and chat servers will normally dole out new servers lists
+// if they change, but you have a chicken-and-egg problem if the servers
+// move someplace without being able to provide access to the previous servers
+// to redirect access.
+int DWYCOEXPORT dwyco_update_server_list(const char *lhxfer_str, int lhxfer_str_len);
+
 void DWYCOEXPORT dwyco_power_clean_safe();
 int DWYCOEXPORT dwyco_empty_trash();
 int DWYCOEXPORT dwyco_count_trashed_users();

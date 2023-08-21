@@ -6,15 +6,16 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml 2.12
-import QtQuick 2.12
-import QtQuick.Window 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.12
-import QtQuick.Layouts 1.12
-import QtQuick.Dialogs 1.3
-import QtMultimedia 5.12
+import QtQml
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtMultimedia
 import dwyco 1.0
+//import Qt.labs.platform as Mumble
 
 ApplicationWindow {
     property real contentScaleFactor: screenDpi / 160
@@ -76,7 +77,7 @@ ApplicationWindow {
         return 0
     }
     font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
-    
+    //font.weight: Font.Bold
     
     property color primary : "#673AB7"
     property color primary_dark : "#512DA8"
@@ -160,7 +161,7 @@ ApplicationWindow {
 
     }
     property int close_bounce: 0
-    onClosing: {
+    onClosing: (close)=> {
         // special cases, don't let them navigate around the
         // initial app setup
         if(profile_bootstrapped === 0) {
@@ -312,21 +313,21 @@ ApplicationWindow {
             onTriggered: {
                 confirm_block_delete.visible = true
             }
-            MessageDialog {
+            MessageYN {
                 id: confirm_block_delete
                 title: "Block and delete?"
-                icon: StandardIcon.Question
+                //icon: StandardIcon.Question
                 text: "Delete ALL messages from user and BLOCK them?"
                 informativeText: "This removes FAVORITE and HIDDEN messages too."
-                standardButtons: StandardButton.Yes | StandardButton.No
-                onYes: {
+                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                onYesClicked: {
                     core.set_ignore(chatbox.to_uid, 1)
                     core.delete_user(chatbox.to_uid)
                     themsglist.reload_model()
                     stack.pop()
 
                 }
-                onNo: {
+                onNoClicked: {
                     stack.pop()
                 }
             }
@@ -348,7 +349,7 @@ ApplicationWindow {
         visible: false
         enabled: false
 
-        onUid_selected: {
+        onUid_selected: (uid, action) => {
             console.log("UID SELECTED", uid)
             last_uid_selected = uid
 
@@ -908,7 +909,7 @@ ApplicationWindow {
             exit()
         }
 
-        onServer_login: {
+        onServer_login: (msg, what)=> {
            
             console.log(msg)
             console.log(what)
@@ -926,7 +927,7 @@ ApplicationWindow {
             //applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid())
         }
 
-        onNew_msg: {
+        onNew_msg: (from_uid, txt, mid)=> {
             console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
             if(from_uid === themsglist.uid || core.map_to_representative(from_uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model();
@@ -943,7 +944,7 @@ ApplicationWindow {
             sound_recv.play()
         }
 
-        onSys_msg_idx_updated: {
+        onSys_msg_idx_updated: (uid)=> {
             console.log("upd " + uid + " " + themsglist.uid)
             if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model()
@@ -952,12 +953,12 @@ ApplicationWindow {
             }
         }
 
-        onMsg_send_status: {
+        onMsg_send_status: (status, recipient, pers_id)=> {
             console.log(pers_id, status, recipient)
             //hwtext.text = status
-            if(status == DwycoCore.MSG_SEND_SUCCESS) {
+            if(status === DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
-                if(themsglist.uid == recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
+                if(themsglist.uid === recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
                     themsglist.reload_model()
 
                 }
@@ -965,16 +966,16 @@ ApplicationWindow {
             }
         }
 
-        onMsg_progress: {
+        onMsg_progress: (pers_id, recipient, msg, percent_done)=> {
             console.log(pers_id, msg, percent_done)
             //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
-        onProfile_update: {
+        onProfile_update: (success)=> {
             top_dispatch.profile_updated(success)
         }
 
-        onQt_app_state_change: {
+        onQt_app_state_change: (app_state)=> {
             console.log("app state change ", app_state)
             if(app_state === 0) {
                 // resuming

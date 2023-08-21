@@ -79,7 +79,7 @@ void android_log_stuff(const char *str, const char *s1, int s2);
 #endif
 
 
-#if defined(MACOSX) && !defined(DWYCO_IOS)
+#if defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
 #include <QtMacExtras>
 #endif
 
@@ -537,7 +537,8 @@ DwycoCore::dwyco_sys_event_callback(int cmd, int id,
     else if(cmd == DWYCO_SE_USER_ADD)
     {
         TheConvListModel->add_uid_to_model(suid);
-        dwyco_fetch_info(uid, len_uid);
+        // adding it to the model causes info to be fetched
+        //dwyco_fetch_info(uid, len_uid);
     }
     else if(cmd == DWYCO_SE_USER_DEL)
     {
@@ -1775,6 +1776,23 @@ DwycoCore::init()
     DVP::init_dvp();
     simple_call::init(this);
     AvoidSSL = !QSslSocket::supportsSsl();
+    if(!AvoidSSL)
+    {
+        // this is a silly hack for linux desktop where we end up
+        // having to compile on some old stuff, but the newer
+        // desktops have openssl with newer versions with missing
+        // symbols...
+#if defined(LINUX) && !(defined(MAC_CLIENT) || defined(ANDROID))
+        QString ssl1 = QSslSocket::sslLibraryBuildVersionString();
+        ssl1.truncate(9);
+        QString ssl2 = QSslSocket::sslLibraryVersionString();
+        ssl2.truncate(9);
+        if(ssl1 != ssl2)
+            AvoidSSL = 1;
+#endif
+    }
+
+
     Net_access = new QNetworkAccessManager(this);
     connect(Net_access, &QNetworkAccessManager::finished,
             this, &DwycoCore::dir_download_finished);
@@ -1853,7 +1871,7 @@ DwycoCore::init()
 
 #endif
 
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) //|| defined(DWYCO_IOS)
     dwyco_set_external_video_capture_callbacks(
         vgqt_new,
         vgqt_del,
@@ -1868,7 +1886,7 @@ DwycoCore::init()
 
     );
 
-#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT)
+#elif defined(LINUX) && !defined(EMSCRIPTEN) && !defined(MAC_CLIENT) && defined(DWYCO_VIdEO)
     dwyco_set_external_video_capture_callbacks(
         vgnew,
         vgdel,
@@ -1969,7 +1987,10 @@ DwycoCore::init()
     load_unviewed();
     update_any_unviewed(any_unviewed_msgs());
     reload_conv_list();
-    reload_ignore_list();
+    // don't do this, we'll load it when they display the dialog.
+    // this causes a lot of "fetch_info"'s to happen at start up
+    // that aren't really needed.
+    //reload_ignore_list();
 
     const char *uid;
     int len_uid;
@@ -2075,7 +2096,7 @@ DwycoCore::map_to_representative(const QString& uid)
 void
 DwycoCore::set_badge_number(int i)
 {
-#if  defined(MACOSX) && !defined(DWYCO_IOS)
+#if  defined(MACOSX) && !defined(DWYCO_IOS) && defined(DWYCO_QT5)
     if(i == 0)
         QtMac::setBadgeLabelText("");
     else
@@ -3374,7 +3395,7 @@ DwycoCore::play_zap_view(int view_id)
 int
 DwycoCore::start_gj2(QString gname, QString password)
 {
-    QByteArray gn = gname.toLatin1();
+    QByteArray gn = gname.trimmed().toLatin1();
     QByteArray pw = password.toLatin1();
     return dwyco_start_gj2(gn.constData(), pw.constData());
 }
