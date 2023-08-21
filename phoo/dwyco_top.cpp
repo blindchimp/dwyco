@@ -3383,7 +3383,7 @@ DwycoCore::play_zap_view(int view_id)
 int
 DwycoCore::start_gj2(QString gname, QString password)
 {
-    QByteArray gn = gname.toLatin1();
+    QByteArray gn = gname.trimmed().toLatin1();
     QByteArray pw = password.toLatin1();
     return dwyco_start_gj2(gn.constData(), pw.constData());
 }
