@@ -201,6 +201,9 @@ install_emergency_servers2(QNetworkReply *reply)
             file.write(em);
             file.close();
         }
+        // NOTE: this might be something we should gate with some user
+        // input since the program may just shut down.
+        dwyco_update_server_list(em.constData(), em.length());
     }
     reply->manager()->deleteLater();
     reply->deleteLater();
