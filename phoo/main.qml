@@ -75,7 +75,7 @@ ApplicationWindow {
         console.warn("Could not calculate 'vh' based on Screen.height.")
         return 0
     }
-    font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+    //font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
     font.weight: Font.Bold
     
     property color primary : "#673AB7"
