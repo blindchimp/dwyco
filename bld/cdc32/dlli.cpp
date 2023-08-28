@@ -1718,7 +1718,7 @@ dwyco_update_server_list(const char *lhxfer_str, int lhxfer_str_len)
     m[1] = item;
     // WARNING: this function may call dwyco_exit and quit the program
     // if the server list has changed.
-    update_server_list(item, 0, vcnil, ValidPtr());
+    update_server_list(m, 0, vcnil, ValidPtr());
     return 1;
 }
 
