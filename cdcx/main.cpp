@@ -191,7 +191,8 @@ install_emergency_servers2(QNetworkReply *reply)
 {
     if (reply->error() == QNetworkReply::NoError)
     {
-        QFile file("servers2.eme");
+        DwOString tfile = add_pfx(Tmp_pfx, "servers2.tmp");
+        QFile file(tfile.c_str());
         QByteArray em = reply->readAll();
         // note: we can have an "error" if file not found or
         // redirect isn't handled properly, and it will still count

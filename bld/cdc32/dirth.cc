@@ -158,7 +158,7 @@ update_server_list(vc m, void *, vc, ValidPtr)
     for(int i = 0; i < Server_list.num_elems(); ++i)
     {
         int j;
-        vc d = Server_list[i];
+        const vc& d = Server_list[i];
         for(j = 0; j < nsl.num_elems(); ++j)
         {
             if(d[SL_SERVER_NAME] == nsl[j][SL_SERVER_NAME] &&
