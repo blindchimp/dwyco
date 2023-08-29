@@ -189,6 +189,13 @@ static
 void
 install_emergency_servers2(QNetworkReply *reply)
 {
+    //volatile auto d = reply->error();
+    // NOTENOTE! if you don't have SSL installed properly (happens on
+    // windows sometimes) you will get an "unknown error" IF THE WEBSERVER
+    // USES automatic https redirection. the solution is to make the
+    // webserver use exactly what we asked for: plain HTTP. for caddy,
+    // this involved updating the Caddyfile to explicitly match
+    // the URL in the request and not to the normal https redirection.
     if (reply->error() == QNetworkReply::NoError)
     {
         DwOString tfile = add_pfx(Tmp_pfx, "servers2.tmp");
@@ -307,6 +314,11 @@ int main(int argc, char *argv[])
         shares.mkpath(userdir + "shares");
     }
     }
+#endif
+
+#ifdef WIN32
+// still expecting to start in the directory where all our data is
+    QString userdir("./");
 #endif
 
 
