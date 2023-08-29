@@ -229,6 +229,7 @@ setup_emergency_servers()
 
 int main(int argc, char *argv[])
 {
+    QApplication app(argc, argv);
     srand(time(0));
     AvoidSSL = !QSslSocket::supportsSsl();
     if(!AvoidSSL)
@@ -435,7 +436,7 @@ int main(int argc, char *argv[])
 
 
     init_sound();
-    QApplication app(argc, argv);
+
     // note: qt seems to use some of these names in constructing
     // file names. this can be a problem if different FS's with different
     // naming conventions are being used. this manifests itself with
@@ -452,7 +453,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationVersion(ver);
     QSettings::setDefaultFormat(QSettings::IniFormat);
     // note: need to set the path to the right place, same as fn_pfx for dll
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, User_pfx);
 
     QStringList args = QGuiApplication::arguments();
     for(int i = 1; i < args.count(); ++i)
@@ -938,7 +939,7 @@ int main(int argc, char *argv[])
     exit_sound();
     if(!d)
     {
-        QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(sport));
+        QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(sport), User_pfx);
     }
 
 #ifdef LEAK_CLEANUP
