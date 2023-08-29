@@ -315,17 +315,20 @@ int main(int argc, char *argv[])
         shares.mkpath(userdir + "shares");
     }
     }
+    QString syspath = QCoreApplication::applicationDirPath() + QDir::separator();
+    //syspath = "/home/dwight/cdcx/";
 #endif
 
 #ifdef WIN32
 // still expecting to start in the directory where all our data is
     QString userdir("./");
+    QString syspath("./");
 #endif
 
 
 #define FPATH "./"
 
-    dwyco_set_fn_prefixes(0, userdir.toLatin1().constData(), (userdir.toLatin1() + QByteArray("/tmp/")).constData());
+    dwyco_set_fn_prefixes(syspath.toLatin1().constData(), userdir.toLatin1().constData(), (userdir.toLatin1() + QByteArray("/tmp/")).constData());
     {
         char sys[1024];
         char user[1024];
