@@ -251,6 +251,8 @@ int main(int argc, char *argv[])
 #if defined(MAC_CLIENT) && defined(CDCX_MAC_USE_DEFAULT_LOCATION)
     void EstablishRunDirectory();
     EstablishRunDirectory();
+    QString userdir("./");
+    QString syspath("./");
     AvoidSSL = 1;
 
 #endif
