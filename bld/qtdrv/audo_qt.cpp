@@ -140,7 +140,7 @@ public slots:
         QMutexLocker ml(&audio_mutex);
         if(audio_output)
         {
-            if(audio_output->state() != QAudio::ActiveState)
+            if(audio_output->state() == QAudio::StoppedState)
             {
                 qio_dev = audio_output->start();
                 audio_output->setVolume(1.0);
