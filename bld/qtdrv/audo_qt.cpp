@@ -123,14 +123,15 @@ public slots:
     }
 
     void handle_stateChange(QAudio::State a) {
-//        QMutexLocker ml(&audio_mutex);
-//        if(a == QAudio::IdleState)
-//        {
+        QMutexLocker ml(&audio_mutex);
+        if(a == QAudio::StoppedState)
+        {
+            volatile int b = 1;
 //            if(audio_output)
 //            {
-//                audio_output->start(qio_dev);
+//                qio_dev = audio_output->start();
 //            }
-//        }
+        }
 
     }
 
