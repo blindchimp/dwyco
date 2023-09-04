@@ -227,8 +227,26 @@ setup_emergency_servers()
     QNetworkReply *reply = manager->get(r);
 }
 
+static
+    void
+    myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+#if 1
+    if(msg.contains("Timers cannot be stopped from another thread"))
+        ::abort();
+    if(msg.contains("Timers can only be used with threads started with QThread"))
+        ::abort();
+#endif
+
+}
+
+
 int main(int argc, char *argv[])
 {
+#if 1 // && defined(DWYCO_RELEASE)
+    qInstallMessageHandler(myMessageOutput);
+#endif
+
     QApplication app(argc, argv);
     srand(time(0));
     AvoidSSL = !QSslSocket::supportsSsl();
