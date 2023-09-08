@@ -243,7 +243,7 @@ static
 
 int main(int argc, char *argv[])
 {
-#if 1 // && defined(DWYCO_RELEASE)
+#if !defined(CDCX_RELEASE)
     qInstallMessageHandler(myMessageOutput);
 #endif
 
