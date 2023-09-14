@@ -291,6 +291,7 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 
 
 #include "dlli.h"
+#include "cdcver.h"
 #include "trc.h"
 #include "doinit.h"
 #include "mmchan.h"
