@@ -364,7 +364,7 @@ using namespace CryptoPP;
 #include "dwcls_timer.h"
 #include "qmsgsql.h"
 #include "vcwsock.h"
-#include "backsql.h"
+//#include "backsql.h"
 #include "grpmsg.h"
 #include "upnp.h"
 #include "pulls.h"
@@ -9110,7 +9110,8 @@ DWYCOEXPORT
 void
 dwyco_create_backup()
 {
-    create_msg_backup();
+    //create_msg_backup();
+    desktop_backup();
 }
 
 static
@@ -9126,7 +9127,7 @@ DWYCOEXPORT
 int
 dwyco_copy_out_backup(const char *dir, int force)
 {
-    DwString fn = newfn("bu.sql");
+    DwString fn = newfn("bun.sql");
     DwString filename = dir;
     filename += DIRSEPSTR;
     filename += "dwyco-backup-%1.sql";
@@ -9161,6 +9162,7 @@ dwyco_copy_out_backup(const char *dir, int force)
         if(!CopyFile(fn.c_str(), filename.c_str(), 0))
             return 0;
     }
+#if 0
     fn = newfn("dbu.sql");
     filename = dir;
     filename += DIRSEPSTR;
@@ -9169,6 +9171,7 @@ dwyco_copy_out_backup(const char *dir, int force)
     move_version(filename);
     if(!CopyFile(fn.c_str(), filename.c_str(), 0))
         return 0;
+#endif
     return 1;
 }
 
@@ -9180,6 +9183,8 @@ dwyco_remove_backup()
     DeleteFile(fn.c_str());
     fn = newfn("dbu.sql");
     DeleteFile(fn.c_str());
+    fn = newfn("bun.sql");
+    DeleteFile(fn.c_str());
 }
 
 // NOTE NOTE!
@@ -9190,6 +9195,7 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
 {
     if(!restore_msgs(bu_fn, msgs_only))
         return 0;
+#if 0
     DwString dfn(bu_fn);
     int pos;
     if((pos = dfn.find("dwyco-backup-")) == DwString::npos)
@@ -9197,6 +9203,7 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
     dfn.insert(pos + 13, "diff-");
     if(!restore_msgs(dfn.c_str(), msgs_only))
         return 0;
+#endif
     // this is special, we need to get out of here without
     // any of the usual exit processing
     // this is for windows, since we can't really delete a file
