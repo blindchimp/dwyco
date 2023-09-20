@@ -2316,8 +2316,11 @@ DwycoCore::uid_keyboard_input(QString uid)
 void
 DwycoCore::bootstrap(QString name, QString email)
 {
-    QByteArray bname = name.toLatin1();
-    QByteArray bemail = email.toLatin1();
+    // note: android and other mobile platforms with auto complete
+    // and other keyboard auto-typing is notorious for having extra
+    // spaces at the end of text inputs. just get rid of it.
+    QByteArray bname = name.trimmed().toLatin1().trimmed();
+    QByteArray bemail = email.trimmed().toLatin1().trimmed();
 
     dwyco_create_bootstrap_profile(bname.constData(), bname.length(), "", 0, "mobile user", 11, bemail.constData(), bemail.length());
     dwyco_set_local_auth(1);
@@ -2389,9 +2392,9 @@ DwycoCore::set_simple_profile(QString handle, QString email, QString desc, QStri
     const char *profile_pack;
     int len_profile_pack;
 
-    QByteArray bhandle = handle.toLatin1();
-    QByteArray bemail = email.toLatin1();
-    QByteArray bedesc = desc.toLatin1();
+    QByteArray bhandle = handle.trimmed().toLatin1().trimmed();
+    QByteArray bemail = email.trimmed().toLatin1().trimmed();
+    QByteArray bedesc = desc.trimmed().toLatin1().trimmed();
     QByteArray fn = img_fn.toLatin1();
     int compid;
 
@@ -3395,8 +3398,8 @@ DwycoCore::play_zap_view(int view_id)
 int
 DwycoCore::start_gj2(QString gname, QString password)
 {
-    QByteArray gn = gname.trimmed().toLatin1();
-    QByteArray pw = password.toLatin1();
+    QByteArray gn = gname.trimmed().toLatin1().trimmed();
+    QByteArray pw = password.trimmed().toLatin1().trimmed();
     return dwyco_start_gj2(gn.constData(), pw.constData());
 }
 

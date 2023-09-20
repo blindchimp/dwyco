@@ -37,12 +37,12 @@ dowiz()
     QVariant qv;
 
     qv = wiz->field("name");
-    QByteArray name = strip_html(qv.toString()).toAscii();
+    QByteArray name = strip_html(qv.toString()).toAscii().trimmed();
     qv = wiz->field("location");
-    QByteArray location = strip_html(qv.toString()).toAscii();
-    QByteArray desc = strip_html(p1->ui.desc->toPlainText()).toAscii();
+    QByteArray location = strip_html(qv.toString()).toAscii().trimmed();
+    QByteArray desc = strip_html(p1->ui.desc->toPlainText()).toAscii().trimmed();
     qv = wiz->field("email");
-    QByteArray email = strip_html(qv.toString()).toAscii();
+    QByteArray email = strip_html(qv.toString()).toAscii().trimmed();
 
     // if they manage to cancel out of the wizard, make sure
     // some reasonable defaults get set up
