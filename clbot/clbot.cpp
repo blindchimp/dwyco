@@ -300,7 +300,12 @@ main(int argc, char *argv[])
                 // in their latest profile entry. we don't want to return the new account
                 q.exec("delete from baz where not exists(select 1 from bar where trim(baz.email) collate nocase = bar.email)");
 
-                // TO DO: ignore filtering
+                // ignore filtering
+                q.prepare("with ign as (select ignorer from iy.entry_bag where ignoree = ?1 union select ignoree from iy.entry_bag where ignorer = ?1)"
+                       "delete from baz where uid in (select * from ign)"
+                       );
+                q.addBindValue(huid);
+                q.exec();
                 q.exec("select uid, trim(email) from baz");
 
                 while(q.next())
