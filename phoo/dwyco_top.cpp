@@ -119,6 +119,7 @@ int DwycoCore::Android_migrate;
 
 // kluge
 QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
+QByteArray HTheMan("5a098f3df49015331d74");
 
 static QByteArray
 dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
@@ -2457,6 +2458,10 @@ DwycoCore::get_pal(QString uid)
 void
 DwycoCore::set_ignore(QString uid, int is_ignored)
 {
+    // let's just avoid this from the outset
+    if(uid == HTheMan)
+        return;
+
     QByteArray buid = QByteArray::fromHex(uid.toLatin1());
     if(is_ignored)
     {
