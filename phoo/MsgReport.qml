@@ -23,7 +23,7 @@ Page {
         spacing: mm(3)
 
         Label {
-            text: "Click SEND to forward the message to Dwyco. We will review the message and contact you if more details are needed. The user DWYCO will appear in your contact list to help with future messages regarding this issue."
+            text: "Click SEND to forward the message to Dwyco. We will review the message within 24 hours and contact you if more details are needed. The user DWYCO will appear in your contact list to help with future messages regarding this issue."
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
@@ -40,8 +40,16 @@ Page {
         Button {
             text: "SEND for review"
             onClicked: {
-                // note: don't save the message
-                core.send_forward(the_man, "Abuse report", mid, 0)
+                core.send_forward(the_man, "Abuse report", mid, 1)
+                stack.pop()
+            }
+            Layout.fillWidth: true
+        }
+        Button {
+            text: "SEND for review AND BLOCK User"
+            onClicked: {
+                core.send_forward(the_man, "Abuse report", mid, 1)
+                core.set_ignore(uid, 1)
                 stack.pop()
             }
             Layout.fillWidth: true
