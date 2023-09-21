@@ -30,7 +30,7 @@
 #include "dhsetup.h"
 #include "profiledb.h"
 #include "se.h"
-#include "backsql.h"
+//#include "backsql.h"
 #include "dwrtlog.h"
 #ifdef LINUX
 #include <sys/utsname.h>
@@ -122,7 +122,7 @@ got_purge_outbox(vc, void *, vc, ValidPtr)
 static void
 reset_backups(vc, void *, vc, ValidPtr)
 {
-    dwyco::reset_msg_backup();
+    //dwyco::reset_msg_backup();
 }
 
 void

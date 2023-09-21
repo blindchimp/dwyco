@@ -7,6 +7,10 @@ int android_restore_msgs();
 int android_days_since_last_backup();
 int android_get_backup_state();
 int android_set_backup_state(int i);
+void desktop_backup();
+int restore_msgs(const char *fn, int msgs_only);
+extern int Enable_backups;
+extern int Backup_freq;
 }
 
 #endif // BACKANDROID_H

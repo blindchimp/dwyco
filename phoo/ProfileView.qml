@@ -18,6 +18,7 @@ Page {
     property alias preview_text: handle.text
     property alias preview_desc: desc.text
     property bool dragging
+    property int is_blocked: 0
 
     anchors.fill:parent
     header: SimpleToolbar {
@@ -25,6 +26,11 @@ Page {
     }
 
     function update_profile(uid) {
+        is_blocked = core.get_ignore(uid)
+        preview_source = is_blocked === 1 ? "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png" : core.uid_to_profile_preview(uid)
+        preview_text = is_blocked === 1 ? "unblock user to see profile" : core.uid_to_name(uid)
+        preview_desc = is_blocked === 1 ? "" : core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION)
+
         if(core.uid_profile_regular(uid)) {
             preview_source = core.uid_to_profile_preview(uid)
             preview_text = core.uid_to_name(uid)
@@ -52,12 +58,18 @@ Page {
             }
 
         }
+        function onIgnore_event(uid) {
+            if(uid === profview.uid) {
+                update_profile(uid)
+            }
+        }
     }
 
     
     onVisibleChanged: {
         if(visible) {
             update_profile(uid)
+
         }
     }
 

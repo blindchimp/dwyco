@@ -47,7 +47,7 @@ public:
     void attach(const DwString& dbname, const DwString& schema_name);
     void detach(const DwString& schema_name);
 
-    int init(int flags = -1);
+    int init(int sqlite_flags = -1, bool no_filename_mod = false);
     void exit();
     void optimize();
     void set_cache_size(int);
