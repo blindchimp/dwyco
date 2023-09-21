@@ -31,6 +31,10 @@ Page {
         preview_text = is_blocked === 1 ? "unblock user to see profile" : core.uid_to_name(uid)
         preview_desc = is_blocked === 1 ? "" : core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION)
 
+        if(is_blocked) {
+            return
+        }
+
         if(core.uid_profile_regular(uid)) {
             preview_source = core.uid_to_profile_preview(uid)
             preview_text = core.uid_to_name(uid)
