@@ -110,10 +110,9 @@ Page {
                 MenuItem {
                     text: "Delete msg"
                     onTriggered: {
-                        core.delete_message(uid, mid)
+                        core.set_tag_message(mid, "_trash");
                         themsglist.reload_model()
                         stack.pop()
-
                     }
                 }
 

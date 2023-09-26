@@ -583,6 +583,12 @@ ApplicationWindow {
         visible: false
     }
 
+    SimpleTrashBrowse {
+        id: trash_browse
+        model: themsglist
+        visible: false
+    }
+
 
     ProfileView {
         id: theprofileview

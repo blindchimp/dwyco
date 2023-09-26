@@ -160,6 +160,7 @@ QMsgSql::init_schema_fav()
         sql_simple("insert into static_crdt_tags values('_ignore')");
         sql_simple("insert into static_crdt_tags values('_pal')");
         sql_simple("insert into static_crdt_tags values('_leader')");
+        sql_simple("insert into static_crdt_tags values('_trash')");
 
         // this is an upgrade, the msg_tags2 stuff should be installed in gmt
         // with proper guids. this should mostly only be done once, but there
@@ -176,6 +177,9 @@ QMsgSql::init_schema_fav()
     {
         rollback_transaction();
     }
+    start_transaction();
+    sql_simple("insert into static_crdt_tags values('_trash')");
+    commit_transaction();
 }
 
 void
