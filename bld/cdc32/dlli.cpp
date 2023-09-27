@@ -9204,6 +9204,8 @@ dwyco_remove_backup()
 
 // NOTE NOTE!
 // YOU MUST EXIT IMMEDIATELY IF THIS RETURNS 1
+// WARNING: if you are in a group, this will not work right.
+// you MUST exit the group first before attempting a restore!
 DWYCOEXPORT
 int
 dwyco_restore_from_backup(const char *bu_fn, int msgs_only)

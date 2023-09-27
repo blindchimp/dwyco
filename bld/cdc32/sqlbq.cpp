@@ -24,11 +24,11 @@
 #include "vc.h"
 #include "sqlbq.h"
 #include "ta.h"
+#include "dwstr.h"
 
 #define USER_BOMB(a, b) {return (b);}
 
-#ifdef DWYCO_DBG_CHECK_SQL
-#include "dwstr.h"
+
 // this is a hack to get around the "unbound arguments are treated as null"
 // peculiarity in sqlite. i've been burned directly by this problem several
 // times, usually thru typos. this is for debugging only, and
@@ -36,6 +36,7 @@
 // more than ?31 as an arg, and it is broken in cases where you give
 // it ? in some other context.
 namespace dwyco {
+#ifdef DWYCO_DBG_CHECK_SQL
 static
 void
 check_args(const char *sql, int count)
