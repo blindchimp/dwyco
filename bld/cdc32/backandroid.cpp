@@ -67,7 +67,7 @@ struct backup_sql : public SimpleSql
         sql_simple("create table if not exists misc_blobs (name text unique on conflict replace, data blob);");
         sql_simple("create table if not exists bu (lock integer not null default 0, "
                    "state integer not null, date_sent integer default 0, date_ack integer default 0, date_updated integer default 0, version integer default 0, primary key (lock), check (lock = 0));");
-        sql_simple("insert or ignore into bu(lock, state) values(0, 0);");
+        sql_simple("insert or ignore into bu(lock, state, date_sent) values(0, 0, strftime('%s', 'now'));");
 
         sql_simple("create index if not exists from_uid_idx on msgs(from_uid);");
         sql_simple("create index if not exists mid_idx on msgs(mid);");
@@ -609,6 +609,39 @@ restore_account_info(const char *dbn)
     return 1;
 }
 
+int
+desktop_days_since_last_backup()
+{
+    backup_sql db("bun.sql");
+    if(!db.init())
+    {
+        return 0;
+    }
+
+    vc res = db.sql_simple("select date_updated from main.bu");
+
+    long long du = res[0][0];
+    long long now = time(0);
+    return (now - du) / (24L * 3600);
+}
+
+int
+desktop_days_since_backup_created()
+{
+    backup_sql db("bun.sql");
+    if(!db.init())
+    {
+        return 0;
+    }
+
+    vc res = db.sql_simple("select date_sent from main.bu");
+
+    long long du = res[0][0];
+    long long now = time(0);
+    return (now - du) / (24L * 3600);
+}
+
+
 void
 desktop_backup()
 {
@@ -624,8 +657,7 @@ desktop_backup()
     {
         if(!Db->init())
         {
-            delete Db;
-            Db = 0;
+            throw -1;
             return;
             //oopanic("can't init backup");
         }
@@ -693,6 +725,7 @@ desktop_backup()
     Db = 0;
     if(redo_backup)
     {
+        TRACK_ADD(BU_remove_trashed_backup, 1);
         DeleteFile(newfn("bun.sql").c_str());
     }
 }
