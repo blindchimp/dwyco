@@ -23,19 +23,19 @@
 #include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
-#include "dwstr.h"
+#include "ta.h"
 
-namespace dwyco {
 #define USER_BOMB(a, b) {return (b);}
 
 #ifdef DWYCO_DBG_CHECK_SQL
-
+#include "dwstr.h"
 // this is a hack to get around the "unbound arguments are treated as null"
 // peculiarity in sqlite. i've been burned directly by this problem several
 // times, usually thru typos. this is for debugging only, and
 // should be disabled in release. note that it assumes you won't have
 // more than ?31 as an arg, and it is broken in cases where you give
 // it ? in some other context.
+namespace dwyco {
 static
 void
 check_args(const char *sql, int count)
@@ -114,8 +114,11 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
                                      &st, &tail)) != SQLITE_OK)
     {
+#if DWYCO_DBG_CHECK_SQL
         oopanic(sqlite3_errmsg(dbs));
         throw -1;
+#endif
+        TRACK_ADD_str(sqlite3_errmsg(dbs), 1);
         return vcnil;
     }
     if(tail && *tail != 0)
@@ -250,7 +253,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             // the compiler won't elide it before we can inspect it
             // in the debugger.
             const char *volatile a = sqlite3_errmsg(dbs);
-
+            TRACK_ADD_str(a, 1);
             sqlite3_finalize(st);
             return vcnil;
         }

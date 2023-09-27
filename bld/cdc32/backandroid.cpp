@@ -79,10 +79,10 @@ struct backup_sql : public SimpleSql
                    "guid text not null collate nocase, "
                    "unique(mid, tag, uid, guid) on conflict ignore)");
     }
-
-
 };
 
+// this has suffered cut and paste enough times that
+// a bit of remodularization is probably in order.
 static backup_sql *Db;
 
 #define sql Db->sql_simple
@@ -232,7 +232,10 @@ android_days_since_last_backup()
 {
     auto db = new backup_sql;
     if(!db->init())
-        oopanic("can't init backup");
+    {
+        delete db;
+        return 0;
+    }
 
     vc res = db->sql_simple("select date_updated from main.bu");
     db->exit();
@@ -251,7 +254,10 @@ android_get_backup_state()
     // as empty backup file, but don't create one
     // if it isn't there.
     if(!db->init(SQLITE_OPEN_READWRITE))
+    {
+        delete db;
         return 0;
+    }
 
     vc res = db->sql_simple("select state from main.bu");
     db->exit();
@@ -264,7 +270,11 @@ android_set_backup_state(int i)
 {
     auto db = new backup_sql;
     if(!db->init())
-        oopanic("can't init backup");
+    {
+        delete db;
+        return 0;
+    }
+
     int ret = 1;
     try
     {
@@ -295,6 +305,7 @@ android_backup()
     Db = new backup_sql;
     if(!Db->init())
     {
+        delete Db;
         return;
         oopanic("can't init backup");
     }
@@ -500,7 +511,7 @@ backup_account_info(const char *dbn)
         sql_rollback_transaction();
     }
     // not a deal breaker if these don't make it in together
-    backup_file(TAG_DB, dbn);
+    //backup_file(TAG_DB, dbn);
     // don't back this up, it is just user settings they may
     // want to adjust when they get their messages, but it isn't
     // necessary to reload it, possibly coming up in a weird state.
@@ -575,21 +586,6 @@ restore_account_info(const char *dbn)
     if(dh.is_nil())
         return 0;
 
-    //    // if there are existing auth/dh.dif files, move them
-    //    // out of the way instead of overwriting them
-    //    DwString rfn = gen_random_filename();
-    //    DwString tf("auth");
-    //    tf = newfn(tf);
-    //    DwString sv(tf);
-    //    sv += ".";
-    //    sv += rfn;
-    //    move_replace(tf, sv);
-
-    //    tf = newfn("dh.dif");
-    //    sv = tf;
-    //    sv += ".";
-    //    sv += rfn;
-    //    move_replace(tf, sv);
 
     if(!restore_blob("auth", dbn))
         return 0;
@@ -597,7 +593,7 @@ restore_account_info(const char *dbn)
         return 0;
     // if we can't restore the tags, we can still get going
     // without them, so don't error out.
-    restore_blob(TAG_DB, dbn);
+    //restore_blob(TAG_DB, dbn);
     // likewise with sinfo
     restore_blob("sinfo", dbn);
 
@@ -619,18 +615,24 @@ desktop_backup()
     if(Db)
         return;
     Db = new backup_sql("bun.sql");
-    if(!Db->init())
-    {
-        //return;
-        oopanic("can't init backup");
-    }
-    Db->sync_off();
-    Db->optimize();
-    Db->attach(newfn(MSG_IDX_DB), "mi");
-    Db->attach(newfn(TAG_DB), "mt");
+    // in the field, it appears backups get trashed occasionally, so
+    // if there is any problem at all during backup creation, just remove it
+    // and hope the next one will work.
+    bool redo_backup = false;
 
     try
     {
+        if(!Db->init())
+        {
+            delete Db;
+            Db = 0;
+            return;
+            //oopanic("can't init backup");
+        }
+        Db->sync_off();
+        Db->optimize();
+        Db->attach(newfn(MSG_IDX_DB), "mi");
+        Db->attach(newfn(TAG_DB), "mt");
 
         sql_start_transaction();
         sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
@@ -665,24 +667,34 @@ desktop_backup()
 
 
     done:
-          ;
+          backup_account_info("main");
     }
     catch(vc err)
     {
         sql_rollback_transaction();
         if(err == vc("full"))
         {
-
+            // this may be transient, and there isn't really
+            // any indication the backup is trashed in this case.
+            // so just ignore it for now.
+        }
+        else
+        {
+            redo_backup = true;
         }
     }
     catch(...)
     {
-
+        redo_backup = true;
     }
-    backup_account_info("main");
+
     Db->exit();
     delete Db;
     Db = 0;
+    if(redo_backup)
+    {
+        DeleteFile(newfn("bun.sql").c_str());
+    }
 }
 
 // note: uid is assumed be hex already here
@@ -771,8 +783,12 @@ android_restore_msgs()
         return 0;
     Db = new backup_sql;
     if(!Db->init())
-        oopanic("can't init backup");
-    //Db->attach(newfn(MSG_IDX_DB), "mi");
+    {
+        delete Db;
+        Db = 0;
+        return 0;
+    }
+
     Db->attach(newfn(TAG_DB), "mt");
     Db->sync_off();
     GRTLOG("android restore", 0, 0);
@@ -831,8 +847,12 @@ restore_msgs(const char *cfn, int msgs_only)
         return 0;
     Db = new backup_sql(cfn);
     if(!Db->init(SQLITE_OPEN_READWRITE, true))
-        oopanic("can't init backup");
-    //Db->attach(newfn(MSG_IDX_DB), "mi");
+    {
+        delete Db;
+        Db = 0;
+        return 0;
+    }
+
     Db->attach(newfn(TAG_DB), "mt");
     Db->sync_off();
 
