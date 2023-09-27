@@ -9107,11 +9107,26 @@ dwyco_estimate_bandwidth2(int *out_bw_out, int *in_bw_out)
 }
 
 DWYCOEXPORT
-void
-dwyco_create_backup()
+int
+dwyco_create_backup(int days_to_run, int days_to_rebuild)
 {
-    //create_msg_backup();
+    int du = desktop_days_since_last_backup();
+    if(du == -1)
+    {
+        desktop_backup();
+        return 1;
+    }
+    int dr = desktop_days_since_backup_created();
+    if(dr == -1 || dr >= days_to_rebuild)
+    {
+        dwyco_remove_backup();
+        desktop_backup();
+        return 1;
+    }
+    if(du < days_to_run)
+        return 0;
     desktop_backup();
+    return 1;
 }
 
 static

@@ -615,12 +615,14 @@ desktop_days_since_last_backup()
     backup_sql db("bun.sql");
     if(!db.init())
     {
-        return 0;
+        return -1;
     }
 
     vc res = db.sql_simple("select date_updated from main.bu");
 
     long long du = res[0][0];
+    if(du == 0)
+        return -1;
     long long now = time(0);
     return (now - du) / (24L * 3600);
 }
@@ -631,7 +633,7 @@ desktop_days_since_backup_created()
     backup_sql db("bun.sql");
     if(!db.init())
     {
-        return 0;
+        return -1;
     }
 
     vc res = db.sql_simple("select date_sent from main.bu");
@@ -642,11 +644,11 @@ desktop_days_since_backup_created()
 }
 
 
-void
+int
 desktop_backup()
 {
     if(Db)
-        return;
+        return 0;
     Db = new backup_sql("bun.sql");
     // in the field, it appears backups get trashed occasionally, so
     // if there is any problem at all during backup creation, just remove it
@@ -658,7 +660,7 @@ desktop_backup()
         if(!Db->init())
         {
             throw -1;
-            return;
+            return 0;
             //oopanic("can't init backup");
         }
         Db->sync_off();
@@ -727,7 +729,9 @@ desktop_backup()
     {
         TRACK_ADD(BU_remove_trashed_backup, 1);
         DeleteFile(newfn("bun.sql").c_str());
+        return 0;
     }
+    return 1;
 }
 
 // note: uid is assumed be hex already here

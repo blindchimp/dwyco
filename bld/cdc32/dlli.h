@@ -1566,15 +1566,20 @@ typedef DWYCO_LIST DWYCO_JOIN_LOG_MODEL;
 int DWYCOEXPORT dwyco_get_join_log_model(DWYCO_JOIN_LOG_MODEL *list_out);
 
 // api for creating a simple backup of messages and account info
-// "create_backup" creates an initial backup, then subsequent calls
-// create a smaller incremental backup.
+// "create_backup" creates an initial backup in an internal database.
+// if the backup is less than "days_to_run" days old, create_backup does nothing.
+// if the backup is older than "days_to_rebuild" old, the backup is deleted and created from scratch.
+// the way backup works, messages that are deleted are not removed from the database immediately,
+// so messages are accumulated until the backup is created from scratch.
+// create_backup returns 1 if the backup should be copied out, and 0 otherwise.
+//
 // calling "copy out" copies the current backup to an app specified folder.
 // calling "remove" just removes the internal backup, causing a full backup
 // to be created on the next call to "create_backup".
 // restore takes a backup, and adds it to the current set of messages
 // non-destructively. if msgs_only is false, it attempts to restore the
 // actual account info as well, instead of just messages.
-void DWYCOEXPORT dwyco_create_backup();
+int DWYCOEXPORT dwyco_create_backup(int days_to_run, int days_to_rebuild);
 int DWYCOEXPORT dwyco_copy_out_backup(const char *dir, int force);
 void DWYCOEXPORT dwyco_remove_backup();
 int DWYCOEXPORT dwyco_restore_from_backup(const char *bu_fn, int msgs_only);
