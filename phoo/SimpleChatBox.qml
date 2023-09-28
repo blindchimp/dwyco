@@ -438,6 +438,30 @@ Page {
                                 }
                             }
                         }
+                        MenuItem {
+                            text: "Trash msgs"
+                            onTriggered: {
+                                confirm_trash.visible = true
+                            }
+                            MessageDialog {
+                                id: confirm_trash
+                                title: "Trash all msgs?"
+                                icon: StandardIcon.Question
+                                text: "Trash ALL msgs from this user?"
+                                informativeText: "This KEEPS FAVORITE messages."
+                                standardButtons: StandardButton.Yes | StandardButton.No
+                                onYes: {
+                                    //core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.set_all_selected()
+                                    themsglist.tag_all_selected("_trash")
+                                    themsglist.reload_model()
+                                    close()
+                                }
+                                onNo: {
+                                    close()
+                                }
+                            }
+                        }
 
                         MenuItem {
                             text: "Delete user"
