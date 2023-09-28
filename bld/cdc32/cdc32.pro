@@ -283,7 +283,6 @@ directsend.cpp \
 msend.cpp \
 qmsgsql.cpp \
 fetch_to_inbox.cpp \
-backsql.cpp \
 sqlbq.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \

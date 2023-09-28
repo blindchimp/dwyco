@@ -55,7 +55,7 @@ exit_sound()
 void
 play_sound_plat(const char *fn)
 {
-    DwOString fpx = add_pfx(User_pfx, fn);
+    DwOString fpx = add_pfx(Sys_pfx, fn);
     QSound::play(fpx.c_str());
 }
 

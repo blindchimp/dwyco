@@ -291,6 +291,7 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 
 
 #include "dlli.h"
+#include "cdcver.h"
 #include "trc.h"
 #include "doinit.h"
 #include "mmchan.h"
@@ -363,7 +364,7 @@ using namespace CryptoPP;
 #include "dwcls_timer.h"
 #include "qmsgsql.h"
 #include "vcwsock.h"
-#include "backsql.h"
+//#include "backsql.h"
 #include "grpmsg.h"
 #include "upnp.h"
 #include "pulls.h"
@@ -1718,7 +1719,7 @@ dwyco_update_server_list(const char *lhxfer_str, int lhxfer_str_len)
     m[1] = item;
     // WARNING: this function may call dwyco_exit and quit the program
     // if the server list has changed.
-    update_server_list(item, 0, vcnil, ValidPtr());
+    update_server_list(m, 0, vcnil, ValidPtr());
     return 1;
 }
 
@@ -9106,10 +9107,26 @@ dwyco_estimate_bandwidth2(int *out_bw_out, int *in_bw_out)
 }
 
 DWYCOEXPORT
-void
-dwyco_create_backup()
+int
+dwyco_create_backup(int days_to_run, int days_to_rebuild)
 {
-    create_msg_backup();
+    int du = desktop_days_since_last_backup();
+    if(du == -1)
+    {
+        desktop_backup();
+        return 1;
+    }
+    int dr = desktop_days_since_backup_created();
+    if(dr == -1 || dr >= days_to_rebuild)
+    {
+        dwyco_remove_backup();
+        desktop_backup();
+        return 1;
+    }
+    if(du < days_to_run)
+        return 0;
+    desktop_backup();
+    return 1;
 }
 
 static
@@ -9125,7 +9142,7 @@ DWYCOEXPORT
 int
 dwyco_copy_out_backup(const char *dir, int force)
 {
-    DwString fn = newfn("bu.sql");
+    DwString fn = newfn("bun.sql");
     DwString filename = dir;
     filename += DIRSEPSTR;
     filename += "dwyco-backup-%1.sql";
@@ -9160,6 +9177,7 @@ dwyco_copy_out_backup(const char *dir, int force)
         if(!CopyFile(fn.c_str(), filename.c_str(), 0))
             return 0;
     }
+#if 0
     fn = newfn("dbu.sql");
     filename = dir;
     filename += DIRSEPSTR;
@@ -9168,6 +9186,7 @@ dwyco_copy_out_backup(const char *dir, int force)
     move_version(filename);
     if(!CopyFile(fn.c_str(), filename.c_str(), 0))
         return 0;
+#endif
     return 1;
 }
 
@@ -9179,16 +9198,21 @@ dwyco_remove_backup()
     DeleteFile(fn.c_str());
     fn = newfn("dbu.sql");
     DeleteFile(fn.c_str());
+    fn = newfn("bun.sql");
+    DeleteFile(fn.c_str());
 }
 
 // NOTE NOTE!
 // YOU MUST EXIT IMMEDIATELY IF THIS RETURNS 1
+// WARNING: if you are in a group, this will not work right.
+// you MUST exit the group first before attempting a restore!
 DWYCOEXPORT
 int
 dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
 {
     if(!restore_msgs(bu_fn, msgs_only))
         return 0;
+#if 0
     DwString dfn(bu_fn);
     int pos;
     if((pos = dfn.find("dwyco-backup-")) == DwString::npos)
@@ -9196,6 +9220,7 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
     dfn.insert(pos + 13, "diff-");
     if(!restore_msgs(dfn.c_str(), msgs_only))
         return 0;
+#endif
     // this is special, we need to get out of here without
     // any of the usual exit processing
     // this is for windows, since we can't really delete a file
