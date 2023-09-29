@@ -41,7 +41,7 @@ public:
     Q_INVOKABLE void toggle_selected(QByteArray mid);
     Q_INVOKABLE void set_all_selected();
     Q_INVOKABLE void set_all_unselected();
-    Q_INVOKABLE void delete_all_selected();
+    Q_INVOKABLE void trash_all_selected();
     Q_INVOKABLE void obliterate_all_selected();
     Q_INVOKABLE void fav_all_selected(int);
     Q_INVOKABLE void tag_all_selected(QByteArray tag);

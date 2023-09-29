@@ -16,6 +16,7 @@ ToolBar {
     property Component extras
     property alias delete_warning_text : confirm_delete.text
     property alias delete_warning_inf_text: confirm_delete.informativeText
+    property url star_icon: mi("ic_star_black_24dp.png")
 
     background: Rectangle {
         color: primary_light
@@ -58,7 +59,7 @@ ToolBar {
         ToolButton {
             contentItem: Image {
                 anchors.centerIn: parent
-                source: mi("ic_star_black_24dp.png")
+                source: star_icon
             }
 
             Layout.fillHeight: true

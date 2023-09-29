@@ -18,7 +18,8 @@ Page {
     property bool multiselect_mode: false
 
     function star_fun(b) {
-        console.log("chatbox star")
+        console.log("untrash star")
+        model.untag_all_selected("_trash")
 
     }
 
@@ -83,11 +84,12 @@ Page {
     header: Column {
         width:parent.width
         MultiSelectToolbar {
-            id:multi_toolbar
+            id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
             delete_warning_inf_text: "Deletes on all your devices"
             delete_warning_text: "Delete all selected messages FOREVER?"
+            star_icon: mi("delete-restore-black.png")
         }
 
         ToolBar {

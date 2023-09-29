@@ -334,7 +334,7 @@ msglist_model::mid_tag_changed(QString mid)
 }
 
 void
-msglist_model::delete_all_selected()
+msglist_model::trash_all_selected()
 {
     //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     foreach (const QString &value, Selected)
