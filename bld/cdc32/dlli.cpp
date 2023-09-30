@@ -291,6 +291,7 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 
 
 #include "dlli.h"
+#include "cdcver.h"
 #include "trc.h"
 #include "doinit.h"
 #include "mmchan.h"
@@ -363,7 +364,7 @@ using namespace CryptoPP;
 #include "dwcls_timer.h"
 #include "qmsgsql.h"
 #include "vcwsock.h"
-#include "backsql.h"
+//#include "backsql.h"
 #include "grpmsg.h"
 #include "upnp.h"
 #include "pulls.h"
@@ -406,6 +407,7 @@ int Inhibit_auto_connect;
 vc Current_chat_server_id;
 int is_invisible();
 void set_invisible(int);
+void update_server_list(vc, void *, vc, ValidPtr);
 
 //static int ReadOnlyMode;
 extern int QSend_inprogress;
@@ -1681,6 +1683,43 @@ dwyco_bg_exit()
     GRTLOG("end of exit", 0, 0);
     handle_crash_done();
     Inited = 0;
+    return 1;
+}
+
+// call this AFTER calling dwyco_init_*
+// it installs a new server list, and if it is
+// different from the list on the disk, you'll get
+// callbacks for exiting the program, and it also
+// updates the server list on disk so the next restart
+// will use the new list you just installed.
+DWYCOEXPORT
+int
+dwyco_update_server_list(const char *lhxfer_str, int lhxfer_str_len)
+{
+    vc v(VC_BSTRING, lhxfer_str, lhxfer_str_len);
+    vcxstream vcx((const char *)v, v.len(), vcxstream::FIXED);
+
+    vc item;
+    long len;
+    if(!vcx.open(vcxstream::READABLE))
+    {
+        return 0;
+    }
+    if((len = item.xfer_in(vcx)) < 0)
+    {
+        GRTLOG("can't read supplied server list (must be LH xfer format)", 0, 0);
+        return 0;
+    }
+    if(item.type() != VC_VECTOR)
+    {
+        GRTLOG("server list must be a vector", 0, 0);
+        return 0;
+    }
+    vc m(VC_VECTOR);
+    m[1] = item;
+    // WARNING: this function may call dwyco_exit and quit the program
+    // if the server list has changed.
+    update_server_list(m, 0, vcnil, ValidPtr());
     return 1;
 }
 
@@ -9068,10 +9107,26 @@ dwyco_estimate_bandwidth2(int *out_bw_out, int *in_bw_out)
 }
 
 DWYCOEXPORT
-void
-dwyco_create_backup()
+int
+dwyco_create_backup(int days_to_run, int days_to_rebuild)
 {
-    create_msg_backup();
+    int du = desktop_days_since_last_backup();
+    if(du == -1)
+    {
+        desktop_backup();
+        return 1;
+    }
+    int dr = desktop_days_since_backup_created();
+    if(dr == -1 || dr >= days_to_rebuild)
+    {
+        dwyco_remove_backup();
+        desktop_backup();
+        return 1;
+    }
+    if(du < days_to_run)
+        return 0;
+    desktop_backup();
+    return 1;
 }
 
 static
@@ -9087,7 +9142,7 @@ DWYCOEXPORT
 int
 dwyco_copy_out_backup(const char *dir, int force)
 {
-    DwString fn = newfn("bu.sql");
+    DwString fn = newfn("bun.sql");
     DwString filename = dir;
     filename += DIRSEPSTR;
     filename += "dwyco-backup-%1.sql";
@@ -9122,6 +9177,7 @@ dwyco_copy_out_backup(const char *dir, int force)
         if(!CopyFile(fn.c_str(), filename.c_str(), 0))
             return 0;
     }
+#if 0
     fn = newfn("dbu.sql");
     filename = dir;
     filename += DIRSEPSTR;
@@ -9130,6 +9186,7 @@ dwyco_copy_out_backup(const char *dir, int force)
     move_version(filename);
     if(!CopyFile(fn.c_str(), filename.c_str(), 0))
         return 0;
+#endif
     return 1;
 }
 
@@ -9141,16 +9198,21 @@ dwyco_remove_backup()
     DeleteFile(fn.c_str());
     fn = newfn("dbu.sql");
     DeleteFile(fn.c_str());
+    fn = newfn("bun.sql");
+    DeleteFile(fn.c_str());
 }
 
 // NOTE NOTE!
 // YOU MUST EXIT IMMEDIATELY IF THIS RETURNS 1
+// WARNING: if you are in a group, this will not work right.
+// you MUST exit the group first before attempting a restore!
 DWYCOEXPORT
 int
 dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
 {
     if(!restore_msgs(bu_fn, msgs_only))
         return 0;
+#if 0
     DwString dfn(bu_fn);
     int pos;
     if((pos = dfn.find("dwyco-backup-")) == DwString::npos)
@@ -9158,6 +9220,7 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
     dfn.insert(pos + 13, "diff-");
     if(!restore_msgs(dfn.c_str(), msgs_only))
         return 0;
+#endif
     // this is special, we need to get out of here without
     // any of the usual exit processing
     // this is for windows, since we can't really delete a file

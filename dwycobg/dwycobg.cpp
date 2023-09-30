@@ -1,6 +1,7 @@
 #include "dlli.h"
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 // small background app for desktop, can either be invoked to
 // finish sending queued messages then exit, or as a
@@ -54,7 +55,11 @@ main(int argc, char **argv)
 {
     int port = 0;
     if(argc < 2)
+    {
+        const char *a = "dwycobg " __DATE__ " " __TIME__ "\n";
+        write(0, a, strlen(a));
         return 1;
+    }
 
     port = atoi(argv[1]);
     if(port < 1024 || port > 65535)

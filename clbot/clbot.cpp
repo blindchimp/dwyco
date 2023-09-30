@@ -269,13 +269,13 @@ main(int argc, char *argv[])
                 QSqlQuery q;
                 q.exec("begin transaction");
                 q.exec("drop table if exists temp.bar");
-                q.exec("create temp table bar(email text collate NOCASE)");
+                q.exec("create temp table bar(email text not null collate nocase, unique(email) on conflict ignore, check(length(trim(email)) > 0))");
                 //q.exec("create index bardex on bar(email collate NOCASE)");
             }
             for(int i = 0; i < n; ++i)
             {
                 QSqlQuery q;
-                q.prepare("insert into bar values(?1)");
+                q.prepare("insert or ignore into bar values(trim(?1))");
                 q.addBindValue(addrs[i]);
                 q.exec();
             }
@@ -287,21 +287,26 @@ main(int argc, char *argv[])
                 q.exec("delete from bar where not email like '%@%'");
 
                 // get all candidate uids
-                q.exec("create temp table foo as select uid from profiles,bar where profiles.email collate nocase = bar.email");
+                q.exec("create temp table foo as select uid from profiles,bar where trim(profiles.email) collate nocase = bar.email");
 
                 // find the latest profile for all those uids
                 q.exec("create temp table baz as select *,max(time) from profiles, foo using(uid) group by uid");
 
                 // remove from baz any uids that don't have an email anymore (ie, user removed it for whatever reason.)
-                q.exec("delete from baz where length(email) = 0");
+                q.exec("delete from baz where length(trim(email)) = 0");
 
                 // also remove any emails that weren't in the input list, this can happen if someone
                 // has an old email that is matched, but then changed the email to something different
                 // in their latest profile entry. we don't want to return the new account
-                q.exec("delete from baz where not exists(select 1 from bar where baz.email collate nocase = bar.email)");
+                q.exec("delete from baz where not exists(select 1 from bar where trim(baz.email) collate nocase = bar.email)");
 
-                // TO DO: ignore filtering
-                q.exec("select uid, email from baz");
+                // ignore filtering
+                q.prepare("with ign as (select ignorer from iy.entry_bag where ignoree = ?1 union select ignoree from iy.entry_bag where ignorer = ?1)"
+                       "delete from baz where uid in (select * from ign)"
+                       );
+                q.addBindValue(huid);
+                q.exec();
+                q.exec("select uid, trim(email) from baz");
 
                 while(q.next())
                 {

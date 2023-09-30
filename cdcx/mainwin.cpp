@@ -3988,11 +3988,12 @@ DWYCOCALLCONV
 dwyco_emergency_callback(int problem, int must_exit, const char *dll_msg)
 {
 
-    if(must_exit)
-        DieDieDie = 1;
+    Block_DLL = 1;
     if(problem == DWYCO_EMERGENCY_DB_CHANGE)
     {
         QMessageBox::information(Mainwinform, "Server Changes", dll_msg);
+        if(must_exit)
+            DieDieDie = 1;
         return;
     }
 #if 0
@@ -4001,6 +4002,8 @@ dwyco_emergency_callback(int problem, int must_exit, const char *dll_msg)
 #endif
 #endif
     QMessageBox::information(Mainwinform, "Unrecoverable error", dll_msg);
+    if(must_exit)
+        DieDieDie = 1;
 }
 
 #if 0

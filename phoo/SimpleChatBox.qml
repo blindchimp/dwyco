@@ -32,6 +32,7 @@ Page {
     property url cur_source
     property var call_buttons_model
     property bool lock_to_bottom: false
+    property int is_blocked: 0
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -154,7 +155,7 @@ Page {
                         source: {
                             if(to_uid === "")
                                 return
-                            return (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid))) ?
+                            return (is_blocked !== 1 && (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid)))) ?
                                     cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         }
                         fillMode: Image.PreserveAspectCrop
@@ -163,7 +164,7 @@ Page {
 
                     }
                     Text {
-                        id:top_toolbar_text
+                        id: top_toolbar_text
                         //width: dp(160)
                         clip: true
                         anchors.leftMargin: 2
@@ -533,11 +534,11 @@ Page {
                     ind_online = connected
                 }
             }
-//        onIgnore_event: {
-//            if(uid === to_uid) {
-//               to_uid = ""
-//            }
-//        }
+        function onIgnore_event(uid) {
+            if(uid === to_uid) {
+               is_blocked = core.get_ignore(uid)
+            }
+        }
 
     }
 
@@ -562,6 +563,7 @@ Page {
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
         call_buttons_model = core.get_button_model(to_uid)
+        is_blocked = core.get_ignore(to_uid)
     }
 
     Loader {

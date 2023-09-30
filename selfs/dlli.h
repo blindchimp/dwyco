@@ -1196,6 +1196,27 @@ int DWYCOEXPORT dwyco_exit();
 int DWYCOEXPORT dwyco_bg_init();
 int DWYCOEXPORT dwyco_bg_exit();
 
+// call this AFTER calling dwyco_init_*
+// it is OPTIONAL, as the servers and core services
+// normally handle this for you.
+// it installs a new server list, and if it is
+// different from the list on the disk, you'll get
+// callbacks for exiting the program, and it also
+// updates the server list on disk so the next restart
+// will use the new list you just installed.
+// WARNING! this call may instantly exit the program if the server
+// list has changed in some significant way.
+// this call is primarily used in order to avoid introducing a
+// dependency on DNS into this library. this usually uses IP addresses
+// only. the client can usually handle DNS issues, and can fetch
+// a server list from our web servers using the usual techniques, then
+// install the list using this function.
+// our servers and chat servers will normally dole out new servers lists
+// if they change, but you have a chicken-and-egg problem if the servers
+// move someplace without being able to provide access to the previous servers
+// to redirect access.
+int DWYCOEXPORT dwyco_update_server_list(const char *lhxfer_str, int lhxfer_str_len);
+
 void DWYCOEXPORT dwyco_power_clean_safe();
 int DWYCOEXPORT dwyco_empty_trash();
 int DWYCOEXPORT dwyco_count_trashed_users();
@@ -1545,15 +1566,20 @@ typedef DWYCO_LIST DWYCO_JOIN_LOG_MODEL;
 int DWYCOEXPORT dwyco_get_join_log_model(DWYCO_JOIN_LOG_MODEL *list_out);
 
 // api for creating a simple backup of messages and account info
-// "create_backup" creates an initial backup, then subsequent calls
-// create a smaller incremental backup.
+// "create_backup" creates an initial backup in an internal database.
+// if the backup is less than "days_to_run" days old, create_backup does nothing.
+// if the backup is older than "days_to_rebuild" old, the backup is deleted and created from scratch.
+// the way backup works, messages that are deleted are not removed from the database immediately,
+// so messages are accumulated until the backup is created from scratch.
+// create_backup returns 1 if the backup should be copied out, and 0 otherwise.
+//
 // calling "copy out" copies the current backup to an app specified folder.
 // calling "remove" just removes the internal backup, causing a full backup
 // to be created on the next call to "create_backup".
 // restore takes a backup, and adds it to the current set of messages
 // non-destructively. if msgs_only is false, it attempts to restore the
 // actual account info as well, instead of just messages.
-void DWYCOEXPORT dwyco_create_backup();
+int DWYCOEXPORT dwyco_create_backup(int days_to_run, int days_to_rebuild);
 int DWYCOEXPORT dwyco_copy_out_backup(const char *dir, int force);
 void DWYCOEXPORT dwyco_remove_backup();
 int DWYCOEXPORT dwyco_restore_from_backup(const char *bu_fn, int msgs_only);

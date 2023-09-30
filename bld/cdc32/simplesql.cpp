@@ -53,7 +53,7 @@ SimpleSql::set_update_hook(update_hook fun, void *user_arg)
 }
 
 int
-SimpleSql::init(int flags)
+SimpleSql::init(int sqlite_flags, bool no_filename_mod)
 {
     if(Db)
         oopanic("already init");
@@ -61,15 +61,25 @@ SimpleSql::init(int flags)
     // this assumes that flags == -1 is invalid for sqlite, which is a stretch, but
     // probably ok. the alternative is to just let the sqlite api leak thru a bit
     // more in the header.
-    if(flags == -1)
-        flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
-    if(sqlite3_open_v2(newfn(dbnames[0]).c_str(), &Db, flags, 0) != SQLITE_OK)
+    if(sqlite_flags == -1)
+        sqlite_flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+    if(sqlite3_open_v2((no_filename_mod ? dbnames[0].c_str() : newfn(dbnames[0]).c_str()),
+                        &Db, sqlite_flags, 0) != SQLITE_OK)
     {
         Db = 0;
         return 0;
     }
-    sync_off();
-    init_schema(schema_names[0]);
+    try
+    {
+        sync_off();
+        init_schema(schema_names[0]);
+    }
+    catch(...)
+    {
+        exit();
+        return 0;
+    }
+
     return 1;
 }
 
@@ -126,13 +136,20 @@ SimpleSql::attach(const DwString& dbname, const DwString& schema_name)
         ndbname = dbname;
     if(dbnames.contains(ndbname) || schema_names.contains(schema_name))
         return;
-    int tmp = check_txn;
-    check_txn = 0;
-    sql_simple("attach ?1 as ?2", ndbname.c_str(), schema_name.c_str());
-    check_txn = tmp;
-    dbnames.append(ndbname);
-    schema_names.append(schema_name);
-    init_schema(schema_name);
+    try
+    {
+        int tmp = check_txn;
+        check_txn = 0;
+        sql_simple("attach ?1 as ?2", ndbname.c_str(), schema_name.c_str());
+        check_txn = tmp;
+        init_schema(schema_name);
+        dbnames.append(ndbname);
+        schema_names.append(schema_name);
+    }
+    catch(...)
+    {
+        throw;
+    }
 }
 
 void
@@ -141,12 +158,19 @@ SimpleSql::detach(const DwString& schema_name)
     int i;
     if((i = schema_names.index(schema_name)) == -1)
         return;
-    int tmp = check_txn;
-    check_txn = 0;
-    sql_simple("detach ?1", schema_name.c_str());
-    check_txn = tmp;
-    dbnames.del(i);
-    schema_names.del(i);
+    try
+    {
+        int tmp = check_txn;
+        check_txn = 0;
+        sql_simple("detach ?1", schema_name.c_str());
+        check_txn = tmp;
+        dbnames.del(i);
+        schema_names.del(i);
+    }
+    catch(...)
+    {
+        throw;
+    }
 }
 
 // note: the monkey business with tdepth is because the "savepoint"
