@@ -8045,7 +8045,17 @@ DWYCOEXPORT
 int
 dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag)
 {
+    oopanic("fix this");
     vc res = sql_get_tagged_mids2(tag);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_mids_older_than(DWYCO_LIST *list_out, const char *tag, int days)
+{
+    vc res = sql_get_tagged_mids_older_than(tag, days);
     *list_out = dwyco_list_from_vc(res);
     return 1;
 }

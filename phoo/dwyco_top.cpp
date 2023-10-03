@@ -2069,6 +2069,24 @@ DwycoCore::init()
 
 }
 
+void
+DwycoCore::power_clean()
+{
+    DWYCO_LIST mids;
+    if(!dwyco_get_tagged_mids_older_than(&mids, "_trash", 0))
+    {
+        return;
+    }
+    simple_scoped qm(mids);
+    int n = qm.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray b = qm.get<QByteArray>(i);
+        dwyco_delete_saved_message(0, 0, b.constData());
+    }
+
+}
+
 int
 DwycoCore::load_backup()
 {

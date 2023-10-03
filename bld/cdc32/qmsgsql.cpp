@@ -2779,6 +2779,28 @@ sql_get_tagged_mids2(vc tag)
     return res;
 }
 
+// this returns all mids with given tag regardless of download state
+// whose creation time is older than the given number of days.
+
+vc
+sql_get_tagged_mids_older_than(vc tag, int days)
+{
+    vc res;
+    try
+    {
+        sql_start_transaction();
+        res = sql_simple("select distinct(mid) from gmt where tag = ?1 and strftime('%s', 'now') - time > (?2 * 24 * 3600) and not exists(select 1 from gtomb where gmt.guid = guid)",
+                         tag, days);
+        sql_commit_transaction();
+        res = flatten(res);
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+        res = vc(VC_VECTOR);
+    }
+    return res;
+}
 vc
 sql_get_tagged_idx(vc tag)
 {
