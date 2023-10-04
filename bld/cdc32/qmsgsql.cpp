@@ -465,6 +465,12 @@ generate_delta(vc uid, vc delta_id)
         // ok, this is a problem. we don't want to commit updates to our notion of the REMOTE end
         // until we have some idea that we actually sent them and they are incorporated there.
         // now, i thought i figured that out with the "syncpoint" idea, but maybe it isn't working.
+
+        // yea, it is fucked up. if we create an midlog, we have committed changes to the delta
+        // files that will block the changes we just noticed from future midlogs. BUT we delete the
+        // midlog when the connection drops, or if the program crashes. this *should* causes the
+        // syncpoint to be out of whack, but for some reason it isn't, and the updates are never
+        // synced via this delta method.
         s.commit_transaction();
     }
     catch (...)
