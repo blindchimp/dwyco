@@ -99,11 +99,11 @@ Page {
     header: Column {
         width:parent.width
         MultiSelectToolbar {
-            id:multi_toolbar
+            id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT delete FAVORITE messages"
-            delete_warning_text: "Delete all selected messages?"
+            delete_warning_inf_text: "Does NOT trash FAVORITE messages"
+            delete_warning_text: "Trash all selected messages?"
         }
 
         ToolBar {
@@ -260,7 +260,7 @@ Page {
                                 id: confirm_delete2
                                 title: "Clear?"
                                 icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
+                                text: "Trash ALL messages from user?"
                                 informativeText: "This KEEPS FAVORITE messages."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
@@ -285,7 +285,7 @@ Page {
                                 title: "Bulk delete?"
                                 icon: StandardIcon.Question
                                 text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE messages too."
+                                informativeText: "This REMOVES FAVORITE messages too."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
                                     core.delete_user(simp_msg_browse.to_uid)

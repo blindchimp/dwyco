@@ -88,9 +88,9 @@ ToolBar {
             }
             MessageDialog {
                 id: confirm_delete
-                title: "Bulk delete?"
+                title: "Trash all?"
                 icon: StandardIcon.Question
-                text: "Delete ALL messages from selected users?"
+                text: "Trash ALL messages from selected users?"
                 informativeText: "This removes FAVORITE messages too."
                 standardButtons: StandardButton.Yes | StandardButton.No
                 onYes: {
