@@ -1086,16 +1086,28 @@ import_remote_iupdate(vc remote_uid, vc vals)
         {
             mid = vals[0];
             uid = sql_get_uid_from_mid(mid);
-            //sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
-            //sql_simple("delete from gi where mid = ?1", mid);
-            // note: doing it this way causes log entries to be created by triggers
-            // which might lead to storms of propagated deletes in completely
-            // connected clusters. it might make sense to just remove all but one
-            // of the current_clients so that the updates propagate around to one
-            // client at a time.
+            vc res3 = sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now')) returning 1", mid);
+            vc res4 = sql_simple("delete from gi where mid = ?1 returning 1", mid);
+            // XX note: doing it this way causes log entries to be created by triggers
+            // XX which might lead to storms of propagated deletes in completely
+            // XX connected clusters. it might make sense to just remove all but one
+            // XX of the current_clients so that the updates propagate around to one
+            // XX client at a time.
+
+            // ok, here is the crux of the missing tombstone problem: if the msg_idx does not have
+            // the mid we are installing a tombstone for (ie, we haven't downloaded it here yet)
+            // the triggers on msg_idx will not be done, and the tombstone will not be created.
+            // the mid may remain in gi because we heard about the message from another client, but
+            // if we got a tombstone request, it should be toast in gi as well.
+            //
+            // the other side thinks it has propagated it, since the delta version will match, and
+            // voila, the tombstone is never propagated here again.
+            // the fix is to just install the tombstones manually.
+            // i'm not sure why i had
+            // it correct above, then commented it out, other than i was worried about storms.
             vc res1 = sql_simple("delete from msg_idx where mid = ?1 returning 1", mid);
             vc res2 = sql_simple("delete from gmt where mid = ?1 returning 1", mid);
-            if(res1.num_elems() > 0 || res2.num_elems() > 0)
+            if(res3.num_elems() > 0 || res4.num_elems() > 0 || res1.num_elems() > 0 || res2.num_elems() > 0)
                 index_changed = true;
         }
         sql_simple("insert into current_clients values(?1)", huid);
