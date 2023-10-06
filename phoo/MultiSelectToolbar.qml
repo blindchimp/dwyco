@@ -91,10 +91,10 @@ ToolBar {
                 title: "Trash all?"
                 icon: StandardIcon.Question
                 text: "Trash ALL messages from selected users?"
-                informativeText: "This removes FAVORITE messages too."
+                informativeText: "This does NOT trash FAVORITE messages."
                 standardButtons: StandardButton.Yes | StandardButton.No
                 onYes: {
-                    model.delete_all_selected()
+                    model.trash_all_selected()
                     multiselect_mode = false
                     close()
                 }

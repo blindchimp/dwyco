@@ -104,16 +104,16 @@ ConvListModel::at_least_one_selected()
 
 
 void
-ConvListModel::delete_all_selected()
+ConvListModel::obliterate_all_selected()
 {
     int n = count();
-    QList<Conversation *> to_remove;
+    //QList<Conversation *> to_remove;
     for(int i = 0; i < n; ++i)
     {
         Conversation *c = at(i);
         if(c->get_selected())
         {
-            to_remove.append(c);
+            //to_remove.append(c);
             QByteArray buid = c->get_uid().toLatin1();
             buid = QByteArray::fromHex(buid);
             if(dwyco_is_pal(buid.constData(), buid.length()))
@@ -122,6 +122,71 @@ ConvListModel::delete_all_selected()
             del_unviewed_uid(buid);
         }
     }
+
+    hack_unread_count();
+    reload_conv_list();
+
+}
+
+static
+void
+trash_messages(QByteArray buid)
+{
+    DWYCO_LIST msgs;
+    if(!dwyco_get_message_index(&msgs, buid.constData(), buid.length()))
+        return;
+
+    DWYCO_LIST favs;
+    if(!dwyco_get_tagged_mids(&favs, "_fav"))
+        return;
+
+    QSet<QByteArray> fset;
+
+    simple_scoped qf(favs);
+    int n = qf.rows();
+    QByteArray hbuid = buid.toHex();
+    for(int i = 0; i < n; ++i)
+    {
+        auto huid = qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID);
+        if(huid != hbuid)
+            continue;
+        fset.insert(qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID));
+    }
+
+    simple_scoped q(msgs);
+    n = q.rows();
+
+    for(int i = 0; i < n; ++i)
+    {
+        auto mid = q.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+        if(fset.contains(mid))
+            continue;
+        dwyco_set_msg_tag(mid.constData(), "_trash");
+    }
+
+}
+
+void
+ConvListModel::trash_all_selected()
+{
+    int n = count();
+    //QList<Conversation *> to_remove;
+    dwyco_start_bulk_update();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        if(c->get_selected())
+        {
+            //to_remove.append(c);
+            QByteArray buid = c->get_uid().toLatin1();
+            buid = QByteArray::fromHex(buid);
+            if(dwyco_is_pal(buid.constData(), buid.length()))
+                continue;
+            trash_messages(buid);
+            del_unviewed_uid(buid);
+        }
+    }
+    dwyco_end_bulk_update();
 
     hack_unread_count();
     reload_conv_list();
@@ -360,12 +425,22 @@ ConvSortFilterModel::set_all_selected(bool b)
 }
 
 void
-ConvSortFilterModel::delete_all_selected()
+ConvSortFilterModel::obliterate_all_selected()
 {
     ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->delete_all_selected();
+    m->obliterate_all_selected();
+
+}
+
+void
+ConvSortFilterModel::trash_all_selected()
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    m->trash_all_selected();
 
 }
 

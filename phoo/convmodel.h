@@ -68,7 +68,8 @@ public:
     void reload_possible_changes(long time);
 
     void set_all_selected(bool);
-    void delete_all_selected();
+    void obliterate_all_selected();
+    void trash_all_selected();
     void pal_all_selected(bool);
     void block_all_selected();
     bool at_least_one_selected();
@@ -106,7 +107,8 @@ public:
     Q_INVOKABLE int get_by_uid(QString uid);
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void set_all_selected(bool);
-    Q_INVOKABLE void delete_all_selected();
+    Q_INVOKABLE void obliterate_all_selected();
+    Q_INVOKABLE void trash_all_selected();
     Q_INVOKABLE void pal_all_selected(bool);
     Q_INVOKABLE void block_all_selected();
     Q_INVOKABLE bool at_least_one_selected();

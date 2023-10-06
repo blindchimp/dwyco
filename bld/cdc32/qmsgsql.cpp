@@ -2083,11 +2083,37 @@ sql_load_index(vc uid, int max_count)
 //    return res;
 }
 
+// note: this query is the same as the one above, and as far as i know,
+// it isn't needed anywhere. if i put partial paging of message index
+// things, this will probably change.
 static
 int
 sql_count_index(vc uid)
 {
-    vc res = sql_simple("select count(distinct(mid)) from gi where assoc_uid = ?1", to_hex(uid));
+    vc huid = to_hex(uid);
+    vc res;
+    try
+    {
+        sql_start_transaction();
+        vc gid = map_uid_to_gid(uid);
+
+        res = sql_simple(
+                    with_create_uidset(2)
+                    "select count(*) "
+                    " from gi where "
+                    " (assoc_uid in (select * from uidset)"
+                    // messages from previous group members
+                    " or (is_sent isnull and length(?1) > 0 and from_group = ?1 ))"
+                    " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid)",
+                    gid.is_nil() ? "" : to_hex(gid),
+                    huid);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return -1;
+    }
     return (int)res[0][0];
 }
 
@@ -2938,8 +2964,8 @@ sql_uid_updated_since(vc time)
     return ret;
 }
 
-// NOTE: if a message hasn't been indexed (ie, it hasn't been downloaded and filed
-// in the file system yet), it will not show up in this count.
+// NOTE: if a message hasn't been seen yet (in other words, another
+// client in the group might have more messages we haven't seen), it will not show up in this count.
 int
 sql_uid_count_tag(vc uid, vc tag)
 {
