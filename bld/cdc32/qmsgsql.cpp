@@ -1837,11 +1837,13 @@ sql_get_recent_users(int recent, int *total_out)
         sql_start_transaction();
         // remove all uid's from the user list except one that represents the group.
         // arbitrary: the lowest one lexicographically, which might change.
-        // another option might be to return the one that us currently active,
+        // another option might be to return the one that is currently active,
         // which means we might be able to direct message/call them
         vc res = sql_simple(
-                    "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi  "
+                    "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi "
                     "where strftime('%s', 'now') - date < ?2 "
+                    "and not exists(select 1 from gmt where mid = gi.mid and tag = '_trash' "
+                    "and not exists(select 1 from gtomb where guid = gmt.guid))"
                     "group by assoc_uid),"
 
                     // note: the join here just makes sure the mins table doesn't include
@@ -1867,7 +1869,9 @@ sql_get_recent_users(int recent, int *total_out)
             // uid's we are not returning. this is really intended just to
             // give the user some idea of how many users are being hidden,
             // and might just as easily be a boolean.
-            vc res2 = sql_simple("select count(distinct assoc_uid) from gi");
+            //vc res2 = sql_simple("select count(distinct assoc_uid) from gi");
+            // for whatever reason, this is about twice as fast as the above
+            vc res2 = sql_simple("select count(*) from (select count(*) from gi group by assoc_uid)");
             *total_out = (long)res2[0][0];
         }
         sql_commit_transaction();
