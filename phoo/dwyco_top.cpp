@@ -2077,6 +2077,7 @@ DwycoCore::power_clean()
     {
         return;
     }
+    dwyco_start_bulk_update();
     simple_scoped qm(mids);
     int n = qm.rows();
     for(int i = 0; i < n; ++i)
@@ -2084,7 +2085,7 @@ DwycoCore::power_clean()
         QByteArray b = qm.get<QByteArray>(i);
         dwyco_delete_saved_message(0, 0, b.constData());
     }
-
+    dwyco_end_bulk_update();
 }
 
 int
