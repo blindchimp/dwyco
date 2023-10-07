@@ -337,6 +337,7 @@ void
 msglist_model::trash_all_selected()
 {
     //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    dwyco_start_bulk_update();
     foreach (const QString &value, Selected)
     {
         QByteArray mid = value.toLatin1();
@@ -360,6 +361,7 @@ msglist_model::trash_all_selected()
         }
 
     }
+    dwyco_end_bulk_update();
     Selected.clear();
     force_reload_model();
 }
@@ -368,6 +370,7 @@ void
 msglist_model::obliterate_all_selected()
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    dwyco_start_bulk_update();
     foreach (const QString &value, Selected)
     {
         QByteArray mid = value.toLatin1();
@@ -391,6 +394,7 @@ msglist_model::obliterate_all_selected()
         }
 
     }
+    dwyco_end_bulk_update();
     Selected.clear();
     force_reload_model();
 }
