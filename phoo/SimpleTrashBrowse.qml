@@ -37,6 +37,7 @@ Page {
             themsglist.set_show_trash(false)
             themsglist.set_show_hidden(show_hidden)
             themsglist.tag = ""
+            ConvListModel.reload_convlist()
         }
 
     }

@@ -474,6 +474,12 @@ ConvSortFilterModel::at_least_one_selected()
 
 }
 
+void
+ConvSortFilterModel::reload_convlist()
+{
+    reload_conv_list();
+}
+
 bool
 ConvSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right) const
 {

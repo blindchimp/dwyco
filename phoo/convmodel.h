@@ -112,6 +112,9 @@ public:
     Q_INVOKABLE void pal_all_selected(bool);
     Q_INVOKABLE void block_all_selected();
     Q_INVOKABLE bool at_least_one_selected();
+    // bogus, fix me XXX this is for reloading when _trash tags change, which
+    // should be handled in the client, not so much in the api
+    Q_INVOKABLE void reload_convlist();
 
 private:
     int m_count;

@@ -144,6 +144,8 @@ hack_unread_count()
 void
 reload_conv_list()
 {
+    if(!TheDwycoCore)
+        return;
     Conv_sort_proxy->setDynamicSortFilter(false);
     int total = 0;
     dwyco_load_users2(!TheDwycoCore->get_use_archived(), &total);
