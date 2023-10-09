@@ -416,28 +416,28 @@ Page {
                             }
                         }
 
-                        MenuItem {
-                            text: "Clear msgs"
-                            onTriggered: {
-                                confirm_clear.visible = true
-                            }
-                            MessageDialog {
-                                id: confirm_clear
-                                title: "Remove all msgs?"
-                                icon: StandardIcon.Question
-                                text: "Delete ALL (including HIDDEN) msgs from this user?"
-                                informativeText: "This KEEPS FAVORITE messages."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    core.clear_messages_unfav(chatbox.to_uid)
-                                    themsglist.reload_model()
-                                    close()
-                                }
-                                onNo: {
-                                    close()
-                                }
-                            }
-                        }
+//                        MenuItem {
+//                            text: "Clear msgs"
+//                            onTriggered: {
+//                                confirm_clear.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_clear
+//                                title: "Remove all msgs?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+//                                informativeText: "This KEEPS FAVORITE messages."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.clear_messages_unfav(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
                             text: "Trash msgs"
                             onTriggered: {
@@ -452,9 +452,8 @@ Page {
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
                                     //core.clear_messages_unfav(chatbox.to_uid)
-                                    themsglist.set_all_selected()
-                                    themsglist.tag_all_selected("_trash")
-                                    themsglist.reload_model()
+                                    themsglist.trash_all_selected()
+                                    themsglist.invalidate_filter()
                                     close()
                                 }
                                 onNo: {

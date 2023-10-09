@@ -31,6 +31,7 @@ public:
     QString tag() const;
 
     Q_INVOKABLE void reload_model();
+    Q_INVOKABLE void invalidate_model_filter();
 
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
 

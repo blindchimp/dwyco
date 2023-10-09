@@ -525,6 +525,12 @@ msglist_model::force_reload_model()
 }
 
 void
+msglist_model::invalidate_model_filter()
+{
+    invalidateFilter();
+}
+
+void
 msglist_model::set_filter(int sent, int recv, int last_n, int only_favs)
 {
     filter_show_recv = recv;

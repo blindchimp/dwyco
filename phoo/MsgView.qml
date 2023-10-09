@@ -25,6 +25,7 @@ Page {
     property bool hid
     property string text_bg_color: primary_dark
     property string export_result
+    property bool is_trash: false
 
     //anchors.fill:parent
 
@@ -43,6 +44,7 @@ Page {
             core.stop_zap_view(view_id)
             core.delete_zap_view(view_id)
             }
+            is_trash = false
         }
         else
         {
@@ -108,10 +110,14 @@ Page {
                 x: parent.width - width
                 transformOrigin: Menu.TopRight
                 MenuItem {
-                    text: "Delete msg"
+                    text: is_trash ? "Delete forever" : "Trash msg"
                     onTriggered: {
-                        core.set_tag_message(mid, "_trash");
-                        themsglist.reload_model()
+                        if(is_trash) {
+                            core.set_tag_message(mid, "_trash")
+                        } else {
+                            core.delete_message(uid, mid)
+                        }
+                        themsglist.invalidate_model_filter()
                         stack.pop()
                     }
                 }
