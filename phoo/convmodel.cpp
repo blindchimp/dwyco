@@ -380,7 +380,7 @@ ConvSortFilterModel::ConvSortFilterModel(QObject *p)
 }
 
 // WARNING: the index is interpreted as a SOURCE model index
-// we is kinda useless in QML, now that i think about it.
+// which is kinda useless in QML, now that i think about it.
 // when i need this, will have to provide some mapping
 QObject *
 ConvSortFilterModel::get(int source_idx)
@@ -431,6 +431,7 @@ ConvSortFilterModel::obliterate_all_selected()
     if(!m)
         ::abort();
     m->obliterate_all_selected();
+    invalidateFilter();
 
 }
 
@@ -441,6 +442,7 @@ ConvSortFilterModel::trash_all_selected()
     if(!m)
         ::abort();
     m->trash_all_selected();
+    invalidateFilter();
 
 }
 
@@ -478,6 +480,24 @@ void
 ConvSortFilterModel::reload_convlist()
 {
     reload_conv_list();
+    invalidateFilter();
+}
+
+void
+ConvSortFilterModel::invalidate_filter()
+{
+    invalidateFilter();
+}
+
+bool
+ConvSortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
+{
+    auto alm = dynamic_cast<ConvListModel *>(sourceModel());
+
+    QVariant uid = alm->data(alm->index(source_row, 0), alm->roleForName("uid"));
+    auto buid = QByteArray::fromHex(uid.toByteArray());
+    int ret = dwyco_all_messages_tagged(buid.constData(), buid.length(), "_trash");
+    return ret != 0;
 }
 
 bool

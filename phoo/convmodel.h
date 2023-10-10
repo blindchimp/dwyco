@@ -96,6 +96,7 @@ class ConvSortFilterModel : public QSortFilterProxyModel
 public:
     ConvSortFilterModel(QObject *p = 0);
     virtual bool lessThan(const QModelIndex& left, const QModelIndex& right) const;
+    virtual bool filterAcceptsRow(int source_row, const QModelIndex& parent) const;
 
     int count() const {
         if(sourceModel()) {
@@ -115,6 +116,7 @@ public:
     // bogus, fix me XXX this is for reloading when _trash tags change, which
     // should be handled in the client, not so much in the api
     Q_INVOKABLE void reload_convlist();
+    Q_INVOKABLE void invalidate_filter();
 
 private:
     int m_count;

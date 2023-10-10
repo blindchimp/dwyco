@@ -452,8 +452,9 @@ Page {
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
                                     //core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.set_all_selected()
                                     themsglist.trash_all_selected()
-                                    themsglist.invalidate_filter()
+                                    themsglist.invalidate_model_filter()
                                     close()
                                 }
                                 onNo: {
