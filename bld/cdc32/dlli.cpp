@@ -8108,6 +8108,14 @@ dwyco_valid_tag_exists(const char *tag)
     return sql_exists_valid_tag(tag);
 }
 
+DWYCOEXPORT
+int
+dwyco_all_messages_tagged(const char *uid, int len_uid, const char *tag)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    int ret = sql_uid_all_mid_tagged(uid, tag);
+    return ret;
+}
 
 DWYCOEXPORT
 void

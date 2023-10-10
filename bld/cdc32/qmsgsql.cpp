@@ -1842,8 +1842,8 @@ sql_get_recent_users(int recent, int *total_out)
         vc res = sql_simple(
                     "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi "
                     "where strftime('%s', 'now') - date < ?2 "
-                    "and not exists(select 1 from gmt where mid = gi.mid and tag = '_trash' "
-                    "and not exists(select 1 from gtomb where guid = gmt.guid))"
+                    //"and not exists(select 1 from gmt where mid = gi.mid and tag = '_trash' "
+                    //"and not exists(select 1 from gtomb where guid = gmt.guid))"
                     "group by assoc_uid),"
 
                     // note: the join here just makes sure the mins table doesn't include
@@ -2918,6 +2918,37 @@ sql_uid_has_tag(vc uid, vc tag)
                             tag,
                     to_hex(uid));
         c = (res.num_elems() > 0);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+    return c;
+
+}
+
+// this is used mainly for if a uid's messages have been
+// trashed. if so, it is better to avoid showing the uid
+// in a lot of contexts.
+int
+sql_uid_all_mid_tagged(const vc& uid, const vc& tag)
+{
+    int c = 0;
+    try
+    {
+        sql_start_transaction();
+        vc res = sql_simple(
+                    with_create_uidset(2)
+                    "select 1 from gi where assoc_uid in (select * from uidset) "
+                    "and not exists(select 1 from gmt where gi.mid = mid and tag = ?1 "
+                    "and not exists(select 1 from gtomb where guid = gmt.guid)) "
+                    "and not exists(select 1 from msg_tomb where mid = gi.mid) "
+                    "limit 1",
+                    tag,
+                    to_hex(uid)
+                    );
+        c = (res.num_elems() == 1);
         sql_commit_transaction();
     }
     catch(...)
