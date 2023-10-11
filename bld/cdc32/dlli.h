@@ -1221,6 +1221,9 @@ int DWYCOEXPORT dwyco_bg_exit();
 // to redirect access.
 int DWYCOEXPORT dwyco_update_server_list(const char *lhxfer_str, int lhxfer_str_len);
 
+// NOTE: this style of trash handling is mostly deprecated, and power_clean
+// is a no-op. i'm leaving it in here because "trashing" something can be useful
+// during debugging, and as a safeguard against data loss while  group syncing.
 void DWYCOEXPORT dwyco_power_clean_safe();
 int DWYCOEXPORT dwyco_empty_trash();
 int DWYCOEXPORT dwyco_count_trashed_users();
