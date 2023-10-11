@@ -250,24 +250,24 @@ Page {
                             }
                         }
 
-
                         MenuItem {
-                            text: "Clear msgs"
+                            text: "Trash msgs"
                             onTriggered: {
-                                confirm_delete2.visible = true
+                                confirm_trash.visible = true
                             }
                             MessageDialog {
-                                id: confirm_delete2
-                                title: "Clear?"
+                                id: confirm_trash
+                                title: "Trash all messages?"
                                 icon: StandardIcon.Question
-                                text: "Trash ALL messages from user?"
+                                text: "Trash ALL messages from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
-                                    core.clear_messages_unfav(simp_msg_browse.to_uid)
-                                    themsglist.reload_model()
+                                    //core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.set_all_selected()
+                                    themsglist.trash_all_selected()
+                                    themsglist.invalidate_model_filter()
                                     close()
-                                    stack.pop()
                                 }
                                 onNo: {
                                     close()
@@ -275,29 +275,54 @@ Page {
                             }
                         }
 
-                        MenuItem {
-                            text: "Delete user"
-                            onTriggered: {
-                                confirm_delete.visible = true
-                            }
-                            MessageDialog {
-                                id: confirm_delete
-                                title: "Bulk delete?"
-                                icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
-                                informativeText: "This REMOVES FAVORITE messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    core.delete_user(simp_msg_browse.to_uid)
-                                    themsglist.reload_model()
-                                    close()
-                                    stack.pop()
-                                }
-                                onNo: {
-                                    close()
-                                }
-                            }
-                        }
+
+//                        MenuItem {
+//                            text: "Clear msgs"
+//                            onTriggered: {
+//                                confirm_delete2.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_delete2
+//                                title: "Clear?"
+//                                icon: StandardIcon.Question
+//                                text: "Trash ALL messages from user?"
+//                                informativeText: "This KEEPS FAVORITE messages."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.clear_messages_unfav(simp_msg_browse.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                    stack.pop()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
+
+//                        MenuItem {
+//                            text: "Delete user"
+//                            onTriggered: {
+//                                confirm_delete.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_delete
+//                                title: "Bulk delete?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL messages from user?"
+//                                informativeText: "This REMOVES FAVORITE messages too."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.delete_user(simp_msg_browse.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                    stack.pop()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
                             text: "More..."
                             onTriggered: {

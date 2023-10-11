@@ -484,7 +484,7 @@ ConvSortFilterModel::reload_convlist()
 }
 
 void
-ConvSortFilterModel::invalidate_filter()
+ConvSortFilterModel::invalidate_model_filter()
 {
     invalidateFilter();
 }

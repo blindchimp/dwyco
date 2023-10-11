@@ -71,6 +71,7 @@ Page {
                     text: "Hide"
                     onTriggered: {
                         model.tag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -78,6 +79,7 @@ Page {
                     text: "UnHide"
                     onTriggered: {
                         model.untag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -445,9 +447,9 @@ Page {
                             }
                             MessageDialog {
                                 id: confirm_trash
-                                title: "Trash all msgs?"
+                                title: "Trash all messages?"
                                 icon: StandardIcon.Question
-                                text: "Trash ALL msgs from this user?"
+                                text: "Trash ALL messages from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
@@ -463,29 +465,29 @@ Page {
                             }
                         }
 
-                        MenuItem {
-                            text: "Delete user"
-                            onTriggered: {
-                                confirm_delete.visible = true
-                            }
-                            MessageDialog {
-                                id: confirm_delete
-                                title: "Bulk delete?"
-                                icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE and HIDDEN messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    core.delete_user(chatbox.to_uid)
-                                    themsglist.reload_model()
-                                    close()
-                                    stack.pop()
-                                }
-                                onNo: {
-                                    close()
-                                }
-                            }
-                        }
+//                        MenuItem {
+//                            text: "Delete user"
+//                            onTriggered: {
+//                                confirm_delete.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_delete
+//                                title: "Bulk delete?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL messages from user?"
+//                                informativeText: "This removes FAVORITE and HIDDEN messages too."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.delete_user(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                    stack.pop()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
                             text: "More..."
                             onTriggered: {

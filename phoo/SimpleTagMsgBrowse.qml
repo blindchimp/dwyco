@@ -73,6 +73,7 @@ Page {
                     onTriggered: {
                         model.tag_all_selected("_hid")
                         multiselect_mode = false
+                        model.invalidate_model_filter()
                     }
                 }
                 MenuItem {
@@ -80,6 +81,7 @@ Page {
                     onTriggered: {
                         model.untag_all_selected("_hid")
                         multiselect_mode = false
+                        model.invalidate_model_filter()
                     }
                 }
                 MenuItem {

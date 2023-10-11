@@ -144,6 +144,7 @@ Page {
                             core.unset_tag_message(mid, "_hid")
                         else
                             core.set_tag_message(mid, "_hid")
+                        themsglist.invalidate_model_filter()
                     }
                 }
                 MenuItem {

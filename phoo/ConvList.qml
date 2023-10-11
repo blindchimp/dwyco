@@ -71,10 +71,10 @@ Page {
                     }
                     MessageDialog {
                         id: confirm_delete
-                        title: "Block and Bulk delete?"
+                        title: "Block user and delete messages?"
                         icon: StandardIcon.Question
                         text: "Delete ALL messages from selected users?"
-                        informativeText: "This removes FAVORITE messages too."
+                        informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                         standardButtons: StandardButton.Yes | StandardButton.No
                         onYes: {
                             ConvListModel.block_all_selected()

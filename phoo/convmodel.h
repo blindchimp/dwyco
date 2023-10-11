@@ -116,7 +116,7 @@ public:
     // bogus, fix me XXX this is for reloading when _trash tags change, which
     // should be handled in the client, not so much in the api
     Q_INVOKABLE void reload_convlist();
-    Q_INVOKABLE void invalidate_filter();
+    Q_INVOKABLE void invalidate_model_filter();
 
 private:
     int m_count;

@@ -95,6 +95,7 @@ ToolBar {
                 standardButtons: StandardButton.Yes | StandardButton.No
                 onYes: {
                     model.trash_all_selected()
+                    model.invalidate_model_filter()
                     multiselect_mode = false
                     close()
                 }
