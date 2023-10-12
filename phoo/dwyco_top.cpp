@@ -2075,7 +2075,7 @@ void
 DwycoCore::power_clean()
 {
     DWYCO_LIST mids;
-    if(!dwyco_get_tagged_mids_older_than(&mids, "_trash", 0))
+    if(!dwyco_get_tagged_mids_older_than(&mids, "_trash", 30))
     {
         return;
     }
