@@ -121,19 +121,6 @@ int DwycoCore::Android_migrate;
 QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
 QByteArray HTheMan("5a098f3df49015331d74");
 
-static QByteArray
-dwyco_get_attr(DWYCO_LIST l, int row, const char *col)
-{
-    const char *val;
-    int len;
-    int type;
-    if(!dwyco_list_get(l, row, col, &val, &len, &type))
-        ::abort();
-    if(type != DWYCO_TYPE_STRING && type != DWYCO_TYPE_NIL)
-        ::abort();
-    return QByteArray(val, len);
-}
-
 void
 hack_unread_count()
 {
@@ -1555,16 +1542,16 @@ load_cam_model()
     HasCamHardware = 1;
 #else
 
-
     DWYCO_LIST drv = dwyco_get_vfw_drivers();
     if(drv)
     {
+        simple_scoped qdrv(drv);
         int n;
-        dwyco_list_numelems(drv, &n, 0);
+        n = qdrv.rows();
+
         for(int i = 0; i < n; ++i)
         {
-            QByteArray b = dwyco_get_attr(drv, i, DWYCO_VFW_DRIVER_NAME);
-
+            auto b = qdrv.get<QByteArray>(i, DWYCO_VFW_DRIVER_NAME);
             CamListModel->append(QString(b));
             HasCamHardware = 1;
         }

@@ -238,7 +238,10 @@ ConvListModel::decorate(QString huid, QString txt, QString mid)
     QByteArray uid = QByteArray::fromHex(huid.toLatin1());
     Conversation *c = getByUid(huid);
     if(!c)
+    {
+        add_uid_to_model(uid);
         return;
+    }
     //int cnt = uid_unviewed_msgs_count(uid);
     //c->update_unseen_count(cnt);
     c->update_any_unread(uid_has_unviewed_msgs(uid));
@@ -304,6 +307,17 @@ ConvListModel::load_users_to_model()
     for(int i = 0; i < n; ++i)
     {
         QByteArray uid = sl.get<QByteArray>(i);
+        Conversation *c = add_uid_to_model(uid);
+        c->update_counter = cnt;
+    }
+
+    // if there are messages on the server that are not fetched
+    // yet, there might be uid's we need to display as well.
+    QList<QByteArray> unviewed;
+    unviewed = uids_with_unviewed();
+    for(int i = 0; i < unviewed.count(); ++i)
+    {
+        auto uid = unviewed.at(i);
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
@@ -374,6 +388,11 @@ ConvSortFilterModel::ConvSortFilterModel(QObject *p)
     setSortCaseSensitivity(Qt::CaseInsensitive);
     sort(0);
     m_count = 0;
+    connect(this, &QAbstractItemModel::rowsInserted, this, &ConvSortFilterModel::countChanged);
+    connect(this, &QAbstractItemModel::rowsRemoved, this, &ConvSortFilterModel::countChanged);
+    connect(this, &QAbstractItemModel::modelReset, this, &ConvSortFilterModel::countChanged);
+    connect(this, &QAbstractItemModel::layoutChanged, this, &ConvSortFilterModel::countChanged);
+
 #ifdef DWYCO_MODEL_TEST
     new QAbstractItemModelTester(this);
 #endif
@@ -496,8 +515,10 @@ ConvSortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_
 
     QVariant uid = alm->data(alm->index(source_row, 0), alm->roleForName("uid"));
     auto buid = QByteArray::fromHex(uid.toByteArray());
+    if(uid_has_unviewed_msgs(buid))
+        return true;
     int ret = dwyco_all_messages_tagged(buid.constData(), buid.length(), "_trash");
-    return ret != 0;
+    return ret == 0;
 }
 
 bool

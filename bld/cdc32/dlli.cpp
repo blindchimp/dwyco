@@ -8042,7 +8042,10 @@ DWYCOEXPORT
 int
 dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag)
 {
-    oopanic("fix this");
+    oopanic("broken");
+    // needs to return uid,mid pairs, but this query can't
+    // really do that, so it needs to be noted if you really
+    // need this query
     vc res = sql_get_tagged_mids2(tag);
     *list_out = dwyco_list_from_vc(res);
     return 1;

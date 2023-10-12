@@ -78,7 +78,8 @@ Page {
                         standardButtons: StandardButton.Yes | StandardButton.No
                         onYes: {
                             ConvListModel.block_all_selected()
-                            ConvListModel.delete_all_selected()
+                            ConvListModel.obliterate_all_selected()
+                            multiselect_mode = false
                             close()
                         }
                         onNo: {

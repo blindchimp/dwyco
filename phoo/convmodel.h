@@ -100,7 +100,8 @@ public:
 
     int count() const {
         if(sourceModel()) {
-            return dynamic_cast<ConvListModel *>(sourceModel())->count();
+            return rowCount();
+            //return dynamic_cast<ConvListModel *>(sourceModel())->count();
         }
         return 0;
     }

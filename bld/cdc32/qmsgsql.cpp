@@ -2948,7 +2948,7 @@ sql_uid_all_mid_tagged(const vc& uid, const vc& tag)
                     tag,
                     to_hex(uid)
                     );
-        c = (res.num_elems() == 1);
+        c = (res.num_elems() != 1);
         sql_commit_transaction();
     }
     catch(...)
