@@ -104,7 +104,25 @@ Page {
                 source: mi("ic_action_overflow.png")
             }
             onClicked: optionsMenu.open()
+            MenuItem {
+                id: untrash_item
+                text: "Untrash msg"
+                visible: false
+                onTriggered: {
+                    core.unset_tag_message(mid, "_trash")
+                    themsglist.invalidate_model_filter()
+                    stack.pop()
+                }
+            }
+            MenuItem {
+                id: review_item
+                text: "Review"
+                visible: false
+                onTriggered: {
+                    stack.push(msg_review)
 
+                }
+            }
             Menu {
                 id: optionsMenu
                 x: parent.width - width
@@ -121,7 +139,15 @@ Page {
                         stack.pop()
                     }
                 }
-
+//                MenuItem {
+//                    text: "Untrash msg"
+//                    visible: is_trash
+//                    onTriggered: {
+//                        core.unset_tag_message(mid, "_trash")
+//                        themsglist.invalidate_model_filter()
+//                        stack.pop()
+//                    }
+//                }
                 MenuItem {
                     text: "Forward msg"
                     onTriggered: {
@@ -163,15 +189,35 @@ Page {
                     }
                 }
 
-                MenuItem {
-                    text: "Review"
-                    visible: core.this_uid === the_man
-                    onTriggered: {
-                        stack.push(msg_review)
+//                MenuItem {
+//                    text: "Review"
+//                    visible: core.this_uid === the_man
+//                    onTriggered: {
+//                        stack.push(msg_review)
 
+//                    }
+//                }
+
+
+                onVisibleChanged: {
+                    if(visible) {
+                        if(is_trash) {
+                            untrash_item.visible = true
+                            optionsMenu.insertItem(0, untrash_item)
+                        }
+                        else {
+                            untrash_item.visible = false
+                            optionsMenu.removeItem(untrash_item)
+                        }
+                        if(core.this_uid === the_man) {
+                            review_item.visible = true
+                            optionsMenu.addItem(review_item)
+                        } else {
+                            review_item.visible = false
+                            optionsMenu.removeItem(review_item)
+                        }
                     }
                 }
-
 
             }
         }
