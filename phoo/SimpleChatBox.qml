@@ -103,8 +103,8 @@ Page {
             id:multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT delete FAVORITE messages"
-            delete_warning_text: "Delete all selected messages?"
+            delete_warning_inf_text: "Does NOT trash FAVORITE messages"
+            delete_warning_text: "Trash all selected messages?"
         }
 
         ToolBar {
