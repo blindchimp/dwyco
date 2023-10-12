@@ -112,10 +112,10 @@ Page {
                 MenuItem {
                     text: is_trash ? "Delete forever" : "Trash msg"
                     onTriggered: {
-                        if(is_trash) {
-                            core.set_tag_message(mid, "_trash")
-                        } else {
+                        if(is_trash) { 
                             core.delete_message(uid, mid)
+                        } else {
+                            core.set_tag_message(mid, "_trash")
                         }
                         themsglist.invalidate_model_filter()
                         stack.pop()
