@@ -163,12 +163,7 @@ public:
         dwyco_exit();
     }
 
-    Q_INVOKABLE void power_clean() {
-        // note: this is disabled right now, pending some
-        // better definition of "clean". it doesn't jive
-        // with the syncing stuff we do now.
-        dwyco_power_clean_safe();
-    }
+    Q_INVOKABLE void power_clean();
 
     Q_INVOKABLE QString get_my_uid() {
         return My_uid.toHex();

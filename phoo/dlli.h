@@ -822,6 +822,9 @@ int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 // this returns just mid's, no uids, in a single column
 // it will return msgs that have not been downloaded yet as well.
 int DWYCOEXPORT dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag);
+// like above, but the tag's creation time has to be older than the
+// specified number of days
+int DWYCOEXPORT dwyco_get_tagged_mids_older_than(DWYCO_LIST *list_out, const char *tag, int days);
 
 int DWYCOEXPORT dwyco_count_tag(const char *tag);
 // a tag is considered "valid" if it currently refers to an mid in the global index
@@ -834,6 +837,7 @@ int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_mid_disposition(const char *mid);
+int DWYCOEXPORT dwyco_all_messages_tagged(const char *uid, int len_uid, const char *tag);
 
 // INTERNAL API
 int DWYCOEXPORT dwyco_run_sql(const char *s, const char *a1, const char *a2, const char *a3);

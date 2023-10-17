@@ -239,6 +239,7 @@ msglist_model::msglist_model(QObject *p) :
     filter_last_n = -1;
     filter_only_favs = 0;
     filter_show_hidden = 1;
+    filter_show_trash = false;
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
     mlm = this;
@@ -333,9 +334,10 @@ msglist_model::mid_tag_changed(QString mid)
 }
 
 void
-msglist_model::delete_all_selected()
+msglist_model::trash_all_selected()
 {
-    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    dwyco_start_bulk_update();
     foreach (const QString &value, Selected)
     {
         QByteArray mid = value.toLatin1();
@@ -353,10 +355,46 @@ msglist_model::delete_all_selected()
         else
         {
             if(!dwyco_get_fav_msg(mid.constData()))
-                dwyco_delete_saved_message(buid.constData(), buid.length(), mid.constData());
+            {
+                dwyco_set_msg_tag(mid.constData(), "_trash");
+            }
         }
 
     }
+    dwyco_end_bulk_update();
+    Selected.clear();
+    force_reload_model();
+}
+
+void
+msglist_model::obliterate_all_selected()
+{
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    dwyco_start_bulk_update();
+    foreach (const QString &value, Selected)
+    {
+        QByteArray mid = value.toLatin1();
+        DWYCO_LIST l;
+        if(dwyco_get_unfetched_message(&l, mid.constData()))
+        {
+            dwyco_list_release(l);
+            dwyco_delete_unfetched_message(mid.constData());
+        }
+        else if(dwyco_qd_message_to_body(&l, mid.constData(), mid.length()))
+        {
+            dwyco_list_release(l);
+            dwyco_kill_message(mid.constData(), mid.length());
+        }
+        else
+        {
+            if(!dwyco_get_fav_msg(mid.constData()))
+            {
+                dwyco_delete_saved_message(buid.constData(), buid.length(), mid.constData());
+            }
+        }
+
+    }
+    dwyco_end_bulk_update();
     Selected.clear();
     force_reload_model();
 }
@@ -487,6 +525,12 @@ msglist_model::force_reload_model()
 }
 
 void
+msglist_model::invalidate_model_filter()
+{
+    invalidateFilter();
+}
+
+void
 msglist_model::set_filter(int sent, int recv, int last_n, int only_favs)
 {
     filter_show_recv = recv;
@@ -505,10 +549,26 @@ msglist_model::set_show_hidden(int show_hidden)
     Selected.clear();
 }
 
+void
+msglist_model::set_show_trash(bool show_trash)
+{
+    filter_show_trash = show_trash;
+    invalidateFilter();
+    Selected.clear();
+}
+
 bool
 msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
     QAbstractItemModel *alm = sourceModel();
+
+    if(filter_show_trash == false)
+    {
+        QVariant mid = alm->data(alm->index(source_row, 0), MID);
+        int trashed = dwyco_mid_has_tag(mid.toByteArray().constData(), "_trash");
+        if(trashed)
+            return false;
+    }
 
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
