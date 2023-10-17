@@ -91,6 +91,33 @@ del_unviewed_uid(const QByteArray& uid)
     }
 }
 
+QList<QByteArray>
+uids_with_unviewed()
+{
+    DWYCO_LIST tm;
+    if(!dwyco_get_tagged_mids(&tm, "unviewed"))
+        return QList<QByteArray>();
+    simple_scoped qtm(tm);
+    QList<QByteArray> ret;
+    for(int i = 0; i < qtm.rows(); ++i)
+    {
+        QByteArray ruid = qtm.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID);
+        if(!ret.contains(ruid))
+            ret.append(ruid);
+    }
+    DWYCO_UNFETCHED_MSG_LIST uml;
+    if(!dwyco_get_unfetched_messages(&uml, 0, 0))
+        return ret;
+    simple_scoped quml(uml);
+    for(int i = 0; i < quml.rows(); ++i)
+    {
+        QByteArray huid = quml.get<QByteArray>(i, DWYCO_QMS_FROM).toHex();
+        if(!ret.contains(huid))
+            ret.append(huid);
+    }
+    return ret;
+}
+
 void
 del_unviewed_mid(const QByteArray& mid)
 {

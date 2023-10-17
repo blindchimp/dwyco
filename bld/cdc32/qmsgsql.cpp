@@ -160,6 +160,7 @@ QMsgSql::init_schema_fav()
         sql_simple("insert into static_crdt_tags values('_ignore')");
         sql_simple("insert into static_crdt_tags values('_pal')");
         sql_simple("insert into static_crdt_tags values('_leader')");
+        sql_simple("insert into static_crdt_tags values('_trash')");
 
         // this is an upgrade, the msg_tags2 stuff should be installed in gmt
         // with proper guids. this should mostly only be done once, but there
@@ -176,6 +177,9 @@ QMsgSql::init_schema_fav()
     {
         rollback_transaction();
     }
+    start_transaction();
+    sql_simple("insert into static_crdt_tags values('_trash')");
+    commit_transaction();
 }
 
 void
@@ -461,6 +465,12 @@ generate_delta(vc uid, vc delta_id)
         // ok, this is a problem. we don't want to commit updates to our notion of the REMOTE end
         // until we have some idea that we actually sent them and they are incorporated there.
         // now, i thought i figured that out with the "syncpoint" idea, but maybe it isn't working.
+
+        // yea, it is fucked up. if we create an midlog, we have committed changes to the delta
+        // files that will block the changes we just noticed from future midlogs. BUT we delete the
+        // midlog when the connection drops, or if the program crashes. this *should* causes the
+        // syncpoint to be out of whack, but for some reason it isn't, and the updates are never
+        // synced via this delta method.
         s.commit_transaction();
     }
     catch (...)
@@ -1076,16 +1086,28 @@ import_remote_iupdate(vc remote_uid, vc vals)
         {
             mid = vals[0];
             uid = sql_get_uid_from_mid(mid);
-            //sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now'))", mid);
-            //sql_simple("delete from gi where mid = ?1", mid);
-            // note: doing it this way causes log entries to be created by triggers
-            // which might lead to storms of propagated deletes in completely
-            // connected clusters. it might make sense to just remove all but one
-            // of the current_clients so that the updates propagate around to one
-            // client at a time.
+            vc res3 = sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now')) returning 1", mid);
+            vc res4 = sql_simple("delete from gi where mid = ?1 returning 1", mid);
+            // XX note: doing it this way causes log entries to be created by triggers
+            // XX which might lead to storms of propagated deletes in completely
+            // XX connected clusters. it might make sense to just remove all but one
+            // XX of the current_clients so that the updates propagate around to one
+            // XX client at a time.
+
+            // ok, here is the crux of the missing tombstone problem: if the msg_idx does not have
+            // the mid we are installing a tombstone for (ie, we haven't downloaded it here yet)
+            // the triggers on msg_idx will not be done, and the tombstone will not be created.
+            // the mid may remain in gi because we heard about the message from another client, but
+            // if we got a tombstone request, it should be toast in gi as well.
+            //
+            // the other side thinks it has propagated it, since the delta version will match, and
+            // voila, the tombstone is never propagated here again.
+            // the fix is to just install the tombstones manually.
+            // i'm not sure why i had
+            // it correct above, then commented it out, other than i was worried about storms.
             vc res1 = sql_simple("delete from msg_idx where mid = ?1 returning 1", mid);
             vc res2 = sql_simple("delete from gmt where mid = ?1 returning 1", mid);
-            if(res1.num_elems() > 0 || res2.num_elems() > 0)
+            if(res3.num_elems() > 0 || res4.num_elems() > 0 || res1.num_elems() > 0 || res2.num_elems() > 0)
                 index_changed = true;
         }
         sql_simple("insert into current_clients values(?1)", huid);
@@ -1815,11 +1837,13 @@ sql_get_recent_users(int recent, int *total_out)
         sql_start_transaction();
         // remove all uid's from the user list except one that represents the group.
         // arbitrary: the lowest one lexicographically, which might change.
-        // another option might be to return the one that us currently active,
+        // another option might be to return the one that is currently active,
         // which means we might be able to direct message/call them
         vc res = sql_simple(
-                    "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi  "
+                    "with uids(uid,lc) as (select assoc_uid, max(logical_clock) from gi "
                     "where strftime('%s', 'now') - date < ?2 "
+                    //"and not exists(select 1 from gmt where mid = gi.mid and tag = '_trash' "
+                    //"and not exists(select 1 from gtomb where guid = gmt.guid))"
                     "group by assoc_uid),"
 
                     // note: the join here just makes sure the mins table doesn't include
@@ -1845,7 +1869,9 @@ sql_get_recent_users(int recent, int *total_out)
             // uid's we are not returning. this is really intended just to
             // give the user some idea of how many users are being hidden,
             // and might just as easily be a boolean.
-            vc res2 = sql_simple("select count(distinct assoc_uid) from gi");
+            //vc res2 = sql_simple("select count(distinct assoc_uid) from gi");
+            // for whatever reason, this is about twice as fast as the above
+            vc res2 = sql_simple("select count(*) from (select count(*) from gi group by assoc_uid)");
             *total_out = (long)res2[0][0];
         }
         sql_commit_transaction();
@@ -2061,11 +2087,37 @@ sql_load_index(vc uid, int max_count)
 //    return res;
 }
 
+// note: this query is the same as the one above, and as far as i know,
+// it isn't needed anywhere. if i put partial paging of message index
+// things, this will probably change.
 static
 int
 sql_count_index(vc uid)
 {
-    vc res = sql_simple("select count(distinct(mid)) from gi where assoc_uid = ?1", to_hex(uid));
+    vc huid = to_hex(uid);
+    vc res;
+    try
+    {
+        sql_start_transaction();
+        vc gid = map_uid_to_gid(uid);
+
+        res = sql_simple(
+                    with_create_uidset(2)
+                    "select count(*) "
+                    " from gi where "
+                    " (assoc_uid in (select * from uidset)"
+                    // messages from previous group members
+                    " or (is_sent isnull and length(?1) > 0 and from_group = ?1 ))"
+                    " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid)",
+                    gid.is_nil() ? "" : to_hex(gid),
+                    huid);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return -1;
+    }
     return (int)res[0][0];
 }
 
@@ -2775,6 +2827,28 @@ sql_get_tagged_mids2(vc tag)
     return res;
 }
 
+// this returns all mids with given tag regardless of download state
+// whose creation time is older than the given number of days.
+
+vc
+sql_get_tagged_mids_older_than(vc tag, int days)
+{
+    vc res;
+    try
+    {
+        sql_start_transaction();
+        res = sql_simple("select distinct(mid) from gmt where tag = ?1 and strftime('%s', 'now') - time > (?2 * 24 * 3600) and not exists(select 1 from gtomb where gmt.guid = guid)",
+                         tag, days);
+        sql_commit_transaction();
+        res = flatten(res);
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+        res = vc(VC_VECTOR);
+    }
+    return res;
+}
 vc
 sql_get_tagged_idx(vc tag)
 {
@@ -2854,6 +2928,37 @@ sql_uid_has_tag(vc uid, vc tag)
 
 }
 
+// this is used mainly for if a uid's messages have been
+// trashed. if so, it is better to avoid showing the uid
+// in a lot of contexts.
+int
+sql_uid_all_mid_tagged(const vc& uid, const vc& tag)
+{
+    int c = 0;
+    try
+    {
+        sql_start_transaction();
+        vc res = sql_simple(
+                    with_create_uidset(2)
+                    "select 1 from gi where assoc_uid in (select * from uidset) "
+                    "and not exists(select 1 from gmt where gi.mid = mid and tag = ?1 "
+                    "and not exists(select 1 from gtomb where guid = gmt.guid)) "
+                    "and not exists(select 1 from msg_tomb where mid = gi.mid) "
+                    "limit 1",
+                    tag,
+                    to_hex(uid)
+                    );
+        c = (res.num_elems() != 1);
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+    return c;
+
+}
+
 // return a list of uid's that appear to have updates since
 // the given time. takes into account tags and tag tombstones
 // and potentially new messages only. if the sync stuff loads
@@ -2894,8 +2999,8 @@ sql_uid_updated_since(vc time)
     return ret;
 }
 
-// NOTE: if a message hasn't been indexed (ie, it hasn't been downloaded and filed
-// in the file system yet), it will not show up in this count.
+// NOTE: if a message hasn't been seen yet (in other words, another
+// client in the group might have more messages we haven't seen), it will not show up in this count.
 int
 sql_uid_count_tag(vc uid, vc tag)
 {

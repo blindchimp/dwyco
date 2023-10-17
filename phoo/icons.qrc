@@ -341,5 +341,11 @@
         <file>icons/material/xhdpi/ic_fullscreen_exit_black_24dp.png</file>
         <file>icons/material/xhdpi/ic_fullscreen_exit_white_24dp.png</file>
         <file>icons/material/xhdpi/ic_fullscreen_white_24dp.png</file>
+        <file>icons/material/xhdpi/delete-restore-black.png</file>
+        <file>icons/material/hdpi/delete-restore-black.png</file>
+        <file>icons/material/mdpi/delete-restore-black.png</file>
+        <file>icons/material/xhdpi/delete-restore-white.png</file>
+        <file>icons/material/hdpi/delete-restore-white.png</file>
+        <file>icons/material/mdpi/delete-restore-white.png</file>
     </qresource>
 </RCC>
