@@ -948,15 +948,17 @@ int main(int argc, char *argv[])
     setting_get("disable_backups", d);
     if(!d)
     {
-        dwyco_create_backup();
+        if(dwyco_create_backup(7, 30))
+        {
 #ifdef DWYCO_QT5
-        QStringList sl = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
-        QString loc = sl[0];
+            QStringList sl = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+            QString loc = sl[0];
 #else
-        QString loc = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+            QString loc = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
 #endif
-        QByteArray b = loc.toLatin1();
-        dwyco_copy_out_backup(b.constData(), 0);
+            QByteArray b = loc.toLatin1();
+            dwyco_copy_out_backup(b.constData(), 0);
+        }
     }
     dwyco_exit();
     exit_sound();

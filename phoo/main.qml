@@ -326,7 +326,7 @@ ApplicationWindow {
                 title: "Block and delete?"
                 icon: StandardIcon.Question
                 text: "Delete ALL messages from user and BLOCK them?"
-                informativeText: "This removes FAVORITE and HIDDEN messages too."
+                informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                 standardButtons: StandardButton.Yes | StandardButton.No
                 onYes: {
                     core.set_ignore(chatbox.to_uid, 1)
@@ -588,6 +588,12 @@ ApplicationWindow {
 
     SimpleTagMsgBrowse {
         id: simp_tag_browse
+        model: themsglist
+        visible: false
+    }
+
+    SimpleTrashBrowse {
+        id: trash_browse
         model: themsglist
         visible: false
     }

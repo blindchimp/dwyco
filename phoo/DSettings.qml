@@ -178,6 +178,16 @@ Page {
         }
 
         ItemDelegate {
+            id: trash_button
+            text: qsTr("View Trash")
+            onClicked: {
+                stack.push(trash_browse)
+            }
+
+            Layout.fillWidth: true
+        }
+
+        ItemDelegate {
             id: load_backup_button
             text: qsTr("Load backup\n(quits Phoo, restarting finishes load.)")
             onClicked: {

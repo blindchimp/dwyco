@@ -4194,12 +4194,9 @@ dwyco_delete_user(const char *uid, int len_uid)
     vc u(VC_BSTRING, uid, len_uid);
 
     Rescan_msgs = 1;
-    //vc dir = uid_to_dir(u);
-    int ret = remove_user(u, "");
-    ack_all(u);
-    pal_del(u, 1);
-    prf_invalidate(u);
-    Session_infos.del(u);
+
+    int ret = remove_user(u);
+
     return ret;
 }
 
@@ -4210,9 +4207,9 @@ dwyco_clear_user(const char *uid, int len_uid)
     vc u(VC_BSTRING, uid, len_uid);
 
     Rescan_msgs = 1;
-    //vc dir = uid_to_dir(u);
+
     int ret = clear_user(u);
-    ack_all(u);
+
     return ret;
 }
 
@@ -8045,7 +8042,20 @@ DWYCOEXPORT
 int
 dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag)
 {
+    oopanic("broken");
+    // needs to return uid,mid pairs, but this query can't
+    // really do that, so it needs to be noted if you really
+    // need this query
     vc res = sql_get_tagged_mids2(tag);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_mids_older_than(DWYCO_LIST *list_out, const char *tag, int days)
+{
+    vc res = sql_get_tagged_mids_older_than(tag, days);
     *list_out = dwyco_list_from_vc(res);
     return 1;
 }
@@ -8101,6 +8111,14 @@ dwyco_valid_tag_exists(const char *tag)
     return sql_exists_valid_tag(tag);
 }
 
+DWYCOEXPORT
+int
+dwyco_all_messages_tagged(const char *uid, int len_uid, const char *tag)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    int ret = sql_uid_all_mid_tagged(uid, tag);
+    return ret;
+}
 
 DWYCOEXPORT
 void
@@ -9107,11 +9125,26 @@ dwyco_estimate_bandwidth2(int *out_bw_out, int *in_bw_out)
 }
 
 DWYCOEXPORT
-void
-dwyco_create_backup()
+int
+dwyco_create_backup(int days_to_run, int days_to_rebuild)
 {
-    //create_msg_backup();
+    int du = desktop_days_since_last_backup();
+    if(du == -1)
+    {
+        desktop_backup();
+        return 1;
+    }
+    int dr = desktop_days_since_backup_created();
+    if(dr == -1 || dr >= days_to_rebuild)
+    {
+        dwyco_remove_backup();
+        desktop_backup();
+        return 1;
+    }
+    if(du < days_to_run)
+        return 0;
     desktop_backup();
+    return 1;
 }
 
 static
@@ -9189,6 +9222,8 @@ dwyco_remove_backup()
 
 // NOTE NOTE!
 // YOU MUST EXIT IMMEDIATELY IF THIS RETURNS 1
+// WARNING: if you are in a group, this will not work right.
+// you MUST exit the group first before attempting a restore!
 DWYCOEXPORT
 int
 dwyco_restore_from_backup(const char *bu_fn, int msgs_only)

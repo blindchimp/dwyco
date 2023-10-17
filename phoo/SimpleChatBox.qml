@@ -71,6 +71,7 @@ Page {
                     text: "Hide"
                     onTriggered: {
                         model.tag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -78,6 +79,7 @@ Page {
                     text: "UnHide"
                     onTriggered: {
                         model.untag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -101,8 +103,8 @@ Page {
             id:multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT delete FAVORITE messages"
-            delete_warning_text: "Delete all selected messages?"
+            delete_warning_inf_text: "Does NOT trash FAVORITE messages"
+            delete_warning_text: "Trash all selected messages?"
         }
 
         ToolBar {
@@ -417,21 +419,45 @@ Page {
                             }
                         }
 
+//                        MenuItem {
+//                            text: "Clear msgs"
+//                            onTriggered: {
+//                                confirm_clear.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_clear
+//                                title: "Remove all msgs?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+//                                informativeText: "This KEEPS FAVORITE messages."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.clear_messages_unfav(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
-                            text: "Clear msgs"
+                            text: "Trash msgs"
                             onTriggered: {
-                                confirm_clear.visible = true
+                                confirm_trash.visible = true
                             }
                             MessageDialog {
-                                id: confirm_clear
-                                title: "Remove all msgs?"
+                                id: confirm_trash
+                                title: "Trash all messages?"
                                 icon: StandardIcon.Question
-                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+                                text: "Trash ALL messages from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
-                                    core.clear_messages_unfav(chatbox.to_uid)
-                                    themsglist.reload_model()
+                                    //core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.set_all_selected()
+                                    themsglist.trash_all_selected()
+                                    themsglist.invalidate_model_filter()
                                     close()
                                 }
                                 onNo: {
@@ -440,29 +466,29 @@ Page {
                             }
                         }
 
-                        MenuItem {
-                            text: "Delete user"
-                            onTriggered: {
-                                confirm_delete.visible = true
-                            }
-                            MessageDialog {
-                                id: confirm_delete
-                                title: "Bulk delete?"
-                                icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE and HIDDEN messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    core.delete_user(chatbox.to_uid)
-                                    themsglist.reload_model()
-                                    close()
-                                    stack.pop()
-                                }
-                                onNo: {
-                                    close()
-                                }
-                            }
-                        }
+//                        MenuItem {
+//                            text: "Delete user"
+//                            onTriggered: {
+//                                confirm_delete.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_delete
+//                                title: "Bulk delete?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL messages from user?"
+//                                informativeText: "This removes FAVORITE and HIDDEN messages too."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.delete_user(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                    stack.pop()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
                             text: "More..."
                             onTriggered: {
