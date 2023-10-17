@@ -2654,11 +2654,10 @@ remove_user_files(vc dir, const char *pfx, int keep_folder)
     //return retval;
 }
 
+static
 int
-remove_user(vc uid, const char *pfx)
+clear_user_msgs(const vc& uid)
 {
-    vc dir = uid_to_dir(uid);
-    // remove indexes so the msgs don't magically reappear
     try
     {
         sql_start_transaction();
@@ -2678,42 +2677,48 @@ remove_user(vc uid, const char *pfx)
         sql_rollback_transaction();
         return 0;
     }
-
-    // when we unindex everything successfully, remove the files
-    remove_user_files(dir, pfx, 0);
-    MsgFolders.del(uid);
-    se_emit(SE_USER_REMOVE, uid);
     return 1;
 }
 
 int
-clear_user(vc uid)
+remove_user(const vc& uid)
 {
-    try
-    {
-        sql_start_transaction();
-        sql_remove_all_tags_uid(uid);
-        clear_msg_idx_uid(uid);
-        DwString tag("_");
-        tag += (const char *)to_hex(uid);
-        vc mids = sql_get_tagged_mids2(tag.c_str());
-        for(int i = 0; i < mids.num_elems(); ++i)
-        {
-            sql_remove_all_tags_mid(mids[i][0]);
-        }
-        sql_commit_transaction();
-    }
-    catch(...)
-    {
-        sql_rollback_transaction();
+
+    int ret = clear_user_msgs(uid);
+    if(!ret)
         return 0;
+
+    const vc uids = map_uid_to_uids(uid);
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc u = uids[i];
+        const vc dir = uid_to_dir(u);
+        remove_user_files(dir, "", 0);
+        MsgFolders.del(u);
+        ack_all(u);
+        pal_del(u, 1);
+        prf_invalidate(u);
+        Session_infos.del(u);
     }
+    // note: the uid here is mapped down to representative
+    se_emit(SE_USER_REMOVE, uid);
+    Rescan_msgs = 1;
+    return 1;
+}
+
+int
+clear_user(const vc& uid)
+{
+    int ret = clear_user_msgs(uid);
+    if(!ret)
+        return 0;
 
     const vc uids = map_uid_to_uids(uid);
     for(int i = 0; i < uids.num_elems(); ++i)
     {
         const vc dir = uid_to_dir(uids[i]);
         remove_user_files(dir, "", 1);
+        ack_all(uids[i]);
     }
     Rescan_msgs = 1;
     return 1;

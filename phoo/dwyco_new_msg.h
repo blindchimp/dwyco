@@ -26,5 +26,6 @@ void clear_session_msg();
 void clear_unviewed_msgs();
 void load_inbox_tags_to_unviewed(QSet<QByteArray>&);
 void add_got_msg_from(const QByteArray& uid);
+QList<QByteArray> uids_with_unviewed();
 
 #endif

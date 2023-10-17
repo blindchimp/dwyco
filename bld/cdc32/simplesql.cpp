@@ -69,8 +69,17 @@ SimpleSql::init(int sqlite_flags, bool no_filename_mod)
         Db = 0;
         return 0;
     }
-    sync_off();
-    init_schema(schema_names[0]);
+    try
+    {
+        sync_off();
+        init_schema(schema_names[0]);
+    }
+    catch(...)
+    {
+        exit();
+        return 0;
+    }
+
     return 1;
 }
 

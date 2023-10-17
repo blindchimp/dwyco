@@ -60,7 +60,7 @@ public:
     SimpleUser * add_uid_to_model(const QByteArray& uid);
 
     void set_all_selected(bool);
-    void delete_all_selected();
+    //void delete_all_selected();
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void send_forward_selected(QString mid_to_forward);
 
@@ -109,7 +109,7 @@ public:
     Q_INVOKABLE void load_from_cq_file();
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void set_all_selected(bool);
-    Q_INVOKABLE void delete_all_selected();
+    //Q_INVOKABLE void delete_all_selected();
     Q_INVOKABLE void send_forward_selected(QString mid_to_forward);
 
     Q_INVOKABLE int get_selected_count();

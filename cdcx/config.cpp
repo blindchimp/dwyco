@@ -461,6 +461,17 @@ get_a_backup_filename(QWidget *parent, QString filter)
 
 void configform::on_restore_button_clicked()
 {
+    if(ui.sync_enable->isChecked())
+    {
+        QMessageBox mb(QMessageBox::Information, "Restore backup",
+                       QString("You cannot restore a backup while linked to a device group. "
+                               "First, unlink this device from the group, then restart and "
+                               "perform the restore operation. Then restart and re-link to the "
+                               "group."),
+                       QMessageBox::Ok, this);
+        mb.exec();
+        return;
+    }
     QMessageBox mb(QMessageBox::Warning, "Restore backup",
                    QString("Are you sure you want to restore from backup file? Restoring "
                            "messages simply adds the messages in the backup to your current "

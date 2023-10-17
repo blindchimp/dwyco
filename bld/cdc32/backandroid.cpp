@@ -67,7 +67,7 @@ struct backup_sql : public SimpleSql
         sql_simple("create table if not exists misc_blobs (name text unique on conflict replace, data blob);");
         sql_simple("create table if not exists bu (lock integer not null default 0, "
                    "state integer not null, date_sent integer default 0, date_ack integer default 0, date_updated integer default 0, version integer default 0, primary key (lock), check (lock = 0));");
-        sql_simple("insert or ignore into bu(lock, state) values(0, 0);");
+        sql_simple("insert or ignore into bu(lock, state, date_sent) values(0, 0, strftime('%s', 'now'));");
 
         sql_simple("create index if not exists from_uid_idx on msgs(from_uid);");
         sql_simple("create index if not exists mid_idx on msgs(mid);");
@@ -79,10 +79,10 @@ struct backup_sql : public SimpleSql
                    "guid text not null collate nocase, "
                    "unique(mid, tag, uid, guid) on conflict ignore)");
     }
-
-
 };
 
+// this has suffered cut and paste enough times that
+// a bit of remodularization is probably in order.
 static backup_sql *Db;
 
 #define sql Db->sql_simple
@@ -232,7 +232,10 @@ android_days_since_last_backup()
 {
     auto db = new backup_sql;
     if(!db->init())
-        oopanic("can't init backup");
+    {
+        delete db;
+        return 0;
+    }
 
     vc res = db->sql_simple("select date_updated from main.bu");
     db->exit();
@@ -251,7 +254,10 @@ android_get_backup_state()
     // as empty backup file, but don't create one
     // if it isn't there.
     if(!db->init(SQLITE_OPEN_READWRITE))
+    {
+        delete db;
         return 0;
+    }
 
     vc res = db->sql_simple("select state from main.bu");
     db->exit();
@@ -264,7 +270,11 @@ android_set_backup_state(int i)
 {
     auto db = new backup_sql;
     if(!db->init())
-        oopanic("can't init backup");
+    {
+        delete db;
+        return 0;
+    }
+
     int ret = 1;
     try
     {
@@ -295,6 +305,7 @@ android_backup()
     Db = new backup_sql;
     if(!Db->init())
     {
+        delete Db;
         return;
         oopanic("can't init backup");
     }
@@ -500,7 +511,7 @@ backup_account_info(const char *dbn)
         sql_rollback_transaction();
     }
     // not a deal breaker if these don't make it in together
-    backup_file(TAG_DB, dbn);
+    //backup_file(TAG_DB, dbn);
     // don't back this up, it is just user settings they may
     // want to adjust when they get their messages, but it isn't
     // necessary to reload it, possibly coming up in a weird state.
@@ -575,21 +586,6 @@ restore_account_info(const char *dbn)
     if(dh.is_nil())
         return 0;
 
-    //    // if there are existing auth/dh.dif files, move them
-    //    // out of the way instead of overwriting them
-    //    DwString rfn = gen_random_filename();
-    //    DwString tf("auth");
-    //    tf = newfn(tf);
-    //    DwString sv(tf);
-    //    sv += ".";
-    //    sv += rfn;
-    //    move_replace(tf, sv);
-
-    //    tf = newfn("dh.dif");
-    //    sv = tf;
-    //    sv += ".";
-    //    sv += rfn;
-    //    move_replace(tf, sv);
 
     if(!restore_blob("auth", dbn))
         return 0;
@@ -597,7 +593,7 @@ restore_account_info(const char *dbn)
         return 0;
     // if we can't restore the tags, we can still get going
     // without them, so don't error out.
-    restore_blob(TAG_DB, dbn);
+    //restore_blob(TAG_DB, dbn);
     // likewise with sinfo
     restore_blob("sinfo", dbn);
 
@@ -613,24 +609,64 @@ restore_account_info(const char *dbn)
     return 1;
 }
 
-void
+int
+desktop_days_since_last_backup()
+{
+    backup_sql db("bun.sql");
+    if(!db.init())
+    {
+        return -1;
+    }
+
+    vc res = db.sql_simple("select date_updated from main.bu");
+
+    long long du = res[0][0];
+    if(du == 0)
+        return -1;
+    long long now = time(0);
+    return (now - du) / (24L * 3600);
+}
+
+int
+desktop_days_since_backup_created()
+{
+    backup_sql db("bun.sql");
+    if(!db.init())
+    {
+        return -1;
+    }
+
+    vc res = db.sql_simple("select date_sent from main.bu");
+
+    long long du = res[0][0];
+    long long now = time(0);
+    return (now - du) / (24L * 3600);
+}
+
+
+int
 desktop_backup()
 {
     if(Db)
-        return;
+        return 0;
     Db = new backup_sql("bun.sql");
-    if(!Db->init())
-    {
-        //return;
-        oopanic("can't init backup");
-    }
-    Db->sync_off();
-    Db->optimize();
-    Db->attach(newfn(MSG_IDX_DB), "mi");
-    Db->attach(newfn(TAG_DB), "mt");
+    // in the field, it appears backups get trashed occasionally, so
+    // if there is any problem at all during backup creation, just remove it
+    // and hope the next one will work.
+    bool redo_backup = false;
 
     try
     {
+        if(!Db->init())
+        {
+            throw -1;
+            return 0;
+            //oopanic("can't init backup");
+        }
+        Db->sync_off();
+        Db->optimize();
+        Db->attach(newfn(MSG_IDX_DB), "mi");
+        Db->attach(newfn(TAG_DB), "mt");
 
         sql_start_transaction();
         sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
@@ -665,24 +701,37 @@ desktop_backup()
 
 
     done:
-          ;
+          backup_account_info("main");
     }
     catch(vc err)
     {
         sql_rollback_transaction();
         if(err == vc("full"))
         {
-
+            // this may be transient, and there isn't really
+            // any indication the backup is trashed in this case.
+            // so just ignore it for now.
+        }
+        else
+        {
+            redo_backup = true;
         }
     }
     catch(...)
     {
-
+        redo_backup = true;
     }
-    backup_account_info("main");
+
     Db->exit();
     delete Db;
     Db = 0;
+    if(redo_backup)
+    {
+        TRACK_ADD(BU_remove_trashed_backup, 1);
+        DeleteFile(newfn("bun.sql").c_str());
+        return 0;
+    }
+    return 1;
 }
 
 // note: uid is assumed be hex already here
@@ -771,8 +820,12 @@ android_restore_msgs()
         return 0;
     Db = new backup_sql;
     if(!Db->init())
-        oopanic("can't init backup");
-    //Db->attach(newfn(MSG_IDX_DB), "mi");
+    {
+        delete Db;
+        Db = 0;
+        return 0;
+    }
+
     Db->attach(newfn(TAG_DB), "mt");
     Db->sync_off();
     GRTLOG("android restore", 0, 0);
@@ -831,8 +884,12 @@ restore_msgs(const char *cfn, int msgs_only)
         return 0;
     Db = new backup_sql(cfn);
     if(!Db->init(SQLITE_OPEN_READWRITE, true))
-        oopanic("can't init backup");
-    //Db->attach(newfn(MSG_IDX_DB), "mi");
+    {
+        delete Db;
+        Db = 0;
+        return 0;
+    }
+
     Db->attach(newfn(TAG_DB), "mt");
     Db->sync_off();
 
