@@ -44,7 +44,7 @@ vc save_body(vc msgid, vc from, vc text, vc attachment_id, vc date, vc rating, v
 int uid_ignored(const vc &uid);
 void delete_msg2(vc msgid);
 void delete_body3(vc uid, vc msgid, int inhibit_indexing);
-void trash_body(vc uid, vc msg_id, int inhibit_indexing);
+
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,
               vc body_to_forward, const char *new_text, vc att_hash, vc special_type, vc st_arg1, int no_forward, vc user_filename, int save_sent);
@@ -78,13 +78,17 @@ vc get_local_ignore();
 vc get_local_ignore_mapped();
 vc get_local_pals();
 void power_clean_safe();
-//int trash_user(vc dir);
-int trash_file(const DwString& dir, const DwString& fn);
+
+// these are mainly for debugging now
+// they move files to a "trash" folder instead of
+// deleting them.
+void trash_body(vc uid, vc msg_id, int inhibit_indexing);
 void untrash_users();
-vc uid_to_dir(const vc &uid);
-vc dir_to_uid(DwString s);
 int count_trashed_users();
 int empty_trash();
+
+vc uid_to_dir(const vc &uid);
+vc dir_to_uid(DwString s);
 void append_forwarded_text(DwString& s, vc body);
 void append_forwarded_bodies(vc v, vc body);
 vc get_body_text(vc body);
