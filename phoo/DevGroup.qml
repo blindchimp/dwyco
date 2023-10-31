@@ -173,14 +173,35 @@ Page {
             id: unjoin_button
             text: qsTr("Disable to UNLINK this device (requires restart)")
             onClicked: {
-                if(core.start_gj2("", "") === 1) {
-                    waiting_for_leave_ack = true
-                    //Qt.quit()
-                }
+                confirm_leave.visible = true
+//                if(core.start_gj2("", "") === 1) {
+//                    waiting_for_leave_ack = true
+//                    //Qt.quit()
+//                }
             }
             checked: true
             visible: group_active
             Layout.fillWidth: true
+            MessageDialog {
+                id: confirm_leave
+                title: "Leave group"
+                icon: StandardIcon.Question
+                text: "Leave the group and stop syncing?"
+                informativeText: "No messages are deleted from this action."
+                standardButtons: StandardButton.Yes | StandardButton.No
+                onYes: {
+                    if(core.start_gj2("", "") === 1) {
+                        waiting_for_leave_ack = true
+                        //Qt.quit()
+                    }
+
+                    close()
+                }
+                onNo: {
+                    unjoin_button.checked = true
+                    close()
+                }
+            }
         }
         Switch {
             id: server_mode
