@@ -88,10 +88,10 @@ ToolBar {
             }
             MessageDialog {
                 id: confirm_delete
-                title: "Trash all?"
+                title: "Bulk Trash"
                 icon: StandardIcon.Question
                 text: "Trash ALL messages from selected users?"
-                informativeText: "This does NOT trash FAVORITE messages."
+                informativeText: "This KEEPS FAVORITES, but TRASHES HIDDEN messages."
                 standardButtons: StandardButton.Yes | StandardButton.No
                 onYes: {
                     model.trash_all_selected()

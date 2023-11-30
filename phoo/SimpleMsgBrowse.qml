@@ -13,6 +13,7 @@ import QtQuick.Controls 2.12
 import QtQuick.Dialogs 1.3
 
 Page {
+    id: simple_msg_browse
     property alias model: grid.model
     property string to_uid;
     property bool multiselect_mode: false
@@ -40,16 +41,33 @@ Page {
         cur_source = core.uid_to_profile_preview(to_uid)
         top_toolbar_text.text = core.uid_to_name(to_uid)
         ind_online = core.get_established_state(to_uid)
+        filter_show_only_fav = 0
+        filter_show_sent = 1
+
     }
 
     onMultiselect_modeChanged: {
         model.set_all_unselected()
     }
-//    onVisibleChanged: {
-//        multiselect_mode = false
-//        filter_show_only_fav = 0
-//        filter_show_sent = 1
-//    }
+    onVisibleChanged: {
+        //console.log("STAACK ", StackView.index, stack.depth)
+    }
+
+    // this just gets the case where the msg browser is popped off the
+    // stack, we need to reset the options so it doesn't affect other
+    // parts of the ui (the msglistmodel is a global, which, seems like
+    // it might be complicating things sometimes.)
+    Connections {
+        target: stack
+        function onDepthChanged() {
+            console.log("depth mb ", simple_msg_browse.StackView.index, stack.depth)
+            if(simple_msg_browse.StackView.index === -1) {
+                filter_show_only_fav = 0
+                filter_show_sent = 1
+            }
+
+        }
+    }
 
     Component {
         id: extras_button
@@ -102,7 +120,7 @@ Page {
             id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT trash FAVORITE messages"
+            delete_warning_inf_text: "KEEPS FAVORITE messages"
             delete_warning_text: "Trash all selected messages?"
         }
 
@@ -132,6 +150,8 @@ Page {
                     }
                     checkable: false
                     onClicked: {
+                        filter_show_only_fav = 0
+                        filter_show_sent = 1
                         stack.pop()
                     }
                     Layout.fillHeight: true
@@ -194,6 +214,8 @@ Page {
 //                        z:10
 //                        visible: true
                         onClicked: {
+                            filter_show_only_fav = 0
+                            filter_show_sent = 1
                             stack.pop()
                         }
                     }

@@ -1,7 +1,11 @@
 #include "dlli.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 // small background app for desktop, can either be invoked to
 // finish sending queued messages then exit, or as a
@@ -57,7 +61,7 @@ main(int argc, char **argv)
     if(argc < 2)
     {
         const char *a = "dwycobg " __DATE__ " " __TIME__ "\n";
-        write(0, a, strlen(a));
+        write(1, a, strlen(a));
         return 1;
     }
 

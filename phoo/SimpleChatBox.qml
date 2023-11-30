@@ -440,7 +440,7 @@ Page {
 //                            }
 //                        }
                         MenuItem {
-                            text: "Trash msgs"
+                            text: "Trash msgs..."
                             onTriggered: {
                                 confirm_trash.visible = true
                             }

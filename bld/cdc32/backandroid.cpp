@@ -181,7 +181,9 @@ backup_msg(const vc& uid, const vc& mid)
             if(fd != -1)
                 close(fd);
             delete [] buf;
-            sql_insert_record(uid, mid, ret, attfn, "");
+            // note: this is probably not a good idea
+            //sql_insert_record(uid, mid, ret, attfn, "");
+            throw;
         }
 
     }
@@ -613,18 +615,25 @@ int
 desktop_days_since_last_backup()
 {
     backup_sql db("bun.sql");
+
     if(!db.init())
     {
         return -1;
     }
+    try
+    {
+        vc res = db.sql_simple("select date_updated from main.bu");
 
-    vc res = db.sql_simple("select date_updated from main.bu");
-
-    long long du = res[0][0];
-    if(du == 0)
+        long long du = res[0][0];
+        if(du == 0)
+            return -1;
+        long long now = time(0);
+        return (now - du) / (24L * 3600);
+    }
+    catch(...)
+    {
         return -1;
-    long long now = time(0);
-    return (now - du) / (24L * 3600);
+    }
 }
 
 int
@@ -636,11 +645,18 @@ desktop_days_since_backup_created()
         return -1;
     }
 
-    vc res = db.sql_simple("select date_sent from main.bu");
+    try
+    {
+        vc res = db.sql_simple("select date_sent from main.bu");
 
-    long long du = res[0][0];
-    long long now = time(0);
-    return (now - du) / (24L * 3600);
+        long long du = res[0][0];
+        long long now = time(0);
+        return (now - du) / (24L * 3600);
+    }
+    catch (...)
+    {
+        return -1;
+    }
 }
 
 
@@ -688,7 +704,7 @@ desktop_backup()
         catch(...)
         {
             sql_rollback_transaction();
-            goto done;
+            throw -1;
         }
 
         // everything not already backed up
@@ -696,12 +712,11 @@ desktop_backup()
                 "select assoc_uid, mid from mi.msg_idx where mid not in (select mid from main.msgs) "
                 " order by logical_clock desc", 30))
         {
-            goto done;
+            // note: if attempt_backup returns 0, it could be the disk is full, not necessarily that
+            // the database is corrupt. so make an attempt to store the account info. if that fails,
+            // we probably need to redo the backup.
         }
-
-
-    done:
-          backup_account_info("main");
+        backup_account_info("main");
     }
     catch(vc err)
     {
