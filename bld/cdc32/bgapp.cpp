@@ -522,6 +522,8 @@ check_background_backup(vc asock, bool just_check_once)
             else
             {
                 // user requests an exit
+                // note: if this happens, it probably makes it look like UI just
+                // crashed, since the whole process will be exited.
                 dwyco_bg_exit();
                 exit(0);
             }

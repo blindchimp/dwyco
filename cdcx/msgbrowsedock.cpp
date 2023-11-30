@@ -302,7 +302,8 @@ MsgBrowseDock::on_actionDelete_triggered(bool)
 
     QModelIndexList *midxs = 0;
     QList<DwOString> *mids = get_selection(midxs, 0);
-
+    if(!midxs)
+        return;
     int row = 0;
     for(int i = 0; i < mids->count(); ++i)
     {

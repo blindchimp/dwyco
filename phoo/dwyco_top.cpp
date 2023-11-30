@@ -121,6 +121,53 @@ int DwycoCore::Android_migrate;
 QByteArray Clbot(QByteArray::fromHex("59501a2f37bec3993f0d"));
 QByteArray HTheMan("5a098f3df49015331d74");
 
+// this just downloads the current servers2 file from
+// a website using whatever dns is setup for dwyco.com.
+// normally we avoid using dns. this is useful if we
+// really need to move someplace in case there is a large
+// outage or something.
+static
+void
+install_emergency_servers2(QNetworkReply *reply)
+{
+    //volatile auto d = reply->error();
+    // NOTENOTE! if you don't have SSL installed properly (happens on
+    // windows sometimes) you will get an "unknown error" IF THE WEBSERVER
+    // USES automatic https redirection. the solution is to make the
+    // webserver use exactly what we asked for: plain HTTP. for caddy,
+    // this involved updating the Caddyfile to explicitly match
+    // the URL in the request and not to the normal https redirection.
+    if (reply->error() == QNetworkReply::NoError)
+    {
+        QByteArray tfile = add_pfx(Tmp_pfx, "servers2.tmp");
+        QFile file(tfile);
+        QByteArray em = reply->readAll();
+        // note: we can have an "error" if file not found or
+        // redirect isn't handled properly, and it will still count
+        // as "NoError", it just gives you no bytes in the download.
+        if (em.length() > 0 && file.open(QIODevice::WriteOnly))
+        {
+            file.write(em);
+            file.close();
+        }
+        // NOTE: this might be something we should gate with some user
+        // input since the program may just shut down.
+        dwyco_update_server_list(em.constData(), em.length());
+    }
+    reply->manager()->deleteLater();
+    reply->deleteLater();
+}
+
+static
+void
+setup_emergency_servers()
+{
+    auto manager = new QNetworkAccessManager;
+    QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
+    auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
+    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    QNetworkReply *reply = manager->get(r);
+}
 void
 hack_unread_count()
 {
@@ -2041,6 +2088,7 @@ DwycoCore::init()
     }
 
     update_android_backup_available(dwyco_get_android_backup_state());
+    setup_emergency_servers();
 
 }
 
