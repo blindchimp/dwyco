@@ -5,7 +5,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.0'
+        classpath 'com.android.tools.build:gradle:8.0.2'
 	classpath 'com.google.gms:google-services:4.3.15'
 	classpath 'com.google.firebase:firebase-crashlytics-gradle:2.8.1'
 
@@ -54,6 +54,7 @@ android {
     compileSdkVersion androidCompileSdkVersion.toInteger()
 
     /*buildToolsVersion '28.0.3'*/
+         namespace 'com.dwyco.phoo'
 
     sourceSets {
         main {
