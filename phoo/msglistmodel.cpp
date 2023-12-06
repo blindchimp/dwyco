@@ -64,7 +64,6 @@ enum {
     IS_FORWARDED,
     IS_NO_FORWARD,
     DATE_CREATED,
-    DATE_RECEIVED,
     LOCAL_TIME_CREATED, // this take into account time zone and all that
     IS_QD,
     IS_ACTIVE,
@@ -896,7 +895,6 @@ msglist_raw::roleNames() const
     rn(IS_FORWARDED);
     rn(IS_NO_FORWARD);
     rn(DATE_CREATED);
-    rn(DATE_RECEIVED);
     rn(LOCAL_TIME_CREATED);
     rn(IS_FAVORITE);
     rn(IS_HIDDEN);
@@ -1015,10 +1013,29 @@ msglist_raw::qd_data ( int r, int role ) const
     case Qt::DecorationRole:
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
 
+    case IS_NO_FORWARD:
+    {
+        // note: determining if a message has limited forwarding can be
+        // expensive, since we check the integrity of the message. for the
+        // purposes of this model, we just say "no, it's in the message q, so don't try it."
+        // since this is used for display purposes, it's fine since forwarding a
+        // q-d message seems a little weird anyway.
+        return 1;
+    }
+    case ASSOC_UID:
+    {
+        // note: this message is in the outgoing q, so it is "from" you. but we'll get whatever
+        // is stored in the message, in case some day we do something weird with it.
+        DWYCO_LIST ba = dwyco_get_body_array(qsm);
+        simple_scoped qba(ba);
+        QVariant v;
+        v.setValue(qba.get<QByteArray>(DWYCO_QM_BODY_FROM).toHex());
+
+        return v;
+    }
     default:
         return QVariant();
     }
-
 }
 
 void
@@ -1143,6 +1160,20 @@ msglist_raw::inbox_data (int r, int role ) const
 
     case Qt::DecorationRole:
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
+
+    case IS_FILE:
+    case IS_NO_FORWARD:
+        // note: in this case, we don't know until the msg is downloaded
+        // and it would be kinda nice if we received a signal when that
+        // happened. in reality, i think the entire model is probably reloaded
+        // when a message download has completed... have to check
+        return QVariant();
+
+    case ASSOC_UID:
+    {
+        auto buid = m.get<QByteArray>(r, DWYCO_QMS_FROM);
+        return buid.toHex();
+    }
 
     default:
         return QVariant();
