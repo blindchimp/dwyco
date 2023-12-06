@@ -342,18 +342,31 @@ msglist_model::trash_all_selected()
     {
         QByteArray mid = value.toLatin1();
         DWYCO_LIST l;
+        // note: "trashing" something we might end up downloading, we just
+        // put the tag in, the download will probably happen at some point
+        // from somewhere, which is what we want. deleting it altogether is
+        // not what we want.
+#if 0
         if(dwyco_get_unfetched_message(&l, mid.constData()))
         {
             dwyco_list_release(l);
             dwyco_delete_unfetched_message(mid.constData());
         }
-        else if(dwyco_qd_message_to_body(&l, mid.constData(), mid.length()))
+        //else
+#endif
+        // trashing a q-d message just means stopping it and throwing it away
+        if(dwyco_qd_message_to_body(&l, mid.constData(), mid.length()))
         {
             dwyco_list_release(l);
             dwyco_kill_message(mid.constData(), mid.length());
         }
         else
         {
+            // race condition here... if the fav tag isn't here yet,
+            // we can "trash" it, which will trash it everywhere
+            // despite being fav. we probably need to add something
+            // about checking for fav in the trash check and automatically
+            // untrash them if they are favs
             if(!dwyco_get_fav_msg(mid.constData()))
             {
                 dwyco_set_msg_tag(mid.constData(), "_trash");
