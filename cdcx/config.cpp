@@ -45,6 +45,8 @@ configform::configform(QDialog *parent)
     ui.label_8->hide();
     ui.label_9->hide();
     ui.label_10->hide();
+    ui.untrash->hide();
+    ui.empty_trash->hide();
 
     TheConfigForm = this;
     // mainwinform may not exist yet

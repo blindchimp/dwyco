@@ -217,6 +217,7 @@ install_emergency_servers2(QNetworkReply *reply)
     reply->deleteLater();
 }
 
+static
 void
 setup_emergency_servers()
 {
@@ -228,8 +229,8 @@ setup_emergency_servers()
 }
 
 static
-    void
-    myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+void
+myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
 #if 1
     if(msg.contains("Timers cannot be stopped from another thread"))

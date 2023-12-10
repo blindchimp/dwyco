@@ -2709,7 +2709,7 @@ vc_winsock_datagram::socket_send_raw(void *obuf, long& len, long timeout, const 
 
 	int nsent = 0;
 	char *buf = (char *)obuf;
-	struct sockaddr *addrp = 0;
+    struct sockaddr *_addrp = 0;
     int addrlen = 0;
 
 	if(!to.is_nil())
@@ -2721,12 +2721,13 @@ vc_winsock_datagram::socket_send_raw(void *obuf, long& len, long timeout, const 
 		// any docs...)
 		if(!used_connect || to != peer_addr)
 		{
-			if(!vc_to_sockaddr(to, addrp, addrlen))
+            if(!vc_to_sockaddr(to, _addrp, addrlen))
 			{
 				RAISEABORT(bad_addr_format, vcnil);
 			}
 		}
 	}
+    scoped_sockaddr addrp(_addrp);
 	
 	
 	while(1)
@@ -2795,8 +2796,7 @@ vc_winsock_datagram::socket_send_raw(void *obuf, long& len, long timeout, const 
 		else
         	break;
 	}
-	if(addrp)
-		free(addrp);
+
 	vc tmp(nsent);
 	return tmp;
 }

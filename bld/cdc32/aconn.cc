@@ -391,7 +391,19 @@ broadcast_announcement()
     v[BD_APP_ID] = App_ID;
     v[BD_DISPOSITION] = MMChannel::My_disposition;
     announce[1] = v;
-    sendvc(Local_broadcast, announce);
+    if(!sendvc(Local_broadcast, announce))
+    {
+        // this can happen if the network goes down, and the socket
+        // will be closed because of whatever random error the
+        // socket stack decides to return.
+        stop_broadcaster();
+        start_broadcaster();
+        // override the short timer
+        Broadcast_timer.reset();
+        Broadcast_timer.set_interval(60);
+        Broadcast_timer.set_autoreload(0);
+        Broadcast_timer.start();
+    }
 }
 
 static
