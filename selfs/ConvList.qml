@@ -71,14 +71,15 @@ Page {
                     }
                     MessageDialog {
                         id: confirm_delete
-                        title: "Block and Bulk delete?"
+                        title: "Block user and delete messages?"
                         icon: StandardIcon.Question
                         text: "Delete ALL messages from selected users?"
-                        informativeText: "This removes FAVORITE messages too."
+                        informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                         standardButtons: StandardButton.Yes | StandardButton.No
                         onYes: {
                             ConvListModel.block_all_selected()
-                            ConvListModel.delete_all_selected()
+                            ConvListModel.obliterate_all_selected()
+                            multiselect_mode = false
                             close()
                         }
                         onNo: {
@@ -235,7 +236,7 @@ Page {
                    //width: dp(80)
                    //height: dp(60)
                    source : { 
-                       (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                       (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
                                    core.uid_to_profile_preview(uid) :
                                    "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png" 
                    }
@@ -402,8 +403,10 @@ Page {
            id: bgrec
            height: gridView1.cellHeight
            width: gridView1.cellWidth
+
            opacity: {multiselect_mode && selected ? 0.5 : 1.0}
            color: primary_dark
+           //scale: .5
            border.width: 1
            gradient: Gradient {
                GradientStop { position: 0.0; color: primary_light }
@@ -414,7 +417,7 @@ Page {
                id: ppic
                anchors.centerIn: parent
                source : {
-                   (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                   (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
                                core.uid_to_profile_preview(uid) :
                                "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                }
@@ -532,7 +535,7 @@ Page {
    GridView {
        id: gridView1
        anchors.fill:parent
-       cellWidth: 160 ; cellHeight: 160
+       cellWidth: 80 ; cellHeight: 80
 
        visible: show_grid.grid_checked
 

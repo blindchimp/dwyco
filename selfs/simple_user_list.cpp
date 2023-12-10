@@ -70,6 +70,7 @@ SimpleUserModel::set_all_selected(bool b)
 
 }
 
+#if 0
 void
 SimpleUserModel::delete_all_selected()
 {
@@ -94,6 +95,7 @@ SimpleUserModel::delete_all_selected()
     TheDwycoCore->update_total_users(total);
     load_users_to_model();
 }
+#endif
 
 void
 SimpleUserModel::send_forward_selected(QString mid_to_forward)
@@ -366,6 +368,7 @@ SimpleUserSortFilterModel::set_all_selected(bool b)
     m->set_all_selected(b);
 }
 
+#if 0
 void
 SimpleUserSortFilterModel::delete_all_selected()
 {
@@ -375,6 +378,7 @@ SimpleUserSortFilterModel::delete_all_selected()
     m->delete_all_selected();
 
 }
+#endif
 
 void
 SimpleUserSortFilterModel::send_forward_selected(QString mid_to_forward)

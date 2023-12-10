@@ -32,6 +32,7 @@ Page {
     property url cur_source
     property var call_buttons_model
     property bool lock_to_bottom: false
+    property int is_blocked: 0
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -70,6 +71,7 @@ Page {
                     text: "Hide"
                     onTriggered: {
                         model.tag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -77,6 +79,7 @@ Page {
                     text: "UnHide"
                     onTriggered: {
                         model.untag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -100,8 +103,8 @@ Page {
             id:multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT delete FAVORITE messages"
-            delete_warning_text: "Delete all selected messages?"
+            delete_warning_inf_text: "Does NOT trash FAVORITE messages"
+            delete_warning_text: "Trash all selected messages?"
         }
 
         ToolBar {
@@ -154,7 +157,7 @@ Page {
                         source: {
                             if(to_uid === "")
                                 return
-                            return (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid))) ?
+                            return (is_blocked !== 1 && (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid)))) ?
                                     cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         }
                         fillMode: Image.PreserveAspectCrop
@@ -163,7 +166,7 @@ Page {
 
                     }
                     Text {
-                        id:top_toolbar_text
+                        id: top_toolbar_text
                         //width: dp(160)
                         clip: true
                         anchors.leftMargin: 2
@@ -415,21 +418,45 @@ Page {
                             }
                         }
 
+//                        MenuItem {
+//                            text: "Clear msgs"
+//                            onTriggered: {
+//                                confirm_clear.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_clear
+//                                title: "Remove all msgs?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+//                                informativeText: "This KEEPS FAVORITE messages."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.clear_messages_unfav(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
-                            text: "Clear msgs"
+                            text: "Trash msgs..."
                             onTriggered: {
-                                confirm_clear.visible = true
+                                confirm_trash.visible = true
                             }
                             MessageDialog {
-                                id: confirm_clear
-                                title: "Remove all msgs?"
+                                id: confirm_trash
+                                title: "Trash all messages?"
                                 icon: StandardIcon.Question
-                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+                                text: "Trash ALL messages from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
-                                    core.clear_messages_unfav(chatbox.to_uid)
-                                    themsglist.reload_model()
+                                    //core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.set_all_selected()
+                                    themsglist.trash_all_selected()
+                                    themsglist.invalidate_model_filter()
                                     close()
                                 }
                                 onNo: {
@@ -438,29 +465,29 @@ Page {
                             }
                         }
 
-                        MenuItem {
-                            text: "Delete user"
-                            onTriggered: {
-                                confirm_delete.visible = true
-                            }
-                            MessageDialog {
-                                id: confirm_delete
-                                title: "Bulk delete?"
-                                icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE and HIDDEN messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    core.delete_user(chatbox.to_uid)
-                                    themsglist.reload_model()
-                                    close()
-                                    stack.pop()
-                                }
-                                onNo: {
-                                    close()
-                                }
-                            }
-                        }
+//                        MenuItem {
+//                            text: "Delete user"
+//                            onTriggered: {
+//                                confirm_delete.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_delete
+//                                title: "Bulk delete?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL messages from user?"
+//                                informativeText: "This removes FAVORITE and HIDDEN messages too."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.delete_user(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                    stack.pop()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
                             text: "More..."
                             onTriggered: {
@@ -533,11 +560,11 @@ Page {
                     ind_online = connected
                 }
             }
-//        onIgnore_event: {
-//            if(uid === to_uid) {
-//               to_uid = ""
-//            }
-//        }
+        function onIgnore_event(uid) {
+            if(uid === to_uid) {
+               is_blocked = core.get_ignore(uid)
+            }
+        }
 
     }
 
@@ -562,6 +589,7 @@ Page {
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
         call_buttons_model = core.get_button_model(to_uid)
+        is_blocked = core.get_ignore(to_uid)
     }
 
     Loader {

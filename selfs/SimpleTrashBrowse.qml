@@ -13,46 +13,33 @@ import QtQuick.Controls 2.12
 import QtQuick.Dialogs 1.3
 
 Page {
-    id: simple_tag_msg_browse
     property alias model: grid.model
-    property string to_tag;
+
     property bool multiselect_mode: false
-    property url cur_source
-    property int ind_online: 0
-    property int filter_show_sent: 1
 
     function star_fun(b) {
-        console.log("chatbox star")
-        model.fav_all_selected(b ? 1 : 0)
-    }
+        console.log("untrash star")
+        model.untag_all_selected("_trash")
 
-    onFilter_show_sentChanged: {
-        themsglist.set_filter(filter_show_sent, 1, -1, to_tag == "_fav" ? 1 : 0)
-    }
-
-    onTo_tagChanged: {
-        themsglist.tag = to_tag
-        filter_show_sent = 1
     }
 
     onMultiselect_modeChanged: {
         model.set_all_unselected()
     }
     onVisibleChanged: {
-        //multiselect_mode = false
-        //filter_show_sent = 1
-    }
-
-    Connections {
-        target: stack
-        function onDepthChanged() {
-            console.log("depth tmg", simple_tag_msg_browse.StackView.index, stack.depth)
-            if(simple_tag_msg_browse.StackView.index === -1) {
-                //filter_show_only_fav = 0
-                filter_show_sent = 1
-            }
-
+        multiselect_mode = false
+        if(visible) {
+            themsglist.set_filter(1, 1, -1, 0);
+            themsglist.set_show_hidden(1)
+            themsglist.set_show_trash(true)
+            themsglist.tag = "_trash"
+        } else {
+            themsglist.set_show_trash(false)
+            themsglist.set_show_hidden(show_hidden)
+            themsglist.tag = ""
+            ConvListModel.reload_convlist()
         }
+
     }
 
     Component {
@@ -69,28 +56,20 @@ Page {
                 id: optionsMenu
                 x: parent.width - width
                 transformOrigin: Menu.TopRight
+
                 MenuItem {
-                    text: "Unfavorite"
+                    text: "Delete forever"
                     onTriggered: {
-                        star_fun(false)
+                        model.obliterate_all_selected()
+                        //model.tag_all_selected("_hid")
                         multiselect_mode = false
-                        model.invalidate_model_filter()
                     }
                 }
                 MenuItem {
-                    text: "Hide"
+                    text: "Untrash"
                     onTriggered: {
-                        model.tag_all_selected("_hid")
+                        model.untag_all_selected("_trash")
                         multiselect_mode = false
-                        model.invalidate_model_filter()
-                    }
-                }
-                MenuItem {
-                    text: "UnHide"
-                    onTriggered: {
-                        model.untag_all_selected("_hid")
-                        multiselect_mode = false
-                        model.invalidate_model_filter()
                     }
                 }
                 MenuItem {
@@ -109,8 +88,9 @@ Page {
             id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "KEEPS FAVORITE messages"
-            delete_warning_text: "Trash all selected messages?"
+            delete_warning_inf_text: "Deletes on all your devices"
+            delete_warning_text: "Delete all selected messages FOREVER?"
+            star_icon: mi("delete-restore-black.png")
         }
 
         ToolBar {
@@ -142,8 +122,6 @@ Page {
                         stack.pop()
                     }
                     Layout.fillHeight: true
-                    //Layout.maximumWidth: mm(3)
-                    //Layout.rightMargin: 0
                 }
 
                 Item {
@@ -167,11 +145,8 @@ Page {
                         anchors.top: parent.top
                         //anchors.bottom: parent.bottom
                         anchors.left: prof.left
-                        text: to_tag === "_hid" ? "Hidden" : (to_tag === "_fav" ? "Favorites" : to_tag)
+                        text: "Trash"
                     }
-
-
-
                 }
 
                 Item {
@@ -190,22 +165,23 @@ Page {
                         source: mi("ic_action_overflow.png")
                     }
                     onClicked: optionsMenu.open()
-                    //visible: simp_msg_browse.visible
+                    visible: trash_browse.visible
 
                     Menu {
 
                         id: optionsMenu
                         x: parent.width - width
                         transformOrigin: Menu.TopRight
-                        MenuItem {
-                            text: "Show sent"
-                            checked: filter_show_sent
-                            checkable: true
-                            onCheckedChanged: {
-                                filter_show_sent = checked
-                            }
 
+
+                        MenuItem {
+                            text: "Empty Trash"
+                            onTriggered: {
+                                model.set_all_selected()
+                                model.obliterate_all_selected()
+                            }
                         }
+
                     }
                 }
             }
@@ -402,6 +378,7 @@ Page {
 
                         } else {
                             console.log("show msg")
+                            themsgview.is_trash = true
                             themsgview.msg_text = model.MSG_TEXT
                             themsgview.view_id = -1
                             themsgview.mid = model.mid

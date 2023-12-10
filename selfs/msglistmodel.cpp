@@ -64,7 +64,6 @@ enum {
     IS_FORWARDED,
     IS_NO_FORWARD,
     DATE_CREATED,
-    DATE_RECEIVED,
     LOCAL_TIME_CREATED, // this take into account time zone and all that
     IS_QD,
     IS_ACTIVE,
@@ -141,6 +140,7 @@ msglist_model::invalidate_mid(const QByteArray& mid, const QString& huid)
     int midi = mid_to_index(mid);
     if(midi == -1)
         return;
+    invalidateFilter();
     QModelIndex mi = index(midi, 0);
     emit dataChanged(mi, mi, QVector<int>());
 
@@ -239,6 +239,7 @@ msglist_model::msglist_model(QObject *p) :
     filter_last_n = -1;
     filter_only_favs = 0;
     filter_show_hidden = 1;
+    filter_show_trash = false;
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
     mlm = this;
@@ -333,9 +334,56 @@ msglist_model::mid_tag_changed(QString mid)
 }
 
 void
-msglist_model::delete_all_selected()
+msglist_model::trash_all_selected()
+{
+    //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    dwyco_start_bulk_update();
+    foreach (const QString &value, Selected)
+    {
+        QByteArray mid = value.toLatin1();
+        DWYCO_LIST l;
+        // note: "trashing" something we might end up downloading, we just
+        // put the tag in, the download will probably happen at some point
+        // from somewhere, which is what we want. deleting it altogether is
+        // not what we want.
+#if 0
+        if(dwyco_get_unfetched_message(&l, mid.constData()))
+        {
+            dwyco_list_release(l);
+            dwyco_delete_unfetched_message(mid.constData());
+        }
+        //else
+#endif
+        // trashing a q-d message just means stopping it and throwing it away
+        if(dwyco_qd_message_to_body(&l, mid.constData(), mid.length()))
+        {
+            dwyco_list_release(l);
+            dwyco_kill_message(mid.constData(), mid.length());
+        }
+        else
+        {
+            // race condition here... if the fav tag isn't here yet,
+            // we can "trash" it, which will trash it everywhere
+            // despite being fav. we probably need to add something
+            // about checking for fav in the trash check and automatically
+            // untrash them if they are favs
+            if(!dwyco_get_fav_msg(mid.constData()))
+            {
+                dwyco_set_msg_tag(mid.constData(), "_trash");
+            }
+        }
+
+    }
+    dwyco_end_bulk_update();
+    Selected.clear();
+    force_reload_model();
+}
+
+void
+msglist_model::obliterate_all_selected()
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    dwyco_start_bulk_update();
     foreach (const QString &value, Selected)
     {
         QByteArray mid = value.toLatin1();
@@ -353,10 +401,13 @@ msglist_model::delete_all_selected()
         else
         {
             if(!dwyco_get_fav_msg(mid.constData()))
+            {
                 dwyco_delete_saved_message(buid.constData(), buid.length(), mid.constData());
+            }
         }
 
     }
+    dwyco_end_bulk_update();
     Selected.clear();
     force_reload_model();
 }
@@ -487,6 +538,12 @@ msglist_model::force_reload_model()
 }
 
 void
+msglist_model::invalidate_model_filter()
+{
+    invalidateFilter();
+}
+
+void
 msglist_model::set_filter(int sent, int recv, int last_n, int only_favs)
 {
     filter_show_recv = recv;
@@ -505,10 +562,26 @@ msglist_model::set_show_hidden(int show_hidden)
     Selected.clear();
 }
 
+void
+msglist_model::set_show_trash(bool show_trash)
+{
+    filter_show_trash = show_trash;
+    invalidateFilter();
+    Selected.clear();
+}
+
 bool
 msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
     QAbstractItemModel *alm = sourceModel();
+
+    if(filter_show_trash == false)
+    {
+        QVariant mid = alm->data(alm->index(source_row, 0), MID);
+        int trashed = dwyco_mid_has_tag(mid.toByteArray().constData(), "_trash");
+        if(trashed)
+            return false;
+    }
 
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
@@ -835,7 +908,6 @@ msglist_raw::roleNames() const
     rn(IS_FORWARDED);
     rn(IS_NO_FORWARD);
     rn(DATE_CREATED);
-    rn(DATE_RECEIVED);
     rn(LOCAL_TIME_CREATED);
     rn(IS_FAVORITE);
     rn(IS_HIDDEN);
@@ -954,10 +1026,29 @@ msglist_raw::qd_data ( int r, int role ) const
     case Qt::DecorationRole:
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
 
+    case IS_NO_FORWARD:
+    {
+        // note: determining if a message has limited forwarding can be
+        // expensive, since we check the integrity of the message. for the
+        // purposes of this model, we just say "no, it's in the message q, so don't try it."
+        // since this is used for display purposes, it's fine since forwarding a
+        // q-d message seems a little weird anyway.
+        return 1;
+    }
+    case ASSOC_UID:
+    {
+        // note: this message is in the outgoing q, so it is "from" you. but we'll get whatever
+        // is stored in the message, in case some day we do something weird with it.
+        DWYCO_LIST ba = dwyco_get_body_array(qsm);
+        simple_scoped qba(ba);
+        QVariant v;
+        v.setValue(qba.get<QByteArray>(DWYCO_QM_BODY_FROM).toHex());
+
+        return v;
+    }
     default:
         return QVariant();
     }
-
 }
 
 void
@@ -1082,6 +1173,20 @@ msglist_raw::inbox_data (int r, int role ) const
 
     case Qt::DecorationRole:
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
+
+    case IS_FILE:
+    case IS_NO_FORWARD:
+        // note: in this case, we don't know until the msg is downloaded
+        // and it would be kinda nice if we received a signal when that
+        // happened. in reality, i think the entire model is probably reloaded
+        // when a message download has completed... have to check
+        return QVariant();
+
+    case ASSOC_UID:
+    {
+        auto buid = m.get<QByteArray>(r, DWYCO_QMS_FROM);
+        return buid.toHex();
+    }
 
     default:
         return QVariant();

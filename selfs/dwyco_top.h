@@ -58,6 +58,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, android_migrate)
     QML_READONLY_VAR_PROPERTY(int, android_backup_available)
 
+    QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready);
+
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
@@ -84,6 +86,8 @@ public:
         m_invisible = false;
         m_android_migrate = Android_migrate;
         m_android_backup_available = 0;
+        m_desktop_update_ready = false;
+        m_total_users = 0;
     }
     static QByteArray My_uid;
     static int Android_migrate;
@@ -159,12 +163,7 @@ public:
         dwyco_exit();
     }
 
-    Q_INVOKABLE void power_clean() {
-        // note: this is disabled right now, pending some
-        // better definition of "clean". it doesn't jive
-        // with the syncing stuff we do now.
-        dwyco_power_clean_safe();
-    }
+    Q_INVOKABLE void power_clean();
 
     Q_INVOKABLE QString get_my_uid() {
         return My_uid.toHex();
