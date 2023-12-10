@@ -105,6 +105,17 @@ various android SDK and AVD manager interfaces. You can use android
 studio to do these tasks (I suspect you might be able to do it all
 from the command-line too, but I didn't try it.)
 
+(1.5) SPECIAL NOTE! SAVE SOME HEADACHES!
+You will save yourself a fair amount of headache if you can tell
+qt-creator to use whatever java is shipped with Android studio. This
+is true on both Linux and MAC. Usually the folder is something like
+"android-studio/jbr". On the mac, you have to find the Application folder
+and drill into it until you find the "jbr/Contents/Home" folder.  Note:
+this is needed for deployment since some java stuff needs to be executed
+to create android applications. Unless you need java for something
+else, I think you can avoid the java installs mentioned below.
+
+
 (2) Find and install a JDK.  Select a JDK to download with aarch64
 architecture, version 11.  I've experimented in the past with getting
 it from homebrew and other sources, but as of this writing, the
@@ -137,7 +148,7 @@ arch -x86_64 /bin/bash $DIR/build/ndk-build "$@"
 
 brew install automake pkg-config libtool autoconf
 
-(This is for the android build of some of the old xiph codecs, so
+(This is for the android build of some of the old xiph codecs, to
 get the hand-coded assembly performance improvements.)
 
 Do the usual build process in phoobld/jni, you may have to use the NDK environment variable to tell it where the NDK is located.

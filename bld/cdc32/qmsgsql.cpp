@@ -2659,9 +2659,6 @@ sql_index_all()
 }
 #endif
 
-// FAVMSG
-
-
 static
 void
 sql_insert_record_mt(vc mid, vc tag)
