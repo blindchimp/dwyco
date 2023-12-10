@@ -2837,8 +2837,13 @@ DwycoCore::delete_message(QString uid, QString mid)
     buid = QByteArray::fromHex(buid);
     if(dwyco_get_fav_msg(bmid.constData()))
         return 0;
+    DWYCO_LIST l;
+    if(dwyco_qd_message_to_body(&l, bmid.constData(), bmid.length()))
+    {
+        dwyco_list_release(l);
+        return dwyco_kill_message(bmid.constData(), bmid.length());
+    }
     return dwyco_delete_saved_message(buid.constData(), buid.length(), bmid.constData());
-
 }
 
 int
