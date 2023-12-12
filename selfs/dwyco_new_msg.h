@@ -18,12 +18,14 @@ void del_unviewed_uid(const QByteArray& uid);
 void del_unviewed_mid(const QByteArray& uid, const QByteArray& mid);
 void del_unviewed_mid(const QByteArray& mid);
 bool uid_has_unviewed_msgs(const QByteArray &uid);
-int uid_unviewed_msgs_count(const QByteArray &uid);
+//int uid_unviewed_msgs_count(const QByteArray &uid);
 bool any_unviewed_msgs();
 void load_unviewed();
 bool got_msg_this_session(const QByteArray &uid);
 void clear_session_msg();
 void clear_unviewed_msgs();
 void load_inbox_tags_to_unviewed(QSet<QByteArray>&);
+void add_got_msg_from(const QByteArray& uid);
+QList<QByteArray> uids_with_unviewed();
 
 #endif

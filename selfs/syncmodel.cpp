@@ -11,7 +11,8 @@
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "dwycolist2.h"
-
+#include "dwyco_top.h"
+extern DwycoCore *TheDwycoCore;
 
 SyncDescModel *TheSyncDescModel;
 
@@ -108,6 +109,21 @@ SyncDescModel::load_model()
         Sync_desc *c = dead[i];
         remove(c);
     }
+#if 1
+    {
+    DWYCO_LIST l;
+    if(!dwyco_get_group_status(&l))
+        return;
+    simple_scoped gl(l);
+    TheDwycoCore->update_active_group_name(gl.get<QByteArray>(DWYCO_GS_GNAME));
+    TheDwycoCore->update_join_key(gl.get<QByteArray>(DWYCO_GS_JOIN_KEY));
+    TheDwycoCore->update_percent_synced(gl.get_long(DWYCO_GS_PERCENT_SYNCED));
+    TheDwycoCore->update_group_status(gl.get_long(DWYCO_GS_IN_PROGRESS));
+    TheDwycoCore->update_eager_pull(gl.get_long(DWYCO_GS_EAGER));
+    TheDwycoCore->update_group_private_key_valid(gl.get_long(DWYCO_GS_VALID));
+    //TheJoinLogModel->load_model();
+    }
+#endif
 
 }
 

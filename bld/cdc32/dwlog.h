@@ -31,6 +31,7 @@ private:
 
     void make_entry(const char *str = 0, const char * = 0, const char * = 0);
     //void make_entry(vc v);
+
     void init();
 };
 

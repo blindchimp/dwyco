@@ -414,7 +414,7 @@ Page {
 //            }
 //        }
         //keyNavigationEnabled: true
-        onCurrentItemChanged: {currentItem.forceActiveFocus()}
+        //onCurrentItemChanged: {currentItem.forceActiveFocus()}
 
     }
 
