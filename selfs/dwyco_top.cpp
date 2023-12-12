@@ -1761,6 +1761,61 @@ DwycoCore::refresh_directory()
     update_directory_fetching(true);
 }
 
+
+// note: for phoo, we don't allow the user to control
+// the update process like we did in the old days.
+void
+DWYCOCALLCONV
+DwycoCore::dwyco_check_for_update_done(int status, const char *desc)
+{
+
+    switch(status)
+    {
+    case DWYCO_AUTOUPDATE_CHECK_FAILED:
+
+    case DWYCO_AUTOUPDATE_CHECK_NOT_NEEDED:
+
+    case DWYCO_AUTOUPDATE_CHECK_AVAILABLE:
+    case DWYCO_AUTOUPDATE_CHECK_AVAILABLE_COMPULSORY1:
+    case DWYCO_AUTOUPDATE_CHECK_AVAILABLE_COMPULSORY2:
+
+
+        // note: on the mac and linux, we just give them a link
+        // and make them do the update "by hand" for now.
+
+        break;
+    case DWYCO_AUTOUPDATE_CHECK_USER1:
+    {
+        // this just checks and stages an update, but doesn't run it
+        dwyco_start_autoupdate_download_bg();
+        QFile::remove(add_pfx(Sys_pfx, "run-update"));
+
+    }
+
+    break;
+    case DWYCO_AUTOUPDATE_CHECK_USER2:
+        // this creates the flag that will cause the update to be launched
+        // the next time the launcher is run, in addition to downloading the
+        // update.
+        if(dwyco_start_autoupdate_download_bg() == 2)
+        {
+            // staged and ready to go
+            QFile qf(add_pfx(Sys_pfx, "run-update"));
+
+            if(qf.open(QFile::WriteOnly))
+            {
+                qf.putChar('r');
+                qf.close();
+            }
+            if(TheDwycoCore)
+                TheDwycoCore->update_desktop_update_ready(true);
+
+        }
+
+        break;
+    }
+}
+
 void
 DwycoCore::inhibit_all_incoming_calls(int i)
 {
@@ -1781,6 +1836,23 @@ DwycoCore::init()
     DVP::init_dvp();
     simple_call::init(this);
     AvoidSSL = !QSslSocket::supportsSsl();
+    if(!AvoidSSL)
+    {
+        // this is a silly hack for linux desktop where we end up
+        // having to compile on some old stuff, but the newer
+        // desktops have openssl with newer versions with missing
+        // symbols...
+#if defined(LINUX) && !(defined(MAC_CLIENT) || defined(ANDROID))
+        QString ssl1 = QSslSocket::sslLibraryBuildVersionString();
+        ssl1.truncate(9);
+        QString ssl2 = QSslSocket::sslLibraryVersionString();
+        ssl2.truncate(9);
+        if(ssl1 != ssl2)
+            AvoidSSL = 1;
+#endif
+    }
+
+
     Net_access = new QNetworkAccessManager(this);
     connect(Net_access, &QNetworkAccessManager::finished,
             this, &DwycoCore::dir_download_finished);
@@ -1789,8 +1861,13 @@ DwycoCore::init()
     dwyco_set_chat_ctx_callback(dwyco_chat_ctx_callback);
     dwyco_set_system_event_callback(dwyco_sys_event_callback);
     dwyco_set_video_display_callback(dwyco_video_make_image);
-    dwyco_set_user_control_callback(dwyco_user_control);
+    //dwyco_set_user_control_callback(dwyco_user_control);
     dwyco_set_emergency_callback(dwyco_emergency);
+#if (defined(_Windows) || defined(LINUX) || defined(MAC_CLIENT)) && !defined(DWYCO_IOS) && !defined(ANDROID)
+    // note: this is desktop windows only, we'll have to notify
+    // other users without app stores to visit a link or something
+    dwyco_set_autoupdate_status_callback(dwyco_check_for_update_done);
+#endif
     dwyco_set_disposition("foreground", 10);
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
@@ -2159,6 +2236,13 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         dwyco_set_disposition("background", 10);
         simple_call::suspend();
         dwyco_disconnect_chat_server();
+        // note: this might not be strictly necessary, but i put it in here
+        // because this is how it worked before i changed to a less drastic
+        // "suspend" (ie, it keeps more state now, allowing the connections
+        // to exist between background cycles). we might be able to just
+        // "pause" the calls so the stream doesn't get jammed up, then
+        // unpause when we come back.
+        dwyco_hangup_all_calls();
         dwyco_suspend();
         if(BGLockSock)
         {
