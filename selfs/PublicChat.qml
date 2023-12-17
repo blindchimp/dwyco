@@ -129,7 +129,7 @@ Page {
     Connections {
         target: core
 
-        onChat_event: {
+        function onChat_event(cmd, sid, huid, sname, vdata, qid, extra_arg) {
             console.log("got chat event")
             console.log(cmd, sid)
             console.log(huid)
@@ -191,6 +191,7 @@ Page {
                 wrapMode: Text.Wrap
                 opacity: 1.0
                 color: primary_text
+                font: applicationWindow1.font
                 
             }
             
@@ -238,14 +239,14 @@ Page {
         // will pop up on the previous screen, wtf.
         //focus: visible
         // qt 5.11 seems focus is handled a little differently
-        onVisibleChanged: {
-            if(Qt.platform.os == "android") {
-            if(!visible)
-                focus = false
-            } else {
-                focus = visible
-            }
-        }
+//        onVisibleChanged: {
+//            if(Qt.platform.os == "android") {
+//            if(!visible)
+//                focus = false
+//            } else {
+//                focus = visible
+//            }
+//        }
     }
     
     Button {

@@ -23,6 +23,8 @@
 QQmlApplicationEngine *TheEngine;
 
 void dwyco_register_qml(QQmlContext *root);
+void start_desktop_background();
+
 #ifdef ANDROID
 NotificationClient *notificationClient;
 #endif
@@ -61,7 +63,7 @@ int main(int argc, char *argv[])
     QQuickStyle::setFallbackStyle("Material");
 #endif
 
-    qDebug() << QQuickStyle::availableStyles();
+    //qDebug() << QQuickStyle::availableStyles();
 
     // note: qt seems to use some of these names in constructing
     // file names. this can be a problem if different FS's with different
@@ -128,8 +130,17 @@ int main(int argc, char *argv[])
 
 
     engine.rootContext()->setContextProperty("screenDpi", dpi);
+#ifdef DWYCO_DEBUG
+    engine.rootContext()->setContextProperty("dwyco_debug", true);
+#else
+    engine.rootContext()->setContextProperty("dwyco_debug", false);
+#endif
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
-    return app.exec();
+    int ret;
+    ret = app.exec();
+    start_desktop_background();
+
+    return ret;
 }

@@ -422,6 +422,9 @@ extern int Chat_online;
 extern vc App_ID;
 
 vc Client_version;
+namespace dwyco {
+DwTimer Db_timer("db_timer");
+}
 
 #undef CPPLEAK
 #ifdef CPPLEAK
@@ -1092,6 +1095,9 @@ dwyco_resume()
     //resume_qmsg();
     //init_prfdb();
     start_database_thread();
+    Db_timer.stop();
+    Db_timer.load(200);
+    Db_timer.start();
     Dwyco_suspended = 0;
 }
 
@@ -1896,10 +1902,6 @@ send_new()
     dirth_send_check_for_update(My_UID, QckDone(background_check_for_update_done, 0));
     dirth_send_get_group(My_UID, QckDone(set_group_uids, 0));
 
-}
-
-namespace dwyco {
-DwTimer Db_timer("db_timer");
 }
 
 static

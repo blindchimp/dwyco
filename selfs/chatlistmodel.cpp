@@ -9,7 +9,7 @@
 
 // this is the model that encapsulates the list of current users in the
 // chat server (ie, playing trivia or public chatting.)
-
+#include <QGuiApplication>
 #include "chatlistmodel.h"
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
@@ -37,8 +37,8 @@ ChatListModel::decorate(QString huid, QString txt, QString mid)
     ChatUser *c = getByUid(huid);
     if(!c)
         return;
-    int cnt = uid_unviewed_msgs_count(uid);
-    c->set_unseen_count(cnt);
+    bool f = uid_has_unviewed_msgs(uid);
+    c->update_any_unviewed(f);
 }
 
 void
@@ -82,7 +82,8 @@ ChatListModel::add_uid_to_model(const QByteArray& uid)
     ChatUser *c = getByUid(huid);
     if(!c)
     {
-        c = new ChatUser(this);
+        c = new ChatUser(0);
+        c->moveToThread(QGuiApplication::instance()->thread());
         c->update_uid(huid);
         append(c);
     }
@@ -92,7 +93,7 @@ ChatListModel::add_uid_to_model(const QByteArray& uid)
     get_review_status(uid, reviewed, regular);
     c->update_REGULAR(regular);
     c->update_REVIEWED(reviewed);
-    c->set_unseen_count(uid_unviewed_msgs_count(uid));
+    c->update_any_unviewed(uid_has_unviewed_msgs(uid));
     //c->update_resolved_counter(c->get_resolved_counter() + 1);
     return c;
 }

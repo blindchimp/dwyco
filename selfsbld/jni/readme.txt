@@ -2,7 +2,8 @@ Sat Sep 28 10:49:56 MDT 2019
 
 on Macos, using homebrew, be sure you have autoconf installed:
 
-brew install autoconf autotools libtool pkg-config
+brew install autoconf automake autotools libtool pkg-config
+(note: some of them may not exist depending on macos version you are using)
 
 basic idea for an android build:
 

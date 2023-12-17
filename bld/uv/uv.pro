@@ -7,6 +7,7 @@ INCLUDEPATH += src include include/uv-private
 
 !win32 {
 DEFINES += _LARGEFILE_SOURCE _FILE_OFFSET_BITS=64
+QMAKE_CFLAGS_WARN_ON += -Wno-unused-parameter
 }
 
 macx-clang|macx-ios-clang {
