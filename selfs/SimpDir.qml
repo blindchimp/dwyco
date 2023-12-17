@@ -99,6 +99,7 @@ Page {
                         clip: true
                         font.bold: true
                         elide: Text.ElideRight
+                        font.pixelSize: applicationWindow1.font.pixelSize
                     }
                     Text {
                         Layout.alignment: Qt.AlignLeft
@@ -107,6 +108,7 @@ Page {
                         text: description
                         clip: true
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                        font: applicationWindow1.font
 
                     }
                 }
@@ -254,7 +256,7 @@ Page {
 
     Connections {
         target: core
-        onIgnore_event: {
+        function onIgnore_event() {
             if(simpdir_top.visible)
                 core.refresh_directory()
         }

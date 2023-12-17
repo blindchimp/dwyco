@@ -272,6 +272,16 @@ is_foreground(const vc& uid)
     {
         if(disp == vc("foreground"))
             return 1;
+        // if there is no disposition, it is likely an old
+        // client, so we just pretend it is foreground for compat
+        if(disp.is_nil())
+            return 1;
+    }
+    else
+    {
+        // if there is no disposition, it is likely an old
+        // client, so we just pretend it is foreground for compat
+        return 1;
     }
     return 0;
 }

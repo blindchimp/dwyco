@@ -7,10 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 #include "ccmodel.h"
-#include "dlli.h"
-#include "dwyco_new_msg.h"
-#include "getinfo.h"
-#include "dwycolist2.h"
 #include "dwyco_top.h"
 
 extern DwycoCore *TheDwycoCore;

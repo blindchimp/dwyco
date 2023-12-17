@@ -44,14 +44,14 @@ Page {
 
     Connections {
         target: core
-        onVideo_display: {
+        function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id !== video_chan)
                 return
             viewer.source = img_path
             something_recorded = true
         }
 
-        onVideo_capture_preview: {
+        function onVideo_capture_preview(img_path) {
             if(!visible)
                 return
             if(start.active) {
@@ -62,14 +62,14 @@ Page {
             }
         }
 
-        onZap_stopped: {
+        function onZap_stopped(zid) {
             if(zid != rzid)
                 return
             video_chan = -1
 
         }
 
-        onQt_app_state_change: {
+        function onQt_app_state_change(app_state) {
             if(app_state === 0) {
                 // resuming
 //                if(visible) {
@@ -349,7 +349,7 @@ Page {
             }
             width: parent.width
             z: 20
-            opacity: .7
+            opacity: .9
             visible: sm.running
 
             Button {

@@ -16,12 +16,22 @@ Page {
     id: forward_list
     //anchors.fill: parent
     property bool multiselect_mode : true
-    property string mid_to_forward
-    property string uid_folder
+    //property string mid_to_forward
+    //property string uid_folder
     property int limited_forward: 0
 
     header: SimpleToolbar {
 
+    }
+
+    Component.onCompleted: {
+        limited_forward = core.flim(mid_to_forward)
+        if(limited_forward) {
+            user_model.load_admin_users_to_model()
+        } else {
+            user_model.load_users_to_model()
+        }
+        multiselect_mode = true
     }
 
     Component {
@@ -115,7 +125,7 @@ Page {
 
     onVisibleChanged: {
         if(visible) {
-            limited_forward = core.flim(uid_folder, mid_to_forward)
+            limited_forward = core.flim(mid_to_forward)
             if(limited_forward) {
                 user_model.load_admin_users_to_model()
             } else {
@@ -124,73 +134,71 @@ Page {
             multiselect_mode = true
         } else {
             multiselect_mode = false
-            uid_folder = ""
+            //uid_folder = ""
             mid_to_forward = ""
         }
     }
-    ColumnLayout {
+
+    ListView {
+        id: listView2
         anchors.fill: parent
-        spacing: mm(2)
 
-        ListView {
-            id: listView2
-
-            model: user_model
-            delegate: forward_list_delegate
-            clip: true
-            //spacing: 5
-            ScrollBar.vertical: ScrollBar {
-                background: Rectangle {
-                    color: "green"
-                }
-            }
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-
-        }
-
-        Button {
-            id:send_button
-            Layout.fillWidth: true
-            Layout.margins: mm(5)
-            enabled: {user_model.selected_count > 0 ? true : false}
-
+        model: user_model
+        delegate: forward_list_delegate
+        clip: true
+        //spacing: 5
+        ScrollBar.vertical: ScrollBar {
             background: Rectangle {
-                id: bg
-                color: "indigo"
-                radius: 20
+                color: "green"
             }
-            contentItem: Text {
-                color: send_button.enabled ? "white" : "gray"
-                text: send_button.text
-                anchors.centerIn: bg
-                verticalAlignment: Text.AlignVCenter
-                horizontalAlignment: Text.AlignHCenter
-            }
-            text: send_button.enabled ? "Send" : (limited_forward ? "Select Admin" : "Select Recipients")
-
-            onClicked: {
-                //            for(var i = 0; i < user_model.count; ++i) {
-                //                if(user_model.get(i).selected) {
-                //                    var recip_uid = user_model.get(i).uid
-                //                    core.send_forward(recip_uid, uid_folder, mid_to_forward)
-                //                }
-                //            }
-                // for some reason, when user_model is a subclass
-                // of sortproxymodel, the javascript above doesn't
-                // work. it displays properly and whatnot, but the count
-                // doesn't work, and i don't get a error. oh well, the
-                // sort proxy doesn't play well since you have to forward stuff
-                // out to the source model which is tedious.
-                // instead, i just implement the send in c++ in the model
-                user_model.send_forward_selected(uid_folder, mid_to_forward)
-                themsglist.reload_model()
-                chatbox.listview.positionViewAtBeginning()
-                //
-                stack.pop()
-            }
-
         }
+
+
     }
+
+    Button {
+        id:send_button
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+
+        enabled: {user_model.selected_count > 0 ? true : false}
+
+        background: Rectangle {
+            id: bg
+            color: "indigo"
+            radius: 20
+        }
+        contentItem: Text {
+            color: send_button.enabled ? "white" : "gray"
+            text: send_button.text
+            anchors.centerIn: bg
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignHCenter
+        }
+        text: send_button.enabled ? "Send" : (limited_forward ? "Select Admin" : "Select Recipients")
+
+        onClicked: {
+            //            for(var i = 0; i < user_model.count; ++i) {
+            //                if(user_model.get(i).selected) {
+            //                    var recip_uid = user_model.get(i).uid
+            //                    core.send_forward(recip_uid, uid_folder, mid_to_forward)
+            //                }
+            //            }
+            // for some reason, when user_model is a subclass
+            // of sortproxymodel, the javascript above doesn't
+            // work. it displays properly and whatnot, but the count
+            // doesn't work, and i don't get a error. oh well, the
+            // sort proxy doesn't play well since you have to forward stuff
+            // out to the source model which is tedious.
+            // instead, i just implement the send in c++ in the model
+            user_model.send_forward_selected(mid_to_forward)
+            themsglist.reload_model()
+            chatbox.listview.positionViewAtBeginning()
+            //
+            stack.pop()
+        }
+
+    }
+
 
 }

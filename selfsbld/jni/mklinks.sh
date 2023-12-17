@@ -16,6 +16,7 @@ rm -f  ppm
 rm -f  pbm
 rm -f  pgm
 rm -f miniupnpc
+rm -f uv
 
 ln -s  ../../bld/jhead
 ln -s  ../../bld/cdc32
@@ -34,3 +35,4 @@ ln -s ../../bld/ppm
 ln -s ../../bld/pbm
 ln -s ../../bld/pgm
 ln -s ../../bld/miniupnp/miniupnp-master/miniupnpc
+ln -s ../../bld/uv
