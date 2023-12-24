@@ -101,7 +101,7 @@ int MMChannel::Exclusive_audio_id;
 ChatDisplayCallback MMChannel::gen_public_chat_display_callback;
 ChatDisplayCallback MMChannel::gen_private_chat_display_callback;
 CallAppearedCallback MMChannel::call_appeared_callback;
-UIPopupCallback MMChannel::popup_zap_accept_box_callback;
+//UIPopupCallback MMChannel::popup_zap_accept_box_callback;
 UIPopupCallback MMChannel::set_progress_status_callback;
 UIPopupCallback MMChannel::popup_message_box_callback;
 UIPopupCallback MMChannel::popup_update_box_callback;

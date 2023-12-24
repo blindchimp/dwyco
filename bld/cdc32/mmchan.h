@@ -571,10 +571,7 @@ private:
     void finish_connection();
     void finish_connection_new();
 public:
-    enum accpt {NONE, ACCEPT, REJECT, ZACCEPT, ZACCEPT_ALWAYS,
-                ZREJECT, ZREJECT_IGNORE
-               } user_accept;
-    //int accept_box;
+    enum accpt {NONE, ACCEPT, REJECT} user_accept;
 
 private:
     int auto_quality_boost;
@@ -799,7 +796,7 @@ public:
     ChatDisplay * gen_public_chat_display();
     ChatDisplay * gen_private_chat_display();
 
-    static UIPopupCallback popup_zap_accept_box_callback;
+    //static UIPopupCallback popup_zap_accept_box_callback;
     static UIPopupCallback set_progress_status_callback;
     static UIPopupCallback popup_message_box_callback;
     static UIPopupCallback popup_update_box_callback;

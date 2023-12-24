@@ -3752,60 +3752,22 @@ dwyco_call_reject(int id, int session_ignore)
     return 1;
 }
 
+// this isn't supported any more (ie, the client should handle
+// confirmation of message receive, if it wants.
+
 // incoming zap message calls
 DWYCOEXPORT
 void
 dwyco_set_zap_appearance_callback(DwycoZapAppearanceCallback cb)
 {
-    zap_appearance_callback = cb;
-}
-
-static void
-kill_za_bounce(MMChannel *mc, vc, void *p, ValidPtr)
-{
-    mc->call_appearance_death_callback = 0;
-    if(call_appearance_death_callback)
-        (*call_appearance_death_callback)(mc->myid);
-}
-
-static int
-zap_appeared_bounce(MMChannel *mc, vc name, vc filename, vc size)
-{
-    mc->call_appearance_death_callback = kill_za_bounce;
-    mc->cad_arg2 = 0;
-
-    DwString msg = (const char *)name;
-    msg += " wants to send you a direct Audio/Video Message (size ";
-    char sz[255];
-    sprintf(sz, "%d", (int)size);
-    msg += sz;
-    msg += ")";
-    vc uid = mc->remote_uid();
-    if(zap_appearance_callback)
-    {
-        (*zap_appearance_callback)(mc->myid,
-                                   (const char *)name, (int)size,
-                                   (const char *)uid, uid.len());
-    }
-    else
-    {
-        GRTLOG("received direct zap_appearance, but there is no user defined zap_appearance_callback. either define a zap_appearance callback, or hardwire always_accept_zap to 1.", 0, 0);
-    }
-    return 0;
+    oopanic("zap appearances not supported anymore");
+    //zap_appearance_callback = cb;
 }
 
 DWYCOEXPORT
 int
 dwyco_zap_accept(int id, int always_accept)
 {
-    MMChannel *m = MMChannel::channel_by_id(id);
-    if(m)
-    {
-        m->user_accept = always_accept ? MMChannel::ZACCEPT_ALWAYS : MMChannel::ZACCEPT;
-        m->call_appearance_death_callback = 0;
-        return 1;
-    }
-    GRTLOG("zap_accept: cant find channel associated with chan_id (%d), zap not accepted.", id, 0);
     return 0;
 }
 
@@ -3813,15 +3775,7 @@ DWYCOEXPORT
 int
 dwyco_zap_reject(int id, int session_ignore)
 {
-    MMChannel *m = MMChannel::channel_by_id(id);
-    if(m)
-    {
-        m->user_accept = session_ignore ? MMChannel::ZREJECT_IGNORE : MMChannel::ZREJECT;
-        m->call_appearance_death_callback = 0;
-        return 1;
-    }
-    GRTLOG("zap_reject: cant find channel associated with chan_id (%d), zap not rejected.", id, 0);
-    return 0;
+   return 0;
 }
 
 static
@@ -9536,7 +9490,7 @@ setup_callbacks()
     MMChannel::get_main_window_callback = get_main_window;
     MMChannel::gen_public_chat_display_callback = gen_bounce_chatbox_display;
     MMChannel::gen_private_chat_display_callback = gen_bounce_private_chat_display;
-    MMChannel::popup_zap_accept_box_callback = zap_appeared_bounce;
+    //MMChannel::popup_zap_accept_box_callback = zap_appeared_bounce;
     MMChannel::call_appeared_callback = call_appeared_bounce;
     MMChannel::call_accepted_callback = call_accepted_bounce;
     MMChannel::connection_list_changed_callback = update_connection_lists;
