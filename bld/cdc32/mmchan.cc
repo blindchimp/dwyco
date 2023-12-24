@@ -605,8 +605,6 @@ MMChannel::MMChannel() :
 
     incoming_throttle = 0;
 
-    audio_gain_gauge = 0;
-    audio_callback = 0;
     msg_chan = 0;
     user_control_chan = 0;
 

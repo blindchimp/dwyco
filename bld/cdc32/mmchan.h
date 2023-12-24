@@ -551,8 +551,7 @@ public:
     int grab_audio_id;
 
 public:
-    void (*audio_callback)(ValidPtr, double);
-    ValidPtr *audio_gain_gauge;
+
     long client_timecode_adjustment;
     int make_first_0;
 
