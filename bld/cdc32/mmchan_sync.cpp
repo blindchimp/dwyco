@@ -49,7 +49,7 @@ void
 MMChannel::assert_eager_pulls()
 {
     vc uid = remote_uid();
-    vc huid = to_hex(uid);
+    //vc huid = to_hex(uid);
     vc mids = sql_get_non_local_messages_at_uid(uid, 100);
     if(mids.is_nil())
         return;
@@ -467,7 +467,10 @@ void
 MMChannel::eager_pull_processing()
 {
     if((int)get_settings_value("sync/eager") == 0)
+    {
+        eager_pull_timer.stop();
         return;
+    }
 
     if(!eager_pull_timer.is_running())
     {

@@ -79,6 +79,7 @@ vc package_downstream_sends(vc remote_uid);
 vc import_remote_iupdate(vc remote_uid, vc vals);
 void import_remote_tupdate(vc remote_uid, vc vals);
 vc sql_get_non_local_messages_at_uid(vc uid, int max_count);
+vc sql_get_non_local_messages_at_uid_recent(vc uid, int max_count);
 vc sql_uid_updated_since(vc time);
 
 vc sql_dump_mi();

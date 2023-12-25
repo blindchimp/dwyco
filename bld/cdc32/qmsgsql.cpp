@@ -2394,6 +2394,29 @@ sql_get_non_local_messages_at_uid(vc uid, int max_count)
     }
 }
 
+vc
+sql_get_non_local_messages_at_uid_recent(vc uid, int max_count)
+{
+    vc huid = to_hex(uid);
+    try
+    {
+        sql_start_transaction();
+        vc res = sql_simple("select mid from gi where "
+                            "data > strftime('%s', 'now') - 30 * 86400 "
+                            "and not exists(select 1 from pull_failed where gi.mid = mid and uid = ?1) "
+                            "and not exists (select 1 from msg_idx where gi.mid = mid)"
+                            "and not exists (select 1 from msg_tomb where gi.mid = mid) order by logical_clock desc limit ?2",
+                            huid, max_count);
+        sql_commit_transaction();
+        return flatten(res);
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+        return vcnil;
+    }
+}
+
 
 int
 msg_index_count(vc uid)
