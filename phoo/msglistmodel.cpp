@@ -446,7 +446,12 @@ msglist_model::tag_all_selected(QByteArray tag)
             dwyco_list_release(l);
             continue;
         }
-        dwyco_set_msg_tag(b.constData(), tag.constData());
+        // the core allows multiple tags, but that results in a lot of duplication
+        // for no reason (that i have figured out yet, anyway.) so for now, just
+        // don't allow it. maybe at some point we'll change the core to not allow
+        // it.
+        if(!dwyco_mid_has_tag(b.constData(), tag.constData()))
+            dwyco_set_msg_tag(b.constData(), tag.constData());
     }
     dwyco_end_bulk_update();
     force_reload_model();

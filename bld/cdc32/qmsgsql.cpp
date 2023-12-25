@@ -2780,7 +2780,11 @@ sql_fav_set_fav(vc mid, int fav)
     }
     else
     {
-        sql_insert_record_mt(mid, "_fav");
+        // note: in the past, we allowed multiple favorite tags, but this doesn't really
+        // make sense, and can lead to a lot of thrashing, so just ignore multiple attempts
+        // to create favorites
+        if(!sql_fav_is_fav(mid))
+            sql_insert_record_mt(mid, "_fav");
     }
 }
 
@@ -2915,7 +2919,6 @@ sql_get_all_idx()
 int
 sql_mid_has_tag(vc mid, vc tag)
 {
-    VCArglist a;
     vc res = sql_simple("select 1 from gmt where mid = ?1 and tag = ?2 and not exists(select 1 from mt.gtomb where guid = gmt.guid) limit 1",
                         mid, tag);
     return res.num_elems() > 0;
