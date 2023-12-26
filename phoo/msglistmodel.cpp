@@ -446,8 +446,9 @@ msglist_model::tag_all_selected(QByteArray tag)
             dwyco_list_release(l);
             continue;
         }
-        // the core allows multiple tags, but that results in a lot of duplication
-        // for no reason (that i have figured out yet, anyway.) so for now, just
+        // the core allows multiple tags, but that can result in redundant tags.
+        // it doesn't cause things to fail, but i can't think of a good reason to
+        // for it right now. so for now, just
         // don't allow it. maybe at some point we'll change the core to not allow
         // it.
         if(!dwyco_mid_has_tag(b.constData(), tag.constData()))
