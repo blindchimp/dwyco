@@ -35,9 +35,6 @@
 using namespace dwyco;
 using namespace dwyco::qmsgsql;
 
-#ifdef LINUX
-#include "miscemu.h"
-#endif
 #include "sepstr.h"
 
 // NOTE: when we are in eager mode, we should schedule

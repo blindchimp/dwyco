@@ -12,6 +12,6 @@
 int filelength(int fd);
 int mkdir(const char *);
 
-#define DIRSEPSTR "/"
+#include "sepstr.h"
 
 #endif
