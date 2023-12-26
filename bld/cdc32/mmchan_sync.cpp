@@ -47,9 +47,36 @@ MMChannel::assert_eager_pulls()
 {
     vc uid = remote_uid();
     //vc huid = to_hex(uid);
-    vc mids = sql_get_non_local_messages_at_uid(uid, 100);
+    vc mids;
+    int eager_mode = (int)get_settings_value("sync/eager");
+    // note: we are goofing here, eager_mode = 1 is "normal" mode
+    // and 2 is "recent mode", but if it is anything else, we still
+    // want to act like "normal mode"
+    if(eager_mode != 2)
+    {
+        mids = sql_get_non_local_messages_at_uid(uid, 100);
+    }
+    else if(eager_mode == 2)
+    {
+        mids = sql_get_non_local_messages_at_uid_recent(uid, 100);
+    }
     if(mids.is_nil())
         return;
+    if(mids.num_elems() == 0)
+    {
+        // we've reached the end of what we can fetch, at least until some
+        // new updates come in. so we just turn off the timer to avoid a
+        // bunch of queries that will likely return 0.
+        // the timer is turned back on when we detect an update to the global
+        // database.
+        eager_pull_timer.stop();
+        eager_pull_timer_active = false;
+        return;
+    }
+    else
+    {
+        eager_pull_timer_active = true;
+    }
     for(int i = 0; i < mids.num_elems(); ++i)
     {
         vc mid = mids[i];
@@ -351,6 +378,10 @@ MMChannel::process_iupdate(vc cmd)
 {
     //GRTLOGVC(cmd);
     vc mid = import_remote_iupdate(remote_uid(), cmd[1]);
+    // getting an index update means we should re-engage
+    // the eager timer so we can fetch it right away.
+    if(!mid.is_nil())
+        eager_pull_timer_active = true;
     // this is the piecemeal restart of an assert
     if(!mid.is_nil() && pulls::set_pull_in_progress(mid, remote_uid()))
     {
@@ -444,8 +475,9 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
         clean_pull_failed_uid(remote_uid());
-        if((int)get_settings_value("sync/eager") == 1)
+        if((int)get_settings_value("sync/eager") >= 1)
         {
+            eager_pull_timer_active = true;
             assert_eager_pulls();
         }
         else
@@ -469,7 +501,7 @@ MMChannel::eager_pull_processing()
         return;
     }
 
-    if(!eager_pull_timer.is_running())
+    if(eager_pull_timer_active && !eager_pull_timer.is_running())
     {
         eager_pull_timer.set_interval(10000);
         eager_pull_timer.set_autoreload(1);

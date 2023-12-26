@@ -1060,6 +1060,7 @@ private:
     void process_tupdate(vc cmd);
     void process_syncpoint(vc cmd);
 
+    bool eager_pull_timer_active;
     DwTimer eager_pull_timer;
     void assert_eager_pulls();
     void start_stalled_pulls();
