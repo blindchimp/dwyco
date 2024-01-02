@@ -7502,6 +7502,7 @@ ack_get_done2(vc m, void *, vc del2_args, ValidPtr )
     // was originally deleted (set to pending)
     //int orig_refresh = Refresh_users;
     delete_msg2(del2_args[1]);
+    sql_remove_all_tags_mid(del2_args[1]);
     //if(m[1].is_nil())
     //	return;
     //Refresh_users = orig_refresh;
@@ -7849,12 +7850,12 @@ DWYCOEXPORT
 int
 dwyco_delete_unfetched_message(const char *msg_id)
 {
-    vc id(msg_id);
+    vc mid(msg_id);
 
     vc args(VC_VECTOR);
     args.append(vcnil);
-    args.append(id);
-    dirth_send_ack_get(My_UID, id, QckDone(ack_get_done2, 0, args));
+    args.append(mid);
+    dirth_send_ack_get(My_UID, mid, QckDone(ack_get_done2, 0, args));
     //dirth_send_addtag(My_UID, id, "_del", QckDone(0, 0));
     return 1;
 }
