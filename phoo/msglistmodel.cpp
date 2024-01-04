@@ -825,7 +825,18 @@ msglist_raw::reload_model(int force)
     {
         int order_by_tag_time = 0;
         if(m_tag == "_trash")
+        {
+            // this is a weird corner case where we might have things
+            // waiting on the server that have been trashed, and not
+            // fetched yet.
+            dwyco_get_unfetched_messages(&inbox_msgs, 0, 0);
+            // note: the model will include all uid's, but the filterAcceptsRow will
+            // only show the trashed ones
+            if(inbox_msgs)
+                dwyco_list_numelems(inbox_msgs, &count_inbox_msgs, 0);
+
             order_by_tag_time = 1;
+        }
         dwyco_get_tagged_idx(&msg_idx, m_tag.toLatin1().constData(), order_by_tag_time);
         //dwyco_list_print(msg_idx);
         dwyco_list_numelems(msg_idx, &count_msg_idx, 0);
@@ -833,7 +844,7 @@ msglist_raw::reload_model(int force)
             endResetModel();
         else
         {
-            beginInsertRows(QModelIndex(), 0, count_msg_idx == 0 ? 0 : (count_msg_idx - 1));
+            beginInsertRows(QModelIndex(), 0, count_msg_idx + count_inbox_msgs == 0 ? 0 : (count_msg_idx + count_inbox_msgs - 1));
             endInsertRows();
         }
         return;
