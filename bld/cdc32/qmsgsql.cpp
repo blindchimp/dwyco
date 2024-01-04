@@ -2874,20 +2874,26 @@ sql_get_tagged_mids_older_than(vc tag, int days)
     return res;
 }
 vc
-sql_get_tagged_idx(vc tag)
+sql_get_tagged_idx(vc tag, int order_by_tag_time)
 {
     vc res;
     try
     {
         sql_start_transaction();
-        res = sql_simple("select "
-                 "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
-                 "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-                 " from gmt,gi using(mid) where tag = ?1 and not exists(select 1 from mt.gtomb where guid = gmt.guid)"
-                         " and not exists(select 1 from msg_tomb where mid = gi.mid) "
-                         "group by mid "
-                         "order by logical_clock desc",
-                            tag);
+
+        DwString sql = DwString(
+                    "select "
+                    "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+                    "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
+                    " from gmt,gi using(mid) where tag = ?1 and not exists(select 1 from mt.gtomb where guid = gmt.guid)"
+                    " and not exists(select 1 from msg_tomb where mid = gi.mid) "
+                    "group by mid ");
+        if(order_by_tag_time)
+            sql += " order by gmt.time desc";
+        else
+            sql += " order by logical_clock desc";
+        res = sql_simple(sql.c_str(), tag);
+
         sql_commit_transaction();
     }
     catch (...)

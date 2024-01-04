@@ -823,7 +823,10 @@ msglist_raw::reload_model(int force)
     // note: setting the tag overrides the uid
     if(m_tag.length() > 0)
     {
-        dwyco_get_tagged_idx(&msg_idx, m_tag.toLatin1().constData());
+        int order_by_tag_time = 0;
+        if(m_tag == "_trash")
+            order_by_tag_time = 1;
+        dwyco_get_tagged_idx(&msg_idx, m_tag.toLatin1().constData(), order_by_tag_time);
         //dwyco_list_print(msg_idx);
         dwyco_list_numelems(msg_idx, &count_msg_idx, 0);
         if(end_reset)

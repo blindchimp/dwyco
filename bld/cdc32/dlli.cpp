@@ -8019,14 +8019,14 @@ dwyco_get_tagged_mids_older_than(DWYCO_LIST *list_out, const char *tag, int days
 
 DWYCOEXPORT
 int
-dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
+dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag, int order_by_tag_time)
 {
     vc res;
     // super-kluge
     if(strcmp(tag, "*") == 0)
         res = sql_get_all_idx();
     else
-        res = sql_get_tagged_idx(tag);
+        res = sql_get_tagged_idx(tag, order_by_tag_time);
     *list_out = dwyco_list_from_vc(res);
     return 1;
 }
