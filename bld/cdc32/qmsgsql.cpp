@@ -2873,6 +2873,10 @@ sql_get_tagged_mids_older_than(vc tag, int days)
     }
     return res;
 }
+
+// this is used for displaying sets of tagged mids. ordering by tag time
+// is used for trash handling, since you really want to see when something
+// was trashed, not when the messages was created, in that case.
 vc
 sql_get_tagged_idx(vc tag, int order_by_tag_time)
 {
@@ -2889,7 +2893,7 @@ sql_get_tagged_idx(vc tag, int order_by_tag_time)
                     " and not exists(select 1 from msg_tomb where mid = gi.mid) "
                     "group by mid ");
         if(order_by_tag_time)
-            sql += " order by gmt.time desc";
+            sql += " order by gmt.time desc, logical_clock desc";
         else
             sql += " order by logical_clock desc";
         res = sql_simple(sql.c_str(), tag);
