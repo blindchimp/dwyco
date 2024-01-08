@@ -501,6 +501,7 @@ DISTFILES += \
     androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
     androidinst2/src/com/dwyco/android/NotificationClient.java \
     androidinst2/src/com/dwyco/android/SocketLock.java \
+    androidinst2/src/com/dwyco/android/FileUtils.java \
     androidinst2/src/com/dwyco/phoo/DwycoApp.java \
     androidinst2/AndroidManifest.xml \
     androidinst2/build.gradle \
