@@ -551,8 +551,7 @@ public:
     int grab_audio_id;
 
 public:
-    void (*audio_callback)(ValidPtr, double);
-    ValidPtr *audio_gain_gauge;
+
     long client_timecode_adjustment;
     int make_first_0;
 
@@ -572,10 +571,7 @@ private:
     void finish_connection();
     void finish_connection_new();
 public:
-    enum accpt {NONE, ACCEPT, REJECT, ZACCEPT, ZACCEPT_ALWAYS,
-                ZREJECT, ZREJECT_IGNORE
-               } user_accept;
-    //int accept_box;
+    enum accpt {NONE, ACCEPT, REJECT} user_accept;
 
 private:
     int auto_quality_boost;
@@ -800,7 +796,7 @@ public:
     ChatDisplay * gen_public_chat_display();
     ChatDisplay * gen_private_chat_display();
 
-    static UIPopupCallback popup_zap_accept_box_callback;
+    //static UIPopupCallback popup_zap_accept_box_callback;
     static UIPopupCallback set_progress_status_callback;
     static UIPopupCallback popup_message_box_callback;
     static UIPopupCallback popup_update_box_callback;
@@ -1064,6 +1060,7 @@ private:
     void process_tupdate(vc cmd);
     void process_syncpoint(vc cmd);
 
+    bool eager_pull_timer_active;
     DwTimer eager_pull_timer;
     void assert_eager_pulls();
     void start_stalled_pulls();

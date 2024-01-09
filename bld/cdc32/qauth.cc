@@ -22,7 +22,6 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "miscemu.h"
 #endif
 #include "dwrtlog.h"
 #include "xinfo.h"

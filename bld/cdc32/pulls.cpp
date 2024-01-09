@@ -1,4 +1,5 @@
-// this is a set of (mid, uid, inprogress-flag) records
+// this is a set of (mid, uid, inprogress-flag) records.
+//
 // the existence of a record means we have some idea that we can
 // obtain the mid from the associated uid.
 //
@@ -130,7 +131,7 @@ pulls::get_stalled_pulls(const vc &uid)
     // any pull with a uid of nil means "any uid", so we assert pulls
     // based on that, since this is called at the time we are first
     // connecting to a client
-    auto wildcards = pulls::Qbm.query_by_member(vcnil, &pulls::mid);
+    DwVecP<pulls> wildcards = pulls::Qbm.query_by_member(vcnil, &pulls::mid);
     for(int i = 0; i < wildcards.num_elems(); ++i)
     {
         assert_pull(wildcards[i]->mid, uid, wildcards[i]->pri);

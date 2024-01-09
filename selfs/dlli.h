@@ -832,7 +832,7 @@ int DWYCOEXPORT dwyco_valid_tag_exists(const char *tag);
 
 // note: the following functions will not return a msg if it hasn't been
 // downloaded.
-int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
+int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag, int order_by_tag_time);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
@@ -1221,6 +1221,9 @@ int DWYCOEXPORT dwyco_bg_exit();
 // to redirect access.
 int DWYCOEXPORT dwyco_update_server_list(const char *lhxfer_str, int lhxfer_str_len);
 
+// NOTE: this style of trash handling is mostly deprecated, and power_clean
+// is a no-op. i'm leaving it in here because "trashing" something can be useful
+// during debugging, and as a safeguard against data loss while  group syncing.
 void DWYCOEXPORT dwyco_power_clean_safe();
 int DWYCOEXPORT dwyco_empty_trash();
 int DWYCOEXPORT dwyco_count_trashed_users();

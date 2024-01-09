@@ -2394,6 +2394,29 @@ sql_get_non_local_messages_at_uid(vc uid, int max_count)
     }
 }
 
+vc
+sql_get_non_local_messages_at_uid_recent(vc uid, int max_count)
+{
+    vc huid = to_hex(uid);
+    try
+    {
+        sql_start_transaction();
+        vc res = sql_simple("select mid from gi where "
+                            "date > strftime('%s', 'now') - 30 * 86400 "
+                            "and not exists(select 1 from pull_failed where gi.mid = mid and uid = ?1) "
+                            "and not exists (select 1 from msg_idx where gi.mid = mid)"
+                            "and not exists (select 1 from msg_tomb where gi.mid = mid) order by logical_clock desc limit ?2",
+                            huid, max_count);
+        sql_commit_transaction();
+        return flatten(res);
+    }
+    catch (...)
+    {
+        sql_rollback_transaction();
+        return vcnil;
+    }
+}
+
 
 int
 msg_index_count(vc uid)
@@ -2757,7 +2780,11 @@ sql_fav_set_fav(vc mid, int fav)
     }
     else
     {
-        sql_insert_record_mt(mid, "_fav");
+        // note: in the past, we allowed multiple favorite tags, but this doesn't really
+        // make sense, and can lead to a lot of thrashing, so just ignore multiple attempts
+        // to create favorites
+        if(!sql_fav_is_fav(mid))
+            sql_insert_record_mt(mid, "_fav");
     }
 }
 
@@ -2846,21 +2873,31 @@ sql_get_tagged_mids_older_than(vc tag, int days)
     }
     return res;
 }
+
+// this is used for displaying sets of tagged mids. ordering by tag time
+// is used for trash handling, since you really want to see when something
+// was trashed, not when the messages was created, in that case.
 vc
-sql_get_tagged_idx(vc tag)
+sql_get_tagged_idx(vc tag, int order_by_tag_time)
 {
     vc res;
     try
     {
         sql_start_transaction();
-        res = sql_simple("select "
-                 "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
-                 "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
-                 " from gmt,gi using(mid) where tag = ?1 and not exists(select 1 from mt.gtomb where guid = gmt.guid)"
-                         " and not exists(select 1 from msg_tomb where mid = gi.mid) "
-                         "group by mid "
-                         "order by logical_clock desc",
-                            tag);
+
+        DwString sql = DwString(
+                    "select "
+                    "date, mid, is_sent, is_forwarded, is_no_forward, is_file, special_type, "
+                    "has_attachment, att_has_video, att_has_audio, att_is_short_video, logical_clock, assoc_uid "
+                    " from gmt,gi using(mid) where tag = ?1 and not exists(select 1 from mt.gtomb where guid = gmt.guid)"
+                    " and not exists(select 1 from msg_tomb where mid = gi.mid) "
+                    "group by mid ");
+        if(order_by_tag_time)
+            sql += " order by gmt.time desc, logical_clock desc";
+        else
+            sql += " order by logical_clock desc";
+        res = sql_simple(sql.c_str(), tag);
+
         sql_commit_transaction();
     }
     catch (...)
@@ -2892,7 +2929,6 @@ sql_get_all_idx()
 int
 sql_mid_has_tag(vc mid, vc tag)
 {
-    VCArglist a;
     vc res = sql_simple("select 1 from gmt where mid = ?1 and tag = ?2 and not exists(select 1 from mt.gtomb where guid = gmt.guid) limit 1",
                         mid, tag);
     return res.num_elems() > 0;

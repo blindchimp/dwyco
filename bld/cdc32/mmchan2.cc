@@ -14,7 +14,6 @@
 #include "qauth.h"
 #include "dwrtlog.h"
 #include "codec.h"
-#include "fnmod.h"
 #include "dwscoped.h"
 using namespace dwyco;
 

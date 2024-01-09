@@ -1,0 +1,8 @@
+Thu 04 Jan 2024 02:28:29 PM MST
+
+the android versions of the apps here have been successfully using
+Qt 5.15.9. I tried moving up to Qt 5.15.12, but there are some changes
+to how come components render (Toolbars and ToolButtons, for rando, for example.) that are not worth trying to debug.
+
+Also, the 5.15.12 androiddeployqt doesn't appear to be able to create a proper release for phoo, complaining about a missing FileDialog that is not deployed properly to the apk. Again, also not worth debugging it. This is mentioned in QTBUG-110360,
+

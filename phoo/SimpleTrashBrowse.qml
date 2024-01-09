@@ -91,6 +91,7 @@ Page {
             delete_warning_inf_text: "Deletes on all your devices"
             delete_warning_text: "Delete all selected messages FOREVER?"
             star_icon: mi("delete-restore-black.png")
+            is_trash: true
         }
 
         ToolBar {
