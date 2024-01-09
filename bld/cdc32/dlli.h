@@ -832,7 +832,7 @@ int DWYCOEXPORT dwyco_valid_tag_exists(const char *tag);
 
 // note: the following functions will not return a msg if it hasn't been
 // downloaded.
-int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
+int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag, int order_by_tag_time);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);

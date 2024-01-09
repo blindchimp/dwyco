@@ -2087,6 +2087,19 @@ DwycoCore::init()
         setting_put("bugfix1", "");
     }
 
+    QString upgrade1;
+    if(!setting_get("upgrade1", upgrade1))
+    {
+        // set lazy to "recent"
+        QString mode = get_setting("sync/eager").toString();
+        if(mode == "0")
+        {
+            set_setting("sync/eager", "2");
+        }
+
+        setting_put("upgrade1", "");
+    }
+
     update_android_backup_available(dwyco_get_android_backup_state());
     setup_emergency_servers();
 

@@ -109,6 +109,9 @@ Page {
     footer: ToolBar {
         id: footer_toolbar
         width: parent.width
+        background: Rectangle {
+            color: primary_dark
+        }
         RowLayout {
             anchors.fill: parent
         ButtonGroup {
@@ -138,6 +141,9 @@ Page {
                 }
                 show_sent = checked
                 show_recv = false
+            }
+            background: Rectangle {
+                color: primary_dark
             }
             Rectangle {
                 id: badge1
@@ -196,6 +202,9 @@ Page {
                 show_recv = checked
                 show_sent = false
 
+            }
+            background: Rectangle {
+                color: primary_dark
             }
             Rectangle {
                 id: badge2
