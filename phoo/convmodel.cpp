@@ -114,12 +114,13 @@ ConvListModel::obliterate_all_selected()
         if(c->get_selected())
         {
             //to_remove.append(c);
-            QByteArray buid = c->get_uid().toLatin1();
-            buid = QByteArray::fromHex(buid);
+            QByteArray huid = c->get_uid().toLatin1();
+            QByteArray buid = QByteArray::fromHex(huid);
             if(dwyco_is_pal(buid.constData(), buid.length()))
                 continue;
             dwyco_delete_user(buid.constData(), buid.length());
             del_unviewed_uid(buid);
+            dwyco_unset_msg_tag(huid.constData(), "recent_uid");
         }
     }
 
@@ -191,8 +192,8 @@ ConvListModel::trash_all_selected()
         if(c->get_selected())
         {
             //to_remove.append(c);
-            QByteArray buid = c->get_uid().toLatin1();
-            buid = QByteArray::fromHex(buid);
+            QByteArray huid = c->get_uid().toLatin1();
+            QByteArray buid = QByteArray::fromHex(huid);
             if(dwyco_is_pal(buid.constData(), buid.length()))
                 continue;
             trash_messages(buid);
@@ -241,6 +242,7 @@ ConvListModel::block_all_selected()
             dwyco_ignore(buid.constData(), buid.length());
             TheIgnoreListModel->add_uid_to_model(buid);
             c->update_is_blocked(true);
+            add_got_msg_from(buid);
         }
     }
 }
@@ -334,7 +336,10 @@ ConvListModel::load_users_to_model()
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
-#if 1
+    // ok, if you have a large, old corpus of messages, this
+    // just clogs your convlist with old pals that are probably
+    // never going to log in again.
+#if 0
     DWYCO_LIST pl = dwyco_pal_get_list();
     simple_scoped qpl(pl);
     for(int i = 0; i < qpl.rows(); ++i)
@@ -344,7 +349,21 @@ ConvListModel::load_users_to_model()
         c->update_counter = cnt;
     }
 #endif
-
+    DWYCO_LIST pl;
+    if(dwyco_get_tagged_mids(&pl, "recent_uid"))
+    {
+        simple_scoped qpl(pl);
+        for(int i = 0; i < qpl.rows(); ++i)
+        {
+            QByteArray huid = qpl.get<QByteArray>(i);
+            QByteArray buid = QByteArray::fromHex(huid);
+            if(dwyco_is_pal(buid.constData(), buid.length()))
+            {
+                Conversation *c = add_uid_to_model(huid);
+                c->update_counter = cnt;
+            }
+        }
+    }
     // find removed items
     // there is probably a faster way of doing this, but
     // given this should not happen often or with very long lists,

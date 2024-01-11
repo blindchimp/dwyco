@@ -35,12 +35,16 @@ add_unviewed(const QByteArray& uid, const QByteArray& mid)
 {
     dwyco_set_msg_tag(mid.constData(), "unviewed");
     Got_msg_from_this_session.insert(uid);
+    QByteArray huid = uid.toHex();
+    dwyco_set_msg_tag(huid.constData(), "recent_uid");
 }
 
 void
 add_got_msg_from(const QByteArray& uid)
 {
     Got_msg_from_this_session.insert(uid);
+    QByteArray huid = uid.toHex();
+    dwyco_set_msg_tag(huid.constData(), "recent_uid");
 }
 
 void
@@ -69,12 +73,16 @@ load_unviewed()
 {
     QSet<QByteArray> dum;
     load_inbox_tags_to_unviewed(dum);
+    dwyco_unset_all_msg_tag("recent_uid");
 }
 
 bool
 got_msg_this_session(const QByteArray &uid)
 {
-    return Got_msg_from_this_session.contains(uid);
+    QByteArray huid = uid.toHex();
+    // note: this looks goofy, but we are checking if the tag exists at all, not
+    // if a particular message has it.
+    return Got_msg_from_this_session.contains(uid) || dwyco_mid_has_tag(huid.constData(), "recent_uid");
 }
 
 void

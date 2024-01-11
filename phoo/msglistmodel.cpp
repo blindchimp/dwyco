@@ -336,7 +336,7 @@ msglist_model::mid_tag_changed(QString mid)
 void
 msglist_model::trash_all_selected()
 {
-    //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
+    QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     dwyco_start_bulk_update();
     foreach (const QString &value, Selected)
     {
@@ -374,6 +374,7 @@ msglist_model::trash_all_selected()
         }
 
     }
+    add_got_msg_from(buid);
     dwyco_end_bulk_update();
     Selected.clear();
     force_reload_model();
@@ -407,6 +408,8 @@ msglist_model::obliterate_all_selected()
         }
 
     }
+    // note: when we obliterate, don't really want the user hanging around
+    dwyco_unset_msg_tag(m_uid.toLatin1().constData(), "recent_uid");
     dwyco_end_bulk_update();
     Selected.clear();
     force_reload_model();
