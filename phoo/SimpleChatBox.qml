@@ -1273,57 +1273,71 @@ Page {
 
     }
 
-    Rectangle {
+    PulseLoader {
         id: typing_thing
-        color: "red"
-        opacity: .5
+        barCount: 5
+        color: "deeppink"
+        opacity: .7
         x: textField1.x
         y: textField1.y - height
-        width: 40
-        height: 40
+        width: 80
+        height: 10
         visible: ind_typing === 1
-    }
-    SequentialAnimation {
-        id: typing_animation
-        loops: Animation.Infinite
-        running: ind_typing === 1
-        onRunningChanged: {
-            if(running) {
-                typing_thing.y = textField1.y - typing_thing.height
-                typing_animation.start()
-            } else {
-                typing_thing.y = textField1.y - typing_thing.height
-            }
-        }
-
-        // Animate the y property of the target typing_thing
-        PropertyAnimation {
-            target: typing_thing
-            property: "y"
-            from: typing_thing.y
-            to: typing_thing.y - 10
-            duration: 300
-            onStarted: {
-                console.log("FUCK")
-            }
-        }
-
-        // Pause for a short duration
-        PauseAnimation {
-            duration: 300
-        }
-
-        // Animate the y property back to its original position
-        PropertyAnimation {
-            target: typing_thing
-            property: "y"
-            from: typing_thing.y
-            to: typing_thing.y + 10
-            duration: 300
-        }
-
+        running: visible
 
     }
+
+//    Rectangle {
+//        id: typing_thing
+//        color: "red"
+//        opacity: .5
+//        x: textField1.x
+//        y: textField1.y - height
+//        width: 40
+//        height: 40
+//        visible: ind_typing === 1
+//    }
+//    SequentialAnimation {
+//        id: typing_animation
+//        loops: Animation.Infinite
+//        running: ind_typing === 1
+//        onRunningChanged: {
+//            if(running) {
+//                typing_thing.y = textField1.y - typing_thing.height
+//                typing_animation.start()
+//            } else {
+//                typing_thing.y = textField1.y - typing_thing.height
+//            }
+//        }
+
+//        // Animate the y property of the target typing_thing
+//        PropertyAnimation {
+//            target: typing_thing
+//            property: "y"
+//            from: typing_thing.y
+//            to: typing_thing.y - 10
+//            duration: 300
+//            onStarted: {
+//                console.log("FUCK")
+//            }
+//        }
+
+//        // Pause for a short duration
+//        PauseAnimation {
+//            duration: 300
+//        }
+
+//        // Animate the y property back to its original position
+//        PropertyAnimation {
+//            target: typing_thing
+//            property: "y"
+//            from: typing_thing.y
+//            to: typing_thing.y + 10
+//            duration: 300
+//        }
+
+
+//    }
 
 
 }
