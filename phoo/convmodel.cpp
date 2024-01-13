@@ -334,7 +334,8 @@ ConvListModel::load_users_to_model()
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
-#if 1
+    // this just clutters things if you have a large old corpus
+#if 0
     DWYCO_LIST pl = dwyco_pal_get_list();
     simple_scoped qpl(pl);
     for(int i = 0; i < qpl.rows(); ++i)

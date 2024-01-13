@@ -61,6 +61,7 @@
         <file>Reindex.qml</file>
         <file>RestoreAutoBackup.qml</file>
         <file>SimpleTrashBrowse.qml</file>
+        <file>PulseLoader.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>
