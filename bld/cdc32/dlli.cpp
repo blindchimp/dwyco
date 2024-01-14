@@ -7116,7 +7116,8 @@ dwyco_start_gj2(const char *gname, const char *password)
             dwyco::ezset::sql_start_transaction();
             set_settings_value("group/join_key", "");
             set_settings_value("group/alt_name", "");
-            set_settings_value("sync/eager", 0);
+            // don't reset eager, this is a user defined thing
+            //set_settings_value("sync/eager", 0);
         }
         catch(...)
         {
