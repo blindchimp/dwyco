@@ -242,9 +242,11 @@ android_days_since_last_backup()
     vc res = db->sql_simple("select date_updated from main.bu");
     db->exit();
     delete db;
-
-    long long du = res[0][0];
-    long long now = time(0);
+    vc r2 = res[0][0];
+    if(r2.type() != VC_INT)
+        return 0;
+    long long du = r2;
+    auto now = time(0);
     return (now - du) / (24L * 3600);
 }
 
