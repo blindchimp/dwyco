@@ -7,6 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
+#include "ezset.h"
 #ifdef _Windows
 #ifdef _MSC_VER
 #include <direct.h>
@@ -1324,32 +1325,30 @@ setup_crdt_triggers()
         {
             sql_simple("insert into schema_sections (name, val) values('crdt_triggers', 0)");
         }
-        else if((int)res[0][0] == 3)
+        else if((int)res[0][0] == 4)
             throw 0;
+
+        // note: some of these might be better put in "update triggers" since they aren't really
+        // crdt specific. but for now, i'll just keep it as is.
         sql_simple("create trigger if not exists miupdate after insert on main.msg_idx begin insert into midlog (mid,to_uid,op) select new.mid, uid, 'a' from current_clients; end");
         sql_simple("drop trigger if exists mt.tagupdate");
-//        sql_simple("create trigger if not exists mt.tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
-//                   "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
 
         // note: this drop trigger is a good idea in case the UID changes externally (like they delete the auth file)
         //sql_simple("drop trigger if exists xgi");
         sql_simple("create trigger if not exists xgi after insert on main.msg_idx begin insert into gi select *, 1, null from msg_idx where mid = new.mid limit 1; end");
-        //sql_simple("drop trigger if exists dgi");
-        sql_simple("create trigger if not exists dgi after delete on main.msg_idx begin "
+        sql_simple("drop trigger if exists dgi");
+        sql_simple("create trigger if not exists dgi2 after delete on main.msg_idx begin "
                    "delete from gi where mid = old.mid; "
-                   "insert into msg_tomb (mid, time) values(old.mid, strftime('%s', 'now')); "
+                   //"insert into msg_tomb (mid, time) values(old.mid, strftime('%s', 'now')); "
                    "end");
         sql_simple("create trigger if not exists mtomb_log after insert on msg_tomb begin "
                    "insert into midlog(mid,to_uid,op) select new.mid, uid, 'd' from current_clients; "
                    "end"
                    );
 
-            sql_simple("drop trigger if exists mt.dgmt");
-//        sql_simple("create trigger if not exists mt.dgmt after delete on mt.gmt begin "
-//                            "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
-//                            "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
-//                            "end");
-        sql_simple("update schema_sections set val = 3 where name = 'crdt_triggers'");
+        sql_simple("drop trigger if exists mt.dgmt");
+
+        sql_simple("update schema_sections set val = 4 where name = 'crdt_triggers'");
 
         sql_commit_transaction();
     }  catch (...) {
@@ -1357,12 +1356,30 @@ setup_crdt_triggers()
 
     }
 
-    sql_simple("create temp trigger if not exists tagupdate after insert on gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
+    vc v = get_settings_value("group/alt_name");
+    if(v.len() > 0)
+    {
+
+
+    sql_simple("create temp trigger if not exists tagupdate after insert on mt.gmt begin insert into taglog (mid, tag, guid,to_uid,op) "
                "select new.mid, new.tag, new.guid, uid, 'a' from current_clients where new.tag in (select * from crdt_tags); end");
     sql_simple("create temp trigger if not exists dgmt after delete on mt.gmt begin "
                         "insert into taglog (mid, tag, guid,to_uid,op) select old.mid, old.tag, old.guid, uid, 'd' from current_clients,crdt_tags where old.tag = tag; "
                         "insert into gtomb(guid, time) select old.guid, strftime('%s', 'now') from crdt_tags where old.tag = tag; "
                         "end");
+    sql_simple("create temp trigger if not exists gen_msg_tomb after delete on main.msg_idx begin "
+               "insert into msg_tomb (mid, time) values(old.mid, strftime('%s', 'now')); "
+               "end"
+               );
+    }
+    else
+    {
+        // not in a group, remove any lingering tombstones
+        sql_start_transaction();
+        sql_simple("delete from msg_tomb");
+        sql_simple("delete from mt.gtomb");
+        sql_commit_transaction();
+    }
     // XXX i wonder why i left out a trigger on insert of gtomb (like the one above for mtomb).
     // possibly to avoid storms? the only time there is a direct insert to the gtomb is when
     // a receiver processes a 'd' update or we get an index from another group member.

@@ -242,9 +242,11 @@ android_days_since_last_backup()
     vc res = db->sql_simple("select date_updated from main.bu");
     db->exit();
     delete db;
-
-    long long du = res[0][0];
-    long long now = time(0);
+    vc r2 = res[0][0];
+    if(r2.type() != VC_INT)
+        return 0;
+    long long du = r2;
+    auto now = time(0);
     return (now - du) / (24L * 3600);
 }
 
@@ -304,6 +306,8 @@ android_backup()
 {
     if(Db)
         return;
+    // since this is a small backup, just delete and do it from scratch
+    DeleteFile(newfn("aback.sql").c_str());
     Db = new backup_sql;
     if(!Db->init())
     {
@@ -320,10 +324,10 @@ android_backup()
     {
 
         sql_start_transaction();
-        sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
-        sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
-        sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
-        sql("delete from main.tags");
+        //sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
+        //sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
+        //sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
+        //sql("delete from main.tags");
         sql("update main.bu set date_updated = strftime('%s', 'now'), state = 1");
         sql_commit_transaction();
         Db->vacuum();
@@ -331,10 +335,20 @@ android_backup()
         Db->set_max_size(24);
 
         // these tags are user-generated and usually pretty small
+        // since we don't allow backups to be loaded in group mode,
+        // only store data that would be used in non-group mode
         try
         {
             sql_start_transaction();
-            sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags)");
+            sql("create temp table static_uid_tags(tag text not null)");
+            sql("insert into static_uid_tags values('_ignore')");
+            sql("insert into static_uid_tags values('_pal')");
+            sql("insert into static_uid_tags values('_leader')");
+            sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags) "
+                "and rowid in (select max(rowid) from mt.gmt group by mid,tag) "
+                "and (mid in (select mid from msg_idx) or tag in (select * from temp.static_uid_tags))"
+                );
+            sql("update main.tags set uid = ?1", to_hex(My_UID));
             sql_commit_transaction();
         }
         catch(...)
