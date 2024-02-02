@@ -805,8 +805,28 @@ restore_msg(const vc& uid, const vc& mid)
         dir += DIRSEPSTR;
         DwString ffn = dir;
         ffn += fn;
+        // there is no reason to *re*serialize it here
+#if 0
         if(!save_info(msg, ffn.c_str(), 1))
             return 0;
+#endif
+#ifdef _Windows
+            if(_access(ffn.c_str(), 0) == 0)
+                return 1;
+            int fd = _creat(actual_attfn.c_str(), _S_IWRITE);
+#else
+            if(access(ffn.c_str(), F_OK) == -1)
+            {
+                int fd = creat(ffn.c_str(), 0666);
+                auto len = res[0][0].len();
+                if(write(fd, (const char *)res[0][0], len) != len)
+                {
+                    close(fd);
+                    return 0;
+                }
+                close(fd);
+            }
+#endif
         if(attfn.len() > 0)
         {
             DwString actual_attfn = dir;
