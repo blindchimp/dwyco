@@ -189,9 +189,17 @@ static
 void
 install_emergency_servers2(QNetworkReply *reply)
 {
+    //volatile auto d = reply->error();
+    // NOTENOTE! if you don't have SSL installed properly (happens on
+    // windows sometimes) you will get an "unknown error" IF THE WEBSERVER
+    // USES automatic https redirection. the solution is to make the
+    // webserver use exactly what we asked for: plain HTTP. for caddy,
+    // this involved updating the Caddyfile to explicitly match
+    // the URL in the request and not to the normal https redirection.
     if (reply->error() == QNetworkReply::NoError)
     {
-        QFile file("servers2.eme");
+        DwOString tfile = add_pfx(Tmp_pfx, "servers2.tmp");
+        QFile file(tfile.c_str());
         QByteArray em = reply->readAll();
         // note: we can have an "error" if file not found or
         // redirect isn't handled properly, and it will still count
@@ -209,6 +217,7 @@ install_emergency_servers2(QNetworkReply *reply)
     reply->deleteLater();
 }
 
+static
 void
 setup_emergency_servers()
 {
@@ -219,8 +228,27 @@ setup_emergency_servers()
     QNetworkReply *reply = manager->get(r);
 }
 
+static
+void
+myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+#if 1
+    if(msg.contains("Timers cannot be stopped from another thread"))
+        ::abort();
+    if(msg.contains("Timers can only be used with threads started with QThread"))
+        ::abort();
+#endif
+
+}
+
+
 int main(int argc, char *argv[])
 {
+#if !defined(CDCX_RELEASE)
+    qInstallMessageHandler(myMessageOutput);
+#endif
+
+    QApplication app(argc, argv);
     srand(time(0));
     AvoidSSL = !QSslSocket::supportsSsl();
     if(!AvoidSSL)
@@ -242,6 +270,8 @@ int main(int argc, char *argv[])
 #if defined(MAC_CLIENT) && defined(CDCX_MAC_USE_DEFAULT_LOCATION)
     void EstablishRunDirectory();
     EstablishRunDirectory();
+    QString userdir("./");
+    QString syspath("./");
     AvoidSSL = 1;
 
 #endif
@@ -306,12 +336,20 @@ int main(int argc, char *argv[])
         shares.mkpath(userdir + "shares");
     }
     }
+    QString syspath = QCoreApplication::applicationDirPath() + QDir::separator();
+    //syspath = "/home/dwight/cdcx/";
+#endif
+
+#ifdef WIN32
+// still expecting to start in the directory where all our data is
+    QString userdir("./");
+    QString syspath("./");
 #endif
 
 
 #define FPATH "./"
 
-    dwyco_set_fn_prefixes(0, userdir.toLatin1().constData(), (userdir.toLatin1() + QByteArray("/tmp/")).constData());
+    dwyco_set_fn_prefixes(syspath.toLatin1().constData(), userdir.toLatin1().constData(), (userdir.toLatin1() + QByteArray("/tmp/")).constData());
     {
         char sys[1024];
         char user[1024];
@@ -422,7 +460,7 @@ int main(int argc, char *argv[])
 
 
     init_sound();
-    QApplication app(argc, argv);
+
     // note: qt seems to use some of these names in constructing
     // file names. this can be a problem if different FS's with different
     // naming conventions are being used. this manifests itself with
@@ -439,7 +477,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationVersion(ver);
     QSettings::setDefaultFormat(QSettings::IniFormat);
     // note: need to set the path to the right place, same as fn_pfx for dll
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, User_pfx);
 
     QStringList args = QGuiApplication::arguments();
     for(int i = 1; i < args.count(); ++i)
@@ -914,21 +952,23 @@ int main(int argc, char *argv[])
     setting_get("disable_backups", d);
     if(!d)
     {
-        dwyco_create_backup();
+        if(dwyco_create_backup(7, 30))
+        {
 #ifdef DWYCO_QT5
-        QStringList sl = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
-        QString loc = sl[0];
+            QStringList sl = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+            QString loc = sl[0];
 #else
-        QString loc = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+            QString loc = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
 #endif
-        QByteArray b = loc.toLatin1();
-        dwyco_copy_out_backup(b.constData(), 0);
+            QByteArray b = loc.toLatin1();
+            dwyco_copy_out_backup(b.constData(), 0);
+        }
     }
     dwyco_exit();
     exit_sound();
     if(!d)
     {
-        QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(sport));
+        QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(sport), User_pfx);
     }
 
 #ifdef LEAK_CLEANUP

@@ -59,11 +59,16 @@ class IgnoreSortFilterModel : public QSortFilterProxyModel
 
 public:
     IgnoreSortFilterModel(QObject *p = 0);
-    int count() const {
+    Q_INVOKABLE int count() const {
         if(sourceModel()) {
             return dynamic_cast<IgnoreListModel *>(sourceModel())->count();
         }
         return 0;
+    }
+    Q_INVOKABLE void load_users_to_model() {
+        if(sourceModel()) {
+            dynamic_cast<IgnoreListModel *>(sourceModel())->load_users_to_model();
+        }
     }
     //virtual bool lessThan(const QModelIndex& left, const QModelIndex& right) const;
 private:

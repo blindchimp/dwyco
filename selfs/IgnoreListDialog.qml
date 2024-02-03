@@ -18,6 +18,11 @@ Page {
         extras: extra_button
     }
 
+    font: applicationWindow1.font
+    Component.onCompleted: {
+        IgnoreListModel.load_users_to_model()
+    }
+
     Component {
         id: extra_button
 

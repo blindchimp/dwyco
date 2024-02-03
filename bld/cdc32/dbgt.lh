@@ -164,6 +164,8 @@ DwycoVidGetDataCallback
 DwycoCACallback
 DwycoAudGetDataCallback
 dwyco_set_system_event_callback
+dwyco_stop_msg_cond
+dwyco_request_singleton_lock
 ))
 
 gbind(Strip-white-re regex(|^[ 	]*\\(.*[^	 ]\\)[ 	]*$|))

@@ -11,6 +11,8 @@
 
 #ifdef _Windows
 #define DIRSEPSTR "\\"
+#else
+#define DIRSEPSTR "/"
 #endif
 
 #endif

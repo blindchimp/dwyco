@@ -1,3 +1,9 @@
+Fri 08 Dec 2023 04:33:06 PM MST
+
+NOTE NOTE NOTE!
+You will save yourself a fair amount of headache if you can tell qt-creator to use whatever java is shipped with Android studio. This is true on both Linux and MAC. Usually the folder is something like "android-studio/jbr", on the mac, you have to find the Application folder and drill into it until you find the "jbr/Contents/Home" folder.
+Note: this is needed for deployment since some java stuff needs to be executed to create android applications.
+
 Tue Jan  9 16:12:27 MST 2018
 dwightm
 
@@ -14,7 +20,7 @@ ca. 2021: WARNING! Qt 5.12.9 MUST be used to compile and deploy to play store. Q
 linux
 -----
 thanks to appimages and @probonopd on github, appimages are automatically
-created in the github releases area.
+created in the github releases area. note: broken ca 2023
 
 windows
 -------

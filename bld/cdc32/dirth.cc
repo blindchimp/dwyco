@@ -30,7 +30,7 @@
 #include "dhsetup.h"
 #include "profiledb.h"
 #include "se.h"
-#include "backsql.h"
+//#include "backsql.h"
 #include "dwrtlog.h"
 #ifdef LINUX
 #include <sys/utsname.h>
@@ -122,7 +122,7 @@ got_purge_outbox(vc, void *, vc, ValidPtr)
 static void
 reset_backups(vc, void *, vc, ValidPtr)
 {
-    dwyco::reset_msg_backup();
+    //dwyco::reset_msg_backup();
 }
 
 void
@@ -158,7 +158,7 @@ update_server_list(vc m, void *, vc, ValidPtr)
     for(int i = 0; i < Server_list.num_elems(); ++i)
     {
         int j;
-        vc d = Server_list[i];
+        const vc& d = Server_list[i];
         for(j = 0; j < nsl.num_elems(); ++j)
         {
             if(d[SL_SERVER_NAME] == nsl[j][SL_SERVER_NAME] &&

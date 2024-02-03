@@ -52,6 +52,8 @@ public:
     //static void hide_all();
     static void init(QObject *mainwin);
     static void suspend();
+    static void resume();
+    static int Suspended;
     static QObject *Mainwinform;
     static int Reject_incoming_calls;
 

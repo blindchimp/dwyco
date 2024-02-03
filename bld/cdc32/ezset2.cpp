@@ -83,7 +83,8 @@ static init_settings Initial_settings[] =
     // on the server or anything, this is just something a potential
     // group joiner needs to have in order to request the group private key.
     DWUIDECLVAL(VC_BSTRING, group/join_key, "", 0),
-    DWUIDECLVAL(VC_INT, sync/eager, "", 0),
+    // this is "recent" mode, by default
+    DWUIDECLVAL(VC_INT, sync/eager, "", 2),
 
     DWUIDECLVAL(VC_INT, server/invis, "", 0),
 

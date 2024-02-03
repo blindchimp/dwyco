@@ -4,6 +4,7 @@
 #define dwyco_eze2 _real_dwyco_eze2 
 #define dwyco_ezd2 _real_dwyco_ezd2 
 #define dwyco_set_fn_prefixes _real_dwyco_set_fn_prefixes 
+#define dwyco_get_suspend_state _real_dwyco_get_suspend_state 
 #define dwyco_suspend _real_dwyco_suspend 
 #define dwyco_resume _real_dwyco_resume 
 #define dwyco_set_chat_ctx_callback _real_dwyco_set_chat_ctx_callback 
@@ -29,6 +30,7 @@
 #define dwyco_init _real_dwyco_init 
 #define dwyco_bg_init _real_dwyco_bg_init 
 #define dwyco_bg_exit _real_dwyco_bg_exit 
+#define dwyco_update_server_list _real_dwyco_update_server_list 
 #define dwyco_power_clean_safe _real_dwyco_power_clean_safe 
 #define dwyco_get_authenticator _real_dwyco_get_authenticator 
 #define dwyco_set_login_result_callback _real_dwyco_set_login_result_callback 
@@ -42,6 +44,7 @@
 #define dwyco_inhibit_incoming_sac _real_dwyco_inhibit_incoming_sac 
 #define dwyco_inhibit_outgoing_sac _real_dwyco_inhibit_outgoing_sac 
 #define dwyco_inhibit_all_incoming _real_dwyco_inhibit_all_incoming 
+#define dwyco_set_disposition _real_dwyco_set_disposition 
 #define dwyco_fetch_info _real_dwyco_fetch_info 
 #define dwyco_service_channels _real_dwyco_service_channels 
 #define dwyco_add_entropy_timer _real_dwyco_add_entropy_timer 
@@ -87,6 +90,7 @@
 #define dwyco_set_private_chat_init_callback _real_dwyco_set_private_chat_init_callback 
 #define dwyco_set_private_chat_display_callback _real_dwyco_set_private_chat_display_callback 
 #define dwyco_set_public_chat_display_callback _real_dwyco_set_public_chat_display_callback 
+#define dwyco_set_bgapp_msg_callback _real_dwyco_set_bgapp_msg_callback 
 #define dwyco_command_from_keyboard _real_dwyco_command_from_keyboard 
 #define dwyco_line_from_keyboard _real_dwyco_line_from_keyboard 
 #define dwyco_selective_chat_recipient_enable _real_dwyco_selective_chat_recipient_enable 
@@ -133,6 +137,7 @@
 #define dwyco_get_profile_to_viewer _real_dwyco_get_profile_to_viewer 
 #define dwyco_get_profile_to_viewer_sync _real_dwyco_get_profile_to_viewer_sync 
 #define dwyco_name_to_uid _real_dwyco_name_to_uid 
+#define dwyco_map_uid_to_representative _real_dwyco_map_uid_to_representative 
 #define dwyco_create_bootstrap_profile _real_dwyco_create_bootstrap_profile 
 #define dwyco_make_profile_pack _real_dwyco_make_profile_pack 
 #define dwyco_set_setting _real_dwyco_set_setting 
@@ -182,9 +187,10 @@
 #define dwyco_uid_to_ip _real_dwyco_uid_to_ip 
 #define dwyco_uid_to_ip2 _real_dwyco_uid_to_ip2 
 #define dwyco_uid_g _real_dwyco_uid_g 
-#define dwyco_load_users _real_dwyco_load_users 
+#define dwyco_load_users_internal _real_dwyco_load_users_internal 
 #define dwyco_load_users2 _real_dwyco_load_users2 
 #define dwyco_get_user_list2 _real_dwyco_get_user_list2 
+#define dwyco_get_updated_uids _real_dwyco_get_updated_uids 
 #define dwyco_get_message_index _real_dwyco_get_message_index 
 #define dwyco_get_message_index2 _real_dwyco_get_message_index2 
 #define dwyco_get_new_message_index _real_dwyco_get_new_message_index 
@@ -194,11 +200,13 @@
 #define dwyco_start_bulk_update _real_dwyco_start_bulk_update 
 #define dwyco_end_bulk_update _real_dwyco_end_bulk_update 
 #define dwyco_get_sync_model _real_dwyco_get_sync_model 
+#define dwyco_get_join_log_model _real_dwyco_get_join_log_model 
 #define dwyco_get_group_status _real_dwyco_get_group_status 
 #define dwyco_get_saved_message3 _real_dwyco_get_saved_message3 
 #define dwyco_get_saved_message _real_dwyco_get_saved_message 
 #define dwyco_get_unfetched_messages _real_dwyco_get_unfetched_messages 
 #define dwyco_get_unfetched_message _real_dwyco_get_unfetched_message 
+#define dwyco_mid_disposition _real_dwyco_mid_disposition 
 #define dwyco_is_special_message2 _real_dwyco_is_special_message2 
 #define dwyco_get_user_payload _real_dwyco_get_user_payload 
 #define dwyco_start_gj2 _real_dwyco_start_gj2 
@@ -221,12 +229,14 @@
 #define dwyco_unset_all_msg_tag _real_dwyco_unset_all_msg_tag 
 #define dwyco_get_tagged_mids _real_dwyco_get_tagged_mids 
 #define dwyco_get_tagged_mids2 _real_dwyco_get_tagged_mids2 
+#define dwyco_get_tagged_mids_older_than _real_dwyco_get_tagged_mids_older_than 
 #define dwyco_get_tagged_idx _real_dwyco_get_tagged_idx 
 #define dwyco_mid_has_tag _real_dwyco_mid_has_tag 
 #define dwyco_uid_has_tag _real_dwyco_uid_has_tag 
 #define dwyco_uid_count_tag _real_dwyco_uid_count_tag 
 #define dwyco_count_tag _real_dwyco_count_tag 
 #define dwyco_valid_tag_exists _real_dwyco_valid_tag_exists 
+#define dwyco_all_messages_tagged _real_dwyco_all_messages_tagged 
 #define dwyco_set_fav_msg _real_dwyco_set_fav_msg 
 #define dwyco_get_fav_msg _real_dwyco_get_fav_msg 
 #define dwyco_run_sql _real_dwyco_run_sql 
@@ -272,6 +282,9 @@
 #define dwyco_copy_out_backup _real_dwyco_copy_out_backup 
 #define dwyco_remove_backup _real_dwyco_remove_backup 
 #define dwyco_restore_from_backup _real_dwyco_restore_from_backup 
+#define dwyco_get_android_backup_state _real_dwyco_get_android_backup_state 
+#define dwyco_set_android_backup_state _real_dwyco_set_android_backup_state 
+#define dwyco_restore_android_backup _real_dwyco_restore_android_backup 
 #define dwyco_set_aux_string _real_dwyco_set_aux_string 
 #define dwyco_write_token _real_dwyco_write_token 
 #define dwyco_clear_contact_list _real_dwyco_clear_contact_list 

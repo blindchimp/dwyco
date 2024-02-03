@@ -17,6 +17,8 @@ ToolBar {
     property Component extras
     property alias delete_warning_text : confirm_delete.text
     property alias delete_warning_inf_text: confirm_delete.informativeText
+    property url star_icon: mi("ic_star_black_24dp.png")
+    property bool is_trash: false
 
     background: Rectangle {
         color: primary_light
@@ -59,7 +61,7 @@ ToolBar {
         ToolButton {
             contentItem: Image {
                 anchors.centerIn: parent
-                source: mi("ic_star_black_24dp.png")
+                source: star_icon
             }
 
             Layout.fillHeight: true
@@ -88,30 +90,18 @@ ToolBar {
             }
             MessageYN {
                 id: confirm_delete
-                title: "Bulk delete?"
-                //icon: StandardIcon.Question
-                text: "Delete ALL messages from selected users?"
-                informativeText: "This REMOVES FAVORITE messages too."
-                detailedText: "This is what you use to completely obliterate all messages from selected users, including favorite and hidden messages."
-                //detailedText: informativeText
-                //buttons: MessageDialog.Yes | MessageDialog.No
-//                onButtonClicked: (button, role)=> {
-//                                     switch(button) {
-//                                         case MessageDialog.Yes: {
-//                                             model.delete_all_selected()
-//                                             multiselect_mode = false
-//                                             close()
-//                                             break
-//                                         }
-//                                         case MessageDialog.No: {
-//                                             close()
-//                                             break
-//                                         }
-//                                     }
-//                                 }
+                title: "Bulk Trash?"
+                
+                text: "Trash ALL messages from selected users?"
+                informativeText: "This KEEPS FAVORITE, but TRASHES HIDDEN message."
 
                 onYesClicked: {
-                    model.delete_all_selected()
+                    if(is_trash) {
+                        model.obliterate_all_selected()
+                    } else {
+                        model.trash_all_selected()
+                    }
+                    model.invalidate_model_filter()
                     multiselect_mode = false
                     close()
                 }

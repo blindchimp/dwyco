@@ -104,16 +104,16 @@ ConvListModel::at_least_one_selected()
 
 
 void
-ConvListModel::delete_all_selected()
+ConvListModel::obliterate_all_selected()
 {
     int n = count();
-    QList<Conversation *> to_remove;
+    //QList<Conversation *> to_remove;
     for(int i = 0; i < n; ++i)
     {
         Conversation *c = at(i);
         if(c->get_selected())
         {
-            to_remove.append(c);
+            //to_remove.append(c);
             QByteArray buid = c->get_uid().toLatin1();
             buid = QByteArray::fromHex(buid);
             if(dwyco_is_pal(buid.constData(), buid.length()))
@@ -122,6 +122,84 @@ ConvListModel::delete_all_selected()
             del_unviewed_uid(buid);
         }
     }
+
+    hack_unread_count();
+    reload_conv_list();
+
+}
+
+static
+void
+trash_messages(QByteArray buid)
+{
+    DWYCO_LIST msgs;
+    if(!dwyco_get_message_index(&msgs, buid.constData(), buid.length()))
+        return;
+
+    DWYCO_LIST favs;
+    if(!dwyco_get_tagged_mids(&favs, "_fav"))
+        return;
+
+    QSet<QByteArray> fset;
+
+    simple_scoped qf(favs);
+    int n = qf.rows();
+    QByteArray hbuid = buid.toHex();
+    for(int i = 0; i < n; ++i)
+    {
+        auto huid = qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID);
+        if(huid != hbuid)
+            continue;
+        fset.insert(qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID));
+    }
+
+    simple_scoped q(msgs);
+    n = q.rows();
+
+    for(int i = 0; i < n; ++i)
+    {
+        auto mid = q.get<QByteArray>(i, DWYCO_MSG_IDX_MID);
+        if(fset.contains(mid))
+            continue;
+        dwyco_set_msg_tag(mid.constData(), "_trash");
+    }
+
+    DWYCO_LIST um;
+    if(!dwyco_get_unfetched_messages(&um, buid.constData(), buid.length()))
+        return;
+    simple_scoped q2(um);
+    n = q2.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        auto mid = q2.get<QByteArray>(i, DWYCO_QMS_ID);
+        if(fset.contains(mid))
+            continue;
+        dwyco_set_msg_tag(mid.constData(), "_trash");
+    }
+
+}
+
+void
+ConvListModel::trash_all_selected()
+{
+    int n = count();
+    //QList<Conversation *> to_remove;
+    dwyco_start_bulk_update();
+    for(int i = 0; i < n; ++i)
+    {
+        Conversation *c = at(i);
+        if(c->get_selected())
+        {
+            //to_remove.append(c);
+            QByteArray buid = c->get_uid().toLatin1();
+            buid = QByteArray::fromHex(buid);
+            if(dwyco_is_pal(buid.constData(), buid.length()))
+                continue;
+            trash_messages(buid);
+            del_unviewed_uid(buid);
+        }
+    }
+    dwyco_end_bulk_update();
 
     hack_unread_count();
     reload_conv_list();
@@ -173,7 +251,10 @@ ConvListModel::decorate(QString huid, QString txt, QString mid)
     QByteArray uid = QByteArray::fromHex(huid.toLatin1());
     Conversation *c = getByUid(huid);
     if(!c)
+    {
+        add_uid_to_model(uid);
         return;
+    }
     //int cnt = uid_unviewed_msgs_count(uid);
     //c->update_unseen_count(cnt);
     c->update_any_unread(uid_has_unviewed_msgs(uid));
@@ -242,6 +323,18 @@ ConvListModel::load_users_to_model()
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
+
+    // if there are messages on the server that are not fetched
+    // yet, there might be uid's we need to display as well.
+    QList<QByteArray> unviewed;
+    unviewed = uids_with_unviewed();
+    for(int i = 0; i < unviewed.count(); ++i)
+    {
+        auto uid = unviewed.at(i);
+        Conversation *c = add_uid_to_model(uid);
+        c->update_counter = cnt;
+    }
+    // this just clutters things if you have a large old corpus
 #if 0
     DWYCO_LIST pl = dwyco_pal_get_list();
     simple_scoped qpl(pl);
@@ -309,13 +402,18 @@ ConvSortFilterModel::ConvSortFilterModel(QObject *p)
     setSortCaseSensitivity(Qt::CaseInsensitive);
     sort(0);
     m_count = 0;
+    connect(this, &QAbstractItemModel::rowsInserted, this, &ConvSortFilterModel::countChanged);
+    connect(this, &QAbstractItemModel::rowsRemoved, this, &ConvSortFilterModel::countChanged);
+    connect(this, &QAbstractItemModel::modelReset, this, &ConvSortFilterModel::countChanged);
+    connect(this, &QAbstractItemModel::layoutChanged, this, &ConvSortFilterModel::countChanged);
+
 #ifdef DWYCO_MODEL_TEST
     new QAbstractItemModelTester(this);
 #endif
 }
 
 // WARNING: the index is interpreted as a SOURCE model index
-// we is kinda useless in QML, now that i think about it.
+// which is kinda useless in QML, now that i think about it.
 // when i need this, will have to provide some mapping
 QObject *
 ConvSortFilterModel::get(int source_idx)
@@ -360,12 +458,24 @@ ConvSortFilterModel::set_all_selected(bool b)
 }
 
 void
-ConvSortFilterModel::delete_all_selected()
+ConvSortFilterModel::obliterate_all_selected()
 {
     ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
     if(!m)
         ::abort();
-    m->delete_all_selected();
+    m->obliterate_all_selected();
+    invalidateFilter();
+
+}
+
+void
+ConvSortFilterModel::trash_all_selected()
+{
+    ConvListModel *m = dynamic_cast<ConvListModel *>(sourceModel());
+    if(!m)
+        ::abort();
+    m->trash_all_selected();
+    invalidateFilter();
 
 }
 
@@ -397,6 +507,32 @@ ConvSortFilterModel::at_least_one_selected()
         ::abort();
     return m->at_least_one_selected();
 
+}
+
+void
+ConvSortFilterModel::reload_convlist()
+{
+    reload_conv_list();
+    invalidateFilter();
+}
+
+void
+ConvSortFilterModel::invalidate_model_filter()
+{
+    invalidateFilter();
+}
+
+bool
+ConvSortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
+{
+    auto alm = dynamic_cast<ConvListModel *>(sourceModel());
+
+    QVariant uid = alm->data(alm->index(source_row, 0), alm->roleForName("uid"));
+    auto buid = QByteArray::fromHex(uid.toByteArray());
+    if(uid_has_unviewed_msgs(buid))
+        return true;
+    int ret = dwyco_all_messages_tagged(buid.constData(), buid.length(), "_trash");
+    return ret == 0;
 }
 
 bool
