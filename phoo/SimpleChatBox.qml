@@ -448,14 +448,15 @@ Page {
                                 confirm_trash.visible = true
                             }
                             MessageYN {
-                                id: confirm_clear
-                                title: "Remove all msgs?"
-                                //icon: StandardIcon.Question
-                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+                                id: confirm_trash
+                                title: "Trash all msgs?"
+                                text: "Trash ALL (including HIDDEN) msgs from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                                
                                 onYesClicked: {
-                                    core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.set_all_selected()
+                                    themsglist.trash_all_selected()
+                                    themsglist.invalidate_model_filter()
                                     themsglist.reload_model()
                                     close()
                                 }

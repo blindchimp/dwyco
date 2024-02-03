@@ -279,14 +279,16 @@ Page {
                                 confirm_trash.visible = true
                             }
                             MessageYN {
-                                id: confirm_delete2
-                                title: "Clear?"
-                                //icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
+                                id: confirm_trash
+                                title: "Trash all messages?"
+                                
+                                text: "Trash ALL messages from user?"
                                 informativeText: "This KEEPS FAVORITE messages."
-                                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                                
                                 onYesClicked: {
-                                    core.clear_messages_unfav(simp_msg_browse.to_uid)
+                                    themsglist.set_all_selected()
+                                    themsglist.trash_all_selected()
+                                    themsglist.invalidate_model_filter()
                                     themsglist.reload_model()
                                     close()
                                 }

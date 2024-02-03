@@ -182,14 +182,13 @@ Page {
             checked: true
             visible: group_active
             Layout.fillWidth: true
-            MessageDialog {
+            MessageYN {
                 id: confirm_leave
                 title: "Leave group"
-                icon: StandardIcon.Question
                 text: "Leave the group and stop syncing?"
                 informativeText: "No messages are deleted from this action."
-                standardButtons: StandardButton.Yes | StandardButton.No
-                onYes: {
+
+                onYesClicked: {
                     if(core.start_gj2("", "") === 1) {
                         waiting_for_leave_ack = true
                         //Qt.quit()
@@ -197,7 +196,7 @@ Page {
 
                     close()
                 }
-                onNo: {
+                onNoClicked: {
                     unjoin_button.checked = true
                     close()
                 }

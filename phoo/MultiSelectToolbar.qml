@@ -90,30 +90,18 @@ ToolBar {
             }
             MessageYN {
                 id: confirm_delete
-                title: "Bulk delete?"
-                //icon: StandardIcon.Question
-                text: "Delete ALL messages from selected users?"
-                informativeText: "This REMOVES FAVORITE messages too."
-                detailedText: "This is what you use to completely obliterate all messages from selected users, including favorite and hidden messages."
-                //detailedText: informativeText
-                //buttons: MessageDialog.Yes | MessageDialog.No
-//                onButtonClicked: (button, role)=> {
-//                                     switch(button) {
-//                                         case MessageDialog.Yes: {
-//                                             model.delete_all_selected()
-//                                             multiselect_mode = false
-//                                             close()
-//                                             break
-//                                         }
-//                                         case MessageDialog.No: {
-//                                             close()
-//                                             break
-//                                         }
-//                                     }
-//                                 }
+                title: "Bulk Trash?"
+                
+                text: "Trash ALL messages from selected users?"
+                informativeText: "This KEEPS FAVORITE, but TRASHES HIDDEN message."
 
                 onYesClicked: {
-                    model.delete_all_selected()
+                    if(is_trash) {
+                        model.obliterate_all_selected()
+                    } else {
+                        model.trash_all_selected()
+                    }
+                    model.invalidate_model_filter()
                     multiselect_mode = false
                     close()
                 }

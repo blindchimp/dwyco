@@ -165,7 +165,8 @@ setup_emergency_servers()
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
-    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    // not sure, maybe i don't need this in qt6 any more?
+    //r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     QNetworkReply *reply = manager->get(r);
 }
 void
