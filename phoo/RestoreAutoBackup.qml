@@ -26,6 +26,38 @@ Rectangle {
 
         anchors.fill:parent
         anchors.margins: mm(3)
+        visible: core.group_private_key_valid === 1
+
+        Item {
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+        }
+        Label {
+
+            text: qsTr("You cannot restore a backup while you are linked to a device group. First, exit the group, then perform the restore. Then re-link this device to the group.")
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+
+        }
+        Item {
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+        }
+        Button {
+
+            text: qsTr("Got it")
+            onClicked: {
+                //core.set_local_setting("restore-prompt", "1")
+                stack.pop()
+            }
+            Layout.fillWidth: true
+        }
+    }
+    ColumnLayout {
+
+        anchors.fill:parent
+        anchors.margins: mm(3)
+        visible: core.group_private_key_valid !== 1
 
 
         Item {

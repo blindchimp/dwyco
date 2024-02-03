@@ -422,6 +422,9 @@ extern int Chat_online;
 extern vc App_ID;
 
 vc Client_version;
+namespace dwyco {
+DwTimer Db_timer("db_timer");
+}
 
 #undef CPPLEAK
 #ifdef CPPLEAK
@@ -1092,6 +1095,9 @@ dwyco_resume()
     //resume_qmsg();
     //init_prfdb();
     start_database_thread();
+    Db_timer.stop();
+    Db_timer.load(200);
+    Db_timer.start();
     Dwyco_suspended = 0;
 }
 
@@ -1607,6 +1613,17 @@ dwyco_exit()
 {
     if(!Inited)
         return 1;
+    // just empty the trash once a week, this is mainly for debugging
+    // these days anyway, since we don't really offer a way for users
+    // to untrash this atm.
+    vc last_empty;
+    if(!load_info(last_empty, "trs.dif") ||
+            (time(0) - (time_t)last_empty) > ((time_t)7 * 24 * 3600))
+    {
+        empty_trash();
+        last_empty = time(0);
+        save_info(last_empty, "trs.dif");
+    }
     // just to flush stats
     TRACK_ADD(DLLI_exit, 1);
     dwyco_enable_activity_checking(0, 0, 0);
@@ -1896,10 +1913,6 @@ send_new()
     dirth_send_check_for_update(My_UID, QckDone(background_check_for_update_done, 0));
     dirth_send_get_group(My_UID, QckDone(set_group_uids, 0));
 
-}
-
-namespace dwyco {
-DwTimer Db_timer("db_timer");
 }
 
 static
@@ -3750,60 +3763,22 @@ dwyco_call_reject(int id, int session_ignore)
     return 1;
 }
 
+// this isn't supported any more (ie, the client should handle
+// confirmation of message receive, if it wants.
+
 // incoming zap message calls
 DWYCOEXPORT
 void
 dwyco_set_zap_appearance_callback(DwycoZapAppearanceCallback cb)
 {
-    zap_appearance_callback = cb;
-}
-
-static void
-kill_za_bounce(MMChannel *mc, vc, void *p, ValidPtr)
-{
-    mc->call_appearance_death_callback = 0;
-    if(call_appearance_death_callback)
-        (*call_appearance_death_callback)(mc->myid);
-}
-
-static int
-zap_appeared_bounce(MMChannel *mc, vc name, vc filename, vc size)
-{
-    mc->call_appearance_death_callback = kill_za_bounce;
-    mc->cad_arg2 = 0;
-
-    DwString msg = (const char *)name;
-    msg += " wants to send you a direct Audio/Video Message (size ";
-    char sz[255];
-    sprintf(sz, "%d", (int)size);
-    msg += sz;
-    msg += ")";
-    vc uid = mc->remote_uid();
-    if(zap_appearance_callback)
-    {
-        (*zap_appearance_callback)(mc->myid,
-                                   (const char *)name, (int)size,
-                                   (const char *)uid, uid.len());
-    }
-    else
-    {
-        GRTLOG("received direct zap_appearance, but there is no user defined zap_appearance_callback. either define a zap_appearance callback, or hardwire always_accept_zap to 1.", 0, 0);
-    }
-    return 0;
+    oopanic("zap appearances not supported anymore");
+    //zap_appearance_callback = cb;
 }
 
 DWYCOEXPORT
 int
 dwyco_zap_accept(int id, int always_accept)
 {
-    MMChannel *m = MMChannel::channel_by_id(id);
-    if(m)
-    {
-        m->user_accept = always_accept ? MMChannel::ZACCEPT_ALWAYS : MMChannel::ZACCEPT;
-        m->call_appearance_death_callback = 0;
-        return 1;
-    }
-    GRTLOG("zap_accept: cant find channel associated with chan_id (%d), zap not accepted.", id, 0);
     return 0;
 }
 
@@ -3811,15 +3786,7 @@ DWYCOEXPORT
 int
 dwyco_zap_reject(int id, int session_ignore)
 {
-    MMChannel *m = MMChannel::channel_by_id(id);
-    if(m)
-    {
-        m->user_accept = session_ignore ? MMChannel::ZREJECT_IGNORE : MMChannel::ZREJECT;
-        m->call_appearance_death_callback = 0;
-        return 1;
-    }
-    GRTLOG("zap_reject: cant find channel associated with chan_id (%d), zap not rejected.", id, 0);
-    return 0;
+   return 0;
 }
 
 static
@@ -4194,12 +4161,9 @@ dwyco_delete_user(const char *uid, int len_uid)
     vc u(VC_BSTRING, uid, len_uid);
 
     Rescan_msgs = 1;
-    //vc dir = uid_to_dir(u);
-    int ret = remove_user(u, "");
-    ack_all(u);
-    pal_del(u, 1);
-    prf_invalidate(u);
-    Session_infos.del(u);
+
+    int ret = remove_user(u);
+
     return ret;
 }
 
@@ -4210,9 +4174,9 @@ dwyco_clear_user(const char *uid, int len_uid)
     vc u(VC_BSTRING, uid, len_uid);
 
     Rescan_msgs = 1;
-    //vc dir = uid_to_dir(u);
+
     int ret = clear_user(u);
-    ack_all(u);
+
     return ret;
 }
 
@@ -7163,7 +7127,8 @@ dwyco_start_gj2(const char *gname, const char *password)
             dwyco::ezset::sql_start_transaction();
             set_settings_value("group/join_key", "");
             set_settings_value("group/alt_name", "");
-            set_settings_value("sync/eager", 0);
+            // don't reset eager, this is a user defined thing
+            //set_settings_value("sync/eager", 0);
         }
         catch(...)
         {
@@ -7549,6 +7514,7 @@ ack_get_done2(vc m, void *, vc del2_args, ValidPtr )
     // was originally deleted (set to pending)
     //int orig_refresh = Refresh_users;
     delete_msg2(del2_args[1]);
+    sql_remove_all_tags_mid(del2_args[1]);
     //if(m[1].is_nil())
     //	return;
     //Refresh_users = orig_refresh;
@@ -7896,12 +7862,12 @@ DWYCOEXPORT
 int
 dwyco_delete_unfetched_message(const char *msg_id)
 {
-    vc id(msg_id);
+    vc mid(msg_id);
 
     vc args(VC_VECTOR);
     args.append(vcnil);
-    args.append(id);
-    dirth_send_ack_get(My_UID, id, QckDone(ack_get_done2, 0, args));
+    args.append(mid);
+    dirth_send_ack_get(My_UID, mid, QckDone(ack_get_done2, 0, args));
     //dirth_send_addtag(My_UID, id, "_del", QckDone(0, 0));
     return 1;
 }
@@ -8045,6 +8011,10 @@ DWYCOEXPORT
 int
 dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag)
 {
+    oopanic("broken");
+    // needs to return uid,mid pairs, but this query can't
+    // really do that, so it needs to be noted if you really
+    // need this query
     vc res = sql_get_tagged_mids2(tag);
     *list_out = dwyco_list_from_vc(res);
     return 1;
@@ -8052,14 +8022,23 @@ dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag)
 
 DWYCOEXPORT
 int
-dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
+dwyco_get_tagged_mids_older_than(DWYCO_LIST *list_out, const char *tag, int days)
+{
+    vc res = sql_get_tagged_mids_older_than(tag, days);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag, int order_by_tag_time)
 {
     vc res;
     // super-kluge
     if(strcmp(tag, "*") == 0)
         res = sql_get_all_idx();
     else
-        res = sql_get_tagged_idx(tag);
+        res = sql_get_tagged_idx(tag, order_by_tag_time);
     *list_out = dwyco_list_from_vc(res);
     return 1;
 }
@@ -8101,6 +8080,14 @@ dwyco_valid_tag_exists(const char *tag)
     return sql_exists_valid_tag(tag);
 }
 
+DWYCOEXPORT
+int
+dwyco_all_messages_tagged(const char *uid, int len_uid, const char *tag)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    int ret = sql_uid_all_mid_tagged(uid, tag);
+    return ret;
+}
 
 DWYCOEXPORT
 void
@@ -9206,21 +9193,11 @@ dwyco_remove_backup()
 // YOU MUST EXIT IMMEDIATELY IF THIS RETURNS 1
 // WARNING: if you are in a group, this will not work right.
 // you MUST exit the group first before attempting a restore!
-DWYCOEXPORT
-int
-dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
+
+static
+void
+special_backup_bailout()
 {
-    if(!restore_msgs(bu_fn, msgs_only))
-        return 0;
-#if 0
-    DwString dfn(bu_fn);
-    int pos;
-    if((pos = dfn.find("dwyco-backup-")) == DwString::npos)
-        return 0;
-    dfn.insert(pos + 13, "diff-");
-    if(!restore_msgs(dfn.c_str(), msgs_only))
-        return 0;
-#endif
     // this is special, we need to get out of here without
     // any of the usual exit processing
     // this is for windows, since we can't really delete a file
@@ -9238,6 +9215,18 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
     // unforunately, on windows, it crashes the qt process for some
     // reason, so i'll have to leave it to the caller to schedule
     // a quick graceful exit.
+}
+
+DWYCOEXPORT
+int
+dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
+{
+    if(Current_alternate)
+        return 0;
+    if(!restore_msgs(bu_fn, msgs_only))
+        return 0;
+
+    special_backup_bailout();
     return 1;
     //exit(0);
 }
@@ -9264,8 +9253,12 @@ DWYCOEXPORT
 int
 dwyco_restore_android_backup()
 {
-    int ret = android_restore_msgs();
-    return ret;
+    if(Current_alternate)
+        return 0;
+    if(!android_restore_msgs())
+        return 0;
+    special_backup_bailout();
+    return 1;
 }
 
 // these are some functions that are called from java (via swig interface)
@@ -9516,7 +9509,7 @@ setup_callbacks()
     MMChannel::get_main_window_callback = get_main_window;
     MMChannel::gen_public_chat_display_callback = gen_bounce_chatbox_display;
     MMChannel::gen_private_chat_display_callback = gen_bounce_private_chat_display;
-    MMChannel::popup_zap_accept_box_callback = zap_appeared_bounce;
+    //MMChannel::popup_zap_accept_box_callback = zap_appeared_bounce;
     MMChannel::call_appeared_callback = call_appeared_bounce;
     MMChannel::call_accepted_callback = call_accepted_bounce;
     MMChannel::connection_list_changed_callback = update_connection_lists;

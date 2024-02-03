@@ -173,29 +173,87 @@ Page {
             id: unjoin_button
             text: qsTr("Disable to UNLINK this device (requires restart)")
             onClicked: {
-                if(core.start_gj2("", "") === 1) {
-                    waiting_for_leave_ack = true
-                    //Qt.quit()
-                }
+                confirm_leave.visible = true
+//                if(core.start_gj2("", "") === 1) {
+//                    waiting_for_leave_ack = true
+//                    //Qt.quit()
+//                }
             }
             checked: true
             visible: group_active
             Layout.fillWidth: true
-        }
-        Switch {
-            id: server_mode
-            text: qsTr("Server mode (store all messages to this device)")
-            checked: core.eager_pull
-            onClicked: {
-                if(checked) {
-                    core.set_setting("sync/eager", "1")
-                } else {
-                    core.set_setting("sync/eager", "0")
+            MessageDialog {
+                id: confirm_leave
+                title: "Leave group"
+                icon: StandardIcon.Question
+                text: "Leave the group and stop syncing?"
+                informativeText: "No messages are deleted from this action."
+                standardButtons: StandardButton.Yes | StandardButton.No
+                onYes: {
+                    if(core.start_gj2("", "") === 1) {
+                        waiting_for_leave_ack = true
+                        //Qt.quit()
+                    }
+
+                    close()
                 }
+                onNo: {
+                    unjoin_button.checked = true
+                    close()
+                }
+            }
+        }
+//        Switch {
+//            id: server_mode
+//            text: qsTr("Server mode (store all messages to this device)")
+//            checked: core.eager_pull
+//            onClicked: {
+//                if(checked) {
+//                    core.set_setting("sync/eager", "2")
+//                } else {
+//                    core.set_setting("sync/eager", "0")
+//                }
+//            }
+
+//            visible: false // group_active
+//            Layout.fillWidth: true
+//        }
+        Label {
+            text: "Which messages to sync?"
+            visible: group_active
+        }
+
+        RadioButton {
+            text: "Recent (recommended)"
+            checked: core.eager_pull === 2
+            onClicked: {
+                core.set_setting("sync/eager", "2")
             }
 
             visible: group_active
             Layout.fillWidth: true
+
+
+        }
+        RadioButton {
+            text: "Lazy (only when viewed)"
+            checked: core.eager_pull === 0
+            onClicked: {
+                core.set_setting("sync/eager", "0")
+            }
+            visible: group_active
+            Layout.fillWidth: true
+
+        }
+        RadioButton {
+            text: "Everything (server mode)"
+            checked: core.eager_pull === 1
+            onClicked: {
+                core.set_setting("sync/eager", "1")
+            }
+            visible: group_active
+            Layout.fillWidth: true
+
         }
 
         ListView {

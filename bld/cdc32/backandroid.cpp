@@ -181,7 +181,9 @@ backup_msg(const vc& uid, const vc& mid)
             if(fd != -1)
                 close(fd);
             delete [] buf;
-            sql_insert_record(uid, mid, ret, attfn, "");
+            // note: this is probably not a good idea
+            //sql_insert_record(uid, mid, ret, attfn, "");
+            throw;
         }
 
     }
@@ -240,9 +242,11 @@ android_days_since_last_backup()
     vc res = db->sql_simple("select date_updated from main.bu");
     db->exit();
     delete db;
-
-    long long du = res[0][0];
-    long long now = time(0);
+    vc r2 = res[0][0];
+    if(r2.type() != VC_INT)
+        return 0;
+    long long du = r2;
+    auto now = time(0);
     return (now - du) / (24L * 3600);
 }
 
@@ -302,6 +306,8 @@ android_backup()
 {
     if(Db)
         return;
+    // since this is a small backup, just delete and do it from scratch
+    DeleteFile(newfn("aback.sql").c_str());
     Db = new backup_sql;
     if(!Db->init())
     {
@@ -318,10 +324,10 @@ android_backup()
     {
 
         sql_start_transaction();
-        sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
-        sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
-        sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
-        sql("delete from main.tags");
+        //sql("delete from main.msgs where main.msgs.mid in (select mid from mi.msg_tomb)");
+        //sql("delete from main.msgs where main.msgs.mid not in (select mid from mi.msg_idx)");
+        //sql("delete from main.msgs where not exists (select 1 from main.tags,main.msgs using(mid) where main.tags.tag = '_fav')");
+        //sql("delete from main.tags");
         sql("update main.bu set date_updated = strftime('%s', 'now'), state = 1");
         sql_commit_transaction();
         Db->vacuum();
@@ -329,10 +335,20 @@ android_backup()
         Db->set_max_size(24);
 
         // these tags are user-generated and usually pretty small
+        // since we don't allow backups to be loaded in group mode,
+        // only store data that would be used in non-group mode
         try
         {
             sql_start_transaction();
-            sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags)");
+            sql("create temp table static_uid_tags(tag text not null)");
+            sql("insert into static_uid_tags values('_ignore')");
+            sql("insert into static_uid_tags values('_pal')");
+            sql("insert into static_uid_tags values('_leader')");
+            sql("insert into main.tags select * from mt.gmt where tag in (select * from mt.static_crdt_tags) "
+                "and rowid in (select max(rowid) from mt.gmt group by mid,tag) "
+                "and (mid in (select mid from msg_idx) or tag in (select * from temp.static_uid_tags))"
+                );
+            sql("update main.tags set uid = ?1", to_hex(My_UID));
             sql_commit_transaction();
         }
         catch(...)
@@ -613,18 +629,25 @@ int
 desktop_days_since_last_backup()
 {
     backup_sql db("bun.sql");
+
     if(!db.init())
     {
         return -1;
     }
+    try
+    {
+        vc res = db.sql_simple("select date_updated from main.bu");
 
-    vc res = db.sql_simple("select date_updated from main.bu");
-
-    long long du = res[0][0];
-    if(du == 0)
+        long long du = res[0][0];
+        if(du == 0)
+            return -1;
+        long long now = time(0);
+        return (now - du) / (24L * 3600);
+    }
+    catch(...)
+    {
         return -1;
-    long long now = time(0);
-    return (now - du) / (24L * 3600);
+    }
 }
 
 int
@@ -636,11 +659,18 @@ desktop_days_since_backup_created()
         return -1;
     }
 
-    vc res = db.sql_simple("select date_sent from main.bu");
+    try
+    {
+        vc res = db.sql_simple("select date_sent from main.bu");
 
-    long long du = res[0][0];
-    long long now = time(0);
-    return (now - du) / (24L * 3600);
+        long long du = res[0][0];
+        long long now = time(0);
+        return (now - du) / (24L * 3600);
+    }
+    catch (...)
+    {
+        return -1;
+    }
 }
 
 
@@ -688,7 +718,7 @@ desktop_backup()
         catch(...)
         {
             sql_rollback_transaction();
-            goto done;
+            throw -1;
         }
 
         // everything not already backed up
@@ -696,12 +726,11 @@ desktop_backup()
                 "select assoc_uid, mid from mi.msg_idx where mid not in (select mid from main.msgs) "
                 " order by logical_clock desc", 30))
         {
-            goto done;
+            // note: if attempt_backup returns 0, it could be the disk is full, not necessarily that
+            // the database is corrupt. so make an attempt to store the account info. if that fails,
+            // we probably need to redo the backup.
         }
-
-
-    done:
-          backup_account_info("main");
+        backup_account_info("main");
     }
     catch(vc err)
     {
@@ -776,8 +805,28 @@ restore_msg(const vc& uid, const vc& mid)
         dir += DIRSEPSTR;
         DwString ffn = dir;
         ffn += fn;
+        // there is no reason to *re*serialize it here
+#if 0
         if(!save_info(msg, ffn.c_str(), 1))
             return 0;
+#endif
+#ifdef _Windows
+            if(_access(ffn.c_str(), 0) == 0)
+                return 1;
+            int fd = _creat(actual_attfn.c_str(), _S_IWRITE);
+#else
+            if(access(ffn.c_str(), F_OK) == -1)
+            {
+                int fd = creat(ffn.c_str(), 0666);
+                auto len = res[0][0].len();
+                if(write(fd, (const char *)res[0][0], len) != len)
+                {
+                    close(fd);
+                    return 0;
+                }
+                close(fd);
+            }
+#endif
         if(attfn.len() > 0)
         {
             DwString actual_attfn = dir;

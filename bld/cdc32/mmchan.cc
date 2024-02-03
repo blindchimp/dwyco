@@ -101,7 +101,7 @@ int MMChannel::Exclusive_audio_id;
 ChatDisplayCallback MMChannel::gen_public_chat_display_callback;
 ChatDisplayCallback MMChannel::gen_private_chat_display_callback;
 CallAppearedCallback MMChannel::call_appeared_callback;
-UIPopupCallback MMChannel::popup_zap_accept_box_callback;
+//UIPopupCallback MMChannel::popup_zap_accept_box_callback;
 UIPopupCallback MMChannel::set_progress_status_callback;
 UIPopupCallback MMChannel::popup_message_box_callback;
 UIPopupCallback MMChannel::popup_update_box_callback;
@@ -605,8 +605,6 @@ MMChannel::MMChannel() :
 
     incoming_throttle = 0;
 
-    audio_gain_gauge = 0;
-    audio_callback = 0;
     msg_chan = 0;
     user_control_chan = 0;
 
@@ -674,6 +672,7 @@ MMChannel::MMChannel() :
     mmr_sync_state.value_changed.connect_memfun(this, &MMChannel::mmr_sync_state_changed);
     package_index_future = nullptr;
     unpack_index_future = nullptr;
+    eager_pull_timer_active = true;
 }
 
 MMChannel::~MMChannel()

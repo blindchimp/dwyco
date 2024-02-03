@@ -95,6 +95,13 @@ SimpleContactModel::load_users_to_model()
     }
 }
 
+void
+SimpleContactModel::set_model_to_single_email(const QString& email)
+{
+    clear();
+    add_contact_to_model("", "", email.toLatin1());
+}
+
 void send_contact_query(QList<QString> emails);
 
 void

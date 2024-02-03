@@ -384,7 +384,8 @@ public static void set_user_property(String name, String value) {
         {
             if(requestCode == REQUEST_OPEN_IMAGE)
             {
-                String filePath = getPath(getApplicationContext(), data.getData());
+                //String filePath = getPath(getApplicationContext(), data.getData());
+                String filePath = FileUtils.getRealPath(getApplicationContext(), data.getData());
                 if(filePath != null)
                 {
                     dwybg.dwyco_set_aux_string(filePath);

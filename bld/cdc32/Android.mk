@@ -157,7 +157,6 @@ sqlbq.cpp \
 sqlite3.c \
 dwybg_wrap.c \
 aqext_android.cpp \
-backsql.cpp \
 upnp.cpp \
 simplesql.cpp \
 aqkey.cpp \

@@ -318,8 +318,7 @@ ApplicationWindow {
                 title: "Block and delete?"
                 //icon: StandardIcon.Question
                 text: "Delete ALL messages from user and BLOCK them?"
-                informativeText: "This removes FAVORITE and HIDDEN messages too."
-                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                 onYesClicked: {
                     core.set_ignore(chatbox.to_uid, 1)
                     core.delete_user(chatbox.to_uid)
@@ -580,6 +579,12 @@ ApplicationWindow {
 
     SimpleTagMsgBrowse {
         id: simp_tag_browse
+        model: themsglist
+        visible: false
+    }
+
+    SimpleTrashBrowse {
+        id: trash_browse
         model: themsglist
         visible: false
     }

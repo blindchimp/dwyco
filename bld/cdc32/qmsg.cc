@@ -272,6 +272,16 @@ is_foreground(const vc& uid)
     {
         if(disp == vc("foreground"))
             return 1;
+        // if there is no disposition, it is likely an old
+        // client, so we just pretend it is foreground for compat
+        if(disp.is_nil())
+            return 1;
+    }
+    else
+    {
+        // if there is no disposition, it is likely an old
+        // client, so we just pretend it is foreground for compat
+        return 1;
     }
     return 0;
 }
@@ -2654,11 +2664,10 @@ remove_user_files(vc dir, const char *pfx, int keep_folder)
     //return retval;
 }
 
+static
 int
-remove_user(vc uid, const char *pfx)
+clear_user_msgs(const vc& uid)
 {
-    vc dir = uid_to_dir(uid);
-    // remove indexes so the msgs don't magically reappear
     try
     {
         sql_start_transaction();
@@ -2678,47 +2687,54 @@ remove_user(vc uid, const char *pfx)
         sql_rollback_transaction();
         return 0;
     }
-
-    // when we unindex everything successfully, remove the files
-    remove_user_files(dir, pfx, 0);
-    MsgFolders.del(uid);
-    se_emit(SE_USER_REMOVE, uid);
     return 1;
 }
 
 int
-clear_user(vc uid)
+remove_user(const vc& uid)
 {
-    try
-    {
-        sql_start_transaction();
-        sql_remove_all_tags_uid(uid);
-        clear_msg_idx_uid(uid);
-        DwString tag("_");
-        tag += (const char *)to_hex(uid);
-        vc mids = sql_get_tagged_mids2(tag.c_str());
-        for(int i = 0; i < mids.num_elems(); ++i)
-        {
-            sql_remove_all_tags_mid(mids[i][0]);
-        }
-        sql_commit_transaction();
-    }
-    catch(...)
-    {
-        sql_rollback_transaction();
+
+    int ret = clear_user_msgs(uid);
+    if(!ret)
         return 0;
+
+    const vc uids = map_uid_to_uids(uid);
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc u = uids[i];
+        const vc dir = uid_to_dir(u);
+        remove_user_files(dir, "", 0);
+        MsgFolders.del(u);
+        ack_all(u);
+        pal_del(u, 1);
+        prf_invalidate(u);
+        Session_infos.del(u);
     }
+    // note: the uid here is mapped down to representative
+    se_emit(SE_USER_REMOVE, uid);
+    Rescan_msgs = 1;
+    return 1;
+}
+
+int
+clear_user(const vc& uid)
+{
+    int ret = clear_user_msgs(uid);
+    if(!ret)
+        return 0;
 
     const vc uids = map_uid_to_uids(uid);
     for(int i = 0; i < uids.num_elems(); ++i)
     {
         const vc dir = uid_to_dir(uids[i]);
         remove_user_files(dir, "", 1);
+        ack_all(uids[i]);
     }
     Rescan_msgs = 1;
     return 1;
 }
 
+static
 int
 trash_file(const DwString& dir, const DwString& fn)
 {
@@ -2743,63 +2759,59 @@ trash_file(const DwString& dir, const DwString& fn)
     return 1;
 }
 
-int
-trash_user(vc dir)
+void
+trash_body(vc uid, vc msg_id, int inhibit_indexing)
 {
-    if(dir.len() == 0)
-        return 0;
-    int i;
-    DwString s((const char *)dir);
+    if(uid.len() == 0)
+        return;
+    DwString s((const char *)to_hex(uid));
+    DwString t((const char *)msg_id);
 
-    if(s.length() == 0)
-        return 0;
-    if(s.rfind(".usr") != s.length() - 4)
-        return 0;
-    DwString s2 = s;
-    s2.remove(s2.length() - 4);
-    if(s2.find_first_not_of("0123456789abcdefABCDEF") != DwString::npos)
-        return 0;
-    vc uid = from_hex(s2.c_str());
-
-    int god = (uid == TheMan);
-    if(god)
-        return 0;
-
-    DwString trashdir = newfn("trash");
-    trashdir += DIRSEPSTR;
-    trashdir += s;
-    mkdir(trashdir.c_str());
+    s += ".usr";
+    DwString userdir = s;
     s = newfn(s);
-    s += "" DIRSEPSTR "*.*";
+    s += DIRSEPSTR;
+    s += t;
+    DwString s2 = s;
+    s += ".bod";
 
-    int retval = 1;
-    FindVec& fv = *find_to_vec(s.c_str());
-    int n = fv.num_elems();
-
-    for(i = 0; i < n; ++i)
+    vc msg;
+    if(load_info(msg, s.c_str(), 1))
     {
-        WIN32_FIND_DATA& d = *fv[i];
-        if(strcmp(d.cFileName, ".") == 0 ||
-                strcmp(d.cFileName, "..") == 0)
-            continue;
-        DwString s2((const char *)dir);
-        s2 = newfn(s2);
-        s2 += "" DIRSEPSTR "";
-        s2 += d.cFileName;
-        DwString trashfile = trashdir;
-        trashfile += "" DIRSEPSTR "";
-        trashfile += d.cFileName;
-        if(!move_replace(s2, trashfile))
-            retval = 0;
+        if(!inhibit_indexing)
+        {
+            sql_start_transaction();
+            remove_msg_idx(uid, msg_id);
+            sql_remove_all_tags_mid(msg_id);
+            sql_commit_transaction();
+        }
+        if(!msg[QM_BODY_ATTACHMENT].is_nil())
+            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
+            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
+        trash_file(userdir, (t + ".bod"));
+        //DeleteFile(s.c_str());
+        return;
     }
-    if(!RemoveDirectory(newfn((const char *)dir).c_str()))
-        retval = 0;
-    delete_findvec(&fv);
-    MsgFolders.del(uid);
-    remove_msg_idx_uid(uid);
-    se_emit(SE_USER_REMOVE, uid);
-    return retval;
+    s2 += ".snt";
+    if(load_info(msg, s2.c_str(), 1))
+    {
+        if(!inhibit_indexing)
+        {
+            sql_start_transaction();
+            remove_msg_idx(uid, msg_id);
+            sql_remove_all_tags_mid(msg_id);
+            sql_commit_transaction();
+        }
+        if(!msg[QM_BODY_ATTACHMENT].is_nil())
+            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
+            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
+        trash_file(userdir, (t + ".snt"));
+        //DeleteFile(s2.c_str());
+        return;
+
+    }
 }
+
 
 void
 untrash_users()
@@ -2857,6 +2869,32 @@ untrash_users()
         load_msg_index(uid, 1);
     }
     delete_findvec(&fv);
+}
+
+int
+count_trashed_users()
+{
+    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
+    int num = fv.num_elems();
+    delete_findvec(&fv);
+    return num;
+}
+
+int
+empty_trash()
+{
+    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
+    int num = fv.num_elems();
+    for(int i = 0; i < num; ++i)
+    {
+        WIN32_FIND_DATA& d = *fv[i];
+        if(strcmp(d.cFileName, ".") == 0 ||
+                strcmp(d.cFileName, "..") == 0)
+            continue;
+        remove_user_files(d.cFileName, "trash" DIRSEPSTR "", 0);
+    }
+    delete_findvec(&fv);
+    return 1;
 }
 
 vc
@@ -3136,59 +3174,6 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             delete_attachment2(uid, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s2.c_str());
-        return;
-
-    }
-}
-
-void
-trash_body(vc uid, vc msg_id, int inhibit_indexing)
-{
-    if(uid.len() == 0)
-        return;
-    DwString s((const char *)to_hex(uid));
-    DwString t((const char *)msg_id);
-
-    s += ".usr";
-    DwString userdir = s;
-    s = newfn(s);
-    s += DIRSEPSTR;
-    s += t;
-    DwString s2 = s;
-    s += ".bod";
-
-    vc msg;
-    if(load_info(msg, s.c_str(), 1))
-    {
-        if(!inhibit_indexing)
-        {
-            sql_start_transaction();
-            remove_msg_idx(uid, msg_id);
-            sql_remove_all_tags_mid(msg_id);
-            sql_commit_transaction();
-        }
-        if(!msg[QM_BODY_ATTACHMENT].is_nil())
-            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
-            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
-        trash_file(userdir, (t + ".bod"));
-        //DeleteFile(s.c_str());
-        return;
-    }
-    s2 += ".snt";
-    if(load_info(msg, s2.c_str(), 1))
-    {
-        if(!inhibit_indexing)
-        {
-            sql_start_transaction();
-            remove_msg_idx(uid, msg_id);
-            sql_remove_all_tags_mid(msg_id);
-            sql_commit_transaction();
-        }
-        if(!msg[QM_BODY_ATTACHMENT].is_nil())
-            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
-            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
-        trash_file(userdir, (t + ".snt"));
-        //DeleteFile(s2.c_str());
         return;
 
     }
@@ -4342,86 +4327,7 @@ void
 power_clean_safe()
 {
     return;
-#if 0
-    sql_index_all();
-    int n;
-    vc uids = sql_get_empty_users();
 
-    if(!uids.is_nil())
-    {
-        n = uids.num_elems();
-        for(int i = 0; i < n; ++i)
-        {
-            vc uid = from_hex(uids[i]);
-            if(uid == My_UID)
-                continue;
-            if(pal_user(uid))
-                continue;
-            trash_user(uid_to_dir(uid));
-        }
-    }
-
-    uids = sql_get_no_response_users();
-
-    if(!uids.is_nil())
-    {
-        n = uids.num_elems();
-        for(int i = 0; i < n; ++i)
-        {
-            vc uid = from_hex(uids[i]);
-            if(uid == My_UID)
-                continue;
-            if(pal_user(uid))
-                continue;
-            if(sql_fav_has_fav(uid))
-                continue;
-            trash_user(uid_to_dir(uid));
-        }
-    }
-
-    uids = sql_get_old_ignored_users();
-    if(uids.is_nil())
-        return;
-    n = uids.num_elems();
-    for(int i = 0; i < n; ++i)
-    {
-        vc uid = from_hex(uids[i]);
-        if(uid == My_UID)
-            continue;
-        if(pal_user(uid))
-            continue;
-        if(sql_fav_has_fav(uid))
-            continue;
-        trash_user(uid_to_dir(uid));
-    }
-#endif
-
-}
-
-int
-count_trashed_users()
-{
-    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
-    int num = fv.num_elems();
-    delete_findvec(&fv);
-    return num;
-}
-
-int
-empty_trash()
-{
-    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
-    int num = fv.num_elems();
-    for(int i = 0; i < num; ++i)
-    {
-        WIN32_FIND_DATA& d = *fv[i];
-        if(strcmp(d.cFileName, ".") == 0 ||
-                strcmp(d.cFileName, "..") == 0)
-            continue;
-        remove_user_files(d.cFileName, "trash" DIRSEPSTR "", 0);
-    }
-    delete_findvec(&fv);
-    return 1;
 }
 
 void

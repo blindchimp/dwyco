@@ -72,14 +72,13 @@ Page {
                     }
                     MessageYN {
                         id: confirm_delete
-                        title: "Block and Bulk delete?"
-                        //icon: StandardIcon.Question
+                        title: "Block user and delete messages?"
                         text: "Delete ALL messages from selected users?"
-                        informativeText: "This removes FAVORITE messages too."
-                        //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
+                        informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                         onYesClicked: {
                             ConvListModel.block_all_selected()
-                            ConvListModel.delete_all_selected()
+                            ConvListModel.obliterate_all_selected()
+                            multiselect_mode = false
                             close()
                         }
                         onNoClicked: {

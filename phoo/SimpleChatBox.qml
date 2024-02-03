@@ -73,6 +73,7 @@ Page {
                     text: "Hide"
                     onTriggered: {
                         model.tag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -80,6 +81,7 @@ Page {
                     text: "UnHide"
                     onTriggered: {
                         model.untag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -103,8 +105,8 @@ Page {
             id:multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT delete FAVORITE messages"
-            delete_warning_text: "Delete all selected messages?"
+            delete_warning_inf_text: "Does NOT trash FAVORITE messages"
+            delete_warning_text: "Trash all selected messages?"
         }
 
         ToolBar {
@@ -418,10 +420,32 @@ Page {
                             }
                         }
 
+//                        MenuItem {
+//                            text: "Clear msgs"
+//                            onTriggered: {
+//                                confirm_clear.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_clear
+//                                title: "Remove all msgs?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+//                                informativeText: "This KEEPS FAVORITE messages."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.clear_messages_unfav(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
-                            text: "Clear msgs"
+                            text: "Trash msgs..."
                             onTriggered: {
-                                confirm_clear.visible = true
+                                confirm_trash.visible = true
                             }
                             MessageYN {
                                 id: confirm_clear
@@ -441,29 +465,29 @@ Page {
                             }
                         }
 
-                        MenuItem {
-                            text: "Delete user"
-                            onTriggered: {
-                                confirm_delete.visible = true
-                            }
-                            MessageYN {
-                                id: confirm_delete
-                                title: "Bulk delete?"
-                                //icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE and HIDDEN messages too."
-                                //buttons: Mumble.MessageDialog.Yes | Mumble.MessageDialog.No
-                                onYesClicked: {
-                                    core.delete_user(chatbox.to_uid)
-                                    themsglist.reload_model()
-                                    close()
-                                    stack.pop()
-                                }
-                                onNoClicked: {
-                                    close()
-                                }
-                            }
-                        }
+//                        MenuItem {
+//                            text: "Delete user"
+//                            onTriggered: {
+//                                confirm_delete.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_delete
+//                                title: "Bulk delete?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL messages from user?"
+//                                informativeText: "This removes FAVORITE and HIDDEN messages too."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.delete_user(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                    stack.pop()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
                             text: "More..."
                             onTriggered: {
@@ -1244,4 +1268,72 @@ Page {
         }
 
     }
+
+    PulseLoader {
+        id: typing_thing
+        barCount: 5
+        color: "deeppink"
+        opacity: .7
+        x: textField1.x
+        y: textField1.y - height
+        width: 80
+        height: 10
+        visible: ind_typing === 1
+        running: visible
+
+    }
+
+//    Rectangle {
+//        id: typing_thing
+//        color: "red"
+//        opacity: .5
+//        x: textField1.x
+//        y: textField1.y - height
+//        width: 40
+//        height: 40
+//        visible: ind_typing === 1
+//    }
+//    SequentialAnimation {
+//        id: typing_animation
+//        loops: Animation.Infinite
+//        running: ind_typing === 1
+//        onRunningChanged: {
+//            if(running) {
+//                typing_thing.y = textField1.y - typing_thing.height
+//                typing_animation.start()
+//            } else {
+//                typing_thing.y = textField1.y - typing_thing.height
+//            }
+//        }
+
+//        // Animate the y property of the target typing_thing
+//        PropertyAnimation {
+//            target: typing_thing
+//            property: "y"
+//            from: typing_thing.y
+//            to: typing_thing.y - 10
+//            duration: 300
+//            onStarted: {
+//                console.log("FUCK")
+//            }
+//        }
+
+//        // Pause for a short duration
+//        PauseAnimation {
+//            duration: 300
+//        }
+
+//        // Animate the y property back to its original position
+//        PropertyAnimation {
+//            target: typing_thing
+//            property: "y"
+//            from: typing_thing.y
+//            to: typing_thing.y + 10
+//            duration: 300
+//        }
+
+
+//    }
+
+
 }
