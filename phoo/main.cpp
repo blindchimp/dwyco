@@ -17,7 +17,8 @@
 #include <QQmlFileSelector>
 #ifdef ANDROID
 #include "notificationclient.h"
-#include <QAndroidJniObject>
+#include <QJniObject>
+typedef QJniObject QAndroidJniObject;
 #endif
 
 QQmlApplicationEngine *TheEngine;

@@ -33,8 +33,9 @@
 #ifdef ANDROID
 #include "notificationclient.h"
 
-#include <QtAndroidExtras/QAndroidJniObject>
-#include <QtAndroidExtras>
+#include <QJniObject>
+//#include <QtAndroidExtras>
+typedef QJniObject QAndroidJniObject;
 
 void android_log_stuff(const char *str, const char *s1, int s2);
 
