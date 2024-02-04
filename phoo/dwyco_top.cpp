@@ -21,7 +21,7 @@
 #include <unistd.h>
 #endif
 #ifdef ANDROID
-#include <QtAndroid>
+//#include <QtAndroid>
 #endif
 #include "dlli.h"
 #include <stdlib.h>
@@ -1108,7 +1108,7 @@ DwycoCore::directory_swap()
 
 }
 
-#ifdef ANDROID
+#if 0 && ANDROID
 static
 QStandardPaths::StandardLocation
 determine_android_migration()
@@ -1198,7 +1198,7 @@ setup_locations()
 //QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
     //DwycoCore::Android_migrate = 1;
 #ifdef ANDROID
-    filepath = determine_android_migration();
+    //filepath = determine_android_migration();
 #endif
     //
     QStringList args = QGuiApplication::arguments();

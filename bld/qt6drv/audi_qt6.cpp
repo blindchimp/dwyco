@@ -318,19 +318,12 @@ audi_qt_delete(void *)
     Audi = 0;
 }
 
-#ifdef ANDROID
-static
-void
-nada(const QtAndroid::PermissionResultMap&)
-{
-    return;
-}
-#endif
+
 
 int DWYCOCALLCONV
 audi_qt_init(void *)
 {
-#ifdef ANDROID
+#if 0 && ANDROID
     if(QtAndroid::checkPermission("android.permission.RECORD_AUDIO") == QtAndroid::PermissionResult::Denied)
     {
         QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.RECORD_AUDIO"));
