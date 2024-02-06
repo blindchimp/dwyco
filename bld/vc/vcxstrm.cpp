@@ -20,9 +20,10 @@ void dwrtlog_vc(char *, int, vc);
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcxstrm.cpp 1.52 1998/12/09 05:12:37 dwight Exp $";
 
 
-long VCX_max_element_len = LONG_MAX;
-long VCX_max_elements = LONG_MAX;
-long VCX_max_depth = LONG_MAX;
+long vcxstream::Max_element_len = LONG_MAX;
+long vcxstream::Max_elements = LONG_MAX;
+long vcxstream::Max_depth = LONG_MAX;
+long vcxstream::Max_memory = LONG_MAX;
 
 #if 0
 long VCX_max_element_len = 1024 * 1024;
@@ -75,9 +76,10 @@ vcxstream::vcxstream(const char *ubuf, long l, enum style sty) : log(VCX_ILOG)
 	own_buf = 0;
 	read_only = 0;
 
-    max_elements = VCX_max_elements;
-    max_depth = VCX_max_depth;
-    max_element_len = VCX_max_element_len;
+    max_elements = Max_elements;
+    max_depth = Max_depth;
+    max_element_len = Max_element_len;
+    max_memory = Max_memory;
 }
 
 vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -95,9 +97,10 @@ vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf,
 	styl = sty;
 	read_only = 0;
 
-    max_elements = VCX_max_elements;
-    max_depth = VCX_max_depth;
-    max_element_len = VCX_max_element_len;
+    max_elements = Max_elements;
+    max_depth = Max_depth;
+    max_element_len = Max_element_len;
+    max_memory = Max_memory;
 }
 
 vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -116,9 +119,10 @@ vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(
 	own_buf = 0;
 	read_only = 0;
 
-    max_elements = VCX_max_elements;
-    max_depth = VCX_max_depth;
-    max_element_len = VCX_max_element_len;
+    max_elements = Max_elements;
+    max_depth = Max_depth;
+    max_element_len = Max_element_len;
+    max_memory = Max_memory;
 }
 
 vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -137,9 +141,10 @@ vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
 	own_buf = 0;
 	read_only = 0;
 
-    max_elements = VCX_max_elements;
-    max_depth = VCX_max_depth;
-    max_element_len = VCX_max_element_len;
+    max_elements = Max_elements;
+    max_depth = Max_depth;
+    max_element_len = Max_element_len;
+    max_memory = Max_memory;
 }
 
 vcxstream::~vcxstream()

@@ -118,6 +118,11 @@ public:
         ATOMIC
     };
 
+    static long Max_element_len;
+    static long Max_elements;
+    static long Max_depth;
+    static long Max_memory;
+
 	// use this when there is no device, just a fixed buffer
 	// 
 	//vcxstream(char *buf = 0, long len = 2048, enum style = FIXED);
@@ -174,6 +179,7 @@ public:
     // a single vector is 1 level. if the vector contains another vector, that is 2, and so on.
     // setting this to -1 will return an error for any deserialization.
     long max_depth;
+    long max_memory;
 
     int flushnb();
     enum status get_status();
