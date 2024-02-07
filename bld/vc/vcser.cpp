@@ -57,7 +57,17 @@ vc::xfer_in(vcxstream& vcx)
     if(vcx.max_depth == -1)
         return EXIN_PARSE;
     --vcx.max_depth;
+    vcxstream::Memory_tally = 0;
     long ret = real_xfer_in(vcx);
+    if(!(ret == EXIN_DEV || ret == EXIN_PARSE))
+    {
+        vcx.memory_tally += vcxstream::Memory_tally;
+        if(vcx.memory_tally >= vcx.max_memory)
+        {
+            //attach(vc_nil::vcnilrep);
+            ret = EXIN_PARSE;
+        }
+    }
     ++vcx.max_depth;
     return ret;
 }

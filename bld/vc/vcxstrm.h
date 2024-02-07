@@ -168,6 +168,11 @@ public:
     // and would probably require some exception handling.
     // this should be adequate to allow limiting mischief for simple
     // outward facing protocols where the expected form is fairly restricted.
+    // NOTE: hitting one of these limits will stop the deserialization
+    // and consumption of input in a more or less random place. it is
+    // up to the caller to finalize the device (close it, stop using it.)
+    // if you don't do this, and continue to read data from the device, you
+    // will almost certainly end up with trash.
 
     // the max number of elements in a composite (like a vector)
     long max_elements;
@@ -179,7 +184,16 @@ public:
     // a single vector is 1 level. if the vector contains another vector, that is 2, and so on.
     // setting this to -1 will return an error for any deserialization.
     long max_depth;
+
+    // max amount of memory for a single deserialization operation.
+    // note: this is not checked at allocation time, but rather when
+    // a complete deserialization operation is performed. this eliminates
+    // situations where constructors might fail. but, it allows the
+    // deserialization to continue past this limit.
     long max_memory;
+    unsigned long memory_tally;
+
+    static unsigned long Memory_tally;
 
     int flushnb();
     enum status get_status();

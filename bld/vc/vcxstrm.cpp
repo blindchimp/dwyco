@@ -12,6 +12,7 @@
 #include "dwvecp.h"
 #include "string.h"
 #include "vcxstrm.h"
+#include <new>
 
 
 void dwrtlog(const char *, char *, int, int, int, int, int, int);
@@ -24,6 +25,20 @@ long vcxstream::Max_element_len = LONG_MAX;
 long vcxstream::Max_elements = LONG_MAX;
 long vcxstream::Max_depth = LONG_MAX;
 long vcxstream::Max_memory = LONG_MAX;
+unsigned long vcxstream::Memory_tally = 0;
+
+void* operator new(std::size_t sz)
+{
+    if (sz == 0)
+        ++sz; // avoid std::malloc(0) which may return nullptr on success
+
+    if (void *ptr = std::malloc(sz))
+    {
+        vcxstream::Memory_tally += sz;
+        return ptr;
+    }
+    throw std::bad_alloc{}; // required by [new.delete.single]/3
+}
 
 #if 0
 long VCX_max_element_len = 1024 * 1024;
@@ -80,6 +95,7 @@ vcxstream::vcxstream(const char *ubuf, long l, enum style sty) : log(VCX_ILOG)
     max_depth = Max_depth;
     max_element_len = Max_element_len;
     max_memory = Max_memory;
+    memory_tally = 0;
 }
 
 vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -101,6 +117,7 @@ vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf,
     max_depth = Max_depth;
     max_element_len = Max_element_len;
     max_memory = Max_memory;
+    memory_tally = 0;
 }
 
 vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -123,6 +140,7 @@ vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(
     max_depth = Max_depth;
     max_element_len = Max_element_len;
     max_memory = Max_memory;
+    memory_tally = 0;
 }
 
 vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -145,6 +163,7 @@ vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
     max_depth = Max_depth;
     max_element_len = Max_element_len;
     max_memory = Max_memory;
+    memory_tally = 0;
 }
 
 vcxstream::~vcxstream()
