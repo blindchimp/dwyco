@@ -651,10 +651,6 @@ vgqt_init(void *aqext, int frame_rate)
     if(!Cam)
         return 0;
 #endif
-#ifdef MACOSX
-    QObject::disconnect(Cam_sig);
-    Cam_sig = QObject::connect(Cam, &QCamera::stateChanged, config_viewfinder);
-#endif
 
     if(!Cam)
     {
@@ -672,7 +668,7 @@ vgqt_init(void *aqext, int frame_rate)
     Cam->start();
     return 1;
 
-#if defined(DWYCO_IOS) || defined(MACOSX)
+#if 0 && (defined(DWYCO_IOS) || defined(MACOSX))
     QCameraViewfinderSettings vfs;
     vfs = Cam->viewfinderSettings();
     vfs.setPixelFormat(QVideoFrame::Format_NV12);
