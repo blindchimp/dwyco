@@ -52,7 +52,7 @@
 #include <QFuture>
 #include <QThread>
 #include <QDebug>
-QDebug operator<<(QDebug dbg, const QCameraFormat &type);
+
 #include "vgqt.h"
 #include "vidaq.h"
 #include "pgm.h"
@@ -106,8 +106,9 @@ static QCamera *Cam;
 static QMediaCaptureSession *Mcs;
 static QMetaObject::Connection Cam_sig;
 static QList<QCameraDevice> Cams;
+static QList<QCameraFormat> CFormats;
 static int Cur_idx = -1;
-
+QDebug operator<<(QDebug dbg, const QCameraFormat &type);
 
 struct finished
 {
@@ -139,38 +140,9 @@ static int next_icb;
 
 void oopanic(const char *);
 
-//class probe_handler : public QObject
-//{
-//    Q_OBJECT
-//public:
-//    probe_handler(QObject *parent = 0) : QObject(parent) {}
-
-//    QVideoProbe probe;
-//public slots:
-//    void handleFrame(const QVideoFrame&);
-//    //void flush_frames();
-
-//};
-
-//class vidsurf : public QAbstractVideoSurface
-//{
-//    Q_OBJECT
-//public:
-
-//    virtual bool present(const QVideoFrame &frame) {return true;}
-//    virtual bool start(const QVideoSurfaceFormat &format) { return QAbstractVideoSurface::start(format);}
-//    virtual void stop() {QAbstractVideoSurface::stop();}
-
-//    virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(QAbstractVideoBuffer::HandleType type = QAbstractVideoBuffer::NoHandle) const {
-//        QList<QVideoFrame::PixelFormat> pf;
-//        pf.append(QVideoFrame::Format_NV12);
-//        return pf;
-//    }
-//};
 
 //#include "vgqt.moc"
 
-//static probe_handler *Probe_handler;
 static int stop_thread;
 #ifdef TEST_THREAD
 static pthread_t thread;
@@ -411,13 +383,54 @@ QDebug operator<<(QDebug dbg, const QCameraFormat &format)
 
     // Output the format settings to qdebug
 
-    dbg << "Resolution: " << resolutionWidth << "x" << resolutionHeight;
-    dbg << "Pixel Format: " << pixelFormat;
+    dbg << "(" << resolutionWidth << "x" << resolutionHeight << ",";
+    dbg << pixelFormat << " " << format.maxFrameRate() << ")";
     return dbg;
 
 }
 
 #ifndef TEST_THREAD
+static
+QCameraFormat
+find_closest(const QList<QCameraFormat>& formats, int cols, int rows)
+{
+
+    int fmts[] = {
+        QVideoFrameFormat::Format_YUV420P,
+        QVideoFrameFormat::Format_YV12,
+        QVideoFrameFormat::Format_UYVY,
+        QVideoFrameFormat::Format_YUYV,
+        QVideoFrameFormat::Format_NV12,
+        QVideoFrameFormat::Format_NV21,
+        QVideoFrameFormat::Format_RGBX8888
+    };
+    int nf = sizeof(fmts) / sizeof(fmts[0]);
+
+	int n = formats.count();
+    int best = INT_MAX;
+    QCameraFormat bestf;
+    for(int i = 0; i < n; ++i)
+    {
+        auto f = formats[i];
+        int a = std::abs(f.resolution().height() - rows) + std::abs(f.resolution().width() - cols);
+        if(a < best)
+        {
+            for(int j = 0; j < nf; ++j)
+            {
+                if(f.pixelFormat() == fmts[j])
+                {
+                    best = a;
+                    bestf = f;
+                    break;
+                }
+            }
+        }
+    }
+    return bestf;
+}
+
+
+
 char **
 DWYCOEXPORT
 vgqt_get_video_devices()
@@ -428,6 +441,7 @@ vgqt_get_video_devices()
     for(int i = 0; i < n; ++i)
     {
         qDebug() << Cams[i].videoFormats() << "\n";
+        CFormats.append(find_closest(Cams[i].videoFormats(), 640, 480));
         QByteArray desc = Cams[i].description().toLatin1();
         if(Cams[i].isNull())
         {
@@ -611,10 +625,17 @@ config_viewfinder(QCamera::State state)
 }
 #endif
 
+static
+void
+new_video_frame(const QVideoFrame& frm)
+{
+    qDebug() << frm.pixelFormat() << "\n";
+}
 int
 DWYCOEXPORT
 vgqt_init(void *aqext, int frame_rate)
 {
+
 #ifdef TEST_THREAD
     if(thread == 0)
     {
@@ -623,7 +644,8 @@ vgqt_init(void *aqext, int frame_rate)
     }
     return 1;
 #endif
-
+    if(!Mcs)
+        return 0;
 #ifdef USE_QML_CAMERA
     Cam = find_qml_camera();
     if(!Cam)
@@ -639,9 +661,16 @@ vgqt_init(void *aqext, int frame_rate)
         if(Cur_idx < 0 || Cur_idx >= Cams.count())
             return 0;
         Cam = new QCamera(Cams[Cur_idx]);
+        Cam->setCameraFormat(CFormats[Cur_idx]);
         QObject::connect(Cam, &QCamera::activeChanged, config_viewfinder);
+        QVideoSink *vs = new QVideoSink;
+        Mcs->setCamera(Cam);
+        Mcs->setVideoSink(vs);
+        QObject::connect(vs, &QVideoSink::videoFrameChanged, new_video_frame);
     }
-    Cam->setActive(true);
+    //Cam->setActive(true);
+    Cam->start();
+    return 1;
 
 #if defined(DWYCO_IOS) || defined(MACOSX)
     QCameraViewfinderSettings vfs;
