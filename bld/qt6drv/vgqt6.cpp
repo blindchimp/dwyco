@@ -36,21 +36,23 @@
 // video test frames without accessing a camera device. this is very useful if your video
 // device driver is fussy or crashes your computer during debugging.
 //
+
+
+
 #include <QList>
 #include <QVector>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QCamera>
-#include <QCameraInfo>
-#include <QCameraViewfinder>
-#include <QAbstractVideoSurface>
+#include <QMediaDevices>
+#include <QMediaCaptureSession>
 #include <QVideoFrame>
-#include <QVideoProbe>
+#include <QVideoSink>
 #include <QtConcurrent>
 #include <QFuture>
 #include <QThread>
 #include <QDebug>
-
+QDebug operator<<(QDebug dbg, const QCameraFormat &type);
 #include "vgqt.h"
 #include "vidaq.h"
 #include "pgm.h"
@@ -101,8 +103,9 @@ static int debug = 1;
 static QMutex mutex;
 static int Orientation;
 static QCamera *Cam;
+static QMediaCaptureSession *Mcs;
 static QMetaObject::Connection Cam_sig;
-static QList<QCameraInfo> Cams;
+static QList<QCameraDevice> Cams;
 static int Cur_idx = -1;
 
 
@@ -136,38 +139,38 @@ static int next_icb;
 
 void oopanic(const char *);
 
-class probe_handler : public QObject
-{
-    Q_OBJECT
-public:
-    probe_handler(QObject *parent = 0) : QObject(parent) {}
+//class probe_handler : public QObject
+//{
+//    Q_OBJECT
+//public:
+//    probe_handler(QObject *parent = 0) : QObject(parent) {}
 
-    QVideoProbe probe;
-public slots:
-    void handleFrame(const QVideoFrame&);
-    //void flush_frames();
+//    QVideoProbe probe;
+//public slots:
+//    void handleFrame(const QVideoFrame&);
+//    //void flush_frames();
 
-};
+//};
 
-class vidsurf : public QAbstractVideoSurface
-{
-    Q_OBJECT
-public:
+//class vidsurf : public QAbstractVideoSurface
+//{
+//    Q_OBJECT
+//public:
 
-    virtual bool present(const QVideoFrame &frame) {return true;}
-    virtual bool start(const QVideoSurfaceFormat &format) { return QAbstractVideoSurface::start(format);}
-    virtual void stop() {QAbstractVideoSurface::stop();}
+//    virtual bool present(const QVideoFrame &frame) {return true;}
+//    virtual bool start(const QVideoSurfaceFormat &format) { return QAbstractVideoSurface::start(format);}
+//    virtual void stop() {QAbstractVideoSurface::stop();}
 
-    virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(QAbstractVideoBuffer::HandleType type = QAbstractVideoBuffer::NoHandle) const {
-        QList<QVideoFrame::PixelFormat> pf;
-        pf.append(QVideoFrame::Format_NV12);
-        return pf;
-    }
-};
+//    virtual QList<QVideoFrame::PixelFormat> supportedPixelFormats(QAbstractVideoBuffer::HandleType type = QAbstractVideoBuffer::NoHandle) const {
+//        QList<QVideoFrame::PixelFormat> pf;
+//        pf.append(QVideoFrame::Format_NV12);
+//        return pf;
+//    }
+//};
 
-#include "vgqt.moc"
+//#include "vgqt.moc"
 
-static probe_handler *Probe_handler;
+//static probe_handler *Probe_handler;
 static int stop_thread;
 #ifdef TEST_THREAD
 static pthread_t thread;
@@ -397,17 +400,40 @@ get_interleaved_chroma_planes(int ccols, int crows, unsigned char *c, gray**& vu
     }
 }
 
+QDebug operator<<(QDebug dbg, const QCameraFormat &format)
+{
+    // Get the individual format settings
+
+    const int resolutionWidth = format.resolution().width();
+    const int resolutionHeight = format.resolution().height();
+    const QVideoFrameFormat::PixelFormat pixelFormat = format.pixelFormat();
+
+
+    // Output the format settings to qdebug
+
+    dbg << "Resolution: " << resolutionWidth << "x" << resolutionHeight;
+    dbg << "Pixel Format: " << pixelFormat;
+    return dbg;
+
+}
+
 #ifndef TEST_THREAD
 char **
 DWYCOEXPORT
 vgqt_get_video_devices()
 {
-    Cams = QCameraInfo::availableCameras();
+    Cams = QMediaDevices::videoInputs();
     int n = Cams.count();
     char **r = new char *[n + 1];
     for(int i = 0; i < n; ++i)
     {
+        qDebug() << Cams[i].videoFormats() << "\n";
         QByteArray desc = Cams[i].description().toLatin1();
+        if(Cams[i].isNull())
+        {
+            desc = "unavailable";
+        }
+
         r[i] = new char [desc.count() + 1];
         strcpy(r[i], desc.constData());
     }
@@ -475,12 +501,10 @@ void
 DWYCOEXPORT
 vgqt_stop_video_device()
 {
-    if(Probe_handler)
+    if(Mcs)
     {
         vgqt_stop(0);
         vgqt_pass(0);
-        delete Probe_handler;
-        Probe_handler = 0;
     }
     stop_all_conversions();
 
@@ -499,9 +523,9 @@ void
 DWYCOEXPORT
 vgqt_new(void *aqext)
 {
-    if(Probe_handler)
+    if(Mcs)
         return;
-    Probe_handler = new probe_handler;
+    Mcs = new QMediaCaptureSession;
     Raw_frame = vframe();
 #ifdef TEST_THREAD
     stop_thread = 0;
@@ -514,10 +538,12 @@ DWYCOEXPORT
 vgqt_del(void *aqext)
 {
 
-    if(Probe_handler)
+    if(Mcs)
     {
         vgqt_stop(0);
         vgqt_pass(0);
+        delete Mcs;
+        Mcs = 0;
     }
 #ifndef USE_QML_CAMERA
     if(Cam)
@@ -526,8 +552,7 @@ vgqt_del(void *aqext)
         Cam = 0;
     }
 #endif
-    delete Probe_handler;
-    Probe_handler = 0;
+
     stop_thread = 1;
     QMutexLocker ml(&mutex);
     stop_all_conversions();
@@ -559,7 +584,13 @@ find_qml_camera()
 }
 #endif
 
+static
+void
+config_viewfinder(bool state)
+{
 
+}
+#if 0
 static
 void
 config_viewfinder(QCamera::State state)
@@ -578,48 +609,40 @@ config_viewfinder(QCamera::State state)
     Cam->start();
 
 }
+#endif
 
 int
 DWYCOEXPORT
 vgqt_init(void *aqext, int frame_rate)
 {
-    if(!Probe_handler)
-    {
-        Probe_handler = new probe_handler;
 #ifdef TEST_THREAD
+    if(thread == 0)
+    {
         stop_thread = 0;
         pthread_create(&thread, 0, test_thread, 0);
-#endif
     }
-#ifdef TEST_THREAD
     return 1;
-#else
+#endif
 
 #ifdef USE_QML_CAMERA
     Cam = find_qml_camera();
     if(!Cam)
         return 0;
+#endif
 #ifdef MACOSX
     QObject::disconnect(Cam_sig);
     Cam_sig = QObject::connect(Cam, &QCamera::stateChanged, config_viewfinder);
 #endif
-#else
-    qDebug() << "DEFAULT " << QCameraInfo::defaultCamera() << "\n";
+
     if(!Cam)
     {
         if(Cur_idx < 0 || Cur_idx >= Cams.count())
             return 0;
         Cam = new QCamera(Cams[Cur_idx]);
-        QObject::connect(Cam, &QCamera::stateChanged, config_viewfinder);
+        QObject::connect(Cam, &QCamera::activeChanged, config_viewfinder);
     }
-    if(Cam->status() == QCamera::UnavailableStatus)
-    {
-        return 0;
-    }
-    Cam->setCaptureMode(QCamera::CaptureViewfinder);
-    Cam->load();
-    //Cam->start();
-#endif
+    Cam->setActive(true);
+
 #if defined(DWYCO_IOS) || defined(MACOSX)
     QCameraViewfinderSettings vfs;
     vfs = Cam->viewfinderSettings();
@@ -650,27 +673,14 @@ vgqt_init(void *aqext, int frame_rate)
     QList<QSize> sz = Cam->supportedViewfinderResolutions();
     qDebug() << sz << "\n";
 #endif
-    QCameraInfo caminfo(*Cam);
-    if(caminfo.isNull())
-    {
-        qDebug() << "NO CAMINFO\n";
-        return 0;
-    }
-    Orientation = caminfo.orientation();
-    QObject::connect(&Probe_handler->probe, SIGNAL(videoFrameProbed(QVideoFrame)),
-                     Probe_handler, SLOT(handleFrame(QVideoFrame)), Qt::UniqueConnection);
 
-    if(Probe_handler->probe.setSource(Cam))
-    {
-        Cam->load();
-        return 1;
-    }
-    else
-        qDebug() << "CANT PROBE CAM\n";
+    //Orientation = caminfo.orientation();
+    //QObject::connect(&Probe_handler->probe, SIGNAL(videoFrameProbed(QVideoFrame)),
+    //                 Probe_handler, SLOT(handleFrame(QVideoFrame)), Qt::UniqueConnection);
 
 
     return 0;
-#endif
+
 }
 
 int
@@ -708,9 +718,9 @@ vgqt_stop(void *aqext)
 {
     // XXX need to make sure thread is dead and then
     // see about the capture device too
-    if(!Probe_handler)
+    if(!Mcs)
         return;
-    Probe_handler->probe.setSource((QMediaObject *)0);
+
     stop_all_conversions();
 }
 
@@ -781,7 +791,7 @@ conv_data(vframe ivf)
         //next_buf = (next_buf + 1) % NB_BUFFER;
         ml.unlock();
 
-        if(!vf.map(QAbstractVideoBuffer::ReadOnly))
+        if(!vf.map(QVideoFrame::ReadOnly))
         {
             oopanic("can't map");
         }
@@ -790,26 +800,23 @@ conv_data(vframe ivf)
 
         int fmt = 0;
         int swap = 0;
-        QVideoFrame::PixelFormat vfpf = vf.pixelFormat();
+        QVideoFrameFormat::PixelFormat vfpf = vf.pixelFormat();
         switch(vfpf)
         {
-        case QVideoFrame::Format_RGB24:
+        case QVideoFrameFormat::Format_RGBX8888:
             fmt = AQ_RGB24;
             break;
-        case QVideoFrame::Format_RGB555:
-            fmt = AQ_RGB555;
-            break;
-        case QVideoFrame::Format_YUV420P:
+        case QVideoFrameFormat::Format_YUV420P:
             fmt = AQ_YUV12;
             swap = 1;
             break;
-        case QVideoFrame::Format_YV12:
+        case QVideoFrameFormat::Format_YV12:
             fmt = AQ_YUV12;
             break;
-        case QVideoFrame::Format_UYVY:
+        case QVideoFrameFormat::Format_UYVY:
             fmt = AQ_UYVY;
             break;
-        case QVideoFrame::Format_YUYV:
+        case QVideoFrameFormat::Format_YUYV:
             fmt = AQ_YUY2;
             break;
         // note: NV12 seems to be the closest thing to
@@ -820,14 +827,14 @@ conv_data(vframe ivf)
         // though it needs more testing because sometimes it doesn't
         // appear to get setup properly, and we still end up with
         // ARGB32 in here.
-        case QVideoFrame::Format_NV12:
+        case QVideoFrameFormat::Format_NV12:
             swap = 1;
         // FALL THRU
-        case QVideoFrame::Format_NV21:
+        case QVideoFrameFormat::Format_NV21:
             fmt = AQ_NV21;
             // for now, if the stride isn't the same as
             // the dimensions, bail
-            if(vf.bytesPerLine() != vf.width())
+            if(vf.bytesPerLine(0) != vf.width())
                 ::abort();
             break;
         default:
@@ -841,17 +848,19 @@ conv_data(vframe ivf)
 #if !(defined(ANDROID) || defined(MACOSX))
         if(fmt & AQ_YUV12)
         {
-            unsigned char *c = (unsigned char *)vf.bits();
+            unsigned char *c = (unsigned char *)vf.bits(0);
             gray **g = pgm_allocarray(cols, rows);
             memcpy(&g[0][0], c, cols * rows);
             c += cols * rows;
             f.planes[0] = g;
 
+            c = vf.bits(1);
             g = pgm_allocarray(cols / 2, rows / 2);
             memcpy(&g[0][0], c, (cols * rows) / 4);
             f.planes[1] = g;
             c += (cols * rows) / 4;
 
+            c = vf.bits(2);
             g = pgm_allocarray(cols / 2, rows / 2);
             memcpy(&g[0][0], c, (cols * rows) / 4);
             f.planes[2] = g;
@@ -881,7 +890,7 @@ conv_data(vframe ivf)
         void *cb;
         void *cr;
         int fmt_out;
-        void *r = cvt.convert_data(vf.bits(), vf.bytesPerLine() * vf.height(), ccols, crows, y, cb, cr, fmt_out, 0);
+        void *r = cvt.convert_data(vf.bits(0), vf.bytesPerLine(0) * vf.height(), ccols, crows, y, cb, cr, fmt_out, 0);
         f.planes[0] = (gray **)r;
         f.planes[1] = (gray **)cb;
         f.planes[2] = (gray **)cr;
@@ -893,7 +902,7 @@ conv_data(vframe ivf)
 
 #endif
 
-        unsigned char *c = (unsigned char *)vf.bits();
+        unsigned char *c = (unsigned char *)vf.bits(0);
 #define SSCOLS (640)
 #define SSROWS (calcrows)
         int calcrows = (float)rows / ((float)cols / SSCOLS);
@@ -1021,44 +1030,44 @@ vgqt_need(void *aqext)
 }
 
 
-void
-probe_handler::handleFrame(const QVideoFrame& frm)
-{
-    QMutexLocker ml(&mutex);
+//void
+//probe_handler::handleFrame(const QVideoFrame& frm)
+//{
+//    QMutexLocker ml(&mutex);
 
-    Raw_frame.frm = frm;
-#ifdef __WIN32__
-    Raw_frame.captime = timeGetTime();
-#else
-    struct timeval tm;
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    tm.tv_sec = ts.tv_sec;
-    tm.tv_usec = ts.tv_nsec / 1000;
-    Raw_frame.captime = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
-#endif
-
-//    if(next_buf == (next_ibuf + 1) % NB_BUFFER)
-//    {
-//        // drop it for now, maybe something more complicated
-//        // like overwriting next frame would look better
-//        // in some cases, but not worth it at this point.
-//        return;
-//    }
+//    Raw_frame.frm = frm;
 //#ifdef __WIN32__
-//    y_bufs[next_ibuf] = timeGetTime();
+//    Raw_frame.captime = timeGetTime();
 //#else
 //    struct timeval tm;
 //    struct timespec ts;
 //    clock_gettime(CLOCK_MONOTONIC, &ts);
 //    tm.tv_sec = ts.tv_sec;
 //    tm.tv_usec = ts.tv_nsec / 1000;
-//    y_bufs[next_ibuf] = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
+//    Raw_frame.captime = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
 //#endif
 
-//    vbufs[next_ibuf] = frm;
+////    if(next_buf == (next_ibuf + 1) % NB_BUFFER)
+////    {
+////        // drop it for now, maybe something more complicated
+////        // like overwriting next frame would look better
+////        // in some cases, but not worth it at this point.
+////        return;
+////    }
+////#ifdef __WIN32__
+////    y_bufs[next_ibuf] = timeGetTime();
+////#else
+////    struct timeval tm;
+////    struct timespec ts;
+////    clock_gettime(CLOCK_MONOTONIC, &ts);
+////    tm.tv_sec = ts.tv_sec;
+////    tm.tv_usec = ts.tv_nsec / 1000;
+////    y_bufs[next_ibuf] = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
+////#endif
 
-//    next_ibuf = (next_ibuf + 1) % NB_BUFFER;
-}
+////    vbufs[next_ibuf] = frm;
+
+////    next_ibuf = (next_ibuf + 1) % NB_BUFFER;
+//}
 
 
