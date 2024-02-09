@@ -965,6 +965,7 @@ conv_data(vframe ivf)
         }
 
         c += f.c * f.r;
+        c = vf.bits(1);
         // note: 2 channels, cb and cr
         gray **cr;
         gray **cb;
