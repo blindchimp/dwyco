@@ -80,14 +80,14 @@ AudioOutputWin32::device_bufs_playing()
 
 static
 void CALLBACK
-cb_dispatch(HWAVEOUT hwo, UINT msg, DWORD obj, DWORD p1, DWORD p2)
+cb_dispatch(HWAVEOUT hwo, UINT msg, DWORD_PTR obj, DWORD_PTR p1, DWORD_PTR p2)
 {
     AudioOutputWin32 *o = (AudioOutputWin32 *)obj;
     o->callback(hwo, msg, p1, p2);
 }
 
 void
-AudioOutputWin32::callback(HWAVEOUT hwo, UINT msg, DWORD p1, DWORD p2)
+AudioOutputWin32::callback(HWAVEOUT hwo, UINT msg, DWORD_PTR p1, DWORD_PTR p2)
 {
     switch(msg)
     {
@@ -113,7 +113,7 @@ AudioOutputWin32::device_init()
     init_format(format);
 
     res = waveOutOpen(&waveout, WAVE_MAPPER, &format,
-                      (DWORD)cb_dispatch, (DWORD)this, CALLBACK_FUNCTION);
+                      (DWORD_PTR)cb_dispatch, (DWORD_PTR)this, (DWORD)CALLBACK_FUNCTION);
 
     if(res != MMSYSERR_NOERROR)
     {

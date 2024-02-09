@@ -27,12 +27,13 @@ QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-va
 }
 
 win32-* {
-FORCE_DESKTOP_VGQT=0
+FORCE_DESKTOP_VGQT=1
 DEFINES += _WIN32 _CRT_SECURE_NO_WARNINGS __WIN32__ #_MBCS
 DEFINES -= UNICODE
 QMAKE_CXXFLAGS_WARN_ON -= -W3
 QMAKE_CXXFLAGS += /wd4100 /wd4068 /wd4189 /wd4291
 DEFINES += _Windows
+DEFINES += CDCCORE_STATIC
 }
 linux-*|macx-* {
 QMAKE_CXX=ccache g++

@@ -223,8 +223,10 @@ $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
 $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \
 $${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
-$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib \
+$${D}/qt6drv/$${S}/qt6drv.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
+
+#$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/$${S}/cdc32.lib \
@@ -242,6 +244,7 @@ $${D}/vorbis112/$${S}/vorbis.lib \
 $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
 $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \
+$${D}/qt6drv/$${S}/qt6drv.lib \
 $${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\cdc32\\win32\\vs2008\\Debug\\cdcdll.lib \

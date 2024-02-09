@@ -4557,7 +4557,7 @@ dwyco_get_profile_to_viewer(const char *uid, int len_uid, DwycoProfileCallback c
 {
     vc u(VC_BSTRING, uid, len_uid);
     vc vv(VC_VECTOR);
-    vv[0] = vc((long)cb);
+    vv[0] = vc((long long)cb);
     vv[1] = u;
 #if 1
     if(prf_already_cached(u))

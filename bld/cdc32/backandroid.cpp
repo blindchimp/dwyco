@@ -813,7 +813,7 @@ restore_msg(const vc& uid, const vc& mid)
 #ifdef _Windows
             if(_access(ffn.c_str(), 0) == 0)
                 return 1;
-            int fd = _creat(actual_attfn.c_str(), _S_IWRITE);
+            int fd = _creat(ffn.c_str(), _S_IWRITE);
 #else
             if(access(ffn.c_str(), F_OK) == -1)
             {
