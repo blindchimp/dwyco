@@ -185,7 +185,7 @@ win32 {
 
 DEFINES += MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32
 
-INCLUDEPATH += dllwin
+INCLUDEPATH += dllwin ../bld/qt6drv
 # use this for linking to dynamic cdcdll
 #LIBS +=  \\Users\\dwight\\deploy-cdcx\\cdcdll8.lib winmm.lib user32.lib kernel32.lib
 

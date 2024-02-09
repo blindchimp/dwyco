@@ -51,7 +51,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(MAC_CLIENT) || defined(LINUX)
+#if defined(MAC_CLIENT) || defined(LINUX) || defined(_Windows)
 #include "vgqt.h"
 #include "audi_qt.h"
 #include "audo_qt.h"
