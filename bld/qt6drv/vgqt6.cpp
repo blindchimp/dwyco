@@ -441,9 +441,10 @@ vgqt_get_video_devices()
     for(int i = 0; i < n; ++i)
     {
         qDebug() << Cams[i].videoFormats() << "\n";
-        CFormats.append(find_closest(Cams[i].videoFormats(), 640, 480));
+        auto cf = find_closest(Cams[i].videoFormats(), 640, 480);
+        CFormats.append(cf);
         QByteArray desc = Cams[i].description().toLatin1();
-        if(Cams[i].isNull())
+        if(Cams[i].isNull() || cf.isNull())
         {
             desc = "unavailable";
         }
@@ -629,7 +630,18 @@ static
 void
 new_video_frame(const QVideoFrame& frm)
 {
-    qDebug() << frm.pixelFormat() << "\n";
+    //qDebug() << frm.pixelFormat() << "\n";
+    Raw_frame.frm = frm;
+#ifdef __WIN32__
+    Raw_frame.captime = timeGetTime();
+#else
+    struct timeval tm;
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    tm.tv_sec = ts.tv_sec;
+    tm.tv_usec = ts.tv_nsec / 1000;
+    Raw_frame.captime = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
+#endif
 }
 int
 DWYCOEXPORT
@@ -729,12 +741,6 @@ vgqt_pass(void *aqext)
 {
     QMutexLocker ml(&mutex);
     Raw_frame = vframe();
-//    while(next_buf != next_ibuf)
-//    {
-//        vbufs[next_buf] = QVideoFrame();
-//        //GRTLOG("chuck %d", (int)y_bufs[next_buf], 0);
-//        next_buf = (next_buf + 1) % NB_BUFFER;
-//    }
 }
 
 void
@@ -801,20 +807,12 @@ static
 struct finished
 conv_data(vframe ivf)
 {
-
-    QMutexLocker ml(&mutex);
-
     struct finished f;
 
-    //if(next_buf != next_ibuf)
-    //{
-        //int nb = next_buf;
+
         int cols, rows;
         QVideoFrame vf = ivf.frm;
         f.captime = ivf.captime;
-        //vbufs[nb] = QVideoFrame();
-        //next_buf = (next_buf + 1) % NB_BUFFER;
-        ml.unlock();
 
         if(!vf.map(QVideoFrame::ReadOnly))
         {
@@ -822,6 +820,7 @@ conv_data(vframe ivf)
         }
         f.r = rows = vf.height();
         f.c = cols = vf.width();
+        int flipped = vf.surfaceFormat().scanLineDirection() == QVideoFrameFormat::TopToBottom;
 
         int fmt = 0;
         int swap = 0;
@@ -829,11 +828,14 @@ conv_data(vframe ivf)
         switch(vfpf)
         {
         case QVideoFrameFormat::Format_RGBX8888:
+            // XXX FIX ME, this won't work since there are no video frame formats
+            // that use 24bit rgb formats in qt6. so we would need to update
+            // our converter if we ever came across a camera that produces this
             fmt = AQ_RGB24;
             break;
         case QVideoFrameFormat::Format_YUV420P:
             fmt = AQ_YUV12;
-            swap = 1;
+            //swap = 1;
             break;
         case QVideoFrameFormat::Format_YV12:
             fmt = AQ_YUV12;
@@ -903,26 +905,27 @@ conv_data(vframe ivf)
         }
         else
         {
-            // note: this was an attempt to convert yuy2 as returned by
-            // the qt camera system to something we can use. it gets the plane
-            // wrong so the pic doesn't look right. and capture stops after
-            // a few frames, probably gstreamer getting confused about something.
-        VidConvert cvt;
-        cvt.set_format(fmt);
-        int ccols = vf.width();
-        int crows = vf.height();
-        void *y;
-        void *cb;
-        void *cr;
-        int fmt_out;
-        void *r = cvt.convert_data(vf.bits(0), vf.bytesPerLine(0) * vf.height(), ccols, crows, y, cb, cr, fmt_out, 0);
-        f.planes[0] = (gray **)r;
-        f.planes[1] = (gray **)cb;
-        f.planes[2] = (gray **)cr;
+            // note: this is assumed to be some kind of interleaved format with dense lines.
+            // we'll need to update the converter to add a "line_length" or something if
+            // we ever run into one of those.
+            VidConvert cvt;
+            cvt.set_format(fmt);
+            cvt.swap_uv = 0;
+            cvt.set_upside_down(flipped);
+            int ccols = vf.width();
+            int crows = vf.height();
+            void *y;
+            void *cb;
+            void *cr;
+            int fmt_out;
+            void *r = cvt.convert_data(vf.bits(0), vf.bytesPerLine(0) * vf.height(), ccols, crows, y, cb, cr, fmt_out, 0);
+            f.planes[0] = (gray **)r;
+            f.planes[1] = (gray **)cb;
+            f.planes[2] = (gray **)cr;
 
-        vf.unmap();
-        vf = QVideoFrame();
-        return f;
+            vf.unmap();
+            vf = QVideoFrame();
+            return f;
         }
 
 #endif
@@ -1018,7 +1021,6 @@ conv_data(vframe ivf)
         vf.unmap();
         vf = QVideoFrame();
         return f;
-    //}
 
     oopanic("aqvfw get no data");
     // not reached
@@ -1039,11 +1041,6 @@ vgqt_need(void *aqext)
     QMutexLocker ml(&mutex);
     if(!Raw_frame.frm.isValid())
         return;
-//    if(next_ibuf == next_buf)
-//    {
-//        // no raw frames to process
-//        return;
-//    }
     if(next_cb == (next_icb + 1) % NB_BUFFER)
     {
         // no room to start another conversion
