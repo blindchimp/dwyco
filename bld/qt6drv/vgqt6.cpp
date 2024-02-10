@@ -676,7 +676,7 @@ vgqt_init(void *aqext, int frame_rate)
         Mcs->setVideoSink(vs);
         QObject::connect(vs, &QVideoSink::videoFrameChanged, new_video_frame);
     }
-    //Cam->setActive(true);
+
     Cam->start();
     return 1;
 
@@ -878,18 +878,24 @@ conv_data(vframe ivf)
             unsigned char *c = (unsigned char *)vf.bits(0);
             gray **g = pgm_allocarray(cols, rows);
             memcpy(&g[0][0], c, cols * rows);
-            c += cols * rows;
+            if(flipped)
+                flip_in_place(g, cols, rows);
+            //c += cols * rows;
             f.planes[0] = g;
 
             c = vf.bits(1);
             g = pgm_allocarray(cols / 2, rows / 2);
             memcpy(&g[0][0], c, (cols * rows) / 4);
+            if(flipped)
+                flip_in_place(g, cols / 2, rows / 2);
             f.planes[1] = g;
-            c += (cols * rows) / 4;
+            //c += (cols * rows) / 4;
 
             c = vf.bits(2);
             g = pgm_allocarray(cols / 2, rows / 2);
             memcpy(&g[0][0], c, (cols * rows) / 4);
+            if(flipped)
+                flip_in_place(g, cols / 2, rows / 2);
             f.planes[2] = g;
 
             if(swap)
@@ -1052,45 +1058,5 @@ vgqt_need(void *aqext)
     next_cb = (next_cb + 1) % NB_BUFFER;
 }
 
-
-//void
-//probe_handler::handleFrame(const QVideoFrame& frm)
-//{
-//    QMutexLocker ml(&mutex);
-
-//    Raw_frame.frm = frm;
-//#ifdef __WIN32__
-//    Raw_frame.captime = timeGetTime();
-//#else
-//    struct timeval tm;
-//    struct timespec ts;
-//    clock_gettime(CLOCK_MONOTONIC, &ts);
-//    tm.tv_sec = ts.tv_sec;
-//    tm.tv_usec = ts.tv_nsec / 1000;
-//    Raw_frame.captime = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
-//#endif
-
-////    if(next_buf == (next_ibuf + 1) % NB_BUFFER)
-////    {
-////        // drop it for now, maybe something more complicated
-////        // like overwriting next frame would look better
-////        // in some cases, but not worth it at this point.
-////        return;
-////    }
-////#ifdef __WIN32__
-////    y_bufs[next_ibuf] = timeGetTime();
-////#else
-////    struct timeval tm;
-////    struct timespec ts;
-////    clock_gettime(CLOCK_MONOTONIC, &ts);
-////    tm.tv_sec = ts.tv_sec;
-////    tm.tv_usec = ts.tv_nsec / 1000;
-////    y_bufs[next_ibuf] = ((tm.tv_sec * 1000000) + tm.tv_usec) / 1000; // turn into msecs
-////#endif
-
-////    vbufs[next_ibuf] = frm;
-
-////    next_ibuf = (next_ibuf + 1) % NB_BUFFER;
-//}
 
 

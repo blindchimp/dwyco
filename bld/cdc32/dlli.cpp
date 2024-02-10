@@ -2419,7 +2419,7 @@ dwyco_set_channel_destroy_callback(int chan_id, DwycoChannelDestroyCallback cb, 
         return;
 
     m->destroy_callback = bounce_destroy;
-    m->dcb_arg1 = vc((long)user_arg);
+    m->dcb_arg1 = vc((long long)user_arg);
     m->dcb_arg2 = (void *)cb;
 }
 
@@ -2705,7 +2705,7 @@ dwyco_chat_create_user_lobby(const char *dispname,  const char *category, const 
 {
     update_activity();
     vc v(VC_VECTOR);
-    v.append((long)cb);
+    v.append((long long)cb);
     v.append(dispname);
     dirth_send_create_user_lobby(My_UID, dispname, category, vc(VC_BSTRING, sub_god_uid, len_sub_god_uid), pw, user_limit, QckDone(bounce_create_user_lobby, user_arg, v));
 }
@@ -2731,7 +2731,7 @@ dwyco_chat_remove_user_lobby(const char *lobby_id, DwycoCommandCallback cb, void
 {
     update_activity();
     vc v(VC_VECTOR);
-    v.append((long)cb);
+    v.append((long long)cb);
     v.append(lobby_id);
     dirth_send_remove_user_lobby(My_UID, lobby_id, QckDone(bounce_remove_user_lobby, user_arg, v));
 }
