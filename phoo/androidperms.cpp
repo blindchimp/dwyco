@@ -2,7 +2,7 @@
 #include "androidperms.h"
 #ifdef ANDROID
 #include <QPermissions>
-#include <QOperatingSystemVersion>
+#include <QCoreApplication>
 #endif
 
 AndroidPerms::AndroidPerms(QObject *parent) : QObject(parent)
@@ -19,7 +19,7 @@ AndroidPerms::android_api()
 #ifndef ANDROID
     return 0;
 #else
-    return QOperatingSystemVersion::current().majorVersion();
+    return QNativeInterface::QAndroidApplication::sdkVersion();
 #endif
 }
 
