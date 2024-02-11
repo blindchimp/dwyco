@@ -52,7 +52,7 @@
 #include <QFuture>
 #include <QThread>
 #include <QDebug>
-
+#include <stdlib.h>
 #include "vgqt.h"
 #include "vidaq.h"
 #include "pgm.h"
@@ -412,7 +412,7 @@ find_closest(const QList<QCameraFormat>& formats, int cols, int rows)
     for(int i = 0; i < n; ++i)
     {
         auto f = formats[i];
-        int a = std::abs(f.resolution().height() - rows) + std::abs(f.resolution().width() - cols);
+        int a = abs(f.resolution().height() - rows) + abs(f.resolution().width() - cols);
         if(a < best)
         {
             for(int j = 0; j < nf; ++j)
