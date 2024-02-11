@@ -1106,7 +1106,7 @@ VidConvert::unpack_to_planar(unsigned char *buf,
         {
             if(i & 1)
             {
-                *cbline = (*cbline + buf[j * 4] + cboff) / 2;
+                *cbline = (*cbline + buf[j * 4 + cboff]) / 2;
                 *crline = (*crline + buf[j * 4 + croff]) / 2;
                 ++cbline;
                 ++crline;

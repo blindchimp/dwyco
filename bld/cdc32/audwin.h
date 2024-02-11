@@ -44,7 +44,7 @@ protected:
     DWBYTE *silence;
     int silence_len;
     long num_out;
-    virtual void callback(HWAVEOUT hwo, UINT msg, DWORD p1, DWORD p2);
+    virtual void callback(HWAVEOUT hwo, UINT msg, DWORD_PTR p1, DWORD_PTR p2);
     AudioMixer *mixer;
 
 private:
@@ -53,7 +53,7 @@ private:
     CRITICAL_SECTION& cs;
     int aec;
 
-    friend void CALLBACK cb_dispatch(HWAVEOUT hwo, UINT msg, DWORD obj, DWORD p1, DWORD p2);
+    friend void CALLBACK cb_dispatch(HWAVEOUT hwo, UINT msg, DWORD_PTR obj, DWORD_PTR p1, DWORD_PTR p2);
 };
 
 

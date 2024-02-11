@@ -2126,7 +2126,7 @@ sql_count_index(vc uid)
                     // messages from previous group members
                     " or (is_sent isnull and length(?1) > 0 and from_group = ?1 ))"
                     " and not exists (select 1 from msg_tomb as tmb where gi.mid = tmb.mid)",
-                    gid.is_nil() ? "" : to_hex(gid),
+            gid.is_nil() ? vc("") : to_hex(gid),
                     huid);
         sql_commit_transaction();
     }

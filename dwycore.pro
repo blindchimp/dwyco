@@ -21,5 +21,6 @@ bld/uv
 
 linux-*:SUBDIRS += bld/qt6drv bld/v4lcap
 macx-*:SUBDIRS += bld/qt6drv
+win32-*:SUBDIRS += bld/qt6drv
 
 SUBDIRS += cdcx

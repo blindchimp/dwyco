@@ -31,7 +31,12 @@
 void cdcxpanic(const char *);
 
 // pick a type that won't lose info when cast back and forth to void *
+#ifdef _WIN64
+typedef long long DVP_COOKIE;
+#else
 typedef long DVP_COOKIE;
+#endif
+
 typedef QHash<DVP_COOKIE, void *> DVP_MAP;
 
 class DVP

@@ -51,7 +51,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(MAC_CLIENT) || defined(LINUX)
+#if defined(MAC_CLIENT) || defined(LINUX) || defined(_Windows)
 #include "vgqt.h"
 #include "audi_qt.h"
 #include "audo_qt.h"
@@ -224,7 +224,8 @@ setup_emergency_servers()
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
-    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    // not needed anymore in qt6
+    //r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     QNetworkReply *reply = manager->get(r);
 }
 

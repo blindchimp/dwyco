@@ -50,7 +50,7 @@ private:
     int len_leftover;
 
 protected:
-    virtual void callback(HWAVEOUT hwo, UINT msg, DWORD p1, DWORD p2);
+    virtual void callback(HWAVEOUT hwo, UINT msg, DWORD_PTR p1, DWORD_PTR p2);
 
 };
 
