@@ -1,6 +1,8 @@
+
 #include "androidperms.h"
 #ifdef ANDROID
-#include <QtAndroidExtras>
+#include <QPermissions>
+#include <QOperatingSystemVersion>
 #endif
 
 AndroidPerms::AndroidPerms(QObject *parent) : QObject(parent)
@@ -17,7 +19,7 @@ AndroidPerms::android_api()
 #ifndef ANDROID
     return 0;
 #else
-    return QtAndroid::androidSdkVersion();
+    return QOperatingSystemVersion::current().majorVersion();
 #endif
 }
 
@@ -29,7 +31,7 @@ AndroidPerms::load()
     update_camera_permission(true);
     update_post_notifications_permission(true);
 #else
-    if(QtAndroid::androidSdkVersion() < 23)
+    if(android_api() < 23)
     {
         update_external_storage_permission(true);
         update_camera_permission(true);
