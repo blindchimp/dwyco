@@ -1,4 +1,4 @@
-
+#undef ANDROID
 #include "androidperms.h"
 #ifdef ANDROID
 #include <QPermissions>

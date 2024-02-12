@@ -2179,7 +2179,7 @@ DwycoCore::set_badge_number(int i)
 int
 DwycoCore::load_contacts()
 {
-#ifdef ANDROID
+#if 0 && ANDROID
     if(QtAndroid::checkPermission("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
     {
         QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_CONTACTS"));
