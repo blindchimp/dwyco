@@ -190,9 +190,13 @@ public:
     // a complete deserialization operation is performed. this eliminates
     // situations where constructors might fail. but, it allows the
     // deserialization to continue past this limit.
-    long max_memory;
-    unsigned long memory_tally;
+    void set_max_memory(int);
 
+private:
+    long max_memory;
+    int max_count_digits;  // roughly log10(max_memory)
+    unsigned long memory_tally;
+friend void* ::operator new(std::size_t sz);
     static unsigned long Memory_tally;
 
     int flushnb();

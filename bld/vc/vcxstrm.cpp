@@ -40,6 +40,27 @@ void* operator new(std::size_t sz)
     throw std::bad_alloc{}; // required by [new.delete.single]/3
 }
 
+static
+int
+elog10(unsigned int N)
+{
+    int estimate = 0;
+    while (N > 9)
+    {
+        estimate += 1;
+        N /= 10;
+    }
+    return estimate;
+}
+
+void
+vcxstream::set_max_memory(int mxm)
+{
+    int lmxm = elog10(mxm);
+    max_memory = mxm;
+    max_count_digits = lmxm + 1;
+}
+
 #if 0
 long VCX_max_element_len = 1024 * 1024;
 long VCX_max_elements = 1024;
