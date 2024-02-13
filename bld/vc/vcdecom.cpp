@@ -510,7 +510,7 @@ vc_decomposable::decode_numelems(vcxstream& vcx, long& elems_out)
 	if((cp = vcx.in_want(ENCODED_LEN_LEN)) == 0)
 		return EXIN_DEV;
 	int len = decode_len(cp);
-    if(len == -1 || len == 0)
+    if(len == -1 || len == 0 || len > vcx.max_count_digits)
 		return EXIN_PARSE;
     if(len > vcx.max_element_len)
         return EXIN_PARSE;

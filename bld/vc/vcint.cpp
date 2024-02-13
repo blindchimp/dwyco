@@ -201,7 +201,7 @@ vc_int::xfer_in(vcxstream& vcx)
 	if(lp == 0)
 		return EXIN_DEV;
     int len = decode_len(lp);
-    if(len == -1 || len == 0)
+    if(len == -1 || len == 0 || len > vcx.max_count_digits)
         return EXIN_PARSE;
     if(len > vcx.max_element_len)
         return EXIN_PARSE;

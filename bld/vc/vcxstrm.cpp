@@ -117,6 +117,7 @@ vcxstream::vcxstream(const char *ubuf, long l, enum style sty) : log(VCX_ILOG)
     max_element_len = Max_element_len;
     max_memory = Max_memory;
     memory_tally = 0;
+    max_count_digits = INT_MAX;
 }
 
 vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -139,6 +140,7 @@ vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf,
     max_element_len = Max_element_len;
     max_memory = Max_memory;
     memory_tally = 0;
+    max_count_digits = INT_MAX;
 }
 
 vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -162,6 +164,7 @@ vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(
     max_element_len = Max_element_len;
     max_memory = Max_memory;
     memory_tally = 0;
+    max_count_digits = INT_MAX;
 }
 
 vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -185,6 +188,7 @@ vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
     max_element_len = Max_element_len;
     max_memory = Max_memory;
     memory_tally = 0;
+    max_count_digits = INT_MAX;
 }
 
 vcxstream::~vcxstream()
