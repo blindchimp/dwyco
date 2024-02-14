@@ -25,6 +25,17 @@ long vcxstream::Max_element_len = LONG_MAX;
 long vcxstream::Max_elements = LONG_MAX;
 long vcxstream::Max_depth = LONG_MAX;
 long vcxstream::Max_memory = LONG_MAX;
+
+// ok, this global tally thing isn't going to work like i expected.
+// there were a bunch of things i forgot to consider like if there are multiple
+// streams and some of them are "retry" because the device blocked, how do i
+// adjust the amount of memory that has been used by that stream for those
+// open-retry-close situations. also, who gets "charged" for a memory allocation
+// needs to be thought about a little more concretely. new api's are needed to clients
+// can set the max memory limits for each stream (or come up with a scheme where we
+// just have one global limit, in order to protect against problems at a coarse level.)
+// as it is, this will work ok for simple things like "xfer" where there is one
+// blocking deserialization going at any time.
 unsigned long vcxstream::Memory_tally = 0;
 
 void* operator new(std::size_t sz)
