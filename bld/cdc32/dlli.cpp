@@ -9193,21 +9193,11 @@ dwyco_remove_backup()
 // YOU MUST EXIT IMMEDIATELY IF THIS RETURNS 1
 // WARNING: if you are in a group, this will not work right.
 // you MUST exit the group first before attempting a restore!
-DWYCOEXPORT
-int
-dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
+
+static
+void
+special_backup_bailout()
 {
-    if(!restore_msgs(bu_fn, msgs_only))
-        return 0;
-#if 0
-    DwString dfn(bu_fn);
-    int pos;
-    if((pos = dfn.find("dwyco-backup-")) == DwString::npos)
-        return 0;
-    dfn.insert(pos + 13, "diff-");
-    if(!restore_msgs(dfn.c_str(), msgs_only))
-        return 0;
-#endif
     // this is special, we need to get out of here without
     // any of the usual exit processing
     // this is for windows, since we can't really delete a file
@@ -9225,6 +9215,18 @@ dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
     // unforunately, on windows, it crashes the qt process for some
     // reason, so i'll have to leave it to the caller to schedule
     // a quick graceful exit.
+}
+
+DWYCOEXPORT
+int
+dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
+{
+    if(Current_alternate)
+        return 0;
+    if(!restore_msgs(bu_fn, msgs_only))
+        return 0;
+
+    special_backup_bailout();
     return 1;
     //exit(0);
 }
@@ -9251,8 +9253,12 @@ DWYCOEXPORT
 int
 dwyco_restore_android_backup()
 {
-    int ret = android_restore_msgs();
-    return ret;
+    if(Current_alternate)
+        return 0;
+    if(!android_restore_msgs())
+        return 0;
+    special_backup_bailout();
+    return 1;
 }
 
 // these are some functions that are called from java (via swig interface)
