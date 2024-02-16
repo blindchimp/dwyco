@@ -102,7 +102,7 @@ QT += concurrent
 INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
 }
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst3
 
 linux-* {
 DEFINES += LINUX
@@ -496,23 +496,23 @@ HEADERS += \
     syncmodel.h
 
 DISTFILES += \
-    androidinst2/google-services.json \
-    androidinst2/src/com/dwyco/cdc32/dwybg.java \
-    androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst2/src/com/dwyco/phoo/app.java \
-    androidinst2/src/com/dwyco/android/DwycoProbe.java \
-    androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
-    androidinst2/src/com/dwyco/android/NotificationClient.java \
-    androidinst2/src/com/dwyco/android/SocketLock.java \
-    androidinst2/src/com/dwyco/android/FileUtils.java \
-    androidinst2/src/com/dwyco/phoo/DwycoApp.java \
-    androidinst2/AndroidManifest.xml \
-    androidinst2/build.gradle \
-    androidinst2/gradle.properties \
-    androidinst2/gradle/wrapper/gradle-wrapper.jar \
-    androidinst2/gradle/wrapper/gradle-wrapper.properties \
-    androidinst2/gradlew \
-    androidinst2/gradlew.bat \
-    androidinst2/res/values/libs.xml \
-    androidinst2/res/xml/provider_paths.xml
+    androidinst3/google-services.json \
+    androidinst3/src/com/dwyco/cdc32/dwybg.java \
+    androidinst3/src/com/dwyco/cdc32/dwybgJNI.java \
+    androidinst3/src/com/dwyco/phoo/app.java \
+    androidinst3/src/com/dwyco/android/DwycoProbe.java \
+    androidinst3/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst3/src/com/dwyco/android/NotificationClient.java \
+    androidinst3/src/com/dwyco/android/SocketLock.java \
+    androidinst3/src/com/dwyco/android/FileUtils.java \
+    androidinst3/src/com/dwyco/phoo/DwycoApp.java \
+    androidinst3/AndroidManifest.xml \
+    androidinst3/build.gradle \
+    androidinst3/gradle.properties \
+    androidinst3/gradle/wrapper/gradle-wrapper.jar \
+    androidinst3/gradle/wrapper/gradle-wrapper.properties \
+    androidinst3/gradlew \
+    androidinst3/gradlew.bat \
+    androidinst3/res/values/libs.xml \
+    androidinst3/res/xml/provider_paths.xml
 
