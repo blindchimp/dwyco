@@ -7,8 +7,8 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick
-import Qt.labs.folderlistmodel
-import QtQml 
+import Qt.labs.folderlistmodel 2.5
+//import QtQml
 import QtQuick.Layouts 
 import QtQuick.Controls
 
