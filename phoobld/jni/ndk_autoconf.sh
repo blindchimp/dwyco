@@ -9,20 +9,21 @@ export HOST_TAG="linux-x86_64"
 fi
 
 export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
-NDK_API_LEVEL=21
-#if [ $NDK_ABI = "arm64" -o $NDK_ABI = "x86_64" ]
-#then
-#NDK_API_LEVEL=21
-#fi
 
-export CC=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang
-export CXX=$TOOLCHAIN/bin/${TARGET_TAG}${NDK_API_LEVEL}-clang++
+export CC=$TOOLCHAIN/bin/${TARGET_TAG}21-clang
+export CXX=$TOOLCHAIN/bin/${TARGET_TAG}21-clang++
 
-AR=`ndk-which --abi ${NDK_ABI_NAME} ar`
-AS=`ndk-which --abi ${NDK_ABI_NAME} as`
-LD=`ndk-which --abi ${NDK_ABI_NAME} ld`
-RANLIB=`ndk-which --abi ${NDK_ABI_NAME} ranlib`
-STRIP=`ndk-which --abi ${NDK_ABI_NAME} strip`
+AR=$TOOLCHAIN/bin/llvm-ar
+AS=$TOOLCHAIN/bin/llvm-as
+LD=$TOOLCHAIN/bin/ld
+RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+STRIP=$TOOLCHAIN/bin/llvm-strip
+
+#AR=`ndk-which --abi ${NDK_ABI_NAME} ar`
+#AS=`ndk-which --abi ${NDK_ABI_NAME} as`
+#LD=`ndk-which --abi ${NDK_ABI_NAME} ld`
+#RANLIB=`ndk-which --abi ${NDK_ABI_NAME} ranlib`
+#STRIP=`ndk-which --abi ${NDK_ABI_NAME} strip`
 
 export AR
 export AS

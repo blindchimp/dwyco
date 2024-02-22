@@ -6,7 +6,8 @@ if [[ "x$NDK" == "x" ]]; then
 #NDK=~/android/android-ndk
 	if [ `uname` = "Darwin" ]
 	then
-	NDK=~/Library/Android/sdk/ndk/21.3.6528147/
+	#NDK=~/Library/Android/sdk/ndk/21.3.6528147/
+	NDK=~/Library/Android/sdk/ndk/25.1.8937393/
 	else
 	#NDK=~/Android/Sdk/ndk/21.3.6528147
 	NDK=~/Android/Sdk/ndk/25.1.8937393
