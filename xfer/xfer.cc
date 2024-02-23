@@ -150,7 +150,7 @@ setup_session_key()
         return;
     vcx.close();
 
-    Session_key = dh_store_and_forward_get_key(Key_material, Server_keys);
+    Session_key = dh_store_and_forward_get_key2(Key_material, Server_keys);
     ECtx = vclh_encdec_open();
     DCtx = vclh_encdec_open();
     vclh_encdec_init_key_ctx(ECtx, Session_key, 0);
