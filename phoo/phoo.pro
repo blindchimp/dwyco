@@ -1,5 +1,5 @@
 TEMPLATE = app
-FORCE_DESKTOP_VGQT=0
+FORCE_DESKTOP_VGQT=1
 
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 
@@ -13,7 +13,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="3.96"
+VER="3.97"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 
@@ -102,7 +102,7 @@ QT += concurrent
 INCLUDEPATH += $${DINC}/kazlib $${DINC}/dwcls $${DINC}/pbm $${DINC}/pgm
 }
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst3
 
 linux-* {
 DEFINES += LINUX
@@ -328,7 +328,7 @@ D = $${OUT_PWD}/../bld
 
 L=$$PWD/../$$DWYCO_CONFDIR/libs/$$ANDROID_TARGET_ARCH
 
-LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qtdrv/libqtdrv_$${QT_ARCH}.a
+LIBS += $$D/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a $$D/qt6drv/libqt6drv_$${QT_ARCH}.a
 
 # link against shared lib that is also used by the background, saves a bit of
 # code but renders debugger useless. also NOTE: none of the JNI stuff will
@@ -420,14 +420,11 @@ $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \
 $${D}/jhead/$${S}/jhead.lib \
 $${D}/uv/$${S}/uv.lib \
+$${D}/qt6drv/$${S}/qt6drv.lib \
 $${D}/qt-qml-models/$${S}/QtQmlModels_$${QT_ARCH}.lib \
 $${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib binmode.obj \
-$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
 
-#delayimp.lib $${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
-#QMAKE_LFLAGS_RELEASE += /DELAYLOAD:mtcapxe.dll
-#QMAKE_LFLAGS_DEBUG += /DELAYLOAD:mtcapxe.dll
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/$${S}/cdc32.lib \
@@ -447,13 +444,8 @@ $${D}/speex/$${S}/speex.lib \
 $${D}/ogg/$${S}/ogg.lib \
 $${D}/jhead/$${S}/jhead.lib \
 $${D}/qt-qml-models/$${S}/QtQmlModels_$${QT_ARCH}.lib \
-$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib
-
-#\\mk\\depot\\dwycore\\bld\\vorbis112\\win32\\vs2003\\libvorbis\\Debug\\libvorbis.lib \
-#\\mk\\depot\\dwycore\\bld\\theora\\win32\\vs2008\\win32\\Debug\\libtheora_static.lib \
-#\\mk\\depot\\dwycore\\bld\\speex\\win32\\vs2008\\Debug\\libspeex.lib \
-#\\mk\\depot\\dwycore\\bld\\speex\\win32\\vs2008\\libspeexdsp\\Debug\\libspeexdsp.lib \
-#\\mk\\depot\\dwycore\\bld\\ogg\\win32\\vs2003\\libogg\\Debug\\libogg.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
+$${D}/qt6drv/$${S}/qt6drv.lib
 
 }
 
@@ -496,23 +488,23 @@ HEADERS += \
     syncmodel.h
 
 DISTFILES += \
-    androidinst2/google-services.json \
-    androidinst2/src/com/dwyco/cdc32/dwybg.java \
-    androidinst2/src/com/dwyco/cdc32/dwybgJNI.java \
-    androidinst2/src/com/dwyco/phoo/app.java \
-    androidinst2/src/com/dwyco/android/DwycoProbe.java \
-    androidinst2/src/com/dwyco/android/MyFirebaseMessagingService.java \
-    androidinst2/src/com/dwyco/android/NotificationClient.java \
-    androidinst2/src/com/dwyco/android/SocketLock.java \
-    androidinst2/src/com/dwyco/android/FileUtils.java \
-    androidinst2/src/com/dwyco/phoo/DwycoApp.java \
-    androidinst2/AndroidManifest.xml \
-    androidinst2/build.gradle \
-    androidinst2/gradle.properties \
-    androidinst2/gradle/wrapper/gradle-wrapper.jar \
-    androidinst2/gradle/wrapper/gradle-wrapper.properties \
-    androidinst2/gradlew \
-    androidinst2/gradlew.bat \
-    androidinst2/res/values/libs.xml \
-    androidinst2/res/xml/provider_paths.xml
+    androidinst3/google-services.json \
+    androidinst3/src/com/dwyco/cdc32/dwybg.java \
+    androidinst3/src/com/dwyco/cdc32/dwybgJNI.java \
+    androidinst3/src/com/dwyco/phoo/app.java \
+    androidinst3/src/com/dwyco/android/DwycoProbe.java \
+    androidinst3/src/com/dwyco/android/MyFirebaseMessagingService.java \
+    androidinst3/src/com/dwyco/android/NotificationClient.java \
+    androidinst3/src/com/dwyco/android/SocketLock.java \
+    androidinst3/src/com/dwyco/android/FileUtils.java \
+    androidinst3/src/com/dwyco/phoo/DwycoApp.java \
+    androidinst3/AndroidManifest.xml \
+    androidinst3/build.gradle \
+    androidinst3/gradle.properties \
+    androidinst3/gradle/wrapper/gradle-wrapper.jar \
+    androidinst3/gradle/wrapper/gradle-wrapper.properties \
+    androidinst3/gradlew \
+    androidinst3/gradlew.bat \
+    androidinst3/res/values/libs.xml \
+    androidinst3/res/xml/provider_paths.xml
 

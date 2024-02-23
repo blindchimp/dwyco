@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     dpi = screen->logicalDotsPerInch() * app.devicePixelRatio();
 #elif defined(Q_OS_ANDROID)
     QAndroidJniObject qtActivity =
-        QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt5/android/QtNative",
+        QAndroidJniObject::callStaticObjectMethod("org/qtproject/qt/android/QtNative",
                 "activity", "()Landroid/app/Activity;");
     QAndroidJniObject resources = qtActivity.callObjectMethod("getResources",
                                   "()Landroid/content/res/Resources;");

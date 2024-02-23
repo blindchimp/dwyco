@@ -197,7 +197,7 @@ pthread_spin_unlock(pthread_spinlock_t *a)
 #endif
 
 // note: ndk api 24 includes these now
-#if 1
+#if 0
 #ifdef ANDROID
 typedef volatile int pthread_spinlock_t;
 static

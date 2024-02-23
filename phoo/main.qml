@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-import QtQml
+//import QtQml
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
@@ -996,7 +996,7 @@ ApplicationWindow {
             qt_application_state = app_state
         }
 
-        onImage_picked: {
+        onImage_picked: (fn) => {
             console.log("image " + fn)
             if(android_img_pick_hack === 1)
             {
@@ -1011,14 +1011,14 @@ ApplicationWindow {
             }
         }
 
-        onAny_unviewedChanged: {
+        onAny_unviewedChanged: (any_unviewed) => {
             if(any_unviewed)
                 set_badge_number(1)
             else
                 set_badge_number(0)
         }
 
-        onClient_nameChanged: {
+        onClient_nameChanged: (client_name) => {
             core.update_dwyco_client_name(core.client_name)
         }
     }

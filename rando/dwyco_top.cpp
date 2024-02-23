@@ -1885,7 +1885,7 @@ DwycoCore::init()
     {
         // just query for _json tag and processes those directly
         DWYCO_LIST tml;
-        if(dwyco_get_tagged_idx(&tml, "_json"))
+        if(dwyco_get_tagged_idx(&tml, "_json", 0))
         {
             simple_scoped stml(tml);
             for(int i = 0; i < stml.rows(); ++i)

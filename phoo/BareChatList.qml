@@ -11,7 +11,7 @@
 // attached to a chatbox or something as a side-bar, since you have more
 // room.
 
-import QtQml
+//import QtQml
 import QtQuick
 import dwyco
 import QtQuick.Layouts

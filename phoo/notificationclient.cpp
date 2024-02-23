@@ -213,6 +213,7 @@ NotificationClient::load_contacts()
 int
 NotificationClient::open_image()
 {
+#if 0
     QtAndroid::PermissionResultMap m;
 
     if(QtAndroid::checkPermission("android.permission.READ_MEDIA_IMAGES") == QtAndroid::PermissionResult::Granted)
@@ -232,6 +233,7 @@ NotificationClient::open_image()
     {
         return 0;
     }
+#endif
 
 ok:;
     QAndroidJniObject::callStaticMethod<void>(

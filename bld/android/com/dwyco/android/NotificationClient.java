@@ -4,7 +4,8 @@
 
 package com.dwyco.android;
 import com.dwyco.cdc32.dwybg;
-import org.qtproject.qt5.android.bindings.QtActivity;
+import org.qtproject.qt.android.bindings.QtActivity;
+import org.qtproject.qt.android.bindings.QtApplication;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.NotificationChannel;

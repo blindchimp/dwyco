@@ -22,6 +22,7 @@ SUBDIRS += bld/miniupnp/miniupnp-master/miniupnpc
 linux-*:SUBDIRS += bld/v4lcap bld/$$QTDRV
 macx-clang: SUBDIRS += bld/$$QTDRV
 macx-ios-clang: SUBDIRS += bld/$$QTDRV
+win*: SUBDIRS += bld/$$QTDRV
 SUBDIRS += phoo
 #android: include(/home/dwight/android/astudio/android_openssl/openssl.pri)
 #android: include(/Users/dwight/android/astudio/android_openssl/openssl.pri)
