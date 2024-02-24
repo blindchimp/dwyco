@@ -398,10 +398,10 @@ find_closest(const QList<QCameraFormat>& formats, int cols, int rows)
     int fmts[] = {
         QVideoFrameFormat::Format_YUV420P,
         QVideoFrameFormat::Format_YV12,
-        QVideoFrameFormat::Format_UYVY,
-        QVideoFrameFormat::Format_YUYV,
         QVideoFrameFormat::Format_NV12,
         QVideoFrameFormat::Format_NV21,
+        QVideoFrameFormat::Format_UYVY,
+        QVideoFrameFormat::Format_YUYV,
         QVideoFrameFormat::Format_RGBX8888
     };
     int nf = sizeof(fmts) / sizeof(fmts[0]);
@@ -429,6 +429,30 @@ find_closest(const QList<QCameraFormat>& formats, int cols, int rows)
     return bestf;
 }
 
+static
+QByteArray
+get_format(QCameraDevice dev, int cols, int rows, QCameraFormat& format_out)
+{
+
+    QByteArray desc;
+    if(dev.isNull())
+    {
+        desc = "unavailable";
+       format_out = QCameraFormat();
+    }
+    else
+    {
+        qDebug() << dev.videoFormats() << "\n";
+        auto cf = find_closest(dev.videoFormats(), cols, rows);
+        format_out = cf;
+        desc = dev.description().toLatin1();
+        if(cf.isNull())
+        {
+            desc = "unavailable";
+        }
+    }
+    return desc;
+}
 
 
 char **
@@ -437,22 +461,34 @@ vgqt_get_video_devices()
 {
     Cams = QMediaDevices::videoInputs();
     int n = Cams.count();
-    char **r = new char *[n + 1];
-    for(int i = 0; i < n; ++i)
+    char **r = new char *[3 * n + 1];
+    for(int i = 0; i < n * 3; i += 3)
     {
-        qDebug() << Cams[i].videoFormats() << "\n";
-        auto cf = find_closest(Cams[i].videoFormats(), 640, 480);
-        CFormats.append(cf);
-        QByteArray desc = Cams[i].description().toLatin1();
-        if(Cams[i].isNull() || cf.isNull())
-        {
-            desc = "unavailable";
-        }
-
-        r[i] = new char [desc.count() + 1];
+        QByteArray desc;
+        QCameraFormat format;
+        QCameraDevice dev = Cams[i / 3];
+        desc = get_format(dev, 640, 480, format);
+        desc += " (Normal)";
+        r[i] = new char [desc.length() + 1];
         strcpy(r[i], desc.constData());
+        CFormats.append(format);
+        qDebug() << desc << " " << format << "\n";
+
+        desc = get_format(dev, 320, 240, format);
+        desc += " (Small)";
+        r[i + 1] = new char [desc.length() + 1];
+        strcpy(r[i + 1], desc.constData());
+        CFormats.append(format);
+         qDebug() << desc << " " << format << "\n";
+
+        desc = get_format(dev, 1280, 960, format);
+        desc += " (Large)";
+        r[i + 2] = new char [desc.length() + 1];
+        strcpy(r[i + 2], desc.constData());
+        CFormats.append(format);
+         qDebug() << desc << " " << format << "\n";
     }
-    r[n] = 0;
+    r[3 * n] = 0;
     return r;
 }
 
@@ -666,9 +702,9 @@ vgqt_init(void *aqext, int frame_rate)
 
     if(!Cam)
     {
-        if(Cur_idx < 0 || Cur_idx >= Cams.count())
+        if(Cur_idx < 0 || Cur_idx >= Cams.count() * 3)
             return 0;
-        Cam = new QCamera(Cams[Cur_idx]);
+        Cam = new QCamera(Cams[Cur_idx / 3]);
         Cam->setCameraFormat(CFormats[Cur_idx]);
         QObject::connect(Cam, &QCamera::activeChanged, config_viewfinder);
         QVideoSink *vs = new QVideoSink;
