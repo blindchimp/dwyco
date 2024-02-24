@@ -1,5 +1,5 @@
 TEMPLATE = app
-FORCE_DESKTOP_VGQT=0
+FORCE_DESKTOP_VGQT=1
 
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
@@ -107,7 +107,7 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 
 
-INCLUDEPATH += $${DINC}/v4lcap
+#INCLUDEPATH += $${DINC}/v4lcap
 
 QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
 QMAKE_LFLAGS += -g #-fsanitize=address
@@ -135,11 +135,10 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
-$${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 -lv4l2 \
 -ldl
 
@@ -160,11 +159,10 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
-$${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 }
 

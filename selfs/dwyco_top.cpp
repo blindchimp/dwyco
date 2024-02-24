@@ -53,7 +53,7 @@ void android_log_stuff(const char *str, const char *s1, int s2);
 #include "androidperms.h"
 #include "profpv.h"
 #if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN) && !defined(DWYCO_IOS)
-#include "v4lcapexp.h"
+//#include "v4lcapexp.h"
 //#include "esdaudin.h"
 #include "audi_qt.h"
 #include "audo_qt.h"
