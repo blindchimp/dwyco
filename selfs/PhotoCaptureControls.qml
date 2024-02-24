@@ -38,11 +38,11 @@
 **
 ****************************************************************************/
 
-import QtQuick 2.12
-import QtMultimedia 5.12
-import QtQuick.Layouts 1.12
-import QtQuick.Controls 2.12
-import dwyco 1.0
+import QtQuick
+import QtMultimedia
+import QtQuick.Layouts
+import QtQuick.Controls
+import dwyco
 
 Item {
     //property Camera camera
@@ -78,25 +78,25 @@ Item {
         }
         CameraButton {
             text: "Capture"
-            visible: camera.imageCapture.ready
+            visible: capture_session.imageCapture.readyForCapture
             onClicked: {
                 file_captured = ""
                 //camera.imageCapture.capture()
                 //camera.imageCapture.captureToLocation(core.tmp_dir)
-                console.log("cam st ", camera.lockStatus == Camera.Unlocked)
-                console.log("cam af ", camera.focus.isFocusModeSupported(CameraFocus.FocusAuto))
-                if(Qt.platform.os == "ios") {
-                    camera.imageCapture.captureToLocation(core.tmp_dir)
-                } else {
-                    if(camera.focus.isFocusModeSupported(CameraFocus.FocusAuto) && camera.lockStatus == Camera.Unlocked)
-                        camera.searchAndLock()
-                    else
-                        camera.imageCapture.captureToLocation(core.tmp_dir)
-                }
+                //console.log("cam st ", camera.lockStatus == Camera.Unlocked)
+                //console.log("cam af ", camera.focus.isFocusModeSupported(CameraFocus.FocusAuto))
+                //if(Qt.platform.os == "ios") {
+                    capture_session.imageCapture.captureToFile(core.tmp_dir)
+//                } else {
+//                    if(camera.focus.isFocusModeSupported(CameraFocus.FocusAuto) && camera.lockStatus == Camera.Unlocked)
+//                        camera.searchAndLock()
+//                    else
+//                        camera.imageCapture.captureToLocation(core.tmp_dir)
+//                }
             }
             onVisibleChanged: {
-                if(visible)
-                    camera.unlock()
+//                if(visible)
+//                    camera.unlock()
             }
 
             Layout.fillWidth: true
@@ -105,7 +105,7 @@ Item {
         
         CameraButton {
             text: "Swap"
-            visible: QtMultimedia.availableCameras.length > 1
+            visible: devices.videoInputs.length > 1
             onClicked: {
                 cur_cam = (cur_cam == 0 ? 1 : 0)
                 // note sure if this a bug or not...
@@ -114,9 +114,9 @@ Item {
                 // doesn't unlock it... like the searchAndLock fails
                 // if the target camera doesn't support autofocus or
                 // whatever. these unlocks work around the problem.
-                camera.unlock()
-                camera.deviceId = QtMultimedia.availableCameras[cur_cam].deviceId
-                camera.unlock()
+                //camera.unlock()
+                camera.deviceId = devices.videoInputs[cur_cam].deviceId
+                //camera.unlock()
             }
             Layout.fillWidth: true
         }

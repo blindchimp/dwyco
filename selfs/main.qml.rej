@@ -1,0 +1,109 @@
+***************
+*** 76,82 ****
+          return 0
+      }
+      font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+-     font.weight: Font.Bold
+      
+      property color primary : "#673AB7"
+      property color primary_dark : "#512DA8"
+--- 77,83 ----
+          return 0
+      }
+      font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
++     //font.weight: Font.Bold
+      
+      property color primary : "#673AB7"
+      property color primary_dark : "#512DA8"
+***************
+*** 316,336 ****
+              onTriggered: {
+                  confirm_block_delete.visible = true
+              }
+-             MessageDialog {
+                  id: confirm_block_delete
+                  title: "Block and delete?"
+-                 icon: StandardIcon.Question
+                  text: "Delete ALL messages from user and BLOCK them?"
+                  informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
+-                 standardButtons: StandardButton.Yes | StandardButton.No
+-                 onYes: {
+                      core.set_ignore(chatbox.to_uid, 1)
+                      core.delete_user(chatbox.to_uid)
+                      themsglist.reload_model()
+                      stack.pop()
+  
+                  }
+-                 onNo: {
+                      stack.pop()
+                  }
+              }
+--- 317,336 ----
+              onTriggered: {
+                  confirm_block_delete.visible = true
+              }
++             MessageYN {
+                  id: confirm_block_delete
+                  title: "Block and delete?"
++                 //icon: StandardIcon.Question
+                  text: "Delete ALL messages from user and BLOCK them?"
+                  informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
++                 onYesClicked: {
+                      core.set_ignore(chatbox.to_uid, 1)
+                      core.delete_user(chatbox.to_uid)
+                      themsglist.reload_model()
+                      stack.pop()
+  
+                  }
++                 onNoClicked: {
+                      stack.pop()
+                  }
+              }
+***************
+*** 929,935 ****
+              //applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid())
+          }
+  
+-         onNew_msg: {
+              console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
+              if(from_uid === themsglist.uid || core.map_to_representative(from_uid) === core.map_to_representative(themsglist.uid)) {
+                  themsglist.reload_model();
+--- 929,935 ----
+              //applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid())
+          }
+  
++         onNew_msg: (from_uid, txt, mid)=> {
+              console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
+              if(from_uid === themsglist.uid || core.map_to_representative(from_uid) === core.map_to_representative(themsglist.uid)) {
+                  themsglist.reload_model();
+***************
+*** 1011,1024 ****
+              }
+          }
+  
+-         onAny_unviewedChanged: {
+              if(any_unviewed)
+                  set_badge_number(1)
+              else
+                  set_badge_number(0)
+          }
+  
+-         onClient_nameChanged: {
+              core.update_dwyco_client_name(core.client_name)
+          }
+      }
+--- 1011,1024 ----
+              }
+          }
+  
++         onAny_unviewedChanged: (any_unviewed) => {
+              if(any_unviewed)
+                  set_badge_number(1)
+              else
+                  set_badge_number(0)
+          }
+  
++         onClient_nameChanged: (client_name) => {
+              core.update_dwyco_client_name(core.client_name)
+          }
+      }
