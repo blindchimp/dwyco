@@ -5,7 +5,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 
 DEFINES += NO_BUILDTIME
 DEFINES += NO_DWYCO_AUDIO
-VER="2.86"
+VER="2.90"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 

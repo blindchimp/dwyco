@@ -63,12 +63,12 @@ Page {
             fav = core.has_tag_message(mid, "_fav")
             hid = core.has_tag_message(mid, "_hid")
         }
-        function onMsg_tag_change_global(changed_mid, huid) {
-            if(changed_mid != mid)
-                return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
-        }
+//        function onMsg_tag_change_global(changed_mid, huid) {
+//            if(changed_mid != mid)
+//                return
+//            fav = core.has_tag_message(mid, "_fav")
+//            hid = core.has_tag_message(mid, "_hid")
+//        }
     }
 
     Component {

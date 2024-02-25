@@ -18,19 +18,19 @@ AppDrawerForm {
         close()
 
     }
-    MessageDialog {
+    MessageYN {
         id: confirm_delete
         title: "Delete all"
-        icon: StandardIcon.Question
+        //icon: StandardIcon.Question
         text: "Delete ALL pictures?"
         informativeText: "This REMOVES FAVORITE pictures too."
-        standardButtons: StandardButton.Yes | StandardButton.No
-        onYes: {
+        //standardButtons: StandardButton.Yes | StandardButton.No
+        onYesClicked: {
             ConvListModel.set_all_selected(true)
             ConvListModel.delete_all_selected()
             close()
         }
-        onNo: {
+        onNoClicked: {
             close()
         }
     }
@@ -40,14 +40,14 @@ AppDrawerForm {
         close()
     }
 
-    MessageDialog {
+    MessageYN {
         id: confirm_delete2
         title: "Delete Non-favorites?"
-        icon: StandardIcon.Question
+        //icon: StandardIcon.Question
         text: "Delete Non-favorite pictures?"
         informativeText: "This KEEPS FAVORITE pictures"
-        standardButtons: StandardButton.Yes | StandardButton.No
-        onYes: {
+        //standardButtons: StandardButton.Yes | StandardButton.No
+        onYesClicked: {
             var i
             var u
             for(i = 0; i < ConvListModel.count; i++) {
@@ -57,7 +57,7 @@ AppDrawerForm {
 
             close()
         }
-        onNo: {
+        onNoClicked: {
             close()
         }
     }

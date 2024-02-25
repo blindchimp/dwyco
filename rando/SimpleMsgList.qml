@@ -6,11 +6,11 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-import QtQuick 2.6
-import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.2
-import QtPositioning 5.12
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import QtQuick.Controls.Material
+import QtPositioning
 
 Page {
     id: msglist
@@ -550,7 +550,7 @@ Page {
                     anchors.left: parent.left
                     Connections {
                         target: core
-                        onMsg_progress : {
+                        function onMsg_progress(pers_id, recipient, msg, percent_done) {
                             console.log("PB ", pers_id, msg, percent_done, model.mid)
                             if(pers_id === model.mid) {
                                 pb.value = percent_done
