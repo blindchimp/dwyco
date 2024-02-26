@@ -1,12 +1,13 @@
 # raw groq generated
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.28)
+include(/home/dwight/git/dwyco/phoobld/conf.cmake)
+
+message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 project(dwcls VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 
 add_library(dwcls STATIC
   dwhash.cpp
@@ -22,11 +23,6 @@ add_library(dwcls STATIC
 
 target_include_directories(dwcls PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
-  ${Qt5_INCLUDE_DIRS}
-)
-
-target_compile_definitions(dwcls PRIVATE
-  QT_DEPRECATED_WARNINGS
 )
 
 target_compile_features(dwcls PRIVATE
