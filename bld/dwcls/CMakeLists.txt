@@ -1,8 +1,14 @@
 # raw groq generated
-cmake_minimum_required(VERSION 3.28)
-include(/home/dwight/git/dwyco/phoobld/conf.cmake)
+cmake_minimum_required(VERSION 3.27)
+include(/Users/dwight/git/dwyco/phoobld/conf.cmake)
 
-message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+# Dump all variables
+message("Dumping all variables:")
+get_cmake_property(variableNames VARIABLES)
+foreach(varName ${variableNames})
+    message("${varName} = ${${varName}}")
+endforeach()
+
 
 project(dwcls VERSION 0.1 LANGUAGES CXX)
 
