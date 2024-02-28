@@ -172,7 +172,7 @@ got_alarm(int)
 // this thread stuff is just a poor-mans watchdog timer so we don't end up
 // with these things lingering around if they get stuck for some reason.
 static
-DWORD __RPC_CALLEE ThreadProc (LPVOID lpdwThreadParam )
+DWORD WINAPI ThreadProc (LPVOID lpdwThreadParam )
 {
     Sleep(20 * 60 * 1000);
     ExitProcess(1);
