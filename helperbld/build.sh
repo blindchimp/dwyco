@@ -7,6 +7,6 @@ mkdir -p $SHADOW_NAME
 (
 opwd=$PWD
 cd $SHADOW_NAME
-qmake DWYCO_CONFDIR=helperbld QMAKE_APPLE_DEVICE_ARCHS="x86_64" $opwd/helpers.pro
+qmake DWYCO_CONFDIR=helperbld QMAKE_APPLE_DEVICE_ARCHS="x86_64 arm64" $opwd/helpers.pro
 make -j 8
 )

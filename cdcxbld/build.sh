@@ -21,6 +21,6 @@ fi
 (
 opwd=$PWD
 cd $SHADOW_NAME
-qmake CONFIG+=release DWYCO_CONFDIR=cdcxbld QMAKE_APPLE_DEVICE_ARCHS="x86_64" $opwd/dwycore.pro
+qmake CONFIG+=release DWYCO_CONFDIR=cdcxbld QMAKE_APPLE_DEVICE_ARCHS="x86_64 arm64" $opwd/dwycore.pro
 make -j 8
 )
