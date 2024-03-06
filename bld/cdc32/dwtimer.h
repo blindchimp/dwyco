@@ -60,8 +60,8 @@ public:
     int is_running();
 
 private:
-    DwTimer(const DwTimer&);
-    DwTimer& operator=(const DwTimer&);
+    DwTimer(const DwTimer&) = delete;
+    DwTimer& operator=(const DwTimer&) = delete;
     struct dwyco::timer timer;
     int auto_reload;
     int enabled;

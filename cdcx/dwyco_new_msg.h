@@ -24,4 +24,7 @@ int load_unviewed();
 int reload_msgs();
 int session_msg(const QByteArray &uid);
 int any_unread_msg(const QByteArray& uid);
+
+extern QSet<QByteArray> Got_msg_from;
+
 #endif
