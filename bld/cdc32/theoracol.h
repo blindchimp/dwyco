@@ -23,6 +23,7 @@ public:
     virtual DWBYTE *final_package(int &len);
     virtual DWBYTE * code_preprocess(gray **img_l, gray **img_cb, gray **img_cr,
                                      int cols, int rows, int is_ref, int& len_out, void *captured_ppm);
+    virtual void display_info(const char *str);
 private:
     virtual void codeyuv(gray **img_l, gray **img_cb, gray **img_cr,
                          int cols, int rows, int is_ref, int& len_out, int subsamp);
@@ -52,6 +53,7 @@ public:
     virtual void decode_from_stream(DWBYTE*& buf, int& len, void *&vimg, int &cols, int& rows);
     virtual void decode_postprocess(DWBYTE *buf, int len);
     virtual void display_decoded(void *p, int cols, int rows);
+    virtual void display_info(const char *str);
 private:
     void setup_decoder_state(int fsize, int fqual);
     friend class MMChannel;

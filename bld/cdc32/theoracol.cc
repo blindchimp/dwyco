@@ -1,3 +1,4 @@
+#include "gvchild.h"
 #ifndef DWYCO_NO_THEORA_CODEC
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
@@ -374,6 +375,7 @@ CDCTheoraCoderColor::~CDCTheoraCoderColor()
 int
 CDCTheoraCoderColor::get_quality()
 {
+    return 4;
     // with the other codecs, a file on the disk
     // gives the mapping between qualities and
     // name, but here we just hack this up to use
@@ -1017,6 +1019,18 @@ CDCTheoraCoderColor::display_img_2b_coded(pixel **g, int cols, int rows)
     }
 }
 
+static void
+display_info(const char *str, int gv_id)
+{
+    set_caption_by_id(gv_id, str);
+}
+
+void
+CDCTheoraCoderColor::display_info(const char *str)
+{
+    ::display_info(str, gv_id);
+}
+
 CDCTheoraDecoderColor::CDCTheoraDecoderColor()
 {
     setup_info = 0;
@@ -1297,5 +1311,12 @@ CDCTheoraDecoderColor::display_decoded(void *p, int cols, int rows)
     pixel **img = (pixel **)p;
     ppm_to_colorview(img, cols, rows, gv_id);
 }
+
+void
+CDCTheoraDecoderColor::display_info(const char *str)
+{
+    ::display_info(str, gv_id);
+}
+
 #endif
 
