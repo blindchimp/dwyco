@@ -107,6 +107,9 @@ public:
 	virtual void socket_set_error(vc v);
 	virtual vc socket_set_option(vcsocketmode m, unsigned long = 0,
 		unsigned long = 0, unsigned long = 0);
+#ifdef _Windows
+    virtual int socket_set_async(void *, unsigned int msg, long events);
+#endif
 	virtual vcsocketmode socket_get_mode();
 	virtual vc socket_local_addr();
 	virtual vc socket_peer_addr();

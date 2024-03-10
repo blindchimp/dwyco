@@ -242,6 +242,15 @@ vc_default::socket_set_option(vcsocketmode, unsigned long, unsigned long, unsign
 	USER_BOMB("can't set socket option on non-socket", vcnil);
 }
 
+#ifdef _Windows
+int
+vc_default::socket_set_async(void *, unsigned int msg, long events)
+{
+
+    USER_BOMB("can't set socket async on non-socket", 0);
+}
+#endif
+
 vcsocketmode
 vc_default::socket_get_mode()
 {
