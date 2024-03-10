@@ -140,9 +140,7 @@ SimpleSocket::SimpleSocket(vc sock)
     if(MMChannel::get_main_window_callback &&
             (h = (*MMChannel::get_main_window_callback)(0)))
     {
-        sock.socket_set_option(VC_WSAASYNC_SELECT,
-                               (unsigned long)h,
-                               WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
+        sock.socket_set_async(h, WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
     }
 #endif
 
@@ -242,9 +240,7 @@ SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry)
                 (h = (*MMChannel::get_main_window_callback)(0)))
         {
 #ifdef _Windows
-            sock.socket_set_option(VC_WSAASYNC_SELECT,
-                                   (unsigned long)h,
-                                   WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
+            sock.socket_set_async(h, WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
 #endif
         }
         // ug, hack
@@ -711,9 +707,7 @@ Listener::accept()
             (h = (*MMChannel::get_main_window_callback)(0)))
     {
 #ifdef _Windows
-        newsock.socket_set_option(VC_WSAASYNC_SELECT,
-                                  (unsigned long)h,
-                                  WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
+        newsock.socket_set_async(h, WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
 #endif
     }
     SimpleSocket *s = new SimpleSocket;

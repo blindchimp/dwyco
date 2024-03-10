@@ -2284,6 +2284,19 @@ vc_winsock::socket_set_error(vc v)
 	error = v;
 }
 
+#ifdef _Windows
+int
+vc_winsock::socket_set_async(void *hwnd, unsigned int msg, long events)
+{
+    if(WSAAsyncSelect(sock, (HWND)hwnd, msg, events) == SOCKET_ERROR)
+    {
+        RAISEABORT(generic_problem, 0);
+    }
+    smode = VC_NONBLOCKING;
+    return 1;
+}
+#endif
+
 vc
 vc_winsock::socket_set_option(vcsocketmode m, 
 	unsigned long a1, unsigned long a2, unsigned long a3)

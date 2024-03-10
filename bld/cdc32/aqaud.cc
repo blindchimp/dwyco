@@ -109,7 +109,7 @@ AudioAquireWin32::init(int bufsize, int nbufs, HWND win)
 
     init_format(format);
 
-    res = waveInOpen(&wavein, WAVE_MAPPER, &format, (DWORD)win, 0,
+    res = waveInOpen(&wavein, WAVE_MAPPER, &format, (DWORD_PTR)win, 0,
                      win ? CALLBACK_WINDOW : CALLBACK_NULL);
     if(res != MMSYSERR_NOERROR)
     {
@@ -183,7 +183,7 @@ AudioAquireWin32::off()
         for(int i = 0; i < len; i += 2)
         {
             int a;
-            a = (((short *)buf)[i / 2] + (dwyco_rand() < RAND_MAX / 2) ? 4 : -4);
+            a = (((short *)buf)[i / 2] + ((dwyco_rand() < RAND_MAX / 2) ? 4 : -4));
             if(a < -32767)
                 ((short *)buf)[i / 2] = -32767;
             else if(a > 32767)
