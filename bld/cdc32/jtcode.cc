@@ -70,7 +70,7 @@ JPEGTCoder::JPEGTCoder()
 #endif
 {
     cpu_save = 64;
-    use_motion_comp = 1;
+    use_motion_comp = 0;
     decoded_frame = 0;
     decoded_frame_now = 0;
     ref_xform_now = &ref_xform;

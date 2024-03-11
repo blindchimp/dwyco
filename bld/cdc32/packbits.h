@@ -134,10 +134,10 @@ public:
         outbuf = (DWBYTE*) t;
     }
     inline void init();
-    inline void addbits_raw(ELTYPE val, int bits, BITBUFT*& outbuf);
+    inline void addbits_raw(UELTYPE val, int bits, BITBUFT*& outbuf);
     inline void add0(BITBUFT*& outbuf);
     inline void add1(BITBUFT*& outbuf);
-    inline void addbits_raw(ELTYPE val, int bits, DWBYTE*& outbuf) {
+    inline void addbits_raw(UELTYPE val, int bits, DWBYTE*& outbuf) {
         BITBUFT* t = (BITBUFT*)outbuf;
         addbits_raw(val, bits, t);
         outbuf = (DWBYTE*) t;
@@ -198,7 +198,7 @@ Packbits::add1(BITBUFT*& outbuf)
 
 inline
 void
-Packbits::addbits_raw(ELTYPE val, int bits, BITBUFT*& outbuf)
+Packbits::addbits_raw(UELTYPE val, int bits, BITBUFT*& outbuf)
 {
     val &= (1 << bits) - 1;
 #ifdef SHOW
@@ -277,11 +277,11 @@ public:
         init(t);
         inbuf = (DWBYTE*)t;
     }
-    inline ELTYPE getbits_raw(int bits, BITBUFT*& inbuf);
+    inline UELTYPE getbits_raw(int bits, BITBUFT*& inbuf);
     inline int getbit_raw(BITBUFT*& inbuf);
-    inline ELTYPE getbits_raw(int bits, DWBYTE*& inbuf) {
+    inline UELTYPE getbits_raw(int bits, DWBYTE*& inbuf) {
         BITBUFT *t = (BITBUFT*)inbuf;
-        ELTYPE val = getbits_raw(bits, t);
+        UELTYPE val = getbits_raw(bits, t);
         inbuf = (DWBYTE*)t;
         return val;
     }
@@ -320,10 +320,10 @@ Unpackbits::getbit_raw(BITBUFT*& inbuf)
 }
 
 inline
-ELTYPE
+UELTYPE
 Unpackbits::getbits_raw(int bits, BITBUFT*& inbuf)
 {
-    ELTYPE val;
+    UELTYPE val;
     if(bits >= bits_left)
     {
         val = cur >> (BITBUFSZ - bits_left);

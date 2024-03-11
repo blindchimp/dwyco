@@ -24,6 +24,7 @@ typedef int dwINT32;
 typedef unsigned int dwUINT32;
 
 typedef int ELTYPE;
+typedef unsigned int UELTYPE;
 typedef unsigned char DWBYTE;
 typedef unsigned short DWUSHORT;
 typedef dwUINT32 BITBUFT;
@@ -36,8 +37,8 @@ typedef ELTYPE VEC16[16];
 typedef MAT8_8 MAT;
 typedef ELTYPE VEC[MSZ];
 
-#define BLKR (480 / MSZ)
-#define BLKC (720 / MSZ)
+#define BLKR (960 / MSZ)
+#define BLKC (1280 / MSZ)
 typedef MAT XFRM[1][1];
 
 #define BIAS 128

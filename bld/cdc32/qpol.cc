@@ -32,7 +32,7 @@ qpol_init()
 // note: there is an optimizer bug that causes the linux build
 // to crash if the poli file exists. since we don't use it anymore,
 // just ignore this.
-    return;
+    //return;
     int i = 0;
 
     FILE *f = fopen(newfn("poli").c_str(), "rt");
