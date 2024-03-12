@@ -17,23 +17,15 @@
 #include "qval.h"
 QByteArray fname();
 
-// this is a necessitas/android hack
-class activateit : public QWizardPage
-{
-public:
-    void showEvent(QShowEvent *e) {
-        QWizardPage::activateWindow();
-        QWizardPage::showEvent(e);
-    }
-};
 
-class toswarn_page : public activateit
+class toswarn_page : public QWizardPage
 {
     Q_OBJECT
 public:
     toswarn_page() {
+         setTitle("Terms of Service");
         ui.setupUi(this);
-        setTitle("Terms of Service");
+
 
     }
 public slots:
@@ -44,7 +36,7 @@ private:
     Ui::toswarn ui;
 };
 
-class userdata_page : public activateit
+class userdata_page : public QWizardPage
 {
     Q_OBJECT
 public:
@@ -79,7 +71,7 @@ public:
     Ui::userwid ui;
 };
 
-class netspeed_page : public activateit
+class netspeed_page : public QWizardPage
 {
     Q_OBJECT
 public:

@@ -1,5 +1,5 @@
 TEMPLATE = app
-FORCE_DESKTOP_VGQT=0
+FORCE_DESKTOP_VGQT=1
 
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
@@ -14,7 +14,7 @@ include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="1.65"
+VER="1.70"
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms
@@ -31,10 +31,10 @@ INSTALLS += appdir_icon appdir_desktop
 
 
 QT += core qml quick multimedia network #widgets #positioning
-QT += quickcontrols2
+QT += quickcontrols2 statemachine
 
-android: QT += androidextras
-macx-clang: QT += macextras
+#android: QT += androidextras
+#macx-clang: QT += macextras
 
 linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
@@ -44,7 +44,7 @@ QMAKE_INFO_PLIST=Info.plist.mac
 #CONFIG -= app_bundle
 }
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qt6drv $${PWD}/../bld/dwcls
 
 #QMAKE_MAC_SDK = macosx10.9
 DEFINES += DWYCO_RELEASE
@@ -107,7 +107,7 @@ DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
 
 
-INCLUDEPATH += $${DINC}/v4lcap
+#INCLUDEPATH += $${DINC}/v4lcap
 
 QMAKE_CXXFLAGS += -g #-fsanitize=address #-O2
 QMAKE_LFLAGS += -g #-fsanitize=address
@@ -135,11 +135,10 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
-$${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 -lv4l2 \
 -ldl
 
@@ -160,11 +159,10 @@ $${D}/ogg/libogg.a \
 $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
-$${D}/v4lcap/libv4lcap.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 }
 
@@ -235,7 +233,7 @@ $${D}/speex/libspeex.a \
 $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a \
+$${D}/qt6drv/libqt6drv.a \
 $${D}/uv/libuv.a \
 -lsqlite3 \
 -Wl,-framework,Cocoa -Wl,-framework,AudioToolbox -Wl,-framework,CoreAudio -Wl,-framework,QTKit -Wl,-framework,QuartzCore
@@ -260,7 +258,7 @@ $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 }
 
@@ -290,7 +288,7 @@ $${D}/jhead/libjhead.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -312,7 +310,7 @@ $${D}/jhead/libjhead.a \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
 $${D}/uv/libuv.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qt6drv/libqt6drv.a
 
 
 }
@@ -353,7 +351,7 @@ ANDROID_VERSION_NAME=$$VER
 
 PRE_TARGETDEPS += \
 $${D}/qt-qml-models/libQtQmlModels_$${QT_ARCH}.a \
-$${D}/qtdrv/libqtdrv_$${QT_ARCH}.a
+$${D}/qt6drv/libqt6drv_$${QT_ARCH}.a
 
 #LIBS += \
 #$${D}/libcdc32.a \

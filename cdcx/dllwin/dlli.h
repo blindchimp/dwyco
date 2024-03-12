@@ -1049,7 +1049,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_QM_BODY_ID "000"
 #define DWYCO_QM_BODY_FROM "001"
 //#define DWYCO_QM_BODY_TEXT_do_not_use_use_get_msg_array_instead "002"
-//#define DWYCO_QM_BODY_TEXT2_obsolete "002"
+#define DWYCO_QM_BODY_TEXT2_obsolete "002"
 #define DWYCO_QM_BODY_ATTACHMENT "003"
 #if 0
 #define DWYCO_QM_BODY_DATE "004"

@@ -395,6 +395,9 @@ public:
 	notvirtual void socket_set_error(vc v);
 	notvirtual vc socket_set_option(vcsocketmode m, unsigned long = 0,
 		unsigned long = 0, unsigned long = 0);
+#ifdef _Windows
+    notvirtual int socket_set_async(void *hwnd, unsigned int msg, long events);
+#endif
 	notvirtual vcsocketmode socket_get_mode();
 	notvirtual vc socket_local_addr();
 	notvirtual vc socket_peer_addr();

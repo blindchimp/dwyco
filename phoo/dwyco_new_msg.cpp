@@ -93,6 +93,7 @@ del_unviewed_uid(const QByteArray& uid)
     }
 }
 
+// WARNING: this returns uids in HEX, not binary
 QList<QByteArray>
 uids_with_unviewed()
 {

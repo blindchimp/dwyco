@@ -36,7 +36,7 @@ SOURCES += \
     lib/decapiwrapper.c
 
 linux-*|macx-clang {
-DEFINES += OC_X86_ASM OC_X86_64_ASM
+#DEFINES += OC_X86_ASM OC_X86_64_ASM
 SOURCES += \
         lib/x86/x86cpu.c \
         lib/x86/mmxencfrag.c \

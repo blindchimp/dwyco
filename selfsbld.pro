@@ -2,7 +2,7 @@ TEMPLATE = subdirs
 CONFIG += ordered
 
 android-* {
-SUBDIRS=bld/qt-qml-models bld/qt-supermacros bld/qtdrv
+SUBDIRS=bld/qt-qml-models bld/qt-supermacros bld/qt6drv
 }
 
 !android {
@@ -12,9 +12,9 @@ SUBDIRS=bld/jhead bld/ogg bld/vorbis112 bld/theora.1.2.x bld/speex bld/kazlib bl
 SUBDIRS += bld/miniupnp/miniupnp-master/miniupnpc
 }
 
-linux-*:SUBDIRS += bld/v4lcap bld/qtdrv
-macx-clang: SUBDIRS += bld/qtdrv
-macx-ios-clang: SUBDIRS += bld/qtdrv
+linux-*:SUBDIRS +=  bld/qt6drv
+macx-clang: SUBDIRS += bld/qt6drv
+macx-ios-clang: SUBDIRS += bld/qt6drv
 SUBDIRS += selfs
 #android: include(/home/dwight/android/astudio/android_openssl/openssl.pri)
 #android: include(/Users/dwight/android/astudio/android_openssl/openssl.pri)

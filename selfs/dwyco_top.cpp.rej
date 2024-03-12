@@ -1,0 +1,34 @@
+***************
+*** 1197,1203 ****
+  //QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
+      //DwycoCore::Android_migrate = 1;
+  #ifdef ANDROID
+-     filepath = determine_android_migration();
+  #endif
+      //
+      QStringList args = QGuiApplication::arguments();
+--- 1198,1204 ----
+  //QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
+      //DwycoCore::Android_migrate = 1;
+  #ifdef ANDROID
++     //filepath = determine_android_migration();
+  #endif
+      //
+      QStringList args = QGuiApplication::arguments();
+***************
+*** 1918,1924 ****
+  
+  #endif
+  
+- #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+      dwyco_set_external_video_capture_callbacks(
+          vgqt_new,
+          vgqt_del,
+--- 1920,1926 ----
+  
+  #endif
+  
++ #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) //|| defined(DWYCO_IOS)
+      dwyco_set_external_video_capture_callbacks(
+          vgqt_new,
+          vgqt_del,

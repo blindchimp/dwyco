@@ -26,7 +26,8 @@
 
 static QList<QByteArray> fetching;
 QString dwyco_info_to_display(QByteArray uid);
-static QSet<QByteArray> Got_msg_from;
+QSet<QByteArray> Got_msg_from;
+extern QSet<DwOString> Session_remove;
 static QSet<QByteArray> Got_msg_from_this_session;
 static QSet<QByteArray> Dont_refetch;
 static QList<QByteArray> Delete_msgs;
@@ -332,6 +333,8 @@ dwyco_new_msg(DwOString& uid_out, DwOString& txt, int& zap_viewer, DwOString& mi
     mid = tmid;
     Got_msg_from.insert(uid_out);
     Got_msg_from_this_session.insert(uid_out);
+    // if they were removed, but we got a message from them, re-appear them
+    Session_remove.remove(uid_out);
     add_unviewed(uid_out, tmid);
     DWYCO_SAVED_MSG_LIST sm;
     if(!dwyco_get_saved_message(&sm, uid_out.constData(), uid_out.length(), tmid.constData()))

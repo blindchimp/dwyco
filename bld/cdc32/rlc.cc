@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include "rlc.h"
 [[noreturn]] void oopanic(const char *);
-
+#ifdef DWYCO_DCT_CODER
 BinaryRLC::BinaryRLC()
 {
     do_init = 1;
@@ -78,6 +78,7 @@ BinaryRLC::flush(BITBUFT*& out)
         emit_run(cnt, out);
     packer.flush(out);
 }
+#endif
 
 BinaryRLD::BinaryRLD()
 {

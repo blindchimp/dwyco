@@ -30,6 +30,11 @@ dowiz()
     wiz->setPixmap(QWizard::WatermarkPixmap, QPixmap(":/new/prefix1/wizdec.png"));
     //wiz->show();
     //wiz->resize(800, 800);
+    wiz->setWindowTitle("CDC-X Setup");
+    wiz->setModal(true);
+#ifdef WIN32
+    wiz->setWizardStyle(QWizard::ModernStyle);
+#endif
     Block_DLL = 1;
 
     wiz->exec();

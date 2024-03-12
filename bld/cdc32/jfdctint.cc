@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/jfdctint.cc 1.2 1997/11/25 20:41:03 dwight Stable095 $
  */
@@ -286,4 +286,5 @@ jpeg_fdct_islow (DCTELEM * data)
 }
 
 #endif /* DCT_ISLOW_SUPPORTED */
+#endif
 #endif

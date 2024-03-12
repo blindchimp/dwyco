@@ -17,7 +17,7 @@
 #include <QGuiApplication>
 #include <QImage>
 #ifdef ANDROID
-#include <QtAndroid>
+//#include <QtAndroid>
 #endif
 #include "androidperms.h"
 #include "dlli.h"
@@ -157,7 +157,8 @@ setup_emergency_servers()
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
-    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    // not sure, maybe i don't need this in qt6 any more?
+    //r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     QNetworkReply *reply = manager->get(r);
 }
 
@@ -1298,15 +1299,16 @@ dwyco_img_to_qimg(void *vimg, int cols, int rows, int depth)
 {
     unsigned char **img = (unsigned char **)vimg;
 
-    QImage qi(cols, rows, QImage::Format_RGB888);
+    QImage qi(cols, rows, QImage::Format_BGR888);
 
-#ifdef DWYCO_FORCE_DESKTOP_VGQT
+#if 1 && defined(DWYCO_FORCE_DESKTOP_VGQT)
     for(int r = 0; r < rows; ++r)
     {
         unsigned char *sli = img[r];
         uchar *sl = qi.scanLine(r);
         memcpy(sl, sli, 3 * cols);
     }
+    qi.mirror(false, true);
 #else
     for(int r = 0; r < rows; ++r)
     {
@@ -2027,7 +2029,7 @@ DwycoCore::set_badge_number(int i)
 int
 DwycoCore::load_contacts()
 {
-#ifdef ANDROID
+#if 0 && ANDROID
     if(QtAndroid::checkPermission("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
     {
         QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_CONTACTS"));

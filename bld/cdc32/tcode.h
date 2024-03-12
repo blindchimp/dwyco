@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -110,4 +110,5 @@ protected:
 };
 double compute_motion(gray **f1, gray **f0, int si, int sj, int clip,
                       double& mean_out);
+#endif
 #endif
