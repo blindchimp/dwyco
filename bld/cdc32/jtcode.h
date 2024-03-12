@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -57,4 +57,5 @@ protected:
     unsigned int coeff_tweak;
 
 };
+#endif
 #endif

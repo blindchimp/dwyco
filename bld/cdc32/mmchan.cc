@@ -1888,9 +1888,12 @@ MMChannel::coder_from_config()
             c = new CDCTheoraCoderColor;
         else
 #endif
+#ifdef DWYCO_DCT_CODER
             if(v.contains("dct"))
                 c = new TMSWCoderColor;
+
             else
+#endif
                 FAILRET("incompatible coding style");
     c->set_crop(1);
     //c->set_subsample(CTUserDefaults.get_subsample());

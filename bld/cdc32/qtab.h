@@ -19,8 +19,10 @@
 #define JPEG_INTERNALS
 #include "jpeglib.h"
 
+#ifdef DWYCO_DCT_CODER
 typedef ELTYPE (TCoder::*QTAB_MAXFUNP)();
 typedef void (TCoder::*QTAB_RECONFUNP)(int, int);
+#endif
 
 class QTAB
 {
@@ -37,8 +39,11 @@ public:
     dwINT32 i_dct[DCTSIZE2];
     dwINT32 f_dct_mul[DCTSIZE2];
 
+#ifdef DWYCO_DCT_CODER
+
     QTAB_MAXFUNP maxfun;
     QTAB_RECONFUNP reconfun;
+#endif
 
     int operator()(int i, int j) {
         return q[i][j];
@@ -46,10 +51,11 @@ public:
     int& operator[](int i) {
         return ((dwINT32 *)q)[i];
     }
-
+#if 0
     QTAB(FILE *);
     int read(FILE *);
     void write(FILE *);
+#endif
     void init_dct_tables();
 protected:
     QTAB();

@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -360,3 +360,4 @@ done_block:
     decoded_frame_now = df;
     finish_frame();
 }
+#endif
