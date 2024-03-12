@@ -32,7 +32,7 @@ INCLUDEPATH += .
 #QMAKE_EXTRA_TARGETS += dateincr
 #PRE_TARGETDEPS += dateincr
 
-QT +=  core network webenginewidgets
+QT +=  core network statemachine webenginewidgets
 QT += core gui widgets multimedia multimediawidgets
 
 RESOURCES=icons.qrc
