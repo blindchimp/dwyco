@@ -1144,19 +1144,6 @@ mainwinform::refetch_user_list()
     dwyco_load_users2(!Display_archived_users, &User_count);
 }
 
-#if 0
-QDockWidget *
-mainwinform::get_current_tab()
-{
-    QList<QTabBar *> tbl = findChildren<QTabBar *>();
-    if(tbl.count() < 1)
-        return 0;
-    int current = tbl[0]->currentIndex();
-    return 0;
-
-}
-#endif
-
 bool
 mainwinform::event(QEvent *event)
 {
@@ -2793,6 +2780,50 @@ mainwinform::load_users()
                     cdcxpanic("wtf4");
             }
 
+        }
+    }
+
+    // this is here because if someone is archived, then they send you a message
+    // they wouldn't be displayed. this just makes sure every user that sends you
+    // a message is displayed in the user list.
+    auto gmf = Got_msg_from.values();
+     n = gmf.count();
+    for(int i = 0; i < n; ++i)
+    {
+        DwOString uid = gmf[i];
+#if 0
+        if(!display_uid_in_list(uid))
+            continue;
+#endif
+        if(Session_remove.contains(uid))
+            continue;
+        QVariant quid(uid);
+        QModelIndexList ql = umodel->match(umodel->index(0, 0), Qt::UserRole, quid, 1, Qt::MatchExactly);
+        if(ql.count() == 0)
+        {
+            if(!umodel->insertRow(0))
+                cdcxpanic("wtf");
+            if(!umodel->setData(umodel->index(0, 0), dwyco_info_to_display(uid)))
+                cdcxpanic("wtf2");
+            if(!umodel->setData(umodel->index(0, 0), quid, Qt::UserRole))
+                cdcxpanic("wtf3");
+            if(!umodel->setData(umodel->index(0, 0), cur_update, Qt::UserRole + 1))
+                cdcxpanic("wtf4");
+        }
+        else
+        {
+            // it's already in there, check to see if the info has changed
+            if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
+                cdcxpanic("wtf5");
+            QString info = dwyco_info_to_display(uid);
+            auto disp_name = umodel->data(ql[0]).toString();
+            if(info == disp_name)
+                continue;
+            else
+            {
+                if(!umodel->setData(ql[0], info, Qt::DisplayRole))
+                    cdcxpanic("wtf4");
+            }
         }
     }
 

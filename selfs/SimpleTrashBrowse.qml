@@ -58,17 +58,17 @@ Page {
                 transformOrigin: Menu.TopRight
 
                 MenuItem {
-                    text: "Delete forever"
+                    text: "Untrash"
                     onTriggered: {
-                        model.obliterate_all_selected()
-                        //model.tag_all_selected("_hid")
+                        model.untag_all_selected("_trash")
                         multiselect_mode = false
                     }
                 }
                 MenuItem {
-                    text: "Untrash"
+                    text: "Delete forever"
                     onTriggered: {
-                        model.untag_all_selected("_trash")
+                        model.obliterate_all_selected()
+                        //model.tag_all_selected("_hid")
                         multiselect_mode = false
                     }
                 }
@@ -91,6 +91,7 @@ Page {
             delete_warning_inf_text: "Deletes on all your devices"
             delete_warning_text: "Delete all selected messages FOREVER?"
             star_icon: mi("delete-restore-black.png")
+            is_trash: true
         }
 
         ToolBar {

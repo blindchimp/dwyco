@@ -164,6 +164,19 @@ trash_messages(QByteArray buid)
         dwyco_set_msg_tag(mid.constData(), "_trash");
     }
 
+    DWYCO_LIST um;
+    if(!dwyco_get_unfetched_messages(&um, buid.constData(), buid.length()))
+        return;
+    simple_scoped q2(um);
+    n = q2.rows();
+    for(int i = 0; i < n; ++i)
+    {
+        auto mid = q2.get<QByteArray>(i, DWYCO_QMS_ID);
+        if(fset.contains(mid))
+            continue;
+        dwyco_set_msg_tag(mid.constData(), "_trash");
+    }
+
 }
 
 void
@@ -321,6 +334,7 @@ ConvListModel::load_users_to_model()
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }
+    // this just clutters things if you have a large old corpus
 #if 0
     DWYCO_LIST pl = dwyco_pal_get_list();
     simple_scoped qpl(pl);

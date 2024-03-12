@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -653,4 +653,5 @@ main(int argc, char **argv)
     }
 
 }
+#endif
 #endif
