@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -95,3 +95,4 @@ JPEGCoderColor::final_package(int& len_out)
     len_out = len;
     return buf;
 }
+#endif

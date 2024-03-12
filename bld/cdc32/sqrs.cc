@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -54,4 +54,5 @@ main()
     for(int i = 0; i < 256; ++i)
         printf("abs(%d) = %d\n", i, mo_abs[i]);
 }
+#endif
 #endif

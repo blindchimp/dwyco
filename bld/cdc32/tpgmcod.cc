@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -91,3 +91,4 @@ TMSWCoderColor::display_info(const char *str)
 {
     ::display_info(str, gv_id);
 }
+#endif

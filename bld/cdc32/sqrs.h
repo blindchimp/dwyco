@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -20,5 +20,6 @@ extern int *mo_abs_ptr;
 void gen_sqr();
 void gen_abs();
 
+#endif
 #endif
 
