@@ -56,6 +56,8 @@ load_inbox_tags_to_unviewed(QSet<QByteArray>& uids_out)
     {
         QByteArray uid = QByteArray::fromHex(qtm.get<QByteArray>(i, DWYCO_TAGGED_MIDS_HEX_UID));
         QByteArray mid = qtm.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        if(dwyco_mid_has_tag(mid.constData(), "_trash"))
+            continue;
         add_unviewed(uid, mid);
         uids_out.insert(uid);
     }
@@ -188,7 +190,9 @@ dwyco_process_unfetched_list(DWYCO_UNFETCHED_MSG_LIST ml, QSet<QByteArray>& uids
         // but the user would appear towards the top of the user list, which is weird.
         // this happens sometimes when attachments are not fetchable for whatever reason.
         Already_processed.insert(mid);
-        if(dwyco_mid_disposition(mid) == 0)
+        if(dwyco_mid_has_tag(mid.constData(), "_trash"))
+            continue;
+        if(dwyco_mid_disposition(mid.constData()) == 0)
         {
             // this corresponds to the case where the index doesn't have any
             // record of this mid anywhere else. so we tag it in a way that will

@@ -390,7 +390,8 @@ int main(int argc, char *argv[])
     dwyco_trace_init();
     int dum;
 #ifdef WIN32
-    dwyco_set_main_msg_window(::GetDesktopWindow());
+    //dwyco_set_main_msg_window(::GetDesktopWindow());
+    set_main_win();
     // note: in 2.9, qtwebkit + openssl seems to crash randomly on
     // first run, so we are nixing it for now.
     AvoidSSL = 1;

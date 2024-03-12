@@ -811,13 +811,14 @@ restore_msg(const vc& uid, const vc& mid)
             return 0;
 #endif
 #ifdef _Windows
-            if(_access(ffn.c_str(), 0) == 0)
-                return 1;
-            int fd = _creat(ffn.c_str(), _S_IWRITE);
-#else
-            if(access(ffn.c_str(), F_OK) == -1)
+        // if(_access(ffn.c_str(), 0) == 0)
+        //     return 1;
+        // int fd = _creat(ffn.c_str(), _S_IWRITE);
+        if(_access(ffn.c_str(), 0) == -1)
+        {
+            int fd = _creat(ffn.c_str(), 0);
+            if(fd != -1)
             {
-                int fd = creat(ffn.c_str(), 0666);
                 auto len = res[0][0].len();
                 if(write(fd, (const char *)res[0][0], len) != len)
                 {
@@ -826,6 +827,22 @@ restore_msg(const vc& uid, const vc& mid)
                 }
                 close(fd);
             }
+        }
+#else
+        if(access(ffn.c_str(), F_OK) == -1)
+        {
+            int fd = creat(ffn.c_str(), 0666);
+            if(fd != -1)
+            {
+                auto len = res[0][0].len();
+                if(write(fd, (const char *)res[0][0], len) != len)
+                {
+                    close(fd);
+                    return 0;
+                }
+                close(fd);
+            }
+        }
 #endif
         if(attfn.len() > 0)
         {

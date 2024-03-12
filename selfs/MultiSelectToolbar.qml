@@ -17,6 +17,7 @@ ToolBar {
     property alias delete_warning_text : confirm_delete.text
     property alias delete_warning_inf_text: confirm_delete.informativeText
     property url star_icon: mi("ic_star_black_24dp.png")
+    property bool is_trash: false
 
     background: Rectangle {
         color: primary_light
@@ -94,7 +95,11 @@ ToolBar {
                 informativeText: "This KEEPS FAVORITES, but TRASHES HIDDEN messages."
                 standardButtons: StandardButton.Yes | StandardButton.No
                 onYes: {
-                    model.trash_all_selected()
+                    if(is_trash) {
+                        model.obliterate_all_selected()
+                    } else {
+                        model.trash_all_selected()
+                    }
                     model.invalidate_model_filter()
                     multiselect_mode = false
                     close()

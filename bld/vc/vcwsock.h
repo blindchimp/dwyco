@@ -107,7 +107,7 @@ public:
 	static int poll_all(int what_for, Socketvec&, int sec = 0, int usec = 0);
 	static int poll_sets(int what_for, Socketvec&, int sec = 0, int usec = 0);
 	static void close_all_but(SOCKET);
-        static void set_async_error(SOCKET s, int err);
+    static void set_async_error(SOCKET s, int err);
 
 	static int startup();
 	static int shutoff();
@@ -137,6 +137,9 @@ public:
 	virtual void socket_set_error(vc v);
 	virtual vc socket_set_option(vcsocketmode m, unsigned long = 0,
 		unsigned long = 0, unsigned long = 0);
+#ifdef _Windows
+    virtual int socket_set_async(void *hwnd, unsigned int msg, long events);
+#endif
 	virtual vc socket_peer_addr();
 	virtual vc socket_local_addr();
 	virtual vc socket_recv_buf(vc& item, int to_get, const vc& recv_info, vc& addr_info);

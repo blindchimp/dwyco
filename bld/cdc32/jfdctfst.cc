@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/jfdctfst.cc 1.6 1997/11/25 20:41:03 dwight Stable095 $
  */
@@ -304,3 +304,4 @@ jpeg_fdct_ifast (DCTELEM * data)
 }
 
 #endif /* DCT_IFAST_SUPPORTED */
+#endif

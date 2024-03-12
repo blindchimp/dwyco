@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -929,3 +929,4 @@ holdit:
     finish_frame();
 #endif
 }
+#endif

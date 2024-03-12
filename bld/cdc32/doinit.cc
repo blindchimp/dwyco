@@ -144,13 +144,17 @@ init_codec(const char *logname)
         rgb_ycc_start();
         build_ycc_rgb_table();
         init_dct();
+#ifdef DWYCO_DCT_CODER
         init_huff_encode();
+#endif
         init_huff_decode();
         QTAB::qtab_init();
         JQTAB::jqtab_init();
         qpol_init();
+#ifdef DWYCO_DCT_CODER
         gen_sqr();
         gen_abs();
+#endif
 #ifdef DWYCO_CODEC
         gen_magqtabs();
 #endif
@@ -256,14 +260,18 @@ simple_init_codec(const char *logname)
         rgb_ycc_start();
         build_ycc_rgb_table();
         init_dct();
+#ifdef DWYCO_DCT_CODER
         init_huff_encode();
+#endif
         init_huff_decode();
 
         QTAB::qtab_init();
         JQTAB::jqtab_init();
         qpol_init();
+#ifdef DWYCO_DCT_CODER
         gen_sqr();
         gen_abs();
+#endif
 #ifdef DWYCO_CODEC
         gen_magqtabs();
 #endif

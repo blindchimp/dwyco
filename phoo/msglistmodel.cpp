@@ -1483,8 +1483,14 @@ msglist_raw::get_msg_text(int row) const
 #endif
     }
 
-
-    auto txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
+    QByteArray txt;
+    if(qba.is_nil(0, DWYCO_QM_BODY_NEW_TEXT2))
+    {
+        // super old message, try to read the old text index
+        txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_TEXT2_obsolete);
+    }
+    else
+        txt = qba.get<QByteArray>(0, DWYCO_QM_BODY_NEW_TEXT2);
 #ifdef LINUX_EMOJI_CRASH_HACK
     return QString::fromLatin1(get_extended(txt));
 #else

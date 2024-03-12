@@ -203,20 +203,57 @@ Page {
                 }
             }
         }
-        Switch {
-            id: server_mode
-            text: qsTr("Server mode (store all messages to this device)")
-            checked: core.eager_pull
+//        Switch {
+//            id: server_mode
+//            text: qsTr("Server mode (store all messages to this device)")
+//            checked: core.eager_pull
+//            onClicked: {
+//                if(checked) {
+//                    core.set_setting("sync/eager", "2")
+//                } else {
+//                    core.set_setting("sync/eager", "0")
+//                }
+//            }
+
+//            visible: false // group_active
+//            Layout.fillWidth: true
+//        }
+        Label {
+            text: "Which messages to sync?"
+            visible: group_active
+        }
+
+        RadioButton {
+            text: "Recent (recommended)"
+            checked: core.eager_pull === 2
             onClicked: {
-                if(checked) {
-                    core.set_setting("sync/eager", "1")
-                } else {
-                    core.set_setting("sync/eager", "0")
-                }
+                core.set_setting("sync/eager", "2")
             }
 
             visible: group_active
             Layout.fillWidth: true
+
+
+        }
+        RadioButton {
+            text: "Lazy (only when viewed)"
+            checked: core.eager_pull === 0
+            onClicked: {
+                core.set_setting("sync/eager", "0")
+            }
+            visible: group_active
+            Layout.fillWidth: true
+
+        }
+        RadioButton {
+            text: "Everything (server mode)"
+            checked: core.eager_pull === 1
+            onClicked: {
+                core.set_setting("sync/eager", "1")
+            }
+            visible: group_active
+            Layout.fillWidth: true
+
         }
 
         ListView {
