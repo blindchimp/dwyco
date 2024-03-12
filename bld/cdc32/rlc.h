@@ -14,6 +14,7 @@
 #define RLC_H
 #include "packbits.h"
 
+#ifdef DWYCO_DCT_CODER
 class BinaryRLC
 {
 public:
@@ -31,6 +32,7 @@ private:
 
     void emit_run(int cnt, BITBUFT*&);
 };
+#endif
 
 class BinaryRLD
 {

@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/jchuff.h 1.7 1997/11/25 20:41:03 dwight Stable095 $
  */
@@ -46,3 +46,4 @@ int encode_one_block (JCOEFPTR block, int& last_dc_val,
 
 extern c_derived_tbl *Dc_derived_tbls_c[];
 extern c_derived_tbl *Ac_derived_tbls_c[];
+#endif

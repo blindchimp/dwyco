@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -30,5 +30,6 @@ public:
     static void (*resize_video_window_callback)(int id, int cols, int rows);
 };
 
+#endif
 #endif
 
