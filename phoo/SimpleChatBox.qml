@@ -618,7 +618,7 @@ Page {
 
     PicPreview {
         id: chat_pic_preview
-        onClosed: {
+        onClosed: (ok) => {
             if(ok) {
                 url_to_send = source
                 core.simple_send_url(to_uid, "", url_to_send)
