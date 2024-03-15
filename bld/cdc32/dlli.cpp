@@ -6519,12 +6519,6 @@ dwyco_end_bulk_update()
     dwyco::qmsgsql::sql_commit_transaction();
 }
 
-void
-pull_target_destroyed(vc uid)
-{
-    //pulls::deassert_by_uid(uid);
-}
-
 DWYCOEXPORT
 int
 dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out)
