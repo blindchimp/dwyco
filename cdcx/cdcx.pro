@@ -10,7 +10,11 @@ TEMPLATE = app
 TARGET = CDC-X
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += UNICODE
-DEFINES += DWYCO_NICE_VERSION=\\\"3.100\\\"
+greaterThan(QT_MAJOR_VERSION, 5) {
+DEFINES += DWYCO_NICE_VERSION=\\\"4.101\\\"
+} else {
+DEFINES += DWYCO_NICE_VERSION=\\\"3.101\\\"
+}
 
 DEPENDPATH += .
 INCLUDEPATH += .
@@ -29,8 +33,7 @@ INCLUDEPATH += .
 #PRE_TARGETDEPS += dateincr
 
 QT +=  core network webenginewidgets
-equals(QT_MAJOR_VERSION, 4): QT += webkit
-macx-*|win32|linux-*:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
+QT += core gui widgets multimedia multimediawidgets
 
 RESOURCES=icons.qrc
 #CONFIG-=app_bundle
@@ -50,8 +53,8 @@ DEFINES += WHATBOX=BrowseBox
 #DEFINES += LOCAL_TEST
 #DEFINES += NO_BUILDTIME
 DEFINES += CDCX_WEBKIT
-greaterThan(QT_MAJOR_VERSION, 4): DEFINES += DWYCO_QT5
-greaterThan(QT_MAJOR_VERSION, 4): DEFINES += toAscii=toLatin1
+DEFINES += DWYCO_QT5
+DEFINES += toAscii=toLatin1
 #DEFINES += NO_DWYCO_AUDIO
 #DEFINES += LEAK_CLEANUP
 HEADERS += mainwin.h tfhex.h dwyco_new_msg.h evret.h about.h composer.h autoupdate.h msgtohtml.h player.h ssmap.h  config.h snd.h croom.h pw.h login.h qwiz.h userwid.h cspw.h qval.h dirmisc.h iglist.h ct.h userlob.h  \
