@@ -430,13 +430,12 @@ MMChannel::send_pull_error(vc mid, vc pri)
     send_pull_resp(mid, vcnil, vcnil, vcnil, pri);
 }
 
-void pull_target_destroyed(vc uid);
 void
 MMChannel::cleanup_pulls(int myid)
 {
     vc uid = remote_uid();
     vc huid = to_hex(uid);
-    pull_target_destroyed(uid);
+    pulls::reset_inprogress_for_uid(uid);
     sql_run_sql("delete from current_clients where uid = ?1", huid);
     sql_run_sql("delete from midlog where to_uid = ?1", huid);
     sql_run_sql("delete from taglog where to_uid = ?1", huid);

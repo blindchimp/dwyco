@@ -57,6 +57,7 @@ public:
     static void deassert_by_uid(const vc& uid);
     static void pull_failed(const vc& mid, const vc& uid);
     static int set_pull_in_progress(const vc &mid, const vc &uid);
+    static void reset_inprogress_for_uid(const vc& uid);
     static int count() {
         return Qbm.count();
     }

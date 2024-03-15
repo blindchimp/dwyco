@@ -105,6 +105,23 @@ pulls::pull_failed(const vc &mid, const vc &uid)
     }
 }
 
+void
+pulls::reset_inprogress_for_uid(const vc& uid)
+{
+   DwTreeKazIter<int, pulls *> i(&inp_set);
+   DwVecP<pulls> ret;
+   for(;!i.eol(); i.forward())
+   {
+       auto p = i.get().get_key();
+       if(p->uid == uid)
+           ret.append(p);
+   }
+   for(int i = 0; i < ret.num_elems(); ++i)
+   {
+       ret[i]->set_in_progress(0);
+   }
+}
+
 int
 pulls::set_pull_in_progress(const vc& mid, const vc& uid)
 {
