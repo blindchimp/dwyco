@@ -1995,13 +1995,17 @@ MMChannel::init_config(int caller)
     // note: these are capabilities for xmit/recv
     v = vc(VC_VECTOR);
     v.append("ms-gsm610");
-    v.append("lpc4800");
-    v.append("raw-8khz");
+    //v.append("lpc4800");
+    //v.append("raw-8khz");
 #ifdef DWYCO_USE_SPEEX
     v.append("speex");
 #endif
+#ifndef DWYCO_NO_VORBIS
+#ifdef UWB_SAMPLING
     v.append("vorbis");
+#endif
     v.append("vorbis8khz");
+#endif
     config.add_kv("audio codec", v);
 
     v = vc(VC_VECTOR);
@@ -2086,7 +2090,6 @@ MMChannel::set_requested_codec(int codec)
     if(!config.find("requested config", rc))
         return;
     vc r(VC_VECTOR);
-    r.append("grayscale");
     r.append(codec_number_to_name(codec));
     rc.add_kv("codec", r);
 }
@@ -2136,7 +2139,6 @@ MMChannel::requested_config()
 {
     vc m(VC_MAP, "", 7);
     vc r(VC_VECTOR);
-    r.append("grayscale");
     r.append(sysattr_get_vc("us-video-coder"));
     m.add_kv("codec", r);
 
