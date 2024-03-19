@@ -1,6 +1,6 @@
 # raw groq generated
 cmake_minimum_required(VERSION 3.27)
-include(/Users/dwight/git/dwyco/phoobld/conf.cmake)
+include(/home/dwight/git/dwyco/phoobld/conf.cmake)
 
 # Dump all variables
 message("Dumping all variables:")
