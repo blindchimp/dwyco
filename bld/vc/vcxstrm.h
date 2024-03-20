@@ -24,7 +24,6 @@
 //
 // $Header: g:/dwight/repo/vc/rcs/vcxstrm.h 1.49 1998/12/09 05:11:28 dwight Exp $
 
-#include "dwvec.h"
 #include "dwvecp.h"
 #include "vc.h"
 #include "dwgrows.h"
@@ -202,8 +201,6 @@ friend void* ::operator new(std::size_t sz);
     int flushnb();
     enum status get_status();
 
-private:
-
     int retry();
 	void put_back(const char *, long);
 	int flush();
@@ -217,9 +214,32 @@ private:
 	void commit();
     int check_status(enum status);
 
-private:
+    // being able to serialize things that were non-trees
+    // seemed like a good idea. but honestly, i think it is a waste
+    // at this point.
+    //
+    // let's just avoid dealing with self-referential things. it works, but
+    // if the caller sends in something with a cycle, it creates garbage and might end up as a DOS.
+    // in 20+ years i've never needed this functionality, so let's just
+    // disable it by default.
+    //
+    // NOTE: we just rely on the visited flag, and ignore the chit_table. if you send in a
+    // vc that is not a tree, it is almost certainly a programming error, so we panic.
+    // just to illustrate:
+    // lbind(empty_vec vector())
+    // lbind(dag vector(<empty_vec> <empty_vec>))
+    // <<serialize dag someway>> results in a panic.
+    //
+    // but, serializing
+    // lbind(dag vector(vector() vector()))
+    // works fine, since the two inner vectors are distinct
+    //
+    // NOTE2: there is nothing in the encoding that says "this should be non-self-referential".
+    // so on the decode side, you have to make sure this self_ref flag gets set out of band if you *do* want
+    // to allow self-ref.
+    bool allow_self_ref = false;
 	ChitTable *chit_table;
-        void chit_destroy_table();
+    void chit_destroy_table();
 	
 	// tells which device to use
 	enum devtype {INDEPENDENT, VCPTR, VC, NONE} dtype;

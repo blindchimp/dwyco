@@ -10,7 +10,7 @@
 #include <climits>
 #include "dwvec.h"
 #include "dwvecp.h"
-#include "string.h"
+#include <string.h>
 #include "vcxstrm.h"
 #include <new>
 
@@ -31,10 +31,10 @@ long vcxstream::Max_memory = LONG_MAX;
 // streams and some of them are "retry" because the device blocked, how do i
 // adjust the amount of memory that has been used by that stream for those
 // open-retry-close situations. also, who gets "charged" for a memory allocation
-// needs to be thought about a little more concretely. new api's are needed to clients
+// needs to be thought about a little more concretely. new api's are needed so clients
 // can set the max memory limits for each stream (or come up with a scheme where we
 // just have one global limit, in order to protect against problems at a coarse level.)
-// as it is, this will work ok for simple things like "xfer" where there is one
+// as it is, this will only work ok for simple things like "xfer" where there is one
 // blocking deserialization going at any time.
 unsigned long vcxstream::Memory_tally = 0;
 
@@ -700,6 +700,8 @@ vcxstream::flushnb()
 vc_default *
 vcxstream::chit_get(VCXCHIT c)
 {
+    if(!allow_self_ref)
+        return 0;
 	if(chit_table == 0)
 		return 0;
 
@@ -711,6 +713,8 @@ vcxstream::chit_get(VCXCHIT c)
 void
 vcxstream::chit_append(vc_default *v)
 {
+    if(!allow_self_ref)
+        return;
 	if(chit_table == 0)
 		chit_table = new ChitTable;
 	chit_table->append(v);
@@ -730,6 +734,11 @@ VCXCHIT
 vcxstream::chit_find(vc_default *v)
 {
 	VCXCHIT c = -1;
+
+    if(!allow_self_ref)
+    {
+        oopanic("attempt to serialize self referential vc");
+    }
     // this really is a panic, because chit_find is only called
     // during serialization and if we cant find a visited
     // item, there is something really wrong.
