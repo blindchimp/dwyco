@@ -25,21 +25,10 @@
 #include <QDebug>
 #include <QDir>
 
-static
-void
-DWYCOCALLCONV
-dwyco_db_login_result(const char *str, int what)
-{
-
-    if(what != 0)
-        dwyco_switch_to_chat_server(0);
-    else
-        exit(1);
-}
-
 static quint32 Sent_age;
 static QByteArray My_uid;
 static QMap<QByteArray, QString> Who_got_what;
+int Chat_server;
 
 static QStringList Ann_names;
 
@@ -50,6 +39,18 @@ struct simple_scoped
     ~simple_scoped() {dwyco_list_release(value);}
     operator DWYCO_LIST() {return value;}
 };
+
+static
+void
+DWYCOCALLCONV
+dwyco_db_login_result(const char *str, int what)
+{
+
+    if(what != 0)
+        dwyco_switch_to_chat_server(Chat_server);
+    else
+        exit(1);
+}
 
 void
 forward_msg(const QByteArray& mid, const QByteArray& uid)
@@ -250,6 +251,8 @@ main(int argc, char *argv[])
 
     const char *name = argv[1];
     const char *desc = argv[2];
+    if(argc >= 5)
+        Chat_server = atoi(argv[4]);
     char *cmd = strdup(argv[0]);
     cmd = basename(cmd);
 
