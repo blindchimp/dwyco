@@ -282,7 +282,10 @@ vcxstream::close(how_close how)
 	if(how != DISCARD && iostyle == ATOMIC && check_status(READABLE))
 	{
 		if(how == RETRY)
+        {
 			put_back(log.ref_str(), log.length());
+            memory_tally = log.length();
+        }
 		log.reset();
 		if(how == RETRY)
 		{
@@ -302,6 +305,7 @@ vcxstream::close(how_close how)
 			ok = 0;
     }
 	stat = CLOSED;
+    memory_tally = 0;
 	if(do_devclose(how) == 0)
 		return 0;
 	return ok;
@@ -324,6 +328,15 @@ vcxstream::retry()
     if(stat == READABLE)
     {
         put_back(log.ref_str(), log.length());
+        // this is a hack: during the deserialization, you were
+        // "charged" for two things: the amount of memory for the
+        // deserialized items, and the size of the log in case you had
+        // to back out. however, when you back out, presumably all the
+        // items that were built are freed in anticipation for another
+        // try at deserializing. this just sets the memory_tally to the size
+        // of the log so you are not accumulating lots of tallied memory
+        // on each retry.
+        memory_tally = log.length(); // really need the size of allocated memory, not used memory
         log.reset();
     }
     chit_destroy_table();
@@ -441,7 +454,7 @@ vcxstream::close2(how_close how)
     }
     // regardless of what we're doing, eliminate the
     // chit table. this means that open-close pairs
-    // are what determines how graph cycles are computed
+    // are what determines how dag references are computed
     chit_destroy_table();
     //delete chit_table;
     //chit_table = 0;
@@ -737,9 +750,9 @@ vcxstream::chit_find(vc_default *v)
 
     if(!allow_self_ref)
     {
-        oopanic("attempt to serialize self referential vc");
+        oopanic("attempt to serialize non-tree-like vc");
     }
-    // this really is a panic, because chit_find is only called
+    // this really *is* a panic, because chit_find is only called
     // during serialization and if we cant find a visited
     // item, there is something really wrong.
 	if(chit_table == 0 || (c = chit_table->index(v)) < 0)
@@ -773,6 +786,7 @@ vcxstream::chit_destroy_table()
 void
 vcxstream::commit()
 {
+    memory_tally = 0;
 	log.reset();
 }
 

@@ -62,6 +62,7 @@ vc::xfer_in(vcxstream& vcx)
     if(!(ret == EXIN_DEV || ret == EXIN_PARSE))
     {
         vcx.memory_tally += vcxstream::Memory_tally;
+        //fprintf(stderr, "%p add %ld tot %ld\n", &vcx, vcxstream::Memory_tally, vcx.memory_tally);
         if(vcx.memory_tally >= vcx.max_memory)
         {
             //attach(vc_nil::vcnilrep);
