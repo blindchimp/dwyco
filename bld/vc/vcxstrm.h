@@ -267,6 +267,12 @@ friend void* ::operator new(std::size_t sz);
 	DwGrowingString log;
 	
 	long do_overflow(char *buf, long len);
+    // this calls back into the "underflow" method on the device (or whatever is set up to handle reading from a device.)
+    // the function returns the number of bytes actually read.
+    // if you don't consume *any* bytes from the device, return -1.
+    // it is *best* if you return at least min bytes, BUT if you don't, the stream
+    // will buffer what you *do* return (but in_want will return 0.) you cannot
+    // return more than max bytes (the stream only has enough space that much at most.)
 	long do_underflow(char *buf, long min, long max);
 	long do_devopen(int style, int stat);
 	long do_devclose(int style);
