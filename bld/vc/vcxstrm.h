@@ -191,15 +191,14 @@ public:
     // deserialization to continue past this limit.
     void set_max_memory(int);
 
+    int flushnb();
+    enum status get_status();
 private:
     long max_memory;
     int max_count_digits;  // roughly log10(max_memory)
     unsigned long memory_tally;
 friend void* ::operator new(std::size_t sz);
     static unsigned long Memory_tally;
-
-    int flushnb();
-    enum status get_status();
 
     int retry();
 	void put_back(const char *, long);
@@ -237,7 +236,12 @@ friend void* ::operator new(std::size_t sz);
     // NOTE2: there is nothing in the encoding that says "this should be non-self-referential".
     // so on the decode side, you have to make sure this self_ref flag gets set out of band if you *do* want
     // to allow self-ref.
-    bool allow_self_ref = false;
+
+    // dammit: the above is mostly true, but there is code in the servers that inadvertently creates
+    // non-tree structures, from processing commands recursively. there is a lot of code to look
+    // at to get rid of this "accident" with processing "auth-command" encapsulated items. the problem
+    // crops up during return processing with referencing semi-global error and extra return values.
+    bool allow_self_ref = true;
 	ChitTable *chit_table;
     void chit_destroy_table();
 	
