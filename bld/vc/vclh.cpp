@@ -323,6 +323,7 @@ dogetfile(vc file, vc var)
     return vc(len);
 }
 
+#if 0
 vc
 dogetfile_test(vc file, vc var)
 {
@@ -359,6 +360,7 @@ dogetfile_test(vc file, vc var)
 	Vcmap->local_add(var, item);
 	return vc(len);
 }
+#endif
 
 
 vc
@@ -3446,7 +3448,7 @@ vc::init_rest()
 
 	// saving/restoring xfer format 
 	makefun("putfile", VC(doputfile, "putfile", VC_FUNC_BUILTIN_LEAF));
-    makefun("getfile", VC(dogetfile_test, "getfile", VC_FUNC_BUILTIN_LEAF));
+    makefun("getfile", VC(dogetfile, "getfile", VC_FUNC_BUILTIN_LEAF));
 	makefun("serialize", VC(vclh_serialize, "serialize", VC_FUNC_BUILTIN_LEAF));
 	makefun("deserialize", VC(vclh_deserialize, "deserialize", VC_FUNC_BUILTIN_LEAF));
 
