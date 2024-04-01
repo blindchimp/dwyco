@@ -299,9 +299,32 @@ doputfile(vc file, vc item)
 	return vc(len);
 }
 
-
 vc
 dogetfile(vc file, vc var)
+{
+    if(var.type() != VC_STRING)
+    {
+        USER_BOMB("second arg to getfile must be string to bind to", vcnil);
+    }
+    if(file.eof())
+    {
+        USER_BOMB("file is at EOF", vcnil);
+    }
+    vcxstream v(file);
+    vc item;
+    long len;
+    if(!v.open(vcxstream::READABLE))
+        return vcnil;
+    if((len = item.xfer_in(v)) < 0)
+        return vcnil;
+    if(!v.close(vcxstream::FLUSH))
+        return vcnil;
+    Vcmap->local_add(var, item);
+    return vc(len);
+}
+
+vc
+dogetfile_test(vc file, vc var)
 {
 	if(var.type() != VC_STRING)
 	{
@@ -314,10 +337,23 @@ dogetfile(vc file, vc var)
 	vcxstream v(file);
 	vc item;
 	long len;
-	if(!v.open(vcxstream::READABLE))
-		return vcnil;
-	if((len = item.xfer_in(v)) < 0)
-		return vcnil;
+    while(1)
+    {
+        if(!v.open(vcxstream::READABLE, vcxstream::ATOMIC))
+            return vcnil;
+
+        if((len = item.xfer_in(v)) < 0)
+        {
+            if(len == EXIN_DEV && !file.eof())
+            {
+                v.close(vcxstream::RETRY);
+                continue;
+            }
+            else if(len == EXIN_PARSE)
+                return vcnil;
+        }
+        break;
+    }
 	if(!v.close(vcxstream::FLUSH))
 		return vcnil;
 	Vcmap->local_add(var, item);
@@ -3410,7 +3446,7 @@ vc::init_rest()
 
 	// saving/restoring xfer format 
 	makefun("putfile", VC(doputfile, "putfile", VC_FUNC_BUILTIN_LEAF));
-	makefun("getfile", VC(dogetfile, "getfile", VC_FUNC_BUILTIN_LEAF));
+    makefun("getfile", VC(dogetfile_test, "getfile", VC_FUNC_BUILTIN_LEAF));
 	makefun("serialize", VC(vclh_serialize, "serialize", VC_FUNC_BUILTIN_LEAF));
 	makefun("deserialize", VC(vclh_deserialize, "deserialize", VC_FUNC_BUILTIN_LEAF));
 
