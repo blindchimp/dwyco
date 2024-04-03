@@ -64,10 +64,10 @@ vc::xfer_in(vcxstream& vcx)
     if(!(ret == EXIN_DEV || ret == EXIN_PARSE))
     {
         auto c = b - a;
-        vcx.memory_tally += c; //vcxstream::Memory_tally;
-        fprintf(stderr, "%p add %ld tot %ld\n", &vcx, c, /*vcxstream::Memory_tally*/ vcx.memory_tally);
+        vcx.memory_tally += c;
+        fprintf(stderr, "%p add %ld tot %ld\n", &vcx, c, vcx.memory_tally);
         // note: since we are being called recursively, remove the local tally so it isn't counted multiple times
-        // higher up the chain.s
+        // higher up the chain.
         vcxstream::Memory_tally -= c;
         if(vcx.memory_tally >= vcx.max_memory)
         {

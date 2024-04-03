@@ -120,7 +120,6 @@ public:
     static long Max_element_len;
     static long Max_elements;
     static long Max_depth;
-    static long Max_memory;
 
 	// use this when there is no device, just a fixed buffer
 	// 
@@ -161,10 +160,6 @@ public:
     // exceeded. this is useful if you know the character of
     // the objects that are going to be deserialized, and
     // the input may be from an unknown source.
-    // it might be better to provide some means of hooking the
-    // memory allocator and terminating after a certain amount of
-    // memory had been allocated, but that is environment dependent
-    // and would probably require some exception handling.
     // this should be adequate to allow limiting mischief for simple
     // outward facing protocols where the expected form is fairly restricted.
     // NOTE: hitting one of these limits will stop the deserialization
@@ -173,13 +168,13 @@ public:
     // if you don't do this, and continue to read data from the device, you
     // will almost certainly end up with trash.
 
-    // the max number of elements in a composite (like a vector)
+    // the max number of elements in a decomposable (like a vector)
     long max_elements;
-    // the max length in the representation (in bytes) of any non-composite (int, float, string)
+    // the max length in the representation (in bytes) of any atomic (int, float, string)
     long max_element_len;
     // the maximum number of levels of the structure to be parsed.
     // for example, just a single composite (like an int) is 0 "levels".
-    // this excludes all composites.
+    // this excludes all decomposables.
     // a single vector is 1 level. if the vector contains another vector, that is 2, and so on.
     // setting this to -1 will return an error for any deserialization.
     long max_depth;
@@ -190,12 +185,19 @@ public:
     // situations where constructors might fail. but, it allows the
     // deserialization to continue past this limit.
     void set_max_memory(int);
+    static void set_default_max_memory(int);
 
     int flushnb();
     enum status get_status();
 private:
     long max_memory;
     int max_count_digits;  // roughly log10(max_memory)
+
+    // note: these are global defaults, and need to be set in
+    // tandem to make sense.
+    static long Max_memory;
+    static int Max_count_digits;
+
     unsigned long memory_tally;
 friend void* ::operator new(std::size_t sz);
     static unsigned long Memory_tally;

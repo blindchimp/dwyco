@@ -13,6 +13,7 @@
 #include <string.h>
 #include "vcxstrm.h"
 #include <new>
+#include "vcio.h"
 
 
 void dwrtlog(const char *, char *, int, int, int, int, int, int);
@@ -25,17 +26,18 @@ long vcxstream::Max_element_len = LONG_MAX;
 long vcxstream::Max_elements = LONG_MAX;
 long vcxstream::Max_depth = LONG_MAX;
 long vcxstream::Max_memory = LONG_MAX;
-
-// ok, this global tally thing isn't going to work like i expected.
-// there were a bunch of things i forgot to consider like if there are multiple
-// streams and some of them are "retry" because the device blocked, how do i
-// adjust the amount of memory that has been used by that stream for those
-// open-retry-close situations. also, who gets "charged" for a memory allocation
-// needs to be thought about a little more concretely. new api's are needed so clients
-// can set the max memory limits for each stream (or come up with a scheme where we
-// just have one global limit, in order to protect against problems at a coarse level.)
-// as it is, this will only work ok for simple things like "xfer" where there is one
-// blocking deserialization going at any time.
+int vcxstream::Max_count_digits;
+// this is used to estimate the amount of memory being used during
+// a deserialization. seriously "estimate", it can be surprising in
+// some cases if you decide you deserialize something that is
+// an N byte image or something, and the tally says "2 * N". this could
+// happen because the stream needs to do extra allocations for
+// large items, etc. using this is more of a "stopgap" hardening thing
+// so you can put an upper-bound on how much memory is used during
+// a deserialization. keep this in mind when you are designing your protocols,
+// ie. lots of little chunks are easier to control than allowing giant
+// strings to be included in vectors, etc.
+//
 unsigned long vcxstream::Memory_tally = 0;
 
 void* operator new(std::size_t sz)
@@ -72,11 +74,13 @@ vcxstream::set_max_memory(int mxm)
     max_count_digits = lmxm + 1;
 }
 
-#if 0
-long VCX_max_element_len = 1024 * 1024;
-long VCX_max_elements = 1024;
-long VCX_max_depth = 7;
-#endif
+void
+vcxstream::set_default_max_memory(int mxm)
+{
+    int lmxm = elog10(mxm);
+    Max_memory = mxm;
+    Max_count_digits = lmxm + 1;
+}
 
 #define VCX_ILOG 128
 
@@ -87,25 +91,6 @@ vcxstream::check_status(enum status s)
 		return 0;
 	return 1;
 }
-
-#if 0
-vcxstream::vcxstream(char *ubuf, long l, enum style sty) : log(VCX_ILOG)
-{
-	dtype = NONE;
-	uflow = 0;
-	oflow = 0;
-	manager = 0;
-	mgr = 0;
-	buf = ubuf;
-	cur = buf;
-	len = l;
-	stat = NOT_OPEN;
-	styl = sty;
-    chit_table = 0;
-	own_buf = 0;
-	read_only = 0;
-}
-#endif
 
 vcxstream::vcxstream(const char *ubuf, long l, enum style sty) : log(VCX_ILOG)
 {
@@ -128,7 +113,9 @@ vcxstream::vcxstream(const char *ubuf, long l, enum style sty) : log(VCX_ILOG)
     max_element_len = Max_element_len;
     max_memory = Max_memory;
     memory_tally = 0;
-    max_count_digits = INT_MAX;
+    if(Max_count_digits == 0)
+        Max_count_digits = elog10(Max_memory) + 1;
+    max_count_digits = Max_count_digits;
 }
 
 vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -151,7 +138,9 @@ vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf,
     max_element_len = Max_element_len;
     max_memory = Max_memory;
     memory_tally = 0;
-    max_count_digits = INT_MAX;
+    if(Max_count_digits == 0)
+        Max_count_digits = elog10(Max_memory) + 1;
+    max_count_digits = Max_count_digits;
 }
 
 vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -175,7 +164,9 @@ vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(
     max_element_len = Max_element_len;
     max_memory = Max_memory;
     memory_tally = 0;
-    max_count_digits = INT_MAX;
+    if(Max_count_digits == 0)
+        Max_count_digits = elog10(Max_memory) + 1;
+    max_count_digits = Max_count_digits;
 }
 
 vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -199,7 +190,9 @@ vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
     max_element_len = Max_element_len;
     max_memory = Max_memory;
     memory_tally = 0;
-    max_count_digits = INT_MAX;
+    if(Max_count_digits == 0)
+        Max_count_digits = elog10(Max_memory) + 1;
+    max_count_digits = Max_count_digits;
 }
 
 vcxstream::~vcxstream()
@@ -606,7 +599,7 @@ VcError << "\r\n";
 void
 vcxstream::put_back(const char *str, long pblen)
 {
-//VcError << "putting back " << pblen << "\n";
+VcError << "putting back " << pblen << "\n";
 	if(!check_status(READABLE))
         oopanic("put back on non-readable stream");
 	// attempt to stuff some stuff back into the
@@ -614,7 +607,7 @@ vcxstream::put_back(const char *str, long pblen)
 	if(pblen <= (cur - buf))
 	{
 		// it'll fit on the top of the current buffer
-//VcError << "puting back on top " << cur << "\n";
+VcError << "puting back on top\n";
 		cur -= pblen;
 		memmove(cur, str, pblen);
 		return;
@@ -626,7 +619,7 @@ vcxstream::put_back(const char *str, long pblen)
         oopanic("can't enlarge buffer");
 	int newlen = len + pblen;
 	char *newbuf = new char [newlen];
-//VcError << "putback new buffer len " << newlen << "\n";
+VcError << "putback new buffer len " << newlen << "\n";
 	memmove(newbuf, str, pblen);
 	memmove(newbuf + pblen, cur, eod - cur);
 	eod = newbuf + (pblen + (eod - cur));
