@@ -2,8 +2,11 @@ LH_INTERPRETER=1
 
 linux-*|macx-* {
 DEFINES += LINUX
-QMAKE_CXX=ccache g++
-QMAKE_CC=ccache gcc
+#QMAKE_CXX=ccache g++
+#QMAKE_CC=ccache gcc
+QMAKE_CXX=/AFLplusplus/afl-clang-fast++
+QMAKE_CC=/AFLplusplus/afl-clang-fast
+QMAKE_LINK=/AFLplusplus/afl-clang-fast++
 }
 
 #linux-*: DEFINES += LH_WRAP_SPREAD LH_WRAP_SQLITE3
