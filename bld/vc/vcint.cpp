@@ -201,10 +201,13 @@ vc_int::xfer_in(vcxstream& vcx)
 	if(lp == 0)
 		return EXIN_DEV;
     int len = decode_len(lp);
-    if(len == -1 || len == 0 || len > vcx.max_count_digits)
+    if(len == -1 || len == 0)
         return EXIN_PARSE;
     if(len > vcx.max_element_len)
+    {
+        user_warning("xfer_in int hit max_element len");
         return EXIN_PARSE;
+    }
 
 	lp = vcx.in_want(len);
 	if(lp == 0)

@@ -3029,7 +3029,19 @@ vclh_uri_decode(vc s)
 	return vc(VC_BSTRING, res.c_str(), res.length());
 }
 
-
+vc
+vclh_set_xferin_constraints(vc max_memory, vc max_depth, vc max_elements, vc max_element_len)
+{
+    if(max_memory.type() != VC_INT ||
+            max_depth.type() != VC_INT ||
+            max_elements.type() != VC_INT ||
+            max_element_len.type() != VC_INT)
+    {
+        USER_BOMB("xferin_constraints args must all be integers (max_memory must be in bytes and > 0, other args -1 means don't change that constraint.)", vcnil);
+    }
+    vc::set_xferin_constraints(max_memory, max_depth, max_elements, max_element_len);
+    return vctrue;
+}
 
 vc
 dodump()
@@ -3114,6 +3126,18 @@ vc::non_lh_init()
     DwVP::init_dvp();
     vc_uvsocket::init_uvs_loop();
 #endif
+}
+
+void
+vc::set_xferin_constraints(long max_memory, long max_depth, long max_elements, long max_element_len)
+{
+    vcxstream::set_default_max_memory(max_memory);
+    if(max_depth != -1)
+        vcxstream::Max_depth = max_depth;
+    if(max_elements != -1)
+        vcxstream::Max_elements = max_elements;
+    if(max_element_len != -1)
+        vcxstream::Max_element_len = max_element_len;
 }
 
 
@@ -3518,6 +3542,7 @@ vc::init_rest()
 	makefun("GZ-compress-xfer", VC(vclh_compress_xfer, "GZ-compress-xfer", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-decompress-xfer", VC(lh_decompress_xfer, "GZ-decompress-xfer", VC_FUNC_BUILTIN_LEAF));
 
+    makefun("set-xferin-constraints", VC(vclh_set_xferin_constraints, "set-xferin-constraints", VC_FUNC_BUILTIN_LEAF));
 	// debugging
 #ifdef VCDBG
 	makefun("__lh_break_on_call", VC(vclh_break_on_call, "__lh_break_on_call", VC_FUNC_BUILTIN_LEAF));

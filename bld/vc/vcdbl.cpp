@@ -175,7 +175,10 @@ vc_double::xfer_in(vcxstream& vcx)
     if(flen == -1 || flen == 0)
 		return EXIN_PARSE;
     if(flen > vcx.max_element_len)
+    {
+        user_warning("xfer_in double hit max_element len");
         return EXIN_PARSE;
+    }
 	if((cp = vcx.in_want(flen)) == 0)
 		return EXIN_DEV;
 

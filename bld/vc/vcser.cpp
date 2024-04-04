@@ -55,7 +55,10 @@ long
 vc::xfer_in(vcxstream& vcx)
 {
     if(vcx.max_depth == -1)
+    {
+        user_warning("xfer_in hit max_depth");
         return EXIN_PARSE;
+    }
     --vcx.max_depth;
     auto a = vcxstream::Memory_tally;
     long ret = real_xfer_in(vcx);
@@ -73,6 +76,7 @@ vc::xfer_in(vcxstream& vcx)
         {
             //attach(vc_nil::vcnilrep);
             ret = EXIN_PARSE;
+            user_warning("xfer_in hit memory limit");
         }
     }
     ++vcx.max_depth;
