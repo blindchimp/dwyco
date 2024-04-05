@@ -1,4 +1,6 @@
-
+; NOTE! this kinda worked, but was never used much, so it is
+; just here for historical purposes. i removed most of the support
+; for interactive debugging, so don't even try....
 ;
 ; debugger shell for LH
 ; $Header: /home/dwight/repo/vc/rcs/lhdbg.lh 1.17 1997/10/05 17:27:06 dwight Exp $
