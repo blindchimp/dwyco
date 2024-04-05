@@ -11,6 +11,7 @@ int Continue_on_alarm;
 void
 oopanic(const char *s)
 {
+    ::abort();
 	// note: this isn't a "crash" from afl perspective,
 	// since we detected it rather than segv or something.
 	// note that a server might still crash, and this is
@@ -30,8 +31,13 @@ main(int, char **argv)
     vcx.open(vcxstream::READABLE);
 
 	vc o;
-	o.xfer_in(vcx);
+    if(o.xfer_in(vcx) < 0)
+    {
+        // if the deserialize fails, o should be nil
+        if(!o.is_nil())
+            ::abort();
+    }
     //o.print_top(VcOutput);
-exit(0);
+    exit(0);
 }
 

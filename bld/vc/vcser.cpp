@@ -16,6 +16,7 @@
 #include "vcdecom.h"
 #include "vcxstrm.h"
 #include "vcenco.h"
+#include "vcmap.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcser.cpp 1.49 1998/12/09 05:12:36 dwight Exp $";
 
 
@@ -60,25 +61,36 @@ vc::xfer_in(vcxstream& vcx)
         return EXIN_PARSE;
     }
     --vcx.max_depth;
-    auto a = vcxstream::Memory_tally;
-    long ret = real_xfer_in(vcx);
-    auto b = vcxstream::Memory_tally;
-
-    if(!(ret == EXIN_DEV || ret == EXIN_PARSE))
+    long ret;
+    int save_throw = Throw_user_panic;
+    Throw_user_panic = 1;
+    try
     {
-        auto c = b - a;
-        vcx.memory_tally += c;
-        //fprintf(stderr, "%p add %ld tot %ld\n", &vcx, c, vcx.memory_tally);
-        // note: since we are being called recursively, remove the local tally so it isn't counted multiple times
-        // higher up the chain.
-        vcxstream::Memory_tally -= c;
-        if(vcx.memory_tally >= vcx.max_memory)
+        auto a = vcxstream::Memory_tally;
+        ret = real_xfer_in(vcx);
+        auto b = vcxstream::Memory_tally;
+
+        if(!(ret == EXIN_DEV || ret == EXIN_PARSE))
         {
-            //attach(vc_nil::vcnilrep);
-            ret = EXIN_PARSE;
-            user_warning("xfer_in hit memory limit");
+            auto c = b - a;
+            vcx.memory_tally += c;
+            //fprintf(stderr, "%p add %ld tot %ld\n", &vcx, c, vcx.memory_tally);
+            // note: since we are being called recursively, remove the local tally so it isn't counted multiple times
+            // higher up the chain.
+            vcxstream::Memory_tally -= c;
+            if(vcx.memory_tally >= vcx.max_memory)
+            {
+                //attach(vc_nil::vcnilrep);
+                ret = EXIN_PARSE;
+                user_warning("xfer_in hit memory limit");
+            }
         }
     }
+    catch(...)
+    {
+        ret = EXIN_PARSE;
+    }
+    Throw_user_panic = save_throw;
     ++vcx.max_depth;
     return ret;
 }

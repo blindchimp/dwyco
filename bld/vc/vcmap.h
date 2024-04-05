@@ -18,16 +18,9 @@
 //
 #define CHECK_EXC_BO if(Vcmap->backout_in_progress()) return vcnil
 #define CHECK_EXC_BO_LOOP if(Vcmap->backout_in_progress()) break
-#if 1 // VCDBG
-#define USER_BOMB(str, ret) do {user_panic(str); Vcmap->set_dbg_backout(); return ret;} while(0)
+#define USER_BOMB(str, ret) do {if(Throw_user_panic) throw -1; user_panic(str); Vcmap->set_dbg_backout(); return ret;} while(0)
 // need this because some stupid cpp's don't handle null macro args right
-#define USER_BOMB2(str) do {user_panic(str); Vcmap->set_dbg_backout(); return;} while(0)
-#else
-
-#define USER_BOMB(str, ret) do {drop_to_dbg(str, "bomb"); return ret;} while(0)
-#define USER_BOMB2(str) do {drop_to_dbg(str, "bomb"); return;} while(0)
-
-#endif
+#define USER_BOMB2(str) do {if(Throw_user_panic) throw -1; user_panic(str); Vcmap->set_dbg_backout(); return;} while(0)
 
 #define CHECK_DBG_BO(ret) if(Vcmap->dbg_backout_in_progress()) return ret
 #define CHECK_DBG_BO_LOOP if(Vcmap->dbg_backout_in_progress()) break
@@ -52,5 +45,6 @@
 #include "vcdbg.h"
 #include "vcctx.h"
 extern vcctx *Vcmap;
+extern int Throw_user_panic;
 
 #endif
