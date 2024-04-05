@@ -29,7 +29,7 @@ main(int, char **argv)
 	v.open(argv[1], VCFILE_READ|VCFILE_BINARY);
 	vcxstream vcx(v);
     vcx.open(vcxstream::READABLE);
-
+    {
 	vc o;
     if(o.xfer_in(vcx) < 0)
     {
@@ -37,7 +37,8 @@ main(int, char **argv)
         if(!o.is_nil())
             ::abort();
     }
+    }
     //o.print_top(VcOutput);
-    exit(0);
+    return 0;
 }
 

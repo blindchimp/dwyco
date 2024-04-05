@@ -202,7 +202,10 @@ vc::real_xfer_in(vcxstream& vcx)
 		// object, and then toss the string object.
 		nrep = new vc_string(VcNoinit());
 		if((n = nrep->xfer_in(vcx)) < 0)
+        {
+            delete nrep;
 			return n;
+        }
 		vc_default *nrep2 = new vc_regex((const char *)*nrep);
 		delete nrep;
 		redefine(nrep2);
@@ -227,7 +230,15 @@ vc::real_xfer_in(vcxstream& vcx)
 	// set to the xfered value.
 	//
 	redefine(nrep);
-	n = nrep->xfer_in(vcx);
+    try
+    {
+        n = nrep->xfer_in(vcx);
+    }
+    catch(...)
+    {
+        n = EXIN_PARSE;
+    }
+
 	if(n < 0)
 	{
 		// if a failure, turn into nil
@@ -235,6 +246,9 @@ vc::real_xfer_in(vcxstream& vcx)
 		// any partial results that
 		// may have been created.
 		attach(vc_nil::vcnilrep);
+        // note we may be referenced in a chit table, which will
+        // handle the ref counting manually. so no need to delete
+        // here.
     	return n;
 	}
 	
