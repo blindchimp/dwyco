@@ -23,6 +23,10 @@ equals(LH_INTERPRETER, 1) {
 # it would require something quite a bit more complicated, or changing
 # some of the semantics of the language.
 DEFINES += LHOBJ PERFHACKS FUNCACHE #CACHE_LOOKUPS
+# defining VCDBG causes LH to collect more info so stack dumps are more verbose, and
+# it can emit coverage info as your LH program runs (see scripts in "coverage" for
+# processing it.) the source code in vcsrc.cpp has more info on coverage.
+#DEFINES += VCDBG
 }
 !equals(LH_INTERPRETER, 1) {
 DEFINES += NO_VCEVAL
