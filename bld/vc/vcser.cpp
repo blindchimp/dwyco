@@ -80,7 +80,10 @@ vc::xfer_in(vcxstream& vcx)
             vcxstream::Memory_tally -= c;
             if(vcx.memory_tally >= vcx.max_memory)
             {
-                //attach(vc_nil::vcnilrep);
+                // note: we need this since we are passing judgement on
+                // the item *after* returning from real_xfer_in, which
+                // at this point thinks everything is aok.
+                attach(vc_nil::vcnilrep);
                 ret = EXIN_PARSE;
                 user_warning("xfer_in hit memory limit");
             }
