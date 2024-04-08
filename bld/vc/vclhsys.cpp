@@ -59,8 +59,7 @@ vclh_getenv(vc name)
 vc
 vclh_putenv(vc name, vc value)
 {
-	static char puttmp[2048];
-	const char *put;
+    const char *put;
 	
 	if(name.type() != VC_STRING)
 		USER_BOMB("first arg to putenv must be string", vcnil);
@@ -70,10 +69,16 @@ vclh_putenv(vc name, vc value)
 		put = "";
 	else
 		put = value;
-	sprintf(puttmp, "%s=%s", (const char *)name, put);
-	char *putstr = strdup(puttmp);
+    DwString env((const char *)name);
+    env += "=";
+    env += put;
+    char *putstr = strdup(env.c_str());
 	if(putenv(putstr) != 0)
+    {
+        free(putstr);
 		return vcnil;
+    }
+    // leak, probably
 	return vctrue;
 }
 
@@ -235,10 +240,11 @@ vclh_strftime_hp(vc format)
 	char s[455];
 	if(strftime(s, 255, format, t) == 0)
 		USER_BOMB("strftime format result too long (must be < 255 chars)", vcnil);
+    DwString ret(s);
 	char us[100];
-	sprintf(us, ".%06ld", tv.tv_usec);
-	strcat(s, us);
-	return vc(s);
+    snprintf(us, sizeof(us), ".%06ld", tv.tv_usec);
+    ret += us;
+    return vc(ret.c_str());
 #else
 	USER_BOMB("sorry, no hi precision time under windows", vcnil);
 #endif

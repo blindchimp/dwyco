@@ -2337,7 +2337,7 @@ dogensym()
 	char buf[128];
 
 	++i;
-    sprintf(buf, "gensym%lu", i);
+    snprintf(buf, sizeof(buf), "gensym%lu", i);
 	return vc(buf);
 }
 

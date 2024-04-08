@@ -33,7 +33,12 @@ vc_double::operator long() const {USER_BOMB("truncating double", 0);}
 vc_double::operator const char *() const {USER_BOMB("can't convert double to char *", "0");}
 
 const char *
-vc_double::peek_str() const {sprintf(buf, "%g", d); return buf;}
+vc_double::peek_str() const {
+    int ret = snprintf(buf, sizeof(buf), "%g", d);
+    if(ret < 0 || ret + 1 >= sizeof(buf))
+        oopanic("double peek programming error");
+    return buf;
+}
 
 void
 vc_double::stringrep(VcIO o) const {o << d;}
@@ -147,7 +152,7 @@ vc_double::xfer_out(vcxstream& vcx)
 	char buf[40];
 	char fbuf[2048];
 
-	sprintf(fbuf, "%.*g", (int)(sizeof(fbuf) / 2), d);
+    snprintf(fbuf, sizeof(fbuf), "%.*g", (int)(sizeof(fbuf) / 2), d);
 
 	int flen = strlen(fbuf);
 	int len = encode_long(buf, flen);
