@@ -7,7 +7,7 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 /*
-This objects are used in the interpreter to represent the location
+These objects are used in the interpreter to represent the location
 in the source code (as seen by the lexer) of various parts of the
 parse tree. It is used for debugging, printing, and simple coverage
 reporting.
@@ -20,7 +20,7 @@ and more detailed info about how the parse tree is being executed is kept.
 Most of this info is printed when there is a request to dump an execution
 backtrace.
 
-For coverage tracking (useful mainly for testing), the following environment
+For coverage tracking, VCDBG must be defined, and the following environment
 variables are used:
 DWYCO_COLORIZED_NAME - set this to the name of the file which is created to contain the
 coverage information. If this is not set, the default "color.out" is used.

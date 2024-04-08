@@ -33,7 +33,7 @@ void
 vc_composite::bomb_func(const char *type) const
 {
 	char s[1000];
-	sprintf(s, "can't convert composite to %s\n", type);
+    snprintf(s, sizeof(s), "can't convert composite to %s\n", type);
 	USER_BOMB2(s);
 }
 

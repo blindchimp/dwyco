@@ -42,7 +42,7 @@ vc
 vc_memberfun::get_special() const
 {
 	char s[100];
-	sprintf(s, "%08x ", obj.rep);
+    snprintf(s, sizeof(s), "%p ", obj.rep);
 	DwString a(s);
 	a += (const char *)fun.get_special();
 	vc ret(a.c_str());

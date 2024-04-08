@@ -236,6 +236,7 @@ public:
 	static void non_lh_exit(void);
 	static void setup_logs(void);
 	static void shutdown_logs(void);
+    static void set_xferin_constraints(long max_memory, long max_depth = -1, long max_elements = -1, long max_element_len = -1);
 
         static vc set_to_vector(vc set);
         static vc map_to_vector(vc map);

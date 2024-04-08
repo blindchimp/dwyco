@@ -249,7 +249,7 @@ VcExcDebugNode::has_brief()
 void
 vcctx::excraise(const vc& str, VCArglist *al)
 {
-	char buf[128];
+    char buf[1024];
 #ifdef VCDBG
 	VcExcDebugNode dbg;
 	dbg.exc_str = str;
@@ -258,8 +258,8 @@ vcctx::excraise(const vc& str, VCArglist *al)
 
 	if(exc_backout)
 	{
-		char foo[1024];
-		sprintf(foo, "raised %s: raise while backing out?", (const char *)str);
+        char foo[1024];
+        snprintf(foo, sizeof(foo), "raised %s: raise while backing out?", (const char *)str);
 		oopanic(foo);
 	}
 	if(exc_doing_backouts)
@@ -296,7 +296,7 @@ vcctx::excraise(const vc& str, VCArglist *al)
 			handler->enable();
 			if(level == 'A' && ret != vc("backout"))
             {
-            	sprintf(buf, "Function cannot resume after exception %s", (const char *)str);
+                snprintf(buf, sizeof(buf), "Function cannot resume after exception %s", (const char *)str);
             	USER_BOMB2(buf);
             }
 			// handled ok, now start the backout process
@@ -323,7 +323,7 @@ vcctx::excraise(const vc& str, VCArglist *al)
 	// no handler found, perform default system action
 	if(level == 'W')
 		return;
-	sprintf(buf, "No handler found for %s", (const char *)str);
+    snprintf(buf, sizeof(buf), "No handler found for %s", (const char *)str);
 	USER_BOMB2(buf);
 }
 

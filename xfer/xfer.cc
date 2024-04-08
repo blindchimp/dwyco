@@ -59,8 +59,6 @@
 
 vc Filename;
 vc Filesize;
-vc Key_material;
-vc Session_key;
 vc ECtx;
 vc DCtx;
 vc Client_UID;
@@ -137,9 +135,9 @@ vc Server_keys;
 #include "dwyco_dh_dif.cpp"
 
 void
-setup_session_key()
+setup_session_key(vc key_material)
 {
-    if(Key_material.is_nil())
+    if(key_material.is_nil())
         return;
     udh_init(vcnil);
 
@@ -150,11 +148,11 @@ setup_session_key()
         return;
     vcx.close();
 
-    Session_key = dh_store_and_forward_get_key2(Key_material, Server_keys);
+    vc session_key = dh_store_and_forward_get_key2(key_material, Server_keys);
     ECtx = vclh_encdec_open();
     DCtx = vclh_encdec_open();
-    vclh_encdec_init_key_ctx(ECtx, Session_key, 0);
-    vclh_encdec_init_key_ctx(DCtx, Session_key, 0);
+    vclh_encdec_init_key_ctx(ECtx, session_key, 0);
+    vclh_encdec_init_key_ctx(DCtx, session_key, 0);
 }
 
 
@@ -397,8 +395,8 @@ recv_crypto(vc sock)
     vc sf_material;
     if(!recv_vc(sock, sf_material))
         return 0;
-    Key_material = sf_material;
-    setup_session_key();
+
+    setup_session_key(sf_material);
     return 1;
 }
 
@@ -760,6 +758,12 @@ main(int argc, char **argv)
     //dolog(argv[1]);
     //dolog(argv[2]);
     vc::non_lh_init();
+    // note: just from eyeballing it, this seems like it would
+    // cover everything that is being deserialized ca 2024.
+    // files are sent in small 2k chunks, and the control
+    // info is short vectors. these limits should allow
+    // some flexibility, but stop most other problems.
+    vc::set_xferin_constraints(20000, 3, 10);
 
 #if 1
     struct rlimit r;
