@@ -179,11 +179,21 @@ vc_double::xfer_in(vcxstream& vcx)
     // we know length has to be > 0
     if(flen == -1 || flen == 0)
 		return EXIN_PARSE;
-    if(flen > vcx.max_element_len)
+    // trying to say we only accept n-digit floats
+    // doesn't make a lot of sense, especially when
+    // we don't really have a way of controlling
+    // the output in xfer_out (ie, it is easy to
+    // get 50 digit floats for 1/3). but on the other
+    // hand, having a limit on the flen can make sense
+    // maybe we should just hard code it... using
+    // the max_memory stuff should keep things in check, but
+    // if you don't use that, you'll be vulnerable here
+    if(flen > 100 || flen > vcx.max_element_len)
     {
         user_warning("xfer_in double hit max_element len");
         return EXIN_PARSE;
     }
+
 	if((cp = vcx.in_want(flen)) == 0)
 		return EXIN_DEV;
 
