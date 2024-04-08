@@ -16,6 +16,7 @@
 #include "vcdecom.h"
 #include "vcxstrm.h"
 #include "vcenco.h"
+#include "vcmap.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcser.cpp 1.49 1998/12/09 05:12:36 dwight Exp $";
 
 
@@ -55,9 +56,44 @@ long
 vc::xfer_in(vcxstream& vcx)
 {
     if(vcx.max_depth == -1)
+    {
+        user_warning("xfer_in hit max_depth");
         return EXIN_PARSE;
+    }
     --vcx.max_depth;
-    long ret = real_xfer_in(vcx);
+    long ret;
+    int save_throw = Throw_user_panic;
+    Throw_user_panic = 1;
+    try
+    {
+        auto a = vcxstream::Memory_tally;
+        ret = real_xfer_in(vcx);
+        auto b = vcxstream::Memory_tally;
+
+        if(!(ret == EXIN_DEV || ret == EXIN_PARSE))
+        {
+            auto c = b - a;
+            vcx.memory_tally += c;
+            //fprintf(stderr, "%p add %ld tot %ld\n", &vcx, c, vcx.memory_tally);
+            // note: since we are being called recursively, remove the local tally so it isn't counted multiple times
+            // higher up the chain.
+            vcxstream::Memory_tally -= c;
+            if(vcx.memory_tally >= vcx.max_memory)
+            {
+                // note: we need this since we are passing judgement on
+                // the item *after* returning from real_xfer_in, which
+                // at this point thinks everything is aok.
+                attach(vc_nil::vcnilrep);
+                ret = EXIN_PARSE;
+                user_warning("xfer_in hit memory limit");
+            }
+        }
+    }
+    catch(...)
+    {
+        ret = EXIN_PARSE;
+    }
+    Throw_user_panic = save_throw;
     ++vcx.max_depth;
     return ret;
 }
@@ -169,7 +205,10 @@ vc::real_xfer_in(vcxstream& vcx)
 		// object, and then toss the string object.
 		nrep = new vc_string(VcNoinit());
 		if((n = nrep->xfer_in(vcx)) < 0)
+        {
+            delete nrep;
 			return n;
+        }
 		vc_default *nrep2 = new vc_regex((const char *)*nrep);
 		delete nrep;
 		redefine(nrep2);
@@ -194,7 +233,15 @@ vc::real_xfer_in(vcxstream& vcx)
 	// set to the xfered value.
 	//
 	redefine(nrep);
-	n = nrep->xfer_in(vcx);
+    try
+    {
+        n = nrep->xfer_in(vcx);
+    }
+    catch(...)
+    {
+        n = EXIN_PARSE;
+    }
+
 	if(n < 0)
 	{
 		// if a failure, turn into nil
@@ -202,6 +249,9 @@ vc::real_xfer_in(vcxstream& vcx)
 		// any partial results that
 		// may have been created.
 		attach(vc_nil::vcnilrep);
+        // note we may be referenced in a chit table, which will
+        // handle the ref counting manually. so no need to delete
+        // here.
     	return n;
 	}
 	

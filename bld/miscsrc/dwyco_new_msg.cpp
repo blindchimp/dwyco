@@ -99,7 +99,7 @@ int
 dwyco_new_msg2(QByteArray& uid_out, QByteArray& txt, int& zap_viewer, QByteArray& mid, int& has_att, int& is_file, QByteArray& creator_uid)
 {
     DWYCO_LIST inbox_mids;
-    if(!dwyco_get_tagged_idx(&inbox_mids, "_inbox"))
+    if(!dwyco_get_tagged_idx(&inbox_mids, "_inbox", 0))
         return 0;
     simple_scoped qim(inbox_mids);
     int n = qim.rows();

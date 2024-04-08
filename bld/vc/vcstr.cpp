@@ -364,17 +364,24 @@ vc_string::xfer_in(vcxstream& vcx)
 	if((cp = vcx.in_want(ENCODED_LEN_LEN)) == 0)
 		return EXIN_DEV;
     int len = decode_len(cp);
-    if(len == -1 || len == 0)
+    if(len == -1 || len == 0 || len > vcx.max_count_digits)
 		return EXIN_PARSE;
+    // this check is kinda spurious, since it is len_len. max_element_len would have to be really small
     if(len > vcx.max_element_len)
+    {
+        user_warning("xfer_in str hit max_element len len");
         return EXIN_PARSE;
+    }
 	if((cp = vcx.in_want(len)) == 0)
 		return EXIN_DEV;
 	long slen = decode_long(cp, len);
 	if(slen == -1)
 		return EXIN_PARSE;
     if(slen > vcx.max_element_len)
+    {
+        user_warning("xfer_in str hit max_element len");
         return EXIN_PARSE;
+    }
 
     char *ostr = str;
     // do this in case slen is wildly big

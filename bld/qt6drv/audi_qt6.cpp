@@ -314,8 +314,11 @@ audi_qt_delete(void *)
     Bufs.clear();
     Buf_times.clear();
     //delete Audi;
-    Audi->deleteLater();
-    Audi = 0;
+    if(Audi)
+    {
+        Audi->deleteLater();
+        Audi = 0;
+    }
 }
 
 

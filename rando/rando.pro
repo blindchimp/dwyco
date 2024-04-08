@@ -13,7 +13,7 @@ QT += core qml multimedia network
 QT += quickcontrols2
 QT += location positioning
 
-android: QT += androidextras
+#android: QT += androidextras
 macx-clang: QT += macextras
 CONFIG += c++11
 

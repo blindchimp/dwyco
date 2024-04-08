@@ -28,7 +28,7 @@ punt on threaded socket stuff
 can't really rely on the "close the socket in another thread" trick,
 and it needs to be replaced with a "control" socketpair scheme probably.
 this implementation does seem to work,
-but there a lot of these that just make me queasy about it,
+but there a lot of things that just make me queasy about it,
 not the least of which is most of the rest of the code is not thread safe.
 it works in this case because of very careful access to internals,
 and avoiding use of some common global variables.
