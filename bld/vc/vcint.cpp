@@ -197,14 +197,20 @@ vc_int::xfer_out(vcxstream& vcx)
 long
 vc_int::xfer_in(vcxstream& vcx)
 {
-	char *lp = vcx.in_want(2);
+    char *lp = vcx.in_want(ENCODED_LEN_LEN);
 	if(lp == 0)
 		return EXIN_DEV;
     int len = decode_len(lp);
-    if(len == -1 || len == 0)
+    if(len == -1 || len == 0 || len > vcx.max_count_digits)
         return EXIN_PARSE;
+    // this is sketchy, equivalent to something like
+    // "only accept up to n-digit ints". i'm leaving it for
+    // now since it is good to have an extra check.
     if(len > vcx.max_element_len)
+    {
+        user_warning("xfer_in int hit max_element len");
         return EXIN_PARSE;
+    }
 
 	lp = vcx.in_want(len);
 	if(lp == 0)
@@ -213,6 +219,6 @@ vc_int::xfer_in(vcxstream& vcx)
     i = decode_long2(lp, len, error);
     if(error)
         return EXIN_PARSE;
-	return len + 2;
+    return len + ENCODED_LEN_LEN;
 }
 

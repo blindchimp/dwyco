@@ -37,7 +37,9 @@ vc_file::underflow(vcxstream&, char *buf, long min, long max)
 	long got = min;
 	if(!read(buf, got))
 		return -1;
-	if(got < min)
-		return -1;
+    // wow, long standing bug. read can return and consume less than
+    // requested.
+    //if(got < min)
+    //	return -1;
     return got;
 }

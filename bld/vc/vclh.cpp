@@ -299,9 +299,33 @@ doputfile(vc file, vc item)
 	return vc(len);
 }
 
-
 vc
 dogetfile(vc file, vc var)
+{
+    if(var.type() != VC_STRING)
+    {
+        USER_BOMB("second arg to getfile must be string to bind to", vcnil);
+    }
+    if(file.eof())
+    {
+        USER_BOMB("file is at EOF", vcnil);
+    }
+    vcxstream v(file);
+    vc item;
+    long len;
+    if(!v.open(vcxstream::READABLE))
+        return vcnil;
+    if((len = item.xfer_in(v)) < 0)
+        return vcnil;
+    if(!v.close(vcxstream::FLUSH))
+        return vcnil;
+    Vcmap->local_add(var, item);
+    return vc(len);
+}
+
+#if 0
+vc
+dogetfile_test(vc file, vc var)
 {
 	if(var.type() != VC_STRING)
 	{
@@ -314,15 +338,29 @@ dogetfile(vc file, vc var)
 	vcxstream v(file);
 	vc item;
 	long len;
-	if(!v.open(vcxstream::READABLE))
-		return vcnil;
-	if((len = item.xfer_in(v)) < 0)
-		return vcnil;
+    while(1)
+    {
+        if(!v.open(vcxstream::READABLE, vcxstream::ATOMIC))
+            return vcnil;
+
+        if((len = item.xfer_in(v)) < 0)
+        {
+            if(len == EXIN_DEV && !file.eof())
+            {
+                v.close(vcxstream::RETRY);
+                continue;
+            }
+            else if(len == EXIN_PARSE)
+                return vcnil;
+        }
+        break;
+    }
 	if(!v.close(vcxstream::FLUSH))
 		return vcnil;
 	Vcmap->local_add(var, item);
 	return vc(len);
 }
+#endif
 
 
 vc
@@ -2299,7 +2337,7 @@ dogensym()
 	char buf[128];
 
 	++i;
-    sprintf(buf, "gensym%lu", i);
+    snprintf(buf, sizeof(buf), "gensym%lu", i);
 	return vc(buf);
 }
 
@@ -2991,7 +3029,19 @@ vclh_uri_decode(vc s)
 	return vc(VC_BSTRING, res.c_str(), res.length());
 }
 
-
+vc
+vclh_set_xferin_constraints(vc max_memory, vc max_depth, vc max_elements, vc max_element_len)
+{
+    if(max_memory.type() != VC_INT ||
+            max_depth.type() != VC_INT ||
+            max_elements.type() != VC_INT ||
+            max_element_len.type() != VC_INT)
+    {
+        USER_BOMB("xferin_constraints args must all be integers (max_memory must be in bytes and > 0, other args -1 means don't change that constraint.)", vcnil);
+    }
+    vc::set_xferin_constraints(max_memory, max_depth, max_elements, max_element_len);
+    return vctrue;
+}
 
 vc
 dodump()
@@ -3076,6 +3126,18 @@ vc::non_lh_init()
     DwVP::init_dvp();
     vc_uvsocket::init_uvs_loop();
 #endif
+}
+
+void
+vc::set_xferin_constraints(long max_memory, long max_depth, long max_elements, long max_element_len)
+{
+    vcxstream::set_default_max_memory(max_memory);
+    if(max_depth != -1)
+        vcxstream::Max_depth = max_depth;
+    if(max_elements != -1)
+        vcxstream::Max_elements = max_elements;
+    if(max_element_len != -1)
+        vcxstream::Max_element_len = max_element_len;
 }
 
 
@@ -3410,7 +3472,7 @@ vc::init_rest()
 
 	// saving/restoring xfer format 
 	makefun("putfile", VC(doputfile, "putfile", VC_FUNC_BUILTIN_LEAF));
-	makefun("getfile", VC(dogetfile, "getfile", VC_FUNC_BUILTIN_LEAF));
+    makefun("getfile", VC(dogetfile, "getfile", VC_FUNC_BUILTIN_LEAF));
 	makefun("serialize", VC(vclh_serialize, "serialize", VC_FUNC_BUILTIN_LEAF));
 	makefun("deserialize", VC(vclh_deserialize, "deserialize", VC_FUNC_BUILTIN_LEAF));
 
@@ -3480,6 +3542,7 @@ vc::init_rest()
 	makefun("GZ-compress-xfer", VC(vclh_compress_xfer, "GZ-compress-xfer", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-decompress-xfer", VC(lh_decompress_xfer, "GZ-decompress-xfer", VC_FUNC_BUILTIN_LEAF));
 
+    makefun("set-xferin-constraints", VC(vclh_set_xferin_constraints, "set-xferin-constraints", VC_FUNC_BUILTIN_LEAF));
 	// debugging
 #ifdef VCDBG
 	makefun("__lh_break_on_call", VC(vclh_break_on_call, "__lh_break_on_call", VC_FUNC_BUILTIN_LEAF));

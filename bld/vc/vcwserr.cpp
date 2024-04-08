@@ -157,8 +157,8 @@ vc_wsget_errstr(int err)
 		if(err == Vcwserrvals[i].errnum)
 			return Vcwserrvals[i].str;
 	}
-	static char a[500];
-	sprintf(a, "[%d] %s Say what?", err, strerror(err));
+    static char a[500];
+    snprintf(a, sizeof(a), "[%d] %s Say what?", err, strerror(err));
 	return a;
 }
 

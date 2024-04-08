@@ -24,7 +24,6 @@
 //
 // $Header: g:/dwight/repo/vc/rcs/vcxstrm.h 1.49 1998/12/09 05:11:28 dwight Exp $
 
-#include "dwvec.h"
 #include "dwvecp.h"
 #include "vc.h"
 #include "dwgrows.h"
@@ -118,6 +117,10 @@ public:
         ATOMIC
     };
 
+    static long Max_element_len;
+    static long Max_elements;
+    static long Max_depth;
+
 	// use this when there is no device, just a fixed buffer
 	// 
 	//vcxstream(char *buf = 0, long len = 2048, enum style = FIXED);
@@ -157,28 +160,47 @@ public:
     // exceeded. this is useful if you know the character of
     // the objects that are going to be deserialized, and
     // the input may be from an unknown source.
-    // it might be better to provide some means of hooking the
-    // memory allocator and terminating after a certain amount of
-    // memory had been allocated, but that is environment dependent
-    // and would probably require some exception handling.
     // this should be adequate to allow limiting mischief for simple
     // outward facing protocols where the expected form is fairly restricted.
+    // NOTE: hitting one of these limits will stop the deserialization
+    // and consumption of input in a more or less random place. it is
+    // up to the caller to finalize the device (close it, stop using it.)
+    // if you don't do this, and continue to read data from the device, you
+    // will almost certainly end up with trash.
 
-    // the max number of elements in a composite (like a vector)
+    // the max number of elements in a decomposable (like a vector)
     long max_elements;
-    // the max length in the representation (in bytes) of any non-composite (int, float, string)
+    // the max length in the representation (in bytes) of any atomic (int, float, string)
     long max_element_len;
     // the maximum number of levels of the structure to be parsed.
     // for example, just a single composite (like an int) is 0 "levels".
-    // this excludes all composites.
+    // this excludes all decomposables.
     // a single vector is 1 level. if the vector contains another vector, that is 2, and so on.
     // setting this to -1 will return an error for any deserialization.
     long max_depth;
 
+    // max amount of memory for a single deserialization operation.
+    // note: this is not checked at allocation time, but rather when
+    // a complete deserialization operation is performed. this eliminates
+    // situations where constructors might fail. but, it allows the
+    // deserialization to continue past this limit.
+    void set_max_memory(int);
+    static void set_default_max_memory(int);
+
     int flushnb();
     enum status get_status();
-
 private:
+    long max_memory;
+    int max_count_digits;  // roughly log10(max_memory)
+
+    // note: these are global defaults, and need to be set in
+    // tandem to make sense.
+    static long Max_memory;
+    static int Max_count_digits;
+
+    unsigned long memory_tally;
+friend void* ::operator new(std::size_t sz);
+    static unsigned long Memory_tally;
 
     int retry();
 	void put_back(const char *, long);
@@ -193,9 +215,37 @@ private:
 	void commit();
     int check_status(enum status);
 
-private:
+    // being able to serialize things that were non-trees
+    // seemed like a good idea. but honestly, i think it is a waste
+    // at this point.
+    //
+    // let's just avoid dealing with self-referential things. it works, but
+    // if the caller sends in something with a cycle, it creates garbage and might end up as a DOS.
+    // in 20+ years i've never needed this functionality, so let's just
+    // disable it by default.
+    //
+    // NOTE: we just rely on the visited flag, and ignore the chit_table. if you send in a
+    // vc that is not a tree, it is almost certainly a programming error, so we panic.
+    // just to illustrate:
+    // lbind(empty_vec vector())
+    // lbind(dag vector(<empty_vec> <empty_vec>))
+    // <<serialize dag someway>> results in a panic.
+    //
+    // but, serializing
+    // lbind(dag vector(vector() vector()))
+    // works fine, since the two inner vectors are distinct
+    //
+    // NOTE2: there is nothing in the encoding that says "this should be non-self-referential".
+    // so on the decode side, you have to make sure this self_ref flag gets set out of band if you *do* want
+    // to allow self-ref.
+
+    // dammit: the above is mostly true, but there is code in the servers that inadvertently creates
+    // non-tree structures, from processing commands recursively. there is a lot of code to look
+    // at to get rid of this "accident" with processing "auth-command" encapsulated items. the problem
+    // crops up during return processing with referencing semi-global error and extra return values.
+    bool allow_self_ref = true;
 	ChitTable *chit_table;
-        void chit_destroy_table();
+    void chit_destroy_table();
 	
 	// tells which device to use
 	enum devtype {INDEPENDENT, VCPTR, VC, NONE} dtype;
@@ -219,6 +269,12 @@ private:
 	DwGrowingString log;
 	
 	long do_overflow(char *buf, long len);
+    // this calls back into the "underflow" method on the device (or whatever is set up to handle reading from a device.)
+    // the function returns the number of bytes actually read.
+    // if you don't consume *any* bytes from the device, return -1.
+    // it is *best* if you return at least min bytes, BUT if you don't, the stream
+    // will buffer what you *do* return (but in_want will return 0.) you cannot
+    // return more than max bytes (the stream only has enough space that much at most.)
 	long do_underflow(char *buf, long min, long max);
 	long do_devopen(int style, int stat);
 	long do_devclose(int style);

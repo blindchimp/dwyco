@@ -124,9 +124,7 @@ init_rct();
 	}
 #endif
 	// try to get the basic stuff in first
-#ifdef VCDBG_INTERACTIVE
-	vc("__lh_start_debugger").global_bind("t");
-#endif
+
 	vc("__lh_enc").global_bind(dec ? vctrue : vcnil);
     FILE *lf = fopen(load_file.c_str(), dec ? "rb" : "r");
 	if(lf != 0)
@@ -167,14 +165,7 @@ init_rct();
 	vc *s = new vc(*strm);
 	delete strm;
 	fclose(i);
-#ifdef VCDBG_INTERACTIVE
-	vc("__lh_dbg_user_expr").global_bind(*s);
-	char *d = "__lh_debug(|LH debug, type \"help\" for help.| toplev nil nil)";
-	vc *dbg = new vc(VC_CVAR, d, strlen(d));
-	dbg->force_eval();
-	delete dbg;
-	delete s;
-#else
+
     if(!translate)
         (void)s->force_eval();
     else
@@ -183,7 +174,6 @@ init_rct();
         VcOutput << "vc top() { return " << top << "();}\n";
     }
 	delete s;
-#endif
 	vc::exit();
 	vc::shutdown_logs();
 	return 0;
@@ -195,9 +185,6 @@ oopanic(const char *s)
 {
 	printf("panic: %s\n", s);
 	fflush(stdout);
-#ifdef VCDBG_INTERACTIVE
-	drop_to_dbg("unrecoverable implementation bug", "bomb");
-#endif
 	exit(1);
 }
 
