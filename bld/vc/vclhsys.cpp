@@ -242,7 +242,7 @@ vclh_strftime_hp(vc format)
 		USER_BOMB("strftime format result too long (must be < 255 chars)", vcnil);
     DwString ret(s);
 	char us[100];
-    snprintf(us, sizeof(us), ".%06ld", tv.tv_usec);
+    snprintf(us, sizeof(us), ".%06ld", (long)tv.tv_usec);
     ret += us;
     return vc(ret.c_str());
 #else
