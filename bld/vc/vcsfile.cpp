@@ -154,7 +154,8 @@ vc_stdio_file::read(void *buf, long& len)
 		return 0;
 
 	long ret;
-
+    // testing
+    //len = 1;
 	ret = fread(buf, 1, len, handle);
 
 	if(ret != len && !feof(handle))

@@ -97,7 +97,7 @@ vc_func::get_special() const {return name;}
 void
 vc_func::bomb_func(const char *type) const {
 	char s[1000];
-	sprintf(s, "can't convert function to %s\n", type);
+    snprintf(s, sizeof(s), "can't convert function to %s\n", type);
 	USER_BOMB2(s);
 }
 
