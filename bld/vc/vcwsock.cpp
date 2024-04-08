@@ -1706,62 +1706,62 @@ vc_winsock::underflow(vcxstream&, char *buf, long min, long max)
 vc
 vc_winsock::socket_recv(vc& item, const vc& recv_info, vc& addr_info)
 {
-	if(!init())
-		return vcnil;
+    if(!init())
+        return vcnil;
     addr_info = peer_addr;
-	vcxstream *is;
-	vcxstream isl(this);
-	if(buffered)
-		is = &vcxr;
-	else
-		is = &isl;
-	vcxstream& istrm = *is;
+    vcxstream *is;
+    vcxstream isl(this);
+    if(buffered)
+        is = &vcxr;
+    else
+        is = &isl;
+    vcxstream& istrm = *is;
 
-	if(buffered)
-	{
-	if(istrm.get_status() != vcxstream::READABLE)
-	{
-		if(!istrm.open(vcxstream::READABLE, 
-			smode == VC_NONBLOCKING ? vcxstream::ATOMIC : vcxstream::MULTIPLE))
-		{
-			RAISEABORT(generic_problem, vcnil);
-		}
-	}
-	int err;
-	if((err = item.xfer_in(istrm)) < 0)
-	{
-		static vc wouldblock("wouldblock");
-		static vc retry("retry");
-		if(smode == VC_NONBLOCKING &&
-			error == wouldblock && err == EXIN_DEV)
-		{
-			istrm.close(vcxstream::RETRY);
-			return retry;
-		}
-		else
-			istrm.close(vcxstream::DISCARD);
-		return vcnil;
-	}
-	// note: this implies that per-send is how cycles are
-	// computed 
-	istrm.chit_new_table();
-	istrm.commit();
-	}
-	else
-	{
-	if(!istrm.open(vcxstream::READABLE))
-	{
-		RAISEABORT(generic_problem, vcnil);
+    if(buffered)
+    {
+        if(istrm.get_status() != vcxstream::READABLE)
+        {
+            if(!istrm.open(vcxstream::READABLE,
+                           smode == VC_NONBLOCKING ? vcxstream::ATOMIC : vcxstream::MULTIPLE))
+            {
+                RAISEABORT(generic_problem, vcnil);
+            }
+        }
+        int err;
+        if((err = item.xfer_in(istrm)) < 0)
+        {
+            static vc wouldblock("wouldblock");
+            static vc retry("retry");
+            if(smode == VC_NONBLOCKING &&
+                    error == wouldblock && err == EXIN_DEV)
+            {
+                istrm.close(vcxstream::RETRY);
+                return retry;
+            }
+            else
+                istrm.close(vcxstream::DISCARD);
+            return vcnil;
+        }
+        // note: this implies that per-send is how cycles are
+        // computed
+        istrm.chit_new_table();
+        istrm.commit();
     }
-	if(item.xfer_in(istrm) < 0)
-	{
-		istrm.close(vcxstream::DISCARD);
-		return vcnil;
-	}
-	istrm.close();
-	}
+    else
+    {
+        if(!istrm.open(vcxstream::READABLE))
+        {
+            RAISEABORT(generic_problem, vcnil);
+        }
+        if(item.xfer_in(istrm) < 0)
+        {
+            istrm.close(vcxstream::DISCARD);
+            return vcnil;
+        }
+        istrm.close();
+    }
 
-	return vctrue;
+    return vctrue;
 }
 
 vc

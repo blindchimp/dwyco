@@ -9,4 +9,5 @@
 #include "vcmap.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcmap.cpp 1.47 1997/10/05 17:27:06 dwight Stable $";
 vcctx *Vcmap;
+int Throw_user_panic;
 

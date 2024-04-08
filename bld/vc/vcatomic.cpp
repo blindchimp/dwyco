@@ -18,7 +18,7 @@ vc_atomic::bomb_setop() const
     // add the type in here anyways
     enum vc_type t = type();
     char a[1024];
-    sprintf(a, "can't do set operation on atomic (%d)", (int)t);
+    snprintf(a, sizeof(a), "can't do set operation on atomic (%d)", (int)t);
     USER_BOMB2(a);
 }
 
