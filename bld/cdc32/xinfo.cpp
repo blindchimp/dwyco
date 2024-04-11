@@ -48,7 +48,7 @@ save_info(vc info, const char *filename, int nomodify)
     vc v = newfn.c_str();
     if(f.open(v, (vcfilemode)(VCFILE_WRITE|VCFILE_BINARY)))
     {
-        vcxstream vcx(f);
+        vcxstream vcx(f, 0, 128 * 1024);
         if(!vcx.open(vcxstream::WRITEABLE))
         {
             TRACK_ADD_nosave(SI_open, 1);
@@ -107,7 +107,7 @@ load_info(vc& info, const char *filename, int nomodify)
     vc v = newfn.c_str();
     if(!f.open(v, (vcfilemode)(VCFILE_READ|VCFILE_BINARY)))
         return 0;
-    vcxstream vcx(f);
+    vcxstream vcx(f, 0, 128 * 1024);
     if(!vcx.open(vcxstream::READABLE))
         goto err;
     if((err = info.xfer_in(vcx)) < 0)
