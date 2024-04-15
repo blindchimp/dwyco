@@ -50,6 +50,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <sys/resource.h>
+#include <errno.h>
 #include "vc.h"
 #include "vcxstrm.h"
 #include "vcudh.h"
@@ -131,6 +132,16 @@ dolog(const char *s)
     //close(fd);
 }
 
+void
+dolog_sys(const char *desc)
+{
+    int save_errno = errno;
+    DwString a(desc);
+    a += ":";
+    a += strerror(save_errno);
+    dolog(a.c_str());
+}
+
 vc Server_keys;
 #include "dwyco_dh_dif.cpp"
 
@@ -147,8 +158,13 @@ setup_session_key(vc key_material)
     if(Server_keys.xfer_in(vcx) < 0)
         return;
     vcx.close();
-
-    vc session_key = dh_store_and_forward_get_key2(key_material, Server_keys);
+    // note: i keep going back and forth on the compat between the old
+    // single-key stuff and the new multi-key stuff. since most of the
+    // server stuff still uses the old API, just keep that intact and
+    // avoid the compat hacks in *get_key2. note ca 2024, it is really
+    // unlikely any old messages using the old scheme still exist on the
+    // server, so the compat hack is a bit questionable at this point.
+    vc session_key = dh_store_and_forward_get_key(key_material, Server_keys);
     ECtx = vclh_encdec_open();
     DCtx = vclh_encdec_open();
     vclh_encdec_init_key_ctx(ECtx, session_key, 0);
@@ -159,6 +175,8 @@ setup_session_key(vc key_material)
 int
 checkfn(vc s)
 {
+    if(s.type() != VC_STRING)
+        return 0;
     if(Loose_file)
     {
         const char *a = (const char *)s;
@@ -274,7 +292,10 @@ get_write_locked_fd(vc filename)
 
                     off_t off = lseek(fd, 0, SEEK_END);
                     if(off == (off_t)-1)
+                    {
+                        dolog_sys("seek on restart");
                         return 0;
+                    }
                     Start_offset = off;
                     char a[1024];
                     sprintf(a, "locked recv restart %ld", off);
@@ -327,9 +348,14 @@ get_read_locked_file(vc filename)
         fl.l_len = 0;
         if(fcntl(fd, F_SETLK, &fl) == -1)
         {
+            dolog_sys("open read lock fail");
             return -1;
         }
         return fd;
+    }
+    else
+    {
+        dolog_sys("open read locked");
     }
     return -1;
 }
@@ -407,7 +433,7 @@ recv_get_request(vc sock)
 
     if(!recv_vc(sock, req))
         return 0;
-
+    vc fn;
     if(req.type() != VC_STRING)
     {
         if(req.type() != VC_VECTOR)
@@ -420,16 +446,18 @@ recv_get_request(vc sock)
         Client_UID = req[2];
         Client_MID = req[3];
 
-        req = req[0];
+        fn = req[0];
     }
+    else
+        fn = req;
 
 
-    if(!checkfn(req))
+    if(!checkfn(fn))
     {
         dolog("bogus filename");
         return 0;
     }
-    Filename = req;
+    Filename = fn;
     // it is better to get the lock as soon as we know the filename
     // so that we can avoid problems where file sizes and stuff would
     // change if there is another writer running around
@@ -437,7 +465,7 @@ recv_get_request(vc sock)
     if(File == -1)
         return 0;
 
-    Filesize = vclh_file_size(req);
+    Filesize = vclh_file_size(fn);
     if(Filesize.is_nil())
         return 0;
     long fs = (long)Filesize;
@@ -541,7 +569,10 @@ recv_response(vc sock)
             if(File == -1)
                 return 0;
             if(lseek(File, Start_offset, SEEK_SET) == -1)
+            {
+                dolog_sys("ready to send lseek");
                 return 0;
+            }
             return 1;
         }
         return 0;
@@ -743,12 +774,15 @@ got_alarm(int)
     _exit(0);
 }
 
+#undef TEST
 int
 main(int argc, char **argv)
 {
     // assume we're started by inetd
     signal(SIGALRM, got_alarm);
+#ifndef TEST
     alarm(60);
+#endif
     if(!(argc == 3 || argc == 4 || argc == 5))
         exit(1);
 
@@ -787,7 +821,6 @@ main(int argc, char **argv)
 #endif
     //close(2);
     //open("/tmp/st", O_CREAT|O_WRONLY|O_TRUNC, 0666);
-#undef TEST
     int s = 0;
 #ifdef TEST
     int port = atoi(argv[3]);
@@ -800,7 +833,7 @@ main(int argc, char **argv)
     sa.sin_port = htons(port);
     bind(s, (struct sockaddr *)&sa, sizeof(sa));
     listen(s, 5);
-    socklen_t slen;
+    socklen_t slen = sizeof(sa);
     s = accept(s, (struct sockaddr *)&sa, &slen);
 #endif
     struct sockaddr_in in;
