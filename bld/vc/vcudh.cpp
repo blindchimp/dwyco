@@ -364,7 +364,7 @@ vclh_sf_material(vc other_pub, vc key_out)
 // sfpack is the package of info created by dh_store_and_forward_material, presumably
 // created by the sender. here is where we do the agreement and recover the session key.
 
-static
+
 vc
 dh_store_and_forward_get_key(vc sfpack, vc our_material)
 {
@@ -491,6 +491,18 @@ dh_store_and_forward_get_key2(vc sfpack, vc our_material)
     if((sfpack.num_elems() & 1) != 1 || sfpack.num_elems() < 3)
     {
         // maybe it is an old pack, try the old decryption
+        // note: this is a bit of hail mary and might crash the program,
+        // should probably reconsider doing this at all. i've been toggling
+        // back and forth several times for our_material[0] and our_material,
+        // presumably because i've been coming in here with server-based
+        // single-key API stuff.
+        //
+        // note: i keep going back and forth on the compat between the old
+        // single-key stuff and the new multi-key stuff. since most of the
+        // server stuff still uses the old API, just keep that intact and
+        // avoid the compat hacks in *get_key2. note ca 2024, it is really
+        // unlikely any old messages using the old scheme still exist on the
+        // server, so the compat hack is a bit questionable at this point.
         return dh_store_and_forward_get_key(sfpack, our_material[0]);
     }
 
