@@ -14,7 +14,7 @@ include($$PWD/../../SortFilterProxyModel/SortFilterProxyModel.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="1.65"
+VER="1.70"
 DEFINES += SELFSTREAM
 DEFINES += NO_DWYCO_AUDIO
 # i'll shit myself if this works on all platforms

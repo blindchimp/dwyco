@@ -599,7 +599,7 @@ VcError << "\r\n";
 void
 vcxstream::put_back(const char *str, long pblen)
 {
-VcError << "putting back " << pblen << "\n";
+//VcError << "putting back " << pblen << "\n";
 	if(!check_status(READABLE))
         oopanic("put back on non-readable stream");
 	// attempt to stuff some stuff back into the
@@ -607,7 +607,7 @@ VcError << "putting back " << pblen << "\n";
 	if(pblen <= (cur - buf))
 	{
 		// it'll fit on the top of the current buffer
-VcError << "puting back on top\n";
+//VcError << "puting back on top\n";
 		cur -= pblen;
 		memmove(cur, str, pblen);
 		return;
@@ -619,7 +619,7 @@ VcError << "puting back on top\n";
         oopanic("can't enlarge buffer");
 	int newlen = len + pblen;
 	char *newbuf = new char [newlen];
-VcError << "putback new buffer len " << newlen << "\n";
+//VcError << "putback new buffer len " << newlen << "\n";
 	memmove(newbuf, str, pblen);
 	memmove(newbuf + pblen, cur, eod - cur);
 	eod = newbuf + (pblen + (eod - cur));
