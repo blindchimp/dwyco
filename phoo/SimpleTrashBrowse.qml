@@ -65,17 +65,17 @@ Page {
                     }
                 }
                 MenuItem {
+                    text: "Select All"
+                    onTriggered: {
+                        model.set_all_selected()
+                    }
+                }
+                MenuItem {
                     text: "Delete forever"
                     onTriggered: {
                         model.obliterate_all_selected()
                         //model.tag_all_selected("_hid")
                         multiselect_mode = false
-                    }
-                }
-                MenuItem {
-                    text: "Select All"
-                    onTriggered: {
-                        model.set_all_selected()
                     }
                 }
             }
