@@ -103,122 +103,20 @@ Page {
                 anchors.centerIn: parent
                 source: mi("ic_action_overflow.png")
             }
-            onClicked: optionsMenu.open()
-            MenuItem {
-                id: untrash_item
-                text: "Untrash msg"
-                visible: false
-                onTriggered: {
-                    core.unset_tag_message(mid, "_trash")
-                    themsglist.invalidate_model_filter()
-                    stack.pop()
-                }
+            onClicked: {
+                if(is_trash)
+                    optionsMenuTrash.open()
+                else
+                    optionsMenu.open()
             }
-            MenuItem {
-                id: review_item
-                text: "Review"
-                visible: false
-                onTriggered: {
-                    stack.push(msg_review)
 
-                }
-            }
-            Menu {
+            MsgViewMenu {
                 id: optionsMenu
-                x: parent.width - width
-                transformOrigin: Menu.TopRight
-                MenuItem {
-                    text: is_trash ? "Delete forever" : "Trash msg"
-                    onTriggered: {
-                        if(is_trash) { 
-                            core.delete_message(uid, mid)
-                        } else {
-                            core.set_tag_message(mid, "_trash")
-                        }
-                        themsglist.invalidate_model_filter()
-                        stack.pop()
-                    }
-                }
-//                MenuItem {
-//                    text: "Untrash msg"
-//                    visible: is_trash
-//                    onTriggered: {
-//                        core.unset_tag_message(mid, "_trash")
-//                        themsglist.invalidate_model_filter()
-//                        stack.pop()
-//                    }
-//                }
-                MenuItem {
-                    text: "Forward msg"
-                    onTriggered: {
-                        forward_dialog.mid_to_forward = mid
-                        //forward_dialog.uid_folder = uid
-                        stack.push(forward_dialog)
-                    }
-                }
-
-                MenuItem {
-                    text: fav ? "Unfavorite" : "Favorite"
-                    onTriggered: {
-                        core.set_fav_message(mid, !fav)
-                    }
-                }
-                MenuItem {
-                    text: hid ? "Unhide" : "Hide"
-                    onTriggered: {
-                        if(hid)
-                            core.unset_tag_message(mid, "_hid")
-                        else
-                            core.set_tag_message(mid, "_hid")
-                        themsglist.invalidate_model_filter()
-                    }
-                }
-                MenuItem {
-                    text: "Copy Text"
-                    onTriggered: {
-                        msg_text.selectAll()
-                        msg_text.copy()
-                    }
-                }
-
-                MenuItem {
-                    text: "Report"
-                    onTriggered: {
-                        stack.push(msg_report)
-
-                    }
-                }
-
-//                MenuItem {
-//                    text: "Review"
-//                    visible: core.this_uid === the_man
-//                    onTriggered: {
-//                        stack.push(msg_review)
-
-//                    }
-//                }
-
-
-                onVisibleChanged: {
-                    if(visible) {
-                        if(is_trash) {
-                            untrash_item.visible = true
-                            optionsMenu.insertItem(0, untrash_item)
-                        }
-                        else {
-                            untrash_item.visible = false
-                            optionsMenu.removeItem(untrash_item)
-                        }
-                        if(core.this_uid === the_man) {
-                            review_item.visible = true
-                            optionsMenu.addItem(review_item)
-                        } else {
-                            review_item.visible = false
-                            optionsMenu.removeItem(review_item)
-                        }
-                    }
-                }
-
+                visible: false
+            }
+            MsgViewMenuTrash {
+                id: optionsMenuTrash
+                visible: false
             }
         }
     }
