@@ -62,6 +62,8 @@
         <file>RestoreAutoBackup.qml</file>
         <file>SimpleTrashBrowse.qml</file>
         <file>PulseLoader.qml</file>
+        <file>MsgViewMenu.qml</file>
+        <file>MsgViewMenuTrash.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>
