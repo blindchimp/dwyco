@@ -1590,7 +1590,7 @@ load_cam_model()
 
     CamListModel->append("(Select this to disable video)");
     CamListModel->append("(Files)");
-#if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
+#if 0 && defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
     CamListModel->append("Camera");
     HasCamHardware = 1;
 #else
@@ -1925,7 +1925,11 @@ DwycoCore::init()
         vgqt_stop,
         vgqt_get_data,
         vgqt_free_data,
-        0, 0, 0, 0, 0, 0, 0, 0
+                vgqt_get_video_devices,
+                vgqt_free_video_devices,
+                vgqt_set_video_device,
+                vgqt_stop_video_device,
+        0, 0, 0, 0
 
     );
 
