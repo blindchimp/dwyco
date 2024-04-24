@@ -8619,12 +8619,17 @@ dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, int len_str)
 // functionality and robustness on various platforms, so the actual function of the
 // API varies a bit and usually needs to be tweaked.)
 //
-// in macosx link with macdrv.a, which is compiled externally using xcode on the mac. the client calls "init_mac_drivers" to initialize things.
-// likewise with LINUX, linke with v4lcap.a and call the external setup functions.
+// likewise with LINUX, link with v4lcap.a and call the external setup functions.
 //
 // on windows, compiling with DWYCO_NO_VIDEO_CAPTURE eliminates VFW and
 // the internal setup of DX9. this is
 // useful for debugging since video capture can be a problem in some environments.
+//
+// (notes, ca 2024: 
+// macos must use vgqt drivers for both qt5 and qt6.
+// linux must use vgqt audio drivers, v4l2 for video (qt5 drivers are too flakey. qt6 might change this.)
+// windows must use mtcapxe.dll (32bit) and built-in audio for qt5. qt6 is all 64-bit so we'll have to change
+//  to qt6 vgqt. built-in audio will probably still work ok in 64bits.
 
 #ifndef DWYCO_NO_VIDEO_CAPTURE
 #ifdef __WIN32__
