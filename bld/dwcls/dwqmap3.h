@@ -65,7 +65,7 @@ private:
 
     const int *rehash;
 
-    long search(const D& key, int& found, long& first_del = dum);
+    long search(const D& key, int& found, long& first_del = dum) const;
 
     virtual void add_assoc(const D& key, const R& val, long idx) = 0;
     virtual const R& get_rng(long idx) const = 0;
@@ -86,7 +86,7 @@ public:
     virtual ~DwQMap();
 
     int num_elems() const;
-    int contains(const D&);
+    int contains(const D&) const;
     int find(const D&, R& out, R** wp = 0);
     void add(const D&, const R&);
     int replace(const D&, const R&, R** wp = 0);
@@ -167,7 +167,7 @@ tcls::num_elems() const
 
 thdr
 int
-tcls::contains(const D& key)
+tcls::contains(const D& key) const
 {
     int found;
     search(key, found);
@@ -291,7 +291,7 @@ tcls::setfull(long idx)
 
 thdr
 long
-tcls::search(const D& key, int& found, long& first_del)
+tcls::search(const D& key, int& found, long& first_del) const
 {
     unsigned long hv0 = ::hash(key) % size;
     unsigned long hv = hv0;

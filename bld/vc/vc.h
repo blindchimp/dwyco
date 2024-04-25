@@ -353,7 +353,7 @@ public:
 	notvirtual const vc& operator[](const vc& v) const;
 	notvirtual const vc& operator[](int) const;
 	notvirtual const vc& operator[](long) const;
-	notvirtual int contains(const vc& v) ;
+    notvirtual int contains(const vc& v) const;
     notvirtual int find(const vc& v, vc& out) ;
 	notvirtual void add(const vc& v) ;
 	notvirtual void add_kv(const vc& k, const vc& v) ;

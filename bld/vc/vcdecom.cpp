@@ -140,7 +140,7 @@ vc_vector::member_select(const vc& member, vc& out, int , vc_object *)
 }
 
 int
-vc_vector::contains(const vc& v)
+vc_vector::contains(const vc& v) const
 {
 	return vec.index(v) != -1;
 }
@@ -603,7 +603,7 @@ vc_map::operator[](long i)
 }
 
 int
-vc_map::contains(const vc& v)
+vc_map::contains(const vc& v) const
 {
 	return map.contains(v);
 }
@@ -872,7 +872,7 @@ vc_list_set::operator[](long i)
 }
 
 int
-vc_list_set::contains(const vc& v)
+vc_list_set::contains(const vc& v) const
 {
 	return list.exists(v);
 }
@@ -1121,7 +1121,7 @@ vc_bag::operator[](long i)
 }
 
 int
-vc_bag::contains(const vc& v)
+vc_bag::contains(const vc& v) const
 {
 	return set.contains(v);
 }
@@ -1431,7 +1431,7 @@ vc_tree::operator[](long i)
 }
 
 int
-vc_tree::contains(const vc& v)
+vc_tree::contains(const vc& v) const
 {
 	return tree.exists(v);
 }

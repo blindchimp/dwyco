@@ -485,7 +485,7 @@ vc& vc_default::operator[](long i) {USER_BOMB("undefined decomposable", vcbitbuc
 const vc& vc_default::operator[](const vc& v) const{USER_BOMB("undefined decomposable", vcbitbucket);}
 const vc& vc_default::operator[](int) const{USER_BOMB("undefined decomposable", vcbitbucket);}
 const vc& vc_default::operator[](long) const{USER_BOMB("undefined decomposable", vcbitbucket);}
-int vc_default::contains(const vc& v) {USER_BOMB("undefined decomposable", 0);}
+int vc_default::contains(const vc& v)  const {USER_BOMB("undefined decomposable", 0);}
 int vc_default::find(const vc& v, vc& out) {USER_BOMB("undefined decomposable", 0);}
 void vc_default::add(const vc& v) {USER_BOMB2("undefined decomposable");}
 void vc_default::add_kv(const vc& k, const vc& v) {USER_BOMB2("undefined decomposable");}
@@ -512,3 +512,4 @@ vc vc_default::translate(VcIO o) const
     o << "\n#error failed translation\n";
     USER_BOMB("#error cant translate", vcnil);
 }
+
