@@ -99,7 +99,7 @@ vc::operator%(const vc &v) const {return rep->operator%(v); }
 //
 vc
 vc::funmeta() const {return rep->funmeta();}
-
+#if 0
 // functor action
 vc
 vc::operator()(void) const {return (*rep)(); }
@@ -116,6 +116,8 @@ vc
 vc::operator()(vc v0, vc v1, vc v2) const {return (*rep)(v0, v1, v2);}
 vc
 vc::operator()(vc v0, vc v1, vc v2, vc v3) const {return (*rep)(v0, v1, v2, v3);}
+#endif
+
 
 // decomposable operations
 int

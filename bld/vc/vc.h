@@ -333,7 +333,7 @@ public:
 	// meta-data ops
 	//
 	notvirtual vc funmeta() const ;
-
+#if 0
 	// functors 
 	notvirtual vc operator()(void) const ;
 	//notvirtual vc operator()(void *p) const ;
@@ -343,7 +343,7 @@ public:
 	notvirtual vc operator()(vc v0, vc v1) const ;
 	notvirtual vc operator()(vc v0, vc v1, vc v2) const ;
 	notvirtual vc operator()(vc v0, vc v1, vc v2, vc v3) const ;
-
+#endif
 	// decomposable operations
 	notvirtual int is_empty() const ;
     notvirtual int num_elems() const ;
