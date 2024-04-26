@@ -333,11 +333,12 @@ public:
 	// meta-data ops
 	//
 	notvirtual vc funmeta() const ;
+    notvirtual vc operator()(VCArglist *al) const ;
 #if 0
 	// functors 
 	notvirtual vc operator()(void) const ;
 	//notvirtual vc operator()(void *p) const ;
-	notvirtual vc operator()(VCArglist *al) const ;
+    notvirtual vc operator()(VCArglist *al) const ;
 
 	notvirtual vc operator()(vc v0) const ;
 	notvirtual vc operator()(vc v0, vc v1) const ;

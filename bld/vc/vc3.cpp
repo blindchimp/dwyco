@@ -99,6 +99,9 @@ vc::operator%(const vc &v) const {return rep->operator%(v); }
 //
 vc
 vc::funmeta() const {return rep->funmeta();}
+vc
+vc::operator()(VCArglist *al) const { return (*rep)(al);}
+
 #if 0
 // functor action
 vc

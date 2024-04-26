@@ -73,7 +73,7 @@ public:
 	virtual int operator >=(const vc &v) const ;
 	virtual int operator ==(const vc &v) const ;
 	virtual int operator !=(const vc &v) const ;
-
+#if 0
 	// in keeping with the convenience hack in vcfuncal.cpp, we
 	// allowing calling of strings by mapping first...
 	// note: this allows a tight infinite recursion:
@@ -88,6 +88,7 @@ public:
 	virtual vc operator()(vc v0, vc v1) const ;
 	virtual vc operator()(vc v0, vc v1, vc v2) const ;
 	virtual vc operator()(vc v0, vc v1, vc v2, vc v3) const ;
+#endif
 
 	int int_lt(const vc& v) const  ;
 	int int_le(const vc& v) const  ;

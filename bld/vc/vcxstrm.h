@@ -21,7 +21,9 @@
 // There are a variety of styles of I/O & devices supported
 // via both constructor args and args to specific I/O calls.
 //
-//
+// this class has evolved to provide support for serialization
+// and is more or less tied to the "vc" class.
+
 // $Header: g:/dwight/repo/vc/rcs/vcxstrm.h 1.49 1998/12/09 05:11:28 dwight Exp $
 
 #include "dwvecp.h"

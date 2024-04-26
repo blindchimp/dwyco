@@ -199,6 +199,7 @@ vc_string::operator ==(const vc &v) const {return v.str_eq(*this); }
 int
 vc_string::operator !=(const vc &v) const {return v.str_ne(*this); }
 
+#if 0
 // in keeping with the convenience hack in vcfuncal.cpp, we
 // allowing calling of strings by mapping first...
 // note: this allows a tight infinite recursion:
@@ -211,7 +212,6 @@ vc_string::operator()(void) const {return eval()();}
 //vc_string::operator()(void *p) const {return eval()(p);}
 vc
 vc_string::operator()(VCArglist *al) const {return eval()(al);}
-
 vc
 vc_string::operator()(vc v0) const {return eval()(v0);}
 vc
@@ -220,6 +220,7 @@ vc
 vc_string::operator()(vc v0, vc v1, vc v2) const {return eval()(v0, v1, v2);}
 vc
 vc_string::operator()(vc v0, vc v1, vc v2, vc v3) const {return eval()(v0, v1, v2, v3);}
+#endif
 
 int
 vc_string::int_lt(const vc&) const  {bomb_op(); return FALSE;}
