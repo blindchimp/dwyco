@@ -195,7 +195,7 @@ decl_rel(str)
 	virtual const vc& operator[](const vc& v) const;
 	virtual const vc& operator[](int) const;
 	virtual const vc& operator[](long) const;
-	virtual int contains(const vc& v) ;
+    virtual int contains(const vc& v) const;
     virtual int find(const vc& v, vc& out) ;
 	virtual void add(const vc& v) ;
 	virtual void add_kv(const vc& k, const vc& v) ;

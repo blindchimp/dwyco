@@ -168,7 +168,8 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qtdrv/libqtdrv.a \
+$${D}/v4lcap/libv4lcap.a
 
 
 #-lesd \
