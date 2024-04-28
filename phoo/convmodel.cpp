@@ -330,7 +330,8 @@ ConvListModel::load_users_to_model()
     unviewed = uids_with_unviewed();
     for(int i = 0; i < unviewed.count(); ++i)
     {
-        auto uid = unviewed.at(i);
+        QByteArray uid = unviewed.at(i);
+        uid = QByteArray::fromHex(uid);
         Conversation *c = add_uid_to_model(uid);
         c->update_counter = cnt;
     }

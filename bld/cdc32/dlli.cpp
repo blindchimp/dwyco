@@ -8079,7 +8079,7 @@ int
 dwyco_all_messages_tagged(const char *uid, int len_uid, const char *tag)
 {
     vc buid(VC_BSTRING, uid, len_uid);
-    int ret = sql_uid_all_mid_tagged(uid, tag);
+    int ret = sql_uid_all_mid_tagged(buid, tag);
     return ret;
 }
 
