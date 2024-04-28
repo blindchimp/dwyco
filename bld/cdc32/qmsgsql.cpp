@@ -2988,6 +2988,16 @@ sql_uid_all_mid_tagged(const vc& uid, const vc& tag)
     try
     {
         sql_start_transaction();
+#if 0
+        vc res = sql_simple(
+                    with_create_uidset(2) ","
+                    "tm(mid) as (select mid from gmt where tag = ?1 and not exists (select 1 from gtomb where gmt.guid = guid) group by mid),"
+                    "msgs(mid) as (select mid from gi where assoc_uid in (select * from uidset) and not exists(select 1 from msg_tomb where mid = gi.mid))"
+                    "select mid from msgs except select mid from tm limit 1",
+                    tag,
+                    to_hex(uid)
+                    );
+#else
         vc res = sql_simple(
                     with_create_uidset(2)
                     "select 1 from gi where assoc_uid in (select * from uidset) "
@@ -2998,6 +3008,7 @@ sql_uid_all_mid_tagged(const vc& uid, const vc& tag)
                     tag,
                     to_hex(uid)
                     );
+#endif
         c = (res.num_elems() != 1);
         sql_commit_transaction();
     }

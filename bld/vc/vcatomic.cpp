@@ -127,7 +127,7 @@ vc_atomic::operator[](int) const {bomb_setop(); return bogus;}
 const vc&
 vc_atomic::operator[](long) const {bomb_setop(); return bogus;}
 int
-vc_atomic::contains(const vc&){bomb_setop(); return FALSE;}
+vc_atomic::contains(const vc&) const {bomb_setop(); return FALSE;}
 int
 vc_atomic::find(const vc&, vc& ){bomb_setop(); return FALSE;}
 void

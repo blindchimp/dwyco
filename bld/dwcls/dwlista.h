@@ -75,6 +75,7 @@ public:
     void backward();
     T search(const T& key);
     int exists(const T& key);
+    int exists(const T& key) const;
     int exists(const T& key, T& val_out);
     int num_elems() const;
     virtual void insert(const T&);
@@ -83,6 +84,7 @@ public:
     virtual int remove_last();
     void sort_add(const T&);
     virtual int search_fun(const T& key, const T& elem);
+    virtual int search_fun(const T& key, const T& elem) const;
     virtual int sort_fun(const T& from_list, const T& new_elem);
     virtual int eqfun(const T& e1, const T& e2) const;
     int eol() const;
@@ -405,6 +407,23 @@ DwListA<T>::exists(const T& key)
 
 template<class T>
 int
+DwListA<T>::exists(const T& key) const
+{
+    DwListAIter<T> i(this);
+    while(!i.eol())
+    {
+        const T& d = i.get();
+        if (search_fun(key, d))
+        {
+            return 1;
+        }
+        i.forward();
+    }
+    return 0;
+}
+
+template<class T>
+int
 DwListA<T>::exists(const T& key, T& val_out)
 {
     rewind();
@@ -532,6 +551,13 @@ DwListA<T>::sort_add(const T& data)
 template<class T>
 int
 DwListA<T>::search_fun(const T& key, const T& elem)
+{
+    return key == elem;
+}
+
+template<class T>
+int
+DwListA<T>::search_fun(const T& key, const T& elem) const
 {
     return key == elem;
 }

@@ -1,10 +1,4 @@
-# WARNING for QT4 on macosx xcode 8/9: you need to change the mkspecs files that
-# contain references to -mmacosx-version-min=... and remove them.
-# otherwise you may get link errors related to old versions of libstdc++
-# which is no longer supported.
-# Also, if you get linker warnings related to version mismatches, you can
-# hand it the Makefile generated for the top level cdcx build and
-# change all occurances of "10.5" to "10.9"
+
 VCCFG_COMP=$$PWD
 DWYCOBG=0
 DWYCO_APP=cdcx
@@ -22,6 +16,7 @@ QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-vari
 }
 macx-* {
 DEFINES += LINUX MACOSX DWYCO_FORCE_DESKTOP_VGQT
+# we must use the vgqt qt5 driver since we don't have any native drivers.
 FORCE_DESKTOP_VGQT=1
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 }
