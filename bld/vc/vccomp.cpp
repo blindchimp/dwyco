@@ -272,7 +272,7 @@ vc_composite::operator[](int)const {bomb_setop(); return bogus;}
 const vc&
 vc_composite::operator[](long)const {bomb_setop(); return bogus;}
 int
-vc_composite::contains(const vc&){bomb_setop();return 0;}
+vc_composite::contains(const vc&) const {bomb_setop();return 0;}
 int
 vc_composite::find(const vc&, vc& ){bomb_setop();return 0;}
 void

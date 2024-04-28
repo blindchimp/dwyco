@@ -67,7 +67,7 @@ public:
 	virtual const vc& operator[](const vc& v) const;
 	virtual const vc& operator[](int) const;
 	virtual const vc& operator[](long) const;
-	virtual int contains(const vc&);
+    virtual int contains(const vc&) const;
 	virtual int find(const vc&, vc& out);
 	virtual void add(const vc&);
 	virtual void add_kv(const vc&, const vc&);

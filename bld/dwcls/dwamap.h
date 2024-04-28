@@ -46,7 +46,7 @@ public:
     int no_expand;
 
     virtual int num_elems() const ;
-    virtual int contains(const D&) ;
+    virtual int contains(const D&) const ;
     virtual int find(const D&, R& out, R** wp = 0) ;
     virtual void add(const D&, const R&) ;
     virtual int replace(const D&, const R&, R** wp = 0) ;
@@ -97,7 +97,7 @@ tcls::num_elems() const
 
 thdr
 int
-tcls::contains(const D& key)
+tcls::contains(const D& key) const
 {
     return map->contains(key);
 }

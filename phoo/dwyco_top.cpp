@@ -1839,29 +1839,6 @@ DwycoCore::init()
     //dwyco_set_chat_server_status_callback(dwyco_chat_server_status);
 
 #if ((defined(LINUX)) || defined(DWYCO_IOS)) && !defined(NO_DWYCO_AUDIO)
-
-#if 0 && defined(LINUX) && !defined(ANDROID) && !defined(MAC_CLIENT)
-    dwyco_set_external_audio_output_callbacks(
-        audout_sdl_new,
-        audout_sdl_delete,
-        audout_sdl_init,
-        audout_sdl_device_output,
-        audout_sdl_device_done,
-        audout_sdl_device_stop,
-        audout_sdl_device_reset,
-        audout_sdl_device_status,
-        audout_sdl_device_close,
-        audout_sdl_device_buffer_time,
-        audout_sdl_device_play_silence,
-        audout_sdl_device_bufs_playing
-    );
-
-// this may eventually work for android, for now there is some
-// timing/buffer problem. seems to work ok on linux tho
-
-#else
-
-
     dwyco_set_external_audio_output_callbacks(
         audout_qt_new,
         audout_qt_delete,
@@ -1876,9 +1853,6 @@ DwycoCore::init()
         audout_qt_device_play_silence,
         audout_qt_device_bufs_playing
     );
-#endif
-#endif
-#if ((defined(LINUX)) || defined(DWYCO_IOS)) && /*!defined(ANDROID) &&*/ !defined(NO_DWYCO_AUDIO)
 
     dwyco_set_external_audio_capture_callbacks(
         audi_qt_new,
