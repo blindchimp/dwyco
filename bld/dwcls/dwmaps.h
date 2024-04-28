@@ -28,7 +28,7 @@ public:
     DwMaps();
     virtual ~DwMaps() {}
     virtual int num_elems() const = 0;
-    virtual int contains(const D&) = 0;
+    virtual int contains(const D&)  const = 0;
     virtual int find(const D&, R& out, R** wp = 0) = 0;
     virtual void add(const D&, const R&) = 0;
     virtual int replace(const D&, const R&, R** wp = 0) = 0;

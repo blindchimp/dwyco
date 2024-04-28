@@ -12,6 +12,7 @@ import QtQuick.Controls
 import dwyco
 import QtQuick.Layouts
 import QtMultimedia
+import ".."
 
 Page {
     property bool dragging
@@ -48,7 +49,7 @@ Page {
 
     Connections {
         target: core
-        onCamera_change: {
+        function onCamera_change(cam_on) {
             if(visible) {
                 if(cam_on === 1 && core.vid_dev_idx === 2) {
                     preview_cam.start()
@@ -194,7 +195,7 @@ Page {
                 }
                 Connections {
                     target: core
-                    onVideo_capture_preview: {
+                    function onVideo_capture_preview(img_path) {
                         if(visible)
                             viewer.source = img_path
                     }

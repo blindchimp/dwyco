@@ -135,7 +135,7 @@ vc::operator[](int i) const {return (*rep)[i];}
 const vc&
 vc::operator[](long i) const {return (*rep)[i];}
 int
-vc::contains(const vc& v) {return rep->contains(v);}
+vc::contains(const vc& v) const {return rep->contains(v);}
 int
 vc::find(const vc& v, vc& out) {return rep->find(v, out);}
 void

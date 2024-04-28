@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
     QQmlFileSelector *sel = new QQmlFileSelector(TheEngine);
     QStringList sels;
 #if defined(DWYCO_FORCE_DESKTOP_VGQT) || defined(ANDROID) || defined(DWYCO_IOS)
-    sels.append("vgqt");
+    //sels.append("vgqt");
 #endif
 
 #if (defined(Q_OS_WIN) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && !defined(ANDROID)

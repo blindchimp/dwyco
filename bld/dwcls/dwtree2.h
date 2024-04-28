@@ -40,7 +40,7 @@ public:
     int operator==(DwTreeKaz const &t) const;
 
     R get(D const&);
-    int exists(D const&);
+    int exists(D const&) const;
     int contains(D const&);
     int find(D const&, R& out);
     int find(const D&, R&out, DwTreeKazIter<R,D>& i);
@@ -181,7 +181,7 @@ tcls::get(D const &k)
 
 theader
 int
-tcls::exists(D const &k)
+tcls::exists(D const &k) const
 {
     dnode_t *n = dict_lookup(dict, (const void *)&k);
     return !!n;

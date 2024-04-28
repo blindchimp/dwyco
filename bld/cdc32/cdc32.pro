@@ -24,8 +24,6 @@ $${VCCFG_COMP} \
 
 linux-*: INCLUDEPATH += ../v4lcap
 
-#FORCE_DESKTOP_VGQT=0
-
 DEFINES += \
 	VCCFG_FILE \
 	DWVEC_DOINIT \
