@@ -146,7 +146,7 @@ static struct vcwserrvals
 
 static int Nerrs = sizeof(Vcwserrvals) / sizeof(Vcwserrvals[0]);
 
-const char *
+vc
 vc_wsget_errstr(int err)
 {
 	if(err == 0)
@@ -155,11 +155,11 @@ vc_wsget_errstr(int err)
 	for(int i = 0; i < Nerrs; ++i)
 	{
 		if(err == Vcwserrvals[i].errnum)
-			return Vcwserrvals[i].str;
+            return vc(Vcwserrvals[i].str);
 	}
-    static char a[500];
+    char a[500];
     snprintf(a, sizeof(a), "[%d] %s Say what?", err, strerror(err));
-	return a;
+    return vc(a);
 }
 
 

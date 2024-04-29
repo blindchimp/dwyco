@@ -136,7 +136,7 @@ enum vcsocketmode {
 #define VC_SOCK_SHUTDOWN_RD 0
 #define VC_SOCK_SHUTDOWN_WR 1
 #define VC_SOCK_SHUTDOWN_BOTH 2
-const char *vc_wsget_errstr(int);
+
 
 #ifdef _Windows
 // can't do this, it causes compile errors, sigh.
@@ -157,6 +157,7 @@ class vc;
 class vc_default;
 class vc_object;
 class vc_fundef;
+vc vc_wsget_errstr(int);
 
 #ifdef __GNUG__
 #include "dwvec.h"
