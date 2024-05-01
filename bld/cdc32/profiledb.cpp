@@ -465,27 +465,38 @@ save_pk(vc uid, vc prf)
     if(!check_pk(prf))
         return 0;
 
-    VCArglist a;
-    a.append("insert or replace into pubkeys("
-             "uid, "
-             "static_public, "
-             "dwyco_sig, "
-             "alt_static_public, "
-             "alt_server_sig, "
-             "alt_gname, "
-             "time"
-             ")"
-             "values(?1, ?2, ?3, ?4, ?5, ?6, strftime('%s', 'now'))"
-             );
-    a.append(huid);
-    a.append(blobnil(prf[PKC_STATIC_PUBLIC]));
-    a.append(blobnil(prf[PKC_DWYCO_SIGNATURE]));
-    a.append(blobnil(prf[PKC_ALT_STATIC_PUBLIC]));
-    a.append(blobnil(prf[PKC_ALT_SERVER_SIG]));
-    a.append(blobnil(prf[PKC_ALT_GNAME]));
-    sql_bulk_query(&a);
+    vc oprf;
+    if(!load_pk(uid, oprf) ||
+            prf[PKC_STATIC_PUBLIC] != oprf[PKC_STATIC_PUBLIC] ||
+            prf[PKC_DWYCO_SIGNATURE] != oprf[PKC_DWYCO_SIGNATURE] ||
+            prf[PKC_ALT_STATIC_PUBLIC] != oprf[PKC_ALT_STATIC_PUBLIC] ||
+            prf[PKC_ALT_SERVER_SIG] != oprf[PKC_ALT_SERVER_SIG] ||
+            prf[PKC_ALT_GNAME] != oprf[PKC_ALT_GNAME]
+            )
+    {
 
-    Keys_updated.emit(uid, 1);
+        VCArglist a;
+        a.append("insert or replace into pubkeys("
+                 "uid, "
+                 "static_public, "
+                 "dwyco_sig, "
+                 "alt_static_public, "
+                 "alt_server_sig, "
+                 "alt_gname, "
+                 "time"
+                 ")"
+                 "values(?1, ?2, ?3, ?4, ?5, ?6, strftime('%s', 'now'))"
+                 );
+        a.append(huid);
+        a.append(blobnil(prf[PKC_STATIC_PUBLIC]));
+        a.append(blobnil(prf[PKC_DWYCO_SIGNATURE]));
+        a.append(blobnil(prf[PKC_ALT_STATIC_PUBLIC]));
+        a.append(blobnil(prf[PKC_ALT_SERVER_SIG]));
+        a.append(blobnil(prf[PKC_ALT_GNAME]));
+        sql_bulk_query(&a);
+
+        Keys_updated.emit(uid, 1);
+    }
     return 1;
 }
 

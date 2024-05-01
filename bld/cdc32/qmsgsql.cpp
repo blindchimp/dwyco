@@ -1774,9 +1774,9 @@ map_uid_to_uids(const vc& uid)
     vc ret(VC_VECTOR);
     try
     {
-        sql_start_transaction();
+        //sql_start_transaction();
         res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", to_hex(uid));
-        sql_commit_transaction();
+        //sql_commit_transaction();
         if(res.num_elems() == 0)
         {
             ret[0] = uid;
@@ -2958,7 +2958,7 @@ sql_uid_has_tag(vc uid, vc tag)
     int c = 0;
     try
     {
-        sql_start_transaction();
+        //sql_start_transaction();
         vc res = sql_simple(
                     with_create_uidset(2)
                     "select 1 from gmt,gi using(mid) where assoc_uid in (select * from uidset) and tag = ?1 "
@@ -2968,11 +2968,11 @@ sql_uid_has_tag(vc uid, vc tag)
                             tag,
                     to_hex(uid));
         c = (res.num_elems() > 0);
-        sql_commit_transaction();
+        //sql_commit_transaction();
     }
     catch(...)
     {
-        sql_rollback_transaction();
+        //sql_rollback_transaction();
     }
     return c;
 
@@ -2987,7 +2987,7 @@ sql_uid_all_mid_tagged(const vc& uid, const vc& tag)
     int c = 0;
     try
     {
-        sql_start_transaction();
+        //sql_start_transaction();
 #if 0
         vc res = sql_simple(
                     with_create_uidset(2) ","
@@ -3010,11 +3010,11 @@ sql_uid_all_mid_tagged(const vc& uid, const vc& tag)
                     );
 #endif
         c = (res.num_elems() != 1);
-        sql_commit_transaction();
+        //sql_commit_transaction();
     }
     catch(...)
     {
-        sql_rollback_transaction();
+        //sql_rollback_transaction();
     }
     return c;
 
