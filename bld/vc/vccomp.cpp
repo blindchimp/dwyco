@@ -161,6 +161,7 @@ vc_composite::func_eq(const vc&) const {return FALSE;}
 vc
 vc_composite::operator()(VCArglist *) const {return bomb_funcall();}
 
+#if 0
 vc
 vc_composite::operator()() const {return bomb_funcall();}
 vc
@@ -171,6 +172,7 @@ vc
 vc_composite::operator()(vc v0, vc v1, vc v2) const {return bomb_funcall();}
 vc
 vc_composite::operator()(vc v0, vc v1, vc v2, vc v3) const {return bomb_funcall();}
+#endif
 
 vc_composite::operator double() const {bomb_func("double"); return 0.0; }
 vc_composite::operator int() const {bomb_func("int"); return 0;}

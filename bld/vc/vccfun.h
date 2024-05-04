@@ -56,12 +56,14 @@ ctor_decl(VCFUNCP,5)
 	virtual void do_arg_setup(VCArglist *) const;
 
 public:
+#if 0
 	vc operator()() const ;
 	vc operator()(vc v0) const ;
 	vc operator()(vc v0, vc v1) const ;
 	vc operator()(vc v0, vc v1, vc v2) const ;
 	vc operator()(vc v0, vc v1, vc v2, vc v3) const ;
 	//vc operator()(void *p) const ;
+#endif
 
 	int func_eq(const vc& v) const ;
 	int is_atomic() const;

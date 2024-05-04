@@ -72,12 +72,13 @@ public:
 
 	//vc operator()(void *p) const ;
 	vc operator()(VCArglist *a) const ;
-
+#if 0
 	vc operator()() const ;
 	vc operator()(vc v0) const ;
 	vc operator()(vc v0, vc v1) const ;
 	vc operator()(vc v0, vc v1, vc v2) const ;
 	vc operator()(vc v0, vc v1, vc v2, vc v3) const ;
+#endif
 
 	operator double() const ;
 	operator int() const ;

@@ -51,8 +51,6 @@ private:
 
 public:
 	virtual void stringrep(VcIO) const;
-	//vc operator()(VCArglist *) const;
-
 	int func_eq(const vc& v) const;
 	
 };

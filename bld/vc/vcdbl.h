@@ -9,7 +9,7 @@
 #ifndef VCDBL_H
 #define VCDBL_H
 // $Header: g:/dwight/repo/vc/rcs/vcdbl.h 1.47 1997/10/05 17:27:06 dwight Stable $
-#include "vcint.h"
+#include "vcatomic.h"
 class vcxstream;
 //
 // Floating point atoms
@@ -23,7 +23,7 @@ private:
 public:
 	vc_double() ;
 	vc_double(double d2) ;
-	vc_double(const vc_int &v) ;
+    //vc_double(const vc_int &v) ;
 	vc_double(const vc_double &v) ;
 	virtual ~vc_double() ;
 

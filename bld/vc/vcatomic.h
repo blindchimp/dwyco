@@ -50,14 +50,15 @@ public:
 	virtual int set_eq(const vc& v) const;
 	virtual int func_eq(const vc& v) const;
 
-	virtual vc operator()(void) const;
-	//virtual vc operator()(void *p) const;
-	virtual vc operator()(VCArglist *al) const;
 
+	virtual vc operator()(VCArglist *al) const;
+#if 0
+    virtual vc operator()(void) const;
 	virtual vc operator()(vc v0) const;
 	virtual vc operator()(vc v0, vc v1) const;
 	virtual vc operator()(vc v0, vc v1, vc v2) const;
 	virtual vc operator()(vc v0, vc v1, vc v2, vc v3) const;
+#endif
 
 	virtual int num_elems() const;
 	virtual int is_empty() const;

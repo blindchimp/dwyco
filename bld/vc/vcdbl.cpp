@@ -23,7 +23,7 @@ char vc_double::buf[2048];
 
 vc_double::vc_double() { d = 0.0;  }
 vc_double::vc_double(double d2) { d = d2;  }
-vc_double::vc_double(const vc_int &v) { d = v.i; }
+//vc_double::vc_double(const vc_int &v) { d = v.i; }
 vc_double::vc_double(const vc_double &v) { d = v.d; }
 vc_double::~vc_double() { }
 

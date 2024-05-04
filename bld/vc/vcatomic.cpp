@@ -95,12 +95,11 @@ int
 vc_atomic::func_eq(const vc&) const {return FALSE;}
 
 vc
-vc_atomic::operator()(void) const {bomb_call_atom();return vcnil;}
-//vc
-//vc_atomic::operator()(void *) const {bomb_call_atom();return vcnil;}
-vc
 vc_atomic::operator()(VCArglist *) const {bomb_call_atom();return vcnil;}
 
+#if 0
+vc
+vc_atomic::operator()(void) const {bomb_call_atom();return vcnil;}
 vc
 vc_atomic::operator()(vc ) const {bomb_call_atom();return vcnil;}
 vc
@@ -109,6 +108,7 @@ vc
 vc_atomic::operator()(vc , vc , vc ) const {bomb_call_atom();return vcnil;}
 vc
 vc_atomic::operator()(vc , vc , vc , vc ) const {bomb_call_atom();return vcnil;}
+#endif
 
 int
 vc_atomic::num_elems() const {bomb_setop(); return 0;}

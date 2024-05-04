@@ -222,6 +222,7 @@ vc_cfunc::do_copy() const {
 	return 0;
 }
 
+#if 0
 vc
 vc_cfunc::operator()() const {return (*funcp0)();}
 vc
@@ -234,7 +235,7 @@ vc
 vc_cfunc::operator()(vc v0, vc v1, vc v2, vc v3) const {return (*funcp4)(v0, v1, v2, v3);}
 //vc
 //vc_cfunc::operator()(void *p) const {return (*funcp_vp)(p);}
-
+#endif
 int
 vc_cfunc::func_eq(const vc& v) const { return funcp0 == ((const vc_cfunc&)v).funcp0; }
 hashValueType

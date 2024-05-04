@@ -28,7 +28,7 @@ public:
 	long ref_count;
 	vc_default();
 
-	vc_default(const vc_default&);
+    vc_default(const vc_default&) = delete;
 #ifdef OBJTRACK
 	virtual ~vc_default();
 	int serial;
@@ -162,14 +162,14 @@ decl_rel(str)
 #undef decl_arith
 #undef decl_rel
 	// functors 
-	virtual vc operator()(void) const ;
-	//virtual vc operator()(void *p) const ;
+    //virtual vc operator()(void) const ;
 	virtual vc operator()(VCArglist *al) const ;
-
+#if 0
 	virtual vc operator()(vc v0) const ;
 	virtual vc operator()(vc v0, vc v1) const ;
 	virtual vc operator()(vc v0, vc v1, vc v2) const ;
 	virtual vc operator()(vc v0, vc v1, vc v2, vc v3) const ;
+#endif
 
 	// relationals
 	virtual int operator <(const vc &v) const ;

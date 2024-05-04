@@ -65,12 +65,14 @@ public:
 	void bomb_op() const;
 
 	virtual vc operator()(VCArglist *) const;
+#if 0
 	virtual vc operator()(vc v1) const {return vc_composite::operator()(v1);}
 	virtual vc operator()(vc v1, vc v2) const {return vc_composite::operator()(v1, v2);}
 	virtual vc operator()(vc v1, vc v2, vc v3) const {return vc_composite::operator()(v1, v2, v3);}
 	virtual vc operator()(vc v1, vc v2, vc v3, vc v4) const {return vc_composite::operator()(v1, v2, v3, v4);}
 	virtual vc operator()(void) const {return vc_composite::operator()();}
 	//virtual vc operator()(void *p) const {return vc_composite::operator()(p);}
+#endif
 	enum vc_type type() const ;
 	virtual int operator ==(const vc &v) const ;
 	virtual int operator !=(const vc &v) const ;

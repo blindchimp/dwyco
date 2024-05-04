@@ -47,12 +47,14 @@ private:
 	virtual vc do_function_call(VCArglist *) const;
 #endif
 	virtual vc operator()(VCArglist *) const;
+#if 0
 	virtual vc operator()(vc v1) const {return vc_fundef::operator()(v1);}
 	virtual vc operator()(vc v1, vc v2) const {return vc_fundef::operator()(v1, v2);}
 	virtual vc operator()(vc v1, vc v2, vc v3) const {return vc_fundef::operator()(v1, v2, v3);}
 	virtual vc operator()(vc v1, vc v2, vc v3, vc v4) const {return vc_fundef::operator()(v1, v2, v3, v4);}
 	virtual vc operator()(void) const {return vc_fundef::operator()();}
 	//virtual vc operator()(void *p) const {return vc_fundef::operator()(p);}
+#endif
 	
 	void printOn(VcIO outputStream) ;
 

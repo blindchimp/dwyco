@@ -84,6 +84,7 @@ vc_default::vc_default()
 #endif
 }
 
+#if 0
 // we don't want to allow objects to be
 // copied verbatim because that would leave
 // the reference count messed up.
@@ -94,6 +95,7 @@ vc_default::vc_default(const vc_default&)
 	break_tag = BREAK_NONE;
 #endif
 }
+#endif
 
 #ifdef OBJTRACK
 vc_default::~vc_default()
@@ -452,15 +454,15 @@ decl_rel(str)
 #undef decl_rel
 
 // functors 
-vc vc_default::operator()(void) const {USER_BOMB("undefined functor", vcnil);}
+//vc vc_default::operator()(void) const {USER_BOMB("undefined functor", vcnil);}
 //vc vc_default::operator()(void *p) const {USER_BOMB("undefined functor", vcnil);}
 vc vc_default::operator()(VCArglist *al) const {USER_BOMB("undefined functor", vcnil);}
-
+#if 0
 vc vc_default::operator()(vc v0) const {USER_BOMB("undefined functor", vcnil);}
 vc vc_default::operator()(vc v0, vc v1) const {USER_BOMB("undefined functor", vcnil);}
 vc vc_default::operator()(vc v0, vc v1, vc v2) const {USER_BOMB("undefined functor", vcnil);}
 vc vc_default::operator()(vc v0, vc v1, vc v2, vc v3) const {USER_BOMB("undefined functor", vcnil);}
-
+#endif
 	// relationals
 	 int vc_default::operator <(const vc &v) const {USER_BOMB("undefined op", 0);}
 	 int vc_default::operator <=(const vc &v) const {USER_BOMB("undefined op", 0);}
