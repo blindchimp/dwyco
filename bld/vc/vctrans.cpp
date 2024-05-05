@@ -355,7 +355,8 @@ vc_cfunc::emitlink(VCArglist *a, vc ourname, VcIO o) const
         // the problem is, if we use separate arguments to c functions, we have a lot
         // less control over what happens to those arguments in terms of
         // what ctors/dtors get called and when, and even what order the args
-        // are evaluated in (even the interpreter suffers from this currently).
+        // are evaluated in (the interpreter doesn't suffer from this currently: it evaluates
+        // the arguments in a loop in sequence, then calls the c-func).
         // this has has some performance implications, as well as just various
         // compiler dependencies and whatnot.
         // downside of using the varadic style is, if we want to use the runtime functions

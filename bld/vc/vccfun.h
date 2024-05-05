@@ -29,7 +29,6 @@ private:
 	VCFUNCP4 funcp4;
 	VCFUNCP5 funcp5;
 	VCFUNCPv funcpv;
-        //VCFUNCPVP funcp_vp;
 	};
 	int nargs;
 	VCTRANSFUNCP transfunc;
@@ -45,7 +44,6 @@ ctor_decl(VCFUNCP,4)
 ctor_decl(VCFUNCP,5)
 #undef ctor
 
-    //vc_cfunc(VCFUNCPVP p, const char *name, const char *impl_fun, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
 	// varadic function
     vc_cfunc(VCFUNCPv p, const char *name, const char *impl_fun, int style = VC_FUNC_NORMAL|VC_FUNC_VARADIC, VCTRANSFUNCP = 0);
 

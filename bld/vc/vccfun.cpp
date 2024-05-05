@@ -185,8 +185,6 @@ ctor(VCFUNCP,4,4)
 ctor(VCFUNCP,5,5)
 #undef ctor
 
-//vc_cfunc::vc_cfunc(VCFUNCPVP p, const char *name, const char *impl_fun, int style, VCTRANSFUNCP tfp)
-//     : vc_func(vc(name), style) {funcp_vp = p; nargs = 1; transfunc = tfp;}
 // varadic function
 vc_cfunc::vc_cfunc(VCFUNCPv p, const char *cname, const char *impl_fun, int style, VCTRANSFUNCP tfp)
     : vc_func(vc(cname), style | VC_FUNC_VARADIC) {funcpv = p; nargs = -1; transfunc = tfp; impl_name = impl_fun; }

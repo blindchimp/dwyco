@@ -228,7 +228,7 @@ vc_object::member_select(const vc& mem, vc& mem_out, int toplev, vc_object *topo
 			return 1;
 	}
 
-#ifdef LH_OBJ_FORWARDS
+#ifdef LHOBJ_FORWARDS
 	
 #ifdef VCDBG
 	dbg.set_state(VcObjectDbgNode::DELEGATE);
