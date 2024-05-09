@@ -48,8 +48,8 @@ class DwQMap4// : public DwMaps<R,D>
     friend class DwQMap4Iter<R,D,nelems>;
 
 private:
-    DwQMap4(const DwQMap4&) {oopanic("nope");}
-    const DwQMap4& operator=(const DwQMap4&) {oopanic("nope2");}
+    DwQMap4(const DwQMap4&) = delete;
+    const DwQMap4& operator=(const DwQMap4&) = delete;
 
     int count;				// number of elements in table
     int thresh;				// number of elements where ops degrade
