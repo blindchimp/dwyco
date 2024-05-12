@@ -179,7 +179,6 @@ typedef vc (*VCFUNCP3)(vc, vc, vc);
 typedef vc (*VCFUNCP4)(vc, vc, vc, vc);
 typedef vc (*VCFUNCP5)(vc, vc, vc, vc, vc);
 typedef vc (*VCFUNCPv)(VCArglist *);
-typedef vc (*VCFUNCPVP)(void *);
 
 typedef vc (*VCTRANSFUNCP)(VCArglist *, VcIO);
 #endif
@@ -285,7 +284,7 @@ public:
     vc(VCFUNCP3, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCP4, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCP5, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
-    vc(VCFUNCPVP, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
+    //vc(VCFUNCPVP, const char *, const char *, int style = VC_FUNC_NORMAL, VCTRANSFUNCP = 0);
     vc(VCFUNCPv,const char *, const char *, int style = VC_FUNC_NORMAL|VC_FUNC_VARADIC, VCTRANSFUNCP = 0);
 #endif
 
