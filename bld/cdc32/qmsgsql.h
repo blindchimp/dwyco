@@ -69,13 +69,13 @@ int sql_count_valid_tag(vc tag);
 int sql_is_mid_local(vc mid);
 int sql_is_mid_anywhere(vc mid);
 int sql_mid_has_tombstone(vc mid);
-int import_remote_mi(vc remote_uid);
+int import_remote_mi(const vc &remote_uid);
 vc sql_find_who_has_mid(vc mid);
 bool sql_has_msg_recently(vc uid, long num_seconds);
 vc sql_last_recved_msg(vc uid);
 
 vc sql_run_sql(vc s, vc a1 = vcnil, vc a2 = vcnil, vc a3 = vcnil);
-vc package_downstream_sends(vc remote_uid);
+vc package_downstream_sends(const vc &remote_uid);
 vc import_remote_iupdate(vc remote_uid, vc vals);
 void import_remote_tupdate(vc remote_uid, vc vals);
 vc sql_get_non_local_messages_at_uid(vc uid, int max_count);
@@ -104,8 +104,8 @@ void clean_pull_failed_mid(const vc &mid);
 void clean_pull_failed_uid(const vc& uid);
 bool pull_failed(const vc& mid, const vc& uid);
 
-vc get_delta_id(vc uid);
-bool generate_delta(vc uid, vc delta_id);
+vc get_delta_id(const vc &uid);
+bool generate_delta(const vc &uid, const vc &delta_id);
 void create_dump_indexes(const DwString& fn);
 void import_new_syncpoint(vc remote_uid, vc delta_id);
 

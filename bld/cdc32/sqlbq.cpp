@@ -93,7 +93,7 @@ vc
 sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
 {
     const VCArglist &aa = *a;
-    const vc sql = aa.get(0);
+    const vc& sql = aa.get(0);
     //vc err = aa[2];
     // everything after err is considered to be a binding to be
     // set into the sql
@@ -131,7 +131,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     {
         for(int i = 1; i < a->num_elems(); ++i)
         {
-            vc val = aa.get(i);
+            const vc& val = aa.get(i);
             switch(val.type())
             {
             case VC_INT:

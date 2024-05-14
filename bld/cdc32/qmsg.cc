@@ -3860,7 +3860,7 @@ recover_inprogress()
 
 static
 void
-reset_qsend(enum dwyco_sys_event cmd, const DwString& qid, vc recip_uid)
+reset_qsend(enum dwyco_sys_event cmd, const DwString& qid, const vc& recip_uid)
 {
     if(cmd == SE_MSG_SEND_START)
         return;
@@ -3869,7 +3869,7 @@ reset_qsend(enum dwyco_sys_event cmd, const DwString& qid, vc recip_uid)
 
 static
 void
-reset_qsend_special(enum dwyco_sys_event cmd, const DwString& qid, vc recip_uid)
+reset_qsend_special(enum dwyco_sys_event cmd, const DwString& qid, const vc& recip_uid)
 {
     if(cmd == SE_MSG_SEND_START)
         return;

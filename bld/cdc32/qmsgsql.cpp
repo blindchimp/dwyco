@@ -128,7 +128,7 @@ QMsgSql::init_schema_fav()
     try
     {
         start_transaction();
-        vc res = sql_simple("pragma mt.user_version");
+        const vc& res = sql_simple("pragma mt.user_version");
         if((int)res[0][0] == 2)
             throw 0;
         if((int)res[0][0] != 0)
@@ -209,7 +209,7 @@ QMsgSql::init_schema(const DwString& schema_name)
                 // us from mistakenly running on a database we have
                 // upgraded during debugging.remove this once
                 // experiments are merged.
-                vc res = sql_simple("pragma user_version");
+                const vc& res = sql_simple("pragma user_version");
                 if((int)res[0][0] == 6)
                 {
                     throw 0;
@@ -332,15 +332,15 @@ init_index_data()
 void
 add_pull_failed(const vc& mid, const vc& uid)
 {
-    vc huid = to_hex(uid);
+    const vc& huid = to_hex(uid);
     sql_simple("insert into pull_failed(mid, uid) values(?1, ?2)", mid, huid);
 }
 
 bool
 pull_failed(const vc& mid, const vc& uid)
 {
-    vc huid = to_hex(uid);
-    vc res = sql_simple("select 1 from pull_failed where mid = ?1 and uid = ?2 limit 1", mid, huid);
+    const vc& huid = to_hex(uid);
+    const vc& res = sql_simple("select 1 from pull_failed where mid = ?1 and uid = ?2 limit 1", mid, huid);
     return res.num_elems() > 0;
 }
 
@@ -372,7 +372,7 @@ stop_existing_pulls(const vc& mid)
 }
 
 vc
-get_delta_id(vc uid)
+get_delta_id(const vc& uid)
 {
     vc huid = to_hex(uid);
     vc res = sql_simple("select delta_id from deltas where from_client_uid = ?1", huid);
@@ -382,9 +382,9 @@ get_delta_id(vc uid)
 }
 
 bool
-generate_delta(vc uid, vc delta_id)
+generate_delta(const vc& uid, const vc& delta_id)
 {
-    vc huid = to_hex(uid);
+    const vc& huid = to_hex(uid);
     DwString dbfn = DwString("minew%1.tdb").arg((const char *)huid);
     dbfn = newfn(dbfn);
     SimpleSql s(dbfn);
@@ -416,10 +416,10 @@ generate_delta(vc uid, vc delta_id)
     try
     {
         s.start_transaction();
-        vc did = s.sql_simple("select delta_id from id");
+        const vc& did = s.sql_simple("select delta_id from id");
         if(did.num_elems() != 1 || did[0][0] != delta_id)
             throw -1;
-        const vc r1 = s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
+        const vc& r1 = s.sql_simple("with newmids(mid) as (select mid from mi.gi where mid not in (select mid from main.msg_idx)) "
                      "insert into midlog(mid, to_uid, op) select mid, ?1, 'a' from newmids returning mid", huid);
         // just insert some dummy rows, since we know that we will never be resending this
         // index database again. if the delta_ids don't match, this gets recreated from scratch
@@ -427,14 +427,14 @@ generate_delta(vc uid, vc delta_id)
         {
             s.sql_simple("insert into main.msg_idx(mid, assoc_uid) values(?1, '')", r1[i][0]);
         }
-        const vc r2 = s.sql_simple("with newmids(mid) as (select mid from mi.msg_tomb where mid not in (select mid from main.msg_tomb)) "
+        const vc& r2 = s.sql_simple("with newmids(mid) as (select mid from mi.msg_tomb where mid not in (select mid from main.msg_tomb)) "
                      "insert into midlog(mid, to_uid, op) select mid, ?1, 'd' from newmids returning mid", huid);
         for(int i = 0; i < r2.num_elems(); ++i)
         {
             s.sql_simple("insert into main.msg_tomb(mid) values(?1)", r2[i][0]);
         }
         // tags
-        const vc r3 = s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
+        const vc& r3 = s.sql_simple("with newguids(mid, tag, guid) as (select mid, tag, guid from mt.gmt where tag in (select * from static_crdt_tags) and "
                      "guid not in (select guid from main.msg_tags2)) "
                      "insert into taglog(mid, tag, guid, to_uid, op) select mid, tag, guid, ?1, 'a' from newguids returning guid", huid);
         for(int i = 0; i < r3.num_elems(); ++i)
@@ -445,7 +445,7 @@ generate_delta(vc uid, vc delta_id)
         // so for now i'll just set the tag to the empty string, and figure it out later. the only
         // reason we were transmitting the mid and tag in this case was for display purposes ("we deleted
         // such and such a tag, here is what we have to update in the UI")
-        const vc r4 = s.sql_simple("with newguids(guid) as (select guid from mt.gtomb where guid not in (select guid from main.tomb)) "
+        const vc& r4 = s.sql_simple("with newguids(guid) as (select guid from mt.gtomb where guid not in (select guid from main.tomb)) "
                      "insert into taglog(mid, tag, guid, to_uid, op) select '', '', guid, ?1, 'd' from newguids returning guid", huid);
         for(int i = 0; i < r4.num_elems(); ++i)
         {
@@ -586,7 +586,7 @@ make_sql_args(int n)
 }
 
 static void
-msg_idx_updated(vc uid, int prepended)
+msg_idx_updated(const vc& uid, int prepended)
 {
     if(prepended)
         se_emit(SE_USER_MSG_IDX_UPDATED_PREPEND, uid);
@@ -596,9 +596,9 @@ msg_idx_updated(vc uid, int prepended)
 
 
 vc
-package_downstream_sends(vc remote_uid)
+package_downstream_sends(const vc& remote_uid)
 {
-    const vc huid = to_hex(remote_uid);
+    const vc& huid = to_hex(remote_uid);
     try
     {
         // NOTE: may want to package this as a single command
@@ -606,7 +606,7 @@ package_downstream_sends(vc remote_uid)
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
         // most of the time, the logs are empty, so just shortcut that case
-        const vc chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
+        const vc& chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
         if((int)chk[0][0] == 0)
         {
             sql_commit_transaction();
@@ -626,8 +626,8 @@ package_downstream_sends(vc remote_uid)
         // messages and one for tags. it might make sense to change this to one table
         // in the future so simplify things here.
 
-        const vc next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
-        const vc next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
+        const vc& next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
+        const vc& next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
         vc sync_id;
         vc next_tag_sync;
         vc next_mid_sync;
@@ -648,9 +648,9 @@ package_downstream_sends(vc remote_uid)
             next_tag_sync = next_tag_sync_res[0][1];
         }
 
-        const vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
+        const vc& idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
                              "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2", huid, next_mid_sync);
-        const vc mtombs = sql_simple("select mid, op from main.midlog "
+        const vc& mtombs = sql_simple("select mid, op from main.midlog "
                                "where midlog.to_uid = ?1 and op = 'd' and rowid < ?2", huid, next_mid_sync);
 
         // note: put in the "group by" since it appears at some point i allowed duplicate
@@ -658,9 +658,9 @@ package_downstream_sends(vc remote_uid)
         // a picture of which client has which tags, and i'm not sure i use that info anywhere).
         // the duplicates didn't cause an error, just lots of extra processing that was ignored.
 
-        const vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
+        const vc& tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
                              "where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
-        const vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
+        const vc& tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
                               "where to_uid = ?1 and op = 'd' and tl.rowid < ?2", huid, next_tag_sync);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || !sync_id.is_nil())
             GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d sync %s", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), (const char *)sync_id);
@@ -722,9 +722,9 @@ static
 void
 sync_user(vc v)
 {
-    vc uid = v[0];
+    const vc& uid = v[0];
 
-    vc res = sql_simple("select mid from msg_idx where assoc_uid = ?1", to_hex(uid));
+    const vc& res = sql_simple("select mid from msg_idx where assoc_uid = ?1", to_hex(uid));
     int nm = res.num_elems();
     DwBag<vc> b(vcnil, nm / 3 + 1);
     for(int i = 0; i < nm; ++i)
@@ -933,9 +933,9 @@ remove_sync_state()
 // until a client themselves leaves the group.
 //
 int
-import_remote_mi(vc remote_uid)
+import_remote_mi(const vc& remote_uid)
 {
-    vc huid = to_hex(remote_uid);
+    const vc& huid = to_hex(remote_uid);
     DwString fn = DwString("mi%1.tdb").arg((const char *)huid);
     //DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
     SimpleSql s(MSG_IDX_DB);
@@ -953,7 +953,7 @@ import_remote_mi(vc remote_uid)
     try
     {
         s.start_transaction();
-        const vc newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
+        const vc& newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
         // note sure what i was up to here... removing the contents
         // of crdt_tags will effectively disable the triggers for
         // creating the tag logs (that would get sent to other clients)
@@ -974,13 +974,13 @@ import_remote_mi(vc remote_uid)
         s.sql_simple("delete from current_clients where uid = ?1", huid);
 
         s.sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
-        vc res = s.sql_simple("select max(logical_clock) from gi");
+        const vc& res = s.sql_simple("select max(logical_clock) from gi");
         if(res[0][0].type() == VC_INT)
         {
             long lc = (long)res[0][0];
             update_global_logical_clock(lc);
         }
-        const vc newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
+        const vc& newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
         s.sql_simple("delete from main.gi where mid in (select mid from main.msg_tomb)");
 
         //sync_files();
