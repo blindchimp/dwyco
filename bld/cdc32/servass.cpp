@@ -18,12 +18,11 @@
 #include "dwstr.h"
 #include "servass.h"
 #include "netvid.h"
-#include "doinit.h"
 #include "qdirth.h"
-#include "gvchild.h"
 #include "msgdisp.h"
 #include "calllive.h"
 #include "ta.h"
+#include "netlog.h"
 
 using namespace dwyco;
 
@@ -73,7 +72,7 @@ serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv)
         // we may end up waiting awhile if the accept/rej box gets popped up,
         // so wait till later to get the STUN sockets set up.
         TRACK_ADD(CLR_control_established, 1);
-
+        Netlog_signal.emit(chan->tube->mklog("event", "proxy recv ctrl"));
         mc->schedule_destroy(MMChannel::HARD);
     }
     else
@@ -91,6 +90,7 @@ serv_recv_online(MMChannel *mc, vc prox_info, void *, ValidPtr mcv)
         sproto *s = new sproto(c, recv_command, mc->vp);
         mc->simple_protos[c] = s;
         s->start();
+        Netlog_signal.emit(mc->tube->mklog("event", "proxy recv chan"));
 
         TRACK_ADD(CLR_subchan_established, 1);
     }
@@ -133,11 +133,8 @@ void
 start_serv_recv_thread(vc ip, vc port, ValidPtr mcv)
 {
 
-    MMChannel *mc = MMChannel::start_server_channel(
-                        MMChannel::BYADDR,
-                        inet_addr(ip),
-                        0,
-                        port);
+    MMChannel *mc = MMChannel::start_server_channel(ip, port);
+
     if(!mc)
     {
         serv_recv_call_failed_last(0, vcnil, 0, ValidPtr());

@@ -13,6 +13,21 @@ if you get link errors for -lGL. Note that you may be able to avoid
 some of the installation by providing the right symlink target for
 libGL.so, but I didn't try this.
 
+for v4l, use this
+
+sudo apt install libv4l-dev
+or
+sudo apt install libv4l-0
+
+WARNING: you will need to set the permissions on /dev/videoX, or put
+your user into the "video" group on some systems.
+
+
+for android codec builds, sadly, you'll need autoconf:
+
+sudo apt install autoconf libtool
+
+
 Thu Apr 18 09:37:39 PDT 2019
 
 You'll need:

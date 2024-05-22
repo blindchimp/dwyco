@@ -114,7 +114,7 @@ public:
 	virtual vc& operator[](const vc& v);
 	virtual vc& operator[](int);
 	virtual vc& operator[](long);
-	virtual int contains(const vc&);
+	virtual int contains(const vc&) const;
     virtual int find(const vc&, vc& out);
 	virtual void add(const vc&);
 	virtual int del(const vc&);
@@ -161,7 +161,7 @@ public:
 	virtual vc& operator[](const vc& v);
 	virtual vc& operator[](int);
 	virtual vc& operator[](long);
-	virtual int contains(const vc&);
+    virtual int contains(const vc&) const;
     virtual int find(const vc&, vc& out);
 	virtual void add(const vc&);
 	virtual int del(const vc&);
@@ -237,7 +237,7 @@ public:
 	virtual vc& operator[](const vc& v);
 	virtual vc& operator[](int);
 	virtual vc& operator[](long);
-	virtual int contains(const vc&);
+    virtual int contains(const vc&) const;
     virtual int find(const vc&, vc& out);
 	virtual void add(const vc&);
 	virtual void add_kv(const vc&, const vc&);
@@ -306,7 +306,7 @@ decl(mod, %)
 	virtual const vc& operator[](const vc& v) const;
 	virtual const vc& operator[](int) const;
 	virtual const vc& operator[](long) const;
-	virtual int contains(const vc&);
+    virtual int contains(const vc&) const;
     virtual int find(const vc&, vc& out);
 	virtual void add(const vc&);
 	virtual int del(const vc&);
@@ -360,7 +360,7 @@ public:
 	virtual vc& operator[](const vc& v);
 	virtual vc& operator[](int);
 	virtual vc& operator[](long);
-	virtual int contains(const vc&);
+    virtual int contains(const vc&) const;
     virtual int find(const vc&, vc& out);
 	virtual void add(const vc&);
 	virtual void add_kv(const vc&, const vc&);

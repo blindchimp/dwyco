@@ -14,6 +14,7 @@ import android.app.PendingIntent;
 import android.os.Bundle;
 import android.app.AlarmManager;
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 import android.content.SharedPreferences;
 
 import android.content.ContentResolver;
@@ -37,10 +38,18 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import android.app.job.JobScheduler;
-import android.app.job.JobInfo;
-import android.app.job.JobInfo.Builder;
 import android.content.ComponentName;
+import androidx.core.content.FileProvider;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import android.os.ParcelFileDescriptor;
+import android.content.ContentValues;
+import java.io.IOException;
+import java.io.File;
+
+import androidx.work.*;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 // note: use notificationcompat stuff for older androids
 
@@ -51,6 +60,7 @@ public class NotificationClient extends QtActivity
     private static SocketLock prefs_lock;
     public static int allow_notification = 1;
     private static FirebaseAnalytics mFirebaseAnalytics;
+    private static String TAG = "notification_client";
 
     public NotificationClient()
     {
@@ -61,15 +71,7 @@ public class NotificationClient extends QtActivity
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
-        //Intent i = new Intent(m_instance, Push_Notification_Service.class);
-        //startService(i);
-
-        //Calendar cur_cal = Calendar.getInstance();
-        //cur_cal.setTimeInMillis(System.currentTimeMillis());
-        //Intent i2 = new Intent(m_instance, Push_Notification_Service.class);
-        //PendingIntent pintent = PendingIntent.getService(m_instance, 0, i2, 0);
-        //AlarmManager alarm = (AlarmManager) m_instance.getSystemService(Context.ALARM_SERVICE);
-        //alarm.setRepeating(AlarmManager.RTC_WAKEUP, cur_cal.getTimeInMillis(), 1000 * 60, pintent);
+        
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
 	if(DwycoApp.keep_screen_on)
@@ -118,11 +120,11 @@ public class NotificationClient extends QtActivity
         if(allow_notification == 0)
             return;
         NotificationManager m_notificationManager = (NotificationManager)m_instance.getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification.Builder m_builder;
+        NotificationCompat.Builder m_builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        m_builder = new Notification.Builder(m_instance, "dwyco");
+        m_builder = new NotificationCompat.Builder(m_instance, "dwyco");
         } else {
-        m_builder = new Notification.Builder(m_instance);
+        m_builder = new NotificationCompat.Builder(m_instance);
         }
         m_builder.setSmallIcon(DwycoApp.notification_icon());
         //m_builder.setColor(m_instance.getResources().getColor(R.color.green));
@@ -135,17 +137,17 @@ public class NotificationClient extends QtActivity
         sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         int quiet = sp.getInt("quiet", 0);
         prefs_lock.release();
-        int def = Notification.DEFAULT_ALL;
+        int def = NotificationCompat.DEFAULT_ALL;
         if(quiet == 1)
-            def = def & (~(Notification.DEFAULT_SOUND|Notification.DEFAULT_VIBRATE));
+            def = def & (~(NotificationCompat.DEFAULT_SOUND|NotificationCompat.DEFAULT_VIBRATE));
         m_builder.setDefaults(def);
 
         Intent notintent = new Intent(m_instance, NotificationClient.class);
         notintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent p = PendingIntent.getActivity(m_instance, 1, notintent, 0);
+        PendingIntent p = PendingIntent.getActivity(m_instance, 1, notintent, PendingIntent.FLAG_IMMUTABLE);
         m_builder.setContentIntent(p);
 
-        Notification not = m_builder.getNotification();
+        Notification not = m_builder.build();
         m_notificationManager.notify(1, not);
 
     }
@@ -251,60 +253,41 @@ public static String get_token() {
     }
 
     public static void start_background() {
-        prefs_lock.lock();
-        SharedPreferences sp;
+        // tested this all the way back to api 22, seems to work.
+        Constraints constraints = new Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED)
+        .build();
 
-        sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
-        int port = sp.getInt("lockport", 4500);
-        String sys_pfx = sp.getString("sys_pfx", ".");
-        String user_pfx = sp.getString("user_pfx", ".");
-        String tmp_pfx = sp.getString("tmp_pfx", ".");
-        String token = sp.getString("token", "notoken");
-        prefs_lock.release();
-        // this is just a hack to avoid a crash in android O
-        // this disables the background processing that happens when the
-        // main app goes to sleep, which means delivery of large messages
-        // will not work quite right (only happens when the app is
-        // active). this will have to be fixed eventually.
+        if(DwycoApp.is_rando)
+        {
+            //OneTimeWorkRequest uploadWorkRequest = new OneTimeWorkRequest.Builder(DwycoProbe.class)
+            //    .setConstraints(constraints)
+            //   .build();
+            //WorkManager.getInstance(m_instance).enqueueUniqueWork("upload_only", ExistingWorkPolicy.REPLACE, uploadWorkRequest);
+            // note: this is a kluge right now, we can't do a backup if the main IU is alive in any way,
+            // so we just kinda hope it gets killed off when this work is done so the backup gets
+            // remade once in awhile. best way to fix this is to have the backup done in a separate
+            // work thing. the reason i don't fix it is because i'm unsure how useful the backup
+            // feature actually is for rando.
+            PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 12, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build();
+            
+            WorkManager.getInstance(m_instance)
+                .enqueueUniquePeriodicWork("upload_only", 
+                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, uploadWorkRequest);
+        }
+        else
+        {
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            Intent i = new Intent(m_instance, DwycoSender.class);
-        i.putExtra("lockport", port);
-        i.putExtra("sys_pfx", sys_pfx);
-        i.putExtra("user_pfx", user_pfx);
-        i.putExtra("tmp_pfx", tmp_pfx);
-        i.putExtra("token", token);
-            m_instance.startForegroundService(i);
-
-            // JobScheduler js = (JobScheduler)m_instance.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-            // ComponentName jobService =  new ComponentName("com.dwyco.rando", DwycoProbe.class.getName());
-            // JobInfo.Builder jib = new JobInfo.Builder(1, jobService);
-            // JobInfo ji = jib.
-            //    setPeriodic(60 * 15  * 1000).
-            //    setPersisted(true).
-            //    setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).
-            //    build();
-            // int i = js.schedule(ji);
-            // if(i == JobScheduler.RESULT_FAILURE)
-            //     catchLog("JOB SCHED FAIL");
-            //     else
-            //     catchLog("JOB OK");
-            return;
-
-
-            }
-            else {
-                Intent i = new Intent(m_instance, Dwyco_Message.class);
-        i.putExtra("lockport", port);
-        i.putExtra("sys_pfx", sys_pfx);
-        i.putExtra("user_pfx", user_pfx);
-        i.putExtra("tmp_pfx", tmp_pfx);
-        i.putExtra("token", token);
-
-            m_instance.startService(i);
-            }
-
+            PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 1, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .build();
+            
+            WorkManager.getInstance(m_instance)
+                .enqueueUniquePeriodicWork("upload_only", 
+                ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, uploadWorkRequest);
+        }
     }
 
 public static void log_event() {
@@ -401,7 +384,8 @@ public static void set_user_property(String name, String value) {
         {
             if(requestCode == REQUEST_OPEN_IMAGE)
             {
-                String filePath = getPath(getApplicationContext(), data.getData());
+                //String filePath = getPath(getApplicationContext(), data.getData());
+                String filePath = FileUtils.getRealPath(getApplicationContext(), data.getData());
                 if(filePath != null)
                 {
                     dwybg.dwyco_set_aux_string(filePath);
@@ -561,6 +545,69 @@ public static void set_user_property(String name, String value) {
      */
     public static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
+    public static  void notifyMediaStoreScanner(String filepath) throws IOException {
+
+        Context mContext = m_instance.getApplicationContext();
+        Uri cacheImageUri;
+        File f = new File(filepath);
+        if(!f.exists()) {
+            Log.e(TAG, "file doesn't exist");
+            throw new IOException("file to share doesn't exist");
+        }
+        cacheImageUri = FileProvider.getUriForFile(mContext, DwycoApp.file_provider, f);
+        Uri newImageUri = createImageInMediaStore(mContext, cacheImageUri);
+        ContentResolver resolver = mContext
+                .getContentResolver();
+        FileInputStream input ;
+        FileOutputStream outputStream ;
+        try (ParcelFileDescriptor pfd = resolver
+                .openFileDescriptor(newImageUri, "w", null)) {
+            // Write data into the pending image.
+            try(ParcelFileDescriptor  pfdInput  = resolver.openFileDescriptor(cacheImageUri , "r",null)){
+
+                outputStream =new FileOutputStream(pfd.getFileDescriptor());
+                input = new FileInputStream(pfdInput.getFileDescriptor());
+                int  readResponse;
+                do {
+                    byte[] bytes = new byte[1024];
+                    readResponse = input.read(bytes);
+                    outputStream.write(bytes);
+                }while (readResponse !=-1);
+                input.close();
+                outputStream.close();
+            } catch (IOException e) {
+                Log.e(TAG, e.getMessage());
+                throw  new IOException("Error saving image ");
+            }
+
+        } catch (IOException e) {
+            Log.e(TAG, e.getMessage());
+            throw  new IOException("Error saving image ");
+        }
+    }
+
+
+    private static Uri createImageInMediaStore(Context mContext, Uri cacheImageUri){
+        if (mContext== null)
+            throw new IllegalArgumentException("mContext can not be null");
+        if(cacheImageUri == null)
+            throw new IllegalArgumentException("cacheImageUri can not be null");
+
+        String imageName = cacheImageUri.getLastPathSegment();
+        ContentResolver contentResolver = mContext.getContentResolver();
+        Uri imagesCollection;
+
+        if(Build.VERSION.SDK_INT  <= Build.VERSION_CODES.P){
+            imagesCollection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
+        }else{
+            imagesCollection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        }
+
+        ContentValues newImageContentValues = new ContentValues();
+        newImageContentValues.put(MediaStore.Images.ImageColumns.DISPLAY_NAME, imageName);
+        return  contentResolver.insert(imagesCollection, newImageContentValues);
     }
 
     private static void catchLog(String log) {

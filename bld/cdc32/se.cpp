@@ -21,6 +21,7 @@ using namespace dwyco;
 
 extern DwycoSystemEventCallback dwyco_system_event_callback;
 
+namespace dwyco {
 static DwVec<vc> Se_q;
 // this table is a quick hack, it is indexed by the enum in se.h
 // if you change that, you need to change this accordingly.
@@ -78,31 +79,40 @@ static int Se_cmd_to_api[] =
 };
 
 void
-se_emit(dwyco_sys_event cmd, vc uid)
+se_emit(dwyco_sys_event cmd, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
     v[1] = map_to_representative_uid(uid);
 
-    // don't filter out dups for now.
-    // there may be ordering dependencies that are
-    // more important than just processing a dup command
-    //
-#if 0
-    int n = Se_q.num_elems();
-    for(int i = 0; i < n; ++i)
+    // this is a little dicey since we haven't really
+    // thought about the exact issues related to having
+    // multiple undelivered dups (like what if processing
+    // a message multiple times in a row is what we want)
+    // there are also issues with duplicate sequences of different
+    // messages, especially if processing some message induces
+    // more messages in this q.
+    // for now, we just check for one duplicate message on the
+    // end of the q, and ignore it. this stops situations where
+    // a bulk operation is stacking a bunch of the same
+    // notification up, most of which aren't useful.
+    // but really, this needs to be addressed on a
+    // message-by-message basis.
+
+    int n = Se_q.num_elems() - 1;
+    if(n >= 0)
     {
-        if((int)Se_q[i][0] == cmd && Se_q[i][1] == id)
+        if((int)Se_q[n][0] == cmd && Se_q[n][1] == uid)
             return;
     }
-#endif
+
     Se_q.append(v);
     GRTLOG("se_emit ", 0, 0);
     GRTLOGVC(v);
 }
 
 void
-se_emit_chat(dwyco_sys_event cmd, vc server_id)
+se_emit_chat(dwyco_sys_event cmd, const vc& server_id)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -115,7 +125,7 @@ se_emit_chat(dwyco_sys_event cmd, vc server_id)
 }
 
 void
-se_emit_msg(dwyco_sys_event cmd, const DwString& qid, vc uid)
+se_emit_msg(dwyco_sys_event cmd, const DwString& qid, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -127,7 +137,7 @@ se_emit_msg(dwyco_sys_event cmd, const DwString& qid, vc uid)
 }
 
 void
-se_emit_msg(dwyco_sys_event cmd, vc qid, vc uid)
+se_emit_msg(dwyco_sys_event cmd, const vc& qid, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -139,7 +149,7 @@ se_emit_msg(dwyco_sys_event cmd, vc qid, vc uid)
 }
 
 void
-se_emit_msg_status(const DwString& qid, vc ruid, const DwString& msg, int percent)
+se_emit_msg_status(const DwString& qid, const vc& ruid, const DwString& msg, int percent)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_SEND_STATUS;
@@ -154,7 +164,7 @@ se_emit_msg_status(const DwString& qid, vc ruid, const DwString& msg, int percen
 }
 
 void
-se_emit_msg_progress(const DwString& mid, vc ruid, const DwString& msg, int percent)
+se_emit_msg_progress(const DwString& mid, const vc& ruid, const DwString& msg, int percent)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_DOWNLOAD_PROGRESS;
@@ -169,7 +179,7 @@ se_emit_msg_progress(const DwString& mid, vc ruid, const DwString& msg, int perc
 }
 
 void
-se_emit_msg_pull_ok(vc mid, vc uid)
+se_emit_msg_pull_ok(const vc& mid, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_PULL_OK;
@@ -181,7 +191,7 @@ se_emit_msg_pull_ok(vc mid, vc uid)
 }
 
 void
-se_emit_msg_tag_change(vc mid, vc uid)
+se_emit_msg_tag_change(const vc& mid, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_TAG_CHANGE;
@@ -193,7 +203,7 @@ se_emit_msg_tag_change(vc mid, vc uid)
 }
 
 void
-se_emit_join(vc gname, int res)
+se_emit_join(const vc& gname, int res)
 {
     vc v(VC_VECTOR);
 
@@ -212,9 +222,6 @@ se_emit_group_status_change()
     GRTLOGVC(v);
 }
 
-extern vc Cur_ignore;
-extern vc Pals;
-
 void
 se_emit_uid_list_changed()
 {
@@ -227,7 +234,7 @@ se_emit_uid_list_changed()
 }
 
 void
-se_emit_server_attr(vc name, vc val)
+se_emit_server_attr(const vc& name, const vc& val)
 {
     vc v(VC_VECTOR);
     v[0] = SE_SERVER_ATTR;
@@ -406,4 +413,5 @@ se_process()
     if(n > 0)
         return 1;
     return 0;
+}
 }

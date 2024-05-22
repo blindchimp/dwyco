@@ -1104,7 +1104,7 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
 
     QString ttl = windowTitle();
     ttl += "(";
-    ttl += Version.c_str();
+    ttl += QCoreApplication::applicationVersion();
     ttl += ")";
     setWindowTitle(ttl);
 
@@ -1143,19 +1143,6 @@ mainwinform::refetch_user_list()
 {
     dwyco_load_users2(!Display_archived_users, &User_count);
 }
-
-#if 0
-QDockWidget *
-mainwinform::get_current_tab()
-{
-    QList<QTabBar *> tbl = findChildren<QTabBar *>();
-    if(tbl.count() < 1)
-        return 0;
-    int current = tbl[0]->currentIndex();
-    return 0;
-
-}
-#endif
 
 bool
 mainwinform::event(QEvent *event)
@@ -2501,6 +2488,9 @@ mainwinform::idle()
         reload_msgs();
         refetch_user_list();
         load_users();
+        // trigger initial msg rescan in case background thingy
+        // downloaded some messages
+        dwyco_set_rescan_messages(1);
 
         //dwyco_get_server_list(&Dwyco_server_list, &dum);
         // note: this won't work because we don't yet have
@@ -2562,7 +2552,7 @@ mainwinform::idle()
     {
         cdcx_set_refresh_users(0);
         //chatform2::update_chat_displays();
-        dwyco_load_users2(0, 0);
+        dwyco_load_users2(!Display_archived_users, 0);
         load_users();
         decorate_users();
         emit refresh_users();
@@ -2733,7 +2723,7 @@ mainwinform::load_users()
             if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                 cdcxpanic("wtf5");
             QString info = dwyco_info_to_display(uid);
-            QVariant disp_name = umodel->data(ql[0]);
+            auto disp_name = umodel->data(ql[0]).toString();
             if(info == disp_name)
                 continue;
             else
@@ -2781,7 +2771,7 @@ mainwinform::load_users()
             if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                 cdcxpanic("wtf5");
             QString info = dwyco_info_to_display(uid);
-            QVariant disp_name = umodel->data(ql[0]);
+            auto disp_name = umodel->data(ql[0]).toString();
             if(info == disp_name)
                 continue;
             else
@@ -2790,6 +2780,50 @@ mainwinform::load_users()
                     cdcxpanic("wtf4");
             }
 
+        }
+    }
+
+    // this is here because if someone is archived, then they send you a message
+    // they wouldn't be displayed. this just makes sure every user that sends you
+    // a message is displayed in the user list.
+    auto gmf = Got_msg_from.values();
+     n = gmf.count();
+    for(int i = 0; i < n; ++i)
+    {
+        DwOString uid = gmf[i];
+#if 0
+        if(!display_uid_in_list(uid))
+            continue;
+#endif
+        if(Session_remove.contains(uid))
+            continue;
+        QVariant quid(uid);
+        QModelIndexList ql = umodel->match(umodel->index(0, 0), Qt::UserRole, quid, 1, Qt::MatchExactly);
+        if(ql.count() == 0)
+        {
+            if(!umodel->insertRow(0))
+                cdcxpanic("wtf");
+            if(!umodel->setData(umodel->index(0, 0), dwyco_info_to_display(uid)))
+                cdcxpanic("wtf2");
+            if(!umodel->setData(umodel->index(0, 0), quid, Qt::UserRole))
+                cdcxpanic("wtf3");
+            if(!umodel->setData(umodel->index(0, 0), cur_update, Qt::UserRole + 1))
+                cdcxpanic("wtf4");
+        }
+        else
+        {
+            // it's already in there, check to see if the info has changed
+            if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
+                cdcxpanic("wtf5");
+            QString info = dwyco_info_to_display(uid);
+            auto disp_name = umodel->data(ql[0]).toString();
+            if(info == disp_name)
+                continue;
+            else
+            {
+                if(!umodel->setData(ql[0], info, Qt::DisplayRole))
+                    cdcxpanic("wtf4");
+            }
         }
     }
 
@@ -2824,7 +2858,7 @@ mainwinform::load_users()
                 if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                     cdcxpanic("wtf5");
                 QString info = dwyco_info_to_display(uid);
-                QVariant disp_name = umodel->data(ql[0]);
+                auto disp_name = umodel->data(ql[0]).toString();
                 if(info == disp_name)
                     continue;
                 else
@@ -2865,7 +2899,7 @@ mainwinform::load_users()
                 if(!umodel->setData(ql[0], cur_update, Qt::UserRole + 1))
                     cdcxpanic("wtf5");
                 QString info = dwyco_info_to_display(uid);
-                QVariant disp_name = umodel->data(ql[0]);
+                auto disp_name = umodel->data(ql[0]).toString();
                 if(info == disp_name)
                     continue;
                 else
@@ -3544,8 +3578,14 @@ dwyco_sys_event_callback(int cmd, int id,
         Mainwinform->emit uid_status_change(suid);
         break;
     case DWYCO_SE_GRP_JOIN_OK:
-        dwyco_set_setting("group/alt_name", TheConfigForm->ui.CDC_group__alt_name->text().toLatin1().constData());
+        dwyco_set_setting("group/alt_name", namestr.c_str());
+        QMessageBox::information(Mainwinform, "Device group changed", QString("Linked to %1, CDC-X must quit now").
+                                 arg(namestr.length() == 0 ? "<no group>" : namestr.c_str()));
         DieDieDie = 1;
+        break;
+    case DWYCO_SE_GRP_JOIN_FAIL:
+        dwyco_set_setting("group/alt_name", "");
+        QMessageBox::information(Mainwinform, "Device group change failed", QString("Account linking failed, try again later (%1)").arg(namestr.c_str()));
         break;
     default:
         break;
@@ -3979,11 +4019,12 @@ DWYCOCALLCONV
 dwyco_emergency_callback(int problem, int must_exit, const char *dll_msg)
 {
 
-    if(must_exit)
-        DieDieDie = 1;
+    Block_DLL = 1;
     if(problem == DWYCO_EMERGENCY_DB_CHANGE)
     {
         QMessageBox::information(Mainwinform, "Server Changes", dll_msg);
+        if(must_exit)
+            DieDieDie = 1;
         return;
     }
 #if 0
@@ -3992,6 +4033,8 @@ dwyco_emergency_callback(int problem, int must_exit, const char *dll_msg)
 #endif
 #endif
     QMessageBox::information(Mainwinform, "Unrecoverable error", dll_msg);
+    if(must_exit)
+        DieDieDie = 1;
 }
 
 #if 0
@@ -4383,7 +4426,7 @@ void mainwinform::on_actionHide_triggered()
 
 void mainwinform::on_actionExit_2_triggered()
 {
-    DieDieDie = 1;
+    DieDieDie = 2;
 }
 
 

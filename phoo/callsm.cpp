@@ -101,6 +101,7 @@
 #include "ct.h"
 #include "callsm_objs.h"
 #include "ccmodel.h"
+#include "dwycolist2.h"
 
 extern int Public_chat_video_pause;
 //extern QByteArray My_uid;
@@ -111,8 +112,8 @@ int HasAudioOutput;
 
 DwQueryByMember<simple_call> simple_call::Simple_calls;
 
-QByteArray dwyco_get_attr(DWYCO_LIST l, int row, const char *col);
 QObject *simple_call::Mainwinform;
+int simple_call::Suspended;
 
 
 static int
@@ -646,6 +647,17 @@ simple_call::connect_signals()
     }
 }
 
+static
+QByteArray
+map_down(const QByteArray& uid)
+{
+    DWYCO_LIST r;
+    dwyco_map_uid_to_representative(uid.constData(), uid.length(), &r);
+    simple_scoped q(r);
+    QByteArray ruid = q.get<QByteArray>(0);
+    return ruid;
+}
+
 void
 simple_call::signal_dispatcher()
 {
@@ -653,12 +665,13 @@ simple_call::signal_dispatcher()
     if(sig_idx == -1)
         return;
     QMetaMethod mm = metaObject()->method(sig_idx);
-    // here we see if there is an matching signal with a uid
+    // here we see if there is a matching signal with a uid
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
+    QByteArray ruid = map_down(uid);
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
-                              Q_ARG(QString, uid.toHex()));
+                              Q_ARG(QString, ruid.toHex()));
 
 }
 
@@ -669,12 +682,13 @@ simple_call::signal_dispatcher_int(int i)
     if(sig_idx == -1)
         return;
     QMetaMethod mm = metaObject()->method(sig_idx);
-    // here we see if there is an matching signal with a uid
+    // here we see if there is a matching signal with a uid
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
+    QByteArray ruid = map_down(uid);
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
-                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(QString, ruid.toHex()),
                               Q_ARG(int, i));
 
 }
@@ -686,12 +700,13 @@ simple_call::signal_dispatcher_bool(bool i)
     if(sig_idx == -1)
         return;
     QMetaMethod mm = metaObject()->method(sig_idx);
-    // here we see if there is an matching signal with a uid
+    // here we see if there is a matching signal with a uid
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
+    QByteArray ruid = map_down(uid);
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
-                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(QString, ruid.toHex()),
                               Q_ARG(bool, i));
 
 }
@@ -703,12 +718,13 @@ simple_call::signal_dispatcher_string(QString i)
     if(sig_idx == -1)
         return;
     QMetaMethod mm = metaObject()->method(sig_idx);
-    // here we see if there is an matching signal with a uid
+    // here we see if there is a matching signal with a uid
     // argument in the mainwinform, and invoke that
     QByteArray b(mm.name());
     b.prepend("sc_");
+    QByteArray ruid = map_down(uid);
     QMetaObject::invokeMethod(Mainwinform, b, Qt::AutoConnection,
-                              Q_ARG(QString, uid.toHex()),
+                              Q_ARG(QString, ruid.toHex()),
                               Q_ARG(QString, i));
 
 }
@@ -1067,7 +1083,8 @@ simple_call::start_accept_timer()
 void
 simple_call::stop_accept_timer()
 {
-    accept_timer.stop();
+    if(!Suspended)
+        accept_timer.stop();
     //stop_animation(uid);
 }
 
@@ -1110,13 +1127,41 @@ simple_call::stop_retry_timer()
 void
 simple_call::suspend()
 {
+
     QList<simple_call *> tmp(Simple_calls.objs);
     int n = tmp.count();
     for(int i = 0; i < n; ++i)
     {
-        tmp[i]->update_connected(0);
+        //tmp[i]->update_connected(0);
+        // don't initiate any connections
+        tmp[i]->connect_state_machine->stop();
+        // don't engage in any call screening
+        tmp[i]->call_setup_state_machine->stop();
+        // stop the keyboard timer and make it inactive
+        // for the remote side.
+        tmp[i]->keyboard_active_timer.stop();
+        tmp[i]->keyboard_inactive();
         //delete tmp[i];
     }
+
+    Suspended = 1;
+}
+
+void
+simple_call::resume()
+{
+    QList<simple_call *> tmp(Simple_calls.objs);
+    int n = tmp.count();
+    for(int i = 0; i < n; ++i)
+    {
+        //tmp[i]->update_connected(0);
+        tmp[i]->connect_state_machine->start();
+        tmp[i]->call_setup_state_machine->start();
+        tmp[i]->keyboard_active_timer.start();
+        //tmp[i]->keyboard_inactive();
+        //delete tmp[i];
+    }
+    Suspended = 0;
 }
 
 simple_call *
@@ -1417,7 +1462,10 @@ simple_call::call_died(int chan_id, void *arg)
     sc->call_id = -1;
     // we know we stopped it before because we accepted a call from it.
     sc->on_hangup_clicked();
-    sc->connect_state_machine->start();
+    // don't restart the connect state machine if a call dies
+    // while we are in the background
+    if(!Suspended)
+        sc->connect_state_machine->start();
 }
 
 void
@@ -1461,6 +1509,12 @@ simple_call::dwyco_call_screening_callback(int chan_id,
 {
     QByteArray suid(uid, len_uid);
     QByteArray ct(call_type, len_call_type);
+
+    if(Suspended)
+    {
+        *accept_call_style = DWYCO_CSC_REJECT_CALL;
+        return 0;
+    }
 
     // need to check if ignore processing is handled in the dll anymore
     if(dwyco_is_ignored(uid, len_uid))

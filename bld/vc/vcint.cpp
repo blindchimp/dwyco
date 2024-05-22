@@ -25,17 +25,11 @@ char vc_int::buf[100];
 static VcIOHackStr intbuf;
 
 vc_int::vc_int() { i = 0; }
-vc_int::vc_int(int64_t i2) { i = i2; }
+//vc_int::vc_int(int64_t i2) { i = i2; }
 vc_int::vc_int(const vc_int &v) {  i = v.i; }
+vc_int::vc_int(long long i2) {i = i2;}
 
 vc_int::~vc_int() { }
-
-#ifdef _Windows
-vc_int::operator int64_t() const
-{
-    return i;
-}
-#endif
 
 vc_int::operator long() const {
     if(sizeof(long) <= sizeof(i))
@@ -65,6 +59,16 @@ vc_int::operator void *() const {
 	return (void *)i;
 }
 vc_int::operator double() const {return (double)i; }
+vc_int::operator long long() const {
+    if(sizeof(long long) <= sizeof(i))
+        return i;
+    if(i > LLONG_MAX || i < LLONG_MIN)
+    {
+        USER_BOMB("integer truncation", 0);
+    }
+    else
+        return i;
+}
 //vc_int::operator int64_t() const {return i; }
 vc_int::operator const char *() const {USER_BOMB("can't convert int to string (unimp)", "0");}
 
@@ -193,14 +197,20 @@ vc_int::xfer_out(vcxstream& vcx)
 long
 vc_int::xfer_in(vcxstream& vcx)
 {
-	char *lp = vcx.in_want(2);
+    char *lp = vcx.in_want(ENCODED_LEN_LEN);
 	if(lp == 0)
 		return EXIN_DEV;
     int len = decode_len(lp);
     if(len == -1 || len == 0)
         return EXIN_PARSE;
+    // this is sketchy, equivalent to something like
+    // "only accept up to n-digit ints". i'm leaving it for
+    // now since it is good to have an extra check.
     if(len > vcx.max_element_len)
+    {
+        user_warning("xfer_in int hit max_element len");
         return EXIN_PARSE;
+    }
 
 	lp = vcx.in_want(len);
 	if(lp == 0)
@@ -209,6 +219,6 @@ vc_int::xfer_in(vcxstream& vcx)
     i = decode_long2(lp, len, error);
     if(error)
         return EXIN_PARSE;
-	return len + 2;
+    return len + ENCODED_LEN_LEN;
 }
 

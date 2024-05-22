@@ -10,7 +10,6 @@
 #define NETDIAG_H
 
 #include "vc.h"
-#include "dwvec.h"
 #include "dwstr.h"
 
 struct probe_result

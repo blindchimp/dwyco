@@ -21,15 +21,10 @@
 #include "vcdeflt.h"
 #include "vcmap.h"
 #include "vcexcctx.h"
-#include "vcnil.h"
-#include "vcint.h"
-#include "vcdbl.h"
 #include "vcfundef.h"
-#include "vccvar.h"
 #include "vcfile.h"
 #include "dwgrows.h"
 #include "vclhsys.h"
-#include "vcfuncal.h"
 #include "uricodec.h"
 #include "vctrans.h"
 #include "vclh.h"
@@ -70,8 +65,15 @@
 #include "vcuvsock.h"
 #endif
 
+// macos compiler seems fussy about this. seeing as this is a kluge
+// we'll just work around it for now.
+#ifdef MACOSX
+typedef long VC_INT_TYPE;
+typedef unsigned long VC_UINT_TYPE;
+#else
 typedef int64_t VC_INT_TYPE;
 typedef uint64_t VC_UINT_TYPE;
+#endif
 
 const vc vctrue("t");
 const vc vcone(1);
@@ -297,9 +299,33 @@ doputfile(vc file, vc item)
 	return vc(len);
 }
 
-
 vc
 dogetfile(vc file, vc var)
+{
+    if(var.type() != VC_STRING)
+    {
+        USER_BOMB("second arg to getfile must be string to bind to", vcnil);
+    }
+    if(file.eof())
+    {
+        USER_BOMB("file is at EOF", vcnil);
+    }
+    vcxstream v(file);
+    vc item;
+    long len;
+    if(!v.open(vcxstream::READABLE))
+        return vcnil;
+    if((len = item.xfer_in(v)) < 0)
+        return vcnil;
+    if(!v.close(vcxstream::FLUSH))
+        return vcnil;
+    Vcmap->local_add(var, item);
+    return vc(len);
+}
+
+#if 0
+vc
+dogetfile_test(vc file, vc var)
 {
 	if(var.type() != VC_STRING)
 	{
@@ -312,15 +338,29 @@ dogetfile(vc file, vc var)
 	vcxstream v(file);
 	vc item;
 	long len;
-	if(!v.open(vcxstream::READABLE))
-		return vcnil;
-	if((len = item.xfer_in(v)) < 0)
-		return vcnil;
+    while(1)
+    {
+        if(!v.open(vcxstream::READABLE, vcxstream::ATOMIC))
+            return vcnil;
+
+        if((len = item.xfer_in(v)) < 0)
+        {
+            if(len == EXIN_DEV && !file.eof())
+            {
+                v.close(vcxstream::RETRY);
+                continue;
+            }
+            else if(len == EXIN_PARSE)
+                return vcnil;
+        }
+        break;
+    }
 	if(!v.close(vcxstream::FLUSH))
 		return vcnil;
 	Vcmap->local_add(var, item);
 	return vc(len);
 }
+#endif
 
 
 vc
@@ -520,7 +560,7 @@ dostring(VCArglist *a)
 	DwGrowingString g(cnt);
 	for(long i = 0; i < cnt; ++i)
 	{
-		vc v = (*a)[i];
+        const vc& v = (*a)[i];
 		switch(v.type())
 		{
 		case VC_INT:
@@ -574,7 +614,7 @@ dovectorsize(VCArglist *va)
 	{
 		USER_BOMB("vector constructor must have at least 1 arg", vcnil);
 	}
-	vc v = (*va)[0];
+    const vc& v = (*va)[0];
 	if(v.type() != VC_INT)
 	{
 		USER_BOMB("initial vector size must be an integer", vcnil);
@@ -1193,6 +1233,8 @@ dotype(vc v)
 		return "socket";
     case VC_UVSOCKET_STREAM:
     case VC_UVSOCKET_DGRAM:
+    case VC_TSOCKET_DGRAM:
+    case VC_TSOCKET_STREAM:
         return "uvsocket";
 	case VC_CHIT:
 		return "chit";
@@ -1288,6 +1330,10 @@ dotype3(vc v)
         return "uvsocket_stream";
     case VC_UVSOCKET_DGRAM:
         return "uvsocket_dgram";
+    case VC_TSOCKET_DGRAM:
+        return "tsocket_dgram";
+    case VC_TSOCKET_STREAM:
+        return "tsocket_stream";
 	case VC_CHIT:
 		return "chit";
 	case VC_OBJECT:
@@ -1666,7 +1712,7 @@ doif(VCArglist *a)
     auto c = VcDbgInfo.get();
     c->cur_idx = 0;
 #endif
-	vc cond = ((*a)[0]).eval();
+    const vc& cond = ((*a)[0]).eval();
     CHECK_ANY_BO(vcnil);
     vc ret;
 	// note: no need to check_bo after these evals
@@ -1703,7 +1749,7 @@ docand(VCArglist *a)
 #ifdef VCDBG
         c->cur_idx = i;
 #endif
-		vc ret = ((*a)[i]).eval();
+        const vc& ret = ((*a)[i]).eval();
 		CHECK_ANY_BO(vcnil);
 		if(ret.is_nil())
 			return vcnil;
@@ -2291,7 +2337,7 @@ dogensym()
 	char buf[128];
 
 	++i;
-    sprintf(buf, "gensym%lu", i);
+    snprintf(buf, sizeof(buf), "gensym%lu", i);
 	return vc(buf);
 }
 
@@ -2983,7 +3029,19 @@ vclh_uri_decode(vc s)
 	return vc(VC_BSTRING, res.c_str(), res.length());
 }
 
-
+vc
+vclh_set_xferin_constraints(vc max_memory, vc max_depth, vc max_elements, vc max_element_len)
+{
+    if(max_memory.type() != VC_INT ||
+            max_depth.type() != VC_INT ||
+            max_elements.type() != VC_INT ||
+            max_element_len.type() != VC_INT)
+    {
+        USER_BOMB("xferin_constraints args must all be integers (max_memory must be in bytes and > 0, other args -1 means don't change that constraint.)", vcnil);
+    }
+    vc::set_xferin_constraints(max_memory, max_depth, max_elements, max_element_len);
+    return vctrue;
+}
 
 vc
 dodump()
@@ -3068,6 +3126,18 @@ vc::non_lh_init()
     DwVP::init_dvp();
     vc_uvsocket::init_uvs_loop();
 #endif
+}
+
+void
+vc::set_xferin_constraints(long max_memory, long max_depth, long max_elements, long max_element_len)
+{
+    vcxstream::set_default_max_memory(max_memory);
+    if(max_depth != -1)
+        vcxstream::Max_depth = max_depth;
+    if(max_elements != -1)
+        vcxstream::Max_elements = max_elements;
+    if(max_element_len != -1)
+        vcxstream::Max_element_len = max_element_len;
 }
 
 
@@ -3258,7 +3328,7 @@ vc::init_rest()
 	makefun("copy", VC(docopy, "copy", VC_FUNC_BUILTIN_LEAF));
 	makefun("void", VC(dovoid, "void", VC_FUNC_BUILTIN_LEAF));
     makefun("prog", VC2(doprog, "prog", VC_FUNC_BUILTIN_LEAF, trans_doprog));
-	makefun("eval", VC(evalfun, "eval", VC_FUNC_BUILTIN_LEAF));
+    makefun("eval", VC2(evalfun, "eval", VC_FUNC_BUILTIN_LEAF, trans_eval));
 
 	// string stuff
 	makefun("strlen", VC(vclh_strlen, "strlen", VC_FUNC_BUILTIN_LEAF));
@@ -3402,7 +3472,7 @@ vc::init_rest()
 
 	// saving/restoring xfer format 
 	makefun("putfile", VC(doputfile, "putfile", VC_FUNC_BUILTIN_LEAF));
-	makefun("getfile", VC(dogetfile, "getfile", VC_FUNC_BUILTIN_LEAF));
+    makefun("getfile", VC(dogetfile, "getfile", VC_FUNC_BUILTIN_LEAF));
 	makefun("serialize", VC(vclh_serialize, "serialize", VC_FUNC_BUILTIN_LEAF));
 	makefun("deserialize", VC(vclh_deserialize, "deserialize", VC_FUNC_BUILTIN_LEAF));
 
@@ -3457,8 +3527,11 @@ vc::init_rest()
     makefun("UDH-just-publics", VC(udh_just_publics, "UDH-just-publics", VC_FUNC_BUILTIN_LEAF));
     makefun("UDH-agree", VC(udh_agree_auth, "UDH-agree", VC_FUNC_BUILTIN_LEAF));
 
+    // WARNING: these functions use the old single-key API for these functions
+    // this is used for setting up simple GCM encryption with clients of cdc-x
+    // servers. also used for some group-entry protocol stuff.
     makefun("UDH-sf-material", VC(vclh_sf_material, "UDH-sf-material", VC_FUNC_BUILTIN_LEAF));
-    makefun("UDH-sf-get-key", VC(dh_store_and_forward_get_key, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
+    makefun("UDH-sf-get-key", VC(vclh_dh_store_and_forward_get_key, "UDH-sf-get-key", VC_FUNC_BUILTIN_LEAF));
 #endif
 	makefun("GZ-compress-open", VC(vclh_compression_open, "GZ-compress-open", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-compress-close", VC(vclh_compression_close, "GZ-compress-close", VC_FUNC_BUILTIN_LEAF));
@@ -3469,6 +3542,7 @@ vc::init_rest()
 	makefun("GZ-compress-xfer", VC(vclh_compress_xfer, "GZ-compress-xfer", VC_FUNC_BUILTIN_LEAF));
 	makefun("GZ-decompress-xfer", VC(lh_decompress_xfer, "GZ-decompress-xfer", VC_FUNC_BUILTIN_LEAF));
 
+    makefun("set-xferin-constraints", VC(vclh_set_xferin_constraints, "set-xferin-constraints", VC_FUNC_BUILTIN_LEAF));
 	// debugging
 #ifdef VCDBG
 	makefun("__lh_break_on_call", VC(vclh_break_on_call, "__lh_break_on_call", VC_FUNC_BUILTIN_LEAF));
@@ -3513,5 +3587,8 @@ vc::exit()
 void
 vc::non_lh_exit()
 {
+#ifndef DWYCO_NO_UVSOCK
+    vc_uvsocket::exit_uvs_loop();
+#endif
 	vc_winsock::shutoff();
 }

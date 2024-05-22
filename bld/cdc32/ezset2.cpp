@@ -31,6 +31,14 @@ static init_settings Initial_settings[] =
     DWUIDECLVAL(VC_INT, net/disable_upnp, "", 0),
     DWUIDECLVAL(VC_INT, net/call_setup_media_select, "", CSMS_TCP_ONLY),
     DWUIDECLVAL(VC_INT, net/listen, "", 1),
+    // for broadcasting on the local network
+    // generally, each app should have a different app_id and port
+    // so they don't step on each others toes.
+    DWUIDECLVAL(VC_BSTRING, net/app_id, "dwyco", 0),
+    DWUIDECLVAL(VC_INT, net/broadcast_port, "", 48901),
+    // in seconds
+    DWUIDECLVAL(VC_INT, net/broadcast_interval, "", 60),
+
     DWUIDECLVAL(VC_INT, call_acceptance/max_audio, "", 4),
     DWUIDECLVAL(VC_INT, call_acceptance/max_chat, "", 4),
     DWUIDECLVAL(VC_INT, call_acceptance/max_video, "", 4),
@@ -71,13 +79,21 @@ static init_settings Initial_settings[] =
 
     DWUIDECLVAL(VC_BSTRING, group/alt_name, "", 0),
     // the "join key" is simply the key used for encrypting join messages.
-    // this protects the group private key. it isn't recorded anywhere
+    // this protects the group private key in flight. it isn't recorded anywhere
     // on the server or anything, this is just something a potential
     // group joiner needs to have in order to request the group private key.
     DWUIDECLVAL(VC_BSTRING, group/join_key, "", 0),
-    DWUIDECLVAL(VC_INT, sync/eager, "", 0),
+    // this is "recent" mode, by default
+    DWUIDECLVAL(VC_INT, sync/eager, "", 2),
 
     DWUIDECLVAL(VC_INT, server/invis, "", 0),
+
+    // cosmetics
+#ifdef DWYCO_APP_NICENAME
+    DWUIDECLVAL(VC_BSTRING, app/nicename, DWYCO_APP_NICENAME, 0),
+#else
+    DWUIDECLVAL(VC_BSTRING, app/nicename, "dwyco", 0),
+#endif
 
     {VC_NIL,0, 0, 0}
 };
@@ -101,6 +117,26 @@ static settings_sql *Db;
 
 #define sql Db->sql_simple
 
+namespace ezset {
+
+void
+sql_start_transaction()
+{
+    Db->start_transaction();
+}
+void
+sql_commit_transaction()
+{
+    Db->commit_transaction();
+}
+void
+sql_rollback_transaction()
+{
+    Db->rollback_transaction();
+}
+
+}
+
 struct setting : public ssns::trackable
 {
     setting(const setting&) = delete;
@@ -116,7 +152,6 @@ struct setting : public ssns::trackable
     void update_db(vc val) {
         sql("update settings set value = ?1 where name = ?2", val, name);
         setting_changed.emit(name, val);
-
     }
 };
 
@@ -141,7 +176,7 @@ init_sql_settings()
         s->value.value_changed.connect_memfun(s, &setting::update_db);
         Map->add(s->name, s);
     }
-    Db->start_transaction();
+    sql_start_transaction();
     for(int i = 0; Initial_settings[i].name != 0; ++i)
     {
         if(Map->contains(Initial_settings[i].name))
@@ -166,27 +201,7 @@ init_sql_settings()
         }
         s->value.value_changed.connect_memfun(s, &setting::update_db);
     }
-    Db->commit_transaction();
-}
-
-namespace ezset {
-
-void
-sql_start_transaction()
-{
-    Db->start_transaction();
-}
-void
-sql_commit_transaction()
-{
-    Db->commit_transaction();
-}
-void
-sql_rollback_transaction()
-{
-    Db->rollback_transaction();
-}
-
+    sql_commit_transaction();
 }
 
 void
@@ -256,6 +271,9 @@ set_settings_value(const char *name, int val)
     setting *s;
     if(!Map->find(name, s))
         oopanic("bad setting");
+    vc tmp = s->value;
+    if(tmp.type() != VC_INT)
+        oopanic("attempt to change to int");
     s->value = val;
     return 1;
 }
@@ -269,6 +287,9 @@ set_settings_value(const char *name, vc val)
     setting *s;
     if(!Map->find(name, s))
         oopanic("bad setting");
+    vc tmp = s->value;
+    if(tmp.type() != val.type())
+        oopanic("attempt to change setting type");
     s->value = val;
     return 1;
 }

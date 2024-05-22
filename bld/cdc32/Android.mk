@@ -16,7 +16,11 @@ LOCAL_CFLAGS := $(MY_CONF_LOCAL_CFLAGS) \
 
 LOCAL_CPP_EXTENSION := .cc .cpp
 
-LOCAL_CPPFLAGS += #-DDW_RTLOG -DDWYCO_NO_CLEANUP_ON_EXIT -DDWYCO_APP_DEBUG
+#LOCAL_CPPFLAGS += -DDW_RTLOG #-DDWYCO_NO_CLEANUP_ON_EXIT -DDWYCO_APP_DEBUG
+#LOCAL_CPPFLAGS += -DDWYCO_NETLOG
+#LOCAL_CPPFLAGS += -DDW_ANDROID_LOG
+#LOCAL_CPPFLAGS += -DDWYCO_DO_USER_LOG
+#LOCAL_CPPFLAGS += -DDWYCO_CDC_LIBUV
 #LOCAL_CPPFLAGS += -DDWYCO_TRACE 
 #LOCAL_CPPFLAGS += -DLEAK_CLEANUP
 #LOCAL_CPPFLAGS += -DDWYCO_FIELD_DEBUG
@@ -25,6 +29,7 @@ ifeq ($(DWYCO_APP), "rando")
 LOCAL_CPPFLAGS += -DDWYCO_NO_THEORA_CODEC -DDWYCO_NO_GSM -DDWYCO_NO_VORBIS -DDWYCO_NO_UPNP -DDWYCO_NO_VIDEO_MSGS -DDWYCO_NO_VIDEO_FROM_PPM
 else
 LOCAL_CPPFLAGS += -DDWYCO_THREADED_ENCODE
+#LOCAL_CPPFLAGS += -DDWYCO_BACKGROUND_SYNC
 endif
 
 LOCAL_SRC_FILES=  \
@@ -77,6 +82,7 @@ dwlog.cc \
 syncvar.cc \
 doinit.cc \
 netcod.cc \
+netcod2.cc \
 tcode.cc \
 statfun.cc \
 dirth.cc \
@@ -151,7 +157,6 @@ sqlbq.cpp \
 sqlite3.c \
 dwybg_wrap.c \
 aqext_android.cpp \
-backsql.cpp \
 upnp.cpp \
 simplesql.cpp \
 aqkey.cpp \
@@ -161,12 +166,15 @@ grpmsg.cpp \
 mmchan_sync.cpp \
 sync_sendq.cpp \
 bgapp.cpp \
-synccalls.cpp
+synccalls.cpp \
+netlog.cpp \
+activeuid.cpp \
+backandroid.cpp
 
 ifeq ($(DWYCO_APP), "rando")
 LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls
 else
-LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls
+LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls miniupnpc
 endif
 
 LOCAL_C_INCLUDES := \
@@ -187,6 +195,8 @@ $(LOCAL_PATH)/../speex/include \
 $(LOCAL_PATH)/../theora/include \
 $(LOCAL_PATH)/../ogg/include \
 $(LOCAL_PATH)/../vorbis/include \
+$(LOCAL_PATH)/../miniupnp/miniupnp-master/miniupnpc \
+$(LOCAL_PATH)/../uv/include \
 $(APP_PROJECT_PATH)
 
 LOCAL_CPPFLAGS += -fpermissive -frtti

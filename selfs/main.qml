@@ -39,7 +39,8 @@ ApplicationWindow {
         str += icon
         return str
     }
-
+    // attempt to convert an absolute length into the
+    // number of pixels on the screen
     function cm(cm){
         if(Screen.pixelDensity)
             return cm*Screen.pixelDensity*10
@@ -58,6 +59,10 @@ ApplicationWindow {
         console.warn("Could not calculate 'inch' based on Screen.pixelDensity.")
         return 0
     }
+    // takes a percent, and returns the number of pixels
+    // corresponding that percentage of the given dimension
+    // used when you just want to estimate that something should
+    // take a certain percentage of the screen
     function vw(i){
         if(Screen.width)
             return i*(Screen.width/100)
@@ -70,6 +75,7 @@ ApplicationWindow {
         console.warn("Could not calculate 'vh' based on Screen.height.")
         return 0
     }
+    font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
     
     
     property color primary : "#673AB7"
@@ -106,13 +112,19 @@ ApplicationWindow {
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
-    property bool show_archived_users: true
+    property bool show_archived_users: false
 
+    property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
+    property int qt_application_state: 0
     property bool is_mobile
+
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
     property bool is_camera_available
-    is_camera_available: QtMultimedia.availableCameras.length > 0
+    is_camera_available: camListModel.count > 2 || QtMultimedia.availableCameras.length > 0
+
+    property bool group_active
+    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
     function pin_expire() {
         var expire
@@ -144,8 +156,13 @@ ApplicationWindow {
     // at the same time.
     //width: Screen.width
     //height: Screen.height
-    title: qsTr("Dwyco ") + core.buildtime
+    title: {
+        qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
+                                                 " (" + core.active_group_name + " " + core.percent_synced + "%)" :
+                                                 (core.group_status === 1 ?
+                                                      "(Requesting " + core.active_group_name + ")" : ""))
 
+    }
     property int close_bounce: 0
     onClosing: {
         // special cases, don't let them navigate around the
@@ -183,6 +200,7 @@ ApplicationWindow {
 
     Component.onCompleted: {
         AndroidPerms.request_sync("android.permission.CAMERA")
+        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
 
@@ -328,7 +346,6 @@ ApplicationWindow {
             last_uid_selected = uid
 
             if(action === "clicked") {
-
                 stack.push(chatbox)
             }
             else if(action == "hold")
@@ -391,6 +408,28 @@ ApplicationWindow {
             }
         }
     }
+    Loader {
+        id: restore_auto_backup
+        visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/RestoreAutoBackup.qml"
+            }
+        }
+
+    }
+
+//    DevGroup {
+//        id: device_group
+//        visible: false
+//        onQuitnowChanged: {
+//            if(quitnow === true)
+//            {
+//                stack.push(device_group)
+//            }
+//        }
+//    }
 
 //    ConvList {
 //        id: convlist
@@ -783,13 +822,23 @@ ApplicationWindow {
         
     }
 
+//    Migrate {
+//        id: migrate_page
+//        visible: false
+//    }
+
+//    Reindex {
+//        id: background_reindex
+//        visible: false
+//    }
+
     DwycoCore {
         id: core
         property int is_database_online: -1
         property int is_chat_online: -1
 
         objectName: "dwyco_singleton"
-        client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
+        client_name: {"selfs-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
             var a
             a = get_local_setting("first-run")
@@ -900,9 +949,8 @@ ApplicationWindow {
         }
 
         onSys_msg_idx_updated: {
-            console.log("update idx", uid)
-            console.log("upd" + uid + " " + themsglist.uid)
-            if(uid === themsglist.uid) {
+            console.log("upd " + uid + " " + themsglist.uid)
+            if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model()
 
                 console.log("RELOAD msg_idx")
@@ -914,7 +962,7 @@ ApplicationWindow {
             //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
-                if(themsglist.uid == recipient) {
+                if(themsglist.uid == recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
                     themsglist.reload_model()
 
                 }
@@ -945,6 +993,7 @@ ApplicationWindow {
             if(Qt.platform.os == "android") {
                 notificationClient.set_lastrun()
             }
+            qt_application_state = app_state
         }
 
         onImage_picked: {
@@ -968,7 +1017,6 @@ ApplicationWindow {
             else
                 set_badge_number(0)
         }
-
     }
 
     Rectangle {
@@ -990,6 +1038,15 @@ ApplicationWindow {
         }
     }
 
+    Timer {
+        id: sync_debug
+        interval: 10000
+        repeat: true
+        running: group_active && server_account_created && qt_application_state === 0
+        onTriggered: {
+            SyncDescModel.load_model()
+        }
+    }
 
     Timer {
         id: service_timer

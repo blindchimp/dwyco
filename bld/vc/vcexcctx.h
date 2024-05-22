@@ -12,6 +12,17 @@
 #include "vc.h"
 #include "dwvecp.h"
 
+// note: in retrospect, this is waaaay overcomplicated.
+// a much simpler try { mumble } catch * {catch-mumble}
+// construct is adequate for virtually all exception handling.
+// expressions called on exception backout, and a default handler
+// are more than adequate, and much simpler to implement.
+//
+// things i have never used: matching exception strings, fancy
+// handlers that "do things" other than just start backout,
+// returning fancy values from the raise-site, continuing
+// execution after a raise, canceling handlers and backouts
+// once set, etc.
 //
 // VC exception handling is loosely based on the
 // exception handler presented in the '85 USENIX proceedings

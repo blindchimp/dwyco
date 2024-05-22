@@ -65,9 +65,11 @@ public:
     void remove_uid_from_model(const QByteArray& uid);
     Conversation * add_uid_to_model(const QByteArray& uid);
     void redecorate();
+    void reload_possible_changes(long time);
 
     void set_all_selected(bool);
-    void delete_all_selected();
+    void obliterate_all_selected();
+    void trash_all_selected();
     void pal_all_selected(bool);
     void block_all_selected();
     bool at_least_one_selected();
@@ -94,20 +96,28 @@ class ConvSortFilterModel : public QSortFilterProxyModel
 public:
     ConvSortFilterModel(QObject *p = 0);
     virtual bool lessThan(const QModelIndex& left, const QModelIndex& right) const;
+    virtual bool filterAcceptsRow(int source_row, const QModelIndex& parent) const;
 
     int count() const {
         if(sourceModel()) {
-            return dynamic_cast<ConvListModel *>(sourceModel())->count();
+            return rowCount();
+            //return dynamic_cast<ConvListModel *>(sourceModel())->count();
         }
         return 0;
     }
-
+    Q_INVOKABLE QObject *get(int source_idx);
+    Q_INVOKABLE int get_by_uid(QString uid);
     Q_INVOKABLE void toggle_selected(QString uid);
     Q_INVOKABLE void set_all_selected(bool);
-    Q_INVOKABLE void delete_all_selected();
+    Q_INVOKABLE void obliterate_all_selected();
+    Q_INVOKABLE void trash_all_selected();
     Q_INVOKABLE void pal_all_selected(bool);
     Q_INVOKABLE void block_all_selected();
     Q_INVOKABLE bool at_least_one_selected();
+    // bogus, fix me XXX this is for reloading when _trash tags change, which
+    // should be handled in the client, not so much in the api
+    Q_INVOKABLE void reload_convlist();
+    Q_INVOKABLE void invalidate_model_filter();
 
 private:
     int m_count;

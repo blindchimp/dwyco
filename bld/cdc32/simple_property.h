@@ -8,6 +8,9 @@
 // note: if T is a composite type that contains "add" and "del" methods
 // you can get signals when new or existing  elements of type T are added or removed  (resp)
 // from the set. note: this only works with vc right now, since elements and sets are the same type.
+// WARNING: if it is a composite, and you assign a value that overwrites the entire
+// composite value, you get ONE signal for "value_changed", it does NOT try to emit
+// signals as if each element in the composite was deleted then added again.
 //
 // WARNING: this is not a very robust class, and is really only intended to
 // accommodate simple intrinsic types and a couple of container classes

@@ -3,7 +3,7 @@
 
 if [ ! -d "$NDK" ]
 then
-export NDK=~/android/android-ndk
+export NDK=~/Android/Sdk/ndk/21.3.6528147
 fi
 echo $NDK
 

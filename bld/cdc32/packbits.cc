@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -11,8 +11,9 @@
  * $Header: g:/dwight/repo/cdc32/rcs/packbits.cc 1.2 1997/11/25 20:41:03 dwight Stable095 $
  */
 #include "packbits.h"
-#include "dwlista.h"
+
 #ifdef RECORD
+#include "dwlista.h"
 DwListA<int> Symlist;
 Packbits *CTracking;
 #endif
@@ -20,3 +21,4 @@ Packbits::Packbits()
 {
     bits_left = BITBUFSZ;
 }
+#endif

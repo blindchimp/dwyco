@@ -5,7 +5,6 @@
 #include <sqlite3.h>
 #endif
 
-#include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
 #include "fnmod.h"
@@ -47,19 +46,40 @@ SimpleSql::set_busy_timeout(int ms)
     sqlite3_busy_timeout(Db, ms);
 }
 
+void
+SimpleSql::set_update_hook(update_hook fun, void *user_arg)
+{
+    sqlite3_update_hook(Db, fun, user_arg);
+}
+
 int
-SimpleSql::init()
+SimpleSql::init(int sqlite_flags, bool no_filename_mod)
 {
     if(Db)
         oopanic("already init");
-    if(sqlite3_open(newfn(dbnames[0]).c_str(), &Db) != SQLITE_OK)
+    // note: i did it this way to avoid having to include sqlite.h in simplesql.h
+    // this assumes that flags == -1 is invalid for sqlite, which is a stretch, but
+    // probably ok. the alternative is to just let the sqlite api leak thru a bit
+    // more in the header.
+    if(sqlite_flags == -1)
+        sqlite_flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+    if(sqlite3_open_v2((no_filename_mod ? dbnames[0].c_str() : newfn(dbnames[0]).c_str()),
+                        &Db, sqlite_flags, 0) != SQLITE_OK)
     {
         Db = 0;
         return 0;
     }
-    //sqlite3_busy_timeout(Db, 1000);
-    sync_off();
-    init_schema(schema_names[0]);
+    try
+    {
+        sync_off();
+        init_schema(schema_names[0]);
+    }
+    catch(...)
+    {
+        exit();
+        return 0;
+    }
+
     return 1;
 }
 
@@ -75,18 +95,61 @@ SimpleSql::exit()
 }
 
 void
+SimpleSql::optimize()
+{
+    try
+    {
+        sql_simple("pragma optimize");
+    }
+    catch (...)
+    {
+
+    }
+}
+
+void
+SimpleSql::set_cache_size(int n)
+{
+    try
+    {
+        for(int i = 0; i < schema_names.num_elems(); ++i)
+        {
+            DwString a = DwString("pragma %1.cache_size = -%2").arg(schema_names[i], DwString::fromInt(n));
+            sql_simple(a.c_str());
+        }
+        sql_simple("pragma temp.cache_size = -1000");
+    }
+    catch (...)
+    {
+
+    }
+}
+
+
+void
 SimpleSql::attach(const DwString& dbname, const DwString& schema_name)
 {
-    DwString ndbname = newfn(dbname);
+    DwString ndbname;
+    if(!dbname.eq(":memory:"))
+        ndbname = newfn(dbname);
+    else
+        ndbname = dbname;
     if(dbnames.contains(ndbname) || schema_names.contains(schema_name))
         return;
-    int tmp = check_txn;
-    check_txn = 0;
-    sql_simple("attach ?1 as ?2", ndbname.c_str(), schema_name.c_str());
-    check_txn = tmp;
-    dbnames.append(ndbname);
-    schema_names.append(schema_name);
-    init_schema(schema_name);
+    try
+    {
+        int tmp = check_txn;
+        check_txn = 0;
+        sql_simple("attach ?1 as ?2", ndbname.c_str(), schema_name.c_str());
+        check_txn = tmp;
+        init_schema(schema_name);
+        dbnames.append(ndbname);
+        schema_names.append(schema_name);
+    }
+    catch(...)
+    {
+        throw;
+    }
 }
 
 void
@@ -95,12 +158,19 @@ SimpleSql::detach(const DwString& schema_name)
     int i;
     if((i = schema_names.index(schema_name)) == -1)
         return;
-    int tmp = check_txn;
-    check_txn = 0;
-    sql_simple("detach ?1", schema_name.c_str());
-    check_txn = tmp;
-    dbnames.del(i);
-    schema_names.del(i);
+    try
+    {
+        int tmp = check_txn;
+        check_txn = 0;
+        sql_simple("detach ?1", schema_name.c_str());
+        check_txn = tmp;
+        dbnames.del(i);
+        schema_names.del(i);
+    }
+    catch(...)
+    {
+        throw;
+    }
 }
 
 // note: the monkey business with tdepth is because the "savepoint"
@@ -177,21 +247,22 @@ SimpleSql::commit_transaction()
                 VCArglist a;
                 a.append("rollback transaction");
                 // the docs say the rollback might fail, but it is no bigs.
-                // what state the database is in, shrug.
+                // what state the database ends up in? shrug.
                 try {
-                sqlite3_bulk_query(Db, &a);
+                    sqlite3_bulk_query(Db, &a);
                 }
                 catch(...)
                 {
 
                 }
             }
+            // i'm not even sure you want to continue on at this
+            // point, if your commits are failing
+            check_txn = tmp;
             throw;
         }
     }
     check_txn = tmp;
-
-
 }
 
 
@@ -211,6 +282,36 @@ SimpleSql::sync_on()
     check_txn = 0;
     sql_simple("pragma synchronous=normal;");
     check_txn = tmp;
+}
+
+void
+SimpleSql::vacuum()
+{
+    int tmp = check_txn;
+    check_txn = 0;
+    try
+    {
+        for(int i = 0; i < schema_names.num_elems(); ++i)
+        {
+            DwString a = DwString("vacuum %1").arg(schema_names[i]);
+            sql_simple(a.c_str());
+        }
+    }
+    catch (...)
+    {
+
+    }
+    check_txn = tmp;
+}
+
+void
+SimpleSql::set_max_size(int mb)
+{
+   vc pagesize = sql_simple("pragma page_size");
+   int sz = pagesize[0][0];
+
+   int pages = (mb * 1024 * 1024) / sz;
+   sql_simple(DwString("pragma max_page_count=%1").arg(DwString::fromInt(pages)).c_str());
 }
 
 void
@@ -268,6 +369,8 @@ SimpleSql::query(const VCArglist *a)
     vc res = sqlite3_bulk_query(Db, a);
     if(res.is_nil() || (res.type() == VC_STRING && res == vc("busy")))
         throw -1;
+    if(res.type() == VC_STRING && res == vc("full"))
+        throw res;
     return res;
 }
 

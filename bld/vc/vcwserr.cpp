@@ -24,8 +24,7 @@
  */
 #ifdef USE_WINSOCK
 #include <WinSock2.h>
-#endif
-#ifdef USE_BERKSOCK
+#else
 #include <errno.h>
 #define WSABASEERR 0
 #endif
@@ -40,7 +39,7 @@ static struct vcwserrvals
 } Vcwserrvals [] =
 {
 {  WSABASEERR,         "[0] No Error"},
-#ifdef USE_BERKSOCK
+#ifndef USE_WINSOCK
 {  EINTR,           "[10004] Interrupted system call"},
 {  EBADF,           "[10009] Bad file number"},
 {  EACCES,          "[10013] Permission denied"},
@@ -55,7 +54,7 @@ static struct vcwserrvals
 {  WSAEINVAL,          "[10022] Invalid argument"},
 {  WSAEMFILE,          "[10024] Too many open files"},
 #endif
-#ifdef USE_BERKSOCK
+#ifndef USE_WINSOCK
 {  EWOULDBLOCK,     "[10035] Operation would block"},
 {  EINPROGRESS,     "[10036] Operation now in progress"},
 {  EALREADY,        "[10037] Operation already in progress"},
@@ -88,9 +87,6 @@ static struct vcwserrvals
 {  EHOSTDOWN,       "[10064] Host is down"},
 {  EHOSTUNREACH,    "[10065] No Route to Host"},
 {  ENOTEMPTY,       "[10066] Directory not empty"},
-#if 0
-{  EPROCLIM,        "[10067] Too many processes"},
-#endif
 {  EUSERS,          "[10068] Too many users"},
 {  EDQUOT,          "[10069] Disc Quota Exceeded"},
 {  ESTALE,          "[10070] Stale NFS file handle"},
@@ -150,7 +146,7 @@ static struct vcwserrvals
 
 static int Nerrs = sizeof(Vcwserrvals) / sizeof(Vcwserrvals[0]);
 
-const char *
+vc
 vc_wsget_errstr(int err)
 {
 	if(err == 0)
@@ -159,11 +155,11 @@ vc_wsget_errstr(int err)
 	for(int i = 0; i < Nerrs; ++i)
 	{
 		if(err == Vcwserrvals[i].errnum)
-			return Vcwserrvals[i].str;
+            return vc(Vcwserrvals[i].str);
 	}
-	static char a[500];
-	sprintf(a, "[%d] %s Say what?", err, strerror(err));
-	return a;
+    char a[500];
+    snprintf(a, sizeof(a), "[%d] %s Say what?", err, strerror(err));
+    return vc(a);
 }
 
 

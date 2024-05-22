@@ -33,15 +33,18 @@ typedef void (*QDFUNCP)(vc, void *, vc, ValidPtr);
 
 struct ReqType
 {
+private:
+    static int Serial;
+public:
     vc name;
     int serial;
 
     ReqType() {
         serial = 0;
     }
-    ReqType(vc n, int s) {
+    ReqType(vc n) {
         name = n;
-        serial = s;
+        serial = ++Serial;
     }
 
     int operator==(const ReqType& rt) const {
@@ -67,11 +70,18 @@ struct ReqType
 
 struct QckDone
 {
+    enum permanent_flag {TRANSIENT = 0, PERMANENT = 1};
+
     ReqType type;
     QDFUNCP callback;
     void *arg1;
     vc arg2;
-    int permanent;
+    enum permanent_flag permanent;
+    // NOTE: this isn't used like other "vp" members
+    // since it is set to what the user supplies rather than
+    // referring to ourself. in
+    // other words, it is the context we are passing
+    // back to the callback for the user.
     ValidPtr vp;
     // this is used to mark callbacks with the channel
     // the response that would trigger it should come from.
@@ -83,31 +93,36 @@ struct QckDone
     time_t time_qed;
 
 
+
     QckDone() {
         callback = 0;
         arg1 = 0;
-        permanent = 0;
+        permanent = TRANSIENT;
         channel = -1;
         timeout = -1;
         time_qed = -1;
     }
     QckDone(QDFUNCP cb, void *user_arg,
-            vc user_arg2 = vcnil, ValidPtr v = ValidPtr(), vc t = vcnil, int s = 0, int p = 0, int chan = -1, int tmout = -1)
-        : vp(v), type(t, s) {
+            vc user_arg2 = vcnil, ValidPtr v = ValidPtr(), vc t = vcnil, enum permanent_flag p = TRANSIENT)
+        : vp(v), type(t) {
         callback = cb;
         arg1 = user_arg;
         permanent = p;
+        type.name = t;
+        if(p == PERMANENT)
+            type.serial = 0;
         arg2 = user_arg2;
-        channel = chan;
-        if(tmout != -1)
-            this->timeout = tmout + time(0);
-        else
-            this->timeout = -1;
+        this->timeout = -1;
+        this->channel = -1;
         time_qed = -1;
     }
 
     // note: we don't check arg1 and arg2 because they are user supplied
     // and we don't know what "==" means for them in general.
+    // using == here is a bit sketchy, and we should probably
+    // just change it to a member name, since this is used
+    // mainly for finding and canceling operations, so we
+    // are looking for "X request destined for callback with context vp"
     int operator==(const QckDone& m) const {
         return callback == m.callback &&
                type == m.type &&
@@ -149,7 +164,7 @@ void dirth_send_unignore(vc id, vc uid, QckDone d);
 void dirth_send_ignore_count(vc id, vc uid, vc delta, QckDone d);
 void dirth_cancel_callbacks(QDFUNCP f, void *arg1, const ReqType& type);
 void dirth_cancel_callbacks(QDFUNCP f, ValidPtr vp, const ReqType& type);
-int dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, vc arg2 = vcnil);
+int dirth_pending_callbacks(QDFUNCP f, void *arg1, const ReqType& type, const vc &arg2);
 void dirth_simulate_error_response(const QckDone& q);
 void dirth_dead_channel_cleanup(int chan);
 void dirth_send_ack_all(vc id, QckDone d);
@@ -185,8 +200,9 @@ QckMsg dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d);
 vc generate_mac_msg(vc);
 
 extern DwListA<QckDone> Waitq;
+extern DwListA<QckDone> PWaitq;
 extern DwListA<vc> Response_q;
-extern int Serial;
+//extern int Serial;
 }
 
 // all msgs to server start with these two things

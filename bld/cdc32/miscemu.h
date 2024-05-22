@@ -10,11 +10,8 @@
 #define MISCEMU_H
 
 int filelength(int fd);
-#ifdef __GNUG__
-void itoa(int, char *, int);
-#endif
 int mkdir(const char *);
 
-#define DIRSEPSTR "/"
+#include "sepstr.h"
 
 #endif

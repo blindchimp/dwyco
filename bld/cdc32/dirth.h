@@ -14,7 +14,6 @@
 #define DIRTH_H
 
 #include "vc.h"
-#include "mmchan.h"
 #include "simple_property.h"
 
 class MessageDisplay;
@@ -32,7 +31,7 @@ vc get_server_name_by_uid(vc, vc&);
 vc get_random_xfer_server_ip(vc& port);
 vc get_random_server_ip(vc server_list, vc& port);
 bool contains_xfer_ip(vc ip);
-int dirth_switch_to_server(int, MessageDisplay * = 0);
+//int dirth_switch_to_server(int, MessageDisplay * = 0);
 //int dirth_switch_to_server2(const char *id, MessageDisplay *md = 0);
 int dirth_switch_to_chat_server(int, const char *pw);
 vc make_local_ports();

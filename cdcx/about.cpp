@@ -17,5 +17,9 @@ aboutform::aboutform(QDialog *parent)
 {
     ui.setupUi(this);
     ui.version->setText(Version.c_str());
+    QString ver("Dwyco CDC-X ");
+    ver += QCoreApplication::applicationVersion();
+    ver += " (Open Source)";
+    ui.nice_version->setText(ver);
 }
 

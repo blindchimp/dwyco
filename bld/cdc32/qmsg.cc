@@ -28,10 +28,8 @@
 #include "mmchan.h"
 #include "filetube.h"
 #include "vc.h"
-#include "vccomp.h"
 #include "dwstr.h"
 #include "qauth.h"
-#include "dirth.h"
 #include "qdirth.h"
 #ifdef _Windows
 #ifdef _MSC_VER
@@ -61,7 +59,6 @@
 #include "pval.h"
 #include "doinit.h"
 #include "ta.h"
-#include "cdcver.h"
 #include "files.h"
 #include "sha.h"
 #include "aes.h"
@@ -80,7 +77,6 @@ using namespace CryptoPP;
 #endif
 #include "dwtree2.h"
 #include "se.h"
-#include "chatq.h"
 #include "pgdll.h"
 #include "sepstr.h"
 #include "ser.h"
@@ -97,18 +93,24 @@ using namespace CryptoPP;
 #include "grpmsg.h"
 #include "aconn.h"
 #include "cdcpal.h"
+#include "vccrypt2.h"
 
 using namespace dwyco;
 using namespace dwyco::qmsgsql;
 
-vc MsgFolders;
-
+namespace dwyco {
 int Rescan_msgs;
+vc Cur_ignore;
+vc No_direct_msgs;
+vc No_direct_att;
+vc Session_infos;
+vc MsgFolders;
+vc Pals;
+}
 
 // list of message summaries both from server and direct
 static vc Cur_msgs;
 
-vc Cur_ignore;
 vc Session_ignore;
 // mutual is separated out because we want to have a
 // part of the ignore list that cannot be maniplated
@@ -117,22 +119,23 @@ vc Mutual_ignore;
 
 
 vc Online;
-vc Client_types;
+vc Client_disposition;
 
 //vc Never_visible;
 //vc Always_visible;
 //vc I_grant;
 //vc They_grant;
-vc No_direct_msgs;
-vc No_direct_att;
 //int Pal_auth_warn;
-vc Pals;
+
 vc Client_ports;
 vc Chat_ips;
 vc Chat_ports;
-vc Session_infos;
 static vc In_progress;
+
+
+
 static int64_t Logical_clock;
+
 // this is used in order to assign clock values to
 // messages when we first see them from the server.
 static vc Mid_to_logical_clock;
@@ -142,6 +145,18 @@ void new_pipeline();
 int save_msg(vc m, vc msg_id);
 
 #include "qmsgsql.h"
+
+// XXX there is a problem with just fetching the logical clock
+// from the msg index... there are paths through the code where
+// we create a message, use the logical clock (and increment it) but
+// then we never store the message (ie, a sent message that isn't saved.)
+// if we quit and restart, our logical clock will not reflect that we
+// sent that message. so, we really need to make sure the logical clock
+// is stored somewhere persistently to get the best presentation of the
+// message ordering.
+// note that using the max value from the index is a perfectly reasonable
+// estimate. likewise for the current system time, if it looks sane.
+//
 
 void
 update_global_logical_clock(int64_t lc)
@@ -167,6 +182,12 @@ boost_logical_clock()
         Logical_clock = tmplc + 1;
 }
 
+int64_t
+diff_logical_clock(int64_t tm)
+{
+    return Logical_clock - tm;
+}
+
 #ifdef WIN32
 int
 move_replace(const DwString& s, const DwString& d)
@@ -181,8 +202,9 @@ move_replace(const DwString& s, const DwString& d)
 }
 #endif
 
-static int
-add_msg_folder(vc uid)
+static
+int
+add_msg_folder(const vc& uid)
 {
     if(MsgFolders.contains(uid))
         return 0;
@@ -241,13 +263,51 @@ pals_to_tags()
     }
 }
 
-int
-uid_online_display(vc uid)
+static
+bool
+is_foreground(const vc& uid)
 {
-    if(Online.contains(uid))
+    vc disp;
+    if(Client_disposition.find(uid, disp))
+    {
+        if(disp == vc("foreground"))
+            return 1;
+        // if there is no disposition, it is likely an old
+        // client, so we just pretend it is foreground for compat
+        if(disp.is_nil())
+            return 1;
+    }
+    else
+    {
+        // if there is no disposition, it is likely an old
+        // client, so we just pretend it is foreground for compat
+        return 1;
+    }
+    return 0;
+}
+
+
+int
+uid_online_display(const vc& uid)
+{
+    if(Online.contains(uid) && is_foreground(uid))
         return 1;
     if(Broadcast_discoveries.contains(uid))
         return 1;
+    const vc uids = map_uid_to_uids(uid);
+    if(uids.num_elems() == 1)
+        return 0;
+
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc& tuid = uids[i];
+        if(Online.contains(tuid) && is_foreground(uid))
+            return 1;
+        if(Broadcast_discoveries.contains(tuid))
+            return 1;
+
+    }
+
     return 0;
 }
 
@@ -378,7 +438,7 @@ init_qmsg()
     Cur_msgs = vc(VC_VECTOR);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
-    Client_types = vc(VC_TREE);
+    Client_disposition = vc(VC_TREE);
     No_direct_msgs = vc(VC_SET);
     No_direct_att = vc(VC_SET);
     MsgFolders = vc(VC_TREE);
@@ -517,7 +577,7 @@ exit_qmsg()
     //Session_ignore = vcnil;
     Mutual_ignore = vcnil;
     Online = vcnil;
-    Client_types = vcnil;
+    Client_disposition = vcnil;
     No_direct_msgs = vcnil;
     No_direct_att = vcnil;
 
@@ -580,13 +640,23 @@ suspend_qmsg()
 void
 resume_qmsg()
 {
+    // these items will get updates when we connect
+    // to a server, so just clear them out.
     Cur_msgs = vc(VC_VECTOR);
     Mutual_ignore = vc(VC_SET);
     Online = vc(VC_TREE);
-    Client_types = vc(VC_TREE);
-    No_direct_msgs = vc(VC_SET);
-    No_direct_att = vc(VC_SET);
-    MsgFolders = vc(VC_TREE);
+    Client_disposition = vc(VC_TREE);
+
+    // let's keep this info, since it is unlikely to
+    // change while we were suspended
+    //No_direct_msgs = vc(VC_SET);
+    //No_direct_att = vc(VC_SET);
+
+    // keep this info, since we load new stuff incrementally now
+    // this might have to change if we reload everything in the
+    // future
+    //MsgFolders = vc(VC_TREE);
+
     In_progress = vc(VC_TREE);
     
     // not perfect, but better than scanning for a max value
@@ -1180,7 +1250,7 @@ dir_to_uid(DwString s)
 }
 
 vc
-uid_to_dir(vc uid)
+uid_to_dir(const vc& uid)
 {
     if(uid.len() == 0)
         return "";
@@ -1200,12 +1270,10 @@ init_msg_folder(vc uid, DwString* fn_out)
     s = newfn(s);
     if(fn_out)
         *fn_out = s;
-    int do_fetch = 0;
-    if(mkdir(s.c_str()) == 0)
-    {
-        do_fetch = 1;
-        add_msg_folder(uid);
-    }
+    mkdir(s.c_str());
+
+    int do_fetch = add_msg_folder(uid);
+
     if(do_fetch || !Session_infos.contains(uid))
     {
         fetch_info(uid);
@@ -1365,7 +1433,80 @@ fetch_attachment(vc fn, DestroyCallback dc, vc dcb_arg1, void *dcb_arg2, ValidPt
 }
 
 static void
-fetch_pk_done(vc m, void *, vc uid, ValidPtr)
+fetch_pk_done2(vc m, void *, vc uid, ValidPtr)
+{
+    if(m[1].is_nil())
+    {
+        if(m[2] == vc("no-key"))
+        {
+            pk_invalidate(uid);
+            // to avoid repeatedly fetching a key that may never exist
+            // (like it was an old account that never had a key generated
+            // for it), for this session we'll just cache this response
+            // from the server.
+            pk_set_session_cache(uid);
+            TRACK_ADD(QM_fetch_pk_no_key2, 1);
+        }
+        else
+        {
+            // if it was a failure (most likely went offline
+            // while trying to deliver a message), cause a new
+            // fetch to happen next time the send is attempted
+            pk_force_check(uid);
+            TRACK_ADD(QM_fetch_pk_failed2, 1);
+        }
+        return;
+    }
+    if(m[1].type() != VC_VECTOR)
+    {
+        TRACK_ADD(QM_fetch_pk_bogus_return2, 1);
+        return;
+    }
+    vc static_public(VC_VECTOR);
+    static_public[DH_STATIC_PUBLIC] = m[1][0];
+    vc sig = m[1][1];
+    // next is a vector containing the alt key
+    vc alt = m[1][2];
+    if(!alt.is_nil())
+    {
+        vc alt_pk = alt[0];
+        vc alt_static_public(VC_VECTOR);
+        alt_static_public[DH_STATIC_PUBLIC] = alt_pk;
+        vc server_sig = alt[1];
+        vc gname = alt[2];
+        put_pk2(uid, static_public, sig, alt_static_public, server_sig, gname);
+    }
+    else
+    {
+        put_pk(uid, static_public, sig);
+    }
+
+    pk_set_session_cache(uid);
+    TRACK_ADD(QM_fetch_pk_ok2, 1);
+
+}
+
+static void
+fetch_group_uids(vc m, void *, vc, ValidPtr)
+{
+    if(m[1].is_nil())
+        return;
+    const vc pk = m[1][0];
+    const vc uids = m[1][1];
+
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc uid = uids[i];
+        if(dirth_pending_callbacks(fetch_pk_done2, 0, ReqType(), uid))
+            return;
+        dirth_send_get_pk(My_UID, uid, QckDone(fetch_pk_done2, 0, uid));
+    }
+
+}
+
+
+static void
+fetch_pk_done(vc m, void *user_arg, vc uid, ValidPtr)
 {
     if(m[1].is_nil())
     {
@@ -1407,6 +1548,14 @@ fetch_pk_done(vc m, void *, vc uid, ValidPtr)
         vc server_sig = alt[1];
         vc gname = alt[2];
         put_pk2(uid, static_public, sig, alt_static_public, server_sig, gname);
+        // force fetch of all profiles in the gname
+        // this probably needs to be changed so that a list of other uid's in
+        // the group are returned as well, for consistency reasons (ie, things
+        // might change while this operation in flight.
+        // for now, we'll do it this way to see how things work out.
+        int get_members = (user_arg == nullptr);
+        if(get_members)
+            dirth_send_get_group_pk(My_UID, gname, QckDone(fetch_group_uids, 0));
 
     }
     else
@@ -1418,8 +1567,6 @@ fetch_pk_done(vc m, void *, vc uid, ValidPtr)
     TRACK_ADD(QM_fetch_pk_ok, 1);
 
 }
-
-
 
 static
 void
@@ -1436,7 +1583,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
 //    vc desc = other[1][1];
 //    vc location = other[1][2];
 
-    static vc invalid("invalid");
+    static const vc invalid("invalid");
 
     vc v;
     // special case: if issuing this command results in a local
@@ -1447,7 +1594,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
     // in the past, we provided "alternate info" we could use if the
     // server failed, and this was derived from secondary like the
     // directory. but if those sources are not available that
-    // bogus info would get in and never cleaned out.
+    // bogus info would get in and never get cleaned out.
 #if 0
     static vc server_timeout("server timeout");
     static vc server_disconnected("server disconnected");
@@ -1474,7 +1621,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         // fetch it
         if(m[2] == invalid)
             prf_set_cached(uid);
-        vc ai = make_best_local_info(uid, 0);
+        const vc ai = make_best_local_info(uid, 0);
         v = vc(VC_VECTOR);
         v[QIR_FROM] = uid;
         v[QIR_HANDLE] = ai[0];
@@ -1491,7 +1638,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         if(m[1].type() == VC_STRING && m[1] == vc("ok"))
         {
             prf_set_cached(uid);
-            vc ai = make_best_local_info(uid, 0);
+            const vc ai = make_best_local_info(uid, 0);
             v = vc(VC_VECTOR);
             v[QIR_FROM] = uid;
             v[QIR_HANDLE] = ai[0];
@@ -1506,7 +1653,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         {
             // create an old-style info vec
             prf_set_cached(uid);
-            vc ai = make_best_local_info(uid, 0);
+            const vc ai = make_best_local_info(uid, 0);
             v = vc(VC_VECTOR);
             v[QIR_FROM] = uid;
             v[QIR_HANDLE] = ai[0];
@@ -1524,7 +1671,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
         {
             // had to use alternate info, don't set as cached
             v = vc(VC_VECTOR);
-            vc ai = make_best_local_info(uid, 0);
+            const vc ai = make_best_local_info(uid, 0);
             v[QIR_FROM] = uid;
             v[QIR_HANDLE] = ai[0];
             v[QIR_EMAIL] = "";
@@ -1538,7 +1685,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
     }
     if(valid_info(v))
     {
-        vc user_id = v[0];
+        const vc user_id = v[0];
 
         Session_infos.add_kv(user_id, v);
     }
@@ -1546,7 +1693,7 @@ fetch_info_done_profile(vc m, void *, vc other, ValidPtr)
 
 static
 vc
-make_alt_info(vc name, vc desc, vc location)
+make_alt_info(const vc& name, const vc& desc, const vc& location)
 {
     vc r(VC_VECTOR);
     r.append(name);
@@ -1556,7 +1703,7 @@ make_alt_info(vc name, vc desc, vc location)
 }
 
 vc
-make_best_local_info(vc uid, int *cant_resolve_now)
+make_best_local_info(const vc& uid, int *cant_resolve_now)
 {
     if(cant_resolve_now)
         *cant_resolve_now = 0;
@@ -1567,7 +1714,10 @@ make_best_local_info(vc uid, int *cant_resolve_now)
         vc pack;
         if(deserialize(prf[PRF_PACK], pack))
         {
-            return make_alt_info(pack[vc("handle")], pack[vc("desc")], pack[vc("loc")]);
+            static vc h("handle");
+            static vc d("desc");
+            static vc l("loc");
+            return make_alt_info(pack[h], pack[d], pack[l]);
         }
     }
     // this is an indicator that the profile isn't available in the main cache, and should
@@ -1578,7 +1728,7 @@ make_best_local_info(vc uid, int *cant_resolve_now)
         vc u;
         if(Broadcast_discoveries.find(uid, u))
         {
-            vc name = u[BD_NICE_NAME];
+            const vc name = u[BD_NICE_NAME];
             if(!name.is_nil())
                 return make_alt_info(name, "", "local-net");
         }
@@ -1618,7 +1768,7 @@ make_best_local_info(vc uid, int *cant_resolve_now)
 }
 
 void
-fetch_info(vc uid)
+fetch_info(const vc& uid)
 {
 // fetch info is now a "get-profile", though for compat, we
 // morph the profile info to old format for now.
@@ -1844,14 +1994,6 @@ decrypt_special(vc mid, vc msg)
     // changing the id
     dm[QQM_LOCAL_ID] = mid;
     return dm;
-//    if(store_direct(0, dm, 0) == -1)
-//    {
-//        return 0;
-//    }
-//    return 1;
-
-
-
 }
 
 struct special_map
@@ -2048,7 +2190,7 @@ query_done(vc m, void *, vc, ValidPtr)
             continue;
         }
         init_msg_folder(from);
-        se_emit(SE_USER_ADD, from);
+        //se_emit(SE_USER_ADD, from);
         // it was a problem trying to let special messages percolate
         // thru into the client api. so, just strip them out and
         // process them internally now
@@ -2067,6 +2209,20 @@ query_done(vc m, void *, vc, ValidPtr)
         // assiging lc's for each path thru the system. maybe the server even
         // needs to have its own lc
         vc mid = v[QM_ID];
+        // if we have already fetched the message and it is local, just
+        // ack it automatically so we don't keep refetching it.
+        if(sql_is_mid_local(mid))
+        {
+            dirth_send_ack_get2(My_UID, mid, QckDone(0, 0));
+            continue;
+        }
+        if(sql_mid_has_tombstone(mid))
+        {
+            dirth_send_ack_get(My_UID, mid, QckDone(0, 0));
+            // hmmm, wonder what i was thinking here, i left the
+            // continue out  before...
+            continue;
+        }
         if(!Mid_to_logical_clock.contains(mid))
         {
             long lc;
@@ -2088,12 +2244,15 @@ query_done(vc m, void *, vc, ValidPtr)
         sql_add_tag(mid, "_remote");
         DwString a("_");
         a += (const char *)to_hex(from);
+        sql_remove_mid_tag(mid, a.c_str());
         sql_add_tag(mid, a.c_str());
     }
     sql_commit_transaction();
     }
     catch(...)
     {
+        // we could probably restore the previous value of Cur_msgs here, but
+        // if this happens, the system is probably on its way out
         Cur_msgs = vc(VC_VECTOR);
         sql_rollback_transaction();
     }
@@ -2106,8 +2265,6 @@ query_messages()
 {
     dirth_send_query2(My_UID, QckDone(query_done, 0));
 }
-
-//static int Hack_first_load = 0;
 
 // return -1 if the message can never be delivered here
 // callers can use this to determine when to delete
@@ -2236,7 +2393,11 @@ store_direct(MMChannel *m, vc msg, void *)
     // attachment (ie, attachment msgs must go via the server.)
     if(m)
     {
-        No_direct_msgs.del(from);
+        // clear out all direct message blocks if they are in
+        // a device group.
+        const vc uids = map_uid_to_uids(from);
+        for(int i = 0; i < uids.num_elems(); ++i)
+            No_direct_msgs.del(uids[i]);
     }
 
     Rescan_msgs = 1;
@@ -2247,9 +2408,14 @@ store_direct(MMChannel *m, vc msg, void *)
         sql_start_transaction();
         if(save_msg(msg, id))
         {
-
+            // avoid creating extra _inbox in case it came from
+            // multiple sources. note, even tho the _inbox tag
+            // isn't synced, it participates in the default
+            // guid generation, so dups can occur. might want to
+            // redo this so we can avoid dups like this for tags
+            // that are only used locally.
+            sql_remove_mid_tag(id, "_inbox");
             sql_add_tag(id, "_inbox");
-            //sql_add_tag(id, "_local");
             sql_remove_mid_tag(id, "_remote");
             if(!msg[QQM_BODY_SPECIAL_TYPE].is_nil())
                 sql_add_tag(id, "_special");
@@ -2280,7 +2446,7 @@ store_direct(MMChannel *m, vc msg, void *)
     return 1;
 }
 
-
+#if 0
 void
 load_users(int only_recent, int *total_out)
 {
@@ -2288,52 +2454,30 @@ load_users(int only_recent, int *total_out)
 
     MsgFolders = vc(VC_TREE);
 
-    if(only_recent)
+    vc ret = sql_get_recent_users(only_recent, total_out);
+    if(ret.is_nil() || ret.num_elems() == 0)
     {
-        vc ret = sql_get_recent_users(only_recent, total_out);
-        if(ret.is_nil() || ret.num_elems() == 0)
+        if(ret.is_nil())
         {
-            if(ret.is_nil())
-            {
-                TRACK_ADD(QM_UL_recent_fail, 1);
-            }
-            else
-            {
-                TRACK_ADD(QM_UL_recent_empty, 1);
-            }
+            TRACK_ADD(QM_UL_recent_fail, 1);
+        }
+        else
+        {
+            TRACK_ADD(QM_UL_recent_empty, 1);
+        }
+        if(only_recent)
             return load_users(0, total_out);
-        }
-        int n = ret.num_elems();
-        TRACK_MAX(QM_UL_recent_count, n);
-        for(int i = 0; i < n; ++i)
-        {
-            vc uid = from_hex(ret[i]);
-            add_msg_folder(uid);
-            //MsgFolders.add_kv(uid, vcnil);
-        }
     }
-    else
+    int n = ret.num_elems();
+    TRACK_MAX(QM_UL_recent_count, n);
+    for(int i = 0; i < n; ++i)
     {
-
-        FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
-        auto n = fv.num_elems();
-        TRACK_MAX(QM_UL_count, n);
-        for(int i = 0; i < n; ++i)
-        {
-            WIN32_FIND_DATA &d = *fv[i];
-            s = d.cFileName;
-            vc uid = dir_to_uid(s);
-            if(uid.len() != 10)
-                continue;
-            add_msg_folder(uid);
-            //MsgFolders.add_kv(uid, vcnil);
-        }
-
-        delete_findvec(&fv);
-        if(total_out)
-            *total_out = MsgFolders.num_elems();
+        vc uid = from_hex(ret[i]);
+        add_msg_folder(uid);
     }
 }
+#endif
+
 
 void
 load_users_from_files(int *total_out)
@@ -2349,7 +2493,7 @@ load_users_from_files(int *total_out)
     {
         WIN32_FIND_DATA &d = *fv[i];
         s = d.cFileName;
-        vc uid = dir_to_uid(s);
+        const vc uid = dir_to_uid(s);
         if(uid.len() != 10)
             continue;
         add_msg_folder(uid);
@@ -2365,8 +2509,6 @@ load_users_from_files(int *total_out)
 void
 load_users_from_index(int recent, int *total_out)
 {
-    DwString s;
-
     MsgFolders = vc(VC_TREE);
 
     vc ret = sql_get_recent_users(recent, total_out);
@@ -2385,12 +2527,8 @@ load_users_from_index(int recent, int *total_out)
         {
             vc uid = from_hex(ret[i]);
             add_msg_folder(uid);
-            //MsgFolders.add_kv(uid, vcnil);
         }
-        if(total_out)
-            *total_out = n;
     }
-
 }
 
 
@@ -2460,7 +2598,7 @@ ack_all(vc uid)
     vc mids = sql_get_tagged_mids2(tag.c_str());
     for(int i = 0; i < mids.num_elems(); ++i)
     {
-        sql_fav_remove_mid(mids[i][0]);
+        sql_remove_all_tags_mid(mids[i][0]);
     }
     sql_commit_transaction();
 
@@ -2526,52 +2664,77 @@ remove_user_files(vc dir, const char *pfx, int keep_folder)
     //return retval;
 }
 
+static
 int
-remove_user(vc uid, const char *pfx)
+clear_user_msgs(const vc& uid)
 {
-
-    // note: this removes pal auth stuff too
-    vc dir = uid_to_dir(uid);
-    //always_vis_del(uid);
-    // remove indexs so the msgs don't magically reappear
-    sql_start_transaction();
-    sql_fav_remove_uid(uid);
-    clear_msg_idx_uid(uid);
-    DwString tag("_");
-    tag += (const char *)to_hex(uid);
-    vc mids = sql_get_tagged_mids2(tag.c_str());
-    for(int i = 0; i < mids.num_elems(); ++i)
+    try
     {
-        sql_fav_remove_mid(mids[i][0]);
+        sql_start_transaction();
+        sql_remove_all_tags_uid(uid);
+        clear_msg_idx_uid(uid);
+        DwString tag("_");
+        tag += (const char *)to_hex(uid);
+        vc mids = sql_get_tagged_mids2(tag.c_str());
+        for(int i = 0; i < mids.num_elems(); ++i)
+        {
+            sql_remove_all_tags_mid(mids[i][0]);
+        }
+        sql_commit_transaction();
     }
-    sql_commit_transaction();
-    // when we unindex everything successfully, remove the files
-    remove_user_files(dir, pfx, 0);
-    MsgFolders.del(uid);
-    se_emit(SE_USER_REMOVE, uid);
+    catch(...)
+    {
+        sql_rollback_transaction();
+        return 0;
+    }
     return 1;
 }
 
 int
-clear_user(vc uid, const char *pfx)
+remove_user(const vc& uid)
 {
-    sql_start_transaction();
-    sql_fav_remove_uid(uid);
-    clear_msg_idx_uid(uid);
-    DwString tag("_");
-    tag += (const char *)to_hex(uid);
-    vc mids = sql_get_tagged_mids2(tag.c_str());
-    for(int i = 0; i < mids.num_elems(); ++i)
+
+    int ret = clear_user_msgs(uid);
+    if(!ret)
+        return 0;
+
+    const vc uids = map_uid_to_uids(uid);
+    for(int i = 0; i < uids.num_elems(); ++i)
     {
-        sql_fav_remove_mid(mids[i][0]);
+        const vc u = uids[i];
+        const vc dir = uid_to_dir(u);
+        remove_user_files(dir, "", 0);
+        MsgFolders.del(u);
+        ack_all(u);
+        pal_del(u, 1);
+        prf_invalidate(u);
+        Session_infos.del(u);
     }
-    sql_commit_transaction();
-    vc dir = uid_to_dir(uid);
-    remove_user_files(dir, pfx, 1);
+    // note: the uid here is mapped down to representative
+    se_emit(SE_USER_REMOVE, uid);
     Rescan_msgs = 1;
     return 1;
 }
 
+int
+clear_user(const vc& uid)
+{
+    int ret = clear_user_msgs(uid);
+    if(!ret)
+        return 0;
+
+    const vc uids = map_uid_to_uids(uid);
+    for(int i = 0; i < uids.num_elems(); ++i)
+    {
+        const vc dir = uid_to_dir(uids[i]);
+        remove_user_files(dir, "", 1);
+        ack_all(uids[i]);
+    }
+    Rescan_msgs = 1;
+    return 1;
+}
+
+static
 int
 trash_file(const DwString& dir, const DwString& fn)
 {
@@ -2596,63 +2759,59 @@ trash_file(const DwString& dir, const DwString& fn)
     return 1;
 }
 
-int
-trash_user(vc dir)
+void
+trash_body(vc uid, vc msg_id, int inhibit_indexing)
 {
-    if(dir.len() == 0)
-        return 0;
-    int i;
-    DwString s((const char *)dir);
+    if(uid.len() == 0)
+        return;
+    DwString s((const char *)to_hex(uid));
+    DwString t((const char *)msg_id);
 
-    if(s.length() == 0)
-        return 0;
-    if(s.rfind(".usr") != s.length() - 4)
-        return 0;
-    DwString s2 = s;
-    s2.remove(s2.length() - 4);
-    if(s2.find_first_not_of("0123456789abcdefABCDEF") != DwString::npos)
-        return 0;
-    vc uid = from_hex(s2.c_str());
-
-    int god = (uid == TheMan);
-    if(god)
-        return 0;
-
-    DwString trashdir = newfn("trash");
-    trashdir += DIRSEPSTR;
-    trashdir += s;
-    mkdir(trashdir.c_str());
+    s += ".usr";
+    DwString userdir = s;
     s = newfn(s);
-    s += "" DIRSEPSTR "*.*";
+    s += DIRSEPSTR;
+    s += t;
+    DwString s2 = s;
+    s += ".bod";
 
-    int retval = 1;
-    FindVec& fv = *find_to_vec(s.c_str());
-    int n = fv.num_elems();
-
-    for(i = 0; i < n; ++i)
+    vc msg;
+    if(load_info(msg, s.c_str(), 1))
     {
-        WIN32_FIND_DATA& d = *fv[i];
-        if(strcmp(d.cFileName, ".") == 0 ||
-                strcmp(d.cFileName, "..") == 0)
-            continue;
-        DwString s2((const char *)dir);
-        s2 = newfn(s2);
-        s2 += "" DIRSEPSTR "";
-        s2 += d.cFileName;
-        DwString trashfile = trashdir;
-        trashfile += "" DIRSEPSTR "";
-        trashfile += d.cFileName;
-        if(!move_replace(s2, trashfile))
-            retval = 0;
+        if(!inhibit_indexing)
+        {
+            sql_start_transaction();
+            remove_msg_idx(uid, msg_id);
+            sql_remove_all_tags_mid(msg_id);
+            sql_commit_transaction();
+        }
+        if(!msg[QM_BODY_ATTACHMENT].is_nil())
+            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
+            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
+        trash_file(userdir, (t + ".bod"));
+        //DeleteFile(s.c_str());
+        return;
     }
-    if(!RemoveDirectory(newfn((const char *)dir).c_str()))
-        retval = 0;
-    delete_findvec(&fv);
-    MsgFolders.del(uid);
-    remove_msg_idx_uid(uid);
-    se_emit(SE_USER_REMOVE, uid);
-    return retval;
+    s2 += ".snt";
+    if(load_info(msg, s2.c_str(), 1))
+    {
+        if(!inhibit_indexing)
+        {
+            sql_start_transaction();
+            remove_msg_idx(uid, msg_id);
+            sql_remove_all_tags_mid(msg_id);
+            sql_commit_transaction();
+        }
+        if(!msg[QM_BODY_ATTACHMENT].is_nil())
+            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
+            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
+        trash_file(userdir, (t + ".snt"));
+        //DeleteFile(s2.c_str());
+        return;
+
+    }
 }
+
 
 void
 untrash_users()
@@ -2712,6 +2871,32 @@ untrash_users()
     delete_findvec(&fv);
 }
 
+int
+count_trashed_users()
+{
+    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
+    int num = fv.num_elems();
+    delete_findvec(&fv);
+    return num;
+}
+
+int
+empty_trash()
+{
+    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
+    int num = fv.num_elems();
+    for(int i = 0; i < num; ++i)
+    {
+        WIN32_FIND_DATA& d = *fv[i];
+        if(strcmp(d.cFileName, ".") == 0 ||
+                strcmp(d.cFileName, "..") == 0)
+            continue;
+        remove_user_files(d.cFileName, "trash" DIRSEPSTR "", 0);
+    }
+    delete_findvec(&fv);
+    return 1;
+}
+
 vc
 load_msgs(vc uid)
 {
@@ -2722,12 +2907,13 @@ load_msgs(vc uid)
 
         for(int i = 0; i < Cur_msgs.num_elems(); ++i)
         {
-            vc fuid = map_to_representative_uid(Cur_msgs[i][QM_FROM]);
+            const vc& cm = Cur_msgs[i];
+            vc fuid = map_to_representative_uid(cm[QM_FROM]);
             if(fuid == muid)
             {
-                if(sql_mid_has_tag(Cur_msgs[i][QM_ID], "_ack"))
+                if(sql_mid_has_tag(cm[QM_ID], "_ack"))
                     continue;
-                vc cpy = Cur_msgs[i].copy();
+                vc cpy = cm.copy();
                 cpy[QM_FROM] = fuid;
                 ret.append(cpy);
             }
@@ -2737,9 +2923,10 @@ load_msgs(vc uid)
     {
         for(int i = 0; i < Cur_msgs.num_elems(); ++i)
         {
-            if(sql_mid_has_tag(Cur_msgs[i][QM_ID], "_ack"))
+            const vc& cm = Cur_msgs[i];
+            if(sql_mid_has_tag(cm[QM_ID], "_ack"))
                 continue;
-            vc cpy = Cur_msgs[i].copy();
+            vc cpy = cm.copy();
             cpy[QM_FROM] = map_to_representative_uid(cpy[QM_FROM]);
             ret.append(cpy);
         }
@@ -2856,6 +3043,11 @@ load_bodies(vc dir, int load_sent)
 }
 
 
+// note: this assumes that the largest logical_clock
+// is in the first item in the list. this may not  be
+// needed any longer, now that we have gone full koolaide
+// on the indexing, and sqlite can get the largest lc out
+// in an index without too much trouble.
 void
 boost_clock(vc mi)
 {
@@ -2961,7 +3153,7 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_fav_remove_mid(msg_id);
+            sql_remove_all_tags_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
@@ -2976,65 +3168,12 @@ delete_body3(vc uid, vc msg_id, int inhibit_indexing)
         {
             sql_start_transaction();
             remove_msg_idx(uid, msg_id);
-            sql_fav_remove_mid(msg_id);
+            sql_remove_all_tags_mid(msg_id);
             sql_commit_transaction();
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             delete_attachment2(uid, msg[QM_BODY_ATTACHMENT]);
         DeleteFile(s2.c_str());
-        return;
-
-    }
-}
-
-void
-trash_body(vc uid, vc msg_id, int inhibit_indexing)
-{
-    if(uid.len() == 0)
-        return;
-    DwString s((const char *)to_hex(uid));
-    DwString t((const char *)msg_id);
-
-    s += ".usr";
-    DwString userdir = s;
-    s = newfn(s);
-    s += DIRSEPSTR;
-    s += t;
-    DwString s2 = s;
-    s += ".bod";
-
-    vc msg;
-    if(load_info(msg, s.c_str(), 1))
-    {
-        if(!inhibit_indexing)
-        {
-            sql_start_transaction();
-            remove_msg_idx(uid, msg_id);
-            sql_fav_remove_mid(msg_id);
-            sql_commit_transaction();
-        }
-        if(!msg[QM_BODY_ATTACHMENT].is_nil())
-            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
-            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
-        trash_file(userdir, (t + ".bod"));
-        //DeleteFile(s.c_str());
-        return;
-    }
-    s2 += ".snt";
-    if(load_info(msg, s2.c_str(), 1))
-    {
-        if(!inhibit_indexing)
-        {
-            sql_start_transaction();
-            remove_msg_idx(uid, msg_id);
-            sql_fav_remove_mid(msg_id);
-            sql_commit_transaction();
-        }
-        if(!msg[QM_BODY_ATTACHMENT].is_nil())
-            trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
-            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
-        trash_file(userdir, (t + ".snt"));
-        //DeleteFile(s2.c_str());
         return;
 
     }
@@ -3635,7 +3774,7 @@ do_local_store(vc filename, vc speced_mid)
             // we saved the message, but the indexing failed, need
             // a fix for this. possibly we can just schedule a
             // re-index for this user.
-            if(!update_msg_idx(recip[i], m[1]))
+            if(!update_msg_idx(recip[i], m[1], 0))
             {
                 // FIGURE IT OUT
             }
@@ -3721,7 +3860,7 @@ recover_inprogress()
 
 static
 void
-reset_qsend(enum dwyco_sys_event cmd, const DwString& qid, vc recip_uid)
+reset_qsend(enum dwyco_sys_event cmd, const DwString& qid, const vc& recip_uid)
 {
     if(cmd == SE_MSG_SEND_START)
         return;
@@ -3730,7 +3869,7 @@ reset_qsend(enum dwyco_sys_event cmd, const DwString& qid, vc recip_uid)
 
 static
 void
-reset_qsend_special(enum dwyco_sys_event cmd, const DwString& qid, vc recip_uid)
+reset_qsend_special(enum dwyco_sys_event cmd, const DwString& qid, const vc& recip_uid)
 {
     if(cmd == SE_MSG_SEND_START)
         return;
@@ -3798,7 +3937,7 @@ sort_on_time(vc vec, int field)
 
 static
 void
-load_q_files(const DwString& dir, vc uid, int load_special, vc vec)
+load_q_files(const DwString& dir, const vc& uid, int load_special, vc vec)
 {
     DwString pat(dir);
     pat += DIRSEPSTR;
@@ -3843,6 +3982,8 @@ msg_outq_empty()
     else
         outbox_empty = 1;
     closedir(d);
+    if(!outbox_empty)
+        return 0;
 
     d = opendir(newfn("inprogress").c_str());
     if(!d)
@@ -3950,12 +4091,17 @@ qd_send_one()
 
 // find all outbox and inprogress message id's (*.q)
 vc
-load_qd_msgs(vc uid, int load_special)
+load_qd_msgs(const vc& uid, int load_special)
 {
     vc ret(VC_VECTOR);
-
-    load_q_files("outbox", uid, load_special, ret);
-    load_q_files("inprogress", uid, load_special, ret);
+    const vc uids = map_uid_to_uids(uid);
+    int n = uids.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        const vc u(uids[i]);
+        load_q_files("outbox", u, load_special, ret);
+        load_q_files("inprogress", u, load_special, ret);
+    }
     sort_on_time(ret, 2);
 
     return ret;
@@ -3999,7 +4145,7 @@ qd_purge_outbox()
     delete_findvec(&fv);
 }
 
-
+#if 0
 int
 save_to_inbox(vc m)
 {
@@ -4012,6 +4158,7 @@ save_to_inbox(vc m)
     sql_add_tag(m[QQM_LOCAL_ID], "_inbox");
     return 1;
 }
+#endif
 
 
 void
@@ -4087,7 +4234,7 @@ is_ignored_id_by_user(vc id)
 
 
 int
-uid_ignored(vc uid)
+uid_ignored(const vc& uid)
 {
     if(uid.type() != VC_STRING)
         return 1;
@@ -4180,86 +4327,7 @@ void
 power_clean_safe()
 {
     return;
-#if 0
-    sql_index_all();
-    int n;
-    vc uids = sql_get_empty_users();
 
-    if(!uids.is_nil())
-    {
-        n = uids.num_elems();
-        for(int i = 0; i < n; ++i)
-        {
-            vc uid = from_hex(uids[i]);
-            if(uid == My_UID)
-                continue;
-            if(pal_user(uid))
-                continue;
-            trash_user(uid_to_dir(uid));
-        }
-    }
-
-    uids = sql_get_no_response_users();
-
-    if(!uids.is_nil())
-    {
-        n = uids.num_elems();
-        for(int i = 0; i < n; ++i)
-        {
-            vc uid = from_hex(uids[i]);
-            if(uid == My_UID)
-                continue;
-            if(pal_user(uid))
-                continue;
-            if(sql_fav_has_fav(uid))
-                continue;
-            trash_user(uid_to_dir(uid));
-        }
-    }
-
-    uids = sql_get_old_ignored_users();
-    if(uids.is_nil())
-        return;
-    n = uids.num_elems();
-    for(int i = 0; i < n; ++i)
-    {
-        vc uid = from_hex(uids[i]);
-        if(uid == My_UID)
-            continue;
-        if(pal_user(uid))
-            continue;
-        if(sql_fav_has_fav(uid))
-            continue;
-        trash_user(uid_to_dir(uid));
-    }
-#endif
-
-}
-
-int
-count_trashed_users()
-{
-    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
-    int num = fv.num_elems();
-    delete_findvec(&fv);
-    return num;
-}
-
-int
-empty_trash()
-{
-    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
-    int num = fv.num_elems();
-    for(int i = 0; i < num; ++i)
-    {
-        WIN32_FIND_DATA& d = *fv[i];
-        if(strcmp(d.cFileName, ".") == 0 ||
-                strcmp(d.cFileName, "..") == 0)
-            continue;
-        remove_user_files(d.cFileName, "trash" DIRSEPSTR "", 0);
-    }
-    delete_findvec(&fv);
-    return 1;
 }
 
 void
@@ -4381,7 +4449,7 @@ find_files_to_keep(DwString subdir, DwString pat, vc nodel)
             if(!valid_qd_message(m))
             {
                 DeleteFile(d.c_str());
-                Log->make_entry("deleting bogus item.");
+                Log_make_entry("deleting bogus item.");
             }
             else
             {
@@ -4399,7 +4467,7 @@ find_files_to_keep(DwString subdir, DwString pat, vc nodel)
                     if(!valid_qd_message(em))
                     {
                         DeleteFile(newfn(fn).c_str());
-                        Log->make_entry("deleteing bogus encrypted package");
+                        Log_make_entry("deleteing bogus encrypted package");
                     }
                     else
                     {

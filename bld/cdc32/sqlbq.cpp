@@ -23,12 +23,11 @@
 #include "dwrtlog.h"
 #include "vc.h"
 #include "sqlbq.h"
+#include "ta.h"
 #include "dwstr.h"
 
-namespace dwyco {
 #define USER_BOMB(a, b) {return (b);}
 
-#ifdef DWYCO_DBG_CHECK_SQL
 
 // this is a hack to get around the "unbound arguments are treated as null"
 // peculiarity in sqlite. i've been burned directly by this problem several
@@ -36,6 +35,8 @@ namespace dwyco {
 // should be disabled in release. note that it assumes you won't have
 // more than ?31 as an arg, and it is broken in cases where you give
 // it ? in some other context.
+namespace dwyco {
+#ifdef DWYCO_DBG_CHECK_SQL
 static
 void
 check_args(const char *sql, int count)
@@ -92,7 +93,7 @@ vc
 sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
 {
     const VCArglist &aa = *a;
-    vc sql = aa.get(0);
+    const vc& sql = aa.get(0);
     //vc err = aa[2];
     // everything after err is considered to be a binding to be
     // set into the sql
@@ -114,8 +115,11 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     if((errcode = sqlite3_prepare_v2(dbs, sql, sql.len(),
                                      &st, &tail)) != SQLITE_OK)
     {
+#if DWYCO_DBG_CHECK_SQL
         oopanic(sqlite3_errmsg(dbs));
         throw -1;
+#endif
+        TRACK_ADD_str(sqlite3_errmsg(dbs), 1);
         return vcnil;
     }
     if(tail && *tail != 0)
@@ -127,11 +131,11 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
     {
         for(int i = 1; i < a->num_elems(); ++i)
         {
-            vc val = aa.get(i);
+            const vc& val = aa.get(i);
             switch(val.type())
             {
             case VC_INT:
-                if(sqlite3_bind_int(st, i, val) != SQLITE_OK)
+                if(sqlite3_bind_int64(st, i, val) != SQLITE_OK)
                 {
                     sqlite3_finalize(st);
                     USER_BOMB("sql bind error", vcnil)
@@ -204,7 +208,18 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
             res = "busy";
             // it is probably best to just issue an explicit rollback sql
             // command just in case.
-            break;
+            goto out;
+
+            // note: this one is mostly for situations where we are
+            // limiting the size of the resulting database for backups
+            // or something like that. best thing to do is abort, then
+            // vacuum and retry, or maybe adjust the info you are trying
+            // to backup. this is mostly for android, where there is a limit
+            // on the automatic backup of about 25MB.
+        case SQLITE_FULL:
+            res = "full";
+            goto out;
+
         case SQLITE_ROW:
         {
             vc resrow(VC_VECTOR, 0, cols);
@@ -213,7 +228,7 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
                 switch(sqlite3_column_type(st, i))
                 {
                 case SQLITE_INTEGER:
-                    resrow[i] = sqlite3_column_int(st, i);
+                    resrow[i] = sqlite3_column_int64(st, i);
                     break;
                 case SQLITE_FLOAT:
                     resrow[i] = sqlite3_column_double(st, i);
@@ -235,7 +250,11 @@ sqlite3_bulk_query(sqlite3 *dbs, const VCArglist *a)
         }
         break;
         default:
-            //oopanic(sqlite3_errmsg(dbs));
+            // note: the volatile here is for debugging, hoping
+            // the compiler won't elide it before we can inspect it
+            // in the debugger.
+            const char *volatile a = sqlite3_errmsg(dbs);
+            TRACK_ADD_str(a, 1);
             sqlite3_finalize(st);
             return vcnil;
         }

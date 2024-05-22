@@ -11,14 +11,9 @@
 #include "mmchan.h"
 #include "netvid.h"
 
-#include "gvchild.h"
-#include "senc.h"
 #include "qauth.h"
-#include "qmsg.h"
 #include "dwrtlog.h"
 #include "codec.h"
-#include "fnmod.h"
-#include "se.h"
 #include "dwscoped.h"
 using namespace dwyco;
 

@@ -15,6 +15,9 @@
 #include "dlli.h"
 #include "vc.h"
 #include "dwrtlog.h"
+#include "qauth.h"
+
+using namespace dwyco;
 
 static int Reentered;
 static VcIOHackStr *Bufp;
@@ -141,7 +144,6 @@ printargout(const char *atype, const char *aname, T val,
     {
         // note: hack, we don't have the len, but for now we know
         // it is always 10, ok for debugging anyways
-        vc to_hex(vc);
         vc h = to_hex(vc(VC_BSTRING, *val, *len));
         Buf << "(" << aname << "," << alname << "<=" << *len << ")" << "<= " << (const char *)h << " ";
     }
@@ -180,7 +182,6 @@ printargout(const char *atype, const char *aname, const char **val,
     {
         // note: hack, we don't have the len, but for now we know
         // it is always 10, ok for debugging anyways
-        vc to_hex(vc);
         vc h = to_hex(vc(VC_BSTRING, *val, len));
         Buf << "(" << aname << "," << alname << "<=" << len << ")" << "<= " << (const char *)h << " ";
     }
@@ -219,7 +220,6 @@ printargout(const char *atype, const char *aname, char **val,
     {
         // note: hack, we don't have the len, but for now we know
         // it is always 10, ok for debugging anyways
-        vc to_hex(vc);
         vc h = to_hex(vc(VC_BSTRING, *val, len));
         Buf << "(" << aname << "," << alname << "<=" << len << ")" << "<= " << (const char *)h << " ";
     }
@@ -258,7 +258,6 @@ printargout(const char *atype, const char *aname, const char **val,
     {
         // note: hack, we don't have the len, but for now we know
         // it is always 10, ok for debugging anyways
-        vc to_hex(vc);
         vc h = to_hex(vc(VC_BSTRING, *val, *len));
         Buf << "(" << aname << "," << alname << "<=" << len << ")" << "<= " << (const char *)h << " ";
     }
@@ -297,7 +296,6 @@ printargout(const char *atype, const char *aname, char **val,
     {
         // note: hack, we don't have the len, but for now we know
         // it is always 10, ok for debugging anyways
-        vc to_hex(vc);
         vc h = to_hex(vc(VC_BSTRING, *val, *len));
         Buf << "(" << aname << "," << alname << "<=" << len << ")" << "<= " << (const char *)h << " ";
     }
@@ -336,7 +334,6 @@ printarg(const char *atype, const char *aname, T val,
         }
         else
         {
-            vc to_hex(vc);
             vc h = to_hex(vc(VC_BSTRING, val, len));
             Buf << "(" << aname << "," << alname << "=" << len << ")" << "= " << (const char *)h << " ";
         }
@@ -370,7 +367,6 @@ printarg(const char *atype, const char *aname, const char *val)
     {
         // note: hack, we don't have the len, but for now we know
         // it is always 10, ok for debugging anyways
-        vc to_hex(vc);
         vc h = to_hex(vc(VC_BSTRING, val, 10));
         Buf << aname << "= " << (const char *)h << " ";
     }

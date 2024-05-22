@@ -1,3 +1,13 @@
+// ca 6/2022
+// this appears to compile and work ok with qt5 now, but with the
+// new background processing, the update aspects of this are even
+// harder to justify (we'd have to figure out a way of shutting down
+// the background processing before running the update. maybe
+// putting some of this into cdcx as a "self update" mode before
+// it starts normal processing would make sense. but i'm not interested in
+// doing something that complicated for an app that is basically
+// being decommissioned.)
+//
 // note: this is a qt4 program that doesn't compile at the moment.
 // i'm not going to fix it because it is only used by CDC-X installs, and
 // i'm not sure i'm going to continue using it, as the functionality i put
@@ -12,6 +22,7 @@
 #include <QFileInfo>
 #include <QProcess>
 #include <QDesktopWidget>
+#include <QApplication>
 #include <stdio.h>
 #include "qdwyrun.h"
 #include "ui_qdwyrun.h"
@@ -36,18 +47,19 @@
 #endif
 
 #include "vc.h"
-#include "vccomp.h"
 #include "vclhsys.h"
 #include "dwstr.h"
 #include "sha.h"
 #include "vccrypt2.h"
 #include "zcomp.h"
-#include "vclh.h"
 
 using namespace CryptoPP;
 
-extern QString app_to_run;
-extern QString update_app;
+extern QString App_to_run;
+extern QString Update_app_name;
+extern QString App_nice_name;
+int Run_update_on_exit;
+
 static int Did_simple_update;
 
 qdwyrun::qdwyrun(QWidget *parent) :
@@ -60,6 +72,7 @@ qdwyrun::qdwyrun(QWidget *parent) :
     idle_timer.setSingleShot(1);
     idle_timer.start();
     ui->done_button->setVisible(0);
+    ui->launch_label->setText("Launching " + App_nice_name + "...");
 }
 
 qdwyrun::~qdwyrun()
@@ -327,15 +340,15 @@ qdwyrun::run_app()
     been_here = 1;
     QStringList args;
     int n = qApp->arguments().count();
-    for(int i = 3; i < n; ++i)
+    for(int i = 4; i < n; ++i)
     {
         args.append(qApp->arguments().at(i));
     }
     proc = new QProcess;
     connect(proc, SIGNAL(started()), this, SLOT(app_started()));
-    connect(proc, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(too_quick(int, QProcess::ExitStatus)));
+    connect(proc, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(too_quick(int,QProcess::ExitStatus)));
     connect(proc, SIGNAL(error(QProcess::ProcessError)), this, SLOT(proc_error(QProcess::ProcessError)));
-    run_proc(app_to_run, args);
+    run_proc(App_to_run, args);
 }
 
 void
@@ -387,9 +400,9 @@ qdwyrun::update_finished(int exitcode, QProcess::ExitStatus estatus)
         ui->label_2->setText("Update failed");
 
     QFile::remove("run-update");
-    QFile::remove(update_app);
-    QString chkfn = update_app + ".chk";
-    QString sigfn = update_app + ".sig";
+    QFile::remove(Update_app_name);
+    QString chkfn = Update_app_name + ".chk";
+    QString sigfn = Update_app_name + ".sig";
     QFile::remove(chkfn);
     QFile::remove(sigfn);
 
@@ -410,6 +423,10 @@ qdwyrun::update_error(QProcess::ProcessError)
 void
 qdwyrun::run_update(QString fn)
 {
+    Run_update_on_exit = 1;
+    QApplication::quit();
+    return;
+#if 0
     static int been_here;
     if(been_here)
         return;
@@ -425,12 +442,13 @@ qdwyrun::run_update(QString fn)
     a += fn;
     chmod(fn.toLatin1().constData(), 0755);
 
-    ui->label_2->setText("Updating CDC-X...");
+    ui->label_2->setText("Updating " + App_nice_name + "...");
 
     proc = new QProcess;
-    connect(proc, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(update_finished(int, QProcess::ExitStatus)));
+    connect(proc, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(update_finished(int,QProcess::ExitStatus)));
     connect(proc, SIGNAL(error(QProcess::ProcessError)), this, SLOT(update_error(QProcess::ProcessError)));
     run_proc(a, args);
+#endif
 }
 
 static int
@@ -491,7 +509,7 @@ qdwyrun::idle()
 #if defined(_Windows) || defined(_WIN32)
         // if there is anyone around even thinking of using the file, punt
         QString mn("dwyco-autoupdate-");
-        mn += update_app;
+        mn += Update_app_name;
         HANDLE h;
         if((h = CreateMutex(NULL, TRUE, mn.toLatin1())) == NULL)
         {
@@ -510,7 +528,7 @@ qdwyrun::idle()
             return;
         }
 
-        FILE *f = fopen(update_app.toLatin1().constData(), "r");
+        FILE *f = fopen(Update_app_name.toLatin1().constData(), "r");
         if(!f)
         {
             run_app();
@@ -530,9 +548,9 @@ qdwyrun::idle()
         }
 #endif
 
-        if(check_staged_update(update_app.toLatin1().constData()))
+        if(check_staged_update(Update_app_name.toLatin1().constData()))
         {
-            run_update(update_app);
+            run_update(Update_app_name);
         }
         else
             run_app();

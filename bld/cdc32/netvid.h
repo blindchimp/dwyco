@@ -12,15 +12,13 @@
  */
 #ifndef NETVID_H
 #define NETVID_H
-#include <windows.h>
 #include "matcom.h"
 #include "netcod.h"
 #include "dwtimer.h"
 #include "dwvecp.h"
-#include "dwstr.h"
-#include "vccrypt2.h"
 #include "pval.h"
 #include "servass.h"
+#include "ssns.h"
 
 // error returns
 // op not completed: <0
@@ -37,7 +35,7 @@
 #define FIRST_UNRELIABLE_CHAN 2
 #define FIRST_RELIABLE_CHAN 4
 class vc;
-//class ValidPtr;
+
 class MMChannel;
 
 class MMTube
@@ -93,7 +91,7 @@ public:
     virtual void set_acquisition_time(long time) {}
 
     // link setup and destroy
-    virtual int connect(const char *remote_addr, const char *local_addr, int block = 0, HWND = 0, int setup_unreliable = 0);
+    virtual int connect(const char *remote_addr, const char *local_addr, int block = 0, int setup_unreliable = 0);
     int accept(SimpleSocket *);
     int disconnect();
     int disconnect_ctrl();
@@ -224,6 +222,14 @@ private:
     static vc Ping;
     int keepalive();
     void toss();
+
+    vc tubeid;
+    // in bytes
+    long total_sent;
+    long total_recv;
+public:
+    vc mklog(vc = vcnil, vc = vcnil, vc = vcnil, vc = vcnil,
+             vc = vcnil, vc = vcnil, vc = vcnil, vc = vcnil);
 
 };
 

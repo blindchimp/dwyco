@@ -14,7 +14,6 @@
 #include "vcmap.h"
 #include "vcfuncal.h"
 #include "vcmemsel.h"
-#include "dwdate.h"
 #include "vcio.h"
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vccvar.cpp 1.52 1998/10/26 02:48:42 dwight Exp $";

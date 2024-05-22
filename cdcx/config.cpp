@@ -13,7 +13,6 @@
 #include "config.h"
 #include "dlli.h"
 #include "ssmap.h"
-#include "composer.h"
 #include "mainwin.h"
 #include "simple_public.h"
 #include "tfhex.h"
@@ -46,6 +45,8 @@ configform::configform(QDialog *parent)
     ui.label_8->hide();
     ui.label_9->hide();
     ui.label_10->hide();
+    ui.untrash->hide();
+    ui.empty_trash->hide();
 
     TheConfigForm = this;
     // mainwinform may not exist yet
@@ -397,8 +398,8 @@ void configform::on_reset_backup_button_clicked()
                        "Your backup has been reset. "
                        "A new backup will be created the next time you exit CDC-X (unless you have "
                        "disabled backups.)",
-                       QMessageBox::Ok);
-    msgBox.setWindowFlags(Qt::WindowStaysOnTopHint);
+                       QMessageBox::Ok, this);
+    msgBox.setWindowFlag(Qt::WindowStaysOnTopHint, true);
     int ret = msgBox.exec();
 
 }
@@ -462,6 +463,17 @@ get_a_backup_filename(QWidget *parent, QString filter)
 
 void configform::on_restore_button_clicked()
 {
+    if(ui.sync_enable->isChecked())
+    {
+        QMessageBox mb(QMessageBox::Information, "Restore backup",
+                       QString("You cannot restore a backup while linked to a device group. "
+                               "First, unlink this device from the group, then restart and "
+                               "perform the restore operation. Then restart and re-link to the "
+                               "group."),
+                       QMessageBox::Ok, this);
+        mb.exec();
+        return;
+    }
     QMessageBox mb(QMessageBox::Warning, "Restore backup",
                    QString("Are you sure you want to restore from backup file? Restoring "
                            "messages simply adds the messages in the backup to your current "
@@ -492,13 +504,17 @@ void configform::on_restore_button_clicked()
                                 QMessageBox::Ok|QMessageBox::Cancel, QMessageBox::Cancel) == QMessageBox::Cancel)
         return;
 
-    dwyco_restore_from_backup(bufn.toLatin1().constData(), msgs_only);
-    // if we get here, something went wrong
+    if(dwyco_restore_from_backup(bufn.toLatin1().constData(), msgs_only))
+    {
+        DieDieDie = 1;
+        return;
+    }
+
 
     QMessageBox::information(this, "Restore",
                              "Restore encountered an error. Don't worry, most of it may have worked fine. Click OK to exit. Then restart CDC-X.",
                              QMessageBox::Ok);
-    exit(0);
+    DieDieDie = 1;
 }
 
 void configform::on_pals_only_clicked(bool checked)
@@ -507,27 +523,61 @@ void configform::on_pals_only_clicked(bool checked)
         dwyco_field_debug("cfg-pals-only", 1);
 }
 
-void configform::on_join_clicked()
-{
-    //dwyco_set_setting("group/alt_name", ui.CDC_group__alt_name->text().toLatin1().constData());
-    //dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
-    //dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData());
-}
-
 void configform::on_sync_enable_clicked(bool checked)
 {
     if(checked)
     {
-        dwyco_set_setting("group/join_key", ui.CDC_group__join_key->text().toLatin1().constData());
-        dwyco_start_gj2(ui.CDC_group__alt_name->text().toLatin1().constData(), ui.CDC_group__join_key->text().toLatin1().constData());
+        QString gtrim = ui.CDC_group__alt_name->text().trimmed();
+        QString key = ui.CDC_group__join_key->text();
+        if(gtrim.toLatin1().length() < 4 ||
+            key.toLatin1().length() < 4)
+        {
+            QMessageBox warn(QMessageBox::Warning, "Device linking failed",
+                             "The device name and password must be at least 4 characters.",
+                             QMessageBox::Ok);
+            warn.exec();
+            ui.sync_enable->setChecked(false);
+            return;
+        }
+        dwyco_set_setting("group/join_key", key.toLatin1().constData());
+
+        if(!dwyco_start_gj2(gtrim.toLatin1().constData(), key.toLatin1().constData()))
+        {
+            QMessageBox warn(QMessageBox::Warning, "Device linking failed",
+                                     "Can't perform linking now, try again later.",
+                                     QMessageBox::Ok);
+            warn.exec();
+        }
+        else
+        {
+            ui.CDC_group__alt_name->setReadOnly(true);
+            ui.sync_enable->setText(ui.sync_enable->text() + "(Working...)");
+        }
     }
     else
     {
-        dwyco_set_setting("group/join_key", "");
-        if(dwyco_start_gj2("", ""))
+        //dwyco_set_setting("group/join_key", "");
+        if(!dwyco_start_gj2("", ""))
         {
-            exit(0);
+            QMessageBox::information(this, "Device UNLINKING failed",
+                                     "Can't perform UNLINKING now, try again later.",
+                                     QMessageBox::Ok);
         }
+        ui.CDC_group__join_key->setText("");
+        ui.CDC_group__alt_name->setReadOnly(false);
     }
 
    }
+
+void configform::on_show_password_clicked(bool checked)
+{
+    if(checked)
+    {
+        ui.CDC_group__join_key->setEchoMode(QLineEdit::Normal);
+    }
+    else
+    {
+        ui.CDC_group__join_key->setEchoMode(QLineEdit::Password);
+    }
+}
+

@@ -17,15 +17,24 @@
 #include "se.h"
 class MMChannel;
 
-// simple class to allow sending a msg (via server for now.)
-//
+// send a message via the server with optional public key encryption.
+// stores the message so it can be re-tried automatically if the
+// send is not successful.
+// the "qfn" file that is required by this class is created using
+// the q_message functions.
 namespace dwyco {
 class DwQSend
 {
+    DwQSend(const DwQSend&) = delete;
+    DwQSend& operator=(const DwQSend&) = delete;
+
     static void qd_send_done(vc m, void *, vc, ValidPtr vp);
     static void eo_qd_xfer(MMChannel *mc, vc, void *, ValidPtr vp);
     static void qd_set_status(MMChannel *mc, vc msg, void *, ValidPtr vp);
     static void xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp);
+    static void delete_later(DwQSend *d);
+
+    ValidPtr vp;
 
 public:
     DwQSend(const DwString& qfn, int defer_send);
@@ -34,7 +43,7 @@ public:
     DwString qfn;
     static dwyco::DwQueryByMember<DwQSend> Qbm;
     int inprogress;
-    ValidPtr vp;
+
     enum enc_mode {
         // use PK encryption if we have recipient's public key locally.
         // otherwise, send the message as is, and initiate a fetch to
@@ -60,11 +69,11 @@ public:
     // status is first arg
     // second arg is persistent id, ie, the name of the .q file
     // third arg is recipient uid
-    ssns::signal3<enum dwyco_sys_event, const DwString&, vc> se_sig;
+    ssns::signal3<enum dwyco_sys_event, const DwString&, const vc&> se_sig;
 
     // transfer statuses, useful for debugging
     // (pers-id, ruid, msg, percent)
-    ssns::signal4<const DwString&, vc, const DwString&, int> status_sig;
+    ssns::signal4<const DwString&, const vc&, const DwString&, int> status_sig;
 
 private:
 
@@ -115,6 +124,9 @@ private:
 
     void do_store();
     int send_with_attachment();
+
+    // these emit signals as the message send
+    // state machine proceeds
     void fail();
     void succeed();
     void start();

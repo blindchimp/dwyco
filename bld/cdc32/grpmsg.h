@@ -9,6 +9,7 @@ int exit_gj();
 void clear_gj();
 vc get_status_gj();
 vc get_join_log();
+void add_join_log(vc msg, vc uid);
 
 // initiator
 int start_gj(vc target_uid, vc gname, vc password);

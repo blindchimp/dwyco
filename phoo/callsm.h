@@ -52,6 +52,8 @@ public:
     //static void hide_all();
     static void init(QObject *mainwin);
     static void suspend();
+    static void resume();
+    static int Suspended;
     static QObject *Mainwinform;
 
     int show_preview;
@@ -113,7 +115,7 @@ signals:
     void connect_established();
     void connect_failed();
     void connect_terminated();
-    void connect_terminated(QByteArray uid);
+    //void connect_terminated(QByteArray uid);
     void connect_already_exists();
 
     // signals for call setup/screening

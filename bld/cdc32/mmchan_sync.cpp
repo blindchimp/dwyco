@@ -18,7 +18,6 @@
 #include "dwrtlog.h"
 #include "fnmod.h"
 #include "se.h"
-#include "dwscoped.h"
 #include "qauth.h"
 #include "qmsgsql.h"
 #include "xinfo.h"
@@ -27,42 +26,75 @@
 #include "dhgsetup.h"
 #include "pulls.h"
 #include "synccalls.h"
+#ifdef DWYCO_BACKGROUND_SYNC
 #include <thread>
 #include <future>
 #include <chrono>
+#endif
 
 using namespace dwyco;
 using namespace dwyco::qmsgsql;
 
-#ifdef LINUX
-#include "miscemu.h"
-#endif
 #include "sepstr.h"
-
-void start_stalled_pulls(MMChannel *);
 
 // NOTE: when we are in eager mode, we should schedule
 // a periodic "reassert" across a connection if there have been any changes
 // to the global model from a connection (ie, someone says they might have
 // something new.)
-static
-void
-assert_eager_pulls(MMChannel *mc, vc uid)
-{
-    vc huid = to_hex(uid);
-    vc mids = sql_get_non_local_messages_at_uid(uid);
 
+void
+MMChannel::assert_eager_pulls()
+{
+    vc uid = remote_uid();
+    //vc huid = to_hex(uid);
+    vc mids;
+    int eager_mode = (int)get_settings_value("sync/eager");
+    // note: we are goofing here, eager_mode = 1 is "normal" mode
+    // and 2 is "recent mode", but if it is anything else, we still
+    // want to act like "normal mode"
+    if(eager_mode != 2)
+    {
+        mids = sql_get_non_local_messages_at_uid(uid, 100);
+    }
+    else if(eager_mode == 2)
+    {
+        mids = sql_get_non_local_messages_at_uid_recent(uid, 100);
+    }
+    if(mids.is_nil())
+        return;
+    if(mids.num_elems() == 0)
+    {
+        // we've reached the end of what we can fetch, at least until some
+        // new updates come in. so we just turn off the timer to avoid a
+        // bunch of queries that will likely return 0.
+        // the timer is turned back on when we detect an update to the global
+        // database.
+        eager_pull_timer.stop();
+        eager_pull_timer_active = false;
+        return;
+    }
+    else
+    {
+        eager_pull_timer_active = true;
+    }
     for(int i = 0; i < mids.num_elems(); ++i)
     {
         vc mid = mids[i];
         pulls::assert_pull(mid, uid, PULLPRI_BACKGROUND);
-        if(!pulls::pull_in_progress(mid, uid))
-        {
-            pulls::set_pull_in_progress(mid, uid);
-            mc->send_pull(mid, PULLPRI_BACKGROUND);
-        }
+        if(pulls::set_pull_in_progress(mid, uid))
+            send_pull(mid, PULLPRI_BACKGROUND);
     }
+}
 
+void
+MMChannel::start_stalled_pulls()
+{
+    DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(remote_uid());
+    for(int i = 0; i < stalled_pulls.num_elems(); ++i)
+    {
+        stalled_pulls[i]->set_in_progress(1);
+        send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
+    }
 }
 
 static
@@ -100,6 +132,7 @@ string_to_file(vc str, DwString fn)
     if(write(fd, (const char *)str, str.len()) != str.len())
     {
         close(fd);
+        DeleteFile(fn.c_str());
         return 0;
     }
     close(fd);
@@ -110,12 +143,10 @@ vc
 MMChannel::package_index()
 {
     vc fn;
-    vc fn2;
 
     try
     {
         fn = sql_dump_mi();
-        fn2 = sql_dump_mt();
     }
     catch(...)
     {
@@ -125,11 +156,15 @@ MMChannel::package_index()
     vc cmd(VC_VECTOR);
     cmd[0] = "idx";
     cmd[1] = file_to_string((const char *)fn);
-    cmd[2] = file_to_string((const char *)fn2);
-    remove((const char *)fn);
-    remove((const char *)fn2);
-    if(cmd[1].is_nil() || cmd[2].is_nil())
+
+    vc huid = to_hex(remote_uid());
+    DwString mfn = DwString("minew%1.tdb").arg((const char *)huid);
+    mfn = newfn(mfn);
+    if(!move_replace((const char *)fn, mfn))
         return vcnil;
+    if(cmd[1].is_nil())
+        return vcnil;
+    create_dump_indexes(mfn);
     return cmd;
 }
 
@@ -145,22 +180,23 @@ MMChannel::unpack_index(vc cmd)
 {
     if(cmd[0] != vc("idx"))
         return 0;
+    // deltas are coming as normal updates
+    if(cmd[1].is_nil())
+        return 1;
 
     vc huid = to_hex(remote_uid());
     GRTLOG("unpack from %s", (const char *)huid, 0);
-    DwString mifn("mi%1.sql");
-    DwString favfn("fav%1.sql");
+    DwString mifn("mi%1.tdb");
 
     mifn.arg((const char *)huid);
-    favfn.arg((const char *)huid);
     mifn = newfn(mifn);
-    favfn = newfn(favfn);
     if(!string_to_file(cmd[1], mifn))
         return 0;
-    if(!string_to_file(cmd[2], favfn))
-        return 0;
     if(!import_remote_mi(remote_uid()))
+    {
+        DeleteFile(mifn.c_str());
         return 0;
+    }
     return 1;
 }
 
@@ -172,7 +208,16 @@ MMChannel::process_pull(vc cmd)
     vc mid = cmd[1];
     vc pri = cmd[5];
     // load the msg and attachment, and send it back as a "pull-resp"
-
+    // XXX note this probably needs to be done in one query, but
+    // this is a weird case anywhere, where a client has sent us
+    // a request thinking it is still in the global index...
+    // this is kinda a race if there are tombstones propagating
+    // while a bunch of pulls are getting done.
+    if(!sql_is_mid_local(mid) || sql_mid_has_tombstone(mid))
+    {
+        send_pull_error(mid, pri);
+        return;
+    }
     vc huid = sql_get_uid_from_mid(mid);
     if(huid.is_nil())
     {
@@ -201,6 +246,8 @@ MMChannel::process_pull(vc cmd)
             return;
         }
     }
+    // XXX: this is where we would encrypt to an UNTRUSTED client
+    // unless we ourselves are untrusted, then just send the ecnrypted stuff
     send_pull_resp(mid, from_hex(huid), body, att, pri);
 }
 
@@ -208,7 +255,10 @@ void
 MMChannel::pull_done(vc mid, vc remote_uid, vc success)
 {
     if(success.is_nil())
+    {
         pulls::pull_failed(mid, remote_uid);
+        add_pull_failed(mid, remote_uid);
+    }
     else
     {
         // if the pull succeeded, cancel all the
@@ -219,6 +269,7 @@ MMChannel::pull_done(vc mid, vc remote_uid, vc success)
         {
             cl[i]->sync_sendq.del_pull(mid);
         }
+        clean_pull_failed_mid(mid);
     }
 }
 
@@ -242,6 +293,9 @@ MMChannel::process_pull_resp(vc cmd)
         return;
     }
 
+    // XXX: HERE IS WHERE WE DECRYPT FROM AN UNTRUSTED PULL
+    // unless we ourselves are untrusted, in which case we just
+    // save it as is. note problem below...
     vc m = body;
     DwString udir;
     init_msg_folder(uid, &udir);
@@ -265,12 +319,22 @@ MMChannel::process_pull_resp(vc cmd)
             if(!string_to_file(att, fd))
                 oopanic("cant save att");
         }
+        // if the msg is already in the list of messages from the
+        // server, nuke it here so it won't show up in the
+        // message models as if it needs fetching.
+        delete_msg2(mid);
+
         // note: this would do an se_emit to say the msg index had changed,
         // when in fact, it doesn't really change. we would not have been
         // able to do the pull if it wasn't already in some part of the index
         // we do need to make a local record of it. we can either copy it
         // from the record that induced the pull, or we can just recreate it.
         // for now, we just recreate, and do not emit the msg_update
+        //
+        // note: if we are untrusted ourselves, the index has to be
+        // derived differently. since we don't really need most of the info
+        // to sync, maybe some abbreviated info can be sent from the
+        // other client.
         if(!update_msg_idx(uid, m, 1))
         {
             // managed to save message, but indexing failed,
@@ -313,7 +377,16 @@ void
 MMChannel::process_iupdate(vc cmd)
 {
     //GRTLOGVC(cmd);
-    import_remote_iupdate(remote_uid(), cmd[1]);
+    vc mid = import_remote_iupdate(remote_uid(), cmd[1]);
+    // getting an index update means we should re-engage
+    // the eager timer so we can fetch it right away.
+    if(!mid.is_nil())
+        eager_pull_timer_active = true;
+    // this is the piecemeal restart of an assert
+    if(!mid.is_nil() && pulls::set_pull_in_progress(mid, remote_uid()))
+    {
+        send_pull(mid, PULLPRI_NORMAL);
+    }
 }
 
 void
@@ -321,6 +394,12 @@ MMChannel::process_tupdate(vc cmd)
 {
     //GRTLOGVC(cmd);
     import_remote_tupdate(remote_uid(), cmd[1]);
+}
+
+void
+MMChannel::process_syncpoint(vc cmd)
+{
+    import_new_syncpoint(remote_uid(), cmd[1]);
 }
 
 void
@@ -351,13 +430,12 @@ MMChannel::send_pull_error(vc mid, vc pri)
     send_pull_resp(mid, vcnil, vcnil, vcnil, pri);
 }
 
-void pull_target_destroyed(vc uid);
 void
 MMChannel::cleanup_pulls(int myid)
 {
     vc uid = remote_uid();
     vc huid = to_hex(uid);
-    pull_target_destroyed(uid);
+    pulls::reset_inprogress_for_uid(uid);
     sql_run_sql("delete from current_clients where uid = ?1", huid);
     sql_run_sql("delete from midlog where to_uid = ?1", huid);
     sql_run_sql("delete from taglog where to_uid = ?1", huid);
@@ -383,6 +461,9 @@ MMChannel::mms_sync_state_changed(enum syncstate s)
     }
 }
 
+// note: when the mmr_sync_state changes to "NORMAL_RECV" we have
+// processed the remote client's index and merged it with our index,
+// so anything that depends on that is good to do here.
 void
 MMChannel::mmr_sync_state_changed(enum syncstate s)
 {
@@ -392,13 +473,15 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
     if(s == NORMAL_RECV)
     {
         sql_run_sql("insert into current_clients values(?1)", huid);
-        if((int)get_settings_value("sync/eager") == 1)
+        clean_pull_failed_uid(remote_uid());
+        if((int)get_settings_value("sync/eager") >= 1)
         {
-            assert_eager_pulls(this, remote_uid());
+            eager_pull_timer_active = true;
+            assert_eager_pulls();
         }
         else
         {
-            start_stalled_pulls(this);
+            start_stalled_pulls();
         }
     }
     else
@@ -408,11 +491,72 @@ MMChannel::mmr_sync_state_changed(enum syncstate s)
 
 }
 
+void
+MMChannel::eager_pull_processing()
+{
+    if((int)get_settings_value("sync/eager") == 0)
+    {
+        eager_pull_timer.stop();
+        return;
+    }
+
+    if(eager_pull_timer_active && !eager_pull_timer.is_running())
+    {
+        eager_pull_timer.set_interval(10000);
+        eager_pull_timer.set_autoreload(1);
+        eager_pull_timer.start();
+    }
+    if(eager_pull_timer.is_expired())
+    {
+        eager_pull_timer.ack_expire();
+        if((sync_sendq.count() == 0) &&
+                tube && msync_state == MEDIA_SESSION_UP && !tube->has_data(msync_chan))
+        {
+            // only assert if the incoming channel appears to be empty
+            // as well. this gives us a chance to process the results of
+            // all the previous requests, so we can make progress as the
+            // msgs are transferred and saved here (the index will be updated
+            // and we will avoid a lot of re-asserts of things we have already
+            // seen.)
+            assert_eager_pulls();
+        }
+    }
+}
+
+void
+MMChannel::throttle_downstream_timer(vc)
+{
+    if(downstream_timer.get_interval() != 5000)
+    {
+        downstream_timer.stop();
+        downstream_timer.set_interval(5000);
+    }
+    downstream_timer.start();
+
+}
+
 int
 MMChannel::process_outgoing_sync()
 {
     if(mms_sync_state == MMSS_ERR)
         return 0;
+    if(mms_sync_state == SEND_DELTA_OK)
+    {
+        // generate_delta created entries on the midlog that can get sent
+        // normally without requiring a re-init on the receiver. so we
+        // transition straight into NORMAL state.
+        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, 1);
+        throttle_downstream_timer(vcnil);
+        // tell the other side there is no index to unpack
+        vc vcx(VC_VECTOR);
+        vcx[0] = "idx";
+        vcx[1] = vcnil;
+        sync_sendq.append(vcx, PULLPRI_INIT);
+        mms_sync_state = NORMAL_SEND;
+        return 1;
+    }
+
     if(!tube->can_write_data(msync_chan))
     {
         return 0;
@@ -445,6 +589,7 @@ MMChannel::process_outgoing_sync()
         if(vcx.is_nil())
             return 0;
         destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, 1);
     }
     else if(mms_sync_state == MMSS_TRYAGAIN)
     {
@@ -452,12 +597,12 @@ MMChannel::process_outgoing_sync()
     }
     else if(mms_sync_state == NORMAL_SEND)
     {
-        if(!downstream_timer.is_running())
-        {
-            downstream_timer.set_interval(5000);
-            downstream_timer.set_autoreload(1);
-            downstream_timer.start();
-        }
+//        if(!downstream_timer.is_running())
+//        {
+//            downstream_timer.set_interval(5000);
+//            downstream_timer.set_autoreload(0);
+//            downstream_timer.start();
+//        }
         if(downstream_timer.is_expired())
         {
             downstream_timer.ack_expire();
@@ -473,7 +618,12 @@ MMChannel::process_outgoing_sync()
                 for(int i = 0; i < ds.num_elems(); ++i)
                     sync_sendq.append(ds[i], PULLPRI_NORMAL);
             }
+            else
+            {
+                downstream_timer.stop();
+            }
         }
+        eager_pull_processing();
 
         vcx = package_next_cmd();
         if(vcx.is_nil())
@@ -500,7 +650,7 @@ MMChannel::process_outgoing_sync()
     GRTLOG("msync output ok %d %s", myid, (const char *)to_hex(remote_uid()));
     if(mms_sync_state == NORMAL_SEND)
     {
-    GRTLOGVC(vcx);
+        GRTLOGVC(vcx);
     }
 
     mms_sync_state = NORMAL_SEND;
@@ -572,6 +722,10 @@ MMChannel::process_incoming_sync()
             else if(cmd == vc("tupdate"))
             {
                 process_tupdate(rvc);
+            }
+            else if(cmd == vc("sync"))
+            {
+                process_syncpoint(rvc);
             }
         }
         return 1;

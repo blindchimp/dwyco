@@ -176,6 +176,7 @@ void DWYCOEXPORT dwyco_set_pal_auth_callback(DwycoPalAuthCallback cb);
 void DWYCOEXPORT dwyco_set_emergency_callback(DwycoEmergencyCallback cb);
 void DWYCOEXPORT dwyco_set_user_control_callback(DwycoUserControlCallback cb);
 void DWYCOEXPORT dwyco_set_call_bandwidth_callback(DwycoStatusCallback cb);
+void DWYCOEXPORT dwyco_set_bgapp_msg_callback(DwycoPublicChatDisplayCallback cb);
 
 // Warning: call screening is in the process of changing
 // some of this may not be as advertised... XXX clean it up XXX
@@ -550,8 +551,14 @@ int DWYCOEXPORT dwyco_get_profile_to_viewer(const char *uid, int len_uid, DwycoP
 // you must call dwyco_free_array when you are done with fn_out
 //
 int DWYCOEXPORT dwyco_get_profile_to_viewer_sync(const char *uid, int len_uid, char **fn_out, int *len_fn_out);
+// look up exact name, and emit an IDENT message with the uid.
+// it is random if the handle results in multiple uid's.
 void DWYCOEXPORT dwyco_name_to_uid(const char *handle, int len_handle);
 
+// NOTE: returns the current group representative from our current
+// local cache. NOTE: this is EPHEMERAL, the representative can change.
+// XXX: need a message to indicate the groups we observe have changed.
+int dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out);
 // not impl.
 int DWYCOEXPORT dwyco_remove_profile(DwycoProfileCallback cb, void *arg);
 int DWYCOEXPORT dwyco_update_profile(const char *text, int len_text, DwycoProfileCallback cb, void *arg);
@@ -643,8 +650,16 @@ void DWYCOEXPORT dwyco_set_channel_destroy_callback(int chan_id,
 // while it is being used under Windows
 #define DWYCO_AUTOUPDATE_IN_PROGRESS 3
 
+// NOTE: this mutex is used on windows to coordinate
+// the autoupdate and installer process. it is referenced
+// explicitly in the InnoSetup scripts, and in the
+// (completely antique) "waitwrap" exe to smooth the
+// update process. DO NOT CHANGE THIS.
+// note: this should NOT be used to try and coordinate
+// mutual exclusion between different clients using
+// the same data directories.
 #ifndef DWYCO_AUTOUPDATE_MUTEX_NAME
-#define DWYCO_AUTOUPDATE_MUTEX_NAME "dwyco cdcx mutex2"
+#define DWYCO_AUTOUPDATE_MUTEX_NAME(app) "dwyco " app " mutex2"
 #endif
 
 // autoupdate check status
@@ -706,7 +721,7 @@ int DWYCOEXPORT dwyco_uid_status(const char *uid, int len_uid);
 void DWYCOEXPORT dwyco_uid_to_ip(const char *uid, int len_uid, int *can_do_direct, char **str_out);
 int DWYCOEXPORT dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **str_out);
 int DWYCOEXPORT dwyco_uid_g(const char *uid, int len_uid);
-int DWYCOEXPORT dwyco_load_users();
+int DWYCOEXPORT dwyco_load_users_internal();
 int DWYCOEXPORT dwyco_load_users2(int recent, int *total_out);
 int DWYCOEXPORT dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out);
 int DWYCOEXPORT dwyco_get_message_index(DWYCO_MSG_IDX *list_out, const char *uid, int len_uid);
@@ -718,6 +733,7 @@ int DWYCOEXPORT dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, 
 int DWYCOEXPORT dwyco_delete_unfetched_message(const char *msg_id);
 int DWYCOEXPORT dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id);
 int DWYCOEXPORT dwyco_save_message(const char *msg_id);
+int DWYCOEXPORT dwyco_get_updated_uids(DWYCO_USER_LIST *list_out, long time);
 
 // returns 1 if the message content was successfully loads, and 0 otherwise.
 // NOTE: uid is ignored
@@ -806,6 +822,9 @@ int DWYCOEXPORT dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 // this returns just mid's, no uids, in a single column
 // it will return msgs that have not been downloaded yet as well.
 int DWYCOEXPORT dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag);
+// like above, but the tag's creation time has to be older than the
+// specified number of days
+int DWYCOEXPORT dwyco_get_tagged_mids_older_than(DWYCO_LIST *list_out, const char *tag, int days);
 
 int DWYCOEXPORT dwyco_count_tag(const char *tag);
 // a tag is considered "valid" if it currently refers to an mid in the global index
@@ -813,10 +832,12 @@ int DWYCOEXPORT dwyco_valid_tag_exists(const char *tag);
 
 // note: the following functions will not return a msg if it hasn't been
 // downloaded.
-int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
+int DWYCOEXPORT dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag, int order_by_tag_time);
 int DWYCOEXPORT dwyco_mid_has_tag(const char *mid, const char * tag);
 int DWYCOEXPORT dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 int DWYCOEXPORT dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
+int DWYCOEXPORT dwyco_mid_disposition(const char *mid);
+int DWYCOEXPORT dwyco_all_messages_tagged(const char *uid, int len_uid, const char *tag);
 
 // INTERNAL API
 int DWYCOEXPORT dwyco_run_sql(const char *s, const char *a1, const char *a2, const char *a3);
@@ -1028,7 +1049,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 #define DWYCO_QM_BODY_ID "000"
 #define DWYCO_QM_BODY_FROM "001"
 //#define DWYCO_QM_BODY_TEXT_do_not_use_use_get_msg_array_instead "002"
-//#define DWYCO_QM_BODY_TEXT2_obsolete "002"
+#define DWYCO_QM_BODY_TEXT2_obsolete "002"
 #define DWYCO_QM_BODY_ATTACHMENT "003"
 #if 0
 #define DWYCO_QM_BODY_DATE "004"
@@ -1142,7 +1163,7 @@ int DWYCOEXPORT dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, in
 // if uid != 0, msg_id must refer to a saved msg from uid (NOTE: THIS IS BROKEN)
 int DWYCOEXPORT dwyco_is_special_message(const char *msg_id, int *what_out);
 int DWYCOEXPORT dwyco_is_special_message2(DWYCO_UNFETCHED_MSG_LIST ml, int *what_out);
-int DWYCOEXPORT dwyco_get_user_payload(DWYCO_UNFETCHED_MSG_LIST ml, const char **str_out, int *len_out);
+int DWYCOEXPORT dwyco_get_user_payload(DWYCO_SAVED_MSG_LIST ml, const char **str_out, int *len_out);
 
 // "what" returns from the dwyco_is_special_message function
 #define DWYCO_SUMMARY_PAL_AUTH_REQ 0
@@ -1179,6 +1200,30 @@ int DWYCOEXPORT dwyco_exit();
 int DWYCOEXPORT dwyco_bg_init();
 int DWYCOEXPORT dwyco_bg_exit();
 
+// call this AFTER calling dwyco_init_*
+// it is OPTIONAL, as the servers and core services
+// normally handle this for you.
+// it installs a new server list, and if it is
+// different from the list on the disk, you'll get
+// callbacks for exiting the program, and it also
+// updates the server list on disk so the next restart
+// will use the new list you just installed.
+// WARNING! this call may instantly exit the program if the server
+// list has changed in some significant way.
+// this call is primarily used in order to avoid introducing a
+// dependency on DNS into this library. this usually uses IP addresses
+// only. the client can usually handle DNS issues, and can fetch
+// a server list from our web servers using the usual techniques, then
+// install the list using this function.
+// our servers and chat servers will normally dole out new servers lists
+// if they change, but you have a chicken-and-egg problem if the servers
+// move someplace without being able to provide access to the previous servers
+// to redirect access.
+int DWYCOEXPORT dwyco_update_server_list(const char *lhxfer_str, int lhxfer_str_len);
+
+// NOTE: this style of trash handling is mostly deprecated, and power_clean
+// is a no-op. i'm leaving it in here because "trashing" something can be useful
+// during debugging, and as a safeguard against data loss while  group syncing.
 void DWYCOEXPORT dwyco_power_clean_safe();
 int DWYCOEXPORT dwyco_empty_trash();
 int DWYCOEXPORT dwyco_count_trashed_users();
@@ -1188,12 +1233,10 @@ void DWYCOEXPORT dwyco_untrash_users();
 // experimental.
 void DWYCOEXPORT dwyco_suspend();
 void DWYCOEXPORT dwyco_resume();
+int DWYCOEXPORT dwyco_get_suspend_state();
 
 int DWYCOEXPORT dwyco_service_channels(int *spin);
 void DWYCOEXPORT dwyco_set_client_version(const char *str, int len_str);
-// use this to filter out local broadcasts and other online reporting
-// for dwyco apps using the same back end.
-void DWYCOEXPORT dwyco_set_app_id(const char *str, int len_str);
 //void DWYCOEXPORT dwyco_set_login_password(const char *pw, int len_pw);
 void DWYCOEXPORT dwyco_set_login_result_callback(DwycoServerLoginCallback cb);
 void DWYCOEXPORT dwyco_database_login();
@@ -1206,6 +1249,7 @@ void DWYCOEXPORT dwyco_inhibit_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_incoming_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_outgoing_sac(int i);
 void DWYCOEXPORT dwyco_inhibit_all_incoming(int i);
+void DWYCOEXPORT dwyco_set_disposition(const char *str, int len_str);
 //void DWYCOEXPORT dwyco_inhibit_chat(int i);
 
 int DWYCOEXPORT dwyco_get_audio_hw(int *has_audio_input, int *has_audio_output, int *audio_hw_full_duplex);
@@ -1489,6 +1533,10 @@ int DWYCOEXPORT dwyco_add_contact(const char *name, const char *phone, const cha
 void DWYCOEXPORT dwyco_signal_msg_cond();
 void DWYCOEXPORT dwyco_wait_msg_cond(int ms);
 int DWYCOEXPORT dwyco_test_funny_mutex(int port);
+// this is for the unix-domain lock. only used on android
+// where the battery saver interfers with local networking
+// for background tasks.
+int dwyco_request_singleton_lock(const char *name, int port);
 
 // this is mostly for debugging, most users won't need to know this info
 typedef DWYCO_LIST DWYCO_SYNC_MODEL;
@@ -1525,18 +1573,27 @@ typedef DWYCO_LIST DWYCO_JOIN_LOG_MODEL;
 int DWYCOEXPORT dwyco_get_join_log_model(DWYCO_JOIN_LOG_MODEL *list_out);
 
 // api for creating a simple backup of messages and account info
-// "create_backup" creates an initial backup, then subsequent calls
-// create a smaller incremental backup.
+// "create_backup" creates an initial backup in an internal database.
+// if the backup is less than "days_to_run" days old, create_backup does nothing.
+// if the backup is older than "days_to_rebuild" old, the backup is deleted and created from scratch.
+// the way backup works, messages that are deleted are not removed from the database immediately,
+// so messages are accumulated until the backup is created from scratch.
+// create_backup returns 1 if the backup should be copied out, and 0 otherwise.
+//
 // calling "copy out" copies the current backup to an app specified folder.
 // calling "remove" just removes the internal backup, causing a full backup
 // to be created on the next call to "create_backup".
 // restore takes a backup, and adds it to the current set of messages
 // non-destructively. if msgs_only is false, it attempts to restore the
 // actual account info as well, instead of just messages.
-void DWYCOEXPORT dwyco_create_backup();
+int DWYCOEXPORT dwyco_create_backup(int days_to_run, int days_to_rebuild);
 int DWYCOEXPORT dwyco_copy_out_backup(const char *dir, int force);
 void DWYCOEXPORT dwyco_remove_backup();
 int DWYCOEXPORT dwyco_restore_from_backup(const char *bu_fn, int msgs_only);
+
+int DWYCOEXPORT dwyco_get_android_backup_state();
+int DWYCOEXPORT dwyco_set_android_backup_state(int i);
+int DWYCOEXPORT dwyco_restore_android_backup();
 
 
 // not called from java

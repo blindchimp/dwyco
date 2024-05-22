@@ -17,7 +17,6 @@
 #include "vidaq.h"
 #include "aqkey.h"
 
-#include "tdecode.h"
 #include "tpgmdec.h"
 #include "aq.h"
 #include "tpgmcod.h"
@@ -38,13 +37,10 @@
 
 #include "dirth.h"
 
-#include "jccolor.h"
-#include "jdcolor.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "cdcver.h"
 #include "filetube.h"
-#include "imgmisc.h"
 #include "vidaq.h"
 #include "callq.h"
 #ifdef SPAZ_CODEC
@@ -61,8 +57,6 @@
 #include "ta.h"
 #include "fnmod.h"
 #include "sysattr.h"
-#include "se.h"
-#include "xinfo.h"
 #include "dhsetup.h"
 #include "vcudh.h"
 #include "profiledb.h"
@@ -72,10 +66,9 @@
 #include "dhgsetup.h"
 #include "ezset.h"
 #include "qmsgsql.h"
-#ifdef _Windows
-//#include <winsock2.h>
-//#include <ws2tcpip.h>
-#endif
+#include "netlog.h"
+#include "vccrypt2.h"
+
 using namespace dwyco;
 
 extern vc Current_room;
@@ -93,7 +86,7 @@ using namespace CryptoPP;
 #define PACKET_DROP_INTERVAL 10000
 
 
-#define FAILRET(x) do { {fail_reason = (x); Log->make_entry(x); return 0;} } while(0)
+#define FAILRET(x) do { {fail_reason = (x); Log_make_entry(x); return 0;} } while(0)
 
 GetWindowCallback MMChannel::get_mdi_client_window_callback;
 GetWindowCallback MMChannel::get_main_window_callback;
@@ -108,7 +101,7 @@ int MMChannel::Exclusive_audio_id;
 ChatDisplayCallback MMChannel::gen_public_chat_display_callback;
 ChatDisplayCallback MMChannel::gen_private_chat_display_callback;
 CallAppearedCallback MMChannel::call_appeared_callback;
-UIPopupCallback MMChannel::popup_zap_accept_box_callback;
+//UIPopupCallback MMChannel::popup_zap_accept_box_callback;
 UIPopupCallback MMChannel::set_progress_status_callback;
 UIPopupCallback MMChannel::popup_message_box_callback;
 UIPopupCallback MMChannel::popup_update_box_callback;
@@ -132,6 +125,7 @@ DwTreeKaz<MMChannel *, int> *MMChannel::AllChan2;
 int MMChannel::Sync_receivers = 1;
 int MMChannel::Auto_sync = 1;
 DwTimer MMChannel::Bw_adj_timer("bw_adj");
+dwyco::sigprop<vc> MMChannel::My_disposition;
 //#define DWYCO_THREADED_ENCODE
 
 #if defined(DWYCO_THREADED_ENCODE) && defined(LINUX)
@@ -441,24 +435,23 @@ MMChannel::MMChannel() :
     ctrl_timer("ctrl-timer"),
     keepalive_timer("keepalive"),
     nego_timer("nego"),
-    resolve_timer("resolve"),
+    //resolve_timer("resolve"),
     ctrl_send_watchdog("ctrl-send-watchdog"),
-    syncmap(vcnil),
-    remote_vars(vcnil),
-    sync_manager(&syncmap),
-    bw_limit_incoming("bw_limit_incoming", &syncmap),
-    bw_limit_outgoing("bw_limit_outgoing", &syncmap),
-    available_audio_decoders("available_audio_decoders", &syncmap),
-    available_audio_coders("available_audio_coders", &syncmap),
-    pinger("pinger", &syncmap),
-    pause_audio("pause_audio", &syncmap),
-    pause_video("pause_video", &syncmap),
-    incoming_throttle("incoming_throttle", &syncmap),
+    remote_vars(),
+    sync_manager(),
+    //bw_limit_incoming("bw_limit_incoming", &sync_manager),
+    //bw_limit_outgoing("bw_limit_outgoing", &sync_manager),
+    //available_audio_decoders("available_audio_decoders", &sync_manager),
+    //available_audio_coders("available_audio_coders", &sync_manager),
+    pinger("pinger", &sync_manager),
+    pause_audio("pause_audio", &sync_manager),
+    pause_video("pause_video", &sync_manager),
+    incoming_throttle("incoming_throttle", &sync_manager),
 
-    rem_bw_limit_incoming("bw_limit_incoming", &remote_vars),
-    rem_bw_limit_outgoing("bw_limit_outgoing", &remote_vars),
-    rem_available_audio_decoders("available_audio_decoders", &remote_vars),
-    rem_available_audio_coders("available_audio_coders", &remote_vars),
+    //rem_bw_limit_incoming("bw_limit_incoming", &remote_vars),
+    //rem_bw_limit_outgoing("bw_limit_outgoing", &remote_vars),
+    //rem_available_audio_decoders("available_audio_decoders", &remote_vars),
+    //rem_available_audio_coders("available_audio_coders", &remote_vars),
     rem_pinger("pinger", &remote_vars),
     rem_pause_audio("pause_audio", &remote_vars),
     rem_pause_video("pause_video", &remote_vars),
@@ -486,7 +479,7 @@ MMChannel::MMChannel() :
 
     ref_timer.set_interval(10000);
     ref_timer.set_autoreload(1);
-    ref_timer.start();
+    //ref_timer.start();
 
     ready_for_ref = 1;
 
@@ -573,6 +566,7 @@ MMChannel::MMChannel() :
 
     gv_id = 0;
 
+#if 0
     // resolve and connection
     hr = 0;
     resolve_done = 0;
@@ -580,15 +574,16 @@ MMChannel::MMChannel() :
     resolve_buf = 0;
     resolve_result = -1;
     resolve_failed = 0;
+#endif
     memset(&addr_out, 0, sizeof(addr_out));
 
     msg_output = 0;
     call_setup = 0;
 
     // sync variables at this rate
-    sync_timer.set_autoreload(1);
-    sync_timer.set_interval(1000);
-    sync_timer.start();
+    //sync_timer.set_autoreload(1);
+    //sync_timer.set_interval(1000);
+    //sync_timer.start();
 
     pinger_timer.set_autoreload(1);
     pinger_timer.set_interval(60 * 1000);
@@ -623,8 +618,6 @@ MMChannel::MMChannel() :
 
     incoming_throttle = 0;
 
-    audio_gain_gauge = 0;
-    audio_callback = 0;
     msg_chan = 0;
     user_control_chan = 0;
 
@@ -692,6 +685,7 @@ MMChannel::MMChannel() :
     mmr_sync_state.value_changed.connect_memfun(this, &MMChannel::mmr_sync_state_changed);
     package_index_future = nullptr;
     unpack_index_future = nullptr;
+    eager_pull_timer_active = true;
 }
 
 MMChannel::~MMChannel()
@@ -891,6 +885,13 @@ MMChannel::stop_service()
     if((i = MMChannels.index(this)) == -1)
         return;
     MMChannels[i] = 0;
+    // this is the point in the channel destruction
+    // process where the channel become invisible to
+    // the bandwidth thing, so redo that now just
+    // to let the system respond to new bandwidth
+    // allocation.
+    adjust_outgoing_bandwidth();
+    adjust_incoming_bandwidth();
 }
 
 int
@@ -1211,8 +1212,6 @@ MMChannel::destroy()
     {
         if(num_chans_with_tube(tube) == 1)
         {
-            if(typeid(*tube) != typeid(SlippyTube))
-                Log->make_entry("destroy link to ", remote_iam(), "");
             delete tube;
             tube = 0;
         }
@@ -1226,7 +1225,7 @@ MMChannel::destroy()
             // finish xferring files or whatever.
             //tube->disconnect_ctrl();
             tube = 0;
-            Log->make_entry("disconnect shared link to ", remote_iam(), "");
+            Log_make_entry("disconnect shared link to ", remote_iam(), "");
         }
     }
     if(private_kaq)
@@ -1235,7 +1234,7 @@ MMChannel::destroy()
         private_kaq = 0;
         delete private_chat_display;
         private_chat_display = 0;
-        Log->make_entry("private chat shutdown");
+        Log_make_entry("private chat shutdown");
     }
 
     if(do_destroy == HARD || (do_destroy == SOFT &&
@@ -1254,7 +1253,7 @@ MMChannel::destroy()
             // we know there is only one sampler
             // in this version...
             exitaq();
-            Log->make_entry("sampler shutdown");
+            Log_make_entry("sampler shutdown");
         }
     }
     grab_coded_id = -1;
@@ -1279,7 +1278,7 @@ MMChannel::destroy()
         if(audio_sampler)
         {
             exit_audio_input();
-            Log->make_entry("audio sampler shutdown");
+            Log_make_entry("audio sampler shutdown");
             audio_sampler = 0;
         }
         if(audio_output)
@@ -1293,7 +1292,7 @@ MMChannel::destroy()
             else
                 delete audio_output;
             audio_output = 0;
-            Log->make_entry("audio output shutdown");
+            Log_make_entry("audio output shutdown");
         }
     }
     // check to see if there are any other audio
@@ -1525,8 +1524,6 @@ finish:
 int
 MMChannel::local_media_setup_new()
 {
-    vc msgs(VC_VECTOR);
-    msgs.append(vc(match_notes.c_str()));
     // we merge all the media to one control
     // point on the UI
 
@@ -1537,28 +1534,32 @@ MMChannel::local_media_setup_new()
 
     if(connection_list_changed_callback)
         (*connection_list_changed_callback)(0, clc_arg1, clc_arg2, clc_arg3);
-    // always set ourselves up to receive video
-    if(!build_incoming_video())
-    {
-        // maybe set flags to say we can't recv video
-    }
-    // ... and audio
-    if(!build_incoming_audio(1))
-    {
-        // set flags saying we can't receive audio
-    }
-    // use old private chat channel for app-level control msgs
-    // that need to be tightly-bound to channel existence
-    if(!build_outgoing_chat_private(1))
-    {
-    }
 
-    if(!msg_chan && !user_control_chan)
+    // note: for msg and uc chans, don't set up devices either, since
+    // we aren't expecting media to come in on those things anyway.
+    vc aux_r(VC_VECTOR);
+    aux_r.append("aux_r");
+    if(!msg_chan && !user_control_chan && call_type != vc("sync"))
     {
+        // always set ourselves up to receive video
+        if(!build_incoming_video())
+        {
+            // maybe set flags to say we can't recv video
+        }
+        // ... and audio
+        if(!build_incoming_audio(1))
+        {
+            // set flags saying we can't receive audio
+        }
+        // use old private chat channel for app-level control msgs
+        // that need to be tightly-bound to channel existence
+        if(!build_outgoing_chat_private(1))
+        {
+        }
+
         audio_chan = -1;
         int ret;
-        vc aux_r(VC_VECTOR);
-        aux_r.append("aux_r");
+
         if(!force_unreliable_audio)
         {
             if(!proxy_info.is_nil())
@@ -1594,27 +1595,26 @@ MMChannel::local_media_setup_new()
                 simple_protos[video_chan] = s;
             }
         }
-
-        if(call_type == vc("sync"))
+    }
+    else if(call_type == vc("sync"))
+    {
+        // for now, just set up a sync channel for each connection, like media channels
+        // this is ok for testing, but probably needs more thought
+        if(!proxy_info.is_nil())
+            send_ctrl(aux_r);  // this prompts the callee to setup a channel to the proxy
+        msync_chan = -1;
+        int ret;
+        if((ret = tube->gen_channel(proxy_info.is_nil() ? remote_listening_port() : (int)proxy_info[1], msync_chan)) == SSERR)
         {
-            // for now, just set up a sync channel for each connection, like media channels
-            // this is ok for testing, but probably needs more thought
-            if(!proxy_info.is_nil())
-                send_ctrl(aux_r);  // this prompts the callee to setup a channel to the proxy
             msync_chan = -1;
-            if((ret = tube->gen_channel(proxy_info.is_nil() ? remote_listening_port() : (int)proxy_info[1], msync_chan)) == SSERR)
-            {
-                msync_chan = -1;
-            }
-            else
-            {
-                msync_state = ret;
-                sproto *s = new sproto(msync_chan, media_x_setup, vp);
-                s->start();
-                simple_protos[msync_chan] = s;
-            }
         }
-
+        else
+        {
+            msync_state = ret;
+            sproto *s = new sproto(msync_chan, media_x_setup, vp);
+            s->start();
+            simple_protos[msync_chan] = s;
+        }
     }
     negotiating = 0;
     return 1;
@@ -1822,6 +1822,23 @@ MMChannel::remote_call_type()
     return v;
 }
 
+// return background for older software that doesn't
+// have a disposition, because foreground is treated
+// specially and gets higher priority.
+vc
+MMChannel::remote_disposition()
+{
+    vc v;
+    if(!remote_cfg.is_atomic())
+    {
+        if(!remote_cfg.find("disposition", v))
+            return "background";
+    }
+    else
+        return "background";
+    return v;
+}
+
 unsigned short
 MMChannel::remote_listening_port()
 {
@@ -1884,9 +1901,12 @@ MMChannel::coder_from_config()
             c = new CDCTheoraCoderColor;
         else
 #endif
+#ifdef DWYCO_DCT_CODER
             if(v.contains("dct"))
                 c = new TMSWCoderColor;
+
             else
+#endif
                 FAILRET("incompatible coding style");
     c->set_crop(1);
     //c->set_subsample(CTUserDefaults.get_subsample());
@@ -1963,7 +1983,6 @@ MMChannel::init_config(int caller)
     config.add_kv("my uid", My_UID);
     config.add_kv("my connection", My_connection);
     config.add_kv("room", Current_room);
-    config.add_kv("msging", 1);
     config.add_kv("msg_chan", msg_chan);
     config.add_kv("user_control_chan", user_control_chan);
 
@@ -1989,13 +2008,17 @@ MMChannel::init_config(int caller)
     // note: these are capabilities for xmit/recv
     v = vc(VC_VECTOR);
     v.append("ms-gsm610");
-    v.append("lpc4800");
-    v.append("raw-8khz");
+    //v.append("lpc4800");
+    //v.append("raw-8khz");
 #ifdef DWYCO_USE_SPEEX
     v.append("speex");
 #endif
+#ifndef DWYCO_NO_VORBIS
+#ifdef UWB_SAMPLING
     v.append("vorbis");
+#endif
     v.append("vorbis8khz");
+#endif
     config.add_kv("audio codec", v);
 
     v = vc(VC_VECTOR);
@@ -2066,6 +2089,7 @@ MMChannel::init_config(int caller)
         v.append("uc"); // see above
     }
     config.add_kv("channel duplex", v);
+    config.add_kv("disposition", My_disposition);
 }
 
 void
@@ -2079,7 +2103,6 @@ MMChannel::set_requested_codec(int codec)
     if(!config.find("requested config", rc))
         return;
     vc r(VC_VECTOR);
-    r.append("grayscale");
     r.append(codec_number_to_name(codec));
     rc.add_kv("codec", r);
 }
@@ -2129,7 +2152,6 @@ MMChannel::requested_config()
 {
     vc m(VC_MAP, "", 7);
     vc r(VC_VECTOR);
-    r.append("grayscale");
     r.append(sysattr_get_vc("us-video-coder"));
     m.add_kv("codec", r);
 
@@ -2642,9 +2664,44 @@ MMChannel::channel_by_call_type(vc uid, vc call_type)
 }
 
 ChanList
+MMChannel::channels_by_call_type(vc uid, vc call_type)
+{
+    // return all channels for uid of call_type
+    scoped_ptr<ChanList> cl(get_serviced_channels_net());
+    ChanListIter cli(cl.get());
+    ChanList ret;
+    for(; !cli.eol(); cli.forward())
+    {
+        MMChannel *mc = cli.getp();
+        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && call_type == mc->remote_call_type())
+        {
+            ret.append(mc);
+        }
+    }
+    return ret;
+}
+
+void
+MMChannel::destroy_by_uid(vc uid)
+{
+    scoped_ptr<ChanList> cl(get_serviced_channels_net());
+    ChanListIter cli(cl.get());
+
+    for(; !cli.eol(); cli.forward())
+    {
+        MMChannel *mc = cli.getp();
+        if(mc->do_destroy == KEEP && uid == mc->remote_uid())
+        {
+            mc->schedule_destroy(HARD);
+        }
+    }
+
+}
+
+ChanList
 MMChannel::channels_by_call_type(vc call_type)
 {
-    // check current connections for uid
+    // check current connections for call_type
     scoped_ptr<ChanList> cl(get_serviced_channels_net());
     ChanListIter cli(cl.get());
     ChanList ret;
@@ -2744,13 +2801,13 @@ MMChannel::recv_config(vc cfg)
         {
             if(uid_ignored(uid))
             {
-                Log->make_entry("call rejected, on ignore list");
+                Log_make_entry("call rejected, on ignore list");
                 send_error("busy");
                 goto cleanup;
             }
             if(!call_screening_callback && (int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
-                Log->make_entry("call rejected, pals-only mode");
+                Log_make_entry("call rejected, pals-only mode");
                 send_error("pals-only");
                 goto cleanup;
             }
@@ -2806,12 +2863,13 @@ MMChannel::recv_config(vc cfg)
             vc pw;
             if(!cfg.find("pw", pw))
             {
+                Netlog_signal.emit(tube->mklog("event", "no sync pw"));
                 send_error("sync needs pw");
                 goto cleanup;
             }
             if(!Current_alternate)
-
             {
+                Netlog_signal.emit(tube->mklog("event", "wrong sync group"));
                 send_error("sync wrong group");
                 goto cleanup;
             }
@@ -2822,12 +2880,39 @@ MMChannel::recv_config(vc cfg)
             if(pw != ipw)
             {
                 send_error("sync wrong group or schema");
+                Netlog_signal.emit(tube->mklog("event", "wrong sync pw"));
+                GRTLOG("wrong group pw them %s us %s", (const char *)to_hex(pw), (const char *)to_hex(ipw));
                 goto cleanup;
             }
             cfg.del("pw");
             common_cfg.del("pw");
             remote_cfg.del("pw");
             is_sync_chan = true;
+
+            ChanList cl = channels_by_call_type(remote_uid(), "sync");
+            if(cl.num_elems() > 1)
+            {
+                // maybe there is a channel the process of timing out,
+                // we just assume this current one will be better than
+                // the previous one (we definitely don't want more than
+                // one at a time.
+                // NOTE: have to check that the cleanup of the old
+                // channel won't interfere with setup of this one.
+                // alternatively, we can just kill both of them and let
+                // it reconnect, as this should be fairly rare.
+                for(int i = 0; i < cl.num_elems(); ++i)
+                {
+                    if(cl[i] != this)
+                    {
+                        if(cl[i]->tube)
+                        {
+                            Netlog_signal.emit(cl[i]->tube->mklog("event", "dup sync"));
+                        }
+                        cl[i]->schedule_destroy();
+                    }
+                }
+            }
+
             finish_connection_new();
             return;
         }
@@ -2959,7 +3044,7 @@ MMChannel::recv_config(vc cfg)
         {
             if((int)get_settings_value("zap/ignore") == 1 && !pal_user(uid))
             {
-                Log->make_entry("call rejected, pals-only mode");
+                Log_make_entry("call rejected, pals-only mode");
                 send_error("pals-only");
                 goto cleanup;
             }
@@ -2974,13 +3059,13 @@ MMChannel::recv_config(vc cfg)
         vc pw;
         if(!cfg.find("pw", pw))
         {
-            Log->make_entry("call rejected, password required");
+            Log_make_entry("call rejected, password required");
             send_error("password required to connect");
             goto cleanup;
         }
         if(pw != get_settings_value("call_acceptance/pw"))
         {
-            Log->make_entry("call rejected, incorrect pw.");
+            Log_make_entry("call rejected, incorrect pw.");
             send_error("incorrect password");
             goto cleanup;
         }
@@ -2999,7 +3084,7 @@ MMChannel::recv_config(vc cfg)
     {
         if(num_video_recvs() >= CallAcceptanceData.get_max_video_recv())
         {
-            Log->make_entry("video rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("video rejected from ", remote_iam(), " (busy)");
             send_error("video busy");
             goto cleanup;
         }
@@ -3014,7 +3099,7 @@ MMChannel::recv_config(vc cfg)
         if(num_audio_recvs() >= CallAcceptanceData.get_max_audio_recv())
         {
             send_error("audio busy");
-            Log->make_entry("audio rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("audio rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_send += "audio ";
@@ -3025,7 +3110,7 @@ MMChannel::recv_config(vc cfg)
         if(num_video_sends() >= CallAcceptanceData.get_max_video())
         {
             send_error("video busy");
-            Log->make_entry("video send req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("video send req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_recv += "video ";
@@ -3036,7 +3121,7 @@ MMChannel::recv_config(vc cfg)
         if(num_audio_sends() >= CallAcceptanceData.get_max_audio())
         {
             send_error("audio busy");
-            Log->make_entry("audio send req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("audio send req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_recv += "audio ";
@@ -3046,7 +3131,7 @@ MMChannel::recv_config(vc cfg)
         if(num_chats() >= CallAcceptanceData.get_max_chat())
         {
             send_error("chat busy");
-            Log->make_entry("chat req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("chat req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_recv += "chat ";
@@ -3056,7 +3141,7 @@ MMChannel::recv_config(vc cfg)
         if(num_chats_private() >= CallAcceptanceData.get_max_pchat())
         {
             send_error("private chat busy");
-            Log->make_entry("private chat req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("private chat req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         wants_to_recv += "private-chat";
@@ -3108,7 +3193,7 @@ MMChannel::finish_connection()
     {
         if(!prescreened && num_video_recvs() >= CallAcceptanceData.get_max_video_recv())
         {
-            Log->make_entry("video rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("video rejected from ", remote_iam(), " (busy)");
             send_error("video busy");
             goto cleanup;
         }
@@ -3120,7 +3205,7 @@ MMChannel::finish_connection()
             send_error("can't create decoder (either not enough memory or incompatible)");
             goto cleanup;
         }
-        Log->make_entry("video coming from ", remote_iam(), "");
+        Log_make_entry("video coming from ", remote_iam(), "");
 
     }
     // must set up outgoing audio first to audio sampler
@@ -3131,7 +3216,7 @@ MMChannel::finish_connection()
         if(!prescreened && num_audio_sends() >= CallAcceptanceData.get_max_audio())
         {
             send_error("audio busy");
-            Log->make_entry("audio send req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("audio send req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
 #ifdef CDC32
@@ -3147,7 +3232,7 @@ MMChannel::finish_connection()
             send_error(fail_reason);
             goto cleanup;
         }
-        Log->make_entry("serving audio to ", remote_iam(), "");
+        Log_make_entry("serving audio to ", remote_iam(), "");
     }
     if(local_recv_audio())
     {
@@ -3165,12 +3250,12 @@ MMChannel::finish_connection()
                 gv_id = -1;
 #endif
             build_incoming_audio(0);
-            Log->make_entry("audio coming from ", remote_iam(), "");
+            Log_make_entry("audio coming from ", remote_iam(), "");
         }
         else
         {
             send_error("audio busy");
-            Log->make_entry("audio rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("audio rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
     }
@@ -3180,7 +3265,7 @@ MMChannel::finish_connection()
         if(!prescreened && num_video_sends() >= CallAcceptanceData.get_max_video())
         {
             send_error("video busy");
-            Log->make_entry("video send req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("video send req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
 #ifdef CDC32
@@ -3196,7 +3281,7 @@ MMChannel::finish_connection()
             send_error(fail_reason);
             goto cleanup;
         }
-        Log->make_entry("serving video to ", remote_iam(), "");
+        Log_make_entry("serving video to ", remote_iam(), "");
     }
 
     if(local_chat())
@@ -3204,7 +3289,7 @@ MMChannel::finish_connection()
         if(!prescreened && num_chats() >= CallAcceptanceData.get_max_chat())
         {
             send_error("chat busy");
-            Log->make_entry("chat req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("chat req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         if(!build_outgoing_chat(0))
@@ -3214,14 +3299,14 @@ MMChannel::finish_connection()
         }
         chat_display = gen_public_chat_display();
         //chat_display = new ChatCharOwl;
-        Log->make_entry("remote chat from ", remote_iam(), " accepted");
+        Log_make_entry("remote chat from ", remote_iam(), " accepted");
     }
     if(local_chat_private())
     {
         if(!prescreened && num_chats_private() >= CallAcceptanceData.get_max_pchat())
         {
             send_error("private chat busy");
-            Log->make_entry("private chat req rejected from ", remote_iam(), " (busy)");
+            Log_make_entry("private chat req rejected from ", remote_iam(), " (busy)");
             goto cleanup;
         }
         if(!build_outgoing_chat_private(0))
@@ -3229,7 +3314,7 @@ MMChannel::finish_connection()
             send_error(fail_reason);
             goto cleanup;
         }
-        Log->make_entry("remote private chat from ", remote_iam(), " accepted");
+        Log_make_entry("remote private chat from ", remote_iam(), " accepted");
     }
     //vc v(VC_VECTOR);
     //v[0] = matches;
@@ -3289,45 +3374,50 @@ void
 MMChannel::finish_connection_new()
 {
     vc riam;
-    if(msg_chan || user_control_chan || is_sync_chan)
-        goto done;
-    if(call_accepted_callback)
-        (*call_accepted_callback)(this, ca_arg1, ca_arg2, ca_arg3);
-    call_accepted_callback_called = 1;
-done:
+    bool media_channel = !(msg_chan || user_control_chan || is_sync_chan);
+    if(media_channel)
+    {
+        if(call_accepted_callback)
+            (*call_accepted_callback)(this, ca_arg1, ca_arg2, ca_arg3);
+        call_accepted_callback_called = 1;
+    }
+
     send_ctrl(config);
     if(use_stun)
         pstate = WAIT_FOR_STUN;
     else
         pstate = ESTABLISHED;
 
-    // always set ourselves up to receive video
-    if(!build_incoming_video())
+    if(media_channel)
     {
-        // maybe set flags to say we can't recv video
-    }
-    // ... and audio
-    if(!build_incoming_audio(0))
-    {
-        // set flags saying we can't receive audio
-    }
-    if(!build_outgoing_chat_private(0))
-    {
-        // error, prolly need to bail
+        // always set ourselves up to receive video
+        if(!build_incoming_video())
+        {
+            // maybe set flags to say we can't recv video
+        }
+        // ... and audio
+        if(!build_incoming_audio(0))
+        {
+            // set flags saying we can't receive audio
+        }
+        if(!build_outgoing_chat_private(0))
+        {
+            // error, prolly need to bail
+        }
     }
 
     riam = remote_username();
-    {
-        DwString a((const char *)riam);
 
-        set_string_id(a);
+    DwString a((const char *)riam);
 
-        if(connection_list_changed_callback)
-            (*connection_list_changed_callback)(0, clc_arg1, clc_arg2, clc_arg3);
-        negotiating = 0;
-        turn_accept_on();
-        nego_timer.reset();
-    }
+    set_string_id(a);
+
+    if(connection_list_changed_callback)
+        (*connection_list_changed_callback)(0, clc_arg1, clc_arg2, clc_arg3);
+    negotiating = 0;
+    turn_accept_on();
+    nego_timer.reset();
+
     return;
 cleanup:
     pstate = WAIT_FOR_CLOSE;
@@ -3714,6 +3804,7 @@ MMChannel::tick()
     {
         nego_timer.ack_expire();
         schedule_destroy();
+        GRTLOG("nego timed out on chan %d", myid, 0);
         return 0;
     }
 
@@ -3728,10 +3819,18 @@ MMChannel::tick()
 
     if(pstate == ESTABLISHED && !server_channel)
     {
+        if(sync_manager.update_available() && !sync_timer.is_running())
+        {
+            sync_timer.set_interval(5 * 1000);
+            sync_timer.set_autoreload(0);
+            sync_timer.start();
+        }
         if(sync_timer.is_expired())
         {
             sync_timer.ack_expire();
+            // note: this resets update_available
             sync_send();
+
         }
         // this is a hack to check to see if the other side is still there
         // in cases where they drop off without cleanly closing.
@@ -3741,7 +3840,13 @@ MMChannel::tick()
         int p1 = (int)pinger;
         int p2 = (int)rem_pinger;
         if(abs(p1 - p2) > 3)
+        {
+            if(tube)
+            {
+                Netlog_signal.emit(tube->mklog("event", "timeout pinger"));
+            }
             schedule_destroy();
+        }
     }
 
     if(pinger_timer.is_expired())
@@ -3995,8 +4100,17 @@ MMChannel::service_channels(int *spin_out)
     clock_t start_time = clock();
     if(!been_here)
     {
+        // note: this used to be our only time we adjusted the
+        // bandwidth, polling all network items once every
+        // 3 seconds and adjusting it based on what channels
+        // were setup, rather than what channels were actually
+        // doing. this is ok on desktop, but for mobile it was
+        // a lot of wakeups for mostly no reason. i keep this
+        // here just as a stopgap in case i screw up getting the
+        // adjustment calls done at the right time... at least we'll
+        // get an adjustment once a minute.
         Bw_adj_timer.set_autoreload(1);
-        Bw_adj_timer.set_interval(3000);
+        Bw_adj_timer.set_interval(60 * 1000);
         Bw_adj_timer.start();
         been_here = 1;
     }
@@ -4033,9 +4147,7 @@ MMChannel::service_channels(int *spin_out)
     }
     callq_tick();
     int dont_restart_listening = 0;
-    int num_active_channels = 0;
-    int blocked_on_link = 0;
-    int used_cpu = 0;
+
     int spin = 0;
     for(i = 0; i < MMChannels.num_elems(); ++i)
     {
@@ -4073,8 +4185,6 @@ MMChannel::service_channels(int *spin_out)
         {
             mc->msg_out("Connection stopped.");
             mc->schedule_destroy(HARD);
-            if(mc->pstate == RESOLVING_NAME)
-                mc->cancel_resolve();
             mc->destroy();
             mc->stop_service();
             delete mc;
@@ -4116,7 +4226,7 @@ MMChannel::service_channels(int *spin_out)
                 oopanic("nego prog error");
             }
         }
-        ++num_active_channels;
+
         if(mc->pstate == WAIT_FOR_USER_ACCEPT)
         {
             switch(mc->user_accept)
@@ -4146,27 +4256,7 @@ MMChannel::service_channels(int *spin_out)
             spin = 1;
             continue;
         }
-        if(mc->pstate == RESOLVING_NAME)
-        {
-            switch(mc->poll_resolve())
-            {
-            case -1:
-                continue;
-            case 0:
-                mc->schedule_destroy();
-                continue;
-            case 1:
-                if(mc->start_connect() == 1)
-                {
-                    goto try_connect;
-                }
-                mc->schedule_destroy();
-                continue;
-            default:
-                oopanic("resolve prog error");
-            }
-            continue;
-        }
+
 try_connect:
         if(mc->pstate == CONNECTING)
         {
@@ -4326,7 +4416,7 @@ stun_done:
                     {
                         int len;
                         DWBYTE *b;
-                        ++used_cpu;
+
                         GRTLOG("grab1", 0, 0);
                         unsigned long captime;
                         int ref;
@@ -4410,7 +4500,7 @@ stun_done:
                     if(Moron_dork_mode)
                     {
                         int len;
-                        ++used_cpu;
+
                         GRTLOG("moron grab1", 0, 0);
                         unsigned long captime;
                         int ref;
@@ -4448,7 +4538,7 @@ stun_done:
                         mc->schedule_destroy();
                         continue;
                     }
-                    if( t->buf_drained() && t->can_write_mmdata())
+                    if(t->buf_drained() && t->can_write_mmdata())
                     {
                         MMChannel *bcast = channel_by_id(mc->grab_coded_id);
                         GRTLOG("blast %d ourlast %d", (int)bcast->last_time_index, (int)mc->last_time_index);
@@ -4480,10 +4570,6 @@ stun_done:
                         }
                         // note: no place to display send statistics unless
                         // we cook up something special.
-                    }
-                    else
-                    {
-                        ++blocked_on_link;
                     }
                 }
                 else
@@ -4640,6 +4726,10 @@ ctrl_processing:
                     }
                     if(mc->ctrl_send_watchdog.is_expired())
                     {
+                        if(mc->tube)
+                        {
+                            Netlog_signal.emit(mc->tube->mklog("event", "ctrl watchdog timeout"));
+                        }
                         mc->schedule_destroy();
                         goto next_iter_ctrl_send;
                     }
@@ -4737,6 +4827,10 @@ next_iter:
 resume:
         if(mc->sync_pinger.is_expired())
         {
+            if(mc->tube)
+            {
+                Netlog_signal.emit(mc->tube->mklog("event", "sync pinger timeout"));
+            }
             mc->schedule_destroy(HARD);
             continue;
         }
@@ -4784,7 +4878,6 @@ resume:
                     // awhile for the reliable channel to come up...)
                     if(decoder && !decoder->busy())
                     {
-                        ++used_cpu;
                         decoder->decode_postprocess(b, len);
                         GRTLOG("sent to decoder", 0, 0);
                         mc->fps_recv.add_units(1);

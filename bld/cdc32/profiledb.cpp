@@ -5,15 +5,13 @@
 #include "ser.h"
 #include "qdirth.h"
 #include "se.h"
-#include "dhsetup.h"
-#include "dhgsetup.h"
 #include "vcudh.h"
 #include "dwrtlog.h"
 #include "vccrypt2.h"
 #include "ssns.h"
 #include "fnmod.h"
+#include "qmsg.h"
 
-extern vc Session_infos;
 extern vc My_UID;
 
 namespace dwyco {
@@ -182,7 +180,7 @@ check_profile(vc prf)
 }
 
 int
-load_profile(vc uid, vc& prf_out)
+load_profile(const vc& uid, vc& prf_out)
 {
     if(uid.type() != VC_STRING)
         return 0;
@@ -231,7 +229,7 @@ load_profile(vc uid, vc& prf_out)
 
 static
 vc
-blob(vc v)
+blob(const vc& v)
 {
     vc ret(VC_VECTOR);
     ret[0] = "blob";
@@ -304,7 +302,7 @@ save_profile(vc uid, vc prf)
 }
 
 int
-prf_already_cached(vc uid)
+prf_already_cached(const vc& uid)
 {
     if(uid == My_UID)
     {
@@ -467,27 +465,38 @@ save_pk(vc uid, vc prf)
     if(!check_pk(prf))
         return 0;
 
-    VCArglist a;
-    a.append("insert or replace into pubkeys("
-             "uid, "
-             "static_public, "
-             "dwyco_sig, "
-             "alt_static_public, "
-             "alt_server_sig, "
-             "alt_gname, "
-             "time"
-             ")"
-             "values(?1, ?2, ?3, ?4, ?5, ?6, strftime('%s', 'now'))"
-             );
-    a.append(huid);
-    a.append(blobnil(prf[PKC_STATIC_PUBLIC]));
-    a.append(blobnil(prf[PKC_DWYCO_SIGNATURE]));
-    a.append(blobnil(prf[PKC_ALT_STATIC_PUBLIC]));
-    a.append(blobnil(prf[PKC_ALT_SERVER_SIG]));
-    a.append(blobnil(prf[PKC_ALT_GNAME]));
-    sql_bulk_query(&a);
+    vc oprf;
+    if(!load_pk(uid, oprf) ||
+            prf[PKC_STATIC_PUBLIC] != oprf[PKC_STATIC_PUBLIC] ||
+            prf[PKC_DWYCO_SIGNATURE] != oprf[PKC_DWYCO_SIGNATURE] ||
+            prf[PKC_ALT_STATIC_PUBLIC] != oprf[PKC_ALT_STATIC_PUBLIC] ||
+            prf[PKC_ALT_SERVER_SIG] != oprf[PKC_ALT_SERVER_SIG] ||
+            prf[PKC_ALT_GNAME] != oprf[PKC_ALT_GNAME]
+            )
+    {
 
-    Keys_updated.emit(uid, 1);
+        VCArglist a;
+        a.append("insert or replace into pubkeys("
+                 "uid, "
+                 "static_public, "
+                 "dwyco_sig, "
+                 "alt_static_public, "
+                 "alt_server_sig, "
+                 "alt_gname, "
+                 "time"
+                 ")"
+                 "values(?1, ?2, ?3, ?4, ?5, ?6, strftime('%s', 'now'))"
+                 );
+        a.append(huid);
+        a.append(blobnil(prf[PKC_STATIC_PUBLIC]));
+        a.append(blobnil(prf[PKC_DWYCO_SIGNATURE]));
+        a.append(blobnil(prf[PKC_ALT_STATIC_PUBLIC]));
+        a.append(blobnil(prf[PKC_ALT_SERVER_SIG]));
+        a.append(blobnil(prf[PKC_ALT_GNAME]));
+        sql_bulk_query(&a);
+
+        Keys_updated.emit(uid, 1);
+    }
     return 1;
 }
 
@@ -513,7 +522,7 @@ put_pk2(vc uid, vc sfpk, vc sig, vc alt_pk, vc server_sig, vc gname)
 }
 
 int
-pk_session_cached(vc uid)
+pk_session_cached(const vc& uid)
 {
     if(uid == My_UID)
     {

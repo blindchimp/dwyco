@@ -1,7 +1,7 @@
 struct fn_rules  {const char *name; char **pfx; int cacheable; DwString *cached_val;};
 %%
 xferdl, &System_prefix, 1
-servers2, &System_prefix, 1
+servers2, &User_prefix, 1
 entropy, &User_prefix, 1
 system.dh, &System_prefix, 1
 dwyco.dh, &System_prefix, 1
@@ -31,7 +31,7 @@ prf, &User_prefix, 1
 prf2, &User_prefix, 1
 pk, &User_prefix, 1
 xfer, &User_prefix, 1
-.dbg, &System_prefix, 0
+.dbg, &User_prefix, 0
 .usr, &User_prefix, 0
 .dif, &User_prefix, 0
 .aux, &User_prefix, 0
@@ -51,3 +51,4 @@ xfer, &User_prefix, 1
 .sql, &User_prefix, 0
 .pat, &System_prefix, 0
 .urd, &User_prefix, 0
+.tdb, &Tmp_prefix, 0

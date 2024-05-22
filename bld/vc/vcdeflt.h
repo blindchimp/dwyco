@@ -78,6 +78,7 @@ public:
 	virtual operator long() const ;
 	virtual operator char() const ;
 	virtual operator void *() const ;
+    virtual operator long long() const;
     //virtual operator int64_t() const;
 
 	// default relationals
@@ -106,6 +107,9 @@ public:
 	virtual void socket_set_error(vc v);
 	virtual vc socket_set_option(vcsocketmode m, unsigned long = 0,
 		unsigned long = 0, unsigned long = 0);
+#ifdef _Windows
+    virtual int socket_set_async(void *, unsigned int msg, long events);
+#endif
 	virtual vcsocketmode socket_get_mode();
 	virtual vc socket_local_addr();
 	virtual vc socket_peer_addr();
@@ -191,7 +195,7 @@ decl_rel(str)
 	virtual const vc& operator[](const vc& v) const;
 	virtual const vc& operator[](int) const;
 	virtual const vc& operator[](long) const;
-	virtual int contains(const vc& v) ;
+    virtual int contains(const vc& v) const;
     virtual int find(const vc& v, vc& out) ;
 	virtual void add(const vc& v) ;
 	virtual void add_kv(const vc& k, const vc& v) ;

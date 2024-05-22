@@ -13,22 +13,24 @@
 // note: this stuff is screaming for exceptions, but we don't got it
 // yet in enough compilers to use it... sigh.
 
-//#include <windows.h>
 #include <string.h>
 #include "vc.h"
+#include "vccomp.h"
 #include "netcod2.h"
-#include "vcwsock.h"
 #include "matcom.h"
 #include "vcxstrm.h"
-#include "dwlog.h"
 #include "dwstr.h"
-#include "mmchan.h"
 
 #include "dwrtlog.h"
-#include "qauth.h"
 #include "ta.h"
 #include "dwstr.h"
 #include "dwqbm.h"
+#ifdef _Windows
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 using namespace dwyco;
 
 static DwQueryByMember<SimpleSocket> SSQbm;
@@ -125,7 +127,7 @@ SimpleSocket::reconnect(const char *remote_addr)
 }
 
 int
-SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry, HWND hwnd)
+SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry)
 {
     if(!retry)
         initsock();
@@ -338,13 +340,14 @@ SimpleSocket::sendvc(vc v)
 {
     if(sock.is_nil())
         return 0;
-    if(sock.socket_put_obj(v, vcnil, 0).is_nil())
+    vc len = sock.socket_put_obj(v, vcnil, 0);
+    if(len.is_nil())
         return 0;
     GRTLOG("sendvc ", 0, 0);
     GRTLOGVC(sock);
     GRTLOGVC(v);
 
-    return 1;
+    return len;
 }
 
 int
@@ -402,7 +405,7 @@ SimpleSocket::recvvc(vc& v)
 
 
 int
-Listener::init(const char *, const char *local_addr, int, HWND)
+Listener::init(const char *, const char *local_addr, int)
 {
     initsock();
 

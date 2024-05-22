@@ -22,7 +22,6 @@
 #include "vcudh.h"
 #include "sepstr.h"
 #include "ta.h"
-#include "dhgsetup.h"
 #include "qauth.h"
 #ifdef WIN32
 #include <io.h>
@@ -39,8 +38,14 @@ namespace dwyco {
 
 // note: if you set both Force and Avoid, nothing will get sent
 // to the server, messages will still be q'd up, just never sent.
+
+// for testing, set to 1 means don't use pk encryption on any messages
 int Avoid_pk;
+// cause all messages to use encryption. if a public key can't be
+// be found, the message will never be sent (not, some old clients
+// don't have public keys.)
 int Force_pk;
+
 dwyco::DwQueryByMember<DwQSend> DwQSend::Qbm;
 
 // send a q'd message
@@ -77,9 +82,8 @@ async_delete(vc, void *, vc, ValidPtr vp)
     delete (DwQSend *)(void *)vp;
 }
 
-static
 void
-delete_later(DwQSend *d)
+DwQSend::delete_later(DwQSend *d)
 {
     dirth_q_local_action(vc(VC_VECTOR), QckDone(async_delete, 0, vcnil, d->vp));
 }
@@ -197,7 +201,7 @@ DwQSend::qd_send_done(vc m, void *, vc, ValidPtr vp)
 
 //        if(m[3].type() == VC_VECTOR && !m[3][0].is_nil())
 //            qs->delivered_mid = m[3][0];
-        Log->make_entry("Sent q'd message.");
+        Log_make_entry("Sent q'd message.");
         DwString tmpfn = qs->qfn;
         tmpfn += ".tmp";
         move_in_progress(qs->qfn, tmpfn);
@@ -489,13 +493,13 @@ DwQSend::send_message()
     if(!load_info(m, afn.c_str()))
     {
         // corrupt or something
-        Log->make_entry("deleting corrupt message");
+        Log_make_entry("deleting corrupt message");
         DeleteFile(newfn(afn).c_str());
         return -1;
     }
     if(!valid_qd_message(m))
     {
-        Log->make_entry("bogus message deleted");
+        Log_make_entry("bogus message deleted");
         DeleteFile(newfn(afn).c_str());
         return -1;
     }
@@ -505,7 +509,7 @@ DwQSend::send_message()
         att_actual_fn = newfn(att_basename);
         if(access(att_actual_fn.c_str(), 0) != 0)
         {
-            Log->make_entry("deleting corrupt message (no attachment)");
+            Log_make_entry("deleting corrupt message (no attachment)");
             DeleteFile(newfn(afn).c_str());
             return -1;
         }
@@ -573,7 +577,7 @@ DwQSend::send_message()
         if(!load_info(emsg, efn.c_str()))
         {
             // corrupt or something
-            Log->make_entry("deleting corrupt emsg");
+            Log_make_entry("deleting corrupt emsg");
             DeleteFile(newfn(efn).c_str());
             emsg = vcnil;
             TRACK_ADD(QS_restart_enc_bad_load, 1);
@@ -586,7 +590,7 @@ DwQSend::send_message()
                 DwString tmp_att_actual_fn = newfn(tmp_att_basename);
                 if(access(tmp_att_actual_fn.c_str(), 0) != 0)
                 {
-                    Log->make_entry("deleting corrupt enc message (no attachment)");
+                    Log_make_entry("deleting corrupt enc message (no attachment)");
                     DeleteFile(newfn(efn).c_str());
                     emsg = vcnil;
                     TRACK_ADD(QS_restart_enc_bad_att, 1);
@@ -613,8 +617,13 @@ DwQSend::send_message()
         // this message may be dropped by the recipient because
         // of a key mismatch (the get_pk may return a stale key.
         // this case should be really rare.)
-        // if the key hasn't been fetched before, the message
-        // will be sent unencrypted until the key is fetched.
+        // if the key isn't immediately available, by default, the message
+        // is sent unencrypted and a fetch is initiated so future messages
+        // can be sent encrypted. this is in line with the "convenience over
+        // complete security" trade-off this software makes sometimes.
+        // if a message positively needs encryption, this behavior
+        // can be changed with the "force_encryption" flag, at the
+        // cost of delaying some messages.
         // it probably makes sense to try and fetch keys that are
         // likely to be used, but that complicates things. for now,
         // keep it simple.
@@ -622,13 +631,12 @@ DwQSend::send_message()
         // some reason, either set force_encryption or Force_pk
         // and if there is no way to encrypt it now, the message is
         // just stored and not sent.
-        // (though, right now, i don't think there are any cases where
-        // encryption is forced on a per-message basis)
         // note2: as an aside, this doesn't mean the message is
         // sent in the clear, as all the connections to the server and other
         // peers are encrypted. it just means that some messages might be
         // temporarily stored on the server in the clear. usually the first
-        // message between two peers is the only one affected.
+        // message between two peers is the only one affected. a lot of time
+        // that message is "test" or "hi", soooo, not a huge deal in most cases.
         //
         if(!pk_session_cached(recip_uid))
         {

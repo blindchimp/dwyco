@@ -2,8 +2,9 @@ VCCFG_COMP=$$PWD
 DWYCO_APP=selfs
 DWYCOBG=0
 DWYCO_USE_LINUX_AUDIO=0
-DEFINES += VCCFG_FILE #register=
-CONFIG(debug): DEFINES += DWYCO_DEBUG
+DEFINES += VCCFG_FILE DWYCO_APP_NICENAME=\\\"Selfs\\\" #DWYCO_VC_THREADED
+
+CONFIG(debug, debug|release): DEFINES += DWYCO_DEBUG
 
 linux-*|wasm-emscripten {
 DEFINES += LINUX
@@ -19,7 +20,9 @@ DEFINES += USE_QML_CAMERA
 macx-g++*|macx-clang* {
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 DEFINES += LINUX MACOSX
-FORCE_DESKTOP_VGQT=0
+FORCE_DESKTOP_VGQT=1
+DEFINES += USE_QML_CAMERA
+
 }
 
 win32-* {

@@ -30,20 +30,19 @@
 #include "matcom.h"
 #include "bcastq.h"
 #include "dwstr.h"
-//#include "audstats.h"
-//#include "sd.h"
 #include "syncvar.h"
 #include "pval.h"
-//#include "sd3.h"
-#include "dwmapr.h"
 #include "dlli.h"
 #include "netvid.h"
 #include "sproto.h"
 #include "ssns.h"
 #include "audconv.h"
-#include "aconn.h"
 #include "simple_property.h"
 #include "sync_sendq.h"
+#include "syncvar.h"
+// DON'T REMOVE THESE
+// there are namespace decls that need them
+#include "aconn.h"
 #include "calllive.h"
 
 class MMTube;
@@ -57,11 +56,19 @@ class AudioOutput;
 class AudioAcquire;
 class MessageDisplay;
 
+// fyi: this is a little weird, but for the friend
+// decls below, we need this namespace thing
+// instead of something like "using dwyco::DirectSend"
+// which requires the class definition for some reason.
+// oh well.
 namespace dwyco {
 class DirectSend;
 class DwQSend;
 struct QckMsg;
 }
+
+using dwyco::sproto;
+using dwyco::strans;
 
 typedef DwVecP<MMChannel> ChanList;
 typedef DwVecPIter<MMChannel> ChanListIter;
@@ -110,9 +117,6 @@ public:
     // the sampler is a device that can provide
     // uncoded data. if this member is null, the
     // channel produces no original coded video
-    // (though, in the future it may be possible to
-    // use channels as reflectors, but that isn't
-    // possible now.)
     VidAcquire *sampler;
 
     // the coder member can be null, in which
@@ -197,11 +201,14 @@ public:
     vc remote_connection();
     int remote_session_id();
     vc remote_call_type();
+    vc remote_disposition();
     DwCoder *coder_from_config();
     DwDecoder *decoder_from_config();
     static MMChannel *already_connected(vc uid, int is_msg_chan = 0, int is_user_control_chan = 0);
     static MMChannel *channel_by_call_type(vc uid, vc call_type);
     static ChanList channels_by_call_type(vc call_type);
+    static ChanList channels_by_call_type(vc uid, vc call_type);
+    static void destroy_by_uid(vc uid);
     static int Sync_receivers;
     static int Auto_sync;
     static int compute_sync();
@@ -259,7 +266,6 @@ private:
 
     void init_config(int caller);
     vc match_config(vc, int caller);
-    DwString match_notes;
     vc requested_config();
 
     void recv_config(vc);
@@ -281,7 +287,7 @@ public:
     enum state {
         IDLE,
         // initial connection setup
-        RESOLVING_NAME,
+        //RESOLVING_NAME,
         CONNECTING,
 
         // post-connection, initial capability negotiation
@@ -545,8 +551,7 @@ public:
     int grab_audio_id;
 
 public:
-    void (*audio_callback)(ValidPtr, double);
-    ValidPtr *audio_gain_gauge;
+
     long client_timecode_adjustment;
     int make_first_0;
 
@@ -566,10 +571,7 @@ private:
     void finish_connection();
     void finish_connection_new();
 public:
-    enum accpt {NONE, ACCEPT, REJECT, ZACCEPT, ZACCEPT_ALWAYS,
-                ZREJECT, ZREJECT_IGNORE
-               } user_accept;
-    //int accept_box;
+    enum accpt {NONE, ACCEPT, REJECT} user_accept;
 
 private:
     int auto_quality_boost;
@@ -623,18 +625,18 @@ private:
     friend void dwyco::poll_listener();
 private:
 
-    friend void async_lookup_handler(HANDLE, DWORD);
-    void cancel_resolve();
-    HANDLE hr;
-    DwTimer resolve_timer;
-    int resolve_done;
-    int resolve_len;
+    //friend void async_lookup_handler(HANDLE, DWORD);
+    //void cancel_resolve();
+    //HANDLE hr;
+    //DwTimer resolve_timer;
+//    int resolve_done;
+//    int resolve_len;
 public:
-    int resolve_failed;
+    //int resolve_failed;
     vc attempt_uid;
 private:
-    char *resolve_buf;
-    int resolve_result;
+    //char *resolve_buf;
+    //int resolve_result;
 public:
     DwString addrstr;
     DwString ouraddr;
@@ -644,12 +646,12 @@ public:
 private:
 
     int poll_connect();
-    int poll_resolve();
+    //int poll_resolve();
     void show_winsock_error(int err);
 public:
-    enum resolve_how {BYNAME=0, BYADDR=1};
-    int start_resolve(enum resolve_how how, unsigned long addr, const char *hostname);
-    int start_connect();
+    //enum resolve_how {BYNAME=0, BYADDR=1};
+    //int start_resolve(enum resolve_how how, unsigned long addr, const char *hostname);
+    int start_connect(vc ip, int port);
     in_addr addr_out;
     int port;
 
@@ -665,20 +667,19 @@ public:
 private:
     // these are for keeping sets of variables synced
     // across the link
-    SyncMap syncmap;
     SyncManage sync_manager;
-    SyncVar bw_limit_incoming;
-    SyncVar bw_limit_outgoing;
-    SyncVar available_audio_decoders;
-    SyncVar available_audio_coders;
+    //SyncVar bw_limit_incoming;
+    //SyncVar bw_limit_outgoing;
+    //SyncVar available_audio_decoders;
+    //SyncVar available_audio_coders;
     SyncVar pinger;
     SyncVar incoming_throttle;
 
-    SyncMap remote_vars;
-    SyncVar rem_bw_limit_incoming;
-    SyncVar rem_bw_limit_outgoing;
-    SyncVar rem_available_audio_decoders;
-    SyncVar rem_available_audio_coders;
+    SyncManage remote_vars;
+    //SyncVar rem_bw_limit_incoming;
+    //SyncVar rem_bw_limit_outgoing;
+    //SyncVar rem_available_audio_decoders;
+    //SyncVar rem_available_audio_coders;
     SyncVar rem_pinger;
     SyncVar rem_incoming_throttle;
 
@@ -795,7 +796,7 @@ public:
     ChatDisplay * gen_public_chat_display();
     ChatDisplay * gen_private_chat_display();
 
-    static UIPopupCallback popup_zap_accept_box_callback;
+    //static UIPopupCallback popup_zap_accept_box_callback;
     static UIPopupCallback set_progress_status_callback;
     static UIPopupCallback popup_message_box_callback;
     static UIPopupCallback popup_update_box_callback;
@@ -810,9 +811,10 @@ public:
     DwTimer keepalive_timer; // used for pinging servers
     void keepalive_processing();
 
-private:
+public:
     static int adjust_outgoing_bandwidth();
     static int adjust_incoming_bandwidth();
+private:
     static int get_available_output_bandwidth();
     static int get_available_input_bandwidth();
     int adjust_outgoing_throttle(int);
@@ -832,8 +834,7 @@ public:
     static void send_to_db(const dwyco::QckMsg& m, int chan_id);
     void server_response(vc v);
     void chat_response(vc);
-    static MMChannel *start_server_channel(enum resolve_how,
-                                           unsigned long addr, const char *name, int port);
+    static MMChannel *start_server_channel(vc ip, int port);
     int server_channel;
     int secondary_server_channel;
     vc password;
@@ -842,7 +843,7 @@ public:
     // can q things to it before it is connected.
     vc attempt_ip;
     vc attempt_port;
-    vc attempt_name;
+    //vc attempt_name;
 
     // this is used to lightly scramble the  output
     // of a coder (input to decoder). for use with
@@ -1009,6 +1010,8 @@ public:
     int wait_for_sync_challenge(int subchan, sproto *p, const char *ev);
     int send_sync_resp(int subchan, sproto *p, const char *ev);
     int sync_ready(int subchan, sproto *p, const char *ev);
+    int send_delta(int subchan, sproto *p, const char *ev);
+    int wait_for_delta(int subchan, sproto *p, const char *ev);
 
     // set to 1 if attachment actively rejected (can never be sent,
     // usually because size is too big.
@@ -1021,6 +1024,7 @@ private:
         MMSS_ERR = -2,
         MMSS_NONE = -1,
         START = 0,
+        SEND_DELTA_OK,
         SEND_INIT,
         RECV_INIT,
         NORMAL_RECV,
@@ -1039,6 +1043,7 @@ private:
     int process_incoming_sync();
     DwTimer sync_pinger;
     DwTimer downstream_timer;
+    void throttle_downstream_timer(vc);
 
     // why pointer? i don't want even a chance that this
     // will block on delete... i'd rather have a little leak
@@ -1053,6 +1058,13 @@ private:
     void process_pull_resp(vc cmd);
     void process_iupdate(vc cmd);
     void process_tupdate(vc cmd);
+    void process_syncpoint(vc cmd);
+
+    bool eager_pull_timer_active;
+    DwTimer eager_pull_timer;
+    void assert_eager_pulls();
+    void start_stalled_pulls();
+    void eager_pull_processing();
     // FIX THIS, should be private
 public:
     dwyco::sendq sync_sendq;
@@ -1067,12 +1079,20 @@ public:
     void send_pull(vc mid, int pri);
 
     //ssns::signal3<vc, vc, vc> pull_done;
+
+public:
+    // this is sent in direct connections, and is used to
+    // indicate whether the system is in "foreground" or
+    // "background". this is usefu when you are trying to
+    // figure out where to initially send a message.
+    static dwyco::sigprop<vc> My_disposition;
     static void dump_serv_hist();
 };
 
-#define PULLPRI_INTERACTIVE 0
-#define PULLPRI_NORMAL 1
-#define PULLPRI_BACKGROUND 2
+#define PULLPRI_INIT 0
+#define PULLPRI_INTERACTIVE 1
+#define PULLPRI_NORMAL 2
+#define PULLPRI_BACKGROUND 3
 
 #define AUDIO_NUM_STATES 8
 #define AUDIO_TALK 0

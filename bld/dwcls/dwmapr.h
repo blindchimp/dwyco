@@ -33,7 +33,7 @@ public:
     void set_size(int);
 
     int num_elems() const;
-    int contains(const D&);
+    int contains(const D&) const;
     int find(const D&, R& out, R** wp = 0);
     void add(const D&, const R&);
     int replace(const D&, const R&, R** wp = 0);
@@ -91,7 +91,7 @@ tcls::num_elems() const
 
 thdr
 int
-tcls::contains(const D& key)
+tcls::contains(const D& key) const
 {
     DwAssocImp<R,D> tmp(def, key);
     return set.contains(tmp);

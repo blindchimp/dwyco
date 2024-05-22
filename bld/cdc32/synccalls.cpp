@@ -15,7 +15,6 @@ using namespace dwyco;
 extern vc Online;
 extern DwString dwyco::Schema_version_hack;
 
-static
 vc
 uids_to_call()
 {
@@ -88,7 +87,6 @@ originate_calls(vc uid)
         return uid < My_UID;
 }
 
-
 vc
 build_sync_status_model()
 {
@@ -103,6 +101,7 @@ build_sync_status_model()
         v[M_UID] = uids[i];
         v[M_STATUS] = originate_calls(uids[i]) ? "od" : "rd"; // disconnected
         v[M_PULLS_ASSERT] = pulls::count_by_uid(uids[i]);
+        v[M_PERCENT_SYNCED] = 0;
         ret.append(v);
         cuids.append(uids[i]);
     }
@@ -149,7 +148,21 @@ build_sync_status_model()
     // i did some testing and "distinct(mid)" is a lot slower
     // for some reason than using the similar "group by mid".
     // never figured out why
-    vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select 1 from gi group by mid)), from_client_uid from gi group by from_client_uid");
+    // these two are about the same performance, just one is easier to
+    // understand...
+
+    // note: for this experiment, we can't calculate this anymore, we'll need
+    // different protocol for it (maybe create another small table during initial
+    // sync setup or something.
+
+#if 0
+    vc res = sql_run_sql(
+    "with total_mids(cnt) as (select count(*) from (select 1 from gi group by mid))"
+    "select (count(*) * 100) / (select cnt from total_mids), from_client_uid from gi group by from_client_uid"
+                );
+    //vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select 1 from gi group by mid)), from_client_uid from gi group by from_client_uid");
+    if(!res.is_nil())
+    {
     for(int i = 0; i < res.num_elems(); ++i)
     {
         vc uid = from_hex(res[i][1]);
@@ -159,6 +172,8 @@ build_sync_status_model()
         vc v = ret[j];
         v[M_PERCENT_SYNCED] = res[i][0];
     }
+    }
+#endif
 
     GRTLOGVC(ret);
     return ret;
@@ -240,8 +255,13 @@ struct local_connect_timer : public ssns::trackable
     }
 };
 
-
-
+// this is where we look at the set of group members, and
+// schedule call attempts to any that are online. throttling the
+// attempt-to-connect rate is based on whether we are
+// successful in at least trying connect. if we
+// can't find anyone to connect to, we reduce our rate of trying
+// so we can avoid using too many cpu cycles.
+//
 void
 sync_call_setup()
 {

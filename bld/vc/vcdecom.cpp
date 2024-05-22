@@ -15,15 +15,25 @@
 #ifdef _Windows
 #include <windows.h>
 #endif
+#ifdef DWYCO_VC_THREADED
+#include <mutex>
+std::mutex SN_mutex;
+#endif
 
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcdecom.cpp 1.50 1998/12/09 05:12:20 dwight Exp $";
 
-long vc_decomposable::SN;	// serial number for id's of decompoables
+long vc_decomposable::SN;	// serial number for id's of decomposables
 
 static vc bogus;
 vc_decomposable::vc_decomposable()
 {
+#ifdef DWYCO_VC_THREADED
+    SN_mutex.lock();
+#endif
 	serial_number = SN++;
+#ifdef DWYCO_VC_THREADED
+    SN_mutex.unlock();
+#endif
 	iterators = 0;
 }
 
@@ -130,7 +140,7 @@ vc_vector::member_select(const vc& member, vc& out, int , vc_object *)
 }
 
 int
-vc_vector::contains(const vc& v)
+vc_vector::contains(const vc& v) const
 {
 	return vec.index(v) != -1;
 }
@@ -500,17 +510,21 @@ vc_decomposable::decode_numelems(vcxstream& vcx, long& elems_out)
 	if((cp = vcx.in_want(ENCODED_LEN_LEN)) == 0)
 		return EXIN_DEV;
 	int len = decode_len(cp);
-    if(len == -1 || len == 0)
+    if(len == -1 || len == 0 || len > vcx.max_count_digits)
 		return EXIN_PARSE;
-    if(len > vcx.max_element_len)
-        return EXIN_PARSE;
+    // don't t think this makes sense any more
+    //if(len > vcx.max_element_len)
+    //    return EXIN_PARSE;
 	if((cp = vcx.in_want(len)) == 0)
 		return EXIN_DEV;
 	long l = decode_long(cp, len);
 	if(l == -1)
 		return EXIN_PARSE;
     if(l > vcx.max_elements)
+    {
+        user_warning("xfer_in hit max_elements");
         return EXIN_PARSE;
+    }
 	elems_out = l;
     return len + ENCODED_LEN_LEN;
 }
@@ -589,7 +603,7 @@ vc_map::operator[](long i)
 }
 
 int
-vc_map::contains(const vc& v)
+vc_map::contains(const vc& v) const
 {
 	return map.contains(v);
 }
@@ -858,7 +872,7 @@ vc_list_set::operator[](long i)
 }
 
 int
-vc_list_set::contains(const vc& v)
+vc_list_set::contains(const vc& v) const
 {
 	return list.exists(v);
 }
@@ -1107,7 +1121,7 @@ vc_bag::operator[](long i)
 }
 
 int
-vc_bag::contains(const vc& v)
+vc_bag::contains(const vc& v) const
 {
 	return set.contains(v);
 }
@@ -1417,7 +1431,7 @@ vc_tree::operator[](long i)
 }
 
 int
-vc_tree::contains(const vc& v)
+vc_tree::contains(const vc& v) const
 {
 	return tree.exists(v);
 }

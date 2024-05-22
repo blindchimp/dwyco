@@ -16,36 +16,39 @@
 #include "mmchan.h"
 #include "pval.h"
 
+namespace dwyco {
 extern int Rescan_msgs;
 extern vc Cur_ignore;
 extern vc No_direct_msgs;
 extern vc No_direct_att;
 extern vc Session_infos;
 extern vc MsgFolders;
+extern vc Pals;
+}
 
-void load_users(int only_recent, int *total_out);
+//void load_users(int only_recent, int *total_out);
 void load_users_from_files(int *total_out);
 void load_users_from_index(int recent, int *total_out);
-int remove_user(vc uid, const char *pfx);
-int clear_user(vc uid, const char *pfx);
+int remove_user(const vc &uid);
+int clear_user(const vc &uid);
 vc load_msgs(vc uid);
 vc load_bodies(vc dir, int load_sent);
 vc load_body_by_id(vc uid, vc msg_id);
-vc load_qd_msgs(vc uid, int load_special);
+vc load_qd_msgs(const vc &uid, int load_special);
 vc load_qd_to_body(vc qid);
 void query_messages();
 MMChannel *fetch_attachment(vc fn, DestroyCallback, vc, void *, ValidPtr,
                             StatusCallback, void *, ValidPtr, vc server_ip = vcnil, vc server_port = vcnil);
 vc save_body(vc msgid, vc from, vc text, vc attachment_id, vc date, vc rating, vc authvec,
              vc forwarded_body, vc new_text, vc no_forward, vc user_filename, vc logical_clock, vc special_type, vc from_group);
-int uid_ignored(vc uid);
+int uid_ignored(const vc &uid);
 void delete_msg2(vc msgid);
 void delete_body3(vc uid, vc msgid, int inhibit_indexing);
-void trash_body(vc uid, vc msg_id, int inhibit_indexing);
+
 void delete_attachment2(vc user_id, vc msgid);
 int q_message(vc recip, const char *attachment, DwString& fn_out,
               vc body_to_forward, const char *new_text, vc att_hash, vc special_type, vc st_arg1, int no_forward, vc user_filename, int save_sent);
-void fetch_info(vc uid);
+void fetch_info(const vc &uid);
 int qd_send_one();
 int msg_outq_empty();
 void qd_purge_outbox();
@@ -62,7 +65,7 @@ void got_ignore(vc m, void *, vc, ValidPtr);
 void add_ignore(vc uid);
 void del_ignore(vc uid);
 void ack_all(vc);
-int save_to_inbox(vc m);
+//int save_to_inbox(vc m);
 int store_direct(MMChannel *m, vc msg, void *);
 vc direct_to_server(vc msgid);
 void ack_all_direct();
@@ -75,13 +78,17 @@ vc get_local_ignore();
 vc get_local_ignore_mapped();
 vc get_local_pals();
 void power_clean_safe();
-//int trash_user(vc dir);
-int trash_file(const DwString& dir, const DwString& fn);
+
+// these are mainly for debugging now
+// they move files to a "trash" folder instead of
+// deleting them.
+void trash_body(vc uid, vc msg_id, int inhibit_indexing);
 void untrash_users();
-vc uid_to_dir(vc uid);
-vc dir_to_uid(DwString s);
 int count_trashed_users();
 int empty_trash();
+
+vc uid_to_dir(const vc &uid);
+vc dir_to_uid(DwString s);
 void append_forwarded_text(DwString& s, vc body);
 void append_forwarded_bodies(vc v, vc body);
 vc get_body_text(vc body);
@@ -133,7 +140,7 @@ void save_qmsg_state();
 // which is different than the number of entries in
 // the current index.
 vc do_local_store(vc filename, vc speced_mid);
-vc make_best_local_info(vc uid, int *cant_resolve_now);
+vc make_best_local_info(const vc& uid, int *cant_resolve_now);
 int init_msg_folder(vc uid);
 int init_msg_folder(vc uid, DwString* fn_out);
 vc encrypt_msg_qqm(vc msg_to_send, vc dhsf, vc ectx, vc key);
@@ -150,12 +157,14 @@ int decrypt_attachment(vc filename, vc key, vc filename_dst);
 
 unsigned long uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal);
 int uid_online(vc uid);
+int uid_online_display(const vc& uid);
 void boost_clock(vc mi);
 int move_replace(const DwString& s, const DwString& d);
 vc pal_to_vector(int raw);
 void clean_cruft();
 void boost_logical_clock();
 void update_global_logical_clock(int64_t lc);
+int64_t diff_logical_clock(int64_t tm);
 
 #define VERF_AUTH_NO_INFO 0x1
 #define VERF_AUTH_FAILED 0x2

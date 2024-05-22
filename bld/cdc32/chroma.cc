@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -36,10 +36,7 @@
 #include "jchuff.h"
 #include "jdhuff.h"
 #include "macs.h"
-#include "pred.h"
 #include "mo.h"
-#include "sqrs.h"
-#include "statfun.h"
 #include "chroma.h"
 
 #define VERB(x)
@@ -363,3 +360,4 @@ done_block:
     decoded_frame_now = df;
     finish_frame();
 }
+#endif

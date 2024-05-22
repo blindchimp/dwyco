@@ -12,114 +12,114 @@
 #include "dwrtlog.h"
 #define TRACK_ADD(var, num) do {\
     GRTLOG(#var " %d", num, 0); \
-if(Track_stats) \
+if(dwyco::Track_stats) \
 { \
         vc __n; \
-        if(Stats.find(#var, __n)) \
+        if(dwyco::Stats.find(#var, __n)) \
 	{ \
                 int __i = static_cast<int>(__n); \
                 __i += (num); \
-                Stats.add_kv(#var, __i); \
+                dwyco::Stats.add_kv(#var, __i); \
 	} \
 	else \
 	{ \
-        Stats.add_kv(#var, static_cast<int>(num)); \
+        dwyco::Stats.add_kv(#var, static_cast<int>(num)); \
 	} \
-        dwyco::save_info(Stats, "stats"); \
+        dwyco::save_info(dwyco::Stats, "stats"); \
 } \
 } while(0)
 
 #define TRACK_ADD_str(var, num) do {\
     GRTLOG(#var " %d", num, 0); \
-if(Track_stats) \
+if(dwyco::Track_stats) \
 { \
         vc __n; \
-        if(Stats.find(var, __n)) \
+        if(dwyco::Stats.find(var, __n)) \
 	{ \
                 int __i = static_cast<int>(__n); \
                 __i += (num); \
-                Stats.add_kv(var, __i); \
+                dwyco::Stats.add_kv(var, __i); \
 	} \
 	else \
 	{ \
-        Stats.add_kv(var, static_cast<int>(num)); \
+        dwyco::Stats.add_kv(var, static_cast<int>(num)); \
 	} \
-        dwyco::save_info(Stats, "stats"); \
+        dwyco::save_info(dwyco::Stats, "stats"); \
 } \
 } while(0)
 
 #define TRACK_ADD_nosave(var, num) do {\
     GRTLOG(#var " %d", num, 0); \
-if(Track_stats) \
+if(dwyco::Track_stats) \
 { \
         vc __n; \
-        if(Stats.find(#var, __n)) \
+        if(dwyco::Stats.find(#var, __n)) \
 	{ \
                 int __i = int(__n); \
                 __i += (num); \
-                Stats.add_kv(#var, __i); \
+                dwyco::Stats.add_kv(#var, __i); \
 	} \
 	else \
 	{ \
-        Stats.add_kv(#var, int(num)); \
+        dwyco::Stats.add_kv(#var, int(num)); \
 	} \
 } \
 } while(0)
 
 #define TRACK_MAX(var, num) do {\
     GRTLOG(#var " max %d", num, 0); \
-if(Track_stats) \
+if(dwyco::Track_stats) \
 { \
         vc __n; \
-        if(Stats.find(#var "_max", __n)) \
+        if(dwyco::Stats.find(#var "_max", __n)) \
         { \
                 int __i = int(__n); \
                 if((num) > __i) \
-                    Stats.add_kv(#var "_max", int(num)); \
+                    dwyco::Stats.add_kv(#var "_max", int(num)); \
         } \
         else \
         { \
-                Stats.add_kv(#var "_max", int(num)); \
+                dwyco::Stats.add_kv(#var "_max", int(num)); \
         } \
-        dwyco::save_info(Stats, "stats"); \
+        dwyco::save_info(dwyco::Stats, "stats"); \
 } \
 } while(0)
 
 #define TRACK_ADD_VC(avar, num) do {\
     GRTLOGVC(avar); \
-if(Track_stats) \
+if(dwyco::Track_stats) \
 { \
         vc __n; \
     vc __var = (avar); \
-        if(Stats.find(__var, __n)) \
+        if(dwyco::Stats.find(__var, __n)) \
 	{ \
                 int __i = int(__n); \
                 __i += (num); \
-                Stats.add_kv(__var, __i); \
+                dwyco::Stats.add_kv(__var, __i); \
 	} \
 	else \
 	{ \
-                Stats.add_kv(__var, int(num)); \
+                dwyco::Stats.add_kv(__var, int(num)); \
 	} \
-    dwyco::save_info(Stats, "stats"); \
+    dwyco::save_info(dwyco::Stats, "stats"); \
 } \
 } while(0)
 
 #define TRACK_ADD_VC_nosave(avar, num) do {\
     GRTLOGVC(avar); \
-if(Track_stats) \
+if(dwyco::Track_stats) \
 { \
         vc __n; \
     vc __var = (avar); \
-        if(Stats.find(__var, __n)) \
+        if(dwyco::Stats.find(__var, __n)) \
 	{ \
                 int __i = int(__n); \
                 __i += (num); \
-                Stats.add_kv(__var, __i); \
+                dwyco::Stats.add_kv(__var, __i); \
 	} \
 	else \
 	{ \
-                Stats.add_kv(__var, int(num)); \
+                dwyco::Stats.add_kv(__var, int(num)); \
 	} \
 } \
 } while(0)
@@ -132,9 +132,11 @@ if(Track_stats) \
 #define TRACK_MAX(var, num) do {} while(0)
 #endif
 
+namespace dwyco {
 extern vc Stats;
 extern int Track_stats;
 void init_stats();
+}
 #include "xinfo.h"
 
 

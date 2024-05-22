@@ -15,16 +15,22 @@ Page {
             color: core.is_database_online === 1 ? "green" : "red"
         }
     }
+    focusPolicy: Qt.StrongFocus
     Column {
 
-        spacing: mm(1)
+        spacing: mm(5)
         anchors.fill: parent
-        anchors.margins: mm(1)
+        anchors.margins: mm(5)
         Button {
             id: watch_button
             width: parent.width
             height: parent.height / 2
             text: "Watch"
+            focus: true
+            Component.onCompleted: {
+                forceActiveFocus()
+            }
+            KeyNavigation.down: capture_button
 
         }
 

@@ -8,7 +8,6 @@
 */
 #include "mmchan.h"
 #include "qdirth.h"
-#include "dirth.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "chatgrid.h"
@@ -19,6 +18,9 @@
 #include "ta.h"
 #include "profiledb.h"
 #include "dwscoped.h"
+#include "netlog.h"
+#include "qmsgsql.h"
+
 using namespace dwyco;
 
 extern vc Online;
@@ -137,6 +139,19 @@ background_check_for_update_done(vc m, void *, vc, ValidPtr)
 }
 
 
+// NOTE: ca 2023, the chat server does not do the uid folding, so
+// we do it here. not sure if i should go ahead and do it remotely,
+// or just leave it as a presentation thing for the ui to take care
+// of.
+// NOTE AGAIN: folding the uid's caused a problem where the ip address
+// associated with a uid was not right. the Chat_ips cache is cumulative
+// and if you map a uid down to a representative, the ip associated with the
+// original uid is not right, and can cause connections that do NOT want
+// the mapped uid to get confused. this happened when uid's were mapped
+// showed the ip of some other uid. the Chat_ips are not used for user
+// presentation, only debugging and possibly sync connections or direct
+// connections, where having the unmapped uid is correct.
+//
 void
 MMChannel::chat_response(vc v)
 {
@@ -202,12 +217,13 @@ MMChannel::chat_response(vc v)
     else if(v[0] == chat_on)
     {
         GRTLOGVC(v);
-        vc uid = v[2];
-        vc name = v[1];
-        vc ip = v[3];
-        vc ah = v[4];
-        vc ports = v[5];
-        vc attrs = v[6];
+        const vc& unmapped_uid = v[2];
+        const vc& uid = map_to_representative_uid(unmapped_uid);
+        const vc& name = v[1];
+        const vc& ip = v[3];
+        const vc& ah = v[4];
+        const vc& ports = v[5];
+        const vc& attrs = v[6];
 #ifdef DWYCO_ASSHAT
         new_asshole(uid, ah);
 #endif
@@ -227,40 +243,41 @@ MMChannel::chat_response(vc v)
 
                 TheChatGrid->end_update();
             }
-            Chat_ports.add_kv(uid, ports);
-            Chat_ips.add_kv(uid, strip_port(ip));
+            Chat_ports.add_kv(unmapped_uid, ports);
+            Chat_ips.add_kv(unmapped_uid, strip_port(ip));
 
         }
     }
     else if(v[0] == chat_off)
     {
-        vc uid = v[1];
+        const vc& uid = map_to_representative_uid(v[1]);
         if(!uid_ignored(uid))
         {
             if(TheChatGrid)
             {
                 TheChatGrid->start_update();
-                TheChatGrid->remove_user(v[1]);
+                TheChatGrid->remove_user(uid);
                 TheChatGrid->end_update();
             }
         }
     }
     else if(v[0] == currently_on)
     {
-        vc ul = v[1];
+        const vc& ul = v[1];
         GRTLOG("CURRENT", 0, 0);
         GRTLOGVC(ul);
-        int n = v[1].num_elems();
+        int n = ul.num_elems();
         if(TheChatGrid)
             TheChatGrid->start_update();
         for(int i = 0; i < n; ++i)
         {
-            vc uid = ul[i][0][1];
-            vc name = ul[i][0][0];
-            vc ports = ul[i][0][3];
-            vc ah = ul[i][2];
-            vc ip = ul[i][1];
-            vc attrs = ul[i][3];
+            const vc& unmapped_uid = ul[i][0][1];
+            const vc& uid = map_to_representative_uid(unmapped_uid);
+            const vc& name = ul[i][0][0];
+            const vc& ports = ul[i][0][3];
+            const vc& ah = ul[i][2];
+            const vc& ip = ul[i][1];
+            const vc& attrs = ul[i][3];
             GRTLOGVC(uid);
             GRTLOGVC(name);
             GRTLOGVC(ports);
@@ -281,8 +298,8 @@ MMChannel::chat_response(vc v)
                         TheChatGrid->update_attr(uid, attrs[i][0], attrs[i][1]);
                     }
                 }
-                Chat_ports.add_kv(uid, ports);
-                Chat_ips.add_kv(uid, strip_port(ip));
+                Chat_ports.add_kv(unmapped_uid, ports);
+                Chat_ips.add_kv(unmapped_uid, strip_port(ip));
 
             }
         }
@@ -418,7 +435,7 @@ MMChannel::chat_response(vc v)
         GRTLOGVC(v);
         if(TheChatGrid)
         {
-            TheChatGrid->update_attr(v[1], v[2], v[3]);
+            TheChatGrid->update_attr(map_to_representative_uid(v[1]), v[2], v[3]);
         }
     }
     else if(v[0] == admin_info)
@@ -474,7 +491,7 @@ MMChannel::chat_response(vc v)
         // here is where we need *all* the servers, so they can be
         // broken out into their components and saved for use by
         // other parts of the DLL
-        void update_server_list(vc m, void *, vc, ValidPtr);
+        //void update_server_list(vc m, void *, vc, ValidPtr);
         vc m(VC_VECTOR);
         m[1] = v[2];
         update_server_list(m, 0, vcnil, ValidPtr());
@@ -538,29 +555,18 @@ MMChannel::chat_response(vc v)
 }
 
 MMChannel *
-MMChannel::start_server_channel(enum resolve_how how, unsigned long addr, const char *name, int port)
+MMChannel::start_server_channel(vc ip, int port)
 {
     MMChannel *m = new MMChannel;
     m->server_channel = 1;
     m->port = port;
-    if(how == BYNAME)
+
+    if(!m->start_connect(ip, port))
     {
-        if(!m->start_resolve(how, addr, name))
-        {
-            delete m;
-            return 0;
-        }
+        delete m;
+        return 0;
     }
-    else
-    {
-        // start straight with the ip
-        m->addr_out.s_addr = addr;
-        if(!m->start_connect())
-        {
-            delete m;
-            return 0;
-        }
-    }
+
     m->start_service();
     m->frame_timer.stop();
     m->ref_timer.stop();
@@ -573,6 +579,8 @@ MMChannel::start_server_channel(enum resolve_how how, unsigned long addr, const 
     m->bps_audio_recv.stop();
     m->bps_file_xfer.stop();
     m->pinger_timer.stop();
+
+    Netlog_signal.emit(m->tube->mklog("event", "server"));
 
     return m;
 }

@@ -3,7 +3,7 @@
 
 if [ ! -d "$NDK" ]
 then
-export NDK=~/android/android-ndk
+export NDK=~/Android/Sdk/ndk/21.3.6528147
 fi
 echo $NDK
 
@@ -17,4 +17,4 @@ fi
 (cd ..;mkdir obj)
 # force rebuild all
 #$NDK/ndk-build -B NDK_DEBUG=1
-$NDK/ndk-build  -B -j8 #NDK_DEBUG=1
+$NDK/ndk-build   -j8 #NDK_DEBUG=1

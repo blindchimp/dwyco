@@ -33,7 +33,7 @@ void
 vc_composite::bomb_func(const char *type) const
 {
 	char s[1000];
-	sprintf(s, "can't convert composite to %s\n", type);
+    snprintf(s, sizeof(s), "can't convert composite to %s\n", type);
 	USER_BOMB2(s);
 }
 
@@ -272,7 +272,7 @@ vc_composite::operator[](int)const {bomb_setop(); return bogus;}
 const vc&
 vc_composite::operator[](long)const {bomb_setop(); return bogus;}
 int
-vc_composite::contains(const vc&){bomb_setop();return 0;}
+vc_composite::contains(const vc&) const {bomb_setop();return 0;}
 int
 vc_composite::find(const vc&, vc& ){bomb_setop();return 0;}
 void

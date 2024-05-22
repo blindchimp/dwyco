@@ -8,19 +8,20 @@
 */
 
 #include "directsend.h"
+#include "qmsgsql.h"
 #include "qsend.h"
-#include "dlli.h"
 #include "se.h"
 #include "msend.h"
 #include "qmsg.h"
 #include "xinfo.h"
 #include "ezset.h"
+#include "activeuid.h"
 
 namespace dwyco {
 
 static
 void
-qs_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, vc ruid)
+qs_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, const vc& ruid)
 {
     // avoid multiple start messages for one "round" of send attempts
     if(status == SE_MSG_SEND_START)
@@ -65,13 +66,19 @@ send_via_server_int(const DwString& qfn, int inhibit_encryption, int no_group, i
 
 static
 void
-ds_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, vc ruid)
+ds_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, const vc& ruid)
 {
     if(status == SE_MSG_SEND_SUCCESS ||
             status == SE_MSG_SEND_START ||
             status == SE_MSG_SEND_DELIVERY_SUCCESS ||
             status == SE_MSG_SEND_CANCELED)
     {
+        if(status == SE_MSG_SEND_SUCCESS)
+        {
+            const vc uids = map_uid_to_uids(ruid);
+            for(int i = 0; i < uids.num_elems(); ++i)
+                No_direct_msgs.del(uids[i]);
+        }
         se_emit_msg(status, qfn, ruid);
         return;
     }
@@ -153,6 +160,37 @@ send_best_way(const DwString& qfn, vc ruid)
     // that will cause it not to be picked up while we are operating on it, but
     // that will eventually be picked up and sent.
 
+    // note: the recipient of a message isn't considered "part of the message"
+    // for purposes of delivery. but, we store the recipient uid in the file
+    // that is created and stored while delivery is attempted. unfortunately,
+    // sometimes the best place to deliver a message is different than what
+    // is initially stored in the message. the current send state-machines
+    // pretty much assume the recipient is a constant, and will use whatever
+    // is stored in the message while it is trying to deliver it.
+    // the api for "directsend" probably needs to be augmented with something
+    // like "ignore what is in the message and try to send it here first",
+    // and since if there is any error
+    // at all, it switches to server send, things shouldn't need to get too
+    // much more complicated.
+    // XXX note also, if we are in a group and we are sending to ourselves
+    // or anyone in the group, we probably need to special case that, short-circuiting
+    // it seems like a good idea.
+    int skip_direct = 0;
+    vc best_uid = find_best_candidate_for_initial_send(ruid, skip_direct);
+    vc m;
+    // kluge: update recipient
+    if(!load_info(m, qfn.c_str()))
+        return 0;
+    m[QQM_RECIP_VEC][0] = best_uid;
+    if(!save_info(m, qfn.c_str()))
+        return 0;
+
+    if(skip_direct)
+    {
+        move_to_outbox(qfn);
+        return send_via_server_int(qfn, 0, 0, 0);
+    }
+
     DirectSend *ds = new DirectSend(qfn);
     ds->se_sig.connect_ptrfun(ds_signal_bounce);
     ds->status_sig.connect_ptrfun(se_emit_msg_status);
@@ -180,7 +218,7 @@ send_best_way(const DwString& qfn, vc ruid)
 // message as well so it is never sent.
 static
 void
-delete_message(enum dwyco_sys_event, const DwString& qfn, vc)
+delete_message(enum dwyco_sys_event, const DwString& qfn, const vc&)
 {
     // note: on windows, we may not be able to delete a message if it is
     // still open. this is likely to happen more with attachments, so

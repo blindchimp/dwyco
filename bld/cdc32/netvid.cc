@@ -10,9 +10,8 @@
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/netvid.cc 1.27 1999/01/10 16:09:38 dwight Checkpoint $
  */
-#ifdef _Windows
+
 #include <windows.h>
-#endif
 #include <stdio.h>
 #include <string.h>
 #include "netvid.h"
@@ -22,10 +21,55 @@
 #include "dwvec.h"
 #include "dwrtlog.h"
 #include "dwstr.h"
+#include "netlog.h"
+#include "dwyco_rand.h"
+#include "vccrypt2.h"
+using namespace dwyco;
 
 vc MMTube::Ping("vomit");
 int MMTube::dummy;
 int MMTube::always_zero;
+
+
+vc
+MMTube::mklog(vc v1, vc v2, vc v3, vc v4, vc v5, vc v6, vc v7, vc v8)
+{
+    vc v(VC_VECTOR);
+    if(ctrl_sock)
+    {
+    v.append("local_ip");
+    v.append(ctrl_sock->local_addr().c_str());
+    v.append("peer_ip");
+    v.append(ctrl_sock->peer_addr().c_str());
+    }
+    v.append("tube_id");
+    v.append(tubeid);
+    v.append("bytes_out");
+    v.append(total_sent);
+    v.append("bytes_in");
+    v.append(total_recv);
+    if(!v1.is_nil())
+    {
+        v.append(v1);
+        v.append(v2);
+    }
+    if(!v3.is_nil())
+    {
+        v.append(v3);
+        v.append(v4);
+    }
+    if(!v5.is_nil())
+    {
+        v.append(v5);
+        v.append(v6);
+    }
+    if(!v7.is_nil())
+    {
+        v.append(v7);
+        v.append(v8);
+    }
+    return v;
+}
 
 MMTube::MMTube() :
     baud(0, !DWVEC_FIXED, DWVEC_AUTO_EXPAND),
@@ -43,10 +87,16 @@ MMTube::MMTube() :
     last_tick = GetTickCount();
     enc_ctrl = 0;
     dec_ctrl = 0;
+    init_netlog();
+    tubeid = dwyco_rand();
+    total_recv = 0;
+    total_sent = 0;
 }
 
 MMTube::~MMTube()
 {
+    if(ctrl_sock)
+        Netlog_signal.emit(mklog("event", "tube destroy"));
     delete ctrl_sock;
     delete mm_sock;
     for(int i = 2; i < socks.num_elems(); ++i)
@@ -63,6 +113,7 @@ MMTube::toss()
     {
         last_ctrl_error = ctrl_sock->last_error;
         GRTLOG("toss %s %s", (const char *)last_ctrl_error, ctrl_sock->peer_addr().c_str());
+        Netlog_signal.emit(mklog("event", "ctrl toss"));
     }
     else
     {
@@ -125,6 +176,7 @@ MMTube::set_channel(SimpleSocket *s, int enc, int dec, int chan)
     socks[chan] = s;
     enc_chan[chan] = enc;
     dec_chan[chan] = dec;
+    Netlog_signal.emit(mklog("event", "chan import", "chan_id", chan));
     // what about in_bits and baud... hmmm
 }
 
@@ -139,6 +191,7 @@ MMTube::drop_channel(int chan)
 {
     if(!connected)
         return;
+    Netlog_signal.emit(mklog("event", "chan drop", "chan_id", chan));
     delete socks[chan];
     socks[chan] = 0;
     enc_chan[chan] = 0;
@@ -190,11 +243,12 @@ MMTube::gen_channel(unsigned short remote_port, int& chan)
         drop_channel(chan);
         return ret;
     }
+    Netlog_signal.emit(mklog("event", "chan connected", "chan_id", chan));
     return 1;
 }
 
 int
-MMTube::connect(const char *remote_addr, const char *local_addr, int block, HWND hwnd, int setup_unreliable)
+MMTube::connect(const char *remote_addr, const char *local_addr, int block, int setup_unreliable)
 {
     if(connected)
         return SSERR;
@@ -209,7 +263,7 @@ MMTube::connect(const char *remote_addr, const char *local_addr, int block, HWND
 
     // XXX block/noblock on connect
     ctrl_sock->non_blocking(!block);
-    if(!ctrl_sock->init(remote_addr, local_addr, retry, hwnd))
+    if(!ctrl_sock->init(remote_addr, local_addr, retry))
     {
         int ret = SSERR;
         if(ctrl_sock->wouldblock())
@@ -225,6 +279,7 @@ MMTube::connect(const char *remote_addr, const char *local_addr, int block, HWND
 
     }
     connected = 1;
+    Netlog_signal.emit(mklog("event", "ctrl connected"));
     return 1;
 }
 
@@ -274,6 +329,7 @@ MMTube::accept(SimpleSocket *s)
     }
     ctrl_sock = s;
     connected = 1;
+    Netlog_signal.emit(mklog("event", "ctrl accepted"));
     return 1;
 
 }
@@ -291,6 +347,7 @@ MMTube::disconnect_ctrl()
     if(!ctrl_sock)
         return 1;
     last_ctrl_error = ctrl_sock->last_error;
+    Netlog_signal.emit(mklog("event", "ctrl terminated"));
     delete ctrl_sock;
     ctrl_sock = 0;
     GRTLOG("toss ctrl %s", (const char *)last_ctrl_error, 0);
@@ -461,7 +518,8 @@ MMTube::send_ctrl_data(vc v)
             return SSERR;
         v = tmp;
     }
-    if(!ctrl_sock->sendvc(v))
+    int len = 0;
+    if((len = ctrl_sock->sendvc(v)) == 0)
     {
         if(ctrl_sock->wouldblock())
             return SSTRYAGAIN;
@@ -471,6 +529,7 @@ MMTube::send_ctrl_data(vc v)
     // assume control and data are going over
     // same link
     //in_bits += 8 * (long)len;
+    total_sent += len;
     return 1;
 }
 
@@ -482,13 +541,15 @@ MMTube::recv_ctrl_data(vc& v)
     // eat keepalive messages
     do
     {
-        if(!ctrl_sock->recvvc(v))
+        int len = 0;
+        if((len = ctrl_sock->recvvc(v)) == 0)
         {
             if(ctrl_sock->wouldblock())
                 return SSTRYAGAIN;
             disconnect_ctrl();
             return SSERR;
         }
+        total_recv += len;
         if(dec_ctrl)
         {
             GRTLOG("DEC ctrl ", 0, 0);
@@ -527,14 +588,14 @@ MMTube::send_data(vc v, int chan, int bwchan)
         if(tmp.is_nil())
             return SSERR;
         v = tmp;
-        len = v[1].len();
+        //len = v[1].len();
     }
     else
     {
         // guestimate
-        len = v.len();
+        //len = v.len();
     }
-    if(!socks[chan]->sendvc(v))
+    if((len = socks[chan]->sendvc(v)) == 0)
     {
         if(socks[chan]->wouldblock())
             return SSTRYAGAIN;
@@ -542,6 +603,7 @@ MMTube::send_data(vc v, int chan, int bwchan)
         return SSERR;
     }
     in_bits[bwchan] += len * 8;
+    total_sent += len;
     return 1;
 }
 
@@ -574,13 +636,17 @@ MMTube::recv_data(vc& v, int chan)
 {
     if(socks[chan] == 0)
         return SSERR;
-    if(!socks[chan]->recvvc(v))
+    // check all recvvc returns len properly
+    // libuv version does...
+    int len = 0;
+    if(!(len = socks[chan]->recvvc(v)))
     {
         if(socks[chan]->wouldblock())
             return SSTRYAGAIN;
         drop_channel(chan);
         return SSERR;
     }
+    total_recv += len;
     if(dec_chan[chan])
     {
         GRTLOG("DEC chan %d ", chan, 0);
@@ -636,6 +702,7 @@ MMTube::tick()
         keepalive_timer.ack_expire();
         if(!keepalive())
         {
+            Netlog_signal.emit(mklog("event", "keepalive failed"));
             toss();
             return 0;
         }

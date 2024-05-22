@@ -13,24 +13,15 @@
 #include <io.h>
 #include <fcntl.h>
 #endif
+#include <windows.h>
 #include "vc.h"
-#include "vcxstrm.h"
-#include "vccomp.h"
-#include "qdirth.h"
-#include "gvchild.h"
 #include "dwtimer.h"
-#include "netvid.h"
 #include "qauth.h"
-#include "dirth.h"
-#include "pval.h"
-#include "qmsg.h"
 #include "asshole.h"
-#include "dlli.h"
 #ifdef LINUX
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "miscemu.h"
 #endif
 #include "dwrtlog.h"
 #include "xinfo.h"
@@ -39,6 +30,8 @@
 using namespace dwyco;
 
 vc vclh_sha(vc);
+
+namespace dwyco {
 
 vc My_UID;
 vc My_MID;
@@ -52,7 +45,7 @@ int Entropy_charge;
 void (*Entropy_display_callback)(int);
 
 vc
-to_hex(vc s)
+to_hex(const vc& s)
 {
     const char *a = (const char *)s;
     int len = s.len();
@@ -79,7 +72,7 @@ hexd(char a)
 }
 
 vc
-from_hex(vc s)
+from_hex(const vc& s)
 {
     const char *a = (const char *)s;
     int len = s.len();
@@ -423,6 +416,8 @@ qauth_check_account_exists()
     vc dum1;
     vc dum2;
     return(load_auth_info(dum1, dum2, "auth"));
+}
+
 }
 
 

@@ -22,13 +22,13 @@
 #include <errno.h>
 #include <stdlib.h>
 #include "netvid.h"
-#include "dwlog.h"
-#include "doinit.h"
 #include "vc.h"
 #include "dwvec.h"
 #include "filetube.h"
 #include "dwrtlog.h"
-#include "fnmod.h"
+#include "netlog.h"
+
+using namespace dwyco;
 
 // switch little-endian stuff in files
 #ifdef __ppc__
@@ -614,7 +614,7 @@ DummyTube::can_write_mmdata()
 
 
 int
-DummyTube::connect(const char *remote_addr, const char *local_addr, int block, HWND hwnd, int setup_unreliable)
+DummyTube::connect(const char *remote_addr, const char *local_addr, int block, int setup_unreliable)
 {
     if(connected)
         return SSERR;
@@ -669,6 +669,10 @@ DummyTube::gen_channel(unsigned short remote_port, int& chan)
         drop_channel(chan);
         return ret;
     }
+    Netlog_signal.emit(mklog("event", "dchan connected", "chan_id", chan,
+                          "local_ip", socks[chan]->local_addr().c_str(),
+                          "peer_ip", socks[chan]->peer_addr().c_str()
+                          ));
     return 1;
 }
 

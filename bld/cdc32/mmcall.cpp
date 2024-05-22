@@ -19,7 +19,7 @@
 // to hang all this off of them, and it is better if they are just
 // left as "one shot" objects rather than trying to extend them.
 //
-// in addition, we eventually want to have some kinda outgoing call
+// in addition, we eventually want to have some kind of outgoing call
 // q in order to limit the number of simultaneous calls, and these
 // objects could be used in that area as well.
 //
@@ -34,9 +34,9 @@
 #include "mmcall.h"
 #include "calllive.h"
 #include "dwrtlog.h"
-#include "qauth.h"
 #include "pval.h"
 #include "qmsg.h"
+#include "qauth.h"
 #ifdef _Windows
 typedef unsigned long in_addr_t;
 #endif
@@ -188,29 +188,12 @@ MMCall::start_call(int media_sel)
     this->media_select = media_sel;
     mc->call_type = call_type;
 
-    in_addr_t addr;
-    if((addr = inet_addr((const char *)host)) == INADDR_NONE)
+    if(!mc->start_connect(host, port))
     {
-        // start connect process at resolve stage
-        if(!mc->start_resolve(MMChannel::BYNAME, 0, (const char *)host))
-        {
-            mc->schedule_destroy(MMChannel::HARD);
-            return 0;
-        }
-
-
+        mc->schedule_destroy(MMChannel::HARD);
+        return 0;
     }
-    else
-    {
-        // start connect process with ip
-        mc->addr_out.s_addr = addr;
-        if(!mc->start_connect())
-        {
-            mc->schedule_destroy(MMChannel::HARD);
-            return 0;
-        }
 
-    }
     call_started();
     return 1;
 }

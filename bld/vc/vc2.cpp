@@ -8,7 +8,6 @@
 */
 #include "vc.h"
 #include "vcdeflt.h"
-#include "vcmap.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vc2.cpp 1.48 1998/08/06 04:44:12 dwight Exp $";
 
 vc
@@ -53,6 +52,13 @@ vc::socket_set_option(vcsocketmode m, unsigned long a1, unsigned long a2, unsign
 {
 	return rep->socket_set_option(m, a1, a2, a3);
 }
+#ifdef _Windows
+int
+vc::socket_set_async(void *hwnd, unsigned int msg, long events)
+{
+    return rep->socket_set_async(hwnd, msg, events);
+}
+#endif
 
 vcsocketmode
 vc::socket_get_mode()

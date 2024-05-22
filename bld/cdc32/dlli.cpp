@@ -272,6 +272,16 @@
 //
 //
 
+#ifdef _Windows
+#include <io.h>
+#include <direct.h>
+#include <sys/utime.h>
+#include <sys\stat.h>
+#include <time.h>
+#include <winsock2.h>
+#endif
+
+#include "vclhsys.h"
 #ifdef DWYCO_TRACE
 #include "dwyco_rename.h"
 #endif
@@ -280,8 +290,8 @@
 static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 
 
-//#undef NO_RTLOG
 #include "dlli.h"
+#include "cdcver.h"
 #include "trc.h"
 #include "doinit.h"
 #include "mmchan.h"
@@ -296,11 +306,9 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "dirth.h"
 #include "qauth.h"
 #include "vccrypt2.h"
-#include "msgdisp.h"
 #include "mcc.h"
 #include "aqkey.h"
 #include "chatdisp.h"
-#include "pbmcfg.h"
 #include "qdirth.h"
 
 #include "vccomp.h"
@@ -310,17 +318,11 @@ static int Inactivity_time = DEFAULT_INACTIVITY_TIME;
 #include "codec.h"
 #include "filetube.h"
 
-#define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
-#include "md5.h"
 #include "sha.h"
 using namespace CryptoPP;
-using namespace Weak;
-#include "filters.h"
-#include "files.h"
 #include "autoup.h"
 #include "fnmod.h"
 #include "profiledb.h"
-#include "msgddll.h"
 #include "callq.h"
 #include "mmcall.h"
 #include "calldll.h"
@@ -338,18 +340,6 @@ using namespace Weak;
 #include "tpgmdec.h"
 #include "imgmisc.h"
 #include "ser.h"
-#if defined(_MSC_VER)
-#include <io.h>
-#endif
-#ifdef _Windows
-#include <io.h>
-#ifdef _MSC_VER
-#include <direct.h>
-#include <sys/utime.h>
-#endif
-#include <sys\stat.h>
-#include <time.h>
-#endif
 
 #ifdef VIDGRAB_HACKS
 #include "vgexp.h"
@@ -366,30 +356,28 @@ using namespace Weak;
 #include "dhsetup.h"
 #include "dhgsetup.h"
 #include "qsend.h"
-#include "directsend.h"
 #include "msend.h"
 #include "cdcpal.h"
 #include "dwyco_rand.h"
 #include "dwscoped.h"
 #include "ta.h"
-#include "cdcver.h"
 #include "dwcls_timer.h"
 #include "qmsgsql.h"
 #include "vcwsock.h"
-#include "backsql.h"
+//#include "backsql.h"
 #include "grpmsg.h"
 #include "upnp.h"
 #include "pulls.h"
-#include "dwycolist2.h"
 #include "vcudh.h"
 #include "synccalls.h"
+#include "backandroid.h"
+#include "directsend.h"
 
 using namespace dwyco;
 
 //extern vc Session_ignore;
 extern vc Mutual_ignore;
 extern vc Server_list;
-extern int Send_auth;
 extern vc Current_authenticator;
 extern vc Current_session_key;
 extern DwVec<ValidPtr> CompositionDeleteQ;
@@ -398,11 +386,9 @@ static void setup_callbacks();
 static int UI_ids = 1000000;
 static int Inited;
 HWND Main_window;
-extern int Create_new_account;
+//extern int Create_new_account;
 extern int Database_id;
 
-int uid_online(vc);
-int uid_online_display(vc);
 unsigned long uid_to_ip(vc, int&, int&prim, int&sec, int&pal);
 void exit_conf_mode();
 void enter_conf_mode();
@@ -421,6 +407,7 @@ int Inhibit_auto_connect;
 vc Current_chat_server_id;
 int is_invisible();
 void set_invisible(int);
+void update_server_list(vc, void *, vc, ValidPtr);
 
 //static int ReadOnlyMode;
 extern int QSend_inprogress;
@@ -435,6 +422,9 @@ extern int Chat_online;
 extern vc App_ID;
 
 vc Client_version;
+namespace dwyco {
+DwTimer Db_timer("db_timer");
+}
 
 #undef CPPLEAK
 #ifdef CPPLEAK
@@ -476,7 +466,7 @@ struct BodyView {
 
     // this is a signal that is emitted as a progress indicator during
     // file transfers. it is intended for display purposes only.
-    ssns::signal4<const DwString&, vc, const DwString&, int> progress_signal;
+    ssns::signal4<const DwString&, const vc&, const DwString&, int> progress_signal;
 };
 
 DwQueryByMember<BodyView> BodyView::Bvqbm;
@@ -526,7 +516,7 @@ set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
     int p = (int)(((double)mc->total_got * 100) / e);
     if(q->status_callback)
     {
-        (*q->status_callback)((int)q->vp, msg, p, q->scb_arg1);
+        (*q->status_callback)(q->vp.cookie, msg, p, q->scb_arg1);
     }
     q->progress_signal.emit(DwString(q->msg_id), My_UID, DwString(msg), p);
 }
@@ -711,6 +701,8 @@ dbgdump(int id, const char *msg, int percent_done, void *user_arg)
 extern vc Online;
 extern vc Cur_uids;
 extern vc Client_ports;
+extern vc Client_disposition;
+
 
 DWYCOEXPORT
 void
@@ -731,6 +723,18 @@ dwyco_debug_dump()
         vc h = to_hex(v[i][0]);
         DwString a((const char *)h);
         a += " ";
+        vc disp;
+        if(Client_disposition.find(v[i][0], disp))
+        {
+            if(disp == vc("foreground"))
+                a += "fg ";
+            else
+                a += "bg ";
+        }
+        else
+        {
+            a += "xx ";
+        }
         a += (const char *)v[i][1];
         if(Client_ports.find(v[i][0], h))
         {
@@ -744,24 +748,34 @@ dwyco_debug_dump()
         }
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
     }
-    (*dbg_msg_callback)(0, "Broadcasts", 0, 0);
-    v = vc::tree_to_vector(Broadcast_discoveries);
-    for(int i = 0; i < v.num_elems(); ++i)
-    {
-        DwString a(to_hex(v[i][0]));
-        a += " ";
-        vc h = v[i][1];
-        a += " ";
-        a += h[0].peek_str();
-        a += " ";
-        a += h[1].peek_str();
-        a += " ";
-        a += h[2].peek_str();
-        a += " ";
-        a += h[3].peek_str();
-        a += " ";
-        (*dbg_msg_callback)(0, a.c_str(), 0, 0);
 
+    v = vc::tree_to_vector(Broadcast_discoveries);
+    if(v.num_elems() > 0)
+    {
+        (*dbg_msg_callback)(0, "Broadcasts", 0, 0);
+        for(int i = 0; i < v.num_elems(); ++i)
+        {
+            DwString a(to_hex(v[i][0]));
+            a += " ";
+            const vc& h = v[i][1];
+            a += h[BD_DISPOSITION].peek_str();
+            a += " ";
+            a += h[BD_IP].peek_str();
+            a += " ";
+            a += h[BD_NICE_NAME].peek_str();
+            a += " ";
+            a += h[BD_PRIMARY_PORT].peek_str();
+            a += " ";
+            a += h[BD_SECONDARY_PORT].peek_str();
+            a += " ";
+
+            (*dbg_msg_callback)(0, a.c_str(), 0, 0);
+
+        }
+    }
+    else
+    {
+        (*dbg_msg_callback)(0, "No local discoveries", 0, 0);
     }
 
     scoped_ptr<ChanList> chans(MMChannel::get_serviced_channels());
@@ -1016,6 +1030,13 @@ static int Suspend_listen_state;
 static int Suspend_listen_mode;
 
 DWYCOEXPORT
+int
+dwyco_get_suspend_state()
+{
+    return Dwyco_suspended;
+}
+
+DWYCOEXPORT
 void
 dwyco_suspend()
 {
@@ -1026,22 +1047,22 @@ dwyco_suspend()
     Dwyco_suspended = 1;
     // note: this pal stuff won't be necessary once we switch to regular
     // server-based interest list.
-    exit_pal();
-    MMChannel::exit_mmchan();
+    //exit_pal();
+    //MMChannel::exit_mmchan();
     // empty out all the system messages
     while(se_process() || dirth_poll_response())
         ;
     save_qmsg_state();
     suspend_qmsg();
-    exit_prfdb();
+    //exit_prfdb();
     save_entropy();
     int current_listen = is_listening();
     Suspend_listen_mode = current_listen;
     Suspend_listen_state = (int)get_settings_value("net/listen");
-    set_listen_state(0);
-    Inhibit_database_thread = 1;
-    Inhibit_auto_connect = 1;
-    Inhibit_pal = 1;
+    //set_listen_state(0);
+    //Inhibit_database_thread = 1;
+    //Inhibit_auto_connect = 1;
+    //Inhibit_pal = 1;
     // mobile platforms like to kill suspended processes, but that isn't
     // really a "crash"
     handle_crash_done();
@@ -1057,18 +1078,28 @@ dwyco_resume()
     if(!Dwyco_suspended)
         return;
     handle_crash_setup();
-    init_entropy();
-    Inhibit_database_thread = 0;
-    Inhibit_pal = 0;
-    Inhibit_auto_connect = 0;
-    QSend_inprogress = 0;
-    QSend_special_inprogress = 0;
-    turn_accept_on();
-    set_listen_state(Suspend_listen_state);
-    init_pal();
-    resume_qmsg();
-    init_prfdb();
+    //init_entropy();
+    // just give it a little nudge
+    // yep, a couple of trash bytes in here
+    char a[4];
+    a[0] = (char)dwyco_rand();
+    a[3] = (char)dwyco_rand();
+    add_entropy(a, sizeof(a));
+    //Inhibit_database_thread = 0;
+    //Inhibit_pal = 0;
+    //Inhibit_auto_connect = 0;
+    //QSend_inprogress = 0;
+    //QSend_special_inprogress = 0;
+    //turn_accept_on();
+    //set_listen_state(Suspend_listen_state);
+    //init_pal();
+    //recover_inprogress();
+    //resume_qmsg();
+    //init_prfdb();
     start_database_thread();
+    Db_timer.stop();
+    Db_timer.load(200);
+    Db_timer.start();
     Dwyco_suspended = 0;
 }
 
@@ -1413,17 +1444,6 @@ dwyco_set_client_version(const char *str, int len_str)
     Client_version = vc(VC_BSTRING, str, len_str);
 }
 
-DWYCOEXPORT
-void
-dwyco_set_app_id(const char *str, int len_str)
-{
-    if(str == 0)
-        dwyco::App_ID = vcnil;
-    else
-        dwyco::App_ID = vc(VC_BSTRING, str, len_str);
-}
-
-
 //
 // call this once at startup, preferably before doing
 // anything else (do it before starting the main
@@ -1444,9 +1464,9 @@ dwyco_init()
     // note: race condition here, but it isn't too likely
     // to be a problem and i can't be bothered to fix it at
     // the moment.
-    if(OpenMutex(MUTEX_ALL_ACCESS, FALSE, DWYCO_AUTOUPDATE_MUTEX_NAME) == NULL)
+    if(OpenMutex(MUTEX_ALL_ACCESS, FALSE, DWYCO_AUTOUPDATE_MUTEX_NAME(DWYCO_MUTEX_NAME)) == NULL)
     {
-        DLL_mutex = CreateMutex(NULL, FALSE, DWYCO_AUTOUPDATE_MUTEX_NAME);
+        DLL_mutex = CreateMutex(NULL, FALSE, DWYCO_AUTOUPDATE_MUTEX_NAME(DWYCO_MUTEX_NAME));
     }
     else
     {
@@ -1469,9 +1489,12 @@ dwyco_init()
 
     All_mute = 1;
 
-    // note: this is for rando, the external audio drivers
+    // note: for rando, the external audio drivers
     // will return 0 since we haven't set them up.
-#if defined(LINUX) || defined(_Windows)
+    // this was a kluge, need to just have rando
+    // explicitly avoid including any audio stuff.
+
+#if defined(LINUX)
     // note: these must be 1 if you have external audio in linux, since
     // init_codec probes the devices to see if they are there and can
     // be used for full-duplex stuff. what a hack. really need to fix
@@ -1487,9 +1510,8 @@ dwyco_init()
         if(!Disable_UPNP)
         {
         int rport = (dwyco_rand() % (65500 - 10000)) + 10000;
-//        dwyco_set_net_data(rport, rport + 1, rport + 2,
-//                           rport, rport + 1, rport + 2,
-//                           1, 0, CSMS_TCP_ONLY, 1);
+        dwyco_inhibit_pal(1);
+        set_settings_value("net/listen", 0);
         set_settings_value("net/primary_port", rport);
         set_settings_value("net/secondary_port", rport + 1);
         set_settings_value("net/pal_port", rport + 2);
@@ -1501,6 +1523,7 @@ dwyco_init()
         set_settings_value("net/advertise_nat_ports", 1);
         set_settings_value("net/disable_upnp", 0);
         set_settings_value("net/call_setup_media_select", CSMS_TCP_ONLY);
+        dwyco_inhibit_pal(0);
         set_settings_value("net/listen", 1);
 #ifndef DWYCO_NO_UPNP
         bg_upnp(rport, rport + 1, rport, rport + 1);
@@ -1572,7 +1595,11 @@ dwyco_init()
     // the user can override by calling this itself.
     dwyco_enable_activity_checking(1, Inactivity_time, internal_activity);
     init_gj();
+    if(vclh_file_exists(newfn(MSG_IDX_DB).c_str()).is_nil())
+        reindex_possible_changes();
+#ifdef DWYCO_SYNC_DEBUG
     reindex_possible_changes();
+#endif
     Inited = 1;
     return 1;
 }
@@ -1588,6 +1615,17 @@ dwyco_exit()
 {
     if(!Inited)
         return 1;
+    // just empty the trash once a week, this is mainly for debugging
+    // these days anyway, since we don't really offer a way for users
+    // to untrash this atm.
+    vc last_empty;
+    if(!load_info(last_empty, "trs.dif") ||
+            (time(0) - (time_t)last_empty) > ((time_t)7 * 24 * 3600))
+    {
+        empty_trash();
+        last_empty = time(0);
+        save_info(last_empty, "trs.dif");
+    }
     // just to flush stats
     TRACK_ADD(DLLI_exit, 1);
     dwyco_enable_activity_checking(0, 0, 0);
@@ -1597,6 +1635,8 @@ dwyco_exit()
     exit_audio_input();
     exit_audio_output();
     exit_codec();
+    //android_backup();
+    //android_restore_msgs();
 
     // don't delete, since there may be post-dwyco_exit calls come
     // in from global dtors and stuff, just log them
@@ -1626,6 +1666,8 @@ dwyco_bg_init()
 
     handle_crash_setup();
     load_info(Transmit_stats, "stats");
+    unlink(newfn("stats").c_str());
+
     setup_callbacks();
     init_bg_msg_send("bg.log");
     init_pal();
@@ -1639,7 +1681,11 @@ dwyco_bg_init()
     if((gm = getenv("kk27g")) != 0)
         KKG = gm;
     init_gj();
+    if(vclh_file_exists(newfn(MSG_IDX_DB).c_str()).is_nil())
+        reindex_possible_changes();
+#ifdef DWYCO_SYNC_DEBUG
     reindex_possible_changes();
+#endif
     Inited = 1;
     return 1;
 }
@@ -1656,6 +1702,43 @@ dwyco_bg_exit()
     GRTLOG("end of exit", 0, 0);
     handle_crash_done();
     Inited = 0;
+    return 1;
+}
+
+// call this AFTER calling dwyco_init_*
+// it installs a new server list, and if it is
+// different from the list on the disk, you'll get
+// callbacks for exiting the program, and it also
+// updates the server list on disk so the next restart
+// will use the new list you just installed.
+DWYCOEXPORT
+int
+dwyco_update_server_list(const char *lhxfer_str, int lhxfer_str_len)
+{
+    vc v(VC_BSTRING, lhxfer_str, lhxfer_str_len);
+    vcxstream vcx((const char *)v, v.len(), vcxstream::FIXED);
+
+    vc item;
+    long len;
+    if(!vcx.open(vcxstream::READABLE))
+    {
+        return 0;
+    }
+    if((len = item.xfer_in(vcx)) < 0)
+    {
+        GRTLOG("can't read supplied server list (must be LH xfer format)", 0, 0);
+        return 0;
+    }
+    if(item.type() != VC_VECTOR)
+    {
+        GRTLOG("server list must be a vector", 0, 0);
+        return 0;
+    }
+    vc m(VC_VECTOR);
+    m[1] = item;
+    // WARNING: this function may call dwyco_exit and quit the program
+    // if the server list has changed.
+    update_server_list(m, 0, vcnil, ValidPtr());
     return 1;
 }
 
@@ -1752,6 +1835,10 @@ login_auth_results(vc m, void *, vc, ValidPtr)
             {
                 set_invisible(1);
             }
+            if(m[3][12].type() == VC_INT)
+            {
+                dwyco::DirectSend::Inline_attach_size = (int)m[3][12];
+            }
             pal_login();
         }
         if(m[2] == created)
@@ -1791,6 +1878,8 @@ set_group_uids(vc m, void *, vc, ValidPtr)
     // if the server doesn't know the group at all, you still get back
     // a vector with your own uid in it.
     Group_uids = m[1];
+    // update profiles, since this is an "authoritative" group membership
+    update_profiles_for_new_membership();
 }
 
 // NOTE: before this is called, all the static public keys and
@@ -1828,30 +1917,31 @@ send_new()
 
 }
 
-static void
+static
+void
 db_reconnect()
 {
     if(Inhibit_auto_connect)
         return;
-    static DwTimer db_timer("db_timer");
+
     static int been_here;
     if(Database_id == -1)
     {
         if(!been_here)
         {
-            db_timer.set_oneshot(1);
-            db_timer.load(1);
-            db_timer.start();
+            Db_timer.set_oneshot(1);
+            Db_timer.load(1);
+            Db_timer.start();
             been_here = 1;
         }
-        if(!db_timer.is_running())
+        if(!Db_timer.is_running())
         {
-            db_timer.load((10 + (dwyco_rand() % 45)) * 1000);
-            db_timer.start();
+            Db_timer.load((10 + (dwyco_rand() % 45)) * 1000);
+            Db_timer.start();
         }
-        if(db_timer.is_expired())
+        if(Db_timer.is_expired())
         {
-            db_timer.ack_expire();
+            Db_timer.ack_expire();
             start_database_thread();
         }
 
@@ -1968,6 +2058,14 @@ dwyco_inhibit_all_incoming(int i)
 
 DWYCOEXPORT
 void
+dwyco_set_disposition(const char *str, int len_str)
+{
+    vc s(VC_BSTRING, str, len_str);
+    MMChannel::My_disposition = s;
+}
+
+DWYCOEXPORT
+void
 dwyco_fetch_info(const char *uid, int len_uid)
 {
     vc vuid(VC_BSTRING, uid, len_uid);
@@ -2020,7 +2118,7 @@ handle_deferred_msg_send()
 // wake you up. you can also safely ignore this and
 // just call at fixed intervals to simplify things.
 //
-// if spin_out is non-zero, it means the core wants to
+// if *spin_out is non-zero, it means the core wants to
 // be called continuously.
 // sometimes the core needs
 // spinning to make things work properly (like
@@ -2128,11 +2226,16 @@ dwyco_service_channels(int *spin_out)
     }
 #endif
     {
-    DwString str;
-    dwtime_t nex = DwTimer::next_expire_time(str) - DwTimer::time_now();
-    GRTLOG("next timer %ld", nex, 0);
-    GRTLOG("(%s)", str.c_str(), 0);
-    entered = 0;
+        DwString str;
+        dwtime_t nex = DwTimer::next_expire_time(str) - DwTimer::time_now();
+#if 0
+        GRTLOG("next timer %ld", nex, 0);
+        GRTLOG("(%s)", str.c_str(), 0);
+
+        void android_log_stuff(const char *str, const char *s1, int s2);
+        android_log_stuff("dsc tmr ", str.c_str(), nex);
+#endif
+        entered = 0;
     return nex;
     }
 }
@@ -2339,6 +2442,7 @@ namespace dwyco {
 double Audio_delay = 2.0;
 int Audio_agc;
 int Audio_denoise;
+DwycoPublicChatDisplayCallback dwyco_bgapp_msg_callback;
 }
 
 
@@ -2460,7 +2564,6 @@ DWYCOEXPORT
 int
 dwyco_get_audio_output_in_progress()
 {
-    extern CRITICAL_SECTION Audio_lock;
     EnterCriticalSection(&Audio_lock);
     int spk = TheAudioOutput && TheAudioOutput->device_bufs_playing();
     LeaveCriticalSection(&Audio_lock);
@@ -2749,6 +2852,13 @@ void
 dwyco_set_public_chat_display_callback(DwycoPublicChatDisplayCallback cb)
 {
     public_chat_display_callback = cb;
+}
+
+DWYCOEXPORT
+void
+dwyco_set_bgapp_msg_callback(DwycoPublicChatDisplayCallback cb)
+{
+    dwyco::dwyco_bgapp_msg_callback = cb;
 }
 
 extern KeyboardAcquire *TheMsgAq;
@@ -3183,6 +3293,19 @@ dwyco_channel_create(const char *uid, int len_uid, DwycoCallDispositionCallback 
     return 1;
 }
 
+// note: adjusting the b/w throttles at start/stop of
+// streaming media is an optimization. in the past, we
+// just polled the state of the system and adjusted
+// every few seconds, which was a lot simpler in terms
+// of debugging and allowing changes to the system
+// that would not end up breaking the bandwidth allocation.
+// but, it was also wasteful, since most of the time the
+// allocation never changed. this way new way of doing it
+// just reflects the fact that video (and to a much less
+// extent audio and data-sync) is what uses the most
+// bandwidth in most situations. so we just adjust
+// when we think video may end up streaming.
+
 DWYCOEXPORT
 int
 dwyco_channel_send_video(int chan_id, int vid_dev)
@@ -3195,7 +3318,13 @@ dwyco_channel_send_video(int chan_id, int vid_dev)
     // video for some reason.
     // note: build_outgoing calls callbacks for video display init which
     // we probably need to modify in some way.
-    return mc->build_outgoing(1, 1, (int)get_settings_value("rate/max_fps"));
+    int ret = mc->build_outgoing(1, 1, (int)get_settings_value("rate/max_fps"));
+    if(ret)
+    {
+        MMChannel::adjust_outgoing_bandwidth();
+        MMChannel::adjust_incoming_bandwidth();
+    }
+    return ret;
 }
 
 DWYCOEXPORT
@@ -3207,6 +3336,8 @@ dwyco_channel_stop_send_video(int chan_id)
         return 0;
     mc->grab_coded_id = -1;
     // maybe check for no other senders and shutdown acq as well
+    MMChannel::adjust_outgoing_bandwidth();
+    MMChannel::adjust_incoming_bandwidth();
     return 1;
 }
 
@@ -3222,7 +3353,13 @@ dwyco_channel_send_audio(int chan_id, int aud_dev)
     // video for some reason.
     // note: build_outgoing calls callbacks for video display init which
     // we probably need to modify in some way.
-    return mc->build_outgoing_audio(1);
+    int ret = mc->build_outgoing_audio(1);
+    if(ret)
+    {
+        MMChannel::adjust_outgoing_bandwidth();
+        MMChannel::adjust_incoming_bandwidth();
+    }
+    return ret;
 }
 
 DWYCOEXPORT
@@ -3234,6 +3371,8 @@ dwyco_channel_stop_send_audio(int chan_id)
         return 0;
     mc->grab_audio_id = -1;
     // maybe check for no other senders and shutdown acq as well
+    MMChannel::adjust_outgoing_bandwidth();
+    MMChannel::adjust_incoming_bandwidth();
     return 1;
 }
 
@@ -3626,60 +3765,22 @@ dwyco_call_reject(int id, int session_ignore)
     return 1;
 }
 
+// this isn't supported any more (ie, the client should handle
+// confirmation of message receive, if it wants.
+
 // incoming zap message calls
 DWYCOEXPORT
 void
 dwyco_set_zap_appearance_callback(DwycoZapAppearanceCallback cb)
 {
-    zap_appearance_callback = cb;
-}
-
-static void
-kill_za_bounce(MMChannel *mc, vc, void *p, ValidPtr)
-{
-    mc->call_appearance_death_callback = 0;
-    if(call_appearance_death_callback)
-        (*call_appearance_death_callback)(mc->myid);
-}
-
-static int
-zap_appeared_bounce(MMChannel *mc, vc name, vc filename, vc size)
-{
-    mc->call_appearance_death_callback = kill_za_bounce;
-    mc->cad_arg2 = 0;
-
-    DwString msg = (const char *)name;
-    msg += " wants to send you a direct Audio/Video Message (size ";
-    char sz[255];
-    sprintf(sz, "%d", (int)size);
-    msg += sz;
-    msg += ")";
-    vc uid = mc->remote_uid();
-    if(zap_appearance_callback)
-    {
-        (*zap_appearance_callback)(mc->myid,
-                                   (const char *)name, (int)size,
-                                   (const char *)uid, uid.len());
-    }
-    else
-    {
-        GRTLOG("received direct zap_appearance, but there is no user defined zap_appearance_callback. either define a zap_appearance callback, or hardwire always_accept_zap to 1.", 0, 0);
-    }
-    return 0;
+    oopanic("zap appearances not supported anymore");
+    //zap_appearance_callback = cb;
 }
 
 DWYCOEXPORT
 int
 dwyco_zap_accept(int id, int always_accept)
 {
-    MMChannel *m = MMChannel::channel_by_id(id);
-    if(m)
-    {
-        m->user_accept = always_accept ? MMChannel::ZACCEPT_ALWAYS : MMChannel::ZACCEPT;
-        m->call_appearance_death_callback = 0;
-        return 1;
-    }
-    GRTLOG("zap_accept: cant find channel associated with chan_id (%d), zap not accepted.", id, 0);
     return 0;
 }
 
@@ -3687,15 +3788,7 @@ DWYCOEXPORT
 int
 dwyco_zap_reject(int id, int session_ignore)
 {
-    MMChannel *m = MMChannel::channel_by_id(id);
-    if(m)
-    {
-        m->user_accept = session_ignore ? MMChannel::ZREJECT_IGNORE : MMChannel::ZREJECT;
-        m->call_appearance_death_callback = 0;
-        return 1;
-    }
-    GRTLOG("zap_reject: cant find channel associated with chan_id (%d), zap not rejected.", id, 0);
-    return 0;
+   return 0;
 }
 
 static
@@ -4070,12 +4163,9 @@ dwyco_delete_user(const char *uid, int len_uid)
     vc u(VC_BSTRING, uid, len_uid);
 
     Rescan_msgs = 1;
-    //vc dir = uid_to_dir(u);
-    int ret = remove_user(u, "");
-    ack_all(u);
-    pal_del(u, 1);
-    prf_invalidate(u);
-    Session_infos.del(u);
+
+    int ret = remove_user(u);
+
     return ret;
 }
 
@@ -4086,9 +4176,9 @@ dwyco_clear_user(const char *uid, int len_uid)
     vc u(VC_BSTRING, uid, len_uid);
 
     Rescan_msgs = 1;
-    //vc dir = uid_to_dir(u);
-    int ret = clear_user(u, "");
-    ack_all(u);
+
+    int ret = clear_user(u);
+
     return ret;
 }
 
@@ -4101,24 +4191,26 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
     if(!sql_fav_has_fav(u))
         return dwyco_clear_user(uid, len_uid);
 
-    try {
-
-    qmsgsql::sql_start_transaction();
-    vc delmid = get_unfav_msgids(u);
-
-    int n = delmid.num_elems();
-    for(int i = 0; i < n; ++i)
+    vc delmid;
+    try
     {
-        vc suid = from_hex(sql_get_uid_from_mid(delmid[i]));
-        if(!suid.is_nil())
+        // note: this is really problematic if the fav tags are not
+        // up to date locally, and we end up deleting a message here.
+        // maybe we should just move the msg to the trash, at least then
+        // there would be a chance to recover by untrashing and rescanning
+        qmsgsql::sql_start_transaction();
+        delmid = get_unfav_msgids(u);
+
+        int n = delmid.num_elems();
+        for(int i = 0; i < n; ++i)
+        {
+            vc suid = sql_get_uid_from_mid(delmid[i]);
+            if(suid.is_nil())
+                throw -1;
+            suid = from_hex(suid);
             delete_body3(suid, delmid[i], 0);
-    }
-    // bulk update the indexes
-    //remove_msg_idx_uid(u);
-    // even if there are some files left in the filesystem
-    // that is ok, since they will get reindexed next time the
-    // index is loaded.
-    qmsgsql::sql_commit_transaction();
+        }
+        qmsgsql::sql_commit_transaction();
     }
     catch(...)
     {
@@ -4128,7 +4220,13 @@ dwyco_clear_user_unfav(const char *uid, int len_uid)
     }
 
     Rescan_msgs = 1;
-
+    if(Current_alternate)
+    {
+        for(int i = 0; i < delmid.num_elems(); ++i)
+        {
+            pulls::deassert_pull(delmid[i]);
+        }
+    }
     // this may need a revisit: basically it is saying anything that
     // we haven't fetched yet can't be favorited, which may not be
     // true if someone else has already fetched and favorited it
@@ -4304,7 +4402,7 @@ dwyco_set_profile_from_composer(int compid, const char *txt, int txt_len, DwycoP
     // for the bogus file.
     //v[2] = gen_profile_authenticator(v, m->filehash);
     vc vv(VC_VECTOR);
-    vv[0] = vc((long)cb);
+    vv[0] = vc(VC_INT_DTOR, (vc_int_dtor_fun)0, (void *)cb);
     vv[1] = My_UID;
     vv[2] = v;
     // compat hack, if this is a file zap, move it to another slot in the
@@ -4618,6 +4716,18 @@ dwyco_name_to_uid(const char *handle, int len_handle)
     dirth_send_get_uid(My_UID, h, QckDone(name_map_done, 0, h, ValidPtr()));
 }
 
+DWYCOEXPORT
+int
+dwyco_map_uid_to_representative(const char *uid, int len_uid, DWYCO_LIST *list_out)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    vc repuid = map_to_representative_uid(buid);
+    vc ret(VC_VECTOR);
+    ret[0] = repuid;
+    *list_out = dwyco_list_from_vc(ret);
+    return 1;
+}
+
 int
 internal_boot_file(const char *handle, int len_handle, const char *desc, int len_desc, const char *loc, int len_loc, const char *email, int len_email)
 {
@@ -4767,8 +4877,8 @@ dwyco_make_zap_composition( char *dum)
 
     m->composer = 1;
     m->FormShow();
-    GRTLOG("make_zap_composition: ret %d", (int)m->vp, 0);
-    return m->vp;
+    GRTLOG("make_zap_composition: ret %d", m->vp.cookie, 0);
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -4827,7 +4937,7 @@ dwyco_make_zap_composition_raw(const char *filename, const char *possible_extens
         }
         m->user_filename = base.c_str();
     }
-    return m->vp;
+    return m->vp.cookie;
 }
 
 // this is used when doing multi-sends, you need to
@@ -4879,8 +4989,8 @@ dwyco_dup_zap_composition(int compid)
     }
 
 
-    GRTLOG("dup_zap_composition: ret %d", (int)m->vp, 0);
-    return m->vp;
+    GRTLOG("dup_zap_composition: ret %d", m->vp.cookie, 0);
+    return m->vp.cookie;
 
 }
 
@@ -5005,8 +5115,8 @@ dwyco_make_forward_zap_composition2(const char *msg_id, int strip_forward_text)
     m->msg_text = (const char *)text;
     m->composer = 1;
     m->FormShow();
-    GRTLOG("make_forward_zap: ret %d", (int)m->vp, 0);
-    return m->vp;
+    GRTLOG("make_forward_zap: ret %d", m->vp.cookie, 0);
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -5089,7 +5199,7 @@ dwyco_make_special_zap_composition( int special_type, const char *user_block, in
         return -1;
     }
     m->FormShow();
-    return m->vp;
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -5133,8 +5243,8 @@ dwyco_make_file_zap_composition( const char *filename, int len_filename)
     m->user_filename = dwbasename(a.c_str()).c_str();
     m->composer = 1;
     m->FormShow();
-    GRTLOG("make_file_zap: ret %d", (int)m->vp, 0);
-    return m->vp;
+    GRTLOG("make_file_zap: ret %d", m->vp.cookie, 0);
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -5770,8 +5880,8 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
     m->file_basename = (const char *)v[0][QM_BODY_ATTACHMENT];
     m->actual_filename = newfn(s).c_str();
     m->inhibit_hashing = 1;
-    GRTLOG("make_zap_view: ret %d", (int)m->vp, 0);
-    return m->vp;
+    GRTLOG("make_zap_view: ret %d", m->vp.cookie, 0);
+    return m->vp.cookie;
 }
 
 // the filename should be a basename with no path. this is intended for
@@ -5788,7 +5898,7 @@ dwyco_make_zap_view_file(const char *filename)
     m->actual_filename = newfn(filename);
     m->file_basename = filename;
     m->inhibit_hashing = 1;
-    return m->vp;
+    return m->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -5803,7 +5913,7 @@ dwyco_make_zap_view_file_raw(const char *filename)
     m->actual_filename = filename;
     m->file_basename = dwbasename(filename);
     m->inhibit_hashing = 1;
-    return m->vp;
+    return m->vp.cookie;
 }
 
 // use this to CANCEL a composition without sending it.
@@ -6197,7 +6307,7 @@ dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **st
     struct in_addr in;
     in.s_addr = ip;
 
-    // we an use this once the winsock2 stuff works
+    // we can use this once the winsock2 stuff works
 #if 0
     char *out = new char[INET_ADDRSTRLEN + 1];
     if(inet_ntop(AF_INET, &in, out, INET_ADDRSTRLEN + 1) == 0)
@@ -6209,8 +6319,12 @@ dwyco_uid_to_ip2(const char *uid, int len_uid, int *can_do_direct_out, char **st
     if(str_out)
     {
         char *c = inet_ntoa(in);
-        char *out = new char[strlen(c) + 1];
-        strncpy(out, c, strlen(c) + 1);
+        DwString a(c);
+        a += ":";
+        a += DwString::fromInt(prim);
+        char *out = new char[a.length() + 1];
+        memcpy(out, a.c_str(), a.length());
+        out[a.length()] = 0;
         *str_out = out;
     }
     return 1;
@@ -6232,9 +6346,16 @@ dwyco_uid_g(const char *uid, int len_uid)
     return 0;
 }
 
+// WARNING: this function does not do the group folding, it just loads
+// using what is in the file system. it should be the same if you are not
+// using any group stuff (but note, even if you yourself are not in a group
+// you still need the folding, otherwise it will look really confusing
+// seeing multiple entries for users that *are* in a group.)
+// this should probably be an internal API, only available for doing
+// low level stuff, like backups or something.
 DWYCOEXPORT
 int
-dwyco_load_users()
+dwyco_load_users_internal()
 {
     load_users_from_files(0);
     return 1;
@@ -6266,6 +6387,17 @@ dwyco_get_user_list2(DWYCO_USER_LIST *list_out, int *nelems_out)
     *nelems_out = n;
     return 1;
 }
+
+DWYCOEXPORT
+int
+dwyco_get_updated_uids(DWYCO_USER_LIST *list_out, long time)
+{
+    vc& ret = *new vc(VC_VECTOR);
+    ret = sql_uid_updated_since(time);
+    *list_out = (DWYCO_USER_LIST)&ret;
+    return 1;
+}
+
 
 DWYCOEXPORT
 int
@@ -6389,23 +6521,6 @@ dwyco_end_bulk_update()
     dwyco::qmsgsql::sql_commit_transaction();
 }
 
-void
-pull_target_destroyed(vc uid)
-{
-    pulls::deassert_by_uid(uid);
-}
-
-void
-start_stalled_pulls(MMChannel *mc)
-{
-    DwVecP<pulls> stalled_pulls = pulls::get_stalled_pulls(mc->remote_uid());
-    for(int i = 0; i < stalled_pulls.num_elems(); ++i)
-    {
-        stalled_pulls[i]->set_in_progress(1);
-        mc->send_pull(stalled_pulls[i]->mid, stalled_pulls[i]->pri);
-    }
-}
-
 DWYCOEXPORT
 int
 dwyco_get_sync_model(DWYCO_SYNC_MODEL *list_out)
@@ -6486,9 +6601,11 @@ dwyco_get_group_status(DWYCO_LIST *list_out)
         vc gname = Current_alternate->alt_name();
         r[GS_GNAME] = gname;
         r[GS_VALID] = DH_alternate::has_private_key(gname);
-        vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from (select count(*) from gi group by mid)) from gi where from_client_uid = ?1", to_hex(My_UID));
-
-        r[GS_PERCENT_SYNCED] = res[0][0];
+        vc res = sql_run_sql("select (count(*) * 100) / (select count(*) from gi) from msg_idx");
+        if(res.is_nil())
+            r[GS_PERCENT_SYNCED] = 0;
+        else
+            r[GS_PERCENT_SYNCED] = res[0][0];
         r[GS_IN_PROGRESS] = 0;
 
     }
@@ -6517,40 +6634,54 @@ pull_msg(vc uid, vc msg_id)
     // here is where we look for where the msg might be available, and
     // try to issue a pull to that client. we might have to set up a connection
     // as well before issuing the pull.
-
+#if 0
     vc uids = sql_find_who_has_mid(msg_id);
+#else
+    vc uids = uids_to_call();
+#endif
     if(uids.is_nil())
     {
         GRTLOG("cant find uid for mid %s", (const char *)msg_id, 0);
+        pulls::assert_pull(msg_id, vcnil, PULLPRI_INTERACTIVE);
         return DWYCO_GSM_TRANSIENT_FAIL;
     }
 
     for(int i = 0; i < uids.num_elems(); ++i)
     {
+#if 0
         uids[i] = from_hex(uids[i]);
+#endif
         pulls::assert_pull(msg_id, uids[i], PULLPRI_INTERACTIVE);
     }
 
+    //
+    // note: this probably needs a heuristic to either send
+    // all pulls at once, or decide which one is most likely
+    // to work. for now, try everyone we are connected to.
+    // since this is along the "interactive" path, this seems
+    // ok, since it is unlikely to be a lot of them, and
+    // the user as indicated they want to see it. which means
+    // a little extra thrashing might be ok as long as the
+    // message shows up pretty quickly.
     DwVecP<MMCall> mmcl = MMCall::calls_by_type("sync");
+    bool started_one = false;
     for(int i = 0; i < mmcl.num_elems(); ++i)
     {
         MMCall *mmc = mmcl[i];
         if(uids.contains(mmc->uid))
         {
-//            if(pulls::pull_in_progress(msg_id, mmc->uid))
-//                continue;
-            // if there is an established call, just use that one and return.
-            // this means we always try an established connection first.
-            // if there are some number of connections in progress, we end up
-            // q-ing the pull to all the connections.
             if(mmc->established)
             {
                 MMChannel *mc = MMChannel::channel_by_id(mmc->chan_id);
                 if(mc)
                 {
+                    // don't resend if it failed last time we asked
+                    if(pull_failed(msg_id, mc->remote_uid()))
+                        continue;
                     pulls::set_pull_in_progress(msg_id, mc->remote_uid());
                     mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
-                    return DWYCO_GSM_PULL_IN_PROGRESS;
+                    started_one = true;
+                    //return DWYCO_GSM_PULL_IN_PROGRESS;
                 }
             }
         }
@@ -6561,25 +6692,26 @@ pull_msg(vc uid, vc msg_id)
         MMChannel *mc;
         if((mc = MMChannel::channel_by_call_type(uids[i], "sync")))
         {
-//            if(pulls::pull_in_progress(msg_id, mc->remote_uid()))
-//                continue;
-
+            if(pull_failed(msg_id, mc->remote_uid()))
+                continue;
             pulls::set_pull_in_progress(msg_id, mc->remote_uid());
             mc->send_pull(msg_id, PULLPRI_INTERACTIVE);
-            // note: this probably needs a heuristic to either send
-            // all pulls at once, or decide which one is most likely
-            // to work. for now, we just do the first one.
-            return DWYCO_GSM_PULL_IN_PROGRESS;
+            started_one = true;
+            //return DWYCO_GSM_PULL_IN_PROGRESS;
         }
     }
+    if(started_one)
+        return DWYCO_GSM_PULL_IN_PROGRESS;
     return DWYCO_GSM_TRANSIENT_FAIL_AVAILABLE;
 }
 
 
 DWYCOEXPORT
 int
-dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
+dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *a_msg_id)
 {
+    const vc msg_id(a_msg_id);
+
     vc uid = sql_get_uid_from_mid(msg_id);
     if(uid.is_nil())
         return DWYCO_GSM_ERROR;
@@ -6594,7 +6726,7 @@ dwyco_get_saved_message3(DWYCO_SAVED_MSG_LIST *list_out, const char *msg_id)
     vc body = load_body_by_id(uid, msg_id);
     if(body.is_nil())
     {
-        GRTLOG("get_saved_message: cant load body uid %s msg %s", (const char *)to_hex(uid), msg_id);
+        GRTLOG("get_saved_message: cant load body uid %s msg %s", (const char *)to_hex(uid), (const char *)msg_id);
         return DWYCO_GSM_ERROR;
     }
     vc& ret = *new vc(VC_VECTOR);
@@ -6641,6 +6773,15 @@ dwyco_get_unfetched_message(DWYCO_UNFETCHED_MSG_LIST *list_out, const char *msg_
     ret[0] = summary;
     *list_out = (DWYCO_UNFETCHED_MSG_LIST)&ret;
     return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_mid_disposition(const char *mid)
+{
+    if(sql_is_mid_anywhere(mid))
+        return 1;
+    return 0;
 }
 
 struct special_map
@@ -6886,6 +7027,7 @@ group_enter_setup(vc m, void *, vc, ValidPtr vp)
             // we can query to give us some information about who is likely to be gone.
             if(members.num_elems() == 0)
             {
+                add_join_log("group abandoned", My_UID);
                 Join_attempts.emit(My_UID, "group probably abandoned");
                 throw -1;
             }
@@ -6981,7 +7123,8 @@ dwyco_start_gj2(const char *gname, const char *password)
             dwyco::ezset::sql_start_transaction();
             set_settings_value("group/join_key", "");
             set_settings_value("group/alt_name", "");
-            set_settings_value("sync/eager", 0);
+            // don't reset eager, this is a user defined thing
+            //set_settings_value("sync/eager", 0);
         }
         catch(...)
         {
@@ -6993,6 +7136,9 @@ dwyco_start_gj2(const char *gname, const char *password)
         try
         {
             dwyco::qmsgsql::sql_start_transaction();
+            // note: this might have already been done when the
+            // alt_name was changed above. just making sure at this
+            // point.
             remove_sync_state();
         }
         catch(...)
@@ -7003,9 +7149,11 @@ dwyco_start_gj2(const char *gname, const char *password)
             return 0;
         }
         // hokey, really need to get this done under one transaction
-        dwyco::dhg::sql_commit_transaction();
+        if(Current_alternate)
+            dwyco::dhg::sql_commit_transaction();
         dwyco::ezset::sql_commit_transaction();
         dwyco::qmsgsql::sql_commit_transaction();
+        dwyco::qmsgsql::sql_vacuum();
         //se_emit_group_status_change();
         dirth_send_prov_leave(My_UID, QckDone(leave_ack, 0, vcnil));
         delete Current_alternate;
@@ -7019,7 +7167,7 @@ dwyco_start_gj2(const char *gname, const char *password)
     auto dha = new DH_alternate;
     dha->init(My_UID, gname);
     dha->remove_key(gname);
-    dha->load_account(gname);
+    dha->load_account(gname, true);
     //dha->password = password;
     set_settings_value("group/join_key", password);
     dirth_send_set_get_group_pk(My_UID, dha->alt_name(), dha->my_static_public(), QckDone(group_enter_setup, 0, vcnil, dha->vp));
@@ -7335,7 +7483,7 @@ save_msg(vc m, vc msg_id)
 
     if(msg[QQM_BODY_ATTACHMENT].is_nil())
     {
-        if(!update_msg_idx(vcnil, body))
+        if(!update_msg_idx(vcnil, body, 0))
             return 0;
         //ack_direct(msg_id);
         delete_msg2(msg_id);
@@ -7345,7 +7493,7 @@ save_msg(vc m, vc msg_id)
     // the attachment was sent direct as well.
     if(!refile_attachment(msg[QQM_BODY_ATTACHMENT], msg[QQM_BODY_FROM]))
         return 0;
-    if(!update_msg_idx(vcnil, body))
+    if(!update_msg_idx(vcnil, body, 0))
         return 0;
     //ack_direct(msg_id);
     delete_msg2(msg_id);
@@ -7362,6 +7510,7 @@ ack_get_done2(vc m, void *, vc del2_args, ValidPtr )
     // was originally deleted (set to pending)
     //int orig_refresh = Refresh_users;
     delete_msg2(del2_args[1]);
+    sql_remove_all_tags_mid(del2_args[1]);
     //if(m[1].is_nil())
     //	return;
     //Refresh_users = orig_refresh;
@@ -7390,7 +7539,7 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
             // we may also *never* be able to decrypt tons of things
             // until the key is reset in the server.
             if(q->msg_download_callback)
-                (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
+                (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
             se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
             // note: don't ack it automatically, since we *might* be in a situation where we
             // are waiting for a group key. once the group key is installed we might be
@@ -7448,13 +7597,13 @@ add_server_response_to_direct_list(BodyView *q, vc msg)
     if(store_direct(0, dm, 0) == -1)
     {
         if(q->msg_download_callback)
-            (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_RATHOLED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_RATHOLED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED, q->msg_id, from);
         return;
     }
 
     if(q->msg_download_callback)
-        (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_OK, q->msg_id, q->mdc_arg1);
+        (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_OK, q->msg_id, q->mdc_arg1);
     se_emit_msg(SE_MSG_DOWNLOAD_OK, q->msg_id, from);
     // note: just send ack_get, with no return, assume it always works.
     // if it doesn't work, it is no big deal, we just get a message
@@ -7479,7 +7628,7 @@ eo_xfer(MMChannel *mc, vc m, void *, ValidPtr vp)
     {
         //q->MessageBox("Get failed, try again later.");
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, vcnil);
         q->cancel();
         delete q;
@@ -7522,7 +7671,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     if(m[1].is_nil())
     {
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
         q->cancel();
         delete q;
@@ -7549,7 +7698,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     {
         //q->MessageBox("Can't find message on server.");
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_FAILED, q->msg_id, vcnil);
         q->cancel();
         delete q;
@@ -7571,7 +7720,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
     {
 
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, from);
         q->cancel();
         delete q;
@@ -7589,7 +7738,7 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
         if(!can_decrypt)
         {
             if(q->msg_download_callback)
-                (*q->msg_download_callback)(q->vp, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
+                (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_DECRYPT_FAILED, q->msg_id, q->mdc_arg1);
             se_emit_msg(SE_MSG_DOWNLOAD_FAILED_PERMANENT_DELETED_DECRYPT_FAILED, q->msg_id, from);
             dirth_send_ack_get2(My_UID, q->msg_id, QckDone(0, 0));
             delete q;
@@ -7622,14 +7771,14 @@ get_done(vc m, void *, vc msg_id, ValidPtr vp)
                                set_status, 0, q->vp, ip, port)))
     {
         if(q->msg_download_callback)
-            (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
+            (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, q->mdc_arg1);
         se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_FAILED, q->msg_id, from);
         q->cancel();
         delete q;
         return;
     }
     if(q->msg_download_callback)
-        (*q->msg_download_callback)((int)q->vp, DWYCO_MSG_DOWNLOAD_FETCHING_ATTACHMENT, q->msg_id, q->mdc_arg1);
+        (*q->msg_download_callback)(q->vp.cookie, DWYCO_MSG_DOWNLOAD_FETCHING_ATTACHMENT, q->msg_id, q->mdc_arg1);
     se_emit_msg(SE_MSG_DOWNLOAD_ATTACHMENT_FETCH_START, q->msg_id, from);
     q->xfer_channel = mc;
 
@@ -7667,6 +7816,11 @@ dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback dcb,
 
     if(BodyView::Bvqbm.exists_by_member(m, &BodyView::msg_id))
         return 0;
+    // if we're trying to fetch a message that we already have or
+    // that has been deleted somehow or other, just ignore the
+    // request.
+    if(sql_is_mid_local(m) || sql_mid_has_tombstone(m))
+        return 0;
 
     BodyView *bv = new BodyView;
 
@@ -7678,7 +7832,7 @@ dwyco_fetch_server_message(const char *msg_id, DwycoMessageDownloadCallback dcb,
     dirth_send_get2(My_UID, bv->msg_id, QckDone(get_done, bv, bv->msg_id, bv->vp));
     se_emit_msg(SE_MSG_DOWNLOAD_START, m, vcnil);
     bv->progress_signal.connect_ptrfun(se_emit_msg_progress);
-    return (int)bv->vp;
+    return bv->vp.cookie;
 }
 
 DWYCOEXPORT
@@ -7704,12 +7858,12 @@ DWYCOEXPORT
 int
 dwyco_delete_unfetched_message(const char *msg_id)
 {
-    vc id(msg_id);
+    vc mid(msg_id);
 
     vc args(VC_VECTOR);
     args.append(vcnil);
-    args.append(id);
-    dirth_send_ack_get(My_UID, id, QckDone(ack_get_done2, 0, args));
+    args.append(mid);
+    dirth_send_ack_get(My_UID, mid, QckDone(ack_get_done2, 0, args));
     //dirth_send_addtag(My_UID, id, "_del", QckDone(0, 0));
     return 1;
 }
@@ -7723,7 +7877,10 @@ dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id)
     // a group representative
 
     vc mid(msg_id);
-    vc uid = from_hex(sql_get_uid_from_mid(mid));
+    vc uid = sql_get_uid_from_mid(mid);
+    if(uid.is_nil())
+        return 0;
+    uid = from_hex(uid);
     delete_body3(uid, mid, 0);
     vc args(VC_VECTOR);
     args.append(vcnil);
@@ -7732,7 +7889,18 @@ dwyco_delete_saved_message(const char *user_id, int len_uid, const char *msg_id)
     // but if we aren't ina group, this isn't necessary because the
     // ack was done when the message was fetched
     if(Current_alternate)
+    {
         dirth_send_ack_get(My_UID, mid, QckDone(ack_get_done2, 0, args));
+        // note: this is relatively cheap and keeps the pull process from
+        // getting started again. there might be pulls q-ed referencing the mid
+        // but rummaging around to find them all is expensive. it is probably
+        // better just to let them complete (in the rare case they exist) and
+        // let the tombstones filter them out (there might end up being a
+        // a message stored in the filesystem that is referenced by a tombstone, but
+        // this won't be a problem unless the filesystem gets rescanned for some
+        // reason.)
+        pulls::deassert_pull(mid);
+    }
     //dirth_send_addtag(My_UID, mid, "_del", QckDone(0, 0));
     return 1;
 }
@@ -7767,14 +7935,49 @@ DWYCOEXPORT
 DWYCO_LIST
 dwyco_pal_get_list()
 {
-    return dwyco_list_from_vc(pal_to_vector(1));
+    // this isn't used so much by clients anymore, but
+    // in its current form it will return lots of uid's
+    // that are supposed to be just one representative.
+    // this is confusing... but there are some situations
+    // where this might be useful. if this ever happens,
+    // i think i'll just have "raw" api's that do not do
+    // the folding. for now, we just do the folding.
+    vc v = pal_to_vector(1);
+    vc folded(VC_SET);
+    vc newv(VC_VECTOR);
+    for(int i = 0; i < v.num_elems(); ++i)
+    {
+        const vc e = map_to_representative_uid(v[i]);
+        if(!folded.contains(e))
+        {
+            folded.add(e);
+            newv.append(e);
+        }
+    }
+
+    return dwyco_list_from_vc(newv);
 }
 
 DWYCOEXPORT
 void
 dwyco_set_msg_tag(const char *mid, const char *tag)
 {
-    sql_add_tag(mid, tag);
+    try
+    {
+        qmsgsql::sql_start_transaction();
+        // note: the reason we do this is because "adding" a tag
+        // will create dups with new guid's (this is because of the
+        // crdt syncing stuff.) we don't really want the user
+        // defined tags to be synced by default, but i may change
+        // this
+        sql_remove_mid_tag(mid, tag);
+        sql_add_tag(mid, tag);
+        qmsgsql::sql_commit_transaction();
+    }
+    catch(...)
+    {
+        qmsgsql::sql_rollback_transaction();
+    }
 }
 
 DWYCOEXPORT
@@ -7804,6 +8007,10 @@ DWYCOEXPORT
 int
 dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag)
 {
+    oopanic("broken");
+    // needs to return uid,mid pairs, but this query can't
+    // really do that, so it needs to be noted if you really
+    // need this query
     vc res = sql_get_tagged_mids2(tag);
     *list_out = dwyco_list_from_vc(res);
     return 1;
@@ -7811,14 +8018,23 @@ dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag)
 
 DWYCOEXPORT
 int
-dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
+dwyco_get_tagged_mids_older_than(DWYCO_LIST *list_out, const char *tag, int days)
+{
+    vc res = sql_get_tagged_mids_older_than(tag, days);
+    *list_out = dwyco_list_from_vc(res);
+    return 1;
+}
+
+DWYCOEXPORT
+int
+dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag, int order_by_tag_time)
 {
     vc res;
     // super-kluge
     if(strcmp(tag, "*") == 0)
         res = sql_get_all_idx();
     else
-        res = sql_get_tagged_idx(tag);
+        res = sql_get_tagged_idx(tag, order_by_tag_time);
     *list_out = dwyco_list_from_vc(res);
     return 1;
 }
@@ -7860,6 +8076,14 @@ dwyco_valid_tag_exists(const char *tag)
     return sql_exists_valid_tag(tag);
 }
 
+DWYCOEXPORT
+int
+dwyco_all_messages_tagged(const char *uid, int len_uid, const char *tag)
+{
+    vc buid(VC_BSTRING, uid, len_uid);
+    int ret = sql_uid_all_mid_tagged(buid, tag);
+    return ret;
+}
 
 DWYCOEXPORT
 void
@@ -7919,7 +8143,8 @@ dwyco_ignore(const char *uid, int len_uid)
     //dirth_send_ignore(My_UID, uid, QckDone(ignore_done, 0, uid));
 
     // just get the assbase update, no other server storage is done
-    dirth_send_ignore(My_UID, uid, QckDone());
+    MMChannel::destroy_by_uid(buid);
+    dirth_send_ignore(My_UID, buid, QckDone());
 }
 
 static void
@@ -8396,12 +8621,17 @@ dwyco_list_from_string(DWYCO_LIST *list_out, const char *str, int len_str)
 // functionality and robustness on various platforms, so the actual function of the
 // API varies a bit and usually needs to be tweaked.)
 //
-// in macosx link with macdrv.a, which is compiled externally using xcode on the mac. the client calls "init_mac_drivers" to initialize things.
-// likewise with LINUX, linke with v4lcap.a and call the external setup functions.
+// likewise with LINUX, link with v4lcap.a and call the external setup functions.
 //
 // on windows, compiling with DWYCO_NO_VIDEO_CAPTURE eliminates VFW and
 // the internal setup of DX9. this is
 // useful for debugging since video capture can be a problem in some environments.
+//
+// (notes, ca 2024: 
+// macos must use vgqt drivers for both qt5 and qt6.
+// linux must use vgqt audio drivers, v4l2 for video (qt5 drivers are too flakey. qt6 might change this.)
+// windows must use mtcapxe.dll (32bit) and built-in audio for qt5. qt6 is all 64-bit so we'll have to change
+//  to qt6 vgqt. built-in audio will probably still work ok in 64bits.
 
 #ifndef DWYCO_NO_VIDEO_CAPTURE
 #ifdef __WIN32__
@@ -8596,6 +8826,7 @@ DWYCOEXPORT
 void
 dwyco_handle_msg(const char *msg, int len_msg, unsigned int message, unsigned int wp, unsigned int lp)
 {
+#if 0
     if(message == WM_USER + 400)
     {
 
@@ -8606,6 +8837,7 @@ dwyco_handle_msg(const char *msg, int len_msg, unsigned int message, unsigned in
     {
         async_lookup_handler((HANDLE)wp, lp);
     }
+#endif
     add_entropy_timer((char *)msg, len_msg);
 
 }
@@ -8863,10 +9095,26 @@ dwyco_estimate_bandwidth2(int *out_bw_out, int *in_bw_out)
 }
 
 DWYCOEXPORT
-void
-dwyco_create_backup()
+int
+dwyco_create_backup(int days_to_run, int days_to_rebuild)
 {
-    create_msg_backup();
+    int du = desktop_days_since_last_backup();
+    if(du == -1)
+    {
+        desktop_backup();
+        return 1;
+    }
+    int dr = desktop_days_since_backup_created();
+    if(dr == -1 || dr >= days_to_rebuild)
+    {
+        dwyco_remove_backup();
+        desktop_backup();
+        return 1;
+    }
+    if(du < days_to_run)
+        return 0;
+    desktop_backup();
+    return 1;
 }
 
 static
@@ -8882,7 +9130,7 @@ DWYCOEXPORT
 int
 dwyco_copy_out_backup(const char *dir, int force)
 {
-    DwString fn = newfn("bu.sql");
+    DwString fn = newfn("bun.sql");
     DwString filename = dir;
     filename += DIRSEPSTR;
     filename += "dwyco-backup-%1.sql";
@@ -8917,6 +9165,7 @@ dwyco_copy_out_backup(const char *dir, int force)
         if(!CopyFile(fn.c_str(), filename.c_str(), 0))
             return 0;
     }
+#if 0
     fn = newfn("dbu.sql");
     filename = dir;
     filename += DIRSEPSTR;
@@ -8925,6 +9174,7 @@ dwyco_copy_out_backup(const char *dir, int force)
     move_version(filename);
     if(!CopyFile(fn.c_str(), filename.c_str(), 0))
         return 0;
+#endif
     return 1;
 }
 
@@ -8936,23 +9186,80 @@ dwyco_remove_backup()
     DeleteFile(fn.c_str());
     fn = newfn("dbu.sql");
     DeleteFile(fn.c_str());
+    fn = newfn("bun.sql");
+    DeleteFile(fn.c_str());
+}
+
+// NOTE NOTE!
+// YOU MUST EXIT IMMEDIATELY IF THIS RETURNS 1
+// WARNING: if you are in a group, this will not work right.
+// you MUST exit the group first before attempting a restore!
+
+static
+void
+special_backup_bailout()
+{
+    // this is special, we need to get out of here without
+    // any of the usual exit processing
+    // this is for windows, since we can't really delete a file
+    // of an open database
+    exit_qmsg();
+    exit_gj();
+    exit_dhgdb();
+    DeleteFile(newfn("msgs.sql").c_str());
+    // remove the group info, they can re-enter the group
+    DeleteFile(newfn("dhg.sql").c_str());
+    // this will terminate any group key protocol stuff that
+    // was in progress
+    DeleteFile(newfn("skid.sql").c_str());
+    // we'll just have to note that you MUST EXIT immediately after this.
+    // unforunately, on windows, it crashes the qt process for some
+    // reason, so i'll have to leave it to the caller to schedule
+    // a quick graceful exit.
 }
 
 DWYCOEXPORT
 int
 dwyco_restore_from_backup(const char *bu_fn, int msgs_only)
 {
+    if(Current_alternate)
+        return 0;
     if(!restore_msgs(bu_fn, msgs_only))
         return 0;
-    DwString dfn(bu_fn);
-    int pos;
-    if((pos = dfn.find("dwyco-backup-")) == DwString::npos)
-        return 0;
-    dfn.insert(pos + 13, "diff-");
-    if(!restore_msgs(dfn.c_str(), msgs_only))
-        return 0;
 
-    exit(0);
+    special_backup_bailout();
+    return 1;
+    //exit(0);
+}
+
+// special hacks for android
+DWYCOEXPORT
+int
+dwyco_get_android_backup_state()
+{
+    int ret = android_get_backup_state();
+    return ret;
+}
+
+DWYCOEXPORT
+int
+dwyco_set_android_backup_state(int i)
+{
+    int ret = android_set_backup_state(i);
+    return ret;
+}
+
+// NOTE: IF THIS RETURNS 1, you have to exit immediately
+DWYCOEXPORT
+int
+dwyco_restore_android_backup()
+{
+    if(Current_alternate)
+        return 0;
+    if(!android_restore_msgs())
+        return 0;
+    special_backup_bailout();
+    return 1;
 }
 
 // these are some functions that are called from java (via swig interface)
@@ -9203,7 +9510,7 @@ setup_callbacks()
     MMChannel::get_main_window_callback = get_main_window;
     MMChannel::gen_public_chat_display_callback = gen_bounce_chatbox_display;
     MMChannel::gen_private_chat_display_callback = gen_bounce_private_chat_display;
-    MMChannel::popup_zap_accept_box_callback = zap_appeared_bounce;
+    //MMChannel::popup_zap_accept_box_callback = zap_appeared_bounce;
     MMChannel::call_appeared_callback = call_appeared_bounce;
     MMChannel::call_accepted_callback = call_accepted_bounce;
     MMChannel::connection_list_changed_callback = update_connection_lists;
@@ -9212,7 +9519,6 @@ setup_callbacks()
     MMChannel::uc_message_callback = bounce_uc_callback;
     MMChannel::call_screening_callback = bounce_call_screening;
     TPGMMSWDecoderColor::display_info_in_titlebar_callback = caption_update;
-    extern void (*Entropy_display_callback)(int);
     Entropy_display_callback = entropy_display;
 }
 

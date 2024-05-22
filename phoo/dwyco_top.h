@@ -15,6 +15,7 @@
 #include <QVariant>
 #include <QUrl>
 #include <QNetworkReply>
+#include <QThread>
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
@@ -54,6 +55,10 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, group_private_key_valid)
 
     QML_READONLY_VAR_PROPERTY(bool, invisible)
+    QML_READONLY_VAR_PROPERTY(int, android_migrate)
+    QML_READONLY_VAR_PROPERTY(int, android_backup_available)
+
+    QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready);
 
 
 public:
@@ -68,7 +73,7 @@ public:
         m_audio_full_duplex = 0;
         m_vid_dev_idx = 0;
         m_vid_dev_name = "";
-        m_use_archived = true;
+        m_use_archived = false;
         m_this_uid = "";
         m_this_handle = "";
         m_directory_fetching = false;
@@ -79,8 +84,13 @@ public:
         m_eager_pull = 0;
         m_any_unviewed = false;
         m_invisible = false;
+        m_android_migrate = Android_migrate;
+        m_android_backup_available = 0;
+        m_desktop_update_ready = false;
+        m_total_users = 0;
     }
     static QByteArray My_uid;
+    static int Android_migrate;
 
 
     enum System_event {
@@ -142,15 +152,18 @@ public:
     Q_INVOKABLE void init();
     Q_INVOKABLE int service_channels();
     Q_INVOKABLE void exit() {
-        //dwyco_empty_trash();
-        //dwyco_power_clean_safe();
-        dwyco_debug_dump();
+        // note: this will clean some parts of the
+        // system that might be in use by the client
+        // as well, and ignore some parts. like files
+        // ending in .jpeg will not be removed from
+        // the tmp folder. it is probably a mistake
+        // for the client to be using the same tmp
+        // folder as the dwyco* api, since it might
+        // clean some things the client isn't expecting.
         dwyco_exit();
     }
 
-    Q_INVOKABLE void power_clean() {
-        dwyco_power_clean_safe();
-    }
+    Q_INVOKABLE void power_clean();
 
     Q_INVOKABLE QString get_my_uid() {
         return My_uid.toHex();
@@ -287,6 +300,27 @@ public:
     Q_INVOKABLE void set_badge_number(int i);
     Q_INVOKABLE void refresh_directory();
 
+    Q_INVOKABLE int send_report(QString uid);
+    Q_INVOKABLE QString export_attachment(QString mid);
+    static void one_time_copy_files();
+    Q_INVOKABLE void background_migrate();
+    Q_INVOKABLE void directory_swap();
+
+    // this can sometime take awhile, so we handle it in a thread, then
+    // cause the user to exit and restart
+    Q_INVOKABLE void background_reindex();
+    static void do_reindex();
+
+    Q_INVOKABLE QUrl from_local_file(const QString&);
+    Q_INVOKABLE QString to_local_file(const QUrl& url);
+
+    Q_INVOKABLE int load_backup();
+    Q_INVOKABLE int get_android_backup_state();
+
+    Q_INVOKABLE QString map_to_representative(const QString& uid);
+
+public:
+
 public slots:
     void app_state_change(Qt::ApplicationState);
     void update_dwyco_client_name(QString);
@@ -309,7 +343,8 @@ signals:
     void video_capture_preview(QString img_path);
 // this is used internally, should not fiddle with it via QML
     void user_control(int, QByteArray, QByteArray);
-    void decorate_user(const QString& uid);
+
+    void decorate_user(QString uid);
     void sys_chat_server_status(int id, int status);
     void qt_app_state_change(int app_state);
 
@@ -359,6 +394,8 @@ signals:
     void zap_stopped(int zid);
 
     void mid_tag_changed(QString mid);
+    void migration_complete();
+	void reindex_complete();
 
     void name_to_uid_result(QString uid, QString handle);
     // WARNING: DO NOT USE THESE QBYTEARRAY THINGS IN QML, they are not
@@ -371,6 +408,36 @@ signals:
 private:
 
     static void DWYCOCALLCONV dwyco_chat_ctx_callback(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name, int type, const char *val, int len_val, int qid, int extra_arg);
+    static void DWYCOCALLCONV dwyco_check_for_update_done(int status, const char *desc);
+    static void DWYCOCALLCONV dwyco_sys_event_callback(int cmd, int id,
+                             const char *uid, int len_uid,
+                             const char *name, int len_name,
+                             int type, const char *val, int len_val,
+                             int qid,
+                             int extra_arg);
+    static void DWYCOCALLCONV
+    emit_chat_event(int cmd, int id, const char *uid, int len_uid, const char *name, int len_name,
+                    int type, const char *val, int len_val,
+                    int qid, int extra_arg);
+    static int Suspended;
+
+};
+
+class fuck_me_with_a_brick : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::one_time_copy_files();
+    }
+
+};
+
+class fuck_me_with_a_brick2 : public QThread
+{
+    Q_OBJECT
+    void run() {
+        DwycoCore::do_reindex();
+    }
 
 };
 

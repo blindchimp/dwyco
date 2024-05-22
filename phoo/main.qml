@@ -39,7 +39,8 @@ ApplicationWindow {
         str += icon
         return str
     }
-
+    // attempt to convert an absolute length into the
+    // number of pixels on the screen
     function cm(cm){
         if(Screen.pixelDensity)
             return cm*Screen.pixelDensity*10
@@ -58,6 +59,10 @@ ApplicationWindow {
         console.warn("Could not calculate 'inch' based on Screen.pixelDensity.")
         return 0
     }
+    // takes a percent, and returns the number of pixels
+    // corresponding that percentage of the given dimension
+    // used when you just want to estimate that something should
+    // take a certain percentage of the screen
     function vw(i){
         if(Screen.width)
             return i*(Screen.width/100)
@@ -70,7 +75,8 @@ ApplicationWindow {
         console.warn("Could not calculate 'vh' based on Screen.height.")
         return 0
     }
-    
+    font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+    font.weight: Font.Bold
     
     property color primary : "#673AB7"
     property color primary_dark : "#512DA8"
@@ -105,13 +111,16 @@ ApplicationWindow {
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
-    property bool show_archived_users: true
+    property bool show_archived_users: false
 
     property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
-
+    property int qt_application_state: 0
     property bool is_mobile
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+
+    property bool group_active
+    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
 
     function pin_expire() {
         var expire
@@ -186,6 +195,7 @@ ApplicationWindow {
 
     Component.onCompleted: {
         AndroidPerms.request_sync("android.permission.CAMERA")
+        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
 
@@ -247,6 +257,7 @@ ApplicationWindow {
 
 
     footer: RowLayout {
+        visible: dwyco_debug
             Label {
                 id: ind_invis
                 text: "Invis"
@@ -254,6 +265,12 @@ ApplicationWindow {
                 color: "red"
 
             }
+            Label {
+                text: "Archived " + (core.total_users - ConvListModel.count).toString()
+                visible: core.total_users > ConvListModel.count
+                color: "red"
+            }
+
             Item {
                 Layout.fillWidth: true
             }
@@ -300,7 +317,7 @@ ApplicationWindow {
                 title: "Block and delete?"
                 icon: StandardIcon.Question
                 text: "Delete ALL messages from user and BLOCK them?"
-                informativeText: "This removes FAVORITE and HIDDEN messages too."
+                informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                 standardButtons: StandardButton.Yes | StandardButton.No
                 onYes: {
                     core.set_ignore(chatbox.to_uid, 1)
@@ -398,6 +415,17 @@ ApplicationWindow {
             }
         }
     }
+    Loader {
+        id: restore_auto_backup
+        visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/RestoreAutoBackup.qml"
+            }
+        }
+
+    }
 
     DevGroup {
         id: device_group
@@ -429,11 +457,11 @@ ApplicationWindow {
         Connections {
             target: core
             function onQt_app_state_change(app_state) {
-                if(core.app_state === 0) {
+                if(app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
 
                 }
-                if(core.app_state !== 0) {
+                if(app_state !== 0) {
                     console.log("CHAT SERVER PAUSE");
 
                     //core.disconnect_chat_server()
@@ -452,10 +480,6 @@ ApplicationWindow {
 
     }
 
-    ContactList {
-        id: contact_list
-        visible: false
-    }
 
     Loader {
         id: cqres
@@ -510,9 +534,26 @@ ApplicationWindow {
         visible: false
     }
 
-    ForwardToList {
+    Loader {
         id: forward_dialog
+        property string mid_to_forward
         visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible)
+                source = "qrc:/ForwardToList.qml"
+        }
+    }
+
+    Loader {
+        id: send_multi_report
+        visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible)
+                source = "qrc:/SendMulti.qml"
+        }
+
     }
 
     SimpleChatBox {
@@ -538,6 +579,12 @@ ApplicationWindow {
 
     SimpleTagMsgBrowse {
         id: simp_tag_browse
+        model: themsglist
+        visible: false
+    }
+
+    SimpleTrashBrowse {
+        id: trash_browse
         model: themsglist
         visible: false
     }
@@ -736,17 +783,17 @@ ApplicationWindow {
 
     SoundEffect {
         id: sound_sent
-        source: "qrc:/androidinst/assets/space-zap.wav"
+        source: "qrc:/androidinst2/assets/space-zap.wav"
     }
     SoundEffect {
         id: sound_recv
-        source: "qrc:/androidinst/assets/space-zap.wav"
+        source: "qrc:/androidinst2/assets/space-zap.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
     SoundEffect {
         id: sound_alert
-        source: "qrc:/androidinst/assets/space-incoming.wav"
+        source: "qrc:/androidinst2/assets/space-incoming.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
@@ -765,22 +812,45 @@ ApplicationWindow {
         
     }
 
+    Migrate {
+        id: migrate_page
+        visible: false
+    }
+
+    Reindex {
+        id: background_reindex
+        visible: false
+    }
+
     DwycoCore {
         id: core
         property int is_database_online: -1
         property int is_chat_online: -1
 
         objectName: "dwyco_singleton"
-        client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
+        client_name: {"phoo-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
+            if(core.android_migrate === 1)
+            {
+                stack.push(migrate_page)
+                return
+            }
             var a
             a = get_local_setting("first-run")
             if(a === "") {
                 //profile_dialog.visible = true
+                // don't need a reindex_complete
+                set_local_setting("reindex1", "1")
                 stack.push(convlist)
                 stack.push(blank_page)
                 stack.push(profile_dialog)
             } else {
+                a = get_local_setting("reindex1")
+                if(a === "")
+                {
+                    stack.push(background_reindex)
+                    return
+                }
                 stack.push(convlist)
                 profile_bootstrapped = 1
                 pwdialog.state = "start"
@@ -863,11 +933,8 @@ ApplicationWindow {
         }
 
         onNew_msg: {
-            console.log(from_uid)
-            console.log(txt)
-            console.log(mid)
-            console.log("msglist", themsglist.uid)
-            if(from_uid === themsglist.uid) {
+            console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
+            if(from_uid === themsglist.uid || core.map_to_representative(from_uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model();
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
@@ -883,9 +950,8 @@ ApplicationWindow {
         }
 
         onSys_msg_idx_updated: {
-            console.log("update idx", uid)
             console.log("upd " + uid + " " + themsglist.uid)
-            if(uid === themsglist.uid) {
+            if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model()
 
                 console.log("RELOAD msg_idx")
@@ -897,7 +963,7 @@ ApplicationWindow {
             //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
-                if(themsglist.uid == recipient) {
+                if(themsglist.uid == recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
                     themsglist.reload_model()
 
                 }
@@ -927,7 +993,7 @@ ApplicationWindow {
             if(Qt.platform.os == "android") {
                 notificationClient.set_lastrun()
             }
-
+            qt_application_state = app_state
         }
 
         onImage_picked: {
@@ -952,6 +1018,9 @@ ApplicationWindow {
                 set_badge_number(0)
         }
 
+        onClient_nameChanged: {
+            core.update_dwyco_client_name(core.client_name)
+        }
     }
 
     Rectangle {
@@ -977,7 +1046,7 @@ ApplicationWindow {
         id: sync_debug
         interval: 10000
         repeat: true
-        running: server_account_created
+        running: group_active && server_account_created && qt_application_state === 0
         onTriggered: {
             SyncDescModel.load_model()
         }
@@ -1012,14 +1081,14 @@ ApplicationWindow {
             // which isn't really necessary.
             var sc_next = core.service_channels()
             //console.log("next ", sc_next)
-//            if(sc_next === 1 || sc_next < 0)
-//            {
-//                service_timer.interval = 1
-//            }
-//            else
-//            {
-//                service_timer.interval = (sc_next === 0 ? 100 : Math.min(100, sc_next))
-//            }
+            if(sc_next === 1 || sc_next < 0)
+            {
+                service_timer.interval = 1
+            }
+            else
+            {
+                service_timer.interval = (sc_next === 0 ? 100 : Math.min(100, sc_next))
+            }
         }
 
     }

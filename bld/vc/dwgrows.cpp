@@ -38,6 +38,8 @@ DwGrowingString::ref_str()
 long
 DwGrowingString::copy_out(char *buf, long len)
 {
+    if(len > curlen)
+        oopanic("copy_out len error");
 	long movelen = len < curlen ? len : curlen;
 	memmove(buf, &str[0], movelen);
 	return movelen;
@@ -58,6 +60,20 @@ DwGrowingString::append(const char *s, long len)
 	char *a = &str[curlen];
 	memmove(a, s, len);
 	curlen += len;
+}
+
+void
+DwGrowingString::consume_all_but(long len)
+{
+    if(len < 0)
+        oopanic("bad len to consume");
+    if(len >= curlen)
+    {
+        return;
+    }
+    memmove(&str[0], &str[curlen - len], len);
+    curlen = len;
+    nmark = 0;
 }
 
 void
@@ -87,3 +103,27 @@ DwGrowingString::toss_mark()
 		oopanic("mark  underflow");
 	--nmark;
 }
+
+#ifdef TEST
+#include <stdio.h>
+void
+oopanic(const char *)
+{
+::abort();
+}
+int
+main(int, char **)
+{
+
+	DwGrowingString a(2);
+	a.append("this is great", 5);
+	
+	printf("len %d\n", a.length());
+
+	a.consume_all_but(1);
+	printf("len %d\n", a.length());
+	a.append("\0", 1);
+	printf("str \"%s\"\n", a.ref_str());
+}
+#endif
+

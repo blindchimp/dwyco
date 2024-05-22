@@ -10,8 +10,10 @@
 #include <climits>
 #include "dwvec.h"
 #include "dwvecp.h"
-#include "string.h"
+#include <string.h>
 #include "vcxstrm.h"
+#include <new>
+#include "vcio.h"
 
 
 void dwrtlog(const char *, char *, int, int, int, int, int, int);
@@ -20,17 +22,67 @@ void dwrtlog_vc(char *, int, vc);
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcxstrm.cpp 1.52 1998/12/09 05:12:37 dwight Exp $";
 
 
-long VCX_max_element_len = LONG_MAX;
-long VCX_max_elements = LONG_MAX;
-long VCX_max_depth = LONG_MAX;
+long vcxstream::Max_element_len = LONG_MAX;
+long vcxstream::Max_elements = LONG_MAX;
+long vcxstream::Max_depth = LONG_MAX;
+long vcxstream::Max_memory = LONG_MAX;
+int vcxstream::Max_count_digits;
+// this is used to estimate the amount of memory being used during
+// a deserialization. seriously "estimate", it can be surprising in
+// some cases if you decide you deserialize something that is
+// an N byte image or something, and the tally says "2 * N". this could
+// happen because the stream needs to do extra allocations for
+// large items, etc. using this is more of a "stopgap" hardening thing
+// so you can put an upper-bound on how much memory is used during
+// a deserialization. keep this in mind when you are designing your protocols,
+// ie. lots of little chunks are easier to control than allowing giant
+// strings to be included in vectors, etc.
+//
+unsigned long vcxstream::Memory_tally = 0;
 
-#if 0
-long VCX_max_element_len = 1024 * 1024;
-long VCX_max_elements = 1024;
-long VCX_max_depth = 7;
-#endif
+void* operator new(std::size_t sz)
+{
+    if (sz == 0)
+        ++sz; // avoid std::malloc(0) which may return nullptr on success
 
-#define VCX_ILOG 4
+    if (void *ptr = std::malloc(sz))
+    {
+        vcxstream::Memory_tally += sz;
+        return ptr;
+    }
+    throw std::bad_alloc{}; // required by [new.delete.single]/3
+}
+
+static
+int
+elog10(unsigned int N)
+{
+    int estimate = 0;
+    while (N > 9)
+    {
+        estimate += 1;
+        N /= 10;
+    }
+    return estimate;
+}
+
+void
+vcxstream::set_max_memory(int mxm)
+{
+    int lmxm = elog10(mxm);
+    max_memory = mxm;
+    max_count_digits = lmxm + 1;
+}
+
+void
+vcxstream::set_default_max_memory(int mxm)
+{
+    int lmxm = elog10(mxm);
+    Max_memory = mxm;
+    Max_count_digits = lmxm + 1;
+}
+
+#define VCX_ILOG 128
 
 int
 vcxstream::check_status(enum status s)
@@ -39,25 +91,6 @@ vcxstream::check_status(enum status s)
 		return 0;
 	return 1;
 }
-
-#if 0
-vcxstream::vcxstream(char *ubuf, long l, enum style sty) : log(VCX_ILOG)
-{
-	dtype = NONE;
-	uflow = 0;
-	oflow = 0;
-	manager = 0;
-	mgr = 0;
-	buf = ubuf;
-	cur = buf;
-	len = l;
-	stat = NOT_OPEN;
-	styl = sty;
-    chit_table = 0;
-	own_buf = 0;
-	read_only = 0;
-}
-#endif
 
 vcxstream::vcxstream(const char *ubuf, long l, enum style sty) : log(VCX_ILOG)
 {
@@ -75,9 +108,14 @@ vcxstream::vcxstream(const char *ubuf, long l, enum style sty) : log(VCX_ILOG)
 	own_buf = 0;
 	read_only = 0;
 
-    max_elements = VCX_max_elements;
-    max_depth = VCX_max_depth;
-    max_element_len = VCX_max_element_len;
+    max_elements = Max_elements;
+    max_depth = Max_depth;
+    max_element_len = Max_element_len;
+    max_memory = Max_memory;
+    memory_tally = 0;
+    if(Max_count_digits == 0)
+        Max_count_digits = elog10(Max_memory) + 1;
+    max_count_digits = Max_count_digits;
 }
 
 vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -95,9 +133,14 @@ vcxstream::vcxstream(VCXUNDERFUN uf, VCXOVERFUN of, vc_default *obj, char *ubuf,
 	styl = sty;
 	read_only = 0;
 
-    max_elements = VCX_max_elements;
-    max_depth = VCX_max_depth;
-    max_element_len = VCX_max_element_len;
+    max_elements = Max_elements;
+    max_depth = Max_depth;
+    max_element_len = Max_element_len;
+    max_memory = Max_memory;
+    memory_tally = 0;
+    if(Max_count_digits == 0)
+        Max_count_digits = elog10(Max_memory) + 1;
+    max_count_digits = Max_count_digits;
 }
 
 vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -116,9 +159,14 @@ vcxstream::vcxstream(vc_default *obj, char *ubuf, long l, enum style sty) : log(
 	own_buf = 0;
 	read_only = 0;
 
-    max_elements = VCX_max_elements;
-    max_depth = VCX_max_depth;
-    max_element_len = VCX_max_element_len;
+    max_elements = Max_elements;
+    max_depth = Max_depth;
+    max_element_len = Max_element_len;
+    max_memory = Max_memory;
+    memory_tally = 0;
+    if(Max_count_digits == 0)
+        Max_count_digits = elog10(Max_memory) + 1;
+    max_count_digits = Max_count_digits;
 }
 
 vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
@@ -137,9 +185,14 @@ vcxstream::vcxstream(vc obj, char *ubuf, long l, enum style sty) : log(VCX_ILOG)
 	own_buf = 0;
 	read_only = 0;
 
-    max_elements = VCX_max_elements;
-    max_depth = VCX_max_depth;
-    max_element_len = VCX_max_element_len;
+    max_elements = Max_elements;
+    max_depth = Max_depth;
+    max_element_len = Max_element_len;
+    max_memory = Max_memory;
+    memory_tally = 0;
+    if(Max_count_digits == 0)
+        Max_count_digits = elog10(Max_memory) + 1;
+    max_count_digits = Max_count_digits;
 }
 
 vcxstream::~vcxstream()
@@ -222,7 +275,10 @@ vcxstream::close(how_close how)
 	if(how != DISCARD && iostyle == ATOMIC && check_status(READABLE))
 	{
 		if(how == RETRY)
+        {
 			put_back(log.ref_str(), log.length());
+            memory_tally = log.length();
+        }
 		log.reset();
 		if(how == RETRY)
 		{
@@ -242,6 +298,7 @@ vcxstream::close(how_close how)
 			ok = 0;
     }
 	stat = CLOSED;
+    memory_tally = 0;
 	if(do_devclose(how) == 0)
 		return 0;
 	return ok;
@@ -264,6 +321,15 @@ vcxstream::retry()
     if(stat == READABLE)
     {
         put_back(log.ref_str(), log.length());
+        // this is a hack: during the deserialization, you were
+        // "charged" for two things: the amount of memory for the
+        // deserialized items, and the size of the log in case you had
+        // to back out. however, when you back out, presumably all the
+        // items that were built are freed in anticipation for another
+        // try at deserializing. this just sets the memory_tally to the size
+        // of the log so you are not accumulating lots of tallied memory
+        // on each retry.
+        memory_tally = log.length(); // really need the size of allocated memory, not used memory
         log.reset();
     }
     chit_destroy_table();
@@ -342,9 +408,7 @@ vcxstream::close2(how_close how)
         case CONTINUE:
             log.reset();
             chit_destroy_table();
-            //delete chit_table;
-            //chit_table = 0;
-            stat = CLOSED;
+            //stat = CLOSED;
             return 1;
             break;
         default:
@@ -383,7 +447,7 @@ vcxstream::close2(how_close how)
     }
     // regardless of what we're doing, eliminate the
     // chit table. this means that open-close pairs
-    // are what determines how graph cycles are computed
+    // are what determines how dag references are computed
     chit_destroy_table();
     //delete chit_table;
     //chit_table = 0;
@@ -543,7 +607,7 @@ vcxstream::put_back(const char *str, long pblen)
 	if(pblen <= (cur - buf))
 	{
 		// it'll fit on the top of the current buffer
-//VcError << "puting back on top " << cur << "\n";
+//VcError << "puting back on top\n";
 		cur -= pblen;
 		memmove(cur, str, pblen);
 		return;
@@ -574,7 +638,7 @@ vcxstream::flush()
     case WRITEABLE:
 		if(buf != cur)
 		{
-			if(do_overflow(buf, cur - buf) < 0)
+            if(do_overflow(buf, cur - buf) < cur - buf)
 				return 0;
         	cur = buf;
 		}
@@ -642,6 +706,8 @@ vcxstream::flushnb()
 vc_default *
 vcxstream::chit_get(VCXCHIT c)
 {
+    if(!allow_self_ref)
+        return 0;
 	if(chit_table == 0)
 		return 0;
 
@@ -653,6 +719,8 @@ vcxstream::chit_get(VCXCHIT c)
 void
 vcxstream::chit_append(vc_default *v)
 {
+    if(!allow_self_ref)
+        return;
 	if(chit_table == 0)
 		chit_table = new ChitTable;
 	chit_table->append(v);
@@ -672,7 +740,12 @@ VCXCHIT
 vcxstream::chit_find(vc_default *v)
 {
 	VCXCHIT c = -1;
-    // this really is a panic, because chit_find is only called
+
+    if(!allow_self_ref)
+    {
+        oopanic("attempt to serialize non-tree-like vc");
+    }
+    // this really *is* a panic, because chit_find is only called
     // during serialization and if we cant find a visited
     // item, there is something really wrong.
 	if(chit_table == 0 || (c = chit_table->index(v)) < 0)
@@ -706,6 +779,7 @@ vcxstream::chit_destroy_table()
 void
 vcxstream::commit()
 {
+    memory_tally = 0;
 	log.reset();
 }
 

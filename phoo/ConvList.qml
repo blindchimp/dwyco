@@ -71,14 +71,15 @@ Page {
                     }
                     MessageDialog {
                         id: confirm_delete
-                        title: "Block and Bulk delete?"
+                        title: "Block user and delete messages?"
                         icon: StandardIcon.Question
                         text: "Delete ALL messages from selected users?"
-                        informativeText: "This removes FAVORITE messages too."
+                        informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                         standardButtons: StandardButton.Yes | StandardButton.No
                         onYes: {
                             ConvListModel.block_all_selected()
-                            ConvListModel.delete_all_selected()
+                            ConvListModel.obliterate_all_selected()
+                            multiselect_mode = false
                             close()
                         }
                         onNo: {
@@ -235,7 +236,7 @@ Page {
                    //width: dp(80)
                    //height: dp(60)
                    source : { 
-                       (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                       (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
                                    core.uid_to_profile_preview(uid) :
                                    "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png" 
                    }
@@ -317,6 +318,7 @@ Page {
                    text: display
                    elide: Text.ElideRight
                    clip: true
+                   font: applicationWindow1.font
                    Layout.alignment: Qt.AlignLeft
                    Layout.fillWidth: true
 
@@ -415,7 +417,7 @@ Page {
                id: ppic
                anchors.centerIn: parent
                source : {
-                   (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                   (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
                                core.uid_to_profile_preview(uid) :
                                "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                }

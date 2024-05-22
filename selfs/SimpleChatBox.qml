@@ -32,6 +32,7 @@ Page {
     property url cur_source
     property var call_buttons_model
     property bool lock_to_bottom: false
+    property int is_blocked: 0
 
     function star_fun(b) {
         console.log("chatbox star")
@@ -70,6 +71,7 @@ Page {
                     text: "Hide"
                     onTriggered: {
                         model.tag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -77,6 +79,7 @@ Page {
                     text: "UnHide"
                     onTriggered: {
                         model.untag_all_selected("_hid")
+                        model.invalidate_model_filter()
                         multiselect_mode = false
                     }
                 }
@@ -100,8 +103,8 @@ Page {
             id:multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT delete FAVORITE messages"
-            delete_warning_text: "Delete all selected messages?"
+            delete_warning_inf_text: "Does NOT trash FAVORITE messages"
+            delete_warning_text: "Trash all selected messages?"
         }
 
         ToolBar {
@@ -154,7 +157,7 @@ Page {
                         source: {
                             if(to_uid === "")
                                 return
-                            return (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid))) ?
+                            return (is_blocked !== 1 && (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid)))) ?
                                     cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         }
                         fillMode: Image.PreserveAspectCrop
@@ -163,7 +166,7 @@ Page {
 
                     }
                     Text {
-                        id:top_toolbar_text
+                        id: top_toolbar_text
                         //width: dp(160)
                         clip: true
                         anchors.leftMargin: 2
@@ -390,11 +393,13 @@ Page {
                                     // ugh, what a hack
                                     android_img_pick_hack = 0
                                     android_img_pick_hack = 2
-                                    notificationClient.open_image()
+                                    if(notificationClient.open_image() === 0) {
+                                        failed_msg.text = "Android blocked access to images."
+                                        animateOpacity.start()
+                                    }
                                 } else {
                                     picture_picker.visible = true
                                 }
-
                             }
                         }
                         MenuItem {
@@ -413,21 +418,45 @@ Page {
                             }
                         }
 
+//                        MenuItem {
+//                            text: "Clear msgs"
+//                            onTriggered: {
+//                                confirm_clear.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_clear
+//                                title: "Remove all msgs?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+//                                informativeText: "This KEEPS FAVORITE messages."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.clear_messages_unfav(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
-                            text: "Clear msgs"
+                            text: "Trash msgs..."
                             onTriggered: {
-                                confirm_clear.visible = true
+                                confirm_trash.visible = true
                             }
                             MessageDialog {
-                                id: confirm_clear
-                                title: "Remove all msgs?"
+                                id: confirm_trash
+                                title: "Trash all messages?"
                                 icon: StandardIcon.Question
-                                text: "Delete ALL (including HIDDEN) msgs from this user?"
+                                text: "Trash ALL messages from this user?"
                                 informativeText: "This KEEPS FAVORITE messages."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
-                                    core.clear_messages_unfav(chatbox.to_uid)
-                                    themsglist.reload_model()
+                                    //core.clear_messages_unfav(chatbox.to_uid)
+                                    themsglist.set_all_selected()
+                                    themsglist.trash_all_selected()
+                                    themsglist.invalidate_model_filter()
                                     close()
                                 }
                                 onNo: {
@@ -436,29 +465,29 @@ Page {
                             }
                         }
 
-                        MenuItem {
-                            text: "Delete user"
-                            onTriggered: {
-                                confirm_delete.visible = true
-                            }
-                            MessageDialog {
-                                id: confirm_delete
-                                title: "Bulk delete?"
-                                icon: StandardIcon.Question
-                                text: "Delete ALL messages from user?"
-                                informativeText: "This removes FAVORITE and HIDDEN messages too."
-                                standardButtons: StandardButton.Yes | StandardButton.No
-                                onYes: {
-                                    core.delete_user(chatbox.to_uid)
-                                    themsglist.reload_model()
-                                    close()
-                                    stack.pop()
-                                }
-                                onNo: {
-                                    close()
-                                }
-                            }
-                        }
+//                        MenuItem {
+//                            text: "Delete user"
+//                            onTriggered: {
+//                                confirm_delete.visible = true
+//                            }
+//                            MessageDialog {
+//                                id: confirm_delete
+//                                title: "Bulk delete?"
+//                                icon: StandardIcon.Question
+//                                text: "Delete ALL messages from user?"
+//                                informativeText: "This removes FAVORITE and HIDDEN messages too."
+//                                standardButtons: StandardButton.Yes | StandardButton.No
+//                                onYes: {
+//                                    core.delete_user(chatbox.to_uid)
+//                                    themsglist.reload_model()
+//                                    close()
+//                                    stack.pop()
+//                                }
+//                                onNo: {
+//                                    close()
+//                                }
+//                            }
+//                        }
                         MenuItem {
                             text: "More..."
                             onTriggered: {
@@ -492,12 +521,12 @@ Page {
 
     Connections {
         target: core
-        onSc_rem_keyboard_active : {
+        function onSc_rem_keyboard_active(uid, active) {
             if(uid === to_uid) {
                 ind_typing = active
             }
         }
-        onNew_msg : {
+        function onNew_msg(from_uid, txt, mid) {
             // if we're visible, reset the unviewed msgs thing since presumably
             // we can see it. might want to set it if the view is scrolled up
             // and we can't actually see it until we scroll down, but for
@@ -506,7 +535,7 @@ Page {
                 core.reset_unviewed_msgs(to_uid)
             }
         }
-        onSys_uid_resolved: {
+        function onSys_uid_resolved(uid) {
             if(chatbox.to_uid === uid) {
                 // try to defeat caching since the actual name
                 // of the "preview url" hasn't changed, but the contents have
@@ -515,27 +544,27 @@ Page {
                 top_toolbar_text.text = core.uid_to_name(uid)
             }
         }
-        onSc_connect_terminated: {
+        function onSc_connect_terminated(uid) {
             if(chatbox.to_uid === uid) {
                 console.log("CONNECT TERMINATED")
             }
         }
 
-        onSc_connectedChanged: {
+        function onSc_connectedChanged(uid, connected) {
                 if(chatbox.to_uid === uid) {
                     console.log("ConnectedChanged ", connected)
                     if(connected === 0 && vidpanel.visible) {
                         vidpanel.visible = false
                         core.enable_video_capture_preview(0)
                     }
-                    ind_online = connected === 1 ? true : false
+                    ind_online = connected
                 }
             }
-//        onIgnore_event: {
-//            if(uid === to_uid) {
-//               to_uid = ""
-//            }
-//        }
+        function onIgnore_event(uid) {
+            if(uid === to_uid) {
+               is_blocked = core.get_ignore(uid)
+            }
+        }
 
     }
 
@@ -560,6 +589,7 @@ Page {
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
         call_buttons_model = core.get_button_model(to_uid)
+        is_blocked = core.get_ignore(to_uid)
     }
 
     Loader {
@@ -615,6 +645,13 @@ Page {
         anchors.top: parent.top
         anchors.topMargin: 0
         Layout.margins: mm(1)
+//        BareConvList {
+//            id: conv_sidebar
+//            //visible: true
+//            Layout.fillHeight: true
+//            Layout.minimumWidth: parent.width / 5
+//        }
+
         VidCall {
             id: vidpanel
             visible: false
@@ -655,6 +692,12 @@ Page {
                 //console.log("at y beg ", atYBeginning)
             }
         }
+        BareConvList {
+            id: conv_sidebar
+            //visible: true
+            Layout.fillHeight: true
+            Layout.minimumWidth: parent.width / 5
+        }
     }
 
 
@@ -672,8 +715,9 @@ Page {
             border.color: divider
             color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
 
-            anchors.left: {(SENT == 0) ? parent.left : undefined}
-            anchors.right: {(SENT == 1) ? parent.right : undefined}
+            //anchors.left: {(SENT == 0) ? parent.left : undefined}
+            x: (SENT === 1) ? listView1.width - ditem.width - 3 : 3
+            //anchors.right: {(SENT == 1) ? parent.right : undefined}
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             onHeightChanged: {
@@ -782,8 +826,8 @@ Page {
                     fillMode: Image.PreserveAspectFit
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
-                    //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                    source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
+                    source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                    //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
                     asynchronous: true
@@ -823,6 +867,7 @@ Page {
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
                     textFormat: Text.RichText
+                    font: applicationWindow1.font
                     color: primary_text
                     clip: true
                     onLinkActivated: {
@@ -894,7 +939,9 @@ Page {
                             themsgview.uid = to_uid
                             themsgview.text_bg_color = ditem.color
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file://" + String(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
+
+                                // PREVIEW_FILENAME != "" ? ("file:///" + PREVIEW_FILENAME) :
                                 stack.push(themsgview)
                             }
                             else {
@@ -1124,7 +1171,7 @@ Page {
         }
         Connections {
             target: core
-            onZap_stopped: {
+            function onZap_stopped(zid) {
                 if(zid === audio_zap_button.zid) {
                     core.send_zap(zid, to_uid, 1)
                     audio_zap_button.zid = -1
@@ -1175,6 +1222,32 @@ Page {
 
     }
 
+    Rectangle {
+        anchors.fill: failed_msg
+        color: "black"
+        z: 9
+        opacity: failed_msg.opacity
+    }
+
+    Text {
+        id: failed_msg
+        text: "Failed..."
+        font.bold: true
+        anchors.centerIn: parent
+        z: 10
+        color: "white"
+
+        opacity: 0.0
+        NumberAnimation {
+               id: animateOpacity
+               target: failed_msg
+               properties: "opacity"
+               from: 1.0
+               to: 0.0
+               duration: 3000
+          }
+    }
+
     Warning {
         id: warn
         visible: false
@@ -1195,4 +1268,72 @@ Page {
         }
 
     }
+
+    PulseLoader {
+        id: typing_thing
+        barCount: 5
+        color: "deeppink"
+        opacity: .7
+        x: textField1.x
+        y: textField1.y - height
+        width: 80
+        height: 10
+        visible: ind_typing === 1
+        running: visible
+
+    }
+
+//    Rectangle {
+//        id: typing_thing
+//        color: "red"
+//        opacity: .5
+//        x: textField1.x
+//        y: textField1.y - height
+//        width: 40
+//        height: 40
+//        visible: ind_typing === 1
+//    }
+//    SequentialAnimation {
+//        id: typing_animation
+//        loops: Animation.Infinite
+//        running: ind_typing === 1
+//        onRunningChanged: {
+//            if(running) {
+//                typing_thing.y = textField1.y - typing_thing.height
+//                typing_animation.start()
+//            } else {
+//                typing_thing.y = textField1.y - typing_thing.height
+//            }
+//        }
+
+//        // Animate the y property of the target typing_thing
+//        PropertyAnimation {
+//            target: typing_thing
+//            property: "y"
+//            from: typing_thing.y
+//            to: typing_thing.y - 10
+//            duration: 300
+//            onStarted: {
+//                console.log("FUCK")
+//            }
+//        }
+
+//        // Pause for a short duration
+//        PauseAnimation {
+//            duration: 300
+//        }
+
+//        // Animate the y property back to its original position
+//        PropertyAnimation {
+//            target: typing_thing
+//            property: "y"
+//            from: typing_thing.y
+//            to: typing_thing.y + 10
+//            duration: 300
+//        }
+
+
+//    }
+
+
 }

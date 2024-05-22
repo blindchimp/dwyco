@@ -10,14 +10,12 @@
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/aq.cc 1.15 1999/01/10 16:09:23 dwight Checkpoint $
  */
-#include "gvchild.h"
 #include "dwstr.h"
 #include "aq.h"
 
 #include "acqfile.h"
 #include "aqkey.h"
 #include "mmchan.h"
-#include "chatgrid.h"
 #include "ezset.h"
 #include "aqext.h"
 
@@ -53,7 +51,7 @@ int
 init_raw_files(int mbox, DwString& fail_reason)
 {
     FileAcquire<pixel> *a = new FileAcquire<pixel>;
-    a->set_fail_reason("unknown");
+    a->set_fail_reason("unknown raw file init");
 
     if(!a->init((int)get_settings_value("raw_files/use_pattern") == 1 ?
                 (const char *)get_settings_value("raw_files/raw_files_pattern") :
@@ -105,7 +103,7 @@ init_external_video(int mbox)
 int
 initaq(int mbox, DwString& fail_reason)
 {
-    fail_reason = "unknown";
+    fail_reason = "unknown video acq init failure";
     if(TheAq)
         return 1;
     if(!Bound_setting)

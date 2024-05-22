@@ -17,7 +17,8 @@ class DwGrowingString
 {
 public:
         DwGrowingString(int init_len = 128);
-
+    // warning: this invalidates any pointers gotten by
+    // ref_str
 	void append(const char *, long len);
 	void mark();
 	int pop_to_mark(char *& buf_out, long& len_out);
@@ -26,6 +27,11 @@ public:
 	const char *ref_str();
 	long copy_out(char *, long len);
 	void reset();
+    // without changing the size of the internal buffer,
+    // move the last chunk of data to the
+    // beginning of the string, and reset the size
+    // to len.
+    void consume_all_but(long len);
 
 private:
 

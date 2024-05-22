@@ -17,6 +17,7 @@
 #include "fnmod.h"
 #include "qmsg.h"
 #include "sepstr.h"
+#include "filetube.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,8 +28,9 @@
 #define CHANNEL_SETUP_TIMEOUT (1000 * 4)
 #define XFER_WATCHDOG_TIMEOUT (1000 * 20)
 
-using namespace dwyco;
+namespace dwyco {
 DwQueryByMember<DirectSend> DirectSend::Qbm;
+int DirectSend::Inline_attach_size = 50 * 1024;
 
 DirectSend::DirectSend(const DwString& fn) :
     vp(this)
@@ -58,17 +60,17 @@ async_delete(vc, void *, vc, ValidPtr vp)
     delete (DirectSend *)(void *)vp;
 }
 
-static
+
 void
-delete_later(DirectSend *d)
+DirectSend::delete_later(DirectSend *d)
 {
     d->disconnect_all();
     dirth_q_local_action(vc(VC_VECTOR), QckDone(async_delete, 0, vcnil, d->vp));
 }
 
-static
+
 void
-send_done(vc m, void *, vc, ValidPtr vp)
+DirectSend::send_done(vc m, void *, vc, ValidPtr vp)
 {
     if(!vp.is_valid())
         return;
@@ -153,7 +155,7 @@ DirectSend::send_direct()
     }
     QckDone d(send_done, 0, vcnil, vp);
     d.set_timeout(10);
-    d.type = ReqType("msg", ++Serial);
+    d.type = ReqType("msg");
     v[0] = d.type.response_type();
     v[1] = msg_to_send;
     v[2] = small_attachment;
@@ -165,8 +167,8 @@ DirectSend::send_direct()
 
 }
 
-static void
-eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
+void
+DirectSend::eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
 {
     mc->timer1.stop();
     if(!vp.is_valid())
@@ -209,8 +211,8 @@ eo_direct_xfer(MMChannel *mc, vc, void *, ValidPtr vp)
     q->send_direct();
 }
 
-static void
-set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
+void
+DirectSend::set_status(MMChannel *mc, vc msg, void *, ValidPtr vp)
 {
     mc->timer1.stop();
     mc->timer1.load(XFER_WATCHDOG_TIMEOUT);
@@ -246,8 +248,8 @@ xfer_chan_call_succeeded(MMChannel *mc, int chan, vc, void *, ValidPtr)
     // timer1 callback still set to xfer_chan_setup_timeout
 }
 
-static void
-xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp)
+void
+DirectSend::xfer_chan_setup_timeout(MMChannel *mc, vc arg1, void *arg2, ValidPtr vp)
 {
     eo_direct_xfer(mc, arg1, arg2, vp);
 }
@@ -260,7 +262,16 @@ DirectSend::load_small_attachment()
     struct stat sb;
     if(stat(actual_filename.c_str(), &sb) == -1)
         return 0;
-    if(sb.st_size > 20 * 1024)
+    // ca 2023, boost this to 50k since cameras
+    // are sending bigger items now, and network
+    // speeds are quite a bit better now.
+
+    // note: clamp this in case something weird comes in
+    if(Inline_attach_size < 0 || Inline_attach_size > 500 * 1024)
+    {
+        Inline_attach_size = 50 * 1024;
+    }
+    if(sb.st_size > Inline_attach_size)
         return 0;
 
     FILE *f = fopen(actual_filename.c_str(), "rb");
@@ -507,8 +518,6 @@ DirectSend::send_message()
         return 1;
     }
 
-
-
     // just return ok if we are in the process of setting up a direct
     // channel, or the channel is already set up
     DwVecP<MMCall> ret = MMCall::MMCalls_qbm.query_by_member(uid, &MMCall::uid);
@@ -676,4 +685,5 @@ DirectSend::canceled()
     se_sig.emit(SE_MSG_SEND_CANCELED, qfn, r);
     delete_later(this);
 
+}
 }

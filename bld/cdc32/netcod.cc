@@ -99,12 +99,28 @@ SimpleSocket::any_waiting_for_write()
     return SSQbm.exists_by_fun(&SimpleSocket::waiting_for_write, 1);
 }
 
+int
+SimpleSocket::load_write_set()
+{
+    vc_winsock::clear_write_set();
+    auto res = SSQbm.query_by_fun(&SimpleSocket::waiting_for_write, 1);
+    if(res.num_elems() == 0)
+        return 0;
+    for(int i = 0; i < res.num_elems(); ++i)
+    {
+        auto ss = res[i];
+        ss->sock.socket_add_write_set();
+    }
+    return 1;
+}
+
 SimpleSocket::SimpleSocket()
 {
     noblock = 0;
     istream = 0;
     ostream = 0;
     polling_for_connect = 0;
+    working_len = 0;
     SSQbm.add(this);
 }
 
@@ -116,6 +132,7 @@ SimpleSocket::SimpleSocket(vc sock)
     istream = 0;
     ostream = 0;
     polling_for_connect = 0;
+    working_len = 0;
     this->sock = sock;
 
 #ifdef _Windows
@@ -123,9 +140,7 @@ SimpleSocket::SimpleSocket(vc sock)
     if(MMChannel::get_main_window_callback &&
             (h = (*MMChannel::get_main_window_callback)(0)))
     {
-        sock.socket_set_option(VC_WSAASYNC_SELECT,
-                               (unsigned long)h,
-                               WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
+        sock.socket_set_async(h, WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
     }
 #endif
 
@@ -203,7 +218,7 @@ SimpleSocket::reconnect(const char *remote_addr)
 }
 
 int
-SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry, HWND hwnd)
+SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry)
 {
     if(!retry)
         initsock();
@@ -225,9 +240,7 @@ SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry, H
                 (h = (*MMChannel::get_main_window_callback)(0)))
         {
 #ifdef _Windows
-            sock.socket_set_option(VC_WSAASYNC_SELECT,
-                                   (unsigned long)h,
-                                   WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
+            sock.socket_set_async(h, WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
 #endif
         }
         // ug, hack
@@ -242,7 +255,8 @@ SimpleSocket::init(const char *remote_addr, const char *local_addr, int retry, H
                 GRTLOGVC(vcra);
                 if(!wouldblock())
                     bad_op();
-                polling_for_connect = 1;
+                else
+                    polling_for_connect = 1;
                 return 0;
             }
         }
@@ -402,7 +416,7 @@ SimpleSocket::active()
 	v->max_retries = 0; \
 	}
 
-#define RET(a) {if(sock.type() == VC_SOCKET) sock.set_err_callback(cb); return (a);}
+#define RET(a) do {if(sock.type() == VC_SOCKET) sock.set_err_callback(cb); return (a);} while(0)
 
 int
 SimpleSocket::sendlc(DWBYTE *buf, int len, int wbok)
@@ -554,6 +568,7 @@ SimpleSocket::sendvc(vc v)
             vc_composite::new_dfs();
             if((len = v.xfer_out(ostrm)) < 0)
                 RET(0);
+            working_len = len;
         }
         else
         {
@@ -567,7 +582,7 @@ SimpleSocket::sendvc(vc v)
             GRTLOG("flush nb done", 0, 0);
             if(!ostrm.close(vcxstream::DISCARD))
                 RET(0);
-            RET(1);
+            RET(working_len);
         case NB_RETRY:
             GRTLOG("flush nb retry", 0, 0);
             if(!ostrm.close(vcxstream::RETRY))
@@ -594,19 +609,6 @@ SimpleSocket::sendvc(vc v)
             RET(0);
     }
 
-#if 0
-    vc f(VC_FILE);
-    f.open("ser.out", VCFILE_WRITE);
-    vcxstream tstrm(f);
-    if(!tstrm.open(vcxstream::WRITEABLE))
-        return 0;
-    vc_composite::new_dfs();
-    if((len = v.xfer_out(tstrm)) < 0)
-        return 0;
-    if(!tstrm.close(vcxstream::FLUSH))
-        return 0;
-    f.close();
-#endif
     return len;
 }
 
@@ -647,7 +649,7 @@ SimpleSocket::recvvc(vc& v)
 
 
 int
-Listener::init(const char *, const char *local_addr, int, HWND)
+Listener::init(const char *, const char *local_addr, int)
 {
     initsock();
     sock.set_err_callback(net_socket_error);
@@ -705,9 +707,7 @@ Listener::accept()
             (h = (*MMChannel::get_main_window_callback)(0)))
     {
 #ifdef _Windows
-        newsock.socket_set_option(VC_WSAASYNC_SELECT,
-                                  (unsigned long)h,
-                                  WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
+        newsock.socket_set_async(h, WM_USER + 400, FD_READ|FD_WRITE|FD_CLOSE/*|FD_CONNECT*/);
 #endif
     }
     SimpleSocket *s = new SimpleSocket;

@@ -19,7 +19,6 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <strings.h>
-#include "dwyco_rand.h"
 
 [[noreturn]] void oopanic(const char *);
 
@@ -196,6 +195,9 @@ pthread_spin_unlock(pthread_spinlock_t *a)
 }
 
 #endif
+
+// note: ndk api 24 includes these now
+#if 1
 #ifdef ANDROID
 typedef volatile int pthread_spinlock_t;
 static
@@ -224,6 +226,7 @@ pthread_spin_unlock(pthread_spinlock_t *a)
     __sync_synchronize();
     *a = 0;
 }
+#endif
 
 #endif
 
@@ -337,14 +340,6 @@ filelength(int fd)
     lseek(fd, old, SEEK_SET);
     return sz;
 }
-
-#ifdef __GNUG__
-void
-itoa(int i, char *out, int)
-{
-    sprintf(out, "%d", i);
-}
-#endif
 
 int
 mkdir(const char *p)

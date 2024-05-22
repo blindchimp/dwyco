@@ -137,7 +137,10 @@ filename_modify(const DwString& fn, DwString& fn_out)
     {
         if(fnr->cacheable && !fnr->cached_val)
         {
-            fnr->cached_val = new DwString(*fnr->pfx);
+            if(*fnr->pfx)
+                fnr->cached_val = new DwString(*fnr->pfx);
+            else
+                fnr->cached_val = new DwString;
             *fnr->cached_val += fn;
         }
         if(fnr->cacheable)
@@ -160,13 +163,20 @@ filename_modify(const DwString& fn, DwString& fn_out)
         fnr = Perfect_Hash::in_word_set(".q", 2);
         if(!fnr)
             oopanic("something wrong with hash tables");
-        if(check_pfx(*fnr->pfx, fn))
+        if(*fnr->pfx)
+        {
+            if(check_pfx(*fnr->pfx, fn))
+            {
+                fn_out = fn;
+                return 1;
+            }
+            fn_out = *fnr->pfx;
+            fn_out += fn;
+        }
+        else
         {
             fn_out = fn;
-            return 1;
         }
-        fn_out = *fnr->pfx;
-        fn_out += fn;
         GRTLOG("suffix %s -> %s", fn.c_str(), fn_out.c_str());
         return 1;
     }
@@ -177,13 +187,20 @@ filename_modify(const DwString& fn, DwString& fn_out)
         fnr = Perfect_Hash::in_word_set(suf.c_str(), suf.length());
         if(!fnr)
             oopanic("can't map suffix");
-        if(check_pfx(*fnr->pfx, fn))
+        if(*fnr->pfx)
+        {
+            if(check_pfx(*fnr->pfx, fn))
+            {
+                fn_out = fn;
+                return 1;
+            }
+            fn_out = *fnr->pfx;
+            fn_out += fn;
+        }
+        else
         {
             fn_out = fn;
-            return 1;
         }
-        fn_out = *fnr->pfx;
-        fn_out += fn;
         GRTLOG("suffix %s -> %s", fn.c_str(), fn_out.c_str());
         return 1;
     }
@@ -300,7 +317,7 @@ is_user_dir(const DwString& fn)
 }
 
 int
-is_attachment(vc fn)
+is_attachment(const vc& fn)
 {
     if(fn.len() != 24)
         return 0;

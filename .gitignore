@@ -587,3 +587,6 @@ bld/speexdsp/libspeexdsp/testresample2
 *.10-pre1
 
 bld/android/com/dwyco/android/.vscode/
+/fckbld.pro
+/fucktola
+CMakeLists.txt.user

@@ -56,7 +56,7 @@ public:
     int num_elems() const {
         return count;
     }
-    int contains(const T&);
+    int contains(const T&) const;
     int del(const T&);
     int del_all(const T&);
     int find(const T&, T& out, T** wp = 0);
@@ -221,7 +221,7 @@ DwBag<T>::del(const T& key)
 
 template<class T>
 int
-DwBag<T>::contains(const T& key)
+DwBag<T>::contains(const T& key) const
 {
     unsigned long hval = ::hash(key) % table_size;
     if(table[hval] == 0)

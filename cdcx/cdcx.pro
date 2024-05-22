@@ -10,6 +10,11 @@ TEMPLATE = app
 TARGET = CDC-X
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += UNICODE
+greaterThan(QT_MAJOR_VERSION, 5) {
+DEFINES += DWYCO_NICE_VERSION=\\\"4.106\\\"
+} else {
+DEFINES += DWYCO_NICE_VERSION=\\\"3.106\\\"
+}
 
 DEPENDPATH += .
 INCLUDEPATH += .
@@ -28,8 +33,7 @@ INCLUDEPATH += .
 #PRE_TARGETDEPS += dateincr
 
 QT +=  core network webenginewidgets
-equals(QT_MAJOR_VERSION, 4): QT += webkit
-macx-*|win32|linux-*:greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets multimedia multimediawidgets
+QT += core gui widgets multimedia multimediawidgets
 
 RESOURCES=icons.qrc
 #CONFIG-=app_bundle
@@ -49,8 +53,8 @@ DEFINES += WHATBOX=BrowseBox
 #DEFINES += LOCAL_TEST
 #DEFINES += NO_BUILDTIME
 DEFINES += CDCX_WEBKIT
-greaterThan(QT_MAJOR_VERSION, 4): DEFINES += DWYCO_QT5
-greaterThan(QT_MAJOR_VERSION, 4): DEFINES += toAscii=toLatin1
+DEFINES += DWYCO_QT5
+DEFINES += toAscii=toLatin1
 #DEFINES += NO_DWYCO_AUDIO
 #DEFINES += LEAK_CLEANUP
 HEADERS += mainwin.h tfhex.h dwyco_new_msg.h evret.h about.h composer.h autoupdate.h msgtohtml.h player.h ssmap.h  config.h snd.h croom.h pw.h login.h qwiz.h userwid.h cspw.h qval.h dirmisc.h iglist.h ct.h userlob.h  \
@@ -142,9 +146,9 @@ $${D}/jenkins/libjenkins.a \
 $${D}/qtdrv/libqtdrv.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
--lsqlite3 \
 $${D}/v4lcap/libv4lcap.a \
--lv4l2
+-lv4l2 \
+-ldl
 
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
@@ -164,7 +168,8 @@ $${D}/jenkins/libjenkins.a \
 $${D}/speex/libspeex.a \
 $${D}/uv/libuv.a \
 $${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a \
-$${D}/qtdrv/libqtdrv.a
+$${D}/qtdrv/libqtdrv.a \
+$${D}/v4lcap/libv4lcap.a
 
 
 #-lesd \
@@ -193,48 +198,54 @@ DEFINES += CDCCORE_STATIC
 # compile out parts that aren't available in qt4
 DEFINES += CDCX_NO_SSL
 
-# use this if you are building with qmake files
-#D = \\Users\\dwight\\build-cdcx\\bld
+#D = $$replace(OUT_PWD, /, \\)\\..\\bld
+#S = release
 
-D = $$replace(OUT_PWD, /, \\)\\..\\bld
-S = release
+D=$${OUT_PWD}/../bld
+CONFIG(debug, debug|release) {
+    S=debug
+}
+CONFIG(release, debug|release) {
+    S=release
+}
+
 LIBS += \
-$${D}\\cdc32\\$${S}\\cdc32.lib \
-$${D}\\vc\\$${S}\\vc.lib \
-$${D}\\crypto5\\$${S}\\crypto5.lib \
-$${D}\\dwcls\\$${S}\\dwcls.lib \
-$${D}\\gsm\\$${S}\\gsm.lib \
-$${D}\\kazlib\\$${S}\\kazlib.lib \
-$${D}\\ppm\\$${S}\\ppm.lib \
-$${D}\\pgm\\$${S}\\pgm.lib \
-$${D}\\pbm\\$${S}\\pbm.lib \
-$${D}\\zlib\\$${S}\\zlib.lib \
-$${D}\\jenkins\\$${S}\\jenkins.lib \
-$${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
-$${D}\\speex\\$${S}\\speex.lib \
-$${D}\\ogg\\$${S}\\ogg.lib \
-$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib \
-$${PWD}\\..\\bld\\mtcap\\mingw-rel\\win32\\mtcapxe.lib \
+$${D}/cdc32/$${S}/cdc32.lib \
+$${D}/vc/$${S}/vc.lib \
+$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/dwcls/$${S}/dwcls.lib \
+$${D}/gsm/$${S}/gsm.lib \
+$${D}/kazlib/$${S}/kazlib.lib \
+$${D}/ppm/$${S}/ppm.lib \
+$${D}/pgm/$${S}/pgm.lib \
+$${D}/pbm/$${S}/pbm.lib \
+$${D}/zlib/$${S}/zlib.lib \
+$${D}/jenkins/$${S}/jenkins.lib \
+$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
+$${D}/speex/$${S}/speex.lib \
+$${D}/ogg/$${S}/ogg.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib \
+$${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib \
 winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
 
 PRE_TARGETDEPS += \
-$${D}\\cdc32\\$${S}\\cdc32.lib \
-$${D}\\vc\\$${S}\\vc.lib \
-$${D}\\crypto5\\$${S}\\crypto5.lib \
-$${D}\\dwcls\\$${S}\\dwcls.lib \
-$${D}\\gsm\\$${S}\\gsm.lib \
-$${D}\\kazlib\\$${S}\\kazlib.lib \
-$${D}\\ppm\\$${S}\\ppm.lib \
-$${D}\\pgm\\$${S}\\pgm.lib \
-$${D}\\pbm\\$${S}\\pbm.lib \
-$${D}\\zlib\\$${S}\\zlib.lib \
-$${D}\\jenkins\\$${S}\\jenkins.lib \
-$${D}\\vorbis112\\$${S}\\vorbis.lib \
-$${D}\\theora.1.2.x\\$${S}\\theora.1.2.x.lib \
-$${D}\\speex\\$${S}\\speex.lib \
-$${D}\\ogg\\$${S}\\ogg.lib \
-$${D}\\miniupnp\\miniupnp-master\\miniupnpc\\$${S}\\miniupnpc.lib
+$${D}/cdc32/$${S}/cdc32.lib \
+$${D}/vc/$${S}/vc.lib \
+$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/dwcls/$${S}/dwcls.lib \
+$${D}/gsm/$${S}/gsm.lib \
+$${D}/kazlib/$${S}/kazlib.lib \
+$${D}/ppm/$${S}/ppm.lib \
+$${D}/pgm/$${S}/pgm.lib \
+$${D}/pbm/$${S}/pbm.lib \
+$${D}/zlib/$${S}/zlib.lib \
+$${D}/jenkins/$${S}/jenkins.lib \
+$${D}/vorbis112/$${S}/vorbis.lib \
+$${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
+$${D}/speex/$${S}/speex.lib \
+$${D}/ogg/$${S}/ogg.lib \
+$${D}/miniupnp/miniupnp-master/miniupnpc/$${S}/miniupnpc.lib
 
 #\\mk\\depot\\dwycore\\bld\\cdc32\\win32\\vs2008\\Debug\\cdcdll.lib \
 

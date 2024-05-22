@@ -24,13 +24,12 @@ $${VCCFG_COMP} \
 
 linux-*: INCLUDEPATH += ../v4lcap
 
-FORCE_DESKTOP_VGQT=1
-
 DEFINES += \
 	VCCFG_FILE \
 	DWVEC_DOINIT \
         DWYCO_USE_SQLITE \
-    #DWYCO_THREADED_ENCODE
+        DWYCO_NO_VIDEO_FROM_PPM \
+        DWYCO_MUTEX_NAME=\\\"$${DWYCO_APP}\\\"
     
 equals(DWYCO_APP, "rando") {
 DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
@@ -42,12 +41,18 @@ message("cdc32 setup for rando")
 } else {
 CONFIG(debug,debug|release) {
 #DEFINES += DWYCO_NO_CLEANUP_ON_EXIT
-#DEFINES += DWYCO_TRACE DW_RTLOG DWYCO_NO_CLEANUP_ON_EXIT #DWYCO_THREADED_ENCODE
+#DEFINES += DWYCO_TRACE
+#DEFINES += DWYCO_THREADED_ENCODE
+#DEFINES += DW_RTLOG
 #DEFINES += DWYCO_FIELD_DEBUG
-DEFINES += DWYCO_BACKGROUND_SYNC
+#android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
+DEFINES += DWYCO_SYNC_DEBUG
+#DEFINES += DWYCO_DBG_CHECK_SQL
+#DEFINES += DWYCO_BACKGROUND_SYNC
+message("DEBUG cdc32")
 } else {
 message("release build")
-DEFINES += DWYCO_BACKGROUND_SYNC
+#android|macx-ios:DEFINES += DWYCO_BACKGROUND_SYNC
 }
 DEFINES += MINIUPNP_STATICLIB
 message("generic setup for cdc32")
@@ -67,6 +72,9 @@ QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
 DEFINES += DWYCO_USE_STATIC_SQLITE
 equals(DWYCOBG, 0) {
 DEFINES += DWYCO_CDC_LIBUV
+}
+equals(DWYCOBG, 1) {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 }
 SOURCES += sqlite3.c
 equals(FORCE_DESKTOP_VGQT, 1) {
@@ -107,6 +115,9 @@ DEFINES += DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT
 #equals(DWYCOBG, 0) {
 #DEFINES += DWYCO_CDC_LIBUV
 #}
+equals(DWYCOBG, 1) {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
+}
 }
 
 android-g++ {
@@ -117,11 +128,18 @@ SOURCES += sqlite3.c glob/glob.c
 }
 
 linux-* {
+# useful for static qt build
+QMAKE_CXXFLAGS += -Djpeg_natural_order=dwy_jpeg_natural_order
+
 DEFINES += UWB_SAMPLING  UWB_SAMPLE_RATE=44100 
 DEFINES += DWYCO_USE_STATIC_SQLITE
 SOURCES += sqlite3.c
 equals(DWYCOBG, 0) {
 DEFINES += DWYCO_CDC_LIBUV
+}
+equals(DWYCOBG, 1) {
+DEFINES += DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
+#DEFINES += DWYCO_CDC_LIBUV
 }
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
@@ -140,6 +158,8 @@ SOURCES += sqlite3.c
 }
 
 SOURCES += \
+    activeuid.cpp \
+    backandroid.cpp \
     bgapp.cpp \
     ezset2.cpp \
 mmchan.cc \
@@ -261,19 +281,19 @@ directsend.cpp \
 msend.cpp \
 qmsgsql.cpp \
 fetch_to_inbox.cpp \
-backsql.cpp \
 sqlbq.cpp \
 aqext_android.cpp \
     dhgsetup.cpp \
     simplesql.cpp \
     grpmsg.cpp \
     upnp.cpp \
-    aqkey.cpp
+    aqkey.cpp \
+    netlog.cpp
 
 HEADERS += \
-    profiledb.h \
-    pulls.h \
-    simple_property.h \
-    sync_sendq.h \
-    vccfg.h
+    backandroid.h
+
+
+
+
 

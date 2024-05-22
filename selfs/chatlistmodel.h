@@ -25,7 +25,7 @@ class ChatUser : public QObject
     QML_READONLY_VAR_PROPERTY(bool, REVIEWED)
     QML_READONLY_VAR_PROPERTY(bool, REGULAR)
     QML_READONLY_VAR_PROPERTY(int, resolved_counter)
-    QML_WRITABLE_VAR_PROPERTY(int, unseen_count)
+    QML_READONLY_VAR_PROPERTY(bool, any_unviewed)
 
 public:
     ChatUser(QObject *parent = 0) : QObject(parent) {
@@ -34,7 +34,7 @@ public:
         m_REVIEWED = false;
         m_REGULAR = false;
         m_resolved_counter = 0;
-        m_unseen_count = 0;
+        m_any_unviewed = false;
     }
 
 };

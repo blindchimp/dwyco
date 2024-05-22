@@ -135,7 +135,7 @@ vc::operator[](int i) const {return (*rep)[i];}
 const vc&
 vc::operator[](long i) const {return (*rep)[i];}
 int
-vc::contains(const vc& v) {return rep->contains(v);}
+vc::contains(const vc& v) const {return rep->contains(v);}
 int
 vc::find(const vc& v, vc& out) {return rep->find(v, out);}
 void
@@ -287,7 +287,7 @@ vc::operator int() const { return (int)*rep; }
 vc::operator double() const { return (double)*rep;}
 vc::operator const char *() const { return (const char *)*rep; }
 vc::operator long() const { return (long)*rep;}
-//vc::operator int64_t() const { return (int64_t)*rep;}
+vc::operator long long() const { return (long long)*rep;}
 vc::operator char() const { return (char)*rep;}
 vc::operator void *() const { return (void *)*rep;}
 

@@ -6,6 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
+#include <QApplication>
 #include <QDialog>
 #include <QSettings>
 #include <QtNetwork/QHostInfo>
@@ -18,19 +19,20 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QUrl>
 #endif
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "ui_mainwin.h"
 #include "mainwin.h"
 #include "adminw.h"
 #include "autoupdate.h"
 #include "dlli.h"
 #include "dvp.h"
-#include "dwstr.h"
 #include "tfhex.h"
 #if 0
 #if defined(LINUX) && !defined(MAC_CLIENT)
@@ -178,12 +180,98 @@ set_main_win()
 }
 #endif
 
+// this just downloads the current servers2 file from
+// a website using whatever dns is setup for dwyco.com.
+// normally we avoid using dns. this is useful if we
+// really need to move someplace in case there is a large
+// outage or something.
+static
+void
+install_emergency_servers2(QNetworkReply *reply)
+{
+    //volatile auto d = reply->error();
+    // NOTENOTE! if you don't have SSL installed properly (happens on
+    // windows sometimes) you will get an "unknown error" IF THE WEBSERVER
+    // USES automatic https redirection. the solution is to make the
+    // webserver use exactly what we asked for: plain HTTP. for caddy,
+    // this involved updating the Caddyfile to explicitly match
+    // the URL in the request and not to the normal https redirection.
+    if (reply->error() == QNetworkReply::NoError)
+    {
+        DwOString tfile = add_pfx(Tmp_pfx, "servers2.tmp");
+        QFile file(tfile.c_str());
+        QByteArray em = reply->readAll();
+        // note: we can have an "error" if file not found or
+        // redirect isn't handled properly, and it will still count
+        // as "NoError", it just gives you no bytes in the download.
+        if (em.length() > 0 && file.open(QIODevice::WriteOnly))
+        {
+            file.write(em);
+            file.close();
+        }
+        // NOTE: this might be something we should gate with some user
+        // input since the program may just shut down.
+        dwyco_update_server_list(em.constData(), em.length());
+    }
+    reply->manager()->deleteLater();
+    reply->deleteLater();
+}
+
+static
+void
+setup_emergency_servers()
+{
+    auto manager = new QNetworkAccessManager;
+    QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
+    auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
+    r.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    QNetworkReply *reply = manager->get(r);
+}
+
+static
+void
+myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+#if 1
+    if(msg.contains("Timers cannot be stopped from another thread"))
+        ::abort();
+    if(msg.contains("Timers can only be used with threads started with QThread"))
+        ::abort();
+#endif
+
+}
+
+
 int main(int argc, char *argv[])
 {
+#if !defined(CDCX_RELEASE)
+    qInstallMessageHandler(myMessageOutput);
+#endif
+
+    QApplication app(argc, argv);
     srand(time(0));
+    AvoidSSL = !QSslSocket::supportsSsl();
+    if(!AvoidSSL)
+    {
+        // this is a silly hack for linux desktop where we end up
+        // having to compile on some old stuff, but the newer
+        // desktops have openssl with newer versions with missing
+        // symbols...
+#if defined(LINUX) && !(defined(MAC_CLIENT) || defined(ANDROID))
+        QString ssl1 = QSslSocket::sslLibraryBuildVersionString();
+        ssl1.truncate(9);
+        QString ssl2 = QSslSocket::sslLibraryVersionString();
+        ssl2.truncate(9);
+        if(ssl1 != ssl2)
+            AvoidSSL = 1;
+#endif
+    }
+
 #if defined(MAC_CLIENT) && defined(CDCX_MAC_USE_DEFAULT_LOCATION)
     void EstablishRunDirectory();
     EstablishRunDirectory();
+    QString userdir("./");
+    QString syspath("./");
     AvoidSSL = 1;
 
 #endif
@@ -199,47 +287,69 @@ int main(int argc, char *argv[])
     signal(SIGPIPE, SIG_IGN);
 #endif
 
-    // this has to happen way early because the logging stuff
-    // needs to know where to send stuff
-#if 0 //defined(DWYCO_QT5)
-#define FPATH userdir
-    QString userdir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    userdir += "/dwyco/cdc-x/";
+#if defined(LINUX) && !defined(MAC_CLIENT)
+    // this is mainly for appimage-type installation. the read-only stuff
+    // it in the appimage, and the rest of the user data will be in
+    // documents/dwyco/cdc-x.
+    // for debugging, you can use the --path /mumble
+    // to override the default
+    QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
+    QString userdir;
     {
-        QDir d;
-        d.mkpath(userdir);
+    QStringList args = QGuiApplication::arguments();
+
+    for(int i = 1; i < args.count(); ++i)
+    {
+            if(args[i] == "--path")
+            {
+                if(i + 1 < args.count())
+                {
+                    userdir = args[i + 1];
+                    break;
+                }
+            }
     }
-    QFile::copy("assets:/dwyco.dh", userdir + "dwyco.dh");
-    QFile::copy("assets:/license.txt", userdir + "license.txt");
-    QFile::copy("assets:/no_img.png", userdir + "no_img.png");
-    QFile::copy("assets:/online.wav", userdir + "online.wav");
-    QFile::copy("assets:/relaxed-call.wav", userdir + "relaxed-call.wav");
-    QFile::copy("assets:/relaxed-incoming.wav", userdir + "relaxed-incoming.wav");
-    QFile::copy("assets:/relaxed-online.wav", userdir + "relaxed-online.wav");
-    QFile::copy("assets:/relaxed-zap.wav", userdir + "relaxed-zap.wav");
-    QFile::copy("assets:/servers2", userdir + "servers2");
-    QFile::copy("assets:/space-call.wav", userdir + "space-call.wav");
-    QFile::copy("assets:/space-incoming.wav", userdir + "space-incoming.wav");
-    QFile::copy("assets:/space-online.wav", userdir + "space-online.wav");
-    QFile::copy("assets:/space-zap.wav", userdir + "space-zap.wav");
-    QFile::copy("assets:/v21.ver", userdir + "v21.ver");
-    QFile::copy("assets:/zap.wav", userdir + "zap.wav");
 
-    dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
-    //QString q = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    //char a[1000];
-    //strncpy(a, q.toLatin1().constData(), q.toLatin1().count());
+    if(userdir.length() == 0)
+    {
+        userdir = QStandardPaths::writableLocation(filepath);
+        userdir += "/dwyco/cdc-x/";
+    }
+    else
+    {
+        userdir += "/";
+    }
 
-#else
-    // note: other platforms use "chdir" to place where user data is...
-#define FPATH "./"
-    //dwyco_set_fn_prefixes(FPATH, FPATH, FPATH);
+    {
+        QDir d(userdir);
+        d.mkpath(userdir);
+        // this is just a stopgap, really need to do something to obfuscate the files
+        // a little bit to avoid apps indexing temp images on all platforms
+        QString fp = d.filePath(".nomedia");
+        QFile f(fp);
+        f.open(QIODevice::WriteOnly);
+        f.putChar(0);
+        f.close();
+    }
+    {
+        QDir shares(userdir + "shares");
+        shares.mkpath(userdir + "shares");
+    }
+    }
+    QString syspath = QCoreApplication::applicationDirPath() + QDir::separator();
+    //syspath = "/home/dwight/cdcx/";
 #endif
 
-//#define FPATH "/home/dwight/cdcx-user/"
-//    dwyco_set_fn_prefixes("/home/dwight/cdcx/", "/home/dwight/cdcx-user/", "/home/dwight/cdcx-tmp/");
-//    chdir("/home/dwight/barf");
+#ifdef WIN32
+// still expecting to start in the directory where all our data is
+    QString userdir("./");
+    QString syspath("./");
+#endif
 
+
+#define FPATH "./"
+
+    dwyco_set_fn_prefixes(syspath.toLatin1().constData(), userdir.toLatin1().constData(), (userdir.toLatin1() + QByteArray("/tmp/")).constData());
     {
         char sys[1024];
         char user[1024];
@@ -260,19 +370,28 @@ int main(int argc, char *argv[])
             Tmp_pfx = ".";
 
     }
-#ifdef __WIN32__
-    _mkdir(Tmp_pfx.c_str());
-    _mkdir(User_pfx.c_str());
-#else
-    mkdir(Tmp_pfx.c_str(), 0777);
-    mkdir(User_pfx.c_str(), 0777);
-#endif
-    //mkdir(Sys_pfx.c_str(), 0777);
+    {
+        QDir d;
+        d.mkpath(User_pfx);
+    }
+    {
+        QDir d;
+        d.mkpath(Tmp_pfx);
+    }
+    // this is the one goofy thing... we have a servers2 that is
+    // distributed with the read-only stuff, but it needs to be
+    // writable so the servers can update it if needed.
+    // so we "install" it once if it doesn't exists. if it
+    // doesn't exist, and the "install" fails, the core dll
+    // has a compiled in version as a last resort.
+    if(!QFile(userdir + "servers2").exists())
+        QFile::copy(Sys_pfx + "/servers2", userdir + "servers2");
 
     dwyco_trace_init();
     int dum;
 #ifdef WIN32
-    dwyco_set_main_msg_window(::GetDesktopWindow());
+    //dwyco_set_main_msg_window(::GetDesktopWindow());
+    set_main_win();
     // note: in 2.9, qtwebkit + openssl seems to crash randomly on
     // first run, so we are nixing it for now.
     AvoidSSL = 1;
@@ -342,7 +461,7 @@ int main(int argc, char *argv[])
 
 
     init_sound();
-    QApplication app(argc, argv);
+
     // note: qt seems to use some of these names in constructing
     // file names. this can be a problem if different FS's with different
     // naming conventions are being used. this manifests itself with
@@ -351,16 +470,17 @@ int main(int argc, char *argv[])
     // things like dropbox and btsync.
     QCoreApplication::setOrganizationName("dwyco");
     QCoreApplication::setOrganizationDomain("dwyco.com");
-    // if we run one copy of a cdc-x install on multiple machines,
-    // identify the settings for the machine by local hostname.
-    // this allows for differences in devices and stuff on that host.
-    QString LocalHostName = QHostInfo::localHostName();
-    QCoreApplication::setApplicationName(QString("cdc-x") + LocalHostName);
+    QCoreApplication::setApplicationName(QString("cdc-x"));
+    QString ver(DWYCO_NICE_VERSION);
+#ifndef CDCX_RELEASE
+    ver += " debug ";
+#endif
+    QCoreApplication::setApplicationVersion(ver);
     QSettings::setDefaultFormat(QSettings::IniFormat);
     // note: need to set the path to the right place, same as fn_pfx for dll
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, User_pfx);
 
-    QStringList args = QCoreApplication::arguments();
+    QStringList args = QGuiApplication::arguments();
     for(int i = 1; i < args.count(); ++i)
     {
         if(args[i] == "--avoid-camera")
@@ -376,72 +496,6 @@ int main(int argc, char *argv[])
     //Q_INIT_RESOURCE(icons);
 
     //dwyco_set_cmd_path(argv[0], strlen(argv[0]));
-// these have to be done before init, since init may probe
-// devices
-#if 0
-#if defined(LINUX)
-
-    dwyco_set_external_video_capture_callbacks(
-        vgnew,
-        vgdel,
-        vginit,
-        vghas_data,
-        vgneed,
-        vgpass,
-        vgstop,
-        vgget_data,
-        vgfree_data,
-        vgget_video_devices,
-        vgfree_video_devices,
-        vgset_video_device,
-        vgstop_video_device,
-        0, 0, 0, 0
-
-    );
-
-#endif
-
-
-#if defined(LINUX) && !defined(MAC_CLIENT) && !defined(NO_DWYCO_AUDIO)
-
-    dwyco_set_external_audio_output_callbacks(
-        audout_sdl_new,
-        audout_sdl_delete,
-        audout_sdl_init,
-        audout_sdl_device_output,
-        audout_sdl_device_done,
-        audout_sdl_device_stop,
-        audout_sdl_device_reset,
-        audout_sdl_device_status,
-        audout_sdl_device_close,
-        audout_sdl_device_buffer_time,
-        audout_sdl_device_play_silence,
-        audout_sdl_device_bufs_playing
-    );
-
-#endif
-
-
-#if defined(LINUX) && !defined(MAC_CLIENT) && !defined(NO_DWYCO_AUDIO)
-
-    dwyco_set_external_audio_capture_callbacks(
-        esd_new,
-        esd_delete,
-        esd_init,
-        esd_has_data,
-        esd_need,
-        esd_pass,
-        esd_stop,
-        esd_on,
-        esd_off,
-        esd_reset,
-        esd_status,
-        esd_get_data
-
-    );
-
-#endif
-#endif
 
     dwyco_set_login_result_callback(dwyco_db_login_result);
 
@@ -545,7 +599,7 @@ int main(int argc, char *argv[])
     );
 #endif
 
-
+    dwyco_set_disposition("foreground", 10);
     dwyco_init();
     //printf("%s\n", a);
     //fflush(stdout);
@@ -676,6 +730,8 @@ int main(int argc, char *argv[])
     dwyco_set_setting("net/call_setup_media_select", "1");
     //dwyco_set_setting("net/force_non_firewall_friendly", "0");
     dwyco_set_setting("sync/eager", "1");
+    dwyco_set_setting("net/app_id", "phoo");
+    dwyco_set_setting("net/broadcast_port", "48903");
 
     // note: for video capture,
     // Linux & Mac ignore the setting and always uses external video
@@ -813,7 +869,13 @@ int main(int argc, char *argv[])
     QSettings settings;
     mainwin.restoreGeometry(settings.value("mainwin-geometry").toByteArray());
 
+    setup_emergency_servers();
+
     int i = app.exec();
+    // this is more or less an emergency where the system state may be
+    // goofy, like after a panic or restore operation.
+    if(DieDieDie == 1)
+        return 0;
     //dwyco_empty_trash();
     if(!Inhibit_powerclean)
         dwyco_power_clean_safe();
@@ -822,51 +884,36 @@ int main(int argc, char *argv[])
     setting_get("disable_backups", d);
     if(!d)
     {
-        dwyco_create_backup();
+        if(dwyco_create_backup(7, 30))
+        {
 #ifdef DWYCO_QT5
-        QStringList sl = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
-        QString loc = sl[0];
+            QStringList sl = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+            QString loc = sl[0];
 #else
-        QString loc = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+            QString loc = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
 #endif
-        QByteArray b = loc.toLatin1();
-        dwyco_copy_out_backup(b.constData(), 0);
+            QByteArray b = loc.toLatin1();
+            dwyco_copy_out_backup(b.constData(), 0);
+        }
     }
     dwyco_exit();
     exit_sound();
     if(!d)
     {
-#if defined(LINUX) || defined(MAC_CLIENT)
-        QProcess::startDetached(QString("./dwycobg ") + sport);
-#else
-
-        PROCESS_INFORMATION pi;
-        STARTUPINFO si;
-
-        memset(&si, 0, sizeof(si));
-        GetStartupInfo(&si);
-        si.dwFlags = 0;
-        wchar_t wtf[128];
-        QByteArray b("dwycobg.exe ");
-        mbstowcs(wtf, "dwycobg.exe", sizeof(wtf) - 1);
-        QByteArray p = sport;
-        b += p;
-        wchar_t wtfp[128];
-        mbstowcs(wtfp, b.constData(), sizeof(wtfp) - 1);
-
-        if (!CreateProcess(wtf,wtfp,NULL,NULL,
-                           0, //TRUE, // inherit handles
-                           CREATE_NO_WINDOW,NULL,NULL,&si,&pi) ) {
-
-            i = GetLastError();
-        }
-
-#endif
+        QProcess::startDetached(QCoreApplication::applicationDirPath() + QDir::separator() + QString("dwycobg"), QStringList(sport), User_pfx);
     }
 
 #ifdef LEAK_CLEANUP
     void mainwin_leak_cleanup();
     mainwin_leak_cleanup();
+#endif
+#ifdef LINUX
+    // on linux + qt5.12, there is some problem with the exit processing, maybe having something
+    // to do with webengine that causes the "return" to just hang for seconds.
+    // as much as i hate to do this, i think flushing fd's is already
+    // done at this point, so i'm just hacking this to quit immediately.
+    //
+    _exit(0);
 #endif
     return i;
 }

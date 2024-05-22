@@ -12,14 +12,12 @@
 #endif
 
 #include "vc.h"
-#include "xinfo.h"
 #include "dwrtlog.h"
 #include "qauth.h"
 #include "vcudh.h"
 #include "dhgsetup.h"
 #include "simplesql.h"
 #include "sha3.h"
-#include "rng.h"
 #include "aes.h"
 #include "modes.h"
 #include "simple_property.h"
@@ -28,6 +26,7 @@
 #include "qmsgsql.h"
 #include "synccalls.h"
 #include "grpmsg.h"
+#include "pulls.h"
 
 
 using namespace CryptoPP;
@@ -120,6 +119,9 @@ change_current_group(vc, vc )
     // sync history state. this is mainly so we don't
     // propagate tombstones that might delete things on
     // other clients when we join a group we may have been in before.
+    // note: it is probably better not to generate the tombstones
+    // in the first place if we are not in "group mode", but
+    // that will need some schema changes
     remove_sync_state();
     se_emit_group_status_change();
 }
@@ -138,6 +140,7 @@ eager_changed(vc, vc)
 {
     drop_all_sync_calls(0);
     se_emit_group_status_change();
+    pulls::clear_all_asserts();
 }
 
 static
@@ -158,12 +161,32 @@ init_dhgdb()
 }
 
 void
+exit_dhgdb()
+{
+    if(DHG_db)
+    {
+        DHG_db->exit();
+        delete DHG_db;
+        DHG_db = 0;
+    }
+}
+
+static int Init;
+// note: there is no "exit" for this, which should probably
+// be revisited. for now, we just ignore multiple init's, as
+// we don't really need to redo everything even when switching
+// threads.
+void
 init_dhg()
 {
-    if(Current_alternate)
-        return;
-
+    // emit this message to prompt clients to re-read the state
+    // if necessary. but this is a kluge, should just have clients
+    // initialize themselves properly.
     se_emit_group_status_change();
+    if(Init)
+        return;
+    Init = 1;
+
     bind_sql_setting("group/alt_name", change_current_group);
     bind_sql_setting("group/join_key", change_join_key);
     Join_signal.connect_ptrfun(successful_join, 1);
@@ -180,9 +203,14 @@ init_dhg()
     bind_sql_setting("sync/eager", eager_changed);
     DH_alternate *dha = new DH_alternate;
     dha->init(My_UID, alt_name);
-    if(!dha->load_account(alt_name))
+    if(!dha->load_account(alt_name, false))
     {
+        // can't find the given name, something may have happened
+        // to our key, maybe restoring from a backup or whatever.
+        // revert back to "no group" mode
         delete dha;
+        set_settings_value("group/alt_name", "");
+        set_settings_value("group/join_key", "");
         return;
     }
     vc v = DHG_db->sql_simple("select * from group_uids");
@@ -228,17 +256,17 @@ DH_alternate::leave()
 {
     try
     {
-        DHG_db->start_transaction();
-        DHG_db->sql_simple("delete from group_uids");
-        DHG_db->sql_simple("delete from keys where alt_name = ?1", alternate_name);
-        DHG_db->sql_simple("delete from sigs where alt_name = ?1", alternate_name);
-        DHG_db->commit_transaction();
+        sql_start_transaction();
+        sql("delete from group_uids");
+        sql("delete from keys where alt_name = ?1", alternate_name);
+        sql("delete from sigs where alt_name = ?1", alternate_name);
+        sql_commit_transaction();
         DH_static = vcnil;
         alternate_name = vcnil;
     }
     catch(...)
     {
-        DHG_db->rollback_transaction();
+        sql_rollback_transaction();
         throw -1;
     }
 }
@@ -248,17 +276,17 @@ DH_alternate::update_group(vc uids)
 {
     try
     {
-        DHG_db->start_transaction();
-        DHG_db->sql_simple("delete from group_uids");
+        sql_start_transaction();
+        sql("delete from group_uids");
         for(int i = 0; i < uids.num_elems(); ++i)
         {
-            DHG_db->sql_simple("insert into group_uids values(?1)", to_hex(uids[i]));
+            sql("insert into group_uids values(?1)", to_hex(uids[i]));
         }
-        DHG_db->commit_transaction();
+        sql_commit_transaction();
     }
     catch(...)
     {
-        DHG_db->rollback_transaction();
+        sql_rollback_transaction();
     }
 }
 
@@ -266,7 +294,7 @@ int
 DH_alternate::insert_record(vc uid, vc alt_name, vc dh_static)
 {
     try {
-        DHG_db->start_transaction();
+        sql_start_transaction();
         VCArglist a;
         a.append("insert into keys values(?1, ?2, ?3, ?4, ?5)");
         a.append(to_hex(uid));
@@ -281,10 +309,10 @@ DH_alternate::insert_record(vc uid, vc alt_name, vc dh_static)
         a.append(v2);
         a.append(time(0));
         DHG_db->query(&a);
-        DHG_db->commit_transaction();
+        sql_commit_transaction();
 
     } catch (...) {
-        DHG_db->rollback_transaction();
+        sql_rollback_transaction();
         return 0;
     }
     return 1;
@@ -304,11 +332,11 @@ DH_alternate::new_account()
 // return 2 means account was created, and the public static info will
 // have to be refreshed in the profile, etc.
 int
-DH_alternate::load_account(vc alternate_name)
+DH_alternate::load_account(vc alternate_name, bool create_if_not_exists)
 {
     vc res;
     try {
-        res = DHG_db->sql_simple("select pubkey, privkey from keys where uid = ?1 and alt_name = ?2 order by time desc limit 1",
+        res = sql("select pubkey, privkey from keys where uid = ?1 and alt_name = ?2 order by time desc limit 1",
                                  to_hex(uid), alternate_name);
     } catch (...) {
         GRTLOG("cant create DH account", 0, 0);
@@ -316,7 +344,7 @@ DH_alternate::load_account(vc alternate_name)
     }
     if(res.num_elems() == 0)
     {
-        if(!new_account())
+        if(!create_if_not_exists || !new_account())
         {
             GRTLOG("cant create DH account", 0, 0);
             return 0;
@@ -356,17 +384,17 @@ DH_alternate::insert_public_key(vc alt_name, vc grp_key, vc sig)
     {
         DwString a(alt_name);
         alt_name = to_lower(alt_name);
-        DHG_db->start_transaction();
+        sql_start_transaction();
         remove_key(alt_name);
         sql("insert or replace into keys (alt_name, pubkey, privkey, uid, time) values(?1, ?2, ?3, ?4, strftime('%s', 'now'))",
             alt_name, blob(grp_key), blob(""), to_hex(My_UID));
         sql("insert or replace into sigs(alt_name, sig) values(?1, ?2)",
             alt_name, blob(sig));
-        DHG_db->commit_transaction();
+        sql_commit_transaction();
     }
     catch(...)
     {
-        DHG_db->rollback_transaction();
+        sql_rollback_transaction();
         return 0;
     }
     return 1;
@@ -380,7 +408,7 @@ DH_alternate::insert_sig(vc alt_name, vc sig)
     if(!DHG_db)
         return 0;
     alt_name = to_lower(alt_name);
-    DHG_db->sql_simple("insert or ignore into sigs (alt_name, sig) values(?1, ?2)",
+    sql("insert or ignore into sigs (alt_name, sig) values(?1, ?2)",
                        alt_name,
                        blob(sig)
                        );
@@ -394,9 +422,9 @@ DH_alternate::insert_private_key(vc alt_name, vc grp_key)
         return 0;
     try
     {
-        DHG_db->start_transaction();
+        sql_start_transaction();
         alt_name = to_lower(alt_name);
-        vc res = DHG_db->sql_simple("select 1 from keys where alt_name = ?1 and pubkey = ?2",
+        vc res = sql("select 1 from keys where alt_name = ?1 and pubkey = ?2",
                                     alt_name,
                                     blob(grp_key[DH_STATIC_PUBLIC]));
         if(res.num_elems() != 1)
@@ -409,16 +437,16 @@ DH_alternate::insert_private_key(vc alt_name, vc grp_key)
             throw -1;
         }
 
-        DHG_db->sql_simple("update keys set privkey = ?2 where alt_name = ?1 and pubkey = ?3",
+        sql("update keys set privkey = ?2 where alt_name = ?1 and pubkey = ?3",
                            alt_name,
                            blob(grp_key[DH_STATIC_PRIVATE]),
                            blob(grp_key[DH_STATIC_PUBLIC])
                            );
-        DHG_db->commit_transaction();
+        sql_commit_transaction();
     }
     catch(...)
     {
-        DHG_db->rollback_transaction();
+        sql_rollback_transaction();
         return 0;
     }
 
@@ -430,21 +458,22 @@ DH_alternate::remove_key(vc alt_name)
 {
     if(!DHG_db)
         return 0;
-    DHG_db->start_transaction();
+    sql_start_transaction();
     alt_name = to_lower(alt_name);
-    DHG_db->sql_simple("delete from keys where alt_name = ?1", alt_name);
-    DHG_db->sql_simple("delete from sigs where alt_name = ?1", alt_name);
-    DHG_db->commit_transaction();
+    sql("delete from keys where alt_name = ?1", alt_name);
+    sql("delete from sigs where alt_name = ?1", alt_name);
+    sql_commit_transaction();
     return 1;
 }
+
 int
 DH_alternate::has_private_key(vc alt_name)
 {
     if(!DHG_db)
         return 0;
-    DHG_db->start_transaction();
-    vc res = DHG_db->sql_simple("select privkey from keys where alt_name = ?1", alt_name);
-    DHG_db->commit_transaction();
+    sql_start_transaction();
+    vc res = sql("select privkey from keys where alt_name = ?1", alt_name);
+    sql_commit_transaction();
     if(res.num_elems() == 0)
         return 0;
     if(res[0][0].is_nil() || res[0][0].len() == 0)
@@ -514,7 +543,7 @@ DH_alternate::get_all_keys()
 {
     if(!DHG_db)
         return vcnil;
-    vc res = DHG_db->sql_simple("select pubkey, privkey from keys order by time desc");
+    vc res = sql("select pubkey, privkey from keys order by time desc");
     vc ret(VC_VECTOR);
     int n = res.num_elems();
     for(int i = 0; i < n; ++i)
@@ -572,6 +601,46 @@ DH_alternate::challenge_recv(vc m, vc& resp)
 
     resp = sha3(vc(VC_BSTRING, (const char *)checkstr, sizeof(checkstr)));
     return 1;
+}
+
+void
+update_profiles_for_new_membership()
+{
+    if(!DHG_db)
+        return;
+    if(!Current_alternate)
+        return;
+    DHG_db->attach("prfdb.sql", "prf");
+
+    try
+    {
+        sql_start_transaction();
+        // find all uid's that proport to have our public alt_key
+        // if they aren't in the current set of group uid's, get rid of them
+        // so they are refetched.
+        sql(
+            "with foo(uid) as (select uid from pubkeys where alt_static_public = (select pubkey from keys where alt_name = ?1))"
+             "delete from prf.pubkeys where uid in (select uid from foo except select uid from group_uids)",
+                    Current_alternate->alt_name()
+        );
+
+        // if there are new members in the group, but their pub keys in the profile cache
+        // don't match, delete them
+        sql(
+            "with foo(uid) as (select uid from pubkeys,group_uids using(uid) where pubkeys.alt_static_public != (select pubkey from keys where alt_name = ?1))"
+             "delete from prf.pubkeys where uid in (select * from foo)",
+                    Current_alternate->alt_name()
+                    );
+
+
+        sql_commit_transaction();
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
+
+    //DHG_db->detach("prf");
 }
 
 }

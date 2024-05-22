@@ -18,7 +18,7 @@ vc_atomic::bomb_setop() const
     // add the type in here anyways
     enum vc_type t = type();
     char a[1024];
-    sprintf(a, "can't do set operation on atomic (%d)", (int)t);
+    snprintf(a, sizeof(a), "can't do set operation on atomic (%d)", (int)t);
     USER_BOMB2(a);
 }
 
@@ -127,7 +127,7 @@ vc_atomic::operator[](int) const {bomb_setop(); return bogus;}
 const vc&
 vc_atomic::operator[](long) const {bomb_setop(); return bogus;}
 int
-vc_atomic::contains(const vc&){bomb_setop(); return FALSE;}
+vc_atomic::contains(const vc&) const {bomb_setop(); return FALSE;}
 int
 vc_atomic::find(const vc&, vc& ){bomb_setop(); return FALSE;}
 void

@@ -24,11 +24,9 @@
 
 #include "vc.h"
 #include "vcwsock.h"
-#include "vccrypt2.h"
 
 #include "aq.h"
 #include "dwlog.h"
-#include "gvchild.h"
 #include "jchuff.h"
 #include "jdhuff.h"
 #include "audchk.h"
@@ -47,7 +45,6 @@
 #include "aconn.h"
 #include "sysattr.h"
 #include "fnmod.h"
-#include "xinfo.h"
 #include "dhsetup.h"
 #include "dwyco_rand.h"
 #include "dirth.h"
@@ -56,17 +53,19 @@
 #include "qdirth.h"
 #include "ta.h"
 #include "dhgsetup.h"
-#include "qmsgsql.h"
 #include "pgdll.h"
 
 using namespace dwyco;
 
-vc Myhostname;
-DwLog *Log;
 CRITICAL_SECTION Audio_lock;
+extern int Media_select;
+extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
+
+namespace dwyco {
+
+vc Myhostname;
 vc TheMan;
 
-extern CRITICAL_SECTION Audio_mixer_shutdown_lock;
 void init_dct();
 void init_stats();
 
@@ -89,7 +88,7 @@ init_codec(const char *logname)
             Myhostname = hostname;
 
         init_stats();
-        Log = new DwLog(newfn(logname).c_str());
+
 #ifdef DW_RTLOG
         if(!RTLog)
         {
@@ -99,7 +98,7 @@ init_codec(const char *logname)
             init_rtlog();
         }
 #endif
-        Log->make_entry("system starting up");
+        Log_make_entry("system starting up");
 
         // note: this ought to be fixed, so that there is nothing
         // going to stdout from this lib. it mucks up things like
@@ -107,25 +106,25 @@ init_codec(const char *logname)
         // attach stdout to a file
 #if 0
         if(!freopen(newfn("c.out").c_str(), "w", stdout))
-            Log->make_entry("can't redirect stdout");
+            Log_make_entry("can't redirect stdout");
         if(!freopen(newfn("c.out").c_str(), "w", stderr))
-            Log->make_entry("can't redirect stderr");
+            Log_make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
 #endif
 
         if(access(newfn("inprogress").c_str(), 0) == -1)
             if(mkdir(newfn("inprogress").c_str()) == -1)
-                Log->make_entry("can't create inprogress dir");
+                Log_make_entry("can't create inprogress dir");
         if(access(newfn("outbox").c_str(), 0) == -1)
             if(mkdir(newfn("outbox").c_str()) == -1)
-                Log->make_entry("can't create outbox dir");
+                Log_make_entry("can't create outbox dir");
         if(access(newfn("trash").c_str(), 0) == -1)
             if(mkdir(newfn("trash").c_str()) == -1)
-                Log->make_entry("can't create trash dir");
+                Log_make_entry("can't create trash dir");
         if(access(newfn("xfer").c_str(), 0) == -1)
             if(mkdir(newfn("xfer").c_str()) == -1)
-                Log->make_entry("can't create xfer dir");
+                Log_make_entry("can't create xfer dir");
         init_dhgdb();
         init_sql_settings();
         init_aconn();
@@ -145,13 +144,17 @@ init_codec(const char *logname)
         rgb_ycc_start();
         build_ycc_rgb_table();
         init_dct();
+#ifdef DWYCO_DCT_CODER
         init_huff_encode();
+#endif
         init_huff_decode();
         QTAB::qtab_init();
         JQTAB::jqtab_init();
         qpol_init();
+#ifdef DWYCO_DCT_CODER
         gen_sqr();
         gen_abs();
+#endif
 #ifdef DWYCO_CODEC
         gen_magqtabs();
 #endif
@@ -162,11 +165,10 @@ init_codec(const char *logname)
 
         check_audio_device();
         if(!Audio_hw_full_duplex)
-            Log->make_entry("audio hardware is half-duplex");
+            Log_make_entry("audio hardware is half-duplex");
         else
-            Log->make_entry("audio hardware claims full-duplex");
+            Log_make_entry("audio hardware claims full-duplex");
 
-        extern int Media_select;
         switch((int)get_settings_value("net/call_setup_media_select"))
         {
         default:
@@ -192,9 +194,7 @@ init_codec(const char *logname)
         init_qmsg();
 
         //stun_pool_init();
-#ifndef MACOSX
         init_netdiag(); // note: can't do netdiag until stun_server is known.
-#endif
         init_callq();
 #ifdef DWYCO_ASSHAT
         init_assholes();
@@ -203,7 +203,7 @@ init_codec(const char *logname)
         init_sysattr();
         //Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls);
         init = 1;
-        Log->make_entry("init done");
+        Log_make_entry("init done");
     }
 }
 
@@ -229,7 +229,6 @@ simple_init_codec(const char *logname)
 
         init_stats();
 #ifdef DW_RTLOG
-        Log = new DwLog(logname);
         if(!RTLog)
         {
             // leave RTLog 0 to inhibit logging in newfn
@@ -238,7 +237,7 @@ simple_init_codec(const char *logname)
             init_rtlog();
         }
 #endif
-        Log->make_entry("system starting up");
+        Log_make_entry("system starting up");
         init_sql_settings();
         //init_aconn();
         //init_dhg();
@@ -248,9 +247,9 @@ simple_init_codec(const char *logname)
         // curses
         // attach stdout to a file
         if(!freopen(newfn("c.out").c_str(), "w", stdout))
-            Log->make_entry("can't redirect stdout");
+            Log_make_entry("can't redirect stdout");
         if(!freopen(newfn("c.out").c_str(), "w", stderr))
-            Log->make_entry("can't redirect stderr");
+            Log_make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
 
@@ -261,14 +260,18 @@ simple_init_codec(const char *logname)
         rgb_ycc_start();
         build_ycc_rgb_table();
         init_dct();
+#ifdef DWYCO_DCT_CODER
         init_huff_encode();
+#endif
         init_huff_decode();
 
         QTAB::qtab_init();
         JQTAB::jqtab_init();
         qpol_init();
+#ifdef DWYCO_DCT_CODER
         gen_sqr();
         gen_abs();
+#endif
 #ifdef DWYCO_CODEC
         gen_magqtabs();
 #endif
@@ -279,7 +282,7 @@ simple_init_codec(const char *logname)
 
         init_sysattr();
         init = 1;
-        Log->make_entry("init done");
+        Log_make_entry("init done");
     }
 }
 
@@ -305,8 +308,7 @@ init_bg_msg_send(const char *logname)
         else
             Myhostname = hostname;
         init_stats();
-        if(!Log)
-            Log = new DwLog(logname);
+
 #ifdef DW_RTLOG
         if(!RTLog)
         {
@@ -318,18 +320,18 @@ init_bg_msg_send(const char *logname)
 #endif
         if(access(newfn("inprogress").c_str(), 0) == -1)
             if(mkdir(newfn("inprogress").c_str()) == -1)
-                Log->make_entry("can't create inprogress dir");
+                Log_make_entry("can't create inprogress dir");
         if(access(newfn("outbox").c_str(), 0) == -1)
             if(mkdir(newfn("outbox").c_str()) == -1)
-                Log->make_entry("can't create outbox dir");
+                Log_make_entry("can't create outbox dir");
         if(access(newfn("trash").c_str(), 0) == -1)
             if(mkdir(newfn("trash").c_str()) == -1)
-                Log->make_entry("can't create trash dir");
+                Log_make_entry("can't create trash dir");
         if(access(newfn("xfer").c_str(), 0) == -1)
             if(mkdir(newfn("xfer").c_str()) == -1)
-                Log->make_entry("can't create xfer dir");
+                Log_make_entry("can't create xfer dir");
 
-        Log->make_entry("background system starting up");
+        Log_make_entry("background system starting up");
         init_dhgdb();
         init_sql_settings();
         init_aconn();
@@ -341,9 +343,9 @@ init_bg_msg_send(const char *logname)
         // curses
         // attach stdout to a file
         if(!freopen(newfn("c.out").c_str(), "w", stdout))
-            Log->make_entry("can't redirect stdout");
+            Log_make_entry("can't redirect stdout");
         if(!freopen(newfn("c.out").c_str(), "w", stderr))
-            Log->make_entry("can't redirect stderr");
+            Log_make_entry("can't redirect stderr");
         setbuf(stdout, 0);
         setbuf(stderr, 0);
 
@@ -364,17 +366,18 @@ init_bg_msg_send(const char *logname)
 
         // note: the background send does server-only sends, so this should never
         // get used. however, the syncing stuff might initiate some calls
+        // note also there is no reason to exit the callq. it *might* make sense
+        // to cancel calls that are being set up if, for example, you are
+        // switching the service channels from one thread to another.
         init_callq();
 
         init_sysattr();
 
         Bg_msg_send_init = 1;
-        Log->make_entry("background init done");
+        Log_make_entry("background init done");
     }
 }
 
-// this doesn't do a perfect cleanup, mainly because we assume the
-// process is going to be exiting afterwards.
 
 void
 exit_bg_msg_send()
@@ -384,7 +387,7 @@ exit_bg_msg_send()
 
     save_qmsg_state();
     save_entropy();
-    Log->make_entry("background exit");
+    Log_make_entry("background exit");
 
     // note: mmchan depends on being able to use some of the
     // other stuff below, so we clean it up first. there
@@ -394,11 +397,16 @@ exit_bg_msg_send()
     while(se_process() || dirth_poll_response())
         ;
 
-    exit_qmsg();
+    //exit_qmsg();
     exit_pal();
     exit_prfdb();
 
-    vc::non_lh_exit();
+    // note: don't bother turning off network since
+    // we are going to exit soon anyways. note this
+    // is just to avoid a crash with uv sockets. really
+    // the whole init/exit thing needs to be cleaned up
+    // in VC.
+    //vc::non_lh_exit();
     vc::shutdown_logs();
 
 #ifdef DW_RTLOG
@@ -412,9 +420,17 @@ exit_bg_msg_send()
 void
 exit_codec()
 {
+    // do this here mainly so we can get some network
+    // debugging output when the program exits
+    MMChannel::exit_mmchan();
     save_qmsg_state();
     save_entropy();
-    Log->make_entry("exit");
+    // note: this analyzes the database, which can be a huge
+    // win with sqlite
+    exit_qmsg();
+    Log_make_entry("exit");
+
+
 
     vc::non_lh_exit();
     vc::shutdown_logs();
@@ -454,3 +470,4 @@ exit_codec()
 
 }
 
+}

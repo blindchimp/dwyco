@@ -242,6 +242,15 @@ vc_default::socket_set_option(vcsocketmode, unsigned long, unsigned long, unsign
 	USER_BOMB("can't set socket option on non-socket", vcnil);
 }
 
+#ifdef _Windows
+int
+vc_default::socket_set_async(void *, unsigned int msg, long events)
+{
+
+    USER_BOMB("can't set socket async on non-socket", 0);
+}
+#endif
+
 vcsocketmode
 vc_default::socket_get_mode()
 {
@@ -295,6 +304,7 @@ vc_default::operator int() const { USER_BOMB("unimp cast to int", 0); }
 vc_default::operator double() const { USER_BOMB("unimp cast to double", 0.); }
 vc_default::operator const char *() const { USER_BOMB("unimp cast to char *", ""); }
 vc_default::operator long() const { USER_BOMB("unimp cast to long", 0); }
+vc_default::operator long long() const { USER_BOMB("unimp cast to long long", 0); }
 vc_default::operator char() const { USER_BOMB("unimp cast to char", 0); }
 vc_default::operator void *() const { USER_BOMB("unimp cast to void *", 0); }
 //vc_default::operator int64_t() const { USER_BOMB("unimp cast to int64_t", 0); }
@@ -475,7 +485,7 @@ vc& vc_default::operator[](long i) {USER_BOMB("undefined decomposable", vcbitbuc
 const vc& vc_default::operator[](const vc& v) const{USER_BOMB("undefined decomposable", vcbitbucket);}
 const vc& vc_default::operator[](int) const{USER_BOMB("undefined decomposable", vcbitbucket);}
 const vc& vc_default::operator[](long) const{USER_BOMB("undefined decomposable", vcbitbucket);}
-int vc_default::contains(const vc& v) {USER_BOMB("undefined decomposable", 0);}
+int vc_default::contains(const vc& v)  const {USER_BOMB("undefined decomposable", 0);}
 int vc_default::find(const vc& v, vc& out) {USER_BOMB("undefined decomposable", 0);}
 void vc_default::add(const vc& v) {USER_BOMB2("undefined decomposable");}
 void vc_default::add_kv(const vc& k, const vc& v) {USER_BOMB2("undefined decomposable");}
@@ -502,3 +512,4 @@ vc vc_default::translate(VcIO o) const
     o << "\n#error failed translation\n";
     USER_BOMB("#error cant translate", vcnil);
 }
+

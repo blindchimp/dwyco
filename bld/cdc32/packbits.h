@@ -122,6 +122,7 @@ extern DwListA<int> Symlist;
 
 #define BITBUFSZ (sizeof(cur) * 8)
 
+#ifdef DWYCO_DCT_CODER
 class Packbits
 {
 public:
@@ -263,6 +264,7 @@ Packbits::init()
 {
     bits_left = BITBUFSZ;
 }
+#endif
 
 // use this class to unpack a stream produced by Packbits
 class Unpackbits

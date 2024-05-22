@@ -38,7 +38,8 @@ ApplicationWindow {
         str += icon
         return str
     }
-
+    // attempt to convert an absolute length into the
+    // number of pixels on the screen
     function cm(cm){
         if(Screen.pixelDensity)
             return cm*Screen.pixelDensity*10
@@ -57,6 +58,10 @@ ApplicationWindow {
         console.warn("Could not calculate 'inch' based on Screen.pixelDensity.")
         return 0
     }
+    // takes a percent, and returns the number of pixels
+    // corresponding that percentage of the given dimension
+    // used when you just want to estimate that something should
+    // take a certain percentage of the screen
     function vw(i){
         if(Screen.width)
             return i*(Screen.width/100)
@@ -69,6 +74,9 @@ ApplicationWindow {
         console.warn("Could not calculate 'vh' based on Screen.height.")
         return 0
     }
+
+    font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
+    font.weight: Font.Bold
 
     function sec_to_hours(s) {
         return Math.trunc(s / 3600)
@@ -129,6 +137,9 @@ ApplicationWindow {
     property bool expire_immediate: false
     property bool show_hidden: true
     property bool show_archived_users: false
+    property bool is_mobile
+
+    is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
     function datesec() {
         return Math.round(Date.now() / 1000)
@@ -184,6 +195,7 @@ ApplicationWindow {
 
     Component.onCompleted: {
         AndroidPerms.request_sync("android.permission.CAMERA")
+        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
 
@@ -312,6 +324,17 @@ ApplicationWindow {
     }
 
     Loader {
+        id: restore_auto_backup
+        visible: false
+        active: visible
+        onVisibleChanged: {
+            if(visible) {
+                source = "qrc:/RestoreAutoBackup.qml"
+            }
+        }
+    }
+
+    Loader {
         id: help_dialog
         visible: false
         active: visible
@@ -410,6 +433,11 @@ ApplicationWindow {
         id: fname
     }
 
+    Reindex {
+        id: background_reindex
+        visible: false
+    }
+
     DwycoCore {
         id: core
         property int is_database_online: -1
@@ -418,13 +446,29 @@ ApplicationWindow {
         objectName: "dwyco_singleton"
         client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
+            if(core.android_migrate === 1)
+            {
+                stack.push(migrate_page)
+                return
+            }
+
             var a
             a = get_local_setting("first-run")
             if(a === "") {
                 //stack.push(simple_msg_list)
                 //stack.push(blank_page)
                 stack.push(profile_dialog)
+                // don't need a reindex_complete
+                set_local_setting("reindex1", "1")
+
             } else {
+                a = get_local_setting("reindex1")
+                if(a === "")
+                {
+                    stack.push(background_reindex)
+                    return
+                }
+
                 init()
                 stack.push(simple_msg_list)
                 profile_bootstrapped = 1
@@ -488,6 +532,10 @@ ApplicationWindow {
             }
             exit()
         }
+
+//        onMigration_complete: {
+//            Qt.quit()
+//        }
 
         onServer_login: {
            
@@ -615,6 +663,11 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
         z: 5
+    }
+
+    Migrate {
+        id: migrate_page
+        visible: false
     }
 
 

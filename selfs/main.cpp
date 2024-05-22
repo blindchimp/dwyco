@@ -23,6 +23,8 @@
 QQmlApplicationEngine *TheEngine;
 
 void dwyco_register_qml(QQmlContext *root);
+void start_desktop_background();
+
 #ifdef ANDROID
 NotificationClient *notificationClient;
 #endif
@@ -61,7 +63,7 @@ int main(int argc, char *argv[])
     QQuickStyle::setFallbackStyle("Material");
 #endif
 
-    qDebug() << QQuickStyle::availableStyles();
+    //qDebug() << QQuickStyle::availableStyles();
 
     // note: qt seems to use some of these names in constructing
     // file names. this can be a problem if different FS's with different
@@ -71,11 +73,8 @@ int main(int argc, char *argv[])
     // things like dropbox and btsync.
     QCoreApplication::setOrganizationName("dwyco");
     QCoreApplication::setOrganizationDomain("dwyco.com");
-    // if we run one copy of a cdc-x install on multiple machines,
-    // identify the settings for the machine by local hostname.
-    // this allows for differences in devices and stuff on that host.
-    QString LocalHostName = QHostInfo::localHostName();
-    QCoreApplication::setApplicationName(QString("selfs") + LocalHostName);
+
+    QCoreApplication::setApplicationName(QString("selfs"));
     QSettings::setDefaultFormat(QSettings::IniFormat);
     // note: need to set the path to the right place, same as fn_pfx for dll
     //QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, FPATH);
@@ -131,8 +130,17 @@ int main(int argc, char *argv[])
 
 
     engine.rootContext()->setContextProperty("screenDpi", dpi);
+#ifdef DWYCO_DEBUG
+    engine.rootContext()->setContextProperty("dwyco_debug", true);
+#else
+    engine.rootContext()->setContextProperty("dwyco_debug", false);
+#endif
 
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
-    return app.exec();
+    int ret;
+    ret = app.exec();
+    start_desktop_background();
+
+    return ret;
 }

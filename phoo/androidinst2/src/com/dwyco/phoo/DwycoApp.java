@@ -16,6 +16,10 @@ public class DwycoApp {
         final public static String lock_shared_prefs = "com.dwyco.phoo.prefs";
 	// name of shared preferences
         final public static String shared_prefs = "phoo";
+	// name of file provider for sharing files into the mediastore
+	// warning! there is a bunch of other stupid glue in res/xml/provider_paths.xml
+	// and  AndroidManifest.xml <provider... yada> needed to get this working.
+	final public static String file_provider = "com.dwyco.phoo.provider";
 	// notification message to use when a msg has been downloaded in the
 	// background and is available immediately
         final public static String new_received = "New msg received";
@@ -28,13 +32,21 @@ public class DwycoApp {
 	// msg receive performance on android 8+, but you also get an
 	// annoying notification. if typical fcm performance of msg delivery in 15
 	// or 20 minutes is not a problem, then set to false.
+	// note: this isn't really used any more
         final public static boolean sender_sticky = true;
+
 	// false means set the FLAG_SECURE on the app so direct screenshots are not permitted
 	// (at least in some cases, seems a bit inconsistent depending on android version)
         final public static boolean allow_screenshots = false;
 
         final public static boolean is_rando = false;
 
-	final public static boolean keep_screen_on = true;
+	final public static boolean keep_screen_on = false;
+
+	// note: this is for telling the background running how to behave.
+	// "or" these together. ca 12/2022, this will change for sure
+	// depending on what i do with workmanager, etc.
+	final public static int exit_if_outq_empty = 1;
+	final public static int check_backup_once = 2;
 	
 }

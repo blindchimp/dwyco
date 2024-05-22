@@ -12,7 +12,7 @@
  */
 #ifndef CHROMA_H
 #define CHROMA_H
-
+#ifdef DWYCO_DCT_CODER
 #include "jtcode.h"
 
 class JPEGTCoderChroma : public JPEGTCoder
@@ -27,7 +27,9 @@ private:
     JPEGTCoder *luma;
     int fsampling;
 };
+#endif
 
 #define CHROMA_HEADER_SZ sizeof(unsigned short)
 
 #endif
+

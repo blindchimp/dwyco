@@ -12,6 +12,4 @@ SOURCES += \
 src/framing.c \
 src/bitwise.c
 
-HEADERS += \
-include/ogg/os_types.h \
-include/ogg/ogg.h
+

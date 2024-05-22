@@ -12,11 +12,12 @@
 #include "chatq.h"
 #include "dirth.h"
 #include "ezset.h"
+#include "qauth.h"
+
 using namespace dwyco;
 
-extern vc My_UID;
-
-static int
+static
+int
 send_to_chatserver(vc v)
 {
     extern int Chat_id;

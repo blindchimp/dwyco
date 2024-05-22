@@ -43,7 +43,7 @@ Page {
             else
                 storage_warning = 0
             AndroidPerms.load()
-            if(storage_warning === 1 && !AndroidPerms.external_storage_permission) {
+            if(storage_warning === 1) {
                 warn.visible = true
             }
         }
@@ -109,6 +109,9 @@ Page {
     footer: ToolBar {
         id: footer_toolbar
         width: parent.width
+        background: Rectangle {
+            color: primary_dark
+        }
         RowLayout {
             anchors.fill: parent
         ButtonGroup {
@@ -138,6 +141,9 @@ Page {
                 }
                 show_sent = checked
                 show_recv = false
+            }
+            background: Rectangle {
+                color: primary_dark
             }
             Rectangle {
                 id: badge1
@@ -171,22 +177,34 @@ Page {
             onCheckedChanged: {
                 if(checked) {
                     sent.checked = false
-                    var i
-                    var u
-                    for(i = 0; i < ConvListModel.count; i++) {
-                        u = ConvListModel.get(i).uid
-                        if(u !== the_man) {
-                            //themsglist.set_sort(false)
-                            top_dispatch.uid_selected(u, "clicked")
-                            break;
-                        }
-                    }
+                    // note: i had hoped not to call out
+                    // the rando daemon explicitly here,
+                    // maybe because the id might change.
+                    // but that isn't going to happen at this
+                    // point, and there is a minor bug if a
+                    // message from a user other than the_man
+                    // or redist shows up (like someone could
+                    // do it maliciously if they got your id#)
+//                    var i
+//                    var u
+//                    for(i = 0; i < ConvListModel.count; i++) {
+//                        u = ConvListModel.get(i).uid
+//                        if(u !== the_man) {
+//                            //themsglist.set_sort(false)
+//                            top_dispatch.uid_selected(u, "clicked")
+//                            break;
+//                        }
+//                    }
+                    top_dispatch.uid_selected(redist, "clicked")
                     recv_badge = false
                     core.clear_unseen_rando()
                 }
                 show_recv = checked
                 show_sent = false
 
+            }
+            background: Rectangle {
+                color: primary_dark
             }
             Rectangle {
                 id: badge2
@@ -769,9 +787,9 @@ scrolling in the listview or doesn't recognizing the swipe.
         id: warn
         visible: false
         z: 3
-        warning: "You denied access to storage, which is OK. BUT if you uninstall the app, the pictures stored by this app are also removed. IF YOU WOULD LIKE TO KEEP THE PICTURES YOU GET, EVEN IF YOU UNINSTALL, click the button below to quit the app. Then restart the app, and when it asks for permission to access storage, answer YES."
+        warning: "WARNING: if you uninstall Rando, all of the pictures in this app are removed. In order to SAVE A PICTURE you want to keep: view it, and click the \"share\" button to save it to your phone."
         inhibit_key: "storage_warning"
-        oops_text: "Quit (give storage permission next time)"
+        got_it_forever_text: "Got it"
 
         onVisibleChanged: {
             if(visible) {
@@ -782,11 +800,6 @@ scrolling in the listview or doesn't recognizing the swipe.
                 else
                     storage_warning = 0
             }
-        }
-
-        onOopsChanged: {
-            if(oops)
-                Qt.quit()
         }
     }
 

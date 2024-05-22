@@ -83,7 +83,7 @@ public:
         //qio_dev->open(QIODevice::ReadOnly);
         qio_dev = 0;
         audio_output = 0;
-        audio_poll_timer = new QTimer(this);
+        audio_poll_timer = new QTimer;
         audio_poll_timer->setTimerType(Qt::PreciseTimer);
         audio_poll_timer->setSingleShot(false);
         connect(audio_poll_timer, SIGNAL(timeout()), this, SLOT(qt_pushmore()));
@@ -95,6 +95,8 @@ public:
         qio_dev = 0;
         delete audio_output;
         audio_output = 0;
+        audio_poll_timer->deleteLater();
+        audio_poll_timer = 0;
     }
     QIODevice *qio_dev;
     QAudioOutput *audio_output;
@@ -121,14 +123,15 @@ public slots:
     }
 
     void handle_stateChange(QAudio::State a) {
-//        QMutexLocker ml(&audio_mutex);
-//        if(a == QAudio::IdleState)
-//        {
+        QMutexLocker ml(&audio_mutex);
+        if(a == QAudio::StoppedState)
+        {
+            volatile int b = 1;
 //            if(audio_output)
 //            {
-//                audio_output->start(qio_dev);
+//                qio_dev = audio_output->start();
 //            }
-//        }
+        }
 
     }
 
@@ -138,7 +141,7 @@ public slots:
         QMutexLocker ml(&audio_mutex);
         if(audio_output)
         {
-            if(audio_output->state() != QAudio::ActiveState)
+            if(audio_output->state() == QAudio::StoppedState)
             {
                 qio_dev = audio_output->start();
                 audio_output->setVolume(1.0);

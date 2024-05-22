@@ -364,3 +364,5 @@ jni/pgm
 jni/ppm
 jni/vc
 jni/zlib
+jni/miniupnpc
+jni/uv

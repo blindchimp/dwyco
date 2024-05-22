@@ -103,6 +103,14 @@ msglist_model::data ( const QModelIndex & index, int role ) const
     else if( role == Qt::DecorationRole)
     {
         DwOString str;
+        DwOString mid;
+        if(!dwyco_get_attr(msg_idx, index.row(), DWYCO_MSG_IDX_MID, mid))
+            return QVariant();
+        if(dwyco_mid_has_tag(mid.c_str(), "_trash"))
+        {
+            return QVariant(QImage(":/new/prefix1/kill.png"));
+        }
+
         if(dwyco_get_attr(msg_idx, index.row(), DWYCO_MSG_IDX_HAS_ATTACHMENT, str) == 0)
         {
             return QVariant();

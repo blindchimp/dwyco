@@ -1,0 +1,17 @@
+qt5-qmake
+g++/clang
+qml-module-qtqml-models2
+qml-module-qtqml
+qml-module-qtquick-controls2
+qml-module-qtqml-statemachine
+qml-module-qtmultimedia
+qml-module-qtquick-dialogs
+qml-module-qt-labs-qmlmodels
+qtbase5-private-dev
+qtdeclarative5-dev
+libqt5multimedia5-plugins
+libqtavwidgets1
+qtmultimedia5-dev
+qml-module-qtquick-layouts
+qml-module-qtgraphicaleffects
+v4l2-utils

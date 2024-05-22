@@ -26,8 +26,6 @@
 
 #ifdef _Windows
 #define USE_WINSOCK
-#else
-#define USE_BERKSOCK
 #endif
 
 #include <stdlib.h>
@@ -98,7 +96,9 @@ enum vc_type {
 	VC_SET_N = 32,
     VC_BAG_N = 33,
     VC_UVSOCKET_STREAM = 34,
-    VC_UVSOCKET_DGRAM = 35
+    VC_UVSOCKET_DGRAM = 35,
+    VC_TSOCKET_STREAM = 36,
+    VC_TSOCKET_DGRAM = 37
 };
 
 // note: the new gcc's are too pissy about
@@ -136,7 +136,7 @@ enum vcsocketmode {
 #define VC_SOCK_SHUTDOWN_RD 0
 #define VC_SOCK_SHUTDOWN_WR 1
 #define VC_SOCK_SHUTDOWN_BOTH 2
-const char *vc_wsget_errstr(int);
+
 
 #ifdef _Windows
 // can't do this, it causes compile errors, sigh.
@@ -157,6 +157,7 @@ class vc;
 class vc_default;
 class vc_object;
 class vc_fundef;
+vc vc_wsget_errstr(int);
 
 #ifdef __GNUG__
 #include "dwvec.h"
@@ -236,6 +237,7 @@ public:
 	static void non_lh_exit(void);
 	static void setup_logs(void);
 	static void shutdown_logs(void);
+    static void set_xferin_constraints(long max_memory, long max_depth = -1, long max_elements = -1, long max_element_len = -1);
 
         static vc set_to_vector(vc set);
         static vc map_to_vector(vc map);
@@ -268,9 +270,9 @@ public:
 	vc(double d);
 	vc(int i);
 	vc(long i);
-        vc(long long);
+    vc(long long);
 	vc(const char *s);
-        vc(const char *s, int len);
+    vc(const char *s, int len);
 
 	vc(enum vc_type, const char * = "nil", long extra_parm = 0);
         vc(enum vc_type, vc_int_dtor_fun d, void *arg);
@@ -352,7 +354,7 @@ public:
 	notvirtual const vc& operator[](const vc& v) const;
 	notvirtual const vc& operator[](int) const;
 	notvirtual const vc& operator[](long) const;
-	notvirtual int contains(const vc& v) ;
+    notvirtual int contains(const vc& v) const;
     notvirtual int find(const vc& v, vc& out) ;
 	notvirtual void add(const vc& v) ;
 	notvirtual void add_kv(const vc& k, const vc& v) ;
@@ -395,6 +397,9 @@ public:
 	notvirtual void socket_set_error(vc v);
 	notvirtual vc socket_set_option(vcsocketmode m, unsigned long = 0,
 		unsigned long = 0, unsigned long = 0);
+#ifdef _Windows
+    notvirtual int socket_set_async(void *hwnd, unsigned int msg, long events);
+#endif
 	notvirtual vcsocketmode socket_get_mode();
 	notvirtual vc socket_local_addr();
 	notvirtual vc socket_peer_addr();
@@ -469,7 +474,7 @@ decl_rel(str)
 	notvirtual operator long() const ;
 	notvirtual operator char() const ;
 	notvirtual operator void *() const;
-    //notvirtual operator int64_t() const;
+    notvirtual operator long long() const;
 
 	void print_top(VcIO o);
 	void print(VcIO o);
@@ -549,6 +554,9 @@ vc::vc(const vc& v)
 #ifdef USE_RCT
 RCQINC(v.rep)
 #else
+#ifdef DWYCO_VC_THREADED
+    if(v.rep != vc_nil::vcnilrep)
+#endif
 	++v.rep->ref_count;
 #endif
 	rep = v.rep;
@@ -580,6 +588,9 @@ vc::operator=(const vc& v)
 RCQINC(v.rep)
 RCQDEC(rep)
 #else
+#ifdef DWYCO_VC_THREADED
+        if(v.rep != vc_nil::vcnilrep)
+#endif
 		++v.rep->ref_count;
 		if(rep != vc_nil::vcnilrep && --rep->ref_count == 0) 
 		{

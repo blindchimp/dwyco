@@ -74,6 +74,14 @@
         <file>icons/material/xhdpi/ic_vertical_align_top_black_24dp.png</file>
         <file>icons/material/mdpi/ic_vertical_align_top_black_24dp.png</file>
         <file>icons/material/hdpi/ic_vertical_align_top_black_24dp.png</file>
+
+        <file>icons/material/hdpi/ic_share_black_24dp.png</file>
+        <file>icons/material/hdpi/ic_share_white_24dp.png</file>
+        <file>icons/material/mdpi/ic_share_black_24dp.png</file>
+        <file>icons/material/mdpi/ic_share_white_24dp.png</file>
+        <file>icons/material/xhdpi/ic_share_black_24dp.png</file>
+        <file>icons/material/xhdpi/ic_share_white_24dp.png</file>
+
     </qresource>
     <qresource prefix="/">
         <file>icons/greenguy.png</file>

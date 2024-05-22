@@ -18,12 +18,13 @@
 #include <fcntl.h>
 #ifdef _Windows
 #include <io.h>
-#include <windows.h>
 #endif
+#include <windows.h>
 #include <math.h>
 #include <stdio.h>
 #ifndef _Windows
 #include <netdb.h>
+#include <arpa/inet.h>
 #endif
 #include "dwyco_rand.h"
 

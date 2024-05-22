@@ -16,17 +16,13 @@
 #include "mmchan.h"
 #include "audout.h"
 #include "qmsg.h"
-#include "qdirth.h"
-#include "msgdisp.h"
 #include "audchk.h"
 #include "ta.h"
 #include "dirth.h"
 #include "codec.h"
 #include "fnmod.h"
 #include "mcc.h"
-#include "se.h"
 #include "sysattr.h"
-#include "xinfo.h"
 #include "ezset.h"
 #undef index
 
@@ -38,8 +34,9 @@ extern double Audio_delay;
 extern DwycoStatusCallback dbg_msg_callback;
 using namespace dwyco;
 
-static int
-msgbox(const char *s, const char *s2, int)
+static
+void
+msgbox(const char *s, const char *s2)
 {
     if(!s)
         s = "";
@@ -52,7 +49,6 @@ msgbox(const char *s, const char *s2, int)
     if(dbg_msg_callback)
         (*dbg_msg_callback)(0, msg.c_str(), 0, 0);
 
-    return IDCANCEL;
 }
 
 DwVec<ValidPtr> Composers;
@@ -241,6 +237,8 @@ TMsgCompose::TMsgCompose(const TMsgCompose& m)
     user_filename = m.user_filename;
     dont_save_sent = m.dont_save_sent;
     special_type = m.special_type;
+    hiq = m.hiq;
+    view_id = -1;
 }
 
 TMsgCompose::~TMsgCompose()
@@ -419,7 +417,7 @@ int  TMsgCompose::record_buttonClick()
         mc->gv_id = -1;
         if(!mc->build_outgoing(1, 1, hiq ? 20 : 10))
         {
-            msgbox("Video recording device not available.", 0, MB_OK);
+            msgbox("Video recording device not available.", 0);
             stop_buttonClick();
             do_append = 1;
             return 0;
@@ -449,7 +447,7 @@ int  TMsgCompose::record_buttonClick()
 
         if(!mc->build_outgoing_audio(1))
         {
-            msgbox("Audio recording device not available.", 0, MB_OK);
+            msgbox("Audio recording device not available.", 0);
             stop_buttonClick();
             do_append = 1;
             return 0;
@@ -886,7 +884,7 @@ void  TMsgCompose::send_buttonClick()
     if(!q_message(rid_list, file_basename.c_str(), qfn,
                   body_to_forward, msg_text.c_str(), filehash, sp, sp_payload, no_forward, ufn, !dont_save_sent))
     {
-        msgbox("Can't Q message, free up some diskspace and try again.", 0, MB_OK);
+        msgbox("Can't Q message, free up some diskspace and try again.", 0);
         enable_most();
         return;
     }
@@ -1009,7 +1007,7 @@ TMsgCompose::do_record_pic()
     mc->gv_id = -1;
     if(!mc->build_outgoing(1, 1, 12))
     {
-        msgbox("Video recording device not available.", 0, MB_OK);
+        msgbox("Video recording device not available.", 0);
         return 0;
     }
     // set it high, so that a frame is emitted almost immediately

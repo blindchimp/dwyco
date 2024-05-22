@@ -16,9 +16,9 @@
 #include "qpol.h"
 #include "dwlog.h"
 #include "fnmod.h"
+#include "doinit.h"
 using namespace dwyco;
 
-extern DwLog *Log;
 // note: these structures are rather rickety, not
 // a good idea to muck with them after they are
 // built. this really should be done via LH
@@ -38,7 +38,7 @@ qpol_init()
     FILE *f = fopen(newfn("poli").c_str(), "rt");
     if(f == 0)
     {
-        Log->make_entry("no policies?");
+        Log_make_entry("no policies?");
         return;
     }
 
@@ -68,7 +68,7 @@ qpol_init()
         case POLNAME:
             if(do_end)
             {
-                Log->make_entry("expected policy name, got end");
+                Log_make_entry("expected policy name, got end");
                 return;
             }
 #if defined(__CONSOLE__) || defined(__GNUG__)
@@ -97,6 +97,6 @@ qpol_init()
     fclose(f);
     char s[100];
     sprintf(s, "%d policies", i);
-    Log->make_entry(s);
+    Log_make_entry(s);
 }
 

@@ -20,14 +20,13 @@
 #include "dwlog.h"
 #include "jdct.h"
 #include "fnmod.h"
+#include "doinit.h"
 
 using namespace dwyco;
 
-extern DwLog *Log;
-
 QTABTAB QTables;
 QIDTAB QidTables;
-
+#ifdef DWYCO_DCT_CODER
 #define fastfun(name) {#name, TCoder::max_##name, TCoder::recon_##name}
 static struct nfp {
     char *name;
@@ -61,6 +60,7 @@ static struct nfp {
 } funs[1];
 #define NFUNS 0
 #endif
+#endif
 
 int QTAB::Id;
 
@@ -80,11 +80,11 @@ QTAB::qtab_init()
     QTables.add(qp->name, qp);
     QidTables.add(qp->id, qp);
     return;
-
+#if 0
     FILE *f = fopen(newfn("qtabs").c_str(), "rt");
     if(f == 0)
     {
-        Log->make_entry("no quantization tables?");
+        Log_make_entry("no quantization tables?");
         return;
     }
 
@@ -106,8 +106,9 @@ QTAB::qtab_init()
     }
     char s[100];
     sprintf(s, "%d dwyco quantization tables", i);
-    Log->make_entry(s);
+    Log_make_entry(s);
     fclose(f);
+#endif
 }
 
 QTAB::QTAB()
@@ -115,11 +116,14 @@ QTAB::QTAB()
     name = "unmapped";
     memset(q, 0, sizeof(q));
     id = Id++;
+#ifdef DWYCO_DCT_CODER
     maxfun = 0;
     reconfun = 0;
+#endif
     init_dct_tables();
 }
 
+#if 0
 QTAB::QTAB(FILE *f)
 {
     read(f);
@@ -164,6 +168,7 @@ QTAB::write(FILE *f)
     }
 
 }
+#endif
 
 INT16 QTAB::aanscales[DCTSIZE2] = {
     /* precomputed values scaled up by 14 bits */

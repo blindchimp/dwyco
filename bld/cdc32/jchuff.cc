@@ -1,4 +1,4 @@
-
+#ifdef DWYCO_DCT_CODER
 /*
  * $Header: g:/dwight/repo/cdc32/rcs/jchuff.cc 1.7 1997/11/25 20:41:03 dwight Stable095 $
  */
@@ -705,4 +705,5 @@ main()
 		printf("%x\n", a[j]);
 
 }
+#endif
 #endif

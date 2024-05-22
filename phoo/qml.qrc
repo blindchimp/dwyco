@@ -23,7 +23,6 @@
         <file>PINDialog.qml</file>
         <file>PINChangeDialog.qml</file>
         <file>PicPreview.qml</file>
-        <file>ContactList.qml</file>
         <file>SimpleToolbar.qml</file>
         <file>CircularImage.qml</file>
         <file>CQRes.qml</file>
@@ -57,6 +56,14 @@
         <file>DevGroup.qml</file>
         <file>BareConvList.qml</file>
         <file>+desktop/BareConvList.qml</file>
+        <file>SendMulti.qml</file>
+        <file>Migrate.qml</file>
+        <file>Reindex.qml</file>
+        <file>RestoreAutoBackup.qml</file>
+        <file>SimpleTrashBrowse.qml</file>
+        <file>PulseLoader.qml</file>
+        <file>MsgViewMenu.qml</file>
+        <file>MsgViewMenuTrash.qml</file>
     </qresource>
     <qresource prefix="/+linux"/>
     <qresource prefix="/+vgqt"/>

@@ -70,6 +70,7 @@ SimpleUserModel::set_all_selected(bool b)
 
 }
 
+#if 0
 void
 SimpleUserModel::delete_all_selected()
 {
@@ -90,10 +91,11 @@ SimpleUserModel::delete_all_selected()
     hack_unread_count();
 
     int total = 0;
-    dwyco_load_users2(0, &total);
+    dwyco_load_users2(!TheDwycoCore->get_use_archived(), &total);
     TheDwycoCore->update_total_users(total);
     load_users_to_model();
 }
+#endif
 
 void
 SimpleUserModel::send_forward_selected(QString mid_to_forward)
@@ -195,6 +197,7 @@ SimpleUserModel::load_users_to_model()
     int n;
     clear();
     QObject::connect(TheDwycoCore, SIGNAL(sys_uid_resolved(QString)), this, SLOT(uid_resolved(QString)), Qt::UniqueConnection);
+    dwyco_load_users2(1, 0);
     dwyco_get_user_list2(&l, &n);
     simple_scoped ql(l);
     for(int i = 0; i < n; ++i)
@@ -365,6 +368,7 @@ SimpleUserSortFilterModel::set_all_selected(bool b)
     m->set_all_selected(b);
 }
 
+#if 0
 void
 SimpleUserSortFilterModel::delete_all_selected()
 {
@@ -374,6 +378,7 @@ SimpleUserSortFilterModel::delete_all_selected()
     m->delete_all_selected();
 
 }
+#endif
 
 void
 SimpleUserSortFilterModel::send_forward_selected(QString mid_to_forward)
@@ -400,12 +405,12 @@ SimpleUserSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& 
     else if(!lsm && rsm)
         return false;
 
-    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
-    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
-    if(lreg && !rreg)
-        return true;
-    else if(!lreg && rreg)
-        return false;
+//    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
+//    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
+//    if(lreg && !rreg)
+//        return true;
+//    else if(!lreg && rreg)
+//        return false;
 
     int ret1 = QSortFilterProxyModel::lessThan(left, right);
     int ret2 = QSortFilterProxyModel::lessThan(right, left);

@@ -14,29 +14,23 @@
 #include "doinit.h"
 #include "dirth.h"
 #include "vc.h"
-#include "vcmap.h"
 #include "qdirth.h"
 #include "qauth.h"
 #include "qmsg.h"
 #include "cdcver.h"
 #include "mmchan.h"
-#include "senc.h"
 #include "dwstr.h"
-#include "gvchild.h"
 #include "chatops.h"
-#include "chatgrid.h"
 #include "asshole.h"
 #include "servass.h"
-#include "aconn.h"
 #include "fnmod.h"
 #include "chatops.h"
-#include "pgdll.h"
 #include "xinfo.h"
 #include "vcudh.h"
 #include "dhsetup.h"
 #include "profiledb.h"
 #include "se.h"
-#include "backsql.h"
+//#include "backsql.h"
 #include "dwrtlog.h"
 #ifdef LINUX
 #include <sys/utsname.h>
@@ -78,6 +72,9 @@ extern vc My_connection;
 
 void exit_conf_mode();
 vc set_get_uniq(int&);
+void update_server_list(vc, void *, vc, ValidPtr);
+void ignoring_you_update(vc, void *, vc, ValidPtr);
+void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
 
 #ifdef LEAK_CLEANUP
 void
@@ -125,7 +122,7 @@ got_purge_outbox(vc, void *, vc, ValidPtr)
 static void
 reset_backups(vc, void *, vc, ValidPtr)
 {
-    dwyco::reset_msg_backup();
+    //dwyco::reset_msg_backup();
 }
 
 void
@@ -161,7 +158,7 @@ update_server_list(vc m, void *, vc, ValidPtr)
     for(int i = 0; i < Server_list.num_elems(); ++i)
     {
         int j;
-        vc d = Server_list[i];
+        const vc& d = Server_list[i];
         for(j = 0; j < nsl.num_elems(); ++j)
         {
             if(d[SL_SERVER_NAME] == nsl[j][SL_SERVER_NAME] &&
@@ -390,6 +387,8 @@ set_group_uids(vc m, void *, vc, ValidPtr)
     // if the server doesn't know the group at all, you still get back
     // a vector with your own uid in it.
     Group_uids = m[1];
+    // update profiles, since this is an "authoritative" group membership
+    update_profiles_for_new_membership();
 }
 
 static
@@ -433,35 +432,33 @@ emit_invis_update(vc name, vc val)
 }
 
 
-void update_server_list(vc, void *, vc, ValidPtr);
-void ignoring_you_update(vc, void *, vc, ValidPtr);
-void background_check_for_update_done(vc m, void *, vc, ValidPtr p);
-
 void
 init_dirth()
 {
     Waitq = DwListA<QckDone>();
     Response_q = DwListA<vc>();
-    Waitq.append(QckDone(got_sync, 0, vcnil, ValidPtr(0), "sync", 0, 1));
-    Waitq.append(QckDone(got_serv_r, 0, vcnil, ValidPtr(0), "serv_r", 0, 1));
-    Waitq.append(QckDone(got_inhibit, 0, vcnil, ValidPtr(0), "inhibit", 0, 1));
-    Waitq.append(QckDone(got_purge_outbox, 0, vcnil, ValidPtr(0), "purge_outbox", 0, 1));
+    PWaitq = DwListA<QckDone>();
+    PWaitq.append(QckDone(got_sync, 0, vcnil, ValidPtr(0), "sync", QckDone::PERMANENT));
+    PWaitq.append(QckDone(got_serv_r, 0, vcnil, ValidPtr(0), "serv_r", QckDone::PERMANENT));
+    PWaitq.append(QckDone(got_inhibit, 0, vcnil, ValidPtr(0), "inhibit", QckDone::PERMANENT));
+    PWaitq.append(QckDone(got_purge_outbox, 0, vcnil, ValidPtr(0), "purge_outbox", QckDone::PERMANENT));
     //void got_mailbox_full(vc m, void *, vc, ValidPtr);
-    //Waitq.append(QckDone(got_mailbox_full, 0, vcnil, ValidPtr(0), "mailbox_full", 0, 1));
-    Waitq.append(QckDone(update_server_list, 0, vcnil, ValidPtr(0), "nsl", 0, 1));
-    Waitq.append(QckDone(ignoring_you_update, 0, vcnil, ValidPtr(0), "iy", 0, 1));
-    Waitq.append(QckDone(background_check_for_update_done, 0, vcnil, ValidPtr(0), "serv-check-update", 0, 1));
+    //Waitq.append(QckDone(got_mailbox_full, 0, vcnil, ValidPtr(0), "mailbox_full", QckDone::PERMANENT));
+    PWaitq.append(QckDone(update_server_list, 0, vcnil, ValidPtr(0), "nsl", QckDone::PERMANENT));
+    PWaitq.append(QckDone(ignoring_you_update, 0, vcnil, ValidPtr(0), "iy", QckDone::PERMANENT));
+    PWaitq.append(QckDone(background_check_for_update_done, 0, vcnil, ValidPtr(0), "serv-check-update", QckDone::PERMANENT));
 
-    Waitq.append(QckDone(async_pal, 0, vcnil, ValidPtr(0), "async-pal", 0, 1));
-    Waitq.append(QckDone(invalidate_profile, 0, vcnil, ValidPtr(0), "invalidate-profile", 0, 1));
-    Waitq.append(QckDone(reset_backups, 0, vcnil, ValidPtr(0), "reset-backups", 0, 1));
-    Waitq.append(QckDone(invalidate_group, 0, vcnil, ValidPtr(0), "invalidate-group", 0, 1));
-    Waitq.append(QckDone(update_attr, 0, vcnil, ValidPtr(0), "attr", 0, 1));
+    PWaitq.append(QckDone(async_pal, 0, vcnil, ValidPtr(0), "async-pal", QckDone::PERMANENT));
+    PWaitq.append(QckDone(invalidate_profile, 0, vcnil, ValidPtr(0), "invalidate-profile", QckDone::PERMANENT));
+    PWaitq.append(QckDone(reset_backups, 0, vcnil, ValidPtr(0), "reset-backups", QckDone::PERMANENT));
+    PWaitq.append(QckDone(invalidate_group, 0, vcnil, ValidPtr(0), "invalidate-group", QckDone::PERMANENT));
+    PWaitq.append(QckDone(update_attr, 0, vcnil, ValidPtr(0), "attr", QckDone::PERMANENT));
 
     //get the server list set up
     if(!load_info(Server_list, "servers2") || Server_list.type() != VC_VECTOR ||
             Server_list.num_elems() < 1)
     {
+        GRTLOG("WARNING: using compiled in servers2", 0, 0);
         vc v("090160901409017020212s1.dwyco.org020215173.255.230.19201054350002011a02015Adult02015Adult09013020217s6.blindchimp.com02021366.135.42.14701054350009017020212s1.dwyco.org020215173.255.230.19201054350102011a02017Couples02015Adult09013020217s6.blindchimp.com02021366.135.42.14701054350109017020212s2.dwyco.org02021250.116.26.1201054350202011a020210Clean Chat02015Adult09013020212s5.dwyco.com02021469.164.210.23701054350209017020212s2.dwyco.org02021250.116.26.1201054350302011a02013Gay02015Adult09013020217s6.blindchimp.com02021366.135.42.147010543503090140901701010010110101301010020212s1.dwyco.org020215173.255.230.1920105405000901701010010110101301011020212s1.dwyco.org020215173.255.230.1920105405010901701010010110101301012020212s2.dwyco.org02021250.116.26.120105405020901701010010110101301013020212s2.dwyco.org02021250.116.26.120105405030901209013020212s1.dwyco.org020215173.255.230.1920104690209013020212s2.dwyco.org02021250.116.26.12010469020901109013020212s1.dwyco.org020215173.255.230.1920105100960901109013020212s5.dwyco.com02021469.164.210.237010434340901209013020212s1.dwyco.org020215173.255.230.1920104343709013020212s2.dwyco.org02021250.116.26.1201043437");
         vcxstream vcx((const char *)v, v.len(), vcxstream::FIXED);
 
@@ -534,7 +531,7 @@ system_info()
     screen.append(ScreenSize.bottom);
 
     OSVERSIONINFO o;
-    memset(&o, 0, sizeof(0));
+    memset(&o, 0, sizeof(o));
     o.dwOSVersionInfoSize = sizeof(o);
     GetVersionEx(&o);
 
@@ -565,7 +562,7 @@ system_info()
     osv.append(buf.release);
     osv.append(buf.sysname);
     osv.append(buf.machine);
-    osv.append(buf.nodename);
+    osv.append("noname");
 
     v.append(screen);
     v.append(osv);
@@ -783,34 +780,6 @@ db_call_failed_last(MMChannel *mc, vc, void *, ValidPtr)
     TRACK_ADD(DB_hard_fail, 1);
 }
 
-void
-db_call_failed(MMChannel *mc, vc, void *, ValidPtr)
-{
-    Database_id = -1;
-    //if(mc->resolve_failed)
-    {
-        MMChannel *mc = MMChannel::start_server_channel(
-                    MMChannel::BYNAME,
-                    0,
-                    My_server_name,
-                    My_server_port);
-
-        if(!mc)
-        {
-            Database_id = -1;
-            return;
-        }
-        mc->established_callback = db_online;
-        mc->destroy_callback = db_call_failed_last;
-        mc->set_string_id("Dwyco Database");
-        Database_id = mc->myid;
-        Database_online = 0;
-        //GRTLOG("db resolve failed", 0, 0);
-        //return;
-    }
-    GRTLOG("db call failed", 0, 0);
-}
-
 
 void
 start_database_thread()
@@ -819,21 +788,18 @@ start_database_thread()
         return;
     if(Database_id != -1)
         return;
-    MMChannel *mc = MMChannel::start_server_channel(
-                        MMChannel::BYADDR,
-                        inet_addr(My_server_ip),
-                        0,
-                        My_server_port);
+
+    MMChannel *mc = MMChannel::start_server_channel(My_server_ip, My_server_port);
+
     if(!mc)
     {
         // maybe DNS hosed right off the bat, so
         // go straight to next stage
         Database_id = -1;
-        db_call_failed(0, vcnil, 0, ValidPtr());
         return;
     }
     mc->established_callback = db_online;
-    mc->destroy_callback = db_call_failed;
+    mc->destroy_callback = db_call_failed_last;
     mc->set_string_id("Dwyco Database");
     Database_id = mc->myid;
     Database_online = 0;

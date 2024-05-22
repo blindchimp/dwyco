@@ -42,7 +42,7 @@ public:
     //vc password;
 
     void init(vc uid, vc alternate_name);
-    int load_account(vc alternate_name);
+    int load_account(vc alternate_name, bool create_if_not_exists);
     void leave();
     vc alt_name() {return alternate_name;}
     vc my_static();
@@ -89,7 +89,9 @@ public:
 // keys can get inserted in the database from pure message handling, so
 // this needs to be called early.
 void init_dhgdb();
+void exit_dhgdb();
 void init_dhg();
+void update_profiles_for_new_membership();
 extern sigprop<dwyco::DH_alternate *> Current_alternate;
 extern sigprop<vc> Group_uids;
 

@@ -14,6 +14,10 @@ QByteArray User_pfx;
 QByteArray Sys_pfx;
 QByteArray Tmp_pfx;
 
+QByteArray User_pfx_native;
+QByteArray Sys_pfx_native;
+QByteArray Tmp_pfx_native;
+
 QByteArray
 add_pfx(const QByteArray& pfx, const QByteArray& fn)
 {

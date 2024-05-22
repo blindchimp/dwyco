@@ -172,7 +172,7 @@ got_alarm(int)
 // this thread stuff is just a poor-mans watchdog timer so we don't end up
 // with these things lingering around if they get stuck for some reason.
 static
-DWORD ThreadProc (LPVOID lpdwThreadParam )
+DWORD __RPC_CALLEE ThreadProc (LPVOID lpdwThreadParam )
 {
     Sleep(20 * 60 * 1000);
     ExitProcess(1);
@@ -182,7 +182,7 @@ static int ourmain(int argc, char **argv);
 #ifdef __BORLANDC__
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
-int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 #endif
 {
     LPTSTR *av;
@@ -190,7 +190,9 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdL
     char **argv = 0;
 
     /*******************************************************
-     * WIN32 command line parser function********************************************************/	int    argc, BuffSize, i;
+     * WIN32 command line parser function
+     ********************************************************/
+    int    argc, BuffSize, i;
     WCHAR  *wcCommandLine;
     LPWSTR *argw;		// Get a WCHAR version of the parsed commande line
     wcCommandLine = GetCommandLineW();
@@ -214,6 +216,24 @@ int
 main(int argc, char **argv)
 #endif
 {
+    // arguments are
+    // ip:port to connect to
+    // name of file to fetch (no paths, no crazy characters)
+    // hex signature to check
+    //
+    // this downloads the file, creates an SHA1 hash of the file
+    // then checks the dsa signature of the hash of the downloaded file.
+    //
+    // if there is a partial download of the file, it restarts the download
+    //
+    // if this is successful, there should be 3 files created:
+    // name, name.chk, name.sig
+    // name is the file, .chk is the binary sha1 hash of the file, and .sig
+    // is the binary dsa signature (using the hash.)
+    //
+    // if the signature verification fails, the file and file.chk are deleted
+    // (essentially causing the download to start from scratch next time.)
+
     if(argc < 4)
         exit(1);
 #ifdef LINUX

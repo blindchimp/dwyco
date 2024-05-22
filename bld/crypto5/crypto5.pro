@@ -2,7 +2,22 @@ TEMPLATE = lib
 CONFIG += staticlib
 CONFIG -= qt
 CONFIG += warn_off
-macx-g++|macx-clang|linux-g++: QMAKE_CXXFLAGS += -Wno-unused-variable -Wno-unused-parameter
+macx-g++|macx-clang|linux-g++ {
+# this monkey business forces the use of c++11 when
+# compiling with newer versions of qt, which puts
+# flags on the command line for newer c++ versions, which
+# breaks compilation of this library.
+QMAKE_CXXFLAGS -= -std=c++1z
+QMAKE_CXXFLAGS -= -std=gnu++1z
+QMAKE_CXXFLAGS_CXX1Z=""
+QMAKE_CXXFLAGS_GNUCXX1Z=""
+QMAKE_CXXFLAGS += -Wno-unused-variable -Wno-unused-parameter $$QMAKE_CXXFLAGS_CXX11
+}
+
+windows {
+# get rid of c++17, this lib doesn't need it
+QMAKE_CXXFLAGS_CXX1Z=""
+}
 
 include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += NDEBUG 

@@ -8,7 +8,6 @@
 */
 #include "ignoremodel.h"
 #include "dlli.h"
-#include "dwyco_new_msg.h"
 #include "getinfo.h"
 #include "dwycolist2.h"
 
@@ -105,36 +104,3 @@ IgnoreSortFilterModel::IgnoreSortFilterModel(QObject *p)
     m_count = 0;
 }
 
-#if 0
-bool
-IgnoreSortFilterModel::lessThan(const QModelIndex& left, const QModelIndex& right) const
-{
-    IgnoreListModel *m = dynamic_cast<IgnoreListModel *>(sourceModel());
-    if(!m)
-        return false;
-    int luc = m->data(left, m->roleForName("unseen_count")).toInt();
-    int ruc = m->data(right, m->roleForName("unseen_count")).toInt();
-    if(luc < ruc)
-        return false;
-    else if(ruc < luc)
-        return true;
-
-    bool lau = m->data(left, m->roleForName("any_unread")).toBool();
-    bool rau = m->data(right, m->roleForName("any_unread")).toBool();
-    if(lau && !rau)
-        return true;
-    else if(!lau && rau)
-        return false;
-
-    bool lreg = m->data(left, m->roleForName("REGULAR")).toBool();
-    bool rreg = m->data(right, m->roleForName("REGULAR")).toBool();
-    if(lreg && !rreg)
-        return true;
-    else if(!lreg && rreg)
-        return false;
-
-    return QSortFilterProxyModel::lessThan(left, right);
-}
-
-
-#endif

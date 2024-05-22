@@ -147,15 +147,15 @@ Page {
             Layout.fillWidth: true
         }
 
-//        CheckBox {
-//            id: show_archived
-//            text: { "Show archived users (" + core.total_users.toString() + ")" }
-//            onCheckedChanged: {
-//                core.use_archived = checked
-//                show_archived_users = checked
-//            }
-//            Layout.fillWidth: true
-//        }
+        CheckBox {
+            id: show_archived
+            text: { "Show archived users (" + core.total_users.toString() + ")" }
+            onCheckedChanged: {
+                core.use_archived = checked
+                show_archived_users = checked
+            }
+            Layout.fillWidth: true
+        }
 
 
         ItemDelegate {
@@ -176,6 +176,30 @@ Page {
 
             Layout.fillWidth: true
         }
+
+        ItemDelegate {
+            id: trash_button
+            text: qsTr("View Trash")
+            onClicked: {
+                stack.push(trash_browse)
+            }
+
+            Layout.fillWidth: true
+        }
+
+        ItemDelegate {
+            id: load_backup_button
+            text: qsTr("Load backup\n(quits Phoo, restarting finishes load.)")
+            onClicked: {
+                stack.push(restore_auto_backup)
+            }
+            onVisibleChanged: {
+                enabled = (core.get_android_backup_state() > 0)
+            }
+
+            Layout.fillWidth: true
+        }
+
         ItemDelegate {
             id: about_button
             text: qsTr("About")
