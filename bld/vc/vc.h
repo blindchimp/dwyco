@@ -154,6 +154,7 @@ typedef int SOCKET;
 typedef unsigned long hashValueType;
 
 class vc;
+class vcy;
 class vc_default;
 class vc_object;
 class vc_fundef;
@@ -173,11 +174,11 @@ typedef DwSVec<vc> VCArglist;
 #include "vcfext.h"
 class VcLexer;
 typedef vc (*VCFUNCP0)();
-typedef vc (*VCFUNCP1)(vc);
-typedef vc (*VCFUNCP2)(vc, vc);
-typedef vc (*VCFUNCP3)(vc, vc, vc);
-typedef vc (*VCFUNCP4)(vc, vc, vc, vc);
-typedef vc (*VCFUNCP5)(vc, vc, vc, vc, vc);
+typedef vc (*VCFUNCP1)(vc&);
+typedef vc (*VCFUNCP2)(vc&, vc&);
+typedef vc (*VCFUNCP3)(vc&, vc&, vc&);
+typedef vc (*VCFUNCP4)(vc&, vc&, vc&, vc&);
+typedef vc (*VCFUNCP5)(vc&, vc&, vc&, vc&, vc&);
 typedef vc (*VCFUNCPv)(VCArglist *);
 typedef vc (*VCFUNCPVP)(void *);
 
@@ -199,8 +200,16 @@ extern vc vcbitbucket;
 #ifdef VCDBG
 extern int Eval_break;
 #endif
+class vcy
+{
+public:
+    vc_default *rep;
+    operator vc();
+    void *operator new(size_t, vcy *v) {return v;}
+    void *operator new(size_t s) {return ::operator new(s);}
+};
 
-class vc
+class vc : public vcy
 {
 friend class vc_default;
 private:
@@ -210,7 +219,7 @@ private:
 // does the dispatching and that is where the "virtuals"
 // are.
 #define notvirtual
-	vc_default *rep;
+    //
 	
 	void vc_init(enum vc_type, const char *, long extra_parm);
 

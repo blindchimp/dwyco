@@ -1180,7 +1180,7 @@ doslambda(VCArglist *a)
 }
 
 vc
-dofunmeta(vc v)
+dofunmeta(vc& v)
 {
 	return v.funmeta();
 }

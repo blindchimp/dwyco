@@ -13,7 +13,7 @@
 // globals for now.
 
 vc dosetdynamic(vc);
-vc dofunmeta(vc);
+vc dofunmeta(vc &);
 vc do_exploded_funcall(vc, vc);
 vc dotype(vc);
 vc dotype2(vc);
