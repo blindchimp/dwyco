@@ -1,0 +1,5 @@
+lbind(f openfile(/dev/stdin rb))
+while(t prog(
+	lbind(a readatoms(<f>))
+	printl(<a>)
+))

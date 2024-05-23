@@ -46,7 +46,7 @@
 //static char Rcsid[] = "$Header: /e/linux/home/dwight/repo/vc/rcs/vclhsys.cpp 1.45 1999/03/17 14:57:04 dwight Exp $";
 
 vc
-vclh_getenv(vc name)
+vclh_getenv(vc& name)
 {
 	if(name.type() != VC_STRING)
 		USER_BOMB("first arg to getenv must be string", vcnil);
@@ -57,7 +57,7 @@ vclh_getenv(vc name)
 }
 
 vc
-vclh_putenv(vc name, vc value)
+vclh_putenv(vc& name, vc& value)
 {
     const char *put;
 	
@@ -83,7 +83,7 @@ vclh_putenv(vc name, vc value)
 }
 
 vc
-vclh_dir2map(vc dir)
+vclh_dir2map(vc& dir)
 {
 #ifdef _MSC_VER
 	USER_BOMB("sorry, msvc version doesn't support dir2map yet", vcnil);
@@ -105,7 +105,7 @@ vclh_dir2map(vc dir)
 }
 
 vc
-vclh_file_remove(vc file)
+vclh_file_remove(vc& file)
 {
 	if(file.type() != VC_STRING)
 		USER_BOMB("first arg to remove must be string filename", vcnil);
@@ -115,7 +115,7 @@ vclh_file_remove(vc file)
 }
 
 vc
-vclh_file_exists(vc file)
+vclh_file_exists(vc& file)
 {
 	if(file.type() != VC_STRING)
 		USER_BOMB("first arg to exists must be string filename", vcnil);
@@ -129,7 +129,7 @@ vclh_file_exists(vc file)
 }
 
 vc
-vclh_file_access(vc file, vc how)
+vclh_file_access(vc& file, vc& how)
 {
 	if(file.type() != VC_STRING)
 		USER_BOMB("first arg to access must be string filename", vcnil);
@@ -154,7 +154,7 @@ vclh_file_access(vc file, vc how)
 // on windows, i have no idea about the detailed properties of
 // the operation.
 vc
-vclh_file_rename(vc from, vc to)
+vclh_file_rename(vc& from, vc& to)
 {
 	if(from.type() != VC_STRING)
 		USER_BOMB("first arg to rename must be string filename", vcnil);
@@ -166,7 +166,7 @@ vclh_file_rename(vc from, vc to)
 }
 
 vc
-vclh_file_size(vc file)
+vclh_file_size(vc& file)
 {
 	if(file.type() != VC_STRING)
 		USER_BOMB("first arg to size must be string filename", vcnil);
@@ -178,7 +178,7 @@ vclh_file_size(vc file)
 }
 
 vc
-vclh_file_stat(vc file)
+vclh_file_stat(vc& file)
 {
 	if(file.type() != VC_STRING)
 		USER_BOMB("first arg to size must be string filename", vcnil);
@@ -206,7 +206,7 @@ vclh_file_stat(vc file)
 }
 
 vc
-vclh_strftime(vc time, vc format)
+vclh_strftime(vc& time, vc& format)
 {
 	if(time.type() != VC_INT)
 		USER_BOMB("first arg to strftime must be integer time", vcnil);
@@ -226,7 +226,7 @@ vclh_strftime(vc time, vc format)
 }
 
 vc
-vclh_strftime_hp(vc format)
+vclh_strftime_hp(vc& format)
 {
 #ifdef UNIX
 	if(format.type() != VC_STRING)
@@ -295,7 +295,7 @@ vclh_time_hp2(void)
 
 
 vc
-vclh_system(vc cmd)
+vclh_system(vc& cmd)
 {
 #ifdef DWYCO_IOS
 	return vcnil;
@@ -311,7 +311,7 @@ vclh_system(vc cmd)
 #if defined(_Windows) && !defined(__WIN32__)
 
 vc
-vclh_sleep(vc seconds)
+vclh_sleep(vc& seconds)
 {
 	if(seconds.type() != VC_INT)
 		USER_BOMB("first arg to sleep must be integer number of seconds", vcnil);
@@ -334,7 +334,7 @@ vclh_sleep(vc seconds)
 }
 #else
 vc
-vclh_sleep(vc seconds)
+vclh_sleep(vc& seconds)
 {
 	if(seconds.type() != VC_INT)
 		USER_BOMB("first arg to sleep must be integer number of seconds", vcnil);
@@ -469,7 +469,7 @@ vclh_clean_zombies2(VCArglist *al)
 }
 
 vc
-vclh_alarm(vc sec)
+vclh_alarm(vc& sec)
 {
 #ifndef __WIN32__
 	if(sec.type() != VC_INT)
@@ -483,7 +483,7 @@ vclh_alarm(vc sec)
 }
 
 vc
-vclh_kill(vc pid, vc sig)
+vclh_kill(vc& pid, vc& sig)
 {
 #ifndef __WIN32__
 	if(pid.type() != VC_INT || sig.type() != VC_INT)
