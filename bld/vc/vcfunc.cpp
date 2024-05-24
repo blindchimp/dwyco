@@ -133,7 +133,7 @@ vc_func::operator()(VCArglist *al) const
 {
 	do_function_initialize(al);
 	do_arg_setup(al);
-	vc retval = ((vc_func *)this)->do_function_call(al);
+    vc retval = do_function_call(al);
 	do_function_finalize(al);
 	return retval;
 }
@@ -159,7 +159,7 @@ vc_func::do_arg_setup(VCArglist *) const
 }
 
 vc
-vc_func::do_function_call(VCArglist *, int) 
+vc_func::do_function_call(VCArglist *, int) const
 {
 	oopanic("unimp funcall");
 	return vcnil;

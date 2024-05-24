@@ -77,7 +77,7 @@ subtimeval(struct timeval& t1, struct timeval& t0)
 #endif
 
 vc
-vc_cfunc::do_function_call(VCArglist *a, int) 
+vc_cfunc::do_function_call(VCArglist *a, int) const
 {
 #ifdef VCDBG
 	if(break_on(BREAK_CALL))

@@ -37,7 +37,7 @@ protected:
 	~vc_fundef();
 	
 	virtual void do_arg_setup(VCArglist *) const;
-	virtual vc do_function_call(VCArglist *, int suppress_break = 0) ;
+    virtual vc do_function_call(VCArglist *, int suppress_break = 0) const;
 
 private:
 	vc fundef;

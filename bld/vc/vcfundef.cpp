@@ -192,7 +192,7 @@ subtimeval(struct timeval& t1, struct timeval& t0)
 #endif
 
 vc
-vc_fundef::do_function_call(VCArglist *, int suppress_break) 
+vc_fundef::do_function_call(VCArglist *, int suppress_break) const
 {
 
 	// note: args are set up,
