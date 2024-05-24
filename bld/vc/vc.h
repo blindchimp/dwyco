@@ -169,6 +169,7 @@ template<class T> class DwVec;
 //typedef DwVec<vc> VCArglist;
 #include "dwsvec.h"
 typedef DwSVec<vc> VCArglist;
+typedef DwSVec<vcy> VCArgHolder;
 
 #ifndef NO_VCEVAL
 #include "vcfext.h"
@@ -204,7 +205,7 @@ class vcy
 {
 public:
     vc_default *rep;
-    operator vc();
+    explicit operator vc() const;
     void *operator new(size_t, vcy *v) {return v;}
     void *operator new(size_t s) {return ::operator new(s);}
 };
@@ -495,6 +496,7 @@ decl_rel(str)
 
 	notvirtual vc force_eval() const ;
 	notvirtual vc eval() const ;
+    notvirtual vcy evalarg() const;
 
 	notvirtual void stringrep(VcIO o) const ;
 
@@ -527,6 +529,13 @@ decl_rel(str)
 #undef notvirtual
 };
 
+inline
+vcy::operator vc() const
+{
+    vc v;
+    v.rep = rep;
+    return v;
+}
 #ifndef VC_DBG_ENVELOPE
 #include "vcdeflt.h"
 #include "vcnil.h"

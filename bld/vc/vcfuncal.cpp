@@ -325,7 +325,7 @@ vc_funcall::eval() const
 	int n = arglist.num_elems();
 
     //VCArglist al(n, 0, 1, 8, 0, 1);
-    VCArglist al;
+    VCArgHolder al;
     al.set_size(n);
 
 #ifdef VCDBG
@@ -349,7 +349,7 @@ vc_funcall::eval() const
 			dbg(argnum) = i;
             _dbg.cur_idx = i;
 #endif
-            al.append(arglist[i].eval());
+            al.append(arglist[i].evalarg());
 			if(Vcmap->dbg_backout_in_progress())
 			{
 				dbg_print(f, i);

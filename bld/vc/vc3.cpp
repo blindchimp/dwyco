@@ -363,6 +363,25 @@ vc::eval() const
 #endif
 }
 
+vcy
+vc::evalarg() const
+{
+#ifdef NO_VCEVAL
+    oopanic("eval2");
+#else
+#ifdef VCDBG
+    VcDebugNode *n = VcDbgInfo.get();
+    if(n->src_list)
+    {
+        (*n->src_list)[n->cur_idx].print();
+    }
+#endif
+    if(is_quoted())
+        return *this;
+    return rep->evalarg();
+#endif
+}
+
 void
 vc::stringrep(VcIO o) const {rep->stringrep(o);}
 
