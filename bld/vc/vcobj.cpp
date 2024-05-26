@@ -69,7 +69,8 @@ VcObjectDbgNode::printOn(VcIO os)
 		os << "<<erroneous dbg state>> ";
 	}
 	os << "object generated from factory \"";
-	obj->factory.get_special().printOn(os);
+    vc noconst = obj->factory_name;
+    noconst.printOn(os);
 	os << "\"\n";
 	os << "Attempting to ";
 	switch(find_state)
