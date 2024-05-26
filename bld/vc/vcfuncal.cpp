@@ -363,7 +363,7 @@ vc_funcall::eval() const
 	dbg(info) = "Calling function";
 #endif
 
-	vc ret = f(&al);
+    vcy ret = dynamic_cast<vc_func *>(f.rep)->internal_call(&al);
 
 #ifdef VCDBG
 	dbg(info) = "After function return";
@@ -372,10 +372,10 @@ vc_funcall::eval() const
 
 	if(Vcmap->dbg_backout_in_progress())
 	{
-		dbg_print(f, &al);
+        //dbg_print(f, &al);
 		return vcnil;
 	}
-	return ret;
+    return vc(ret);
 }
 
 void

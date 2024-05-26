@@ -45,6 +45,8 @@ protected:
     virtual vc do_function_call(VCArglist *, int = 0) const;
 	virtual void do_function_finalize(VCArglist *) const;
 
+    virtual vcy internal_call(VCArgHolder *) const {oopanic("no internal call");}
+
 private:
 	void init_rest(int);
 	vc_func(const vc& nm, int v = VC_FUNC_NORMAL);
