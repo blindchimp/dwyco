@@ -105,10 +105,10 @@ VcObjectDbgNode::printOn(VcIO os)
 }
 #endif
 
-vc_object::vc_object(vc_factory_def *fac, VC_FACTORY_MAP *mems)
+vc_object::vc_object(const vc& fac_name, VC_FACTORY_MAP *mems) :
+    factory_name(fac_name),
+    members(mems)
 {
-	factory.attach(fac);
-	members = mems;
 	mutant = 0;
 }
 
@@ -293,7 +293,8 @@ vc_object::printOn(VcIO os)
 {
 	VC_FACTORY_MAP_ITER i(members);
 	os << "object(factory: ";
-	factory.get_special().printOn(os); 
+    vc noconst = factory_name;
+    noconst.printOn(os);
 	if(mutant)
 		os << " (mutant)";
 	os << "\n";
