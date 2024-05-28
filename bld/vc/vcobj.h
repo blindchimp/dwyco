@@ -38,11 +38,13 @@ public:
 	int mutant;
 
 private:
-    const vc& factory_name;
+    vc factory_name;
 	VC_FACTORY_MAP *members;
 	vc base_obj;
+#ifdef LH_OBJ_FORWARDS
 	VC_FORWARD_LIST forwards;
 	VC_FORWARD_LIST delegates;
+#endif
 
 
 };
