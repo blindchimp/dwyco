@@ -56,6 +56,7 @@ private:
 	void dbg_print(const vc&, VCArglist *) const;
 	
 	vc eval() const;
+    vcy evalarg() const;
 
 	virtual vc_default *do_copy() const {
 		vc_funcall *v = new vc_funcall(*this);

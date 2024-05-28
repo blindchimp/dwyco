@@ -240,6 +240,58 @@ vc_fundef::do_function_call(VCArglist *, int suppress_break) const
 	return ret;
 }
 
+vcy
+vc_fundef::internal_call(VCArgHolder *a) const
+{
+    if(!is_construct)
+        Vcmap->open_ctx();
+    int n_formal_args = bindargs->num_elems();
+    int n_call_args = a->num_elems();
+    if(varadic && n_call_args < n_formal_args)
+    {
+        VcError << "warning: varadic " << (is_construct ? "construct" : "function")
+            <<  " \"";
+        vc a = name;
+        a.print(VcError);
+        VcError << "\" called with fewer arguments than definition, "
+            "unspec'ed args lbinded to nil\n";
+    }
+    if(!varadic && n_call_args != n_formal_args)
+    {
+        VcError << "warning: non-varadic " <<
+            (is_construct ? "construct" : "function") <<  " \"";
+        vc a = name;
+        a.print(VcError);
+        VcError << "\" called with " <<
+            ((n_call_args < n_formal_args) ?
+                "fewer args than expected, unspec'ed args lbinded to nil." :
+                "more args than expected, extra args ignored.") << "\n";
+    }
+
+    for(int i = 0; i < n_formal_args; ++i)
+    {
+        Vcmap->local_add((*bindargs)[i], (i >= n_call_args) ? vcnil : vc((*a)[i]));
+    }
+    if(varadic)
+    {
+        // bundle up the trailing args into a special variable
+        // and lbind this into the function context.
+        vc trailing(VC_VECTOR);
+        int i;
+        int j;
+        for(i = n_formal_args, j = 0; i < n_call_args; ++i, ++j)
+            trailing[j] = vc((*a)[i]);
+        Vcmap->local_add("__lh_varargs", trailing);
+    }
+
+    vc ret = fundef.force_eval();
+    if(Vcmap->ret_in_progress())
+        ret = Vcmap->retval();
+    if(!is_construct)
+        Vcmap->close_ctx();
+    return vcy(ret);
+}
+
 
 vc
 vc_fundef::funmeta() const

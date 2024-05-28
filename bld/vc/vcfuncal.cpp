@@ -246,9 +246,14 @@ vc_funcall::flush_cache()
 	*cached_fun = vcnil;
 }
 
-
 vc
 vc_funcall::eval() const
+{
+    return vc(evalarg());
+}
+
+vcy
+vc_funcall::evalarg() const
 {
 
 #ifdef VCDBG
@@ -363,7 +368,7 @@ vc_funcall::eval() const
 	dbg(info) = "Calling function";
 #endif
 
-    vcy ret = dynamic_cast<vc_func *>(f.rep)->internal_call(&al);
+    vcy ret = static_cast<vc_func *>(f.rep)->internal_call(&al);
 
 #ifdef VCDBG
 	dbg(info) = "After function return";
@@ -375,7 +380,7 @@ vc_funcall::eval() const
         //dbg_print(f, &al);
 		return vcnil;
 	}
-    return vc(ret);
+    return ret;
 }
 
 void

@@ -38,6 +38,7 @@ protected:
 	
 	virtual void do_arg_setup(VCArglist *) const;
     virtual vc do_function_call(VCArglist *, int suppress_break = 0) const;
+    virtual vcy internal_call(VCArgHolder *) const;
 
 private:
 	vc fundef;

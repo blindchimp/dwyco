@@ -147,6 +147,50 @@ vc_cfunc::do_function_call(VCArglist *a, int) const
     return ret;
 }
 
+vcy
+vc_cfunc::internal_call(VCArgHolder *al) const
+{
+    // this doesn't make a lot of sense, but just for testing, we'll do this here
+    VCArglist aa;
+    VCArglist *a = &aa;
+    int n = al->num_elems();
+    aa.set_size(n);
+    for(int i = 0; i < n; ++i)
+    {
+        aa.append(vc((*al)[i]));
+    }
+    if(varadic)
+    {
+        return (*funcpv)(a);
+    }
+    vc ret;
+    switch(dwmax(a->num_elems(), (long)nargs))
+    {
+    case 0:
+        ret =  (*funcp0)();
+        break;
+    case 1:
+        ret =  (*funcp1)((*a)[0]);
+        break;
+    case 2:
+        ret =  (*funcp2)((*a)[0], (*a)[1]);
+        break;
+    case 3:
+        ret =  (*funcp3)((*a)[0], (*a)[1], (*a)[2]);
+        break;
+    case 4:
+        ret =  (*funcp4)((*a)[0], (*a)[1], (*a)[2], (*a)[3]);
+        break;
+    case 5:
+        ret =  (*funcp5)((*a)[0], (*a)[1], (*a)[2], (*a)[3], (*a)[4]);
+        break;
+    default:
+        oopanic("arg overflow");
+        /*NOTREACHED*/
+    }
+    return ret;
+}
+
 #if 0
 // note: this was a quick hack to output all the decls
 // for bound c funcs. i didn't want to have to type them all
