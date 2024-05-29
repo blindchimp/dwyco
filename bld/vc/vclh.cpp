@@ -560,7 +560,7 @@ dostring(VCArglist *a)
 	DwGrowingString g(cnt);
 	for(long i = 0; i < cnt; ++i)
 	{
-		vc v = (*a)[i];
+        const vc& v = (*a)[i];
 		switch(v.type())
 		{
 		case VC_INT:
@@ -614,7 +614,7 @@ dovectorsize(VCArglist *va)
 	{
 		USER_BOMB("vector constructor must have at least 1 arg", vcnil);
 	}
-	vc v = (*va)[0];
+    const vc& v = (*va)[0];
 	if(v.type() != VC_INT)
 	{
 		USER_BOMB("initial vector size must be an integer", vcnil);
@@ -1712,7 +1712,7 @@ doif(VCArglist *a)
     auto c = VcDbgInfo.get();
     c->cur_idx = 0;
 #endif
-	vc cond = ((*a)[0]).eval();
+    const vc& cond = ((*a)[0]).eval();
     CHECK_ANY_BO(vcnil);
     vc ret;
 	// note: no need to check_bo after these evals
@@ -1749,7 +1749,7 @@ docand(VCArglist *a)
 #ifdef VCDBG
         c->cur_idx = i;
 #endif
-		vc ret = ((*a)[i]).eval();
+        const vc& ret = ((*a)[i]).eval();
 		CHECK_ANY_BO(vcnil);
 		if(ret.is_nil())
 			return vcnil;

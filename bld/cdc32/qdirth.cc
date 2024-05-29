@@ -36,6 +36,7 @@ extern int Chat_id;
 
 namespace dwyco {
 DwListA<QckDone> Waitq;
+DwListA<QckDone> PWaitq;
 DwListA<vc> Response_q;
 int ReqType::Serial;
 
@@ -228,6 +229,44 @@ dirth_simulate_error_response(const QckDone& q)
     }
 }
 
+static
+int
+find_in_q(const vc& v, DwListA<QckDone>& waitq)
+{
+    int ret = 0;
+    waitq.rewind();
+    while(!waitq.eol())
+    {
+        const QckDone *wp;
+        wp = waitq.peek_ptr();
+        GRTLOG("wq %s", (char *)wp->type, 0);
+        if(wp->type.name == v[0][0] && wp->type.serial == (int)v[0][1])
+        {
+            QckDone q = *wp;
+            if(q.permanent == QckDone::TRANSIENT)
+                waitq.remove();
+            // note: as long as you don't reference the waitq after this
+            // it is safe for callbacks from "done" to call more commands
+            // that might q more commands
+            q.done(v);
+            if(q.time_qed != -1)
+            {
+                if(time(0) - q.time_qed > 15)
+                {
+                    Enable_timeout = 0;
+                }
+                else
+                    Enable_timeout = 1;
+            }
+
+            ret = 1;
+            break;
+        }
+        waitq.forward();
+    }
+    return ret;
+}
+
 int
 dirth_poll_response()
 {
@@ -245,36 +284,10 @@ dirth_poll_response()
             //oopanic("debug proto fail");
             continue;
         }
-        Waitq.rewind();
-        while(!Waitq.eol())
-        {
-            const QckDone *wp;
-            wp = Waitq.peek_ptr();
-            GRTLOG("wq %s", (char *)wp->type, 0);
-            if(wp->type.name == v[0][0] && wp->type.serial == (int)v[0][1])
-            {
-                QckDone q = *wp;
-                if(q.permanent == QckDone::TRANSIENT)
-                    Waitq.remove();
-                // note: as long as you don't reference the Waitq after this
-                // it is safe for callbacks from "done" to call more commands
-                // that might q more commands
-                q.done(v);
-                if(q.time_qed != -1)
-                {
-                    if(time(0) - q.time_qed > 15)
-                    {
-                        Enable_timeout = 0;
-                    }
-                    else
-                        Enable_timeout = 1;
-                }
-
-                ret = 1;
-                break;
-            }
-            Waitq.forward();
-        }
+        if(find_in_q(v, Waitq))
+            ret = 1;
+        else if(find_in_q(v, PWaitq))
+            ret = 1;
     }
     return ret;
 }

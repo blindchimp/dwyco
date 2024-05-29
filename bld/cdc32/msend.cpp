@@ -21,7 +21,7 @@ namespace dwyco {
 
 static
 void
-qs_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, vc ruid)
+qs_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, const vc& ruid)
 {
     // avoid multiple start messages for one "round" of send attempts
     if(status == SE_MSG_SEND_START)
@@ -66,7 +66,7 @@ send_via_server_int(const DwString& qfn, int inhibit_encryption, int no_group, i
 
 static
 void
-ds_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, vc ruid)
+ds_signal_bounce(enum dwyco_sys_event status, const DwString& qfn, const vc& ruid)
 {
     if(status == SE_MSG_SEND_SUCCESS ||
             status == SE_MSG_SEND_START ||
@@ -218,7 +218,7 @@ send_best_way(const DwString& qfn, vc ruid)
 // message as well so it is never sent.
 static
 void
-delete_message(enum dwyco_sys_event, const DwString& qfn, vc)
+delete_message(enum dwyco_sys_event, const DwString& qfn, const vc&)
 {
     // note: on windows, we may not be able to delete a message if it is
     // still open. this is likely to happen more with attachments, so

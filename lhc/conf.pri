@@ -1,6 +1,6 @@
 LH_INTERPRETER=1
 
-linux-*:DEFINES += LINUX
+linux-*:DEFINES += LINUX CACHE_LOOKUPS
 linux-g++*|macx-g++*: QMAKE_CXX=ccache g++
 linux-clang-*|macx-clang-*: QMAKE_CXX=ccache clang++
 macx-*:DEFINES += LINUX MACOSX
