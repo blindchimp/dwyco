@@ -200,6 +200,7 @@ QckMsg dirth_get_setup_session_key_cmd(vc id, vc sf_material, QckDone& d);
 vc generate_mac_msg(vc);
 
 extern DwListA<QckDone> Waitq;
+extern DwListA<QckDone> PWaitq;
 extern DwListA<vc> Response_q;
 //extern int Serial;
 }

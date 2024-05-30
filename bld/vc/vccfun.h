@@ -50,7 +50,7 @@ ctor_decl(VCFUNCP,5)
 	vc eval() const ;
 
 	virtual vc_default *do_copy() const ;
-	virtual vc do_function_call(VCArglist *, int = 0) ;
+    virtual vc do_function_call(VCArglist *, int = 0) const;
 	virtual void do_arg_setup(VCArglist *) const;
 
 public:
