@@ -173,11 +173,11 @@ typedef DwSVec<vc> VCArglist;
 #include "vcfext.h"
 class VcLexer;
 typedef vc (*VCFUNCP0)();
-typedef vc (*VCFUNCP1)(vc);
-typedef vc (*VCFUNCP2)(vc, vc);
-typedef vc (*VCFUNCP3)(vc, vc, vc);
-typedef vc (*VCFUNCP4)(vc, vc, vc, vc);
-typedef vc (*VCFUNCP5)(vc, vc, vc, vc, vc);
+typedef vc (*VCFUNCP1)(vc&);
+typedef vc (*VCFUNCP2)(vc&, vc&);
+typedef vc (*VCFUNCP3)(vc&, vc&, vc&);
+typedef vc (*VCFUNCP4)(vc&, vc&, vc&, vc&);
+typedef vc (*VCFUNCP5)(vc&, vc&, vc&, vc&, vc&);
 typedef vc (*VCFUNCPv)(VCArglist *);
 typedef vc (*VCFUNCPVP)(void *);
 

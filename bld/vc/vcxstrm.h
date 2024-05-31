@@ -47,7 +47,7 @@ friend vc lh_bf_xfer_enc(vc);
 friend vc vclh_bf_xfer_enc_ctx(vc, vc);
 friend vc vclh_compress_xfer(vc, vc);
 friend vc vclh_serialize(vc&);
-friend vc serialize(vc&);
+friend vc serialize(vc);
 friend int deserialize(vc, vc&);
 friend vc vclh_encdec_xfer_enc_ctx(vc, vc);
 friend class vc_uvsocket;

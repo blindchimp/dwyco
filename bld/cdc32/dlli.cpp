@@ -1593,7 +1593,8 @@ dwyco_init()
     // the user can override by calling this itself.
     dwyco_enable_activity_checking(1, Inactivity_time, internal_activity);
     init_gj();
-    if(vclh_file_exists(newfn(MSG_IDX_DB).c_str()).is_nil())
+    vc nfn = newfn(MSG_IDX_DB).c_str();
+    if(vclh_file_exists(nfn).is_nil())
         reindex_possible_changes();
 #ifdef DWYCO_SYNC_DEBUG
     reindex_possible_changes();
@@ -1679,7 +1680,8 @@ dwyco_bg_init()
     if((gm = getenv("kk27g")) != 0)
         KKG = gm;
     init_gj();
-    if(vclh_file_exists(newfn(MSG_IDX_DB).c_str()).is_nil())
+    vc nfn = newfn(MSG_IDX_DB).c_str();
+    if(vclh_file_exists(nfn).is_nil())
         reindex_possible_changes();
 #ifdef DWYCO_SYNC_DEBUG
     reindex_possible_changes();

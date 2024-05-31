@@ -29,7 +29,7 @@ vc get_local_ignore();
 
 int send_to_secondary(vc ip, vc port, QckMsg m, QckDone d);
 vc to_hex(vc);
-vc vclh_serialize(vc);
+vc vclh_serialize(vc&);
 vc vclh_sha(vc);
 extern int Database_id;
 extern int Chat_id;
