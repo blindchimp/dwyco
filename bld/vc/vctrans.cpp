@@ -59,7 +59,8 @@ DwString
 buf_to_c_string(const char *buf, int len)
 {
     // return something that will get buffer past c lexer intact
-    DwString ret((const char *)vclh_to_hex(vc(VC_BSTRING, buf, len)));
+    vc b(VC_BSTRING, buf, len);
+    DwString ret((const char *)vclh_to_hex(b));
     for(int i = 0; i < len; ++i)
     {
         ret.insert(i * 4, "\\x");
