@@ -55,7 +55,6 @@ private:
 
 public:
 	vc_decomposable();
-	~vc_decomposable() {}
 
 	void bomb_op() const;
 
@@ -342,7 +341,6 @@ public:
 
 	vc_tree() : tree(vcnil) {}
 	vc_tree(const vc_tree& v) : tree(v.tree) {}
-	~vc_tree() {}
 
 	enum vc_type type() const { return VC_TREE; }
 

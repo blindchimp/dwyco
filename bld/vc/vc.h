@@ -538,6 +538,15 @@ vc::is_nil() const
     return rep == vc_nil::vcnilrep;
 }
 
+inline
+int
+vc::is_quoted() const
+{
+    //if(rep->quoted != rep->is_quoted())
+    //    oopanic("huh");
+    return rep->quoted;
+}
+
 
 inline
 vc::vc(const vc& v)

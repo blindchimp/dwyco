@@ -13,6 +13,7 @@
 
 vc_socket::vc_socket()
 {
+    quoted = 1;
 	emode = EXCEPTIONS;
 	smode = VC_BLOCKING;
 	err_callback = 0;

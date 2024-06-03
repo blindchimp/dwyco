@@ -110,6 +110,7 @@ vc_object::vc_object(const vc& fac_name, VC_FACTORY_MAP *mems) :
     factory_name(fac_name),
     members(mems)
 {
+    quoted = 1;
 	mutant = 0;
 }
 
