@@ -1714,24 +1714,25 @@ doif(VCArglist *a)
 #endif
     const vc& cond = ((*a)[0]).eval();
     CHECK_ANY_BO(vcnil);
-    vc ret;
+    //vc ret;
 	// note: no need to check_bo after these evals
     // since it is going to return immediately anyway.
+    // note: modified to get some copy-elision
 	if(!cond.is_nil())
 	{
 #ifdef VCDBG
         c->cur_idx = 1;
 #endif
-		ret = ((*a)[1]).eval();
+        return ((*a)[1]).eval();
 	}
 	else if(a->num_elems() == 3)
 	{
 #ifdef VCDBG
         c->cur_idx = 2;
 #endif
-		ret = ((*a)[2]).eval();
+        return ((*a)[2]).eval();
 	}
-    return ret;
+    return vcnil;
 }
 
 vc
@@ -1955,14 +1956,14 @@ doforeach(vc var, vc set, vc expr)
     auto c = VcDbgInfo.get();
     c->cur_idx = 0;
 #endif
-	vc b = var.eval();
+    const vc& b = var.eval();
     CHECK_ANY_BO(vcnil);
 	if(b.type() != VC_STRING)
 		USER_BOMB("foreach variable must be string", vcnil);
 #ifdef VCDBG
     c->cur_idx = 1;
 #endif
-    vc a = set.eval();
+    const vc& a = set.eval();
     CHECK_ANY_BO(vcnil);
 #ifdef VCDBG
     c->cur_idx = 2;

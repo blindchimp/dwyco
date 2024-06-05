@@ -518,6 +518,16 @@ decl_rel(str)
 #undef notvirtual
 };
 
+#include "vcdeflt.h"
+inline
+int
+vc::is_quoted() const
+{
+    //if(rep->quoted != rep->is_quoted())
+    //    oopanic("huh");
+    return rep->quoted;
+}
+
 #ifndef VC_DBG_ENVELOPE
 #include "vcdeflt.h"
 #include "vcnil.h"
@@ -538,14 +548,7 @@ vc::is_nil() const
     return rep == vc_nil::vcnilrep;
 }
 
-inline
-int
-vc::is_quoted() const
-{
-    //if(rep->quoted != rep->is_quoted())
-    //    oopanic("huh");
-    return rep->quoted;
-}
+
 
 
 inline
