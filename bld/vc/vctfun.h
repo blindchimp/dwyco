@@ -17,7 +17,7 @@ public:
 
 protected:
 
-    virtual vc do_function_call(VCArglist *, int suppress_break = 0);
+    virtual vc do_function_call(VCArglist *, int suppress_break = 0) const;
 
 private:
     vc tfundef;

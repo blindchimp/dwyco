@@ -1,0 +1,81 @@
+set-dynamic-binding(nil)
+gbind(N 1000)
+gbind(Iter 50)
+gbind(Limit2 4.0)
+gbind(stdout openfile(foo.pnm wb))
+compile(mandel `
+	lbind(N1 sub(<N> 1))
+	lbind(B 8)
+	lbind(B1 sub(<B> 1))
+	fputs(<stdout> {P4 |\n| <N> | | <N> |\n|})
+	for(r 0 <N1> prog(
+
+		lbind(c 0)
+		lbind(byte-acc 0)
+		lbind(bit-num 0)
+		while(lt(<c> <N>) prog(
+			lbind(zi vector2(<B> 0.))
+			lbind(zr vector2(<B> 0.))
+			lbind(cr vector2(<B>))
+			lbind(ci vector2(<B>))
+			lbind(tr vector2(<B> 0.))
+			lbind(ti vector2(<B> 0.))
+			for(i 0 <B1> prog(
+				putidx(<cr> <i> sub(div(mul(2. add(<c> <i>)) <N>) 1.5))
+				putidx(<ci> <i> sub(div(mul(2. <r>) <N>) 1.0))
+			))
+			;printl(<cr>)
+			;printl(<ci>)
+
+			lbind(ms vector2(<B> 0))
+			lbind(iter <Iter>)
+			while(gt(<iter> 0) prog(
+				lbind(zi add(mul(2. mul(<zr> <zi>)) <ci>))
+				lbind(zr add(sub(<tr> <ti>) <cr>))
+				lbind(tr mul(<zr> <zr>))
+				lbind(ti mul(<zi> <zi>))
+				;printl(<iter>)
+				;printl(<tr>)
+				;printl(<ti>)
+				lbind(ta add(<tr> <ti>))
+				;printl(<ta>)
+				lbind(i 0)
+				lbind(all 0)
+				foreach(v <ta> prog(
+					if(gt(<v> <Limit2>) prog(
+						lbind(all add(<all> 1))
+						putidx(<ms> <i> 1)
+					))
+					lbind(i add(<i> 1))
+				))
+				if(eq(<all> <B>) break(1))
+				lbind(iter sub(<iter> 1))
+			))
+			foreach(b <ms> prog(
+				;print(<b>)
+				lbind(byte-acc bor(blsl(<byte-acc> 1) <b>))
+			))
+			lbind(bit-num add(<bit-num> <B>))
+			if(eq(<bit-num> 8) prog(
+				fputs(<stdout> string(<byte-acc>))
+				lbind(byte-acc 0)
+				lbind(bit-num 0)
+			)
+			; else
+			prog(
+			))
+			;printl(<ms>)
+			lbind(c add(<c> <B>))
+		))
+		if(ne(mod(<N> 8) 0) prog(
+			lbind(byte-acc blsl(<byte-acc> sub(8 mod(<N> 8))))
+			fputs(<stdout> string(<byte-acc>))
+			lbind(byte-acc 0)
+			lbind(bit-num 0)
+		))
+		;printl(||)
+	))
+	
+')
+
+mandel()
