@@ -1,4 +1,4 @@
-add_compile_definitions(VCCFG_FILE DWYCO_APP_NICENAME="Phoo")
+add_compile_definitions(VCCFG_FILE)
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 # Determine the host platform
 if(UNIX)
