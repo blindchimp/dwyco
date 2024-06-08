@@ -23,11 +23,11 @@ include_directories(
 if(UNIX)
     # Linux specific configurations
     set(LIBS
-        ${CMAKE_CURRENT_SOURCE_DIR}/../bld/vc/libvc.a
-        ${CMAKE_CURRENT_SOURCE_DIR}/../bld/dwcls/libdwcls.a
-        ${CMAKE_CURRENT_SOURCE_DIR}/../bld/jenkins/libjenkins.a
-        ${CMAKE_CURRENT_SOURCE_DIR}/../bld/kazlib/libkazlib.a
-        ${CMAKE_CURRENT_SOURCE_DIR}/../bld/crypto5/libcrypto5.a
+        ${CMAKE_CURRENT_BINARY_DIR}/../bld/vc/libvc.a
+        ${CMAKE_CURRENT_BINARY_DIR}/../bld/dwcls/libdwcls.a
+        ${CMAKE_CURRENT_BINARY_DIR}/../bld/jenkins/libjenkins.a
+        ${CMAKE_CURRENT_BINARY_DIR}/../bld/kazlib/libkazlib.a
+        ${CMAKE_CURRENT_BINARY_DIR}/../bld/crypto5/libcrypto5.a
     )
 
     set(PRE_TARGETDEPS
