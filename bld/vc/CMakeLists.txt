@@ -82,6 +82,7 @@ add_library(vc STATIC
     vcudh.cpp 
     reobj.cpp 
     vctsock.cpp
+    vclhnet.cpp
 )
 
 target_compile_definitions(vc PRIVATE VC_LIBRARY)

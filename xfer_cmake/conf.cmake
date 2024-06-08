@@ -1,4 +1,4 @@
-add_compile_definitions(VCCFG_FILE)
+add_compile_definitions(-DVCCFG_FILE)
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 # Determine the host platform
 if(UNIX)

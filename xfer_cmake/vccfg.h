@@ -8,5 +8,7 @@
 // and even if there was, i think the license prohibits it.)
 #define DWYCO_NO_VCREGEX
 // remove LH eval loop and some hacks related to that
+#ifndef NO_VCEVAL
 #define NO_VCEVAL
+#endif
 #undef LHOBJ
