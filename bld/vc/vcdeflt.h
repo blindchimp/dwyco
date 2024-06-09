@@ -26,7 +26,7 @@ class vc_default
 friend class vc;
 friend class vcxstream;
 
-protected:
+public:
     long ref_count;
     int quoted;
     vc_default(int quot);
