@@ -14,10 +14,15 @@ target_sources(xfer PRIVATE xfer.cc)
 # Set the include directories
 include_directories(
     ${VCCFG_COMP}
-    /home/dwight/syncdev/keys
     ${CMAKE_CURRENT_SOURCE_DIR}/../bld/dwcls
     ${CMAKE_CURRENT_SOURCE_DIR}/../bld/vc
 )
+
+if(APPLE)
+    include_directories(/Users/dwight/syncdev/keys)
+else()
+    include_directories( /home/dwight/syncdev/keys)
+endif()
 
 # Handle platform-specific configurations
 if(UNIX)
