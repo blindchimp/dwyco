@@ -128,6 +128,7 @@ target_link_libraries(cdcx PRIVATE
     ${D}/v4lcap/libv4lcap.a
     -lv4l2
     -ldl
+    -pthread
 
     Qt${QT_VERSION_MAJOR}::Widgets
 Qt${QT_VERSION_MAJOR}::Network

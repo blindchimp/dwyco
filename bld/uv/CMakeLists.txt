@@ -123,6 +123,6 @@ add_library(uv STATIC
 	${SOURCES}
 )
 
-
+target_compile_definitions(uv PUBLIC _GNU_SOURCE _POSIX_C_SOURCE=200112)
 #install(TARGETS gsm DESTINATION lib)
 
