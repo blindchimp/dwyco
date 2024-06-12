@@ -106,6 +106,7 @@ else()
     endif()
 endif()
 set(D ${CMAKE_CURRENT_BINARY_DIR}/../bld)
+if(UNIX AND NOT APPLE)
 target_link_libraries(cdcx PRIVATE
     ${D}/cdc32/libcdc32.a
     ${D}/vc/libvc.a
@@ -137,6 +138,42 @@ Qt5::WebEngineCore
     Qt5::WebEngineWidgets
 
 )
+else()
+    add_compile_definitions(DWYCO_FORCE_DESKTOP_VGQT)
+    find_library(CF CoreFoundation)
+    find_library(COCOA Cocoa)
+    target_link_libraries(cdcx PRIVATE
+        ${D}/cdc32/libcdc32.a
+        ${D}/vc/libvc.a
+        ${D}/crypto5/libcrypto5.a
+        ${D}/dwcls/libdwcls.a
+        ${D}/gsm/libgsm.a
+        ${D}/kazlib/libkazlib.a
+        ${D}/ppm/libppm.a
+        ${D}/pgm/libpgm.a
+        ${D}/pbm/libpbm.a
+        ${D}/zlib/libz.a
+        ${D}/theora.1.2.x/libtheora.1.2.x.a
+        ${D}/speex/libspeex.a
+        ${D}/vorbis112/libvorbis112.a
+        ${D}/ogg/libogg.a
+        ${D}/jenkins/libjenkins.a
+        ${D}/qtdrv/libqtdrv.a
+        ${D}/uv/libuv.a
+        ${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
+        -ldl
+        -pthread
+        ${CF}
+        ${COCOA}
+
+        Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Network
+    Qt${QT_VERSION_MAJOR}::Multimedia
+    Qt5::WebEngineCore
+        Qt5::WebEngineWidgets
+
+    )
+endif()
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

@@ -6,7 +6,9 @@ project(uv LANGUAGES C)
 include_directories(src include include/uv-private)
 if(UNIX)
 add_compile_definitions(_LARGEFILE_SOURCE _FILE_OFFSET_BITS=64)
+if(NOT APPLE)
 add_compile_definitions(_GNU_SOURCE _POSIX_C_SOURCE=200112)
+endif()
 if(ANDROID)
     add_compile_definitions(LINUX ANDROID)
 endif()
@@ -123,6 +125,6 @@ add_library(uv STATIC
 	${SOURCES}
 )
 
-target_compile_definitions(uv PUBLIC _GNU_SOURCE _POSIX_C_SOURCE=200112)
+#target_compile_definitions(uv PUBLIC _GNU_SOURCE _POSIX_C_SOURCE=200112)
 #install(TARGETS gsm DESTINATION lib)
 
