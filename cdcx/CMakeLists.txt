@@ -20,7 +20,8 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngine)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui WebEngineWidgets)
 add_compile_definitions(
 UNICODE
-LINUX VCCFG_FILE
+LINUX
+VCCFG_FILE
 CDCX_RELEASE
 CDCX_MAC_USE_DEFAULT_LOCATION
 WHATBOX=BrowseBox
@@ -31,6 +32,7 @@ DWYCO_QT5
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
+DWYCO_NICE_VERSION=\"3.107\"
 )
 include_directories(
 ./dllwin ../bld/qtdrv .
@@ -103,10 +105,33 @@ else()
         )
     endif()
 endif()
-
+set(D ${CMAKE_CURRENT_BINARY_DIR}/../bld)
 target_link_libraries(cdcx PRIVATE
+    ${D}/cdc32/libcdc32.a
+    ${D}/vc/libvc.a
+    ${D}/crypto5/libcrypto5.a
+    ${D}/dwcls/libdwcls.a
+    ${D}/gsm/libgsm.a
+    ${D}/kazlib/libkazlib.a
+    ${D}/ppm/libppm.a
+    ${D}/pgm/libpgm.a
+    ${D}/pbm/libpbm.a
+    ${D}/zlib/libz.a
+    ${D}/theora.1.2.x/libtheora.1.2.x.a
+    ${D}/speex/libspeex.a
+    ${D}/vorbis112/libvorbis112.a
+    ${D}/ogg/libogg.a
+    ${D}/jenkins/libjenkins.a
+    ${D}/qtdrv/libqtdrv.a
+    ${D}/uv/libuv.a
+    ${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
+    ${D}/v4lcap/libv4lcap.a
+    -lv4l2
+    -ldl
+
     Qt${QT_VERSION_MAJOR}::Widgets
 Qt${QT_VERSION_MAJOR}::Network
+Qt${QT_VERSION_MAJOR}::Multimedia
 Qt5::WebEngineCore
     Qt5::WebEngineWidgets
 
