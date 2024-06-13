@@ -82,6 +82,7 @@ set(PROJECT_SOURCES
             prfview.ui 
             simplehtmlbox.ui
             icons.qrc
+            mactards.mm
 
 )
 
@@ -142,7 +143,7 @@ Qt5::WebEngineCore
 
 )
 else()
-    add_compile_definitions(DWYCO_FORCE_DESKTOP_VGQT)
+    add_compile_definitions(MAC_CLIENT DWYCO_FORCE_DESKTOP_VGQT)
     find_library(CF CoreFoundation)
     find_library(COCOA Cocoa)
     target_link_libraries(cdcx PRIVATE
@@ -182,12 +183,13 @@ endif()
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
 if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.cdcx)
+  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER dwyco.cdc-x)
 endif()
 set_target_properties(cdcx PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.mac
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
