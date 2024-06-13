@@ -142,7 +142,7 @@ Qt5::WebEngineCore
     Qt5::WebEngineWidgets
 
 )
-else()
+elseif(APPLE)
     add_compile_definitions(MAC_CLIENT DWYCO_FORCE_DESKTOP_VGQT)
     find_library(CF CoreFoundation)
     find_library(COCOA Cocoa)
@@ -177,6 +177,36 @@ else()
         Qt5::WebEngineWidgets
 
     )
+elseif(WIN32)
+
+add_compile_definitions(  MINGW_CLIENT VCCFG_FILE _CRT_SECURE_NO_WARNINGS __WIN32__ _Windows WIN32)
+add_compile_definitions(CDCCORE_STATIC)
+# ssl either isn't available or doesn't work, so we just
+# compile out parts that aren't available in qt4
+add_compile_definitions(CDCX_NO_SSL)
+
+target_link_libraries(
+	cdcx PRIVATE
+${D}/cdc32/cdc32.lib 
+${D}/vc/vc.lib 
+${D}/crypto5/crypto5.lib 
+${D}/dwcls/dwcls.lib 
+${D}/gsm/gsm.lib 
+${D}/kazlib/kazlib.lib 
+${D}/ppm/ppm.lib 
+${D}/pgm/pgm.lib 
+${D}/pbm/pbm.lib 
+#${D}/zlib/zlibstatic.lib 
+${D}/jenkins/jenkins.lib 
+${D}/vorbis112/vorbis.lib 
+${D}/theora.1.2.x/theora.1.2.x.lib 
+${D}/speex/speex.lib 
+${D}/ogg/ogg.lib 
+${D}/miniupnp/miniupnp-master/miniupnpc/miniupnpc.lib 
+${CMAKE_CURRENT_SOURCE_DIR}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib 
+winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
+)
+
 endif()
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
