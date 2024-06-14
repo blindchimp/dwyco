@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(cdcx VERSION 0.1 LANGUAGES CXX)
+set(DWYCO_CONFDIR cdcx_cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
+include(subdirs.cmake)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -109,7 +112,7 @@ else()
         )
     endif()
 endif()
-set(D ${CMAKE_CURRENT_BINARY_DIR}/../bld)
+set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
 if(UNIX AND NOT APPLE)
 target_link_libraries(cdcx PRIVATE
     ${D}/cdc32/libcdc32.a
