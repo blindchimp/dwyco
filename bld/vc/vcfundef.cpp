@@ -192,7 +192,7 @@ subtimeval(struct timeval& t1, struct timeval& t0)
 #endif
 
 vc
-vc_fundef::do_function_call(VCArglist *, int suppress_break) 
+vc_fundef::do_function_call(VCArglist *, int suppress_break) const
 {
 
 	// note: args are set up,
@@ -215,8 +215,10 @@ vc_fundef::do_function_call(VCArglist *, int suppress_break)
 #endif
 	vc ret = fundef.force_eval();
 	if(Vcmap->ret_in_progress())
-		ret = Vcmap->retval();
-#ifdef LHPROF
+#ifndef LHPROF
+        return Vcmap->retval();
+#else //LHPROF
+        ret = Vcmap->retval();
 	struct rusage r1;
 	getrusage(RUSAGE_SELF, &r1);
 	struct timeval t1;

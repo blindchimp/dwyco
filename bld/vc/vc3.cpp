@@ -38,8 +38,8 @@ int
 vc::is_varadic() const {return rep->is_varadic();}
 int
 vc::must_eval_args() const { return rep->must_eval_args(); }
-int
-vc::is_quoted() const {return rep->is_quoted();}
+//int
+//vc::is_quoted() const {return rep->is_quoted();}
 int
 vc::is_map_inhibited() const { return rep->is_map_inhibited();}
 void

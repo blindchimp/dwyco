@@ -40,7 +40,7 @@ private:
 #endif
 
 protected:
-	int quoted;
+    //int quoted;
 	int dont_map;
 	VC_ERR_CALLBACK err_callback;
 

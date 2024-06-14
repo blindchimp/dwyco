@@ -1,4 +1,4 @@
-
+#ifdef MAC_CLIENT
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -156,3 +156,4 @@ void EstablishRunDirectory()
     //dwyco_set_cmd_path(cdc_x_RunDir.c_str(), cdc_x_RunDir.length());
 
 }
+#endif

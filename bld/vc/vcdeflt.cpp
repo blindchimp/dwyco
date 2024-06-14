@@ -69,9 +69,10 @@ clear_objmap()
 
 #endif
 
-vc_default::vc_default()
+vc_default::vc_default(int quot)
 {
 	ref_count = 1;
+    quoted = quot;
 #ifdef VCDBG
 	break_tag = BREAK_NONE;
 #endif
@@ -87,13 +88,13 @@ vc_default::vc_default()
 // we don't want to allow objects to be
 // copied verbatim because that would leave
 // the reference count messed up.
-vc_default::vc_default(const vc_default&)
-{
-	ref_count = 1;
-#ifdef VCDBG
-	break_tag = BREAK_NONE;
-#endif
-}
+//vc_default::vc_default(const vc_default&)
+//{
+//	ref_count = 1;
+//#ifdef VCDBG
+//	break_tag = BREAK_NONE;
+//#endif
+//}
 
 #ifdef OBJTRACK
 vc_default::~vc_default()

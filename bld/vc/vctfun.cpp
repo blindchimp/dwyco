@@ -60,7 +60,7 @@ vc_trans_fundef::vc_trans_fundef(vc nm, VCArglist *a, vc fdef, int sty)
 }
 
 vc
-vc_trans_fundef::do_function_call(VCArglist *, int suppress_break)
+vc_trans_fundef::do_function_call(VCArglist *, int suppress_break) const
 {
     vc (*p)();
     p = (vc (*)())(long)tfundef;

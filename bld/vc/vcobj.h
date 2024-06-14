@@ -23,7 +23,7 @@ friend class vc_factory_def;
 public:
 	//vc_object(vc_factory_def *fac, VC_FACTORY_MAP *mems, const vc& base,
 	//	const VC_FORWARD_LIST& forw, const VC_FORWARD_LIST& dele);
-	vc_object(vc_factory_def *fac, VC_FACTORY_MAP *mems);
+    vc_object(const vc& fac_name, VC_FACTORY_MAP *mems);
 	~vc_object();
 
 	vc_default *do_copy() const {oopanic("copy object"); return 0;}
@@ -38,11 +38,13 @@ public:
 	int mutant;
 
 private:
-	vc factory;
+    vc factory_name;
 	VC_FACTORY_MAP *members;
 	vc base_obj;
+#ifdef LH_OBJ_FORWARDS
 	VC_FORWARD_LIST forwards;
 	VC_FORWARD_LIST delegates;
+#endif
 
 
 };
