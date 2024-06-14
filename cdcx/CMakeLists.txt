@@ -85,9 +85,11 @@ set(PROJECT_SOURCES
             prfview.ui 
             simplehtmlbox.ui
             icons.qrc
-            mactards.mm
 
 )
+if(APPLE)
+    list(APPEND PROJECT_SOURCES mactards.mm)
+endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(cdcx
