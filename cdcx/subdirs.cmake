@@ -18,9 +18,9 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/vc ${CMAKE_CURRENT_BINARY_DIR}/bld/v
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/miniupnp/miniupnp-master/miniupnpc ${CMAKE_CURRENT_BINARY_DIR}/bld/miniupnp/miniupnp-master/miniupnpc)
 
 if(UNIX AND NOT APPLE)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qtdrv ${CMAKE_CURRENT_BINARY_DIR}/bld/qtdrv)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qt6drv ${CMAKE_CURRENT_BINARY_DIR}/bld/qt6drv)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/v4lcap ${CMAKE_CURRENT_BINARY_DIR}/bld/v4lcap)
 endif()
 if(APPLE)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qtdrv ${CMAKE_CURRENT_BINARY_DIR}/bld/qtdrv)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qt6drv ${CMAKE_CURRENT_BINARY_DIR}/bld/qt6drv)
 endif()

@@ -11,17 +11,17 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-find_package(Qt5 REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Network)
+find_package(QT NAMES Qt6  REQUIRED COMPONENTS Network)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Multimedia)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS WebEngine)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS WebEngine)
 #find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngine)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui WebEngineWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui WebEngineWidgets StateMachine)
 
 add_compile_definitions(
 UNICODE
@@ -34,6 +34,7 @@ WHATBOX=BrowseBox
 #NO_BUILDTIME
 CDCX_WEBKIT
 DWYCO_QT5
+DWYCO_QT6
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
@@ -133,7 +134,7 @@ target_link_libraries(cdcx PRIVATE
     ${D}/vorbis112/libvorbis112.a
     ${D}/ogg/libogg.a
     ${D}/jenkins/libjenkins.a
-    ${D}/qtdrv/libqtdrv.a
+    ${D}/qt6drv/libqt6drv.a
     ${D}/uv/libuv.a
     ${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
     ${D}/v4lcap/libv4lcap.a
@@ -144,8 +145,9 @@ target_link_libraries(cdcx PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
 Qt${QT_VERSION_MAJOR}::Network
 Qt${QT_VERSION_MAJOR}::Multimedia
-Qt5::WebEngineCore
-    Qt5::WebEngineWidgets
+Qt6::WebEngineCore
+    Qt6::WebEngineWidgets
+    Qt6::StateMachine
 
 )
 elseif(APPLE)
@@ -168,7 +170,7 @@ elseif(APPLE)
         ${D}/vorbis112/libvorbis112.a
         ${D}/ogg/libogg.a
         ${D}/jenkins/libjenkins.a
-        ${D}/qtdrv/libqtdrv.a
+        ${D}/qt6drv/libqt6drv.a
         ${D}/uv/libuv.a
         ${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
         -ldl
@@ -179,8 +181,8 @@ elseif(APPLE)
         Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::Multimedia
-    Qt5::WebEngineCore
-        Qt5::WebEngineWidgets
+    Qt6::WebEngineCore
+        Qt6::WebEngineWidgets
 
     )
 elseif(WIN32)
