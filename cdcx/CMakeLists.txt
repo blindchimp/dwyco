@@ -110,6 +110,7 @@ else()
             ${PROJECT_SOURCES}
 
         )
+    add_dependencies(cdcx cdc32)
     endif()
 endif()
 set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
