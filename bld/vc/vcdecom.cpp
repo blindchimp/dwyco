@@ -27,6 +27,7 @@ long vc_decomposable::SN;	// serial number for id's of decomposables
 static vc bogus;
 vc_decomposable::vc_decomposable()
 {
+    quoted = 1;
 #ifdef DWYCO_VC_THREADED
     SN_mutex.lock();
 #endif

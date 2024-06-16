@@ -560,7 +560,7 @@ dostring(VCArglist *a)
 	DwGrowingString g(cnt);
 	for(long i = 0; i < cnt; ++i)
 	{
-		vc v = (*a)[i];
+        const vc& v = (*a)[i];
 		switch(v.type())
 		{
 		case VC_INT:
@@ -614,7 +614,7 @@ dovectorsize(VCArglist *va)
 	{
 		USER_BOMB("vector constructor must have at least 1 arg", vcnil);
 	}
-	vc v = (*va)[0];
+    const vc& v = (*va)[0];
 	if(v.type() != VC_INT)
 	{
 		USER_BOMB("initial vector size must be an integer", vcnil);
@@ -1712,26 +1712,27 @@ doif(VCArglist *a)
     auto c = VcDbgInfo.get();
     c->cur_idx = 0;
 #endif
-	vc cond = ((*a)[0]).eval();
+    const vc& cond = ((*a)[0]).eval();
     CHECK_ANY_BO(vcnil);
-    vc ret;
+    //vc ret;
 	// note: no need to check_bo after these evals
     // since it is going to return immediately anyway.
+    // note: modified to get some copy-elision
 	if(!cond.is_nil())
 	{
 #ifdef VCDBG
         c->cur_idx = 1;
 #endif
-		ret = ((*a)[1]).eval();
+        return ((*a)[1]).eval();
 	}
 	else if(a->num_elems() == 3)
 	{
 #ifdef VCDBG
         c->cur_idx = 2;
 #endif
-		ret = ((*a)[2]).eval();
+        return ((*a)[2]).eval();
 	}
-    return ret;
+    return vcnil;
 }
 
 vc
@@ -1749,7 +1750,7 @@ docand(VCArglist *a)
 #ifdef VCDBG
         c->cur_idx = i;
 #endif
-		vc ret = ((*a)[i]).eval();
+        const vc& ret = ((*a)[i]).eval();
 		CHECK_ANY_BO(vcnil);
 		if(ret.is_nil())
 			return vcnil;
@@ -1955,14 +1956,14 @@ doforeach(vc var, vc set, vc expr)
     auto c = VcDbgInfo.get();
     c->cur_idx = 0;
 #endif
-	vc b = var.eval();
+    const vc& b = var.eval();
     CHECK_ANY_BO(vcnil);
 	if(b.type() != VC_STRING)
 		USER_BOMB("foreach variable must be string", vcnil);
 #ifdef VCDBG
     c->cur_idx = 1;
 #endif
-    vc a = set.eval();
+    const vc& a = set.eval();
     CHECK_ANY_BO(vcnil);
 #ifdef VCDBG
     c->cur_idx = 2;

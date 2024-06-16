@@ -2531,11 +2531,11 @@ load_users_from_index(int recent, int *total_out)
     }
 }
 
-
+static
 vc
-uid_to_short_text(vc id)
+uid_to_short_text(const vc& uid)
 {
-    vc u = to_hex(id);
+    vc u = to_hex(uid);
     DwString chop((const char *)u);
     chop.remove(8);
     DwString ret;
@@ -2545,23 +2545,23 @@ uid_to_short_text(vc id)
 }
 
 vc
-uid_to_handle(vc uid, int *cant_resolve_now)
+uid_to_handle(const vc& uid, int *cant_resolve_now)
 {
-    vc ai = make_best_local_info(uid, cant_resolve_now);
+    const vc& ai = make_best_local_info(uid, cant_resolve_now);
     return ai[0];
 }
 
 vc
-uid_to_handle2(vc uid)
+uid_to_handle2(const vc& uid)
 {
-    vc ai = make_best_local_info(uid, 0);
+    const vc& ai = make_best_local_info(uid, 0);
     return ai[0];
 }
 
 vc
-uid_to_location(vc id, int *cant_resolve_now)
+uid_to_location(const vc& uid, int *cant_resolve_now)
 {
-    vc ai = make_best_local_info(id, cant_resolve_now);
+    const vc& ai = make_best_local_info(uid, cant_resolve_now);
     return ai[1];
 }
 
@@ -3860,7 +3860,7 @@ recover_inprogress()
 
 static
 void
-reset_qsend(enum dwyco_sys_event cmd, const DwString& qid, vc recip_uid)
+reset_qsend(enum dwyco_sys_event cmd, const DwString& qid, const vc& recip_uid)
 {
     if(cmd == SE_MSG_SEND_START)
         return;
@@ -3869,7 +3869,7 @@ reset_qsend(enum dwyco_sys_event cmd, const DwString& qid, vc recip_uid)
 
 static
 void
-reset_qsend_special(enum dwyco_sys_event cmd, const DwString& qid, vc recip_uid)
+reset_qsend_special(enum dwyco_sys_event cmd, const DwString& qid, const vc& recip_uid)
 {
     if(cmd == SE_MSG_SEND_START)
         return;
@@ -4331,7 +4331,7 @@ power_clean_safe()
 }
 
 void
-append_forwarded_text(DwString& s, vc body)
+append_forwarded_text(DwString& s, const vc& body)
 {
     if(body.type() != VC_VECTOR)
     {
@@ -4339,19 +4339,21 @@ append_forwarded_text(DwString& s, vc body)
         return;
     }
     int cant_resolve;
+    const vc& from = body[QM_BODY_FROM];
     if(body[QM_BODY_FORWARDED_BODY].is_nil())
     {
 
         s += "Created by ";
         vc handle;
-        handle = uid_to_handle(body[QM_BODY_FROM], &cant_resolve);
-        if(cant_resolve)
-            handle = " ";
+        handle = uid_to_handle(from, &cant_resolve);
+//        if(cant_resolve)
+//            handle = " ";
         s += (const char *)handle;
         if(cant_resolve)
         {
+            fetch_info(from);
             s += " (";
-            s += (const char *)uid_to_short_text(body[QM_BODY_FROM]);
+            s += (const char *)uid_to_short_text(from);
             s += ")";
         }
         s += "\r\n";
@@ -4360,14 +4362,15 @@ append_forwarded_text(DwString& s, vc body)
     }
     s += "from ";
     vc handle;
-    handle = uid_to_handle(body[QM_BODY_FROM], &cant_resolve);
-    if(cant_resolve)
-        handle = " ";
+    handle = uid_to_handle(from, &cant_resolve);
+//    if(cant_resolve)
+//        handle = " ";
     s += (const char *)handle;
     if(cant_resolve)
     {
+        fetch_info(from);
         s += " (";
-        s += (const char *)uid_to_short_text(body[QM_BODY_FROM]);
+        s += (const char *)uid_to_short_text(from);
         s += ")";
     }
     s += "\r\n";

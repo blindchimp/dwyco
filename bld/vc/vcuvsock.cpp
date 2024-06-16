@@ -108,6 +108,7 @@ vc_uvsocket::vc_uvsocket() :
     //putq(this),
     readx(this, 0, 128 * 1024, vcxstream::CONTINUOUS_READAHEAD)
 {
+    quoted = 1;
 	listening = 0;
 	tcp_handle = 0;
     tmpbuf = 0;

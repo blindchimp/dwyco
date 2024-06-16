@@ -59,7 +59,7 @@ void remove_in_progress(const DwString& fn);
 void remove_from_outbox(const DwString&);
 void recover_inprogress();
 void del_msg(vc vec, vc item);
-vc uid_to_handle2(vc uid);
+vc uid_to_handle2(const vc &uid);
 vc find_cur_msg(vc msg_id);
 void got_ignore(vc m, void *, vc, ValidPtr);
 void add_ignore(vc uid);
@@ -89,7 +89,7 @@ int empty_trash();
 
 vc uid_to_dir(const vc &uid);
 vc dir_to_uid(DwString s);
-void append_forwarded_text(DwString& s, vc body);
+void append_forwarded_text(DwString& s, const vc &body);
 void append_forwarded_bodies(vc v, vc body);
 vc get_body_text(vc body);
 int verify_authentication(vc text, vc uid, vc att_filename, vc datevec, vc no_forward, vc mac);

@@ -42,7 +42,7 @@ protected:
 
 	virtual void do_function_initialize(VCArglist *) const;
 	virtual void do_arg_setup(VCArglist *) const;
-	virtual vc do_function_call(VCArglist *, int = 0) ;
+    virtual vc do_function_call(VCArglist *, int = 0) const;
 	virtual void do_function_finalize(VCArglist *) const;
 
 private:

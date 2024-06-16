@@ -11,7 +11,7 @@ macx-*: DEFINES +=  MACOSX LH_WRAP_SQLITE3
 
 #QMAKE_CFLAGS += -g -pg #-fsanitize=address
 #QMAKE_CXXFLAGS += -g -pg #-fsanitize=address
-QMAKE_CXXFLAGS += -std=c++11
+QMAKE_CXXFLAGS += -std=c++17
 #QMAKE_LFLAGS += -g -pg
 #DEFINES += VC_DBG_ENVELOPE
 QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-reorder

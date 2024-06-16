@@ -8,7 +8,6 @@
 */
 #include "vc.h"
 #include "vcsfile.h"
-#include "vcmap.h"
 //static char Rcsid[] = "$Header: g:/dwight/repo/vc/rcs/vcsfile.cpp 1.48 1998/08/01 04:47:34 dwight Exp $";
 
 
@@ -134,7 +133,7 @@ vc_stdio_file::fgets(void *buf, long len)
 
 	if(ret == 0)
     {
-    	if(!feof(handle))
+        if(!feof(handle) || ferror(handle))
 			VCFILE_RAISEABORT("A:READ_OPERATION_FAILED", filename, vcnil, 0);
 		return 0;
 	}
@@ -158,7 +157,7 @@ vc_stdio_file::read(void *buf, long& len)
     //len = 1;
 	ret = fread(buf, 1, len, handle);
 
-	if(ret != len && !feof(handle))
+    if((ret != len && !feof(handle)) || ferror(handle))
     {
 		VCFILE_RAISEABORT("A:READ_OPERATION_FAILED", filename, vcnil, 0);
 	}
@@ -181,7 +180,7 @@ vc_stdio_file::write(const void *buf, long& len)
 
 	ret = fwrite(buf, 1, len, handle);
 
-	if(ret != len)
+    if(ret != len || ferror(handle))
     {
 		VCFILE_RAISEABORT("A:WRITE_OPERATION_FAILED", filename, vcnil, 0);
 	}

@@ -180,7 +180,7 @@ DwBag<T>::del2(dwinternal_pos<T> p)
     return;
 }
 
-// warning: this version of replaces *all* the existing keys
+// warning: this version replaces *all* the existing keys
 //
 template<class T>
 int

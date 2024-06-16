@@ -383,6 +383,7 @@ vc_tsocket::vc_tsocket() :
     readx(this, 0, 0, vcxstream::CONTINUOUS_READAHEAD),
     send_lock(send_mutex, std::defer_lock)
 {
+    quoted = 1;
     listening = 0;
     syntax = 0;
     state = 0;

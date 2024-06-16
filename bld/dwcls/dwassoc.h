@@ -28,10 +28,10 @@ private:
 
 public:
     DwAssocImp(const R& v, const D& k);
-    DwAssocImp() {}
-    DwAssocImp(const DwAssocImp&);
-    DwAssocImp& operator=(const DwAssocImp&);
-    ~DwAssocImp() {}
+    DwAssocImp() = default;
+//    DwAssocImp(const DwAssocImp&);
+//    DwAssocImp& operator=(const DwAssocImp&);
+//    ~DwAssocImp() {}
     int operator==(const DwAssocImp &a) const {
         return key == a.key;
     }
@@ -62,24 +62,24 @@ DwAssocImp<R,D>::DwAssocImp(const R& v, const D& k)
 {
 }
 
-template<class R, class D>
-DwAssocImp<R,D>::DwAssocImp(const DwAssocImp<R,D>& c)
-    :
-    value(c.value),
-    key(c.key)
-{
-}
+//template<class R, class D>
+//DwAssocImp<R,D>::DwAssocImp(const DwAssocImp<R,D>& c)
+//    :
+//    value(c.value),
+//    key(c.key)
+//{
+//}
 
-template<class R, class D>
-DwAssocImp<R,D>&
-DwAssocImp<R,D>::operator=(const DwAssocImp<R,D>& c)
-{
-    if(this != &c)
-    {
-        value = c.value;
-        key = c.key;
-    }
-    return *this;
-}
+//template<class R, class D>
+//DwAssocImp<R,D>&
+//DwAssocImp<R,D>::operator=(const DwAssocImp<R,D>& c)
+//{
+//    if(this != &c)
+//    {
+//        value = c.value;
+//        key = c.key;
+//    }
+//    return *this;
+//}
 
 #endif

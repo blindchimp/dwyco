@@ -680,8 +680,8 @@ do_recvfile(vc sock)
     exit(0);
 }
 
-vc lh_socket_from_os_handle(vc, vc, vc);
-
+//vc lh_socket_from_os_handle(vc, vc, vc);
+#include "vclhnet.h"
 
 void
 recv_main(int sock)
