@@ -45,7 +45,7 @@ public:
 	static const vc Predestroyname;
 
 private:
-	virtual vc do_function_call(VCArglist *, int = 0) ;
+    virtual vc do_function_call(VCArglist *, int = 0) const;
 
 	VC_FACTORY_MAP *member_map;
 	vc base_expr;
@@ -53,7 +53,7 @@ private:
 	VC_FORWARD_LIST forwards;
 	VC_FORWARD_LIST delegates;
 #endif
-	long instance_count;
+    mutable long instance_count;
 };
 
 

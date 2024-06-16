@@ -168,10 +168,16 @@ vc_cvar::translate(VcIO o) const
         vc val = vc_list.get_first();
         if(val.type() == VC_STRING)
         {
+            // note: this won't make much difference except in really rare occasions
+            // (like with something like mandel.lh, where it is like 20% faster.) mainly
+            // because the lookup cache is flushed on *every* bind.
+            DwString tmpl("static vc %2() {static vc var = %1;\nreturn Vcmap->get(var);\n}\n");
+#ifdef LH_STATIC_RANGE_CACHE
             DwString tmpl("static vc %2() {static vc var = %1;\nstatic vc *range;static unsigned long cached_when;\n"
 "if(range && cached_when >= vc_cvar::Lookup_cache_counter) {return *range;}\n"
             "cached_when = vc_cvar::Lookup_cache_counter;\n"
 "return Vcmap->get2(var, range);\n}\n");
+#endif
             vc ourname = gensym();
             tmpl.arg(vc_to_c_vc(val), (const char *)ourname);
             o << tmpl.c_str();

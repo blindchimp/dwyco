@@ -59,9 +59,9 @@ bombvec(mod, "modulo");
 DwListA<vc_composite *> vc_composite::Comp_list;
 #endif
 
-vc_composite::vc_composite()
+vc_composite::vc_composite() : vc_default(0)
 {
-	quoted = 0;
+    //quoted = 0;
 	dont_map = 0;
 	visit = 0;
 #if 0

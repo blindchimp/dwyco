@@ -77,7 +77,7 @@ subtimeval(struct timeval& t1, struct timeval& t0)
 #endif
 
 vc
-vc_cfunc::do_function_call(VCArglist *a, int) 
+vc_cfunc::do_function_call(VCArglist *a, int) const
 {
 #ifdef VCDBG
 	if(break_on(BREAK_CALL))
@@ -91,7 +91,6 @@ vc_cfunc::do_function_call(VCArglist *a, int)
 	getrusage(RUSAGE_SELF, &r0);
 	struct timeval t0;
 	gettimeofday(&t0, 0);
-#endif
 	vc ret;
 	if(varadic)
 		ret = (*funcpv)(a);
@@ -123,7 +122,6 @@ vc_cfunc::do_function_call(VCArglist *a, int)
 			/*NOTREACHED*/
 		}
 	}
-#ifdef LHPROF
 	struct rusage r1;
 	getrusage(RUSAGE_SELF, &r1);
 	struct timeval t1;
@@ -143,8 +141,39 @@ vc_cfunc::do_function_call(VCArglist *a, int)
 	total_real_time += n;
 	total_real_time2 += n * n;
 	hist_real_time.add_sample(n);
-#endif
     return ret;
+#else
+    if(varadic)
+        return (*funcpv)(a);
+    else
+    {
+
+        switch(dwmax(a->num_elems(), (long)nargs))
+        {
+        case 0:
+            return (*funcp0)();
+            break;
+        case 1:
+            return (*funcp1)((*a)[0]);
+            break;
+        case 2:
+            return (*funcp2)((*a)[0], (*a)[1]);
+            break;
+        case 3:
+            return (*funcp3)((*a)[0], (*a)[1], (*a)[2]);
+            break;
+        case 4:
+            return (*funcp4)((*a)[0], (*a)[1], (*a)[2], (*a)[3]);
+            break;
+        case 5:
+            return (*funcp5)((*a)[0], (*a)[1], (*a)[2], (*a)[3], (*a)[4]);
+            break;
+        default:
+            oopanic("arg overflow");
+            /*NOTREACHED*/
+        }
+    }
+#endif
 }
 
 #if 0

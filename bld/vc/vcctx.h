@@ -23,6 +23,7 @@ class vcctx
 private:
 	DwVecP<functx> maps;
 	int ctx;
+    functx *cur_ctx;
 	
 	// exception handling
 	int exc_backout;
@@ -70,14 +71,14 @@ public:
 	void open_ctx(functx * = 0) ;
 	void close_ctx();
 
-	void set_retval(const vc& v) { maps[ctx]->set_retval(v); }
-    int ret_in_progress() const { return maps[ctx]->ret_in_progress(); }
-	vc retval() { return maps[ctx]->get_retval(); }
+	void set_retval(const vc& v) { cur_ctx->set_retval(v); }
+    int ret_in_progress() const { return cur_ctx->ret_in_progress(); }
+	vc retval() { return cur_ctx->get_retval(); }
 
-	void open_loop() {maps[ctx]->open_loop();}
-	void close_loop() {maps[ctx]->close_loop();}
-    int break_in_progress() const {return maps[ctx]->break_in_progress();}
-	void set_break_level(int n) {maps[ctx]->set_break_level(n);}
+	void open_loop() {cur_ctx->open_loop();}
+	void close_loop() {cur_ctx->close_loop();}
+    int break_in_progress() const {return cur_ctx->break_in_progress();}
+	void set_break_level(int n) {cur_ctx->set_break_level(n);}
 
     int unwind_in_progress() const {
 		return ret_in_progress() ||

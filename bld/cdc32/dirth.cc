@@ -437,21 +437,22 @@ init_dirth()
 {
     Waitq = DwListA<QckDone>();
     Response_q = DwListA<vc>();
-    Waitq.append(QckDone(got_sync, 0, vcnil, ValidPtr(0), "sync", QckDone::PERMANENT));
-    Waitq.append(QckDone(got_serv_r, 0, vcnil, ValidPtr(0), "serv_r", QckDone::PERMANENT));
-    Waitq.append(QckDone(got_inhibit, 0, vcnil, ValidPtr(0), "inhibit", QckDone::PERMANENT));
-    Waitq.append(QckDone(got_purge_outbox, 0, vcnil, ValidPtr(0), "purge_outbox", QckDone::PERMANENT));
+    PWaitq = DwListA<QckDone>();
+    PWaitq.append(QckDone(got_sync, 0, vcnil, ValidPtr(0), "sync", QckDone::PERMANENT));
+    PWaitq.append(QckDone(got_serv_r, 0, vcnil, ValidPtr(0), "serv_r", QckDone::PERMANENT));
+    PWaitq.append(QckDone(got_inhibit, 0, vcnil, ValidPtr(0), "inhibit", QckDone::PERMANENT));
+    PWaitq.append(QckDone(got_purge_outbox, 0, vcnil, ValidPtr(0), "purge_outbox", QckDone::PERMANENT));
     //void got_mailbox_full(vc m, void *, vc, ValidPtr);
     //Waitq.append(QckDone(got_mailbox_full, 0, vcnil, ValidPtr(0), "mailbox_full", QckDone::PERMANENT));
-    Waitq.append(QckDone(update_server_list, 0, vcnil, ValidPtr(0), "nsl", QckDone::PERMANENT));
-    Waitq.append(QckDone(ignoring_you_update, 0, vcnil, ValidPtr(0), "iy", QckDone::PERMANENT));
-    Waitq.append(QckDone(background_check_for_update_done, 0, vcnil, ValidPtr(0), "serv-check-update", QckDone::PERMANENT));
+    PWaitq.append(QckDone(update_server_list, 0, vcnil, ValidPtr(0), "nsl", QckDone::PERMANENT));
+    PWaitq.append(QckDone(ignoring_you_update, 0, vcnil, ValidPtr(0), "iy", QckDone::PERMANENT));
+    PWaitq.append(QckDone(background_check_for_update_done, 0, vcnil, ValidPtr(0), "serv-check-update", QckDone::PERMANENT));
 
-    Waitq.append(QckDone(async_pal, 0, vcnil, ValidPtr(0), "async-pal", QckDone::PERMANENT));
-    Waitq.append(QckDone(invalidate_profile, 0, vcnil, ValidPtr(0), "invalidate-profile", QckDone::PERMANENT));
-    Waitq.append(QckDone(reset_backups, 0, vcnil, ValidPtr(0), "reset-backups", QckDone::PERMANENT));
-    Waitq.append(QckDone(invalidate_group, 0, vcnil, ValidPtr(0), "invalidate-group", QckDone::PERMANENT));
-    Waitq.append(QckDone(update_attr, 0, vcnil, ValidPtr(0), "attr", QckDone::PERMANENT));
+    PWaitq.append(QckDone(async_pal, 0, vcnil, ValidPtr(0), "async-pal", QckDone::PERMANENT));
+    PWaitq.append(QckDone(invalidate_profile, 0, vcnil, ValidPtr(0), "invalidate-profile", QckDone::PERMANENT));
+    PWaitq.append(QckDone(reset_backups, 0, vcnil, ValidPtr(0), "reset-backups", QckDone::PERMANENT));
+    PWaitq.append(QckDone(invalidate_group, 0, vcnil, ValidPtr(0), "invalidate-group", QckDone::PERMANENT));
+    PWaitq.append(QckDone(update_attr, 0, vcnil, ValidPtr(0), "attr", QckDone::PERMANENT));
 
     //get the server list set up
     if(!load_info(Server_list, "servers2") || Server_list.type() != VC_VECTOR ||
