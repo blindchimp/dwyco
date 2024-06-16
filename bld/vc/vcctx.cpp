@@ -23,6 +23,7 @@ vcctx::vcctx() {
 	backout_ctx = 0;
 	dbg_backout = 0;
 	maps[0] = new functx(313);
+    cur_ctx = maps[0];
 }
 
 vcctx::~vcctx()
@@ -46,7 +47,7 @@ vcctx::open_ctx(functx *f)
 	
 #ifdef LHOBJ
 	if(ctx >= 0)
-		maps[ctx]->disable_obj_ctx();
+        cur_ctx->disable_obj_ctx();
 #endif
 	++ctx;
 	if(!f)
@@ -58,6 +59,7 @@ vcctx::open_ctx(functx *f)
 		// use the existing function context
 		// as a template
 	}
+    cur_ctx = maps[ctx];
 }
 
 void
@@ -72,50 +74,52 @@ vcctx::close_ctx()
 		// context being closed.
 		call_backouts_back_to(backout_handler);
     }
-	delete maps[ctx];
+    delete cur_ctx;
 	--ctx;
+    cur_ctx = maps[ctx];
 #ifdef LHOBJ
 	// re-enable the previous object context in case it was
 	// disabled on entry.
-	maps[ctx]->enable_obj_ctx();
+    cur_ctx->enable_obj_ctx();
 #endif
+
 }
 
 #ifdef LHOBJ
 void
 vcctx::open_obj_ctx(vc_object *o)
 {
-	maps[ctx]->open_obj_ctx(o);
+	cur_ctx->open_obj_ctx(o);
 }
 
 void
 vcctx::close_obj_ctx()
 {
-	maps[ctx]->close_obj_ctx();
+	cur_ctx->close_obj_ctx();
 }
 
 void
 vcctx::obj_bind(const vc& mem, const vc& val)
 {
-	maps[ctx]->obj_bind(mem, val);
+	cur_ctx->obj_bind(mem, val);
 }
 
 int
 vcctx::obj_contains(const vc& mem)
 {
-	return maps[ctx]->obj_contains(mem);
+	return cur_ctx->obj_contains(mem);
 }
 
 void
 vcctx::obj_remove(const vc& mem)
 {
-	maps[ctx]->obj_del(mem);
+	cur_ctx->obj_del(mem);
 }
 
 vc
 vcctx::obj_find(const vc& mem)
 {
-	return maps[ctx]->obj_find(mem);
+	return cur_ctx->obj_find(mem);
 }
 
 int
@@ -129,7 +133,7 @@ vcctx::is_base_init()
 void
 vcctx::set_base_init(int s)
 {
-	maps[ctx]->set_base_init(s);
+	cur_ctx->set_base_init(s);
 }
 
 #endif
@@ -146,7 +150,7 @@ vcctx::add(const vc& key, const vc& value)
 			return;
 		  }
 	}
-	maps[ctx]->add(key, value);
+	cur_ctx->add(key, value);
 }
 
 vc
@@ -359,22 +363,22 @@ vcctx::global_find(const vc& k) {
 
 void
 vcctx::local_add(const vc& k, const vc& val) {
-	maps[ctx]->add(k, val);
+	cur_ctx->add(k, val);
 }
 
 int
 vcctx::local_contains(const vc& v) {
-	return maps[ctx]->contains(v);
+	return cur_ctx->contains(v);
 }
 
 void
 vcctx::local_remove(const vc& k) {
-	maps[ctx]->del(k);
+	cur_ctx->del(k);
 }
 
 vc
 vcctx::local_find(const vc& k) {
-	return maps[ctx]->get(k);
+	return cur_ctx->get(k);
 }
 
 
@@ -383,17 +387,17 @@ int
 vcctx::backed_out_to(excfun *handler) {
 	if(!exc_backout) return 0;
 	return handler == backout_handler;
-	//return maps[ctx]->backed_out_to(handler);
+	//return cur_ctx->backed_out_to(handler);
 }
 
 excfun *
 vcctx::addhandler(const vc& pat, const vc& fun) {
-	return maps[ctx]->addhandler(pat, fun);
+	return cur_ctx->addhandler(pat, fun);
 }
 
 excfun *
 vcctx::add_instant_backout_handler(const vc& pat) {
-	return maps[ctx]->add_instant_backout_handler(pat);
+	return cur_ctx->add_instant_backout_handler(pat);
 }
 
 void
@@ -404,12 +408,12 @@ vcctx::add_default_handler(const vc& pat, const vc& fun) {
 
 void
 vcctx::drophandler(excfun *handler) {
-	maps[ctx]->drop(handler);
+	cur_ctx->drop(handler);
 }
 
 void
 vcctx::addbackout(const vc& expr) {
-	maps[ctx]->addbackout(expr);
+	cur_ctx->addbackout(expr);
 }
 
 void
@@ -423,7 +427,7 @@ vcctx::call_backouts_back_to(excfun *handler) {
 		oopanic("backing out while not in backout-mode?");
 	exc_backout = 0;
 	exc_doing_backouts = 1;
-	maps[ctx]->call_backouts_back_to(handler);
+	cur_ctx->call_backouts_back_to(handler);
 	exc_doing_backouts = 0;
 	exc_backout = 1;
 }

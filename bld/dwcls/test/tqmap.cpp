@@ -61,10 +61,64 @@ start_timer()
 }
 
 void
+perf0()
+{
+    Int map[10];
+    long n = 0;
+    Gen = 0;
+    srand(0);
+    for(int i = 0; i < 4; ++i)
+        map[i] = rand();
+    start_timer();
+    while(Gen == 0)
+    {
+        map[4 + (n % 4)] = 0;
+        n++;
+    }
+    printf("%ld\n", n / RUNTIME);
+}
+
+void
+perf0_1()
+{
+    Int map[10];
+    long n = 0;
+    Gen = 0;
+    for(int i = 0; i < 4; ++i)
+        map[i] = rand();
+    start_timer();
+    while(Gen == 0)
+    {
+        int m2[20];
+        m2[4] = 0;
+        n++;
+    }
+    printf("%ld\n", n / RUNTIME);
+}
+
+void
+perf0_2()
+{
+    Int map[10];
+    long n = 0;
+    Gen = 0;
+    for(int i = 0; i < 4; ++i)
+        map[i] = rand();
+    start_timer();
+    while(Gen == 0)
+    {
+        map[4 + n % 4] = 0;
+        n++;
+    }
+    printf("%ld\n", n / RUNTIME);
+}
+
+
+void
 perf1()
 {
     DwAMap<Int, Int> a(0, 0);
-    int n = 0;
+    long n = 0;
     Gen = 0;
     srand(0);
     for(int i = 0; i < 4; ++i)
@@ -75,14 +129,14 @@ perf1()
         a.add(n % 4,0);
         ++n;
     }
-    printf("%d\n", n / RUNTIME);
+    printf("%ld\n", n / RUNTIME);
 }
 
 void
 perf2()
 {
     //DwAMap<Int, Int> a(0, 0);
-    int n = 0;
+    long n = 0;
     Gen = 0;
     srand(0);
     //for(int i = 0; i < 4; ++i)
@@ -97,14 +151,14 @@ perf2()
 //        a.add(1, 0);
         ++n;
     }
-    printf("%d\n", n / RUNTIME);
+    printf("%ld\n", n / RUNTIME);
 }
 
 void
 perf3()
 {
     DwAMap<Int, Int> a(0, 0);
-    int n = 0;
+    long n = 0;
     Gen = 0;
     srand(0);
 //    for(int i = 0; i < 20; ++i)
@@ -120,14 +174,14 @@ perf3()
         a.get(n % 4);
         ++n;
     }
-    printf("%d\n", n / RUNTIME);
+    printf("%ld\n", n / RUNTIME);
 }
 
 void
 perf4()
 {
     DwQMapLazyC<Int, Int, 32> a;
-    int n = 0;
+    long  n = 0;
     Gen = 0;
     srand(0);
 //    for(int i = 0; i < 20; ++i)
@@ -143,14 +197,14 @@ perf4()
         a.get(n % 4);
         ++n;
     }
-    printf("%d\n", n / RUNTIME);
+    printf("%ld\n", n / RUNTIME);
 }
 
 void
 perf5()
 {
     DwQMap4<Int, Int, 32> a;
-    int n = 0;
+    long n = 0;
     Gen = 0;
     srand(0);
 //    for(int i = 0; i < 20; ++i)
@@ -166,7 +220,7 @@ perf5()
         a.get(n % 4);
         ++n;
     }
-    printf("%d\n", n / RUNTIME);
+    printf("%ld\n", n / RUNTIME);
 }
 
 
@@ -174,6 +228,9 @@ perf5()
 int
 main()
 {
+    //perf0();
+    perf0_1();
+    exit(0);
     perf3();
     perf4();
     perf5();

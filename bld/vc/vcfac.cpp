@@ -139,7 +139,7 @@ vc_factory_def::~vc_factory_def()
 }
 
 vc
-vc_factory_def::do_function_call(VCArglist *, int) 
+vc_factory_def::do_function_call(VCArglist *, int) const
 {
 
 #ifdef LHPROF
@@ -158,7 +158,7 @@ vc_factory_def::do_function_call(VCArglist *, int)
 	
 	// generate an uninitialized object 
 	// note: assume vc_object doesn't copy in new_map
-	vc_object *oret = new vc_object(this, new_map);
+    vc_object *oret = new vc_object(name, new_map);
 	
 	vc ret;
 	ret.redefine(oret);

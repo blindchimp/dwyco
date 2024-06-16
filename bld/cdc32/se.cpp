@@ -79,7 +79,7 @@ static int Se_cmd_to_api[] =
 };
 
 void
-se_emit(dwyco_sys_event cmd, vc uid)
+se_emit(dwyco_sys_event cmd, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -112,7 +112,7 @@ se_emit(dwyco_sys_event cmd, vc uid)
 }
 
 void
-se_emit_chat(dwyco_sys_event cmd, vc server_id)
+se_emit_chat(dwyco_sys_event cmd, const vc& server_id)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -125,7 +125,7 @@ se_emit_chat(dwyco_sys_event cmd, vc server_id)
 }
 
 void
-se_emit_msg(dwyco_sys_event cmd, const DwString& qid, vc uid)
+se_emit_msg(dwyco_sys_event cmd, const DwString& qid, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -137,7 +137,7 @@ se_emit_msg(dwyco_sys_event cmd, const DwString& qid, vc uid)
 }
 
 void
-se_emit_msg(dwyco_sys_event cmd, vc qid, vc uid)
+se_emit_msg(dwyco_sys_event cmd, const vc& qid, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = cmd;
@@ -149,7 +149,7 @@ se_emit_msg(dwyco_sys_event cmd, vc qid, vc uid)
 }
 
 void
-se_emit_msg_status(const DwString& qid, vc ruid, const DwString& msg, int percent)
+se_emit_msg_status(const DwString& qid, const vc& ruid, const DwString& msg, int percent)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_SEND_STATUS;
@@ -164,7 +164,7 @@ se_emit_msg_status(const DwString& qid, vc ruid, const DwString& msg, int percen
 }
 
 void
-se_emit_msg_progress(const DwString& mid, vc ruid, const DwString& msg, int percent)
+se_emit_msg_progress(const DwString& mid, const vc& ruid, const DwString& msg, int percent)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_DOWNLOAD_PROGRESS;
@@ -179,7 +179,7 @@ se_emit_msg_progress(const DwString& mid, vc ruid, const DwString& msg, int perc
 }
 
 void
-se_emit_msg_pull_ok(vc mid, vc uid)
+se_emit_msg_pull_ok(const vc& mid, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_PULL_OK;
@@ -191,7 +191,7 @@ se_emit_msg_pull_ok(vc mid, vc uid)
 }
 
 void
-se_emit_msg_tag_change(vc mid, vc uid)
+se_emit_msg_tag_change(const vc& mid, const vc& uid)
 {
     vc v(VC_VECTOR);
     v[0] = SE_MSG_TAG_CHANGE;
@@ -203,7 +203,7 @@ se_emit_msg_tag_change(vc mid, vc uid)
 }
 
 void
-se_emit_join(vc gname, int res)
+se_emit_join(const vc& gname, int res)
 {
     vc v(VC_VECTOR);
 
@@ -234,7 +234,7 @@ se_emit_uid_list_changed()
 }
 
 void
-se_emit_server_attr(vc name, vc val)
+se_emit_server_attr(const vc& name, const vc& val)
 {
     vc v(VC_VECTOR);
     v[0] = SE_SERVER_ATTR;

@@ -48,8 +48,9 @@ bombvec(div, "division");
 bombvec(mod, "modulo");
 #undef bombvec
 
-vc_atomic::vc_atomic()
+vc_atomic::vc_atomic() : vc_default(1)
 {
+    //quoted = 1;
 }
 
 int

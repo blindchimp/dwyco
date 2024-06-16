@@ -24,16 +24,19 @@ class vc_default
 : public vc
 {
 friend class vc;
-public:
-	long ref_count;
-	vc_default();
+friend class vcxstream;
 
-	vc_default(const vc_default&);
+public:
+    long ref_count;
+    int quoted;
+    vc_default(int quot);
+
+    vc_default(const vc_default&) = delete;
 #ifdef OBJTRACK
 	virtual ~vc_default();
 	int serial;
 #else
-	virtual ~vc_default() {}
+    virtual ~vc_default() = default;
 #endif
 
 	virtual vc_object *get_obj() const;
