@@ -616,11 +616,19 @@ dirth_send_ack_get(vc uid, vc mid, QckDone d)
 void
 dirth_send_ack_get2(vc uid, vc mid, QckDone d)
 {
-//    // NOTE: in all cases, if you are not in a group, deleting a message
-//    // means just delete it, so there is no need to do the group-based
-//    // filtering.
-//    if(!Current_alternate)
-//        return dirth_send_ack_get(uid, mid, d);
+   // NOTE: in all cases, if you are not in a group, acking a message
+    // means just delete it, so there is no need to do the group-based
+    // filtering.
+    // XXX note: i had this commented out for a long time, and it
+    // essentially made most messages never get deleted on the
+    // server. this is kinda wrong, but the system worked ok.
+    // this probably shouldn't be enforced solely on the client,
+    // the server can scan and remove files if they were acked
+    // by uid's are not in a group, or whose entire group
+    // membership have acked the messages (which may be never
+    // if they are directly synced with each other.)
+   if(!Current_alternate)
+        return dirth_send_ack_get(uid, mid, d);
 
     QckMsg m;
 
