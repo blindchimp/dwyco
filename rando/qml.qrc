@@ -28,7 +28,6 @@
         <file>Help.qml</file>
         <file>MapImage.qml</file>
         <file>GeoListView.qml</file>
-        <file>Migrate.qml</file>
         <file>Reindex.qml</file>
         <file>RestoreAutoBackup.qml</file>
     </qresource>

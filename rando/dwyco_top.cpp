@@ -922,7 +922,7 @@ DwycoCore::set_invisible_state(int s)
 {
     dwyco_set_invisible_state(s);
 }
-
+#if 0
 // if they installed externally, copy the files in to the local
 // app storage, and rename the data folder.
 // this should only need to be done once, and the process should be
@@ -987,6 +987,7 @@ DwycoCore::background_migrate()
     connect(q, SIGNAL(finished()), this, SIGNAL(migration_complete()));
     q->start();
 }
+#endif
 
 void
 DwycoCore::background_reindex()
@@ -1016,6 +1017,7 @@ DwycoCore::to_local_file(const QUrl& u)
     return u.toLocalFile();
 }
 
+#if 0
 void
 DwycoCore::directory_swap()
 {
@@ -1048,6 +1050,7 @@ DwycoCore::directory_swap()
         cdcxpanic("failed migration");
 
 }
+#endif
 
 
 static
@@ -1058,7 +1061,7 @@ setup_locations()
 
     filepath = QStandardPaths::AppDataLocation;
 
-#if defined(ANDROID)
+#if 0 && defined(ANDROID)
     QString localdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     localdir += "/dwyco/rando/";
     User_pfx = localdir.toUtf8();
