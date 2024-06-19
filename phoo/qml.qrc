@@ -57,7 +57,6 @@
         <file>BareConvList.qml</file>
         <file>+desktop/BareConvList.qml</file>
         <file>SendMulti.qml</file>
-        <file>Migrate.qml</file>
         <file>Reindex.qml</file>
         <file>RestoreAutoBackup.qml</file>
         <file>SimpleTrashBrowse.qml</file>
