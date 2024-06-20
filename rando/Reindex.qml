@@ -77,8 +77,7 @@ Rectangle {
         BusyIndicator {
             id: busy
             running: reindex_in_progress && !reindex_done
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.verticalCenter: parent.verticalCenter
+            Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
         }
         Item {
             Layout.fillHeight: true

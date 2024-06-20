@@ -415,7 +415,8 @@ Page {
                                 mapimage.lon = parseFloat(o.lon)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
                                 mapimage.placename = location.text
-                                mapimage.zoom = default_map_zoom
+                                //mapimage.zoom = default_map_zoom
+                                mapimage.reset_zoom(default_map_zoom)
                                 stack.push(mapimage)
                             }
                             else
@@ -432,7 +433,8 @@ Page {
                                 mapimage.lon = parseFloat(SENT_TO_LON)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
                                 mapimage.placename = location.text
-                                mapimage.zoom = default_map_zoom
+                                //mapimage.zoom = default_map_zoom
+                                mapimage.reset_zoom(default_map_zoom)
                                 stack.push(mapimage)
 
                             }

@@ -36,7 +36,8 @@ Page {
                     mapimage.lon = parseFloat(model.lon)
                     mapimage.center = QtPositioning.coordinate(parseFloat(model.lat), parseFloat(model.lon))
                     mapimage.placename = model.display
-                    mapimage.zoom = default_map_zoom
+                    //mapimage.zoom = default_map_zoom
+                    mapimage.reset_zoom(default_map_zoom)
                     stack.push(mapimage)
                 }
             }
