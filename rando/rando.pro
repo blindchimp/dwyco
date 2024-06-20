@@ -31,7 +31,7 @@ QMAKE_INFO_PLIST=Info.plist.mac
 
 INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/dwcls
 
-DEFINES += DWYCO_RELEASE
+#DEFINES += DWYCO_RELEASE
 ICON=rando.icns
 RC_FILE=rando.rc
 
@@ -50,7 +50,7 @@ SOURCES += main.cpp \
     resizeimage.cpp \
     androidperms.cpp
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst2
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst3
 
 linux-* {
 DEFINES += LINUX
