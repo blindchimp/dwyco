@@ -649,7 +649,7 @@ scrolling in the listview or doesn't recognizing the swipe.
         visible: {model.uid === the_man && listview.count === 0}
         font.bold: true
         anchors.fill: parent
-        background: parent.background
+        //background: parent.background
 
     ColumnLayout {
         anchors.fill: parent

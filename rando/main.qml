@@ -554,7 +554,7 @@ ApplicationWindow {
             }
         }
 
-        onNew_msg: {
+        onNew_msg: (from_uid, txt, mid) => {
             console.log(from_uid)
             console.log(txt)
             console.log(mid)
@@ -573,7 +573,7 @@ ApplicationWindow {
 
         }
 
-        onSys_msg_idx_updated: {
+        onSys_msg_idx_updated: (uid, prepend) => {
             console.log("update idx", uid)
             console.log("upd" + uid + " " + themsglist.uid)
             if(uid === themsglist.uid) {
@@ -590,7 +590,7 @@ ApplicationWindow {
             }
         }
 
-        onMsg_send_status: {
+        onMsg_send_status: (pers_id, status, recipient) => {
             console.log(pers_id, status, recipient)
             //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {

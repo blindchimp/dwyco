@@ -50,7 +50,7 @@ android:fullBackupContent="@xml/backup_rules"
 </service>
 <provider
     android:name="androidx.core.content.FileProvider"
-    android:authorities="com.dwyco.phoo.provider"
+    android:authorities="com.dwyco.rando.provider"
     android:exported="false"
     android:grantUriPermissions="true">
     <meta-data
