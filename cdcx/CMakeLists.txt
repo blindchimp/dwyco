@@ -19,7 +19,7 @@ find_package(QT NAMES Qt6  REQUIRED COMPONENTS Network)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS WebEngine)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS WebEngineCore)
 #find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngine)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui WebEngineWidgets StateMachine)
 
@@ -37,7 +37,7 @@ DWYCO_QT6
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
-DWYCO_NICE_VERSION=\"3.107\"
+DWYCO_NICE_VERSION=\"4.107\"
 )
 include_directories(
 ./dllwin ../bld/qtdrv .
@@ -182,6 +182,7 @@ elseif(APPLE)
     Qt${QT_VERSION_MAJOR}::Multimedia
     Qt6::WebEngineCore
         Qt6::WebEngineWidgets
+        Qt6::StateMachine
 
     )
 elseif(WIN32)
@@ -203,20 +204,21 @@ ${D}/kazlib/kazlib.lib
 ${D}/ppm/ppm.lib 
 ${D}/pgm/pgm.lib 
 ${D}/pbm/pbm.lib 
-${D}/zlib/zlibstaticd.lib
+${D}/zlib/zlibstatic.lib
 ${D}/jenkins/jenkins.lib 
 ${D}/vorbis112/vorbis112.lib
 ${D}/theora.1.2.x/theora.1.2.x.lib 
 ${D}/speex/speex.lib 
 ${D}/ogg/ogg.lib 
 ${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.lib
-${CMAKE_CURRENT_SOURCE_DIR}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib 
+${D}/qt6drv/qt6drv.lib
 winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib # binmode.obj
 Qt${QT_VERSION_MAJOR}::Widgets
 Qt${QT_VERSION_MAJOR}::Network
 Qt${QT_VERSION_MAJOR}::Multimedia
-Qt5::WebEngineCore
-Qt5::WebEngineWidgets
+Qt6::WebEngineCore
+Qt6::WebEngineWidgets
+Qt6::StateMachine
 )
 target_link_options(cdcx PRIVATE binmode.obj)
 

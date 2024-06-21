@@ -33,10 +33,12 @@ if(UNIX)
     set(EXTRA_FILES winemu.cc linid.cpp)
 endif()
 
-if(WIN32)
+if(MSVC)
     set(EXTRA_FILES uniq.cpp audwin.cc aqaud.cc)
     add_compile_definitions(
-        VIDGRAB_HACKS
+        # don't use the "internal" vidgrab stuff anymore, it must be
+        # done externally in the vgqt capture driver
+        #VIDGRAB_HACKS
         UWB_SAMPLING  UWB_SAMPLE_RATE=44100
     )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../mtcap)

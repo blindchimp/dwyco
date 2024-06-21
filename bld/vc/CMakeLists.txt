@@ -8,6 +8,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR}/conf.cmake)
 include_directories(
     ${VCCFG_COMP}
     ${CMAKE_CURRENT_SOURCE_DIR}/../dwcls
+    #note: this is fucked up, i guess zlib generates a config file
+    # at build time.
+    ${CMAKE_CURRENT_BINARY_DIR}/../zlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../zlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../crypto5
     ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
