@@ -17,16 +17,16 @@ include_directories(
 
 
 # Definitions
-add_definitions(-DVC_INTERNAL -DDWYCO_NO_TSOCK -DUNIX)
+add_compile_definitions(VC_INTERNAL DWYCO_NO_TSOCK)
 
 if(WIN32)
-    add_definitions(-D_CRT_NO_POSIX_ERROR_CODES)
+    add_compile_definitions(_CRT_NO_POSIX_ERROR_CODES)
 endif()
 
 if(LH_INTERPRETER EQUAL 1)
-    add_definitions(-DLHOBJ -DPERFHACKS -DFUNCACHE)
+    add_compile_definitions(LHOBJ PERFHACKS FUNCACHE)
 else()
-    add_definitions(-DNO_VCEVAL)
+    add_compile_definitions(NO_VCEVAL)
 endif()
 
 add_library(vc STATIC
