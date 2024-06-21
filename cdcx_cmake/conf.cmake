@@ -1,6 +1,7 @@
 add_compile_definitions(-DVCCFG_FILE)
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 add_compile_definitions(CDCCORE_STATIC)
+add_compile_definitions(DWYCO_FORCE_DESKTOP_VGQT)
 # Determine the host platform
 if(UNIX)
     add_compile_definitions(UNIX LINUX)

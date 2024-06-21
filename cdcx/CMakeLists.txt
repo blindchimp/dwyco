@@ -22,6 +22,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS WebEngineCore)
 #find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngine)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui WebEngineWidgets StateMachine)
+set(FORCE_DESKTOP_VGQT 1)
 
 add_compile_definitions(
 UNICODE
