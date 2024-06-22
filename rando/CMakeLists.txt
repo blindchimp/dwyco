@@ -64,22 +64,21 @@ set_target_properties(rando PROPERTIES
 set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
 target_link_libraries(rando
     PRIVATE
-    ${D}/cdc32/libcdc32.a
-        ${D}/vc/libvc.a
-        ${D}/crypto5/libcrypto5.a
-        ${D}/dwcls/libdwcls.a
-
-        ${D}/kazlib/libkazlib.a
-        ${D}/pbm/libpbm.a
-
-
-        ${D}/jenkins/libjenkins.a
-
-        ${D}/uv/libuv.a
+    cdc32
+    vc
+    crypto5
+    dwcls
+    kazlib
+    pbm
+    uv
+    jenkins
+    qt-qml-models
+    jhead
     Qt6::Quick
     Qt6::Network
     Qt6::Multimedia
     Qt6::QuickControls2
+    -ldl
 )
 
 include(GNUInstallDirs)
