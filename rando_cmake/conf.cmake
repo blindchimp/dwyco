@@ -1,4 +1,5 @@
 set(DWYCO_APP "rando")
+set(DWYCOBG 0)
 add_compile_definitions(DWYCO_APP_NICENAME="Rando")
 
 add_compile_definitions(VCCFG_FILE)
