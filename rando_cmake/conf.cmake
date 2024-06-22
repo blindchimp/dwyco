@@ -1,5 +1,5 @@
-set(DWYCO_APP "cdcx")
-add_compile_definitions(DWYCO_APP_NICENAME="CDC-X")
+set(DWYCO_APP "rando")
+add_compile_definitions(DWYCO_APP_NICENAME="Rando")
 
 add_compile_definitions(-DVCCFG_FILE)
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
@@ -23,7 +23,7 @@ endif()
 
 
 if(ANDROID)
-    add_compile_definitions(ANDROID)
+    add_compile_definitions(ANDROID LINUX)
     add_compile_options( -frtti -fexceptions)
 endif()
 
