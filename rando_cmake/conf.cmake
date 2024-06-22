@@ -1,10 +1,13 @@
 set(DWYCO_APP "rando")
 add_compile_definitions(DWYCO_APP_NICENAME="Rando")
 
-add_compile_definitions(-DVCCFG_FILE)
+add_compile_definitions(VCCFG_FILE)
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
-add_compile_definitions(CDCCORE_STATIC)
-add_compile_definitions(DWYCO_FORCE_DESKTOP_VGQT)
+add_compile_definitions(
+	CDCCORE_STATIC
+	DWYCO_FORCE_DESKTOP_VGQT
+	DWYCO_NO_AUDIO
+)
 # Determine the host platform
 if(UNIX)
     add_compile_definitions(UNIX LINUX)
