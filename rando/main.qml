@@ -13,6 +13,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtCore
 import dwyco
 
 ApplicationWindow {
@@ -194,8 +195,27 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        if(camera_permission.status !== Qt.PermissionGranted) {
+            console.log("CAMERA DENIED")
+            camera_permission.request()
+        } else {
+            console.log("CAMERA ALLOWED")
+        }
+
         AndroidPerms.request_sync("android.permission.CAMERA")
         AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+    }
+
+    CameraPermission {
+        id: camera_permission
+        onStatusChanged: {
+            if(status === Qt.PermissionGranted) {
+                console.log("Camera now granted")
+            } else {
+                console.log("Camera denied again")
+            }
+
+        }
     }
 
 
