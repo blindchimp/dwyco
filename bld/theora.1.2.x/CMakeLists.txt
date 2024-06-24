@@ -35,6 +35,7 @@ set(SOURCES
 )
 
 if(UNIX)
+    if(QT_VERSION_MAJOR EQUAL 5)
 add_compile_definitions(OC_X86_ASM OC_X86_64_ASM)
 list(APPEND SOURCES
         lib/x86/x86cpu.c 
@@ -50,6 +51,7 @@ list(APPEND SOURCES
         lib/x86/sse2encfrag.c 
         lib/x86/sse2idct.c
 )
+endif()
 endif()
 
 if(WIN32)

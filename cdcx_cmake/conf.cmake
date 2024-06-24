@@ -1,7 +1,8 @@
 set(DWYCO_APP "cdcx")
+set(DWYCOBG 0)
 add_compile_definitions(DWYCO_APP_NICENAME="CDC-X")
 
-add_compile_definitions(-DVCCFG_FILE)
+add_compile_definitions(VCCFG_FILE)
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 add_compile_definitions(CDCCORE_STATIC)
 add_compile_definitions(DWYCO_FORCE_DESKTOP_VGQT)
