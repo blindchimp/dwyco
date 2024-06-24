@@ -24,7 +24,7 @@ set(FORCE_DESKTOP_VGQT 1)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
-qt_add_executable(rando
+set(SRCS
     main.cpp
     dwyco_top.cpp
         dwyco_new_msg.cpp
@@ -40,16 +40,57 @@ qt_add_executable(rando
         resizeimage.cpp
         androidperms.cpp
 )
-
-qt_add_qml_module(randoqml
-    URI rando
-    VERSION 1.0
-    RESOURCES qml.qrc
-)
-qt_add_resources(rando
+qt_add_resources(SRCS
     dwyco.qrc
     icons.qrc
 )
+qt_add_executable(rando
+   ${SRCS}
+)
+
+qt_add_qml_module(rando
+    URI rando_app
+    VERSION 1.0
+# WARNING: without this option, it prepends
+# some stupid ass "qt/qml/rando_app" to all the
+# resource paths
+    NO_RESOURCE_TARGET_PATH
+    QML_FILES
+    main.qml
+           ProfileDialog.qml
+           DeclarativeCamera.qml
+           PhotoPreview.qml
+           PhotoCaptureControls.qml
+           CameraButton.qml
+           MsgView.qml
+           PicPreview.qml
+           SimpleToolbar.qml
+           CircularImage.qml
+           MultiSelectToolbar.qml
+           About.qml
+           DSettings.qml
+           AppDrawer.qml
+           AppDrawerForm.ui.qml
+           TipButton.qml
+           GridToggle.qml
+           +desktop/GridToggle.qml
+           FName.qml
+           SimpleMsgList.qml
+           MsgReport.qml
+           Warning.qml
+           ProgressRound.qml
+           Help.qml
+           MapImage.qml
+           GeoListView.qml
+           Reindex.qml
+           RestoreAutoBackup.qml
+           MessageYN.qml
+           RESOURCES
+           images/toolbutton.png
+           images/toolbutton.sci
+
+)
+
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
@@ -58,10 +99,11 @@ set_target_properties(rando PROPERTIES
 #    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.apprando
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.mac
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
-set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
+#set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
 target_link_libraries(rando
     PRIVATE
     cdc32

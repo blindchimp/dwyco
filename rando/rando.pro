@@ -14,7 +14,7 @@ QT += quickcontrols2
 QT += location positioning
 
 #android: QT += androidextras
-macx-clang: QT += macextras
+#macx-clang: QT += macextras
 CONFIG += c++11
 
 DEFINES += DWYCO_APP_DEBUG
