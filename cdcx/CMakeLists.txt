@@ -21,7 +21,7 @@ find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS WebEngineCore)
 #find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngine)
-find_package(Qt6 REQUIRED COMPONENTS Core Gui WebEngineWidgets StateMachine Concurrent MultiMediaWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui WebEngineWidgets StateMachine Concurrent MultimediaWidgets)
 set(FORCE_DESKTOP_VGQT 1)
 
 add_compile_definitions(
@@ -141,25 +141,8 @@ set(BASELIBS
 set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
 if(UNIX AND NOT APPLE)
 target_link_libraries(cdcx PRIVATE
-    ${D}/cdc32/libcdc32.a
-    ${D}/vc/libvc.a
-    ${D}/crypto5/libcrypto5.a
-    ${D}/dwcls/libdwcls.a
-    ${D}/gsm/libgsm.a
-    ${D}/kazlib/libkazlib.a
-    ${D}/ppm/libppm.a
-    ${D}/pgm/libpgm.a
-    ${D}/pbm/libpbm.a
-    ${D}/zlib/libz.a
-    ${D}/theora.1.2.x/libtheora.1.2.x.a
-    ${D}/speex/libspeex.a
-    ${D}/vorbis112/libvorbis112.a
-    ${D}/ogg/libogg.a
-    ${D}/jenkins/libjenkins.a
-    ${D}/qt6drv/libqt6drv.a
-    ${D}/uv/libuv.a
-    ${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.a
-    ${D}/v4lcap/libv4lcap.a
+    ${BASELIBS}
+    v4lcap
     -lv4l2
     -ldl
     -pthread
