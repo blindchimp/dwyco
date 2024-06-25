@@ -136,6 +136,13 @@ set(BASELIBS
     qt6drv
     uv
     miniupnpc
+    Qt${QT_VERSION_MAJOR}::Widgets
+Qt${QT_VERSION_MAJOR}::Network
+Qt${QT_VERSION_MAJOR}::Multimedia
+Qt6::WebEngineCore
+    Qt6::WebEngineWidgets
+    Qt6::StateMachine
+
 )
 
 set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
@@ -146,14 +153,6 @@ target_link_libraries(cdcx PRIVATE
     -lv4l2
     -ldl
     -pthread
-
-    Qt${QT_VERSION_MAJOR}::Widgets
-Qt${QT_VERSION_MAJOR}::Network
-Qt${QT_VERSION_MAJOR}::Multimedia
-Qt6::WebEngineCore
-    Qt6::WebEngineWidgets
-    Qt6::StateMachine
-
 )
 elseif(APPLE)
     add_compile_definitions(MAC_CLIENT DWYCO_FORCE_DESKTOP_VGQT)
@@ -165,14 +164,6 @@ elseif(APPLE)
         -pthread
         ${CF}
         ${COCOA}
-
-        Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::Network
-    Qt${QT_VERSION_MAJOR}::Multimedia
-    Qt6::WebEngineCore
-        Qt6::WebEngineWidgets
-        Qt6::StateMachine
-
     )
 elseif(WIN32)
 
@@ -183,31 +174,9 @@ add_compile_definitions(CDCCORE_STATIC)
 add_compile_definitions(CDCX_NO_SSL)
 
 target_link_libraries(
-	cdcx PRIVATE
-${D}/cdc32/cdc32.lib 
-${D}/vc/vc.lib 
-${D}/crypto5/crypto5.lib 
-${D}/dwcls/dwcls.lib 
-${D}/gsm/gsm.lib 
-${D}/kazlib/kazlib.lib 
-${D}/ppm/ppm.lib 
-${D}/pgm/pgm.lib 
-${D}/pbm/pbm.lib 
-${D}/zlib/zlibstatic.lib
-${D}/jenkins/jenkins.lib 
-${D}/vorbis112/vorbis112.lib
-${D}/theora.1.2.x/theora.1.2.x.lib 
-${D}/speex/speex.lib 
-${D}/ogg/ogg.lib 
-${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.lib
-${D}/qt6drv/qt6drv.lib
-winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib # binmode.obj
-Qt${QT_VERSION_MAJOR}::Widgets
-Qt${QT_VERSION_MAJOR}::Network
-Qt${QT_VERSION_MAJOR}::Multimedia
-Qt6::WebEngineCore
-Qt6::WebEngineWidgets
-Qt6::StateMachine
+    cdcx PRIVATE
+    ${BASELIBS}
+    winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib # binmode.obj
 )
 target_link_options(cdcx PRIVATE binmode.obj)
 
