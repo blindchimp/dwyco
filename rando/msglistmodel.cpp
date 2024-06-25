@@ -47,7 +47,7 @@ static QMap<QByteArray, int> Mid_to_percent;
 // after that, the fetch can be initiated explicitly
 static QSet<QByteArray> Manual_fetch;
 
-extern QMap<QByteArray,QLoc> Hash_to_loc;
+extern QMultiMap<QByteArray,QLoc> Hash_to_loc;
 extern QMap<QByteArray,QByteArray> Hash_to_review;
 extern QMap<QByteArray,long> Hash_to_max_lc;
 

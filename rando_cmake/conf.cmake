@@ -7,7 +7,7 @@ set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 add_compile_definitions(
 	CDCCORE_STATIC
 	DWYCO_FORCE_DESKTOP_VGQT
-	DWYCO_NO_AUDIO
+        NO_DWYCO_AUDIO
 )
 # Determine the host platform
 if(UNIX)
