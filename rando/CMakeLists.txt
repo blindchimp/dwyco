@@ -103,9 +103,7 @@ set_target_properties(rando PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
-#set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
-target_link_libraries(rando
-    PRIVATE
+set(BASELIBS
     cdc32
     vc
     crypto5
@@ -120,8 +118,21 @@ target_link_libraries(rando
     Qt6::Network
     Qt6::Multimedia
     Qt6::QuickControls2
+)
+if(UNIX)
+target_link_libraries(rando
+    PRIVATE
+   ${BASELIBS}
     -ldl
 )
+endif()
+
+if(WIN32)
+    target_link_libraries(rando
+        PRIVATE
+       ${BASELIBS}
+    )
+endif()
 
 include(GNUInstallDirs)
 install(TARGETS rando
