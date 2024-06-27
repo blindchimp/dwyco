@@ -91,7 +91,12 @@ qt_add_qml_module(rando
 
 )
 
-
+set(androidlibs
+    ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/arm64-v8a/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/armeabi-v7a/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/x86/libdwyco_jni.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/x86_64/libdwyco_jni.so
+)
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
@@ -102,7 +107,13 @@ set_target_properties(rando PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.mac
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
+    QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
+
 )
+set_target_properties(rando PROPERTIES
+ QT_ANDROID_EXTRA_LIBS "${androidlibs}"
+)
+
 set(BASELIBS
     cdc32
     vc
@@ -119,7 +130,19 @@ set(BASELIBS
     Qt6::Multimedia
     Qt6::QuickControls2
 )
-if(UNIX)
+
+if(ANDROID)
+    target_link_libraries(rando PRIVATE
+        qt-qml-models
+        ${CMAKE_CURRENT_SOURCE_DIR}/../randobld/libs/${CMAKE_ANDROID_ARCH_ABI}/libdwyco_jni.so
+        Qt6::Quick
+        Qt6::Network
+        Qt6::Multimedia
+        Qt6::QuickControls2
+    )
+endif()
+
+if(UNIX AND NOT ANDROID)
 target_link_libraries(rando
     PRIVATE
    ${BASELIBS}
