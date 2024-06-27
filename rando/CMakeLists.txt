@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
+set(RANDO_VERSION "4.91")
+set(RANDO_VERSION_NAME ${RANDO_VERSION})
+set(RANDO_VERSION_CODE 3000136)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
 include_directories(
@@ -19,7 +22,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Positioning)
 set(FORCE_DESKTOP_VGQT 1)
 
 qt_standard_project_setup(REQUIRES 6.5)
@@ -112,6 +115,9 @@ set_target_properties(rando PROPERTIES
 )
 set_target_properties(rando PROPERTIES
  QT_ANDROID_EXTRA_LIBS "${androidlibs}"
+ QT_ANDROID_VERSION_NAME ${RANDO_VERSION_NAME}
+ QT_ANDROID_VERSION_CODE ${RANDO_VERSION_CODE}
+
 )
 
 set(BASELIBS
@@ -129,6 +135,7 @@ set(BASELIBS
     Qt6::Network
     Qt6::Multimedia
     Qt6::QuickControls2
+    Qt6::Positioning
 )
 
 if(ANDROID)
@@ -139,6 +146,7 @@ if(ANDROID)
         Qt6::Network
         Qt6::Multimedia
         Qt6::QuickControls2
+        Qt6::Positioning
     )
 endif()
 
