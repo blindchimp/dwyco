@@ -5,7 +5,7 @@ add_compile_definitions(DWYCO_APP_NICENAME="CDC-X")
 add_compile_definitions(VCCFG_FILE)
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 add_compile_definitions(CDCCORE_STATIC)
-add_compile_definitions(DWYCO_FORCE_DESKTOP_VGQT)
+
 # Determine the host platform
 if(UNIX)
     add_compile_definitions(UNIX LINUX)
@@ -15,11 +15,13 @@ endif()
 if(WIN32)
 add_compile_definitions(_WIN32 __WIN32__ _Windows)
 add_compile_options(/wd4100 /wd4068 /wd4189 /wd4291)
+add_compile_definitions(DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT)
 endif()
 
 if(APPLE)
     # Set compiler definitions for macOS
     add_compile_definitions(MACOSX)
+    add_compile_definitions(DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT)
 endif()
 
 
