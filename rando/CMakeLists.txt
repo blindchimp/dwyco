@@ -23,8 +23,17 @@ find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Positioning)
-set(FORCE_DESKTOP_VGQT 1)
 
+# this needs a re-think, possibly a command to copy the androidinst3 file, then
+# populate it with the java stuff would work. then change the package_source_dir to
+# be the created folder. this could help us avoid the .gitignore mickey-mouse in the androidinst3
+# dir. might look into a special cmake file
+# that just does an install as well. for now, we just let it happen at cmake
+# time instead of build time.
+if(ANDROID)
+file(COPY ../bld/android/com/dwyco DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/)
+file(COPY ../../deploy-rando/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
+endif()
 qt_standard_project_setup(REQUIRES 6.5)
 
 set(SRCS
