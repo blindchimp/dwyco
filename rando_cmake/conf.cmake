@@ -24,6 +24,9 @@ if(APPLE)
     # Set compiler definitions for macOS
     add_compile_definitions(MACOSX)
 endif()
+if(IOS)
+    add_compile_definitions(DWYCO_IOS)
+endif()
 
 
 if(ANDROID)
