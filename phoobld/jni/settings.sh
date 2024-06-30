@@ -7,10 +7,12 @@ if [[ "x$NDK" == "x" ]]; then
 	if [ `uname` = "Darwin" ]
 	then
 	#NDK=~/Library/Android/sdk/ndk/21.3.6528147/
-	NDK=~/Library/Android/sdk/ndk/25.1.8937393/
+	#NDK=~/Library/Android/sdk/ndk/25.1.8937393/
+	NDK=~/Library/Android/sdk/ndk/26.1.10909125/
 	else
 	#NDK=~/Android/Sdk/ndk/21.3.6528147
-	NDK=~/Android/Sdk/ndk/25.1.8937393
+	#NDK=~/Android/Sdk/ndk/25.1.8937393
+	NDK=~/Android/Sdk/ndk/26.1.10909125
 	fi
 fi
 # i use only a small number of formats - set this to 0 if you want everything.
