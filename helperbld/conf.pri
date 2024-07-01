@@ -7,7 +7,7 @@
 # change all occurances of "10.5" to "10.9"
 VCCFG_COMP=$$PWD
 DWYCOBG=1
-DEFINES += VCCFG_FILE DWYCO_NO_UPNP
+DEFINES += VCCFG_FILE DWYCO_NO_UPNP VCLH_COMPRESS
 linux-*:DEFINES += LINUX
 macx-ios-clang: DEFINES += LINUX MACOSX DWYCO_IOS
 macx-*|linux-* {

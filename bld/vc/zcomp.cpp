@@ -1,4 +1,4 @@
-#ifndef NO_VCEVAL
+#if defined(VCLH_COMPRESS) || !defined(NO_VCEVAL)
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
