@@ -112,11 +112,17 @@ set(androidlibs
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
+if(IOS)
+    set(INFOPLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.ios)
+else()
+    set(INFOPLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.mac)
+endif()
+
 set_target_properties(rando PROPERTIES
 #    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.apprando
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.mac
+    MACOSX_BUNDLE_INFO_PLIST ${INFOPLIST}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
@@ -176,9 +182,24 @@ if(WIN32)
 target_link_options(rando PRIVATE binmode.obj)
 endif()
 
+if(IOS)
+    target_link_libraries(rando
+        PRIVATE
+       ${BASELIBS}
+
+    )
+endif()
+
 include(GNUInstallDirs)
 install(TARGETS rando
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+qt_generate_deploy_app_script(
+    TARGET rando
+    OUTPUT_SCRIPT deploy_script
+    NO_UNSUPPORTED_PLATFORM_ERROR
+)
+install(SCRIPT ${deploy_script})
