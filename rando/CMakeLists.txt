@@ -113,13 +113,13 @@ set(androidlibs
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
 if(IOS)
-    set(INFOPLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.ios)
+    set(INFOPLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.cmake.ios)
 else()
     set(INFOPLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.mac)
 endif()
 
 set_target_properties(rando PROPERTIES
-#    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.apprando
+    MACOSX_BUNDLE_GUI_IDENTIFIER com.dwyco.rando
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE_INFO_PLIST ${INFOPLIST}
