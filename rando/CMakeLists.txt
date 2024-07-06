@@ -5,6 +5,9 @@ set(DWYCO_CONFDIR rando_cmake)
 set(RANDO_VERSION "4.91")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
 set(RANDO_VERSION_CODE 3000136)
+if (ANDROID)
+    include(/home/dwight/Android/Sdk/android_openssl/CMakeLists.txt)
+endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
 include_directories(
@@ -22,7 +25,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Positioning)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Positioning Location)
 
 # this needs a re-think, possibly a command to copy the androidinst3 file, then
 # populate it with the java stuff would work. then change the package_source_dir to
@@ -151,6 +154,7 @@ set(BASELIBS
     Qt6::Multimedia
     Qt6::QuickControls2
     Qt6::Positioning
+    Qt6::Location
 )
 
 if(ANDROID)
@@ -162,6 +166,7 @@ if(ANDROID)
         Qt6::Multimedia
         Qt6::QuickControls2
         Qt6::Positioning
+        Qt6::Location
     )
 endif()
 
@@ -203,3 +208,4 @@ qt_generate_deploy_app_script(
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
+
