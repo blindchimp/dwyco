@@ -399,6 +399,7 @@ Page {
                 anchors.left: img.left
                 anchors.margins: mm(.5)
                 visible: location.text.length > 0
+                z: 10
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
