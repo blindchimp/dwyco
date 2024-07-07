@@ -230,10 +230,13 @@ Page {
         CircularImage {
             id: img
             property bool click_to_fetch
+
             click_to_fetch: model.uid !== the_man && !IS_ACTIVE && FETCH_STATE === "manual"
-            x: items_margin
-            //y: mm(10)
-            width: listview.width - 2 * items_margin
+
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: items_margin
+
             height: {
                 if(click_to_fetch)
                     return width
