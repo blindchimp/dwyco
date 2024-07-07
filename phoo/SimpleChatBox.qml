@@ -725,7 +725,7 @@ Page {
                     when: SENT === 0
                     AnchorChanges {
                         target: ditem
-                        anchors.left: parent ? parent.left : undefined
+                        anchors.left: ListView.view.contentItem.left
                         anchors.right: undefined
                     }
                 },
@@ -735,7 +735,7 @@ Page {
                     AnchorChanges {
                         target: ditem
                         anchors.left: undefined
-                        anchors.right: parent ? parent.right : undefined
+                        anchors.right: ListView.view.contentItem.right
                     }
                 }
 
