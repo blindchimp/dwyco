@@ -233,9 +233,9 @@ Page {
 
             click_to_fetch: model.uid !== the_man && !IS_ACTIVE && FETCH_STATE === "manual"
 
-            anchors.left: parent.left
-            anchors.right: parent.right
             anchors.margins: items_margin
+            anchors.left: ListView.view.contentItem.left
+            anchors.right: ListView.view.contentItem.right
 
             height: {
                 if(click_to_fetch)
