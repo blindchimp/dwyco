@@ -41,7 +41,7 @@ Rectangle {
     anchors.fill: parent
 
     color: "black"
-    state: "PhotoCapture"
+    state: camera_permission.status !== Qt.PermissionStatus.Granted ? "Idle" : "PhotoCapture"
     
     Component.onCompleted: {
         cameraUI.snapshot.connect(stack.get(stack.depth - 2).snapshot)

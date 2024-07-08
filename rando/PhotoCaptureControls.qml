@@ -115,7 +115,7 @@ Item {
                 // if the target camera doesn't support autofocus or
                 // whatever. these unlocks work around the problem.
                 //camera.unlock()
-                camera.deviceId = devices.videoInputs[cur_cam].deviceId
+                camera.cameraDevice = devices.videoInputs[cur_cam]
                 //camera.unlock()
             }
             Layout.fillWidth: true
