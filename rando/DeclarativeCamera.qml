@@ -203,9 +203,9 @@ Rectangle {
             color: "white"
         }
 
-        text: {camera_permission.status !== Qt.PermissionGranted ? qsTr("Camera permission denied by Android") : qsTr("(No camera devices available)")}
+        text: {camera_permission.status !== Qt.PermissionStatus.Granted ? qsTr("Camera permission denied by Android") : qsTr("(No camera devices available)")}
         z: 6
-        visible: {camera_permission.status !== Qt.PermissionGranted || devices.videoInputs.length === 0}
+        visible: {camera_permission.status !== Qt.PermissionStatus.Granted || devices.videoInputs.length === 0}
         Button {
             anchors.left: parent.left
             anchors.bottom: parent.bottom

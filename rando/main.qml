@@ -195,7 +195,7 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        if(camera_permission.status !== Qt.PermissionGranted) {
+        if(camera_permission.status != Qt.PermissionStatus.Granted) {
             console.log("CAMERA DENIED")
             camera_permission.request()
         } else {
@@ -209,7 +209,7 @@ ApplicationWindow {
     CameraPermission {
         id: camera_permission
         onStatusChanged: {
-            if(status === Qt.PermissionGranted) {
+            if(status == Qt.PermissionStatus.Granted) {
                 console.log("Camera now granted")
             } else {
                 console.log("Camera denied again")
