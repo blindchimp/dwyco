@@ -821,10 +821,10 @@ ApplicationWindow {
         
     }
 
-    Migrate {
-        id: migrate_page
-        visible: false
-    }
+//    Migrate {
+//        id: migrate_page
+//        visible: false
+//    }
 
     Reindex {
         id: background_reindex
@@ -839,11 +839,11 @@ ApplicationWindow {
         objectName: "dwyco_singleton"
         client_name: {"phoo-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
-            if(core.android_migrate === 1)
-            {
-                stack.push(migrate_page)
-                return
-            }
+//            if(core.android_migrate === 1)
+//            {
+//                stack.push(migrate_page)
+//                return
+//            }
             var a
             a = get_local_setting("first-run")
             if(a === "") {
