@@ -590,3 +590,7 @@ bld/android/com/dwyco/android/.vscode/
 /fckbld.pro
 /fucktola
 CMakeLists.txt.user
+
+rando/androidinst3/src/com/dwyco/android/.vscode/
+
+bld/zlib/zconf.h.included

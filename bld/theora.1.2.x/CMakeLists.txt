@@ -35,6 +35,7 @@ set(SOURCES
 )
 
 if(UNIX)
+    if(QT_VERSION_MAJOR EQUAL 5)
 add_compile_definitions(OC_X86_ASM OC_X86_64_ASM)
 list(APPEND SOURCES
         lib/x86/x86cpu.c 
@@ -51,8 +52,14 @@ list(APPEND SOURCES
         lib/x86/sse2idct.c
 )
 endif()
+endif()
 
 if(WIN32)
+    # note: we compile qt5 stuff in 32-bit, so you
+    # can use this asm code. it fails to compile with the
+    # 64-bit version of vc. this really shouldn't be here
+    # i need a generic 32/64 test via cmake
+    if(QT_VERSION_MAJOR EQUAL 5)
 add_compile_definitions(OC_X86_ASM)
 list(APPEND SOURCES
         lib/x86_vc/x86cpu.c 
@@ -65,6 +72,7 @@ list(APPEND SOURCES
         lib/x86_vc/x86state.c
 
 )
+endif()
 endif()
 
 add_library(theora.1.2.x STATIC

@@ -923,7 +923,7 @@ DwycoCore::set_invisible_state(int s)
 {
     dwyco_set_invisible_state(s);
 }
-
+#if 0
 // if they installed externally, copy the files in to the local
 // app storage, and rename the data folder.
 // this should only need to be done once, and the process should be
@@ -988,6 +988,7 @@ DwycoCore::background_migrate()
     connect(q, SIGNAL(finished()), this, SIGNAL(migration_complete()));
     q->start();
 }
+#endif
 
 void
 DwycoCore::background_reindex()
@@ -1017,6 +1018,7 @@ DwycoCore::to_local_file(const QUrl& u)
     return u.toLocalFile();
 }
 
+#if 0
 void
 DwycoCore::directory_swap()
 {
@@ -1049,6 +1051,7 @@ DwycoCore::directory_swap()
         cdcxpanic("failed migration");
 
 }
+#endif
 
 
 static
@@ -1059,7 +1062,7 @@ setup_locations()
 
     filepath = QStandardPaths::AppDataLocation;
 
-#if defined(ANDROID)
+#if 0 && defined(ANDROID)
     QString localdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     localdir += "/dwyco/rando/";
     User_pfx = localdir.toUtf8();
@@ -1180,13 +1183,13 @@ setup_locations()
         QFile::copy("assets:/servers2", userdir + "servers2");
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
 #else
-    QFile::copy(":androidinst2/assets/dwyco.dh", userdir + "dwyco.dh");
-    QFile::copy(":androidinst2/assets/license.txt", userdir + "license.txt");
-    QFile::copy(":androidinst2/assets/no_img.png", userdir + "no_img.png");
+    QFile::copy(":androidinst3/assets/dwyco.dh", userdir + "dwyco.dh");
+    QFile::copy(":androidinst3/assets/license.txt", userdir + "license.txt");
+    QFile::copy(":androidinst3/assets/no_img.png", userdir + "no_img.png");
     if(!QFile(userdir + "servers2").exists())
-        QFile::copy(":androidinst2/assets/servers2", userdir + "servers2");
+        QFile::copy(":androidinst3/assets/servers2", userdir + "servers2");
     QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
-    QFile::copy(":androidinst2/assets/v21.ver", userdir + "v21.ver");
+    QFile::copy(":androidinst3/assets/v21.ver", userdir + "v21.ver");
 #endif
     dwyco_set_fn_prefixes(userdir.toLatin1().constData(), userdir.toLatin1().constData(), QString(userdir + "tmp/").toLatin1().constData());
     // can't do this call until prefixes are set since it wants to init the log file

@@ -659,7 +659,7 @@ void DWYCOEXPORT dwyco_set_channel_destroy_callback(int chan_id,
 // mutual exclusion between different clients using
 // the same data directories.
 #ifndef DWYCO_AUTOUPDATE_MUTEX_NAME
-#define DWYCO_AUTOUPDATE_MUTEX_NAME(app) "dwyco " app " mutex2"
+#define DWYCO_AUTOUPDATE_MUTEX_NAME(app) "dwyco " #app " mutex2"
 #endif
 
 // autoupdate check status

@@ -33,21 +33,19 @@ if(UNIX)
     set(EXTRA_FILES winemu.cc linid.cpp)
 endif()
 
-if(WIN32)
+if(MSVC)
     set(EXTRA_FILES uniq.cpp audwin.cc aqaud.cc)
     add_compile_definitions(
-        VIDGRAB_HACKS
+        # don't use the "internal" vidgrab stuff anymore, it must be
+        # done externally in the vgqt capture driver
+        #VIDGRAB_HACKS
         UWB_SAMPLING  UWB_SAMPLE_RATE=44100
     )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../mtcap)
 
 endif()
 
-if(FORCE_DESKTOP_VGQT EQUAL 1)
-    add_compile_definitions(DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT)
-endif()
-
-if(DWYCOBG EQUAL 1)
+if(${DWYCOBG} EQUAL 1)
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 )
 endif()
@@ -62,7 +60,7 @@ add_compile_definitions(
         DWYCO_MUTEX_NAME=${DWYCO_APP}
 )
 
-if(DWYCO_APP EQUAL "rando")
+if(${DWYCO_APP} STREQUAL "rando")
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS)
 else()
     add_compile_definitions(MINIUPNP_STATICLIB)

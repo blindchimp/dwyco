@@ -13,6 +13,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtCore
 import dwyco
 
 ApplicationWindow {
@@ -194,8 +195,27 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        if(camera_permission.status !== Qt.PermissionGranted) {
+            console.log("CAMERA DENIED")
+            camera_permission.request()
+        } else {
+            console.log("CAMERA ALLOWED")
+        }
+
         AndroidPerms.request_sync("android.permission.CAMERA")
         AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+    }
+
+    CameraPermission {
+        id: camera_permission
+        onStatusChanged: {
+            if(status === Qt.PermissionGranted) {
+                console.log("Camera now granted")
+            } else {
+                console.log("Camera denied again")
+            }
+
+        }
     }
 
 
@@ -446,11 +466,11 @@ ApplicationWindow {
         objectName: "dwyco_singleton"
         client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
-            if(core.android_migrate === 1)
-            {
-                stack.push(migrate_page)
-                return
-            }
+//            if(core.android_migrate === 1)
+//            {
+//                stack.push(migrate_page)
+//                return
+//            }
 
             var a
             a = get_local_setting("first-run")
@@ -554,7 +574,7 @@ ApplicationWindow {
             }
         }
 
-        onNew_msg: {
+        onNew_msg: (from_uid, txt, mid) => {
             console.log(from_uid)
             console.log(txt)
             console.log(mid)
@@ -573,7 +593,7 @@ ApplicationWindow {
 
         }
 
-        onSys_msg_idx_updated: {
+        onSys_msg_idx_updated: (uid, prepend) => {
             console.log("update idx", uid)
             console.log("upd" + uid + " " + themsglist.uid)
             if(uid === themsglist.uid) {
@@ -590,7 +610,7 @@ ApplicationWindow {
             }
         }
 
-        onMsg_send_status: {
+        onMsg_send_status: (pers_id, status, recipient) => {
             console.log(pers_id, status, recipient)
             //hwtext.text = status
             if(status == DwycoCore.MSG_SEND_SUCCESS) {
@@ -665,10 +685,10 @@ ApplicationWindow {
         z: 5
     }
 
-    Migrate {
-        id: migrate_page
-        visible: false
-    }
+//    Migrate {
+//        id: migrate_page
+//        visible: false
+//    }
 
 
     onServer_account_createdChanged: {

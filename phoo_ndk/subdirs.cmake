@@ -1,9 +1,3 @@
-cmake_minimum_required(VERSION 3.5)
-
-project(cdcxbld LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/crypto5 ${CMAKE_CURRENT_BINARY_DIR}/bld/crypto5)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/kazlib ${CMAKE_CURRENT_BINARY_DIR}/bld/kazlib)
@@ -30,6 +24,3 @@ endif()
 if(APPLE)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qtdrv ${CMAKE_CURRENT_BINARY_DIR}/bld/qtdrv)
 endif()
-add_subdirectory(${CMAKE_SOURCE_DIR}/../cdcx ${CMAKE_CURRENT_BINARY_DIR}/cdcx)
-#install(TARGETS xferbld
-#    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})

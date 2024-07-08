@@ -277,9 +277,12 @@ public:
     Q_INVOKABLE int geo_count_from_hash(QString hash);
 
     Q_INVOKABLE QString export_attachment(QString mid);
+#if 0
+    // these are part of one-time migration
     static void one_time_copy_files();
     Q_INVOKABLE void background_migrate();
     Q_INVOKABLE void directory_swap();
+#endif
 
     // this can sometime take awhile, so we handle it in a thread, then
     // cause the user to exit and restart
@@ -364,9 +367,9 @@ signals:
     void zap_stopped(int zid);
 
     void mid_tag_changed(QString mid);
-    void migration_complete();
+    //void migration_complete();
+	void reindex_complete();
 
-    void reindex_complete();
 
 private:
 
@@ -386,6 +389,7 @@ private:
 
 };
 
+#if 0
 class fuck_me_with_a_brick : public QThread
 {
     Q_OBJECT
@@ -394,6 +398,7 @@ class fuck_me_with_a_brick : public QThread
     }
 
 };
+#endif
 
 class fuck_me_with_a_brick2 : public QThread
 {

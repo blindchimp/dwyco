@@ -1,4 +1,4 @@
-
+#if defined(VCLH_COMPRESS) || !defined(NO_VCEVAL)
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -253,3 +253,4 @@ lh_decompress_xfer(vc ctx, vc v, vc out)
 	Vcmap->local_add(out, dec);
 	return vctrue;
 }
+#endif

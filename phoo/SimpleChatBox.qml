@@ -716,8 +716,30 @@ Page {
             color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
 
             //anchors.left: {(SENT == 0) ? parent.left : undefined}
-            x: (SENT === 1) ? listView1.width - ditem.width - 3 : 3
+            //x: (SENT === 1) ? listView1.width - ditem.width - 3 : 3
+
             //anchors.right: {(SENT == 1) ? parent.right : undefined}
+            states: [
+                State {
+                    name: "recved"
+                    when: SENT === 0
+                    AnchorChanges {
+                        target: ditem
+                        anchors.left: ListView.view.contentItem.left
+                        anchors.right: undefined
+                    }
+                },
+                State {
+                    name: "sent"
+                    when: SENT === 1
+                    AnchorChanges {
+                        target: ditem
+                        anchors.left: undefined
+                        anchors.right: ListView.view.contentItem.right
+                    }
+                }
+
+            ]
             anchors.margins: 3
             opacity: {multiselect_mode && SELECTED ? 0.5 : 1.0}
             onHeightChanged: {

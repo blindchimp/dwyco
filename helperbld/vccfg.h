@@ -9,4 +9,5 @@
 #define DWYCO_NO_VCREGEX
 // remove LH eval loop and some hacks related to that
 #define NO_VCEVAL
+#define VCLH_COMPRESS
 #undef LHOBJ

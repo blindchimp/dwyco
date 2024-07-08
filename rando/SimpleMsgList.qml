@@ -9,7 +9,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import QtQuick.Controls.Material
+//import QtQuick.Controls.Material
 import QtPositioning
 
 Page {
@@ -230,10 +230,13 @@ Page {
         CircularImage {
             id: img
             property bool click_to_fetch
+
             click_to_fetch: model.uid !== the_man && !IS_ACTIVE && FETCH_STATE === "manual"
-            x: items_margin
-            //y: mm(10)
-            width: listview.width - 2 * items_margin
+
+            anchors.margins: items_margin
+            anchors.left: ListView.view.contentItem.left
+            anchors.right: ListView.view.contentItem.right
+
             height: {
                 if(click_to_fetch)
                     return width
@@ -399,6 +402,7 @@ Page {
                 anchors.left: img.left
                 anchors.margins: mm(.5)
                 visible: location.text.length > 0
+                z: 10
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
@@ -415,7 +419,8 @@ Page {
                                 mapimage.lon = parseFloat(o.lon)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(o.lat), parseFloat(o.lon))
                                 mapimage.placename = location.text
-                                mapimage.zoom = default_map_zoom
+                                //mapimage.zoom = default_map_zoom
+                                mapimage.reset_zoom(default_map_zoom)
                                 stack.push(mapimage)
                             }
                             else
@@ -432,7 +437,8 @@ Page {
                                 mapimage.lon = parseFloat(SENT_TO_LON)
                                 mapimage.center = QtPositioning.coordinate(parseFloat(SENT_TO_LAT), parseFloat(SENT_TO_LON))
                                 mapimage.placename = location.text
-                                mapimage.zoom = default_map_zoom
+                                //mapimage.zoom = default_map_zoom
+                                mapimage.reset_zoom(default_map_zoom)
                                 stack.push(mapimage)
 
                             }
@@ -647,7 +653,7 @@ scrolling in the listview or doesn't recognizing the swipe.
         visible: {model.uid === the_man && listview.count === 0}
         font.bold: true
         anchors.fill: parent
-        background: parent.background
+        //background: parent.background
 
     ColumnLayout {
         anchors.fill: parent
