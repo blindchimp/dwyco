@@ -25,7 +25,6 @@ find_package(Qt5 REQUIRED COMPONENTS Core Gui WebEngineWidgets)
 
 add_compile_definitions(
 UNICODE
-LINUX
 VCCFG_FILE
 CDCX_RELEASE
 CDCX_MAC_USE_DEFAULT_LOCATION
@@ -202,16 +201,22 @@ ${D}/kazlib/kazlib.lib
 ${D}/ppm/ppm.lib 
 ${D}/pgm/pgm.lib 
 ${D}/pbm/pbm.lib 
-#${D}/zlib/zlibstatic.lib 
+${D}/zlib/zlibstaticd.lib
 ${D}/jenkins/jenkins.lib 
-${D}/vorbis112/vorbis.lib 
+${D}/vorbis112/vorbis112.lib
 ${D}/theora.1.2.x/theora.1.2.x.lib 
 ${D}/speex/speex.lib 
 ${D}/ogg/ogg.lib 
-${D}/miniupnp/miniupnp-master/miniupnpc/miniupnpc.lib 
+${D}/miniupnp/miniupnp-master/miniupnpc/libminiupnpc.lib
 ${CMAKE_CURRENT_SOURCE_DIR}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib 
-winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib binmode.obj
+winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib # binmode.obj
+Qt${QT_VERSION_MAJOR}::Widgets
+Qt${QT_VERSION_MAJOR}::Network
+Qt${QT_VERSION_MAJOR}::Multimedia
+Qt5::WebEngineCore
+Qt5::WebEngineWidgets
 )
+target_link_options(cdcx PRIVATE binmode.obj)
 
 endif()
 
