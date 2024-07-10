@@ -22,7 +22,12 @@ include_directories(
     ../bld/qt-supermacros
     ../bld/qt6drv
 )
+if(UNIX AND NOT APPLE)
+    include_directories(../bld/v4lcap)
+endif()
+
 add_compile_definitions(NO_BUILDTIME)
+
 if(APPLE)
 	add_compile_definitions(MAC_CLIENT)
 endif()
