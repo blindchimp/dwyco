@@ -17,6 +17,7 @@ include_directories(
     ../bld/qt-supermacros
 )
 add_compile_definitions(NO_BUILDTIME)
+add_compile_definitions(BUILDTIME="${RANDO_VERSION}")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
