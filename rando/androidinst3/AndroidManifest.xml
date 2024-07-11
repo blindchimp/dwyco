@@ -22,7 +22,8 @@ android:fullBackupContent="@xml/backup_rules"
         android:preserveLegacyExternalStorage="true" 
         android:dataExtractionRules="@xml/a33backup_rules"
         android:allowBackup="true"
-        android:fullBackupOnly="false">
+        android:fullBackupOnly="false"
+        android:icon="@drawable/icon" >
         <activity
             android:name="com.dwyco.android.NotificationClient"
             android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density"
