@@ -1182,6 +1182,7 @@ setup_locations()
     if(!QFile(userdir + "servers2").exists())
         QFile::copy("assets:/servers2", userdir + "servers2");
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
+    QFile::copy("assets:/qtquickcontrols2.conf", userdir + "qtquickcontrols2.conf");
 #else
     QFile::copy(":androidinst3/assets/dwyco.dh", userdir + "dwyco.dh");
     QFile::copy(":androidinst3/assets/license.txt", userdir + "license.txt");

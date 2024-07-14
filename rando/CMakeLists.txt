@@ -4,7 +4,7 @@ project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
 set(RANDO_VERSION "4.91")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000136)
+set(RANDO_VERSION_CODE 3000137)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -157,6 +157,10 @@ set(BASELIBS
     Qt6::QuickControls2
     Qt6::Positioning
     Qt6::Location
+)
+
+qt_import_plugins(rando
+    EXCLUDE_BY_TYPE qmltooling
 )
 
 if(ANDROID)
