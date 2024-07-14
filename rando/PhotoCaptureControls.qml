@@ -41,7 +41,7 @@
 import QtQuick
 import QtMultimedia
 import QtQuick.Layouts
-import QtQuick.Controls
+import QtQuick.Controls.Material
 import dwyco
 
 Item {

@@ -3,7 +3,7 @@
 // controls 1. this is just updated for qtquick.controls 2
 //
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Material
 import Qt5Compat.GraphicalEffects
 
 ProgressBar

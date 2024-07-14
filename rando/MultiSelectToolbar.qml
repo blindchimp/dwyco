@@ -8,7 +8,7 @@
 */
 import QtQuick
 import dwyco
-import QtQuick.Controls
+import QtQuick.Controls.Material
 import QtQuick.Layouts
 import QtQuick.Dialogs
 //import Qt.labs.platform

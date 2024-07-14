@@ -7,7 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Controls.Material
 

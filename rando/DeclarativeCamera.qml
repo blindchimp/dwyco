@@ -9,7 +9,7 @@
 import QtQml
 import QtQuick
 import QtMultimedia
-import QtQuick.Controls
+import QtQuick.Controls.Material
 
 // the API to this object is ugly... essentially, the requirement is
 // that the user of the object must reside in a stackview, and
