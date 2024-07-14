@@ -164,7 +164,8 @@ att_file_hash(const QByteArray& mid, QByteArray& hash_out)
     if(!dwyco_copy_out_file_zap_buf2(mid.constData(), &buf, &len, 4096))
         return 0;
     QCryptographicHash ch(QCryptographicHash::Sha1);
-    ch.addData(buf, len);
+    QByteArrayView b(buf, len);
+    ch.addData(b);
 
     QByteArray res = ch.result();
     Mid_to_hash.insert(mid, res);

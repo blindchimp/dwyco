@@ -1933,7 +1933,7 @@ DwycoCore::init()
                                     QList<QLoc> ql = Hash_to_loc.values(hh);
                                     if(!ql.contains(loca))
                                     {
-                                        Hash_to_loc.insertMulti(hh, loca);
+                                        Hash_to_loc.insert(hh, loca);
                                     }
                                     long v = Hash_to_max_lc.value(hh, 0);
                                     if(lc > v)
@@ -3168,7 +3168,8 @@ DwycoCore::send_simple_cam_pic(QString recipient, QString msg, QString filename)
     char buf[4096];
     int len = df.read(buf, sizeof(buf));
     QCryptographicHash ch(QCryptographicHash::Sha1);
-    ch.addData(buf, len);
+    QByteArrayView b(buf, len);
+    ch.addData(b);
 
     QByteArray res = ch.result();
     res = res.toHex();
@@ -3250,7 +3251,7 @@ DwycoCore::export_attachment(QString mid)
     if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
         return "";
     QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
-    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    quint16 csum = qChecksum(QByteArrayView(scary_fn));
     // look for file extension
     int dot = scary_fn.lastIndexOf('.');
     if(dot != -1)
