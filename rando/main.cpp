@@ -57,8 +57,8 @@ int main(int argc, char *argv[])
     QQuickStyle::setStyle("Fusion");
     QQuickStyle::setFallbackStyle("Fusion");
 #else
-    QQuickStyle::setStyle("Material");
-    QQuickStyle::setFallbackStyle("Material");
+    //QQuickStyle::setStyle("Material");
+    //QQuickStyle::setFallbackStyle("Material");
 #endif
 
     //perm_setup(app);
