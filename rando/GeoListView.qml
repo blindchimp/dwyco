@@ -26,7 +26,8 @@ Page {
     Component {
         id: geodel
         ItemDelegate {
-            width: parent.width
+            anchors.left: ListView.view.contentItem.left
+            anchors.right: ListView.view.contentItem.right
             text: model.display
             display: AbstractButton.TextBesideIcon
             icon.source: model.lat.length === 0 ? mi("ic_not_interested_black_24dp.png") : mi("ic_language_black_24dp.png")
