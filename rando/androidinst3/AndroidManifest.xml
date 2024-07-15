@@ -68,6 +68,5 @@ android:fullBackupContent="@xml/backup_rules"
 
 <uses-permission android:name="android.permission.VIBRATE"/>
 <uses-permission android:name="android.permission.CAMERA"/>
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 </manifest>
