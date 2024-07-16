@@ -67,8 +67,23 @@ load_inbox_tags_to_unviewed(QSet<QByteArray>& uids_out)
 void
 load_unviewed()
 {
+    dwyco_start_bulk_update();
     QSet<QByteArray> dum;
     load_inbox_tags_to_unviewed(dum);
+    DWYCO_LIST tm;
+    if(!dwyco_get_tagged_mids(&tm, "unviewed"))
+    {
+        dwyco_end_bulk_update();
+        return;
+    }
+    simple_scoped qtm(tm);
+    for(int i = 0; i < qtm.rows(); ++i)
+    {
+        QByteArray mid = qtm.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        if(dwyco_mid_has_tag(mid.constData(), "_trash"))
+            dwyco_unset_msg_tag(mid.constData(), "unviewed");
+    }
+    dwyco_end_bulk_update();
 }
 
 bool
@@ -93,6 +108,7 @@ del_unviewed_uid(const QByteArray& uid)
     }
 }
 
+// WARNING: this returns uids in HEX, not binary
 QList<QByteArray>
 uids_with_unviewed()
 {
