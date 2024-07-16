@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.91")
+set(RANDO_VERSION "4.92")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000136)
+set(RANDO_VERSION_CODE 3000138)
 if (ANDROID)
-    include(/home/dwight/Android/Sdk/android_openssl/CMakeLists.txt)
+    include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
@@ -17,6 +17,7 @@ include_directories(
     ../bld/qt-supermacros
 )
 add_compile_definitions(NO_BUILDTIME)
+add_compile_definitions(BUILDTIME="${RANDO_VERSION}")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
@@ -129,6 +130,7 @@ set_target_properties(rando PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
+    QT_ANDROID_TARGET_SDK_VERSION 33
 
 )
 set_target_properties(rando PROPERTIES
@@ -155,6 +157,10 @@ set(BASELIBS
     Qt6::QuickControls2
     Qt6::Positioning
     Qt6::Location
+)
+
+qt_import_plugins(rando
+    EXCLUDE_BY_TYPE qmltooling
 )
 
 if(ANDROID)

@@ -4,7 +4,6 @@
     android:installLocation="auto"
     android:versionCode="-- %%INSERT_VERSION_CODE%% --"
     android:versionName="-- %%INSERT_VERSION_NAME%% --">
-    <!-- %%INSERT_PERMISSIONS -->
     <!-- %%INSERT_FEATURES -->
     <supports-screens
         android:anyDensity="true"
@@ -22,7 +21,8 @@ android:fullBackupContent="@xml/backup_rules"
         android:preserveLegacyExternalStorage="true" 
         android:dataExtractionRules="@xml/a33backup_rules"
         android:allowBackup="true"
-        android:fullBackupOnly="false">
+        android:fullBackupOnly="false"
+        android:icon="@drawable/icon" >
         <activity
             android:name="com.dwyco.android.NotificationClient"
             android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density"
@@ -68,6 +68,5 @@ android:fullBackupContent="@xml/backup_rules"
 
 <uses-permission android:name="android.permission.VIBRATE"/>
 <uses-permission android:name="android.permission.CAMERA"/>
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 </manifest>

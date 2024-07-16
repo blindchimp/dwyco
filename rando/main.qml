@@ -7,7 +7,6 @@
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 import QtQuick
-import QtQml
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Controls.Material
@@ -195,7 +194,7 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        if(camera_permission.status !== Qt.PermissionGranted) {
+        if(camera_permission.status != Qt.PermissionStatus.Granted) {
             console.log("CAMERA DENIED")
             camera_permission.request()
         } else {
@@ -209,7 +208,7 @@ ApplicationWindow {
     CameraPermission {
         id: camera_permission
         onStatusChanged: {
-            if(status === Qt.PermissionGranted) {
+            if(status == Qt.PermissionStatus.Granted) {
                 console.log("Camera now granted")
             } else {
                 console.log("Camera denied again")

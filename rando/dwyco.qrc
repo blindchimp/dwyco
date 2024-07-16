@@ -6,5 +6,6 @@
         <file>androidinst3/assets/no_img.png</file>
         <file>androidinst3/assets/servers2</file>
         <file>androidinst3/assets/v21.ver</file>
+        <file>androidinst3/assets/qtquickcontrols2.conf</file>
     </qresource>
 </RCC>

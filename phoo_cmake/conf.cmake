@@ -9,7 +9,7 @@ add_compile_definitions(
 	DWYCO_FORCE_DESKTOP_VGQT
 )
 # Determine the host platform
-if(UNIX)
+if(UNIX AND NOT APPLE)
     add_compile_definitions(UNIX LINUX)
 	add_compile_options(-Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function)
 endif()
@@ -21,7 +21,8 @@ endif()
 
 if(APPLE)
     # Set compiler definitions for macOS
-    add_compile_definitions(MACOSX)
+    add_compile_definitions(MACOSX LINUX UNIX)
+	add_compile_options(-Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function)
 endif()
 if(IOS)
     add_compile_definitions(DWYCO_IOS)

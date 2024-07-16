@@ -66,6 +66,60 @@ Page {
         }
     }
 
+    PinchArea {
+        id: pincher
+        anchors.fill: parent
+        pinch.dragAxis: Pinch.XAndYAxis
+
+        // this works, but zooms too fast
+        //property real start_zoom_level
+
+        // onPinchStarted: {
+        //     console.log("start pinch", mapz.map.zoomLevel)
+        //     start_zoom_level = mapz.map.zoomLevel
+        // }
+
+        // onPinchUpdated: {
+        //     console.log("pinch ", pinch.scale)
+        //     var p
+        //     p = pinch.scale
+        //     mapz.map.zoomLevel = start_zoom_level * p
+        // }
+
+        property real oldZoom
+        function calcZoomDelta(zoom, percent) {
+            return zoom + Math.log(percent)/Math.log(2)
+        }
+
+        onPinchStarted: {
+            oldZoom = mapz.map.zoomLevel
+        }
+
+        onPinchUpdated: (pinch) => {
+            mapz.map.zoomLevel = calcZoomDelta(oldZoom, pinch.scale)
+        }
+
+        onPinchFinished: (pinch) => {
+            mapz.map.zoomLevel = calcZoomDelta(oldZoom, pinch.scale)
+        }
+
+        MouseArea {
+            id: dragArea
+            hoverEnabled: true
+            anchors.fill: parent
+            //drag.target: mapz
+            scrollGestureEnabled: false
+
+            // onPressed: {
+            //     dragging = true
+
+            // }
+            onClicked: {
+                stack.pop()
+            }
+        }
+    }
+
     Component {
         id: extras_button
         Label {
