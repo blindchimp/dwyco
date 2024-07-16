@@ -661,7 +661,7 @@ Page {
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
                     //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                    source: {PREVIEW_FILENAME != "" ? ("file:///" + String(PREVIEW_FILENAME)) :
+                    source: {PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
                     asynchronous: true
@@ -778,7 +778,7 @@ Page {
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file:///" + String(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {

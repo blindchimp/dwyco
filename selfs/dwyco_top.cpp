@@ -162,6 +162,10 @@ static
 void
 setup_emergency_servers()
 {
+#ifdef LOCAL_SERVERS
+    // don't update server list, we want it to stay local while we test
+    return;
+#endif
     auto manager = new QNetworkAccessManager;
     QObject::connect(manager, &QNetworkAccessManager::finished, install_emergency_servers2);
     auto r = QNetworkRequest(QUrl("http://www.dwyco.com/downloads/servers2.eme"));
@@ -982,6 +986,7 @@ DwycoCore::name_to_uid(QString handle)
     dwyco_name_to_uid(b.constData(), b.length());
 }
 
+#if 0
 // if they installed externally, copy the files in to the local
 // app storage, and rename the data folder.
 // this should only need to be done once, and the process should be
@@ -1046,6 +1051,7 @@ DwycoCore::background_migrate()
     connect(q, SIGNAL(finished()), this, SIGNAL(migration_complete()));
     q->start();
 }
+#endif
 
 void
 DwycoCore::background_reindex()
@@ -1075,6 +1081,7 @@ DwycoCore::to_local_file(const QUrl& u)
     return u.toLocalFile();
 }
 
+#if 0
 void
 DwycoCore::directory_swap()
 {
@@ -1107,14 +1114,17 @@ DwycoCore::directory_swap()
         cdcxpanic("failed migration");
 
 }
+#endif
 
 #if 0 && ANDROID
 static
 QStandardPaths::StandardLocation
 determine_android_migration()
 {
+    // ca 6/2024, migration done
     QStandardPaths::StandardLocation filepath = QStandardPaths::AppDataLocation;
-
+    return filepath;
+#if 0
     QString localdir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     localdir += "/dwyco/phoo/";
     User_pfx = localdir.toUtf8();
@@ -1187,6 +1197,7 @@ determine_android_migration()
         }
     }
     return filepath;
+#endif
 }
 #endif
 

@@ -13,38 +13,46 @@ import QtQuick.Controls.Material
 import QtQuick.Dialogs
 
 Page {
+    id: simple_tag_msg_browse
     property alias model: grid.model
     property string to_tag;
     property bool multiselect_mode: false
     property url cur_source
     property int ind_online: 0
     property int filter_show_sent: 1
-    property int filter_show_only_fav: 0
 
     function star_fun(b) {
         console.log("chatbox star")
         model.fav_all_selected(b ? 1 : 0)
     }
 
-    onFilter_show_only_favChanged: {
-        themsglist.set_filter(filter_show_sent, 1, -1, filter_show_only_fav)
-    }
-
     onFilter_show_sentChanged: {
-        themsglist.set_filter(filter_show_sent, 1, -1, filter_show_only_fav)
+        themsglist.set_filter(filter_show_sent, 1, -1, to_tag == "_fav" ? 1 : 0)
     }
 
     onTo_tagChanged: {
         themsglist.tag = to_tag
+        filter_show_sent = 1
     }
 
     onMultiselect_modeChanged: {
         model.set_all_unselected()
     }
     onVisibleChanged: {
-        multiselect_mode = false
-        filter_show_only_fav = 0
-        filter_show_sent = 1
+        //multiselect_mode = false
+        //filter_show_sent = 1
+    }
+
+    Connections {
+        target: stack
+        function onDepthChanged() {
+            console.log("depth tmg", simple_tag_msg_browse.StackView.index, stack.depth)
+            if(simple_tag_msg_browse.StackView.index === -1) {
+                //filter_show_only_fav = 0
+                filter_show_sent = 1
+            }
+
+        }
     }
 
     Component {
@@ -66,6 +74,7 @@ Page {
                     onTriggered: {
                         star_fun(false)
                         multiselect_mode = false
+                        model.invalidate_model_filter()
                     }
                 }
                 MenuItem {
@@ -73,6 +82,7 @@ Page {
                     onTriggered: {
                         model.tag_all_selected("_hid")
                         multiselect_mode = false
+                        model.invalidate_model_filter()
                     }
                 }
                 MenuItem {
@@ -80,6 +90,7 @@ Page {
                     onTriggered: {
                         model.untag_all_selected("_hid")
                         multiselect_mode = false
+                        model.invalidate_model_filter()
                     }
                 }
                 MenuItem {
@@ -95,11 +106,11 @@ Page {
     header: Column {
         width:parent.width
         MultiSelectToolbar {
-            id:multi_toolbar
+            id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Does NOT delete FAVORITE messages"
-            delete_warning_text: "Delete all selected messages?"
+            delete_warning_inf_text: "KEEPS FAVORITE messages"
+            delete_warning_text: "Trash all selected messages?"
         }
 
         ToolBar {
@@ -179,7 +190,7 @@ Page {
                         source: mi("ic_action_overflow.png")
                     }
                     onClicked: optionsMenu.open()
-                    visible: simp_msg_browse.visible
+                    //visible: simp_msg_browse.visible
 
                     Menu {
 
@@ -195,24 +206,6 @@ Page {
                             }
 
                         }
-
-                        MenuItem {
-                            text: "Show Only Favorites"
-                            checked: filter_show_only_fav
-                            checkable: true
-                            onCheckedChanged: {
-                                filter_show_only_fav = checked
-                            }
-
-                        }
-
-                        MenuItem {
-                            text: "View profile"
-                            onTriggered: {
-                                stack.push(theprofileview)
-                            }
-                        }
-
                     }
                 }
             }
@@ -414,7 +407,7 @@ Page {
                             themsgview.mid = model.mid
                             themsgview.uid = model.ASSOC_UID
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file://" + String(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {

@@ -65,17 +65,17 @@ Page {
                     }
                 }
                 MenuItem {
+                    text: "Select All"
+                    onTriggered: {
+                        model.set_all_selected()
+                    }
+                }
+                MenuItem {
                     text: "Delete forever"
                     onTriggered: {
                         model.obliterate_all_selected()
                         //model.tag_all_selected("_hid")
                         multiselect_mode = false
-                    }
-                }
-                MenuItem {
-                    text: "Select All"
-                    onTriggered: {
-                        model.set_all_selected()
                     }
                 }
             }
@@ -385,7 +385,7 @@ Page {
                             themsgview.mid = model.mid
                             themsgview.uid = model.ASSOC_UID
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : ("file://" + String(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {
