@@ -12,7 +12,7 @@
 #include <QScreen>
 #include <QSettings>
 #include <QHostInfo>
-#include <QQuickStyle>
+//#include <QQuickStyle>
 #include <QDebug>
 #include <QQmlFileSelector>
 #ifdef ANDROID
