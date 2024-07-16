@@ -245,7 +245,7 @@ Page {
             asynchronous: true
             source: {
                 click_to_fetch ? mi("ic_cloud_download_black_24dp.png") :
-                (PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : "")
+                (PREVIEW_FILENAME !== "" ? core.from_local_file(PREVIEW_FILENAME) : "")
             }
 
             fillMode: click_to_fetch ? Image.Pad : Image.PreserveAspectCrop
