@@ -11,7 +11,7 @@ set(PHOO_VERSION "4.109")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
 set(PHOO_VERSION_CODE 2000118)
 if (ANDROID)
-    include(/home/dwight/Android/Sdk/android_openssl/CMakeLists.txt)
+    include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
@@ -22,7 +22,7 @@ include_directories(
     ../bld/qt-supermacros
     ../bld/qt6drv
 )
-if(UNIX AND NOT APPLE)
+if(UNIX AND NOT APPLE AND NOT ANDROID)
     include_directories(../bld/v4lcap)
 endif()
 
@@ -196,6 +196,7 @@ set_target_properties(phoo PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
+    QT_ANDROID_TARGET_SDK_VERSION 34
 
 )
 set_target_properties(phoo PROPERTIES
@@ -238,12 +239,14 @@ Qt6::StateMachine
 if(ANDROID)
     target_link_libraries(phoo PRIVATE
         qt-qml-models
+        qt6drv
         ${CMAKE_CURRENT_SOURCE_DIR}/../phoobld/libs/${CMAKE_ANDROID_ARCH_ABI}/libdwyco_jni.so
         Qt6::Quick
         Qt6::Network
         Qt6::Multimedia
         Qt6::QuickControls2
 	Qt6::Concurrent
+        Qt6::StateMachine
     )
 endif()
 

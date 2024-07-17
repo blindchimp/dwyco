@@ -1,6 +1,7 @@
 # note: this is a kluge, hoping that zlib gets created first since it screws
 # around and creates some header files at build time (whoever decided this
 # was a good thing... sheesh)
+if(NOT ANDROID)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/zlib ${CMAKE_CURRENT_BINARY_DIR}/bld/zlib)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/crypto5 ${CMAKE_CURRENT_BINARY_DIR}/bld/crypto5)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/kazlib ${CMAKE_CURRENT_BINARY_DIR}/bld/kazlib)
@@ -19,13 +20,13 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/cdc32 ${CMAKE_CURRENT_BINARY_DIR}/bl
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/uv ${CMAKE_CURRENT_BINARY_DIR}/bld/uv)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/vc ${CMAKE_CURRENT_BINARY_DIR}/bld/vc)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/jhead ${CMAKE_CURRENT_BINARY_DIR}/bld/jhead)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qt-qml-models ${CMAKE_CURRENT_BINARY_DIR}/bld/qt-qml-models)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/miniupnp/miniupnp-master/miniupnpc ${CMAKE_CURRENT_BINARY_DIR}/bld/miniupnp/miniupnp-master/miniupnpc)
+endif()
+add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qt-qml-models ${CMAKE_CURRENT_BINARY_DIR}/bld/qt-qml-models)
 
-if(UNIX AND NOT APPLE)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qt6drv ${CMAKE_CURRENT_BINARY_DIR}/bld/qt6drv)
+if(UNIX AND NOT APPLE AND NOT ANDROID)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/v4lcap ${CMAKE_CURRENT_BINARY_DIR}/bld/v4lcap)
 endif()
-if(APPLE OR WIN32 OR MSVC)
+if(APPLE OR WIN32 OR MSVC OR ANDROID)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qt6drv ${CMAKE_CURRENT_BINARY_DIR}/bld/qt6drv)
 endif()
