@@ -11,29 +11,48 @@ Dialog {
     property string detailedText
     property string informativeText
     property string text
-    // background: Rectangle {
-    //     color: "red"
-    //     implicitWidth: 300
-    //     implicitHeight: 200
-    // }
+    background: Rectangle {
+        color: "red"
+        //implicitWidth: 300
+        //implicitHeight: 200
+        radius: 5
+    }
 
-    standardButtons: Dialog.Yes | Dialog.No
+    //standardButtons: Dialog.Yes | Dialog.No
     modal: true
     focus: true
-    width: 300
-    height: 200
+
+    //width: 400
+    //height: 300
+    footer: DialogButtonBox {
+        standardButtons: DialogButtonBox.Yes | DialogButtonBox.No
+        //buttonLayout: DialogButtonBox.AndroidLayout
+        background: Rectangle {
+            color: "black"
+            radius: 5
+
+        }
+
+    }
 
     ColumnLayout {
-
+    anchors.fill: dia
     Label {
         id: lab
         text: dia.text
+        //horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
         Layout.fillWidth: true
     }
     Label {
         id: lab2
         text: dia.informativeText
+        //horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
         Layout.fillWidth: true
+    }
+    Item {
+        Layout.fillHeight: true
     }
     }
 
