@@ -10,7 +10,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import QtQuick.Dialogs
+//import QtQuick.Dialogs
 import QtCore
 import dwyco
 
@@ -157,6 +157,45 @@ ApplicationWindow {
     //width: Screen.width
     //height: Screen.height
     title: qsTr("Dwyco Rando")
+
+    MessageYN {
+        id: confirm_delete2
+        title: "Delete Non-favorites?"
+        //icon: StandardIcon.Question
+        text: "Delete Non-favorite pictures?"
+        informativeText: "This KEEPS FAVORITE pictures"
+        //standardButtons: StandardButton.Yes | StandardButton.No
+        onYesClicked: {
+            var i
+            var u
+            for(i = 0; i < ConvListModel.count; i++) {
+                u = ConvListModel.get(i).uid
+                core.clear_messages_unfav(u)
+            }
+
+            close()
+        }
+        onNoClicked: {
+            close()
+        }
+    }
+
+    MessageYN {
+        id: confirm_delete
+        title: "Delete all"
+        //icon: StandardIcon.Question
+        text: "Delete ALL pictures?"
+        informativeText: "This REMOVES FAVORITE pictures too."
+        //standardButtons: StandardButton.Yes | StandardButton.No
+        onYesClicked: {
+            ConvListModel.set_all_selected(true)
+            ConvListModel.delete_all_selected()
+            close()
+        }
+        onNoClicked: {
+            close()
+        }
+    }
 
     property int close_bounce: 0
     onClosing: (close)=> {

@@ -10,7 +10,7 @@ import QtQuick
 import dwyco
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import QtQuick.Dialogs
+//import QtQuick.Dialogs
 //import Qt.labs.platform
 
 ToolBar {

@@ -1,36 +1,50 @@
 import QtQuick
+import QtQuick.Layouts
 import QtQuick.Controls.Material
-import QtQuick.Dialogs
+//import QtQuick.Dialogs
 
-MessageDialog {
+Dialog {
+    id: dia
+    anchors.centerIn: parent
     signal noClicked
     signal yesClicked
+    property string detailedText
+    property string informativeText
+    property string text
+    // background: Rectangle {
+    //     color: "red"
+    //     implicitWidth: 300
+    //     implicitHeight: 200
+    // }
 
-//    title: "Bulk delete?"
-//    //icon: StandardIcon.Question
-//    text: "Delete ALL messages from selected users?"
-//    informativeText: "This REMOVES FAVORITE messages too."
-    buttons: MessageDialog.Yes | MessageDialog.No
-    //detailedText: ""
-    onButtonClicked: (button, role)=> {
-                         switch(button) {
-                             case MessageDialog.Yes: {
-                                 yesClicked()
-                                 break
-                             }
-                             case MessageDialog.No: {
-                                 noClicked()
-                                 break
-                             }
-                         }
-                     }
+    standardButtons: Dialog.Yes | Dialog.No
+    modal: true
+    focus: true
+    width: 300
+    height: 200
 
-//                onYesClicked: {
-//                    model.delete_all_selected()
-//                    multiselect_mode = false
-//                    close()
-//                }
-//                onNoClicked: {
-//                    close()
-//                }
+    ColumnLayout {
+
+    Label {
+        id: lab
+        text: dia.text
+        Layout.fillWidth: true
+    }
+    Label {
+        id: lab2
+        text: dia.informativeText
+        Layout.fillWidth: true
+    }
+    }
+
+
+    onAccepted: {
+        console.log("YES")
+        // FIXME
+        noClicked()
+    }
+    onRejected:{
+        console.log("NO")
+        noClicked()
+    }
 }

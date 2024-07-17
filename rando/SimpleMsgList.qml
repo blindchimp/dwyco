@@ -50,11 +50,11 @@ Page {
 
     header: Column {
         width: parent.width
-        MultiSelectToolbar {
-            id: multi_toolbar
-            visible: multiselect_mode
-            //extras: extras_button
-        }
+        // MultiSelectToolbar {
+        //     id: multi_toolbar
+        //     visible: multiselect_mode
+        //     //extras: extras_button
+        // }
         ToolBar {
             id: regular_toolbar
             background: Rectangle {

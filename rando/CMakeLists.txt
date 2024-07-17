@@ -82,7 +82,7 @@ qt_add_qml_module(rando
            PicPreview.qml
            SimpleToolbar.qml
            CircularImage.qml
-           MultiSelectToolbar.qml
+           #MultiSelectToolbar.qml
            About.qml
            DSettings.qml
            AppDrawer.qml

@@ -14,54 +14,15 @@ AppDrawerForm {
     signal close()
 
     delete_all.onClicked: {
-        confirm_delete.visible = true
+        confirm_delete.open()
         close()
 
-    }
-    MessageYN {
-        id: confirm_delete
-        title: "Delete all"
-        //icon: StandardIcon.Question
-        text: "Delete ALL pictures?"
-        informativeText: "This REMOVES FAVORITE pictures too."
-        //standardButtons: StandardButton.Yes | StandardButton.No
-        onYesClicked: {
-            ConvListModel.set_all_selected(true)
-            ConvListModel.delete_all_selected()
-            close()
-        }
-        onNoClicked: {
-            close()
-        }
     }
 
     clear_nonfav.onClicked: {
-        confirm_delete2.visible = true
+        confirm_delete2.open()
         close()
     }
-
-    MessageYN {
-        id: confirm_delete2
-        title: "Delete Non-favorites?"
-        //icon: StandardIcon.Question
-        text: "Delete Non-favorite pictures?"
-        informativeText: "This KEEPS FAVORITE pictures"
-        //standardButtons: StandardButton.Yes | StandardButton.No
-        onYesClicked: {
-            var i
-            var u
-            for(i = 0; i < ConvListModel.count; i++) {
-                u = ConvListModel.get(i).uid
-                core.clear_messages_unfav(u)
-            }
-
-            close()
-        }
-        onNoClicked: {
-            close()
-        }
-    }
-
 
     anchors.fill: parent
 
