@@ -59,8 +59,7 @@ Dialog {
 
     onAccepted: {
         console.log("YES")
-        // FIXME
-        noClicked()
+        yesClicked()
     }
     onRejected:{
         console.log("NO")

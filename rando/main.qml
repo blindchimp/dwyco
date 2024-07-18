@@ -137,6 +137,7 @@ ApplicationWindow {
     property bool show_hidden: true
     property bool show_archived_users: false
     property bool is_mobile
+    property bool hard_close: false
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
 
@@ -198,7 +199,12 @@ ApplicationWindow {
     }
 
     property int close_bounce: 0
-    onClosing: (close)=> {
+    onClosing: (close) => {
+                   if(hard_close) {
+                       close.accepted = true
+                       return
+                   }
+
         // special cases, don't let them navigate around the
         // initial app setup
         if(profile_bootstrapped === 0) {

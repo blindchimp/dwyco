@@ -60,6 +60,7 @@ Rectangle {
             Layout.fillWidth: true
             onClicked: {
                 core.set_local_setting("reindex1", "1")
+                hard_close = true
                 Qt.quit()
             }
             visible: reindex_done
@@ -69,6 +70,7 @@ Rectangle {
             //Layout.horizontalCenter: true
             Layout.fillWidth: true
             onClicked: {
+                hard_close = true
                 Qt.quit()
             }
             visible: busy.running

@@ -312,7 +312,7 @@ Page {
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
-                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
+                visible: IS_QD === 0 && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
                 source: mi("ic_not_interested_black_24dp.png")
 
                 z: 10
@@ -540,7 +540,7 @@ Page {
             }
             Image {
                 id: deco2
-                visible: IS_QD
+                visible: IS_QD === 1
                 source: mi("ic_cloud_upload_black_24dp.png")
                 anchors.left: img.left
                 anchors.top: img.top
