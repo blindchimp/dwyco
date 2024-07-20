@@ -9,6 +9,7 @@
 import QtQuick
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import dwyco
 
 Page {
     anchors.fill: parent
@@ -80,6 +81,14 @@ Page {
             onClicked: {
 
                 Qt.openUrlExternally("http://www.dwyco.com/license.txt")
+            }
+            Layout.fillWidth: true
+        }
+        Button {
+            text: "test"
+            onClicked: {
+
+                core.send_debug("a33bbcb888e2e0c11099")
             }
             Layout.fillWidth: true
         }
