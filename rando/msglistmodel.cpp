@@ -587,7 +587,7 @@ msglist_model::find_first_unseen()
 bool
 msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
-    return true;
+    //return true;
     QAbstractItemModel *alm = sourceModel();
 
 #if 0
@@ -597,7 +597,10 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     if(hl.length() == 0)
         return false;
 #endif
-
+    QVariant is_file = alm->data(alm->index(source_row, 0), IS_FILE);
+    if(is_file.toInt() == 0)
+        return false;
+    return true;
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
         return false;
