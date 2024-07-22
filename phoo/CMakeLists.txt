@@ -36,9 +36,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
 find_package(QT NAMES Qt6  REQUIRED COMPONENTS Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
+find_package(Qt6 REQUIRED COMPONENTS Network)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concurrent MultimediaWidgets)
 
@@ -95,6 +95,10 @@ qt_add_executable(phoo
    ${SRCS}
    callsm_objs.h # need this so automoc can find this head-only q_object
 
+)
+
+qt_import_plugins(phoo
+    EXCLUDE_BY_TYPE qmltooling
 )
 
 qt_add_qml_module(phoo
@@ -222,7 +226,6 @@ set(BASELIBS
     vorbis112
     ogg
     jenkins
-    qt6drv
     uv
     jhead
     miniupnpc
@@ -254,6 +257,7 @@ if(UNIX AND NOT ANDROID)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
+   v4lcap
     -ldl
 )
 endif()
