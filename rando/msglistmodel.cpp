@@ -598,9 +598,20 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
         return false;
 #endif
     QVariant is_file = alm->data(alm->index(source_row, 0), IS_FILE);
-    if(is_file.toInt() == 0)
-        return false;
-    return true;
+    if(is_file.toInt() == 1)
+        return true;
+    QVariant is_active = alm->data(alm->index(source_row, 0), IS_ACTIVE);
+    if(is_active.toBool())
+        return true;
+    QVariant is_qd = alm->data(alm->index(source_row, 0), IS_QD);
+    if(is_qd.toInt() == 1)
+        return true;
+
+    QVariant fetch_state = alm->data(alm->index(source_row, 0), FETCH_STATE);
+    if(fetch_state.toString() == "manual")
+        return true;
+
+
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
         return false;
