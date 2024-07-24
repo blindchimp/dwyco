@@ -83,6 +83,7 @@ enum {
     ASSOC_HASH,
     SENT_TO_LAT,
     SENT_TO_LON,
+    IS_UNFETCHED
 };
 
 
@@ -275,7 +276,7 @@ msglist_model::msglist_model(QObject *p) :
     filter_show_hidden = 1;
     special_sort = false;
     msglist_raw *m = new msglist_raw(p);
-    setDynamicSortFilter(false);
+    setDynamicSortFilter(true);
     setSourceModel(m);
     mlm = this;
 }
@@ -597,6 +598,9 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     if(hl.length() == 0)
         return false;
 #endif
+    QVariant is_unfetched = alm->data(alm->index(source_row, 0), IS_UNFETCHED);
+    if(is_unfetched.toBool())
+        return true;
     QVariant is_file = alm->data(alm->index(source_row, 0), IS_FILE);
     if(is_file.toInt() == 1)
         return true;
@@ -974,6 +978,7 @@ msglist_raw::roleNames() const
     rn(ASSOC_HASH);
     rn(SENT_TO_LAT);
     rn(SENT_TO_LON);
+    rn(IS_UNFETCHED);
 #undef rn
     return roles;
 }
@@ -1076,6 +1081,8 @@ msglist_raw::qd_data ( int r, int role ) const
         return -1.0;
     case FETCH_STATE:
         return QString("none");
+    case IS_UNFETCHED:
+        return false;
 
     case Qt::DecorationRole:
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
@@ -1123,6 +1130,7 @@ auto_fetch(QByteArray mid)
         if(fetch_id != 0)
         {
             Fetching.append(mid);
+            mlm->invalidate();
             return 1;
         }
     }
@@ -1262,6 +1270,7 @@ msglist_raw::inbox_data (int r, int role ) const
     case IS_HIDDEN:
     case IS_FORWARDED:
     case IS_UNSEEN:
+    case IS_FILE:
         return 0;
 
     case LOGICAL_CLOCK:
@@ -1271,7 +1280,8 @@ msglist_raw::inbox_data (int r, int role ) const
         if(!Mid_to_percent.contains(mid))
             return -1.0;
         return (double)Mid_to_percent.value(mid);
-
+    case IS_UNFETCHED:
+        return true;
     case Qt::DecorationRole:
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
 
@@ -1547,6 +1557,10 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
     else if(role == LOGICAL_CLOCK)
     {
         return (qlonglong)m.get_long(r, DWYCO_MSG_IDX_LOGICAL_CLOCK);
+    }
+    else if(role == IS_UNFETCHED)
+    {
+        return false;
     }
     }
     catch(...)
