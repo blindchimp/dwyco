@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
 #if defined(_WIN32)
-    QQuickStyle::setStyle("Fusion");
-    QQuickStyle::setFallbackStyle("Fusion");
+    //QQuickStyle::setStyle("Fusion");
+    //QQuickStyle::setFallbackStyle("Fusion");
 #else
     //QQuickStyle::setStyle("Material");
     //QQuickStyle::setFallbackStyle("Material");

@@ -610,6 +610,7 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     QVariant fetch_state = alm->data(alm->index(source_row, 0), FETCH_STATE);
     if(fetch_state.toString() == "manual")
         return true;
+    return false;
 
 
     QVariant is_sent = alm->data(alm->index(source_row, 0), SENT);
