@@ -1,0 +1,147 @@
+
+		   SOFTWARE LICENSE AGREEMENT
+
+
+Please read this agreement before continuing. 
+
+CDC32 and CDC-X are Copyright 1995-2017 (c) Dwyco, Inc., All rights reserved.
+
+This distribution of CDC-X is Freeware.
+
+You are welcome to use it for as long as you like. There is no
+expiration on the software. If your usage of the system is
+consistent with typical usage patterns of users that employ
+the software as a chat site, you will probably never be asked to pay
+for the Dwyco service. If you use the system as something other
+than a "chat" site, you may be asked to pay for a subscription
+to the Dwyco service.
+
+In addition, there may be several "Advanced features" in any
+given version of CDC-X that are enabled during a trial period (usually
+several weeks). You must buy a subscription to use them after the
+trial period. Currently, there are no "pay features", all features
+are available to all users for free.
+
+After the trial period, CDC-X remains completely functional except for
+these features.
+
+Note: for the Linux version of the software, the advanced features
+are provided for free. However, we encourage Linux users to buy
+subscriptions to help support further development of CDC-X for Linux.
+
+Instructions for buying a subscription to the Dwyco service are 
+available by clicking Help|How to buy a subscription...
+or clicking on the credit-card button on the toolbar after starting the program.
+
+You MAY make copies of the program for your personal or
+friends' use, upload it to Web sites, post it to newsgroups, or
+distribute it through other channels as long as no direct fee is charged
+for the software. No part of this license shall imply that
+copies of CDC-X can be redistributed or remarketed with other products
+without the prior written consent of Dwyco, Inc.
+
+IN ANY CASE, NO MATTER WHAT THE DISTRIBUTION MEDIA,
+THE DISTRIBUTION FILE MUST NOT BE MODIFIED IN ANY WAY.
+The name of the distribution file is:
+	* Windows: cdcxdwy.exe
+	* Linux: cdcx-linux-<arch>.sh
+	* MacOS: CDC-X.dmg
+    * Mobile versions: from your app store
+
+If you'd like to distribute the software in a compilation 
+please drop us a line at:
+
+Dwyco, Inc.
+email: cdchelp@dwyco.com
+
+We're mainly concerned with getting you the latest and greatest
+version of the program.
+You can also visit http://www.dwyco.com, where the latest
+software (or pointers to it) can be obtained.
+
+
+By proceeding to run CDC-X, hereinafter referred to as "Program",
+you signify your acceptance of this license agreement. 
+EXCEPT AS EXPRESSLY SET FORTH IN THIS AGREEMENT, you may not use,
+copy, modify or transfer this program or any part thereof, and
+you may not transfer any rights granted hereby.
+
+If you do not agree with the terms, you must remove this software
+program from your computer systems.
+
+
+A. You agree:
+
+	1. That Dwyco, Inc. retains all rights and title to the Program;
+
+	2. Not to try to list or reconstruct, by any means, the source
+	   code of the Program;
+
+	3. Not to add, remove or change any part of the Program, including,
+	but not limited to, product identification or notices 
+       from the Program or any support material;
+
+	4. To prevent others from violating the terms listed above.
+
+
+B. In addition, here is some standard protective language:
+
+	1. Termination. This license shall be automatically terminated upon
+	   breech of any term of this Agreement by you.  Upon termination,
+	   you must immediately destroy all of your copies of the Program.
+	   All of your obligations and the rights of Dwyco, Inc.
+	   hereunder shall survive termination.
+
+	2. Limitation on Liability; Exclusive Remedy. DWYCO, INC. 
+	   IS NOT RESPONSIBLE FOR LOSS OR INACCURACY OF DATA, OR FOR ANY 
+	   INDIRECT, INCIDENTAL OR CONSEQUENTIAL DAMAGES INCLUDING, BUT NOT
+	   LIMITED TO, LOSS OF REVENUES AND LOSS OF PROFITS.  ANY LIABILITY
+	   OF DWYCO, INC. UNDER ANY LEGAL THEORY WHATSOEVER WILL
+	   BE LIMITED TO PRODUCT REPLACEMENT OR IF UNENFORCEABLE, TO REFUND
+	   OF THE LICENSE FEE.
+
+	3. General. Due to the unique nature of the Program and the 
+	   competitive advantage it gives Dwyco, Inc., there can
+	   be no adequate remedy at law for any breach of your obligations
+	   hereunder and upon any such breach or any threat thereof, 
+	   Dwyco, Inc. shall be entitled to appropriate equitable 
+	   relief in addition to whatever other remedies it might be 
+	   entitled. This Agreement is a complete and exclusive statement
+	   of the agreement between you and Dwyco, Inc. concerning
+	   the Program that supersedes all representations, proposals or
+	   prior agreements, oral or written.  This Agreement can only
+	   be modified by a duly executed writing.  This Agreement shall
+	   be governed by and construed in accordance with the laws of
+	   the State of Colorado, without regard to any conflict of laws 
+	   provision thereof. 
+
+	   The prevailing party in any legal action brought to enforce 
+	   this Agreement shall be entitled to legal fees and costs.
+	   No delay or failure to exercise any right hereunder shall be
+	   deemed to be a waiver thereof and any waiver of any right
+	   or condition shall not apply to any other time or right.  
+	   The exclusive jurisdiction and venue of any action with respect
+	   to this agreement shall be the Superior Court of Colorado 
+	   for the County of Boulder or the United States District Court
+	   for the State of Colorado, and each of the parties hereto 
+	   submits itself to the exclusive jurisdiction and venue of 
+	   such courts for the purpose of any such action.
+
+	4. Warranty. Software programs, however embodied, are provided
+	   "AS IS" and Dwyco, Inc. makes no warranty or
+	   representation, whether express or implied, including but
+	   not limited to the implied warranties of merchantability,
+	   fitness for a particular purpose and noninfringement.  With
+	   respect to any software, its quality, performance, merchantability,
+	   or fitness for any particular purpose, you bear the entire risk
+	   as to quality and performance.  Should the software programs
+	   prove defective following purchase you assume the entire cost
+	   of all necessary servicing or repair.
+
+	   Federal law provides severe civil and criminal penalties for
+	   the unauthorized reproduction or distribution of copyrighted
+	   computer software programs.  No copyright notice shall be
+	   deemed to imply that the Program has been placed in the 
+	   public domain.
+
+

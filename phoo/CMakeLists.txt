@@ -93,7 +93,7 @@ qt_add_resources(SRCS
 )
 qt_add_executable(phoo
    ${SRCS}
-   callsm_objs.h # need this so automoc can find this head-only q_object
+   callsm_objs.h # need this so automoc can find this header-only q_object
 
 )
 
