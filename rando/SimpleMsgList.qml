@@ -237,11 +237,11 @@ Page {
             anchors.right: ListView.view.contentItem.right
 
             height: {
-                if(click_to_fetch)
+                if(IS_UNFETCHED || click_to_fetch)
                     return width
                 return (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
             }
-            visible: click_to_fetch || IS_ACTIVE || IS_QD === 1 || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
+            visible: click_to_fetch || IS_UNFETCHED || IS_ACTIVE || IS_QD === 1 || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
             asynchronous: true
             source: {
                 click_to_fetch ? mi("ic_cloud_download_black_24dp.png") :

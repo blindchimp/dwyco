@@ -60,7 +60,7 @@ ProgressBar
          style: Text.Outline
          styleColor: "black"
 
-         text: control.indeterminate ? "" : (control.visualPosition * 100).toFixed() + "%"
+         text: control.indeterminate ? "..." : (control.visualPosition * 100).toFixed() + "%"
       }
    }
 }
