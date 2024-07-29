@@ -253,7 +253,7 @@ if(ANDROID)
     )
 endif()
 
-if(UNIX AND NOT ANDROID)
+if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
@@ -271,7 +271,7 @@ if(WIN32)
 target_link_options(phoo PRIVATE binmode.obj)
 endif()
 
-if(IOS)
+if(APPLE OR IOS)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}

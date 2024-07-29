@@ -783,17 +783,17 @@ ApplicationWindow {
 
     SoundEffect {
         id: sound_sent
-        source: "qrc:/androidinst2/assets/space-zap.wav"
+        source: "qrc:/androidinst3/assets/space-zap.wav"
     }
     SoundEffect {
         id: sound_recv
-        source: "qrc:/androidinst2/assets/space-zap.wav"
+        source: "qrc:/androidinst3/assets/space-zap.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
     SoundEffect {
         id: sound_alert
-        source: "qrc:/androidinst2/assets/space-incoming.wav"
+        source: "qrc:/androidinst3/assets/space-incoming.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
