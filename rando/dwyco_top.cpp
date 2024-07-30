@@ -3382,6 +3382,7 @@ dwyco_register_qml(QQmlContext *root)
 
 }
 
+#ifdef DWYCO_DEBUG
 int
 DwycoCore::send_debug(const QString& uid)
 {
@@ -3467,3 +3468,4 @@ DwycoCore::send_debug(const QString& uid)
     return 1;
 
 }
+#endif

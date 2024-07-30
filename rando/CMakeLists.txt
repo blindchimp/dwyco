@@ -18,6 +18,7 @@ include_directories(
 )
 add_compile_definitions(NO_BUILDTIME)
 add_compile_definitions(BUILDTIME="${RANDO_VERSION}")
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)

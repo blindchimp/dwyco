@@ -36,7 +36,7 @@ Dialog {
     }
 
     ColumnLayout {
-    anchors.fill: dia
+    anchors.fill: parent
     Label {
         id: lab
         text: dia.text

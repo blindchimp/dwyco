@@ -85,6 +85,7 @@ Page {
             Layout.fillWidth: true
         }
         Button {
+            visible: dwyco_debug
             text: "test"
             onClicked: {
 
