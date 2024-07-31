@@ -296,6 +296,9 @@ public:
     Q_INVOKABLE int get_android_backup_state();
 
     Q_INVOKABLE QString map_to_representative(const QString& uid);
+#ifdef DWYCO_DEBUG
+    Q_INVOKABLE int send_debug(const QString& uid);
+#endif
 
 public:
 

@@ -594,3 +594,4 @@ CMakeLists.txt.user
 rando/androidinst3/src/com/dwyco/android/.vscode/
 
 bld/zlib/zconf.h.included
+.cache

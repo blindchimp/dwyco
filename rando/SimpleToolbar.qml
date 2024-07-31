@@ -10,7 +10,7 @@
 import QtQuick
 import dwyco
 import QtQuick.Layouts
-import QtQuick.Controls
+import QtQuick.Controls.Material
 
 ToolBar {
     property Component extras

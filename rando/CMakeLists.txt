@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.92")
+set(RANDO_VERSION "4.100")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000138)
+set(RANDO_VERSION_CODE 3000148)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -18,6 +18,7 @@ include_directories(
 )
 add_compile_definitions(NO_BUILDTIME)
 add_compile_definitions(BUILDTIME="${RANDO_VERSION}")
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
@@ -26,7 +27,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Positioning Location)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Material Positioning Location)
 
 # this needs a re-think, possibly a command to copy the androidinst3 file, then
 # populate it with the java stuff would work. then change the package_source_dir to
@@ -82,7 +83,7 @@ qt_add_qml_module(rando
            PicPreview.qml
            SimpleToolbar.qml
            CircularImage.qml
-           MultiSelectToolbar.qml
+           #MultiSelectToolbar.qml
            About.qml
            DSettings.qml
            AppDrawer.qml
@@ -130,7 +131,7 @@ set_target_properties(rando PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
     QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3
-    QT_ANDROID_TARGET_SDK_VERSION 33
+    QT_ANDROID_TARGET_SDK_VERSION 34
 
 )
 set_target_properties(rando PROPERTIES
@@ -154,7 +155,7 @@ set(BASELIBS
     Qt6::Quick
     Qt6::Network
     Qt6::Multimedia
-    Qt6::QuickControls2
+    Qt6::QuickControls2Material
     Qt6::Positioning
     Qt6::Location
 )
@@ -170,7 +171,7 @@ if(ANDROID)
         Qt6::Quick
         Qt6::Network
         Qt6::Multimedia
-        Qt6::QuickControls2
+        Qt6::QuickControls2Material
         Qt6::Positioning
         Qt6::Location
     )
