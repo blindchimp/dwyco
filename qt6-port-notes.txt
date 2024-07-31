@@ -1,0 +1,11 @@
+Wed 31 Jul 2024 10:38:31 AM MDT
+
+porting to qt6 turned out to be a bit of a slog.
+
+* getting everything to build with cmake was time consuming, but eventually i had something that worked mostly like qmake, only with more obtuse build specification files.
+* on windows, porting up to msvc2019 64-bit was a minor deal. the work affects all apps in this case, cdcx, phoo, etc. as well.
+* with qt 6.5, multimedia was finally available again, and a new set of qt6 drivers were needed. this was more or less a straight-forward port of the audio and video capture drivers from vgqt (qt5 version.)
+* NOTE: on windows, we can no longer support the old capture drivers (32bit) and must test the new qt6drv based drivers for cdcx. this might be a big deal, since the old drivers worked pretty well, and the existing windows user base will probably be impacted pretty hard if this doesn't work right. 
+* NOTE: on the mac, we used the vgqt5 drivers and they seem to work ok. need to test the vgqt6 drivers but otherwise, it is probably going to be ok.
+* in the cdc32 codebase, there were a set of minor tweaks for windows specific items in the windows audio area. these need more testing.
+* NOTE! the cmake files are for qt6 only. if you need to build for qt5, just use the qmake files.

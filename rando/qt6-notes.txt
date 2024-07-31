@@ -1,0 +1,18 @@
+Wed 31 Jul 2024 10:45:08 AM MDT
+
+Rando is an android app, and most of the problems with a qt6 port revolved around getting cmake builds to work, and getting the right android NDK setup.
+
+
+The build is still a hybrid for android, with the "libdwyco.so" being built with the old ndk-build system. This might be possible to do with cmake eventually, but I just couldn't bring myself to break something that is working just fine. Note that libdwyco has no direct dependency on Qt, so we aren't forced into using cmake just yet.
+
+
+Only minor changes to the rando QML code were necessary, mainly related to the completely revamped Multimedia, Location, Permission, and Position modules.
+
+There was only one non-trivial change that is really just a long-standing bug in rando: it doesn't clean up some of the meta-information when messages are deleted, and this information ends up getting loaded into the display models as 0-height delegates (so they are invisible, essentially, but still there.) this causes a performance problem in qt6 for some reason. the fix was to filter out all (or most) of the 0-height delegates in the model.
+
+Deployment for qt6 is a bit of runaround.
+
+* The size of the apk are about 10MB bigger than qt5. I'm still not sure why.
+* Part of the size problem is deployment of all style libs by default, even though they are not used. A lot of the file changes and odd-looking "Material" imports and so on are to try and avoid pulling in the other styles. There is one sentence in the Qt docs that also mention that you will get a performance boost if you can specify a style explicitly, so the qml compiler can generate code for it. In addition, if you reference the platform "Dialogs" component, it will pull in all the styles as well. This is what prompted me to create a simple "dialog" by hand in order to avoid the platform dialog component.
+* The "qmlimportscanner" is sloppy, and scans recursively for QML files looking for dependencies. So, let's say you have an "old" subdirectory that has some QML files you are working on replacing, qmlimportscanner will still find the old imports from those files and include the modules in your apk. The only work around I can find is to "chmod 0 old" to keep it from traversing it, or obviously getting rid of it. https://bugreports.qt.io/browse/QTBUG-49915
+* Note that QUIT processing has changed from qt5, but it still compiles just fine in qt6. The qt6 fails though. You have to set a signal: QObject::connect(TheEngine, &QQmlEngine::quit, &app, &QGuiApplication::quit); and then properly handle that in your QML code.
