@@ -14,7 +14,8 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtMultimedia
-import dwyco 1.0
+import QtCore
+import dwyco
 //import Qt.labs.platform as Mumble
 
 ApplicationWindow {
@@ -201,8 +202,27 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        if(camera_permission.status != Qt.PermissionStatus.Granted) {
+            console.log("CAMERA DENIED")
+            camera_permission.request()
+        } else {
+            console.log("CAMERA ALLOWED")
+        }
+
         AndroidPerms.request_sync("android.permission.CAMERA")
         AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+    }
+
+    CameraPermission {
+        id: camera_permission
+        onStatusChanged: {
+            if(status == Qt.PermissionStatus.Granted) {
+                console.log("Camera now granted")
+            } else {
+                console.log("Camera denied again")
+            }
+
+        }
     }
 
 

@@ -71,7 +71,7 @@ Rectangle {
 
         Button {
             id: gotit_forever
-            text: "Got it, and don't show again"
+            text: "Got it, and don't ask again"
             visible: {inhibit_key.length > 0}
             onClicked: {
                 core.set_local_setting(inhibit_key, "1")
