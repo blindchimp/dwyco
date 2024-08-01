@@ -1,36 +1,68 @@
 import QtQuick
-import QtQuick.Controls
-import QtQuick.Dialogs
+import QtQuick.Layouts
+import QtQuick.Controls.Material
+//import QtQuick.Dialogs
 
-MessageDialog {
+Dialog {
+    id: dia
+    anchors.centerIn: parent
     signal noClicked
     signal yesClicked
+    property string detailedText
+    property string informativeText
+    property string text
+    background: Rectangle {
+        color: "red"
+        //implicitWidth: 300
+        //implicitHeight: 200
+        radius: 5
+    }
 
-//    title: "Bulk delete?"
-//    //icon: StandardIcon.Question
-//    text: "Delete ALL messages from selected users?"
-//    informativeText: "This REMOVES FAVORITE messages too."
-    buttons: MessageDialog.Yes | MessageDialog.No
-    //detailedText: ""
-    onButtonClicked: (button, role)=> {
-                         switch(button) {
-                             case MessageDialog.Yes: {
-                                 yesClicked()
-                                 break
-                             }
-                             case MessageDialog.No: {
-                                 noClicked()
-                                 break
-                             }
-                         }
-                     }
+    //standardButtons: Dialog.Yes | Dialog.No
+    modal: true
+    focus: true
 
-//                onYesClicked: {
-//                    model.delete_all_selected()
-//                    multiselect_mode = false
-//                    close()
-//                }
-//                onNoClicked: {
-//                    close()
-//                }
+    //width: 400
+    //height: 300
+    footer: DialogButtonBox {
+        standardButtons: DialogButtonBox.Yes | DialogButtonBox.No
+        //buttonLayout: DialogButtonBox.AndroidLayout
+        background: Rectangle {
+            color: "black"
+            radius: 5
+
+        }
+
+    }
+
+    ColumnLayout {
+    anchors.fill: parent
+    Label {
+        id: lab
+        text: dia.text
+        //horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        Layout.fillWidth: true
+    }
+    Label {
+        id: lab2
+        text: dia.informativeText
+        //horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        Layout.fillWidth: true
+    }
+    Item {
+        Layout.fillHeight: true
+    }
+    }
+
+
+    onAccepted: {
+        console.log("YES")
+        yesClicked()
+    }
+    onRejected:{
+        console.log("NO")
+        noClicked()
+    }
 }

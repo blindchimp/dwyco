@@ -8,8 +8,7 @@
 
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
-//import QtQuick.Controls.Material
+import QtQuick.Controls.Material
 import QtPositioning
 
 Page {
@@ -51,11 +50,11 @@ Page {
 
     header: Column {
         width: parent.width
-        MultiSelectToolbar {
-            id: multi_toolbar
-            visible: multiselect_mode
-            //extras: extras_button
-        }
+        // MultiSelectToolbar {
+        //     id: multi_toolbar
+        //     visible: multiselect_mode
+        //     //extras: extras_button
+        // }
         ToolBar {
             id: regular_toolbar
             background: Rectangle {
@@ -238,15 +237,15 @@ Page {
             anchors.right: ListView.view.contentItem.right
 
             height: {
-                if(click_to_fetch)
+                if(IS_UNFETCHED || click_to_fetch)
                     return width
                 return (((show_sent && SENT === 0) || (show_recv && SENT === 1)) || IS_FILE === 0) ? 0 : width
             }
-            visible: click_to_fetch || IS_ACTIVE || IS_QD || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
+            visible: click_to_fetch || IS_UNFETCHED || IS_ACTIVE || IS_QD === 1 || ((((show_sent && SENT === 1) || (show_recv && SENT === 0)) && IS_FILE === 1))
             asynchronous: true
             source: {
                 click_to_fetch ? mi("ic_cloud_download_black_24dp.png") :
-                (PREVIEW_FILENAME !== "" ? ("file:///" + String(PREVIEW_FILENAME)) : "")
+                (PREVIEW_FILENAME !== "" ? core.from_local_file(PREVIEW_FILENAME) : "")
             }
 
             fillMode: click_to_fetch ? Image.Pad : Image.PreserveAspectCrop
@@ -313,7 +312,7 @@ Page {
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
-                visible: !IS_QD && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
+                visible: IS_QD === 0 && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
                 source: mi("ic_not_interested_black_24dp.png")
 
                 z: 10
@@ -541,7 +540,7 @@ Page {
             }
             Image {
                 id: deco2
-                visible: IS_QD
+                visible: IS_QD === 1
                 source: mi("ic_cloud_upload_black_24dp.png")
                 anchors.left: img.left
                 anchors.top: img.top

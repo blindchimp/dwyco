@@ -42,6 +42,9 @@ android:fullBackupContent="@xml/backup_rules"
           <meta-data
                 android:name="android.app.arguments"
                 android:value="-- %%INSERT_APP_ARGUMENTS%% --" />
+
+                <meta-data android:name="android.app.splash_screen_drawable_portrait" android:resource="@drawable/splashscreen_port"/>
+                <meta-data android:name="android.app.splash_screen_drawable_landscape" android:resource="@drawable/splashscreen_land"/>
         </activity>
 <service android:name="com.dwyco.android.MyFirebaseMessagingService" android:exported="false">
             <intent-filter>

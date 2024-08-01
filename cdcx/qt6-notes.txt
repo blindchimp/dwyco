@@ -1,0 +1,11 @@
+Wed 31 Jul 2024 11:43:36 AM MDT
+
+Notes on qt6 port of CDC-X
+
+status:
+
+* MAC: seems to work ok as a qt6 app, though video and audio needs a bit more testing.
+* Windows: seems to work ok, but the deployment probably needs to change (install package in a more standard way, and point the data to the old qt5 folder.) Video/audio drivers need more testing.
+* Linux: still need to use the v4l2 drivers for video, but otherwise seems to work. deployment is broken, since linuxdeployqt cannot build qt6 AppImages.
+
+overall, changes to the code were minor qt6 naming and API changes.

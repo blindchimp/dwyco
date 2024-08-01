@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ANDROID
-    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+//    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
 

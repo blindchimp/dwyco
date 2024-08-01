@@ -12,7 +12,7 @@
 #include <QScreen>
 #include <QSettings>
 #include <QHostInfo>
-#include <QQuickStyle>
+//#include <QQuickStyle>
 #include <QDebug>
 #include <QQmlFileSelector>
 #ifdef ANDROID
@@ -54,11 +54,11 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
 #if defined(_WIN32)
-    QQuickStyle::setStyle("Fusion");
-    QQuickStyle::setFallbackStyle("Fusion");
+    //QQuickStyle::setStyle("Fusion");
+    //QQuickStyle::setFallbackStyle("Fusion");
 #else
-    QQuickStyle::setStyle("Material");
-    QQuickStyle::setFallbackStyle("Material");
+    //QQuickStyle::setStyle("Material");
+    //QQuickStyle::setFallbackStyle("Material");
 #endif
 
     //perm_setup(app);
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 #else
     engine.rootContext()->setContextProperty("dwyco_debug", false);
 #endif
-
+    QObject::connect(TheEngine, &QQmlEngine::quit, &app, &QGuiApplication::quit);
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
 
     return app.exec();

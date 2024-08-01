@@ -9,7 +9,7 @@
 import QtQml
 import QtQuick
 import QtMultimedia
-import QtQuick.Controls
+import QtQuick.Controls.Material
 
 // the API to this object is ugly... essentially, the requirement is
 // that the user of the object must reside in a stackview, and
@@ -127,7 +127,7 @@ Rectangle {
                               file_captured = path
                               console.log("SAVED ", file_captured)
                               //photoPreview.ok_vis = true
-                              photoPreview.source = "file://" + file_captured
+                              photoPreview.source = core.from_local_file(file_captured)
 
                           }
         }
