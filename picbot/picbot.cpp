@@ -207,7 +207,12 @@ main(int argc, char *argv[])
     if(argc < 4)
         exit(1);
     signal(SIGPIPE, SIG_IGN);
-	alarm(3600);
+    // this alarm stuff might have been causing some problems
+    // with dup messages and what not. it wasn't being reset
+    // like a watchdog, so just hard-crashing the process
+    // once an hour. i changed it to just be like a watchdog
+    // but for 5 minutes instead.
+    alarm(300);
     int fd = open("/dev/urandom", O_RDONLY);
     unsigned int foo;
     read(fd, (void *)&foo, sizeof(foo));
@@ -257,6 +262,7 @@ main(int argc, char *argv[])
     {
         int spin;
         dwyco_service_channels(&spin);
+        alarm(300);
         if(spin)
             usleep(10 * 1000);
         else
