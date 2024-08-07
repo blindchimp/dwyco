@@ -27,7 +27,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Material Positioning Location)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Positioning Location)
 
 # this needs a re-think, possibly a command to copy the androidinst3 file, then
 # populate it with the java stuff would work. then change the package_source_dir to
@@ -155,7 +155,7 @@ set(BASELIBS
     Qt6::Quick
     Qt6::Network
     Qt6::Multimedia
-    Qt6::QuickControls2Material
+    Qt6::QuickControls2
     Qt6::Positioning
     Qt6::Location
 )
@@ -171,7 +171,7 @@ if(ANDROID)
         Qt6::Quick
         Qt6::Network
         Qt6::Multimedia
-        Qt6::QuickControls2Material
+        Qt6::QuickControls2
         Qt6::Positioning
         Qt6::Location
     )

@@ -249,8 +249,10 @@ ApplicationWindow {
         AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
-    CameraPermission {
+    Item {
         id: camera_permission
+        property int status: Qt.PermissionStatus.Granted
+        visible: false
         onStatusChanged: {
             if(status == Qt.PermissionStatus.Granted) {
                 console.log("Camera now granted")
