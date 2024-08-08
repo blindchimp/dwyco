@@ -16,6 +16,7 @@
 #include "libgen.h"
 #include "dlli.h"
 #include "dwyco_new_msg.h"
+#include "dwycolist2.h"
 #include <QList>
 #include <QByteArray>
 #include <QMap>
@@ -25,7 +26,26 @@
 #include <QDebug>
 #include <QDir>
 
+// 6 hours means a few pictures a day if you log in daily.
+// i pulled this out of my ass, there is no data to support it.
+#define PIC_INTERVAL (6 * 3600)
 
+// note: delivery time of a message is loosey-goosey, and we try to account
+// for device groups (ie, if one member enrolls, it effectively will deliver
+// one message for the group.)
+// generally, this was devised to reward people for revealing themselves in
+// the public directory. so, when it starts, it logs in to the adult chat room
+// and anyone that is enrolled will get a message if they haven't in the last
+// PIC_INTERVAL seconds. roughly. if you enter while this bot is running, you
+// will also get a message.
+// the first time this bot sees a "yes" message and you haven't received a message
+// in the last PIC_INTERVAL, you will get a message, no
+// matter what chat server you are in (or even if you are not in any chat
+// server.) automated delivery after that requires you to be listed in the main
+// Adult chat server. note that being listed doesn't necessarily mean you
+// are online since the chat servers can retain listings for some time after a
+// user goes offline.
+//
 static
 void
 DWYCOCALLCONV
@@ -46,14 +66,6 @@ quint32 Sent_age;
 QFileInfoList Pics;
 QStringList Pic_names;
 
-struct simple_scoped
-{
-    DWYCO_LIST value;
-    simple_scoped(DWYCO_LIST v) {value = v;}
-    ~simple_scoped() {dwyco_list_release(value);}
-    operator DWYCO_LIST() {return value;}
-};
-
 void
 forward_msg(const QByteArray& mid, const QByteArray& uid)
 {
@@ -67,9 +79,35 @@ forward_msg(const QByteArray& mid, const QByteArray& uid)
 }
 
 QByteArray
+map_uid(const QByteArray& uid)
+{
+    DWYCO_LIST mapped;
+    if(dwyco_map_uid_to_representative(uid.constData(), uid.length(), &mapped))
+    {
+        simple_scoped qmapped(mapped);
+        QByteArray muid = qmapped.get<QByteArray>(0);
+        return muid;
+    }
+    return uid;
+}
+
+QSet<QByteArray>
+map_uids(const QSet<QByteArray>& from)
+{
+    QSet<QByteArray> to;
+    QSetIterator<QByteArray> i(from);
+    while(i.hasNext())
+    {
+        QByteArray uid = i.next();
+        to.insert(map_uid(uid));
+    }
+    return to;
+}
+
+QByteArray
 time_till()
 {
-    int time_till_next = (6 * 3600) - (time(0) - Sent_age);
+    int time_till_next = PIC_INTERVAL - (time(0) - Sent_age);
     if(time_till_next < 0)
         time_till_next = 0;
     int hours_till = time_till_next / 3600;
@@ -150,11 +188,12 @@ load_pic_names(QString dirname)
 int
 send_pic(QByteArray buid)
 {
-    if(!Subscribers.contains(buid))
+    if(!(Subscribers.contains(buid) || Subscribers.contains(map_uid(buid))))
         return 0;
-    if(Sent.contains(buid))
+    if(Sent.contains(buid) || Sent.contains(map_uid(buid)))
         return 0;
     Sent.insert(buid);
+    Sent.insert(map_uid(buid));
     save_it(Sent, "sent.qds");
 
     // select random file
@@ -180,6 +219,10 @@ dwyco_chat_ctx_callback(int cmd, int id,
     if(name)
         dname = QByteArray(name, len_name);
 
+    // note: the dll maps the uids based on groups, but it doesn't
+    // filter them, which means you can get duplicate uid's if you
+    // don't do the filtering yourself. send_pic below does the
+    // filtering to avoid sending multiple pics.
     QByteArray buid;
     if(uid)
     {
@@ -239,12 +282,13 @@ main(int argc, char *argv[])
 
     dwyco_set_local_auth(1);
     dwyco_finish_startup();
-	int i = 0;
+
 	int r = 20 * 60 + (rand() % 30) * 60;
     time_t start = time(0);
 
     load_pic_names(argv[3]);
     load_it(Subscribers, "subscribers.qds");
+    Subscribers = map_uids(Subscribers);
     if(!load_it(Sent_age, "sent_age.qds"))
     {
         Sent_age = time(0);
@@ -267,7 +311,7 @@ main(int argc, char *argv[])
             usleep(10 * 1000);
         else
             usleep(50 * 1000);
-        ++i;
+
         if(time(0) - start >= r || access("stop", F_OK) == 0)
         {
             dwyco_power_clean_safe();
@@ -284,7 +328,7 @@ main(int argc, char *argv[])
         }
         was_online = 1;
 
-        if(time(0) - Sent_age > 6 * 3600)
+        if(time(0) - Sent_age > PIC_INTERVAL)
         {
             Sent.clear();
             save_it(Sent, "sent.qds");
@@ -311,13 +355,14 @@ main(int argc, char *argv[])
             txt = txt.toLower();
             if(txt.contains("yes"))
             {
-                if(Subscribers.contains(uid))
+                if(Subscribers.contains(uid) || Subscribers.contains(map_uid(uid)))
                 {
                     send_reply_to(uid, QByteArray("You are already subscribed. ") + ts);
                 }
                 else
                 {
                     Subscribers.insert(uid);
+                    Subscribers.insert(map_uid(uid));
                     save_it(Subscribers, "subscribers.qds");
                     send_reply_to(uid, "I'll send you random pics every day you visit Dwyco. To stop me, send me a zap containing the word \"stop\".");
                     if(!send_pic(uid))
@@ -330,6 +375,7 @@ main(int argc, char *argv[])
             else if(txt.contains("stop"))
             {
                 Subscribers.remove(uid);
+                Subscribers.remove(map_uid(uid));
                 save_it(Subscribers, "subscribers.qds");
                 send_reply_to(uid, "Ok, no more pic of the day. Thanks!");
             }
