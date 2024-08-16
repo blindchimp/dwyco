@@ -590,3 +590,4 @@ bld/android/com/dwyco/android/.vscode/
 /fckbld.pro
 /fucktola
 CMakeLists.txt.user
+build/
