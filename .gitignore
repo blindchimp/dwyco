@@ -590,6 +590,7 @@ bld/android/com/dwyco/android/.vscode/
 /fckbld.pro
 /fucktola
 CMakeLists.txt.user
+build/
 
 rando/androidinst3/src/com/dwyco/android/.vscode/
 
@@ -597,3 +598,19 @@ bld/zlib/zconf.h.included
 .cache
 
 phoo/androidinst3/src/com/dwyco/android/.vscode/
+
+phoo/androidinst3/src/com/dwyco/android/.vscode/launch.json
+
+phoo/androidinst3/src/com/dwyco/android/DwycoProbe.java
+
+phoo/androidinst3/src/com/dwyco/android/FileUtils.java
+
+phoo/androidinst3/src/com/dwyco/android/MyFirebaseMessagingService.java
+
+phoo/androidinst3/src/com/dwyco/android/NotificationClient.java
+
+phoo/androidinst3/src/com/dwyco/android/SocketLock.java
+
+phoo/androidinst3/src/com/dwyco/cdc32/dwybg.java
+
+phoo/androidinst3/src/com/dwyco/cdc32/dwybgJNI.java
