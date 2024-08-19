@@ -203,6 +203,21 @@ install(TARGETS cdcx
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+install(
+    DIRECTORY deploy/ DESTINATION bin
+)
+
+# Generate the deployment script for the target MyApp.
+qt_generate_deploy_app_script(
+    TARGET cdcx
+    OUTPUT_SCRIPT deploy_script
+    NO_UNSUPPORTED_PLATFORM_ERROR
+    NO_TRANSLATIONS
+
+)
+
+# Call the deployment script on "cmake --install".
+install(SCRIPT ${deploy_script})
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(cdcx)
