@@ -11,17 +11,11 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-find_package(Qt6 REQUIRED COMPONENTS Core)
 
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
-find_package(QT NAMES Qt6  REQUIRED COMPONENTS Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS WebEngineCore)
-#find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngine)
-find_package(Qt6 REQUIRED COMPONENTS Core Gui WebEngineWidgets StateMachine Concurrent MultimediaWidgets)
+find_package(QT NAMES Qt6)
+find_package(Qt6 REQUIRED COMPONENTS
+    Core Gui WebEngineWidgets StateMachine Concurrent MultimediaWidgets
+    Widgets Network Multimedia WebEngineCore)
 
 
 add_compile_definitions(
@@ -136,9 +130,9 @@ set(BASELIBS
     qt6drv
     uv
     miniupnpc
-    Qt${QT_VERSION_MAJOR}::Widgets
-Qt${QT_VERSION_MAJOR}::Network
-Qt${QT_VERSION_MAJOR}::Multimedia
+    Qt6::Widgets
+Qt6::Network
+Qt6::Multimedia
 Qt6::WebEngineCore
     Qt6::WebEngineWidgets
     Qt6::StateMachine
@@ -207,12 +201,12 @@ install(
     DIRECTORY deploy/ DESTINATION bin
 )
 
-# Generate the deployment script for the target MyApp.
+# Generate the deployment script for the target
 qt_generate_deploy_app_script(
     TARGET cdcx
     OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
-    NO_TRANSLATIONS
+    #NO_TRANSLATIONS
 
 )
 
