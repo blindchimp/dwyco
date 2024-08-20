@@ -1,5 +1,5 @@
 #!/bin/sh
-export PATH=$HOME/Qt/6.5.3/macos/bin:$PATH
+export PATH=$HOME/Qt/6.7.2/macos/bin:$PATH
 
 U=`uname`
 

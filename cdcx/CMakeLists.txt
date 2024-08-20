@@ -197,9 +197,12 @@ install(TARGETS cdcx
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+if(NOT APPLE)
 install(
     DIRECTORY deploy/ DESTINATION bin
 )
+endif()
 
 # Generate the deployment script for the target
 qt_generate_deploy_app_script(
