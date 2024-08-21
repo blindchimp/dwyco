@@ -39,7 +39,6 @@
 #include "audconv.h"
 #include "simple_property.h"
 #include "sync_sendq.h"
-#include "syncvar.h"
 // DON'T REMOVE THESE
 // there are namespace decls that need them
 #include "aconn.h"
