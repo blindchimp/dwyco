@@ -1,0 +1,48 @@
+CDC-X is Copyright (c) 1995-present, Dwyco, Inc.
+All rights reserved.
+
+CDC-X is an online audio/video live call and messaging system.
+
+Mon 27 Jun 2022 09:14:13 AM MDT
+
+"Installer" download can be found at http://www.dwyco.com
+Source code is on github.com, search for "dwyco".
+
+The "installer" is a self-extracting shell script that creates a directory
+called "cdcx" in $(HOME). It does not
+install anything to your system directories, and it does not require
+root privs (in fact, you should make sure you are NOT root before
+installing it.)
+
+The best way to install it is:
+* download the installer to your home directory
+* open a terminal window (which should default to your home directory.)
+* type (depending on what you downloaded):
+
+sh cdcx-linux-x86_64.sh
+
+It should print out a few lines as it extracts the files. If it
+complains about timestamps being in the future, you can ignore those warnings.
+
+* next, to run cdcx type:
+cd cdcx
+./cdcx &
+
+This version of CDC-X was compiled and tested using Qt 5.12 on Ubuntu 20.04.
+If your system-native Qt package is installed, it should start and run.
+
+Just a quick note: CDCX MUST BE STARTED WITH A WORKING DIRECTORY SET TO
+THE CDCX INSTALLATION DIRECTORY. It will crash horribly otherwise. If
+you open a terminal like above, you'll have no problems.
+
+Dependencies
+sudo apt-get install v4l-utils
+
+on 16.04, and other newer distros, you may need these:
+sudo apt-get install libsdl-sound1.2
+
+if your distro doesn't have qt installed, you can try this:
+
+sudo apt install qt5-default
+sudo apt install libqt5gui5 libqt5multimedia5 libqt5webenginewidgets5
+
