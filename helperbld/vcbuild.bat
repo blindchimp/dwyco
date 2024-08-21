@@ -1,6 +1,6 @@
 echo on
 
-set PATH=c:\qt\6.7.2\msvc2019_64\bin;%PATH%
+set PATH=c:\qt\6.5.3\msvc2019_64\bin;%PATH%
 
 cd "\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build"
 call vcvarsall x64
