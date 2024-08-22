@@ -33,6 +33,9 @@ extern vc Client_ports;
 int is_invisible();
 
 namespace dwyco {
+
+ssns::signal0 Online_info;
+
 // not perfect if packets are dropped, the
 // response we get may not match, but it isn't
 // fatal
@@ -229,6 +232,7 @@ process_pal_resp(vc v)
         }
 
         Pal_logged_in = 1;
+        Online_info.emit();
     }
     else if(v[0] == vcon)
     {
@@ -250,6 +254,7 @@ process_pal_resp(vc v)
         {
 
         }
+        Online_info.emit();
     }
     else if(v[0] == vcoff)
     {

@@ -494,9 +494,9 @@ discover_tick()
     }
     for(int i = 0; i < kill.num_elems(); ++i)
     {
-        Local_uid_discovered.emit(kill[i], 0);
         Freshness.del(kill[i]);
         Broadcast_discoveries.del(kill[i]);
+        Local_uid_discovered.emit(kill[i], 0);
         se_emit(SE_STATUS_CHANGE, kill[i]);
     }
 #endif

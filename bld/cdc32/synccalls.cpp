@@ -7,6 +7,7 @@
 #include "synccalls.h"
 #include "qmsgsql.h"
 #include "dirth.h"
+#include "cdcpal.h"
 #ifdef _Windows
 #include <time.h>
 #endif
@@ -78,6 +79,8 @@ static
 int
 originate_calls(vc uid)
 {
+    return 1;
+
     time_t now = time(0);
     now /= 60;
     now /= 5;
@@ -212,7 +215,7 @@ struct local_connect_timer : public ssns::trackable
 {
     local_connect_timer() : connect_timer("sync-conn-setup"){
         connect_timer.set_autoreload(1);
-        connect_timer.set_interval(60 * 1000);
+        connect_timer.set_interval(1000);
         connect_timer.set_oneshot(0);
         connect_timer.reset();
         connect_timer.start();
@@ -222,10 +225,10 @@ struct local_connect_timer : public ssns::trackable
 
     void throttle_up()
     {
-        if(connect_timer.get_interval() == 10000)
+        if(connect_timer.get_interval() == 1000)
             return;
         connect_timer.stop();
-        connect_timer.set_interval(10000);
+        connect_timer.set_interval(1000);
         connect_timer.start();
     }
 
@@ -272,7 +275,8 @@ sync_call_setup()
     {
         lct = new local_connect_timer;
         Database_online.value_changed.connect_memfun(lct, &local_connect_timer::db_state_change);
-        //Local_uid_discovered.connect_memfun(lct, &local_connect_timer::local_discovery);
+        Local_uid_discovered.connect_memfun(lct, &local_connect_timer::local_discovery);
+        Online_info.connect_memfun(lct, &local_connect_timer::throttle_up);
     }
 
     if(!lct->connect_timer.is_expired())
