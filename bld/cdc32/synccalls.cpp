@@ -1,4 +1,5 @@
 #include "dlli.h"
+#include "ezset.h"
 #include "mmchan.h"
 #include "dhgsetup.h"
 #include "mmcall.h"
@@ -258,6 +259,13 @@ struct local_connect_timer : public ssns::trackable
     }
 };
 
+static local_connect_timer *lct;
+static
+void
+throttle_up_on_setting_change(vc, vc)
+{
+    lct->throttle_up();
+}
 // this is where we look at the set of group members, and
 // schedule call attempts to any that are online. throttling the
 // attempt-to-connect rate is based on whether we are
@@ -270,13 +278,15 @@ sync_call_setup()
 {
     if(!Current_alternate)
         return;
-    static local_connect_timer *lct;
+
     if(!lct)
     {
         lct = new local_connect_timer;
         Database_online.value_changed.connect_memfun(lct, &local_connect_timer::db_state_change);
         Local_uid_discovered.connect_memfun(lct, &local_connect_timer::local_discovery);
         Online_info.connect_memfun(lct, &local_connect_timer::throttle_up);
+        bind_sql_section("net/", throttle_up_on_setting_change);
+        bind_sql_setting("sync/eager", throttle_up_on_setting_change);
     }
 
     if(!lct->connect_timer.is_expired())
