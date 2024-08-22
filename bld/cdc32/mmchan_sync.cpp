@@ -545,8 +545,8 @@ MMChannel::process_outgoing_sync()
         // generate_delta created entries on the midlog that can get sent
         // normally without requiring a re-init on the receiver. so we
         // transition straight into NORMAL state.
-        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
-        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, 1);
+        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, ssns::UNIQUE);
+        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, ssns::UNIQUE);
         throttle_downstream_timer(vcnil);
         // tell the other side there is no index to unpack
         vc vcx(VC_VECTOR);
@@ -588,8 +588,8 @@ MMChannel::process_outgoing_sync()
         // the receive part sets this up too
         if(vcx.is_nil())
             return 0;
-        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
-        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, 1);
+        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, ssns::UNIQUE);
+        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, ssns::UNIQUE);
     }
     else if(mms_sync_state == MMSS_TRYAGAIN)
     {
@@ -684,7 +684,7 @@ MMChannel::process_incoming_sync()
             return 1;
         if(mmr_sync_state == RECV_INIT)
         {
-            destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+            destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, ssns::UNIQUE);
 #ifdef DWYCO_BACKGROUND_SYNC
             if(unpack_index_future == nullptr)
             {

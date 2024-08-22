@@ -159,10 +159,10 @@ init_pal()
     Last_sent = vc(VC_VECTOR);
     Init = 1;
 
-    Group_uids.value_changed.connect_ptrfun(group_changed, 1);
-    Database_online.value_changed.connect_ptrfun(clear_online, 1);
+    Group_uids.value_changed.connect_ptrfun(group_changed, ssns::UNIQUE);
+    Database_online.value_changed.connect_ptrfun(clear_online, ssns::UNIQUE);
     bind_sql_setting("server/invis", invis_changed);
-    MMChannel::My_disposition.value_changed.connect_ptrfun(disposition_changed, 1);
+    MMChannel::My_disposition.value_changed.connect_ptrfun(disposition_changed, ssns::UNIQUE);
     return 1;
 }
 

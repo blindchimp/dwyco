@@ -1505,7 +1505,7 @@ init_qmsg_sql()
 
     }
     //Database_online.value_changed.connect_ptrfun(refetch_pk);
-    Keys_updated.connect_ptrfun(update_group_map, 1);
+    Keys_updated.connect_ptrfun(update_group_map, ssns::UNIQUE);
 }
 
 void

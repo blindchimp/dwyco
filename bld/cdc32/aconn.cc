@@ -344,8 +344,8 @@ init_aconn()
     bind_sql_section("net/", net_section_changed);
     App_ID = get_settings_value("net/app_id");
     start_discover();
-    Current_alternate.value_changed.connect_ptrfun(broadcast_check, 1);
-    Database_online.value_changed.connect_ptrfun(broadcast_check2, 1);
+    Current_alternate.value_changed.connect_ptrfun(broadcast_check, ssns::UNIQUE);
+    Database_online.value_changed.connect_ptrfun(broadcast_check2, ssns::UNIQUE);
 
 }
 
