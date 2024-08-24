@@ -239,7 +239,7 @@ start_broadcaster()
 
     DwString a;
     a = "any:any";
-    if(Local_broadcast.socket_init(a.c_str(), 0, 0).is_nil())
+    if(Local_broadcast.socket_init(a.c_str(), 0, 1).is_nil())
     {
         stop_broadcaster();
         return 0;
@@ -297,7 +297,7 @@ start_discover()
     a = "any:";
     a += DwString::fromInt((int)get_settings_value("net/broadcast_port"));
     // this didn't appear to work with just "ip:port" for broadcasts
-    if(Local_discover.socket_init(a.c_str(), 0, 0).is_nil())
+    if(Local_discover.socket_init(a.c_str(), 0, 1).is_nil())
     {
         stop_discover();
         return 0;
