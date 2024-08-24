@@ -337,7 +337,7 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
         prim = u[BD_PRIMARY_PORT];
         sec = u[BD_SECONDARY_PORT];
         pal = u[BD_PAL_PORT];
-        GRTLOGA("uid to ip locally ONLINE %s %d %d %d", (const char *)u[0], prim, sec, pal, 0);
+        GRTLOGA("uid %s to ip locally ONLINE %s %d %d %d", (const char *)to_hex(uid), (const char *)u[0], prim, sec, pal);
         GRTLOGVC(u);
         return inet_addr((const char *)u[BD_IP]);
     }
@@ -365,7 +365,7 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
             GRTLOG("ONLINE no ports %s", a.c_str(), 0);
             return 0;
         }
-        GRTLOGA("uid to ip ONLINE %s %d %d %d", a.c_str(), prim, sec, pal, 0);
+        GRTLOGA("uid %s to ip ONLINE %s %d %d %d", (const char *)to_hex(uid), a.c_str(), prim, sec, pal);
         return inet_addr(a.c_str());
 
     }
@@ -393,7 +393,7 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
             GRTLOG("CHAT no ports %s", a.c_str(), 0);
             return 0;
         }
-        GRTLOGA("uid to ip ONLINE/CHAT %s %d %d %d", a.c_str(), prim, sec, pal, 0);
+        GRTLOGA("uid %s to ip ONLINE/CHAT %s %d %d %d", (const char *)to_hex(uid), a.c_str(), prim, sec, pal);
         return inet_addr(a.c_str());
     }
 
