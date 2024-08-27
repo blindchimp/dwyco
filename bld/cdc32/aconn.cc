@@ -27,6 +27,7 @@
 #include "se.h"
 #include "dhgsetup.h"
 #include "dirth.h"
+#include "dwstr.h"
 
 // NOTENOTENOTE! fixme, look at the dlli.cpp section where some of these
 // settings are tweaked and set bindings somewhere so we can do the
