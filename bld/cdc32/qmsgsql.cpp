@@ -461,7 +461,7 @@ generate_delta(const vc& uid, const vc& delta_id)
         }
         else
         {
-            GRTLOG("no delta for %s", (const char *)huid, 0);
+            GRTLOG("empty delta for %s", (const char *)huid, 0);
         }
         // ok, this is a problem. we don't want to commit updates to our notion of the REMOTE end
         // until we have some idea that we actually sent them and they are incorporated there.
