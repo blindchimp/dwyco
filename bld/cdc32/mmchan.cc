@@ -2660,7 +2660,7 @@ MMChannel::channels_by_call_type(vc uid, vc call_type)
     for(; !cli.eol(); cli.forward())
     {
         MMChannel *mc = cli.getp();
-        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && call_type == mc->remote_call_type())
+        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && (call_type == mc->remote_call_type() || call_type == mc->call_type))
         {
             ret.append(mc);
         }
