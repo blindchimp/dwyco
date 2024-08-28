@@ -2879,6 +2879,27 @@ MMChannel::recv_config(vc cfg)
             ChanList cl = channels_by_call_type(remote_uid(), "sync");
             if(cl.num_elems() > 1)
             {
+                // we can do several things:
+                // (1) destroy this connection before it has a chance to do anything more.
+                // (2) destroy the existing connection.
+                // (3) *someday* let multiple connections exist.
+                //
+                // ca 8/2024, there seem to be some problems (bugs) in the
+                // syncing stuff that get triggered if we kill the existing connection.
+                // this is especially true if we are aggressively trying to get
+                // connections set up, as it is really likely two clients will be
+                // trying to connect to each other at the same time. the bugs manifest as
+                // the "delta" generation stuff getting confused, and resulting in
+                // entire indexes being exchanged (this will take some intensive
+                // debugging to figure out.)
+                send_error("already sync connected");
+                Netlog_signal.emit(tube->mklog("event", "already sync connected"));
+                GRTLOG("already sync connected", 0, 0);
+                goto cleanup;
+
+
+#if 0
+
                 // maybe there is a channel the process of timing out,
                 // we just assume this current one will be better than
                 // the previous one (we definitely don't want more than
@@ -2898,6 +2919,7 @@ MMChannel::recv_config(vc cfg)
                         cl[i]->schedule_destroy();
                     }
                 }
+#endif
             }
 
             finish_connection_new();
