@@ -526,10 +526,10 @@ MMChannel::eager_pull_processing()
 void
 MMChannel::throttle_downstream_timer(vc)
 {
-    if(downstream_timer.get_interval() != 5000)
+    if(downstream_timer.get_interval() != 1000)
     {
         downstream_timer.stop();
-        downstream_timer.set_interval(5000);
+        downstream_timer.set_interval(1000);
     }
     downstream_timer.start();
 
