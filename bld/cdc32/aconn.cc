@@ -27,6 +27,7 @@
 #include "se.h"
 #include "dhgsetup.h"
 #include "dirth.h"
+#include "dwstr.h"
 
 // NOTENOTENOTE! fixme, look at the dlli.cpp section where some of these
 // settings are tweaked and set bindings somewhere so we can do the
@@ -239,7 +240,7 @@ start_broadcaster()
 
     DwString a;
     a = "any:any";
-    if(Local_broadcast.socket_init(a.c_str(), 0, 0).is_nil())
+    if(Local_broadcast.socket_init(a.c_str(), 0, 1).is_nil())
     {
         stop_broadcaster();
         return 0;
@@ -297,7 +298,7 @@ start_discover()
     a = "any:";
     a += DwString::fromInt((int)get_settings_value("net/broadcast_port"));
     // this didn't appear to work with just "ip:port" for broadcasts
-    if(Local_discover.socket_init(a.c_str(), 0, 0).is_nil())
+    if(Local_discover.socket_init(a.c_str(), 0, 1).is_nil())
     {
         stop_discover();
         return 0;
@@ -344,8 +345,8 @@ init_aconn()
     bind_sql_section("net/", net_section_changed);
     App_ID = get_settings_value("net/app_id");
     start_discover();
-    Current_alternate.value_changed.connect_ptrfun(broadcast_check, 1);
-    Database_online.value_changed.connect_ptrfun(broadcast_check2, 1);
+    Current_alternate.value_changed.connect_ptrfun(broadcast_check, ssns::UNIQUE);
+    Database_online.value_changed.connect_ptrfun(broadcast_check2, ssns::UNIQUE);
 
 }
 
@@ -494,9 +495,9 @@ discover_tick()
     }
     for(int i = 0; i < kill.num_elems(); ++i)
     {
-        Local_uid_discovered.emit(kill[i], 0);
         Freshness.del(kill[i]);
         Broadcast_discoveries.del(kill[i]);
+        Local_uid_discovered.emit(kill[i], 0);
         se_emit(SE_STATUS_CHANGE, kill[i]);
     }
 #endif

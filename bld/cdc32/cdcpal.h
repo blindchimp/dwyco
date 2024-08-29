@@ -11,6 +11,7 @@
 
 #include "vc.h"
 #include "pval.h"
+#include "ssns.h"
 namespace dwyco {
 int init_pal();
 void exit_pal();
@@ -24,6 +25,7 @@ void async_pal(vc, void *, vc, ValidPtr);
 
 extern int Inhibit_pal;
 extern int Pal_logged_in;
+extern ssns::signal0 Online_info;
 }
 
 #endif

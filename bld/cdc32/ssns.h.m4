@@ -217,12 +217,12 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(loop($1,[i],[T[]i])), int unique = 0)
+    connection connect_ptrfun(void (*fn)(loop($1,[i],[T[]i])), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_ptrfun$1[]ifelse($1,0,[],[<loop($1,[i],[T[]i])>])* slot = new slot_ptrfun$1[]ifelse($1,0,[],[<loop($1,[i],[T[]i])>])(fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -245,12 +245,12 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(loop($1,[i],[T[]i])), int unique = 0)
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(loop($1,[i],[T[]i])), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_memfun$1<T_obj[]ifelse($1,0,[],[, loop($1,[i],[T[]i])])>* slot = new slot_memfun$1<T_obj[]ifelse($1,0,[],[, loop($1,[i],[T[]i])])>(obj, fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -456,6 +456,11 @@ divert[]dnl
 namespace ssns
 {
 
+enum signal_setup
+{
+	REGULAR = 0,
+	UNIQUE = 1
+};
 // Forward defs
 class trackable;
 class signal_base;

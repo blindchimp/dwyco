@@ -15,11 +15,10 @@
 #include "dwqbm.h"
 #include "se.h"
 
-class MMCall;
 class MMChannel;
 
 namespace dwyco {
-
+class MMCall;
 // this class sends a message over a "direct" link between two
 // clients. there is no encryption done here, the link that is used
 // is an encrypted tunnel. if a suitable link does not exist

@@ -2421,6 +2421,20 @@ vc_winsock::socket_set_option(vcsocketmode m,
         {
             RAISEABORT(generic_problem, vcnil);
         }
+#else
+        RAISEABORT(generic_problem, vcnil);
+#endif
+        return vctrue;
+
+    case VC_SET_REUSEADDR:
+#if !defined(_Windows)
+        val = a1;
+        if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1)
+        {
+            RAISEABORT(generic_problem, vcnil);
+        }
+#else
+        RAISEABORT(generic_problem, vcnil);
 #endif
         return vctrue;
 

@@ -96,7 +96,7 @@ init_netlog()
         Netlog = 0;
         return 0;
     }
-    Netlog_signal.connect_ptrfun(netlog::netlog_slot, 1);
+    Netlog_signal.connect_ptrfun(netlog::netlog_slot, ssns::UNIQUE);
     return 1;
 }
 

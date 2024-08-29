@@ -41,7 +41,9 @@
 typedef unsigned long in_addr_t;
 #endif
 
-using namespace dwyco;
+//using namespace dwyco;
+
+namespace dwyco {
 
 DwVec<ValidPtr> MMCall::MMCalls;
 DwQueryByMember<MMCall> MMCall::MMCalls_qbm;
@@ -80,10 +82,6 @@ MMCall::~MMCall()
     if(i == -1)
         oopanic("mmcall not on list");
     MMCalls.del(i);
-#ifdef DWYCO_TRACE
-    void invalidate_cb_ctx(int);
-    invalidate_cb_ctx(vp.cookie);
-#endif
     vp.invalidate();
     MMCalls_qbm.del(this);
 }
@@ -149,9 +147,9 @@ MMCall::start_call(int media_sel)
     mc->attempt_uid = uid;
     mc->port = (int)port;
     mc->proxy_info = proxinfo;
-    mc->destroy_callback = ::direct_call_failed;
+    mc->destroy_callback = dwyco::direct_call_failed;
     mc->dcb_arg3 = vp;
-    mc->established_callback = ::direct_call_ok;
+    mc->established_callback = dwyco::direct_call_ok;
     mc->ecb_arg3 = vp;
     // i couldn't decide if this would be a good idea or not:
     // in the case of msgs, it is good because the result is
@@ -168,7 +166,7 @@ MMCall::start_call(int media_sel)
         mc->timer1.load(CALLLIVE_DIRECT_TIMEOUT);
     mc->timer1.set_oneshot(1);
     mc->timer1.start();
-    mc->timer1_callback = ::timer1_expired;
+    mc->timer1_callback = dwyco::timer1_expired;
     mc->t1cb_arg3 = vp;
     // XXX NOTE: setup low level connect callback to cause
     // timer1 to be incremented by some 30 seconds or so to
@@ -310,4 +308,5 @@ MMCall::call_rejected(const char *why)
     if(scb)
         (*scb)(this, MMCALL_REJECTED, scb_arg1, scb_arg2);
     call_sig.emit(this, MMCALL_REJECTED, scb_arg1, scb_arg2);
+}
 }

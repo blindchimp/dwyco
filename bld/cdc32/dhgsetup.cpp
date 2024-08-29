@@ -189,7 +189,7 @@ init_dhg()
 
     bind_sql_setting("group/alt_name", change_current_group);
     bind_sql_setting("group/join_key", change_join_key);
-    Join_signal.connect_ptrfun(successful_join, 1);
+    Join_signal.connect_ptrfun(successful_join, ssns::UNIQUE);
     vc alt_name;
     vc pw;
 
@@ -221,8 +221,8 @@ init_dhg()
 
     //dha->password = pw;
     Current_alternate = dha;
-    Group_uids.value_changed.connect_ptrfun(&DH_alternate::update_group, 1);
-    Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls, 1);
+    Group_uids.value_changed.connect_ptrfun(&DH_alternate::update_group, ssns::UNIQUE);
+    Current_alternate.value_changed.connect_ptrfun(drop_all_sync_calls, ssns::UNIQUE);
 }
 
 
