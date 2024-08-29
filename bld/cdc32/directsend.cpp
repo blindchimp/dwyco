@@ -534,7 +534,7 @@ DirectSend::send_message()
                 return 1;
             }
             TRACK_ADD(DS_dchan_not_established, 1);
-            ret[i]->call_sig.connect_memfun(this, &DirectSend::call_disposition, 1);
+            ret[i]->call_sig.connect_memfun(this, &DirectSend::call_disposition, ssns::UNIQUE);
             return 1;
         }
     }

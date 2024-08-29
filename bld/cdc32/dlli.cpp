@@ -831,6 +831,8 @@ dwyco_debug_dump()
         a += (const char *)mc->call_type;
         a += " ";
         a += (const char *)mc->remote_call_type();
+        a += " ";
+        a += (const char *)to_hex(mc->remote_uid());
 
         a += "]";
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);

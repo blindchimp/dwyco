@@ -31,6 +31,7 @@ public:
     sigprop(const T& v) {val = v;}
 
     ssns::signal1<T> value_changed;
+    ssns::signal3<T, T, int> element_changed;
 
     void set_val(const T& v) {
         if(val != v)
@@ -68,10 +69,14 @@ public:
             return;
         val.add(e);
         value_changed.emit(val);
+        element_changed.emit(val, e, 1);
     }
     void del(const T& e) {
         if(val.del(e))
+        {
             value_changed.emit(val);
+            element_changed.emit(val, e, 0);
+        }
     }
 };
 
