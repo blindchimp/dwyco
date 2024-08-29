@@ -82,10 +82,6 @@ MMCall::~MMCall()
     if(i == -1)
         oopanic("mmcall not on list");
     MMCalls.del(i);
-#ifdef DWYCO_TRACE
-    void invalidate_cb_ctx(int);
-    invalidate_cb_ctx(vp.cookie);
-#endif
     vp.invalidate();
     MMCalls_qbm.del(this);
 }
