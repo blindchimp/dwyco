@@ -13,6 +13,46 @@
 #include <time.h>
 #endif
 
+// this is where we figure out what connections to initiate to what other
+// devices in our device group.
+//
+// these are mostly heuristics, trying to balance the frequency we
+// attempt connections with the amount of wasted resources caused by
+// to much re-trying.
+//
+// note that we try to connect to *all* other group members, provided we can
+// find their ip address. it might make sense to limit this to some subset
+// eventually in order to avoid storms of updates. right now, it doesn't
+// seem to be a problem given most device groups are fairly small, and most of
+// devices are "offline" or unreachable most of the time.
+//
+// we don't try to figure out the quality of the connections (ie, a direct local
+// ip might be better than going through a proxy.) doing something useful in
+// this area would require some changes in other parts of the system that aren't
+// really worth it at this point (like assessing an incoming connection before
+// starting the protocol state machine, and replacing an existing connection.)
+//
+// there is also a function for creating a data model that can be used to print
+// the current state of the set of connections. this isn't too useful for
+// users, but can be useful for diagnosing problems while debugging.
+//
+// note: i tried a klugey way to try and avoid too much livelock (ie, a device
+// comes online, and other devices in the group immediately try to
+// connect to us while we are connecting to them, resulting in both the
+// connections being rejected.)
+//
+// assuming the clocks on both devices are about ok at the minute level:
+// (1) each device breaks up time in to 5 minute blocks.
+//   if it is an odd block, this device can only originate calls to lexicographically larger uid's.
+//   otherwise, it can only originate calls to smaller uid's.
+//
+// since all the uid's in the group use the same function, this results in A originating to B for
+// 5 minutes, then B to A for 5 minutes. this works, but has some obvious problems with
+// the largest and smallest uid's being mostly "receive only" for 5 minutes at a time.
+//
+// HUGE NOTE: allowing multiple simultaneous connection between two devices is known to
+// cause problems with the "delta" processing. i didn't debug it enough to figure it out.
+//
 using namespace dwyco;
 extern vc Online;
 extern DwString dwyco::Schema_version_hack;
