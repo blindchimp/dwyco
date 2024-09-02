@@ -120,11 +120,12 @@ static
 int
 originate_calls(vc uid)
 {
-    return 1;
+    //return 1;
 
     time_t now = time(0);
-    now /= 60;
-    now /= 5;
+    //now /= 60;
+    //now /= 5;
+    now /= 37;
     if(now & 1)
         return uid > My_UID;
     else
@@ -406,8 +407,9 @@ sync_call_setup()
             }
         }
         GRTLOG("trying sync to %s", (const char *)to_hex(call_uids[i]), 0);
-        if(originate_calls(call_uids[i]))
+        if(1 /*originate_calls(call_uids[i]) */)
         {
+            int o = originate_calls(call_uids[i]);
             vc pw;
             // this is ok for testing, as it will keep us from
             // screwing up and syncing with non-group members.
@@ -431,7 +433,7 @@ sync_call_setup()
                 pw = "";
             GRTLOG("out trying sync to %s (%s)", (const char *)to_hex(call_uids[i]), (const char *)to_hex(pw));
             if(dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              (const char *)pw, pw.len(), "sync", 4, 1))
+                              (const char *)pw, pw.len(), "sync", 4, o ? 1 : 15))
             {
                 succ = 1;
             }
