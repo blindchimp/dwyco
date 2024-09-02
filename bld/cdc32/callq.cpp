@@ -26,7 +26,7 @@
 using namespace dwyco;
 extern int Media_select;
 
-#define CALLQ_POLL_TIME (10000)
+#define CALLQ_POLL_TIME (3000)
 #define CALLQ_SLOW_POLL_TIME (60000)
 
 namespace dwyco {
@@ -46,7 +46,21 @@ struct callq
     // holds the MMCall pointer we are tracking
     // which is why we don't invalidate it here
     ValidPtr vp;
+
+    // when this timeout expires, we remove the call from the
+    // callq. this just keeps stale calls from blocking
+    // attempts at new calls forever.
     DwTimer timeout;
+
+    // this just allows a small delay to be added to
+    // the call attempt. this is used mainly to avoid
+    // situations where two uid's are calling each other
+    // simultaneously and it creates some livelock if
+    // only one connection is allowed (ie, they both end up
+    // getting canceled over and over.)
+    time_t time_entered;
+    time_t delay;
+
     enum call_state status;
     // we interpose our stuff so we can track the call status
     CallStatusCallback user_cb;
@@ -59,6 +73,8 @@ struct callq
         user_cb = 0;
         arg1 = 0;
         cancel = 0;
+        time_entered = 0;
+        delay = 0;
     }
 };
 
@@ -117,9 +133,12 @@ CallQ::~CallQ()
 void
 CallQ::reset_poll_time(dwtime_t interval)
 {
-    call_q_timer.stop();
-    call_q_timer.set_interval(interval);
-    call_q_timer.start();
+    if(call_q_timer.get_interval() != interval)
+    {
+        call_q_timer.stop();
+        call_q_timer.set_interval(interval);
+        call_q_timer.start();
+    }
 }
 
 void
@@ -179,7 +198,7 @@ CallQ::cq_call_status(MMCall *mmc, int status, void *arg1, ValidPtr vp)
 }
 
 int
-CallQ::add_call(MMCall *mmc)
+CallQ::add_call(MMCall *mmc, int defer_time)
 {
     int i;
     callq *cq;
@@ -190,14 +209,15 @@ CallQ::add_call(MMCall *mmc)
             if(mmc->uid == ((MMCall *)(void *)(calls[i]->vp))->uid)
                 return 0;
     }
+    cq = new callq(mmc->vp);
     if((i = calls.index(0)) == -1)
     {
-        calls.append(cq = new callq(mmc->vp));
+        calls.append(cq);
         i = calls.num_elems() - 1;
     }
     else
     {
-        calls[i] = cq = new callq(mmc->vp);
+        calls[i] = cq;
     }
     GRTLOG("add_call %s id %d", (const char *)to_hex(mmc->uid), calls[i]->vp.cookie);
     // interpose our callback
@@ -206,6 +226,8 @@ CallQ::add_call(MMCall *mmc)
     cq->arg2 = mmc->scb_arg2;
     cq->timeout.set_interval(5 * 60 * 1000);
     cq->timeout.start();
+    cq->time_entered = time(0);
+    cq->delay = defer_time;
     mmc->scb = cq_call_status;
     mmc->scb_arg2 = mmc->vp;
     TheCallQ->reset_poll_time(CALLQ_POLL_TIME);
@@ -344,17 +366,19 @@ CallQ::tick()
     {
         if(!calls[i])
             continue;
-        if(calls[i]->status == CQ_WAITING && !calls[i]->cancel)
+        struct callq *cq = calls[i];
+        if(cq->status == CQ_WAITING && !cq->cancel &&
+                (time(0) > (cq->time_entered + cq->delay)))
         {
             // NOTE: WARNING: this start_call does an immediate callback
             // with "call_started", so callback should be aware of this
             // probably needs to be fixed.
-            if(((MMCall *)(void *)calls[i]->vp)->start_call(Media_select))
+            if(((MMCall *)(void *)(cq->vp))->start_call(Media_select))
             {
                 // stop the timeout, once it is connecting, other timers
                 // cause the state to progress
-                calls[i]->timeout.stop();
-                calls[i]->status = CQ_CONNECTING;
+                cq->timeout.stop();
+                cq->status = CQ_CONNECTING;
                 ++connecting;
             }
             if(connected + connecting >= max_established)

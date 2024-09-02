@@ -2507,6 +2507,8 @@ MMChannel::crypto_agree(vc crypto, int caller)
     }
 
     vc agreed = udh_agree_auth(channel_keys, their_pubkeys);
+    if(agreed.is_nil())
+        return 0;
     agreed = kdf(agreed, caller, My_UID, rem_uid);
     agreed = vclh_sha(agreed);
     // chop down to 128 bits, since we are hardwired to that with
