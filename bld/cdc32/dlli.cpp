@@ -3441,7 +3441,11 @@ dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc
     }
     else
     {
-        if(TheCallQ->add_call(mmc) == 0)
+        // this is a hack to avoid an api change
+        // q_call == 1 used to mean 0 delay, but now
+        // i just put the delay into the q_call
+        int delay = (q_call == 1) ? 0 : q_call;
+        if(TheCallQ->add_call(mmc, delay) == 0)
         {
             delete mmc;
             return 0;
