@@ -1049,12 +1049,12 @@ private:
     vc package_next_cmd();
 
     std::future<int> *unpack_index_future;
-    int unpack_index(vc cmd);
-    void process_pull(vc cmd);
-    void process_pull_resp(vc cmd);
-    void process_iupdate(vc cmd);
-    void process_tupdate(vc cmd);
-    void process_syncpoint(vc cmd);
+    int unpack_index(cvcr cmd);
+    void process_pull(cvcr cmd);
+    void process_pull_resp(cvcr cmd);
+    void process_iupdate(cvcr cmd);
+    void process_tupdate(cvcr cmd);
+    void process_syncpoint(cvcr cmd);
 
     bool eager_pull_timer_active;
     DwTimer eager_pull_timer;
@@ -1065,14 +1065,14 @@ private:
 public:
     dwyco::sendq sync_sendq;
 private:
-    void send_pull_resp(vc mid, vc uid, vc msg, vc att, vc pri);
-    void send_pull_error(vc mid, vc pri);
+    void send_pull_resp(const vc &mid, const vc &uid, const vc &msg, const vc &att, const vc &pri);
+    void send_pull_error(cvcr mid, cvcr pri);
 
     void cleanup_pulls(int myid);
-    void pull_done(vc mid, vc remote_uid, vc success);
+    void pull_done(cvcr mid, cvcr remote_uid, cvcr success);
 
 public:
-    void send_pull(vc mid, int pri);
+    void send_pull(const vc &mid, int pri);
 
     //ssns::signal3<vc, vc, vc> pull_done;
 

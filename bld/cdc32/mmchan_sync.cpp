@@ -45,7 +45,7 @@ using namespace dwyco::qmsgsql;
 void
 MMChannel::assert_eager_pulls()
 {
-    vc uid = remote_uid();
+    const vc& uid = remote_uid();
     //vc huid = to_hex(uid);
     vc mids;
     int eager_mode = (int)get_settings_value("sync/eager");
@@ -79,7 +79,7 @@ MMChannel::assert_eager_pulls()
     }
     for(int i = 0; i < mids.num_elems(); ++i)
     {
-        vc mid = mids[i];
+        const vc& mid = mids[i];
         pulls::assert_pull(mid, uid, PULLPRI_BACKGROUND);
         if(pulls::set_pull_in_progress(mid, uid))
             send_pull(mid, PULLPRI_BACKGROUND);
@@ -176,7 +176,7 @@ MMChannel::package_next_cmd()
 }
 
 int
-MMChannel::unpack_index(vc cmd)
+MMChannel::unpack_index(cvcr cmd)
 {
     if(cmd[0] != vc("idx"))
         return 0;
@@ -201,7 +201,7 @@ MMChannel::unpack_index(vc cmd)
 }
 
 void
-MMChannel::process_pull(vc cmd)
+MMChannel::process_pull(cvcr cmd)
 {
     if(cmd[0] != vc("pull"))
         oopanic("pull");
@@ -252,7 +252,7 @@ MMChannel::process_pull(vc cmd)
 }
 
 void
-MMChannel::pull_done(vc mid, vc remote_uid, vc success)
+MMChannel::pull_done(cvcr mid, cvcr remote_uid, cvcr success)
 {
     if(success.is_nil())
     {
@@ -274,7 +274,7 @@ MMChannel::pull_done(vc mid, vc remote_uid, vc success)
 }
 
 void
-MMChannel::process_pull_resp(vc cmd)
+MMChannel::process_pull_resp(cvcr cmd)
 {
     // XXX: this probably needs to be conditional on whether
     // we have a tombstone here or not. you can imagine a case
@@ -385,7 +385,7 @@ MMChannel::process_pull_resp(vc cmd)
 }
 
 void
-MMChannel::process_iupdate(vc cmd)
+MMChannel::process_iupdate(cvcr cmd)
 {
     //GRTLOGVC(cmd);
     vc mid = import_remote_iupdate(remote_uid(), cmd[1]);
@@ -401,20 +401,20 @@ MMChannel::process_iupdate(vc cmd)
 }
 
 void
-MMChannel::process_tupdate(vc cmd)
+MMChannel::process_tupdate(cvcr cmd)
 {
     //GRTLOGVC(cmd);
     import_remote_tupdate(remote_uid(), cmd[1]);
 }
 
 void
-MMChannel::process_syncpoint(vc cmd)
+MMChannel::process_syncpoint(cvcr cmd)
 {
     import_new_syncpoint(remote_uid(), cmd[1]);
 }
 
 void
-MMChannel::send_pull(vc mid, int pri)
+MMChannel::send_pull(const vc& mid, int pri)
 {
     vc cmd(VC_VECTOR);
     cmd[0] = "pull";
@@ -424,7 +424,7 @@ MMChannel::send_pull(vc mid, int pri)
 }
 
 void
-MMChannel::send_pull_resp(vc mid, vc uid, vc msg, vc att, vc pri)
+MMChannel::send_pull_resp(const vc& mid, const vc& uid, const vc& msg, const vc& att, const vc& pri)
 {
     vc cmd(VC_VECTOR);
     cmd[0] = "pull-resp";
@@ -436,7 +436,7 @@ MMChannel::send_pull_resp(vc mid, vc uid, vc msg, vc att, vc pri)
 }
 
 void
-MMChannel::send_pull_error(vc mid, vc pri)
+MMChannel::send_pull_error(cvcr mid, cvcr pri)
 {
     send_pull_resp(mid, vcnil, vcnil, vcnil, pri);
 }
