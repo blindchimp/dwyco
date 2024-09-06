@@ -276,6 +276,17 @@ MMChannel::pull_done(vc mid, vc remote_uid, vc success)
 void
 MMChannel::process_pull_resp(vc cmd)
 {
+    // XXX: this probably needs to be conditional on whether
+    // we have a tombstone here or not. you can imagine a case
+    // where a tombstone gets created and is being propagated at
+    // the same time a pull is in progress, and the results of
+    // the pull come after the tombstone is installed. it won't break
+    // the display of the messages (the tombstone will cause it to be
+    // filtered out) BUT since the message ends up here, it is
+    // a condidate for being re-indexed (and therefore reappearing) after
+    // things like group changes and whatnot.
+    //
+
     // here is where we insert the fetched message into our
     // local model (which automatically gets put into the global
     // model held here.)
