@@ -2597,14 +2597,14 @@ index_user(vc v)
 }
 #endif
 
+static
 void
-create_dir_meta(int update_existing)
+create_dir_meta()
 {
     try
     {
         sql_start_transaction();
-        if(!update_existing)
-            sql_simple("delete from dir_meta");
+        sql_simple("delete from dir_meta");
         FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
         auto n = fv.num_elems();
         for(int i = 0; i < n; ++i)
@@ -2653,6 +2653,7 @@ reindex_possible_changes()
         sql_simple("delete from dir_meta where dirname in (select * from bar)");
         sql_simple("update bar set dirname = replace(dirname, '.usr', '')");
         sql_simple("delete from msg_idx where assoc_uid in (select * from bar)");
+        sql_simple("delete from indexed_flag where uid in (select * from bar)");
 
         for(int i = 0; i < needs_reindex.num_elems(); ++i)
         {
@@ -2663,7 +2664,7 @@ reindex_possible_changes()
         }
         sql_simple("drop table bar");
         sql_simple("drop table foo");
-        create_dir_meta(1);
+        create_dir_meta();
         sql_commit_transaction();
     }
     catch (...)

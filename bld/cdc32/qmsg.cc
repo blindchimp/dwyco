@@ -2762,21 +2762,21 @@ trash_file(const DwString& dir, const DwString& fn)
 void
 trash_body(vc uid, vc msg_id, int inhibit_indexing)
 {
-    if(uid.len() == 0)
+    if(uid.type() != VC_STRING || uid.len() != 10)
         return;
-    DwString s((const char *)to_hex(uid));
-    DwString t((const char *)msg_id);
+    DwString huid((const char *)to_hex(uid));
+    DwString mid((const char *)msg_id);
 
-    s += ".usr";
-    DwString userdir = s;
-    s = newfn(s);
-    s += DIRSEPSTR;
-    s += t;
-    DwString s2 = s;
-    s += ".bod";
+    huid += ".usr";
+    DwString userdir = huid;
+    huid = newfn(huid);
+    huid += DIRSEPSTR;
+    huid += mid;
+    DwString s2 = huid;
+    huid += ".bod";
 
     vc msg;
-    if(load_info(msg, s.c_str(), 1))
+    if(load_info(msg, huid.c_str(), 1))
     {
         if(!inhibit_indexing)
         {
@@ -2787,9 +2787,7 @@ trash_body(vc uid, vc msg_id, int inhibit_indexing)
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
-            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
-        trash_file(userdir, (t + ".bod"));
-        //DeleteFile(s.c_str());
+        trash_file(userdir, (mid + ".bod"));
         return;
     }
     s2 += ".snt";
@@ -2804,11 +2802,8 @@ trash_body(vc uid, vc msg_id, int inhibit_indexing)
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
-            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
-        trash_file(userdir, (t + ".snt"));
-        //DeleteFile(s2.c_str());
+        trash_file(userdir, (mid + ".snt"));
         return;
-
     }
 }
 
