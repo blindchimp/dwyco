@@ -116,9 +116,28 @@ int check_profile_checksum(vc m, vc uid);
 //void reset_they_grant();
 //void reset_always_vis();
 //void reset_never_vis();
-typedef DwVecP<WIN32_FIND_DATA> FindVec;
-FindVec *find_to_vec(const char *pat);
-void delete_findvec(FindVec *fv);
+class _FindVec
+{
+public:
+    ~_FindVec() {
+        int n = fv.num_elems();
+        for(int i = 0; i < n; ++i)
+            delete fv[i];
+    }
+    const WIN32_FIND_DATA *operator[](int i) const {
+        return fv[i];
+    }
+    WIN32_FIND_DATA *&operator[](int i) {
+        return fv[i];
+    }
+    int num_elems() const {return fv.num_elems();}
+private:
+    DwVecP<WIN32_FIND_DATA> fv;
+};
+
+typedef _FindVec FindVec;
+FindVec find_to_vec(const char *pat);
+
 int creator_no_forward(vc body);
 int any_no_forward(vc body);
 int decode_no_forward_msg(vc m);

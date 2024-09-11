@@ -1290,12 +1290,12 @@ init_msg_folder(vc uid)
     return 1;
 }
 
-FindVec *
+FindVec
 find_to_vec(const char *pat)
 {
     int i = 1;
 
-    FindVec& ret = *new FindVec;
+    FindVec ret;
 #ifdef _Windows
     WIN32_FIND_DATA n;
     HANDLE h = FindFirstFile(pat, &n);
@@ -1334,7 +1334,7 @@ find_to_vec(const char *pat)
     {
         if(free_pat)
             free((void *)pat);
-        return &ret;
+        return ret;
     }
     for(i = 0; i < glb.gl_pathc; ++i)
     {
@@ -1349,16 +1349,69 @@ find_to_vec(const char *pat)
         free((void *)pat);
 #endif
 
-    return &ret;
+    return ret;
 }
 
-void
-delete_findvec(FindVec *fv)
+FindVec
+find_to_vec2(const char *pat)
 {
-    int n = fv->num_elems();
-    for(int i = 0; i < n; ++i)
-        delete (*fv)[i];
-    delete fv;
+    int i = 1;
+
+    FindVec ret;
+#ifdef _Windows
+    WIN32_FIND_DATA n;
+    HANDLE h = FindFirstFile(pat, &n);
+    int idx;
+    for(idx = 0; h != INVALID_HANDLE_VALUE && i != 0; i = FindNextFile(h, &n))
+    {
+        ret[idx] = new WIN32_FIND_DATA;
+        *ret[idx] = n;
+        ++idx;
+    }
+    if(h != INVALID_HANDLE_VALUE)
+        FindClose(h);
+#endif
+#if defined(LINUX)
+// HACK: in dos, *.* will match a filename "foo" even tho
+// it has no ".", so we kluge here and translate *.* into *
+    char *a;
+    int free_pat = 0;
+    int l = strlen(pat);
+    if(l >= 3)
+    {
+        if(pat[l - 3] == '*' &&
+                pat[l - 2] == '.' &&
+                pat[l - 1] == '*')
+        {
+            a = strdup(pat);
+            a[l - 2] = 0;
+            pat = a;
+            free_pat = 1;
+        }
+    }
+    glob_t glb;
+    glb.gl_offs = 0;
+    int e = glob(pat, GLOB_NOSORT, 0, &glb);
+    if(e != 0)
+    {
+        if(free_pat)
+            free((void *)pat);
+        return ret;
+    }
+    for(i = 0; i < glb.gl_pathc; ++i)
+    {
+        DwString a(glb.gl_pathv[i]);
+        a = dwbasename(a.c_str());
+        ret[i] = new WIN32_FIND_DATA;
+        memset(ret[i], 0, sizeof(*ret[i]));
+        strncpy(ret[i]->cFileName, a.c_str(), sizeof(ret[i]->cFileName) - 1);
+    }
+    globfree(&glb);
+    if(free_pat)
+        free((void *)pat);
+#endif
+
+    return ret;
 }
 
 static
@@ -2486,7 +2539,7 @@ load_users_from_files(int *total_out)
 
     MsgFolders = vc(VC_TREE);
 
-    FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
+    FindVec fv = find_to_vec(newfn("*.usr").c_str());
     auto n = fv.num_elems();
     TRACK_MAX(QM_UL_count, n);
     for(int i = 0; i < n; ++i)
@@ -2500,7 +2553,6 @@ load_users_from_files(int *total_out)
         //MsgFolders.add_kv(uid, vcnil);
     }
 
-    delete_findvec(&fv);
     if(total_out)
         *total_out = MsgFolders.num_elems();
 
@@ -2632,7 +2684,7 @@ remove_user_files(vc dir, const char *pfx, int keep_folder)
     s = p;
 
     int retval = 1;
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv = find_to_vec(s.c_str());
     int n = fv.num_elems();
 
     for(i = 0; i < n; ++i)
@@ -2656,7 +2708,6 @@ remove_user_files(vc dir, const char *pfx, int keep_folder)
     p += (const char *)dir;
     if(!god &&  (!keep_folder && !RemoveDirectory(newfn(p).c_str())))
         retval = 0;
-    delete_findvec(&fv);
 
     return 1; // tired of hearing tech support about not being able to
     // remove things, not sure why this happens (maybe they
@@ -2818,7 +2869,7 @@ untrash_users()
     DwString s = trashdir;
     s += "*.usr";
 
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv = find_to_vec(s.c_str());
     int n = fv.num_elems();
 
     for(i = 0; i < n; ++i)
@@ -2837,7 +2888,7 @@ untrash_users()
         DwString dir = s2;
 
         s2 += "" DIRSEPSTR "*.*";
-        FindVec& fv2 = *find_to_vec(s2.c_str());
+        FindVec fv2 = find_to_vec(s2.c_str());
         int n2 = fv2.num_elems();
         for(int j = 0; j < n2; ++j)
         {
@@ -2859,26 +2910,23 @@ untrash_users()
             move_replace(src, dst);
         }
         RemoveDirectory(dir.c_str());
-        delete_findvec(&fv2);
         clear_indexed_flag(uid);
         load_msg_index(uid, 1);
     }
-    delete_findvec(&fv);
 }
 
 int
 count_trashed_users()
 {
-    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
+    FindVec fv = find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
     int num = fv.num_elems();
-    delete_findvec(&fv);
     return num;
 }
 
 int
 empty_trash()
 {
-    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
+    FindVec fv = find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
     int num = fv.num_elems();
     for(int i = 0; i < num; ++i)
     {
@@ -2888,7 +2936,6 @@ empty_trash()
             continue;
         remove_user_files(d.cFileName, "trash" DIRSEPSTR "", 0);
     }
-    delete_findvec(&fv);
     return 1;
 }
 
@@ -2985,7 +3032,7 @@ load_bodies(vc dir, int load_sent)
     s += "" DIRSEPSTR "*.bod";
     int t = 0;
 
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv = find_to_vec(s.c_str());
     int n = fv.num_elems();
     for(i = 0; i < n; ++i)
     {
@@ -3000,14 +3047,13 @@ load_bodies(vc dir, int load_sent)
             sorter.add(GroovyItem(info), t++);
         }
     }
-    delete_findvec(&fv);
 
     if(load_sent)
     {
         ss = newfn(ss);
         ss += "" DIRSEPSTR "*.snt";
         s = ss;
-        FindVec& fv2 = *find_to_vec(s.c_str());
+        FindVec fv2 = find_to_vec(s.c_str());
         n = fv2.num_elems();
         for(i = 0; i < n; ++i)
         {
@@ -3023,7 +3069,6 @@ load_bodies(vc dir, int load_sent)
                 sorter.add(GroovyItem(info), t++);
             }
         }
-        delete_findvec(&fv2);
     }
 
     DwTreeKazIter<int, GroovyItem> iter(&sorter);
@@ -3838,7 +3883,7 @@ recover_inprogress()
 {
     int i;
 
-    FindVec& fv = *find_to_vec(newfn("inprogress" DIRSEPSTR "*.q").c_str());
+    FindVec fv = find_to_vec(newfn("inprogress" DIRSEPSTR "*.q").c_str());
     int nn = fv.num_elems();
     for(i = 0; i < nn; ++i)
     {
@@ -3849,7 +3894,6 @@ recover_inprogress()
         d += n.cFileName;
         move_replace(newfn(s), newfn(d));
     }
-    delete_findvec(&fv);
 }
 
 
@@ -3938,7 +3982,7 @@ load_q_files(const DwString& dir, const vc& uid, int load_special, vc vec)
     pat += DIRSEPSTR;
     pat += "*.q";
 
-    FindVec& fv = *find_to_vec(newfn(pat).c_str());
+    FindVec fv = find_to_vec(newfn(pat).c_str());
     int nn = fv.num_elems();
     int i;
     for(i = 0; i < nn; ++i)
@@ -3960,7 +4004,6 @@ load_q_files(const DwString& dir, const vc& uid, int load_special, vc vec)
             }
         }
     }
-    delete_findvec(&fv);
 
 }
 
@@ -4128,7 +4171,7 @@ qd_purge_outbox()
 
     recover_inprogress();
 
-    FindVec& fv = *find_to_vec(newfn("outbox" DIRSEPSTR "*.q").c_str());
+    FindVec fv = find_to_vec(newfn("outbox" DIRSEPSTR "*.q").c_str());
     int nn = fv.num_elems();
     for(i = 0; i < nn; ++i)
     {
@@ -4137,7 +4180,6 @@ qd_purge_outbox()
         d += n.cFileName;
         DeleteFile(newfn(d).c_str());
     }
-    delete_findvec(&fv);
 }
 
 #if 0
@@ -4411,7 +4453,7 @@ strip_port(vc ip)
 static void
 remove_all_but(const char *fn, vc nodel)
 {
-    FindVec& fv = *find_to_vec(newfn(fn).c_str());
+    FindVec fv = find_to_vec(newfn(fn).c_str());
     int nn = fv.num_elems();
     for(int i = 0; i < nn; ++i)
     {
@@ -4421,7 +4463,6 @@ remove_all_but(const char *fn, vc nodel)
             DeleteFile(newfn(n.cFileName).c_str());
         }
     }
-    delete_findvec(&fv);
 }
 
 static
@@ -4432,7 +4473,7 @@ find_files_to_keep(DwString subdir, DwString pat, vc nodel)
 
     match += DIRSEPSTR;
     match += pat;
-    FindVec& fv = *find_to_vec(match.c_str());
+    FindVec fv = find_to_vec(match.c_str());
     int nn = fv.num_elems();
     for(int i = 0; i < nn; ++i)
     {
@@ -4479,7 +4520,6 @@ find_files_to_keep(DwString subdir, DwString pat, vc nodel)
             }
         }
     }
-    delete_findvec(&fv);
 }
 
 
@@ -4542,7 +4582,6 @@ clean_cruft()
             DeleteFile(tfn.c_str());
 
         }
-        delete_findvec(&fv);
     }
 #endif
 #endif
