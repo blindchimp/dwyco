@@ -739,11 +739,11 @@ sync_user(vc v)
     DwString ss = s;
     s += "" DIRSEPSTR "*.bod";
 
-    FindVec fv = find_to_vec(s.c_str());
+    FindVec fv(s);
     auto n = fv.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA &d = *fv[i];
+        const WIN32_FIND_DATA &d = *fv[i];
         if(strlen(d.cFileName) != 24)
             continue;
         DwString mid(d.cFileName);
@@ -759,11 +759,11 @@ sync_user(vc v)
     DwString ss = s;
     s += "" DIRSEPSTR "*.snt";
 
-    FindVec fv = find_to_vec(s.c_str());
+    FindVec fv(s);
     auto n = fv.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA &d = *fv[i];
+        const WIN32_FIND_DATA &d = *fv[i];
         if(strlen(d.cFileName) != 24)
             continue;
         DwString mid(d.cFileName);
@@ -803,14 +803,14 @@ void
 remove_delta_databases()
 {
     {
-        FindVec fv = find_to_vec(newfn("minew????????????????????.tdb").c_str());
+        FindVec fv(newfn("minew????????????????????.tdb"));
         for(int i = 0; i < fv.num_elems(); ++i)
         {
             DeleteFile(newfn(fv[i]->cFileName).c_str());
         }
     }
     {
-        FindVec fv = find_to_vec(newfn("mi????????????????????.tdb").c_str());
+        FindVec fv(newfn("mi????????????????????.tdb"));
         for(int i = 0; i < fv.num_elems(); ++i)
         {
             DeleteFile(newfn(fv[i]->cFileName).c_str());
@@ -2214,11 +2214,11 @@ create_date_index(vc uid)
     {
         sql_start_transaction();
         sql_simple("create temp table found_mid(mid text not null primary key)");
-        FindVec fv = find_to_vec(s.c_str());
+        FindVec fv(s);
         auto n = fv.num_elems();
         for(i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA &d = *fv[i];
+            const WIN32_FIND_DATA &d = *fv[i];
             DwString s2(ss);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
@@ -2237,11 +2237,11 @@ create_date_index(vc uid)
         s = ss;
         s += "" DIRSEPSTR "*.snt";
 
-        FindVec fv2 = find_to_vec(s.c_str());
+        FindVec fv2(s);
         n = fv2.num_elems();
         for(i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA &d = *fv2[i];
+            const WIN32_FIND_DATA &d = *fv2[i];
             DwString s2(ss);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
@@ -2599,11 +2599,11 @@ create_dir_meta()
     {
         sql_start_transaction();
         sql_simple("delete from dir_meta");
-        FindVec fv = find_to_vec(newfn("*.usr").c_str());
+        FindVec fv(newfn("*.usr"));
         auto n = fv.num_elems();
         for(int i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA& d = *fv[i];
+            const WIN32_FIND_DATA& d = *fv[i];
             DwString fdirname = newfn(d.cFileName);
             struct stat s;
             if(stat(fdirname.c_str(), &s) == -1)
@@ -2625,11 +2625,11 @@ reindex_possible_changes()
     {
         sql_start_transaction();
         sql_simple("create temp table foo(dirname text collate nocase primary key not null, time default 0)");
-        FindVec fv = find_to_vec(newfn("*.usr").c_str());
+        FindVec fv(newfn("*.usr"));
         auto n = fv.num_elems();
         for(int i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA& d = *fv[i];
+            const WIN32_FIND_DATA& d = *fv[i];
             DwString fdirname = newfn(d.cFileName);
             struct stat s;
             if(stat(fdirname.c_str(), &s) == -1)
