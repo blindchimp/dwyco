@@ -1615,17 +1615,7 @@ dwyco_exit()
 {
     if(!Inited)
         return 1;
-    // just empty the trash once a week, this is mainly for debugging
-    // these days anyway, since we don't really offer a way for users
-    // to untrash this atm.
-    vc last_empty;
-    if(!load_info(last_empty, "trs.dif") ||
-            (time(0) - (time_t)last_empty) > ((time_t)7 * 24 * 3600))
-    {
-        empty_trash();
-        last_empty = time(0);
-        save_info(last_empty, "trs.dif");
-    }
+    weekly_trash_empty();
     // just to flush stats
     TRACK_ADD(DLLI_exit, 1);
     dwyco_enable_activity_checking(0, 0, 0);

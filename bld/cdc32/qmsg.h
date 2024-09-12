@@ -182,6 +182,7 @@ void boost_clock(vc mi);
 int move_replace(const DwString& s, const DwString& d);
 vc pal_to_vector(int raw);
 void clean_cruft();
+void weekly_trash_empty();
 void boost_logical_clock();
 void update_global_logical_clock(int64_t lc);
 int64_t diff_logical_clock(int64_t tm);
