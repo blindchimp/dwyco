@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #include "dlli.h"
 #include "ezset.h"
 #include "mmchan.h"
@@ -18,13 +26,15 @@
 //
 // these are mostly heuristics, trying to balance the frequency we
 // attempt connections with the amount of wasted resources caused by
-// to much re-trying.
+// retrying too often.
 //
 // note that we try to connect to *all* other group members, provided we can
 // find their ip address. it might make sense to limit this to some subset
 // eventually in order to avoid storms of updates. right now, it doesn't
 // seem to be a problem given most device groups are fairly small, and most of
-// devices are "offline" or unreachable most of the time.
+// devices are "offline" or unreachable most of the time. i think the callq
+// limits the total number of extant connections to something like 4 (ca 9/2024).
+// this is an arbitrary number, but works ok in practice.
 //
 // we don't try to figure out the quality of the connections (ie, a direct local
 // ip might be better than going through a proxy.) doing something useful in
@@ -52,6 +62,11 @@
 //
 // HUGE NOTE: allowing multiple simultaneous connection between two devices is known to
 // cause problems with the "delta" processing. i didn't debug it enough to figure it out.
+//
+// NOTE! ca 9/2024, i changed the connection set up to be more aggressive:
+// (1) when a new IP is detected, we immediately set up an originating call in the call-q, EXCEPT
+//  we add a delay of 15 seconds based on the same lexicographic function mentioned above.
+// this mostly solves the livelock problem, but can result in extra connectios that are rejected.
 //
 using namespace dwyco;
 extern vc Online;
@@ -356,6 +371,11 @@ sync_call_setup()
     int succ = 0;
     for(int i = 0; i < call_uids.num_elems(); ++i)
     {
+        // note: the following if statement was where i was thinking some
+        // more heuristics might be applied to help with deciding on whether
+        // to try a connection or not. it works ok as is, and i'm not sure
+        // a lot of the cases make much difference, so i might make sense to
+        // get rid of this later.
         if(!Broadcast_discoveries.contains(call_uids[i]))
         {
             if(!Online.contains(call_uids[i]))

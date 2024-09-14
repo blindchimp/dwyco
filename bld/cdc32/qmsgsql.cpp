@@ -739,11 +739,11 @@ sync_user(vc v)
     DwString ss = s;
     s += "" DIRSEPSTR "*.bod";
 
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv(s);
     auto n = fv.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA &d = *fv[i];
+        const WIN32_FIND_DATA &d = *fv[i];
         if(strlen(d.cFileName) != 24)
             continue;
         DwString mid(d.cFileName);
@@ -752,7 +752,6 @@ sync_user(vc v)
             trash_body(uid, mid.c_str(), 1);
 
     }
-    delete_findvec(&fv);
     }
     {
     DwString s((const char *)id);
@@ -760,11 +759,11 @@ sync_user(vc v)
     DwString ss = s;
     s += "" DIRSEPSTR "*.snt";
 
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv(s);
     auto n = fv.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA &d = *fv[i];
+        const WIN32_FIND_DATA &d = *fv[i];
         if(strlen(d.cFileName) != 24)
             continue;
         DwString mid(d.cFileName);
@@ -773,7 +772,6 @@ sync_user(vc v)
             trash_body(uid, mid.c_str(), 1);
 
     }
-    delete_findvec(&fv);
     }
 
 
@@ -805,20 +803,18 @@ void
 remove_delta_databases()
 {
     {
-        FindVec *fv = find_to_vec(newfn("minew????????????????????.tdb").c_str());
-        for(int i = 0; i < fv->num_elems(); ++i)
+        FindVec fv(newfn("minew????????????????????.tdb"));
+        for(int i = 0; i < fv.num_elems(); ++i)
         {
-            DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+            DeleteFile(newfn(fv[i]->cFileName).c_str());
         }
-        delete_findvec(fv);
     }
     {
-        FindVec *fv = find_to_vec(newfn("mi????????????????????.tdb").c_str());
-        for(int i = 0; i < fv->num_elems(); ++i)
+        FindVec fv(newfn("mi????????????????????.tdb"));
+        for(int i = 0; i < fv.num_elems(); ++i)
         {
-            DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+            DeleteFile(newfn(fv[i]->cFileName).c_str());
         }
-        delete_findvec(fv);
     }
 }
 
@@ -2218,11 +2214,11 @@ create_date_index(vc uid)
     {
         sql_start_transaction();
         sql_simple("create temp table found_mid(mid text not null primary key)");
-        FindVec& fv = *find_to_vec(s.c_str());
+        FindVec fv(s);
         auto n = fv.num_elems();
         for(i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA &d = *fv[i];
+            const WIN32_FIND_DATA &d = *fv[i];
             DwString s2(ss);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
@@ -2237,16 +2233,15 @@ create_date_index(vc uid)
                 sql_insert_record(index_from_body(uid, info), uid);
             }
         }
-        delete_findvec(&fv);
 
         s = ss;
         s += "" DIRSEPSTR "*.snt";
 
-        FindVec& fv2 = *find_to_vec(s.c_str());
+        FindVec fv2(s);
         n = fv2.num_elems();
         for(i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA &d = *fv2[i];
+            const WIN32_FIND_DATA &d = *fv2[i];
             DwString s2(ss);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
@@ -2263,7 +2258,6 @@ create_date_index(vc uid)
             }
         }
         sql_simple("delete from msg_idx where assoc_uid = ?1 and mid not in (select * from found_mid)", huid);
-        delete_findvec(&fv2);
         sql_insert_indexed_flag(uid);
         sql_simple("delete from midlog");
         sql_simple("delete from taglog");
@@ -2597,19 +2591,19 @@ index_user(vc v)
 }
 #endif
 
+static
 void
-create_dir_meta(int update_existing)
+create_dir_meta()
 {
     try
     {
         sql_start_transaction();
-        if(!update_existing)
-            sql_simple("delete from dir_meta");
-        FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
+        sql_simple("delete from dir_meta");
+        FindVec fv(newfn("*.usr"));
         auto n = fv.num_elems();
         for(int i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA& d = *fv[i];
+            const WIN32_FIND_DATA& d = *fv[i];
             DwString fdirname = newfn(d.cFileName);
             struct stat s;
             if(stat(fdirname.c_str(), &s) == -1)
@@ -2617,7 +2611,6 @@ create_dir_meta(int update_existing)
             sql_simple("insert or replace into dir_meta(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
         }
         sql_commit_transaction();
-        delete_findvec(&fv);
     }
     catch (...)
     {
@@ -2632,18 +2625,17 @@ reindex_possible_changes()
     {
         sql_start_transaction();
         sql_simple("create temp table foo(dirname text collate nocase primary key not null, time default 0)");
-        FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
+        FindVec fv(newfn("*.usr"));
         auto n = fv.num_elems();
         for(int i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA& d = *fv[i];
+            const WIN32_FIND_DATA& d = *fv[i];
             DwString fdirname = newfn(d.cFileName);
             struct stat s;
             if(stat(fdirname.c_str(), &s) == -1)
                 continue;
             sql_simple("insert into foo(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
         }
-        delete_findvec(&fv);
         vc needs_reindex = sql_simple("select replace(dirname, '.usr', '') from foo,dir_meta using(dirname) where foo.time != dir_meta.time "
                                       "union select replace(dirname, '.usr', '') from foo where not exists(select 1 from dir_meta where foo.dirname = dir_meta.dirname)");
         // not sure about this: if a folder is missing now, if we do this, it effectively
@@ -2653,6 +2645,7 @@ reindex_possible_changes()
         sql_simple("delete from dir_meta where dirname in (select * from bar)");
         sql_simple("update bar set dirname = replace(dirname, '.usr', '')");
         sql_simple("delete from msg_idx where assoc_uid in (select * from bar)");
+        sql_simple("delete from indexed_flag where uid in (select * from bar)");
 
         for(int i = 0; i < needs_reindex.num_elems(); ++i)
         {
@@ -2663,7 +2656,7 @@ reindex_possible_changes()
         }
         sql_simple("drop table bar");
         sql_simple("drop table foo");
-        create_dir_meta(1);
+        create_dir_meta();
         sql_commit_transaction();
     }
     catch (...)
