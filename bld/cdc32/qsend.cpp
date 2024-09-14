@@ -42,7 +42,7 @@ namespace dwyco {
 // for testing, set to 1 means don't use pk encryption on any messages
 int Avoid_pk;
 // cause all messages to use encryption. if a public key can't be
-// be found, the message will never be sent (not, some old clients
+// be found, the message will never be sent (note, some old clients
 // don't have public keys.)
 int Force_pk;
 

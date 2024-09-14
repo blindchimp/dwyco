@@ -159,6 +159,7 @@ class vc_default;
 class vc_object;
 class vc_fundef;
 vc vc_wsget_errstr(int);
+typedef const vc& cvcr;
 
 #ifdef __GNUG__
 #include "dwvec.h"
