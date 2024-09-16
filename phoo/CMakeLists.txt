@@ -41,6 +41,7 @@ find_package(QT NAMES Qt6  REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS Network)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concurrent MultimediaWidgets)
 
@@ -259,6 +260,7 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
+   Qt6::Widgets
    v4lcap
     -ldl
 )
