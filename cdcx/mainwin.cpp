@@ -3586,6 +3586,10 @@ dwyco_sys_event_callback(int cmd, int id,
     case DWYCO_SE_GRP_JOIN_FAIL:
         dwyco_set_setting("group/alt_name", "");
         QMessageBox::information(Mainwinform, "Device group change failed", QString("Account linking failed, try again later (%1)").arg(namestr.c_str()));
+        TheConfigForm->ui.CDC_group__join_key->setText("");
+        TheConfigForm->ui.CDC_group__alt_name->setReadOnly(false);
+        TheConfigForm->ui.CDC_group__alt_name->setText("");
+        TheConfigForm->ui.sync_enable->setChecked(false);
         break;
     default:
         break;

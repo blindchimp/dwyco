@@ -17,7 +17,7 @@ DEFINES += DWYCO_NICE_VERSION=\\\"3.200\\\"
 }
 
 DEPENDPATH += .
-INCLUDEPATH += .
+INCLUDEPATH += . ../bld/dwcls
 
 # warning, this dumptime stuff doesn't work too well with qmake.
 # i haven't figured out a way of ordering it for parallel makes.
