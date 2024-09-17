@@ -273,10 +273,10 @@ dwyco_new_msg(DwOString& uid_out, DwOString& txt, int& zap_viewer, DwOString& mi
     }
     Delete_msgs.clear();
 
-    DWYCO_UNFETCHED_MSG_LIST ml;
-    if(!dwyco_get_unfetched_messages(&ml, 0, 0))
+    DWYCO_UNFETCHED_MSG_LIST _ml;
+    if(!dwyco_get_unfetched_messages(&_ml, 0, 0))
         return 0;
-    simple_scoped qml(ml);
+    simple_scoped qml(_ml);
     int n;
     const char *val;
     int len;
@@ -285,14 +285,14 @@ dwyco_new_msg(DwOString& uid_out, DwOString& txt, int& zap_viewer, DwOString& mi
 
     for(int i = 0; i < n; ++i)
     {
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_FROM, uid_out))
+        if(!dwyco_get_attr(qml, i, DWYCO_QMS_FROM, uid_out))
             continue;
-        if(!dwyco_get_attr(ml, i, DWYCO_QMS_ID, mid))
+        if(!dwyco_get_attr(qml, i, DWYCO_QMS_ID, mid))
             continue;
         if(Dont_refetch.contains(mid) ||
                 fetching.contains(mid) || fetching.count() >= 5)
             continue;
-        if(!dwyco_list_get(ml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
+        if(!dwyco_list_get(qml, i, DWYCO_QMS_IS_DIRECT, &val, &len, &type))
             continue;
         if(type == DWYCO_TYPE_NIL)
         {
