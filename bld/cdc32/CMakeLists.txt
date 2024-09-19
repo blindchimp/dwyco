@@ -58,6 +58,10 @@ add_compile_definitions(
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME=${DWYCO_APP}
+        # usually you only need this if you are statically linking
+        # since we have a local copy of libjpeg hacked-up here.
+        # someday, i will put it in a namespace or something
+	jpeg_natural_order=dwy_jpeg_natural_order
 )
 
 if(${DWYCO_APP} STREQUAL "rando")
