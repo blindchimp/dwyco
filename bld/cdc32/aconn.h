@@ -9,7 +9,6 @@
 #ifndef ACONN_H
 #define ACONN_H
 
-#include "dwstr.h"
 #include "ssns.h"
 #include "vc.h"
 

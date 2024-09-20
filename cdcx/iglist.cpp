@@ -9,6 +9,7 @@
 #include <QtGui>
 #include <QDesktopServices>
 #include <QMessageBox>
+#include "dwycolistscoped.h"
 #include "ui_iglist.h"
 #include "iglist.h"
 #include "dwstr.h"
@@ -66,9 +67,10 @@ iglistform::refresh()
 {
     ui.list->clear();
 
-    DWYCO_LIST il = dwyco_ignore_list_get();
-    int n;
-    dwyco_list_numelems(il, &n, 0);
+    DWYCO_LIST _il = dwyco_ignore_list_get();
+    simple_scoped il(_il);
+    int n = il.rows();
+
     for(int i = 0; i < n; ++i)
     {
         const char *uid;

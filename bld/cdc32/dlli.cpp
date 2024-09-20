@@ -831,6 +831,8 @@ dwyco_debug_dump()
         a += (const char *)mc->call_type;
         a += " ";
         a += (const char *)mc->remote_call_type();
+        a += " ";
+        a += (const char *)to_hex(mc->remote_uid());
 
         a += "]";
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
@@ -1613,17 +1615,7 @@ dwyco_exit()
 {
     if(!Inited)
         return 1;
-    // just empty the trash once a week, this is mainly for debugging
-    // these days anyway, since we don't really offer a way for users
-    // to untrash this atm.
-    vc last_empty;
-    if(!load_info(last_empty, "trs.dif") ||
-            (time(0) - (time_t)last_empty) > ((time_t)7 * 24 * 3600))
-    {
-        empty_trash();
-        last_empty = time(0);
-        save_info(last_empty, "trs.dif");
-    }
+    weekly_trash_empty();
     // just to flush stats
     TRACK_ADD(DLLI_exit, 1);
     dwyco_enable_activity_checking(0, 0, 0);
@@ -3439,7 +3431,11 @@ dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc
     }
     else
     {
-        if(TheCallQ->add_call(mmc) == 0)
+        // this is a hack to avoid an api change
+        // q_call == 1 used to mean 0 delay, but now
+        // i just put the delay into the q_call
+        int delay = (q_call == 1) ? 0 : q_call;
+        if(TheCallQ->add_call(mmc, delay) == 0)
         {
             delete mmc;
             return 0;

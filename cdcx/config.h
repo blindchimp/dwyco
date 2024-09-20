@@ -52,6 +52,9 @@ signals:
     void content_filter_event(int);
     void pals_only(int);
 
+protected:
+    void showEvent(QShowEvent *ev) override;
+
 public:
     Ui::config_dialog ui;
 };

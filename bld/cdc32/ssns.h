@@ -41,6 +41,11 @@
 namespace ssns
 {
 
+enum signal_setup
+{
+	REGULAR = 0,
+	UNIQUE = 1
+};
 // Forward defs
 class trackable;
 class signal_base;
@@ -995,12 +1000,12 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(), int unique = 0)
+    connection connect_ptrfun(void (*fn)(), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_ptrfun0* slot = new slot_ptrfun0(fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -1023,12 +1028,12 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(), int unique = 0)
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_memfun0<T_obj>* slot = new slot_memfun0<T_obj>(obj, fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -1289,12 +1294,12 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1), int unique = 0)
+    connection connect_ptrfun(void (*fn)(T1), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_ptrfun1<T1>* slot = new slot_ptrfun1<T1>(fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -1317,12 +1322,12 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1), int unique = 0)
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_memfun1<T_obj, T1>* slot = new slot_memfun1<T_obj, T1>(obj, fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -1583,12 +1588,12 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2), int unique = 0)
+    connection connect_ptrfun(void (*fn)(T1, T2), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_ptrfun2<T1, T2>* slot = new slot_ptrfun2<T1, T2>(fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -1611,12 +1616,12 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2), int unique = 0)
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_memfun2<T_obj, T1, T2>* slot = new slot_memfun2<T_obj, T1, T2>(obj, fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -1877,12 +1882,12 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3), int unique = 0)
+    connection connect_ptrfun(void (*fn)(T1, T2, T3), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_ptrfun3<T1, T2, T3>* slot = new slot_ptrfun3<T1, T2, T3>(fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -1905,12 +1910,12 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3), int unique = 0)
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_memfun3<T_obj, T1, T2, T3>* slot = new slot_memfun3<T_obj, T1, T2, T3>(obj, fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -2171,12 +2176,12 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4), int unique = 0)
+    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_ptrfun4<T1, T2, T3, T4>* slot = new slot_ptrfun4<T1, T2, T3, T4>(fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -2199,12 +2204,12 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4), int unique = 0)
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_memfun4<T_obj, T1, T2, T3, T4>* slot = new slot_memfun4<T_obj, T1, T2, T3, T4>(obj, fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -2465,12 +2470,12 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5), int unique = 0)
+    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_ptrfun5<T1, T2, T3, T4, T5>* slot = new slot_ptrfun5<T1, T2, T3, T4, T5>(fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -2493,12 +2498,12 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5), int unique = 0)
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_memfun5<T_obj, T1, T2, T3, T4, T5>* slot = new slot_memfun5<T_obj, T1, T2, T3, T4, T5>(obj, fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -2759,12 +2764,12 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5, T6), int unique = 0)
+    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5, T6), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_ptrfun6<T1, T2, T3, T4, T5, T6>* slot = new slot_ptrfun6<T1, T2, T3, T4, T5, T6>(fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -2787,12 +2792,12 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6), int unique = 0)
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_memfun6<T_obj, T1, T2, T3, T4, T5, T6>* slot = new slot_memfun6<T_obj, T1, T2, T3, T4, T5, T6>(obj, fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -3053,12 +3058,12 @@ public:
     }
 
     // Connect to a normal global function
-    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5, T6, T7), int unique = 0)
+    connection connect_ptrfun(void (*fn)(T1, T2, T3, T4, T5, T6, T7), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_ptrfun7<T1, T2, T3, T4, T5, T6, T7>* slot = new slot_ptrfun7<T1, T2, T3, T4, T5, T6, T7>(fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();
@@ -3081,12 +3086,12 @@ public:
     }
     
     template <typename T_obj>
-    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6, T7), int unique = 0)
+    connection connect_memfun(T_obj* obj, void (T_obj::*fn)(T1, T2, T3, T4, T5, T6, T7), enum signal_setup unique = REGULAR)
     {
         mutex_locker lock;
         
         slot_memfun7<T_obj, T1, T2, T3, T4, T5, T6, T7>* slot = new slot_memfun7<T_obj, T1, T2, T3, T4, T5, T6, T7>(obj, fn);
-        if(unique)
+        if(unique == UNIQUE)
         {
             typename slot_list::iterator it = m_slots.begin();
             typename slot_list::iterator itEnd = m_slots.end();

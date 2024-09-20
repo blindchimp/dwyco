@@ -15,6 +15,7 @@
 #include "dwqbm.h"
 #include "ssns.h"
 
+namespace dwyco {
 class MMCall;
 
 typedef void (*CallStatusCallback)(MMCall *, int status, void *user_arg, ValidPtr);
@@ -116,6 +117,7 @@ public:
     virtual void stun_servass_failure();
     virtual void call_rejected(const char *why);
 };
+}
 
 #define MMCALL_ESTABLISHED 1	// call successful
 #define MMCALL_CANCELED 2		// call was locally canceled during setup
