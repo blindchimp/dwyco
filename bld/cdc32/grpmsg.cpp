@@ -1,4 +1,12 @@
 
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
 #include "simplesql.h"
 #include "vc.h"
 #include "dlli.h"
@@ -77,7 +85,7 @@ init_gj()
     SKID = new struct skid_sql;
     SKID->init();
     SKID->sql_simple("delete from join_log where time < strftime('%s', 'now') - 7 * 24 * 3600");
-    Join_attempts.connect_ptrfun(external_join_event, 1);
+    Join_attempts.connect_ptrfun(external_join_event, ssns::UNIQUE);
     return 1;
 }
 

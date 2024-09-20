@@ -184,8 +184,8 @@ public:
     // a complete deserialization operation is performed. this eliminates
     // situations where constructors might fail. but, it allows the
     // deserialization to continue past this limit.
-    void set_max_memory(int);
-    static void set_default_max_memory(int);
+    void set_max_memory(long);
+    static void set_default_max_memory(long);
 
     int flushnb();
     enum status get_status();

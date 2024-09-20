@@ -28,10 +28,10 @@ static VcIOHackStr *Bufp;
 #include <ctype.h>
 #include <stdio.h>
 
-void
-invalidate_cb_ctx(int)
-{
-}
+//void
+//invalidate_cb_ctx(int)
+//{
+//}
 
 // note: this hackery is to make sure the lifetime of the
 // buffer object lasts until the process dies... since some

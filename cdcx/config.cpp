@@ -9,6 +9,7 @@
 #include <QtGui>
 #include <QMessageBox>
 #include <QFileDialog>
+#include "dwycolistscoped.h"
 #include "ui_config.h"
 #include "config.h"
 #include "dlli.h"
@@ -400,8 +401,7 @@ void configform::on_reset_backup_button_clicked()
                        "disabled backups.)",
                        QMessageBox::Ok, this);
     msgBox.setWindowFlag(Qt::WindowStaysOnTopHint, true);
-    int ret = msgBox.exec();
-
+    msgBox.exec();
 }
 
 static
@@ -537,6 +537,8 @@ void configform::on_sync_enable_clicked(bool checked)
                              QMessageBox::Ok);
             warn.exec();
             ui.sync_enable->setChecked(false);
+            ui.CDC_group__join_key->setText("");
+            ui.CDC_group__alt_name->setReadOnly(false);
             return;
         }
         dwyco_set_setting("group/join_key", key.toLatin1().constData());
@@ -579,5 +581,35 @@ void configform::on_show_password_clicked(bool checked)
     {
         ui.CDC_group__join_key->setEchoMode(QLineEdit::Password);
     }
+}
+
+void
+configform::showEvent(QShowEvent *ev)
+{
+    QDialog::showEvent(ev);
+
+    DWYCO_LIST gs;
+    if(!dwyco_get_group_status(&gs))
+        return;
+    simple_scoped qgs(gs);
+    if(qgs.get_long(DWYCO_GS_VALID) != 1)
+        return;
+    long percent = qgs.get_long(DWYCO_GS_PERCENT_SYNCED);
+
+    DWYCO_LIST status;
+    if(!dwyco_get_sync_model(&status))
+        return;
+    simple_scoped qstatus(status);
+    int n = qstatus.rows();
+    int c = 0;
+    for(int i = 0; i < n; ++i)
+    {
+        QByteArray b = qstatus.get<QByteArray>(i, DWYCO_SM_STATUS);
+        if(b.at(1) == 'a')
+            ++c;
+    }
+
+    ui.sync_enable->setText("Enable device linking (" + QString::number(percent) + "% synced, " + QString::number(c) + "/" + QString::number(n) + " active)");
+
 }
 

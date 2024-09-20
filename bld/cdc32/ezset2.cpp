@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #include "ezset.h"
 #include "simplesql.h"
 #include "simple_property.h"
@@ -222,7 +230,7 @@ bind_sql_setting(vc name, void (*fn)(vc, vc))
     setting *s;
     if(!Map->find(name, s))
         oopanic("bad setting");
-    s->setting_changed.connect_ptrfun(fn, 1);
+    s->setting_changed.connect_ptrfun(fn, ssns::UNIQUE);
 }
 
 void
@@ -238,7 +246,7 @@ bind_sql_section(vc pfx, void (*fn)(vc, vc))
         if(strncmp(pfx, nm, pfx.len()) == 0)
         {
             setting *s = a.get_value();
-            s->setting_changed.connect_ptrfun(fn, 1);
+            s->setting_changed.connect_ptrfun(fn, ssns::UNIQUE);
         }
 
     }
