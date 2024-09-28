@@ -6,3 +6,16 @@ to how come components render (Toolbars and ToolButtons, for rando, for example.
 
 Also, the 5.15.12 androiddeployqt doesn't appear to be able to create a proper release for phoo, complaining about a missing FileDialog that is not deployed properly to the apk. Again, also not worth debugging it. This is mentioned in QTBUG-110360,
 
+Sat 21 Sep 2024 10:09:03 AM MDT
+
+for qt5 and linux, using linuxdeployqt works mostly as long as you use ubuntu 18.04 to compile.
+
+for qt6 and linux, there is no working similar tool. trying to build and just let the platform installed qt6 attempt to run is a waste of time. the number of dependencies is too huge.
+
+attempting to do a static build with qt6.5 almost worked, but QtMultimedia using the required ffmpeg would not build (and doesn't work, even though phoo starts, it just can't load any of the multimedia components. i guess the fallback to the native drivers doesn't even work.)
+
+cdcx on linux using static qt6 will not work because static qwebengine is not supported. it probably is a waste of time to port it up to qt6 anyways.
+
+so, in summary, qt6 on linux is a waste of time.
+
+qt6 on macos and windows (which both have supported "deploy" tools) is plausible for both cdcx and phoo.

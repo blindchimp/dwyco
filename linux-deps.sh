@@ -15,3 +15,5 @@ qtmultimedia5-dev
 qml-module-qtquick-layouts
 qml-module-qtgraphicaleffects
 v4l2-utils
+libv4l-dev
+v4l-utils
