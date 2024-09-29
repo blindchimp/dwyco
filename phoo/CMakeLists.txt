@@ -280,6 +280,7 @@ if(APPLE OR IOS)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}
+       Qt6::Widgets
 
     )
 endif()
