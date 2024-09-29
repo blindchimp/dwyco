@@ -253,6 +253,7 @@ if(ANDROID)
         Qt6::QuickControls2
 	Qt6::Concurrent
         Qt6::StateMachine
+        Qt6::Widgets
     )
 endif()
 
