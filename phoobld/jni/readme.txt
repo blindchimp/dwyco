@@ -19,10 +19,10 @@ the NDK's for you. ca 2024, QtCreator mercifully does most of this for you.)
 
 WARNING WARNING WARNING:
 on a fresh install, be sure to run "distclean.sh" to get rid of all the old cruft, otherwise, autoconf may fail with really obscure and useless error messages.
-
-./distclean.sh
+NOTE! also the "distclean" can cause autoconf to go into an infinite loop. jesus, what a POS.
 
 sh mklinks.sh
+./distclean.sh
 
 ./build-autoconf.sh
 
