@@ -72,6 +72,28 @@ struct rando_sql : public SimpleSql
 
         sql_simple("create table if not exists freebie_interval(lock integer not null default 0, secs integer not null, primary key(lock), check(lock = 0))");
         sql_simple("insert or replace into freebie_interval(lock, secs) values(0, ?1)", Freebie_interval);
+
+        // these just allow us to avoid a lot of unneeded scanning
+        sql_simple("create table if not exists state_change(flag integer not null default 0, lock integer not null default 0, primary key(lock), check(lock = 0))");
+        sql_simple("insert or ignore into state_change(flag, lock) values (0, 0)");
+
+#define table_trigger(table) \
+        sql_simple("create trigger if not exists " #table "_trigger1 after insert on " #table \
+                   " begin update state_change set flag = 1; end"); \
+        sql_simple("create trigger if not exists " #table "_trigger2 after update on " #table \
+                   " begin update state_change set flag = 1; end");
+
+        table_trigger(logins)
+                table_trigger(sent_freebie)
+                table_trigger(recv_loc)
+                table_trigger(recv_loc2)
+                table_trigger(sent_geo)
+                table_trigger(sent_geo2)
+                table_trigger(randos)
+                table_trigger(sent_to)
+                table_trigger(grace)
+
+#undef table_trigger
     }
 
 };
@@ -257,8 +279,8 @@ uid_due_randos()
 
     // list of all uids that have sent something in, but never received anything
     D->sql_simple("insert into res select from_uid,c1.cr from c1 where from_uid not in (select to_uid from c2);");
-    D->sql_simple("drop table c1");
-    D->sql_simple("drop table c2");
+    //D->sql_simple("drop table c1");
+    //D->sql_simple("drop table c2");
 
     // users getting a grace-period
     // we aren't too worried if something happens later that causes the message
@@ -266,8 +288,8 @@ uid_due_randos()
     D->sql_simple("insert into res select uid, 0 from grace where sent = 0");
     D->sql_simple("update grace set sent = 1 where sent = 0");
     res = D->sql_simple("select * from res");
-    D->sql_simple("drop table res");
-    D->commit_transaction();
+    //D->sql_simple("drop table res");
+    D->rollback_transaction();
     }
     catch(...)
     {
@@ -841,10 +863,12 @@ main(int argc, char *argv[])
     D = new rando_sql;
     if(!D->init())
         exit(1);
+    D->set_cache_size(10000);
     if(Reviewer_only)
     {
         update_hashes();
     }
+    time_t last_db_check = time(0);
 
     while(1)
     {
@@ -1055,17 +1079,27 @@ main(int argc, char *argv[])
            HANDLE_MSG(mid);
 
         }
-
-        vc due = uid_due_randos();
-        for(int i = 0; i < due.num_elems(); ++i)
         {
-            do_rando(due[i][0]);
+        vc res = D->sql_simple("select flag from state_change");
+        if((int)res[0][0] == 0 && time(0) - last_db_check < 60)
+            continue;
+        }
+        last_db_check = time(0);
+        vc due1 = uid_due_randos();
+        for(int i = 0; i < due1.num_elems(); ++i)
+        {
+            do_rando(due1[i][0]);
         }
 
-        due = uid_due_freebie();
-        for(int i = 0; i < due.num_elems(); ++i)
+        vc due2 = uid_due_freebie();
+        for(int i = 0; i < due2.num_elems(); ++i)
         {
-            do_freebie(due[i][0]);
+            do_freebie(due2[i][0]);
+        }
+
+        if(due1.num_elems() == 0 && due2.num_elems() == 0)
+        {
+            D->sql_simple("update state_change set flag = 0");
         }
 
 
