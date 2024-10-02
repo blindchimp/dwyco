@@ -8,7 +8,7 @@ SOURCES += \
     randobot.cpp \
     ../bld/miscsrc/dwyco_new_msg.cpp
 
-DEFINES += DWYCO_THROW
+DEFINES += DWYCO_THROW DWYCO_USE_STATIC_SQLITE
 INCLUDEPATH += $${PWD}/../bld/dwcls $${PWD}/../bld/vc $${PWD}/../bld/cdc32 ../bld/miscsrc $${VCCFG_COMP}
 
 linux-*|macx-* {
