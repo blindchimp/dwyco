@@ -23,11 +23,9 @@ Item {
     Component {
         id: chatlist_delegate
         Rectangle {
-            property bool showit
-            showit: true // (REVIEWED && REGULAR) || show_unreviewed
             property bool censor_it
-            censor_it: !regular_profile(REVIEWED, REGULAR)
-            height: showit ? picht() : 0
+            censor_it: censor && !regular_profile(REVIEWED, REGULAR)
+            height: picht()
             width: ListView.view.width
             //opacity: {multiselect_mode && selected ? 0.5 : 1.0}
             color: primary_dark
@@ -36,7 +34,7 @@ Item {
                 GradientStop { position: 0.0; color: amber_light }
                 GradientStop { position: 1.0; color: amber_dark}
             }
-            visible: showit
+
             RowLayout {
                 id: drow
                 spacing: mm(1)
@@ -47,7 +45,7 @@ Item {
                     //width: dp(80)
                     //height: dp(60)
                     source : {
-                        (!invalid && (show_unreviewed || (REVIEWED && REGULAR)) && resolved_counter > -1) ?
+                        (!invalid && (!censor_it && resolved_counter > -1)) ?
                                     core.uid_to_profile_preview(uid) :
                                     "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                     }

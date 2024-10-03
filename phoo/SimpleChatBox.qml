@@ -144,6 +144,10 @@ Page {
 
                 Item {
                     id: prof
+                    property bool censor_it
+                    property bool regular
+                    censor_it: censor && !prof.regular
+                    regular: {chatbox_page.to_uid !== "" && applicationWindow1.init_called && core.uid_profile_regular(chatbox_page.to_uid)}
                     //color: "red" //accent
                     //border.width: 1
                     //radius: 3
@@ -152,12 +156,13 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
+
                     CircularImage {
                         id: top_toolbar_img
                         source: {
                             if(to_uid === "")
                                 return
-                            return (is_blocked !== 1 && (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid)))) ?
+                            return (is_blocked !== 1 && !prof.censor_it) ?
                                     cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         }
                         fillMode: Image.PreserveAspectCrop
@@ -169,7 +174,7 @@ Page {
                         id: top_toolbar_text
                         //width: dp(160)
                         property string rawtext: ""
-                        text: to_uid.length == 0 ? "" : (core.uid_profile_regular(to_uid) ? rawtext : censor_name(rawtext))
+                        text: to_uid.length == 0 ? "" : (!prof.censor_it ? rawtext : censor_name(rawtext))
                         clip: true
                         anchors.leftMargin: 2
                         fontSizeMode: Text.Fit

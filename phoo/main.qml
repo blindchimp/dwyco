@@ -106,12 +106,20 @@ ApplicationWindow {
     property bool server_account_created: false
     property int android_img_pick_hack: 0
 
+    // this is set to true if the distributor requires user-generated content
+    // to be censored (Google and Apple). When this is false, the display of
+    // various content is controlled by the user "show_unreviewed" item.
+    property bool corporate_censorship: true
     property bool dwy_invis: false
     property bool dwy_quiet: false
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
     property bool show_archived_users: false
+    property bool init_called: false
+
+    property bool censor
+    censor:  corporate_censorship || !show_unreviewed
 
     property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
     property int qt_application_state: 0
@@ -672,6 +680,7 @@ ApplicationWindow {
                 Qt.inputMethod.hide()
                 if(state === "start") {
                     core.init()
+                    init_called = true
                 }
             }
         }
@@ -915,6 +924,7 @@ ApplicationWindow {
 
             if(pwdialog.allow_access === 1) {
                 init()
+                init_called = true
             }
         }
 

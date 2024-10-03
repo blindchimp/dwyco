@@ -225,6 +225,8 @@ Page {
                GradientStop { position: 0.0; color: primary_light }
                GradientStop { position: 1.0; color: primary_dark}
            }
+           property bool censor_it
+           censor_it: censor && !regular_profile(REVIEWED, REGULAR)
 
            RowLayout {
                id: drow
@@ -236,7 +238,7 @@ Page {
                    //width: dp(80)
                    //height: dp(60)
                    source : { 
-                       (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                       (!invalid && !is_blocked && !censor_it && resolved_counter > -1) ?
                                    core.uid_to_profile_preview(uid) :
                                    "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png" 
                    }
@@ -315,7 +317,7 @@ Page {
                }
 
                Text {
-                   text: regular_profile(REVIEWED, REGULAR) ? display : censor_name(display)
+                   text: !censor_it ? display : censor_name(display)
                    elide: Text.ElideRight
                    clip: true
                    font: applicationWindow1.font
@@ -412,12 +414,14 @@ Page {
                GradientStop { position: 0.0; color: primary_light }
                GradientStop { position: 1.0; color: primary_dark}
            }
+           property bool censor_it
+           censor_it: censor && !regular_profile(REVIEWED, REGULAR)
 
            CircularImage {
                id: ppic
                anchors.centerIn: parent
                source : {
-                   (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                   (!invalid && !is_blocked && !censor_it && resolved_counter > -1) ?
                                core.uid_to_profile_preview(uid) :
                                "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                }
@@ -492,7 +496,7 @@ Page {
            }
 
            Text {
-               text: regular_profile(REVIEWED, REGULAR) ? display : censor_name(display)
+               text: !censor_it ? display : censor_name(display)
                elide: Text.ElideRight
                clip: true
                anchors.bottom: parent.bottom

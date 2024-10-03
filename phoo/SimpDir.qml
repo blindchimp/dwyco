@@ -63,7 +63,9 @@ Page {
     Component {
         id: simpdir_delegate
         Rectangle {
+            property bool censor_it
             property bool regular
+            censor_it: censor && !regular
             width: ListView.view.width
             height: has_preview ? vh(pct) : vh(pct) / 2
             border.width: 1
@@ -83,7 +85,7 @@ Page {
                 CircularImage {
                     id: preview
                     source: {has_preview ?
-                                 (regular ?
+                                 (!censor_it ?
                                      core.uid_to_http_profile_preview(uid) :
                                      "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                     fillMode: Image.PreserveAspectCrop
@@ -106,7 +108,7 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         id: nm
-                        text: regular ? handle : censor_name(handle)
+                        text: !censor_it ? handle : censor_name(handle)
                         clip: true
                         font.bold: true
                         elide: Text.ElideRight
@@ -116,7 +118,7 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        text: regular ? description : censor_name(description)
+                        text: !censor_it ? description : censor_name(description)
                         clip: true
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         font: applicationWindow1.font
@@ -168,8 +170,9 @@ Page {
     Component {
         id: simpdir_grid_delegate
         Rectangle {
-            id: rec
+            property bool censor_it
             property bool regular
+            censor_it: censor && !regular
             width: gridView1.cellWidth
             height: gridView1.cellHeight
             border.width: 1
@@ -183,7 +186,7 @@ Page {
             CircularImage {
                 id: preview
                 source: {has_preview ?
-                             (rec.regular ?
+                             (!censor_it ?
                                  core.uid_to_http_profile_preview(uid) :
                                  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                 fillMode: Image.PreserveAspectCrop
@@ -192,7 +195,7 @@ Page {
                 visible: has_preview
             }
             Text {
-                text: regular ? handle : censor_name(handle)
+                text: !censor_it ? handle : censor_name(handle)
                 elide: Text.ElideRight
                 clip: true
                 anchors.bottom: parent.bottom
@@ -211,7 +214,7 @@ Page {
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
                     id: nm
-                    text: regular ? handle : censor_name(handle)
+                    text: !censor_it ? handle : censor_name(handle)
                     clip: true
                     font.bold: true
                     elide: Text.ElideRight
@@ -221,7 +224,7 @@ Page {
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: regular ? description : censor_name(description)
+                    text: !censor_it ? description : censor_name(description)
                     clip: true
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                 }

@@ -1823,6 +1823,23 @@ DwycoCore::init()
     DVP::init_dvp();
     simple_call::init(this);
     AvoidSSL = !QSslSocket::supportsSsl();
+    if(!AvoidSSL)
+    {
+        // this is a silly hack for linux desktop where we end up
+        // having to compile on some old stuff, but the newer
+        // desktops have openssl with newer versions with missing
+        // symbols...
+#if defined(LINUX) && !(defined(MAC_CLIENT) || defined(ANDROID))
+        QString ssl1 = QSslSocket::sslLibraryBuildVersionString();
+        ssl1.truncate(9);
+        QString ssl2 = QSslSocket::sslLibraryVersionString();
+        ssl2.truncate(9);
+        if(ssl1 != ssl2)
+            AvoidSSL = 1;
+#endif
+    }
+
+
     // some old androids despite "supportsssl" returning
     // true, it doesn't work. will figure out later.
     AvoidSSL = 1;

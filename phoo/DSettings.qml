@@ -38,12 +38,12 @@ Page {
         }
 
         var a
-//        a = core.get_local_setting("show_unreviewed")
-//        if(a === "" || a === "0") {
-//            unreviewed.checked = false
-//        } else {
-//            unreviewed.checked = true
-//        }
+        a = core.get_local_setting("show_unreviewed")
+        if(a === "" || a === "0") {
+            unreviewed.checked = false
+        } else {
+            unreviewed.checked = true
+        }
         if(core.get_local_setting("inh_content_warning") === "")
             inh_content_warning = 0
         else
@@ -113,29 +113,30 @@ Page {
             Layout.fillWidth: true
         }
 
-//        CheckBox {
-//            id: unreviewed
-//            text: "Show all profiles\n(WARNING: shows explicit content)"
-//            onCheckedChanged: {
-//                show_unreviewed = checked
-//                core.set_local_setting("show_unreviewed", checked ? "1" : "0")
-//                if(Qt.platform.os == "android") {
-//                    if(show_unreviewed)
-//                        notificationClient.set_user_property("content", "unrev")
-//                    else
-//                        notificationClient.set_user_property("content", "rev")
-//                }
-//                SimpleDirectoryList.clear()
-//            }
-//            onClicked: {
-//                if(checked) {
-//                    if(inh_content_warning === 0) {
-//                        warn.visible = true
-//                    }
-//                }
-//            }
-//            Layout.fillWidth: true
-//        }
+        CheckBox {
+            id: unreviewed
+            text: "Show all profiles\n(WARNING: shows explicit content)"
+            visible: !censor
+            onCheckedChanged: {
+                show_unreviewed = checked
+                core.set_local_setting("show_unreviewed", checked ? "1" : "0")
+                if(Qt.platform.os == "android") {
+                    if(show_unreviewed)
+                        notificationClient.set_user_property("content", "unrev")
+                    else
+                        notificationClient.set_user_property("content", "rev")
+                }
+                SimpleDirectoryList.clear()
+            }
+            onClicked: {
+                if(checked) {
+                    if(inh_content_warning === 0) {
+                        warn.visible = true
+                    }
+                }
+            }
+            Layout.fillWidth: true
+        }
         CheckBox {
             id: show_hidden_msgs
             text: "Show hidden messages"

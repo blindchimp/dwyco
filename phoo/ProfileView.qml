@@ -35,7 +35,7 @@ Page {
             return
         }
 
-        if(core.uid_profile_regular(uid)) {
+        if(!censor || core.uid_profile_regular(uid)) {
             preview_source = core.uid_to_profile_preview(uid)
             preview_text = core.uid_to_name(uid)
             preview_desc = core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION)
