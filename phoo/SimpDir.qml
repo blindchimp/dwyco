@@ -63,11 +63,13 @@ Page {
     Component {
         id: simpdir_delegate
         Rectangle {
+            property bool regular
             width: ListView.view.width
             height: has_preview ? vh(pct) : vh(pct) / 2
             border.width: 1
 
             color: primary_dark
+            regular: {return core.uid_profile_regular(uid)}
 
             gradient: Gradient {
                 GradientStop { position: 0.0; color: primary_light }
@@ -81,7 +83,7 @@ Page {
                 CircularImage {
                     id: preview
                     source: {has_preview ?
-                                 (core.uid_profile_regular(uid) ?
+                                 (regular ?
                                      core.uid_to_http_profile_preview(uid) :
                                      "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                     fillMode: Image.PreserveAspectCrop
@@ -104,7 +106,7 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         id: nm
-                        text: core.uid_profile_regular(uid) ? handle : censor_name(handle)
+                        text: regular ? handle : censor_name(handle)
                         clip: true
                         font.bold: true
                         elide: Text.ElideRight
@@ -114,7 +116,7 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        text: core.uid_profile_regular(uid) ? description : censor_name(description)
+                        text: regular ? description : censor_name(description)
                         clip: true
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         font: applicationWindow1.font
@@ -166,11 +168,13 @@ Page {
     Component {
         id: simpdir_grid_delegate
         Rectangle {
+            id: rec
+            property bool regular
             width: gridView1.cellWidth
             height: gridView1.cellHeight
             border.width: 1
             color: primary_dark
-
+            regular: {return core.uid_profile_regular(uid)}
             gradient: Gradient {
                 GradientStop { position: 0.0; color: primary_light }
                 GradientStop { position: 1.0; color: primary_dark}
@@ -179,7 +183,7 @@ Page {
             CircularImage {
                 id: preview
                 source: {has_preview ?
-                             (core.uid_profile_regular(uid) ?
+                             (rec.regular ?
                                  core.uid_to_http_profile_preview(uid) :
                                  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                 fillMode: Image.PreserveAspectCrop
@@ -188,7 +192,7 @@ Page {
                 visible: has_preview
             }
             Text {
-                text: core.uid_profile_regular(uid) ? handle : censor_name(handle)
+                text: regular ? handle : censor_name(handle)
                 elide: Text.ElideRight
                 clip: true
                 anchors.bottom: parent.bottom
@@ -207,7 +211,7 @@ Page {
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
                     id: nm
-                    text: core.uid_profile_regular(uid) ? handle : censor_name(handle)
+                    text: regular ? handle : censor_name(handle)
                     clip: true
                     font.bold: true
                     elide: Text.ElideRight
@@ -217,7 +221,7 @@ Page {
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: core.uid_profile_regular(uid) ? description : censor_name(description)
+                    text: regular ? description : censor_name(description)
                     clip: true
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                 }
