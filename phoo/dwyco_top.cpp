@@ -1840,6 +1840,9 @@ DwycoCore::init()
     }
 
 
+    // some old androids despite "supportsssl" returning
+    // true, it doesn't work. will figure out later.
+    AvoidSSL = 1;
     Net_access = new QNetworkAccessManager(this);
     connect(Net_access, &QNetworkAccessManager::finished,
             this, &DwycoCore::dir_download_finished);
@@ -2756,7 +2759,7 @@ DwycoCore::get_simple_directory_url()
         url.setUrl("https://profiles.dwyco.org/cgi-bin/mksimphtdir.sh");
 
     qurl.addQueryItem("uid", My_uid.toHex());
-    qurl.addQueryItem("filt", QString::number(1));//QString::number(!ui->filter->isChecked()));
+    qurl.addQueryItem("filt", QString::number(1));
     qurl.addQueryItem("sid", QString::number(0));
 #if 0
     if(Current_server != -1)
@@ -2797,8 +2800,10 @@ DwycoCore::get_simple_lh_url()
     {
         filt = (a == "0") ? "1" : "0";
     }
+    // we'll filter it here instead of having the server do it
+    filt = "0";
     qurl.addQueryItem("uid", My_uid.toHex());
-    qurl.addQueryItem("filt", filt);//QString::number(!ui->filter->isChecked()));
+    qurl.addQueryItem("filt", filt);
     qurl.addQueryItem("sid", QString::number(0));
 #if 0
     if(Current_server != -1)

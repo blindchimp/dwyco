@@ -144,6 +144,10 @@ Page {
 
                 Item {
                     id: prof
+                    property bool censor_it
+                    property bool regular
+                    censor_it: censor && !prof.regular
+                    regular: {chatbox_page.to_uid !== "" && applicationWindow1.init_called && core.uid_profile_regular(chatbox_page.to_uid)}
                     //color: "red" //accent
                     //border.width: 1
                     //radius: 3
@@ -152,12 +156,13 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
+
                     CircularImage {
                         id: top_toolbar_img
                         source: {
                             if(to_uid === "")
                                 return
-                            return (is_blocked !== 1 && (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid)))) ?
+                            return (is_blocked !== 1 && !prof.censor_it) ?
                                     cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         }
                         fillMode: Image.PreserveAspectCrop
@@ -168,6 +173,8 @@ Page {
                     Text {
                         id: top_toolbar_text
                         //width: dp(160)
+                        property string rawtext: ""
+                        text: to_uid.length == 0 ? "" : (!prof.censor_it ? rawtext : censor_name(rawtext))
                         clip: true
                         anchors.leftMargin: 2
                         fontSizeMode: Text.Fit
@@ -540,7 +547,8 @@ Page {
                 // of the "preview url" hasn't changed, but the contents have
                 cur_source = ""
                 cur_source = core.uid_to_profile_preview(uid)
-                top_toolbar_text.text = core.uid_to_name(uid)
+                top_toolbar_text.rawtext = ""
+                top_toolbar_text.rawtext = core.uid_to_name(uid)
             }
         }
         function onSc_connect_terminated(uid) {
@@ -583,8 +591,10 @@ Page {
             return
         textField1.text = ""
         core.reset_unviewed_msgs(to_uid)
+        cur_source = ""
         cur_source = core.uid_to_profile_preview(to_uid)
-        top_toolbar_text.text = core.uid_to_name(to_uid)
+        top_toolbar_text.rawtext = ""
+        top_toolbar_text.rawtext = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
         //call_buttons_model = core.get_button_model(to_uid)
