@@ -11,13 +11,13 @@ TARGET = CDC-X
 include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 DEFINES += UNICODE
 greaterThan(QT_MAJOR_VERSION, 5) {
-DEFINES += DWYCO_NICE_VERSION=\\\"4.109\\\"
+DEFINES += DWYCO_NICE_VERSION=\\\"4.202\\\"
 } else {
-DEFINES += DWYCO_NICE_VERSION=\\\"3.109\\\"
+DEFINES += DWYCO_NICE_VERSION=\\\"3.202\\\"
 }
 
 DEPENDPATH += .
-INCLUDEPATH += .
+INCLUDEPATH += . ../bld/dwcls
 
 # warning, this dumptime stuff doesn't work too well with qmake.
 # i haven't figured out a way of ordering it for parallel makes.

@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #ifndef SIMPLE_PROPERTY_H
 #define SIMPLE_PROPERTY_H
 
@@ -31,6 +39,7 @@ public:
     sigprop(const T& v) {val = v;}
 
     ssns::signal1<T> value_changed;
+    ssns::signal3<T, T, int> element_changed;
 
     void set_val(const T& v) {
         if(val != v)
@@ -68,10 +77,14 @@ public:
             return;
         val.add(e);
         value_changed.emit(val);
+        element_changed.emit(val, e, 1);
     }
     void del(const T& e) {
         if(val.del(e))
+        {
             value_changed.emit(val);
+            element_changed.emit(val, e, 0);
+        }
     }
 };
 

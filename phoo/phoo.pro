@@ -13,7 +13,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="3.109"
+VER="3.200"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 
@@ -338,7 +338,7 @@ LIBS += $${L}/libdwyco_jni.so
 #ANDROID_EXTRA_LIBS += $${L}/libdwyco_jni.so
 ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/arm64-v8a/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86/libdwyco_jni.so $$PWD/../$$DWYCO_CONFDIR/libs/x86_64/libdwyco_jni.so
 
-ANDROID_TARGET_SDK_VERSION=33
+ANDROID_TARGET_SDK_VERSION=34
 #ANDROID_MIN_SDK_VERSION=24
 ANDROID_VERSION_CODE=2000118
 ANDROID_VERSION_NAME=$$VER

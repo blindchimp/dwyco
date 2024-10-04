@@ -251,10 +251,7 @@ TMsgCompose::~TMsgCompose()
         if(actual_filename.length() > 0)
             DeleteFileQ(actual_filename.c_str());
     }
-#ifdef DWYCO_TRACE
-    void invalidate_cb_ctx(int);
-    invalidate_cb_ctx(vp.cookie);
-#endif
+
     vp.invalidate();
 }
 

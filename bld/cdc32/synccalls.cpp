@@ -1,4 +1,13 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #include "dlli.h"
+#include "ezset.h"
 #include "mmchan.h"
 #include "dhgsetup.h"
 #include "mmcall.h"
@@ -7,10 +16,58 @@
 #include "synccalls.h"
 #include "qmsgsql.h"
 #include "dirth.h"
+#include "cdcpal.h"
 #ifdef _Windows
 #include <time.h>
 #endif
 
+// this is where we figure out what connections to initiate to what other
+// devices in our device group.
+//
+// these are mostly heuristics, trying to balance the frequency we
+// attempt connections with the amount of wasted resources caused by
+// retrying too often.
+//
+// note that we try to connect to *all* other group members, provided we can
+// find their ip address. it might make sense to limit this to some subset
+// eventually in order to avoid storms of updates. right now, it doesn't
+// seem to be a problem given most device groups are fairly small, and most of
+// devices are "offline" or unreachable most of the time. i think the callq
+// limits the total number of extant connections to something like 4 (ca 9/2024).
+// this is an arbitrary number, but works ok in practice.
+//
+// we don't try to figure out the quality of the connections (ie, a direct local
+// ip might be better than going through a proxy.) doing something useful in
+// this area would require some changes in other parts of the system that aren't
+// really worth it at this point (like assessing an incoming connection before
+// starting the protocol state machine, and replacing an existing connection.)
+//
+// there is also a function for creating a data model that can be used to print
+// the current state of the set of connections. this isn't too useful for
+// users, but can be useful for diagnosing problems while debugging.
+//
+// note: i tried a klugey way to try and avoid too much livelock (ie, a device
+// comes online, and other devices in the group immediately try to
+// connect to us while we are connecting to them, resulting in both the
+// connections being rejected.)
+//
+// assuming the clocks on both devices are about ok at the minute level:
+// (1) each device breaks up time in to 5 minute blocks.
+//   if it is an odd block, this device can only originate calls to lexicographically larger uid's.
+//   otherwise, it can only originate calls to smaller uid's.
+//
+// since all the uid's in the group use the same function, this results in A originating to B for
+// 5 minutes, then B to A for 5 minutes. this works, but has some obvious problems with
+// the largest and smallest uid's being mostly "receive only" for 5 minutes at a time.
+//
+// HUGE NOTE: allowing multiple simultaneous connection between two devices is known to
+// cause problems with the "delta" processing. i didn't debug it enough to figure it out.
+//
+// NOTE! ca 9/2024, i changed the connection set up to be more aggressive:
+// (1) when a new IP is detected, we immediately set up an originating call in the call-q, EXCEPT
+//  we add a delay of 15 seconds based on the same lexicographic function mentioned above.
+// this mostly solves the livelock problem, but can result in extra connectios that are rejected.
+//
 using namespace dwyco;
 extern vc Online;
 extern DwString dwyco::Schema_version_hack;
@@ -78,9 +135,12 @@ static
 int
 originate_calls(vc uid)
 {
+    //return 1;
+
     time_t now = time(0);
-    now /= 60;
-    now /= 5;
+    //now /= 60;
+    //now /= 5;
+    now /= 37;
     if(now & 1)
         return uid > My_UID;
     else
@@ -212,7 +272,7 @@ struct local_connect_timer : public ssns::trackable
 {
     local_connect_timer() : connect_timer("sync-conn-setup"){
         connect_timer.set_autoreload(1);
-        connect_timer.set_interval(60 * 1000);
+        connect_timer.set_interval(1000);
         connect_timer.set_oneshot(0);
         connect_timer.reset();
         connect_timer.start();
@@ -222,10 +282,10 @@ struct local_connect_timer : public ssns::trackable
 
     void throttle_up()
     {
-        if(connect_timer.get_interval() == 10000)
+        if(connect_timer.get_interval() == 1000)
             return;
         connect_timer.stop();
-        connect_timer.set_interval(10000);
+        connect_timer.set_interval(1000);
         connect_timer.start();
     }
 
@@ -255,6 +315,13 @@ struct local_connect_timer : public ssns::trackable
     }
 };
 
+static local_connect_timer *lct;
+static
+void
+throttle_up_on_setting_change(vc, vc)
+{
+    lct->throttle_up();
+}
 // this is where we look at the set of group members, and
 // schedule call attempts to any that are online. throttling the
 // attempt-to-connect rate is based on whether we are
@@ -267,12 +334,15 @@ sync_call_setup()
 {
     if(!Current_alternate)
         return;
-    static local_connect_timer *lct;
+
     if(!lct)
     {
         lct = new local_connect_timer;
         Database_online.value_changed.connect_memfun(lct, &local_connect_timer::db_state_change);
-        //Local_uid_discovered.connect_memfun(lct, &local_connect_timer::local_discovery);
+        Local_uid_discovered.connect_memfun(lct, &local_connect_timer::local_discovery);
+        Online_info.connect_memfun(lct, &local_connect_timer::throttle_up);
+        bind_sql_section("net/", throttle_up_on_setting_change);
+        bind_sql_setting("sync/eager", throttle_up_on_setting_change);
     }
 
     if(!lct->connect_timer.is_expired())
@@ -301,6 +371,11 @@ sync_call_setup()
     int succ = 0;
     for(int i = 0; i < call_uids.num_elems(); ++i)
     {
+        // note: the following if statement was where i was thinking some
+        // more heuristics might be applied to help with deciding on whether
+        // to try a connection or not. it works ok as is, and i'm not sure
+        // a lot of the cases make much difference, so i might make sense to
+        // get rid of this later.
         if(!Broadcast_discoveries.contains(call_uids[i]))
         {
             if(!Online.contains(call_uids[i]))
@@ -352,8 +427,9 @@ sync_call_setup()
             }
         }
         GRTLOG("trying sync to %s", (const char *)to_hex(call_uids[i]), 0);
-        if(originate_calls(call_uids[i]))
+        if(1 /*originate_calls(call_uids[i]) */)
         {
+            int o = originate_calls(call_uids[i]);
             vc pw;
             // this is ok for testing, as it will keep us from
             // screwing up and syncing with non-group members.
@@ -377,7 +453,7 @@ sync_call_setup()
                 pw = "";
             GRTLOG("out trying sync to %s (%s)", (const char *)to_hex(call_uids[i]), (const char *)to_hex(pw));
             if(dwyco_connect_uid(call_uids[i], call_uids[i].len(), sync_call_disposition, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                              (const char *)pw, pw.len(), "sync", 4, 1))
+                              (const char *)pw, pw.len(), "sync", 4, o ? 1 : 15))
             {
                 succ = 1;
             }

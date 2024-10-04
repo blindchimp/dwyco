@@ -27,6 +27,8 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
 endif()
 
 add_compile_definitions(NO_BUILDTIME)
+add_compile_definitions(BUILDTIME="${PHOO_VERSION}")
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 
 if(APPLE)
 	add_compile_definitions(MAC_CLIENT)
@@ -275,6 +277,7 @@ if(APPLE OR IOS)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}
+       Qt6::Widgets
 
     )
 endif()

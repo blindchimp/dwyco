@@ -2507,6 +2507,8 @@ MMChannel::crypto_agree(vc crypto, int caller)
     }
 
     vc agreed = udh_agree_auth(channel_keys, their_pubkeys);
+    if(agreed.is_nil())
+        return 0;
     agreed = kdf(agreed, caller, My_UID, rem_uid);
     agreed = vclh_sha(agreed);
     // chop down to 128 bits, since we are hardwired to that with
@@ -2660,7 +2662,7 @@ MMChannel::channels_by_call_type(vc uid, vc call_type)
     for(; !cli.eol(); cli.forward())
     {
         MMChannel *mc = cli.getp();
-        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && call_type == mc->remote_call_type())
+        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && (call_type == mc->remote_call_type() || call_type == mc->call_type))
         {
             ret.append(mc);
         }
@@ -2879,6 +2881,27 @@ MMChannel::recv_config(vc cfg)
             ChanList cl = channels_by_call_type(remote_uid(), "sync");
             if(cl.num_elems() > 1)
             {
+                // we can do several things:
+                // (1) destroy this connection before it has a chance to do anything more.
+                // (2) destroy the existing connection.
+                // (3) *someday* let multiple connections exist.
+                //
+                // ca 8/2024, there seem to be some problems (bugs) in the
+                // syncing stuff that get triggered if we kill the existing connection.
+                // this is especially true if we are aggressively trying to get
+                // connections set up, as it is really likely two clients will be
+                // trying to connect to each other at the same time. the bugs manifest as
+                // the "delta" generation stuff getting confused, and resulting in
+                // entire indexes being exchanged (this will take some intensive
+                // debugging to figure out.)
+                send_error("already sync connected");
+                Netlog_signal.emit(tube->mklog("event", "already sync connected"));
+                GRTLOG("already sync connected", 0, 0);
+                goto cleanup;
+
+
+#if 0
+
                 // maybe there is a channel the process of timing out,
                 // we just assume this current one will be better than
                 // the previous one (we definitely don't want more than
@@ -2898,6 +2921,7 @@ MMChannel::recv_config(vc cfg)
                         cl[i]->schedule_destroy();
                     }
                 }
+#endif
             }
 
             finish_connection_new();

@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #include "netlog.h"
 #include <time.h>
 
@@ -96,7 +104,7 @@ init_netlog()
         Netlog = 0;
         return 0;
     }
-    Netlog_signal.connect_ptrfun(netlog::netlog_slot, 1);
+    Netlog_signal.connect_ptrfun(netlog::netlog_slot, ssns::UNIQUE);
     return 1;
 }
 

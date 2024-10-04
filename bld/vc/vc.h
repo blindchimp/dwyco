@@ -115,18 +115,19 @@ enum vcerrormode {EXCEPTIONS, RETURN_CODES};
 // roughly speaking, this is a glom of socket and fd options.
 // not really any rhyme or reason here
 enum vcsocketmode {
-	VC_BLOCKING,
-	VC_NONBLOCKING,
-	VC_WSAASYNC_SELECT,
-	VC_CLOSE_ON_EXEC,
-	VC_NO_CLOSE_ON_EXEC,
-	VC_SET_RECV_BUF_SIZE,
-	VC_GET_RECV_BUF_SIZE,
-	VC_SET_SEND_BUF_SIZE,
-	VC_GET_SEND_BUF_SIZE,
-	VC_SET_TCP_NO_DELAY,
-        VC_BUFFER_SOCK,
-        VC_SET_BROADCAST
+    VC_BLOCKING,
+    VC_NONBLOCKING,
+    VC_WSAASYNC_SELECT,
+    VC_CLOSE_ON_EXEC,
+    VC_NO_CLOSE_ON_EXEC,
+    VC_SET_RECV_BUF_SIZE,
+    VC_GET_RECV_BUF_SIZE,
+    VC_SET_SEND_BUF_SIZE,
+    VC_GET_SEND_BUF_SIZE,
+    VC_SET_TCP_NO_DELAY,
+    VC_BUFFER_SOCK,
+    VC_SET_BROADCAST,
+    VC_SET_REUSEADDR
 };
 #define  VC_SOCK_ERROR 4
 #define  VC_SOCK_READ  2
@@ -158,6 +159,7 @@ class vc_default;
 class vc_object;
 class vc_fundef;
 vc vc_wsget_errstr(int);
+typedef const vc& cvcr;
 
 #ifdef __GNUG__
 #include "dwvec.h"

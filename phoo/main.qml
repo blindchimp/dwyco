@@ -1070,7 +1070,7 @@ ApplicationWindow {
 
     Timer {
         id: sync_debug
-        interval: 10000
+        interval: 1000
         repeat: true
         running: group_active && server_account_created && qt_application_state === 0
         onTriggered: {

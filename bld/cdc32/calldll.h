@@ -12,6 +12,7 @@
 #include "mmcall.h"
 #include "dlli.h"
 
+namespace dwyco {
 class MMCallDLL : public MMCall
 {
 public:
@@ -31,4 +32,5 @@ public:
 
     MessageDisplay *get_ui_msg_output();
 };
+}
 #endif

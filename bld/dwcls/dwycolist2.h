@@ -11,6 +11,9 @@
 #include "dlli.h"
 #include <stdlib.h>
 
+// note: dwyco_list and dwyco_list_throw are just convenience wrappers
+// for the DWYCO_LIST. They do not try to manage the lifetime of the list.
+// if you want the list to release when it goes out of scope, use "simple_scoped"
 struct dwyco_list
 {
 private:
@@ -175,6 +178,8 @@ private:
 
 public:
     simple_scoped(DWYCO_LIST& v): dwyco_list(v) {
+        // this is just a safety thing, making sure you don't
+        // directly use the list you sent in.
         v = 0;
     }
     ~simple_scoped() {

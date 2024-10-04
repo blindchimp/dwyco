@@ -2,7 +2,7 @@ VCCFG_COMP=$$PWD
 DWYCO_APP=phoo
 DWYCOBG=0
 DEFINES += VCCFG_FILE DWYCO_APP_NICENAME=\\\"Phoo\\\" #DWYCO_VC_THREADED
-
+DEFINES += DWYCO_NETLOG
 CONFIG(debug, debug|release): DEFINES += DWYCO_DEBUG
 
 linux-*|wasm-emscripten {

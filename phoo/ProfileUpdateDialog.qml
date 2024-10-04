@@ -259,7 +259,8 @@ Page {
     ColumnLayout {
         id: column
         anchors.fill: parent
-        spacing: 3
+        anchors.topMargin: 5
+        spacing: 6
 
         TextFieldX {
             id: handle

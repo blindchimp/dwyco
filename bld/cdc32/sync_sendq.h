@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #ifndef SYNC_SENDQ_H
 #define SYNC_SENDQ_H
 #include "vc.h"
@@ -44,7 +52,7 @@ class sendq {
             pri = -1;
             clk = -1;
         }
-        qkey(int p, int c, vc m, vc cmd) {
+        qkey(int p, int c, const vc& m, const vc& cmd) {
             pri = p;
             clk = c;
             mid = m;
@@ -77,10 +85,11 @@ class sendq {
 public:
     sendq() : q(0), pull_set(qkey()) {}
 
-    void append(vc cmd, int pri) {
-        static vc pull("pull");
+    void append(const vc& cmd, int pri) {
+        static const vc pull("pull");
         vc mid;
         qkey qk;
+        vc tcmd = cmd;
         int update = 1;
         if(cmd[0] == pull)
         {
@@ -92,7 +101,7 @@ public:
                 if(pri < qk.pri)
                 {
                     q.del(qk);
-                    cmd = qk.cmd;
+                    tcmd = qk.cmd;
                 }
                 else
                     update = 0;
@@ -100,7 +109,7 @@ public:
         }
         if(update)
         {
-            qk = qkey(pri, Clk, mid, cmd);
+            qk = qkey(pri, Clk, mid, tcmd);
             q.add(qk, 0);
             if(!mid.is_nil())
                 pull_set.add(mid, qk);
@@ -113,19 +122,18 @@ public:
             return vcnil;
         qkey qk;
         q.delmin(&qk);
-        vc ret = qk.cmd;
         if(!qk.mid.is_nil())
         {
             pull_set.del(qk.mid);
         }
-        return ret;
+        return qk.cmd;
     }
 
     // this can be used to delete any pulls that are in the
     // q, for example after successfully processing a pull-resp,
     // there is no need to process other  pulls that might be
     // pending to other clients.
-    int del_pull(vc mid) {
+    int del_pull(const vc& mid) {
         qkey qk;
         if(pull_set.find(mid, qk))
         {
@@ -136,7 +144,7 @@ public:
         return 0;
     }
 
-    bool contains(vc mid) {
+    bool contains(const vc& mid) {
         if(pull_set.contains(mid))
             return true;
         return false;

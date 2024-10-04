@@ -32,8 +32,6 @@ extern int Disable_outgoing_SAC;
 
 // time to set up a direct call (including initial negotiation).
 #define CALLLIVE_DIRECT_TIMEOUT (4000)
-// time to allow user to accept/reject a call
-#define CALLLIVE_DIRECT_USER_TIMEOUT (30000)
 
 #define MEDIA_TCP_DIRECT 0
 #define MEDIA_TCP_VIA_PROXY 1

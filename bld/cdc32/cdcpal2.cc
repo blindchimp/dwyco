@@ -33,6 +33,9 @@ extern vc Client_ports;
 int is_invisible();
 
 namespace dwyco {
+
+ssns::signal0 Online_info;
+
 // not perfect if packets are dropped, the
 // response we get may not match, but it isn't
 // fatal
@@ -159,10 +162,10 @@ init_pal()
     Last_sent = vc(VC_VECTOR);
     Init = 1;
 
-    Group_uids.value_changed.connect_ptrfun(group_changed, 1);
-    Database_online.value_changed.connect_ptrfun(clear_online, 1);
+    Group_uids.value_changed.connect_ptrfun(group_changed, ssns::UNIQUE);
+    Database_online.value_changed.connect_ptrfun(clear_online, ssns::UNIQUE);
     bind_sql_setting("server/invis", invis_changed);
-    MMChannel::My_disposition.value_changed.connect_ptrfun(disposition_changed, 1);
+    MMChannel::My_disposition.value_changed.connect_ptrfun(disposition_changed, ssns::UNIQUE);
     return 1;
 }
 
@@ -229,6 +232,7 @@ process_pal_resp(vc v)
         }
 
         Pal_logged_in = 1;
+        Online_info.emit();
     }
     else if(v[0] == vcon)
     {
@@ -250,6 +254,7 @@ process_pal_resp(vc v)
         {
 
         }
+        Online_info.emit();
     }
     else if(v[0] == vcoff)
     {
