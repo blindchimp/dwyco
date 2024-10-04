@@ -20,7 +20,7 @@ Page {
     property bool dragging
     property int is_blocked: 0
 
-    anchors.fill:parent
+    anchors.fill: parent
     header: SimpleToolbar {
 
     }
@@ -34,8 +34,9 @@ Page {
         if(is_blocked) {
             return
         }
-
-        if(!censor || core.uid_profile_regular(uid)) {
+        // note: don't censor anything on desktop if the person is trying to click through,
+        // they probably want to see it.
+        if(!censor || !is_mobile || core.uid_profile_regular(uid)) {
             preview_source = core.uid_to_profile_preview(uid)
             preview_text = core.uid_to_name(uid)
             preview_desc = core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION)

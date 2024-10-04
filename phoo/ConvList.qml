@@ -317,7 +317,8 @@ Page {
                }
 
                Text {
-                   text: !censor_it ? display : censor_name(display)
+                   // on desktop, don't censor text
+                   text: (!censor_it || !is_mobile)  ? display : censor_name(display)
                    elide: Text.ElideRight
                    clip: true
                    font: applicationWindow1.font
@@ -496,7 +497,8 @@ Page {
            }
 
            Text {
-               text: !censor_it ? display : censor_name(display)
+               // don't censor text on desktop
+               text: (!censor_it || !is_mobile) ? display : censor_name(display)
                elide: Text.ElideRight
                clip: true
                anchors.bottom: parent.bottom

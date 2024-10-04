@@ -116,7 +116,7 @@ Page {
         CheckBox {
             id: unreviewed
             text: "Show all profiles\n(WARNING: shows explicit content)"
-            visible: !censor
+            visible: !corporate_censorship
             onCheckedChanged: {
                 show_unreviewed = checked
                 core.set_local_setting("show_unreviewed", checked ? "1" : "0")
