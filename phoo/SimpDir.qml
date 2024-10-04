@@ -11,6 +11,12 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+// note: this page doesn't update its contents dynamically.
+// it loads a static page from the server and displays it.
+// to get a new page, you have to "refresh" the entire contents.
+// this is different from the "conversation" model, where
+// it listens for signals related to profile updates and
+// can update its contents piecemeal
 Page {
     id: simpdir_top
     anchors.fill: parent
@@ -57,11 +63,15 @@ Page {
     Component {
         id: simpdir_delegate
         Rectangle {
+            property bool censor_it
+            property bool regular
+            censor_it: censor && !regular
             width: ListView.view.width
             height: has_preview ? vh(pct) : vh(pct) / 2
             border.width: 1
 
             color: primary_dark
+            regular: {return core.uid_profile_regular(uid)}
 
             gradient: Gradient {
                 GradientStop { position: 0.0; color: primary_light }
@@ -74,7 +84,10 @@ Page {
                 anchors.fill: parent
                 CircularImage {
                     id: preview
-                    source: {has_preview ? core.uid_to_http_profile_preview(uid) : ""}
+                    source: {has_preview ?
+                                 (!censor_it ?
+                                     core.uid_to_http_profile_preview(uid) :
+                                     "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                     fillMode: Image.PreserveAspectCrop
                     Layout.minimumWidth: picht()
                     Layout.maximumWidth: picht()
@@ -95,7 +108,7 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         id: nm
-                        text: handle
+                        text: !censor_it ? handle : censor_name(handle)
                         clip: true
                         font.bold: true
                         elide: Text.ElideRight
@@ -105,7 +118,7 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        text: description
+                        text: !censor_it ? description : censor_name(description)
                         clip: true
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         font: applicationWindow1.font
@@ -157,11 +170,14 @@ Page {
     Component {
         id: simpdir_grid_delegate
         Rectangle {
+            property bool censor_it
+            property bool regular
+            censor_it: censor && !regular
             width: gridView1.cellWidth
             height: gridView1.cellHeight
             border.width: 1
             color: primary_dark
-
+            regular: {return core.uid_profile_regular(uid)}
             gradient: Gradient {
                 GradientStop { position: 0.0; color: primary_light }
                 GradientStop { position: 1.0; color: primary_dark}
@@ -169,14 +185,17 @@ Page {
 
             CircularImage {
                 id: preview
-                source: {has_preview ? core.uid_to_http_profile_preview(uid) : ""}
+                source: {has_preview ?
+                             (!censor_it ?
+                                 core.uid_to_http_profile_preview(uid) :
+                                 "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                 fillMode: Image.PreserveAspectCrop
                 height:parent.height
                 width: parent.height
                 visible: has_preview
             }
             Text {
-                text: handle
+                text: !censor_it ? handle : censor_name(handle)
                 elide: Text.ElideRight
                 clip: true
                 anchors.bottom: parent.bottom
@@ -195,7 +214,7 @@ Page {
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
                     id: nm
-                    text: handle
+                    text: !censor_it ? handle : censor_name(handle)
                     clip: true
                     font.bold: true
                     elide: Text.ElideRight
@@ -205,7 +224,7 @@ Page {
                     Layout.alignment: Qt.AlignLeft
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    text: description
+                    text: !censor_it ? description : censor_name(description)
                     clip: true
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                 }
