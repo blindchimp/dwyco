@@ -513,3 +513,4 @@ DISTFILES += \
     androidinst2/res/values/libs.xml \
     androidinst2/res/xml/provider_paths.xml
 
+android: include(/home/dwight/Android/Sdk/android_openssl/openssl.pri)

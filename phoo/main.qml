@@ -109,7 +109,7 @@ ApplicationWindow {
     // this is set to true if the distributor requires user-generated content
     // to be censored (Google and Apple). When this is false, the display of
     // various content is controlled by the user "show_unreviewed" item.
-    property bool corporate_censorship: true
+    property bool corporate_censorship: is_mobile
     property bool dwy_invis: false
     property bool dwy_quiet: false
     property bool show_unreviewed: false
@@ -126,6 +126,17 @@ ApplicationWindow {
     property bool is_mobile
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+    // let's be serious, ca 2024 there is no practical choice regarding distribution
+    // of mobile apps
+    property string corporate_overlord
+    corporate_overlord: {
+        if(Qt.platform.os === "android")
+            return "Google, Inc."
+        if(Qt.platform.os === "ios")
+            return "Apple, Inc."
+        return ""
+    }
+
 
     property bool group_active
     group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
