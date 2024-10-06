@@ -485,6 +485,13 @@ ApplicationWindow {
             function onQt_app_state_change(app_state) {
                 if(app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
+                    if(chatlist.visible || public_chat.visible) {
+                        if(core.chat_online() === 0) {
+                             console.log("CHAT SERVER reconnect ")
+                            core.switch_to_chat_server(chat_server.connect_server)
+                            chat_server.auto_connect = true
+                        }
+                    }
 
                 }
                 if(app_state !== 0) {
