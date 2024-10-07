@@ -35,7 +35,7 @@ toAscii=toLatin1
 DWYCO_NICE_VERSION=\"4.107\"
 )
 include_directories(
-./dllwin ../bld/qt6drv .
+./dllwin ../bld/qt6drv ../bld/dwcls .
 )
 
 set(PROJECT_SOURCES
