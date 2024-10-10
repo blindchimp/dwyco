@@ -38,7 +38,7 @@ int vcxstream::Max_count_digits;
 // ie. lots of little chunks are easier to control than allowing giant
 // strings to be included in vectors, etc.
 //
-unsigned long vcxstream::Memory_tally = 0;
+thread_local long vcxstream::Memory_tally = 0;
 
 void* operator new(std::size_t sz)
 {
