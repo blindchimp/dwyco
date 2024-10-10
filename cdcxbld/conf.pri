@@ -33,8 +33,8 @@ DEFINES += CDCCORE_STATIC  DWYCO_FORCE_DESKTOP_VGQT
 linux-*|macx-* {
 QMAKE_CXX=ccache g++
 
-QMAKE_CFLAGS += #-fsanitize=address
-QMAKE_CXXFLAGS += -std=c++11 #-fsanitize=address
-QMAKE_LFLAGS += -std=c++11 #-fsanitize=address
+QMAKE_CFLAGS += -g #-fsanitize=address
+QMAKE_CXXFLAGS += -g -std=c++11 #-fsanitize=address
+QMAKE_LFLAGS += -g -std=c++11 #-fsanitize=address
 }
 
