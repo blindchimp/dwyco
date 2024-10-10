@@ -200,7 +200,7 @@ private:
 
     long memory_tally;
 friend void* ::operator new(std::size_t sz);
-    static long Memory_tally;
+    static thread_local long Memory_tally;
 
     int retry();
 	void put_back(const char *, long);
