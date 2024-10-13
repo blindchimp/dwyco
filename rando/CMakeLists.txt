@@ -28,6 +28,11 @@ find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Material Positioning Location)
+# Get Qt version from the Qt6 config
+execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# Define a preprocessor macro with the Qt version
+add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
 
 # this needs a re-think, possibly a command to copy the androidinst3 file, then
 # populate it with the java stuff would work. then change the package_source_dir to
