@@ -200,6 +200,7 @@ target_link_options(rando PRIVATE binmode.obj)
 endif()
 
 if(IOS)
+    qt_add_ios_ffmpeg_libraries(rando)
     target_link_libraries(rando
         PRIVATE
        ${BASELIBS}

@@ -274,6 +274,7 @@ target_link_options(phoo PRIVATE binmode.obj)
 endif()
 
 if(APPLE OR IOS)
+    qt_add_ios_ffmpeg_libraries(phoo)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}
