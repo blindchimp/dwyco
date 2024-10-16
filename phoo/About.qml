@@ -26,12 +26,9 @@ Page {
         RowLayout {
             spacing: mm(3)
             Label {
-                text: "phoo (open source):"
-            }
-
-            Label {
-                text: core.client_name
+                text: "Phoo (open source): " + core.client_name + " (Qt " + core.qt_version_string + ")"
                 Layout.fillWidth: true
+                fontSizeMode: Text.Fit
             }
 
         }
