@@ -6,7 +6,6 @@ bld/vorbis112 \
 bld/theora.1.2.x \
 bld/speex \
 bld/kazlib \
-bld/zlib \
 bld/dwcls \
 bld/crypto5 \
 bld/jenkins \
