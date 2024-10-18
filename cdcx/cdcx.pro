@@ -139,7 +139,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/speex/libspeex.a \
 $${D}/vorbis112/libvorbis.a \
@@ -162,7 +161,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -220,7 +218,6 @@ $${D}/kazlib/$${S}/kazlib.lib \
 $${D}/ppm/$${S}/ppm.lib \
 $${D}/pgm/$${S}/pgm.lib \
 $${D}/pbm/$${S}/pbm.lib \
-$${D}/zlib/$${S}/zlib.lib \
 $${D}/jenkins/$${S}/jenkins.lib \
 $${D}/vorbis112/$${S}/vorbis.lib \
 $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
@@ -242,7 +239,6 @@ $${D}/kazlib/$${S}/kazlib.lib \
 $${D}/ppm/$${S}/ppm.lib \
 $${D}/pgm/$${S}/pgm.lib \
 $${D}/pbm/$${S}/pbm.lib \
-$${D}/zlib/$${S}/zlib.lib \
 $${D}/jenkins/$${S}/jenkins.lib \
 $${D}/vorbis112/$${S}/vorbis.lib \
 $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
@@ -282,7 +278,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -304,7 +299,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
