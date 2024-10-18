@@ -63,9 +63,8 @@ init_audio_mixer()
     TheAudioMixer->exit = 0;
     if(!TheAudioOutput)
         return 0;
-#ifdef _Windows
-    ((AudioOutputWin32 *)TheAudioOutput)->set_mixer(TheAudioMixer);
-#endif
+
+    TheAudioOutput->set_mixer(TheAudioMixer);
 
     // mixer needs to run in a different thread
     // for best response
@@ -148,10 +147,8 @@ exit_audio_mixer()
         LeaveCriticalSection(&Audio_mixer_shutdown_lock);
         return 0;
     }
-#ifdef _Windows
     if(TheAudioOutput)
-        ((AudioOutputWin32 *)TheAudioOutput)->set_mixer(0);
-#endif
+        TheAudioOutput->set_mixer(0);
     AudioMixer * volatile tmp = TheAudioMixer;
     TheAudioMixer = 0;
     delete tmp;
