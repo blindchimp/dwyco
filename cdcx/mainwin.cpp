@@ -34,6 +34,7 @@
 #include <QMutexLocker>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPermission>
 
 #include <time.h>
 #include "ui_mainwin.h"
@@ -854,7 +855,19 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
     ui.setupUi(this);
     Mainwinform = this;
     AudioActionGroup = new QList<QAction *>;
-    dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
+    if(qApp->checkPermission(QMicrophonePermission{}) == Qt::PermissionStatus::Granted)
+    {
+        dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
+    }
+    else
+    {
+        qApp->requestPermission(QMicrophonePermission{}, [](const QPermission &permission) {
+            if(permission.status() == Qt::PermissionStatus::Granted) {
+                dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
+            }
+        });
+
+    }
 
     ui.toolBar->hide();
 
