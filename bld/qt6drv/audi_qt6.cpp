@@ -219,6 +219,8 @@ InputTest::do_on()
 {
     if(!m_audioInput)
         return;
+    if(m_audioInput->state() == QAudio::IdleState)
+        m_audioInput->start(m_audioInfo);
     if(m_audioInput->state() != QAudio::SuspendedState)
         return;
     m_audioInput->resume();
@@ -360,6 +362,7 @@ void DWYCOCALLCONV
 audi_qt_need(void *)
 {
     audi_qt_init(0);
+    audi_qt_on(0);
 
 }
 void DWYCOCALLCONV audi_qt_pass(void *)
