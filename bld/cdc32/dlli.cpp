@@ -372,6 +372,7 @@ using namespace CryptoPP;
 #include "synccalls.h"
 #include "backandroid.h"
 #include "directsend.h"
+#include "audchk.h"
 
 using namespace dwyco;
 
@@ -2440,6 +2441,7 @@ DWYCOEXPORT
 int
 dwyco_get_audio_hw(int *has_audio_input_out, int *has_audio_output_out, int *audio_hw_full_duplex_out)
 {
+    check_audio_device();
     if(has_audio_input_out)
         *has_audio_input_out = Has_audio_input;
     if(has_audio_output_out)
