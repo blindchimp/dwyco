@@ -12,6 +12,7 @@
 #include "audmix.h"
 #include "audo.h"
 #include "audi.h"
+#include "audout.h"
 #ifdef _Windows
 #include <process.h>
 #include "audwin.h"
