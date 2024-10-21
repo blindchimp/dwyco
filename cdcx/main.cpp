@@ -407,9 +407,10 @@ int main(int argc, char *argv[])
 #endif
     Version += "Dwyco-CDC-X-";
     Version += __DATE__;
-    Version += " ";
-    Version += __TIME__;
-    Version += "-961";
+    Version += " (Qt ";
+    Version += QT_VERSION_STRING;
+    Version += ")";
+
 
     dwyco_set_client_version(Version.c_str(), Version.length());
     ZeroUID = from_hex("00000000000000000000");

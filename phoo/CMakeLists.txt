@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR phoo_cmake)
-set(PHOO_VERSION "4.202")
+set(PHOO_VERSION "4.210")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
 set(PHOO_VERSION_CODE 2000118)
 if (ANDROID)
@@ -44,6 +44,12 @@ find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concurrent MultimediaWidgets)
+
+# Get Qt version from the Qt6 config
+execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# Define a preprocessor macro with the Qt version
+add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
 
 # this needs a re-think, possibly a command to copy the androidinst3 file, then
 # populate it with the java stuff would work. then change the package_source_dir to
@@ -223,7 +229,7 @@ set(BASELIBS
     ppm
     pgm
     pbm
-    zlibstatic
+ #   zlib
     theora.1.2.x
     speex
     vorbis112
