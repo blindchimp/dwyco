@@ -229,7 +229,7 @@ set(BASELIBS
     ppm
     pgm
     pbm
-    zlibstatic
+ #   zlib
     theora.1.2.x
     speex
     vorbis112
