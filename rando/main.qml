@@ -509,7 +509,7 @@ ApplicationWindow {
         property int is_chat_online: -1
 
         objectName: "dwyco_singleton"
-        client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
+        client_name: {"rando-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
 //            if(core.android_migrate === 1)
 //            {
@@ -716,6 +716,9 @@ ApplicationWindow {
 //                set_badge_number(0)
 //        }
 
+        onClient_nameChanged: (client_name) => {
+            core.update_dwyco_client_name(core.client_name)
+        }
     }
 
     Rectangle {
