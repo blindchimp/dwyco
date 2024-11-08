@@ -238,15 +238,22 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        if(camera_permission.status != Qt.PermissionStatus.Granted) {
-            console.log("CAMERA DENIED")
-            camera_permission.request()
-        } else {
-            console.log("CAMERA ALLOWED")
-        }
+        // this is a bit of a kluge: we used to ask for permission
+        // on startup. but android won't let us q-up multiple permission
+        // requests at the same time. so we know we only need post_notifications
+        // first, then camera when the user uses the camera button. which should
+        // be an ok solution for now (maybe if they fiddle the permissions
+        // directly, it could get into a weird situation, but that is unlikely.)
 
-        AndroidPerms.request_sync("android.permission.CAMERA")
-        AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+        // if(camera_permission.status != Qt.PermissionStatus.Granted) {
+        //     console.log("CAMERA DENIED")
+        //     camera_permission.request()
+        // } else {
+        //     console.log("CAMERA ALLOWED")
+        // }
+
+        // AndroidPerms.request_sync("android.permission.CAMERA")
+        // AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
     CameraPermission {
