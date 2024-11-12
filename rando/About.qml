@@ -28,7 +28,7 @@ Page {
         RowLayout {
             spacing: mm(3)
             Label {
-                text: "Dwyco Rando (open source): " + core.client_name
+                text: "Dwyco Rando (open source): " + core.client_name + " (Qt " + core.qt_version_string + ")"
                 Layout.fillWidth: true
                 fontSizeMode: Text.Fit
             }
