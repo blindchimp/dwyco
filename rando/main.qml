@@ -444,7 +444,7 @@ ApplicationWindow {
         property int is_chat_online: -1
 
         objectName: "dwyco_singleton"
-        client_name: {"QML-" + Qt.platform.os + "-" + core.buildtime}
+        client_name: {"rando-" + Qt.platform.os + "-" + core.buildtime}
         Component.onCompleted: {
 //            if(core.android_migrate === 1)
 //            {

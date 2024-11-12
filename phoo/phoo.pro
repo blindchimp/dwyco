@@ -16,6 +16,7 @@ DEFINES += NO_BUILDTIME
 VER="3.210"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
+DEFINES += QT_VERSION_STRING=\\\"$$QT_VERSION\\\"
 
 CONFIG(appdir) {
 target.path=/usr/bin
