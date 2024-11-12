@@ -1,3 +1,4 @@
+#include "vc.h"
 #if defined(VCLH_COMPRESS) || !defined(NO_VCEVAL)
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
@@ -6,7 +7,6 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#include "vc.h"
 #include "vccomp.h"
 #include "zlib.h"
 #include "dwgrows.h"
