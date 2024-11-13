@@ -52,7 +52,7 @@ import androidx.work.*;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
-import androidx.activity.*;
+//import androidx.activity.*;
 import android.content.pm.PackageManager;
 import androidx.core.app.ActivityCompat;
 
