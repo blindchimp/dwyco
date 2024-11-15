@@ -58,7 +58,8 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(int, android_migrate)
     QML_READONLY_VAR_PROPERTY(int, android_backup_available)
 
-    QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready);
+    QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready)
+    QML_READONLY_VAR_PROPERTY(QString, qt_version_string)
 
 
 public:
@@ -88,6 +89,7 @@ public:
         m_android_backup_available = 0;
         m_desktop_update_ready = false;
         m_total_users = 0;
+        m_qt_version_string = QT_VERSION_STRING;
     }
     static QByteArray My_uid;
     static int Android_migrate;

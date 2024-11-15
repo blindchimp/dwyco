@@ -1,4 +1,5 @@
-
+#include "vc.h"
+#if defined(VCLH_COMPRESS) || !defined(NO_VCEVAL)
 /* ===
 ; Copyright (c) 1995-present, Dwyco, Inc.
 ; 
@@ -6,7 +7,6 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-#include "vc.h"
 #include "vccomp.h"
 #include "zlib.h"
 #include "dwgrows.h"
@@ -253,3 +253,4 @@ lh_decompress_xfer(vc ctx, vc v, vc out)
 	Vcmap->local_add(out, dec);
 	return vctrue;
 }
+#endif

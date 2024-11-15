@@ -1,19 +1,21 @@
-qt5-qmake
-g++/clang
-qml-module-qtqml-models2
-qml-module-qtqml
-qml-module-qtquick-controls2
-qml-module-qtqml-statemachine
-qml-module-qtmultimedia
-qml-module-qtquick-dialogs
-qml-module-qt-labs-qmlmodels
-qtbase5-private-dev
-qtdeclarative5-dev
-libqt5multimedia5-plugins
-libqtavwidgets1
-qtmultimedia5-dev
-qml-module-qtquick-layouts
-qml-module-qtgraphicaleffects
-v4l2-utils
-libv4l-dev
-v4l-utils
+sudo apt install qt5-qmake
+sudo apt install g++/clang
+sudo apt install qml-module-qtqml-models2
+sudo apt install qml-module-qtqml
+sudo apt install qml-module-qtquick-controls2
+sudo apt install qml-module-qtqml-statemachine
+sudo apt install qml-module-qtmultimedia
+sudo apt install qml-module-qtquick-dialogs
+sudo apt install qml-module-qt-labs-qmlmodels
+sudo apt install qtbase5-private-dev
+sudo apt install qtdeclarative5-dev
+sudo apt install libqt5multimedia5-plugins
+sudo apt install libqtavwidgets1
+sudo apt install qtmultimedia5-dev
+sudo apt install qml-module-qtquick-layouts
+sudo apt install qml-module-qtgraphicaleffects
+sudo apt install v4l2-utils
+sudo apt install libv4l-dev
+sudo apt install v4l-utils
+sudo apt install libxkbcommon-dev
+sudo apt install libxcb-xkb-dev

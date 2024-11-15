@@ -13,9 +13,10 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="3.206"
+VER="3.210"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
+DEFINES += QT_VERSION_STRING=\\\"$$QT_VERSION\\\"
 
 CONFIG(appdir) {
 target.path=/usr/bin
@@ -128,7 +129,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -153,7 +153,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -196,7 +195,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -228,7 +226,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -252,7 +249,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -283,7 +279,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -305,7 +300,6 @@ $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
 $${D}/pgm/libpgm.a \
 $${D}/pbm/libpbm.a \
-$${D}/zlib/libzlib.a \
 $${D}/theora.1.2.x/libtheora.1.2.x.a \
 $${D}/vorbis112/libvorbis.a \
 $${D}/ogg/libogg.a \
@@ -409,7 +403,6 @@ $${D}/kazlib/$${S}/kazlib.lib \
 $${D}/ppm/$${S}/ppm.lib \
 $${D}/pgm/$${S}/pgm.lib \
 $${D}/pbm/$${S}/pbm.lib \
-$${D}/zlib/$${S}/zlib.lib \
 $${D}/jenkins/$${S}/jenkins.lib \
 $${D}/vorbis112/$${S}/vorbis.lib \
 $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \
@@ -436,7 +429,6 @@ $${D}/kazlib/$${S}/kazlib.lib \
 $${D}/ppm/$${S}/ppm.lib \
 $${D}/pgm/$${S}/pgm.lib \
 $${D}/pbm/$${S}/pbm.lib \
-$${D}/zlib/$${S}/zlib.lib \
 $${D}/jenkins/$${S}/jenkins.lib \
 $${D}/vorbis112/$${S}/vorbis.lib \
 $${D}/theora.1.2.x/$${S}/theora.1.2.x.lib \

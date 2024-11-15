@@ -11,7 +11,6 @@ rm -f  libspeex
 rm -f  libtheora
 rm -f  libvorbis
 rm -f  vc
-rm -f  zlib
 rm -f  ppm
 rm -f  pbm
 rm -f  pgm
@@ -29,7 +28,6 @@ ln -s  ../../bld/speexdsp libspeex
 ln -s ../../bld/theora.1.2.x libtheora
 ln -s  ../../bld/libvorbis-1.3.6 libvorbis
 ln -s ../../bld/vc
-ln -s ../../bld/zlib
 ln -s ../../bld/ppm
 ln -s ../../bld/pbm
 ln -s ../../bld/pgm
