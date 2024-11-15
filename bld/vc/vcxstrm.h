@@ -198,9 +198,9 @@ private:
     static long Max_memory;
     static int Max_count_digits;
 
-    unsigned long memory_tally;
+    long memory_tally;
 friend void* ::operator new(std::size_t sz);
-    static unsigned long Memory_tally;
+    static thread_local long Memory_tally;
 
     int retry();
 	void put_back(const char *, long);
