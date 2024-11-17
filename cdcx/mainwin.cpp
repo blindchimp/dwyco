@@ -854,6 +854,7 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
     ui.setupUi(this);
     Mainwinform = this;
     AudioActionGroup = new QList<QAction *>;
+
     dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
 
     ui.toolBar->hide();

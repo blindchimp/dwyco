@@ -16,10 +16,11 @@
 #include "libpbm.h"
 #if defined(KINDA_STDC)
 #include <stdarg.h>
+
 #else /*__STDC__*/
 #include <varargs.h>
 #endif /*__STDC__*/
-
+void exit(int);
 /*
  * this is some old crap for windows only. the default
  * fmode is O_TEXT. the borland compilers don't seem to
@@ -128,7 +129,7 @@ pm_freearray( its, rows )
     }
 #endif /* A_FRAGARRAY */
 
-
+#if 0
 /* Case-insensitive keyword matcher. */
 
 int
@@ -405,7 +406,7 @@ pm_message( va_alist )
         }
     va_end( args );
     }
-
+#endif
 #if defined(KINDA_STDC)
 void
 pm_error( char* format, ... )
@@ -426,12 +427,13 @@ pm_error( va_alist )
     format = va_arg( args, char* );
 #endif /*__STDC__*/
 
-    fprintf( stderr, "%s: ", progname );
+    //fprintf( stderr, "%s: ", progname );
     (void) vfprintf( stderr, format, args );
     fputc( '\n', stderr );
     va_end( args );
     exit( 1 );
     }
+#if 0
 
 #ifdef NEED_VFPRINTF1
 
@@ -1577,3 +1579,4 @@ char	**nargv,
 	return(optopt);			/* dump back option letter */
 }
 #endif /* VMS */
+#endif

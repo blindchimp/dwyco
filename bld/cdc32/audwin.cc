@@ -25,7 +25,6 @@ AudioOutputWin32::AudioOutputWin32(CRITICAL_SECTION& c, int decom, int nbufs)
     waveout = 0;
     silence = 0;
     silence_len = 0;
-    mixer = 0;
     num_out = 0;
     aec = 0;
     //InitializeCriticalSection(&cs);
