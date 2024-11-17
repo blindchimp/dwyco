@@ -45,7 +45,6 @@ protected:
     int silence_len;
     long num_out;
     virtual void callback(HWAVEOUT hwo, UINT msg, DWORD p1, DWORD p2);
-    AudioMixer *mixer;
 
 private:
     HWAVEOUT waveout;
