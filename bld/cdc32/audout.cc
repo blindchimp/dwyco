@@ -74,6 +74,7 @@ AudioOutput::AudioOutput(int decom, int nbufs)
 
     decoder = 0;
     fancy_recover = 0;
+    mixer = 0;
 }
 
 AudioOutput::~AudioOutput()

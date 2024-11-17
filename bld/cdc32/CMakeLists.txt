@@ -19,7 +19,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../ppm
     ${CMAKE_CURRENT_SOURCE_DIR}/../gsm
     ${CMAKE_CURRENT_SOURCE_DIR}/../speex/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../theora/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../theora.1.2.x/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../ogg/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../vorbis112/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
@@ -31,6 +31,7 @@ if(UNIX)
     include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../v4lcap)
     include_directories(winemu)
     set(EXTRA_FILES winemu.cc linid.cpp)
+    add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
 endif()
 
 if(MSVC)
