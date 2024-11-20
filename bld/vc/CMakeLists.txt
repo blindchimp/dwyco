@@ -24,7 +24,7 @@ add_compile_definitions(VC_INTERNAL DWYCO_NO_TSOCK)
 
 if(WIN32)
     add_compile_definitions(_CRT_NO_POSIX_ERROR_CODES)
-elseif()
+else()
 	add_compile_definitions(UNIX)
 endif()
 
