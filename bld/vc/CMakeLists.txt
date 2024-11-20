@@ -34,7 +34,7 @@ else()
     add_compile_definitions(NO_VCEVAL)
 endif()
 
-add_library(vc STATIC
+set(SRCS
     dwgrows.cpp 
     pmatch.cpp 
     vc.cpp 
@@ -89,5 +89,7 @@ add_library(vc STATIC
     vctsock.cpp
     vclhnet.cpp
 )
+
+add_library(vc OBJECT ${SRCS})
 
 target_compile_definitions(vc PRIVATE VC_LIBRARY)

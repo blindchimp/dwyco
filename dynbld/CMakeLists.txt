@@ -4,6 +4,9 @@ project(dwyco LANGUAGES CXX)
 set(DWYCO_CONFDIR dynbld)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 
+find_library(mumble CoreFoundation)
+find_library(mumble2 ApplicationServices)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(subdirs.cmake)
@@ -28,9 +31,11 @@ set(BASELIBS
 )
 
 add_library(dwyco SHARED dwyco.cpp)
-target_link_libraries(dwyco
+target_link_libraries(dwyco PRIVATE
     ${BASELIBS}
+    ${mumble}
+    ${mumble2}
 )
-target_link_options(dwyco PRIVATE "-Wl,--whole-archive")
+#target_link_libraries(dwyco PRIVATE ${mumble} ${mumble2})
 
 #target_compile_definitions(dwyco_jni PRIVATE DWYCO_JNI_LIBRARY)

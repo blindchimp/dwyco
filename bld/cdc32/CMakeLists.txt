@@ -71,7 +71,7 @@ else()
     add_compile_definitions(MINIUPNP_STATICLIB)
 endif()
 
-add_library(cdc32 STATIC
+add_library(cdc32 OBJECT
 	activeuid.cpp 
 	backandroid.cpp 
 	bgapp.cpp 

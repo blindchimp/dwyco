@@ -121,7 +121,7 @@ set(SOURCES
 endif()
 
 
-add_library(uv STATIC
+add_library(uv OBJECT
 	${SOURCES}
 )
 
