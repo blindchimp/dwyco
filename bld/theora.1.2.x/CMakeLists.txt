@@ -75,7 +75,7 @@ list(APPEND SOURCES
 endif()
 endif()
 
-add_library(theora.1.2.x STATIC
+add_library(theora.1.2.x OBJECT
 	${SOURCES}
 )
 

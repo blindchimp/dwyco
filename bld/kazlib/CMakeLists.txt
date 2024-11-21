@@ -9,6 +9,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_definitions(-DNDEBUG)
 
-add_library(kazlib STATIC
+add_library(kazlib OBJECT
 dict.c
 )
