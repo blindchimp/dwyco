@@ -241,8 +241,13 @@ post_req(int compid, vc vuid, DwString& pers_id, int no_group, int inhibit_encry
     // password encryption, all the current group members can decrypt it.
     // note that message itself is encrypted with the password, not as
     // good as the pk stuff, but still reasonable. the underlying skid protocol
-    // is supposedly resistant to attack even if it is done "in the clear", so
-    // we are probably ok even if someone else can decrypt the messages.
+    // is supposedly resistant to attack even if it is done "in the clear".
+    // unfortunately, if someone goes to the trouble to decrypt the message
+    // by brute-forcing the hash, they would be able to start a new
+    // run of the protocol and get G. so, there is definitely room for
+    // improvement here, like asking the user to allow the protocol to
+    // proceed, or any of other things. all of them make it less convenient to use
+    // so probably would have to be optional.
     if(!send_via_server(m->qfn, inhibit_encryption, no_group, 1))
     {
         GRTLOG("post_req: send startup failed", 0, 0);
