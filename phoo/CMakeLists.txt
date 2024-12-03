@@ -29,6 +29,7 @@ endif()
 add_compile_definitions(NO_BUILDTIME)
 add_compile_definitions(BUILDTIME="${PHOO_VERSION}")
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
+add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 
 if(APPLE)
 	add_compile_definitions(MAC_CLIENT)
