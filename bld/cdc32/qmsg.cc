@@ -804,7 +804,7 @@ valid_info(vc v)
 }
 
 int
-valid_qd_message(vc v)
+valid_qd_message(const vc& v)
 {
 // vector(vector(recipients...) vector(fromid text_message attachid vector(yy dd hh mm ss))
     if(v.type() != VC_VECTOR)
@@ -878,8 +878,9 @@ gen_hash(DwString filename)
     return val;
 }
 
+static
 void
-gen_authentication(vc qmsg, vc att_hash)
+gen_authentication(vc qmsg, const vc& att_hash)
 {
     // put the auth vector into a q'd message
     vc av(VC_VECTOR);
@@ -953,7 +954,7 @@ gen_authentication(vc qmsg, vc att_hash)
 }
 
 int
-verify_authentication(vc text, vc uid, vc att_hash, vc datevec, vc no_forward, vc mac)
+verify_authentication(const vc& text, const vc& uid, const vc& att_hash, const vc& datevec, const vc& no_forward, const vc& mac)
 {
     SHA sha;
     byte *secret = (byte *)HASH_SECRET;
@@ -1010,20 +1011,21 @@ verify_authentication(vc text, vc uid, vc att_hash, vc datevec, vc no_forward, v
 }
 
 int
-verify_chain(vc body, int top, vc att_hash, vc attachment_dir)
+verify_chain(const vc& body, int top, const vc& a_att_hash, const vc& attachment_dir)
 {
     GRTLOG("verify chain %d", top, 0);
     GRTLOGVC(body);
     GRTLOGVC(att_hash);
     GRTLOGVC(attachment_dir);
-    vc from = body[QM_BODY_FROM];
+    const vc& from = body[QM_BODY_FROM];
     vc text = body[QM_BODY_NEW_TEXT];
-    vc attachment = body[QM_BODY_ATTACHMENT];
-    vc authvec = body[QM_BODY_AUTH_VEC];
-    vc new_text = body[QM_BODY_NEW_TEXT];
-    vc forwarded_body = body[QM_BODY_FORWARDED_BODY];
-    vc datevec = body[QM_BODY_DATE];
-    vc no_forward = body[QM_BODY_NO_FORWARD];
+    const vc& attachment = body[QM_BODY_ATTACHMENT];
+    const vc& authvec = body[QM_BODY_AUTH_VEC];
+    const vc& new_text = body[QM_BODY_NEW_TEXT];
+    const vc& forwarded_body = body[QM_BODY_FORWARDED_BODY];
+    const vc& datevec = body[QM_BODY_DATE];
+    const vc& no_forward = body[QM_BODY_NO_FORWARD];
+    vc att_hash = a_att_hash;
 
     int res = 0;
     if(authvec.is_nil())
@@ -1031,7 +1033,7 @@ verify_chain(vc body, int top, vc att_hash, vc attachment_dir)
         res = VERF_AUTH_NO_INFO;
         return res;
     }
-    vc av_no_forward = authvec[QMBA_NO_FORWARD];
+    const vc& av_no_forward = authvec[QMBA_NO_FORWARD];
     if(!forwarded_body.is_nil())
         text = new_text;
     int auth;
