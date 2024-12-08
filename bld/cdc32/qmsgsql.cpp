@@ -359,6 +359,13 @@ clean_pull_failed_uid(const vc& uid)
 
 // cancel all the
 // extant pulls in other send_qs
+// should we also delete any extand pull-resp as well?
+// hmm, no. leave that for another functions, but it makes
+// sense if have "deleted" a message, and we q-ed up a response
+// regarding the message we probably should nuke it.
+// likewise, if we receive a response from a message we know
+// has been deleted, we should probably discard the response.
+// see the comment near "process_pull_resp"
 static
 void
 stop_existing_pulls(const vc& mid)
@@ -2523,7 +2530,7 @@ get_unfav_msgids(vc uid)
         vc res = sql_simple(
                     with_create_uidset(1)
                     "select mid as foo from gi where assoc_uid in (select * from uidset) "
-                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') ", to_hex(uid));
+                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav' and not exists(select 1 from gtomb where gmt.guid = gtomb.guid)) ", to_hex(uid));
         sql_commit_transaction();
         ret = flatten(res);
     }
