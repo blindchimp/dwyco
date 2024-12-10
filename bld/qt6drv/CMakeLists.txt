@@ -9,12 +9,12 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS MultimediaWidgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS MultimediaWidgets)
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Concurrent)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Concurrent)
+#find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Multimedia)
+#find_package(QT NAMES Qt6 REQUIRED COMPONENTS MultimediaWidgets)
+find_package(Qt6 REQUIRED COMPONENTS MultimediaWidgets)
+#find_package(QT NAMES Qt6 REQUIRED COMPONENTS Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Concurrent)
 include_directories(../miscsrc ../ppm ../pgm ../pbm ../cdc32)
 add_library(qt6drv STATIC
     audi_qt6.cpp
