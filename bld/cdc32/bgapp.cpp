@@ -1201,8 +1201,8 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
             )
         {
             GRTLOGA("fast poll snooze %d spin %d rq %d cq %d proto %d",
-                    spin,
                     snooze,
+                    spin,
                     Response_q.num_elems(),
                     MMChannel::any_ctrl_q_pending(),
                     dwyco::sproto::any_quick_transitions()
