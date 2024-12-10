@@ -2550,8 +2550,16 @@ get_unfav_msgids(vc uid)
 void
 clear_msg_idx_uid(vc uid)
 {
+    vc mids;
+    try
+    {
+        mids = sql_clear_uid(uid);
+    }
+    catch(...)
+    {
+        return;
+    }
     msg_idx_updated(uid, 0);
-    vc mids = sql_clear_uid(uid);
     // if we are not in a group, then don't bother with notifying the
     // server, since it was done at fetch time
     if(Current_alternate)
