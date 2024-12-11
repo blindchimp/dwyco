@@ -63,6 +63,8 @@ add_compile_definitions(
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME=${DWYCO_APP}
+        DWYCO_TRACE
+        DW_RTLOG
 )
 
 if(${DWYCO_APP} STREQUAL "rando")

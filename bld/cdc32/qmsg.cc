@@ -1015,7 +1015,7 @@ verify_chain(const vc& body, int top, const vc& a_att_hash, const vc& attachment
 {
     GRTLOG("verify chain %d", top, 0);
     GRTLOGVC(body);
-    GRTLOGVC(att_hash);
+    GRTLOGVC(a_att_hash);
     GRTLOGVC(attachment_dir);
     const vc& from = body[QM_BODY_FROM];
     vc text = body[QM_BODY_NEW_TEXT];
