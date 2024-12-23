@@ -6,7 +6,7 @@ project(jenkins LANGUAGES C)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(jenkins STATIC
+add_library(jenkins OBJECT
 lookup2.c
 lookup3.c
 )

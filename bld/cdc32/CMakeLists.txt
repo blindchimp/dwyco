@@ -46,6 +46,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../mtcap)
 
 endif()
 
+if(APPLE AND NOT UNIX)
+    add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
+endif()
+
 if(${DWYCOBG} EQUAL 1)
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS
 )
@@ -59,6 +63,8 @@ add_compile_definitions(
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME=${DWYCO_APP}
+        DWYCO_TRACE
+        DW_RTLOG
 )
 
 if(${DWYCO_APP} STREQUAL "rando")
@@ -67,7 +73,7 @@ else()
     add_compile_definitions(MINIUPNP_STATICLIB)
 endif()
 
-add_library(cdc32 STATIC
+add_library(cdc32 OBJECT
 	activeuid.cpp 
 	backandroid.cpp 
 	bgapp.cpp 

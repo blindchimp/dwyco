@@ -213,8 +213,8 @@ MMChannel::process_pull(cvcr cmd)
 {
     if(cmd[0] != vc("pull"))
         oopanic("pull");
-    vc mid = cmd[1];
-    vc pri = cmd[5];
+    cvcr mid = cmd[1];
+    cvcr pri = cmd[5];
     // load the msg and attachment, and send it back as a "pull-resp"
     // XXX note this probably needs to be done in one query, but
     // this is a weird case anywhere, where a client has sent us
@@ -226,21 +226,21 @@ MMChannel::process_pull(cvcr cmd)
         send_pull_error(mid, pri);
         return;
     }
-    vc huid = sql_get_uid_from_mid(mid);
+    cvcr huid = sql_get_uid_from_mid(mid);
     if(huid.is_nil())
     {
         send_pull_error(mid, pri);
         return;
     }
 
-    vc body = load_body_by_id(from_hex(huid), mid);
+    cvcr body = load_body_by_id(from_hex(huid), mid);
     if(body.is_nil())
     {
         send_pull_error(mid, pri);
         return;
     }
 
-    vc attfn = body[QM_BODY_ATTACHMENT];
+    cvcr attfn = body[QM_BODY_ATTACHMENT];
     vc att;
     if(!attfn.is_nil())
     {

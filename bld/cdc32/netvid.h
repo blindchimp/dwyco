@@ -228,8 +228,8 @@ private:
     long total_sent;
     long total_recv;
 public:
-    vc mklog(vc = vcnil, vc = vcnil, vc = vcnil, vc = vcnil,
-             vc = vcnil, vc = vcnil, vc = vcnil, vc = vcnil);
+    vc mklog(cvcr = vcnil, cvcr = vcnil, cvcr = vcnil, cvcr = vcnil,
+             cvcr = vcnil, cvcr = vcnil, cvcr = vcnil, cvcr = vcnil);
 
 };
 
