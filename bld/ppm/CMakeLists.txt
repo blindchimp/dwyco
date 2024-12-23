@@ -6,7 +6,7 @@ project(ppm LANGUAGES C)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../pbm ${CMAKE_CURRENT_SOURCE_DIR}/../pgm)
 
-add_library(ppm STATIC
+add_library(ppm OBJECT
 	libppm1.c
     libppm2.c
 )

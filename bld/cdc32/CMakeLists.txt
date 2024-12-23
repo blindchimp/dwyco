@@ -63,6 +63,8 @@ add_compile_definitions(
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME=${DWYCO_APP}
+        DWYCO_TRACE
+        DW_RTLOG
 )
 
 if(${DWYCO_APP} STREQUAL "rando")
@@ -71,7 +73,7 @@ else()
     add_compile_definitions(MINIUPNP_STATICLIB)
 endif()
 
-add_library(cdc32 STATIC
+add_library(cdc32 OBJECT
 	activeuid.cpp 
 	backandroid.cpp 
 	bgapp.cpp 

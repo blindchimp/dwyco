@@ -11,7 +11,7 @@ include_directories(v4lcap PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../cdc32
 )
 
-add_library(v4lcap STATIC
+add_library(v4lcap OBJECT
 v4l2cap.cpp
 )
 
