@@ -29,7 +29,7 @@ endif()
 add_compile_definitions(NO_BUILDTIME)
 add_compile_definitions(BUILDTIME="${PHOO_VERSION}")
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
-add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
+
 
 if(APPLE)
 	add_compile_definitions(MAC_CLIENT)
@@ -47,9 +47,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concur
 
 # Get Qt version from the Qt6 config
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-# Define a preprocessor macro with the Qt version
-add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
+add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 
 # this needs a re-think, possibly a command to copy the androidinst3 file, then
 # populate it with the java stuff would work. then change the package_source_dir to
@@ -266,7 +264,7 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
-   v4lcap
+   #v4lcap
     -ldl
 )
 endif()

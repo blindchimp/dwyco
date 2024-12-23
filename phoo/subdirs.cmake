@@ -24,9 +24,9 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/miniupnp/miniupnp-master/miniupnpc $
 endif()
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qt-qml-models ${CMAKE_CURRENT_BINARY_DIR}/bld/qt-qml-models)
 
-if(UNIX AND NOT APPLE AND NOT ANDROID)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/v4lcap ${CMAKE_CURRENT_BINARY_DIR}/bld/v4lcap)
-endif()
+#if(UNIX AND NOT APPLE AND NOT ANDROID)
+#add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/v4lcap ${CMAKE_CURRENT_BINARY_DIR}/bld/v4lcap)
+#endif()
 if(APPLE OR WIN32 OR MSVC OR ANDROID OR UNIX)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../bld/qt6drv ${CMAKE_CURRENT_BINARY_DIR}/bld/qt6drv)
 endif()
