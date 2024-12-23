@@ -21,7 +21,7 @@ endif()
 
 set(SOURCES libspeex/resample.c)
 
-add_library(speex STATIC
+add_library(speex OBJECT
 	${SOURCES}
 )
 
