@@ -215,7 +215,7 @@ vclh_sha(vc s)
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to SHA must be string or file", vcnil);
 		
-	SHA md;
+    SHA1 md;
 	SecByteBlock b(md.DigestSize());
 	if(s.type() == VC_FILE)
 	{
@@ -524,7 +524,7 @@ vclh_dh_save(vc filename)
 	if(filename.type() != VC_STRING)
 		USER_BOMB("first arg must be filename", vcnil);
 	HexEncoder h(new FileSink((const char *)filename));
-	MyDH->DEREncode(h);
+    MyDH->AccessMaterial().Save(h);
 	return vctrue;
 }
 
