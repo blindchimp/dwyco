@@ -3,7 +3,7 @@ VCCFG_COMP=$$PWD
 DWYCOBG=0
 DWYCO_APP=cdcx
 DEFINES += VCCFG_FILE DWYCO_APP_NICENAME=\\\"CDC-X\\\" #DWYCO_VC_THREADED
-
+DEFINES += CRYPTOPP_DISABLE_ASM
 linux-* {
 DEFINES += LINUX
 # note: if you want audio, you have to use the qt5 audio drivers in qtdrv.
