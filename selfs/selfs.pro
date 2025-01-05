@@ -121,7 +121,7 @@ D = $${SHADOW}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
@@ -145,7 +145,7 @@ $${D}/qtdrv/libqtdrv.a \
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
@@ -187,7 +187,7 @@ D = $${SHADOW}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
@@ -216,7 +216,7 @@ SHADOW=$$OUT_PWD/..
 LIBS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
@@ -239,7 +239,7 @@ $${D}/uv/libuv.a \
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
@@ -268,7 +268,7 @@ D = $$OUT_PWD/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
@@ -289,7 +289,7 @@ $${D}/qtdrv/libqtdrv.a
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \
@@ -351,7 +351,7 @@ $${D}/qtdrv/libqtdrv_$${QT_ARCH}.a
 #LIBS += \
 #$${D}/libcdc32.a \
 #$${D}/libvc.a \
-#$${D}/libcrypto5.a \
+#$${D}/libcrypto8.a \
 #$${D}/libdwcls.a \
 #$${D}/libgsm.a \
 #$${D}/libkazlib.a \
@@ -398,7 +398,7 @@ CONFIG(release, debug|release) {
 LIBS += \
 $${D}/cdc32/$${S}/cdc32.lib \
 $${D}/vc/$${S}/vc.lib \
-$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/crypto8/$${S}/crypto8.lib \
 $${D}/dwcls/$${S}/dwcls.lib \
 $${D}/gsm/$${S}/gsm.lib \
 $${D}/kazlib/$${S}/kazlib.lib \
@@ -424,7 +424,7 @@ $${PWD}/../bld/mtcap/mingw-rel/win32/mtcapxe.lib
 PRE_TARGETDEPS += \
 $${D}/cdc32/$${S}/cdc32.lib \
 $${D}/vc/$${S}/vc.lib \
-$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/crypto8/$${S}/crypto8.lib \
 $${D}/dwcls/$${S}/dwcls.lib \
 $${D}/gsm/$${S}/gsm.lib \
 $${D}/kazlib/$${S}/kazlib.lib \
