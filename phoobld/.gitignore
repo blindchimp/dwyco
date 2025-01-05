@@ -350,6 +350,7 @@ bld/vorbis/vq/.deps/
 bld/vorbis/vq/Makefile
 jni/cdc32
 jni/crypto5
+jni/crypto8
 jni/dwcls
 jni/gsm
 jni/jenkins
