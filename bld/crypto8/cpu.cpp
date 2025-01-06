@@ -70,7 +70,53 @@ unsigned long int getauxval(unsigned long int) { return 0; }
 // setenv-android.sh will copy the header and source file
 // into PWD and the makefile will build it in place.
 #if defined(__ANDROID__)
+#ifndef CRYPTOPP_DISABLE_ASM
 # include "cpu-features.h"
+#else
+
+// ca 1/2025
+// brute force: this "disable asm" stuff proports to
+// provide a build that avoids needing exotic cpu detection for employing
+// cpu specific intrinsics and assembly code.
+// the android "cpufeaures" is the kind of thing that
+// causes a lot of heartburn for build systems (requiring
+// copying and building ndk-version-specific files and 
+// headers at build time instead of just providing something
+// official in the ndk.) cpufeatures is now deprecated, i see, and
+// google has an official drop in for it "cpu_features", that is
+// even more complicated....
+// https://github.com/google/cpu_features/tree/main
+//
+// if you prefer a simpler build situation, and don't want to muck with cpu detection on android
+// this just effectively compiles-out all the cpufeatures stuff.
+//
+#define android_getCpuFeatures() (0)
+#define android_getCpuFamily() (0)
+#define ANDROID_CPU_ARM_FEATURE_ARMv7 0
+#define ANDROID_CPU_ARM64_FEATURE_ASIMD 0
+#define ANDROID_CPU_ARM_FEATURE_NEON 0
+#define ANDROID_CPU_ARM64_FEATURE_CRC32 0
+#define ANDROID_CPU_ARM_FEATURE_CRC32 0
+#define ANDROID_CPU_ARM64_FEATURE_PMULL 0
+#define ANDROID_CPU_ARM_FEATURE_PMULL 0
+#define ANDROID_CPU_ARM64_FEATURE_AES 0
+#define ANDROID_CPU_ARM_FEATURE_AES 0
+#define ANDROID_CPU_ARM64_FEATURE_SHA1 0
+#define ANDROID_CPU_ARM_FEATURE_SHA1 0
+#define ANDROID_CPU_ARM64_FEATURE_SHA2 0
+#define ANDROID_CPU_ARM_FEATURE_SHA2 0
+#define ANDROID_CPU_ARM64_FEATURE_SHA3 0
+#define ANDROID_CPU_ARM_FEATURE_SHA3 0
+#define ANDROID_CPU_ARM64_FEATURE_SHA512 0
+#define ANDROID_CPU_ARM_FEATURE_SHA512 0
+#define ANDROID_CPU_ARM64_FEATURE_SM3 0
+#define ANDROID_CPU_ARM_FEATURE_SM3 0
+#define ANDROID_CPU_ARM64_FEATURE_SM4 0
+
+#define ANDROID_CPU_FAMILY_ARM 0
+#define ANDROID_CPU_FAMILY_ARM64 0
+#endif
+
 #endif
 
 #ifdef CRYPTOPP_GNU_STYLE_INLINE_ASSEMBLY
