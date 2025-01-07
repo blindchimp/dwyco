@@ -20,6 +20,7 @@
 #include "dwrtlog.h"
 #include "grpmsg.h"
 #include "se.h"
+#include "keccak.h"
 
 extern DwVec<ValidPtr> CompositionDeleteQ;
 
@@ -167,13 +168,35 @@ a message that is encrypted using B's p2p public key.
 not a man-in-the-middle tampering with things.)
 */
 
+// note: the only reason this exists is that crypto++ 5.6.2 produces
+// a different value for SHA3_256 than later versions. they folded
+// the older functionality into Keccak... i'm not sure that will be
+// a problem down the line or not.
+// older versions of dwyco software used SHA3_256, and for compat, we'll
+// use Keccak until we can move off both of these and onto something else.
+static
+vc
+cryptopp_keccak_256(vc s)
+{
+    using namespace CryptoPP;
+    if(s.type() != VC_STRING)
+        return vcnil;
+
+    Keccak_256 md;
+    SecByteBlock b(md.DigestSize());
+    md.Update((const byte *)(const char *)s, s.len());
+    md.Final(b);
+    vc ret(VC_BSTRING, (const char *)b.data(), (long)md.DigestSize());
+    return ret;
+}
+
 static
 vc
 xfer_enc(vc v, vc password)
 {
     if(password.type() != VC_STRING)
         return vcnil;
-    vc k = vclh_sha3_256(password);
+    vc k = cryptopp_keccak_256(password);
     k = vc(VC_BSTRING, (const char *)k, 16);
     vc enc_ctx = vclh_encdec_open();
     vclh_encdec_init_key_ctx(enc_ctx, k, 0);
@@ -194,7 +217,7 @@ xfer_dec(vc vs, vc password)
         return vcnil;
     if(password.type() != VC_STRING)
         return vcnil;
-    vc k = vclh_sha3_256(password);
+    vc k = cryptopp_keccak_256(password);
     k = vc(VC_BSTRING, (const char *)k, 16);
     vc enc_ctx = vclh_encdec_open();
     vclh_encdec_init_key_ctx(enc_ctx, k, 0);

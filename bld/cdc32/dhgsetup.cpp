@@ -20,6 +20,7 @@
 #include "sha3.h"
 #include "aes.h"
 #include "modes.h"
+#include "keccak.h"
 #include "simple_property.h"
 #include "ezset.h"
 #include "se.h"
@@ -65,13 +66,25 @@ struct DHG_sql : public SimpleSql
 
 };
 
-static vc
+// WARNING: this sha3 produces pre-5.6.4 values (which was used in old software.)
+// for compat, we changed it to Keccak, since it produced the old values.
+// WARNING WARNING: this is used for "group id", which were put into messages
+// starting several years ago, in order to aid in grouping messages. if you
+// change this function, the group id's will look different, and it will be
+// displayed differently in the UI.
+// unfortunately, if we change the hash function, it will be collosal pain in the
+// butt to re-write the group info all over the place. it might be a good idea to
+// come up with a better way of doing it that can avoid extra steps that might change
+// or make it more flexible in some way.
+//
+static
+vc
 sha3(vc s)
 {
     if(s.type() != VC_STRING)
         return vcnil;
 
-    SHA3_256 md;
+    Keccak_256 md;
     SecByteBlock b(md.DigestSize());
     md.Update((const byte *)(const char *)s, s.len());
     md.Final(b);
@@ -527,7 +540,7 @@ DH_alternate::get_gid()
 vc
 DH_alternate::hash_key_material()
 {
-    SHA3_256 md;
+    Keccak_256 md;
     SecByteBlock b(md.DigestSize());
     vc s = DH_static[DH_STATIC_PUBLIC];
     md.Update((const byte *)(const char *)s, s.len());
