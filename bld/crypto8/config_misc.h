@@ -76,7 +76,7 @@
 // signal a DEBUG build (and NDK_DEBUG=0 to signal non-DEBUG build).
 // Also see http://github.com/weidai11/cryptopp/issues/277, CVE-2016-7420 and
 // https://developer.android.com/ndk/guides/ndk-build
-#if (defined(DEBUG) || defined(_DEBUG)) || (defined(NDK_DEBUG) && (NDK_DEBUG > 0))
+#if 0 && (defined(DEBUG) || defined(_DEBUG)) || (defined(NDK_DEBUG) && (NDK_DEBUG > 0))
 # undef CRYPTOPP_DEBUG
 # define CRYPTOPP_DEBUG 1
 #endif
