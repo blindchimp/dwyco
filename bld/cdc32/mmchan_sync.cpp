@@ -214,7 +214,7 @@ MMChannel::process_pull(cvcr cmd)
     if(cmd[0] != vc("pull"))
         oopanic("pull");
     cvcr mid = cmd[1];
-    cvcr pri = cmd[5];
+    cvcr pri = cmd[2];
     // load the msg and attachment, and send it back as a "pull-resp"
     // XXX note this probably needs to be done in one query, but
     // this is a weird case anywhere, where a client has sent us
