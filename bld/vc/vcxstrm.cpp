@@ -38,7 +38,7 @@ int vcxstream::Max_count_digits;
 // ie. lots of little chunks are easier to control than allowing giant
 // strings to be included in vectors, etc.
 //
-unsigned long vcxstream::Memory_tally = 0;
+thread_local long vcxstream::Memory_tally = 0;
 
 void* operator new(std::size_t sz)
 {
@@ -55,8 +55,10 @@ void* operator new(std::size_t sz)
 
 static
 int
-elog10(unsigned int N)
+elog10(long N)
 {
+    if(N <= 0)
+        oopanic("bad log10");
     int estimate = 0;
     while (N > 9)
     {
@@ -67,7 +69,7 @@ elog10(unsigned int N)
 }
 
 void
-vcxstream::set_max_memory(int mxm)
+vcxstream::set_max_memory(long mxm)
 {
     int lmxm = elog10(mxm);
     max_memory = mxm;
@@ -75,7 +77,7 @@ vcxstream::set_max_memory(int mxm)
 }
 
 void
-vcxstream::set_default_max_memory(int mxm)
+vcxstream::set_default_max_memory(long mxm)
 {
     int lmxm = elog10(mxm);
     Max_memory = mxm;

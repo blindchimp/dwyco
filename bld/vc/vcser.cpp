@@ -66,18 +66,26 @@ vc::xfer_in(vcxstream& vcx)
     Throw_user_panic = 1;
     try
     {
-        auto a = vcxstream::Memory_tally;
+        //static int depth;
+        long a = vcxstream::Memory_tally;
+        //fprintf(stderr, "%d a %ld\n", depth, a);
+        //++depth;
         ret = real_xfer_in(vcx);
-        auto b = vcxstream::Memory_tally;
+        //--depth;
+        long b = vcxstream::Memory_tally;
+        //fprintf(stderr, "%d b %ld\n", depth, b);
 
         if(!(ret == EXIN_DEV || ret == EXIN_PARSE))
         {
-            auto c = b - a;
+            if(a > b)
+                user_warning("WTF");
+            long c = b - a;
             vcx.memory_tally += c;
-            //fprintf(stderr, "%p add %ld tot %ld\n", &vcx, c, vcx.memory_tally);
+            //fprintf(stderr, "%p add %ld tot %ld %ld %ld %s\n", &vcx, c, vcx.memory_tally, a, b, (a > b) ? "WTF" : "" );
             // note: since we are being called recursively, remove the local tally so it isn't counted multiple times
             // higher up the chain.
             vcxstream::Memory_tally -= c;
+
             if(vcx.memory_tally >= vcx.max_memory)
             {
                 // note: we need this since we are passing judgement on

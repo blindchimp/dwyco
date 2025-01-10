@@ -184,8 +184,8 @@ public:
     // a complete deserialization operation is performed. this eliminates
     // situations where constructors might fail. but, it allows the
     // deserialization to continue past this limit.
-    void set_max_memory(int);
-    static void set_default_max_memory(int);
+    void set_max_memory(long);
+    static void set_default_max_memory(long);
 
     int flushnb();
     enum status get_status();
@@ -198,9 +198,9 @@ private:
     static long Max_memory;
     static int Max_count_digits;
 
-    unsigned long memory_tally;
+    long memory_tally;
 friend void* ::operator new(std::size_t sz);
-    static unsigned long Memory_tally;
+    static thread_local long Memory_tally;
 
     int retry();
 	void put_back(const char *, long);
