@@ -35,9 +35,9 @@ implementation 'com.google.firebase:firebase-crashlytics'
     // optional - Multiprocess support
     //implementation "androidx.work:work-multiprocess:$work_version"
 // for photopicker stuff
-	implementation "androidx.activity:activity:1.9.3"
-	implementation "androidx.activity:activity-compose:1.9.3"
-	implementation "androidx.activity:activity-ktx:1.9.3"
+	//implementation "androidx.activity:activity:1.9.3"
+	//implementation "androidx.activity:activity-compose:1.9.3"
+	//implementation "androidx.activity:activity-ktx:1.9.3"
 }
 
 android {
