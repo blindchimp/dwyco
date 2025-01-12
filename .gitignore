@@ -17,6 +17,7 @@ selfsbld/jni/NDK_ABI_X86
 selfsbld/obj/
 selfsbld/libs/
 build-*/
+build/
 phoobld.pro.user
 *.pro.user
 bld/ogg/Makefile
