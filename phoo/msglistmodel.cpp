@@ -140,9 +140,10 @@ msglist_model::invalidate_mid(const QByteArray& mid, const QString& huid)
     int midi = mid_to_index(mid);
     if(midi == -1)
         return;
-    invalidateFilter();
+    //invalidateFilter();
     QModelIndex mi = index(midi, 0);
     emit dataChanged(mi, mi, QVector<int>());
+    invalidateFilter();
 
 }
 
