@@ -1010,7 +1010,7 @@ verify_authentication(vc text, vc uid, vc att_hash, vc datevec, vc no_forward, v
 }
 
 int
-verify_chain(vc body, int top, vc att_hash, vc attachment_dir)
+verify_chain(vc body, int top, vc a_att_hash, vc attachment_dir)
 {
     GRTLOG("verify chain %d", top, 0);
     GRTLOGVC(body);
