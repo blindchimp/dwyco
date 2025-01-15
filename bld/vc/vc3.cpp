@@ -122,6 +122,22 @@ int
 vc::is_empty() const {return rep->is_empty();}
 int
 vc::num_elems() const {return rep->num_elems();}
+// WARNING: these operations are extremely suspect. there has
+// been a subtle bug here for 20+ years. the static_cast things
+// below are REQUIRED to get the compiler to use the "const" overloads
+// for the called indexing operator. turns out, the expression
+// "*rep" *even on a const object* has the non-const type "vc_default",
+// NOT "const vc_default".
+// so, the compiler would choose the non-const functions, which allowed
+// implicit modification of the size of a vector when the index was
+// past the end of the existing size (which is a convenience in a lot of cases.)
+// now, in some code, we use "const vc&" hoping to be const all the way down, and
+// the vector class would just panic if you tried to index past the end (which is fine.)
+// instead, we got dangling references when the vector was shuffled around, which might
+// or might not happen, depending on how much was pre-allocated and the index requested.
+//
+// so... if there are "indexing past the end" bugs, at least now we will get panics
+// and not dangling pointers.
 vc&
 vc::operator[](const vc& v) {return (*rep)[v];}
 vc&
@@ -129,11 +145,20 @@ vc::operator[](int i) {return (*rep)[i];}
 vc&
 vc::operator[](long i) {return (*rep)[i];}
 const vc&
-vc::operator[](const vc& v) const {return (*rep)[v];}
+vc::operator[](const vc& v) const {
+    return (*static_cast<const vc_default *>(rep))[v];
+}
 const vc&
-vc::operator[](int i) const {return (*rep)[i];}
+vc::operator[](int i) const {
+    return (*static_cast<const vc_default *>(rep))[i];
+}
 const vc&
-vc::operator[](long i) const {return (*rep)[i];}
+vc::operator[](long i) const {
+    return (*static_cast<const vc_default *>(rep))[i];
+}
+//
+// END bogosity
+//
 int
 vc::contains(const vc& v) const {return rep->contains(v);}
 int
