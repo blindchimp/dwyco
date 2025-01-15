@@ -5,7 +5,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR}/conf.cmake)
 project(gsm LANGUAGES C)
 add_compile_definitions(NDEBUG FAST SASR NeedFunctionPrototypes=1 )
 
-add_library(gsm STATIC
+add_library(gsm OBJECT
 add.c 
 code.c 
 debug.c 

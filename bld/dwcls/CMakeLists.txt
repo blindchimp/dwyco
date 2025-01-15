@@ -10,7 +10,7 @@ include_directories(dwcls PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
 )
 
-add_library(dwcls STATIC
+add_library(dwcls OBJECT
   dwhash.cpp
   useful.cpp
   dwstr.cpp

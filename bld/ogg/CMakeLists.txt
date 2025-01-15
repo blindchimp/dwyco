@@ -8,7 +8,7 @@ include_directories(ogg PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-add_library(ogg STATIC
+add_library(ogg OBJECT
 src/framing.c 
 src/bitwise.c
 )

@@ -5,9 +5,9 @@ project(crypto5 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_definitions(-DNDEBUG)
+add_compile_definitions(NDEBUG)
 
-add_library(crypto5 STATIC
+add_library(crypto5 OBJECT
 algparam.cpp 
 asn.cpp 
 authenc.cpp 
