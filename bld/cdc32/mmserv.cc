@@ -217,13 +217,13 @@ MMChannel::chat_response(vc v)
     else if(v[0] == chat_on)
     {
         GRTLOGVC(v);
-        const vc& unmapped_uid = v[2];
-        const vc& uid = map_to_representative_uid(unmapped_uid);
-        const vc& name = v[1];
-        const vc& ip = v[3];
-        const vc& ah = v[4];
-        const vc& ports = v[5];
-        const vc& attrs = v[6];
+        const vc unmapped_uid = v[2];
+        const vc uid = map_to_representative_uid(unmapped_uid);
+        const vc name = v[1];
+        const vc ip = v[3];
+        const vc ah = v[4];
+        const vc ports = v[5];
+        const vc attrs = v[6];
 #ifdef DWYCO_ASSHAT
         new_asshole(uid, ah);
 #endif
@@ -250,7 +250,7 @@ MMChannel::chat_response(vc v)
     }
     else if(v[0] == chat_off)
     {
-        const vc& uid = map_to_representative_uid(v[1]);
+        const vc uid = map_to_representative_uid(v[1]);
         if(!uid_ignored(uid))
         {
             if(TheChatGrid)
@@ -263,7 +263,7 @@ MMChannel::chat_response(vc v)
     }
     else if(v[0] == currently_on)
     {
-        const vc& ul = v[1];
+        const vc ul = v[1];
         GRTLOG("CURRENT", 0, 0);
         GRTLOGVC(ul);
         int n = ul.num_elems();
@@ -271,13 +271,13 @@ MMChannel::chat_response(vc v)
             TheChatGrid->start_update();
         for(int i = 0; i < n; ++i)
         {
-            const vc& unmapped_uid = ul[i][0][1];
-            const vc& uid = map_to_representative_uid(unmapped_uid);
-            const vc& name = ul[i][0][0];
-            const vc& ports = ul[i][0][3];
-            const vc& ah = ul[i][2];
-            const vc& ip = ul[i][1];
-            const vc& attrs = ul[i][3];
+            const vc unmapped_uid = ul[i][0][1];
+            const vc uid = map_to_representative_uid(unmapped_uid);
+            const vc name = ul[i][0][0];
+            const vc ports = ul[i][0][3];
+            const vc ah = ul[i][2];
+            const vc ip = ul[i][1];
+            const vc attrs = ul[i][3];
             GRTLOGVC(uid);
             GRTLOGVC(name);
             GRTLOGVC(ports);
