@@ -273,7 +273,7 @@ if(WIN32)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}
-       winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib
+       winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib
     )
 target_link_options(phoo PRIVATE binmode.obj)
 endif()
