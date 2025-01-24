@@ -548,7 +548,7 @@ tcls::apply(Funcp fun)
 }
 
 #undef tcls
-#undef theader
+#undef thdr
 
 template<class T, int noinit = 0>
 class DwVecIter : public DwIter<DwVec<T, noinit>, T>
