@@ -16,7 +16,8 @@
 #include "dwvec.h"
 #include <string.h>
 
-class DwString : private DwVec<char>
+typedef DwVec<char, 1> dwstr_basevec;
+class DwString : private dwstr_basevec
 {
 public:
     DwString();
@@ -32,7 +33,7 @@ public:
     DwString& operator+=(char);
     DwString operator+(const DwString& s) const;
     int operator==(const DwString& s) const {
-        return DwVec<char>::operator==(s);
+        return dwstr_basevec::operator==(s);
     }
     int operator!=(const DwString& s) const {
         return !((*this) == s);
@@ -112,21 +113,21 @@ DwString::length() const
 
 inline
 DwString::DwString()
-    : DwVec<char>(1, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND, 64, 0, 1)
+    : dwstr_basevec(1, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND, 64)
 {
     (*this)[0] = 0;
 }
 
 inline
 DwString::DwString(const char *s)
-    : DwVec<char>(strlen(s) + 1, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND, 64, 0, 1)
+    : dwstr_basevec(strlen(s) + 1, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND, 64)
 {
     strcpy(&(*this)[0], s);
 }
 
 inline
 DwString::DwString(const char *s, int start, int len)
-    : DwVec<char>(len + 1, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND, 64, 0, 1)
+    : dwstr_basevec(len + 1, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND, 64)
 {
     memcpy(&(*this)[0], &s[start], len);
     (*this)[len] = 0;
@@ -134,7 +135,7 @@ DwString::DwString(const char *s, int start, int len)
 
 inline
 DwString::DwString(const char *s, int len)
-    : DwVec<char>(len + 1, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND, 64, 0, 1)
+    : dwstr_basevec(len + 1, !DWVEC_FIXED, !DWVEC_AUTO_EXPAND, 64)
 {
     memcpy(&(*this)[0], &s[0], len);
     (*this)[len] = 0;

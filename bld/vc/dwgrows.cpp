@@ -17,7 +17,7 @@
 [[noreturn]] void oopanic(const char *);
 
 DwGrowingString::DwGrowingString(int len)
-    : str(len, !DWVEC_FIXED, DWVEC_AUTO_EXPAND, len, 0, 1)
+    : str(len, !DWVEC_FIXED, DWVEC_AUTO_EXPAND, len)
 {
 	nmark = 0;
 	curlen = 0;
@@ -29,6 +29,14 @@ DwGrowingString::length()
 	return curlen;
 }
 
+// note: this call is a bit dicey, since the underlying vector
+// is "not fixed and auto-resize" so, if the length is 0
+// calling this will resize the vector to 1 and return
+// a valid pointer (but to uninitialized stuff.) it is up to
+// the caller to notice the length is 0 and not de-reference it.
+// ie, don't be tempted to change this to "const", since that will
+// change the behavior to "crash" instead of "return valid pointer to trash."
+// this probably needs to be rethought a little bit...
 const char *
 DwGrowingString::ref_str()
 {

@@ -38,7 +38,7 @@ private:
 	int nmark;
 	long curlen;
 	long mark_stack[NMARKS];
-	DwVec<char> str;
+    DwVec<char, 1> str;
 };
 
 #endif

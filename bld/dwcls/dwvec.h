@@ -75,7 +75,7 @@
 // again at a later date...)
 //
 
-template<class T> class DwVecIter;
+//template<class T> class DwVecIter;
 
 #ifndef DWVEC_DEFAULTBLOCKSIZE
 #define DWVEC_DEFAULTBLOCKSIZE 4
@@ -83,7 +83,7 @@ template<class T> class DwVecIter;
 #define DWVEC_FIXED 1
 #define DWVEC_AUTO_EXPAND 1
 
-template<class T>
+template<class T, int noinit = 0>
 class DwVec
 {
 protected:
@@ -93,7 +93,7 @@ protected:
     int auto_expand;	// true means refs >= count cause expansion
     long blocksize;
     long alloced_count;	// total number of allocated entries
-    int noinit;
+    //int noinit;
 
 public:
 #ifdef DWVEC_DOINIT
@@ -103,8 +103,7 @@ public:
 
     DwVec(long = 0, int is_fixed = 0, int auto_expand = 1,
           long = DWVEC_DEFAULTBLOCKSIZE,
-          void (*)(T&) = 0,
-          int noinit = 0
+          void (*)(T&) = 0
          );
     virtual ~DwVec();
 
@@ -141,7 +140,7 @@ public:
     void del(long idx, long cnt = 1);
     long index(const T&) const;
     int contains(const T&) const;
-    void apply(typename DwVec<T>::Funcp f);
+    void apply(Funcp f);
     virtual T get_by_iter(DwIter<DwVec, T> *a) const ;
 #ifdef DWVEC_DOINIT
     void init_value(T& v) {
@@ -151,16 +150,18 @@ public:
 #endif
 };
 
+#define thdr template<class T, int noinit>
+#define tcls DwVec<T, noinit>
 
-template<class T>
-DwVec<T>::DwVec(const DwVec<T>& vec)
+thdr
+tcls::DwVec(const DwVec<T, noinit>& vec)
 {
     count = vec.count;
     is_fixed = vec.is_fixed;
     auto_expand = vec.auto_expand;
     blocksize = vec.blocksize;
     alloced_count = count + blocksize - (count % blocksize);
-    noinit = vec.noinit;
+    //noinit = vec.noinit;
     values = new T[alloced_count];
     long real_count = alloced_count;
 
@@ -168,9 +169,9 @@ DwVec<T>::DwVec(const DwVec<T>& vec)
     for(i = 0; i < count; ++i)
         values[i] = vec.values[i];
 #ifdef DWVEC_DOINIT
-    if(!noinit)
+    initfun = vec.initfun;
+    if(initfun && !noinit)
     {
-        initfun = vec.initfun;
         for(i = count; i < real_count; ++i)
             init_value(values[i]);
     }
@@ -180,9 +181,9 @@ DwVec<T>::DwVec(const DwVec<T>& vec)
 
 }
 
-template<class T>
-DwVec<T>&
-DwVec<T>::operator=(const DwVec<T>& vec)
+thdr
+DwVec<T, noinit>&
+tcls::operator=(const DwVec<T, noinit>& vec)
 {
     if(this != &vec)
     {
@@ -192,16 +193,16 @@ DwVec<T>::operator=(const DwVec<T>& vec)
         auto_expand = vec.auto_expand;
         blocksize = vec.blocksize;
         alloced_count = count + blocksize - (count % blocksize);
-        noinit = vec.noinit;
+        //noinit = vec.noinit;
         values = new T[alloced_count];
 
         int i;
         for(i = 0; i < count; ++i)
             values[i] = vec.values[i];
 #ifdef DWVEC_DOINIT
-        if(!noinit)
+        initfun = vec.initfun;
+        if(initfun && !noinit)
         {
-            initfun = vec.initfun;
             for(i = count; i < alloced_count; ++i)
                 init_value(values[i]);
         }
@@ -212,15 +213,15 @@ DwVec<T>::operator=(const DwVec<T>& vec)
 
 }
 
-template<class T>
-DwVec<T>::DwVec(DwVec<T>&& vec)
+thdr
+tcls::DwVec(DwVec<T, noinit>&& vec)
 {
     count = vec.count;
     is_fixed = vec.is_fixed;
     auto_expand = vec.auto_expand;
     blocksize = vec.blocksize;
     alloced_count = vec.alloced_count;
-    noinit = vec.noinit;
+    //noinit = vec.noinit;
 #ifdef DWVEC_DOINIT
     initfun = vec.initfun;
 #endif
@@ -228,9 +229,9 @@ DwVec<T>::DwVec(DwVec<T>&& vec)
     vec.values = nullptr;
 }
 
-template<class T>
-DwVec<T>&
-DwVec<T>::operator=(DwVec<T>&& vec)
+thdr
+DwVec<T, noinit>&
+tcls::operator=(DwVec<T, noinit>&& vec)
 {
     if(this != &vec)
     {
@@ -240,7 +241,7 @@ DwVec<T>::operator=(DwVec<T>&& vec)
         auto_expand = vec.auto_expand;
         blocksize = vec.blocksize;
         alloced_count = vec.alloced_count;
-        noinit = vec.noinit;
+        //noinit = vec.noinit;
 #ifdef DWVEC_DOINIT
         initfun = vec.initfun;
 #endif
@@ -251,25 +252,26 @@ DwVec<T>::operator=(DwVec<T>&& vec)
 }
 
 
-template<class T>
-DwVec<T>::DwVec(long icount, int fixed, int aexp, long blksize,
-                void (*ifun)(T&),
-                int anoinit
+thdr
+tcls::DwVec(long icount, int fixed, int aexp, long blksize,
+                void (*ifun)(T&)
                )
 {
     long real_count;			/* real allocation count */
 
     count = icount;
     blocksize = blksize;
-    noinit = anoinit;
+    //noinit = anoinit;
 
     alloced_count = real_count = count + blocksize - (count % blocksize);
     values = new T[real_count];
 
 #ifdef DWVEC_DOINIT
-    if(!noinit)
+    // new did it above, unless provided with a special initfun
+    // don't redo it.
+    initfun = ifun;
+    if(initfun && !noinit)
     {
-        initfun = ifun;
         for(int i = 0; i < real_count; ++i)
             init_value(values[i]);
     }
@@ -282,19 +284,19 @@ DwVec<T>::DwVec(long icount, int fixed, int aexp, long blksize,
     auto_expand = aexp;
 }
 
-template<class T>
-DwVec<T>::~DwVec()
+thdr
+tcls::~DwVec()
 {
     delete [] values;
 }
 
 
-template<class T>
+thdr
 #ifdef DWVEC_INLINES
 inline
 #endif
 const T&
-DwVec<T>::operator[](long index) const
+tcls::operator[](long index) const
 {
 #ifndef DWVEC_NO_INDEX_CHECK
     if(index < 0)
@@ -306,12 +308,12 @@ DwVec<T>::operator[](long index) const
 }
 
 
-template<class T>
+thdr
 #ifdef DWVEC_INLINES
 inline
 #endif
 T&
-DwVec<T>::operator[](long index)
+tcls::operator[](long index)
 {
 #ifndef DWVEC_NO_INDEX_CHECK
     if(index < 0)
@@ -345,9 +347,9 @@ DwVec<T>::operator[](long index)
 // When the storage is actually reclaimed, the dtors are called, but
 // this may not happen until the entire vector is destructed.
 //
-template<class T>
+thdr
 void
-DwVec<T>::set_size(long new_count)
+tcls::set_size(long new_count)
 {
     long old_count;			/* old array count */
     long old_alloc_count;	/* old alloc allocation count */
@@ -386,7 +388,7 @@ DwVec<T>::set_size(long new_count)
         delete [] values;
         values = new_values;
 #ifdef DWVEC_DOINIT
-        if(!noinit)
+        if(initfun && !noinit)
         {
             if(new_alloc_count > old_alloc_count)
             {
@@ -411,10 +413,10 @@ DwVec<T>::set_size(long new_count)
     // fiddle with it here...
 }
 
-template<class T>
+thdr
 inline
 void
-DwVec<T>::append(const T& t)
+tcls::append(const T& t)
 {
 #ifdef DWVEC_FAST_APPEND
     if(count + 1 > alloced_count)
@@ -431,9 +433,9 @@ DwVec<T>::append(const T& t)
 #endif
 }
 
-template<class T>
+thdr
 void
-DwVec<T>::insert(const T& t, long idx)
+tcls::insert(const T& t, long idx)
 {
     if(is_fixed)
         oopanic("insert on fixed vector");
@@ -450,9 +452,9 @@ DwVec<T>::insert(const T& t, long idx)
     values[idx] = t;
 }
 
-template<class T>
+thdr
 void
-DwVec<T>::spread(long idx, long cnt)
+tcls::spread(long idx, long cnt)
 {
     if(is_fixed)
         oopanic("spread on fixed vector");
@@ -480,9 +482,9 @@ DwVec<T>::spread(long idx, long cnt)
 // items. T must support proper "assignment"
 // semantics for this to work reasonably.
 //
-template<class T>
+thdr
 void
-DwVec<T>::del(long idx, long delcnt)
+tcls::del(long idx, long delcnt)
 {
     if(is_fixed)
         oopanic("del on fix vector");
@@ -506,16 +508,16 @@ DwVec<T>::del(long idx, long delcnt)
     set_size(count - delcnt);
 }
 
-template<class T>
+thdr
 int
-DwVec<T>::contains(const T& t) const
+tcls::contains(const T& t) const
 {
     return index(t) != -1;
 }
 
-template<class T>
+thdr
 long
-DwVec<T>::index(const T& t) const
+tcls::index(const T& t) const
 {
     for(long i = 0; i < count; ++i)
     {
@@ -525,9 +527,9 @@ DwVec<T>::index(const T& t) const
     return -1;
 }
 
-template<class T>
+thdr
 int
-DwVec<T>::operator==(const DwVec<T>& v2) const
+tcls::operator==(const DwVec<T, noinit>& v2) const
 {
     if(count != v2.count)
         return 0;
@@ -537,18 +539,21 @@ DwVec<T>::operator==(const DwVec<T>& v2) const
     return 1;
 }
 
-template<class T>
+thdr
 void
-DwVec<T>::apply(typename DwVec<T>::Funcp fun)
+tcls::apply(Funcp fun)
 {
     for(long i = 0; i < count; ++i)
         (*fun)(values[i]);
 }
 
-template<class T>
-class DwVecIter : public DwIter<DwVec<T>, T>
+#undef tcls
+#undef theader
+
+template<class T, int noinit = 0>
+class DwVecIter : public DwIter<DwVec<T, noinit>, T>
 {
-    friend class DwVec<T>;
+    friend class DwVec<T, noinit>;
 private:
     long cur;
     long max;
@@ -583,11 +588,11 @@ public:
 };
 
 
-template<class T>
+template<class T, int noinit>
 T
-DwVec<T>::get_by_iter(DwIter<DwVec<T>, T> *a) const
+DwVec<T, noinit>::get_by_iter(DwIter<DwVec<T, noinit>, T> *a) const
 {
-    return (*this)[((DwVecIter<T> *)a)->cur];
+    return (*this)[((DwVecIter<T, noinit> *)a)->cur];
 }
 
 #endif
