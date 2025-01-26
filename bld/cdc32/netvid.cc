@@ -151,6 +151,7 @@ MMTube::find_chan()
         if(socks[i] == 0)
         {
             in_bits[i] = 0;
+            baud[i] = 0;
             enc_chan[i] = 0;
             dec_chan[i] = 0;
             return i;
@@ -160,6 +161,7 @@ MMTube::find_chan()
     if(i < FIRST_RELIABLE_CHAN)
         i = FIRST_RELIABLE_CHAN;
     in_bits[i] = 0;
+    baud[i] = 0;
     socks[i] = 0;
     enc_chan[i] = 0;
     dec_chan[i] = 0;
@@ -178,6 +180,10 @@ MMTube::set_channel(SimpleSocket *s, int enc, int dec, int chan)
     dec_chan[chan] = dec;
     Netlog_signal.emit(mklog("event", "chan import", "chan_id", chan));
     // what about in_bits and baud... hmmm
+    // this needs to be checked, seems like this is used during setup,
+    // so maybe the channel has already been initialized by an external
+    // b/w allocator. i'm not even sure we are controlling it at the "channel"
+    // level.
 }
 
 SimpleSocket *
@@ -725,6 +731,7 @@ MMTube::set_est_baud(unsigned long t, int chan)
     {
         baud.set_size(chan + 1);
         in_bits.set_size(chan + 1);
+        in_bits[chan] = 0;
     }
     //in_bits[chan] = 0;
     unsigned long tmp = baud[chan];
