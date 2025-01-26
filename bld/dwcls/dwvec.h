@@ -31,6 +31,31 @@
 // reasonable default ctors.
 // CDC-X needs this defined, otherwise DwVecP's don't get 0's on
 // initialization.
+//
+// NOTE: ca 1/2025, i tried the thing i originally had back in the 1990's, with a template
+// definition like this: template<class T, int noinit = 0>
+// thinking it might just elide code it didn't need during compilation.
+// it *sorta* worked ok, after having to fix a bunch of other uses of the
+// template. BUT, sadly, the MS compiler on windows choked on it. since it wasn't
+// really all that much of an improvement, i just changed the interface like this:
+
+// IF you give an init_fun of 0, it indicates you are ok with whatever default ctor T() is used.
+// with primitive types that have no ctor, this means no initialization.
+//
+// IF you give init_fun as some void (*)(T&), it is called when initialization is required.
+//  * NOTE: this is mostly used for pointer types to allow us to init entries to 0.
+//
+// IF you give no_init = 1, initialization is not performed, except during
+// new[] calls the compiler handles. in other words, don't rely on something being initialized.
+//  * this is useful in cases where T is a primitive type and you are controlling the count carefully and
+//    don't want the overhead of initialization.
+//
+// IF you give no_init = 0 (the default) it means entries in the vector are initialized, including
+// the tails of vectors you might not know about explicitly. BUT NOTE: if T has no default ctor, this does NOT
+// provide initialization without providing init_fun. also, as a side effect, entries that are
+// deleted using "del" are set to "initial value" explicitly before being overwritten by other entries
+// in the vector (not sure why i did this, except i thought i might change to a "memmove" implementation of it.)
+//
 #undef DWVEC_DOINIT
 #define DWVEC_DOINIT
 #ifndef DWVEC_DOINIT
@@ -64,9 +89,9 @@
 // responsibility to implement the desired copy semantics (the
 // package will only assign the pointers...)  also, auto-enlarged
 // arrays of pointers result in uninitialized pointer values.
+// if you want pointers to be initialized, use DwVecP
 //
-//
-// note: tried to do this using templates with fixed arguments, but
+// note: in 1990's i tried to do this using templates with fixed arguments, but
 // all three of the compilers I have access to screw it up...
 // template<class T, int is_fixed, int auto_expand>
 //
@@ -168,9 +193,10 @@ DwVec<T>::DwVec(const DwVec<T>& vec)
     for(i = 0; i < count; ++i)
         values[i] = vec.values[i];
 #ifdef DWVEC_DOINIT
-    if(!noinit)
+    initfun = vec.initfun;
+    if(initfun && !noinit)
     {
-        initfun = vec.initfun;
+
         for(i = count; i < real_count; ++i)
             init_value(values[i]);
     }
@@ -199,9 +225,10 @@ DwVec<T>::operator=(const DwVec<T>& vec)
         for(i = 0; i < count; ++i)
             values[i] = vec.values[i];
 #ifdef DWVEC_DOINIT
-        if(!noinit)
+        initfun = vec.initfun;
+        if(initfun && !noinit)
         {
-            initfun = vec.initfun;
+
             for(i = count; i < alloced_count; ++i)
                 init_value(values[i]);
         }
@@ -267,9 +294,10 @@ DwVec<T>::DwVec(long icount, int fixed, int aexp, long blksize,
     values = new T[real_count];
 
 #ifdef DWVEC_DOINIT
-    if(!noinit)
+    initfun = ifun;
+    if(initfun && !noinit)
     {
-        initfun = ifun;
+
         for(int i = 0; i < real_count; ++i)
             init_value(values[i]);
     }
@@ -386,7 +414,7 @@ DwVec<T>::set_size(long new_count)
         delete [] values;
         values = new_values;
 #ifdef DWVEC_DOINIT
-        if(!noinit)
+        if(initfun && !noinit)
         {
             if(new_alloc_count > old_alloc_count)
             {
@@ -400,7 +428,7 @@ DwVec<T>::set_size(long new_count)
     else if(new_count > old_count)
     {
 #ifdef DWVEC_DOINIT
-        if(!noinit)
+        if(initfun && !noinit)
         {
             for(long i = old_count; i < new_count; ++i)
                 init_value(values[i]);
@@ -462,7 +490,7 @@ DwVec<T>::spread(long idx, long cnt)
     long i;
     for(i = count - 1 - cnt; i >= idx; --i)
         values[i + cnt] = values[i];
-    if(!noinit)
+    if(initfun && !noinit)
     {
         for(i = idx; i < idx + cnt; ++i)
 #ifdef DWVEC_DOINIT
@@ -492,6 +520,9 @@ DwVec<T>::del(long idx, long delcnt)
         oopanic("bad del");
     // force assignment to default value
     long i;
+    // this is one case where we want to force the deleted
+    // items to be set to default ctor before shuffling the
+    // values around, even if the initfun is 0.
     if(!noinit)
     {
         for(i = idx; i < idx + delcnt; ++i)
