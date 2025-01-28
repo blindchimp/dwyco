@@ -1,0 +1,20 @@
+Wed 31 Jul 2024 10:38:31 AM MDT
+
+Tue Jan 21 12:57:06 MST 2025
+(trying to get things working on qt-6.8)
+so far,
+6.8.0: android text boxes still fucked up, keyboard doesn't work right
+6.8.1: androiddeployqt will not deploy anything (WTF, Qt!)
+
+conclusion: mobile development is not a priority for qt devs.
+
+porting to qt6 turned out to be a bit of a slog.
+
+* getting everything to build with cmake was time consuming, but eventually i had something that worked mostly like qmake, only with more obtuse build specification files.
+* on windows, porting up to msvc2019 64-bit was a minor deal. the work affects all apps in this case, cdcx, phoo, etc. as well.
+* with qt 6.5, multimedia was finally available again, and a new set of qt6 drivers were needed. this was more or less a straight-forward port of the audio and video capture drivers from vgqt (qt5 version.)
+* NOTE: on windows, we can no longer support the old capture drivers (32bit) and must test the new qt6drv based drivers for cdcx. this might be a big deal, since the old drivers worked pretty well, and the existing windows user base will probably be impacted pretty hard if this doesn't work right. 
+* NOTE: on the mac, we used the vgqt5 drivers and they seem to work ok. need to test the vgqt6 drivers but otherwise, it is probably going to be ok.
+* iOS: qt5 for ios simulator works if built for x86 and you  have rosetta set up. QT6, on the otherhand, will not deploy properly to the ios simulator in any way. if you build for arm64 only, it builds, but refuses to deploy for a bunch of non-sensical reasons (it doesn't matter, xcode says the libs are not compatible when it tries to link them, qtcreator says the "bundle version" is invalid, or "can't find bundle path" probably because it has fucked up the "iphone" deployment paths with the "iphone-simulator" paths. attempting to build for x86 only on ios-simulator, build fails with missing ffmpeg dependencies.
+* in the cdc32 codebase, there were a set of minor tweaks for windows specific items in the windows audio area. these need more testing.
+* NOTE! the cmake files are for qt6 only. if you need to build for qt5, just use the qmake files.

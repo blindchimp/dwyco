@@ -19,3 +19,18 @@ cdcx on linux using static qt6 will not work because static qwebengine is not su
 so, in summary, qt6 on linux is a waste of time.
 
 qt6 on macos and windows (which both have supported "deploy" tools) is plausible for both cdcx and phoo.
+
+Tue Jan 21 13:08:27 MST 2025
+
+qt6 port branches:
+qt-6.8-port - doesn't work for a myriad of reasons (deployment problems, bugs in 6.8 release, etc.)
+qt-6.5-port - this actually turned into a qt 6.7 release. qt6.7 is terrible, do not use.
+qt-6.5-backport - this is qt-6.5-port with the qt6.7 specific things removed (mostly permissions i think, which were only half-assed into qt 6.7)
+
+deployment status:
+rando (android only): deployed with qt 6.8.0 (since rando has no input text boxes, it avoided glaring qt bug)
+phoo (android, still deployed with qt 5.15.9, blocked because of text box and deployment bugs in qt6)
+cdcx
+	* windows - still on qt5.15, 32bit, using old capture drivers.
+	* macos  - attempted 6.8, but audio,video, and permissions bugs caused us to back-out to 6.5.3. 6.5.3 release is ok, but i received multiple reports from users of crashes. i them to downgrade to previous version, and that solved their problems.
+	* linux - qt5 appimages still kinda work. as noted above, qt6 is a waste of time.

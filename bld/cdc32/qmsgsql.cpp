@@ -1597,7 +1597,7 @@ sql_delete_mid(vc mid)
 long
 sql_get_max_logical_clock()
 {
-    vc res = sql_simple("select max(logical_clock) from gi");
+    const vc res = sql_simple("select max(logical_clock) from gi");
     if(res[0][0].type() != VC_INT)
         return 0;
     return (long)res[0][0];
@@ -1618,7 +1618,7 @@ bool
 sql_has_msg_recently(vc uid, long num_seconds)
 {
     vc huid = to_hex(uid);
-    vc res = sql_simple("select max(logical_clock) from gi where assoc_uid = ?1 and is_sent isnull", huid);
+    const vc res = sql_simple("select max(logical_clock) from gi where assoc_uid = ?1 and is_sent isnull", huid);
     // we try two things: first check to see if the logical clock we are currently
     // on minus what is in the index is in the interval now - num_seconds.
     // if we just return "yes" as it is most likely ok.
@@ -1634,10 +1634,10 @@ sql_has_msg_recently(vc uid, long num_seconds)
     // a big deal
     if(diff < num_seconds)
         return true;
-    res = sql_simple("select max(date) from gi where assoc_uid = ?1 and is_sent isnull", huid);
-    if(res.num_elems() != 1)
+    const vc res2 = sql_simple("select max(date) from gi where assoc_uid = ?1 and is_sent isnull", huid);
+    if(res2.num_elems() != 1)
         return false;
-    if(res[0][0].is_nil())
+    if(res2[0][0].is_nil())
         return false;
     auto dm = static_cast<long long>(res[0][0]);
     if(time(0) - dm < num_seconds)
@@ -1728,7 +1728,7 @@ init_group_map()
 
         // use the profile database to find candidates, which we can do without
         // being connected to the server.
-        vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public");
+        const vc keys = sql_simple("select alt_static_public from prf.pubkeys where length(alt_static_public) > 0 group by alt_static_public");
         for(int i = 0; i < keys.num_elems(); ++i)
         {
             vc k = keys[i][0];
@@ -1750,7 +1750,7 @@ init_group_map()
 vc
 map_uid_to_gid(vc uid)
 {
-    vc res = sql_simple("select gid from group_map where uid = ?1", to_hex(uid));
+    const vc res = sql_simple("select gid from group_map where uid = ?1", to_hex(uid));
     if(res.num_elems() == 0)
         return vcnil;
     return from_hex(res[0][0]);
