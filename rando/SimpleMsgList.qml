@@ -226,7 +226,7 @@ Page {
     Component {
         id: msg_delegate
 
-        CircularImage {
+        CircularImage2 {
             id: img
             property bool click_to_fetch
 

@@ -7,7 +7,21 @@ Item {
     property alias source: sourceItem.source
     property real radius: Math.min(width, height) / 2.0
 
-    anchors.fill: parent
+    property alias fillMode: sourceItem.fillMode
+    property alias sourceSize: sourceItem.sourceSize
+    property alias mipmap: sourceItem.mipmap
+    property alias status: sourceItem.status
+    property alias verticalAlignment: sourceItem.verticalAlignment
+    property alias smooth: sourceItem.smooth
+    property alias horizontalAlignment: sourceItem.horizontalAlignment
+    property alias progress: sourceItem.progress
+    property alias asynchronous: sourceItem.asynchronous
+    property alias paintedWidth: sourceItem.paintedWidth
+    property alias paintedHeight: sourceItem.paintedHeight
+
+    implicitWidth: sourceItem.implicitWidth
+    implicitHeight: sourceItem.implicitHeight
+
     Image {
         id: sourceItem
         source: ""

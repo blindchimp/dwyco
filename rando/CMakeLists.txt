@@ -110,6 +110,7 @@ qt_add_qml_module(rando
            RESOURCES
            images/toolbutton.png
            images/toolbutton.sci
+           QML_FILES CircularImage2.qml
 
 )
 
