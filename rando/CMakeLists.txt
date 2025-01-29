@@ -111,6 +111,7 @@ qt_add_qml_module(rando
            images/toolbutton.png
            images/toolbutton.sci
            QML_FILES CircularImage2.qml
+           QML_FILES CircularProgressBar.qml
 
 )
 

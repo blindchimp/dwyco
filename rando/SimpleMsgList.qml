@@ -501,6 +501,7 @@ Page {
                         {
                             console.log(e)
                             console.log(mid)
+				console.log(MSG_TEXT)
                         }
                         return ""
                     } else {
@@ -570,13 +571,15 @@ Page {
                 //anchors.fill: img
                 //width: img.width
                 anchors.margins: mm(1)
-                sourceComponent: ProgressRound {
+                sourceComponent: CircularProgressBar {
                     id: pbar
                     //width: pbar_loader.width
                     visible: model.IS_ACTIVE
-                    value: ATTACHMENT_PERCENT
-                    indeterminate: {ATTACHMENT_PERCENT < 0.0}
-                    to: 100.0
+                    //visible: true
+                    //value: .4
+                    value: {ATTACHMENT_PERCENT < 0.0 ? 0 : ATTACHMENT_PERCENT / 100.0}
+                    //indeterminate: {ATTACHMENT_PERCENT < 0.0}
+                    //to: 100.0
                     z: 4
 //                    background: Rectangle {
 //                        color: "green"
