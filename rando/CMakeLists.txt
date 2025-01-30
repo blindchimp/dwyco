@@ -21,11 +21,9 @@ add_compile_definitions(BUILDTIME="${RANDO_VERSION}")
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
-find_package(QT NAMES Qt6  REQUIRED COMPONENTS Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6  REQUIRED COMPONENTS Network)
+find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Material Positioning Location)
 # Get Qt version from the Qt6 config
@@ -69,6 +67,7 @@ qt_add_resources(SRCS
 qt_add_executable(rando
    ${SRCS}
 )
+qt_add_ios_ffmpeg_libraries(rando)
 
 qt_add_qml_module(rando
     URI rando_app
@@ -202,6 +201,7 @@ target_link_options(rando PRIVATE binmode.obj)
 endif()
 
 if(IOS)
+    #message("FUCKFUCKFUCK")
     qt_add_ios_ffmpeg_libraries(rando)
     target_link_libraries(rando
         PRIVATE

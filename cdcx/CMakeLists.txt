@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6)
 find_package(Qt6 REQUIRED COMPONENTS
     Core Gui WebEngineWidgets StateMachine Concurrent MultimediaWidgets
-    Widgets Network Multimedia WebEngineCore)
+    Widgets Network Multimedia WebEngineCore WebEngineWidgets)
 
 # Get Qt version from the Qt6 config
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
