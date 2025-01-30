@@ -103,6 +103,8 @@ qt_add_executable(phoo
    callsm_objs.h # need this so automoc can find this header-only q_object
 
 )
+qt_add_ios_ffmpeg_libraries(phoo)
+
 
 qt_import_plugins(phoo
     EXCLUDE_BY_TYPE qmltooling
