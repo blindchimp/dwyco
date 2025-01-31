@@ -1168,8 +1168,8 @@ Page {
         anchors.fill: toolButton1
         //anchors.verticalCenter: textField1.verticalCenter
 
-        enabled: !toolButton1.enabled && core.has_audio_input
-        visible: !toolButton1.enabled && core.has_audio_input
+        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
+        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
         z: 5
         background: Rectangle {
             id: bg2
