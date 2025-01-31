@@ -1079,7 +1079,7 @@ Page {
         }
     }
 
-    Button {
+    RoundButton {
         property int but_width
         property int but_height
         id: toolButton1
@@ -1097,7 +1097,7 @@ Page {
         background: Rectangle {
             id: bg
             color: accent
-            radius: 20
+            radius: toolButton1.radius
             // this is weird, setting size is supposed to be unnecessary...
             // qt5.10 didn't have a problem with the previous code that was here.
             anchors.fill: toolButton1
@@ -1106,10 +1106,16 @@ Page {
             anchors.centerIn: bg
             source: mi("ic_send_black_24dp.png")
             opacity: toolButton1.enabled ? 1.0 : 0.3
+            scale: 2
         }
         
+        //icon.source: mi("ic_send_black_24dp.png")
+        //icon.width: width
+        //icon.height: height
+        radius: width / 2
+        //icon.color: accent
 
-        text: "send"
+        //text: "send"
         onClicked: {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
