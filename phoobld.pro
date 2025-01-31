@@ -20,7 +20,7 @@ SUBDIRS += bld/miniupnp/miniupnp-master/miniupnpc
 }
 
 linux-*:SUBDIRS += bld/v4lcap bld/$$QTDRV
-macx-clang: SUBDIRS += bld/$$QTDRV
+macx-clang|macx-g++: SUBDIRS += bld/$$QTDRV
 macx-ios-clang: SUBDIRS += bld/$$QTDRV
 win*: SUBDIRS += bld/$$QTDRV
 SUBDIRS += phoo
