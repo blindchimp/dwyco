@@ -108,6 +108,7 @@ extern DwOString Last_server_id;
 extern DwOString Last_selected_id;
 extern int Last_selected_idx;
 extern int Askup;
+extern int AvoidCamera;
 static int Ask_lobby_pw;
 static DwOString Ask_lobby_pw_id;
 static DwOString Current_lobby_pw;
@@ -864,6 +865,20 @@ mainwinform::mainwinform(QWidget *parent, Qt::WindowFlags flags)
         qApp->requestPermission(QMicrophonePermission{}, [](const QPermission &permission) {
             if(permission.status() == Qt::PermissionStatus::Granted) {
                 dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
+            }
+        });
+
+    }
+
+    if(qApp->checkPermission(QCameraPermission{}) == Qt::PermissionStatus::Granted)
+    {
+        //dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
+    }
+    else
+    {
+        qApp->requestPermission(QCameraPermission{}, [](const QPermission &permission) {
+            if(permission.status() != Qt::PermissionStatus::Granted) {
+                AvoidCamera = 1;
             }
         });
 

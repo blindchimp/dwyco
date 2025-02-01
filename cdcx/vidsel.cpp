@@ -60,6 +60,28 @@ block_enable_video_capture_preview(int on, int *ui_id)
     return ret;
 }
 
+int
+camera_denied(int req)
+{
+    if(qApp->checkPermission(QCameraPermission{}) == Qt::PermissionStatus::Granted)
+    {
+        //dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
+        return 0;
+    }
+    else
+    {
+        if(req)
+        {
+            qApp->requestPermission(QCameraPermission{}, [](const QPermission &permission) {
+                if(permission.status() != Qt::PermissionStatus::Granted) {
+                    AvoidCamera = 1;
+                }
+            });
+        }
+        return 1;
+    }
+}
+
 VidSel::VidSel(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::VidSel)
@@ -213,7 +235,7 @@ VidSel::on_devlist_currentRowChanged(int r)
         emit camera_change(0);
         return;
     }
-    if(r > 0)
+    if(r > 0 && !camera_denied(0))
     {
         Block_DLL = 1;
         if(r > FILES_OFFSET - 1) // make this "1" if you are going to have the (files) option
@@ -244,7 +266,11 @@ VidSel::on_devlist_currentRowChanged(int r)
         emit camera_change(HasCamera);
     }
     else
+    {
+        if(camera_denied(1))
+            r = 0;
         emit camera_change(0);
+    }
     last_index = r;
 }
 
