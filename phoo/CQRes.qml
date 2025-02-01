@@ -266,7 +266,7 @@ Page {
                 spacing: mm(1)
                 anchors.fill: parent
 
-                CircularImage {
+                CircularImage2 {
                     id: preview
                     source: {core.uid_profile_regular(uid) ? core.uid_to_profile_preview(uid) : ""}
                     fillMode: Image.PreserveAspectCrop

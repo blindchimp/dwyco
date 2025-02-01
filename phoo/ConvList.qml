@@ -230,7 +230,7 @@ Page {
                spacing: mm(1)
                anchors.fill: parent
 
-               CircularImage {
+               CircularImage2 {
                    id: ppic
                    //width: dp(80)
                    //height: dp(60)
@@ -412,7 +412,7 @@ Page {
                GradientStop { position: 1.0; color: primary_dark}
            }
 
-           CircularImage {
+           CircularImage2 {
                id: ppic
                anchors.centerIn: parent
                source : {

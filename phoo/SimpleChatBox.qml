@@ -154,7 +154,7 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
-                    CircularImage {
+                    CircularImage2 {
                         id: top_toolbar_img
                         source: {
                             if(to_uid === "")

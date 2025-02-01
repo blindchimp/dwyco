@@ -72,7 +72,7 @@ Page {
                 id: drow33
                 spacing: 5
                 anchors.fill: parent
-                CircularImage {
+                CircularImage2 {
                     id: preview
                     source: {has_preview ? core.uid_to_http_profile_preview(uid) : ""}
                     fillMode: Image.PreserveAspectCrop
@@ -167,7 +167,7 @@ Page {
                 GradientStop { position: 1.0; color: primary_dark}
             }
 
-            CircularImage {
+            CircularImage2 {
                 id: preview
                 source: {has_preview ? core.uid_to_http_profile_preview(uid) : ""}
                 fillMode: Image.PreserveAspectCrop

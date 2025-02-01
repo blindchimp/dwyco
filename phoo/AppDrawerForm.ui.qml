@@ -70,7 +70,7 @@ Pane {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    CircularImage {
+                    CircularImage2 {
                         id: circularImage
                         Layout.maximumHeight: 32
                         Layout.maximumWidth: 32

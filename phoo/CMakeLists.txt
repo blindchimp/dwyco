@@ -140,7 +140,7 @@ qt_add_qml_module(phoo
         PINChangeDialog.qml
         PicPreview.qml
         SimpleToolbar.qml
-        CircularImage.qml
+        CircularImage2.qml
         CQRes.qml
         ConvToolButton.qml
         MultiSelectToolbar.qml
