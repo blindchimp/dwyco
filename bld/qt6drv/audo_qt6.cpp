@@ -15,6 +15,7 @@
 #include <QIODevice>
 #include <QTimer>
 #include <QAudioSink>
+#include <QMediaDevices>
 
 #include "dlli.h"
 
@@ -124,14 +125,14 @@ public slots:
     }
 
     void handle_stateChange(QAudio::State a) {
-//        QMutexLocker ml(&audio_mutex);
-//        if(a == QAudio::IdleState)
-//        {
-//            if(audio_output)
-//            {
-//                audio_output->start(qio_dev);
-//            }
-//        }
+       QMutexLocker ml(&audio_mutex);
+       if(a == QAudio::IdleState)
+       {
+           // if(audio_output)
+           // {
+           //     audio_output->start();
+           // }
+       }
 
     }
 
@@ -152,6 +153,14 @@ public slots:
         af.setSampleRate(UWB_SAMPLE_RATE);
         af.setSampleFormat(QAudioFormat::Int16);
         af.setChannelCount(1);
+        af.setChannelConfig(QAudioFormat::ChannelConfigMono);
+
+            QAudioDevice info(QMediaDevices::defaultAudioOutput());
+            if (!info.isFormatSupported(af)) {
+                qWarning() << "Raw audio format not supported by backend, cannot play audio.";
+                return;
+            }
+
 
         audio_output = new QAudioSink(af);
         audio_output->setBufferSize(3 * AUDBUF_LEN);
