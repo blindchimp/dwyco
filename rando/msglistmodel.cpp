@@ -266,6 +266,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
     roles.append(ATTACHMENT_PERCENT);
     roles.append(DIRECT);
     dataChanged(mi, mi, roles);
+    mlm->invalidate();
 }
 
 
@@ -1075,6 +1076,7 @@ msglist_raw::qd_data ( int r, int role ) const
     case IS_FAVORITE:
     case IS_HIDDEN:
     case IS_UNSEEN:
+    case IS_FILE:
         return 0;
 
     case IS_FORWARDED:
