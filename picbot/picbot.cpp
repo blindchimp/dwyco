@@ -301,7 +301,7 @@ main(int argc, char *argv[])
     }
 
     int was_online = 0;
-
+    unlink("stopped");
     while(1)
     {
         int spin;
@@ -312,7 +312,16 @@ main(int argc, char *argv[])
         else
             usleep(50 * 1000);
 
-        if(time(0) - start >= r || access("stop", F_OK) == 0)
+        if(access("stop", F_OK) == 0)
+        {
+            creat("stopped", 0666);
+            dwyco_power_clean_safe();
+            dwyco_empty_trash();
+            dwyco_exit();
+            exit(0);
+        }
+
+        if(time(0) - start >= r)
         {
             dwyco_power_clean_safe();
             dwyco_empty_trash();

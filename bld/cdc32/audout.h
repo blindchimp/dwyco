@@ -60,6 +60,7 @@ public:
     virtual void switch_streams();
     void set_decoder(AudioConverter *);
     AudioConverter *get_decoder();
+    virtual void set_mixer(AudioMixer *) {}
 
 
     virtual int play_timed(DWBYTE *buf, int len, int at_time = 0, int do_free = 1);
@@ -90,6 +91,7 @@ public:
 
 protected:
     int decompress;
+    AudioMixer *mixer;
 
 private:
     typedef DwVecP<DWBYTE> BUFVEC;

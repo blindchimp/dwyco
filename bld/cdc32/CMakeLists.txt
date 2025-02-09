@@ -19,7 +19,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../ppm
     ${CMAKE_CURRENT_SOURCE_DIR}/../gsm
     ${CMAKE_CURRENT_SOURCE_DIR}/../speex/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../theora/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../theora.1.2.x/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../ogg/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../vorbis112/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
@@ -31,6 +31,7 @@ if(UNIX)
     include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../v4lcap)
     include_directories(winemu)
     set(EXTRA_FILES winemu.cc linid.cpp)
+    add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
 endif()
 
 if(MSVC)
@@ -43,6 +44,10 @@ if(MSVC)
     )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../mtcap)
 
+endif()
+
+if(APPLE AND NOT UNIX)
+    add_compile_definitions(UWB_SAMPLING  UWB_SAMPLE_RATE=44100)
 endif()
 
 if(${DWYCOBG} EQUAL 1)
@@ -58,6 +63,8 @@ add_compile_definitions(
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME=${DWYCO_APP}
+        DWYCO_TRACE
+        DW_RTLOG
 )
 
 if(${DWYCO_APP} STREQUAL "rando")
@@ -66,7 +73,7 @@ else()
     add_compile_definitions(MINIUPNP_STATICLIB)
 endif()
 
-add_library(cdc32 STATIC
+add_library(cdc32 OBJECT
 	activeuid.cpp 
 	backandroid.cpp 
 	bgapp.cpp 

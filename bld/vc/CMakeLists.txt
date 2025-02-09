@@ -24,7 +24,7 @@ add_compile_definitions(VC_INTERNAL DWYCO_NO_TSOCK)
 
 if(WIN32)
     add_compile_definitions(_CRT_NO_POSIX_ERROR_CODES)
-elseif()
+else()
 	add_compile_definitions(UNIX)
 endif()
 
@@ -34,7 +34,7 @@ else()
     add_compile_definitions(NO_VCEVAL)
 endif()
 
-add_library(vc STATIC
+set(SRCS
     dwgrows.cpp 
     pmatch.cpp 
     vc.cpp 
@@ -89,5 +89,7 @@ add_library(vc STATIC
     vctsock.cpp
     vclhnet.cpp
 )
+
+add_library(vc OBJECT ${SRCS})
 
 target_compile_definitions(vc PRIVATE VC_LIBRARY)

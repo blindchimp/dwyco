@@ -46,7 +46,11 @@ private:
     char *big;
     int count;
     int real_count;
-
+    inline T& ref(int i);
+    inline const T &ref(int i) const;
+#ifdef DWSVEC_DBG
+    mutable bool did_ref;
+#endif
 public:
     inline DwSVec();
     inline ~DwSVec();
@@ -55,8 +59,7 @@ public:
     inline void append(T&&);
     inline void append2(T);
     //inline void append(void *);
-    inline T& ref(int i);
-    inline const T &ref(int i) const;
+
     inline T get(int i) const;
     void set_size(int newsize);
 
@@ -87,6 +90,9 @@ DwSVec<T>::DwSVec()
     count = 0;
     real_count = DWSVEC_INITIAL;
     big = vec;
+#ifdef DWSVEC_DBG
+    did_ref = false;
+#endif
 }
 
 template<class T>
@@ -164,6 +170,7 @@ T &DwSVec<T>::ref(int i)
 #ifdef DWSVEC_DBG
     if(i >= count || i < 0)
         oopanic("bad svec ref");
+    did_ref = true;
 #endif
     return ((T*)big)[i];
 }
@@ -175,7 +182,9 @@ const T &DwSVec<T>::ref(int i) const
 #ifdef DWSVEC_DBG
     if(i >= count || i < 0)
         oopanic("bad svec ref");
+    did_ref = true;
 #endif
+
     return ((const T*)big)[i];
 }
 
@@ -196,7 +205,7 @@ void
 DwSVec<T>::set_size(int newsize)
 {
 #ifdef DWSVEC_DBG
-    if(newsize < count)
+    if(newsize < count || did_ref)
         oopanic("bad svec setsize");
 #endif
     if(newsize > real_count)
@@ -217,7 +226,7 @@ void
 DwSVec<T>::del(int s, int n)
 {
 #ifdef DWSVEC_DBG
-    if(s != 0 || n > count || n < 0)
+    if(s != 0 || n > count || n < 0 || did_ref)
         oopanic("bad svec del");
 #endif
     for(int i = 0; i < n; ++i)

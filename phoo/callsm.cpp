@@ -105,6 +105,15 @@
 
 extern int Public_chat_video_pause;
 //extern QByteArray My_uid;
+
+// these are a bit problematic. you must
+// initializes these based on whatever your
+// client system supports *before* you create
+// any of these simple_call objects. that
+// usually means probing the camera, and/or using
+// dwyco_get_audio_hw to probe for mics/speakers.
+// this might involve requesting permissions and
+// whatnot, which is still very platform-specific.
 int HasCamera;
 int HasCamHardware;
 int HasAudioInput;
@@ -190,8 +199,9 @@ simple_call::simple_call(const QByteArray& auid, QObject *parent) :
     connect(Mainwinform, SIGNAL(audio_recording(int,int)), this, SLOT(audio_recording_event(int,int)));
 
     connect_signals();
-
-    dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
+    // we changed this call so it probes the hardware. so don't do this on
+    // every object creation.
+    //dwyco_get_audio_hw(&HasAudioInput, &HasAudioOutput, 0);
 
     chan_id = -1;
     call_id = -1;

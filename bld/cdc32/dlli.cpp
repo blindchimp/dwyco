@@ -372,6 +372,7 @@ using namespace CryptoPP;
 #include "synccalls.h"
 #include "backandroid.h"
 #include "directsend.h"
+#include "audchk.h"
 
 using namespace dwyco;
 
@@ -2440,6 +2441,7 @@ DWYCOEXPORT
 int
 dwyco_get_audio_hw(int *has_audio_input_out, int *has_audio_output_out, int *audio_hw_full_duplex_out)
 {
+    check_audio_device();
     if(has_audio_input_out)
         *has_audio_input_out = Has_audio_input;
     if(has_audio_output_out)
@@ -5782,6 +5784,7 @@ dwyco_kill_message(const char *pers_id, int len_pers_id)
     return kill_message(a);
 }
 
+#if 0
 static int
 can_play_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int unsaved)
 {
@@ -5803,6 +5806,7 @@ can_play_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int un
     u = uid_to_dir(u);
     return !(any_no_forward(body) && (verify_chain(body, 1, vcnil, u) != VERF_AUTH_OK));
 }
+#endif
 
 //
 // Zap viewing contexts
@@ -5833,7 +5837,7 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
 //        ruid = "<<q-d msg>>";
 //    }
 
-    vc& v = *(vc *)list;
+    const vc& v = *(vc *)list;
     // qd's message don't have an mid, and attachments
     // are not filed anywhere special. the q'd stuff seems
     // like a hack, and probably needs to be figured out.
@@ -7427,8 +7431,8 @@ DWYCOEXPORT
 int
 dwyco_authenticate_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int unsaved)
 {
-    vc& v = *(vc *)m;
-    vc body = v[0];
+    const vc& v = *(vc *)m;
+    const vc& body = v[0];
     if(body[QM_BODY_SENT].is_nil())
     {
         return verify_chain(body, 1, vcnil, unsaved ? vc(".") : vcnil);

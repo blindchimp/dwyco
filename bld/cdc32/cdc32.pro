@@ -16,7 +16,7 @@ $${VCCFG_COMP} \
 ../ppm \
 ../gsm \
 ../speex/include \
-../theora/include \
+../theora.1.2.x/include \
 ../ogg/include \
 ../vorbis112/include \
 ../uv/include \
