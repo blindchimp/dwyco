@@ -44,6 +44,12 @@ Rectangle {
     state: camera_permission.status !== Qt.PermissionStatus.Granted ? "Idle" : "PhotoCapture"
     
     Component.onCompleted: {
+        if(camera_permission.status != Qt.PermissionStatus.Granted) {
+            console.log("CAMERA DENIED")
+            camera_permission.request()
+        } else {
+            console.log("CAMERA ALLOWED")
+        }
         cameraUI.snapshot.connect(stack.get(stack.depth - 2).snapshot)
         console.log("WTF CAMERA")
     }
@@ -140,7 +146,7 @@ Rectangle {
         active: cameraUI.visible
         //captureMode: Camera.CaptureStillImage
         focusMode: Camera.FocusModeAuto
-        whiteBalanceMode: Camera.WhiteBalanceAuto
+        //whiteBalanceMode: Camera.WhiteBalanceAuto
 
 //        onLockStatusChanged: {
 //            console.log("lock status ", lockStatus)

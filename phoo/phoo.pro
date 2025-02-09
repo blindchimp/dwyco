@@ -13,7 +13,11 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:QMAKE_EXTRA_TARGETS += dateincr
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
-VER="3.213"
+greaterThan(QT_MAJOR_VERSION, 5) {
+VER="4.212"
+} else {
+VER="3.212"
+}
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 DEFINES += QT_VERSION_STRING=\\\"$$QT_VERSION\\\"
@@ -40,18 +44,21 @@ QT += statemachine
 
 !equals(QT_MAJOR_VERSION, 6) {
 android: QT += androidextras
-macx-clang: QT += macextras
+macx-clang|macx-g++: QT += macextras
+INCLUDEPATH += $${PWD}/../bld/qtdrv
+} else {
+INCLUDEPATH += $${PWD}/../bld/qt6drv
 }
 
-linux-*|android|macx-ios-clang|macx-clang: QT += concurrent
+QT += concurrent
 DEFINES += DWYCO_APP_DEBUG
 macx-ios-clang: QMAKE_INFO_PLIST=Info.plist.ios
-macx-clang {
+macx-clang|macx-g++ {
 QMAKE_INFO_PLIST=Info.plist.mac
 #CONFIG -= app_bundle
 }
 
-INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/qtdrv $${PWD}/../bld/dwcls
+INCLUDEPATH += $${PWD}/../bld/qt-qml-models $${PWD}/../bld/qt-supermacros $${PWD}/../bld/dwcls
 
 #QMAKE_MAC_SDK = macosx10.9
 DEFINES += DWYCO_RELEASE
@@ -208,7 +215,7 @@ $${D}/qt-qml-models/libQtQmlModels.a
 
 }
 
-macx-clang {
+macx-clang|macx-g++ {
 DEFINES += MACOSX MAC_CLIENT
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT

@@ -124,7 +124,7 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
-                    CircularImage {
+                    CircularImage2 {
                         id: top_toolbar_img
                         source: "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         fillMode: Image.PreserveAspectCrop

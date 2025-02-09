@@ -15,7 +15,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6)
 find_package(Qt6 REQUIRED COMPONENTS
     Core Gui WebEngineWidgets StateMachine Concurrent MultimediaWidgets
-    Widgets Network Multimedia WebEngineCore)
+    Widgets Network Multimedia WebEngineCore WebEngineWidgets)
+
+# Get Qt version from the Qt6 config
+execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# Define a preprocessor macro with the Qt version
+add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
 
 
 add_compile_definitions(
@@ -32,10 +38,10 @@ DWYCO_QT6
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
-DWYCO_NICE_VERSION=\"4.107\"
+DWYCO_NICE_VERSION=\"4.216\"
 )
 include_directories(
-./dllwin ../bld/qt6drv .
+./dllwin ../bld/qt6drv ../bld/dwcls .
 )
 
 set(PROJECT_SOURCES
@@ -121,7 +127,6 @@ set(BASELIBS
     ppm
     pgm
     pbm
-    zlib
     theora.1.2.x
     speex
     vorbis112

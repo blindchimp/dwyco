@@ -158,8 +158,7 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
-
-                    CircularImage {
+                    CircularImage2 {
                         id: top_toolbar_img
                         source: {
                             if(to_uid === "")
@@ -1088,7 +1087,7 @@ Page {
         }
     }
 
-    Button {
+    RoundButton {
         property int but_width
         property int but_height
         id: toolButton1
@@ -1106,7 +1105,7 @@ Page {
         background: Rectangle {
             id: bg
             color: accent
-            radius: 20
+            radius: toolButton1.radius
             // this is weird, setting size is supposed to be unnecessary...
             // qt5.10 didn't have a problem with the previous code that was here.
             anchors.fill: toolButton1
@@ -1115,10 +1114,16 @@ Page {
             anchors.centerIn: bg
             source: mi("ic_send_black_24dp.png")
             opacity: toolButton1.enabled ? 1.0 : 0.3
+            scale: 2
         }
         
+        //icon.source: mi("ic_send_black_24dp.png")
+        //icon.width: width
+        //icon.height: height
+        radius: width / 2
+        //icon.color: accent
 
-        text: "send"
+        //text: "send"
         onClicked: {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
@@ -1177,8 +1182,8 @@ Page {
         anchors.fill: toolButton1
         //anchors.verticalCenter: textField1.verticalCenter
 
-        enabled: !toolButton1.enabled && core.has_audio_input
-        visible: !toolButton1.enabled && core.has_audio_input
+        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
+        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
         z: 5
         background: Rectangle {
             id: bg2

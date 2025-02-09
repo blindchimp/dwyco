@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.102")
+set(RANDO_VERSION "4.222")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000150)
+set(RANDO_VERSION_CODE 3000162)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -21,13 +21,16 @@ add_compile_definitions(BUILDTIME="${RANDO_VERSION}")
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
-find_package(QT NAMES Qt6  REQUIRED COMPONENTS Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6  REQUIRED COMPONENTS Network)
+find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2Material Positioning Location)
+# Get Qt version from the Qt6 config
+execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# Define a preprocessor macro with the Qt version
+add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
 
 # this needs a re-think, possibly a command to copy the androidinst3 file, then
 # populate it with the java stuff would work. then change the package_source_dir to
@@ -39,7 +42,7 @@ if(ANDROID)
 file(COPY ../bld/android/com/dwyco DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/)
 file(COPY ../../deploy-rando/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
 endif()
-qt_standard_project_setup(REQUIRES 6.5)
+qt_standard_project_setup(REQUIRES 6.8)
 
 set(SRCS
     main.cpp
@@ -64,6 +67,7 @@ qt_add_resources(SRCS
 qt_add_executable(rando
    ${SRCS}
 )
+qt_add_ios_ffmpeg_libraries(rando)
 
 qt_add_qml_module(rando
     URI rando_app
@@ -105,6 +109,8 @@ qt_add_qml_module(rando
            RESOURCES
            images/toolbutton.png
            images/toolbutton.sci
+           QML_FILES CircularImage2.qml
+           QML_FILES CircularProgressBar.qml
 
 )
 
@@ -189,12 +195,14 @@ if(WIN32)
     target_link_libraries(rando
         PRIVATE
        ${BASELIBS}
-       winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib
+       winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib
     )
 target_link_options(rando PRIVATE binmode.obj)
 endif()
 
 if(IOS)
+    #message("FUCKFUCKFUCK")
+    qt_add_ios_ffmpeg_libraries(rando)
     target_link_libraries(rando
         PRIVATE
        ${BASELIBS}

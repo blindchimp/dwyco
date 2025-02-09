@@ -48,7 +48,7 @@ Item {
                property bool censor_it
                censor_it: censor && !regular_profile(REVIEWED, REGULAR)
 
-               CircularImage {
+               CircularImage2 {
                    id: ppic
                    //width: dp(80)
                    //height: dp(60)

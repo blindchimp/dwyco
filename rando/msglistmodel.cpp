@@ -21,6 +21,9 @@
 #include "dwyco_new_msg.h"
 #include "dwyco_top.h"
 #include "qloc.h"
+#ifdef DWYCO_MODEL_TEST
+#include <QAbstractItemModelTester>
+#endif
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
@@ -263,6 +266,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
     roles.append(ATTACHMENT_PERCENT);
     roles.append(DIRECT);
     dataChanged(mi, mi, roles);
+    mlm->invalidate();
 }
 
 
@@ -279,6 +283,9 @@ msglist_model::msglist_model(QObject *p) :
     setDynamicSortFilter(true);
     setSourceModel(m);
     mlm = this;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 }
 
 msglist_model::~msglist_model()
@@ -678,6 +685,9 @@ msglist_raw::msglist_raw(QObject *p)
     count_inbox_msgs = 0;
     count_msg_idx = 0;
     count_qd_msgs = 0;
+#ifdef DWYCO_MODEL_TEST
+    new QAbstractItemModelTester(this);
+#endif
 }
 
 msglist_raw::~msglist_raw()
@@ -1066,6 +1076,7 @@ msglist_raw::qd_data ( int r, int role ) const
     case IS_FAVORITE:
     case IS_HIDDEN:
     case IS_UNSEEN:
+    case IS_FILE:
         return 0;
 
     case IS_FORWARDED:

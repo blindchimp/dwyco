@@ -232,7 +232,7 @@ Page {
                spacing: mm(1)
                anchors.fill: parent
 
-               CircularImage {
+               CircularImage2 {
                    id: ppic
                    //width: dp(80)
                    //height: dp(60)
@@ -329,7 +329,7 @@ Page {
            MouseArea {
                anchors.fill: drow
                acceptedButtons: Qt.LeftButton|Qt.RightButton
-               onClicked: {
+               onClicked : (mouse) => {
                    console.log("click")
                    console.log(index)
                    listView2.currentIndex = index
@@ -417,7 +417,7 @@ Page {
            property bool censor_it
            censor_it: censor && !regular_profile(REVIEWED, REGULAR)
 
-           CircularImage {
+           CircularImage2 {
                id: ppic
                anchors.centerIn: parent
                source : {

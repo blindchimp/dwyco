@@ -236,8 +236,14 @@ ApplicationWindow {
         } else {
             console.log("CAMERA ALLOWED")
         }
+        if(microphone_permission.status != Qt.PermissionStatus.Granted) {
+            console.log("MIC DENIED")
+            microphone_permission.request()
+        } else {
+            console.log("MIC ALLOWED")
+        }
 
-        AndroidPerms.request_sync("android.permission.CAMERA")
+        //AndroidPerms.request_sync("android.permission.CAMERA")
         AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
     }
 
@@ -248,6 +254,18 @@ ApplicationWindow {
                 console.log("Camera now granted")
             } else {
                 console.log("Camera denied again")
+            }
+
+        }
+    }
+
+    MicrophonePermission {
+        id: microphone_permission
+        onStatusChanged: {
+            if(status == Qt.PermissionStatus.Granted) {
+                console.log("Mic now granted")
+            } else {
+                console.log("Mic denied again")
             }
 
         }

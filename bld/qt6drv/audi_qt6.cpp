@@ -99,6 +99,7 @@ public slots:
 
     void do_on();
     void do_off();
+    void handleStateChanged(QAudio::State);
 
 signals:
     void on();
@@ -164,7 +165,31 @@ void InputTest::createAudioInput()
     m_audioInput->start(m_audioInfo);
     connect(this, &InputTest::on, this, &InputTest::do_on, Qt::QueuedConnection);
     connect(this, &InputTest::off, this, &InputTest::do_off, Qt::QueuedConnection);
+    connect(m_audioInput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 }
+
+void InputTest::handleStateChanged(QAudio::State newState)
+{
+    volatile QAudio::State s = newState;
+    switch (newState) {
+        case QAudio::StoppedState:
+            if (m_audioInput->error() != QAudio::NoError) {
+                // Error handling
+            } else {
+                // Finished recording
+            }
+            break;
+
+        case QAudio::ActiveState:
+            // Started recording - read from IO device
+            break;
+
+        default:
+            // ... other cases as appropriate
+            break;
+    }
+}
+
 
 void InputTest::readMore()
 {
@@ -219,6 +244,11 @@ InputTest::do_on()
 {
     if(!m_audioInput)
         return;
+    if(m_audioInput->state() == QAudio::IdleState)
+    {
+        m_audioInput->resume();
+        return;
+    }
     if(m_audioInput->state() != QAudio::SuspendedState)
         return;
     m_audioInput->resume();
@@ -360,6 +390,7 @@ void DWYCOCALLCONV
 audi_qt_need(void *)
 {
     audi_qt_init(0);
+    audi_qt_on(0);
 
 }
 void DWYCOCALLCONV audi_qt_pass(void *)

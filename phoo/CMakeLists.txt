@@ -7,9 +7,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR phoo_cmake)
-set(PHOO_VERSION "4.109")
+set(PHOO_VERSION "4.213")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
-set(PHOO_VERSION_CODE 2000118)
+set(PHOO_VERSION_CODE 2000119)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -30,19 +30,24 @@ add_compile_definitions(NO_BUILDTIME)
 add_compile_definitions(BUILDTIME="${PHOO_VERSION}")
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 
+
 if(APPLE)
 	add_compile_definitions(MAC_CLIENT)
 endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
-find_package(QT NAMES Qt6  REQUIRED COMPONENTS Network)
+find_package(Qt6 REQUIRED COMPONENTS Quick)
+#find_package(QT NAMES Qt6  REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS Network)
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
+#find_package(QT NAMES Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui StateMachine QuickControls2 Concurrent MultimediaWidgets)
+
+# Get Qt version from the Qt6 config
+execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 
 # this needs a re-think, possibly a command to copy the androidinst3 file, then
 # populate it with the java stuff would work. then change the package_source_dir to
@@ -54,7 +59,7 @@ if(ANDROID)
 file(COPY ../bld/android/com/dwyco DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/)
 #file(COPY ../../deploy-phoo/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
 endif()
-qt_standard_project_setup(REQUIRES 6.5)
+qt_standard_project_setup(REQUIRES 6.8)
 
 set(SRCS
  main.cpp 
@@ -98,6 +103,8 @@ qt_add_executable(phoo
    callsm_objs.h # need this so automoc can find this header-only q_object
 
 )
+qt_add_ios_ffmpeg_libraries(phoo)
+
 
 qt_import_plugins(phoo
     EXCLUDE_BY_TYPE qmltooling
@@ -133,7 +140,7 @@ qt_add_qml_module(phoo
         PINChangeDialog.qml
         PicPreview.qml
         SimpleToolbar.qml
-        CircularImage.qml
+        CircularImage2.qml
         CQRes.qml
         ConvToolButton.qml
         MultiSelectToolbar.qml
@@ -196,7 +203,7 @@ endif()
 
 set_target_properties(phoo PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER com.dwyco.phoo
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE_INFO_PLIST ${INFOPLIST}
     MACOSX_BUNDLE TRUE
@@ -222,7 +229,7 @@ set(BASELIBS
     ppm
     pgm
     pbm
-    zlib
+ #   zlib
     theora.1.2.x
     speex
     vorbis112
@@ -259,7 +266,7 @@ if(UNIX AND NOT ANDROID AND NOT APPLE)
 target_link_libraries(phoo
     PRIVATE
    ${BASELIBS}
-   v4lcap
+   #v4lcap
     -ldl
 )
 endif()
@@ -268,12 +275,13 @@ if(WIN32)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}
-       winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib
+       winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib psapi.lib
     )
 target_link_options(phoo PRIVATE binmode.obj)
 endif()
 
 if(APPLE OR IOS)
+    qt_add_ios_ffmpeg_libraries(phoo)
     target_link_libraries(phoo
         PRIVATE
        ${BASELIBS}

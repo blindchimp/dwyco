@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
     signal(SIGPIPE, SIG_IGN);
 #endif
 
-#if defined(LINUX) && !defined(MAC_CLIENT)
+#if /*defined(LINUX) &&*/ !defined(MAC_CLIENT)
     // this is mainly for appimage-type installation. the read-only stuff
     // it in the appimage, and the rest of the user data will be in
     // documents/dwyco/cdc-x.
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
     //syspath = "/home/dwight/cdcx/";
 #endif
 
-#ifdef WIN32
+#if 0 &&  WIN32
 // still expecting to start in the directory where all our data is
     QString userdir("./");
     QString syspath("./");

@@ -20,7 +20,7 @@ android:fullBackupContent="@xml/backup_rules"
         android:hasFragileUserData="true"
         android:preserveLegacyExternalStorage="true" 
         android:dataExtractionRules="@xml/a33backup_rules"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:fullBackupOnly="false"
         android:icon="@drawable/icon" >
         <activity

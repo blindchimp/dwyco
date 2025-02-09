@@ -51,6 +51,10 @@ import java.io.File;
 import androidx.work.*;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
+//import androidx.activity.*;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
 
 // note: use notificationcompat stuff for older androids
 
@@ -101,7 +105,34 @@ public class NotificationClient extends QtActivity
 
             }
 
+        // after a shitshow trying to get this working with the stupid-complicated
+        // new api, an AI informed me that using the old-school simpler method was
+        // doable. I'm not sure i need all the imports and other garbage i added
+        // above while i was fiddling with using the new method. 
+        // the only down side i see with this is that android will ask for
+        // notification permissions twice before starting to ignore the request.
+        // which is fine. otherwise i would have to save some state in the handler
+        // below. not worth the troubles.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1);
+            }
+        }
     }
+
+
+@Override
+public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (requestCode == 1) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            // Permission granted
+        } else {
+            // Permission denied
+        }
+    }
+}
+
 
     @Override
     protected void onResume() {
