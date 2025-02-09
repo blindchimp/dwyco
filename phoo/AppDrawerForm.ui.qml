@@ -139,7 +139,7 @@ Pane {
             Layout.fillWidth: true
         }
 
-        Switch {
+        SwitchDelegate {
             id: quiet_switch
             text: qsTr("Quiet")
             bottomPadding: ctrl_pad
@@ -148,7 +148,7 @@ Pane {
             Layout.fillWidth: true
         }
 
-        Switch {
+        SwitchDelegate {
             id: invisible_switch
             text: qsTr("Invisible")
             bottomPadding: ctrl_pad
