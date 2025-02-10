@@ -14,9 +14,9 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 #!macx-ios-clang:PRE_TARGETDEPS += dateincr
 DEFINES += NO_BUILDTIME
 greaterThan(QT_MAJOR_VERSION, 5) {
-VER="4.212"
+VER="4.213"
 } else {
-VER="3.212"
+VER="3.213"
 }
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"

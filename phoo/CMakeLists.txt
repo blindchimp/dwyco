@@ -98,9 +98,20 @@ qt_add_resources(SRCS
     dwyco.qrc
     icons.qrc
 )
+
+if(APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE "greenguy.icns")
+set(app_icon "${CMAKE_CURRENT_SOURCE_DIR}/greenguy.icns")
+set_source_files_properties(${app_icon} PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
+endif()
+
 qt_add_executable(phoo
+    MACOSX_BUNDLE ${app_icon}
    ${SRCS}
    callsm_objs.h # need this so automoc can find this header-only q_object
+
 
 )
 qt_add_ios_ffmpeg_libraries(phoo)
