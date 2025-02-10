@@ -605,20 +605,21 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     if(hl.length() == 0)
         return false;
 #endif
-    QVariant is_unfetched = alm->data(alm->index(source_row, 0), IS_UNFETCHED);
+    QModelIndex mi = alm->index(source_row, 0);
+    QVariant is_unfetched = alm->data(mi, IS_UNFETCHED);
     if(is_unfetched.toBool())
         return true;
-    QVariant is_file = alm->data(alm->index(source_row, 0), IS_FILE);
+    QVariant is_file = alm->data(mi, IS_FILE);
     if(is_file.toInt() == 1)
         return true;
-    QVariant is_active = alm->data(alm->index(source_row, 0), IS_ACTIVE);
+    QVariant is_active = alm->data(mi, IS_ACTIVE);
     if(is_active.toBool())
         return true;
-    QVariant is_qd = alm->data(alm->index(source_row, 0), IS_QD);
+    QVariant is_qd = alm->data(mi, IS_QD);
     if(is_qd.toInt() == 1)
         return true;
 
-    QVariant fetch_state = alm->data(alm->index(source_row, 0), FETCH_STATE);
+    QVariant fetch_state = alm->data(mi, FETCH_STATE);
     if(fetch_state.toString() == "manual")
         return true;
     return false;
