@@ -86,7 +86,7 @@ qt_add_qml_module(rando
            MsgView.qml
            PicPreview.qml
            SimpleToolbar.qml
-           CircularImage.qml
+
            #MultiSelectToolbar.qml
            About.qml
            DSettings.qml
@@ -99,7 +99,7 @@ qt_add_qml_module(rando
            SimpleMsgList.qml
            MsgReport.qml
            Warning.qml
-           ProgressRound.qml
+
            Help.qml
            MapImage.qml
            GeoListView.qml
