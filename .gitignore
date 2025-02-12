@@ -615,3 +615,7 @@ phoo/androidinst3/src/com/dwyco/cdc32/dwybg.java
 
 phoo/androidinst3/src/com/dwyco/cdc32/dwybgJNI.java
 .aider*
+
+bld/android/com/dwyco/.vscode/
+
+rando/androidinst3/src/com/dwyco/.vscode/

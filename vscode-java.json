@@ -1,0 +1,11 @@
+{
+    "java.configuration.runtimes": [
+  
+  {
+    "name": "JavaSE-17",
+    "path": "/home/dwight/Downloads/jdk-17.0.14+7",
+    "default": true
+  }
+  
+]
+}

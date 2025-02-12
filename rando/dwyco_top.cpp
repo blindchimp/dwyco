@@ -10,12 +10,20 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQmlComponent>
-#include <QtQml>
+//#include <QtQml>
 #include <QUrl>
 #include <QUrlQuery>
 #include <QSslSocket>
 #include <QGuiApplication>
 #include <QImage>
+#include <QFile>
+#include <QDir>
+#include <QStandardPaths>
+#include <QTcpServer>
+#include <QNetworkReply>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QSettings>
 #ifdef ANDROID
 //#include <QtAndroid>
 #endif
@@ -3294,7 +3302,8 @@ DwycoCore::export_attachment(QString mid)
     if(qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
         return "";
     QByteArray scary_fn = qsm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
-    quint16 csum = qChecksum(scary_fn.constData(), scary_fn.length());
+    QByteArrayView b(scary_fn);
+    quint16 csum = qChecksum(b);
     // look for file extension
     int dot = scary_fn.lastIndexOf('.');
     if(dot != -1)
