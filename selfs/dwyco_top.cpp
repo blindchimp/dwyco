@@ -1247,6 +1247,7 @@ setup_locations()
 //    QFile::copy("assets:/relaxed-zap.wav", userdir + "relaxed-zap.wav");
     if(!QFile(userdir + "servers2").exists())
         QFile::copy("assets:/servers2", userdir + "servers2");
+    QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
 //    QFile::copy("assets:/space-call.wav", userdir + "space-call.wav");
 //    QFile::copy("assets:/space-incoming.wav", userdir + "space-incoming.wav");
 //    QFile::copy("assets:/space-online.wav", userdir + "space-online.wav");
