@@ -41,7 +41,7 @@ Page {
                 storage_warning = 1
             else
                 storage_warning = 0
-            AndroidPerms.load()
+            //AndroidPerms.load()
             if(storage_warning === 1) {
                 warn.visible = true
             }

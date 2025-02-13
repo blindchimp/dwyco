@@ -49,7 +49,6 @@ SOURCES += main.cpp \
     getinfo.cpp \
     qlimitedbuffer.cpp \
     resizeimage.cpp \
-    androidperms.cpp
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst3
 
@@ -283,8 +282,7 @@ HEADERS += \
     convmodel.h \
     getinfo.h \
     qlimitedbuffer.h \
-    resizeimage.h \
-    androidperms.h
+    resizeimage.h
 
 DISTFILES += \
     androidinst3/google-services.json \

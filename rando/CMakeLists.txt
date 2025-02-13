@@ -58,7 +58,7 @@ set(SRCS
         getinfo.cpp
         qlimitedbuffer.cpp
         resizeimage.cpp
-        androidperms.cpp
+
 )
 qt_add_resources(SRCS
     dwyco.qrc
