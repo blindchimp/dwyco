@@ -1180,6 +1180,7 @@ setup_locations()
     QFile::copy("assets:/no_img.png", userdir + "no_img.png");
     if(!QFile(userdir + "servers2").exists())
         QFile::copy("assets:/servers2", userdir + "servers2");
+    QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
 #else
     QFile::copy(":androidinst2/assets/dwyco.dh", userdir + "dwyco.dh");
