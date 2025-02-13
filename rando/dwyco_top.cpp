@@ -1181,6 +1181,7 @@ setup_locations()
     QFile::copy("assets:/no_img.png", userdir + "no_img.png");
     if(!QFile(userdir + "servers2").exists())
         QFile::copy("assets:/servers2", userdir + "servers2");
+    QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
     QFile::copy("assets:/v21.ver", userdir + "v21.ver");
     QFile::copy("assets:/qtquickcontrols2.conf", userdir + "qtquickcontrols2.conf");
 #else
