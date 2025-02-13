@@ -386,6 +386,7 @@ int main(int argc, char *argv[])
     // has a compiled in version as a last resort.
     if(!QFile(userdir + "servers2").exists())
         QFile::copy(Sys_pfx + "/servers2", userdir + "servers2");
+    QFile::setPermissions(userdir + "servers2", QFile::ReadOwner|QFile::WriteOwner);
 
     dwyco_trace_init();
     int dum;
