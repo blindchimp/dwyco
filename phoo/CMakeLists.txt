@@ -63,7 +63,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 set(SRCS
  main.cpp 
-    androidperms.cpp 
+
     ccmodel.cpp 
     discomodel.cpp 
     dwyco_top.cpp 
