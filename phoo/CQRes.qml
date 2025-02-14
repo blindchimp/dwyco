@@ -62,6 +62,16 @@ Page {
         id: cq_res_model
     }
 
+    // there is an odd corner-case that may qualify as a qt6.8 bug here...
+    // if a user goes to the settings menu and denies access to contacts,
+    // it appears that android kills the app and on restart, we request
+    // the permission. that is fine. now, the user backgrounds the app and
+    // goes to settings and allows the permission. android apparently does NOT
+    // exit the app, and so now the status is stuck at "denied" in the app,
+    // but the actual permission is "granted". the permission request
+    // returns immediately (maybe checking succeeded or something) and the
+    // status is not updated. so our UI is stuck seeing "denied". the
+    // status property is "read-only" so we can't update it manually.
     ContactsPermission {
         id: contacts_permission
         onStatusChanged: {
