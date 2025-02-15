@@ -48,6 +48,7 @@ Page {
         Button {
             text: "Quit"
             onClicked: {
+                hard_close = true
                 Qt.quit()
             }
         }

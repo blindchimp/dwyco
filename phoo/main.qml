@@ -202,13 +202,13 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        if(camera_permission.status != Qt.PermissionStatus.Granted) {
+        if(camera_permission.status !== Qt.PermissionStatus.Granted) {
             console.log("CAMERA DENIED")
             camera_permission.request()
         } else {
             console.log("CAMERA ALLOWED")
         }
-        if(microphone_permission.status != Qt.PermissionStatus.Granted) {
+        if(microphone_permission.status !== Qt.PermissionStatus.Granted) {
             console.log("MIC DENIED")
             microphone_permission.request()
         } else {
@@ -474,12 +474,12 @@ ApplicationWindow {
     DevGroup {
         id: device_group
         visible: false
-        onQuitnowChanged: {
-            if(quitnow === true)
-            {
-                stack.push(device_group)
-            }
-        }
+        // onQuitnowChanged: {
+        //     if(quitnow === true)
+        //     {
+        //         stack.push(device_group)
+        //     }
+        // }
     }
 
     ConvList {
@@ -1084,6 +1084,34 @@ ApplicationWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
         z: 5
+    }
+
+    Rectangle {
+        id: force_quit
+        visible: device_group.quitnow
+        anchors.fill: parent
+        color: "orange"
+        z: 10
+        RowLayout {
+            id: quit_page
+            anchors.fill: parent
+            anchors.margins: mm(2)
+
+            spacing: mm(3)
+            Button {
+                text: "Quit"
+                onClicked: {
+                    expire_immediate = true
+                    hard_close = true
+                    Qt.quit()
+                }
+            }
+            Label {
+                text: "Success! " + device_group.provisional_group + " active. Click QUIT"
+                Layout.fillWidth: true
+            }
+
+        }
     }
 
 
