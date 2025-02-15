@@ -5838,23 +5838,33 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
 //    }
 
     const vc& v = *(vc *)list;
+    vc body = v[0];
     // qd's message don't have an mid, and attachments
     // are not filed anywhere special. the q'd stuff seems
     // like a hack, and probably needs to be figured out.
     if(!qd)
     {
-        vc mid = v[0][QM_BODY_ID];
+        vc mid = body[QM_BODY_ID];
         ruid = sql_get_uid_from_mid(mid);
         if(ruid.is_nil())
             return 0;
         ruid = from_hex(ruid);
     }
-    if(v[0][QM_BODY_ATTACHMENT].is_nil())
+    if(body[QM_BODY_ATTACHMENT].is_nil())
     {
         GRTLOG("make_zap_view: fail, msg has no attachment (%s)", (const char *)ruid, 0);
         return 0;
     }
-    if(!v[0][QM_BODY_FILE_ATTACHMENT].is_nil())
+    // our first in-the-wild crash because we changed the vector api...
+    // old unencrypted messages did not have any indexes past BODY_ATTACHMENT
+    // which caused this to crash when we changed "v" to be const.
+    // note that this is kinda unexpected... you send in something, and even though
+    // this only "reads" it, it modifies the messages by expanding the vector. odd, but
+    // that's the way it goes, and it was keeping some level of compatibility i didn't have
+    // before. note: possible it might make sense to just instead of crashing, just return
+    // the default value (nil in this case) and not actually modify the length of the vector
+    // behind the scenes.
+    if(!body[QM_BODY_FILE_ATTACHMENT].is_nil())
     {
         GRTLOG("make_zap_view: fail, msg has file attachment (%s)", (const char *)ruid, 0);
         return 0;
@@ -5874,8 +5884,8 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
         s = (const char *)uid_to_dir(ruid);
         s += DIRSEPSTR;
     }
-    s += (const char *)v[0][QM_BODY_ATTACHMENT];
-    m->file_basename = (const char *)v[0][QM_BODY_ATTACHMENT];
+    s += (const char *)body[QM_BODY_ATTACHMENT];
+    m->file_basename = (const char *)body[QM_BODY_ATTACHMENT];
     m->actual_filename = newfn(s).c_str();
     m->inhibit_hashing = 1;
     GRTLOG("make_zap_view: ret %d", m->vp.cookie, 0);
