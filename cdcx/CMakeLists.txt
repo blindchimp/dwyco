@@ -175,7 +175,7 @@ add_compile_definitions(CDCX_NO_SSL)
 target_link_libraries(
     cdcx PRIVATE
     ${BASELIBS}
-    winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib # binmode.obj
+    winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib  psapi.lib # binmode.obj
 )
 target_link_options(cdcx PRIVATE binmode.obj)
 
