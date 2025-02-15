@@ -3,6 +3,8 @@ set(DWYCOBG 0)
 add_compile_definitions(DWYCO_APP_NICENAME="Rando")
 
 add_compile_definitions(VCCFG_FILE)
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
+
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 add_compile_definitions(
 	CDCCORE_STATIC
