@@ -30,8 +30,13 @@ Page {
                 Layout.fillWidth: true
                 fontSizeMode: Text.Fit
             }
-
         }
+        Label {
+            text: "Content censored by decree of " + corporate_overlord
+            visible: corporate_censorship && is_mobile
+            Layout.fillWidth: true
+        }
+
         Label {
             text: "(C) 1995-present, Dwyco, Inc."
             Layout.fillWidth: true
@@ -63,12 +68,9 @@ Page {
             Layout.fillWidth: true
         }
 
-
-
         Button {
             text: "Privacy policy"
             onClicked: {
-
                 Qt.openUrlExternally("https://www.dwyco.net/privacy-policy")
             }
             Layout.fillWidth: true

@@ -78,7 +78,7 @@ ApplicationWindow {
         return 0
     }
     font.pixelSize: {is_mobile ? Screen.pixelDensity * 2.5 : font.pixelSize}
-    //font.weight: Font.Bold
+    font.weight: Font.Bold
     
     property color primary : "#673AB7"
     property color primary_dark : "#512DA8"
@@ -108,12 +108,20 @@ ApplicationWindow {
     property bool server_account_created: false
     property int android_img_pick_hack: 0
 
+    // this is set to true if the distributor requires user-generated content
+    // to be censored (Google and Apple). When this is false, the display of
+    // various content is controlled by the user "show_unreviewed" item.
+    property bool corporate_censorship: is_mobile
     property bool dwy_invis: false
     property bool dwy_quiet: false
     property bool show_unreviewed: false
     property bool expire_immediate: false
     property bool show_hidden: true
     property bool show_archived_users: false
+    property bool init_called: false
+
+    property bool censor
+    censor:  corporate_censorship || !show_unreviewed
 
     property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
     property int qt_application_state: 0
@@ -121,6 +129,17 @@ ApplicationWindow {
     property bool hard_close: false
 
     is_mobile: {Qt.platform.os === "android" || Qt.platform.os === "ios"}
+    // let's be serious, ca 2024 there is no practical choice regarding distribution
+    // of mobile apps
+    property string corporate_overlord
+    corporate_overlord: {
+        if(Qt.platform.os === "android")
+            return "Google, Inc."
+        if(Qt.platform.os === "ios")
+            return "Apple, Inc."
+        return ""
+    }
+
 
     property bool group_active
     group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
@@ -141,6 +160,15 @@ ApplicationWindow {
 
     function datesec() {
         return Math.round(Date.now() / 1000)
+    }
+
+    function censor_name(namestr) {
+        var first = namestr.substr(0, 3)
+        return first.concat("***")
+
+    }
+    function regular_profile(reviewed, regular) {
+        return reviewed == 1 && regular == 1
     }
 
     id: applicationWindow1
@@ -690,6 +718,7 @@ ApplicationWindow {
                 Qt.inputMethod.hide()
                 if(state === "start") {
                     core.init()
+                    init_called = true
                 }
             }
         }
@@ -933,6 +962,7 @@ ApplicationWindow {
 
             if(pwdialog.allow_access === 1) {
                 init()
+                init_called = true
             }
         }
 
