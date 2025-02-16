@@ -202,7 +202,7 @@ $${D}/qt-qml-models/libQtQmlModels.a
 
 }
 
-macx-clang {
+macx-clang|macx-g++ {
 DEFINES += MACOSX MAC_CLIENT
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT

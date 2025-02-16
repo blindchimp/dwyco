@@ -7,9 +7,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR phoo_cmake)
-set(PHOO_VERSION "4.213")
+set(PHOO_VERSION "4.224")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
-set(PHOO_VERSION_CODE 2000119)
+set(PHOO_VERSION_CODE 2000120)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -63,7 +63,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 set(SRCS
  main.cpp 
-    androidperms.cpp 
+
     ccmodel.cpp 
     discomodel.cpp 
     dwyco_top.cpp 
@@ -98,9 +98,20 @@ qt_add_resources(SRCS
     dwyco.qrc
     icons.qrc
 )
+
+if(APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE "greenguy.icns")
+set(app_icon "${CMAKE_CURRENT_SOURCE_DIR}/greenguy.icns")
+set_source_files_properties(${app_icon} PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
+endif()
+
 qt_add_executable(phoo
+    MACOSX_BUNDLE ${app_icon}
    ${SRCS}
    callsm_objs.h # need this so automoc can find this header-only q_object
+
 
 )
 qt_add_ios_ffmpeg_libraries(phoo)

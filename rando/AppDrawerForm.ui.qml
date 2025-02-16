@@ -59,7 +59,7 @@ Pane {
                     Layout.fillHeight: true
                     Layout.fillWidth: true
 
-                    CircularImage {
+                    CircularImage2 {
                         id: circularImage
 
                         Layout.maximumHeight: 32
@@ -92,7 +92,7 @@ Pane {
                 }
             }
         }
-        Switch {
+        SwitchDelegate {
             id: freebies_switch
             text: qsTr("Free pics")
             //            bottomPadding: ctrl_pad

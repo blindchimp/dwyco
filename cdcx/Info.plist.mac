@@ -23,9 +23,9 @@
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>@EXECUTABLE@ wants to access the camera</string>
+	<string>CDC-X wants to access the camera</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>@EXECUTABLE@ wants to access the microphone</string>
+	<string>CDC-X wants to access the microphone</string>
 	<key>NSRequiresAquaSystemAppearance</key>
         <true/>
 </dict>

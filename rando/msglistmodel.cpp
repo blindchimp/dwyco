@@ -186,7 +186,7 @@ msglist_model::msg_recv_progress(QString mid, QString huid, QString msg, int per
     Mid_to_percent.insert(bmid, percent_done);
     int midi = mid_to_index(bmid);
     QModelIndex mi = index(midi, 0);
-    dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
+    emit dataChanged(mi, mi, QVector<int>(1, ATTACHMENT_PERCENT));
 }
 
 // note: despite this being a member function, it is called for any message
@@ -264,9 +264,9 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
-    roles.append(DIRECT);
-    dataChanged(mi, mi, roles);
-    mlm->invalidate();
+    //roles.append(DIRECT);
+    emit dataChanged(mi, mi, roles);
+    mlm->invalidateFilter();
 }
 
 
@@ -605,20 +605,21 @@ msglist_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent
     if(hl.length() == 0)
         return false;
 #endif
-    QVariant is_unfetched = alm->data(alm->index(source_row, 0), IS_UNFETCHED);
+    QModelIndex mi = alm->index(source_row, 0);
+    QVariant is_unfetched = alm->data(mi, IS_UNFETCHED);
     if(is_unfetched.toBool())
         return true;
-    QVariant is_file = alm->data(alm->index(source_row, 0), IS_FILE);
+    QVariant is_file = alm->data(mi, IS_FILE);
     if(is_file.toInt() == 1)
         return true;
-    QVariant is_active = alm->data(alm->index(source_row, 0), IS_ACTIVE);
+    QVariant is_active = alm->data(mi, IS_ACTIVE);
     if(is_active.toBool())
         return true;
-    QVariant is_qd = alm->data(alm->index(source_row, 0), IS_QD);
+    QVariant is_qd = alm->data(mi, IS_QD);
     if(is_qd.toInt() == 1)
         return true;
 
-    QVariant fetch_state = alm->data(alm->index(source_row, 0), FETCH_STATE);
+    QVariant fetch_state = alm->data(mi, FETCH_STATE);
     if(fetch_state.toString() == "manual")
         return true;
     return false;

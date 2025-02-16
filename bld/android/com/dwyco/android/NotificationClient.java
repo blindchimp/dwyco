@@ -66,6 +66,8 @@ public class NotificationClient extends QtActivity
     public static int allow_notification = 1;
     private static FirebaseAnalytics mFirebaseAnalytics;
     private static String TAG = "notification_client";
+    private static final int REQUEST_POST_NOTIFICATIONS = 1;
+    private static final int REQUEST_EXTERNAL_STORAGE_PERMISSION = 2;
 
     public NotificationClient()
     {
@@ -115,20 +117,49 @@ public class NotificationClient extends QtActivity
         // below. not worth the troubles.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1);
+                    ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQUEST_POST_NOTIFICATIONS);
             }
         }
+
+        // mostly AI generated, gemini 2.0. mods to fix
+        // prompt: give me some android java code that will request the correct storage permission for writing an image to the Downloads directory on an android phone.
+        // do not give me code for storing an image. i just want code for requesting the correct permission.
+        // Android 10 (API 29) or higher: Assume MediaStore or other scoped storage mechanism is used.
+            // No need to request WRITE_EXTERNAL_STORAGE permission if correctly using MediaStore.
+            // **IMPORTANT**: Adjust this logic based on your actual MediaStore implementation.  It's possible you STILL need the permission,
+            // particularly if interacting with files outside the scope of the MediaStore.
+        
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        // Check if we have write permission
+        int permission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_EXTERNAL_STORAGE_PERMISSION
+            );
+        }
+    }
     }
 
 
 @Override
 public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    if (requestCode == 1) {
+    if (requestCode == REQUEST_POST_NOTIFICATIONS) {
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             // Permission granted
         } else {
             // Permission denied
+        }
+    }
+    if (requestCode == REQUEST_EXTERNAL_STORAGE_PERMISSION) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            // Permission granted.  Proceed with writing to external storage.
+        } else {
+            // Permission denied. Explain to the user that the feature is unavailable.
         }
     }
 }

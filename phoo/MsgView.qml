@@ -196,10 +196,10 @@ Page {
                 onClicked: {
                     // supposedly you don't need storage permissions to add to
                     // image collections via mediastore on newer android versions
-                    if(AndroidPerms.android_api() < 29 && !AndroidPerms.external_storage_permission) {
-                        if(!AndroidPerms.request_sync("android.permission.WRITE_EXTERNAL_STORAGE"))
-                            return
-                    }
+                    // if(AndroidPerms.android_api() < 29 && !AndroidPerms.external_storage_permission) {
+                    //     if(!AndroidPerms.request_sync("android.permission.WRITE_EXTERNAL_STORAGE"))
+                    //         return
+                    // }
 
                     var export_name = core.export_attachment(mid)
                     if(export_name.length > 0) {

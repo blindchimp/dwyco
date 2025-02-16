@@ -58,7 +58,7 @@ set(SRCS
         getinfo.cpp
         qlimitedbuffer.cpp
         resizeimage.cpp
-        androidperms.cpp
+
 )
 qt_add_resources(SRCS
     dwyco.qrc
@@ -86,7 +86,7 @@ qt_add_qml_module(rando
            MsgView.qml
            PicPreview.qml
            SimpleToolbar.qml
-           CircularImage.qml
+
            #MultiSelectToolbar.qml
            About.qml
            DSettings.qml
@@ -99,7 +99,7 @@ qt_add_qml_module(rando
            SimpleMsgList.qml
            MsgReport.qml
            Warning.qml
-           ProgressRound.qml
+
            Help.qml
            MapImage.qml
            GeoListView.qml
@@ -131,8 +131,8 @@ endif()
 
 set_target_properties(rando PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER com.dwyco.rando
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE_BUNDLE_VERSION "0.1" #${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1" #${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE_INFO_PLIST ${INFOPLIST}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE

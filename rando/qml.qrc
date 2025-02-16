@@ -11,7 +11,6 @@
         <file>MsgView.qml</file>
         <file>PicPreview.qml</file>
         <file>SimpleToolbar.qml</file>
-        <file>CircularImage.qml</file>
         <file>About.qml</file>
         <file>DSettings.qml</file>
         <file>AppDrawer.qml</file>
@@ -23,7 +22,6 @@
         <file>SimpleMsgList.qml</file>
         <file>MsgReport.qml</file>
         <file>Warning.qml</file>
-        <file>ProgressRound.qml</file>
         <file>Help.qml</file>
         <file>MapImage.qml</file>
         <file>GeoListView.qml</file>

@@ -50,7 +50,7 @@
 #include "audi_qt.h"
 void android_log_stuff(const char *str, const char *s1, int s2);
 #endif
-#include "androidperms.h"
+//#include "androidperms.h"
 #include "profpv.h"
 #if defined(LINUX) && !defined(MAC_CLIENT) && !defined(ANDROID) && !defined(EMSCRIPTEN) && !defined(DWYCO_IOS)
 #include "v4lcapexp.h"
@@ -1116,7 +1116,7 @@ DwycoCore::directory_swap()
 }
 #endif
 
-#if 0 && ANDROID
+#ifdef ANDROID
 static
 QStandardPaths::StandardLocation
 determine_android_migration()
@@ -1208,7 +1208,7 @@ setup_locations()
     QStandardPaths::StandardLocation filepath = QStandardPaths::DocumentsLocation;
 
 #ifdef ANDROID
-    //filepath = determine_android_migration();
+    filepath = determine_android_migration();
 #endif
     //
     QStringList args = QGuiApplication::arguments();
@@ -2172,15 +2172,9 @@ DwycoCore::set_badge_number(int i)
 int
 DwycoCore::load_contacts()
 {
-#if 0 && ANDROID
-    if(QtAndroid::checkPermission("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
-    {
-        QtAndroid::PermissionResultMap m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_CONTACTS"));
-        if(m.value("android.permission.READ_CONTACTS") == QtAndroid::PermissionResult::Denied)
-        {
-            return 0;
-        }
-    }
+#if ANDROID
+    // note: we're assuming the UI does the platform specific permissions
+    // check for access to contacts
     notificationClient->load_contacts();
     return 1;
 #else
@@ -3534,8 +3528,8 @@ dwyco_register_qml(QQmlContext *root)
     root->setContextProperty("JoinLogModel", jlm);
 
 //#ifdef ANDROID
-    AndroidPerms *a = new AndroidPerms;
-    root->setContextProperty("AndroidPerms", a);
+    //AndroidPerms *a = new AndroidPerms;
+    //root->setContextProperty("AndroidPerms", a);
 //#endif
 
 }

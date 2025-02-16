@@ -5,7 +5,7 @@ include($$PWD/../$$DWYCO_CONFDIR/conf.pri)
 
 DEFINES += NO_BUILDTIME
 DEFINES += NO_DWYCO_AUDIO
-VER="2.91"
+VER="4.212"
 # i'll shit myself if this works on all platforms
 DEFINES += BUILDTIME=\"\\\"$${VER}\\\"\"
 DEFINES += QT_VERSION_STRING=\\\"$$QT_VERSION\\\"
@@ -49,7 +49,6 @@ SOURCES += main.cpp \
     getinfo.cpp \
     qlimitedbuffer.cpp \
     resizeimage.cpp \
-    androidperms.cpp
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/androidinst3
 
@@ -283,8 +282,7 @@ HEADERS += \
     convmodel.h \
     getinfo.h \
     qlimitedbuffer.h \
-    resizeimage.h \
-    androidperms.h
+    resizeimage.h
 
 DISTFILES += \
     androidinst3/google-services.json \
