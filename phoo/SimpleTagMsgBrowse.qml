@@ -331,6 +331,7 @@ Page {
 
             Text {
                 function gentext(msg) {
+                    return msg
                     return "<html>" + msg + "</html>"
                 }
 
@@ -339,7 +340,7 @@ Page {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 //anchors.top: preview.visible ? undefined : parent.top
-                height: preview.visible ? parent.height : implicitHeight
+                //height: preview.visible ? parent.height : implicitHeight
                 text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT))
                 verticalAlignment: Text.AlignBottom
                 wrapMode: preview.visible ? Text.NoWrap : Text.WordWrap
@@ -348,6 +349,7 @@ Page {
                 color: amber_light
                 style: Text.Outline
                 styleColor: "black"
+                padding: 3
 
                 clip: true
             }
