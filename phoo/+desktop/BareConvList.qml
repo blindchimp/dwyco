@@ -45,13 +45,15 @@ Item {
                id: drow
                spacing: mm(1)
                anchors.fill: parent
+               property bool censor_it
+               censor_it: censor && !regular_profile(REVIEWED, REGULAR)
 
                CircularImage2 {
                    id: ppic
                    //width: dp(80)
                    //height: dp(60)
                    source : { 
-                       (!invalid && !is_blocked && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
+                       (!invalid && !is_blocked && !drow.censor_it && resolved_counter > -1) ?
                                    core.uid_to_profile_preview(uid) :
                                    "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png" 
                    }
@@ -130,6 +132,8 @@ Item {
                }
 
                Text {
+                   // note: we don't censor the text on desktop, if they are already in your
+                   // list, being able to see the text is a little more important.
                    text: display
                    elide: Text.ElideRight
                    clip: true
