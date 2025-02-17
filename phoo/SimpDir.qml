@@ -19,7 +19,7 @@ import QtQuick.Layouts
 // can update its contents piecemeal
 Page {
     id: simpdir_top
-    anchors.fill: parent
+    //anchors.fill: parent
 
     signal uid_selected(string uid, string action)
 
@@ -130,7 +130,7 @@ Page {
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton|Qt.RightButton
-                onClicked: {
+                onClicked: (mouse)=> {
                     console.log("simpdir click ")
                     console.log(index)
                     listView1.currentIndex = index
@@ -233,7 +233,7 @@ Page {
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton|Qt.RightButton
-                onClicked: {
+                onClicked: (mouse)=> {
                     console.log("simpdir click ")
                     console.log(index)
                     gridView1.currentIndex = index

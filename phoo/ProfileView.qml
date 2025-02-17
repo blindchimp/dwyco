@@ -20,7 +20,7 @@ Page {
     property bool dragging
     property int is_blocked: 0
 
-    anchors.fill: parent
+    //anchors.fill: parent
     header: SimpleToolbar {
 
     }

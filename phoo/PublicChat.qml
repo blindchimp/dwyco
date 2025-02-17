@@ -15,7 +15,7 @@ import dwyco
 
 Page {
     id: pchat
-    anchors.fill: parent
+    //anchors.fill: parent
     property alias model: listView1.model
     //property int connect_server: 0
     
