@@ -12,7 +12,7 @@ import QtQuick.Controls
 
 Page {
     id: chatlist_top
-    anchors.fill: parent
+    //anchors.fill: parent
 
     header: SimpleToolbar {
         background: Rectangle {
