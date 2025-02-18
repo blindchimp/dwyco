@@ -22,7 +22,7 @@ include $(MY_CONF_LOCAL_PATH)/libvorbis/Android2.mk
 include $(MY_CONF_LOCAL_PATH)/libvorbis/Android3.mk
 include $(MY_CONF_LOCAL_PATH)/libspeex/Android.mk
 include $(MY_CONF_LOCAL_PATH)/miniupnpc/Android.mk
-#include $(MY_CONF_LOCAL_PATH)/uv/Android.mk
+include $(MY_CONF_LOCAL_PATH)/uv/Android.mk
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := dwyco_jni
@@ -41,7 +41,7 @@ crypto5 \
 kazlib \
 jenkins \
 dwcls \
-miniupnpc
-#uv
+miniupnpc \
+uv
 
 include $(BUILD_SHARED_LIBRARY)
