@@ -161,12 +161,12 @@ Page {
         active: visible
         sourceComponent: Mumble.FileDialog {
                 title: "Pick a picture"
-                folder: shortcuts.pictures
+                //folder: shortcuts.pictures
                 onAccepted: {
-                    console.log(fileUrl)
-                    console.log(Qt.resolvedUrl(fileUrl))
+                    console.log(file)
+                    console.log(Qt.resolvedUrl(file))
                     //img_preview.source = fileUrl
-                    prof_pic_preview.source = fileUrl
+                    prof_pic_preview.source = file
                     prof_pic_preview.ok_vis = true
                     prof_pic_preview.ok_text = "Ok"
                     stack.push(prof_pic_preview, {"ok_text":"Use"})
