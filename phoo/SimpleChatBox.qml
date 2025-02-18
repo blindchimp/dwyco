@@ -35,7 +35,9 @@ Page {
     property var call_buttons_model
     property bool lock_to_bottom: false
     property int is_blocked: 0
+    property int prov_img_height
 
+    prov_img_height: .25 * height
     function star_fun(b) {
         console.log("chatbox star")
         model.fav_all_selected(b ? 1 : 0)
@@ -852,7 +854,8 @@ Page {
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
                     //Layout.minimumWidth: (listView1.width * 3) / 4
-                    Layout.maximumHeight: listView1.height / 2
+                    //Layout.maximumHeight: listView1.height / 2
+                    Layout.preferredHeight: prov_img_height
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
 
                     fillMode: Image.PreserveAspectFit
