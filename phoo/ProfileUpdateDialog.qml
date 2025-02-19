@@ -12,7 +12,8 @@ import QtQuick.Controls
 import dwyco
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import Qt.labs.platform as Mumble
+import QtCore
+//import Qt.labs.platform as Mumble
 
 Page {
     id: rectangle1
@@ -159,14 +160,14 @@ Page {
 
         visible: false
         active: visible
-        sourceComponent: Mumble.FileDialog {
+        sourceComponent: FileDialog {
                 title: "Pick a picture"
-                //folder: shortcuts.pictures
+                currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
                 onAccepted: {
-                    console.log(file)
-                    console.log(Qt.resolvedUrl(file))
+                    console.log(selectedFile)
+                    console.log(Qt.resolvedUrl(selectedFile))
                     //img_preview.source = fileUrl
-                    prof_pic_preview.source = file
+                    prof_pic_preview.source = selectedFile
                     prof_pic_preview.ok_vis = true
                     prof_pic_preview.ok_text = "Ok"
                     stack.push(prof_pic_preview, {"ok_text":"Use"})
