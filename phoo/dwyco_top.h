@@ -31,7 +31,6 @@ class DwycoCore : public QObject
 {
     Q_OBJECT
     QML_ELEMENT
-    QML_UNCREATABLE("dwyco singleton is created internally")
 
     QML_WRITABLE_VAR_PROPERTY(QString, client_name)
     QML_WRITABLE_VAR_PROPERTY(bool, use_archived)

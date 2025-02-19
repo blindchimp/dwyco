@@ -3478,10 +3478,17 @@ dwyco_register_qml(QQmlContext *root)
 {
     setup_locations();
     TheRootCtx = root;
-    qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
-    qmlRegisterType<msglist_model>("dwyco", 1, 0, "DwycoMsgList");
-    qmlRegisterType<SimpleUserSortFilterModel>("dwyco", 1, 0, "DwycoSimpleUserModel");
-    qmlRegisterType<SimpleContactModel>("dwyco", 1, 0, "DwycoSimpleContactModel");
+    // the registration of these things is done via QML_ELEMENT
+    // macros in qt6. note, i think some of these might be better
+    // defined as just context properties (as below). maybe
+    // the msglist_model might make sense as a type, since multiple
+    // objects in that case might be useful.
+
+    //qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
+    //qmlRegisterType<msglist_model>("dwyco", 1, 0, "DwycoMsgList");
+    //qmlRegisterType<SimpleUserSortFilterModel>("dwyco", 1, 0, "DwycoSimpleUserModel");
+    //qmlRegisterType<SimpleContactModel>("dwyco", 1, 0, "DwycoSimpleContactModel");
+
     //qmlRegisterType<FauxButton>("dwyco", 1, 0, "FauxButton");
     //qmlRegisterType<iglist_model>("dwyco", 1, 0, "DwycoIgnoreList");
     //qmlRegisterType<codel>("dwyco", 1, 0, "ChatListModel");
