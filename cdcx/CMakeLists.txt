@@ -17,6 +17,10 @@ find_package(Qt6 REQUIRED COMPONENTS
     Core Gui WebEngineWidgets StateMachine Concurrent MultimediaWidgets
     Widgets Network Multimedia WebEngineCore WebEngineWidgets)
 
+# NOTE! this cmake file needs a redo!
+# we'll never be building a qt5 version using cmake
+qt_standard_project_setup(REQUIRES 6.8)
+
 # Get Qt version from the Qt6 config
 execute_process(COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 
