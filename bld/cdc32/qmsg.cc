@@ -4500,6 +4500,8 @@ clean_cruft()
     remove_all_but("*.aux", nodel);
     DwString d1, user, tmp;
     get_fn_prefixes(d1, user, tmp);
+// note: this is a good cleanup, but we can't do it as long as we
+// are keeping the remote index databases in tmp.
 #if 0
     // this is a bit dangerous, but for this one case where the
     // names are identical except for a "/tmp/" on the end of the

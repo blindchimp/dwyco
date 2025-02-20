@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.222")
+set(RANDO_VERSION "4.223")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000162)
+set(RANDO_VERSION_CODE 3000163)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -22,6 +22,7 @@ add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Quick)
+qt_standard_project_setup(REQUIRES 6.8)
 find_package(Qt6  REQUIRED COMPONENTS Network)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 
@@ -42,7 +43,7 @@ if(ANDROID)
 file(COPY ../bld/android/com/dwyco DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/)
 file(COPY ../../deploy-rando/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
 endif()
-qt_standard_project_setup(REQUIRES 6.8)
+
 
 set(SRCS
     main.cpp

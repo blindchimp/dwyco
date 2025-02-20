@@ -787,7 +787,7 @@ ApplicationWindow {
 
         z: 10
         exit_button.onClicked: {
-            expire_immediate = true
+            applicationWindow1.expire_immediate = true
             Qt.quit()
         }
         Component.onCompleted: {

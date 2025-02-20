@@ -146,7 +146,7 @@ Rectangle {
         active: cameraUI.visible
         //captureMode: Camera.CaptureStillImage
         focusMode: Camera.FocusModeAuto
-        //whiteBalanceMode: Camera.WhiteBalanceAuto
+        whiteBalanceMode: Camera.WhiteBalanceAuto
 
 //        onLockStatusChanged: {
 //            console.log("lock status ", lockStatus)

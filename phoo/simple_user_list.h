@@ -10,6 +10,7 @@
 #define SIMPLEUSERMODEL_H
 
 #include <QObject>
+#include <QQmlEngine>
 #include "QSortFilterProxyModel"
 #include "QQmlObjectListModel.h"
 #include "QQmlVarPropertyHelpers.h"
@@ -81,6 +82,7 @@ public slots:
 class SimpleUserSortFilterModel : public QSortFilterProxyModel
 {
     Q_OBJECT
+    QML_NAMED_ELEMENT(DwycoSimpleUserModel)
     Q_PROPERTY(int selected_count READ get_selected_count NOTIFY selected_countChanged)
     Q_PROPERTY (int count READ count NOTIFY countChanged)
 

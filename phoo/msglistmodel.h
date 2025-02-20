@@ -10,11 +10,14 @@
 #define MSGLISTMODEL_H
 #include <QAbstractListModel>
 #include <QSortFilterProxyModel>
+#include <QQmlEngine>
 #include "dlli.h"
 
 class msglist_model : public QSortFilterProxyModel
 {
     Q_OBJECT
+    //QML_ELEMENT
+    QML_NAMED_ELEMENT(DwycoMsgList)
     Q_PROPERTY(QString uid READ uid WRITE setUid NOTIFY uidChanged)
     Q_PROPERTY(QString tag READ tag WRITE setTag NOTIFY tagChanged)
 
