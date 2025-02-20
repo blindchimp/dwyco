@@ -6,7 +6,7 @@
 ; License, v. 2.0. If a copy of the MPL was not distributed with this file,
 ; You can obtain one at https://mozilla.org/MPL/2.0/.
 */
-//import QtQml
+import QtQml
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
@@ -123,7 +123,7 @@ ApplicationWindow {
     property bool censor
     censor:  corporate_censorship || !show_unreviewed
 
-    property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && core.is_database_online === 1}
+    property bool up_and_running : {pwdialog.allow_access === 1 && profile_bootstrapped === 1 && server_account_created && is_database_online === 1}
     property int qt_application_state: 0
     property bool is_mobile
     property bool hard_close: false
@@ -140,16 +140,22 @@ ApplicationWindow {
         return ""
     }
 
+    property int is_database_online: -1
+    property int is_chat_online: -1
+
+    property string client_name
+    client_name: {"phoo-" + Qt.platform.os + "-" + Core.buildtime}
+
 
     property bool group_active
-    group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
+    group_active: Core.active_group_name.length > 0 && Core.group_status === 0 && Core.group_private_key_valid === 1
 
     function pin_expire() {
         var expire
         var duration
-        duration = core.get_local_setting("pin_duration")
+        duration = Core.get_local_setting("pin_duration")
         if(duration === "") {
-            core.set_local_setting("pin_duration", "0")
+            Core.set_local_setting("pin_duration", "0")
             duration = "0"
         }
         if(expire_immediate)
@@ -184,10 +190,10 @@ ApplicationWindow {
     //width: Screen.width
     //height: Screen.height
     title: {
-        qsTr("Dwyco ") + core.this_handle + (core.group_private_key_valid === 1 ?
-                                                 " (" + core.active_group_name + " " + core.percent_synced + "%)" :
-                                                 (core.group_status === 1 ?
-                                                      "(Requesting " + core.active_group_name + ")" : ""))
+        qsTr("Dwyco ") + Core.this_handle + (Core.group_private_key_valid === 1 ?
+                                                 " (" + Core.active_group_name + " " + Core.percent_synced + "%)" :
+                                                 (Core.group_status === 1 ?
+                                                      "(Requesting " + Core.active_group_name + ")" : ""))
 
     }
     property int close_bounce: 0
@@ -245,6 +251,73 @@ ApplicationWindow {
 
         //AndroidPerms.request_sync("android.permission.CAMERA")
         //AndroidPerms.request_sync("android.permission.POST_NOTIFICATIONS")
+
+        var a
+        a = Core.get_local_setting("first-run")
+        if(a === "") {
+            //profile_dialog.visible = true
+            // don't need a reindex_complete
+            Core.set_local_setting("reindex1", "1")
+            stack.push(convlist)
+            stack.push(blank_page)
+            stack.push(profile_dialog)
+        } else {
+            a = Core.get_local_setting("reindex1")
+            if(a === "")
+            {
+                stack.push(background_reindex)
+                return
+            }
+            stack.push(convlist)
+            profile_bootstrapped = 1
+            pwdialog.state = "start"
+        }
+        a = Core.get_local_setting("acct-created")
+        if(a === "") {
+            server_account_created = false
+        } else {
+            server_account_created = true
+        }
+        if(profile_bootstrapped === 1 && !server_account_created) {
+            stack.push(blank_page)
+        }
+
+        if(Qt.platform.os == "android") {
+            notificationClient.cancel()
+        }
+
+        a = Core.get_local_setting("quiet")
+        if(a === "" || a === "false") {
+            dwy_quiet = false
+            if(Qt.platform.os == "android") {
+            notificationClient.set_quiet(0)
+            }
+        } else {
+            dwy_quiet = true
+            if(Qt.platform.os == "android") {
+            notificationClient.set_quiet(1)
+            }
+        }
+
+
+//            a = get_local_setting("invis")
+//            if(a === "" || a === "false") {
+//                dwy_invis = false
+//            } else {
+//                dwy_invis = true
+//            }
+
+        a = Core.get_local_setting("show_unreviewed")
+        if(a === "" || a === "0") {
+            show_unreviewed = false
+        } else {
+            show_unreviewed = true
+        }
+
+        if(pwdialog.allow_access === 1) {
+            Core.init()
+            init_called = true
+        }
     }
 
     CameraPermission {
@@ -311,17 +384,17 @@ ApplicationWindow {
             }
 
             Connections {
-                target: core
+                target: Core
                 function onProfile_update(success) {
-                    drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
-                    drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
+                    drawer_contents.circularImage.source = Core.uid_to_profile_preview(Core.get_my_uid())
+                    drawer_contents.text1.text = Core.uid_to_name(Core.get_my_uid())
                 }
             }
 
             onVisibleChanged: {
                 if(visible) {
-                    drawer_contents.circularImage.source = core.uid_to_profile_preview(core.get_my_uid())
-                    drawer_contents.text1.text = core.uid_to_name(core.get_my_uid())
+                    drawer_contents.circularImage.source = Core.uid_to_profile_preview(Core.get_my_uid())
+                    drawer_contents.text1.text = Core.uid_to_name(Core.get_my_uid())
                 }
 
             }
@@ -334,13 +407,13 @@ ApplicationWindow {
             Label {
                 id: ind_invis
                 text: "Invis"
-                visible: core.invisible
+                visible: Core.invisible
                 color: "red"
 
             }
             Label {
-                text: "Archived " + (core.total_users - ConvListModel.count).toString()
-                visible: core.total_users > ConvListModel.count
+                text: "Archived " + (Core.total_users - ConvListModel.count).toString()
+                visible: Core.total_users > ConvListModel.count
                 color: "red"
             }
 
@@ -360,11 +433,11 @@ ApplicationWindow {
             }
             Label {
                 id: db_status
-                text: core.is_database_online === 0 ? "db off" : "db on"
+                text: is_database_online === 0 ? "db off" : "db on"
             }
             Label {
                 id: chat_status
-                text: core.is_chat_online === 0 ? "chat off" : "chat on"
+                text: is_chat_online === 0 ? "chat off" : "chat on"
             }
     }
 
@@ -376,7 +449,7 @@ ApplicationWindow {
         MenuItem {
             text: "Block user"
             onTriggered: {
-                core.set_ignore(chatbox.to_uid, 1)
+                Core.set_ignore(chatbox.to_uid, 1)
                 stack.pop()
             }
         }
@@ -392,8 +465,8 @@ ApplicationWindow {
                 text: "Delete ALL messages from user and BLOCK them?"
                 informativeText: "This removes FAVORITE and HIDDEN messages too. (NO UNDO)"
                 onYesClicked: {
-                    core.set_ignore(chatbox.to_uid, 1)
-                    core.delete_user(chatbox.to_uid)
+                    Core.set_ignore(chatbox.to_uid, 1)
+                    Core.delete_user(chatbox.to_uid)
                     themsglist.reload_model()
                     stack.pop()
 
@@ -443,7 +516,7 @@ ApplicationWindow {
 
         property string next_state
         property string ok_text: "Send"
-        anchors.fill: parent
+        //anchors.fill: parent
         visible: false
         active: visible
 
@@ -527,14 +600,14 @@ ApplicationWindow {
         property bool auto_connect: false
 
         Connections {
-            target: core
+            target: Core
             function onQt_app_state_change(app_state) {
                 if(app_state === 0) {
                     console.log("CHAT SERVER RESUME ")
                     if(chatlist.visible || public_chat.visible) {
-                        if(core.chat_online() === 0) {
+                        if(Core.chat_online() === 0) {
                              console.log("CHAT SERVER reconnect ")
-                            core.switch_to_chat_server(chat_server.connect_server)
+                            Core.switch_to_chat_server(chat_server.connect_server)
                             chat_server.auto_connect = true
                         }
                     }
@@ -543,7 +616,7 @@ ApplicationWindow {
                 if(app_state !== 0) {
                     console.log("CHAT SERVER PAUSE");
 
-                    //core.disconnect_chat_server()
+                    //Core.disconnect_chat_server()
                 }
             }
 
@@ -551,7 +624,7 @@ ApplicationWindow {
                 console.log("CHAT SERVER RESTART ", what, chat_server.auto_connect)
                 if(what > 0) {
                     if(chat_server.auto_connect) {
-                        core.switch_to_chat_server(chat_server.connect_server)
+                        Core.switch_to_chat_server(chat_server.connect_server)
                     }
                 }
             }
@@ -592,7 +665,7 @@ ApplicationWindow {
         }
         onLoaded: {
             if(SimpleDirectoryList.count === 0)
-                core.refresh_directory()
+                Core.refresh_directory()
         }
     }
 
@@ -643,7 +716,7 @@ ApplicationWindow {
         visible: false
 
         onVisibleChanged: {
-            core.reset_unviewed_msgs(to_uid)
+            Core.reset_unviewed_msgs(to_uid)
         }
 
     }
@@ -734,7 +807,7 @@ ApplicationWindow {
             if(allow_access === 1) {
                 Qt.inputMethod.hide()
                 if(state === "start") {
-                    core.init()
+                    Core.init()
                     init_called = true
                 }
             }
@@ -747,7 +820,7 @@ ApplicationWindow {
                 StateChangeScript {
                     script: {
                         //load password expire from disk
-                        var pexp = core.get_local_setting("pin_expire")
+                        var pexp = Core.get_local_setting("pin_expire")
                         if(pexp === "")
                             pexp = 0
                         else
@@ -764,7 +837,7 @@ ApplicationWindow {
                 StateChangeScript {
                     script: {
                         var expire = pin_expire()
-                        core.set_local_setting("pin_expire", expire.toString())
+                        Core.set_local_setting("pin_expire", expire.toString())
                         pwdialog.pw_expire_time = expire
                     }
                 }
@@ -902,86 +975,6 @@ ApplicationWindow {
         visible: false
     }
 
-    DwycoCore {
-        id: core
-        property int is_database_online: -1
-        property int is_chat_online: -1
-
-        objectName: "dwyco_singleton"
-        client_name: {"phoo-" + Qt.platform.os + "-" + core.buildtime}
-        Component.onCompleted: {
-//            if(core.android_migrate === 1)
-//            {
-//                stack.push(migrate_page)
-//                return
-//            }
-            var a
-            a = get_local_setting("first-run")
-            if(a === "") {
-                //profile_dialog.visible = true
-                // don't need a reindex_complete
-                set_local_setting("reindex1", "1")
-                stack.push(convlist)
-                stack.push(blank_page)
-                stack.push(profile_dialog)
-            } else {
-                a = get_local_setting("reindex1")
-                if(a === "")
-                {
-                    stack.push(background_reindex)
-                    return
-                }
-                stack.push(convlist)
-                profile_bootstrapped = 1
-                pwdialog.state = "start"
-            }
-            a = get_local_setting("acct-created")
-            if(a === "") {
-                server_account_created = false
-            } else {
-                server_account_created = true
-            }
-            if(profile_bootstrapped === 1 && !server_account_created) {
-                stack.push(blank_page)
-            }
-
-            if(Qt.platform.os == "android") {
-                notificationClient.cancel()
-            }
-
-            a = get_local_setting("quiet")
-            if(a === "" || a === "false") {
-                dwy_quiet = false
-                if(Qt.platform.os == "android") {
-                notificationClient.set_quiet(0)
-                }
-            } else {
-                dwy_quiet = true
-                if(Qt.platform.os == "android") {
-                notificationClient.set_quiet(1)
-                }
-            }
-
-
-//            a = get_local_setting("invis")
-//            if(a === "" || a === "false") {
-//                dwy_invis = false
-//            } else {
-//                dwy_invis = true
-//            }
-
-            a = get_local_setting("show_unreviewed")
-            if(a === "" || a === "0") {
-                show_unreviewed = false
-            } else {
-                show_unreviewed = true
-            }
-
-            if(pwdialog.allow_access === 1) {
-                init()
-                init_called = true
-            }
-        }
 
 
         Component.onDestruction: {
@@ -991,31 +984,33 @@ ApplicationWindow {
                 notificationClient.set_lastrun()
             }
             var expire = pin_expire()
-            core.set_local_setting("pin_expire", expire.toString())
-            exit()
+            Core.set_local_setting("pin_expire", expire.toString())
+            Core.exit()
         }
 
-        onServer_login: (msg, what)=> {
+        Connections {
+            target: Core
+        function onServer_login (msg, what) {
            
             console.log(msg)
             console.log(what)
             if(what === 1) {
-                set_local_setting("acct-created", "true")
+                Core.set_local_setting("acct-created", "true")
                 server_account_created = true
             }
             if(Qt.platform.os == "android") {
-                notificationClient.set_msg_count_url(core.get_msg_count_url())
+                notificationClient.set_msg_count_url(Core.get_msg_count_url())
                 notificationClient.log_event()
                 notificationClient.set_lastrun()
             }
             if(simpdir_rect.visible && SimpleDirectoryList.count === 0)
-                refresh_directory()
-            //applicationWindow1.title = "Dwyco " + core.uid_to_name(core.get_my_uid())
+                Core.refresh_directory()
+            //applicationWindow1.title = "Dwyco " + Core.uid_to_name(Core.get_my_uid())
         }
 
-        onNew_msg: (from_uid, txt, mid)=> {
+        function onNew_msg (from_uid, txt, mid) {
             console.log("new msglist ", themsglist.uid, ' ', from_uid, " ", mid)
-            if(from_uid === themsglist.uid || core.map_to_representative(from_uid) === core.map_to_representative(themsglist.uid)) {
+            if(from_uid === themsglist.uid || Core.map_to_representative(from_uid) === Core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model();
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
@@ -1030,21 +1025,21 @@ ApplicationWindow {
             sound_recv.play()
         }
 
-        onSys_msg_idx_updated: (uid)=> {
+        function onSys_msg_idx_updated (uid) {
             console.log("upd " + uid + " " + themsglist.uid)
-            if(uid === themsglist.uid || core.map_to_representative(uid) === core.map_to_representative(themsglist.uid)) {
+            if(uid === themsglist.uid || Core.map_to_representative(uid) === Core.map_to_representative(themsglist.uid)) {
                 themsglist.reload_model()
 
                 console.log("RELOAD msg_idx")
             }
         }
 
-        onMsg_send_status: (status, recipient, pers_id)=> {
+        function onMsg_send_status(status, recipient, pers_id) {
             console.log(pers_id, status, recipient)
             //hwtext.text = status
-            if(status === DwycoCore.MSG_SEND_SUCCESS) {
+            if(status === Core.MSG_SEND_SUCCESS) {
                 //sound_sent.play()
-                if(themsglist.uid === recipient || core.map_to_representative(themsglist.uid) === core.map_to_representative(recipient)) {
+                if(themsglist.uid === recipient || Core.map_to_representative(themsglist.uid) === Core.map_to_representative(recipient)) {
                     themsglist.reload_model()
 
                 }
@@ -1052,16 +1047,16 @@ ApplicationWindow {
             }
         }
 
-        onMsg_progress: (pers_id, recipient, msg, percent_done)=> {
+        function onMsg_progress (pers_id, recipient, msg, percent_done) {
             console.log(pers_id, msg, percent_done)
             //hwtext.text = msg + " " + String(percent_done) + "%"
         }
 
-        onProfile_update: (success)=> {
+        function onProfile_update (success) {
             top_dispatch.profile_updated(success)
         }
 
-        onQt_app_state_change: (app_state)=> {
+        function onQt_app_state_change(app_state) {
             console.log("app state change ", app_state)
             if(app_state === 0) {
                 // resuming
@@ -1077,7 +1072,7 @@ ApplicationWindow {
             qt_application_state = app_state
         }
 
-        onImage_picked: (fn) => {
+        function onImage_picked(fn) {
             console.log("image " + fn)
             if(android_img_pick_hack === 1)
             {
@@ -1092,18 +1087,18 @@ ApplicationWindow {
             }
         }
 
-        onAny_unviewedChanged: (any_unviewed) => {
+        function onAny_unviewedChanged(any_unviewed) {
             if(any_unviewed)
-                set_badge_number(1)
+                Core.set_badge_number(1)
             else
-                set_badge_number(0)
+                Core.set_badge_number(0)
         }
 
-        onClient_nameChanged: (client_name) => {
-            core.update_dwyco_client_name(core.client_name)
-        }
+
     }
-
+    onClient_nameChanged: {
+            Core.update_dwyco_client_name(client_name)
+        }
     Rectangle {
         id: blank_page
         visible: false
@@ -1168,11 +1163,11 @@ ApplicationWindow {
             if(pwdialog.allow_access === 0)
                 return
             //time.text = Date().toString()
-            if(core.database_online() !== core.is_database_online) {
-                core.is_database_online = core.database_online()
+            if(Core.database_online() !== is_database_online) {
+                is_database_online = Core.database_online()
             }
-            if(core.chat_online() !== core.is_chat_online) {
-                core.is_chat_online = core.chat_online()
+            if(Core.chat_online() !== is_chat_online) {
+                is_chat_online = Core.chat_online()
             }
 
             // note: trying to schedule out another service channels call
@@ -1188,7 +1183,7 @@ ApplicationWindow {
             // call to service channels. if you leave them unsynchronized, you get "next"
             // expirations that are more or less random based on when the timer was started,
             // which isn't really necessary.
-            var sc_next = core.service_channels()
+            var sc_next = Core.service_channels()
             //console.log("next ", sc_next)
             if(sc_next === 1 || sc_next < 0)
             {

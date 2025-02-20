@@ -47,24 +47,24 @@ Pane {
         }
         set_pin_button.onClicked: {
             if(pw.length > 0) {
-                var salt = core.random_string(10)
+                var salt = Core.random_string(10)
                 var total = salt + pw
                 var hash = Qt.md5(total)
-                core.set_local_setting("salt", salt)
-                core.set_local_setting("pw", hash)
-                //core.set_local_setting("cpw", pw)
+                Core.set_local_setting("salt", salt)
+                Core.set_local_setting("pw", hash)
+                //Core.set_local_setting("cpw", pw)
             } else {
-                core.set_local_setting("salt", "")
-                core.set_local_setting("pw", "")
-                //core.set_local_setting("cpw", "")
+                Core.set_local_setting("salt", "")
+                Core.set_local_setting("pw", "")
+                //Core.set_local_setting("cpw", "")
             }
 
             confirm_old_pw.reset()
             confirm_old_pw.load_cpw()
             reset()
-            core.set_local_setting("pin_duration", "0")
+            Core.set_local_setting("pin_duration", "0")
             var expire = pin_expire()
-            core.set_local_setting("pin_expire", expire.toString())
+            Core.set_local_setting("pin_expire", expire.toString())
             pwdialog.pw_expire_time = expire
             pwdialog.reset()
             pwdialog.load_cpw()

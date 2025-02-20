@@ -32,7 +32,7 @@ Page {
     property int inh_profile_warning: 1
 
     Component.onCompleted: {
-        if(core.get_local_setting("inh_profile_warning") === "")
+        if(Core.get_local_setting("inh_profile_warning") === "")
             inh_profile_warning = 0
         else
             inh_profile_warning = 1
@@ -133,11 +133,11 @@ Page {
         if(visible && preview_existing) {
             img_filename = ""
             img_preview_source = ""
-            handle.text_input = core.uid_to_name(core.get_my_uid())
-            desc.text = core.uid_to_profile_info(core.get_my_uid(), DwycoCore.DESCRIPTION)
-            email.text_input = core.uid_to_profile_info(core.get_my_uid(), DwycoCore.EMAIL)
-            img_preview.source = core.uid_to_profile_preview(core.get_my_uid())
-            img_filename = core.uid_to_profile_image_filename(core.get_my_uid())
+            handle.text_input = Core.uid_to_name(Core.get_my_uid())
+            desc.text = Core.uid_to_profile_info(Core.get_my_uid(), Core.DESCRIPTION)
+            email.text_input = Core.uid_to_profile_info(Core.get_my_uid(), Core.EMAIL)
+            img_preview.source = Core.uid_to_profile_preview(Core.get_my_uid())
+            img_filename = Core.uid_to_profile_image_filename(Core.get_my_uid())
             preview_existing = false
 
         }
@@ -184,12 +184,12 @@ Page {
         onClosed: {
             if(ok) {
                 img_preview.source = source
-                img_filename = core.url_to_filename(source)
+                img_filename = Core.url_to_filename(source)
                 picture_picker.visible = false
             }
             else
             {
-                img_preview.source = core.uid_to_profile_preview(core.get_my_uid())
+                img_preview.source = Core.uid_to_profile_preview(Core.get_my_uid())
                 img_filename = ""
             }
             source = ""
@@ -328,7 +328,7 @@ Page {
                 enabled: {profile_sent === 0}
                 onClicked: {
                     Qt.inputMethod.commit()
-                    if(core.set_simple_profile(handle.text_input, email.text_input, desc.text, img_filename) === 1) {
+                    if(Core.set_simple_profile(handle.text_input, email.text_input, desc.text, img_filename) === 1) {
                         profile_sent = 1
                     }
                     else
@@ -369,7 +369,7 @@ Page {
         id: offline_help
         anchors.fill: parent
         z: 5
-        visible: {core.is_database_online !== 1}
+        visible: {is_database_online !== 1}
         Label {
             anchors.fill: parent
             anchors.margins: mm(3)

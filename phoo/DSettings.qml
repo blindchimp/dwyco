@@ -25,9 +25,9 @@ Page {
 
     Component.onCompleted: {
         var duration
-        duration = core.get_local_setting("pin_duration")
+        duration = Core.get_local_setting("pin_duration")
         if(duration === "") {
-            core.set_local_setting("pin_duration", "0")
+            Core.set_local_setting("pin_duration", "0")
             duration = "0"
         }
         if(duration !== "0") {
@@ -38,18 +38,18 @@ Page {
         }
 
         var a
-        a = core.get_local_setting("show_unreviewed")
+        a = Core.get_local_setting("show_unreviewed")
         if(a === "" || a === "0") {
             unreviewed.checked = false
         } else {
             unreviewed.checked = true
         }
-        if(core.get_local_setting("inh_content_warning") === "")
+        if(Core.get_local_setting("inh_content_warning") === "")
             inh_content_warning = 0
         else
             inh_content_warning = 1
 
-        a = core.get_local_setting("show_hidden");
+        a = Core.get_local_setting("show_hidden");
         if(a === "" || a === "1") {
             themsglist.set_show_hidden(1)
             show_hidden_msgs.checked = true
@@ -81,7 +81,7 @@ Page {
             if(visible) {
                 oops = false
             } else {
-                if(core.get_local_setting("inh_content_warning") === "")
+                if(Core.get_local_setting("inh_content_warning") === "")
                     inh_content_warning = 0
                 else
                     inh_content_warning = 1
@@ -106,9 +106,9 @@ Page {
                     d = 0
                 }
 
-                core.set_local_setting("pin_duration", d.toString())
+                Core.set_local_setting("pin_duration", d.toString())
                 if(d === 0)
-                    core.set_local_setting("pin_expire", "")
+                    Core.set_local_setting("pin_expire", "")
             }
             Layout.fillWidth: true
         }
@@ -119,7 +119,7 @@ Page {
             visible: !corporate_censorship
             onCheckedChanged: {
                 show_unreviewed = checked
-                core.set_local_setting("show_unreviewed", checked ? "1" : "0")
+                Core.set_local_setting("show_unreviewed", checked ? "1" : "0")
                 if(Qt.platform.os == "android") {
                     if(show_unreviewed)
                         notificationClient.set_user_property("content", "unrev")
@@ -141,7 +141,7 @@ Page {
             id: show_hidden_msgs
             text: "Show hidden messages"
             onCheckedChanged: {
-                core.set_local_setting("show_hidden", checked ? "1" : "0")
+                Core.set_local_setting("show_hidden", checked ? "1" : "0")
                 themsglist.set_show_hidden(checked ? 1 : 0)
                 show_hidden = checked
             }
@@ -150,9 +150,9 @@ Page {
 
         CheckBox {
             id: show_archived
-            text: { "Show archived users (" + core.total_users.toString() + ")" }
+            text: { "Show archived users (" + Core.total_users.toString() + ")" }
             onCheckedChanged: {
-                core.use_archived = checked
+                Core.use_archived = checked
                 show_archived_users = checked
             }
             Layout.fillWidth: true
@@ -195,7 +195,7 @@ Page {
                 stack.push(restore_auto_backup)
             }
             onVisibleChanged: {
-                enabled = (core.get_android_backup_state() > 0)
+                enabled = (Core.get_android_backup_state() > 0)
             }
 
             Layout.fillWidth: true

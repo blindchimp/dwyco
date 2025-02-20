@@ -82,16 +82,16 @@ Item {
             onClicked: {
                 file_captured = ""
                 //camera.imageCapture.capture()
-                //camera.imageCapture.captureToLocation(core.tmp_dir)
+                //camera.imageCapture.captureToLocation(Core.tmp_dir)
                 //console.log("cam st ", camera.lockStatus == Camera.Unlocked)
                 //console.log("cam af ", camera.focus.isFocusModeSupported(CameraFocus.FocusAuto))
                 //if(Qt.platform.os == "ios") {
-                    capture_session.imageCapture.captureToFile(core.tmp_dir)
+                    capture_session.imageCapture.captureToFile(Core.tmp_dir)
 //                } else {
 //                    if(camera.focus.isFocusModeSupported(CameraFocus.FocusAuto) && camera.lockStatus == Camera.Unlocked)
 //                        camera.searchAndLock()
 //                    else
-//                        camera.imageCapture.captureToLocation(core.tmp_dir)
+//                        camera.imageCapture.captureToLocation(Core.tmp_dir)
 //                }
             }
             onVisibleChanged: {

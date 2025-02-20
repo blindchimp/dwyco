@@ -12,6 +12,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Dialogs
 //import Qt.labs.platform 1.0 as Mumble
+import dwyco
 
 Page {
     id: simple_msg_browse
@@ -40,10 +41,10 @@ Page {
         if(to_uid === "")
             return
         cur_source = ""
-        cur_source = core.uid_to_profile_preview(to_uid)
+        cur_source = Core.uid_to_profile_preview(to_uid)
         top_toolbar_text.rawtext = ""
-        top_toolbar_text.rawtext = core.uid_to_name(to_uid)
-        ind_online = core.get_established_state(to_uid)
+        top_toolbar_text.rawtext = Core.uid_to_name(to_uid)
+        ind_online = Core.get_established_state(to_uid)
         filter_show_only_fav = 0
         filter_show_sent = 1
 
@@ -167,7 +168,7 @@ Page {
                     property bool censor_it
                     property bool regular
                     censor_it: censor && !regular
-                    regular: {return init_called && core.uid_profile_regular(to_uid)}
+                    regular: {return init_called && Core.uid_profile_regular(to_uid)}
                     //color: "red" //accent
                     //border.width: 1
                     //radius: 3
@@ -237,7 +238,7 @@ Page {
                 }
 
                 ConvToolButton {
-                    visible: {stack.depth > 2 || core.any_unviewed}
+                    visible: {stack.depth > 2 || Core.any_unviewed}
                 }
 
 
@@ -320,7 +321,7 @@ Page {
 //                                informativeText: "This KEEPS FAVORITE messages."
 //                                standardButtons: StandardButton.Yes | StandardButton.No
 //                                onYes: {
-//                                    core.clear_messages_unfav(simp_msg_browse.to_uid)
+//                                    Core.clear_messages_unfav(simp_msg_browse.to_uid)
 //                                    themsglist.reload_model()
 //                                    close()
 //                                    stack.pop()
@@ -344,7 +345,7 @@ Page {
 //                                informativeText: "This REMOVES FAVORITE messages too."
 //                                standardButtons: StandardButton.Yes | StandardButton.No
 //                                onYes: {
-//                                    core.delete_user(simp_msg_browse.to_uid)
+//                                    Core.delete_user(simp_msg_browse.to_uid)
 //                                    themsglist.reload_model()
 //                                    close()
 //                                    stack.pop()
@@ -470,7 +471,7 @@ Page {
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
-                source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                source: { PREVIEW_FILENAME != "" ? (Core.from_local_file(PREVIEW_FILENAME)) :
                 //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                   (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
@@ -557,7 +558,7 @@ Page {
                     } else {
 
                         if(model.FETCH_STATE === "manual") {
-                            core.retry_auto_fetch(model.mid)
+                            Core.retry_auto_fetch(model.mid)
                             console.log("retry fetch")
 
                         } else {
@@ -567,14 +568,14 @@ Page {
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (Core.from_local_file(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(model.mid)
+                                    var vid = Core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
-                                    //core.play_zap_view(vid)
+                                    //Core.play_zap_view(vid)
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {
                                         themsgview.view_source = mi("ic_audiotrack_black_24dp.png")
                                     } else {

@@ -19,10 +19,10 @@ Page {
     }
 
     Connections {
-        target: core
+        target: Core
         function onJoin_result(gname, result) {
             if(gname.length > 0 && result === 1) {
-                core.set_setting("group/alt_name", gname)
+                Core.set_setting("group/alt_name", gname)
                 provisional_group = gname
                 quitnow = true
                 header.visible = false
@@ -88,7 +88,7 @@ Page {
         }
 
         Label {
-            text: group_active ? "Active: " + core.active_group_name + " (" + core.percent_synced + "%)" : "Not Linked"
+            text: group_active ? "Active: " + Core.active_group_name + " (" + Core.percent_synced + "%)" : "Not Linked"
             font.bold: true
             font.pixelSize: 16
             visible: true
@@ -96,11 +96,11 @@ Page {
         }
         RowLayout {
             id: requesting
-            visible: core.group_status === 1
+            visible: Core.group_status === 1
             Button {
                 text: "Cancel"
                 onClicked: {
-                    if(core.start_gj2("", "") === 1) {
+                    if(Core.start_gj2("", "") === 1) {
                         Qt.quit()
                     }
                 }
@@ -110,7 +110,7 @@ Page {
             }
             Label {
                 id: label1
-                text: "Requesting key for: " + core.active_group_name
+                text: "Requesting key for: " + Core.active_group_name
                 font.bold: true
                 font.pixelSize: 16
                 Layout.fillWidth: true
@@ -120,7 +120,7 @@ Page {
 
         TextFieldX {
             id: group_name
-            text_input: !enabled ? core.active_group_name : ""
+            text_input: !enabled ? Core.active_group_name : ""
             placeholder_text: "Group name (4+ chars, e.g. jane@mumble)"
             visible: !group_active
             inputMethodHints: Qt.ImhNoPredictiveText|Qt.ImhLowercaseOnly
@@ -150,7 +150,7 @@ Page {
             }
             Label {
                 id: label2
-                text: show_pin.checked ? core.join_key : "####"
+                text: show_pin.checked ? Core.join_key : "####"
                 font.bold: true
                 font.pixelSize: 16
                 Layout.fillWidth: true
@@ -162,7 +162,7 @@ Page {
             id: join_button
             text: qsTr("Enable to link this device (requires restart)")
             onClicked: {
-                core.start_gj2(group_name.text_input, group_pw.text_input)
+                Core.start_gj2(group_name.text_input, group_pw.text_input)
                 show_failed = false;
             }
 
@@ -175,7 +175,7 @@ Page {
             text: qsTr("Click to UNLINK this device... (requires restart)")
             onClicked: {
                 confirm_leave.visible = true
-//                if(core.start_gj2("", "") === 1) {
+//                if(Core.start_gj2("", "") === 1) {
 //                    waiting_for_leave_ack = true
 //                    //Qt.quit()
 //                }
@@ -190,7 +190,7 @@ Page {
                 informativeText: "No messages are deleted from this action."
 
                 onYesClicked: {
-                    if(core.start_gj2("", "") === 1) {
+                    if(Core.start_gj2("", "") === 1) {
                         waiting_for_leave_ack = true
                         //Qt.quit()
                     }
@@ -206,12 +206,12 @@ Page {
 //        Switch {
 //            id: server_mode
 //            text: qsTr("Server mode (store all messages to this device)")
-//            checked: core.eager_pull
+//            checked: Core.eager_pull
 //            onClicked: {
 //                if(checked) {
-//                    core.set_setting("sync/eager", "2")
+//                    Core.set_setting("sync/eager", "2")
 //                } else {
-//                    core.set_setting("sync/eager", "0")
+//                    Core.set_setting("sync/eager", "0")
 //                }
 //            }
 
@@ -225,9 +225,9 @@ Page {
 
         RadioDelegate {
             text: "Recent (recommended)"
-            checked: core.eager_pull === 2
+            checked: Core.eager_pull === 2
             onClicked: {
-                core.set_setting("sync/eager", "2")
+                Core.set_setting("sync/eager", "2")
             }
 
             visible: group_active
@@ -237,9 +237,9 @@ Page {
         }
         RadioDelegate {
             text: "Lazy (only when viewed)"
-            checked: core.eager_pull === 0
+            checked: Core.eager_pull === 0
             onClicked: {
-                core.set_setting("sync/eager", "0")
+                Core.set_setting("sync/eager", "0")
             }
             visible: group_active
             Layout.fillWidth: true
@@ -247,9 +247,9 @@ Page {
         }
         RadioDelegate {
             text: "Everything (server mode)"
-            checked: core.eager_pull === 1
+            checked: Core.eager_pull === 1
             onClicked: {
-                core.set_setting("sync/eager", "1")
+                Core.set_setting("sync/eager", "1")
             }
             visible: group_active
             Layout.fillWidth: true
@@ -428,7 +428,7 @@ Page {
             checkable: false
             text: "net report"
             onClicked: {
-                //core.send_report(the_man)
+                //Core.send_report(the_man)
                 stack.push(send_multi_report)
             }
 

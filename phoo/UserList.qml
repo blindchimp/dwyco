@@ -31,11 +31,11 @@ Rectangle {
                    height: dp(60)
                    source : {
                        
-                       core.uid_to_profile_preview(uid)
+                       Core.uid_to_profile_preview(uid)
                     }
 //                   source: {
 //                       (PROFILE_REVIEWED == 1 && PROFILE_REGULAR == 1) ?
-//                                   core.uid_to_profile_preview(uid) :
+//                                   Core.uid_to_profile_preview(uid) :
 //                                    "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
 //                   }
                    anchors.verticalCenter: parent.verticalCenter
@@ -115,7 +115,7 @@ Rectangle {
                }
                onPressAndHold:  {
                    listView2.currentIndex = index
-                   //core.set_pal(uid, core.get_pal(uid) == 0 ? 1 : 0)
+                   //Core.set_pal(uid, Core.get_pal(uid) == 0 ? 1 : 0)
                    uid_selected(uid, "hold")
                }
 

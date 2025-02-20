@@ -81,7 +81,7 @@ Item {
             id: cancel
             text: "Retry"
             onClicked: {
-                core.delete_file(file_captured)
+                Core.delete_file(file_captured)
                 source = ""
                 file_captured = ""
                 closed(false)

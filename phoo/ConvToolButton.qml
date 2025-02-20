@@ -10,7 +10,6 @@ import QtQuick
 import QtQuick.Controls
 import dwyco
 
-
 TipButton {
     background: Image {
         // WTF: this id isn't referenced
@@ -23,7 +22,7 @@ TipButton {
     }
     contentItem:  Rectangle {
         anchors.centerIn: parent
-        visible: core.any_unviewed
+        visible: Core.any_unviewed
         color: "indigo"
         anchors.margins: mm(1)
         anchors.fill: parent
@@ -33,7 +32,7 @@ TipButton {
             anchors.fill: parent
             text: "!"
             color: "white"
-            visible: core.any_unviewed
+            visible: Core.any_unviewed
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }

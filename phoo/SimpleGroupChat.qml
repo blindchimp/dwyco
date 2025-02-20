@@ -35,7 +35,7 @@ Page {
     }
 
     Component.onCompleted: {
-        if(core.get_local_setting("inh_block_warning") === "")
+        if(Core.get_local_setting("inh_block_warning") === "")
             inh_block_warning = 0
         else
             inh_block_warning = 1
@@ -175,7 +175,7 @@ Page {
                 }
 
                 ConvToolButton {
-                    visible: {stack.depth > 2 || core.any_unviewed}
+                    visible: {stack.depth > 2 || Core.any_unviewed}
                 }
 
                 CallButtonLink {
@@ -220,10 +220,10 @@ Page {
                     onVisibleChanged: {
                         if(visible) {
                             vidpanel.visible = true
-                            core.enable_video_capture_preview(1)
+                            Core.enable_video_capture_preview(1)
                         } else {
                             vidpanel.visible = false
-                            core.enable_video_capture_preview(0)
+                            Core.enable_video_capture_preview(0)
                         }
                     }
                     ToolTip.text: "Hangup"
@@ -369,7 +369,7 @@ Page {
                         MenuItem {
                             text: "Send video message"
                             onTriggered: {
-                                core.try_connect(to_uid)
+                                Core.try_connect(to_uid)
                                 dwyco_vid_rec.uid = to_uid
                                 stack.push(dwyco_vid_rec)
                             }
@@ -385,7 +385,7 @@ Page {
                         MenuItem {
                             text: "Clear msgs"
                             onTriggered: {
-                                core.clear_messages_unfav(chatbox.to_uid)
+                                Core.clear_messages_unfav(chatbox.to_uid)
 
                                 themsglist.reload_model()
                             }
@@ -404,7 +404,7 @@ Page {
                                 informativeText: "This removes FAVORITE messages too."
                                 standardButtons: StandardButton.Yes | StandardButton.No
                                 onYes: {
-                                    core.delete_user(chatbox.to_uid)
+                                    Core.delete_user(chatbox.to_uid)
                                     themsglist.reload_model()
                                     close()
                                     stack.pop()
@@ -439,21 +439,21 @@ Page {
     
     function snapshot(filename) {
         console.log("CAMERA SNAP2", filename)
-        core.send_simple_cam_pic(to_uid, "", filename)
+        Core.send_simple_cam_pic(to_uid, "", filename)
         themsglist.reload_model()
         listview.positionViewAtBeginning()
         
     }
 
     Connections {
-        target: core
+        target: Core
         onNew_msg : {
             // if we're visible, reset the unviewed msgs thing since presumably
             // we can see it. might want to set it if the view is scrolled up
             // and we can't actually see it until we scroll down, but for
             // another day...
             if(visible && from_uid === to_uid) {
-                core.reset_unviewed_msgs(to_uid)
+                Core.reset_unviewed_msgs(to_uid)
             }
         }
         onSys_uid_resolved: {
@@ -476,12 +476,12 @@ Page {
         if(to_uid === "")
             return
         textField1.text = ""
-        core.reset_unviewed_msgs(to_uid)
-        cur_source = core.uid_to_profile_preview(to_uid)
-        top_toolbar_text.text = core.uid_to_name(to_uid)
-        ind_typing = core.get_rem_keyboard_state(to_uid)
-        ind_online = core.get_established_state(to_uid)
-        call_buttons_model = core.get_button_model(to_uid)
+        Core.reset_unviewed_msgs(to_uid)
+        cur_source = Core.uid_to_profile_preview(to_uid)
+        top_toolbar_text.text = Core.uid_to_name(to_uid)
+        ind_typing = Core.get_rem_keyboard_state(to_uid)
+        ind_online = Core.get_established_state(to_uid)
+        call_buttons_model = Core.get_button_model(to_uid)
     }
 
     Loader {
@@ -512,7 +512,7 @@ Page {
         onClosed: {
             if(ok) {
                 url_to_send = source
-                core.simple_send_url(to_uid, "", url_to_send)
+                Core.simple_send_url(to_uid, "", url_to_send)
                 themsglist.reload_model()
                 listView1.positionViewAtBeginning()
             }
@@ -661,7 +661,7 @@ Page {
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
                     //source: { PREVIEW_FILENAME == "" ? "" : ("file:///" + String(PREVIEW_FILENAME)) }
-                    source: {PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                    source: {PREVIEW_FILENAME != "" ? (Core.from_local_file(PREVIEW_FILENAME)) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
                     asynchronous: true
@@ -768,7 +768,7 @@ Page {
                     } else {
 
                         if(model.FETCH_STATE === "manual") {
-                            core.retry_auto_fetch(model.mid)
+                            Core.retry_auto_fetch(model.mid)
                             console.log("retry fetch")
 
                         } else {
@@ -778,12 +778,12 @@ Page {
                             themsgview.mid = model.mid
                             themsgview.uid = to_uid
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (Core.from_local_file(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(model.mid)
+                                    var vid = Core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
 
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {
@@ -812,7 +812,7 @@ Page {
     }
     onVisibleChanged: {
         multiselect_mode = false
-        if(inh_block_warning === 0 && core.get_ignore(to_uid) !== 0) {
+        if(inh_block_warning === 0 && Core.get_ignore(to_uid) !== 0) {
             warn.visible = true
         } else {
             warn.visible = false
@@ -841,16 +841,16 @@ Page {
         }
 
         onLengthChanged: {
-            core.uid_keyboard_input(to_uid)
+            Core.uid_keyboard_input(to_uid)
         }
         onInputMethodComposingChanged: {
-            core.uid_keyboard_input(to_uid)
+            Core.uid_keyboard_input(to_uid)
         }
 
         onAccepted: {
             if(textField1.length > 0) {
-                core.simple_send(to_uid, textField1.text)
-                core.try_connect(to_uid)
+                Core.simple_send(to_uid, textField1.text)
+                Core.try_connect(to_uid)
 
                 themsglist.reload_model()
                 textField1.text = ""
@@ -923,8 +923,8 @@ Page {
         onClicked: {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
-            core.simple_send(to_uid, textField1.text)
-            core.try_connect(to_uid)
+            Core.simple_send(to_uid, textField1.text)
+            Core.try_connect(to_uid)
             themsglist.reload_model()
             textField1.text = ""
             listView1.positionViewAtBeginning()
@@ -947,8 +947,8 @@ Page {
         anchors.fill: toolButton1
         //anchors.verticalCenter: textField1.verticalCenter
 
-        enabled: !toolButton1.enabled && core.has_audio_input
-        visible: !toolButton1.enabled && core.has_audio_input
+        enabled: !toolButton1.enabled && Core.has_audio_input
+        visible: !toolButton1.enabled && Core.has_audio_input
         z: 5
         background: Rectangle {
             id: bg2
@@ -963,19 +963,19 @@ Page {
         ToolTip.text: "Press while talking to send audio msg"
 
         onPressed: {
-            core.try_connect(to_uid)
-            zid = core.make_zap_composition()
-            chan = core.start_zap_record(zid, 0, 1)
+            Core.try_connect(to_uid)
+            zid = Core.make_zap_composition()
+            chan = Core.start_zap_record(zid, 0, 1)
         }
         onReleased: {
-            core.stop_zap_record(zid)
+            Core.stop_zap_record(zid)
 
         }
         Connections {
-            target: core
+            target: Core
             onZap_stopped: {
                 if(zid === audio_zap_button.zid) {
-                    core.send_zap(zid, to_uid, 1)
+                    Core.send_zap(zid, to_uid, 1)
                     audio_zap_button.zid = -1
                     themsglist.reload_model()
                 }
@@ -1036,7 +1036,7 @@ Page {
             if(visible) {
                 oops = false
             } else {
-                if(core.get_local_setting("inh_block_warning") === "")
+                if(Core.get_local_setting("inh_block_warning") === "")
                     inh_block_warning = 0
                 else
                     inh_block_warning = 1

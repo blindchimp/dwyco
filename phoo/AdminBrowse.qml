@@ -51,10 +51,10 @@ Rectangle {
                         //filename = filePath + "/" + filename
                         themsgview.view_id = -1
                         themsgview.view_source = ""
-                        var vid = core.make_zap_view_file(filename)
+                        var vid = Core.make_zap_view_file(filename)
                         themsgview.view_id = vid
                         themsgview.mid = ""
-                        //core.play_zap_view(vid)
+                        //Core.play_zap_view(vid)
                         stack.push(themsgview)
                     }
                 }

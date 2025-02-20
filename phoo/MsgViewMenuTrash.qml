@@ -10,7 +10,7 @@ Menu {
     MenuItem {
         text: "Untrash msg"
         onTriggered: {
-            core.unset_tag_message(mid, "_trash")
+            Core.unset_tag_message(mid, "_trash")
             themsglist.invalidate_model_filter()
             stack.pop()
         }
@@ -27,23 +27,23 @@ Menu {
     MenuItem {
         text: fav ? "Unfavorite" : "Favorite"
         onTriggered: {
-            core.set_fav_message(mid, !fav)
+            Core.set_fav_message(mid, !fav)
         }
     }
     MenuItem {
         text: hid ? "Unhide" : "Hide"
         onTriggered: {
             if(hid)
-                core.unset_tag_message(mid, "_hid")
+                Core.unset_tag_message(mid, "_hid")
             else
-                core.set_tag_message(mid, "_hid")
+                Core.set_tag_message(mid, "_hid")
             themsglist.invalidate_model_filter()
         }
     }
     MenuItem {
         text: "Delete forever"
         onTriggered: {
-            core.delete_message(uid, mid)
+            Core.delete_message(uid, mid)
             themsglist.invalidate_model_filter()
             stack.pop()
         }

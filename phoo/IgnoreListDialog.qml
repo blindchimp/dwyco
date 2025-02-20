@@ -45,7 +45,7 @@ Page {
                     text: "Unblock all"
                     onTriggered: {
                         console.log("clear")
-                        core.clear_ignore_list()
+                        Core.clear_ignore_list()
                     }
                 }
             }
@@ -73,7 +73,7 @@ Page {
                 text: "x"
                 onClicked: {
                     console.log("unignore " + uid)
-                    core.set_ignore(uid, 0)
+                    Core.set_ignore(uid, 0)
                 }
                 anchors.right: drow.right
                 //anchors.verticalCenter: parent.verticalCenter

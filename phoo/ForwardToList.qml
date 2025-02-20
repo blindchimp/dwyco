@@ -25,7 +25,7 @@ Page {
     }
 
     Component.onCompleted: {
-        limited_forward = core.flim(mid_to_forward)
+        limited_forward = Core.flim(mid_to_forward)
         if(limited_forward) {
             user_model.load_admin_users_to_model()
         } else {
@@ -58,7 +58,7 @@ Page {
                     //height: dp(60)
                     source : {
                         (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
-                                    core.uid_to_profile_preview(uid) :
+                                    Core.uid_to_profile_preview(uid) :
                                     "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                     }
                     //anchors.verticalCenter: parent.verticalCenter
@@ -125,7 +125,7 @@ Page {
 
     onVisibleChanged: {
         if(visible) {
-            limited_forward = core.flim(mid_to_forward)
+            limited_forward = Core.flim(mid_to_forward)
             if(limited_forward) {
                 user_model.load_admin_users_to_model()
             } else {
@@ -181,7 +181,7 @@ Page {
             //            for(var i = 0; i < user_model.count; ++i) {
             //                if(user_model.get(i).selected) {
             //                    var recip_uid = user_model.get(i).uid
-            //                    core.send_forward(recip_uid, uid_folder, mid_to_forward)
+            //                    Core.send_forward(recip_uid, uid_folder, mid_to_forward)
             //                }
             //            }
             // for some reason, when user_model is a subclass

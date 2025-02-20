@@ -25,7 +25,7 @@ Page {
 
     onVisibleChanged: {
         if(visible && SimpleDirectoryList.count === 0)
-            core.refresh_directory()
+            Core.refresh_directory()
     }
 
     header: SimpleToolbar {
@@ -52,7 +52,7 @@ Page {
                 MenuItem {
                     text: "Refresh"
                     onTriggered: {
-                        core.refresh_directory()
+                        Core.refresh_directory()
                     }
                 }
             }
@@ -71,7 +71,7 @@ Page {
             border.width: 1
 
             color: primary_dark
-            regular: {return core.uid_profile_regular(uid)}
+            regular: {return Core.uid_profile_regular(uid)}
 
             gradient: Gradient {
                 GradientStop { position: 0.0; color: primary_light }
@@ -86,7 +86,7 @@ Page {
                     id: preview
                     source: {has_preview ?
                                  (!censor_it ?
-                                     core.uid_to_http_profile_preview(uid) :
+                                     Core.uid_to_http_profile_preview(uid) :
                                      "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                     fillMode: Image.PreserveAspectCrop
                     Layout.minimumWidth: picht()
@@ -177,7 +177,7 @@ Page {
             height: gridView1.cellHeight
             border.width: 1
             color: primary_dark
-            regular: {return core.uid_profile_regular(uid)}
+            regular: {return Core.uid_profile_regular(uid)}
             gradient: Gradient {
                 GradientStop { position: 0.0; color: primary_light }
                 GradientStop { position: 1.0; color: primary_dark}
@@ -187,7 +187,7 @@ Page {
                 id: preview
                 source: {has_preview ?
                              (!censor_it ?
-                                 core.uid_to_http_profile_preview(uid) :
+                                 Core.uid_to_http_profile_preview(uid) :
                                  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png") : ""}
                 fillMode: Image.PreserveAspectCrop
                 height:parent.height
@@ -274,17 +274,17 @@ Page {
     }
 
     Connections {
-        target: core
+        target: Core
         function onIgnore_event() {
             if(simpdir_top.visible)
-                core.refresh_directory()
+                Core.refresh_directory()
         }
     }
 
     BusyIndicator {
         id: busy1
 
-        running: {core.directory_fetching}
+        running: {Core.directory_fetching}
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }

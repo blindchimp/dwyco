@@ -25,9 +25,9 @@ Page {
     onVisibleChanged: {
         if(!visible)
         {
-            core.stop_zap_record(rzid)
-            core.stop_zap(rzid)
-            core.cancel_zap(rzid)
+            Core.stop_zap_record(rzid)
+            Core.stop_zap(rzid)
+            Core.cancel_zap(rzid)
             rzid = -1
             video_chan = -1
             something_recorded = false
@@ -35,7 +35,7 @@ Page {
         }
         else
         {
-            rzid = core.make_zap_composition()
+            rzid = Core.make_zap_composition()
             video_chan = -1
             something_recorded = false
             sm.start()
@@ -43,7 +43,7 @@ Page {
     }
 
     Connections {
-        target: core
+        target: Core
         function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id !== video_chan)
                 return
@@ -89,7 +89,7 @@ Page {
         id: sm
         initialState: start
         onStopped: {
-            core.enable_video_capture_preview(0)
+            Core.enable_video_capture_preview(0)
         }
 
         DSM.State {
@@ -108,13 +108,13 @@ Page {
             }
 
             onEntered: {
-                core.enable_video_capture_preview(1)
-                core.cancel_zap(rzid)
-                rzid = core.make_zap_composition()
+                Core.enable_video_capture_preview(1)
+                Core.cancel_zap(rzid)
+                rzid = Core.make_zap_composition()
                 video_chan = -1
             }
             onExited: {
-                //core.enable_video_capture_preview(0)
+                //Core.enable_video_capture_preview(0)
             }
         }
 
@@ -122,9 +122,9 @@ Page {
             id: quick_pic_send
             DSM.SignalTransition {
                 targetState: start
-                signal: core.zap_stopped
+                signal: Core.zap_stopped
                 onTriggered: {
-                    core.send_zap(rzid, uid, 1)
+                    Core.send_zap(rzid, uid, 1)
                     rzid = -1
                     video_chan = -1
                 }
@@ -136,7 +136,7 @@ Page {
             }
 
             onEntered: {
-                video_chan = core.start_zap_record_pic(rzid)
+                video_chan = Core.start_zap_record_pic(rzid)
                 something_recorded = false
             }
             onExited: {
@@ -149,7 +149,7 @@ Page {
             id: pic_recording
             DSM.SignalTransition {
                 targetState: pic_staged
-                signal: core.zap_stopped
+                signal: Core.zap_stopped
             }
             DSM.TimeoutTransition {
                 targetState: pic_staged
@@ -157,7 +157,7 @@ Page {
             }
 
             onEntered: {
-                video_chan = core.start_zap_record_pic(rzid)
+                video_chan = Core.start_zap_record_pic(rzid)
                 something_recorded = false
             }
             onExited: {
@@ -172,7 +172,7 @@ Page {
                 targetState: start
                 signal: send.clicked
                 onTriggered: {
-                    core.send_zap(rzid, uid, 1)
+                    Core.send_zap(rzid, uid, 1)
                     rzid = -1
                     video_chan = -1
                 }
@@ -181,23 +181,23 @@ Page {
                 targetState: pic_recording
                 signal: snapshot.clicked
                 onTriggered: {
-                    core.cancel_zap(rzid)
-                    rzid = core.make_zap_composition()
+                    Core.cancel_zap(rzid)
+                    rzid = Core.make_zap_composition()
                 }
             }
             DSM.SignalTransition {
                 targetState: quick_pic_send
                 signal: snap_and_send.clicked
                 onTriggered: {
-                    core.cancel_zap(rzid)
-                    rzid = core.make_zap_composition()
+                    Core.cancel_zap(rzid)
+                    rzid = Core.make_zap_composition()
                 }
             }
             onEntered: {
-                video_chan = core.play_zap(rzid)
+                video_chan = Core.play_zap(rzid)
             }
             onExited: {
-                core.stop_zap(rzid)
+                Core.stop_zap(rzid)
                 video_chan = -1
             }
 
@@ -211,14 +211,14 @@ Page {
             }
             DSM.SignalTransition {
                 targetState: staged
-                signal: core.zap_stopped
+                signal: Core.zap_stopped
             }
             onEntered: {
-                video_chan = core.start_zap_record(rzid, 1, 1)
+                video_chan = Core.start_zap_record(rzid, 1, 1)
                 something_recorded = false
             }
             onExited: {
-                core.stop_zap_record(rzid)
+                Core.stop_zap_record(rzid)
                 video_chan = -1
             }
 
@@ -229,7 +229,7 @@ Page {
                 targetState: start
                 signal: send.clicked
                 onTriggered: {
-                    core.send_zap(rzid, uid, 1)
+                    Core.send_zap(rzid, uid, 1)
                     rzid = -1
                     video_chan = -1
                 }
@@ -242,8 +242,8 @@ Page {
                 targetState: recording
                 signal: rec.clicked
                 onTriggered: {
-                    core.cancel_zap(rzid)
-                    rzid = core.make_zap_composition()
+                    Core.cancel_zap(rzid)
+                    rzid = Core.make_zap_composition()
                 }
             }
 
@@ -256,13 +256,13 @@ Page {
             }
             DSM.SignalTransition {
                 targetState: staged
-                signal: core.zap_stopped
+                signal: Core.zap_stopped
             }
             onEntered: {
-                video_chan = core.play_zap(rzid)
+                video_chan = Core.play_zap(rzid)
             }
             onExited: {
-                core.stop_zap(rzid)
+                Core.stop_zap(rzid)
                 video_chan = -1
 
             }
@@ -459,8 +459,8 @@ Page {
 //            }
 //            onClicked: {
 //                stack.pop()
-//                core.stop_zap_record(rzid)
-//                core.cancel_zap(rzid)
+//                Core.stop_zap_record(rzid)
+//                Core.cancel_zap(rzid)
 //            }
 //        }
 //    }

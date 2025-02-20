@@ -54,7 +54,7 @@ AppDrawerForm {
     }
     lock_and_exit_button.onClicked: {
         expire_immediate = true
-        core.power_clean()
+        Core.power_clean()
         if(Qt.platform.os === "android") {
             notificationClient.start_background()
             notificationClient.set_lastrun()
@@ -63,7 +63,7 @@ AppDrawerForm {
     }
 
     quiet_switch.checked: dwy_quiet
-    invisible_switch.checked: core.invisible
+    invisible_switch.checked: Core.invisible
 
     quiet_switch.onClicked: {
         dwy_quiet = quiet_switch.checked
@@ -71,13 +71,13 @@ AppDrawerForm {
         if(Qt.platform.os === "android") {
             notificationClient.set_quiet(dwy_quiet ? 1 : 0)
         }
-        core.set_local_setting("quiet", dwy_quiet ? "true" : "false")
+        Core.set_local_setting("quiet", dwy_quiet ? "true" : "false")
         //close()
     }
     invisible_switch.onClicked: {
         dwy_invis = invisible_switch.checked
-        core.set_local_setting("invis", dwy_invis ? "true" : "false")
-        core.set_invisible_state(dwy_invis ? 1 : 0)
+        Core.set_local_setting("invis", dwy_invis ? "true" : "false")
+        Core.set_invisible_state(dwy_invis ? 1 : 0)
         //close()
     }
 

@@ -26,7 +26,7 @@ Rectangle {
 
         anchors.fill:parent
         anchors.margins: mm(3)
-        visible: core.group_private_key_valid === 1
+        visible: Core.group_private_key_valid === 1
 
         Item {
             Layout.fillHeight: true
@@ -47,7 +47,7 @@ Rectangle {
 
             text: qsTr("Got it")
             onClicked: {
-                //core.set_local_setting("restore-prompt", "1")
+                //Core.set_local_setting("restore-prompt", "1")
                 stack.pop()
             }
             Layout.fillWidth: true
@@ -57,7 +57,7 @@ Rectangle {
 
         anchors.fill:parent
         anchors.margins: mm(3)
-        visible: core.group_private_key_valid !== 1
+        visible: Core.group_private_key_valid !== 1
 
 
         Item {
@@ -89,10 +89,10 @@ Rectangle {
             id: restore_backup
             text: qsTr("Add previous pals and messages?\n(quits now, requires restart)")
             onClicked: {
-                core.load_backup()
-                core.set_local_setting("reindex1", "")
-                //core.set_local_setting("restore-prompt", "1")
-                core.exit()
+                Core.load_backup()
+                Core.set_local_setting("reindex1", "")
+                //Core.set_local_setting("restore-prompt", "1")
+                Core.exit()
                 hard_close = true
                 Qt.quit()
             }
@@ -108,7 +108,7 @@ Rectangle {
             id: not_now
             text: qsTr("Not now")
             onClicked: {
-                //core.set_local_setting("restore-prompt", "1")
+                //Core.set_local_setting("restore-prompt", "1")
                 stack.pop()
             }
             Layout.fillWidth: true

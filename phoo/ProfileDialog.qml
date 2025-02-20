@@ -80,8 +80,8 @@ Rectangle {
                     name = textInput1.text_input
                 }
 
-                core.bootstrap(name, textInput2.text_input)
-                core.set_local_setting("first-run", "done")
+                Core.bootstrap(name, textInput2.text_input)
+                Core.set_local_setting("first-run", "done")
                 profile_bootstrapped = 1
                 stack.pop()
             }

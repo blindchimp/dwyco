@@ -15,7 +15,7 @@ Rectangle {
 //        }
 //    }
     Connections {
-        target: core
+        target: Core
         function onMigration_complete() {
             migration_done = true
         }
@@ -53,7 +53,7 @@ Rectangle {
             text: "Tap to start copy"
             Layout.fillWidth: true
             onClicked: {
-                core.background_migrate()
+                Core.background_migrate()
                 migration_in_progress = true
             }
             visible: !migration_in_progress && !migration_done
@@ -65,7 +65,7 @@ Rectangle {
             Layout.fillWidth: true
             onClicked: {
                 // do directory swap, and exit immediately
-                core.directory_swap();
+                Core.directory_swap();
                 Qt.quit()
             }
             visible: migration_done

@@ -11,7 +11,7 @@ Menu {
     MenuItem {
         text: "Trash msg"
         onTriggered: {
-            core.set_tag_message(mid, "_trash")
+            Core.set_tag_message(mid, "_trash")
             themsglist.invalidate_model_filter()
             stack.pop()
         }
@@ -28,16 +28,16 @@ Menu {
     MenuItem {
         text: fav ? "Unfavorite" : "Favorite"
         onTriggered: {
-            core.set_fav_message(mid, !fav)
+            Core.set_fav_message(mid, !fav)
         }
     }
     MenuItem {
         text: hid ? "Unhide" : "Hide"
         onTriggered: {
             if(hid)
-                core.unset_tag_message(mid, "_hid")
+                Core.unset_tag_message(mid, "_hid")
             else
-                core.set_tag_message(mid, "_hid")
+                Core.set_tag_message(mid, "_hid")
             themsglist.invalidate_model_filter()
         }
     }

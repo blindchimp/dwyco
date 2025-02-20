@@ -23,10 +23,10 @@ Rectangle {
     anchors.fill: parent
 
     password_ok : {
-        var salt = core.get_local_setting("salt")
+        var salt = Core.get_local_setting("salt")
         if(salt.length === 0)
             return 1
-        var target = core.get_local_setting("pw");
+        var target = Core.get_local_setting("pw");
         var total = salt + pw.text
         if(target === Qt.md5(total))
             return 1

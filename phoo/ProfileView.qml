@@ -26,29 +26,29 @@ Page {
     }
 
     function update_profile(uid) {
-        is_blocked = core.get_ignore(uid)
-        preview_source = is_blocked === 1 ? "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png" : core.uid_to_profile_preview(uid)
-        preview_text = is_blocked === 1 ? "unblock user to see profile" : core.uid_to_name(uid)
-        preview_desc = is_blocked === 1 ? "" : core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION)
+        is_blocked = Core.get_ignore(uid)
+        preview_source = is_blocked === 1 ? "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png" : Core.uid_to_profile_preview(uid)
+        preview_text = is_blocked === 1 ? "unblock user to see profile" : Core.uid_to_name(uid)
+        preview_desc = is_blocked === 1 ? "" : Core.uid_to_profile_info(uid, Core.DESCRIPTION)
 
         if(is_blocked) {
             return
         }
         // note: don't censor anything on desktop if the person is trying to click through,
         // they probably want to see it.
-        if(!censor || !is_mobile || core.uid_profile_regular(uid)) {
-            preview_source = core.uid_to_profile_preview(uid)
-            preview_text = core.uid_to_name(uid)
-            preview_desc = core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION)
+        if(!censor || !is_mobile || Core.uid_profile_regular(uid)) {
+            preview_source = Core.uid_to_profile_preview(uid)
+            preview_text = Core.uid_to_name(uid)
+            preview_desc = Core.uid_to_profile_info(uid, Core.DESCRIPTION)
         } else {
             preview_source =  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
-            preview_text = censor_name(core.uid_to_name(uid))
-            preview_desc = censor_name(core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION))
+            preview_text = censor_name(Core.uid_to_name(uid))
+            preview_desc = censor_name(Core.uid_to_profile_info(uid, Core.DESCRIPTION))
         }
     }
 
     Connections {
-        target: core
+        target: Core
         function onSys_uid_resolved(uid) {
             if(uid === profview.uid) {
                 update_profile(uid)

@@ -77,14 +77,14 @@ Pane {
             onClicked: {
                 if(pw1.text == pw2.text) {
                     if(pw1.text.length > 0) {
-                        var salt = core.random_string(10);
+                        var salt = Core.random_string(10);
                         var total = salt + pw1.text;
                         var hash = Qt.md5(total);
-                        core.set_local_setting("salt", salt);
-                        core.set_local_setting("pw", hash);
+                        Core.set_local_setting("salt", salt);
+                        Core.set_local_setting("pw", hash);
                     } else {
-                        core.set_local_setting("salt", "");
-                        core.set_local_setting("pw", "");
+                        Core.set_local_setting("salt", "");
+                        Core.set_local_setting("pw", "");
                     }
                 }
 

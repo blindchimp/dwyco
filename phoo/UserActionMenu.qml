@@ -25,7 +25,7 @@ Menu {
 //    MenuItem {
 //        text: "Clear msgs"
 //        onTriggered: {
-//            core.clear_messages(uid)
+//            Core.clear_messages(uid)
 //            themsglist.reload_model()
 //        }
 //    }
@@ -33,7 +33,7 @@ Menu {
 //    MenuItem {
 //        text: "Delete user"
 //        onTriggered: {
-//            core.delete_user(uid)
+//            Core.delete_user(uid)
 //            themsglist.reload_model()
 //        }
 //    }
@@ -44,14 +44,14 @@ Menu {
     MenuItem {
         text: "Block user"
         onTriggered: {
-            core.set_ignore(uid, 1)            
+            Core.set_ignore(uid, 1)            
         }
     }
 //    MenuItem {
 //        text: "Block and Delete user"
 //        onTriggered: {
-//            core.set_ignore(uid, 1)
-//            core.delete_user(uid)
+//            Core.set_ignore(uid, 1)
+//            Core.delete_user(uid)
 //            themsglist.reload_model()
             
 //        }

@@ -27,39 +27,39 @@ Page {
     onVisibleChanged: {
         if(visible)
         {
-            if(core.vid_dev_idx === 2) {
+            if(Core.vid_dev_idx === 2) {
                 preview_cam.start()
-                core.enable_video_capture_preview(1)
-            } else if(core.vid_dev_idx === 1) {
+                Core.enable_video_capture_preview(1)
+            } else if(Core.vid_dev_idx === 1) {
                 // files
                 preview_cam.stop()
-                core.enable_video_capture_preview(1)
+                Core.enable_video_capture_preview(1)
             } else {
                 preview_cam.stop()
-                core.enable_video_capture_preview(0)
+                Core.enable_video_capture_preview(0)
                 viewer.source = mi("ic_videocam_off_black_24dp.png")
             }
         }
         else
         {
-            core.enable_video_capture_preview(0)
+            Core.enable_video_capture_preview(0)
         }
 
     }
 
     Connections {
-        target: core
+        target: Core
         function onCamera_change(cam_on) {
             if(visible) {
-                if(cam_on === 1 && core.vid_dev_idx === 2) {
+                if(cam_on === 1 && Core.vid_dev_idx === 2) {
                     preview_cam.start()
-                    core.enable_video_capture_preview(1)
-                } else if(cam_on === 1 && core.vid_dev_idx === 1) {
+                    Core.enable_video_capture_preview(1)
+                } else if(cam_on === 1 && Core.vid_dev_idx === 1) {
                     preview_cam.stop()
-                    core.enable_video_capture_preview(1)
+                    Core.enable_video_capture_preview(1)
                 } else {
                     preview_cam.stop()
-                    core.enable_video_capture_preview(0)
+                    Core.enable_video_capture_preview(0)
                     viewer.source = mi("ic_videocam_off_black_24dp.png")
                 }
             }
@@ -149,7 +149,7 @@ Page {
                     anchors.fill: parent
                     onClicked: {
                         camlist.currentIndex = index
-                        core.select_vid_dev(index)
+                        Core.select_vid_dev(index)
                     }
                 }
             }
@@ -194,7 +194,7 @@ Page {
                     scale = 1.0
                 }
                 Connections {
-                    target: core
+                    target: Core
                     function onVideo_capture_preview(img_path) {
                         if(visible)
                             viewer.source = img_path

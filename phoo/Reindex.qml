@@ -15,7 +15,7 @@ Rectangle {
 //        }
 //    }
     Connections {
-        target: core
+        target: Core
         function onReindex_complete() {
             reindex_done = true
         }
@@ -48,7 +48,7 @@ Rectangle {
             text: "Tap to start upgrade"
             Layout.fillWidth: true
             onClicked: {
-                core.background_reindex()
+                Core.background_reindex()
                 reindex_in_progress = true
             }
             visible: !reindex_in_progress && !reindex_done
@@ -59,7 +59,7 @@ Rectangle {
             //Layout.horizontalCenter: true
             Layout.fillWidth: true
             onClicked: {
-                core.set_local_setting("reindex1", "1")
+                Core.set_local_setting("reindex1", "1")
                 hard_close = true
                 Qt.quit()
             }

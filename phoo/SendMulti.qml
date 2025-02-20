@@ -52,7 +52,7 @@ Page {
                     //height: dp(60)
                     source : {
                         (!invalid && ((REVIEWED && REGULAR) || show_unreviewed) && resolved_counter > -1) ?
-                                    core.uid_to_profile_preview(uid) :
+                                    Core.uid_to_profile_preview(uid) :
                                     "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                     }
                     //anchors.verticalCenter: parent.verticalCenter
@@ -161,7 +161,7 @@ Page {
             for(var i = 0; i < user_model.count; ++i) {
                 if(user_model.at(i).selected) {
                     var recip_uid = user_model.at(i).uid
-                    core.send_report(recip_uid)
+                    Core.send_report(recip_uid)
                     console.log(" selected ", recip_uid)
                 }
             }

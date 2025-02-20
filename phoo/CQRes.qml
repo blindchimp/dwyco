@@ -30,19 +30,19 @@ Page {
     // handler below.
 
     Connections {
-        target: core
+        target: Core
         function onCq_results_received(succ) {
             if(succ) {
                 cq_res_model.load_from_cq_file()
                 query_succeeded = 1
-                core.set_local_setting("cq-succeeded", "1")
+                Core.set_local_setting("cq-succeeded", "1")
             } else {
                 cq_res_model.clear()
                 query_succeeded = 0
-                core.set_local_setting("cq-succeeded", "0")
+                Core.set_local_setting("cq-succeeded", "0")
             }
             query_in_progress = 0
-            core.set_local_setting("cq-in-progress", "0")
+            Core.set_local_setting("cq-in-progress", "0")
 
         }
 
@@ -109,14 +109,14 @@ Page {
             Layout.alignment: Qt.AlignCenter
             text: "Search for email"
             onClicked: {
-                core.delete_cq_results()
+                Core.delete_cq_results()
 
                 user_model.set_model_to_single_email(single_email.text_input)
                 user_model.send_query()
                 query_in_progress = 1
                 query_succeeded = 0
-                core.set_local_setting("cq-in-progress", "1")
-                core.set_local_setting("cq-succeeded", "0")
+                Core.set_local_setting("cq-in-progress", "1")
+                Core.set_local_setting("cq-succeeded", "0")
                 no_contacts = false
             }
 
@@ -129,14 +129,14 @@ Page {
             text: contacts_permission.status !== Qt.PermissionStatus.Granted ? "Click to allow contact list" : "Send Email Contacts Securely"
             visible: is_mobile
             onClicked: {
-                core.delete_cq_results()
+                Core.delete_cq_results()
 
                 if(contacts_permission.status !== Qt.PermissionStatus.Granted) {
                     contacts_permission.request()
                     return
                 }
 
-                if(core.load_contacts() === 0) {
+                if(Core.load_contacts() === 0) {
                     // permission denied
                     return
                 }
@@ -146,14 +146,14 @@ Page {
                     user_model.send_query()
                     query_in_progress = 1
                     query_succeeded = 0
-                    core.set_local_setting("cq-in-progress", "1")
-                    core.set_local_setting("cq-succeeded", "0")
+                    Core.set_local_setting("cq-in-progress", "1")
+                    Core.set_local_setting("cq-succeeded", "0")
                     no_contacts = false
                 } else {
                     query_in_progress = 0
                     query_succeeded = 0
-                    core.set_local_setting("cq-in-progress", "0")
-                    core.set_local_setting("cq-succeeded", "0")
+                    Core.set_local_setting("cq-in-progress", "0")
+                    Core.set_local_setting("cq-succeeded", "0")
                     no_contacts = true
                 }
             }
@@ -239,7 +239,7 @@ Page {
                 MenuItem {
                     text: "Refresh"
                     onTriggered: {
-                        core.delete_cq_results()
+                        Core.delete_cq_results()
                         cq_res_model.load_from_cq_file()
                         if(is_mobile)
                         {
@@ -247,7 +247,7 @@ Page {
                                 contacts_permission.request()
                                 return
                             }
-                            if(core.load_contacts() === 0) {
+                            if(Core.load_contacts() === 0) {
                                 return
                             }
 
@@ -256,14 +256,14 @@ Page {
                                 user_model.send_query()
                                 query_in_progress = 1
                                 query_succeeded = 0
-                                core.set_local_setting("cq-in-progress", "1")
-                                core.set_local_setting("cq-succeeded", "0")
+                                Core.set_local_setting("cq-in-progress", "1")
+                                Core.set_local_setting("cq-succeeded", "0")
                                 no_contacts = false
                             } else {
                                 query_in_progress = 0
                                 query_succeeded = 0
-                                core.set_local_setting("cq-in-progress", "0")
-                                core.set_local_setting("cq-succeeded", "0")
+                                Core.set_local_setting("cq-in-progress", "0")
+                                Core.set_local_setting("cq-succeeded", "0")
                                 no_contacts = true
 
                             }
@@ -273,8 +273,8 @@ Page {
                             single_email.text_input = ""
                             query_in_progress = 0
                             query_succeeded = 0
-                            core.set_local_setting("cq-in-progress", "0")
-                            core.set_local_setting("cq-succeeded", "0")
+                            Core.set_local_setting("cq-in-progress", "0")
+                            Core.set_local_setting("cq-succeeded", "0")
                         }
                     }
                 }
@@ -307,7 +307,7 @@ Page {
 
                 CircularImage2 {
                     id: preview
-                    source: {core.uid_profile_regular(uid) ? core.uid_to_profile_preview(uid) : ""}
+                    source: {Core.uid_profile_regular(uid) ? Core.uid_to_profile_preview(uid) : ""}
                     fillMode: Image.PreserveAspectCrop
                     Layout.minimumWidth: picht()
                     Layout.maximumWidth: picht()
@@ -315,10 +315,10 @@ Page {
                     Layout.maximumHeight: picht()
                     Layout.margins: mm(.125)
                     Connections {
-                        target: core
+                        target: Core
                         function onSys_uid_resolved(uid) {
                             if(uid === model.uid) {
-                                preview.source = core.uid_profile_regular(uid) ? core.uid_to_profile_preview(uid) : ""
+                                preview.source = Core.uid_profile_regular(uid) ? Core.uid_to_profile_preview(uid) : ""
                             }
                         }
 
@@ -333,15 +333,15 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         id: nm
-                        text: {core.uid_profile_regular(uid) ? core.uid_to_profile_info(uid, DwycoCore.HANDLE) : "<<hidden>>"}
+                        text: {Core.uid_profile_regular(uid) ? Core.uid_to_profile_info(uid, Core.HANDLE) : "<<hidden>>"}
                         clip: true
                         font.bold: true
                         elide: Text.ElideRight
                         Connections {
-                            target: core
+                            target: Core
                             function onSys_uid_resolved(uid) {
                                 if(uid === model.uid) {
-                                    nm.text = core.uid_profile_regular(uid) ? core.uid_to_profile_info(uid, DwycoCore.HANDLE) : "<<hidden>>"
+                                    nm.text = Core.uid_profile_regular(uid) ? Core.uid_to_profile_info(uid, Core.HANDLE) : "<<hidden>>"
                                 }
                             }
 
@@ -363,17 +363,17 @@ Page {
                         Layout.alignment: Qt.AlignLeft
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        text: {core.uid_profile_regular(uid) ? core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION) : "<<hidden>>"}
+                        text: {Core.uid_profile_regular(uid) ? Core.uid_to_profile_info(uid, Core.DESCRIPTION) : "<<hidden>>"}
                         clip: true
                         font.pixelSize: applicationWindow1.font.pixelSize
                         //width: parent.width - (nm.width + preview.width)
 
                         wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         Connections {
-                            target: core
+                            target: Core
                             function onSys_uid_resolved(uid) {
                                 if(uid === model.uid) {
-                                    desc.text = core.uid_profile_regular(uid) ? core.uid_to_profile_info(uid, DwycoCore.DESCRIPTION) : "<<hidden>>"
+                                    desc.text = Core.uid_profile_regular(uid) ? Core.uid_to_profile_info(uid, Core.DESCRIPTION) : "<<hidden>>"
                                 }
                             }
 
@@ -411,25 +411,25 @@ Page {
 
     Component.onCompleted: {
         cqres_top.uid_selected.connect(top_dispatch.uid_selected)
-        var q = core.get_local_setting("cq-in-progress")
+        var q = Core.get_local_setting("cq-in-progress")
         if(q === "")
         {
             query_in_progress = 0
-            core.set_local_setting("cq-in-progress", "0")
+            Core.set_local_setting("cq-in-progress", "0")
         }
         else
         {
-            query_in_progress = parseInt(core.get_local_setting("cq-in-progress"))
+            query_in_progress = parseInt(Core.get_local_setting("cq-in-progress"))
         }
-        q = core.get_local_setting("cq-succeeded")
+        q = Core.get_local_setting("cq-succeeded")
         if(q === "")
         {
             query_succeeded = 0;
-            core.set_local_setting("cq-succeeded", "0")
+            Core.set_local_setting("cq-succeeded", "0")
         }
         else
         {
-            query_succeeded = parseInt(core.get_local_setting("cq-succeeded"))
+            query_succeeded = parseInt(Core.get_local_setting("cq-succeeded"))
         }
         cq_res_model.load_from_cq_file()
     }

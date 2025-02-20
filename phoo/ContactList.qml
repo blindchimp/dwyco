@@ -136,7 +136,7 @@ Page {
                 if(user_model.get(i).selected) {
                     var recip_uid = user_model.get(i).email
                     console.log("selected " + recip_uid)
-                    //core.send_forward(recip_uid, uid_folder, mid_to_forward)
+                    //Core.send_forward(recip_uid, uid_folder, mid_to_forward)
                 }
             }
             user_model.send_query()

@@ -30,33 +30,33 @@ Page {
     Component.onCompleted: {
         //if(visible)
         //{
-            if(core.vid_dev_idx !== 0) {
-                core.enable_video_capture_preview(1)
+            if(Core.vid_dev_idx !== 0) {
+                Core.enable_video_capture_preview(1)
             } else {
-                core.enable_video_capture_preview(0)
+                Core.enable_video_capture_preview(0)
                 viewer.source = mi("ic_videocam_off_black_24dp.png")
 
             }
-            camlist.currentIndex = core.vid_dev_idx
+            camlist.currentIndex = Core.vid_dev_idx
             console.log("CAM IDX ", camlist.currentIndex)
         //}
         //else
     }
     Component.onDestruction: {
         {
-            core.enable_video_capture_preview(0)
+            Core.enable_video_capture_preview(0)
         }
 
     }
 
     Connections {
-        target: core
+        target: Core
         function onCamera_change(cam_on) {
             if(visible) {
                 if(cam_on) {
-                    core.enable_video_capture_preview(1)
+                    Core.enable_video_capture_preview(1)
                 } else {
-                    core.enable_video_capture_preview(0)
+                    Core.enable_video_capture_preview(0)
                     viewer.source = mi("ic_videocam_off_black_24dp.png")
                 }
             }
@@ -81,7 +81,7 @@ Page {
                     anchors.fill: parent
                     onClicked: {
                         camlist.currentIndex = index
-                        core.select_vid_dev(index)
+                        Core.select_vid_dev(index)
 
                         console.log("CAM IDX ", index)
                     }
@@ -125,7 +125,7 @@ Page {
                     scale = 1.0
                 }
                 Connections {
-                    target: core
+                    target: Core
                     function onVideo_capture_preview(img_path) {
                         if(visible)
                             viewer.source = img_path

@@ -44,7 +44,7 @@ Page {
     }
 
     Component.onCompleted: {
-        if(core.get_local_setting("inh_block_warning") === "")
+        if(Core.get_local_setting("inh_block_warning") === "")
             inh_block_warning = 0
         else
             inh_block_warning = 1
@@ -151,7 +151,7 @@ Page {
                     property bool censor_it
                     property bool regular
                     censor_it: censor && !prof.regular
-                    regular: {chatbox_page.to_uid !== "" && applicationWindow1.init_called && core.uid_profile_regular(chatbox_page.to_uid)}
+                    regular: {chatbox_page.to_uid !== "" && applicationWindow1.init_called && Core.uid_profile_regular(chatbox_page.to_uid)}
                     //color: "red" //accent
                     //border.width: 1
                     //radius: 3
@@ -219,7 +219,7 @@ Page {
                 }
 
                 ConvToolButton {
-                    visible: {stack.depth > 2 || core.any_unviewed}
+                    visible: {stack.depth > 2 || Core.any_unviewed}
                 }
 
                 CallButtonLink {
@@ -264,10 +264,10 @@ Page {
                     onVisibleChanged: {
                         if(visible) {
                             vidpanel.visible = true
-                            core.enable_video_capture_preview(1)
+                            Core.enable_video_capture_preview(1)
                         } else {
                             vidpanel.visible = false
-                            core.enable_video_capture_preview(0)
+                            Core.enable_video_capture_preview(0)
                         }
                     }
                     ToolTip.text: "Hangup"
@@ -415,7 +415,7 @@ Page {
                         MenuItem {
                             text: "Send video message"
                             onTriggered: {
-                                core.start_control(to_uid)
+                                Core.start_control(to_uid)
                                 dwyco_vid_rec.uid = to_uid
                                 stack.push(dwyco_vid_rec)
                             }
@@ -441,7 +441,7 @@ Page {
 //                                informativeText: "This KEEPS FAVORITE messages."
 //                                standardButtons: StandardButton.Yes | StandardButton.No
 //                                onYes: {
-//                                    core.clear_messages_unfav(chatbox.to_uid)
+//                                    Core.clear_messages_unfav(chatbox.to_uid)
 //                                    themsglist.reload_model()
 //                                    close()
 //                                }
@@ -487,7 +487,7 @@ Page {
 //                                informativeText: "This removes FAVORITE and HIDDEN messages too."
 //                                standardButtons: StandardButton.Yes | StandardButton.No
 //                                onYes: {
-//                                    core.delete_user(chatbox.to_uid)
+//                                    Core.delete_user(chatbox.to_uid)
 //                                    themsglist.reload_model()
 //                                    close()
 //                                    stack.pop()
@@ -522,14 +522,14 @@ Page {
     
     function snapshot(filename) {
         console.log("CAMERA SNAP2", filename)
-        core.send_simple_cam_pic(to_uid, "", filename)
+        Core.send_simple_cam_pic(to_uid, "", filename)
         themsglist.reload_model()
         listview.positionViewAtBeginning()
         
     }
 
     Connections {
-        target: core
+        target: Core
         function onSc_rem_keyboard_active(uid, active) {
             if(uid === to_uid) {
                 ind_typing = active
@@ -541,7 +541,7 @@ Page {
             // and we can't actually see it until we scroll down, but for
             // another day...
             if(visible && from_uid === to_uid) {
-                core.reset_unviewed_msgs(to_uid)
+                Core.reset_unviewed_msgs(to_uid)
             }
         }
         function onSys_uid_resolved(uid) {
@@ -549,9 +549,9 @@ Page {
                 // try to defeat caching since the actual name
                 // of the "preview url" hasn't changed, but the contents have
                 cur_source = ""
-                cur_source = core.uid_to_profile_preview(uid)
+                cur_source = Core.uid_to_profile_preview(uid)
                 top_toolbar_text.rawtext = ""
-                top_toolbar_text.rawtext = core.uid_to_name(uid)
+                top_toolbar_text.rawtext = Core.uid_to_name(uid)
             }
         }
         function onSc_connect_terminated(uid) {
@@ -565,14 +565,14 @@ Page {
                     console.log("ConnectedChanged ", connected)
                     if(connected === 0 && vidpanel.visible) {
                         vidpanel.visible = false
-                        core.enable_video_capture_preview(0)
+                        Core.enable_video_capture_preview(0)
                     }
                     ind_online = connected
                 }
             }
         function onIgnore_event(uid) {
             if(uid === to_uid) {
-               is_blocked = core.get_ignore(uid)
+               is_blocked = Core.get_ignore(uid)
             }
         }
 
@@ -593,15 +593,15 @@ Page {
         if(to_uid === "")
             return
         textField1.text = ""
-        core.reset_unviewed_msgs(to_uid)
+        Core.reset_unviewed_msgs(to_uid)
         cur_source = ""
-        cur_source = core.uid_to_profile_preview(to_uid)
+        cur_source = Core.uid_to_profile_preview(to_uid)
         top_toolbar_text.rawtext = ""
-        top_toolbar_text.rawtext = core.uid_to_name(to_uid)
-        ind_typing = core.get_rem_keyboard_state(to_uid)
-        ind_online = core.get_established_state(to_uid)
-        call_buttons_model = core.get_button_model(to_uid)
-        is_blocked = core.get_ignore(to_uid)
+        top_toolbar_text.rawtext = Core.uid_to_name(to_uid)
+        ind_typing = Core.get_rem_keyboard_state(to_uid)
+        ind_online = Core.get_established_state(to_uid)
+        call_buttons_model = Core.get_button_model(to_uid)
+        is_blocked = Core.get_ignore(to_uid)
     }
 
     Loader {
@@ -632,7 +632,7 @@ Page {
         onClosed: (ok) => {
             if(ok) {
                 url_to_send = source
-                core.simple_send_url(to_uid, "", url_to_send)
+                Core.simple_send_url(to_uid, "", url_to_send)
                 themsglist.reload_model()
                 listView1.positionViewAtBeginning()
             }
@@ -861,7 +861,7 @@ Page {
                     fillMode: Image.PreserveAspectFit
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
-                    source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                    source: { PREVIEW_FILENAME != "" ? (Core.from_local_file(PREVIEW_FILENAME)) :
                     //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
@@ -963,7 +963,7 @@ Page {
                     } else {
 
                         if(model.FETCH_STATE === "manual") {
-                            core.retry_auto_fetch(model.mid)
+                            Core.retry_auto_fetch(model.mid)
                             console.log("retry fetch")
 
                         } else {
@@ -974,14 +974,14 @@ Page {
                             themsgview.uid = to_uid
                             themsgview.text_bg_color = ditem.color
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (Core.from_local_file(model.PREVIEW_FILENAME))
 
                                 // PREVIEW_FILENAME != "" ? ("file:///" + PREVIEW_FILENAME) :
                                 stack.push(themsgview)
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(model.mid)
+                                    var vid = Core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
 
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {
@@ -1010,7 +1010,7 @@ Page {
     }
     onVisibleChanged: {
         multiselect_mode = false
-        if(inh_block_warning === 0 && core.get_ignore(to_uid) !== 0) {
+        if(inh_block_warning === 0 && Core.get_ignore(to_uid) !== 0) {
             warn.visible = true
         } else {
             warn.visible = false
@@ -1039,16 +1039,16 @@ Page {
         }
 
         onLengthChanged: {
-            core.uid_keyboard_input(to_uid)
+            Core.uid_keyboard_input(to_uid)
         }
         onInputMethodComposingChanged: {
-            core.uid_keyboard_input(to_uid)
+            Core.uid_keyboard_input(to_uid)
         }
 
         onAccepted: {
             if(textField1.length > 0) {
-                core.simple_send(to_uid, core.strip_html(textField1.text))
-                core.start_control(to_uid)
+                Core.simple_send(to_uid, Core.strip_html(textField1.text))
+                Core.start_control(to_uid)
 
                 themsglist.reload_model()
                 textField1.text = ""
@@ -1131,8 +1131,8 @@ Page {
         onClicked: {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
-            core.simple_send(to_uid, core.strip_html(textField1.text))
-            core.start_control(to_uid)
+            Core.simple_send(to_uid, Core.strip_html(textField1.text))
+            Core.start_control(to_uid)
             themsglist.reload_model()
             textField1.text = ""
             listView1.positionViewAtBeginning()
@@ -1186,8 +1186,8 @@ Page {
         anchors.fill: toolButton1
         //anchors.verticalCenter: textField1.verticalCenter
 
-        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
-        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && core.has_audio_input
+        enabled: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && Core.has_audio_input
+        visible: microphone_permission.status === Qt.PermissionStatus.Granted && !toolButton1.enabled && Core.has_audio_input
         z: 5
         background: Rectangle {
             id: bg2
@@ -1202,19 +1202,19 @@ Page {
         ToolTip.text: "Press while talking to send audio msg"
 
         onPressed: {
-            core.start_control(to_uid)
-            zid = core.make_zap_composition()
-            chan = core.start_zap_record(zid, 0, 1)
+            Core.start_control(to_uid)
+            zid = Core.make_zap_composition()
+            chan = Core.start_zap_record(zid, 0, 1)
         }
         onReleased: {
-            core.stop_zap_record(zid)
+            Core.stop_zap_record(zid)
 
         }
         Connections {
-            target: core
+            target: Core
             function onZap_stopped(zid) {
                 if(zid === audio_zap_button.zid) {
-                    core.send_zap(zid, to_uid, 1)
+                    Core.send_zap(zid, to_uid, 1)
                     audio_zap_button.zid = -1
                     themsglist.reload_model()
                 }
@@ -1301,7 +1301,7 @@ Page {
             if(visible) {
                 oops = false
             } else {
-                if(core.get_local_setting("inh_block_warning") === "")
+                if(Core.get_local_setting("inh_block_warning") === "")
                     inh_block_warning = 0
                 else
                     inh_block_warning = 1

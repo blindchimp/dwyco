@@ -117,8 +117,8 @@ Page {
     
     onVisibleChanged: {
         if(visible) {
-            if(!core.is_chat_online) {
-                core.switch_to_chat_server(chat_server.connect_server)
+            if(!is_chat_online) {
+                Core.switch_to_chat_server(chat_server.connect_server)
                 chat_server.auto_connect = true
             }
         }
@@ -127,7 +127,7 @@ Page {
     
     
     Connections {
-        target: core
+        target: Core
 
         function onChat_event(cmd, sid, huid, sname, vdata, qid, extra_arg) {
             console.log("got chat event")
@@ -137,7 +137,7 @@ Page {
             console.log(vdata)
             console.log(qid)
             console.log(extra_arg)
-            if(cmd == DwycoCore.CHAT_CTX_RECV_DATA)
+            if(cmd == Core.CHAT_CTX_RECV_DATA)
             {
                 //public_chat.text = public_chat.text + "<br>" + vdata[0];
                 var smname = sname.substring(0, 10)
@@ -220,15 +220,15 @@ Page {
                 }
             
         onLengthChanged: {
-            //core.uid_keyboard_input(to_uid)
+            //Core.uid_keyboard_input(to_uid)
         }
         onInputMethodComposingChanged: {
-            //core.uid_keyboard_input(to_uid)
+            //Core.uid_keyboard_input(to_uid)
         }
 
         onAccepted: {
             if(textField1.length > 0) {
-                core.send_chat(textField1.text)
+                Core.send_chat(textField1.text)
                 textField1.text = ""
                 listView1.positionViewAtBeginning()
             }
@@ -284,7 +284,7 @@ Page {
             Qt.inputMethod.commit()
             Qt.inputMethod.reset()
             
-            core.send_chat(textField1.text)
+            Core.send_chat(textField1.text)
             textField1.text = ""
             listView1.positionViewAtBeginning()
             if(Qt.platform.os == "android") {
@@ -302,7 +302,7 @@ Page {
     BusyIndicator {
         id: busy1
         
-        running: {!core.is_chat_online}
+        running: {!is_chat_online}
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
     }

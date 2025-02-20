@@ -39,8 +39,8 @@ Rectangle {
     }
 
     function load_cpw() {
-        correct_pw = core.get_local_setting("pw")
-        salt = core.get_local_setting("salt")
+        correct_pw = Core.get_local_setting("pw")
+        salt = Core.get_local_setting("salt")
     }
 
     function calc_pw(str) {

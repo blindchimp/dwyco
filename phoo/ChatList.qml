@@ -27,8 +27,8 @@ Page {
    onVisibleChanged: {
        if(visible) {
            Qt.inputMethod.hide()
-           if(!core.is_chat_online) {
-               core.switch_to_chat_server(chat_server.connect_server)
+           if(!is_chat_online) {
+               Core.switch_to_chat_server(chat_server.connect_server)
                chat_server.auto_connect = true
            }
        }
@@ -37,7 +37,7 @@ Page {
    BusyIndicator {
        id: busy1
 
-       running: {!core.is_chat_online}
+       running: {!is_chat_online}
        anchors.horizontalCenter: parent.horizontalCenter
        anchors.verticalCenter: parent.verticalCenter
    }

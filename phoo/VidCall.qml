@@ -8,7 +8,7 @@ VidCallForm {
     //property string a_uid: ""
 
     Connections {
-        target: core
+        target: Core
 
         function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id != a_ui_id)

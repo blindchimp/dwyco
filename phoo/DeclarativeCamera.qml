@@ -127,7 +127,7 @@ Rectangle {
                               file_captured = path
                               console.log("SAVED ", file_captured)
                               //photoPreview.ok_vis = true
-                              photoPreview.source = core.from_local_file(file_captured)
+                              photoPreview.source = Core.from_local_file(file_captured)
 
                           }
         }
@@ -145,7 +145,7 @@ Rectangle {
 //        onLockStatusChanged: {
 //            console.log("lock status ", lockStatus)
 //            if(lockStatus == Camera.Locked) {
-//                camera.imageCapture.captureToLocation(core.tmp_dir)
+//                camera.imageCapture.captureToLocation(Core.tmp_dir)
 
 //            }
 

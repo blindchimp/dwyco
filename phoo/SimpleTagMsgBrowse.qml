@@ -180,7 +180,7 @@ Page {
                 }
 
                 ConvToolButton {
-                    visible: {stack.depth > 2 || core.any_unviewed}
+                    visible: {stack.depth > 2 || Core.any_unviewed}
                 }
 
 
@@ -314,7 +314,7 @@ Page {
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
-                source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                source: { PREVIEW_FILENAME != "" ? (Core.from_local_file(PREVIEW_FILENAME)) :
                 //source: {PREVIEW_FILENAME !== "" ? ("file://" + PREVIEW_FILENAME) :
                                                   (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
@@ -399,7 +399,7 @@ Page {
                     } else {
 
                         if(model.FETCH_STATE === "manual") {
-                            core.retry_auto_fetch(model.mid)
+                            Core.retry_auto_fetch(model.mid)
                             console.log("retry fetch")
 
                         } else {
@@ -409,14 +409,14 @@ Page {
                             themsgview.mid = model.mid
                             themsgview.uid = model.ASSOC_UID
                             if(model.IS_FILE === 1) {
-                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (core.from_local_file(model.PREVIEW_FILENAME))
+                                themsgview.view_source = model.PREVIEW_FILENAME === "" ? "" : (Core.from_local_file(model.PREVIEW_FILENAME))
                                 stack.push(themsgview)
                             }
                             else {
                                 if(model.HAS_VIDEO === 1 || model.HAS_AUDIO === 1) {
-                                    var vid = core.make_zap_view(model.mid)
+                                    var vid = Core.make_zap_view(model.mid)
                                     themsgview.view_id = vid
-                                    //core.play_zap_view(vid)
+                                    //Core.play_zap_view(vid)
                                     if(model.HAS_AUDIO === 1 && model.HAS_VIDEO === 0) {
                                         themsgview.view_source = mi("ic_audiotrack_black_24dp.png")
                                     } else {

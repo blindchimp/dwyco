@@ -2227,7 +2227,7 @@ DwycoCore::app_state_change(Qt::ApplicationState as)
         // *and* we may not get to the server, so force a reload here just
         // in case.
         dwyco_set_disposition("foreground", 10);
-        update_dwyco_client_name(m_client_name);
+        //update_dwyco_client_name(m_client_name);
         QSet<QByteArray> dum;
         load_inbox_tags_to_unviewed(dum);
         reload_conv_list_since(time_suspended);

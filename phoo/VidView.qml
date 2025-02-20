@@ -51,7 +51,7 @@ Page {
     }
 
     Connections {
-        target: core
+        target: Core
         function onVideo_display(ui_id, frame_number, img_path) {
             view_source = img_path
         }

@@ -40,7 +40,7 @@ Page {
         Button {
             text: "SEND for review"
             onClicked: {
-                core.send_forward(the_man, "Abuse report", mid, 1)
+                Core.send_forward(the_man, "Abuse report", mid, 1)
                 stack.pop()
             }
             Layout.fillWidth: true
@@ -48,8 +48,8 @@ Page {
         Button {
             text: "SEND for review AND BLOCK User"
             onClicked: {
-                core.send_forward(the_man, "Abuse report", mid, 1)
-                core.set_ignore(uid, 1)
+                Core.send_forward(the_man, "Abuse report", mid, 1)
+                Core.set_ignore(uid, 1)
                 stack.pop()
             }
             Layout.fillWidth: true

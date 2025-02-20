@@ -41,29 +41,29 @@ Page {
         if(!visible)
         {
             if(view_id !== -1) {
-            core.stop_zap_view(view_id)
-            core.delete_zap_view(view_id)
+            Core.stop_zap_view(view_id)
+            Core.delete_zap_view(view_id)
             }
             is_trash = false
         }
         else
         {
             if(view_id !== -1) {
-                ui_id = core.play_zap_view(view_id)
+                ui_id = Core.play_zap_view(view_id)
             }
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
+            fav = Core.has_tag_message(mid, "_fav")
+            hid = Core.has_tag_message(mid, "_hid")
         }
     }
 
 //    fav: { (mid.length > 0) ?
-//             (core.get_fav_message(mid) === 1) : false
+//             (Core.get_fav_message(mid) === 1) : false
 //    }
 
-//    hid: {mid.length > 0 ? core.has_tag_message(mid, "_hid") === 1 : false}
+//    hid: {mid.length > 0 ? Core.has_tag_message(mid, "_hid") === 1 : false}
 
     Connections {
-        target: core
+        target: Core
         function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id === msgviewer.ui_id) {
                 view_source = img_path
@@ -72,14 +72,14 @@ Page {
         function onMid_tag_changed(changed_mid) {
             if(changed_mid != mid)
                 return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
+            fav = Core.has_tag_message(mid, "_fav")
+            hid = Core.has_tag_message(mid, "_hid")
         }
         function onMsg_tag_change_global(changed_mid, huid) {
             if(changed_mid != mid)
                 return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
+            fav = Core.has_tag_message(mid, "_fav")
+            hid = Core.has_tag_message(mid, "_hid")
         }
         function onQt_app_state_change(app_state) {
             if(app_state === 0) {
@@ -88,8 +88,8 @@ Page {
             }
             if(app_state !== 0) {
                 if(view_id !== -1) {
-                core.stop_zap_view(view_id)
-                core.delete_zap_view(view_id)
+                Core.stop_zap_view(view_id)
+                Core.delete_zap_view(view_id)
                 }
             }
         }
@@ -156,7 +156,7 @@ Page {
                     radius: width / 2
                 }
                 onCheckedChanged: {
-                    core.set_fav_message(mid, checked)
+                    Core.set_fav_message(mid, checked)
                 }
 
                 checkable: true
@@ -201,7 +201,7 @@ Page {
                     //         return
                     // }
 
-                    var export_name = core.export_attachment(mid)
+                    var export_name = Core.export_attachment(mid)
                     if(export_name.length > 0) {
                         export_result = "Saved to " + export_name.substring(export_name.lastIndexOf('/') + 1)
                         if(Qt.platform.os == "android") {
@@ -235,9 +235,9 @@ Page {
                 }
                 onCheckedChanged: {
                 if(checked)
-                    core.set_tag_message(mid, "_hid")
+                    Core.set_tag_message(mid, "_hid")
                 else
-                    core.unset_tag_message(mid, "_hid")
+                    Core.unset_tag_message(mid, "_hid")
                 }
                 checkable: true
                 checked: hid
@@ -321,8 +321,8 @@ Page {
 
                 }
                 onClicked: {
-                    core.stop_zap_view(view_id)
-                    core.delete_zap_view(view_id)
+                    Core.stop_zap_view(view_id)
+                    Core.delete_zap_view(view_id)
                     stack.pop()
                 }
                 onPressAndHold: {

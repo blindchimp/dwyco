@@ -30,9 +30,8 @@
 class DwycoCore : public QObject
 {
     Q_OBJECT
-    QML_ELEMENT
 
-    QML_WRITABLE_VAR_PROPERTY(QString, client_name)
+    //QML_WRITABLE_VAR_PROPERTY(QString, client_name)
     QML_WRITABLE_VAR_PROPERTY(bool, use_archived)
     QML_READONLY_VAR_PROPERTY(int, total_users)
     QML_READONLY_VAR_PROPERTY(bool, any_unviewed)
@@ -63,10 +62,12 @@ class DwycoCore : public QObject
     QML_READONLY_VAR_PROPERTY(bool, desktop_update_ready)
     QML_READONLY_VAR_PROPERTY(QString, qt_version_string)
 
+    QML_NAMED_ELEMENT(Core)
+    QML_SINGLETON
 
 public:
     DwycoCore(QObject *parent = 0) : QObject(parent) {
-        m_client_name = "";
+        //m_client_name = "";
         m_buildtime = BUILDTIME;
         m_user_dir = ".";
         m_tmp_dir = ".";

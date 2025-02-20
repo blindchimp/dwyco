@@ -33,6 +33,8 @@ long DwVP::CookieGen = 2000;
 void
 DwVP::add_ptr(long p, void *v)
 {
+    if(!Ptr_listp)
+        init_dvp();
     if(Ptr_list.exists(p))
         oopanic("bogus ptr add");
     Ptr_list.add(p, v);
@@ -43,18 +45,24 @@ DwVP::add_ptr(long p, void *v)
 int
 DwVP::valid_ptr(long p)
 {
+    if(!Ptr_listp)
+        init_dvp();
     return Ptr_list.exists(p);
 }
 
 void
 DwVP::del_ptr(long p)
 {
+    if(!Ptr_listp)
+        init_dvp();
     Ptr_list.del(p);
 }
 
 DwVP
 DwVP::cookie_to_ptr(long cookie)
 {
+    if(!Ptr_listp)
+        init_dvp();
     DwVP p;
     p.cookie = cookie;
     void *v;

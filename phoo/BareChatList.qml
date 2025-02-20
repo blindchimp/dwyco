@@ -46,7 +46,7 @@ Item {
                     //height: dp(60)
                     source : {
                         (!invalid && (!censor_it && resolved_counter > -1)) ?
-                                    core.uid_to_profile_preview(uid) :
+                                    Core.uid_to_profile_preview(uid) :
                                     "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                     }
                     //anchors.verticalCenter: parent.verticalCenter
@@ -114,7 +114,7 @@ Item {
 
 
     Connections {
-        target: core
+        target: Core
         function onSys_invalidate_profile(uid) {
             console.log("chatlist invalidate " + uid)
         }
