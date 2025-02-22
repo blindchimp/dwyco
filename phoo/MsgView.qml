@@ -66,20 +66,20 @@ Page {
         target: core
         function onVideo_display(ui_id, frame_number, img_path) {
             if(ui_id === msgviewer.ui_id) {
-                view_source = img_path
+                msgviewer.view_source = img_path
             }
         }
         function onMid_tag_changed(changed_mid) {
-            if(changed_mid != mid)
+            if(changed_mid != msgviewer.mid)
                 return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
+            fav = core.has_tag_message(msgviewer.mid, "_fav")
+            hid = core.has_tag_message(msgviewer.mid, "_hid")
         }
         function onMsg_tag_change_global(changed_mid, huid) {
-            if(changed_mid != mid)
+            if(changed_mid != msgviewer.mid)
                 return
-            fav = core.has_tag_message(mid, "_fav")
-            hid = core.has_tag_message(mid, "_hid")
+            fav = core.has_tag_message(msgviewer.mid, "_fav")
+            hid = core.has_tag_message(msgviewer.mid, "_hid")
         }
         function onQt_app_state_change(app_state) {
             if(app_state === 0) {
@@ -87,9 +87,9 @@ Page {
 
             }
             if(app_state !== 0) {
-                if(view_id !== -1) {
-                core.stop_zap_view(view_id)
-                core.delete_zap_view(view_id)
+                if(msgviewer.view_id !== -1) {
+                core.stop_zap_view(msgviewer.view_id)
+                core.delete_zap_view(msgviewer.view_id)
                 }
             }
         }
