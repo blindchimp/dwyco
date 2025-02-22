@@ -4,6 +4,7 @@ add_compile_definitions(DWYCO_APP_NICENAME="Phoo")
 
 add_compile_definitions(VCCFG_FILE)
 add_compile_definitions($<$<CONFIG:Debug>:DWYCO_DEBUG>)
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_APP_DEBUG>)
 set(VCCFG_COMP ${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR})
 add_compile_definitions(
 	CDCCORE_STATIC
