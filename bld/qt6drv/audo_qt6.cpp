@@ -126,6 +126,7 @@ public slots:
 
     void handle_stateChange(QAudio::State a) {
        QMutexLocker ml(&audio_mutex);
+        GRTLOG("state change to %d", a, 0);
        if(a == QAudio::IdleState)
        {
            // if(audio_output)
@@ -149,6 +150,11 @@ public slots:
             }
             return;
         }
+
+        const auto devices = QMediaDevices::audioOutputs();
+        for (const QAudioDevice &device : devices)
+            qDebug() << "Device: " << device.description();
+
         QAudioFormat af;
         af.setSampleRate(UWB_SAMPLE_RATE);
         af.setSampleFormat(QAudioFormat::Int16);
@@ -165,9 +171,9 @@ public slots:
         audio_output = new QAudioSink(af);
         audio_output->setBufferSize(3 * AUDBUF_LEN);
         connect(audio_output, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handle_stateChange(QAudio::State)));
-
-        qio_dev = audio_output->start();
         audio_output->setVolume(1.0);
+        qio_dev = audio_output->start();
+
     }
 
 signals:
@@ -233,7 +239,11 @@ mumble::qt_pushmore()
     int len = audio_output->bytesFree();
     char *buf = new char[len];
     int len_out = qt_filler(0, buf, len);
-    qio_dev->write(buf, len_out);
+    if(len_out > 0)
+    {
+        qio_dev->write(buf, len_out);
+        GRTLOG("pushed %d", len, 0);
+    }
     delete [] buf;
 }
 
