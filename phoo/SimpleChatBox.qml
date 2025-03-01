@@ -37,7 +37,7 @@ Page {
     property int is_blocked: 0
     property int prov_img_height
 
-    prov_img_height: .25 * height
+    prov_img_height: .33 * height
     function star_fun(b) {
         console.log("chatbox star")
         model.fav_all_selected(b ? 1 : 0)
