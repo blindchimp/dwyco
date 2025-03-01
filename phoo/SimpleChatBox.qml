@@ -725,7 +725,7 @@ Page {
 
             border.width: 1
             border.color: divider
-            color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
+            color: {(IS_QD === 1) ? "gray" : ((SENT === 0) ? accent : primary_light)}
 
             //anchors.left: {(SENT == 0) ? parent.left : undefined}
             //x: (SENT === 1) ? listView1.width - ditem.width - 3 : 3
@@ -849,11 +849,11 @@ Page {
                 Image {
                     id: preview
 
-                    visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
+                    visible: {HAS_ATTACHMENT}
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
-                    //Layout.minimumWidth: (listView1.width * 3) / 4
+                    Layout.minimumWidth: PREVIEW_FILENAME === "" ? (listView1.width * 1) / 4 : null
                     //Layout.maximumHeight: listView1.height / 2
                     Layout.preferredHeight: prov_img_height
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
@@ -861,7 +861,7 @@ Page {
                     fillMode: Image.PreserveAspectFit
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
-                    source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                    source: { PREVIEW_FILENAME !== "" ? (core.from_local_file(PREVIEW_FILENAME)) :
                     //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 
