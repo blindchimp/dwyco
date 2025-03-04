@@ -88,8 +88,8 @@ Page {
             id: multi_toolbar
             visible: multiselect_mode
             extras: extras_button
-            delete_warning_inf_text: "Deletes on all your devices"
-            delete_warning_text: "Delete all selected messages FOREVER?"
+            delete_warning_inf_text: "Deletes on ALL your devices"
+            delete_warning_text: "Delete selected messages FOREVER?"
             star_icon: mi("delete-restore-black.png")
             is_trash: true
         }
@@ -287,11 +287,11 @@ Page {
             Image {
                 id: preview
                 anchors.fill: parent
-                visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
+                visible: {HAS_ATTACHMENT}
                 fillMode: Image.PreserveAspectFit
                 // note: the extra "/" in file:// is to accomodate
                 // windows which may return "c:/mumble"
-                source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                source: { PREVIEW_FILENAME !== "" ? (core.from_local_file(PREVIEW_FILENAME)) :
                 //source: {PREVIEW_FILENAME !== "" ? ("file://" + PREVIEW_FILENAME) :
                                                   (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 

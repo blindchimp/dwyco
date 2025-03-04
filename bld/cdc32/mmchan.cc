@@ -2844,11 +2844,27 @@ MMChannel::recv_config(vc cfg)
         // make sure we are at least in a group with
         // the same hash (this is not a security check, just
         // making sure we don't accept sync links from obviously
-        // wrong group)
+        // wrong group.) this is mostly useful when you are debugging, and
+        // forget to update executables all over the place.
         vc m;
         vc r;
         if(!remote_cfg.is_nil() && remote_call_type() == vc("sync"))
         {
+            // this is a hack. it isn't uncommon to get tech support emails from
+            // people that want to move a cdc-x install to a new computer. usually,
+            // we just tell them to copy it. which of course now means all your
+            // auth, sync, private keys are duplicated. which is fine. if they
+            // try to use them at the same time, they just fight with each other.
+            // but we definitely don't want to allow a sync channel between them.
+            const vc ruid = remote_uid();
+            if(ruid.is_nil() || ruid == My_UID)
+            {
+                send_error("self-sync rejected (probably copied installation)");
+                Netlog_signal.emit(tube->mklog("event", "self-sync-reject"));
+                GRTLOG("self-sync rejected", 0, 0);
+                goto cleanup;
+            }
+
             vc pw;
             if(!cfg.find("pw", pw))
             {
@@ -2878,7 +2894,7 @@ MMChannel::recv_config(vc cfg)
             remote_cfg.del("pw");
             is_sync_chan = true;
 
-            ChanList cl = channels_by_call_type(remote_uid(), "sync");
+            ChanList cl = channels_by_call_type(ruid, "sync");
             if(cl.num_elems() > 1)
             {
                 // we can do several things:
