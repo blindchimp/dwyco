@@ -515,8 +515,8 @@ Page {
     background: Rectangle {
         color: primary_dark
         gradient: Gradient {
-            GradientStop { position: 0.0; color: primary_light }
-            GradientStop { position: 1.0; color: primary_dark}
+            GradientStop { position: 1.0; color: primary_light }
+            GradientStop { position: 0.0; color: primary_dark}
         }
     }
     
@@ -1030,13 +1030,13 @@ Page {
         wrapMode: TextInput.WordWrap
         height: implicitHeight // Math.max(implicitHeight * 2, contentHeight)
         
-        background: Rectangle {
-            radius: 10
-            anchors.fill: parent
-            border.color: "#333"
-            border.width: 1
-            color: icons
-        }
+        // background: Rectangle {
+        //     radius: 10
+        //     anchors.fill: parent
+        //     border.color: "#333"
+        //     border.width: 1
+        //     color: icons
+        // }
 
         onLengthChanged: {
             core.uid_keyboard_input(to_uid)

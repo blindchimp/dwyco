@@ -211,13 +211,13 @@ Page {
         placeholderText: qsTr("Type...")
         height: Math.max(implicitHeight * 1.3, contentHeight)
         wrapMode: TextInput.WordWrap
-        background: Rectangle {
-                    radius: 2
-                    anchors.fill: parent
-                    border.color: "#333"
-                    border.width: 1
-                    color: "lawngreen"
-                }
+        // background: Rectangle {
+        //             radius: 2
+        //             anchors.fill: parent
+        //             border.color: "#333"
+        //             border.width: 1
+        //             color: "lawngreen"
+        //         }
             
         onLengthChanged: {
             //core.uid_keyboard_input(to_uid)
