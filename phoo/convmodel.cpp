@@ -130,11 +130,12 @@ ConvListModel::obliterate_all_selected()
 
 static
 void
-trash_messages(QByteArray buid)
+trash_messages(const QByteArray& buid)
 {
     DWYCO_LIST msgs;
     if(!dwyco_get_message_index(&msgs, buid.constData(), buid.length()))
         return;
+    simple_scoped q(msgs);
 
     DWYCO_LIST favs;
     if(!dwyco_get_tagged_mids(&favs, "_fav"))
@@ -153,7 +154,6 @@ trash_messages(QByteArray buid)
         fset.insert(qf.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID));
     }
 
-    simple_scoped q(msgs);
     n = q.rows();
 
     for(int i = 0; i < n; ++i)
