@@ -798,7 +798,8 @@ restore_msg(const vc& uid, const vc& mid)
     try
     {
         const vc res = sql("select msg, attfn, att from msgs where mid = ?1", mid);
-
+        if(res.num_elems() != 1)
+            throw -1;
         vc msg;
         if(!deserialize(res[0][0], msg))
             return 0;
