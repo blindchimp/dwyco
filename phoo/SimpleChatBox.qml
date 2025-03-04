@@ -853,7 +853,7 @@ Page {
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
-                    Layout.minimumWidth: PREVIEW_FILENAME === "" ? (listView1.width * 1) / 4 : null
+                    Layout.minimumWidth: PREVIEW_FILENAME === "" ? (listView1.width * 1) / 4 : 0
                     //Layout.maximumHeight: listView1.height / 2
                     Layout.preferredHeight: prov_img_height
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
