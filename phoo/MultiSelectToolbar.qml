@@ -102,6 +102,10 @@ ToolBar {
                         model.trash_all_selected()
                     }
                     model.invalidate_model_filter()
+                    // ACK, this is a kluge. this just gets the model that
+                    // might be loaded with a uid we happen to have modified
+                    // during the trash operation.
+                    themsglist.invalidate_model_filter()
                     multiselect_mode = false
                     close()
                 }
