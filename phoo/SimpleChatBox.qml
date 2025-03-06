@@ -33,7 +33,9 @@ Page {
     property var call_buttons_model
     property bool lock_to_bottom: false
     property int is_blocked: 0
+    property int prov_img_height
 
+    prov_img_height: .33 * height
     function star_fun(b) {
         console.log("chatbox star")
         model.fav_all_selected(b ? 1 : 0)
@@ -144,6 +146,10 @@ Page {
 
                 Item {
                     id: prof
+                    property bool censor_it
+                    property bool regular
+                    censor_it: censor && !prof.regular
+                    regular: {chatbox_page.to_uid !== "" && applicationWindow1.init_called && core.uid_profile_regular(chatbox_page.to_uid)}
                     //color: "red" //accent
                     //border.width: 1
                     //radius: 3
@@ -152,12 +158,13 @@ Page {
                     Layout.minimumHeight: cm(1)
                     //Layout.leftMargin: 0
 
+
                     CircularImage {
                         id: top_toolbar_img
                         source: {
                             if(to_uid === "")
                                 return
-                            return (is_blocked !== 1 && (show_unreviewed || (server_account_created && core.uid_profile_regular(to_uid)))) ?
+                            return (is_blocked !== 1 && !prof.censor_it) ?
                                     cur_source :  "qrc:/new/red32/icons/red-32x32/exclamation-32x32.png"
                         }
                         fillMode: Image.PreserveAspectCrop
@@ -168,6 +175,8 @@ Page {
                     Text {
                         id: top_toolbar_text
                         //width: dp(160)
+                        property string rawtext: ""
+                        text: to_uid.length == 0 ? "" : (!prof.censor_it ? rawtext : censor_name(rawtext))
                         clip: true
                         anchors.leftMargin: 2
                         fontSizeMode: Text.Fit
@@ -541,7 +550,8 @@ Page {
                 // of the "preview url" hasn't changed, but the contents have
                 cur_source = ""
                 cur_source = core.uid_to_profile_preview(uid)
-                top_toolbar_text.text = core.uid_to_name(uid)
+                top_toolbar_text.rawtext = ""
+                top_toolbar_text.rawtext = core.uid_to_name(uid)
             }
         }
         function onSc_connect_terminated(uid) {
@@ -584,8 +594,10 @@ Page {
             return
         textField1.text = ""
         core.reset_unviewed_msgs(to_uid)
+        cur_source = ""
         cur_source = core.uid_to_profile_preview(to_uid)
-        top_toolbar_text.text = core.uid_to_name(to_uid)
+        top_toolbar_text.rawtext = ""
+        top_toolbar_text.rawtext = core.uid_to_name(to_uid)
         ind_typing = core.get_rem_keyboard_state(to_uid)
         ind_online = core.get_established_state(to_uid)
         call_buttons_model = core.get_button_model(to_uid)
@@ -713,7 +725,7 @@ Page {
 
             border.width: 1
             border.color: divider
-            color: {(IS_QD == 1) ? "gray" : ((SENT == 0) ? accent : primary_light)}
+            color: {(IS_QD === 1) ? "gray" : ((SENT === 0) ? accent : primary_light)}
 
             //anchors.left: {(SENT == 0) ? parent.left : undefined}
             //x: (SENT === 1) ? listView1.width - ditem.width - 3 : 3
@@ -837,18 +849,19 @@ Page {
                 Image {
                     id: preview
 
-                    visible: {HAS_ATTACHMENT && PREVIEW_FILENAME !== ""}
+                    visible: {HAS_ATTACHMENT}
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.maximumWidth: (listView1.width * 3) / 4
-                    //Layout.minimumWidth: (listView1.width * 3) / 4
-                    Layout.maximumHeight: listView1.height / 2
+                    Layout.minimumWidth: PREVIEW_FILENAME === "" ? (listView1.width * 1) / 4 : 0
+                    //Layout.maximumHeight: listView1.height / 2
+                    Layout.preferredHeight: prov_img_height
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
 
                     fillMode: Image.PreserveAspectFit
                     // note: the extra "/" in file:// is to accomodate
                     // windows which may return "c:/mumble"
-                    source: { PREVIEW_FILENAME != "" ? (core.from_local_file(PREVIEW_FILENAME)) :
+                    source: { PREVIEW_FILENAME !== "" ? (core.from_local_file(PREVIEW_FILENAME)) :
                     //source: {PREVIEW_FILENAME != "" ? ("file://" + PREVIEW_FILENAME) :
                                                       (HAS_AUDIO === 1 ? mi("ic_audiotrack_black_24dp.png") : "")}
 

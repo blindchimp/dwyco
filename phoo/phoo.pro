@@ -331,7 +331,7 @@ ANDROID_EXTRA_LIBS = $$PWD/../$$DWYCO_CONFDIR/libs/armeabi-v7a/libdwyco_jni.so $
 
 ANDROID_TARGET_SDK_VERSION=34
 #ANDROID_MIN_SDK_VERSION=24
-ANDROID_VERSION_CODE=2000118
+ANDROID_VERSION_CODE=2000119
 ANDROID_VERSION_NAME=$$VER
 #contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
 #    ANDROID_EXTRA_LIBS += \
@@ -505,3 +505,4 @@ DISTFILES += \
     androidinst2/res/values/libs.xml \
     androidinst2/res/xml/provider_paths.xml
 
+android: include(/home/dwight/Android/Sdk/android_openssl/openssl.pri)
