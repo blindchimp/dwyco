@@ -63,9 +63,10 @@ add_compile_definitions(
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
         DWYCO_MUTEX_NAME=${DWYCO_APP}
-        #DWYCO_TRACE
-        #DW_RTLOG
 )
+
+add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)
+add_compile_definitions($<$<CONFIG:Debug>:DWYCO_TRACE>)
 
 if(${DWYCO_APP} STREQUAL "rando")
     add_compile_definitions(DWYCO_NO_THEORA_CODEC DWYCO_NO_GSM DWYCO_NO_VORBIS DWYCO_NO_UPNP DWYCO_NO_VIDEO_FROM_PPM DWYCO_NO_VIDEO_MSGS)
