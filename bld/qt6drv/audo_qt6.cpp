@@ -162,6 +162,7 @@ public slots:
         af.setChannelConfig(QAudioFormat::ChannelConfigMono);
 
             QAudioDevice info(QMediaDevices::defaultAudioOutput());
+            qDebug() << "default: " << info.description();
             if (!info.isFormatSupported(af)) {
                 qWarning() << "Raw audio format not supported by backend, cannot play audio.";
                 return;
