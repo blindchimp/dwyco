@@ -94,8 +94,8 @@ protected:
     AudioMixer *mixer;
 
 private:
-    typedef DwVecP<DWBYTE> BUFVEC;
-    typedef DwVec<int> LENVEC;
+    // typedef DwVecP<DWBYTE> BUFVEC;
+    // typedef DwVec<int> LENVEC;
     DwTimer output_timer;
     DwVecP<DWBYTE> bufs;
     DwVec<int> lens;
@@ -113,8 +113,8 @@ private:
 
     int curseq;
     int seq0;
-    BUFVEC *seq_bufs[2];
-    LENVEC *seq_lens[2];
+    //BUFVEC *seq_bufs[2];
+    //LENVEC *seq_lens[2];
     DwVecP<DWBYTE> bufs2;
     DwVec<int> lens2;
     DwVec<int> do_free2;

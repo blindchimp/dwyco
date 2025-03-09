@@ -2655,7 +2655,7 @@ QPixmap
 circlize(QPixmap pm)
 {
     QImage img = pm.toImage();
-    img.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    img = img.convertToFormat(QImage::Format_ARGB32_Premultiplied);
     QImage imageOut(img.size(),QImage::Format_ARGB32_Premultiplied);
     //painter on it
     QPainter painter(&imageOut);
