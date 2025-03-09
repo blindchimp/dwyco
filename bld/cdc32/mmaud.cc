@@ -165,6 +165,8 @@ MMChannel::process_audio_sampler()
 
         int len;
         int time;
+        GRTLOGA("samp amute %d auto_sq %d talko %d excl %d", All_mute, Auto_squelch, Talk_override, Exclusive_audio, 0);
+
         EnterCriticalSection(&Audio_lock);
         if(!audio_sampler->has_data())
         {
@@ -173,6 +175,7 @@ MMChannel::process_audio_sampler()
         }
         DWBYTE *b = (DWBYTE *)audio_sampler->get_data(len, time);
         LeaveCriticalSection(&Audio_lock);
+        GRTLOG("samp data %d, %d", len, time);
 #if 0
         {
             FILE *f = fopen("input.aud", "a");
