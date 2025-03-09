@@ -51,10 +51,10 @@ AudioOutput::AudioOutput(int decom, int nbufs)
     next_out = 0;
     time_last_buf_played = output_timer.time_now();
     decompress = decom;
-    seq_bufs[0] = &bufs;
-    seq_lens[0] = &lens;
-    seq_bufs[1] = &bufs2;
-    seq_lens[1] = &lens2;
+    // seq_bufs[0] = &bufs;
+    // seq_lens[0] = &lens;
+    // seq_bufs[1] = &bufs2;
+    // seq_lens[1] = &lens2;
     curseq = 0;
     seq0 = -1;
     reset_timer = 1;
