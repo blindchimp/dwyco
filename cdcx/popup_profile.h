@@ -22,7 +22,7 @@ class popup_profile : public QWidget
     Q_OBJECT
 
 public:
-    explicit popup_profile(QWidget *parent = 0, Qt::WindowFlags = 0);
+    explicit popup_profile(QWidget *parent = 0, Qt::WindowFlags = Qt::WindowFlags());
     ~popup_profile();
     DVP vp;
     QTimer tmr;
