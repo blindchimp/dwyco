@@ -558,7 +558,7 @@ AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfre
     if(off < 0)
     {
 #ifdef AUDDBG
-        AUDRTLOG(L, "neg off ", off, 0);
+        AUDRTLOG(L, "neg off %d", off, 0);
 #endif
         return 1;
     }
@@ -577,8 +577,10 @@ AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfre
         bufs_to_buffer = bufs.num_elems();
         if(output_timer.is_running())
         {
+            output_timer.reset();
             output_timer.load(output_timer.get_time_left() +
                               device_one_buffer_time() * morebufs);
+            output_timer.start();
 #ifdef AUDDBG
             AUDRTLOG(L, "timer extend %d", output_timer.get_time_left(), 0);
 #endif
