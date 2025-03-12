@@ -64,11 +64,18 @@ public:
             oopanic("splat null");
         return val;
     }
+    // this is really bad, as apparently
+    // which conversion gets triggered if you
+    // instantiate this class with (e.g.) uint32_t
+    // when the context wants "int" will be bool
+    // instead of uint32_t -> int. footgun ahoy!
+#if 0
     operator bool() const {
         if(val == 0)
             return false;
         return true;
     }
+#endif
 
     // surprising, but glad it works. if T doesn't have these members
     // as long as you don't invoke these members, the compiler won't complain
