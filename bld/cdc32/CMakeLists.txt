@@ -62,7 +62,7 @@ add_compile_definitions(
         DWYCO_USE_SQLITE
         DWYCO_USE_STATIC_SQLITE
         DWYCO_NO_VIDEO_FROM_PPM
-        DWYCO_MUTEX_NAME=${DWYCO_APP}
+        DWYCO_MUTEX_NAME="${DWYCO_APP}"
 )
 
 add_compile_definitions($<$<CONFIG:Debug>:DW_RTLOG>)

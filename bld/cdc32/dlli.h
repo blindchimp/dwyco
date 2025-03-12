@@ -663,7 +663,6 @@ void DWYCOEXPORT dwyco_set_channel_destroy_callback(int chan_id,
 // substitute the macro from the at the callsite.
 // instead, make sure your macro argument is "appname"
 #if defined(_Windows) && !defined(DWYCO_MUTEX_NAME)
-#warning "YOU NEED A DWYCO_MUTEX_NAME, using default cdcx"
 #define DWYCO_MUTEX_NAME "cdcx"
 #endif
 #define DWYCO_AUTOUPDATE_MUTEX_NAME(app) "dwyco " app " mutex2"
