@@ -549,6 +549,12 @@ AudioOutput::change_buffering(int n)
 
 }
 
+// this is bad, if the sequence numbers aren't increasing here,
+// the data is just thrown away. so this is only really useful
+// when playing from files, or from remote audio devices over
+// a reliable channel. but, this function is overly complicated
+// for those situations. it just happens to work ok enough that
+// i don't want to replace it atm.
 int
 AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfree)
 {

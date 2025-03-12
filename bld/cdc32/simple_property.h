@@ -31,7 +31,7 @@ namespace dwyco {
 template<class T>
 class sigprop
 {
-protected:
+private:
     T val;
 
 public:
