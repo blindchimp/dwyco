@@ -36,7 +36,7 @@ QMAKE_CXX=ccache g++
 QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 QMAKE_CFLAGS +=  #-fsanitize=address
-QMAKE_CXXFLAGS +=  #-std=c++11 #-fsanitize=address
-QMAKE_LFLAGS +=  #-std=c++11 #-fsanitize=address
+QMAKE_CXXFLAGS +=  #-fsanitize=address
+QMAKE_LFLAGS +=   #-fsanitize=address
 }
 

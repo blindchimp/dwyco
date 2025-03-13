@@ -26,7 +26,6 @@ DEFINES += DWYCO_NO_VIDEO_CAPTURE
 }
 linux-*|macx-*: QMAKE_CXX=ccache g++
 android: DEFINES += ANDROID LINUX
-linux-*:QMAKE_CXXFLAGS += -std=c++11
 
 #QMAKE_CFLAGS += -fsanitize=address
 #QMAKE_CXXFLAGS += -fsanitize=address
