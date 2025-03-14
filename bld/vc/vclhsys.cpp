@@ -350,7 +350,7 @@ vclh_sleep(vc seconds)
 vc
 vclh_process_create(VCArglist *va)
 {
-	int fd_tosave = (int)(*va)[0];
+    int fd_tosave = (int)va->get(0);
 	va->del(0);
 #ifdef __WIN32__
 	PROCESS_INFORMATION pi;
