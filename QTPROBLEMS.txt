@@ -1,3 +1,7 @@
+Fri Mar 14 01:26:02 PM MST 2025
+* some really weird problems related to qt6.8.2. be careful where you point your paths for tools. if you use the wrong androiddeployqt (say from 6.8.0, since it could actually build multi-abi builds), you might get apk's that have weird java linker errors in onCameraOpen2 in qtmultimedia. on linux. building with macos seems to work ok.
+* there is a straight up bug in qt 6.8.2 where "rcc" is picked up from the system when using cmake to build android apps (which is a problem, for example, if you have qt5 development env installed, rcc will be in the system directories.) this produces subtly different resource files (like they will have extra "^M" characters in some of the strings.
+
 Thu 04 Jan 2024 02:28:29 PM MST
 
 the android versions of the apps here have been successfully using
