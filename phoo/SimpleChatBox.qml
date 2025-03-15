@@ -648,6 +648,7 @@ Page {
     }
 
     RowLayout {
+        id: listview_layout
         anchors.bottom: textField1.top
         anchors.bottomMargin: 10
         anchors.right: parent.right
@@ -1091,7 +1092,7 @@ Page {
         }
     }
 
-    RoundButton {
+    TipButton {
         property int but_width
         property int but_height
         id: toolButton1
@@ -1104,12 +1105,13 @@ Page {
         anchors.bottomMargin: 1
         //anchors.verticalCenter: textField1.verticalCenter
         
-        enabled: {textField1.inputMethodComposing || textField1.length > 0 || textField1.text.length > 0}
+        enabled: {textField1.inputMethodComposing || textField1.length > 0}
         
         background: Rectangle {
             id: bg
             color: accent
-            radius: toolButton1.radius
+            radius: 20
+            //radius: toolButton1.radius
             // this is weird, setting size is supposed to be unnecessary...
             // qt5.10 didn't have a problem with the previous code that was here.
             anchors.fill: toolButton1
@@ -1118,13 +1120,13 @@ Page {
             anchors.centerIn: bg
             source: mi("ic_send_black_24dp.png")
             opacity: toolButton1.enabled ? 1.0 : 0.3
-            scale: 2
+            //scale: 2
         }
         
         //icon.source: mi("ic_send_black_24dp.png")
         //icon.width: width
         //icon.height: height
-        radius: width / 2
+        //radius: width / 2
         //icon.color: accent
 
         //text: "send"
@@ -1134,7 +1136,8 @@ Page {
             core.simple_send(to_uid, core.strip_html(textField1.text))
             core.start_control(to_uid)
             themsglist.reload_model()
-            textField1.text = ""
+            //textField1.text = ""
+            textField1.clear()
             listView1.positionViewAtBeginning()
         }
         Component.onCompleted: {
@@ -1148,8 +1151,10 @@ Page {
         id: go_to_bottom
         width: toolButton1.width
         height: toolButton1.height
-        anchors.bottom: toolButton1.top
-        anchors.right: toolButton1.right
+        anchors.bottom: listview_layout.bottom
+        anchors.bottomMargin: mm(2)
+        anchors.right: listview_layout.right
+        anchors.rightMargin: conv_sidebar.width
 
         background: Rectangle {
             id: gtb_bg
