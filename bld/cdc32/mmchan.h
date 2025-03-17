@@ -239,12 +239,12 @@ public:
     static int num_audio_recvs();
     static int num_audio_output_feeders();
     static int num_video_sends();
-    static int num_audio_sends();
+    static int num_active_audio_sends();
+    static int num_audio_coder_channels();
     static int num_chats();
     static int num_chats_private();
     static int num_calls();
     static MMChannel *channel_by_id(int);
-    static int Session_id;
     static MMChannel *get_channel_by_session_id(int sid);
 
     static void clean_video_sampler_refs(VidAcquire *v);
@@ -545,6 +545,7 @@ public:
     int build_outgoing_audio(int);
     int build_incoming_audio(int);
     int grab_audio_id;
+    int is_audio_channel;
 
 public:
 

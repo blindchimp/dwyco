@@ -32,6 +32,15 @@
 
 
 #define DWSVEC_INITIAL 8
+// this checks basic index arguments for validity.
+// it also contains a check for situations where you
+// might be holding a reference to the internal vector, and
+// panics if you attempt an operation that might move that
+// vector someplace else. this produces false positives, but
+// is useful for finding that "oops" things were you are
+// keeping an address around too long. generally, if you
+// are performing modifications to the vector other than
+// "append", this probably isn't the right class to use.
 #define DWSVEC_DBG
 [[noreturn]] void oopanic(const char *a);
 
