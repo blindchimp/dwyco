@@ -323,7 +323,7 @@ MMChannel::build_outgoing_audio(int locally_invoked)
     // INCLUDE A TEST OF WHETHER WE CAN USE MSGSM,
     // SINCE IT IS THE THING THAT IS MISSING A LOT OF
     // THE TIME.
-
+    is_audio_channel = 1;
     grab_audio_id = mcx->myid;
     last_audio_index = mcx->last_audio_index;
     audio_timecode = mcx->audio_timecode;

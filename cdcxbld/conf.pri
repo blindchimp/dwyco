@@ -4,6 +4,7 @@ DWYCOBG=0
 DWYCO_APP=cdcx
 DEFINES += VCCFG_FILE DWYCO_APP_NICENAME=\\\"CDC-X\\\" #DWYCO_VC_THREADED
 
+CONFIG(debug, debug|release): DEFINES += DWYCO_DEBUG DWYCO_APP_DEBUG
 linux-* {
 DEFINES += LINUX DWYCO_FORCE_DESKTOP_VGQT
 DWYCO_USE_LINUX_AUDIO=0
@@ -32,9 +33,10 @@ DEFINES += CDCCORE_STATIC  DWYCO_FORCE_DESKTOP_VGQT
 }
 linux-*|macx-* {
 QMAKE_CXX=ccache g++
-
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 QMAKE_CFLAGS +=  #-fsanitize=address
-QMAKE_CXXFLAGS +=  #-std=c++11 #-fsanitize=address
-QMAKE_LFLAGS +=  #-std=c++11 #-fsanitize=address
+QMAKE_CXXFLAGS +=  #-fsanitize=address
+QMAKE_LFLAGS +=   #-fsanitize=address
 }
 

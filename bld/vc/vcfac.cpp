@@ -40,8 +40,8 @@ subtimeval(struct timeval& t1, struct timeval& t0)
 }
 #endif
 
-vc_factory_def::vc_factory_def(const vc& fac_name, vc& args,
-	VCArglist *mem_pairs, const vc& base, vc& forwards_list, vc& delegates_list)
+vc_factory_def::vc_factory_def(const vc& fac_name, const vc& args,
+                               VCArglist *mem_pairs, const vc& base, const vc &forwards_list, const vc &delegates_list)
 {
 	int n;
 	int i;
@@ -57,7 +57,7 @@ vc_factory_def::vc_factory_def(const vc& fac_name, vc& args,
     bindargs = new DwSVec<vc>;
 	for(i = 0; i < n; ++i)
         (*bindargs).append(args[i]);
-		
+
 #ifdef LHOBJ_FORWARDS
 	// copy in names that are automatically forwarded
 
@@ -89,7 +89,7 @@ vc_factory_def::vc_factory_def(const vc& fac_name, vc& args,
 		delegates[i] = delegates_list[i];
 	}
 #else
-    if(forwards_list != vcnil || delegates_list != vcnil)
+    if(!forwards_list.is_nil() || !delegates_list.is_nil())
         USER_BOMB2("forwards not supported");
 #endif
 
@@ -282,7 +282,7 @@ vc_factory_def::do_function_call(VCArglist *, int) const
 	new_map->add(Thisname, ret);
 	// note: "this" is a circular reference, so we tweak the
 	// reference count to allow the object to be reclaimed.
-	// this is a little bit dicey, because the the circular
+    // this is a little bit dicey, because the circular
 	// referent's count will go to -1, which could cause
 	// some things to break if they weren't expecting this.
 	// this wouldn't be necessary if we used some kinda mark-and-sweep

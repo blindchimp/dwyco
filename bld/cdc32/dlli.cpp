@@ -1319,23 +1319,23 @@ dwyco_get_create_new_account()
 
 DWYCOEXPORT
 void
-dwyco_free(char *p)
+dwyco_free(char *p_elide)
 {
-    delete p;
+    delete p_elide;
 }
 
 DWYCOEXPORT
 void
-dwyco_free_array(char *p)
+dwyco_free_array(char *p_elide)
 {
-    delete [] p;
+    delete [] p_elide;
 }
 
 DWYCOEXPORT
 void
-dwyco_free_image(char *p, int rows)
+dwyco_free_image(char *p_elide, int rows)
 {
-    ppm_freearray(p, rows);
+    ppm_freearray(p_elide, rows);
 }
 
 // activity reporting

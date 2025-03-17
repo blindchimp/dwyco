@@ -157,11 +157,13 @@ MMChannel::send_reliable_audio(DWBYTE *buf, int len)
     {
         // q it for another try
         audioq.add(buf, len, audio_timecode, last_audio_index, current_payload_type);
+        GRTLOGA("q aud out %d tc%d aindex %d pt %d", len, audio_timecode, last_audio_index, current_payload_type, 0);
+
         return 0;
     }
     else // worked
     {
-
+GRTLOGA("success aud out %d tc %d aindex %d pt %d", len, audio_timecode, last_audio_index, current_payload_type, 0);
     }
     return 1;
 
@@ -203,6 +205,7 @@ MMChannel::attempt_audio_q_send(int& out_len)
     }
     else // worked
     {
+        GRTLOGA("success q aud out %d tc%d aindex %d pt %d", len, timecode, aindex, payload, 0);
         // for testing, assume no other xmitters
         audioq.remove();
         // note: this calculation isn't exactly right, though send_data
@@ -210,6 +213,7 @@ MMChannel::attempt_audio_q_send(int& out_len)
         out_len = len + sizeof(audio_timecode) + sizeof(current_payload_type);
         ++last_audio_index;
     }
+
     return 1;
 
 }

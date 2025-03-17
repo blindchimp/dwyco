@@ -682,9 +682,9 @@ domap(VCArglist *a)
 	// in the mapping.
 	long tsize = 31;
 	int nargs = a->num_elems();
-	if(nargs > 0 && (*a)[0].type() == VC_INT)
-	{
-		tsize = (*a)[0];
+    if(nargs > 0 && a->get(0).type() == VC_INT)
+    {
+        tsize = a->get(0);
 		if(tsize <= 0)
 			USER_BOMB("estimated size must be > 0", vcnil);
         a->del(0);
@@ -1000,7 +1000,7 @@ check_fun_arglist(VCArglist *a)
 	if(a->num_elems() < 2)
 		USER_BOMB("function def must have >= 2 args", vcnil);
 		
-	vc f = (*a)[0];
+    vc f = a->get(0);
 	if(f.type() != VC_STRING)
 		USER_BOMB("can't bind function def to non-string", vcnil);
 
@@ -1059,11 +1059,11 @@ dospecial_fundef(VCArglist *a)
 
 	if(a->num_elems() < 3)
 		USER_BOMB("scompile must have >= 3 args", vcnil);
-
-	if((*a)[0].type() != VC_STRING)
+    const vc style_str = a->get(0);
+    if(style_str.type() != VC_STRING)
 		USER_BOMB("first arg to scompile must be style indicator string", vcnil);
 		
-	const char *ft = (*a)[0];
+    const char *ft = style_str;
 	int style = VC_FUNC_NORMAL;
 	int decrypt = 0;
 	while(*ft)
@@ -1136,11 +1136,11 @@ doslambda(VCArglist *a)
 	// d = don't eval args
 	// e = if def is a string, decrypt before lexing
 	// next args are as in normal function definition.
-
-	if((*a)[0].type() != VC_STRING)
+    const vc style_str = a->get(0);
+    if(style_str.type() != VC_STRING)
 		USER_BOMB("first arg to slambda must be style indicator string", vcnil);
 		
-	const char *ft = (*a)[0];
+    const char *ft = style_str;
 	int style = VC_FUNC_NORMAL;
 	int decrypt = 0;
 	while(*ft)

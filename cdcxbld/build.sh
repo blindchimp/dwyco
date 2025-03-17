@@ -1,7 +1,12 @@
 #!/bin/sh
-export PATH=$HOME/Qt/6.8.2/macos/bin:$PATH
-
 U=`uname`
+if [ $U = Darwin ]
+then
+	export PATH=$HOME/Qt/6.8.2/macos/bin:$PATH
+else
+	export PATH=$HOME/Qt/6.8.2/gcc_64/bin:$PATH
+fi
+
 
 D=$HOME
 SHADOW_NAME=$D/git/build-cdcx
