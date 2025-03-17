@@ -19,7 +19,7 @@ class loginform : public QDialog
     Q_OBJECT
 
 public:
-    loginform(QWidget *parent = 0, Qt::WindowFlags = 0);
+    loginform(QWidget *parent = 0, Qt::WindowFlags = Qt::WindowFlags());
 
     void new_account();
     int is_new_account;

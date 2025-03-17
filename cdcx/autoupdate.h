@@ -18,7 +18,7 @@ class autoupdateform : public QDialog
     Q_OBJECT
 
 public:
-    autoupdateform(QDialog *parent = 0, Qt::WindowFlags f = 0);
+    autoupdateform(QDialog *parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     ~autoupdateform();
     int forced;
     int inhibit_unforced;
