@@ -19,7 +19,7 @@ public:
     int ui_id;
 
 
-    vidlab(QWidget *parent = 0, Qt::WindowFlags f = 0);
+    vidlab(QWidget *parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     ~vidlab() {}
 
     QPixmap local_pixmap;

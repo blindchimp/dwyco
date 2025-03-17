@@ -20,7 +20,7 @@ class player : public QWidget
 
 
 public:
-    player(QWidget * parent = 0, Qt::WindowFlags flags = 0 );
+    player(QWidget * parent = 0, Qt::WindowFlags flags = Qt::WindowFlags() );
     virtual ~player();
     void setText(QString) {}
 

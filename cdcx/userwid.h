@@ -17,7 +17,7 @@ class userwid : public QWidget
     Q_OBJECT
 
 public:
-    userwid(QWidget *parent = 0, Qt::WindowFlags flags = 0);
+    userwid(QWidget *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
 
 
 private slots:

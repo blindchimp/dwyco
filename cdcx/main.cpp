@@ -650,7 +650,14 @@ int main(int argc, char *argv[])
     // mode, audio is sent exclusively to one channel regardless of
     // how many listeners there are.
     //dwyco_set_exclusive_audio(1, -1);
+
+    // note: BUG these are not persistent, should find a place to
+    // store them
     dwyco_set_codec_data(0, 0, .5);
+
+    new configform;
+    TheConfigForm->load();
+
 
     dwyco_set_video_display_callback(dwyco_video_display);
     //dwyco_set_unregister_callback(dwyco_unregister);

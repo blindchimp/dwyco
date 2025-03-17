@@ -4,6 +4,8 @@ DWYCOBG=0
 DWYCO_APP=cdcx
 DEFINES += VCCFG_FILE DWYCO_APP_NICENAME=\\\"CDC-X\\\" #DWYCO_VC_THREADED
 DEFINES += CRYPTOPP_DISABLE_ASM
+
+CONFIG(debug, debug|release): DEFINES += DWYCO_DEBUG DWYCO_APP_DEBUG
 linux-* {
 DEFINES += LINUX
 # note: if you want audio, you have to use the qt5 audio drivers in qtdrv.
@@ -34,7 +36,8 @@ DEFINES += _Windows
 }
 linux-*|macx-* {
 QMAKE_CXX=ccache g++
-
+QMAKE_CXXFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
+QMAKE_CFLAGS_WARN_ON = -Wall -Wno-unused-parameter -Wno-reorder -Wno-unused-variable -Wno-unused-function
 QMAKE_CFLAGS +=  #-fsanitize=address
 QMAKE_CXXFLAGS +=  -std=c++11 #-fsanitize=address
 QMAKE_LFLAGS +=  -std=c++11 #-fsanitize=address

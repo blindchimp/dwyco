@@ -110,7 +110,6 @@ StatusCallback2 MMChannel::uc_message_callback;
 CallScreeningCallback MMChannel::call_screening_callback;
 
 int MMChannel::Moron_dork_mode;
-int MMChannel::Session_id = 1;
 
 // Conference mode, mostly defunct
 int Conf;
@@ -521,6 +520,7 @@ MMChannel::MMChannel() :
     audio_output = 0;
     audio_sampler = 0;
     grab_audio_id = -1;
+    is_audio_channel = 0;
     last_audio_buf = 0;
     last_audio_len = 0;
     last_audio_index = 0;
@@ -1090,7 +1090,7 @@ MMChannel::num_video_sends()
 }
 
 int
-MMChannel::num_audio_sends()
+MMChannel::num_active_audio_sends()
 {
     int cnt = 0;
     for(int i = 0; i < MMChannels.num_elems(); ++i)
@@ -1100,6 +1100,24 @@ MMChannel::num_audio_sends()
             continue;
         if(!m->do_destroy && m->tube &&
                 ((m->grab_audio_id != -1 && channel_by_id(m->grab_audio_id))))
+            ++cnt;
+    }
+    return cnt;
+
+}
+
+int
+MMChannel::num_audio_coder_channels()
+{
+    int cnt = 0;
+    for(int i = 0; i < MMChannels.num_elems(); ++i)
+    {
+        MMChannel *m = MMChannels[i];
+        if(!m)
+            continue;
+        if(!m->do_destroy && m->tube &&
+                ((m->grab_audio_id != -1 && channel_by_id(m->grab_audio_id)) ||
+                 m->is_audio_channel))
             ++cnt;
     }
     return cnt;
@@ -1295,7 +1313,7 @@ MMChannel::destroy()
     }
     // check to see if there are any other audio
     // senders alive, if not, shut down the acquisition objects
-    if(num_audio_sends() == 0)
+    if(num_audio_coder_channels() == 0)
     {
         MMChannel *c = find_audio_xmitter();
         if(c && c != this)

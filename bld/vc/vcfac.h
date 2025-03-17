@@ -33,8 +33,8 @@ class vc_factory_def : public vc_fundef
 {
 public:
 	vc_factory_def();
-	vc_factory_def(const vc& name, vc& args, VCArglist *mem_pairs, const vc& base,
-		vc& forwards_list, vc& delegates_list);
+    vc_factory_def(const vc& name, const vc& args, VCArglist *mem_pairs, const vc& base,
+        const vc& forwards_list, const vc& delegates_list);
 	~vc_factory_def();
 	
 	static const vc Basename;

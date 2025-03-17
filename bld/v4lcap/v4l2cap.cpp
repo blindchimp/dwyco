@@ -184,12 +184,13 @@ static
 DwVec<DwString>
 VideoDevices()
 {
-    char a[100];
+    DwString a;
     DwVec<DwString> ret;
     for(int i = 0; i < 4; ++i)
     {
-        sprintf(a, "/dev/video%d", i);
-        int f = open(a, O_RDWR);
+        a = DwString("/dev/video%1").arg(DwString::fromInt(i));
+
+        int f = open(a.c_str(), O_RDWR);
         if(f != -1)
         {
             ret.append(a);
@@ -214,6 +215,18 @@ video_stream(int on)
     return 0;
 }
 
+static
+char *
+safer_copy(const DwString& b)
+{
+    size_t n = b.length();
+    char *r = new char[n + 1];
+    strncpy(r, b.c_str(), n + 1);
+    // supposedly strncpy copies extra 0's
+    // but this is just a safety thing.
+    r[n] = 0;
+    return r;
+}
 
 char **
 DWYCOEXPORT
@@ -259,9 +272,7 @@ vgget_video_devices()
         {
             DwString b = "Large (~320x240) ";
             b += vs.name;
-            r[k] = new char [b.length() + 1];
-            strcpy(r[k], b.c_str());
-            r[k][b.length()] = 0;
+            r[k] = safer_copy(b);
             ++k;
         }
 
@@ -291,9 +302,7 @@ vgget_video_devices()
         {
             DwString b = "Small (~160x120) ";
             b += vs.name;
-            r[k] = new char [b.length() + 1];
-            strcpy(r[k], b.c_str());
-            r[k][b.length()] = 0;
+            r[k] = safer_copy(b);
             ++k;
         }
 
@@ -313,9 +322,7 @@ vgget_video_devices()
         {
             DwString b = "Huge (~640x480) ";
             b += vs.name;
-            r[k] = new char [b.length() + 1];
-            strcpy(r[k], b.c_str());
-            r[k][b.length()] = 0;
+            r[k] = safer_copy(b);
             ++k;
         }
 
@@ -335,9 +342,7 @@ vgget_video_devices()
         {
             DwString b = "HD 720 (~1280x720) ";
             b += vs.name;
-            r[k] = new char [b.length() + 1];
-            strcpy(r[k], b.c_str());
-            r[k][b.length()] = 0;
+            r[k] = safer_copy(b);
             ++k;
         }
     }
@@ -602,9 +607,9 @@ vgget_data(
     {
         int nb = next_buf;
         void *bm = bufs[nb];
-        int cols, rows;
-        *r_out = rows = Devs[Cur_dev].rows;
-        *c_out = cols = Devs[Cur_dev].cols;
+
+        *r_out = Devs[Cur_dev].rows;
+        *c_out = Devs[Cur_dev].cols;
         *captime_out = y_bufs[nb];
         *fmt_out = (AQ_COLOR|Selected_format);
         *bytes_out = lens[nb];
@@ -731,6 +736,7 @@ grab_frames(void *)
         ret = ioctl (V4L_grabber, VIDIOC_QBUF, &buf);
         if (ret < 0) {
             fprintf (stderr, "Unable to requeue buffer (%d).\n", errno);
+            delete [] new_buf;
             goto die;
         }
 
