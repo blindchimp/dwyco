@@ -228,6 +228,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString &shui
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
+    roles.append(PREVIEW_FILENAME);
     emit dataChanged(mi, mi, roles);
 }
 
@@ -749,6 +750,18 @@ msglist_raw::reload_model(int force)
 {
     QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
 
+    // note: based on dogfooding, i've seen cases where it looks like
+    // duplicate mid's might be getting put in the model. i suspect this is
+    // from weird cases where a message is received partially from one path
+    // (ie, direct, or via sync) and then also exists at the server.
+    // we don't make any hard assumptions about the 3 lists being
+    // disjoint in the mid's, but it looks weird to a user when it happens.
+    //
+    // possibly we could enforce the disjoint property by having some
+    // priority for messages based on where they are available. also might not be worth it, since
+    // it can usually be resolved automatically when the network is working
+    // right.
+    //
     // remove for testing, when a message is pulled, we need to
     // "invalidate" it more gracefully. for now, just reload the model
 #if 1
@@ -1109,6 +1122,7 @@ retry_auto_fetch(QByteArray mid)
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
+    roles.append(PREVIEW_FILENAME);
     emit mlm->dataChanged(mi, mi, roles);
     return tmp;
 }
