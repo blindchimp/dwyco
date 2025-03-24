@@ -255,6 +255,15 @@ NotificationClient::vibrate(long ms)
 }
 
 void
+NotificationClient::beep()
+{
+    QAndroidJniObject::callStaticMethod<void>("com/dwyco/android/NotificationClient",
+                                              "beep"
+                                              );
+
+}
+
+void
 NotificationClient::set_quiet(int i)
 {
     jint ji = i;
