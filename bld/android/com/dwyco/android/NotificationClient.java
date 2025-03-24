@@ -72,7 +72,7 @@ public class NotificationClient extends QtActivity
     private static String TAG = "notification_client";
     private static final int REQUEST_POST_NOTIFICATIONS = 1;
     private static final int REQUEST_EXTERNAL_STORAGE_PERMISSION = 2;
-    private SoundPoolPlayer soundPoolPlayer;
+    private static SoundPoolPlayer soundPoolPlayer;
 
     public NotificationClient()
     {
@@ -241,6 +241,11 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
         {
             catchLog("vibrate exception " + e);
         }
+    }
+
+    public static void beep()
+    {
+        soundPoolPlayer.playAlertSound();
     }
 
     public static void set_msg_count_url(String s) {

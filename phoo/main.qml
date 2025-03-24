@@ -1020,14 +1020,22 @@ ApplicationWindow {
                 // note: this could be annoying if the person is
                 // browsing back, need to check to see if so and not
                 // do this, or display a "go to bottom" icon
-//                if(chatbox.listview.atYEnd) {
-//                    chatbox.listview.positionViewAtBeginning()
-//                }
+              //  if(chatbox.listview.atYEnd) {
+              //      chatbox.listview.positionViewAtBeginning()
+              //  }
                 console.log("RELOAD nm")
                 //themsglist.reload_model()
             }
             //notificationClient.notification = "New messages"
-            sound_recv.play()
+
+                       if(Qt.platform.os == "android") {
+                           notificationClient.beep()
+                       } else {
+                           sound_recv.play()
+                       }
+
+
+
         }
 
         onSys_msg_idx_updated: (uid)=> {
