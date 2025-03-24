@@ -11,6 +11,9 @@ public class DwycoApp {
     public static int notification_icon() {
         return R.drawable.ic_stat_not_icon2;
         }
+    public static int alert_resource() {
+	    return R.raw.alert;
+    }
 
 	// socket lock used for shared prefs locks
         final public static String lock_shared_prefs = "com.dwyco.phoo.prefs";

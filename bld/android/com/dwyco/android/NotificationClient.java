@@ -56,6 +56,10 @@ import androidx.core.content.ContextCompat;
 import android.content.pm.PackageManager;
 import androidx.core.app.ActivityCompat;
 
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
+
 // note: use notificationcompat stuff for older androids
 
 public class NotificationClient extends QtActivity
@@ -68,6 +72,7 @@ public class NotificationClient extends QtActivity
     private static String TAG = "notification_client";
     private static final int REQUEST_POST_NOTIFICATIONS = 1;
     private static final int REQUEST_EXTERNAL_STORAGE_PERMISSION = 2;
+    private SoundPoolPlayer soundPoolPlayer;
 
     public NotificationClient()
     {
@@ -142,6 +147,8 @@ public class NotificationClient extends QtActivity
             );
         }
     }
+
+           soundPoolPlayer = new SoundPoolPlayer(this);
     }
 
 
@@ -677,6 +684,57 @@ public static void set_user_property(String name, String value) {
         Log.d("dwyco_notfication", log);
     }
 
+
+
+private class SoundPoolPlayer {
+
+    private static final String TAG = "SoundPoolPlayer";
+    private SoundPool soundPool;
+    private int soundId;
+    private Context context;
+
+    public SoundPoolPlayer(Context context) {
+        this.context = context;
+
+        // Use AudioAttributes for modern Android versions
+        AudioAttributes attributes = new AudioAttributes.Builder()
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+        .build();
+
+        soundPool = new SoundPool.Builder()
+        .setAudioAttributes(attributes)
+        .build();
+
+        // Load the sound
+        soundId = soundPool.load(context, DwycoApp.alert_resource(), 1);
+
+        // Check if the sound loaded successfully.  This is important!
+        soundPool.setOnLoadCompleteListener(new
+        SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId,
+                                       int status) {
+                if (status != 0) {
+                    Log.e(TAG, "Error loading sound: status = " + status);
+                }
+            }
+        });
+    }
+
+    public void playAlertSound() {
+        if (soundId != 0) { // Ensure the sound is loaded before playing
+            soundPool.play(soundId, 1.0f, 1.0f, 0, 0, 1.0f);
+        } else {
+            Log.w(TAG, "Sound not loaded yet.  Cannot play.");
+        }
+    }
+
+    public void release() {
+        if (soundPool != null) {
+            soundPool.release();
+            soundPool = null;
+        }
+    }
 }
-
-
+}
