@@ -140,6 +140,15 @@ ApplicationWindow {
         return ""
     }
 
+    function beep() {
+        if(dwy_quiet)
+            return
+        if(Qt.platform.os == "android") {
+            notificationClient.beep()
+        } else {
+            sound_recv.play()
+        }
+    }
 
     property bool group_active
     group_active: core.active_group_name.length > 0 && core.group_status === 0 && core.group_private_key_valid === 1
@@ -861,22 +870,22 @@ ApplicationWindow {
     }
   
 
-    SoundEffect {
-        id: sound_sent
-        source: "qrc:/androidinst3/assets/space-zap.wav"
-    }
+    // SoundEffect {
+    //     id: sound_sent
+    //     source: "qrc:/androidinst3/assets/space-zap.wav"
+    // }
     SoundEffect {
         id: sound_recv
         source: "qrc:/androidinst3/assets/space-zap.wav"
         volume: {dwy_quiet ? 0.0 : 1.0}
         muted: dwy_quiet
     }
-    SoundEffect {
-        id: sound_alert
-        source: "qrc:/androidinst3/assets/space-incoming.wav"
-        volume: {dwy_quiet ? 0.0 : 1.0}
-        muted: dwy_quiet
-    }
+    // SoundEffect {
+    //     id: sound_alert
+    //     source: "qrc:/androidinst3/assets/space-incoming.wav"
+    //     volume: {dwy_quiet ? 0.0 : 1.0}
+    //     muted: dwy_quiet
+    // }
 
     
     StackView {
@@ -1028,12 +1037,7 @@ ApplicationWindow {
             }
             //notificationClient.notification = "New messages"
 
-                       if(Qt.platform.os == "android") {
-                           notificationClient.beep()
-                       } else {
-                           sound_recv.play()
-                       }
-
+              beep()
 
 
         }

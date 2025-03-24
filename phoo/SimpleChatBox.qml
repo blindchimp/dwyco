@@ -1241,7 +1241,8 @@ Page {
         onVisibleChanged: {
             if(visible) {
                 value = 0
-                sound_alert.play()
+                //sound_alert.play()
+                beep()
             }
         }
         z: 5
