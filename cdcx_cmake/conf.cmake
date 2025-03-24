@@ -19,6 +19,7 @@ if(WIN32)
 add_compile_definitions(_WIN32 __WIN32__ _Windows)
 add_compile_options(/wd4100 /wd4068 /wd4189 /wd4291)
 add_compile_definitions(DWYCO_NO_VIDEO_CAPTURE DWYCO_FORCE_DESKTOP_VGQT)
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
 if(APPLE)
