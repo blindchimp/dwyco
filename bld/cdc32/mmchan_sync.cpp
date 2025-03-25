@@ -53,7 +53,7 @@ using namespace dwyco::qmsgsql;
 void
 MMChannel::assert_eager_pulls()
 {
-    const vc& uid = remote_uid();
+    const vc uid = remote_uid();
     //vc huid = to_hex(uid);
     vc mids;
     int eager_mode = (int)get_settings_value("sync/eager");
@@ -62,11 +62,11 @@ MMChannel::assert_eager_pulls()
     // want to act like "normal mode"
     if(eager_mode != 2)
     {
-        mids = sql_get_non_local_messages_at_uid(uid, 100);
+        mids = sql_get_non_local_messages_at_uid(uid, 20);
     }
     else if(eager_mode == 2)
     {
-        mids = sql_get_non_local_messages_at_uid_recent(uid, 100);
+        mids = sql_get_non_local_messages_at_uid_recent(uid, 20);
     }
     if(mids.is_nil())
         return;
