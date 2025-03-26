@@ -956,7 +956,15 @@ import_remote_mi(const vc& remote_uid)
     try
     {
         s.start_transaction();
-        const vc& newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
+        // we need to trim or do something so this "import" operation isn't so time consuming.
+        // i think there might need to be some kind of explicit event like "new sync client initialized"
+        // so clients can perform all the re-loading they need. the "add_user" thing below needs to go away
+        // and we just signal the client to re-issue the reload_conv_list so all these extra things don't show up
+        // in the conv list when the background gets loaded.
+        // i wonder if this is a case where wal_mode might help if we could background this operation, allowing the
+        // client to continue without getting blocked (might not, since wal_mode isn't really a table thing, but
+        // a database-wide thing, i think.
+        const vc& newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx where not exists (select 1 from main.gi where assoc_uid = mi2.msg_idx.assoc_uid limit 1)");
         // note sure what i was up to here... removing the contents
         // of crdt_tags will effectively disable the triggers for
         // creating the tag logs (that would get sent to other clients)
