@@ -1320,6 +1320,7 @@ setup_update_triggers()
     // based on update to mt...
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
+#if 0
     sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
                "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
                "end"
@@ -1332,6 +1333,10 @@ setup_update_triggers()
                "insert into uid_updated(uid) select assoc_uid from main.gi where mid = (select mid from mt.gmt where guid = new.guid); "
                "end"
                );
+#endif
+    sql_simple("drop trigger if exists uid_update1");
+    sql_simple("drop trigger if exists uid_update2");
+
 
 
 }
