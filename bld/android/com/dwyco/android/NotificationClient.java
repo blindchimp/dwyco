@@ -148,6 +148,7 @@ public class NotificationClient extends QtActivity
         }
     }
 
+    	if(!DwycoApp.is_rando)
            soundPoolPlayer = new SoundPoolPlayer(this);
     }
 
@@ -245,7 +246,8 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
 
     public static void beep()
     {
-        soundPoolPlayer.playAlertSound();
+	    if(soundPoolPlayer != null)
+		soundPoolPlayer.playAlertSound();
     }
 
     public static void set_msg_count_url(String s) {
