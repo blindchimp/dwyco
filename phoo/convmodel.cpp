@@ -124,7 +124,7 @@ ConvListModel::obliterate_all_selected()
     }
 
     hack_unread_count();
-    reload_conv_list();
+    ::reload_conv_list();
 
 }
 
@@ -202,7 +202,7 @@ ConvListModel::trash_all_selected()
     dwyco_end_bulk_update();
 
     hack_unread_count();
-    reload_conv_list();
+    ::reload_conv_list();
 
 }
 
@@ -513,7 +513,7 @@ ConvSortFilterModel::at_least_one_selected()
 void
 ConvSortFilterModel::reload_convlist()
 {
-    reload_conv_list();
+    ::reload_conv_list();
     invalidateFilter();
 }
 
