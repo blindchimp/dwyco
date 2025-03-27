@@ -58,7 +58,7 @@ add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 # time instead of build time.
 if(ANDROID)
 file(COPY ../bld/android/com/dwyco DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/)
-#file(COPY ../../deploy-phoo/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
+file(COPY ../../deploy-phoo-android/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
 endif()
 
 
