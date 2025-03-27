@@ -12,6 +12,7 @@
 #define DWVECP_H
 #include "useful.h"
 #include "dwvec.h"
+#include <utility>
 #undef index
 
 // class for vector of pointers... you can use
@@ -41,6 +42,11 @@ public:
     DwVecP& operator=(const DwVecP& s) {
         return (DwVecP&)DwVec<void *>::operator=(s);
     }
+    DwVecP& operator=(DwVecP&& s) {
+        return (DwVecP&)DwVec<void *>::operator=(std::move(s));
+    }
+    DwVecP(DwVecP&& v) : DwVec<void *>::DwVec<void *>(std::move(v)) {}
+
     ~DwVecP() {}
     int operator==(const DwVecP& s) const {
         return DwVec<void *>::operator==(s);
