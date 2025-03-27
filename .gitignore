@@ -621,3 +621,7 @@ bld/android/com/dwyco/.vscode/
 
 rando/androidinst3/src/com/dwyco/.vscode/
 **/.qmlls.ini
+
+.idea/
+
+bld/android/android.iml

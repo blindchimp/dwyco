@@ -763,7 +763,7 @@ Page {
 
             Image {
                 id: deco2
-                visible: IS_QD
+                visible: IS_QD === 1
                 source: decoration
                 anchors.left: ditem.left
                 anchors.top: ditem.top
@@ -819,7 +819,7 @@ Page {
                 height: 16
                 anchors.top: ditem.top
                 anchors.left: is_forwarded.right
-                visible: {!IS_QD && (HAS_VIDEO && !HAS_SHORT_VIDEO)}
+                visible: {IS_QD === 0 && (HAS_VIDEO === 1 && HAS_SHORT_VIDEO === 0)}
                 z: 3
                 color: primary_light
                 radius: width / 2
@@ -855,7 +855,7 @@ Page {
                     Layout.maximumWidth: (listView1.width * 3) / 4
                     Layout.minimumWidth: PREVIEW_FILENAME === "" ? (listView1.width * 1) / 4 : 0
                     //Layout.maximumHeight: listView1.height / 2
-                    Layout.preferredHeight: prov_img_height
+                    Layout.preferredHeight: chatbox_page.prov_img_height
                     Layout.alignment: Qt.AlignHCenter|Qt.AlignVCenter
 
                     fillMode: Image.PreserveAspectFit
@@ -897,7 +897,7 @@ Page {
                     id: msg
                     text: FETCH_STATE === "manual" ? "(click to fetch)" : gentext(String(MSG_TEXT), DATE_CREATED)
                     Layout.maximumWidth: (listView1.width * 3) / 4
-                    width: implicitWidth
+                    //width: implicitWidth
                     horizontalAlignment: { (SENT === 1) ? Text.AlignRight : Text.AlignLeft}
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.Wrap
@@ -905,7 +905,7 @@ Page {
                     font: applicationWindow1.font
                     color: primary_text
                     clip: true
-                    onLinkActivated: {
+                    onLinkActivated: (link)=> {
                         console.log(link + " link activated")
                         Qt.openUrlExternally(link)
                     }
@@ -1240,7 +1240,8 @@ Page {
         onVisibleChanged: {
             if(visible) {
                 value = 0
-                sound_alert.play()
+                //sound_alert.play()
+                beep()
             }
         }
         z: 5
