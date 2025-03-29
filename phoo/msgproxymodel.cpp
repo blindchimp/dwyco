@@ -18,18 +18,9 @@
 #include <QAbstractItemModelTester>
 #endif
 #include <stdlib.h>
-#include "msglistmodel.h"
+#include "msgrawmodel.h"
 #include "msgproxymodel.h"
-#include "msgpv.h"
-#include "pfx.h"
-#include "dwycolist2.h"
-#include "dwyco_new_msg.h"
-#include "dwyco_top.h"
 #include "dlli.h"
-
-#if defined(LINUX) && !(defined(ANDROID) || defined(MACOSX))
-#define LINUX_EMOJI_CRASH_HACK
-#endif
 
 #define SM (dynamic_cast<msglist_raw *>(sourceModel()))
 
@@ -44,7 +35,6 @@ msgproxy_model::msgproxy_model(QObject *p) :
     filter_show_trash = false;
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
-    mlm = this;
 #ifdef DWYCO_MODEL_TEST
     new QAbstractItemModelTester(this);
 #endif
@@ -58,7 +48,7 @@ msgproxy_model::~msgproxy_model()
 }
 
 void
-msglist_model::toggle_selected(QByteArray bmid)
+msgproxy_model::toggle_selected(QByteArray bmid)
 {
     if(selected.contains(bmid))
         selected.remove(bmid);
@@ -67,25 +57,25 @@ msglist_model::toggle_selected(QByteArray bmid)
     int i = mid_to_index(bmid);
     QModelIndex mi = index(i, 0);
     if(i != -1)
-        emit dataChanged(mi, mi, QVector<int>(1, SELECTED));
+        emit dataChanged(mi, mi, QVector<int>(1, msglist_raw::SELECTED));
 
 }
 
 void
-msglist_model::set_all_selected()
+msgproxy_model::set_all_selected()
 {
     int n = rowCount();
     for(int i = 0; i < n; ++i)
     {
         QModelIndex mi = index(i, 0);
-        QByteArray mid = data(mi, MID).toByteArray();
+        QByteArray mid = data(mi, msglist_raw::MID).toByteArray();
         selected.insert(mid);
-        emit dataChanged(mi, mi, QVector<int>(1, SELECTED));
+        emit dataChanged(mi, mi, QVector<int>(1, msglist_raw::SELECTED));
     }
 }
 
 void
-msglist_model::set_all_unselected()
+msgproxy_model::set_all_unselected()
 {
     QSet<QByteArray> oselected = selected;
     selected.clear();
@@ -95,13 +85,13 @@ msglist_model::set_all_unselected()
         if(i != -1)
         {
             QModelIndex mi = index(i, 0);
-            emit dataChanged(mi, mi, QVector<int>(1, SELECTED));
+            emit dataChanged(mi, mi, QVector<int>(1, msglist_raw::SELECTED));
         }
     }
 }
 
 bool 
-msglist_model::at_least_one_selected()
+msgproxy_model::at_least_one_selected()
 {
 	return selected.count() > 0;
 }
@@ -109,21 +99,21 @@ msglist_model::at_least_one_selected()
 // forwarded data operations
 
 void
-msglist_model::trash_all_selected()
+msgproxy_model::trash_all_selected()
 {
-	SM->trash_all_selected();
+    SM->trash_all_selected(selected);
     selected.clear();
 }
 
 void
-msglist_model::obliterate_all_selected()
+msgproxy_model::obliterate_all_selected()
 {
-	SM->obliterate_all_selected();
+    SM->obliterate_all_selected(selected);
     selected.clear();
 }
 
 void
-msglist_model::fav_all_selected(int f)
+msgproxy_model::fav_all_selected(int f)
 {
 #if 0
     //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
@@ -145,7 +135,7 @@ msglist_model::fav_all_selected(int f)
 }
 
 void
-msglist_model::tag_all_selected(QByteArray tag)
+msgproxy_model::tag_all_selected(QByteArray tag)
 {
 #if 0
     //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
@@ -173,7 +163,7 @@ msglist_model::tag_all_selected(QByteArray tag)
 }
 
 void
-msglist_model::untag_all_selected(QByteArray tag)
+msgproxy_model::untag_all_selected(QByteArray tag)
 {
 #if 0
     //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
@@ -192,4 +182,52 @@ msglist_model::untag_all_selected(QByteArray tag)
     dwyco_end_bulk_update();
     force_reload_model();
 #endif
+}
+
+QVariant
+msgproxy_model::data ( const QModelIndex & index, int role ) const
+{
+    if(role == msglist_raw::SELECTED)
+    {
+        QAbstractItemModel *alm = sourceModel();
+        QModelIndex si = mapToSource(index);
+        QVariant mid = alm->data(alm->index(si.row(), 0), msglist_raw::MID);
+        return selected.contains(mid.toByteArray());
+    }
+    return SM->data(mapToSource(index), role);
+}
+
+bool
+msgproxy_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
+{
+    QAbstractItemModel *alm = sourceModel();
+
+    if(filter_show_trash == false)
+    {
+        QVariant mid = alm->data(alm->index(source_row, 0), msglist_raw::MID);
+        int trashed = dwyco_mid_has_tag(mid.toByteArray().constData(), "_trash");
+        if(trashed)
+            return false;
+    }
+
+    QVariant is_sent = alm->data(alm->index(source_row, 0), msglist_raw::SENT);
+    if(filter_show_sent == 0 && is_sent.toInt() == 1)
+        return false;
+    if(filter_show_recv == 0 && is_sent.toInt() == 0)
+        return false;
+    if(filter_only_favs)
+    {
+        QVariant is_fav = alm->data(alm->index(source_row, 0), msglist_raw::IS_FAVORITE);
+        if(is_fav.toInt() == 0)
+            return false;
+    }
+    if(filter_show_hidden == 0)
+    {
+        QVariant mid = alm->data(alm->index(source_row, 0), msglist_raw::MID);
+        int hidden = dwyco_mid_has_tag(mid.toByteArray().constData(), "_hid");
+        if(hidden)
+            return false;
+    }
+
+    return true;
 }

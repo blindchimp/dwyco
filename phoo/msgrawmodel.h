@@ -10,6 +10,7 @@
 #define MSGRAWMODEL_H
 #include <QAbstractListModel>
 #include "QQmlVarPropertyHelpers.h"
+#include "dlli.h"
 
 class msglist_raw : public QAbstractListModel
 {
@@ -20,15 +21,35 @@ class msglist_raw : public QAbstractListModel
 
 public:
     msglist_raw(QObject * = 0);
-
     virtual ~msglist_raw();
+
+    enum {
+        MID = Qt::UserRole,
+        SENT,
+        MSG_TEXT,
+        PREVIEW_FILENAME,
+        HAS_VIDEO,
+        HAS_SHORT_VIDEO,
+        HAS_AUDIO,
+        IS_FILE,
+        HAS_ATTACHMENT,
+        IS_FORWARDED,
+        IS_NO_FORWARD,
+        DATE_CREATED,
+        LOCAL_TIME_CREATED, // this take into account time zone and all that
+        IS_QD,
+        IS_ACTIVE,
+        IS_FAVORITE,
+        IS_HIDDEN,
+        SELECTED,
+        FETCH_STATE,
+        ATTACHMENT_PERCENT,
+        ASSOC_UID, // who the message is from (or to, if sent msg)
+    };
 
     int rowCount ( const QModelIndex & parent = QModelIndex() ) const;
     QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
     virtual QHash<int, QByteArray> roleNames() const;
-
-    void reload_model(int force = 0);
-    void reload_inbox_model();
 
     Q_INVOKABLE void reload_model();
 
@@ -47,7 +68,7 @@ public slots:
     void invalidate_mid(const QByteArray& mid, const QString& huid);
 
     void reload_model(int force = 0);
-    void reload_model(const QString&);
+    void reload_model2(const QString&);
     void reload_inbox_model();
 
 private:

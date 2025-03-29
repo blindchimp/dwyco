@@ -9,6 +9,8 @@
 #define MSGPROXYMODEL_H
 #include <QAbstractListModel>
 #include <QSortFilterProxyModel>
+#include <QSet>
+#include <QByteArray>
 
 class msgproxy_model : public QSortFilterProxyModel
 {
@@ -18,13 +20,13 @@ class msgproxy_model : public QSortFilterProxyModel
 
 public:
     msgproxy_model(QObject * = 0);
-
     virtual ~msgproxy_model();
 
-    Q_INVOKABLE void invalidate_model_filter();
 
+    QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
 
+    Q_INVOKABLE void invalidate_model_filter();
     Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n);
     Q_INVOKABLE void set_show_hidden(int);
     Q_INVOKABLE void set_show_trash(bool);
