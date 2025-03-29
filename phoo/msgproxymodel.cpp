@@ -35,6 +35,8 @@ msgproxy_model::msgproxy_model(QObject *p) :
     filter_show_trash = false;
     msglist_raw *m = new msglist_raw(p);
     setSourceModel(m);
+    QObject::connect(this, &msgproxy_model::uidChanged, m, &msglist_raw::set_uid);
+    QObject::connect(this, &msgproxy_model::tagChanged, m, &msglist_raw::set_tag);
 #ifdef DWYCO_MODEL_TEST
     new QAbstractItemModelTester(this);
 #endif
@@ -45,6 +47,54 @@ msgproxy_model::~msgproxy_model()
     // not needed, as msglist is a singleton, but
     // useful to uncomment this for leak checking
     //delete sourceModel();
+}
+
+void
+msgproxy_model::reload_model()
+{
+    SM->reload_model();
+}
+
+int
+msgproxy_model::mid_to_index(QByteArray mid)
+{
+    int sidx = SM->mid_to_index(mid);
+    if(sidx == -1)
+        return -1;
+    return mapFromSource(SM->index(sidx)).row();
+}
+
+void
+msgproxy_model::invalidate_model_filter()
+{
+    invalidateFilter();
+}
+
+void
+msgproxy_model::set_filter(int sent, int recv, int last_n, int only_favs)
+{
+    filter_show_recv = recv;
+    filter_show_sent = sent;
+    filter_last_n = last_n;
+    filter_only_favs = only_favs;
+    invalidateFilter();
+    selected.clear();
+}
+
+void
+msgproxy_model::set_show_hidden(int show_hidden)
+{
+    filter_show_hidden = show_hidden;
+    invalidateFilter();
+    selected.clear();
+}
+
+void
+msgproxy_model::set_show_trash(bool show_trash)
+{
+    filter_show_trash = show_trash;
+    invalidateFilter();
+    selected.clear();
 }
 
 void

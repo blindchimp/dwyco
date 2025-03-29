@@ -51,7 +51,7 @@ public:
     QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
     virtual QHash<int, QByteArray> roleNames() const;
 
-    Q_INVOKABLE void reload_model();
+    //Q_INVOKABLE void reload_model();
 
     Q_INVOKABLE void trash_all_selected(const QSet<QByteArray>&);
     Q_INVOKABLE void obliterate_all_selected(const QSet<QByteArray>&);
@@ -87,6 +87,8 @@ private:
     QString get_msg_text(int row) const;
     QString preview_filename(int row) const;
 };
+
+extern msglist_raw *mlm;
 
 
 #endif

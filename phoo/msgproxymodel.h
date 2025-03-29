@@ -11,10 +11,14 @@
 #include <QSortFilterProxyModel>
 #include <QSet>
 #include <QByteArray>
+#include "QQmlVarPropertyHelpers.h"
+
 
 class msgproxy_model : public QSortFilterProxyModel
 {
     Q_OBJECT
+    QML_WRITABLE_VAR_PROPERTY(QString, uid)
+    QML_WRITABLE_VAR_PROPERTY(QString, tag)
 
     QSet<QByteArray> selected;
 
@@ -27,9 +31,10 @@ public:
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
 
     Q_INVOKABLE void invalidate_model_filter();
-    Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n);
+    Q_INVOKABLE void set_filter(int show_sent, int show_recv, int last_n, int only_fav);
     Q_INVOKABLE void set_show_hidden(int);
     Q_INVOKABLE void set_show_trash(bool);
+    Q_INVOKABLE void reload_model();
 
     Q_INVOKABLE void toggle_selected(QByteArray mid);
     Q_INVOKABLE void set_all_selected();
