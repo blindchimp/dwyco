@@ -71,7 +71,7 @@ set(SRCS
     dwyco_new_msg.cpp 
     joinlogmodel.cpp 
     pfx.cpp 
-    msglistmodel.cpp 
+
     msgpv.cpp 
     simpledirmodel.cpp 
     ssmap.cpp 
@@ -93,6 +93,8 @@ set(SRCS
     ctlist.cpp 
     dwycovideopreviewprovider.cpp  
     syncmodel.cpp
+    msgrawmodel.cpp
+    msgproxymodel.cpp
 )
 
 qt_add_resources(SRCS
