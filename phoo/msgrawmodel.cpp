@@ -15,7 +15,6 @@
 #ifdef DWYCO_MODEL_TEST
 #include <QAbstractItemModelTester>
 #endif
-#include "QQmlVarPropertyHelpers.h"
 #include <stdlib.h>
 #include "msgrawmodel.h"
 #include "msgpv.h"
@@ -317,12 +316,10 @@ msglist_raw::obliterate_all_selected(const QSet<QByteArray>& selected)
 }
 
 void
-msglist_raw::fav_all_selected(int f)
+msglist_raw::fav_all_selected(const QSet<QByteArray>& selected, int f)
 {
-#if 0
-    //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     dwyco_start_bulk_update();
-    foreach (const QString &value, Selected)
+    foreach (const QString &value, selected)
     {
         QByteArray b = value.toLatin1();
         DWYCO_LIST l;
@@ -334,17 +331,14 @@ msglist_raw::fav_all_selected(int f)
         dwyco_set_fav_msg(b.constData(), f);
     }
     dwyco_end_bulk_update();
-    force_reload_model();
-#endif
+    reload_model(1);
 }
 
 void
-msglist_raw::tag_all_selected(QByteArray tag)
+msglist_raw::tag_all_selected(const QSet<QByteArray>& selected, const QByteArray& tag)
 {
-#if 0
-    //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     dwyco_start_bulk_update();
-    foreach (const QString &value, Selected)
+    foreach (const QString &value, selected)
     {
         QByteArray b = value.toLatin1();
         DWYCO_LIST l;
@@ -362,17 +356,14 @@ msglist_raw::tag_all_selected(QByteArray tag)
             dwyco_set_msg_tag(b.constData(), tag.constData());
     }
     dwyco_end_bulk_update();
-    force_reload_model();
-#endif
+    reload_model(1);
 }
 
 void
-msglist_raw::untag_all_selected(QByteArray tag)
+msglist_raw::untag_all_selected(const QSet<QByteArray> &selected, const QByteArray& tag)
 {
-#if 0
-    //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
     dwyco_start_bulk_update();
-    foreach (const QString &value, Selected)
+    foreach (const QString &value, selected)
     {
         QByteArray b = value.toLatin1();
         DWYCO_LIST l;
@@ -384,8 +375,7 @@ msglist_raw::untag_all_selected(QByteArray tag)
         dwyco_unset_msg_tag(b.constData(), tag.constData());
     }
     dwyco_end_bulk_update();
-    force_reload_model();
-#endif
+    reload_model(1);
 }
 
 msglist_raw::msglist_raw(QObject *p)

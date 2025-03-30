@@ -59,9 +59,9 @@ public:
 
     Q_INVOKABLE void trash_all_selected(const QSet<QByteArray>&);
     Q_INVOKABLE void obliterate_all_selected(const QSet<QByteArray>&);
-    Q_INVOKABLE void fav_all_selected(int);
-    Q_INVOKABLE void tag_all_selected(QByteArray tag);
-    Q_INVOKABLE void untag_all_selected(QByteArray tag);
+    Q_INVOKABLE void fav_all_selected(const QSet<QByteArray> &selected, int);
+    Q_INVOKABLE void tag_all_selected(const QSet<QByteArray> &selected, const QByteArray &tag);
+    Q_INVOKABLE void untag_all_selected(const QSet<QByteArray> &selected, const QByteArray &tag);
 
     int mid_to_index(QByteArray mid);
 

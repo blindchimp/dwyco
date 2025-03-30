@@ -172,73 +172,19 @@ msgproxy_model::obliterate_all_selected()
 void
 msgproxy_model::fav_all_selected(int f)
 {
-#if 0
-    //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
-    dwyco_start_bulk_update();
-    foreach (const QString &value, selected)
-    {
-        QByteArray b = value.toLatin1();
-        DWYCO_LIST l;
-        if(dwyco_qd_message_to_body(&l, b.constData(), b.length()))
-        {
-            dwyco_list_release(l);
-            continue;
-        }
-        dwyco_set_fav_msg(b.constData(), f);
-    }
-    dwyco_end_bulk_update();
-    force_reload_model();
-#endif
+    SM->fav_all_selected(selected, f);
 }
 
 void
 msgproxy_model::tag_all_selected(QByteArray tag)
 {
-#if 0
-    //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
-    dwyco_start_bulk_update();
-    foreach (const QString &value, selected)
-    {
-        QByteArray b = value.toLatin1();
-        DWYCO_LIST l;
-        if(dwyco_qd_message_to_body(&l, b.constData(), b.length()))
-        {
-            dwyco_list_release(l);
-            continue;
-        }
-        // the core allows multiple tags, but that can result in redundant tags.
-        // it doesn't cause things to fail, but i can't think of a good reason to
-        // for it right now. so for now, just
-        // don't allow it. maybe at some point we'll change the core to not allow
-        // it.
-        if(!dwyco_mid_has_tag(b.constData(), tag.constData()))
-            dwyco_set_msg_tag(b.constData(), tag.constData());
-    }
-    dwyco_end_bulk_update();
-    force_reload_model();
-#endif
+    SM->tag_all_selected(selected, tag);
 }
 
 void
 msgproxy_model::untag_all_selected(QByteArray tag)
 {
-#if 0
-    //QByteArray buid = QByteArray::fromHex(m_uid.toLatin1());
-    dwyco_start_bulk_update();
-    foreach (const QString &value, selected)
-    {
-        QByteArray b = value.toLatin1();
-        DWYCO_LIST l;
-        if(dwyco_qd_message_to_body(&l, b.constData(), b.length()))
-        {
-            dwyco_list_release(l);
-            continue;
-        }
-        dwyco_unset_msg_tag(b.constData(), tag.constData());
-    }
-    dwyco_end_bulk_update();
-    force_reload_model();
-#endif
+    SM->untag_all_selected(selected, tag);
 }
 
 QVariant
