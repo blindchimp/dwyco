@@ -204,29 +204,30 @@ bool
 msgproxy_model::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
 {
     QAbstractItemModel *alm = sourceModel();
+    const QModelIndex qmis =  alm->index(source_row, 0);
 
     if(filter_show_trash == false)
     {
-        QVariant mid = alm->data(alm->index(source_row, 0), msglist_raw::MID);
+        QVariant mid = alm->data(qmis, msglist_raw::MID);
         int trashed = dwyco_mid_has_tag(mid.toByteArray().constData(), "_trash");
         if(trashed)
             return false;
     }
 
-    QVariant is_sent = alm->data(alm->index(source_row, 0), msglist_raw::SENT);
+    QVariant is_sent = alm->data(qmis, msglist_raw::SENT);
     if(filter_show_sent == 0 && is_sent.toInt() == 1)
         return false;
     if(filter_show_recv == 0 && is_sent.toInt() == 0)
         return false;
     if(filter_only_favs)
     {
-        QVariant is_fav = alm->data(alm->index(source_row, 0), msglist_raw::IS_FAVORITE);
+        QVariant is_fav = alm->data(qmis, msglist_raw::IS_FAVORITE);
         if(is_fav.toInt() == 0)
             return false;
     }
     if(filter_show_hidden == 0)
     {
-        QVariant mid = alm->data(alm->index(source_row, 0), msglist_raw::MID);
+        QVariant mid = alm->data(qmis, msglist_raw::MID);
         int hidden = dwyco_mid_has_tag(mid.toByteArray().constData(), "_hid");
         if(hidden)
             return false;
