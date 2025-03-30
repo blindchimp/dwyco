@@ -120,6 +120,7 @@ msglist_raw::invalidate_mid(const QByteArray& mid, const QString& huid)
 
     QModelIndex mi = index(midi, 0);
     emit dataChanged(mi, mi, QVector<int>());
+    emit invalidate_item(mid);
     // probably needs an emit or something invalidateFilter();
 
 }
@@ -235,6 +236,7 @@ msglist_raw::mid_tag_changed(QString mid)
     roles.append(IS_HIDDEN);
     roles.append(IS_FAVORITE);
     emit dataChanged(mi, mi, roles);
+    emit invalidate_item(mid.toLatin1());
 }
 
 void

@@ -37,6 +37,7 @@ msgproxy_model::msgproxy_model(QObject *p) :
     setSourceModel(m);
     QObject::connect(this, &msgproxy_model::uidChanged, m, &msglist_raw::set_uid);
     QObject::connect(this, &msgproxy_model::tagChanged, m, &msglist_raw::set_tag);
+    QObject::connect(m, &msglist_raw::invalidate_item, this, &msgproxy_model::refilter);
 #ifdef DWYCO_MODEL_TEST
     new QAbstractItemModelTester(this);
 #endif
@@ -66,6 +67,12 @@ msgproxy_model::mid_to_index(QByteArray mid)
 
 void
 msgproxy_model::invalidate_model_filter()
+{
+    invalidateFilter();
+}
+
+void
+msgproxy_model::refilter(const QByteArray& mid)
 {
     invalidateFilter();
 }

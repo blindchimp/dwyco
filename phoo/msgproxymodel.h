@@ -47,6 +47,8 @@ public:
     Q_INVOKABLE bool at_least_one_selected();
 
     int mid_to_index(QByteArray mid);
+public slots:
+    void refilter(const QByteArray& mid);
 
 private:
 

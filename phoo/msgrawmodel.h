@@ -41,6 +41,12 @@ public:
         IS_ACTIVE,
         IS_FAVORITE,
         IS_HIDDEN,
+        // warning: despite this being here, trying to access it will panic.
+        // this is really just a way of providing QML a way to know something
+        // is selected based on mid, rather than by index (like the selection
+        // model stuff does in qt.) the proxy model handles the "selection model"
+        // and returns the selected state of an item, so it should never come
+        // down to this model.
         SELECTED,
         FETCH_STATE,
         ATTACHMENT_PERCENT,
@@ -50,8 +56,6 @@ public:
     int rowCount ( const QModelIndex & parent = QModelIndex() ) const;
     QVariant data ( const QModelIndex & index, int role = Qt::DisplayRole ) const;
     virtual QHash<int, QByteArray> roleNames() const;
-
-    //Q_INVOKABLE void reload_model();
 
     Q_INVOKABLE void trash_all_selected(const QSet<QByteArray>&);
     Q_INVOKABLE void obliterate_all_selected(const QSet<QByteArray>&);
@@ -70,6 +74,9 @@ public slots:
     void reload_model(int force = 0);
     void reload_model2(const QString&);
     void reload_inbox_model();
+
+signals:
+    void invalidate_item(const QByteArray& mid);
 
 private:
     DWYCO_MSG_IDX msg_idx;
