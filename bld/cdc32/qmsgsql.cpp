@@ -605,7 +605,6 @@ msg_idx_updated(const vc& uid, int prepended)
 vc
 package_downstream_sends(const vc& remote_uid)
 {
-    const vc& huid = to_hex(remote_uid);
     try
     {
         // NOTE: may want to package this as a single command
@@ -613,13 +612,14 @@ package_downstream_sends(const vc& remote_uid)
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
         // most of the time, the logs are empty, so just shortcut that case
-        const vc& chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
+        const vc chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
         if((int)chk[0][0] == 0)
         {
             sql_commit_transaction();
             return vcnil;
         }
 
+        const vc huid = to_hex(remote_uid);
         // note: this sync thing is supposed to be processed after all the updates
         // that are received during a delta update, letting us know what we have integrated
         // from the remote side. for now, we just assume
@@ -633,8 +633,8 @@ package_downstream_sends(const vc& remote_uid)
         // messages and one for tags. it might make sense to change this to one table
         // in the future so simplify things here.
 
-        const vc& next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
-        const vc& next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
+        const vc next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
+        const vc next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
         vc sync_id;
         vc next_tag_sync;
         vc next_mid_sync;
@@ -655,9 +655,9 @@ package_downstream_sends(const vc& remote_uid)
             next_tag_sync = next_tag_sync_res[0][1];
         }
 
-        const vc& idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
+        const vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
                              "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2", huid, next_mid_sync);
-        const vc& mtombs = sql_simple("select mid, op from main.midlog "
+        const vc mtombs = sql_simple("select mid, op from main.midlog "
                                "where midlog.to_uid = ?1 and op = 'd' and rowid < ?2", huid, next_mid_sync);
 
         // note: put in the "group by" since it appears at some point i allowed duplicate
@@ -665,9 +665,9 @@ package_downstream_sends(const vc& remote_uid)
         // a picture of which client has which tags, and i'm not sure i use that info anywhere).
         // the duplicates didn't cause an error, just lots of extra processing that was ignored.
 
-        const vc& tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
+        const vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
                              "where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
-        const vc& tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
+        const vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
                               "where to_uid = ?1 and op = 'd' and tl.rowid < ?2", huid, next_tag_sync);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || !sync_id.is_nil())
             GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d sync %s", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), (const char *)sync_id);
