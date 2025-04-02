@@ -378,6 +378,17 @@ stop_existing_pulls(const vc& mid)
     }
 }
 
+static
+void
+stop_existing_pulls(ChanList& cl, const vc& mid)
+{
+    pulls::deassert_pull(mid);
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        cl[i]->sync_sendq.del_pull(mid);
+    }
+}
+
 vc
 get_delta_id(const vc& uid)
 {
@@ -938,7 +949,7 @@ remove_sync_state()
 int
 import_remote_mi(const vc& remote_uid)
 {
-    const vc& huid = to_hex(remote_uid);
+    const vc huid = to_hex(remote_uid);
     DwString fn = DwString("mi%1.tdb").arg((const char *)huid);
     //DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
     SimpleSql s(MSG_IDX_DB);
@@ -951,6 +962,7 @@ import_remote_mi(const vc& remote_uid)
 #endif
     s.attach(TAG_DB, "mt");
     s.attach(fn, "mi2");
+    s.set_cache_size(100000);
 
     int ret = 1;
     try
@@ -964,7 +976,8 @@ import_remote_mi(const vc& remote_uid)
         // i wonder if this is a case where wal_mode might help if we could background this operation, allowing the
         // client to continue without getting blocked (might not, since wal_mode isn't really a table thing, but
         // a database-wide thing, i think.
-        const vc& newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx where not exists (select 1 from main.gi where assoc_uid = mi2.msg_idx.assoc_uid limit 1)");
+        s.sql_simple("create index if not exists mi2.assoc_uid_idx on msg_idx(assoc_uid)");
+        const vc newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx where not exists (select 1 from main.gi where assoc_uid = mi2.msg_idx.assoc_uid limit 1)");
         // note sure what i was up to here... removing the contents
         // of crdt_tags will effectively disable the triggers for
         // creating the tag logs (that would get sent to other clients)
@@ -985,13 +998,13 @@ import_remote_mi(const vc& remote_uid)
         s.sql_simple("delete from current_clients where uid = ?1", huid);
 
         s.sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
-        const vc& res = s.sql_simple("select max(logical_clock) from gi");
+        const vc res = s.sql_simple("select max(logical_clock) from gi");
         if(res[0][0].type() == VC_INT)
         {
             long lc = (long)res[0][0];
             update_global_logical_clock(lc);
         }
-        const vc& newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
+        const vc newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
         s.sql_simple("delete from main.gi where mid in (select mid from main.msg_tomb)");
 
         //sync_files();
@@ -1034,10 +1047,11 @@ import_remote_mi(const vc& remote_uid)
         {
             se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
         }
+        ChanList cl = get_all_sync_chans();
         for(int i = 0; i < newtombs.num_elems(); ++i)
         {
             const vc mid = newtombs[i][0];
-            stop_existing_pulls(mid);
+            stop_existing_pulls(cl, mid);
         }
 #endif
     }
@@ -1046,9 +1060,10 @@ import_remote_mi(const vc& remote_uid)
         s.rollback_transaction();
         ret = 0;
     }
-
+    // explicitly detach so the optimize doesn't
+    // look at it.
     s.detach("mi2");
-
+    s.optimize();
     s.exit();
     return ret;
 }
@@ -1797,12 +1812,20 @@ map_gid_to_uids(vc gid)
 vc
 map_uid_to_uids(const vc& uid)
 {
-    vc res;
     vc ret(VC_VECTOR);
     try
     {
+        const vc huid = to_hex(uid);
+        {
+            const vc m = sql_simple("select 1 from group_map where uid = ?1", huid);
+            if(m.num_elems() == 0)
+            {
+                ret[0] = uid;
+                return ret;
+            }
+        }
         //sql_start_transaction();
-        res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", to_hex(uid));
+        const vc res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", huid);
         //sql_commit_transaction();
         if(res.num_elems() == 0)
         {
