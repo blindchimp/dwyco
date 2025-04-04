@@ -1191,9 +1191,12 @@ import_new_syncpoint(vc remote_uid, vc delta_id)
 }
 
 void
-import_remote_tupdate(vc remote_uid, vc vals)
+import_remote_tupdate(const vc& remote_uid, const vc& vals)
 {
-    vc huid = to_hex(remote_uid);
+    if(vals.type() != VC_VECTOR || vals.num_elems() < 1)
+        return;
+    const vc huid = to_hex(remote_uid);
+
     try
     {
         sql_start_transaction();
@@ -1201,13 +1204,15 @@ import_remote_tupdate(vc remote_uid, vc vals)
         // received this from
         sql_simple("delete from current_clients where uid = ?1", huid);
 
-        vc op = vals.remove_last();
-        if(op == vc("a"))
+        const vc& op = vals[vals.num_elems() - 1];
+        static vc op_a("a");
+        static vc op_d("d");
+        if(op == op_a)
         {
-            vc mid = vals[0];
-            vc tag = vals[1];
-            vc tm = vals[2];
-            vc guid = vals[3];
+            const vc& mid = vals[0];
+            const vc& tag = vals[1];
+            const vc& tm = vals[2];
+            const vc& guid = vals[3];
 
             sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select ?1, ?2, ?3, ?4, ?5 where not exists (select 1 from mt.gtomb where ?5 = guid)", mid, tag, tm, huid, guid);
             vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
@@ -1226,16 +1231,16 @@ import_remote_tupdate(vc remote_uid, vc vals)
                 se_emit_uid_list_changed();
             }
         }
-        else if (op == vc("d"))
+        else if (op == op_d)
         {
-            vc guid = vals[0];
-            vc mid = vals[1];
-            vc tag = vals[2];
+            const vc& guid = vals[0];
+            const vc& mid = vals[1];
+            const vc& tag = vals[2];
             sql_simple("insert or ignore into mt.gtomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
-            vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
+            const vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
             if(res.num_elems() == 1)
             {
-                vc uid = sql_get_uid_from_mid(mid);
+                const vc uid = sql_get_uid_from_mid(mid);
                 if(!uid.is_nil())
                     se_emit_msg_tag_change(mid, from_hex(uid));
                 else
