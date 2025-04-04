@@ -15,6 +15,7 @@ namespace dwyco {
 int init_gj();
 int exit_gj();
 void clear_gj();
+void clean_gj();
 vc get_status_gj();
 vc get_join_log();
 void add_join_log(vc msg, vc uid);
