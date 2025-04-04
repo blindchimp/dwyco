@@ -7096,7 +7096,7 @@ dwyco_start_gj2(const char *gname, const char *password)
         // we don't do this now, except to get rid of sync
         // channels.
         // we want to issue one more command to server to
-        // indicate out provisional group change before we
+        // indicate our provisional group change before we
         // exit.
 #if 0
         // drop all network connections

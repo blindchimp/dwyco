@@ -72,7 +72,7 @@ transient_online_list()
 {
     DwTreeKaz<int, vc> tmpl(0);
 
-    vc p = pal_to_vector(0);
+    const vc p = pal_to_vector(0);
     // note that p may contain group representatives, but we
     // really need the group uid's explicitly since we are going
     // to use the info try and target message delivery.
@@ -101,7 +101,7 @@ transient_online_list()
         return tree_to_vec(tmpl);
     }
     // fill out remainder with recent conversations
-    vc rm = sql_get_recent_users2(3600 * 24 * 14, left_over);
+    const vc rm = sql_get_recent_users2(3600 * 24 * 14, left_over);
     if(rm.is_nil())
     {
         tmpl.del(My_UID);
