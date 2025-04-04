@@ -27,7 +27,8 @@
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
-#include "msglistmodel.h"
+#include "msgrawmodel.h"
+#include "msgproxymodel.h"
 #include "pfx.h"
 #include "ssmap.h"
 #include "dwycoimageprovider.h"

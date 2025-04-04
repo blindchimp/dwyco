@@ -4225,7 +4225,7 @@ uid_ignored(const vc& uid)
 vc
 get_local_ignore()
 {
-    vc res = sql_get_tagged_mids2("_ignore");
+    const vc res = sql_get_tagged_mids2("_ignore");
     //vc res = map_uid_list_from_tag("_ignore");
     vc ret(VC_SET);
     for(int i = 0; i < res.num_elems(); ++i)

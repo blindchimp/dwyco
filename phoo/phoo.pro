@@ -72,8 +72,9 @@ SOURCES += main.cpp \
     dwyco_top.cpp \
     dwyco_new_msg.cpp \
     joinlogmodel.cpp \
+    msgproxymodel.cpp \
+    msgrawmodel.cpp \
     pfx.cpp \
-    msglistmodel.cpp \
     msgpv.cpp \
     simpledirmodel.cpp \
     ssmap.cpp \
@@ -464,8 +465,9 @@ HEADERS += \
     discomodel.h \
 	dwyco_top.h \
     joinlogmodel.h \
-    msglistmodel.h \
     dwycoimageprovider.h \
+    msgproxymodel.h \
+    msgrawmodel.h \
     notificationclient.h \
     profpv.h \
     dwquerybymember.h \
