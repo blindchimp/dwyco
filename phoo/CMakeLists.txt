@@ -7,9 +7,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(DWYCO_CONFDIR phoo_cmake)
-set(PHOO_VERSION "4.227")
+set(PHOO_VERSION "4.228")
 set(PHOO_VERSION_NAME ${PHOO_VERSION})
-set(PHOO_VERSION_CODE 2000123)
+set(PHOO_VERSION_CODE 2000128)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -58,7 +58,7 @@ add_compile_definitions(QT_VERSION_STRING="${QT_VERSION}")
 # time instead of build time.
 if(ANDROID)
 file(COPY ../bld/android/com/dwyco DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/)
-#file(COPY ../../deploy-phoo/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
+file(COPY ../../deploy-phoo-android/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
 endif()
 
 
@@ -71,7 +71,7 @@ set(SRCS
     dwyco_new_msg.cpp 
     joinlogmodel.cpp 
     pfx.cpp 
-    msglistmodel.cpp 
+
     msgpv.cpp 
     simpledirmodel.cpp 
     ssmap.cpp 
@@ -93,6 +93,8 @@ set(SRCS
     ctlist.cpp 
     dwycovideopreviewprovider.cpp  
     syncmodel.cpp
+    msgrawmodel.cpp
+    msgproxymodel.cpp
 )
 
 qt_add_resources(SRCS

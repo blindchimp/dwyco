@@ -10,6 +10,8 @@ include_directories(dwcls PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
 )
 
+
+
 add_library(dwcls OBJECT
   dwhash.cpp
   useful.cpp
@@ -22,6 +24,9 @@ add_library(dwcls OBJECT
   dwcls_timer.cpp
 )
 
-
+target_sources(dwcls INTERFACE
+    dwvec.h dwvecp.h dwsvec.h dwlista.h dwmapr.h dwqbm.h dwqbm2.h
+    dwbag.h dwset.h dwycolist2.h dwassoc.h dwiter.h
+)
 #install(TARGETS dwcls DESTINATION lib)
 

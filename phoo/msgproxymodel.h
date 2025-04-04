@@ -7,6 +7,7 @@
 */
 #ifndef MSGPROXYMODEL_H
 #define MSGPROXYMODEL_H
+#include <QQmlEngine>
 #include <QAbstractListModel>
 #include <QSortFilterProxyModel>
 #include <QSet>
@@ -17,6 +18,7 @@
 class msgproxy_model : public QSortFilterProxyModel
 {
     Q_OBJECT
+	    QML_NAMED_ELEMENT(DwycoMsgList)
     QML_WRITABLE_VAR_PROPERTY(QString, uid)
     QML_WRITABLE_VAR_PROPERTY(QString, tag)
 

@@ -264,6 +264,7 @@ msglist_model::msg_recv_status(int cmd, const QString &smid, const QString& shui
     roles.append(IS_ACTIVE);
     roles.append(FETCH_STATE);
     roles.append(ATTACHMENT_PERCENT);
+    roles.append(PREVIEW_FILENAME);
     //roles.append(DIRECT);
     emit dataChanged(mi, mi, roles);
     mlm->invalidateFilter();
