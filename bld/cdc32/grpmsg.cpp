@@ -78,6 +78,18 @@ external_join_event(vc, vc)
     se_emit_group_status_change();
 }
 
+void
+clean_gj()
+{
+    SKID->start_transaction();
+    SKID->sql_simple("delete from join_log where time < strftime('%s', 'now') - 7 * 24 * 3600");
+    // note: you get roughly a week to complete the protocol.
+    // this is useful in situations where you are in a group for a long period of time
+    // and may accumulate partial runs of the protocol.
+    SKID->sql_simple("delete from pstate where time < strftime('%s', 'now') - 7 * 24 * 3600");
+    SKID->commit_transaction();
+}
+
 int
 init_gj()
 {
@@ -85,7 +97,7 @@ init_gj()
         return 1;
     SKID = new struct skid_sql;
     SKID->init();
-    SKID->sql_simple("delete from join_log where time < strftime('%s', 'now') - 7 * 24 * 3600");
+    clean_gj();
     Join_attempts.connect_ptrfun(external_join_event, ssns::UNIQUE);
     return 1;
 }
@@ -540,6 +552,7 @@ install_group_key(vc from, vc msg, vc password)
 int
 recv_gj1(vc from, vc msg, vc password)
 {
+    clean_gj();
     DwString pers_id;
     vc hfrom = to_hex(from);
     if(from == My_UID)
@@ -620,6 +633,7 @@ recv_gj1(vc from, vc msg, vc password)
 int
 recv_gj3(vc from, vc msg, vc password)
 {
+    clean_gj();
     DwString pers_id;
     vc hfrom = to_hex(from);
     int ret = 0;

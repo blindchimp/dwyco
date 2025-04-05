@@ -360,7 +360,7 @@ DwVec<T>::operator[](long index)
         }
     }
 #else
-    if(index >= count && auto_expand)
+    if(!is_fixed && index >= count && auto_expand)
         set_size(index + 1);
 #endif
 
