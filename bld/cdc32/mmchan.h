@@ -681,7 +681,7 @@ private:
     SyncVar rem_incoming_throttle;
 
     void sync_send();
-    void sync_recv(vc);
+    void sync_recv(const vc &);
     DwTimer sync_timer;
     DwTimer pinger_timer;
 
