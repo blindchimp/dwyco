@@ -73,7 +73,7 @@ qt_add_executable(rando
 qt_add_ios_ffmpeg_libraries(rando)
 
 qt_add_qml_module(rando
-    URI rando_app
+    URI dwyco
     VERSION 1.0
 # WARNING: without this option, it prepends
 # some stupid ass "qt/qml/rando_app" to all the

@@ -18,7 +18,7 @@
 class msgproxy_model : public QSortFilterProxyModel
 {
     Q_OBJECT
-	    QML_NAMED_ELEMENT(DwycoMsgList)
+    QML_NAMED_ELEMENT(DwycoMsgList)
     QML_WRITABLE_VAR_PROPERTY(QString, uid)
     QML_WRITABLE_VAR_PROPERTY(QString, tag)
 

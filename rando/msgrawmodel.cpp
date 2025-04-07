@@ -29,6 +29,7 @@
 #define LINUX_EMOJI_CRASH_HACK
 #endif
 [[noreturn]] void cdcxpanic(const char *);
+void update_unseen_from_db();
 
 class DwycoCore;
 extern DwycoCore *TheDwycoCore;
@@ -250,13 +251,17 @@ msglist_raw::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
     {
         reload_inbox_model();
         add_unviewed(buid, mid);
+        update_unseen_from_db();
+        load_to_hash(buid, mid);
         emit TheDwycoCore->new_msg(shuid, "", smid);
         emit TheDwycoCore->decorate_user(shuid);
 
         dwyco_unset_msg_tag(mid.constData(), "_inbox");
         if(m_uid == shuid)
+        {
             mid_tag_changed(smid);
-
+            invalidate_sent_to();
+        }
     }
     // FALLTHRU
         [[clang::fallthrough]];
