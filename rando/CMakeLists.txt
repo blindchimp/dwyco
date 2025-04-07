@@ -51,7 +51,7 @@ set(SRCS
         dwyco_new_msg.cpp
         geospray.cpp
         pfx.cpp
-        msglistmodel.cpp
+
         msgpv.cpp
         ssmap.cpp
         notificationclient.cpp
@@ -59,6 +59,8 @@ set(SRCS
         getinfo.cpp
         qlimitedbuffer.cpp
         resizeimage.cpp
+	msgrawmodel.cpp
+	msgproxymodel.cpp
 
 )
 qt_add_resources(SRCS

@@ -32,7 +32,8 @@
 #include <stdlib.h>
 #include "dwyco_new_msg.h"
 #include "getinfo.h"
-#include "msglistmodel.h"
+#include "msgrawmodel.h"
+#include "msgproxymodel.h"
 #include "pfx.h"
 #include "ssmap.h"
 //#include "dwycoimageprovider.h"
@@ -3350,8 +3351,8 @@ dwyco_register_qml(QQmlContext *root)
 {
     setup_locations();
     TheRootCtx = root;
-    qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
-    qmlRegisterType<msglist_model>("dwyco", 1, 0, "DwycoMsgList");
+    //qmlRegisterType<DwycoCore>("dwyco", 1, 0, "DwycoCore");
+    //qmlRegisterType<msglist_model>("dwyco", 1, 0, "DwycoMsgList");
     //qmlRegisterType<SimpleUserSortFilterModel>("dwyco", 1, 0, "DwycoSimpleUserModel");
    // qmlRegisterType<SimpleContactModel>("dwyco", 1, 0, "DwycoSimpleContactModel");
     //qmlRegisterType<FauxButton>("dwyco", 1, 0, "FauxButton");

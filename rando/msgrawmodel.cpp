@@ -12,6 +12,7 @@
 #include <QList>
 #include <QSet>
 #include <QMap>
+#include <QCryptographicHash>
 #ifdef DWYCO_MODEL_TEST
 #include <QAbstractItemModelTester>
 #endif
@@ -22,6 +23,7 @@
 #include "dwycolist2.h"
 #include "dwyco_new_msg.h"
 #include "dwyco_top.h"
+#include "qloc.h"
 
 #if defined(LINUX) && !(defined(ANDROID) || defined(MACOSX))
 #define LINUX_EMOJI_CRASH_HACK
@@ -49,7 +51,12 @@ static QMap<QByteArray, int> Mid_to_percent;
 // messages are automatically fetched, unless it fails.
 // after that, the fetch can be initiated explicitly
 static QSet<QByteArray> Manual_fetch;
-static QSet<QByteArray> Failed_fetch;
+
+extern QMultiMap<QByteArray,QLoc> Hash_to_loc;
+extern QMap<QByteArray,QByteArray> Hash_to_review;
+extern QMap<QByteArray,long> Hash_to_max_lc;
+
+static QMap<QByteArray,QByteArray> Mid_to_hash;
 
 static
 QString
@@ -96,6 +103,49 @@ gen_time_unsaved(DWYCO_UNFETCHED_MSG_LIST l, int row)
     return t;
 }
 
+static
+int
+att_file_hash(const QByteArray& mid, QByteArray& hash_out)
+{
+    DWYCO_SAVED_MSG_LIST qsm;
+    QByteArray uid;
+    if(!dwyco_get_saved_message(&qsm, uid.constData(), uid.length(), mid.constData()))
+    {
+        return 0;
+    }
+    simple_scoped sm(qsm);
+    QByteArray aname = sm.get<QByteArray>(DWYCO_QM_BODY_ATTACHMENT);
+    if(aname.length() == 0)
+    {
+        return 0;
+    }
+
+    if(Mid_to_hash.contains(mid))
+    {
+        hash_out = Mid_to_hash.value(mid);
+        return 1;
+    }
+
+    QByteArray user_filename = sm.get<QByteArray>(DWYCO_QM_BODY_FILE_ATTACHMENT);
+    int is_file = user_filename.length() > 0;
+    if(!is_file)
+        return 0;
+
+    const char *buf = 0;
+    int len = 0;
+    if(!dwyco_copy_out_file_zap_buf2(mid.constData(), &buf, &len, 4096))
+        return 0;
+    QCryptographicHash ch(QCryptographicHash::Sha1);
+    QByteArrayView b(buf, len);
+    ch.addData(b);
+
+    QByteArray res = ch.result();
+    Mid_to_hash.insert(mid, res);
+    hash_out = res;
+    dwyco_free_array((char *)buf);
+    return 1;
+}
+
 void
 msglist_raw::msg_recv_progress(QString mid, QString huid, QString msg, int percent_done)
 {
@@ -122,6 +172,27 @@ msglist_raw::invalidate_mid(const QByteArray& mid, const QString& huid)
     emit invalidate_item(mid);
     // probably needs an emit or something invalidateFilter();
 
+}
+
+// this is a bit sloppy, but since there aren't that
+// many things in the list, it hopefully won't be a problem
+// to just invalidate everything
+void
+msglist_raw::invalidate_sent_to()
+{
+    int n = rowCount();
+    for(int i = 0; i < n; ++i)
+    {
+        QModelIndex mi = index(i, 0);
+        QVector<int> v;
+        v.append(SENT_TO_LOCATION);
+        v.append(SENT_TO_LAT);
+        v.append(SENT_TO_LON);
+        v.append(REVIEW_RESULTS);
+        v.append(IS_UNSEEN);
+
+        emit dataChanged(mi, mi, v);
+    }
 }
 
 void
@@ -153,7 +224,6 @@ msglist_raw::msg_recv_status(int cmd, const QString &smid, const QString &shuid)
         if(i >= 0)
             Fetching.removeAt(i);
         Mid_to_percent.remove(mid);
-        Failed_fetch.insert(mid);
         Manual_fetch.insert(mid);
 
         reload_inbox_model();
@@ -572,6 +642,7 @@ msglist_raw::reload_model(int force)
 
 
     }
+#endif
 
     // note: i discovered that an initial empty model would
     // react to a "resetmodel" by loading the entire model
@@ -768,12 +839,12 @@ msglist_raw::qd_data ( int r, int role ) const
     {
         return !qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT);
     }
-    case IS_FILE:
-    {
-        if(!qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT) && !qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
-            return 1;
-        return 0;
-    }
+    // case IS_FILE:
+    // {
+    //     if(!qsm.is_nil(DWYCO_QM_BODY_ATTACHMENT) && !qsm.is_nil(DWYCO_QM_BODY_FILE_ATTACHMENT))
+    //         return 1;
+    //     return 0;
+    // }
     case DATE_CREATED:
     {
         DWYCO_LIST ba = dwyco_get_body_array(qsm);
@@ -856,7 +927,7 @@ clear_manual_gate()
 int
 auto_fetch(QByteArray mid)
 {
-    if(!(Fetching.contains(mid) || Manual_fetch.contains(mid) || Failed_fetch.contains(mid)))
+    if(!(Fetching.contains(mid) || Manual_fetch.contains(mid)))
     {
         // issue a server fetch, client will have to
         // come back in to get it when the fetch is done
@@ -865,7 +936,14 @@ auto_fetch(QByteArray mid)
         if(fetch_id != 0)
         {
             Fetching.append(mid);
-            mlm->invalidate();
+            int midi = mlm->mid_to_index(mid);
+            if(midi < 0)
+                return 1;
+            QModelIndex mi = mlm->index(midi, 0);
+            QVector<int> roles;
+            roles.append(msglist_raw::IS_ACTIVE);
+            roles.append(msglist_raw::FETCH_STATE);
+            emit mlm->dataChanged(mi, mi, roles);
             return 1;
         }
     }
@@ -888,6 +966,22 @@ retry_auto_fetch(QByteArray mid)
     roles.append(msglist_raw::PREVIEW_FILENAME);
     emit mlm->dataChanged(mi, mi, roles);
     return tmp;
+}
+
+static
+int
+hash_has_tag(QByteArray hash, const char *tag)
+{
+    DWYCO_LIST tl;
+    dwyco_get_tagged_mids(&tl, hash.constData());
+    simple_scoped stl(tl);
+    for(int i = 0; i < stl.rows(); ++i)
+    {
+        QByteArray b = stl.get<QByteArray>(i, DWYCO_TAGGED_MIDS_MID);
+        if(dwyco_mid_has_tag(b.constData(), tag))
+            return 1;
+    }
+    return 0;
 }
 
 QVariant
@@ -942,8 +1036,6 @@ msglist_raw::inbox_data (int r, int role ) const
     }
     case FETCH_STATE:
     {
-        if(Failed_fetch.contains(mid))
-            return QString("failed");
         if(Manual_fetch.contains(mid))
             return QString("manual");
         return QString("auto");
@@ -976,7 +1068,6 @@ msglist_raw::inbox_data (int r, int role ) const
     case Qt::DecorationRole:
         return QVariant("qrc:///new/red32/icons/red-32x32/Upload-32x32.png");
 
-    case IS_FILE:
     case IS_NO_FORWARD:
         // note: in this case, we don't know until the msg is downloaded
         // and it would be kinda nice if we received a signal when that
@@ -1267,10 +1358,6 @@ msglist_raw::data ( const QModelIndex & index, int role ) const
         if(!att_file_hash(mid, h))
             return QByteArray("");
         return QString(h.toHex());
-    }
-    else if(role == LOGICAL_CLOCK)
-    {
-        return (qlonglong)m.get_long(r, DWYCO_MSG_IDX_LOGICAL_CLOCK);
     }
     else if(role == IS_UNFETCHED)
     {

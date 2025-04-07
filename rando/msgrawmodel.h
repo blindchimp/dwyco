@@ -51,6 +51,13 @@ public:
         FETCH_STATE,
         ATTACHMENT_PERCENT,
         ASSOC_UID, // who the message is from (or to, if sent msg)
+    SENT_TO_LOCATION,
+    REVIEW_RESULTS,
+    IS_UNSEEN,
+    ASSOC_HASH,
+    SENT_TO_LAT,
+    SENT_TO_LON,
+    IS_UNFETCHED
     };
 
     int rowCount ( const QModelIndex & parent = QModelIndex() ) const;
@@ -64,6 +71,7 @@ public:
     Q_INVOKABLE void untag_all_selected(const QSet<QByteArray> &selected, const QByteArray &tag);
 
     int mid_to_index(QByteArray mid);
+    void invalidate_sent_to();
 
 public slots:
     void msg_recv_status(int cmd, const QString& mid, const QString& huid);
