@@ -681,7 +681,7 @@ private:
     SyncVar rem_incoming_throttle;
 
     void sync_send();
-    void sync_recv(vc);
+    void sync_recv(const vc &);
     DwTimer sync_timer;
     DwTimer pinger_timer;
 
@@ -1072,6 +1072,10 @@ private:
     void cleanup_pulls(int myid);
     void pull_done(cvcr mid, cvcr remote_uid, cvcr success);
 
+    // this is useful for long-running servers where
+    // we want to discard protocol-runs that have stalled
+    static DwTimer SKID_cleaner_timer;
+
 public:
     void send_pull(const vc &mid, int pri);
 
@@ -1080,7 +1084,7 @@ public:
 public:
     // this is sent in direct connections, and is used to
     // indicate whether the system is in "foreground" or
-    // "background". this is usefu when you are trying to
+    // "background". this is useful when you are trying to
     // figure out where to initially send a message.
     static dwyco::sigprop<vc> My_disposition;
 };

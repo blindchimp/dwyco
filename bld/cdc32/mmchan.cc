@@ -12,6 +12,7 @@
 #include "chatdisp.h"
 #include "dwstr.h"
 #include "mmchan.h"
+#include "grpmsg.h"
 #include "netvid.h"
 #include "codec.h"
 #include "vidaq.h"
@@ -122,6 +123,7 @@ int MMChannel::Sync_receivers = 1;
 int MMChannel::Auto_sync = 1;
 DwTimer MMChannel::Bw_adj_timer("bw_adj");
 dwyco::sigprop<vc> MMChannel::My_disposition;
+DwTimer MMChannel::SKID_cleaner_timer("skid_cleaner");
 //#define DWYCO_THREADED_ENCODE
 
 #if defined(DWYCO_THREADED_ENCODE) && defined(LINUX)
@@ -4156,6 +4158,14 @@ MMChannel::service_channels(int *spin_out)
         Bw_adj_timer.set_autoreload(1);
         Bw_adj_timer.set_interval(60 * 1000);
         Bw_adj_timer.start();
+
+        if(Current_alternate)
+        {
+            // clean out old protocol runs once a day
+            SKID_cleaner_timer.set_autoreload(1);
+            SKID_cleaner_timer.set_interval(24 * 3600 * 1000);
+            SKID_cleaner_timer.start();
+        }
         been_here = 1;
     }
     poll_listener();
@@ -4178,6 +4188,10 @@ MMChannel::service_channels(int *spin_out)
         Bw_adj_timer.ack_expire();
         adjust_outgoing_bandwidth();
         adjust_incoming_bandwidth();
+    }
+    if(SKID_cleaner_timer.is_expired())
+    {
+        clean_gj();
     }
     if(some_serviced_channels_net())
     {
