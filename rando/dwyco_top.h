@@ -18,6 +18,7 @@
 #include "dlli.h"
 #include "QQmlVarPropertyHelpers.h"
 #include <QAbstractListModel>
+#include <QQmlEngine>
 #ifndef NO_BUILDTIME
 #include "buildtime.h"
 #else
@@ -28,6 +29,7 @@
 class DwycoCore : public QObject
 {
     Q_OBJECT
+    QML_ELEMENT
 
     QML_WRITABLE_VAR_PROPERTY(QString, client_name)
     QML_WRITABLE_VAR_PROPERTY(bool, use_archived)

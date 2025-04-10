@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 
 project(rando VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR rando_cmake)
-set(RANDO_VERSION "4.228")
+set(RANDO_VERSION "4.229")
 set(RANDO_VERSION_NAME ${RANDO_VERSION})
-set(RANDO_VERSION_CODE 3000168)
+set(RANDO_VERSION_CODE 3000169)
 if (ANDROID)
     include(${ANDROID_SDK_ROOT}/android_openssl/CMakeLists.txt)
 endif()
@@ -51,7 +51,7 @@ set(SRCS
         dwyco_new_msg.cpp
         geospray.cpp
         pfx.cpp
-        msglistmodel.cpp
+
         msgpv.cpp
         ssmap.cpp
         notificationclient.cpp
@@ -59,6 +59,8 @@ set(SRCS
         getinfo.cpp
         qlimitedbuffer.cpp
         resizeimage.cpp
+	msgrawmodel.cpp
+	msgproxymodel.cpp
 
 )
 qt_add_resources(SRCS
@@ -71,7 +73,7 @@ qt_add_executable(rando
 qt_add_ios_ffmpeg_libraries(rando)
 
 qt_add_qml_module(rando
-    URI rando_app
+    URI dwyco
     VERSION 1.0
 # WARNING: without this option, it prepends
 # some stupid ass "qt/qml/rando_app" to all the
