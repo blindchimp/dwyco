@@ -25,7 +25,7 @@ MMChannel::sync_send()
 }
 
 void
-MMChannel::sync_recv(vc updates)
+MMChannel::sync_recv(const vc& updates)
 {
     int nupdates = updates.num_elems();
 
@@ -34,17 +34,20 @@ MMChannel::sync_recv(vc updates)
 
     for(int i = 0; i < nupdates; ++i)
     {
-        int action = ((const char *)updates[i][0])[0];
+        const vc u = updates[i];
+        int action = ((const char *)u[0])[0];
+        const vc k = u[1];
+        const vc v = u[2];
         switch(action)
         {
         case 'a':
-            remote_vars.map->add(updates[i][1], updates[i][2]);
+            remote_vars.map->add(k, v);
             break;
         case 'r':
-            remote_vars.map->replace(updates[i][1], updates[i][2]);
+            remote_vars.map->replace(k, v);
             break;
         case 'd':
-            remote_vars.map->del(updates[i][1]);
+            remote_vars.map->del(k);
             break;
         }
     }

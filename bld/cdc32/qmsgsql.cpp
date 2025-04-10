@@ -1303,7 +1303,9 @@ setup_update_triggers()
 {
     try {
         sql_start_transaction();
-
+        // WARNING: be careful with this schema versioning stuff. you probably need to
+        // create NEW KEY's instead of just updating the "val", since old version of the
+        // software do not use a "we're at the max value" technique.
         vc res = sql_simple("select val from schema_sections where name = 'update_triggers'");
         if(res.num_elems() == 0)
         {
@@ -1367,6 +1369,9 @@ setup_crdt_triggers()
 {
     try {
         sql_start_transaction();
+        // WARNING: be careful with this schema versioning stuff. you probably need to
+        // create NEW KEY's instead of just updating the "val", since old version of the
+        // software do not use a "we're at the max value" technique.
         vc res = sql_simple("select val from schema_sections where name = 'crdt_triggers'");
         if(res.num_elems() == 0)
         {
