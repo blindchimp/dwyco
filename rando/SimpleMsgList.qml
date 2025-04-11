@@ -786,6 +786,8 @@ scrolling in the listview or doesn't recognizing the swipe.
             i = themsglist.find_first_unseen()
             if(i >= 0)
                 listview.positionViewAtIndex(i, ListView.Beginning)
+            else
+                core.reset_unviewed_msgs(the_man)
         }
         ToolTip.text: "Skip to next unseen"
 
