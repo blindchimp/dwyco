@@ -318,6 +318,7 @@ Page {
                 z: 10
                 MouseArea {
                     anchors.fill: parent
+                    preventStealing: true
                     onClicked: {
                         if(fail_review_msg.state == "moveIn")
                             fail_review_msg.state = "moveOut"
@@ -404,6 +405,7 @@ Page {
                 z: 10
                 MouseArea {
                     anchors.fill: parent
+                    preventStealing: true
                     onClicked: {
                         if(core.geo_count_from_hash(ASSOC_HASH) > 1) {
                         geolist.hash = ASSOC_HASH
