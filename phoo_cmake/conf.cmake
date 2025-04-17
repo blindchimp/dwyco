@@ -1,3 +1,4 @@
+set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 set(DWYCO_APP "phoo")
 set(DWYCOBG 0)
 add_compile_definitions(DWYCO_APP_NICENAME="Phoo")
