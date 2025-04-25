@@ -248,6 +248,9 @@ QMsgSql::init_schema(const DwString& schema_name)
             sql_simple("create index if not exists assoc_uid_idx on msg_idx(assoc_uid)");
             sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock)");
             sql_simple("create index if not exists date_idx on msg_idx(date)");
+            // NOTE: these indexes need to be dropped
+            // if we have a query that is based on global "has_attachment", a partial
+            // index might be more useful.
             sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
             sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
 
@@ -283,6 +286,10 @@ QMsgSql::init_schema(const DwString& schema_name)
             sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
             sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock)");
             sql_simple("create index if not exists gidate_idx on gi(date)");
+            // NOTE: these indexes need to be dropped
+            // if we have a query that is based on global "has_attachment", a partial
+            // index might be more useful.
+            // likewise for from_group
             sql_simple("create index if not exists gisent_idx on gi(is_sent)");
             sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
             sql_simple("create index if not exists gifrom_group on gi(from_group)");
@@ -1313,6 +1320,9 @@ setup_update_triggers()
         }
         else if((int)res[0][0] == 1)
             throw 0;
+
+        // this rescan stuff is probably too expensive. it might just be better to do
+        // it in the update_hook
         sql_simple("create table rescan(flag integer)");
         sql_simple("insert into rescan (flag) values(0)");
         sql_simple("create trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
