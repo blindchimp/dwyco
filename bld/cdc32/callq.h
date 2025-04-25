@@ -22,7 +22,8 @@ public:
     ~CallQ();
 
     //int add_call(vc uid, vc host, vc port, vc proxinfo);
-    int add_call(MMCall*);
+    // the time in seconds to defer trying the call (after the add call.)
+    int add_call(MMCall*, int defer_time = 0);
     //int cancel_call(int);
     int cancel_all();
     void set_max_established(int);

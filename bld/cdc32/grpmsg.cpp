@@ -1,4 +1,12 @@
 
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
+
 #include "simplesql.h"
 #include "vc.h"
 #include "dlli.h"
@@ -69,6 +77,18 @@ external_join_event(vc, vc)
     se_emit_group_status_change();
 }
 
+void
+clean_gj()
+{
+    SKID->start_transaction();
+    SKID->sql_simple("delete from join_log where time < strftime('%s', 'now') - 7 * 24 * 3600");
+    // note: you get roughly a week to complete the protocol.
+    // this is useful in situations where you are in a group for a long period of time
+    // and may accumulate partial runs of the protocol.
+    SKID->sql_simple("delete from pstate where time < strftime('%s', 'now') - 7 * 24 * 3600");
+    SKID->commit_transaction();
+}
+
 int
 init_gj()
 {
@@ -76,8 +96,8 @@ init_gj()
         return 1;
     SKID = new struct skid_sql;
     SKID->init();
-    SKID->sql_simple("delete from join_log where time < strftime('%s', 'now') - 7 * 24 * 3600");
-    Join_attempts.connect_ptrfun(external_join_event, 1);
+    clean_gj();
+    Join_attempts.connect_ptrfun(external_join_event, ssns::UNIQUE);
     return 1;
 }
 
@@ -233,8 +253,13 @@ post_req(int compid, vc vuid, DwString& pers_id, int no_group, int inhibit_encry
     // password encryption, all the current group members can decrypt it.
     // note that message itself is encrypted with the password, not as
     // good as the pk stuff, but still reasonable. the underlying skid protocol
-    // is supposedly resistant to attack even if it is done "in the clear", so
-    // we are probably ok even if someone else can decrypt the messages.
+    // is supposedly resistant to attack even if it is done "in the clear".
+    // unfortunately, if someone goes to the trouble to decrypt the message
+    // by brute-forcing the hash, they would be able to start a new
+    // run of the protocol and get G. so, there is definitely room for
+    // improvement here, like asking the user to allow the protocol to
+    // proceed, or any of other things. all of them make it less convenient to use
+    // so probably would have to be optional.
     if(!send_via_server(m->qfn, inhibit_encryption, no_group, 1))
     {
         GRTLOG("post_req: send startup failed", 0, 0);
@@ -504,6 +529,7 @@ install_group_key(vc from, vc msg, vc password)
 int
 recv_gj1(vc from, vc msg, vc password)
 {
+    clean_gj();
     DwString pers_id;
     vc hfrom = to_hex(from);
     if(from == My_UID)
@@ -584,6 +610,7 @@ recv_gj1(vc from, vc msg, vc password)
 int
 recv_gj3(vc from, vc msg, vc password)
 {
+    clean_gj();
     DwString pers_id;
     vc hfrom = to_hex(from);
     int ret = 0;

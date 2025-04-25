@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #include "ezset.h"
 #ifdef DWYCO_TRACE
 #include "dwyco_rename.h"
@@ -945,6 +953,7 @@ out:
     }
 #ifndef ANDROID
     clean_cruft();
+    weekly_trash_empty();
 #endif
     //exit(0);
     return 0;
@@ -1192,8 +1201,8 @@ dwyco_background_sync(int port, const char *sys_pfx, const char *user_pfx, const
             )
         {
             GRTLOGA("fast poll snooze %d spin %d rq %d cq %d proto %d",
-                    spin,
                     snooze,
+                    spin,
                     Response_q.num_elems(),
                     MMChannel::any_ctrl_q_pending(),
                     dwyco::sproto::any_quick_transitions()
@@ -1250,6 +1259,7 @@ out:
     dwyco_bg_exit();
 #ifndef ANDROID
     clean_cruft();
+    weekly_trash_empty();
 #endif
     //exit(0);
     return 0;

@@ -12,6 +12,7 @@
 #include "chatdisp.h"
 #include "dwstr.h"
 #include "mmchan.h"
+#include "grpmsg.h"
 #include "netvid.h"
 #include "codec.h"
 #include "vidaq.h"
@@ -110,7 +111,6 @@ StatusCallback2 MMChannel::uc_message_callback;
 CallScreeningCallback MMChannel::call_screening_callback;
 
 int MMChannel::Moron_dork_mode;
-int MMChannel::Session_id = 1;
 
 // Conference mode, mostly defunct
 int Conf;
@@ -123,6 +123,7 @@ int MMChannel::Sync_receivers = 1;
 int MMChannel::Auto_sync = 1;
 DwTimer MMChannel::Bw_adj_timer("bw_adj");
 dwyco::sigprop<vc> MMChannel::My_disposition;
+DwTimer MMChannel::SKID_cleaner_timer("skid_cleaner");
 //#define DWYCO_THREADED_ENCODE
 
 #if defined(DWYCO_THREADED_ENCODE) && defined(LINUX)
@@ -521,6 +522,7 @@ MMChannel::MMChannel() :
     audio_output = 0;
     audio_sampler = 0;
     grab_audio_id = -1;
+    is_audio_channel = 0;
     last_audio_buf = 0;
     last_audio_len = 0;
     last_audio_index = 0;
@@ -1090,7 +1092,7 @@ MMChannel::num_video_sends()
 }
 
 int
-MMChannel::num_audio_sends()
+MMChannel::num_active_audio_sends()
 {
     int cnt = 0;
     for(int i = 0; i < MMChannels.num_elems(); ++i)
@@ -1100,6 +1102,24 @@ MMChannel::num_audio_sends()
             continue;
         if(!m->do_destroy && m->tube &&
                 ((m->grab_audio_id != -1 && channel_by_id(m->grab_audio_id))))
+            ++cnt;
+    }
+    return cnt;
+
+}
+
+int
+MMChannel::num_audio_coder_channels()
+{
+    int cnt = 0;
+    for(int i = 0; i < MMChannels.num_elems(); ++i)
+    {
+        MMChannel *m = MMChannels[i];
+        if(!m)
+            continue;
+        if(!m->do_destroy && m->tube &&
+                ((m->grab_audio_id != -1 && channel_by_id(m->grab_audio_id)) ||
+                 m->is_audio_channel))
             ++cnt;
     }
     return cnt;
@@ -1295,7 +1315,7 @@ MMChannel::destroy()
     }
     // check to see if there are any other audio
     // senders alive, if not, shut down the acquisition objects
-    if(num_audio_sends() == 0)
+    if(num_audio_coder_channels() == 0)
     {
         MMChannel *c = find_audio_xmitter();
         if(c && c != this)
@@ -2507,6 +2527,8 @@ MMChannel::crypto_agree(vc crypto, int caller)
     }
 
     vc agreed = udh_agree_auth(channel_keys, their_pubkeys);
+    if(agreed.is_nil())
+        return 0;
     agreed = kdf(agreed, caller, My_UID, rem_uid);
     agreed = vclh_sha(agreed);
     // chop down to 128 bits, since we are hardwired to that with
@@ -2660,7 +2682,7 @@ MMChannel::channels_by_call_type(vc uid, vc call_type)
     for(; !cli.eol(); cli.forward())
     {
         MMChannel *mc = cli.getp();
-        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && call_type == mc->remote_call_type())
+        if(mc->do_destroy == KEEP && uid == mc->remote_uid() && (call_type == mc->remote_call_type() || call_type == mc->call_type))
         {
             ret.append(mc);
         }
@@ -2842,11 +2864,27 @@ MMChannel::recv_config(vc cfg)
         // make sure we are at least in a group with
         // the same hash (this is not a security check, just
         // making sure we don't accept sync links from obviously
-        // wrong group)
+        // wrong group.) this is mostly useful when you are debugging, and
+        // forget to update executables all over the place.
         vc m;
         vc r;
         if(!remote_cfg.is_nil() && remote_call_type() == vc("sync"))
         {
+            // this is a hack. it isn't uncommon to get tech support emails from
+            // people that want to move a cdc-x install to a new computer. usually,
+            // we just tell them to copy it. which of course now means all your
+            // auth, sync, private keys are duplicated. which is fine. if they
+            // try to use them at the same time, they just fight with each other.
+            // but we definitely don't want to allow a sync channel between them.
+            const vc ruid = remote_uid();
+            if(ruid.is_nil() || ruid == My_UID)
+            {
+                send_error("self-sync rejected (probably copied installation)");
+                Netlog_signal.emit(tube->mklog("event", "self-sync-reject"));
+                GRTLOG("self-sync rejected", 0, 0);
+                goto cleanup;
+            }
+
             vc pw;
             if(!cfg.find("pw", pw))
             {
@@ -2876,9 +2914,30 @@ MMChannel::recv_config(vc cfg)
             remote_cfg.del("pw");
             is_sync_chan = true;
 
-            ChanList cl = channels_by_call_type(remote_uid(), "sync");
+            ChanList cl = channels_by_call_type(ruid, "sync");
             if(cl.num_elems() > 1)
             {
+                // we can do several things:
+                // (1) destroy this connection before it has a chance to do anything more.
+                // (2) destroy the existing connection.
+                // (3) *someday* let multiple connections exist.
+                //
+                // ca 8/2024, there seem to be some problems (bugs) in the
+                // syncing stuff that get triggered if we kill the existing connection.
+                // this is especially true if we are aggressively trying to get
+                // connections set up, as it is really likely two clients will be
+                // trying to connect to each other at the same time. the bugs manifest as
+                // the "delta" generation stuff getting confused, and resulting in
+                // entire indexes being exchanged (this will take some intensive
+                // debugging to figure out.)
+                send_error("already sync connected");
+                Netlog_signal.emit(tube->mklog("event", "already sync connected"));
+                GRTLOG("already sync connected", 0, 0);
+                goto cleanup;
+
+
+#if 0
+
                 // maybe there is a channel the process of timing out,
                 // we just assume this current one will be better than
                 // the previous one (we definitely don't want more than
@@ -2898,6 +2957,7 @@ MMChannel::recv_config(vc cfg)
                         cl[i]->schedule_destroy();
                     }
                 }
+#endif
             }
 
             finish_connection_new();
@@ -4098,6 +4158,14 @@ MMChannel::service_channels(int *spin_out)
         Bw_adj_timer.set_autoreload(1);
         Bw_adj_timer.set_interval(60 * 1000);
         Bw_adj_timer.start();
+
+        if(Current_alternate)
+        {
+            // clean out old protocol runs once a day
+            SKID_cleaner_timer.set_autoreload(1);
+            SKID_cleaner_timer.set_interval(24 * 3600 * 1000);
+            SKID_cleaner_timer.start();
+        }
         been_here = 1;
     }
     poll_listener();
@@ -4120,6 +4188,10 @@ MMChannel::service_channels(int *spin_out)
         Bw_adj_timer.ack_expire();
         adjust_outgoing_bandwidth();
         adjust_incoming_bandwidth();
+    }
+    if(SKID_cleaner_timer.is_expired())
+    {
+        clean_gj();
     }
     if(some_serviced_channels_net())
     {

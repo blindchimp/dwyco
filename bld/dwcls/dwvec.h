@@ -200,6 +200,8 @@ DwVec<T>::DwVec(const DwVec<T>& vec)
         for(i = count; i < real_count; ++i)
             init_value(values[i]);
     }
+    else
+        initfun = 0;
 #endif
 
 }
@@ -299,6 +301,10 @@ DwVec<T>::DwVec(long icount, int fixed, int aexp, long blksize,
         for(int i = 0; i < real_count; ++i)
             init_value(values[i]);
     }
+    else
+    {
+        initfun = 0;
+    }
 #endif
     is_fixed = fixed;
     auto_expand = aexp;
@@ -354,7 +360,7 @@ DwVec<T>::operator[](long index)
         }
     }
 #else
-    if(index >= count && auto_expand)
+    if(!is_fixed && index >= count && auto_expand)
         set_size(index + 1);
 #endif
 

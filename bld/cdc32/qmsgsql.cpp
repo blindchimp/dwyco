@@ -248,6 +248,9 @@ QMsgSql::init_schema(const DwString& schema_name)
             sql_simple("create index if not exists assoc_uid_idx on msg_idx(assoc_uid)");
             sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock)");
             sql_simple("create index if not exists date_idx on msg_idx(date)");
+            // NOTE: these indexes need to be dropped
+            // if we have a query that is based on global "has_attachment", a partial
+            // index might be more useful.
             sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
             sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
 
@@ -283,6 +286,10 @@ QMsgSql::init_schema(const DwString& schema_name)
             sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
             sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock)");
             sql_simple("create index if not exists gidate_idx on gi(date)");
+            // NOTE: these indexes need to be dropped
+            // if we have a query that is based on global "has_attachment", a partial
+            // index might be more useful.
+            // likewise for from_group
             sql_simple("create index if not exists gisent_idx on gi(is_sent)");
             sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
             sql_simple("create index if not exists gifrom_group on gi(from_group)");
@@ -359,12 +366,30 @@ clean_pull_failed_uid(const vc& uid)
 
 // cancel all the
 // extant pulls in other send_qs
+// should we also delete any extand pull-resp as well?
+// hmm, no. leave that for another functions, but it makes
+// sense if have "deleted" a message, and we q-ed up a response
+// regarding the message we probably should nuke it.
+// likewise, if we receive a response from a message we know
+// has been deleted, we should probably discard the response.
+// see the comment near "process_pull_resp"
 static
 void
 stop_existing_pulls(const vc& mid)
 {
     pulls::deassert_pull(mid);
     ChanList cl = get_all_sync_chans();
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        cl[i]->sync_sendq.del_pull(mid);
+    }
+}
+
+static
+void
+stop_existing_pulls(ChanList& cl, const vc& mid)
+{
+    pulls::deassert_pull(mid);
     for(int i = 0; i < cl.num_elems(); ++i)
     {
         cl[i]->sync_sendq.del_pull(mid);
@@ -461,7 +486,7 @@ generate_delta(const vc& uid, const vc& delta_id)
         }
         else
         {
-            GRTLOG("no delta for %s", (const char *)huid, 0);
+            GRTLOG("empty delta for %s", (const char *)huid, 0);
         }
         // ok, this is a problem. we don't want to commit updates to our notion of the REMOTE end
         // until we have some idea that we actually sent them and they are incorporated there.
@@ -598,7 +623,6 @@ msg_idx_updated(const vc& uid, int prepended)
 vc
 package_downstream_sends(const vc& remote_uid)
 {
-    const vc& huid = to_hex(remote_uid);
     try
     {
         // NOTE: may want to package this as a single command
@@ -606,13 +630,14 @@ package_downstream_sends(const vc& remote_uid)
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
         // most of the time, the logs are empty, so just shortcut that case
-        const vc& chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
+        const vc chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
         if((int)chk[0][0] == 0)
         {
             sql_commit_transaction();
             return vcnil;
         }
 
+        const vc huid = to_hex(remote_uid);
         // note: this sync thing is supposed to be processed after all the updates
         // that are received during a delta update, letting us know what we have integrated
         // from the remote side. for now, we just assume
@@ -626,8 +651,8 @@ package_downstream_sends(const vc& remote_uid)
         // messages and one for tags. it might make sense to change this to one table
         // in the future so simplify things here.
 
-        const vc& next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
-        const vc& next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
+        const vc next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
+        const vc next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
         vc sync_id;
         vc next_tag_sync;
         vc next_mid_sync;
@@ -648,9 +673,9 @@ package_downstream_sends(const vc& remote_uid)
             next_tag_sync = next_tag_sync_res[0][1];
         }
 
-        const vc& idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
+        const vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
                              "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2", huid, next_mid_sync);
-        const vc& mtombs = sql_simple("select mid, op from main.midlog "
+        const vc mtombs = sql_simple("select mid, op from main.midlog "
                                "where midlog.to_uid = ?1 and op = 'd' and rowid < ?2", huid, next_mid_sync);
 
         // note: put in the "group by" since it appears at some point i allowed duplicate
@@ -658,9 +683,9 @@ package_downstream_sends(const vc& remote_uid)
         // a picture of which client has which tags, and i'm not sure i use that info anywhere).
         // the duplicates didn't cause an error, just lots of extra processing that was ignored.
 
-        const vc& tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
+        const vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
                              "where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
-        const vc& tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
+        const vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
                               "where to_uid = ?1 and op = 'd' and tl.rowid < ?2", huid, next_tag_sync);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || !sync_id.is_nil())
             GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d sync %s", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), (const char *)sync_id);
@@ -739,11 +764,11 @@ sync_user(vc v)
     DwString ss = s;
     s += "" DIRSEPSTR "*.bod";
 
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv(s);
     auto n = fv.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA &d = *fv[i];
+        const WIN32_FIND_DATA &d = *fv[i];
         if(strlen(d.cFileName) != 24)
             continue;
         DwString mid(d.cFileName);
@@ -752,7 +777,6 @@ sync_user(vc v)
             trash_body(uid, mid.c_str(), 1);
 
     }
-    delete_findvec(&fv);
     }
     {
     DwString s((const char *)id);
@@ -760,11 +784,11 @@ sync_user(vc v)
     DwString ss = s;
     s += "" DIRSEPSTR "*.snt";
 
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv(s);
     auto n = fv.num_elems();
     for(int i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA &d = *fv[i];
+        const WIN32_FIND_DATA &d = *fv[i];
         if(strlen(d.cFileName) != 24)
             continue;
         DwString mid(d.cFileName);
@@ -773,7 +797,6 @@ sync_user(vc v)
             trash_body(uid, mid.c_str(), 1);
 
     }
-    delete_findvec(&fv);
     }
 
 
@@ -805,20 +828,18 @@ void
 remove_delta_databases()
 {
     {
-        FindVec *fv = find_to_vec(newfn("minew????????????????????.tdb").c_str());
-        for(int i = 0; i < fv->num_elems(); ++i)
+        FindVec fv(newfn("minew????????????????????.tdb"));
+        for(int i = 0; i < fv.num_elems(); ++i)
         {
-            DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+            DeleteFile(newfn(fv[i]->cFileName).c_str());
         }
-        delete_findvec(fv);
     }
     {
-        FindVec *fv = find_to_vec(newfn("mi????????????????????.tdb").c_str());
-        for(int i = 0; i < fv->num_elems(); ++i)
+        FindVec fv(newfn("mi????????????????????.tdb"));
+        for(int i = 0; i < fv.num_elems(); ++i)
         {
-            DeleteFile(newfn((*fv)[i]->cFileName).c_str());
+            DeleteFile(newfn(fv[i]->cFileName).c_str());
         }
-        delete_findvec(fv);
     }
 }
 
@@ -935,7 +956,7 @@ remove_sync_state()
 int
 import_remote_mi(const vc& remote_uid)
 {
-    const vc& huid = to_hex(remote_uid);
+    const vc huid = to_hex(remote_uid);
     DwString fn = DwString("mi%1.tdb").arg((const char *)huid);
     //DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
     SimpleSql s(MSG_IDX_DB);
@@ -948,12 +969,22 @@ import_remote_mi(const vc& remote_uid)
 #endif
     s.attach(TAG_DB, "mt");
     s.attach(fn, "mi2");
+    s.set_cache_size(100000);
 
     int ret = 1;
     try
     {
         s.start_transaction();
-        const vc& newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
+        // we need to trim or do something so this "import" operation isn't so time consuming.
+        // i think there might need to be some kind of explicit event like "new sync client initialized"
+        // so clients can perform all the re-loading they need. the "add_user" thing below needs to go away
+        // and we just signal the client to re-issue the reload_conv_list so all these extra things don't show up
+        // in the conv list when the background gets loaded.
+        // i wonder if this is a case where wal_mode might help if we could background this operation, allowing the
+        // client to continue without getting blocked (might not, since wal_mode isn't really a table thing, but
+        // a database-wide thing, i think.
+        s.sql_simple("create index if not exists mi2.assoc_uid_idx on msg_idx(assoc_uid)");
+        const vc newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx where not exists (select 1 from main.gi where assoc_uid = mi2.msg_idx.assoc_uid limit 1)");
         // note sure what i was up to here... removing the contents
         // of crdt_tags will effectively disable the triggers for
         // creating the tag logs (that would get sent to other clients)
@@ -974,13 +1005,13 @@ import_remote_mi(const vc& remote_uid)
         s.sql_simple("delete from current_clients where uid = ?1", huid);
 
         s.sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
-        const vc& res = s.sql_simple("select max(logical_clock) from gi");
+        const vc res = s.sql_simple("select max(logical_clock) from gi");
         if(res[0][0].type() == VC_INT)
         {
             long lc = (long)res[0][0];
             update_global_logical_clock(lc);
         }
-        const vc& newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
+        const vc newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
         s.sql_simple("delete from main.gi where mid in (select mid from main.msg_tomb)");
 
         //sync_files();
@@ -1023,10 +1054,11 @@ import_remote_mi(const vc& remote_uid)
         {
             se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
         }
+        ChanList cl = get_all_sync_chans();
         for(int i = 0; i < newtombs.num_elems(); ++i)
         {
             const vc mid = newtombs[i][0];
-            stop_existing_pulls(mid);
+            stop_existing_pulls(cl, mid);
         }
 #endif
     }
@@ -1035,9 +1067,10 @@ import_remote_mi(const vc& remote_uid)
         s.rollback_transaction();
         ret = 0;
     }
-
+    // explicitly detach so the optimize doesn't
+    // look at it.
     s.detach("mi2");
-
+    s.optimize();
     s.exit();
     return ret;
 }
@@ -1086,40 +1119,51 @@ import_remote_iupdate(vc remote_uid, vc vals)
         else if(op == vc("d"))
         {
             mid = vals[0];
-            uid = sql_get_uid_from_mid(mid);
-            vc res3 = sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now')) returning 1", mid);
-            vc res4 = sql_simple("delete from gi where mid = ?1 returning 1", mid);
-            // XX note: doing it this way causes log entries to be created by triggers
-            // XX which might lead to storms of propagated deletes in completely
-            // XX connected clusters. it might make sense to just remove all but one
-            // XX of the current_clients so that the updates propagate around to one
-            // XX client at a time.
+            if(!mid.is_nil())
+            {
+                uid = sql_get_uid_from_mid(mid);
+                vc res3 = sql_simple("insert into msg_tomb (mid, time) values(?1, strftime('%s', 'now')) returning 1", mid);
+                vc res4 = sql_simple("delete from gi where mid = ?1 returning 1", mid);
+                // XX note: doing it this way causes log entries to be created by triggers
+                // XX which might lead to storms of propagated deletes in completely
+                // XX connected clusters. it might make sense to just remove all but one
+                // XX of the current_clients so that the updates propagate around to one
+                // XX client at a time.
 
-            // ok, here is the crux of the missing tombstone problem: if the msg_idx does not have
-            // the mid we are installing a tombstone for (ie, we haven't downloaded it here yet)
-            // the triggers on msg_idx will not be done, and the tombstone will not be created.
-            // the mid may remain in gi because we heard about the message from another client, but
-            // if we got a tombstone request, it should be toast in gi as well.
-            //
-            // the other side thinks it has propagated it, since the delta version will match, and
-            // voila, the tombstone is never propagated here again.
-            // the fix is to just install the tombstones manually.
-            // i'm not sure why i had
-            // it correct above, then commented it out, other than i was worried about storms.
-            vc res1 = sql_simple("delete from msg_idx where mid = ?1 returning 1", mid);
-            vc res2 = sql_simple("delete from gmt where mid = ?1 returning 1", mid);
-            if(res3.num_elems() > 0 || res4.num_elems() > 0 || res1.num_elems() > 0 || res2.num_elems() > 0)
-                index_changed = true;
+                // ok, here is the crux of the missing tombstone problem: if the msg_idx does not have
+                // the mid we are installing a tombstone for (ie, we haven't downloaded it here yet)
+                // the triggers on msg_idx will not be done, and the tombstone will not be created.
+                // the mid may remain in gi because we heard about the message from another client, but
+                // if we got a tombstone request, it should be toast in gi as well.
+                //
+                // the other side thinks it has propagated it, since the delta version will match, and
+                // voila, the tombstone is never propagated here again.
+                // the fix is to just install the tombstones manually.
+                // i'm not sure why i had
+                // it correct above, then commented it out, other than i was worried about storms.
+                vc res1 = sql_simple("delete from msg_idx where mid = ?1 returning 1", mid);
+                vc res2 = sql_simple("delete from gmt where mid = ?1 returning 1", mid);
+                if(res3.num_elems() > 0 || res4.num_elems() > 0 || res1.num_elems() > 0 || res2.num_elems() > 0)
+                    index_changed = true;
+
+                if(!uid.is_nil())
+                {
+                    // note: we don't have to redo index updates, since we just did it
+                    // "by hand" right here. "trashing" the body by moving it to another
+                    // folder is more of a "avoid data loss" thing, as the message delete
+                    // is being requested by a remote group member. and while we're debugging
+                    // this can be useful.
+                    trash_body(from_hex(uid), mid, 1);
+                    // once we see a tombstone, that means we should not
+                    // be fetching it from anywhere.
+                    stop_existing_pulls(mid);
+                }
+            }
         }
+
         sql_simple("insert into current_clients values(?1)", huid);
         sql_commit_transaction();
-        if(op == vc("d") && !uid.is_nil() && !mid.is_nil())
-        {
-            trash_body(from_hex(uid), mid, 1);
-            // once we see a tombstone, that means we should not
-            // be fetching it from anywhere.
-            stop_existing_pulls(mid);
-        }
+
         if(index_changed && !uid.is_nil())
         {
             msg_idx_updated(from_hex(uid), 0);
@@ -1154,9 +1198,12 @@ import_new_syncpoint(vc remote_uid, vc delta_id)
 }
 
 void
-import_remote_tupdate(vc remote_uid, vc vals)
+import_remote_tupdate(const vc& remote_uid, const vc& vals)
 {
-    vc huid = to_hex(remote_uid);
+    if(vals.type() != VC_VECTOR || vals.num_elems() < 1)
+        return;
+    const vc huid = to_hex(remote_uid);
+
     try
     {
         sql_start_transaction();
@@ -1164,13 +1211,15 @@ import_remote_tupdate(vc remote_uid, vc vals)
         // received this from
         sql_simple("delete from current_clients where uid = ?1", huid);
 
-        vc op = vals.remove_last();
-        if(op == vc("a"))
+        const vc& op = vals[vals.num_elems() - 1];
+        static vc op_a("a");
+        static vc op_d("d");
+        if(op == op_a)
         {
-            vc mid = vals[0];
-            vc tag = vals[1];
-            vc tm = vals[2];
-            vc guid = vals[3];
+            const vc& mid = vals[0];
+            const vc& tag = vals[1];
+            const vc& tm = vals[2];
+            const vc& guid = vals[3];
 
             sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select ?1, ?2, ?3, ?4, ?5 where not exists (select 1 from mt.gtomb where ?5 = guid)", mid, tag, tm, huid, guid);
             vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
@@ -1189,16 +1238,16 @@ import_remote_tupdate(vc remote_uid, vc vals)
                 se_emit_uid_list_changed();
             }
         }
-        else if (op == vc("d"))
+        else if (op == op_d)
         {
-            vc guid = vals[0];
-            vc mid = vals[1];
-            vc tag = vals[2];
+            const vc& guid = vals[0];
+            const vc& mid = vals[1];
+            const vc& tag = vals[2];
             sql_simple("insert or ignore into mt.gtomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
-            vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
+            const vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
             if(res.num_elems() == 1)
             {
-                vc uid = sql_get_uid_from_mid(mid);
+                const vc uid = sql_get_uid_from_mid(mid);
                 if(!uid.is_nil())
                     se_emit_msg_tag_change(mid, from_hex(uid));
                 else
@@ -1261,7 +1310,9 @@ setup_update_triggers()
 {
     try {
         sql_start_transaction();
-
+        // WARNING: be careful with this schema versioning stuff. you probably need to
+        // create NEW KEY's instead of just updating the "val", since old version of the
+        // software do not use a "we're at the max value" technique.
         vc res = sql_simple("select val from schema_sections where name = 'update_triggers'");
         if(res.num_elems() == 0)
         {
@@ -1269,6 +1320,9 @@ setup_update_triggers()
         }
         else if((int)res[0][0] == 1)
             throw 0;
+
+        // this rescan stuff is probably too expensive. it might just be better to do
+        // it in the update_hook
         sql_simple("create table rescan(flag integer)");
         sql_simple("insert into rescan (flag) values(0)");
         sql_simple("create trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
@@ -1298,6 +1352,7 @@ setup_update_triggers()
     // based on update to mt...
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
+#if 0
     sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
                "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
                "end"
@@ -1310,6 +1365,10 @@ setup_update_triggers()
                "insert into uid_updated(uid) select assoc_uid from main.gi where mid = (select mid from mt.gmt where guid = new.guid); "
                "end"
                );
+#endif
+    sql_simple("drop trigger if exists uid_update1");
+    sql_simple("drop trigger if exists uid_update2");
+
 
 
 }
@@ -1320,6 +1379,9 @@ setup_crdt_triggers()
 {
     try {
         sql_start_transaction();
+        // WARNING: be careful with this schema versioning stuff. you probably need to
+        // create NEW KEY's instead of just updating the "val", since old version of the
+        // software do not use a "we're at the max value" technique.
         vc res = sql_simple("select val from schema_sections where name = 'crdt_triggers'");
         if(res.num_elems() == 0)
         {
@@ -1505,7 +1567,7 @@ init_qmsg_sql()
 
     }
     //Database_online.value_changed.connect_ptrfun(refetch_pk);
-    Keys_updated.connect_ptrfun(update_group_map, 1);
+    Keys_updated.connect_ptrfun(update_group_map, ssns::UNIQUE);
 }
 
 void
@@ -1770,12 +1832,20 @@ map_gid_to_uids(vc gid)
 vc
 map_uid_to_uids(const vc& uid)
 {
-    vc res;
     vc ret(VC_VECTOR);
     try
     {
+        const vc huid = to_hex(uid);
+        {
+            const vc m = sql_simple("select 1 from group_map where uid = ?1", huid);
+            if(m.num_elems() == 0)
+            {
+                ret[0] = uid;
+                return ret;
+            }
+        }
         //sql_start_transaction();
-        res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", to_hex(uid));
+        const vc res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", huid);
         //sql_commit_transaction();
         if(res.num_elems() == 0)
         {
@@ -2218,11 +2288,11 @@ create_date_index(vc uid)
     {
         sql_start_transaction();
         sql_simple("create temp table found_mid(mid text not null primary key)");
-        FindVec& fv = *find_to_vec(s.c_str());
+        FindVec fv(s);
         auto n = fv.num_elems();
         for(i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA &d = *fv[i];
+            const WIN32_FIND_DATA &d = *fv[i];
             DwString s2(ss);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
@@ -2237,16 +2307,15 @@ create_date_index(vc uid)
                 sql_insert_record(index_from_body(uid, info), uid);
             }
         }
-        delete_findvec(&fv);
 
         s = ss;
         s += "" DIRSEPSTR "*.snt";
 
-        FindVec& fv2 = *find_to_vec(s.c_str());
+        FindVec fv2(s);
         n = fv2.num_elems();
         for(i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA &d = *fv2[i];
+            const WIN32_FIND_DATA &d = *fv2[i];
             DwString s2(ss);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
@@ -2263,7 +2332,6 @@ create_date_index(vc uid)
             }
         }
         sql_simple("delete from msg_idx where assoc_uid = ?1 and mid not in (select * from found_mid)", huid);
-        delete_findvec(&fv2);
         sql_insert_indexed_flag(uid);
         sql_simple("delete from midlog");
         sql_simple("delete from taglog");
@@ -2529,7 +2597,7 @@ get_unfav_msgids(vc uid)
         vc res = sql_simple(
                     with_create_uidset(1)
                     "select mid as foo from gi where assoc_uid in (select * from uidset) "
-                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav') ", to_hex(uid));
+                 "and not exists (select 1 from gmt where mid = foo and tag = '_fav' and not exists(select 1 from gtomb where gmt.guid = gtomb.guid)) ", to_hex(uid));
         sql_commit_transaction();
         ret = flatten(res);
     }
@@ -2549,8 +2617,16 @@ get_unfav_msgids(vc uid)
 void
 clear_msg_idx_uid(vc uid)
 {
+    vc mids;
+    try
+    {
+        mids = sql_clear_uid(uid);
+    }
+    catch(...)
+    {
+        return;
+    }
     msg_idx_updated(uid, 0);
-    vc mids = sql_clear_uid(uid);
     // if we are not in a group, then don't bother with notifying the
     // server, since it was done at fetch time
     if(Current_alternate)
@@ -2597,19 +2673,19 @@ index_user(vc v)
 }
 #endif
 
+static
 void
-create_dir_meta(int update_existing)
+create_dir_meta()
 {
     try
     {
         sql_start_transaction();
-        if(!update_existing)
-            sql_simple("delete from dir_meta");
-        FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
+        sql_simple("delete from dir_meta");
+        FindVec fv(newfn("*.usr"));
         auto n = fv.num_elems();
         for(int i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA& d = *fv[i];
+            const WIN32_FIND_DATA& d = *fv[i];
             DwString fdirname = newfn(d.cFileName);
             struct stat s;
             if(stat(fdirname.c_str(), &s) == -1)
@@ -2617,7 +2693,6 @@ create_dir_meta(int update_existing)
             sql_simple("insert or replace into dir_meta(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
         }
         sql_commit_transaction();
-        delete_findvec(&fv);
     }
     catch (...)
     {
@@ -2632,18 +2707,17 @@ reindex_possible_changes()
     {
         sql_start_transaction();
         sql_simple("create temp table foo(dirname text collate nocase primary key not null, time default 0)");
-        FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
+        FindVec fv(newfn("*.usr"));
         auto n = fv.num_elems();
         for(int i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA& d = *fv[i];
+            const WIN32_FIND_DATA& d = *fv[i];
             DwString fdirname = newfn(d.cFileName);
             struct stat s;
             if(stat(fdirname.c_str(), &s) == -1)
                 continue;
             sql_simple("insert into foo(dirname, time) values(?1, ?2)", d.cFileName, s.st_mtime);
         }
-        delete_findvec(&fv);
         vc needs_reindex = sql_simple("select replace(dirname, '.usr', '') from foo,dir_meta using(dirname) where foo.time != dir_meta.time "
                                       "union select replace(dirname, '.usr', '') from foo where not exists(select 1 from dir_meta where foo.dirname = dir_meta.dirname)");
         // not sure about this: if a folder is missing now, if we do this, it effectively
@@ -2653,6 +2727,7 @@ reindex_possible_changes()
         sql_simple("delete from dir_meta where dirname in (select * from bar)");
         sql_simple("update bar set dirname = replace(dirname, '.usr', '')");
         sql_simple("delete from msg_idx where assoc_uid in (select * from bar)");
+        sql_simple("delete from indexed_flag where uid in (select * from bar)");
 
         for(int i = 0; i < needs_reindex.num_elems(); ++i)
         {
@@ -2663,7 +2738,7 @@ reindex_possible_changes()
         }
         sql_simple("drop table bar");
         sql_simple("drop table foo");
-        create_dir_meta(1);
+        create_dir_meta();
         sql_commit_transaction();
     }
     catch (...)

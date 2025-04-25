@@ -172,14 +172,13 @@ activeuid.cpp \
 backandroid.cpp
 
 ifeq ($(DWYCO_APP), "rando")
-LOCAL_STATIC_LIBRARIES := pbm vc crypto5 zlib kazlib jenkins dwcls
+LOCAL_STATIC_LIBRARIES := pbm vc crypto5 kazlib jenkins dwcls
 else
-LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 zlib kazlib jenkins dwcls miniupnpc
+LOCAL_STATIC_LIBRARIES := libspeexdsp-prebuilt libvorbis-prebuilt libvorbisenc-prebuilt libvorbisfile-prebuilt libtheora-prebuilt libtheoraenc-prebuilt libtheoradec-prebuilt libogg-prebuilt gsm  ppm pgm pbm vc crypto5 kazlib jenkins dwcls miniupnpc
 endif
 
 LOCAL_C_INCLUDES := \
 $(LOCAL_PATH)/../dwcls \
-$(LOCAL_PATH)/../zlib \
 $(LOCAL_PATH)/../kazlib \
 $(LOCAL_PATH)/../jenkins \
 $(LOCAL_PATH)/../crypto5 \

@@ -8,6 +8,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../../${DWYCO_CONFDIR}/conf.cmake)
 include_directories(
     ${VCCFG_COMP}
     ${CMAKE_CURRENT_SOURCE_DIR}/../dwcls
+    #note: this is fucked up, i guess zlib generates a config file
+    # at build time.
+    ${CMAKE_CURRENT_BINARY_DIR}/../zlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../zlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../crypto5
     ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
@@ -21,6 +24,8 @@ add_compile_definitions(VC_INTERNAL DWYCO_NO_TSOCK)
 
 if(WIN32)
     add_compile_definitions(_CRT_NO_POSIX_ERROR_CODES)
+else()
+	add_compile_definitions(UNIX)
 endif()
 
 if(LH_INTERPRETER EQUAL 1)
@@ -29,7 +34,7 @@ else()
     add_compile_definitions(NO_VCEVAL)
 endif()
 
-add_library(vc STATIC
+set(SRCS
     dwgrows.cpp 
     pmatch.cpp 
     vc.cpp 
@@ -84,5 +89,7 @@ add_library(vc STATIC
     vctsock.cpp
     vclhnet.cpp
 )
+
+add_library(vc OBJECT ${SRCS})
 
 target_compile_definitions(vc PRIVATE VC_LIBRARY)

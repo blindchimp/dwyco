@@ -372,6 +372,7 @@ using namespace CryptoPP;
 #include "synccalls.h"
 #include "backandroid.h"
 #include "directsend.h"
+#include "audchk.h"
 
 using namespace dwyco;
 
@@ -831,6 +832,8 @@ dwyco_debug_dump()
         a += (const char *)mc->call_type;
         a += " ";
         a += (const char *)mc->remote_call_type();
+        a += " ";
+        a += (const char *)to_hex(mc->remote_uid());
 
         a += "]";
         (*dbg_msg_callback)(0, a.c_str(), 0, 0);
@@ -1316,23 +1319,23 @@ dwyco_get_create_new_account()
 
 DWYCOEXPORT
 void
-dwyco_free(char *p)
+dwyco_free(char *p_elide)
 {
-    delete p;
+    delete p_elide;
 }
 
 DWYCOEXPORT
 void
-dwyco_free_array(char *p)
+dwyco_free_array(char *p_elide)
 {
-    delete [] p;
+    delete [] p_elide;
 }
 
 DWYCOEXPORT
 void
-dwyco_free_image(char *p, int rows)
+dwyco_free_image(char *p_elide, int rows)
 {
-    ppm_freearray(p, rows);
+    ppm_freearray(p_elide, rows);
 }
 
 // activity reporting
@@ -1613,17 +1616,7 @@ dwyco_exit()
 {
     if(!Inited)
         return 1;
-    // just empty the trash once a week, this is mainly for debugging
-    // these days anyway, since we don't really offer a way for users
-    // to untrash this atm.
-    vc last_empty;
-    if(!load_info(last_empty, "trs.dif") ||
-            (time(0) - (time_t)last_empty) > ((time_t)7 * 24 * 3600))
-    {
-        empty_trash();
-        last_empty = time(0);
-        save_info(last_empty, "trs.dif");
-    }
+    weekly_trash_empty();
     // just to flush stats
     TRACK_ADD(DLLI_exit, 1);
     dwyco_enable_activity_checking(0, 0, 0);
@@ -2448,6 +2441,7 @@ DWYCOEXPORT
 int
 dwyco_get_audio_hw(int *has_audio_input_out, int *has_audio_output_out, int *audio_hw_full_duplex_out)
 {
+    check_audio_device();
     if(has_audio_input_out)
         *has_audio_input_out = Has_audio_input;
     if(has_audio_output_out)
@@ -3439,7 +3433,11 @@ dwyco_connect_uid(const char *uid, int len_uid, DwycoCallDispositionCallback cdc
     }
     else
     {
-        if(TheCallQ->add_call(mmc) == 0)
+        // this is a hack to avoid an api change
+        // q_call == 1 used to mean 0 delay, but now
+        // i just put the delay into the q_call
+        int delay = (q_call == 1) ? 0 : q_call;
+        if(TheCallQ->add_call(mmc, delay) == 0)
         {
             delete mmc;
             return 0;
@@ -5786,6 +5784,7 @@ dwyco_kill_message(const char *pers_id, int len_pers_id)
     return kill_message(a);
 }
 
+#if 0
 static int
 can_play_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int unsaved)
 {
@@ -5807,6 +5806,7 @@ can_play_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int un
     u = uid_to_dir(u);
     return !(any_no_forward(body) && (verify_chain(body, 1, vcnil, u) != VERF_AUTH_OK));
 }
+#endif
 
 //
 // Zap viewing contexts
@@ -5837,24 +5837,34 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
 //        ruid = "<<q-d msg>>";
 //    }
 
-    vc& v = *(vc *)list;
+    const vc& v = *(vc *)list;
+    vc body = v[0];
     // qd's message don't have an mid, and attachments
     // are not filed anywhere special. the q'd stuff seems
     // like a hack, and probably needs to be figured out.
     if(!qd)
     {
-        vc mid = v[0][QM_BODY_ID];
+        vc mid = body[QM_BODY_ID];
         ruid = sql_get_uid_from_mid(mid);
         if(ruid.is_nil())
             return 0;
         ruid = from_hex(ruid);
     }
-    if(v[0][QM_BODY_ATTACHMENT].is_nil())
+    if(body[QM_BODY_ATTACHMENT].is_nil())
     {
         GRTLOG("make_zap_view: fail, msg has no attachment (%s)", (const char *)ruid, 0);
         return 0;
     }
-    if(!v[0][QM_BODY_FILE_ATTACHMENT].is_nil())
+    // our first in-the-wild crash because we changed the vector api...
+    // old unencrypted messages did not have any indexes past BODY_ATTACHMENT
+    // which caused this to crash when we changed "v" to be const.
+    // note that this is kinda unexpected... you send in something, and even though
+    // this only "reads" it, it modifies the messages by expanding the vector. odd, but
+    // that's the way it goes, and it was keeping some level of compatibility i didn't have
+    // before. note: possible it might make sense to just instead of crashing, just return
+    // the default value (nil in this case) and not actually modify the length of the vector
+    // behind the scenes.
+    if(!body[QM_BODY_FILE_ATTACHMENT].is_nil())
     {
         GRTLOG("make_zap_view: fail, msg has file attachment (%s)", (const char *)ruid, 0);
         return 0;
@@ -5874,8 +5884,8 @@ dwyco_make_zap_view2(DWYCO_SAVED_MSG_LIST list, int qd)
         s = (const char *)uid_to_dir(ruid);
         s += DIRSEPSTR;
     }
-    s += (const char *)v[0][QM_BODY_ATTACHMENT];
-    m->file_basename = (const char *)v[0][QM_BODY_ATTACHMENT];
+    s += (const char *)body[QM_BODY_ATTACHMENT];
+    m->file_basename = (const char *)body[QM_BODY_ATTACHMENT];
     m->actual_filename = newfn(s).c_str();
     m->inhibit_hashing = 1;
     GRTLOG("make_zap_view: ret %d", m->vp.cookie, 0);
@@ -7086,7 +7096,7 @@ dwyco_start_gj2(const char *gname, const char *password)
         // we don't do this now, except to get rid of sync
         // channels.
         // we want to issue one more command to server to
-        // indicate out provisional group change before we
+        // indicate our provisional group change before we
         // exit.
 #if 0
         // drop all network connections
@@ -7431,8 +7441,8 @@ DWYCOEXPORT
 int
 dwyco_authenticate_body(DWYCO_SAVED_MSG_LIST m, const char *recip_uid, int len_uid, int unsaved)
 {
-    vc& v = *(vc *)m;
-    vc body = v[0];
+    const vc& v = *(vc *)m;
+    const vc& body = v[0];
     if(body[QM_BODY_SENT].is_nil())
     {
         return verify_chain(body, 1, vcnil, unsaved ? vc(".") : vcnil);

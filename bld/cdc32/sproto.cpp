@@ -55,8 +55,6 @@
 #include "ta.h"
 #include "netlog.h"
 
-using namespace dwyco;
-
 namespace dwyco {
 DwQueryByMember<sproto> sproto::Qbm;
 

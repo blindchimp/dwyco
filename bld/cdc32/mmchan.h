@@ -39,7 +39,6 @@
 #include "audconv.h"
 #include "simple_property.h"
 #include "sync_sendq.h"
-#include "syncvar.h"
 // DON'T REMOVE THESE
 // there are namespace decls that need them
 #include "aconn.h"
@@ -66,9 +65,6 @@ class DirectSend;
 class DwQSend;
 struct QckMsg;
 }
-
-using dwyco::sproto;
-using dwyco::strans;
 
 typedef DwVecP<MMChannel> ChanList;
 typedef DwVecPIter<MMChannel> ChanListIter;
@@ -243,12 +239,12 @@ public:
     static int num_audio_recvs();
     static int num_audio_output_feeders();
     static int num_video_sends();
-    static int num_audio_sends();
+    static int num_active_audio_sends();
+    static int num_audio_coder_channels();
     static int num_chats();
     static int num_chats_private();
     static int num_calls();
     static MMChannel *channel_by_id(int);
-    static int Session_id;
     static MMChannel *get_channel_by_session_id(int sid);
 
     static void clean_video_sampler_refs(VidAcquire *v);
@@ -342,7 +338,7 @@ private:
 
     void drop_subchannel(int chan);
 
-    DwVecP<sproto> simple_protos;
+    DwVecP<dwyco::sproto> simple_protos;
 
     int handle_channels();
 
@@ -549,6 +545,7 @@ public:
     int build_outgoing_audio(int);
     int build_incoming_audio(int);
     int grab_audio_id;
+    int is_audio_channel;
 
 public:
 
@@ -684,7 +681,7 @@ private:
     SyncVar rem_incoming_throttle;
 
     void sync_send();
-    void sync_recv(vc);
+    void sync_recv(const vc &);
     DwTimer sync_timer;
     DwTimer pinger_timer;
 
@@ -982,36 +979,36 @@ public:
     // messages are not encrypted when stored locally.
 
 public:
-    int init_connect(int subchan, sproto *p, const char *ev);
-    int send_file_info(int subchan, sproto *p, const char *ev);
-    int send_file_info_server(int subchan, sproto *p, const char *ev);
-    int check_file_response(int subchan, sproto *p, const char *ev);
-    int send_chunk(int subchan, sproto *p, const char *ev);
-    int wait_for_ok(int subchan, sproto *p, const char *ev);
-    int send_rej_ack(int subchan, sproto *p, const char *ev);
-    int get_what_to_do(int subchan, sproto *p, const char *ev);
-    int recv_chunk(int subchan, sproto *p, const char *ev);
-    int accept_att(int subchan, sproto *p, const char *ev);
-    int send_pull_info(int subchan, sproto *p, const char *ev);
-    int recv_pull_info(int subchan, sproto *p, const char *ev);
-    int send_recv_reject(int subchan, sproto *p, const char *ev);
-    int send_recv_ok(int subchan, sproto *p, const char *ev);
-    int send_ok(int subchan, sproto *p, const char *ev);
-    int send_sf_material(int subchan, sproto *p, const char *ev);
+    int init_connect(int subchan, dwyco::sproto *p, const char *ev);
+    int send_file_info(int subchan, dwyco::sproto *p, const char *ev);
+    int send_file_info_server(int subchan, dwyco::sproto *p, const char *ev);
+    int check_file_response(int subchan, dwyco::sproto *p, const char *ev);
+    int send_chunk(int subchan, dwyco::sproto *p, const char *ev);
+    int wait_for_ok(int subchan, dwyco::sproto *p, const char *ev);
+    int send_rej_ack(int subchan, dwyco::sproto *p, const char *ev);
+    int get_what_to_do(int subchan, dwyco::sproto *p, const char *ev);
+    int recv_chunk(int subchan, dwyco::sproto *p, const char *ev);
+    int accept_att(int subchan, dwyco::sproto *p, const char *ev);
+    int send_pull_info(int subchan, dwyco::sproto *p, const char *ev);
+    int recv_pull_info(int subchan, dwyco::sproto *p, const char *ev);
+    int send_recv_reject(int subchan, dwyco::sproto *p, const char *ev);
+    int send_recv_ok(int subchan, dwyco::sproto *p, const char *ev);
+    int send_ok(int subchan, dwyco::sproto *p, const char *ev);
+    int send_sf_material(int subchan, dwyco::sproto *p, const char *ev);
 
-    int send_media_ok(int subchan, sproto *p, const char *ev);
-    int check_media_response(int subchan, sproto *p, const char *ev);
-    int send_media_id(int subchan, sproto *p, const char *ev);
-    int init_connect_media(int subchan, sproto *p, const char *ev);
-    int send_media_ping(int subchan, sproto *p, const char *ev);
+    int send_media_ok(int subchan, dwyco::sproto *p, const char *ev);
+    int check_media_response(int subchan, dwyco::sproto *p, const char *ev);
+    int send_media_id(int subchan, dwyco::sproto *p, const char *ev);
+    int init_connect_media(int subchan, dwyco::sproto *p, const char *ev);
+    int send_media_ping(int subchan, dwyco::sproto *p, const char *ev);
 
-    int send_sync_challenge(int subchan, sproto *p, const char *ev);
-    int check_sync_challenge_response(int subchan, sproto *p, const char *ev);
-    int wait_for_sync_challenge(int subchan, sproto *p, const char *ev);
-    int send_sync_resp(int subchan, sproto *p, const char *ev);
-    int sync_ready(int subchan, sproto *p, const char *ev);
-    int send_delta(int subchan, sproto *p, const char *ev);
-    int wait_for_delta(int subchan, sproto *p, const char *ev);
+    int send_sync_challenge(int subchan, dwyco::sproto *p, const char *ev);
+    int check_sync_challenge_response(int subchan, dwyco::sproto *p, const char *ev);
+    int wait_for_sync_challenge(int subchan, dwyco::sproto *p, const char *ev);
+    int send_sync_resp(int subchan, dwyco::sproto *p, const char *ev);
+    int sync_ready(int subchan, dwyco::sproto *p, const char *ev);
+    int send_delta(int subchan, dwyco::sproto *p, const char *ev);
+    int wait_for_delta(int subchan, dwyco::sproto *p, const char *ev);
 
     // set to 1 if attachment actively rejected (can never be sent,
     // usually because size is too big.
@@ -1053,12 +1050,12 @@ private:
     vc package_next_cmd();
 
     std::future<int> *unpack_index_future;
-    int unpack_index(vc cmd);
-    void process_pull(vc cmd);
-    void process_pull_resp(vc cmd);
-    void process_iupdate(vc cmd);
-    void process_tupdate(vc cmd);
-    void process_syncpoint(vc cmd);
+    int unpack_index(cvcr cmd);
+    void process_pull(cvcr cmd);
+    void process_pull_resp(cvcr cmd);
+    void process_iupdate(cvcr cmd);
+    void process_tupdate(cvcr cmd);
+    void process_syncpoint(cvcr cmd);
 
     bool eager_pull_timer_active;
     DwTimer eager_pull_timer;
@@ -1069,21 +1066,25 @@ private:
 public:
     dwyco::sendq sync_sendq;
 private:
-    void send_pull_resp(vc mid, vc uid, vc msg, vc att, vc pri);
-    void send_pull_error(vc mid, vc pri);
+    void send_pull_resp(const vc &mid, const vc &uid, const vc &msg, const vc &att, const vc &pri);
+    void send_pull_error(cvcr mid, cvcr pri);
 
     void cleanup_pulls(int myid);
-    void pull_done(vc mid, vc remote_uid, vc success);
+    void pull_done(cvcr mid, cvcr remote_uid, cvcr success);
+
+    // this is useful for long-running servers where
+    // we want to discard protocol-runs that have stalled
+    static DwTimer SKID_cleaner_timer;
 
 public:
-    void send_pull(vc mid, int pri);
+    void send_pull(const vc &mid, int pri);
 
     //ssns::signal3<vc, vc, vc> pull_done;
 
 public:
     // this is sent in direct connections, and is used to
     // indicate whether the system is in "foreground" or
-    // "background". this is usefu when you are trying to
+    // "background". this is useful when you are trying to
     // figure out where to initially send a message.
     static dwyco::sigprop<vc> My_disposition;
 };
@@ -1193,10 +1194,10 @@ public:
 // protocols.)
 #define MMCHAN_PROTOCOL_VERS (6)
 
-extern struct strans recv_command[];
-extern struct strans file_send[];
-extern struct strans file_send_server[];
-extern struct strans media_x_setup[];
-extern struct strans recv_attachment_pull[];
+extern struct dwyco::strans recv_command[];
+extern struct dwyco::strans file_send[];
+extern struct dwyco::strans file_send_server[];
+extern struct dwyco::strans media_x_setup[];
+extern struct dwyco::strans recv_attachment_pull[];
 
 #endif

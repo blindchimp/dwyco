@@ -41,21 +41,21 @@ make_factory_def(VCArglist *a, vc& name_out)
 		/*NOTREACHED*/
 	}
 
-	vc name = (*a)[0];
-	vc args = (*a)[1];
+    const vc name = a->get(0);
+    const vc args = a->get(1);
 	if(!args.is_nil() && args.type() != VC_VECTOR)
 	{
 		USER_BOMB("list of args must be a vector in make_factory", vcnil);
 		/*NOTREACHED*/
 	}
-	vc base = (*a)[2];
-	vc delegates = (*a)[3];
+    const vc base = a->get(2);
+    const vc delegates = a->get(3);
 	if(!delegates.is_nil() && delegates.type() != VC_VECTOR)
 	{
 		USER_BOMB("list of delegate names in make_factory must be a vector()", vcnil);
 		/*NOTREACHED*/
 	}
-	vc forwards = (*a)[4];
+    const vc forwards = a->get(4);
 	if(!forwards.is_nil() && forwards.type() != VC_VECTOR)
 	{
 		USER_BOMB("list of forwarding names in make_factory must be a vector()", vcnil);

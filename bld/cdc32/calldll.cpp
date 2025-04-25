@@ -10,6 +10,8 @@
 #include "msgddll.h"
 #include "dlli.h"
 
+namespace dwyco {
+
 MMCallDLL::MMCallDLL(vc auid, vc ahost, vc aport, vc aproxinfo, int amsg_chan,
                      int auser_control_chan,
                      DwycoCallDispositionCallback cdc, void *cdc_arg1,
@@ -33,4 +35,6 @@ MMCallDLL::get_ui_msg_output()
     // MMCall vp id, we'll have to change a bunch of stuff
     // to use the right id instead of channel id's
     return new MsgDisplayDLL(dscb, vp.cookie, dscb_arg1);
+}
+
 }

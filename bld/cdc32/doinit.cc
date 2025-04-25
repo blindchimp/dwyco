@@ -163,7 +163,7 @@ init_codec(const char *logname)
         vc::non_lh_init();
         vc_winsock::startup();
 
-        check_audio_device();
+        //check_audio_device();
         if(!Audio_hw_full_duplex)
             Log_make_entry("audio hardware is half-duplex");
         else

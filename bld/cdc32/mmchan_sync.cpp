@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #ifdef _WIN32
 #ifdef _MSC_VER
 #include <direct.h>
@@ -45,7 +53,7 @@ using namespace dwyco::qmsgsql;
 void
 MMChannel::assert_eager_pulls()
 {
-    vc uid = remote_uid();
+    const vc uid = remote_uid();
     //vc huid = to_hex(uid);
     vc mids;
     int eager_mode = (int)get_settings_value("sync/eager");
@@ -54,11 +62,11 @@ MMChannel::assert_eager_pulls()
     // want to act like "normal mode"
     if(eager_mode != 2)
     {
-        mids = sql_get_non_local_messages_at_uid(uid, 100);
+        mids = sql_get_non_local_messages_at_uid(uid, 20);
     }
     else if(eager_mode == 2)
     {
-        mids = sql_get_non_local_messages_at_uid_recent(uid, 100);
+        mids = sql_get_non_local_messages_at_uid_recent(uid, 20);
     }
     if(mids.is_nil())
         return;
@@ -79,7 +87,7 @@ MMChannel::assert_eager_pulls()
     }
     for(int i = 0; i < mids.num_elems(); ++i)
     {
-        vc mid = mids[i];
+        const vc& mid = mids[i];
         pulls::assert_pull(mid, uid, PULLPRI_BACKGROUND);
         if(pulls::set_pull_in_progress(mid, uid))
             send_pull(mid, PULLPRI_BACKGROUND);
@@ -176,7 +184,7 @@ MMChannel::package_next_cmd()
 }
 
 int
-MMChannel::unpack_index(vc cmd)
+MMChannel::unpack_index(cvcr cmd)
 {
     if(cmd[0] != vc("idx"))
         return 0;
@@ -201,7 +209,7 @@ MMChannel::unpack_index(vc cmd)
 }
 
 void
-MMChannel::process_pull(vc cmd)
+MMChannel::process_pull(cvcr cmd)
 {
     if(cmd[0] != vc("pull"))
         oopanic("pull");
@@ -252,7 +260,7 @@ MMChannel::process_pull(vc cmd)
 }
 
 void
-MMChannel::pull_done(vc mid, vc remote_uid, vc success)
+MMChannel::pull_done(cvcr mid, cvcr remote_uid, cvcr success)
 {
     if(success.is_nil())
     {
@@ -274,8 +282,19 @@ MMChannel::pull_done(vc mid, vc remote_uid, vc success)
 }
 
 void
-MMChannel::process_pull_resp(vc cmd)
+MMChannel::process_pull_resp(cvcr cmd)
 {
+    // XXX: this probably needs to be conditional on whether
+    // we have a tombstone here or not. you can imagine a case
+    // where a tombstone gets created and is being propagated at
+    // the same time a pull is in progress, and the results of
+    // the pull come after the tombstone is installed. it won't break
+    // the display of the messages (the tombstone will cause it to be
+    // filtered out) BUT since the message ends up here, it is
+    // a condidate for being re-indexed (and therefore reappearing) after
+    // things like group changes and whatnot.
+    //
+
     // here is where we insert the fetched message into our
     // local model (which automatically gets put into the global
     // model held here.)
@@ -374,7 +393,7 @@ MMChannel::process_pull_resp(vc cmd)
 }
 
 void
-MMChannel::process_iupdate(vc cmd)
+MMChannel::process_iupdate(cvcr cmd)
 {
     //GRTLOGVC(cmd);
     vc mid = import_remote_iupdate(remote_uid(), cmd[1]);
@@ -390,20 +409,20 @@ MMChannel::process_iupdate(vc cmd)
 }
 
 void
-MMChannel::process_tupdate(vc cmd)
+MMChannel::process_tupdate(cvcr cmd)
 {
     //GRTLOGVC(cmd);
     import_remote_tupdate(remote_uid(), cmd[1]);
 }
 
 void
-MMChannel::process_syncpoint(vc cmd)
+MMChannel::process_syncpoint(cvcr cmd)
 {
     import_new_syncpoint(remote_uid(), cmd[1]);
 }
 
 void
-MMChannel::send_pull(vc mid, int pri)
+MMChannel::send_pull(const vc& mid, int pri)
 {
     vc cmd(VC_VECTOR);
     cmd[0] = "pull";
@@ -413,7 +432,7 @@ MMChannel::send_pull(vc mid, int pri)
 }
 
 void
-MMChannel::send_pull_resp(vc mid, vc uid, vc msg, vc att, vc pri)
+MMChannel::send_pull_resp(const vc& mid, const vc& uid, const vc& msg, const vc& att, const vc& pri)
 {
     vc cmd(VC_VECTOR);
     cmd[0] = "pull-resp";
@@ -425,7 +444,7 @@ MMChannel::send_pull_resp(vc mid, vc uid, vc msg, vc att, vc pri)
 }
 
 void
-MMChannel::send_pull_error(vc mid, vc pri)
+MMChannel::send_pull_error(cvcr mid, cvcr pri)
 {
     send_pull_resp(mid, vcnil, vcnil, vcnil, pri);
 }
@@ -526,10 +545,10 @@ MMChannel::eager_pull_processing()
 void
 MMChannel::throttle_downstream_timer(vc)
 {
-    if(downstream_timer.get_interval() != 5000)
+    if(downstream_timer.get_interval() != 1000)
     {
         downstream_timer.stop();
-        downstream_timer.set_interval(5000);
+        downstream_timer.set_interval(1000);
     }
     downstream_timer.start();
 
@@ -545,8 +564,8 @@ MMChannel::process_outgoing_sync()
         // generate_delta created entries on the midlog that can get sent
         // normally without requiring a re-init on the receiver. so we
         // transition straight into NORMAL state.
-        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
-        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, 1);
+        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, ssns::UNIQUE);
+        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, ssns::UNIQUE);
         throttle_downstream_timer(vcnil);
         // tell the other side there is no index to unpack
         vc vcx(VC_VECTOR);
@@ -588,8 +607,8 @@ MMChannel::process_outgoing_sync()
         // the receive part sets this up too
         if(vcx.is_nil())
             return 0;
-        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
-        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, 1);
+        destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, ssns::UNIQUE);
+        Qmsg_update.connect_memfun(this, &MMChannel::throttle_downstream_timer, ssns::UNIQUE);
     }
     else if(mms_sync_state == MMSS_TRYAGAIN)
     {
@@ -684,7 +703,7 @@ MMChannel::process_incoming_sync()
             return 1;
         if(mmr_sync_state == RECV_INIT)
         {
-            destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, 1);
+            destroy_signal.connect_memfun(this, &MMChannel::cleanup_pulls, ssns::UNIQUE);
 #ifdef DWYCO_BACKGROUND_SYNC
             if(unpack_index_future == nullptr)
             {

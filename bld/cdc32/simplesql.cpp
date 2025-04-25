@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #include "simplesql.h"
 #ifdef DWYCO_USE_STATIC_SQLITE
 #include "sqlite/sqlite3.h"
@@ -366,10 +374,12 @@ SimpleSql::query(const VCArglist *a)
     if(check_txn && tdepth == 0)
         oopanic("q out of txn");
 #endif
+    static vc busy("busy");
+    static vc full("full");
     vc res = sqlite3_bulk_query(Db, a);
-    if(res.is_nil() || (res.type() == VC_STRING && res == vc("busy")))
+    if(res.is_nil() || (res.type() == VC_STRING && res == busy))
         throw -1;
-    if(res.type() == VC_STRING && res == vc("full"))
+    if(res.type() == VC_STRING && res == full)
         throw res;
     return res;
 }

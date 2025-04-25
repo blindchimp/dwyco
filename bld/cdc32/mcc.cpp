@@ -251,10 +251,7 @@ TMsgCompose::~TMsgCompose()
         if(actual_filename.length() > 0)
             DeleteFileQ(actual_filename.c_str());
     }
-#ifdef DWYCO_TRACE
-    void invalidate_cb_ctx(int);
-    invalidate_cb_ctx(vp.cookie);
-#endif
+
     vp.invalidate();
 }
 
@@ -604,7 +601,8 @@ void  TMsgCompose::play_buttonClick( int no_audio)
     mc->dcb_arg2 = 0;
     mc->dcb_arg3 = vp;
     stop_id = mc->myid;
-    mc->build_incoming_audio(1);
+    if(!no_audio)
+        mc->build_incoming_audio(1);
     if(mc->audio_output)
         mc->audio_output->fancy_recover = 0;
 

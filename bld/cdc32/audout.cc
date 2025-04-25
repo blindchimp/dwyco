@@ -51,10 +51,10 @@ AudioOutput::AudioOutput(int decom, int nbufs)
     next_out = 0;
     time_last_buf_played = output_timer.time_now();
     decompress = decom;
-    seq_bufs[0] = &bufs;
-    seq_lens[0] = &lens;
-    seq_bufs[1] = &bufs2;
-    seq_lens[1] = &lens2;
+    // seq_bufs[0] = &bufs;
+    // seq_lens[0] = &lens;
+    // seq_bufs[1] = &bufs2;
+    // seq_lens[1] = &lens2;
     curseq = 0;
     seq0 = -1;
     reset_timer = 1;
@@ -74,6 +74,7 @@ AudioOutput::AudioOutput(int decom, int nbufs)
 
     decoder = 0;
     fancy_recover = 0;
+    mixer = 0;
 }
 
 AudioOutput::~AudioOutput()
@@ -548,6 +549,12 @@ AudioOutput::change_buffering(int n)
 
 }
 
+// this is bad, if the sequence numbers aren't increasing here,
+// the data is just thrown away. so this is only really useful
+// when playing from files, or from remote audio devices over
+// a reliable channel. but, this function is overly complicated
+// for those situations. it just happens to work ok enough that
+// i don't want to replace it atm.
 int
 AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfree)
 {
@@ -557,7 +564,7 @@ AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfre
     if(off < 0)
     {
 #ifdef AUDDBG
-        AUDRTLOG(L, "neg off ", off, 0);
+        AUDRTLOG(L, "neg off %d", off, 0);
 #endif
         return 1;
     }
@@ -576,8 +583,10 @@ AudioOutput::play_seq_ec(DWBYTE *buf, int len, int seq, int packet_seq, int dfre
         bufs_to_buffer = bufs.num_elems();
         if(output_timer.is_running())
         {
+            output_timer.reset();
             output_timer.load(output_timer.get_time_left() +
                               device_one_buffer_time() * morebufs);
+            output_timer.start();
 #ifdef AUDDBG
             AUDRTLOG(L, "timer extend %d", output_timer.get_time_left(), 0);
 #endif

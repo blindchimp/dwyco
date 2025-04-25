@@ -73,7 +73,7 @@ void init_qmsg();
 void exit_qmsg();
 void suspend_qmsg();
 void resume_qmsg();
-int valid_qd_message(vc v);
+int valid_qd_message(const vc &v);
 vc get_local_ignore();
 vc get_local_ignore_mapped();
 vc get_local_pals();
@@ -92,8 +92,8 @@ vc dir_to_uid(DwString s);
 void append_forwarded_text(DwString& s, const vc &body);
 void append_forwarded_bodies(vc v, vc body);
 vc get_body_text(vc body);
-int verify_authentication(vc text, vc uid, vc att_filename, vc datevec, vc no_forward, vc mac);
-int verify_chain(vc body, int top, vc att_hash, vc attachment_dir = vcnil);
+int verify_authentication(const vc &text, const vc &uid, const vc &att_filename, const vc &datevec, const vc &no_forward, const vc &mac);
+int verify_chain(const vc &body, int top, const vc &att_hash, const vc &attachment_dir = vcnil);
 vc strip_port(vc);
 vc strip_chain(vc);
 int check_profile_authenticator(vc m, vc uid);
@@ -116,9 +116,29 @@ int check_profile_checksum(vc m, vc uid);
 //void reset_they_grant();
 //void reset_always_vis();
 //void reset_never_vis();
-typedef DwVecP<WIN32_FIND_DATA> FindVec;
-FindVec *find_to_vec(const char *pat);
-void delete_findvec(FindVec *fv);
+namespace dwyco {
+class FindVec
+{
+public:
+    FindVec(const DwString& a) {
+        find_to_vec(a.c_str());
+    }
+    ~FindVec() {
+        int n = fv.num_elems();
+        for(int i = 0; i < n; ++i)
+            delete fv[i];
+    }
+    const WIN32_FIND_DATA *operator[](int i) const {
+        return fv[i];
+    }
+
+    int num_elems() const {return fv.num_elems();}
+private:
+    DwVecP<WIN32_FIND_DATA> fv;
+    void find_to_vec(const char *pat);
+};
+}
+
 int creator_no_forward(vc body);
 int any_no_forward(vc body);
 int decode_no_forward_msg(vc m);
@@ -162,6 +182,7 @@ void boost_clock(vc mi);
 int move_replace(const DwString& s, const DwString& d);
 vc pal_to_vector(int raw);
 void clean_cruft();
+void weekly_trash_empty();
 void boost_logical_clock();
 void update_global_logical_clock(int64_t lc);
 int64_t diff_logical_clock(int64_t tm);

@@ -6,7 +6,7 @@ project(jhead LANGUAGES CXX)
 include_directories(. ${CMAKE_CURRENT_SOURCE_DIR}/cjhead)
 add_compile_options(-fpermissive)
 
-add_library(jhead STATIC
+add_library(jhead OBJECT
 exif.cpp 
 gpsinfo.cpp 
 iptc.cpp 

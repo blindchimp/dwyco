@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #ifndef SIMPLE_PROPERTY_H
 #define SIMPLE_PROPERTY_H
 
@@ -23,7 +31,7 @@ namespace dwyco {
 template<class T>
 class sigprop
 {
-protected:
+private:
     T val;
 
 public:
@@ -31,6 +39,7 @@ public:
     sigprop(const T& v) {val = v;}
 
     ssns::signal1<T> value_changed;
+    ssns::signal3<T, T, int> element_changed;
 
     void set_val(const T& v) {
         if(val != v)
@@ -55,11 +64,18 @@ public:
             oopanic("splat null");
         return val;
     }
+    // this is really bad, as apparently
+    // which conversion gets triggered if you
+    // instantiate this class with (e.g.) uint32_t
+    // when the context wants "int" will be bool
+    // instead of uint32_t -> int. footgun ahoy!
+#if 0
     operator bool() const {
         if(val == 0)
             return false;
         return true;
     }
+#endif
 
     // surprising, but glad it works. if T doesn't have these members
     // as long as you don't invoke these members, the compiler won't complain
@@ -68,10 +84,14 @@ public:
             return;
         val.add(e);
         value_changed.emit(val);
+        element_changed.emit(val, e, 1);
     }
     void del(const T& e) {
         if(val.del(e))
+        {
             value_changed.emit(val);
+            element_changed.emit(val, e, 0);
+        }
     }
 };
 

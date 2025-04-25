@@ -33,6 +33,9 @@ extern vc Client_ports;
 int is_invisible();
 
 namespace dwyco {
+
+ssns::signal0 Online_info;
+
 // not perfect if packets are dropped, the
 // response we get may not match, but it isn't
 // fatal
@@ -69,7 +72,7 @@ transient_online_list()
 {
     DwTreeKaz<int, vc> tmpl(0);
 
-    vc p = pal_to_vector(0);
+    const vc p = pal_to_vector(0);
     // note that p may contain group representatives, but we
     // really need the group uid's explicitly since we are going
     // to use the info try and target message delivery.
@@ -98,7 +101,7 @@ transient_online_list()
         return tree_to_vec(tmpl);
     }
     // fill out remainder with recent conversations
-    vc rm = sql_get_recent_users2(3600 * 24 * 14, left_over);
+    const vc rm = sql_get_recent_users2(3600 * 24 * 14, left_over);
     if(rm.is_nil())
     {
         tmpl.del(My_UID);
@@ -159,10 +162,10 @@ init_pal()
     Last_sent = vc(VC_VECTOR);
     Init = 1;
 
-    Group_uids.value_changed.connect_ptrfun(group_changed, 1);
-    Database_online.value_changed.connect_ptrfun(clear_online, 1);
+    Group_uids.value_changed.connect_ptrfun(group_changed, ssns::UNIQUE);
+    Database_online.value_changed.connect_ptrfun(clear_online, ssns::UNIQUE);
     bind_sql_setting("server/invis", invis_changed);
-    MMChannel::My_disposition.value_changed.connect_ptrfun(disposition_changed, 1);
+    MMChannel::My_disposition.value_changed.connect_ptrfun(disposition_changed, ssns::UNIQUE);
     return 1;
 }
 
@@ -229,6 +232,7 @@ process_pal_resp(vc v)
         }
 
         Pal_logged_in = 1;
+        Online_info.emit();
     }
     else if(v[0] == vcon)
     {
@@ -250,6 +254,7 @@ process_pal_resp(vc v)
         {
 
         }
+        Online_info.emit();
     }
     else if(v[0] == vcoff)
     {

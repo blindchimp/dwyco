@@ -63,7 +63,7 @@ set(SOURCES
 endif()
 
 
-add_library(vorbis112 STATIC
+add_library(vorbis112 OBJECT
 	${SOURCES}
 )
 

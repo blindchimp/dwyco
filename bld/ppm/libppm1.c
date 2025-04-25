@@ -17,6 +17,7 @@
 #include "pbm.h"
 #include "libpbm.h"
 
+#if 0
 void
 ppm_init( argcP, argv )
     int* argcP;
@@ -24,6 +25,7 @@ ppm_init( argcP, argv )
     {
     pgm_init( argcP, argv );
     }
+#endif
 
 void
 ppm_readppminitrest( file, colsP, rowsP, maxvalP )

@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #include "backandroid.h"
 #include "simplesql.h"
 #include "qmsgsql.h"
@@ -790,7 +798,8 @@ restore_msg(const vc& uid, const vc& mid)
     try
     {
         const vc res = sql("select msg, attfn, att from msgs where mid = ?1", mid);
-
+        if(res.num_elems() != 1)
+            throw -1;
         vc msg;
         if(!deserialize(res[0][0], msg))
             return 0;

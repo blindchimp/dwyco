@@ -32,7 +32,7 @@ int MMTube::always_zero;
 
 
 vc
-MMTube::mklog(vc v1, vc v2, vc v3, vc v4, vc v5, vc v6, vc v7, vc v8)
+MMTube::mklog(cvcr v1, cvcr v2, cvcr v3, cvcr v4, cvcr v5, cvcr v6, cvcr v7, cvcr v8)
 {
     vc v(VC_VECTOR);
     if(ctrl_sock)

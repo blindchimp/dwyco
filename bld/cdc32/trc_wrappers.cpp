@@ -40,9 +40,9 @@ DWYCOEXPORT void _real_dwyco_finish_startup();
 DWYCOEXPORT void _real_dwyco_set_local_auth(int a);
 DWYCOEXPORT void _real_dwyco_gen_pass(const char *pw, int len_pw, char **salt_in_out, int *len_salt_in_out, char **hash_out, int *len_hash_out);
 DWYCOEXPORT int _real_dwyco_get_create_new_account();
-DWYCOEXPORT void _real_dwyco_free(char *p);
-DWYCOEXPORT void _real_dwyco_free_array(char *p);
-DWYCOEXPORT void _real_dwyco_free_image(char *p, int rows);
+DWYCOEXPORT void _real_dwyco_free(char *p_elide);
+DWYCOEXPORT void _real_dwyco_free_array(char *p_elide);
+DWYCOEXPORT void _real_dwyco_free_image(char *p_elide, int rows);
 DWYCOEXPORT void _real_dwyco_enable_activity_checking(int on, int timeout, DwycoActivityCallback cb);
 DWYCOEXPORT void _real_dwyco_set_inactivity_time(int secs);
 DWYCOEXPORT int _real_dwyco_chat_set_activity_state(int active, const char *state, int len_state);
@@ -250,7 +250,7 @@ DWYCOEXPORT void _real_dwyco_unset_all_msg_tag(const char *tag);
 DWYCOEXPORT int _real_dwyco_get_tagged_mids(DWYCO_LIST *list_out, const char *tag);
 DWYCOEXPORT int _real_dwyco_get_tagged_mids2(DWYCO_LIST *list_out, const char *tag);
 DWYCOEXPORT int _real_dwyco_get_tagged_mids_older_than(DWYCO_LIST *list_out, const char *tag, int days);
-DWYCOEXPORT int _real_dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag);
+DWYCOEXPORT int _real_dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag, int order_by_tag_time);
 DWYCOEXPORT int _real_dwyco_mid_has_tag(const char *mid, const char *tag);
 DWYCOEXPORT int _real_dwyco_uid_has_tag(const char *uid, int len_uid, const char *tag);
 DWYCOEXPORT int _real_dwyco_uid_count_tag(const char *uid, int len_uid, const char *tag);
@@ -845,32 +845,29 @@ return(_ret);
 
 DWYCOEXPORT
 void
-dwyco_free(char *p)
+dwyco_free(char *p_elide)
 {
 printfunname("dwyco_free");
-printarg("char *", "p",p);
-_real_dwyco_free(p);
+_real_dwyco_free(p_elide);
 printret();
 }
 
 DWYCOEXPORT
 void
-dwyco_free_array(char *p)
+dwyco_free_array(char *p_elide)
 {
 printfunname("dwyco_free_array");
-printarg("char *", "p",p);
-_real_dwyco_free_array(p);
+_real_dwyco_free_array(p_elide);
 printret();
 }
 
 DWYCOEXPORT
 void
-dwyco_free_image(char *p, int rows)
+dwyco_free_image(char *p_elide, int rows)
 {
 printfunname("dwyco_free_image");
-printarg("char *", "p",p);
 printarg(" int ", "rows",rows);
-_real_dwyco_free_image(p,rows);
+_real_dwyco_free_image(p_elide,rows);
 printret();
 }
 
@@ -3375,12 +3372,13 @@ return(_ret);
 
 DWYCOEXPORT
 int
-dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag)
+dwyco_get_tagged_idx(DWYCO_MSG_IDX *list_out, const char *tag, int order_by_tag_time)
 {
 printfunname("dwyco_get_tagged_idx");
 printarg("DWYCO_MSG_IDX *", "list_out",list_out);
 printarg(" const char *", "tag",tag);
-int _ret = _real_dwyco_get_tagged_idx(list_out,tag);
+printarg(" int ", "order_by_tag_time",order_by_tag_time);
+int _ret = _real_dwyco_get_tagged_idx(list_out,tag,order_by_tag_time);
 printargout("DWYCO_MSG_IDX *", "list_out",list_out);
 printretval(_ret);
 return(_ret);

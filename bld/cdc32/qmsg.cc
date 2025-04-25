@@ -337,7 +337,7 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
         prim = u[BD_PRIMARY_PORT];
         sec = u[BD_SECONDARY_PORT];
         pal = u[BD_PAL_PORT];
-        GRTLOGA("uid to ip locally ONLINE %s %d %d %d", (const char *)u[0], prim, sec, pal, 0);
+        GRTLOGA("uid %s to ip locally ONLINE %s %d %d %d", (const char *)to_hex(uid), (const char *)u[0], prim, sec, pal);
         GRTLOGVC(u);
         return inet_addr((const char *)u[BD_IP]);
     }
@@ -365,7 +365,7 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
             GRTLOG("ONLINE no ports %s", a.c_str(), 0);
             return 0;
         }
-        GRTLOGA("uid to ip ONLINE %s %d %d %d", a.c_str(), prim, sec, pal, 0);
+        GRTLOGA("uid %s to ip ONLINE %s %d %d %d", (const char *)to_hex(uid), a.c_str(), prim, sec, pal);
         return inet_addr(a.c_str());
 
     }
@@ -393,7 +393,7 @@ uid_to_ip(vc uid, int& can_do_direct, int& prim, int& sec, int& pal)
             GRTLOG("CHAT no ports %s", a.c_str(), 0);
             return 0;
         }
-        GRTLOGA("uid to ip ONLINE/CHAT %s %d %d %d", a.c_str(), prim, sec, pal, 0);
+        GRTLOGA("uid %s to ip ONLINE/CHAT %s %d %d %d", (const char *)to_hex(uid), a.c_str(), prim, sec, pal);
         return inet_addr(a.c_str());
     }
 
@@ -804,7 +804,7 @@ valid_info(vc v)
 }
 
 int
-valid_qd_message(vc v)
+valid_qd_message(const vc& v)
 {
 // vector(vector(recipients...) vector(fromid text_message attachid vector(yy dd hh mm ss))
     if(v.type() != VC_VECTOR)
@@ -878,8 +878,9 @@ gen_hash(DwString filename)
     return val;
 }
 
+static
 void
-gen_authentication(vc qmsg, vc att_hash)
+gen_authentication(vc qmsg, const vc& att_hash)
 {
     // put the auth vector into a q'd message
     vc av(VC_VECTOR);
@@ -953,7 +954,7 @@ gen_authentication(vc qmsg, vc att_hash)
 }
 
 int
-verify_authentication(vc text, vc uid, vc att_hash, vc datevec, vc no_forward, vc mac)
+verify_authentication(const vc& text, const vc& uid, const vc& att_hash, const vc& datevec, const vc& no_forward, const vc& mac)
 {
     SHA sha;
     byte *secret = (byte *)HASH_SECRET;
@@ -1010,11 +1011,11 @@ verify_authentication(vc text, vc uid, vc att_hash, vc datevec, vc no_forward, v
 }
 
 int
-verify_chain(vc body, int top, vc a_att_hash, vc attachment_dir)
+verify_chain(const vc& body, int top, const vc& a_att_hash, const vc& attachment_dir)
 {
     GRTLOG("verify chain %d", top, 0);
     GRTLOGVC(body);
-    GRTLOGVC(att_hash);
+    GRTLOGVC(a_att_hash);
     GRTLOGVC(attachment_dir);
     const vc from = body[QM_BODY_FROM];
     vc text = body[QM_BODY_NEW_TEXT];
@@ -1291,12 +1292,12 @@ init_msg_folder(vc uid)
     return 1;
 }
 
-FindVec *
-find_to_vec(const char *pat)
+void
+FindVec::find_to_vec(const char *pat)
 {
     int i = 1;
 
-    FindVec& ret = *new FindVec;
+    DwVecP<WIN32_FIND_DATA>& ret = fv;
 #ifdef _Windows
     WIN32_FIND_DATA n;
     HANDLE h = FindFirstFile(pat, &n);
@@ -1335,7 +1336,7 @@ find_to_vec(const char *pat)
     {
         if(free_pat)
             free((void *)pat);
-        return &ret;
+        return;
     }
     for(i = 0; i < glb.gl_pathc; ++i)
     {
@@ -1349,17 +1350,6 @@ find_to_vec(const char *pat)
     if(free_pat)
         free((void *)pat);
 #endif
-
-    return &ret;
-}
-
-void
-delete_findvec(FindVec *fv)
-{
-    int n = fv->num_elems();
-    for(int i = 0; i < n; ++i)
-        delete (*fv)[i];
-    delete fv;
 }
 
 static
@@ -2487,12 +2477,12 @@ load_users_from_files(int *total_out)
 
     MsgFolders = vc(VC_TREE);
 
-    FindVec &fv = *find_to_vec(newfn("*.usr").c_str());
+    FindVec fv(newfn("*.usr"));
     auto n = fv.num_elems();
     TRACK_MAX(QM_UL_count, n);
     for(int i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA &d = *fv[i];
+        const WIN32_FIND_DATA &d = *fv[i];
         s = d.cFileName;
         const vc uid = dir_to_uid(s);
         if(uid.len() != 10)
@@ -2501,7 +2491,6 @@ load_users_from_files(int *total_out)
         //MsgFolders.add_kv(uid, vcnil);
     }
 
-    delete_findvec(&fv);
     if(total_out)
         *total_out = MsgFolders.num_elems();
 
@@ -2633,12 +2622,12 @@ remove_user_files(vc dir, const char *pfx, int keep_folder)
     s = p;
 
     int retval = 1;
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv(s);
     int n = fv.num_elems();
 
     for(i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA& d = *fv[i];
+        const WIN32_FIND_DATA& d = *fv[i];
         if(strcmp(d.cFileName, ".") == 0 ||
                 strcmp(d.cFileName, "..") == 0)
             continue;
@@ -2657,7 +2646,6 @@ remove_user_files(vc dir, const char *pfx, int keep_folder)
     p += (const char *)dir;
     if(!god &&  (!keep_folder && !RemoveDirectory(newfn(p).c_str())))
         retval = 0;
-    delete_findvec(&fv);
 
     return 1; // tired of hearing tech support about not being able to
     // remove things, not sure why this happens (maybe they
@@ -2763,21 +2751,21 @@ trash_file(const DwString& dir, const DwString& fn)
 void
 trash_body(vc uid, vc msg_id, int inhibit_indexing)
 {
-    if(uid.len() == 0)
+    if(uid.type() != VC_STRING || uid.len() != 10)
         return;
-    DwString s((const char *)to_hex(uid));
-    DwString t((const char *)msg_id);
+    DwString huid((const char *)to_hex(uid));
+    DwString mid((const char *)msg_id);
 
-    s += ".usr";
-    DwString userdir = s;
-    s = newfn(s);
-    s += DIRSEPSTR;
-    s += t;
-    DwString s2 = s;
-    s += ".bod";
+    huid += ".usr";
+    DwString userdir = huid;
+    huid = newfn(huid);
+    huid += DIRSEPSTR;
+    huid += mid;
+    DwString s2 = huid;
+    huid += ".bod";
 
     vc msg;
-    if(load_info(msg, s.c_str(), 1))
+    if(load_info(msg, huid.c_str(), 1))
     {
         if(!inhibit_indexing)
         {
@@ -2788,9 +2776,7 @@ trash_body(vc uid, vc msg_id, int inhibit_indexing)
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
-            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
-        trash_file(userdir, (t + ".bod"));
-        //DeleteFile(s.c_str());
+        trash_file(userdir, (mid + ".bod"));
         return;
     }
     s2 += ".snt";
@@ -2805,11 +2791,8 @@ trash_body(vc uid, vc msg_id, int inhibit_indexing)
         }
         if(!msg[QM_BODY_ATTACHMENT].is_nil())
             trash_file(userdir, (const char *)msg[QM_BODY_ATTACHMENT]);
-            //delete_attachment2(user_id, msg[QM_BODY_ATTACHMENT]);
-        trash_file(userdir, (t + ".snt"));
-        //DeleteFile(s2.c_str());
+        trash_file(userdir, (mid + ".snt"));
         return;
-
     }
 }
 
@@ -2824,12 +2807,12 @@ untrash_users()
     DwString s = trashdir;
     s += "*.usr";
 
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv(s);
     int n = fv.num_elems();
 
     for(i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA& d = *fv[i];
+        const WIN32_FIND_DATA& d = *fv[i];
         if(strcmp(d.cFileName, ".") == 0 ||
                 strcmp(d.cFileName, "..") == 0)
             continue;
@@ -2843,11 +2826,11 @@ untrash_users()
         DwString dir = s2;
 
         s2 += "" DIRSEPSTR "*.*";
-        FindVec& fv2 = *find_to_vec(s2.c_str());
+        FindVec fv2(s2);
         int n2 = fv2.num_elems();
         for(int j = 0; j < n2; ++j)
         {
-            WIN32_FIND_DATA& d2 = *fv2[j];
+            const WIN32_FIND_DATA& d2 = *fv2[j];
             if(strcmp(d2.cFileName, ".") == 0 ||
                     strcmp(d2.cFileName, "..") == 0)
                 continue;
@@ -2865,36 +2848,32 @@ untrash_users()
             move_replace(src, dst);
         }
         RemoveDirectory(dir.c_str());
-        delete_findvec(&fv2);
         clear_indexed_flag(uid);
         load_msg_index(uid, 1);
     }
-    delete_findvec(&fv);
 }
 
 int
 count_trashed_users()
 {
-    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
+    FindVec fv(newfn("trash" DIRSEPSTR "*.usr"));
     int num = fv.num_elems();
-    delete_findvec(&fv);
     return num;
 }
 
 int
 empty_trash()
 {
-    FindVec &fv = *find_to_vec(newfn("trash" DIRSEPSTR "*.usr").c_str());
+    FindVec fv(newfn("trash" DIRSEPSTR "*.usr"));
     int num = fv.num_elems();
     for(int i = 0; i < num; ++i)
     {
-        WIN32_FIND_DATA& d = *fv[i];
+        const WIN32_FIND_DATA& d = *fv[i];
         if(strcmp(d.cFileName, ".") == 0 ||
                 strcmp(d.cFileName, "..") == 0)
             continue;
         remove_user_files(d.cFileName, "trash" DIRSEPSTR "", 0);
     }
-    delete_findvec(&fv);
     return 1;
 }
 
@@ -2991,11 +2970,11 @@ load_bodies(vc dir, int load_sent)
     s += "" DIRSEPSTR "*.bod";
     int t = 0;
 
-    FindVec& fv = *find_to_vec(s.c_str());
+    FindVec fv(s);
     int n = fv.num_elems();
     for(i = 0; i < n; ++i)
     {
-        WIN32_FIND_DATA &d = *fv[i];
+        const WIN32_FIND_DATA &d = *fv[i];
         DwString s2(dpref);
         s2 += "" DIRSEPSTR "";
         s2 += d.cFileName;
@@ -3006,18 +2985,17 @@ load_bodies(vc dir, int load_sent)
             sorter.add(GroovyItem(info), t++);
         }
     }
-    delete_findvec(&fv);
 
     if(load_sent)
     {
         ss = newfn(ss);
         ss += "" DIRSEPSTR "*.snt";
         s = ss;
-        FindVec& fv2 = *find_to_vec(s.c_str());
+        FindVec fv2(s);
         n = fv2.num_elems();
         for(i = 0; i < n; ++i)
         {
-            WIN32_FIND_DATA &d = *fv2[i];
+            const WIN32_FIND_DATA &d = *fv2[i];
             DwString s2(dpref);
             s2 += "" DIRSEPSTR "";
             s2 += d.cFileName;
@@ -3029,7 +3007,6 @@ load_bodies(vc dir, int load_sent)
                 sorter.add(GroovyItem(info), t++);
             }
         }
-        delete_findvec(&fv2);
     }
 
     DwTreeKazIter<int, GroovyItem> iter(&sorter);
@@ -3844,18 +3821,17 @@ recover_inprogress()
 {
     int i;
 
-    FindVec& fv = *find_to_vec(newfn("inprogress" DIRSEPSTR "*.q").c_str());
+    FindVec fv(newfn("inprogress" DIRSEPSTR "*.q"));
     int nn = fv.num_elems();
     for(i = 0; i < nn; ++i)
     {
-        WIN32_FIND_DATA& n = *fv[i];
+        const WIN32_FIND_DATA& n = *fv[i];
         DwString s("inprogress" DIRSEPSTR "");
         DwString d("outbox" DIRSEPSTR "");
         s += n.cFileName;
         d += n.cFileName;
         move_replace(newfn(s), newfn(d));
     }
-    delete_findvec(&fv);
 }
 
 
@@ -3944,12 +3920,12 @@ load_q_files(const DwString& dir, const vc& uid, int load_special, vc vec)
     pat += DIRSEPSTR;
     pat += "*.q";
 
-    FindVec& fv = *find_to_vec(newfn(pat).c_str());
+    FindVec fv(newfn(pat));
     int nn = fv.num_elems();
     int i;
     for(i = 0; i < nn; ++i)
     {
-        WIN32_FIND_DATA& n = *fv[i];
+        const WIN32_FIND_DATA& n = *fv[i];
         vc v(VC_VECTOR);
         vc b = load_qb(dir, n.cFileName);
 
@@ -3966,7 +3942,6 @@ load_q_files(const DwString& dir, const vc& uid, int load_special, vc vec)
             }
         }
     }
-    delete_findvec(&fv);
 
 }
 
@@ -4134,16 +4109,15 @@ qd_purge_outbox()
 
     recover_inprogress();
 
-    FindVec& fv = *find_to_vec(newfn("outbox" DIRSEPSTR "*.q").c_str());
+    FindVec fv(newfn("outbox" DIRSEPSTR "*.q"));
     int nn = fv.num_elems();
     for(i = 0; i < nn; ++i)
     {
-        WIN32_FIND_DATA& n = *fv[i];
+        const WIN32_FIND_DATA& n = *fv[i];
         DwString d("outbox" DIRSEPSTR "");
         d += n.cFileName;
         DeleteFile(newfn(d).c_str());
     }
-    delete_findvec(&fv);
 }
 
 #if 0
@@ -4251,7 +4225,7 @@ uid_ignored(const vc& uid)
 vc
 get_local_ignore()
 {
-    vc res = sql_get_tagged_mids2("_ignore");
+    const vc res = sql_get_tagged_mids2("_ignore");
     //vc res = map_uid_list_from_tag("_ignore");
     vc ret(VC_SET);
     for(int i = 0; i < res.num_elems(); ++i)
@@ -4417,17 +4391,16 @@ strip_port(vc ip)
 static void
 remove_all_but(const char *fn, vc nodel)
 {
-    FindVec& fv = *find_to_vec(newfn(fn).c_str());
+    FindVec fv(newfn(fn));
     int nn = fv.num_elems();
     for(int i = 0; i < nn; ++i)
     {
-        WIN32_FIND_DATA& n = *fv[i];
+        const WIN32_FIND_DATA& n = *fv[i];
         if(!nodel.contains(n.cFileName))
         {
             DeleteFile(newfn(n.cFileName).c_str());
         }
     }
-    delete_findvec(&fv);
 }
 
 static
@@ -4438,11 +4411,11 @@ find_files_to_keep(DwString subdir, DwString pat, vc nodel)
 
     match += DIRSEPSTR;
     match += pat;
-    FindVec& fv = *find_to_vec(match.c_str());
+    FindVec fv(match);
     int nn = fv.num_elems();
     for(int i = 0; i < nn; ++i)
     {
-        WIN32_FIND_DATA& n = *fv[i];
+        const WIN32_FIND_DATA& n = *fv[i];
 
         DwString d(newfn(subdir));
         d += DIRSEPSTR;
@@ -4485,7 +4458,6 @@ find_files_to_keep(DwString subdir, DwString pat, vc nodel)
             }
         }
     }
-    delete_findvec(&fv);
 }
 
 
@@ -4538,21 +4510,36 @@ clean_cruft()
     {
         DwString tp = tmp;
         tp += "*.*";
-        FindVec& fv = *find_to_vec(tp.c_str());
+        FindVec fv(tp);
         int nn = fv.num_elems();
         for(int i = 0; i < nn; ++i)
         {
-            WIN32_FIND_DATA& n = *fv[i];
+            const WIN32_FIND_DATA& n = *fv[i];
             DwString tfn = tmp;
             tfn += n.cFileName;
             DeleteFile(tfn.c_str());
 
         }
-        delete_findvec(&fv);
     }
 #endif
 #endif
 
+}
+
+void
+weekly_trash_empty()
+{
+    // just empty the trash once a week, this is mainly for debugging
+    // these days anyway, since we don't really offer a way for users
+    // to untrash this atm.
+    vc last_empty;
+    if(!load_info(last_empty, "trs.dif") ||
+            (time(0) - (time_t)last_empty) > ((time_t)7 * 24 * 3600))
+    {
+        empty_trash();
+        last_empty = time(0);
+        save_info(last_empty, "trs.dif");
+    }
 }
 
 #if 0

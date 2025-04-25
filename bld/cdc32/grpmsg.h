@@ -1,3 +1,11 @@
+
+/* ===
+; Copyright (c) 1995-present, Dwyco, Inc.
+; 
+; This Source Code Form is subject to the terms of the Mozilla Public
+; License, v. 2.0. If a copy of the MPL was not distributed with this file,
+; You can obtain one at https://mozilla.org/MPL/2.0/.
+*/
 #ifndef GRPMSG_H
 #define GRPMSG_H
 #include "vc.h"
@@ -7,6 +15,7 @@ namespace dwyco {
 int init_gj();
 int exit_gj();
 void clear_gj();
+void clean_gj();
 vc get_status_gj();
 vc get_join_log();
 void add_join_log(vc msg, vc uid);
