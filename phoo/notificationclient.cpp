@@ -216,6 +216,7 @@ NotificationClient::open_image()
 #if 0
     QtAndroid::PermissionResultMap m;
 
+#if 0
     if(QtAndroid::checkPermission("android.permission.READ_MEDIA_IMAGES") == QtAndroid::PermissionResult::Granted)
         goto ok;
 
@@ -223,15 +224,18 @@ NotificationClient::open_image()
     m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_MEDIA_IMAGES"));
     if(m.value("android.permission.READ_MEDIA_IMAGES") == QtAndroid::PermissionResult::Granted)
         goto ok;
+#endif
 
-
-    if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Granted)
-        goto ok;
-
-    m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
-    if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+    if(QtAndroid::androidSdkVersion() < 30)
     {
-        return 0;
+        if(QtAndroid::checkPermission("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Granted)
+            goto ok;
+
+        m = QtAndroid::requestPermissionsSync(QStringList("android.permission.READ_EXTERNAL_STORAGE"));
+        if(m.value("android.permission.READ_EXTERNAL_STORAGE") == QtAndroid::PermissionResult::Denied)
+        {
+            return 0;
+        }
     }
 #endif
 
