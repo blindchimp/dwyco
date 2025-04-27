@@ -307,25 +307,32 @@ Page {
                 }
             }
 
-            Image {
+            RoundButton {
                 id: failed_review
                 anchors.top: img.top
                 anchors.left: img.left
                 anchors.margins: mm(.5)
                 visible: IS_QD === 0 && REVIEW_RESULTS != "Unknown" && themsglist.uid === the_man
-                source: mi("ic_not_interested_black_24dp.png")
-
-                z: 10
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: {
-                        if(fail_review_msg.state == "moveIn")
-                            fail_review_msg.state = "moveOut"
-                        else
-                            fail_review_msg.state = "moveIn"
-                        core.hash_clear_tag(ASSOC_HASH, "unviewed")
-                    }
+                icon.source: mi("ic_not_interested_black_24dp.png")
+                onClicked: {
+                    if(fail_review_msg.state == "moveIn")
+                        fail_review_msg.state = "moveOut"
+                    else
+                        fail_review_msg.state = "moveIn"
+                    core.hash_clear_tag(ASSOC_HASH, "unviewed")
                 }
+                z: 10
+                // MouseArea {
+                //     anchors.fill: parent
+                //     preventStealing: true
+                //     onClicked: {
+                //         if(fail_review_msg.state == "moveIn")
+                //             fail_review_msg.state = "moveOut"
+                //         else
+                //             fail_review_msg.state = "moveIn"
+                //         core.hash_clear_tag(ASSOC_HASH, "unviewed")
+                //     }
+                // }
 
                 SequentialAnimation {
                     running: IS_UNSEEN === 1
@@ -389,9 +396,9 @@ Page {
 
 
 
-            Image {
+            RoundButton {
                 id: has_geo_info
-                source: {
+                icon.source: {
 
                     themsglist.uid === the_man ?
                                 ((core.geo_count_from_hash(ASSOC_HASH) > 1) ? mi("ic_open_in_new_black_24dp.png") : mi("ic_language_black_24dp.png"))
@@ -402,8 +409,9 @@ Page {
                 anchors.margins: mm(.5)
                 visible: location.text.length > 0
                 z: 10
-                MouseArea {
-                    anchors.fill: parent
+                // MouseArea {
+                //     anchors.fill: parent
+                //     preventStealing: true
                     onClicked: {
                         if(core.geo_count_from_hash(ASSOC_HASH) > 1) {
                         geolist.hash = ASSOC_HASH
@@ -453,7 +461,7 @@ Page {
 
                         core.hash_clear_tag(ASSOC_HASH, "unviewed")
                     }
-                }
+                //}
                 SequentialAnimation {
                     running: IS_UNSEEN === 1
                     loops: Animation.Infinite
@@ -786,6 +794,8 @@ scrolling in the listview or doesn't recognizing the swipe.
             i = themsglist.find_first_unseen()
             if(i >= 0)
                 listview.positionViewAtIndex(i, ListView.Beginning)
+            else
+                core.reset_unviewed_msgs(the_man)
         }
         ToolTip.text: "Skip to next unseen"
 
