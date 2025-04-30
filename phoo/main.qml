@@ -986,6 +986,11 @@ ApplicationWindow {
                 show_unreviewed = true
             }
 
+            a = get_local_setting("user_test")
+            if(a === "true") {
+                corporate_censorship = false
+            }
+
             if(pwdialog.allow_access === 1) {
                 init()
                 init_called = true
