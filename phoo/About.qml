@@ -32,7 +32,7 @@ Page {
             }
         }
         Label {
-            text: "Content censored by decree of " + corporate_overlord
+            text: "Content censored for " + corporate_overlord
             visible: corporate_censorship && is_mobile
             Layout.fillWidth: true
         }
