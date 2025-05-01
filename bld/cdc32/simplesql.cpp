@@ -374,10 +374,12 @@ SimpleSql::query(const VCArglist *a)
     if(check_txn && tdepth == 0)
         oopanic("q out of txn");
 #endif
+    static vc busy("busy");
+    static vc full("full");
     vc res = sqlite3_bulk_query(Db, a);
-    if(res.is_nil() || (res.type() == VC_STRING && res == vc("busy")))
+    if(res.is_nil() || (res.type() == VC_STRING && res == busy))
         throw -1;
-    if(res.type() == VC_STRING && res == vc("full"))
+    if(res.type() == VC_STRING && res == full)
         throw res;
     return res;
 }

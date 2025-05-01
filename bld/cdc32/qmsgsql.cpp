@@ -248,6 +248,9 @@ QMsgSql::init_schema(const DwString& schema_name)
             sql_simple("create index if not exists assoc_uid_idx on msg_idx(assoc_uid)");
             sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock)");
             sql_simple("create index if not exists date_idx on msg_idx(date)");
+            // NOTE: these indexes need to be dropped
+            // if we have a query that is based on global "has_attachment", a partial
+            // index might be more useful.
             sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
             sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
 
@@ -283,6 +286,10 @@ QMsgSql::init_schema(const DwString& schema_name)
             sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
             sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock)");
             sql_simple("create index if not exists gidate_idx on gi(date)");
+            // NOTE: these indexes need to be dropped
+            // if we have a query that is based on global "has_attachment", a partial
+            // index might be more useful.
+            // likewise for from_group
             sql_simple("create index if not exists gisent_idx on gi(is_sent)");
             sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
             sql_simple("create index if not exists gifrom_group on gi(from_group)");
@@ -372,6 +379,17 @@ stop_existing_pulls(const vc& mid)
 {
     pulls::deassert_pull(mid);
     ChanList cl = get_all_sync_chans();
+    for(int i = 0; i < cl.num_elems(); ++i)
+    {
+        cl[i]->sync_sendq.del_pull(mid);
+    }
+}
+
+static
+void
+stop_existing_pulls(ChanList& cl, const vc& mid)
+{
+    pulls::deassert_pull(mid);
     for(int i = 0; i < cl.num_elems(); ++i)
     {
         cl[i]->sync_sendq.del_pull(mid);
@@ -605,7 +623,6 @@ msg_idx_updated(const vc& uid, int prepended)
 vc
 package_downstream_sends(const vc& remote_uid)
 {
-    const vc& huid = to_hex(remote_uid);
     try
     {
         // NOTE: may want to package this as a single command
@@ -613,13 +630,14 @@ package_downstream_sends(const vc& remote_uid)
         // under a transaction. may not be necessary, but just a thought
         sql_start_transaction();
         // most of the time, the logs are empty, so just shortcut that case
-        const vc& chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
+        const vc chk = sql_simple("select (select count(*) from midlog) + (select count(*) from taglog)");
         if((int)chk[0][0] == 0)
         {
             sql_commit_transaction();
             return vcnil;
         }
 
+        const vc huid = to_hex(remote_uid);
         // note: this sync thing is supposed to be processed after all the updates
         // that are received during a delta update, letting us know what we have integrated
         // from the remote side. for now, we just assume
@@ -633,8 +651,8 @@ package_downstream_sends(const vc& remote_uid)
         // messages and one for tags. it might make sense to change this to one table
         // in the future so simplify things here.
 
-        const vc& next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
-        const vc& next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
+        const vc next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
+        const vc next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
         vc sync_id;
         vc next_tag_sync;
         vc next_mid_sync;
@@ -655,9 +673,9 @@ package_downstream_sends(const vc& remote_uid)
             next_tag_sync = next_tag_sync_res[0][1];
         }
 
-        const vc& idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
+        const vc idxs = sql_simple("select msg_idx.*, midlog.op from main.msg_idx, main.midlog "
                              "where midlog.mid = msg_idx.mid and midlog.to_uid = ?1 and op = 'a' and midlog.rowid < ?2", huid, next_mid_sync);
-        const vc& mtombs = sql_simple("select mid, op from main.midlog "
+        const vc mtombs = sql_simple("select mid, op from main.midlog "
                                "where midlog.to_uid = ?1 and op = 'd' and rowid < ?2", huid, next_mid_sync);
 
         // note: put in the "group by" since it appears at some point i allowed duplicate
@@ -665,9 +683,9 @@ package_downstream_sends(const vc& remote_uid)
         // a picture of which client has which tags, and i'm not sure i use that info anywhere).
         // the duplicates didn't cause an error, just lots of extra processing that was ignored.
 
-        const vc& tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
+        const vc tags = sql_simple("select mt2.mid, mt2.tag, mt2.time, mt2.guid, tl.op from mt.gmt as mt2, mt.taglog as tl "
                              "where mt2.mid = tl.mid and mt2.tag = tl.tag and to_uid = ?1 and op = 'a' and tl.rowid < ?2 group by mt2.guid", huid, next_tag_sync);
-        const vc& tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
+        const vc tombs = sql_simple("select tl.guid,tl.mid,tl.tag,tl.op from mt.taglog as tl "
                               "where to_uid = ?1 and op = 'd' and tl.rowid < ?2", huid, next_tag_sync);
         if(idxs.num_elems() > 0 || mtombs.num_elems() > 0 || tags.num_elems() > 0 || tombs.num_elems() > 0 || !sync_id.is_nil())
             GRTLOGA("downstream idx %d mtomb %d tag %d ttomb %d sync %s", idxs.num_elems(), mtombs.num_elems(), tags.num_elems(), tombs.num_elems(), (const char *)sync_id);
@@ -938,7 +956,7 @@ remove_sync_state()
 int
 import_remote_mi(const vc& remote_uid)
 {
-    const vc& huid = to_hex(remote_uid);
+    const vc huid = to_hex(remote_uid);
     DwString fn = DwString("mi%1.tdb").arg((const char *)huid);
     //DwString favfn = DwString("fav%1.sql").arg((const char *)huid);
     SimpleSql s(MSG_IDX_DB);
@@ -951,12 +969,22 @@ import_remote_mi(const vc& remote_uid)
 #endif
     s.attach(TAG_DB, "mt");
     s.attach(fn, "mi2");
+    s.set_cache_size(100000);
 
     int ret = 1;
     try
     {
         s.start_transaction();
-        const vc& newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx except select distinct(assoc_uid) from main.gi");
+        // we need to trim or do something so this "import" operation isn't so time consuming.
+        // i think there might need to be some kind of explicit event like "new sync client initialized"
+        // so clients can perform all the re-loading they need. the "add_user" thing below needs to go away
+        // and we just signal the client to re-issue the reload_conv_list so all these extra things don't show up
+        // in the conv list when the background gets loaded.
+        // i wonder if this is a case where wal_mode might help if we could background this operation, allowing the
+        // client to continue without getting blocked (might not, since wal_mode isn't really a table thing, but
+        // a database-wide thing, i think.
+        s.sql_simple("create index if not exists mi2.assoc_uid_idx on msg_idx(assoc_uid)");
+        const vc newuids = s.sql_simple("select distinct(assoc_uid) from mi2.msg_idx where not exists (select 1 from main.gi where assoc_uid = mi2.msg_idx.assoc_uid limit 1)");
         // note sure what i was up to here... removing the contents
         // of crdt_tags will effectively disable the triggers for
         // creating the tag logs (that would get sent to other clients)
@@ -977,13 +1005,13 @@ import_remote_mi(const vc& remote_uid)
         s.sql_simple("delete from current_clients where uid = ?1", huid);
 
         s.sql_simple("insert or ignore into main.gi select * from mi2.msg_idx");
-        const vc& res = s.sql_simple("select max(logical_clock) from gi");
+        const vc res = s.sql_simple("select max(logical_clock) from gi");
         if(res[0][0].type() == VC_INT)
         {
             long lc = (long)res[0][0];
             update_global_logical_clock(lc);
         }
-        const vc& newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
+        const vc newtombs = s.sql_simple("insert or ignore into main.msg_tomb select * from mi2.msg_tomb returning mid");
         s.sql_simple("delete from main.gi where mid in (select mid from main.msg_tomb)");
 
         //sync_files();
@@ -1026,10 +1054,11 @@ import_remote_mi(const vc& remote_uid)
         {
             se_emit(SE_USER_ADD, from_hex(newuids[i][0]));
         }
+        ChanList cl = get_all_sync_chans();
         for(int i = 0; i < newtombs.num_elems(); ++i)
         {
             const vc mid = newtombs[i][0];
-            stop_existing_pulls(mid);
+            stop_existing_pulls(cl, mid);
         }
 #endif
     }
@@ -1038,9 +1067,10 @@ import_remote_mi(const vc& remote_uid)
         s.rollback_transaction();
         ret = 0;
     }
-
+    // explicitly detach so the optimize doesn't
+    // look at it.
     s.detach("mi2");
-
+    s.optimize();
     s.exit();
     return ret;
 }
@@ -1168,9 +1198,12 @@ import_new_syncpoint(vc remote_uid, vc delta_id)
 }
 
 void
-import_remote_tupdate(vc remote_uid, vc vals)
+import_remote_tupdate(const vc& remote_uid, const vc& vals)
 {
-    vc huid = to_hex(remote_uid);
+    if(vals.type() != VC_VECTOR || vals.num_elems() < 1)
+        return;
+    const vc huid = to_hex(remote_uid);
+
     try
     {
         sql_start_transaction();
@@ -1178,13 +1211,15 @@ import_remote_tupdate(vc remote_uid, vc vals)
         // received this from
         sql_simple("delete from current_clients where uid = ?1", huid);
 
-        vc op = vals.remove_last();
-        if(op == vc("a"))
+        const vc& op = vals[vals.num_elems() - 1];
+        static vc op_a("a");
+        static vc op_d("d");
+        if(op == op_a)
         {
-            vc mid = vals[0];
-            vc tag = vals[1];
-            vc tm = vals[2];
-            vc guid = vals[3];
+            const vc& mid = vals[0];
+            const vc& tag = vals[1];
+            const vc& tm = vals[2];
+            const vc& guid = vals[3];
 
             sql_simple("insert or ignore into mt.gmt (mid, tag, time, uid, guid) select ?1, ?2, ?3, ?4, ?5 where not exists (select 1 from mt.gtomb where ?5 = guid)", mid, tag, tm, huid, guid);
             vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
@@ -1203,16 +1238,16 @@ import_remote_tupdate(vc remote_uid, vc vals)
                 se_emit_uid_list_changed();
             }
         }
-        else if (op == vc("d"))
+        else if (op == op_d)
         {
-            vc guid = vals[0];
-            vc mid = vals[1];
-            vc tag = vals[2];
+            const vc& guid = vals[0];
+            const vc& mid = vals[1];
+            const vc& tag = vals[2];
             sql_simple("insert or ignore into mt.gtomb(guid, time) values(?1, strftime('%s', 'now'))", guid);
-            vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
+            const vc res = sql_simple("select 1 from static_crdt_tags where tag = ?1 limit 1", tag);
             if(res.num_elems() == 1)
             {
-                vc uid = sql_get_uid_from_mid(mid);
+                const vc uid = sql_get_uid_from_mid(mid);
                 if(!uid.is_nil())
                     se_emit_msg_tag_change(mid, from_hex(uid));
                 else
@@ -1275,7 +1310,9 @@ setup_update_triggers()
 {
     try {
         sql_start_transaction();
-
+        // WARNING: be careful with this schema versioning stuff. you probably need to
+        // create NEW KEY's instead of just updating the "val", since old version of the
+        // software do not use a "we're at the max value" technique.
         vc res = sql_simple("select val from schema_sections where name = 'update_triggers'");
         if(res.num_elems() == 0)
         {
@@ -1283,6 +1320,9 @@ setup_update_triggers()
         }
         else if((int)res[0][0] == 1)
             throw 0;
+
+        // this rescan stuff is probably too expensive. it might just be better to do
+        // it in the update_hook
         sql_simple("create table rescan(flag integer)");
         sql_simple("insert into rescan (flag) values(0)");
         sql_simple("create trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
@@ -1312,6 +1352,7 @@ setup_update_triggers()
     // based on update to mt...
     sql_simple("create temp trigger rescan6 after insert on mt.gmt begin update rescan set flag = 1; end");
     sql_simple("create temp trigger rescan8 after delete on mt.gmt begin update rescan set flag = 1; end");
+#if 0
     sql_simple("create temp trigger uid_update3 after insert on mt.gmt begin "
                "insert into uid_updated(uid) select assoc_uid from main.gi where mid = new.mid; "
                "end"
@@ -1324,6 +1365,10 @@ setup_update_triggers()
                "insert into uid_updated(uid) select assoc_uid from main.gi where mid = (select mid from mt.gmt where guid = new.guid); "
                "end"
                );
+#endif
+    sql_simple("drop trigger if exists uid_update1");
+    sql_simple("drop trigger if exists uid_update2");
+
 
 
 }
@@ -1334,6 +1379,9 @@ setup_crdt_triggers()
 {
     try {
         sql_start_transaction();
+        // WARNING: be careful with this schema versioning stuff. you probably need to
+        // create NEW KEY's instead of just updating the "val", since old version of the
+        // software do not use a "we're at the max value" technique.
         vc res = sql_simple("select val from schema_sections where name = 'crdt_triggers'");
         if(res.num_elems() == 0)
         {
@@ -1784,12 +1832,20 @@ map_gid_to_uids(vc gid)
 vc
 map_uid_to_uids(const vc& uid)
 {
-    vc res;
     vc ret(VC_VECTOR);
     try
     {
+        const vc huid = to_hex(uid);
+        {
+            const vc m = sql_simple("select 1 from group_map where uid = ?1", huid);
+            if(m.num_elems() == 0)
+            {
+                ret[0] = uid;
+                return ret;
+            }
+        }
         //sql_start_transaction();
-        res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", to_hex(uid));
+        const vc res = sql_simple("select uid from group_map where gid = (select gid from group_map where uid = ?1) order by uid asc", huid);
         //sql_commit_transaction();
         if(res.num_elems() == 0)
         {
