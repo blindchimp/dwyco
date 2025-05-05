@@ -638,7 +638,7 @@ package_downstream_sends(const vc& remote_uid)
         }
 
         const vc huid = to_hex(remote_uid);
-        // note: this sync thing is supposed to be processed after all the updates
+        // note: this "sync" command is supposed to be processed after all the updates
         // that are received during a delta update, letting us know what we have integrated
         // from the remote side. for now, we just assume
         // we are creating a block of updates which are applied in order on the remote
@@ -649,7 +649,7 @@ package_downstream_sends(const vc& remote_uid)
         // process only updates up to the next sync point.
         // there are two copies of the syncpoint, only because we have two logs: one for
         // messages and one for tags. it might make sense to change this to one table
-        // in the future so simplify things here.
+        // in the future to simplify things here.
 
         const vc next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
         const vc next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
