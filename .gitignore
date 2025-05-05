@@ -624,3 +624,5 @@ rando/androidinst3/src/com/dwyco/.vscode/
 .idea/
 
 bld/android/android.iml
+
+rando/.cache/
