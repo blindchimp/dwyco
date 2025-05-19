@@ -248,6 +248,9 @@ QMsgSql::init_schema(const DwString& schema_name)
             sql_simple("create index if not exists assoc_uid_idx on msg_idx(assoc_uid)");
             sql_simple("create index if not exists logical_clock_idx on msg_idx(logical_clock)");
             sql_simple("create index if not exists date_idx on msg_idx(date)");
+            // NOTE: these indexes need to be dropped
+            // if we have a query that is based on global "has_attachment", a partial
+            // index might be more useful.
             sql_simple("create index if not exists sent_idx on msg_idx(is_sent)");
             sql_simple("create index if not exists att_idx on msg_idx(has_attachment)");
 
@@ -283,6 +286,10 @@ QMsgSql::init_schema(const DwString& schema_name)
             sql_simple("create index if not exists giassoc_uid_idx on gi(assoc_uid)");
             sql_simple("create index if not exists gilogical_clock_idx on gi(logical_clock)");
             sql_simple("create index if not exists gidate_idx on gi(date)");
+            // NOTE: these indexes need to be dropped
+            // if we have a query that is based on global "has_attachment", a partial
+            // index might be more useful.
+            // likewise for from_group
             sql_simple("create index if not exists gisent_idx on gi(is_sent)");
             sql_simple("create index if not exists giatt_idx on gi(has_attachment)");
             sql_simple("create index if not exists gifrom_group on gi(from_group)");
@@ -631,7 +638,7 @@ package_downstream_sends(const vc& remote_uid)
         }
 
         const vc huid = to_hex(remote_uid);
-        // note: this sync thing is supposed to be processed after all the updates
+        // note: this "sync" command is supposed to be processed after all the updates
         // that are received during a delta update, letting us know what we have integrated
         // from the remote side. for now, we just assume
         // we are creating a block of updates which are applied in order on the remote
@@ -642,7 +649,7 @@ package_downstream_sends(const vc& remote_uid)
         // process only updates up to the next sync point.
         // there are two copies of the syncpoint, only because we have two logs: one for
         // messages and one for tags. it might make sense to change this to one table
-        // in the future so simplify things here.
+        // in the future to simplify things here.
 
         const vc next_tag_sync_res = sql_simple("select guid, rowid from taglog where to_uid = ?1 and op = 's' order by rowid limit 1", huid);
         const vc next_mid_sync_res = sql_simple("select mid, rowid from midlog where to_uid = ?1 and op ='s' order by rowid limit 1", huid);
@@ -1303,7 +1310,9 @@ setup_update_triggers()
 {
     try {
         sql_start_transaction();
-
+        // WARNING: be careful with this schema versioning stuff. you probably need to
+        // create NEW KEY's instead of just updating the "val", since old version of the
+        // software do not use a "we're at the max value" technique.
         vc res = sql_simple("select val from schema_sections where name = 'update_triggers'");
         if(res.num_elems() == 0)
         {
@@ -1311,6 +1320,9 @@ setup_update_triggers()
         }
         else if((int)res[0][0] == 1)
             throw 0;
+
+        // this rescan stuff is probably too expensive. it might just be better to do
+        // it in the update_hook
         sql_simple("create table rescan(flag integer)");
         sql_simple("insert into rescan (flag) values(0)");
         sql_simple("create trigger rescan1 after insert on main.msg_tomb begin update rescan set flag = 1; end");
@@ -1367,6 +1379,9 @@ setup_crdt_triggers()
 {
     try {
         sql_start_transaction();
+        // WARNING: be careful with this schema versioning stuff. you probably need to
+        // create NEW KEY's instead of just updating the "val", since old version of the
+        // software do not use a "we're at the max value" technique.
         vc res = sql_simple("select val from schema_sections where name = 'crdt_triggers'");
         if(res.num_elems() == 0)
         {
