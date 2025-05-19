@@ -1,4 +1,3 @@
-set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 set(DWYCO_APP "phoo")
 set(DWYCOBG 0)
 add_compile_definitions(DWYCO_APP_NICENAME="Phoo")
@@ -11,6 +10,11 @@ add_compile_definitions(
 	CDCCORE_STATIC
 	DWYCO_FORCE_DESKTOP_VGQT
 )
+
+if(NOT WIN32)
+set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+endif()
+
 # Determine the host platform
 if(UNIX AND NOT APPLE)
     add_compile_definitions(UNIX LINUX)
