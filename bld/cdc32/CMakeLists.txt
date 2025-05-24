@@ -214,3 +214,10 @@ add_library(cdc32 OBJECT
 )
 
 target_compile_definitions(cdc32 PRIVATE CDC32_LIBRARY)
+# anything over -O1 causes the xcode 16.3 compiler to generate
+# code for the old DCT decoder that is broken. it might be
+# something in the old code, but i couldn't easily find the
+# problem.
+if(APPLE)
+target_compile_options(cdc32 PRIVATE $<$<CONFIG:Release>:-O1>)
+endif()
