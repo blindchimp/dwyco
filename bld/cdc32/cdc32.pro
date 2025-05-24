@@ -80,6 +80,11 @@ SOURCES += sqlite3.c
 equals(FORCE_DESKTOP_VGQT, 1) {
 DEFINES += DWYCO_FORCE_DESKTOP_VGQT
 }
+
+# this avoids a bug compiling the old jpeg decoder
+#  on macos xcode 16.3 with -O2
+CONFIG(release, debug|release): QMAKE_CXXFLAGS += -O1
+
 }
 
 macx-ios-clang {
