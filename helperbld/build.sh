@@ -1,6 +1,6 @@
 #!/bin/sh
 D=$HOME
-export PATH=$D/Qt/6.8.3/macos/bin:$PATH
+export PATH=$D/Qt/6.8.2/macos/bin:$PATH
 SHADOW_NAME=$D/git/build-helpers
 mkdir -p $SHADOW_NAME
 
