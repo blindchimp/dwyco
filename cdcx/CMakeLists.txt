@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(cdcx VERSION 0.1 LANGUAGES CXX)
+project(CDC-X VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR cdcx_cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../${DWYCO_CONFDIR}/conf.cmake)
 include(subdirs.cmake)
@@ -96,30 +96,20 @@ if(APPLE)
     list(APPEND PROJECT_SOURCES mactards.mm)
 endif()
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(cdcx
-        MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
-    )
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET cdcx APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
-else()
-    if(ANDROID)
-        add_library(cdcx SHARED
-            ${PROJECT_SOURCES}
-        )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-    else()
-        add_executable(cdcx
-            ${PROJECT_SOURCES}
-
-        )
-    add_dependencies(cdcx cdc32)
-    endif()
+if(APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE "greenguy.icns")
+set(app_icon "${CMAKE_CURRENT_SOURCE_DIR}/greenguy.icns")
+set_source_files_properties(${app_icon} PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
 endif()
+
+
+qt_add_executable(CDC-X
+    MACOSX_BUNDLE ${app_icon}
+    MANUAL_FINALIZATION
+    ${PROJECT_SOURCES}
+)
 
 set(BASELIBS
     cdc32
@@ -150,7 +140,7 @@ Qt6::WebEngineCore
 
 set(D ${CMAKE_CURRENT_BINARY_DIR}/bld)
 if(UNIX AND NOT APPLE)
-target_link_libraries(cdcx PRIVATE
+target_link_libraries(CDC-X PRIVATE
     ${BASELIBS}
     v4lcap
     -lv4l2
@@ -161,7 +151,7 @@ elseif(APPLE)
     add_compile_definitions(MAC_CLIENT DWYCO_FORCE_DESKTOP_VGQT)
     find_library(CF CoreFoundation)
     find_library(COCOA Cocoa)
-    target_link_libraries(cdcx PRIVATE
+    target_link_libraries(CDC-X PRIVATE
 	${BASELIBS}
         -ldl
         -pthread
@@ -177,11 +167,11 @@ add_compile_definitions(CDCCORE_STATIC)
 add_compile_definitions(CDCX_NO_SSL)
 
 target_link_libraries(
-    cdcx PRIVATE
+    CDC-X PRIVATE
     ${BASELIBS}
     winmm.lib user32.lib kernel32.lib wsock32.lib advapi32.lib ws2_32.lib  iphlpapi.lib  psapi.lib # binmode.obj
 )
-target_link_options(cdcx PRIVATE binmode.obj)
+target_link_options(CDC-X PRIVATE binmode.obj)
 
 endif()
 
@@ -191,7 +181,7 @@ endif()
 if(${QT_VERSION} VERSION_LESS 6.1.0)
   set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER dwyco.cdc-x)
 endif()
-set_target_properties(cdcx PROPERTIES
+set_target_properties(CDC-X PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -201,7 +191,7 @@ set_target_properties(cdcx PROPERTIES
 )
 
 include(GNUInstallDirs)
-install(TARGETS cdcx
+install(TARGETS CDC-X
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -215,7 +205,7 @@ endif()
 
 # Generate the deployment script for the target
 qt_generate_deploy_app_script(
-    TARGET cdcx
+    TARGET CDC-X
     OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
     #NO_TRANSLATIONS
@@ -226,5 +216,5 @@ qt_generate_deploy_app_script(
 install(SCRIPT ${deploy_script})
 
 if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(cdcx)
+    qt_finalize_executable(CDC-X)
 endif()
