@@ -52,6 +52,12 @@ struct Sql : public SimpleSql
                    "time integer"
                    ")");
         sql_simple("create index if not exists altidx on pubkeys(alt_static_public)");
+        sql_simple("create table if not exists pk_verified("
+                   "uid text collate nocase primary key not null, "
+                   "verified integer not null default 0, "
+                   "time integer "
+                   ")"
+                   );
 
     }
 
@@ -64,6 +70,7 @@ static vc Prf_session_cache;
 
 static vc Pk_memory_cache;
 static vc Pk_session_cache;
+static int Can_verify;
 
 static
 vc
@@ -143,6 +150,17 @@ init_prfdb()
             set_settings_value("user/location", pack[vc("loc")]);
             set_settings_value("user/email", pack[vc("email")]);
         }
+    }
+    try
+    {
+        DwString sigpub(newfn("dsadwyco.pub"));
+
+        vclh_dsa_pub_init(sigpub.c_str());
+        Can_verify = 1;
+    }
+    catch(...)
+    {
+
     }
 
 }
@@ -345,18 +363,18 @@ prf_invalidate(vc uid)
 // pk related stuff
 
 static int
-check_pk(vc prf)
+check_pk(vc pk)
 {
     // basic sanity checking on decrypted profile
     // note: assumes the thing that is doing the
     // decrypting does sanity checks on its own encapsulation.
     // note: don't check for signature, some keys will not
     // be signed.
-    if(prf.type() != VC_VECTOR)
+    if(pk.type() != VC_VECTOR)
         return 0;
-    if(prf[PKC_STATIC_PUBLIC].type() != VC_STRING)
+    if(pk[PKC_STATIC_PUBLIC].type() != VC_STRING)
         return 0;
-    if(!prf[PKC_DWYCO_SIGNATURE].is_nil() && prf[PKC_DWYCO_SIGNATURE].type() != VC_STRING)
+    if(!pk[PKC_DWYCO_SIGNATURE].is_nil() && pk[PKC_DWYCO_SIGNATURE].type() != VC_STRING)
         return 0;
     return 1;
 }
@@ -365,8 +383,8 @@ static int
 verify_sig(vc prf)
 {
     return 1;
-    // WARNING: server computes the SHA of the SERIALIZED public
-    // key, not sure what i was thinking, except that maybe if the
+    // WARNING: server computes the SHA of {binary-uid | SERIALIZED public key},
+    // not sure what i was thinking, except that maybe if the
     // public key was a composite other than a string, it might
     // still work without mods
     vc hash = vclh_sha(prf[PKC_STATIC_PUBLIC]);
@@ -464,46 +482,76 @@ blobnil(vc v)
 
 static
 int
-save_pk(vc uid, vc prf)
+save_pk(vc uid, vc pk)
 {
     Pk_memory_cache.del(uid);
     vc huid = to_hex(uid);
     GRTLOG("SAVE PK", 0, 0);
     GRTLOGVC(prf);
-    if(!check_pk(prf))
+    if(!check_pk(pk))
         return 0;
+    int n = pk.num_elems();
+    for(int i = 0; i < n; ++i)
+    {
+        if(pk[i].type() == VC_STRING && pk[i].len() == 0)
+            pk[i] = vcnil;
+    }
 
-    vc oprf;
-    if(!load_pk(uid, oprf) ||
-            prf[PKC_STATIC_PUBLIC] != oprf[PKC_STATIC_PUBLIC] ||
-            prf[PKC_DWYCO_SIGNATURE] != oprf[PKC_DWYCO_SIGNATURE] ||
-            prf[PKC_ALT_STATIC_PUBLIC] != oprf[PKC_ALT_STATIC_PUBLIC] ||
-            prf[PKC_ALT_SERVER_SIG] != oprf[PKC_ALT_SERVER_SIG] ||
-            prf[PKC_ALT_GNAME] != oprf[PKC_ALT_GNAME]
+    vc opk;
+    volatile int foo = 0;
+    if((foo = !load_pk(uid, opk)) ||
+            pk[PKC_STATIC_PUBLIC] != opk[PKC_STATIC_PUBLIC] ||
+            pk[PKC_DWYCO_SIGNATURE] != opk[PKC_DWYCO_SIGNATURE] ||
+            pk[PKC_ALT_STATIC_PUBLIC] != opk[PKC_ALT_STATIC_PUBLIC] ||
+            pk[PKC_ALT_SERVER_SIG] != opk[PKC_ALT_SERVER_SIG] ||
+            pk[PKC_ALT_GNAME] != opk[PKC_ALT_GNAME]
             )
     {
+        try
+        {
+            sql_start_transaction();
 
-        VCArglist a;
-        a.append("insert or replace into pubkeys("
-                 "uid, "
-                 "static_public, "
-                 "dwyco_sig, "
-                 "alt_static_public, "
-                 "alt_server_sig, "
-                 "alt_gname, "
-                 "time"
-                 ")"
-                 "values(?1, ?2, ?3, ?4, ?5, ?6, strftime('%s', 'now'))"
-                 );
-        a.append(huid);
-        a.append(blobnil(prf[PKC_STATIC_PUBLIC]));
-        a.append(blobnil(prf[PKC_DWYCO_SIGNATURE]));
-        a.append(blobnil(prf[PKC_ALT_STATIC_PUBLIC]));
-        a.append(blobnil(prf[PKC_ALT_SERVER_SIG]));
-        a.append(blobnil(prf[PKC_ALT_GNAME]));
-        sql_bulk_query(&a);
-
-        Keys_updated.emit(uid, 1);
+            VCArglist a;
+            a.append("insert or replace into pubkeys("
+                     "uid, "
+                     "static_public, "
+                     "dwyco_sig, "
+                     "alt_static_public, "
+                     "alt_server_sig, "
+                     "alt_gname, "
+                     "time"
+                     ")"
+                     "values(?1, ?2, ?3, ?4, ?5, ?6, strftime('%s', 'now'))"
+                     );
+            a.append(huid);
+            a.append(blobnil(pk[PKC_STATIC_PUBLIC]));
+            a.append(blobnil(pk[PKC_DWYCO_SIGNATURE]));
+            a.append(blobnil(pk[PKC_ALT_STATIC_PUBLIC]));
+            a.append(blobnil(pk[PKC_ALT_SERVER_SIG]));
+            a.append(blobnil(pk[PKC_ALT_GNAME]));
+            sql_bulk_query(&a);
+            if(Can_verify)
+            {
+                const vc sig = pk[PKC_DWYCO_SIGNATURE];
+                if(!sig.is_nil())
+                {
+                    // verify the signature on store
+                    vc spk = serialize(pk[PKC_STATIC_PUBLIC]);
+                    DwString a(uid, uid.len());
+                    a += DwString(spk, spk.len());
+                    vc h = vclh_sha(vc(VC_BSTRING, a.c_str(), a.length()));
+                    if(vclh_dsa_verify(h, sig).is_nil())
+                        throw -1;
+                    sql_simple("insert or replace into pk_verified(uid, verified, time) values (?1, 1, strftime('%s', 'now'))", huid);
+                }
+            }
+            sql_commit_transaction();
+            Keys_updated.emit(uid, 1);
+        }
+        catch(...)
+        {
+            sql_rollback_transaction();
+        }
     }
     return 1;
 }
@@ -557,11 +605,21 @@ pk_force_check(vc uid)
 void
 pk_invalidate(vc uid)
 {
-    vc res = sql_simple("select 1 from pubkeys where uid = ?1", to_hex(uid));
-    sql_simple("delete from pubkeys where uid = ?1", to_hex(uid));
-    pk_force_check(uid);
-    if(res.num_elems() != 0)
-        Keys_updated.emit(uid, 0);
+    try
+    {
+        sql_start_transaction();
+        vc res = sql_simple("select 1 from pubkeys where uid = ?1", to_hex(uid));
+        sql_simple("delete from pubkeys where uid = ?1", to_hex(uid));
+        sql_simple("delete from pk_verified where uid = ?1", to_hex(uid));
+        sql_commit_transaction();
+        pk_force_check(uid);
+        if(res.num_elems() != 0)
+            Keys_updated.emit(uid, 0);
+    }
+    catch(...)
+    {
+        sql_rollback_transaction();
+    }
 }
 
 // this is probably only useful as a fall-back, since the info could be
