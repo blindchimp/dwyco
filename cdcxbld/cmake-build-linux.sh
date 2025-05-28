@@ -8,8 +8,7 @@ QTFLAVOR=gcc_64
 export PATH=~/Qt/$QTVERS/$QTFLAVOR/bin:$PATH
 export CMAKE_CXX_COMPILER_LAUNCHER=ccache
 
-~/Qt/$QTVERS/$QTFLAVOR/bin/qt-cmake -D CMAKE_BUILD_TYPE=Release -S ~/git/dwyco/cdcx -B ~/git/build-cdcx -G Ninja
-#~/Qt/$QTVERS/$QTFLAVOR/bin/qt-cmake -D QT_QMAKE_EXECUTABLE="/Users/dwight/Qt/$QTVERS/$QTFLAVOR/bin/qmake" -D CMAKE_BUILD_TYPE=Release -S ~/git/dwyco/cdcx -B ~/git/build-cdcx -G Ninja
+~/Qt/$QTVERS/$QTFLAVOR/bin/qt-cmake -D QT_QMAKE_EXECUTABLE="${HOME}/Qt/$QTVERS/$QTFLAVOR/bin/qmake" -D CMAKE_BUILD_TYPE=Release -S ~/git/dwyco/cdcx -B ~/git/build-cdcx -G Ninja
 
 cd ~/git/build-cdcx
 ninja
