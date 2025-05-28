@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.19)
 
 project(CDC-X VERSION 0.1 LANGUAGES CXX)
 set(DWYCO_CONFDIR cdcx_cmake)
@@ -42,7 +42,7 @@ DWYCO_QT6
 toAscii=toLatin1
 #NO_DWYCO_AUDIO
 #LEAK_CLEANUP
-DWYCO_NICE_VERSION=\"4.230\"
+DWYCO_NICE_VERSION=\"4.235\"
 )
 include_directories(
 ./dllwin ../bld/qt6drv ../bld/dwcls .
