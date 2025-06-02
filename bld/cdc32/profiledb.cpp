@@ -25,6 +25,7 @@ extern vc My_UID;
 namespace dwyco {
 ssns::signal2<vc, int> Profile_updated;
 ssns::signal2<vc, int> Keys_updated;
+ssns::signal2<vc, int> Pk_verification_failed;
 
 struct Sql : public SimpleSql
 {
@@ -379,18 +380,43 @@ check_pk(vc pk)
     return 1;
 }
 
-static int
-verify_sig(vc prf)
+static
+int
+verify_sig(vc uid, vc pk)
 {
     return 1;
     // WARNING: server computes the SHA of {binary-uid | SERIALIZED public key},
     // not sure what i was thinking, except that maybe if the
     // public key was a composite other than a string, it might
     // still work without mods
-    vc hash = vclh_sha(prf[PKC_STATIC_PUBLIC]);
-    vclh_dsa_pub_init("dsadwyco.pub");
-    vc ret = vclh_dsa_verify(hash, prf[PKC_DWYCO_SIGNATURE]);
+    const vc sig = pk[PKC_DWYCO_SIGNATURE];
+    if(!Can_verify || sig.is_nil())
+        return 0;
+
+    // verify the signature on store
+    vc spk = serialize(pk[PKC_STATIC_PUBLIC]);
+    DwString a(uid, uid.len());
+    a += DwString(spk, spk.len());
+    vc h = vclh_sha(vc(VC_BSTRING, a.c_str(), a.length()));
+    // if it doesn't verify, just delete any verification record
+    // and emit a signal?
+    vc ret = vclh_dsa_verify(h, sig);
+    if(ret.is_nil())
+    {
+        Pk_verification_failed.emit(uid, 0);
+    }
+
     return !ret.is_nil();
+}
+
+int
+verification_record_exists(vc uid)
+{
+    vc huid = to_hex(uid);
+    vc ret = sql_simple("select 1 from pk_verified where uid = ?1");
+    if(ret.num_elems() == 0)
+        return 0;
+    return 1;
 }
 
 static
@@ -420,10 +446,13 @@ load_pk(vc uid, vc& prf_out)
         prf.append(d[i].len() == 0 ? vcnil : d[i]);
     }
 
-    if(!check_pk(prf) || !verify_sig(prf))
+    if(!check_pk(prf))
     {
         pk_force_check(uid);
+        sql_start_transaction();
         sql_simple("delete from pubkeys where uid = ?1", huid);
+        sql_simple("delete from pk_verified where uid = ?1", huid);
+        sql_commit_transaction();
         return 0;
     }
 
@@ -540,9 +569,15 @@ save_pk(vc uid, vc pk)
                     DwString a(uid, uid.len());
                     a += DwString(spk, spk.len());
                     vc h = vclh_sha(vc(VC_BSTRING, a.c_str(), a.length()));
-                    if(vclh_dsa_verify(h, sig).is_nil())
-                        throw -1;
-                    sql_simple("insert or replace into pk_verified(uid, verified, time) values (?1, 1, strftime('%s', 'now'))", huid);
+                    // if it doesn't verify, just delete any verification record
+                    // and emit a signal?
+                    if(!vclh_dsa_verify(h, sig).is_nil())
+                        sql_simple("insert or replace into pk_verified(uid, verified, time) values (?1, 1, strftime('%s', 'now'))", huid);
+                    else
+                    {
+                        Pk_verification_failed.emit(uid, 0);
+                        sql_simple("delete from pk_verified where uid = ?1", huid);
+                    }
                 }
             }
             sql_commit_transaction();
