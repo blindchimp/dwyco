@@ -273,15 +273,15 @@ public:
     Unpackbits() {
         bits_left = BITBUFSZ;
     }
-    inline void init(BITBUFT*& inbuf);
-    inline void init(DWBYTE*& inbuf) {
+     void init(BITBUFT*& inbuf);
+     void init(DWBYTE*& inbuf) {
         BITBUFT *t = (BITBUFT*)inbuf;
         init(t);
         inbuf = (DWBYTE*)t;
     }
-    inline ELTYPE getbits_raw(int bits, BITBUFT*& inbuf);
-    inline int getbit_raw(BITBUFT*& inbuf);
-    inline ELTYPE getbits_raw(int bits, DWBYTE*& inbuf) {
+     ELTYPE getbits_raw(int bits, BITBUFT*& inbuf);
+     int getbit_raw(BITBUFT*& inbuf);
+     ELTYPE getbits_raw(int bits, DWBYTE*& inbuf) {
         BITBUFT *t = (BITBUFT*)inbuf;
         ELTYPE val = getbits_raw(bits, t);
         inbuf = (DWBYTE*)t;
@@ -292,78 +292,4 @@ protected:
     BITBUFT cur;
     int bits_left;
 };
-
-inline
-int
-Unpackbits::getbit_raw(BITBUFT*& inbuf)
-{
-    int val;
-    if(bits_left >= 1)
-    {
-        val = (cur >> (BITBUFSZ - 1)) & 1;
-        --bits_left;
-        cur <<= 1;
-    }
-    else
-    {
-        cur = *inbuf++;
-        cur = int_to_le(cur);
-#ifdef SHOW
-        printf("%x load %x\n", this, cur);
-#endif
-        bits_left = BITBUFSZ - 1;
-        val = (cur >> (BITBUFSZ - 1)) & 1;
-        cur <<= 1;
-    }
-#ifdef SHOW
-    printf("gotbit %x, %x, %d\n", this, inbuf, val);
-#endif
-    return val;
-}
-
-inline
-ELTYPE
-Unpackbits::getbits_raw(int bits, BITBUFT*& inbuf)
-{
-    ELTYPE val;
-    if(bits >= bits_left)
-    {
-        val = cur >> (BITBUFSZ - bits_left);
-        val <<= (bits - bits_left);
-        int morebits = bits - bits_left;
-        cur = *inbuf++;
-        cur = int_to_le(cur);
-#ifdef SHOW
-        printf("%x load %x\n", this, cur);
-#endif
-        val |= (cur >> (BITBUFSZ - (morebits))) & ((1 << (morebits)) - 1);
-        bits_left = BITBUFSZ - (morebits);
-        cur <<= morebits;
-#ifdef SHOW
-        printf("gotraw %d\n", val);
-#endif
-        return val;
-    }
-    val = cur >> (BITBUFSZ - bits);
-    bits_left -= bits;
-    cur <<= bits;
-#ifdef SHOW
-    printf("gotraw %d\n", val);
-#endif
-    return val;
-}
-
-
-inline
-void
-Unpackbits::init(BITBUFT*& inbuf)
-{
-    cur = *inbuf++;
-    cur = int_to_le(cur);
-#ifdef SHOW
-    printf("%x load %x\n", this, cur);
-#endif
-    bits_left = BITBUFSZ;
-}
-
 #endif

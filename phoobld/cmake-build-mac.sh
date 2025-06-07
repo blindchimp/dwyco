@@ -1,5 +1,5 @@
 #!/bin/sh
-QTVERS=6.8.3
+QTVERS=6.8.2
 export PATH=~/Qt/$QTVERS/macos/bin:$PATH
 export CMAKE_CXX_COMPILER_LAUNCHER=ccache
 

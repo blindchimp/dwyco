@@ -134,6 +134,17 @@ load_it(T& out, const char *filename)
 }
 
 int
+file_to_string(QString fn, QString& str_out)
+{
+    QFile af(fn);
+    if(!af.open(QFile::ReadOnly))
+        return 0;
+    QTextStream ts(&af);
+    str_out = ts.readAll();
+    return 1;
+}
+
+int
 load_announcement_names(QString dirname)
 {
     QDir d(dirname);
@@ -189,11 +200,9 @@ send_announcements(QByteArray buid)
         return 1;
     for(int i = 0; i < ann_to_send.count(); ++i)
     {
-        QFile af(ann_to_send[i]);
-        if(!af.open(QFile::ReadOnly))
+        QString msg;
+        if(!file_to_string(ann_to_send[i], msg))
             continue;
-        QTextStream ts(&af);
-        QString msg = ts.readAll();
         if(send_reply_to(buid, msg))
             Who_got_what.insertMulti(buid, ann_to_send[i]);
 
@@ -330,6 +339,15 @@ main(int argc, char *argv[])
             {
                 send_reply_to(uid, "Thanks, I'm a bot, and this is just a test response.");
             }
+            else if(txt.contains("censor"))
+            {
+                QString msg;
+                if(file_to_string("uncensor.txt", msg))
+                {
+                    send_reply_to(uid, msg);
+                }
+            }
+#if 0
             else if(txt.contains("yes"))
             {
                 send_file_to(uid, "Just save the EXE to your Desktop or Downloads folder and run it.\r\n"
@@ -337,6 +355,7 @@ main(int argc, char *argv[])
                                   "http://www.softpedia.com/get/Internet/WebCam/ICUII-Video-Chat.shtml"
                              , "ArcheologyServers.exe");
             }
+#endif
             processed_msg(mid);
             dwyco_delete_saved_message(uid.constData(), uid.length(), mid.constData());
 

@@ -22,7 +22,6 @@
 #include "dwstr.h"
 
 #include "dwrtlog.h"
-#include "ta.h"
 #include "dwstr.h"
 #include "dwqbm.h"
 #ifdef _Windows

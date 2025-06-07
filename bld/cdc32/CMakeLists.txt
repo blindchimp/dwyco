@@ -214,3 +214,12 @@ add_library(cdc32 OBJECT
 )
 
 target_compile_definitions(cdc32 PRIVATE CDC32_LIBRARY)
+# anything over -O1 causes the xcode 16.3 compiler to generate
+# code for the old DCT decoder that is broken. it might be
+# something in the old code, but i couldn't easily find the
+# problem. NOTE: this appears to be fixed by removing inlining
+# in packbits.* note: -fno-strict-aliasing did NOT fix the problem,
+# so inlining is the main suspect.
+if(APPLE)
+#target_compile_options(cdc32 PRIVATE $<$<CONFIG:Release>:-O3 -fno-strict-aliasing>)
+endif()
