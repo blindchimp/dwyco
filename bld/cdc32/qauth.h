@@ -29,6 +29,7 @@ void init_entropy();
 void save_entropy();
 DwString gen_random_filename();
 int gen_random_int();
+long long gen_random_long_long();
 
 extern vc My_UID;
 extern vc My_MID;

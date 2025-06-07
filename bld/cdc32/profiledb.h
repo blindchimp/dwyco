@@ -16,6 +16,7 @@ void init_prfdb();
 void exit_prfdb();
 extern ssns::signal2<vc, int> Profile_updated;
 extern ssns::signal2<vc, int> Keys_updated;
+extern ssns::signal2<vc, int> Pk_verification_failed;
 
 int get_pk(vc uid, vc& sfpk_out);
 int get_pk2(vc uid, vc& sfpk_out, vc& alt_sfpk_out, vc &alt_name);
@@ -27,6 +28,7 @@ void pk_force_check(vc uid);
 void pk_invalidate(vc uid);
 void pk_set_session_cache(vc uid);
 int pk_session_cached(const vc &uid);
+int verification_record_exists(vc uid);
 
 #define PKC_STATIC_PUBLIC 0
 #define PKC_DWYCO_SIGNATURE 1
