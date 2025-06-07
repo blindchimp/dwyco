@@ -611,7 +611,7 @@ set_listen_state(int on)
                 delete Listen_sock;
                 Listen_sock = 0;
             }
-            if(Current_alternate)
+            //if(Current_alternate)
                 start_broadcaster();
         }
     }
