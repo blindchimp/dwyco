@@ -174,6 +174,7 @@ private:
     int crypto_agree(vc their_crypto, int caller);
     void recv_crypto(vc their_crypto);
     void recv_matching_crypto(vc their_crypto);
+    ssns::signal2<vc, int> pk_not_verified;
 
     void start_handshake();
     void wait_for_config();

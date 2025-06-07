@@ -483,7 +483,7 @@ MMChannel::check_sync_challenge_response(int subchan, sproto *p, const char *ev)
     if(i == SSTRYAGAIN)
         return sproto::stay;
 
-    if(p->user_info == rvc)
+    if(rvc.type() == VC_STRING && p->user_info == rvc)
     {
         p->user_info = vcnil;
         return sproto::next;

@@ -286,6 +286,15 @@ gen_random_int()
     return ret;
 }
 
+long long
+gen_random_long_long()
+{
+    vc rn = get_entropy();
+    long long ret;
+    memcpy((void *)&ret, (const char *)rn, sizeof(ret));
+    return ret;
+}
+
 DwString
 gen_random_filename()
 {
