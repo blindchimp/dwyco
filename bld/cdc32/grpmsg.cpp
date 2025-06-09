@@ -186,6 +186,9 @@ note: i think this protocol needs some extra work to make it resistant to MITM.
 // this is way better than unsalted hash, but still might be better using
 // argon2 or something with some time/memory complexity parameters
 // to keep brute force attacks a little harder.
+// though, even that may not be worth it. if you are really
+// concerned about it, you will use a decent password.
+
 static
 vc
 kdf(vc password, vc& salt)
@@ -214,22 +217,39 @@ xfer_enc(vc v, vc password)
     vc p = vclh_encdec_xfer_enc_ctx(enc_ctx, v);
     if(p.is_nil())
         return vcnil;
+    // note: sticking the salt in here provides a little bit
+    // of backwards compat (by that, i mean, it won't crash
+    // old software. the keys won't work out right, but
+    // not crashing is a nice perk.)
     p[2] = salt;
     return serialize(p);
 }
 
 static
 vc
-xfer_dec(vc vs, vc password)
+xfer_dec(vc vs, vc password, vc& detail)
 {
     vc v;
     // XXX there are probably some reasonable
     // constraints we can put on the deserialization
     if(!deserialize(vs, v))
+    {
+        detail = "deserialize failed";
         return vcnil;
+    }
+    // THIS IS A COMPAT HACK: if we receive a message without a salt,
+    // notify about a version mismatch
+    if(v.num_elems() == 2)
+    {
+        detail = "wrong version";
+        return vcnil;
+    }
     vc salt = v[2];
     if(password.type() != VC_STRING || salt.type() != VC_STRING)
+    {
+        detail = "bad types";
         return vcnil;
+    }
     vc k = kdf(password, salt);
     v[2] = vcnil;
     vc enc_ctx = vclh_encdec_open();
@@ -237,7 +257,10 @@ xfer_dec(vc vs, vc password)
     vc ret;
     vc p = encdec_xfer_dec_ctx(enc_ctx, v, ret);
     if(p.is_nil())
+    {
+        detail = "decryption failed";
         return vcnil;
+    }
     return ret;
 }
 
@@ -402,12 +425,12 @@ recv_gj2(vc from, vc msg, vc password)
     int rollback = 0;
     try
     {
-
-        vc m = xfer_dec(msg, password);
+        vc detail;
+        vc m = xfer_dec(msg, password, detail);
 
         if(m.is_nil())
         {
-            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj2: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj2: ' || ?2, ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom, detail);
             Join_attempts.emit(hfrom, "decrypt failed");
             return 0;
         }
@@ -501,11 +524,12 @@ install_group_key(vc from, vc msg, vc password)
     if(from == My_UID)
         return 0;
     vc hfrom = to_hex(from);
-    vc m = xfer_dec(msg, password);
+    vc detail;
+    vc m = xfer_dec(msg, password, detail);
 
     if(m.is_nil())
     {
-        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('install_key: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('install_key: ' || ?2, ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom, detail);
         Join_attempts.emit(hfrom, "decrypt failed");
         return 0;
     }
@@ -571,11 +595,12 @@ recv_gj1(vc from, vc msg, vc password)
         // if we're not currently in a group, don't even try to send a key back
         if(!Current_alternate)
             return 0;
-        vc m = xfer_dec(msg, password);
+        vc detail;
+        vc m = xfer_dec(msg, password, detail);
 
         if(m.is_nil())
         {
-            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj1: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj1: ' || ?2, ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom, detail);
             Join_attempts.emit(hfrom, "decrypt failed");
             return 0;
         }
@@ -661,11 +686,12 @@ recv_gj3(vc from, vc msg, vc password)
         // if we're not currently in a group, don't even try to send a key back
         if(!Current_alternate)
             throw -1;
-        vc m = xfer_dec(msg, password);
+        vc detail;
+        vc m = xfer_dec(msg, password, detail);
 
         if(m.is_nil())
         {
-            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj3: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj3: ' || ?2, ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom, detail);
             Join_attempts.emit(hfrom, "decrypt failed");
             throw -1;
         }
