@@ -189,11 +189,15 @@ vclh_sha256(vc s)
 	return ret;
 }
 
+// NOTE NOTE: this will only compile with Crypto++ 8.x. This is on purpose.
+// if you compile the SHA3_256 with 5.6.2, you will get a different hash
+// function.
+
 // WARNING WARNING! this "sha3_256" was hooked to cryptopp 5.6.2, which
 // produced different output from the official "sha3_256". DO NOT USE THIS.
 // i leave it here in case there are scripts that used it i can't remember.
 vc
-vclh_sha3_256(vc s)
+vclh_sha3_256_keccak(vc s)
 {
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to SHA must be string or file", vcnil);
@@ -212,6 +216,28 @@ vclh_sha3_256(vc s)
 	}
 	vc ret(VC_BSTRING, (const char *)b.data(), (long)md.DigestSize());
 	return ret;
+}
+
+vc
+vclh_sha3_256_std(vc s)
+{
+    if(s.type() != VC_STRING && s.type() != VC_FILE)
+        USER_BOMB("first arg to SHA must be string or file", vcnil);
+    //user_warning("DO NOT USE THIS SHA3_256");
+
+    SHA3_256 md;
+    SecByteBlock b(md.DigestSize());
+    if(s.type() == VC_FILE)
+    {
+        return hash_file(s, md);
+    }
+    else
+    {
+        md.Update((const unsigned char *)(const char *)s, s.len());
+        md.Final(b);
+    }
+    vc ret(VC_BSTRING, (const char *)b.data(), (long)md.DigestSize());
+    return ret;
 }
 
 vc

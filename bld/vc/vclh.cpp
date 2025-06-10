@@ -3480,7 +3480,12 @@ vc::init_rest()
 	makefun("uri-encode", VC(vclh_uri_encode, "uri-encode", VC_FUNC_BUILTIN_LEAF));
 	makefun("uri-decode", VC(vclh_uri_decode, "uri-decode", VC_FUNC_BUILTIN_LEAF));
 #ifndef NO_LHCRYPTO
-	makefun("SHA3_256", VC(vclh_sha3_256, "SHA3_256", VC_FUNC_BUILTIN_LEAF));
+    // the following two things are because the crypto++ lib v5 had different
+    // hash function output for SHA3_256. if you need to coordinate with something
+    // that uses the old values, use SHA3_256_keccak. the *_std function produces
+    // values consistent with that eventually ended up in the standards.
+    makefun("SHA3_256_std", VC(vclh_sha3_256_std, "SHA3_256_std", VC_FUNC_BUILTIN_LEAF));
+    makefun("SHA3_256_keccak", VC(vclh_sha3_256_keccak, "SHA3_256_keccak", VC_FUNC_BUILTIN_LEAF));
 	makefun("SHA256", VC(vclh_sha256, "SHA256", VC_FUNC_BUILTIN_LEAF));
 	makefun("SHA", VC(vclh_sha, "SHA", VC_FUNC_BUILTIN_LEAF));
 	makefun("MD5", VC(vclh_md5, "MD5", VC_FUNC_BUILTIN_LEAF));
