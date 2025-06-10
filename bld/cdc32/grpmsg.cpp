@@ -180,6 +180,14 @@ a message that is encrypted using B's p2p public key.
 note: i think this protocol needs some extra work to make it resistant to MITM.
 */
 
+
+
+// note:  crypto++ 5.6.2 produces
+// a different value for SHA3_256 than later versions. they folded
+// the older functionality into Keccak...
+// since we changed to using a salt, the hashes will never work out with
+// old software, so we might as well just go with the newer hash function too.
+
 // this implements the simple one-step KDF mentioned in
 // NIST SP 800-56C REV . 2 with hash function sha256.
 // we salt with 160 bits.
@@ -190,12 +198,6 @@ note: i think this protocol needs some extra work to make it resistant to MITM.
 // though, even that may not be worth it. if you are really
 // concerned about it, you will use a decent password.
 
-// note: the only reason this exists is that crypto++ 5.6.2 produces
-// a different value for SHA3_256 than later versions. they folded
-// the older functionality into Keccak... i'm not sure that will be
-// a problem down the line or not.
-// older versions of dwyco software used SHA3_256, and for compat, we'll
-// use Keccak until we can move off both of these and onto something else.
 static
 vc
 kdf(vc password, vc& salt)
@@ -209,22 +211,6 @@ kdf(vc password, vc& salt)
     vc k = vclh_sha3_256(b);
     k = vc(VC_BSTRING, (const char *)k, 16);
     return k;
-}
-
-static
-vc
-cryptopp_keccak_256(vc s)
-{
-    using namespace CryptoPP;
-    if(s.type() != VC_STRING)
-        return vcnil;
-
-    Keccak_256 md;
-    SecByteBlock b(md.DigestSize());
-    md.Update((const byte *)(const char *)s, s.len());
-    md.Final(b);
-    vc ret(VC_BSTRING, (const char *)b.data(), (long)md.DigestSize());
-    return ret;
 }
 
 static
