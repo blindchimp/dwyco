@@ -20,7 +20,6 @@
 #include "dwrtlog.h"
 #include "grpmsg.h"
 #include "se.h"
-#include "keccak.h"
 
 extern DwVec<ValidPtr> CompositionDeleteQ;
 
