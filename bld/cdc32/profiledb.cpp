@@ -516,7 +516,7 @@ save_pk(vc uid, vc pk)
     Pk_memory_cache.del(uid);
     vc huid = to_hex(uid);
     GRTLOG("SAVE PK", 0, 0);
-    GRTLOGVC(prf);
+    GRTLOGVC(pk);
     if(!check_pk(pk))
         return 0;
     int n = pk.num_elems();

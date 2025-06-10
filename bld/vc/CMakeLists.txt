@@ -12,7 +12,7 @@ include_directories(
     # at build time.
     ${CMAKE_CURRENT_BINARY_DIR}/../zlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../zlib
-    ${CMAKE_CURRENT_SOURCE_DIR}/../crypto5
+    ${CMAKE_CURRENT_SOURCE_DIR}/../crypto8
     ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../jenkins
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
