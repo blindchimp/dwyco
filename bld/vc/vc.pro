@@ -4,7 +4,7 @@ CONFIG -= qt
 
 include($$PWD/../../$$DWYCO_CONFDIR/conf.pri)
 
-INCLUDEPATH +=  $${VCCFG_COMP} ../dwcls ../zlib ../crypto5 ../kazlib ../jenkins ../uv/include
+INCLUDEPATH +=  $${VCCFG_COMP} ../dwcls ../zlib ../crypto8 ../kazlib ../jenkins ../uv/include
 DEFINES += VC_INTERNAL DWYCO_NO_TSOCK #DWYCO_VC_THREADED DWYCO_NO_TSOCK
 
 !win32 {

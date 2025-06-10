@@ -32,6 +32,7 @@
 #include "aes.h"
 #include "randpool.h"
 #include "sha3.h"
+#include "keccak.h"
 #ifdef LINUX
 #include <unistd.h>
 #include <fcntl.h>
@@ -188,13 +189,17 @@ vclh_sha256(vc s)
 	return ret;
 }
 
+// WARNING WARNING! this "sha3_256" was hooked to cryptopp 5.6.2, which
+// produced different output from the official "sha3_256". DO NOT USE THIS.
+// i leave it here in case there are scripts that used it i can't remember.
 vc
 vclh_sha3_256(vc s)
 {
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to SHA must be string or file", vcnil);
+    //user_warning("DO NOT USE THIS SHA3_256");
 		
-	SHA3_256 md;
+	Keccak_256 md;
 	SecByteBlock b(md.DigestSize());
 	if(s.type() == VC_FILE)
 	{
@@ -215,7 +220,7 @@ vclh_sha(vc s)
 	if(s.type() != VC_STRING && s.type() != VC_FILE)
 		USER_BOMB("first arg to SHA must be string or file", vcnil);
 		
-	SHA md;
+    SHA1 md;
 	SecByteBlock b(md.DigestSize());
 	if(s.type() == VC_FILE)
 	{
@@ -524,7 +529,7 @@ vclh_dh_save(vc filename)
 	if(filename.type() != VC_STRING)
 		USER_BOMB("first arg must be filename", vcnil);
 	HexEncoder h(new FileSink((const char *)filename));
-	MyDH->DEREncode(h);
+    MyDH->AccessMaterial().Save(h);
 	return vctrue;
 }
 

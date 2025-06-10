@@ -179,6 +179,14 @@ a message that is encrypted using B's p2p public key.
 note: i think this protocol needs some extra work to make it resistant to MITM.
 */
 
+
+
+// note:  crypto++ 5.6.2 produces
+// a different value for SHA3_256 than later versions. they folded
+// the older functionality into Keccak...
+// since we changed to using a salt, the hashes will never work out with
+// old software, so we might as well just go with the newer hash function too.
+
 // this implements the simple one-step KDF mentioned in
 // NIST SP 800-56C REV . 2 with hash function sha256.
 // we salt with 160 bits.

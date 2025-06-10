@@ -9,7 +9,7 @@ $${VCCFG_COMP} \
 ../zlib \
 ../kazlib \
 ../jenkins \
-../crypto5 \
+../crypto8 \
 ../vc \
 ../pbm \
 ../pgm \

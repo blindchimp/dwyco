@@ -107,7 +107,7 @@ sha(vc s)
     if(s.type() != VC_STRING)
         return vcnil;
 
-    SHA md;
+    SHA1 md;
     SecByteBlock b(md.DigestSize());
     md.Update((const byte *)(const char *)s, s.len());
     md.Final(b);
