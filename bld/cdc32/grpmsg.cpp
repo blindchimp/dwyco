@@ -207,7 +207,7 @@ kdf(vc password, vc& salt)
         salt = get_entropy();
     s += DwString((const char *)salt, salt.len());
     vc b(VC_BSTRING, s.c_str(), s.length());
-    vc k = vclh_sha3_256(b);
+    vc k = vclh_sha3_256_std(b);
     k = vc(VC_BSTRING, (const char *)k, 16);
     return k;
 }
