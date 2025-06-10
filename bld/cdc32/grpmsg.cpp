@@ -180,12 +180,37 @@ a message that is encrypted using B's p2p public key.
 note: i think this protocol needs some extra work to make it resistant to MITM.
 */
 
+// this implements the simple one-step KDF mentioned in
+// NIST SP 800-56C REV . 2 with hash function sha256.
+// we salt with 160 bits.
+// we only need 128 bits for a key, so counter == 1
+// this is way better than unsalted hash, but still might be better using
+// argon2 or something with some time/memory complexity parameters
+// to keep brute force attacks a little harder.
+// though, even that may not be worth it. if you are really
+// concerned about it, you will use a decent password.
+
 // note: the only reason this exists is that crypto++ 5.6.2 produces
 // a different value for SHA3_256 than later versions. they folded
 // the older functionality into Keccak... i'm not sure that will be
 // a problem down the line or not.
 // older versions of dwyco software used SHA3_256, and for compat, we'll
 // use Keccak until we can move off both of these and onto something else.
+static
+vc
+kdf(vc password, vc& salt)
+{
+    DwString s("\0\0\0\1", 4);
+    s += (const char *)password;
+    if(salt.is_nil())
+        salt = get_entropy();
+    s += DwString((const char *)salt, salt.len());
+    vc b(VC_BSTRING, s.c_str(), s.length());
+    vc k = vclh_sha3_256(b);
+    k = vc(VC_BSTRING, (const char *)k, 16);
+    return k;
+}
+
 static
 vc
 cryptopp_keccak_256(vc s)
@@ -208,35 +233,57 @@ xfer_enc(vc v, vc password)
 {
     if(password.type() != VC_STRING)
         return vcnil;
-    vc k = cryptopp_keccak_256(password);
-    k = vc(VC_BSTRING, (const char *)k, 16);
+    vc salt;
+    vc k = kdf(password, salt);
     vc enc_ctx = vclh_encdec_open();
     vclh_encdec_init_key_ctx(enc_ctx, k, 0);
     vc p = vclh_encdec_xfer_enc_ctx(enc_ctx, v);
     if(p.is_nil())
         return vcnil;
+    // note: sticking the salt in here provides a little bit
+    // of backwards compat (by that, i mean, it won't crash
+    // old software. the keys won't work out right, but
+    // not crashing is a nice perk.)
+    p[2] = salt;
     return serialize(p);
 }
 
 static
 vc
-xfer_dec(vc vs, vc password)
+xfer_dec(vc vs, vc password, vc& detail)
 {
     vc v;
     // XXX there are probably some reasonable
     // constraints we can put on the deserialization
     if(!deserialize(vs, v))
+    {
+        detail = "deserialize failed";
         return vcnil;
-    if(password.type() != VC_STRING)
+    }
+    // THIS IS A COMPAT HACK: if we receive a message without a salt,
+    // notify about a version mismatch
+    if(v.num_elems() == 2)
+    {
+        detail = "wrong version";
         return vcnil;
-    vc k = cryptopp_keccak_256(password);
-    k = vc(VC_BSTRING, (const char *)k, 16);
+    }
+    vc salt = v[2];
+    if(password.type() != VC_STRING || salt.type() != VC_STRING)
+    {
+        detail = "bad types";
+        return vcnil;
+    }
+    vc k = kdf(password, salt);
+    v[2] = vcnil;
     vc enc_ctx = vclh_encdec_open();
     vclh_encdec_init_key_ctx(enc_ctx, k, 0);
     vc ret;
     vc p = encdec_xfer_dec_ctx(enc_ctx, v, ret);
     if(p.is_nil())
+    {
+        detail = "decryption failed";
         return vcnil;
+    }
     return ret;
 }
 
@@ -322,6 +369,8 @@ terminate(vc initiator, vc responder)
 int
 start_gj(vc target_uid, vc gname, vc password)
 {
+    if(Current_alternate)
+        return 0;
     DwString pers_id;
 
     vc nonce = to_hex(get_entropy());
@@ -390,17 +439,21 @@ start_gj(vc target_uid, vc gname, vc password)
 int
 recv_gj2(vc from, vc msg, vc password)
 {
+    // if somehow we are already in a group, don't process the messages
+    if(Current_alternate)
+        return 0;
+
     DwString pers_id;
     vc hfrom = to_hex(from);
     int rollback = 0;
     try
     {
-
-        vc m = xfer_dec(msg, password);
+        vc detail;
+        vc m = xfer_dec(msg, password, detail);
 
         if(m.is_nil())
         {
-            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj2: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj2: ' || ?2, ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom, detail);
             Join_attempts.emit(hfrom, "decrypt failed");
             return 0;
         }
@@ -489,14 +542,17 @@ recv_gj2(vc from, vc msg, vc password)
 int
 install_group_key(vc from, vc msg, vc password)
 {
+    if(Current_alternate)
+        return 0;
     if(from == My_UID)
         return 0;
     vc hfrom = to_hex(from);
-    vc m = xfer_dec(msg, password);
+    vc detail;
+    vc m = xfer_dec(msg, password, detail);
 
     if(m.is_nil())
     {
-        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('install_key: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+        SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('install_key: ' || ?2, ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom, detail);
         Join_attempts.emit(hfrom, "decrypt failed");
         return 0;
     }
@@ -559,17 +615,25 @@ recv_gj1(vc from, vc msg, vc password)
         return 0;
     try
     {
-        vc m = xfer_dec(msg, password);
+        // if we're not currently in a group, don't even try to send a key back
+        if(!Current_alternate)
+            return 0;
+        vc detail;
+        vc m = xfer_dec(msg, password, detail);
 
         if(m.is_nil())
         {
-            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj1: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj1: ' || ?2, ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom, detail);
             Join_attempts.emit(hfrom, "decrypt failed");
             return 0;
         }
 
         vc nonce = m[0];
         vc alt_name = m[1];
+
+        // if the requested group isn't the one were current in, do not continue
+        if(Current_alternate->alt_name() != alt_name)
+            return 0;
 
         SKID->start_transaction();
 
@@ -645,11 +709,12 @@ recv_gj3(vc from, vc msg, vc password)
         // if we're not currently in a group, don't even try to send a key back
         if(!Current_alternate)
             throw -1;
-        vc m = xfer_dec(msg, password);
+        vc detail;
+        vc m = xfer_dec(msg, password, detail);
 
         if(m.is_nil())
         {
-            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj3: failed decrypt', ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom);
+            SKID->sql_simple("insert into join_log (msg, uid1, err, time) values('gj3: ' || ?2, ?1, 'failed decrypt', strftime('%s', 'now'))", hfrom, detail);
             Join_attempts.emit(hfrom, "decrypt failed");
             throw -1;
         }
@@ -662,6 +727,15 @@ recv_gj3(vc from, vc msg, vc password)
         // first checks
         if(to_hex(My_UID) != our_uid)
         {
+            throw -1;
+        }
+
+        // note: for now, we are only in one group, and it should be the
+        // same as the requester wanted. this ought to be fixed later
+        // if we allow multiple groups for some reason
+        if(Current_alternate->alt_name() != alt_name)
+        {
+            //oopanic("protocol error");
             throw -1;
         }
 
@@ -681,14 +755,7 @@ recv_gj3(vc from, vc msg, vc password)
             }
         }
 
-        // note: for now, we are only in one group, and it should be the
-        // same as the requester wanted. this ought to be fixed later
-        // if we allow multiple groups for some reason
-        if(Current_alternate->alt_name() != alt_name)
-        {
-            //oopanic("protocol error");
-            throw -1;
-        }
+
         Group_uids.add(from);
         vc mr(VC_VECTOR);
         mr[0] = alt_name;
