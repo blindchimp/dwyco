@@ -15,7 +15,7 @@ D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
@@ -30,7 +30,7 @@ $${D}/uv/libuv.a \
 PRE_TARGETDEPS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
@@ -46,7 +46,7 @@ D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/kazlib/libkazlib.a \
 $${D}/ppm/libppm.a \
@@ -74,7 +74,7 @@ CONFIG(release, debug|release) {
 LIBS += \
 $${D}/cdc32/$${S}/cdc32.lib \
 $${D}/vc/$${S}/vc.lib \
-$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/crypto8/$${S}/crypto8.lib \
 $${D}/dwcls/$${S}/dwcls.lib \
 $${D}/kazlib/$${S}/kazlib.lib \
 $${D}/ppm/$${S}/ppm.lib \

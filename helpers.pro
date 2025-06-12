@@ -9,12 +9,12 @@ TEMPLATE = subdirs
 CONFIG += ordered
 
 linux {
-SUBDIRS=bld/ogg bld/vorbis112 bld/theora.1.2.x bld/speex bld/kazlib bld/zlib bld/dwcls bld/crypto5 bld/jenkins bld/vc bld/pbm bld/pgm bld/ppm bld/gsm bld/cdc32 bld/uv
+SUBDIRS=bld/ogg bld/vorbis112 bld/theora.1.2.x bld/speex bld/kazlib bld/zlib bld/dwcls bld/crypto8 bld/jenkins bld/vc bld/pbm bld/pgm bld/ppm bld/gsm bld/cdc32 bld/uv
 #SUBDIRS += ftpreview
 }
 
 !linux {
-SUBDIRS=bld/kazlib bld/zlib bld/dwcls bld/crypto5 bld/jenkins bld/vc bld/pbm bld/pgm bld/ppm bld/gsm bld/cdc32
+SUBDIRS=bld/kazlib bld/zlib bld/dwcls bld/crypto8 bld/jenkins bld/vc bld/pbm bld/pgm bld/ppm bld/gsm bld/cdc32
 }
 
 SUBDIRS += dwycobg xferdl

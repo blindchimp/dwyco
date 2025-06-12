@@ -192,7 +192,7 @@ get_guid()
     d7.munge(vald, strlen(vald));
 
     byte a[20];
-    SHA sha;
+    SHA1 sha;
     sha.Update(dir, strlen((const char *)dir));
     sha.Update((const byte *)"8395821084", 10);
     sha.Final(a);
