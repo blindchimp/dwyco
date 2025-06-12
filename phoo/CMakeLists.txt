@@ -236,7 +236,7 @@ set_target_properties(phoo PROPERTIES
 set(BASELIBS
     cdc32
     vc
-    crypto5
+    crypto8
     dwcls
     gsm
     kazlib

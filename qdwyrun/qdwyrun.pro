@@ -37,7 +37,7 @@ macx-* {
 D=$${PWD}/../bld
 L=$${OUT_PWD}/../bld
 
-INCLUDEPATH += $$D/dwcls $$D/vc $$D/crypto5
+INCLUDEPATH += $$D/dwcls $$D/vc $$D/crypto8
 
 linux-*|macx-* {
 LIBS += \
@@ -45,7 +45,7 @@ $$L/vc/libvc.a \
 $$L/dwcls/libdwcls.a \
 $$L/jenkins/libjenkins.a \
 $$L/kazlib/libkazlib.a \
-$$L/crypto5/libcrypto5.a \
+$$L/crypto8/libcrypto8.a \
 $$L/zlib/libzlib.a
 
 #$$L/uv/libuv.a
@@ -66,7 +66,7 @@ CONFIG(release, debug|release) {
 
 LIBS += \
 $${D}/vc/$${S}/vc.lib \
-$${D}/crypto5/$${S}/crypto5.lib \
+$${D}/crypto8/$${S}/crypto8.lib \
 $${D}/dwcls/$${S}/dwcls.lib \
 $${D}/kazlib/$${S}/kazlib.lib \
 $${D}/jenkins/$${S}/jenkins.lib \

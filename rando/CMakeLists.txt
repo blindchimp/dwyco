@@ -153,7 +153,7 @@ set_target_properties(rando PROPERTIES
 set(BASELIBS
     cdc32
     vc
-    crypto5
+    crypto8
     dwcls
     kazlib
     pbm

@@ -9,7 +9,7 @@ include_directories(
     ${VCCFG_COMP}
     ${CMAKE_CURRENT_SOURCE_DIR}/../dwcls
     ${CMAKE_CURRENT_SOURCE_DIR}/../zlib
-    ${CMAKE_CURRENT_SOURCE_DIR}/../crypto5
+    ${CMAKE_CURRENT_SOURCE_DIR}/../crypto8
     ${CMAKE_CURRENT_SOURCE_DIR}/../kazlib
     ${CMAKE_CURRENT_SOURCE_DIR}/../jenkins
     ${CMAKE_CURRENT_SOURCE_DIR}/../uv/include
