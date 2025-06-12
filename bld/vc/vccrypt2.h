@@ -13,7 +13,8 @@
 #include "vc.h"
 vc vclh_sha(vc);
 vc vclh_sha256(vc);
-vc vclh_sha3_256(vc s);
+vc vclh_sha3_256_std(vc s);
+vc vclh_sha3_256_keccak(vc s);
 vc vclh_md5(vc);
 vc vclh_base64_encode(vc s);
 vc vclh_base64_decode(vc s);
