@@ -527,8 +527,7 @@ save_pk(vc uid, vc pk)
     }
 
     vc opk;
-    volatile int foo = 0;
-    if((foo = !load_pk(uid, opk)) ||
+    if(!load_pk(uid, opk) ||
             pk[PKC_STATIC_PUBLIC] != opk[PKC_STATIC_PUBLIC] ||
             pk[PKC_DWYCO_SIGNATURE] != opk[PKC_DWYCO_SIGNATURE] ||
             pk[PKC_ALT_STATIC_PUBLIC] != opk[PKC_ALT_STATIC_PUBLIC] ||
