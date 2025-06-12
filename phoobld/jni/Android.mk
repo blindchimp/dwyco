@@ -7,7 +7,7 @@ include $(MY_CONF_LOCAL_PATH)/kazlib/Android.mk
 include $(MY_CONF_LOCAL_PATH)/dwcls/Android.mk
 include $(MY_CONF_LOCAL_PATH)/jenkins/Android.mk
 include $(MY_CONF_LOCAL_PATH)/gsm/Android.mk
-include $(MY_CONF_LOCAL_PATH)/crypto5/Android.mk
+include $(MY_CONF_LOCAL_PATH)/crypto8/Android.mk
 include $(MY_CONF_LOCAL_PATH)/vc/Android.mk
 include $(MY_CONF_LOCAL_PATH)/pbm/Android.mk
 include $(MY_CONF_LOCAL_PATH)/pgm/Android.mk
@@ -37,7 +37,7 @@ ppm \
 pgm \
 pbm \
 vc \
-crypto5 \
+crypto8 \
 kazlib \
 jenkins \
 dwcls \

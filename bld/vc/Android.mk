@@ -65,7 +65,7 @@ LOCAL_C_INCLUDES := \
 $(LOCAL_PATH)/../dwcls \
 $(LOCAL_PATH)/../kazlib \
 $(LOCAL_PATH)/../jenkins \
-$(LOCAL_PATH)/../crypto5 \
+$(LOCAL_PATH)/../crypto8 \
 $(LOCAL_PATH)/../uv/include \
 $(APP_PROJECT_PATH)
 
