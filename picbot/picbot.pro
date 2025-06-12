@@ -14,7 +14,7 @@ D = $${OUT_PWD}/../bld
 LIBS += \
 $${D}/cdc32/libcdc32.a \
 $${D}/vc/libvc.a \
-$${D}/crypto5/libcrypto5.a \
+$${D}/crypto8/libcrypto8.a \
 $${D}/dwcls/libdwcls.a \
 $${D}/gsm/libgsm.a \
 $${D}/kazlib/libkazlib.a \

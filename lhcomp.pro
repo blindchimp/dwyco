@@ -1,4 +1,4 @@
 TEMPLATE = subdirs
 CONFIG += ordered
-SUBDIRS=bld/kazlib bld/zlib bld/dwcls bld/crypto5 bld/jenkins bld/vc bld/uv lhc
+SUBDIRS=bld/kazlib bld/zlib bld/dwcls bld/crypto8 bld/jenkins bld/vc bld/uv lhc
 

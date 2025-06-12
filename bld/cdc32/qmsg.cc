@@ -860,7 +860,7 @@ gen_hash(DwString filename)
         GRTLOG("bogus hash filename %s", filename.c_str(), 0);
         return val;
     }
-    SHA sha;
+    SHA1 sha;
     HashFilter *hf = new HashFilter(sha);
     FileSource fs(filename.c_str(), true, hf);
     int n = hf->MaxRetrievable();
@@ -886,7 +886,7 @@ gen_authentication(vc qmsg, const vc& att_hash)
     vc av(VC_VECTOR);
     vc mvec = qmsg[QQM_MSG_VEC];
 
-    SHA sha;
+    SHA1 sha;
     byte *secret = (byte *)HASH_SECRET;
     sha.Update(secret, sizeof(HASH_SECRET) - 1);
     // note: old clients may or may not be able to authenticate newer
@@ -956,7 +956,7 @@ gen_authentication(vc qmsg, const vc& att_hash)
 int
 verify_authentication(const vc& text, const vc& uid, const vc& att_hash, const vc& datevec, const vc& no_forward, const vc& mac)
 {
-    SHA sha;
+    SHA1 sha;
     byte *secret = (byte *)HASH_SECRET;
     sha.Update(secret, sizeof(HASH_SECRET) - 1);
     sha.Update((const byte *)(const char *)text, text.len());

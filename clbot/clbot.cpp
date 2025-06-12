@@ -186,7 +186,7 @@ main(int argc, char *argv[])
 	int r = 20 * 60 + (rand() % 30) * 60;
     time_t start = time(0);
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    char *dbn = "/home/dwight/syncdev/profiles.sqlite3";
+    const char *dbn = "/home/dwight/syncdev/profiles.sqlite3";
     if(argc >= 2)
         dbn = argv[1];
     if(access(dbn, R_OK|W_OK) != 0)

@@ -65,7 +65,7 @@ set_get_uniq(int& method)
     {
         return method_5(method);
     }
-    SHA sha;
+    SHA1 sha;
     byte *secret = (byte *)HASH_MUMBLE;
     sha.Update(secret, sizeof(HASH_MUMBLE) - 1);
     FILE *f = fopen("/tmp/.k", "r");

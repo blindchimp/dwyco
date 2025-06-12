@@ -1,7 +1,7 @@
 LH_INTERPRETER=1
 
 linux-*|macx-* {
-DEFINES += LINUX
+DEFINES += LINUX CRYPTOPP_DISABLE_ASM
 QMAKE_CXX=ccache g++
 QMAKE_CC=ccache gcc
 }
