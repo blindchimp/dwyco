@@ -17,7 +17,7 @@
 #include "vcudh.h"
 #include "dhgsetup.h"
 #include "simplesql.h"
-#include "sha3.h"
+//#include "sha3.h"
 #include "aes.h"
 #include "modes.h"
 #include "keccak.h"
@@ -520,7 +520,7 @@ DH_alternate::my_static_public()
 vc
 DH_alternate::get_gid(vc pubkey)
 {
-    SHA3_256 md;
+    Keccak_256 md;
     SecByteBlock b(md.DigestSize());
     md.Update((const byte *)(const char *)pubkey, pubkey.len());
     md.Final(b);
