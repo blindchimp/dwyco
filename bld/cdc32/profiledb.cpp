@@ -413,7 +413,7 @@ int
 verification_record_exists(vc uid)
 {
     vc huid = to_hex(uid);
-    vc ret = sql_simple("select 1 from pk_verified where uid = ?1");
+    vc ret = sql_simple("select 1 from pk_verified where uid = ?1", huid);
     if(ret.num_elems() == 0)
         return 0;
     return 1;
