@@ -2,6 +2,7 @@
 rm -f  jhead
 rm -f  cdc32
 rm -f  crypto5
+rm -f  crypto8
 rm -f  dwcls
 rm -f  gsm
 rm -f  jenkins
@@ -18,7 +19,7 @@ rm -f miniupnpc
 
 ln -s  ../../bld/jhead
 ln -s  ../../bld/cdc32
-ln -s  ../../bld/crypto5
+ln -s  ../../bld/crypto8
 ln -s ../../bld/dwcls
 ln -s ../../bld/gsm
 ln -s ../../bld/jenkins
