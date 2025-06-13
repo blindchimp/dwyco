@@ -201,6 +201,10 @@ static
 vc
 kdf(vc password, vc& salt)
 {
+    // note: adding this incompatibility isn't worth it
+    // right now. yes, salting would be better, but it doesn't
+    // meaningfully improve security of weak passwords.
+#ifdef USE_SALT
     DwString s("\0\0\0\1", 4);
     s += (const char *)password;
     if(salt.is_nil())
@@ -209,6 +213,10 @@ kdf(vc password, vc& salt)
     vc b(VC_BSTRING, s.c_str(), s.length());
     vc k = vclh_sha3_256_std(b);
     k = vc(VC_BSTRING, (const char *)k, 16);
+#else
+    vc k = vclh_sha3_256_keccak(password);
+    k = vc(VC_BSTRING, (const char *)k, 16);
+#endif
     return k;
 }
 
@@ -225,11 +233,13 @@ xfer_enc(vc v, vc password)
     vc p = vclh_encdec_xfer_enc_ctx(enc_ctx, v);
     if(p.is_nil())
         return vcnil;
+#ifdef USE_SALT
     // note: sticking the salt in here provides a little bit
     // of backwards compat (by that, i mean, it won't crash
     // old software. the keys won't work out right, but
     // not crashing is a nice perk.)
     p[2] = salt;
+#endif
     return serialize(p);
 }
 
@@ -245,6 +255,7 @@ xfer_dec(vc vs, vc password, vc& detail)
         detail = "deserialize failed";
         return vcnil;
     }
+#ifdef USE_SALT
     // THIS IS A COMPAT HACK: if we receive a message without a salt,
     // notify about a version mismatch
     if(v.num_elems() == 2)
@@ -253,13 +264,17 @@ xfer_dec(vc vs, vc password, vc& detail)
         return vcnil;
     }
     vc salt = v[2];
+    v[2] = vcnil;
     if(password.type() != VC_STRING || salt.type() != VC_STRING)
     {
         detail = "bad types";
         return vcnil;
     }
+#else
+    vc salt;
+#endif
     vc k = kdf(password, salt);
-    v[2] = vcnil;
+
     vc enc_ctx = vclh_encdec_open();
     vclh_encdec_init_key_ctx(enc_ctx, k, 0);
     vc ret;
@@ -383,9 +398,21 @@ start_gj(vc target_uid, vc gname, vc password)
     int comp_id = dwyco_make_special_zap_composition(DWYCO_SPECIAL_TYPE_JOIN1, (const char *)mk, mk.len());
     if(comp_id == -1)
         return 0;
-
+    vc dum;
+    vc adum;
+    vc aname;
+    int inh_pk = 1;
+    // if we have a group key for the name the target_uid is in, then try to use it.
+    // this is better than leaving just the password encryption hanging out.
+    if(get_pk2(target_uid, dum, adum, aname))
+    {
+        if(aname == gname)
+        {
+            inh_pk = 0;
+        }
+    }
     // send to group
-    if(!post_req(comp_id, target_uid, pers_id, 0))
+    if(!post_req(comp_id, target_uid, pers_id, 0, inh_pk))
     {
         dwyco_delete_zap_composition(comp_id);
         return 0;
@@ -488,7 +515,7 @@ recv_gj2(vc from, vc msg, vc password)
             throw -1;
 
         // respond to just the sender (not group)
-        if(!post_req(comp_id, from, pers_id, 1))
+        if(!post_req(comp_id, from, pers_id, 1, 0))
         {
             dwyco_delete_zap_composition(comp_id);
             throw -1;
@@ -646,7 +673,8 @@ recv_gj1(vc from, vc msg, vc password)
         if(comp_id == -1)
             throw -1;
         // respond to just the initiator (not any group they might accidently be in)
-        if(!post_req(comp_id, from, pers_id, 1))
+        // also, allow pk encryption if we have their key.
+        if(!post_req(comp_id, from, pers_id, 1, 0))
         {
             dwyco_delete_zap_composition(comp_id);
             throw -1;
