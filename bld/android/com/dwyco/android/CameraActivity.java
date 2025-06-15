@@ -1,4 +1,7 @@
 package com.dwyco.android;
+// note: this is needed for resources, but isn't
+// really something i want here... WIP
+//import com.dwyco.phoo.R;
 
 import android.Manifest;
 import android.content.Intent;
@@ -212,7 +215,7 @@ public class CameraActivity extends AppCompatActivity {
         File[] mediaDirs = getExternalMediaDirs();
         File mediaDir = null;
         if (mediaDirs != null && mediaDirs.length > 0) {
-            mediaDir = new File(mediaDirs[0], getResources().getString(R.string.app_name));
+            mediaDir = new File(mediaDirs[0], "PhooPics");
             mediaDir.mkdirs();
         }
         return mediaDir != null ? mediaDir : getFilesDir();
