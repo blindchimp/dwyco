@@ -73,6 +73,9 @@ public class NotificationClient extends QtActivity
     private static final int REQUEST_POST_NOTIFICATIONS = 1;
     private static final int REQUEST_EXTERNAL_STORAGE_PERMISSION = 2;
     private static SoundPoolPlayer soundPoolPlayer;
+    // --- Camera Integration ---
+    static final int REQUEST_IMAGE_CAPTURE = 2; // New request code for the camera
+
 
     public NotificationClient()
     {
@@ -80,10 +83,21 @@ public class NotificationClient extends QtActivity
         prefs_lock = new SocketLock(DwycoApp.lock_shared_prefs);
     }
 
+    // --- Camera Integration: New method to be called from QML ---
+    public static void takePicture() {
+        if (m_instance == null) {
+            Log.e(TAG, "NotificationClient instance is null. Cannot start camera.");
+            return;
+        }
+        Intent intent = new Intent(m_instance, CameraActivity.class);
+        m_instance.startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
+    }
+
+
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
-        
+
         if(!DwycoApp.allow_screenshots)
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
 	if(DwycoApp.keep_screen_on)
@@ -115,7 +129,7 @@ public class NotificationClient extends QtActivity
         // after a shitshow trying to get this working with the stupid-complicated
         // new api, an AI informed me that using the old-school simpler method was
         // doable. I'm not sure i need all the imports and other garbage i added
-        // above while i was fiddling with using the new method. 
+        // above while i was fiddling with using the new method.
         // the only down side i see with this is that android will ask for
         // notification permissions twice before starting to ignore the request.
         // which is fine. otherwise i would have to save some state in the handler
@@ -133,7 +147,7 @@ public class NotificationClient extends QtActivity
             // No need to request WRITE_EXTERNAL_STORAGE permission if correctly using MediaStore.
             // **IMPORTANT**: Adjust this logic based on your actual MediaStore implementation.  It's possible you STILL need the permission,
             // particularly if interacting with files outside the scope of the MediaStore.
-        
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
         // Check if we have write permission
         int permission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -263,7 +277,7 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
 
     public static void set_lastrun() {
         prefs_lock.lock();
-        long secs = System.currentTimeMillis() / 1000; 
+        long secs = System.currentTimeMillis() / 1000;
         SharedPreferences sp = m_instance.getSharedPreferences(DwycoApp.shared_prefs, MODE_PRIVATE);
         SharedPreferences.Editor pe = sp.edit();
         pe.putLong("lastrun", secs);
@@ -317,11 +331,11 @@ public static String get_token() {
           pe.putString("token", token);
           pe.commit();
           prefs_lock.release();
-      
+
           Log.d("wrote token: ", token);
           // Log and toast
           //Log.d("TOKEN", token);
-          
+
         }
     });
 
@@ -349,20 +363,20 @@ public static String get_token() {
             PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 12, TimeUnit.HOURS)
                 .setConstraints(constraints)
                 .build();
-            
+
             WorkManager.getInstance(m_instance)
-                .enqueueUniquePeriodicWork("upload_only", 
+                .enqueueUniquePeriodicWork("upload_only",
                 ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, uploadWorkRequest);
         }
         else
         {
-        
+
             PeriodicWorkRequest uploadWorkRequest = new PeriodicWorkRequest.Builder(DwycoProbe.class, 1, TimeUnit.HOURS)
                 .setConstraints(constraints)
                 .build();
-            
+
             WorkManager.getInstance(m_instance)
-                .enqueueUniquePeriodicWork("upload_only", 
+                .enqueueUniquePeriodicWork("upload_only",
                 ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE, uploadWorkRequest);
         }
     }
@@ -473,8 +487,19 @@ public static void set_user_property(String name, String value) {
                     dwybg.dwyco_set_aux_string("");
                     catchLog("result null");
                 }
-
             }
+            // --- Camera Integration: Handle the result from CameraActivity ---
+            else if (requestCode == REQUEST_IMAGE_CAPTURE) {
+                if (data != null && data.hasExtra("image_path")) {
+                    String imagePath = data.getStringExtra("image_path");
+                    dwybg.dwyco_set_aux_string(imagePath);
+                    catchLog("Photo captured: " + imagePath);
+                } else {
+                    dwybg.dwyco_set_aux_string("");
+                    catchLog("Photo capture cancelled or failed.");
+                }
+            }
+
         }
         else
         {
@@ -673,7 +698,7 @@ public static void set_user_property(String name, String value) {
             throw new IllegalArgumentException("cacheImageUri can not be null");
 
         String imageName = cacheImageUri.getLastPathSegment();
-        ContentResolver contentResolver = mContext.getContentResolver();
+        ContentResolver contentResolver = m_instance.getContentResolver();
         Uri imagesCollection;
 
         if(Build.VERSION.SDK_INT  <= Build.VERSION_CODES.P){
@@ -745,3 +770,4 @@ private class SoundPoolPlayer {
     }
 }
 }
+

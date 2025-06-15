@@ -628,3 +628,5 @@ bld/android/android.iml
 rando/.cache/
 
 randobld/jni/crypto8
+
+phoo/androidinst3/src/com/dwyco/android/CameraActivity.java
