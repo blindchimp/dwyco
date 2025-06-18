@@ -42,6 +42,9 @@ add_definitions(-DQT_VERSION_STRING="${QT_VERSION}")
 if(ANDROID)
 file(COPY ../bld/android/com/dwyco DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/)
 file(COPY ../../deploy-rando/google-services.json DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/dwyco/android/CameraActivity.java"  HACK_JAVA)
+string(REPLACE com.dwyco.phoo.R com.dwyco.rando.R HACK_MODDED "${HACK_JAVA}")
+file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/androidinst3/src/com/dwyco/android/CameraActivity.java" "${HACK_MODDED}")
 endif()
 
 

@@ -107,6 +107,13 @@ void NotificationClient::set_lastrun()
         "set_lastrun");
 }
 
+void NotificationClient::takePicture()
+{
+    QAndroidJniObject::callStaticMethod<void>(
+        "com/dwyco/android/NotificationClient",
+        "takePicture");
+}
+
 void
 NotificationClient::set_msg_count_url(QString s)
 {
@@ -251,6 +258,15 @@ NotificationClient::vibrate(long ms)
             "vibrate",
             "(J)V",
             jms);
+
+}
+
+void
+NotificationClient::beep()
+{
+    QAndroidJniObject::callStaticMethod<void>("com/dwyco/android/NotificationClient",
+                                              "beep"
+                                              );
 
 }
 
