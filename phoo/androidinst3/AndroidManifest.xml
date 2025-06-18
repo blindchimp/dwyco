@@ -49,7 +49,7 @@ android:fullBackupContent="@xml/backup_rules"
                 android:value="minimal" />
         </activity>
 	<activity
-            android:name=".CameraActivity"
+            android:name="com.dwyco.android.CameraActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />

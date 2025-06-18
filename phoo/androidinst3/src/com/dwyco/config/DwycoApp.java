@@ -4,7 +4,7 @@
 // for most apps without having to copy them around to your
 // app folder.
 
-package com.dwyco.android;
+package com.dwyco.config;
 import com.dwyco.phoo.R;
 
 public class DwycoApp {

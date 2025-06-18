@@ -1,7 +1,7 @@
 package com.dwyco.android;
 // note: this is needed for resources, but isn't
 // really something i want here... WIP
-//import com.dwyco.phoo.R;
+import com.dwyco.phoo.R;
 
 import android.Manifest;
 import android.content.Intent;
